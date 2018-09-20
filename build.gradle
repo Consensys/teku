@@ -297,6 +297,7 @@ startScripts {
 dependencies {
   compile project(':beaconchain')
   errorprone 'com.google.errorprone:error_prone_core:2.3.1'
+  compile ('org.web3j:core:3.5.0')
 }
 
 task createEVMToolApp(type: CreateStartScripts) {
