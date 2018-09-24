@@ -1,7 +1,7 @@
 apply plugin: 'java-library'
 
 jar {
-  baseName 'pantheon-ethereum-rlp'
+  baseName 'beaconchain-ethereum-rlp'
   manifest {
     attributes('Implementation-Title': baseName,
     'Implementation-Version': project.version)

@@ -100,7 +100,7 @@ allprojects {
    * The properties passed are:
    * - 'test.ethereum.include': allows to run a single Ethereum reference tests. For instance,
    *   running a single general state test can be done with:
-   *    ./gradlew :ethereum:net.consensys.pantheon.ethereum.vm:test -Dtest.single=GeneralStateTest -Dtest.ethereum.include=callcodecallcallcode_101-Frontier
+   *    ./gradlew :ethereum:net.consensys.beaconchain.ethereum.vm:test -Dtest.single=GeneralStateTest -Dtest.ethereum.include=callcodecallcallcode_101-Frontier
    *   The meaning being that will be run only the tests for which the value passed as "include"
    *   (which can be a java pattern) matches parts of the test name. Knowing that tests names for
    *   reference tests are of the form:
@@ -111,7 +111,7 @@ allprojects {
    *   multiple variant of that test are run. The variant is a simple number.
    * - 'test.ethereum.state.eip': for general state tests, allows to only run tests for the
    *   milestone specified by this value. So for instance,
-   *    ./gradlew :ethereum:net.consensys.pantheon.ethereum.vm:test -Dtest.single=GeneralStateTest -Dtest.ethereum.state.eip=Frontier
+   *    ./gradlew :ethereum:net.consensys.beaconchain.ethereum.vm:test -Dtest.single=GeneralStateTest -Dtest.ethereum.state.eip=Frontier
    *   only run general state tests for Frontier. Note that this behavior could be achieved as well
    *   with the 'include' option above since it is a pattern, but this is a slightly more convenient
    *   option.
@@ -238,7 +238,7 @@ subprojects {
         publications {
           MavenDeployment(MavenPublication) {
             from components.java
-            groupId 'net.consensys.pantheon'
+            groupId 'net.consensys.beaconchain'
             artifactId project.jar.baseName
             version project.version
           }
@@ -271,7 +271,7 @@ subprojects {
 jar { enabled = false }
 
 apply plugin: 'application'
-mainClassName = "net.consensys.pantheon.Pantheon"
+mainClassName = "net.consensys.beaconchain.BeaconChain"
 applicationDefaultJvmArgs = [
   "-Dvertx.disableFileCPResolving=true",
   "-Dpantheon.home=PANTHEON_HOME",
@@ -281,9 +281,9 @@ applicationDefaultJvmArgs = [
 ]
 
 run {
-  args project.hasProperty("pantheon.run.args") ? project.property("pantheon.run.args").toString().split("\\s+") : []
+  args project.hasProperty("beaconchain.run.args") ? project.property("beaconchain.run.args").toString().split("\\s+") : []
   doFirst {
-    applicationDefaultJvmArgs = applicationDefaultJvmArgs.collect{it.replace('PANTHEON_HOME', "$buildDir/pantheon")}
+    applicationDefaultJvmArgs = applicationDefaultJvmArgs.collect{it.replace('PANTHEON_HOME', "$buildDir/beaconchain")}
   }
 }
 
@@ -295,13 +295,13 @@ startScripts {
 }
 
 dependencies {
-  compile project(':pantheon')
+  compile project(':beaconchain')
   errorprone 'com.google.errorprone:error_prone_core:2.3.1'
 }
 
 task createEVMToolApp(type: CreateStartScripts) {
   outputDir = startScripts.outputDir
-  mainClassName = 'net.consensys.pantheon.EVMTool'
+  mainClassName = 'net.consensys.beaconchain.EVMTool'
   applicationName = 'evm'
   classpath = startScripts.classpath
 }

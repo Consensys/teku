@@ -112,10 +112,10 @@ downloadLicenses {
   ]
 
   licenses = [
-      (group('pantheon'))            : apache,
-      (group('pantheon.ethereum'))   : apache,
-      (group('pantheon.services'))   : apache,
-      (group('pantheon.consensus'))  : apache,
+      (group('beaconchain'))            : apache,
+      (group('beaconchain.ethereum'))   : apache,
+      (group('beaconchain.services'))   : apache,
+      (group('beaconchain.consensus'))  : apache,
 
       // https://checkerframework.org/manual/#license
       // The more permissive MIT License applies to code that you might want
