@@ -65,7 +65,7 @@ allprojects {
       // This path needs to be relative to each project
       target fileTree('.') {
         include '**/*.java'
-        exclude '**/.gradle/**'
+        exclude '**/.gradle/**', 'web3j'
       }
       removeUnusedImports()
       eclipse().configFile(rootProject.file('gradle/eclipse-java-google-style.xml'))
