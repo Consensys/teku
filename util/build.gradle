@@ -1,0 +1,19 @@
+apply plugin: 'java-library'
+
+jar {
+  baseName 'beaconchain-util'
+  manifest {
+    attributes('Implementation-Title': baseName,
+    'Implementation-Version': project.version)
+  }
+}
+
+dependencies {
+  implementation 'com.google.guava:guava'
+  implementation 'io.vertx:vertx-core'
+
+  testImplementation project(":crypto")
+  testImplementation 'junit:junit'
+  testImplementation 'org.assertj:assertj-core'
+  testImplementation 'org.mockito:mockito-core'
+}
