@@ -1,0 +1,7 @@
+rootProject.name='beaconchain'
+include 'crypto'
+include 'ethereum:core'
+include 'ethereum:rlp'
+include 'beaconchain'
+include 'util'
+include 'errorprone-checks'
