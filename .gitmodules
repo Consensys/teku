@@ -1,4 +1,0 @@
-[submodule "web3j"]
-	path = web3j
-	url = https://github.com/web3j/web3j.git
-	branch = master
