@@ -6,12 +6,12 @@ import net.consensys.beaconchain.ethereum.core.Hash;
 
 public class ActiveState {
 
-    private AttestationRecord[] pending_attestations;
-    private Hash[] recent_block_hashes;
-    private SpecialObjects[] pending_specials;
+  private AttestationRecord[] pending_attestations;
+  private Hash[] recent_block_hashes;
+  private SpecialObject[] pending_specials;
 
-    public ActiveState() {
+  public ActiveState() {
 
-    }
+  }
 
 }

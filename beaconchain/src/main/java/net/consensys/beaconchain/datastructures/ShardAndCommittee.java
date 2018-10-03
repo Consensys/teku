@@ -5,11 +5,11 @@ import org.web3j.abi.datatypes.generated.Int24;
 
 public class ShardAndCommittee {
 
-    private Int16 shard_id;
-    private Int24[] committee;
+  private Int16 shard_id;
+  private Int24[] committee;
 
-    public ShardAndCommittee() {
+  public ShardAndCommittee() {
 
-    }
+  }
 
 }
