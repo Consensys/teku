@@ -5,11 +5,11 @@ import org.web3j.abi.datatypes.generated.Int8;
 
 public class SpecialObject {
 
-    private Bytes[] data;
-    private Int8 type;
+  private Bytes[] data;
+  private Int8 type;
 
-    public SpecialObject() {
+  public SpecialObject() {
 
-    }
+  }
 
 }
