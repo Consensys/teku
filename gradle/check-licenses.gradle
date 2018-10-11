@@ -22,12 +22,15 @@ ext.acceptedLicenses = [
     'MIT License',
     'Apache License, Version 2.0',
     'Bouncy Castle Licence',
+    'GNU General Public License Version 2',
+    'GNU Lesser General Public License Version 2.1',
     'Public Domain',
     'Mozilla Public License 1.0',
     'Mozilla Public License Version 1.1',
     'Mozilla Public License Version 2.0',
     'CC0 1.0 Universal License',
     'Common Development and Distribution License 1.0',
+    'Common Public License - v 1.0',
     'Unicode/ICU License',
     'No license found',// for temporary use with Picocli jar
     'TODO to be fixed' // use it for temporary states when a license needs investigation.
