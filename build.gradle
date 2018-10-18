@@ -1,11 +1,14 @@
+import net.ltgt.gradle.errorprone.CheckSeverity
+
 plugins {
-  id 'com.diffplug.gradle.spotless' version '3.6.0'
+  id 'com.diffplug.gradle.spotless' version '3.13.0'
   id 'com.palantir.git-version' version '0.10.0'
   id 'io.spring.dependency-management' version '1.0.4.RELEASE'
   id 'com.github.hierynomus.license' version '0.14.0'
-  id 'net.ltgt.errorprone' version '0.0.14'
+  id 'net.ltgt.errorprone' version '0.6'
   id 'me.champeau.gradle.jmh' version '0.4.5' apply false
-  id 'com.jfrog.bintray' version '1.7.3'
+  id 'com.jfrog.bintray' version '1.8.4'
+  id 'net.researchgate.release' version '2.6.0'
 }
 
 defaultTasks 'build', 'checkLicenses', 'javadoc'
@@ -57,7 +60,23 @@ allprojects {
 
   version = rootProject.version
 
-  repositories { jcenter() }
+  jacoco { toolVersion = '0.8.2' }
+
+  sourceCompatibility = '1.8'
+  targetCompatibility = '1.8'
+
+  repositories {
+    jcenter()
+    mavenCentral()
+    maven { url  "https://consensys.bintray.com/pegasys-repo" }
+  }
+
+  dependencies {
+    errorprone("com.google.errorprone:error_prone_core")
+    if (JavaVersion.current().isJava8()) {
+      errorproneJavac("com.google.errorprone:javac")
+    }
+  }
 
   apply plugin: 'com.diffplug.gradle.spotless'
   spotless {
@@ -65,7 +84,8 @@ allprojects {
       // This path needs to be relative to each project
       target fileTree('.') {
         include '**/*.java'
-        exclude '**/.gradle/**', 'web3j'
+        exclude '**/.gradle/**'
+        exclude 'web3j'
       }
       removeUnusedImports()
       eclipse().configFile(rootProject.file('gradle/eclipse-java-google-style.xml'))
@@ -85,12 +105,15 @@ allprojects {
       '-Xlint:finally',
       '-Xlint:static',
       '-Werror',
-      '-Xep:FutureReturnValueIgnored:OFF',
-      '-Xep:InsecureCryptoUsage:WARN',
-      '-Xep:FieldCanBeFinal:WARN',
-      '-Xep:WildcardImport:WARN',
-      '-XepExcludedPaths:.*/generated',
     ]
+
+    options.errorprone {
+      excludedPaths '.*/(generated|.*ReferenceTest_.*)'
+      check('FutureReturnValueIgnored', CheckSeverity.OFF)
+      check('InsecureCryptoUsage', CheckSeverity.WARN)
+      check('FieldCanBeFinal', CheckSeverity.WARN)
+      check('WildcardImport', CheckSeverity.WARN)
+    }
   }
 
   /*
@@ -136,14 +159,14 @@ allprojects {
   }
 
   // Normalise Xdoclint behaviour across JDKs (OpenJDK 8 is more lenient than Oracle JDK by default).
-  javadoc { options.addStringOption('Xdoclint:all', '-quiet') }
+  javadoc {
+    options.addStringOption('Xdoclint:all', '-quiet')
+    options.encoding = 'UTF-8'
+  }
 
 }
 
 task deploy() {}
-
-
-
 
 
 subprojects {
@@ -206,12 +229,6 @@ subprojects {
 
   if (file('src/jmh').directory) {
     apply plugin: 'me.champeau.gradle.jmh'
-
-    jmhCompileGeneratedClasses {
-      options.compilerArgs += [
-        '-XepDisableAllChecks'
-      ]
-    }
 
     jmh {
       // Allows to control JMH execution directly from the command line. I typical execution may look
@@ -300,22 +317,12 @@ dependencies {
   compile ('org.web3j:core:3.5.0')
 }
 
-task createEVMToolApp(type: CreateStartScripts) {
-  outputDir = startScripts.outputDir
-  mainClassName = 'net.consensys.beaconchain.EVMTool'
-  applicationName = 'evm'
-  classpath = startScripts.classpath
-}
-
-applicationDistribution.into("bin") {
-  duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-  from(createEVMToolApp)
-  fileMode = 0755
-}
-
 applicationDistribution.into("") { from("LICENSE") }
 
+installDist { dependsOn checkLicenses }
+
 distTar {
+  dependsOn checkLicenses
   doFirst {
     delete fileTree(dir: 'build/distributions', include: '*.tar.gz')
   }
@@ -324,6 +331,7 @@ distTar {
 }
 
 distZip {
+  dependsOn checkLicenses
   doFirst {
     delete fileTree(dir: 'build/distributions', include: '*.zip')
   }
