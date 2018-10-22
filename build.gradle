@@ -11,12 +11,13 @@ plugins {
   id 'net.researchgate.release' version '2.6.0'
 }
 
-defaultTasks 'build', 'checkLicenses', 'javadoc'
+// defaultTasks 'build', 'checkLicenses', 'javadoc'
+defaultTasks 'build'
 
 def buildAliases = ['dev': [
     'spotlessApply',
     'build',
-    'checkLicenses',
+//    'checkLicenses',
     'javadoc'
   ]]
 
@@ -319,10 +320,11 @@ dependencies {
 
 applicationDistribution.into("") { from("LICENSE") }
 
-installDist { dependsOn checkLicenses }
+//installDist { dependsOn checkLicenses }
+installDist { }
 
 distTar {
-  dependsOn checkLicenses
+//  dependsOn checkLicenses
   doFirst {
     delete fileTree(dir: 'build/distributions', include: '*.tar.gz')
   }
@@ -331,7 +333,7 @@ distTar {
 }
 
 distZip {
-  dependsOn checkLicenses
+//  dependsOn checkLicenses
   doFirst {
     delete fileTree(dir: 'build/distributions', include: '*.zip')
   }
