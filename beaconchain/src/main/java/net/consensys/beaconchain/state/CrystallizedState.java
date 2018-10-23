@@ -128,6 +128,4 @@ public class CrystallizedState {
       return split_arr;
     }
   }
-
-
 }
