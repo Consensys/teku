@@ -42,9 +42,8 @@ public class BytesValueTest {
 
   private static ByteBuf bb(String hex) {
     byte[] bytes = fromHexString(hex).getArrayUnsafe();
-    return Unpooled
-        .unreleasableBuffer(Unpooled.buffer(bytes.length, Integer.MAX_VALUE))
-        .writeBytes(bytes);
+    return Unpooled.unreleasableBuffer(Unpooled.buffer(bytes.length, Integer.MAX_VALUE)).writeBytes(
+        bytes);
   }
 
   @Test
@@ -197,9 +196,9 @@ public class BytesValueTest {
   }
 
   private static void assertWrapByteBuf(byte[] bytes) {
-    ByteBuf buffer = Unpooled
-        .unreleasableBuffer(Unpooled.buffer(bytes.length, Integer.MAX_VALUE))
-        .writeBytes(bytes);
+    ByteBuf buffer =
+        Unpooled.unreleasableBuffer(Unpooled.buffer(bytes.length, Integer.MAX_VALUE)).writeBytes(
+            bytes);
     BytesValue value = wrapBuffer(buffer);
     assertEquals(buffer.writerIndex(), value.size());
     byte[] arr = new byte[buffer.writerIndex()];
@@ -726,13 +725,15 @@ public class BytesValueTest {
   public void appendingToByteBuf() {
     byte[] bytes0 = new byte[0];
     byte[] bytes1 = new byte[0];
-    assertAppendToByteBuf(BytesValue.EMPTY, Unpooled
-        .unreleasableBuffer(Unpooled.buffer(bytes0.length, Integer.MAX_VALUE))
-        .writeBytes(bytes0), BytesValue.EMPTY);
+    assertAppendToByteBuf(BytesValue.EMPTY,
+        Unpooled.unreleasableBuffer(Unpooled.buffer(bytes0.length, Integer.MAX_VALUE)).writeBytes(
+            bytes0),
+        BytesValue.EMPTY);
     assertAppendToByteBuf(BytesValue.EMPTY, bb("0x1234"), h("0x1234"));
-    assertAppendToByteBuf(h("0x1234"), Unpooled
-        .unreleasableBuffer(Unpooled.buffer(bytes1.length, Integer.MAX_VALUE))
-        .writeBytes(bytes1), h("0x1234"));
+    assertAppendToByteBuf(h("0x1234"),
+        Unpooled.unreleasableBuffer(Unpooled.buffer(bytes1.length, Integer.MAX_VALUE)).writeBytes(
+            bytes1),
+        h("0x1234"));
     assertAppendToByteBuf(h("0x5678"), bb("0x1234"), h("0x12345678"));
   }
 
