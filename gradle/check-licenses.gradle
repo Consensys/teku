@@ -159,4 +159,4 @@ task checkLicenses {
     }
   }
 }
-check.dependsOn checkLicenses
+//check.dependsOn checkLicenses

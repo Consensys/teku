@@ -89,7 +89,6 @@ allprojects {
         exclude 'web3j'
       }
       removeUnusedImports()
-      eclipse().configFile(rootProject.file('gradle/eclipse-java-google-style.xml'))
       importOrder 'net.consensys', 'java', ''
       trimTrailingWhitespace()
       endWithNewline()
