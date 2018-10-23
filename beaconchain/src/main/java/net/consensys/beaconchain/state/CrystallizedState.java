@@ -33,11 +33,39 @@ public class CrystallizedState {
 
   private static class CrystallizedStateOperators {
 
+
+    /**
+     * Converts int to Bytes3.
+     *
+     * @param seed  converted
+     * @return      converted Bytes3
+     */
+    private static Bytes3 toBytes3(int seed) {
+      byte[] bytes = new byte[3];
+      bytes[0] = (byte) (seed >> 16);
+      bytes[1] = (byte) (seed >> 8);
+      bytes[2] = (byte) seed;
+      return new Bytes3(bytes);
+    }
+
+    /**
+     * Converts byte[] to int.
+     *
+     * @param src   byte[]
+     * @param pos   Index in Byte[] array
+     * @return      converted int
+     */
+    private static int fromBytes3(byte[] src, int pos) {
+      return ((src[pos] & 0xF) << 16) |
+          ((src[pos+1] & 0xFF) << 8) |
+          (src[pos+2] & 0xFF);
+    }
+
     /**
      * Shuffles an array.
      *
-     * @param arr
-     * @param seed
+     * @param arr   The array.
+     * @param seed  Initial seed value used for randomization.
      * @return
      */
     private static ValidatorRecord[] shuffle(ValidatorRecord[] arr, int seed) {
@@ -52,23 +80,15 @@ public class CrystallizedState {
       while (i < arr.length) {
 
         if (i < 1) {
-          // Convert seed to Bytes3.
-          byte[] bytes = new byte[3];
-          bytes[0] = (byte) (seed >> 16);
-          bytes[1] = (byte) (seed >> 8);
-          bytes[2] = (byte) seed;
-          source = new Bytes3(bytes);
+          source = toBytes3(seed);
         } else {
           source = new Bytes3(source.getValue());
         }
 
         for (int pos = 0; pos < 30; pos += 3) {
 
-          // Convert Bytes3 to int.
           byte[] src = source.getValue();
-          int m = ((src[pos] & 0xF) << 16) |
-               ((src[pos+1] & 0xFF) << 8) |
-               (src[pos+2] & 0xFF);
+          int m = fromBytes3(src, pos);
 
           int remaining = arr.length - i;
           if (remaining == 0)
