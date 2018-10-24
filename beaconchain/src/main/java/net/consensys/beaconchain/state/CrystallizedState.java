@@ -1,11 +1,12 @@
 package net.consensys.beaconchain.state;
 
-import java.nio.ByteBuffer;
 import java.util.Arrays;
+import java.util.List;
+
+import com.google.common.annotations.VisibleForTesting;
 import net.consensys.beaconchain.datastructures.CrosslinkRecord;
 import net.consensys.beaconchain.datastructures.ListOfValidators;
 import net.consensys.beaconchain.datastructures.ShardAndCommittee;
-import net.consensys.beaconchain.datastructures.ValidatorRecord;
 import net.consensys.beaconchain.ethereum.core.Hash;
 
 import org.web3j.abi.datatypes.generated.Bytes3;
@@ -30,8 +31,7 @@ public class CrystallizedState {
   public CrystallizedState() {}
 
 
-
-  private static class CrystallizedStateOperators {
+  static class CrystallizedStateOperators {
 
 
     /**
@@ -40,7 +40,8 @@ public class CrystallizedState {
      * @param seed  converted
      * @return      converted Bytes3
      */
-    private static Bytes3 toBytes3(int seed) {
+    @VisibleForTesting
+    static Bytes3 toBytes3(int seed) {
       byte[] bytes = new byte[3];
       bytes[0] = (byte) (seed >> 16);
       bytes[1] = (byte) (seed >> 8);
@@ -55,77 +56,110 @@ public class CrystallizedState {
      * @param pos   Index in Byte[] array
      * @return      converted int
      */
-    private static int fromBytes3(byte[] src, int pos) {
-      return ((src[pos] & 0xF) << 16) |
-          ((src[pos+1] & 0xFF) << 8) |
-          (src[pos+2] & 0xFF);
+    @VisibleForTesting
+    static int fromBytes3(Hash src, int pos) {
+      return ((src.extractArray()[pos] & 0xF) << 16) |
+          ((src.extractArray()[pos + 1] & 0xFF) << 8) |
+          (src.extractArray()[pos + 2] & 0xFF);
     }
 
     /**
-     * Shuffles an array.
+     * Returns the shuffled ``values`` with seed as entropy.
      *
-     * @param arr   The array.
-     * @param seed  Initial seed value used for randomization.
-     * @return
+     * @param values    The array.
+     * @param seed      Initial seed value used for randomization.
+     * @return          The shuffled array.
      */
-    private static ValidatorRecord[] shuffle(ValidatorRecord[] arr, int seed) {
-      int rand_max = (int) Math.pow(2, 24);
-      assert arr.length <= rand_max;
+    @VisibleForTesting
+    static List[] shuffle(List[] values, Hash seed) {
 
-      ValidatorRecord[] shuffled_arr = arr.clone();
-      ValidatorRecord[] tmp = new ValidatorRecord[arr.length];
-      Bytes3 source = new Bytes3(new byte[0]);
-      int i = 0;
+      int values_count = values.length;
 
-      while (i < arr.length) {
+      // Entropy is consumed from the seed in 3-byte (24 bit) chunks.
+      int rand_bytes = 3;
+      // The highest possible result of the RNG.
+      int rand_max = (int) Math.pow(2, (rand_bytes * 8) - 1);
 
-        if (i < 1) {
-          source = toBytes3(seed);
-        } else {
-          source = new Bytes3(source.getValue());
-        }
+      // The range of the RNG places an upper-bound on the size of the list that
+      // may be shuffled. It is a logic error to supply an oversized list.
+      assert values_count < rand_max;
 
-        for (int pos = 0; pos < 30; pos += 3) {
+      List[] output = values.clone();
+      Hash source = seed;
+      int index = 0;
 
-          byte[] src = source.getValue();
-          int m = fromBytes3(src, pos);
+      while (index < values_count - 1) {
+        // Re-hash the `source` to obtain a new pattern of bytes.
+        source = Hash.hash(source);
 
-          int remaining = arr.length - i;
-          if (remaining == 0)
-            break;
-          rand_max = rand_max - rand_max % remaining;
-          if (0 < rand_max) {
-            int replacement_pos = (0 % remaining) + i;
-            tmp[i] = shuffled_arr[i];
-            shuffled_arr[i] = shuffled_arr[replacement_pos];
-            shuffled_arr[replacement_pos] = tmp[i];
-            i += 1;
+        // List to hold values for swap below.
+        List tmp;
+
+        // Iterate through the `source` bytes in 3-byte chunks
+        for (int position = 0; position < (32 - (32 % rand_bytes)); position += rand_bytes) {
+          // Determine the number of indices remaining in `values` and exit
+          // once the last index is reached.
+          int remaining = values_count - index;
+          if (remaining == 1) break;
+
+          // Read 3-bytes of `source` as a 24-bit big-endian integer.
+          int sample_from_source = fromBytes3(source, position);
+
+
+          // Sample values greater than or equal to `sample_max` will cause
+          // modulo bias when mapped into the `remaining` range.
+          int sample_max = rand_max - rand_max % remaining;
+
+          // Perform a swap if the consumed entropy will not cause modulo bias.
+          if (sample_from_source < sample_max) {
+            // Select a replacement index for the current index
+            int replacement_position = (sample_from_source % remaining) + index;
+            // Swap the current index with the replacement index.
+            tmp = output[index];
+            output[index] = output[replacement_position];
+            output[replacement_position] = tmp;
+            index += 1;
           }
         }
-
       }
 
-      return shuffled_arr;
+      return output;
     }
 
 
     /**
-     * Splits an array into N pieces.
+     * Returns the split ``seq`` in ``split_count`` pieces in protocol.
      *
-     * @param arr   The original list of validators.
-     * @param N     The number of pieces to split the array into.
-     * @return      The list of validators split into N pieces.
+     * @param seq             The original list of validators.
+     * @param split_count     The number of pieces to split the array into.
+     * @return                The list of validators split into N pieces.
      */
-    private static ValidatorRecord[][] split(ValidatorRecord[] arr, int N) {
-      // TODO: Set more accurate size of double array.
-      ValidatorRecord[][] split_arr = new ValidatorRecord[N][arr.length];
-      for (int i = 0; i < N; i++) {
-        int startIndex = arr.length * i/N;
-        int endIndex = arr.length * (i + 1)/N;
-        ValidatorRecord[] new_split = Arrays.copyOfRange(arr, startIndex, endIndex);
+    static List[][] split(List[] seq, int split_count) {
+
+      int list_length = seq.length;
+
+      List[][] split_arr = new List[split_count][seq.length];
+
+      for (int i = 0; i < split_count; i++) {
+        int startIndex = list_length * i / split_count;
+        int endIndex = list_length * (i + 1) / split_count;
+        List[] new_split = Arrays.copyOfRange(seq, startIndex, endIndex);
         split_arr[i] = new_split;
       }
+
       return split_arr;
+
     }
+
+    /**
+     * A helper method for readability.
+     */
+    static int clamp(int minval, int maxval, int x) {
+      if (x <= minval) return minval;
+      if (x >= maxval) return maxval;
+      return x;
+    }
+
+
   }
 }

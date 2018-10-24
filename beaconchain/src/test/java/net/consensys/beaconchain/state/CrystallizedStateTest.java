@@ -1,13 +1,17 @@
 package net.consensys.beaconchain.state;
 
-//import net.consensys.beaconchain.datastructures.ValidatorRecord;
-import net.consensys.beaconchain.state.CrystallizedState.CrystallizedStateOperators;
-import org.junit.Test;
+import static net.consensys.beaconchain.state.CrystallizedState.CrystallizedStateOperators.fromBytes3;
+import static net.consensys.beaconchain.state.CrystallizedState.CrystallizedStateOperators.toBytes3;
+import static net.consensys.beaconchain.state.CrystallizedState.CrystallizedStateOperators.shuffle;
+import static net.consensys.beaconchain.state.CrystallizedState.CrystallizedStateOperators.split;
 
+import net.consensys.beaconchain.datastructures.ValidatorRecord;
 
-import org.web3j.abi.datatypes.generated.Bytes3;
 
 import static org.junit.Assert.assertEquals;
+import org.junit.Test;
+import org.web3j.abi.datatypes.generated.Bytes3;
+
 
 public class CrystallizedStateTest {
 
@@ -20,7 +24,7 @@ public class CrystallizedStateTest {
     byte[] bytes = {(byte) 3, (byte) 829, (byte) 212420};
 
     Bytes3 expected = new Bytes3(bytes);
-    Bytes3 actual = CrystallizedStateOperators.toBytes3(seed);
+    Bytes3 actual = toBytes3(seed);
 
     assertEquals(expected, actual);
   }
@@ -30,11 +34,11 @@ public class CrystallizedStateTest {
   @Test
   public void fromBytes3Test() {
 
-    byte[] src = new byte[3];
+    byte[] src = {(byte) 3, (byte) 829, (byte) 212420};
     int pos = 0;
 
-    int expected = 30;
-    int actual = CrystallizedStateOperators.fromBytes3(src, pos);
+    int expected = 212420;
+    int actual = fromBytes3(src, pos);
 
     assertEquals(expected, actual);
   }
@@ -45,7 +49,7 @@ public class CrystallizedStateTest {
 //  public void shuffleTest() {
 //
 //    ValidatorRecord[] expected = new ValidatorRecord[];
-//    ValidatorRecord[] actual = CrystallizedStateOperators.shuffle();
+//    ValidatorRecord[] actual = shuffle();
 //
 //    assertEquals(expected, actual);
 //  }
@@ -56,10 +60,12 @@ public class CrystallizedStateTest {
 //  public void splitTest() {
 //
 //    ValidatorRecord[][] expected = new ValidatorRecord[][];
-//    ValidatorRecord[][] actual = CrystallizedStateOperators.split();
+//    ValidatorRecord[][] actual = split();
 //
 //    assertEquals(expected, actual);
 //  }
+
+
 
 
 }
