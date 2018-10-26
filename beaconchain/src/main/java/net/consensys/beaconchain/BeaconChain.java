@@ -2,15 +2,13 @@ package net.consensys.beaconchain;
 
 public final class BeaconChain {
 
-  // Genesis time will be set programmatically when the BeaconChain starts
-  final int GENESIS_TIME;
-
   // The constants below are correct as of spec dated 2018/10/25
   static final int SHARD_COUNT                       = (int) Math.pow(2, 10); // 1,024 Shards
   static final int DEPOSIT_SIZE                      = (int) Math.pow(2, 5);  // 32 Eth
   static final int MIN_ONLINE_DEPOSIT_SIZE           = (int) Math.pow(2, 4);  // 16 Eth
   static final int GWEI_PER_ETH                      = (int) Math.pow(10, 9); // 1,000,000,000 Wei
   static final int MIN_COMMITTEE_SIZE                = (int) Math.pow(2, 7);  // 128 Validators
+  static final int GENESIS_TIME                      = 0; // TBD
   static final int SLOT_DURATION                     = (int) Math.pow(2, 4);  // 16 seconds
   static final int CYCLE_LENGTH                      = (int) Math.pow(2, 6);  // 64 Slots
   static final int MIN_VALIDATOR_SET_CHANGE_INTERVAL = (int) Math.pow(2, 8);  // 256 Slots
@@ -23,8 +21,7 @@ public final class BeaconChain {
   static final int INITIAL_FORK_VERSION              = 0;
 
   // Constructor
-  public BeaconChain(int genesisTime) {
-    GENESIS_TIME = genesisTime;
+  public BeaconChain() {
   }
 
   public static String getConstantsAsString() {
@@ -33,6 +30,7 @@ public final class BeaconChain {
             + "\nMIN_ONLINE_DEPOSIT_SIZE: " + MIN_ONLINE_DEPOSIT_SIZE
             + "\nGWEI_PER_ETH: " + GWEI_PER_ETH
             + "\nMIN_COMMITTEE_SIZE: " + MIN_COMMITTEE_SIZE
+            + "\nGENESIS_TIME: " + GENESIS_TIME
             + "\nSLOT_DURATION: " + SLOT_DURATION
             + "\nCYCLE_LENGTH: " + CYCLE_LENGTH
             + "\nMIN_VALIDATOR_SET_CHANGE_INTERVAL: " + MIN_VALIDATOR_SET_CHANGE_INTERVAL
