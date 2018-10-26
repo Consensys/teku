@@ -8,6 +8,16 @@ import org.junit.Test;
 
 public class UintTest {
 
+    @Test
+    public void createUintTest() {
+        Uint24 a = new Uint24(42);
+        Uint32 b = new Uint32(42L);
+        Uint256 c = new Uint256(BigInteger.valueOf(42L));
+        assertEquals(a.getValue().intValue(), 42);
+        assertEquals(b.getValue().intValue(), 42);
+        assertEquals(c.getValue().intValue(), 42);
+    }
+
     @Test(expected = IllegalArgumentException.class)
     public void badUint8Test() {
         Uint8 a = new Uint8(256);
