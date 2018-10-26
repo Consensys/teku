@@ -1,0 +1,43 @@
+package net.consensys.beaconchain.util.uints;
+
+import java.math.BigInteger;
+
+_COMMENT_
+
+public class Uint# extends Uint {
+
+    // Constructor
+    public Uint#(BigInteger value) {
+        super(#, value);
+    }
+
+    // Constructor
+    public Uint#(long value) {
+        this(BigInteger.valueOf(value));
+    }
+
+    // Constructor
+    public Uint#(int value) {
+        this(BigInteger.valueOf((long) value));
+    }
+
+    @Override
+    public Uint# add(Uint a) {
+        return new Uint#(doAdd(a));
+    }
+
+    @Override
+    public Uint# sub(Uint a) {
+        return new Uint#(doSub(a));
+    }
+
+    @Override
+    public Uint# mul(Uint a) {
+        return new Uint#(doMul(a));
+    }
+
+    @Override
+    public Uint# div(Uint a) {
+        return new Uint#(doDiv(a));
+    }
+}
