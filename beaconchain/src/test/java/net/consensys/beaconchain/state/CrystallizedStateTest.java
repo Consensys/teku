@@ -7,6 +7,8 @@ import static net.consensys.beaconchain.state.CrystallizedState.CrystallizedStat
 
 import net.consensys.beaconchain.datastructures.ValidatorRecord;
 
+import net.consensys.beaconchain.ethereum.core.Hash;
+
 
 import static org.junit.Assert.assertEquals;
 import org.junit.Test;
@@ -35,6 +37,7 @@ public class CrystallizedStateTest {
   public void fromBytes3Test() {
 
     byte[] src = {(byte) 3, (byte) 829, (byte) 212420};
+//    Hash src = ;
     int pos = 0;
 
     int expected = 212420;

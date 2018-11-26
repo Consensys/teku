@@ -71,7 +71,7 @@ public class CrystallizedState {
      * @return          The shuffled array.
      */
     @VisibleForTesting
-    static List[] shuffle(List[] values, Hash seed) {
+    static List<T> shuffle(List values, Hash seed) {
 
       int values_count = values.length;
 
