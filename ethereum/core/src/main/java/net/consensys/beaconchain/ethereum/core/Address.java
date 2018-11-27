@@ -112,4 +112,5 @@ public class Address extends DelegatingBytesValue {
     BytesValue copiedStorage = wrapped.copy();
     return Address.wrap(copiedStorage);
   }
+
 }
