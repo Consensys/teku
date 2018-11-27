@@ -23,8 +23,29 @@ public class SimpleSerializeTest {
   @Test
   public void deserializeBytes32Test() {
     Bytes32 comparator = Bytes32.wrap("55555555555555555555555555555555".getBytes(UTF_8));
-    Bytes32 deserialized = SimpleSerialize.deserialize("55555555555555555555555555555555".getBytes(UTF_8));
+    byte[] serialized = SimpleSerialize.serialize(comparator);
+
+    Bytes32 deserialized = SimpleSerialize.deserialize(serialized);
 
     assertTrue(deserialized.equals(comparator));
   }
+
+  @Test
+  public void serializeAddressTest() {
+    Bytes32 bytes32 = Bytes32.wrap("55555555555555555555555555555555".getBytes(UTF_8));
+    byte[] serialized = SimpleSerialize.serialize(bytes32);
+    byte[] comparator = "55555555555555555555555555555555".getBytes(UTF_8);
+
+    assertArrayEquals(serialized, comparator);
+  }
+  @Test
+  public void deserializeAddressTest() {
+    Bytes32 comparator = Bytes32.wrap("55555555555555555555555555555555".getBytes(UTF_8));
+    byte[] serialized = SimpleSerialize.serialize(comparator);
+
+    Bytes32 deserialized = SimpleSerialize.deserialize(serialized);
+
+    assertTrue(deserialized.equals(comparator));
+  }
+
 }
