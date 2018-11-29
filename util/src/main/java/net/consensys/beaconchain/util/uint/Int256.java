@@ -2,6 +2,7 @@ package net.consensys.beaconchain.util.uint;
 
 import net.consensys.beaconchain.util.bytes.Bytes32;
 import net.consensys.beaconchain.util.bytes.Bytes32Backed;
+import net.consensys.beaconchain.util.bytes.BytesValue;
 
 /**
  * A signed 256-bits precision number.
@@ -18,9 +19,10 @@ public interface Int256 extends Bytes32Backed, Comparable<Int256> {
   /** The value -1. */
   Int256 MINUS_ONE = DefaultInt256.minusOne();
 
-  static Int256 wrap(Bytes32 bytes) {
-    return new DefaultInt256(bytes);
+  static Int256 wrap(BytesValue bytes) {
+    return new DefaultInt256((Bytes32) bytes);
   }
+
 
   default boolean isZero() {
     return bytes().isZero();
