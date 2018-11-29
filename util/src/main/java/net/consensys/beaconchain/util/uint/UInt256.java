@@ -1,6 +1,8 @@
 package net.consensys.beaconchain.util.uint;
 
+import net.consensys.beaconchain.util.bytes.Bytes3;
 import net.consensys.beaconchain.util.bytes.Bytes32;
+import net.consensys.beaconchain.util.bytes.BytesValue;
 
 import java.math.BigInteger;
 
@@ -26,8 +28,8 @@ public interface UInt256 extends UInt256Value<UInt256> {
     return new DefaultUInt256(UInt256Bytes.of(value));
   }
 
-  static UInt256 wrap(Bytes32 value) {
-    return new DefaultUInt256(value);
+  static UInt256 wrap(BytesValue value) {
+    return new DefaultUInt256((Bytes32) value);
   }
 
   static Counter<UInt256> newCounter() {
