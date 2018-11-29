@@ -1,7 +1,7 @@
 package net.consensys.beaconchain.util.bytes;
 
 /** Static utility methods to work with {@link Bytes3}. */
-public abstract class Bytes3s {
+public class Bytes3s {
   private Bytes3s() {}
 
   public static void and(Bytes3 v1, Bytes3 v2, MutableBytes3 result) {
