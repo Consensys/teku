@@ -33,4 +33,9 @@ dependencies {
   testImplementation 'org.awaitility:awaitility'
   testImplementation 'org.assertj:assertj-core'
   testImplementation 'org.mockito:mockito-core'
+
+  test {
+    testLogging.showStandardStreams = true
+  }
+
 }
