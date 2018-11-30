@@ -1,6 +1,5 @@
 package net.consensys.beaconchain.util.uint;
 
-import net.consensys.beaconchain.util.bytes.Bytes3;
 import net.consensys.beaconchain.util.bytes.Bytes32;
 import net.consensys.beaconchain.util.bytes.BytesValue;
 
