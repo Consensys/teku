@@ -1,5 +1,9 @@
 package net.consensys.beaconchain;
 
+import net.consensys.beaconchain.datastructures.state.ShardAndCommittee;
+import net.consensys.beaconchain.datastructures.state.ValidatorRecord;
+import net.consensys.beaconchain.ethereum.core.Hash;
+
 public final class BeaconChain {
 
   // The constants below are correct as of spec dated 2018/10/25
@@ -47,5 +51,6 @@ public final class BeaconChain {
             + "\nINITIAL_FORK_VERSION: " + INITIAL_FORK_VERSION
             + "\n";
   }
+  
 
 }

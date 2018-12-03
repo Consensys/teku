@@ -11,7 +11,7 @@ public class ValidatorRecord {
   private Uint64 balance;
   private Uint64 status;
   private Uint64 last_status_change_slot;
-  private Uint64 exit_seq;
+  private Uint64 exit_count;
 
   public ValidatorRecord() {
 
