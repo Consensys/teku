@@ -16,7 +16,6 @@ public class BeaconStateTest {
 
   @Test(expected = IllegalArgumentException.class)
   public void failsWhenInvalidArgumentIntToBytes3() {
-    // Should this fail when converting a negative number?
     BeaconState.BeaconStateHelperFunctions.intToBytes3(-1);
   }
 
