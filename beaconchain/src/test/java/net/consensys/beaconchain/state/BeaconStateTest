@@ -9,11 +9,21 @@ import org.junit.Test;
 
 public class BeaconStateTest {
 
-  @Test
-  public void failsWhenInvalidArgumentFromBytes3() {}
+  private Hash hashSrc() {
+    BytesValue bytes = BytesValue.wrap(new byte[]{(byte) 1, (byte) 256, (byte) 65656});
+    return Hash.hash(bytes);
+  }
 
-  @Test
-  public void failsWhenInvalidArgumentsToBytes3() {}
+  @Test(expected = IllegalArgumentException.class)
+  public void failsWhenInvalidArgumentIntToBytes3() {
+    // Should this fail when converting a negative number?
+    BeaconState.BeaconStateHelperFunctions.intToBytes3(-1);
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void failsWhenInvalidArgumentsBytes3ToInt() {
+    BeaconState.BeaconStateHelperFunctions.bytes3ToInt(hashSrc(), -1);
+  }
 
   @Test
   public void convertIntToBytes3() {
@@ -25,11 +35,8 @@ public class BeaconStateTest {
 
   @Test
   public void convertBytes3ToInt() {
-    BytesValue bytes = BytesValue.wrap(new byte[]{(byte) 1, (byte) 256, (byte) 65656});
-    Hash src = Hash.hash(bytes);
-    int pos = 0;
     int expected = 65656;
-    int actual = BeaconState.BeaconStateHelperFunctions.bytes3ToInt(src, pos);
+    int actual = BeaconState.BeaconStateHelperFunctions.bytes3ToInt(hashSrc(), 0);
     assertThat(actual).isEqualTo(expected);
   }
 
