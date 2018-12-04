@@ -19,6 +19,7 @@ ext.acceptedLicenses = [
     'BSD 3-Clause',
     'Eclipse Public License - v 1.0',
     'Eclipse Public License 1.0',
+    'Eclipse Public License - v 2.0',
     'MIT License',
     'Apache License, Version 2.0',
     'Bouncy Castle Licence',
@@ -52,6 +53,7 @@ downloadLicenses {
   ext.mpl2_0 = license('Mozilla Public License, Version 2.0', 'http://www.mozilla.org/MPL/2.0/')
   ext.cddl = license('Common Development and Distribution License 1.0', 'http://opensource.org/licenses/CDDL-1.0')
   ext.cddl1_1 = license('Common Development and Distribution License 1.0', 'http://oss.oracle.com/licenses/CDDL-1.1')
+  ext.epl2_0 = license('Eclipse Public License - v 2.0', 'https://www.eclipse.org/legal/epl-2.0/')
   ext.todoToBeFixed = license('TODO to be fixed', 'TODO to be fixed')
   aliases = [
       (apache)    : [
@@ -107,6 +109,12 @@ downloadLicenses {
               (cddl1_1): [
               'CDDL 1.1',
               'COMMON DEVELOPMENT AND DISTRIBUTION LICENSE (CDDL) Version 1.1',
+      ],
+      (epl2_0): [
+          'EPL 2.0',
+          'Eclipse Public License 2.0',
+          'Eclipse Public License - v 2.0',
+          license('Eclipse Public License - v 2.0','https://www.eclipse.org/legal/epl-2.0/')
       ]
 
   ]
@@ -130,7 +138,9 @@ downloadLicenses {
       (group('javax.ws.rs')): cddl1_1,
       (group('org.glassfish.jersey.core')): apache,
       (group('org.glassfish.jersey.bundles.repackaged')): apache,
-      (group('org.glassfish.jersey.connectors')): apache
+      (group('org.glassfish.jersey.connectors')): apache,
+      //Explicitly declare EPL 2.0 for jnr-poxix - it is simultaneously licensed under 3 licenses.
+      'com.github.jnr:jnr-posix:3.0.47': epl2_0
   ]
 }
 
