@@ -1,11 +1,10 @@
 package net.consensys.beaconchain.state;
 
-import net.consensys.beaconchain.ethereum.core.Hash;
+import static com.google.common.base.Preconditions.checkArgument;
+
 import net.consensys.beaconchain.util.bytes.Bytes3;
 
 import com.google.common.annotations.VisibleForTesting;
-
-import static com.google.common.base.Preconditions.checkArgument;
 
 
 public class BeaconState {
@@ -39,11 +38,12 @@ public class BeaconState {
      * @throws IllegalArgumentException if pos is a negative value.
      */
     @VisibleForTesting
-    static int bytes3ToInt(Hash src, int pos) {
-      checkArgument(pos > 0, "Expected positive pos but got %s", pos);
-      return ((src.extractArray()[pos] & 0xF) << 16) |
-          ((src.extractArray()[pos + 1] & 0xFF) << 8) |
-          (src.extractArray()[pos + 2] & 0xFF);
+    static int bytes3ToInt(Bytes3 src, int pos) {
+      checkArgument(pos > -1, "Expected positive pos but got %s", pos);
+      byte[] bytes = src.extractArray();
+      return ((bytes[pos] & 0xF) << 16) |
+          ((bytes[pos + 1] & 0xFF) << 8) |
+          (bytes[pos + 2] & 0xFF);
     }
   }
 
