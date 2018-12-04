@@ -151,6 +151,7 @@ allprojects {
       'root.log.level',
       'evm.log.level'
     ]
+    testLogging.showStandardStreams = true;
     for (String name : toImport) {
       if (System.getProperty(name) != null) {
         systemProperty name, System.getProperty(name)
