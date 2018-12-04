@@ -26,3 +26,7 @@ tmp/
 build/
 out/
 web3j/
+vrc/node_modules/
+vrc/build/
+vrc/.vscode/
+vrc/npm-debug.*
