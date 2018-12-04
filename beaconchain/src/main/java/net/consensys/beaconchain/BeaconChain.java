@@ -51,6 +51,6 @@ public final class BeaconChain {
             + "\nINITIAL_FORK_VERSION: " + INITIAL_FORK_VERSION
             + "\n";
   }
-  
+
 
 }
