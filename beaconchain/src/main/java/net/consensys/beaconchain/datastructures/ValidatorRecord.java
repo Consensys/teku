@@ -13,24 +13,20 @@
 
 package net.consensys.beaconchain.datastructures;
 
-import net.consensys.beaconchain.ethereum.core.Address;
 import net.consensys.beaconchain.ethereum.core.Hash;
-
-import org.web3j.abi.datatypes.generated.Int128;
-import org.web3j.abi.datatypes.generated.Int16;
-import org.web3j.abi.datatypes.generated.Int256;
-import org.web3j.abi.datatypes.generated.Int64;
-import org.web3j.abi.datatypes.generated.Int8;
+import net.consensys.beaconchain.util.uint.UInt384;
+import net.consensys.beaconchain.util.uint.UInt64;
 
 public class ValidatorRecord {
 
-  private Address withdrawal_address;
+  private UInt384 pubkey;
+  private Hash withdrawal_credentials;
   private Hash randao_commitment;
-  private Int8 status;
-  private Int16 withdrawal_shard;
-  private Int64 exit_slot;
-  private Int128 balance;
-  private Int256 pubkey;
+  private UInt64 randao_skips;
+  public UInt64 balance;
+  public UInt64 status;
+  private UInt64 last_status_change_slot;
+  private UInt64 exit_count;
 
   public ValidatorRecord() {
 

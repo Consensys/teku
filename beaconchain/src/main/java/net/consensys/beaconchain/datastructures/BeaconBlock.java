@@ -13,15 +13,22 @@
 
 package net.consensys.beaconchain.datastructures;
 
-import org.web3j.abi.datatypes.generated.Int64;
+import net.consensys.beaconchain.ethereum.core.Hash;
+import net.consensys.beaconchain.util.uint.UInt384;
+import net.consensys.beaconchain.util.uint.UInt64;
 
-public class ListOfValidators {
+public class BeaconBlock {
 
-  private ValidatorRecord[] validators;
-  private Int64 dynasty;
-  private Int64 slot;
+  public UInt64 slot;
+  private Hash randao_reveal;
+  private Hash candidate_pow_receipt_root;
+  private Hash[] ancestor_hashes;
+  private Hash state_root;
+  private AttestationRecord[] attestations;
+  private SpecialRecord[] specials;
+  private UInt384[] proposer_signature;
 
-  public ListOfValidators() {
+  public BeaconBlock() {
 
   }
 
