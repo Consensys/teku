@@ -95,33 +95,33 @@ public class UInt64Test {
   public void divideUnsigned() {
     //Test Basic Quotient Accuracy
     // 2/1 = 2
-    divide(2, 1, 2, 0, true, false);
-    divide(2, 1, 2, 0, false, false);
+    divide(2, 1, 2, false, false);
+    divide(2, 1, 2, false, false);
     // 3/1 = 3
-    divide(3, 1, 3, 0, true, false);
-    divide(3, 1, 3, 0, false, false);
+    divide(3, 1, 3, true, false);
+    divide(3, 1, 3, false, false);
     // 4/2 = 2
-    divide(4, 2, 2, 0, true, false);
-    divide(4, 2, 2, 0, false, false);
+    divide(4, 2, 2, true, false);
+    divide(4, 2, 2, false, false);
 
     //Test Remainder
     // 15/16 = 0 + 15/16
-    divide(15, 16, 0, 15, true, false);
-    divide(15, 16, 0, 15, false, false);
+    divide(15, 16, 0, true, false);
+    divide(15, 16, 0, false, false);
     // 4/3 = 1 + 1/3
-    divide(4, 3, 1, 1, true, false);
-    divide(4, 3, 1, 1, false, false);
+    divide(4, 3, 1, true, false);
+    divide(4, 3, 1, false, false);
 
     //Divide by 0
     // 0/0 (should throw IllegalArgumentException)
-    divide(0, 0, 0, 0, true, true);
-    divide(0, 0, 0, 0, false, true);
+    divide(0, 0, 0, true, true);
+    divide(0, 0, 0, false, true);
     // 1/0 (should throw IllegalArgumentException)
-    divide(1, 0, 0, 0, true, true);
-    divide(1, 0, 0, 0, false, true);
+    divide(1, 0, 0, true, true);
+    divide(1, 0, 0, false, true);
     // 0/1 (should not throw IllegalArgumentException)
-    divide(0, 1, 0, 0, true, false);
-    divide(0, 1, 0, 0, false, false);
+    divide(0, 1, 0, true, false);
+    divide(0, 1, 0, false, false);
 
     //TODO Add more tests closer to unsigned boundaries.
   }
@@ -163,7 +163,7 @@ public class UInt64Test {
       thrown = true;
     }
 
-    Assert.assertEquals("Addition should not have thrown an exception.", false, thrown);
+    Assert.assertEquals("Subtraction should not have thrown an exception.", false, thrown);
   }
 
   private void multiply(long multiplicand, long multiplier, long expectedProduct, boolean treatSecondArgumentAsPrimitive) {
@@ -177,24 +177,24 @@ public class UInt64Test {
         UInt64 uMultiplier = UInt64.valueOf(multiplier);
         uProduct.times(uMultiplier);
       }
-      Assert.assertEquals("Difference", expectedProduct, uProduct.getValue());
+      Assert.assertEquals("Product", expectedProduct, uProduct.getValue());
       Assert.assertEquals("UInt64 Product", UInt64.valueOf(expectedProduct), uProduct);
     } catch (Exception e) {
       thrown = true;
     }
 
-    Assert.assertEquals("Addition should not have thrown an exception.", false, thrown);
+    Assert.assertEquals("Multiplication should not have thrown an exception.", false, thrown);
   }
 
-  private void divide(long dividend, long divisor, long expectedQuotient, long expectedRemainder, boolean treatSecondArgumentAsPrimitive, boolean shouldThrow) {
+  private void divide(long dividend, long divisor, long expectedQuotient, boolean treatSecondArgumentAsPrimitive, boolean shouldThrow) {
     if(shouldThrow) {
-      divideExpectException(dividend, divisor, expectedQuotient, expectedRemainder, treatSecondArgumentAsPrimitive);
+      divideExpectException(dividend, divisor, expectedQuotient, treatSecondArgumentAsPrimitive);
     } else {
-      divideExpectResult(dividend, divisor, expectedQuotient, expectedRemainder, treatSecondArgumentAsPrimitive);
+      divideExpectResult(dividend, divisor, expectedQuotient, treatSecondArgumentAsPrimitive);
     }
   }
 
-  private void divideExpectException(long dividend, long divisor, long expectedQuotient, long expectedRemainder, boolean treatSecondArgumentAsPrimitive) {
+  private void divideExpectException(long dividend, long divisor, long expectedQuotient, boolean treatSecondArgumentAsPrimitive) {
     try {
       UInt64 uQuotient = UInt64.valueOf(dividend);
       if(treatSecondArgumentAsPrimitive) {
@@ -210,7 +210,7 @@ public class UInt64Test {
     }
   }
 
-  private void divideExpectResult(long dividend, long divisor, long expectedQuotient, long expectedRemainder, boolean treatSecondArgumentAsPrimitive) {
+  private void divideExpectResult(long dividend, long divisor, long expectedQuotient, boolean treatSecondArgumentAsPrimitive) {
     boolean thrown = false;
 
     try {
@@ -222,8 +222,7 @@ public class UInt64Test {
         uQuotient.dividedBy(uDivisor);
       }
       Assert.assertEquals("Quotient", expectedQuotient, uQuotient.getValue());
-      Assert.assertEquals("Remainder", expectedRemainder, uQuotient.getRemainder());
-      Assert.assertEquals("UInt64 Division Result", UInt64.valueOf(expectedQuotient, expectedRemainder), uQuotient);
+      Assert.assertEquals("UInt64 Division Result", UInt64.valueOf(expectedQuotient), uQuotient);
     } catch (Exception e) {
       thrown = true;
     }

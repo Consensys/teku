@@ -16,38 +16,36 @@ package net.consensys.beaconchain.util.uint;
 import java.util.Objects;
 
 /**
- * An unsigned 64-bits precision number.
+ * An unsigned 64-bit precision integer.
  */
 public class UInt64 implements Comparable<UInt64> {
+  //Yes, this looks weird. If it helps, think of this as (Long.MAX_VALUE<<1)+1.
+  public static final UInt64 MAX_VALUE = valueOfUnsafe(-1);
+  public static final UInt64 MIN_VALUE = valueOf(0);
+
+
   private long value;
-  private long remainder;
 
-  public UInt64(long value) {
+  private UInt64(long value) {
     this.value = value;
-    this.remainder = 0;
-  }
-
-  public UInt64(long value, long remainder) {
-    this.value = value;
-    this.remainder = remainder;
   }
 
   public long getValue() {
     return value;
   }
 
-  public long getRemainder() {
-    return remainder;
+  //For familiarity for users of java.lang.Long
+  public static UInt64 valueOf(long unsignedValue) {
+    return new UInt64(unsignedValue);
   }
 
-  //For familiarity for users of java.lang.Long
-  public static UInt64 valueOf(long value) {
-    return new UInt64(value);
+  private static UInt64 valueOfUnsafe(long unsafeValue) {
+    return new UInt64(unsafeValue);
   }
 
-  //For familiarity for users of java.lang.Long
-  public static UInt64 valueOf(long value, long remainder) {
-    return new UInt64(value, remainder);
+  public UInt64 increment() {
+    ++this.value;
+    return new UInt64(this.value);
   }
 
   public UInt64 plus(long unsignedAddend) {
@@ -57,6 +55,11 @@ public class UInt64 implements Comparable<UInt64> {
 
   public UInt64 plus(UInt64 addend) {
     this.value += addend.getValue();
+    return new UInt64(this.value);
+  }
+
+  public UInt64 decrement() {
+    --this.value;
     return new UInt64(this.value);
   }
 
@@ -84,27 +87,21 @@ public class UInt64 implements Comparable<UInt64> {
     if(unsignedDivisor == 0) {
       throw new IllegalArgumentException("Argument 'divisor' is 0.");
     }
-    this.remainder = Long.remainderUnsigned(this.value, unsignedDivisor);
     this.value = Long.divideUnsigned(this.value, unsignedDivisor);
-    return new UInt64(this.value, this.remainder);
+    return new UInt64(this.value);
   }
 
   public UInt64 dividedBy(UInt64 divisor) {
     if(divisor.value == 0) {
       throw new IllegalArgumentException("Argument 'divisor' is 0.");
     }
-    this.remainder = Long.remainderUnsigned(this.value, divisor.getValue());
     this.value = Long.divideUnsigned(this.value, divisor.getValue());
-    return new UInt64(this.value, this.remainder);
+    return new UInt64(this.value);
   }
 
   @Override
   public int compareTo(UInt64 uint) {
-    if(this.value != uint.getValue()) {
-      return Long.compareUnsigned(this.value, uint.getValue());
-    } else {
-      return Long.compareUnsigned(this.remainder, uint.getRemainder());
-    }
+    return Long.compareUnsigned(this.value, uint.getValue());
   }
 
   @Override
@@ -119,11 +116,16 @@ public class UInt64 implements Comparable<UInt64> {
 
     UInt64 uint = (UInt64) o;
 
-    return this.value == uint.getValue() && this.remainder == uint.getRemainder();
+    return this.value == uint.getValue();
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(value, remainder);
+    return Objects.hash(value);
+  }
+
+  @Override
+  public String toString() {
+    return Long.toUnsignedString(this.value);
   }
 }
