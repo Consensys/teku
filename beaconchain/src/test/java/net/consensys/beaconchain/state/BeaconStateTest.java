@@ -57,36 +57,44 @@ public class BeaconStateTest {
   }
 
   @Test
-  public void testSplit1() {
+  public void splitReturnsOneSmallerSizedSplit() {
     Object[] actual = split(new Object[]{0, 1, 2, 3, 4, 5, 6, 7}, 3);
     Object[][] expected = {{0, 1}, {2, 3, 4}, {5, 6, 7}};
     assertThat(actual).isEqualTo(expected);
   }
 
   @Test
-  public void testSplit2() {
+  public void splitReturnsTwoSmallerSizedSplits() {
     Object[] actual = split(new Object[]{0, 1, 2, 3, 4, 5, 6}, 3);
     Object[][] expected = {{0, 1}, {2, 3}, {4, 5, 6}};
     assertThat(actual).isEqualTo(expected);
   }
 
   @Test
-  public void testSplit3() {
+  public void splitReturnsEquallySizedSplits() {
     Object[] actual = split(new Object[]{0, 1, 2, 3, 4, 5, 6, 7, 8}, 3);
     Object[][] expected = {{0, 1, 2}, {3, 4, 5}, {6, 7, 8}};
     assertThat(actual).isEqualTo(expected);
   }
 
   @Test
-  public void testClamp() {
+  public void clampReturnsMinVal() {
     int actual = clamp(3, 5, 0);
     int expected = 3;
     assertThat(actual).isEqualTo(expected);
-    actual = clamp(3, 5, 6);
-    expected = 5;
+  }
+
+  @Test
+  public void clampReturnsMaxVal() {
+    int actual = clamp(3, 5, 6);
+    int expected = 5;
     assertThat(actual).isEqualTo(expected);
-    actual = clamp(3, 5, 4);
-    expected = 4;
+  }
+
+  @Test
+  public void clampReturnsX() {
+    int actual = clamp(3, 5, 4);
+    int expected = 4;
     assertThat(actual).isEqualTo(expected);
   }
 
