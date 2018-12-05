@@ -13,13 +13,13 @@
 
 package net.consensys.beaconchain.datastructures;
 
-import org.web3j.abi.datatypes.generated.Int16;
-import org.web3j.abi.datatypes.generated.Int24;
+import net.consensys.beaconchain.util.uint.UInt64;
 
 public class ShardAndCommittee {
 
-  private Int16 shard_id;
-  private Int24[] committee;
+  public UInt64 shard;
+  public int[] committee;
+  private UInt64 total_validator_count;
 
   public ShardAndCommittee() {
 
