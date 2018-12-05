@@ -15,8 +15,16 @@ package net.consensys.beaconchain.state;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
+import net.consensys.beaconchain.datastructures.CandidatePoWReceiptRootRecord;
+import net.consensys.beaconchain.datastructures.CrosslinkRecord;
+import net.consensys.beaconchain.datastructures.ForkData;
+import net.consensys.beaconchain.datastructures.PendingAttestationRecord;
+import net.consensys.beaconchain.datastructures.ShardAndCommittee;
+import net.consensys.beaconchain.datastructures.ShardReassignmentRecord;
+import net.consensys.beaconchain.datastructures.ValidatorRecord;
 import net.consensys.beaconchain.ethereum.core.Hash;
 import net.consensys.beaconchain.util.bytes.Bytes3;
+import net.consensys.beaconchain.util.uint.UInt64;
 
 import java.util.Arrays;
 
@@ -24,6 +32,40 @@ import com.google.common.annotations.VisibleForTesting;
 
 
 public class BeaconState {
+
+  // Validator registry
+  private ValidatorRecord[] validator_registry;
+  private UInt64 validator_registry_latest_change_slot;
+  private UInt64 validator_registry_exit_count;
+  private Hash validator_registry_delta_chain_tip;
+
+  // Randomness and committees
+  private Hash randao_mix;
+  private Hash next_seed;
+  private ShardAndCommittee[][] shard_committees_at_slots;
+  private int[][] persistent_committees;
+  private ShardReassignmentRecord[] persistent_committee_reassignments;
+
+  // Finality
+  private UInt64 previous_justified_slot;
+  private UInt64 justified_slot;
+  private UInt64 justified_slot_bitfield;
+  private UInt64 finalized_slot;
+
+  // Recent state
+  private CrosslinkRecord[] latest_crosslinks;
+  private UInt64 latest_state_recalculation_slot;
+  private Hash[] latest_block_hashes;
+  private UInt64[] latest_penalized_exit_balances;
+  private PendingAttestationRecord[] latest_attestations;
+
+  // PoW receipt root
+  private Hash processed_pow_receipt_root;
+  private CandidatePoWReceiptRootRecord[] candidate_pow_receipt_roots;
+
+  // Misc
+  private UInt64 genesis_time;
+  private ForkData fork_data;
 
   static class BeaconStateHelperFunctions {
 
