@@ -14,7 +14,6 @@
 package net.consensys.beaconchain.util.uint;
 
 import java.util.Objects;
-import java.lang.Long;
 
 /**
  * An unsigned 64-bits precision number.
