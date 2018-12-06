@@ -29,6 +29,10 @@ public class UInt64 implements Comparable<UInt64> {
     this.value = value;
   }
 
+  public UInt64(UInt64 uint) {
+    this.value = uint.getValue();
+  }
+
   public long getValue() {
     return value;
   }
