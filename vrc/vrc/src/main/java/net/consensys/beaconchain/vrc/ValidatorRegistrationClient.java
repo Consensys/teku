@@ -1,4 +1,4 @@
-package net.consensys.beaconchain.services;
+package net.consensys.beaconchain.vrc;
 
 import java.nio.charset.Charset;
 import java.util.Random;
@@ -7,7 +7,7 @@ import com.google.common.eventbus.EventBus;
 
 public class ValidatorRegistrationClient {
 
-    private EventBus eventBus;
+    private final EventBus eventBus;
 
     public ValidatorRegistrationClient(EventBus eventBus){
         this.eventBus = eventBus;

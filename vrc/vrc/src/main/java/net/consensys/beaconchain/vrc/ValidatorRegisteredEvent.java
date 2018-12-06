@@ -1,4 +1,4 @@
-package net.consensys.beaconchain.services;
+package net.consensys.beaconchain.vrc;
 
 public class ValidatorRegisteredEvent {
 
