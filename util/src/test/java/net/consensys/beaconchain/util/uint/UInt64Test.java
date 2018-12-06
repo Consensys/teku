@@ -22,47 +22,46 @@ public class UInt64Test {
   public void addUnsigned() {
     //Test Basic Sum Accuracy
     // 0+0 = 0
-    add(0, 0, 0, true);
-    add(0, 0, 0, false);
-
+    add(0, 0, "0");
     // 0+1 = 1
-    add(0, 1, 1, true);
-    add(0, 1, 1, false);
-
+    add(0, 1, "1");
     // 1+0 = 1
-    add(1, 0, 1, true);
-    add(1, 0, 1, false);
-
+    add(1, 0, "1");
     // 1+1 = 2
-    add(1, 1, 2, true);
-    add(1, 1, 2, false);
+    add(1, 1, "2");
 
-    //TODO Add more tests closer to unsigned boundaries.
+    //Test Edge Cases Around 32-bit and 64-bit Boundaries
+    // 2^63-1 + 1 = 2^63 (instead of -2^63 as in signed arithmetic)
+    add(Long.MAX_VALUE, 1, "9223372036854775808");
+    // 2^63 + 2^63-1 = 2^64-1
+    add(Long.MIN_VALUE, Long.MAX_VALUE, "18446744073709551615");
+    // 2^64-1 + 1 = 0 (it is expected that an unsigned int will wrap)
+    UInt64 uSum = new UInt64(UInt64.MAX_VALUE);
+    uSum.plus(1);
+    Assert.assertEquals("UInt64.MAX_VALUE + 1", "0", uSum.toString());
   }
 
   @Test
   public void subtractUnsigned() {
     //Test Basic Sum Accuracy
     // 0-0 = 0
-    subtract(0, 0, 0, true);
-    subtract(0, 0, 0, false);
-
+    subtract(0, 0, "0");
     // 1-0 = 1
-    subtract(1, 0, 1, true);
-    subtract(1, 0, 1, false);
-
+    subtract(1, 0, "1");
     // 1-1 = 0
-    subtract(1, 1, 0, true);
-    subtract(1, 1, 0, false);
-
+    subtract(1, 1, "0");
     // 2-1 = 1
-    subtract(2, 1, 1, true);
-    subtract(2, 1, 1, false);
+    subtract(2, 1, "1");
 
-    //TODO Add more tests closer to unsigned boundaries.
-    // 0-1 = ?
-    //subtract(1, 1, 2, true);
-    //subtract(1, 1, 2, false);
+    //Test Edge Cases Around 32-bit and 64-bit Boundaries
+    // 2^63 - 1 = 2^63-1
+    subtract(Long.MIN_VALUE, 1, "9223372036854775807");
+    // 0 - 1 = 2^64-1 (it is expected that an unsigned int will wrap)
+    subtract(0, 1, "18446744073709551615");
+    // 2^64-1 - 1 = 18446744073709551614 (2^64 - 2)
+    UInt64 uDifference = new UInt64(UInt64.MAX_VALUE);
+    uDifference.minus(1);
+    Assert.assertEquals("UInt64.MAX_VALUE - 1", "18446744073709551614", uDifference.toString());
   }
 
   @Test
@@ -126,19 +125,23 @@ public class UInt64Test {
     //TODO Add more tests closer to unsigned boundaries.
   }
 
-  private void add(long augend, long addend, long expectedSum, boolean treatSecondArgumentAsPrimitive) {
+  private void add(long augend, long addend, String expectedSum) {
     boolean thrown = false;
 
     try {
-      UInt64 uSum = UInt64.valueOf(augend);
-      if(treatSecondArgumentAsPrimitive) {
-        uSum.plus(addend);
-      } else {
-        UInt64 uAddend = UInt64.valueOf(addend);
-        uSum.plus(uAddend);
-      }
-      Assert.assertEquals("Sum", expectedSum, uSum.getValue());
-      Assert.assertEquals("UInt64 Sum", UInt64.valueOf(expectedSum), uSum);
+      //Final here as a mental note. Don't operate on uSum. UInt64#plus has side-effects, so final doesn't make much of a difference.
+      final UInt64 uAugend = UInt64.valueOf(augend);
+      
+      UInt64 longSum = new UInt64(uAugend);
+      longSum.plus(addend);
+      Assert.assertEquals("Sum", expectedSum, Long.toUnsignedString(longSum.getValue()));
+      Assert.assertEquals("UInt64 Sum", UInt64.valueOf(expectedSum), longSum);
+
+      UInt64 uintSum = new UInt64(uAugend);
+      UInt64 uAddend = UInt64.valueOf(addend);
+      uintSum.plus(uAddend);
+      Assert.assertEquals("Sum", expectedSum, Long.toUnsignedString(uintSum.getValue()));
+      Assert.assertEquals("UInt64 Sum", UInt64.valueOf(expectedSum), uintSum);
     } catch (Exception e) {
       thrown = true;
     }
@@ -146,19 +149,22 @@ public class UInt64Test {
     Assert.assertEquals("Addition should not have thrown an exception.", false, thrown);
   }
 
-  private void subtract(long minuend, long subtrahend, long expectedDifference, boolean treatSecondArgumentAsPrimitive) {
+  private void subtract(long minuend, long subtrahend, String expectedDifference) {
     boolean thrown = false;
 
     try {
-      UInt64 uDifference = UInt64.valueOf(minuend);
-      if(treatSecondArgumentAsPrimitive) {
-        uDifference.minus(subtrahend);
-      } else {
-        UInt64 uSubtrahend = UInt64.valueOf(subtrahend);
-        uDifference.minus(uSubtrahend);
-      }
-      Assert.assertEquals("Difference", expectedDifference, uDifference.getValue());
-      Assert.assertEquals("UInt64 Difference", UInt64.valueOf(expectedDifference), uDifference);
+      final UInt64 uMinuend = UInt64.valueOf(minuend);
+
+      UInt64 longDifference = new UInt64(uMinuend);
+      longDifference.minus(subtrahend);
+      Assert.assertEquals("Difference", expectedDifference, Long.toUnsignedString(longDifference.getValue()));
+      Assert.assertEquals("UInt64 Difference", UInt64.valueOf(expectedDifference), longDifference);
+
+      UInt64 uintDifference = new UInt64(uMinuend);
+      UInt64 uSubtrahend = UInt64.valueOf(subtrahend);
+      uintDifference.minus(uSubtrahend);
+      Assert.assertEquals("Difference", expectedDifference, Long.toUnsignedString(uintDifference.getValue()));
+      Assert.assertEquals("UInt64 Difference", UInt64.valueOf(expectedDifference), uintDifference);
     } catch (Exception e) {
       thrown = true;
     }
