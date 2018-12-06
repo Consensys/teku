@@ -1,4 +1,7 @@
 package net.consensys.beaconchain.services;
+import net.consensys.beaconchain.vrc.ValidatorRegisteredEvent;
+import net.consensys.beaconchain.vrc.ValidatorRegistrationClient;
+
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 
