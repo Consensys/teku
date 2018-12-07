@@ -11,24 +11,10 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package net.consensys.beaconchain.vrc;
+package net.consensys.beaconchain.services;
 
-//TODO: This class needs to be modified to contain
-// the validator info that the beacon chain needs.
-public class ValidatorRegisteredEvent {
-
-    private String name;
-
-    public ValidatorRegisteredEvent(){
-
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
+public interface ServiceInterface {
+    void init();
+    void start();
+    void stop();
 }
