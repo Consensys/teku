@@ -15,13 +15,13 @@ package net.consensys.beaconchain;
 
 import net.consensys.beaconchain.controllers.ServiceController;
 
-public final class BeaconChain {
+public final class App {
     public static void main(final String... args) {
         // Process Command Line Args
         // Instantiate ServiceController and start event loop
          System.out.println(Constants.getConstantsAsString());
-         ServiceController sc = new ServiceController();
-         sc.start();
+         ServiceController.init();
+         ServiceController.start();
 
     }
 }

@@ -92,6 +92,7 @@ allprojects {
       importOrder 'net.consensys', 'java', ''
       trimTrailingWhitespace()
       endWithNewline()
+      licenseHeaderFile "${rootDir}/gradle/spotless.java.license"
     }
   }
 

@@ -11,24 +11,25 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package net.consensys.beaconchain.vrc;
+package net.consensys.beaconchain.services;
 
-//TODO: This class needs to be modified to contain
-// the validator info that the beacon chain needs.
-public class ValidatorRegisteredEvent {
+public class ServiceFactory<T> {
 
-    private String name;
+    private final Class<T> type;
 
-    public ValidatorRegisteredEvent(){
-
+    public ServiceFactory(Class<T> type) {
+      this.type = type;
     }
 
-    public String getName() {
-        return name;
+    public T getInstance() {
+        try {
+            return type.getDeclaredConstructor().newInstance();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public static <S> ServiceFactory<S> getInstance(Class<S> type) {
+        return new ServiceFactory<S>(type);
     }
-
 }

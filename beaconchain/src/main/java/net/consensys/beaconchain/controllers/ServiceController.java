@@ -1,28 +1,33 @@
+/*
+ * Copyright 2018 ConsenSys AG.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ */
+
 package net.consensys.beaconchain.controllers;
 
-import net.consensys.beaconchain.services.EventBusFactory;
-import net.consensys.beaconchain.services.PowchainFactory;
+import net.consensys.beaconchain.services.BeaconChainService;
 import net.consensys.beaconchain.services.PowchainService;
+import net.consensys.beaconchain.services.ServiceFactory;
 
-import com.google.common.eventbus.EventBus;
 
 public class ServiceController {
-    private PowchainService powchainService;
-    private EventBus eventBus;
+    private static final BeaconChainService beaconChainService = ServiceFactory.getInstance(BeaconChainService.class).getInstance();;
+    private static final PowchainService powchainService = ServiceFactory.getInstance(PowchainService.class).getInstance();
 
-    public ServiceController(){
-        this.powchainService = PowchainFactory.getInstance();
-        this.eventBus = EventBusFactory.getInstance();
-        this.init();
-    }
 
     // initialize/register all services
-    public void init(){
+    public static void init(){
 
-        // PoWchain Service
-       this.eventBus.register(this.powchainService);
-
-        // Blockchain Service
+        beaconChainService.init();
+        powchainService.init();
 
         // Validator Service
 
@@ -31,13 +36,16 @@ public class ServiceController {
         // RPC Service
     }
 
-    public void start(){
+    public static void start(){
         // start all services
-        this.powchainService.start();
+        beaconChainService.start();
+        powchainService.start();
 
     }
 
-    public void stop(){
+    public static void stop(){
         // stop all services
+        beaconChainService.stop();
+        powchainService.stop();
     }
 }

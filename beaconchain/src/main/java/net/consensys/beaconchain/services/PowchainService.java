@@ -1,3 +1,16 @@
+/*
+ * Copyright 2018 ConsenSys AG.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ */
+
 package net.consensys.beaconchain.services;
 import net.consensys.beaconchain.vrc.ValidatorRegisteredEvent;
 import net.consensys.beaconchain.vrc.ValidatorRegistrationClient;
@@ -5,15 +18,31 @@ import net.consensys.beaconchain.vrc.ValidatorRegistrationClient;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 
-public class PowchainService {
+public class PowchainService implements ServiceInterface{
 
     private int numValidators;
+    private final EventBus eventBus;
     private final ValidatorRegistrationClient vrc;
 
     public PowchainService(){
-        EventBus eventBus = EventBusFactory.getInstance();
+        this.eventBus = EventBusFactory.getInstance();
         this.vrc = new ValidatorRegistrationClient(eventBus);
         this.numValidators = 0;
+    }
+
+    @Override
+    public void init(){
+        this.eventBus.register(this);
+    }
+
+    @Override
+    public void start(){
+        this.vrc.listenForValidators();
+    }
+
+    @Override
+    public void stop(){
+
     }
 
     @Subscribe
@@ -22,9 +51,4 @@ public class PowchainService {
         System.out.println(validatorRegisteredEvent.getName());
         System.out.println("Number of validators registered: " + this.numValidators);
     }
-
-    public void start(){
-        this.vrc.listenForValidators();
-    }
-
 }
