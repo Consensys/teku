@@ -20,64 +20,64 @@ public final class Constants {
   // The constants below are correct as of spec dated 2018/12/5
 
   // Misc
-  static final int SHARD_COUNT                                    = (int) Math.pow(2, 10); // 1,024 Shards
-  static final int TARGET_COMMITTEE_SIZE                          = (int) Math.pow(2, 8); // 256 validators
-  static final int MAX_ATTESTATIONS_PER_BLOCK                     = (int) Math.pow(2, 7);  // 128 attestations
-  static final int MIN_BALANCE                                    = (int) Math.pow(2, 4);  // 16 Eth
-  static final int MAX_BALANCE_CHURN_QUOTIENT                     = (int) Math.pow(2, 5);  // 32
-  static final int GWEI_PER_ETH                                   = (int) Math.pow(10, 9); // 1,000,000,000 Wei
-  static final int BEACON_CHAIN_SHARD_NUMBER                      = (int) Math.pow(2, 64) - 1;
-  static final String BLS_WITHDRAWAL_CREDENTIALS                  = "0x00";
+  public static final int SHARD_COUNT                                    = (int) Math.pow(2, 10); // 1,024 Shards
+  public static final int TARGET_COMMITTEE_SIZE                          = (int) Math.pow(2, 8); // 256 validators
+  public static final int MAX_ATTESTATIONS_PER_BLOCK                     = (int) Math.pow(2, 7);  // 128 attestations
+  public static final int MIN_BALANCE                                    = (int) Math.pow(2, 4);  // 16 Eth
+  public static final int MAX_BALANCE_CHURN_QUOTIENT                     = (int) Math.pow(2, 5);  // 32
+  public static final int GWEI_PER_ETH                                   = (int) Math.pow(10, 9); // 1,000,000,000 Wei
+  public static final int BEACON_CHAIN_SHARD_NUMBER                      = (int) Math.pow(2, 64) - 1;
+  public static final String BLS_WITHDRAWAL_CREDENTIALS                  = "0x00";
 
   // Deposit contract
   //  static final Address DEPOSIT_CONTRACT_ADDRESS               =  Value is still TBD
-  static final int DEPOSIT_CONTRACT_TREE_DEPTH                    = (int) Math.pow(2, 5);  // 32
-  static final int MIN_DEPOSIT                                    = (int) Math.pow(2, 0);  // 1 Eth
-  static final int MAX_DEPOSIT                                    = (int) Math.pow(2, 5);  // 32 Eth
+  public static final int DEPOSIT_CONTRACT_TREE_DEPTH                    = (int) Math.pow(2, 5);  // 32
+  public static final int MIN_DEPOSIT                                    = (int) Math.pow(2, 0);  // 1 Eth
+  public static final int MAX_DEPOSIT                                    = (int) Math.pow(2, 5);  // 32 Eth
 
   // Initial values
-  static final int INITIAL_FORK_VERSION                           = 0;
-  static final int INITIAL_SLOT_NUMBER                            = 0;
-  static final Bytes32 ZERO_HASH                                  = Bytes32.ZERO;
+  public static final int INITIAL_FORK_VERSION                           = 0;
+  public static final int INITIAL_SLOT_NUMBER                            = 0;
+  public static final Bytes32 ZERO_HASH                                  = Bytes32.ZERO;
 
   // Time parameters
-  static final int SLOT_DURATION                                  = 6;  // 6 seconds
-  static final int MIN_ATTESTATION_INCLUSION_DELAY                = (int) Math.pow(2, 2); // 4 slots
-  static final int EPOCH_LENGTH                                   = (int) Math.pow(2, 6);  // 64 slots
-  static final int MIN_VALIDATOR_REGISTRY_CHANGE_INTERVAL	        = (int) Math.pow(2, 8);  // 256 slots
-  static final int POW_RECEIPT_ROOT_VOTING_PERIOD	        	      = (int) Math.pow(2, 10); // 1,024 slots
-  static final int SHARD_PERSISTENT_COMMITTEE_CHANGE_PERIOD       = (int) Math.pow(2, 17); // 131,072 slots
-  static final int COLLECTIVE_PENALTY_CALCULATION_PERIOD          = (int) Math.pow(2, 20); // 1,048,576 slots
-  static final int ZERO_BALANCE_VALIDATOR_TTL                     = (int) Math.pow(2, 22); // 4,194,304 slots
+  public static final int SLOT_DURATION                                  = 6;  // 6 seconds
+  public static final int MIN_ATTESTATION_INCLUSION_DELAY                = (int) Math.pow(2, 2); // 4 slots
+  public static final int EPOCH_LENGTH                                   = (int) Math.pow(2, 6);  // 64 slots
+  public static final int MIN_VALIDATOR_REGISTRY_CHANGE_INTERVAL	        = (int) Math.pow(2, 8);  // 256 slots
+  public static final int POW_RECEIPT_ROOT_VOTING_PERIOD	        	      = (int) Math.pow(2, 10); // 1,024 slots
+  public static final int SHARD_PERSISTENT_COMMITTEE_CHANGE_PERIOD       = (int) Math.pow(2, 17); // 131,072 slots
+  public static final int COLLECTIVE_PENALTY_CALCULATION_PERIOD          = (int) Math.pow(2, 20); // 1,048,576 slots
+  public static final int ZERO_BALANCE_VALIDATOR_TTL                     = (int) Math.pow(2, 22); // 4,194,304 slots
 
   // Reward and penalty quotients
-  static final int BASE_REWARD_QUOTIENT                           = (int) Math.pow(2, 11); // 2,048
-  static final int WHISTLEBLOWER_REWARD_QUOTIENT                  = (int) Math.pow(2, 9); // 512
-  static final int INCLUDER_REWARD_QUOTIENT                       = (int) Math.pow(2, 3); // 8
-  static final int INACTIVITY_PENALTY_QUOTIENT                    = (int) Math.pow(2, 34); // 131,072
+  public static final int BASE_REWARD_QUOTIENT                           = (int) Math.pow(2, 11); // 2,048
+  public static final int WHISTLEBLOWER_REWARD_QUOTIENT                  = (int) Math.pow(2, 9); // 512
+  public static final int INCLUDER_REWARD_QUOTIENT                       = (int) Math.pow(2, 3); // 8
+  public static final int INACTIVITY_PENALTY_QUOTIENT                    = (int) Math.pow(2, 34); // 131,072
 
   // Status codes
-  static final int PENDING_ACTIVATION                             = 0;
-  static final int ACTIVE                                         = 1;
-  static final int ACTIVE_PENDING_EXIT                            = 2;
-  static final int EXITED_WITHOUT_PENALTY                         = 3;
-  static final int EXITED_WITH_PENALTY                            = 4;
+  public static final int PENDING_ACTIVATION                             = 0;
+  public static final int ACTIVE                                         = 1;
+  public static final int ACTIVE_PENDING_EXIT                            = 2;
+  public static final int EXITED_WITHOUT_PENALTY                         = 3;
+  public static final int EXITED_WITH_PENALTY                            = 4;
 
   // Special record types
-  static final int VOLUNTARY_EXIT                                 = 0;
-  static final int CASPER_SLASHING                                = 1;
-  static final int PROPOSER_SLASHING                              = 2;
-  static final int DEPOSIT_PROOF                                  = 3;
+  public static final int VOLUNTARY_EXIT                                 = 0;
+  public static final int CASPER_SLASHING                                = 1;
+  public static final int PROPOSER_SLASHING                              = 2;
+  public static final int DEPOSIT_PROOF                                  = 3;
 
   // Validator registry delta flags
-  static final int ACTIVATION                                     = 0;
-  static final int EXIT                                           = 1;
+  public static final int ACTIVATION                                     = 0;
+  public static final int EXIT                                           = 1;
 
   // Signature domains
-  static final int DOMAIN_DEPOSIT                                 = 0;
-  static final int DOMAIN_ATTESTATION                             = 1;
-  static final int DOMAIN_PROPOSAL                                = 2;
-  static final int DOMAIN_EXIT                                    = 3;
+  public static final int DOMAIN_DEPOSIT                                 = 0;
+  public static final int DOMAIN_ATTESTATION                             = 1;
+  public static final int DOMAIN_PROPOSAL                                = 2;
+  public static final int DOMAIN_EXIT                                    = 3;
 
   public static String getConstantsAsString() {
     return "--Misc--"
