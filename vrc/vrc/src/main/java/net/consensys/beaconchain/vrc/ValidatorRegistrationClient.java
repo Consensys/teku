@@ -16,8 +16,8 @@ public class ValidatorRegistrationClient {
     }
 
     public void listenForValidators(){
-        // TODO:  This code will be removed when we have the code 
-        // wired to listen for real validator registrations. 
+        // TODO:  This code will be removed when we have the code
+        // wired to listen for real validator registrations.
         while(true){
             try {
                 Thread.sleep(1000);

@@ -1,6 +1,6 @@
 package net.consensys.beaconchain.services;
 
-import net.consensys.beaconchain.services.PowchainService;
+
 
 public class PowchainFactory {
 

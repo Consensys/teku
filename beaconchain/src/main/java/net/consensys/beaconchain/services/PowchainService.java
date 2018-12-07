@@ -11,7 +11,7 @@ public class PowchainService {
     private final ValidatorRegistrationClient vrc;
 
     public PowchainService(){
-        EventBus eventBus = EventBusFactory.getEventBus();
+        EventBus eventBus = EventBusFactory.getInstance();
         this.vrc = new ValidatorRegistrationClient(eventBus);
         this.numValidators = 0;
     }
