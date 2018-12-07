@@ -1,0 +1,18 @@
+apply plugin: 'java-library'
+
+jar {
+  baseName 'beaconchain-vrc'
+  manifest {
+    attributes('Implementation-Title': baseName,
+    'Implementation-Version': project.version)
+  }
+}
+
+dependencies {
+  api 'org.bouncycastle:bcprov-jdk15on'
+
+  implementation 'com.google.guava:guava'
+
+  testImplementation 'org.assertj:assertj-core'
+  testImplementation 'junit:junit'
+}
