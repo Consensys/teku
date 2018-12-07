@@ -12,6 +12,7 @@
  */
 
 package net.consensys.beaconchain.services;
+import net.consensys.beaconchain.vrc.NewBlockEvent;
 import net.consensys.beaconchain.vrc.ValidatorRegisteredEvent;
 
 import com.google.common.eventbus.EventBus;
@@ -19,9 +20,11 @@ import com.google.common.eventbus.Subscribe;
 
 public class BeaconChainService implements ServiceInterface{
 
+    private int numValidators;
     private final EventBus eventBus;
 
     public BeaconChainService(){
+        this.numValidators = 0;
         this.eventBus = EventBusFactory.getInstance();
     }
 
@@ -32,7 +35,6 @@ public class BeaconChainService implements ServiceInterface{
 
     @Override
     public void start(){
-
     }
 
     @Override
@@ -41,8 +43,15 @@ public class BeaconChainService implements ServiceInterface{
     }
 
     @Subscribe
-    public void onValidatorRegistered(ValidatorRegisteredEvent validatorRegisteredEvent){
+    public void onNewBlock(NewBlockEvent newBlockEvent){
+        System.out.println("New Block detected:" + newBlockEvent.getInfo());
+    }
 
+    @Subscribe
+    public void onValidatorRegistered(ValidatorRegisteredEvent validatorRegisteredEvent){
+        this.numValidators++;
+        System.out.println("Validator Registration Event detected:" + validatorRegisteredEvent.getInfo());
+        System.out.println("Number of validators registered: " + this.numValidators);
     }
 
 }
