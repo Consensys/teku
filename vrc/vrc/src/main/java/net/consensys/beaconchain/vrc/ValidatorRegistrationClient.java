@@ -13,8 +13,6 @@
 
 package net.consensys.beaconchain.vrc;
 
-import java.nio.charset.Charset;
-import java.util.Random;
 
 import com.google.common.eventbus.EventBus;
 
@@ -31,6 +29,8 @@ public class ValidatorRegistrationClient {
     public void listenToPoWChain(){
         // TODO:  This code will be removed when we have the code
         // wired to listen for real validator registrations.
+        int blockNum = 0;
+        int validatorNum = 0;
         while(true){
             try {
                 Thread.sleep(1000);
@@ -39,19 +39,17 @@ public class ValidatorRegistrationClient {
                 System.out.println(e);
             }
 
-            byte[] array = new byte[7];
-            new Random().nextBytes(array);
-            String generatedString = new String(array, Charset.forName("US-ASCII"));
-
-            //randomly create an event
+             //randomly create an event
             int eventType = (int) (Math.random() * 4) + 1;
             if(eventType == 1){
+                validatorNum++;
                 // let listeners know that a new validator has registered
-                validatorRegistered(generatedString);
+                validatorRegistered(Integer.toString(validatorNum));
             }
             else {
+                blockNum++;
                 // let listeners know that there is a new block
-                newBlock(generatedString);
+                newBlock(Integer.toString(blockNum));
             }
         }
     }

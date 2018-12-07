@@ -290,7 +290,7 @@ subprojects {
 jar { enabled = false }
 
 apply plugin: 'application'
-mainClassName = "net.consensys.beaconchain.BeaconChain"
+mainClassName = "net.consensys.beaconchain.App"
 applicationDefaultJvmArgs = [
   "-Dvertx.disableFileCPResolving=true",
   "-Dpantheon.home=PANTHEON_HOME",

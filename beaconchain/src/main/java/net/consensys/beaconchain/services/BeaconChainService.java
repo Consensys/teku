@@ -44,14 +44,15 @@ public class BeaconChainService implements ServiceInterface{
 
     @Subscribe
     public void onNewBlock(NewBlockEvent newBlockEvent){
-        System.out.println("New Block detected:" + newBlockEvent.getInfo());
+        System.out.println("New Block Event detected");
+        System.out.println("Block Number:" + newBlockEvent.getInfo());
     }
 
     @Subscribe
     public void onValidatorRegistered(ValidatorRegisteredEvent validatorRegisteredEvent){
         this.numValidators++;
-        System.out.println("Validator Registration Event detected:" + validatorRegisteredEvent.getInfo());
-        System.out.println("Number of validators registered: " + this.numValidators);
+        System.out.println("Validator Registration Event detected");
+        System.out.println("Validator Number: " + validatorRegisteredEvent.getInfo());
     }
 
 }
