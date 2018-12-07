@@ -14,12 +14,12 @@
 package net.consensys.beaconchain.vrc;
 
 //TODO: This class needs to be modified to contain
-// the validator info that the beacon chain needs.
-public class ValidatorRegisteredEvent {
+// the block info that the beacon chain needs.
+public class NewBlockEvent {
 
     private String info;
 
-    public ValidatorRegisteredEvent(){
+    public NewBlockEvent(){
 
     }
 

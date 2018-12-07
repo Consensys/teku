@@ -28,7 +28,7 @@ public class ValidatorRegistrationClient {
         this.eventBus = eventBus;
     }
 
-    public void listenForValidators(){
+    public void listenToPoWChain(){
         // TODO:  This code will be removed when we have the code
         // wired to listen for real validator registrations.
         while(true){
@@ -43,16 +43,31 @@ public class ValidatorRegistrationClient {
             new Random().nextBytes(array);
             String generatedString = new String(array, Charset.forName("US-ASCII"));
 
-            // let listeners know that a new validator has registered
-            validatorRegistered(generatedString);
+            //randomly create an event
+            int eventType = (int) (Math.random() * 4) + 1;
+            if(eventType == 1){
+                // let listeners know that a new validator has registered
+                validatorRegistered(generatedString);
+            }
+            else {
+                // let listeners know that there is a new block
+                newBlock(generatedString);
+            }
         }
     }
 
     public void validatorRegistered(String validatorInfo){
         // TODO: pass in real validator information that the beacon chain needs to know about
-        ValidatorRegisteredEvent vrcEvent = new ValidatorRegisteredEvent();
-        vrcEvent.setName(validatorInfo);
-        this.eventBus.post(vrcEvent);
+        ValidatorRegisteredEvent event = new ValidatorRegisteredEvent();
+        event.setInfo(validatorInfo);
+        this.eventBus.post(event);
+    }
+
+    public void newBlock(String blockInfo){
+        // TODO: pass in real block information that the beacon chain needs to know about
+        NewBlockEvent event = new NewBlockEvent();
+        event.setInfo(blockInfo);
+        this.eventBus.post(event);
     }
 
 
