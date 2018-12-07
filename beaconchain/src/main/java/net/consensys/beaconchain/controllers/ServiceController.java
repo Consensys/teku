@@ -1,19 +1,24 @@
 package net.consensys.beaconchain.controllers;
+
+import com.google.common.eventbus.EventBus;
 import net.consensys.beaconchain.services.EventBusFactory;
 import net.consensys.beaconchain.services.PowchainService;
 
 public class ServiceController {
-    PowchainService powchainService;
+    private PowchainService powchainService;
+    private EventBus eventBus;
+
     public ServiceController(){
+        this.powchainService = PowchainService.getInstance();
+        this.eventBus = EventBusFactory.getInstance();
         this.init();
     }
 
+    // initialize/register all services
     public void init(){
-        // initialize/register all services
 
         // PoWchain Service
-        this.powchainService = new PowchainService();
-        EventBusFactory.getEventBus().register(this.powchainService);
+       this.eventBus.register(this.powchainService);
 
         // Blockchain Service
 

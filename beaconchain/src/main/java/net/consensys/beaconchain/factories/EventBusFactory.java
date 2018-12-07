@@ -7,10 +7,9 @@ import com.google.common.eventbus.EventBus;
 
 public class EventBusFactory {
 
-  //hold the instance of the event bus here
     private static final EventBus eventBus = new AsyncEventBus(Executors.newCachedThreadPool());
 
-    public static EventBus getEventBus() {
+    public static EventBus getInstance() {
         return eventBus;
     }
 
