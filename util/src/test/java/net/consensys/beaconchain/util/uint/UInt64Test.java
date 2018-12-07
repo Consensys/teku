@@ -136,7 +136,7 @@ public class UInt64Test {
     try {
       //Final here as a mental note. Don't operate on uAugend. UInt64#plus has side-effects, so final doesn't make much of a difference.
       final UInt64 uAugend = UInt64.valueOf(augend);
-      
+
       UInt64 longSum = new UInt64(uAugend);
       longSum.plus(addend);
       Assert.assertEquals("Sum", expectedSum, Long.toUnsignedString(longSum.getValue()));
