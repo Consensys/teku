@@ -1,9 +1,9 @@
-package net.consensys.beaconchain.datastructures;
+package net.consensys.beaconchain.datastructures.BeaconChainOperations;
 
 import net.consensys.beaconchain.ethereum.core.Hash;
 import net.consensys.beaconchain.util.uint.UInt64;
 
-public class DepositProofSpecial {
+public class Deposit {
 
   private Hash[] merkle_branch;
   private UInt64 merkle_tree_index;
@@ -18,7 +18,7 @@ public class DepositProofSpecial {
   //        'timestamp': 'uint64',
   //    },
 
-  public DepositProofSpecial() {
+  public Deposit() {
 
   }
 
