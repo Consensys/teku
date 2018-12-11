@@ -1,4 +1,4 @@
-package net.consensys.beaconchain.datastructures;
+package net.consensys.beaconchain.datastructures.BeaconChainOperations;
 
 import net.consensys.beaconchain.ethereum.core.Hash;
 import net.consensys.beaconchain.util.uint.UInt64;

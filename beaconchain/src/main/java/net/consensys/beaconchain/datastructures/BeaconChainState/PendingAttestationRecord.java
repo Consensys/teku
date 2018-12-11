@@ -1,5 +1,6 @@
-package net.consensys.beaconchain.datastructures;
+package net.consensys.beaconchain.datastructures.BeaconChainState;
 
+import net.consensys.beaconchain.datastructures.BeaconChainOperations.AttestationData;
 import net.consensys.beaconchain.util.bytes.Bytes32;
 import net.consensys.beaconchain.util.uint.UInt64;
 

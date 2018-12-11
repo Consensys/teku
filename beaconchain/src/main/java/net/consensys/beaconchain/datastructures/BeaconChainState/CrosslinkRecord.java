@@ -11,17 +11,17 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package net.consensys.beaconchain.datastructures;
+package net.consensys.beaconchain.datastructures.BeaconChainState;
 
+import net.consensys.beaconchain.ethereum.core.Hash;
 import net.consensys.beaconchain.util.uint.UInt64;
 
-public class ShardAndCommittee {
+public class CrosslinkRecord {
 
-  public UInt64 shard;
-  public int[] committee;
-  private UInt64 total_validator_count;
+  private Hash shard_block_hash;
+  private UInt64 slot;
 
-  public ShardAndCommittee() {
+  public CrosslinkRecord() {
 
   }
 

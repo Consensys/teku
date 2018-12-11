@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package net.consensys.beaconchain.datastructures;
+package net.consensys.beaconchain.datastructures.BeaconChainState;
 
 import net.consensys.beaconchain.ethereum.core.Hash;
 import net.consensys.beaconchain.util.uint.UInt384;

@@ -15,13 +15,13 @@ package net.consensys.beaconchain.state;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
-import net.consensys.beaconchain.datastructures.CandidatePoWReceiptRootRecord;
-import net.consensys.beaconchain.datastructures.CrosslinkRecord;
-import net.consensys.beaconchain.datastructures.ForkData;
-import net.consensys.beaconchain.datastructures.PendingAttestationRecord;
-import net.consensys.beaconchain.datastructures.ShardAndCommittee;
-import net.consensys.beaconchain.datastructures.ShardReassignmentRecord;
-import net.consensys.beaconchain.datastructures.ValidatorRecord;
+import net.consensys.beaconchain.datastructures.BeaconChainState.CandidatePoWReceiptRootRecord;
+import net.consensys.beaconchain.datastructures.BeaconChainState.CrosslinkRecord;
+import net.consensys.beaconchain.datastructures.BeaconChainState.ForkData;
+import net.consensys.beaconchain.datastructures.BeaconChainState.PendingAttestationRecord;
+import net.consensys.beaconchain.datastructures.BeaconChainState.ShardCommittee;
+import net.consensys.beaconchain.datastructures.BeaconChainState.ShardReassignmentRecord;
+import net.consensys.beaconchain.datastructures.BeaconChainState.ValidatorRecord;
 import net.consensys.beaconchain.ethereum.core.Hash;
 import net.consensys.beaconchain.util.bytes.Bytes3;
 import net.consensys.beaconchain.util.uint.UInt64;
@@ -42,7 +42,7 @@ public class BeaconState {
   // Randomness and committees
   private Hash randao_mix;
   private Hash next_seed;
-  private ShardAndCommittee[][] shard_committees_at_slots;
+  private ShardCommittee[][] shard_committees_at_slots;
   private int[][] persistent_committees;
   private ShardReassignmentRecord[] persistent_committee_reassignments;
 

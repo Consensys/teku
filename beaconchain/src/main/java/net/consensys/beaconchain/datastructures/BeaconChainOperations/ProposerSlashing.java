@@ -1,8 +1,9 @@
-package net.consensys.beaconchain.datastructures;
+package net.consensys.beaconchain.datastructures.BeaconChainOperations;
 
+import net.consensys.beaconchain.datastructures.BeaconChainBlocks.ProposalSignedData;
 import net.consensys.beaconchain.util.uint.UInt384;
 
-public class ProposerSlashingSpecial {
+public class ProposerSlashing {
 
   private int proposer_index;
   private ProposalSignedData proposal_data_1;
@@ -10,7 +11,7 @@ public class ProposerSlashingSpecial {
   private ProposalSignedData proposal_data_2;
   private UInt384[] proposal_signature_2;
 
-  public ProposerSlashingSpecial() {
+  public ProposerSlashing() {
 
   }
 
