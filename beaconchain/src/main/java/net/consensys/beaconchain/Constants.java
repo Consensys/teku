@@ -22,12 +22,12 @@ public final class Constants {
   // Misc
   public static final int SHARD_COUNT                                    = (int) Math.pow(2, 10); // 1,024 Shards
   public static final int TARGET_COMMITTEE_SIZE                          = (int) Math.pow(2, 8); // 256 validators
-  public static final int MAX_ATTESTATIONS_PER_BLOCK                     = (int) Math.pow(2, 7);  // 128 attestations
-  public static final int MIN_BALANCE                                    = (int) Math.pow(2, 4);  // 16 Eth
+  public static final int EJECTION_BALANCE                               = (int) Math.pow(2, 4);  // 16 Eth
   public static final int MAX_BALANCE_CHURN_QUOTIENT                     = (int) Math.pow(2, 5);  // 32
   public static final int GWEI_PER_ETH                                   = (int) Math.pow(10, 9); // 1,000,000,000 Wei
   public static final int BEACON_CHAIN_SHARD_NUMBER                      = (int) Math.pow(2, 64) - 1;
-  public static final String BLS_WITHDRAWAL_CREDENTIALS                  = "0x00";
+  public static final String BLS_WITHDRAWAL_PREFIX_BYTE                  = "0x00";
+  public static final int MAX_CASPER_VOTES                               = (int) Math.pow(2, 10); // 1,024 votes
 
   // Deposit contract
   //  static final Address DEPOSIT_CONTRACT_ADDRESS               =  Value is still TBD
@@ -63,11 +63,13 @@ public final class Constants {
   public static final int EXITED_WITHOUT_PENALTY                         = 3;
   public static final int EXITED_WITH_PENALTY                            = 4;
 
-  // Special record types
-  public static final int VOLUNTARY_EXIT                                 = 0;
-  public static final int CASPER_SLASHING                                = 1;
-  public static final int PROPOSER_SLASHING                              = 2;
-  public static final int DEPOSIT_PROOF                                  = 3;
+  // Max operations per block
+  public static final int MAX_PROPOSER_SLASHINGS                         = (int) Math.pow(2, 4);  // 16
+  public static final int MAX_CASPER_SLASHINGS                           = (int) Math.pow(2, 4);  // 16
+  public static final int MAX_ATTESTATIONS                               = (int) Math.pow(2, 7);  // 128
+  public static final int MAX_DEPOSITS                                   = (int) Math.pow(2, 4);  // 16
+  public static final int MAX_EXITS                                      = (int) Math.pow(2, 4);  // 16
+
 
   // Validator registry delta flags
   public static final int ACTIVATION                                     = 0;
@@ -83,12 +85,12 @@ public final class Constants {
     return "--Misc--"
             + "\nSHARD_COUNT: " + SHARD_COUNT
             + "\nTARGET_COMMITTEE_SIZE: " + TARGET_COMMITTEE_SIZE
-            + "\nMAX_ATTESTATIONS_PER_BLOCK: " + MAX_ATTESTATIONS_PER_BLOCK
-            + "\nMIN_BALANCE: " + MIN_BALANCE
+            + "\nMIN_BALANCE: " + EJECTION_BALANCE
             + "\nMAX_BALANCE_CHURN_QUOTIENT: " + MAX_BALANCE_CHURN_QUOTIENT
             + "\nGWEI_PER_ETH: " + GWEI_PER_ETH
             + "\nBEACON_CHAIN_SHARD_NUMBER: " + BEACON_CHAIN_SHARD_NUMBER
-            + "\nBLS_WITHDRAWAL_CREDENTIALS: " + BLS_WITHDRAWAL_CREDENTIALS
+            + "\nBLS_WITHDRAWAL_CREDENTIALS: " + BLS_WITHDRAWAL_PREFIX_BYTE
+            + "\nMAX_CASPER_VOTES: " + MAX_CASPER_VOTES
 
             + "\n\n--Deposit contract--"
 //            + "\nDEPOSIT_CONTRACT_ADDRESS: " + DEPOSIT_CONTRACT_ADDRESS
@@ -124,11 +126,14 @@ public final class Constants {
             + "\nEXITED_WITHOUT_PENALTY: " + EXITED_WITHOUT_PENALTY
             + "\nEXITED_WITH_PENALTY: " + EXITED_WITH_PENALTY
 
-            + "\n\n--Special record types--"
-            + "\nVOLUNTARY_EXIT: " + VOLUNTARY_EXIT
-            + "\nCASPER_SLASHING: " + CASPER_SLASHING
-            + "\nPROPOSER_SLASHING: " + PROPOSER_SLASHING
-            + "\nDEPOSIT_PROOF: " + DEPOSIT_PROOF
+
+            + "\n\n--Max operations per block--"
+            + "\nMAX_PROPOSER_SLASHINGS: " + MAX_PROPOSER_SLASHINGS
+            + "\nMAX_CASPER_SLASHINGS: " + MAX_CASPER_SLASHINGS
+            + "\nMAX_ATTESTATIONS: " + MAX_ATTESTATIONS
+            + "\nMAX_DEPOSITS: " + MAX_DEPOSITS
+            + "\nMAX_EXITS: " + MAX_EXITS
+
 
             + "\n\n--Validator registry delta flags--"
             + "\nACTIVATION: " + ACTIVATION

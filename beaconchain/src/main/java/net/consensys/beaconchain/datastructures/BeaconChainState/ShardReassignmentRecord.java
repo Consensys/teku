@@ -1,4 +1,4 @@
-package net.consensys.beaconchain.datastructures;
+package net.consensys.beaconchain.datastructures.BeaconChainState;
 
 import net.consensys.beaconchain.util.uint.UInt64;
 
