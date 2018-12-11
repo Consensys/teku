@@ -13,7 +13,12 @@
 
 package net.consensys.beaconchain.datastructures.BeaconChainBlocks;
 
-import net.consensys.beaconchain.datastructures.BeaconChainOperations.*;
+import net.consensys.beaconchain.datastructures.BeaconChainOperations.Attestation;
+import net.consensys.beaconchain.datastructures.BeaconChainOperations.CasperSlashing;
+import net.consensys.beaconchain.datastructures.BeaconChainOperations.Deposit;
+import net.consensys.beaconchain.datastructures.BeaconChainOperations.Exit;
+import net.consensys.beaconchain.datastructures.BeaconChainOperations.ProposerSlashing;
+
 
 public class BeaconBlockBody {
 
