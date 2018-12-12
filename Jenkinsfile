@@ -33,7 +33,7 @@ try {
                 archiveArtifacts '**/build/reports/**'
                 archiveArtifacts '**/build/test-results/**'
 
-                junit '**/build/test-results/**/*.xml'
+                junit allowEmptyResults: true, testResults: '**/build/test-results/**/*.xml'
             }
         }
     }
