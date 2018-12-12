@@ -21,7 +21,7 @@ if (env.BRANCH_NAME == "master") {
 try {
     node {
         checkout scm
-        docker.image('openjdk:11-jdk-slim').inside {
+        docker.image('openjdk:8-jdk-alpine').inside {
             try {
                 stage('Build') {
                     sh './gradlew --no-daemon --parallel build'
