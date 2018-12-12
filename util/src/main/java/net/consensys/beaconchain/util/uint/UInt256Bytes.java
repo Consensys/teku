@@ -16,13 +16,17 @@ package net.consensys.beaconchain.util.uint;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
+import net.consensys.beaconchain.util.bytes.Bytes1;
 import net.consensys.beaconchain.util.bytes.Bytes3;
 import net.consensys.beaconchain.util.bytes.Bytes32;
 import net.consensys.beaconchain.util.bytes.Bytes32s;
+import net.consensys.beaconchain.util.bytes.Bytes48;
 import net.consensys.beaconchain.util.bytes.BytesValue;
 import net.consensys.beaconchain.util.bytes.BytesValues;
+import net.consensys.beaconchain.util.bytes.MutableBytes1;
 import net.consensys.beaconchain.util.bytes.MutableBytes3;
 import net.consensys.beaconchain.util.bytes.MutableBytes32;
+import net.consensys.beaconchain.util.bytes.MutableBytes48;
 
 import java.math.BigInteger;
 import java.util.function.BinaryOperator;
@@ -365,9 +369,21 @@ public abstract class UInt256Bytes {
     return bytes;
   }
 
+  public static Bytes48 ofBytes48(long v) {
+    checkArgument(v >= 0, "Argument must be positive, got %s", v);
+    MutableBytes48 bytes = MutableBytes48.create();
+    return bytes;
+  }
+
   public static Bytes3 ofBytes3(long v) {
     checkArgument(v >= 0, "Argument must be positive, got %s", v);
     MutableBytes3 bytes = MutableBytes3.create();
+    return bytes;
+  }
+
+  public static Bytes1 ofBytes1(long v) {
+    checkArgument(v >= 0, "Argument must be positive, got %s", v);
+    MutableBytes1 bytes = MutableBytes1.create();
     return bytes;
   }
 
