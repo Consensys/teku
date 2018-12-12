@@ -20,11 +20,13 @@ import net.consensys.beaconchain.util.bytes.Bytes1;
 import net.consensys.beaconchain.util.bytes.Bytes3;
 import net.consensys.beaconchain.util.bytes.Bytes32;
 import net.consensys.beaconchain.util.bytes.Bytes32s;
+import net.consensys.beaconchain.util.bytes.Bytes48;
 import net.consensys.beaconchain.util.bytes.BytesValue;
 import net.consensys.beaconchain.util.bytes.BytesValues;
 import net.consensys.beaconchain.util.bytes.MutableBytes1;
 import net.consensys.beaconchain.util.bytes.MutableBytes3;
 import net.consensys.beaconchain.util.bytes.MutableBytes32;
+import net.consensys.beaconchain.util.bytes.MutableBytes48;
 
 import java.math.BigInteger;
 import java.util.function.BinaryOperator;
@@ -364,6 +366,12 @@ public abstract class UInt256Bytes {
     checkArgument(v >= 0, "Argument must be positive, got %s", v);
     MutableBytes32 bytes = MutableBytes32.create();
     bytes.setLong(Bytes32.SIZE - 8, v);
+    return bytes;
+  }
+
+  public static Bytes48 ofBytes48(long v) {
+    checkArgument(v >= 0, "Argument must be positive, got %s", v);
+    MutableBytes48 bytes = MutableBytes48.create();
     return bytes;
   }
 
