@@ -1,5 +1,6 @@
 #!/usr/bin/env groovy
 
+//badedit
 if (env.BRANCH_NAME == "master") {
     properties([
         buildDiscarder(
