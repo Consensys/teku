@@ -41,8 +41,7 @@ try {
     currentBuild.result = 'FAILURE'
 } finally {
     // If we're on master and it failed, notify slack
-    // DELIBERATELY DISABLED FOR THIS PROJECT
-    if (false && env.BRANCH_NAME == "master") {
+    if (env.BRANCH_NAME == "master") {
         def currentResult = currentBuild.result ?: 'SUCCESS'
         def channel = '#team-pegasys-rd-bc'
         if (currentResult == 'SUCCESS') {
