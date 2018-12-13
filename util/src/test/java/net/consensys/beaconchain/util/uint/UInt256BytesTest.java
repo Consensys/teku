@@ -11,12 +11,12 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package net.consensys.beaconchain.util.uint;
+package net.consensys.artemis.util.uint;
 
-import net.consensys.beaconchain.util.bytes.Bytes32;
-import net.consensys.beaconchain.util.bytes.MutableBytes32;
-import net.consensys.beaconchain.util.uint.UInt256Bytes.BinaryLongOp;
-import net.consensys.beaconchain.util.uint.UInt256Bytes.BinaryOp;
+import net.consensys.artemis.util.bytes.Bytes32;
+import net.consensys.artemis.util.bytes.MutableBytes32;
+import net.consensys.artemis.util.uint.UInt256Bytes.BinaryLongOp;
+import net.consensys.artemis.util.uint.UInt256Bytes.BinaryOp;
 
 import java.math.BigInteger;
 

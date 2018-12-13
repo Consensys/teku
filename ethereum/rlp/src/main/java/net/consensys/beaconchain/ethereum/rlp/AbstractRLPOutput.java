@@ -11,16 +11,16 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package net.consensys.beaconchain.ethereum.rlp;
+package net.consensys.artemis.ethereum.rlp;
 
 import static com.google.common.base.Preconditions.checkState;
-import static net.consensys.beaconchain.ethereum.rlp.RLPEncodingHelpers.elementSize;
-import static net.consensys.beaconchain.ethereum.rlp.RLPEncodingHelpers.listSize;
-import static net.consensys.beaconchain.ethereum.rlp.RLPEncodingHelpers.writeElement;
-import static net.consensys.beaconchain.ethereum.rlp.RLPEncodingHelpers.writeListHeader;
+import static net.consensys.artemis.ethereum.rlp.RLPEncodingHelpers.elementSize;
+import static net.consensys.artemis.ethereum.rlp.RLPEncodingHelpers.listSize;
+import static net.consensys.artemis.ethereum.rlp.RLPEncodingHelpers.writeElement;
+import static net.consensys.artemis.ethereum.rlp.RLPEncodingHelpers.writeListHeader;
 
-import net.consensys.beaconchain.util.bytes.BytesValue;
-import net.consensys.beaconchain.util.bytes.MutableBytesValue;
+import net.consensys.artemis.util.bytes.BytesValue;
+import net.consensys.artemis.util.bytes.MutableBytesValue;
 
 import java.util.ArrayList;
 import java.util.Arrays;

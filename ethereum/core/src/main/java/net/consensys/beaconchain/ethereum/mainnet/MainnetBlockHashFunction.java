@@ -11,12 +11,12 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package net.consensys.beaconchain.ethereum.mainnet;
+package net.consensys.artemis.ethereum.mainnet;
 
-import net.consensys.beaconchain.ethereum.core.BlockHeader;
-import net.consensys.beaconchain.ethereum.core.Hash;
-import net.consensys.beaconchain.ethereum.rlp.RLP;
-import net.consensys.beaconchain.util.bytes.BytesValue;
+import net.consensys.artemis.ethereum.core.BlockHeader;
+import net.consensys.artemis.ethereum.core.Hash;
+import net.consensys.artemis.ethereum.rlp.RLP;
+import net.consensys.artemis.util.bytes.BytesValue;
 
 /**
  * Implements the block hashing algorithm for MainNet as per the yellow paper.

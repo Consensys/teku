@@ -11,13 +11,13 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package net.consensys.beaconchain.ethereum.core;
+package net.consensys.artemis.ethereum.core;
 
 
-import net.consensys.beaconchain.ethereum.rlp.RLPInput;
-import net.consensys.beaconchain.ethereum.rlp.RLPOutput;
-import net.consensys.beaconchain.util.bytes.BytesValue;
-import net.consensys.beaconchain.util.uint.UInt256;
+import net.consensys.artemis.ethereum.rlp.RLPInput;
+import net.consensys.artemis.ethereum.rlp.RLPOutput;
+import net.consensys.artemis.util.bytes.BytesValue;
+import net.consensys.artemis.util.uint.UInt256;
 
 import java.util.Objects;
 

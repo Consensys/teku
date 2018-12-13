@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package net.consensys.beaconchain.util.bytes;
+package net.consensys.artemis.util.bytes;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkElementIndex;

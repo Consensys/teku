@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package net.consensys.beaconchain.util.uint;
+package net.consensys.artemis.util.uint;
 
 import java.util.Objects;
 

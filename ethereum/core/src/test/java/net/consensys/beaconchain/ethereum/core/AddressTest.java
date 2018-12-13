@@ -11,10 +11,10 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package net.consensys.beaconchain.ethereum.vm;
+package net.consensys.artemis.ethereum.vm;
 
-import net.consensys.beaconchain.ethereum.core.Address;
-import net.consensys.beaconchain.util.bytes.BytesValue;
+import net.consensys.artemis.ethereum.core.Address;
+import net.consensys.artemis.util.bytes.BytesValue;
 
 import org.junit.Assert;
 import org.junit.Test;

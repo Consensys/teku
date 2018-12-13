@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package net.consensys.beaconchain.util.bytes;
+package net.consensys.artemis.util.bytes;
 
 /**
  * Base interface for a value whose content is stored with exactly 32 bytes.

@@ -1,7 +1,7 @@
 apply plugin: 'java-library'
 
 jar {
-  baseName 'beaconchain-crypto'
+  baseName 'artemis-crypto'
   manifest {
     attributes('Implementation-Title': baseName,
     'Implementation-Version': project.version)

@@ -1,7 +1,7 @@
 apply plugin: 'java-library'
 
 jar {
-  baseName 'beaconchain-core'
+  baseName 'artemis-core'
   manifest {
     attributes('Implementation-Title': baseName,
     'Implementation-Version': project.version)

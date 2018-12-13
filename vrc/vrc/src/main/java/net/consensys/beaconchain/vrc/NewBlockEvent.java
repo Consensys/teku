@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package net.consensys.beaconchain.vrc;
+package net.consensys.artemis.vrc;
 
 //TODO: This class needs to be modified to contain
 // the block info that the beacon chain needs.

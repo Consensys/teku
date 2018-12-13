@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package net.consensys.beaconchain.util.bytes;
+package net.consensys.artemis.util.bytes;
 
 /** Static utility methods to work with {@link Bytes48}. */
 public abstract class Bytes48s {
