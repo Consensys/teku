@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package net.consensys.beaconchain.ethereum.rlp;
+package net.consensys.artemis.ethereum.rlp;
 
 /**
  * Exception thrown if an RLP input is corrupted and cannot be decoded properly.

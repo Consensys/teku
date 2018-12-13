@@ -11,13 +11,13 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package net.consensys.beaconchain.util.uint;
+package net.consensys.artemis.util.uint;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
-import net.consensys.beaconchain.util.bytes.AbstractBytes32Backed;
-import net.consensys.beaconchain.util.bytes.Bytes32;
-import net.consensys.beaconchain.util.bytes.MutableBytes32;
+import net.consensys.artemis.util.bytes.AbstractBytes32Backed;
+import net.consensys.artemis.util.bytes.Bytes32;
+import net.consensys.artemis.util.bytes.MutableBytes32;
 
 /**
  * Default implementation of a {@link Int256}.

@@ -11,9 +11,9 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package net.consensys.beaconchain.ethereum.core;
+package net.consensys.artemis.ethereum.core;
 
-import net.consensys.beaconchain.util.uint.UInt256;
+import net.consensys.artemis.util.uint.UInt256;
 
 
 /**

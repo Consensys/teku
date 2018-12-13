@@ -11,14 +11,14 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package net.consensys.beaconchain.ethereum.rlp;
+package net.consensys.artemis.ethereum.rlp;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
-import net.consensys.beaconchain.util.bytes.BytesValue;
-import net.consensys.beaconchain.util.bytes.BytesValues;
-import net.consensys.beaconchain.util.bytes.MutableBytesValue;
-import net.consensys.beaconchain.util.uint.UInt256Value;
+import net.consensys.artemis.util.bytes.BytesValue;
+import net.consensys.artemis.util.bytes.BytesValues;
+import net.consensys.artemis.util.bytes.MutableBytesValue;
+import net.consensys.artemis.util.uint.UInt256Value;
 
 import java.math.BigInteger;
 import java.net.InetAddress;

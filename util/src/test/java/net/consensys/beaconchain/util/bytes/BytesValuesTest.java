@@ -11,17 +11,17 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package net.consensys.beaconchain.util.bytes;
+package net.consensys.artemis.util.bytes;
 
-import static net.consensys.beaconchain.util.bytes.BytesValue.fromHexString;
-import static net.consensys.beaconchain.util.bytes.BytesValues.asSignedBigInteger;
-import static net.consensys.beaconchain.util.bytes.BytesValues.asUnsignedBigInteger;
-import static net.consensys.beaconchain.util.bytes.BytesValues.concatenate;
-import static net.consensys.beaconchain.util.bytes.BytesValues.extractInt;
-import static net.consensys.beaconchain.util.bytes.BytesValues.extractLong;
-import static net.consensys.beaconchain.util.bytes.BytesValues.ofUnsignedShort;
-import static net.consensys.beaconchain.util.bytes.BytesValues.toMinimalBytes;
-import static net.consensys.beaconchain.util.bytes.BytesValues.trimLeadingZeros;
+import static net.consensys.artemis.util.bytes.BytesValue.fromHexString;
+import static net.consensys.artemis.util.bytes.BytesValues.asSignedBigInteger;
+import static net.consensys.artemis.util.bytes.BytesValues.asUnsignedBigInteger;
+import static net.consensys.artemis.util.bytes.BytesValues.concatenate;
+import static net.consensys.artemis.util.bytes.BytesValues.extractInt;
+import static net.consensys.artemis.util.bytes.BytesValues.extractLong;
+import static net.consensys.artemis.util.bytes.BytesValues.ofUnsignedShort;
+import static net.consensys.artemis.util.bytes.BytesValues.toMinimalBytes;
+import static net.consensys.artemis.util.bytes.BytesValues.trimLeadingZeros;
 import static org.junit.Assert.assertEquals;
 
 import java.math.BigInteger;

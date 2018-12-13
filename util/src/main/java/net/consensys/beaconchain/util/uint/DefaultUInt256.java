@@ -11,9 +11,9 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package net.consensys.beaconchain.util.uint;
+package net.consensys.artemis.util.uint;
 
-import net.consensys.beaconchain.util.bytes.Bytes32;
+import net.consensys.artemis.util.bytes.Bytes32;
 
 /**
  * Default implementation of a {@link UInt256}.

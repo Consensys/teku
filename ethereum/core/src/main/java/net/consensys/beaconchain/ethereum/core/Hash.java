@@ -11,14 +11,14 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package net.consensys.beaconchain.ethereum.core;
+package net.consensys.artemis.ethereum.core;
 
-import static net.consensys.beaconchain.crypto.Hash.keccak256;
+import static net.consensys.artemis.crypto.Hash.keccak256;
 
-import net.consensys.beaconchain.ethereum.rlp.RLP;
-import net.consensys.beaconchain.util.bytes.Bytes32;
-import net.consensys.beaconchain.util.bytes.BytesValue;
-import net.consensys.beaconchain.util.bytes.DelegatingBytes32;
+import net.consensys.artemis.ethereum.rlp.RLP;
+import net.consensys.artemis.util.bytes.Bytes32;
+import net.consensys.artemis.util.bytes.BytesValue;
+import net.consensys.artemis.util.bytes.DelegatingBytes32;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 

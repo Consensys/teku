@@ -11,11 +11,11 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package net.consensys.beaconchain.ethereum.core;
+package net.consensys.artemis.ethereum.core;
 
 import static org.junit.Assert.assertEquals;
 
-import net.consensys.beaconchain.util.bytes.BytesValue;
+import net.consensys.artemis.util.bytes.BytesValue;
 
 import java.util.ArrayList;
 import java.util.List;

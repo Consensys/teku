@@ -11,22 +11,22 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package net.consensys.beaconchain.util.uint;
+package net.consensys.artemis.util.uint;
 
 
 import static com.google.common.base.Preconditions.checkArgument;
 
-import net.consensys.beaconchain.util.bytes.Bytes1;
-import net.consensys.beaconchain.util.bytes.Bytes3;
-import net.consensys.beaconchain.util.bytes.Bytes32;
-import net.consensys.beaconchain.util.bytes.Bytes32s;
-import net.consensys.beaconchain.util.bytes.Bytes48;
-import net.consensys.beaconchain.util.bytes.BytesValue;
-import net.consensys.beaconchain.util.bytes.BytesValues;
-import net.consensys.beaconchain.util.bytes.MutableBytes1;
-import net.consensys.beaconchain.util.bytes.MutableBytes3;
-import net.consensys.beaconchain.util.bytes.MutableBytes32;
-import net.consensys.beaconchain.util.bytes.MutableBytes48;
+import net.consensys.artemis.util.bytes.Bytes1;
+import net.consensys.artemis.util.bytes.Bytes3;
+import net.consensys.artemis.util.bytes.Bytes32;
+import net.consensys.artemis.util.bytes.Bytes32s;
+import net.consensys.artemis.util.bytes.Bytes48;
+import net.consensys.artemis.util.bytes.BytesValue;
+import net.consensys.artemis.util.bytes.BytesValues;
+import net.consensys.artemis.util.bytes.MutableBytes1;
+import net.consensys.artemis.util.bytes.MutableBytes3;
+import net.consensys.artemis.util.bytes.MutableBytes32;
+import net.consensys.artemis.util.bytes.MutableBytes48;
 
 import java.math.BigInteger;
 import java.util.function.BinaryOperator;

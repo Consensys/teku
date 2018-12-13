@@ -11,9 +11,9 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package net.consensys.beaconchain.ethereum.rlp;
+package net.consensys.artemis.ethereum.rlp;
 
-import net.consensys.beaconchain.util.bytes.BytesValue;
+import net.consensys.artemis.util.bytes.BytesValue;
 
 import java.util.ArrayList;
 import java.util.List;

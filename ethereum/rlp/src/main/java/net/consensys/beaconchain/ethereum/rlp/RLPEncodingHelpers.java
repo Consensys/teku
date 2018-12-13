@@ -11,10 +11,10 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package net.consensys.beaconchain.ethereum.rlp;
+package net.consensys.artemis.ethereum.rlp;
 
-import net.consensys.beaconchain.util.bytes.BytesValue;
-import net.consensys.beaconchain.util.bytes.MutableBytesValue;
+import net.consensys.artemis.util.bytes.BytesValue;
+import net.consensys.artemis.util.bytes.MutableBytesValue;
 
 /**
  * Helper static methods to facilitate RLP encoding <b>within this package</b>. Neither this class

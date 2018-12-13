@@ -11,13 +11,13 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package net.consensys.beaconchain.util.bytes;
+package net.consensys.artemis.util.bytes;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
-import net.consensys.beaconchain.util.uint.Int256;
-import net.consensys.beaconchain.util.uint.UInt256;
-import net.consensys.beaconchain.util.uint.UInt256Bytes;
+import net.consensys.artemis.util.uint.Int256;
+import net.consensys.artemis.util.uint.UInt256;
+import net.consensys.artemis.util.uint.UInt256Bytes;
 
 
 /**

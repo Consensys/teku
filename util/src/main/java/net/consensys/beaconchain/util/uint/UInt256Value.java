@@ -11,11 +11,11 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package net.consensys.beaconchain.util.uint;
+package net.consensys.artemis.util.uint;
 
 import static com.google.common.base.Preconditions.checkState;
 
-import net.consensys.beaconchain.util.bytes.Bytes32Backed;
+import net.consensys.artemis.util.bytes.Bytes32Backed;
 
 /**
  * Represents a 256-bits (32 bytes) unsigned integer value.

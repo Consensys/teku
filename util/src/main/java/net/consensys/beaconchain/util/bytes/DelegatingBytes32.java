@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package net.consensys.beaconchain.util.bytes;
+package net.consensys.artemis.util.bytes;
 
 public class DelegatingBytes32 extends BaseDelegatingBytesValue<Bytes32> implements Bytes32 {
   protected DelegatingBytes32(Bytes32 wrapped) {
