@@ -13,11 +13,9 @@
 
 package net.consensys.errorpronechecks;
 
-
 import com.google.errorprone.CompilationTestHelper;
 import org.junit.Before;
 import org.junit.Test;
-
 
 public class DoNotInvokeMessageDigestDirectlyTest {
 
@@ -38,5 +36,4 @@ public class DoNotInvokeMessageDigestDirectlyTest {
   public void doNotInvokeMessageDigestDirectlyNegativeCases() {
     compilationHelper.addSourceFile("DoNotInvokeMessageDigestDirectlyNegativeCases.java").doTest();
   }
-
 }

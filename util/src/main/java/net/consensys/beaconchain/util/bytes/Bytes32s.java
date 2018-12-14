@@ -55,7 +55,7 @@ public abstract class Bytes32s {
 
   public static void not(Bytes32 v, MutableBytes32 result) {
     for (int i = 0; i < Bytes32.SIZE; i++) {
-      result.set(i, (byte) (~v.get(i)));
+      result.set(i, (byte) ~v.get(i));
     }
   }
 

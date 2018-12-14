@@ -55,7 +55,7 @@ public class Bytes3s {
 
   public static void not(Bytes3 v, MutableBytes3 result) {
     for (int i = 0; i < Bytes3.SIZE; i++) {
-      result.set(i, (byte) (~v.get(i)));
+      result.set(i, (byte) ~v.get(i));
     }
   }
 

@@ -2,13 +2,13 @@ import net.ltgt.gradle.errorprone.CheckSeverity
 
 plugins {
   id 'com.diffplug.gradle.spotless' version '3.13.0'
-  id 'com.palantir.git-version' version '0.10.0'
-  id 'io.spring.dependency-management' version '1.0.4.RELEASE'
-  id 'com.github.hierynomus.license' version '0.14.0'
-  id 'net.ltgt.errorprone' version '0.6'
-  id 'me.champeau.gradle.jmh' version '0.4.5' apply false
   id 'com.jfrog.bintray' version '1.8.4'
-  id 'net.researchgate.release' version '2.6.0'
+  id 'com.github.ben-manes.versions' version '0.20.0'
+  id 'com.github.hierynomus.license' version '0.15.0'
+  id 'io.spring.dependency-management' version '1.0.6.RELEASE'
+  id 'me.champeau.gradle.jmh' version '0.4.7' apply false
+  id 'net.ltgt.errorprone' version '0.6'
+  id 'net.researchgate.release' version '2.7.0'
 }
 
 // defaultTasks 'build', 'checkLicenses', 'javadoc'
@@ -55,7 +55,6 @@ allprojects {
   apply plugin: 'io.spring.dependency-management'
   apply plugin: 'jacoco'
   apply plugin: 'net.ltgt.errorprone'
-  apply plugin: 'com.jfrog.bintray'
   apply from: "${rootDir}/gradle/versions.gradle"
   apply from: "${rootDir}/gradle/check-licenses.gradle"
 
@@ -69,7 +68,6 @@ allprojects {
   repositories {
     if ("$System.env.JENKINS_URL" == 'https://jenkins.pegasys.tech/') {
       maven { url "https://nexus.int.pegasys.tech/repository/jcenter/" }
-      maven { url  "https://consensys.bintray.com/pegasys-repo" }
     } else {
       jcenter()
       mavenCentral()
@@ -114,12 +112,18 @@ allprojects {
     ]
 
     options.errorprone {
-      excludedPaths '.*/(generated|.*ReferenceTest_.*)'
+      excludedPaths '.*/(generated/*.*|.*ReferenceTest_.*)'
+
+      // We like to use futures with no return values.
       check('FutureReturnValueIgnored', CheckSeverity.OFF)
-      check('InsecureCryptoUsage', CheckSeverity.WARN)
+      // We use the JSR-305 annotations instead of the Google annotations.
+      check('ImmutableEnumChecker', CheckSeverity.OFF)
+
       check('FieldCanBeFinal', CheckSeverity.WARN)
+      check('InsecureCryptoUsage', CheckSeverity.WARN)
       check('WildcardImport', CheckSeverity.WARN)
     }
+    options.encoding = 'UTF-8'
   }
 
   /*
@@ -168,6 +172,11 @@ allprojects {
   // Normalise Xdoclint behaviour across JDKs (OpenJDK 8 is more lenient than Oracle JDK by default).
   javadoc {
     options.addStringOption('Xdoclint:all', '-quiet')
+    if (JavaVersion.current() == JavaVersion.VERSION_1_8) {
+      options.addStringOption('Xwerror', '-quiet')
+    } else {
+      options.addStringOption('Xwerror', '-html5')
+    }
     options.encoding = 'UTF-8'
   }
 
@@ -227,7 +236,7 @@ subprojects {
 
   task integrationTest(type: Test, dependsOn:["compileTestJava"]){
     group = "verification"
-    description = "Runs the Pantheon Integration Test"
+    description = "Runs the Artemis integration tests"
 
     testClassesDirs = sourceSets.integrationTest.output.classesDirs
     classpath = sourceSets.integrationTest.runtimeClasspath
@@ -254,41 +263,6 @@ subprojects {
     }
 
     dependencies { jmh 'org.apache.logging.log4j:log4j-api' }
-  }
-
-  afterEvaluate {
-    if (project.jar.enabled) {
-      publishing {
-        publications {
-          MavenDeployment(MavenPublication) {
-            from components.java
-            groupId 'net.consensys.artemis'
-            artifactId project.jar.baseName
-            version project.version
-          }
-        }
-      }
-
-      bintray {
-        user = System.getenv('BINTRAY_USER')
-        key = System.getenv('BINTRAY_KEY')
-        publications = ['MavenDeployment']
-        pkg {
-          repo = rootProject.name.toLowerCase()
-          name = rootProject.name.capitalize()
-          userOrg = 'consensys'
-          licenses = ['Apache-2.0']
-          version {
-            name = project.version
-            desc = rootProject.name.capitalize() + ' distribution'
-            released  = new Date()
-            vcsTag = project.version
-          }
-        }
-      }
-
-      deploy.dependsOn bintrayUpload
-    }
   }
 }
 
@@ -320,7 +294,7 @@ startScripts {
 
 dependencies {
   compile project(':artemis')
-  errorprone 'com.google.errorprone:error_prone_core:2.3.1'
+  errorprone 'com.google.errorprone:error_prone_core'
   compile ('org.web3j:core:3.5.0')
 }
 
@@ -369,9 +343,6 @@ configure(subprojects.findAll {it.name != 'errorprone-checks'}) {
   dependencies { annotationProcessor project(":errorprone-checks") }
 
   tasks.withType(JavaCompile) {
-    options.compilerArgs += [
-      '-processorpath',
-      configurations.annotationProcessor.asPath
-    ]
+    options.annotationProcessorPath = configurations.annotationProcessor
   }
 }

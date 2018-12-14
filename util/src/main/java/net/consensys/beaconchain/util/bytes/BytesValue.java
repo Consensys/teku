@@ -339,7 +339,7 @@ public interface BytesValue extends Comparable<BytesValue> {
     checkArgument(i <= size() - 8,
         "Value of size %s has not enough bytes to read a 8 bytes long from index %s", size(), i);
 
-    return (((long) getInt(i)) << 32) | (((long) (getInt(i + 4))) & 0xFFFFFFFFL);
+    return (((long) getInt(i)) << 32) | (((long) getInt(i + 4)) & 0xFFFFFFFFL);
   }
 
   /**

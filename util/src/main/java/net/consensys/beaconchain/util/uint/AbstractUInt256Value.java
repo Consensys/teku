@@ -174,6 +174,7 @@ abstract class AbstractUInt256Value<T extends UInt256Value<T>> extends AbstractB
     return UInt256Bytes.compareUnsigned(bytes(), other.bytes());
   }
 
+  @SuppressWarnings("EqualsGetClass")
   @Override
   public boolean equals(Object other) {
     if (other == null)
