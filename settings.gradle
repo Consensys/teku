@@ -1,3 +1,6 @@
+
+enableFeaturePreview('STABLE_PUBLISHING')
+
 rootProject.name='artemis'
 include 'crypto'
 include 'ethereum:core'

@@ -34,16 +34,19 @@ import com.sun.source.tree.Tree;
  * https://github.com/google/error-prone/wiki/Writing-a-check
  */
 
-
 @AutoService(BugChecker.class) // the service descriptor
-@BugPattern(name = "DoNotReturnNullOptionals", summary = "Do not return null optionals.",
-    category = JDK, severity = SUGGESTION)
+@BugPattern(
+  name = "DoNotReturnNullOptionals",
+  summary = "Do not return null optionals.",
+  category = JDK,
+  severity = SUGGESTION
+)
 public class DoNotReturnNullOptionals extends BugChecker implements MethodTreeMatcher {
 
   private static class ReturnNullMatcher implements Matcher<Tree> {
 
     @Override
-    public boolean matches(Tree tree, VisitorState state) {
+    public boolean matches(final Tree tree, final VisitorState state) {
       if ((tree instanceof ReturnTree) && (((ReturnTree) tree).getExpression() != null)) {
         return ((ReturnTree) tree).getExpression().getKind() == NULL_LITERAL;
       }
@@ -55,9 +58,11 @@ public class DoNotReturnNullOptionals extends BugChecker implements MethodTreeMa
   private static final Matcher<Tree> CONTAINS_RETURN_NULL = contains(RETURN_NULL);
 
   @Override
-  public Description matchMethod(MethodTree tree, VisitorState state) {
-    if ((tree.getReturnType() == null) || !tree.getReturnType().toString().startsWith("Optional<")
-        || (tree.getBody() == null) || (!CONTAINS_RETURN_NULL.matches(tree.getBody(), state))) {
+  public Description matchMethod(final MethodTree tree, final VisitorState state) {
+    if ((tree.getReturnType() == null)
+        || !tree.getReturnType().toString().startsWith("Optional<")
+        || (tree.getBody() == null)
+        || !CONTAINS_RETURN_NULL.matches(tree.getBody(), state)) {
       return Description.NO_MATCH;
     }
     return describeMatch(tree);

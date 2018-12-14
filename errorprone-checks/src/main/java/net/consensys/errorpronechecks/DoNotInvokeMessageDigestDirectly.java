@@ -24,16 +24,19 @@ import com.google.errorprone.bugpatterns.BugChecker.MethodInvocationTreeMatcher;
 import com.google.errorprone.matchers.Description;
 import com.sun.source.tree.MethodInvocationTree;
 
-
 @AutoService(BugChecker.class)
-@BugPattern(name = "DoNotInvokeMessageDigestDirectly",
-    summary = "Do not invoke MessageDigest.getInstance directly.", category = JDK,
-    severity = WARNING)
+@BugPattern(
+  name = "DoNotInvokeMessageDigestDirectly",
+  summary = "Do not invoke MessageDigest.getInstance directly.",
+  category = JDK,
+  severity = WARNING
+)
 public class DoNotInvokeMessageDigestDirectly extends BugChecker
     implements MethodInvocationTreeMatcher {
 
   @Override
-  public Description matchMethodInvocation(MethodInvocationTree tree, VisitorState state) {
+  public Description matchMethodInvocation(
+      final MethodInvocationTree tree, final VisitorState state) {
     if (tree.getMethodSelect().toString().equals("MessageDigest.getInstance")) {
       return describeMatch(tree);
     }
