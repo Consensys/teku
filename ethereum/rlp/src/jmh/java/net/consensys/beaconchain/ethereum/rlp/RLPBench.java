@@ -11,9 +11,9 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package net.consensys.artemis.ethereum.rlp;
+package tech.pegasys.artemis.ethereum.rlp;
 
-import net.consensys.artemis.util.bytes.BytesValue;
+import tech.pegasys.artemis.util.bytes.BytesValue;
 
 import java.util.ArrayList;
 import java.util.List;
