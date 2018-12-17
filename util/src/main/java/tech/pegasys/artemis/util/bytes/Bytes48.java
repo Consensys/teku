@@ -19,6 +19,8 @@ import tech.pegasys.artemis.util.uint.Int256;
 import tech.pegasys.artemis.util.uint.UInt256;
 import tech.pegasys.artemis.util.uint.UInt256Bytes;
 
+import java.util.Arrays;
+
 
 /**
  * A {@link BytesValue} that is guaranteed to contain exactly 48 bytes.
@@ -31,6 +33,26 @@ public interface Bytes48 extends BytesValue {
   Bytes48 FALSE = UInt256Bytes.ofBytes48(0);
   Bytes48 TRUE = UInt256Bytes.ofBytes48(1);
   Bytes48 ZERO = wrap(new byte[48]);
+
+  /**
+   * Converts int to Bytes48 in Big Endian byte order.
+   *
+   * @param seed  converted
+   * @return      converted Bytes48
+   * @throws IllegalArgumentException if seed is a negative value.
+   */
+  static Bytes48 intToBytes48(int seed) {
+    byte[] bytes = new byte[48];
+    if(seed < 0) {
+      Arrays.fill(bytes, 0, 44, (byte) 0xFF);
+    } else {
+      Arrays.fill(bytes, 0, 44, (byte) 0x0);
+    }
+    for(int i = 44; i < 48; ++i) {
+      bytes[i] = (byte) ((seed >> ((47-i) * 8)) & 0xFF);
+    }
+    return Bytes48.wrap(bytes);
+  }
 
   /**
    * Wraps the provided byte array, which must be of length 48, as a {@link Bytes48}.

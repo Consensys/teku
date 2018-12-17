@@ -14,6 +14,7 @@
 package tech.pegasys.artemis.util.bytes;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.artemis.util.bytes.Bytes48.intToBytes48;
 
 import org.junit.Test;
 
@@ -27,6 +28,20 @@ public class Bytes48Test {
   @Test(expected = IllegalArgumentException.class)
   public void failsWhenWrappingArrayLargerThan48() {
     Bytes48.wrap(new byte[49]);
+  }
+
+  @Test
+  public void convertIntToBytes48() {
+    Bytes48 expected = Bytes48.wrap(new byte[]
+        {(byte) 0, (byte) 0, (byte) 0, (byte) 0, (byte) 0, (byte) 0, (byte) 0, (byte) 0,
+            (byte) 0, (byte) 0, (byte) 0, (byte) 0, (byte) 0, (byte) 0, (byte) 0, (byte) 0,
+            (byte) 0, (byte) 0, (byte) 0, (byte) 0, (byte) 0, (byte) 0, (byte) 0, (byte) 0,
+            (byte) 0, (byte) 0, (byte) 0, (byte) 0, (byte) 0, (byte) 0, (byte) 0, (byte) 0,
+            (byte) 0, (byte) 0, (byte) 0, (byte) 0, (byte) 0, (byte) 0, (byte) 0, (byte) 0,
+            (byte) 0, (byte) 0, (byte) 0, (byte) 0, (byte) 20, (byte) 103, (byte) -62, (byte) 41});
+    Bytes48 actual =
+        intToBytes48(342344233);
+    assertThat(actual).isEqualTo(expected);
   }
 
   @Test
