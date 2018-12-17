@@ -14,6 +14,7 @@
 package tech.pegasys.artemis.util.bytes;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.artemis.util.bytes.Bytes3.intToBytes3;
 
 import org.junit.Test;
 
@@ -28,6 +29,19 @@ public class Bytes3Test {
   public void failsWhenWrappingArrayLargerThan3() {
     Bytes3.wrap(new byte[4]);
   }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void failsWhenInvalidArgumentIntToBytes3() {
+    intToBytes3(-1);
+  }
+
+  @Test
+  public void convertIntToBytes3() {
+    Bytes3 expected = Bytes3.wrap(new byte[]{(byte) 1, (byte) 256, (byte) 65656});
+    Bytes3 actual = intToBytes3(65656);
+    assertThat(actual).isEqualTo(expected);
+  }
+
 
   @Test
   public void leftPadAValueToBytes3() {
