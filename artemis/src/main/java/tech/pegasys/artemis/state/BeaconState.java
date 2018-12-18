@@ -25,6 +25,7 @@ import tech.pegasys.artemis.datastructures.BeaconChainState.ValidatorRecord;
 import tech.pegasys.artemis.ethereum.core.Hash;
 import tech.pegasys.artemis.util.uint.UInt64;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -32,8 +33,13 @@ import com.google.common.annotations.VisibleForTesting;
 
 public class BeaconState {
 
+  // Misc
+  private UInt64 slot;
+  private UInt64 genesis_time;
+  private ForkData fork_data;
+
   // Validator registry
-  private ValidatorRecord[] validator_registry;
+  private ArrayList<ValidatorRecord> validator_registry;
   private UInt64 validator_registry_latest_change_slot;
   private UInt64 validator_registry_exit_count;
   private Hash validator_registry_delta_chain_tip;
@@ -48,23 +54,19 @@ public class BeaconState {
   // Finality
   private UInt64 previous_justified_slot;
   private UInt64 justified_slot;
-  private UInt64 justified_slot_bitfield;
+  private UInt64 justification_bitfield;
   private UInt64 finalized_slot;
 
   // Recent state
   private CrosslinkRecord[] latest_crosslinks;
-  private UInt64 latest_state_recalculation_slot;
-  private Hash[] latest_block_hashes;
-  private UInt64[] latest_penalized_exit_balances;
+  private Hash[] latest_block_roots;
+  private UInt64 latest_penalized_exit_balances;
   private PendingAttestationRecord[] latest_attestations;
+  private Hash[] batched_block_roots;
 
   // PoW receipt root
   private Hash processed_pow_receipt_root;
   private CandidatePoWReceiptRootRecord[] candidate_pow_receipt_roots;
-
-  // Misc
-  private UInt64 genesis_time;
-  private ForkData fork_data;
 
   static class BeaconStateHelperFunctions {
 
