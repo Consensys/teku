@@ -16,14 +16,14 @@ package tech.pegasys.artemis.datastructures.BeaconChainOperations;
 import tech.pegasys.artemis.ethereum.core.Hash;
 import tech.pegasys.artemis.util.uint.UInt384;
 
-public class DepositParameters {
+public class DepositInput {
 
   private UInt384 pubkey;
-  private UInt384[] proof_of_possession;
   private Hash withdrawal_credentials;
   private Hash randao_commitment;
+  private UInt384[] proof_of_possession;
 
-  public DepositParameters() {
+  public DepositInput() {
 
   }
 }
