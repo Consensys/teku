@@ -28,6 +28,8 @@ public class ValidatorRecord {
   private UInt64 latest_status_change_slot;
   private UInt64 exit_count;
 
+  public ValidatorRecord(){}
+
   public ValidatorRecord(int pubkey, Hash withdrawal_credentials, Hash randao_commitment,
                          UInt64 randao_layers, UInt64 deposit, UInt64 status, UInt64 slot, UInt64 exit_count) {
     this.pubkey = new UInt384(pubkey);
