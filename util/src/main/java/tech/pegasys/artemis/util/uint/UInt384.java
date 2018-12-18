@@ -14,4 +14,11 @@
 package tech.pegasys.artemis.util.uint;
 
 public class UInt384 {
+
+  private final long value;
+
+  public UInt384(long value) {
+    this.value = value;
+  }
+
 }
