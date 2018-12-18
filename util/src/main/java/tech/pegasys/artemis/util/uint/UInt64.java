@@ -174,10 +174,41 @@ public class UInt64 implements Comparable<UInt64> {
    * @throws IllegalArgumentException If the divisor is 0.
    */
   public UInt64 dividedBy(UInt64 divisor) {
-    if(divisor.value == 0) {
+    if(divisor.getValue() == 0) {
       throw new IllegalArgumentException("Argument 'divisor' is 0.");
     }
     return new UInt64(Long.divideUnsigned(this.value, divisor.getValue()));
+  }
+
+    /**
+   * Computes the modulo of the divisor passed in the argument and the dividend object. The result is returned as a new UInt64.
+   * <p><strong>NOTE: </strong> Java will not natively allow integer literals larger than 2^63-1,
+   * so unsigned integers between 2^63-1 and 2^64-1 MUST be representated as a negative literal.
+   * <p>If this is not desired, please use {@link #modulo(UInt64)}, i.e. modulo(UInt64.valueOf(String))
+   *
+   * @param unsignedDivisor An unsigned long to divide by when computing modulus. Please see note above about support for large unsigned longs between 2^63-1 and 2^64-1.
+   * @return A new UInt64 containing the result of the modulo operation.
+   * @throws IllegalArgumentException If the divisor is 0.
+   */
+  public UInt64 modulo(long unsignedDivisor) {
+    if(unsignedDivisor == 0) {
+      throw new IllegalArgumentException("Argument 'divisor' is 0.");
+    }
+    return new UInt64(Long.remainderUnsigned(this.value, unsignedDivisor));
+  }
+
+  /**
+   * Computes the modulo of the divisor passed in the argument and the specified dividend object. The result is returned as a new UInt64.
+   *
+   * @param divisor A UInt64 representing an unsigned long to divide by when computing modulus.
+   * @return A new UInt64 containing the result of the modulo operation.
+   * @throws IllegalArgumentException If the divisor is 0.
+   */
+  public UInt64 modulo(UInt64 divisor) {
+    if(divisor.getValue() == 0) {
+      throw new IllegalArgumentException("Argument 'divisor' is 0.");
+    }
+    return new UInt64(Long.remainderUnsigned(this.value, divisor.getValue()));
   }
 
   @Override

@@ -127,7 +127,44 @@ public class UInt64Test {
     Assert.assertEquals("UInt64.MAX_VALUE / 1", "18446744073709551615", uQuotient.toString());
     // 2^64-1 / 2 = 2^63-1
     UInt64 uQuotientMax = UInt64.MAX_VALUE.dividedBy(2);
-    Assert.assertEquals("UInt64.MAX_VALUE / 1", "9223372036854775807", uQuotientMax.toString());
+    Assert.assertEquals("UInt64.MAX_VALUE / 2", "9223372036854775807", uQuotientMax.toString());
+  }
+
+  @Test
+  public void moduloUnsigned() {
+    //Test Basic Mod Accuracy
+    // 2%1 = 2
+    mod(2, 1, "0", false);
+    // 3%1 = 3
+    mod(3, 1, "0", false);
+    // 4%2 = 0
+    mod(4, 2, "0", false);
+
+    //Test More Complex Remainder
+    // 15%16 = 15
+    mod(15, 16, "15", false);
+    // 4%3 = 1
+    mod(4, 3, "1", false);
+
+    //Divide by 0
+    // 0%0 (should throw IllegalArgumentException)
+    mod(0, 0, "0", true);
+    // 1%0 (should throw IllegalArgumentException)
+    mod(1, 0, "0", true);
+    // 0%1 = 0 (should not throw IllegalArgumentException)
+    mod(0, 1, "0", false);
+
+    //Test Edge Cases Around 32-bit and 64-bit Boundaries
+    // 2^63 % 0 (should throw IllegalArgumentException)
+    mod(Long.MIN_VALUE, 0, "0", true);
+    // 2^63 % 2 = 2^62
+    mod(Long.MIN_VALUE, 2, "0", false);
+    // 2^64-1 % 1 = 0
+    UInt64 uQuotient = UInt64.MAX_VALUE.modulo(1);
+    Assert.assertEquals("UInt64.MAX_VALUE % 1", "0", uQuotient.toString());
+    // 2^64-1 % 2 = 1
+    UInt64 uQuotientMax = UInt64.MAX_VALUE.modulo(2);
+    Assert.assertEquals("UInt64.MAX_VALUE % 2", "1", uQuotientMax.toString());
   }
 
   private void add(long augend, long addend, String expectedSum) {
@@ -195,20 +232,32 @@ public class UInt64Test {
 
   private void divide(long dividend, long divisor, String expectedQuotient, boolean shouldThrow) {
     if(shouldThrow) {
-      divideExpectException(dividend, divisor, expectedQuotient);
+      divideExpectException(dividend, divisor, expectedQuotient, false);
     } else {
-      divideExpectResult(dividend, divisor, expectedQuotient);
+      divideExpectResult(dividend, divisor, expectedQuotient, false);
     }
   }
 
-  private void divideExpectException(long dividend, long divisor, String expectedQuotient) {
+  private void mod(long dividend, long divisor, String expectedQuotient, boolean shouldThrow) {
+    if(shouldThrow) {
+      divideExpectException(dividend, divisor, expectedQuotient, true);
+    } else {
+      divideExpectResult(dividend, divisor, expectedQuotient, true);
+    }
+  }
+
+  private void divideExpectException(long dividend, long divisor, String expectedQuotient, boolean isModulo) {
     try {
       final UInt64 uDividend = UInt64.valueOf(dividend);
-
-      UInt64 longQuotient = uDividend.dividedBy(divisor);
-      UInt64 uDivisor = UInt64.valueOf(divisor);
-      UInt64 uintQuotient = uDividend.dividedBy(uDivisor);
-
+      if(isModulo) {
+        UInt64 longQuotient = uDividend.modulo(divisor);
+        UInt64 uDivisor = UInt64.valueOf(divisor);
+        UInt64 uintQuotient = uDividend.modulo(uDivisor);
+      } else {
+        UInt64 longQuotient = uDividend.dividedBy(divisor);
+        UInt64 uDivisor = UInt64.valueOf(divisor);
+        UInt64 uintQuotient = uDividend.dividedBy(uDivisor);
+      }
       Assert.fail("Exception was expected but not thrown.");
     } catch (Exception e) {
       Assert.assertTrue("Division operation was expected to throw an exception of type IllegalArgumentException.", e instanceof IllegalArgumentException);
@@ -216,20 +265,30 @@ public class UInt64Test {
     }
   }
 
-  private void divideExpectResult(long dividend, long divisor, String expectedQuotient) {
+  private void divideExpectResult(long dividend, long divisor, String expectedQuotient, boolean isModulo) {
     boolean thrown = false;
 
     try {
       final UInt64 uDividend = UInt64.valueOf(dividend);
+      if(isModulo){
+        UInt64 longQuotient = uDividend.modulo(divisor);
+        Assert.assertEquals("Quotient", expectedQuotient, Long.toUnsignedString(longQuotient.getValue()));
+        Assert.assertEquals("UInt64 Modulo Result", UInt64.valueOf(expectedQuotient), longQuotient);
 
-      UInt64 longQuotient = uDividend.dividedBy(divisor);
-      Assert.assertEquals("Quotient", expectedQuotient, Long.toUnsignedString(longQuotient.getValue()));
-      Assert.assertEquals("UInt64 Division Result", UInt64.valueOf(expectedQuotient), longQuotient);
+        UInt64 uDivisor = UInt64.valueOf(divisor);
+        UInt64 uintQuotient = uDividend.modulo(uDivisor);
+        Assert.assertEquals("Quotient", expectedQuotient, Long.toUnsignedString(uintQuotient.getValue()));
+        Assert.assertEquals("UInt64 Modulo Result", UInt64.valueOf(expectedQuotient), uintQuotient);
+      } else {
+        UInt64 longQuotient = uDividend.dividedBy(divisor);
+        Assert.assertEquals("Quotient", expectedQuotient, Long.toUnsignedString(longQuotient.getValue()));
+        Assert.assertEquals("UInt64 Modulo Result", UInt64.valueOf(expectedQuotient), longQuotient);
 
-      UInt64 uDivisor = UInt64.valueOf(divisor);
-      UInt64 uintQuotient = uDividend.dividedBy(uDivisor);
-      Assert.assertEquals("Quotient", expectedQuotient, Long.toUnsignedString(uintQuotient.getValue()));
-      Assert.assertEquals("UInt64 Division Result", UInt64.valueOf(expectedQuotient), uintQuotient);
+        UInt64 uDivisor = UInt64.valueOf(divisor);
+        UInt64 uintQuotient = uDividend.dividedBy(uDivisor);
+        Assert.assertEquals("Quotient", expectedQuotient, Long.toUnsignedString(uintQuotient.getValue()));
+        Assert.assertEquals("UInt64 Modulo Result", UInt64.valueOf(expectedQuotient), uintQuotient);
+      }
     } catch (Exception e) {
       thrown = true;
     }
