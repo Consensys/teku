@@ -68,6 +68,13 @@ public class BeaconState {
   private Hash processed_pow_receipt_root;
   private ArrayList<CandidatePoWReceiptRootRecord> candidate_pow_receipt_roots;
 
+  // Default Constructor
+  public BeaconState()
+  {
+    //TODO: temp to allow it to run in demo mode
+    this.slot = UInt64.MIN_VALUE;
+  }
+
   public BeaconState(
       // Misc
       UInt64 slot, UInt64 genesis_time, ForkData fork_data,
@@ -125,6 +132,28 @@ public class BeaconState {
 
   }
 
+  // Copy Constructor
+  public BeaconState(BeaconState state){
+    // deep copy
+    this.slot = state.slot;
+  }
+  /**
+  * @return the slot
+  */
+  public UInt64 getSlot(){
+    return this.slot;
+  }
+
+  /**
+   * @param slot
+   */
+  public void setSlot(UInt64 slot){
+    this.slot = slot;
+  }
+
+  public void incrementSlot(){
+    this.slot = this.slot.increment();
+  }
 
   static class BeaconStateHelperFunctions {
 

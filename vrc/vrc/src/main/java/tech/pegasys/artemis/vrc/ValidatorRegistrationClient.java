@@ -33,7 +33,7 @@ public class ValidatorRegistrationClient {
         int validatorNum = 0;
         while(true){
             try {
-                Thread.sleep(1000);
+                Thread.sleep(15000);
             }
             catch(InterruptedException e){
                 System.out.println(e);
@@ -63,7 +63,7 @@ public class ValidatorRegistrationClient {
 
     public void newBlock(String blockInfo){
         // TODO: pass in real block information that the beacon chain needs to know about
-        NewBlockEvent event = new NewBlockEvent();
+        NewPoWBlockEvent event = new NewPoWBlockEvent();
         event.setInfo(blockInfo);
         this.eventBus.post(event);
     }

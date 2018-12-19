@@ -11,7 +11,9 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.services;
+package tech.pegasys.artemis.services.powchain;
+import tech.pegasys.artemis.factories.EventBusFactory;
+import tech.pegasys.artemis.services.ServiceInterface;
 import tech.pegasys.artemis.vrc.ValidatorRegistrationClient;
 
 import com.google.common.eventbus.EventBus;

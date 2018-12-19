@@ -15,11 +15,11 @@ package tech.pegasys.artemis.vrc;
 
 //TODO: This class needs to be modified to contain
 // the block info that the beacon chain needs.
-public class NewBlockEvent {
+public class NewPoWBlockEvent {
 
     private String info;
 
-    public NewBlockEvent(){
+    public NewPoWBlockEvent(){
 
     }
 

@@ -19,7 +19,6 @@ public final class Artemis {
     public static void main(final String... args) {
         // Process Command Line Args
         // Instantiate ServiceController and start event loop
-         System.out.println(Constants.getConstantsAsString());
          ServiceController.init();
          ServiceController.start();
 
