@@ -68,11 +68,6 @@ public class BeaconState {
   private Hash processed_pow_receipt_root;
   private ArrayList<CandidatePoWReceiptRootRecord> candidate_pow_receipt_roots;
 
-  // Default Constructor
-  public BeaconState()
-  {
-  }
-
   public BeaconState(
       // Misc
       UInt64 slot, UInt64 genesis_time, ForkData fork_data,

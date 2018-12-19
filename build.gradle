@@ -119,7 +119,7 @@ allprojects {
       // We use the JSR-305 annotations instead of the Google annotations.
       check('ImmutableEnumChecker', CheckSeverity.OFF)
 
-      check('FieldCanBeFinal', CheckSeverity.WARN)
+      check('FieldCanBeFinal', CheckSeverity.OFF)
       check('InsecureCryptoUsage', CheckSeverity.WARN)
       check('WildcardImport', CheckSeverity.WARN)
     }
