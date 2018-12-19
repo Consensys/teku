@@ -39,7 +39,7 @@ public class BeaconState {
   private ForkData fork_data;
 
   // Validator registry
-  private ArrayList<ValidatorRecord> validator_registry;
+  public ArrayList<ValidatorRecord> validator_registry;
   private UInt64 validator_registry_latest_change_slot;
   private UInt64 validator_registry_exit_count;
   private Hash validator_registry_delta_chain_tip;
@@ -47,9 +47,9 @@ public class BeaconState {
   // Randomness and committees
   private Hash randao_mix;
   private Hash next_seed;
-  private ShardCommittee[][] shard_committees_at_slots;
-  private int[][] persistent_committees;
-  private ShardReassignmentRecord[] persistent_committee_reassignments;
+  public ArrayList<ArrayList<ShardCommittee>> shard_committees_at_slots;
+  public ArrayList<ArrayList<Integer>> persistent_committees;
+  private ArrayList<ShardReassignmentRecord> persistent_committee_reassignments;
 
   // Finality
   private UInt64 previous_justified_slot;
@@ -58,15 +58,78 @@ public class BeaconState {
   private UInt64 finalized_slot;
 
   // Recent state
-  private CrosslinkRecord[] latest_crosslinks;
-  private Hash[] latest_block_roots;
-  private UInt64 latest_penalized_exit_balances;
-  private PendingAttestationRecord[] latest_attestations;
-  private Hash[] batched_block_roots;
+  private ArrayList<CrosslinkRecord> latest_crosslinks;
+  private ArrayList<Hash> latest_block_roots;
+  private ArrayList<UInt64> latest_penalized_exit_balances;
+  private ArrayList<PendingAttestationRecord> latest_attestations;
+  private ArrayList<Hash> batched_block_roots;
 
   // PoW receipt root
   private Hash processed_pow_receipt_root;
-  private CandidatePoWReceiptRootRecord[] candidate_pow_receipt_roots;
+  private ArrayList<CandidatePoWReceiptRootRecord> candidate_pow_receipt_roots;
+
+  // Default Constructor
+  public BeaconState()
+  {
+  }
+
+  public BeaconState(
+      // Misc
+      UInt64 slot, UInt64 genesis_time, ForkData fork_data,
+      // Validator registry
+      ArrayList<ValidatorRecord> validator_registry, UInt64 validator_registry_latest_change_slot,
+      UInt64 validator_registry_exit_count, Hash validator_registry_delta_chain_tip,
+      // Randomness and committees
+      Hash randao_mix, Hash next_seed, ArrayList<ArrayList<ShardCommittee>> shard_committees_at_slots,
+      ArrayList<ArrayList<Integer>> persistent_committees,
+      ArrayList<ShardReassignmentRecord> persistent_committee_reassignments,
+      // Finality
+      UInt64 previous_justified_slot, UInt64 justified_slot, UInt64 justification_bitfield,
+      UInt64 finalized_slot,
+      // Recent state
+      ArrayList<CrosslinkRecord> latest_crosslinks, ArrayList<Hash> latest_block_roots,
+      ArrayList<UInt64>  latest_penalized_exit_balances, ArrayList<PendingAttestationRecord> latest_attestations,
+      ArrayList<Hash> batched_block_roots,
+      // PoW receipt root
+      Hash processed_pow_receipt_root, ArrayList<CandidatePoWReceiptRootRecord> candidate_pow_receipt_roots) {
+
+    // Misc
+    this.slot = slot;
+    this. genesis_time = genesis_time;
+    this.fork_data = fork_data;
+
+    // Validator registry
+    this.validator_registry = validator_registry;
+    this.validator_registry_latest_change_slot = validator_registry_latest_change_slot;
+    this.validator_registry_exit_count = validator_registry_exit_count;
+    this.validator_registry_delta_chain_tip = validator_registry_delta_chain_tip;
+
+    // Randomness and committees
+    this.randao_mix = randao_mix;
+    this.next_seed = next_seed;
+    this.shard_committees_at_slots = shard_committees_at_slots;
+    this.persistent_committees = persistent_committees;
+    this.persistent_committee_reassignments = persistent_committee_reassignments;
+
+    // Finality
+    this.previous_justified_slot = previous_justified_slot;
+    this.justified_slot = justified_slot;
+    this.justification_bitfield = justification_bitfield;
+    this.finalized_slot = finalized_slot;
+
+    // Recent state
+    this.latest_crosslinks = latest_crosslinks;
+    this.latest_block_roots = latest_block_roots;
+    this.latest_penalized_exit_balances = latest_penalized_exit_balances;
+    this.latest_attestations = latest_attestations;
+    this.batched_block_roots = batched_block_roots;
+
+    // PoW receipt root
+    this.processed_pow_receipt_root = processed_pow_receipt_root;
+    this.candidate_pow_receipt_roots = candidate_pow_receipt_roots;
+
+  }
+
 
   static class BeaconStateHelperFunctions {
 
