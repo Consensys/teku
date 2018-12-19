@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.services;
+package tech.pegasys.artemis.factories;
 
 import java.util.concurrent.Executors;
 

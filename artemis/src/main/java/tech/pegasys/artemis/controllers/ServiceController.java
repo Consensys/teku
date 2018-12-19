@@ -13,9 +13,9 @@
 
 package tech.pegasys.artemis.controllers;
 
-import tech.pegasys.artemis.services.BeaconChainService;
-import tech.pegasys.artemis.services.PowchainService;
-import tech.pegasys.artemis.services.ServiceFactory;
+import tech.pegasys.artemis.factories.ServiceFactory;
+import tech.pegasys.artemis.services.beaconchain.BeaconChainService;
+import tech.pegasys.artemis.services.powchain.PowchainService;
 
 
 public class ServiceController {
