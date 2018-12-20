@@ -186,8 +186,6 @@ public class BeaconState {
     this.slot = this.slot.increment();
   }
 
-
-
   /**
    *
    * @param validators
