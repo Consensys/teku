@@ -19,6 +19,8 @@ import static tech.pegasys.artemis.Constants.ACTIVATION;
 import static tech.pegasys.artemis.Constants.ACTIVE;
 import static tech.pegasys.artemis.Constants.ACTIVE_PENDING_EXIT;
 import static tech.pegasys.artemis.Constants.COLLECTIVE_PENALTY_CALCULATION_PERIOD;
+import static tech.pegasys.artemis.Constants.DOMAIN_DEPOSIT;
+import static tech.pegasys.artemis.Constants.EMPTY_SIGNATURE;
 import static tech.pegasys.artemis.Constants.EPOCH_LENGTH;
 import static tech.pegasys.artemis.Constants.EXIT;
 import static tech.pegasys.artemis.Constants.EXITED_WITHOUT_PENALTY;
@@ -27,8 +29,11 @@ import static tech.pegasys.artemis.Constants.GWEI_PER_ETH;
 import static tech.pegasys.artemis.Constants.MAX_DEPOSIT;
 import static tech.pegasys.artemis.Constants.PENDING_ACTIVATION;
 import static tech.pegasys.artemis.Constants.WHISTLEBLOWER_REWARD_QUOTIENT;
+import static tech.pegasys.artemis.Constants.ZERO_BALANCE_VALIDATOR_TTL;
 import static tech.pegasys.artemis.ethereum.core.TreeHash.hash_tree_root;
+import static tech.pegasys.artemis.util.bls.BLSVerify.bls_verify;
 
+import tech.pegasys.artemis.datastructures.beaconchainoperations.DepositInput;
 import tech.pegasys.artemis.datastructures.beaconchainstate.CandidatePoWReceiptRootRecord;
 import tech.pegasys.artemis.datastructures.beaconchainstate.CrosslinkRecord;
 import tech.pegasys.artemis.datastructures.beaconchainstate.ForkData;
@@ -39,6 +44,7 @@ import tech.pegasys.artemis.datastructures.beaconchainstate.ValidatorRecord;
 import tech.pegasys.artemis.datastructures.beaconchainstate.ValidatorRegistryDeltaBlock;
 import tech.pegasys.artemis.ethereum.core.Hash;
 import tech.pegasys.artemis.util.bytes.Bytes32;
+import tech.pegasys.artemis.util.bytes.BytesValue;
 import tech.pegasys.artemis.util.uint.UInt384;
 import tech.pegasys.artemis.util.uint.UInt64;
 
@@ -178,13 +184,125 @@ public class BeaconState {
   }
 
 
+
   /**
-   * Update the validator status with the given ``index`` to ``new_status``.
-   * Handle other general accounting related to this status update.
-   * Note that this function mutates ``state``.
-   * @param index
-   * @param new_status
+   *
+   * @param validators
+   * @param current_slot
+   * @return
    */
+  private int min_empty_validator_index(ArrayList<ValidatorRecord> validators, int current_slot) {
+    for (int i = 0; i < validators.size(); i++) {
+      ValidatorRecord v = validators.get(i);
+      if (v.getBalance() == 0 && v.getLatest_status_change_slot().getValue() + ZERO_BALANCE_VALIDATOR_TTL
+          <= current_slot) {
+        return i;
+      }
+    }
+    return -1;
+  }
+
+  /**
+   *
+   * @param state
+   * @param pubkey
+   * @param proof_of_possession
+   * @param withdrawal_credentials
+   * @param randao_commitment
+   * @return
+   */
+  private boolean validate_proof_of_possession(BeaconState state, int pubkey, Bytes32 proof_of_possession,
+                                               Hash withdrawal_credentials, Hash randao_commitment) {
+    DepositInput proof_of_possession_data = new DepositInput(UInt384.valueOf(pubkey), withdrawal_credentials,
+        randao_commitment, EMPTY_SIGNATURE);
+
+    UInt384 signature = UInt384.valueOf(BytesValue.wrap(proof_of_possession.extractArray()).getInt(0));
+    UInt64 domain = UInt64.valueOf(get_domain(state.fork_data, toIntExact(state.slot.getValue()), DOMAIN_DEPOSIT));
+    return bls_verify(UInt384.valueOf(pubkey), hash_tree_root(proof_of_possession_data), signature, domain);
+
+  }
+
+  /**
+     * Process a deposit from Ethereum 1.0.
+      * Note that this function mutates ``state``.
+      * @param state
+   * @param pubkey
+   * @param deposit
+    * @param proof_of_possession
+    * @param withdrawal_credentials
+    * @param randao_commitment
+    * @return
+        */
+  private int process_deposit(BeaconState state, int pubkey, int deposit, Bytes32 proof_of_possession,
+                              Hash withdrawal_credentials, Hash randao_commitment) {
+    assert validate_proof_of_possession(state, pubkey, proof_of_possession, withdrawal_credentials, randao_commitment);
+
+    UInt384[] validator_pubkeys = new UInt384[state.validator_registry.size()];
+    for (int i=0; i < validator_pubkeys.length; i++) {
+      validator_pubkeys[i] = state.validator_registry.get(i).getPubkey();
+    }
+
+    int index = -1;
+
+    if (!Arrays.asList(validator_pubkeys).contains(UInt384.valueOf(pubkey))) {
+      // Add new validator
+      ValidatorRecord validator = new ValidatorRecord(pubkey, withdrawal_credentials, randao_commitment,
+          UInt64.valueOf(0), deposit, UInt64.valueOf(PENDING_ACTIVATION), state.slot, UInt64.valueOf(0));
+
+      ArrayList<ValidatorRecord> validators_copy = new ArrayList<ValidatorRecord>();
+      validators_copy.addAll(validator_registry);
+      index = min_empty_validator_index(validators_copy, toIntExact(slot.getValue()));
+      if (index == -1) {
+        state.validator_registry.add(validator);
+        index = validators_copy.size() - 1;
+      } else {
+        state.validator_registry.set(index, validator);
+      }
+    } else {
+      // Increase balance by deposit
+      index = Arrays.asList(validator_pubkeys).indexOf(UInt384.valueOf(pubkey));
+      ValidatorRecord validator = state.validator_registry.get(index);
+      assert validator.getWithdrawal_credentials().equals(withdrawal_credentials);
+
+      validator.setBalance(validator.getBalance() + deposit);
+    }
+
+    return index;
+  }
+
+
+  /**
+   *
+   * @param fork_data
+   * @param slot
+   * @param domain_type
+   * @return
+   */
+  private int get_domain(ForkData fork_data, int slot, int domain_type) {
+    return get_fork_version(fork_data, slot) * (int) Math.pow(2, 32) + domain_type;
+  }
+
+  /**
+   *
+   * @param fork_data
+   * @param slot
+   * @return
+   */
+  private int get_fork_version(ForkData fork_data, int slot) {
+    if (slot < fork_data.getFork_slot().getValue()) {
+      return toIntExact(fork_data.getPre_fork_version().getValue());
+    } else {
+      return toIntExact(fork_data.getPost_fork_version().getValue());
+    }
+  }
+
+      /**
+       * Update the validator status with the given ``index`` to ``new_status``.
+       * Handle other general accounting related to this status update.
+       * Note that this function mutates ``state``.
+       * @param index
+       * @param new_status
+       */
   private void update_validator_status(int index, int new_status) {
     if (new_status == ACTIVE) {
       activate_validator(index);
