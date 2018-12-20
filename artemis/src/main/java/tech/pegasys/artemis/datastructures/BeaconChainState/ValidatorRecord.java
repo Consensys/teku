@@ -19,18 +19,18 @@ import tech.pegasys.artemis.util.uint.UInt64;
 
 public class ValidatorRecord {
 
-  private UInt384 pubkey;
+  public UInt384 pubkey;
   private Hash withdrawal_credentials;
   private Hash randao_commitment;
   private UInt64 randao_layers;
-  public UInt64 balance;
+  public double balance;
   public UInt64 status;
-  private UInt64 latest_status_change_slot;
-  private UInt64 exit_count;
+  public UInt64 latest_status_change_slot;
+  public UInt64 exit_count;
 
    public ValidatorRecord(int pubkey, Hash withdrawal_credentials, Hash randao_commitment,
-                         UInt64 randao_layers, UInt64 deposit, UInt64 status, UInt64 slot, UInt64 exit_count) {
-    this.pubkey = new UInt384(pubkey);
+                         UInt64 randao_layers, double deposit, UInt64 status, UInt64 slot, UInt64 exit_count) {
+    this.pubkey = UInt384.valueOf(pubkey);
     this.withdrawal_credentials = withdrawal_credentials;
     this.randao_commitment = randao_commitment;
     this.randao_layers = randao_layers;
@@ -40,11 +40,11 @@ public class ValidatorRecord {
     this.exit_count = exit_count;
   }
 
-  public UInt64 getBalance() {
+  public double getBalance() {
     return this.balance;
   }
 
-  public void setBalance(UInt64 balance) {
+  public void setBalance(double balance) {
     this.balance = balance;
   }
 
