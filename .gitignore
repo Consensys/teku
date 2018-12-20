@@ -26,7 +26,8 @@ tmp/
 build/
 out/
 web3j/
-vrc/node_modules/
-vrc/build/
-vrc/.vscode/
-vrc/npm-debug.*
+
+pow/.vscode/
+pow/truffle/.vscode/
+pow/truffle/node_modules/
+pow/truffle/npm-debug.*

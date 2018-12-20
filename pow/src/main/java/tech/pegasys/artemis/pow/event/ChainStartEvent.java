@@ -11,24 +11,19 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.vrc;
+package tech.pegasys.artemis.pow.event;
 
-//TODO: This class needs to be modified to contain
-// the validator info that the beacon chain needs.
-public class ValidatorRegisteredEvent {
+import tech.pegasys.artemis.pow.contract.ValidatorRegistrationContract;
 
-    private String info;
+public class ChainStartEvent {
 
-    public ValidatorRegisteredEvent(){
+    private ValidatorRegistrationContract.ChainStartEventResponse response = null;
 
+    public ChainStartEvent(ValidatorRegistrationContract.ChainStartEventResponse response){
+        this.response = response;
     }
 
-    public String getInfo() {
-        return this.info;
+    public ValidatorRegistrationContract.ChainStartEventResponse getResponse() {
+        return response;
     }
-
-    public void setInfo(String info) {
-        this.info = info;
-    }
-
 }
