@@ -8,4 +8,5 @@ include 'ethereum:rlp'
 include 'artemis'
 include 'util'
 include 'errorprone-checks'
-include 'vrc:vrc'
+include 'pow'
+

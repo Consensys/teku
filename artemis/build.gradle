@@ -12,8 +12,8 @@ dependencies {
   implementation project(':crypto')
   implementation project(':ethereum:core')
   implementation project(':ethereum:rlp')
-  implementation project(':vrc:vrc')
-  compile ('org.web3j:core:3.5.0')
+  implementation project(':pow')
+  compile ('org.web3j:core:3.6.0')
 
   implementation 'com.google.guava:guava'
   // Disable picocli while the 3.6 release with default enhancement is published.

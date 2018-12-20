@@ -11,24 +11,19 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.vrc;
+package tech.pegasys.artemis.pow.event;
 
-//TODO: This class needs to be modified to contain
-// the block info that the beacon chain needs.
-public class NewPoWBlockEvent {
+import tech.pegasys.artemis.pow.contract.ValidatorRegistrationContract;
 
-    private String info;
+public class ValidatorRegistrationEvent{
 
-    public NewPoWBlockEvent(){
+    private ValidatorRegistrationContract.Eth1DepositEventResponse response = null;
 
+    public ValidatorRegistrationEvent(ValidatorRegistrationContract.Eth1DepositEventResponse response){
+        this.response = response;
     }
 
-    public String getInfo() {
-        return this.info;
+    public ValidatorRegistrationContract.Eth1DepositEventResponse getResponse() {
+        return response;
     }
-
-    public void setInfo(String info) {
-        this.info = info;
-    }
-
 }

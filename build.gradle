@@ -295,7 +295,7 @@ startScripts {
 dependencies {
   compile project(':artemis')
   errorprone 'com.google.errorprone:error_prone_core'
-  compile ('org.web3j:core:3.5.0')
+  compile ('org.web3j:core:3.6.0')
 }
 
 applicationDistribution.into("") { from("LICENSE") }

@@ -1,7 +1,11 @@
+plugins {
+    id 'java'
+}
+
 apply plugin: 'java-library'
 
 jar {
-  baseName 'artemis-vrc'
+  baseName 'artemis-pow'
   manifest {
     attributes('Implementation-Title': baseName,
     'Implementation-Version': project.version)
@@ -10,9 +14,20 @@ jar {
 
 dependencies {
   api 'org.bouncycastle:bcprov-jdk15on'
-
+  compile ('org.web3j:core:3.6.0')
   implementation 'com.google.guava:guava'
 
   testImplementation 'org.assertj:assertj-core'
   testImplementation 'junit:junit'
+}
+version '1.0.0-SNAPSHOT'
+
+sourceCompatibility = 1.8
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    testCompile group: 'junit', name: 'junit', version: '4.12'
 }
