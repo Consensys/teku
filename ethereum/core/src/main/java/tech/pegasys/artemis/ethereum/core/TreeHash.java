@@ -11,27 +11,14 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.util.uint;
+package tech.pegasys.artemis.ethereum.core;
 
-public class UInt384 {
+import tech.pegasys.artemis.util.bytes.Bytes32;
 
-  private final long value;
+public class TreeHash {
 
-  private UInt384(long value) {
-    this.value = value;
+  public static Bytes32 hash_tree_root(Object value) {
+    return Bytes32.FALSE;
   }
-
-  public UInt384(UInt64 uint) {
-    this.value = uint.getValue();
-  }
-
-  public long getValue() {
-    return value;
-  }
-
-  public static UInt384 valueOf(long unsignedValue) {
-    return new UInt384(unsignedValue);
-  }
-
 
 }

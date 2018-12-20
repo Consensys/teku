@@ -14,6 +14,20 @@
 package tech.pegasys.artemis.state;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static java.lang.Math.toIntExact;
+import static tech.pegasys.artemis.Constants.ACTIVATION;
+import static tech.pegasys.artemis.Constants.ACTIVE;
+import static tech.pegasys.artemis.Constants.ACTIVE_PENDING_EXIT;
+import static tech.pegasys.artemis.Constants.COLLECTIVE_PENALTY_CALCULATION_PERIOD;
+import static tech.pegasys.artemis.Constants.EPOCH_LENGTH;
+import static tech.pegasys.artemis.Constants.EXIT;
+import static tech.pegasys.artemis.Constants.EXITED_WITHOUT_PENALTY;
+import static tech.pegasys.artemis.Constants.EXITED_WITH_PENALTY;
+import static tech.pegasys.artemis.Constants.GWEI_PER_ETH;
+import static tech.pegasys.artemis.Constants.MAX_DEPOSIT;
+import static tech.pegasys.artemis.Constants.PENDING_ACTIVATION;
+import static tech.pegasys.artemis.Constants.WHISTLEBLOWER_REWARD_QUOTIENT;
+import static tech.pegasys.artemis.ethereum.core.TreeHash.hash_tree_root;
 
 import tech.pegasys.artemis.datastructures.BeaconChainState.CandidatePoWReceiptRootRecord;
 import tech.pegasys.artemis.datastructures.BeaconChainState.CrosslinkRecord;
@@ -22,7 +36,9 @@ import tech.pegasys.artemis.datastructures.BeaconChainState.PendingAttestationRe
 import tech.pegasys.artemis.datastructures.BeaconChainState.ShardCommittee;
 import tech.pegasys.artemis.datastructures.BeaconChainState.ShardReassignmentRecord;
 import tech.pegasys.artemis.datastructures.BeaconChainState.ValidatorRecord;
+import tech.pegasys.artemis.datastructures.BeaconChainState.ValidatorRegistryDeltaBlock;
 import tech.pegasys.artemis.ethereum.core.Hash;
+import tech.pegasys.artemis.util.uint.UInt384;
 import tech.pegasys.artemis.util.uint.UInt64;
 
 import java.util.ArrayList;
@@ -31,18 +47,19 @@ import java.util.Arrays;
 import com.google.common.annotations.VisibleForTesting;
 
 
+
 public class BeaconState {
 
   // Misc
-  private UInt64 slot;
+  public UInt64 slot;
   private UInt64 genesis_time;
   private ForkData fork_data;
 
   // Validator registry
   public ArrayList<ValidatorRecord> validator_registry;
   private UInt64 validator_registry_latest_change_slot;
-  private UInt64 validator_registry_exit_count;
-  private Hash validator_registry_delta_chain_tip;
+  public UInt64 validator_registry_exit_count;
+  public Hash validator_registry_delta_chain_tip;
 
   // Randomness and committees
   private Hash randao_mix;
@@ -60,7 +77,7 @@ public class BeaconState {
   // Recent state
   private ArrayList<CrosslinkRecord> latest_crosslinks;
   private ArrayList<Hash> latest_block_roots;
-  private ArrayList<UInt64> latest_penalized_exit_balances;
+  public ArrayList<Double> latest_penalized_exit_balances;
   private ArrayList<PendingAttestationRecord> latest_attestations;
   private ArrayList<Hash> batched_block_roots;
 
@@ -68,11 +85,17 @@ public class BeaconState {
   private Hash processed_pow_receipt_root;
   private ArrayList<CandidatePoWReceiptRootRecord> candidate_pow_receipt_roots;
 
+
   // Default Constructor
   public BeaconState()
   {
     //TODO: temp to allow it to run in demo mode
     this.slot = UInt64.MIN_VALUE;
+  }
+
+  public BeaconState(BeaconState state){
+    // deep copy
+    this.slot = state.slot;
   }
 
   public BeaconState(
@@ -90,14 +113,14 @@ public class BeaconState {
       UInt64 finalized_slot,
       // Recent state
       ArrayList<CrosslinkRecord> latest_crosslinks, ArrayList<Hash> latest_block_roots,
-      ArrayList<UInt64>  latest_penalized_exit_balances, ArrayList<PendingAttestationRecord> latest_attestations,
+      ArrayList<Double>  latest_penalized_exit_balances, ArrayList<PendingAttestationRecord> latest_attestations,
       ArrayList<Hash> batched_block_roots,
       // PoW receipt root
       Hash processed_pow_receipt_root, ArrayList<CandidatePoWReceiptRootRecord> candidate_pow_receipt_roots) {
 
     // Misc
     this.slot = slot;
-    this. genesis_time = genesis_time;
+    this.genesis_time = genesis_time;
     this.fork_data = fork_data;
 
     // Validator registry
@@ -132,11 +155,6 @@ public class BeaconState {
 
   }
 
-  // Copy Constructor
-  public BeaconState(BeaconState state){
-    // deep copy
-    this.slot = state.slot;
-  }
   /**
   * @return the slot
   */
@@ -155,9 +173,167 @@ public class BeaconState {
     this.slot = this.slot.increment();
   }
 
+
+  /**
+   * Update the validator status with the given ``index`` to ``new_status``.
+   * Handle other general accounting related to this status update.
+   * Note that this function mutates ``state``.
+   * @param index
+   * @param new_status
+   */
+  private void update_validator_status(int index, int new_status) {
+    if (new_status == ACTIVE) {
+      activate_validator(index);
+    }
+    if (new_status == ACTIVE_PENDING_EXIT) {
+      initiate_validator_exit(index);
+    }
+    if (new_status == EXITED_WITH_PENALTY || new_status == EXITED_WITHOUT_PENALTY) {
+      exit_validator(index, new_status);
+    }
+  }
+
+  /**
+   * Activate the validator with the given ``index``.
+   * Note that this function mutates ``state``.
+   * @param index
+   */
+  @VisibleForTesting
+  public void activate_validator(int index) {
+    ValidatorRecord validator = validator_registry.get(index);
+    if (validator.status.getValue() != PENDING_ACTIVATION) {
+      return;
+    }
+
+    validator.status = UInt64.valueOf(ACTIVE);
+    validator.latest_status_change_slot = slot;
+    validator_registry_delta_chain_tip =
+        get_new_validator_registry_delta_chain_tip(validator_registry_delta_chain_tip,
+        index, toIntExact(validator.pubkey.getValue()), ACTIVATION);
+  }
+
+
+  /**
+   * Initiate exit for the validator with the given ``index``.
+   * Note that this function mutates ``state``.
+   * @param index
+   */
+  @VisibleForTesting
+  public void initiate_validator_exit(int index) {
+    ValidatorRecord validator = validator_registry.get(index);
+    if (validator.status.getValue() != ACTIVE) {
+      return;
+    }
+
+    validator.status = UInt64.valueOf(ACTIVE_PENDING_EXIT);
+    validator.latest_status_change_slot = slot;
+  }
+
+
+  /**
+   * Exit the validator with the given ``index``.
+   * Note that this function mutates ``state``.
+   * @param index
+   * @param new_status
+   */
+  @VisibleForTesting
+  public void exit_validator(int index, int new_status) {
+    ValidatorRecord validator = validator_registry.get(index);
+    UInt64 prev_status = validator.status;
+
+    if (prev_status.getValue() == EXITED_WITH_PENALTY) {
+      return;
+    }
+
+    validator.status = UInt64.valueOf(new_status);
+    validator.latest_status_change_slot = slot;
+
+    if (new_status == EXITED_WITH_PENALTY) {
+      int lpeb_index = toIntExact(slot.getValue()) / COLLECTIVE_PENALTY_CALCULATION_PERIOD;
+      latest_penalized_exit_balances.set(lpeb_index,
+          latest_penalized_exit_balances.get(lpeb_index) + get_effective_balance(validator));
+
+      ValidatorRecord whistleblower = validator_registry.get(get_beacon_proposer_index(toIntExact(slot.getValue())));
+
+      whistleblower.balance = whistleblower.balance + validator.balance / WHISTLEBLOWER_REWARD_QUOTIENT;
+      validator.balance = validator.balance - validator.balance / WHISTLEBLOWER_REWARD_QUOTIENT;
+    }
+
+    if (prev_status.getValue() == EXITED_WITHOUT_PENALTY){
+      return;
+    }
+
+    // The following updates only occur if not previous exited
+    validator_registry_exit_count = validator_registry_exit_count.increment();
+    validator.exit_count = validator_registry_exit_count;
+    validator_registry_delta_chain_tip = get_new_validator_registry_delta_chain_tip(
+        validator_registry_delta_chain_tip, index, toIntExact(validator.pubkey.getValue()), EXIT);
+
+    // Remove validator from persistent committees
+    for (int i = 0; i < persistent_committees.size(); i++) {
+      ArrayList<Integer> committee = persistent_committees.get(i);
+      for (int j = 0; j < committee.size(); j++) {
+        if (committee.get(j) == index) {
+          // Pop validator_index from committee
+          ArrayList<Integer> new_committee = new ArrayList<Integer>(committee.subList(0, i));
+          new_committee.addAll(committee.subList(i+1, committee.size()));
+          persistent_committees.set(i, new_committee);
+          break;
+        }
+      }
+    }
+  }
+
+  /**
+   * Returns the beacon proposer index for the ``slot``.
+   * @param slot
+   * @return
+   */
+  private int get_beacon_proposer_index(int slot) {
+    int[] first_committee = get_shard_committees_at_slot(slot).get(0).committee;
+    return first_committee[slot % first_committee.length];
+  }
+
+  /**
+   * Returns the ``ShardCommittee`` for the ``slot``.
+   * @param slot
+   * @return
+   */
+  private ArrayList<ShardCommittee> get_shard_committees_at_slot(int slot) {
+    int earliest_slot_in_array = toIntExact(this.slot.getValue()) - (toIntExact(this.slot.getValue()) % EPOCH_LENGTH)
+        - EPOCH_LENGTH;
+    assert earliest_slot_in_array <= slot;
+    assert slot < (earliest_slot_in_array + EPOCH_LENGTH * 2);
+
+    return shard_committees_at_slots.get(slot - earliest_slot_in_array);
+  }
+
+  /**
+   * Compute the next root in the validator registry delta chain.
+   * @param current_validator_registry_delta_chain_tip
+   * @param validator_index
+   * @param pubkey
+   * @param flag
+   * @return
+   */
+  private Hash get_new_validator_registry_delta_chain_tip(Hash current_validator_registry_delta_chain_tip,
+                                                 int validator_index, int pubkey, int flag) {
+    return Hash.hash(hash_tree_root(
+        new ValidatorRegistryDeltaBlock(current_validator_registry_delta_chain_tip, validator_index,
+            UInt384.valueOf(pubkey), UInt64.valueOf(flag))));
+  }
+
+  /**
+   * Returns the effective balance (also known as "balance at stake") for the ``validator``.
+   * @param validator
+   * @return
+   */
+  private double get_effective_balance(ValidatorRecord validator) {
+    return Math.min(validator.balance, MAX_DEPOSIT * GWEI_PER_ETH);
+  }
+
+
   static class BeaconStateHelperFunctions {
-
-
 
     /**
      * Converts byte[] to int.

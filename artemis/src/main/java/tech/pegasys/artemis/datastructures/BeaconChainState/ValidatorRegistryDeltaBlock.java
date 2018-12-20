@@ -13,18 +13,22 @@
 
 package tech.pegasys.artemis.datastructures.BeaconChainState;
 
+import tech.pegasys.artemis.ethereum.core.Hash;
+import tech.pegasys.artemis.util.uint.UInt384;
 import tech.pegasys.artemis.util.uint.UInt64;
 
-public class ShardCommittee {
+public class ValidatorRegistryDeltaBlock {
 
-  public UInt64 shard;
-  public int[] committee;
-  private UInt64 total_validator_count;
+  private Hash latest_registry_delta_root;
+  private int validator_index;
+  private UInt384 pubkey;
+  private UInt64 flag;
 
-  public ShardCommittee(UInt64 shard, int[] committee, UInt64 total_validator_count) {
-    this.shard = shard;
-    this.committee = committee;
-    this.total_validator_count = total_validator_count;
+  public ValidatorRegistryDeltaBlock(Hash latest_registry_delta_root, int validator_index,
+                                     UInt384 pubkey, UInt64 flag) {
+    this.latest_registry_delta_root = latest_registry_delta_root;
+    this.validator_index = validator_index;
+    this.pubkey = pubkey;
+    this.flag = flag;
   }
-
 }
