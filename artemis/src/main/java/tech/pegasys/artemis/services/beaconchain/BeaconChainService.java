@@ -15,6 +15,8 @@ package tech.pegasys.artemis.services.beaconchain;
 import tech.pegasys.artemis.Constants;
 import tech.pegasys.artemis.datastructures.BeaconChainBlocks.BeaconBlock;
 import tech.pegasys.artemis.factories.EventBusFactory;
+import tech.pegasys.artemis.pow.event.ChainStartEvent;
+import tech.pegasys.artemis.pow.event.ValidatorRegistrationEvent;
 import tech.pegasys.artemis.services.ServiceInterface;
 import tech.pegasys.artemis.state.BeaconState;
 
@@ -53,16 +55,16 @@ public class BeaconChainService implements ServiceInterface{
 
     }
 
-//    @Subscribe
-//    public void onChainStarted(ChainStartEvent event){
-//        System.out.println("ChainStart Event Detected");
-//    }
+    @Subscribe
+    public void onChainStarted(ChainStartEvent event){
+        System.out.println("ChainStart Event Detected");
+    }
 
-//    @Subscribe
-//    public void onValidatorRegistered(ValidatorRegistrationEvent event){
-//        System.out.println("Validator Registration Event detected");
-//        //System.out.println("   Validator Number: " + validatorRegisteredEvent.getInfo());
-//    }
+    @Subscribe
+    public void onValidatorRegistered(ValidatorRegistrationEvent event){
+        System.out.println("Validator Registration Event detected");
+        //System.out.println("   Validator Number: " + validatorRegisteredEvent.getInfo());
+    }
 
     @Subscribe
     public void onNewSlot(Date date){

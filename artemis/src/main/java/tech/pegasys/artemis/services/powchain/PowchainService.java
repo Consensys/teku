@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.services.powchain;
 import tech.pegasys.artemis.factories.EventBusFactory;
+import tech.pegasys.artemis.pow.ValidatorRegistrationClient;
 import tech.pegasys.artemis.services.ServiceInterface;
 
 import com.google.common.eventbus.EventBus;
@@ -22,11 +23,11 @@ import com.google.common.eventbus.EventBus;
 public class PowchainService implements ServiceInterface {
 
     private final EventBus eventBus;
-//    private final ValidatorRegistrationClient vrc;
+    private final ValidatorRegistrationClient vrc;
 
     public PowchainService(){
         this.eventBus = EventBusFactory.getInstance();
-//        this.vrc = new ValidatorRegistrationClient(eventBus);
+        this.vrc = new ValidatorRegistrationClient(eventBus);
     }
 
     @Override
@@ -36,7 +37,7 @@ public class PowchainService implements ServiceInterface {
 
     @Override
     public void start(){
-//        this.vrc.listenToPoWChain();
+        this.vrc.listenToPoWChain();
     }
 
     @Override
