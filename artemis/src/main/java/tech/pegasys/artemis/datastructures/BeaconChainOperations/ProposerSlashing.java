@@ -24,8 +24,52 @@ public class ProposerSlashing {
   private ProposalSignedData proposal_data_2;
   private UInt384[] proposal_signature_2;
 
-  public ProposerSlashing() {
-
+  public ProposerSlashing(int proposer_index, ProposalSignedData proposal_data_1, UInt384[] proposal_signature_1,
+                          ProposalSignedData proposal_data_2, UInt384[] proposal_signature_2) {
+    this.proposer_index = proposer_index;
+    this.proposal_data_1 = proposal_data_1;
+    this.proposal_signature_1 = proposal_signature_1;
+    this.proposal_data_2 = proposal_data_2;
+    this.proposal_signature_2 = proposal_signature_2;
   }
 
+  public int getProposer_index() {
+    return proposer_index;
+  }
+
+  public void setProposer_index(int proposer_index) {
+    this.proposer_index = proposer_index;
+  }
+
+  public ProposalSignedData getProposal_data_1() {
+    return proposal_data_1;
+  }
+
+  public void setProposal_data_1(ProposalSignedData proposal_data_1) {
+    this.proposal_data_1 = proposal_data_1;
+  }
+
+  public UInt384[] getProposal_signature_1() {
+    return proposal_signature_1;
+  }
+
+  public void setProposal_signature_1(UInt384[] proposal_signature_1) {
+    this.proposal_signature_1 = proposal_signature_1;
+  }
+
+  public ProposalSignedData getProposal_data_2() {
+    return proposal_data_2;
+  }
+
+  public void setProposal_data_2(ProposalSignedData proposal_data_2) {
+    this.proposal_data_2 = proposal_data_2;
+  }
+
+  public UInt384[] getProposal_signature_2() {
+    return proposal_signature_2;
+  }
+
+  public void setProposal_signature_2(UInt384[] proposal_signature_2) {
+    this.proposal_signature_2 = proposal_signature_2;
+  }
 }

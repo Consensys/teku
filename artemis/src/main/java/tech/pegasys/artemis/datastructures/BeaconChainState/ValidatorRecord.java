@@ -19,14 +19,14 @@ import tech.pegasys.artemis.util.uint.UInt64;
 
 public class ValidatorRecord {
 
-  public UInt384 pubkey;
+  private UInt384 pubkey;
   private Hash withdrawal_credentials;
   private Hash randao_commitment;
   private UInt64 randao_layers;
-  public double balance;
-  public UInt64 status;
-  public UInt64 latest_status_change_slot;
-  public UInt64 exit_count;
+  private double balance;
+  private UInt64 status;
+  private UInt64 latest_status_change_slot;
+  private UInt64 exit_count;
 
    public ValidatorRecord(int pubkey, Hash withdrawal_credentials, Hash randao_commitment,
                          UInt64 randao_layers, double deposit, UInt64 status, UInt64 slot, UInt64 exit_count) {
@@ -56,4 +56,51 @@ public class ValidatorRecord {
     this.status = status;
   }
 
+  public UInt384 getPubkey() {
+    return pubkey;
+  }
+
+  public void setPubkey(UInt384 pubkey) {
+    this.pubkey = pubkey;
+  }
+
+  public Hash getRandao_commitment() {
+    return randao_commitment;
+  }
+
+  public void setRandao_commitment(Hash randao_commitment) {
+    this.randao_commitment = randao_commitment;
+  }
+
+  public Hash getWithdrawal_credentials() {
+    return withdrawal_credentials;
+  }
+
+  public void setWithdrawal_credentials(Hash withdrawal_credentials) {
+    this.withdrawal_credentials = withdrawal_credentials;
+  }
+
+  public UInt64 getRandao_layers() {
+    return randao_layers;
+  }
+
+  public void setRandao_layers(UInt64 randao_layers) {
+    this.randao_layers = randao_layers;
+  }
+
+  public UInt64 getLatest_status_change_slot() {
+    return latest_status_change_slot;
+  }
+
+  public void setLatest_status_change_slot(UInt64 latest_status_change_slot) {
+    this.latest_status_change_slot = latest_status_change_slot;
+  }
+
+  public UInt64 getExit_count() {
+    return exit_count;
+  }
+
+  public void setExit_count(UInt64 exit_count) {
+    this.exit_count = exit_count;
+  }
 }

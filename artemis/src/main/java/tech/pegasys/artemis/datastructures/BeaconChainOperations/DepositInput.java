@@ -23,7 +23,43 @@ public class DepositInput {
   private Hash randao_commitment;
   private UInt384[] proof_of_possession;
 
-  public DepositInput() {
+  public DepositInput(UInt384 pubkey, Hash withdrawal_credentials, Hash randao_commitment,
+                      UInt384[] proof_of_possession) {
+    this.pubkey = pubkey;
+    this.withdrawal_credentials = withdrawal_credentials;
+    this.randao_commitment = randao_commitment;
+    this.proof_of_possession = proof_of_possession;
+  }
 
+  public UInt384 getPubkey() {
+    return pubkey;
+  }
+
+  public void setPubkey(UInt384 pubkey) {
+    this.pubkey = pubkey;
+  }
+
+  public Hash getWithdrawal_credentials() {
+    return withdrawal_credentials;
+  }
+
+  public void setWithdrawal_credentials(Hash withdrawal_credentials) {
+    this.withdrawal_credentials = withdrawal_credentials;
+  }
+
+  public Hash getRandao_commitment() {
+    return randao_commitment;
+  }
+
+  public void setRandao_commitment(Hash randao_commitment) {
+    this.randao_commitment = randao_commitment;
+  }
+
+  public UInt384[] getProof_of_possession() {
+    return proof_of_possession;
+  }
+
+  public void setProof_of_possession(UInt384[] proof_of_possession) {
+    this.proof_of_possession = proof_of_possession;
   }
 }

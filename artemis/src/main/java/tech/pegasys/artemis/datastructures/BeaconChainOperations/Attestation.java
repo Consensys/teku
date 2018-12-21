@@ -24,8 +24,43 @@ public class Attestation {
   private Bytes32 custody_bitfield;
   private UInt384 aggregate_signature;
 
-  public Attestation() {
-
+  public Attestation(AttestationData data, Bytes32 participation_bitfield, Bytes32 custody_bitfield,
+                     UInt384 aggregate_signature) {
+    this.data = data;
+    this.participation_bitfield = participation_bitfield;
+    this.custody_bitfield = custody_bitfield;
+    this.aggregate_signature = aggregate_signature;
   }
 
+  public Bytes32 getParticipation_bitfield() {
+    return participation_bitfield;
+  }
+
+  public void setParticipation_bitfield(Bytes32 participation_bitfield) {
+    this.participation_bitfield = participation_bitfield;
+  }
+
+  public AttestationData getData() {
+    return data;
+  }
+
+  public void setData(AttestationData data) {
+    this.data = data;
+  }
+
+  public Bytes32 getCustody_bitfield() {
+    return custody_bitfield;
+  }
+
+  public void setCustody_bitfield(Bytes32 custody_bitfield) {
+    this.custody_bitfield = custody_bitfield;
+  }
+
+  public UInt384 getAggregate_signature() {
+    return aggregate_signature;
+  }
+
+  public void setAggregate_signature(UInt384 aggregate_signature) {
+    this.aggregate_signature = aggregate_signature;
+  }
 }

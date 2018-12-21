@@ -16,6 +16,7 @@ package tech.pegasys.artemis;
 import tech.pegasys.artemis.controllers.ServiceController;
 
 public final class Artemis {
+
     public static void main(final String... args) {
         // Process Command Line Args
         // Instantiate ServiceController and start event loop
@@ -23,4 +24,5 @@ public final class Artemis {
          ServiceController.start();
 
     }
+
 }
