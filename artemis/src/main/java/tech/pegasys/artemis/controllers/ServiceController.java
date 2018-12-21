@@ -19,9 +19,9 @@ import tech.pegasys.artemis.services.powchain.PowchainService;
 
 
 public class ServiceController {
+
     private static final BeaconChainService beaconChainService = ServiceFactory.getInstance(BeaconChainService.class).getInstance();;
     private static final PowchainService powchainService = ServiceFactory.getInstance(PowchainService.class).getInstance();
-
 
     // initialize/register all services
     public static void init(){

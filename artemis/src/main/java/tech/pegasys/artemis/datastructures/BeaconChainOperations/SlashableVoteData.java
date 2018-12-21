@@ -22,7 +22,43 @@ public class SlashableVoteData {
   private AttestationData data;
   private UInt384[] aggregate_signature;
 
-  public SlashableVoteData() {
+  public SlashableVoteData(int[] aggregate_signature_poc_0_indices, int[] aggregate_signature_poc_1_indices,
+                           AttestationData data, UInt384[] aggregate_signature) {
+    this.aggregate_signature_poc_0_indices = aggregate_signature_poc_0_indices;
+    this.aggregate_signature_poc_1_indices = aggregate_signature_poc_1_indices;
+    this.data = data;
+    this.aggregate_signature = aggregate_signature;
+  }
 
+  public int[] getAggregate_signature_poc_0_indices() {
+    return aggregate_signature_poc_0_indices;
+  }
+
+  public void setAggregate_signature_poc_0_indices(int[] aggregate_signature_poc_0_indices) {
+    this.aggregate_signature_poc_0_indices = aggregate_signature_poc_0_indices;
+  }
+
+  public int[] getAggregate_signature_poc_1_indices() {
+    return aggregate_signature_poc_1_indices;
+  }
+
+  public void setAggregate_signature_poc_1_indices(int[] aggregate_signature_poc_1_indices) {
+    this.aggregate_signature_poc_1_indices = aggregate_signature_poc_1_indices;
+  }
+
+  public AttestationData getData() {
+    return data;
+  }
+
+  public void setData(AttestationData data) {
+    this.data = data;
+  }
+
+  public UInt384[] getAggregate_signature() {
+    return aggregate_signature;
+  }
+
+  public void setAggregate_signature(UInt384[] aggregate_signature) {
+    this.aggregate_signature = aggregate_signature;
   }
 }

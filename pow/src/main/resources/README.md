@@ -21,7 +21,7 @@ Truper is a utility to compile Vyper contracts for Truffle
 
 `npm i -g truper`
 
-`cd vrc`
+`cd pom`
 
 `npm install`
 

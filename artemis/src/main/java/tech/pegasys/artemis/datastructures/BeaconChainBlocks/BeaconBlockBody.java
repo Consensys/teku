@@ -27,7 +27,53 @@ public class BeaconBlockBody {
   private Deposit[] deposits;
   private Exit[] exits;
 
-  public BeaconBlockBody() {
+  public BeaconBlockBody(Attestation[] attestations, ProposerSlashing[] proposer_slashings, CasperSlashing[]
+                         casper_slashings, Deposit[] deposits, Exit[] exits) {
+    this.attestations = attestations;
+    this.proposer_slashings = proposer_slashings;
+    this.casper_slashings = casper_slashings;
+    this.deposits = deposits;
+    this.exits = exits;
+  }
 
+
+  public Attestation[] getAttestations() {
+    return attestations;
+  }
+
+  public void setAttestations(Attestation[] attestations) {
+    this.attestations = attestations;
+  }
+
+  public ProposerSlashing[] getProposer_slashings() {
+    return proposer_slashings;
+  }
+
+  public void setProposer_slashings(ProposerSlashing[] proposer_slashings) {
+    this.proposer_slashings = proposer_slashings;
+  }
+
+  public CasperSlashing[] getCasper_slashings() {
+    return casper_slashings;
+  }
+
+  public void setCasper_slashings(CasperSlashing[] casper_slashings) {
+    this.casper_slashings = casper_slashings;
+  }
+
+  public Deposit[] getDeposits() {
+    return deposits;
+  }
+
+  public void setDeposits(Deposit[] deposits) {
+    this.deposits = deposits;
+  }
+
+  public Exit[] getExits() {
+    return exits;
+  }
+
+  public void setExits(Exit[] exits) {
+    this.exits = exits;
   }
 }

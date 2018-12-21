@@ -22,8 +22,33 @@ public class Exit {
   private UInt64 validator_index;
   private UInt384[] signature;
 
-  public Exit() {
-
+  public Exit(UInt64 slot, UInt64 validator_index, UInt384[] signature) {
+    this.slot = slot;
+    this.validator_index = validator_index;
+    this.signature = signature;
   }
 
+  public UInt64 getSlot() {
+    return slot;
+  }
+
+  public void setSlot(UInt64 slot) {
+    this.slot = slot;
+  }
+
+  public UInt64 getValidator_index() {
+    return validator_index;
+  }
+
+  public void setValidator_index(UInt64 validator_index) {
+    this.validator_index = validator_index;
+  }
+
+  public UInt384[] getSignature() {
+    return signature;
+  }
+
+  public void setSignature(UInt384[] signature) {
+    this.signature = signature;
+  }
 }
