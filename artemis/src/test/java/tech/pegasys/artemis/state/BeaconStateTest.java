@@ -42,32 +42,30 @@ import org.junit.Test;
 public class BeaconStateTest {
 
   private BeaconState newState(int status) {
-    BeaconState state = new BeaconState(UInt64.MIN_VALUE, UInt64.MIN_VALUE, new ForkData(),
-        new ArrayList<>(), UInt64.MIN_VALUE, UInt64.MIN_VALUE, hash(Bytes32.TRUE),
-        hash(Bytes32.TRUE), hash(Bytes32.TRUE), new ArrayList<>(),
-        new ArrayList<>(), new ArrayList<>(),
-        UInt64.MIN_VALUE, UInt64.MIN_VALUE, UInt64.MIN_VALUE, UInt64.MIN_VALUE,  new ArrayList<>(),
-        new ArrayList<>(),new ArrayList<>(),
-        new ArrayList<>(), new ArrayList<>(),
-        hash(Bytes32.TRUE), new ArrayList<>());
+    BeaconState state = new BeaconState(UInt64.MIN_VALUE, UInt64.MIN_VALUE, new ForkData(UInt64.MIN_VALUE,
+        UInt64.MIN_VALUE, UInt64.MIN_VALUE), new ArrayList<>(), UInt64.MIN_VALUE, UInt64.MIN_VALUE, hash(Bytes32.TRUE),
+        hash(Bytes32.TRUE), hash(Bytes32.TRUE), new ArrayList<>(), new ArrayList<>(), new ArrayList<>(),
+        UInt64.MIN_VALUE, UInt64.MIN_VALUE, UInt64.MIN_VALUE, UInt64.MIN_VALUE,  new ArrayList<>(), new ArrayList<>(),
+        new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), hash(Bytes32.TRUE), new ArrayList<>());
 
     ArrayList<ValidatorRecord> new_records = new ArrayList<ValidatorRecord>(Collections.nCopies(24,
         new ValidatorRecord(1, hash(Bytes32.TRUE), hash(Bytes32.TRUE),
             UInt64.valueOf(status), 100.0, UInt64.valueOf(status), UInt64.MIN_VALUE, UInt64.MIN_VALUE)));
-    state.validator_registry = new_records;
+    state.setValidator_registry(new_records);
 
     ArrayList<Integer> new_committee = new ArrayList<Integer>();
     new_committee.add(0);
     new_committee.add(50);
     new_committee.add(100);
-    state.persistent_committees.add(new_committee);
+    state.getPersistent_committees().add(new_committee);
+    state.getPersistent_committees().add(new_committee);
 
-    state.latest_penalized_exit_balances.add(10.0);
+    state.getLatest_penalized_exit_balances().add(10.0);
 
     ArrayList<ShardCommittee> new_shard_committees = new ArrayList<ShardCommittee>(Collections.nCopies(2,
         new ShardCommittee(UInt64.MIN_VALUE, new int[]{20}, UInt64.valueOf(1))));
-    state.shard_committees_at_slots = new ArrayList<ArrayList<ShardCommittee>>(Collections.nCopies(65,
-        new_shard_committees));
+    state.setShard_committees_at_slots(new ArrayList<ArrayList<ShardCommittee>>(Collections.nCopies(65,
+        new_shard_committees)));
 
     return state;
   }
@@ -76,60 +74,60 @@ public class BeaconStateTest {
   public void activateValidatorNotPendingActivation() {
     BeaconState state = newState(ACTIVE);
     state.activate_validator(0);
-    assertThat(state.validator_registry.get(0).status.getValue()).isEqualTo(ACTIVE);
+    assertThat(state.getValidator_registry().get(0).getStatus().getValue()).isEqualTo(ACTIVE);
   }
 
   @Test
   public void activateValidator() {
     BeaconState state = newState(PENDING_ACTIVATION);
-    assertThat(state.validator_registry.get(0).status.getValue()).isEqualTo(PENDING_ACTIVATION);
+    assertThat(state.getValidator_registry().get(0).getStatus().getValue()).isEqualTo(PENDING_ACTIVATION);
     state.activate_validator(0);
-    assertThat(state.validator_registry.get(0).status.getValue()).isEqualTo(ACTIVE);
-    assertThat(state.validator_registry.get(0).latest_status_change_slot).isEqualTo(state.slot);
+    assertThat(state.getValidator_registry().get(0).getStatus().getValue()).isEqualTo(ACTIVE);
+    assertThat(state.getValidator_registry().get(0).getLatest_status_change_slot()).isEqualTo(state.getSlot());
   }
 
   @Test
   public void initiateValidatorExitNotActive() {
     BeaconState state = newState(ACTIVATION);
     state.initiate_validator_exit(0);
-    assertThat(state.validator_registry.get(0).status.getValue()).isEqualTo(ACTIVATION);
+    assertThat(state.getValidator_registry().get(0).getStatus().getValue()).isEqualTo(ACTIVATION);
   }
 
   @Test
   public void initiateValidatorExit() {
     BeaconState state = newState(ACTIVE);
     state.initiate_validator_exit(0);
-    assertThat(state.validator_registry.get(0).status.getValue()).isEqualTo(ACTIVE_PENDING_EXIT);
-    assertThat(state.validator_registry.get(0).latest_status_change_slot).isEqualTo(state.slot);
+    assertThat(state.getValidator_registry().get(0).getStatus().getValue()).isEqualTo(ACTIVE_PENDING_EXIT);
+    assertThat(state.getValidator_registry().get(0).getLatest_status_change_slot()).isEqualTo(state.getSlot());
   }
 
   @Test
   public void exitValidatorPrevStatusExitedWithPenaltyNewStateExitedWithoutPenalty() {
     BeaconState state = newState(EXITED_WITH_PENALTY);
     state.exit_validator(0, EXITED_WITHOUT_PENALTY);
-    assertThat(state.validator_registry.get(0).status.getValue()).isEqualTo(EXITED_WITH_PENALTY);
+    assertThat(state.getValidator_registry().get(0).getStatus().getValue()).isEqualTo(EXITED_WITH_PENALTY);
   }
 
   @Test
   public void exitValidatorPrevStatusExitedWithoutPenaltyNewStateExitedWithoutPenalty() {
     BeaconState state = newState(EXITED_WITHOUT_PENALTY);
     state.exit_validator(0, EXITED_WITHOUT_PENALTY);
-    assertThat(state.validator_registry.get(0).status.getValue()).isEqualTo(EXITED_WITHOUT_PENALTY);
-    assertThat(state.validator_registry.get(0).latest_status_change_slot).isEqualTo(state.slot);
+    assertThat(state.getValidator_registry().get(0).getStatus().getValue()).isEqualTo(EXITED_WITHOUT_PENALTY);
+    assertThat(state.getValidator_registry().get(0).getLatest_status_change_slot()).isEqualTo(state.getSlot());
   }
 
   @Test
   public void exitValidatorPrevStatusExitedWithoutPenaltyNewStateExitedWithPenalty() {
     // balance changes. no committee changes.
     BeaconState state = newState(EXITED_WITHOUT_PENALTY);
-    long before_exit_count = state.validator_registry_exit_count.getValue();
-    double before_balance = state.validator_registry.get(0).balance;
+    long before_exit_count = state.getValidator_registry_exit_count().getValue();
+    double before_balance = state.getValidator_registry().get(0).getBalance();
 //    Hash before_tip = state.validator_registry_delta_chain_tip;
 
     state.exit_validator(0, EXITED_WITH_PENALTY);
 
-    assertThat(before_exit_count).isEqualTo(state.validator_registry_exit_count.getValue());
-    assertThat(state.validator_registry.get(0).balance).isLessThan(before_balance);
+    assertThat(before_exit_count).isEqualTo(state.getValidator_registry_exit_count().getValue());
+    assertThat(state.getValidator_registry().get(0).getBalance()).isLessThan(before_balance);
     // TODO: Uncomment this when tree_root_hash is working.
 //    assertThat(before_tip).isNotEqualTo(state.validator_registry_delta_chain_tip);
   }
@@ -137,14 +135,14 @@ public class BeaconStateTest {
   @Test
   public void exitValidatorPrevStatusDidNotExitNewStatusExitedWithPenalty() {
     BeaconState state = newState(ACTIVE_PENDING_EXIT);
-    long before_exit_count = state.validator_registry_exit_count.getValue();
-    double before_balance = state.validator_registry.get(0).balance;
+    long before_exit_count = state.getValidator_registry_exit_count().getValue();
+    double before_balance = state.getValidator_registry().get(0).getBalance();
 //    Hash before_tip = state.validator_registry_delta_chain_tip;
 
     state.exit_validator(0, EXITED_WITH_PENALTY);
 
-    assertThat(before_exit_count).isEqualTo(state.validator_registry_exit_count.getValue() - 1);
-    assertThat(state.validator_registry.get(0).balance).isLessThan(before_balance);
+    assertThat(before_exit_count).isEqualTo(state.getValidator_registry_exit_count().getValue() - 1);
+    assertThat(state.getValidator_registry().get(0).getBalance()).isLessThan(before_balance);
     // TODO: Uncomment this when tree_root_hash is working.
 //    assertThat(before_tip).isNotEqualTo(state.validator_registry_delta_chain_tip);
   }
@@ -153,14 +151,14 @@ public class BeaconStateTest {
   public void exitValidatorPrevStatusDidNotExitNewStatusExitedWithoutPenalty() {
     // no balance changes. committee changes.
     BeaconState state = newState(ACTIVE_PENDING_EXIT);
-    long before_exit_count = state.validator_registry_exit_count.getValue();
-    int before_persistent_committees_size = state.persistent_committees.get(0).size();
+    long before_exit_count = state.getValidator_registry_exit_count().getValue();
+    int before_persistent_committees_size = state.getPersistent_committees().get(0).size();
 //    Hash before_tip = state.validator_registry_delta_chain_tip;
 
     state.exit_validator(0, EXITED_WITHOUT_PENALTY);
 
-    assertThat(before_exit_count).isEqualTo(state.validator_registry_exit_count.getValue() - 1);
-    assertThat(state.persistent_committees.get(0).size()).isEqualTo(before_persistent_committees_size - 1);
+    assertThat(before_exit_count).isEqualTo(state.getValidator_registry_exit_count().getValue() - 1);
+    assertThat(state.getPersistent_committees().get(0).size()).isEqualTo(before_persistent_committees_size - 1);
     // TODO: Uncomment this when tree_root_hash is working.
 //    assertThat(before_tip).isNotEqualTo(state.validator_registry_delta_chain_tip);
   }

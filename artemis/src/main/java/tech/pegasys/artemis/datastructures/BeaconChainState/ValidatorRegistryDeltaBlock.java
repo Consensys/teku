@@ -31,4 +31,36 @@ public class ValidatorRegistryDeltaBlock {
     this.pubkey = pubkey;
     this.flag = flag;
   }
+
+  public Hash getLatest_registry_delta_root() {
+    return latest_registry_delta_root;
+  }
+
+  public void setLatest_registry_delta_root(Hash latest_registry_delta_root) {
+    this.latest_registry_delta_root = latest_registry_delta_root;
+  }
+
+  public int getValidator_index() {
+    return validator_index;
+  }
+
+  public void setValidator_index(int validator_index) {
+    this.validator_index = validator_index;
+  }
+
+  public UInt384 getPubkey() {
+    return pubkey;
+  }
+
+  public void setPubkey(UInt384 pubkey) {
+    this.pubkey = pubkey;
+  }
+
+  public UInt64 getFlag() {
+    return flag;
+  }
+
+  public void setFlag(UInt64 flag) {
+    this.flag = flag;
+  }
 }

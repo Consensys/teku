@@ -17,8 +17,8 @@ import tech.pegasys.artemis.util.uint.UInt64;
 
 public class ShardCommittee {
 
-  public UInt64 shard;
-  public int[] committee;
+  private UInt64 shard;
+  private int[] committee;
   private UInt64 total_validator_count;
 
   public ShardCommittee(UInt64 shard, int[] committee, UInt64 total_validator_count) {
@@ -27,4 +27,23 @@ public class ShardCommittee {
     this.total_validator_count = total_validator_count;
   }
 
+  public UInt64 getShard() {
+    return shard;
+  }
+
+  public int[] getCommittee() {
+    return committee;
+  }
+
+  public void setCommittee(int[] committee) {
+    this.committee = committee;
+  }
+
+  public UInt64 getTotal_validator_count() {
+    return total_validator_count;
+  }
+
+  public void setTotal_validator_count(UInt64 total_validator_count) {
+    this.total_validator_count = total_validator_count;
+  }
 }

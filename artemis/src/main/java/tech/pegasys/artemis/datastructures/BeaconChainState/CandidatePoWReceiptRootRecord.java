@@ -18,12 +18,12 @@ import tech.pegasys.artemis.util.uint.UInt64;
 
 public class CandidatePoWReceiptRootRecord {
 
-
   private Hash candidate_pow_receipt_root;
   private UInt64 votes;
 
-  public CandidatePoWReceiptRootRecord() {
-
+  public CandidatePoWReceiptRootRecord(Hash candidate_pow_receipt_root, UInt64 votes) {
+    this.candidate_pow_receipt_root = candidate_pow_receipt_root;
+    this.votes = votes;
   }
 
 }

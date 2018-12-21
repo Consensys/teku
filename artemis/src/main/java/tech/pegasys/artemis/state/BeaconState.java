@@ -51,21 +51,21 @@ import com.google.common.annotations.VisibleForTesting;
 public class BeaconState {
 
   // Misc
-  public UInt64 slot;
+  private UInt64 slot;
   private UInt64 genesis_time;
   private ForkData fork_data;
 
   // Validator registry
-  public ArrayList<ValidatorRecord> validator_registry;
+  private ArrayList<ValidatorRecord> validator_registry;
   private UInt64 validator_registry_latest_change_slot;
-  public UInt64 validator_registry_exit_count;
-  public Hash validator_registry_delta_chain_tip;
+  private UInt64 validator_registry_exit_count;
+  private Hash validator_registry_delta_chain_tip;
 
   // Randomness and committees
   private Hash randao_mix;
   private Hash next_seed;
-  public ArrayList<ArrayList<ShardCommittee>> shard_committees_at_slots;
-  public ArrayList<ArrayList<Integer>> persistent_committees;
+  private ArrayList<ArrayList<ShardCommittee>> shard_committees_at_slots;
+  private ArrayList<ArrayList<Integer>> persistent_committees;
   private ArrayList<ShardReassignmentRecord> persistent_committee_reassignments;
 
   // Finality
@@ -77,7 +77,7 @@ public class BeaconState {
   // Recent state
   private ArrayList<CrosslinkRecord> latest_crosslinks;
   private ArrayList<Hash> latest_block_roots;
-  public ArrayList<Double> latest_penalized_exit_balances;
+  private ArrayList<Double> latest_penalized_exit_balances;
   private ArrayList<PendingAttestationRecord> latest_attestations;
   private ArrayList<Hash> batched_block_roots;
 
@@ -98,7 +98,7 @@ public class BeaconState {
     this.slot = state.slot;
   }
 
-  public BeaconState(
+  BeaconState(
       // Misc
       UInt64 slot, UInt64 genesis_time, ForkData fork_data,
       // Validator registry
@@ -113,7 +113,7 @@ public class BeaconState {
       UInt64 finalized_slot,
       // Recent state
       ArrayList<CrosslinkRecord> latest_crosslinks, ArrayList<Hash> latest_block_roots,
-      ArrayList<Double>  latest_penalized_exit_balances, ArrayList<PendingAttestationRecord> latest_attestations,
+      ArrayList<Double> latest_penalized_exit_balances, ArrayList<PendingAttestationRecord> latest_attestations,
       ArrayList<Hash> batched_block_roots,
       // PoW receipt root
       Hash processed_pow_receipt_root, ArrayList<CandidatePoWReceiptRootRecord> candidate_pow_receipt_roots) {
@@ -201,15 +201,15 @@ public class BeaconState {
   @VisibleForTesting
   public void activate_validator(int index) {
     ValidatorRecord validator = validator_registry.get(index);
-    if (validator.status.getValue() != PENDING_ACTIVATION) {
+    if (validator.getStatus().getValue() != PENDING_ACTIVATION) {
       return;
     }
 
-    validator.status = UInt64.valueOf(ACTIVE);
-    validator.latest_status_change_slot = slot;
+    validator.setStatus(UInt64.valueOf(ACTIVE));
+    validator.setLatest_status_change_slot(slot);
     validator_registry_delta_chain_tip =
         get_new_validator_registry_delta_chain_tip(validator_registry_delta_chain_tip,
-        index, toIntExact(validator.pubkey.getValue()), ACTIVATION);
+        index, toIntExact(validator.getPubkey().getValue()), ACTIVATION);
   }
 
 
@@ -221,12 +221,12 @@ public class BeaconState {
   @VisibleForTesting
   public void initiate_validator_exit(int index) {
     ValidatorRecord validator = validator_registry.get(index);
-    if (validator.status.getValue() != ACTIVE) {
+    if (validator.getStatus().getValue() != ACTIVE) {
       return;
     }
 
-    validator.status = UInt64.valueOf(ACTIVE_PENDING_EXIT);
-    validator.latest_status_change_slot = slot;
+    validator.setStatus(UInt64.valueOf(ACTIVE_PENDING_EXIT));
+    validator.setLatest_status_change_slot(slot);
   }
 
 
@@ -239,14 +239,14 @@ public class BeaconState {
   @VisibleForTesting
   public void exit_validator(int index, int new_status) {
     ValidatorRecord validator = validator_registry.get(index);
-    UInt64 prev_status = validator.status;
+    UInt64 prev_status = validator.getStatus();
 
     if (prev_status.getValue() == EXITED_WITH_PENALTY) {
       return;
     }
 
-    validator.status = UInt64.valueOf(new_status);
-    validator.latest_status_change_slot = slot;
+    validator.setStatus(UInt64.valueOf(new_status));
+    validator.setLatest_status_change_slot(slot);
 
     if (new_status == EXITED_WITH_PENALTY) {
       int lpeb_index = toIntExact(slot.getValue()) / COLLECTIVE_PENALTY_CALCULATION_PERIOD;
@@ -255,8 +255,8 @@ public class BeaconState {
 
       ValidatorRecord whistleblower = validator_registry.get(get_beacon_proposer_index(toIntExact(slot.getValue())));
 
-      whistleblower.balance = whistleblower.balance + validator.balance / WHISTLEBLOWER_REWARD_QUOTIENT;
-      validator.balance = validator.balance - validator.balance / WHISTLEBLOWER_REWARD_QUOTIENT;
+      whistleblower.setBalance(whistleblower.getBalance() + validator.getBalance() / WHISTLEBLOWER_REWARD_QUOTIENT);
+      validator.setBalance(validator.getBalance() - validator.getBalance() / WHISTLEBLOWER_REWARD_QUOTIENT);
     }
 
     if (prev_status.getValue() == EXITED_WITHOUT_PENALTY){
@@ -265,9 +265,9 @@ public class BeaconState {
 
     // The following updates only occur if not previous exited
     validator_registry_exit_count = validator_registry_exit_count.increment();
-    validator.exit_count = validator_registry_exit_count;
+    validator.setExit_count(validator_registry_exit_count);
     validator_registry_delta_chain_tip = get_new_validator_registry_delta_chain_tip(
-        validator_registry_delta_chain_tip, index, toIntExact(validator.pubkey.getValue()), EXIT);
+        validator_registry_delta_chain_tip, index, toIntExact(validator.getPubkey().getValue()), EXIT);
 
     // Remove validator from persistent committees
     for (int i = 0; i < persistent_committees.size(); i++) {
@@ -290,7 +290,7 @@ public class BeaconState {
    * @return
    */
   private int get_beacon_proposer_index(int slot) {
-    int[] first_committee = get_shard_committees_at_slot(slot).get(0).committee;
+    int[] first_committee = get_shard_committees_at_slot(slot).get(0).getCommittee();
     return first_committee[slot % first_committee.length];
   }
 
@@ -329,7 +329,7 @@ public class BeaconState {
    * @return
    */
   private double get_effective_balance(ValidatorRecord validator) {
-    return Math.min(validator.balance, MAX_DEPOSIT * GWEI_PER_ETH);
+    return Math.min(validator.getBalance(), MAX_DEPOSIT * GWEI_PER_ETH);
   }
 
 
@@ -452,8 +452,176 @@ public class BeaconState {
       return x;
     }
 
+  }
 
 
+
+
+  public UInt64 getGenesis_time() {
+    return genesis_time;
+  }
+
+  public void setGenesis_time(UInt64 genesis_time) {
+    this.genesis_time = genesis_time;
+  }
+
+  public ForkData getFork_data() {
+    return fork_data;
+  }
+
+  public void setFork_data(ForkData fork_data) {
+    this.fork_data = fork_data;
+  }
+
+  public ArrayList<ValidatorRecord> getValidator_registry() { return validator_registry; }
+
+  public void setValidator_registry(ArrayList<ValidatorRecord> validator_registry) {
+    this.validator_registry = validator_registry;
+  }
+
+  public UInt64 getValidator_registry_exit_count() {
+    return validator_registry_exit_count;
+  }
+
+  public void setValidator_registry_exit_count(UInt64 validator_registry_exit_count) {
+    this.validator_registry_exit_count = validator_registry_exit_count;
+  }
+
+
+  public UInt64 getValidator_registry_latest_change_slot() {
+    return validator_registry_latest_change_slot;
+  }
+
+  public void setValidator_registry_latest_change_slot(UInt64 validator_registry_latest_change_slot) {
+    this.validator_registry_latest_change_slot = validator_registry_latest_change_slot;
+  }
+
+  public Hash getRandao_mix() {
+    return randao_mix;
+  }
+
+  public void setRandao_mix(Hash randao_mix) {
+    this.randao_mix = randao_mix;
+  }
+
+  public Hash getNext_seed() {
+    return next_seed;
+  }
+
+  public void setNext_seed(Hash next_seed) {
+    this.next_seed = next_seed;
+  }
+
+  public ArrayList<ShardReassignmentRecord> getPersistent_committee_reassignments() {
+    return persistent_committee_reassignments;
+  }
+
+  public void setPersistent_committee_reassignments(ArrayList<ShardReassignmentRecord> persistent_committee_reassignments) {
+    this.persistent_committee_reassignments = persistent_committee_reassignments;
+  }
+
+  public UInt64 getPrevious_justified_slot() {
+    return previous_justified_slot;
+  }
+
+  public void setPrevious_justified_slot(UInt64 previous_justified_slot) {
+    this.previous_justified_slot = previous_justified_slot;
+  }
+
+  public UInt64 getJustification_bitfield() {
+    return justification_bitfield;
+  }
+
+  public void setJustification_bitfield(UInt64 justification_bitfield) {
+    this.justification_bitfield = justification_bitfield;
+  }
+
+  public ArrayList<CrosslinkRecord> getLatest_crosslinks() {
+    return latest_crosslinks;
+  }
+
+  public void setLatest_crosslinks(ArrayList<CrosslinkRecord> latest_crosslinks) {
+    this.latest_crosslinks = latest_crosslinks;
+  }
+
+  public ArrayList<Hash> getLatest_block_roots() {
+    return latest_block_roots;
+  }
+
+  public void setLatest_block_roots(ArrayList<Hash> latest_block_roots) {
+    this.latest_block_roots = latest_block_roots;
+  }
+
+  public ArrayList<PendingAttestationRecord> getLatest_attestations() {
+    return latest_attestations;
+  }
+
+  public void setLatest_attestations(ArrayList<PendingAttestationRecord> latest_attestations) {
+    this.latest_attestations = latest_attestations;
+  }
+
+  public ArrayList<Hash> getBatched_block_roots() {
+    return batched_block_roots;
+  }
+
+  public void setBatched_block_roots(ArrayList<Hash> batched_block_roots) {
+    this.batched_block_roots = batched_block_roots;
+  }
+
+  public UInt64 getJustified_slot() {
+    return justified_slot;
+  }
+
+  public void setJustified_slot(UInt64 justified_slot) {
+    this.justified_slot = justified_slot;
+  }
+
+  public UInt64 getFinalized_slot() {
+    return finalized_slot;
+  }
+
+  public void setFinalized_slot(UInt64 finalized_slot) {
+    this.finalized_slot = finalized_slot;
+  }
+
+  public Hash getProcessed_pow_receipt_root() {
+    return processed_pow_receipt_root;
+  }
+
+  public void setProcessed_pow_receipt_root(Hash processed_pow_receipt_root) {
+    this.processed_pow_receipt_root = processed_pow_receipt_root;
+  }
+
+  public ArrayList<CandidatePoWReceiptRootRecord> getCandidate_pow_receipt_roots() {
+    return candidate_pow_receipt_roots;
+  }
+
+  public void setCandidate_pow_receipt_roots(ArrayList<CandidatePoWReceiptRootRecord> candidate_pow_receipt_roots) {
+    this.candidate_pow_receipt_roots = candidate_pow_receipt_roots;
+  }
+
+  public ArrayList<ArrayList<ShardCommittee>> getShard_committees_at_slots() {
+    return shard_committees_at_slots;
+  }
+
+  public void setShard_committees_at_slots(ArrayList<ArrayList<ShardCommittee>> shard_committees_at_slots) {
+    this.shard_committees_at_slots = shard_committees_at_slots;
+  }
+
+  public ArrayList<ArrayList<Integer>> getPersistent_committees() {
+    return persistent_committees;
+  }
+
+  public void setPersistent_committees(ArrayList<ArrayList<Integer>> persistent_committees) {
+    this.persistent_committees = persistent_committees;
+  }
+
+  public ArrayList<Double> getLatest_penalized_exit_balances() {
+    return latest_penalized_exit_balances;
+  }
+
+  public void setLatest_penalized_exit_balances(ArrayList<Double> latest_penalized_exit_balances) {
+    this.latest_penalized_exit_balances = latest_penalized_exit_balances;
   }
 
 }
