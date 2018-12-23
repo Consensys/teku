@@ -11,19 +11,25 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.factories;
+package tech.pegasys.artemis.services;
 
-import java.util.concurrent.Executors;
+public class ServiceFactory<T> {
 
-import com.google.common.eventbus.AsyncEventBus;
-import com.google.common.eventbus.EventBus;
+    private final Class<T> type;
 
-public class EventBusFactory {
-
-    private static final EventBus eventBus = new AsyncEventBus(Executors.newCachedThreadPool());
-
-    public static EventBus getInstance() {
-        return eventBus;
+    public ServiceFactory(Class<T> type) {
+      this.type = type;
     }
 
+    public T getInstance() {
+        try {
+            return type.getDeclaredConstructor().newInstance();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static <S> ServiceFactory<S> getInstance(Class<S> type) {
+        return new ServiceFactory<S>(type);
+    }
 }

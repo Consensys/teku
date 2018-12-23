@@ -27,7 +27,8 @@ build/
 out/
 web3j/
 
-pow/.vscode/
+*.vscode/
 pow/truffle/.vscode/
 pow/truffle/node_modules/
 pow/truffle/npm-debug.*
+

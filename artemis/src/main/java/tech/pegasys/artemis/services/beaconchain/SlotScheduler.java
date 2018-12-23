@@ -11,25 +11,20 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.factories;
+package tech.pegasys.artemis.services.beaconchain;
 
-public class ServiceFactory<T> {
+import java.util.Date;
 
-    private final Class<T> type;
+import com.google.common.eventbus.EventBus;
 
-    public ServiceFactory(Class<T> type) {
-      this.type = type;
+
+public class SlotScheduler implements Runnable {
+    private EventBus eventBus;
+    SlotScheduler(EventBus eventBus){
+        this.eventBus = eventBus;
     }
-
-    public T getInstance() {
-        try {
-            return type.getDeclaredConstructor().newInstance();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public static <S> ServiceFactory<S> getInstance(Class<S> type) {
-        return new ServiceFactory<S>(type);
+    @Override
+    public void run(){
+        this.eventBus.post(new Date());
     }
 }
