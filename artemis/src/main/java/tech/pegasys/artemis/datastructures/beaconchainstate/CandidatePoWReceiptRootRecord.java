@@ -11,34 +11,19 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.datastructures.BeaconChainState;
+package tech.pegasys.artemis.datastructures.beaconchainstate;
 
 import tech.pegasys.artemis.ethereum.core.Hash;
 import tech.pegasys.artemis.util.uint.UInt64;
 
-public class CrosslinkRecord {
+public class CandidatePoWReceiptRootRecord {
 
-  private Hash shard_block_hash;
-  private UInt64 slot;
+  private Hash candidate_pow_receipt_root;
+  private UInt64 votes;
 
-  public CrosslinkRecord(Hash shard_block_hash, UInt64 slot) {
-    this.shard_block_hash = shard_block_hash;
-    this.slot = slot;
+  public CandidatePoWReceiptRootRecord(Hash candidate_pow_receipt_root, UInt64 votes) {
+    this.candidate_pow_receipt_root = candidate_pow_receipt_root;
+    this.votes = votes;
   }
 
-  public Hash getShard_block_hash() {
-    return shard_block_hash;
-  }
-
-  public void setShard_block_hash(Hash shard_block_hash) {
-    this.shard_block_hash = shard_block_hash;
-  }
-
-  public UInt64 getSlot() {
-    return slot;
-  }
-
-  public void setSlot(UInt64 slot) {
-    this.slot = slot;
-  }
 }

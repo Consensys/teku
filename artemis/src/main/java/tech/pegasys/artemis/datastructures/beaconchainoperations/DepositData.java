@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.datastructures.BeaconChainOperations;
+package tech.pegasys.artemis.datastructures.beaconchainoperations;
 
 import tech.pegasys.artemis.util.uint.UInt64;
 
