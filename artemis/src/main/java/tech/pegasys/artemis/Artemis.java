@@ -14,13 +14,15 @@
 package tech.pegasys.artemis;
 
 import tech.pegasys.artemis.services.ServiceController;
+import tech.pegasys.artemis.cli.CommandLineArguments;
+import picocli.CommandLine;
 
 public final class Artemis {
 
     public static void main(final String... args) {
         try {
             // Process Command Line Args
-
+            CommandLine.run(new CommandLineArguments(), args);
             // Detect SIGTERM
             Runtime.getRuntime().addShutdownHook(new Thread(){
                 @Override
