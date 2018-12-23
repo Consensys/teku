@@ -11,20 +11,23 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.controllers;
+package tech.pegasys.artemis.services;
 
-import tech.pegasys.artemis.factories.ServiceFactory;
 import tech.pegasys.artemis.services.beaconchain.BeaconChainService;
 import tech.pegasys.artemis.services.powchain.PowchainService;
+
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 
 public class ServiceController {
 
     private static final BeaconChainService beaconChainService = ServiceFactory.getInstance(BeaconChainService.class).getInstance();;
     private static final PowchainService powchainService = ServiceFactory.getInstance(PowchainService.class).getInstance();
-
+    private static final ExecutorService beaconChainExecuterService = Executors.newSingleThreadExecutor();
+    private static final ExecutorService powchainExecuterService = Executors.newSingleThreadExecutor();
     // initialize/register all services
-    public static void init(){
+    public static void initAll(){
 
         beaconChainService.init();
         powchainService.init();
@@ -36,16 +39,22 @@ public class ServiceController {
         // RPC Service
     }
 
-    public static void start(){
+    public static void startAll(){
+
         // start all services
-        beaconChainService.start();
-        powchainService.start();
+        beaconChainExecuterService.execute(beaconChainService);
+        powchainExecuterService.execute(powchainService);
+
+
 
     }
 
-    public static void stop(){
+    public static void stopAll(){
         // stop all services
+        beaconChainExecuterService.shutdown();
         beaconChainService.stop();
+        powchainExecuterService.shutdown();
         powchainService.stop();
     }
+
 }
