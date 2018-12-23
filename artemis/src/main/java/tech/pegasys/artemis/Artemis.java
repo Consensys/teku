@@ -13,16 +13,29 @@
 
 package tech.pegasys.artemis;
 
-import tech.pegasys.artemis.controllers.ServiceController;
+import tech.pegasys.artemis.services.ServiceController;
 
 public final class Artemis {
 
     public static void main(final String... args) {
-        // Process Command Line Args
-        // Instantiate ServiceController and start event loop
-         ServiceController.init();
-         ServiceController.start();
+        try {
+            // Process Command Line Args
 
+            // Detect SIGTERM
+            Runtime.getRuntime().addShutdownHook(new Thread(){
+                @Override
+                public void run(){
+                    System.out.println("Artemis is shutting down");
+                    ServiceController.stopAll();
+                }
+            });
+            // Initialize services
+            ServiceController.initAll();
+            // Start services
+            ServiceController.startAll();
+        } catch (Exception e){
+            System.out.println(e.toString());
+        }
     }
 
 }
