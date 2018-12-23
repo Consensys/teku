@@ -13,8 +13,9 @@
 
 package tech.pegasys.artemis.services;
 
-public interface ServiceInterface {
+public interface ServiceInterface extends Runnable{
     void init();
-    void start();
+    @Override
+    void run();
     void stop();
 }
