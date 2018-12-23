@@ -13,8 +13,9 @@
 
 package tech.pegasys.artemis;
 
-import tech.pegasys.artemis.services.ServiceController;
 import tech.pegasys.artemis.cli.CommandLineArguments;
+import tech.pegasys.artemis.services.ServiceController;
+
 import picocli.CommandLine;
 
 public final class Artemis {
@@ -22,19 +23,25 @@ public final class Artemis {
     public static void main(final String... args) {
         try {
             // Process Command Line Args
-            CommandLine.run(new CommandLineArguments(), args);
+            CommandLineArguments cliArgs = new CommandLineArguments();
+            CommandLine commandLine = new CommandLine(cliArgs);
+            commandLine.parse(args);
+            if (commandLine.isUsageHelpRequested()) {
+                commandLine.usage(System.out);
+                return;
+            }
             // Detect SIGTERM
             Runtime.getRuntime().addShutdownHook(new Thread(){
                 @Override
                 public void run(){
                     System.out.println("Artemis is shutting down");
-                    ServiceController.stopAll();
+                    ServiceController.stopAll(cliArgs);
                 }
             });
             // Initialize services
-            ServiceController.initAll();
+            ServiceController.initAll(cliArgs);
             // Start services
-            ServiceController.startAll();
+            ServiceController.startAll(cliArgs);
         } catch (Exception e){
             System.out.println(e.toString());
         }

@@ -16,14 +16,12 @@ package tech.pegasys.artemis.cli;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 
-@Command(name = "Artemis", mixinStandardHelpOptions = true, description = "@|bold Groovy|@ @|underline picocli|@ example")
-public class CommandLineArguments implements Runnable{
-    @Option(names = {"-p", "--simPoWChain"}, description = "If this option is enabled them PoW chain events are simulated.")
-    private Boolean simulatedPoWChainEvents=false;
+@Command(name = "Artemis", mixinStandardHelpOptions = true)
+public class CommandLineArguments{
+    @Option(names = {"-p", "--PoWChainServiceDisabled"}, description = "If this option is enabled then the PoW Chain service is disabled.")
+    private Boolean PoWChainServiceDisabled=false;
 
-    @Override
-    public void run(){
-        System.out.println("SimulatedPoWEvents: " + this.simulatedPoWChainEvents);
+    public Boolean getPoWChainServiceDisabled(){
+        return this.PoWChainServiceDisabled;
     }
-
 }
