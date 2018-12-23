@@ -14,7 +14,7 @@
 package tech.pegasys.artemis.services.beaconchain;
 
 import tech.pegasys.artemis.Constants;
-import tech.pegasys.artemis.datastructures.BeaconChainBlocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.beaconchainblocks.BeaconBlock;
 import tech.pegasys.artemis.state.BeaconState;
 import tech.pegasys.artemis.util.uint.UInt64;
 

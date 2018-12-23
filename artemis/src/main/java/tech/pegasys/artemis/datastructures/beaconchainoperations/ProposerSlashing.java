@@ -11,9 +11,9 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.datastructures.BeaconChainOperations;
+package tech.pegasys.artemis.datastructures.beaconchainoperations;
 
-import tech.pegasys.artemis.datastructures.BeaconChainBlocks.ProposalSignedData;
+import tech.pegasys.artemis.datastructures.beaconchainblocks.ProposalSignedData;
 import tech.pegasys.artemis.util.uint.UInt384;
 
 public class ProposerSlashing {

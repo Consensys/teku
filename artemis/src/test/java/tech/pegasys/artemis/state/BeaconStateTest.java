@@ -26,9 +26,9 @@ import static tech.pegasys.artemis.state.BeaconState.BeaconStateHelperFunctions.
 import static tech.pegasys.artemis.state.BeaconState.BeaconStateHelperFunctions.shuffle;
 import static tech.pegasys.artemis.state.BeaconState.BeaconStateHelperFunctions.split;
 
-import tech.pegasys.artemis.datastructures.BeaconChainState.ForkData;
-import tech.pegasys.artemis.datastructures.BeaconChainState.ShardCommittee;
-import tech.pegasys.artemis.datastructures.BeaconChainState.ValidatorRecord;
+import tech.pegasys.artemis.datastructures.beaconchainstate.ForkData;
+import tech.pegasys.artemis.datastructures.beaconchainstate.ShardCommittee;
+import tech.pegasys.artemis.datastructures.beaconchainstate.ValidatorRecord;
 import tech.pegasys.artemis.ethereum.core.Hash;
 import tech.pegasys.artemis.util.bytes.Bytes32;
 import tech.pegasys.artemis.util.bytes.BytesValue;

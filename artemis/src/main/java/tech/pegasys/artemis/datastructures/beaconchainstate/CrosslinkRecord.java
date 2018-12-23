@@ -11,36 +11,27 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.datastructures.BeaconChainState;
+package tech.pegasys.artemis.datastructures.beaconchainstate;
 
+import tech.pegasys.artemis.ethereum.core.Hash;
 import tech.pegasys.artemis.util.uint.UInt64;
 
-public class ShardReassignmentRecord {
+public class CrosslinkRecord {
 
-  private int validator_index;
-  private UInt64 shard;
+  private Hash shard_block_hash;
   private UInt64 slot;
 
-  public ShardReassignmentRecord(int validator_index, UInt64 shard, UInt64 slot) {
-    this.validator_index = validator_index;
-    this.shard = shard;
+  public CrosslinkRecord(Hash shard_block_hash, UInt64 slot) {
+    this.shard_block_hash = shard_block_hash;
     this.slot = slot;
   }
 
-  public int getValidator_index() {
-    return validator_index;
+  public Hash getShard_block_hash() {
+    return shard_block_hash;
   }
 
-  public void setValidator_index(int validator_index) {
-    this.validator_index = validator_index;
-  }
-
-  public UInt64 getShard() {
-    return shard;
-  }
-
-  public void setShard(UInt64 shard) {
-    this.shard = shard;
+  public void setShard_block_hash(Hash shard_block_hash) {
+    this.shard_block_hash = shard_block_hash;
   }
 
   public UInt64 getSlot() {

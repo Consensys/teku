@@ -13,7 +13,7 @@
 
 package tech.pegasys.artemis.services.beaconchain;
 import tech.pegasys.artemis.Constants;
-import tech.pegasys.artemis.datastructures.BeaconChainBlocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.beaconchainblocks.BeaconBlock;
 import tech.pegasys.artemis.factories.EventBusFactory;
 import tech.pegasys.artemis.pow.event.ChainStartEvent;
 import tech.pegasys.artemis.pow.event.ValidatorRegistrationEvent;

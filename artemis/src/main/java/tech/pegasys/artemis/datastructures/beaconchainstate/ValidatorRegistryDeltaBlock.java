@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.datastructures.BeaconChainState;
+package tech.pegasys.artemis.datastructures.beaconchainstate;
 
 import tech.pegasys.artemis.ethereum.core.Hash;
 import tech.pegasys.artemis.util.uint.UInt384;
