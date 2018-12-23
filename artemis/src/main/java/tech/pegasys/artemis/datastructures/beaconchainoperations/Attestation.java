@@ -11,33 +11,25 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.datastructures.BeaconChainState;
+package tech.pegasys.artemis.datastructures.beaconchainoperations;
 
-import tech.pegasys.artemis.datastructures.BeaconChainOperations.AttestationData;
 import tech.pegasys.artemis.util.bytes.Bytes32;
-import tech.pegasys.artemis.util.uint.UInt64;
+import tech.pegasys.artemis.util.uint.UInt384;
 
-public class PendingAttestationRecord {
+
+public class Attestation {
 
   private AttestationData data;
   private Bytes32 participation_bitfield;
   private Bytes32 custody_bitfield;
-  private UInt64 slot_included;
+  private UInt384 aggregate_signature;
 
-  public PendingAttestationRecord(AttestationData data, Bytes32 participation_bitfield, Bytes32 custody_bitfield,
-                                  UInt64 slot_included) {
+  public Attestation(AttestationData data, Bytes32 participation_bitfield, Bytes32 custody_bitfield,
+                     UInt384 aggregate_signature) {
     this.data = data;
     this.participation_bitfield = participation_bitfield;
     this.custody_bitfield = custody_bitfield;
-    this.slot_included = slot_included;
-  }
-
-  public AttestationData getData() {
-    return data;
-  }
-
-  public void setData(AttestationData data) {
-    this.data = data;
+    this.aggregate_signature = aggregate_signature;
   }
 
   public Bytes32 getParticipation_bitfield() {
@@ -48,6 +40,14 @@ public class PendingAttestationRecord {
     this.participation_bitfield = participation_bitfield;
   }
 
+  public AttestationData getData() {
+    return data;
+  }
+
+  public void setData(AttestationData data) {
+    this.data = data;
+  }
+
   public Bytes32 getCustody_bitfield() {
     return custody_bitfield;
   }
@@ -56,11 +56,11 @@ public class PendingAttestationRecord {
     this.custody_bitfield = custody_bitfield;
   }
 
-  public UInt64 getSlot_included() {
-    return slot_included;
+  public UInt384 getAggregate_signature() {
+    return aggregate_signature;
   }
 
-  public void setSlot_included(UInt64 slot_included) {
-    this.slot_included = slot_included;
+  public void setAggregate_signature(UInt384 aggregate_signature) {
+    this.aggregate_signature = aggregate_signature;
   }
 }

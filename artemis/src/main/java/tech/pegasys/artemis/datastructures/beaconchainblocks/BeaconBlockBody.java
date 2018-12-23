@@ -11,13 +11,13 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.datastructures.BeaconChainBlocks;
+package tech.pegasys.artemis.datastructures.beaconchainblocks;
 
-import tech.pegasys.artemis.datastructures.BeaconChainOperations.Attestation;
-import tech.pegasys.artemis.datastructures.BeaconChainOperations.CasperSlashing;
-import tech.pegasys.artemis.datastructures.BeaconChainOperations.Deposit;
-import tech.pegasys.artemis.datastructures.BeaconChainOperations.Exit;
-import tech.pegasys.artemis.datastructures.BeaconChainOperations.ProposerSlashing;
+import tech.pegasys.artemis.datastructures.beaconchainoperations.Attestation;
+import tech.pegasys.artemis.datastructures.beaconchainoperations.CasperSlashing;
+import tech.pegasys.artemis.datastructures.beaconchainoperations.Deposit;
+import tech.pegasys.artemis.datastructures.beaconchainoperations.Exit;
+import tech.pegasys.artemis.datastructures.beaconchainoperations.ProposerSlashing;
 
 public class BeaconBlockBody {
 

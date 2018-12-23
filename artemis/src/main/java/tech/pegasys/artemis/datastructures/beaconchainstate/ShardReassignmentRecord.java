@@ -11,29 +11,28 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.datastructures.BeaconChainBlocks;
+package tech.pegasys.artemis.datastructures.beaconchainstate;
 
-import tech.pegasys.artemis.ethereum.core.Hash;
 import tech.pegasys.artemis.util.uint.UInt64;
 
-public class ProposalSignedData {
+public class ShardReassignmentRecord {
 
-  private UInt64 slot;
+  private int validator_index;
   private UInt64 shard;
-  private Hash block_hash;
+  private UInt64 slot;
 
-  public ProposalSignedData(UInt64 slot, UInt64 shard, Hash block_hash) {
-    this.slot = slot;
+  public ShardReassignmentRecord(int validator_index, UInt64 shard, UInt64 slot) {
+    this.validator_index = validator_index;
     this.shard = shard;
-    this.block_hash = block_hash;
-  }
-
-  public UInt64 getSlot() {
-    return slot;
-  }
-
-  public void setSlot(UInt64 slot) {
     this.slot = slot;
+  }
+
+  public int getValidator_index() {
+    return validator_index;
+  }
+
+  public void setValidator_index(int validator_index) {
+    this.validator_index = validator_index;
   }
 
   public UInt64 getShard() {
@@ -44,11 +43,11 @@ public class ProposalSignedData {
     this.shard = shard;
   }
 
-  public Hash getBlock_hash() {
-    return block_hash;
+  public UInt64 getSlot() {
+    return slot;
   }
 
-  public void setBlock_hash(Hash block_hash) {
-    this.block_hash = block_hash;
+  public void setSlot(UInt64 slot) {
+    this.slot = slot;
   }
 }
