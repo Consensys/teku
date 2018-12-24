@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.services;
 
+import tech.pegasys.artemis.cli.CommandLineArguments;
 import tech.pegasys.artemis.services.beaconchain.BeaconChainService;
 import tech.pegasys.artemis.services.powchain.PowchainService;
 
@@ -27,10 +28,12 @@ public class ServiceController {
     private static final ExecutorService beaconChainExecuterService = Executors.newSingleThreadExecutor();
     private static final ExecutorService powchainExecuterService = Executors.newSingleThreadExecutor();
     // initialize/register all services
-    public static void initAll(){
+    public static void initAll(CommandLineArguments cliArgs){
 
         beaconChainService.init();
-        powchainService.init();
+        if(!cliArgs.getPoWChainServiceDisabled()){
+            powchainService.init();
+        }
 
         // Validator Service
 
@@ -39,17 +42,19 @@ public class ServiceController {
         // RPC Service
     }
 
-    public static void startAll(){
+    public static void startAll(CommandLineArguments cliArgs){
 
         // start all services
         beaconChainExecuterService.execute(beaconChainService);
-        powchainExecuterService.execute(powchainService);
+        if(!cliArgs.getPoWChainServiceDisabled()){
+            powchainExecuterService.execute(powchainService);
+        }
 
 
 
     }
 
-    public static void stopAll(){
+    public static void stopAll(CommandLineArguments cliArgs){
         // stop all services
         beaconChainExecuterService.shutdown();
         beaconChainService.stop();
