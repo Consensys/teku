@@ -43,9 +43,26 @@ The integration tests can be triggered with:
 ./gradlew integrationTest
 ```
 
-## Run
+## Run Options
+
+To view the run menu:
+
+```
+$ ./gradlew run --args='-h'
+
+Usage: Artemis [-hpV]
+  -h, --help                       Show this help message and exit.
+  -p, --PoWChainServiceDisabled    If this option is enabled then the PoW Chain service is disabled.
+  -V, --version                    Print version information and exit.
+```
 
 You can run the executable from the CLI with this command:
 ```
 ./gradlew run
+```
+
+To run without a PoW Chain:
+
+```
+$ ./gradlew run --args='-p'
 ```
