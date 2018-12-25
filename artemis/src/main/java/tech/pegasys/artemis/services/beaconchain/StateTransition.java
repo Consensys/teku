@@ -50,7 +50,7 @@ public class StateTransition{
 
     protected void slotProcessor(BeaconState state){
         // deep copy beacon state
-        BeaconState newState = new BeaconState(state);
+        BeaconState newState = BeaconState.deepCopy(state);
         state.incrementSlot();
         System.out.println("Processing new slot: " + state.getSlot());
         // Slots the proposer has skipped (i.e. layers of RANDAO expected)
