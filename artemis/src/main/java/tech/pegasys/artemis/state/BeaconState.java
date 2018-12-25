@@ -38,6 +38,7 @@ import tech.pegasys.artemis.datastructures.beaconchainstate.ShardReassignmentRec
 import tech.pegasys.artemis.datastructures.beaconchainstate.ValidatorRecord;
 import tech.pegasys.artemis.datastructures.beaconchainstate.ValidatorRegistryDeltaBlock;
 import tech.pegasys.artemis.ethereum.core.Hash;
+import tech.pegasys.artemis.util.bytes.Bytes32;
 import tech.pegasys.artemis.util.uint.UInt384;
 import tech.pegasys.artemis.util.uint.UInt64;
 
@@ -45,6 +46,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
 
 
@@ -93,9 +96,10 @@ public class BeaconState {
     this.slot = UInt64.MIN_VALUE;
   }
 
-  public BeaconState(BeaconState state){
-    // deep copy
-    this.slot = state.slot;
+  public static BeaconState deepCopy(BeaconState state){
+    Gson gson = new GsonBuilder().registerTypeAdapter(Bytes32.class, new InterfaceAdapter<Bytes32>()).create();
+    BeaconState deepCopy = gson.fromJson(gson.toJson(state), BeaconState.class);
+    return deepCopy;
   }
 
   BeaconState(
