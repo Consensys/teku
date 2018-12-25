@@ -37,6 +37,7 @@ import tech.pegasys.artemis.util.uint.UInt64;
 import java.util.ArrayList;
 import java.util.Collections;
 
+import com.google.gson.Gson;
 import org.junit.Test;
 
 public class BeaconStateTest {
@@ -68,6 +69,40 @@ public class BeaconStateTest {
         new_shard_committees)));
 
     return state;
+  }
+
+  @Test
+  public void deepCopyBeaconState() {
+    BeaconState state = newState(ACTIVE);
+    BeaconState deepCopy = BeaconState.deepCopy(state);
+
+    // Test if deepCopy has the same values as the original state
+    Gson gson = new Gson();
+    String stateJson = gson.toJson(state);
+    String deepCopyJson = gson.toJson(deepCopy);
+    assertThat(stateJson).isEqualTo(deepCopyJson);
+
+    // Test persistent committees
+    ArrayList<Integer> new_committee = new ArrayList<Integer>();
+    new_committee.add(20);
+    deepCopy.getPersistent_committees().add(new_committee);
+    assertThat(deepCopy.getPersistent_committees()).isNotEqualTo(state.getPersistent_committees());
+
+    // Test slot
+    state.incrementSlot();
+    assertThat(deepCopy.getSlot()).isNotEqualTo(state.getSlot());
+
+    // Test fork_data
+    state.setFork_data(new ForkData(UInt64.valueOf(1),UInt64.valueOf(1), UInt64.valueOf(1)));
+    assertThat(deepCopy.getFork_data().getPre_fork_version()).isNotEqualTo(state.getFork_data().getPre_fork_version());
+
+    // Test validator registry
+    ArrayList<ValidatorRecord> new_records = new ArrayList<ValidatorRecord>(Collections.nCopies(12,
+          new ValidatorRecord(2, hash(Bytes32.FALSE), hash(Bytes32.FALSE), UInt64.valueOf(PENDING_ACTIVATION),
+           50.0, UInt64.valueOf(PENDING_ACTIVATION), UInt64.MAX_VALUE, UInt64.MAX_VALUE)));
+    deepCopy.setValidator_registry(new_records);
+    assertThat(deepCopy.getValidator_registry().get(0).getPubkey().getValue())
+      .isNotEqualTo(state.getValidator_registry().get(0).getPubkey().getValue());
   }
 
   @Test
