@@ -14,6 +14,7 @@
 package tech.pegasys.artemis;
 
 import tech.pegasys.artemis.util.bytes.Bytes32;
+import tech.pegasys.artemis.util.bytes.Bytes48;
 
 public final class Constants {
 
@@ -21,13 +22,16 @@ public final class Constants {
 
   // Misc
   public static final int SHARD_COUNT                                    = (int) Math.pow(2, 10); // 1,024 Shards
-  public static final int TARGET_COMMITTEE_SIZE                          = (int) Math.pow(2, 8); // 256 validators
+  public static final int TARGET_COMMITTEE_SIZE                          = (int) Math.pow(2, 7); // 128 validators
   public static final int EJECTION_BALANCE                               = (int) Math.pow(2, 4);  // 16 Eth
   public static final int MAX_BALANCE_CHURN_QUOTIENT                     = (int) Math.pow(2, 5);  // 32
   public static final int GWEI_PER_ETH                                   = (int) Math.pow(10, 9); // 1,000,000,000 Wei
   public static final int BEACON_CHAIN_SHARD_NUMBER                      = (int) Math.pow(2, 64) - 1;
   public static final String BLS_WITHDRAWAL_PREFIX_BYTE                  = "0x00";
   public static final int MAX_CASPER_VOTES                               = (int) Math.pow(2, 10); // 1,024 votes
+  public static final int LATEST_BLOCK_ROOTS_LENGTH                      = (int) Math.pow(2, 13); // 8,192 block roots
+  public static final int LATEST_RANDAO_MIXES_LENGTH                     = (int) Math.pow(2, 13); // 8,192 randao mixes
+  public static final Bytes48[] EMPTY_SIGNATURE                          = new Bytes48[]{Bytes48.FALSE, Bytes48.FALSE};
 
   // Deposit contract
   //  static final Address DEPOSIT_CONTRACT_ADDRESS               =  Value is still TBD
@@ -44,17 +48,16 @@ public final class Constants {
   public static final int SLOT_DURATION                                  = 6;  // 6 seconds
   public static final int MIN_ATTESTATION_INCLUSION_DELAY                = (int) Math.pow(2, 2); // 4 slots
   public static final int EPOCH_LENGTH                                   = (int) Math.pow(2, 6);  // 64 slots
-  public static final int MIN_VALIDATOR_REGISTRY_CHANGE_INTERVAL	        = (int) Math.pow(2, 8);  // 256 slots
-  public static final int POW_RECEIPT_ROOT_VOTING_PERIOD	        	      = (int) Math.pow(2, 10); // 1,024 slots
+  public static final int POW_RECEIPT_ROOT_VOTING_PERIOD	        	     = (int) Math.pow(2, 10); // 1,024 slots
   public static final int SHARD_PERSISTENT_COMMITTEE_CHANGE_PERIOD       = (int) Math.pow(2, 17); // 131,072 slots
   public static final int COLLECTIVE_PENALTY_CALCULATION_PERIOD          = (int) Math.pow(2, 20); // 1,048,576 slots
   public static final int ZERO_BALANCE_VALIDATOR_TTL                     = (int) Math.pow(2, 22); // 4,194,304 slots
 
   // Reward and penalty quotients
-  public static final int BASE_REWARD_QUOTIENT                           = (int) Math.pow(2, 11); // 2,048
+  public static final int BASE_REWARD_QUOTIENT                           = (int) Math.pow(2, 10); // 1,024
   public static final int WHISTLEBLOWER_REWARD_QUOTIENT                  = (int) Math.pow(2, 9); // 512
   public static final int INCLUDER_REWARD_QUOTIENT                       = (int) Math.pow(2, 3); // 8
-  public static final int INACTIVITY_PENALTY_QUOTIENT                    = (int) Math.pow(2, 34); // 131,072
+  public static final int INACTIVITY_PENALTY_QUOTIENT                    = (int) Math.pow(2, 24); // 16,777,216
 
   // Status codes
   public static final int PENDING_ACTIVATION                             = 0;
@@ -91,6 +94,9 @@ public final class Constants {
             + "\nBEACON_CHAIN_SHARD_NUMBER: " + BEACON_CHAIN_SHARD_NUMBER
             + "\nBLS_WITHDRAWAL_CREDENTIALS: " + BLS_WITHDRAWAL_PREFIX_BYTE
             + "\nMAX_CASPER_VOTES: " + MAX_CASPER_VOTES
+            + "\nLATEST_BLOCK_ROOTS_LENGTH: " + LATEST_BLOCK_ROOTS_LENGTH
+            + "\nLATEST_RANDAO_MIXES_LENGTH: " + LATEST_RANDAO_MIXES_LENGTH
+            + "\nEMPTY_SIGNATURE: " + EMPTY_SIGNATURE
 
             + "\n\n--Deposit contract--"
 //            + "\nDEPOSIT_CONTRACT_ADDRESS: " + DEPOSIT_CONTRACT_ADDRESS
@@ -107,7 +113,6 @@ public final class Constants {
             + "\nSLOT_DURATION: " + SLOT_DURATION
             + "\nMIN_ATTESTATION_INCLUSION_DELAY: " + MIN_ATTESTATION_INCLUSION_DELAY
             + "\nEPOCH_LENGTH: " + EPOCH_LENGTH
-            + "\nMIN_VALIDATOR_REGISTRY_CHANGE_INTERVAL: " + MIN_VALIDATOR_REGISTRY_CHANGE_INTERVAL
             + "\nPOW_RECEIPT_ROOT_VOTING_PERIOD: " + POW_RECEIPT_ROOT_VOTING_PERIOD
             + "\nSHARD_PERSISTENT_COMMITTEE_CHANGE_PERIOD: " + SHARD_PERSISTENT_COMMITTEE_CHANGE_PERIOD
             + "\nCOLLECTIVE_PENALTY_CALCULATION_PERIOD: " + COLLECTIVE_PENALTY_CALCULATION_PERIOD
