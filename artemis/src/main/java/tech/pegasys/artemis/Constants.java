@@ -16,6 +16,8 @@ package tech.pegasys.artemis;
 import tech.pegasys.artemis.util.bytes.Bytes32;
 import tech.pegasys.artemis.util.bytes.Bytes48;
 
+import java.util.Arrays;
+
 public final class Constants {
 
   // The constants below are correct as of spec dated 2018/12/5
@@ -96,7 +98,7 @@ public final class Constants {
             + "\nMAX_CASPER_VOTES: " + MAX_CASPER_VOTES
             + "\nLATEST_BLOCK_ROOTS_LENGTH: " + LATEST_BLOCK_ROOTS_LENGTH
             + "\nLATEST_RANDAO_MIXES_LENGTH: " + LATEST_RANDAO_MIXES_LENGTH
-            + "\nEMPTY_SIGNATURE: " + EMPTY_SIGNATURE
+            + "\nEMPTY_SIGNATURE: " + Arrays.toString(EMPTY_SIGNATURE)
 
             + "\n\n--Deposit contract--"
 //            + "\nDEPOSIT_CONTRACT_ADDRESS: " + DEPOSIT_CONTRACT_ADDRESS
