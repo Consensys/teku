@@ -199,7 +199,7 @@ public class BeaconState {
         return i;
       }
     }
-    return -1;
+    return validators.size();
   }
 
   /**
@@ -223,28 +223,29 @@ public class BeaconState {
   }
 
   /**
-     * Process a deposit from Ethereum 1.0.
-      * Note that this function mutates ``state``.
-      * @param state
+   * Process a deposit from Ethereum 1.0.
+   * Note that this function mutates ``state``.
+   * @param state
    * @param pubkey
    * @param deposit
-    * @param proof_of_possession
-    * @param withdrawal_credentials
-    * @param randao_commitment
-    * @return
-        */
-  private int process_deposit(BeaconState state, int pubkey, int deposit, Bytes32 proof_of_possession,
+   * @param proof_of_possession
+   * @param withdrawal_credentials
+   * @param randao_commitment
+   * @return
+   */
+  public int process_deposit(BeaconState state, int pubkey, int deposit, Bytes32 proof_of_possession,
                               Hash withdrawal_credentials, Hash randao_commitment) {
     assert validate_proof_of_possession(state, pubkey, proof_of_possession, withdrawal_credentials, randao_commitment);
 
     UInt384[] validator_pubkeys = new UInt384[state.validator_registry.size()];
+    boolean validatorsPubkeysContainPubkey = false;
     for (int i=0; i < validator_pubkeys.length; i++) {
       validator_pubkeys[i] = state.validator_registry.get(i).getPubkey();
     }
 
     int index = -1;
 
-    if (!Arrays.asList(validator_pubkeys).contains(UInt384.valueOf(pubkey))) {
+    if (indexOfPubkey(validator_pubkeys, pubkey) == -1) {
       // Add new validator
       ValidatorRecord validator = new ValidatorRecord(pubkey, withdrawal_credentials, randao_commitment,
           UInt64.valueOf(0), deposit, UInt64.valueOf(PENDING_ACTIVATION), state.slot, UInt64.valueOf(0));
@@ -252,15 +253,15 @@ public class BeaconState {
       ArrayList<ValidatorRecord> validators_copy = new ArrayList<ValidatorRecord>();
       validators_copy.addAll(validator_registry);
       index = min_empty_validator_index(validators_copy, toIntExact(slot.getValue()));
-      if (index == -1) {
+      if (index == validators_copy.size()) {
         state.validator_registry.add(validator);
-        index = validators_copy.size() - 1;
+        index = state.validator_registry.size() - 1;
       } else {
-        state.validator_registry.set(index, validator);
+        state.validator_registry.add(validator);
       }
     } else {
       // Increase balance by deposit
-      index = Arrays.asList(validator_pubkeys).indexOf(UInt384.valueOf(pubkey));
+      index = indexOfPubkey(validator_pubkeys, pubkey);
       ValidatorRecord validator = state.validator_registry.get(index);
       assert validator.getWithdrawal_credentials().equals(withdrawal_credentials);
 
@@ -270,6 +271,21 @@ public class BeaconState {
     return index;
   }
 
+
+  /**
+   * Helper function to find the index of the pubkey the array of validators' pubkeys.
+   * @param validator_pubkeys
+   * @param pubkey
+   * @return
+   */
+  private int indexOfPubkey(UInt384[] validator_pubkeys, int pubkey) {
+    for (int i = 0; i < validator_pubkeys.length; i++) {
+      if (validator_pubkeys[i].getValue() == pubkey) {
+        return i;
+      }
+    }
+    return -1;
+  }
 
   /**
    *

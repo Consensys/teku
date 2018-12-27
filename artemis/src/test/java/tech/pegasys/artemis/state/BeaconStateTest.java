@@ -71,6 +71,52 @@ public class BeaconStateTest {
     return state;
   }
 
+  private BeaconState processDepositSetup() {
+    BeaconState state = newState(ACTIVE);
+    ValidatorRecord validator1 = new ValidatorRecord(0, Hash.ZERO, Hash.ZERO, UInt64.valueOf(0), 10,
+        UInt64.valueOf(PENDING_ACTIVATION), state.getSlot(), UInt64.valueOf(0));
+    ValidatorRecord validator2 = new ValidatorRecord(100, Hash.ZERO, Hash.ZERO, UInt64.valueOf(0), 10,
+        UInt64.valueOf(PENDING_ACTIVATION), state.getSlot(), UInt64.valueOf(0));
+    ValidatorRecord validator3 = new ValidatorRecord(200, Hash.ZERO, Hash.ZERO, UInt64.valueOf(0), 10,
+        UInt64.valueOf(PENDING_ACTIVATION), state.getSlot(), UInt64.valueOf(0));
+    ArrayList<ValidatorRecord> validators = new ArrayList<ValidatorRecord>();
+    validators.add(validator1);
+    validators.add(validator2);
+    validators.add(validator3);
+    state.setValidator_registry(validators);
+    return state;
+  }
+
+  @Test
+  public void processDepositValidatorPubkeysDoesNotContainPubkeyAndMinEmptyValidatorIndexIsNegative() {
+    BeaconState state = processDepositSetup();
+    int pubkey = 20;
+    assertThat(state.process_deposit(state, pubkey, 100, Bytes32.TRUE, Hash.ZERO, Hash.ZERO))
+        .isEqualTo(3);
+  }
+
+  @Test
+  public void processDepositValidatorPubkeysDoesNotContainPubkey() {
+    BeaconState state = processDepositSetup();
+    int pubkey = 20;
+    assertThat(state.process_deposit(state, pubkey, 100, Bytes32.TRUE, Hash.ZERO, Hash.ZERO))
+        .isEqualTo(3);
+  }
+
+  @Test
+  public void processDepositValidatorPubkeysContainsPubkey() {
+    BeaconState state = processDepositSetup();
+    int pubkey = 200;
+
+    ValidatorRecord validator = state.getValidator_registry().get(2);
+    double oldBalance = validator.getBalance();
+
+    assertThat(state.process_deposit(state, pubkey, 100, Bytes32.TRUE, Hash.ZERO, Hash.ZERO))
+        .isEqualTo(2);
+
+    assertThat(state.getValidator_registry().get(2).getBalance()).isEqualTo(oldBalance + 100);
+  }
+
   @Test
   public void deepCopyBeaconState() {
     BeaconState state = newState(ACTIVE);
@@ -98,11 +144,11 @@ public class BeaconStateTest {
 
     // Test validator registry
     ArrayList<ValidatorRecord> new_records = new ArrayList<ValidatorRecord>(Collections.nCopies(12,
-          new ValidatorRecord(2, hash(Bytes32.FALSE), hash(Bytes32.FALSE), UInt64.valueOf(PENDING_ACTIVATION),
-           50.0, UInt64.valueOf(PENDING_ACTIVATION), UInt64.MAX_VALUE, UInt64.MAX_VALUE)));
+        new ValidatorRecord(2, hash(Bytes32.FALSE), hash(Bytes32.FALSE), UInt64.valueOf(PENDING_ACTIVATION),
+            50.0, UInt64.valueOf(PENDING_ACTIVATION), UInt64.MAX_VALUE, UInt64.MAX_VALUE)));
     deepCopy.setValidator_registry(new_records);
     assertThat(deepCopy.getValidator_registry().get(0).getPubkey().getValue())
-      .isNotEqualTo(state.getValidator_registry().get(0).getPubkey().getValue());
+        .isNotEqualTo(state.getValidator_registry().get(0).getPubkey().getValue());
   }
 
   @Test
