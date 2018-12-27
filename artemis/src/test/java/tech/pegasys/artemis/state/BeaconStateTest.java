@@ -88,20 +88,36 @@ public class BeaconStateTest {
     return state;
   }
 
+  private BeaconState processDepositSetup() {
+    BeaconState state = newState(ACTIVE);
+    ValidatorRecord validator1 = new ValidatorRecord(0, Hash.ZERO, Hash.ZERO, UInt64.valueOf(0), UInt64.valueOf(0),
+        UInt64.valueOf(PENDING_ACTIVATION), state.getSlot(), UInt64.valueOf(0), UInt64.valueOf(0));
+    ValidatorRecord validator2 = new ValidatorRecord(100, Hash.ZERO, Hash.ZERO, UInt64.valueOf(0), UInt64.valueOf(0),
+        UInt64.valueOf(PENDING_ACTIVATION), state.getSlot(), UInt64.valueOf(0), UInt64.valueOf(0));
+    ValidatorRecord validator3 = new ValidatorRecord(200, Hash.ZERO, Hash.ZERO, UInt64.valueOf(0), UInt64.valueOf(0),
+        UInt64.valueOf(PENDING_ACTIVATION), state.getSlot(), UInt64.valueOf(0), UInt64.valueOf(0));
+    ArrayList<ValidatorRecord> validators = new ArrayList<ValidatorRecord>();
+    validators.add(validator1);
+    validators.add(validator2);
+    validators.add(validator3);
+    state.setValidator_registry(validators);
+    return state;
+  }
+
   @Test
   public void processDepositValidatorPubkeysDoesNotContainPubkeyAndMinEmptyValidatorIndexIsNegative() {
-    BeaconState state = newState();
+    BeaconState state = processDepositSetup();
     int pubkey = 20;
     assertThat(state.process_deposit(state, pubkey, 100, Bytes32.TRUE, Hash.ZERO, Hash.ZERO))
-        .isEqualTo(5);
+        .isEqualTo(3);
   }
 
   @Test
   public void processDepositValidatorPubkeysDoesNotContainPubkey() {
-    BeaconState state = newState();
+    BeaconState state = processDepositSetup();
     int pubkey = 20;
     assertThat(state.process_deposit(state, pubkey, 100, Bytes32.TRUE, Hash.ZERO, Hash.ZERO))
-        .isEqualTo(5);
+        .isEqualTo(3);
   }
 
   @Test
