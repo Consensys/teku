@@ -23,30 +23,25 @@ public class ValidatorRecord {
   private Hash withdrawal_credentials;
   private Hash randao_commitment;
   private UInt64 randao_layers;
-  private double balance;
   private UInt64 status;
   private UInt64 latest_status_change_slot;
   private UInt64 exit_count;
+  private UInt64 last_poc_change_slot;
+  private UInt64 second_last_poc_change_slot;
 
-   public ValidatorRecord(int pubkey, Hash withdrawal_credentials, Hash randao_commitment,
-                         UInt64 randao_layers, double deposit, UInt64 status, UInt64 slot, UInt64 exit_count) {
+   public ValidatorRecord(int pubkey, Hash withdrawal_credentials, Hash randao_commitment, UInt64 randao_layers,
+                          UInt64 status, UInt64 slot, UInt64 exit_count, UInt64 last_poc_change_slot,
+                          UInt64 second_last_poc_change_slot) {
     this.pubkey = UInt384.valueOf(pubkey);
     this.withdrawal_credentials = withdrawal_credentials;
     this.randao_commitment = randao_commitment;
     this.randao_layers = randao_layers;
-    this.balance = deposit;
     this.status = status;
     this.latest_status_change_slot = slot;
     this.exit_count = exit_count;
-  }
-
-  public double getBalance() {
-    return this.balance;
-  }
-
-  public void setBalance(double balance) {
-    this.balance = balance;
-  }
+    this.last_poc_change_slot = last_poc_change_slot;
+    this.second_last_poc_change_slot = second_last_poc_change_slot;
+   }
 
   public UInt64 getStatus() {
     return this.status;
@@ -102,5 +97,21 @@ public class ValidatorRecord {
 
   public void setExit_count(UInt64 exit_count) {
     this.exit_count = exit_count;
+  }
+
+  public UInt64 getLast_poc_change_slot() {
+    return last_poc_change_slot;
+  }
+
+  public void setLast_poc_change_slot(UInt64 last_poc_change_slot) {
+    this.last_poc_change_slot = last_poc_change_slot;
+  }
+
+  public UInt64 getSecond_last_poc_change_slot() {
+    return second_last_poc_change_slot;
+  }
+
+  public void setSecond_last_poc_change_slot(UInt64 second_last_poc_change_slot) {
+    this.second_last_poc_change_slot = second_last_poc_change_slot;
   }
 }
