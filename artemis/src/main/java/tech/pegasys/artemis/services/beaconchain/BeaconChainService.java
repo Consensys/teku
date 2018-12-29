@@ -36,7 +36,7 @@ public class BeaconChainService implements ServiceInterface{
     private BeaconState state;
     private StateTransition stateTransition;
     private ScheduledExecutorService scheduler;
-    private static final Logger logger = LogManager.getLogger();
+    private static final Logger LOG = LogManager.getLogger();
 
     public BeaconChainService(){
         this.eventBus = new AsyncEventBus(Executors.newCachedThreadPool());
@@ -66,18 +66,18 @@ public class BeaconChainService implements ServiceInterface{
 
     @Subscribe
     public void onChainStarted(ChainStartEvent event){
-        logger.info("ChainStart Event Detected");
+        LOG.info("ChainStart Event Detected");
     }
 
     @Subscribe
     public void onValidatorRegistered(ValidatorRegistrationEvent event){
-        logger.info("Validator Registration Event detected");
-        //logger.info("   Validator Number: " + validatorRegisteredEvent.getInfo());
+        LOG.info("Validator Registration Event detected");
+        //LOG.info("   Validator Number: " + validatorRegisteredEvent.getInfo());
     }
 
     @Subscribe
     public void onNewSlot(Date date){
-        logger.info("****** New Slot at: " + date + " ******");
+        LOG.info("****** New Slot at: " + date + " ******");
 
         stateTransition.initiate(this.state, new BeaconBlock());
 
@@ -85,7 +85,7 @@ public class BeaconChainService implements ServiceInterface{
 
     @Subscribe
     public void onNewBlock(BeaconBlock beaconBlock){
-        logger.info("New Beacon Block Event detected");
-        logger.info("   Block Number:" + beaconBlock.getSlot());
+        LOG.info("New Beacon Block Event detected");
+        LOG.info("   Block Number:" + beaconBlock.getSlot());
     }
 }
