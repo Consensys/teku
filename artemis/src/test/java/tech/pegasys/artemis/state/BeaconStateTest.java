@@ -112,18 +112,18 @@ public class BeaconStateTest {
 
   @Test
   public void processDepositValidatorPubkeysDoesNotContainPubkeyAndMinEmptyValidatorIndexIsNegative() {
-    BeaconState state = processDepositSetup();
+    BeaconState state = newState();
     int pubkey = 20;
     assertThat(state.process_deposit(state, pubkey, 100, Bytes32.TRUE, Hash.ZERO, Hash.ZERO))
-        .isEqualTo(3);
+        .isEqualTo(5);
   }
 
   @Test
   public void processDepositValidatorPubkeysDoesNotContainPubkey() {
-    BeaconState state = processDepositSetup();
+    BeaconState state = newState();
     int pubkey = 20;
     assertThat(state.process_deposit(state, pubkey, 100, Bytes32.TRUE, Hash.ZERO, Hash.ZERO))
-        .isEqualTo(3);
+        .isEqualTo(5);
   }
 
   @Test
