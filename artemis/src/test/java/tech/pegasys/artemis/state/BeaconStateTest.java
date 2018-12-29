@@ -200,7 +200,7 @@ public class BeaconStateTest {
   @Test
   public void exitValidatorPrevStatusDidNotExitNewStatusExitedWithPenalty() {
     BeaconState state = newState();
-    int validator_index = 0;
+    int validator_index = 2;
 
     long before_exit_count = state.getValidator_registry_exit_count().getValue();
     double before_balance = state.getValidator_balances().get(validator_index);
