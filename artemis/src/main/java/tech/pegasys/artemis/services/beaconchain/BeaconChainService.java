@@ -27,6 +27,8 @@ import java.util.concurrent.TimeUnit;
 import com.google.common.eventbus.AsyncEventBus;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class BeaconChainService implements ServiceInterface{
 
@@ -34,6 +36,7 @@ public class BeaconChainService implements ServiceInterface{
     private BeaconState state;
     private StateTransition stateTransition;
     private ScheduledExecutorService scheduler;
+    private static final Logger LOG = LogManager.getLogger();
 
     public BeaconChainService(){
         this.eventBus = new AsyncEventBus(Executors.newCachedThreadPool());
@@ -63,18 +66,18 @@ public class BeaconChainService implements ServiceInterface{
 
     @Subscribe
     public void onChainStarted(ChainStartEvent event){
-        System.out.println("ChainStart Event Detected");
+        LOG.info("ChainStart Event Detected");
     }
 
     @Subscribe
     public void onValidatorRegistered(ValidatorRegistrationEvent event){
-        System.out.println("Validator Registration Event detected");
-        //System.out.println("   Validator Number: " + validatorRegisteredEvent.getInfo());
+        LOG.info("Validator Registration Event detected");
+        //LOG.info("   Validator Number: " + validatorRegisteredEvent.getInfo());
     }
 
     @Subscribe
     public void onNewSlot(Date date){
-        System.out.println("****** New Slot at: " + date + " ******");
+        LOG.info("****** New Slot at: " + date + " ******");
 
         stateTransition.initiate(this.state, new BeaconBlock());
 
@@ -82,7 +85,7 @@ public class BeaconChainService implements ServiceInterface{
 
     @Subscribe
     public void onNewBlock(BeaconBlock beaconBlock){
-        System.out.println("New Beacon Block Event detected");
-        System.out.println("   Block Number:" + beaconBlock.getSlot());
+        LOG.info("New Beacon Block Event detected");
+        LOG.info("   Block Number:" + beaconBlock.getSlot());
     }
 }
