@@ -18,8 +18,12 @@ import tech.pegasys.artemis.datastructures.beaconchainblocks.BeaconBlock;
 import tech.pegasys.artemis.state.BeaconState;
 import tech.pegasys.artemis.util.uint.UInt64;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class StateTransition{
+
+    private static final Logger logger = LogManager.getLogger();
 
     public StateTransition(){
 
@@ -52,7 +56,7 @@ public class StateTransition{
         // deep copy beacon state
         BeaconState newState = BeaconState.deepCopy(state);
         state.incrementSlot();
-        System.out.println("Processing new slot: " + state.getSlot());
+        logger.info("Processing new slot: " + state.getSlot());
         // Slots the proposer has skipped (i.e. layers of RANDAO expected)
         // should be in ValidatorRecord.randao_skips
         updateProposerRandaoSkips(newState);
@@ -61,7 +65,7 @@ public class StateTransition{
 
     protected void blockProcessor(BeaconState state, BeaconBlock block){
         block.setSlot(state.getSlot());
-        System.out.println("Processing new block in slot: " + block.getSlot());
+        logger.info("Processing new block in slot: " + block.getSlot());
         // block header
         verifySignature(state, block);
         verifyAndUpdateRandao(state, block);
@@ -71,7 +75,7 @@ public class StateTransition{
     }
 
     protected void epochProcessor(BeaconState state){
-        System.out.println("Processing new epoch in slot: " + state.getSlot());
+        logger.info("Processing new epoch in slot: " + state.getSlot());
         updateJustification(state);
         updateFinalization(state);
         updateCrosslinks(state);
