@@ -27,4 +27,5 @@ public class AbstractBytes32Backed implements Bytes32Backed {
   public Bytes32 bytes() {
     return bytes;
   }
+
 }

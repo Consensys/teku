@@ -11,27 +11,17 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.util.uint;
+package tech.pegasys.artemis.util.bls;
 
-public class UInt384 {
+import tech.pegasys.artemis.util.bytes.Bytes32;
+import tech.pegasys.artemis.util.uint.UInt384;
+import tech.pegasys.artemis.util.uint.UInt64;
 
-  private final long value;
+public class BLSVerify {
 
-  private UInt384(long value) {
-    this.value = value;
+  // TODO: Need to update UInt384 to UInt384[].
+  public static boolean bls_verify(UInt384 pubkey, Bytes32 message, UInt384 signature, UInt64 domain) {
+    return true;
   }
-
-  public UInt384(UInt384 uint) {
-    this.value = uint.getValue();
-  }
-
-  public long getValue() {
-    return value;
-  }
-
-  public static UInt384 valueOf(long unsignedValue) {
-    return new UInt384(unsignedValue);
-  }
-
 
 }

@@ -19,6 +19,8 @@ import static tech.pegasys.artemis.Constants.ACTIVATION;
 import static tech.pegasys.artemis.Constants.ACTIVE;
 import static tech.pegasys.artemis.Constants.ACTIVE_PENDING_EXIT;
 import static tech.pegasys.artemis.Constants.COLLECTIVE_PENALTY_CALCULATION_PERIOD;
+import static tech.pegasys.artemis.Constants.DOMAIN_DEPOSIT;
+import static tech.pegasys.artemis.Constants.EMPTY_SIGNATURE;
 import static tech.pegasys.artemis.Constants.EPOCH_LENGTH;
 import static tech.pegasys.artemis.Constants.EXIT;
 import static tech.pegasys.artemis.Constants.EXITED_WITHOUT_PENALTY;
@@ -27,8 +29,11 @@ import static tech.pegasys.artemis.Constants.GWEI_PER_ETH;
 import static tech.pegasys.artemis.Constants.MAX_DEPOSIT;
 import static tech.pegasys.artemis.Constants.PENDING_ACTIVATION;
 import static tech.pegasys.artemis.Constants.WHISTLEBLOWER_REWARD_QUOTIENT;
+import static tech.pegasys.artemis.Constants.ZERO_BALANCE_VALIDATOR_TTL;
 import static tech.pegasys.artemis.ethereum.core.TreeHash.hash_tree_root;
+import static tech.pegasys.artemis.util.bls.BLSVerify.bls_verify;
 
+import tech.pegasys.artemis.datastructures.beaconchainoperations.DepositInput;
 import tech.pegasys.artemis.datastructures.beaconchainstate.CandidatePoWReceiptRootRecord;
 import tech.pegasys.artemis.datastructures.beaconchainstate.CrosslinkRecord;
 import tech.pegasys.artemis.datastructures.beaconchainstate.ForkData;
@@ -39,6 +44,7 @@ import tech.pegasys.artemis.datastructures.beaconchainstate.ValidatorRecord;
 import tech.pegasys.artemis.datastructures.beaconchainstate.ValidatorRegistryDeltaBlock;
 import tech.pegasys.artemis.ethereum.core.Hash;
 import tech.pegasys.artemis.util.bytes.Bytes32;
+import tech.pegasys.artemis.util.bytes.BytesValue;
 import tech.pegasys.artemis.util.uint.UInt384;
 import tech.pegasys.artemis.util.uint.UInt64;
 
@@ -60,13 +66,14 @@ public class BeaconState {
 
   // Validator registry
   private ArrayList<ValidatorRecord> validator_registry;
+  private ArrayList<Double> validator_balances;
   private UInt64 validator_registry_latest_change_slot;
   private UInt64 validator_registry_exit_count;
   private Hash validator_registry_delta_chain_tip;
 
   // Randomness and committees
-  private Hash randao_mix;
-  private Hash next_seed;
+  private ArrayList<Hash> latest_randao_mixes;
+  private ArrayList<Hash> latest_vdf_outputs;
   private ArrayList<ArrayList<ShardCommittee>> shard_committees_at_slots;
   private ArrayList<ArrayList<Integer>> persistent_committees;
   private ArrayList<ShardReassignmentRecord> persistent_committee_reassignments;
@@ -106,10 +113,11 @@ public class BeaconState {
       // Misc
       UInt64 slot, UInt64 genesis_time, ForkData fork_data,
       // Validator registry
-      ArrayList<ValidatorRecord> validator_registry, UInt64 validator_registry_latest_change_slot,
-      UInt64 validator_registry_exit_count, Hash validator_registry_delta_chain_tip,
+      ArrayList<ValidatorRecord> validator_registry, ArrayList<Double> validator_balances,
+      UInt64 validator_registry_latest_change_slot, UInt64 validator_registry_exit_count,
+      Hash validator_registry_delta_chain_tip,
       // Randomness and committees
-      Hash randao_mix, Hash next_seed, ArrayList<ArrayList<ShardCommittee>> shard_committees_at_slots,
+      ArrayList<Hash> latest_randao_mixes, ArrayList<Hash> latest_vdf_outputs, ArrayList<ArrayList<ShardCommittee>> shard_committees_at_slots,
       ArrayList<ArrayList<Integer>> persistent_committees,
       ArrayList<ShardReassignmentRecord> persistent_committee_reassignments,
       // Finality
@@ -129,13 +137,14 @@ public class BeaconState {
 
     // Validator registry
     this.validator_registry = validator_registry;
+    this.validator_balances = validator_balances;
     this.validator_registry_latest_change_slot = validator_registry_latest_change_slot;
     this.validator_registry_exit_count = validator_registry_exit_count;
     this.validator_registry_delta_chain_tip = validator_registry_delta_chain_tip;
 
     // Randomness and committees
-    this.randao_mix = randao_mix;
-    this.next_seed = next_seed;
+    this.latest_randao_mixes = latest_randao_mixes;
+    this.latest_vdf_outputs = latest_vdf_outputs;
     this.shard_committees_at_slots = shard_committees_at_slots;
     this.persistent_committees = persistent_committees;
     this.persistent_committee_reassignments = persistent_committee_reassignments;
@@ -178,14 +187,147 @@ public class BeaconState {
   }
 
 
+
   /**
-   * Update the validator status with the given ``index`` to ``new_status``.
-   * Handle other general accounting related to this status update.
-   * Note that this function mutates ``state``.
-   * @param index
-   * @param new_status
+   *
+   * @param validators
+   * @param current_slot
+   * @return
    */
-  private void update_validator_status(int index, int new_status) {
+  private int min_empty_validator_index(ArrayList<ValidatorRecord> validators, ArrayList<Double> validator_balances,
+                                        int current_slot) {
+    for (int i = 0; i < validators.size(); i++) {
+      ValidatorRecord v = validators.get(i);
+      double vbal = validator_balances.get(i);
+      if (vbal == 0 && v.getLatest_status_change_slot().getValue() + ZERO_BALANCE_VALIDATOR_TTL
+          <= current_slot) {
+        return i;
+      }
+    }
+    return validators.size();
+  }
+
+  /**
+   *
+   * @param state
+   * @param pubkey
+   * @param proof_of_possession
+   * @param withdrawal_credentials
+   * @param randao_commitment
+   * @return
+   */
+  private boolean validate_proof_of_possession(BeaconState state, int pubkey, Bytes32 proof_of_possession,
+                                               Hash withdrawal_credentials, Hash randao_commitment) {
+    DepositInput proof_of_possession_data = new DepositInput(UInt384.valueOf(pubkey), withdrawal_credentials,
+        randao_commitment, EMPTY_SIGNATURE);
+
+    UInt384 signature = UInt384.valueOf(BytesValue.wrap(proof_of_possession.extractArray()).getInt(0));
+    UInt64 domain = UInt64.valueOf(get_domain(state.fork_data, toIntExact(state.slot.getValue()), DOMAIN_DEPOSIT));
+    return bls_verify(UInt384.valueOf(pubkey), hash_tree_root(proof_of_possession_data), signature, domain);
+
+  }
+
+  /**
+   * Process a deposit from Ethereum 1.0.
+   * Note that this function mutates ``state``.
+   * @param state
+   * @param pubkey
+   * @param deposit
+   * @param proof_of_possession
+   * @param withdrawal_credentials
+   * @param randao_commitment
+   * @return
+   */
+  public int process_deposit(BeaconState state, int pubkey, double deposit, Bytes32 proof_of_possession,
+                              Hash withdrawal_credentials, Hash randao_commitment) {
+    assert validate_proof_of_possession(state, pubkey, proof_of_possession, withdrawal_credentials, randao_commitment);
+
+    UInt384[] validator_pubkeys = new UInt384[state.validator_registry.size()];
+    boolean validatorsPubkeysContainPubkey = false;
+    for (int i=0; i < validator_pubkeys.length; i++) {
+      validator_pubkeys[i] = state.validator_registry.get(i).getPubkey();
+    }
+
+    int index = -1;
+
+    if (indexOfPubkey(validator_pubkeys, pubkey) == -1) {
+      // Add new validator
+      ValidatorRecord validator = new ValidatorRecord(pubkey, withdrawal_credentials, randao_commitment,
+          UInt64.MIN_VALUE, UInt64.valueOf(PENDING_ACTIVATION), state.slot, UInt64.MIN_VALUE, UInt64.MIN_VALUE,
+          UInt64.MIN_VALUE);
+
+      ArrayList<ValidatorRecord> validators_copy = new ArrayList<ValidatorRecord>();
+      validators_copy.addAll(validator_registry);
+      index = min_empty_validator_index(validators_copy, validator_balances, toIntExact(slot.getValue()));
+      if (index == validators_copy.size()) {
+        state.validator_registry.add(validator);
+        state.validator_balances.add(deposit);
+        index = state.validator_registry.size() - 1;
+      } else {
+        state.validator_registry.set(index, validator);
+        state.validator_balances.set(index, deposit);
+      }
+    } else {
+      // Increase balance by deposit
+      index = indexOfPubkey(validator_pubkeys, pubkey);
+      ValidatorRecord validator = state.validator_registry.get(index);
+      assert validator.getWithdrawal_credentials().equals(withdrawal_credentials);
+
+      state.validator_balances.set(index, state.validator_balances.get(index) + deposit);
+    }
+
+    return index;
+  }
+
+
+  /**
+   * Helper function to find the index of the pubkey the array of validators' pubkeys.
+   * @param validator_pubkeys
+   * @param pubkey
+   * @return
+   */
+  private int indexOfPubkey(UInt384[] validator_pubkeys, int pubkey) {
+    for (int i = 0; i < validator_pubkeys.length; i++) {
+      if (validator_pubkeys[i].getValue() == pubkey) {
+        return i;
+      }
+    }
+    return -1;
+  }
+
+  /**
+   *
+   * @param fork_data
+   * @param slot
+   * @param domain_type
+   * @return
+   */
+  private int get_domain(ForkData fork_data, int slot, int domain_type) {
+    return get_fork_version(fork_data, slot) * (int) Math.pow(2, 32) + domain_type;
+  }
+
+  /**
+   *
+   * @param fork_data
+   * @param slot
+   * @return
+   */
+  private int get_fork_version(ForkData fork_data, int slot) {
+    if (slot < fork_data.getFork_slot().getValue()) {
+      return toIntExact(fork_data.getPre_fork_version().getValue());
+    } else {
+      return toIntExact(fork_data.getPost_fork_version().getValue());
+    }
+  }
+
+      /**
+       * Update the validator status with the given ``index`` to ``new_status``.
+       * Handle other general accounting related to this status update.
+       * Note that this function mutates ``state``.
+       * @param index
+       * @param new_status
+       */
+  private void update_validator_status(BeaconState state, int index, int new_status) {
     if (new_status == ACTIVE) {
       activate_validator(index);
     }
@@ -193,7 +335,7 @@ public class BeaconState {
       initiate_validator_exit(index);
     }
     if (new_status == EXITED_WITH_PENALTY || new_status == EXITED_WITHOUT_PENALTY) {
-      exit_validator(index, new_status);
+      exit_validator(state, index, new_status);
     }
   }
 
@@ -241,37 +383,42 @@ public class BeaconState {
    * @param new_status
    */
   @VisibleForTesting
-  public void exit_validator(int index, int new_status) {
-    ValidatorRecord validator = validator_registry.get(index);
-    UInt64 prev_status = validator.getStatus();
+  public void exit_validator(BeaconState state, int index, int new_status) {
+    ValidatorRecord validator = state.validator_registry.get(index);
+    long prev_status = validator.getStatus().getValue();
 
-    if (prev_status.getValue() == EXITED_WITH_PENALTY) {
+    if (prev_status == EXITED_WITH_PENALTY) {
       return;
     }
 
     validator.setStatus(UInt64.valueOf(new_status));
-    validator.setLatest_status_change_slot(slot);
+    validator.setLatest_status_change_slot(state.slot);
 
     if (new_status == EXITED_WITH_PENALTY) {
-      int lpeb_index = toIntExact(slot.getValue()) / COLLECTIVE_PENALTY_CALCULATION_PERIOD;
+      int lpeb_index = toIntExact(state.slot.getValue()) / COLLECTIVE_PENALTY_CALCULATION_PERIOD;
       latest_penalized_exit_balances.set(lpeb_index,
-          latest_penalized_exit_balances.get(lpeb_index) + get_effective_balance(validator));
+          latest_penalized_exit_balances.get(lpeb_index) + get_effective_balance(state, index));
 
-      ValidatorRecord whistleblower = validator_registry.get(get_beacon_proposer_index(toIntExact(slot.getValue())));
+      int whistleblower_index = get_beacon_proposer_index(state, toIntExact(state.slot.getValue()));
+      double whistleblower_reward = get_effective_balance(state, index) / WHISTLEBLOWER_REWARD_QUOTIENT;
 
-      whistleblower.setBalance(whistleblower.getBalance() + validator.getBalance() / WHISTLEBLOWER_REWARD_QUOTIENT);
-      validator.setBalance(validator.getBalance() - validator.getBalance() / WHISTLEBLOWER_REWARD_QUOTIENT);
+      double new_whistleblower_balance = state.validator_balances.get(whistleblower_index) + whistleblower_reward;
+
+      state.validator_balances.set(whistleblower_index, new_whistleblower_balance);
+      double new_balance = state.validator_balances.get(index) - whistleblower_reward;
+      state.validator_balances.set(index, new_balance);
+      System.out.println("set");
     }
 
-    if (prev_status.getValue() == EXITED_WITHOUT_PENALTY){
+    if (prev_status == EXITED_WITHOUT_PENALTY){
       return;
     }
 
     // The following updates only occur if not previous exited
-    validator_registry_exit_count = validator_registry_exit_count.increment();
-    validator.setExit_count(validator_registry_exit_count);
-    validator_registry_delta_chain_tip = get_new_validator_registry_delta_chain_tip(
-        validator_registry_delta_chain_tip, index, toIntExact(validator.getPubkey().getValue()), EXIT);
+    state.setValidator_registry_exit_count(state.getValidator_registry_exit_count().increment());
+    validator.setExit_count(state.getValidator_registry_exit_count());
+    state.setValidator_registry_delta_chain_tip(get_new_validator_registry_delta_chain_tip(
+        state.getValidator_registry_delta_chain_tip(), index, toIntExact(validator.getPubkey().getValue()), EXIT));
 
     // Remove validator from persistent committees
     for (int i = 0; i < persistent_committees.size(); i++) {
@@ -290,11 +437,12 @@ public class BeaconState {
 
   /**
    * Returns the beacon proposer index for the ``slot``.
+   * @param state
    * @param slot
    * @return
    */
-  private int get_beacon_proposer_index(int slot) {
-    int[] first_committee = get_shard_committees_at_slot(slot).get(0).getCommittee();
+  private int get_beacon_proposer_index(BeaconState state, int slot) {
+    int[] first_committee = get_shard_committees_at_slot(state, slot).get(0).getCommittee();
     return first_committee[slot % first_committee.length];
   }
 
@@ -303,8 +451,8 @@ public class BeaconState {
    * @param slot
    * @return
    */
-  private ArrayList<ShardCommittee> get_shard_committees_at_slot(int slot) {
-    int earliest_slot_in_array = toIntExact(this.slot.getValue()) - (toIntExact(this.slot.getValue()) % EPOCH_LENGTH)
+  private ArrayList<ShardCommittee> get_shard_committees_at_slot(BeaconState state, int slot) {
+    int earliest_slot_in_array = toIntExact(state.slot.getValue()) - (toIntExact(state.slot.getValue()) % EPOCH_LENGTH)
         - EPOCH_LENGTH;
     assert earliest_slot_in_array <= slot;
     assert slot < (earliest_slot_in_array + EPOCH_LENGTH * 2);
@@ -328,12 +476,29 @@ public class BeaconState {
   }
 
   /**
-   * Returns the effective balance (also known as "balance at stake") for the ``validator``.
-   * @param validator
+   * Returns the effective balance (also known as "balance at stake") for a ``validator`` with the given ``index``.
+   * @param state
+   * @param index
    * @return
    */
-  private double get_effective_balance(ValidatorRecord validator) {
-    return Math.min(validator.getBalance(), MAX_DEPOSIT * GWEI_PER_ETH);
+  private double get_effective_balance(BeaconState state, int index) {
+    return Math.min(state.validator_balances.get(index).intValue(), MAX_DEPOSIT * GWEI_PER_ETH);
+  }
+
+  public ArrayList<Hash> getLatest_randao_mixes() {
+    return latest_randao_mixes;
+  }
+
+  public void setLatest_randao_mixes(ArrayList<Hash> latest_randao_mixes) {
+    this.latest_randao_mixes = latest_randao_mixes;
+  }
+
+  public ArrayList<Hash> getLatest_vdf_outputs() {
+    return latest_vdf_outputs;
+  }
+
+  public void setLatest_vdf_outputs(ArrayList<Hash> latest_vdf_outputs) {
+    this.latest_vdf_outputs = latest_vdf_outputs;
   }
 
 
@@ -460,7 +625,6 @@ public class BeaconState {
 
 
 
-
   public UInt64 getGenesis_time() {
     return genesis_time;
   }
@@ -483,6 +647,12 @@ public class BeaconState {
     this.validator_registry = validator_registry;
   }
 
+  public ArrayList<Double> getValidator_balances() { return validator_balances; }
+
+  public void setValidator_balances(ArrayList<Double> validator_balances) {
+    this.validator_balances = validator_balances;
+  }
+
   public UInt64 getValidator_registry_exit_count() {
     return validator_registry_exit_count;
   }
@@ -491,6 +661,11 @@ public class BeaconState {
     this.validator_registry_exit_count = validator_registry_exit_count;
   }
 
+  public Hash getValidator_registry_delta_chain_tip() { return validator_registry_delta_chain_tip; }
+
+  public void setValidator_registry_delta_chain_tip(Hash validator_registry_delta_chain_tip) {
+    this.validator_registry_delta_chain_tip = validator_registry_delta_chain_tip;
+  }
 
   public UInt64 getValidator_registry_latest_change_slot() {
     return validator_registry_latest_change_slot;
@@ -498,22 +673,6 @@ public class BeaconState {
 
   public void setValidator_registry_latest_change_slot(UInt64 validator_registry_latest_change_slot) {
     this.validator_registry_latest_change_slot = validator_registry_latest_change_slot;
-  }
-
-  public Hash getRandao_mix() {
-    return randao_mix;
-  }
-
-  public void setRandao_mix(Hash randao_mix) {
-    this.randao_mix = randao_mix;
-  }
-
-  public Hash getNext_seed() {
-    return next_seed;
-  }
-
-  public void setNext_seed(Hash next_seed) {
-    this.next_seed = next_seed;
   }
 
   public ArrayList<ShardReassignmentRecord> getPersistent_committee_reassignments() {
