@@ -42,18 +42,33 @@ import org.junit.Test;
 
 public class BeaconStateTest {
 
-  private BeaconState newState(int status) {
+  private BeaconState newState() {
+    // Initialize state
     BeaconState state = new BeaconState(UInt64.MIN_VALUE, UInt64.MIN_VALUE, new ForkData(UInt64.MIN_VALUE,
-        UInt64.MIN_VALUE, UInt64.MIN_VALUE), new ArrayList<>(), UInt64.MIN_VALUE, UInt64.MIN_VALUE, hash(Bytes32.TRUE),
-        hash(Bytes32.TRUE), hash(Bytes32.TRUE), new ArrayList<>(), new ArrayList<>(), new ArrayList<>(),
-        UInt64.MIN_VALUE, UInt64.MIN_VALUE, UInt64.MIN_VALUE, UInt64.MIN_VALUE,  new ArrayList<>(), new ArrayList<>(),
-        new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), hash(Bytes32.TRUE), new ArrayList<>());
+        UInt64.MIN_VALUE, UInt64.MIN_VALUE), new ArrayList<ValidatorRecord>(), new ArrayList<Double>(),
+        UInt64.MIN_VALUE, UInt64.MIN_VALUE, hash(Bytes32.TRUE), new ArrayList<Hash>(), new ArrayList<Hash>(),
+        new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), UInt64.MIN_VALUE, UInt64.MIN_VALUE, UInt64.MIN_VALUE,
+        UInt64.MIN_VALUE,  new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>(),
+        new ArrayList<>(), hash(Bytes32.TRUE), new ArrayList<>());
 
-    ArrayList<ValidatorRecord> new_records = new ArrayList<ValidatorRecord>(Collections.nCopies(24,
-        new ValidatorRecord(1, hash(Bytes32.TRUE), hash(Bytes32.TRUE),
-            UInt64.valueOf(status), 100.0, UInt64.valueOf(status), UInt64.MIN_VALUE, UInt64.MIN_VALUE)));
-    state.setValidator_registry(new_records);
+    // Add validator records
+    ArrayList<ValidatorRecord> validators = new ArrayList<ValidatorRecord>();
+    validators.add(new ValidatorRecord(0, Hash.ZERO, Hash.ZERO, UInt64.MIN_VALUE,
+        UInt64.valueOf(PENDING_ACTIVATION), state.getSlot(), UInt64.MIN_VALUE, UInt64.MIN_VALUE, UInt64.MIN_VALUE));
+    validators.add(new ValidatorRecord(100, Hash.ZERO, Hash.ZERO, UInt64.MIN_VALUE,
+        UInt64.valueOf(ACTIVE), state.getSlot(), UInt64.MIN_VALUE, UInt64.MIN_VALUE, UInt64.MIN_VALUE));
+    validators.add(new ValidatorRecord(200, Hash.ZERO, Hash.ZERO, UInt64.MIN_VALUE,
+        UInt64.valueOf(ACTIVE_PENDING_EXIT), state.getSlot(), UInt64.MIN_VALUE, UInt64.MIN_VALUE, UInt64.MIN_VALUE));
+    validators.add(new ValidatorRecord(0, Hash.ZERO, Hash.ZERO, UInt64.MIN_VALUE,
+        UInt64.valueOf(EXITED_WITHOUT_PENALTY), state.getSlot(), UInt64.MIN_VALUE, UInt64.MIN_VALUE, UInt64.MIN_VALUE));
+    validators.add(new ValidatorRecord(0, Hash.ZERO, Hash.ZERO, UInt64.MIN_VALUE,
+        UInt64.valueOf(EXITED_WITH_PENALTY), state.getSlot(), UInt64.MIN_VALUE, UInt64.MIN_VALUE, UInt64.MIN_VALUE));
+    state.setValidator_registry(validators);
 
+    // Add validator balances
+    state.setValidator_balances(new ArrayList<Double>(Collections.nCopies(5,100.0)));
+
+    // Create committee
     ArrayList<Integer> new_committee = new ArrayList<Integer>();
     new_committee.add(0);
     new_committee.add(50);
@@ -61,10 +76,12 @@ public class BeaconStateTest {
     state.getPersistent_committees().add(new_committee);
     state.getPersistent_committees().add(new_committee);
 
+    // Add penalized exit balances
     state.getLatest_penalized_exit_balances().add(10.0);
 
+    // Create shard_committees
     ArrayList<ShardCommittee> new_shard_committees = new ArrayList<ShardCommittee>(Collections.nCopies(2,
-        new ShardCommittee(UInt64.MIN_VALUE, new int[]{20}, UInt64.valueOf(1))));
+        new ShardCommittee(UInt64.MIN_VALUE, new int[]{0}, UInt64.valueOf(1))));
     state.setShard_committees_at_slots(new ArrayList<ArrayList<ShardCommittee>>(Collections.nCopies(65,
         new_shard_committees)));
 
@@ -72,8 +89,152 @@ public class BeaconStateTest {
   }
 
   @Test
+  public void processDepositValidatorPubkeysDoesNotContainPubkeyAndMinEmptyValidatorIndexIsNegative() {
+    BeaconState state = newState();
+    int pubkey = 20;
+    assertThat(state.process_deposit(state, pubkey, 100, Bytes32.TRUE, Hash.ZERO, Hash.ZERO))
+        .isEqualTo(5);
+  }
+
+  @Test
+  public void processDepositValidatorPubkeysDoesNotContainPubkey() {
+    BeaconState state = newState();
+    int pubkey = 20;
+    assertThat(state.process_deposit(state, pubkey, 100, Bytes32.TRUE, Hash.ZERO, Hash.ZERO))
+        .isEqualTo(5);
+  }
+
+  @Test
+  public void processDepositValidatorPubkeysContainsPubkey() {
+    BeaconState state = newState();
+    int pubkey = 200;
+
+    double oldBalance = state.getValidator_balances().get(2);
+
+    assertThat(state.process_deposit(state, pubkey, 100, Bytes32.TRUE, Hash.ZERO, Hash.ZERO))
+        .isEqualTo(2);
+
+    assertThat(state.getValidator_balances().get(2)).isEqualTo(oldBalance + 100.0);
+  }
+
+  @Test
+  public void activateValidatorNotPendingActivation() {
+    BeaconState state = newState();
+    int validator_index = 0;
+
+    state.activate_validator(validator_index);
+    assertThat(state.getValidator_registry().get(validator_index).getStatus().getValue()).isEqualTo(ACTIVE);
+  }
+
+  @Test
+  public void activateValidator() {
+    BeaconState state = newState();
+    int validator_index = 0;
+
+    assertThat(state.getValidator_registry().get(validator_index).getStatus().getValue()).isEqualTo(PENDING_ACTIVATION);
+    state.activate_validator(validator_index);
+    assertThat(state.getValidator_registry().get(validator_index).getStatus().getValue()).isEqualTo(ACTIVE);
+    assertThat(state.getValidator_registry().get(validator_index).getLatest_status_change_slot())
+        .isEqualTo(state.getSlot());
+  }
+
+  @Test
+  public void initiateValidatorExitNotActive() {
+    BeaconState state = newState();
+    int validator_index = 0;
+
+    state.initiate_validator_exit(validator_index);
+    assertThat(state.getValidator_registry().get(validator_index).getStatus().getValue()).isEqualTo(ACTIVATION);
+  }
+
+  @Test
+  public void initiateValidatorExit() {
+    BeaconState state = newState();
+    int validator_index = 2;
+
+    state.initiate_validator_exit(validator_index);
+    assertThat(state.getValidator_registry().get(validator_index).
+        getStatus().getValue()).isEqualTo(ACTIVE_PENDING_EXIT);
+    assertThat(state.getValidator_registry().get(validator_index).
+        getLatest_status_change_slot()).isEqualTo(state.getSlot());
+  }
+
+  @Test
+  public void exitValidatorPrevStatusExitedWithPenaltyNewStatusExitedWithoutPenalty() {
+    BeaconState state = newState();
+    int validator_index = 4;
+
+    state.exit_validator(state,validator_index, EXITED_WITHOUT_PENALTY);
+    assertThat(state.getValidator_registry().get(validator_index).getStatus().getValue()).isEqualTo(EXITED_WITH_PENALTY);
+  }
+
+  @Test
+  public void exitValidatorPrevStatusExitedWithoutPenaltyNewStatusExitedWithoutPenalty() {
+    BeaconState state = newState();
+    int validator_index = 3;
+
+    state.exit_validator(state, validator_index, EXITED_WITHOUT_PENALTY);
+    assertThat(state.getValidator_registry().get(validator_index).
+        getStatus().getValue()).isEqualTo(EXITED_WITHOUT_PENALTY);
+    assertThat(state.getValidator_registry().get(validator_index).
+        getLatest_status_change_slot()).isEqualTo(state.getSlot());
+  }
+
+  @Test
+  public void exitValidatorPrevStatusExitedWithoutPenaltyNewStatusExitedWithPenalty() {
+    BeaconState state = newState();
+    int validator_index = 3;
+
+    long before_exit_count = state.getValidator_registry_exit_count().getValue();
+    double before_balance = state.getValidator_balances().get(validator_index);
+//    Hash before_tip = state.validator_registry_delta_chain_tip;
+
+    state.exit_validator(state, validator_index, EXITED_WITH_PENALTY);
+
+    assertThat(before_exit_count).isEqualTo(state.getValidator_registry_exit_count().getValue());
+    assertThat(state.getValidator_balances().get(validator_index)).isLessThan(before_balance);
+    // TODO: Uncomment this when tree_root_hash is working.
+//    assertThat(before_tip).isNotEqualTo(state.validator_registry_delta_chain_tip);
+  }
+
+  @Test
+  public void exitValidatorPrevStatusDidNotExitNewStatusExitedWithPenalty() {
+    BeaconState state = newState();
+    int validator_index = 2;
+
+    long before_exit_count = state.getValidator_registry_exit_count().getValue();
+    double before_balance = state.getValidator_balances().get(validator_index);
+//    Hash before_tip = state.validator_registry_delta_chain_tip;
+
+    state.exit_validator(state, validator_index, EXITED_WITH_PENALTY);
+
+    assertThat(before_exit_count).isEqualTo(state.getValidator_registry_exit_count().getValue() - 1);
+    assertThat(state.getValidator_balances().get(validator_index)).isLessThan(before_balance);
+    // TODO: Uncomment this when tree_root_hash is working.
+//    assertThat(before_tip).isNotEqualTo(state.validator_registry_delta_chain_tip);
+  }
+
+  @Test
+  public void exitValidatorPrevStatusDidNotExitNewStatusExitedWithoutPenalty() {
+    BeaconState state = newState();
+    int validator_index = 0;
+
+    long before_exit_count = state.getValidator_registry_exit_count().getValue();
+    int before_persistent_committees_size = state.getPersistent_committees().get(validator_index).size();
+//    Hash before_tip = state.validator_registry_delta_chain_tip;
+
+    state.exit_validator(state, validator_index, EXITED_WITHOUT_PENALTY);
+
+    assertThat(before_exit_count).isEqualTo(state.getValidator_registry_exit_count().getValue() - 1);
+    assertThat(state.getPersistent_committees().get(validator_index).size())
+        .isEqualTo(before_persistent_committees_size - 1);
+    // TODO: Uncomment this when tree_root_hash is working.
+//    assertThat(before_tip).isNotEqualTo(state.validator_registry_delta_chain_tip);
+  }
+
+  @Test
   public void deepCopyBeaconState() {
-    BeaconState state = newState(ACTIVE);
+    BeaconState state = newState();
     BeaconState deepCopy = BeaconState.deepCopy(state);
 
     // Test if deepCopy has the same values as the original state
@@ -98,106 +259,13 @@ public class BeaconStateTest {
 
     // Test validator registry
     ArrayList<ValidatorRecord> new_records = new ArrayList<ValidatorRecord>(Collections.nCopies(12,
-          new ValidatorRecord(2, hash(Bytes32.FALSE), hash(Bytes32.FALSE), UInt64.valueOf(PENDING_ACTIVATION),
-           50.0, UInt64.valueOf(PENDING_ACTIVATION), UInt64.MAX_VALUE, UInt64.MAX_VALUE)));
+        new ValidatorRecord(2, hash(Bytes32.FALSE), hash(Bytes32.FALSE), UInt64.valueOf(PENDING_ACTIVATION),
+            UInt64.valueOf(PENDING_ACTIVATION), UInt64.MAX_VALUE, UInt64.MAX_VALUE, UInt64.MIN_VALUE,
+            UInt64.MIN_VALUE)));
     deepCopy.setValidator_registry(new_records);
     assertThat(deepCopy.getValidator_registry().get(0).getPubkey().getValue())
-      .isNotEqualTo(state.getValidator_registry().get(0).getPubkey().getValue());
+        .isNotEqualTo(state.getValidator_registry().get(0).getPubkey().getValue());
   }
-
-  @Test
-  public void activateValidatorNotPendingActivation() {
-    BeaconState state = newState(ACTIVE);
-    state.activate_validator(0);
-    assertThat(state.getValidator_registry().get(0).getStatus().getValue()).isEqualTo(ACTIVE);
-  }
-
-  @Test
-  public void activateValidator() {
-    BeaconState state = newState(PENDING_ACTIVATION);
-    assertThat(state.getValidator_registry().get(0).getStatus().getValue()).isEqualTo(PENDING_ACTIVATION);
-    state.activate_validator(0);
-    assertThat(state.getValidator_registry().get(0).getStatus().getValue()).isEqualTo(ACTIVE);
-    assertThat(state.getValidator_registry().get(0).getLatest_status_change_slot()).isEqualTo(state.getSlot());
-  }
-
-  @Test
-  public void initiateValidatorExitNotActive() {
-    BeaconState state = newState(ACTIVATION);
-    state.initiate_validator_exit(0);
-    assertThat(state.getValidator_registry().get(0).getStatus().getValue()).isEqualTo(ACTIVATION);
-  }
-
-  @Test
-  public void initiateValidatorExit() {
-    BeaconState state = newState(ACTIVE);
-    state.initiate_validator_exit(0);
-    assertThat(state.getValidator_registry().get(0).getStatus().getValue()).isEqualTo(ACTIVE_PENDING_EXIT);
-    assertThat(state.getValidator_registry().get(0).getLatest_status_change_slot()).isEqualTo(state.getSlot());
-  }
-
-  @Test
-  public void exitValidatorPrevStatusExitedWithPenaltyNewStateExitedWithoutPenalty() {
-    BeaconState state = newState(EXITED_WITH_PENALTY);
-    state.exit_validator(0, EXITED_WITHOUT_PENALTY);
-    assertThat(state.getValidator_registry().get(0).getStatus().getValue()).isEqualTo(EXITED_WITH_PENALTY);
-  }
-
-  @Test
-  public void exitValidatorPrevStatusExitedWithoutPenaltyNewStateExitedWithoutPenalty() {
-    BeaconState state = newState(EXITED_WITHOUT_PENALTY);
-    state.exit_validator(0, EXITED_WITHOUT_PENALTY);
-    assertThat(state.getValidator_registry().get(0).getStatus().getValue()).isEqualTo(EXITED_WITHOUT_PENALTY);
-    assertThat(state.getValidator_registry().get(0).getLatest_status_change_slot()).isEqualTo(state.getSlot());
-  }
-
-  @Test
-  public void exitValidatorPrevStatusExitedWithoutPenaltyNewStateExitedWithPenalty() {
-    // balance changes. no committee changes.
-    BeaconState state = newState(EXITED_WITHOUT_PENALTY);
-    long before_exit_count = state.getValidator_registry_exit_count().getValue();
-    double before_balance = state.getValidator_registry().get(0).getBalance();
-//    Hash before_tip = state.validator_registry_delta_chain_tip;
-
-    state.exit_validator(0, EXITED_WITH_PENALTY);
-
-    assertThat(before_exit_count).isEqualTo(state.getValidator_registry_exit_count().getValue());
-    assertThat(state.getValidator_registry().get(0).getBalance()).isLessThan(before_balance);
-    // TODO: Uncomment this when tree_root_hash is working.
-//    assertThat(before_tip).isNotEqualTo(state.validator_registry_delta_chain_tip);
-  }
-
-  @Test
-  public void exitValidatorPrevStatusDidNotExitNewStatusExitedWithPenalty() {
-    BeaconState state = newState(ACTIVE_PENDING_EXIT);
-    long before_exit_count = state.getValidator_registry_exit_count().getValue();
-    double before_balance = state.getValidator_registry().get(0).getBalance();
-//    Hash before_tip = state.validator_registry_delta_chain_tip;
-
-    state.exit_validator(0, EXITED_WITH_PENALTY);
-
-    assertThat(before_exit_count).isEqualTo(state.getValidator_registry_exit_count().getValue() - 1);
-    assertThat(state.getValidator_registry().get(0).getBalance()).isLessThan(before_balance);
-    // TODO: Uncomment this when tree_root_hash is working.
-//    assertThat(before_tip).isNotEqualTo(state.validator_registry_delta_chain_tip);
-  }
-
-  @Test
-  public void exitValidatorPrevStatusDidNotExitNewStatusExitedWithoutPenalty() {
-    // no balance changes. committee changes.
-    BeaconState state = newState(ACTIVE_PENDING_EXIT);
-    long before_exit_count = state.getValidator_registry_exit_count().getValue();
-    int before_persistent_committees_size = state.getPersistent_committees().get(0).size();
-//    Hash before_tip = state.validator_registry_delta_chain_tip;
-
-    state.exit_validator(0, EXITED_WITHOUT_PENALTY);
-
-    assertThat(before_exit_count).isEqualTo(state.getValidator_registry_exit_count().getValue() - 1);
-    assertThat(state.getPersistent_committees().get(0).size()).isEqualTo(before_persistent_committees_size - 1);
-    // TODO: Uncomment this when tree_root_hash is working.
-//    assertThat(before_tip).isNotEqualTo(state.validator_registry_delta_chain_tip);
-  }
-
 
   private Hash hashSrc() {
     BytesValue bytes = BytesValue.wrap(new byte[]{(byte) 1, (byte) 256, (byte) 65656});
