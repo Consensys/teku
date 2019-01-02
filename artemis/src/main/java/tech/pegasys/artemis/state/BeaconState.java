@@ -25,14 +25,13 @@ import static tech.pegasys.artemis.Constants.EPOCH_LENGTH;
 import static tech.pegasys.artemis.Constants.EXIT;
 import static tech.pegasys.artemis.Constants.EXITED_WITHOUT_PENALTY;
 import static tech.pegasys.artemis.Constants.EXITED_WITH_PENALTY;
-import static tech.pegasys.artemis.Constants.GWEI_PER_ETH;
-import static tech.pegasys.artemis.Constants.MAX_DEPOSIT;
 import static tech.pegasys.artemis.Constants.PENDING_ACTIVATION;
 import static tech.pegasys.artemis.Constants.WHISTLEBLOWER_REWARD_QUOTIENT;
 import static tech.pegasys.artemis.Constants.ZERO_BALANCE_VALIDATOR_TTL;
 import static tech.pegasys.artemis.ethereum.core.TreeHash.hash_tree_root;
 import static tech.pegasys.artemis.util.bls.BLSVerify.bls_verify;
 
+import tech.pegasys.artemis.Constants;
 import tech.pegasys.artemis.datastructures.beaconchainoperations.DepositInput;
 import tech.pegasys.artemis.datastructures.beaconchainstate.CandidatePoWReceiptRootRecord;
 import tech.pegasys.artemis.datastructures.beaconchainstate.CrosslinkRecord;
@@ -42,6 +41,7 @@ import tech.pegasys.artemis.datastructures.beaconchainstate.ShardCommittee;
 import tech.pegasys.artemis.datastructures.beaconchainstate.ShardReassignmentRecord;
 import tech.pegasys.artemis.datastructures.beaconchainstate.ValidatorRecord;
 import tech.pegasys.artemis.datastructures.beaconchainstate.ValidatorRegistryDeltaBlock;
+import tech.pegasys.artemis.datastructures.beaconchainstate.Validators;
 import tech.pegasys.artemis.ethereum.core.Hash;
 import tech.pegasys.artemis.util.bytes.Bytes32;
 import tech.pegasys.artemis.util.bytes.BytesValue;
@@ -65,7 +65,7 @@ public class BeaconState {
   private ForkData fork_data;
 
   // Validator registry
-  private ArrayList<ValidatorRecord> validator_registry;
+  private Validators validator_registry;
   private ArrayList<Double> validator_balances;
   private long validator_registry_latest_change_slot;
   private long validator_registry_exit_count;
@@ -113,7 +113,7 @@ public class BeaconState {
       // Misc
       long slot, long genesis_time, ForkData fork_data,
       // Validator registry
-      ArrayList<ValidatorRecord> validator_registry, ArrayList<Double> validator_balances,
+      Validators validator_registry, ArrayList<Double> validator_balances,
       long validator_registry_latest_change_slot, long validator_registry_exit_count,
       Hash validator_registry_delta_chain_tip,
       // Randomness and committees
@@ -325,7 +325,7 @@ public class BeaconState {
        * @param index
        * @param new_status
        */
-  private void update_validator_status(BeaconState state, int index, int new_status) {
+  public void update_validator_status(BeaconState state, int index, int new_status) {
     if (new_status == ACTIVE) {
       activate_validator(index);
     }
@@ -472,7 +472,6 @@ public class BeaconState {
         new ValidatorRegistryDeltaBlock(current_validator_registry_delta_chain_tip, validator_index,
             UInt384.valueOf(pubkey), UInt64.valueOf(flag))));
   }
-
   /**
    * Returns the effective balance (also known as "balance at stake") for a ``validator`` with the given ``index``.
    * @param state
@@ -480,7 +479,7 @@ public class BeaconState {
    * @return
    */
   private double get_effective_balance(BeaconState state, int index) {
-    return Math.min(state.validator_balances.get(index).intValue(), MAX_DEPOSIT * GWEI_PER_ETH);
+    return Math.min(state.validator_balances.get(index).intValue(), Constants.MAX_DEPOSIT * Constants.GWEI_PER_ETH);
   }
 
   public ArrayList<Hash> getLatest_randao_mixes() {
@@ -639,10 +638,10 @@ public class BeaconState {
     this.fork_data = fork_data;
   }
 
-  public ArrayList<ValidatorRecord> getValidator_registry() { return validator_registry; }
+  public Validators getValidator_registry() { return validator_registry; }
 
   public void setValidator_registry(ArrayList<ValidatorRecord> validator_registry) {
-    this.validator_registry = validator_registry;
+    this.validator_registry = new Validators(validator_registry);
   }
 
   public ArrayList<Double> getValidator_balances() { return validator_balances; }
