@@ -16,7 +16,6 @@ package tech.pegasys.artemis.services.beaconchain;
 import tech.pegasys.artemis.Constants;
 import tech.pegasys.artemis.datastructures.beaconchainblocks.BeaconBlock;
 import tech.pegasys.artemis.state.BeaconState;
-import tech.pegasys.artemis.util.uint.UInt64;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -42,11 +41,8 @@ public class StateTransition{
         blockProcessor(state, block);
         //}
 
-        //TODO: constants either need to be in UINT64 or this needs to be implemented the idiomatic way.
-        long epoch_length = Integer.toUnsignedLong(Constants.EPOCH_LENGTH);
-        long zero = Integer.toUnsignedLong(0);
         // per-epoch processing
-        if( state.getSlot().modulo(epoch_length).equals(UInt64.valueOf(zero)) ){
+        if( state.getSlot() % Constants.EPOCH_LENGTH == 0){
             epochProcessor(state);
         }
 

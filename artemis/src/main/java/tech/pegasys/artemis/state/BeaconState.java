@@ -60,15 +60,15 @@ import com.google.gson.GsonBuilder;
 public class BeaconState {
 
   // Misc
-  private UInt64 slot;
-  private UInt64 genesis_time;
+  private long slot;
+  private long genesis_time;
   private ForkData fork_data;
 
   // Validator registry
   private ArrayList<ValidatorRecord> validator_registry;
   private ArrayList<Double> validator_balances;
-  private UInt64 validator_registry_latest_change_slot;
-  private UInt64 validator_registry_exit_count;
+  private long validator_registry_latest_change_slot;
+  private long validator_registry_exit_count;
   private Hash validator_registry_delta_chain_tip;
 
   // Randomness and committees
@@ -79,10 +79,10 @@ public class BeaconState {
   private ArrayList<ShardReassignmentRecord> persistent_committee_reassignments;
 
   // Finality
-  private UInt64 previous_justified_slot;
-  private UInt64 justified_slot;
-  private UInt64 justification_bitfield;
-  private UInt64 finalized_slot;
+  private long previous_justified_slot;
+  private long justified_slot;
+  private long justification_bitfield;
+  private long finalized_slot;
 
   // Recent state
   private ArrayList<CrosslinkRecord> latest_crosslinks;
@@ -100,7 +100,7 @@ public class BeaconState {
   public BeaconState()
   {
     //TODO: temp to allow it to run in demo mode
-    this.slot = UInt64.MIN_VALUE;
+    this.slot = 0;
   }
 
   public static BeaconState deepCopy(BeaconState state){
@@ -111,18 +111,18 @@ public class BeaconState {
 
   BeaconState(
       // Misc
-      UInt64 slot, UInt64 genesis_time, ForkData fork_data,
+      long slot, long genesis_time, ForkData fork_data,
       // Validator registry
       ArrayList<ValidatorRecord> validator_registry, ArrayList<Double> validator_balances,
-      UInt64 validator_registry_latest_change_slot, UInt64 validator_registry_exit_count,
+      long validator_registry_latest_change_slot, long validator_registry_exit_count,
       Hash validator_registry_delta_chain_tip,
       // Randomness and committees
       ArrayList<Hash> latest_randao_mixes, ArrayList<Hash> latest_vdf_outputs, ArrayList<ArrayList<ShardCommittee>> shard_committees_at_slots,
       ArrayList<ArrayList<Integer>> persistent_committees,
       ArrayList<ShardReassignmentRecord> persistent_committee_reassignments,
       // Finality
-      UInt64 previous_justified_slot, UInt64 justified_slot, UInt64 justification_bitfield,
-      UInt64 finalized_slot,
+      long previous_justified_slot, long justified_slot, long justification_bitfield,
+      long finalized_slot,
       // Recent state
       ArrayList<CrosslinkRecord> latest_crosslinks, ArrayList<Hash> latest_block_roots,
       ArrayList<Double> latest_penalized_exit_balances, ArrayList<PendingAttestationRecord> latest_attestations,
@@ -171,19 +171,19 @@ public class BeaconState {
   /**
   * @return the slot
   */
-  public UInt64 getSlot(){
+  public long getSlot(){
     return this.slot;
   }
 
   /**
    * @param slot
    */
-  public void setSlot(UInt64 slot){
+  public void setSlot(long slot){
     this.slot = slot;
   }
 
   public void incrementSlot(){
-    this.slot = this.slot.increment();
+    this.slot++;
   }
 
   /**
@@ -220,7 +220,7 @@ public class BeaconState {
         randao_commitment, EMPTY_SIGNATURE);
 
     UInt384 signature = UInt384.valueOf(BytesValue.wrap(proof_of_possession.extractArray()).getInt(0));
-    UInt64 domain = UInt64.valueOf(get_domain(state.fork_data, toIntExact(state.slot.getValue()), DOMAIN_DEPOSIT));
+    UInt64 domain = UInt64.valueOf(get_domain(state.fork_data, toIntExact(state.getSlot()), DOMAIN_DEPOSIT));
     return bls_verify(UInt384.valueOf(pubkey), hash_tree_root(proof_of_possession_data), signature, domain);
 
   }
@@ -251,12 +251,12 @@ public class BeaconState {
     if (indexOfPubkey(validator_pubkeys, pubkey) == -1) {
       // Add new validator
       ValidatorRecord validator = new ValidatorRecord(pubkey, withdrawal_credentials, randao_commitment,
-          UInt64.MIN_VALUE, UInt64.valueOf(PENDING_ACTIVATION), state.slot, UInt64.MIN_VALUE, UInt64.MIN_VALUE,
+          UInt64.MIN_VALUE, UInt64.valueOf(PENDING_ACTIVATION), UInt64.valueOf(state.getSlot()), UInt64.MIN_VALUE, UInt64.MIN_VALUE,
           UInt64.MIN_VALUE);
 
       ArrayList<ValidatorRecord> validators_copy = new ArrayList<ValidatorRecord>();
       validators_copy.addAll(validator_registry);
-      index = min_empty_validator_index(validators_copy, validator_balances, toIntExact(slot.getValue()));
+      index = min_empty_validator_index(validators_copy, validator_balances, toIntExact(slot));
       if (index == validators_copy.size()) {
         state.validator_registry.add(validator);
         state.validator_balances.add(deposit);
@@ -350,7 +350,7 @@ public class BeaconState {
     }
 
     validator.setStatus(UInt64.valueOf(ACTIVE));
-    validator.setLatest_status_change_slot(slot);
+    validator.setLatest_status_change_slot(UInt64.valueOf(slot));
     validator_registry_delta_chain_tip =
         get_new_validator_registry_delta_chain_tip(validator_registry_delta_chain_tip,
         index, toIntExact(validator.getPubkey().getValue()), ACTIVATION);
@@ -370,7 +370,7 @@ public class BeaconState {
     }
 
     validator.setStatus(UInt64.valueOf(ACTIVE_PENDING_EXIT));
-    validator.setLatest_status_change_slot(slot);
+    validator.setLatest_status_change_slot(UInt64.valueOf(slot));
   }
 
 
@@ -390,14 +390,14 @@ public class BeaconState {
     }
 
     validator.setStatus(UInt64.valueOf(new_status));
-    validator.setLatest_status_change_slot(state.slot);
+    validator.setLatest_status_change_slot(UInt64.valueOf(state.getSlot()));
 
     if (new_status == EXITED_WITH_PENALTY) {
-      int lpeb_index = toIntExact(state.slot.getValue()) / COLLECTIVE_PENALTY_CALCULATION_PERIOD;
+      int lpeb_index = toIntExact(state.getSlot()) / COLLECTIVE_PENALTY_CALCULATION_PERIOD;
       latest_penalized_exit_balances.set(lpeb_index,
           latest_penalized_exit_balances.get(lpeb_index) + get_effective_balance(state, index));
 
-      int whistleblower_index = get_beacon_proposer_index(state, toIntExact(state.slot.getValue()));
+      int whistleblower_index = get_beacon_proposer_index(state, toIntExact(state.getSlot()));
       double whistleblower_reward = get_effective_balance(state, index) / WHISTLEBLOWER_REWARD_QUOTIENT;
 
       double new_whistleblower_balance = state.validator_balances.get(whistleblower_index) + whistleblower_reward;
@@ -413,8 +413,8 @@ public class BeaconState {
     }
 
     // The following updates only occur if not previous exited
-    state.setValidator_registry_exit_count(state.getValidator_registry_exit_count().increment());
-    validator.setExit_count(state.getValidator_registry_exit_count());
+    state.setValidator_registry_exit_count(state.getValidator_registry_exit_count()+1);
+    validator.setExit_count(UInt64.valueOf(state.getValidator_registry_exit_count()));
     state.setValidator_registry_delta_chain_tip(get_new_validator_registry_delta_chain_tip(
         state.getValidator_registry_delta_chain_tip(), index, toIntExact(validator.getPubkey().getValue()), EXIT));
 
@@ -450,7 +450,7 @@ public class BeaconState {
    * @return
    */
   private ArrayList<ShardCommittee> get_shard_committees_at_slot(BeaconState state, int slot) {
-    int earliest_slot_in_array = toIntExact(state.slot.getValue()) - (toIntExact(state.slot.getValue()) % EPOCH_LENGTH)
+    int earliest_slot_in_array = toIntExact(state.getSlot()) - (toIntExact(state.getSlot()) % EPOCH_LENGTH)
         - EPOCH_LENGTH;
     assert earliest_slot_in_array <= slot;
     assert slot < (earliest_slot_in_array + EPOCH_LENGTH * 2);
@@ -623,11 +623,11 @@ public class BeaconState {
 
 
 
-  public UInt64 getGenesis_time() {
+  public long getGenesis_time() {
     return genesis_time;
   }
 
-  public void setGenesis_time(UInt64 genesis_time) {
+  public void setGenesis_time(long genesis_time) {
     this.genesis_time = genesis_time;
   }
 
@@ -651,11 +651,11 @@ public class BeaconState {
     this.validator_balances = validator_balances;
   }
 
-  public UInt64 getValidator_registry_exit_count() {
+  public long getValidator_registry_exit_count() {
     return validator_registry_exit_count;
   }
 
-  public void setValidator_registry_exit_count(UInt64 validator_registry_exit_count) {
+  public void setValidator_registry_exit_count(long validator_registry_exit_count) {
     this.validator_registry_exit_count = validator_registry_exit_count;
   }
 
@@ -665,11 +665,11 @@ public class BeaconState {
     this.validator_registry_delta_chain_tip = validator_registry_delta_chain_tip;
   }
 
-  public UInt64 getValidator_registry_latest_change_slot() {
+  public long getValidator_registry_latest_change_slot() {
     return validator_registry_latest_change_slot;
   }
 
-  public void setValidator_registry_latest_change_slot(UInt64 validator_registry_latest_change_slot) {
+  public void setValidator_registry_latest_change_slot(long validator_registry_latest_change_slot) {
     this.validator_registry_latest_change_slot = validator_registry_latest_change_slot;
   }
 
@@ -681,19 +681,19 @@ public class BeaconState {
     this.persistent_committee_reassignments = persistent_committee_reassignments;
   }
 
-  public UInt64 getPrevious_justified_slot() {
+  public long getPrevious_justified_slot() {
     return previous_justified_slot;
   }
 
-  public void setPrevious_justified_slot(UInt64 previous_justified_slot) {
+  public void setPrevious_justified_slot(long previous_justified_slot) {
     this.previous_justified_slot = previous_justified_slot;
   }
 
-  public UInt64 getJustification_bitfield() {
+  public long getJustification_bitfield() {
     return justification_bitfield;
   }
 
-  public void setJustification_bitfield(UInt64 justification_bitfield) {
+  public void setJustification_bitfield(long justification_bitfield) {
     this.justification_bitfield = justification_bitfield;
   }
 
@@ -729,19 +729,19 @@ public class BeaconState {
     this.batched_block_roots = batched_block_roots;
   }
 
-  public UInt64 getJustified_slot() {
+  public long getJustified_slot() {
     return justified_slot;
   }
 
-  public void setJustified_slot(UInt64 justified_slot) {
+  public void setJustified_slot(long justified_slot) {
     this.justified_slot = justified_slot;
   }
 
-  public UInt64 getFinalized_slot() {
+  public long getFinalized_slot() {
     return finalized_slot;
   }
 
-  public void setFinalized_slot(UInt64 finalized_slot) {
+  public void setFinalized_slot(long finalized_slot) {
     this.finalized_slot = finalized_slot;
   }
 
