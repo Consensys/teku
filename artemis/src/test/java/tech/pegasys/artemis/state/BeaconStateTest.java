@@ -91,11 +91,11 @@ public class BeaconStateTest {
   private BeaconState processDepositSetup() {
     BeaconState state = newState();
     ValidatorRecord validator1 = new ValidatorRecord(0, Hash.ZERO, Hash.ZERO, UInt64.valueOf(0), UInt64.valueOf(0),
-        UInt64.valueOf(PENDING_ACTIVATION), state.getSlot(), UInt64.valueOf(0), UInt64.valueOf(0));
+        UInt64.valueOf(PENDING_ACTIVATION), UInt64.valueOf(state.getSlot()), UInt64.valueOf(0), UInt64.valueOf(0));
     ValidatorRecord validator2 = new ValidatorRecord(100, Hash.ZERO, Hash.ZERO, UInt64.valueOf(0), UInt64.valueOf(0),
-        UInt64.valueOf(PENDING_ACTIVATION), state.getSlot(), UInt64.valueOf(0), UInt64.valueOf(0));
+        UInt64.valueOf(PENDING_ACTIVATION), UInt64.valueOf(state.getSlot()), UInt64.valueOf(0), UInt64.valueOf(0));
     ValidatorRecord validator3 = new ValidatorRecord(200, Hash.ZERO, Hash.ZERO, UInt64.valueOf(0), UInt64.valueOf(0),
-        UInt64.valueOf(PENDING_ACTIVATION), state.getSlot(), UInt64.valueOf(0), UInt64.valueOf(0));
+        UInt64.valueOf(PENDING_ACTIVATION), UInt64.valueOf(state.getSlot()), UInt64.valueOf(0), UInt64.valueOf(0));
     ArrayList<ValidatorRecord> validators = new ArrayList<ValidatorRecord>();
     validators.add(validator1);
     validators.add(validator2);
