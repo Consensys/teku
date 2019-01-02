@@ -37,13 +37,12 @@ public class ValidatorRecord {
   private UInt64 status;
   private UInt64 latest_status_change_slot;
   private UInt64 exit_count;
-  private Hash poc_commitment;
   private UInt64 last_poc_change_slot;
   private UInt64 second_last_poc_change_slot;
 
-   public ValidatorRecord(int pubkey, Hash withdrawal_credentials, Hash randao_commitment, UInt64 randao_layers,
-                          UInt64 status, UInt64 slot, UInt64 exit_count, Hash poc_commitment,
-                          UInt64 last_poc_change_slot, UInt64 second_last_poc_change_slot) {
+  public ValidatorRecord(int pubkey, Hash withdrawal_credentials, Hash randao_commitment, UInt64 randao_layers,
+                         UInt64 status, UInt64 slot, UInt64 exit_count, UInt64 last_poc_change_slot,
+                         UInt64 second_last_poc_change_slot) {
     this.pubkey = UInt384.valueOf(pubkey);
     this.withdrawal_credentials = withdrawal_credentials;
     this.randao_commitment = randao_commitment;
@@ -51,10 +50,9 @@ public class ValidatorRecord {
     this.status = status;
     this.latest_status_change_slot = slot;
     this.exit_count = exit_count;
-     this.poc_commitment = poc_commitment;
-     this.last_poc_change_slot = last_poc_change_slot;
+    this.last_poc_change_slot = last_poc_change_slot;
     this.second_last_poc_change_slot = second_last_poc_change_slot;
-   }
+  }
 
   public UInt64 getStatus() {
     return this.status;
@@ -128,11 +126,17 @@ public class ValidatorRecord {
     this.second_last_poc_change_slot = second_last_poc_change_slot;
   }
 
-  public Hash getPoc_commitment() {
-    return poc_commitment;
+  public boolean is_active_validator() {
+    //checks validator status against the validator status constants for whether the validator is active
+    return (status.equals(UInt64.valueOf(Constants.ACTIVE)) || status.equals(UInt64.valueOf(Constants.ACTIVE_PENDING_EXIT)));
   }
 
-  public void setPoc_commitment(Hash poc_commitment) {
-    this.poc_commitment = poc_commitment;
+  /**
+   * Returns the effective balance (also known as "balance at stake") for the ``validator``.
+   * @param
+   * @return
+   */
+  public double get_effective_balance() {
+    return Math.min(balance, Constants.MAX_DEPOSIT * Constants.GWEI_PER_ETH);
   }
 }

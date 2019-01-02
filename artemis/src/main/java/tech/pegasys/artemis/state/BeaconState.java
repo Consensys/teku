@@ -27,8 +27,6 @@ import static tech.pegasys.artemis.Constants.EXITED_WITH_PENALTY;
 import static tech.pegasys.artemis.Constants.GWEI_PER_ETH;
 import static tech.pegasys.artemis.Constants.INITIAL_FORK_VERSION;
 import static tech.pegasys.artemis.Constants.INITIAL_SLOT_NUMBER;
-import static tech.pegasys.artemis.Constants.LATEST_BLOCK_ROOTS_LENGTH;
-import static tech.pegasys.artemis.Constants.LATEST_RANDAO_MIXES_LENGTH;
 import static tech.pegasys.artemis.Constants.MAX_DEPOSIT;
 import static tech.pegasys.artemis.Constants.PENDING_ACTIVATION;
 import static tech.pegasys.artemis.Constants.SHARD_COUNT;
@@ -39,6 +37,7 @@ import static tech.pegasys.artemis.ethereum.core.TreeHash.hash_tree_root;
 import static tech.pegasys.artemis.state.BeaconState.BeaconStateHelperFunctions.shuffle;
 import static tech.pegasys.artemis.state.BeaconState.BeaconStateHelperFunctions.split;
 import static tech.pegasys.artemis.util.bls.BLSVerify.bls_verify;
+
 import tech.pegasys.artemis.Constants;
 import tech.pegasys.artemis.datastructures.beaconchainoperations.AttestationData;
 import tech.pegasys.artemis.datastructures.beaconchainoperations.Deposit;
@@ -61,7 +60,6 @@ import tech.pegasys.artemis.util.uint.UInt384;
 import tech.pegasys.artemis.util.uint.UInt64;
 
 import java.util.ArrayList;
-import java.util.Collections;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.gson.Gson;
@@ -130,7 +128,8 @@ public class BeaconState {
       Hash validator_registry_delta_chain_tip,
       // Randomness and committees
       ArrayList<Hash> latest_randao_mixes, ArrayList<Hash> latest_vdf_outputs, ArrayList<ArrayList<ShardCommittee>>
-          shard_committees_at_slots,
+          shard_committees_at_slots, ArrayList<ArrayList<Integer>> persistent_committees,
+      ArrayList<ShardReassignmentRecord> persistent_committee_reassignments,
       // Finality
       long previous_justified_slot, long justified_slot, long justification_bitfield,
       long finalized_slot,
@@ -157,6 +156,8 @@ public class BeaconState {
     this.latest_randao_mixes = latest_randao_mixes;
     this.latest_vdf_outputs = latest_vdf_outputs;
     this.shard_committees_at_slots = shard_committees_at_slots;
+    this.persistent_committees = persistent_committees;
+    this.persistent_committee_reassignments = persistent_committee_reassignments;
 
     // Finality
     this.previous_justified_slot = previous_justified_slot;
@@ -177,8 +178,9 @@ public class BeaconState {
 
   }
 
-  private BeaconState get_initial_beacon_state(ArrayList<Deposit> initial_validator_deposits,
-                                               int genesis_time, Hash processed_pow_receipt_root) {
+  @VisibleForTesting
+  public BeaconState get_initial_beacon_state(ArrayList<Deposit> initial_validator_deposits, int genesis_time, Hash
+      processed_pow_receipt_root) {
 
     ArrayList<Hash> latest_randao_mixes = new ArrayList<>();
     ArrayList<Hash> latest_vdf_outputs = new ArrayList<>();
@@ -186,7 +188,7 @@ public class BeaconState {
     ArrayList<CrosslinkRecord> latest_crosslinks = new ArrayList<CrosslinkRecord>(SHARD_COUNT);
 
     for (int i = 0; i < SHARD_COUNT; i++) {
-      latest_crosslinks.set(i, new CrosslinkRecord(Hash.ZERO, UInt64.valueOf(INITIAL_SLOT_NUMBER)));
+      latest_crosslinks.add(new CrosslinkRecord(Hash.ZERO, UInt64.valueOf(INITIAL_SLOT_NUMBER)));
     }
 
     BeaconState state = new BeaconState(
@@ -207,6 +209,9 @@ public class BeaconState {
         latest_randao_mixes,
         latest_vdf_outputs,
         new ArrayList<ArrayList<ShardCommittee>>(),
+        new ArrayList<ArrayList<Integer>>(),
+        new ArrayList<ShardReassignmentRecord>(),
+
 
         // Finality
         INITIAL_SLOT_NUMBER,
@@ -285,7 +290,7 @@ public class BeaconState {
       int shard_id_start = crosslinking_start_shard + slot * committees_per_slot;
 
       for (int shard_position = 0; shard_position < shard_indices.size(); shard_position++) {
-        shard_committees.set(shard_position,
+        shard_committees.add(
         new ShardCommittee(UInt64.valueOf((shard_id_start + shard_position) % SHARD_COUNT),
                 shard_indices.get(shard_position), UInt64.valueOf(active_validator_indices.size())));
       }
@@ -390,7 +395,7 @@ public class BeaconState {
       // Add new validator
       ValidatorRecord validator = new ValidatorRecord(pubkey, withdrawal_credentials, randao_commitment,
           UInt64.MIN_VALUE, UInt64.valueOf(PENDING_ACTIVATION), UInt64.valueOf(state.getSlot()),
-          UInt64.MIN_VALUE, Hash.ZERO, UInt64.MIN_VALUE, UInt64.MIN_VALUE);
+          UInt64.MIN_VALUE, UInt64.MIN_VALUE, UInt64.MIN_VALUE);
 
       ArrayList<ValidatorRecord> validators_copy = new ArrayList<ValidatorRecord>();
       validators_copy.addAll(validator_registry);

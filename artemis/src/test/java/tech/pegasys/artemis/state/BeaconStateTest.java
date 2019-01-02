@@ -51,7 +51,7 @@ public class BeaconStateTest {
     // Initialize state
     BeaconState state = new BeaconState(0, 0, new ForkData(UInt64.MIN_VALUE,
         UInt64.MIN_VALUE, UInt64.MIN_VALUE), new Validators(), new ArrayList<>(),
-        0, 0, hash(Bytes32.TRUE), new ArrayList<>(),
+        0, 0, hash(Bytes32.TRUE), new ArrayList<>(), new ArrayList<>(), new ArrayList<>(),
         new ArrayList<>(), new ArrayList<>(), 0, 0, 0,
         0,  new ArrayList<>(), new LatestBlockRoots(), new ArrayList<>(), new ArrayList<>(),
         new ArrayList<>(), hash(Bytes32.TRUE), new ArrayList<>());
@@ -59,18 +59,18 @@ public class BeaconStateTest {
     // Add validator records
     ArrayList<ValidatorRecord> validators = new ArrayList<>();
     validators.add(new ValidatorRecord(0, Hash.ZERO, Hash.ZERO, UInt64.MIN_VALUE,
-        UInt64.valueOf(PENDING_ACTIVATION), UInt64.valueOf(state.getSlot()), UInt64.MIN_VALUE, Hash.ZERO, UInt64.MIN_VALUE,
+        UInt64.valueOf(PENDING_ACTIVATION), UInt64.valueOf(state.getSlot()), UInt64.MIN_VALUE, UInt64.MIN_VALUE,
         UInt64.MIN_VALUE));
     validators.add(new ValidatorRecord(100, Hash.ZERO, Hash.ZERO, UInt64.MIN_VALUE,
-        UInt64.valueOf(ACTIVE), UInt64.valueOf(state.getSlot()), UInt64.MIN_VALUE,  Hash.ZERO, UInt64.MIN_VALUE, UInt64.MIN_VALUE));
+        UInt64.valueOf(ACTIVE), UInt64.valueOf(state.getSlot()), UInt64.MIN_VALUE,  UInt64.MIN_VALUE, UInt64.MIN_VALUE));
     validators.add(new ValidatorRecord(200, Hash.ZERO, Hash.ZERO, UInt64.MIN_VALUE,
-        UInt64.valueOf(ACTIVE_PENDING_EXIT), UInt64.valueOf(state.getSlot()), UInt64.MIN_VALUE,  Hash.ZERO, UInt64.MIN_VALUE,
+        UInt64.valueOf(ACTIVE_PENDING_EXIT), UInt64.valueOf(state.getSlot()), UInt64.MIN_VALUE, UInt64.MIN_VALUE,
         UInt64.MIN_VALUE));
     validators.add(new ValidatorRecord(0, Hash.ZERO, Hash.ZERO, UInt64.MIN_VALUE,
-        UInt64.valueOf(EXITED_WITHOUT_PENALTY), UInt64.valueOf(state.getSlot()), UInt64.MIN_VALUE, Hash.ZERO, UInt64.MIN_VALUE,
+        UInt64.valueOf(EXITED_WITHOUT_PENALTY), UInt64.valueOf(state.getSlot()), UInt64.MIN_VALUE, UInt64.MIN_VALUE,
         UInt64.MIN_VALUE));
     validators.add(new ValidatorRecord(0, Hash.ZERO, Hash.ZERO, UInt64.MIN_VALUE,
-        UInt64.valueOf(EXITED_WITH_PENALTY), UInt64.valueOf(state.getSlot()), UInt64.MIN_VALUE, Hash.ZERO, UInt64.MIN_VALUE,
+        UInt64.valueOf(EXITED_WITH_PENALTY), UInt64.valueOf(state.getSlot()), UInt64.MIN_VALUE, UInt64.MIN_VALUE,
         UInt64.MIN_VALUE));
     state.setValidator_registry(validators);
 
@@ -94,22 +94,6 @@ public class BeaconStateTest {
     state.setShard_committees_at_slots(new ArrayList<>(Collections.nCopies(128,
         new_shard_committees)));
 
-    return state;
-  }
-
-  private BeaconState processDepositSetup() {
-    BeaconState state = newState();
-    ValidatorRecord validator1 = new ValidatorRecord(0, Hash.ZERO, Hash.ZERO, UInt64.valueOf(0), UInt64.valueOf(0),
-        UInt64.valueOf(PENDING_ACTIVATION), UInt64.valueOf(state.getSlot()), Hash.ZERO, UInt64.valueOf(0), UInt64.valueOf(0));
-    ValidatorRecord validator2 = new ValidatorRecord(100, Hash.ZERO, Hash.ZERO, UInt64.valueOf(0), UInt64.valueOf(0),
-        UInt64.valueOf(PENDING_ACTIVATION), UInt64.valueOf(state.getSlot()), Hash.ZERO, UInt64.valueOf(0), UInt64.valueOf(0));
-    ValidatorRecord validator3 = new ValidatorRecord(200, Hash.ZERO, Hash.ZERO, UInt64.valueOf(0), UInt64.valueOf(0),
-        UInt64.valueOf(PENDING_ACTIVATION), UInt64.valueOf(state.getSlot()), Hash.ZERO, UInt64.valueOf(0), UInt64.valueOf(0));
-    ArrayList<ValidatorRecord> validators = new ArrayList<>();
-    validators.add(validator1);
-    validators.add(validator2);
-    validators.add(validator3);
-    state.setValidator_registry(validators);
     return state;
   }
 
@@ -327,7 +311,7 @@ public class BeaconStateTest {
     // Test validator registry
     ArrayList<ValidatorRecord> new_records = new ArrayList<ValidatorRecord>(Collections.nCopies(12,
         new ValidatorRecord(2, hash(Bytes32.FALSE), hash(Bytes32.FALSE), UInt64.valueOf(PENDING_ACTIVATION),
-            UInt64.valueOf(PENDING_ACTIVATION), UInt64.MAX_VALUE, UInt64.MAX_VALUE, Hash.ZERO, UInt64.MIN_VALUE,
+            UInt64.valueOf(PENDING_ACTIVATION), UInt64.MAX_VALUE, UInt64.MAX_VALUE, UInt64.MIN_VALUE,
             UInt64.MIN_VALUE)));
     deepCopy.setValidator_registry(new_records);
     assertThat(deepCopy.getValidator_registry().get(0).getPubkey().getValue())
@@ -370,14 +354,15 @@ public class BeaconStateTest {
     split(sample, -1);
   }
 
+
   @Test
   public void splitReturnsOneSmallerSizedSplit() {
     List<Integer> input = Arrays.asList(0, 1, 2, 3, 4, 5, 6, 7);
     ArrayList<Integer> sample = new ArrayList<>(input);
 
-    ArrayList actual = split(sample, 3);
+    ArrayList<ArrayList<Integer>> actual = split(sample, 3);
 
-    ArrayList expected = new ArrayList<>();
+    ArrayList<ArrayList<Integer>> expected = new ArrayList<>();
     List<Integer> one = Arrays.asList(0, 1);
     expected.add(new ArrayList<>(one));
     List<Integer> two = Arrays.asList(2, 3, 4);
@@ -390,12 +375,12 @@ public class BeaconStateTest {
 
   @Test
   public void splitReturnsTwoSmallerSizedSplits() {
-    List<Integer> input = Arrays.asList(0, 1, 2, 3, 4, 5, 6, 7);
+    List<Integer> input = Arrays.asList(0, 1, 2, 3, 4, 5, 6);
     ArrayList<Integer> sample = new ArrayList<>(input);
 
-    ArrayList actual = split(sample, 3);
+    ArrayList<ArrayList<Integer>> actual = split(sample, 3);
 
-    ArrayList expected = new ArrayList<>();
+    ArrayList<ArrayList<Integer>> expected = new ArrayList<>();
     List<Integer> one = Arrays.asList(0, 1);
     expected.add(new ArrayList<>(one));
     List<Integer> two = Arrays.asList(2, 3);
@@ -411,9 +396,9 @@ public class BeaconStateTest {
     List<Integer> input = Arrays.asList(0, 1, 2, 3, 4, 5, 6, 7, 8);
     ArrayList<Integer> sample = new ArrayList<>(input);
 
-    ArrayList actual = split(sample, 3);
+    ArrayList<ArrayList<Integer>> actual = split(sample, 3);
 
-    ArrayList expected = new ArrayList<>();
+    ArrayList<ArrayList<Integer>> expected = new ArrayList<>();
     List<Integer> one = Arrays.asList(0, 1, 2);
     expected.add(new ArrayList<>(one));
     List<Integer> two = Arrays.asList(3, 4, 5);
