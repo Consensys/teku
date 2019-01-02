@@ -18,7 +18,7 @@ import tech.pegasys.artemis.util.uint.UInt64;
 
 public class AttestationData {
 
-  private UInt64 slot;
+  private long slot;
   private UInt64 shard;
   private Hash beacon_block_hash;
   private Hash epoch_boundary_hash;
@@ -27,7 +27,7 @@ public class AttestationData {
   private UInt64 justified_slot;
   private Hash justified_block_hash;
 
-  public AttestationData(UInt64 slot, UInt64 shard, Hash beacon_block_hash, Hash epoch_boundary_hash,
+  public AttestationData(long slot, UInt64 shard, Hash beacon_block_hash, Hash epoch_boundary_hash,
                          Hash shard_block_hash, Hash last_crosslink_hash, UInt64 justified_slot,
                          Hash justified_block_hash) {
     this.slot = slot;
@@ -40,11 +40,11 @@ public class AttestationData {
     this.justified_block_hash = justified_block_hash;
   }
 
-  public UInt64 getSlot() {
+  public long getSlot() {
     return slot;
   }
 
-  public void setSlot(UInt64 slot) {
+  public void setSlot(long slot) {
     this.slot = slot;
   }
 

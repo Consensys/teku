@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.datastructures.beaconchainstate;
 
+import tech.pegasys.artemis.Constants;
 import tech.pegasys.artemis.ethereum.core.Hash;
 import tech.pegasys.artemis.util.uint.UInt384;
 import tech.pegasys.artemis.util.uint.UInt64;
@@ -20,6 +21,16 @@ import tech.pegasys.artemis.util.uint.UInt64;
 public class ValidatorRecord {
 
   private UInt384 pubkey;
+  private double balance = 0.0d;
+
+  public double getBalance() {
+    return balance;
+  }
+
+  public void setBalance(double balance) {
+    this.balance = balance;
+  }
+
   private Hash withdrawal_credentials;
   private Hash randao_commitment;
   private UInt64 randao_layers;
@@ -113,5 +124,19 @@ public class ValidatorRecord {
 
   public void setSecond_last_poc_change_slot(UInt64 second_last_poc_change_slot) {
     this.second_last_poc_change_slot = second_last_poc_change_slot;
+  }
+
+  public boolean is_active_validator() {
+     //checks validator status against the validator status constants for whether the validator is active
+    return (status.equals(UInt64.valueOf(Constants.ACTIVE)) || status.equals(UInt64.valueOf(Constants.ACTIVE_PENDING_EXIT)));
+  }
+
+  /**
+   * Returns the effective balance (also known as "balance at stake") for the ``validator``.
+   * @param
+   * @return
+   */
+  public double get_effective_balance() {
+    return Math.min(balance, Constants.MAX_DEPOSIT * Constants.GWEI_PER_ETH);
   }
 }

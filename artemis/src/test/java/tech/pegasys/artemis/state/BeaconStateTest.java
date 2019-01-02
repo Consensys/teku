@@ -29,6 +29,7 @@ import static tech.pegasys.artemis.state.BeaconState.BeaconStateHelperFunctions.
 import tech.pegasys.artemis.datastructures.beaconchainstate.ForkData;
 import tech.pegasys.artemis.datastructures.beaconchainstate.ShardCommittee;
 import tech.pegasys.artemis.datastructures.beaconchainstate.ValidatorRecord;
+import tech.pegasys.artemis.datastructures.beaconchainstate.Validators;
 import tech.pegasys.artemis.ethereum.core.Hash;
 import tech.pegasys.artemis.util.bytes.Bytes32;
 import tech.pegasys.artemis.util.bytes.BytesValue;
@@ -45,7 +46,7 @@ public class BeaconStateTest {
   private BeaconState newState() {
     // Initialize state
     BeaconState state = new BeaconState(0, 0, new ForkData(UInt64.MIN_VALUE,
-        UInt64.MIN_VALUE, UInt64.MIN_VALUE), new ArrayList<ValidatorRecord>(), new ArrayList<Double>(),
+        UInt64.MIN_VALUE, UInt64.MIN_VALUE), new Validators(), new ArrayList<Double>(),
        0, 0, hash(Bytes32.TRUE), new ArrayList<Hash>(), new ArrayList<Hash>(),
         new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), 0, 0, 0,
         0,  new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>(),
