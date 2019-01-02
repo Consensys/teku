@@ -177,7 +177,7 @@ public class BeaconState {
 
   }
 
-  private BeaconState get_initial_beacon_state(Deposit[] initial_validator_deposits,
+  private BeaconState get_initial_beacon_state(ArrayList<Deposit> initial_validator_deposits,
                                                int genesis_time, Hash processed_pow_receipt_root) {
 
     ArrayList<Hash> latest_randao_mixes = new ArrayList<>();
@@ -226,10 +226,10 @@ public class BeaconState {
         new ArrayList<CandidatePoWReceiptRootRecord>());
 
     // handle initial deposits and activations
-    for (int i = 0; i < initial_validator_deposits.length; i++) {
-      DepositInput deposit_input = initial_validator_deposits[i].getDeposit_data().getDeposit_input();
+    for (int i = 0; i < initial_validator_deposits.size(); i++) {
+      DepositInput deposit_input = initial_validator_deposits.get(i).getDeposit_data().getDeposit_input();
       int validator_index = process_deposit(state, toIntExact(deposit_input.getPubkey().getValue()),
-          initial_validator_deposits[i].getDeposit_data().getValue().getValue(), deposit_input.getProof_of_possession(),
+          initial_validator_deposits.get(i).getDeposit_data().getValue().getValue(), deposit_input.getProof_of_possession(),
           deposit_input.getWithdrawal_credentials(), deposit_input.getRandao_commitment(),
           deposit_input.getPoc_commitment());
 
