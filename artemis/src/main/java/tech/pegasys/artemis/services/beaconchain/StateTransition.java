@@ -13,13 +13,18 @@
 
 package tech.pegasys.artemis.services.beaconchain;
 
+import static java.lang.Math.toIntExact;
+
 import tech.pegasys.artemis.Constants;
 import tech.pegasys.artemis.datastructures.beaconchainblocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.beaconchainstate.ValidatorRecord;
 import tech.pegasys.artemis.state.BeaconState;
 import tech.pegasys.artemis.state.util.EpochProcessorUtil;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import java.util.ArrayList;
 
 public class StateTransition{
 
@@ -54,9 +59,8 @@ public class StateTransition{
         BeaconState newState = BeaconState.deepCopy(state);
         state.incrementSlot();
         logger.info("Processing new slot: " + state.getSlot());
-        // Slots the proposer has skipped (i.e. layers of RANDAO expected)
-        // should be in ValidatorRecord.randao_skips
-        updateProposerRandaoSkips(newState);
+
+        updateProposerRandaoLayer(newState);
         updateRecentBlockHashes(newState);
     }
 
@@ -80,8 +84,13 @@ public class StateTransition{
     }
 
     // slot processing
-    protected void updateProposerRandaoSkips(BeaconState state){
+    protected void updateProposerRandaoLayer(BeaconState state){
+      int curr_slot = toIntExact(state.getSlot());
+      int proposer = state.getBeacon_proposer_index(curr_slot); 
 
+      ArrayList<ValidatorRecord> validator_registry = state.getValidator_registry();
+      ValidatorRecord proposer_record = validator_registry.get(proposer);
+      proposer_record.setRandao_layers(proposer_record.getRandao_layers().increment());
     }
 
     protected void updateRecentBlockHashes(BeaconState state){
