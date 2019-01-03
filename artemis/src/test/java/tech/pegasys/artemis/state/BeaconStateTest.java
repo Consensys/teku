@@ -83,8 +83,9 @@ public class BeaconStateTest {
     state.getLatest_penalized_exit_balances().add(10.0);
 
     // Create shard_committees
+
     ArrayList<ShardCommittee> new_shard_committees = new ArrayList<ShardCommittee>(Collections.nCopies(2,
-        new ShardCommittee(UInt64.MIN_VALUE, new int[]{0}, UInt64.valueOf(1))));
+        new ShardCommittee(UInt64.MIN_VALUE, new ArrayList<Integer>(Collections.nCopies(1, 1)), UInt64.valueOf(1))));
     state.setShard_committees_at_slots(new ArrayList<ArrayList<ShardCommittee>>(Collections.nCopies(65,
         new_shard_committees)));
 

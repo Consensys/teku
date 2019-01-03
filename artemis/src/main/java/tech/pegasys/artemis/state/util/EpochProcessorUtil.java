@@ -40,8 +40,8 @@ public class EpochProcessorUtil {
     }
 
     public static void updateValidatorRegistry(BeaconState state){
-        Validators active_validator_indices = ValidatorsUtil.get_active_validator_indices(state.getValidator_registry());
-        double total_balance = ValidatorsUtil.get_effective_balance(active_validator_indices);
+        Validators active_validators = ValidatorsUtil.get_active_validators(state.getValidator_registry());
+        double total_balance = ValidatorsUtil.get_effective_balance(active_validators);
 
         double max_balance_churn = Math.max((double)(Constants.MAX_DEPOSIT * Constants.GWEI_PER_ETH), total_balance/(2*Constants.MAX_BALANCE_CHURN_QUOTIENT));
 
@@ -53,7 +53,7 @@ public class EpochProcessorUtil {
 
         double total_penalties = latest_penalized_exit_balances.get(period_index) + latest_penalized_exit_balances.get(period_index - 1 < 0 ? period_index - 1 : 0) + latest_penalized_exit_balances.get(period_index - 2 < 0 ? period_index - 2 : 0);
 
-        ArrayList<ValidatorRecord> to_penalize = to_penalize(active_validator_indices);
+        ArrayList<ValidatorRecord> to_penalize = to_penalize(active_validators);
 
     }
 
