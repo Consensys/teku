@@ -16,6 +16,8 @@ package tech.pegasys.artemis.datastructures.beaconchainstate;
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 
+import java.util.ArrayList;
+
 public class ShardCommittee {
 
   private UnsignedLong shard;

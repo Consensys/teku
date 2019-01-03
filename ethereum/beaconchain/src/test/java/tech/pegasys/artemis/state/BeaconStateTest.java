@@ -26,6 +26,7 @@ import static tech.pegasys.artemis.state.BeaconState.BeaconStateHelperFunctions.
 import static tech.pegasys.artemis.state.BeaconState.BeaconStateHelperFunctions.shuffle;
 import static tech.pegasys.artemis.state.BeaconState.BeaconStateHelperFunctions.split;
 
+import tech.pegasys.artemis.datastructures.beaconchainoperations.AttestationData;
 import com.google.common.primitives.UnsignedLong;
 import com.google.gson.Gson;
 import java.util.ArrayList;
