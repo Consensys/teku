@@ -11,7 +11,7 @@ jar {
 dependencies {
   implementation 'com.google.guava:guava'
   implementation 'io.vertx:vertx-core'
-
+  implementation 'io.netty:netty-common'
   testImplementation project(":crypto")
   testImplementation 'junit:junit'
   testImplementation 'org.assertj:assertj-core'
