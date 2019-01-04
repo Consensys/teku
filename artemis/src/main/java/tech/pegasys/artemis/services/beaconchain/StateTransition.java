@@ -86,10 +86,10 @@ public class StateTransition{
     // slot processing
     protected void updateProposerRandaoLayer(BeaconState state){
       int curr_slot = toIntExact(state.getSlot());
-      int proposer = state.get_beacon_proposer_index(state, curr_slot);
+      int proposer_index = state.get_beacon_proposer_index(state, curr_slot);
 
       ArrayList<ValidatorRecord> validator_registry = state.getValidator_registry();
-      ValidatorRecord proposer_record = validator_registry.get(proposer);
+      ValidatorRecord proposer_record = validator_registry.get(proposer_index);
       proposer_record.setRandao_layers(proposer_record.getRandao_layers().increment());
     }
 
