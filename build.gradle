@@ -11,13 +11,11 @@ plugins {
   id 'net.researchgate.release' version '2.7.0'
 }
 
-// defaultTasks 'build', 'checkLicenses', 'javadoc'
 defaultTasks 'build'
 
 def buildAliases = ['dev': [
     'spotlessApply',
     'build',
-//    'checkLicenses',
     'javadoc'
   ]]
 
@@ -295,7 +293,6 @@ startScripts {
 dependencies {
   compile project(':artemis')
   errorprone 'com.google.errorprone:error_prone_core'
-  compile ('org.web3j:core:3.6.0')
 }
 
 applicationDistribution.into("") { from("LICENSE") }
@@ -320,10 +317,10 @@ distZip {
 }
 
 task jacocoRootReport(type: org.gradle.testing.jacoco.tasks.JacocoReport) {
-  additionalSourceDirs = files(subprojects.sourceSets.main.allSource.srcDirs)
-  sourceDirectories = files(subprojects.sourceSets.main.allSource.srcDirs)
-  classDirectories = files(subprojects.sourceSets.main.output)
-  executionData = files(subprojects.jacocoTestReport.executionData)  //how to exclude some package/classes com.test.**
+  additionalSourceDirs.from = files(subprojects.sourceSets.main.allSource.srcDirs)
+  sourceDirectories.from = files(subprojects.sourceSets.main.allSource.srcDirs)
+  classDirectories.from = files(subprojects.sourceSets.main.output)
+  executionData.from = files(subprojects.jacocoTestReport.executionData)  //how to exclude some package/classes com.test.**
   reports {
     xml.enabled true
     csv.enabled true
