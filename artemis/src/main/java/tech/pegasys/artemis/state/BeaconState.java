@@ -102,27 +102,6 @@ public class BeaconState {
   {
     //TODO: temp to allow it to run in demo mode
     this.slot = 0;
-
-    // set shard committees
-    ArrayList<ShardCommittee> new_shard_committees = new ArrayList<ShardCommittee>(Collections.nCopies(2,
-        new ShardCommittee(UInt64.MIN_VALUE, new int[]{0}, UInt64.valueOf(1))));
-    this.shard_committees_at_slots = new ArrayList<ArrayList<ShardCommittee>>(Collections.nCopies(128,
-        new_shard_committees));
-
-    // set validator registry
-    ArrayList<ValidatorRecord> validators = new ArrayList<ValidatorRecord>();
-    validators.add(new ValidatorRecord(0, Hash.ZERO, Hash.ZERO, UInt64.MIN_VALUE,
-        UInt64.valueOf(PENDING_ACTIVATION), UInt64.valueOf(this.slot), UInt64.MIN_VALUE, UInt64.MIN_VALUE, UInt64.MIN_VALUE));
-    validators.add(new ValidatorRecord(100, Hash.ZERO, Hash.ZERO, UInt64.MIN_VALUE,
-        UInt64.valueOf(ACTIVE), UInt64.valueOf(this.slot), UInt64.MIN_VALUE, UInt64.MIN_VALUE, UInt64.MIN_VALUE));
-    validators.add(new ValidatorRecord(200, Hash.ZERO, Hash.ZERO, UInt64.MIN_VALUE,
-        UInt64.valueOf(ACTIVE_PENDING_EXIT), UInt64.valueOf(this.slot), UInt64.MIN_VALUE, UInt64.MIN_VALUE, UInt64.MIN_VALUE));
-    validators.add(new ValidatorRecord(0, Hash.ZERO, Hash.ZERO, UInt64.MIN_VALUE,
-        UInt64.valueOf(EXITED_WITHOUT_PENALTY), UInt64.valueOf(this.slot), UInt64.MIN_VALUE, UInt64.MIN_VALUE, UInt64.MIN_VALUE));
-    validators.add(new ValidatorRecord(0, Hash.ZERO, Hash.ZERO, UInt64.MIN_VALUE,
-        UInt64.valueOf(EXITED_WITH_PENALTY), UInt64.valueOf(this.slot), UInt64.MIN_VALUE, UInt64.MIN_VALUE, UInt64.MIN_VALUE));
-
-    this.validator_registry = validators;
   }
 
   public static BeaconState deepCopy(BeaconState state){
