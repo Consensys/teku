@@ -49,8 +49,6 @@ import tech.pegasys.artemis.util.uint.UInt384;
 import tech.pegasys.artemis.util.uint.UInt64;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.gson.Gson;
