@@ -438,7 +438,7 @@ public class BeaconState {
    * @param slot
    * @return
    */
-  private int get_beacon_proposer_index(BeaconState state, int slot) {
+  public int get_beacon_proposer_index(BeaconState state, int slot) {
     int[] first_committee = get_shard_committees_at_slot(state, slot).get(0).getCommittee();
     return first_committee[slot % first_committee.length];
   }
@@ -779,10 +779,4 @@ public class BeaconState {
   public void setLatest_penalized_exit_balances(ArrayList<Double> latest_penalized_exit_balances) {
     this.latest_penalized_exit_balances = latest_penalized_exit_balances;
   }
-
-  public int getBeacon_proposer_index(int slot) {
-    int[] first_committee = get_shard_committees_at_slot(this, slot).get(0).getCommittee();
-    return first_committee[slot % first_committee.length];
-  }
-
 }
