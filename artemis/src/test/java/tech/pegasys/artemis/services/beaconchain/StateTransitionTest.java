@@ -20,12 +20,15 @@ import static tech.pegasys.artemis.Constants.ACTIVE_PENDING_EXIT;
 import static tech.pegasys.artemis.Constants.EPOCH_LENGTH;
 import static tech.pegasys.artemis.Constants.EXITED_WITHOUT_PENALTY;
 import static tech.pegasys.artemis.Constants.EXITED_WITH_PENALTY;
+import static tech.pegasys.artemis.Constants.LATEST_RANDAO_MIXES_LENGTH;
 import static tech.pegasys.artemis.Constants.PENDING_ACTIVATION;
+import static tech.pegasys.artemis.ethereum.core.Hash.hash;
 
 import tech.pegasys.artemis.datastructures.beaconchainstate.ShardCommittee;
 import tech.pegasys.artemis.datastructures.beaconchainstate.ValidatorRecord;
 import tech.pegasys.artemis.ethereum.core.Hash;
 import tech.pegasys.artemis.state.BeaconState;
+import tech.pegasys.artemis.util.bytes.Bytes32;
 import tech.pegasys.artemis.util.uint.UInt64;
 
 import java.util.ArrayList;
@@ -79,5 +82,25 @@ public class StateTransitionTest {
     long randao_layer_after = proposer_record.getRandao_layers().getValue();
 
     assertThat(randao_layer_before + 1).isEqualTo(randao_layer_after);
+  }
+
+  @Test
+  public void testUpdateLatestRandaoMixes(){
+    BeaconState state = newState();
+    state.setLatest_randao_mixes(new ArrayList<Hash>(Collections.nCopies(LATEST_RANDAO_MIXES_LENGTH, Hash.EMPTY)));
+    state.setSlot(12);
+    ArrayList<Hash> latest_randao_mixes = state.getLatest_randao_mixes();
+    latest_randao_mixes.set(11, hash(Bytes32.TRUE));
+    latest_randao_mixes.set(12, hash(Bytes32.FALSE));
+    StateTransition state_transition = new StateTransition();
+
+    Hash prev_slot_randao_mix = latest_randao_mixes.get(11);
+    Hash curr_slot_randao_mix = latest_randao_mixes.get(12);
+    assertThat(prev_slot_randao_mix).isNotEqualTo(curr_slot_randao_mix);
+
+    state_transition.updateLatestRandaoMixes(state);
+    prev_slot_randao_mix = latest_randao_mixes.get(11);
+    curr_slot_randao_mix = latest_randao_mixes.get(12);
+    assertThat(prev_slot_randao_mix).isEqualTo(curr_slot_randao_mix);
   }
 }

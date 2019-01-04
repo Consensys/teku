@@ -14,10 +14,12 @@
 package tech.pegasys.artemis.services.beaconchain;
 
 import static java.lang.Math.toIntExact;
+import static tech.pegasys.artemis.Constants.LATEST_RANDAO_MIXES_LENGTH;
 
 import tech.pegasys.artemis.Constants;
 import tech.pegasys.artemis.datastructures.beaconchainblocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.beaconchainstate.ValidatorRecord;
+import tech.pegasys.artemis.ethereum.core.Hash;
 import tech.pegasys.artemis.state.BeaconState;
 import tech.pegasys.artemis.state.util.EpochProcessorUtil;
 
@@ -61,6 +63,7 @@ public class StateTransition{
         logger.info("Processing new slot: " + state.getSlot());
 
         updateProposerRandaoLayer(newState);
+        updateLatestRandaoMixes(newState);
         updateRecentBlockHashes(newState);
     }
 
@@ -91,6 +94,13 @@ public class StateTransition{
       ArrayList<ValidatorRecord> validator_registry = state.getValidator_registry();
       ValidatorRecord proposer_record = validator_registry.get(proposer_index);
       proposer_record.setRandao_layers(proposer_record.getRandao_layers().increment());
+    }
+
+    protected void updateLatestRandaoMixes(BeaconState state){
+      int curr_slot = toIntExact(state.getSlot());
+      ArrayList<Hash> latest_randao_mixes = state.getLatest_randao_mixes();
+      Hash prev_slot_randao_mix = latest_randao_mixes.get((curr_slot - 1) % LATEST_RANDAO_MIXES_LENGTH);
+      latest_randao_mixes.set(curr_slot % LATEST_RANDAO_MIXES_LENGTH, prev_slot_randao_mix);
     }
 
     protected void updateRecentBlockHashes(BeaconState state){
