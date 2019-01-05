@@ -13,7 +13,6 @@ dependencies {
   implementation project(':ethereum:core')
   implementation project(':ethereum:rlp')
   implementation project(':pow')
-  compile ('org.web3j:core:3.6.0')
 
   implementation 'com.google.guava:guava'
   implementation 'com.google.code.gson:gson:2.8.5'
@@ -31,7 +30,7 @@ dependencies {
   testImplementation 'org.awaitility:awaitility'
   testImplementation 'org.assertj:assertj-core'
   testImplementation 'org.mockito:mockito-core'
-  compile 'com.google.guava:guava:27.0.1-jre'
+  api 'com.google.guava:guava:27.0.1-jre'
 
   test {
     testLogging.showStandardStreams = true

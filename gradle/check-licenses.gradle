@@ -140,7 +140,7 @@ downloadLicenses {
       (group('org.glassfish.jersey.bundles.repackaged')): apache,
       (group('org.glassfish.jersey.connectors')): apache,
       //Explicitly declare EPL 2.0 for jnr-poxix - it is simultaneously licensed under 3 licenses.
-      'com.github.jnr:jnr-posix:3.0.47': epl2_0
+      'com.github.jnr:jnr-posix:3.0.33': epl2_0
   ]
 }
 
@@ -169,4 +169,4 @@ task checkLicenses {
     }
   }
 }
-//check.dependsOn checkLicenses
+check.dependsOn checkLicenses

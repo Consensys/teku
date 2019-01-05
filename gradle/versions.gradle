@@ -18,6 +18,8 @@ dependencyManagement {
 
     dependency 'commons-cli:commons-cli:1.4'
 
+    dependency 'io.netty:netty-common:4.1.22.Final'
+
     dependency 'info.picocli:picocli:3.8.0'
 
     dependency 'io.netty:netty-common:4.1.22.Final'
@@ -26,8 +28,6 @@ dependencyManagement {
 
     dependency "io.prometheus:simpleclient:0.5.0"
     dependency "io.prometheus:simpleclient_hotspot:0.5.0"
-
-    dependency 'io.reactivex.rxjava2:rxjava:2.2.2'
 
     dependency 'io.vertx:vertx-codegen:3.5.4'
     dependency 'io.vertx:vertx-core:3.5.4'
