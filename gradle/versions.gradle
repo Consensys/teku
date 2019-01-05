@@ -20,6 +20,8 @@ dependencyManagement {
 
     dependency 'info.picocli:picocli:3.8.0'
 
+    dependency 'io.netty:netty-common:4.1.22.Final'
+    
     dependency 'io.pkts:pkts-core:3.0.3'
 
     dependency "io.prometheus:simpleclient:0.5.0"
