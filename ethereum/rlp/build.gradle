@@ -1,5 +1,3 @@
-apply plugin: 'java-library'
-
 jar {
   baseName 'artemis-ethereum-rlp'
   manifest {
