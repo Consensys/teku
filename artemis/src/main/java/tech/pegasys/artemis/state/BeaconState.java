@@ -404,7 +404,6 @@ public class BeaconState {
       state.validator_balances.set(whistleblower_index, new_whistleblower_balance);
       double new_balance = state.validator_balances.get(index) - whistleblower_reward;
       state.validator_balances.set(index, new_balance);
-      System.out.println("set");
     }
 
     if (prev_status == EXITED_WITHOUT_PENALTY){
