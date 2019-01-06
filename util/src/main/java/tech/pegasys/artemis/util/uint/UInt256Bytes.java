@@ -16,17 +16,11 @@ package tech.pegasys.artemis.util.uint;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
-import tech.pegasys.artemis.util.bytes.Bytes1;
-import tech.pegasys.artemis.util.bytes.Bytes3;
 import tech.pegasys.artemis.util.bytes.Bytes32;
 import tech.pegasys.artemis.util.bytes.Bytes32s;
-import tech.pegasys.artemis.util.bytes.Bytes48;
 import tech.pegasys.artemis.util.bytes.BytesValue;
 import tech.pegasys.artemis.util.bytes.BytesValues;
-import tech.pegasys.artemis.util.bytes.MutableBytes1;
-import tech.pegasys.artemis.util.bytes.MutableBytes3;
 import tech.pegasys.artemis.util.bytes.MutableBytes32;
-import tech.pegasys.artemis.util.bytes.MutableBytes48;
 
 import java.math.BigInteger;
 import java.util.function.BinaryOperator;
@@ -366,24 +360,6 @@ public abstract class UInt256Bytes {
     checkArgument(v >= 0, "Argument must be positive, got %s", v);
     MutableBytes32 bytes = MutableBytes32.create();
     bytes.setLong(Bytes32.SIZE - 8, v);
-    return bytes;
-  }
-
-  public static Bytes48 ofBytes48(long v) {
-    checkArgument(v >= 0, "Argument must be positive, got %s", v);
-    MutableBytes48 bytes = MutableBytes48.create();
-    return bytes;
-  }
-
-  public static Bytes3 ofBytes3(long v) {
-    checkArgument(v >= 0, "Argument must be positive, got %s", v);
-    MutableBytes3 bytes = MutableBytes3.create();
-    return bytes;
-  }
-
-  public static Bytes1 ofBytes1(long v) {
-    checkArgument(v >= 0, "Argument must be positive, got %s", v);
-    MutableBytes1 bytes = MutableBytes1.create();
     return bytes;
   }
 
