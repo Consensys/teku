@@ -15,6 +15,7 @@ package tech.pegasys.artemis.crypto;
 
 import tech.pegasys.artemis.util.bytes.Bytes32;
 import tech.pegasys.artemis.util.bytes.BytesValue;
+import tech.pegasys.artemis.util.message.BouncyCastleMessageDigestFactory;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;

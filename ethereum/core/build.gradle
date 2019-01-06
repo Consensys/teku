@@ -1,5 +1,3 @@
-apply plugin: 'java-library'
-
 jar {
   baseName 'artemis-core'
   manifest {
@@ -19,9 +17,7 @@ dependencies {
 
   runtime 'org.apache.logging.log4j:log4j-core'
 
-  testImplementation 'org.assertj:assertj-core'
   testImplementation 'org.mockito:mockito-core'
-  testImplementation 'junit:junit'
 
   integrationTestImplementation 'org.assertj:assertj-core'
   integrationTestImplementation 'org.mockito:mockito-core'

@@ -1,5 +1,3 @@
-apply plugin: 'java-library'
-
 jar {
   baseName 'artemis-crypto'
   manifest {
@@ -11,10 +9,5 @@ jar {
 dependencies {
   api project(':util')
 
-  api 'org.bouncycastle:bcprov-jdk15on'
-
   implementation 'com.google.guava:guava'
-
-  testImplementation 'org.assertj:assertj-core'
-  testImplementation 'junit:junit'
 }
