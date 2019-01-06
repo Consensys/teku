@@ -10,12 +10,12 @@ plugins {
   id 'net.researchgate.release' version '2.7.0'
 }
 
-defaultTasks 'build','checkLicense'
+defaultTasks 'build','checkLicenses'
 
 def buildAliases = ['dev': [
     'spotlessApply',
     'build',
-    'checkLicense',
+    'checkLicenses',
     'javadoc'
   ]]
 

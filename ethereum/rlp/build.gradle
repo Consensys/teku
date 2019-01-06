@@ -21,6 +21,7 @@ dependencies {
 
   //Dependencies for JMH testing RLPBench
   jmh project(':util')
+  compile 'org.openjdk.jmh:jmh-core'
 }
 
 //JMH Configuration Below
