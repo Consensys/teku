@@ -6,10 +6,6 @@ jar {
   }
 }
 
-plugins {
-  id 'net.ltgt.apt' version '0.10'
-}
-
 dependencies {
   implementation project(':crypto')
   implementation project(':ethereum:core')
@@ -28,9 +24,6 @@ dependencies {
   implementation 'org.slf4j:slf4j-nop:1.7.25' 
 
   runtimeOnly 'org.apache.logging.log4j:log4j-core'
-
-  compileOnly 'org.projectlombok:lombok:1.18.4'
-  apt 'org.projectlombok:lombok:1.18.4'
 
   testImplementation 'com.squareup.okhttp3:okhttp'
   testImplementation 'org.awaitility:awaitility'
