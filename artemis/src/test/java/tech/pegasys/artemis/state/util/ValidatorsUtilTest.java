@@ -13,10 +13,7 @@
 
 package tech.pegasys.artemis.state.util;
 
-import static org.junit.Assert.*;
-import static tech.pegasys.artemis.Constants.ACTIVE_PENDING_EXIT;
-import static tech.pegasys.artemis.Constants.EXITED_WITHOUT_PENALTY;
-
+import org.junit.Test;
 import tech.pegasys.artemis.datastructures.beaconchainstate.ValidatorRecord;
 import tech.pegasys.artemis.datastructures.beaconchainstate.Validators;
 import tech.pegasys.artemis.ethereum.core.Hash;
@@ -24,7 +21,13 @@ import tech.pegasys.artemis.util.uint.UInt64;
 
 import java.util.ArrayList;
 
-import org.junit.Test;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
+import static tech.pegasys.artemis.Constants.ACTIVE_PENDING_EXIT;
+import static tech.pegasys.artemis.Constants.EXITED_WITHOUT_PENALTY;
 
 public class ValidatorsUtilTest {
 
