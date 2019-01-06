@@ -210,6 +210,9 @@ subprojects {
   dependencies {
     testImplementation sourceSets.testSupport.output
     integrationTestImplementation sourceSets.testSupport.output
+
+    testImplementation 'junit:junit'
+    testImplementation 'org.assertj:assertj-core'
   }
 
   task integrationTest(type: Test, dependsOn:["compileTestJava"]){
