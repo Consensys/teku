@@ -6,7 +6,6 @@ plugins {
   id 'com.github.ben-manes.versions' version '0.20.0'
   id 'com.github.hierynomus.license' version '0.15.0'
   id 'io.spring.dependency-management' version '1.0.6.RELEASE'
-  id 'me.champeau.gradle.jmh' version '0.4.7' apply false
   id 'net.ltgt.errorprone' version '0.6' apply false
   id 'net.researchgate.release' version '2.7.0'
 }
@@ -25,26 +24,6 @@ gradle.startParameter.taskNames.each {
   expandedTaskList << (buildAliases[it] ? buildAliases[it] : it)
 }
 gradle.startParameter.taskNames = expandedTaskList.flatten()
-
-// Gets a integer command argument, passed with -Pname=x, or the defaut if not provided.
-def _intCmdArg(name, defaultValue) {
-  return project.hasProperty(name) ? project.property(name) as int : defaultValue
-}
-
-def _intCmdArg(name) {
-  return _intCmdArg(name, null)
-}
-
-def _strListCmdArg(name, defaultValue) {
-  if (!project.hasProperty(name))
-    return defaultValue
-
-  return ((String)project.property(name)).tokenize(',')
-}
-
-def _strListCmdArg(name) {
-  return _strListCmdArg(name, null)
-}
 
 def baseVersion = '1.0.0';
 project.version = baseVersion + '-SNAPSHOT'
@@ -240,28 +219,6 @@ subprojects {
     testClassesDirs = sourceSets.integrationTest.output.classesDirs
     classpath = sourceSets.integrationTest.runtimeClasspath
     outputs.upToDateWhen { false }
-  }
-
-  if (file('src/jmh').directory) {
-    apply plugin: 'me.champeau.gradle.jmh'
-
-    jmh {
-      // Allows to control JMH execution directly from the command line. I typical execution may look
-      // like:
-      //    gradle jmh -Pf=2 -Pwi=3 -Pi=5 -Pinclude=MyBench
-      // which will run 2 forks with 3 warmup iterations and 5 normal ones for each, and will only
-      // run the benchmark matching 'MyBench' (a regexp).
-      warmupForks = _intCmdArg('wf')
-      warmupIterations = _intCmdArg('wi')
-      fork = _intCmdArg('f')
-      iterations = _intCmdArg('i')
-      benchmarkMode = _strListCmdArg('bm')
-      include = _strListCmdArg('include', [''])
-      humanOutputFile = project.file("${project.buildDir}/reports/jmh/results.txt")
-      resultFormat = 'JSON'
-    }
-
-    dependencies { jmh 'org.apache.logging.log4j:log4j-api' }
   }
 }
 

@@ -53,7 +53,6 @@ dependencyManagement {
     dependency 'org.mockito:mockito-core:2.23.4'
 
     dependency 'org.openjdk.jmh:jmh-core:1.21'
-    dependency 'org.openjdk.jmh:jmh-generator-annprocess:1.21'
 
     dependency 'org.rocksdb:rocksdbjni:5.15.10'
 
