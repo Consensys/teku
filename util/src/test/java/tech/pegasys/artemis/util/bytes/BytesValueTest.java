@@ -24,7 +24,7 @@ import static tech.pegasys.artemis.util.bytes.BytesValue.fromHexStringLenient;
 import static tech.pegasys.artemis.util.bytes.BytesValue.wrap;
 import static tech.pegasys.artemis.util.bytes.BytesValue.wrapBuffer;
 
-import tech.pegasys.artemis.crypto.BouncyCastleMessageDigestFactory;
+import tech.pegasys.artemis.util.message.BouncyCastleMessageDigestFactory;
 
 import java.math.BigInteger;
 import java.security.MessageDigest;
