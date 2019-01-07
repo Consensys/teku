@@ -778,4 +778,8 @@ public class BeaconState {
   public void setLatest_penalized_exit_balances(ArrayList<Double> latest_penalized_exit_balances) {
     this.latest_penalized_exit_balances = latest_penalized_exit_balances;
   }
+
+  public void setPrevious_block_root(Hash previous_block_root){
+    latest_block_roots.set(toIntExact(slot % Constants.LATEST_BLOCK_ROOTS_LENGTH), previous_block_root);
+  }
 }

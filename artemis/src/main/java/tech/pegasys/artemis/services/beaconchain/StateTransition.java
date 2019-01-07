@@ -104,7 +104,8 @@ public class StateTransition{
     }
 
     protected void updateRecentBlockHashes(BeaconState state){
-
+        //prev block from somewhere
+        //use the tree hash root function to the
     }
 
     // block processing
