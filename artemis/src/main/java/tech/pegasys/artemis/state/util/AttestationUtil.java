@@ -14,12 +14,17 @@
 package tech.pegasys.artemis.state.util;
 
 import tech.pegasys.artemis.Constants;
+import tech.pegasys.artemis.datastructures.beaconchainoperations.AttestationData;
 import tech.pegasys.artemis.datastructures.beaconchainstate.PendingAttestationRecord;
+import tech.pegasys.artemis.datastructures.beaconchainstate.ShardCommittee;
 import tech.pegasys.artemis.ethereum.core.Hash;
 import tech.pegasys.artemis.state.BeaconState;
+import tech.pegasys.artemis.util.bytes.Bytes32;
 
 import java.util.ArrayList;
 import java.util.Iterator;
+
+import static java.lang.Math.toIntExact;
 
 public class AttestationUtil {
 
@@ -63,6 +68,44 @@ public class AttestationUtil {
         if((state.getSlot() <= slot_upper_bound) || slot < state.getSlot())
             return state.getLatest_block_roots().get(Math.toIntExact(slot % state.getLatest_block_roots().size()));
         throw new BlockValidationException("Desired block root not within the provided bounds");
+    }
+
+//    def get_attestation_participants(state: BeaconState,
+//                                     attestation_data: AttestationData,
+//                                     participation_bitfield: bytes) -> List[int]:
+//            """
+//    Returns the participant indices at for the ``attestation_data`` and ``participation_bitfield``.
+//            """
+//
+//            # Find the relevant committee
+//    shard_committees = get_shard_committees_at_slot(state, attestation_data.slot)
+//    shard_committee = [x for x in shard_committees if x.shard == attestation_data.shard][0]
+//            assert len(participation_bitfield) == ceil_div8(len(shard_committee.committee))
+//
+//            # Find the participating attesters in the committee
+//    participants = []
+//            for i, validator_index in enumerate(shard_committee.committee):
+//    participation_bit = (participation_bitfield[i//8] >> (7 - (i % 8))) % 2
+//        if participation_bit == 1:
+//            participants.append(validator_index)
+//            return participants
+
+    public static ArrayList<Integer> get_attestation_participants(BeaconState state, AttestationData attestation_data , Bytes32 participation_bitfield){
+        ArrayList<ShardCommittee> shard_committees = state.get_shard_committees_at_slot(state, toIntExact(attestation_data.getSlot()));
+
+        //Find the relevant committee
+        Iterator<ShardCommittee> itr = shard_committees.iterator();
+        while(itr.hasNext()){
+            ShardCommittee shard_committee = itr.next();
+            if(participation_bitfield.compareTo(new Bytes32(ceil_div8(shard_committee.getCommittee().length)))){
+
+            }
+        }
+        return null;
+    }
+
+    public static int ceil_div8(int input){
+        return (int) Math.ceil(((double)input)/8.0d);
     }
 
 }

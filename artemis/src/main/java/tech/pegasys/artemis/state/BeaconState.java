@@ -447,7 +447,7 @@ public class BeaconState {
    * @param slot
    * @return
    */
-  private ArrayList<ShardCommittee> get_shard_committees_at_slot(BeaconState state, int slot) {
+  public ArrayList<ShardCommittee> get_shard_committees_at_slot(BeaconState state, int slot) {
     int earliest_slot_in_array = toIntExact(state.getSlot()) - (toIntExact(state.getSlot()) % EPOCH_LENGTH)
         - EPOCH_LENGTH;
     assert earliest_slot_in_array <= slot;
