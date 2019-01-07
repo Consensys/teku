@@ -21,18 +21,14 @@ import java.util.stream.Collectors;
 public class ValidatorsUtil {
 
     public static Validators get_active_validator_indices(Validators validators) {
-
-        return validators!= null ?
-                new Validators(validators.stream()
-                        .filter(validatorRecord -> validatorRecord.is_active_validator())
-                        .collect(Collectors.toList())) : new Validators();
-
+        return validators != null ?
+            new Validators(validators.stream()
+                .filter(validatorRecord -> validatorRecord.is_active_validator())
+                .collect(Collectors.toList())) : new Validators();
     }
 
-    public static double get_effective_balance(Validators validators){
-
-        return validators!= null ?
-                validators.stream().mapToDouble(ValidatorRecord::get_effective_balance).sum() : 0.0d;
-
+    public static double get_effective_balance(Validators validators) {
+        return validators != null ?
+            validators.stream().mapToDouble(ValidatorRecord::get_effective_balance).sum() : 0.0d;
     }
 }
