@@ -64,33 +64,33 @@ public class StateTransitionTest {
     BeaconState state = newState();
     state.setSlot(4);
 
-    ArrayList<ShardCommittee> new_shard_committees = new ArrayList<ShardCommittee>(Collections.nCopies(2,
+    ArrayList<ShardCommittee> newShardCommittees = new ArrayList<ShardCommittee>(Collections.nCopies(2,
         new ShardCommittee(UInt64.MIN_VALUE, new int[]{2,4,1,0,3}, UInt64.valueOf(1))));
     state.setShard_committees_at_slots(new ArrayList<ArrayList<ShardCommittee>>(Collections.nCopies(2*EPOCH_LENGTH,
-        new_shard_committees)));
+        newShardCommittees)));
 
-    StateTransition state_transition = new StateTransition();
+    StateTransition stateTransition = new StateTransition();
 
     // get proposer's and a random validator's validator record
     // proposer_index is 3 here since we've set slot to 4
-    int curr_slot = toIntExact(state.getSlot());
-    int proposer_index = state.get_beacon_proposer_index(state, curr_slot);
-    assertThat(proposer_index).isEqualTo(3);
+    int currSlot = toIntExact(state.getSlot());
+    int proposerIndex = state.get_beacon_proposer_index(state, currSlot);
+    assertThat(proposerIndex).isEqualTo(3);
 
-    ArrayList<ValidatorRecord> validator_registry = state.getValidator_registry();
-    ValidatorRecord proposer_record = validator_registry.get(proposer_index);
-    ValidatorRecord random_record = validator_registry.get(1);
+    ArrayList<ValidatorRecord> validatorRegistry = state.getValidator_registry();
+    ValidatorRecord proposerRecord = validatorRegistry.get(proposerIndex);
+    ValidatorRecord randomRecord = validatorRegistry.get(1);
 
     // obtain proposer's and a random validator's randao layer value
     // before and after update method is called
-    long proposer_randao_layer_before = proposer_record.getRandao_layers().getValue();
-    long random_randao_layer_before = random_record.getRandao_layers().getValue();
-    state_transition.updateProposerRandaoLayer(state);
-    long proposer_randao_layer_after = proposer_record.getRandao_layers().getValue();
-    long random_randao_layer_after = random_record.getRandao_layers().getValue();
+    long proposerRandaoLayerBefore = proposerRecord.getRandao_layers().getValue();
+    long randomRandaoLayerBefore = randomRecord.getRandao_layers().getValue();
+    stateTransition.updateProposerRandaoLayer(state);
+    long proposerRandaoLayerAfter = proposerRecord.getRandao_layers().getValue();
+    long randomRandaoLayerAfter = randomRecord.getRandao_layers().getValue();
 
-    assertThat(proposer_randao_layer_before + 1).isEqualTo(proposer_randao_layer_after);
-    assertThat(random_randao_layer_before).isEqualTo(random_randao_layer_after);
+    assertThat(proposerRandaoLayerBefore + 1).isEqualTo(proposerRandaoLayerAfter);
+    assertThat(randomRandaoLayerBefore).isEqualTo(randomRandaoLayerAfter);
   }
 
   @Test
@@ -99,18 +99,18 @@ public class StateTransitionTest {
     state.setLatest_randao_mixes(new ArrayList<Hash>(Collections.nCopies(LATEST_RANDAO_MIXES_LENGTH,
         Hash.EMPTY)));
     state.setSlot(12);
-    ArrayList<Hash> latest_randao_mixes = state.getLatest_randao_mixes();
-    latest_randao_mixes.set(11, hash(Bytes32.TRUE));
-    latest_randao_mixes.set(12, hash(Bytes32.FALSE));
-    StateTransition state_transition = new StateTransition();
+    ArrayList<Hash> latestRandaoMixes = state.getLatest_randao_mixes();
+    latestRandaoMixes.set(11, hash(Bytes32.TRUE));
+    latestRandaoMixes.set(12, hash(Bytes32.FALSE));
+    StateTransition stateTransition = new StateTransition();
 
-    Hash prev_slot_randao_mix = latest_randao_mixes.get(11);
-    Hash curr_slot_randao_mix = latest_randao_mixes.get(12);
-    assertThat(prev_slot_randao_mix).isNotEqualTo(curr_slot_randao_mix);
+    Hash prevSlotRandaoMix = latestRandaoMixes.get(11);
+    Hash currSlotRandaoMix = latestRandaoMixes.get(12);
+    assertThat(prevSlotRandaoMix).isNotEqualTo(currSlotRandaoMix);
 
-    state_transition.updateLatestRandaoMixes(state);
-    prev_slot_randao_mix = latest_randao_mixes.get(11);
-    curr_slot_randao_mix = latest_randao_mixes.get(12);
-    assertThat(prev_slot_randao_mix).isEqualTo(curr_slot_randao_mix);
+    stateTransition.updateLatestRandaoMixes(state);
+    prevSlotRandaoMix = latestRandaoMixes.get(11);
+    currSlotRandaoMix = latestRandaoMixes.get(12);
+    assertThat(prevSlotRandaoMix).isEqualTo(currSlotRandaoMix);
   }
 }

@@ -88,19 +88,19 @@ public class StateTransition{
 
     // slot processing
     protected void updateProposerRandaoLayer(BeaconState state){
-      int curr_slot = toIntExact(state.getSlot());
-      int proposer_index = state.get_beacon_proposer_index(state, curr_slot);
+      int currSlot = toIntExact(state.getSlot());
+      int proposerIndex = state.get_beacon_proposer_index(state, currSlot);
 
-      ArrayList<ValidatorRecord> validator_registry = state.getValidator_registry();
-      ValidatorRecord proposer_record = validator_registry.get(proposer_index);
-      proposer_record.setRandao_layers(proposer_record.getRandao_layers().increment());
+      ArrayList<ValidatorRecord> validatorRegistry = state.getValidator_registry();
+      ValidatorRecord proposerRecord = validatorRegistry.get(proposerIndex);
+      proposerRecord.setRandao_layers(proposerRecord.getRandao_layers().increment());
     }
 
     protected void updateLatestRandaoMixes(BeaconState state){
-      int curr_slot = toIntExact(state.getSlot());
-      ArrayList<Hash> latest_randao_mixes = state.getLatest_randao_mixes();
-      Hash prev_slot_randao_mix = latest_randao_mixes.get((curr_slot - 1) % LATEST_RANDAO_MIXES_LENGTH);
-      latest_randao_mixes.set(curr_slot % LATEST_RANDAO_MIXES_LENGTH, prev_slot_randao_mix);
+      int currSlot = toIntExact(state.getSlot());
+      ArrayList<Hash> latestRandaoMixes = state.getLatest_randao_mixes();
+      Hash prevSlotRandaoMix = latestRandaoMixes.get((currSlot - 1) % LATEST_RANDAO_MIXES_LENGTH);
+      latestRandaoMixes.set(currSlot % LATEST_RANDAO_MIXES_LENGTH, prevSlotRandaoMix);
     }
 
     protected void updateRecentBlockHashes(BeaconState state){
