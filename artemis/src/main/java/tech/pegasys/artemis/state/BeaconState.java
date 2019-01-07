@@ -53,6 +53,8 @@ import tech.pegasys.artemis.util.uint.UInt384;
 import tech.pegasys.artemis.util.uint.UInt64;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.gson.Gson;
@@ -408,7 +410,7 @@ public class BeaconState {
       for (int j = 0; j < committee.size(); j++) {
         if (committee.get(j) == index) {
           // Pop validator_index from committee
-          ArrayList<Integer> new_committee = new ArrayList<Integer>(committee.subList(0, i));
+          ArrayList<Integer> new_committee = new ArrayList<>(committee.subList(0, i));
           new_committee.addAll(committee.subList(i+1, committee.size()));
           persistent_committees.set(i, new_committee);
           break;
@@ -423,7 +425,7 @@ public class BeaconState {
    * @param slot
    * @return
    */
-  private int get_beacon_proposer_index(BeaconState state, int slot) {
+  public static int get_beacon_proposer_index(BeaconState state, int slot) {
     ArrayList<Integer> first_committee = get_shard_committees_at_slot(state, slot).get(0).getCommittee();
     return first_committee.get(slot % first_committee.size());
   }
@@ -433,13 +435,13 @@ public class BeaconState {
    * @param slot
    * @return
    */
-  private ArrayList<ShardCommittee> get_shard_committees_at_slot(BeaconState state, int slot) {
+  public static ArrayList<ShardCommittee> get_shard_committees_at_slot(BeaconState state, int slot) {
     int earliest_slot_in_array = toIntExact(state.getSlot()) - (toIntExact(state.getSlot()) % EPOCH_LENGTH)
         - EPOCH_LENGTH;
     assert earliest_slot_in_array <= slot;
     assert slot < (earliest_slot_in_array + EPOCH_LENGTH * 2);
 
-    return shard_committees_at_slots.get(slot - earliest_slot_in_array);
+    return state.shard_committees_at_slots.get(slot - earliest_slot_in_array);
   }
 
   /**
@@ -449,40 +451,37 @@ public class BeaconState {
    * @param participation_bitfield
    * @return
    */
-  private ArrayList<ShardCommittee> get_attestation_participants(BeaconState state, AttestationData attestation_data,
-                                                          Bytes32 participation_bitfield) {
+  public static ArrayList<ShardCommittee> get_attestation_participants(BeaconState state, AttestationData attestation_data,
+                                                          byte[] participation_bitfield) {
     // Find the relevant committee
-    ArrayList<ShardCommittee> shard_committees = get_shard_committees_at_slot(state, toIntExact(attestation_data.getSlot()));
+    ArrayList<ShardCommittee> shard_committees = get_shard_committees_at_slot(state,
+        toIntExact(attestation_data.getSlot()));
     ArrayList<ShardCommittee> shard_committee = new ArrayList<>();
-    int index = 0;
-    for (int i = 0; i < shard_committees.size(); i++) {
-      if (shard_committees.get(i).getShard().equals(attestation_data.getShard())) {
-        shard_committee.set(index, shard_committees.get(i));
-        index++;
+    for (ShardCommittee curr_shard_committee: shard_committees) {
+      if (curr_shard_committee.getShard().equals(attestation_data.getShard())) {
+        shard_committee.add(curr_shard_committee);
       }
     }
-    assert participation_bitfield.size() == ceil_div8(shard_committee.size());
+    assert participation_bitfield.length == ceil_div8(shard_committee.toArray().length);
 
     // Find the participating attesters in the committee
     ArrayList<ShardCommittee> participants = new ArrayList<>();
-    index = 0;
     for (int i = 0; i < shard_committee.size(); i++) {
-      int participation_bit = (participation_bitfield.get(i/8) >> (7 - (i % 8))) % 2;
+      int participation_bit = (participation_bitfield[i/8] >> (7 - (i % 8))) % 2;
       if (participation_bit == 1) {
-        participants.set(index, shard_committee.get(i));
+        participants.add(shard_committee.get(i));
       }
     }
     return participants;
   }
 
   /**
-   *
+   * Return the smallest integer r such that r * div >= 8.
    * @param div
    * @return
    */
-  private int ceil_div8(int div) {
-    // TODO
-    return div;
+  private static int ceil_div8(int div) {
+    return (int) Math.ceil(8.0 / div);
   }
 
   /**
@@ -492,8 +491,11 @@ public class BeaconState {
    * @param crosslinking_start_shard
    * @return
    */
-  private ArrayList<ArrayList<ShardCommittee>> get_new_shuffling(Hash seed, ArrayList<ValidatorRecord> validators,
-                                                                 int crosslinking_start_shard) {
+  public static ArrayList<ArrayList<ShardCommittee>> get_shuffling(Hash seed, ArrayList<ValidatorRecord> validators,
+                                                                 int crosslinking_start_shard, int slot) {
+    // Normalizes slot to start of epoch boundary
+    slot -= slot % EPOCH_LENGTH;
+
     ArrayList<Integer> active_validator_indices = ValidatorsUtil.get_active_validator_indices(validators);
     int committees_per_slot = BeaconStateHelperFunctions.clamp(1, SHARD_COUNT / EPOCH_LENGTH,
         active_validator_indices.size() / EPOCH_LENGTH / TARGET_COMMITTEE_SIZE);
@@ -508,22 +510,21 @@ public class BeaconState {
 
     ArrayList<ArrayList<ShardCommittee>> output = new ArrayList<>();
 
-    for (int slot = 0; slot < validators_per_slot.size(); slot++) {
+    for (int slot_position = 0; slot_position < validators_per_slot.size(); slot_position++) {
       // Split the shuffled list into committees_per_slot pieces
       ArrayList<ArrayList<Integer>> shard_indices =
-          BeaconStateHelperFunctions.split(validators_per_slot.get(slot), committees_per_slot);
+          BeaconStateHelperFunctions.split(validators_per_slot.get(slot_position), committees_per_slot);
 
-      long shard_id_start = (long) crosslinking_start_shard + slot * committees_per_slot;
+      long shard_id_start = (long) crosslinking_start_shard + slot_position * committees_per_slot;
 
       ArrayList<ShardCommittee> shard_committees = new ArrayList<>();
 
       for (int shard_position = 0; shard_position < shard_indices.size(); shard_position++) {
-        shard_committees.set(shard_position,
-            new ShardCommittee(UInt64.valueOf((shard_id_start + shard_position) % SHARD_COUNT),
+        shard_committees.add(new ShardCommittee(UInt64.valueOf((shard_id_start + shard_position) % SHARD_COUNT),
                 shard_indices.get(shard_position), UInt64.valueOf(active_validator_indices.size())));
       }
 
-      output.set(slot, shard_committees);
+      output.add(shard_committees);
     }
 
     return output;
@@ -542,11 +543,10 @@ public class BeaconState {
   }
 
   /**
-   *     Assumes ``attestation_data_1`` is distinct from ``attestation_data_2``.
-   *     Returns True if the provided ``AttestationData`` are slashable
-   *     due to a 'surround vote'.
-   *     Note: parameter order matters as this function only checks
-   *     that ``attestation_data_1`` surrounds ``attestation_data_2``.
+   * Assumes ``attestation_data_1`` is distinct from ``attestation_data_2``. Returns True if the provided
+   * ``AttestationData`` are slashable due to a 'surround vote'.
+   * Note: parameter order matters as this function only checks that ``attestation_data_1`` surrounds
+   * ``attestation_data_2``.
    * @param attestation_data_1
    * @param attestation_data_2
    * @return
@@ -890,12 +890,12 @@ public class BeaconState {
     this.candidate_pow_receipt_roots = candidate_pow_receipt_roots;
   }
 
-  public ArrayList<ArrayList<ShardCommittee>> getShard_committees_at_slots() {
-    return shard_committees_at_slots;
-  }
-
   public void setShard_committees_at_slots(ArrayList<ArrayList<ShardCommittee>> shard_committees_at_slots) {
     this.shard_committees_at_slots = shard_committees_at_slots;
+  }
+
+  public void setShard_committees_at_slot(int i, ArrayList<ShardCommittee> shard_committee) {
+    this.shard_committees_at_slots.set(i, shard_committee);
   }
 
   public ArrayList<ArrayList<Integer>> getPersistent_committees() {
