@@ -1,5 +1,3 @@
-apply plugin: 'java-library'
-
 jar {
   baseName 'beaconchain-util'
   manifest {
@@ -9,11 +7,11 @@ jar {
 }
 
 dependencies {
+  api 'org.bouncycastle:bcprov-jdk15on'
+  
   implementation 'com.google.guava:guava'
   implementation 'io.vertx:vertx-core'
+  implementation 'io.netty:netty-common'
 
-  testImplementation project(":crypto")
-  testImplementation 'junit:junit'
-  testImplementation 'org.assertj:assertj-core'
   testImplementation 'org.mockito:mockito-core'
 }

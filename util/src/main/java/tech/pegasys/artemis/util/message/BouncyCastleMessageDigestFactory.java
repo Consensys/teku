@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.crypto;
+package tech.pegasys.artemis.util.message;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;

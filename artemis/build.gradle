@@ -1,5 +1,3 @@
-apply plugin: 'java-library'
-
 jar {
   baseName 'artemis'
   manifest {
@@ -13,7 +11,8 @@ dependencies {
   implementation project(':ethereum:core')
   implementation project(':ethereum:rlp')
   implementation project(':pow')
-  compile ('org.web3j:core:3.6.0')
+
+  api 'com.google.guava:guava:27.0.1-jre'
 
   implementation 'com.google.guava:guava'
   implementation 'com.google.code.gson:gson:2.8.5'
@@ -24,14 +23,11 @@ dependencies {
   implementation 'org.apache.logging.log4j:log4j-api'
   implementation 'org.slf4j:slf4j-nop:1.7.25' 
 
-  runtime 'org.apache.logging.log4j:log4j-core'
+  runtimeOnly 'org.apache.logging.log4j:log4j-core'
 
   testImplementation 'com.squareup.okhttp3:okhttp'
-  testImplementation 'junit:junit'
   testImplementation 'org.awaitility:awaitility'
-  testImplementation 'org.assertj:assertj-core'
   testImplementation 'org.mockito:mockito-core'
-  compile 'com.google.guava:guava:27.0.1-jre'
 
   test {
     testLogging.showStandardStreams = true
