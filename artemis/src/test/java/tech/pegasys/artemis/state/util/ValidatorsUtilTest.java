@@ -13,16 +13,6 @@
 
 package tech.pegasys.artemis.state.util;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import tech.pegasys.artemis.datastructures.beaconchainstate.ValidatorRecord;
-import tech.pegasys.artemis.datastructures.beaconchainstate.Validators;
-import tech.pegasys.artemis.ethereum.core.Hash;
-import tech.pegasys.artemis.util.uint.UInt64;
-
-import java.util.Arrays;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -30,8 +20,18 @@ import static org.junit.Assert.assertTrue;
 import static tech.pegasys.artemis.Constants.ACTIVE_PENDING_EXIT;
 import static tech.pegasys.artemis.Constants.EXITED_WITHOUT_PENALTY;
 
-public class ValidatorsUtilTest {
+import tech.pegasys.artemis.datastructures.beaconchainstate.ValidatorRecord;
+import tech.pegasys.artemis.datastructures.beaconchainstate.Validators;
+import tech.pegasys.artemis.ethereum.core.Hash;
+import tech.pegasys.artemis.util.uint.UInt64;
 
+import java.util.Arrays;
+
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
+public class ValidatorsUtilTest {
     public static final double DOUBLE_ASSERTION_DELTA = 0.0d;
     public static final double DEFAULT_BALANCE = 0.0d;
     private int validator_size_expected = 0;
@@ -181,8 +181,8 @@ public class ValidatorsUtilTest {
                                                                      UInt64 status, UInt64 slot, UInt64 exit_count, UInt64 last_poc_change_slot,
                                                                      UInt64 second_last_poc_change_slot,double balance){
         ValidatorRecord validatorRecord =
-                new ValidatorRecord( pubkey,  withdrawal_credentials,  randao_commitment,  randao_layers,
-                status,  slot,  exit_count,  last_poc_change_slot, second_last_poc_change_slot);
+                new ValidatorRecord(pubkey,withdrawal_credentials,randao_commitment,randao_layers,
+                status,slot,exit_count,last_poc_change_slot,second_last_poc_change_slot);
         validatorRecord.setBalance(balance);
 
         return validatorRecord;
@@ -199,11 +199,8 @@ public class ValidatorsUtilTest {
         UInt64 last_poc_change_slot = UInt64.MIN_VALUE;
         UInt64 second_last_poc_change_slot = UInt64.MIN_VALUE;
 
-        return  getAValidatorRecordTestDataFromParameters(pubKey,withdrawal_credentials,
-                randao_commitment,randao_layers,
-                status,slot,exit_count,
-                last_poc_change_slot,
-                second_last_poc_change_slot,balance);
+        return  getAValidatorRecordTestDataFromParameters(pubKey,withdrawal_credentials,randao_commitment,randao_layers,
+                status,slot,exit_count,last_poc_change_slot,second_last_poc_change_slot,balance);
     }
 
     public Validators getValidatorsList(ValidatorRecord... validatorRecords){
