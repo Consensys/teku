@@ -36,7 +36,9 @@ import tech.pegasys.artemis.util.bytes.BytesValue;
 import tech.pegasys.artemis.util.uint.UInt64;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 
 import com.google.gson.Gson;
 import org.junit.Test;
@@ -303,34 +305,74 @@ public class BeaconStateTest {
 
   @Test
   public void testShuffle() {
-    Object[] actual = shuffle(new Object[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}, hashSrc());
-    Object[] expected = {2, 4, 10, 7, 5, 6, 9, 8, 1, 3};
+    List<Integer> input = Arrays.asList(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
+    ArrayList<Integer> sample = new ArrayList<>(input);
+
+    ArrayList<Integer> actual = shuffle(sample, hashSrc());
+    List<Integer> expected_input = Arrays.asList(2, 4, 10, 7, 5, 6, 9, 8, 1, 3);
+    ArrayList<Integer> expected = new ArrayList<>(expected_input);
     assertThat(actual).isEqualTo(expected);
   }
 
   @Test(expected = IllegalArgumentException.class)
   public void failsWhenInvalidArgumentTestSplit() {
-    split(new Object[]{0, 1, 2, 3, 4, 5, 6, 7}, -1);
+    List<Integer> input = Arrays.asList(0, 1, 2, 3, 4, 5, 6, 7);
+    ArrayList<Integer> sample = new ArrayList<>(input);
+
+    split(sample, -1);
   }
 
   @Test
   public void splitReturnsOneSmallerSizedSplit() {
-    Object[] actual = split(new Object[]{0, 1, 2, 3, 4, 5, 6, 7}, 3);
-    Object[][] expected = {{0, 1}, {2, 3, 4}, {5, 6, 7}};
+    List<Integer> input = Arrays.asList(0, 1, 2, 3, 4, 5, 6, 7);
+    ArrayList<Integer> sample = new ArrayList<>(input);
+
+    ArrayList<ArrayList<Integer>> actual = split(sample, 3);
+
+    ArrayList<ArrayList<Integer>> expected = new ArrayList<>();
+    List<Integer> one = Arrays.asList(0, 1);
+    expected.add(new ArrayList<>(one));
+    List<Integer> two = Arrays.asList(2, 3, 4);
+    expected.add(new ArrayList<>(two));
+    List<Integer> three = Arrays.asList(5, 6, 7);
+    expected.add(new ArrayList<>(three));
+
     assertThat(actual).isEqualTo(expected);
   }
 
   @Test
   public void splitReturnsTwoSmallerSizedSplits() {
-    Object[] actual = split(new Object[]{0, 1, 2, 3, 4, 5, 6}, 3);
-    Object[][] expected = {{0, 1}, {2, 3}, {4, 5, 6}};
+    List<Integer> input = Arrays.asList(0, 1, 2, 3, 4, 5, 6);
+    ArrayList<Integer> sample = new ArrayList<>(input);
+
+    ArrayList<ArrayList<Integer>> actual = split(sample, 3);
+
+    ArrayList<ArrayList<Integer>> expected = new ArrayList<>();
+    List<Integer> one = Arrays.asList(0, 1);
+    expected.add(new ArrayList<>(one));
+    List<Integer> two = Arrays.asList(2, 3);
+    expected.add(new ArrayList<>(two));
+    List<Integer> three = Arrays.asList(4, 5, 6);
+    expected.add(new ArrayList<>(three));
+
     assertThat(actual).isEqualTo(expected);
   }
 
   @Test
   public void splitReturnsEquallySizedSplits() {
-    Object[] actual = split(new Object[]{0, 1, 2, 3, 4, 5, 6, 7, 8}, 3);
-    Object[][] expected = {{0, 1, 2}, {3, 4, 5}, {6, 7, 8}};
+    List<Integer> input = Arrays.asList(0, 1, 2, 3, 4, 5, 6, 7, 8);
+    ArrayList<Integer> sample = new ArrayList<>(input);
+
+    ArrayList<ArrayList<Integer>> actual = split(sample, 3);
+
+    ArrayList<ArrayList<Integer>> expected = new ArrayList<>();
+    List<Integer> one = Arrays.asList(0, 1, 2);
+    expected.add(new ArrayList<>(one));
+    List<Integer> two = Arrays.asList(3, 4, 5);
+    expected.add(new ArrayList<>(two));
+    List<Integer> three = Arrays.asList(6, 7, 8);
+    expected.add(new ArrayList<>(three));
+
     assertThat(actual).isEqualTo(expected);
   }
 

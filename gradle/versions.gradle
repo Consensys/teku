@@ -18,14 +18,16 @@ dependencyManagement {
 
     dependency 'commons-cli:commons-cli:1.4'
 
+    dependency 'io.netty:netty-common:4.1.22.Final'
+
     dependency 'info.picocli:picocli:3.8.0'
 
+    dependency 'io.netty:netty-common:4.1.22.Final'
+    
     dependency 'io.pkts:pkts-core:3.0.3'
 
     dependency "io.prometheus:simpleclient:0.5.0"
     dependency "io.prometheus:simpleclient_hotspot:0.5.0"
-
-    dependency 'io.reactivex.rxjava2:rxjava:2.2.2'
 
     dependency 'io.vertx:vertx-codegen:3.5.4'
     dependency 'io.vertx:vertx-core:3.5.4'
@@ -51,7 +53,6 @@ dependencyManagement {
     dependency 'org.mockito:mockito-core:2.23.4'
 
     dependency 'org.openjdk.jmh:jmh-core:1.21'
-    dependency 'org.openjdk.jmh:jmh-generator-annprocess:1.21'
 
     dependency 'org.rocksdb:rocksdbjni:5.15.10'
 

@@ -49,7 +49,6 @@ import tech.pegasys.artemis.util.uint.UInt384;
 import tech.pegasys.artemis.util.uint.UInt64;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.gson.Gson;
@@ -405,7 +404,6 @@ public class BeaconState {
       state.validator_balances.set(whistleblower_index, new_whistleblower_balance);
       double new_balance = state.validator_balances.get(index) - whistleblower_reward;
       state.validator_balances.set(index, new_balance);
-      System.out.println("set");
     }
 
     if (prev_status == EXITED_WITHOUT_PENALTY){
@@ -498,7 +496,6 @@ public class BeaconState {
     this.latest_vdf_outputs = latest_vdf_outputs;
   }
 
-
   static class BeaconStateHelperFunctions {
 
     /**
@@ -526,9 +523,8 @@ public class BeaconState {
      * @return          The shuffled array.
      */
     @VisibleForTesting
-    static Object[] shuffle(Object[] values, Hash seed) {
-
-      int values_count = values.length;
+    static <T> ArrayList<T> shuffle(ArrayList<T> values, Hash seed) {
+      int values_count = values.size();
 
       // Entropy is consumed from the seed in 3-byte (24 bit) chunks.
       int rand_bytes = 3;
@@ -539,16 +535,17 @@ public class BeaconState {
       // may be shuffled. It is a logic error to supply an oversized list.
       assert values_count < rand_max;
 
-      Object[] output = values.clone();
+      ArrayList<T>  output = new ArrayList<>();
+      output.addAll(values);
+
       Hash source = seed;
       int index = 0;
-
       while (index < values_count - 1) {
         // Re-hash the `source` to obtain a new pattern of bytes.
         source = Hash.hash(source);
 
         // List to hold values for swap below.
-        Object tmp;
+        T tmp;
 
         // Iterate through the `source` bytes in 3-byte chunks
         for (int position = 0; position < (32 - (32 % rand_bytes)); position += rand_bytes) {
@@ -564,15 +561,14 @@ public class BeaconState {
           // Sample values greater than or equal to `sample_max` will cause
           // modulo bias when mapped into the `remaining` range.
           int sample_max = rand_max - rand_max % remaining;
-
           // Perform a swap if the consumed entropy will not cause modulo bias.
           if (sample_from_source < sample_max) {
             // Select a replacement index for the current index
             int replacement_position = (sample_from_source % remaining) + index;
             // Swap the current index with the replacement index.
-            tmp = output[index];
-            output[index] = output[replacement_position];
-            output[replacement_position] = tmp;
+            tmp = output.get(index);
+            output.set(index, output.get(replacement_position));
+            output.set(replacement_position, tmp);
             index += 1;
           }
 
@@ -591,20 +587,21 @@ public class BeaconState {
      * @param split_count     The number of pieces to split the array into.
      * @return                The list of validators split into N pieces.
      */
-    static Object[] split(Object[] values, int split_count) {
+    static <T> ArrayList<ArrayList<T>> split(ArrayList<T> values, int split_count) {
       checkArgument(split_count > 0, "Expected positive split_count but got %s", split_count);
 
-      int list_length = values.length;
-
-      Object[] split_arr = new Object[split_count];
+      int list_length = values.size();
+      ArrayList<ArrayList<T>> split_arr = new ArrayList<>(split_count);
 
       for (int i = 0; i < split_count; i++) {
         int startIndex = list_length * i / split_count;
         int endIndex = list_length * (i + 1) / split_count;
-        Object[] new_split = Arrays.copyOfRange(values, startIndex, endIndex);
-        split_arr[i] = new_split;
+        ArrayList<T> new_split = new ArrayList<>();
+        for (int j = startIndex; j < endIndex; j++) {
+          new_split.add(values.get(j));
+        }
+        split_arr.add(new_split);
       }
-
       return split_arr;
 
     }
@@ -619,8 +616,6 @@ public class BeaconState {
     }
 
   }
-
-
 
   public long getGenesis_time() {
     return genesis_time;
