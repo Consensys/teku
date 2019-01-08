@@ -19,7 +19,6 @@ import tech.pegasys.artemis.Constants;
 import tech.pegasys.artemis.datastructures.beaconchainblocks.BeaconBlock;
 import tech.pegasys.artemis.state.BeaconState;
 import tech.pegasys.artemis.state.util.EpochProcessorUtil;
-import tech.pegasys.artemis.state.util.SlotProcessorUtil;
 
 public class StateTransition {
 
@@ -27,17 +26,17 @@ public class StateTransition {
 
   public StateTransition() {}
 
-  public void initiate(BeaconState state, BeaconBlock block) throws StateTransitionException {
+  public void initiate(BeaconState state, BeaconBlock block) {
 
     // per-slot processing
-    slotProcessor(state, block);
+    slotProcessor(state);
 
     // per-block processing
     // TODO: need to check if a new block is produced.
     // For now, we make a new block each slot
-    // if( block != null ){
-    blockProcessor(state, block);
-    // }
+    if (block != null) {
+      blockProcessor(state, block);
+    }
 
     // per-epoch processing
     if (state.getSlot() % Constants.EPOCH_LENGTH == 0) {
@@ -45,16 +44,15 @@ public class StateTransition {
     }
   }
 
-  protected void slotProcessor(BeaconState state, BeaconBlock block)
-      throws StateTransitionException {
+  protected void slotProcessor(BeaconState state) {
     // deep copy beacon state
     BeaconState newState = BeaconState.deepCopy(state);
     state.incrementSlot();
     logger.info("Processing new slot: " + state.getSlot());
-
-    SlotProcessorUtil.updateProposerRandaoLayer(newState);
-    SlotProcessorUtil.updateLatestRandaoMixes(newState);
-    SlotProcessorUtil.updateRecentBlockHashes(newState, block);
+    // Slots the proposer has skipped (i.e. layers of RANDAO expected)
+    // should be in ValidatorRecord.randao_skips
+    updateProposerRandaoSkips(newState);
+    updateRecentBlockHashes(newState);
   }
 
   protected void blockProcessor(BeaconState state, BeaconBlock block) {
@@ -75,6 +73,11 @@ public class StateTransition {
     EpochProcessorUtil.updateCrosslinks(state);
     EpochProcessorUtil.finalBookKeeping(state);
   }
+
+  // slot processing
+  protected void updateProposerRandaoSkips(BeaconState state) {}
+
+  protected void updateRecentBlockHashes(BeaconState state) {}
 
   // block processing
   protected void verifySignature(BeaconState state, BeaconBlock block) {}

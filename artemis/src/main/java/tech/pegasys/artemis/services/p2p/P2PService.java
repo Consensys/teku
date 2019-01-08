@@ -11,34 +11,46 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.services.powchain;
+package tech.pegasys.artemis.services.p2p;
 
+import com.google.common.eventbus.AsyncEventBus;
 import com.google.common.eventbus.EventBus;
-import tech.pegasys.artemis.pow.ValidatorRegistrationClient;
+import java.io.IOException;
+import java.util.concurrent.Executors;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import tech.pegasys.artemis.networking.p2p.MockP2PNetwork;
+import tech.pegasys.artemis.networking.p2p.api.P2PNetwork;
 import tech.pegasys.artemis.services.ServiceInterface;
 
-public class PowchainService implements ServiceInterface {
+public class P2PService implements ServiceInterface {
 
   private EventBus eventBus;
-  private final ValidatorRegistrationClient vrc;
+  private static final Logger LOG = LogManager.getLogger();
+  private P2PNetwork p2pNetwork;
 
-  public PowchainService() {
-    this.vrc = new ValidatorRegistrationClient(eventBus);
+  public P2PService() {
+    this.eventBus = new AsyncEventBus(Executors.newCachedThreadPool());
   }
 
   @Override
   public void init(EventBus eventBus) {
     this.eventBus = eventBus;
+    this.p2pNetwork = new MockP2PNetwork(eventBus);
     this.eventBus.register(this);
   }
 
   @Override
   public void run() {
-    this.vrc.listenToPoWChain();
+    this.p2pNetwork.run();
   }
 
   @Override
   public void stop() {
-    this.eventBus.unregister(this);
+    try {
+      this.p2pNetwork.close();
+    } catch (IOException e) {
+      LOG.warn(e.toString());
+    }
   }
 }

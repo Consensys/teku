@@ -13,10 +13,13 @@
 
 package tech.pegasys.artemis.services;
 
+import com.google.common.eventbus.AsyncEventBus;
+import com.google.common.eventbus.EventBus;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import tech.pegasys.artemis.cli.CommandLineArguments;
 import tech.pegasys.artemis.services.beaconchain.BeaconChainService;
+import tech.pegasys.artemis.services.p2p.P2PService;
 import tech.pegasys.artemis.services.powchain.PowchainService;
 
 public class ServiceController {
@@ -25,21 +28,23 @@ public class ServiceController {
       ServiceFactory.getInstance(BeaconChainService.class).getInstance();;
   private static final PowchainService powchainService =
       ServiceFactory.getInstance(PowchainService.class).getInstance();
+  private static final P2PService p2pService =
+      ServiceFactory.getInstance(P2PService.class).getInstance();
   private static final ExecutorService beaconChainExecuterService =
       Executors.newSingleThreadExecutor();
   private static final ExecutorService powchainExecuterService =
       Executors.newSingleThreadExecutor();
+  private static final ExecutorService p2pExecuterService = Executors.newSingleThreadExecutor();
   // initialize/register all services
   public static void initAll(CommandLineArguments cliArgs) {
-
-    beaconChainService.init();
+    EventBus eventBus = new AsyncEventBus(Executors.newCachedThreadPool());
+    beaconChainService.init(eventBus);
     if (!cliArgs.getPoWChainServiceDisabled()) {
-      powchainService.init();
+      powchainService.init(eventBus);
     }
+    p2pService.init(eventBus);
 
     // Validator Service
-
-    // P2P Service
 
     // RPC Service
   }
@@ -51,6 +56,7 @@ public class ServiceController {
     if (!cliArgs.getPoWChainServiceDisabled()) {
       powchainExecuterService.execute(powchainService);
     }
+    p2pExecuterService.execute(p2pService);
   }
 
   public static void stopAll(CommandLineArguments cliArgs) {
@@ -59,5 +65,6 @@ public class ServiceController {
     beaconChainService.stop();
     powchainExecuterService.shutdown();
     powchainService.stop();
+    p2pService.stop();
   }
 }
