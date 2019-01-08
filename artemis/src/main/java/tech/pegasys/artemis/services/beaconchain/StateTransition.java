@@ -29,6 +29,7 @@ import java.util.ArrayList;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import tech.pegasys.artemis.state.util.SlotProcessorUtil;
 
 public class StateTransition{
 
@@ -38,7 +39,7 @@ public class StateTransition{
 
     }
 
-    public void initiate(BeaconState state, BeaconBlock block){
+    public void initiate(BeaconState state, BeaconBlock block) throws Exception {
 
 
         // per-slot processing
@@ -58,7 +59,7 @@ public class StateTransition{
 
     }
 
-    protected void slotProcessor(BeaconState state, BeaconBlock block){
+    protected void slotProcessor(BeaconState state, BeaconBlock block) throws Exception {
         // deep copy beacon state
         BeaconState newState = BeaconState.deepCopy(state);
         state.incrementSlot();
@@ -105,8 +106,23 @@ public class StateTransition{
       latestRandaoMixes.set(currSlot % LATEST_RANDAO_MIXES_LENGTH, prevSlotRandaoMix);
     }
 
-    protected void updateRecentBlockHashes(BeaconState state, BeaconBlock block){
-        state.setPrevious_block_root(block.getState_root());
+    protected void updateRecentBlockHashes(BeaconState state, BeaconBlock block) throws Exception {
+        Hash previous_state_root = block.getState_root();
+        if(previous_state_root!=null) state.setPrevious_block_root(previous_state_root);
+        else{
+            throw new StateTransitionException("StateTransitionException: BeaconState cannot be updated due to previous_state_root returning a null");
+        }
+        if(state.getSlot() % LATEST_BLOCK_ROOTS_LENGTH == 0){
+            ArrayList<Hash> batched_block_roots = state.getBatched_block_roots();
+            ArrayList<Hash> latest_block_roots = state.getLatest_block_roots();
+            if(batched_block_roots != null && latest_block_roots != null){
+                Hash merkle_root = SlotProcessorUtil.merkle_root(latest_block_roots);
+                batched_block_roots.add(merkle_root);
+            }
+            else{
+                throw new StateTransitionException("StateTransitionException: BeaconState cannot be updated due to batched_block_roots and latest_block_roots returning a null");
+            }
+        }
     }
 
     // block processing
