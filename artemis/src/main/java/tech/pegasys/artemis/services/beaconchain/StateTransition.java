@@ -42,7 +42,7 @@ public class StateTransition{
 
 
         // per-slot processing
-        slotProcessor(state);
+        slotProcessor(state, block);
 
         // per-block processing
          //TODO: need to check if a new block is produced.
@@ -58,7 +58,7 @@ public class StateTransition{
 
     }
 
-    protected void slotProcessor(BeaconState state){
+    protected void slotProcessor(BeaconState state, BeaconBlock block){
         // deep copy beacon state
         BeaconState newState = BeaconState.deepCopy(state);
         state.incrementSlot();
@@ -66,7 +66,7 @@ public class StateTransition{
 
         updateProposerRandaoLayer(newState);
         updateLatestRandaoMixes(newState);
-        updateRecentBlockHashes(newState);
+        updateRecentBlockHashes(newState, block);
     }
 
     protected void blockProcessor(BeaconState state, BeaconBlock block){
@@ -105,18 +105,8 @@ public class StateTransition{
       latestRandaoMixes.set(currSlot % LATEST_RANDAO_MIXES_LENGTH, prevSlotRandaoMix);
     }
 
-    protected void updateRecentBlockHashes(BeaconState state) {
-        //TODO: Implement pulling of previous block from db
-        // instead of using an empty Block as being done here
-        BeaconBlock previousBlock = new BeaconBlock();
-
-        //TODO: Remove casting of Hash once hash_tree_root is implemented to
-        // return Hash instead of Bytes32 as it does now
-        Hash previousBlockRoot = (Hash) TreeHash.hash_tree_root(previousBlock);
-        state.setPrevious_block_root(previousBlockRoot);
-        if (toIntExact(state.getSlot()) % LATEST_BLOCK_ROOTS_LENGTH == 0) {
-            state.updateBatched_block_roots();
-        }
+    protected void updateRecentBlockHashes(BeaconState state, BeaconBlock block){
+        state.setPrevious_block_root(block.getState_root());
     }
 
     // block processing

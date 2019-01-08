@@ -793,6 +793,6 @@ public class BeaconState {
   }
 
   public void setPrevious_block_root(Hash previous_block_root){
-    latest_block_roots.set(toIntExact((slot - 1) % Constants.LATEST_BLOCK_ROOTS_LENGTH), previous_block_root);
+    latest_block_roots.set((toIntExact(slot - 1) % Constants.LATEST_BLOCK_ROOTS_LENGTH), previous_block_root);
   }
 }
