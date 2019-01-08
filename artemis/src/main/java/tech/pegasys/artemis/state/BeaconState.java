@@ -496,6 +496,10 @@ public class BeaconState {
     this.latest_vdf_outputs = latest_vdf_outputs;
   }
 
+  public void updateBatched_block_roots(){
+    batched_block_roots.add(BeaconStateHelperFunctions.merkle_root(latest_block_roots));
+  }
+
   static class BeaconStateHelperFunctions {
 
     /**
@@ -615,6 +619,15 @@ public class BeaconState {
       return x;
     }
 
+    /**
+     * TODO: implement merkle_root
+     * helper function for updateBatched_block_roots()
+     *  definition can be found in spec:
+     * https://github.com/ethereum/eth2.0-specs/blob/master/specs/core/0_beacon-chain.md#merkle_root
+     */
+    static Hash merkle_root(ArrayList<Hash> values) {
+      return Hash.ZERO;
+    }
   }
 
   public long getGenesis_time() {

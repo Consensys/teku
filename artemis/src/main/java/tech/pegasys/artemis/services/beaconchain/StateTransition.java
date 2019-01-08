@@ -14,12 +14,14 @@
 package tech.pegasys.artemis.services.beaconchain;
 
 import static java.lang.Math.toIntExact;
+import static tech.pegasys.artemis.Constants.LATEST_BLOCK_ROOTS_LENGTH;
 import static tech.pegasys.artemis.Constants.LATEST_RANDAO_MIXES_LENGTH;
 
 import tech.pegasys.artemis.Constants;
 import tech.pegasys.artemis.datastructures.beaconchainblocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.beaconchainstate.ValidatorRecord;
 import tech.pegasys.artemis.ethereum.core.Hash;
+import tech.pegasys.artemis.ethereum.core.TreeHash;
 import tech.pegasys.artemis.state.BeaconState;
 import tech.pegasys.artemis.state.util.EpochProcessorUtil;
 
@@ -103,9 +105,18 @@ public class StateTransition{
       latestRandaoMixes.set(currSlot % LATEST_RANDAO_MIXES_LENGTH, prevSlotRandaoMix);
     }
 
-    protected void updateRecentBlockHashes(BeaconState state){
-        //prev block from somewhere
-        //use the tree hash root function to the
+    protected void updateRecentBlockHashes(BeaconState state) {
+        //TODO: Implement pulling of previous block from db
+        // instead of using an empty Block as being done here
+        BeaconBlock previousBlock = new BeaconBlock();
+
+        //TODO: Remove casting of Hash once hash_tree_root is implemented to
+        // return Hash instead of Bytes32 as it does now
+        Hash previousBlockRoot = (Hash) TreeHash.hash_tree_root(previousBlock);
+        state.setPrevious_block_root(previousBlockRoot);
+        if (toIntExact(state.getSlot()) % LATEST_BLOCK_ROOTS_LENGTH == 0) {
+            state.updateBatched_block_roots();
+        }
     }
 
     // block processing
