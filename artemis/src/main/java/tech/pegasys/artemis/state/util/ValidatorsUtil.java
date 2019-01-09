@@ -16,31 +16,19 @@ package tech.pegasys.artemis.state.util;
 import tech.pegasys.artemis.datastructures.beaconchainstate.ValidatorRecord;
 import tech.pegasys.artemis.datastructures.beaconchainstate.Validators;
 
-import java.util.Iterator;
+import java.util.stream.Collectors;
 
 public class ValidatorsUtil {
 
     public static Validators get_active_validator_indices(Validators validators) {
-        Validators active_validator_indices = new Validators();
-        if(validators != null) {
-            Iterator<ValidatorRecord> itr = validators.iterator();
-            while (itr.hasNext()) {
-                ValidatorRecord record = itr.next();
-                if (record.is_active_validator()) active_validator_indices.add(record);
-            }
-        }
-        return active_validator_indices;
+        return validators != null ?
+            new Validators(validators.stream()
+                .filter(validatorRecord -> validatorRecord.is_active_validator())
+                .collect(Collectors.toList())) : new Validators();
     }
 
-    public static double get_effective_balance(Validators validators){
-        double effective_balance = 0.0d;
-        if(validators != null) {
-            Iterator<ValidatorRecord> itr = validators.iterator();
-            while (itr.hasNext()) {
-                ValidatorRecord record = itr.next();
-                effective_balance += record.get_effective_balance();
-            }
-        }
-        return effective_balance;
+    public static double get_effective_balance(Validators validators) {
+        return validators != null ?
+            validators.stream().mapToDouble(ValidatorRecord::get_effective_balance).sum() : 0.0d;
     }
 }
