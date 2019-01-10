@@ -79,8 +79,12 @@ public class BeaconChainService implements ServiceInterface{
     public void onNewSlot(Date date){
         LOG.info("****** New Slot at: " + date + " ******");
 
-        stateTransition.initiate(this.state, new BeaconBlock());
-
+        try{
+            stateTransition.initiate(this.state, new BeaconBlock());
+        }
+        catch(StateTransitionException e){
+            LOG.warn(e);
+        }
     }
 
     @Subscribe

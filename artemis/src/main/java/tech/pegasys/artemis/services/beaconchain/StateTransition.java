@@ -17,6 +17,7 @@ import tech.pegasys.artemis.Constants;
 import tech.pegasys.artemis.datastructures.beaconchainblocks.BeaconBlock;
 import tech.pegasys.artemis.state.BeaconState;
 import tech.pegasys.artemis.state.util.EpochProcessorUtil;
+import tech.pegasys.artemis.state.util.SlotProcessorUtil;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -29,15 +30,14 @@ public class StateTransition{
 
     }
 
-    public void initiate(BeaconState state, BeaconBlock block){
-
+    public void initiate(BeaconState state, BeaconBlock block) throws StateTransitionException {
 
         // per-slot processing
-        slotProcessor(state);
+        slotProcessor(state, block);
 
         // per-block processing
-         //TODO: need to check if a new block is produced.
-         //For now, we make a new block each slot
+        //TODO: need to check if a new block is produced.
+        //For now, we make a new block each slot
         //if( block != null ){
         blockProcessor(state, block);
         //}
@@ -49,15 +49,15 @@ public class StateTransition{
 
     }
 
-    protected void slotProcessor(BeaconState state){
+    protected void slotProcessor(BeaconState state, BeaconBlock block) throws StateTransitionException {
         // deep copy beacon state
         BeaconState newState = BeaconState.deepCopy(state);
         state.incrementSlot();
         logger.info("Processing new slot: " + state.getSlot());
-        // Slots the proposer has skipped (i.e. layers of RANDAO expected)
-        // should be in ValidatorRecord.randao_skips
-        updateProposerRandaoSkips(newState);
-        updateRecentBlockHashes(newState);
+
+        SlotProcessorUtil.updateProposerRandaoLayer(newState);
+        SlotProcessorUtil.updateLatestRandaoMixes(newState);
+        SlotProcessorUtil.updateRecentBlockHashes(newState, block);
     }
 
     protected void blockProcessor(BeaconState state, BeaconBlock block){
@@ -79,15 +79,6 @@ public class StateTransition{
         EpochProcessorUtil.finalBookKeeping(state);
     }
 
-    // slot processing
-    protected void updateProposerRandaoSkips(BeaconState state){
-
-    }
-
-    protected void updateRecentBlockHashes(BeaconState state){
-
-    }
-
     // block processing
     protected void verifySignature(BeaconState state, BeaconBlock block){
 
@@ -100,7 +91,5 @@ public class StateTransition{
     protected void processAttestations(BeaconState state, BeaconBlock block){
 
     }
-
-
 
 }
