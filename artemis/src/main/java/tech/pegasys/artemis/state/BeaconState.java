@@ -36,6 +36,7 @@ import static tech.pegasys.artemis.util.bls.BLSVerify.bls_verify;
 import tech.pegasys.artemis.Constants;
 import tech.pegasys.artemis.datastructures.beaconchainoperations.AttestationData;
 import tech.pegasys.artemis.datastructures.beaconchainoperations.DepositInput;
+import tech.pegasys.artemis.datastructures.beaconchainoperations.LatestBlockRoots;
 import tech.pegasys.artemis.datastructures.beaconchainstate.CandidatePoWReceiptRootRecord;
 import tech.pegasys.artemis.datastructures.beaconchainstate.CrosslinkRecord;
 import tech.pegasys.artemis.datastructures.beaconchainstate.ForkData;
@@ -77,7 +78,7 @@ public class BeaconState {
   // Randomness and committees
   private ArrayList<Hash> latest_randao_mixes;
   private ArrayList<Hash> latest_vdf_outputs;
-  private ArrayList<ArrayList<ShardCommittee>> shard_committees_at_slots;
+  private ArrayList<ArrayList<ShardCommittee>> shard_committees_at_slots = new ArrayList<ArrayList<ShardCommittee>>();
   private ArrayList<ArrayList<Integer>> persistent_committees;
   private ArrayList<ShardReassignmentRecord> persistent_committee_reassignments;
 
@@ -89,10 +90,10 @@ public class BeaconState {
 
   // Recent state
   private ArrayList<CrosslinkRecord> latest_crosslinks;
-  private ArrayList<Hash> latest_block_roots;
+  private LatestBlockRoots latest_block_roots = new LatestBlockRoots();
   private ArrayList<Double> latest_penalized_exit_balances;
   private ArrayList<PendingAttestationRecord> latest_attestations;
-  private ArrayList<Hash> batched_block_roots;
+  private ArrayList<Hash> batched_block_roots = new ArrayList<Hash>();
 
   // PoW receipt root
   private Hash processed_pow_receipt_root;
@@ -127,7 +128,7 @@ public class BeaconState {
       long previous_justified_slot, long justified_slot, long justification_bitfield,
       long finalized_slot,
       // Recent state
-      ArrayList<CrosslinkRecord> latest_crosslinks, ArrayList<Hash> latest_block_roots,
+      ArrayList<CrosslinkRecord> latest_crosslinks, LatestBlockRoots latest_block_roots,
       ArrayList<Double> latest_penalized_exit_balances, ArrayList<PendingAttestationRecord> latest_attestations,
       ArrayList<Hash> batched_block_roots,
       // PoW receipt root
@@ -617,6 +618,10 @@ public class BeaconState {
     this.latest_vdf_outputs = latest_vdf_outputs;
   }
 
+  public void updateBatched_block_roots(){
+    batched_block_roots.add(BeaconStateHelperFunctions.merkle_root(latest_block_roots));
+  }
+
   static class BeaconStateHelperFunctions {
 
     /**
@@ -735,6 +740,15 @@ public class BeaconState {
       return x;
     }
 
+    /**
+     * TODO: implement merkle_root
+     * helper function for updateBatched_block_roots()
+     *  definition can be found in spec:
+     * https://github.com/ethereum/eth2.0-specs/blob/master/specs/core/0_beacon-chain.md#merkle_root
+     */
+    static Hash merkle_root(LatestBlockRoots values) {
+      return Hash.ZERO;
+    }
   }
 
   /**
@@ -837,11 +851,11 @@ public class BeaconState {
     this.latest_crosslinks = latest_crosslinks;
   }
 
-  public ArrayList<Hash> getLatest_block_roots() {
+  public LatestBlockRoots getLatest_block_roots() {
     return latest_block_roots;
   }
 
-  public void setLatest_block_roots(ArrayList<Hash> latest_block_roots) {
+  public void setLatest_block_roots(LatestBlockRoots latest_block_roots) {
     this.latest_block_roots = latest_block_roots;
   }
 
@@ -920,5 +934,4 @@ public class BeaconState {
   public void setLatest_penalized_exit_balances(ArrayList<Double> latest_penalized_exit_balances) {
     this.latest_penalized_exit_balances = latest_penalized_exit_balances;
   }
-
 }

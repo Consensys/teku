@@ -17,6 +17,7 @@ import tech.pegasys.artemis.Constants;
 import tech.pegasys.artemis.datastructures.beaconchainstate.PendingAttestationRecord;
 import tech.pegasys.artemis.ethereum.core.Hash;
 import tech.pegasys.artemis.state.BeaconState;
+import tech.pegasys.artemis.util.uint.UInt64;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -57,11 +58,12 @@ public class AttestationUtil {
         return current_epoch_boundary_attestations;
     }
 
+
     //https://github.com/ethereum/eth2.0-specs/blob/master/specs/core/0_beacon-chain.md#get_block_root
     public static Hash get_block_root(BeaconState state, long slot) throws Exception {
         long slot_upper_bound = slot + state.getLatest_block_roots().size();
         if((state.getSlot() <= slot_upper_bound) || slot < state.getSlot())
-            return state.getLatest_block_roots().get(Math.toIntExact(slot % state.getLatest_block_roots().size()));
+            return state.getLatest_block_roots().get(UInt64.valueOf(slot % state.getLatest_block_roots().size()));
         throw new BlockValidationException("Desired block root not within the provided bounds");
     }
 
