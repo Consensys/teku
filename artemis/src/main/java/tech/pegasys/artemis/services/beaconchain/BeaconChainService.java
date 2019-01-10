@@ -14,13 +14,11 @@
 package tech.pegasys.artemis.services.beaconchain;
 import tech.pegasys.artemis.Constants;
 import tech.pegasys.artemis.datastructures.beaconchainblocks.BeaconBlock;
-import tech.pegasys.artemis.datastructures.beaconchainstate.ShardCommittee;
 import tech.pegasys.artemis.pow.event.ChainStartEvent;
 import tech.pegasys.artemis.pow.event.ValidatorRegistrationEvent;
 import tech.pegasys.artemis.services.ServiceInterface;
 import tech.pegasys.artemis.state.BeaconState;
 
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -31,7 +29,6 @@ import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import tech.pegasys.artemis.util.uint.UInt64;
 
 public class BeaconChainService implements ServiceInterface{
 

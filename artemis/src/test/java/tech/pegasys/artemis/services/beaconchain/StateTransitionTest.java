@@ -24,6 +24,7 @@ import static tech.pegasys.artemis.Constants.LATEST_RANDAO_MIXES_LENGTH;
 import static tech.pegasys.artemis.Constants.PENDING_ACTIVATION;
 import static tech.pegasys.artemis.ethereum.core.Hash.hash;
 
+import tech.pegasys.artemis.datastructures.beaconchainblocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.beaconchainstate.ShardCommittee;
 import tech.pegasys.artemis.datastructures.beaconchainstate.ValidatorRecord;
 import tech.pegasys.artemis.ethereum.core.Hash;
@@ -116,7 +117,7 @@ public class StateTransitionTest {
   }
 
   @Test
-  public void testUpdateRecentBlockHashes(){
+  public void testUpdateRecentBlockHashes() throws StateTransitionException {
     BeaconState state = newState();
         ArrayList<ArrayList<ShardCommittee>> shard_committees_at_slots =  new ArrayList<ArrayList<ShardCommittee>>();
         for(int i=0; i<1000; i++){
@@ -132,21 +133,12 @@ public class StateTransitionTest {
             shard_committees_at_slots.add(shard_commitees);
         }
     state.setShard_committees_at_slots(shard_committees_at_slots);
+    BeaconBlock block = new BeaconBlock();
+    block.setState_root(Hash.ZERO);
+    SlotProcessorUtil.updateRecentBlockHashes(state, block);
 
-
-    state.setSlot(12);
-    ArrayList<Hash> latestRandaoMixes = state.getLatest_randao_mixes();
-    latestRandaoMixes.set(11, hash(Bytes32.TRUE));
-    latestRandaoMixes.set(12, hash(Bytes32.FALSE));
-    StateTransition stateTransition = new StateTransition();
-
-    Hash prevSlotRandaoMix = latestRandaoMixes.get(11);
-    Hash currSlotRandaoMix = latestRandaoMixes.get(12);
-    assertThat(prevSlotRandaoMix).isNotEqualTo(currSlotRandaoMix);
-
-    SlotProcessorUtil.updateLatestRandaoMixes(state);
-    prevSlotRandaoMix = latestRandaoMixes.get(11);
-    currSlotRandaoMix = latestRandaoMixes.get(12);
-    assertThat(prevSlotRandaoMix).isEqualTo(currSlotRandaoMix);
+    assertThat(state.getLatest_block_roots().get(UInt64.valueOf(state.getSlot()))).isEqualTo(block.getState_root());
+    ArrayList<Hash> batched_block_roots = state.getBatched_block_roots();
+    assertThat(batched_block_roots.get(batched_block_roots.size() - 1)).isEqualTo(SlotProcessorUtil.merkle_root(state.getLatest_block_roots()));
   }
 }

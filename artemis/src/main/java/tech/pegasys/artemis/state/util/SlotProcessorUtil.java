@@ -13,23 +13,25 @@
 
 package tech.pegasys.artemis.state.util;
 
+import static java.lang.Math.toIntExact;
+import static tech.pegasys.artemis.Constants.LATEST_BLOCK_ROOTS_LENGTH;
+import static tech.pegasys.artemis.Constants.LATEST_RANDAO_MIXES_LENGTH;
+
 import tech.pegasys.artemis.datastructures.beaconchainblocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.beaconchainoperations.LatestBlockRoots;
 import tech.pegasys.artemis.datastructures.beaconchainstate.ValidatorRecord;
 import tech.pegasys.artemis.datastructures.beaconchainstate.Validators;
 import tech.pegasys.artemis.ethereum.core.Hash;
 import tech.pegasys.artemis.services.beaconchain.StateTransitionException;
 import tech.pegasys.artemis.state.BeaconState;
 import tech.pegasys.artemis.util.bytes.Bytes32;
+import tech.pegasys.artemis.util.uint.UInt64;
 
 import java.util.ArrayList;
 
-import static java.lang.Math.toIntExact;
-import static tech.pegasys.artemis.Constants.LATEST_BLOCK_ROOTS_LENGTH;
-import static tech.pegasys.artemis.Constants.LATEST_RANDAO_MIXES_LENGTH;
-
 public class SlotProcessorUtil {
 
-    public static Hash merkle_root(ArrayList<Hash> latest_block_roots){
+    public static Hash merkle_root(LatestBlockRoots latest_block_roots){
         //todo
         return Hash.wrap(Bytes32.FALSE);
     }
@@ -52,20 +54,17 @@ public class SlotProcessorUtil {
 
     public static void updateRecentBlockHashes(BeaconState state, BeaconBlock block) throws StateTransitionException {
         Hash previous_state_root = block.getState_root();
-        if(previous_state_root!=null) state.setPrevious_block_root(previous_state_root);
-        else{
-            throw new StateTransitionException("StateTransitionException: BeaconState cannot be updated due to previous_state_root returning a null");
-        }
+        if(previous_state_root!=null) state.getLatest_block_roots().put(UInt64.valueOf(state.getSlot()), previous_state_root);
+        else throw new StateTransitionException("StateTransitionException: BeaconState cannot be updated due to previous_state_root returning a null");
+
         if(state.getSlot() % LATEST_BLOCK_ROOTS_LENGTH == 0){
             ArrayList<Hash> batched_block_roots = state.getBatched_block_roots();
-            ArrayList<Hash> latest_block_roots = state.getLatest_block_roots();
+            LatestBlockRoots latest_block_roots = state.getLatest_block_roots();
             if(batched_block_roots != null && latest_block_roots != null){
                 Hash merkle_root = SlotProcessorUtil.merkle_root(latest_block_roots);
                 batched_block_roots.add(merkle_root);
             }
-            else{
-                throw new StateTransitionException("StateTransitionException: BeaconState cannot be updated due to batched_block_roots and latest_block_roots returning a null");
-            }
+            else throw new StateTransitionException("StateTransitionException: BeaconState cannot be updated due to batched_block_roots and latest_block_roots returning a null");
         }
     }
 }

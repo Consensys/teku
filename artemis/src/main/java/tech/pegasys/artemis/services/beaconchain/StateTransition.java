@@ -13,20 +13,11 @@
 
 package tech.pegasys.artemis.services.beaconchain;
 
-import static java.lang.Math.toIntExact;
-import static tech.pegasys.artemis.Constants.LATEST_BLOCK_ROOTS_LENGTH;
-import static tech.pegasys.artemis.Constants.LATEST_RANDAO_MIXES_LENGTH;
-
 import tech.pegasys.artemis.Constants;
 import tech.pegasys.artemis.datastructures.beaconchainblocks.BeaconBlock;
-import tech.pegasys.artemis.datastructures.beaconchainstate.ValidatorRecord;
-import tech.pegasys.artemis.datastructures.beaconchainstate.Validators;
-import tech.pegasys.artemis.ethereum.core.Hash;
 import tech.pegasys.artemis.state.BeaconState;
 import tech.pegasys.artemis.state.util.EpochProcessorUtil;
 import tech.pegasys.artemis.state.util.SlotProcessorUtil;
-
-import java.util.ArrayList;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -41,13 +32,12 @@ public class StateTransition{
 
     public void initiate(BeaconState state, BeaconBlock block) throws StateTransitionException {
 
-
         // per-slot processing
         slotProcessor(state, block);
 
         // per-block processing
-         //TODO: need to check if a new block is produced.
-         //For now, we make a new block each slot
+        //TODO: need to check if a new block is produced.
+        //For now, we make a new block each slot
         //if( block != null ){
         blockProcessor(state, block);
         //}
@@ -89,8 +79,6 @@ public class StateTransition{
         EpochProcessorUtil.finalBookKeeping(state);
     }
 
-
-
     // block processing
     protected void verifySignature(BeaconState state, BeaconBlock block){
 
@@ -103,7 +91,5 @@ public class StateTransition{
     protected void processAttestations(BeaconState state, BeaconBlock block){
 
     }
-
-
 
 }
