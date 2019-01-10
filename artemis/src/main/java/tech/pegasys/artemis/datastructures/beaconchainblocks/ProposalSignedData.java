@@ -18,37 +18,37 @@ import tech.pegasys.artemis.util.uint.UInt64;
 
 public class ProposalSignedData {
 
-  private UInt64 slot;
-  private UInt64 shard;
-  private Hash block_hash;
+    private UInt64 slot;
+    private UInt64 shard;
+    private Hash block_hash;
 
-  public ProposalSignedData(UInt64 slot, UInt64 shard, Hash block_hash) {
-    this.slot = slot;
-    this.shard = shard;
-    this.block_hash = block_hash;
-  }
+    public ProposalSignedData(UInt64 slot, UInt64 shard, Hash block_hash) {
+        this.slot = slot;
+        this.shard = shard;
+        this.block_hash = block_hash;
+    }
 
-  public UInt64 getSlot() {
-    return slot;
-  }
+    public UInt64 getSlot() {
+        return slot;
+    }
 
-  public void setSlot(UInt64 slot) {
-    this.slot = slot;
-  }
+    public void setSlot(UInt64 slot) {
+        this.slot = slot;
+    }
 
-  public UInt64 getShard() {
-    return shard;
-  }
+    public UInt64 getShard() {
+        return shard;
+    }
 
-  public void setShard(UInt64 shard) {
-    this.shard = shard;
-  }
+    public void setShard(UInt64 shard) {
+        this.shard = shard;
+    }
 
-  public Hash getBlock_hash() {
-    return block_hash;
-  }
+    public Hash getBlock_hash() {
+        return block_hash;
+    }
 
-  public void setBlock_hash(Hash block_hash) {
-    this.block_hash = block_hash;
-  }
+    public void setBlock_hash(Hash block_hash) {
+        this.block_hash = block_hash;
+    }
 }

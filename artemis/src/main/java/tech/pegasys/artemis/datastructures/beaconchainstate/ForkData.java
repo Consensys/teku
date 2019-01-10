@@ -17,37 +17,37 @@ import tech.pegasys.artemis.util.uint.UInt64;
 
 public class ForkData {
 
-  private UInt64 pre_fork_version;
-  private UInt64 post_fork_version;
-  private UInt64 fork_slot;
+    private UInt64 pre_fork_version;
+    private UInt64 post_fork_version;
+    private UInt64 fork_slot;
 
-  public ForkData(UInt64 pre_fork_version, UInt64 post_fork_version, UInt64 fork_slot) {
-    this.pre_fork_version = pre_fork_version;
-    this.post_fork_version = post_fork_version;
-    this.fork_slot = fork_slot;
-  }
+    public ForkData(UInt64 pre_fork_version, UInt64 post_fork_version, UInt64 fork_slot) {
+        this.pre_fork_version = pre_fork_version;
+        this.post_fork_version = post_fork_version;
+        this.fork_slot = fork_slot;
+    }
 
-  public UInt64 getPre_fork_version() {
-    return pre_fork_version;
-  }
+    public UInt64 getPre_fork_version() {
+        return pre_fork_version;
+    }
 
-  public void setPre_fork_version(UInt64 pre_fork_version) {
-    this.pre_fork_version = pre_fork_version;
-  }
+    public void setPre_fork_version(UInt64 pre_fork_version) {
+        this.pre_fork_version = pre_fork_version;
+    }
 
-  public UInt64 getPost_fork_version() {
-    return post_fork_version;
-  }
+    public UInt64 getPost_fork_version() {
+        return post_fork_version;
+    }
 
-  public void setPost_fork_version(UInt64 post_fork_version) {
-    this.post_fork_version = post_fork_version;
-  }
+    public void setPost_fork_version(UInt64 post_fork_version) {
+        this.post_fork_version = post_fork_version;
+    }
 
-  public UInt64 getFork_slot() {
-    return fork_slot;
-  }
+    public UInt64 getFork_slot() {
+        return fork_slot;
+    }
 
-  public void setFork_slot(UInt64 fork_slot) {
-    this.fork_slot = fork_slot;
-  }
+    public void setFork_slot(UInt64 fork_slot) {
+        this.fork_slot = fork_slot;
+    }
 }

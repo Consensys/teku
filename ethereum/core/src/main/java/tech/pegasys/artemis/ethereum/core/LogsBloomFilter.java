@@ -16,12 +16,11 @@ package tech.pegasys.artemis.ethereum.core;
 import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.artemis.crypto.Hash.keccak256;
 
+import java.util.Collection;
 import tech.pegasys.artemis.ethereum.rlp.RLPException;
 import tech.pegasys.artemis.ethereum.rlp.RLPInput;
 import tech.pegasys.artemis.util.bytes.BytesValue;
 import tech.pegasys.artemis.util.bytes.MutableBytesValue;
-
-import java.util.Collection;
 
 /*
  * Bloom filter implementation for storing persistent logs, describes a 2048-bit representation of
@@ -34,117 +33,121 @@ import java.util.Collection;
  */
 public class LogsBloomFilter {
 
-  public static final int BYTE_SIZE = 256;
-  private static final int LEAST_SIGNIFICANT_BYTE = 0xFF;
-  private static final int LEAST_SIGNIFICANT_THREE_BITS = 0x7;
-  private static final int BITS_IN_BYTE = 8;
+    public static final int BYTE_SIZE = 256;
+    private static final int LEAST_SIGNIFICANT_BYTE = 0xFF;
+    private static final int LEAST_SIGNIFICANT_THREE_BITS = 0x7;
+    private static final int BITS_IN_BYTE = 8;
 
-  private final MutableBytesValue data;
+    private final MutableBytesValue data;
 
-  public LogsBloomFilter() {
-    this.data = MutableBytesValue.create(BYTE_SIZE);
-  }
-
-  public LogsBloomFilter(BytesValue data) {
-    checkArgument(data.size() == BYTE_SIZE,
-        "Invalid size for bloom filter backing array: expected %s but got %s", BYTE_SIZE,
-        data.size());
-    this.data = data.mutableCopy();
-  }
-
-  public static LogsBloomFilter fromHexString(String hexString) {
-    return new LogsBloomFilter(BytesValue.fromHexString(hexString));
-  }
-
-  public static LogsBloomFilter empty() {
-    return new LogsBloomFilter(BytesValue.wrap(new byte[LogsBloomFilter.BYTE_SIZE]));
-  }
-
-  /**
-   * Creates a bloom filter corresponding to the provide log series.
-   *
-   * @param logs the logs to populate the bloom filter with.
-   * @return the newly created bloom filter populated with the logs from {@code logs}.
-   */
-  public static LogsBloomFilter compute(Collection<Log> logs) {
-    LogsBloomFilter bloom = new LogsBloomFilter();
-    logs.forEach(bloom::insertLog);
-    return bloom;
-  }
-
-  /**
-   * Creates a bloom filter from the given RLP-encoded input.
-   *
-   * @param input The input to read from
-   *
-   * @return the input's corresponding bloom filter
-   */
-  public static LogsBloomFilter readFrom(RLPInput input) {
-    BytesValue bytes = input.readBytesValue();
-    if (bytes.size() != BYTE_SIZE) {
-      throw new RLPException(String.format("LogsBloomFilter unexpected size of %s (needs %s)",
-          bytes.size(), BYTE_SIZE));
+    public LogsBloomFilter() {
+        this.data = MutableBytesValue.create(BYTE_SIZE);
     }
-    return new LogsBloomFilter(bytes);
-  }
 
-  /**
-   * Discover the low order 11-bits, of the first three double-bytes, of the SHA3 hash, of each
-   * value and update the bloom filter accordingly.
-   *
-   * @param hashValue The hash of the log item.
-   */
-  private void setBits(BytesValue hashValue) {
-    for (int counter = 0; counter < 6; counter += 2) {
-      int setBloomBit = ((hashValue.get(counter) & LEAST_SIGNIFICANT_THREE_BITS) << BITS_IN_BYTE)
-          + (hashValue.get(counter + 1) & LEAST_SIGNIFICANT_BYTE);
-      setBit(setBloomBit);
+    public LogsBloomFilter(BytesValue data) {
+        checkArgument(
+                data.size() == BYTE_SIZE,
+                "Invalid size for bloom filter backing array: expected %s but got %s",
+                BYTE_SIZE,
+                data.size());
+        this.data = data.mutableCopy();
     }
-  }
 
-  @Override
-  public final boolean equals(Object obj) {
-    if (obj == this) {
-      return true;
+    public static LogsBloomFilter fromHexString(String hexString) {
+        return new LogsBloomFilter(BytesValue.fromHexString(hexString));
     }
-    if (!(obj instanceof LogsBloomFilter)) {
-      return false;
+
+    public static LogsBloomFilter empty() {
+        return new LogsBloomFilter(BytesValue.wrap(new byte[LogsBloomFilter.BYTE_SIZE]));
     }
-    LogsBloomFilter other = (LogsBloomFilter) obj;
-    return data.equals(other.data);
-  }
 
-  @Override
-  public int hashCode() {
-    return data.hashCode();
-  }
-
-  public BytesValue bytes() {
-    return data;
-  }
-
-  public void insertLog(Log log) {
-    setBits(keccak256(log.logger()));
-
-    for (LogTopic topic : log.topics()) {
-      setBits(keccak256(topic));
+    /**
+     * Creates a bloom filter corresponding to the provide log series.
+     *
+     * @param logs the logs to populate the bloom filter with.
+     * @return the newly created bloom filter populated with the logs from {@code logs}.
+     */
+    public static LogsBloomFilter compute(Collection<Log> logs) {
+        LogsBloomFilter bloom = new LogsBloomFilter();
+        logs.forEach(bloom::insertLog);
+        return bloom;
     }
-  }
 
-  private void setBit(int index) {
-    int byteIndex = BYTE_SIZE - 1 - index / 8;
-    int bitIndex = index % 8;
-    data.set(byteIndex, (byte) (data.get(byteIndex) | (1 << bitIndex)));
-  }
-
-  public void digest(LogsBloomFilter other) {
-    for (int i = 0; i < data.size(); ++i) {
-      data.set(i, (byte) ((data.get(i) | other.data.get(i)) & 0xff));
+    /**
+     * Creates a bloom filter from the given RLP-encoded input.
+     *
+     * @param input The input to read from
+     * @return the input's corresponding bloom filter
+     */
+    public static LogsBloomFilter readFrom(RLPInput input) {
+        BytesValue bytes = input.readBytesValue();
+        if (bytes.size() != BYTE_SIZE) {
+            throw new RLPException(
+                    String.format(
+                            "LogsBloomFilter unexpected size of %s (needs %s)",
+                            bytes.size(), BYTE_SIZE));
+        }
+        return new LogsBloomFilter(bytes);
     }
-  }
 
-  @Override
-  public String toString() {
-    return data.toString();
-  }
+    /**
+     * Discover the low order 11-bits, of the first three double-bytes, of the SHA3 hash, of each
+     * value and update the bloom filter accordingly.
+     *
+     * @param hashValue The hash of the log item.
+     */
+    private void setBits(BytesValue hashValue) {
+        for (int counter = 0; counter < 6; counter += 2) {
+            int setBloomBit =
+                    ((hashValue.get(counter) & LEAST_SIGNIFICANT_THREE_BITS) << BITS_IN_BYTE)
+                            + (hashValue.get(counter + 1) & LEAST_SIGNIFICANT_BYTE);
+            setBit(setBloomBit);
+        }
+    }
+
+    @Override
+    public final boolean equals(Object obj) {
+        if (obj == this) {
+            return true;
+        }
+        if (!(obj instanceof LogsBloomFilter)) {
+            return false;
+        }
+        LogsBloomFilter other = (LogsBloomFilter) obj;
+        return data.equals(other.data);
+    }
+
+    @Override
+    public int hashCode() {
+        return data.hashCode();
+    }
+
+    public BytesValue bytes() {
+        return data;
+    }
+
+    public void insertLog(Log log) {
+        setBits(keccak256(log.logger()));
+
+        for (LogTopic topic : log.topics()) {
+            setBits(keccak256(topic));
+        }
+    }
+
+    private void setBit(int index) {
+        int byteIndex = BYTE_SIZE - 1 - index / 8;
+        int bitIndex = index % 8;
+        data.set(byteIndex, (byte) (data.get(byteIndex) | (1 << bitIndex)));
+    }
+
+    public void digest(LogsBloomFilter other) {
+        for (int i = 0; i < data.size(); ++i) {
+            data.set(i, (byte) ((data.get(i) | other.data.get(i)) & 0xff));
+        }
+    }
+
+    @Override
+    public String toString() {
+        return data.toString();
+    }
 }

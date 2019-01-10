@@ -12,6 +12,16 @@
  */
 
 package tech.pegasys.artemis.services.beaconchain;
+
+import com.google.common.eventbus.AsyncEventBus;
+import com.google.common.eventbus.EventBus;
+import com.google.common.eventbus.Subscribe;
+import java.util.Date;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.artemis.Constants;
 import tech.pegasys.artemis.datastructures.beaconchainblocks.BeaconBlock;
 import tech.pegasys.artemis.pow.event.ChainStartEvent;
@@ -19,18 +29,7 @@ import tech.pegasys.artemis.pow.event.ValidatorRegistrationEvent;
 import tech.pegasys.artemis.services.ServiceInterface;
 import tech.pegasys.artemis.state.BeaconState;
 
-import java.util.Date;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-
-import com.google.common.eventbus.AsyncEventBus;
-import com.google.common.eventbus.EventBus;
-import com.google.common.eventbus.Subscribe;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
-public class BeaconChainService implements ServiceInterface{
+public class BeaconChainService implements ServiceInterface {
 
     private final EventBus eventBus;
     private BeaconState state;
@@ -38,57 +37,59 @@ public class BeaconChainService implements ServiceInterface{
     private ScheduledExecutorService scheduler;
     private static final Logger LOG = LogManager.getLogger();
 
-    public BeaconChainService(){
+    public BeaconChainService() {
         this.eventBus = new AsyncEventBus(Executors.newCachedThreadPool());
         this.state = new BeaconState();
         this.stateTransition = new StateTransition();
     }
 
     @Override
-    public void init(){
+    public void init() {
         this.scheduler = Executors.newScheduledThreadPool(1);
         this.eventBus.register(this);
     }
 
     @Override
-    public void run(){
+    public void run() {
         // slot scheduler fires an event that tells us when it is time for a new slot
         int initialDelay = 0;
-        scheduler.scheduleAtFixedRate(new SlotScheduler(this.eventBus), initialDelay,
-            Constants.SLOT_DURATION , TimeUnit.SECONDS);
+        scheduler.scheduleAtFixedRate(
+                new SlotScheduler(this.eventBus),
+                initialDelay,
+                Constants.SLOT_DURATION,
+                TimeUnit.SECONDS);
     }
 
     @Override
-    public void stop(){
+    public void stop() {
         this.scheduler.shutdown();
         this.eventBus.unregister(this);
     }
 
     @Subscribe
-    public void onChainStarted(ChainStartEvent event){
+    public void onChainStarted(ChainStartEvent event) {
         LOG.info("ChainStart Event Detected");
     }
 
     @Subscribe
-    public void onValidatorRegistered(ValidatorRegistrationEvent event){
+    public void onValidatorRegistered(ValidatorRegistrationEvent event) {
         LOG.info("Validator Registration Event detected");
-        //LOG.info("   Validator Number: " + validatorRegisteredEvent.getInfo());
+        // LOG.info("   Validator Number: " + validatorRegisteredEvent.getInfo());
     }
 
     @Subscribe
-    public void onNewSlot(Date date){
+    public void onNewSlot(Date date) {
         LOG.info("****** New Slot at: " + date + " ******");
 
-        try{
+        try {
             stateTransition.initiate(this.state, new BeaconBlock());
-        }
-        catch(StateTransitionException e){
+        } catch (StateTransitionException e) {
             LOG.warn(e);
         }
     }
 
     @Subscribe
-    public void onNewBlock(BeaconBlock beaconBlock){
+    public void onNewBlock(BeaconBlock beaconBlock) {
         LOG.info("New Beacon Block Event detected");
         LOG.info("   Block Number:" + beaconBlock.getSlot());
     }

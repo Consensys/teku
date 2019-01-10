@@ -13,39 +13,39 @@
 
 package tech.pegasys.artemis.datastructures.beaconchainstate;
 
-import tech.pegasys.artemis.util.uint.UInt64;
-
 import java.util.ArrayList;
+import tech.pegasys.artemis.util.uint.UInt64;
 
 public class ShardCommittee {
 
-  private UInt64 shard;
-  private ArrayList<Integer> committee;
-  private UInt64 total_validator_count;
+    private UInt64 shard;
+    private ArrayList<Integer> committee;
+    private UInt64 total_validator_count;
 
-  public ShardCommittee(UInt64 shard, ArrayList<Integer> committee, UInt64 total_validator_count) {
-    this.shard = shard;
-    this.committee = committee;
-    this.total_validator_count = total_validator_count;
-  }
+    public ShardCommittee(
+            UInt64 shard, ArrayList<Integer> committee, UInt64 total_validator_count) {
+        this.shard = shard;
+        this.committee = committee;
+        this.total_validator_count = total_validator_count;
+    }
 
-  public UInt64 getShard() {
-    return shard;
-  }
+    public UInt64 getShard() {
+        return shard;
+    }
 
-  public ArrayList<Integer> getCommittee() {
-    return committee;
-  }
+    public ArrayList<Integer> getCommittee() {
+        return committee;
+    }
 
-  public void setCommittee(ArrayList<Integer> committee) {
-    this.committee = committee;
-  }
+    public void setCommittee(ArrayList<Integer> committee) {
+        this.committee = committee;
+    }
 
-  public UInt64 getTotal_validator_count() {
-    return total_validator_count;
-  }
+    public UInt64 getTotal_validator_count() {
+        return total_validator_count;
+    }
 
-  public void setTotal_validator_count(UInt64 total_validator_count) {
-    this.total_validator_count = total_validator_count;
-  }
+    public void setTotal_validator_count(UInt64 total_validator_count) {
+        this.total_validator_count = total_validator_count;
+    }
 }

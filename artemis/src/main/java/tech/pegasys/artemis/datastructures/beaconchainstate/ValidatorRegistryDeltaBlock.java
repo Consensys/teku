@@ -19,48 +19,48 @@ import tech.pegasys.artemis.util.uint.UInt64;
 
 public class ValidatorRegistryDeltaBlock {
 
-  private Hash latest_registry_delta_root;
-  private int validator_index;
-  private UInt384 pubkey;
-  private UInt64 flag;
+    private Hash latest_registry_delta_root;
+    private int validator_index;
+    private UInt384 pubkey;
+    private UInt64 flag;
 
-  public ValidatorRegistryDeltaBlock(Hash latest_registry_delta_root, int validator_index,
-                                     UInt384 pubkey, UInt64 flag) {
-    this.latest_registry_delta_root = latest_registry_delta_root;
-    this.validator_index = validator_index;
-    this.pubkey = pubkey;
-    this.flag = flag;
-  }
+    public ValidatorRegistryDeltaBlock(
+            Hash latest_registry_delta_root, int validator_index, UInt384 pubkey, UInt64 flag) {
+        this.latest_registry_delta_root = latest_registry_delta_root;
+        this.validator_index = validator_index;
+        this.pubkey = pubkey;
+        this.flag = flag;
+    }
 
-  public Hash getLatest_registry_delta_root() {
-    return latest_registry_delta_root;
-  }
+    public Hash getLatest_registry_delta_root() {
+        return latest_registry_delta_root;
+    }
 
-  public void setLatest_registry_delta_root(Hash latest_registry_delta_root) {
-    this.latest_registry_delta_root = latest_registry_delta_root;
-  }
+    public void setLatest_registry_delta_root(Hash latest_registry_delta_root) {
+        this.latest_registry_delta_root = latest_registry_delta_root;
+    }
 
-  public int getValidator_index() {
-    return validator_index;
-  }
+    public int getValidator_index() {
+        return validator_index;
+    }
 
-  public void setValidator_index(int validator_index) {
-    this.validator_index = validator_index;
-  }
+    public void setValidator_index(int validator_index) {
+        this.validator_index = validator_index;
+    }
 
-  public UInt384 getPubkey() {
-    return pubkey;
-  }
+    public UInt384 getPubkey() {
+        return pubkey;
+    }
 
-  public void setPubkey(UInt384 pubkey) {
-    this.pubkey = pubkey;
-  }
+    public void setPubkey(UInt384 pubkey) {
+        this.pubkey = pubkey;
+    }
 
-  public UInt64 getFlag() {
-    return flag;
-  }
+    public UInt64 getFlag() {
+        return flag;
+    }
 
-  public void setFlag(UInt64 flag) {
-    this.flag = flag;
-  }
+    public void setFlag(UInt64 flag) {
+        this.flag = flag;
+    }
 }

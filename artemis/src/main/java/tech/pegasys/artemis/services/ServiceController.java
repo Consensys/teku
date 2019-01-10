@@ -13,25 +13,27 @@
 
 package tech.pegasys.artemis.services;
 
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import tech.pegasys.artemis.cli.CommandLineArguments;
 import tech.pegasys.artemis.services.beaconchain.BeaconChainService;
 import tech.pegasys.artemis.services.powchain.PowchainService;
 
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-
-
 public class ServiceController {
 
-    private static final BeaconChainService beaconChainService = ServiceFactory.getInstance(BeaconChainService.class).getInstance();;
-    private static final PowchainService powchainService = ServiceFactory.getInstance(PowchainService.class).getInstance();
-    private static final ExecutorService beaconChainExecuterService = Executors.newSingleThreadExecutor();
-    private static final ExecutorService powchainExecuterService = Executors.newSingleThreadExecutor();
+    private static final BeaconChainService beaconChainService =
+            ServiceFactory.getInstance(BeaconChainService.class).getInstance();;
+    private static final PowchainService powchainService =
+            ServiceFactory.getInstance(PowchainService.class).getInstance();
+    private static final ExecutorService beaconChainExecuterService =
+            Executors.newSingleThreadExecutor();
+    private static final ExecutorService powchainExecuterService =
+            Executors.newSingleThreadExecutor();
     // initialize/register all services
-    public static void initAll(CommandLineArguments cliArgs){
+    public static void initAll(CommandLineArguments cliArgs) {
 
         beaconChainService.init();
-        if(!cliArgs.getPoWChainServiceDisabled()){
+        if (!cliArgs.getPoWChainServiceDisabled()) {
             powchainService.init();
         }
 
@@ -42,24 +44,20 @@ public class ServiceController {
         // RPC Service
     }
 
-    public static void startAll(CommandLineArguments cliArgs){
+    public static void startAll(CommandLineArguments cliArgs) {
 
         // start all services
         beaconChainExecuterService.execute(beaconChainService);
-        if(!cliArgs.getPoWChainServiceDisabled()){
+        if (!cliArgs.getPoWChainServiceDisabled()) {
             powchainExecuterService.execute(powchainService);
         }
-
-
-
     }
 
-    public static void stopAll(CommandLineArguments cliArgs){
+    public static void stopAll(CommandLineArguments cliArgs) {
         // stop all services
         beaconChainExecuterService.shutdown();
         beaconChainService.stop();
         powchainExecuterService.shutdown();
         powchainService.stop();
     }
-
 }

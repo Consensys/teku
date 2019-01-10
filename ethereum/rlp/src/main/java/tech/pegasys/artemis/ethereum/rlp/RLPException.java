@@ -14,11 +14,11 @@
 package tech.pegasys.artemis.ethereum.rlp;
 
 public class RLPException extends RuntimeException {
-  public RLPException(String message) {
-    this(message, null);
-  }
+    public RLPException(String message) {
+        this(message, null);
+    }
 
-  RLPException(String message, Throwable throwable) {
-    super(message, throwable);
-  }
+    RLPException(String message, Throwable throwable) {
+        super(message, throwable);
+    }
 }

@@ -20,16 +20,14 @@ import static org.junit.Assert.assertTrue;
 import static tech.pegasys.artemis.Constants.ACTIVE_PENDING_EXIT;
 import static tech.pegasys.artemis.Constants.EXITED_WITHOUT_PENALTY;
 
+import java.util.Arrays;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 import tech.pegasys.artemis.datastructures.beaconchainstate.ValidatorRecord;
 import tech.pegasys.artemis.datastructures.beaconchainstate.Validators;
 import tech.pegasys.artemis.ethereum.core.Hash;
 import tech.pegasys.artemis.util.uint.UInt64;
-
-import java.util.Arrays;
-
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
 
 public class ValidatorsUtilTest {
     public static final double DOUBLE_ASSERTION_DELTA = 0.0d;
@@ -56,68 +54,83 @@ public class ValidatorsUtilTest {
 
     @Test
     public void assert_get_zero_as_effective_balance_for_nullValidators() {
-        //when
+        // when
         double effectiveBalanceActual = ValidatorsUtil.get_effective_balance(null);
 
-        //then
+        // then
         assertEquals(effectiveBalanceExpected, effectiveBalanceActual, DOUBLE_ASSERTION_DELTA);
     }
 
     @Test
-    public void assert_get_zero_as_effective_balance_for_validators_with_singleValidatorRecord_and_zero_balance() {
-        //given
-        validatorRecordTest =  getValidatorsList(getDefaultValidatorRecordWithStatus(200, ACTIVE_PENDING_EXIT, DEFAULT_BALANCE));
+    public void
+            assert_get_zero_as_effective_balance_for_validators_with_singleValidatorRecord_and_zero_balance() {
+        // given
+        validatorRecordTest =
+                getValidatorsList(
+                        getDefaultValidatorRecordWithStatus(
+                                200, ACTIVE_PENDING_EXIT, DEFAULT_BALANCE));
 
-        //when
+        // when
         double effectiveBalanceActual = ValidatorsUtil.get_effective_balance(validatorRecordTest);
 
-        //then
+        // then
         assertEquals(effectiveBalanceExpected, effectiveBalanceActual, DOUBLE_ASSERTION_DELTA);
     }
 
     @Test
-    public void assert_get_nonZero_as_effective_balance_for_validators_with_singleValidatorRecord_and_nonZero_balance() {
-        //given
+    public void
+            assert_get_nonZero_as_effective_balance_for_validators_with_singleValidatorRecord_and_nonZero_balance() {
+        // given
         balance = 112.32d;
         effectiveBalanceExpected = balance;
-        validatorRecordTest =  getValidatorsList(getDefaultValidatorRecordWithStatus(200, ACTIVE_PENDING_EXIT, balance));
+        validatorRecordTest =
+                getValidatorsList(
+                        getDefaultValidatorRecordWithStatus(200, ACTIVE_PENDING_EXIT, balance));
 
-        //when
+        // when
         double effectiveBalanceActual = ValidatorsUtil.get_effective_balance(validatorRecordTest);
 
-        //then
+        // then
         assertEquals(effectiveBalanceExpected, effectiveBalanceActual, DOUBLE_ASSERTION_DELTA);
     }
 
     @Test
-    public void assert_get_nonZero_value_as_effective_balance_for_validators_with_multipleValidatorRecords() {
-        //given
+    public void
+            assert_get_nonZero_value_as_effective_balance_for_validators_with_multipleValidatorRecords() {
+        // given
         double validatorRecordBal1 = 112.32d;
         double validatorRecordBal2 = 100.445311d;
-        validatorRecordTest = getValidatorsList(
-                getDefaultValidatorRecordWithStatus(100, ACTIVE_PENDING_EXIT, validatorRecordBal1),
-                getDefaultValidatorRecordWithStatus(200, ACTIVE_PENDING_EXIT, validatorRecordBal2));
+        validatorRecordTest =
+                getValidatorsList(
+                        getDefaultValidatorRecordWithStatus(
+                                100, ACTIVE_PENDING_EXIT, validatorRecordBal1),
+                        getDefaultValidatorRecordWithStatus(
+                                200, ACTIVE_PENDING_EXIT, validatorRecordBal2));
         effectiveBalanceExpected = validatorRecordBal1 + validatorRecordBal2;
 
-        //when
+        // when
         double effectiveBalanceActual = ValidatorsUtil.get_effective_balance(validatorRecordTest);
 
-        //then
+        // then
         assertEquals(effectiveBalanceExpected, effectiveBalanceActual, DOUBLE_ASSERTION_DELTA);
     }
 
     @Test
     public void assert_get_active_validator_indices() {
-        //given
-        validatorRecordTest = getValidatorsList(
-        getDefaultValidatorRecordWithStatus(100, ACTIVE_PENDING_EXIT, DEFAULT_BALANCE),
-        getDefaultValidatorRecordWithStatus(200, ACTIVE_PENDING_EXIT, DEFAULT_BALANCE));
+        // given
+        validatorRecordTest =
+                getValidatorsList(
+                        getDefaultValidatorRecordWithStatus(
+                                100, ACTIVE_PENDING_EXIT, DEFAULT_BALANCE),
+                        getDefaultValidatorRecordWithStatus(
+                                200, ACTIVE_PENDING_EXIT, DEFAULT_BALANCE));
         validatorSizeExpected = 2;
 
-        //when
-        Validators activeValidatorsActual = ValidatorsUtil.get_active_validators(validatorRecordTest);
+        // when
+        Validators activeValidatorsActual =
+                ValidatorsUtil.get_active_validators(validatorRecordTest);
 
-        //then
+        // then
         assertNotNull(activeValidatorsActual);
         assertEquals(validatorSizeExpected, activeValidatorsActual.size());
         assertEquals(validatorRecordTest.get(0), activeValidatorsActual.get(0));
@@ -126,16 +139,20 @@ public class ValidatorsUtilTest {
 
     @Test
     public void assert_that_inactive_validators_are_excluded_for_get_active_validator_indices() {
-        //given
-        validatorRecordTest = getValidatorsList(
-                getDefaultValidatorRecordWithStatus(100, ACTIVE_PENDING_EXIT, DEFAULT_BALANCE),
-                getDefaultValidatorRecordWithStatus(200, EXITED_WITHOUT_PENALTY, DEFAULT_BALANCE));
+        // given
+        validatorRecordTest =
+                getValidatorsList(
+                        getDefaultValidatorRecordWithStatus(
+                                100, ACTIVE_PENDING_EXIT, DEFAULT_BALANCE),
+                        getDefaultValidatorRecordWithStatus(
+                                200, EXITED_WITHOUT_PENALTY, DEFAULT_BALANCE));
         validatorSizeExpected = 1;
 
-        //when
-        Validators activeValidatorsActual = ValidatorsUtil.get_active_validators(validatorRecordTest);
+        // when
+        Validators activeValidatorsActual =
+                ValidatorsUtil.get_active_validators(validatorRecordTest);
 
-        //then
+        // then
         assertNotNull(activeValidatorsActual);
         assertEquals(validatorSizeExpected, activeValidatorsActual.size());
         assertTrue(activeValidatorsActual.contains(validatorRecordTest.get(0)));
@@ -144,16 +161,20 @@ public class ValidatorsUtilTest {
 
     @Test
     public void assert_get_active_validator_indices_for_all_inactive_validators_scenario() {
-        //given
-        validatorRecordTest = getValidatorsList(
-                getDefaultValidatorRecordWithStatus(100, EXITED_WITHOUT_PENALTY, DEFAULT_BALANCE),
-                getDefaultValidatorRecordWithStatus(200, EXITED_WITHOUT_PENALTY, DEFAULT_BALANCE));
+        // given
+        validatorRecordTest =
+                getValidatorsList(
+                        getDefaultValidatorRecordWithStatus(
+                                100, EXITED_WITHOUT_PENALTY, DEFAULT_BALANCE),
+                        getDefaultValidatorRecordWithStatus(
+                                200, EXITED_WITHOUT_PENALTY, DEFAULT_BALANCE));
         validatorSizeExpected = 0;
 
-        //when
-        Validators activeValidatorsActual = ValidatorsUtil.get_active_validators(validatorRecordTest);
+        // when
+        Validators activeValidatorsActual =
+                ValidatorsUtil.get_active_validators(validatorRecordTest);
 
-        //then
+        // then
         assertNotNull(activeValidatorsActual);
         assertEquals(validatorSizeExpected, activeValidatorsActual.size());
         assertFalse(activeValidatorsActual.contains(validatorRecordTest.get(0)));
@@ -162,39 +183,66 @@ public class ValidatorsUtilTest {
 
     @Test
     public void assert_get_active_validator_indices_as_emptyList_for_nullInput() {
-        //given
+        // given
         validatorSizeExpected = 0;
 
-        //when
+        // when
         Validators activeValidatorsActual = ValidatorsUtil.get_active_validators(null);
 
-        //then
+        // then
         assertNotNull(activeValidatorsActual);
         assertEquals(validatorSizeExpected, activeValidatorsActual.size());
     }
 
-    public ValidatorRecord getAValidatorRecordTestDataFromParameters(int pubkey, Hash withdrawalCredentials, Hash randaoCommitment, UInt64 randaoLayers,
-        UInt64 status, UInt64 slot, UInt64 exitCount, UInt64 lastPocChangeSlot, UInt64 secondLastPocChangeSlot, double balance) {
+    public ValidatorRecord getAValidatorRecordTestDataFromParameters(
+            int pubkey,
+            Hash withdrawalCredentials,
+            Hash randaoCommitment,
+            UInt64 randaoLayers,
+            UInt64 status,
+            UInt64 slot,
+            UInt64 exitCount,
+            UInt64 lastPocChangeSlot,
+            UInt64 secondLastPocChangeSlot,
+            double balance) {
         ValidatorRecord validatorRecord =
-                new ValidatorRecord(pubkey, withdrawalCredentials, randaoCommitment, randaoLayers,
-                status, slot, exitCount, lastPocChangeSlot, secondLastPocChangeSlot);
+                new ValidatorRecord(
+                        pubkey,
+                        withdrawalCredentials,
+                        randaoCommitment,
+                        randaoLayers,
+                        status,
+                        slot,
+                        exitCount,
+                        lastPocChangeSlot,
+                        secondLastPocChangeSlot);
         validatorRecord.setBalance(balance);
 
         return validatorRecord;
     }
 
-    public ValidatorRecord getDefaultValidatorRecordWithStatus(int pubKey, int statusAsInt, double balance) {
+    public ValidatorRecord getDefaultValidatorRecordWithStatus(
+            int pubKey, int statusAsInt, double balance) {
         Hash withdrawal_credentials = Hash.ZERO;
         Hash randaoCommitment = Hash.ZERO;
         UInt64 randaoLayers = UInt64.MIN_VALUE;
-        UInt64 status = UInt64.valueOf(statusAsInt) ;
-        UInt64 slot =  UInt64.valueOf(0);
+        UInt64 status = UInt64.valueOf(statusAsInt);
+        UInt64 slot = UInt64.valueOf(0);
         UInt64 exitCount = UInt64.MIN_VALUE;
         UInt64 lastPocChangeSlot = UInt64.MIN_VALUE;
         UInt64 secondLastPocChangeSlot = UInt64.MIN_VALUE;
 
-        return  getAValidatorRecordTestDataFromParameters(pubKey,withdrawal_credentials, randaoCommitment, randaoLayers,
-                status, slot, exitCount, lastPocChangeSlot, secondLastPocChangeSlot, balance);
+        return getAValidatorRecordTestDataFromParameters(
+                pubKey,
+                withdrawal_credentials,
+                randaoCommitment,
+                randaoLayers,
+                status,
+                slot,
+                exitCount,
+                lastPocChangeSlot,
+                secondLastPocChangeSlot,
+                balance);
     }
 
     public Validators getValidatorsList(ValidatorRecord... validatorRecords) {

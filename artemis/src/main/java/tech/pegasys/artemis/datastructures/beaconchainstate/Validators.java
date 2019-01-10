@@ -18,7 +18,7 @@ import java.util.List;
 
 public class Validators extends ArrayList<ValidatorRecord> {
 
-    public Validators(){
+    public Validators() {
         super();
     }
 

@@ -13,10 +13,8 @@
 
 package tech.pegasys.artemis.util.bytes;
 
-/**
- * Base interface for a value whose content is stored with exactly 32 bytes.
- */
+/** Base interface for a value whose content is stored with exactly 32 bytes. */
 public interface Bytes32Backed extends BytesBacked {
-  @Override
-  Bytes32 bytes();
+    @Override
+    Bytes32 bytes();
 }

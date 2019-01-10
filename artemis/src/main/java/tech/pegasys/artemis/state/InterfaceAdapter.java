@@ -13,8 +13,6 @@
 
 package tech.pegasys.artemis.state;
 
-import java.lang.reflect.Type;
-
 import com.google.gson.Gson;
 import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonDeserializer;
@@ -23,32 +21,32 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
-
+import java.lang.reflect.Type;
 
 public class InterfaceAdapter<T> implements JsonSerializer<T>, JsonDeserializer<T> {
 
-  @Override
-  public JsonElement serialize(T object, Type typeOfT, JsonSerializationContext context) {
-    JsonObject objectWrapper = new JsonObject();
-    objectWrapper.add("data", new Gson().toJsonTree(object));
-    objectWrapper.addProperty("type", object.getClass().getName());
-    return objectWrapper;
-  }
+    @Override
+    public JsonElement serialize(T object, Type typeOfT, JsonSerializationContext context) {
+        JsonObject objectWrapper = new JsonObject();
+        objectWrapper.add("data", new Gson().toJsonTree(object));
+        objectWrapper.addProperty("type", object.getClass().getName());
+        return objectWrapper;
+    }
 
-  @Override
-  public T deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) throws JsonParseException {
-    JsonObject objectWrapper = (JsonObject) json;
-    JsonElement data = objectWrapper.get("data");
-    JsonElement type = objectWrapper.get("type");
-    if (data == null || type == null) {
-      throw new JsonParseException("No member found in interface wrapper");
+    @Override
+    public T deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context)
+            throws JsonParseException {
+        JsonObject objectWrapper = (JsonObject) json;
+        JsonElement data = objectWrapper.get("data");
+        JsonElement type = objectWrapper.get("type");
+        if (data == null || type == null) {
+            throw new JsonParseException("No member found in interface wrapper");
+        }
+        try {
+            Type realType = Class.forName(type.getAsString());
+            return context.deserialize(data, realType);
+        } catch (ClassNotFoundException e) {
+            throw new JsonParseException(e);
+        }
     }
-    try {
-      Type realType = Class.forName(type.getAsString());
-      return context.deserialize(data, realType);
-    }
-    catch (ClassNotFoundException e) {
-      throw new JsonParseException(e);
-    }
-  }
 }

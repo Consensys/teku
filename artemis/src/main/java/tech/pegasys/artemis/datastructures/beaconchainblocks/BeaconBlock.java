@@ -18,117 +18,86 @@ import tech.pegasys.artemis.util.uint.UInt384;
 
 public class BeaconBlock {
 
-  // Header
-  private long slot;
-  private Hash[] ancestor_hashes;
-  private Hash state_root;
-  private Hash randao_reveal;
-  private Hash candidate_pow_receipt_root;
-  private UInt384[] signature;
+    // Header
+    private long slot;
+    private Hash[] ancestor_hashes;
+    private Hash state_root;
+    private Hash randao_reveal;
+    private Hash candidate_pow_receipt_root;
+    private UInt384[] signature;
 
-  // Body
-  private BeaconBlockBody body;
+    // Body
+    private BeaconBlockBody body;
 
+    public BeaconBlock() {}
 
-  public BeaconBlock() {
+    /** @return the body */
+    public BeaconBlockBody getBody() {
+        return body;
+    }
 
-  }
+    /** @param body the body to set */
+    public void setBody(BeaconBlockBody body) {
+        this.body = body;
+    }
 
-  /**
-   * @return the body
-   */
-  public BeaconBlockBody getBody() {
-    return body;
-  }
+    /** @return the signature */
+    public UInt384[] getSignature() {
+        return signature;
+    }
 
-  /**
-   * @param body the body to set
-   */
-  public void setBody(BeaconBlockBody body) {
-    this.body = body;
-  }
+    /** @param signature the signature to set */
+    public void setSignature(UInt384[] signature) {
+        this.signature = signature;
+    }
 
-  /**
-   * @return the signature
-   */
-  public UInt384[] getSignature() {
-    return signature;
-  }
+    /** @return the candidate_pow_receipt_root */
+    public Hash getCandidate_pow_receipt_root() {
+        return candidate_pow_receipt_root;
+    }
 
-  /**
-   * @param signature the signature to set
-   */
-  public void setSignature(UInt384[] signature) {
-    this.signature = signature;
-  }
+    /** @param candidate_pow_receipt_root the candidate_pow_receipt_root to set */
+    public void setCandidate_pow_receipt_root(Hash candidate_pow_receipt_root) {
+        this.candidate_pow_receipt_root = candidate_pow_receipt_root;
+    }
 
-  /**
-   * @return the candidate_pow_receipt_root
-   */
-  public Hash getCandidate_pow_receipt_root() {
-    return candidate_pow_receipt_root;
-  }
+    /** @return the randao_reveal */
+    public Hash getRandao_reveal() {
+        return randao_reveal;
+    }
 
-  /**
-   * @param candidate_pow_receipt_root the candidate_pow_receipt_root to set
-   */
-  public void setCandidate_pow_receipt_root(Hash candidate_pow_receipt_root) {
-    this.candidate_pow_receipt_root = candidate_pow_receipt_root;
-  }
+    /** @param randao_reveal the randao_reveal to set */
+    public void setRandao_reveal(Hash randao_reveal) {
+        this.randao_reveal = randao_reveal;
+    }
 
-  /**
-   * @return the randao_reveal
-   */
-  public Hash getRandao_reveal() {
-    return randao_reveal;
-  }
+    /** @return the state_root */
+    public Hash getState_root() {
+        return state_root;
+    }
 
-  /**
-   * @param randao_reveal the randao_reveal to set
-   */
-  public void setRandao_reveal(Hash randao_reveal) {
-    this.randao_reveal = randao_reveal;
-  }
+    /** @param state_root the state_root to set */
+    public void setState_root(Hash state_root) {
+        this.state_root = state_root;
+    }
 
-  /**
-   * @return the state_root
-   */
-  public Hash getState_root() {
-    return state_root;
-  }
+    /** @return the ancestor_hashes */
+    public Hash[] getAncestor_hashes() {
+        return ancestor_hashes;
+    }
 
-  /**
-   * @param state_root the state_root to set
-   */
-  public void setState_root(Hash state_root) {
-    this.state_root = state_root;
-  }
+    /** @param ancestor_hashes the ancestor_hashes to set */
+    public void setAncestor_hashes(Hash[] ancestor_hashes) {
+        this.ancestor_hashes = ancestor_hashes;
+    }
 
-  /**
-   * @return the ancestor_hashes
-   */
-  public Hash[] getAncestor_hashes() {
-    return ancestor_hashes;
-  }
+    /** @return the slot */
+    public long getSlot() {
+        return slot;
+    }
 
-  /**
-   * @param ancestor_hashes the ancestor_hashes to set
-   */
-  public void setAncestor_hashes(Hash[] ancestor_hashes) {
-    this.ancestor_hashes = ancestor_hashes;
-  }
-
-  /**
-   * @return the slot
-   */
-  public long getSlot() {
-    return slot;
-  }
-
-  /**
-   * @param slot the slot to set
-   */
-  public void setSlot(long slot) {
-    this.slot = slot;
-  }
+    /** @param slot the slot to set */
+    public void setSlot(long slot) {
+        this.slot = slot;
+    }
 }

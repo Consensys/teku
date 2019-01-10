@@ -18,7 +18,7 @@ package tech.pegasys.artemis.ethereum.rlp;
  * by a lenient RLP decoder.
  */
 public class MalformedRLPInputException extends RLPException {
-  MalformedRLPInputException(String message) {
-    super(message);
-  }
+    MalformedRLPInputException(String message) {
+        super(message);
+    }
 }

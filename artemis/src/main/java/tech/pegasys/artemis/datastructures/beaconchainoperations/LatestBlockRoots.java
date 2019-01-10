@@ -13,12 +13,11 @@
 
 package tech.pegasys.artemis.datastructures.beaconchainoperations;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
 import tech.pegasys.artemis.Constants;
 import tech.pegasys.artemis.ethereum.core.Hash;
 import tech.pegasys.artemis.util.uint.UInt64;
-
-import java.util.LinkedHashMap;
-import java.util.Map;
 
 public class LatestBlockRoots extends LinkedHashMap<UInt64, Hash> {
 

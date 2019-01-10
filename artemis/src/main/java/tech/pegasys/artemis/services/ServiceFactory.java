@@ -18,7 +18,7 @@ public class ServiceFactory<T> {
     private final Class<T> type;
 
     public ServiceFactory(Class<T> type) {
-      this.type = type;
+        this.type = type;
     }
 
     public T getInstance() {

@@ -18,7 +18,7 @@ import java.security.NoSuchAlgorithmException;
 
 public class DoNotInvokeMessageDigestDirectlyNegativeCases {
 
-  public void callsMessageDigestGetInstance() throws NoSuchAlgorithmException {
-    MessageDigest dig = null;
-  }
+    public void callsMessageDigestGetInstance() throws NoSuchAlgorithmException {
+        MessageDigest dig = null;
+    }
 }

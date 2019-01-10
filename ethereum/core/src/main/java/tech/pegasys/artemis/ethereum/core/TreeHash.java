@@ -17,8 +17,7 @@ import tech.pegasys.artemis.util.bytes.Bytes32;
 
 public class TreeHash {
 
-  public static Bytes32 hash_tree_root(Object value) {
-    return Bytes32.FALSE;
-  }
-
+    public static Bytes32 hash_tree_root(Object value) {
+        return Bytes32.FALSE;
+    }
 }

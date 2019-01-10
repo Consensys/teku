@@ -36,35 +36,35 @@ import com.sun.source.tree.Tree;
 
 @AutoService(BugChecker.class) // the service descriptor
 @BugPattern(
-  name = "DoNotReturnNullOptionals",
-  summary = "Do not return null optionals.",
-  category = JDK,
-  severity = SUGGESTION
+    name = "DoNotReturnNullOptionals",
+    summary = "Do not return null optionals.",
+    category = JDK,
+    severity = SUGGESTION
 )
 public class DoNotReturnNullOptionals extends BugChecker implements MethodTreeMatcher {
 
-  private static class ReturnNullMatcher implements Matcher<Tree> {
+    private static class ReturnNullMatcher implements Matcher<Tree> {
+
+        @Override
+        public boolean matches(final Tree tree, final VisitorState state) {
+            if ((tree instanceof ReturnTree) && (((ReturnTree) tree).getExpression() != null)) {
+                return ((ReturnTree) tree).getExpression().getKind() == NULL_LITERAL;
+            }
+            return false;
+        }
+    }
+
+    private static final Matcher<Tree> RETURN_NULL = new ReturnNullMatcher();
+    private static final Matcher<Tree> CONTAINS_RETURN_NULL = contains(RETURN_NULL);
 
     @Override
-    public boolean matches(final Tree tree, final VisitorState state) {
-      if ((tree instanceof ReturnTree) && (((ReturnTree) tree).getExpression() != null)) {
-        return ((ReturnTree) tree).getExpression().getKind() == NULL_LITERAL;
-      }
-      return false;
+    public Description matchMethod(final MethodTree tree, final VisitorState state) {
+        if ((tree.getReturnType() == null)
+                || !tree.getReturnType().toString().startsWith("Optional<")
+                || (tree.getBody() == null)
+                || !CONTAINS_RETURN_NULL.matches(tree.getBody(), state)) {
+            return Description.NO_MATCH;
+        }
+        return describeMatch(tree);
     }
-  }
-
-  private static final Matcher<Tree> RETURN_NULL = new ReturnNullMatcher();
-  private static final Matcher<Tree> CONTAINS_RETURN_NULL = contains(RETURN_NULL);
-
-  @Override
-  public Description matchMethod(final MethodTree tree, final VisitorState state) {
-    if ((tree.getReturnType() == null)
-        || !tree.getReturnType().toString().startsWith("Optional<")
-        || (tree.getBody() == null)
-        || !CONTAINS_RETURN_NULL.matches(tree.getBody(), state)) {
-      return Description.NO_MATCH;
-    }
-    return describeMatch(tree);
-  }
 }

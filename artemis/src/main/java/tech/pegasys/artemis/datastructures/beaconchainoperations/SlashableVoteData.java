@@ -13,54 +13,56 @@
 
 package tech.pegasys.artemis.datastructures.beaconchainoperations;
 
-import tech.pegasys.artemis.util.uint.UInt384;
-
 import java.util.ArrayList;
+import tech.pegasys.artemis.util.uint.UInt384;
 
 public class SlashableVoteData {
 
-  private ArrayList<Integer> custody_bit_0_indices;
-  private ArrayList<Integer> custody_bit_1_indices;
-  private AttestationData data;
-  private UInt384[] aggregate_signature;
+    private ArrayList<Integer> custody_bit_0_indices;
+    private ArrayList<Integer> custody_bit_1_indices;
+    private AttestationData data;
+    private UInt384[] aggregate_signature;
 
-  public SlashableVoteData(ArrayList<Integer> custody_bit_0_indices, ArrayList<Integer> custody_bit_1_indices,
-                           AttestationData data, UInt384[] aggregate_signature) {
-    this.custody_bit_0_indices = custody_bit_0_indices;
-    this.custody_bit_1_indices = custody_bit_1_indices;
-    this.data = data;
-    this.aggregate_signature = aggregate_signature;
-  }
+    public SlashableVoteData(
+            ArrayList<Integer> custody_bit_0_indices,
+            ArrayList<Integer> custody_bit_1_indices,
+            AttestationData data,
+            UInt384[] aggregate_signature) {
+        this.custody_bit_0_indices = custody_bit_0_indices;
+        this.custody_bit_1_indices = custody_bit_1_indices;
+        this.data = data;
+        this.aggregate_signature = aggregate_signature;
+    }
 
-  public ArrayList<Integer> getCustody_bit_0_indices() {
-    return custody_bit_0_indices;
-  }
+    public ArrayList<Integer> getCustody_bit_0_indices() {
+        return custody_bit_0_indices;
+    }
 
-  public void setCustody_bit_0_indices(ArrayList<Integer> custody_bit_0_indices) {
-    this.custody_bit_0_indices = custody_bit_0_indices;
-  }
+    public void setCustody_bit_0_indices(ArrayList<Integer> custody_bit_0_indices) {
+        this.custody_bit_0_indices = custody_bit_0_indices;
+    }
 
-  public AttestationData getData() {
-    return data;
-  }
+    public AttestationData getData() {
+        return data;
+    }
 
-  public void setData(AttestationData data) {
-    this.data = data;
-  }
+    public void setData(AttestationData data) {
+        this.data = data;
+    }
 
-  public UInt384[] getAggregate_signature() {
-    return aggregate_signature;
-  }
+    public UInt384[] getAggregate_signature() {
+        return aggregate_signature;
+    }
 
-  public void setAggregate_signature(UInt384[] aggregate_signature) {
-    this.aggregate_signature = aggregate_signature;
-  }
+    public void setAggregate_signature(UInt384[] aggregate_signature) {
+        this.aggregate_signature = aggregate_signature;
+    }
 
-  public ArrayList<Integer> getCustody_bit_1_indices() {
-    return custody_bit_1_indices;
-  }
+    public ArrayList<Integer> getCustody_bit_1_indices() {
+        return custody_bit_1_indices;
+    }
 
-  public void setCustody_bit_1_indices(ArrayList<Integer> custody_bit_1_indices) {
-    this.custody_bit_1_indices = custody_bit_1_indices;
-  }
+    public void setCustody_bit_1_indices(ArrayList<Integer> custody_bit_1_indices) {
+        this.custody_bit_1_indices = custody_bit_1_indices;
+    }
 }

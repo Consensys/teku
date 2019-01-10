@@ -19,48 +19,51 @@ import tech.pegasys.artemis.util.uint.UInt64;
 
 public class PendingAttestationRecord {
 
-  private AttestationData data;
-  private Bytes32 participation_bitfield;
-  private Bytes32 custody_bitfield;
-  private UInt64 slot_included;
+    private AttestationData data;
+    private Bytes32 participation_bitfield;
+    private Bytes32 custody_bitfield;
+    private UInt64 slot_included;
 
-  public PendingAttestationRecord(AttestationData data, Bytes32 participation_bitfield, Bytes32 custody_bitfield,
-                                  UInt64 slot_included) {
-    this.data = data;
-    this.participation_bitfield = participation_bitfield;
-    this.custody_bitfield = custody_bitfield;
-    this.slot_included = slot_included;
-  }
+    public PendingAttestationRecord(
+            AttestationData data,
+            Bytes32 participation_bitfield,
+            Bytes32 custody_bitfield,
+            UInt64 slot_included) {
+        this.data = data;
+        this.participation_bitfield = participation_bitfield;
+        this.custody_bitfield = custody_bitfield;
+        this.slot_included = slot_included;
+    }
 
-  public AttestationData getData() {
-    return data;
-  }
+    public AttestationData getData() {
+        return data;
+    }
 
-  public void setData(AttestationData data) {
-    this.data = data;
-  }
+    public void setData(AttestationData data) {
+        this.data = data;
+    }
 
-  public Bytes32 getParticipation_bitfield() {
-    return participation_bitfield;
-  }
+    public Bytes32 getParticipation_bitfield() {
+        return participation_bitfield;
+    }
 
-  public void setParticipation_bitfield(Bytes32 participation_bitfield) {
-    this.participation_bitfield = participation_bitfield;
-  }
+    public void setParticipation_bitfield(Bytes32 participation_bitfield) {
+        this.participation_bitfield = participation_bitfield;
+    }
 
-  public Bytes32 getCustody_bitfield() {
-    return custody_bitfield;
-  }
+    public Bytes32 getCustody_bitfield() {
+        return custody_bitfield;
+    }
 
-  public void setCustody_bitfield(Bytes32 custody_bitfield) {
-    this.custody_bitfield = custody_bitfield;
-  }
+    public void setCustody_bitfield(Bytes32 custody_bitfield) {
+        this.custody_bitfield = custody_bitfield;
+    }
 
-  public UInt64 getSlot_included() {
-    return slot_included;
-  }
+    public UInt64 getSlot_included() {
+        return slot_included;
+    }
 
-  public void setSlot_included(UInt64 slot_included) {
-    this.slot_included = slot_included;
-  }
+    public void setSlot_included(UInt64 slot_included) {
+        this.slot_included = slot_included;
+    }
 }

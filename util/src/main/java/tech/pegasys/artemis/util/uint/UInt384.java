@@ -15,23 +15,21 @@ package tech.pegasys.artemis.util.uint;
 
 public class UInt384 {
 
-  private final long value;
+    private final long value;
 
-  private UInt384(long value) {
-    this.value = value;
-  }
+    private UInt384(long value) {
+        this.value = value;
+    }
 
-  public UInt384(UInt384 uint) {
-    this.value = uint.getValue();
-  }
+    public UInt384(UInt384 uint) {
+        this.value = uint.getValue();
+    }
 
-  public long getValue() {
-    return value;
-  }
+    public long getValue() {
+        return value;
+    }
 
-  public static UInt384 valueOf(long unsignedValue) {
-    return new UInt384(unsignedValue);
-  }
-
-
+    public static UInt384 valueOf(long unsignedValue) {
+        return new UInt384(unsignedValue);
+    }
 }

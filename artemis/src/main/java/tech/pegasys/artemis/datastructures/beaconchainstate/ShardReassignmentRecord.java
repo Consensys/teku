@@ -17,37 +17,37 @@ import tech.pegasys.artemis.util.uint.UInt64;
 
 public class ShardReassignmentRecord {
 
-  private int validator_index;
-  private UInt64 shard;
-  private UInt64 slot;
+    private int validator_index;
+    private UInt64 shard;
+    private UInt64 slot;
 
-  public ShardReassignmentRecord(int validator_index, UInt64 shard, UInt64 slot) {
-    this.validator_index = validator_index;
-    this.shard = shard;
-    this.slot = slot;
-  }
+    public ShardReassignmentRecord(int validator_index, UInt64 shard, UInt64 slot) {
+        this.validator_index = validator_index;
+        this.shard = shard;
+        this.slot = slot;
+    }
 
-  public int getValidator_index() {
-    return validator_index;
-  }
+    public int getValidator_index() {
+        return validator_index;
+    }
 
-  public void setValidator_index(int validator_index) {
-    this.validator_index = validator_index;
-  }
+    public void setValidator_index(int validator_index) {
+        this.validator_index = validator_index;
+    }
 
-  public UInt64 getShard() {
-    return shard;
-  }
+    public UInt64 getShard() {
+        return shard;
+    }
 
-  public void setShard(UInt64 shard) {
-    this.shard = shard;
-  }
+    public void setShard(UInt64 shard) {
+        this.shard = shard;
+    }
 
-  public UInt64 getSlot() {
-    return slot;
-  }
+    public UInt64 getSlot() {
+        return slot;
+    }
 
-  public void setSlot(UInt64 slot) {
-    this.slot = slot;
-  }
+    public void setSlot(UInt64 slot) {
+        this.slot = slot;
+    }
 }

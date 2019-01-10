@@ -18,27 +18,27 @@ import tech.pegasys.artemis.util.uint.UInt64;
 
 public class CrosslinkRecord {
 
-  private Hash shard_block_hash;
-  private UInt64 slot;
+    private Hash shard_block_hash;
+    private UInt64 slot;
 
-  public CrosslinkRecord(Hash shard_block_hash, UInt64 slot) {
-    this.shard_block_hash = shard_block_hash;
-    this.slot = slot;
-  }
+    public CrosslinkRecord(Hash shard_block_hash, UInt64 slot) {
+        this.shard_block_hash = shard_block_hash;
+        this.slot = slot;
+    }
 
-  public Hash getShard_block_hash() {
-    return shard_block_hash;
-  }
+    public Hash getShard_block_hash() {
+        return shard_block_hash;
+    }
 
-  public void setShard_block_hash(Hash shard_block_hash) {
-    this.shard_block_hash = shard_block_hash;
-  }
+    public void setShard_block_hash(Hash shard_block_hash) {
+        this.shard_block_hash = shard_block_hash;
+    }
 
-  public UInt64 getSlot() {
-    return slot;
-  }
+    public UInt64 getSlot() {
+        return slot;
+    }
 
-  public void setSlot(UInt64 slot) {
-    this.slot = slot;
-  }
+    public void setSlot(UInt64 slot) {
+        this.slot = slot;
+    }
 }

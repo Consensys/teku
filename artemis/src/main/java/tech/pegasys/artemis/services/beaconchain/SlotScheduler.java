@@ -13,18 +13,18 @@
 
 package tech.pegasys.artemis.services.beaconchain;
 
-import java.util.Date;
-
 import com.google.common.eventbus.EventBus;
-
+import java.util.Date;
 
 public class SlotScheduler implements Runnable {
     private EventBus eventBus;
-    SlotScheduler(EventBus eventBus){
+
+    SlotScheduler(EventBus eventBus) {
         this.eventBus = eventBus;
     }
+
     @Override
-    public void run(){
+    public void run() {
         this.eventBus.post(new Date());
     }
 }

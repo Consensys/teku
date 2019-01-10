@@ -13,63 +13,60 @@
 
 package tech.pegasys.artemis.ethereum.rlp;
 
+import java.math.BigInteger;
 import tech.pegasys.artemis.util.bytes.Bytes32;
 import tech.pegasys.artemis.util.bytes.BytesValue;
 import tech.pegasys.artemis.util.bytes.BytesValues;
 
-import java.math.BigInteger;
-
-/**
- * An {@link RLPInput} that reads RLP encoded data from a {@link BytesValue}.
- */
+/** An {@link RLPInput} that reads RLP encoded data from a {@link BytesValue}. */
 public class BytesValueRLPInput extends AbstractRLPInput {
 
-  // The RLP encoded data.
-  private final BytesValue value;
+    // The RLP encoded data.
+    private final BytesValue value;
 
-  public BytesValueRLPInput(BytesValue value, boolean lenient) {
-    super(lenient);
-    this.value = value;
-    init(value.size(), true);
-  }
+    public BytesValueRLPInput(BytesValue value, boolean lenient) {
+        super(lenient);
+        this.value = value;
+        init(value.size(), true);
+    }
 
-  @Override
-  protected byte inputByte(long offset) {
-    return value.get(Math.toIntExact(offset));
-  }
+    @Override
+    protected byte inputByte(long offset) {
+        return value.get(Math.toIntExact(offset));
+    }
 
-  @Override
-  protected BytesValue inputSlice(long offset, int length) {
-    return value.slice(Math.toIntExact(offset), length);
-  }
+    @Override
+    protected BytesValue inputSlice(long offset, int length) {
+        return value.slice(Math.toIntExact(offset), length);
+    }
 
-  @Override
-  protected Bytes32 inputSlice32(long offset) {
-    return Bytes32.wrap(value, Math.toIntExact(offset));
-  }
+    @Override
+    protected Bytes32 inputSlice32(long offset) {
+        return Bytes32.wrap(value, Math.toIntExact(offset));
+    }
 
-  @Override
-  protected String inputHex(long offset, int length) {
-    return value.slice(Math.toIntExact(offset), length).toString().substring(2);
-  }
+    @Override
+    protected String inputHex(long offset, int length) {
+        return value.slice(Math.toIntExact(offset), length).toString().substring(2);
+    }
 
-  @Override
-  protected BigInteger getUnsignedBigInteger(long offset, int length) {
-    return BytesValues.asUnsignedBigInteger(value.slice(Math.toIntExact(offset), length));
-  }
+    @Override
+    protected BigInteger getUnsignedBigInteger(long offset, int length) {
+        return BytesValues.asUnsignedBigInteger(value.slice(Math.toIntExact(offset), length));
+    }
 
-  @Override
-  protected int getInt(long offset) {
-    return value.getInt(Math.toIntExact(offset));
-  }
+    @Override
+    protected int getInt(long offset) {
+        return value.getInt(Math.toIntExact(offset));
+    }
 
-  @Override
-  protected long getLong(long offset) {
-    return value.getLong(Math.toIntExact(offset));
-  }
+    @Override
+    protected long getLong(long offset) {
+        return value.getLong(Math.toIntExact(offset));
+    }
 
-  @Override
-  public BytesValue raw() {
-    return value;
-  }
+    @Override
+    public BytesValue raw() {
+        return value;
+    }
 }

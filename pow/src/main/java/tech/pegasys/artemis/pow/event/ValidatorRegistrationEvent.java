@@ -15,11 +15,12 @@ package tech.pegasys.artemis.pow.event;
 
 import tech.pegasys.artemis.pow.contract.ValidatorRegistrationContract;
 
-public class ValidatorRegistrationEvent{
+public class ValidatorRegistrationEvent {
 
     private ValidatorRegistrationContract.Eth1DepositEventResponse response = null;
 
-    public ValidatorRegistrationEvent(ValidatorRegistrationContract.Eth1DepositEventResponse response){
+    public ValidatorRegistrationEvent(
+            ValidatorRegistrationContract.Eth1DepositEventResponse response) {
         this.response = response;
     }
 

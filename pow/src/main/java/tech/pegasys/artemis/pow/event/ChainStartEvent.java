@@ -19,7 +19,7 @@ public class ChainStartEvent {
 
     private ValidatorRegistrationContract.ChainStartEventResponse response = null;
 
-    public ChainStartEvent(ValidatorRegistrationContract.ChainStartEventResponse response){
+    public ChainStartEvent(ValidatorRegistrationContract.ChainStartEventResponse response) {
         this.response = response;
     }
 

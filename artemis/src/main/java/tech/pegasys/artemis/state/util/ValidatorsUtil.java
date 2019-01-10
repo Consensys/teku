@@ -16,18 +16,17 @@ package tech.pegasys.artemis.state.util;
 import static tech.pegasys.artemis.Constants.ACTIVE;
 import static tech.pegasys.artemis.Constants.ACTIVE_PENDING_EXIT;
 
+import java.util.ArrayList;
+import java.util.Iterator;
 import tech.pegasys.artemis.datastructures.beaconchainstate.ValidatorRecord;
 import tech.pegasys.artemis.datastructures.beaconchainstate.Validators;
 import tech.pegasys.artemis.util.uint.UInt64;
-
-import java.util.ArrayList;
-import java.util.Iterator;
 
 public class ValidatorsUtil {
 
     public static Validators get_active_validators(Validators validators) {
         Validators active_validators = new Validators();
-        if(validators != null) {
+        if (validators != null) {
             Iterator<ValidatorRecord> itr = validators.iterator();
             while (itr.hasNext()) {
                 ValidatorRecord record = itr.next();
@@ -39,14 +38,16 @@ public class ValidatorsUtil {
 
     /**
      * Gets indices of active validators from ``validators``.
+     *
      * @param validators
      * @return
      */
-    public static ArrayList<Integer> get_active_validator_indices(ArrayList<ValidatorRecord> validators) {
+    public static ArrayList<Integer> get_active_validator_indices(
+            ArrayList<ValidatorRecord> validators) {
         ArrayList<Integer> active_validator_indices = new ArrayList<>();
         for (int i = 0; i < validators.size(); i++) {
-            if (validators.get(i).getStatus().equals(UInt64.valueOf(ACTIVE)) ||
-                validators.get(i).getStatus().equals(UInt64.valueOf(ACTIVE_PENDING_EXIT))) {
+            if (validators.get(i).getStatus().equals(UInt64.valueOf(ACTIVE))
+                    || validators.get(i).getStatus().equals(UInt64.valueOf(ACTIVE_PENDING_EXIT))) {
                 active_validator_indices.add(i);
             }
         }
@@ -54,7 +55,8 @@ public class ValidatorsUtil {
     }
 
     public static double get_effective_balance(Validators validators) {
-        return validators != null ?
-            validators.stream().mapToDouble(ValidatorRecord::get_effective_balance).sum() : 0.0d;
+        return validators != null
+                ? validators.stream().mapToDouble(ValidatorRecord::get_effective_balance).sum()
+                : 0.0d;
     }
 }

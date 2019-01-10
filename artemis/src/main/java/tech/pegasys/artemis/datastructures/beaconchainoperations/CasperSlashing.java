@@ -15,27 +15,27 @@ package tech.pegasys.artemis.datastructures.beaconchainoperations;
 
 public class CasperSlashing {
 
-  private SlashableVoteData votes_1;
-  private SlashableVoteData votes_2;
+    private SlashableVoteData votes_1;
+    private SlashableVoteData votes_2;
 
-  public CasperSlashing(SlashableVoteData votes_1, SlashableVoteData votes_2) {
-    this.votes_1 = votes_1;
-    this.votes_2 = votes_2;
-  }
+    public CasperSlashing(SlashableVoteData votes_1, SlashableVoteData votes_2) {
+        this.votes_1 = votes_1;
+        this.votes_2 = votes_2;
+    }
 
-  public SlashableVoteData getVotes_1() {
-    return votes_1;
-  }
+    public SlashableVoteData getVotes_1() {
+        return votes_1;
+    }
 
-  public void setVotes_1(SlashableVoteData votes_1) {
-    this.votes_1 = votes_1;
-  }
+    public void setVotes_1(SlashableVoteData votes_1) {
+        this.votes_1 = votes_1;
+    }
 
-  public SlashableVoteData getVotes_2() {
-    return votes_2;
-  }
+    public SlashableVoteData getVotes_2() {
+        return votes_2;
+    }
 
-  public void setVotes_2(SlashableVoteData votes_2) {
-    this.votes_2 = votes_2;
-  }
+    public void setVotes_2(SlashableVoteData votes_2) {
+        this.votes_2 = votes_2;
+    }
 }

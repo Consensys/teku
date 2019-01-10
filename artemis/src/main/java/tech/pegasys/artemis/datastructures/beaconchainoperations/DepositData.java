@@ -17,37 +17,37 @@ import tech.pegasys.artemis.util.uint.UInt64;
 
 public class DepositData {
 
-  private DepositInput deposit_input;
-  private UInt64 value;
-  private UInt64 timestamp;
+    private DepositInput deposit_input;
+    private UInt64 value;
+    private UInt64 timestamp;
 
-  public DepositData(DepositInput deposit_input, UInt64 value, UInt64 timestamp) {
-    this.deposit_input = deposit_input;
-    this.value = value;
-    this.timestamp = timestamp;
-  }
+    public DepositData(DepositInput deposit_input, UInt64 value, UInt64 timestamp) {
+        this.deposit_input = deposit_input;
+        this.value = value;
+        this.timestamp = timestamp;
+    }
 
-  public DepositInput getDeposit_input() {
-    return deposit_input;
-  }
+    public DepositInput getDeposit_input() {
+        return deposit_input;
+    }
 
-  public void setDeposit_input(DepositInput deposit_input) {
-    this.deposit_input = deposit_input;
-  }
+    public void setDeposit_input(DepositInput deposit_input) {
+        this.deposit_input = deposit_input;
+    }
 
-  public UInt64 getValue() {
-    return value;
-  }
+    public UInt64 getValue() {
+        return value;
+    }
 
-  public void setValue(UInt64 value) {
-    this.value = value;
-  }
+    public void setValue(UInt64 value) {
+        this.value = value;
+    }
 
-  public UInt64 getTimestamp() {
-    return timestamp;
-  }
+    public UInt64 getTimestamp() {
+        return timestamp;
+    }
 
-  public void setTimestamp(UInt64 timestamp) {
-    this.timestamp = timestamp;
-  }
+    public void setTimestamp(UInt64 timestamp) {
+        this.timestamp = timestamp;
+    }
 }
