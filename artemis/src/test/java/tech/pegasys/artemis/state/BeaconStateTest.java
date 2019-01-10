@@ -49,14 +49,14 @@ public class BeaconStateTest {
   private BeaconState newState() {
     // Initialize state
     BeaconState state = new BeaconState(0, 0, new ForkData(UInt64.MIN_VALUE,
-        UInt64.MIN_VALUE, UInt64.MIN_VALUE), new Validators(), new ArrayList<Double>(),
-       0, 0, hash(Bytes32.TRUE), new ArrayList<Hash>(), new ArrayList<Hash>(),
+        UInt64.MIN_VALUE, UInt64.MIN_VALUE), new Validators(), new ArrayList<>(),
+       0, 0, hash(Bytes32.TRUE), new ArrayList<>(), new ArrayList<>(),
         new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), 0, 0, 0,
         0,  new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>(),
         new ArrayList<>(), hash(Bytes32.TRUE), new ArrayList<>());
 
     // Add validator records
-    ArrayList<ValidatorRecord> validators = new ArrayList<ValidatorRecord>();
+    ArrayList<ValidatorRecord> validators = new ArrayList<>();
     validators.add(new ValidatorRecord(0, Hash.ZERO, Hash.ZERO, UInt64.MIN_VALUE,
         UInt64.valueOf(PENDING_ACTIVATION), UInt64.valueOf(state.getSlot()), UInt64.MIN_VALUE, UInt64.MIN_VALUE, UInt64.MIN_VALUE));
     validators.add(new ValidatorRecord(100, Hash.ZERO, Hash.ZERO, UInt64.MIN_VALUE,
@@ -87,7 +87,7 @@ public class BeaconStateTest {
 
     ArrayList<ShardCommittee> new_shard_committees = new ArrayList<>(Collections.nCopies(2,
         new ShardCommittee(UInt64.MIN_VALUE, new ArrayList<>(Collections.nCopies(1, 1)), UInt64.valueOf(1))));
-    state.setShard_committees_at_slots(new ArrayList<>(Collections.nCopies(65,
+    state.setShard_committees_at_slots(new ArrayList<>(Collections.nCopies(128,
         new_shard_committees)));
 
     return state;
@@ -138,59 +138,46 @@ public class BeaconStateTest {
     assertThat(state.getValidator_balances().get(2)).isEqualTo(oldBalance + 100.0);
   }
 
-  @Test(expected = AssertionError.class)
-  public void getAttestationParticipantsSizesNotEqual() {
-    AttestationData attestationData = new AttestationData(0, UInt64.MIN_VALUE, Hash.ZERO, Hash.ZERO, Hash.ZERO,
-        Hash.ZERO, UInt64.MIN_VALUE, Hash.ZERO);
-    byte[] participation_bitfield = Bytes32.ZERO.extractArray();
-
-    BeaconState.get_attestation_participants(newState(), attestationData, participation_bitfield);
-  }
-
-  @Test
-  public void getAttestationParticipantsReturnsEmptyArrayList() {
-    AttestationData attestationData = new AttestationData(0, UInt64.MIN_VALUE, Hash.ZERO, Hash.ZERO, Hash.ZERO,
-        Hash.ZERO, UInt64.MIN_VALUE, Hash.ZERO);
-    byte[] participation_bitfield = new byte[]{1, 1, 1, 1};
-
-    ArrayList<ShardCommittee> actual = BeaconState.get_attestation_participants(newState(), attestationData,
-        participation_bitfield);
-    ArrayList<ShardCommittee> expected = new ArrayList<>();
-
-    assertThat(actual).isEqualTo(expected);
-  }
+//  @Test(expected = AssertionError.class)
+//  public void getAttestationParticipantsSizesNotEqual() {
+//    AttestationData attestationData = new AttestationData(0, UInt64.MIN_VALUE, Hash.ZERO, Hash.ZERO, Hash.ZERO,
+//        Hash.ZERO, UInt64.MIN_VALUE, Hash.ZERO);
+//    byte[] participation_bitfield = Bytes32.ZERO.extractArray();
+//
+//    BeaconState.get_attestation_participants(newState(), attestationData, participation_bitfield);
+//  }
+//
+//  @Test
+//  public void getAttestationParticipantsReturnsEmptyArrayList() {
+//    AttestationData attestationData = new AttestationData(0, UInt64.MIN_VALUE, Hash.ZERO, Hash.ZERO, Hash.ZERO,
+//        Hash.ZERO, UInt64.MIN_VALUE, Hash.ZERO);
+//    byte[] participation_bitfield = new byte[]{1, 1, 1, 1};
+//
+//    ArrayList<ShardCommittee> actual = BeaconState.get_attestation_participants(newState(), attestationData,
+//        participation_bitfield);
+//    ArrayList<ShardCommittee> expected = new ArrayList<>();
+//
+//    assertThat(actual).isEqualTo(expected);
+//  }
 
   @Test
   public void getAttestationParticipantsSuccessful() {
     BeaconState state = newState();
-    ArrayList<ShardCommittee> shard_committee = new ArrayList<>();
-    shard_committee.add(new ShardCommittee(UInt64.MAX_VALUE,
+    ArrayList<ShardCommittee> shard_committee = state.getShard_committees_at_slots().get(64);
+    shard_committee.add(new ShardCommittee(UInt64.MIN_VALUE,
         new ArrayList<>(Collections.nCopies(1, 0)), UInt64.MIN_VALUE));
-    state.setShard_committees_at_slot(0, shard_committee);
+    state.setShard_committees_at_slot(64, shard_committee);
 
-    AttestationData attestationData = new AttestationData(0, UInt64.MAX_VALUE, Hash.ZERO, Hash.ZERO, Hash.ZERO,
+    AttestationData attestationData = new AttestationData(0, UInt64.MIN_VALUE, Hash.ZERO, Hash.ZERO, Hash.ZERO,
         Hash.ZERO, UInt64.MIN_VALUE, Hash.ZERO);
-    byte[] participation_bitfield = new byte[]{126, 1, 1, 1};
+    byte[] participation_bitfield = new byte[]{127, 1, 1};
 
-    ArrayList<ShardCommittee> actual = BeaconState.get_attestation_participants(newState(), attestationData,
+    ArrayList<ShardCommittee> actual = BeaconState.get_attestation_participants(state, attestationData,
         participation_bitfield);
 
-    assertThat(actual.get(0).getShard()).isEqualTo(UInt64.MAX_VALUE);
-    assertThat(actual.get(0).getCommittee()).isEqualTo(new ArrayList<>(Collections.nCopies(1, 0)));
-    assertThat(actual.get(0).getTotal_validator_count()).isEqualTo(UInt64.MIN_VALUE);
-  }
-
-  @Test
-  public void getShuffling() {
-    Hash seed = Hash.ZERO;
-    int crosslinking_start_shard = 0;
-    int slot = 0;
-
-    ArrayList<ArrayList<ShardCommittee>> actual = BeaconState.get_shuffling(seed, newState().getValidator_registry(),
-        crosslinking_start_shard, slot);
-    ArrayList<ArrayList<ShardCommittee>> expected = new ArrayList<>();
-
-    assertThat(actual).isEqualTo(expected);
+    assertThat(actual.get(1).getShard()).isEqualTo(UInt64.MIN_VALUE);
+    assertThat(actual.get(1).getCommittee()).isEqualTo(new ArrayList<>(Collections.nCopies(1, 0)));
+    assertThat(actual.get(1).getTotal_validator_count()).isEqualTo(UInt64.MIN_VALUE);
   }
 
   @Test

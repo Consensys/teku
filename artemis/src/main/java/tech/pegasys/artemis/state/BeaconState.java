@@ -53,8 +53,6 @@ import tech.pegasys.artemis.util.uint.UInt384;
 import tech.pegasys.artemis.util.uint.UInt64;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.gson.Gson;
@@ -441,7 +439,11 @@ public class BeaconState {
     assert earliest_slot_in_array <= slot;
     assert slot < (earliest_slot_in_array + EPOCH_LENGTH * 2);
 
-    return state.shard_committees_at_slots.get(slot - earliest_slot_in_array);
+    int index = slot - earliest_slot_in_array;
+    if (index < 0) {
+      index = state.shard_committees_at_slots.size() + index;
+    }
+    return state.shard_committees_at_slots.get(index);
   }
 
   /**
@@ -481,6 +483,7 @@ public class BeaconState {
    * @return
    */
   private static int ceil_div8(int div) {
+    checkArgument(div > 0, "Expected positive div but got %s", div);
     return (int) Math.ceil(8.0 / div);
   }
 
@@ -896,6 +899,10 @@ public class BeaconState {
 
   public void setShard_committees_at_slot(int i, ArrayList<ShardCommittee> shard_committee) {
     this.shard_committees_at_slots.set(i, shard_committee);
+  }
+
+  public ArrayList<ArrayList<ShardCommittee>> getShard_committees_at_slots() {
+    return shard_committees_at_slots;
   }
 
   public ArrayList<ArrayList<Integer>> getPersistent_committees() {
