@@ -28,6 +28,7 @@ import tech.pegasys.artemis.datastructures.beaconchainstate.ShardCommittee;
 import tech.pegasys.artemis.datastructures.beaconchainstate.ValidatorRecord;
 import tech.pegasys.artemis.ethereum.core.Hash;
 import tech.pegasys.artemis.state.BeaconState;
+import tech.pegasys.artemis.state.util.SlotProcessorUtil;
 import tech.pegasys.artemis.util.bytes.Bytes32;
 import tech.pegasys.artemis.util.uint.UInt64;
 
@@ -85,7 +86,7 @@ public class StateTransitionTest {
     // before and after update method is called
     long proposerRandaoLayerBefore = proposerRecord.getRandao_layers().getValue();
     long randomRandaoLayerBefore = randomRecord.getRandao_layers().getValue();
-    stateTransition.updateProposerRandaoLayer(state);
+    SlotProcessorUtil.updateProposerRandaoLayer(state);
     long proposerRandaoLayerAfter = proposerRecord.getRandao_layers().getValue();
     long randomRandaoLayerAfter = randomRecord.getRandao_layers().getValue();
 
@@ -108,7 +109,42 @@ public class StateTransitionTest {
     Hash currSlotRandaoMix = latestRandaoMixes.get(12);
     assertThat(prevSlotRandaoMix).isNotEqualTo(currSlotRandaoMix);
 
-    stateTransition.updateLatestRandaoMixes(state);
+    SlotProcessorUtil.updateLatestRandaoMixes(state);
+    prevSlotRandaoMix = latestRandaoMixes.get(11);
+    currSlotRandaoMix = latestRandaoMixes.get(12);
+    assertThat(prevSlotRandaoMix).isEqualTo(currSlotRandaoMix);
+  }
+
+  @Test
+  public void testUpdateRecentBlockHashes(){
+    BeaconState state = newState();
+        ArrayList<ArrayList<ShardCommittee>> shard_committees_at_slots =  new ArrayList<ArrayList<ShardCommittee>>();
+        for(int i=0; i<1000; i++){
+            ArrayList<ShardCommittee> shard_commitees = new ArrayList<ShardCommittee>();
+            for(int j=0; j<64; j++){
+                int total_validator_count = (int)Math.round(Math.random()*64);
+                int commitee[] = new int[total_validator_count];
+                for(int k=0; k<total_validator_count; k++){
+                    commitee[k] = (int)Math.round(Math.random()*64);
+                }
+                shard_commitees.add(new ShardCommittee(UInt64.valueOf(Math.round(Math.random()*5000)), commitee, UInt64.valueOf((long) total_validator_count)));
+            }
+            shard_committees_at_slots.add(shard_commitees);
+        }
+    state.setShard_committees_at_slots(shard_committees_at_slots);
+
+
+    state.setSlot(12);
+    ArrayList<Hash> latestRandaoMixes = state.getLatest_randao_mixes();
+    latestRandaoMixes.set(11, hash(Bytes32.TRUE));
+    latestRandaoMixes.set(12, hash(Bytes32.FALSE));
+    StateTransition stateTransition = new StateTransition();
+
+    Hash prevSlotRandaoMix = latestRandaoMixes.get(11);
+    Hash currSlotRandaoMix = latestRandaoMixes.get(12);
+    assertThat(prevSlotRandaoMix).isNotEqualTo(currSlotRandaoMix);
+
+    SlotProcessorUtil.updateLatestRandaoMixes(state);
     prevSlotRandaoMix = latestRandaoMixes.get(11);
     currSlotRandaoMix = latestRandaoMixes.get(12);
     assertThat(prevSlotRandaoMix).isEqualTo(currSlotRandaoMix);

@@ -20,16 +20,16 @@ import static tech.pegasys.artemis.Constants.LATEST_RANDAO_MIXES_LENGTH;
 import tech.pegasys.artemis.Constants;
 import tech.pegasys.artemis.datastructures.beaconchainblocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.beaconchainstate.ValidatorRecord;
+import tech.pegasys.artemis.datastructures.beaconchainstate.Validators;
 import tech.pegasys.artemis.ethereum.core.Hash;
-import tech.pegasys.artemis.ethereum.core.TreeHash;
 import tech.pegasys.artemis.state.BeaconState;
 import tech.pegasys.artemis.state.util.EpochProcessorUtil;
+import tech.pegasys.artemis.state.util.SlotProcessorUtil;
 
 import java.util.ArrayList;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import tech.pegasys.artemis.state.util.SlotProcessorUtil;
 
 public class StateTransition{
 
@@ -39,7 +39,7 @@ public class StateTransition{
 
     }
 
-    public void initiate(BeaconState state, BeaconBlock block) throws Exception {
+    public void initiate(BeaconState state, BeaconBlock block) throws StateTransitionException {
 
 
         // per-slot processing
@@ -59,15 +59,15 @@ public class StateTransition{
 
     }
 
-    protected void slotProcessor(BeaconState state, BeaconBlock block) throws Exception {
+    protected void slotProcessor(BeaconState state, BeaconBlock block) throws StateTransitionException {
         // deep copy beacon state
         BeaconState newState = BeaconState.deepCopy(state);
         state.incrementSlot();
         logger.info("Processing new slot: " + state.getSlot());
 
-        updateProposerRandaoLayer(newState);
-        updateLatestRandaoMixes(newState);
-        updateRecentBlockHashes(newState, block);
+        SlotProcessorUtil.updateProposerRandaoLayer(newState);
+        SlotProcessorUtil.updateLatestRandaoMixes(newState);
+        SlotProcessorUtil.updateRecentBlockHashes(newState, block);
     }
 
     protected void blockProcessor(BeaconState state, BeaconBlock block){
@@ -89,41 +89,7 @@ public class StateTransition{
         EpochProcessorUtil.finalBookKeeping(state);
     }
 
-    // slot processing
-    protected void updateProposerRandaoLayer(BeaconState state){
-      int currSlot = toIntExact(state.getSlot());
-      int proposerIndex = state.get_beacon_proposer_index(state, currSlot);
 
-      ArrayList<ValidatorRecord> validatorRegistry = state.getValidator_registry();
-      ValidatorRecord proposerRecord = validatorRegistry.get(proposerIndex);
-      proposerRecord.setRandao_layers(proposerRecord.getRandao_layers().increment());
-    }
-
-    protected void updateLatestRandaoMixes(BeaconState state){
-      int currSlot = toIntExact(state.getSlot());
-      ArrayList<Hash> latestRandaoMixes = state.getLatest_randao_mixes();
-      Hash prevSlotRandaoMix = latestRandaoMixes.get((currSlot - 1) % LATEST_RANDAO_MIXES_LENGTH);
-      latestRandaoMixes.set(currSlot % LATEST_RANDAO_MIXES_LENGTH, prevSlotRandaoMix);
-    }
-
-    protected void updateRecentBlockHashes(BeaconState state, BeaconBlock block) throws Exception {
-        Hash previous_state_root = block.getState_root();
-        if(previous_state_root!=null) state.setPrevious_block_root(previous_state_root);
-        else{
-            throw new StateTransitionException("StateTransitionException: BeaconState cannot be updated due to previous_state_root returning a null");
-        }
-        if(state.getSlot() % LATEST_BLOCK_ROOTS_LENGTH == 0){
-            ArrayList<Hash> batched_block_roots = state.getBatched_block_roots();
-            ArrayList<Hash> latest_block_roots = state.getLatest_block_roots();
-            if(batched_block_roots != null && latest_block_roots != null){
-                Hash merkle_root = SlotProcessorUtil.merkle_root(latest_block_roots);
-                batched_block_roots.add(merkle_root);
-            }
-            else{
-                throw new StateTransitionException("StateTransitionException: BeaconState cannot be updated due to batched_block_roots and latest_block_roots returning a null");
-            }
-        }
-    }
 
     // block processing
     protected void verifySignature(BeaconState state, BeaconBlock block){

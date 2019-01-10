@@ -73,7 +73,7 @@ public class BeaconState {
   // Randomness and committees
   private ArrayList<Hash> latest_randao_mixes;
   private ArrayList<Hash> latest_vdf_outputs;
-  private ArrayList<ArrayList<ShardCommittee>> shard_committees_at_slots;
+  private ArrayList<ArrayList<ShardCommittee>> shard_committees_at_slots = new ArrayList<ArrayList<ShardCommittee>>();
   private ArrayList<ArrayList<Integer>> persistent_committees;
   private ArrayList<ShardReassignmentRecord> persistent_committee_reassignments;
 
@@ -448,8 +448,7 @@ public class BeaconState {
    * @return
    */
   private ArrayList<ShardCommittee> get_shard_committees_at_slot(BeaconState state, int slot) {
-    int earliest_slot_in_array = toIntExact(state.getSlot()) - (toIntExact(state.getSlot()) % EPOCH_LENGTH)
-        - EPOCH_LENGTH;
+    int earliest_slot_in_array = toIntExact(state.getSlot()) - (toIntExact(state.getSlot()) % EPOCH_LENGTH) - EPOCH_LENGTH;
     assert earliest_slot_in_array <= slot;
     assert slot < (earliest_slot_in_array + EPOCH_LENGTH * 2);
 
