@@ -115,7 +115,7 @@ public class ValidatorsUtilTest {
         validatorSizeExpected = 2;
 
         //when
-        Validators activeValidatorsActual = ValidatorsUtil.get_active_validator_indices(validatorRecordTest);
+        Validators activeValidatorsActual = ValidatorsUtil.get_active_validators(validatorRecordTest);
 
         //then
         assertNotNull(activeValidatorsActual);
@@ -133,7 +133,7 @@ public class ValidatorsUtilTest {
         validatorSizeExpected = 1;
 
         //when
-        Validators activeValidatorsActual = ValidatorsUtil.get_active_validator_indices(validatorRecordTest);
+        Validators activeValidatorsActual = ValidatorsUtil.get_active_validators(validatorRecordTest);
 
         //then
         assertNotNull(activeValidatorsActual);
@@ -151,7 +151,7 @@ public class ValidatorsUtilTest {
         validatorSizeExpected = 0;
 
         //when
-        Validators activeValidatorsActual = ValidatorsUtil.get_active_validator_indices(validatorRecordTest);
+        Validators activeValidatorsActual = ValidatorsUtil.get_active_validators(validatorRecordTest);
 
         //then
         assertNotNull(activeValidatorsActual);
@@ -166,7 +166,7 @@ public class ValidatorsUtilTest {
         validatorSizeExpected = 0;
 
         //when
-        Validators activeValidatorsActual = ValidatorsUtil.get_active_validator_indices(null);
+        Validators activeValidatorsActual = ValidatorsUtil.get_active_validators(null);
 
         //then
         assertNotNull(activeValidatorsActual);

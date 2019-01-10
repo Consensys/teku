@@ -15,35 +15,29 @@ package tech.pegasys.artemis.datastructures.beaconchainoperations;
 
 import tech.pegasys.artemis.util.uint.UInt384;
 
+import java.util.ArrayList;
+
 public class SlashableVoteData {
 
-  private int[] aggregate_signature_poc_0_indices;
-  private int[] aggregate_signature_poc_1_indices;
+  private ArrayList<Integer> custody_bit_0_indices;
+  private ArrayList<Integer> custody_bit_1_indices;
   private AttestationData data;
   private UInt384[] aggregate_signature;
 
-  public SlashableVoteData(int[] aggregate_signature_poc_0_indices, int[] aggregate_signature_poc_1_indices,
+  public SlashableVoteData(ArrayList<Integer> custody_bit_0_indices, ArrayList<Integer> custody_bit_1_indices,
                            AttestationData data, UInt384[] aggregate_signature) {
-    this.aggregate_signature_poc_0_indices = aggregate_signature_poc_0_indices;
-    this.aggregate_signature_poc_1_indices = aggregate_signature_poc_1_indices;
+    this.custody_bit_0_indices = custody_bit_0_indices;
+    this.custody_bit_1_indices = custody_bit_1_indices;
     this.data = data;
     this.aggregate_signature = aggregate_signature;
   }
 
-  public int[] getAggregate_signature_poc_0_indices() {
-    return aggregate_signature_poc_0_indices;
+  public ArrayList<Integer> getCustody_bit_0_indices() {
+    return custody_bit_0_indices;
   }
 
-  public void setAggregate_signature_poc_0_indices(int[] aggregate_signature_poc_0_indices) {
-    this.aggregate_signature_poc_0_indices = aggregate_signature_poc_0_indices;
-  }
-
-  public int[] getAggregate_signature_poc_1_indices() {
-    return aggregate_signature_poc_1_indices;
-  }
-
-  public void setAggregate_signature_poc_1_indices(int[] aggregate_signature_poc_1_indices) {
-    this.aggregate_signature_poc_1_indices = aggregate_signature_poc_1_indices;
+  public void setCustody_bit_0_indices(ArrayList<Integer> custody_bit_0_indices) {
+    this.custody_bit_0_indices = custody_bit_0_indices;
   }
 
   public AttestationData getData() {
@@ -60,5 +54,13 @@ public class SlashableVoteData {
 
   public void setAggregate_signature(UInt384[] aggregate_signature) {
     this.aggregate_signature = aggregate_signature;
+  }
+
+  public ArrayList<Integer> getCustody_bit_1_indices() {
+    return custody_bit_1_indices;
+  }
+
+  public void setCustody_bit_1_indices(ArrayList<Integer> custody_bit_1_indices) {
+    this.custody_bit_1_indices = custody_bit_1_indices;
   }
 }
