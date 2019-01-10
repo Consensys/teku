@@ -139,27 +139,27 @@ public class BeaconStateTest {
     assertThat(state.getValidator_balances().get(2)).isEqualTo(oldBalance + 100.0);
   }
 
-//  @Test(expected = AssertionError.class)
-//  public void getAttestationParticipantsSizesNotEqual() {
-//    AttestationData attestationData = new AttestationData(0, UInt64.MIN_VALUE, Hash.ZERO, Hash.ZERO, Hash.ZERO,
-//        Hash.ZERO, UInt64.MIN_VALUE, Hash.ZERO);
-//    byte[] participation_bitfield = Bytes32.ZERO.extractArray();
-//
-//    BeaconState.get_attestation_participants(newState(), attestationData, participation_bitfield);
-//  }
-//
-//  @Test
-//  public void getAttestationParticipantsReturnsEmptyArrayList() {
-//    AttestationData attestationData = new AttestationData(0, UInt64.MIN_VALUE, Hash.ZERO, Hash.ZERO, Hash.ZERO,
-//        Hash.ZERO, UInt64.MIN_VALUE, Hash.ZERO);
-//    byte[] participation_bitfield = new byte[]{1, 1, 1, 1};
-//
-//    ArrayList<ShardCommittee> actual = BeaconState.get_attestation_participants(newState(), attestationData,
-//        participation_bitfield);
-//    ArrayList<ShardCommittee> expected = new ArrayList<>();
-//
-//    assertThat(actual).isEqualTo(expected);
-//  }
+  @Test(expected = AssertionError.class)
+  public void getAttestationParticipantsSizesNotEqual() {
+    AttestationData attestationData = new AttestationData(0, UInt64.MIN_VALUE, Hash.ZERO, Hash.ZERO, Hash.ZERO,
+        Hash.ZERO, UInt64.MIN_VALUE, Hash.ZERO);
+    byte[] participation_bitfield = Bytes32.ZERO.extractArray();
+
+    BeaconState.get_attestation_participants(newState(), attestationData, participation_bitfield);
+  }
+
+  @Test
+  public void getAttestationParticipantsReturnsEmptyArrayList() {
+    AttestationData attestationData = new AttestationData(0, UInt64.MIN_VALUE, Hash.ZERO, Hash.ZERO, Hash.ZERO,
+        Hash.ZERO, UInt64.MIN_VALUE, Hash.ZERO);
+    byte[] participation_bitfield = new byte[]{1, 1, 1, 1};
+
+    ArrayList<ShardCommittee> actual = BeaconState.get_attestation_participants(newState(), attestationData,
+        participation_bitfield);
+    ArrayList<ShardCommittee> expected = new ArrayList<>();
+
+    assertThat(actual).isEqualTo(expected);
+  }
 
   @Test
   public void getAttestationParticipantsSuccessful() {
