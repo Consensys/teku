@@ -15,13 +15,15 @@ package tech.pegasys.artemis.datastructures.beaconchainstate;
 
 import tech.pegasys.artemis.util.uint.UInt64;
 
+import java.util.ArrayList;
+
 public class ShardCommittee {
 
   private UInt64 shard;
-  private int[] committee;
+  private ArrayList<Integer> committee;
   private UInt64 total_validator_count;
 
-  public ShardCommittee(UInt64 shard, int[] committee, UInt64 total_validator_count) {
+  public ShardCommittee(UInt64 shard, ArrayList<Integer> committee, UInt64 total_validator_count) {
     this.shard = shard;
     this.committee = committee;
     this.total_validator_count = total_validator_count;
@@ -31,11 +33,11 @@ public class ShardCommittee {
     return shard;
   }
 
-  public int[] getCommittee() {
+  public ArrayList<Integer> getCommittee() {
     return committee;
   }
 
-  public void setCommittee(int[] committee) {
+  public void setCommittee(ArrayList<Integer> committee) {
     this.committee = committee;
   }
 
