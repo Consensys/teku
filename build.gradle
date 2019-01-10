@@ -74,6 +74,7 @@ allprojects {
       trimTrailingWhitespace()
       endWithNewline()
       licenseHeaderFile "${rootDir}/gradle/spotless.java.license"
+      googleJavaFormat().aosp()
     }
   }
 
