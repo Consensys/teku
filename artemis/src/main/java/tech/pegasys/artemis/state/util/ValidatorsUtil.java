@@ -13,34 +13,48 @@
 
 package tech.pegasys.artemis.state.util;
 
+import static tech.pegasys.artemis.Constants.ACTIVE;
+import static tech.pegasys.artemis.Constants.ACTIVE_PENDING_EXIT;
+
 import tech.pegasys.artemis.datastructures.beaconchainstate.ValidatorRecord;
 import tech.pegasys.artemis.datastructures.beaconchainstate.Validators;
+import tech.pegasys.artemis.util.uint.UInt64;
 
+import java.util.ArrayList;
 import java.util.Iterator;
 
 public class ValidatorsUtil {
 
-    public static Validators get_active_validator_indices(Validators validators) {
-        Validators active_validator_indices = new Validators();
+    public static Validators get_active_validators(Validators validators) {
+        Validators active_validators = new Validators();
         if(validators != null) {
             Iterator<ValidatorRecord> itr = validators.iterator();
             while (itr.hasNext()) {
                 ValidatorRecord record = itr.next();
-                if (record.is_active_validator()) active_validator_indices.add(record);
+                if (record.is_active_validator()) active_validators.add(record);
+            }
+        }
+        return active_validators;
+    }
+
+    /**
+     * Gets indices of active validators from ``validators``.
+     * @param validators
+     * @return
+     */
+    public static ArrayList<Integer> get_active_validator_indices(ArrayList<ValidatorRecord> validators) {
+        ArrayList<Integer> active_validator_indices = new ArrayList<>();
+        for (int i = 0; i < validators.size(); i++) {
+            if (validators.get(i).getStatus().equals(UInt64.valueOf(ACTIVE)) ||
+                validators.get(i).getStatus().equals(UInt64.valueOf(ACTIVE_PENDING_EXIT))) {
+                active_validator_indices.add(i);
             }
         }
         return active_validator_indices;
     }
 
-    public static double get_effective_balance(Validators validators){
-        double effective_balance = 0.0d;
-        if(validators != null) {
-            Iterator<ValidatorRecord> itr = validators.iterator();
-            while (itr.hasNext()) {
-                ValidatorRecord record = itr.next();
-                effective_balance += record.get_effective_balance();
-            }
-        }
-        return effective_balance;
+    public static double get_effective_balance(Validators validators) {
+        return validators != null ?
+            validators.stream().mapToDouble(ValidatorRecord::get_effective_balance).sum() : 0.0d;
     }
 }

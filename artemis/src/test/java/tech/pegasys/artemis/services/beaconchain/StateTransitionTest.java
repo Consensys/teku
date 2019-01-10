@@ -65,9 +65,14 @@ public class StateTransitionTest {
     // initialize state and state transition objects
     BeaconState state = newState();
     state.setSlot(4);
-
+    ArrayList<Integer> commitee = new ArrayList<Integer>();
+    commitee.add(Integer.valueOf(2));
+    commitee.add(Integer.valueOf(4));
+    commitee.add(Integer.valueOf(1));
+    commitee.add(Integer.valueOf(0));
+    commitee.add(Integer.valueOf(3));
     ArrayList<ShardCommittee> newShardCommittees = new ArrayList<ShardCommittee>(Collections.nCopies(2,
-        new ShardCommittee(UInt64.MIN_VALUE, new int[]{2,4,1,0,3}, UInt64.valueOf(1))));
+        new ShardCommittee(UInt64.MIN_VALUE, commitee, UInt64.valueOf(1))));
     state.setShard_committees_at_slots(new ArrayList<ArrayList<ShardCommittee>>(Collections.nCopies(2*EPOCH_LENGTH,
         newShardCommittees)));
 
@@ -76,7 +81,7 @@ public class StateTransitionTest {
     // get proposer's and a random validator's validator record
     // proposer_index is 3 here since we've set slot to 4
     int currSlot = toIntExact(state.getSlot());
-    int proposerIndex = state.get_beacon_proposer_index(state, currSlot);
+    int proposerIndex = BeaconState.get_beacon_proposer_index(state, currSlot);
     assertThat(proposerIndex).isEqualTo(3);
 
     ArrayList<ValidatorRecord> validatorRegistry = state.getValidator_registry();
@@ -124,9 +129,10 @@ public class StateTransitionTest {
             ArrayList<ShardCommittee> shard_commitees = new ArrayList<ShardCommittee>();
             for(int j=0; j<64; j++){
                 int total_validator_count = (int)Math.round(Math.random()*64);
-                int commitee[] = new int[total_validator_count];
+
+                ArrayList<Integer> commitee = new ArrayList<Integer>();
                 for(int k=0; k<total_validator_count; k++){
-                    commitee[k] = (int)Math.round(Math.random()*64);
+                  commitee.add(Integer.valueOf((int)Math.round(Math.random()*64)));
                 }
                 shard_commitees.add(new ShardCommittee(UInt64.valueOf(Math.round(Math.random()*5000)), commitee, UInt64.valueOf((long) total_validator_count)));
             }

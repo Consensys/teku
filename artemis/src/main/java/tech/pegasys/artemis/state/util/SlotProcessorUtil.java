@@ -38,7 +38,7 @@ public class SlotProcessorUtil {
 
     public static void updateProposerRandaoLayer(BeaconState state){
         int currSlot = toIntExact(state.getSlot());
-        int proposerIndex = state.get_beacon_proposer_index(state, currSlot);
+        int proposerIndex = BeaconState.get_beacon_proposer_index(state, currSlot);
 
         Validators validators = state.getValidator_registry();
         ValidatorRecord proposerRecord = validators.get(proposerIndex);

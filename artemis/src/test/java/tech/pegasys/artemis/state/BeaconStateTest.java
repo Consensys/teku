@@ -26,6 +26,7 @@ import static tech.pegasys.artemis.state.BeaconState.BeaconStateHelperFunctions.
 import static tech.pegasys.artemis.state.BeaconState.BeaconStateHelperFunctions.shuffle;
 import static tech.pegasys.artemis.state.BeaconState.BeaconStateHelperFunctions.split;
 
+import tech.pegasys.artemis.datastructures.beaconchainoperations.AttestationData;
 import tech.pegasys.artemis.datastructures.beaconchainoperations.LatestBlockRoots;
 import tech.pegasys.artemis.datastructures.beaconchainstate.ForkData;
 import tech.pegasys.artemis.datastructures.beaconchainstate.ShardCommittee;
@@ -49,14 +50,14 @@ public class BeaconStateTest {
   private BeaconState newState() {
     // Initialize state
     BeaconState state = new BeaconState(0, 0, new ForkData(UInt64.MIN_VALUE,
-        UInt64.MIN_VALUE, UInt64.MIN_VALUE), new Validators(), new ArrayList<Double>(),
-       0, 0, hash(Bytes32.TRUE), new ArrayList<Hash>(), new ArrayList<Hash>(),
+        UInt64.MIN_VALUE, UInt64.MIN_VALUE), new Validators(), new ArrayList<>(),
+       0, 0, hash(Bytes32.TRUE), new ArrayList<>(), new ArrayList<>(),
         new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), 0, 0, 0,
         0,  new ArrayList<>(), new LatestBlockRoots(), new ArrayList<>(), new ArrayList<>(),
         new ArrayList<>(), hash(Bytes32.TRUE), new ArrayList<>());
 
     // Add validator records
-    ArrayList<ValidatorRecord> validators = new ArrayList<ValidatorRecord>();
+    ArrayList<ValidatorRecord> validators = new ArrayList<>();
     validators.add(new ValidatorRecord(0, Hash.ZERO, Hash.ZERO, UInt64.MIN_VALUE,
         UInt64.valueOf(PENDING_ACTIVATION), UInt64.valueOf(state.getSlot()), UInt64.MIN_VALUE, UInt64.MIN_VALUE, UInt64.MIN_VALUE));
     validators.add(new ValidatorRecord(100, Hash.ZERO, Hash.ZERO, UInt64.MIN_VALUE,
@@ -70,10 +71,10 @@ public class BeaconStateTest {
     state.setValidator_registry(validators);
 
     // Add validator balances
-    state.setValidator_balances(new ArrayList<Double>(Collections.nCopies(5,100.0)));
+    state.setValidator_balances(new ArrayList<>(Collections.nCopies(5,100.0)));
 
     // Create committee
-    ArrayList<Integer> new_committee = new ArrayList<Integer>();
+    ArrayList<Integer> new_committee = new ArrayList<>();
     new_committee.add(0);
     new_committee.add(50);
     new_committee.add(100);
@@ -84,9 +85,10 @@ public class BeaconStateTest {
     state.getLatest_penalized_exit_balances().add(10.0);
 
     // Create shard_committees
-    ArrayList<ShardCommittee> new_shard_committees = new ArrayList<ShardCommittee>(Collections.nCopies(2,
-        new ShardCommittee(UInt64.MIN_VALUE, new int[]{0}, UInt64.valueOf(1))));
-    state.setShard_committees_at_slots(new ArrayList<ArrayList<ShardCommittee>>(Collections.nCopies(65,
+
+    ArrayList<ShardCommittee> new_shard_committees = new ArrayList<>(Collections.nCopies(2,
+        new ShardCommittee(UInt64.MIN_VALUE, new ArrayList<>(Collections.nCopies(1, 1)), UInt64.valueOf(1))));
+    state.setShard_committees_at_slots(new ArrayList<>(Collections.nCopies(128,
         new_shard_committees)));
 
     return state;
@@ -100,7 +102,7 @@ public class BeaconStateTest {
         UInt64.valueOf(PENDING_ACTIVATION), UInt64.valueOf(state.getSlot()), UInt64.valueOf(0), UInt64.valueOf(0));
     ValidatorRecord validator3 = new ValidatorRecord(200, Hash.ZERO, Hash.ZERO, UInt64.valueOf(0), UInt64.valueOf(0),
         UInt64.valueOf(PENDING_ACTIVATION), UInt64.valueOf(state.getSlot()), UInt64.valueOf(0), UInt64.valueOf(0));
-    ArrayList<ValidatorRecord> validators = new ArrayList<ValidatorRecord>();
+    ArrayList<ValidatorRecord> validators = new ArrayList<>();
     validators.add(validator1);
     validators.add(validator2);
     validators.add(validator3);
@@ -135,6 +137,48 @@ public class BeaconStateTest {
         .isEqualTo(2);
 
     assertThat(state.getValidator_balances().get(2)).isEqualTo(oldBalance + 100.0);
+  }
+
+//  @Test(expected = AssertionError.class)
+//  public void getAttestationParticipantsSizesNotEqual() {
+//    AttestationData attestationData = new AttestationData(0, UInt64.MIN_VALUE, Hash.ZERO, Hash.ZERO, Hash.ZERO,
+//        Hash.ZERO, UInt64.MIN_VALUE, Hash.ZERO);
+//    byte[] participation_bitfield = Bytes32.ZERO.extractArray();
+//
+//    BeaconState.get_attestation_participants(newState(), attestationData, participation_bitfield);
+//  }
+//
+//  @Test
+//  public void getAttestationParticipantsReturnsEmptyArrayList() {
+//    AttestationData attestationData = new AttestationData(0, UInt64.MIN_VALUE, Hash.ZERO, Hash.ZERO, Hash.ZERO,
+//        Hash.ZERO, UInt64.MIN_VALUE, Hash.ZERO);
+//    byte[] participation_bitfield = new byte[]{1, 1, 1, 1};
+//
+//    ArrayList<ShardCommittee> actual = BeaconState.get_attestation_participants(newState(), attestationData,
+//        participation_bitfield);
+//    ArrayList<ShardCommittee> expected = new ArrayList<>();
+//
+//    assertThat(actual).isEqualTo(expected);
+//  }
+
+  @Test
+  public void getAttestationParticipantsSuccessful() {
+    BeaconState state = newState();
+    ArrayList<ShardCommittee> shard_committee = state.getShard_committees_at_slots().get(64);
+    shard_committee.add(new ShardCommittee(UInt64.MIN_VALUE,
+        new ArrayList<>(Collections.nCopies(1, 0)), UInt64.MIN_VALUE));
+    state.setShard_committees_at_slot(64, shard_committee);
+
+    AttestationData attestationData = new AttestationData(0, UInt64.MIN_VALUE, Hash.ZERO, Hash.ZERO, Hash.ZERO,
+        Hash.ZERO, UInt64.MIN_VALUE, Hash.ZERO);
+    byte[] participation_bitfield = new byte[]{127, 1, 1};
+
+    ArrayList<ShardCommittee> actual = BeaconState.get_attestation_participants(state, attestationData,
+        participation_bitfield);
+
+    assertThat(actual.get(1).getShard()).isEqualTo(UInt64.MIN_VALUE);
+    assertThat(actual.get(1).getCommittee()).isEqualTo(new ArrayList<>(Collections.nCopies(1, 0)));
+    assertThat(actual.get(1).getTotal_validator_count()).isEqualTo(UInt64.MIN_VALUE);
   }
 
   @Test
