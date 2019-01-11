@@ -32,6 +32,12 @@ public class Attestation {
     this.aggregate_signature = aggregate_signature;
   }
 
+  /*********************
+   *                   *
+   * GETTERS & SETTERS *
+   *                   *
+   *********************/
+
   public Bytes32 getParticipation_bitfield() {
     return participation_bitfield;
   }

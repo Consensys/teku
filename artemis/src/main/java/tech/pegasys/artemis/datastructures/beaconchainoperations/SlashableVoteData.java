@@ -32,6 +32,12 @@ public class SlashableVoteData {
     this.aggregate_signature = aggregate_signature;
   }
 
+  /*********************
+   *                   *
+   * GETTERS & SETTERS *
+   *                   *
+   *********************/
+
   public ArrayList<Integer> getCustody_bit_0_indices() {
     return custody_bit_0_indices;
   }
