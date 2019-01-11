@@ -13,7 +13,6 @@
 
 package tech.pegasys.artemis.ethereum.rlp;
 
-
 import java.util.function.IntUnaryOperator;
 import java.util.function.LongUnaryOperator;
 

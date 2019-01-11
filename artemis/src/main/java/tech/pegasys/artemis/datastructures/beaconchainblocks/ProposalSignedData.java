@@ -28,12 +28,7 @@ public class ProposalSignedData {
     this.block_hash = block_hash;
   }
 
-  /*********************
-   *                   *
-   * GETTERS & SETTERS *
-   *                   *
-   *********************/
-
+  /** ******************* * GETTERS & SETTERS * * ******************* */
   public UInt64 getSlot() {
     return slot;
   }

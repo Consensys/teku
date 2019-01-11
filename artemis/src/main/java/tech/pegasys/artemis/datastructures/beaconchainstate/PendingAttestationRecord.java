@@ -24,20 +24,18 @@ public class PendingAttestationRecord {
   private Bytes32 custody_bitfield;
   private UInt64 slot_included;
 
-  public PendingAttestationRecord(AttestationData data, Bytes32 participation_bitfield, Bytes32 custody_bitfield,
-                                  UInt64 slot_included) {
+  public PendingAttestationRecord(
+      AttestationData data,
+      Bytes32 participation_bitfield,
+      Bytes32 custody_bitfield,
+      UInt64 slot_included) {
     this.data = data;
     this.participation_bitfield = participation_bitfield;
     this.custody_bitfield = custody_bitfield;
     this.slot_included = slot_included;
   }
 
-  /*********************
-   *                   *
-   * GETTERS & SETTERS *
-   *                   *
-   *********************/
-
+  /** ******************* * GETTERS & SETTERS * * ******************* */
   public AttestationData getData() {
     return data;
   }

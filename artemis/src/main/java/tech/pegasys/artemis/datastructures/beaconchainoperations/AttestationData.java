@@ -27,9 +27,15 @@ public class AttestationData {
   private UInt64 justified_slot;
   private Hash justified_block_hash;
 
-  public AttestationData(long slot, UInt64 shard, Hash beacon_block_hash, Hash epoch_boundary_hash,
-                         Hash shard_block_hash, Hash last_crosslink_hash, UInt64 justified_slot,
-                         Hash justified_block_hash) {
+  public AttestationData(
+      long slot,
+      UInt64 shard,
+      Hash beacon_block_hash,
+      Hash epoch_boundary_hash,
+      Hash shard_block_hash,
+      Hash last_crosslink_hash,
+      UInt64 justified_slot,
+      Hash justified_block_hash) {
     this.slot = slot;
     this.shard = shard;
     this.beacon_block_hash = beacon_block_hash;
@@ -40,12 +46,7 @@ public class AttestationData {
     this.justified_block_hash = justified_block_hash;
   }
 
-  /*********************
-   *                   *
-   * GETTERS & SETTERS *
-   *                   *
-   *********************/
-
+  /** ******************* * GETTERS & SETTERS * * ******************* */
   public long getSlot() {
     return slot;
   }

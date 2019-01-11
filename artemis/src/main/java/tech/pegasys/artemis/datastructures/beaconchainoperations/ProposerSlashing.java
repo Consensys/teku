@@ -24,8 +24,12 @@ public class ProposerSlashing {
   private ProposalSignedData proposal_data_2;
   private UInt384[] proposal_signature_2;
 
-  public ProposerSlashing(int proposer_index, ProposalSignedData proposal_data_1, UInt384[] proposal_signature_1,
-                          ProposalSignedData proposal_data_2, UInt384[] proposal_signature_2) {
+  public ProposerSlashing(
+      int proposer_index,
+      ProposalSignedData proposal_data_1,
+      UInt384[] proposal_signature_1,
+      ProposalSignedData proposal_data_2,
+      UInt384[] proposal_signature_2) {
     this.proposer_index = proposer_index;
     this.proposal_data_1 = proposal_data_1;
     this.proposal_signature_1 = proposal_signature_1;
@@ -33,12 +37,7 @@ public class ProposerSlashing {
     this.proposal_signature_2 = proposal_signature_2;
   }
 
-  /*********************
-   *                   *
-   * GETTERS & SETTERS *
-   *                   *
-   *********************/
-
+  /** ******************* * GETTERS & SETTERS * * ******************* */
   public int getProposer_index() {
     return proposer_index;
   }

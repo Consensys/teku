@@ -34,12 +34,7 @@ public class CandidatePoWReceiptRootRecord {
     this.candidate_pow_receipt_root = candidate_pow_receipt_root;
   }
 
-  /*********************
-   *                   *
-   * GETTERS & SETTERS *
-   *                   *
-   *********************/
-
+  /** ******************* * GETTERS & SETTERS * * ******************* */
   public UInt64 getVotes() {
     return votes;
   }

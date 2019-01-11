@@ -15,17 +15,15 @@ package tech.pegasys.artemis.util.uint;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
+import java.util.function.Supplier;
 import tech.pegasys.artemis.util.bytes.AbstractBytes32Backed;
 import tech.pegasys.artemis.util.bytes.Bytes32;
 import tech.pegasys.artemis.util.bytes.Bytes32s;
 
-import java.util.function.Supplier;
-
 /**
  * Base implementation of all {@link UInt256Value}.
  *
- * <p>
- * Note that this is package-private: "external" {@link UInt256Value} should extend instead
+ * <p>Note that this is package-private: "external" {@link UInt256Value} should extend instead
  * {@link BaseUInt256Value} which add a few operations working on {@link UInt256}, but this exists
  * because {@link UInt256} itself couldn't extend {@link BaseUInt256Value} or the additional methods
  * would conflict with the ones inherited from {@link UInt256Value} (for instance, it would inherit
@@ -177,12 +175,10 @@ abstract class AbstractUInt256Value<T extends UInt256Value<T>> extends AbstractB
   @SuppressWarnings("EqualsGetClass")
   @Override
   public boolean equals(Object other) {
-    if (other == null)
-      return false;
+    if (other == null) return false;
     // Note that we do want strictly class equality in this case: we don't want 2 quantity of
     // mismatching unit to be considered equal, even if they do represent the same number.
-    if (this.getClass() != other.getClass())
-      return false;
+    if (this.getClass() != other.getClass()) return false;
 
     UInt256Value<?> that = (UInt256Value<?>) other;
     return this.bytes().equals(that.bytes());

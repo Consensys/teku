@@ -18,10 +18,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 
-
-/**
- * Static utility methods to work with {@link BytesValue} and {@link MutableBytesValue}.
- */
+/** Static utility methods to work with {@link BytesValue} and {@link MutableBytesValue}. */
 public abstract class BytesValues {
 
   private static final int MAX_UNSIGNED_BYTE = (1 << 8) - 1;
@@ -56,13 +53,12 @@ public abstract class BytesValues {
    *
    * @param value The value of which to trim leading zeros.
    * @return {@code value} if its left-most byte is non zero, or a slice that exclude any leading
-   *         zeros. Note that if {@code value} contains only zeros, it will return an empty value.
+   *     zeros. Note that if {@code value} contains only zeros, it will return an empty value.
    */
   public static BytesValue trimLeadingZeros(BytesValue value) {
     int toTrim = leadingZeros(value);
     return value.slice(toTrim);
   }
-
 
   /**
    * Returns the smallest bytes value whose bytes correspond to the provided long. That is, the
@@ -72,8 +68,7 @@ public abstract class BytesValues {
    * @return The minimal bytes representation corresponding to {@code l}.
    */
   public static BytesValue toMinimalBytes(long l) {
-    if (l == 0)
-      return BytesValue.EMPTY;
+    if (l == 0) return BytesValue.EMPTY;
 
     int zeros = Long.numberOfLeadingZeros(l);
     int resultBytes = 8 - (zeros / 8);
@@ -94,11 +89,13 @@ public abstract class BytesValues {
    * @param v The value, which must fit an unsigned byte.
    * @return A single byte value corresponding to {@code v}.
    * @throws IllegalArgumentException if {@code v < 0} or {@code v} is too big to fit an unsigned
-   *         byte (that is, if {@code v >= (1 << 8)}).
+   *     byte (that is, if {@code v >= (1 << 8)}).
    */
   public static BytesValue ofUnsignedByte(int v) {
-    checkArgument(v >= 0 && v <= MAX_UNSIGNED_BYTE,
-        "Value %s cannot be represented as an unsigned byte (it is negative or too big)", v);
+    checkArgument(
+        v >= 0 && v <= MAX_UNSIGNED_BYTE,
+        "Value %s cannot be represented as an unsigned byte (it is negative or too big)",
+        v);
     byte[] res = new byte[1];
     res[0] = b(v);
     return BytesValue.wrap(res);
@@ -111,11 +108,13 @@ public abstract class BytesValues {
    * @param v The value, which must fit an unsigned short.
    * @return A 2 bytes value corresponding to {@code v}.
    * @throws IllegalArgumentException if {@code v < 0} or {@code v} is too big to fit an unsigned
-   *         2-bytes short (that is, if {@code v >= (1 << 16)}).
+   *     2-bytes short (that is, if {@code v >= (1 << 16)}).
    */
   public static BytesValue ofUnsignedShort(int v) {
-    checkArgument(v >= 0 && v <= MAX_UNSIGNED_SHORT,
-        "Value %s cannot be represented as an unsigned short (it is negative or too big)", v);
+    checkArgument(
+        v >= 0 && v <= MAX_UNSIGNED_SHORT,
+        "Value %s cannot be represented as an unsigned short (it is negative or too big)",
+        v);
     byte[] res = new byte[2];
     res[0] = b(v >> 8);
     res[1] = b(v);
@@ -129,11 +128,13 @@ public abstract class BytesValues {
    * @param v The value, which must fit an unsigned int.
    * @return A 4 bytes value corresponding to {@code v}.
    * @throws IllegalArgumentException if {@code v < 0} or {@code v} is too big to fit an unsigned
-   *         4-bytes int (that is, if {@code v >= (1L << 32)}).
+   *     4-bytes int (that is, if {@code v >= (1L << 32)}).
    */
   public static BytesValue ofUnsignedInt(long v) {
-    checkArgument(v >= 0 && v <= MAX_UNSIGNED_INT,
-        "Value %s cannot be represented as an unsigned int (it is negative or too big)", v);
+    checkArgument(
+        v >= 0 && v <= MAX_UNSIGNED_INT,
+        "Value %s cannot be represented as an unsigned int (it is negative or too big)",
+        v);
     byte[] res = new byte[4];
     res[0] = b(v >> 24);
     res[1] = b(v >> 16);
@@ -145,13 +146,12 @@ public abstract class BytesValues {
   /**
    * Extracts the int value corresponding to the provide bytes, which must be 4 bytes or less.
    *
-   * <p>
-   * This is the inverse operation to {@link #toMinimalBytes(long)} (when the argument of said
+   * <p>This is the inverse operation to {@link #toMinimalBytes(long)} (when the argument of said
    * method fits an int).
    *
    * @param value The value from which to extract the value as an int. If must be 4 bytes or less.
-   *        If it is strictly less than 4 bytes, this behave as if the value was padded with 0 on
-   *        the left to fit 4 bytes.
+   *     If it is strictly less than 4 bytes, this behave as if the value was padded with 0 on the
+   *     left to fit 4 bytes.
    * @return The extracted int value.
    * @throws IllegalArgumentException if the value has strictly more than 4 bytes.
    */
@@ -159,8 +159,7 @@ public abstract class BytesValues {
     int size = value.size();
     checkArgument(size <= 4, "Cannot extract an int from a value of size %s > 4", size);
 
-    if (size == 0)
-      return 0;
+    if (size == 0) return 0;
 
     int res = 0;
     int shift = 0;
@@ -174,12 +173,11 @@ public abstract class BytesValues {
   /**
    * Extracts the long value corresponding to the provide bytes, which must be 8 bytes or less.
    *
-   * <p>
-   * This is the inverse operation to {@link #toMinimalBytes(long)}.
+   * <p>This is the inverse operation to {@link #toMinimalBytes(long)}.
    *
    * @param value The value from which to extract the value as a long. If must be 8 bytes or less.
-   *        If it is strictly less than 8 bytes, this behave as if the value was padded with 0 on
-   *        the left to fit 8 bytes.
+   *     If it is strictly less than 8 bytes, this behave as if the value was padded with 0 on the
+   *     left to fit 8 bytes.
    * @return The extracted long value.
    * @throws IllegalArgumentException if the value has strictly more than 8 bytes.
    */
@@ -187,8 +185,7 @@ public abstract class BytesValues {
     int size = value.size();
     checkArgument(size <= 8, "Cannot extract a long from a value of size %s > 8", size);
 
-    if (size == 0)
-      return 0;
+    if (size == 0) return 0;
 
     long res = 0;
     int shift = 0;
@@ -203,8 +200,8 @@ public abstract class BytesValues {
    * Creates a newly allocated value containing the concatenation of the values provided.
    *
    * @param values The value to copy/concatenate.
-   * @return A newly allocated value containing the result of containing the value from
-   *         {@code values} in their provided order.
+   * @return A newly allocated value containing the result of containing the value from {@code
+   *     values} in their provided order.
    */
   public static BytesValue concatenate(BytesValue... values) {
     int size = 0;
@@ -226,7 +223,7 @@ public abstract class BytesValues {
    *
    * @param bytes The bytes to interpret.
    * @return A positive (or zero) {@link BigInteger} corresponding to this value interpreted as an
-   *         unsigned integer representation.
+   *     unsigned integer representation.
    */
   public static BigInteger asUnsignedBigInteger(BytesValue bytes) {
     return new BigInteger(1, bytes.getArrayUnsafe());
@@ -247,7 +244,7 @@ public abstract class BytesValues {
    *
    * @param bytes The bytes to interpret.
    * @return A {@link BigInteger} corresponding to this value interpreted as a two's-complement
-   *         integer representation.
+   *     integer representation.
    */
   public static BigInteger asSignedBigInteger(BytesValue bytes) {
     // An empty byte value is an invalid magnitude as far as BigInteger is concerned because it
@@ -285,8 +282,12 @@ public abstract class BytesValues {
     if (destSize < 0) {
       destSize = size;
     } else {
-      checkArgument(size <= destSize,
-          "Hex value %s is too big: expected at most %s bytes but got %s", str, destSize, size);
+      checkArgument(
+          size <= destSize,
+          "Hex value %s is too big: expected at most %s bytes but got %s",
+          str,
+          destSize,
+          size);
     }
 
     byte[] out = new byte[destSize];
@@ -296,14 +297,16 @@ public abstract class BytesValues {
       int h = hexToBin(hex.charAt(i));
       int l = hexToBin(hex.charAt(i + 1));
       if (h == -1) {
-        throw new IllegalArgumentException(String.format(
-            "Illegal character '%c' found at index %d in hex binary representation %s",
-            hex.charAt(i), i - idxShift, str));
+        throw new IllegalArgumentException(
+            String.format(
+                "Illegal character '%c' found at index %d in hex binary representation %s",
+                hex.charAt(i), i - idxShift, str));
       }
       if (l == -1) {
-        throw new IllegalArgumentException(String.format(
-            "Illegal character '%c' found at index %d in hex binary representation %s",
-            hex.charAt(i + 1), i + 1 - idxShift, str));
+        throw new IllegalArgumentException(
+            String.format(
+                "Illegal character '%c' found at index %d in hex binary representation %s",
+                hex.charAt(i + 1), i + 1 - idxShift, str));
       }
 
       out[destOffset + (i / 2)] = (byte) (h * 16 + l);
@@ -329,5 +332,4 @@ public abstract class BytesValues {
     }
     return bytes.size();
   }
-
 }

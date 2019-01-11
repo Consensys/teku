@@ -17,13 +17,13 @@ import tech.pegasys.artemis.pow.contract.ValidatorRegistrationContract;
 
 public class ChainStartEvent {
 
-    private ValidatorRegistrationContract.ChainStartEventResponse response = null;
+  private ValidatorRegistrationContract.ChainStartEventResponse response = null;
 
-    public ChainStartEvent(ValidatorRegistrationContract.ChainStartEventResponse response){
-        this.response = response;
-    }
+  public ChainStartEvent(ValidatorRegistrationContract.ChainStartEventResponse response) {
+    this.response = response;
+  }
 
-    public ValidatorRegistrationContract.ChainStartEventResponse getResponse() {
-        return response;
-    }
+  public ValidatorRegistrationContract.ChainStartEventResponse getResponse() {
+    return response;
+  }
 }

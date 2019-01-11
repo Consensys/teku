@@ -15,9 +15,8 @@ package tech.pegasys.artemis.ethereum.rlp;
 
 import static org.junit.Assert.assertEquals;
 
-import tech.pegasys.artemis.util.bytes.BytesValue;
-
 import org.junit.Test;
+import tech.pegasys.artemis.util.bytes.BytesValue;
 
 public class BytesValueRLPOutputTest {
 
@@ -27,8 +26,7 @@ public class BytesValueRLPOutputTest {
 
   private static String times(String base, int times) {
     StringBuilder sb = new StringBuilder();
-    for (int i = 0; i < times; i++)
-      sb.append(base);
+    for (int i = 0; i < times; i++) sb.append(base);
     return sb.toString();
   }
 
@@ -80,7 +78,8 @@ public class BytesValueRLPOutputTest {
     BytesValueRLPOutput out = new BytesValueRLPOutput();
     out.writeBytesValue(h(times("3c", 2241)));
 
-    // 2241 bytes, so long element: 0xb7 + length of value size + value, where the value size is 2241,
+    // 2241 bytes, so long element: 0xb7 + length of value size + value, where the value size is
+    // 2241,
     // 2241 is 0x8c1 so its size is 2 bytes.
     assertEquals(h("0xb908c1" + times("3c", 2241)), out.encoded());
   }

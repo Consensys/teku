@@ -15,18 +15,16 @@ package tech.pegasys.artemis.util.uint;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
+import java.util.function.Function;
 import tech.pegasys.artemis.util.bytes.Bytes32;
 import tech.pegasys.artemis.util.bytes.MutableBytes32;
-
-import java.util.function.Function;
 
 /**
  * A mutable 256-bits (32 bytes) integer value.
  *
- * <p>
- * A {@link Counter} value can be modified through the provided operations ({@link #increment}, ...)
- * of by accessing/mutating the underlying bytes directly with {@link #bytes}. The value itself must
- * be obtained through {@link #get}.
+ * <p>A {@link Counter} value can be modified through the provided operations ({@link #increment},
+ * ...) of by accessing/mutating the underlying bytes directly with {@link #bytes}. The value itself
+ * must be obtained through {@link #get}.
  *
  * @param <T> The concrete type of the value.
  */

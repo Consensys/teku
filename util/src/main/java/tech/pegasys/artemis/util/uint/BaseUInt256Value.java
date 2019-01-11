@@ -15,26 +15,23 @@ package tech.pegasys.artemis.util.uint;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
-import tech.pegasys.artemis.util.bytes.Bytes32;
-
 import java.math.BigInteger;
 import java.util.function.Supplier;
+import tech.pegasys.artemis.util.bytes.Bytes32;
 
 /**
  * Base class for {@link UInt256Value}.
  *
- * <p>
- * This class is abstract as it is not meant to be used directly, but it has no abstract methods. As
- * mentioned in {@link UInt256Value}, this is used to create strongly-typed type aliases of
+ * <p>This class is abstract as it is not meant to be used directly, but it has no abstract methods.
+ * As mentioned in {@link UInt256Value}, this is used to create strongly-typed type aliases of
  * {@link UInt256}. In other words, this allow to "tag" numbers with the unit of what they represent
  * for the type-system, which can help clarity, but also forbid mixing numbers that are mean to be
  * of different units (the strongly type part).
  *
- * <p>
- * This class implements {@link UInt256Value}, but also add a few operations that take a
- * {@link UInt256} directly, for instance {@link #times(UInt256)}. The rational is that multiplying
- * a given quantity of something by a "raw" number is always meaningful, and return a new quantity
- * of the same thing.
+ * <p>This class implements {@link UInt256Value}, but also add a few operations that take a {@link
+ * UInt256} directly, for instance {@link #times(UInt256)}. The rational is that multiplying a given
+ * quantity of something by a "raw" number is always meaningful, and return a new quantity of the
+ * same thing.
  *
  * @param <T> The concrete type of the value.
  */

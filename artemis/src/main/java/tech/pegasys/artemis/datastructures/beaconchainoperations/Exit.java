@@ -28,12 +28,7 @@ public class Exit {
     this.signature = signature;
   }
 
-  /*********************
-   *                   *
-   * GETTERS & SETTERS *
-   *                   *
-   *********************/
-
+  /** ******************* * GETTERS & SETTERS * * ******************* */
   public UInt64 getSlot() {
     return slot;
   }

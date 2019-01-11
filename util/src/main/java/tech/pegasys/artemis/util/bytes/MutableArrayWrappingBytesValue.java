@@ -18,9 +18,7 @@ import static com.google.common.base.Preconditions.checkElementIndex;
 
 import java.util.Arrays;
 
-/**
- * An implementation of {@link MutableBytesValue} backed by a byte array ({@code byte[]}).
- */
+/** An implementation of {@link MutableBytesValue} backed by a byte array ({@code byte[]}). */
 class MutableArrayWrappingBytesValue extends ArrayWrappingBytesValue implements MutableBytesValue {
 
   MutableArrayWrappingBytesValue(byte[] bytes) {
@@ -41,16 +39,19 @@ class MutableArrayWrappingBytesValue extends ArrayWrappingBytesValue implements 
 
   @Override
   public MutableBytesValue mutableSlice(int i, int length) {
-    if (i == 0 && length == size())
-      return this;
-    if (length == 0)
-      return MutableBytesValue.EMPTY;
+    if (i == 0 && length == size()) return this;
+    if (length == 0) return MutableBytesValue.EMPTY;
 
     checkElementIndex(i, size());
-    checkArgument(i + length <= size(),
+    checkArgument(
+        i + length <= size(),
         "Provided length %s is too big: the value has size %s and has only %s bytes from %s",
-        length, size(), size() - i, i);
-    return length == Bytes32.SIZE ? new MutableArrayWrappingBytes32(bytes, offset + i)
+        length,
+        size(),
+        size() - i,
+        i);
+    return length == Bytes32.SIZE
+        ? new MutableArrayWrappingBytes32(bytes, offset + i)
         : new MutableArrayWrappingBytesValue(bytes, offset + i, length);
   }
 

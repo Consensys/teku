@@ -13,9 +13,8 @@
 
 package tech.pegasys.artemis.datastructures.beaconchainoperations;
 
-import tech.pegasys.artemis.util.uint.UInt384;
-
 import java.util.ArrayList;
+import tech.pegasys.artemis.util.uint.UInt384;
 
 public class SlashableVoteData {
 
@@ -24,20 +23,18 @@ public class SlashableVoteData {
   private AttestationData data;
   private UInt384[] aggregate_signature;
 
-  public SlashableVoteData(ArrayList<Integer> custody_bit_0_indices, ArrayList<Integer> custody_bit_1_indices,
-                           AttestationData data, UInt384[] aggregate_signature) {
+  public SlashableVoteData(
+      ArrayList<Integer> custody_bit_0_indices,
+      ArrayList<Integer> custody_bit_1_indices,
+      AttestationData data,
+      UInt384[] aggregate_signature) {
     this.custody_bit_0_indices = custody_bit_0_indices;
     this.custody_bit_1_indices = custody_bit_1_indices;
     this.data = data;
     this.aggregate_signature = aggregate_signature;
   }
 
-  /*********************
-   *                   *
-   * GETTERS & SETTERS *
-   *                   *
-   *********************/
-
+  /** ******************* * GETTERS & SETTERS * * ******************* */
   public ArrayList<Integer> getCustody_bit_0_indices() {
     return custody_bit_0_indices;
   }

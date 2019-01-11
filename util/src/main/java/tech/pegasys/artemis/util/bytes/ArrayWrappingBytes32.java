@@ -15,9 +15,7 @@ package tech.pegasys.artemis.util.bytes;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
-/**
- * An implementation of {@link Bytes32} backed by a byte array ({@code byte[]}).
- */
+/** An implementation of {@link Bytes32} backed by a byte array ({@code byte[]}). */
 class ArrayWrappingBytes32 extends ArrayWrappingBytesValue implements Bytes32 {
 
   ArrayWrappingBytes32(byte[] bytes) {
@@ -36,8 +34,11 @@ class ArrayWrappingBytes32 extends ArrayWrappingBytesValue implements Bytes32 {
 
   // Ensures a proper error message.
   private static byte[] checkLength(byte[] bytes, int offset) {
-    checkArgument(bytes.length - offset >= SIZE,
-        "Expected at least %s bytes from offset %s but got only %s", SIZE, offset,
+    checkArgument(
+        bytes.length - offset >= SIZE,
+        "Expected at least %s bytes from offset %s but got only %s",
+        SIZE,
+        offset,
         bytes.length - offset);
     return bytes;
   }
@@ -46,8 +47,7 @@ class ArrayWrappingBytes32 extends ArrayWrappingBytesValue implements Bytes32 {
   public Bytes32 copy() {
     // Because MutableArrayWrappingBytesValue overrides this, we know we are immutable. We may
     // retain more than necessary however.
-    if (offset == 0 && length == bytes.length)
-      return this;
+    if (offset == 0 && length == bytes.length) return this;
 
     return new ArrayWrappingBytes32(arrayCopy());
   }

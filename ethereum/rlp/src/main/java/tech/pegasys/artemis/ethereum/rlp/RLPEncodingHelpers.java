@@ -35,26 +35,19 @@ class RLPEncodingHelpers {
     return payloadSize <= 55;
   }
 
-  /**
-   * The encoded size of the provided value.
-   */
+  /** The encoded size of the provided value. */
   static int elementSize(BytesValue value) {
-    if (isSingleRLPByte(value))
-      return 1;
+    if (isSingleRLPByte(value)) return 1;
 
-    if (isShortElement(value))
-      return 1 + value.size();
+    if (isShortElement(value)) return 1 + value.size();
 
     return 1 + sizeLength(value.size()) + value.size();
   }
 
-  /**
-   * The encoded size of a list given the encoded size of its payload.
-   */
+  /** The encoded size of a list given the encoded size of its payload. */
   static int listSize(int payloadSize) {
     int size = 1 + payloadSize;
-    if (!isShortList(payloadSize))
-      size += sizeLength(payloadSize);
+    if (!isShortList(payloadSize)) size += sizeLength(payloadSize);
     return size;
   }
 
@@ -93,8 +86,8 @@ class RLPEncodingHelpers {
     return writeLongMetadata(0xf7, payloadSize, dest, destOffset);
   }
 
-  private static int writeLongMetadata(int baseCode, int size, MutableBytesValue dest,
-      int destOffset) {
+  private static int writeLongMetadata(
+      int baseCode, int size, MutableBytesValue dest, int destOffset) {
     int sizeLength = sizeLength(size);
     dest.set(destOffset, (byte) (baseCode + sizeLength));
     int shift = 0;
@@ -109,5 +102,4 @@ class RLPEncodingHelpers {
     int zeros = Integer.numberOfLeadingZeros(size);
     return 4 - (zeros / 8);
   }
-
 }

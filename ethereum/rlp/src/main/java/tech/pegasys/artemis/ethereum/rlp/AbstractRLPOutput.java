@@ -19,13 +19,12 @@ import static tech.pegasys.artemis.ethereum.rlp.RLPEncodingHelpers.listSize;
 import static tech.pegasys.artemis.ethereum.rlp.RLPEncodingHelpers.writeElement;
 import static tech.pegasys.artemis.ethereum.rlp.RLPEncodingHelpers.writeListHeader;
 
-import tech.pegasys.artemis.util.bytes.BytesValue;
-import tech.pegasys.artemis.util.bytes.MutableBytesValue;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.List;
+import tech.pegasys.artemis.util.bytes.BytesValue;
+import tech.pegasys.artemis.util.bytes.MutableBytesValue;
 
 abstract class AbstractRLPOutput implements RLPOutput {
   /*
@@ -82,16 +81,16 @@ abstract class AbstractRLPOutput implements RLPOutput {
 
   @Override
   public void writeBytesValue(BytesValue v) {
-    checkState(stackSize > 1 || values.isEmpty(),
-        "Terminated RLP output, cannot add more elements");
+    checkState(
+        stackSize > 1 || values.isEmpty(), "Terminated RLP output, cannot add more elements");
     values.add(v);
     payloadSizes[currentList()] += elementSize(v);
   }
 
   @Override
   public void writeRLPUnsafe(BytesValue v) {
-    checkState(stackSize > 1 || values.isEmpty(),
-        "Terminated RLP output, cannot add more elements");
+    checkState(
+        stackSize > 1 || values.isEmpty(), "Terminated RLP output, cannot add more elements");
     values.add(v);
     // Mark that last value added as already encoded.
     rlpEncoded.set(values.size() - 1);
@@ -112,7 +111,8 @@ abstract class AbstractRLPOutput implements RLPOutput {
       parentListStack = Arrays.copyOf(parentListStack, (parentListStack.length * 3) / 2);
     }
 
-    // The new current list size is store in the slot we just made room for by incrementing listsCount
+    // The new current list size is store in the slot we just made room for by incrementing
+    // listsCount
     parentListStack[stackSize - 1] = listsCount - 1;
   }
 
@@ -134,7 +134,7 @@ abstract class AbstractRLPOutput implements RLPOutput {
    *
    * @return The size of the RLP-encoded data written to this output.
    * @throws IllegalStateException if some opened list haven't been closed (the output is not valid
-   *         as is).
+   *     as is).
    */
   public int encodedSize() {
     checkState(stackSize == 1, "A list has been entered (startList()) but not left (endList())");
@@ -157,8 +157,10 @@ abstract class AbstractRLPOutput implements RLPOutput {
       } else {
         finalOffset = writeElement(value, res, 0);
       }
-      checkState(finalOffset == res.size(),
-          "Expected single element RLP encode to be of size %s but was of size %s.", res.size(),
+      checkState(
+          finalOffset == res.size(),
+          "Expected single element RLP encode to be of size %s but was of size %s.",
+          res.size(),
           finalOffset);
       return;
     }
@@ -178,7 +180,10 @@ abstract class AbstractRLPOutput implements RLPOutput {
       }
     }
 
-    checkState(offset == res.size(), "Expected RLP encoding to be of size %s but was of size %s.",
-        res.size(), offset);
+    checkState(
+        offset == res.size(),
+        "Expected RLP encoding to be of size %s but was of size %s.",
+        res.size(),
+        offset);
   }
 }
