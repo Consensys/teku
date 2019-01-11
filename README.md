@@ -1,3 +1,5 @@
+# **DO NOT MERGE** - Testing Jenkins CI PR build with only Unicode BMP chars in title.
+
 # artemis
 
  [![Build Status](https://jenkins.pegasys.tech/job/Artemis/job/master/badge/icon)](https://jenkins.pegasys.tech/job/Artemis/job/master/)
