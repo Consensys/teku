@@ -27,6 +27,12 @@ public class DepositData {
     this.timestamp = timestamp;
   }
 
+  /*********************
+   *                   *
+   * GETTERS & SETTERS *
+   *                   *
+   *********************/
+
   public DepositInput getDeposit_input() {
     return deposit_input;
   }

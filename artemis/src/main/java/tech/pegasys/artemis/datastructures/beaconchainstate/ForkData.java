@@ -27,6 +27,12 @@ public class ForkData {
     this.fork_slot = fork_slot;
   }
 
+  /*********************
+   *                   *
+   * GETTERS & SETTERS *
+   *                   *
+   *********************/
+
   public UInt64 getPre_fork_version() {
     return pre_fork_version;
   }

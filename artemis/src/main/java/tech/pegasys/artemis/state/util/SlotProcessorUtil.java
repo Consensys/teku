@@ -32,7 +32,7 @@ import java.util.ArrayList;
 public class SlotProcessorUtil {
 
     public static Hash merkle_root(LatestBlockRoots latest_block_roots){
-        //todo
+        // TODO
         return Hash.wrap(Bytes32.FALSE);
     }
 
@@ -54,17 +54,20 @@ public class SlotProcessorUtil {
 
     public static void updateRecentBlockHashes(BeaconState state, BeaconBlock block) throws StateTransitionException {
         Hash previous_state_root = block.getState_root();
-        if(previous_state_root!=null) state.getLatest_block_roots().put(UInt64.valueOf(state.getSlot()), previous_state_root);
-        else throw new StateTransitionException("StateTransitionException: BeaconState cannot be updated due to previous_state_root returning a null");
+        if (previous_state_root != null) state.getLatest_block_roots().put(UInt64.valueOf(state.getSlot()),
+            previous_state_root);
+        else throw new StateTransitionException("StateTransitionException: BeaconState cannot be updated due to " +
+            "previous_state_root returning a null");
 
-        if(state.getSlot() % LATEST_BLOCK_ROOTS_LENGTH == 0){
+        if (state.getSlot() % LATEST_BLOCK_ROOTS_LENGTH == 0) {
             ArrayList<Hash> batched_block_roots = state.getBatched_block_roots();
             LatestBlockRoots latest_block_roots = state.getLatest_block_roots();
-            if(batched_block_roots != null && latest_block_roots != null){
+            if (batched_block_roots != null && latest_block_roots != null) {
                 Hash merkle_root = SlotProcessorUtil.merkle_root(latest_block_roots);
                 batched_block_roots.add(merkle_root);
             }
-            else throw new StateTransitionException("StateTransitionException: BeaconState cannot be updated due to batched_block_roots and latest_block_roots returning a null");
+            else throw new StateTransitionException("StateTransitionException: BeaconState cannot be updated due to " +
+                "batched_block_roots and latest_block_roots returning a null");
         }
     }
 }
