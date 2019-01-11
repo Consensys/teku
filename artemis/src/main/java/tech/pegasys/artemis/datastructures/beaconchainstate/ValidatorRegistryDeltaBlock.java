@@ -32,6 +32,12 @@ public class ValidatorRegistryDeltaBlock {
     this.flag = flag;
   }
 
+  /*********************
+   *                   *
+   * GETTERS & SETTERS *
+   *                   *
+   *********************/
+
   public Hash getLatest_registry_delta_root() {
     return latest_registry_delta_root;
   }

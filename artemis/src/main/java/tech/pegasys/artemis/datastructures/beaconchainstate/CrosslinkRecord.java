@@ -26,6 +26,12 @@ public class CrosslinkRecord {
     this.slot = slot;
   }
 
+  /*********************
+   *                   *
+   * GETTERS & SETTERS *
+   *                   *
+   *********************/
+
   public Hash getShard_block_hash() {
     return shard_block_hash;
   }

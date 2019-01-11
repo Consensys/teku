@@ -34,6 +34,12 @@ public class DepositInput {
     this.proof_of_possession = proof_of_possession;
   }
 
+  /*********************
+   *                   *
+   * GETTERS & SETTERS *
+   *                   *
+   *********************/
+
   public UInt384 getPubkey() {
     return pubkey;
   }

@@ -33,6 +33,12 @@ public class ProposerSlashing {
     this.proposal_signature_2 = proposal_signature_2;
   }
 
+  /*********************
+   *                   *
+   * GETTERS & SETTERS *
+   *                   *
+   *********************/
+
   public int getProposer_index() {
     return proposer_index;
   }
