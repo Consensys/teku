@@ -29,17 +29,9 @@ public class BeaconBlock {
   // Body
   private BeaconBlockBody body;
 
+  public BeaconBlock() {}
 
-  public BeaconBlock() {
-
-  }
-
-  /*********************
-   *                   *
-   * GETTERS & SETTERS *
-   *                   *
-   *********************/
-
+  /** ******************* * GETTERS & SETTERS * * ******************* */
   public BeaconBlockBody getBody() {
     return body;
   }

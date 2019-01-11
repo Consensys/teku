@@ -22,16 +22,18 @@ import tech.pegasys.artemis.util.bytes.MutableBytes32;
 /**
  * Default implementation of a {@link Int256}.
  *
- * <p>
- * Note that this class is not meant to be exposed outside of this package. Use {@link Int256}
+ * <p>Note that this class is not meant to be exposed outside of this package. Use {@link Int256}
  * static methods to build {@link Int256} values instead.
  */
 class DefaultInt256 extends AbstractBytes32Backed implements Int256 {
 
   DefaultInt256(Bytes32 bytes) {
     super(bytes);
-    checkArgument(bytes.size() == SIZE,
-        "Invalid value for a UInt256: expecting %s bytes but got %s", SIZE, bytes.size());
+    checkArgument(
+        bytes.size() == SIZE,
+        "Invalid value for a UInt256: expecting %s bytes but got %s",
+        SIZE,
+        bytes.size());
   }
 
   // Note meant to be used directly, use Int256.MINUS_ONE instead

@@ -27,12 +27,7 @@ public class ShardReassignmentRecord {
     this.slot = slot;
   }
 
-  /*********************
-   *                   *
-   * GETTERS & SETTERS *
-   *                   *
-   *********************/
-
+  /** ******************* * GETTERS & SETTERS * * ******************* */
   public int getValidator_index() {
     return validator_index;
   }

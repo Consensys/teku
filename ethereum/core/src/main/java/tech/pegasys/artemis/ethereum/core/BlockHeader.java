@@ -13,17 +13,13 @@
 
 package tech.pegasys.artemis.ethereum.core;
 
-
+import java.util.Objects;
 import tech.pegasys.artemis.ethereum.rlp.RLPInput;
 import tech.pegasys.artemis.ethereum.rlp.RLPOutput;
 import tech.pegasys.artemis.util.bytes.BytesValue;
 import tech.pegasys.artemis.util.uint.UInt256;
 
-import java.util.Objects;
-
-/**
- * A mined Ethereum block header.
- */
+/** A mined Ethereum block header. */
 public class BlockHeader extends SealableBlockHeader {
 
   public static final int MAX_EXTRA_DATA_BYTES = 32;
@@ -37,13 +33,37 @@ public class BlockHeader extends SealableBlockHeader {
 
   private Hash hash;
 
-  public BlockHeader(final Hash parentHash, final Hash ommersHash, final Address coinbase,
-      final Hash stateRoot, final Hash transactionsRoot, final Hash receiptsRoot,
-      final LogsBloomFilter logsBloom, final UInt256 difficulty, final long number,
-      final long gasLimit, final long gasUsed, final long timestamp, final BytesValue extraData,
-      final Hash mixHash, final long nonce, final BlockHashFunction hashFunction) {
-    super(parentHash, ommersHash, coinbase, stateRoot, transactionsRoot, receiptsRoot, logsBloom,
-        difficulty, number, gasLimit, gasUsed, timestamp, extraData);
+  public BlockHeader(
+      final Hash parentHash,
+      final Hash ommersHash,
+      final Address coinbase,
+      final Hash stateRoot,
+      final Hash transactionsRoot,
+      final Hash receiptsRoot,
+      final LogsBloomFilter logsBloom,
+      final UInt256 difficulty,
+      final long number,
+      final long gasLimit,
+      final long gasUsed,
+      final long timestamp,
+      final BytesValue extraData,
+      final Hash mixHash,
+      final long nonce,
+      final BlockHashFunction hashFunction) {
+    super(
+        parentHash,
+        ommersHash,
+        coinbase,
+        stateRoot,
+        transactionsRoot,
+        receiptsRoot,
+        logsBloom,
+        difficulty,
+        number,
+        gasLimit,
+        gasUsed,
+        timestamp,
+        extraData);
     this.mixHash = mixHash;
     this.nonce = nonce;
     this.hashFunction = hashFunction;
@@ -108,12 +128,24 @@ public class BlockHeader extends SealableBlockHeader {
 
   public static BlockHeader readFrom(RLPInput input, BlockHashFunction hashFunction) {
     input.enterList();
-    BlockHeader header = new BlockHeader(Hash.wrap(input.readBytes32()),
-        Hash.wrap(input.readBytes32()), Address.readFrom(input), Hash.wrap(input.readBytes32()),
-        Hash.wrap(input.readBytes32()), Hash.wrap(input.readBytes32()),
-        LogsBloomFilter.readFrom(input), input.readUInt256Scalar(), input.readLongScalar(),
-        input.readLongScalar(), input.readLongScalar(), input.readLongScalar(),
-        input.readBytesValue(), Hash.wrap(input.readBytes32()), input.readLong(), hashFunction);
+    BlockHeader header =
+        new BlockHeader(
+            Hash.wrap(input.readBytes32()),
+            Hash.wrap(input.readBytes32()),
+            Address.readFrom(input),
+            Hash.wrap(input.readBytes32()),
+            Hash.wrap(input.readBytes32()),
+            Hash.wrap(input.readBytes32()),
+            LogsBloomFilter.readFrom(input),
+            input.readUInt256Scalar(),
+            input.readLongScalar(),
+            input.readLongScalar(),
+            input.readLongScalar(),
+            input.readLongScalar(),
+            input.readBytesValue(),
+            Hash.wrap(input.readBytes32()),
+            input.readLong(),
+            hashFunction);
     input.leaveList();
     return header;
   }
@@ -157,5 +189,4 @@ public class BlockHeader extends SealableBlockHeader {
     sb.append("nonce=").append(nonce);
     return sb.append("}").toString();
   }
-
 }

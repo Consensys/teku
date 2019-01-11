@@ -13,8 +13,6 @@
 
 package tech.pegasys.artemis.state;
 
-import java.lang.reflect.Type;
-
 import com.google.gson.Gson;
 import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonDeserializer;
@@ -23,7 +21,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
-
+import java.lang.reflect.Type;
 
 public class InterfaceAdapter<T> implements JsonSerializer<T>, JsonDeserializer<T> {
 
@@ -36,7 +34,8 @@ public class InterfaceAdapter<T> implements JsonSerializer<T>, JsonDeserializer<
   }
 
   @Override
-  public T deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) throws JsonParseException {
+  public T deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context)
+      throws JsonParseException {
     JsonObject objectWrapper = (JsonObject) json;
     JsonElement data = objectWrapper.get("data");
     JsonElement type = objectWrapper.get("type");
@@ -46,8 +45,7 @@ public class InterfaceAdapter<T> implements JsonSerializer<T>, JsonDeserializer<
     try {
       Type realType = Class.forName(type.getAsString());
       return context.deserialize(data, realType);
-    }
-    catch (ClassNotFoundException e) {
+    } catch (ClassNotFoundException e) {
       throw new JsonParseException(e);
     }
   }

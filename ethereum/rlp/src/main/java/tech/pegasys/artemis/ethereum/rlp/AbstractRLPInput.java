@@ -15,18 +15,17 @@ package tech.pegasys.artemis.ethereum.rlp;
 
 import static com.google.common.base.Preconditions.checkState;
 
+import java.math.BigInteger;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.util.Arrays;
+import java.util.function.Function;
 import tech.pegasys.artemis.ethereum.rlp.RLPDecodingHelpers.Kind;
 import tech.pegasys.artemis.util.bytes.Bytes32;
 import tech.pegasys.artemis.util.bytes.BytesValue;
 import tech.pegasys.artemis.util.bytes.MutableBytes32;
 import tech.pegasys.artemis.util.uint.UInt256;
 import tech.pegasys.artemis.util.uint.UInt256Value;
-
-import java.math.BigInteger;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.util.Arrays;
-import java.util.function.Function;
 
 abstract class AbstractRLPInput implements RLPInput {
 
@@ -35,7 +34,8 @@ abstract class AbstractRLPInput implements RLPInput {
   protected long size;
 
   // Information on the item the input currently is at (next thing to read).
-  protected long currentItem; // Offset in value to the beginning of the item (or value.size() if done)
+  protected long
+      currentItem; // Offset in value to the beginning of the item (or value.size() if done)
   private Kind currentKind; // Kind of the item.
   private long currentPayloadOffset; // Offset to the beginning of the current item payload.
   private int currentPayloadSize; // Size of the current item payload.
@@ -58,7 +58,8 @@ abstract class AbstractRLPInput implements RLPInput {
     currentItem = 0;
     // Initially set the size to the input as prepareCurrentTime() needs it. Once we've prepare the
     // top level item, we know where that item ends exactly and can update the size to that more
-    // precise value (which basically mean we'll throw errors on malformed inputs potentially sooner).
+    // precise value (which basically mean we'll throw errors on malformed inputs potentially
+    // sooner).
     size = inputSize;
     prepareCurrentItem();
     if (currentKind.isList()) {
@@ -73,13 +74,17 @@ abstract class AbstractRLPInput implements RLPInput {
       // simply for the sake of the error being properly generated.
       long itemEnd = size;
       size = inputSize;
-      throw corrupted("Input doesn't have enough data for RLP encoding: encoding advertise a "
-          + "payload ending at byte %d but input has size %d", itemEnd, inputSize);
+      throw corrupted(
+          "Input doesn't have enough data for RLP encoding: encoding advertise a "
+              + "payload ending at byte %d but input has size %d",
+          itemEnd, inputSize);
     }
 
     if (shouldFitInputSizeExactly && inputSize > size) {
-      throwMalformed("Input has extra data after RLP encoding: encoding ends at byte %d but "
-          + "input has size %d", size, inputSize);
+      throwMalformed(
+          "Input has extra data after RLP encoding: encoding ends at byte %d but "
+              + "input has size %d",
+          size, inputSize);
     }
 
     validateCurrentItem();
@@ -152,10 +157,13 @@ abstract class AbstractRLPInput implements RLPInput {
     if (currentKind == Kind.SHORT_ELEMENT) {
       // Validate that a single byte SHORT_ELEMENT payload is not <= 0x7F. If it is, is should have
       // been written as a BYTE_ELEMENT.
-      if (currentPayloadSize == 1 && currentPayloadOffset < size
+      if (currentPayloadSize == 1
+          && currentPayloadOffset < size
           && (payloadByte(0) & 0xFF) <= 0x7F) {
-        throwMalformed("Malformed RLP item: single byte value 0x%s should have been "
-            + "written without a prefix", hex(currentPayloadOffset, currentPayloadOffset + 1));
+        throwMalformed(
+            "Malformed RLP item: single byte value 0x%s should have been "
+                + "written without a prefix",
+            hex(currentPayloadOffset, currentPayloadOffset + 1));
       }
     }
 
@@ -177,8 +185,10 @@ abstract class AbstractRLPInput implements RLPInput {
     // We will read sizeLength bytes from item + 1. There must be enough bytes for this or the input
     // is corrupted.
     if (size - (item + 1) < sizeLength) {
-      throw corrupted("Invalid RLP item: value of size %d has not enough bytes to read the %d "
-          + "bytes payload size", size, sizeLength);
+      throw corrupted(
+          "Invalid RLP item: value of size %d has not enough bytes to read the %d "
+              + "bytes payload size",
+          size, sizeLength);
     }
 
     // That size (which is at least 1 byte by construction) shouldn't have leading zeros.
@@ -218,8 +228,7 @@ abstract class AbstractRLPInput implements RLPInput {
   }
 
   private void throwMalformed(String msg, Object... params) {
-    if (!lenient)
-      throw new MalformedRLPInputException(errorMsg(msg, params));
+    if (!lenient) throw new MalformedRLPInputException(errorMsg(msg, params));
   }
 
   private CorruptedRLPInputException corrupted(String msg, Object... params) {
@@ -239,9 +248,17 @@ abstract class AbstractRLPInput implements RLPInput {
     long end = Math.min(size, nextItem());
     long realStart = Math.max(0, start - 4);
     long realEnd = Math.min(size, end + 4);
-    return String.format(message + " (at bytes %d-%d: %s%s[%s]%s%s)",
-        concatParams(params, start, end, realStart == 0 ? "" : "...", hex(realStart, start),
-            hex(start, end), hex(end, realEnd), realEnd == size ? "" : "..."));
+    return String.format(
+        message + " (at bytes %d-%d: %s%s[%s]%s%s)",
+        concatParams(
+            params,
+            start,
+            end,
+            realStart == 0 ? "" : "...",
+            hex(realStart, start),
+            hex(start, end),
+            hex(end, realEnd),
+            realEnd == size ? "" : "..."));
   }
 
   private static Object[] concatParams(Object[] initial, Object... others) {
@@ -265,8 +282,9 @@ abstract class AbstractRLPInput implements RLPInput {
   private void checkElt(String what, int expectedSize) {
     checkElt(what);
     if (currentPayloadSize != expectedSize)
-      throw error("Cannot read a %s, expecting %d bytes but current element is %d bytes long", what,
-          expectedSize, currentPayloadSize);
+      throw error(
+          "Cannot read a %s, expecting %d bytes but current element is %d bytes long",
+          what, expectedSize, currentPayloadSize);
   }
 
   private void checkScalar(String what) {
@@ -393,8 +411,8 @@ abstract class AbstractRLPInput implements RLPInput {
   public InetAddress readInetAddress() {
     checkElt("inet address");
     if (currentPayloadSize != 4 && currentPayloadSize != 16) {
-      throw error("Cannot read an inet address, current element is %d bytes long",
-          currentPayloadSize);
+      throw error(
+          "Cannot read an inet address, current element is %d bytes long", currentPayloadSize);
     }
     byte[] address = new byte[currentPayloadSize];
     for (int i = 0; i < currentPayloadSize; i++) {
@@ -511,8 +529,7 @@ abstract class AbstractRLPInput implements RLPInput {
 
     if (!ignoreRest) {
       long listEndOffset = endOfListOffset[depth - 1];
-      if (currentItem < listEndOffset)
-        throw error("Not at the end of the current list");
+      if (currentItem < listEndOffset) throw error("Not at the end of the current list");
     }
 
     --depth;

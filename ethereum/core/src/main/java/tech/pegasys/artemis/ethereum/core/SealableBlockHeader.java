@@ -16,10 +16,7 @@ package tech.pegasys.artemis.ethereum.core;
 import tech.pegasys.artemis.util.bytes.BytesValue;
 import tech.pegasys.artemis.util.uint.UInt256;
 
-
-/**
- * A block header capable of being sealed.
- */
+/** A block header capable of being sealed. */
 public class SealableBlockHeader extends ProcessableBlockHeader {
 
   protected final Hash ommersHash;
@@ -36,10 +33,19 @@ public class SealableBlockHeader extends ProcessableBlockHeader {
 
   protected final BytesValue extraData;
 
-  protected SealableBlockHeader(final Hash parentHash, final Hash ommersHash,
-      final Address coinbase, final Hash stateRoot, final Hash transactionsRoot,
-      final Hash receiptsRoot, final LogsBloomFilter logsBloom, final UInt256 difficulty,
-      final long number, final long gasLimit, final long gasUsed, final long timestamp,
+  protected SealableBlockHeader(
+      final Hash parentHash,
+      final Hash ommersHash,
+      final Address coinbase,
+      final Hash stateRoot,
+      final Hash transactionsRoot,
+      final Hash receiptsRoot,
+      final LogsBloomFilter logsBloom,
+      final UInt256 difficulty,
+      final long number,
+      final long gasLimit,
+      final long gasUsed,
+      final long timestamp,
       final BytesValue extraData) {
     super(parentHash, coinbase, difficulty, number, gasLimit, timestamp);
     this.ommersHash = ommersHash;
@@ -113,5 +119,4 @@ public class SealableBlockHeader extends ProcessableBlockHeader {
   public BytesValue extraData() {
     return extraData;
   }
-
 }

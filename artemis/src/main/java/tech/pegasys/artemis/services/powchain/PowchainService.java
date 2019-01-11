@@ -12,38 +12,35 @@
  */
 
 package tech.pegasys.artemis.services.powchain;
-import tech.pegasys.artemis.pow.ValidatorRegistrationClient;
-import tech.pegasys.artemis.services.ServiceInterface;
-
-import java.util.concurrent.Executors;
 
 import com.google.common.eventbus.AsyncEventBus;
 import com.google.common.eventbus.EventBus;
-
-
+import java.util.concurrent.Executors;
+import tech.pegasys.artemis.pow.ValidatorRegistrationClient;
+import tech.pegasys.artemis.services.ServiceInterface;
 
 public class PowchainService implements ServiceInterface {
 
-    private final EventBus eventBus;
-    private final ValidatorRegistrationClient vrc;
+  private final EventBus eventBus;
+  private final ValidatorRegistrationClient vrc;
 
-    public PowchainService(){
-        this.eventBus = new AsyncEventBus(Executors.newCachedThreadPool());
-        this.vrc = new ValidatorRegistrationClient(eventBus);
-    }
+  public PowchainService() {
+    this.eventBus = new AsyncEventBus(Executors.newCachedThreadPool());
+    this.vrc = new ValidatorRegistrationClient(eventBus);
+  }
 
-    @Override
-    public void init(){
-        this.eventBus.register(this);
-    }
+  @Override
+  public void init() {
+    this.eventBus.register(this);
+  }
 
-    @Override
-    public void run(){
-        this.vrc.listenToPoWChain();
-    }
+  @Override
+  public void run() {
+    this.vrc.listenToPoWChain();
+  }
 
-    @Override
-    public void stop(){
-        this.eventBus.unregister(this);
-    }
+  @Override
+  public void stop() {
+    this.eventBus.unregister(this);
+  }
 }

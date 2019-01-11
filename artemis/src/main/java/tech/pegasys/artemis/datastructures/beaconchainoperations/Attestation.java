@@ -16,7 +16,6 @@ package tech.pegasys.artemis.datastructures.beaconchainoperations;
 import tech.pegasys.artemis.util.bytes.Bytes32;
 import tech.pegasys.artemis.util.uint.UInt384;
 
-
 public class Attestation {
 
   private AttestationData data;
@@ -24,20 +23,18 @@ public class Attestation {
   private Bytes32 custody_bitfield;
   private UInt384 aggregate_signature;
 
-  public Attestation(AttestationData data, Bytes32 participation_bitfield, Bytes32 custody_bitfield,
-                     UInt384 aggregate_signature) {
+  public Attestation(
+      AttestationData data,
+      Bytes32 participation_bitfield,
+      Bytes32 custody_bitfield,
+      UInt384 aggregate_signature) {
     this.data = data;
     this.participation_bitfield = participation_bitfield;
     this.custody_bitfield = custody_bitfield;
     this.aggregate_signature = aggregate_signature;
   }
 
-  /*********************
-   *                   *
-   * GETTERS & SETTERS *
-   *                   *
-   *********************/
-
+  /** ******************* * GETTERS & SETTERS * * ******************* */
   public Bytes32 getParticipation_bitfield() {
     return participation_bitfield;
   }

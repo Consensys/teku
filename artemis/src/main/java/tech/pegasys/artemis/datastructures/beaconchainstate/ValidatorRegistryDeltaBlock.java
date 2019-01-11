@@ -24,20 +24,15 @@ public class ValidatorRegistryDeltaBlock {
   private UInt384 pubkey;
   private UInt64 flag;
 
-  public ValidatorRegistryDeltaBlock(Hash latest_registry_delta_root, int validator_index,
-                                     UInt384 pubkey, UInt64 flag) {
+  public ValidatorRegistryDeltaBlock(
+      Hash latest_registry_delta_root, int validator_index, UInt384 pubkey, UInt64 flag) {
     this.latest_registry_delta_root = latest_registry_delta_root;
     this.validator_index = validator_index;
     this.pubkey = pubkey;
     this.flag = flag;
   }
 
-  /*********************
-   *                   *
-   * GETTERS & SETTERS *
-   *                   *
-   *********************/
-
+  /** ******************* * GETTERS & SETTERS * * ******************* */
   public Hash getLatest_registry_delta_root() {
     return latest_registry_delta_root;
   }

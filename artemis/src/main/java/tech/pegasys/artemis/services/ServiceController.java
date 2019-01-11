@@ -13,53 +13,51 @@
 
 package tech.pegasys.artemis.services;
 
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import tech.pegasys.artemis.cli.CommandLineArguments;
 import tech.pegasys.artemis.services.beaconchain.BeaconChainService;
 import tech.pegasys.artemis.services.powchain.PowchainService;
 
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-
-
 public class ServiceController {
 
-    private static final BeaconChainService beaconChainService = ServiceFactory.getInstance(BeaconChainService.class).getInstance();;
-    private static final PowchainService powchainService = ServiceFactory.getInstance(PowchainService.class).getInstance();
-    private static final ExecutorService beaconChainExecuterService = Executors.newSingleThreadExecutor();
-    private static final ExecutorService powchainExecuterService = Executors.newSingleThreadExecutor();
-    // initialize/register all services
-    public static void initAll(CommandLineArguments cliArgs){
+  private static final BeaconChainService beaconChainService =
+      ServiceFactory.getInstance(BeaconChainService.class).getInstance();;
+  private static final PowchainService powchainService =
+      ServiceFactory.getInstance(PowchainService.class).getInstance();
+  private static final ExecutorService beaconChainExecuterService =
+      Executors.newSingleThreadExecutor();
+  private static final ExecutorService powchainExecuterService =
+      Executors.newSingleThreadExecutor();
+  // initialize/register all services
+  public static void initAll(CommandLineArguments cliArgs) {
 
-        beaconChainService.init();
-        if(!cliArgs.getPoWChainServiceDisabled()){
-            powchainService.init();
-        }
-
-        // Validator Service
-
-        // P2P Service
-
-        // RPC Service
+    beaconChainService.init();
+    if (!cliArgs.getPoWChainServiceDisabled()) {
+      powchainService.init();
     }
 
-    public static void startAll(CommandLineArguments cliArgs){
+    // Validator Service
 
-        // start all services
-        beaconChainExecuterService.execute(beaconChainService);
-        if(!cliArgs.getPoWChainServiceDisabled()){
-            powchainExecuterService.execute(powchainService);
-        }
+    // P2P Service
 
+    // RPC Service
+  }
 
+  public static void startAll(CommandLineArguments cliArgs) {
 
+    // start all services
+    beaconChainExecuterService.execute(beaconChainService);
+    if (!cliArgs.getPoWChainServiceDisabled()) {
+      powchainExecuterService.execute(powchainService);
     }
+  }
 
-    public static void stopAll(CommandLineArguments cliArgs){
-        // stop all services
-        beaconChainExecuterService.shutdown();
-        beaconChainService.stop();
-        powchainExecuterService.shutdown();
-        powchainService.stop();
-    }
-
+  public static void stopAll(CommandLineArguments cliArgs) {
+    // stop all services
+    beaconChainExecuterService.shutdown();
+    beaconChainService.stop();
+    powchainExecuterService.shutdown();
+    powchainService.stop();
+  }
 }

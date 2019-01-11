@@ -16,39 +16,33 @@ package tech.pegasys.artemis.util.bytes;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkElementIndex;
 
-import java.security.MessageDigest;
-
 import com.google.common.annotations.VisibleForTesting;
 import io.netty.buffer.ByteBuf;
 import io.vertx.core.buffer.Buffer;
+import java.security.MessageDigest;
 
 /**
  * A value made of bytes.
  *
- * <p>
- * This class essentially represents an immutable view (the view is immutable, the underlying value
- * may not be) over an array of bytes, but the backing may not be an array in practice.
+ * <p>This class essentially represents an immutable view (the view is immutable, the underlying
+ * value may not be) over an array of bytes, but the backing may not be an array in practice.
  *
- * <p>
- * This interface makes no thread-safety guarantee, and a {@link BytesValue} is generally not thread
- * safe. Specific implementations may be thread-safe however (for instance, the value returned by
- * {@link #copy} is guaranteed to be thread-safe since deeply immutable).
+ * <p>This interface makes no thread-safety guarantee, and a {@link BytesValue} is generally not
+ * thread safe. Specific implementations may be thread-safe however (for instance, the value
+ * returned by {@link #copy} is guaranteed to be thread-safe since deeply immutable).
  *
  * @see BytesValues for static methods to create and work with {@link BytesValue}.
  */
 public interface BytesValue extends Comparable<BytesValue> {
 
-  /**
-   * The empty value (with 0 bytes).
-   */
+  /** The empty value (with 0 bytes). */
   BytesValue EMPTY = wrap(new byte[0]);
 
   /**
    * Wraps the provided byte array as a {@link BytesValue}.
    *
-   * <p>
-   * Note that value is not copied, only wrapped, and thus any future update to {@code value} will
-   * be reflected in the returned value.
+   * <p>Note that value is not copied, only wrapped, and thus any future update to {@code value}
+   * will be reflected in the returned value.
    *
    * @param value The value to wrap.
    * @return A {@link BytesValue} wrapping {@code value}.
@@ -60,16 +54,15 @@ public interface BytesValue extends Comparable<BytesValue> {
   /**
    * Wraps a slice/sub-part of the provided array as a {@link BytesValue}.
    *
-   * <p>
-   * Note that value is not copied, only wrapped, and thus any future update to {@code value} within
-   * the wrapped parts will be reflected in the returned value.
+   * <p>Note that value is not copied, only wrapped, and thus any future update to {@code value}
+   * within the wrapped parts will be reflected in the returned value.
    *
    * @param value The value to wrap.
    * @param offset The index (inclusive) in {@code value} of the first byte exposed by the returned
-   *        value. In other words, you will have {@code wrap(value, o, l).get(0) == value[o]}.
+   *     value. In other words, you will have {@code wrap(value, o, l).get(0) == value[o]}.
    * @param length The length of the resulting value.
    * @return A {@link BytesValue} that expose the bytes of {@code value} from {@code offset}
-   *         (inclusive) to {@code offset + length} (exclusive).
+   *     (inclusive) to {@code offset + length} (exclusive).
    * @throws IndexOutOfBoundsException if {@code offset &lt; 0 || (value.length > 0 && offset >=
    *     value.length)}.
    * @throws IllegalArgumentException if {@code length &lt; 0 || offset + length > value.length}.
@@ -81,10 +74,9 @@ public interface BytesValue extends Comparable<BytesValue> {
   /**
    * Wraps two other value into a concatenated view.
    *
-   * <p>
-   * Note that the values are not copied, only wrapped, and thus any future update to {@code v1} or
-   * {@code v2} will be reflected in the returned value. If copying the inputs is desired instead,
-   * please use {@link BytesValues#concatenate(BytesValue...)}.
+   * <p>Note that the values are not copied, only wrapped, and thus any future update to {@code v1}
+   * or {@code v2} will be reflected in the returned value. If copying the inputs is desired
+   * instead, please use {@link BytesValues#concatenate(BytesValue...)}.
    *
    * @param v1 The first value to wrap.
    * @param v2 The second value to wrap.
@@ -105,21 +97,21 @@ public interface BytesValue extends Comparable<BytesValue> {
 
       @Override
       public BytesValue slice(int i, int length) {
-        if (i == 0 && length == size())
-          return this;
-        if (length == 0)
-          return BytesValue.EMPTY;
+        if (i == 0 && length == size()) return this;
+        if (length == 0) return BytesValue.EMPTY;
 
         checkElementIndex(i, size());
-        checkArgument(i + length <= size(),
+        checkArgument(
+            i + length <= size(),
             "Provided length %s is too big: the value has size %s and has only %s bytes from %s",
-            length, size(), size() - i, i);
+            length,
+            size(),
+            size() - i,
+            i);
 
-        if (i + length < v1.size())
-          return v1.slice(i, length);
+        if (i + length < v1.size()) return v1.slice(i, length);
 
-        if (i >= v1.size())
-          return v2.slice(i - v1.size(), length);
+        if (i >= v1.size()) return v2.slice(i - v1.size(), length);
 
         MutableBytesValue res = MutableBytesValue.create(length);
         int lengthInV1 = v1.size() - i;
@@ -133,9 +125,8 @@ public interface BytesValue extends Comparable<BytesValue> {
   /**
    * Wraps a full Vert.x {@link Buffer} as a {@link BytesValue}.
    *
-   * <p>
-   * Note that as the buffer is wrapped, any change to the content of that buffer may be reflected
-   * in the returned value.
+   * <p>Note that as the buffer is wrapped, any change to the content of that buffer may be
+   * reflected in the returned value.
    *
    * @param buffer The buffer to wrap.
    * @return A {@link BytesValue} that exposes the bytes of {@code buffer}.
@@ -147,16 +138,15 @@ public interface BytesValue extends Comparable<BytesValue> {
   /**
    * Wraps a slice of a Vert.x {@link Buffer} as a {@link BytesValue}.
    *
-   * <p>
-   * Note that as the buffer is wrapped, any change to the content of that buffer may be reflected
-   * in the returned value.
+   * <p>Note that as the buffer is wrapped, any change to the content of that buffer may be
+   * reflected in the returned value.
    *
    * @param buffer The buffer to wrap.
    * @param offset The offset in {@code buffer} from which to expose the bytes in the returned
-   *        value. That is, {@code wrapBuffer(buffer, i, 1).get(0) == buffer.getByte(i)}.
+   *     value. That is, {@code wrapBuffer(buffer, i, 1).get(0) == buffer.getByte(i)}.
    * @param size The size of the returned value.
    * @return A {@link BytesValue} that exposes the equivalent of {@code buffer.getBytes(offset,
-   * offset + size)} (but without copying said bytes).
+   *     offset + size)} (but without copying said bytes).
    */
   static BytesValue wrapBuffer(Buffer buffer, int offset, int size) {
     return MutableBytesValue.wrapBuffer(buffer, offset, size);
@@ -177,10 +167,10 @@ public interface BytesValue extends Comparable<BytesValue> {
    *
    * @param buffer The buffer to wrap.
    * @param offset The offset in {@code buffer} from which to expose the bytes in the returned
-   *        value. That is, {@code wrapBuffer(buffer, i, 1).get(0) == buffer.getByte(i)}.
+   *     value. That is, {@code wrapBuffer(buffer, i, 1).get(0) == buffer.getByte(i)}.
    * @param size The size of the returned value.
    * @return A {@link BytesValue} that exposes the equivalent of {@code buffer.getBytes(offset,
-   * offset + size)} (but without copying said bytes).
+   *     offset + size)} (but without copying said bytes).
    */
   static BytesValue wrapBuffer(ByteBuf buffer, int offset, int size) {
     return MutableBytesValue.wrapBuffer(buffer, offset, size);
@@ -202,7 +192,7 @@ public interface BytesValue extends Comparable<BytesValue> {
    * @param bytes The bytes that must compose the returned value.
    * @return A newly allocated value whose bytes are the one from {@code bytes}.
    * @throws IllegalArgumentException if any of {@code bytes} would be truncated when storing as a
-   *         byte.
+   *     byte.
    */
   @VisibleForTesting
   static BytesValue of(int... bytes) {
@@ -218,14 +208,13 @@ public interface BytesValue extends Comparable<BytesValue> {
   /**
    * Parse an hexadecimal string into a {@link BytesValue}.
    *
-   * <p>
-   * This method is lenient in that {@code str} may of an odd length, in which case it will behave
-   * exactly as if it had an additional 0 in front.
+   * <p>This method is lenient in that {@code str} may of an odd length, in which case it will
+   * behave exactly as if it had an additional 0 in front.
    *
    * @param str The hexadecimal string to parse, which may or may not start with "0x".
    * @return The value corresponding to {@code str}.
    * @throws IllegalArgumentException if {@code str} does not correspond to valid hexadecimal
-   *         representation.
+   *     representation.
    */
   static BytesValue fromHexStringLenient(String str) {
     return BytesValues.fromHexString(str, -1, true);
@@ -234,19 +223,18 @@ public interface BytesValue extends Comparable<BytesValue> {
   /**
    * Parse an hexadecimal string into a {@link BytesValue} of the provided size.
    *
-   * <p>
-   * This method is lenient in that {@code str} may of an odd length, in which case it will behave
-   * exactly as if it had an additional 0 in front.
+   * <p>This method is lenient in that {@code str} may of an odd length, in which case it will
+   * behave exactly as if it had an additional 0 in front.
    *
    * @param str The hexadecimal string to parse, which may or may not start with "0x".
    * @param destinationSize The size of the returned value, which must be big enough to hold the
-   *        bytes represented by {@code str}. If it is strictly bigger those bytes from {@code str},
-   *        the returned value will be left padded with zeros.
+   *     bytes represented by {@code str}. If it is strictly bigger those bytes from {@code str},
+   *     the returned value will be left padded with zeros.
    * @return A value of size {@code destinationSize} corresponding to {@code str} potentially
-   *         left-padded.
+   *     left-padded.
    * @throws IllegalArgumentException if {@code str} does not correspond to valid hexadecimal
-   *         representation, represents more bytes than {@code destinationSize} or
-   *         {@code destinationSize &lt; 0}.
+   *     representation, represents more bytes than {@code destinationSize} or {@code
+   *     destinationSize &lt; 0}.
    */
   static BytesValue fromHexStringLenient(String str, int destinationSize) {
     checkArgument(destinationSize >= 0, "Invalid negative destination size %s", destinationSize);
@@ -256,13 +244,12 @@ public interface BytesValue extends Comparable<BytesValue> {
   /**
    * Parse an hexadecimal string into a {@link BytesValue}.
    *
-   * <p>
-   * This method is strict in that {@code str} must of an even length.
+   * <p>This method is strict in that {@code str} must of an even length.
    *
    * @param str The hexadecimal string to parse, which may or may not start with "0x".
    * @return The value corresponding to {@code str}.
    * @throws IllegalArgumentException if {@code str} does not correspond to valid hexadecimal
-   *         representation, or is of an odd length.
+   *     representation, or is of an odd length.
    */
   static BytesValue fromHexString(String str) {
     return BytesValues.fromHexString(str, -1, false);
@@ -271,20 +258,19 @@ public interface BytesValue extends Comparable<BytesValue> {
   /**
    * Parse an hexadecimal string into a {@link BytesValue}.
    *
-   * <p>
-   * This method is strict in that {@code str} must of an even length.
+   * <p>This method is strict in that {@code str} must of an even length.
    *
    * @param str The hexadecimal string to parse, which may or may not start with "0x".
    * @param destinationSize The size of the returned value, which must be big enough to hold the
-   *        bytes represented by {@code str}. If it is strictly bigger those bytes from {@code str},
-   *        the returned value will be left padded with zeros.
+   *     bytes represented by {@code str}. If it is strictly bigger those bytes from {@code str},
+   *     the returned value will be left padded with zeros.
    * @return A value of size {@code destinationSize} corresponding to {@code str} potentially
-   *         left-padded.
+   *     left-padded.
    * @throws IllegalArgumentException if {@code str} does correspond to valid hexadecimal
-   *         representation, or is of an odd length.
+   *     representation, or is of an odd length.
    * @throws IllegalArgumentException if {@code str} does not correspond to valid hexadecimal
-   *         representation, or is of an odd length, or represents more bytes than
-   *         {@code destinationSize} or {@code destinationSize &lt; 0}.
+   *     representation, or is of an odd length, or represents more bytes than {@code
+   *     destinationSize} or {@code destinationSize &lt; 0}.
    */
   static BytesValue fromHexString(String str, int destinationSize) {
     checkArgument(destinationSize >= 0, "Invalid negative destination size %s", destinationSize);
@@ -314,8 +300,11 @@ public interface BytesValue extends Comparable<BytesValue> {
    */
   default int getInt(int i) {
     checkElementIndex(i, size());
-    checkArgument(i <= size() - 4,
-        "Value of size %s has not enough bytes to read a 4 bytes int from index %s", size(), i);
+    checkArgument(
+        i <= size() - 4,
+        "Value of size %s has not enough bytes to read a 4 bytes int from index %s",
+        size(),
+        i);
 
     int value = 0;
     value |= ((int) get(i) & 0xFF) << 24;
@@ -336,8 +325,11 @@ public interface BytesValue extends Comparable<BytesValue> {
    */
   default long getLong(int i) {
     checkElementIndex(i, size());
-    checkArgument(i <= size() - 8,
-        "Value of size %s has not enough bytes to read a 8 bytes long from index %s", size(), i);
+    checkArgument(
+        i <= size() - 8,
+        "Value of size %s has not enough bytes to read a 8 bytes long from index %s",
+        size(),
+        i);
 
     return (((long) getInt(i)) << 32) | (((long) getInt(i + 4)) & 0xFFFFFFFFL);
   }
@@ -345,14 +337,13 @@ public interface BytesValue extends Comparable<BytesValue> {
   /**
    * Creates a new value representing (a view of) a slice of the bytes of this value.
    *
-   * <p>
-   * Please note that the resulting slice is only a view and as such maintains a link to the
+   * <p>Please note that the resulting slice is only a view and as such maintains a link to the
    * underlying full value. So holding a reference to the returned slice may hold more memory than
    * the slide represents. Use {@link #copy} on the returned slice if that is not what you want.
    *
    * @param index The start index for the slice.
    * @return A new value providing a view over the bytes from index {@code index} (included) to the
-   *         end.
+   *     end.
    * @throws IndexOutOfBoundsException if {@code index &lt; 0}.
    */
   BytesValue slice(int index);
@@ -360,18 +351,17 @@ public interface BytesValue extends Comparable<BytesValue> {
   /**
    * Creates a new value representing (a view of) a slice of the bytes of this value.
    *
-   * <p>
-   * Please note that the resulting slice is only a view and as such maintains a link to the
+   * <p>Please note that the resulting slice is only a view and as such maintains a link to the
    * underlying full value. So holding a reference to the returned slice may hold more memory than
    * the slide represents. Use {@link #copy} on the returned slice if that is not what you want.
    *
    * @param index The start index for the slice.
    * @param length The length of the resulting value.
    * @return A new value providing a view over the bytes from index {@code index} (included) to
-   *         {@code index + length} (excluded).
+   *     {@code index + length} (excluded).
    * @throws IllegalArgumentException if {@code length &lt; 0}.
    * @throws IndexOutOfBoundsException if {@code index &lt; 0} or {index &gt;= size()} or {index +
-   *         length &gt; size()} .
+   *     length &gt; size()} .
    */
   BytesValue slice(int index, int length);
 
@@ -381,8 +371,8 @@ public interface BytesValue extends Comparable<BytesValue> {
    * value.
    *
    * @return A value, equals to this one, but deeply immutable and that doesn't retain any
-   *         "unreachable" bytes. For performance reasons, this is allowed to return this value
-   *         however if it already fit those constraints.
+   *     "unreachable" bytes. For performance reasons, this is allowed to return this value however
+   *     if it already fit those constraints.
    */
   BytesValue copy();
 
@@ -390,7 +380,7 @@ public interface BytesValue extends Comparable<BytesValue> {
    * Returns a new mutable value initialized with the content of this value.
    *
    * @return A mutable copy of this value. This will copy bytes, modifying the returned value will
-   *         <b>not</b> modify this value.
+   *     <b>not</b> modify this value.
    */
   MutableBytesValue mutableCopy();
 
@@ -398,9 +388,8 @@ public interface BytesValue extends Comparable<BytesValue> {
    * Copy the bytes of this value to the provided mutable one, which must have the same size.
    *
    * @param destination The mutable value to which to copy the bytes to, which must have the same
-   *        size as this value. If you want to copy value where size differs, you should use
-   *        {@link #slice} and/or {@link MutableBytesValue#mutableSlice} and apply the copy to the
-   *        result.
+   *     size as this value. If you want to copy value where size differs, you should use {@link
+   *     #slice} and/or {@link MutableBytesValue#mutableSlice} and apply the copy to the result.
    * @throws IllegalArgumentException if {@code this.size() != destination.size()}.
    */
   void copyTo(MutableBytesValue destination);
@@ -408,12 +397,11 @@ public interface BytesValue extends Comparable<BytesValue> {
   /**
    * Copy the bytes of this value to the provided mutable one from a particular offset.
    *
-   * <p>
-   * This is a (potentially slightly more efficient) shortcut for {@code
+   * <p>This is a (potentially slightly more efficient) shortcut for {@code
    * copyTo(destination.mutableSlice(destinationOffset, this.size()))}.
    *
    * @param destination The mutable value to which to copy the bytes to, which must have enough
-   *        bytes from {@code destinationOffset} for the copied value.
+   *     bytes from {@code destinationOffset} for the copied value.
    * @param destinationOffset The offset in {@code destination} at which the copy starts.
    * @throws IllegalArgumentException if the destination doesn't have enough room, that is if {@code
    *     this.size() &gt; (destination.size() - destinationOffset)}.
@@ -423,8 +411,7 @@ public interface BytesValue extends Comparable<BytesValue> {
   /**
    * Appends the bytes of this value to the provided Vert.x {@link Buffer}.
    *
-   * <p>
-   * Note that since a Vert.x {@link Buffer} will grow as necessary, this method never fails.
+   * <p>Note that since a Vert.x {@link Buffer} will grow as necessary, this method never fails.
    *
    * @param buffer The {@link Buffer} to which to append this value.
    */
@@ -501,14 +488,13 @@ public interface BytesValue extends Comparable<BytesValue> {
   /**
    * Get the bytes represented by this value as byte array.
    *
-   * <p>
-   * Contrarily to {@link #extractArray()}, this may avoid allocating a new array and directly
+   * <p>Contrarily to {@link #extractArray()}, this may avoid allocating a new array and directly
    * return the backing array of this value if said value is array backed and doing so is possible.
    * As such, modifications to the returned array may or may not impact this value. As such, this
    * method should be used with care and hence the "unsafe" moniker.
    *
    * @return A byte array with the same content than this value, which may or may not be the direct
-   *         backing of this value.
+   *     backing of this value.
    */
   default byte[] getArrayUnsafe() {
     return extractArray();

@@ -19,7 +19,6 @@ import tech.pegasys.artemis.util.uint.Int256;
 import tech.pegasys.artemis.util.uint.UInt256;
 import tech.pegasys.artemis.util.uint.UInt256Bytes;
 
-
 /**
  * A {@link BytesValue} that is guaranteed to contain exactly 32 bytes.
  *
@@ -35,9 +34,8 @@ public interface Bytes32 extends BytesValue {
   /**
    * Wraps the provided byte array, which must be of length 32, as a {@link Bytes32}.
    *
-   * <p>
-   * Note that value is not copied, only wrapped, and thus any future update to {@code value} will
-   * be reflected in the returned value.
+   * <p>Note that value is not copied, only wrapped, and thus any future update to {@code value}
+   * will be reflected in the returned value.
    *
    * @param bytes The bytes to wrap.
    * @return A {@link Bytes32} wrapping {@code value}.
@@ -51,15 +49,14 @@ public interface Bytes32 extends BytesValue {
   /**
    * Wraps a slice/sub-part of the provided array as a {@link Bytes32}.
    *
-   * <p>
-   * Note that value is not copied, only wrapped, and thus any future update to {@code value} within
-   * the wrapped parts will be reflected in the returned value.
+   * <p>Note that value is not copied, only wrapped, and thus any future update to {@code value}
+   * within the wrapped parts will be reflected in the returned value.
    *
    * @param bytes The bytes to wrap.
    * @param offset The index (inclusive) in {@code value} of the first byte exposed by the returned
-   *        value. In other words, you will have {@code wrap(value, i).get(0) == value[i]}.
+   *     value. In other words, you will have {@code wrap(value, i).get(0) == value[i]}.
    * @return A {@link Bytes32} that exposes the bytes of {@code value} from {@code offset}
-   *         (inclusive) to {@code offset + 32} (exclusive).
+   *     (inclusive) to {@code offset + 32} (exclusive).
    * @throws IndexOutOfBoundsException if {@code offset &lt; 0 || (value.length &gt; 0 && offset >=
    *     value.length)}.
    * @throws IllegalArgumentException if {@code length &lt; 0 || offset + 32 &gt; value.length}.
@@ -71,15 +68,14 @@ public interface Bytes32 extends BytesValue {
   /**
    * Wraps a slice/sub-part of the provided value as a {@link Bytes32}.
    *
-   * <p>
-   * Note that value is not copied, only wrapped, and thus any future update to {@code value} within
-   * the wrapped parts will be reflected in the returned value.
+   * <p>Note that value is not copied, only wrapped, and thus any future update to {@code value}
+   * within the wrapped parts will be reflected in the returned value.
    *
    * @param bytes The bytes to wrap.
    * @param offset The index (inclusive) in {@code value} of the first byte exposed by the returned
-   *        value. In other words, you will have {@code wrap(value, i).get(0) == value.get(i)}.
+   *     value. In other words, you will have {@code wrap(value, i).get(0) == value.get(i)}.
    * @return A {@link Bytes32} that exposes the bytes of {@code value} from {@code offset}
-   *         (inclusive) to {@code offset + 32} (exclusive).
+   *     (inclusive) to {@code offset + 32} (exclusive).
    * @throws IndexOutOfBoundsException if {@code offset &lt; 0 || (value.size() &gt; 0 && offset >=
    *     value.size())}.
    * @throws IllegalArgumentException if {@code length &lt; 0 || offset + 32 &gt; value.size()}.
@@ -97,8 +93,8 @@ public interface Bytes32 extends BytesValue {
    * @throws IllegalArgumentException if {@code value.size() &gt; 32}.
    */
   static Bytes32 leftPad(BytesValue value) {
-    checkArgument(value.size() <= SIZE, "Expected at most %s bytes but got only %s", SIZE,
-        value.size());
+    checkArgument(
+        value.size() <= SIZE, "Expected at most %s bytes but got only %s", SIZE, value.size());
 
     MutableBytes32 bytes = MutableBytes32.create();
     value.copyTo(bytes, SIZE - value.size());
@@ -108,16 +104,15 @@ public interface Bytes32 extends BytesValue {
   /**
    * Parse an hexadecimal string into a {@link Bytes32}.
    *
-   * <p>
-   * This method is lenient in that {@code str} may of an odd length, in which case it will behave
-   * exactly as if it had an additional 0 in front.
+   * <p>This method is lenient in that {@code str} may of an odd length, in which case it will
+   * behave exactly as if it had an additional 0 in front.
    *
    * @param str The hexadecimal string to parse, which may or may not start with "0x". That
-   *        representation may contain less than 32 bytes, in which case the result is left padded
-   *        with zeros (see {@link #fromHexStringStrict} if this is not what you want).
+   *     representation may contain less than 32 bytes, in which case the result is left padded with
+   *     zeros (see {@link #fromHexStringStrict} if this is not what you want).
    * @return The value corresponding to {@code str}.
    * @throws IllegalArgumentException if {@code str} does not correspond to valid hexadecimal
-   *         representation or contains more than 32 bytes.
+   *     representation or contains more than 32 bytes.
    */
   static Bytes32 fromHexStringLenient(String str) {
     return wrap(BytesValues.fromRawHexString(str, SIZE, true));
@@ -126,15 +121,14 @@ public interface Bytes32 extends BytesValue {
   /**
    * Parse an hexadecimal string into a {@link Bytes32}.
    *
-   * <p>
-   * This method is strict in that {@code str} must of an even length.
+   * <p>This method is strict in that {@code str} must of an even length.
    *
    * @param str The hexadecimal string to parse, which may or may not start with "0x". That
-   *        representation may contain less than 32 bytes, in which case the result is left padded
-   *        with zeros (see {@link #fromHexStringStrict} if this is not what you want).
+   *     representation may contain less than 32 bytes, in which case the result is left padded with
+   *     zeros (see {@link #fromHexStringStrict} if this is not what you want).
    * @return The value corresponding to {@code str}.
    * @throws IllegalArgumentException if {@code str} does not correspond to valid hexadecimal
-   *         representation, is of an odd length, or contains more than 32 bytes.
+   *     representation, is of an odd length, or contains more than 32 bytes.
    */
   static Bytes32 fromHexString(String str) {
     return wrap(BytesValues.fromRawHexString(str, SIZE, false));
@@ -143,14 +137,13 @@ public interface Bytes32 extends BytesValue {
   /**
    * Parse an hexadecimal string into a {@link Bytes32}.
    *
-   * <p>
-   * This method is extra strict in that {@code str} must of an even length and the provided
+   * <p>This method is extra strict in that {@code str} must of an even length and the provided
    * representation must have exactly 32 bytes.
    *
    * @param str The hexadecimal string to parse, which may or may not start with "0x".
    * @return The value corresponding to {@code str}.
    * @throws IllegalArgumentException if {@code str} does not correspond to valid hexadecimal
-   *         representation, is of an odd length or does not contain exactly 32 bytes.
+   *     representation, is of an odd length or does not contain exactly 32 bytes.
    */
   static Bytes32 fromHexStringStrict(String str) {
     return wrap(BytesValues.fromRawHexString(str, -1, false));
@@ -170,9 +163,8 @@ public interface Bytes32 extends BytesValue {
   /**
    * Return a {@link UInt256} that wraps these bytes.
    *
-   * <p>
-   * Note that the returned {@link UInt256} is essentially a "view" of these bytes, and so if this
-   * value is mutable and is muted, the returned {@link UInt256} will reflect those changes.
+   * <p>Note that the returned {@link UInt256} is essentially a "view" of these bytes, and so if
+   * this value is mutable and is muted, the returned {@link UInt256} will reflect those changes.
    *
    * @return A {@link UInt256} that wraps these bytes.
    */
@@ -183,9 +175,8 @@ public interface Bytes32 extends BytesValue {
   /**
    * Return a {@link Int256} that wraps these bytes.
    *
-   * <p>
-   * Note that the returned {@link UInt256} is essentially a "view" of these bytes, and so if this
-   * value is mutable and is muted, the returned {@link UInt256} will reflect those changes.
+   * <p>Note that the returned {@link UInt256} is essentially a "view" of these bytes, and so if
+   * this value is mutable and is muted, the returned {@link UInt256} will reflect those changes.
    *
    * @return A {@link Int256} that wraps these bytes.
    */

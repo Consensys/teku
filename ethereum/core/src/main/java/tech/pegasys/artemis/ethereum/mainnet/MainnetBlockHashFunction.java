@@ -18,9 +18,7 @@ import tech.pegasys.artemis.ethereum.core.Hash;
 import tech.pegasys.artemis.ethereum.rlp.RLP;
 import tech.pegasys.artemis.util.bytes.BytesValue;
 
-/**
- * Implements the block hashing algorithm for MainNet as per the yellow paper.
- */
+/** Implements the block hashing algorithm for MainNet as per the yellow paper. */
 public class MainnetBlockHashFunction {
 
   public static Hash createHash(BlockHeader header) {

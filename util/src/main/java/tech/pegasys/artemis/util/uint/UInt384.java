@@ -32,6 +32,4 @@ public class UInt384 {
   public static UInt384 valueOf(long unsignedValue) {
     return new UInt384(unsignedValue);
   }
-
-
 }
