@@ -34,7 +34,8 @@ public class ServiceController {
       Executors.newSingleThreadExecutor();
   private static final ExecutorService powchainExecuterService =
       Executors.newSingleThreadExecutor();
-  private static final ExecutorService p2pExecuterService = Executors.newSingleThreadExecutor();
+  private static final ExecutorService p2pExecuterService =
+      Executors.newSingleThreadExecutor();
   // initialize/register all services
   public static void initAll(CommandLineArguments cliArgs) {
     EventBus eventBus = new AsyncEventBus(Executors.newCachedThreadPool());
