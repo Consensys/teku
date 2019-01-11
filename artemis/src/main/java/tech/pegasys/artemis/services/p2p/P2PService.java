@@ -13,10 +13,8 @@
 
 package tech.pegasys.artemis.services.p2p;
 
-import com.google.common.eventbus.AsyncEventBus;
 import com.google.common.eventbus.EventBus;
 import java.io.IOException;
-import java.util.concurrent.Executors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.artemis.networking.p2p.MockP2PNetwork;
@@ -29,9 +27,7 @@ public class P2PService implements ServiceInterface {
   private static final Logger LOG = LogManager.getLogger();
   private P2PNetwork p2pNetwork;
 
-  public P2PService() {
-    this.eventBus = new AsyncEventBus(Executors.newCachedThreadPool());
-  }
+  public P2PService() {}
 
   @Override
   public void init(EventBus eventBus) {
