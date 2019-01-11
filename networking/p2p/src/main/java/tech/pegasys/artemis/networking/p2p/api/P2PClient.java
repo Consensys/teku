@@ -11,15 +11,20 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.services;
+package tech.pegasys.artemis.networking.p2p.api;
 
-import com.google.common.eventbus.EventBus;
+// TODO: Finish defining proper return types and params
 
-public interface ServiceInterface extends Runnable {
-  void init(EventBus eventBus);
+public interface P2PClient {
+  public void Connect();
 
-  @Override
-  void run();
+  public void SetStreamHandler();
 
-  void stop();
+  public void NewStream();
+
+  public void FindPeer();
+
+  public String PeerID();
+
+  public String[] Peerstore();
 }

@@ -8,6 +8,7 @@ jar {
 
 dependencies {
   implementation project(':crypto')
+  implementation project(':networking:p2p')
   implementation project(':ethereum:core')
   implementation project(':ethereum:rlp')
   implementation project(':pow')
