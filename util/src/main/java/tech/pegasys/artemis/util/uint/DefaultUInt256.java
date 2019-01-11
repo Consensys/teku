@@ -18,8 +18,7 @@ import tech.pegasys.artemis.util.bytes.Bytes32;
 /**
  * Default implementation of a {@link UInt256}.
  *
- * <p>
- * Note that this class is not meant to be exposed outside of this package. Use {@link UInt256}
+ * <p>Note that this class is not meant to be exposed outside of this package. Use {@link UInt256}
  * static methods to build {@link UInt256} values instead.
  */
 class DefaultUInt256 extends AbstractUInt256Value<UInt256> implements UInt256 {

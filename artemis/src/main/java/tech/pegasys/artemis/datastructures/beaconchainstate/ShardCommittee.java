@@ -13,9 +13,8 @@
 
 package tech.pegasys.artemis.datastructures.beaconchainstate;
 
-import tech.pegasys.artemis.util.uint.UInt64;
-
 import java.util.ArrayList;
+import tech.pegasys.artemis.util.uint.UInt64;
 
 public class ShardCommittee {
 
@@ -29,12 +28,7 @@ public class ShardCommittee {
     this.total_validator_count = total_validator_count;
   }
 
-  /*********************
-   *                   *
-   * GETTERS & SETTERS *
-   *                   *
-   *********************/
-
+  /** ******************* * GETTERS & SETTERS * * ******************* */
   public UInt64 getShard() {
     return shard;
   }

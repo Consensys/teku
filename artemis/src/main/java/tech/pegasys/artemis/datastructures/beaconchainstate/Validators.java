@@ -18,12 +18,12 @@ import java.util.List;
 
 public class Validators extends ArrayList<ValidatorRecord> {
 
-    public Validators(){
-        super();
-    }
+  public Validators() {
+    super();
+  }
 
-    public Validators(List<ValidatorRecord> validators) {
-        super();
-        this.addAll(validators);
-    }
+  public Validators(List<ValidatorRecord> validators) {
+    super();
+    this.addAll(validators);
+  }
 }

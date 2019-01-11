@@ -24,25 +24,22 @@ import static tech.pegasys.artemis.util.bytes.BytesValue.fromHexStringLenient;
 import static tech.pegasys.artemis.util.bytes.BytesValue.wrap;
 import static tech.pegasys.artemis.util.bytes.BytesValue.wrapBuffer;
 
-import tech.pegasys.artemis.util.message.BouncyCastleMessageDigestFactory;
-
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+import io.vertx.core.buffer.Buffer;
 import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.function.Function;
-
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
-import io.vertx.core.buffer.Buffer;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
+import tech.pegasys.artemis.util.message.BouncyCastleMessageDigestFactory;
 
 public class BytesValueTest {
 
-  @Rule
-  public ExpectedException thrown = ExpectedException.none();
+  @Rule public ExpectedException thrown = ExpectedException.none();
 
   private static BytesValue h(String hex) {
     return fromHexString(hex);
@@ -54,8 +51,8 @@ public class BytesValueTest {
 
   private static ByteBuf bb(String hex) {
     byte[] bytes = fromHexString(hex).getArrayUnsafe();
-    return Unpooled.unreleasableBuffer(Unpooled.buffer(bytes.length, Integer.MAX_VALUE)).writeBytes(
-        bytes);
+    return Unpooled.unreleasableBuffer(Unpooled.buffer(bytes.length, Integer.MAX_VALUE))
+        .writeBytes(bytes);
   }
 
   @Test
@@ -79,9 +76,7 @@ public class BytesValueTest {
     wrap(null);
   }
 
-  /**
-   * Checks that modifying a wrapped array modifies the value itself.
-   */
+  /** Checks that modifying a wrapped array modifies the value itself. */
   @Test
   public void wrapReflectsUpdates() {
     byte[] bytes = new byte[] {1, 2, 3, 4, 5};
@@ -209,8 +204,8 @@ public class BytesValueTest {
 
   private static void assertWrapByteBuf(byte[] bytes) {
     ByteBuf buffer =
-        Unpooled.unreleasableBuffer(Unpooled.buffer(bytes.length, Integer.MAX_VALUE)).writeBytes(
-            bytes);
+        Unpooled.unreleasableBuffer(Unpooled.buffer(bytes.length, Integer.MAX_VALUE))
+            .writeBytes(bytes);
     BytesValue value = wrapBuffer(buffer);
     assertEquals(buffer.writerIndex(), value.size());
     byte[] arr = new byte[buffer.writerIndex()];
@@ -245,9 +240,7 @@ public class BytesValueTest {
     wrapBuffer((ByteBuf) null);
   }
 
-  /**
-   * Checks that modifying a wrapped buffer modifies the value itself.
-   */
+  /** Checks that modifying a wrapped buffer modifies the value itself. */
   @Test
   public void wrapBufferReflectsUpdates() {
     Buffer buffer = Buffer.buffer(new byte[] {1, 2, 3, 4, 5});
@@ -349,10 +342,12 @@ public class BytesValueTest {
   public void bytes() {
     assertArrayEquals(new byte[] {}, BytesValue.of().extractArray());
     assertArrayEquals(new byte[] {1, 2}, BytesValue.of((byte) 1, (byte) 2).extractArray());
-    assertArrayEquals(new byte[] {1, 2, 3, 4, 5},
+    assertArrayEquals(
+        new byte[] {1, 2, 3, 4, 5},
         BytesValue.of((byte) 1, (byte) 2, (byte) 3, (byte) 4, (byte) 5).extractArray());
 
-    assertArrayEquals(new byte[] {-1, 2, -3}, BytesValue.of((byte) -1, (byte) 2, (byte) -3).extractArray());
+    assertArrayEquals(
+        new byte[] {-1, 2, -3}, BytesValue.of((byte) -1, (byte) 2, (byte) -3).extractArray());
   }
 
   @Test
@@ -588,8 +583,8 @@ public class BytesValueTest {
   @Test
   public void getLongNotEnoughBytes() {
     thrown.expect(IllegalArgumentException.class);
-    thrown
-        .expectMessage("Value of size 4 has not enough bytes to read a 8 bytes long from index 0");
+    thrown.expectMessage(
+        "Value of size 4 has not enough bytes to read a 8 bytes long from index 0");
     wrap(new byte[] {1, 2, 3, 4}).getLong(0);
   }
 
@@ -635,7 +630,6 @@ public class BytesValueTest {
     assertNotEquals(mutableCopy, v);
     assertEquals(h("0x012345"), v);
     assertEquals(h("0xFF2345"), mutableCopy);
-
   }
 
   @Test
@@ -737,14 +731,16 @@ public class BytesValueTest {
   public void appendingToByteBuf() {
     byte[] bytes0 = new byte[0];
     byte[] bytes1 = new byte[0];
-    assertAppendToByteBuf(BytesValue.EMPTY,
-        Unpooled.unreleasableBuffer(Unpooled.buffer(bytes0.length, Integer.MAX_VALUE)).writeBytes(
-            bytes0),
+    assertAppendToByteBuf(
+        BytesValue.EMPTY,
+        Unpooled.unreleasableBuffer(Unpooled.buffer(bytes0.length, Integer.MAX_VALUE))
+            .writeBytes(bytes0),
         BytesValue.EMPTY);
     assertAppendToByteBuf(BytesValue.EMPTY, bb("0x1234"), h("0x1234"));
-    assertAppendToByteBuf(h("0x1234"),
-        Unpooled.unreleasableBuffer(Unpooled.buffer(bytes1.length, Integer.MAX_VALUE)).writeBytes(
-            bytes1),
+    assertAppendToByteBuf(
+        h("0x1234"),
+        Unpooled.unreleasableBuffer(Unpooled.buffer(bytes1.length, Integer.MAX_VALUE))
+            .writeBytes(bytes1),
         h("0x1234"));
     assertAppendToByteBuf(h("0x5678"), bb("0x1234"), h("0x12345678"));
   }
@@ -838,8 +834,7 @@ public class BytesValueTest {
     wrapped.copy().update(md3);
     byte[] digest3 = md3.digest();
 
-    for (int i = 0; i < wrapped.size(); i++)
-      md4.update(wrapped.get(i));
+    for (int i = 0; i < wrapped.size(); i++) md4.update(wrapped.get(i));
     byte[] digest4 = md4.digest();
 
     assertArrayEquals(digest1, digest2);
@@ -876,8 +871,8 @@ public class BytesValueTest {
     }
 
     // Test slightly more complex interactions
-    assertArrayEquals(new byte[] {3, 4},
-        extractor.apply(wrap(new byte[] {1, 2, 3, 4, 5}).slice(2, 2)));
+    assertArrayEquals(
+        new byte[] {3, 4}, extractor.apply(wrap(new byte[] {1, 2, 3, 4, 5}).slice(2, 2)));
     assertArrayEquals(new byte[] {}, extractor.apply(wrap(new byte[] {1, 2, 3, 4, 5}).slice(2, 0)));
   }
 

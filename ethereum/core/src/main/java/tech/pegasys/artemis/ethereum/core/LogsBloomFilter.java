@@ -16,12 +16,11 @@ package tech.pegasys.artemis.ethereum.core;
 import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.artemis.crypto.Hash.keccak256;
 
+import java.util.Collection;
 import tech.pegasys.artemis.ethereum.rlp.RLPException;
 import tech.pegasys.artemis.ethereum.rlp.RLPInput;
 import tech.pegasys.artemis.util.bytes.BytesValue;
 import tech.pegasys.artemis.util.bytes.MutableBytesValue;
-
-import java.util.Collection;
 
 /*
  * Bloom filter implementation for storing persistent logs, describes a 2048-bit representation of
@@ -46,8 +45,10 @@ public class LogsBloomFilter {
   }
 
   public LogsBloomFilter(BytesValue data) {
-    checkArgument(data.size() == BYTE_SIZE,
-        "Invalid size for bloom filter backing array: expected %s but got %s", BYTE_SIZE,
+    checkArgument(
+        data.size() == BYTE_SIZE,
+        "Invalid size for bloom filter backing array: expected %s but got %s",
+        BYTE_SIZE,
         data.size());
     this.data = data.mutableCopy();
   }
@@ -76,14 +77,14 @@ public class LogsBloomFilter {
    * Creates a bloom filter from the given RLP-encoded input.
    *
    * @param input The input to read from
-   *
    * @return the input's corresponding bloom filter
    */
   public static LogsBloomFilter readFrom(RLPInput input) {
     BytesValue bytes = input.readBytesValue();
     if (bytes.size() != BYTE_SIZE) {
-      throw new RLPException(String.format("LogsBloomFilter unexpected size of %s (needs %s)",
-          bytes.size(), BYTE_SIZE));
+      throw new RLPException(
+          String.format(
+              "LogsBloomFilter unexpected size of %s (needs %s)", bytes.size(), BYTE_SIZE));
     }
     return new LogsBloomFilter(bytes);
   }
@@ -96,8 +97,9 @@ public class LogsBloomFilter {
    */
   private void setBits(BytesValue hashValue) {
     for (int counter = 0; counter < 6; counter += 2) {
-      int setBloomBit = ((hashValue.get(counter) & LEAST_SIGNIFICANT_THREE_BITS) << BITS_IN_BYTE)
-          + (hashValue.get(counter + 1) & LEAST_SIGNIFICANT_BYTE);
+      int setBloomBit =
+          ((hashValue.get(counter) & LEAST_SIGNIFICANT_THREE_BITS) << BITS_IN_BYTE)
+              + (hashValue.get(counter + 1) & LEAST_SIGNIFICANT_BYTE);
       setBit(setBloomBit);
     }
   }

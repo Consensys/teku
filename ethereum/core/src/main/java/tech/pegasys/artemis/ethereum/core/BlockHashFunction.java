@@ -16,9 +16,8 @@ package tech.pegasys.artemis.ethereum.core;
 /**
  * An interface for creating the block hash given a {@link BlockHeader}.
  *
- * <p>
- * The algorithm to create the block hash may vary depending on the consensus mechanism used by the
- * chain.
+ * <p>The algorithm to create the block hash may vary depending on the consensus mechanism used by
+ * the chain.
  */
 @FunctionalInterface
 public interface BlockHashFunction {

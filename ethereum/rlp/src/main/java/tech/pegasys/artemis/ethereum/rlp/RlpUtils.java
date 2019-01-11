@@ -121,7 +121,7 @@ public final class RlpUtils {
   /**
    * Decodes the length of an RLP encoded element starting at the beginning of the given buffer.
    *
-   * TODO: Don't wrap in buffer, use array directly
+   * <p>TODO: Don't wrap in buffer, use array directly
    *
    * @param buffer Buffer that has an RLP element starting at index {@code start}
    * @param start the index into buffer from which to start decoding an RLP element length.

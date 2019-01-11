@@ -25,15 +25,13 @@ import static tech.pegasys.artemis.util.bytes.BytesValues.toMinimalBytes;
 import static tech.pegasys.artemis.util.bytes.BytesValues.trimLeadingZeros;
 
 import java.math.BigInteger;
-
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
 public class BytesValuesTest {
 
-  @Rule
-  public ExpectedException thrown = ExpectedException.none();
+  @Rule public ExpectedException thrown = ExpectedException.none();
 
   private static BytesValue h(String hex) {
     return fromHexString(hex);
@@ -226,8 +224,7 @@ public class BytesValuesTest {
     expected = expected.negate();
     v = MutableBytesValue.create(13);
     v.set(0, (byte) 0xEF);
-    for (int i = 1; i < 5; i++)
-      v.set(i, (byte) 0xFF);
+    for (int i = 1; i < 5; i++) v.set(i, (byte) 0xFF);
     v.set(5, (byte) 0x80);
     // 6 bytes of 0
     v.set(12, (byte) 1);

@@ -15,21 +15,21 @@ package tech.pegasys.artemis.services;
 
 public class ServiceFactory<T> {
 
-    private final Class<T> type;
+  private final Class<T> type;
 
-    public ServiceFactory(Class<T> type) {
-      this.type = type;
-    }
+  public ServiceFactory(Class<T> type) {
+    this.type = type;
+  }
 
-    public T getInstance() {
-        try {
-            return type.getDeclaredConstructor().newInstance();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+  public T getInstance() {
+    try {
+      return type.getDeclaredConstructor().newInstance();
+    } catch (Exception e) {
+      throw new RuntimeException(e);
     }
+  }
 
-    public static <S> ServiceFactory<S> getInstance(Class<S> type) {
-        return new ServiceFactory<S>(type);
-    }
+  public static <S> ServiceFactory<S> getInstance(Class<S> type) {
+    return new ServiceFactory<S>(type);
+  }
 }

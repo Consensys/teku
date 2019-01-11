@@ -20,7 +20,7 @@ public class UInt64Test {
 
   @Test
   public void addUnsigned() {
-    //Test Basic Sum Accuracy
+    // Test Basic Sum Accuracy
     // 0+0 = 0
     add(0, 0, "0");
     // 0+1 = 1
@@ -30,7 +30,7 @@ public class UInt64Test {
     // 1+1 = 2
     add(1, 1, "2");
 
-    //Test Edge Cases Around 32-bit and 64-bit Boundaries
+    // Test Edge Cases Around 32-bit and 64-bit Boundaries
     // 2^63-1 + 1 = 2^63 (instead of -2^63 as in signed arithmetic)
     add(Long.MAX_VALUE, 1, "9223372036854775808");
     // 2^63 + 2^63-1 = 2^64-1
@@ -42,7 +42,7 @@ public class UInt64Test {
 
   @Test
   public void subtractUnsigned() {
-    //Test Basic Sum Accuracy
+    // Test Basic Sum Accuracy
     // 0-0 = 0
     subtract(0, 0, "0");
     // 1-0 = 1
@@ -52,7 +52,7 @@ public class UInt64Test {
     // 2-1 = 1
     subtract(2, 1, "1");
 
-    //Test Edge Cases Around 32-bit and 64-bit Boundaries
+    // Test Edge Cases Around 32-bit and 64-bit Boundaries
     // 2^63 - 1 = 2^63-1
     subtract(Long.MIN_VALUE, 1, "9223372036854775807");
     // 0 - 1 = 2^64-1 (it is expected that an unsigned int will wrap)
@@ -64,7 +64,7 @@ public class UInt64Test {
 
   @Test
   public void multiplyUnsigned() {
-    //Test Basic Sum Accuracy
+    // Test Basic Sum Accuracy
     // 0*0 = 0
     multiply(0, 0, "0");
     // 0*1 = 0
@@ -76,7 +76,7 @@ public class UInt64Test {
     // 2*2 = 4
     multiply(2, 2, "4");
 
-    //Test Edge Cases Around 32-bit and 64-bit Boundaries
+    // Test Edge Cases Around 32-bit and 64-bit Boundaries
     // 2^63 * 1 = 2^63 (9223372036854775808)
     multiply(Long.MIN_VALUE, 1, "9223372036854775808");
     // 2^63 * 0 = 0
@@ -95,7 +95,7 @@ public class UInt64Test {
 
   @Test
   public void divideUnsigned() {
-    //Test Basic Quotient Accuracy
+    // Test Basic Quotient Accuracy
     // 2/1 = 2
     divide(2, 1, "2", false);
     // 3/1 = 3
@@ -103,13 +103,13 @@ public class UInt64Test {
     // 4/2 = 2
     divide(4, 2, "2", false);
 
-    //Test Remainder
+    // Test Remainder
     // 15/16 = 0 + 15/16
     divide(15, 16, "0", false);
     // 4/3 = 1 + 1/3
     divide(4, 3, "1", false);
 
-    //Divide by 0
+    // Divide by 0
     // 0/0 (should throw IllegalArgumentException)
     divide(0, 0, "0", true);
     // 1/0 (should throw IllegalArgumentException)
@@ -117,7 +117,7 @@ public class UInt64Test {
     // 0/1 (should not throw IllegalArgumentException)
     divide(0, 1, "0", false);
 
-    //Test Edge Cases Around 32-bit and 64-bit Boundaries
+    // Test Edge Cases Around 32-bit and 64-bit Boundaries
     // 2^63 / 0 (should throw IllegalArgumentException)
     divide(Long.MIN_VALUE, 0, "0", true);
     // 2^63 / 2 = 2^62
@@ -132,7 +132,7 @@ public class UInt64Test {
 
   @Test
   public void moduloUnsigned() {
-    //Test Basic Mod Accuracy
+    // Test Basic Mod Accuracy
     // 2%1 = 2
     mod(2, 1, "0", false);
     // 3%1 = 3
@@ -140,13 +140,13 @@ public class UInt64Test {
     // 4%2 = 0
     mod(4, 2, "0", false);
 
-    //Test More Complex Remainder
+    // Test More Complex Remainder
     // 15%16 = 15
     mod(15, 16, "15", false);
     // 4%3 = 1
     mod(4, 3, "1", false);
 
-    //Divide by 0
+    // Divide by 0
     // 0%0 (should throw IllegalArgumentException)
     mod(0, 0, "0", true);
     // 1%0 (should throw IllegalArgumentException)
@@ -154,7 +154,7 @@ public class UInt64Test {
     // 0%1 = 0 (should not throw IllegalArgumentException)
     mod(0, 1, "0", false);
 
-    //Test Edge Cases Around 32-bit and 64-bit Boundaries
+    // Test Edge Cases Around 32-bit and 64-bit Boundaries
     // 2^63 % 0 (should throw IllegalArgumentException)
     mod(Long.MIN_VALUE, 0, "0", true);
     // 2^63 % 2 = 2^62
@@ -195,12 +195,14 @@ public class UInt64Test {
       final UInt64 uMinuend = UInt64.valueOf(minuend);
 
       UInt64 longDifference = uMinuend.minus(subtrahend);
-      Assert.assertEquals("Difference", expectedDifference, Long.toUnsignedString(longDifference.getValue()));
+      Assert.assertEquals(
+          "Difference", expectedDifference, Long.toUnsignedString(longDifference.getValue()));
       Assert.assertEquals("UInt64 Difference", UInt64.valueOf(expectedDifference), longDifference);
 
       UInt64 uSubtrahend = UInt64.valueOf(subtrahend);
       UInt64 uintDifference = uMinuend.minus(uSubtrahend);
-      Assert.assertEquals("Difference", expectedDifference, Long.toUnsignedString(uintDifference.getValue()));
+      Assert.assertEquals(
+          "Difference", expectedDifference, Long.toUnsignedString(uintDifference.getValue()));
       Assert.assertEquals("UInt64 Difference", UInt64.valueOf(expectedDifference), uintDifference);
     } catch (Exception e) {
       thrown = true;
@@ -216,12 +218,14 @@ public class UInt64Test {
       final UInt64 uMultiplicand = UInt64.valueOf(multiplicand);
 
       UInt64 longProduct = uMultiplicand.times(multiplier);
-      Assert.assertEquals("Product", expectedProduct, Long.toUnsignedString(longProduct.getValue()));
+      Assert.assertEquals(
+          "Product", expectedProduct, Long.toUnsignedString(longProduct.getValue()));
       Assert.assertEquals("UInt64 Product", UInt64.valueOf(expectedProduct), longProduct);
 
       UInt64 uMultiplier = UInt64.valueOf(multiplier);
       UInt64 uintProduct = uMultiplicand.times(uMultiplier);
-      Assert.assertEquals("Product", expectedProduct, Long.toUnsignedString(uintProduct.getValue()));
+      Assert.assertEquals(
+          "Product", expectedProduct, Long.toUnsignedString(uintProduct.getValue()));
       Assert.assertEquals("UInt64 Product", UInt64.valueOf(expectedProduct), uintProduct);
     } catch (Exception e) {
       thrown = true;
@@ -231,7 +235,7 @@ public class UInt64Test {
   }
 
   private void divide(long dividend, long divisor, String expectedQuotient, boolean shouldThrow) {
-    if(shouldThrow) {
+    if (shouldThrow) {
       divideExpectException(dividend, divisor, expectedQuotient, false);
     } else {
       divideExpectResult(dividend, divisor, expectedQuotient, false);
@@ -239,17 +243,18 @@ public class UInt64Test {
   }
 
   private void mod(long dividend, long divisor, String expectedQuotient, boolean shouldThrow) {
-    if(shouldThrow) {
+    if (shouldThrow) {
       divideExpectException(dividend, divisor, expectedQuotient, true);
     } else {
       divideExpectResult(dividend, divisor, expectedQuotient, true);
     }
   }
 
-  private void divideExpectException(long dividend, long divisor, String expectedQuotient, boolean isModulo) {
+  private void divideExpectException(
+      long dividend, long divisor, String expectedQuotient, boolean isModulo) {
     try {
       final UInt64 uDividend = UInt64.valueOf(dividend);
-      if(isModulo) {
+      if (isModulo) {
         UInt64 longQuotient = uDividend.modulo(divisor);
         UInt64 uDivisor = UInt64.valueOf(divisor);
         UInt64 uintQuotient = uDividend.modulo(uDivisor);
@@ -260,33 +265,41 @@ public class UInt64Test {
       }
       Assert.fail("Exception was expected but not thrown.");
     } catch (Exception e) {
-      Assert.assertTrue("Division operation was expected to throw an exception of type IllegalArgumentException.", e instanceof IllegalArgumentException);
-      Assert.assertTrue("Exception message was not correct.", e.getMessage().equals("Argument 'divisor' is 0."));
+      Assert.assertTrue(
+          "Division operation was expected to throw an exception of type IllegalArgumentException.",
+          e instanceof IllegalArgumentException);
+      Assert.assertTrue(
+          "Exception message was not correct.", e.getMessage().equals("Argument 'divisor' is 0."));
     }
   }
 
-  private void divideExpectResult(long dividend, long divisor, String expectedQuotient, boolean isModulo) {
+  private void divideExpectResult(
+      long dividend, long divisor, String expectedQuotient, boolean isModulo) {
     boolean thrown = false;
 
     try {
       final UInt64 uDividend = UInt64.valueOf(dividend);
-      if(isModulo){
+      if (isModulo) {
         UInt64 longQuotient = uDividend.modulo(divisor);
-        Assert.assertEquals("Quotient", expectedQuotient, Long.toUnsignedString(longQuotient.getValue()));
+        Assert.assertEquals(
+            "Quotient", expectedQuotient, Long.toUnsignedString(longQuotient.getValue()));
         Assert.assertEquals("UInt64 Modulo Result", UInt64.valueOf(expectedQuotient), longQuotient);
 
         UInt64 uDivisor = UInt64.valueOf(divisor);
         UInt64 uintQuotient = uDividend.modulo(uDivisor);
-        Assert.assertEquals("Quotient", expectedQuotient, Long.toUnsignedString(uintQuotient.getValue()));
+        Assert.assertEquals(
+            "Quotient", expectedQuotient, Long.toUnsignedString(uintQuotient.getValue()));
         Assert.assertEquals("UInt64 Modulo Result", UInt64.valueOf(expectedQuotient), uintQuotient);
       } else {
         UInt64 longQuotient = uDividend.dividedBy(divisor);
-        Assert.assertEquals("Quotient", expectedQuotient, Long.toUnsignedString(longQuotient.getValue()));
+        Assert.assertEquals(
+            "Quotient", expectedQuotient, Long.toUnsignedString(longQuotient.getValue()));
         Assert.assertEquals("UInt64 Modulo Result", UInt64.valueOf(expectedQuotient), longQuotient);
 
         UInt64 uDivisor = UInt64.valueOf(divisor);
         UInt64 uintQuotient = uDividend.dividedBy(uDivisor);
-        Assert.assertEquals("Quotient", expectedQuotient, Long.toUnsignedString(uintQuotient.getValue()));
+        Assert.assertEquals(
+            "Quotient", expectedQuotient, Long.toUnsignedString(uintQuotient.getValue()));
         Assert.assertEquals("UInt64 Modulo Result", UInt64.valueOf(expectedQuotient), uintQuotient);
       }
     } catch (Exception e) {

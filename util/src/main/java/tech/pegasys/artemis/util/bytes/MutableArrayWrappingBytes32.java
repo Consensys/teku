@@ -13,9 +13,7 @@
 
 package tech.pegasys.artemis.util.bytes;
 
-/**
- * An implementation of {@link MutableBytes32} backed by a byte array ({@code byte[]}).
- */
+/** An implementation of {@link MutableBytes32} backed by a byte array ({@code byte[]}). */
 class MutableArrayWrappingBytes32 extends MutableArrayWrappingBytesValue implements MutableBytes32 {
 
   MutableArrayWrappingBytes32(byte[] bytes) {

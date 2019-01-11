@@ -37,8 +37,11 @@ public abstract class AbstractBytesValue implements BytesValue {
 
   @Override
   public void copyTo(MutableBytesValue dest) {
-    checkArgument(dest.size() == size(), "Cannot copy %s bytes to destination of non-equal size %s",
-        size(), dest.size());
+    checkArgument(
+        dest.size() == size(),
+        "Cannot copy %s bytes to destination of non-equal size %s",
+        size(),
+        dest.size());
 
     copyTo(dest, 0);
   }
@@ -49,16 +52,17 @@ public abstract class AbstractBytesValue implements BytesValue {
     // nothing to copy anyway) and this gets inconvenient for generic methods using copyTo() as
     // they may have to special case empty values because of this. As an example,
     // concatenate(EMPTY, EMPTY) would need to be special cased without this.
-    if (size() == 0)
-      return;
+    if (size() == 0) return;
 
     checkElementIndex(destinationOffset, destination.size());
-    checkArgument(destination.size() - destinationOffset >= size(),
-        "Cannot copy %s bytes, destination has only %s bytes from index %s", size(),
-        destination.size() - destinationOffset, destinationOffset);
+    checkArgument(
+        destination.size() - destinationOffset >= size(),
+        "Cannot copy %s bytes, destination has only %s bytes from index %s",
+        size(),
+        destination.size() - destinationOffset,
+        destinationOffset);
 
-    for (int i = 0; i < size(); i++)
-      destination.set(destinationOffset + i, get(i));
+    for (int i = 0; i < size(); i++) destination.set(destinationOffset + i, get(i));
   }
 
   @Override
@@ -92,8 +96,7 @@ public abstract class AbstractBytesValue implements BytesValue {
   @Override
   public boolean isZero() {
     for (int i = 0; i < size(); i++) {
-      if (get(i) != 0)
-        return false;
+      if (get(i) != 0) return false;
     }
     return true;
   }
@@ -106,25 +109,21 @@ public abstract class AbstractBytesValue implements BytesValue {
   /**
    * Compare this value and the provided one for equality.
    *
-   * <p>
-   * Two {@link BytesValue} are equal is they have the same time and contain the exact same bytes in
-   * order.
+   * <p>Two {@link BytesValue} are equal is they have the same time and contain the exact same bytes
+   * in order.
    *
    * @param other The other value to test for equality.
    * @return Whether this value and {@code other} are equal.
    */
   @Override
   public boolean equals(Object other) {
-    if (!(other instanceof BytesValue))
-      return false;
+    if (!(other instanceof BytesValue)) return false;
 
     BytesValue that = (BytesValue) other;
-    if (this.size() != that.size())
-      return false;
+    if (this.size() != that.size()) return false;
 
     for (int i = 0; i < size(); i++) {
-      if (this.get(i) != that.get(i))
-        return false;
+      if (this.get(i) != that.get(i)) return false;
     }
     return true;
   }
@@ -132,8 +131,7 @@ public abstract class AbstractBytesValue implements BytesValue {
   @Override
   public int hashCode() {
     int result = 1;
-    for (int i = 0; i < size(); i++)
-      result = 31 * result + get(i);
+    for (int i = 0; i < size(); i++) result = 31 * result + get(i);
     return result;
   }
 

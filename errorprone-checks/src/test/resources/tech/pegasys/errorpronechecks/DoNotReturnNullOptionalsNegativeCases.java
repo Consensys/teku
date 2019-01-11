@@ -16,7 +16,6 @@ package tech.pegasys.errorpronechecks;
 import java.util.Optional;
 import javax.annotation.Nullable;
 
-
 public class DoNotReturnNullOptionalsNegativeCases {
 
   public interface allInterfacesAreValid {

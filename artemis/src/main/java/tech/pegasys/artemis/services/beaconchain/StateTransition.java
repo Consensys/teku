@@ -13,83 +13,73 @@
 
 package tech.pegasys.artemis.services.beaconchain;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.artemis.Constants;
 import tech.pegasys.artemis.datastructures.beaconchainblocks.BeaconBlock;
 import tech.pegasys.artemis.state.BeaconState;
 import tech.pegasys.artemis.state.util.EpochProcessorUtil;
 import tech.pegasys.artemis.state.util.SlotProcessorUtil;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+public class StateTransition {
 
-public class StateTransition{
+  private static final Logger logger = LogManager.getLogger();
 
-    private static final Logger logger = LogManager.getLogger();
+  public StateTransition() {}
 
-    public StateTransition(){
+  public void initiate(BeaconState state, BeaconBlock block) throws StateTransitionException {
 
+    // per-slot processing
+    slotProcessor(state, block);
+
+    // per-block processing
+    // TODO: need to check if a new block is produced.
+    // For now, we make a new block each slot
+    // if( block != null ){
+    blockProcessor(state, block);
+    // }
+
+    // per-epoch processing
+    if (state.getSlot() % Constants.EPOCH_LENGTH == 0) {
+      epochProcessor(state);
     }
+  }
 
-    public void initiate(BeaconState state, BeaconBlock block) throws StateTransitionException {
+  protected void slotProcessor(BeaconState state, BeaconBlock block)
+      throws StateTransitionException {
+    // deep copy beacon state
+    BeaconState newState = BeaconState.deepCopy(state);
+    state.incrementSlot();
+    logger.info("Processing new slot: " + state.getSlot());
 
-        // per-slot processing
-        slotProcessor(state, block);
+    SlotProcessorUtil.updateProposerRandaoLayer(newState);
+    SlotProcessorUtil.updateLatestRandaoMixes(newState);
+    SlotProcessorUtil.updateRecentBlockHashes(newState, block);
+  }
 
-        // per-block processing
-        //TODO: need to check if a new block is produced.
-        //For now, we make a new block each slot
-        //if( block != null ){
-        blockProcessor(state, block);
-        //}
+  protected void blockProcessor(BeaconState state, BeaconBlock block) {
+    block.setSlot(state.getSlot());
+    logger.info("Processing new block in slot: " + block.getSlot());
+    // block header
+    verifySignature(state, block);
+    verifyAndUpdateRandao(state, block);
 
-        // per-epoch processing
-        if( state.getSlot() % Constants.EPOCH_LENGTH == 0){
-            epochProcessor(state);
-        }
+    // block body operations
+    processAttestations(state, block);
+  }
 
-    }
+  protected void epochProcessor(BeaconState state) {
+    logger.info("Processing new epoch in slot: " + state.getSlot());
+    EpochProcessorUtil.updateJustification(state);
+    EpochProcessorUtil.updateFinalization(state);
+    EpochProcessorUtil.updateCrosslinks(state);
+    EpochProcessorUtil.finalBookKeeping(state);
+  }
 
-    protected void slotProcessor(BeaconState state, BeaconBlock block) throws StateTransitionException {
-        // deep copy beacon state
-        BeaconState newState = BeaconState.deepCopy(state);
-        state.incrementSlot();
-        logger.info("Processing new slot: " + state.getSlot());
+  // block processing
+  protected void verifySignature(BeaconState state, BeaconBlock block) {}
 
-        SlotProcessorUtil.updateProposerRandaoLayer(newState);
-        SlotProcessorUtil.updateLatestRandaoMixes(newState);
-        SlotProcessorUtil.updateRecentBlockHashes(newState, block);
-    }
+  protected void verifyAndUpdateRandao(BeaconState state, BeaconBlock block) {}
 
-    protected void blockProcessor(BeaconState state, BeaconBlock block){
-        block.setSlot(state.getSlot());
-        logger.info("Processing new block in slot: " + block.getSlot());
-        // block header
-        verifySignature(state, block);
-        verifyAndUpdateRandao(state, block);
-
-        // block body operations
-        processAttestations(state, block);
-    }
-
-    protected void epochProcessor(BeaconState state){
-        logger.info("Processing new epoch in slot: " + state.getSlot());
-        EpochProcessorUtil.updateJustification(state);
-        EpochProcessorUtil.updateFinalization(state);
-        EpochProcessorUtil.updateCrosslinks(state);
-        EpochProcessorUtil.finalBookKeeping(state);
-    }
-
-    // block processing
-    protected void verifySignature(BeaconState state, BeaconBlock block){
-
-    }
-
-    protected void verifyAndUpdateRandao(BeaconState state, BeaconBlock block){
-
-    }
-
-    protected void processAttestations(BeaconState state, BeaconBlock block){
-
-    }
-
+  protected void processAttestations(BeaconState state, BeaconBlock block) {}
 }

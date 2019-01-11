@@ -20,25 +20,22 @@ import tech.pegasys.artemis.util.bytes.Bytes32Backed;
 /**
  * Represents a 256-bits (32 bytes) unsigned integer value.
  *
- * <p>
- * A {@link UInt256Value} is an unsigned integer value stored with 32 bytes, so whose value can
+ * <p>A {@link UInt256Value} is an unsigned integer value stored with 32 bytes, so whose value can
  * range between 0 and 2^256-1. It extends {@link Bytes32Backed} and so the underlying bytes can be
  * accessed through {@link #bytes()}. It also expose the {@link #asSigned()} method that allow to
  * "cast" the number as signed, interpreting the same underlying bytes in two's complement.
  *
- * <p>
- * This interface is a base for such 256-bits precision value and is meant to be implemented to
+ * <p>This interface is a base for such 256-bits precision value and is meant to be implemented to
  * represent a (potentially large) quantity of a particular unit (it is however strongly advised to
  * extend {@link BaseUInt256Value} rather than reimplement this interface from scratch). Doing so
  * provides type safety in that quantities of different units cannot be mixed accidentally.
  *
- * <p>
- * For non-specific needs of a 256-bits value however, {@link UInt256} should be used, which simply
- * represent a raw 32 bytes unsigned number, not attached to a particular unit (in exactly the same
- * way that {@code long} represents a 8 bytes signed number). Implementations of
- * {@link UInt256Value} other than {@link UInt256} should be thought of as strongly-typed type
- * aliases for {@link UInt256}, and can always be "type-casted" to {@link UInt256} explicitly with
- * {@link #asUInt256()}.
+ * <p>For non-specific needs of a 256-bits value however, {@link UInt256} should be used, which
+ * simply represent a raw 32 bytes unsigned number, not attached to a particular unit (in exactly
+ * the same way that {@code long} represents a 8 bytes signed number). Implementations of {@link
+ * UInt256Value} other than {@link UInt256} should be thought of as strongly-typed type aliases for
+ * {@link UInt256}, and can always be "type-casted" to {@link UInt256} explicitly with {@link
+ * #asUInt256()}.
  *
  * @param <T> The concrete type of the value.
  * @see UInt256 for <b>the</b> generic implementation of an integer value with 256-bits precision.
@@ -52,16 +49,14 @@ public interface UInt256Value<T extends UInt256Value<T>> extends Bytes32Backed, 
   /** @return An immutable copy of this value. */
   T copy();
 
-  /**
-   * @return True if this is the value 0.
-   */
+  /** @return True if this is the value 0. */
   default boolean isZero() {
     return bytes().isZero();
   }
 
   /**
-   * @return True if this value fits a java {@code int} (i.e. is less or equal to
-   *         {@code Integer.MAX_VALUE}).
+   * @return True if this value fits a java {@code int} (i.e. is less or equal to {@code
+   *     Integer.MAX_VALUE}).
    */
   default boolean fitsInt() {
     return UInt256Bytes.fitsInt(bytes());
@@ -78,8 +73,8 @@ public interface UInt256Value<T extends UInt256Value<T>> extends Bytes32Backed, 
   }
 
   /**
-   * @return True if this value fits a java {@code long} (i.e. is less or equal to
-   *         {@code Long.MAX_VALUE}).
+   * @return True if this value fits a java {@code long} (i.e. is less or equal to {@code
+   *     Long.MAX_VALUE}).
    */
   default boolean fitsLong() {
     return UInt256Bytes.fitsLong(bytes());
@@ -141,9 +136,7 @@ public interface UInt256Value<T extends UInt256Value<T>> extends Bytes32Backed, 
     return UInt256Bytes.bitLength(bytes());
   }
 
-  /**
-   * @return A view of the bytes of this number as signed (two's complement).
-   */
+  /** @return A view of the bytes of this number as signed (two's complement). */
   default Int256 asSigned() {
     return new DefaultInt256(bytes());
   }
@@ -151,9 +144,8 @@ public interface UInt256Value<T extends UInt256Value<T>> extends Bytes32Backed, 
   /**
    * This value represented as an hexadecimal string.
    *
-   * <p>
-   * Note that this representation includes all the 32 underlying bytes, no matter what the integer
-   * actually represents (in other words, it can have many leading zeros). For a shorter
+   * <p>Note that this representation includes all the 32 underlying bytes, no matter what the
+   * integer actually represents (in other words, it can have many leading zeros). For a shorter
    * representation that don't include leading zeros, use {@link #toShortHexString}.
    *
    * @return This value represented as an hexadecimal string.
@@ -166,8 +158,7 @@ public interface UInt256Value<T extends UInt256Value<T>> extends Bytes32Backed, 
   default String toShortHexString() {
     String hex = toHexString();
     // Skipping '0x'
-    if (hex.charAt(2) != '0')
-      return hex;
+    if (hex.charAt(2) != '0') return hex;
 
     int i = 3;
     while (i < hex.length() && hex.charAt(i) == '0') {
@@ -184,8 +175,7 @@ public interface UInt256Value<T extends UInt256Value<T>> extends Bytes32Backed, 
   /**
    * Type-cast this value as a {@link UInt256}.
    *
-   * <p>
-   * Note that the returned {@link UInt256} is a type-casted "view" of this value, and so if this
+   * <p>Note that the returned {@link UInt256} is a type-casted "view" of this value, and so if this
    * value is mutable and is muted, the returned {@link UInt256} will reflect those changes.
    *
    * @return This value as a {@link UInt256}.

@@ -25,8 +25,12 @@ public class DepositInput {
   private Hash poc_commitment;
   private Bytes32 proof_of_possession;
 
-  public DepositInput(UInt384 pubkey, Hash withdrawal_credentials, Hash randao_commitment, Hash poc_commitment,
-                      Bytes32 proof_of_possession) {
+  public DepositInput(
+      UInt384 pubkey,
+      Hash withdrawal_credentials,
+      Hash randao_commitment,
+      Hash poc_commitment,
+      Bytes32 proof_of_possession) {
     this.pubkey = pubkey;
     this.withdrawal_credentials = withdrawal_credentials;
     this.randao_commitment = randao_commitment;
@@ -34,12 +38,7 @@ public class DepositInput {
     this.proof_of_possession = proof_of_possession;
   }
 
-  /*********************
-   *                   *
-   * GETTERS & SETTERS *
-   *                   *
-   *********************/
-
+  /** ******************* * GETTERS & SETTERS * * ******************* */
   public UInt384 getPubkey() {
     return pubkey;
   }

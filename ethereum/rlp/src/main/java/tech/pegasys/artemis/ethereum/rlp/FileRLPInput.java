@@ -16,19 +16,16 @@ package tech.pegasys.artemis.ethereum.rlp;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
-import tech.pegasys.artemis.util.bytes.Bytes32;
-import tech.pegasys.artemis.util.bytes.BytesValue;
-import tech.pegasys.artemis.util.bytes.BytesValues;
-
 import java.io.File;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
+import tech.pegasys.artemis.util.bytes.Bytes32;
+import tech.pegasys.artemis.util.bytes.BytesValue;
+import tech.pegasys.artemis.util.bytes.BytesValues;
 
-/**
- * An {@link RLPInput} that reads RLP encoded data from a {@link File}.
- */
+/** An {@link RLPInput} that reads RLP encoded data from a {@link File}. */
 public class FileRLPInput extends AbstractRLPInput {
 
   // The RLP encoded data.
@@ -91,7 +88,6 @@ public class FileRLPInput extends AbstractRLPInput {
   @Override
   protected long getLong(long offset) {
     return inputSlice(offset, Long.BYTES).getLong(0);
-
   }
 
   @Override
@@ -99,9 +95,7 @@ public class FileRLPInput extends AbstractRLPInput {
     throw new UnsupportedOperationException("raw() not supported on a Channel");
   }
 
-  /**
-   * @return Offset of the current item
-   */
+  /** @return Offset of the current item */
   public long currentOffset() {
     return currentItem;
   }

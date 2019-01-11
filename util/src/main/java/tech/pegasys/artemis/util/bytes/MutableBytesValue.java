@@ -29,10 +29,9 @@ public interface MutableBytesValue extends BytesValue {
   /**
    * The empty value (with 0 bytes).
    *
-   * <p>
-   * Note that while this implements {@link MutableBytesValue} so it can be used where a
-   * {@link MutableBytesValue} is required, it is effectively immutable since empty and thus having
-   * nothing to mutate.
+   * <p>Note that while this implements {@link MutableBytesValue} so it can be used where a {@link
+   * MutableBytesValue} is required, it is effectively immutable since empty and thus having nothing
+   * to mutate.
    */
   MutableBytesValue EMPTY = wrap(new byte[0]);
 
@@ -49,8 +48,7 @@ public interface MutableBytesValue extends BytesValue {
   /**
    * Wraps a byte array as a mutable byte value.
    *
-   * <p>
-   * This method behave exactly as {@link BytesValue#wrap(byte[])} except that the result is
+   * <p>This method behave exactly as {@link BytesValue#wrap(byte[])} except that the result is
    * mutable.
    *
    * @param value The value to wrap.
@@ -63,16 +61,16 @@ public interface MutableBytesValue extends BytesValue {
   /**
    * Wraps a slice of a Vert.x {@link Buffer} as a {@link MutableBytesValue}.
    *
-   * <p>
-   * Note that as the buffer is wrapped, any change to the content of that buffer may be reflected
-   * in the returned value, and any change to the returned value will be reflected in the buffer.
+   * <p>Note that as the buffer is wrapped, any change to the content of that buffer may be
+   * reflected in the returned value, and any change to the returned value will be reflected in the
+   * buffer.
    *
    * @param buffer The buffer to wrap.
    * @param offset The offset in {@code buffer} from which to expose the bytes in the returned
-   *        value. That is, {@code wrapBuffer(buffer, i, 1).get(0) == buffer.getByte(i)}.
+   *     value. That is, {@code wrapBuffer(buffer, i, 1).get(0) == buffer.getByte(i)}.
    * @param size The size of the returned value.
-   * @return A {@link MutableBytesValue} that exposes (reading and writing) the bytes in
-   *         {@code buffer} from {@code offset} (inclusive) to {@code offset + size} (exclusive).
+   * @return A {@link MutableBytesValue} that exposes (reading and writing) the bytes in {@code
+   *     buffer} from {@code offset} (inclusive) to {@code offset + size} (exclusive).
    */
   static MutableBytesValue wrapBuffer(Buffer buffer, int offset, int size) {
     if (size == 0) {
@@ -86,10 +84,10 @@ public interface MutableBytesValue extends BytesValue {
    *
    * @param buffer The buffer to wrap.
    * @param offset The offset in {@code buffer} from which to expose the bytes in the returned
-   *        value. That is, {@code wrapBuffer(buffer, i, 1).get(0) == buffer.getByte(i)}.
+   *     value. That is, {@code wrapBuffer(buffer, i, 1).get(0) == buffer.getByte(i)}.
    * @param size The size of the returned value.
-   * @return A {@link MutableBytesValue} that exposes (reading and writing) the bytes in
-   *         {@code buffer} from {@code offset} (inclusive) to {@code offset + size} (exclusive).
+   * @return A {@link MutableBytesValue} that exposes (reading and writing) the bytes in {@code
+   *     buffer} from {@code offset} (inclusive) to {@code offset + size} (exclusive).
    */
   static MutableBytesValue wrapBuffer(ByteBuf buffer, int offset, int size) {
     if (size == 0) {
@@ -118,8 +116,11 @@ public interface MutableBytesValue extends BytesValue {
    */
   default void setInt(int i, int value) {
     checkElementIndex(i, size());
-    checkArgument(i <= size() - 4,
-        "Value of size %s has not enough bytes to write a 4 bytes int from index %s", size(), i);
+    checkArgument(
+        i <= size() - 4,
+        "Value of size %s has not enough bytes to write a 4 bytes int from index %s",
+        size(),
+        i);
 
     set(i, (byte) (value >>> 24));
     set(i + 1, (byte) ((value >>> 16) & 0xFF));
@@ -138,8 +139,11 @@ public interface MutableBytesValue extends BytesValue {
    */
   default void setLong(int i, long value) {
     checkElementIndex(i, size());
-    checkArgument(i <= size() - 8,
-        "Value of size %s has not enough bytes to write a 8 bytes long from index %s", size(), i);
+    checkArgument(
+        i <= size() - 8,
+        "Value of size %s has not enough bytes to write a 8 bytes long from index %s",
+        size(),
+        i);
 
     setInt(i, (int) (value >>> 32));
     setInt(i + 4, (int) value);
@@ -148,18 +152,17 @@ public interface MutableBytesValue extends BytesValue {
   /**
    * Creates a new value representing a mutable slice of the bytes of this value.
    *
-   * <p>
-   * Please note that the resulting slice is only a view and as such maintains a link to the
+   * <p>Please note that the resulting slice is only a view and as such maintains a link to the
    * underlying full value. So holding a reference to the returned slice may hold more memory than
    * the slide represents. Use {@link #copy} on the returned slice if that is not what you want.
    *
    * @param i The start index for the slice.
    * @param length The length of the resulting value.
    * @return A new mutable view over the bytes of this value from index {@code i} (included) to
-   *         index {@code i + length} (excluded).
+   *     index {@code i + length} (excluded).
    * @throws IllegalArgumentException if {@code length &lt; 0}.
    * @throws IndexOutOfBoundsException if {@code i &lt; 0} or {i &gt;= size()} or {i + length &gt;
-   *         size()} .
+   *     size()} .
    */
   MutableBytesValue mutableSlice(int i, int length);
 
@@ -174,9 +177,7 @@ public interface MutableBytesValue extends BytesValue {
     }
   }
 
-  /**
-   * Clears all the bytes (set to 0) of this value.
-   */
+  /** Clears all the bytes (set to 0) of this value. */
   default void clear() {
     fill((byte) 0);
   }

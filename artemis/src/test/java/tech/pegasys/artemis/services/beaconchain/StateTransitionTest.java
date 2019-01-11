@@ -24,6 +24,9 @@ import static tech.pegasys.artemis.Constants.LATEST_RANDAO_MIXES_LENGTH;
 import static tech.pegasys.artemis.Constants.PENDING_ACTIVATION;
 import static tech.pegasys.artemis.ethereum.core.Hash.hash;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import org.junit.Test;
 import tech.pegasys.artemis.datastructures.beaconchainblocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.beaconchainstate.ShardCommittee;
 import tech.pegasys.artemis.datastructures.beaconchainstate.ValidatorRecord;
@@ -33,11 +36,6 @@ import tech.pegasys.artemis.state.util.SlotProcessorUtil;
 import tech.pegasys.artemis.util.bytes.Bytes32;
 import tech.pegasys.artemis.util.uint.UInt64;
 
-import java.util.ArrayList;
-import java.util.Collections;
-
-import org.junit.Test;
-
 public class StateTransitionTest {
   private BeaconState newState() {
     // Initialize state
@@ -45,23 +43,68 @@ public class StateTransitionTest {
 
     // Add validator records
     ArrayList<ValidatorRecord> validators = new ArrayList<ValidatorRecord>();
-    validators.add(new ValidatorRecord(0, Hash.ZERO, Hash.ZERO, UInt64.MIN_VALUE,
-        UInt64.valueOf(PENDING_ACTIVATION), UInt64.valueOf(state.getSlot()), UInt64.MIN_VALUE, UInt64.MIN_VALUE, UInt64.MIN_VALUE));
-    validators.add(new ValidatorRecord(100, Hash.ZERO, Hash.ZERO, UInt64.MIN_VALUE,
-        UInt64.valueOf(ACTIVE), UInt64.valueOf(state.getSlot()), UInt64.MIN_VALUE, UInt64.MIN_VALUE, UInt64.MIN_VALUE));
-    validators.add(new ValidatorRecord(200, Hash.ZERO, Hash.ZERO, UInt64.MIN_VALUE,
-        UInt64.valueOf(ACTIVE_PENDING_EXIT), UInt64.valueOf(state.getSlot()), UInt64.MIN_VALUE, UInt64.MIN_VALUE, UInt64.MIN_VALUE));
-    validators.add(new ValidatorRecord(0, Hash.ZERO, Hash.ZERO, UInt64.MIN_VALUE,
-        UInt64.valueOf(EXITED_WITHOUT_PENALTY), UInt64.valueOf(state.getSlot()), UInt64.MIN_VALUE, UInt64.MIN_VALUE, UInt64.MIN_VALUE));
-    validators.add(new ValidatorRecord(0, Hash.ZERO, Hash.ZERO, UInt64.MIN_VALUE,
-        UInt64.valueOf(EXITED_WITH_PENALTY), UInt64.valueOf(state.getSlot()), UInt64.MIN_VALUE, UInt64.MIN_VALUE, UInt64.MIN_VALUE));
+    validators.add(
+        new ValidatorRecord(
+            0,
+            Hash.ZERO,
+            Hash.ZERO,
+            UInt64.MIN_VALUE,
+            UInt64.valueOf(PENDING_ACTIVATION),
+            UInt64.valueOf(state.getSlot()),
+            UInt64.MIN_VALUE,
+            UInt64.MIN_VALUE,
+            UInt64.MIN_VALUE));
+    validators.add(
+        new ValidatorRecord(
+            100,
+            Hash.ZERO,
+            Hash.ZERO,
+            UInt64.MIN_VALUE,
+            UInt64.valueOf(ACTIVE),
+            UInt64.valueOf(state.getSlot()),
+            UInt64.MIN_VALUE,
+            UInt64.MIN_VALUE,
+            UInt64.MIN_VALUE));
+    validators.add(
+        new ValidatorRecord(
+            200,
+            Hash.ZERO,
+            Hash.ZERO,
+            UInt64.MIN_VALUE,
+            UInt64.valueOf(ACTIVE_PENDING_EXIT),
+            UInt64.valueOf(state.getSlot()),
+            UInt64.MIN_VALUE,
+            UInt64.MIN_VALUE,
+            UInt64.MIN_VALUE));
+    validators.add(
+        new ValidatorRecord(
+            0,
+            Hash.ZERO,
+            Hash.ZERO,
+            UInt64.MIN_VALUE,
+            UInt64.valueOf(EXITED_WITHOUT_PENALTY),
+            UInt64.valueOf(state.getSlot()),
+            UInt64.MIN_VALUE,
+            UInt64.MIN_VALUE,
+            UInt64.MIN_VALUE));
+    validators.add(
+        new ValidatorRecord(
+            0,
+            Hash.ZERO,
+            Hash.ZERO,
+            UInt64.MIN_VALUE,
+            UInt64.valueOf(EXITED_WITH_PENALTY),
+            UInt64.valueOf(state.getSlot()),
+            UInt64.MIN_VALUE,
+            UInt64.MIN_VALUE,
+            UInt64.MIN_VALUE));
     state.setValidator_registry(validators);
 
     return state;
   }
 
   @Test
-  public void testUpdateProposerRandaoLayer(){
+  public void testUpdateProposerRandaoLayer() {
     // initialize state and state transition objects
     BeaconState state = newState();
     state.setSlot(4);
@@ -71,10 +114,13 @@ public class StateTransitionTest {
     commitee.add(Integer.valueOf(1));
     commitee.add(Integer.valueOf(0));
     commitee.add(Integer.valueOf(3));
-    ArrayList<ShardCommittee> newShardCommittees = new ArrayList<ShardCommittee>(Collections.nCopies(2,
-        new ShardCommittee(UInt64.MIN_VALUE, commitee, UInt64.valueOf(1))));
-    state.setShard_committees_at_slots(new ArrayList<ArrayList<ShardCommittee>>(Collections.nCopies(2*EPOCH_LENGTH,
-        newShardCommittees)));
+    ArrayList<ShardCommittee> newShardCommittees =
+        new ArrayList<ShardCommittee>(
+            Collections.nCopies(
+                2, new ShardCommittee(UInt64.MIN_VALUE, commitee, UInt64.valueOf(1))));
+    state.setShard_committees_at_slots(
+        new ArrayList<ArrayList<ShardCommittee>>(
+            Collections.nCopies(2 * EPOCH_LENGTH, newShardCommittees)));
 
     StateTransition stateTransition = new StateTransition();
 
@@ -101,10 +147,10 @@ public class StateTransitionTest {
   }
 
   @Test
-  public void testUpdateLatestRandaoMixes(){
+  public void testUpdateLatestRandaoMixes() {
     BeaconState state = newState();
-    state.setLatest_randao_mixes(new ArrayList<Hash>(Collections.nCopies(LATEST_RANDAO_MIXES_LENGTH,
-        Hash.EMPTY)));
+    state.setLatest_randao_mixes(
+        new ArrayList<Hash>(Collections.nCopies(LATEST_RANDAO_MIXES_LENGTH, Hash.EMPTY)));
     state.setSlot(12);
     ArrayList<Hash> latestRandaoMixes = state.getLatest_randao_mixes();
     latestRandaoMixes.set(11, hash(Bytes32.TRUE));
@@ -124,27 +170,34 @@ public class StateTransitionTest {
   @Test
   public void testUpdateRecentBlockHashes() throws StateTransitionException {
     BeaconState state = newState();
-        ArrayList<ArrayList<ShardCommittee>> shard_committees_at_slots =  new ArrayList<ArrayList<ShardCommittee>>();
-        for(int i=0; i<1000; i++){
-            ArrayList<ShardCommittee> shard_commitees = new ArrayList<ShardCommittee>();
-            for(int j=0; j<64; j++){
-                int total_validator_count = (int)Math.round(Math.random()*64);
+    ArrayList<ArrayList<ShardCommittee>> shard_committees_at_slots =
+        new ArrayList<ArrayList<ShardCommittee>>();
+    for (int i = 0; i < 1000; i++) {
+      ArrayList<ShardCommittee> shard_commitees = new ArrayList<ShardCommittee>();
+      for (int j = 0; j < 64; j++) {
+        int total_validator_count = (int) Math.round(Math.random() * 64);
 
-                ArrayList<Integer> commitee = new ArrayList<Integer>();
-                for(int k=0; k<total_validator_count; k++){
-                  commitee.add(Integer.valueOf((int)Math.round(Math.random()*64)));
-                }
-                shard_commitees.add(new ShardCommittee(UInt64.valueOf(Math.round(Math.random()*5000)), commitee, UInt64.valueOf((long) total_validator_count)));
-            }
-            shard_committees_at_slots.add(shard_commitees);
+        ArrayList<Integer> commitee = new ArrayList<Integer>();
+        for (int k = 0; k < total_validator_count; k++) {
+          commitee.add(Integer.valueOf((int) Math.round(Math.random() * 64)));
         }
+        shard_commitees.add(
+            new ShardCommittee(
+                UInt64.valueOf(Math.round(Math.random() * 5000)),
+                commitee,
+                UInt64.valueOf((long) total_validator_count)));
+      }
+      shard_committees_at_slots.add(shard_commitees);
+    }
     state.setShard_committees_at_slots(shard_committees_at_slots);
     BeaconBlock block = new BeaconBlock();
     block.setState_root(Hash.ZERO);
     SlotProcessorUtil.updateRecentBlockHashes(state, block);
 
-    assertThat(state.getLatest_block_roots().get(UInt64.valueOf(state.getSlot()))).isEqualTo(block.getState_root());
+    assertThat(state.getLatest_block_roots().get(UInt64.valueOf(state.getSlot())))
+        .isEqualTo(block.getState_root());
     ArrayList<Hash> batched_block_roots = state.getBatched_block_roots();
-    assertThat(batched_block_roots.get(batched_block_roots.size() - 1)).isEqualTo(SlotProcessorUtil.merkle_root(state.getLatest_block_roots()));
+    assertThat(batched_block_roots.get(batched_block_roots.size() - 1))
+        .isEqualTo(SlotProcessorUtil.merkle_root(state.getLatest_block_roots()));
   }
 }

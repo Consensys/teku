@@ -13,16 +13,15 @@
 
 package tech.pegasys.artemis.util.uint;
 
+import java.math.BigInteger;
 import tech.pegasys.artemis.util.bytes.Bytes32;
 import tech.pegasys.artemis.util.bytes.BytesValue;
-
-import java.math.BigInteger;
 
 /**
  * An unsigned 256-bits precision number.
  *
- * This class is essentially a "raw" {@link UInt256Value}, a 256-bits precision unsigned number of
- * no particular unit.
+ * <p>This class is essentially a "raw" {@link UInt256Value}, a 256-bits precision unsigned number
+ * of no particular unit.
  */
 public interface UInt256 extends UInt256Value<UInt256> {
   /** The value 0. */

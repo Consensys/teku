@@ -88,70 +88,68 @@ public final class Constants {
 
   public static String getConstantsAsString() {
     return "--Misc--"
-            + "\nSHARD_COUNT: " + SHARD_COUNT
-            + "\nTARGET_COMMITTEE_SIZE: " + TARGET_COMMITTEE_SIZE
-            + "\nMIN_BALANCE: " + EJECTION_BALANCE
-            + "\nMAX_BALANCE_CHURN_QUOTIENT: " + MAX_BALANCE_CHURN_QUOTIENT
-            + "\nGWEI_PER_ETH: " + GWEI_PER_ETH
-            + "\nBEACON_CHAIN_SHARD_NUMBER: " + BEACON_CHAIN_SHARD_NUMBER
-            + "\nBLS_WITHDRAWAL_CREDENTIALS: " + BLS_WITHDRAWAL_PREFIX_BYTE
-            + "\nMAX_CASPER_VOTES: " + MAX_CASPER_VOTES
-            + "\nLATEST_BLOCK_ROOTS_LENGTH: " + LATEST_BLOCK_ROOTS_LENGTH
-            + "\nLATEST_RANDAO_MIXES_LENGTH: " + LATEST_RANDAO_MIXES_LENGTH
-            + "\nEMPTY_SIGNATURE: " + Arrays.toString(EMPTY_SIGNATURE)
+        + "\nSHARD_COUNT: " + SHARD_COUNT
+        + "\nTARGET_COMMITTEE_SIZE: " + TARGET_COMMITTEE_SIZE
+        + "\nMIN_BALANCE: " + EJECTION_BALANCE
+        + "\nMAX_BALANCE_CHURN_QUOTIENT: " + MAX_BALANCE_CHURN_QUOTIENT
+        + "\nGWEI_PER_ETH: " + GWEI_PER_ETH
+        + "\nBEACON_CHAIN_SHARD_NUMBER: " + BEACON_CHAIN_SHARD_NUMBER
+        + "\nBLS_WITHDRAWAL_CREDENTIALS: " + BLS_WITHDRAWAL_PREFIX_BYTE
+        + "\nMAX_CASPER_VOTES: " + MAX_CASPER_VOTES
+        + "\nLATEST_BLOCK_ROOTS_LENGTH: " + LATEST_BLOCK_ROOTS_LENGTH
+        + "\nLATEST_RANDAO_MIXES_LENGTH: " + LATEST_RANDAO_MIXES_LENGTH
+        + "\nEMPTY_SIGNATURE: " + Arrays.toString(EMPTY_SIGNATURE)
 
-            + "\n\n--Deposit contract--"
-//            + "\nDEPOSIT_CONTRACT_ADDRESS: " + DEPOSIT_CONTRACT_ADDRESS
-            + "\nDEPOSIT_CONTRACT_TREE_DEPTH: " + DEPOSIT_CONTRACT_TREE_DEPTH
-            + "\nMIN_DEPOSIT: " + MIN_DEPOSIT
-            + "\nMAX_DEPOSIT: " + MAX_DEPOSIT
+        + "\n\n--Deposit contract--"
+//      + "\nDEPOSIT_CONTRACT_ADDRESS: " + DEPOSIT_CONTRACT_ADDRESS
+        + "\nDEPOSIT_CONTRACT_TREE_DEPTH: " + DEPOSIT_CONTRACT_TREE_DEPTH
+        + "\nMIN_DEPOSIT: " + MIN_DEPOSIT
+        + "\nMAX_DEPOSIT: " + MAX_DEPOSIT
 
-            + "\n\n--Initial values--"
-            + "\nINITIAL_FORK_VERSION: " + INITIAL_FORK_VERSION
-            + "\nINITIAL_SLOT_NUMBER: " + INITIAL_SLOT_NUMBER
-            + "\nZERO_HASH: " + ZERO_HASH
+        + "\n\n--Initial values--"
+        + "\nINITIAL_FORK_VERSION: " + INITIAL_FORK_VERSION
+        + "\nINITIAL_SLOT_NUMBER: " + INITIAL_SLOT_NUMBER
+        + "\nZERO_HASH: " + ZERO_HASH
 
-            + "\n\n--Time parameters--"
-            + "\nSLOT_DURATION: " + SLOT_DURATION
-            + "\nMIN_ATTESTATION_INCLUSION_DELAY: " + MIN_ATTESTATION_INCLUSION_DELAY
-            + "\nEPOCH_LENGTH: " + EPOCH_LENGTH
-            + "\nPOW_RECEIPT_ROOT_VOTING_PERIOD: " + POW_RECEIPT_ROOT_VOTING_PERIOD
-            + "\nSHARD_PERSISTENT_COMMITTEE_CHANGE_PERIOD: " + SHARD_PERSISTENT_COMMITTEE_CHANGE_PERIOD
-            + "\nCOLLECTIVE_PENALTY_CALCULATION_PERIOD: " + COLLECTIVE_PENALTY_CALCULATION_PERIOD
-            + "\nZERO_BALANCE_VALIDATOR_TTL: " + ZERO_BALANCE_VALIDATOR_TTL
+        + "\n\n--Time parameters--"
+        + "\nSLOT_DURATION: " + SLOT_DURATION
+        + "\nMIN_ATTESTATION_INCLUSION_DELAY: " + MIN_ATTESTATION_INCLUSION_DELAY
+        + "\nEPOCH_LENGTH: " + EPOCH_LENGTH
+        + "\nPOW_RECEIPT_ROOT_VOTING_PERIOD: " + POW_RECEIPT_ROOT_VOTING_PERIOD
+        + "\nSHARD_PERSISTENT_COMMITTEE_CHANGE_PERIOD: " + SHARD_PERSISTENT_COMMITTEE_CHANGE_PERIOD
+        + "\nCOLLECTIVE_PENALTY_CALCULATION_PERIOD: " + COLLECTIVE_PENALTY_CALCULATION_PERIOD
+        + "\nZERO_BALANCE_VALIDATOR_TTL: " + ZERO_BALANCE_VALIDATOR_TTL
 
-            + "\n\n--Reward and penalty quotients--"
-            + "\nBASE_REWARD_QUOTIENT: " + BASE_REWARD_QUOTIENT
-            + "\nWHISTLEBLOWER_REWARD_QUOTIENT: " + WHISTLEBLOWER_REWARD_QUOTIENT
-            + "\nINCLUDER_REWARD_QUOTIENT: " + INCLUDER_REWARD_QUOTIENT
-            + "\nINACTIVITY_PENALTY_QUOTIENT: " + INACTIVITY_PENALTY_QUOTIENT
+        + "\n\n--Reward and penalty quotients--"
+        + "\nBASE_REWARD_QUOTIENT: " + BASE_REWARD_QUOTIENT
+        + "\nWHISTLEBLOWER_REWARD_QUOTIENT: " + WHISTLEBLOWER_REWARD_QUOTIENT
+        + "\nINCLUDER_REWARD_QUOTIENT: " + INCLUDER_REWARD_QUOTIENT
+        + "\nINACTIVITY_PENALTY_QUOTIENT: " + INACTIVITY_PENALTY_QUOTIENT
 
-            + "\n\n--Status codes--"
-            + "\nPENDING_ACTIVATION: " + PENDING_ACTIVATION
-            + "\nACTIVE: " + ACTIVE
-            + "\nACTIVE_PENDING_EXIT: " + ACTIVE_PENDING_EXIT
-            + "\nEXITED_WITHOUT_PENALTY: " + EXITED_WITHOUT_PENALTY
-            + "\nEXITED_WITH_PENALTY: " + EXITED_WITH_PENALTY
+        + "\n\n--Status codes--"
+        + "\nPENDING_ACTIVATION: " + PENDING_ACTIVATION
+        + "\nACTIVE: " + ACTIVE
+        + "\nACTIVE_PENDING_EXIT: " + ACTIVE_PENDING_EXIT
+        + "\nEXITED_WITHOUT_PENALTY: " + EXITED_WITHOUT_PENALTY
+        + "\nEXITED_WITH_PENALTY: " + EXITED_WITH_PENALTY
 
+        + "\n\n--Max operations per block--"
+        + "\nMAX_PROPOSER_SLASHINGS: " + MAX_PROPOSER_SLASHINGS
+        + "\nMAX_CASPER_SLASHINGS: " + MAX_CASPER_SLASHINGS
+        + "\nMAX_ATTESTATIONS: " + MAX_ATTESTATIONS
+        + "\nMAX_DEPOSITS: " + MAX_DEPOSITS
+        + "\nMAX_EXITS: " + MAX_EXITS
 
-            + "\n\n--Max operations per block--"
-            + "\nMAX_PROPOSER_SLASHINGS: " + MAX_PROPOSER_SLASHINGS
-            + "\nMAX_CASPER_SLASHINGS: " + MAX_CASPER_SLASHINGS
-            + "\nMAX_ATTESTATIONS: " + MAX_ATTESTATIONS
-            + "\nMAX_DEPOSITS: " + MAX_DEPOSITS
-            + "\nMAX_EXITS: " + MAX_EXITS
+        + "\n\n--Validator registry delta flags--"
+        + "\nACTIVATION: " + ACTIVATION
+        + "\nEXIT: " + EXIT
 
-
-            + "\n\n--Validator registry delta flags--"
-            + "\nACTIVATION: " + ACTIVATION
-            + "\nEXIT: " + EXIT
-
-            + "\n\n--Signature domains--"
-            + "\nDOMAIN_DEPOSIT: " + DOMAIN_DEPOSIT
-            + "\nDOMAIN_ATTESTATION: " + DOMAIN_ATTESTATION
-            + "\nDOMAIN_PROPOSAL: " + DOMAIN_PROPOSAL
-            + "\nDOMAIN_EXIT: " + DOMAIN_EXIT
+        + "\n\n--Signature domains--"
+        + "\nDOMAIN_DEPOSIT: " + DOMAIN_DEPOSIT
+        + "\nDOMAIN_ATTESTATION: " + DOMAIN_ATTESTATION
+        + "\nDOMAIN_PROPOSAL: " + DOMAIN_PROPOSAL
+        + "\nDOMAIN_EXIT: " + DOMAIN_EXIT
         + "\n";
   }
-
 }
+

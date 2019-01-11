@@ -17,14 +17,11 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkElementIndex;
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import io.vertx.core.buffer.Buffer;
 import java.security.MessageDigest;
 import java.util.Arrays;
 
-import io.vertx.core.buffer.Buffer;
-
-/**
- * An implementation of {@link BytesValue} backed by a byte array ({@code byte[]}).
- */
+/** An implementation of {@link BytesValue} backed by a byte array ({@code byte[]}). */
 class ArrayWrappingBytesValue extends AbstractBytesValue {
 
   protected final byte[] bytes;
@@ -41,9 +38,12 @@ class ArrayWrappingBytesValue extends AbstractBytesValue {
     if (bytes.length > 0) {
       checkElementIndex(offset, bytes.length);
     }
-    checkArgument(offset + length <= bytes.length,
-        "Provided length %s is too big: the value has only %s bytes from offset %s", length,
-        bytes.length - offset, offset);
+    checkArgument(
+        offset + length <= bytes.length,
+        "Provided length %s is too big: the value has only %s bytes from offset %s",
+        length,
+        bytes.length - offset,
+        offset);
 
     this.bytes = bytes;
     this.offset = offset;
@@ -81,11 +81,16 @@ class ArrayWrappingBytesValue extends AbstractBytesValue {
     }
 
     checkElementIndex(index, size());
-    checkArgument(index + length <= size(),
+    checkArgument(
+        index + length <= size(),
         "Provided length %s is too big: the value has size %s and has only %s bytes from %s",
-        length, size(), size() - index, index);
+        length,
+        size(),
+        size() - index,
+        index);
 
-    return length == Bytes32.SIZE ? new ArrayWrappingBytes32(bytes, offset + index)
+    return length == Bytes32.SIZE
+        ? new ArrayWrappingBytes32(bytes, offset + index)
         : new ArrayWrappingBytesValue(bytes, offset + index, length);
   }
 
@@ -129,8 +134,11 @@ class ArrayWrappingBytesValue extends AbstractBytesValue {
 
   @Override
   public void copyTo(MutableBytesValue dest) {
-    checkArgument(dest.size() == size(), "Cannot copy %s bytes to destination of non-equal size %s",
-        size(), dest.size());
+    checkArgument(
+        dest.size() == size(),
+        "Cannot copy %s bytes to destination of non-equal size %s",
+        size(),
+        dest.size());
 
     copyTo(dest, 0);
   }
@@ -151,9 +159,12 @@ class ArrayWrappingBytesValue extends AbstractBytesValue {
     }
 
     checkElementIndex(destinationOffset, destination.size());
-    checkArgument(destination.size() - destinationOffset >= size(),
-        "Cannot copy %s bytes, destination has only %s bytes from index %s", size(),
-        destination.size() - destinationOffset, destinationOffset);
+    checkArgument(
+        destination.size() - destinationOffset >= size(),
+        "Cannot copy %s bytes, destination has only %s bytes from index %s",
+        size(),
+        destination.size() - destinationOffset,
+        destinationOffset);
 
     MutableArrayWrappingBytesValue d = (MutableArrayWrappingBytesValue) destination;
     System.arraycopy(bytes, offset, d.bytes, d.offset + destinationOffset, size());

@@ -20,5 +20,4 @@ public class TreeHash {
   public static Bytes32 hash_tree_root(Object value) {
     return Bytes32.FALSE;
   }
-
 }

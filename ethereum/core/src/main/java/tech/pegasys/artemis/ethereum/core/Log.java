@@ -13,15 +13,13 @@
 
 package tech.pegasys.artemis.ethereum.core;
 
+import com.google.common.base.Joiner;
+import com.google.common.collect.ImmutableList;
+import java.util.List;
+import java.util.Objects;
 import tech.pegasys.artemis.ethereum.rlp.RLPInput;
 import tech.pegasys.artemis.ethereum.rlp.RLPOutput;
 import tech.pegasys.artemis.util.bytes.BytesValue;
-
-import java.util.List;
-import java.util.Objects;
-
-import com.google.common.base.Joiner;
-import com.google.common.collect.ImmutableList;
 
 /**
  * A log entry is a tuple of a logger’s address (the address of the contract that added the logs), a
@@ -86,12 +84,12 @@ public class Log {
 
   @Override
   public boolean equals(Object other) {
-    if (!(other instanceof Log))
-      return false;
+    if (!(other instanceof Log)) return false;
 
     // Compare data
     Log that = (Log) other;
-    return this.data.equals(that.data) && this.logger.equals(that.logger)
+    return this.data.equals(that.data)
+        && this.logger.equals(that.logger)
         && this.topics.equals(that.topics);
   }
 

@@ -17,11 +17,14 @@ import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 
 @Command(name = "Artemis", mixinStandardHelpOptions = true)
-public class CommandLineArguments{
-    @Option(names = {"-p", "--PoWChainServiceDisabled"}, description = "If this option is enabled then the PoW Chain service is disabled.")
-    private Boolean PoWChainServiceDisabled=false;
+public class CommandLineArguments {
+  @Option(
+    names = {"-p", "--PoWChainServiceDisabled"},
+    description = "If this option is enabled then the PoW Chain service is disabled."
+  )
+  private Boolean PoWChainServiceDisabled = false;
 
-    public Boolean getPoWChainServiceDisabled(){
-        return this.PoWChainServiceDisabled;
-    }
+  public Boolean getPoWChainServiceDisabled() {
+    return this.PoWChainServiceDisabled;
+  }
 }

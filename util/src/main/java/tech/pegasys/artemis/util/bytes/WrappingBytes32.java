@@ -15,16 +15,14 @@ package tech.pegasys.artemis.util.bytes;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
-/**
- * A simple class to wrap another {@link BytesValue} of exactly 32 bytes as a {@link Bytes32}.
- */
+/** A simple class to wrap another {@link BytesValue} of exactly 32 bytes as a {@link Bytes32}. */
 class WrappingBytes32 extends AbstractBytesValue implements Bytes32 {
 
   private final BytesValue value;
 
   WrappingBytes32(BytesValue value) {
-    checkArgument(value.size() == SIZE, "Expected value to be %s bytes, but is %s bytes", SIZE,
-        value.size());
+    checkArgument(
+        value.size() == SIZE, "Expected value to be %s bytes, but is %s bytes", SIZE, value.size());
     this.value = value;
   }
 

@@ -13,15 +13,13 @@
 
 package tech.pegasys.artemis.util.uint;
 
+import java.math.BigInteger;
+import org.junit.Assert;
+import org.junit.Test;
 import tech.pegasys.artemis.util.bytes.Bytes32;
 import tech.pegasys.artemis.util.bytes.MutableBytes32;
 import tech.pegasys.artemis.util.uint.UInt256Bytes.BinaryLongOp;
 import tech.pegasys.artemis.util.uint.UInt256Bytes.BinaryOp;
-
-import java.math.BigInteger;
-
-import org.junit.Assert;
-import org.junit.Test;
 
 public class UInt256BytesTest {
 
@@ -132,8 +130,8 @@ public class UInt256BytesTest {
 
     longMultiply(h("13492324908428420834234908342"), 8, h("107938599267427366673879266736"));
     longMultiply(h("13492324908428420834234908342"), 2048, h("27632281412461405868513092284416"));
-    longMultiply(h("13492324908428420834234908342"), 131072,
-        h("1768466010397529975584837906202624"));
+    longMultiply(
+        h("13492324908428420834234908342"), 131072, h("1768466010397529975584837906202624"));
   }
 
   @Test
@@ -144,14 +142,18 @@ public class UInt256BytesTest {
     longAdd(h("100"), 90, h("190"));
 
     longAdd(h("13492324908428420834234908342"), 10, h("13492324908428420834234908352"));
-    longAdd(h("13492324908428420834234908342"), 23422141424214L,
-        h("13492324908428444256376332556"));
+    longAdd(
+        h("13492324908428420834234908342"), 23422141424214L, h("13492324908428444256376332556"));
 
     longAdd(h("1"), Long.MAX_VALUE, h(UInt256.of(2).pow(UInt256.of(63)).toString()));
 
-    longAdd(h("69539042617438235654073171722120479225708093440527479355806409025672010641359"), 0,
+    longAdd(
+        h("69539042617438235654073171722120479225708093440527479355806409025672010641359"),
+        0,
         h("69539042617438235654073171722120479225708093440527479355806409025672010641359"));
-    longAdd(h("69539042617438235654073171722120479225708093440527479355806409025672010641359"), 10,
+    longAdd(
+        h("69539042617438235654073171722120479225708093440527479355806409025672010641359"),
+        10,
         h("69539042617438235654073171722120479225708093440527479355806409025672010641369"));
   }
 
@@ -163,10 +165,14 @@ public class UInt256BytesTest {
     longSubtract(h("100"), 10, h("90"));
     longSubtract(h("1"), 1, h("0"));
 
-    longSubtract(h("69539042617438235654073171722120479225708093440527479355806409025672010641359"),
-        0, h("69539042617438235654073171722120479225708093440527479355806409025672010641359"));
-    longSubtract(h("69539042617438235654073171722120479225708093440527479355806409025672010641359"),
-        10, h("69539042617438235654073171722120479225708093440527479355806409025672010641349"));
+    longSubtract(
+        h("69539042617438235654073171722120479225708093440527479355806409025672010641359"),
+        0,
+        h("69539042617438235654073171722120479225708093440527479355806409025672010641359"));
+    longSubtract(
+        h("69539042617438235654073171722120479225708093440527479355806409025672010641359"),
+        10,
+        h("69539042617438235654073171722120479225708093440527479355806409025672010641349"));
   }
 
   @Test
@@ -182,8 +188,8 @@ public class UInt256BytesTest {
   }
 
   private void bitLength(String input, int expectedLength) {
-    Assert.assertEquals(expectedLength,
-        UInt256Bytes.bitLength(Bytes32.fromHexStringLenient(input)));
+    Assert.assertEquals(
+        expectedLength, UInt256Bytes.bitLength(Bytes32.fromHexStringLenient(input)));
   }
 
   private void shiftLeft(String input, int shift, String expected) {
@@ -283,8 +289,10 @@ public class UInt256BytesTest {
     if (displayAsHex) {
       Assert.assertEquals(expected, actual);
     } else {
-      String msg = String.format("Expected %s but got %s", UInt256Bytes.toString(expected),
-          UInt256Bytes.toString(actual));
+      String msg =
+          String.format(
+              "Expected %s but got %s",
+              UInt256Bytes.toString(expected), UInt256Bytes.toString(actual));
       Assert.assertEquals(msg, expected, actual);
     }
   }
