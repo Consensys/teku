@@ -51,23 +51,27 @@ public class BeaconStateTest {
     // Initialize state
     BeaconState state = new BeaconState(0, 0, new ForkData(UInt64.MIN_VALUE,
         UInt64.MIN_VALUE, UInt64.MIN_VALUE), new Validators(), new ArrayList<>(),
-       0, 0, hash(Bytes32.TRUE), new ArrayList<>(), new ArrayList<>(),
-        new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), 0, 0, 0,
+        0, 0, hash(Bytes32.TRUE), new ArrayList<>(), new ArrayList<>(), new ArrayList<>(),
+        new ArrayList<>(), new ArrayList<>(), 0, 0, 0,
         0,  new ArrayList<>(), new LatestBlockRoots(), new ArrayList<>(), new ArrayList<>(),
         new ArrayList<>(), hash(Bytes32.TRUE), new ArrayList<>());
 
     // Add validator records
     ArrayList<ValidatorRecord> validators = new ArrayList<>();
     validators.add(new ValidatorRecord(0, Hash.ZERO, Hash.ZERO, UInt64.MIN_VALUE,
-        UInt64.valueOf(PENDING_ACTIVATION), UInt64.valueOf(state.getSlot()), UInt64.MIN_VALUE, UInt64.MIN_VALUE, UInt64.MIN_VALUE));
+        UInt64.valueOf(PENDING_ACTIVATION), UInt64.valueOf(state.getSlot()), UInt64.MIN_VALUE, UInt64.MIN_VALUE,
+        UInt64.MIN_VALUE));
     validators.add(new ValidatorRecord(100, Hash.ZERO, Hash.ZERO, UInt64.MIN_VALUE,
-        UInt64.valueOf(ACTIVE), UInt64.valueOf(state.getSlot()), UInt64.MIN_VALUE, UInt64.MIN_VALUE, UInt64.MIN_VALUE));
+        UInt64.valueOf(ACTIVE), UInt64.valueOf(state.getSlot()), UInt64.MIN_VALUE,  UInt64.MIN_VALUE, UInt64.MIN_VALUE));
     validators.add(new ValidatorRecord(200, Hash.ZERO, Hash.ZERO, UInt64.MIN_VALUE,
-        UInt64.valueOf(ACTIVE_PENDING_EXIT), UInt64.valueOf(state.getSlot()), UInt64.MIN_VALUE, UInt64.MIN_VALUE, UInt64.MIN_VALUE));
+        UInt64.valueOf(ACTIVE_PENDING_EXIT), UInt64.valueOf(state.getSlot()), UInt64.MIN_VALUE, UInt64.MIN_VALUE,
+        UInt64.MIN_VALUE));
     validators.add(new ValidatorRecord(0, Hash.ZERO, Hash.ZERO, UInt64.MIN_VALUE,
-        UInt64.valueOf(EXITED_WITHOUT_PENALTY), UInt64.valueOf(state.getSlot()), UInt64.MIN_VALUE, UInt64.MIN_VALUE, UInt64.MIN_VALUE));
+        UInt64.valueOf(EXITED_WITHOUT_PENALTY), UInt64.valueOf(state.getSlot()), UInt64.MIN_VALUE, UInt64.MIN_VALUE,
+        UInt64.MIN_VALUE));
     validators.add(new ValidatorRecord(0, Hash.ZERO, Hash.ZERO, UInt64.MIN_VALUE,
-        UInt64.valueOf(EXITED_WITH_PENALTY), UInt64.valueOf(state.getSlot()), UInt64.MIN_VALUE, UInt64.MIN_VALUE, UInt64.MIN_VALUE));
+        UInt64.valueOf(EXITED_WITH_PENALTY), UInt64.valueOf(state.getSlot()), UInt64.MIN_VALUE, UInt64.MIN_VALUE,
+        UInt64.MIN_VALUE));
     state.setValidator_registry(validators);
 
     // Add validator balances
@@ -85,7 +89,6 @@ public class BeaconStateTest {
     state.getLatest_penalized_exit_balances().add(10.0);
 
     // Create shard_committees
-
     ArrayList<ShardCommittee> new_shard_committees = new ArrayList<>(Collections.nCopies(2,
         new ShardCommittee(UInt64.MIN_VALUE, new ArrayList<>(Collections.nCopies(1, 1)), UInt64.valueOf(1))));
     state.setShard_committees_at_slots(new ArrayList<>(Collections.nCopies(128,
@@ -94,36 +97,20 @@ public class BeaconStateTest {
     return state;
   }
 
-  private BeaconState processDepositSetup() {
-    BeaconState state = newState();
-    ValidatorRecord validator1 = new ValidatorRecord(0, Hash.ZERO, Hash.ZERO, UInt64.valueOf(0), UInt64.valueOf(0),
-        UInt64.valueOf(PENDING_ACTIVATION), UInt64.valueOf(state.getSlot()), UInt64.valueOf(0), UInt64.valueOf(0));
-    ValidatorRecord validator2 = new ValidatorRecord(100, Hash.ZERO, Hash.ZERO, UInt64.valueOf(0), UInt64.valueOf(0),
-        UInt64.valueOf(PENDING_ACTIVATION), UInt64.valueOf(state.getSlot()), UInt64.valueOf(0), UInt64.valueOf(0));
-    ValidatorRecord validator3 = new ValidatorRecord(200, Hash.ZERO, Hash.ZERO, UInt64.valueOf(0), UInt64.valueOf(0),
-        UInt64.valueOf(PENDING_ACTIVATION), UInt64.valueOf(state.getSlot()), UInt64.valueOf(0), UInt64.valueOf(0));
-    ArrayList<ValidatorRecord> validators = new ArrayList<>();
-    validators.add(validator1);
-    validators.add(validator2);
-    validators.add(validator3);
-    state.setValidator_registry(validators);
-    return state;
-  }
-
   @Test
   public void processDepositValidatorPubkeysDoesNotContainPubkeyAndMinEmptyValidatorIndexIsNegative() {
-    BeaconState state = processDepositSetup();
+    BeaconState state = newState();
     int pubkey = 20;
-    assertThat(state.process_deposit(state, pubkey, 100, Bytes32.TRUE, Hash.ZERO, Hash.ZERO))
-        .isEqualTo(3);
+    assertThat(state.process_deposit(state, pubkey, 100, Bytes32.TRUE, Hash.ZERO, Hash.ZERO, Hash.ZERO))
+        .isEqualTo(5);
   }
 
   @Test
   public void processDepositValidatorPubkeysDoesNotContainPubkey() {
-    BeaconState state = processDepositSetup();
+    BeaconState state = newState();
     int pubkey = 20;
-    assertThat(state.process_deposit(state, pubkey, 100, Bytes32.TRUE, Hash.ZERO, Hash.ZERO))
-        .isEqualTo(3);
+    assertThat(state.process_deposit(state, pubkey, 100, Bytes32.TRUE, Hash.ZERO, Hash.ZERO, Hash.ZERO))
+        .isEqualTo(5);
   }
 
   @Test
@@ -133,7 +120,7 @@ public class BeaconStateTest {
 
     double oldBalance = state.getValidator_balances().get(2);
 
-    assertThat(state.process_deposit(state, pubkey, 100, Bytes32.TRUE, Hash.ZERO, Hash.ZERO))
+    assertThat(state.process_deposit(state, pubkey, 100, Bytes32.TRUE, Hash.ZERO, Hash.ZERO, Hash.ZERO))
         .isEqualTo(2);
 
     assertThat(state.getValidator_balances().get(2)).isEqualTo(oldBalance + 100.0);
@@ -366,6 +353,7 @@ public class BeaconStateTest {
 
     split(sample, -1);
   }
+
 
   @Test
   public void splitReturnsOneSmallerSizedSplit() {

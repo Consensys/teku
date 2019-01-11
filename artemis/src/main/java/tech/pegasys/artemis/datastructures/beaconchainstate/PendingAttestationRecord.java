@@ -32,6 +32,12 @@ public class PendingAttestationRecord {
     this.slot_included = slot_included;
   }
 
+  /*********************
+   *                   *
+   * GETTERS & SETTERS *
+   *                   *
+   *********************/
+
   public AttestationData getData() {
     return data;
   }

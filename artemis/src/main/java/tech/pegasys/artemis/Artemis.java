@@ -20,31 +20,31 @@ import picocli.CommandLine;
 
 public final class Artemis {
 
-    public static void main(final String... args) {
-        try {
-            // Process Command Line Args
-            CommandLineArguments cliArgs = new CommandLineArguments();
-            CommandLine commandLine = new CommandLine(cliArgs);
-            commandLine.parse(args);
-            if (commandLine.isUsageHelpRequested()) {
-                commandLine.usage(System.out);
-                return;
-            }
-            // Detect SIGTERM
-            Runtime.getRuntime().addShutdownHook(new Thread(){
+  public static void main(final String... args) {
+    try {
+      // Process Command Line Args
+      CommandLineArguments cliArgs = new CommandLineArguments();
+      CommandLine commandLine = new CommandLine(cliArgs);
+      commandLine.parse(args);
+      if (commandLine.isUsageHelpRequested()) {
+        commandLine.usage(System.out);
+        return;
+      }
+      // Detect SIGTERM
+      Runtime.getRuntime().addShutdownHook(new Thread(){
                 @Override
                 public void run(){
-                    System.out.println("Artemis is shutting down");
-                    ServiceController.stopAll(cliArgs);
+                  System.out.println("Artemis is shutting down");
+                  ServiceController.stopAll(cliArgs);
                 }
-            });
-            // Initialize services
-            ServiceController.initAll(cliArgs);
-            // Start services
-            ServiceController.startAll(cliArgs);
-        } catch (Exception e){
-            System.out.println(e.toString());
-        }
+      });
+      // Initialize services
+      ServiceController.initAll(cliArgs);
+      // Start services
+      ServiceController.startAll(cliArgs);
+    } catch (Exception e){
+      System.out.println(e.toString());
     }
+  }
 
 }

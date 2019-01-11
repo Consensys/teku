@@ -40,6 +40,12 @@ public class AttestationData {
     this.justified_block_hash = justified_block_hash;
   }
 
+  /*********************
+   *                   *
+   * GETTERS & SETTERS *
+   *                   *
+   *********************/
+
   public long getSlot() {
     return slot;
   }

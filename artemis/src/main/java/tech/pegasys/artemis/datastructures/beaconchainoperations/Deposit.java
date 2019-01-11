@@ -28,6 +28,12 @@ public class Deposit {
     this.deposit_data = deposit_data;
   }
 
+  /*********************
+   *                   *
+   * GETTERS & SETTERS *
+   *                   *
+   *********************/
+
   public Hash[] getMerkle_branch() {
     return merkle_branch;
   }

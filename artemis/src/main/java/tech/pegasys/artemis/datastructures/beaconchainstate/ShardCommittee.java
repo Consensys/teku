@@ -29,6 +29,12 @@ public class ShardCommittee {
     this.total_validator_count = total_validator_count;
   }
 
+  /*********************
+   *                   *
+   * GETTERS & SETTERS *
+   *                   *
+   *********************/
+
   public UInt64 getShard() {
     return shard;
   }

@@ -26,4 +26,25 @@ public class CandidatePoWReceiptRootRecord {
     this.votes = votes;
   }
 
+  public Hash getCandidate_pow_receipt_root() {
+    return candidate_pow_receipt_root;
+  }
+
+  public void setCandidate_pow_receipt_root(Hash candidate_pow_receipt_root) {
+    this.candidate_pow_receipt_root = candidate_pow_receipt_root;
+  }
+
+  /*********************
+   *                   *
+   * GETTERS & SETTERS *
+   *                   *
+   *********************/
+
+  public UInt64 getVotes() {
+    return votes;
+  }
+
+  public void setVotes(UInt64 votes) {
+    this.votes = votes;
+  }
 }

@@ -42,6 +42,11 @@ public class BeaconBlockBody {
     this.exits = exits;
   }
 
+  /*********************
+   *                   *
+   * GETTERS & SETTERS *
+   *                   *
+   *********************/
 
   public Attestation[] getAttestations() {
     return attestations;

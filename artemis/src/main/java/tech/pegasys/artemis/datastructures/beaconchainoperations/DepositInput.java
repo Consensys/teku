@@ -14,6 +14,7 @@
 package tech.pegasys.artemis.datastructures.beaconchainoperations;
 
 import tech.pegasys.artemis.ethereum.core.Hash;
+import tech.pegasys.artemis.util.bytes.Bytes32;
 import tech.pegasys.artemis.util.uint.UInt384;
 
 public class DepositInput {
@@ -21,15 +22,23 @@ public class DepositInput {
   private UInt384 pubkey;
   private Hash withdrawal_credentials;
   private Hash randao_commitment;
-  private UInt384[] proof_of_possession;
+  private Hash poc_commitment;
+  private Bytes32 proof_of_possession;
 
-  public DepositInput(UInt384 pubkey, Hash withdrawal_credentials, Hash randao_commitment,
-                      UInt384[] proof_of_possession) {
+  public DepositInput(UInt384 pubkey, Hash withdrawal_credentials, Hash randao_commitment, Hash poc_commitment,
+                      Bytes32 proof_of_possession) {
     this.pubkey = pubkey;
     this.withdrawal_credentials = withdrawal_credentials;
     this.randao_commitment = randao_commitment;
+    this.poc_commitment = poc_commitment;
     this.proof_of_possession = proof_of_possession;
   }
+
+  /*********************
+   *                   *
+   * GETTERS & SETTERS *
+   *                   *
+   *********************/
 
   public UInt384 getPubkey() {
     return pubkey;
@@ -55,11 +64,19 @@ public class DepositInput {
     this.randao_commitment = randao_commitment;
   }
 
-  public UInt384[] getProof_of_possession() {
+  public Bytes32 getProof_of_possession() {
     return proof_of_possession;
   }
 
-  public void setProof_of_possession(UInt384[] proof_of_possession) {
+  public void setProof_of_possession(Bytes32 proof_of_possession) {
     this.proof_of_possession = proof_of_possession;
+  }
+
+  public Hash getPoc_commitment() {
+    return poc_commitment;
+  }
+
+  public void setPoc_commitment(Hash poc_commitment) {
+    this.poc_commitment = poc_commitment;
   }
 }

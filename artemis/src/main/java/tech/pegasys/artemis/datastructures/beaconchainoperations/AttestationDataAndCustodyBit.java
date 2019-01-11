@@ -18,9 +18,14 @@ public class AttestationDataAndCustodyBit {
   private AttestationData data;
   private boolean poc_bit;
 
-  AttestationDataAndCustodyBit() {
-
+  public AttestationDataAndCustodyBit() {
   }
+
+  /*********************
+   *                   *
+   * GETTERS & SETTERS *
+   *                   *
+   *********************/
 
   public boolean isPoc_bit() {
     return poc_bit;

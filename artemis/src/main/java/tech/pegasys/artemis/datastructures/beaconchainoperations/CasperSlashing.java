@@ -23,6 +23,12 @@ public class CasperSlashing {
     this.votes_2 = votes_2;
   }
 
+  /*********************
+   *                   *
+   * GETTERS & SETTERS *
+   *                   *
+   *********************/
+
   public SlashableVoteData getVotes_1() {
     return votes_1;
   }
