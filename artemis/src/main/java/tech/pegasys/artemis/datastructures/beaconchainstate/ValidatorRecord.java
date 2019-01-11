@@ -68,7 +68,6 @@ public class ValidatorRecord {
     return Math.min(balance, Constants.MAX_DEPOSIT * Constants.GWEI_PER_ETH);
   }
 
-
   /*********************
    *                   *
    * GETTERS & SETTERS *

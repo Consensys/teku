@@ -210,7 +210,6 @@ public class BeaconState {
         new ArrayList<>(),
         new ArrayList<>(),
 
-
         // Finality
         INITIAL_SLOT_NUMBER,
         INITIAL_SLOT_NUMBER,
@@ -257,7 +256,7 @@ public class BeaconState {
   }
 
   /**
-   * Shuffles 'validators' into shard committees using 'seed' as entropy.
+   * Shuffles ``validators`` into shard committees using ``seed`` as entropy.
    * @param seed
    * @param validators
    * @param crosslinking_start_shard
