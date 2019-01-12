@@ -13,15 +13,15 @@
 
 package tech.pegasys.artemis.datastructures.beaconchainoperations;
 
-import tech.pegasys.artemis.util.uint.UInt64;
+import com.google.common.primitives.UnsignedLong;
 
 public class DepositData {
 
   private DepositInput deposit_input;
-  private UInt64 value;
-  private UInt64 timestamp;
+  private UnsignedLong value;
+  private UnsignedLong timestamp;
 
-  public DepositData(DepositInput deposit_input, UInt64 value, UInt64 timestamp) {
+  public DepositData(DepositInput deposit_input, UnsignedLong value, UnsignedLong timestamp) {
     this.deposit_input = deposit_input;
     this.value = value;
     this.timestamp = timestamp;
@@ -36,19 +36,19 @@ public class DepositData {
     this.deposit_input = deposit_input;
   }
 
-  public UInt64 getValue() {
+  public UnsignedLong getValue() {
     return value;
   }
 
-  public void setValue(UInt64 value) {
+  public void setValue(UnsignedLong value) {
     this.value = value;
   }
 
-  public UInt64 getTimestamp() {
+  public UnsignedLong getTimestamp() {
     return timestamp;
   }
 
-  public void setTimestamp(UInt64 timestamp) {
+  public void setTimestamp(UnsignedLong timestamp) {
     this.timestamp = timestamp;
   }
 }

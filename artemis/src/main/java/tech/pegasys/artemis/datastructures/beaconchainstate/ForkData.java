@@ -13,42 +13,42 @@
 
 package tech.pegasys.artemis.datastructures.beaconchainstate;
 
-import tech.pegasys.artemis.util.uint.UInt64;
+import com.google.common.primitives.UnsignedLong;
 
 public class ForkData {
 
-  private UInt64 pre_fork_version;
-  private UInt64 post_fork_version;
-  private UInt64 fork_slot;
+  private UnsignedLong pre_fork_version;
+  private UnsignedLong post_fork_version;
+  private UnsignedLong fork_slot;
 
-  public ForkData(UInt64 pre_fork_version, UInt64 post_fork_version, UInt64 fork_slot) {
+  public ForkData(UnsignedLong pre_fork_version, UnsignedLong post_fork_version, UnsignedLong fork_slot) {
     this.pre_fork_version = pre_fork_version;
     this.post_fork_version = post_fork_version;
     this.fork_slot = fork_slot;
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */
-  public UInt64 getPre_fork_version() {
+  public UnsignedLong getPre_fork_version() {
     return pre_fork_version;
   }
 
-  public void setPre_fork_version(UInt64 pre_fork_version) {
+  public void setPre_fork_version(UnsignedLong pre_fork_version) {
     this.pre_fork_version = pre_fork_version;
   }
 
-  public UInt64 getPost_fork_version() {
+  public UnsignedLong getPost_fork_version() {
     return post_fork_version;
   }
 
-  public void setPost_fork_version(UInt64 post_fork_version) {
+  public void setPost_fork_version(UnsignedLong post_fork_version) {
     this.post_fork_version = post_fork_version;
   }
 
-  public UInt64 getFork_slot() {
+  public UnsignedLong getFork_slot() {
     return fork_slot;
   }
 
-  public void setFork_slot(UInt64 fork_slot) {
+  public void setFork_slot(UnsignedLong fork_slot) {
     this.fork_slot = fork_slot;
   }
 }

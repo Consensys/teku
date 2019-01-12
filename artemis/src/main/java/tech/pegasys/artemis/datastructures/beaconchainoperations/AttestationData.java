@@ -13,28 +13,28 @@
 
 package tech.pegasys.artemis.datastructures.beaconchainoperations;
 
+import com.google.common.primitives.UnsignedLong;
 import tech.pegasys.artemis.ethereum.core.Hash;
-import tech.pegasys.artemis.util.uint.UInt64;
 
 public class AttestationData {
 
   private long slot;
-  private UInt64 shard;
+  private UnsignedLong shard;
   private Hash beacon_block_hash;
   private Hash epoch_boundary_hash;
   private Hash shard_block_hash;
   private Hash last_crosslink_hash;
-  private UInt64 justified_slot;
+  private UnsignedLong justified_slot;
   private Hash justified_block_hash;
 
   public AttestationData(
       long slot,
-      UInt64 shard,
+      UnsignedLong shard,
       Hash beacon_block_hash,
       Hash epoch_boundary_hash,
       Hash shard_block_hash,
       Hash last_crosslink_hash,
-      UInt64 justified_slot,
+      UnsignedLong justified_slot,
       Hash justified_block_hash) {
     this.slot = slot;
     this.shard = shard;
@@ -79,11 +79,11 @@ public class AttestationData {
     this.shard_block_hash = shard_block_hash;
   }
 
-  public UInt64 getShard() {
+  public UnsignedLong getShard() {
     return shard;
   }
 
-  public void setShard(UInt64 shard) {
+  public void setShard(UnsignedLong shard) {
     this.shard = shard;
   }
 
@@ -95,11 +95,11 @@ public class AttestationData {
     this.last_crosslink_hash = last_crosslink_hash;
   }
 
-  public UInt64 getJustified_slot() {
+  public UnsignedLong getJustified_slot() {
     return justified_slot;
   }
 
-  public void setJustified_slot(UInt64 justified_slot) {
+  public void setJustified_slot(UnsignedLong justified_slot) {
     this.justified_slot = justified_slot;
   }
 

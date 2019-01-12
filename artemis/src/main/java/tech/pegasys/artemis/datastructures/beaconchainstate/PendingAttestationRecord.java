@@ -13,22 +13,22 @@
 
 package tech.pegasys.artemis.datastructures.beaconchainstate;
 
+import com.google.common.primitives.UnsignedLong;
 import tech.pegasys.artemis.datastructures.beaconchainoperations.AttestationData;
 import tech.pegasys.artemis.util.bytes.Bytes32;
-import tech.pegasys.artemis.util.uint.UInt64;
 
 public class PendingAttestationRecord {
 
   private AttestationData data;
   private Bytes32 participation_bitfield;
   private Bytes32 custody_bitfield;
-  private UInt64 slot_included;
+  private UnsignedLong slot_included;
 
   public PendingAttestationRecord(
       AttestationData data,
       Bytes32 participation_bitfield,
       Bytes32 custody_bitfield,
-      UInt64 slot_included) {
+      UnsignedLong slot_included) {
     this.data = data;
     this.participation_bitfield = participation_bitfield;
     this.custody_bitfield = custody_bitfield;
@@ -60,11 +60,11 @@ public class PendingAttestationRecord {
     this.custody_bitfield = custody_bitfield;
   }
 
-  public UInt64 getSlot_included() {
+  public UnsignedLong getSlot_included() {
     return slot_included;
   }
 
-  public void setSlot_included(UInt64 slot_included) {
+  public void setSlot_included(UnsignedLong slot_included) {
     this.slot_included = slot_included;
   }
 }

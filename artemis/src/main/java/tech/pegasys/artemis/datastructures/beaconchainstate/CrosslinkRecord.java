@@ -13,15 +13,15 @@
 
 package tech.pegasys.artemis.datastructures.beaconchainstate;
 
+import com.google.common.primitives.UnsignedLong;
 import tech.pegasys.artemis.ethereum.core.Hash;
-import tech.pegasys.artemis.util.uint.UInt64;
 
 public class CrosslinkRecord {
 
   private Hash shard_block_hash;
-  private UInt64 slot;
+  private UnsignedLong slot;
 
-  public CrosslinkRecord(Hash shard_block_hash, UInt64 slot) {
+  public CrosslinkRecord(Hash shard_block_hash, UnsignedLong slot) {
     this.shard_block_hash = shard_block_hash;
     this.slot = slot;
   }
@@ -35,11 +35,11 @@ public class CrosslinkRecord {
     this.shard_block_hash = shard_block_hash;
   }
 
-  public UInt64 getSlot() {
+  public UnsignedLong getSlot() {
     return slot;
   }
 
-  public void setSlot(UInt64 slot) {
+  public void setSlot(UnsignedLong slot) {
     this.slot = slot;
   }
 }

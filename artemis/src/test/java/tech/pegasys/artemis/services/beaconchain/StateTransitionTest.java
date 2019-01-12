@@ -24,6 +24,8 @@ import static tech.pegasys.artemis.Constants.LATEST_RANDAO_MIXES_LENGTH;
 import static tech.pegasys.artemis.Constants.PENDING_ACTIVATION;
 import static tech.pegasys.artemis.ethereum.core.Hash.hash;
 
+
+import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.Collections;
 import org.junit.Test;
@@ -34,7 +36,6 @@ import tech.pegasys.artemis.ethereum.core.Hash;
 import tech.pegasys.artemis.state.BeaconState;
 import tech.pegasys.artemis.state.util.SlotProcessorUtil;
 import tech.pegasys.artemis.util.bytes.Bytes32;
-import tech.pegasys.artemis.util.uint.UInt64;
 
 public class StateTransitionTest {
   private BeaconState newState() {
@@ -48,56 +49,56 @@ public class StateTransitionTest {
             0,
             Hash.ZERO,
             Hash.ZERO,
-            UInt64.MIN_VALUE,
-            UInt64.valueOf(PENDING_ACTIVATION),
-            UInt64.valueOf(state.getSlot()),
-            UInt64.MIN_VALUE,
-            UInt64.MIN_VALUE,
-            UInt64.MIN_VALUE));
+            UnsignedLong.ZERO,
+            UnsignedLong.valueOf(PENDING_ACTIVATION),
+            UnsignedLong.valueOf(state.getSlot()),
+            UnsignedLong.ZERO,
+            UnsignedLong.ZERO,
+            UnsignedLong.ZERO));
     validators.add(
         new ValidatorRecord(
             100,
             Hash.ZERO,
             Hash.ZERO,
-            UInt64.MIN_VALUE,
-            UInt64.valueOf(ACTIVE),
-            UInt64.valueOf(state.getSlot()),
-            UInt64.MIN_VALUE,
-            UInt64.MIN_VALUE,
-            UInt64.MIN_VALUE));
+            UnsignedLong.ZERO,
+            UnsignedLong.valueOf(ACTIVE),
+            UnsignedLong.valueOf(state.getSlot()),
+            UnsignedLong.ZERO,
+            UnsignedLong.ZERO,
+            UnsignedLong.ZERO));
     validators.add(
         new ValidatorRecord(
             200,
             Hash.ZERO,
             Hash.ZERO,
-            UInt64.MIN_VALUE,
-            UInt64.valueOf(ACTIVE_PENDING_EXIT),
-            UInt64.valueOf(state.getSlot()),
-            UInt64.MIN_VALUE,
-            UInt64.MIN_VALUE,
-            UInt64.MIN_VALUE));
+            UnsignedLong.ZERO,
+            UnsignedLong.valueOf(ACTIVE_PENDING_EXIT),
+            UnsignedLong.valueOf(state.getSlot()),
+            UnsignedLong.ZERO,
+            UnsignedLong.ZERO,
+            UnsignedLong.ZERO));
     validators.add(
         new ValidatorRecord(
             0,
             Hash.ZERO,
             Hash.ZERO,
-            UInt64.MIN_VALUE,
-            UInt64.valueOf(EXITED_WITHOUT_PENALTY),
-            UInt64.valueOf(state.getSlot()),
-            UInt64.MIN_VALUE,
-            UInt64.MIN_VALUE,
-            UInt64.MIN_VALUE));
+            UnsignedLong.ZERO,
+            UnsignedLong.valueOf(EXITED_WITHOUT_PENALTY),
+            UnsignedLong.valueOf(state.getSlot()),
+            UnsignedLong.ZERO,
+            UnsignedLong.ZERO,
+            UnsignedLong.ZERO));
     validators.add(
         new ValidatorRecord(
             0,
             Hash.ZERO,
             Hash.ZERO,
-            UInt64.MIN_VALUE,
-            UInt64.valueOf(EXITED_WITH_PENALTY),
-            UInt64.valueOf(state.getSlot()),
-            UInt64.MIN_VALUE,
-            UInt64.MIN_VALUE,
-            UInt64.MIN_VALUE));
+            UnsignedLong.ZERO,
+            UnsignedLong.valueOf(EXITED_WITH_PENALTY),
+            UnsignedLong.valueOf(state.getSlot()),
+            UnsignedLong.ZERO,
+            UnsignedLong.ZERO,
+            UnsignedLong.ZERO));
     state.setValidator_registry(validators);
 
     return state;
@@ -117,7 +118,7 @@ public class StateTransitionTest {
     ArrayList<ShardCommittee> newShardCommittees =
         new ArrayList<ShardCommittee>(
             Collections.nCopies(
-                2, new ShardCommittee(UInt64.MIN_VALUE, commitee, UInt64.valueOf(1))));
+                2, new ShardCommittee(UnsignedLong.ZERO, commitee, UnsignedLong.ONE)));
     state.setShard_committees_at_slots(
         new ArrayList<ArrayList<ShardCommittee>>(
             Collections.nCopies(2 * EPOCH_LENGTH, newShardCommittees)));
@@ -136,11 +137,11 @@ public class StateTransitionTest {
 
     // obtain proposer's and a random validator's randao layer value
     // before and after update method is called
-    long proposerRandaoLayerBefore = proposerRecord.getRandao_layers().getValue();
-    long randomRandaoLayerBefore = randomRecord.getRandao_layers().getValue();
+    long proposerRandaoLayerBefore = proposerRecord.getRandao_layers().longValue();
+    long randomRandaoLayerBefore = randomRecord.getRandao_layers().longValue();
     SlotProcessorUtil.updateProposerRandaoLayer(state);
-    long proposerRandaoLayerAfter = proposerRecord.getRandao_layers().getValue();
-    long randomRandaoLayerAfter = randomRecord.getRandao_layers().getValue();
+    long proposerRandaoLayerAfter = proposerRecord.getRandao_layers().longValue();
+    long randomRandaoLayerAfter = randomRecord.getRandao_layers().longValue();
 
     assertThat(proposerRandaoLayerBefore + 1).isEqualTo(proposerRandaoLayerAfter);
     assertThat(randomRandaoLayerBefore).isEqualTo(randomRandaoLayerAfter);
@@ -183,9 +184,9 @@ public class StateTransitionTest {
         }
         shard_commitees.add(
             new ShardCommittee(
-                UInt64.valueOf(Math.round(Math.random() * 5000)),
+                UnsignedLong.valueOf(Math.round(Math.random() * 5000)),
                 commitee,
-                UInt64.valueOf((long) total_validator_count)));
+                UnsignedLong.valueOf((long) total_validator_count)));
       }
       shard_committees_at_slots.add(shard_commitees);
     }
@@ -194,7 +195,7 @@ public class StateTransitionTest {
     block.setState_root(Hash.ZERO);
     SlotProcessorUtil.updateRecentBlockHashes(state, block);
 
-    assertThat(state.getLatest_block_roots().get(UInt64.valueOf(state.getSlot())))
+    assertThat(state.getLatest_block_roots().get(UnsignedLong.valueOf(state.getSlot())))
         .isEqualTo(block.getState_root());
     ArrayList<Hash> batched_block_roots = state.getBatched_block_roots();
     assertThat(batched_block_roots.get(batched_block_roots.size() - 1))
