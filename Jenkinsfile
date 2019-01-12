@@ -24,10 +24,10 @@ try {
         docker.image('openjdk:8-jdk-alpine').inside {
             try {
                 stage('Build') {
-                    sh './gradlew --no-daemon --parallel build'
+                    sh 'set ENV LANG en_US.UTF-8 && set ENV LANGUAGE en_US:en && set ENV LC_ALL en_US.UTF-8 && ./gradlew --no-daemon --parallel build'
                 }
                 stage('Test') {
-                    sh './gradlew --no-daemon --parallel test'
+                    sh 'set ENV LANG en_US.UTF-8 && set ENV LANGUAGE en_US:en && set ENV LC_ALL en_US.UTF-8 && ./gradlew --no-daemon --parallel test'
                 }
             } finally {
                 archiveArtifacts '**/build/reports/**'
