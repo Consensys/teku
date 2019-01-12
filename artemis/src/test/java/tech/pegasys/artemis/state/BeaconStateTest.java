@@ -26,7 +26,6 @@ import static tech.pegasys.artemis.state.BeaconState.BeaconStateHelperFunctions.
 import static tech.pegasys.artemis.state.BeaconState.BeaconStateHelperFunctions.shuffle;
 import static tech.pegasys.artemis.state.BeaconState.BeaconStateHelperFunctions.split;
 
-
 import com.google.common.primitives.UnsignedLong;
 import com.google.gson.Gson;
 import java.util.ArrayList;
@@ -438,12 +437,12 @@ public class BeaconStateTest {
                     2,
                     hash(Bytes32.FALSE),
                     hash(Bytes32.FALSE),
-                        UnsignedLong.valueOf(PENDING_ACTIVATION),
-                        UnsignedLong.valueOf(PENDING_ACTIVATION),
-                        UnsignedLong.MAX_VALUE,
-                        UnsignedLong.MAX_VALUE,
-                        UnsignedLong.ZERO,
-                        UnsignedLong.ZERO)));
+                    UnsignedLong.valueOf(PENDING_ACTIVATION),
+                    UnsignedLong.valueOf(PENDING_ACTIVATION),
+                    UnsignedLong.MAX_VALUE,
+                    UnsignedLong.MAX_VALUE,
+                    UnsignedLong.ZERO,
+                    UnsignedLong.ZERO)));
     deepCopy.setValidator_registry(new_records);
     assertThat(deepCopy.getValidator_registry().get(0).getPubkey().getValue())
         .isNotEqualTo(state.getValidator_registry().get(0).getPubkey().getValue());

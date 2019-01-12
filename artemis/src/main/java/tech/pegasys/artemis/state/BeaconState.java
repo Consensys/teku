@@ -196,7 +196,8 @@ public class BeaconState {
     ArrayList<CrosslinkRecord> latest_crosslinks = new ArrayList<>(SHARD_COUNT);
 
     for (int i = 0; i < SHARD_COUNT; i++) {
-      latest_crosslinks.add(new CrosslinkRecord(Hash.ZERO, UnsignedLong.valueOf(INITIAL_SLOT_NUMBER)));
+      latest_crosslinks.add(
+          new CrosslinkRecord(Hash.ZERO, UnsignedLong.valueOf(INITIAL_SLOT_NUMBER)));
     }
 
     BeaconState state =
@@ -398,7 +399,8 @@ public class BeaconState {
     UInt384 signature =
         UInt384.valueOf(BytesValue.wrap(proof_of_possession.extractArray()).getInt(0));
     UnsignedLong domain =
-        UnsignedLong.valueOf(get_domain(state.fork_data, toIntExact(state.getSlot()), DOMAIN_DEPOSIT));
+        UnsignedLong.valueOf(
+            get_domain(state.fork_data, toIntExact(state.getSlot()), DOMAIN_DEPOSIT));
     return bls_verify(
         UInt384.valueOf(pubkey), hash_tree_root(proof_of_possession_data), signature, domain);
   }

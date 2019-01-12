@@ -22,7 +22,8 @@ public class ShardCommittee {
   private ArrayList<Integer> committee;
   private UnsignedLong total_validator_count;
 
-  public ShardCommittee(UnsignedLong shard, ArrayList<Integer> committee, UnsignedLong total_validator_count) {
+  public ShardCommittee(
+      UnsignedLong shard, ArrayList<Integer> committee, UnsignedLong total_validator_count) {
     this.shard = shard;
     this.committee = committee;
     this.total_validator_count = total_validator_count;

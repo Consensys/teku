@@ -20,7 +20,6 @@ import static org.junit.Assert.assertTrue;
 import static tech.pegasys.artemis.Constants.ACTIVE_PENDING_EXIT;
 import static tech.pegasys.artemis.Constants.EXITED_WITHOUT_PENALTY;
 
-
 import com.google.common.primitives.UnsignedLong;
 import java.util.Arrays;
 import org.junit.After;

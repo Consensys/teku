@@ -17,7 +17,6 @@ import static java.lang.Math.toIntExact;
 import static tech.pegasys.artemis.Constants.LATEST_BLOCK_ROOTS_LENGTH;
 import static tech.pegasys.artemis.Constants.LATEST_RANDAO_MIXES_LENGTH;
 
-
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import tech.pegasys.artemis.datastructures.beaconchainblocks.BeaconBlock;

@@ -16,7 +16,6 @@ package tech.pegasys.artemis.state.util;
 import static tech.pegasys.artemis.Constants.ACTIVE;
 import static tech.pegasys.artemis.Constants.ACTIVE_PENDING_EXIT;
 
-
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import tech.pegasys.artemis.datastructures.beaconchainstate.ValidatorRecord;

@@ -24,7 +24,6 @@ import static tech.pegasys.artemis.Constants.LATEST_RANDAO_MIXES_LENGTH;
 import static tech.pegasys.artemis.Constants.PENDING_ACTIVATION;
 import static tech.pegasys.artemis.ethereum.core.Hash.hash;
 
-
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.Collections;

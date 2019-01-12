@@ -21,7 +21,8 @@ public class ForkData {
   private UnsignedLong post_fork_version;
   private UnsignedLong fork_slot;
 
-  public ForkData(UnsignedLong pre_fork_version, UnsignedLong post_fork_version, UnsignedLong fork_slot) {
+  public ForkData(
+      UnsignedLong pre_fork_version, UnsignedLong post_fork_version, UnsignedLong fork_slot) {
     this.pre_fork_version = pre_fork_version;
     this.post_fork_version = post_fork_version;
     this.fork_slot = fork_slot;
