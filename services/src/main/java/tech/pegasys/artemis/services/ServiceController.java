@@ -24,27 +24,40 @@ public class ServiceController {
   private static ServiceInterface beaconChainService;
   private static ServiceInterface powchainService;
   private static ServiceInterface p2pService;
+  private static ServiceInterface chainStorageService;
+
   private static final ExecutorService beaconChainExecuterService =
       Executors.newSingleThreadExecutor();
   private static final ExecutorService powchainExecuterService =
       Executors.newSingleThreadExecutor();
   private static final ExecutorService p2pExecuterService = Executors.newSingleThreadExecutor();
+  private static final ExecutorService chainStorageExecutorService =
+      Executors.newSingleThreadExecutor();
+
   // initialize/register all services
-  public static <U extends ServiceInterface, V extends ServiceInterface, W extends ServiceInterface>
+  public static <
+          U extends ServiceInterface,
+          V extends ServiceInterface,
+          W extends ServiceInterface,
+          X extends ServiceInterface>
       void initAll(
           CommandLineArguments cliArgs,
           Class<U> beaconChainServiceType,
           Class<V> powchainServiceType,
-          Class<W> p2pServiceType) {
+          Class<W> p2pServiceType,
+          Class<X> chainStorageServiceType) {
     beaconChainService = ServiceFactory.getInstance(beaconChainServiceType).getInstance();
     powchainService = ServiceFactory.getInstance(powchainServiceType).getInstance();
     p2pService = ServiceFactory.getInstance(p2pServiceType).getInstance();
+    chainStorageService = ServiceFactory.getInstance(chainStorageServiceType).getInstance();
+
     EventBus eventBus = new AsyncEventBus(Executors.newCachedThreadPool());
     beaconChainService.init(eventBus);
     if (!cliArgs.getPoWChainServiceDisabled()) {
       powchainService.init(eventBus);
     }
     p2pService.init(eventBus);
+    chainStorageService.init(eventBus);
 
     // Validator Service
 
@@ -59,6 +72,7 @@ public class ServiceController {
       powchainExecuterService.execute(powchainService);
     }
     p2pExecuterService.execute(p2pService);
+    chainStorageExecutorService.execute(chainStorageService);
   }
 
   public static void stopAll(CommandLineArguments cliArgs) {
@@ -69,5 +83,7 @@ public class ServiceController {
     powchainService.stop();
     p2pExecuterService.shutdown();
     p2pService.stop();
+    chainStorageExecutorService.shutdown();
+    chainStorageService.stop();
   }
 }
