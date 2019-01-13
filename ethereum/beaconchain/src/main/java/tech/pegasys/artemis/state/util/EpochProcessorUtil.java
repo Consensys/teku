@@ -59,7 +59,7 @@ public class EpochProcessorUtil {
     double balance_churn = 0.0d;
 
     for (ValidatorRecord validator : state.getValidator_registry()) {
-      if (validator.getStatus().getValue() == Constants.PENDING_ACTIVATION
+      if (validator.getStatus().longValue() == Constants.PENDING_ACTIVATION
           && validator.getBalance() >= Constants.MAX_DEPOSIT * Constants.GWEI_PER_ETH) {
         balance_churn += validator.get_effective_balance();
 
@@ -77,7 +77,7 @@ public class EpochProcessorUtil {
     double balance_churn = 0.0d;
 
     for (ValidatorRecord validator : state.getValidator_registry()) {
-      if (validator.getStatus().getValue() == Constants.ACTIVE_PENDING_EXIT
+      if (validator.getStatus().longValue() == Constants.ACTIVE_PENDING_EXIT
           && validator.getBalance() >= Constants.MAX_DEPOSIT * Constants.GWEI_PER_ETH) {
         balance_churn += validator.get_effective_balance();
 
@@ -108,7 +108,7 @@ public class EpochProcessorUtil {
     ArrayList<ValidatorRecord> to_penalize = new ArrayList<>();
     if (validator_registry != null) {
       for (ValidatorRecord validator : validator_registry) {
-        if (validator.getStatus().getValue() == Constants.EXITED_WITH_PENALTY)
+        if (validator.getStatus().longValue() == Constants.EXITED_WITH_PENALTY)
           to_penalize.add(validator);
       }
     }

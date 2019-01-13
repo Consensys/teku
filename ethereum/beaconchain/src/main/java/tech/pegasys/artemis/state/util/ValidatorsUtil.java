@@ -16,10 +16,10 @@ package tech.pegasys.artemis.state.util;
 import static tech.pegasys.artemis.Constants.ACTIVE;
 import static tech.pegasys.artemis.Constants.ACTIVE_PENDING_EXIT;
 
+import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import tech.pegasys.artemis.datastructures.beaconchainstate.ValidatorRecord;
 import tech.pegasys.artemis.datastructures.beaconchainstate.Validators;
-import tech.pegasys.artemis.util.uint.UInt64;
 
 public class ValidatorsUtil {
 
@@ -43,8 +43,8 @@ public class ValidatorsUtil {
       ArrayList<ValidatorRecord> validators) {
     ArrayList<Integer> active_validator_indices = new ArrayList<>();
     for (int i = 0; i < validators.size(); i++) {
-      if (validators.get(i).getStatus().equals(UInt64.valueOf(ACTIVE))
-          || validators.get(i).getStatus().equals(UInt64.valueOf(ACTIVE_PENDING_EXIT))) {
+      if (validators.get(i).getStatus().equals(UnsignedLong.valueOf(ACTIVE))
+          || validators.get(i).getStatus().equals(UnsignedLong.valueOf(ACTIVE_PENDING_EXIT))) {
         active_validator_indices.add(i);
       }
     }

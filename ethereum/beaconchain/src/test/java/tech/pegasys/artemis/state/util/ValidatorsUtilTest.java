@@ -20,6 +20,7 @@ import static org.junit.Assert.assertTrue;
 import static tech.pegasys.artemis.Constants.ACTIVE_PENDING_EXIT;
 import static tech.pegasys.artemis.Constants.EXITED_WITHOUT_PENALTY;
 
+import com.google.common.primitives.UnsignedLong;
 import java.util.Arrays;
 import org.junit.After;
 import org.junit.Before;
@@ -27,7 +28,6 @@ import org.junit.Test;
 import tech.pegasys.artemis.datastructures.beaconchainstate.ValidatorRecord;
 import tech.pegasys.artemis.datastructures.beaconchainstate.Validators;
 import tech.pegasys.artemis.ethereum.core.Hash;
-import tech.pegasys.artemis.util.uint.UInt64;
 
 public class ValidatorsUtilTest {
   public static final double DOUBLE_ASSERTION_DELTA = 0.0d;
@@ -185,12 +185,12 @@ public class ValidatorsUtilTest {
       int pubkey,
       Hash withdrawalCredentials,
       Hash randaoCommitment,
-      UInt64 randaoLayers,
-      UInt64 status,
-      UInt64 slot,
-      UInt64 exitCount,
-      UInt64 lastPocChangeSlot,
-      UInt64 secondLastPocChangeSlot,
+      UnsignedLong randaoLayers,
+      UnsignedLong status,
+      UnsignedLong slot,
+      UnsignedLong exitCount,
+      UnsignedLong lastPocChangeSlot,
+      UnsignedLong secondLastPocChangeSlot,
       double balance) {
     ValidatorRecord validatorRecord =
         new ValidatorRecord(
@@ -212,12 +212,12 @@ public class ValidatorsUtilTest {
       int pubKey, int statusAsInt, double balance) {
     Hash withdrawal_credentials = Hash.ZERO;
     Hash randaoCommitment = Hash.ZERO;
-    UInt64 randaoLayers = UInt64.MIN_VALUE;
-    UInt64 status = UInt64.valueOf(statusAsInt);
-    UInt64 slot = UInt64.valueOf(0);
-    UInt64 exitCount = UInt64.MIN_VALUE;
-    UInt64 lastPocChangeSlot = UInt64.MIN_VALUE;
-    UInt64 secondLastPocChangeSlot = UInt64.MIN_VALUE;
+    UnsignedLong randaoLayers = UnsignedLong.ZERO;
+    UnsignedLong status = UnsignedLong.valueOf(statusAsInt);
+    UnsignedLong slot = UnsignedLong.ZERO;
+    UnsignedLong exitCount = UnsignedLong.ZERO;
+    UnsignedLong lastPocChangeSlot = UnsignedLong.ZERO;
+    UnsignedLong secondLastPocChangeSlot = UnsignedLong.ZERO;
 
     return getAValidatorRecordTestDataFromParameters(
         pubKey,

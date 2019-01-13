@@ -13,16 +13,16 @@
 
 package tech.pegasys.artemis.datastructures.beaconchainoperations;
 
+import com.google.common.primitives.UnsignedLong;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import tech.pegasys.artemis.Constants;
 import tech.pegasys.artemis.ethereum.core.Hash;
-import tech.pegasys.artemis.util.uint.UInt64;
 
-public class LatestBlockRoots extends LinkedHashMap<UInt64, Hash> {
+public class LatestBlockRoots extends LinkedHashMap<UnsignedLong, Hash> {
 
   @Override
-  protected boolean removeEldestEntry(Map.Entry<UInt64, Hash> eldest) {
+  protected boolean removeEldestEntry(Map.Entry<UnsignedLong, Hash> eldest) {
     return this.size() > Constants.LATEST_BLOCK_ROOTS_LENGTH;
   }
 }

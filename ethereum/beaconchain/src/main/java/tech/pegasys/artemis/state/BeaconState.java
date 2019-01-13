@@ -39,6 +39,7 @@ import static tech.pegasys.artemis.state.BeaconState.BeaconStateHelperFunctions.
 import static tech.pegasys.artemis.util.bls.BLSVerify.bls_verify;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.primitives.UnsignedLong;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import java.util.ArrayList;
@@ -61,7 +62,6 @@ import tech.pegasys.artemis.state.util.ValidatorsUtil;
 import tech.pegasys.artemis.util.bytes.Bytes32;
 import tech.pegasys.artemis.util.bytes.BytesValue;
 import tech.pegasys.artemis.util.uint.UInt384;
-import tech.pegasys.artemis.util.uint.UInt64;
 
 public class BeaconState {
 
@@ -196,7 +196,8 @@ public class BeaconState {
     ArrayList<CrosslinkRecord> latest_crosslinks = new ArrayList<>(SHARD_COUNT);
 
     for (int i = 0; i < SHARD_COUNT; i++) {
-      latest_crosslinks.add(new CrosslinkRecord(Hash.ZERO, UInt64.valueOf(INITIAL_SLOT_NUMBER)));
+      latest_crosslinks.add(
+          new CrosslinkRecord(Hash.ZERO, UnsignedLong.valueOf(INITIAL_SLOT_NUMBER)));
     }
 
     BeaconState state =
@@ -205,9 +206,9 @@ public class BeaconState {
             INITIAL_SLOT_NUMBER,
             genesis_time,
             new ForkData(
-                UInt64.valueOf(INITIAL_FORK_VERSION),
-                UInt64.valueOf(INITIAL_FORK_VERSION),
-                UInt64.valueOf(INITIAL_SLOT_NUMBER)),
+                UnsignedLong.valueOf(INITIAL_FORK_VERSION),
+                UnsignedLong.valueOf(INITIAL_FORK_VERSION),
+                UnsignedLong.valueOf(INITIAL_SLOT_NUMBER)),
 
             // Validator registry
             new Validators(),
@@ -247,7 +248,7 @@ public class BeaconState {
           process_deposit(
               state,
               toIntExact(deposit_input.getPubkey().getValue()),
-              validator_deposit.getDeposit_data().getValue().getValue(),
+              validator_deposit.getDeposit_data().getValue().longValue(),
               deposit_input.getProof_of_possession(),
               deposit_input.getWithdrawal_credentials(),
               deposit_input.getRandao_commitment(),
@@ -313,9 +314,9 @@ public class BeaconState {
       for (int shard_position = 0; shard_position < shard_indices.size(); shard_position++) {
         shard_committees.add(
             new ShardCommittee(
-                UInt64.valueOf((shard_id_start + shard_position) % SHARD_COUNT),
+                UnsignedLong.valueOf((shard_id_start + shard_position) % SHARD_COUNT),
                 shard_indices.get(shard_position),
-                UInt64.valueOf(active_validator_indices.size())));
+                UnsignedLong.valueOf(active_validator_indices.size())));
       }
 
       output.add(shard_committees);
@@ -347,8 +348,8 @@ public class BeaconState {
    * @return True if the validator is active; false if not.
    */
   private boolean isActiveValidator(ValidatorRecord validator) {
-    return validator.getStatus().equals(UInt64.valueOf(ACTIVE))
-        || validator.getStatus().equals(UInt64.valueOf(ACTIVE_PENDING_EXIT));
+    return validator.getStatus().equals(UnsignedLong.valueOf(ACTIVE))
+        || validator.getStatus().equals(UnsignedLong.valueOf(ACTIVE_PENDING_EXIT));
   }
 
   /**
@@ -364,7 +365,7 @@ public class BeaconState {
       ValidatorRecord v = validators.get(i);
       double vbal = validator_balances.get(i);
       if (vbal == 0
-          && v.getLatest_status_change_slot().getValue() + ZERO_BALANCE_VALIDATOR_TTL
+          && v.getLatest_status_change_slot().longValue() + ZERO_BALANCE_VALIDATOR_TTL
               <= current_slot) {
         return i;
       }
@@ -397,8 +398,9 @@ public class BeaconState {
 
     UInt384 signature =
         UInt384.valueOf(BytesValue.wrap(proof_of_possession.extractArray()).getInt(0));
-    UInt64 domain =
-        UInt64.valueOf(get_domain(state.fork_data, toIntExact(state.getSlot()), DOMAIN_DEPOSIT));
+    UnsignedLong domain =
+        UnsignedLong.valueOf(
+            get_domain(state.fork_data, toIntExact(state.getSlot()), DOMAIN_DEPOSIT));
     return bls_verify(
         UInt384.valueOf(pubkey), hash_tree_root(proof_of_possession_data), signature, domain);
   }
@@ -444,12 +446,12 @@ public class BeaconState {
               pubkey,
               withdrawal_credentials,
               randao_commitment,
-              UInt64.MIN_VALUE,
-              UInt64.valueOf(PENDING_ACTIVATION),
-              UInt64.valueOf(state.getSlot()),
-              UInt64.MIN_VALUE,
-              UInt64.MIN_VALUE,
-              UInt64.MIN_VALUE);
+              UnsignedLong.ZERO,
+              UnsignedLong.valueOf(PENDING_ACTIVATION),
+              UnsignedLong.valueOf(state.getSlot()),
+              UnsignedLong.ZERO,
+              UnsignedLong.ZERO,
+              UnsignedLong.ZERO);
 
       ArrayList<ValidatorRecord> validators_copy = new ArrayList<>(validator_registry);
       index = min_empty_validator_index(validators_copy, validator_balances, toIntExact(slot));
@@ -505,10 +507,10 @@ public class BeaconState {
    * @return
    */
   private int get_fork_version(ForkData fork_data, int slot) {
-    if (slot < fork_data.getFork_slot().getValue()) {
-      return toIntExact(fork_data.getPre_fork_version().getValue());
+    if (slot < fork_data.getFork_slot().longValue()) {
+      return toIntExact(fork_data.getPre_fork_version().longValue());
     } else {
-      return toIntExact(fork_data.getPost_fork_version().getValue());
+      return toIntExact(fork_data.getPost_fork_version().longValue());
     }
   }
 
@@ -539,12 +541,12 @@ public class BeaconState {
   @VisibleForTesting
   public void activate_validator(int index) {
     ValidatorRecord validator = validator_registry.get(index);
-    if (validator.getStatus().getValue() != PENDING_ACTIVATION) {
+    if (validator.getStatus().longValue() != PENDING_ACTIVATION) {
       return;
     }
 
-    validator.setStatus(UInt64.valueOf(ACTIVE));
-    validator.setLatest_status_change_slot(UInt64.valueOf(slot));
+    validator.setStatus(UnsignedLong.valueOf(ACTIVE));
+    validator.setLatest_status_change_slot(UnsignedLong.valueOf(slot));
     validator_registry_delta_chain_tip =
         get_new_validator_registry_delta_chain_tip(
             validator_registry_delta_chain_tip,
@@ -562,12 +564,12 @@ public class BeaconState {
   @VisibleForTesting
   public void initiate_validator_exit(int index) {
     ValidatorRecord validator = validator_registry.get(index);
-    if (validator.getStatus().getValue() != ACTIVE) {
+    if (validator.getStatus().longValue() != ACTIVE) {
       return;
     }
 
-    validator.setStatus(UInt64.valueOf(ACTIVE_PENDING_EXIT));
-    validator.setLatest_status_change_slot(UInt64.valueOf(slot));
+    validator.setStatus(UnsignedLong.valueOf(ACTIVE_PENDING_EXIT));
+    validator.setLatest_status_change_slot(UnsignedLong.valueOf(slot));
   }
 
   /**
@@ -579,14 +581,14 @@ public class BeaconState {
   @VisibleForTesting
   public void exit_validator(BeaconState state, int index, int new_status) {
     ValidatorRecord validator = state.validator_registry.get(index);
-    long prev_status = validator.getStatus().getValue();
+    long prev_status = validator.getStatus().longValue();
 
     if (prev_status == EXITED_WITH_PENALTY) {
       return;
     }
 
-    validator.setStatus(UInt64.valueOf(new_status));
-    validator.setLatest_status_change_slot(UInt64.valueOf(state.getSlot()));
+    validator.setStatus(UnsignedLong.valueOf(new_status));
+    validator.setLatest_status_change_slot(UnsignedLong.valueOf(state.getSlot()));
 
     if (new_status == EXITED_WITH_PENALTY) {
       int lpeb_index = toIntExact(state.getSlot()) / COLLECTIVE_PENALTY_CALCULATION_PERIOD;
@@ -612,7 +614,7 @@ public class BeaconState {
 
     // The following updates only occur if not previous exited
     state.setValidator_registry_exit_count(state.getValidator_registry_exit_count() + 1);
-    validator.setExit_count(UInt64.valueOf(state.getValidator_registry_exit_count()));
+    validator.setExit_count(UnsignedLong.valueOf(state.getValidator_registry_exit_count()));
     state.setValidator_registry_delta_chain_tip(
         get_new_validator_registry_delta_chain_tip(
             state.getValidator_registry_delta_chain_tip(),
@@ -755,9 +757,9 @@ public class BeaconState {
       for (int shard_position = 0; shard_position < shard_indices.size(); shard_position++) {
         shard_committees.add(
             new ShardCommittee(
-                UInt64.valueOf((shard_id_start + shard_position) % SHARD_COUNT),
+                UnsignedLong.valueOf((shard_id_start + shard_position) % SHARD_COUNT),
                 shard_indices.get(shard_position),
-                UInt64.valueOf(active_validator_indices.size())));
+                UnsignedLong.valueOf(active_validator_indices.size())));
       }
 
       output.add(shard_committees);
@@ -790,8 +792,8 @@ public class BeaconState {
    */
   private boolean is_surround_vote(
       AttestationData attestation_data_1, AttestationData attestation_data_2) {
-    long source_epoch_1 = attestation_data_1.getJustified_slot().getValue() / EPOCH_LENGTH;
-    long source_epoch_2 = attestation_data_2.getJustified_slot().getValue() / EPOCH_LENGTH;
+    long source_epoch_1 = attestation_data_1.getJustified_slot().longValue() / EPOCH_LENGTH;
+    long source_epoch_2 = attestation_data_2.getJustified_slot().longValue() / EPOCH_LENGTH;
     long target_epoch_1 = attestation_data_1.getSlot() / EPOCH_LENGTH;
     long target_epoch_2 = attestation_data_2.getSlot() / EPOCH_LENGTH;
     return source_epoch_1 < source_epoch_2
@@ -841,7 +843,7 @@ public class BeaconState {
                 current_validator_registry_delta_chain_tip,
                 validator_index,
                 UInt384.valueOf(pubkey),
-                UInt64.valueOf(flag))));
+                UnsignedLong.valueOf(flag))));
   }
   /**
    * Returns the effective balance (also known as "balance at stake") for a 'validator' with the
