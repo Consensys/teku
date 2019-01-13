@@ -13,23 +13,24 @@
 
 package tech.pegasys.artemis.datastructures.beaconchainstate;
 
+import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
-import tech.pegasys.artemis.util.uint.UInt64;
 
 public class ShardCommittee {
 
-  private UInt64 shard;
+  private UnsignedLong shard;
   private ArrayList<Integer> committee;
-  private UInt64 total_validator_count;
+  private UnsignedLong total_validator_count;
 
-  public ShardCommittee(UInt64 shard, ArrayList<Integer> committee, UInt64 total_validator_count) {
+  public ShardCommittee(
+      UnsignedLong shard, ArrayList<Integer> committee, UnsignedLong total_validator_count) {
     this.shard = shard;
     this.committee = committee;
     this.total_validator_count = total_validator_count;
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */
-  public UInt64 getShard() {
+  public UnsignedLong getShard() {
     return shard;
   }
 
@@ -41,11 +42,11 @@ public class ShardCommittee {
     this.committee = committee;
   }
 
-  public UInt64 getTotal_validator_count() {
+  public UnsignedLong getTotal_validator_count() {
     return total_validator_count;
   }
 
-  public void setTotal_validator_count(UInt64 total_validator_count) {
+  public void setTotal_validator_count(UnsignedLong total_validator_count) {
     this.total_validator_count = total_validator_count;
   }
 }

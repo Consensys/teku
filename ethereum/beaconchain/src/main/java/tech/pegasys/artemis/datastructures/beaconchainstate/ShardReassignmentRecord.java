@@ -13,15 +13,15 @@
 
 package tech.pegasys.artemis.datastructures.beaconchainstate;
 
-import tech.pegasys.artemis.util.uint.UInt64;
+import com.google.common.primitives.UnsignedLong;
 
 public class ShardReassignmentRecord {
 
   private int validator_index;
-  private UInt64 shard;
-  private UInt64 slot;
+  private UnsignedLong shard;
+  private UnsignedLong slot;
 
-  public ShardReassignmentRecord(int validator_index, UInt64 shard, UInt64 slot) {
+  public ShardReassignmentRecord(int validator_index, UnsignedLong shard, UnsignedLong slot) {
     this.validator_index = validator_index;
     this.shard = shard;
     this.slot = slot;
@@ -36,19 +36,19 @@ public class ShardReassignmentRecord {
     this.validator_index = validator_index;
   }
 
-  public UInt64 getShard() {
+  public UnsignedLong getShard() {
     return shard;
   }
 
-  public void setShard(UInt64 shard) {
+  public void setShard(UnsignedLong shard) {
     this.shard = shard;
   }
 
-  public UInt64 getSlot() {
+  public UnsignedLong getSlot() {
     return slot;
   }
 
-  public void setSlot(UInt64 slot) {
+  public void setSlot(UnsignedLong slot) {
     this.slot = slot;
   }
 }

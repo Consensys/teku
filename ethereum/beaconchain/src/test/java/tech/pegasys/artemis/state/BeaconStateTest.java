@@ -26,6 +26,7 @@ import static tech.pegasys.artemis.state.BeaconState.BeaconStateHelperFunctions.
 import static tech.pegasys.artemis.state.BeaconState.BeaconStateHelperFunctions.shuffle;
 import static tech.pegasys.artemis.state.BeaconState.BeaconStateHelperFunctions.split;
 
+import com.google.common.primitives.UnsignedLong;
 import com.google.gson.Gson;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -41,7 +42,6 @@ import tech.pegasys.artemis.datastructures.beaconchainstate.Validators;
 import tech.pegasys.artemis.ethereum.core.Hash;
 import tech.pegasys.artemis.util.bytes.Bytes32;
 import tech.pegasys.artemis.util.bytes.BytesValue;
-import tech.pegasys.artemis.util.uint.UInt64;
 
 public class BeaconStateTest {
 
@@ -51,7 +51,7 @@ public class BeaconStateTest {
         new BeaconState(
             0,
             0,
-            new ForkData(UInt64.MIN_VALUE, UInt64.MIN_VALUE, UInt64.MIN_VALUE),
+            new ForkData(UnsignedLong.ZERO, UnsignedLong.ZERO, UnsignedLong.ZERO),
             new Validators(),
             new ArrayList<>(),
             0,
@@ -81,56 +81,56 @@ public class BeaconStateTest {
             0,
             Hash.ZERO,
             Hash.ZERO,
-            UInt64.MIN_VALUE,
-            UInt64.valueOf(PENDING_ACTIVATION),
-            UInt64.valueOf(state.getSlot()),
-            UInt64.MIN_VALUE,
-            UInt64.MIN_VALUE,
-            UInt64.MIN_VALUE));
+            UnsignedLong.ZERO,
+            UnsignedLong.valueOf(PENDING_ACTIVATION),
+            UnsignedLong.valueOf(state.getSlot()),
+            UnsignedLong.ZERO,
+            UnsignedLong.ZERO,
+            UnsignedLong.ZERO));
     validators.add(
         new ValidatorRecord(
             100,
             Hash.ZERO,
             Hash.ZERO,
-            UInt64.MIN_VALUE,
-            UInt64.valueOf(ACTIVE),
-            UInt64.valueOf(state.getSlot()),
-            UInt64.MIN_VALUE,
-            UInt64.MIN_VALUE,
-            UInt64.MIN_VALUE));
+            UnsignedLong.ZERO,
+            UnsignedLong.valueOf(ACTIVE),
+            UnsignedLong.valueOf(state.getSlot()),
+            UnsignedLong.ZERO,
+            UnsignedLong.ZERO,
+            UnsignedLong.ZERO));
     validators.add(
         new ValidatorRecord(
             200,
             Hash.ZERO,
             Hash.ZERO,
-            UInt64.MIN_VALUE,
-            UInt64.valueOf(ACTIVE_PENDING_EXIT),
-            UInt64.valueOf(state.getSlot()),
-            UInt64.MIN_VALUE,
-            UInt64.MIN_VALUE,
-            UInt64.MIN_VALUE));
+            UnsignedLong.ZERO,
+            UnsignedLong.valueOf(ACTIVE_PENDING_EXIT),
+            UnsignedLong.valueOf(state.getSlot()),
+            UnsignedLong.ZERO,
+            UnsignedLong.ZERO,
+            UnsignedLong.ZERO));
     validators.add(
         new ValidatorRecord(
             0,
             Hash.ZERO,
             Hash.ZERO,
-            UInt64.MIN_VALUE,
-            UInt64.valueOf(EXITED_WITHOUT_PENALTY),
-            UInt64.valueOf(state.getSlot()),
-            UInt64.MIN_VALUE,
-            UInt64.MIN_VALUE,
-            UInt64.MIN_VALUE));
+            UnsignedLong.ZERO,
+            UnsignedLong.valueOf(EXITED_WITHOUT_PENALTY),
+            UnsignedLong.valueOf(state.getSlot()),
+            UnsignedLong.ZERO,
+            UnsignedLong.ZERO,
+            UnsignedLong.ZERO));
     validators.add(
         new ValidatorRecord(
             0,
             Hash.ZERO,
             Hash.ZERO,
-            UInt64.MIN_VALUE,
-            UInt64.valueOf(EXITED_WITH_PENALTY),
-            UInt64.valueOf(state.getSlot()),
-            UInt64.MIN_VALUE,
-            UInt64.MIN_VALUE,
-            UInt64.MIN_VALUE));
+            UnsignedLong.ZERO,
+            UnsignedLong.valueOf(EXITED_WITH_PENALTY),
+            UnsignedLong.valueOf(state.getSlot()),
+            UnsignedLong.ZERO,
+            UnsignedLong.ZERO,
+            UnsignedLong.ZERO));
     state.setValidator_registry(validators);
 
     // Add validator balances
@@ -153,9 +153,9 @@ public class BeaconStateTest {
             Collections.nCopies(
                 2,
                 new ShardCommittee(
-                    UInt64.MIN_VALUE,
+                    UnsignedLong.ZERO,
                     new ArrayList<>(Collections.nCopies(1, 1)),
-                    UInt64.valueOf(1))));
+                    UnsignedLong.ONE)));
     state.setShard_committees_at_slots(
         new ArrayList<>(Collections.nCopies(128, new_shard_committees)));
 
@@ -203,12 +203,12 @@ public class BeaconStateTest {
     AttestationData attestationData =
         new AttestationData(
             0,
-            UInt64.MIN_VALUE,
+            UnsignedLong.ZERO,
             Hash.ZERO,
             Hash.ZERO,
             Hash.ZERO,
             Hash.ZERO,
-            UInt64.MIN_VALUE,
+            UnsignedLong.ZERO,
             Hash.ZERO);
     byte[] participation_bitfield = Bytes32.ZERO.extractArray();
 
@@ -220,12 +220,12 @@ public class BeaconStateTest {
     AttestationData attestationData =
         new AttestationData(
             0,
-            UInt64.MIN_VALUE,
+            UnsignedLong.ZERO,
             Hash.ZERO,
             Hash.ZERO,
             Hash.ZERO,
             Hash.ZERO,
-            UInt64.MIN_VALUE,
+            UnsignedLong.ZERO,
             Hash.ZERO);
     byte[] participation_bitfield = new byte[] {1, 1, 1, 1};
 
@@ -243,27 +243,27 @@ public class BeaconStateTest {
     ArrayList<ShardCommittee> shard_committee = state.getShard_committees_at_slots().get(64);
     shard_committee.add(
         new ShardCommittee(
-            UInt64.MIN_VALUE, new ArrayList<>(Collections.nCopies(1, 0)), UInt64.MIN_VALUE));
+            UnsignedLong.ZERO, new ArrayList<>(Collections.nCopies(1, 0)), UnsignedLong.ZERO));
     state.setShard_committees_at_slot(64, shard_committee);
 
     AttestationData attestationData =
         new AttestationData(
             0,
-            UInt64.MIN_VALUE,
+            UnsignedLong.ZERO,
             Hash.ZERO,
             Hash.ZERO,
             Hash.ZERO,
             Hash.ZERO,
-            UInt64.MIN_VALUE,
+            UnsignedLong.ZERO,
             Hash.ZERO);
     byte[] participation_bitfield = new byte[] {127, 1, 1};
 
     ArrayList<ShardCommittee> actual =
         BeaconState.get_attestation_participants(state, attestationData, participation_bitfield);
 
-    assertThat(actual.get(1).getShard()).isEqualTo(UInt64.MIN_VALUE);
+    assertThat(actual.get(1).getShard()).isEqualTo(UnsignedLong.ZERO);
     assertThat(actual.get(1).getCommittee()).isEqualTo(new ArrayList<>(Collections.nCopies(1, 0)));
-    assertThat(actual.get(1).getTotal_validator_count()).isEqualTo(UInt64.MIN_VALUE);
+    assertThat(actual.get(1).getTotal_validator_count()).isEqualTo(UnsignedLong.ZERO);
   }
 
   @Test
@@ -272,7 +272,7 @@ public class BeaconStateTest {
     int validator_index = 0;
 
     state.activate_validator(validator_index);
-    assertThat(state.getValidator_registry().get(validator_index).getStatus().getValue())
+    assertThat(state.getValidator_registry().get(validator_index).getStatus().longValue())
         .isEqualTo(ACTIVE);
   }
 
@@ -281,17 +281,17 @@ public class BeaconStateTest {
     BeaconState state = newState();
     int validator_index = 0;
 
-    assertThat(state.getValidator_registry().get(validator_index).getStatus().getValue())
+    assertThat(state.getValidator_registry().get(validator_index).getStatus().longValue())
         .isEqualTo(PENDING_ACTIVATION);
     state.activate_validator(validator_index);
-    assertThat(state.getValidator_registry().get(validator_index).getStatus().getValue())
+    assertThat(state.getValidator_registry().get(validator_index).getStatus().longValue())
         .isEqualTo(ACTIVE);
     assertThat(
             state
                 .getValidator_registry()
                 .get(validator_index)
                 .getLatest_status_change_slot()
-                .getValue())
+                .longValue())
         .isEqualTo(state.getSlot());
   }
 
@@ -301,7 +301,7 @@ public class BeaconStateTest {
     int validator_index = 0;
 
     state.initiate_validator_exit(validator_index);
-    assertThat(state.getValidator_registry().get(validator_index).getStatus().getValue())
+    assertThat(state.getValidator_registry().get(validator_index).getStatus().longValue())
         .isEqualTo(ACTIVATION);
   }
 
@@ -311,14 +311,14 @@ public class BeaconStateTest {
     int validator_index = 2;
 
     state.initiate_validator_exit(validator_index);
-    assertThat(state.getValidator_registry().get(validator_index).getStatus().getValue())
+    assertThat(state.getValidator_registry().get(validator_index).getStatus().longValue())
         .isEqualTo(ACTIVE_PENDING_EXIT);
     assertThat(
             state
                 .getValidator_registry()
                 .get(validator_index)
                 .getLatest_status_change_slot()
-                .getValue())
+                .longValue())
         .isEqualTo(state.getSlot());
   }
 
@@ -328,7 +328,7 @@ public class BeaconStateTest {
     int validator_index = 4;
 
     state.exit_validator(state, validator_index, EXITED_WITHOUT_PENALTY);
-    assertThat(state.getValidator_registry().get(validator_index).getStatus().getValue())
+    assertThat(state.getValidator_registry().get(validator_index).getStatus().longValue())
         .isEqualTo(EXITED_WITH_PENALTY);
   }
 
@@ -338,14 +338,14 @@ public class BeaconStateTest {
     int validator_index = 3;
 
     state.exit_validator(state, validator_index, EXITED_WITHOUT_PENALTY);
-    assertThat(state.getValidator_registry().get(validator_index).getStatus().getValue())
+    assertThat(state.getValidator_registry().get(validator_index).getStatus().longValue())
         .isEqualTo(EXITED_WITHOUT_PENALTY);
     assertThat(
             state
                 .getValidator_registry()
                 .get(validator_index)
                 .getLatest_status_change_slot()
-                .getValue())
+                .longValue())
         .isEqualTo(state.getSlot());
   }
 
@@ -424,7 +424,7 @@ public class BeaconStateTest {
     assertThat(deepCopy.getSlot()).isNotEqualTo(state.getSlot());
 
     // Test fork_data
-    state.setFork_data(new ForkData(UInt64.valueOf(1), UInt64.valueOf(1), UInt64.valueOf(1)));
+    state.setFork_data(new ForkData(UnsignedLong.valueOf(1), UnsignedLong.ONE, UnsignedLong.ONE));
     assertThat(deepCopy.getFork_data().getPre_fork_version())
         .isNotEqualTo(state.getFork_data().getPre_fork_version());
 
@@ -437,12 +437,12 @@ public class BeaconStateTest {
                     2,
                     hash(Bytes32.FALSE),
                     hash(Bytes32.FALSE),
-                    UInt64.valueOf(PENDING_ACTIVATION),
-                    UInt64.valueOf(PENDING_ACTIVATION),
-                    UInt64.MAX_VALUE,
-                    UInt64.MAX_VALUE,
-                    UInt64.MIN_VALUE,
-                    UInt64.MIN_VALUE)));
+                    UnsignedLong.valueOf(PENDING_ACTIVATION),
+                    UnsignedLong.valueOf(PENDING_ACTIVATION),
+                    UnsignedLong.MAX_VALUE,
+                    UnsignedLong.MAX_VALUE,
+                    UnsignedLong.ZERO,
+                    UnsignedLong.ZERO)));
     deepCopy.setValidator_registry(new_records);
     assertThat(deepCopy.getValidator_registry().get(0).getPubkey().getValue())
         .isNotEqualTo(state.getValidator_registry().get(0).getPubkey().getValue());

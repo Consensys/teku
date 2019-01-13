@@ -17,6 +17,7 @@ import static java.lang.Math.toIntExact;
 import static tech.pegasys.artemis.Constants.LATEST_BLOCK_ROOTS_LENGTH;
 import static tech.pegasys.artemis.Constants.LATEST_RANDAO_MIXES_LENGTH;
 
+import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import tech.pegasys.artemis.datastructures.beaconchainblocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.beaconchainoperations.LatestBlockRoots;
@@ -26,7 +27,6 @@ import tech.pegasys.artemis.ethereum.core.Hash;
 import tech.pegasys.artemis.state.BeaconState;
 import tech.pegasys.artemis.state.StateTransitionException;
 import tech.pegasys.artemis.util.bytes.Bytes32;
-import tech.pegasys.artemis.util.uint.UInt64;
 
 public class SlotProcessorUtil {
 
@@ -41,7 +41,7 @@ public class SlotProcessorUtil {
 
     Validators validators = state.getValidator_registry();
     ValidatorRecord proposerRecord = validators.get(proposerIndex);
-    proposerRecord.setRandao_layers(proposerRecord.getRandao_layers().increment());
+    proposerRecord.setRandao_layers(proposerRecord.getRandao_layers().plus(UnsignedLong.ONE));
   }
 
   public static void updateLatestRandaoMixes(BeaconState state) {
@@ -55,7 +55,7 @@ public class SlotProcessorUtil {
       throws StateTransitionException {
     Hash previous_state_root = block.getState_root();
     if (previous_state_root != null)
-      state.getLatest_block_roots().put(UInt64.valueOf(state.getSlot()), previous_state_root);
+      state.getLatest_block_roots().put(UnsignedLong.valueOf(state.getSlot()), previous_state_root);
     else
       throw new StateTransitionException(
           "StateTransitionException: BeaconState cannot be updated due to "

@@ -13,35 +13,35 @@
 
 package tech.pegasys.artemis.datastructures.beaconchainblocks;
 
+import com.google.common.primitives.UnsignedLong;
 import tech.pegasys.artemis.ethereum.core.Hash;
-import tech.pegasys.artemis.util.uint.UInt64;
 
 public class ProposalSignedData {
 
-  private UInt64 slot;
-  private UInt64 shard;
+  private UnsignedLong slot;
+  private UnsignedLong shard;
   private Hash block_hash;
 
-  public ProposalSignedData(UInt64 slot, UInt64 shard, Hash block_hash) {
+  public ProposalSignedData(UnsignedLong slot, UnsignedLong shard, Hash block_hash) {
     this.slot = slot;
     this.shard = shard;
     this.block_hash = block_hash;
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */
-  public UInt64 getSlot() {
+  public UnsignedLong getSlot() {
     return slot;
   }
 
-  public void setSlot(UInt64 slot) {
+  public void setSlot(UnsignedLong slot) {
     this.slot = slot;
   }
 
-  public UInt64 getShard() {
+  public UnsignedLong getShard() {
     return shard;
   }
 
-  public void setShard(UInt64 shard) {
+  public void setShard(UnsignedLong shard) {
     this.shard = shard;
   }
 

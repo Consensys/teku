@@ -13,10 +13,10 @@
 
 package tech.pegasys.artemis.datastructures.beaconchainstate;
 
+import com.google.common.primitives.UnsignedLong;
 import tech.pegasys.artemis.Constants;
 import tech.pegasys.artemis.ethereum.core.Hash;
 import tech.pegasys.artemis.util.uint.UInt384;
-import tech.pegasys.artemis.util.uint.UInt64;
 
 public class ValidatorRecord {
 
@@ -33,23 +33,23 @@ public class ValidatorRecord {
 
   private Hash withdrawal_credentials;
   private Hash randao_commitment;
-  private UInt64 randao_layers;
-  private UInt64 status;
-  private UInt64 latest_status_change_slot;
-  private UInt64 exit_count;
-  private UInt64 last_poc_change_slot;
-  private UInt64 second_last_poc_change_slot;
+  private UnsignedLong randao_layers;
+  private UnsignedLong status;
+  private UnsignedLong latest_status_change_slot;
+  private UnsignedLong exit_count;
+  private UnsignedLong last_poc_change_slot;
+  private UnsignedLong second_last_poc_change_slot;
 
   public ValidatorRecord(
       int pubkey,
       Hash withdrawal_credentials,
       Hash randao_commitment,
-      UInt64 randao_layers,
-      UInt64 status,
-      UInt64 slot,
-      UInt64 exit_count,
-      UInt64 last_poc_change_slot,
-      UInt64 second_last_poc_change_slot) {
+      UnsignedLong randao_layers,
+      UnsignedLong status,
+      UnsignedLong slot,
+      UnsignedLong exit_count,
+      UnsignedLong last_poc_change_slot,
+      UnsignedLong second_last_poc_change_slot) {
     this.pubkey = UInt384.valueOf(pubkey);
     this.withdrawal_credentials = withdrawal_credentials;
     this.randao_commitment = randao_commitment;
@@ -64,8 +64,8 @@ public class ValidatorRecord {
   public boolean is_active_validator() {
     // checks validator status against the validator status constants for whether the validator is
     // active
-    return (status.equals(UInt64.valueOf(Constants.ACTIVE))
-        || status.equals(UInt64.valueOf(Constants.ACTIVE_PENDING_EXIT)));
+    return (status.equals(UnsignedLong.valueOf(Constants.ACTIVE))
+        || status.equals(UnsignedLong.valueOf(Constants.ACTIVE_PENDING_EXIT)));
   }
 
   /**
@@ -79,11 +79,11 @@ public class ValidatorRecord {
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */
-  public UInt64 getStatus() {
+  public UnsignedLong getStatus() {
     return this.status;
   }
 
-  public void setStatus(UInt64 status) {
+  public void setStatus(UnsignedLong status) {
     this.status = status;
   }
 
@@ -111,43 +111,43 @@ public class ValidatorRecord {
     this.withdrawal_credentials = withdrawal_credentials;
   }
 
-  public UInt64 getRandao_layers() {
+  public UnsignedLong getRandao_layers() {
     return randao_layers;
   }
 
-  public void setRandao_layers(UInt64 randao_layers) {
+  public void setRandao_layers(UnsignedLong randao_layers) {
     this.randao_layers = randao_layers;
   }
 
-  public UInt64 getLatest_status_change_slot() {
+  public UnsignedLong getLatest_status_change_slot() {
     return latest_status_change_slot;
   }
 
-  public void setLatest_status_change_slot(UInt64 latest_status_change_slot) {
+  public void setLatest_status_change_slot(UnsignedLong latest_status_change_slot) {
     this.latest_status_change_slot = latest_status_change_slot;
   }
 
-  public UInt64 getExit_count() {
+  public UnsignedLong getExit_count() {
     return exit_count;
   }
 
-  public void setExit_count(UInt64 exit_count) {
+  public void setExit_count(UnsignedLong exit_count) {
     this.exit_count = exit_count;
   }
 
-  public UInt64 getLast_poc_change_slot() {
+  public UnsignedLong getLast_poc_change_slot() {
     return last_poc_change_slot;
   }
 
-  public void setLast_poc_change_slot(UInt64 last_poc_change_slot) {
+  public void setLast_poc_change_slot(UnsignedLong last_poc_change_slot) {
     this.last_poc_change_slot = last_poc_change_slot;
   }
 
-  public UInt64 getSecond_last_poc_change_slot() {
+  public UnsignedLong getSecond_last_poc_change_slot() {
     return second_last_poc_change_slot;
   }
 
-  public void setSecond_last_poc_change_slot(UInt64 second_last_poc_change_slot) {
+  public void setSecond_last_poc_change_slot(UnsignedLong second_last_poc_change_slot) {
     this.second_last_poc_change_slot = second_last_poc_change_slot;
   }
 }

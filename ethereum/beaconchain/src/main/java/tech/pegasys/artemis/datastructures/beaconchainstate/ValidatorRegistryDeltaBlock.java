@@ -13,19 +13,19 @@
 
 package tech.pegasys.artemis.datastructures.beaconchainstate;
 
+import com.google.common.primitives.UnsignedLong;
 import tech.pegasys.artemis.ethereum.core.Hash;
 import tech.pegasys.artemis.util.uint.UInt384;
-import tech.pegasys.artemis.util.uint.UInt64;
 
 public class ValidatorRegistryDeltaBlock {
 
   private Hash latest_registry_delta_root;
   private int validator_index;
   private UInt384 pubkey;
-  private UInt64 flag;
+  private UnsignedLong flag;
 
   public ValidatorRegistryDeltaBlock(
-      Hash latest_registry_delta_root, int validator_index, UInt384 pubkey, UInt64 flag) {
+      Hash latest_registry_delta_root, int validator_index, UInt384 pubkey, UnsignedLong flag) {
     this.latest_registry_delta_root = latest_registry_delta_root;
     this.validator_index = validator_index;
     this.pubkey = pubkey;
@@ -57,11 +57,11 @@ public class ValidatorRegistryDeltaBlock {
     this.pubkey = pubkey;
   }
 
-  public UInt64 getFlag() {
+  public UnsignedLong getFlag() {
     return flag;
   }
 
-  public void setFlag(UInt64 flag) {
+  public void setFlag(UnsignedLong flag) {
     this.flag = flag;
   }
 }
