@@ -862,17 +862,17 @@ public class BeaconState {
   static class BeaconStateHelperFunctions {
 
     /**
-     * Converts byte[] to int.
+     * Converts byte[] (wrapped by BytesValue) to int.
      *
-     * @param src byte[]
+     * @param src byte[] (wrapped by BytesValue)
      * @param pos Index in Byte[] array
      * @return converted int
      * @throws IllegalArgumentException if pos is a negative value.
      */
     @VisibleForTesting
-    static int bytes3ToInt(Hash src, int pos) {
+    static int bytes3ToInt(BytesValue src, int pos) {
       checkArgument(pos >= 0, "Expected positive pos but got %s", pos);
-      return ((src.extractArray()[pos] & 0xF) << 16)
+      return ((src.extractArray()[pos] & 0xFF) << 16)
           | ((src.extractArray()[pos + 1] & 0xFF) << 8)
           | (src.extractArray()[pos + 2] & 0xFF);
     }
