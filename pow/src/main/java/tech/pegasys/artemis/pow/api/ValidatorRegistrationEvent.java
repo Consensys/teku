@@ -11,19 +11,10 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.pow.event;
+package tech.pegasys.artemis.pow.api;
 
 import tech.pegasys.artemis.pow.contract.ValidatorRegistrationContract;
 
-public class ChainStartEvent {
-
-  private ValidatorRegistrationContract.ChainStartEventResponse response = null;
-
-  public ChainStartEvent(ValidatorRegistrationContract.ChainStartEventResponse response) {
-    this.response = response;
-  }
-
-  public ValidatorRegistrationContract.ChainStartEventResponse getResponse() {
-    return response;
-  }
+public interface ValidatorRegistrationEvent
+    extends PowEvent<ValidatorRegistrationContract.Eth1DepositEventResponse> {
 }

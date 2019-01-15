@@ -26,8 +26,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.artemis.Constants;
 import tech.pegasys.artemis.datastructures.beaconchainblocks.BeaconBlock;
-import tech.pegasys.artemis.pow.event.ChainStartEvent;
-import tech.pegasys.artemis.pow.event.ValidatorRegistrationEvent;
+import tech.pegasys.artemis.pow.event.ChainStart;
+import tech.pegasys.artemis.pow.event.ValidatorRegistration;
 import tech.pegasys.artemis.services.ServiceInterface;
 import tech.pegasys.artemis.state.BeaconState;
 
@@ -68,12 +68,12 @@ public class BeaconChainService implements ServiceInterface {
   }
 
   @Subscribe
-  public void onChainStarted(ChainStartEvent event) {
+  public void onChainStarted(ChainStart event) {
     LOG.info("ChainStart Event Detected");
   }
 
   @Subscribe
-  public void onValidatorRegistered(ValidatorRegistrationEvent event) {
+  public void onValidatorRegistered(ValidatorRegistration event) {
     LOG.info("Validator Registration Event detected");
     // LOG.info("   Validator Number: " + validatorRegisteredEvent.getInfo());
   }
