@@ -456,14 +456,35 @@ public class BeaconStateTest {
 
   @Test(expected = IllegalArgumentException.class)
   public void failsWhenInvalidArgumentsBytes3ToInt() {
-    bytes3ToInt(hashSrc(), -1);
+    bytes3ToInt(BytesValue.wrap(new byte[] {(byte) 0, (byte) 0, (byte) 0}), -1);
   }
 
   @Test
   public void convertBytes3ToInt() {
-    int expected = 817593;
-    int actual = bytes3ToInt(hashSrc(), 0);
-    assertThat(actual).isEqualTo(expected);
+    // Smoke Tests
+    // Test that MSB [00000001][00000000][11110000] LSB == 65656
+    assertThat(bytes3ToInt(BytesValue.wrap(new byte[] {(byte) 1, (byte) 0, (byte) 120}), 0))
+        .isEqualTo(65656);
+
+    // Boundary Tests
+    // Test that MSB [00000000][00000000][00000000] LSB == 0
+    assertThat(bytes3ToInt(BytesValue.wrap(new byte[] {(byte) 0, (byte) 0, (byte) 0}), 0))
+        .isEqualTo(0);
+    // Test that MSB [00000000][00000000][11111111] LSB == 255
+    assertThat(bytes3ToInt(BytesValue.wrap(new byte[] {(byte) 0, (byte) 0, (byte) 255}), 0))
+        .isEqualTo(255);
+    // Test that MSB [00000000][00000001][00000000] LSB == 256
+    assertThat(bytes3ToInt(BytesValue.wrap(new byte[] {(byte) 0, (byte) 1, (byte) 0}), 0))
+        .isEqualTo(256);
+    // Test that MSB [00000000][11111111][11111111] LSB == 65535
+    assertThat(bytes3ToInt(BytesValue.wrap(new byte[] {(byte) 0, (byte) 255, (byte) 255}), 0))
+        .isEqualTo(65535);
+    // Test that MSB [00000001][00000000][00000000] LSB == 65536
+    assertThat(bytes3ToInt(BytesValue.wrap(new byte[] {(byte) 1, (byte) 0, (byte) 0}), 0))
+        .isEqualTo(65536);
+    // Test that MSB [11111111][11111111][11111111] LSB == 16777215
+    assertThat(bytes3ToInt(BytesValue.wrap(new byte[] {(byte) 255, (byte) 255, (byte) 255}), 0))
+        .isEqualTo(16777215);
   }
 
   @Test
@@ -472,7 +493,7 @@ public class BeaconStateTest {
     ArrayList<Integer> sample = new ArrayList<>(input);
 
     ArrayList<Integer> actual = shuffle(sample, hashSrc());
-    List<Integer> expected_input = Arrays.asList(2, 4, 10, 7, 5, 6, 9, 8, 1, 3);
+    List<Integer> expected_input = Arrays.asList(4, 7, 2, 1, 5, 10, 3, 6, 8, 9);
     ArrayList<Integer> expected = new ArrayList<>(expected_input);
     assertThat(actual).isEqualTo(expected);
   }
