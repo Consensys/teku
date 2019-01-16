@@ -1,5 +1,5 @@
 jar {
-  baseName 'artemis-p2p'
+  baseName 'artemis-services-p2p'
   manifest {
     attributes('Implementation-Title': baseName,
     'Implementation-Version': project.version)
@@ -7,9 +7,9 @@ jar {
 }
 
 dependencies {
-  implementation project(':util')
-  implementation project(':ethereum:core')
-  implementation project(':ethereum:beaconchain')
+  implementation project(':networking:p2p')
+  implementation project(':services')
+
   implementation 'com.google.guava:guava'
   implementation 'org.apache.logging.log4j:log4j-api'
   runtime 'org.apache.logging.log4j:log4j-core'

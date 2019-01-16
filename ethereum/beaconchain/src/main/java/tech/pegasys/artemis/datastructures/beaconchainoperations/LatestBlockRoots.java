@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 ConsenSys AG.
+ * Copyright 2019 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,17 +11,18 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.util.bls;
+package tech.pegasys.artemis.datastructures.beaconchainoperations;
 
 import com.google.common.primitives.UnsignedLong;
-import tech.pegasys.artemis.util.bytes.Bytes32;
-import tech.pegasys.artemis.util.uint.UInt384;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import tech.pegasys.artemis.Constants;
+import tech.pegasys.artemis.ethereum.core.Hash;
 
-public class BLSVerify {
+public class LatestBlockRoots extends LinkedHashMap<UnsignedLong, Hash> {
 
-  // TODO: Need to update UInt384 to UInt384[].
-  public static boolean bls_verify(
-      UInt384 pubkey, Bytes32 message, UInt384 signature, UnsignedLong domain) {
-    return true;
+  @Override
+  protected boolean removeEldestEntry(Map.Entry<UnsignedLong, Hash> eldest) {
+    return this.size() > Constants.LATEST_BLOCK_ROOTS_LENGTH;
   }
 }

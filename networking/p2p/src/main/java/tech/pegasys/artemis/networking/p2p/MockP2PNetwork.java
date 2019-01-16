@@ -14,11 +14,18 @@
 package tech.pegasys.artemis.networking.p2p;
 
 import com.google.common.eventbus.EventBus;
+import com.google.common.primitives.UnsignedLong;
 import java.util.Collection;
+import java.util.Random;
 import java.util.concurrent.CompletableFuture;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import tech.pegasys.artemis.datastructures.beaconchainblocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.beaconchainoperations.Attestation;
+import tech.pegasys.artemis.datastructures.beaconchainoperations.AttestationData;
+import tech.pegasys.artemis.ethereum.core.Hash;
 import tech.pegasys.artemis.networking.p2p.api.P2PNetwork;
+import tech.pegasys.artemis.util.bytes.Bytes32;
 
 public class MockP2PNetwork implements P2PNetwork {
 
@@ -74,8 +81,8 @@ public class MockP2PNetwork implements P2PNetwork {
 
   @Override
   public void run() {
-    this.simulateNewBlocks();
-    this.simulateNewAttestations();
+    this.simulateNewMessages();
+    // this.simulateNewAttestations();
   }
 
   @Override
@@ -83,11 +90,33 @@ public class MockP2PNetwork implements P2PNetwork {
     this.stop();
   }
 
-  private void simulateNewBlocks() {
-    // TODO: implement block simulation so that we can test state transition logic
-  }
+  private void simulateNewMessages() {
+    try {
+      while (true) {
+        Random random = new Random();
+        long n = 1000L * Integer.toUnsignedLong(random.nextInt(7) + 2);
+        Thread.sleep(n);
+        if (n % 3 == 0) {
+          BeaconBlock block = new BeaconBlock();
+          this.eventBus.post(block);
+        } else {
 
-  private void simulateNewAttestations() {
-    // TODO: implement attestation simulation so that we can test state transition logic
+          AttestationData data =
+              new AttestationData(
+                  n,
+                  UnsignedLong.ZERO,
+                  Hash.ZERO,
+                  Hash.ZERO,
+                  Hash.ZERO,
+                  Hash.ZERO,
+                  UnsignedLong.ZERO,
+                  Hash.ZERO);
+          Attestation attestation = new Attestation(data, Bytes32.ZERO, Bytes32.ZERO, null);
+          this.eventBus.post(attestation);
+        }
+      }
+    } catch (InterruptedException e) {
+      LOG.warn(e.toString());
+    }
   }
 }
