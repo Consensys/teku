@@ -21,8 +21,8 @@ import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.artemis.Constants;
-import tech.pegasys.artemis.pow.event.ChainStartEvent;
-import tech.pegasys.artemis.pow.event.ValidatorRegistrationEvent;
+import tech.pegasys.artemis.pow.api.ChainStartEvent;
+import tech.pegasys.artemis.pow.api.ValidatorRegistrationEvent;
 import tech.pegasys.artemis.services.ServiceInterface;
 import tech.pegasys.artemis.state.StateTreeManager;
 
