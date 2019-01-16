@@ -24,6 +24,7 @@ public class ChainStart implements ChainStartEvent {
     this.response = response;
   }
 
+  @Override
   public ValidatorRegistrationContract.ChainStartEventResponse getResponse() {
     return response;
   }

@@ -16,5 +16,4 @@ package tech.pegasys.artemis.pow.api;
 import tech.pegasys.artemis.pow.contract.ValidatorRegistrationContract;
 
 public interface ChainStartEvent
-    extends PowEvent<ValidatorRegistrationContract.ChainStartEventResponse> {
-}
+    extends PowEvent<ValidatorRegistrationContract.ChainStartEventResponse> {}

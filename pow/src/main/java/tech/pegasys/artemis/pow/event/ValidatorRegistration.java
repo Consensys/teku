@@ -20,11 +20,11 @@ public class ValidatorRegistration implements ValidatorRegistrationEvent {
 
   private ValidatorRegistrationContract.Eth1DepositEventResponse response = null;
 
-  public ValidatorRegistration(
-      ValidatorRegistrationContract.Eth1DepositEventResponse response) {
+  public ValidatorRegistration(ValidatorRegistrationContract.Eth1DepositEventResponse response) {
     this.response = response;
   }
 
+  @Override
   public ValidatorRegistrationContract.Eth1DepositEventResponse getResponse() {
     return response;
   }

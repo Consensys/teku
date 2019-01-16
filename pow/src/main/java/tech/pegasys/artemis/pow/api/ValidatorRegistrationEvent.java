@@ -16,5 +16,4 @@ package tech.pegasys.artemis.pow.api;
 import tech.pegasys.artemis.pow.contract.ValidatorRegistrationContract;
 
 public interface ValidatorRegistrationEvent
-    extends PowEvent<ValidatorRegistrationContract.Eth1DepositEventResponse> {
-}
+    extends PowEvent<ValidatorRegistrationContract.Eth1DepositEventResponse> {}
