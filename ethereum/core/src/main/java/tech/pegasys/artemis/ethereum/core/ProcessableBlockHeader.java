@@ -15,10 +15,7 @@ package tech.pegasys.artemis.ethereum.core;
 
 import tech.pegasys.artemis.util.uint.UInt256;
 
-
-/**
- * A block header capable of being processed.
- */
+/** A block header capable of being processed. */
 public class ProcessableBlockHeader {
 
   protected final Hash parentHash;
@@ -34,8 +31,13 @@ public class ProcessableBlockHeader {
   // The block creation timestamp (seconds since the unix epoch)
   protected final long timestamp;
 
-  protected ProcessableBlockHeader(final Hash parentHash, final Address coinbase,
-      final UInt256 difficulty, final long number, final long gasLimit, final long timestamp) {
+  protected ProcessableBlockHeader(
+      final Hash parentHash,
+      final Address coinbase,
+      final UInt256 difficulty,
+      final long number,
+      final long gasLimit,
+      final long timestamp) {
     this.parentHash = parentHash;
     this.coinbase = coinbase;
     this.difficulty = difficulty;
@@ -97,5 +99,4 @@ public class ProcessableBlockHeader {
   public long timestamp() {
     return timestamp;
   }
-
 }

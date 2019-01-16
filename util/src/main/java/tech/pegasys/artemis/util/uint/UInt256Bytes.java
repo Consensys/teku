@@ -13,29 +13,24 @@
 
 package tech.pegasys.artemis.util.uint;
 
-
 import static com.google.common.base.Preconditions.checkArgument;
 
+import com.google.common.annotations.VisibleForTesting;
+import java.math.BigInteger;
+import java.util.function.BinaryOperator;
 import tech.pegasys.artemis.util.bytes.Bytes32;
 import tech.pegasys.artemis.util.bytes.Bytes32s;
 import tech.pegasys.artemis.util.bytes.BytesValue;
 import tech.pegasys.artemis.util.bytes.BytesValues;
 import tech.pegasys.artemis.util.bytes.MutableBytes32;
 
-import java.math.BigInteger;
-import java.util.function.BinaryOperator;
-
-import com.google.common.annotations.VisibleForTesting;
-
 /**
  * Static operations to work on bytes interpreted as 256 bytes unsigned integers.
  *
- * <p>
- * This class is the base of the operations on {@link UInt256} and {@link UInt256Value}, but can
+ * <p>This class is the base of the operations on {@link UInt256} and {@link UInt256Value}, but can
  * also be used to work directly on bytes if necessary.
  *
- * <p>
- * All operations that write a result are written assuming that the result may be the same object
+ * <p>All operations that write a result are written assuming that the result may be the same object
  * than one or more of the operands.
  */
 public abstract class UInt256Bytes {
@@ -94,16 +89,16 @@ public abstract class UInt256Bytes {
     T apply(T op1, T op2, T op3);
   }
 
-  private static void doOnBigInteger(Bytes32 v1, Bytes32 v2, MutableBytes32 dest,
-      BinaryOperator<BigInteger> operator) {
+  private static void doOnBigInteger(
+      Bytes32 v1, Bytes32 v2, MutableBytes32 dest, BinaryOperator<BigInteger> operator) {
     BigInteger i1 = BytesValues.asUnsignedBigInteger(v1);
     BigInteger i2 = BytesValues.asUnsignedBigInteger(v2);
     BigInteger result = operator.apply(i1, i2);
     copy(result, dest);
   }
 
-  private static void doOnBigInteger(Bytes32 v1, Bytes32 v2, Bytes32 v3, MutableBytes32 dest,
-      TriOperator<BigInteger> operator) {
+  private static void doOnBigInteger(
+      Bytes32 v1, Bytes32 v2, Bytes32 v3, MutableBytes32 dest, TriOperator<BigInteger> operator) {
     BigInteger i1 = BytesValues.asUnsignedBigInteger(v1);
     BigInteger i2 = BytesValues.asUnsignedBigInteger(v2);
     BigInteger i3 = BytesValues.asUnsignedBigInteger(v3);
@@ -207,8 +202,7 @@ public abstract class UInt256Bytes {
       for (int i = INT_SIZE - 3; i >= 0; i--) {
         diff = (v1.getInt(i * 4) & LONG_MASK) - ((int) -(diff >> 32));
         result.setInt(i * 4, (int) diff);
-        if (diff == 0)
-          break;
+        if (diff == 0) break;
       }
     }
   }
@@ -388,8 +382,7 @@ public abstract class UInt256Bytes {
   static boolean fitsInt(Bytes32 bytes) {
     // Ints are 4 bytes, so anything but the 4 last bytes must be zeroes
     for (int i = 0; i < SIZE - 4; i++) {
-      if (bytes.get(i) != 0)
-        return false;
+      if (bytes.get(i) != 0) return false;
     }
     // Lastly, the left-most byte of the int must not start with a 1.
     return bytes.get(SIZE - 4) >= 0;
@@ -398,8 +391,7 @@ public abstract class UInt256Bytes {
   static boolean fitsLong(Bytes32 bytes) {
     // Longs are 8 bytes, so anything but the 8 last bytes must be zeroes
     for (int i = 0; i < SIZE - 8; i++) {
-      if (bytes.get(i) != 0)
-        return false;
+      if (bytes.get(i) != 0) return false;
     }
     // Lastly, the left-most byte of the long must not start with a 1.
     return bytes.get(SIZE - 8) >= 0;
@@ -408,8 +400,7 @@ public abstract class UInt256Bytes {
   static int bitLength(Bytes32 bytes) {
     for (int i = 0; i < SIZE; i++) {
       byte b = bytes.get(i);
-      if (b == 0)
-        continue;
+      if (b == 0) continue;
 
       return (SIZE * 8) - (i * 8) - (Integer.numberOfLeadingZeros(b & 0xFF) - 3 * 8);
     }
@@ -419,8 +410,7 @@ public abstract class UInt256Bytes {
   static int compareUnsigned(Bytes32 v1, Bytes32 v2) {
     for (int i = 0; i < SIZE; i++) {
       int cmp = Integer.compare(((int) v1.get(i)) & 0xFF, ((int) v2.get(i)) & 0xFF);
-      if (cmp != 0)
-        return cmp;
+      if (cmp != 0) return cmp;
     }
     return 0;
   }

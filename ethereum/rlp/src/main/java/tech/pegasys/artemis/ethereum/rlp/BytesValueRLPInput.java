@@ -13,15 +13,12 @@
 
 package tech.pegasys.artemis.ethereum.rlp;
 
+import java.math.BigInteger;
 import tech.pegasys.artemis.util.bytes.Bytes32;
 import tech.pegasys.artemis.util.bytes.BytesValue;
 import tech.pegasys.artemis.util.bytes.BytesValues;
 
-import java.math.BigInteger;
-
-/**
- * An {@link RLPInput} that reads RLP encoded data from a {@link BytesValue}.
- */
+/** An {@link RLPInput} that reads RLP encoded data from a {@link BytesValue}. */
 public class BytesValueRLPInput extends AbstractRLPInput {
 
   // The RLP encoded data.

@@ -17,9 +17,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-import tech.pegasys.artemis.util.bytes.BytesValue;
-
 import org.junit.Test;
+import tech.pegasys.artemis.util.bytes.BytesValue;
 
 public class BytesValueRLPInputTest {
 
@@ -29,8 +28,7 @@ public class BytesValueRLPInputTest {
 
   private static String times(String base, int times) {
     StringBuilder sb = new StringBuilder();
-    for (int i = 0; i < times; i++)
-      sb.append(base);
+    for (int i = 0; i < times; i++) sb.append(base);
     return sb.toString();
   }
 
@@ -192,20 +190,22 @@ public class BytesValueRLPInputTest {
     el.reset();
     assertEquals(0, el.enterList());
 
-    BytesValue nestedList = RLP.encode(out -> {
-      out.startList();
-      out.writeByte((byte) 0x01);
-      out.writeByte((byte) 0x02);
-      out.startList();
-      out.writeByte((byte) 0x11);
-      out.writeByte((byte) 0x12);
-      out.startList();
-      out.writeByte((byte) 0x21);
-      out.writeByte((byte) 0x22);
-      out.endList();
-      out.endList();
-      out.endList();
-    });
+    BytesValue nestedList =
+        RLP.encode(
+            out -> {
+              out.startList();
+              out.writeByte((byte) 0x01);
+              out.writeByte((byte) 0x02);
+              out.startList();
+              out.writeByte((byte) 0x11);
+              out.writeByte((byte) 0x12);
+              out.startList();
+              out.writeByte((byte) 0x21);
+              out.writeByte((byte) 0x22);
+              out.endList();
+              out.endList();
+              out.endList();
+            });
 
     RLPInput nl = RLP.input(nestedList);
     RLPInput compare = nl.readAsRlp();
@@ -214,7 +214,8 @@ public class BytesValueRLPInputTest {
     nl.enterList();
     nl.skipNext(); // 0x01
 
-    // Read the next byte that's inside the list, extract it as raw RLP and assert it's its own representation.
+    // Read the next byte that's inside the list, extract it as raw RLP and assert it's its own
+    // representation.
     assertEquals(h("0x02"), nl.readAsRlp().raw());
     // Extract the inner list.
     assertEquals(h("0xc51112c22122"), nl.readAsRlp().raw());

@@ -27,8 +27,8 @@ public interface MutableBytes32 extends MutableBytesValue, Bytes32 {
   /**
    * Wraps a 32 bytes array as a mutable 32 bytes value.
    *
-   * <p>
-   * This method behave exactly as {@link Bytes32#wrap(byte[])} except that the result is a mutable.
+   * <p>This method behave exactly as {@link Bytes32#wrap(byte[])} except that the result is a
+   * mutable.
    *
    * @param value The value to wrap.
    * @return A {@link MutableBytes32} wrapping {@code value}.
@@ -50,11 +50,10 @@ public interface MutableBytes32 extends MutableBytesValue, Bytes32 {
   /**
    * Wraps an existing {@link MutableBytesValue} of size 32 as a mutable 32 bytes value.
    *
-   * <p>
-   * This method does no copy the provided bytes and so any mutation on {@code value} will also be
-   * reflected in the value returned by this method. If a copy is desirable, this can be simply
-   * achieved with calling {@link BytesValue#copyTo(MutableBytesValue)} with a newly created
-   * {@link MutableBytes32} as destination to the copy.
+   * <p>This method does no copy the provided bytes and so any mutation on {@code value} will also
+   * be reflected in the value returned by this method. If a copy is desirable, this can be simply
+   * achieved with calling {@link BytesValue#copyTo(MutableBytesValue)} with a newly created {@link
+   * MutableBytes32} as destination to the copy.
    *
    * @param value The value to wrap.
    * @return A {@link MutableBytes32} wrapping {@code value}.

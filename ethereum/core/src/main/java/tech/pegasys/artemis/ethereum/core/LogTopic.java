@@ -26,8 +26,8 @@ public class LogTopic extends DelegatingBytesValue {
 
   private LogTopic(BytesValue bytes) {
     super(bytes);
-    checkArgument(bytes.size() == SIZE, "A log topic must be be %s bytes long, got %s", SIZE,
-        bytes.size());
+    checkArgument(
+        bytes.size() == SIZE, "A log topic must be be %s bytes long, got %s", SIZE, bytes.size());
   }
 
   public static LogTopic create(BytesValue bytes) {

@@ -15,7 +15,6 @@ package tech.pegasys.artemis.util.message;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 public class BouncyCastleMessageDigestFactory {
@@ -26,5 +25,4 @@ public class BouncyCastleMessageDigestFactory {
   public static MessageDigest create(String algorithm) throws NoSuchAlgorithmException {
     return MessageDigest.getInstance(algorithm, securityProvider);
   }
-
 }

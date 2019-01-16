@@ -13,23 +13,20 @@
 
 package tech.pegasys.artemis.util.uint;
 
+import java.math.BigInteger;
+import java.util.function.BinaryOperator;
 import tech.pegasys.artemis.util.bytes.Bytes32;
 import tech.pegasys.artemis.util.bytes.BytesValue;
 import tech.pegasys.artemis.util.bytes.BytesValues;
 import tech.pegasys.artemis.util.bytes.MutableBytes32;
 
-import java.math.BigInteger;
-import java.util.function.BinaryOperator;
-
 /**
  * Static operations to work on bytes interpreted as 256 bytes signed integers.
  *
- * <p>
- * This class is the base of the operations on {@link Int256} but can also be used to work directly
- * on bytes if necessary.
+ * <p>This class is the base of the operations on {@link Int256} but can also be used to work
+ * directly on bytes if necessary.
  *
- * <p>
- * All operations that write a result are written assuming that the result may be the same object
+ * <p>All operations that write a result are written assuming that the result may be the same object
  * than one or more of the operands.
  */
 abstract class Int256Bytes {
@@ -44,8 +41,8 @@ abstract class Int256Bytes {
     UInt256Bytes.copyPadded(BytesValue.wrap(result.toByteArray()), destination, padding);
   }
 
-  private static void doOnSignedBigInteger(Bytes32 v1, Bytes32 v2, MutableBytes32 dest,
-      BinaryOperator<BigInteger> operator) {
+  private static void doOnSignedBigInteger(
+      Bytes32 v1, Bytes32 v2, MutableBytes32 dest, BinaryOperator<BigInteger> operator) {
     BigInteger i1 = BytesValues.asSignedBigInteger(v1);
     BigInteger i2 = BytesValues.asSignedBigInteger(v2);
     BigInteger result = operator.apply(i1, i2);
@@ -55,8 +52,7 @@ abstract class Int256Bytes {
   // Tests if this value represents -2^255, that is the first byte is 1 followed by only 0. Used to
   // implement the overflow condition of the Yellow Paper in signedDivide().
   private static boolean isMinusP255(Bytes32 v) {
-    if (v.get(0) != (byte) 0x80)
-      return false;
+    if (v.get(0) != (byte) 0x80) return false;
 
     byte b = 0;
     for (int i = 1; i < v.size(); i++) {
@@ -81,11 +77,14 @@ abstract class Int256Bytes {
     if (v2.isZero()) {
       result.clear();
     } else {
-      doOnSignedBigInteger(v1, v2, result, (val, mod) -> {
-        BigInteger absModulo = val.abs().mod(mod.abs());
-        return val.signum() < 0 ? absModulo.negate() : absModulo;
-      });
+      doOnSignedBigInteger(
+          v1,
+          v2,
+          result,
+          (val, mod) -> {
+            BigInteger absModulo = val.abs().mod(mod.abs());
+            return val.signum() < 0 ? absModulo.negate() : absModulo;
+          });
     }
   }
-
 }

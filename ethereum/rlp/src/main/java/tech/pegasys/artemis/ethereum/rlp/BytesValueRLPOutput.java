@@ -16,10 +16,7 @@ package tech.pegasys.artemis.ethereum.rlp;
 import tech.pegasys.artemis.util.bytes.BytesValue;
 import tech.pegasys.artemis.util.bytes.MutableBytesValue;
 
-
-/**
- * An {@link RLPOutput} that writes RLP encoded data to a {@link BytesValue}.
- */
+/** An {@link RLPOutput} that writes RLP encoded data to a {@link BytesValue}. */
 public class BytesValueRLPOutput extends AbstractRLPOutput {
   /**
    * Computes the final encoded data.

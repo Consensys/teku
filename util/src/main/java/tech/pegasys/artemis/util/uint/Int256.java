@@ -17,9 +17,7 @@ import tech.pegasys.artemis.util.bytes.Bytes32;
 import tech.pegasys.artemis.util.bytes.Bytes32Backed;
 import tech.pegasys.artemis.util.bytes.BytesValue;
 
-/**
- * A signed 256-bits precision number.
- */
+/** A signed 256-bits precision number. */
 /*
  * Implementation note: this interface is currently extremely bar-bones and contains only the
  * operations that are currently needed on signed numbers by the Ethereum VM code. We could (and
@@ -36,14 +34,11 @@ public interface Int256 extends Bytes32Backed, Comparable<Int256> {
     return new DefaultInt256((Bytes32) bytes);
   }
 
-
   default boolean isZero() {
     return bytes().isZero();
   }
 
-  /**
-   * @return True if the value is negative.
-   */
+  /** @return True if the value is negative. */
   default boolean isNegative() {
     return bytes().get(0) < 0;
   }
@@ -52,9 +47,7 @@ public interface Int256 extends Bytes32Backed, Comparable<Int256> {
 
   Int256 mod(Int256 value);
 
-  /**
-   * @return A view of the bytes of this number as signed (two's complement).
-   */
+  /** @return A view of the bytes of this number as signed (two's complement). */
   default UInt256 asUnsigned() {
     return new DefaultUInt256(bytes());
   }
