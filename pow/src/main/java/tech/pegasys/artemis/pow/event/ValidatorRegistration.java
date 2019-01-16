@@ -13,17 +13,19 @@
 
 package tech.pegasys.artemis.pow.event;
 
+import tech.pegasys.artemis.pow.api.ValidatorRegistrationEvent;
 import tech.pegasys.artemis.pow.contract.ValidatorRegistrationContract;
 
-public class ChainStartEvent {
+public class ValidatorRegistration implements ValidatorRegistrationEvent {
 
-  private ValidatorRegistrationContract.ChainStartEventResponse response = null;
+  private ValidatorRegistrationContract.Eth1DepositEventResponse response = null;
 
-  public ChainStartEvent(ValidatorRegistrationContract.ChainStartEventResponse response) {
+  public ValidatorRegistration(ValidatorRegistrationContract.Eth1DepositEventResponse response) {
     this.response = response;
   }
 
-  public ValidatorRegistrationContract.ChainStartEventResponse getResponse() {
+  @Override
+  public ValidatorRegistrationContract.Eth1DepositEventResponse getResponse() {
     return response;
   }
 }
