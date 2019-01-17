@@ -15,18 +15,12 @@ package tech.pegasys.artemis.state.util;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
-import java.util.Iterator;
-
 import tech.pegasys.artemis.Constants;
 import tech.pegasys.artemis.datastructures.beaconchainoperations.AttestationData;
 import tech.pegasys.artemis.datastructures.beaconchainstate.PendingAttestationRecord;
-import tech.pegasys.artemis.datastructures.beaconchainstate.ShardCommittee;
 import tech.pegasys.artemis.ethereum.core.Hash;
 import tech.pegasys.artemis.state.BeaconState;
 import tech.pegasys.artemis.util.bytes.Bytes32;
-import tech.pegasys.artemis.util.uint.UInt256Bytes;
-
-import static java.lang.Math.toIntExact;
 
 public class AttestationUtil {
 
@@ -66,6 +60,17 @@ public class AttestationUtil {
     return current_epoch_boundary_attestations;
   }
 
+  public static double get_previous_epoch_boundary_attesting_balance(BeaconState state)
+      throws Exception {
+    // todo
+    return 0.0d;
+  }
+
+  public static double get_current_epoch_boundary_attesting_balance(BeaconState state) {
+    // todo
+    return 0.0d;
+  }
+
   // https://github.com/ethereum/eth2.0-specs/blob/master/specs/core/0_beacon-chain.md#get_block_root
   public static Hash get_block_root(BeaconState state, long slot) throws Exception {
     long slot_upper_bound = slot + state.getLatest_block_roots().size();
@@ -76,21 +81,13 @@ public class AttestationUtil {
     throw new BlockValidationException("Desired block root not within the provided bounds");
   }
 
-  public static ArrayList<Integer> get_attestation_participants(BeaconState state, AttestationData attestation_data , Bytes32 participation_bitfield){
-    ArrayList<ShardCommittee> shard_committees = state.get_shard_committees_at_slot(state, toIntExact(attestation_data.getSlot()));
-
-    //Find the relevant committee
-    Iterator<ShardCommittee> itr = shard_committees.iterator();
-    while(itr.hasNext()){
-      ShardCommittee shard_committee = itr.next();
-//      if(participation_bitfield.compareTo((Bytes32) UInt256Bytes.of((long)ceil_div8(shard_committee.getCommittee().size())))){
-//
-//      }
-    }
+  public static ArrayList<Integer> get_attestation_participants(
+      BeaconState state, AttestationData attestation_data, Bytes32 participation_bitfield) {
+    // todo
     return null;
   }
 
-  public static int ceil_div8(int input){
-    return (int) Math.ceil(((double)input)/8.0d);
+  public static int ceil_div8(int input) {
+    return (int) Math.ceil(((double) input) / 8.0d);
   }
 }

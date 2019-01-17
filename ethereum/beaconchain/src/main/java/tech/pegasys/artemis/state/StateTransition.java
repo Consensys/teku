@@ -15,7 +15,6 @@ package tech.pegasys.artemis.state;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import tech.pegasys.artemis.Constants;
 import tech.pegasys.artemis.datastructures.beaconchainblocks.BeaconBlock;
 import tech.pegasys.artemis.state.util.EpochProcessorUtil;
 
@@ -38,9 +37,13 @@ public class StateTransition {
     }
 
     // per-epoch processing
-    if (state.getSlot() % Constants.EPOCH_LENGTH == 0) {
+    // if (state.getSlot() % Constants.EPOCH_LENGTH == 0) {
+    try {
       epochProcessor(state);
+    } catch (Exception e) {
+      // e.printStackTrace();
     }
+    // }
   }
 
   protected void slotProcessor(BeaconState state) {
@@ -65,7 +68,7 @@ public class StateTransition {
     processAttestations(state, block);
   }
 
-  protected void epochProcessor(BeaconState state) {
+  protected void epochProcessor(BeaconState state) throws Exception {
     logger.info("Processing new epoch in slot: " + state.getSlot());
     EpochProcessorUtil.updateJustification(state);
     EpochProcessorUtil.updateFinalization(state);
