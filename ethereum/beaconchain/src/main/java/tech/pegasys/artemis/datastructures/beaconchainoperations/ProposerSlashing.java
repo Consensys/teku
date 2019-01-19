@@ -13,8 +13,8 @@
 
 package tech.pegasys.artemis.datastructures.beaconchainoperations;
 
+import net.consensys.cava.units.bigints.UInt384;
 import tech.pegasys.artemis.datastructures.beaconchainblocks.ProposalSignedData;
-import tech.pegasys.artemis.util.uint.UInt384;
 
 public class ProposerSlashing {
 

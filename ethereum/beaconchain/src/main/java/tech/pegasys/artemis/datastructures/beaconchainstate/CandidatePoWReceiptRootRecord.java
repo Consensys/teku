@@ -14,7 +14,7 @@
 package tech.pegasys.artemis.datastructures.beaconchainstate;
 
 import com.google.common.primitives.UnsignedLong;
-import tech.pegasys.artemis.ethereum.core.Hash;
+import net.consensys.cava.crypto.Hash;
 
 public class CandidatePoWReceiptRootRecord {
 

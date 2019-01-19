@@ -33,7 +33,6 @@ import static tech.pegasys.artemis.Constants.SHARD_COUNT;
 import static tech.pegasys.artemis.Constants.TARGET_COMMITTEE_SIZE;
 import static tech.pegasys.artemis.Constants.WHISTLEBLOWER_REWARD_QUOTIENT;
 import static tech.pegasys.artemis.Constants.ZERO_BALANCE_VALIDATOR_TTL;
-import static tech.pegasys.artemis.ethereum.core.TreeHash.hash_tree_root;
 import static tech.pegasys.artemis.state.BeaconState.BeaconStateHelperFunctions.shuffle;
 import static tech.pegasys.artemis.state.BeaconState.BeaconStateHelperFunctions.split;
 import static tech.pegasys.artemis.util.bls.BLSVerify.bls_verify;
@@ -43,6 +42,10 @@ import com.google.common.primitives.UnsignedLong;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import java.util.ArrayList;
+import net.consensys.cava.bytes.Bytes;
+import net.consensys.cava.bytes.Bytes32;
+import net.consensys.cava.crypto.Hash;
+import net.consensys.cava.units.bigints.UInt384;
 import tech.pegasys.artemis.Constants;
 import tech.pegasys.artemis.datastructures.beaconchainoperations.AttestationData;
 import tech.pegasys.artemis.datastructures.beaconchainoperations.Deposit;
@@ -57,11 +60,8 @@ import tech.pegasys.artemis.datastructures.beaconchainstate.ShardReassignmentRec
 import tech.pegasys.artemis.datastructures.beaconchainstate.ValidatorRecord;
 import tech.pegasys.artemis.datastructures.beaconchainstate.ValidatorRegistryDeltaBlock;
 import tech.pegasys.artemis.datastructures.beaconchainstate.Validators;
-import tech.pegasys.artemis.ethereum.core.Hash;
+import tech.pegasys.artemis.state.util.TreeHashUtil;
 import tech.pegasys.artemis.state.util.ValidatorsUtil;
-import tech.pegasys.artemis.util.bytes.Bytes32;
-import tech.pegasys.artemis.util.bytes.BytesValue;
-import tech.pegasys.artemis.util.uint.UInt384;
 
 public class BeaconState {
 
@@ -75,11 +75,11 @@ public class BeaconState {
   private ArrayList<Double> validator_balances;
   private long validator_registry_latest_change_slot;
   private long validator_registry_exit_count;
-  private Hash validator_registry_delta_chain_tip;
+  private Bytes32 validator_registry_delta_chain_tip;
 
   // Randomness and committees
-  private ArrayList<Hash> latest_randao_mixes;
-  private ArrayList<Hash> latest_vdf_outputs;
+  private ArrayList<Bytes32> latest_randao_mixes;
+  private ArrayList<Bytes32> latest_vdf_outputs;
   private ArrayList<ArrayList<ShardCommittee>> shard_committees_at_slots = new ArrayList<>();
   private ArrayList<ArrayList<Integer>> persistent_committees;
   private ArrayList<ShardReassignmentRecord> persistent_committee_reassignments;
@@ -95,10 +95,10 @@ public class BeaconState {
   private LatestBlockRoots latest_block_roots = new LatestBlockRoots();
   private ArrayList<Double> latest_penalized_exit_balances;
   private ArrayList<PendingAttestationRecord> latest_attestations;
-  private ArrayList<Hash> batched_block_roots = new ArrayList<>();
+  private ArrayList<Bytes32> batched_block_roots = new ArrayList<>();
 
   // PoW receipt root
-  private Hash processed_pow_receipt_root;
+  private Bytes32 processed_pow_receipt_root;
   private ArrayList<CandidatePoWReceiptRootRecord> candidate_pow_receipt_roots;
 
   // Default Constructor
@@ -125,10 +125,10 @@ public class BeaconState {
       ArrayList<Double> validator_balances,
       long validator_registry_latest_change_slot,
       long validator_registry_exit_count,
-      Hash validator_registry_delta_chain_tip,
+      Bytes32 validator_registry_delta_chain_tip,
       // Randomness and committees
-      ArrayList<Hash> latest_randao_mixes,
-      ArrayList<Hash> latest_vdf_outputs,
+      ArrayList<Bytes32> latest_randao_mixes,
+      ArrayList<Bytes32> latest_vdf_outputs,
       ArrayList<ArrayList<ShardCommittee>> shard_committees_at_slots,
       ArrayList<ArrayList<Integer>> persistent_committees,
       ArrayList<ShardReassignmentRecord> persistent_committee_reassignments,
@@ -142,9 +142,9 @@ public class BeaconState {
       LatestBlockRoots latest_block_roots,
       ArrayList<Double> latest_penalized_exit_balances,
       ArrayList<PendingAttestationRecord> latest_attestations,
-      ArrayList<Hash> batched_block_roots,
+      ArrayList<Bytes32> batched_block_roots,
       // PoW receipt root
-      Hash processed_pow_receipt_root,
+      Bytes32 processed_pow_receipt_root,
       ArrayList<CandidatePoWReceiptRootRecord> candidate_pow_receipt_roots) {
 
     // Misc
@@ -188,16 +188,16 @@ public class BeaconState {
   public BeaconState get_initial_beacon_state(
       ArrayList<Deposit> initial_validator_deposits,
       int genesis_time,
-      Hash processed_pow_receipt_root) {
+      Bytes32 processed_pow_receipt_root) {
 
-    ArrayList<Hash> latest_randao_mixes = new ArrayList<>();
-    ArrayList<Hash> latest_vdf_outputs = new ArrayList<>();
+    ArrayList<Bytes32> latest_randao_mixes = new ArrayList<>();
+    ArrayList<Bytes32> latest_vdf_outputs = new ArrayList<>();
     LatestBlockRoots latest_block_roots = new LatestBlockRoots();
     ArrayList<CrosslinkRecord> latest_crosslinks = new ArrayList<>(SHARD_COUNT);
 
     for (int i = 0; i < SHARD_COUNT; i++) {
       latest_crosslinks.add(
-          new CrosslinkRecord(Hash.ZERO, UnsignedLong.valueOf(INITIAL_SLOT_NUMBER)));
+          new CrosslinkRecord(Bytes32.ZERO, UnsignedLong.valueOf(INITIAL_SLOT_NUMBER)));
     }
 
     BeaconState state =
@@ -215,7 +215,7 @@ public class BeaconState {
             new ArrayList<>(),
             INITIAL_SLOT_NUMBER,
             0,
-            Hash.ZERO,
+            Bytes32.ZERO,
 
             // Randomness and committees
             latest_randao_mixes,
@@ -247,7 +247,7 @@ public class BeaconState {
       int validator_index =
           process_deposit(
               state,
-              toIntExact(deposit_input.getPubkey().getValue()),
+              deposit_input.getPubkey(),
               validator_deposit.getDeposit_data().getValue().longValue(),
               deposit_input.getProof_of_possession(),
               deposit_input.getWithdrawal_credentials(),
@@ -261,7 +261,7 @@ public class BeaconState {
 
     // set initial committee shuffling
     ArrayList<ArrayList<ShardCommittee>> initial_shuffling =
-        get_new_shuffling(Hash.ZERO, state.getValidator_registry(), 0);
+        get_new_shuffling(Bytes32.ZERO, state.getValidator_registry(), 0);
     ArrayList<ArrayList<ShardCommittee>> shard_committees = new ArrayList<>();
     shard_committees.addAll(initial_shuffling);
     shard_committees.addAll(initial_shuffling);
@@ -271,7 +271,7 @@ public class BeaconState {
     ArrayList<Integer> active_validator_indices =
         get_active_validator_indices(state.getValidator_registry());
     state.setPersistent_committees(
-        split(shuffle(active_validator_indices, Hash.ZERO), SHARD_COUNT));
+        split(shuffle(active_validator_indices, Bytes32.ZERO), SHARD_COUNT));
 
     return state;
   }
@@ -285,7 +285,7 @@ public class BeaconState {
    * @return
    */
   private ArrayList<ArrayList<ShardCommittee>> get_new_shuffling(
-      Hash seed, ArrayList<ValidatorRecord> validators, int crosslinking_start_shard) {
+      Bytes32 seed, ArrayList<ValidatorRecord> validators, int crosslinking_start_shard) {
     ArrayList<Integer> active_validator_indices = get_active_validator_indices(validators);
 
     int committees_per_slot =
@@ -383,26 +383,21 @@ public class BeaconState {
    */
   private boolean validate_proof_of_possession(
       BeaconState state,
-      int pubkey,
+      UInt384 pubkey,
       Bytes32 proof_of_possession,
-      Hash withdrawal_credentials,
-      Hash randao_commitment,
-      Hash poc_commitment) {
+      Bytes32 withdrawal_credentials,
+      Bytes32 randao_commitment,
+      Bytes32 poc_commitment) {
     DepositInput proof_of_possession_data =
         new DepositInput(
-            UInt384.valueOf(pubkey),
-            withdrawal_credentials,
-            poc_commitment,
-            randao_commitment,
-            proof_of_possession);
+            pubkey, withdrawal_credentials, poc_commitment, randao_commitment, proof_of_possession);
 
-    UInt384 signature =
-        UInt384.valueOf(BytesValue.wrap(proof_of_possession.extractArray()).getInt(0));
+    UInt384 signature = UInt384.fromBytes(proof_of_possession);
     UnsignedLong domain =
         UnsignedLong.valueOf(
             get_domain(state.fork_data, toIntExact(state.getSlot()), DOMAIN_DEPOSIT));
     return bls_verify(
-        UInt384.valueOf(pubkey), hash_tree_root(proof_of_possession_data), signature, domain);
+        pubkey, TreeHashUtil.hash_tree_root(proof_of_possession_data), signature, domain);
   }
 
   /**
@@ -418,12 +413,12 @@ public class BeaconState {
    */
   public int process_deposit(
       BeaconState state,
-      int pubkey,
+      UInt384 pubkey,
       double deposit,
       Bytes32 proof_of_possession,
-      Hash withdrawal_credentials,
-      Hash randao_commitment,
-      Hash poc_commitment) {
+      Bytes32 withdrawal_credentials,
+      Bytes32 randao_commitment,
+      Bytes32 poc_commitment) {
     assert validate_proof_of_possession(
         state,
         pubkey,
@@ -476,15 +471,15 @@ public class BeaconState {
   }
 
   /**
-   * Helper function to find the index of the pubkey the array of validators' pubkeys.
+   * Helper function to find the index of the pubkey in the array of validators' pubkeys.
    *
    * @param validator_pubkeys
    * @param pubkey
    * @return The index of the pubkey.
    */
-  private int indexOfPubkey(UInt384[] validator_pubkeys, int pubkey) {
+  private int indexOfPubkey(UInt384[] validator_pubkeys, UInt384 pubkey) {
     for (int i = 0; i < validator_pubkeys.length; i++) {
-      if (validator_pubkeys[i].getValue() == pubkey) {
+      if (validator_pubkeys[i].equals(pubkey)) {
         return i;
       }
     }
@@ -549,10 +544,7 @@ public class BeaconState {
     validator.setLatest_status_change_slot(UnsignedLong.valueOf(slot));
     validator_registry_delta_chain_tip =
         get_new_validator_registry_delta_chain_tip(
-            validator_registry_delta_chain_tip,
-            index,
-            toIntExact(validator.getPubkey().getValue()),
-            ACTIVATION);
+            validator_registry_delta_chain_tip, index, validator.getPubkey(), ACTIVATION);
   }
 
   /**
@@ -617,10 +609,7 @@ public class BeaconState {
     validator.setExit_count(UnsignedLong.valueOf(state.getValidator_registry_exit_count()));
     state.setValidator_registry_delta_chain_tip(
         get_new_validator_registry_delta_chain_tip(
-            state.getValidator_registry_delta_chain_tip(),
-            index,
-            toIntExact(validator.getPubkey().getValue()),
-            EXIT));
+            state.getValidator_registry_delta_chain_tip(), index, validator.getPubkey(), EXIT));
 
     // Remove validator from persistent committees
     for (int i = 0; i < persistent_committees.size(); i++) {
@@ -722,7 +711,7 @@ public class BeaconState {
    * @return
    */
   public static ArrayList<ArrayList<ShardCommittee>> get_shuffling(
-      Hash seed, ArrayList<ValidatorRecord> validators, int crosslinking_start_shard, int slot) {
+      Bytes32 seed, ArrayList<ValidatorRecord> validators, int crosslinking_start_shard, int slot) {
     // Normalizes slot to start of epoch boundary
     slot -= slot % EPOCH_LENGTH;
 
@@ -821,9 +810,9 @@ public class BeaconState {
    * @param values
    * @return The merkle root.
    */
-  static Hash merkle_root(LatestBlockRoots values) {
+  static Bytes32 merkle_root(LatestBlockRoots values) {
     // TODO: Implement merkle_root
-    return Hash.ZERO;
+    return Bytes32.ZERO;
   }
 
   /**
@@ -835,14 +824,17 @@ public class BeaconState {
    * @param flag
    * @return The next root.
    */
-  private Hash get_new_validator_registry_delta_chain_tip(
-      Hash current_validator_registry_delta_chain_tip, int validator_index, int pubkey, int flag) {
-    return Hash.hash(
-        hash_tree_root(
+  private Bytes32 get_new_validator_registry_delta_chain_tip(
+      Bytes32 current_validator_registry_delta_chain_tip,
+      int validator_index,
+      UInt384 pubkey,
+      int flag) {
+    return Hash.keccak256(
+        TreeHashUtil.hash_tree_root(
             new ValidatorRegistryDeltaBlock(
                 current_validator_registry_delta_chain_tip,
                 validator_index,
-                UInt384.valueOf(pubkey),
+                pubkey,
                 UnsignedLong.valueOf(flag))));
   }
   /**
@@ -870,11 +862,11 @@ public class BeaconState {
      * @throws IllegalArgumentException if pos is a negative value.
      */
     @VisibleForTesting
-    static int bytes3ToInt(BytesValue src, int pos) {
+    static int bytes3ToInt(Bytes src, int pos) {
       checkArgument(pos >= 0, "Expected positive pos but got %s", pos);
-      return ((src.extractArray()[pos] & 0xFF) << 16)
-          | ((src.extractArray()[pos + 1] & 0xFF) << 8)
-          | (src.extractArray()[pos + 2] & 0xFF);
+      return ((src.get(pos) & 0xFF) << 16)
+          | ((src.get(pos + 1) & 0xFF) << 8)
+          | (src.get(pos + 2) & 0xFF);
     }
 
     /**
@@ -885,7 +877,7 @@ public class BeaconState {
      * @return The shuffled array.
      */
     @VisibleForTesting
-    static <T> ArrayList<T> shuffle(ArrayList<T> values, Hash seed) {
+    static <T> ArrayList<T> shuffle(ArrayList<T> values, Bytes32 seed) {
       int values_count = values.size();
 
       // Entropy is consumed from the seed in 3-byte (24 bit) chunks.
@@ -899,11 +891,11 @@ public class BeaconState {
 
       ArrayList<T> output = new ArrayList<>(values);
 
-      Hash source = seed;
+      Bytes32 source = seed;
       int index = 0;
       while (index < values_count - 1) {
         // Re-hash the `source` to obtain a new pattern of bytes.
-        source = Hash.hash(source);
+        source = Hash.keccak256(source);
 
         // List to hold values for swap below.
         T tmp;
@@ -1023,11 +1015,11 @@ public class BeaconState {
     this.validator_registry_exit_count = validator_registry_exit_count;
   }
 
-  public Hash getValidator_registry_delta_chain_tip() {
+  public Bytes32 getValidator_registry_delta_chain_tip() {
     return validator_registry_delta_chain_tip;
   }
 
-  public void setValidator_registry_delta_chain_tip(Hash validator_registry_delta_chain_tip) {
+  public void setValidator_registry_delta_chain_tip(Bytes32 validator_registry_delta_chain_tip) {
     this.validator_registry_delta_chain_tip = validator_registry_delta_chain_tip;
   }
 
@@ -1088,11 +1080,11 @@ public class BeaconState {
     this.latest_attestations = latest_attestations;
   }
 
-  public ArrayList<Hash> getBatched_block_roots() {
+  public ArrayList<Bytes32> getBatched_block_roots() {
     return batched_block_roots;
   }
 
-  public void setBatched_block_roots(ArrayList<Hash> batched_block_roots) {
+  public void setBatched_block_roots(ArrayList<Bytes32> batched_block_roots) {
     this.batched_block_roots = batched_block_roots;
   }
 
@@ -1112,11 +1104,11 @@ public class BeaconState {
     this.finalized_slot = finalized_slot;
   }
 
-  public Hash getProcessed_pow_receipt_root() {
+  public Bytes32 getProcessed_pow_receipt_root() {
     return processed_pow_receipt_root;
   }
 
-  public void setProcessed_pow_receipt_root(Hash processed_pow_receipt_root) {
+  public void setProcessed_pow_receipt_root(Bytes32 processed_pow_receipt_root) {
     this.processed_pow_receipt_root = processed_pow_receipt_root;
   }
 
@@ -1158,19 +1150,19 @@ public class BeaconState {
     this.latest_penalized_exit_balances = latest_penalized_exit_balances;
   }
 
-  public ArrayList<Hash> getLatest_randao_mixes() {
+  public ArrayList<Bytes32> getLatest_randao_mixes() {
     return latest_randao_mixes;
   }
 
-  public void setLatest_randao_mixes(ArrayList<Hash> latest_randao_mixes) {
+  public void setLatest_randao_mixes(ArrayList<Bytes32> latest_randao_mixes) {
     this.latest_randao_mixes = latest_randao_mixes;
   }
 
-  public ArrayList<Hash> getLatest_vdf_outputs() {
+  public ArrayList<Bytes32> getLatest_vdf_outputs() {
     return latest_vdf_outputs;
   }
 
-  public void setLatest_vdf_outputs(ArrayList<Hash> latest_vdf_outputs) {
+  public void setLatest_vdf_outputs(ArrayList<Bytes32> latest_vdf_outputs) {
     this.latest_vdf_outputs = latest_vdf_outputs;
   }
 

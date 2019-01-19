@@ -14,7 +14,7 @@
 package tech.pegasys.artemis.datastructures.beaconchainoperations;
 
 import java.util.ArrayList;
-import tech.pegasys.artemis.util.uint.UInt384;
+import net.consensys.cava.units.bigints.UInt384;
 
 public class SlashableVoteData {
 
