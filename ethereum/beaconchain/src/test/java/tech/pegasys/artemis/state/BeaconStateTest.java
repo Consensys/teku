@@ -17,6 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.artemis.Constants.ACTIVATION;
 import static tech.pegasys.artemis.Constants.ACTIVE;
 import static tech.pegasys.artemis.Constants.ACTIVE_PENDING_EXIT;
+import static tech.pegasys.artemis.Constants.EMPTY_SIGNATURE;
 import static tech.pegasys.artemis.Constants.EXITED_WITHOUT_PENALTY;
 import static tech.pegasys.artemis.Constants.EXITED_WITH_PENALTY;
 import static tech.pegasys.artemis.Constants.PENDING_ACTIVATION;
@@ -177,7 +178,7 @@ public class BeaconStateTest {
                 state,
                 Bytes48.leftPad(Bytes.of(20)),
                 100,
-                Bytes32.ZERO,
+                EMPTY_SIGNATURE,
                 Bytes32.ZERO,
                 Bytes32.ZERO,
                 Bytes32.ZERO))
@@ -192,7 +193,7 @@ public class BeaconStateTest {
                 state,
                 Bytes48.leftPad(Bytes.of(20)),
                 100,
-                Bytes32.ZERO,
+                EMPTY_SIGNATURE,
                 Bytes32.ZERO,
                 Bytes32.ZERO,
                 Bytes32.ZERO))
@@ -210,7 +211,7 @@ public class BeaconStateTest {
                 state,
                 Bytes48.leftPad(Bytes.of(200)),
                 100,
-                Bytes32.ZERO,
+                EMPTY_SIGNATURE,
                 Bytes32.ZERO,
                 Bytes32.ZERO,
                 Bytes32.ZERO))

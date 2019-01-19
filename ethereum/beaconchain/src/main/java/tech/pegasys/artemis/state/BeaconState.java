@@ -385,7 +385,7 @@ public class BeaconState {
   private boolean validate_proof_of_possession(
       BeaconState state,
       Bytes48 pubkey,
-      Bytes32 proof_of_possession,
+      Bytes48[] proof_of_possession,
       Bytes32 withdrawal_credentials,
       Bytes32 randao_commitment,
       Bytes32 poc_commitment) {
@@ -393,7 +393,9 @@ public class BeaconState {
         new DepositInput(
             pubkey, withdrawal_credentials, poc_commitment, randao_commitment, proof_of_possession);
 
-    Bytes48 signature = Bytes48.leftPad(proof_of_possession);
+    Bytes48[] signature = {
+      Bytes48.leftPad(proof_of_possession[0]), Bytes48.leftPad(proof_of_possession[1])
+    };
     UnsignedLong domain =
         UnsignedLong.valueOf(
             get_domain(state.fork_data, toIntExact(state.getSlot()), DOMAIN_DEPOSIT));
@@ -416,7 +418,7 @@ public class BeaconState {
       BeaconState state,
       Bytes48 pubkey,
       double deposit,
-      Bytes32 proof_of_possession,
+      Bytes48[] proof_of_possession,
       Bytes32 withdrawal_credentials,
       Bytes32 randao_commitment,
       Bytes32 poc_commitment) {

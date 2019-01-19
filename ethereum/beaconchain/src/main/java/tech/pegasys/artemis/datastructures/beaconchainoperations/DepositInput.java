@@ -22,14 +22,14 @@ public class DepositInput {
   private Bytes32 withdrawal_credentials;
   private Bytes32 randao_commitment;
   private Bytes32 poc_commitment;
-  private Bytes32 proof_of_possession;
+  private Bytes48[] proof_of_possession;
 
   public DepositInput(
       Bytes48 pubkey,
       Bytes32 withdrawal_credentials,
       Bytes32 randao_commitment,
       Bytes32 poc_commitment,
-      Bytes32 proof_of_possession) {
+      Bytes48[] proof_of_possession) {
     this.pubkey = pubkey;
     this.withdrawal_credentials = withdrawal_credentials;
     this.randao_commitment = randao_commitment;
@@ -62,11 +62,11 @@ public class DepositInput {
     this.randao_commitment = randao_commitment;
   }
 
-  public Bytes32 getProof_of_possession() {
+  public Bytes48[] getProof_of_possession() {
     return proof_of_possession;
   }
 
-  public void setProof_of_possession(Bytes32 proof_of_possession) {
+  public void setProof_of_possession(Bytes48[] proof_of_possession) {
     this.proof_of_possession = proof_of_possession;
   }
 

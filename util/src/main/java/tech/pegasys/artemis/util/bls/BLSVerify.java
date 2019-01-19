@@ -19,9 +19,8 @@ import net.consensys.cava.bytes.Bytes48;
 
 public class BLSVerify {
 
-  // TODO: Need to update UInt384 to UInt384[].
   public static boolean bls_verify(
-      Bytes48 pubkey, Bytes32 message, Bytes48 signature, UnsignedLong domain) {
+      Bytes48 pubkey, Bytes32 message, Bytes48[] signature, UnsignedLong domain) {
     return true;
   }
 }
