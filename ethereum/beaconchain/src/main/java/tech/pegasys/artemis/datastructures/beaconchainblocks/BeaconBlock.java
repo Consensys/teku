@@ -14,7 +14,7 @@
 package tech.pegasys.artemis.datastructures.beaconchainblocks;
 
 import net.consensys.cava.bytes.Bytes32;
-import net.consensys.cava.units.bigints.UInt384;
+import net.consensys.cava.bytes.Bytes48;
 
 public class BeaconBlock {
 
@@ -24,7 +24,7 @@ public class BeaconBlock {
   private Bytes32 state_root;
   private Bytes32 randao_reveal;
   private Bytes32 candidate_pow_receipt_root;
-  private UInt384[] signature;
+  private Bytes48[] signature;
 
   // Body
   private BeaconBlockBody body;
@@ -40,11 +40,11 @@ public class BeaconBlock {
     this.body = body;
   }
 
-  public UInt384[] getSignature() {
+  public Bytes48[] getSignature() {
     return signature;
   }
 
-  public void setSignature(UInt384[] signature) {
+  public void setSignature(Bytes48[] signature) {
     this.signature = signature;
   }
 

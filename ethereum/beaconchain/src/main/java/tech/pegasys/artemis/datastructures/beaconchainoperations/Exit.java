@@ -14,15 +14,15 @@
 package tech.pegasys.artemis.datastructures.beaconchainoperations;
 
 import com.google.common.primitives.UnsignedLong;
-import net.consensys.cava.units.bigints.UInt384;
+import net.consensys.cava.bytes.Bytes48;
 
 public class Exit {
 
   private UnsignedLong slot;
   private UnsignedLong validator_index;
-  private UInt384[] signature;
+  private Bytes48[] signature;
 
-  public Exit(UnsignedLong slot, UnsignedLong validator_index, UInt384[] signature) {
+  public Exit(UnsignedLong slot, UnsignedLong validator_index, Bytes48[] signature) {
     this.slot = slot;
     this.validator_index = validator_index;
     this.signature = signature;
@@ -45,11 +45,11 @@ public class Exit {
     this.validator_index = validator_index;
   }
 
-  public UInt384[] getSignature() {
+  public Bytes48[] getSignature() {
     return signature;
   }
 
-  public void setSignature(UInt384[] signature) {
+  public void setSignature(Bytes48[] signature) {
     this.signature = signature;
   }
 }

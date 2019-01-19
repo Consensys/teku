@@ -22,8 +22,9 @@ import static tech.pegasys.artemis.Constants.EXITED_WITHOUT_PENALTY;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.Arrays;
+import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
-import net.consensys.cava.units.bigints.UInt384;
+import net.consensys.cava.bytes.Bytes48;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -183,7 +184,7 @@ public class ValidatorsUtilTest {
   }
 
   public ValidatorRecord getAValidatorRecordTestDataFromParameters(
-      UInt384 pubkey,
+      Bytes48 pubkey,
       Bytes32 withdrawalCredentials,
       Bytes32 randaoCommitment,
       UnsignedLong randaoLayers,
@@ -221,7 +222,7 @@ public class ValidatorsUtilTest {
     UnsignedLong secondLastPocChangeSlot = UnsignedLong.ZERO;
 
     return getAValidatorRecordTestDataFromParameters(
-        UInt384.valueOf(pubKeyInt),
+        Bytes48.leftPad(Bytes.ofUnsignedInt(pubKeyInt)),
         withdrawal_credentials,
         randaoCommitment,
         randaoLayers,

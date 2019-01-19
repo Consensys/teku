@@ -15,12 +15,12 @@ package tech.pegasys.artemis.datastructures.beaconchainstate;
 
 import com.google.common.primitives.UnsignedLong;
 import net.consensys.cava.bytes.Bytes32;
-import net.consensys.cava.units.bigints.UInt384;
+import net.consensys.cava.bytes.Bytes48;
 import tech.pegasys.artemis.Constants;
 
 public class ValidatorRecord {
 
-  private UInt384 pubkey;
+  private Bytes48 pubkey;
   private double balance = 0.0d;
 
   public double getBalance() {
@@ -41,7 +41,7 @@ public class ValidatorRecord {
   private UnsignedLong second_last_poc_change_slot;
 
   public ValidatorRecord(
-      UInt384 pubkey,
+      Bytes48 pubkey,
       Bytes32 withdrawal_credentials,
       Bytes32 randao_commitment,
       UnsignedLong randao_layers,
@@ -87,11 +87,11 @@ public class ValidatorRecord {
     this.status = status;
   }
 
-  public UInt384 getPubkey() {
+  public Bytes48 getPubkey() {
     return pubkey;
   }
 
-  public void setPubkey(UInt384 pubkey) {
+  public void setPubkey(Bytes48 pubkey) {
     this.pubkey = pubkey;
   }
 

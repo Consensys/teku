@@ -27,9 +27,10 @@ import com.google.common.primitives.UnsignedLong;
 import java.security.Security;
 import java.util.ArrayList;
 import java.util.Collections;
+import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
+import net.consensys.cava.bytes.Bytes48;
 import net.consensys.cava.crypto.Hash;
-import net.consensys.cava.units.bigints.UInt384;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.junit.Test;
 import tech.pegasys.artemis.datastructures.beaconchainblocks.BeaconBlock;
@@ -51,7 +52,7 @@ public class StateTransitionTest {
     ArrayList<ValidatorRecord> validators = new ArrayList<ValidatorRecord>();
     validators.add(
         new ValidatorRecord(
-            UInt384.valueOf(0),
+            Bytes48.leftPad(Bytes.of(0)),
             Bytes32.ZERO,
             Bytes32.ZERO,
             UnsignedLong.ZERO,
@@ -62,7 +63,7 @@ public class StateTransitionTest {
             UnsignedLong.ZERO));
     validators.add(
         new ValidatorRecord(
-            UInt384.valueOf(100),
+            Bytes48.leftPad(Bytes.of(100)),
             Bytes32.ZERO,
             Bytes32.ZERO,
             UnsignedLong.ZERO,
@@ -73,7 +74,7 @@ public class StateTransitionTest {
             UnsignedLong.ZERO));
     validators.add(
         new ValidatorRecord(
-            UInt384.valueOf(200),
+            Bytes48.leftPad(Bytes.of(200)),
             Bytes32.ZERO,
             Bytes32.ZERO,
             UnsignedLong.ZERO,
@@ -84,7 +85,7 @@ public class StateTransitionTest {
             UnsignedLong.ZERO));
     validators.add(
         new ValidatorRecord(
-            UInt384.valueOf(0),
+            Bytes48.leftPad(Bytes.of(0)),
             Bytes32.ZERO,
             Bytes32.ZERO,
             UnsignedLong.ZERO,
@@ -95,7 +96,7 @@ public class StateTransitionTest {
             UnsignedLong.ZERO));
     validators.add(
         new ValidatorRecord(
-            UInt384.valueOf(0),
+            Bytes48.leftPad(Bytes.of(0)),
             Bytes32.ZERO,
             Bytes32.ZERO,
             UnsignedLong.ZERO,

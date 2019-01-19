@@ -34,8 +34,8 @@ import java.util.Collections;
 import java.util.List;
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
+import net.consensys.cava.bytes.Bytes48;
 import net.consensys.cava.crypto.Hash;
-import net.consensys.cava.units.bigints.UInt384;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.junit.Test;
 import tech.pegasys.artemis.datastructures.beaconchainoperations.AttestationData;
@@ -84,7 +84,7 @@ public class BeaconStateTest {
     ArrayList<ValidatorRecord> validators = new ArrayList<>();
     validators.add(
         new ValidatorRecord(
-            UInt384.ZERO,
+            Bytes48.ZERO,
             Bytes32.ZERO,
             Bytes32.ZERO,
             UnsignedLong.ZERO,
@@ -95,7 +95,7 @@ public class BeaconStateTest {
             UnsignedLong.ZERO));
     validators.add(
         new ValidatorRecord(
-            UInt384.valueOf(100),
+            Bytes48.leftPad(Bytes.of(100)),
             Bytes32.ZERO,
             Bytes32.ZERO,
             UnsignedLong.ZERO,
@@ -106,7 +106,7 @@ public class BeaconStateTest {
             UnsignedLong.ZERO));
     validators.add(
         new ValidatorRecord(
-            UInt384.valueOf(200),
+            Bytes48.leftPad(Bytes.of(200)),
             Bytes32.ZERO,
             Bytes32.ZERO,
             UnsignedLong.ZERO,
@@ -117,7 +117,7 @@ public class BeaconStateTest {
             UnsignedLong.ZERO));
     validators.add(
         new ValidatorRecord(
-            UInt384.valueOf(0),
+            Bytes48.leftPad(Bytes.of(0)),
             Bytes32.ZERO,
             Bytes32.ZERO,
             UnsignedLong.ZERO,
@@ -128,7 +128,7 @@ public class BeaconStateTest {
             UnsignedLong.ZERO));
     validators.add(
         new ValidatorRecord(
-            UInt384.valueOf(0),
+            Bytes48.leftPad(Bytes.of(0)),
             Bytes32.ZERO,
             Bytes32.ZERO,
             UnsignedLong.ZERO,
@@ -175,7 +175,7 @@ public class BeaconStateTest {
     assertThat(
             state.process_deposit(
                 state,
-                UInt384.valueOf(20),
+                Bytes48.leftPad(Bytes.of(20)),
                 100,
                 Bytes32.ZERO,
                 Bytes32.ZERO,
@@ -190,7 +190,7 @@ public class BeaconStateTest {
     assertThat(
             state.process_deposit(
                 state,
-                UInt384.valueOf(20),
+                Bytes48.leftPad(Bytes.of(20)),
                 100,
                 Bytes32.ZERO,
                 Bytes32.ZERO,
@@ -208,7 +208,7 @@ public class BeaconStateTest {
     assertThat(
             state.process_deposit(
                 state,
-                UInt384.valueOf(200),
+                Bytes48.leftPad(Bytes.of(200)),
                 100,
                 Bytes32.ZERO,
                 Bytes32.ZERO,
@@ -455,7 +455,7 @@ public class BeaconStateTest {
             Collections.nCopies(
                 12,
                 new ValidatorRecord(
-                    UInt384.valueOf(2),
+                    Bytes48.leftPad(Bytes.of(2)),
                     Bytes32.ZERO,
                     Bytes32.ZERO,
                     UnsignedLong.valueOf(PENDING_ACTIVATION),

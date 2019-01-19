@@ -14,18 +14,18 @@
 package tech.pegasys.artemis.datastructures.beaconchainoperations;
 
 import net.consensys.cava.bytes.Bytes32;
-import net.consensys.cava.units.bigints.UInt384;
+import net.consensys.cava.bytes.Bytes48;
 
 public class DepositInput {
 
-  private UInt384 pubkey;
+  private Bytes48 pubkey;
   private Bytes32 withdrawal_credentials;
   private Bytes32 randao_commitment;
   private Bytes32 poc_commitment;
   private Bytes32 proof_of_possession;
 
   public DepositInput(
-      UInt384 pubkey,
+      Bytes48 pubkey,
       Bytes32 withdrawal_credentials,
       Bytes32 randao_commitment,
       Bytes32 poc_commitment,
@@ -38,11 +38,11 @@ public class DepositInput {
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */
-  public UInt384 getPubkey() {
+  public Bytes48 getPubkey() {
     return pubkey;
   }
 
-  public void setPubkey(UInt384 pubkey) {
+  public void setPubkey(Bytes48 pubkey) {
     this.pubkey = pubkey;
   }
 

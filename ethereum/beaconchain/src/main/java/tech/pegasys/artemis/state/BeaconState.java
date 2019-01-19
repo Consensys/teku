@@ -44,8 +44,8 @@ import com.google.gson.GsonBuilder;
 import java.util.ArrayList;
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
+import net.consensys.cava.bytes.Bytes48;
 import net.consensys.cava.crypto.Hash;
-import net.consensys.cava.units.bigints.UInt384;
 import tech.pegasys.artemis.Constants;
 import tech.pegasys.artemis.datastructures.beaconchainoperations.AttestationData;
 import tech.pegasys.artemis.datastructures.beaconchainoperations.Deposit;
@@ -111,6 +111,7 @@ public class BeaconState {
     Gson gson =
         new GsonBuilder()
             .registerTypeAdapter(Bytes32.class, new InterfaceAdapter<Bytes32>())
+            .registerTypeAdapter(Bytes48.class, new InterfaceAdapter<Bytes48>())
             .create();
     return gson.fromJson(gson.toJson(state), BeaconState.class);
   }
@@ -383,7 +384,7 @@ public class BeaconState {
    */
   private boolean validate_proof_of_possession(
       BeaconState state,
-      UInt384 pubkey,
+      Bytes48 pubkey,
       Bytes32 proof_of_possession,
       Bytes32 withdrawal_credentials,
       Bytes32 randao_commitment,
@@ -392,7 +393,7 @@ public class BeaconState {
         new DepositInput(
             pubkey, withdrawal_credentials, poc_commitment, randao_commitment, proof_of_possession);
 
-    UInt384 signature = UInt384.fromBytes(proof_of_possession);
+    Bytes48 signature = Bytes48.leftPad(proof_of_possession);
     UnsignedLong domain =
         UnsignedLong.valueOf(
             get_domain(state.fork_data, toIntExact(state.getSlot()), DOMAIN_DEPOSIT));
@@ -413,7 +414,7 @@ public class BeaconState {
    */
   public int process_deposit(
       BeaconState state,
-      UInt384 pubkey,
+      Bytes48 pubkey,
       double deposit,
       Bytes32 proof_of_possession,
       Bytes32 withdrawal_credentials,
@@ -427,7 +428,7 @@ public class BeaconState {
         randao_commitment,
         poc_commitment);
 
-    UInt384[] validator_pubkeys = new UInt384[state.validator_registry.size()];
+    Bytes48[] validator_pubkeys = new Bytes48[state.validator_registry.size()];
     for (int i = 0; i < validator_pubkeys.length; i++) {
       validator_pubkeys[i] = state.validator_registry.get(i).getPubkey();
     }
@@ -477,7 +478,7 @@ public class BeaconState {
    * @param pubkey
    * @return The index of the pubkey.
    */
-  private int indexOfPubkey(UInt384[] validator_pubkeys, UInt384 pubkey) {
+  private int indexOfPubkey(Bytes48[] validator_pubkeys, Bytes48 pubkey) {
     for (int i = 0; i < validator_pubkeys.length; i++) {
       if (validator_pubkeys[i].equals(pubkey)) {
         return i;
@@ -827,7 +828,7 @@ public class BeaconState {
   private Bytes32 get_new_validator_registry_delta_chain_tip(
       Bytes32 current_validator_registry_delta_chain_tip,
       int validator_index,
-      UInt384 pubkey,
+      Bytes48 pubkey,
       int flag) {
     return Hash.keccak256(
         TreeHashUtil.hash_tree_root(

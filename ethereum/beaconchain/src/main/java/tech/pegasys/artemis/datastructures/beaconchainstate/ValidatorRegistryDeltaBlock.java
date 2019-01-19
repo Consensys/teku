@@ -15,17 +15,17 @@ package tech.pegasys.artemis.datastructures.beaconchainstate;
 
 import com.google.common.primitives.UnsignedLong;
 import net.consensys.cava.bytes.Bytes32;
-import net.consensys.cava.units.bigints.UInt384;
+import net.consensys.cava.bytes.Bytes48;
 
 public class ValidatorRegistryDeltaBlock {
 
   private Bytes32 latest_registry_delta_root;
   private int validator_index;
-  private UInt384 pubkey;
+  private Bytes48 pubkey;
   private UnsignedLong flag;
 
   public ValidatorRegistryDeltaBlock(
-      Bytes32 latest_registry_delta_root, int validator_index, UInt384 pubkey, UnsignedLong flag) {
+      Bytes32 latest_registry_delta_root, int validator_index, Bytes48 pubkey, UnsignedLong flag) {
     this.latest_registry_delta_root = latest_registry_delta_root;
     this.validator_index = validator_index;
     this.pubkey = pubkey;
@@ -49,11 +49,11 @@ public class ValidatorRegistryDeltaBlock {
     this.validator_index = validator_index;
   }
 
-  public UInt384 getPubkey() {
+  public Bytes48 getPubkey() {
     return pubkey;
   }
 
-  public void setPubkey(UInt384 pubkey) {
+  public void setPubkey(Bytes48 pubkey) {
     this.pubkey = pubkey;
   }
 
