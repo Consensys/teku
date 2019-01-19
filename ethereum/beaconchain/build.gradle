@@ -7,7 +7,6 @@ jar {
 }
 
 dependencies {
-
   implementation project(':util')
 
   implementation 'net.consensys.cava:cava-crypto'
