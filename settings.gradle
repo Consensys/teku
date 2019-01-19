@@ -1,8 +1,5 @@
 
 rootProject.name='artemis'
-include 'crypto'
-include 'ethereum:core'
-include 'ethereum:rlp'
 include 'ethereum:beaconchain'
 include 'networking:p2p'
 include 'services'

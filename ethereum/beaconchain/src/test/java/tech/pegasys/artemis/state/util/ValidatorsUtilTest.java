@@ -22,12 +22,14 @@ import static tech.pegasys.artemis.Constants.EXITED_WITHOUT_PENALTY;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.Arrays;
+import net.consensys.cava.bytes.Bytes;
+import net.consensys.cava.bytes.Bytes32;
+import net.consensys.cava.bytes.Bytes48;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import tech.pegasys.artemis.datastructures.beaconchainstate.ValidatorRecord;
 import tech.pegasys.artemis.datastructures.beaconchainstate.Validators;
-import tech.pegasys.artemis.ethereum.core.Hash;
 
 public class ValidatorsUtilTest {
   public static final double DOUBLE_ASSERTION_DELTA = 0.0d;
@@ -182,9 +184,9 @@ public class ValidatorsUtilTest {
   }
 
   public ValidatorRecord getAValidatorRecordTestDataFromParameters(
-      int pubkey,
-      Hash withdrawalCredentials,
-      Hash randaoCommitment,
+      Bytes48 pubkey,
+      Bytes32 withdrawalCredentials,
+      Bytes32 randaoCommitment,
       UnsignedLong randaoLayers,
       UnsignedLong status,
       UnsignedLong slot,
@@ -209,9 +211,9 @@ public class ValidatorsUtilTest {
   }
 
   public ValidatorRecord getDefaultValidatorRecordWithStatus(
-      int pubKey, int statusAsInt, double balance) {
-    Hash withdrawal_credentials = Hash.ZERO;
-    Hash randaoCommitment = Hash.ZERO;
+      int pubKeyInt, int statusAsInt, double balance) {
+    Bytes32 withdrawal_credentials = Bytes32.ZERO;
+    Bytes32 randaoCommitment = Bytes32.ZERO;
     UnsignedLong randaoLayers = UnsignedLong.ZERO;
     UnsignedLong status = UnsignedLong.valueOf(statusAsInt);
     UnsignedLong slot = UnsignedLong.ZERO;
@@ -220,7 +222,7 @@ public class ValidatorsUtilTest {
     UnsignedLong secondLastPocChangeSlot = UnsignedLong.ZERO;
 
     return getAValidatorRecordTestDataFromParameters(
-        pubKey,
+        Bytes48.leftPad(Bytes.ofUnsignedInt(pubKeyInt)),
         withdrawal_credentials,
         randaoCommitment,
         randaoLayers,

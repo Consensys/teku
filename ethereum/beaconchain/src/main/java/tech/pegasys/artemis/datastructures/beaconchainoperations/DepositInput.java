@@ -13,24 +13,23 @@
 
 package tech.pegasys.artemis.datastructures.beaconchainoperations;
 
-import tech.pegasys.artemis.ethereum.core.Hash;
-import tech.pegasys.artemis.util.bytes.Bytes32;
-import tech.pegasys.artemis.util.uint.UInt384;
+import net.consensys.cava.bytes.Bytes32;
+import net.consensys.cava.bytes.Bytes48;
 
 public class DepositInput {
 
-  private UInt384 pubkey;
-  private Hash withdrawal_credentials;
-  private Hash randao_commitment;
-  private Hash poc_commitment;
-  private Bytes32 proof_of_possession;
+  private Bytes48 pubkey;
+  private Bytes32 withdrawal_credentials;
+  private Bytes32 randao_commitment;
+  private Bytes32 poc_commitment;
+  private Bytes48[] proof_of_possession;
 
   public DepositInput(
-      UInt384 pubkey,
-      Hash withdrawal_credentials,
-      Hash randao_commitment,
-      Hash poc_commitment,
-      Bytes32 proof_of_possession) {
+      Bytes48 pubkey,
+      Bytes32 withdrawal_credentials,
+      Bytes32 randao_commitment,
+      Bytes32 poc_commitment,
+      Bytes48[] proof_of_possession) {
     this.pubkey = pubkey;
     this.withdrawal_credentials = withdrawal_credentials;
     this.randao_commitment = randao_commitment;
@@ -39,43 +38,43 @@ public class DepositInput {
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */
-  public UInt384 getPubkey() {
+  public Bytes48 getPubkey() {
     return pubkey;
   }
 
-  public void setPubkey(UInt384 pubkey) {
+  public void setPubkey(Bytes48 pubkey) {
     this.pubkey = pubkey;
   }
 
-  public Hash getWithdrawal_credentials() {
+  public Bytes32 getWithdrawal_credentials() {
     return withdrawal_credentials;
   }
 
-  public void setWithdrawal_credentials(Hash withdrawal_credentials) {
+  public void setWithdrawal_credentials(Bytes32 withdrawal_credentials) {
     this.withdrawal_credentials = withdrawal_credentials;
   }
 
-  public Hash getRandao_commitment() {
+  public Bytes32 getRandao_commitment() {
     return randao_commitment;
   }
 
-  public void setRandao_commitment(Hash randao_commitment) {
+  public void setRandao_commitment(Bytes32 randao_commitment) {
     this.randao_commitment = randao_commitment;
   }
 
-  public Bytes32 getProof_of_possession() {
+  public Bytes48[] getProof_of_possession() {
     return proof_of_possession;
   }
 
-  public void setProof_of_possession(Bytes32 proof_of_possession) {
+  public void setProof_of_possession(Bytes48[] proof_of_possession) {
     this.proof_of_possession = proof_of_possession;
   }
 
-  public Hash getPoc_commitment() {
+  public Bytes32 getPoc_commitment() {
     return poc_commitment;
   }
 
-  public void setPoc_commitment(Hash poc_commitment) {
+  public void setPoc_commitment(Bytes32 poc_commitment) {
     this.poc_commitment = poc_commitment;
   }
 }

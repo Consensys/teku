@@ -14,20 +14,20 @@
 package tech.pegasys.artemis.datastructures.beaconchainoperations;
 
 import java.util.ArrayList;
-import tech.pegasys.artemis.util.uint.UInt384;
+import net.consensys.cava.bytes.Bytes48;
 
 public class SlashableVoteData {
 
   private ArrayList<Integer> custody_bit_0_indices;
   private ArrayList<Integer> custody_bit_1_indices;
   private AttestationData data;
-  private UInt384[] aggregate_signature;
+  private Bytes48[] aggregate_signature;
 
   public SlashableVoteData(
       ArrayList<Integer> custody_bit_0_indices,
       ArrayList<Integer> custody_bit_1_indices,
       AttestationData data,
-      UInt384[] aggregate_signature) {
+      Bytes48[] aggregate_signature) {
     this.custody_bit_0_indices = custody_bit_0_indices;
     this.custody_bit_1_indices = custody_bit_1_indices;
     this.data = data;
@@ -51,11 +51,11 @@ public class SlashableVoteData {
     this.data = data;
   }
 
-  public UInt384[] getAggregate_signature() {
+  public Bytes48[] getAggregate_signature() {
     return aggregate_signature;
   }
 
-  public void setAggregate_signature(UInt384[] aggregate_signature) {
+  public void setAggregate_signature(Bytes48[] aggregate_signature) {
     this.aggregate_signature = aggregate_signature;
   }
 

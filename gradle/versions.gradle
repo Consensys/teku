@@ -48,6 +48,12 @@ dependencyManagement {
 
     dependency 'org.bouncycastle:bcprov-jdk15on:1.60'
 
+    dependencySet(group: 'net.consensys.cava', version: '1.0.0-F5022C-snapshot') {
+      entry 'cava-bytes'
+      entry 'cava-crypto'
+      entry 'cava-units'
+    }
+
     dependency 'org.java-websocket:Java-WebSocket:1.3.8'
 
     dependency 'org.mockito:mockito-core:2.23.4'

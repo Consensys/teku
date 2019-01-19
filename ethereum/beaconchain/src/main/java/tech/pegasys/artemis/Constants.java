@@ -13,8 +13,8 @@
 
 package tech.pegasys.artemis;
 
-import tech.pegasys.artemis.util.bytes.Bytes32;
-import tech.pegasys.artemis.util.uint.UInt384;
+import net.consensys.cava.bytes.Bytes32;
+import net.consensys.cava.bytes.Bytes48;
 
 import java.util.Arrays;
 
@@ -33,7 +33,7 @@ public final class Constants {
   public static final int MAX_CASPER_VOTES                               = (int) Math.pow(2, 10); // 1,024 votes
   public static final int LATEST_BLOCK_ROOTS_LENGTH                      = (int) Math.pow(2, 13); // 8,192 block roots
   public static final int LATEST_RANDAO_MIXES_LENGTH                     = (int) Math.pow(2, 13); // 8,192 randao mixes
-  public static final UInt384[] EMPTY_SIGNATURE                          = new UInt384[]{UInt384.valueOf(0), UInt384.valueOf(0)};
+  public static final Bytes48[] EMPTY_SIGNATURE                          = new Bytes48[]{Bytes48.ZERO, Bytes48.ZERO};
 
   // Deposit contract
   //  static final Address DEPOSIT_CONTRACT_ADDRESS               =  Value is still TBD

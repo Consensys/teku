@@ -17,10 +17,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.artemis.Constants.ACTIVATION;
 import static tech.pegasys.artemis.Constants.ACTIVE;
 import static tech.pegasys.artemis.Constants.ACTIVE_PENDING_EXIT;
+import static tech.pegasys.artemis.Constants.EMPTY_SIGNATURE;
 import static tech.pegasys.artemis.Constants.EXITED_WITHOUT_PENALTY;
 import static tech.pegasys.artemis.Constants.EXITED_WITH_PENALTY;
 import static tech.pegasys.artemis.Constants.PENDING_ACTIVATION;
-import static tech.pegasys.artemis.ethereum.core.Hash.hash;
 import static tech.pegasys.artemis.state.BeaconState.BeaconStateHelperFunctions.bytes3ToInt;
 import static tech.pegasys.artemis.state.BeaconState.BeaconStateHelperFunctions.clamp;
 import static tech.pegasys.artemis.state.BeaconState.BeaconStateHelperFunctions.shuffle;
@@ -28,10 +28,16 @@ import static tech.pegasys.artemis.state.BeaconState.BeaconStateHelperFunctions.
 
 import com.google.common.primitives.UnsignedLong;
 import com.google.gson.Gson;
+import java.security.Security;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import net.consensys.cava.bytes.Bytes;
+import net.consensys.cava.bytes.Bytes32;
+import net.consensys.cava.bytes.Bytes48;
+import net.consensys.cava.crypto.Hash;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.junit.Test;
 import tech.pegasys.artemis.datastructures.beaconchainoperations.AttestationData;
 import tech.pegasys.artemis.datastructures.beaconchainoperations.LatestBlockRoots;
@@ -39,11 +45,12 @@ import tech.pegasys.artemis.datastructures.beaconchainstate.ForkData;
 import tech.pegasys.artemis.datastructures.beaconchainstate.ShardCommittee;
 import tech.pegasys.artemis.datastructures.beaconchainstate.ValidatorRecord;
 import tech.pegasys.artemis.datastructures.beaconchainstate.Validators;
-import tech.pegasys.artemis.ethereum.core.Hash;
-import tech.pegasys.artemis.util.bytes.Bytes32;
-import tech.pegasys.artemis.util.bytes.BytesValue;
 
 public class BeaconStateTest {
+
+  static {
+    Security.addProvider(new BouncyCastleProvider());
+  }
 
   private BeaconState newState() {
     // Initialize state
@@ -56,7 +63,7 @@ public class BeaconStateTest {
             new ArrayList<>(),
             0,
             0,
-            hash(Bytes32.TRUE),
+            Bytes32.ZERO,
             new ArrayList<>(),
             new ArrayList<>(),
             new ArrayList<>(),
@@ -71,16 +78,16 @@ public class BeaconStateTest {
             new ArrayList<>(),
             new ArrayList<>(),
             new ArrayList<>(),
-            hash(Bytes32.TRUE),
+            Bytes32.ZERO,
             new ArrayList<>());
 
     // Add validator records
     ArrayList<ValidatorRecord> validators = new ArrayList<>();
     validators.add(
         new ValidatorRecord(
-            0,
-            Hash.ZERO,
-            Hash.ZERO,
+            Bytes48.ZERO,
+            Bytes32.ZERO,
+            Bytes32.ZERO,
             UnsignedLong.ZERO,
             UnsignedLong.valueOf(PENDING_ACTIVATION),
             UnsignedLong.valueOf(state.getSlot()),
@@ -89,9 +96,9 @@ public class BeaconStateTest {
             UnsignedLong.ZERO));
     validators.add(
         new ValidatorRecord(
-            100,
-            Hash.ZERO,
-            Hash.ZERO,
+            Bytes48.leftPad(Bytes.of(100)),
+            Bytes32.ZERO,
+            Bytes32.ZERO,
             UnsignedLong.ZERO,
             UnsignedLong.valueOf(ACTIVE),
             UnsignedLong.valueOf(state.getSlot()),
@@ -100,9 +107,9 @@ public class BeaconStateTest {
             UnsignedLong.ZERO));
     validators.add(
         new ValidatorRecord(
-            200,
-            Hash.ZERO,
-            Hash.ZERO,
+            Bytes48.leftPad(Bytes.of(200)),
+            Bytes32.ZERO,
+            Bytes32.ZERO,
             UnsignedLong.ZERO,
             UnsignedLong.valueOf(ACTIVE_PENDING_EXIT),
             UnsignedLong.valueOf(state.getSlot()),
@@ -111,9 +118,9 @@ public class BeaconStateTest {
             UnsignedLong.ZERO));
     validators.add(
         new ValidatorRecord(
-            0,
-            Hash.ZERO,
-            Hash.ZERO,
+            Bytes48.leftPad(Bytes.of(0)),
+            Bytes32.ZERO,
+            Bytes32.ZERO,
             UnsignedLong.ZERO,
             UnsignedLong.valueOf(EXITED_WITHOUT_PENALTY),
             UnsignedLong.valueOf(state.getSlot()),
@@ -122,9 +129,9 @@ public class BeaconStateTest {
             UnsignedLong.ZERO));
     validators.add(
         new ValidatorRecord(
-            0,
-            Hash.ZERO,
-            Hash.ZERO,
+            Bytes48.leftPad(Bytes.of(0)),
+            Bytes32.ZERO,
+            Bytes32.ZERO,
             UnsignedLong.ZERO,
             UnsignedLong.valueOf(EXITED_WITH_PENALTY),
             UnsignedLong.valueOf(state.getSlot()),
@@ -166,33 +173,48 @@ public class BeaconStateTest {
   public void
       processDepositValidatorPubkeysDoesNotContainPubkeyAndMinEmptyValidatorIndexIsNegative() {
     BeaconState state = newState();
-    int pubkey = 20;
     assertThat(
             state.process_deposit(
-                state, pubkey, 100, Bytes32.TRUE, Hash.ZERO, Hash.ZERO, Hash.ZERO))
+                state,
+                Bytes48.leftPad(Bytes.of(20)),
+                100,
+                EMPTY_SIGNATURE,
+                Bytes32.ZERO,
+                Bytes32.ZERO,
+                Bytes32.ZERO))
         .isEqualTo(5);
   }
 
   @Test
   public void processDepositValidatorPubkeysDoesNotContainPubkey() {
     BeaconState state = newState();
-    int pubkey = 20;
     assertThat(
             state.process_deposit(
-                state, pubkey, 100, Bytes32.TRUE, Hash.ZERO, Hash.ZERO, Hash.ZERO))
+                state,
+                Bytes48.leftPad(Bytes.of(20)),
+                100,
+                EMPTY_SIGNATURE,
+                Bytes32.ZERO,
+                Bytes32.ZERO,
+                Bytes32.ZERO))
         .isEqualTo(5);
   }
 
   @Test
   public void processDepositValidatorPubkeysContainsPubkey() {
     BeaconState state = newState();
-    int pubkey = 200;
 
     double oldBalance = state.getValidator_balances().get(2);
 
     assertThat(
             state.process_deposit(
-                state, pubkey, 100, Bytes32.TRUE, Hash.ZERO, Hash.ZERO, Hash.ZERO))
+                state,
+                Bytes48.leftPad(Bytes.of(200)),
+                100,
+                EMPTY_SIGNATURE,
+                Bytes32.ZERO,
+                Bytes32.ZERO,
+                Bytes32.ZERO))
         .isEqualTo(2);
 
     assertThat(state.getValidator_balances().get(2)).isEqualTo(oldBalance + 100.0);
@@ -204,13 +226,13 @@ public class BeaconStateTest {
         new AttestationData(
             0,
             UnsignedLong.ZERO,
-            Hash.ZERO,
-            Hash.ZERO,
-            Hash.ZERO,
-            Hash.ZERO,
+            Bytes32.ZERO,
+            Bytes32.ZERO,
+            Bytes32.ZERO,
+            Bytes32.ZERO,
             UnsignedLong.ZERO,
-            Hash.ZERO);
-    byte[] participation_bitfield = Bytes32.ZERO.extractArray();
+            Bytes32.ZERO);
+    byte[] participation_bitfield = Bytes32.ZERO.toArrayUnsafe();
 
     BeaconState.get_attestation_participants(newState(), attestationData, participation_bitfield);
   }
@@ -221,12 +243,12 @@ public class BeaconStateTest {
         new AttestationData(
             0,
             UnsignedLong.ZERO,
-            Hash.ZERO,
-            Hash.ZERO,
-            Hash.ZERO,
-            Hash.ZERO,
+            Bytes32.ZERO,
+            Bytes32.ZERO,
+            Bytes32.ZERO,
+            Bytes32.ZERO,
             UnsignedLong.ZERO,
-            Hash.ZERO);
+            Bytes32.ZERO);
     byte[] participation_bitfield = new byte[] {1, 1, 1, 1};
 
     ArrayList<ShardCommittee> actual =
@@ -250,12 +272,12 @@ public class BeaconStateTest {
         new AttestationData(
             0,
             UnsignedLong.ZERO,
-            Hash.ZERO,
-            Hash.ZERO,
-            Hash.ZERO,
-            Hash.ZERO,
+            Bytes32.ZERO,
+            Bytes32.ZERO,
+            Bytes32.ZERO,
+            Bytes32.ZERO,
             UnsignedLong.ZERO,
-            Hash.ZERO);
+            Bytes32.ZERO);
     byte[] participation_bitfield = new byte[] {127, 1, 1};
 
     ArrayList<ShardCommittee> actual =
@@ -434,9 +456,9 @@ public class BeaconStateTest {
             Collections.nCopies(
                 12,
                 new ValidatorRecord(
-                    2,
-                    hash(Bytes32.FALSE),
-                    hash(Bytes32.FALSE),
+                    Bytes48.leftPad(Bytes.of(2)),
+                    Bytes32.ZERO,
+                    Bytes32.ZERO,
                     UnsignedLong.valueOf(PENDING_ACTIVATION),
                     UnsignedLong.valueOf(PENDING_ACTIVATION),
                     UnsignedLong.MAX_VALUE,
@@ -444,45 +466,44 @@ public class BeaconStateTest {
                     UnsignedLong.ZERO,
                     UnsignedLong.ZERO)));
     deepCopy.setValidator_registry(new_records);
-    assertThat(deepCopy.getValidator_registry().get(0).getPubkey().getValue())
-        .isNotEqualTo(state.getValidator_registry().get(0).getPubkey().getValue());
+    assertThat(deepCopy.getValidator_registry().get(0).getPubkey())
+        .isNotEqualTo(state.getValidator_registry().get(0).getPubkey());
   }
 
-  private Hash hashSrc() {
-    BytesValue bytes = BytesValue.wrap(new byte[] {(byte) 1, (byte) 256, (byte) 65656});
-    return hash(bytes);
+  private Bytes32 hashSrc() {
+    Bytes bytes = Bytes.wrap(new byte[] {(byte) 1, (byte) 256, (byte) 65656});
+    return Hash.keccak256(bytes);
   }
 
   @Test(expected = IllegalArgumentException.class)
   public void failsWhenInvalidArgumentsBytes3ToInt() {
-    bytes3ToInt(BytesValue.wrap(new byte[] {(byte) 0, (byte) 0, (byte) 0}), -1);
+    bytes3ToInt(Bytes.wrap(new byte[] {(byte) 0, (byte) 0, (byte) 0}), -1);
   }
 
   @Test
   public void convertBytes3ToInt() {
     // Smoke Tests
     // Test that MSB [00000001][00000000][11110000] LSB == 65656
-    assertThat(bytes3ToInt(BytesValue.wrap(new byte[] {(byte) 1, (byte) 0, (byte) 120}), 0))
+    assertThat(bytes3ToInt(Bytes.wrap(new byte[] {(byte) 1, (byte) 0, (byte) 120}), 0))
         .isEqualTo(65656);
 
     // Boundary Tests
     // Test that MSB [00000000][00000000][00000000] LSB == 0
-    assertThat(bytes3ToInt(BytesValue.wrap(new byte[] {(byte) 0, (byte) 0, (byte) 0}), 0))
-        .isEqualTo(0);
+    assertThat(bytes3ToInt(Bytes.wrap(new byte[] {(byte) 0, (byte) 0, (byte) 0}), 0)).isEqualTo(0);
     // Test that MSB [00000000][00000000][11111111] LSB == 255
-    assertThat(bytes3ToInt(BytesValue.wrap(new byte[] {(byte) 0, (byte) 0, (byte) 255}), 0))
+    assertThat(bytes3ToInt(Bytes.wrap(new byte[] {(byte) 0, (byte) 0, (byte) 255}), 0))
         .isEqualTo(255);
     // Test that MSB [00000000][00000001][00000000] LSB == 256
-    assertThat(bytes3ToInt(BytesValue.wrap(new byte[] {(byte) 0, (byte) 1, (byte) 0}), 0))
+    assertThat(bytes3ToInt(Bytes.wrap(new byte[] {(byte) 0, (byte) 1, (byte) 0}), 0))
         .isEqualTo(256);
     // Test that MSB [00000000][11111111][11111111] LSB == 65535
-    assertThat(bytes3ToInt(BytesValue.wrap(new byte[] {(byte) 0, (byte) 255, (byte) 255}), 0))
+    assertThat(bytes3ToInt(Bytes.wrap(new byte[] {(byte) 0, (byte) 255, (byte) 255}), 0))
         .isEqualTo(65535);
     // Test that MSB [00000001][00000000][00000000] LSB == 65536
-    assertThat(bytes3ToInt(BytesValue.wrap(new byte[] {(byte) 1, (byte) 0, (byte) 0}), 0))
+    assertThat(bytes3ToInt(Bytes.wrap(new byte[] {(byte) 1, (byte) 0, (byte) 0}), 0))
         .isEqualTo(65536);
     // Test that MSB [11111111][11111111][11111111] LSB == 16777215
-    assertThat(bytes3ToInt(BytesValue.wrap(new byte[] {(byte) 255, (byte) 255, (byte) 255}), 0))
+    assertThat(bytes3ToInt(Bytes.wrap(new byte[] {(byte) 255, (byte) 255, (byte) 255}), 0))
         .isEqualTo(16777215);
   }
 

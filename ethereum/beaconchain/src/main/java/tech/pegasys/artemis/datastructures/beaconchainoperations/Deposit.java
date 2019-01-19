@@ -14,26 +14,27 @@
 package tech.pegasys.artemis.datastructures.beaconchainoperations;
 
 import com.google.common.primitives.UnsignedLong;
-import tech.pegasys.artemis.ethereum.core.Hash;
+import net.consensys.cava.bytes.Bytes32;
 
 public class Deposit {
 
-  private Hash[] merkle_branch;
+  private Bytes32[] merkle_branch;
   private UnsignedLong merkle_tree_index;
   private DepositData deposit_data;
 
-  public Deposit(Hash[] merkle_branch, UnsignedLong merkle_tree_index, DepositData deposit_data) {
+  public Deposit(
+      Bytes32[] merkle_branch, UnsignedLong merkle_tree_index, DepositData deposit_data) {
     this.merkle_branch = merkle_branch;
     this.merkle_tree_index = merkle_tree_index;
     this.deposit_data = deposit_data;
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */
-  public Hash[] getMerkle_branch() {
+  public Bytes32[] getMerkle_branch() {
     return merkle_branch;
   }
 
-  public void setMerkle_branch(Hash[] merkle_branch) {
+  public void setMerkle_branch(Bytes32[] merkle_branch) {
     this.merkle_branch = merkle_branch;
   }
 
