@@ -21,13 +21,13 @@ public class Attestation {
   private AttestationData data;
   private Bytes32 participation_bitfield;
   private Bytes32 custody_bitfield;
-  private Bytes48 aggregate_signature;
+  private Bytes48[] aggregate_signature;
 
   public Attestation(
       AttestationData data,
       Bytes32 participation_bitfield,
       Bytes32 custody_bitfield,
-      Bytes48 aggregate_signature) {
+      Bytes48[] aggregate_signature) {
     this.data = data;
     this.participation_bitfield = participation_bitfield;
     this.custody_bitfield = custody_bitfield;
@@ -59,11 +59,11 @@ public class Attestation {
     this.custody_bitfield = custody_bitfield;
   }
 
-  public Bytes48 getAggregate_signature() {
+  public Bytes48[] getAggregate_signature() {
     return aggregate_signature;
   }
 
-  public void setAggregate_signature(Bytes48 aggregate_signature) {
+  public void setAggregate_signature(Bytes48[] aggregate_signature) {
     this.aggregate_signature = aggregate_signature;
   }
 }
