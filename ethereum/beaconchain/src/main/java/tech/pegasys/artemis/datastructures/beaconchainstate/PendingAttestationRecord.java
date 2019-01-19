@@ -14,8 +14,8 @@
 package tech.pegasys.artemis.datastructures.beaconchainstate;
 
 import com.google.common.primitives.UnsignedLong;
+import net.consensys.cava.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.beaconchainoperations.AttestationData;
-import tech.pegasys.artemis.util.bytes.Bytes32;
 
 public class PendingAttestationRecord {
 

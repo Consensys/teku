@@ -11,18 +11,15 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.util.bytes;
+package tech.pegasys.artemis.state.util;
 
-/** Base abstract implementation for {@link Bytes32Backed} implementations. */
-public class AbstractBytes32Backed implements Bytes32Backed {
-  protected final Bytes32 bytes;
+import net.consensys.cava.bytes.Bytes32;
 
-  protected AbstractBytes32Backed(Bytes32 bytes) {
-    this.bytes = bytes;
-  }
+public final class TreeHashUtil {
 
-  @Override
-  public Bytes32 bytes() {
-    return bytes;
+  private TreeHashUtil() {}
+
+  public static Bytes32 hash_tree_root(Object value) {
+    return Bytes32.ZERO;
   }
 }
