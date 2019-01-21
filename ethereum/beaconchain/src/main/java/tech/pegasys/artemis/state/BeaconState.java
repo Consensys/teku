@@ -391,7 +391,7 @@ public class BeaconState {
       Bytes32 poc_commitment) {
     DepositInput proof_of_possession_data =
         new DepositInput(
-            pubkey, withdrawal_credentials, poc_commitment, randao_commitment, proof_of_possession);
+            poc_commitment, proof_of_possession, pubkey, randao_commitment, withdrawal_credentials);
 
     Bytes48[] signature = {
       Bytes48.leftPad(proof_of_possession[0]), Bytes48.leftPad(proof_of_possession[1])
@@ -400,7 +400,7 @@ public class BeaconState {
         UnsignedLong.valueOf(
             get_domain(state.fork_data, toIntExact(state.getSlot()), DOMAIN_DEPOSIT));
     return bls_verify(
-        pubkey, TreeHashUtil.hash_tree_root(proof_of_possession_data), signature, domain);
+        pubkey, TreeHashUtil.hash_tree_root(proof_of_possession_data.toBytes()), signature, domain);
   }
 
   /**
@@ -547,7 +547,11 @@ public class BeaconState {
     validator.setLatest_status_change_slot(UnsignedLong.valueOf(slot));
     validator_registry_delta_chain_tip =
         get_new_validator_registry_delta_chain_tip(
-            validator_registry_delta_chain_tip, index, validator.getPubkey(), ACTIVATION);
+            validator_registry_delta_chain_tip,
+            index,
+            validator.getPubkey(),
+            ACTIVATION,
+            UnsignedLong.valueOf(slot));
   }
 
   /**
@@ -612,7 +616,11 @@ public class BeaconState {
     validator.setExit_count(UnsignedLong.valueOf(state.getValidator_registry_exit_count()));
     state.setValidator_registry_delta_chain_tip(
         get_new_validator_registry_delta_chain_tip(
-            state.getValidator_registry_delta_chain_tip(), index, validator.getPubkey(), EXIT));
+            state.getValidator_registry_delta_chain_tip(),
+            index,
+            validator.getPubkey(),
+            EXIT,
+            UnsignedLong.valueOf(slot)));
 
     // Remove validator from persistent committees
     for (int i = 0; i < persistent_committees.size(); i++) {
@@ -831,14 +839,17 @@ public class BeaconState {
       Bytes32 current_validator_registry_delta_chain_tip,
       int validator_index,
       Bytes48 pubkey,
-      int flag) {
+      int flag,
+      UnsignedLong slot) {
     return Hash.keccak256(
         TreeHashUtil.hash_tree_root(
             new ValidatorRegistryDeltaBlock(
-                current_validator_registry_delta_chain_tip,
-                validator_index,
-                pubkey,
-                UnsignedLong.valueOf(flag))));
+                    UnsignedLong.valueOf(flag),
+                    current_validator_registry_delta_chain_tip,
+                    pubkey,
+                    slot,
+                    validator_index)
+                .toBytes()));
   }
   /**
    * Returns the effective balance (also known as "balance at stake") for a 'validator' with the

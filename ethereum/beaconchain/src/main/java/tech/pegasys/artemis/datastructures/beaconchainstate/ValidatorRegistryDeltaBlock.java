@@ -14,22 +14,71 @@
 package tech.pegasys.artemis.datastructures.beaconchainstate;
 
 import com.google.common.primitives.UnsignedLong;
+import java.util.Objects;
+import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.bytes.Bytes48;
+import net.consensys.cava.ssz.SSZ;
 
-public class ValidatorRegistryDeltaBlock {
+public final class ValidatorRegistryDeltaBlock {
 
-  private Bytes32 latest_registry_delta_root;
-  private int validator_index;
-  private Bytes48 pubkey;
-  private UnsignedLong flag;
+  public static ValidatorRegistryDeltaBlock fromBytes(Bytes bytes) {
+    return SSZ.decode(
+        bytes,
+        reader ->
+            new ValidatorRegistryDeltaBlock(
+                UnsignedLong.fromLongBits(reader.readULong(64)),
+                Bytes32.wrap(reader.readBytes()),
+                Bytes48.wrap(reader.readBytes()),
+                UnsignedLong.fromLongBits(reader.readULong(64)),
+                reader.readInt(24)));
+  }
+
+  private final UnsignedLong flag;
+  private final Bytes32 latest_registry_delta_root;
+  private final Bytes48 pubkey;
+  private final UnsignedLong slot;
+  private final int validator_index;
 
   public ValidatorRegistryDeltaBlock(
-      Bytes32 latest_registry_delta_root, int validator_index, Bytes48 pubkey, UnsignedLong flag) {
-    this.latest_registry_delta_root = latest_registry_delta_root;
-    this.validator_index = validator_index;
-    this.pubkey = pubkey;
+      UnsignedLong flag,
+      Bytes32 latest_registry_delta_root,
+      Bytes48 pubkey,
+      UnsignedLong slot,
+      int validator_index) {
     this.flag = flag;
+    this.latest_registry_delta_root = latest_registry_delta_root;
+    this.pubkey = pubkey;
+    this.slot = slot;
+    this.validator_index = validator_index;
+  }
+
+  public Bytes toBytes() {
+    return SSZ.encode(
+        writer -> {
+          writer.writeULong(flag.longValue(), 64);
+          writer.writeBytes(latest_registry_delta_root);
+          writer.writeBytes(pubkey);
+          writer.writeULong(slot.longValue(), 64);
+          writer.writeInt(validator_index, 24);
+        });
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    ValidatorRegistryDeltaBlock that = (ValidatorRegistryDeltaBlock) o;
+    return validator_index == that.validator_index
+        && Objects.equals(flag, that.flag)
+        && Objects.equals(latest_registry_delta_root, that.latest_registry_delta_root)
+        && Objects.equals(pubkey, that.pubkey)
+        && Objects.equals(slot, that.slot);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(flag, latest_registry_delta_root, pubkey, slot, validator_index);
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */
@@ -37,31 +86,19 @@ public class ValidatorRegistryDeltaBlock {
     return latest_registry_delta_root;
   }
 
-  public void setLatest_registry_delta_root(Bytes32 latest_registry_delta_root) {
-    this.latest_registry_delta_root = latest_registry_delta_root;
-  }
-
   public int getValidator_index() {
     return validator_index;
-  }
-
-  public void setValidator_index(int validator_index) {
-    this.validator_index = validator_index;
   }
 
   public Bytes48 getPubkey() {
     return pubkey;
   }
 
-  public void setPubkey(Bytes48 pubkey) {
-    this.pubkey = pubkey;
-  }
-
   public UnsignedLong getFlag() {
     return flag;
   }
 
-  public void setFlag(UnsignedLong flag) {
-    this.flag = flag;
+  public UnsignedLong getSlot() {
+    return slot;
   }
 }
