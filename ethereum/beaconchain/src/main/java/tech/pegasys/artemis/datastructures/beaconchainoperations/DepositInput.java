@@ -13,28 +13,80 @@
 
 package tech.pegasys.artemis.datastructures.beaconchainoperations;
 
+import java.util.Arrays;
+import java.util.Objects;
+import java.util.stream.Collectors;
+import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.bytes.Bytes48;
+import net.consensys.cava.ssz.SSZ;
 
-public class DepositInput {
+public final class DepositInput {
 
-  private Bytes48 pubkey;
-  private Bytes32 withdrawal_credentials;
-  private Bytes32 randao_commitment;
-  private Bytes32 poc_commitment;
-  private Bytes48[] proof_of_possession;
+  public static DepositInput fromBytes(Bytes bytes) {
+    return SSZ.decode(
+        bytes,
+        reader ->
+            new DepositInput(
+                Bytes32.wrap(reader.readBytes()),
+                reader
+                    .readBytesList()
+                    .stream()
+                    .map(Bytes48::wrap)
+                    .collect(Collectors.toList())
+                    .toArray(new Bytes48[0]),
+                Bytes48.wrap(reader.readBytes()),
+                Bytes32.wrap(reader.readBytes()),
+                Bytes32.wrap(reader.readBytes())));
+  }
+
+  private final Bytes48 pubkey;
+  private final Bytes32 withdrawal_credentials;
+  private final Bytes32 randao_commitment;
+  private final Bytes32 poc_commitment;
+  private final Bytes48[] proof_of_possession;
 
   public DepositInput(
-      Bytes48 pubkey,
-      Bytes32 withdrawal_credentials,
-      Bytes32 randao_commitment,
       Bytes32 poc_commitment,
-      Bytes48[] proof_of_possession) {
+      Bytes48[] proof_of_possession,
+      Bytes48 pubkey,
+      Bytes32 randao_commitment,
+      Bytes32 withdrawal_credentials) {
     this.pubkey = pubkey;
     this.withdrawal_credentials = withdrawal_credentials;
     this.randao_commitment = randao_commitment;
     this.poc_commitment = poc_commitment;
     this.proof_of_possession = proof_of_possession;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    DepositInput that = (DepositInput) o;
+    return Objects.equals(pubkey, that.pubkey)
+        && Objects.equals(withdrawal_credentials, that.withdrawal_credentials)
+        && Objects.equals(randao_commitment, that.randao_commitment)
+        && Objects.equals(poc_commitment, that.poc_commitment)
+        && Arrays.equals(proof_of_possession, that.proof_of_possession);
+  }
+
+  @Override
+  public int hashCode() {
+    int result = Objects.hash(pubkey, withdrawal_credentials, randao_commitment, poc_commitment);
+    result = 31 * result + Arrays.hashCode(proof_of_possession);
+    return result;
+  }
+
+  public Bytes toBytes() {
+    return SSZ.encode(
+        writer -> {
+          writer.writeBytes(poc_commitment);
+          writer.writeBytesList(proof_of_possession);
+          writer.writeBytes(pubkey);
+          writer.writeBytes(randao_commitment);
+          writer.writeBytes(withdrawal_credentials);
+        });
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */
@@ -42,39 +94,19 @@ public class DepositInput {
     return pubkey;
   }
 
-  public void setPubkey(Bytes48 pubkey) {
-    this.pubkey = pubkey;
-  }
-
   public Bytes32 getWithdrawal_credentials() {
     return withdrawal_credentials;
-  }
-
-  public void setWithdrawal_credentials(Bytes32 withdrawal_credentials) {
-    this.withdrawal_credentials = withdrawal_credentials;
   }
 
   public Bytes32 getRandao_commitment() {
     return randao_commitment;
   }
 
-  public void setRandao_commitment(Bytes32 randao_commitment) {
-    this.randao_commitment = randao_commitment;
-  }
-
   public Bytes48[] getProof_of_possession() {
     return proof_of_possession;
   }
 
-  public void setProof_of_possession(Bytes48[] proof_of_possession) {
-    this.proof_of_possession = proof_of_possession;
-  }
-
   public Bytes32 getPoc_commitment() {
     return poc_commitment;
-  }
-
-  public void setPoc_commitment(Bytes32 poc_commitment) {
-    this.poc_commitment = poc_commitment;
   }
 }
