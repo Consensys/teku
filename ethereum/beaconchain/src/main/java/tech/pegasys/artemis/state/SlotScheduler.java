@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.services.beaconchain;
+package tech.pegasys.artemis.state;
 
 import com.google.common.eventbus.EventBus;
 import java.util.Date;
@@ -19,7 +19,7 @@ import java.util.Date;
 public class SlotScheduler implements Runnable {
   private EventBus eventBus;
 
-  SlotScheduler(EventBus eventBus) {
+  public SlotScheduler(EventBus eventBus) {
     this.eventBus = eventBus;
   }
 
