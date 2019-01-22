@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 ConsenSys AG.
+ * Copyright 2019 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -15,7 +15,6 @@ package tech.pegasys.artemis.util.message;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 public class BouncyCastleMessageDigestFactory {
@@ -26,5 +25,4 @@ public class BouncyCastleMessageDigestFactory {
   public static MessageDigest create(String algorithm) throws NoSuchAlgorithmException {
     return MessageDigest.getInstance(algorithm, securityProvider);
   }
-
 }

@@ -1,0 +1,41 @@
+jar {
+  baseName 'artemis-p2p'
+  manifest {
+    attributes('Implementation-Title': baseName,
+    'Implementation-Version': project.version)
+  }
+}
+
+dependencies {
+  implementation project(':util')
+  implementation project(':ethereum:beaconchain')
+  implementation 'com.google.guava:guava'
+
+  implementation 'net.consensys.cava:cava-bytes'
+  implementation 'net.consensys.cava:cava-units'
+
+  implementation 'org.apache.logging.log4j:log4j-api'
+  runtime 'org.apache.logging.log4j:log4j-core'
+
+  testImplementation 'org.mockito:mockito-core'
+
+  integrationTestImplementation 'org.assertj:assertj-core'
+  integrationTestImplementation 'org.mockito:mockito-core'
+  integrationTestImplementation 'junit:junit'
+
+  testSupportImplementation 'org.assertj:assertj-core'
+  testSupportImplementation 'org.mockito:mockito-core'
+  testSupportImplementation 'junit:junit'
+}
+
+configurations { testArtifacts }
+task testJar (type: Jar) {
+  baseName = "${project.name}-test"
+  from sourceSets.test.output
+}
+
+
+artifacts {
+  testArtifacts testJar
+  testSupportArtifacts testSupportJar
+}

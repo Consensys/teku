@@ -1,0 +1,45 @@
+jar {
+  baseName 'artemis-ethereum-beaconchain'
+  manifest {
+    attributes('Implementation-Title': baseName,
+    'Implementation-Version': project.version)
+  }
+}
+
+dependencies {
+  implementation project(':util')
+
+  implementation 'net.consensys.cava:cava-crypto'
+  implementation 'net.consensys.cava:cava-units'
+  implementation 'net.consensys.cava:cava-ssz'
+  implementation 'com.google.guava:guava'
+  implementation 'info.picocli:picocli'
+  implementation 'com.google.code.gson:gson:2.8.5'
+  implementation 'org.apache.logging.log4j:log4j-api'
+  runtime 'org.apache.logging.log4j:log4j-core'
+
+  testImplementation 'org.mockito:mockito-core'
+
+  integrationTestImplementation 'org.assertj:assertj-core'
+  integrationTestImplementation 'org.mockito:mockito-core'
+  integrationTestImplementation 'junit:junit'
+
+  testSupportImplementation 'org.assertj:assertj-core'
+  testSupportImplementation 'org.mockito:mockito-core'
+  testSupportImplementation 'junit:junit'
+  test {
+    testLogging.showStandardStreams = true
+  }
+}
+
+configurations { testArtifacts }
+task testJar (type: Jar) {
+  baseName = "${project.name}-test"
+  from sourceSets.test.output
+}
+
+
+artifacts {
+  testArtifacts testJar
+  testSupportArtifacts testSupportJar
+}

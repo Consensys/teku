@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 ConsenSys AG.
+ * Copyright 2019 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -15,12 +15,11 @@ package tech.pegasys.artemis.ethereum.core;
 
 import static tech.pegasys.artemis.crypto.Hash.keccak256;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import tech.pegasys.artemis.ethereum.rlp.RLP;
 import tech.pegasys.artemis.util.bytes.Bytes32;
 import tech.pegasys.artemis.util.bytes.BytesValue;
 import tech.pegasys.artemis.util.bytes.DelegatingBytes32;
-
-import com.fasterxml.jackson.annotation.JsonCreator;
 
 /** A 32-bytes hash value as used in Ethereum blocks, that is the result of the KEC algorithm. */
 public class Hash extends DelegatingBytes32 {
@@ -49,11 +48,11 @@ public class Hash extends DelegatingBytes32 {
    * Parse an hexadecimal string representing a hash value.
    *
    * @param str An hexadecimal string (with or without the leading '0x') representing a valid hash
-   *        value.
+   *     value.
    * @return The parsed hash.
    * @throws NullPointerException if the provided string is {@code null}.
    * @throws IllegalArgumentException if the string is either not hexadecimal, or not the valid
-   *         representation of a hash (not 32 bytes).
+   *     representation of a hash (not 32 bytes).
    */
   @JsonCreator
   public static Hash fromHexString(String str) {

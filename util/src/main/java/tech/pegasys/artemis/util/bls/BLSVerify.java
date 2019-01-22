@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 ConsenSys AG.
+ * Copyright 2019 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -13,15 +13,14 @@
 
 package tech.pegasys.artemis.util.bls;
 
-import tech.pegasys.artemis.util.bytes.Bytes32;
-import tech.pegasys.artemis.util.uint.UInt384;
-import tech.pegasys.artemis.util.uint.UInt64;
+import com.google.common.primitives.UnsignedLong;
+import net.consensys.cava.bytes.Bytes32;
+import net.consensys.cava.bytes.Bytes48;
 
 public class BLSVerify {
 
-  // TODO: Need to update UInt384 to UInt384[].
-  public static boolean bls_verify(UInt384 pubkey, Bytes32 message, UInt384 signature, UInt64 domain) {
+  public static boolean bls_verify(
+      Bytes48 pubkey, Bytes32 message, Bytes48[] signature, UnsignedLong domain) {
     return true;
   }
-
 }

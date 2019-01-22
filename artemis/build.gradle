@@ -7,16 +7,17 @@ jar {
 }
 
 dependencies {
-  implementation project(':crypto')
-  implementation project(':ethereum:core')
-  implementation project(':ethereum:rlp')
-  implementation project(':pow')
-
+  implementation project(':networking:p2p')
+  implementation project(':services')
+  implementation project(':services:beaconchain')
+  implementation project(':services:powchain')
+  implementation project(':services:p2p')
+  implementation project(':services:chainstorage')
+  implementation project(':ethereum:beaconchain')
+  
   api 'com.google.guava:guava:27.0.1-jre'
-
-  implementation 'com.google.guava:guava'
-  implementation 'com.google.code.gson:gson:2.8.5'
   implementation 'info.picocli:picocli'
+  implementation 'com.google.guava:guava'
   implementation 'net.consensys.cava:cava-toml'
   implementation 'io.vertx:vertx-core'
   implementation 'io.vertx:vertx-web'

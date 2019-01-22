@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 ConsenSys AG.
+ * Copyright 2019 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -15,7 +15,6 @@ package tech.pegasys.errorpronechecks;
 
 import java.util.Optional;
 import javax.annotation.Nullable;
-
 
 public class DoNotReturnNullOptionalsNegativeCases {
 
