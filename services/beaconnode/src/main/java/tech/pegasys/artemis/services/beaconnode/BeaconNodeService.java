@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.services.p2p;
+package tech.pegasys.artemis.services.beaconnode;
 
 import com.google.common.eventbus.EventBus;
 import java.io.IOException;
@@ -21,13 +21,13 @@ import tech.pegasys.artemis.networking.p2p.MockP2PNetwork;
 import tech.pegasys.artemis.networking.p2p.api.P2PNetwork;
 import tech.pegasys.artemis.services.ServiceInterface;
 
-public class P2PService implements ServiceInterface {
+public class BeaconNodeService implements ServiceInterface {
 
   private EventBus eventBus;
   private static final Logger LOG = LogManager.getLogger();
   private P2PNetwork p2pNetwork;
 
-  public P2PService() {}
+  public BeaconNodeService() {}
 
   @Override
   public void init(EventBus eventBus) {
