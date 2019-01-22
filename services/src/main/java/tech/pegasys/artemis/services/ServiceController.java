@@ -23,14 +23,15 @@ public class ServiceController {
 
   private static ServiceInterface beaconChainService;
   private static ServiceInterface powchainService;
-  private static ServiceInterface p2pService;
+  private static ServiceInterface beaconNodeService;
   private static ServiceInterface chainStorageService;
 
   private static final ExecutorService beaconChainExecuterService =
       Executors.newSingleThreadExecutor();
   private static final ExecutorService powchainExecuterService =
       Executors.newSingleThreadExecutor();
-  private static final ExecutorService p2pExecuterService = Executors.newSingleThreadExecutor();
+  private static final ExecutorService beaconNodeExecuterService =
+      Executors.newSingleThreadExecutor();
   private static final ExecutorService chainStorageExecutorService =
       Executors.newSingleThreadExecutor();
 
@@ -48,7 +49,7 @@ public class ServiceController {
           Class<X> chainStorageServiceType) {
     beaconChainService = ServiceFactory.getInstance(beaconChainServiceType).getInstance();
     powchainService = ServiceFactory.getInstance(powchainServiceType).getInstance();
-    p2pService = ServiceFactory.getInstance(p2pServiceType).getInstance();
+    beaconNodeService = ServiceFactory.getInstance(p2pServiceType).getInstance();
     chainStorageService = ServiceFactory.getInstance(chainStorageServiceType).getInstance();
 
     EventBus eventBus = new AsyncEventBus(Executors.newCachedThreadPool());
@@ -56,7 +57,7 @@ public class ServiceController {
     if (!cliArgs.getPoWChainServiceDisabled()) {
       powchainService.init(eventBus);
     }
-    p2pService.init(eventBus);
+    beaconNodeService.init(eventBus);
     chainStorageService.init(eventBus);
 
     // Validator Service
@@ -71,7 +72,7 @@ public class ServiceController {
     if (!cliArgs.getPoWChainServiceDisabled()) {
       powchainExecuterService.execute(powchainService);
     }
-    p2pExecuterService.execute(p2pService);
+    beaconNodeExecuterService.execute(beaconNodeService);
     chainStorageExecutorService.execute(chainStorageService);
   }
 
@@ -81,8 +82,8 @@ public class ServiceController {
     beaconChainService.stop();
     powchainExecuterService.shutdown();
     powchainService.stop();
-    p2pExecuterService.shutdown();
-    p2pService.stop();
+    beaconNodeExecuterService.shutdown();
+    beaconNodeService.stop();
     chainStorageExecutorService.shutdown();
     chainStorageService.stop();
   }
