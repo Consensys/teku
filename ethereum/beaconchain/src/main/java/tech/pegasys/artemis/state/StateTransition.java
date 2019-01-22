@@ -39,7 +39,11 @@ public class StateTransition {
 
     // per-epoch processing
     if (state.getSlot() % Constants.EPOCH_LENGTH == 0) {
-      epochProcessor(state);
+      try {
+        epochProcessor(state);
+      } catch (Exception e) {
+        // e.printStackTrace();
+      }
     }
   }
 
@@ -65,7 +69,7 @@ public class StateTransition {
     processAttestations(state, block);
   }
 
-  protected void epochProcessor(BeaconState state) {
+  protected void epochProcessor(BeaconState state) throws Exception {
     logger.info("Processing new epoch in slot: " + state.getSlot());
     EpochProcessorUtil.updateJustification(state);
     EpochProcessorUtil.updateFinalization(state);
