@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 ConsenSys AG.
+ * Copyright 2019 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -14,13 +14,13 @@
 package tech.pegasys.artemis.datastructures.beaconchainstate;
 
 import com.google.common.primitives.UnsignedLong;
+import net.consensys.cava.bytes.Bytes32;
+import net.consensys.cava.bytes.Bytes48;
 import tech.pegasys.artemis.Constants;
-import tech.pegasys.artemis.ethereum.core.Hash;
-import tech.pegasys.artemis.util.uint.UInt384;
 
 public class ValidatorRecord {
 
-  private UInt384 pubkey;
+  private Bytes48 pubkey;
   private double balance = 0.0d;
 
   public double getBalance() {
@@ -31,8 +31,8 @@ public class ValidatorRecord {
     this.balance = balance;
   }
 
-  private Hash withdrawal_credentials;
-  private Hash randao_commitment;
+  private Bytes32 withdrawal_credentials;
+  private Bytes32 randao_commitment;
   private UnsignedLong randao_layers;
   private UnsignedLong status;
   private UnsignedLong latest_status_change_slot;
@@ -41,16 +41,16 @@ public class ValidatorRecord {
   private UnsignedLong second_last_poc_change_slot;
 
   public ValidatorRecord(
-      int pubkey,
-      Hash withdrawal_credentials,
-      Hash randao_commitment,
+      Bytes48 pubkey,
+      Bytes32 withdrawal_credentials,
+      Bytes32 randao_commitment,
       UnsignedLong randao_layers,
       UnsignedLong status,
       UnsignedLong slot,
       UnsignedLong exit_count,
       UnsignedLong last_poc_change_slot,
       UnsignedLong second_last_poc_change_slot) {
-    this.pubkey = UInt384.valueOf(pubkey);
+    this.pubkey = pubkey;
     this.withdrawal_credentials = withdrawal_credentials;
     this.randao_commitment = randao_commitment;
     this.randao_layers = randao_layers;
@@ -87,27 +87,27 @@ public class ValidatorRecord {
     this.status = status;
   }
 
-  public UInt384 getPubkey() {
+  public Bytes48 getPubkey() {
     return pubkey;
   }
 
-  public void setPubkey(UInt384 pubkey) {
+  public void setPubkey(Bytes48 pubkey) {
     this.pubkey = pubkey;
   }
 
-  public Hash getRandao_commitment() {
+  public Bytes32 getRandao_commitment() {
     return randao_commitment;
   }
 
-  public void setRandao_commitment(Hash randao_commitment) {
+  public void setRandao_commitment(Bytes32 randao_commitment) {
     this.randao_commitment = randao_commitment;
   }
 
-  public Hash getWithdrawal_credentials() {
+  public Bytes32 getWithdrawal_credentials() {
     return withdrawal_credentials;
   }
 
-  public void setWithdrawal_credentials(Hash withdrawal_credentials) {
+  public void setWithdrawal_credentials(Bytes32 withdrawal_credentials) {
     this.withdrawal_credentials = withdrawal_credentials;
   }
 

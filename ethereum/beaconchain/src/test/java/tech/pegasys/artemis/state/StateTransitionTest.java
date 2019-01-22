@@ -22,20 +22,28 @@ import static tech.pegasys.artemis.Constants.EXITED_WITHOUT_PENALTY;
 import static tech.pegasys.artemis.Constants.EXITED_WITH_PENALTY;
 import static tech.pegasys.artemis.Constants.LATEST_RANDAO_MIXES_LENGTH;
 import static tech.pegasys.artemis.Constants.PENDING_ACTIVATION;
-import static tech.pegasys.artemis.ethereum.core.Hash.hash;
 
 import com.google.common.primitives.UnsignedLong;
+import java.security.Security;
 import java.util.ArrayList;
 import java.util.Collections;
+import net.consensys.cava.bytes.Bytes;
+import net.consensys.cava.bytes.Bytes32;
+import net.consensys.cava.bytes.Bytes48;
+import net.consensys.cava.crypto.Hash;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.junit.Test;
 import tech.pegasys.artemis.datastructures.beaconchainblocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.beaconchainstate.ShardCommittee;
 import tech.pegasys.artemis.datastructures.beaconchainstate.ValidatorRecord;
-import tech.pegasys.artemis.ethereum.core.Hash;
 import tech.pegasys.artemis.state.util.SlotProcessorUtil;
-import tech.pegasys.artemis.util.bytes.Bytes32;
 
 public class StateTransitionTest {
+
+  static {
+    Security.addProvider(new BouncyCastleProvider());
+  }
+
   private BeaconState newState() {
     // Initialize state
     BeaconState state = new BeaconState();
@@ -44,9 +52,9 @@ public class StateTransitionTest {
     ArrayList<ValidatorRecord> validators = new ArrayList<ValidatorRecord>();
     validators.add(
         new ValidatorRecord(
-            0,
-            Hash.ZERO,
-            Hash.ZERO,
+            Bytes48.leftPad(Bytes.of(0)),
+            Bytes32.ZERO,
+            Bytes32.ZERO,
             UnsignedLong.ZERO,
             UnsignedLong.valueOf(PENDING_ACTIVATION),
             UnsignedLong.valueOf(state.getSlot()),
@@ -55,9 +63,9 @@ public class StateTransitionTest {
             UnsignedLong.ZERO));
     validators.add(
         new ValidatorRecord(
-            100,
-            Hash.ZERO,
-            Hash.ZERO,
+            Bytes48.leftPad(Bytes.of(100)),
+            Bytes32.ZERO,
+            Bytes32.ZERO,
             UnsignedLong.ZERO,
             UnsignedLong.valueOf(ACTIVE),
             UnsignedLong.valueOf(state.getSlot()),
@@ -66,9 +74,9 @@ public class StateTransitionTest {
             UnsignedLong.ZERO));
     validators.add(
         new ValidatorRecord(
-            200,
-            Hash.ZERO,
-            Hash.ZERO,
+            Bytes48.leftPad(Bytes.of(200)),
+            Bytes32.ZERO,
+            Bytes32.ZERO,
             UnsignedLong.ZERO,
             UnsignedLong.valueOf(ACTIVE_PENDING_EXIT),
             UnsignedLong.valueOf(state.getSlot()),
@@ -77,9 +85,9 @@ public class StateTransitionTest {
             UnsignedLong.ZERO));
     validators.add(
         new ValidatorRecord(
-            0,
-            Hash.ZERO,
-            Hash.ZERO,
+            Bytes48.leftPad(Bytes.of(0)),
+            Bytes32.ZERO,
+            Bytes32.ZERO,
             UnsignedLong.ZERO,
             UnsignedLong.valueOf(EXITED_WITHOUT_PENALTY),
             UnsignedLong.valueOf(state.getSlot()),
@@ -88,9 +96,9 @@ public class StateTransitionTest {
             UnsignedLong.ZERO));
     validators.add(
         new ValidatorRecord(
-            0,
-            Hash.ZERO,
-            Hash.ZERO,
+            Bytes48.leftPad(Bytes.of(0)),
+            Bytes32.ZERO,
+            Bytes32.ZERO,
             UnsignedLong.ZERO,
             UnsignedLong.valueOf(EXITED_WITH_PENALTY),
             UnsignedLong.valueOf(state.getSlot()),
@@ -149,15 +157,15 @@ public class StateTransitionTest {
   public void testUpdateLatestRandaoMixes() {
     BeaconState state = newState();
     state.setLatest_randao_mixes(
-        new ArrayList<Hash>(Collections.nCopies(LATEST_RANDAO_MIXES_LENGTH, Hash.EMPTY)));
+        new ArrayList<Bytes32>(Collections.nCopies(LATEST_RANDAO_MIXES_LENGTH, Bytes32.ZERO)));
     state.setSlot(12);
-    ArrayList<Hash> latestRandaoMixes = state.getLatest_randao_mixes();
-    latestRandaoMixes.set(11, hash(Bytes32.TRUE));
-    latestRandaoMixes.set(12, hash(Bytes32.FALSE));
+    ArrayList<Bytes32> latestRandaoMixes = state.getLatest_randao_mixes();
+    latestRandaoMixes.set(11, Hash.keccak256(Bytes32.fromHexString("0x01")));
+    latestRandaoMixes.set(12, Hash.keccak256(Bytes32.ZERO));
     StateTransition stateTransition = new StateTransition();
 
-    Hash prevSlotRandaoMix = latestRandaoMixes.get(11);
-    Hash currSlotRandaoMix = latestRandaoMixes.get(12);
+    Bytes32 prevSlotRandaoMix = latestRandaoMixes.get(11);
+    Bytes32 currSlotRandaoMix = latestRandaoMixes.get(12);
     assertThat(prevSlotRandaoMix).isNotEqualTo(currSlotRandaoMix);
 
     SlotProcessorUtil.updateLatestRandaoMixes(state);
@@ -190,12 +198,12 @@ public class StateTransitionTest {
     }
     state.setShard_committees_at_slots(shard_committees_at_slots);
     BeaconBlock block = new BeaconBlock();
-    block.setState_root(Hash.ZERO);
+    block.setState_root(Bytes32.ZERO);
     SlotProcessorUtil.updateRecentBlockHashes(state, block);
 
     assertThat(state.getLatest_block_roots().get(UnsignedLong.valueOf(state.getSlot())))
         .isEqualTo(block.getState_root());
-    ArrayList<Hash> batched_block_roots = state.getBatched_block_roots();
+    ArrayList<Bytes32> batched_block_roots = state.getBatched_block_roots();
     assertThat(batched_block_roots.get(batched_block_roots.size() - 1))
         .isEqualTo(SlotProcessorUtil.merkle_root(state.getLatest_block_roots()));
   }

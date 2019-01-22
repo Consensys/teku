@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 ConsenSys AG.
+ * Copyright 2019 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -13,21 +13,21 @@
 
 package tech.pegasys.artemis.datastructures.beaconchainoperations;
 
-import tech.pegasys.artemis.util.bytes.Bytes32;
-import tech.pegasys.artemis.util.uint.UInt384;
+import net.consensys.cava.bytes.Bytes32;
+import net.consensys.cava.bytes.Bytes48;
 
 public class Attestation {
 
   private AttestationData data;
   private Bytes32 participation_bitfield;
   private Bytes32 custody_bitfield;
-  private UInt384 aggregate_signature;
+  private Bytes48[] aggregate_signature;
 
   public Attestation(
       AttestationData data,
       Bytes32 participation_bitfield,
       Bytes32 custody_bitfield,
-      UInt384 aggregate_signature) {
+      Bytes48[] aggregate_signature) {
     this.data = data;
     this.participation_bitfield = participation_bitfield;
     this.custody_bitfield = custody_bitfield;
@@ -59,11 +59,11 @@ public class Attestation {
     this.custody_bitfield = custody_bitfield;
   }
 
-  public UInt384 getAggregate_signature() {
+  public Bytes48[] getAggregate_signature() {
     return aggregate_signature;
   }
 
-  public void setAggregate_signature(UInt384 aggregate_signature) {
+  public void setAggregate_signature(Bytes48[] aggregate_signature) {
     this.aggregate_signature = aggregate_signature;
   }
 }

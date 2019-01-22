@@ -11,18 +11,21 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.datastructures.beaconchainoperations;
+package tech.pegasys.artemis.pow.event;
 
-import com.google.common.primitives.UnsignedLong;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import net.consensys.cava.bytes.Bytes32;
-import tech.pegasys.artemis.Constants;
+import tech.pegasys.artemis.pow.api.ChainStartEvent;
+import tech.pegasys.artemis.pow.contract.ValidatorRegistrationContract;
 
-public class LatestBlockRoots extends LinkedHashMap<UnsignedLong, Bytes32> {
+public class ChainStart implements ChainStartEvent {
+
+  private ValidatorRegistrationContract.ChainStartEventResponse response = null;
+
+  public ChainStart(ValidatorRegistrationContract.ChainStartEventResponse response) {
+    this.response = response;
+  }
 
   @Override
-  protected boolean removeEldestEntry(Map.Entry<UnsignedLong, Bytes32> eldest) {
-    return this.size() > Constants.LATEST_BLOCK_ROOTS_LENGTH;
+  public ValidatorRegistrationContract.ChainStartEventResponse getResponse() {
+    return response;
   }
 }

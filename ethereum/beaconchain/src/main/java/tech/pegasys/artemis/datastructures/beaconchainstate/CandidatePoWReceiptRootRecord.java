@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 ConsenSys AG.
+ * Copyright 2019 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -14,23 +14,23 @@
 package tech.pegasys.artemis.datastructures.beaconchainstate;
 
 import com.google.common.primitives.UnsignedLong;
-import tech.pegasys.artemis.ethereum.core.Hash;
+import net.consensys.cava.bytes.Bytes32;
 
 public class CandidatePoWReceiptRootRecord {
 
-  private Hash candidate_pow_receipt_root;
+  private Bytes32 candidate_pow_receipt_root;
   private UnsignedLong votes;
 
-  public CandidatePoWReceiptRootRecord(Hash candidate_pow_receipt_root, UnsignedLong votes) {
+  public CandidatePoWReceiptRootRecord(Bytes32 candidate_pow_receipt_root, UnsignedLong votes) {
     this.candidate_pow_receipt_root = candidate_pow_receipt_root;
     this.votes = votes;
   }
 
-  public Hash getCandidate_pow_receipt_root() {
+  public Bytes32 getCandidate_pow_receipt_root() {
     return candidate_pow_receipt_root;
   }
 
-  public void setCandidate_pow_receipt_root(Hash candidate_pow_receipt_root) {
+  public void setCandidate_pow_receipt_root(Bytes32 candidate_pow_receipt_root) {
     this.candidate_pow_receipt_root = candidate_pow_receipt_root;
   }
 

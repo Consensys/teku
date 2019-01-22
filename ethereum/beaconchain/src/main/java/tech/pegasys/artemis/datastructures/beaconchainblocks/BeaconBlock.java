@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 ConsenSys AG.
+ * Copyright 2019 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -13,18 +13,18 @@
 
 package tech.pegasys.artemis.datastructures.beaconchainblocks;
 
-import tech.pegasys.artemis.ethereum.core.Hash;
-import tech.pegasys.artemis.util.uint.UInt384;
+import net.consensys.cava.bytes.Bytes32;
+import net.consensys.cava.bytes.Bytes48;
 
 public class BeaconBlock {
 
   // Header
   private long slot;
-  private Hash[] ancestor_hashes;
-  private Hash state_root;
-  private Hash randao_reveal;
-  private Hash candidate_pow_receipt_root;
-  private UInt384[] signature;
+  private Bytes32[] ancestor_hashes;
+  private Bytes32 state_root;
+  private Bytes32 randao_reveal;
+  private Bytes32 candidate_pow_receipt_root;
+  private Bytes48[] signature;
 
   // Body
   private BeaconBlockBody body;
@@ -40,43 +40,43 @@ public class BeaconBlock {
     this.body = body;
   }
 
-  public UInt384[] getSignature() {
+  public Bytes48[] getSignature() {
     return signature;
   }
 
-  public void setSignature(UInt384[] signature) {
+  public void setSignature(Bytes48[] signature) {
     this.signature = signature;
   }
 
-  public Hash getCandidate_pow_receipt_root() {
+  public Bytes32 getCandidate_pow_receipt_root() {
     return candidate_pow_receipt_root;
   }
 
-  public void setCandidate_pow_receipt_root(Hash candidate_pow_receipt_root) {
+  public void setCandidate_pow_receipt_root(Bytes32 candidate_pow_receipt_root) {
     this.candidate_pow_receipt_root = candidate_pow_receipt_root;
   }
 
-  public Hash getRandao_reveal() {
+  public Bytes32 getRandao_reveal() {
     return randao_reveal;
   }
 
-  public void setRandao_reveal(Hash randao_reveal) {
+  public void setRandao_reveal(Bytes32 randao_reveal) {
     this.randao_reveal = randao_reveal;
   }
 
-  public Hash getState_root() {
+  public Bytes32 getState_root() {
     return state_root;
   }
 
-  public void setState_root(Hash state_root) {
+  public void setState_root(Bytes32 state_root) {
     this.state_root = state_root;
   }
 
-  public Hash[] getAncestor_hashes() {
+  public Bytes32[] getAncestor_hashes() {
     return ancestor_hashes;
   }
 
-  public void setAncestor_hashes(Hash[] ancestor_hashes) {
+  public void setAncestor_hashes(Bytes32[] ancestor_hashes) {
     this.ancestor_hashes = ancestor_hashes;
   }
 

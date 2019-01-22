@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 ConsenSys AG.
+ * Copyright 2019 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -21,9 +21,10 @@ import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.artemis.Constants;
-import tech.pegasys.artemis.pow.event.ChainStartEvent;
-import tech.pegasys.artemis.pow.event.ValidatorRegistrationEvent;
+import tech.pegasys.artemis.pow.api.ChainStartEvent;
+import tech.pegasys.artemis.pow.api.ValidatorRegistrationEvent;
 import tech.pegasys.artemis.services.ServiceInterface;
+import tech.pegasys.artemis.state.SlotScheduler;
 import tech.pegasys.artemis.state.StateTreeManager;
 
 public class BeaconChainService implements ServiceInterface {

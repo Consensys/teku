@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 ConsenSys AG.
+ * Copyright 2019 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -18,14 +18,13 @@ import com.google.common.primitives.UnsignedLong;
 import java.util.Collection;
 import java.util.Random;
 import java.util.concurrent.CompletableFuture;
+import net.consensys.cava.bytes.Bytes32;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.artemis.datastructures.beaconchainblocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.beaconchainoperations.Attestation;
 import tech.pegasys.artemis.datastructures.beaconchainoperations.AttestationData;
-import tech.pegasys.artemis.ethereum.core.Hash;
 import tech.pegasys.artemis.networking.p2p.api.P2PNetwork;
-import tech.pegasys.artemis.util.bytes.Bytes32;
 
 public class MockP2PNetwork implements P2PNetwork {
 
@@ -105,12 +104,12 @@ public class MockP2PNetwork implements P2PNetwork {
               new AttestationData(
                   n,
                   UnsignedLong.ZERO,
-                  Hash.ZERO,
-                  Hash.ZERO,
-                  Hash.ZERO,
-                  Hash.ZERO,
+                  Bytes32.ZERO,
+                  Bytes32.ZERO,
+                  Bytes32.ZERO,
+                  Bytes32.ZERO,
                   UnsignedLong.ZERO,
-                  Hash.ZERO);
+                  Bytes32.ZERO);
           Attestation attestation = new Attestation(data, Bytes32.ZERO, Bytes32.ZERO, null);
           this.eventBus.post(attestation);
         }

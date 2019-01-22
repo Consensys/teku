@@ -11,18 +11,28 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.datastructures.beaconchainoperations;
+package tech.pegasys.artemis.datastructures.beaconchainstate;
+
+import static org.junit.Assert.assertEquals;
 
 import com.google.common.primitives.UnsignedLong;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
-import tech.pegasys.artemis.Constants;
+import net.consensys.cava.bytes.Bytes48;
+import org.junit.Test;
 
-public class LatestBlockRoots extends LinkedHashMap<UnsignedLong, Bytes32> {
+public class ValidatorRegistryDeltaBlockTest {
 
-  @Override
-  protected boolean removeEldestEntry(Map.Entry<UnsignedLong, Bytes32> eldest) {
-    return this.size() > Constants.LATEST_BLOCK_ROOTS_LENGTH;
+  @Test
+  public void roundtripSSZ() {
+    ValidatorRegistryDeltaBlock block =
+        new ValidatorRegistryDeltaBlock(
+            UnsignedLong.valueOf(123),
+            Bytes32.random(),
+            Bytes48.random(),
+            UnsignedLong.valueOf(456),
+            23);
+    Bytes encoded = block.toBytes();
+    assertEquals(block, ValidatorRegistryDeltaBlock.fromBytes(encoded));
   }
 }

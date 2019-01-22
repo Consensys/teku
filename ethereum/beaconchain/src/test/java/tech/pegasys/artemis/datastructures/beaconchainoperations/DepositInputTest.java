@@ -13,16 +13,25 @@
 
 package tech.pegasys.artemis.datastructures.beaconchainoperations;
 
-import com.google.common.primitives.UnsignedLong;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import static org.junit.Assert.assertEquals;
+
+import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
-import tech.pegasys.artemis.Constants;
+import net.consensys.cava.bytes.Bytes48;
+import org.junit.Test;
 
-public class LatestBlockRoots extends LinkedHashMap<UnsignedLong, Bytes32> {
+public class DepositInputTest {
 
-  @Override
-  protected boolean removeEldestEntry(Map.Entry<UnsignedLong, Bytes32> eldest) {
-    return this.size() > Constants.LATEST_BLOCK_ROOTS_LENGTH;
+  @Test
+  public void rountripSSZ() {
+    DepositInput di =
+        new DepositInput(
+            Bytes32.random(),
+            new Bytes48[] {Bytes48.random(), Bytes48.random(), Bytes48.random()},
+            Bytes48.random(),
+            Bytes32.random(),
+            Bytes32.random());
+    Bytes sszBytes = di.toBytes();
+    assertEquals(di, DepositInput.fromBytes(sszBytes));
   }
 }

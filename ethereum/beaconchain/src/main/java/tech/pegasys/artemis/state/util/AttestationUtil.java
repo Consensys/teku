@@ -15,12 +15,11 @@ package tech.pegasys.artemis.state.util;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
+import net.consensys.cava.bytes.Bytes32;
 import tech.pegasys.artemis.Constants;
 import tech.pegasys.artemis.datastructures.beaconchainoperations.AttestationData;
 import tech.pegasys.artemis.datastructures.beaconchainstate.PendingAttestationRecord;
-import tech.pegasys.artemis.ethereum.core.Hash;
 import tech.pegasys.artemis.state.BeaconState;
-import tech.pegasys.artemis.util.bytes.Bytes32;
 
 public class AttestationUtil {
 
@@ -72,7 +71,7 @@ public class AttestationUtil {
   }
 
   // https://github.com/ethereum/eth2.0-specs/blob/master/specs/core/0_beacon-chain.md#get_block_root
-  public static Hash get_block_root(BeaconState state, long slot) throws Exception {
+  public static Bytes32 get_block_root(BeaconState state, long slot) throws Exception {
     long slot_upper_bound = slot + state.getLatest_block_roots().size();
     if ((state.getSlot() <= slot_upper_bound) || slot < state.getSlot())
       return state

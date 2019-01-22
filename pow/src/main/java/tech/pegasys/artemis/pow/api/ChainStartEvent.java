@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 ConsenSys AG.
+ * Copyright 2018 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,18 +11,9 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.datastructures.beaconchainoperations;
+package tech.pegasys.artemis.pow.api;
 
-import com.google.common.primitives.UnsignedLong;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import net.consensys.cava.bytes.Bytes32;
-import tech.pegasys.artemis.Constants;
+import tech.pegasys.artemis.pow.contract.ValidatorRegistrationContract;
 
-public class LatestBlockRoots extends LinkedHashMap<UnsignedLong, Bytes32> {
-
-  @Override
-  protected boolean removeEldestEntry(Map.Entry<UnsignedLong, Bytes32> eldest) {
-    return this.size() > Constants.LATEST_BLOCK_ROOTS_LENGTH;
-  }
-}
+public interface ChainStartEvent
+    extends PowEvent<ValidatorRegistrationContract.ChainStartEventResponse> {}

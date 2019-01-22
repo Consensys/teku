@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 ConsenSys AG.
+ * Copyright 2019 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -15,6 +15,7 @@ package tech.pegasys.artemis.state;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import tech.pegasys.artemis.Constants;
 import tech.pegasys.artemis.datastructures.beaconchainblocks.BeaconBlock;
 import tech.pegasys.artemis.state.util.EpochProcessorUtil;
 
@@ -37,13 +38,13 @@ public class StateTransition {
     }
 
     // per-epoch processing
-    // if (state.getSlot() % Constants.EPOCH_LENGTH == 0) {
-    try {
-      epochProcessor(state);
-    } catch (Exception e) {
-      // e.printStackTrace();
+    if (state.getSlot() % Constants.EPOCH_LENGTH == 0) {
+      try {
+        epochProcessor(state);
+      } catch (Exception e) {
+        // e.printStackTrace();
+      }
     }
-    // }
   }
 
   protected void slotProcessor(BeaconState state) {

@@ -11,18 +11,20 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.datastructures.beaconchainoperations;
+package tech.pegasys.artemis.state;
 
-import com.google.common.primitives.UnsignedLong;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import net.consensys.cava.bytes.Bytes32;
-import tech.pegasys.artemis.Constants;
+import com.google.common.eventbus.EventBus;
+import java.util.Date;
 
-public class LatestBlockRoots extends LinkedHashMap<UnsignedLong, Bytes32> {
+public class SlotScheduler implements Runnable {
+  private EventBus eventBus;
+
+  public SlotScheduler(EventBus eventBus) {
+    this.eventBus = eventBus;
+  }
 
   @Override
-  protected boolean removeEldestEntry(Map.Entry<UnsignedLong, Bytes32> eldest) {
-    return this.size() > Constants.LATEST_BLOCK_ROOTS_LENGTH;
+  public void run() {
+    this.eventBus.post(new Date());
   }
 }

@@ -11,18 +11,17 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.datastructures.beaconchainoperations;
+package tech.pegasys.artemis.state.util;
 
-import com.google.common.primitives.UnsignedLong;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
-import tech.pegasys.artemis.Constants;
+import net.consensys.cava.ssz.SSZ;
 
-public class LatestBlockRoots extends LinkedHashMap<UnsignedLong, Bytes32> {
+public final class TreeHashUtil {
 
-  @Override
-  protected boolean removeEldestEntry(Map.Entry<UnsignedLong, Bytes32> eldest) {
-    return this.size() > Constants.LATEST_BLOCK_ROOTS_LENGTH;
+  private TreeHashUtil() {}
+
+  public static Bytes32 hash_tree_root(Bytes value) {
+    return SSZ.hashTreeRoot(value);
   }
 }

@@ -7,15 +7,12 @@ jar {
 }
 
 dependencies {
-  implementation project(':crypto')
   implementation project(':networking:p2p')
   implementation project(':services')
   implementation project(':services:beaconchain')
   implementation project(':services:powchain')
   implementation project(':services:p2p')
   implementation project(':services:chainstorage')
-  implementation project(':ethereum:core')
-  implementation project(':ethereum:rlp')
   implementation project(':ethereum:beaconchain')
   
   api 'com.google.guava:guava:27.0.1-jre'

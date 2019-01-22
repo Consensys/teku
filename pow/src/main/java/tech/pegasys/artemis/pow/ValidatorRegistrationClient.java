@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 ConsenSys AG.
+ * Copyright 2019 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -25,9 +25,11 @@ import org.web3j.protocol.http.HttpService;
 import org.web3j.tx.gas.ContractGasProvider;
 import org.web3j.tx.gas.DefaultGasProvider;
 import rx.Subscription;
+import tech.pegasys.artemis.pow.api.ChainStartEvent;
+import tech.pegasys.artemis.pow.api.ValidatorRegistrationEvent;
 import tech.pegasys.artemis.pow.contract.ValidatorRegistrationContract;
-import tech.pegasys.artemis.pow.event.ChainStartEvent;
-import tech.pegasys.artemis.pow.event.ValidatorRegistrationEvent;
+import tech.pegasys.artemis.pow.event.ChainStart;
+import tech.pegasys.artemis.pow.event.ValidatorRegistration;
 
 public class ValidatorRegistrationClient {
 
@@ -135,12 +137,12 @@ public class ValidatorRegistrationClient {
   }
 
   public void validatorRegistered(ValidatorRegistrationContract.Eth1DepositEventResponse response) {
-    ValidatorRegistrationEvent event = new ValidatorRegistrationEvent(response);
+    ValidatorRegistrationEvent event = new ValidatorRegistration(response);
     this.eventBus.post(event);
   }
 
   public void chainStarted(ValidatorRegistrationContract.ChainStartEventResponse response) {
-    ChainStartEvent event = new ChainStartEvent(response);
+    ChainStartEvent event = new ChainStart(response);
     this.eventBus.post(event);
   }
 }
