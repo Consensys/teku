@@ -22,7 +22,34 @@ import tech.pegasys.artemis.state.BeaconState;
 public class EpochProcessorUtil {
 
   // epoch processing
-  public static void updateJustification(BeaconState state) {}
+  public static void updateJustification(BeaconState state) throws Exception {
+    state.setPrevious_justified_slot(state.getJustified_slot());
+    state.setJustification_bitfield(
+        (state.getJustification_bitfield() * 2) % ((int) Math.pow(2, 64)));
+    double total_balance = BeaconStateUtil.calc_total_balance(state);
+
+    if (3 * AttestationUtil.get_previous_epoch_boundary_attesting_balance(state)
+        >= (2 * total_balance)) {
+      state.setJustification_bitfield(state.getJustification_bitfield() | 2);
+      state.setJustified_slot((state.getSlot() - 2) % Constants.EPOCH_LENGTH);
+    } else if (3 * AttestationUtil.get_current_epoch_boundary_attesting_balance(state)
+        >= (2 * total_balance)) {
+      state.setJustification_bitfield(state.getJustification_bitfield() | 1);
+      state.setJustified_slot((state.getSlot() - 2) % Constants.EPOCH_LENGTH);
+    }
+    if (isPrevJustifiedSlotFinalized(state))
+      state.setFinalized_slot(state.getPrevious_justified_slot());
+  }
+
+  private static boolean isPrevJustifiedSlotFinalized(BeaconState state) {
+    return ((state.getPrevious_justified_slot() == ((state.getSlot() - 2) * Constants.EPOCH_LENGTH)
+            && (state.getJustification_bitfield() % 4) == 3)
+        || (state.getPrevious_justified_slot() == ((state.getSlot() - 3) * Constants.EPOCH_LENGTH)
+            && (state.getJustification_bitfield() % 8) == 7)
+        || (state.getPrevious_justified_slot() == ((state.getSlot() - 4) * Constants.EPOCH_LENGTH)
+            && ((state.getJustification_bitfield() % 16) == 14
+                || (state.getJustification_bitfield() % 16) == 15)));
+  }
 
   public static void updateFinalization(BeaconState state) {}
 
