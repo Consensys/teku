@@ -11,7 +11,7 @@ dependencies {
   implementation project(':services')
   implementation project(':services:beaconchain')
   implementation project(':services:powchain')
-  implementation project(':services:p2p')
+  implementation project(':services:beaconnode')
   implementation project(':services:chainstorage')
   implementation project(':ethereum:beaconchain')
   

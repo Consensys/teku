@@ -17,8 +17,8 @@ import picocli.CommandLine;
 import tech.pegasys.artemis.cli.CommandLineArguments;
 import tech.pegasys.artemis.services.ServiceController;
 import tech.pegasys.artemis.services.beaconchain.BeaconChainService;
+import tech.pegasys.artemis.services.beaconnode.BeaconNodeService;
 import tech.pegasys.artemis.services.chainstorage.ChainStorageService;
-import tech.pegasys.artemis.services.p2p.P2PService;
 import tech.pegasys.artemis.services.powchain.PowchainService;
 
 public final class Artemis {
@@ -48,7 +48,7 @@ public final class Artemis {
           cliArgs,
           BeaconChainService.class,
           PowchainService.class,
-          P2PService.class,
+          BeaconNodeService.class,
           ChainStorageService.class);
       // Start services
       ServiceController.startAll(cliArgs);

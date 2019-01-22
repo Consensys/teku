@@ -17,6 +17,7 @@ import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import net.consensys.cava.bytes.Bytes32;
 import tech.pegasys.artemis.Constants;
+import tech.pegasys.artemis.datastructures.beaconchainoperations.AttestationData;
 import tech.pegasys.artemis.datastructures.beaconchainstate.PendingAttestationRecord;
 import tech.pegasys.artemis.state.BeaconState;
 
@@ -58,6 +59,17 @@ public class AttestationUtil {
     return current_epoch_boundary_attestations;
   }
 
+  public static double get_previous_epoch_boundary_attesting_balance(BeaconState state)
+      throws Exception {
+    // todo
+    return 0.0d;
+  }
+
+  public static double get_current_epoch_boundary_attesting_balance(BeaconState state) {
+    // todo
+    return 0.0d;
+  }
+
   // https://github.com/ethereum/eth2.0-specs/blob/master/specs/core/0_beacon-chain.md#get_block_root
   public static Bytes32 get_block_root(BeaconState state, long slot) throws Exception {
     long slot_upper_bound = slot + state.getLatest_block_roots().size();
@@ -66,5 +78,15 @@ public class AttestationUtil {
           .getLatest_block_roots()
           .get(UnsignedLong.valueOf(slot % state.getLatest_block_roots().size()));
     throw new BlockValidationException("Desired block root not within the provided bounds");
+  }
+
+  public static ArrayList<Integer> get_attestation_participants(
+      BeaconState state, AttestationData attestation_data, Bytes32 participation_bitfield) {
+    // todo
+    return null;
+  }
+
+  public static int ceil_div8(int input) {
+    return (int) Math.ceil(((double) input) / 8.0d);
   }
 }

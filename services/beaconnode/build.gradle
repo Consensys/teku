@@ -1,5 +1,5 @@
 jar {
-  baseName 'artemis-services-p2p'
+  baseName 'artemis-services-beaconnode'
   manifest {
     attributes('Implementation-Title': baseName,
     'Implementation-Version': project.version)
