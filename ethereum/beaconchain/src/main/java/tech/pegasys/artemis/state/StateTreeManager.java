@@ -23,6 +23,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.artemis.datastructures.beaconchainblocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.beaconchainoperations.Attestation;
+import tech.pegasys.artemis.pow.api.ChainStartEvent;
+import tech.pegasys.artemis.pow.api.ValidatorRegistrationEvent;
 
 public class StateTreeManager {
 
@@ -41,6 +43,17 @@ public class StateTreeManager {
     this.unprocessedAttestations = new LinkedBlockingQueue<Attestation>();
 
     this.eventBus.register(this);
+  }
+
+  @Subscribe
+  public void onChainStarted(ChainStartEvent event) {
+    LOG.info("ChainStart Event Detected");
+  }
+
+  @Subscribe
+  public void onValidatorRegistered(ValidatorRegistrationEvent event) {
+    LOG.info("Validator Registration Event detected");
+    // LOG.info("   Validator Number: " + validatorRegisteredEvent.getInfo());
   }
 
   @Subscribe
