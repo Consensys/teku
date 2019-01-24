@@ -20,6 +20,7 @@ dependencies {
   annotationProcessor 'com.google.auto.service:auto-service'
 
   testImplementation 'com.google.errorprone:error_prone_test_helpers'
+  testImplementation 'junit:junit:4.12'
 
   epJavac 'com.google.errorprone:error_prone_check_api'
 }
