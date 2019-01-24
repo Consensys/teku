@@ -20,11 +20,13 @@ import java.util.concurrent.TimeUnit;
 import tech.pegasys.artemis.Constants;
 import tech.pegasys.artemis.services.ServiceInterface;
 import tech.pegasys.artemis.state.SlotScheduler;
+import tech.pegasys.artemis.state.StateTreeManager;
 
 public class BeaconChainService implements ServiceInterface {
 
   private EventBus eventBus;
   private ScheduledExecutorService scheduler;
+  private StateTreeManager stateTreeManager;
 
   public BeaconChainService() {}
 
@@ -32,6 +34,7 @@ public class BeaconChainService implements ServiceInterface {
   public void init(EventBus eventBus) {
     this.eventBus = eventBus;
     this.scheduler = Executors.newScheduledThreadPool(1);
+    this.stateTreeManager = new StateTreeManager(this.eventBus);
     this.eventBus.register(this);
   }
 
