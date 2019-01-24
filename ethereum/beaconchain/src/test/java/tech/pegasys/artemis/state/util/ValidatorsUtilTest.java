@@ -32,7 +32,6 @@ import tech.pegasys.artemis.datastructures.beaconchainstate.ValidatorRecord;
 import tech.pegasys.artemis.datastructures.beaconchainstate.Validators;
 
 class ValidatorsUtilTest {
-  private static final double DOUBLE_ASSERTION_DELTA = 0.0d;
   private static final double DEFAULT_BALANCE = 0.0d;
   private int validatorSizeExpected = 0;
   private double effectiveBalanceExpected = 0.0d;
@@ -60,7 +59,7 @@ class ValidatorsUtilTest {
     double effectiveBalanceActual = ValidatorsUtil.get_effective_balance(null);
 
     // then
-    assertEquals(effectiveBalanceExpected, effectiveBalanceActual, DOUBLE_ASSERTION_DELTA);
+    assertEquals(effectiveBalanceExpected, effectiveBalanceActual);
   }
 
   @Test
@@ -75,7 +74,7 @@ class ValidatorsUtilTest {
     double effectiveBalanceActual = ValidatorsUtil.get_effective_balance(validatorRecordTest);
 
     // then
-    assertEquals(effectiveBalanceExpected, effectiveBalanceActual, DOUBLE_ASSERTION_DELTA);
+    assertEquals(effectiveBalanceExpected, effectiveBalanceActual);
   }
 
   @Test
@@ -91,7 +90,7 @@ class ValidatorsUtilTest {
     double effectiveBalanceActual = ValidatorsUtil.get_effective_balance(validatorRecordTest);
 
     // then
-    assertEquals(effectiveBalanceExpected, effectiveBalanceActual, DOUBLE_ASSERTION_DELTA);
+    assertEquals(effectiveBalanceExpected, effectiveBalanceActual);
   }
 
   @Test
@@ -110,7 +109,7 @@ class ValidatorsUtilTest {
     double effectiveBalanceActual = ValidatorsUtil.get_effective_balance(validatorRecordTest);
 
     // then
-    assertEquals(effectiveBalanceExpected, effectiveBalanceActual, DOUBLE_ASSERTION_DELTA);
+    assertEquals(effectiveBalanceExpected, effectiveBalanceActual);
   }
 
   @Test
