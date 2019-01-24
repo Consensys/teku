@@ -14,25 +14,17 @@
 package tech.pegasys.artemis.services.beaconchain;
 
 import com.google.common.eventbus.EventBus;
-import com.google.common.eventbus.Subscribe;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import tech.pegasys.artemis.Constants;
-import tech.pegasys.artemis.pow.api.ChainStartEvent;
-import tech.pegasys.artemis.pow.api.ValidatorRegistrationEvent;
 import tech.pegasys.artemis.services.ServiceInterface;
 import tech.pegasys.artemis.state.SlotScheduler;
-import tech.pegasys.artemis.state.StateTreeManager;
 
 public class BeaconChainService implements ServiceInterface {
 
   private EventBus eventBus;
   private ScheduledExecutorService scheduler;
-  private static final Logger LOG = LogManager.getLogger();
-  private StateTreeManager stateTreeManager;
 
   public BeaconChainService() {}
 
@@ -40,7 +32,6 @@ public class BeaconChainService implements ServiceInterface {
   public void init(EventBus eventBus) {
     this.eventBus = eventBus;
     this.scheduler = Executors.newScheduledThreadPool(1);
-    this.stateTreeManager = new StateTreeManager(this.eventBus);
     this.eventBus.register(this);
   }
 
@@ -56,16 +47,5 @@ public class BeaconChainService implements ServiceInterface {
   public void stop() {
     this.scheduler.shutdown();
     this.eventBus.unregister(this);
-  }
-
-  @Subscribe
-  public void onChainStarted(ChainStartEvent event) {
-    LOG.info("ChainStart Event Detected");
-  }
-
-  @Subscribe
-  public void onValidatorRegistered(ValidatorRegistrationEvent event) {
-    LOG.info("Validator Registration Event detected");
-    // LOG.info("   Validator Number: " + validatorRegisteredEvent.getInfo());
   }
 }
