@@ -173,6 +173,13 @@ subprojects {
     maxParallelForks = (System.getenv('GRADLE_MAX_TEST_FORKS') ?: (Runtime.runtime.availableProcessors().intdiv(2) ?: 1)).toInteger()
   }
 
+    test {
+        useJUnitPlatform()
+        reports {
+            junitXml.enabled = true
+        }
+    }
+
   tasks.withType(JavaCompile) {
     options.fork = true
     options.incremental = true
