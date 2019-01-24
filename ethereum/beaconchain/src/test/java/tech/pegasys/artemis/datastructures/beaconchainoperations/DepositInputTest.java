@@ -13,17 +13,17 @@
 
 package tech.pegasys.artemis.datastructures.beaconchainoperations;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.bytes.Bytes48;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-public class DepositInputTest {
+class DepositInputTest {
 
   @Test
-  public void rountripSSZ() {
+  void rountripSSZ() {
     DepositInput di =
         new DepositInput(
             Bytes32.random(),

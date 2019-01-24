@@ -14,6 +14,7 @@
 package tech.pegasys.artemis.state;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static tech.pegasys.artemis.Constants.ACTIVATION;
 import static tech.pegasys.artemis.Constants.ACTIVE;
 import static tech.pegasys.artemis.Constants.ACTIVE_PENDING_EXIT;
@@ -28,7 +29,6 @@ import static tech.pegasys.artemis.state.BeaconState.BeaconStateHelperFunctions.
 
 import com.google.common.primitives.UnsignedLong;
 import com.google.gson.Gson;
-import java.security.Security;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -37,8 +37,9 @@ import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.bytes.Bytes48;
 import net.consensys.cava.crypto.Hash;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.junit.Test;
+import net.consensys.cava.junit.BouncyCastleExtension;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import tech.pegasys.artemis.datastructures.beaconchainoperations.AttestationData;
 import tech.pegasys.artemis.datastructures.beaconchainoperations.LatestBlockRoots;
 import tech.pegasys.artemis.datastructures.beaconchainstate.ForkData;
@@ -46,11 +47,8 @@ import tech.pegasys.artemis.datastructures.beaconchainstate.ShardCommittee;
 import tech.pegasys.artemis.datastructures.beaconchainstate.ValidatorRecord;
 import tech.pegasys.artemis.datastructures.beaconchainstate.Validators;
 
-public class BeaconStateTest {
-
-  static {
-    Security.addProvider(new BouncyCastleProvider());
-  }
+@ExtendWith(BouncyCastleExtension.class)
+class BeaconStateTest {
 
   private BeaconState newState() {
     // Initialize state
@@ -170,8 +168,7 @@ public class BeaconStateTest {
   }
 
   @Test
-  public void
-      processDepositValidatorPubkeysDoesNotContainPubkeyAndMinEmptyValidatorIndexIsNegative() {
+  void processDepositValidatorPubkeysDoesNotContainPubkeyAndMinEmptyValidatorIndexIsNegative() {
     BeaconState state = newState();
     assertThat(
             state.process_deposit(
@@ -186,7 +183,7 @@ public class BeaconStateTest {
   }
 
   @Test
-  public void processDepositValidatorPubkeysDoesNotContainPubkey() {
+  void processDepositValidatorPubkeysDoesNotContainPubkey() {
     BeaconState state = newState();
     assertThat(
             state.process_deposit(
@@ -201,7 +198,7 @@ public class BeaconStateTest {
   }
 
   @Test
-  public void processDepositValidatorPubkeysContainsPubkey() {
+  void processDepositValidatorPubkeysContainsPubkey() {
     BeaconState state = newState();
 
     double oldBalance = state.getValidator_balances().get(2);
@@ -220,8 +217,8 @@ public class BeaconStateTest {
     assertThat(state.getValidator_balances().get(2)).isEqualTo(oldBalance + 100.0);
   }
 
-  @Test(expected = AssertionError.class)
-  public void getAttestationParticipantsSizesNotEqual() {
+  @Test
+  void getAttestationParticipantsSizesNotEqual() {
     AttestationData attestationData =
         new AttestationData(
             0,
@@ -234,11 +231,15 @@ public class BeaconStateTest {
             Bytes32.ZERO);
     byte[] participation_bitfield = Bytes32.ZERO.toArrayUnsafe();
 
-    BeaconState.get_attestation_participants(newState(), attestationData, participation_bitfield);
+    assertThrows(
+        AssertionError.class,
+        () ->
+            BeaconState.get_attestation_participants(
+                newState(), attestationData, participation_bitfield));
   }
 
   @Test
-  public void getAttestationParticipantsReturnsEmptyArrayList() {
+  void getAttestationParticipantsReturnsEmptyArrayList() {
     AttestationData attestationData =
         new AttestationData(
             0,
@@ -260,7 +261,7 @@ public class BeaconStateTest {
   }
 
   @Test
-  public void getAttestationParticipantsSuccessful() {
+  void getAttestationParticipantsSuccessful() {
     BeaconState state = newState();
     ArrayList<ShardCommittee> shard_committee = state.getShard_committees_at_slots().get(64);
     shard_committee.add(
@@ -289,7 +290,7 @@ public class BeaconStateTest {
   }
 
   @Test
-  public void activateValidatorNotPendingActivation() {
+  void activateValidatorNotPendingActivation() {
     BeaconState state = newState();
     int validator_index = 0;
 
@@ -299,7 +300,7 @@ public class BeaconStateTest {
   }
 
   @Test
-  public void activateValidator() {
+  void activateValidator() {
     BeaconState state = newState();
     int validator_index = 0;
 
@@ -318,7 +319,7 @@ public class BeaconStateTest {
   }
 
   @Test
-  public void initiateValidatorExitNotActive() {
+  void initiateValidatorExitNotActive() {
     BeaconState state = newState();
     int validator_index = 0;
 
@@ -328,7 +329,7 @@ public class BeaconStateTest {
   }
 
   @Test
-  public void initiateValidatorExit() {
+  void initiateValidatorExit() {
     BeaconState state = newState();
     int validator_index = 2;
 
@@ -345,7 +346,7 @@ public class BeaconStateTest {
   }
 
   @Test
-  public void exitValidatorPrevStatusExitedWithPenaltyNewStatusExitedWithoutPenalty() {
+  void exitValidatorPrevStatusExitedWithPenaltyNewStatusExitedWithoutPenalty() {
     BeaconState state = newState();
     int validator_index = 4;
 
@@ -355,7 +356,7 @@ public class BeaconStateTest {
   }
 
   @Test
-  public void exitValidatorPrevStatusExitedWithoutPenaltyNewStatusExitedWithoutPenalty() {
+  void exitValidatorPrevStatusExitedWithoutPenaltyNewStatusExitedWithoutPenalty() {
     BeaconState state = newState();
     int validator_index = 3;
 
@@ -372,7 +373,7 @@ public class BeaconStateTest {
   }
 
   @Test
-  public void exitValidatorPrevStatusExitedWithoutPenaltyNewStatusExitedWithPenalty() {
+  void exitValidatorPrevStatusExitedWithoutPenaltyNewStatusExitedWithPenalty() {
     BeaconState state = newState();
     int validator_index = 3;
 
@@ -389,7 +390,7 @@ public class BeaconStateTest {
   }
 
   @Test
-  public void exitValidatorPrevStatusDidNotExitNewStatusExitedWithPenalty() {
+  void exitValidatorPrevStatusDidNotExitNewStatusExitedWithPenalty() {
     BeaconState state = newState();
     int validator_index = 2;
 
@@ -406,7 +407,7 @@ public class BeaconStateTest {
   }
 
   @Test
-  public void exitValidatorPrevStatusDidNotExitNewStatusExitedWithoutPenalty() {
+  void exitValidatorPrevStatusDidNotExitNewStatusExitedWithoutPenalty() {
     BeaconState state = newState();
     int validator_index = 0;
 
@@ -425,7 +426,7 @@ public class BeaconStateTest {
   }
 
   @Test
-  public void deepCopyBeaconState() {
+  void deepCopyBeaconState() {
     BeaconState state = newState();
     BeaconState deepCopy = BeaconState.deepCopy(state);
 
@@ -475,13 +476,15 @@ public class BeaconStateTest {
     return Hash.keccak256(bytes);
   }
 
-  @Test(expected = IllegalArgumentException.class)
-  public void failsWhenInvalidArgumentsBytes3ToInt() {
-    bytes3ToInt(Bytes.wrap(new byte[] {(byte) 0, (byte) 0, (byte) 0}), -1);
+  @Test
+  void failsWhenInvalidArgumentsBytes3ToInt() {
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> bytes3ToInt(Bytes.wrap(new byte[] {(byte) 0, (byte) 0, (byte) 0}), -1));
   }
 
   @Test
-  public void convertBytes3ToInt() {
+  void convertBytes3ToInt() {
     // Smoke Tests
     // Test that MSB [00000001][00000000][11110000] LSB == 65656
     assertThat(bytes3ToInt(Bytes.wrap(new byte[] {(byte) 1, (byte) 0, (byte) 120}), 0))
@@ -508,7 +511,7 @@ public class BeaconStateTest {
   }
 
   @Test
-  public void testShuffle() {
+  void testShuffle() {
     List<Integer> input = Arrays.asList(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
     ArrayList<Integer> sample = new ArrayList<>(input);
 
@@ -518,16 +521,16 @@ public class BeaconStateTest {
     assertThat(actual).isEqualTo(expected);
   }
 
-  @Test(expected = IllegalArgumentException.class)
-  public void failsWhenInvalidArgumentTestSplit() {
+  @Test
+  void failsWhenInvalidArgumentTestSplit() {
     List<Integer> input = Arrays.asList(0, 1, 2, 3, 4, 5, 6, 7);
     ArrayList<Integer> sample = new ArrayList<>(input);
 
-    split(sample, -1);
+    assertThrows(IllegalArgumentException.class, () -> split(sample, -1));
   }
 
   @Test
-  public void splitReturnsOneSmallerSizedSplit() {
+  void splitReturnsOneSmallerSizedSplit() {
     List<Integer> input = Arrays.asList(0, 1, 2, 3, 4, 5, 6, 7);
     ArrayList<Integer> sample = new ArrayList<>(input);
 
@@ -545,7 +548,7 @@ public class BeaconStateTest {
   }
 
   @Test
-  public void splitReturnsTwoSmallerSizedSplits() {
+  void splitReturnsTwoSmallerSizedSplits() {
     List<Integer> input = Arrays.asList(0, 1, 2, 3, 4, 5, 6);
     ArrayList<Integer> sample = new ArrayList<>(input);
 
@@ -563,7 +566,7 @@ public class BeaconStateTest {
   }
 
   @Test
-  public void splitReturnsEquallySizedSplits() {
+  void splitReturnsEquallySizedSplits() {
     List<Integer> input = Arrays.asList(0, 1, 2, 3, 4, 5, 6, 7, 8);
     ArrayList<Integer> sample = new ArrayList<>(input);
 
@@ -581,21 +584,21 @@ public class BeaconStateTest {
   }
 
   @Test
-  public void clampReturnsMinVal() {
+  void clampReturnsMinVal() {
     int actual = clamp(3, 5, 0);
     int expected = 3;
     assertThat(actual).isEqualTo(expected);
   }
 
   @Test
-  public void clampReturnsMaxVal() {
+  void clampReturnsMaxVal() {
     int actual = clamp(3, 5, 6);
     int expected = 5;
     assertThat(actual).isEqualTo(expected);
   }
 
   @Test
-  public void clampReturnsX() {
+  void clampReturnsX() {
     int actual = clamp(3, 5, 4);
     int expected = 4;
     assertThat(actual).isEqualTo(expected);

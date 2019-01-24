@@ -34,7 +34,15 @@ dependencyManagement {
     dependency 'io.vertx:vertx-unit:3.5.4'
     dependency 'io.vertx:vertx-web:3.5.4'
 
-    dependency 'junit:junit:4.12'
+
+    dependencySet(group: 'net.consensys.cava', version: '1.0.0-425F50-snapshot') {
+      entry 'cava-bytes'
+      entry 'cava-crypto'
+      entry 'cava-junit'
+      entry 'cava-ssz'
+      entry 'cava-toml'
+      entry 'cava-units'
+    }
 
     dependency 'org.apache.logging.log4j:log4j-api:2.11.1'
     dependency 'org.apache.logging.log4j:log4j-core:2.11.1'
@@ -46,18 +54,15 @@ dependencyManagement {
 
     dependency 'org.bouncycastle:bcprov-jdk15on:1.60'
 
-    dependencySet(group: 'net.consensys.cava', version: '1.0.0-79E441-snapshot') {
-      entry 'cava-bytes'
-      entry 'cava-crypto'
-      entry 'cava-units'
-      entry 'cava-ssz'
-      entry 'cava-toml'
-    }
 
     dependency 'org.java-websocket:Java-WebSocket:1.3.8'
 
-    dependency 'org.mockito:mockito-core:2.23.4'
-
+    dependencySet(group: 'org.junit.jupiter', version: '5.3.2') {
+      entry 'junit-jupiter-api'
+      entry 'junit-jupiter-engine'
+      entry 'junit-jupiter-params'
+    }
+    
     dependency 'org.openjdk.jmh:jmh-core:1.21'
 
     dependency 'org.rocksdb:rocksdbjni:5.15.10'
