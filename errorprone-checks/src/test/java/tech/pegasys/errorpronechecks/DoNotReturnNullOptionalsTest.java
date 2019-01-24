@@ -14,26 +14,26 @@
 package tech.pegasys.errorpronechecks;
 
 import com.google.errorprone.CompilationTestHelper;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-public class DoNotReturnNullOptionalsTest {
+class DoNotReturnNullOptionalsTest {
 
   private CompilationTestHelper compilationHelper;
 
-  @Before
-  public void setup() {
+  @BeforeEach
+  void setup() {
     compilationHelper =
         CompilationTestHelper.newInstance(DoNotReturnNullOptionals.class, getClass());
   }
 
   @Test
-  public void doNotReturnNullPositiveCases() {
+  void doNotReturnNullPositiveCases() {
     compilationHelper.addSourceFile("DoNotReturnNullOptionalsPositiveCases.java").doTest();
   }
 
   @Test
-  public void doNotReturnNullNegativeCases() {
+  void doNotReturnNullNegativeCases() {
     compilationHelper.addSourceFile("DoNotReturnNullOptionalsNegativeCases.java").doTest();
   }
 }

@@ -13,10 +13,10 @@
 
 package tech.pegasys.artemis.state.util;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static tech.pegasys.artemis.Constants.ACTIVE_PENDING_EXIT;
 import static tech.pegasys.artemis.Constants.EXITED_WITHOUT_PENALTY;
 
@@ -25,37 +25,37 @@ import java.util.Arrays;
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.bytes.Bytes48;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.beaconchainstate.ValidatorRecord;
 import tech.pegasys.artemis.datastructures.beaconchainstate.Validators;
 
-public class ValidatorsUtilTest {
-  public static final double DOUBLE_ASSERTION_DELTA = 0.0d;
-  public static final double DEFAULT_BALANCE = 0.0d;
+class ValidatorsUtilTest {
+  private static final double DOUBLE_ASSERTION_DELTA = 0.0d;
+  private static final double DEFAULT_BALANCE = 0.0d;
   private int validatorSizeExpected = 0;
   private double effectiveBalanceExpected = 0.0d;
   private double balance;
   private Validators validatorRecordTest;
 
-  @Before
-  public void setup() {
+  @BeforeEach
+  void setup() {
     validatorSizeExpected = 0;
     effectiveBalanceExpected = 0.0d;
     balance = 0.0d;
     validatorRecordTest = null;
   }
 
-  @After
-  public void teardown() {
+  @AfterEach
+  void teardown() {
     validatorSizeExpected = 0;
     effectiveBalanceExpected = 0.0d;
     validatorRecordTest = null;
   }
 
   @Test
-  public void assert_get_zero_as_effective_balance_for_nullValidators() {
+  void assert_get_zero_as_effective_balance_for_nullValidators() {
     // when
     double effectiveBalanceActual = ValidatorsUtil.get_effective_balance(null);
 
@@ -64,7 +64,7 @@ public class ValidatorsUtilTest {
   }
 
   @Test
-  public void
+  void
       assert_get_zero_as_effective_balance_for_validators_with_singleValidatorRecord_and_zero_balance() {
     // given
     validatorRecordTest =
@@ -79,7 +79,7 @@ public class ValidatorsUtilTest {
   }
 
   @Test
-  public void
+  void
       assert_get_nonZero_as_effective_balance_for_validators_with_singleValidatorRecord_and_nonZero_balance() {
     // given
     balance = 112.32d;
@@ -95,7 +95,7 @@ public class ValidatorsUtilTest {
   }
 
   @Test
-  public void
+  void
       assert_get_nonZero_value_as_effective_balance_for_validators_with_multipleValidatorRecords() {
     // given
     double validatorRecordBal1 = 112.32d;
@@ -114,7 +114,7 @@ public class ValidatorsUtilTest {
   }
 
   @Test
-  public void assert_get_active_validator_indices() {
+  void assert_get_active_validator_indices() {
     // given
     validatorRecordTest =
         getValidatorsList(
@@ -133,7 +133,7 @@ public class ValidatorsUtilTest {
   }
 
   @Test
-  public void assert_that_inactive_validators_are_excluded_for_get_active_validator_indices() {
+  void assert_that_inactive_validators_are_excluded_for_get_active_validator_indices() {
     // given
     validatorRecordTest =
         getValidatorsList(
@@ -152,7 +152,7 @@ public class ValidatorsUtilTest {
   }
 
   @Test
-  public void assert_get_active_validator_indices_for_all_inactive_validators_scenario() {
+  void assert_get_active_validator_indices_for_all_inactive_validators_scenario() {
     // given
     validatorRecordTest =
         getValidatorsList(
@@ -171,7 +171,7 @@ public class ValidatorsUtilTest {
   }
 
   @Test
-  public void assert_get_active_validator_indices_as_emptyList_for_nullInput() {
+  void assert_get_active_validator_indices_as_emptyList_for_nullInput() {
     // given
     validatorSizeExpected = 0;
 
@@ -183,7 +183,7 @@ public class ValidatorsUtilTest {
     assertEquals(validatorSizeExpected, activeValidatorsActual.size());
   }
 
-  public ValidatorRecord getAValidatorRecordTestDataFromParameters(
+  ValidatorRecord getAValidatorRecordTestDataFromParameters(
       Bytes48 pubkey,
       Bytes32 withdrawalCredentials,
       Bytes32 randaoCommitment,
@@ -210,7 +210,7 @@ public class ValidatorsUtilTest {
     return validatorRecord;
   }
 
-  public ValidatorRecord getDefaultValidatorRecordWithStatus(
+  ValidatorRecord getDefaultValidatorRecordWithStatus(
       int pubKeyInt, int statusAsInt, double balance) {
     Bytes32 withdrawal_credentials = Bytes32.ZERO;
     Bytes32 randaoCommitment = Bytes32.ZERO;
@@ -234,7 +234,7 @@ public class ValidatorsUtilTest {
         balance);
   }
 
-  public Validators getValidatorsList(ValidatorRecord... validatorRecords) {
+  Validators getValidatorsList(ValidatorRecord... validatorRecords) {
     return new Validators(Arrays.asList(validatorRecords));
   }
 }

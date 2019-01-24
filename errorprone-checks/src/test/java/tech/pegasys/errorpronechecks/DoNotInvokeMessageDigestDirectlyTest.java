@@ -14,26 +14,26 @@
 package tech.pegasys.errorpronechecks;
 
 import com.google.errorprone.CompilationTestHelper;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-public class DoNotInvokeMessageDigestDirectlyTest {
+class DoNotInvokeMessageDigestDirectlyTest {
 
   private CompilationTestHelper compilationHelper;
 
-  @Before
-  public void setup() {
+  @BeforeEach
+  void setup() {
     compilationHelper =
         CompilationTestHelper.newInstance(DoNotInvokeMessageDigestDirectly.class, getClass());
   }
 
   @Test
-  public void doNotInvokeMessageDigestDirectlyPositiveCases() {
+  void doNotInvokeMessageDigestDirectlyPositiveCases() {
     compilationHelper.addSourceFile("DoNotInvokeMessageDigestDirectlyPositiveCases.java").doTest();
   }
 
   @Test
-  public void doNotInvokeMessageDigestDirectlyNegativeCases() {
+  void doNotInvokeMessageDigestDirectlyNegativeCases() {
     compilationHelper.addSourceFile("DoNotInvokeMessageDigestDirectlyNegativeCases.java").doTest();
   }
 }
