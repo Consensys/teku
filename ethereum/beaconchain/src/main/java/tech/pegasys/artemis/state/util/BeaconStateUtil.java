@@ -21,13 +21,12 @@ import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
+import net.consensys.cava.crypto.Hash;
 import tech.pegasys.artemis.Constants;
 import tech.pegasys.artemis.datastructures.beaconchainstate.ShardCommittee;
 import tech.pegasys.artemis.datastructures.beaconchainstate.ValidatorRecord;
-
-import net.consensys.cava.bytes.Bytes;
-import net.consensys.cava.crypto.Hash;
 import tech.pegasys.artemis.state.BeaconState;
 
 public class BeaconStateUtil {
@@ -125,6 +124,7 @@ public class BeaconStateUtil {
     return Math.min(
         state.getValidator_balances().get(index).intValue(),
         Constants.MAX_DEPOSIT * Constants.GWEI_PER_ETH);
+  }
   // https://github.com/ethereum/eth2.0-specs/blob/master/specs/core/0_beacon-chain.md#get_block_root
   public static Bytes32 get_block_root(BeaconState state, long slot) throws Exception {
     long slot_upper_bound = slot + state.getLatest_block_roots().size();

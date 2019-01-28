@@ -32,12 +32,10 @@ public class StateTransition {
     try {
       // per-slot processing
       slotProcessor(state, block);
-
       // per-block processing
       if (block != null) {
         blockProcessor(state, block);
       }
-
       // per-epoch processing
       if (state.getSlot() % Constants.EPOCH_LENGTH == 0) {
         epochProcessor(state);
@@ -48,15 +46,13 @@ public class StateTransition {
   }
 
   protected void slotProcessor(BeaconState state, BeaconBlock block) throws Exception {
-    // deep copy beacon state
-    BeaconState newState = BeaconState.deepCopy(state);
-    newState.incrementSlot();
-    logger.info("Processing new slot: " + newState.getSlot());
-    SlotProcessorUtil.updateProposerRandaoLayer(newState);
+    state.incrementSlot();
+    logger.info("Processing new slot: " + state.getSlot());
+    SlotProcessorUtil.updateProposerRandaoLayer(state);
     // Slots the proposer has skipped (i.e. layers of RANDAO expected)
     // should be in ValidatorRecord.randao_skips
-    SlotProcessorUtil.updateLatestRandaoMixes(newState);
-    SlotProcessorUtil.updateRecentBlockHashes(newState, block);
+    SlotProcessorUtil.updateLatestRandaoMixes(state);
+    SlotProcessorUtil.updateRecentBlockHashes(state, block);
   }
 
   protected void blockProcessor(BeaconState state, BeaconBlock block) {
