@@ -50,7 +50,6 @@ import tech.pegasys.artemis.Constants;
 import tech.pegasys.artemis.datastructures.beaconchainoperations.AttestationData;
 import tech.pegasys.artemis.datastructures.beaconchainoperations.Deposit;
 import tech.pegasys.artemis.datastructures.beaconchainoperations.DepositInput;
-import tech.pegasys.artemis.datastructures.beaconchainoperations.LatestBlockRoots;
 import tech.pegasys.artemis.datastructures.beaconchainstate.CandidatePoWReceiptRootRecord;
 import tech.pegasys.artemis.datastructures.beaconchainstate.CrosslinkRecord;
 import tech.pegasys.artemis.datastructures.beaconchainstate.ForkData;
@@ -60,6 +59,7 @@ import tech.pegasys.artemis.datastructures.beaconchainstate.ShardReassignmentRec
 import tech.pegasys.artemis.datastructures.beaconchainstate.ValidatorRecord;
 import tech.pegasys.artemis.datastructures.beaconchainstate.ValidatorRegistryDeltaBlock;
 import tech.pegasys.artemis.datastructures.beaconchainstate.Validators;
+import tech.pegasys.artemis.state.util.BeaconStateUtil;
 import tech.pegasys.artemis.state.util.TreeHashUtil;
 import tech.pegasys.artemis.state.util.ValidatorsUtil;
 
@@ -92,7 +92,7 @@ public class BeaconState {
 
   // Recent state
   private ArrayList<CrosslinkRecord> latest_crosslinks;
-  private LatestBlockRoots latest_block_roots = new LatestBlockRoots();
+  private ArrayList<Bytes32> latest_block_roots = new ArrayList<>();
   private ArrayList<Double> latest_penalized_exit_balances;
   private ArrayList<PendingAttestationRecord> latest_attestations;
   private ArrayList<Bytes32> batched_block_roots = new ArrayList<>();
@@ -140,7 +140,7 @@ public class BeaconState {
       long finalized_slot,
       // Recent state
       ArrayList<CrosslinkRecord> latest_crosslinks,
-      LatestBlockRoots latest_block_roots,
+      ArrayList<Bytes32> latest_block_roots,
       ArrayList<Double> latest_penalized_exit_balances,
       ArrayList<PendingAttestationRecord> latest_attestations,
       ArrayList<Bytes32> batched_block_roots,
@@ -193,7 +193,7 @@ public class BeaconState {
 
     ArrayList<Bytes32> latest_randao_mixes = new ArrayList<>();
     ArrayList<Bytes32> latest_vdf_outputs = new ArrayList<>();
-    LatestBlockRoots latest_block_roots = new LatestBlockRoots();
+    ArrayList<Bytes32> latest_block_roots = new ArrayList<>();
     ArrayList<CrosslinkRecord> latest_crosslinks = new ArrayList<>(SHARD_COUNT);
 
     for (int i = 0; i < SHARD_COUNT; i++) {
@@ -819,15 +819,6 @@ public class BeaconState {
   }
 
   /**
-   * @param values
-   * @return The merkle root.
-   */
-  static Bytes32 merkle_root(LatestBlockRoots values) {
-    // TODO: Implement merkle_root
-    return Bytes32.ZERO;
-  }
-
-  /**
    * Compute the next root in the validator registry delta chain.
    *
    * @param current_validator_registry_delta_chain_tip
@@ -1089,11 +1080,11 @@ public class BeaconState {
     this.latest_crosslinks = latest_crosslinks;
   }
 
-  public LatestBlockRoots getLatest_block_roots() {
+  public ArrayList<Bytes32> getLatest_block_roots() {
     return latest_block_roots;
   }
 
-  public void setLatest_block_roots(LatestBlockRoots latest_block_roots) {
+  public void setLatest_block_roots(ArrayList<Bytes32> latest_block_roots) {
     this.latest_block_roots = latest_block_roots;
   }
 
@@ -1192,6 +1183,6 @@ public class BeaconState {
   }
 
   public void updateBatched_block_roots() {
-    batched_block_roots.add(merkle_root(latest_block_roots));
+    batched_block_roots.add(BeaconStateUtil.merkle_root(latest_block_roots));
   }
 }
