@@ -158,7 +158,7 @@ We use Google's Java coding conventions for the project. To reformat code, run:
 Code style will be checked automatically during a build.
 
 ## Coding Conventions
-We have a set of [coding conventions](CODING-CONVENTIONS.md) to which we try to adhere.  These are not strictly enforced during the build, but should be adhered to and called out in code reviews.
+We have a set of [coding conventions](https://github.com/PegaSysEng/pantheon/blob/master/CODING-CONVENTIONS.md) to which we try to adhere.  These are not strictly enforced during the build, but should be adhered to and called out in code reviews.
 
 ## Git Commit Messages & Pull Request Messages
 * Use the present tense ("Add feature" not "Added feature")
