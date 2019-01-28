@@ -14,7 +14,9 @@
 package tech.pegasys.artemis.datastructures.beaconchainoperations;
 
 import com.google.common.primitives.UnsignedLong;
+import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
+import net.consensys.cava.ssz.SSZ;
 
 public class AttestationData {
 
@@ -44,6 +46,20 @@ public class AttestationData {
     this.last_crosslink_hash = last_crosslink_hash;
     this.justified_slot = justified_slot;
     this.justified_block_hash = justified_block_hash;
+  }
+
+  public Bytes toBytes() {
+    return SSZ.encode(
+        writer -> {
+          writer.writeUInt64(slot);
+          writer.writeUInt64(shard.longValue());
+          writer.writeBytes(beacon_block_hash);
+          writer.writeBytes(epoch_boundary_hash);
+          writer.writeBytes(shard_block_hash);
+          writer.writeBytes(last_crosslink_hash);
+          writer.writeUInt64(justified_slot.longValue());
+          writer.writeBytes(justified_block_hash);
+        });
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */

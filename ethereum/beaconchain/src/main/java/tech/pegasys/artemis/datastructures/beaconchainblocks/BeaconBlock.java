@@ -13,10 +13,12 @@
 
 package tech.pegasys.artemis.datastructures.beaconchainblocks;
 
+import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.bytes.Bytes48;
+import net.consensys.cava.ssz.SSZ;
 
-public class BeaconBlock {
+public final class BeaconBlock {
 
   // Header
   private long slot;
@@ -30,6 +32,19 @@ public class BeaconBlock {
   private BeaconBlockBody body;
 
   public BeaconBlock() {}
+
+  public Bytes toBytes() {
+    return SSZ.encode(
+        writer -> {
+          writer.writeUInt64(slot);
+          writer.writeBytesList(ancestor_hashes);
+          writer.writeBytes(state_root);
+          writer.writeBytes(randao_reveal);
+          writer.writeBytes(candidate_pow_receipt_root);
+          writer.writeBytesList(signature);
+          writer.writeBytes(body.toBytes());
+        });
+  }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */
   public BeaconBlockBody getBody() {

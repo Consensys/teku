@@ -13,7 +13,13 @@
 
 package tech.pegasys.artemis.datastructures.beaconchainoperations;
 
+import net.consensys.cava.bytes.Bytes;
+import net.consensys.cava.ssz.SSZ;
+
 public class ProofOfCustodyResponse {
 
   /** Class to be defined in Phase 1. */
+  public Bytes toBytes() {
+    return SSZ.encode(writer -> {});
+  }
 }

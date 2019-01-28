@@ -15,6 +15,7 @@ package tech.pegasys.artemis;
 
 import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.bytes.Bytes48;
+import com.google.common.primitives.UnsignedLong;
 
 import java.util.Arrays;
 
@@ -28,7 +29,7 @@ public final class Constants {
   public static final int EJECTION_BALANCE                               = (int) Math.pow(2, 4);  // 16 Eth
   public static final int MAX_BALANCE_CHURN_QUOTIENT                     = (int) Math.pow(2, 5);  // 32
   public static final int GWEI_PER_ETH                                   = (int) Math.pow(10, 9); // 1,000,000,000 Wei
-  public static final int BEACON_CHAIN_SHARD_NUMBER                      = (int) Math.pow(2, 64) - 1;
+  public static final UnsignedLong BEACON_CHAIN_SHARD_NUMBER             = UnsignedLong.MAX_VALUE;
   public static final String BLS_WITHDRAWAL_PREFIX_BYTE                  = "0x00";
   public static final int MAX_CASPER_VOTES                               = (int) Math.pow(2, 10); // 1,024 votes
   public static final int LATEST_BLOCK_ROOTS_LENGTH                      = (int) Math.pow(2, 13); // 8,192 block roots
@@ -81,10 +82,10 @@ public final class Constants {
   public static final int EXIT                                           = 1;
 
   // Signature domains
-  public static final int DOMAIN_DEPOSIT                                 = 0;
-  public static final int DOMAIN_ATTESTATION                             = 1;
-  public static final int DOMAIN_PROPOSAL                                = 2;
-  public static final int DOMAIN_EXIT                                    = 3;
+  public static final UnsignedLong DOMAIN_DEPOSIT                                 = UnsignedLong.valueOf(0);
+  public static final UnsignedLong DOMAIN_ATTESTATION                             = UnsignedLong.valueOf(1);
+  public static final UnsignedLong DOMAIN_PROPOSAL                                = UnsignedLong.valueOf(2);
+  public static final UnsignedLong DOMAIN_EXIT                                    = UnsignedLong.valueOf(3);
 
   public static String getConstantsAsString() {
     return "--Misc--"
