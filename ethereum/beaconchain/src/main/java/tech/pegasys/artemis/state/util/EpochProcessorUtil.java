@@ -13,8 +13,15 @@
 
 package tech.pegasys.artemis.state.util;
 
+import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.ListIterator;
+import net.consensys.cava.bytes.Bytes32;
 import tech.pegasys.artemis.Constants;
+import tech.pegasys.artemis.datastructures.beaconchainstate.CrosslinkRecord;
+import tech.pegasys.artemis.datastructures.beaconchainstate.ShardCommittee;
 import tech.pegasys.artemis.datastructures.beaconchainstate.ValidatorRecord;
 import tech.pegasys.artemis.datastructures.beaconchainstate.Validators;
 import tech.pegasys.artemis.state.BeaconState;
@@ -37,8 +44,39 @@ public class EpochProcessorUtil {
       state.setJustification_bitfield(state.getJustification_bitfield() | 1);
       state.setJustified_slot((state.getSlot() - 2) % Constants.EPOCH_LENGTH);
     }
+  }
+
+  public static void updateFinalization(BeaconState state) {
     if (isPrevJustifiedSlotFinalized(state))
       state.setFinalized_slot(state.getPrevious_justified_slot());
+  }
+
+  public static void updateCrosslinks(BeaconState state) throws BlockValidationException {
+    for (long n = (state.getSlot() - 2 * Constants.EPOCH_LENGTH); n < state.getSlot(); n++) {
+      ArrayList<HashMap<Long, ShardCommittee>> crosslink_committees_at_slot =
+          BeaconStateUtil.get_crosslink_committees_at_slot(state, n);
+      for (HashMap<Long, ShardCommittee> crosslink_committees : crosslink_committees_at_slot) {
+        for (Long shard : crosslink_committees.keySet()) {
+          ShardCommittee crosslink_committee = crosslink_committees.get(shard);
+
+          if (3 * AttestationUtil.getTotal_attesting_balance(state)
+              >= 2 * total_balance(crosslink_committee)) {
+            state
+                .getLatest_crosslinks()
+                .set(
+                    Math.toIntExact(shard),
+                    new CrosslinkRecord(
+                        winning_root(crosslink_committee), UnsignedLong.valueOf(state.getSlot())));
+          }
+        }
+      }
+    }
+  }
+
+  public static void finalBookKeeping(BeaconState state) {
+    process_ejections(state);
+    update_validator_registry(state);
+    process_penalties_and_exits(state);
   }
 
   private static boolean isPrevJustifiedSlotFinalized(BeaconState state) {
@@ -51,13 +89,17 @@ public class EpochProcessorUtil {
                 || (state.getJustification_bitfield() % 16) == 15)));
   }
 
-  public static void updateFinalization(BeaconState state) {}
+  private static Bytes32 winning_root(ShardCommittee crosslink_committee) {
+    // todo
+    return null;
+  }
 
-  public static void updateCrosslinks(BeaconState state) {}
+  private static double total_balance(ShardCommittee crosslink_committee) {
+    // todo
+    return 0.0d;
+  }
 
-  public static void finalBookKeeping(BeaconState state) {}
-
-  public static void updateValidatorRegistry(BeaconState state) {
+  public static void update_validator_registry(BeaconState state) {
     Validators active_validators =
         ValidatorsUtil.get_active_validators(state.getValidator_registry());
     double total_balance = ValidatorsUtil.get_effective_balance(active_validators);
@@ -140,5 +182,65 @@ public class EpochProcessorUtil {
       }
     }
     return to_penalize;
+  }
+
+  private static void process_penalties_and_exits(BeaconState state) {
+    Validators active_validators =
+        ValidatorsUtil.get_active_validators(state.getValidator_registry());
+    double total_balance = ValidatorsUtil.get_effective_balance(active_validators);
+    ListIterator<ValidatorRecord> itr =
+        (ListIterator<ValidatorRecord>) active_validators.iterator();
+
+    while (itr.hasNext()) {
+      int index = itr.nextIndex();
+      ValidatorRecord validator = itr.next();
+
+      if (Math.floor(state.getSlot() / Constants.EPOCH_LENGTH)
+          == Math.floor(validator.getPenalized_slot() / Constants.EPOCH_LENGTH)
+              + Math.floor(Constants.LATEST_PENALIZED_EXIT_LENGTH / 2)) {
+        int e =
+            (int) Math.floor(state.getSlot() / Constants.EPOCH_LENGTH)
+                % Constants.LATEST_PENALIZED_EXIT_LENGTH;
+        ;
+        double total_at_start =
+            state
+                .getLatest_penalized_exit_balances()
+                .get((e + 1) % Constants.LATEST_PENALIZED_EXIT_LENGTH);
+        double total_at_end = state.getLatest_penalized_exit_balances().get(e);
+        double total_penalties = total_at_end - total_at_start;
+        double penalty =
+            BeaconStateUtil.get_effective_balance(state, validator)
+                * Math.min(total_penalties * 3, total_balance); // total_balance
+        state
+            .getValidator_balances()
+            .set(index, state.getValidator_balances().get(index) - penalty);
+      }
+    }
+    Validators eligible_validators = new Validators();
+    for (ValidatorRecord validator : active_validators) {
+      if (eligible(state, validator)) eligible_validators.add(validator);
+    }
+    Collections.sort(
+        eligible_validators,
+        (a, b) -> {
+          return a.getExit_count().compareTo(b.getExit_count());
+        });
+
+    int withdrawn_so_far = 0;
+    for (ValidatorRecord validator : eligible_validators) {
+      validator.setStatus(UnsignedLong.valueOf(Constants.WITHDRAWABLE));
+      withdrawn_so_far += 1;
+      if (withdrawn_so_far >= Constants.MAX_WITHDRAWALS_PER_EPOCH) break;
+    }
+  }
+
+  private static boolean eligible(BeaconState state, ValidatorRecord validator) {
+    if (validator.getPenalized_slot() <= state.getSlot()) {
+      long penalized_withdrawal_time =
+          (long) Math.floor(Constants.LATEST_PENALIZED_EXIT_LENGTH * Constants.EPOCH_LENGTH / 2);
+      return state.getSlot() >= validator.getPenalized_slot() + penalized_withdrawal_time;
+    } else
+      return state.getSlot()
+          >= validator.getPenalized_slot() + Constants.MIN_VALIDATOR_WITHDRAWAL_TIME;
   }
 }
