@@ -14,6 +14,8 @@
 package tech.pegasys.artemis.datastructures.beaconchainoperations;
 
 import com.google.common.primitives.UnsignedLong;
+import net.consensys.cava.bytes.Bytes;
+import net.consensys.cava.ssz.SSZ;
 
 public class DepositData {
 
@@ -25,6 +27,15 @@ public class DepositData {
     this.deposit_input = deposit_input;
     this.value = value;
     this.timestamp = timestamp;
+  }
+
+  public Bytes toBytes() {
+    return SSZ.encode(
+        writer -> {
+          writer.writeBytes(deposit_input.toBytes());
+          writer.writeUInt64(value.longValue());
+          writer.writeUInt64(value.longValue());
+        });
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */

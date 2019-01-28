@@ -14,7 +14,9 @@
 package tech.pegasys.artemis.datastructures.beaconchainoperations;
 
 import com.google.common.primitives.UnsignedLong;
+import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
+import net.consensys.cava.ssz.SSZ;
 
 public class Deposit {
 
@@ -27,6 +29,15 @@ public class Deposit {
     this.merkle_branch = merkle_branch;
     this.merkle_tree_index = merkle_tree_index;
     this.deposit_data = deposit_data;
+  }
+
+  public Bytes toBytes() {
+    return SSZ.encode(
+        writer -> {
+          writer.writeBytesList(merkle_branch);
+          writer.writeUInt64(merkle_tree_index.longValue());
+          writer.writeBytes(deposit_data.toBytes());
+        });
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */

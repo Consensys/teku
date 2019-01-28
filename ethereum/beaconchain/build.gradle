@@ -7,6 +7,7 @@ jar {
 }
 
 dependencies {
+  implementation project(':pow')
   implementation project(':util')
 
   implementation 'net.consensys.cava:cava-crypto'
@@ -18,15 +19,6 @@ dependencies {
   implementation 'org.apache.logging.log4j:log4j-api'
   runtime 'org.apache.logging.log4j:log4j-core'
 
-  testImplementation 'org.mockito:mockito-core'
-
-  integrationTestImplementation 'org.assertj:assertj-core'
-  integrationTestImplementation 'org.mockito:mockito-core'
-  integrationTestImplementation 'junit:junit'
-
-  testSupportImplementation 'org.assertj:assertj-core'
-  testSupportImplementation 'org.mockito:mockito-core'
-  testSupportImplementation 'junit:junit'
   test {
     testLogging.showStandardStreams = true
   }

@@ -173,6 +173,13 @@ subprojects {
     maxParallelForks = (System.getenv('GRADLE_MAX_TEST_FORKS') ?: (Runtime.runtime.availableProcessors().intdiv(2) ?: 1)).toInteger()
   }
 
+    test {
+        useJUnitPlatform()
+        reports {
+            junitXml.enabled = true
+        }
+    }
+
   tasks.withType(JavaCompile) {
     options.fork = true
     options.incremental = true
@@ -214,8 +221,12 @@ subprojects {
     testImplementation sourceSets.testSupport.output
     integrationTestImplementation sourceSets.testSupport.output
 
-    testImplementation 'junit:junit'
     testImplementation 'org.assertj:assertj-core'
+    testImplementation 'net.consensys.cava:cava-junit'
+    testImplementation 'org.junit.jupiter:junit-jupiter-api'
+    testImplementation 'org.junit.jupiter:junit-jupiter-params'
+
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
   }
 
   task integrationTest(type: Test, dependsOn:["compileTestJava"]){

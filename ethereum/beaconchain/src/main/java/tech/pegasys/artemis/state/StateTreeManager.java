@@ -23,7 +23,10 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.artemis.datastructures.beaconchainblocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.beaconchainoperations.Attestation;
+import tech.pegasys.artemis.pow.api.ChainStartEvent;
+import tech.pegasys.artemis.pow.api.ValidatorRegistrationEvent;
 
+/** Class to manage the state tree and initiate state transitions */
 public class StateTreeManager {
 
   private final EventBus eventBus;
@@ -44,11 +47,24 @@ public class StateTreeManager {
   }
 
   @Subscribe
+  public void onChainStarted(ChainStartEvent event) {
+    LOG.info("ChainStart Event Detected");
+    // TODO: initial state transition logic
+  }
+
+  @Subscribe
+  public void onValidatorRegistered(ValidatorRegistrationEvent event) {
+    LOG.info("Validator Registration Event detected");
+    // LOG.info("   Validator Number: " + validatorRegisteredEvent.getInfo());
+  }
+
+  @Subscribe
   public void onNewSlot(Date date) {
     LOG.info("****** New Slot at: " + date + " ******");
     Optional<BeaconBlock> block = unprocessedBlocks.stream().findFirst();
     if (block.isPresent()) {
       try {
+        // TODO: get canonical state
         stateTransition.initiate(this.state, block.get());
       } catch (NoSuchElementException e) {
         LOG.warn(e.toString());

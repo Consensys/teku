@@ -18,6 +18,7 @@ import org.apache.logging.log4j.Logger;
 import tech.pegasys.artemis.Constants;
 import tech.pegasys.artemis.datastructures.beaconchainblocks.BeaconBlock;
 import tech.pegasys.artemis.state.util.EpochProcessorUtil;
+import tech.pegasys.artemis.state.util.SlotProcessorUtil;
 
 public class StateTransition {
 
@@ -27,46 +28,45 @@ public class StateTransition {
 
   public void initiate(BeaconState state, BeaconBlock block) {
 
-    // per-slot processing
-    slotProcessor(state);
+    try {
+      // per-slot processing
+      slotProcessor(state, block);
 
-    // per-block processing
-    // TODO: need to check if a new block is produced.
-    // For now, we make a new block each slot
-    if (block != null) {
-      blockProcessor(state, block);
-    }
-
-    // per-epoch processing
-    if (state.getSlot() % Constants.EPOCH_LENGTH == 0) {
-      try {
-        epochProcessor(state);
-      } catch (Exception e) {
-        // e.printStackTrace();
+      // per-block processing
+      if (block != null) {
+        blockProcessor(state, block);
       }
+
+      // per-epoch processing
+      if (state.getSlot() % Constants.EPOCH_LENGTH == 0) {
+        epochProcessor(state);
+      }
+    } catch (Exception e) {
+      // e.printStackTrace();
     }
   }
 
-  protected void slotProcessor(BeaconState state) {
+  protected void slotProcessor(BeaconState state, BeaconBlock block) throws Exception {
     // deep copy beacon state
     BeaconState newState = BeaconState.deepCopy(state);
-    state.incrementSlot();
-    logger.info("Processing new slot: " + state.getSlot());
+    newState.incrementSlot();
+    logger.info("Processing new slot: " + newState.getSlot());
+    SlotProcessorUtil.updateLatestRandaoMixes(newState);
     // Slots the proposer has skipped (i.e. layers of RANDAO expected)
     // should be in ValidatorRecord.randao_skips
-    updateProposerRandaoSkips(newState);
-    updateRecentBlockHashes(newState);
+    SlotProcessorUtil.updateLatestRandaoMixes(newState);
+    SlotProcessorUtil.updateRecentBlockHashes(newState, block);
   }
 
   protected void blockProcessor(BeaconState state, BeaconBlock block) {
     block.setSlot(state.getSlot());
     logger.info("Processing new block in slot: " + block.getSlot());
     // block header
-    verifySignature(state, block);
-    verifyAndUpdateRandao(state, block);
+    // verifySignature(state, block);
+    // verifyAndUpdateRandao(state, block);
 
     // block body operations
-    processAttestations(state, block);
+    // processAttestations(state, block);
   }
 
   protected void epochProcessor(BeaconState state) throws Exception {
@@ -76,16 +76,4 @@ public class StateTransition {
     EpochProcessorUtil.updateCrosslinks(state);
     EpochProcessorUtil.finalBookKeeping(state);
   }
-
-  // slot processing
-  protected void updateProposerRandaoSkips(BeaconState state) {}
-
-  protected void updateRecentBlockHashes(BeaconState state) {}
-
-  // block processing
-  protected void verifySignature(BeaconState state, BeaconBlock block) {}
-
-  protected void verifyAndUpdateRandao(BeaconState state, BeaconBlock block) {}
-
-  protected void processAttestations(BeaconState state, BeaconBlock block) {}
 }

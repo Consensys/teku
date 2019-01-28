@@ -14,7 +14,9 @@
 package tech.pegasys.artemis.datastructures.beaconchainblocks;
 
 import com.google.common.primitives.UnsignedLong;
+import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
+import net.consensys.cava.ssz.SSZ;
 
 public class ProposalSignedData {
 
@@ -26,6 +28,15 @@ public class ProposalSignedData {
     this.slot = slot;
     this.shard = shard;
     this.block_hash = block_hash;
+  }
+
+  public Bytes toBytes() {
+    return SSZ.encode(
+        writer -> {
+          writer.writeUInt64(slot.longValue());
+          writer.writeUInt64(shard.longValue());
+          writer.writeBytes(block_hash);
+        });
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */

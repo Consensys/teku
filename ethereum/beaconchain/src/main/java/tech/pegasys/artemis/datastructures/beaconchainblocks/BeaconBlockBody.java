@@ -13,6 +13,8 @@
 
 package tech.pegasys.artemis.datastructures.beaconchainblocks;
 
+import net.consensys.cava.bytes.Bytes;
+import net.consensys.cava.ssz.SSZ;
 import tech.pegasys.artemis.datastructures.beaconchainoperations.Attestation;
 import tech.pegasys.artemis.datastructures.beaconchainoperations.CasperSlashing;
 import tech.pegasys.artemis.datastructures.beaconchainoperations.Deposit;
@@ -22,16 +24,17 @@ import tech.pegasys.artemis.datastructures.beaconchainoperations.ProofOfCustodyR
 import tech.pegasys.artemis.datastructures.beaconchainoperations.ProofOfCustodySeedChange;
 import tech.pegasys.artemis.datastructures.beaconchainoperations.ProposerSlashing;
 
+/** A Beacon block body */
 public class BeaconBlockBody {
 
   private ProposerSlashing[] proposer_slashings;
   private CasperSlashing[] casper_slashings;
   private Attestation[] attestations;
+  private Deposit[] deposits;
+  private Exit[] exits;
   private ProofOfCustodySeedChange[] poc_seed_changes;
   private ProofOfCustodyChallenge[] poc_challenges;
   private ProofOfCustodyResponse[] poc_responses;
-  private Deposit[] deposits;
-  private Exit[] exits;
 
   public BeaconBlockBody(
       Attestation[] attestations,
@@ -44,6 +47,27 @@ public class BeaconBlockBody {
     this.casper_slashings = casper_slashings;
     this.deposits = deposits;
     this.exits = exits;
+  }
+
+  public Bytes toBytes() {
+    return SSZ.encode(
+        writer -> {
+          for (ProposerSlashing item : proposer_slashings) {
+            writer.writeBytes(item.toBytes());
+          }
+          for (CasperSlashing item : casper_slashings) {
+            writer.writeBytes(item.toBytes());
+          }
+          for (Attestation item : attestations) {
+            writer.writeBytes(item.toBytes());
+          }
+          for (Deposit item : deposits) {
+            writer.writeBytes(item.toBytes());
+          }
+          for (Exit item : exits) {
+            writer.writeBytes(item.toBytes());
+          }
+        });
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */
