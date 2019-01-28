@@ -61,10 +61,12 @@ public class StateTreeManager {
   @Subscribe
   public void onNewSlot(Date date) {
     LOG.info("****** New Slot at: " + date + " ******");
+    // TODO: get canonical state
+    // deep copy beacon state
+    this.state = BeaconState.deepCopy(state);
     Optional<BeaconBlock> block = unprocessedBlocks.stream().findFirst();
     if (block.isPresent()) {
       try {
-        // TODO: get canonical state
         stateTransition.initiate(this.state, block.get());
       } catch (NoSuchElementException e) {
         LOG.warn(e.toString());

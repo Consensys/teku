@@ -21,7 +21,9 @@ import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
+import net.consensys.cava.crypto.Hash;
 import tech.pegasys.artemis.Constants;
 import tech.pegasys.artemis.datastructures.beaconchainstate.ShardCommittee;
 import tech.pegasys.artemis.datastructures.beaconchainstate.ValidatorRecord;
@@ -122,5 +124,30 @@ public class BeaconStateUtil {
     return Math.min(
         state.getValidator_balances().get(index).intValue(),
         Constants.MAX_DEPOSIT * Constants.GWEI_PER_ETH);
+  }
+  // https://github.com/ethereum/eth2.0-specs/blob/master/specs/core/0_beacon-chain.md#get_block_root
+  public static Bytes32 get_block_root(BeaconState state, long slot) throws Exception {
+    long slot_upper_bound = slot + state.getLatest_block_roots().size();
+    if ((state.getSlot() <= slot_upper_bound) || slot < state.getSlot())
+      return state
+          .getLatest_block_roots()
+          .get(toIntExact(slot) % state.getLatest_block_roots().size());
+    throw new BlockValidationException("Desired block root not within the provided bounds");
+  }
+
+  /**
+   * @param values
+   * @return The merkle root.
+   */
+  public static Bytes32 merkle_root(ArrayList<Bytes32> list) {
+    // https://github.com/ethereum/eth2.0-specs/blob/master/specs/core/0_beacon-chain.md#merkle_root
+    Bytes32[] o = new Bytes32[list.size() * 2];
+    for (int i = 0; i < list.size(); i++) {
+      o[i + list.size()] = list.get(i);
+    }
+    for (int i = list.size() - 1; i > 0; i--) {
+      o[i] = Hash.keccak256(Bytes.wrap(o[i * 2], o[i * 2 + 1]));
+    }
+    return o[1];
   }
 }
