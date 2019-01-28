@@ -17,6 +17,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.artemis.Constants;
 import tech.pegasys.artemis.datastructures.beaconchainblocks.BeaconBlock;
+import tech.pegasys.artemis.state.util.BlockProcessorUtil;
 import tech.pegasys.artemis.state.util.EpochProcessorUtil;
 import tech.pegasys.artemis.state.util.SlotProcessorUtil;
 
@@ -51,7 +52,7 @@ public class StateTransition {
     BeaconState newState = BeaconState.deepCopy(state);
     newState.incrementSlot();
     logger.info("Processing new slot: " + newState.getSlot());
-    SlotProcessorUtil.updateLatestRandaoMixes(newState);
+    SlotProcessorUtil.updateProposerRandaoLayer(newState);
     // Slots the proposer has skipped (i.e. layers of RANDAO expected)
     // should be in ValidatorRecord.randao_skips
     SlotProcessorUtil.updateLatestRandaoMixes(newState);
@@ -59,10 +60,9 @@ public class StateTransition {
   }
 
   protected void blockProcessor(BeaconState state, BeaconBlock block) {
-    block.setSlot(state.getSlot());
     logger.info("Processing new block in slot: " + block.getSlot());
     // block header
-    // verifySignature(state, block);
+    BlockProcessorUtil.verify_signature(state, block);
     // verifyAndUpdateRandao(state, block);
 
     // block body operations
