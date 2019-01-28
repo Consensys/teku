@@ -40,6 +40,16 @@ public class ValidatorRecord {
   private UnsignedLong last_poc_change_slot;
   private UnsignedLong second_last_poc_change_slot;
 
+  public long getPenalized_slot() {
+    return penalized_slot;
+  }
+
+  public void setPenalized_slot(long penalized_slot) {
+    this.penalized_slot = penalized_slot;
+  }
+
+  private long penalized_slot;
+
   public ValidatorRecord(
       Bytes48 pubkey,
       Bytes32 withdrawal_credentials,

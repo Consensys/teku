@@ -35,6 +35,7 @@ public final class Constants {
   public static final int LATEST_BLOCK_ROOTS_LENGTH                      = (int) Math.pow(2, 13); // 8,192 block roots
   public static final int LATEST_RANDAO_MIXES_LENGTH                     = (int) Math.pow(2, 13); // 8,192 randao mixes
   public static final Bytes48[] EMPTY_SIGNATURE                          = new Bytes48[]{Bytes48.ZERO, Bytes48.ZERO};
+  public static final int LATEST_PENALIZED_EXIT_LENGTH                   = (int) Math.pow(2, 13); //8,192 epochs
 
   // Deposit contract
   //  static final Address DEPOSIT_CONTRACT_ADDRESS               =  Value is still TBD
@@ -86,6 +87,9 @@ public final class Constants {
   public static final UnsignedLong DOMAIN_ATTESTATION                             = UnsignedLong.valueOf(1);
   public static final UnsignedLong DOMAIN_PROPOSAL                                = UnsignedLong.valueOf(2);
   public static final UnsignedLong DOMAIN_EXIT                                    = UnsignedLong.valueOf(3);
+  public static final int MIN_VALIDATOR_WITHDRAWAL_TIME                  = (int) Math.pow(2, 14);  // 16,384 slots ~27 hours
+  public static final int WITHDRAWABLE                                   = 2;
+  public static final int MAX_WITHDRAWALS_PER_EPOCH                      = 4;
 
   public static String getConstantsAsString() {
     return "--Misc--"
