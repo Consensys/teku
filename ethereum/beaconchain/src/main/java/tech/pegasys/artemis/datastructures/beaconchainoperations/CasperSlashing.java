@@ -13,6 +13,9 @@
 
 package tech.pegasys.artemis.datastructures.beaconchainoperations;
 
+import net.consensys.cava.bytes.Bytes;
+import net.consensys.cava.ssz.SSZ;
+
 public class CasperSlashing {
 
   private SlashableVoteData votes_1;
@@ -21,6 +24,14 @@ public class CasperSlashing {
   public CasperSlashing(SlashableVoteData votes_1, SlashableVoteData votes_2) {
     this.votes_1 = votes_1;
     this.votes_2 = votes_2;
+  }
+
+  public Bytes toBytes() {
+    return SSZ.encode(
+        writer -> {
+          writer.writeBytes(votes_1.toBytes());
+          writer.writeBytes(votes_2.toBytes());
+        });
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */

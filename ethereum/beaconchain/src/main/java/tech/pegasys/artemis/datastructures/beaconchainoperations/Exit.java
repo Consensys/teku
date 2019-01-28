@@ -14,7 +14,9 @@
 package tech.pegasys.artemis.datastructures.beaconchainoperations;
 
 import com.google.common.primitives.UnsignedLong;
+import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes48;
+import net.consensys.cava.ssz.SSZ;
 
 public class Exit {
 
@@ -26,6 +28,15 @@ public class Exit {
     this.slot = slot;
     this.validator_index = validator_index;
     this.signature = signature;
+  }
+
+  public Bytes toBytes() {
+    return SSZ.encode(
+        writer -> {
+          writer.writeUInt64(slot.longValue());
+          writer.writeUInt64(validator_index.longValue());
+          writer.writeBytesList(signature);
+        });
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */

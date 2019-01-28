@@ -13,7 +13,9 @@
 
 package tech.pegasys.artemis.datastructures.beaconchainoperations;
 
+import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes48;
+import net.consensys.cava.ssz.SSZ;
 import tech.pegasys.artemis.datastructures.beaconchainblocks.ProposalSignedData;
 
 public class ProposerSlashing {
@@ -35,6 +37,17 @@ public class ProposerSlashing {
     this.proposal_signature_1 = proposal_signature_1;
     this.proposal_data_2 = proposal_data_2;
     this.proposal_signature_2 = proposal_signature_2;
+  }
+
+  public Bytes toBytes() {
+    return SSZ.encode(
+        writer -> {
+          writer.writeInt(proposer_index, 24);
+          writer.writeBytes(proposal_data_1.toBytes());
+          writer.writeBytesList(proposal_signature_1);
+          writer.writeBytes(proposal_data_2.toBytes());
+          writer.writeBytesList(proposal_signature_2);
+        });
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */

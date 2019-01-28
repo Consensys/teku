@@ -495,8 +495,8 @@ public class BeaconState {
    * @param domain_type
    * @return
    */
-  private int get_domain(ForkData fork_data, int slot, int domain_type) {
-    return get_fork_version(fork_data, slot) * (int) Math.pow(2, 32) + domain_type;
+  private int get_domain(ForkData fork_data, int slot, UnsignedLong domain_type) {
+    return get_fork_version(fork_data, slot) * (int) Math.pow(2, 32) + domain_type.intValue();
   }
 
   /**
