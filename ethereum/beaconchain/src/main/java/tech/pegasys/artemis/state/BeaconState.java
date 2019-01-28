@@ -332,7 +332,8 @@ public class BeaconState {
    * @param validators
    * @return
    */
-  private ArrayList<Integer> get_active_validator_indices(ArrayList<ValidatorRecord> validators) {
+  public static ArrayList<Integer> get_active_validator_indices(
+      ArrayList<ValidatorRecord> validators) {
     ArrayList<Integer> active_validators = new ArrayList<>();
     for (int i = 0; i < validators.size(); i++) {
       if (isActiveValidator(validators.get(i))) {
@@ -348,7 +349,7 @@ public class BeaconState {
    * @param validator The validator.
    * @return True if the validator is active; false if not.
    */
-  private boolean isActiveValidator(ValidatorRecord validator) {
+  private static boolean isActiveValidator(ValidatorRecord validator) {
     return validator.getStatus().equals(UnsignedLong.valueOf(ACTIVE))
         || validator.getStatus().equals(UnsignedLong.valueOf(ACTIVE_PENDING_EXIT));
   }
@@ -863,6 +864,16 @@ public class BeaconState {
     return Math.min(
         state.validator_balances.get(index).intValue(),
         Constants.MAX_DEPOSIT * Constants.GWEI_PER_ETH);
+  }
+
+  public Bytes32 getPrevious_epoch_randao_mix() {
+    // todo
+    return null;
+  }
+
+  public int getPrevious_epoch_calculation_slot() {
+    // todo
+    return 0;
   }
 
   static class BeaconStateHelperFunctions {
