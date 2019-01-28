@@ -13,7 +13,6 @@
 
 package tech.pegasys.artemis.state.util;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.HashMap;
 import net.consensys.cava.bytes.Bytes32;
@@ -69,7 +68,9 @@ public class AttestationUtil {
         if (record
                 .getData()
                 .getEpoch_boundary_hash()
-                .equals(get_block_root(state, record.getData().getSlot() - Constants.EPOCH_LENGTH))
+                .equals(
+                    BeaconStateUtil.get_block_root(
+                        state, record.getData().getSlot() - Constants.EPOCH_LENGTH))
             && record.getData().getJustified_slot().longValue() == state.getJustified_slot())
           current_epoch_attestations.add(record);
       }
@@ -86,16 +87,6 @@ public class AttestationUtil {
   public static double get_current_epoch_boundary_attesting_balance(BeaconState state) {
     // todo
     return 0.0d;
-  }
-
-  // https://github.com/ethereum/eth2.0-specs/blob/master/specs/core/0_beacon-chain.md#get_block_root
-  public static Bytes32 get_block_root(BeaconState state, long slot) throws Exception {
-    long slot_upper_bound = slot + state.getLatest_block_roots().size();
-    if ((state.getSlot() <= slot_upper_bound) || slot < state.getSlot())
-      return state
-          .getLatest_block_roots()
-          .get(UnsignedLong.valueOf(slot % state.getLatest_block_roots().size()));
-    throw new BlockValidationException("Desired block root not within the provided bounds");
   }
 
   public static Validators get_attestation_participants(

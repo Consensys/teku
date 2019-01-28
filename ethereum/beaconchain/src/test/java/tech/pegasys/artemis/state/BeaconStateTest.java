@@ -41,7 +41,6 @@ import net.consensys.cava.junit.BouncyCastleExtension;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import tech.pegasys.artemis.datastructures.beaconchainoperations.AttestationData;
-import tech.pegasys.artemis.datastructures.beaconchainoperations.LatestBlockRoots;
 import tech.pegasys.artemis.datastructures.beaconchainstate.ForkData;
 import tech.pegasys.artemis.datastructures.beaconchainstate.ShardCommittee;
 import tech.pegasys.artemis.datastructures.beaconchainstate.ValidatorRecord;
@@ -72,7 +71,7 @@ class BeaconStateTest {
             0,
             0,
             new ArrayList<>(),
-            new LatestBlockRoots(),
+            new ArrayList<>(),
             new ArrayList<>(),
             new ArrayList<>(),
             new ArrayList<>(),
