@@ -870,10 +870,10 @@ public class BeaconState {
   static class BeaconStateHelperFunctions {
 
     /**
-     * Converts byte[] (wrapped by BytesValue) to int.
+     * Converts Bytes to int.
      *
-     * @param src byte[] (wrapped by BytesValue)
-     * @param pos Index in Byte[] array
+     * @param src Bytes
+     * @param pos Index in Bytes
      * @return converted int
      * @throws IllegalArgumentException if pos is a negative value.
      */
