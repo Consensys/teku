@@ -125,6 +125,7 @@ public class BeaconStateUtil {
         state.getValidator_balances().get(index).intValue(),
         Constants.MAX_DEPOSIT * Constants.GWEI_PER_ETH);
   }
+
   // https://github.com/ethereum/eth2.0-specs/blob/master/specs/core/0_beacon-chain.md#get_block_root
   public static Bytes32 get_block_root(BeaconState state, long slot) throws Exception {
     long slot_upper_bound = slot + state.getLatest_block_roots().size();
@@ -135,7 +136,7 @@ public class BeaconStateUtil {
     throw new BlockValidationException("Desired block root not within the provided bounds");
   }
 
-  /**
+  /*
    * @param values
    * @return The merkle root.
    */
