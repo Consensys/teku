@@ -8,7 +8,8 @@ jar {
 
 dependencies {
 
-  implementation project(':ethereum:beaconchain')
+  implementation project(':ethereum:statetransition')
+  implementation project(':ethereum:datastructures')
   implementation project(':services')
   implementation project(':services:powchain')
   implementation project(':pow')
