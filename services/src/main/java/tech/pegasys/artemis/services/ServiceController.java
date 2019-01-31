@@ -17,7 +17,7 @@ import com.google.common.eventbus.AsyncEventBus;
 import com.google.common.eventbus.EventBus;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import tech.pegasys.artemis.cli.CommandLineArguments;
+import tech.pegasys.artemis.util.cli.CommandLineArguments;
 
 public class ServiceController {
 
