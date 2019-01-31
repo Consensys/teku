@@ -11,4 +11,5 @@ include 'artemis'
 include 'util'
 include 'errorprone-checks'
 include 'pow'
+include 'storage'
 

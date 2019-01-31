@@ -11,35 +11,31 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.services.chainstorage;
+package tech.pegasys.artemis.storage;
 
 import com.google.common.eventbus.EventBus;
+import com.google.common.eventbus.Subscribe;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import tech.pegasys.artemis.services.ServiceInterface;
-import tech.pegasys.artemis.storage.ChainStorage;
+import tech.pegasys.artemis.datastructures.beaconchainblocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.beaconchainoperations.Attestation;
 
-public class ChainStorageService implements ServiceInterface {
-  private EventBus eventBus;
-  private ChainStorage chainStore;
+public class ChainStorage {
+  private final EventBus eventBus;
   private static final Logger LOG = LogManager.getLogger();
 
-  public ChainStorageService() {}
-
-  @Override
-  public void init(EventBus eventBus) {
+  public ChainStorage(EventBus eventBus) {
     this.eventBus = eventBus;
-    this.chainStore = new ChainStorage(this.eventBus);
     this.eventBus.register(this);
   }
 
-  @Override
-  public void run() {
-    // TODO Still do something...maybe
+  @Subscribe
+  public void onNewBlock(BeaconBlock block) {
+    LOG.info("ChainStore - New Beacon Block Event detected");
   }
 
-  @Override
-  public void stop() {
-    this.eventBus.unregister(this);
+  @Subscribe
+  public void onNewAttestation(Attestation attestation) {
+    LOG.info("ChainStore - New Attestation Event detected");
   }
 }
