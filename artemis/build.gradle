@@ -9,11 +9,11 @@ jar {
 dependencies {
   implementation project(':networking:p2p')
   implementation project(':services')
-  implementation project(':services:beaconchain')
   implementation project(':services:powchain')
   implementation project(':services:beaconnode')
+  implementation project(':services:beaconchain')
   implementation project(':services:chainstorage')
-  implementation project(':ethereum:beaconchain')
+  implementation project(':util')
   
   api 'com.google.guava:guava:27.0.1-jre'
   implementation 'info.picocli:picocli'
@@ -28,7 +28,6 @@ dependencies {
 
   testImplementation 'com.squareup.okhttp3:okhttp'
   testImplementation 'org.awaitility:awaitility'
-  testImplementation 'org.mockito:mockito-core'
 
   test {
     testLogging.showStandardStreams = true

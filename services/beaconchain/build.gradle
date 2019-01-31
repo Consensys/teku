@@ -8,7 +8,8 @@ jar {
 
 dependencies {
 
-  implementation project(':ethereum:beaconchain')
+  implementation project(':ethereum:statetransition')
+  implementation project(':ethereum:datastructures')
   implementation project(':services')
   implementation project(':services:powchain')
   implementation project(':pow')
@@ -18,15 +19,7 @@ dependencies {
   implementation 'org.apache.logging.log4j:log4j-api'
   runtime 'org.apache.logging.log4j:log4j-core'
 
-  testImplementation 'org.mockito:mockito-core'
-
-  integrationTestImplementation 'org.assertj:assertj-core'
-  integrationTestImplementation 'org.mockito:mockito-core'
-  integrationTestImplementation 'junit:junit'
-
-  testSupportImplementation 'org.assertj:assertj-core'
-  testSupportImplementation 'org.mockito:mockito-core'
-  testSupportImplementation 'junit:junit'
+  testSupportImplementation 'io.vertx:vertx-core'
 }
 
 configurations { testArtifacts }
