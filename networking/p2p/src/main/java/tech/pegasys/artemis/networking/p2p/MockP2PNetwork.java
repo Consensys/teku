@@ -16,6 +16,7 @@ package tech.pegasys.artemis.networking.p2p;
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Random;
 import java.util.concurrent.CompletableFuture;
 import net.consensys.cava.bytes.Bytes32;
@@ -110,7 +111,8 @@ public class MockP2PNetwork implements P2PNetwork {
                   Bytes32.ZERO,
                   UnsignedLong.ZERO,
                   Bytes32.ZERO);
-          Attestation attestation = new Attestation(data, Bytes32.ZERO, Bytes32.ZERO, null);
+          Attestation attestation =
+              new Attestation(data, Bytes32.ZERO, Bytes32.ZERO, Collections.emptyList());
           this.eventBus.post(attestation);
         }
       }

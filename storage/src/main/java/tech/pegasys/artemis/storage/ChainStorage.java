@@ -15,6 +15,8 @@ package tech.pegasys.artemis.storage;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
+import java.nio.charset.Charset;
+import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.kv.MapKeyValueStore;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -44,6 +46,7 @@ public class ChainStorage {
   @Subscribe
   public void onNewAttestation(Attestation attestation) {
     LOG.info("ChainStore - New Attestation Event detected");
-    /*unprocessedStore.putAsync(Bytes.wrap(attestaionKey.getBytes(Charset.defaultCharset())), attestation.toBytes());*/
+    unprocessedStore.putAsync(
+        Bytes.wrap(attestaionKey.getBytes(Charset.defaultCharset())), attestation.toBytes());
   }
 }

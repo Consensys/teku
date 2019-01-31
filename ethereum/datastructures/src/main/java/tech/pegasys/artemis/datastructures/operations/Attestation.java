@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.datastructures.operations;
 
+import java.util.List;
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.bytes.Bytes48;
@@ -23,13 +24,13 @@ public class Attestation {
   private AttestationData data;
   private Bytes32 participation_bitfield;
   private Bytes32 custody_bitfield;
-  private Bytes48[] aggregate_signature;
+  private List<Bytes48> aggregate_signature;
 
   public Attestation(
       AttestationData data,
       Bytes32 participation_bitfield,
       Bytes32 custody_bitfield,
-      Bytes48[] aggregate_signature) {
+      List<Bytes48> aggregate_signature) {
     this.data = data;
     this.participation_bitfield = participation_bitfield;
     this.custody_bitfield = custody_bitfield;
@@ -42,7 +43,7 @@ public class Attestation {
           writer.writeBytes(data.toBytes());
           writer.writeBytes(participation_bitfield);
           writer.writeBytes(custody_bitfield);
-          writer.writeBytesList(aggregate_signature);
+          writer.writeBytesList(aggregate_signature.toArray(new Bytes48[0]));
         });
   }
 
@@ -71,11 +72,11 @@ public class Attestation {
     this.custody_bitfield = custody_bitfield;
   }
 
-  public Bytes48[] getAggregate_signature() {
+  public List<Bytes48> getAggregate_signature() {
     return aggregate_signature;
   }
 
-  public void setAggregate_signature(Bytes48[] aggregate_signature) {
+  public void setAggregate_signature(List<Bytes48> aggregate_signature) {
     this.aggregate_signature = aggregate_signature;
   }
 }
