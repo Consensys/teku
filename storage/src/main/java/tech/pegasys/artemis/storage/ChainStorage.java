@@ -17,8 +17,8 @@ import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import tech.pegasys.artemis.datastructures.beaconchainblocks.BeaconBlock;
-import tech.pegasys.artemis.datastructures.beaconchainoperations.Attestation;
+import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.operations.Attestation;
 
 public class ChainStorage {
   private final EventBus eventBus;
