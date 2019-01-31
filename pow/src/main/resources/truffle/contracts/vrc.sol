@@ -1,4 +1,5 @@
 pragma solidity ^0.5.0;
+pragma experimental ABIEncoderV2;
 
 contract VRC {
 
@@ -15,18 +16,16 @@ contract VRC {
     uint256 DEPOSIT_SIZE = 32 * WEI_PER_ETH;
     uint256 MIN_TOPUP_SIZE = 1 * WEI_PER_ETH;
     //10**9
-
     uint256 POW_CONTRACT_MERKLE_TREE_DEPTH = 32;
-    uint256 SECONDS_PER_DAY = 86400;
 
     event Eth1Deposit(bytes32 previous_receipt_root, bytes[2064] data, uint256 deposit_count);
     event ChainStart(bytes32 receipt_root, bytes[8] time);
 
-    bytes32[uint256] receipt_tree;
+    mapping(uint256 => bytes32) receipt_tree;
     uint256 deposit_count;
     uint256 full_deposit_count;
 
-    function deposit(bytes[2048] deposit_parameters) public payable {
+    function deposit(bytes[2048] memory deposit_parameters) public payable {
 
     }
 
