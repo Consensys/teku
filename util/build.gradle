@@ -1,5 +1,5 @@
 jar {
-  baseName 'beaconchain-util'
+  baseName 'artemis-util'
   manifest {
     attributes('Implementation-Title': baseName,
     'Implementation-Version': project.version)
@@ -9,6 +9,7 @@ jar {
 dependencies {
   api 'org.bouncycastle:bcprov-jdk15on'
 
+  implementation 'info.picocli:picocli'
   implementation 'com.google.guava:guava'
   implementation 'net.consensys.cava:cava-bytes'
 }
