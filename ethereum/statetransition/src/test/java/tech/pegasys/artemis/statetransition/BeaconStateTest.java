@@ -22,10 +22,10 @@ import static tech.pegasys.artemis.datastructures.Constants.EMPTY_SIGNATURE;
 import static tech.pegasys.artemis.datastructures.Constants.EXITED_WITHOUT_PENALTY;
 import static tech.pegasys.artemis.datastructures.Constants.EXITED_WITH_PENALTY;
 import static tech.pegasys.artemis.datastructures.Constants.PENDING_ACTIVATION;
-import static tech.pegasys.artemis.statetransition.BeaconState.BeaconStateHelperFunctions.bytes3ToInt;
-import static tech.pegasys.artemis.statetransition.BeaconState.BeaconStateHelperFunctions.clamp;
-import static tech.pegasys.artemis.statetransition.BeaconState.BeaconStateHelperFunctions.shuffle;
-import static tech.pegasys.artemis.statetransition.BeaconState.BeaconStateHelperFunctions.split;
+import static tech.pegasys.artemis.statetransition.util.BeaconStateUtil.bytes3ToInt;
+import static tech.pegasys.artemis.statetransition.util.BeaconStateUtil.clamp;
+import static tech.pegasys.artemis.statetransition.util.BeaconStateUtil.shuffle;
+import static tech.pegasys.artemis.statetransition.util.BeaconStateUtil.split;
 
 import com.google.common.primitives.UnsignedLong;
 import com.google.gson.Gson;
