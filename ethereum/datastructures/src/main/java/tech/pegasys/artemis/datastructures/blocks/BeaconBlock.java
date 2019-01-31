@@ -31,7 +31,22 @@ public final class BeaconBlock {
   // Body
   private BeaconBlockBody body;
 
-  public BeaconBlock() {}
+  public BeaconBlock(
+      long slot,
+      Bytes32[] ancestor_hashes,
+      Bytes32 state_root,
+      Bytes32 randao_reveal,
+      Bytes32 candidate_pow_receipt_root,
+      Bytes48[] signature,
+      BeaconBlockBody body) {
+    this.slot = slot;
+    this.ancestor_hashes = ancestor_hashes;
+    this.state_root = state_root;
+    this.randao_reveal = randao_reveal;
+    this.candidate_pow_receipt_root = candidate_pow_receipt_root;
+    this.signature = signature;
+    this.body = body;
+  }
 
   public Bytes toBytes() {
     return SSZ.encode(
