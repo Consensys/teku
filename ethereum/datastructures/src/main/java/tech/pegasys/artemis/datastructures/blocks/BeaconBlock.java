@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.datastructures.blocks;
 
+import java.util.List;
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.bytes.Bytes48;
@@ -22,22 +23,22 @@ public final class BeaconBlock {
 
   // Header
   private long slot;
-  private Bytes32[] ancestor_hashes;
+  private List<Bytes32> ancestor_hashes;
   private Bytes32 state_root;
   private Bytes32 randao_reveal;
   private Bytes32 candidate_pow_receipt_root;
-  private Bytes48[] signature;
+  private List<Bytes48> signature;
 
   // Body
   private BeaconBlockBody body;
 
   public BeaconBlock(
       long slot,
-      Bytes32[] ancestor_hashes,
+      List<Bytes32> ancestor_hashes,
       Bytes32 state_root,
       Bytes32 randao_reveal,
       Bytes32 candidate_pow_receipt_root,
-      Bytes48[] signature,
+      List<Bytes48> signature,
       BeaconBlockBody body) {
     this.slot = slot;
     this.ancestor_hashes = ancestor_hashes;
@@ -52,11 +53,11 @@ public final class BeaconBlock {
     return SSZ.encode(
         writer -> {
           writer.writeUInt64(slot);
-          writer.writeBytesList(ancestor_hashes);
+          writer.writeBytesList(ancestor_hashes.toArray(new Bytes32[0]));
           writer.writeBytes(state_root);
           writer.writeBytes(randao_reveal);
           writer.writeBytes(candidate_pow_receipt_root);
-          writer.writeBytesList(signature);
+          writer.writeBytesList(signature.toArray(new Bytes48[0]));
           writer.writeBytes(body.toBytes());
         });
   }
@@ -70,11 +71,11 @@ public final class BeaconBlock {
     this.body = body;
   }
 
-  public Bytes48[] getSignature() {
+  public List<Bytes48> getSignature() {
     return signature;
   }
 
-  public void setSignature(Bytes48[] signature) {
+  public void setSignature(List<Bytes48> signature) {
     this.signature = signature;
   }
 
@@ -102,11 +103,11 @@ public final class BeaconBlock {
     this.state_root = state_root;
   }
 
-  public Bytes32[] getAncestor_hashes() {
+  public List<Bytes32> getAncestor_hashes() {
     return ancestor_hashes;
   }
 
-  public void setAncestor_hashes(Bytes32[] ancestor_hashes) {
+  public void setAncestor_hashes(List<Bytes32> ancestor_hashes) {
     this.ancestor_hashes = ancestor_hashes;
   }
 

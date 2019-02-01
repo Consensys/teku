@@ -15,6 +15,7 @@ package tech.pegasys.artemis.datastructures;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.Arrays;
+import java.util.List;
 import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.bytes.Bytes48;
 
@@ -33,7 +34,7 @@ public final class Constants {
   public static final int MAX_CASPER_VOTES = (int) Math.pow(2, 10); // 1,024 votes
   public static final int LATEST_BLOCK_ROOTS_LENGTH = (int) Math.pow(2, 13); // 8,192 block roots
   public static final int LATEST_RANDAO_MIXES_LENGTH = (int) Math.pow(2, 13); // 8,192 randao mixes
-  public static final Bytes48[] EMPTY_SIGNATURE = new Bytes48[] {Bytes48.ZERO, Bytes48.ZERO};
+  public static final List<Bytes48> EMPTY_SIGNATURE = Arrays.asList(Bytes48.ZERO, Bytes48.ZERO);
   public static final int LATEST_PENALIZED_EXIT_LENGTH = (int) Math.pow(2, 13); // 8,192 epochs
 
   // Deposit contract
@@ -115,7 +116,7 @@ public final class Constants {
         + "\nLATEST_RANDAO_MIXES_LENGTH: "
         + LATEST_RANDAO_MIXES_LENGTH
         + "\nEMPTY_SIGNATURE: "
-        + Arrays.toString(EMPTY_SIGNATURE)
+        + EMPTY_SIGNATURE
         + "\n\n--Deposit contract--"
         //      + "\nDEPOSIT_CONTRACT_ADDRESS: " + DEPOSIT_CONTRACT_ADDRESS
         + "\nDEPOSIT_CONTRACT_TREE_DEPTH: "

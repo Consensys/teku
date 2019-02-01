@@ -20,7 +20,6 @@ import java.util.Collections;
 import java.util.Random;
 import java.util.concurrent.CompletableFuture;
 import net.consensys.cava.bytes.Bytes32;
-import net.consensys.cava.bytes.Bytes48;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
@@ -101,11 +100,11 @@ public class MockP2PNetwork implements P2PNetwork {
           BeaconBlock block =
               new BeaconBlock(
                   n,
-                  new Bytes32[] {Bytes32.ZERO},
+                  Collections.emptyList(),
                   Bytes32.ZERO,
                   Bytes32.ZERO,
                   Bytes32.ZERO,
-                  new Bytes48[] {Bytes48.ZERO},
+                  Collections.emptyList(),
                   null);
           this.eventBus.post(block);
         } else {
