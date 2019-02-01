@@ -27,10 +27,9 @@ import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
 
 /** A Beacon block body */
 public class BeaconBlockBody {
-
+  private List<Attestation> attestations;
   private List<ProposerSlashing> proposer_slashings;
   private List<CasperSlashing> casper_slashings;
-  private List<Attestation> attestations;
   private List<Deposit> deposits;
   private List<Exit> exits;
   private ProofOfCustodySeedChange[] poc_seed_changes;

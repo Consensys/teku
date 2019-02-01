@@ -23,6 +23,7 @@ import net.consensys.cava.bytes.Bytes32;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.blocks.BeaconBlockBody;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
 import tech.pegasys.artemis.networking.p2p.api.P2PNetwork;
@@ -97,34 +98,53 @@ public class MockP2PNetwork implements P2PNetwork {
         long n = 1000L * Integer.toUnsignedLong(random.nextInt(7) + 2);
         Thread.sleep(n);
         if (n % 3 == 0) {
-          BeaconBlock block =
-              new BeaconBlock(
-                  n,
-                  Collections.emptyList(),
-                  Bytes32.ZERO,
-                  Bytes32.ZERO,
-                  Bytes32.ZERO,
-                  Collections.emptyList(),
-                  null);
+          BeaconBlock block = createEmptyBeaconBlock(n);
           this.eventBus.post(block);
         } else {
-          AttestationData data =
-              new AttestationData(
-                  n,
-                  UnsignedLong.ZERO,
-                  Bytes32.ZERO,
-                  Bytes32.ZERO,
-                  Bytes32.ZERO,
-                  Bytes32.ZERO,
-                  UnsignedLong.ZERO,
-                  Bytes32.ZERO);
-          Attestation attestation =
-              new Attestation(data, Bytes32.ZERO, Bytes32.ZERO, Collections.emptyList());
+          Attestation attestation = createEmptyAttestation(n);
           this.eventBus.post(attestation);
         }
       }
     } catch (InterruptedException e) {
       LOG.warn(e.toString());
     }
+  }
+
+  // TODO: These helper methods below almost certianly belong somewhere else.
+  private Attestation createEmptyAttestation(long slotNum) {
+    return new Attestation(
+        createEmptyAttestationData(slotNum), Bytes32.ZERO, Bytes32.ZERO, Collections.emptyList());
+  }
+
+  private AttestationData createEmptyAttestationData(long slotNum) {
+    return new AttestationData(
+        slotNum,
+        UnsignedLong.ZERO,
+        Bytes32.ZERO,
+        Bytes32.ZERO,
+        Bytes32.ZERO,
+        Bytes32.ZERO,
+        UnsignedLong.ZERO,
+        Bytes32.ZERO);
+  }
+
+  private BeaconBlock createEmptyBeaconBlock(long slotNum) {
+    return new BeaconBlock(
+        slotNum,
+        Collections.emptyList(),
+        Bytes32.ZERO,
+        Bytes32.ZERO,
+        Bytes32.ZERO,
+        Collections.emptyList(),
+        createEmptyBeaconBlockBody());
+  }
+
+  private BeaconBlockBody createEmptyBeaconBlockBody() {
+    return new BeaconBlockBody(
+        Collections.emptyList(),
+        Collections.emptyList(),
+        Collections.emptyList(),
+        Collections.emptyList(),
+        Collections.emptyList());
   }
 }

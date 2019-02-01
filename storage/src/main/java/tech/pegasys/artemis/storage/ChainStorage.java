@@ -40,7 +40,8 @@ public class ChainStorage {
   @Subscribe
   public void onNewBlock(BeaconBlock block) {
     LOG.info("ChainStore - New Beacon Block Event detected");
-    /*unprocessedStore.putAsync(Bytes.wrap(blockKey.getBytes(Charset.defaultCharset())), null);*/
+    unprocessedStore.putAsync(
+        Bytes.wrap(blockKey.getBytes(Charset.defaultCharset())), block.toBytes());
   }
 
   @Subscribe
