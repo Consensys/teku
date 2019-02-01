@@ -14,6 +14,7 @@
 package tech.pegasys.artemis.datastructures.operations;
 
 import com.google.common.primitives.UnsignedLong;
+import java.util.List;
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes48;
 import net.consensys.cava.ssz.SSZ;
@@ -22,9 +23,9 @@ public class Exit {
 
   private UnsignedLong slot;
   private UnsignedLong validator_index;
-  private Bytes48[] signature;
+  private List<Bytes48> signature;
 
-  public Exit(UnsignedLong slot, UnsignedLong validator_index, Bytes48[] signature) {
+  public Exit(UnsignedLong slot, UnsignedLong validator_index, List<Bytes48> signature) {
     this.slot = slot;
     this.validator_index = validator_index;
     this.signature = signature;
@@ -35,7 +36,7 @@ public class Exit {
         writer -> {
           writer.writeUInt64(slot.longValue());
           writer.writeUInt64(validator_index.longValue());
-          writer.writeBytesList(signature);
+          writer.writeBytesList(signature.toArray(new Bytes48[0]));
         });
   }
 
@@ -56,11 +57,11 @@ public class Exit {
     this.validator_index = validator_index;
   }
 
-  public Bytes48[] getSignature() {
+  public List<Bytes48> getSignature() {
     return signature;
   }
 
-  public void setSignature(Bytes48[] signature) {
+  public void setSignature(List<Bytes48> signature) {
     this.signature = signature;
   }
 }

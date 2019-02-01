@@ -14,18 +14,19 @@
 package tech.pegasys.artemis.datastructures.operations;
 
 import com.google.common.primitives.UnsignedLong;
+import java.util.List;
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.ssz.SSZ;
 
 public class Deposit {
 
-  private Bytes32[] merkle_branch;
+  private List<Bytes32> merkle_branch;
   private UnsignedLong merkle_tree_index;
   private DepositData deposit_data;
 
   public Deposit(
-      Bytes32[] merkle_branch, UnsignedLong merkle_tree_index, DepositData deposit_data) {
+      List<Bytes32> merkle_branch, UnsignedLong merkle_tree_index, DepositData deposit_data) {
     this.merkle_branch = merkle_branch;
     this.merkle_tree_index = merkle_tree_index;
     this.deposit_data = deposit_data;
@@ -34,18 +35,18 @@ public class Deposit {
   public Bytes toBytes() {
     return SSZ.encode(
         writer -> {
-          writer.writeBytesList(merkle_branch);
+          writer.writeBytesList(merkle_branch.toArray(new Bytes32[0]));
           writer.writeUInt64(merkle_tree_index.longValue());
           writer.writeBytes(deposit_data.toBytes());
         });
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */
-  public Bytes32[] getMerkle_branch() {
+  public List<Bytes32> getMerkle_branch() {
     return merkle_branch;
   }
 
-  public void setMerkle_branch(Bytes32[] merkle_branch) {
+  public void setMerkle_branch(List<Bytes32> merkle_branch) {
     this.merkle_branch = merkle_branch;
   }
 
