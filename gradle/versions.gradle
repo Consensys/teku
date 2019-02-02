@@ -42,6 +42,7 @@ dependencyManagement {
       entry 'cava-ssz'
       entry 'cava-toml'
       entry 'cava-units'
+      entry 'cava-kv'
     }
 
     dependency 'org.apache.logging.log4j:log4j-api:2.11.1'

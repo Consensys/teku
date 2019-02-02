@@ -1,4 +1,3 @@
-
 rootProject.name='artemis'
 include 'ethereum:datastructures'
 include 'ethereum:statetransition'
@@ -12,4 +11,4 @@ include 'artemis'
 include 'util'
 include 'errorprone-checks'
 include 'pow'
-
+include 'storage'

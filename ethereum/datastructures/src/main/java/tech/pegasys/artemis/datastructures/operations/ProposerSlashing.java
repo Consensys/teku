@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.datastructures.operations;
 
+import java.util.List;
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes48;
 import net.consensys.cava.ssz.SSZ;
@@ -22,16 +23,16 @@ public class ProposerSlashing {
 
   private int proposer_index;
   private ProposalSignedData proposal_data_1;
-  private Bytes48[] proposal_signature_1;
+  private List<Bytes48> proposal_signature_1;
   private ProposalSignedData proposal_data_2;
-  private Bytes48[] proposal_signature_2;
+  private List<Bytes48> proposal_signature_2;
 
   public ProposerSlashing(
       int proposer_index,
       ProposalSignedData proposal_data_1,
-      Bytes48[] proposal_signature_1,
+      List<Bytes48> proposal_signature_1,
       ProposalSignedData proposal_data_2,
-      Bytes48[] proposal_signature_2) {
+      List<Bytes48> proposal_signature_2) {
     this.proposer_index = proposer_index;
     this.proposal_data_1 = proposal_data_1;
     this.proposal_signature_1 = proposal_signature_1;
@@ -44,9 +45,9 @@ public class ProposerSlashing {
         writer -> {
           writer.writeInt(proposer_index, 24);
           writer.writeBytes(proposal_data_1.toBytes());
-          writer.writeBytesList(proposal_signature_1);
+          writer.writeBytesList(proposal_signature_1.toArray(new Bytes48[0]));
           writer.writeBytes(proposal_data_2.toBytes());
-          writer.writeBytesList(proposal_signature_2);
+          writer.writeBytesList(proposal_signature_2.toArray(new Bytes48[0]));
         });
   }
 
@@ -67,11 +68,11 @@ public class ProposerSlashing {
     this.proposal_data_1 = proposal_data_1;
   }
 
-  public Bytes48[] getProposal_signature_1() {
+  public List<Bytes48> getProposal_signature_1() {
     return proposal_signature_1;
   }
 
-  public void setProposal_signature_1(Bytes48[] proposal_signature_1) {
+  public void setProposal_signature_1(List<Bytes48> proposal_signature_1) {
     this.proposal_signature_1 = proposal_signature_1;
   }
 
@@ -83,11 +84,11 @@ public class ProposerSlashing {
     this.proposal_data_2 = proposal_data_2;
   }
 
-  public Bytes48[] getProposal_signature_2() {
+  public List<Bytes48> getProposal_signature_2() {
     return proposal_signature_2;
   }
 
-  public void setProposal_signature_2(Bytes48[] proposal_signature_2) {
+  public void setProposal_signature_2(List<Bytes48> proposal_signature_2) {
     this.proposal_signature_2 = proposal_signature_2;
   }
 }
