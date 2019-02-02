@@ -35,11 +35,11 @@ public final class DepositInput {
                 Bytes32.wrap(reader.readBytes())));
   }
 
-  private final Bytes48 pubkey;
-  private final Bytes32 withdrawal_credentials;
-  private final Bytes32 randao_commitment;
   private final Bytes32 poc_commitment;
   private final List<Bytes48> proof_of_possession;
+  private final Bytes48 pubkey;
+  private final Bytes32 randao_commitment;
+  private final Bytes32 withdrawal_credentials;
 
   public DepositInput(
       Bytes32 poc_commitment,
