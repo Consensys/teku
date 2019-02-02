@@ -16,12 +16,14 @@ package tech.pegasys.artemis.statetransition.util;
 import static java.lang.Math.toIntExact;
 
 import com.google.common.primitives.UnsignedLong;
+import java.util.List;
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.bytes.Bytes48;
 import net.consensys.cava.crypto.Hash;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.blocks.Eth1DataVote;
 import tech.pegasys.artemis.datastructures.blocks.ProposalSignedData;
 import tech.pegasys.artemis.statetransition.BeaconState;
 import tech.pegasys.artemis.util.bls.BLSVerify;
@@ -80,8 +82,35 @@ public class BlockProcessorUtil {
     // state.latest_randao_mixes[get_current_epoch(state) % LATEST_RANDAO_MIXES_LENGTH] =
     // xor(get_randao_mix(state, get_current_epoch(state)), hash(block.randao_reveal))
     int index = toIntExact(epoch) % Constants.LATEST_RANDAO_MIXES_LENGTH;
-    state.getLatest_randao_mixes().get(index).xor(Hash.keccak256(epochBytes));
+    Bytes32 latest_randao_mixes = state.getLatest_randao_mixes().get(index);
+    state.getLatest_randao_mixes().set(index, latest_randao_mixes.xor(Hash.keccak256(epochBytes)));
   }
 
-  public static void tally_pow_receipt_root_vote(BeaconState state, BeaconBlock block) {}
+  /**
+   * https://github.com/ethereum/eth2.0-specs/blob/master/specs/core/0_beacon-chain.md#eth1-data
+   *
+   * @param state
+   * @param block
+   */
+  public static void tally_pow_receipt_root_vote(BeaconState state, BeaconBlock block) {
+    /*
+     Eth1 data
+     If block.eth1_data equals eth1_data_vote.eth1_data for some eth1_data_vote
+       in state.eth1_data_votes, set eth1_data_vote.vote_count += 1.
+     Otherwise, append to state.eth1_data_votes
+       a new Eth1DataVote(eth1_data=block.eth1_data, vote_count=1).
+    */
+
+    int index = 0;
+    for (Eth1DataVote vote : state.getEth1_data_votes()) {
+      if (block.getEth1Data().equals(vote.getEth1_data())) {
+        UnsignedLong voteCount = vote.getVote_count().plus(UnsignedLong.ONE);
+        vote.setVote_count(voteCount);
+        break;
+      }
+      index++;
+    }
+    List<Eth1DataVote> votes = state.getEth1_data_votes();
+    votes.add(new Eth1DataVote(block.getEth1Data(), UnsignedLong.ONE));
+  }
 }
