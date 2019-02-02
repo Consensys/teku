@@ -13,10 +13,10 @@
 
 package tech.pegasys.artemis.statetransition.util;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static java.lang.Math.toIntExact;
-import static tech.pegasys.artemis.datastructures.Constants.ACTIVE;
-import static tech.pegasys.artemis.datastructures.Constants.ACTIVE_PENDING_EXIT;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -113,9 +113,38 @@ public class BeaconStateUtil {
     return activeValidators;
   }
 
+  /**
+   * Return the epoch number of the given ``slot``
+   *
+   * @return
+   */
+  public static long slot_to_epoch(long slot) {
+    return slot / Constants.EPOCH_LENGTH;
+  }
+  /**
+   * Return the current epoch of the given ``state``.
+   *
+   * @param state
+   */
+  public static long get_current_epoch(BeaconState state) {
+    return slot_to_epoch(state.getSlot());
+  }
+
+  /**
+   * Return the randao mix at a recent ``epoch``.
+   *
+   * @return
+   */
+  public static Bytes32 get_randao_mix(BeaconState state, long epoch) {
+    assert get_current_epoch(state) - Constants.LATEST_RANDAO_MIXES_LENGTH < epoch;
+    assert epoch <= get_current_epoch(state);
+    int index = toIntExact(epoch) % Constants.LATEST_RANDAO_MIXES_LENGTH;
+    return state.getLatest_randao_mixes().get(index);
+  }
+
   private static boolean isActiveValidator(ValidatorRecord validator) {
-    return validator.getStatus().equals(UnsignedLong.valueOf(ACTIVE))
-        || validator.getStatus().equals(UnsignedLong.valueOf(ACTIVE_PENDING_EXIT));
+    return validator.getStatus().equals(UnsignedLong.valueOf(Constants.ACTIVE))
+        || validator.getStatus().equals(UnsignedLong.valueOf(Constants.ACTIVE_PENDING_EXIT));
   }
 
   public static double get_effective_balance(BeaconState state, ValidatorRecord record) {
@@ -150,5 +179,164 @@ public class BeaconStateUtil {
       o[i] = Hash.keccak256(Bytes.wrap(o[i * 2], o[i * 2 + 1]));
     }
     return o[1];
+  }
+
+  /**
+   * Shuffles ``validators`` into shard committees using ``seed`` as entropy.
+   *
+   * @param seed
+   * @param validators
+   * @param crosslinking_start_shard
+   * @return
+   */
+  public static ArrayList<ArrayList<ShardCommittee>> get_new_shuffling(
+      Bytes32 seed, ArrayList<ValidatorRecord> validators, int crosslinking_start_shard) {
+    ArrayList<Integer> active_validator_indices =
+        ValidatorsUtil.get_active_validator_indices(validators);
+
+    int committees_per_slot =
+        clamp(
+            1,
+            Constants.SHARD_COUNT / Constants.EPOCH_LENGTH,
+            active_validator_indices.size()
+                / Constants.EPOCH_LENGTH
+                / Constants.TARGET_COMMITTEE_SIZE);
+
+    // Shuffle with seed
+    ArrayList<Integer> shuffled_active_validator_indices = shuffle(active_validator_indices, seed);
+
+    // Split the shuffled list into epoch_length pieces
+    ArrayList<ArrayList<Integer>> validators_per_slot =
+        split(shuffled_active_validator_indices, Constants.EPOCH_LENGTH);
+
+    ArrayList<ArrayList<ShardCommittee>> output = new ArrayList<>();
+    for (int slot = 0; slot < validators_per_slot.size(); slot++) {
+      // Split the shuffled list into committees_per_slot pieces
+      ArrayList<ArrayList<Integer>> shard_indices =
+          split(validators_per_slot.get(slot), committees_per_slot);
+      ArrayList<ShardCommittee> shard_committees = new ArrayList<>();
+
+      int shard_id_start = crosslinking_start_shard + slot * committees_per_slot;
+
+      for (int shard_position = 0; shard_position < shard_indices.size(); shard_position++) {
+        shard_committees.add(
+            new ShardCommittee(
+                UnsignedLong.valueOf((shard_id_start + shard_position) % Constants.SHARD_COUNT),
+                shard_indices.get(shard_position),
+                UnsignedLong.valueOf(active_validator_indices.size())));
+      }
+
+      output.add(shard_committees);
+    }
+
+    return output;
+  }
+
+  /**
+   * Converts byte[] (wrapped by BytesValue) to int.
+   *
+   * @param src byte[] (wrapped by BytesValue)
+   * @param pos Index in Byte[] array
+   * @return converted int
+   * @throws IllegalArgumentException if pos is a negative value.
+   */
+  @VisibleForTesting
+  public static int bytes3ToInt(Bytes src, int pos) {
+    checkArgument(pos >= 0, "Expected positive pos but got %s", pos);
+    return ((src.get(pos) & 0xFF) << 16)
+        | ((src.get(pos + 1) & 0xFF) << 8)
+        | (src.get(pos + 2) & 0xFF);
+  }
+
+  /**
+   * Returns the shuffled 'values' with seed as entropy.
+   *
+   * @param values The array.
+   * @param seed Initial seed value used for randomization.
+   * @return The shuffled array.
+   */
+  @VisibleForTesting
+  public static <T> ArrayList<T> shuffle(ArrayList<T> values, Bytes32 seed) {
+    int values_count = values.size();
+
+    // Entropy is consumed from the seed in 3-byte (24 bit) chunks.
+    int rand_bytes = 3;
+    // The highest possible result of the RNG.
+    int rand_max = (int) Math.pow(2, (rand_bytes * 8) - 1);
+
+    // The range of the RNG places an upper-bound on the size of the list that
+    // may be shuffled. It is a logic error to supply an oversized list.
+    assert values_count < rand_max;
+
+    ArrayList<T> output = new ArrayList<>(values);
+
+    Bytes32 source = seed;
+    int index = 0;
+    while (index < values_count - 1) {
+      // Re-hash the `source` to obtain a new pattern of bytes.
+      source = Hash.keccak256(source);
+
+      // List to hold values for swap below.
+      T tmp;
+
+      // Iterate through the `source` bytes in 3-byte chunks
+      for (int position = 0; position < (32 - (32 % rand_bytes)); position += rand_bytes) {
+        // Determine the number of indices remaining in `values` and exit
+        // once the last index is reached.
+        int remaining = values_count - index;
+        if (remaining == 1) break;
+
+        // Read 3-bytes of `source` as a 24-bit big-endian integer.
+        int sample_from_source = bytes3ToInt(source, position);
+
+        // Sample values greater than or equal to `sample_max` will cause
+        // modulo bias when mapped into the `remaining` range.
+        int sample_max = rand_max - rand_max % remaining;
+        // Perform a swap if the consumed entropy will not cause modulo bias.
+        if (sample_from_source < sample_max) {
+          // Select a replacement index for the current index
+          int replacement_position = (sample_from_source % remaining) + index;
+          // Swap the current index with the replacement index.
+          tmp = output.get(index);
+          output.set(index, output.get(replacement_position));
+          output.set(replacement_position, tmp);
+          index += 1;
+        }
+      }
+    }
+
+    return output;
+  }
+
+  /**
+   * Splits 'values' into 'split_count' pieces.
+   *
+   * @param values The original list of validators.
+   * @param split_count The number of pieces to split the array into.
+   * @return The list of validators split into N pieces.
+   */
+  public static <T> ArrayList<ArrayList<T>> split(ArrayList<T> values, int split_count) {
+    checkArgument(split_count > 0, "Expected positive split_count but got %s", split_count);
+
+    int list_length = values.size();
+    ArrayList<ArrayList<T>> split_arr = new ArrayList<>(split_count);
+
+    for (int i = 0; i < split_count; i++) {
+      int startIndex = list_length * i / split_count;
+      int endIndex = list_length * (i + 1) / split_count;
+      ArrayList<T> new_split = new ArrayList<>();
+      for (int j = startIndex; j < endIndex; j++) {
+        new_split.add(values.get(j));
+      }
+      split_arr.add(new_split);
+    }
+    return split_arr;
+  }
+
+  /** A helper method for readability. */
+  public static int clamp(int minval, int maxval, int x) {
+    if (x <= minval) return minval;
+    if (x >= maxval) return maxval;
+    return x;
   }
 }

@@ -24,7 +24,7 @@ public final class BeaconBlock {
   private long slot;
   private Bytes32[] ancestor_hashes;
   private Bytes32 state_root;
-  private Bytes32 randao_reveal;
+  private Bytes48[] randao_reveal;
   private Bytes32 candidate_pow_receipt_root;
   private Bytes48[] signature;
 
@@ -39,7 +39,7 @@ public final class BeaconBlock {
           writer.writeUInt64(slot);
           writer.writeBytesList(ancestor_hashes);
           writer.writeBytes(state_root);
-          writer.writeBytes(randao_reveal);
+          writer.writeBytesList(randao_reveal);
           writer.writeBytes(candidate_pow_receipt_root);
           writer.writeBytesList(signature);
           writer.writeBytes(body.toBytes());
@@ -71,11 +71,11 @@ public final class BeaconBlock {
     this.candidate_pow_receipt_root = candidate_pow_receipt_root;
   }
 
-  public Bytes32 getRandao_reveal() {
+  public Bytes48[] getRandao_reveal() {
     return randao_reveal;
   }
 
-  public void setRandao_reveal(Bytes32 randao_reveal) {
+  public void setRandao_reveal(Bytes48[] randao_reveal) {
     this.randao_reveal = randao_reveal;
   }
 
