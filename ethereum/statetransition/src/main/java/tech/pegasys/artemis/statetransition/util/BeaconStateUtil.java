@@ -113,6 +113,35 @@ public class BeaconStateUtil {
     return activeValidators;
   }
 
+  /**
+   * Return the epoch number of the given ``slot``
+   *
+   * @return
+   */
+  public static long slot_to_epoch(long slot) {
+    return slot / Constants.EPOCH_LENGTH;
+  }
+  /**
+   * Return the current epoch of the given ``state``.
+   *
+   * @param state
+   */
+  public static long get_current_epoch(BeaconState state) {
+    return slot_to_epoch(state.getSlot());
+  }
+
+  /**
+   * Return the randao mix at a recent ``epoch``.
+   *
+   * @return
+   */
+  public static Bytes32 get_randao_mix(BeaconState state, long epoch) {
+    assert get_current_epoch(state) - Constants.LATEST_RANDAO_MIXES_LENGTH < epoch;
+    assert epoch <= get_current_epoch(state);
+    int index = toIntExact(epoch) % Constants.LATEST_RANDAO_MIXES_LENGTH;
+    return state.getLatest_randao_mixes().get(index);
+  }
+
   private static boolean isActiveValidator(ValidatorRecord validator) {
     return validator.getStatus().equals(UnsignedLong.valueOf(Constants.ACTIVE))
         || validator.getStatus().equals(UnsignedLong.valueOf(Constants.ACTIVE_PENDING_EXIT));

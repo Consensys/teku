@@ -87,6 +87,7 @@ public final class Constants {
   public static final UnsignedLong DOMAIN_ATTESTATION = UnsignedLong.valueOf(1);
   public static final UnsignedLong DOMAIN_PROPOSAL = UnsignedLong.valueOf(2);
   public static final UnsignedLong DOMAIN_EXIT = UnsignedLong.valueOf(3);
+  public static final UnsignedLong DOMAIN_RANDAO = UnsignedLong.valueOf(4);
   public static final int MIN_VALIDATOR_WITHDRAWAL_TIME =
       (int) Math.pow(2, 14); // 16,384 slots ~27 hours
   public static final int WITHDRAWABLE = 2;
