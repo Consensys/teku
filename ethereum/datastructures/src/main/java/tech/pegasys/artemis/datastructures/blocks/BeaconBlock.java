@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.datastructures.blocks;
 
+import java.util.List;
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.bytes.Bytes48;
@@ -22,26 +23,41 @@ public final class BeaconBlock {
 
   // Header
   private long slot;
-  private Bytes32[] ancestor_hashes;
+  private List<Bytes32> ancestor_hashes;
   private Bytes32 state_root;
-  private Bytes48[] randao_reveal;
+  private List<Bytes48> randao_reveal;
   private Bytes32 candidate_pow_receipt_root;
-  private Bytes48[] signature;
+  private List<Bytes48> signature;
 
   // Body
   private BeaconBlockBody body;
 
-  public BeaconBlock() {}
+  public BeaconBlock(
+      long slot,
+      List<Bytes32> ancestor_hashes,
+      Bytes32 state_root,
+      List<Bytes48> randao_reveal,
+      Bytes32 candidate_pow_receipt_root,
+      List<Bytes48> signature,
+      BeaconBlockBody body) {
+    this.slot = slot;
+    this.ancestor_hashes = ancestor_hashes;
+    this.state_root = state_root;
+    this.randao_reveal = randao_reveal;
+    this.candidate_pow_receipt_root = candidate_pow_receipt_root;
+    this.signature = signature;
+    this.body = body;
+  }
 
   public Bytes toBytes() {
     return SSZ.encode(
         writer -> {
           writer.writeUInt64(slot);
-          writer.writeBytesList(ancestor_hashes);
+          writer.writeBytesList(ancestor_hashes.toArray(new Bytes32[0]));
           writer.writeBytes(state_root);
-          writer.writeBytesList(randao_reveal);
+          writer.writeBytesList(randao_reveal.toArray(new Bytes48[0]));
           writer.writeBytes(candidate_pow_receipt_root);
-          writer.writeBytesList(signature);
+          writer.writeBytesList(signature.toArray(new Bytes48[0]));
           writer.writeBytes(body.toBytes());
         });
   }
@@ -55,11 +71,11 @@ public final class BeaconBlock {
     this.body = body;
   }
 
-  public Bytes48[] getSignature() {
+  public List<Bytes48> getSignature() {
     return signature;
   }
 
-  public void setSignature(Bytes48[] signature) {
+  public void setSignature(List<Bytes48> signature) {
     this.signature = signature;
   }
 
@@ -71,11 +87,11 @@ public final class BeaconBlock {
     this.candidate_pow_receipt_root = candidate_pow_receipt_root;
   }
 
-  public Bytes48[] getRandao_reveal() {
+  public List<Bytes48> getRandao_reveal() {
     return randao_reveal;
   }
 
-  public void setRandao_reveal(Bytes48[] randao_reveal) {
+  public void setRandao_reveal(List<Bytes48> randao_reveal) {
     this.randao_reveal = randao_reveal;
   }
 
@@ -87,11 +103,11 @@ public final class BeaconBlock {
     this.state_root = state_root;
   }
 
-  public Bytes32[] getAncestor_hashes() {
+  public List<Bytes32> getAncestor_hashes() {
     return ancestor_hashes;
   }
 
-  public void setAncestor_hashes(Bytes32[] ancestor_hashes) {
+  public void setAncestor_hashes(List<Bytes32> ancestor_hashes) {
     this.ancestor_hashes = ancestor_hashes;
   }
 

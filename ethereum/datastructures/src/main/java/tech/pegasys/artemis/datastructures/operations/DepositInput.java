@@ -13,7 +13,7 @@
 
 package tech.pegasys.artemis.datastructures.operations;
 
-import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import net.consensys.cava.bytes.Bytes;
@@ -29,26 +29,21 @@ public final class DepositInput {
         reader ->
             new DepositInput(
                 Bytes32.wrap(reader.readBytes()),
-                reader
-                    .readBytesList()
-                    .stream()
-                    .map(Bytes48::wrap)
-                    .collect(Collectors.toList())
-                    .toArray(new Bytes48[0]),
+                reader.readBytesList().stream().map(Bytes48::wrap).collect(Collectors.toList()),
                 Bytes48.wrap(reader.readBytes()),
                 Bytes32.wrap(reader.readBytes()),
                 Bytes32.wrap(reader.readBytes())));
   }
 
-  private final Bytes48 pubkey;
-  private final Bytes32 withdrawal_credentials;
-  private final Bytes32 randao_commitment;
   private final Bytes32 poc_commitment;
-  private final Bytes48[] proof_of_possession;
+  private final List<Bytes48> proof_of_possession;
+  private final Bytes48 pubkey;
+  private final Bytes32 randao_commitment;
+  private final Bytes32 withdrawal_credentials;
 
   public DepositInput(
       Bytes32 poc_commitment,
-      Bytes48[] proof_of_possession,
+      List<Bytes48> proof_of_possession,
       Bytes48 pubkey,
       Bytes32 randao_commitment,
       Bytes32 withdrawal_credentials) {
@@ -68,13 +63,13 @@ public final class DepositInput {
         && Objects.equals(withdrawal_credentials, that.withdrawal_credentials)
         && Objects.equals(randao_commitment, that.randao_commitment)
         && Objects.equals(poc_commitment, that.poc_commitment)
-        && Arrays.equals(proof_of_possession, that.proof_of_possession);
+        && Objects.equals(proof_of_possession, that.proof_of_possession);
   }
 
   @Override
   public int hashCode() {
     int result = Objects.hash(pubkey, withdrawal_credentials, randao_commitment, poc_commitment);
-    result = 31 * result + Arrays.hashCode(proof_of_possession);
+    result = 31 * result + proof_of_possession.hashCode();
     return result;
   }
 
@@ -82,7 +77,7 @@ public final class DepositInput {
     return SSZ.encode(
         writer -> {
           writer.writeBytes(poc_commitment);
-          writer.writeBytesList(proof_of_possession);
+          writer.writeBytesList(proof_of_possession.toArray(new Bytes48[0]));
           writer.writeBytes(pubkey);
           writer.writeBytes(randao_commitment);
           writer.writeBytes(withdrawal_credentials);
@@ -102,7 +97,7 @@ public final class DepositInput {
     return randao_commitment;
   }
 
-  public Bytes48[] getProof_of_possession() {
+  public List<Bytes48> getProof_of_possession() {
     return proof_of_possession;
   }
 
