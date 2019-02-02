@@ -143,7 +143,7 @@ public class MockP2PNetwork implements P2PNetwork {
         slotNum,
         Arrays.asList(Bytes32.ZERO),
         Bytes32.ZERO,
-        Bytes32.ZERO,
+        Constants.EMPTY_SIGNATURE,
         Bytes32.ZERO,
         Constants.EMPTY_SIGNATURE,
         createEmptyBeaconBlockBody(slotNum));
