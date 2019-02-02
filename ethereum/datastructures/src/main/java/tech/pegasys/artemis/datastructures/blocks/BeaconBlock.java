@@ -26,7 +26,7 @@ public final class BeaconBlock {
   private List<Bytes32> ancestor_hashes;
   private Bytes32 state_root;
   private List<Bytes48> randao_reveal;
-  private Bytes32 candidate_pow_receipt_root;
+  private Eth1Data eth1Data;
   private List<Bytes48> signature;
 
   // Body
@@ -37,14 +37,14 @@ public final class BeaconBlock {
       List<Bytes32> ancestor_hashes,
       Bytes32 state_root,
       List<Bytes48> randao_reveal,
-      Bytes32 candidate_pow_receipt_root,
+      Eth1Data eth1Data,
       List<Bytes48> signature,
       BeaconBlockBody body) {
     this.slot = slot;
     this.ancestor_hashes = ancestor_hashes;
     this.state_root = state_root;
     this.randao_reveal = randao_reveal;
-    this.candidate_pow_receipt_root = candidate_pow_receipt_root;
+    this.eth1Data = eth1Data;
     this.signature = signature;
     this.body = body;
   }
@@ -56,7 +56,6 @@ public final class BeaconBlock {
           writer.writeBytesList(ancestor_hashes.toArray(new Bytes32[0]));
           writer.writeBytes(state_root);
           writer.writeBytesList(randao_reveal.toArray(new Bytes48[0]));
-          writer.writeBytes(candidate_pow_receipt_root);
           writer.writeBytesList(signature.toArray(new Bytes48[0]));
           writer.writeBytes(body.toBytes());
         });
@@ -79,12 +78,12 @@ public final class BeaconBlock {
     this.signature = signature;
   }
 
-  public Bytes32 getCandidate_pow_receipt_root() {
-    return candidate_pow_receipt_root;
+  public Eth1Data getEth1Data() {
+    return eth1Data;
   }
 
-  public void setCandidate_pow_receipt_root(Bytes32 candidate_pow_receipt_root) {
-    this.candidate_pow_receipt_root = candidate_pow_receipt_root;
+  public void setEth1Data(Eth1Data eth1Data) {
+    this.eth1Data = eth1Data;
   }
 
   public List<Bytes48> getRandao_reveal() {
