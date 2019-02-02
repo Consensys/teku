@@ -27,25 +27,18 @@ public final class Eth1DataVote {
     return eth1_data;
   }
 
-  /**
-   * @param eth1_data the eth1_data to set
-   */
+  /** @param eth1_data the eth1_data to set */
   public void setEth1_data(Eth1Data eth1_data) {
     this.eth1_data = eth1_data;
   }
 
-  /**
-   * @return the vote_count
-   */
+  /** @return the vote_count */
   public UnsignedLong getVote_count() {
     return vote_count;
   }
 
-  /**
-   * @param vote_count the vote_count to set
-   */
+  /** @param vote_count the vote_count to set */
   public void setVote_count(UnsignedLong vote_count) {
     this.vote_count = vote_count;
   }
-
 }

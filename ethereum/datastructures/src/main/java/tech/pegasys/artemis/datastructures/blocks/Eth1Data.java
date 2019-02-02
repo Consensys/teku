@@ -37,25 +37,18 @@ public final class Eth1Data {
     return deposit_root;
   }
 
-  /**
-   * @param deposit_root the deposit_root to set
-   */
+  /** @param deposit_root the deposit_root to set */
   public void setDeposit_root(Bytes32 deposit_root) {
     this.deposit_root = deposit_root;
   }
 
-  /**
-   * @return the block_hash
-   */
+  /** @return the block_hash */
   public Bytes32 getBlock_hash() {
     return block_hash;
   }
 
-  /**
-   * @param block_hash the block_hash to set
-   */
+  /** @param block_hash the block_hash to set */
   public void setBlock_hash(Bytes32 block_hash) {
     this.block_hash = block_hash;
   }
-
 }
