@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.datastructures.blocks;
 
+import java.util.List;
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.ssz.SSZ;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
@@ -26,22 +27,21 @@ import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
 
 /** A Beacon block body */
 public class BeaconBlockBody {
-
-  private ProposerSlashing[] proposer_slashings;
-  private CasperSlashing[] casper_slashings;
-  private Attestation[] attestations;
-  private Deposit[] deposits;
-  private Exit[] exits;
+  private List<Attestation> attestations;
+  private List<ProposerSlashing> proposer_slashings;
+  private List<CasperSlashing> casper_slashings;
+  private List<Deposit> deposits;
+  private List<Exit> exits;
   private ProofOfCustodySeedChange[] poc_seed_changes;
   private ProofOfCustodyChallenge[] poc_challenges;
   private ProofOfCustodyResponse[] poc_responses;
 
   public BeaconBlockBody(
-      Attestation[] attestations,
-      ProposerSlashing[] proposer_slashings,
-      CasperSlashing[] casper_slashings,
-      Deposit[] deposits,
-      Exit[] exits) {
+      List<Attestation> attestations,
+      List<ProposerSlashing> proposer_slashings,
+      List<CasperSlashing> casper_slashings,
+      List<Deposit> deposits,
+      List<Exit> exits) {
     this.attestations = attestations;
     this.proposer_slashings = proposer_slashings;
     this.casper_slashings = casper_slashings;
@@ -71,43 +71,43 @@ public class BeaconBlockBody {
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */
-  public Attestation[] getAttestations() {
+  public List<Attestation> getAttestations() {
     return attestations;
   }
 
-  public void setAttestations(Attestation[] attestations) {
+  public void setAttestations(List<Attestation> attestations) {
     this.attestations = attestations;
   }
 
-  public ProposerSlashing[] getProposer_slashings() {
+  public List<ProposerSlashing> getProposer_slashings() {
     return proposer_slashings;
   }
 
-  public void setProposer_slashings(ProposerSlashing[] proposer_slashings) {
+  public void setProposer_slashings(List<ProposerSlashing> proposer_slashings) {
     this.proposer_slashings = proposer_slashings;
   }
 
-  public CasperSlashing[] getCasper_slashings() {
+  public List<CasperSlashing> getCasper_slashings() {
     return casper_slashings;
   }
 
-  public void setCasper_slashings(CasperSlashing[] casper_slashings) {
+  public void setCasper_slashings(List<CasperSlashing> casper_slashings) {
     this.casper_slashings = casper_slashings;
   }
 
-  public Deposit[] getDeposits() {
+  public List<Deposit> getDeposits() {
     return deposits;
   }
 
-  public void setDeposits(Deposit[] deposits) {
+  public void setDeposits(List<Deposit> deposits) {
     this.deposits = deposits;
   }
 
-  public Exit[] getExits() {
+  public List<Exit> getExits() {
     return exits;
   }
 
-  public void setExits(Exit[] exits) {
+  public void setExits(List<Exit> exits) {
     this.exits = exits;
   }
 }

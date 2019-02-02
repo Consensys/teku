@@ -13,23 +13,23 @@
 
 package tech.pegasys.artemis.datastructures.operations;
 
-import java.util.ArrayList;
+import java.util.List;
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes48;
 import net.consensys.cava.ssz.SSZ;
 
 public class SlashableVoteData {
 
-  private ArrayList<Integer> custody_bit_0_indices;
-  private ArrayList<Integer> custody_bit_1_indices;
+  private List<Integer> custody_bit_0_indices;
+  private List<Integer> custody_bit_1_indices;
   private AttestationData data;
-  private Bytes48[] aggregate_signature;
+  private List<Bytes48> aggregate_signature;
 
   public SlashableVoteData(
-      ArrayList<Integer> custody_bit_0_indices,
-      ArrayList<Integer> custody_bit_1_indices,
+      List<Integer> custody_bit_0_indices,
+      List<Integer> custody_bit_1_indices,
       AttestationData data,
-      Bytes48[] aggregate_signature) {
+      List<Bytes48> aggregate_signature) {
     this.custody_bit_0_indices = custody_bit_0_indices;
     this.custody_bit_1_indices = custody_bit_1_indices;
     this.data = data;
@@ -46,16 +46,16 @@ public class SlashableVoteData {
             writer.writeInt(item, 24);
           }
           writer.writeBytes(data.toBytes());
-          writer.writeBytesList(aggregate_signature);
+          writer.writeBytesList(aggregate_signature.toArray(new Bytes48[0]));
         });
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */
-  public ArrayList<Integer> getCustody_bit_0_indices() {
+  public List<Integer> getCustody_bit_0_indices() {
     return custody_bit_0_indices;
   }
 
-  public void setCustody_bit_0_indices(ArrayList<Integer> custody_bit_0_indices) {
+  public void setCustody_bit_0_indices(List<Integer> custody_bit_0_indices) {
     this.custody_bit_0_indices = custody_bit_0_indices;
   }
 
@@ -67,19 +67,19 @@ public class SlashableVoteData {
     this.data = data;
   }
 
-  public Bytes48[] getAggregate_signature() {
+  public List<Bytes48> getAggregate_signature() {
     return aggregate_signature;
   }
 
-  public void setAggregate_signature(Bytes48[] aggregate_signature) {
+  public void setAggregate_signature(List<Bytes48> aggregate_signature) {
     this.aggregate_signature = aggregate_signature;
   }
 
-  public ArrayList<Integer> getCustody_bit_1_indices() {
+  public List<Integer> getCustody_bit_1_indices() {
     return custody_bit_1_indices;
   }
 
-  public void setCustody_bit_1_indices(ArrayList<Integer> custody_bit_1_indices) {
+  public void setCustody_bit_1_indices(List<Integer> custody_bit_1_indices) {
     this.custody_bit_1_indices = custody_bit_1_indices;
   }
 }
