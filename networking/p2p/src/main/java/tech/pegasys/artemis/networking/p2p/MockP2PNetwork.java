@@ -26,6 +26,7 @@ import org.apache.logging.log4j.Logger;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockBody;
+import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.datastructures.blocks.ProposalSignedData;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
@@ -144,7 +145,7 @@ public class MockP2PNetwork implements P2PNetwork {
         Arrays.asList(Bytes32.ZERO),
         Bytes32.ZERO,
         Constants.EMPTY_SIGNATURE,
-        Bytes32.ZERO,
+        new Eth1Data(),
         Constants.EMPTY_SIGNATURE,
         createEmptyBeaconBlockBody(slotNum));
   }

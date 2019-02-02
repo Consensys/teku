@@ -82,8 +82,8 @@ public final class BeaconBlock {
     return eth1Data;
   }
 
-  public void setEth1Data(Eth1Data eth1data) {
-    this.eth1Data = eth1data;
+  public void setEth1Data(Eth1Data eth1Data) {
+    this.eth1Data = eth1Data;
   }
 
   public List<Bytes48> getRandao_reveal() {
