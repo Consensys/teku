@@ -94,6 +94,8 @@ public final class Constants {
   public static final int WITHDRAWABLE = 2;
   public static final int MAX_WITHDRAWALS_PER_EPOCH = 4;
 
+  public static final int GENESIS_SLOT = (int) Math.pow(2, 19); //
+
   public static String getConstantsAsString() {
     return "--Misc--"
         + "\nSHARD_COUNT: "
