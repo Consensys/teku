@@ -130,6 +130,16 @@ public class BeaconStateUtil {
     return slot_to_epoch(state.getSlot());
   }
 
+  public static long get_previous_epoch(BeaconState state) {
+    if (get_current_epoch(state) > slot_to_epoch(Constants.GENESIS_SLOT))
+      return get_current_epoch(state) - 1;
+    else return get_current_epoch(state);
+  }
+
+  public static long get_next_epoch(BeaconState state) {
+    return get_current_epoch(state) + 1;
+  }
+
   /**
    * Return the randao mix at a recent ``epoch``.
    *
