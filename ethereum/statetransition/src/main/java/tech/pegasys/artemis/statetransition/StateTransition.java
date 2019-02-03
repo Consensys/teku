@@ -37,7 +37,7 @@ public class StateTransition {
         blockProcessor(state, block);
       }
       // per-epoch processing
-      if (state.getSlot() % Constants.EPOCH_LENGTH == 0) {
+      if ((state.getSlot() + 1) % Constants.EPOCH_LENGTH == 0) {
         epochProcessor(state);
       }
     } catch (Exception e) {
