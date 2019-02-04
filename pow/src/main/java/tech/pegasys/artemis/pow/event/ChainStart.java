@@ -14,18 +14,13 @@
 package tech.pegasys.artemis.pow.event;
 
 import tech.pegasys.artemis.pow.api.ChainStartEvent;
-import tech.pegasys.artemis.pow.contract.ValidatorRegistrationContract;
+import tech.pegasys.artemis.pow.contract.ValidatorRegistrationContract.ChainStartEventResponse;
 
-public class ChainStart implements ChainStartEvent {
+public class ChainStart extends AbstractEvent<ChainStartEventResponse> implements ChainStartEvent {
 
-  private ValidatorRegistrationContract.ChainStartEventResponse response = null;
+  private static final String TYPE = "CHAIN_START";
 
-  public ChainStart(ValidatorRegistrationContract.ChainStartEventResponse response) {
-    this.response = response;
-  }
-
-  @Override
-  public ValidatorRegistrationContract.ChainStartEventResponse getResponse() {
-    return response;
+  public ChainStart(ChainStartEventResponse response) {
+    super(TYPE, response);
   }
 }

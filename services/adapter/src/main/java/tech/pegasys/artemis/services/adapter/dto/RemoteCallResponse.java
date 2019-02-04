@@ -11,17 +11,28 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.pow.event;
+package tech.pegasys.artemis.services.adapter.dto;
 
-import tech.pegasys.artemis.pow.api.ValidatorRegistrationEvent;
-import tech.pegasys.artemis.pow.contract.ValidatorRegistrationContract.Eth1DepositEventResponse;
+public class RemoteCallResponse {
 
-public class ValidatorRegistration extends AbstractEvent<Eth1DepositEventResponse>
-    implements ValidatorRegistrationEvent {
+  private boolean success;
 
-  public static final String TYPE = "VALIDATOR_REGISTRATION";
+  private Throwable errorCause;
 
-  public ValidatorRegistration(Eth1DepositEventResponse response) {
-    super(TYPE, response);
+  public RemoteCallResponse(boolean success, Throwable errorCause) {
+    this.success = success;
+    this.errorCause = errorCause;
+  }
+
+  public RemoteCallResponse(boolean success) {
+    this(success, null);
+  }
+
+  public boolean isSuccess() {
+    return success;
+  }
+
+  public Throwable getErrorCause() {
+    return errorCause;
   }
 }
