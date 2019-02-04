@@ -50,7 +50,7 @@ public class StateTransition {
     logger.info("Processing new slot: " + state.getSlot());
     SlotProcessorUtil.updateProposerRandaoLayer(state);
     // Slots the proposer has skipped (i.e. layers of RANDAO expected)
-    // should be in ValidatorRecord.randao_skips
+    // should be in Validator.randao_skips
     SlotProcessorUtil.updateLatestRandaoMixes(state);
     SlotProcessorUtil.updateRecentBlockHashes(state, block);
   }
