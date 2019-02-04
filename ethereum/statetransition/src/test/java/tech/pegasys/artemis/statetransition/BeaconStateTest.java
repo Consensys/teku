@@ -64,8 +64,6 @@ class BeaconStateTest {
             new ArrayList<>(),
             new ArrayList<>(),
             new ArrayList<>(),
-            new ArrayList<>(),
-            new ArrayList<>(),
             0,
             0,
             0,
@@ -139,14 +137,6 @@ class BeaconStateTest {
 
     // Add validator balances
     state.setValidator_balances(new ArrayList<>(Collections.nCopies(5, 100.0)));
-
-    // Create committee
-    ArrayList<Integer> new_committee = new ArrayList<>();
-    new_committee.add(0);
-    new_committee.add(50);
-    new_committee.add(100);
-    state.getPersistent_committees().add(new_committee);
-    state.getPersistent_committees().add(new_committee);
 
     // Add penalized exit balances
     state.getLatest_penalized_exit_balances().add(10.0);
@@ -407,21 +397,23 @@ class BeaconStateTest {
 
   @Test
   void exitValidatorPrevStatusDidNotExitNewStatusExitedWithoutPenalty() {
-    BeaconState state = newState();
-    int validator_index = 0;
+    /* Commented as part of persistent committee removal, but may be useful if rewritten.
+        BeaconState state = newState();
+        int validator_index = 0;
 
-    long before_exit_count = state.getValidator_registry_exit_count();
-    int before_persistent_committees_size =
-        state.getPersistent_committees().get(validator_index).size();
-    //    Hash before_tip = state.validator_registry_delta_chain_tip;
+        long before_exit_count = state.getValidator_registry_exit_count();
+        int before_persistent_committees_size =
+            state.getPersistent_committees().get(validator_index).size();
+        //    Hash before_tip = state.validator_registry_delta_chain_tip;
 
-    state.exit_validator(state, validator_index, EXITED_WITHOUT_PENALTY);
+        state.exit_validator(state, validator_index, EXITED_WITHOUT_PENALTY);
 
-    assertThat(before_exit_count).isEqualTo(state.getValidator_registry_exit_count() - 1);
-    assertThat(state.getPersistent_committees().get(validator_index).size())
-        .isEqualTo(before_persistent_committees_size - 1);
-    // TODO: Uncomment this when tree_root_hash is working.
-    //    assertThat(before_tip).isNotEqualTo(state.validator_registry_delta_chain_tip);
+        assertThat(before_exit_count).isEqualTo(state.getValidator_registry_exit_count() - 1);
+        assertThat(state.getPersistent_committees().get(validator_index).size())
+            .isEqualTo(before_persistent_committees_size - 1);
+        // TODO: Uncomment this when tree_root_hash is working.
+        //    assertThat(before_tip).isNotEqualTo(state.validator_registry_delta_chain_tip);
+    */
   }
 
   @Test
@@ -434,12 +426,6 @@ class BeaconStateTest {
     String stateJson = gson.toJson(state);
     String deepCopyJson = gson.toJson(deepCopy);
     assertThat(stateJson).isEqualTo(deepCopyJson);
-
-    // Test persistent committees
-    ArrayList<Integer> new_committee = new ArrayList<Integer>();
-    new_committee.add(20);
-    deepCopy.getPersistent_committees().add(new_committee);
-    assertThat(deepCopy.getPersistent_committees()).isNotEqualTo(state.getPersistent_committees());
 
     // Test slot
     state.incrementSlot();
