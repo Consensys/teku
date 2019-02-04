@@ -85,14 +85,13 @@ public class BlockProcessorUtil {
     Bytes32 latest_randao_mixes = state.getLatest_randao_mixes().get(index);
     state.getLatest_randao_mixes().set(index, latest_randao_mixes.xor(Hash.keccak256(epochBytes)));
   }
-
   /**
    * https://github.com/ethereum/eth2.0-specs/blob/master/specs/core/0_beacon-chain.md#eth1-data
    *
    * @param state
    * @param block
    */
-  public static void tally_pow_receipt_root_vote(BeaconState state, BeaconBlock block) {
+  public static void tally_eth1_receipt_root_vote(BeaconState state, BeaconBlock block) {
     /*
      Eth1 data
      If block.eth1_data equals eth1_data_vote.eth1_data for some eth1_data_vote
@@ -104,7 +103,7 @@ public class BlockProcessorUtil {
     boolean exists = false;
     List<Eth1DataVote> votes = state.getEth1_data_votes();
     for (Eth1DataVote vote : votes) {
-      if (block.getEth1Data().equals(vote.getEth1_data())) {
+      if (block.getEth1_data().equals(vote.getEth1_data())) {
         UnsignedLong voteCount = vote.getVote_count().plus(UnsignedLong.ONE);
         vote.setVote_count(voteCount);
         exists = true;
@@ -112,7 +111,7 @@ public class BlockProcessorUtil {
       }
     }
     if (!exists) {
-      votes.add(new Eth1DataVote(block.getEth1Data(), UnsignedLong.ONE));
+      votes.add(new Eth1DataVote(block.getEth1_data(), UnsignedLong.ONE));
     }
   }
 }
