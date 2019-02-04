@@ -65,7 +65,6 @@ class BeaconStateTest {
             new ArrayList<>(),
             new ArrayList<>(),
             new ArrayList<>(),
-            new ArrayList<>(),
             0,
             0,
             0,
