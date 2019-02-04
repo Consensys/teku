@@ -44,6 +44,8 @@ import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.bytes.Bytes48;
 import net.consensys.cava.crypto.Hash;
 import tech.pegasys.artemis.datastructures.Constants;
+import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
+import tech.pegasys.artemis.datastructures.blocks.Eth1DataVote;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.DepositInput;
@@ -98,6 +100,10 @@ public class BeaconState {
   private Bytes32 processed_pow_receipt_root;
   private ArrayList<CandidatePoWReceiptRootRecord> candidate_pow_receipt_roots;
 
+  // Ethereum 1.0 chain data
+  private Eth1Data latest_eth1_data;
+  private List<Eth1DataVote> eth1_data_votes;
+
   // Default Constructor
   public BeaconState() {
     // TODO: temp to allow it to run in demo mode
@@ -143,7 +149,10 @@ public class BeaconState {
       ArrayList<Bytes32> batched_block_roots,
       // PoW receipt root
       Bytes32 processed_pow_receipt_root,
-      ArrayList<CandidatePoWReceiptRootRecord> candidate_pow_receipt_roots) {
+      ArrayList<CandidatePoWReceiptRootRecord> candidate_pow_receipt_roots,
+      // Eth1Data
+      Eth1Data latest_eth1_data,
+      List<Eth1DataVote> eth1_data_votes) {
 
     // Misc
     this.slot = slot;
@@ -180,6 +189,10 @@ public class BeaconState {
     // PoW receipt root
     this.processed_pow_receipt_root = processed_pow_receipt_root;
     this.candidate_pow_receipt_roots = candidate_pow_receipt_roots;
+
+    // Ethereum 1.0 chain data
+    this.latest_eth1_data = latest_eth1_data;
+    this.eth1_data_votes = eth1_data_votes;
   }
 
   @VisibleForTesting
@@ -237,7 +250,11 @@ public class BeaconState {
 
             // PoW receipt root
             processed_pow_receipt_root,
-            new ArrayList<>());
+            new ArrayList<>(),
+
+            // Ethereum 1.0 chain data
+            new Eth1Data(),
+            new ArrayList<Eth1DataVote>());
 
     // handle initial deposits and activations
     for (Deposit validator_deposit : initial_validator_deposits) {
@@ -796,6 +813,22 @@ public class BeaconState {
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */
+  public Eth1Data getLatest_eth1_data() {
+    return this.latest_eth1_data;
+  }
+
+  public void setLatest_eth1_data(Eth1Data data) {
+    this.latest_eth1_data = data;
+  }
+
+  public List<Eth1DataVote> getEth1_data_votes() {
+    return this.eth1_data_votes;
+  }
+
+  public void setEth1_data_votes(List<Eth1DataVote> votes) {
+    this.eth1_data_votes = votes;
+  }
+
   public long getSlot() {
     return this.slot;
   }
