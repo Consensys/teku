@@ -28,7 +28,7 @@ import net.consensys.cava.bytes.Bytes48;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.artemis.datastructures.state.ValidatorRecord;
+import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.datastructures.state.Validators;
 
 class ValidatorsUtilTest {
@@ -182,7 +182,7 @@ class ValidatorsUtilTest {
     assertEquals(validatorSizeExpected, activeValidatorsActual.size());
   }
 
-  ValidatorRecord getAValidatorRecordTestDataFromParameters(
+  Validator getAValidatorRecordTestDataFromParameters(
       Bytes48 pubkey,
       Bytes32 withdrawalCredentials,
       Bytes32 randaoCommitment,
@@ -193,8 +193,8 @@ class ValidatorsUtilTest {
       UnsignedLong lastPocChangeSlot,
       UnsignedLong secondLastPocChangeSlot,
       double balance) {
-    ValidatorRecord validatorRecord =
-        new ValidatorRecord(
+    Validator validator =
+        new Validator(
             pubkey,
             withdrawalCredentials,
             randaoCommitment,
@@ -204,13 +204,12 @@ class ValidatorsUtilTest {
             exitCount,
             lastPocChangeSlot,
             secondLastPocChangeSlot);
-    validatorRecord.setBalance(balance);
+    validator.setBalance(balance);
 
-    return validatorRecord;
+    return validator;
   }
 
-  ValidatorRecord getDefaultValidatorRecordWithStatus(
-      int pubKeyInt, int statusAsInt, double balance) {
+  Validator getDefaultValidatorRecordWithStatus(int pubKeyInt, int statusAsInt, double balance) {
     Bytes32 withdrawal_credentials = Bytes32.ZERO;
     Bytes32 randaoCommitment = Bytes32.ZERO;
     UnsignedLong randaoLayers = UnsignedLong.ZERO;
@@ -233,7 +232,7 @@ class ValidatorsUtilTest {
         balance);
   }
 
-  Validators getValidatorsList(ValidatorRecord... validatorRecords) {
-    return new Validators(Arrays.asList(validatorRecords));
+  Validators getValidatorsList(Validator... validators) {
+    return new Validators(Arrays.asList(validators));
   }
 }

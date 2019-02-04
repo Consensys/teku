@@ -13,47 +13,50 @@
 
 package tech.pegasys.artemis.statetransition.util;
 
-import static tech.pegasys.artemis.datastructures.Constants.ACTIVE;
-import static tech.pegasys.artemis.datastructures.Constants.ACTIVE_PENDING_EXIT;
-
-import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
-import tech.pegasys.artemis.datastructures.state.ValidatorRecord;
+import java.util.stream.IntStream;
+import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.datastructures.state.Validators;
+import tech.pegasys.artemis.statetransition.BeaconState;
 
 public class ValidatorsUtil {
 
-  public static Validators get_active_validators(Validators validators) {
+  public static Validators get_active_validators(BeaconState state) {
+    return get_active_validators(
+        state.getValidator_registry(), BeaconStateUtil.get_current_epoch(state));
+  }
+
+  public static Validators get_active_validators(Validators validators, long epoch) {
     Validators active_validators = new Validators();
     if (validators != null) {
-      for (ValidatorRecord record : validators) {
-        if (record.is_active_validator()) active_validators.add(record);
+      for (Validator record : validators) {
+        if (record.is_active_validator(epoch)) active_validators.add(record);
       }
     }
     return active_validators;
   }
 
-  /**
-   * Gets indices of active validators from ``validators``.
-   *
-   * @param validators
-   * @return
-   */
-  public static ArrayList<Integer> get_active_validator_indices(
-      ArrayList<ValidatorRecord> validators) {
+  public static ArrayList<Integer> get_active_validator_indices(BeaconState state) {
+    return get_active_validator_indices_at_epoch(
+        state.getValidator_registry(), BeaconStateUtil.get_current_epoch(state));
+  }
+
+  public static ArrayList<Integer> get_active_validator_indices_at_epoch(
+      Validators validators, long epoch) {
     ArrayList<Integer> active_validator_indices = new ArrayList<>();
-    for (int i = 0; i < validators.size(); i++) {
-      if (validators.get(i).getStatus().equals(UnsignedLong.valueOf(ACTIVE))
-          || validators.get(i).getStatus().equals(UnsignedLong.valueOf(ACTIVE_PENDING_EXIT))) {
-        active_validator_indices.add(i);
-      }
-    }
+
+    IntStream.range(0, validators.size())
+        .forEachOrdered(
+            n -> {
+              if (validators.get(n).is_active_validator(epoch)) active_validator_indices.add(n);
+            });
+
     return active_validator_indices;
   }
 
   public static double get_effective_balance(Validators validators) {
     return validators != null
-        ? validators.stream().mapToDouble(ValidatorRecord::get_effective_balance).sum()
+        ? validators.stream().mapToDouble(Validator::get_effective_balance).sum()
         : 0.0d;
   }
 }

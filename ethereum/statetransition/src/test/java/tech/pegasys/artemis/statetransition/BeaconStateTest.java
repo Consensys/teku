@@ -43,7 +43,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
 import tech.pegasys.artemis.datastructures.state.ForkData;
 import tech.pegasys.artemis.datastructures.state.ShardCommittee;
-import tech.pegasys.artemis.datastructures.state.ValidatorRecord;
+import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.datastructures.state.Validators;
 
 @ExtendWith(BouncyCastleExtension.class)
@@ -79,9 +79,9 @@ class BeaconStateTest {
             new ArrayList<>());
 
     // Add validator records
-    ArrayList<ValidatorRecord> validators = new ArrayList<>();
+    ArrayList<Validator> validators = new ArrayList<>();
     validators.add(
-        new ValidatorRecord(
+        new Validator(
             Bytes48.ZERO,
             Bytes32.ZERO,
             Bytes32.ZERO,
@@ -92,7 +92,7 @@ class BeaconStateTest {
             UnsignedLong.ZERO,
             UnsignedLong.ZERO));
     validators.add(
-        new ValidatorRecord(
+        new Validator(
             Bytes48.leftPad(Bytes.of(100)),
             Bytes32.ZERO,
             Bytes32.ZERO,
@@ -103,7 +103,7 @@ class BeaconStateTest {
             UnsignedLong.ZERO,
             UnsignedLong.ZERO));
     validators.add(
-        new ValidatorRecord(
+        new Validator(
             Bytes48.leftPad(Bytes.of(200)),
             Bytes32.ZERO,
             Bytes32.ZERO,
@@ -114,7 +114,7 @@ class BeaconStateTest {
             UnsignedLong.ZERO,
             UnsignedLong.ZERO));
     validators.add(
-        new ValidatorRecord(
+        new Validator(
             Bytes48.leftPad(Bytes.of(0)),
             Bytes32.ZERO,
             Bytes32.ZERO,
@@ -125,7 +125,7 @@ class BeaconStateTest {
             UnsignedLong.ZERO,
             UnsignedLong.ZERO));
     validators.add(
-        new ValidatorRecord(
+        new Validator(
             Bytes48.leftPad(Bytes.of(0)),
             Bytes32.ZERO,
             Bytes32.ZERO,
@@ -451,11 +451,11 @@ class BeaconStateTest {
         .isNotEqualTo(state.getFork_data().getPre_fork_version());
 
     // Test validator registry
-    ArrayList<ValidatorRecord> new_records =
-        new ArrayList<ValidatorRecord>(
+    ArrayList<Validator> new_records =
+        new ArrayList<Validator>(
             Collections.nCopies(
                 12,
-                new ValidatorRecord(
+                new Validator(
                     Bytes48.leftPad(Bytes.of(2)),
                     Bytes32.ZERO,
                     Bytes32.ZERO,

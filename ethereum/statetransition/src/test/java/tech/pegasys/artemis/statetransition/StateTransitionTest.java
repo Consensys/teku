@@ -34,7 +34,7 @@ import net.consensys.cava.junit.BouncyCastleExtension;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import tech.pegasys.artemis.datastructures.state.ShardCommittee;
-import tech.pegasys.artemis.datastructures.state.ValidatorRecord;
+import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.statetransition.util.SlotProcessorUtil;
 
 @ExtendWith(BouncyCastleExtension.class)
@@ -45,9 +45,9 @@ class StateTransitionTest {
     BeaconState state = new BeaconState();
 
     // Add validator records
-    ArrayList<ValidatorRecord> validators = new ArrayList<ValidatorRecord>();
+    ArrayList<Validator> validators = new ArrayList<Validator>();
     validators.add(
-        new ValidatorRecord(
+        new Validator(
             Bytes48.leftPad(Bytes.of(0)),
             Bytes32.ZERO,
             Bytes32.ZERO,
@@ -58,7 +58,7 @@ class StateTransitionTest {
             UnsignedLong.ZERO,
             UnsignedLong.ZERO));
     validators.add(
-        new ValidatorRecord(
+        new Validator(
             Bytes48.leftPad(Bytes.of(100)),
             Bytes32.ZERO,
             Bytes32.ZERO,
@@ -69,7 +69,7 @@ class StateTransitionTest {
             UnsignedLong.ZERO,
             UnsignedLong.ZERO));
     validators.add(
-        new ValidatorRecord(
+        new Validator(
             Bytes48.leftPad(Bytes.of(200)),
             Bytes32.ZERO,
             Bytes32.ZERO,
@@ -80,7 +80,7 @@ class StateTransitionTest {
             UnsignedLong.ZERO,
             UnsignedLong.ZERO));
     validators.add(
-        new ValidatorRecord(
+        new Validator(
             Bytes48.leftPad(Bytes.of(0)),
             Bytes32.ZERO,
             Bytes32.ZERO,
@@ -91,7 +91,7 @@ class StateTransitionTest {
             UnsignedLong.ZERO,
             UnsignedLong.ZERO));
     validators.add(
-        new ValidatorRecord(
+        new Validator(
             Bytes48.leftPad(Bytes.of(0)),
             Bytes32.ZERO,
             Bytes32.ZERO,
@@ -133,9 +133,9 @@ class StateTransitionTest {
     int proposerIndex = BeaconState.get_beacon_proposer_index(state, currSlot);
     assertThat(proposerIndex).isEqualTo(3);
 
-    ArrayList<ValidatorRecord> validatorRegistry = state.getValidator_registry();
-    ValidatorRecord proposerRecord = validatorRegistry.get(proposerIndex);
-    ValidatorRecord randomRecord = validatorRegistry.get(1);
+    ArrayList<Validator> validatorRegistry = state.getValidator_registry();
+    Validator proposerRecord = validatorRegistry.get(proposerIndex);
+    Validator randomRecord = validatorRegistry.get(1);
 
     // obtain proposer's and a random validator's randao layer value
     // before and after update method is called
