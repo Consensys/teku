@@ -40,6 +40,7 @@ import net.consensys.cava.crypto.Hash;
 import net.consensys.cava.junit.BouncyCastleExtension;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
 import tech.pegasys.artemis.datastructures.state.ForkData;
 import tech.pegasys.artemis.datastructures.state.ShardCommittee;
@@ -75,7 +76,7 @@ class BeaconStateTest {
             new ArrayList<>(),
             new ArrayList<>(),
             new ArrayList<>(),
-            Bytes32.ZERO,
+            new Eth1Data(),
             new ArrayList<>());
 
     // Add validator records

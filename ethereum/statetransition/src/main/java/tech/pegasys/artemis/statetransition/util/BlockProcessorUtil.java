@@ -83,5 +83,5 @@ public class BlockProcessorUtil {
     state.getLatest_randao_mixes().get(index).xor(Hash.keccak256(epochBytes));
   }
 
-  public static void tally_pow_receipt_root_vote(BeaconState state, BeaconBlock block) {}
+  public static void tally_eth1_receipt_root_vote(BeaconState state, BeaconBlock block) {}
 }
