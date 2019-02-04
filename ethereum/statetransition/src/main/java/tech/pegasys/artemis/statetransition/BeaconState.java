@@ -49,7 +49,6 @@ import tech.pegasys.artemis.datastructures.blocks.Eth1DataVote;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.DepositInput;
-import tech.pegasys.artemis.datastructures.state.CandidatePoWReceiptRootRecord;
 import tech.pegasys.artemis.datastructures.state.CrosslinkRecord;
 import tech.pegasys.artemis.datastructures.state.ForkData;
 import tech.pegasys.artemis.datastructures.state.PendingAttestationRecord;
@@ -95,10 +94,6 @@ public class BeaconState {
   private ArrayList<Double> latest_penalized_exit_balances;
   private ArrayList<PendingAttestationRecord> latest_attestations;
   private ArrayList<Bytes32> batched_block_roots = new ArrayList<>();
-
-  // PoW receipt root
-  private Bytes32 processed_pow_receipt_root;
-  private ArrayList<CandidatePoWReceiptRootRecord> candidate_pow_receipt_roots;
 
   // Ethereum 1.0 chain data
   private Eth1Data latest_eth1_data;
@@ -147,12 +142,9 @@ public class BeaconState {
       ArrayList<Double> latest_penalized_exit_balances,
       ArrayList<PendingAttestationRecord> latest_attestations,
       ArrayList<Bytes32> batched_block_roots,
-      // PoW receipt root
-      Bytes32 processed_pow_receipt_root,
-      ArrayList<CandidatePoWReceiptRootRecord> candidate_pow_receipt_roots,
-      // Eth1Data
+      // Ethereum 1.0 chain data
       Eth1Data latest_eth1_data,
-      List<Eth1DataVote> eth1_data_votes) {
+      ArrayList<Eth1DataVote> eth1_data_votes) {
 
     // Misc
     this.slot = slot;
@@ -186,10 +178,6 @@ public class BeaconState {
     this.latest_attestations = latest_attestations;
     this.batched_block_roots = batched_block_roots;
 
-    // PoW receipt root
-    this.processed_pow_receipt_root = processed_pow_receipt_root;
-    this.candidate_pow_receipt_roots = candidate_pow_receipt_roots;
-
     // Ethereum 1.0 chain data
     this.latest_eth1_data = latest_eth1_data;
     this.eth1_data_votes = eth1_data_votes;
@@ -197,9 +185,7 @@ public class BeaconState {
 
   @VisibleForTesting
   public BeaconState get_initial_beacon_state(
-      ArrayList<Deposit> initial_validator_deposits,
-      int genesis_time,
-      Bytes32 processed_pow_receipt_root) {
+      ArrayList<Deposit> initial_validator_deposits, int genesis_time, Eth1Data latest_eth1_data) {
 
     ArrayList<Bytes32> latest_randao_mixes = new ArrayList<>();
     ArrayList<Bytes32> latest_vdf_outputs = new ArrayList<>();
@@ -248,13 +234,9 @@ public class BeaconState {
             new ArrayList<>(),
             new ArrayList<>(),
 
-            // PoW receipt root
-            processed_pow_receipt_root,
-            new ArrayList<>(),
-
             // Ethereum 1.0 chain data
-            new Eth1Data(),
-            new ArrayList<Eth1DataVote>());
+            latest_eth1_data,
+            new ArrayList<>());
 
     // handle initial deposits and activations
     for (Deposit validator_deposit : initial_validator_deposits) {
@@ -968,23 +950,6 @@ public class BeaconState {
 
   public void setFinalized_slot(long finalized_slot) {
     this.finalized_slot = finalized_slot;
-  }
-
-  public Bytes32 getProcessed_pow_receipt_root() {
-    return processed_pow_receipt_root;
-  }
-
-  public void setProcessed_pow_receipt_root(Bytes32 processed_pow_receipt_root) {
-    this.processed_pow_receipt_root = processed_pow_receipt_root;
-  }
-
-  public ArrayList<CandidatePoWReceiptRootRecord> getCandidate_pow_receipt_roots() {
-    return candidate_pow_receipt_roots;
-  }
-
-  public void setCandidate_pow_receipt_roots(
-      ArrayList<CandidatePoWReceiptRootRecord> candidate_pow_receipt_roots) {
-    this.candidate_pow_receipt_roots = candidate_pow_receipt_roots;
   }
 
   public void setShard_committees_at_slots(
