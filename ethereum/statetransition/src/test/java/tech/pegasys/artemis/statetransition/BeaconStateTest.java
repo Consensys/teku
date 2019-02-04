@@ -41,7 +41,7 @@ import net.consensys.cava.junit.BouncyCastleExtension;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
-import tech.pegasys.artemis.datastructures.state.ForkData;
+import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.datastructures.state.ShardCommittee;
 import tech.pegasys.artemis.datastructures.state.ValidatorRecord;
 import tech.pegasys.artemis.datastructures.state.Validators;
@@ -55,7 +55,7 @@ class BeaconStateTest {
         new BeaconState(
             0,
             0,
-            new ForkData(UnsignedLong.ZERO, UnsignedLong.ZERO, UnsignedLong.ZERO),
+            new Fork(UnsignedLong.ZERO, UnsignedLong.ZERO, UnsignedLong.ZERO),
             new Validators(),
             new ArrayList<>(),
             0,
@@ -445,10 +445,10 @@ class BeaconStateTest {
     state.incrementSlot();
     assertThat(deepCopy.getSlot()).isNotEqualTo(state.getSlot());
 
-    // Test fork_data
-    state.setFork_data(new ForkData(UnsignedLong.valueOf(1), UnsignedLong.ONE, UnsignedLong.ONE));
-    assertThat(deepCopy.getFork_data().getPre_fork_version())
-        .isNotEqualTo(state.getFork_data().getPre_fork_version());
+    // Test fork
+    state.setFork(new Fork(UnsignedLong.valueOf(1), UnsignedLong.ONE, UnsignedLong.ONE));
+    assertThat(deepCopy.getFork().getPre_fork_version())
+        .isNotEqualTo(state.getFork().getPre_fork_version());
 
     // Test validator registry
     ArrayList<ValidatorRecord> new_records =

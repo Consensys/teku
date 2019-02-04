@@ -51,7 +51,7 @@ import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.DepositInput;
 import tech.pegasys.artemis.datastructures.state.CandidatePoWReceiptRootRecord;
 import tech.pegasys.artemis.datastructures.state.CrosslinkRecord;
-import tech.pegasys.artemis.datastructures.state.ForkData;
+import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.datastructures.state.PendingAttestationRecord;
 import tech.pegasys.artemis.datastructures.state.ShardCommittee;
 import tech.pegasys.artemis.datastructures.state.ShardReassignmentRecord;
@@ -67,7 +67,7 @@ public class BeaconState {
   // Misc
   private long slot;
   private long genesis_time;
-  private ForkData fork_data;
+  private Fork fork;
 
   // Validator registry
   private Validators validator_registry;
@@ -119,7 +119,7 @@ public class BeaconState {
       // Misc
       long slot,
       long genesis_time,
-      ForkData fork_data,
+      Fork fork,
       // Validator registry
       Validators validator_registry,
       ArrayList<Double> validator_balances,
@@ -150,7 +150,7 @@ public class BeaconState {
     // Misc
     this.slot = slot;
     this.genesis_time = genesis_time;
-    this.fork_data = fork_data;
+    this.fork = fork;
 
     // Validator registry
     this.validator_registry = validator_registry;
@@ -205,7 +205,7 @@ public class BeaconState {
             // Misc
             INITIAL_SLOT_NUMBER,
             genesis_time,
-            new ForkData(
+            new Fork(
                 UnsignedLong.valueOf(INITIAL_FORK_VERSION),
                 UnsignedLong.valueOf(INITIAL_FORK_VERSION),
                 UnsignedLong.valueOf(INITIAL_SLOT_NUMBER)),
@@ -350,8 +350,7 @@ public class BeaconState {
             Bytes48.leftPad(proof_of_possession.get(0)),
             Bytes48.leftPad(proof_of_possession.get(1)));
     UnsignedLong domain =
-        UnsignedLong.valueOf(
-            get_domain(state.fork_data, toIntExact(state.getSlot()), DOMAIN_DEPOSIT));
+        UnsignedLong.valueOf(get_domain(state.fork, toIntExact(state.getSlot()), DOMAIN_DEPOSIT));
     return bls_verify(
         pubkey, TreeHashUtil.hash_tree_root(proof_of_possession_data.toBytes()), signature, domain);
   }
@@ -443,25 +442,25 @@ public class BeaconState {
   }
 
   /**
-   * @param fork_data
+   * @param fork
    * @param slot
    * @param domain_type
    * @return
    */
-  private int get_domain(ForkData fork_data, int slot, UnsignedLong domain_type) {
-    return get_fork_version(fork_data, slot) * (int) Math.pow(2, 32) + domain_type.intValue();
+  private int get_domain(Fork fork, int slot, UnsignedLong domain_type) {
+    return get_fork_version(fork, slot) * (int) Math.pow(2, 32) + domain_type.intValue();
   }
 
   /**
-   * @param fork_data
+   * @param fork
    * @param slot
    * @return
    */
-  private int get_fork_version(ForkData fork_data, int slot) {
-    if (slot < fork_data.getFork_slot().longValue()) {
-      return toIntExact(fork_data.getPre_fork_version().longValue());
+  private int get_fork_version(Fork fork, int slot) {
+    if (slot < fork.getFork_slot().longValue()) {
+      return toIntExact(fork.getPre_fork_version().longValue());
     } else {
-      return toIntExact(fork_data.getPost_fork_version().longValue());
+      return toIntExact(fork.getPost_fork_version().longValue());
     }
   }
 
@@ -839,12 +838,12 @@ public class BeaconState {
     this.genesis_time = genesis_time;
   }
 
-  public ForkData getFork_data() {
-    return fork_data;
+  public Fork getFork() {
+    return fork;
   }
 
-  public void setFork_data(ForkData fork_data) {
-    this.fork_data = fork_data;
+  public void setFork(Fork fork) {
+    this.fork = fork;
   }
 
   public Validators getValidator_registry() {
