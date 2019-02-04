@@ -16,13 +16,13 @@ package tech.pegasys.artemis.datastructures.state;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Validators extends ArrayList<ValidatorRecord> {
+public class Validators extends ArrayList<Validator> {
 
   public Validators() {
     super();
   }
 
-  public Validators(List<ValidatorRecord> validators) {
+  public Validators(List<Validator> validators) {
     super();
     this.addAll(validators);
   }
