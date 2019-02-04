@@ -101,16 +101,18 @@ public class BlockProcessorUtil {
        a new Eth1DataVote(eth1_data=block.eth1_data, vote_count=1).
     */
 
-    int index = 0;
-    for (Eth1DataVote vote : state.getEth1_data_votes()) {
+    boolean exists = false;
+    List<Eth1DataVote> votes = state.getEth1_data_votes();
+    for (Eth1DataVote vote : votes) {
       if (block.getEth1Data().equals(vote.getEth1_data())) {
         UnsignedLong voteCount = vote.getVote_count().plus(UnsignedLong.ONE);
         vote.setVote_count(voteCount);
+        exists = true;
         break;
       }
-      index++;
     }
-    List<Eth1DataVote> votes = state.getEth1_data_votes();
-    votes.add(new Eth1DataVote(block.getEth1Data(), UnsignedLong.ONE));
+    if (!exists) {
+      votes.add(new Eth1DataVote(block.getEth1Data(), UnsignedLong.ONE));
+    }
   }
 }
