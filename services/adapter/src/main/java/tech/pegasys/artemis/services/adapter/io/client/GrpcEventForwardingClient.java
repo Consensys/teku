@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.services.adapter.client;
+package tech.pegasys.artemis.services.adapter.io.client;
 
 import io.grpc.CallOptions;
 import io.grpc.Channel;
