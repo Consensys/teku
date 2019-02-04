@@ -56,6 +56,7 @@ public final class BeaconBlock {
           writer.writeBytesList(ancestor_hashes.toArray(new Bytes32[0]));
           writer.writeBytes(state_root);
           writer.writeBytesList(randao_reveal.toArray(new Bytes48[0]));
+          writer.writeBytes(eth1_data.toBytes());
           writer.writeBytesList(signature.toArray(new Bytes48[0]));
           writer.writeBytes(body.toBytes());
         });
