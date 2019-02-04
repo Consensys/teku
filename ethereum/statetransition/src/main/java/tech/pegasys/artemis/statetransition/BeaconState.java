@@ -87,7 +87,7 @@ public class BeaconState {
   // Recent state
   private ArrayList<CrosslinkRecord> latest_crosslinks;
   private ArrayList<Bytes32> latest_block_roots = new ArrayList<>();
-  private ArrayList<Double> latest_penalized_exit_balances;
+  private ArrayList<Double> latest_penalized_balances;
   private ArrayList<PendingAttestationRecord> latest_attestations;
   private ArrayList<Bytes32> batched_block_roots = new ArrayList<>();
 
@@ -132,7 +132,7 @@ public class BeaconState {
       // Recent state
       ArrayList<CrosslinkRecord> latest_crosslinks,
       ArrayList<Bytes32> latest_block_roots,
-      ArrayList<Double> latest_penalized_exit_balances,
+      ArrayList<Double> latest_penalized_balances,
       ArrayList<PendingAttestationRecord> latest_attestations,
       ArrayList<Bytes32> batched_block_roots,
       // Ethereum 1.0 chain data
@@ -164,7 +164,7 @@ public class BeaconState {
     // Recent state
     this.latest_crosslinks = latest_crosslinks;
     this.latest_block_roots = latest_block_roots;
-    this.latest_penalized_exit_balances = latest_penalized_exit_balances;
+    this.latest_penalized_balances = latest_penalized_balances;
     this.latest_attestations = latest_attestations;
     this.batched_block_roots = batched_block_roots;
 
@@ -495,9 +495,9 @@ public class BeaconState {
 
     if (new_status == EXITED_WITH_PENALTY) {
       int lpeb_index = toIntExact(state.getSlot()) / COLLECTIVE_PENALTY_CALCULATION_PERIOD;
-      latest_penalized_exit_balances.set(
+      latest_penalized_balances.set(
           lpeb_index,
-          latest_penalized_exit_balances.get(lpeb_index) + get_effective_balance(state, index));
+          latest_penalized_balances.get(lpeb_index) + get_effective_balance(state, index));
 
       int whistleblower_index = get_beacon_proposer_index(state, toIntExact(state.getSlot()));
       double whistleblower_reward =
@@ -919,12 +919,20 @@ public class BeaconState {
     return shard_committees_at_slots;
   }
 
-  public ArrayList<Double> getLatest_penalized_exit_balances() {
-    return latest_penalized_exit_balances;
+  public ArrayList<ArrayList<Integer>> getPersistent_committees() {
+    return persistent_committees;
   }
 
-  public void setLatest_penalized_exit_balances(ArrayList<Double> latest_penalized_exit_balances) {
-    this.latest_penalized_exit_balances = latest_penalized_exit_balances;
+  public void setPersistent_committees(ArrayList<ArrayList<Integer>> persistent_committees) {
+    this.persistent_committees = persistent_committees;
+  }
+
+  public ArrayList<Double> getLatest_penalized_balances() {
+    return latest_penalized_balances;
+  }
+
+  public void setLatest_penalized_balances(ArrayList<Double> latest_penalized_balances) {
+    this.latest_penalized_balances = latest_penalized_balances;
   }
 
   public ArrayList<Bytes32> getLatest_randao_mixes() {
