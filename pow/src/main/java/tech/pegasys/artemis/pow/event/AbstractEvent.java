@@ -13,15 +13,26 @@
 
 package tech.pegasys.artemis.pow.event;
 
-import tech.pegasys.artemis.pow.api.ValidatorRegistrationEvent;
-import tech.pegasys.artemis.pow.contract.ValidatorRegistrationContract.Eth1DepositEventResponse;
+import tech.pegasys.artemis.pow.api.PowEvent;
 
-public class ValidatorRegistration extends AbstractEvent<Eth1DepositEventResponse>
-    implements ValidatorRegistrationEvent {
+public abstract class AbstractEvent<T> implements PowEvent<T> {
 
-  public static final String TYPE = "VALIDATOR_REGISTRATION";
+  private String type;
 
-  public ValidatorRegistration(Eth1DepositEventResponse response) {
-    super(TYPE, response);
+  private T response;
+
+  public AbstractEvent(String type, T response) {
+    this.type = type;
+    this.response = response;
+  }
+
+  @Override
+  public String getType() {
+    return type;
+  }
+
+  @Override
+  public T getResponse() {
+    return response;
   }
 }

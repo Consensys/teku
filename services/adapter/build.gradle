@@ -1,0 +1,40 @@
+jar {
+    baseName 'artemis-services-adapter'
+    manifest {
+        attributes('Implementation-Title': baseName,
+                'Implementation-Version': project.version)
+    }
+}
+
+dependencies {
+
+    implementation project(':ethereum:beaconchain')
+    implementation project(':services')
+    implementation project(':services:powchain')
+    implementation project(':pow')
+    implementation project(':services:beaconnode')
+
+    implementation 'com.google.guava:guava'
+    implementation 'org.apache.logging.log4j:log4j-api'
+    implementation 'io.grpc:grpc-core:1.18.0'
+    implementation 'io.grpc:grpc-stub:1.18.0'
+    implementation 'io.grpc:grpc-netty:1.18.0'
+    implementation 'io.protostuff:protostuff-core:1.6.0'
+    implementation 'io.protostuff:protostuff-runtime:1.6.0'
+
+    runtime 'org.apache.logging.log4j:log4j-core'
+
+    testSupportImplementation 'io.vertx:vertx-core'
+}
+
+configurations { testArtifacts }
+task testJar (type: Jar) {
+    baseName = "${project.name}-test"
+    from sourceSets.test.output
+}
+
+
+artifacts {
+    testArtifacts testJar
+    testSupportArtifacts testSupportJar
+}

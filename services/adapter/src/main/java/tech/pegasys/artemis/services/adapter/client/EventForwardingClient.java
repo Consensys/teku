@@ -11,17 +11,11 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.pow.event;
+package tech.pegasys.artemis.services.adapter.client;
 
-import tech.pegasys.artemis.pow.api.ValidatorRegistrationEvent;
-import tech.pegasys.artemis.pow.contract.ValidatorRegistrationContract.Eth1DepositEventResponse;
+import tech.pegasys.artemis.pow.api.PowEvent;
 
-public class ValidatorRegistration extends AbstractEvent<Eth1DepositEventResponse>
-    implements ValidatorRegistrationEvent {
+public interface EventForwardingClient<T extends PowEvent> {
 
-  public static final String TYPE = "VALIDATOR_REGISTRATION";
-
-  public ValidatorRegistration(Eth1DepositEventResponse response) {
-    super(TYPE, response);
-  }
+  void forwardEvent(T event);
 }
