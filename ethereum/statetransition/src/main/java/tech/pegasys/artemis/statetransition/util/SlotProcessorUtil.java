@@ -21,22 +21,10 @@ import java.util.ArrayList;
 import net.consensys.cava.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
-import tech.pegasys.artemis.datastructures.state.Validator;
-import tech.pegasys.artemis.datastructures.state.Validators;
 import tech.pegasys.artemis.statetransition.BeaconState;
 import tech.pegasys.artemis.statetransition.StateTransitionException;
 
 public class SlotProcessorUtil {
-
-  public static void updateProposerRandaoLayer(BeaconState state) {
-    int currSlot = toIntExact(state.getSlot());
-    int proposerIndex = BeaconState.get_beacon_proposer_index(state, currSlot);
-
-    Validators validators = state.getValidator_registry();
-    Validator proposerRecord = validators.get(proposerIndex);
-    // todo update methods following the 0.01 updates
-    //    proposerRecord.setRandao_layers(proposerRecord.getRandao_layers().plus(UnsignedLong.ONE));
-  }
 
   public static void updateLatestRandaoMixes(BeaconState state) {
     int currSlot = toIntExact(state.getSlot());
