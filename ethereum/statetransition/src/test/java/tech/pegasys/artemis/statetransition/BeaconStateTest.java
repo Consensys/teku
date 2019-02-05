@@ -16,6 +16,7 @@ package tech.pegasys.artemis.statetransition;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static tech.pegasys.artemis.datastructures.Constants.EMPTY_SIGNATURE;
+import static tech.pegasys.artemis.datastructures.Constants.GENESIS_EPOCH;
 import static tech.pegasys.artemis.statetransition.util.BeaconStateUtil.bytes3ToInt;
 import static tech.pegasys.artemis.statetransition.util.BeaconStateUtil.clamp;
 import static tech.pegasys.artemis.statetransition.util.BeaconStateUtil.exit_validator;
@@ -80,7 +81,7 @@ class BeaconStateTest {
             Bytes48.ZERO,
             Bytes32.ZERO,
             UnsignedLong.ZERO,
-            UnsignedLong.valueOf(Constants.GENESIS_EPOCH),
+            GENESIS_EPOCH,
             UnsignedLong.ZERO,
             UnsignedLong.ZERO,
             UnsignedLong.valueOf(0)));
@@ -89,7 +90,7 @@ class BeaconStateTest {
             Bytes48.leftPad(Bytes.of(100)),
             Bytes32.ZERO,
             UnsignedLong.ZERO,
-            UnsignedLong.valueOf(Constants.GENESIS_EPOCH),
+            GENESIS_EPOCH,
             UnsignedLong.ZERO,
             UnsignedLong.ZERO,
             UnsignedLong.valueOf(0)));
@@ -98,7 +99,7 @@ class BeaconStateTest {
             Bytes48.leftPad(Bytes.of(200)),
             Bytes32.ZERO,
             UnsignedLong.ZERO,
-            UnsignedLong.valueOf(Constants.GENESIS_EPOCH),
+            GENESIS_EPOCH,
             UnsignedLong.ZERO,
             UnsignedLong.ZERO,
             UnsignedLong.valueOf(0)));
@@ -107,7 +108,7 @@ class BeaconStateTest {
             Bytes48.leftPad(Bytes.of(0)),
             Bytes32.ZERO,
             UnsignedLong.ZERO,
-            UnsignedLong.valueOf(Constants.GENESIS_EPOCH),
+            GENESIS_EPOCH,
             UnsignedLong.ZERO,
             UnsignedLong.ZERO,
             UnsignedLong.valueOf(0)));
@@ -116,7 +117,7 @@ class BeaconStateTest {
             Bytes48.leftPad(Bytes.of(0)),
             Bytes32.ZERO,
             UnsignedLong.ZERO,
-            UnsignedLong.valueOf(Constants.GENESIS_EPOCH),
+            GENESIS_EPOCH,
             UnsignedLong.ZERO,
             UnsignedLong.ZERO,
             UnsignedLong.valueOf(0)));
@@ -305,9 +306,10 @@ class BeaconStateTest {
 
     exit_validator(state, validator_index);
     Validator validator = state.getValidator_registry().get(validator_index);
-    long testEpoch =
-        BeaconStateUtil.get_entry_exit_effect_epoch(BeaconStateUtil.get_current_epoch(state));
-    assertThat(validator.getExit_epoch().longValue()).isEqualTo(testEpoch);
+    UnsignedLong testEpoch =
+        BeaconStateUtil.get_entry_exit_effect_epoch(
+            UnsignedLong.valueOf(BeaconStateUtil.get_current_epoch(state)));
+    assertThat(validator.getExit_epoch()).isEqualTo(testEpoch);
   }
 
   @Test

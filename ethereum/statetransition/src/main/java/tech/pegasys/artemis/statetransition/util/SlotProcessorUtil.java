@@ -25,7 +25,6 @@ import tech.pegasys.artemis.statetransition.BeaconState;
 import tech.pegasys.artemis.statetransition.StateTransitionException;
 
 public class SlotProcessorUtil {
-
   public static void updateLatestRandaoMixes(BeaconState state) {
     int currSlot = toIntExact(state.getSlot());
     ArrayList<Bytes32> latestRandaoMixes = state.getLatest_randao_mixes();
