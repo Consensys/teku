@@ -52,7 +52,7 @@ public final class Constants {
   public static final int SLOT_DURATION = 6; // 6 seconds
   public static final int MIN_ATTESTATION_INCLUSION_DELAY = (int) Math.pow(2, 2); // 4 slots
   public static final int EPOCH_LENGTH = (int) Math.pow(2, 6); // 64 slots
-  public static final int POW_RECEIPT_ROOT_VOTING_PERIOD = (int) Math.pow(2, 10); // 1,024 slots
+  public static final int ETH1_DATA_VOTING_PERIOD = (int) Math.pow(2, 10); // 1,024 slots
   public static final int COLLECTIVE_PENALTY_CALCULATION_PERIOD =
       (int) Math.pow(2, 20); // 1,048,576 slots
   public static final int ZERO_BALANCE_VALIDATOR_TTL = (int) Math.pow(2, 22); // 4,194,304 slots
@@ -140,8 +140,8 @@ public final class Constants {
         + MIN_ATTESTATION_INCLUSION_DELAY
         + "\nEPOCH_LENGTH: "
         + EPOCH_LENGTH
-        + "\nPOW_RECEIPT_ROOT_VOTING_PERIOD: "
-        + POW_RECEIPT_ROOT_VOTING_PERIOD
+        + "\nETH1_DATA_VOTING_PERIOD: "
+        + ETH1_DATA_VOTING_PERIOD
         + "\nCOLLECTIVE_PENALTY_CALCULATION_PERIOD: "
         + COLLECTIVE_PENALTY_CALCULATION_PERIOD
         + "\nZERO_BALANCE_VALIDATOR_TTL: "
