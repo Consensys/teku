@@ -43,6 +43,7 @@ import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.datastructures.state.ShardCommittee;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.datastructures.state.Validators;
+import tech.pegasys.artemis.statetransition.util.BeaconStateUtil;
 
 @ExtendWith(BouncyCastleExtension.class)
 class BeaconStateTest {
@@ -79,7 +80,7 @@ class BeaconStateTest {
             Bytes48.ZERO,
             Bytes32.ZERO,
             UnsignedLong.ZERO,
-            UnsignedLong.ZERO,
+            UnsignedLong.valueOf(Constants.GENESIS_EPOCH),
             UnsignedLong.ZERO,
             UnsignedLong.ZERO,
             UnsignedLong.valueOf(0)));
@@ -88,7 +89,7 @@ class BeaconStateTest {
             Bytes48.leftPad(Bytes.of(100)),
             Bytes32.ZERO,
             UnsignedLong.ZERO,
-            UnsignedLong.ZERO,
+            UnsignedLong.valueOf(Constants.GENESIS_EPOCH),
             UnsignedLong.ZERO,
             UnsignedLong.ZERO,
             UnsignedLong.valueOf(0)));
@@ -97,16 +98,7 @@ class BeaconStateTest {
             Bytes48.leftPad(Bytes.of(200)),
             Bytes32.ZERO,
             UnsignedLong.ZERO,
-            UnsignedLong.ZERO,
-            UnsignedLong.ZERO,
-            UnsignedLong.ZERO,
-            UnsignedLong.valueOf(0)));
-    validators.add(
-        new Validator(
-            Bytes48.leftPad(Bytes.of(0)),
-            Bytes32.ZERO,
-            UnsignedLong.ZERO,
-            UnsignedLong.ZERO,
+            UnsignedLong.valueOf(Constants.GENESIS_EPOCH),
             UnsignedLong.ZERO,
             UnsignedLong.ZERO,
             UnsignedLong.valueOf(0)));
@@ -115,7 +107,16 @@ class BeaconStateTest {
             Bytes48.leftPad(Bytes.of(0)),
             Bytes32.ZERO,
             UnsignedLong.ZERO,
+            UnsignedLong.valueOf(Constants.GENESIS_EPOCH),
             UnsignedLong.ZERO,
+            UnsignedLong.ZERO,
+            UnsignedLong.valueOf(0)));
+    validators.add(
+        new Validator(
+            Bytes48.leftPad(Bytes.of(0)),
+            Bytes32.ZERO,
+            UnsignedLong.ZERO,
+            UnsignedLong.valueOf(Constants.GENESIS_EPOCH),
             UnsignedLong.ZERO,
             UnsignedLong.ZERO,
             UnsignedLong.valueOf(0)));
@@ -272,9 +273,9 @@ class BeaconStateTest {
   void activateValidator() {
     BeaconState state = newState();
     int validator_index = 0;
-
-    state.activate_validator(validator_index);
     // TODO: need a better test for 0.1
+    // activate_validator(state,validator_index,true);
+
   }
 
   @Test
@@ -298,28 +299,15 @@ class BeaconStateTest {
   }
 
   @Test
-  void exitValidatorPrevStatusExitedWithPenaltyNewStatusExitedWithoutPenalty() {
+  void exitValidator() {
     BeaconState state = newState();
     int validator_index = 4;
 
     exit_validator(state, validator_index);
-    // TODO: update for 0.1
-    // assertThat(state.getValidator_registry().get(validator_index).getStatus_flags().intValue())
-    //     .isEqualTo(Constants.EXIT);
-  }
-
-  @Test
-  void exitValidatorPrevStatusExitedWithoutPenaltyNewStatusExitedWithoutPenalty() {
-    BeaconState state = newState();
-    int validator_index = 3;
-
-    exit_validator(state, validator_index);
-    // TODO: need better test for 0.1
-    /*assertThat(state.getValidator_registry().get(validator_index).getStatus_flags().intValue())
-        .isEqualTo(EXITED_WITHOUT_PENALTY);
-    assertThat(state.getValidator_registry().get(validator_index).getStatus_flags().longValue())
-        .isEqualTo(state.getSlot());
-        */
+    Validator validator = state.getValidator_registry().get(validator_index);
+    long testEpoch =
+        BeaconStateUtil.get_entry_exit_effect_epoch(BeaconStateUtil.get_current_epoch(state));
+    assertThat(validator.getExit_epoch().longValue()).isEqualTo(testEpoch);
   }
 
   @Test
