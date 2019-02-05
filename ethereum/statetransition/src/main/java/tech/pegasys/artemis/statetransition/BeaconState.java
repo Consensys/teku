@@ -77,7 +77,6 @@ public class BeaconState {
 
   // Randomness and committees
   private ArrayList<Bytes32> latest_randao_mixes;
-  private ArrayList<Bytes32> latest_vdf_outputs;
   private ArrayList<ArrayList<ShardCommittee>> shard_committees_at_slots = new ArrayList<>();
   private ArrayList<ArrayList<Integer>> persistent_committees;
   private ArrayList<ShardReassignmentRecord> persistent_committee_reassignments;
@@ -127,7 +126,6 @@ public class BeaconState {
       Bytes32 validator_registry_delta_chain_tip,
       // Randomness and committees
       ArrayList<Bytes32> latest_randao_mixes,
-      ArrayList<Bytes32> latest_vdf_outputs,
       ArrayList<ArrayList<ShardCommittee>> shard_committees_at_slots,
       ArrayList<ArrayList<Integer>> persistent_committees,
       ArrayList<ShardReassignmentRecord> persistent_committee_reassignments,
@@ -160,7 +158,6 @@ public class BeaconState {
 
     // Randomness and committees
     this.latest_randao_mixes = latest_randao_mixes;
-    this.latest_vdf_outputs = latest_vdf_outputs;
     this.shard_committees_at_slots = shard_committees_at_slots;
     this.persistent_committees = persistent_committees;
     this.persistent_committee_reassignments = persistent_committee_reassignments;
@@ -188,7 +185,6 @@ public class BeaconState {
       ArrayList<Deposit> initial_validator_deposits, int genesis_time, Eth1Data latest_eth1_data) {
 
     ArrayList<Bytes32> latest_randao_mixes = new ArrayList<>();
-    ArrayList<Bytes32> latest_vdf_outputs = new ArrayList<>();
     ArrayList<Bytes32> latest_block_roots = new ArrayList<>();
     ArrayList<CrosslinkRecord> latest_crosslinks = new ArrayList<>(SHARD_COUNT);
 
@@ -216,7 +212,6 @@ public class BeaconState {
 
             // Randomness and committees
             latest_randao_mixes,
-            latest_vdf_outputs,
             new ArrayList<>(),
             new ArrayList<>(),
             new ArrayList<>(),
@@ -987,14 +982,6 @@ public class BeaconState {
 
   public void setLatest_randao_mixes(ArrayList<Bytes32> latest_randao_mixes) {
     this.latest_randao_mixes = latest_randao_mixes;
-  }
-
-  public ArrayList<Bytes32> getLatest_vdf_outputs() {
-    return latest_vdf_outputs;
-  }
-
-  public void setLatest_vdf_outputs(ArrayList<Bytes32> latest_vdf_outputs) {
-    this.latest_vdf_outputs = latest_vdf_outputs;
   }
 
   public void updateBatched_block_roots() {
