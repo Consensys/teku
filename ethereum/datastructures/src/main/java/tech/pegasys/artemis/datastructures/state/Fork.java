@@ -15,13 +15,13 @@ package tech.pegasys.artemis.datastructures.state;
 
 import com.google.common.primitives.UnsignedLong;
 
-public class ForkData {
+public class Fork {
 
   private UnsignedLong pre_fork_version;
   private UnsignedLong post_fork_version;
   private UnsignedLong fork_slot;
 
-  public ForkData(
+  public Fork(
       UnsignedLong pre_fork_version, UnsignedLong post_fork_version, UnsignedLong fork_slot) {
     this.pre_fork_version = pre_fork_version;
     this.post_fork_version = post_fork_version;
