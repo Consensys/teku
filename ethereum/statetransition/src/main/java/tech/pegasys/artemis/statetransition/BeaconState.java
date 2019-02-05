@@ -666,14 +666,6 @@ public class BeaconState {
     this.validator_registry_update_epoch = validator_registry_update_epoch;
   }
 
-  public long getValidator_registry_exit_count() {
-    return validator_registry_exit_count;
-  }
-
-  public void setValidator_registry_exit_count(long validator_registry_exit_count) {
-    this.validator_registry_exit_count = validator_registry_exit_count;
-  }
-
   public Bytes32 getValidator_registry_delta_chain_tip() {
     return validator_registry_delta_chain_tip;
   }
