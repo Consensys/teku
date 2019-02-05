@@ -62,7 +62,7 @@ public class BeaconState {
   // Validator registry
   private Validators validator_registry;
   private ArrayList<Double> validator_balances;
-  private long validator_registry_latest_change_slot;
+  private long validator_registry_update_epoch;
   private Bytes32 validator_registry_delta_chain_tip;
 
   // Randomness and committees
@@ -109,7 +109,7 @@ public class BeaconState {
       // Validator registry
       Validators validator_registry,
       ArrayList<Double> validator_balances,
-      long validator_registry_latest_change_slot,
+      long validator_registry_update_epoch,
       Bytes32 validator_registry_delta_chain_tip,
       // Randomness and committees
       ArrayList<Bytes32> latest_randao_mixes,
@@ -137,7 +137,7 @@ public class BeaconState {
     // Validator registry
     this.validator_registry = validator_registry;
     this.validator_balances = validator_balances;
-    this.validator_registry_latest_change_slot = validator_registry_latest_change_slot;
+    this.validator_registry_update_epoch = validator_registry_update_epoch;
     this.validator_registry_delta_chain_tip = validator_registry_delta_chain_tip;
 
     // Randomness and committees
@@ -716,12 +716,12 @@ public class BeaconState {
     this.validator_registry_delta_chain_tip = validator_registry_delta_chain_tip;
   }
 
-  public long getValidator_registry_latest_change_slot() {
-    return validator_registry_latest_change_slot;
+  public long getValidator_registry_update_epoch() {
+    return validator_registry_update_epoch;
   }
 
-  public void setValidator_registry_latest_change_slot(long validator_registry_latest_change_slot) {
-    this.validator_registry_latest_change_slot = validator_registry_latest_change_slot;
+  public void setValidator_registry_update_epoch(long validator_registry_update_epoch) {
+    this.validator_registry_update_epoch = validator_registry_update_epoch;
   }
 
   public long getPrevious_justified_slot() {
