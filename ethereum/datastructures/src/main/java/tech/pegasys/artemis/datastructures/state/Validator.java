@@ -39,6 +39,23 @@ public class Validator {
 
   public Validator() {}
 
+  public Validator(
+      Bytes48 pubkey,
+      Bytes32 withdrawal_credentials,
+      UnsignedLong activation_epoch,
+      UnsignedLong exit_epoch,
+      UnsignedLong withdrawal_epoch,
+      UnsignedLong penalized_epoch,
+      UnsignedLong status_flags) {
+    this.pubkey = pubkey;
+    this.withdrawal_credentials = withdrawal_credentials;
+    this.activation_epoch = activation_epoch;
+    this.exit_epoch = exit_epoch;
+    this.withdrawal_epoch = withdrawal_epoch;
+    this.penalized_epoch = penalized_epoch;
+    this.status_flags = status_flags;
+  }
+
   public Bytes48 getPubkey() {
     return pubkey;
   }

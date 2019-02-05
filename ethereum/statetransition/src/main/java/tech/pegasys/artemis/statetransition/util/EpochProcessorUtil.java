@@ -111,17 +111,16 @@ public class EpochProcessorUtil {
     updatePendingValidators(max_balance_churn, state);
     updateActivePendingExit(max_balance_churn, state);
 
-    // todo after v0.01 refactor constants no longer exists
-    //    int period_index =
-    //        Math.toIntExact(state.getSlot() / Constants.COLLECTIVE_PENALTY_CALCULATION_PERIOD);
-    //    ArrayList<Double> latest_penalized_exit_balances =
-    // state.getLatest_penalized_exit_balances();
-    //
-    //    double total_penalties =
-    //        latest_penalized_exit_balances.get(period_index)
-    //            + latest_penalized_exit_balances.get(period_index - 1 < 0 ? period_index - 1 : 0)
-    //            + latest_penalized_exit_balances.get(period_index - 2 < 0 ? period_index - 2 : 0);
+    // TODO: Update to reflect spec version 0.1
+    /*int period_index =
+        Math.toIntExact(state.getSlot() / Constants.COLLECTIVE_PENALTY_CALCULATION_PERIOD);
+    ArrayList<Double> latest_penalized_exit_balances = state.getLatest_penalized_balances();
 
+    double total_penalties =
+        latest_penalized_exit_balances.get(period_index)
+            + latest_penalized_exit_balances.get(period_index - 1 < 0 ? period_index - 1 : 0)
+            + latest_penalized_exit_balances.get(period_index - 2 < 0 ? period_index - 2 : 0);
+    */
     ArrayList<Validator> to_penalize = to_penalize(active_validators);
   }
 
@@ -164,13 +163,12 @@ public class EpochProcessorUtil {
   }
 
   private static void process_ejections(BeaconState state) {
+    int index = 0;
     for (Validator validator : state.getValidator_registry()) {
-      // todo updates in v0.01 to constants removed necessary values
-      //      if (validator.getBalance() < Constants.EJECTION_BALANCE)
-      //        state.update_validator_status(
-      //            state,
-      //            state.getValidator_registry().indexOf(validator),
-      //            Constants.EXITED_WITHOUT_PENALTY);
+      if (validator.getBalance() < Constants.EJECTION_BALANCE) {
+        BeaconStateUtil.exit_validator(state, index);
+      }
+      index++;
     }
   }
 
@@ -187,54 +185,56 @@ public class EpochProcessorUtil {
   }
 
   private static void process_penalties_and_exits(BeaconState state) {
-    // todo after the spec refactor status, penalized_slot no longer exists
-    //    Validators active_validators =
-    //        ValidatorsUtil.get_active_validators(state.getValidator_registry());
-    //    double total_balance = ValidatorsUtil.get_effective_balance(active_validators);
-    //    ListIterator<Validator> itr =
-    //        (ListIterator<Validator>) active_validators.iterator();
-    //
-    //    while (itr.hasNext()) {
-    //      int index = itr.nextIndex();
-    //      Validator validator = itr.next();
-    //
-    //      if (Math.floor(state.getSlot() / Constants.EPOCH_LENGTH)
-    //          == Math.floor(validator.getPenalized_slot() / Constants.EPOCH_LENGTH)
-    //              + Math.floor(Constants.LATEST_PENALIZED_EXIT_LENGTH / 2)) {
-    //        int e =
-    //            (int) Math.floor(state.getSlot() / Constants.EPOCH_LENGTH)
-    //                % Constants.LATEST_PENALIZED_EXIT_LENGTH;
-    //        ;
-    //        double total_at_start =
-    //            state
-    //                .getLatest_penalized_exit_balances()
-    //                .get((e + 1) % Constants.LATEST_PENALIZED_EXIT_LENGTH);
-    //        double total_at_end = state.getLatest_penalized_exit_balances().get(e);
-    //        double total_penalties = total_at_end - total_at_start;
-    //        double penalty =
-    //            BeaconStateUtil.get_effective_balance(state, validator)
-    //                * Math.min(total_penalties * 3, total_balance); // total_balance
-    //        state
-    //            .getValidator_balances()
-    //            .set(index, state.getValidator_balances().get(index) - penalty);
-    //      }
-    //    }
-    //    Validators eligible_validators = new Validators();
-    //    for (Validator validator : active_validators) {
-    //      if (eligible(state, validator)) eligible_validators.add(validator);
-    //    }
-    //    Collections.sort(
-    //        eligible_validators,
-    //        (a, b) -> {
-    //          return a.getExit_count().compareTo(b.getExit_count());
-    //        });
-    //
-    //    int withdrawn_so_far = 0;
-    //    for (Validator validator : eligible_validators) {
-    //      validator.setStatus(UnsignedLong.valueOf(Constants.WITHDRAWABLE));
-    //      withdrawn_so_far += 1;
-    //      if (withdrawn_so_far >= Constants.MAX_WITHDRAWALS_PER_EPOCH) break;
-    //    }
+    // todo: penalized slot no longer exists in 0.1 spec
+    /*
+    Validators active_validators =
+        ValidatorsUtil.get_active_validators(state.getValidator_registry());
+    double total_balance = ValidatorsUtil.get_effective_balance(active_validators);
+    ListIterator<Validator> itr =
+        (ListIterator<Validator>) active_validators.iterator();
+
+    while (itr.hasNext()) {
+      int index = itr.nextIndex();
+      Validator validator = itr.next();
+
+      if (Math.floor(state.getSlot() / Constants.EPOCH_LENGTH)
+          == Math.floor(validator.getPenalized_slot() / Constants.EPOCH_LENGTH)
+              + Math.floor(Constants.LATEST_PENALIZED_EXIT_LENGTH / 2)) {
+        int e =
+            (int) Math.floor(state.getSlot() / Constants.EPOCH_LENGTH)
+                % Constants.LATEST_PENALIZED_EXIT_LENGTH;
+        ;
+        double total_at_start =
+            state
+                .getLatest_penalized_balances()
+                .get((e + 1) % Constants.LATEST_PENALIZED_EXIT_LENGTH);
+        double total_at_end = state.getLatest_penalized_balances().get(e);
+        double total_penalties = total_at_end - total_at_start;
+        double penalty =
+            BeaconStateUtil.get_effective_balance(state, validator)
+                * Math.min(total_penalties * 3, total_balance); // total_balance
+        state
+            .getValidator_balances()
+            .set(index, state.getValidator_balances().get(index) - penalty);
+      }
+    }
+    Validators eligible_validators = new Validators();
+    for (Validator validator : active_validators) {
+      if (eligible(state, validator)) eligible_validators.add(validator);
+    }
+    Collections.sort(
+        eligible_validators,
+        (a, b) -> {
+          return a.getExit_count().compareTo(b.getExit_count());
+        });
+
+    int withdrawn_so_far = 0;
+    for (Validator validator : eligible_validators) {
+      validator.setStatus(UnsignedLong.valueOf(Constants.WITHDRAWABLE));
+      withdrawn_so_far += 1;
+      if (withdrawn_so_far >= Constants.MAX_WITHDRAWALS_PER_EPOCH) break;
+    }
+    */
   }
 
   private static boolean eligible(BeaconState state, Validator validator) {

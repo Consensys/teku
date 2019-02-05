@@ -41,7 +41,7 @@ public final class Constants {
   // Initial values
   public static int GENESIS_FORK_VERSION = 0; //
   public static UnsignedLong GENESIS_SLOT = UnsignedLong.valueOf("9223372036854775808"); // 2^63
-  // public static final UnsignedLong GENESIS_EPOCH = BeaconStateUtil.slot_to_epoch();
+  public static final UnsignedLong GENESIS_EPOCH = slot_to_epoch(GENESIS_SLOT);
   public static int GENESIS_START_SHARD = 0; //
   public static UnsignedLong FAR_FUTURE_EPOCH = UnsignedLong.MAX_VALUE; //
   public static Bytes32 ZERO_HASH = Bytes32.ZERO; //
@@ -87,4 +87,8 @@ public final class Constants {
   public static final int DOMAIN_PROPOSAL = 2; //
   public static final int DOMAIN_EXIT = 3; //
   public static final int MAX_DOMAIN_RANDAOEXITS = 4; //
+
+  private static UnsignedLong slot_to_epoch(UnsignedLong slot) {
+    return slot.dividedBy(UnsignedLong.valueOf(Constants.EPOCH_LENGTH));
+  }
 }

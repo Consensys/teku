@@ -33,15 +33,15 @@ import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.bytes.Bytes48;
 import net.consensys.cava.crypto.Hash;
 import tech.pegasys.artemis.datastructures.Constants;
+import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
+import tech.pegasys.artemis.datastructures.blocks.Eth1DataVote;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.DepositInput;
-import tech.pegasys.artemis.datastructures.state.CandidatePoWReceiptRootRecord;
 import tech.pegasys.artemis.datastructures.state.CrosslinkRecord;
-import tech.pegasys.artemis.datastructures.state.ForkData;
+import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.datastructures.state.PendingAttestationRecord;
 import tech.pegasys.artemis.datastructures.state.ShardCommittee;
-import tech.pegasys.artemis.datastructures.state.ShardReassignmentRecord;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.datastructures.state.ValidatorRegistryDeltaBlock;
 import tech.pegasys.artemis.datastructures.state.Validators;
@@ -54,21 +54,17 @@ public class BeaconState {
   // Misc
   private long slot;
   private long genesis_time;
-  private ForkData fork_data;
+  private Fork fork;
 
   // Validator registry
   private Validators validator_registry;
   private ArrayList<Double> validator_balances;
   private long validator_registry_latest_change_slot;
-  private long validator_registry_exit_count;
   private Bytes32 validator_registry_delta_chain_tip;
 
   // Randomness and committees
   private ArrayList<Bytes32> latest_randao_mixes;
-  private ArrayList<Bytes32> latest_vdf_outputs;
   private ArrayList<ArrayList<ShardCommittee>> shard_committees_at_slots = new ArrayList<>();
-  private ArrayList<ArrayList<Integer>> persistent_committees;
-  private ArrayList<ShardReassignmentRecord> persistent_committee_reassignments;
 
   // Finality
   private long previous_justified_slot;
@@ -79,13 +75,13 @@ public class BeaconState {
   // Recent state
   private ArrayList<CrosslinkRecord> latest_crosslinks;
   private ArrayList<Bytes32> latest_block_roots = new ArrayList<>();
-  private ArrayList<Double> latest_penalized_exit_balances;
+  private ArrayList<Double> latest_penalized_balances;
   private ArrayList<PendingAttestationRecord> latest_attestations;
   private ArrayList<Bytes32> batched_block_roots = new ArrayList<>();
 
-  // PoW receipt root
-  private Bytes32 processed_pow_receipt_root;
-  private ArrayList<CandidatePoWReceiptRootRecord> candidate_pow_receipt_roots;
+  // Ethereum 1.0 chain data
+  private Eth1Data latest_eth1_data;
+  private List<Eth1DataVote> eth1_data_votes;
 
   // Default Constructor
   public BeaconState() {
@@ -106,19 +102,15 @@ public class BeaconState {
       // Misc
       long slot,
       long genesis_time,
-      ForkData fork_data,
+      Fork fork,
       // Validator registry
       Validators validator_registry,
       ArrayList<Double> validator_balances,
       long validator_registry_latest_change_slot,
-      long validator_registry_exit_count,
       Bytes32 validator_registry_delta_chain_tip,
       // Randomness and committees
       ArrayList<Bytes32> latest_randao_mixes,
-      ArrayList<Bytes32> latest_vdf_outputs,
       ArrayList<ArrayList<ShardCommittee>> shard_committees_at_slots,
-      ArrayList<ArrayList<Integer>> persistent_committees,
-      ArrayList<ShardReassignmentRecord> persistent_committee_reassignments,
       // Finality
       long previous_justified_slot,
       long justified_slot,
@@ -127,31 +119,27 @@ public class BeaconState {
       // Recent state
       ArrayList<CrosslinkRecord> latest_crosslinks,
       ArrayList<Bytes32> latest_block_roots,
-      ArrayList<Double> latest_penalized_exit_balances,
+      ArrayList<Double> latest_penalized_balances,
       ArrayList<PendingAttestationRecord> latest_attestations,
       ArrayList<Bytes32> batched_block_roots,
-      // PoW receipt root
-      Bytes32 processed_pow_receipt_root,
-      ArrayList<CandidatePoWReceiptRootRecord> candidate_pow_receipt_roots) {
+      // Ethereum 1.0 chain data
+      Eth1Data latest_eth1_data,
+      ArrayList<Eth1DataVote> eth1_data_votes) {
 
     // Misc
     this.slot = slot;
     this.genesis_time = genesis_time;
-    this.fork_data = fork_data;
+    this.fork = fork;
 
     // Validator registry
     this.validator_registry = validator_registry;
     this.validator_balances = validator_balances;
     this.validator_registry_latest_change_slot = validator_registry_latest_change_slot;
-    this.validator_registry_exit_count = validator_registry_exit_count;
     this.validator_registry_delta_chain_tip = validator_registry_delta_chain_tip;
 
     // Randomness and committees
     this.latest_randao_mixes = latest_randao_mixes;
-    this.latest_vdf_outputs = latest_vdf_outputs;
     this.shard_committees_at_slots = shard_committees_at_slots;
-    this.persistent_committees = persistent_committees;
-    this.persistent_committee_reassignments = persistent_committee_reassignments;
 
     // Finality
     this.previous_justified_slot = previous_justified_slot;
@@ -162,30 +150,29 @@ public class BeaconState {
     // Recent state
     this.latest_crosslinks = latest_crosslinks;
     this.latest_block_roots = latest_block_roots;
-    this.latest_penalized_exit_balances = latest_penalized_exit_balances;
+    this.latest_penalized_balances = latest_penalized_balances;
     this.latest_attestations = latest_attestations;
     this.batched_block_roots = batched_block_roots;
 
-    // PoW receipt root
-    this.processed_pow_receipt_root = processed_pow_receipt_root;
-    this.candidate_pow_receipt_roots = candidate_pow_receipt_roots;
+    // Ethereum 1.0 chain data
+    this.latest_eth1_data = latest_eth1_data;
+    this.eth1_data_votes = eth1_data_votes;
   }
 
   @VisibleForTesting
   @SuppressWarnings("ModifiedButNotUsed")
   public BeaconState get_initial_beacon_state(
-      ArrayList<Deposit> initial_validator_deposits,
-      int genesis_time,
-      Bytes32 processed_pow_receipt_root) {
+      ArrayList<Deposit> initial_validator_deposits, int genesis_time, Eth1Data latest_eth1_data) {
 
+    // TODO: this needs to be checked against 0.1 spec
     ArrayList<Bytes32> latest_randao_mixes = new ArrayList<>();
-    ArrayList<Bytes32> latest_vdf_outputs = new ArrayList<>();
     ArrayList<Bytes32> latest_block_roots = new ArrayList<>();
     ArrayList<CrosslinkRecord> latest_crosslinks = new ArrayList<>(SHARD_COUNT);
 
     for (int i = 0; i < SHARD_COUNT; i++) {
       latest_crosslinks.add(new CrosslinkRecord(Bytes32.ZERO, GENESIS_SLOT));
     }
+
     // todo after update v0.01 constants no longer exist
     BeaconState state = new BeaconState();
     //    BeaconState state =
@@ -257,14 +244,6 @@ public class BeaconState {
     shard_committees.addAll(initial_shuffling);
     state.setShard_committees_at_slots(shard_committees);
 
-    // set initial persistent shuffling
-    ArrayList<Integer> active_validator_indices =
-        ValidatorsUtil.get_active_validator_indices_at_epoch(
-            state.getValidator_registry(), BeaconStateUtil.get_current_epoch(this));
-    state.setPersistent_committees(
-        BeaconStateUtil.split(
-            BeaconStateUtil.shuffle(active_validator_indices, Bytes32.ZERO), SHARD_COUNT));
-
     return state;
   }
 
@@ -312,8 +291,7 @@ public class BeaconState {
             Bytes48.leftPad(proof_of_possession.get(0)),
             Bytes48.leftPad(proof_of_possession.get(1)));
     UnsignedLong domain =
-        UnsignedLong.valueOf(
-            get_domain(state.fork_data, toIntExact(state.getSlot()), DOMAIN_DEPOSIT));
+        UnsignedLong.valueOf(get_domain(state.fork, toIntExact(state.getSlot()), DOMAIN_DEPOSIT));
     return bls_verify(
         pubkey, TreeHashUtil.hash_tree_root(proof_of_possession_data.toBytes()), signature, domain);
   }
@@ -407,46 +385,26 @@ public class BeaconState {
   }
 
   /**
-   * @param fork_data
+   * @param fork
    * @param slot
    * @param domain_type
    * @return
    */
-  private int get_domain(ForkData fork_data, int slot, int domain_type) {
-    return get_fork_version(fork_data, slot) * (int) Math.pow(2, 32) + domain_type;
+  private int get_domain(Fork fork, int slot, int domain_type) {
+    return get_fork_version(fork, slot) * (int) Math.pow(2, 32) + domain_type;
   }
 
   /**
-   * @param fork_data
+   * @param fork
    * @param slot
    * @return
    */
-  private int get_fork_version(ForkData fork_data, int slot) {
-    if (slot < fork_data.getFork_slot().longValue()) {
-      return toIntExact(fork_data.getPre_fork_version().longValue());
+  private int get_fork_version(Fork fork, int slot) {
+    if (slot < fork.getFork_slot().longValue()) {
+      return toIntExact(fork.getPre_fork_version().longValue());
     } else {
-      return toIntExact(fork_data.getPost_fork_version().longValue());
+      return toIntExact(fork.getPost_fork_version().longValue());
     }
-  }
-
-  /**
-   * Update the validator status with the given 'index' to 'new_status'. Handle other general
-   * accounting related to this status update. Note that this function mutates 'state'.
-   *
-   * @param index The index of the validator.
-   * @param new_status The validator's new status.
-   */
-  public void update_validator_status(BeaconState state, int index, int new_status) {
-    // todo updates in v0.01 to constants removed necessary values
-    //    if (new_status == ACTIVE) {
-    //      activate_validator(index);
-    //    }
-    //    if (new_status == ACTIVE_PENDING_EXIT) {
-    //      initiate_validator_exit(index);
-    //    }
-    //    if (new_status == EXITED_WITH_PENALTY || new_status == EXITED_WITHOUT_PENALTY) {
-    //      exit_validator(state, index, new_status);
-    //    }
   }
 
   /**
@@ -455,110 +413,14 @@ public class BeaconState {
    * @param index The index of the validator.
    */
   @VisibleForTesting
-  public void activate_validator(int index) {
+  public void activate_validator(BeaconState state, int index, boolean is_genesis) {
     Validator validator = validator_registry.get(index);
-    // todo update methods following the 0.01 updates
-    //    if (validator.getStatus().longValue() != PENDING_ACTIVATION) {
-    //      return;
-    //    }
-    //
-    //    validator.setStatus(UnsignedLong.valueOf(ACTIVE));
-    //    validator.setLatest_status_change_slot(UnsignedLong.valueOf(slot));
-    // todo after update v0.01 constants no longer exist
-    //    validator_registry_delta_chain_tip =
-    //        get_new_validator_registry_delta_chain_tip(
-    //            validator_registry_delta_chain_tip,
-    //            index,
-    //            validator.getPubkey(),
-    //            ACTIVATION,
-    //            UnsignedLong.valueOf(slot));
-  }
-
-  /**
-   * Initiate exit for the validator with the given 'index'. Note that this function mutates
-   * 'state'.
-   *
-   * @param index The index of the validator.
-   */
-  @VisibleForTesting
-  public void initiate_validator_exit(int index) {
-    // todo update methods following the 0.01 updates
-    //    Validator validator = validator_registry.get(index);
-    //    if (validator.getStatus().longValue() != ACTIVE) {
-    //      return;
-    //    }
-    //
-    //    validator.setStatus(UnsignedLong.valueOf(ACTIVE_PENDING_EXIT));
-    //    validator.setLatest_status_change_slot(UnsignedLong.valueOf(slot));
-  }
-
-  /**
-   * Exit the validator with the given 'index'. Note that this function mutates 'state'.
-   *
-   * @param index The index of the validator.
-   * @param new_status The validator's new status.
-   */
-  @VisibleForTesting
-  public void exit_validator(BeaconState state, int index, int new_status) {
-    Validator validator = state.validator_registry.get(index);
-    // todo update methods following the 0.01 updates
-    //    long prev_status = validator.getStatus().longValue();
-
-    //    if (prev_status == EXITED_WITH_PENALTY) {
-    //      return;
-    //    }
-
-    //    validator.setStatus(UnsignedLong.valueOf(new_status));
-    //    validator.setLatest_status_change_slot(UnsignedLong.valueOf(state.getSlot()));
-    // todo updates in v0.01 to constants removed necessary values
-    //    if (new_status == EXITED_WITH_PENALTY) {
-    //      int lpeb_index = toIntExact(state.getSlot()) / COLLECTIVE_PENALTY_CALCULATION_PERIOD;
-    //      latest_penalized_exit_balances.set(
-    //          lpeb_index,
-    //          latest_penalized_exit_balances.get(lpeb_index) + get_effective_balance(state,
-    // index));
-    //
-    //      int whistleblower_index = get_beacon_proposer_index(state, toIntExact(state.getSlot()));
-    //      double whistleblower_reward =
-    //          get_effective_balance(state, index) / WHISTLEBLOWER_REWARD_QUOTIENT;
-    //
-    //      double new_whistleblower_balance =
-    //          state.validator_balances.get(whistleblower_index) + whistleblower_reward;
-    //
-    //      state.validator_balances.set(whistleblower_index, new_whistleblower_balance);
-    //      double new_balance = state.validator_balances.get(index) - whistleblower_reward;
-    //      state.validator_balances.set(index, new_balance);
-    //    }
-    // todo update methods following the 0.01 updates
-    //    if (prev_status == EXITED_WITHOUT_PENALTY) {
-    //      return;
-    //    }
-
-    // The following updates only occur if not previous exited
-    state.setValidator_registry_exit_count(state.getValidator_registry_exit_count() + 1);
-    // todo after the spec refactor exit_count no longer exists
-    //    validator.setExit_count(UnsignedLong.valueOf(state.getValidator_registry_exit_count()));
-    // todo after update v0.01 constants no longer exist
-    //    state.setValidator_registry_delta_chain_tip(
-    //        get_new_validator_registry_delta_chain_tip(
-    //            state.getValidator_registry_delta_chain_tip(),
-    //            index,
-    //            validator.getPubkey(),
-    //                INITIATED_EXIT,
-    //            UnsignedLong.valueOf(slot)));
-
-    // Remove validator from persistent committees
-    for (int i = 0; i < persistent_committees.size(); i++) {
-      ArrayList<Integer> committee = persistent_committees.get(i);
-      for (int j = 0; j < committee.size(); j++) {
-        if (committee.get(j) == index) {
-          // Pop validator_index from committee
-          ArrayList<Integer> new_committee = new ArrayList<>(committee.subList(0, i));
-          new_committee.addAll(committee.subList(i + 1, committee.size()));
-          persistent_committees.set(i, new_committee);
-          break;
-        }
-      }
+    UnsignedLong activation_epoch = Constants.GENESIS_EPOCH;
+    long current_epoch = BeaconStateUtil.get_current_epoch(this);
+    if (UnsignedLong.valueOf(current_epoch).compareTo(Constants.GENESIS_SLOT) > 0) {
+      activation_epoch =
+          BeaconStateUtil.get_entry_exit_effect_epoch(UnsignedLong.valueOf(current_epoch));
+      validator.setActivation_epoch(activation_epoch);
     }
   }
 
@@ -790,6 +652,22 @@ public class BeaconState {
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */
+  public Eth1Data getLatest_eth1_data() {
+    return this.latest_eth1_data;
+  }
+
+  public void setLatest_eth1_data(Eth1Data data) {
+    this.latest_eth1_data = data;
+  }
+
+  public List<Eth1DataVote> getEth1_data_votes() {
+    return this.eth1_data_votes;
+  }
+
+  public void setEth1_data_votes(List<Eth1DataVote> votes) {
+    this.eth1_data_votes = votes;
+  }
+
   public long getSlot() {
     return this.slot;
   }
@@ -810,12 +688,12 @@ public class BeaconState {
     this.genesis_time = genesis_time;
   }
 
-  public ForkData getFork_data() {
-    return fork_data;
+  public Fork getFork() {
+    return fork;
   }
 
-  public void setFork_data(ForkData fork_data) {
-    this.fork_data = fork_data;
+  public void setFork(Fork fork) {
+    this.fork = fork;
   }
 
   public Validators getValidator_registry() {
@@ -834,14 +712,6 @@ public class BeaconState {
     this.validator_balances = validator_balances;
   }
 
-  public long getValidator_registry_exit_count() {
-    return validator_registry_exit_count;
-  }
-
-  public void setValidator_registry_exit_count(long validator_registry_exit_count) {
-    this.validator_registry_exit_count = validator_registry_exit_count;
-  }
-
   public Bytes32 getValidator_registry_delta_chain_tip() {
     return validator_registry_delta_chain_tip;
   }
@@ -856,15 +726,6 @@ public class BeaconState {
 
   public void setValidator_registry_latest_change_slot(long validator_registry_latest_change_slot) {
     this.validator_registry_latest_change_slot = validator_registry_latest_change_slot;
-  }
-
-  public ArrayList<ShardReassignmentRecord> getPersistent_committee_reassignments() {
-    return persistent_committee_reassignments;
-  }
-
-  public void setPersistent_committee_reassignments(
-      ArrayList<ShardReassignmentRecord> persistent_committee_reassignments) {
-    this.persistent_committee_reassignments = persistent_committee_reassignments;
   }
 
   public long getPrevious_justified_slot() {
@@ -931,23 +792,6 @@ public class BeaconState {
     this.finalized_slot = finalized_slot;
   }
 
-  public Bytes32 getProcessed_pow_receipt_root() {
-    return processed_pow_receipt_root;
-  }
-
-  public void setProcessed_pow_receipt_root(Bytes32 processed_pow_receipt_root) {
-    this.processed_pow_receipt_root = processed_pow_receipt_root;
-  }
-
-  public ArrayList<CandidatePoWReceiptRootRecord> getCandidate_pow_receipt_roots() {
-    return candidate_pow_receipt_roots;
-  }
-
-  public void setCandidate_pow_receipt_roots(
-      ArrayList<CandidatePoWReceiptRootRecord> candidate_pow_receipt_roots) {
-    this.candidate_pow_receipt_roots = candidate_pow_receipt_roots;
-  }
-
   public void setShard_committees_at_slots(
       ArrayList<ArrayList<ShardCommittee>> shard_committees_at_slots) {
     this.shard_committees_at_slots = shard_committees_at_slots;
@@ -961,20 +805,12 @@ public class BeaconState {
     return shard_committees_at_slots;
   }
 
-  public ArrayList<ArrayList<Integer>> getPersistent_committees() {
-    return persistent_committees;
+  public ArrayList<Double> getLatest_penalized_balances() {
+    return latest_penalized_balances;
   }
 
-  public void setPersistent_committees(ArrayList<ArrayList<Integer>> persistent_committees) {
-    this.persistent_committees = persistent_committees;
-  }
-
-  public ArrayList<Double> getLatest_penalized_exit_balances() {
-    return latest_penalized_exit_balances;
-  }
-
-  public void setLatest_penalized_exit_balances(ArrayList<Double> latest_penalized_exit_balances) {
-    this.latest_penalized_exit_balances = latest_penalized_exit_balances;
+  public void setLatest_penalized_balances(ArrayList<Double> latest_penalized_balances) {
+    this.latest_penalized_balances = latest_penalized_balances;
   }
 
   public ArrayList<Bytes32> getLatest_randao_mixes() {
@@ -983,14 +819,6 @@ public class BeaconState {
 
   public void setLatest_randao_mixes(ArrayList<Bytes32> latest_randao_mixes) {
     this.latest_randao_mixes = latest_randao_mixes;
-  }
-
-  public ArrayList<Bytes32> getLatest_vdf_outputs() {
-    return latest_vdf_outputs;
-  }
-
-  public void setLatest_vdf_outputs(ArrayList<Bytes32> latest_vdf_outputs) {
-    this.latest_vdf_outputs = latest_vdf_outputs;
   }
 
   public void updateBatched_block_roots() {
