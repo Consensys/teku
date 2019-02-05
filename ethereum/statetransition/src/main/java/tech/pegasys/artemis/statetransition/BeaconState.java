@@ -919,14 +919,6 @@ public class BeaconState {
     return shard_committees_at_slots;
   }
 
-  public ArrayList<ArrayList<Integer>> getPersistent_committees() {
-    return persistent_committees;
-  }
-
-  public void setPersistent_committees(ArrayList<ArrayList<Integer>> persistent_committees) {
-    this.persistent_committees = persistent_committees;
-  }
-
   public ArrayList<Double> getLatest_penalized_balances() {
     return latest_penalized_balances;
   }

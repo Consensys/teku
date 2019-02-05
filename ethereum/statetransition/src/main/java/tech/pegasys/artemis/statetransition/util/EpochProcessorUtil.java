@@ -182,15 +182,17 @@ public class EpochProcessorUtil {
   }
 
   private static void process_penalties_and_exits(BeaconState state) {
+    // todo: penalized slot no longer exists in 0.1 spec
+    /*
     Validators active_validators =
         ValidatorsUtil.get_active_validators(state.getValidator_registry());
     double total_balance = ValidatorsUtil.get_effective_balance(active_validators);
-    ListIterator<ValidatorRecord> itr =
-        (ListIterator<ValidatorRecord>) active_validators.iterator();
+    ListIterator<Validator> itr =
+        (ListIterator<Validator>) active_validators.iterator();
 
     while (itr.hasNext()) {
       int index = itr.nextIndex();
-      ValidatorRecord validator = itr.next();
+      Validator validator = itr.next();
 
       if (Math.floor(state.getSlot() / Constants.EPOCH_LENGTH)
           == Math.floor(validator.getPenalized_slot() / Constants.EPOCH_LENGTH)
@@ -214,7 +216,7 @@ public class EpochProcessorUtil {
       }
     }
     Validators eligible_validators = new Validators();
-    for (ValidatorRecord validator : active_validators) {
+    for (Validator validator : active_validators) {
       if (eligible(state, validator)) eligible_validators.add(validator);
     }
     Collections.sort(
@@ -224,11 +226,12 @@ public class EpochProcessorUtil {
         });
 
     int withdrawn_so_far = 0;
-    for (ValidatorRecord validator : eligible_validators) {
+    for (Validator validator : eligible_validators) {
       validator.setStatus(UnsignedLong.valueOf(Constants.WITHDRAWABLE));
       withdrawn_so_far += 1;
       if (withdrawn_so_far >= Constants.MAX_WITHDRAWALS_PER_EPOCH) break;
     }
+    */
   }
 
   private static boolean eligible(BeaconState state, Validator validator) {
