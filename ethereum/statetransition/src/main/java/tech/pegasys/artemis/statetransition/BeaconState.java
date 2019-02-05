@@ -53,7 +53,6 @@ import tech.pegasys.artemis.datastructures.state.CrosslinkRecord;
 import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.datastructures.state.PendingAttestationRecord;
 import tech.pegasys.artemis.datastructures.state.ShardCommittee;
-import tech.pegasys.artemis.datastructures.state.ShardReassignmentRecord;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.datastructures.state.ValidatorRegistryDeltaBlock;
 import tech.pegasys.artemis.datastructures.state.Validators;
@@ -78,8 +77,6 @@ public class BeaconState {
   // Randomness and committees
   private ArrayList<Bytes32> latest_randao_mixes;
   private ArrayList<ArrayList<ShardCommittee>> shard_committees_at_slots = new ArrayList<>();
-  private ArrayList<ArrayList<Integer>> persistent_committees;
-  private ArrayList<ShardReassignmentRecord> persistent_committee_reassignments;
 
   // Finality
   private long previous_justified_slot;
@@ -127,8 +124,6 @@ public class BeaconState {
       // Randomness and committees
       ArrayList<Bytes32> latest_randao_mixes,
       ArrayList<ArrayList<ShardCommittee>> shard_committees_at_slots,
-      ArrayList<ArrayList<Integer>> persistent_committees,
-      ArrayList<ShardReassignmentRecord> persistent_committee_reassignments,
       // Finality
       long previous_justified_slot,
       long justified_slot,
@@ -159,8 +154,6 @@ public class BeaconState {
     // Randomness and committees
     this.latest_randao_mixes = latest_randao_mixes;
     this.shard_committees_at_slots = shard_committees_at_slots;
-    this.persistent_committees = persistent_committees;
-    this.persistent_committee_reassignments = persistent_committee_reassignments;
 
     // Finality
     this.previous_justified_slot = previous_justified_slot;
@@ -213,8 +206,6 @@ public class BeaconState {
             // Randomness and committees
             latest_randao_mixes,
             new ArrayList<>(),
-            new ArrayList<>(),
-            new ArrayList<>(),
 
             // Finality
             INITIAL_SLOT_NUMBER,
@@ -258,14 +249,6 @@ public class BeaconState {
     shard_committees.addAll(initial_shuffling);
     shard_committees.addAll(initial_shuffling);
     state.setShard_committees_at_slots(shard_committees);
-
-    // set initial persistent shuffling
-    ArrayList<Integer> active_validator_indices =
-        ValidatorsUtil.get_active_validator_indices_at_epoch(
-            state.getValidator_registry(), BeaconStateUtil.get_current_epoch(this));
-    state.setPersistent_committees(
-        BeaconStateUtil.split(
-            BeaconStateUtil.shuffle(active_validator_indices, Bytes32.ZERO), SHARD_COUNT));
 
     return state;
   }
@@ -543,20 +526,6 @@ public class BeaconState {
             validator.getPubkey(),
             EXIT,
             UnsignedLong.valueOf(slot)));
-
-    // Remove validator from persistent committees
-    for (int i = 0; i < persistent_committees.size(); i++) {
-      ArrayList<Integer> committee = persistent_committees.get(i);
-      for (int j = 0; j < committee.size(); j++) {
-        if (committee.get(j) == index) {
-          // Pop validator_index from committee
-          ArrayList<Integer> new_committee = new ArrayList<>(committee.subList(0, i));
-          new_committee.addAll(committee.subList(i + 1, committee.size()));
-          persistent_committees.set(i, new_committee);
-          break;
-        }
-      }
-    }
   }
 
   /**
@@ -873,15 +842,6 @@ public class BeaconState {
     this.validator_registry_latest_change_slot = validator_registry_latest_change_slot;
   }
 
-  public ArrayList<ShardReassignmentRecord> getPersistent_committee_reassignments() {
-    return persistent_committee_reassignments;
-  }
-
-  public void setPersistent_committee_reassignments(
-      ArrayList<ShardReassignmentRecord> persistent_committee_reassignments) {
-    this.persistent_committee_reassignments = persistent_committee_reassignments;
-  }
-
   public long getPrevious_justified_slot() {
     return previous_justified_slot;
   }
@@ -957,14 +917,6 @@ public class BeaconState {
 
   public ArrayList<ArrayList<ShardCommittee>> getShard_committees_at_slots() {
     return shard_committees_at_slots;
-  }
-
-  public ArrayList<ArrayList<Integer>> getPersistent_committees() {
-    return persistent_committees;
-  }
-
-  public void setPersistent_committees(ArrayList<ArrayList<Integer>> persistent_committees) {
-    this.persistent_committees = persistent_committees;
   }
 
   public ArrayList<Double> getLatest_penalized_exit_balances() {
