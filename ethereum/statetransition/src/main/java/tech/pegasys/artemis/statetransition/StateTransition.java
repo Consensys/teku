@@ -48,7 +48,6 @@ public class StateTransition {
   protected void slotProcessor(BeaconState state, BeaconBlock block) throws Exception {
     state.incrementSlot();
     logger.info("Processing new slot: " + state.getSlot());
-    SlotProcessorUtil.updateProposerRandaoLayer(state);
     // Slots the proposer has skipped (i.e. layers of RANDAO expected)
     // should be in Validator.randao_skips
     SlotProcessorUtil.updateLatestRandaoMixes(state);
