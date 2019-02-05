@@ -109,15 +109,16 @@ public class EpochProcessorUtil {
     updatePendingValidators(max_balance_churn, state);
     updateActivePendingExit(max_balance_churn, state);
 
-    int period_index =
+    // TODO: Update to reflect spec version 0.1
+    /*int period_index =
         Math.toIntExact(state.getSlot() / Constants.COLLECTIVE_PENALTY_CALCULATION_PERIOD);
-    ArrayList<Double> latest_penalized_balances = state.getLatest_penalized_balances();
+    ArrayList<Double> latest_penalized_exit_balances = state.getLatest_penalized_balances();
 
     double total_penalties =
-        latest_penalized_balances.get(period_index)
-            + latest_penalized_balances.get(period_index - 1 < 0 ? period_index - 1 : 0)
-            + latest_penalized_balances.get(period_index - 2 < 0 ? period_index - 2 : 0);
-
+        latest_penalized_exit_balances.get(period_index)
+            + latest_penalized_exit_balances.get(period_index - 1 < 0 ? period_index - 1 : 0)
+            + latest_penalized_exit_balances.get(period_index - 2 < 0 ? period_index - 2 : 0);
+    */
     ArrayList<Validator> to_penalize = to_penalize(active_validators);
   }
 
@@ -160,12 +161,12 @@ public class EpochProcessorUtil {
   }
 
   private static void process_ejections(BeaconState state) {
+    int index = 0;
     for (Validator validator : state.getValidator_registry()) {
-      if (validator.getBalance() < Constants.EJECTION_BALANCE)
-        state.update_validator_status(
-            state,
-            state.getValidator_registry().indexOf(validator),
-            Constants.EXITED_WITHOUT_PENALTY);
+      if (validator.getBalance() < Constants.EJECTION_BALANCE) {
+        BeaconStateUtil.exit_validator(state, index);
+      }
+      index++;
     }
   }
 
