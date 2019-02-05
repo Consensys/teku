@@ -125,9 +125,8 @@ public class BeaconStateUtil {
   }
 
   public static long get_previous_epoch(BeaconState state) {
-    if (UnsignedLong.valueOf(get_current_epoch(state))
-            .compareTo(slot_to_epoch(Constants.GENESIS_SLOT))
-        > 0) return get_current_epoch(state) - 1;
+    if (get_current_epoch(state) > slot_to_epoch(Constants.GENESIS_SLOT))
+      return get_current_epoch(state) - 1;
     else return get_current_epoch(state);
   }
 
@@ -142,8 +141,8 @@ public class BeaconStateUtil {
    * @param epoch
    * @return
    */
-  public static UnsignedLong get_entry_exit_effect_epoch(UnsignedLong epoch) {
-    return epoch.plus(UnsignedLong.ONE).plus(UnsignedLong.valueOf(Constants.ENTRY_EXIT_DELAY));
+  public static long get_entry_exit_effect_epoch(long epoch) {
+    return epoch + 1 + Constants.ENTRY_EXIT_DELAY;
   }
 
   /**
@@ -168,7 +167,7 @@ public class BeaconStateUtil {
     Validator validator = state.getValidator_registry().get(index);
 
     UnsignedLong exit_epoch =
-        get_entry_exit_effect_epoch(UnsignedLong.valueOf(get_current_epoch(state)));
+        UnsignedLong.valueOf(get_entry_exit_effect_epoch(get_current_epoch(state)));
     // The following updates only occur if not previous exited
     if (validator.getExit_epoch().compareTo(exit_epoch) <= 0) {
       return;

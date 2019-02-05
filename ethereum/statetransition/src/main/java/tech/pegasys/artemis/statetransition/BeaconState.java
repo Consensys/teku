@@ -170,7 +170,7 @@ public class BeaconState {
     ArrayList<CrosslinkRecord> latest_crosslinks = new ArrayList<>(SHARD_COUNT);
 
     for (int i = 0; i < SHARD_COUNT; i++) {
-      latest_crosslinks.add(new CrosslinkRecord(Bytes32.ZERO, GENESIS_SLOT));
+      latest_crosslinks.add(new CrosslinkRecord(Bytes32.ZERO, UnsignedLong.valueOf(GENESIS_SLOT)));
     }
 
     // todo after update v0.01 constants no longer exist
@@ -415,12 +415,11 @@ public class BeaconState {
   @VisibleForTesting
   public void activate_validator(BeaconState state, int index, boolean is_genesis) {
     Validator validator = validator_registry.get(index);
-    UnsignedLong activation_epoch = Constants.GENESIS_EPOCH;
+    long activation_epoch = Constants.GENESIS_EPOCH;
     long current_epoch = BeaconStateUtil.get_current_epoch(this);
-    if (UnsignedLong.valueOf(current_epoch).compareTo(Constants.GENESIS_SLOT) > 0) {
-      activation_epoch =
-          BeaconStateUtil.get_entry_exit_effect_epoch(UnsignedLong.valueOf(current_epoch));
-      validator.setActivation_epoch(activation_epoch);
+    if (current_epoch > Constants.GENESIS_SLOT) {
+      activation_epoch = BeaconStateUtil.get_entry_exit_effect_epoch(current_epoch);
+      validator.setActivation_epoch(UnsignedLong.valueOf(activation_epoch));
     }
   }
 
