@@ -64,7 +64,6 @@ public class BeaconState {
   private Validators validator_registry;
   private ArrayList<Double> validator_balances;
   private long validator_registry_latest_change_slot;
-  private long validator_registry_exit_count;
   private Bytes32 validator_registry_delta_chain_tip;
 
   // Randomness and committees
@@ -112,7 +111,6 @@ public class BeaconState {
       Validators validator_registry,
       ArrayList<Double> validator_balances,
       long validator_registry_latest_change_slot,
-      long validator_registry_exit_count,
       Bytes32 validator_registry_delta_chain_tip,
       // Randomness and committees
       ArrayList<Bytes32> latest_randao_mixes,
@@ -141,7 +139,6 @@ public class BeaconState {
     this.validator_registry = validator_registry;
     this.validator_balances = validator_balances;
     this.validator_registry_latest_change_slot = validator_registry_latest_change_slot;
-    this.validator_registry_exit_count = validator_registry_exit_count;
     this.validator_registry_delta_chain_tip = validator_registry_delta_chain_tip;
 
     // Randomness and committees
@@ -194,7 +191,6 @@ public class BeaconState {
             new Validators(),
             new ArrayList<>(),
             INITIAL_SLOT_NUMBER,
-            0,
             Bytes32.ZERO,
 
             // Randomness and committees
@@ -719,14 +715,6 @@ public class BeaconState {
 
   public void setValidator_balances(ArrayList<Double> validator_balances) {
     this.validator_balances = validator_balances;
-  }
-
-  public long getValidator_registry_exit_count() {
-    return validator_registry_exit_count;
-  }
-
-  public void setValidator_registry_exit_count(long validator_registry_exit_count) {
-    this.validator_registry_exit_count = validator_registry_exit_count;
   }
 
   public Bytes32 getValidator_registry_delta_chain_tip() {

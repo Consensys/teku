@@ -57,7 +57,6 @@ class BeaconStateTest {
             new Validators(),
             new ArrayList<>(),
             0,
-            0,
             Bytes32.ZERO,
             new ArrayList<>(),
             new ArrayList<>(),
@@ -328,14 +327,12 @@ class BeaconStateTest {
     BeaconState state = newState();
     int validator_index = 3;
 
-    long before_exit_count = state.getValidator_registry_exit_count();
     double before_balance = state.getValidator_balances().get(validator_index);
     //    Hash before_tip = state.validator_registry_delta_chain_tip;
 
     exit_validator(state, validator_index);
 
     // TODO: update for 0.1
-    // assertThat(before_exit_count).isEqualTo(state.getValidator_registry_exit_count());
     // assertThat(state.getValidator_balances().get(validator_index)).isLessThan(before_balance);
     // TODO: Uncomment this when tree_root_hash is working.
     //    assertThat(before_tip).isNotEqualTo(state.validator_registry_delta_chain_tip);
@@ -348,13 +345,11 @@ class BeaconStateTest {
     /*
     int validator_index = 2;
 
-    long before_exit_count = state.getValidator_registry_exit_count();
     double before_balance = state.getValidator_balances().get(validator_index);
     //    Hash before_tip = state.validator_registry_delta_chain_tip;
 
     exit_validator(state, validator_index);
 
-    assertThat(before_exit_count).isEqualTo(state.getValidator_registry_exit_count() - 1);
     assertThat(state.getValidator_balances().get(validator_index)).isLessThan(before_balance);
     // TODO: Uncomment this when tree_root_hash is working.
     //    assertThat(before_tip).isNotEqualTo(state.validator_registry_delta_chain_tip);
@@ -375,7 +370,6 @@ class BeaconStateTest {
     initiate_validator_exit(state, validator_index);
     exit_validator(state, validator_index);
 
-    assertThat(before_exit_count).isEqualTo(state.getValidator_registry_exit_count() - 1);
     assertThat(state.getPersistent_committees().get(validator_index).size())
         .isEqualTo(before_persistent_committees_size - 1);
     // TODO: Uncomment this when tree_root_hash is working.
