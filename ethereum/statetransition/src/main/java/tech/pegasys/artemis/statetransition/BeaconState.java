@@ -16,21 +16,14 @@ package tech.pegasys.artemis.statetransition;
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.lang.Math.toIntExact;
 import static tech.pegasys.artemis.datastructures.Constants.ACTIVATION;
-import static tech.pegasys.artemis.datastructures.Constants.ACTIVE;
-import static tech.pegasys.artemis.datastructures.Constants.ACTIVE_PENDING_EXIT;
-import static tech.pegasys.artemis.datastructures.Constants.COLLECTIVE_PENALTY_CALCULATION_PERIOD;
 import static tech.pegasys.artemis.datastructures.Constants.DOMAIN_DEPOSIT;
 import static tech.pegasys.artemis.datastructures.Constants.EPOCH_LENGTH;
-import static tech.pegasys.artemis.datastructures.Constants.EXIT;
-import static tech.pegasys.artemis.datastructures.Constants.EXITED_WITHOUT_PENALTY;
-import static tech.pegasys.artemis.datastructures.Constants.EXITED_WITH_PENALTY;
 import static tech.pegasys.artemis.datastructures.Constants.GWEI_PER_ETH;
 import static tech.pegasys.artemis.datastructures.Constants.INITIAL_FORK_VERSION;
 import static tech.pegasys.artemis.datastructures.Constants.INITIAL_SLOT_NUMBER;
 import static tech.pegasys.artemis.datastructures.Constants.MAX_DEPOSIT;
 import static tech.pegasys.artemis.datastructures.Constants.SHARD_COUNT;
 import static tech.pegasys.artemis.datastructures.Constants.TARGET_COMMITTEE_SIZE;
-import static tech.pegasys.artemis.datastructures.Constants.WHISTLEBLOWER_REWARD_QUOTIENT;
 import static tech.pegasys.artemis.util.bls.BLSVerify.bls_verify;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -177,6 +170,7 @@ public class BeaconState {
   public BeaconState get_initial_beacon_state(
       ArrayList<Deposit> initial_validator_deposits, int genesis_time, Eth1Data latest_eth1_data) {
 
+    // TODO: this needs to be checked against 0.1 spec
     ArrayList<Bytes32> latest_randao_mixes = new ArrayList<>();
     ArrayList<Bytes32> latest_block_roots = new ArrayList<>();
     ArrayList<CrosslinkRecord> latest_crosslinks = new ArrayList<>(SHARD_COUNT);
@@ -237,8 +231,8 @@ public class BeaconState {
               deposit_input.getRandao_commitment(),
               deposit_input.getPoc_commitment());
 
-      if (state.getValidator_balances().get(validator_index) >= (MAX_DEPOSIT * GWEI_PER_ETH)) {
-        update_validator_status(state, validator_index, ACTIVE);
+      if (get_effective_balance(state, validator_index) >= (MAX_DEPOSIT * GWEI_PER_ETH)) {
+        activate_validator(validator_index);
       }
     }
 
@@ -414,25 +408,6 @@ public class BeaconState {
   }
 
   /**
-   * Update the validator status with the given 'index' to 'new_status'. Handle other general
-   * accounting related to this status update. Note that this function mutates 'state'.
-   *
-   * @param index The index of the validator.
-   * @param new_status The validator's new status.
-   */
-  public void update_validator_status(BeaconState state, int index, int new_status) {
-    if (new_status == ACTIVE) {
-      activate_validator(index);
-    }
-    if (new_status == ACTIVE_PENDING_EXIT) {
-      initiate_validator_exit(index);
-    }
-    if (new_status == EXITED_WITH_PENALTY || new_status == EXITED_WITHOUT_PENALTY) {
-      exit_validator(state, index, new_status);
-    }
-  }
-
-  /**
    * Activate the validator with the given 'index'. Note that this function mutates 'state'.
    *
    * @param index The index of the validator.
@@ -454,78 +429,6 @@ public class BeaconState {
             validator.getPubkey(),
             ACTIVATION,
             UnsignedLong.valueOf(slot));
-  }
-
-  /**
-   * Initiate exit for the validator with the given 'index'. Note that this function mutates
-   * 'state'.
-   *
-   * @param index The index of the validator.
-   */
-  @VisibleForTesting
-  public void initiate_validator_exit(int index) {
-    // todo update methods following the 0.01 updates
-    //    Validator validator = validator_registry.get(index);
-    //    if (validator.getStatus().longValue() != ACTIVE) {
-    //      return;
-    //    }
-    //
-    //    validator.setStatus(UnsignedLong.valueOf(ACTIVE_PENDING_EXIT));
-    //    validator.setLatest_status_change_slot(UnsignedLong.valueOf(slot));
-  }
-
-  /**
-   * Exit the validator with the given 'index'. Note that this function mutates 'state'.
-   *
-   * @param index The index of the validator.
-   * @param new_status The validator's new status.
-   */
-  @VisibleForTesting
-  public void exit_validator(BeaconState state, int index, int new_status) {
-    Validator validator = state.validator_registry.get(index);
-    // todo update methods following the 0.01 updates
-    //    long prev_status = validator.getStatus().longValue();
-
-    //    if (prev_status == EXITED_WITH_PENALTY) {
-    //      return;
-    //    }
-
-    //    validator.setStatus(UnsignedLong.valueOf(new_status));
-    //    validator.setLatest_status_change_slot(UnsignedLong.valueOf(state.getSlot()));
-
-    if (new_status == EXITED_WITH_PENALTY) {
-      int lpeb_index = toIntExact(state.getSlot()) / COLLECTIVE_PENALTY_CALCULATION_PERIOD;
-      latest_penalized_balances.set(
-          lpeb_index,
-          latest_penalized_balances.get(lpeb_index) + get_effective_balance(state, index));
-
-      int whistleblower_index = get_beacon_proposer_index(state, toIntExact(state.getSlot()));
-      double whistleblower_reward =
-          get_effective_balance(state, index) / WHISTLEBLOWER_REWARD_QUOTIENT;
-
-      double new_whistleblower_balance =
-          state.validator_balances.get(whistleblower_index) + whistleblower_reward;
-
-      state.validator_balances.set(whistleblower_index, new_whistleblower_balance);
-      double new_balance = state.validator_balances.get(index) - whistleblower_reward;
-      state.validator_balances.set(index, new_balance);
-    }
-    // todo update methods following the 0.01 updates
-    //    if (prev_status == EXITED_WITHOUT_PENALTY) {
-    //      return;
-    //    }
-
-    // The following updates only occur if not previous exited
-    state.setValidator_registry_exit_count(state.getValidator_registry_exit_count() + 1);
-    // todo after the spec refactor exit_count no longer exists
-    //    validator.setExit_count(UnsignedLong.valueOf(state.getValidator_registry_exit_count()));
-    state.setValidator_registry_delta_chain_tip(
-        get_new_validator_registry_delta_chain_tip(
-            state.getValidator_registry_delta_chain_tip(),
-            index,
-            validator.getPubkey(),
-            EXIT,
-            UnsignedLong.valueOf(slot)));
   }
 
   /**

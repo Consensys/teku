@@ -50,12 +50,12 @@ public final class Constants {
 
   // Time parameters
   public static final int SLOT_DURATION = 6; // 6 seconds
-  public static final int MIN_ATTESTATION_INCLUSION_DELAY = (int) Math.pow(2, 2); // 4 slots
-  public static final int EPOCH_LENGTH = (int) Math.pow(2, 6); // 64 slots
-  public static final int ETH1_DATA_VOTING_PERIOD = (int) Math.pow(2, 10); // 1,024 slots
-  public static final int COLLECTIVE_PENALTY_CALCULATION_PERIOD =
-      (int) Math.pow(2, 20); // 1,048,576 slots
-  public static final int ZERO_BALANCE_VALIDATOR_TTL = (int) Math.pow(2, 22); // 4,194,304 slots
+  public static final int MIN_ATTESTATION_INCLUSION_DELAY = 4; // 4 slots
+  public static final int EPOCH_LENGTH = 64; // slots
+  public static final int SEED_LOOKAHEAD = 1;
+  public static final int ENTRY_EXIT_DELAY = 4;
+  public static final int ETH1_DATA_VOTING_PERIOD = 16; // epochs
+  public static final int MIN_VALIDATOR_WITHDRAWAL_EPOCHS = 256; // epochs
 
   // Reward and penalty quotients
   public static final int BASE_REWARD_QUOTIENT = (int) Math.pow(2, 10); // 1,024
@@ -64,11 +64,8 @@ public final class Constants {
   public static final int INACTIVITY_PENALTY_QUOTIENT = (int) Math.pow(2, 24); // 16,777,216
 
   // Status codes
-  public static final int PENDING_ACTIVATION = 0;
-  public static final int ACTIVE = 1;
-  public static final int ACTIVE_PENDING_EXIT = 2;
-  public static final int EXITED_WITHOUT_PENALTY = 3;
-  public static final int EXITED_WITH_PENALTY = 4;
+  public static final int INITIATED_EXIT = 1;
+  public static final int WITHDRAWABLE = 2;
 
   // Max operations per block
   public static final int MAX_PROPOSER_SLASHINGS = (int) Math.pow(2, 4); // 16
@@ -89,7 +86,6 @@ public final class Constants {
   public static final UnsignedLong DOMAIN_RANDAO = UnsignedLong.valueOf(4);
   public static final int MIN_VALIDATOR_WITHDRAWAL_TIME =
       (int) Math.pow(2, 14); // 16,384 slots ~27 hours
-  public static final int WITHDRAWABLE = 2;
   public static final int MAX_WITHDRAWALS_PER_EPOCH = 4;
 
   public static final int GENESIS_SLOT = (int) Math.pow(2, 19); //
@@ -142,10 +138,6 @@ public final class Constants {
         + EPOCH_LENGTH
         + "\nETH1_DATA_VOTING_PERIOD: "
         + ETH1_DATA_VOTING_PERIOD
-        + "\nCOLLECTIVE_PENALTY_CALCULATION_PERIOD: "
-        + COLLECTIVE_PENALTY_CALCULATION_PERIOD
-        + "\nZERO_BALANCE_VALIDATOR_TTL: "
-        + ZERO_BALANCE_VALIDATOR_TTL
         + "\n\n--Reward and penalty quotients--"
         + "\nBASE_REWARD_QUOTIENT: "
         + BASE_REWARD_QUOTIENT
@@ -156,16 +148,10 @@ public final class Constants {
         + "\nINACTIVITY_PENALTY_QUOTIENT: "
         + INACTIVITY_PENALTY_QUOTIENT
         + "\n\n--Status codes--"
-        + "\nPENDING_ACTIVATION: "
-        + PENDING_ACTIVATION
-        + "\nACTIVE: "
-        + ACTIVE
-        + "\nACTIVE_PENDING_EXIT: "
-        + ACTIVE_PENDING_EXIT
-        + "\nEXITED_WITHOUT_PENALTY: "
-        + EXITED_WITHOUT_PENALTY
-        + "\nEXITED_WITH_PENALTY: "
-        + EXITED_WITH_PENALTY
+        + "\nINITIATED_EXIT: "
+        + INITIATED_EXIT
+        + "\nWITHDRAWABLE: "
+        + WITHDRAWABLE
         + "\n\n--Max operations per block--"
         + "\nMAX_PROPOSER_SLASHINGS: "
         + MAX_PROPOSER_SLASHINGS
