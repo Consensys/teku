@@ -82,17 +82,17 @@ public class BeaconStateUtil {
   }
 
   private static long getCurrent_epoch_start_shard(BeaconState state) {
-    // todo
+    // TODO
     return 0l;
   }
 
   private static long get_previous_epoch_committee_count_per_slot(BeaconState state) {
-    // todo
+    // TODO
     return 0l;
   }
 
   private static long getPrevious_epoch_start_shard(BeaconState state) {
-    // todo
+    // TODO
     return 0l;
   }
 
@@ -104,22 +104,17 @@ public class BeaconStateUtil {
   public static Bytes32 getShard_block_root(BeaconState state, Long shard) {
     return state.getLatest_crosslinks().get(toIntExact(shard)).getShard_block_hash();
   }
-  /**
-   * Return the epoch number of the given ``slot``
-   *
-   * @return
-   */
+
+  /** Return the epoch number of the given ``slot`` */
   public static UnsignedLong slot_to_epoch(UnsignedLong slot) {
     return slot.dividedBy(UnsignedLong.valueOf(Constants.EPOCH_LENGTH));
   }
-  /**
-   * Return the epoch number of the given ``slot``
-   *
-   * @return
-   */
+
+  /** Return the epoch number of the given ``slot`` */
   public static long slot_to_epoch(long slot) {
     return slot / Constants.EPOCH_LENGTH;
   }
+
   /**
    * Return the current epoch of the given ``state``.
    *
@@ -192,11 +187,7 @@ public class BeaconStateUtil {
     // TODO: implement from 0.1 spec
   }
 
-  /**
-   * Return the randao mix at a recent ``epoch``.
-   *
-   * @return
-   */
+  /** Return the randao mix at a recent ``epoch``. */
   public static Bytes32 get_randao_mix(BeaconState state, long epoch) {
     assert get_current_epoch(state) - Constants.LATEST_RANDAO_MIXES_LENGTH < epoch;
     assert epoch <= get_current_epoch(state);
