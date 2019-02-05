@@ -20,7 +20,10 @@ public final class Eth1DataVote {
   private Eth1Data eth1_data;
   private UnsignedLong vote_count;
 
-  public Eth1DataVote() {}
+  public Eth1DataVote(Eth1Data eth1_data, UnsignedLong vote_count) {
+    this.eth1_data = eth1_data;
+    this.vote_count = vote_count;
+  }
 
   /** @return the eth1_data */
   public Eth1Data getEth1_data() {

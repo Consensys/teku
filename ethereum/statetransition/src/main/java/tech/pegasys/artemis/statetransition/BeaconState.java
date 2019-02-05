@@ -28,11 +28,9 @@ import static tech.pegasys.artemis.datastructures.Constants.GWEI_PER_ETH;
 import static tech.pegasys.artemis.datastructures.Constants.INITIAL_FORK_VERSION;
 import static tech.pegasys.artemis.datastructures.Constants.INITIAL_SLOT_NUMBER;
 import static tech.pegasys.artemis.datastructures.Constants.MAX_DEPOSIT;
-import static tech.pegasys.artemis.datastructures.Constants.PENDING_ACTIVATION;
 import static tech.pegasys.artemis.datastructures.Constants.SHARD_COUNT;
 import static tech.pegasys.artemis.datastructures.Constants.TARGET_COMMITTEE_SIZE;
 import static tech.pegasys.artemis.datastructures.Constants.WHISTLEBLOWER_REWARD_QUOTIENT;
-import static tech.pegasys.artemis.datastructures.Constants.ZERO_BALANCE_VALIDATOR_TTL;
 import static tech.pegasys.artemis.util.bls.BLSVerify.bls_verify;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -46,16 +44,17 @@ import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.bytes.Bytes48;
 import net.consensys.cava.crypto.Hash;
 import tech.pegasys.artemis.datastructures.Constants;
+import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
+import tech.pegasys.artemis.datastructures.blocks.Eth1DataVote;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.DepositInput;
-import tech.pegasys.artemis.datastructures.state.CandidatePoWReceiptRootRecord;
 import tech.pegasys.artemis.datastructures.state.CrosslinkRecord;
 import tech.pegasys.artemis.datastructures.state.ForkData;
 import tech.pegasys.artemis.datastructures.state.PendingAttestationRecord;
 import tech.pegasys.artemis.datastructures.state.ShardCommittee;
 import tech.pegasys.artemis.datastructures.state.ShardReassignmentRecord;
-import tech.pegasys.artemis.datastructures.state.ValidatorRecord;
+import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.datastructures.state.ValidatorRegistryDeltaBlock;
 import tech.pegasys.artemis.datastructures.state.Validators;
 import tech.pegasys.artemis.statetransition.util.BeaconStateUtil;
@@ -95,9 +94,9 @@ public class BeaconState {
   private ArrayList<PendingAttestationRecord> latest_attestations;
   private ArrayList<Bytes32> batched_block_roots = new ArrayList<>();
 
-  // PoW receipt root
-  private Bytes32 processed_pow_receipt_root;
-  private ArrayList<CandidatePoWReceiptRootRecord> candidate_pow_receipt_roots;
+  // Ethereum 1.0 chain data
+  private Eth1Data latest_eth1_data;
+  private List<Eth1DataVote> eth1_data_votes;
 
   // Default Constructor
   public BeaconState() {
@@ -141,9 +140,9 @@ public class BeaconState {
       ArrayList<Double> latest_penalized_exit_balances,
       ArrayList<PendingAttestationRecord> latest_attestations,
       ArrayList<Bytes32> batched_block_roots,
-      // PoW receipt root
-      Bytes32 processed_pow_receipt_root,
-      ArrayList<CandidatePoWReceiptRootRecord> candidate_pow_receipt_roots) {
+      // Ethereum 1.0 chain data
+      Eth1Data latest_eth1_data,
+      ArrayList<Eth1DataVote> eth1_data_votes) {
 
     // Misc
     this.slot = slot;
@@ -176,16 +175,14 @@ public class BeaconState {
     this.latest_attestations = latest_attestations;
     this.batched_block_roots = batched_block_roots;
 
-    // PoW receipt root
-    this.processed_pow_receipt_root = processed_pow_receipt_root;
-    this.candidate_pow_receipt_roots = candidate_pow_receipt_roots;
+    // Ethereum 1.0 chain data
+    this.latest_eth1_data = latest_eth1_data;
+    this.eth1_data_votes = eth1_data_votes;
   }
 
   @VisibleForTesting
   public BeaconState get_initial_beacon_state(
-      ArrayList<Deposit> initial_validator_deposits,
-      int genesis_time,
-      Bytes32 processed_pow_receipt_root) {
+      ArrayList<Deposit> initial_validator_deposits, int genesis_time, Eth1Data latest_eth1_data) {
 
     ArrayList<Bytes32> latest_randao_mixes = new ArrayList<>();
     ArrayList<Bytes32> latest_block_roots = new ArrayList<>();
@@ -232,8 +229,8 @@ public class BeaconState {
             new ArrayList<>(),
             new ArrayList<>(),
 
-            // PoW receipt root
-            processed_pow_receipt_root,
+            // Ethereum 1.0 chain data
+            latest_eth1_data,
             new ArrayList<>());
 
     // handle initial deposits and activations
@@ -264,7 +261,8 @@ public class BeaconState {
 
     // set initial persistent shuffling
     ArrayList<Integer> active_validator_indices =
-        get_active_validator_indices(state.getValidator_registry());
+        ValidatorsUtil.get_active_validator_indices_at_epoch(
+            state.getValidator_registry(), BeaconStateUtil.get_current_epoch(this));
     state.setPersistent_committees(
         BeaconStateUtil.split(
             BeaconStateUtil.shuffle(active_validator_indices, Bytes32.ZERO), SHARD_COUNT));
@@ -273,50 +271,21 @@ public class BeaconState {
   }
 
   /**
-   * Gets indices of active validators from 'validators'.
-   *
-   * @param validators
-   * @return
-   */
-  public static ArrayList<Integer> get_active_validator_indices(
-      ArrayList<ValidatorRecord> validators) {
-    ArrayList<Integer> active_validators = new ArrayList<>();
-    for (int i = 0; i < validators.size(); i++) {
-      if (isActiveValidator(validators.get(i))) {
-        active_validators.add(i);
-      }
-    }
-    return active_validators;
-  }
-
-  /**
-   * Checks if 'validator' is active.
-   *
-   * @param validator The validator.
-   * @return True if the validator is active; false if not.
-   */
-  private static boolean isActiveValidator(ValidatorRecord validator) {
-    return validator.getStatus().equals(UnsignedLong.valueOf(ACTIVE))
-        || validator.getStatus().equals(UnsignedLong.valueOf(ACTIVE_PENDING_EXIT));
-  }
-
-  /**
    * @param validators
    * @param current_slot
    * @return The minimum empty validator index.
    */
   private int min_empty_validator_index(
-      ArrayList<ValidatorRecord> validators,
-      ArrayList<Double> validator_balances,
-      int current_slot) {
+      ArrayList<Validator> validators, ArrayList<Double> validator_balances, int current_slot) {
     for (int i = 0; i < validators.size(); i++) {
-      ValidatorRecord v = validators.get(i);
+      Validator v = validators.get(i);
       double vbal = validator_balances.get(i);
-      if (vbal == 0
-          && v.getLatest_status_change_slot().longValue() + ZERO_BALANCE_VALIDATOR_TTL
-              <= current_slot) {
-        return i;
-      }
+      // todo getLatest_status_change_slot method no longer exists following the recent update
+      //      if (vbal == 0
+      //          && v.getLatest_status_change_slot().longValue() + ZERO_BALANCE_VALIDATOR_TTL
+      //              <= current_slot) {
+      return i;
+      //      }
     }
     return validators.size();
   }
@@ -387,19 +356,21 @@ public class BeaconState {
 
     if (indexOfPubkey(validator_pubkeys, pubkey) == -1) {
       // Add new validator
-      ValidatorRecord validator =
-          new ValidatorRecord(
-              pubkey,
-              withdrawal_credentials,
-              randao_commitment,
-              UnsignedLong.ZERO,
-              UnsignedLong.valueOf(PENDING_ACTIVATION),
-              UnsignedLong.valueOf(state.getSlot()),
-              UnsignedLong.ZERO,
-              UnsignedLong.ZERO,
-              UnsignedLong.ZERO);
+      Validator validator = new Validator();
+      // todo Validator constructor changes after the the 0.01 update
+      // empty validator record declared in it's place
+      //          new Validator(
+      //              pubkey,
+      //              withdrawal_credentials,
+      //              randao_commitment,
+      //              UnsignedLong.ZERO,
+      //              UnsignedLong.valueOf(PENDING_ACTIVATION),
+      //              UnsignedLong.valueOf(state.getSlot()),
+      //              UnsignedLong.ZERO,
+      //              UnsignedLong.ZERO,
+      //              UnsignedLong.ZERO);
 
-      ArrayList<ValidatorRecord> validators_copy = new ArrayList<>(validator_registry);
+      ArrayList<Validator> validators_copy = new ArrayList<>(validator_registry);
       index = min_empty_validator_index(validators_copy, validator_balances, toIntExact(slot));
       if (index == validators_copy.size()) {
         state.validator_registry.add(validator);
@@ -412,7 +383,7 @@ public class BeaconState {
     } else {
       // Increase balance by deposit
       index = indexOfPubkey(validator_pubkeys, pubkey);
-      ValidatorRecord validator = state.validator_registry.get(index);
+      Validator validator = state.validator_registry.get(index);
       assert validator.getWithdrawal_credentials().equals(withdrawal_credentials);
 
       state.validator_balances.set(index, state.validator_balances.get(index) + deposit);
@@ -486,13 +457,14 @@ public class BeaconState {
    */
   @VisibleForTesting
   public void activate_validator(int index) {
-    ValidatorRecord validator = validator_registry.get(index);
-    if (validator.getStatus().longValue() != PENDING_ACTIVATION) {
-      return;
-    }
-
-    validator.setStatus(UnsignedLong.valueOf(ACTIVE));
-    validator.setLatest_status_change_slot(UnsignedLong.valueOf(slot));
+    Validator validator = validator_registry.get(index);
+    // todo update methods following the 0.01 updates
+    //    if (validator.getStatus().longValue() != PENDING_ACTIVATION) {
+    //      return;
+    //    }
+    //
+    //    validator.setStatus(UnsignedLong.valueOf(ACTIVE));
+    //    validator.setLatest_status_change_slot(UnsignedLong.valueOf(slot));
     validator_registry_delta_chain_tip =
         get_new_validator_registry_delta_chain_tip(
             validator_registry_delta_chain_tip,
@@ -510,13 +482,14 @@ public class BeaconState {
    */
   @VisibleForTesting
   public void initiate_validator_exit(int index) {
-    ValidatorRecord validator = validator_registry.get(index);
-    if (validator.getStatus().longValue() != ACTIVE) {
-      return;
-    }
-
-    validator.setStatus(UnsignedLong.valueOf(ACTIVE_PENDING_EXIT));
-    validator.setLatest_status_change_slot(UnsignedLong.valueOf(slot));
+    // todo update methods following the 0.01 updates
+    //    Validator validator = validator_registry.get(index);
+    //    if (validator.getStatus().longValue() != ACTIVE) {
+    //      return;
+    //    }
+    //
+    //    validator.setStatus(UnsignedLong.valueOf(ACTIVE_PENDING_EXIT));
+    //    validator.setLatest_status_change_slot(UnsignedLong.valueOf(slot));
   }
 
   /**
@@ -527,15 +500,16 @@ public class BeaconState {
    */
   @VisibleForTesting
   public void exit_validator(BeaconState state, int index, int new_status) {
-    ValidatorRecord validator = state.validator_registry.get(index);
-    long prev_status = validator.getStatus().longValue();
+    Validator validator = state.validator_registry.get(index);
+    // todo update methods following the 0.01 updates
+    //    long prev_status = validator.getStatus().longValue();
 
-    if (prev_status == EXITED_WITH_PENALTY) {
-      return;
-    }
+    //    if (prev_status == EXITED_WITH_PENALTY) {
+    //      return;
+    //    }
 
-    validator.setStatus(UnsignedLong.valueOf(new_status));
-    validator.setLatest_status_change_slot(UnsignedLong.valueOf(state.getSlot()));
+    //    validator.setStatus(UnsignedLong.valueOf(new_status));
+    //    validator.setLatest_status_change_slot(UnsignedLong.valueOf(state.getSlot()));
 
     if (new_status == EXITED_WITH_PENALTY) {
       int lpeb_index = toIntExact(state.getSlot()) / COLLECTIVE_PENALTY_CALCULATION_PERIOD;
@@ -554,14 +528,15 @@ public class BeaconState {
       double new_balance = state.validator_balances.get(index) - whistleblower_reward;
       state.validator_balances.set(index, new_balance);
     }
-
-    if (prev_status == EXITED_WITHOUT_PENALTY) {
-      return;
-    }
+    // todo update methods following the 0.01 updates
+    //    if (prev_status == EXITED_WITHOUT_PENALTY) {
+    //      return;
+    //    }
 
     // The following updates only occur if not previous exited
     state.setValidator_registry_exit_count(state.getValidator_registry_exit_count() + 1);
-    validator.setExit_count(UnsignedLong.valueOf(state.getValidator_registry_exit_count()));
+    // todo after the spec refactor exit_count no longer exists
+    //    validator.setExit_count(UnsignedLong.valueOf(state.getValidator_registry_exit_count()));
     state.setValidator_registry_delta_chain_tip(
         get_new_validator_registry_delta_chain_tip(
             state.getValidator_registry_delta_chain_tip(),
@@ -670,12 +645,13 @@ public class BeaconState {
    * @return
    */
   public static ArrayList<ArrayList<ShardCommittee>> get_shuffling(
-      Bytes32 seed, ArrayList<ValidatorRecord> validators, int crosslinking_start_shard, int slot) {
+      Bytes32 seed, ArrayList<Validator> validators, int crosslinking_start_shard, int slot) {
     // Normalizes slot to start of epoch boundary
     slot -= slot % EPOCH_LENGTH;
 
     ArrayList<Integer> active_validator_indices =
-        ValidatorsUtil.get_active_validator_indices(validators);
+        ValidatorsUtil.get_active_validator_indices_at_epoch(
+            new Validators(validators), BeaconStateUtil.slot_to_epoch(slot));
     int committees_per_slot =
         BeaconStateUtil.clamp(
             1,
@@ -814,6 +790,22 @@ public class BeaconState {
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */
+  public Eth1Data getLatest_eth1_data() {
+    return this.latest_eth1_data;
+  }
+
+  public void setLatest_eth1_data(Eth1Data data) {
+    this.latest_eth1_data = data;
+  }
+
+  public List<Eth1DataVote> getEth1_data_votes() {
+    return this.eth1_data_votes;
+  }
+
+  public void setEth1_data_votes(List<Eth1DataVote> votes) {
+    this.eth1_data_votes = votes;
+  }
+
   public long getSlot() {
     return this.slot;
   }
@@ -846,7 +838,7 @@ public class BeaconState {
     return validator_registry;
   }
 
-  public void setValidator_registry(ArrayList<ValidatorRecord> validator_registry) {
+  public void setValidator_registry(ArrayList<Validator> validator_registry) {
     this.validator_registry = new Validators(validator_registry);
   }
 
@@ -953,23 +945,6 @@ public class BeaconState {
 
   public void setFinalized_slot(long finalized_slot) {
     this.finalized_slot = finalized_slot;
-  }
-
-  public Bytes32 getProcessed_pow_receipt_root() {
-    return processed_pow_receipt_root;
-  }
-
-  public void setProcessed_pow_receipt_root(Bytes32 processed_pow_receipt_root) {
-    this.processed_pow_receipt_root = processed_pow_receipt_root;
-  }
-
-  public ArrayList<CandidatePoWReceiptRootRecord> getCandidate_pow_receipt_roots() {
-    return candidate_pow_receipt_roots;
-  }
-
-  public void setCandidate_pow_receipt_roots(
-      ArrayList<CandidatePoWReceiptRootRecord> candidate_pow_receipt_roots) {
-    this.candidate_pow_receipt_roots = candidate_pow_receipt_roots;
   }
 
   public void setShard_committees_at_slots(
