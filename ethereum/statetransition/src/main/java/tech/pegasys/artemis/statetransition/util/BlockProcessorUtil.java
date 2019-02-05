@@ -57,7 +57,7 @@ public class BlockProcessorUtil {
     int proposerIndex =
         BeaconState.get_beacon_proposer_index(state, Math.toIntExact(state.getSlot()));
     Bytes48 pubkey = state.getValidator_registry().get(proposerIndex).getPubkey();
-    // todo after v0.01 refactor constants no longer exists
+    // TODO: after v0.01 refactor constants no longer exists
     //    return BLSVerify.bls_verify(
     //        pubkey, proposalRoot, block.getSignature(), Constants.DOMAIN_PROPOSAL);
     return true;
@@ -79,7 +79,7 @@ public class BlockProcessorUtil {
     // Verify that bls_verify(pubkey=proposer.pubkey,
     // message=int_to_bytes32(get_current_epoch(state)), signature=block.randao_reveal, domain=
     // get_domain(state.fork, get_current_epoch(state), DOMAIN_RANDAO)).
-    // todo after v0.01 refactor constants no longer exists
+    // TODO: after v0.01 refactor constants no longer exists
     //    BLSVerify.bls_verify(pubkey, epochBytes, block.getRandao_reveal(),
     // Constants.DOMAIN_RANDAO);
     // state.latest_randao_mixes[get_current_epoch(state) % LATEST_RANDAO_MIXES_LENGTH] =
