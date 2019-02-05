@@ -133,6 +133,57 @@ public class BeaconStateUtil {
   }
 
   /**
+   * An entry or exit triggered in the ``epoch`` given by the input takes effect at the epoch given
+   * by the output.
+   *
+   * @param epoch
+   * @return
+   */
+  public static long get_entry_exit_effect_epoch(long epoch) {
+    return epoch + 1 + Constants.ENTRY_EXIT_DELAY;
+  }
+
+  /**
+   * Initiate exit for the validator with the given 'index'. Note that this function mutates
+   * 'state'.
+   *
+   * @param index The index of the validator.
+   */
+  @VisibleForTesting
+  public static void initiate_validator_exit(BeaconState state, int index) {
+    Validator validator = state.getValidator_registry().get(index);
+    validator.setStatus_flags(UnsignedLong.valueOf(Constants.INITIATED_EXIT));
+  }
+
+  /**
+   * Exit the validator of the given ``index``. Note that this function mutates ``state``.
+   *
+   * @param state
+   * @param index
+   */
+  public static void exit_validator(BeaconState state, int index) {
+    Validator validator = state.getValidator_registry().get(index);
+
+    long exit_epoch = get_entry_exit_effect_epoch(get_current_epoch(state));
+    // The following updates only occur if not previous exited
+    if (validator.getExit_epoch().longValue() <= exit_epoch) {
+      return;
+    }
+
+    validator.setExit_epoch(UnsignedLong.valueOf(exit_epoch));
+  }
+
+  /**
+   * Penalize the validator of the given ``index``. Note that this function mutates ``state``.
+   *
+   * @param state
+   * @param index
+   */
+  public static void penalize_validator(BeaconState state, int index) {
+    // TODO: implement from 0.1 spec
+  }
+
+  /**
    * Return the randao mix at a recent ``epoch``.
    *
    * @return
