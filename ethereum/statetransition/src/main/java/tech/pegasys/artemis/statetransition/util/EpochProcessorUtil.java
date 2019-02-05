@@ -160,12 +160,12 @@ public class EpochProcessorUtil {
   }
 
   private static void process_ejections(BeaconState state) {
+    int index = 0;
     for (Validator validator : state.getValidator_registry()) {
-      if (validator.getBalance() < Constants.EJECTION_BALANCE)
-        state.update_validator_status(
-            state,
-            state.getValidator_registry().indexOf(validator),
-            Constants.EXITED_WITHOUT_PENALTY);
+      if (validator.getBalance() < Constants.EJECTION_BALANCE){
+        BeaconStateUtil.exit_validator(state,index);
+      }
+      index++;
     }
   }
 
