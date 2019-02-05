@@ -15,22 +15,11 @@ package tech.pegasys.artemis.statetransition;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.lang.Math.toIntExact;
-import static tech.pegasys.artemis.datastructures.Constants.ACTIVATION;
-import static tech.pegasys.artemis.datastructures.Constants.ACTIVE;
-import static tech.pegasys.artemis.datastructures.Constants.ACTIVE_PENDING_EXIT;
-import static tech.pegasys.artemis.datastructures.Constants.COLLECTIVE_PENALTY_CALCULATION_PERIOD;
 import static tech.pegasys.artemis.datastructures.Constants.DOMAIN_DEPOSIT;
 import static tech.pegasys.artemis.datastructures.Constants.EPOCH_LENGTH;
-import static tech.pegasys.artemis.datastructures.Constants.EXIT;
-import static tech.pegasys.artemis.datastructures.Constants.EXITED_WITHOUT_PENALTY;
-import static tech.pegasys.artemis.datastructures.Constants.EXITED_WITH_PENALTY;
-import static tech.pegasys.artemis.datastructures.Constants.GWEI_PER_ETH;
-import static tech.pegasys.artemis.datastructures.Constants.INITIAL_FORK_VERSION;
-import static tech.pegasys.artemis.datastructures.Constants.INITIAL_SLOT_NUMBER;
-import static tech.pegasys.artemis.datastructures.Constants.MAX_DEPOSIT;
+import static tech.pegasys.artemis.datastructures.Constants.GENESIS_SLOT;
 import static tech.pegasys.artemis.datastructures.Constants.SHARD_COUNT;
 import static tech.pegasys.artemis.datastructures.Constants.TARGET_COMMITTEE_SIZE;
-import static tech.pegasys.artemis.datastructures.Constants.WHISTLEBLOWER_REWARD_QUOTIENT;
 import static tech.pegasys.artemis.util.bls.BLSVerify.bls_verify;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -183,6 +172,7 @@ public class BeaconState {
   }
 
   @VisibleForTesting
+  @SuppressWarnings("ModifiedButNotUsed")
   public BeaconState get_initial_beacon_state(
       ArrayList<Deposit> initial_validator_deposits,
       int genesis_time,
@@ -194,50 +184,50 @@ public class BeaconState {
     ArrayList<CrosslinkRecord> latest_crosslinks = new ArrayList<>(SHARD_COUNT);
 
     for (int i = 0; i < SHARD_COUNT; i++) {
-      latest_crosslinks.add(
-          new CrosslinkRecord(Bytes32.ZERO, UnsignedLong.valueOf(INITIAL_SLOT_NUMBER)));
+      latest_crosslinks.add(new CrosslinkRecord(Bytes32.ZERO, GENESIS_SLOT));
     }
-
-    BeaconState state =
-        new BeaconState(
-            // Misc
-            INITIAL_SLOT_NUMBER,
-            genesis_time,
-            new ForkData(
-                UnsignedLong.valueOf(INITIAL_FORK_VERSION),
-                UnsignedLong.valueOf(INITIAL_FORK_VERSION),
-                UnsignedLong.valueOf(INITIAL_SLOT_NUMBER)),
-
-            // Validator registry
-            new Validators(),
-            new ArrayList<>(),
-            INITIAL_SLOT_NUMBER,
-            0,
-            Bytes32.ZERO,
-
-            // Randomness and committees
-            latest_randao_mixes,
-            latest_vdf_outputs,
-            new ArrayList<>(),
-            new ArrayList<>(),
-            new ArrayList<>(),
-
-            // Finality
-            INITIAL_SLOT_NUMBER,
-            INITIAL_SLOT_NUMBER,
-            0,
-            INITIAL_SLOT_NUMBER,
-
-            // Recent state
-            latest_crosslinks,
-            latest_block_roots,
-            new ArrayList<>(),
-            new ArrayList<>(),
-            new ArrayList<>(),
-
-            // PoW receipt root
-            processed_pow_receipt_root,
-            new ArrayList<>());
+    // todo after update v0.01 constants no longer exist
+    BeaconState state = new BeaconState();
+    //    BeaconState state =
+    //        new BeaconState(
+    //            // Misc
+    //            INITIAL_SLOT_NUMBER,
+    //            genesis_time,
+    //            new ForkData(
+    //                UnsignedLong.valueOf(INITIAL_FORK_VERSION),
+    //                UnsignedLong.valueOf(INITIAL_FORK_VERSION),
+    //                UnsignedLong.valueOf(INITIAL_SLOT_NUMBER)),
+    //
+    //            // Validator registry
+    //            new Validators(),
+    //            new ArrayList<>(),
+    //            INITIAL_SLOT_NUMBER,
+    //            0,
+    //            Bytes32.ZERO,
+    //
+    //            // Randomness and committees
+    //            latest_randao_mixes,
+    //            latest_vdf_outputs,
+    //            new ArrayList<>(),
+    //            new ArrayList<>(),
+    //            new ArrayList<>(),
+    //
+    //            // Finality
+    //            INITIAL_SLOT_NUMBER,
+    //            INITIAL_SLOT_NUMBER,
+    //            0,
+    //            INITIAL_SLOT_NUMBER,
+    //
+    //            // Recent state
+    //            latest_crosslinks,
+    //            latest_block_roots,
+    //            new ArrayList<>(),
+    //            new ArrayList<>(),
+    //            new ArrayList<>(),
+    //
+    //            // PoW receipt root
+    //            processed_pow_receipt_root,
+    //            new ArrayList<>());
 
     // handle initial deposits and activations
     for (Deposit validator_deposit : initial_validator_deposits) {
@@ -251,10 +241,12 @@ public class BeaconState {
               deposit_input.getWithdrawal_credentials(),
               deposit_input.getRandao_commitment(),
               deposit_input.getPoc_commitment());
-
-      if (state.getValidator_balances().get(validator_index) >= (MAX_DEPOSIT * GWEI_PER_ETH)) {
-        update_validator_status(state, validator_index, ACTIVE);
-      }
+      // todo after update v0.01 constants no longer exist
+      //      if (state.getValidator_balances().get(validator_index) >= (MAX_DEPOSIT *
+      // GWEI_PER_ETH)) {
+      // todo updates in v0.01 to constants removed necessary values
+      //        //        update_validator_status(state, validator_index, ACTIVE);
+      //      }
     }
 
     // set initial committee shuffling
@@ -420,8 +412,8 @@ public class BeaconState {
    * @param domain_type
    * @return
    */
-  private int get_domain(ForkData fork_data, int slot, UnsignedLong domain_type) {
-    return get_fork_version(fork_data, slot) * (int) Math.pow(2, 32) + domain_type.intValue();
+  private int get_domain(ForkData fork_data, int slot, int domain_type) {
+    return get_fork_version(fork_data, slot) * (int) Math.pow(2, 32) + domain_type;
   }
 
   /**
@@ -445,15 +437,16 @@ public class BeaconState {
    * @param new_status The validator's new status.
    */
   public void update_validator_status(BeaconState state, int index, int new_status) {
-    if (new_status == ACTIVE) {
-      activate_validator(index);
-    }
-    if (new_status == ACTIVE_PENDING_EXIT) {
-      initiate_validator_exit(index);
-    }
-    if (new_status == EXITED_WITH_PENALTY || new_status == EXITED_WITHOUT_PENALTY) {
-      exit_validator(state, index, new_status);
-    }
+    // todo updates in v0.01 to constants removed necessary values
+    //    if (new_status == ACTIVE) {
+    //      activate_validator(index);
+    //    }
+    //    if (new_status == ACTIVE_PENDING_EXIT) {
+    //      initiate_validator_exit(index);
+    //    }
+    //    if (new_status == EXITED_WITH_PENALTY || new_status == EXITED_WITHOUT_PENALTY) {
+    //      exit_validator(state, index, new_status);
+    //    }
   }
 
   /**
@@ -471,13 +464,14 @@ public class BeaconState {
     //
     //    validator.setStatus(UnsignedLong.valueOf(ACTIVE));
     //    validator.setLatest_status_change_slot(UnsignedLong.valueOf(slot));
-    validator_registry_delta_chain_tip =
-        get_new_validator_registry_delta_chain_tip(
-            validator_registry_delta_chain_tip,
-            index,
-            validator.getPubkey(),
-            ACTIVATION,
-            UnsignedLong.valueOf(slot));
+    // todo after update v0.01 constants no longer exist
+    //    validator_registry_delta_chain_tip =
+    //        get_new_validator_registry_delta_chain_tip(
+    //            validator_registry_delta_chain_tip,
+    //            index,
+    //            validator.getPubkey(),
+    //            ACTIVATION,
+    //            UnsignedLong.valueOf(slot));
   }
 
   /**
@@ -516,24 +510,25 @@ public class BeaconState {
 
     //    validator.setStatus(UnsignedLong.valueOf(new_status));
     //    validator.setLatest_status_change_slot(UnsignedLong.valueOf(state.getSlot()));
-
-    if (new_status == EXITED_WITH_PENALTY) {
-      int lpeb_index = toIntExact(state.getSlot()) / COLLECTIVE_PENALTY_CALCULATION_PERIOD;
-      latest_penalized_exit_balances.set(
-          lpeb_index,
-          latest_penalized_exit_balances.get(lpeb_index) + get_effective_balance(state, index));
-
-      int whistleblower_index = get_beacon_proposer_index(state, toIntExact(state.getSlot()));
-      double whistleblower_reward =
-          get_effective_balance(state, index) / WHISTLEBLOWER_REWARD_QUOTIENT;
-
-      double new_whistleblower_balance =
-          state.validator_balances.get(whistleblower_index) + whistleblower_reward;
-
-      state.validator_balances.set(whistleblower_index, new_whistleblower_balance);
-      double new_balance = state.validator_balances.get(index) - whistleblower_reward;
-      state.validator_balances.set(index, new_balance);
-    }
+    // todo updates in v0.01 to constants removed necessary values
+    //    if (new_status == EXITED_WITH_PENALTY) {
+    //      int lpeb_index = toIntExact(state.getSlot()) / COLLECTIVE_PENALTY_CALCULATION_PERIOD;
+    //      latest_penalized_exit_balances.set(
+    //          lpeb_index,
+    //          latest_penalized_exit_balances.get(lpeb_index) + get_effective_balance(state,
+    // index));
+    //
+    //      int whistleblower_index = get_beacon_proposer_index(state, toIntExact(state.getSlot()));
+    //      double whistleblower_reward =
+    //          get_effective_balance(state, index) / WHISTLEBLOWER_REWARD_QUOTIENT;
+    //
+    //      double new_whistleblower_balance =
+    //          state.validator_balances.get(whistleblower_index) + whistleblower_reward;
+    //
+    //      state.validator_balances.set(whistleblower_index, new_whistleblower_balance);
+    //      double new_balance = state.validator_balances.get(index) - whistleblower_reward;
+    //      state.validator_balances.set(index, new_balance);
+    //    }
     // todo update methods following the 0.01 updates
     //    if (prev_status == EXITED_WITHOUT_PENALTY) {
     //      return;
@@ -543,13 +538,14 @@ public class BeaconState {
     state.setValidator_registry_exit_count(state.getValidator_registry_exit_count() + 1);
     // todo after the spec refactor exit_count no longer exists
     //    validator.setExit_count(UnsignedLong.valueOf(state.getValidator_registry_exit_count()));
-    state.setValidator_registry_delta_chain_tip(
-        get_new_validator_registry_delta_chain_tip(
-            state.getValidator_registry_delta_chain_tip(),
-            index,
-            validator.getPubkey(),
-            EXIT,
-            UnsignedLong.valueOf(slot)));
+    // todo after update v0.01 constants no longer exist
+    //    state.setValidator_registry_delta_chain_tip(
+    //        get_new_validator_registry_delta_chain_tip(
+    //            state.getValidator_registry_delta_chain_tip(),
+    //            index,
+    //            validator.getPubkey(),
+    //                INITIATED_EXIT,
+    //            UnsignedLong.valueOf(slot)));
 
     // Remove validator from persistent committees
     for (int i = 0; i < persistent_committees.size(); i++) {
@@ -780,9 +776,7 @@ public class BeaconState {
    * @return The effective balance.
    */
   private double get_effective_balance(BeaconState state, int index) {
-    return Math.min(
-        state.validator_balances.get(index).intValue(),
-        Constants.MAX_DEPOSIT * Constants.GWEI_PER_ETH);
+    return Math.min(state.validator_balances.get(index).intValue(), Constants.MAX_DEPOSIT_AMOUNT);
   }
 
   public Bytes32 getPrevious_epoch_randao_mix() {

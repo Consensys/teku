@@ -13,6 +13,8 @@
 
 package tech.pegasys.artemis.statetransition.util;
 
+import static tech.pegasys.artemis.datastructures.Constants.MAX_DEPOSIT_AMOUNT;
+
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -103,20 +105,22 @@ public class EpochProcessorUtil {
 
     double max_balance_churn =
         Math.max(
-            (double) (Constants.MAX_DEPOSIT * Constants.GWEI_PER_ETH),
+            (double) MAX_DEPOSIT_AMOUNT,
             total_balance / (2 * Constants.MAX_BALANCE_CHURN_QUOTIENT));
 
     updatePendingValidators(max_balance_churn, state);
     updateActivePendingExit(max_balance_churn, state);
 
-    int period_index =
-        Math.toIntExact(state.getSlot() / Constants.COLLECTIVE_PENALTY_CALCULATION_PERIOD);
-    ArrayList<Double> latest_penalized_exit_balances = state.getLatest_penalized_exit_balances();
-
-    double total_penalties =
-        latest_penalized_exit_balances.get(period_index)
-            + latest_penalized_exit_balances.get(period_index - 1 < 0 ? period_index - 1 : 0)
-            + latest_penalized_exit_balances.get(period_index - 2 < 0 ? period_index - 2 : 0);
+    // todo after v0.01 refactor constants no longer exists
+    //    int period_index =
+    //        Math.toIntExact(state.getSlot() / Constants.COLLECTIVE_PENALTY_CALCULATION_PERIOD);
+    //    ArrayList<Double> latest_penalized_exit_balances =
+    // state.getLatest_penalized_exit_balances();
+    //
+    //    double total_penalties =
+    //        latest_penalized_exit_balances.get(period_index)
+    //            + latest_penalized_exit_balances.get(period_index - 1 < 0 ? period_index - 1 : 0)
+    //            + latest_penalized_exit_balances.get(period_index - 2 < 0 ? period_index - 2 : 0);
 
     ArrayList<Validator> to_penalize = to_penalize(active_validators);
   }
@@ -161,11 +165,12 @@ public class EpochProcessorUtil {
 
   private static void process_ejections(BeaconState state) {
     for (Validator validator : state.getValidator_registry()) {
-      if (validator.getBalance() < Constants.EJECTION_BALANCE)
-        state.update_validator_status(
-            state,
-            state.getValidator_registry().indexOf(validator),
-            Constants.EXITED_WITHOUT_PENALTY);
+      // todo updates in v0.01 to constants removed necessary values
+      //      if (validator.getBalance() < Constants.EJECTION_BALANCE)
+      //        state.update_validator_status(
+      //            state,
+      //            state.getValidator_registry().indexOf(validator),
+      //            Constants.EXITED_WITHOUT_PENALTY);
     }
   }
 

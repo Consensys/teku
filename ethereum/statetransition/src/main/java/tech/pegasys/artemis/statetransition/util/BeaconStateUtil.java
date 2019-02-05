@@ -110,6 +110,14 @@ public class BeaconStateUtil {
    *
    * @return
    */
+  public static UnsignedLong slot_to_epoch(UnsignedLong slot) {
+    return slot.dividedBy(UnsignedLong.valueOf(Constants.EPOCH_LENGTH));
+  }
+  /**
+   * Return the epoch number of the given ``slot``
+   *
+   * @return
+   */
   public static long slot_to_epoch(long slot) {
     return slot / Constants.EPOCH_LENGTH;
   }
@@ -123,8 +131,9 @@ public class BeaconStateUtil {
   }
 
   public static long get_previous_epoch(BeaconState state) {
-    if (get_current_epoch(state) > slot_to_epoch(Constants.GENESIS_SLOT))
-      return get_current_epoch(state) - 1;
+    if (UnsignedLong.valueOf(get_current_epoch(state))
+            .compareTo(slot_to_epoch(Constants.GENESIS_SLOT))
+        > 0) return get_current_epoch(state) - 1;
     else return get_current_epoch(state);
   }
 
@@ -148,8 +157,7 @@ public class BeaconStateUtil {
     // hacky work around for pass by index spec
     int index = state.getValidator_registry().indexOf(record);
     return Math.min(
-        state.getValidator_balances().get(index).intValue(),
-        Constants.MAX_DEPOSIT * Constants.GWEI_PER_ETH);
+        state.getValidator_balances().get(index).intValue(), Constants.MAX_DEPOSIT_AMOUNT);
   }
 
   // https://github.com/ethereum/eth2.0-specs/blob/master/specs/core/0_beacon-chain.md#get_block_root
