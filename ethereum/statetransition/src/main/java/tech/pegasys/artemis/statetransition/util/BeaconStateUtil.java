@@ -82,17 +82,17 @@ public class BeaconStateUtil {
   }
 
   private static long getCurrent_epoch_start_shard(BeaconState state) {
-    // todo
+    // TODO
     return 0l;
   }
 
   private static long get_previous_epoch_committee_count_per_slot(BeaconState state) {
-    // todo
+    // TODO
     return 0l;
   }
 
   private static long getPrevious_epoch_start_shard(BeaconState state) {
-    // todo
+    // TODO
     return 0l;
   }
 
@@ -105,14 +105,16 @@ public class BeaconStateUtil {
     return state.getLatest_crosslinks().get(toIntExact(shard)).getShard_block_hash();
   }
 
-  /**
-   * Return the epoch number of the given ``slot``
-   *
-   * @return
-   */
+  /** Return the epoch number of the given ``slot`` */
+  public static UnsignedLong slot_to_epoch(UnsignedLong slot) {
+    return slot.dividedBy(UnsignedLong.valueOf(Constants.EPOCH_LENGTH));
+  }
+
+  /** Return the epoch number of the given ``slot`` */
   public static long slot_to_epoch(long slot) {
     return slot / Constants.EPOCH_LENGTH;
   }
+
   /**
    * Return the current epoch of the given ``state``.
    *
@@ -123,8 +125,9 @@ public class BeaconStateUtil {
   }
 
   public static long get_previous_epoch(BeaconState state) {
-    if (get_current_epoch(state) > slot_to_epoch(Constants.GENESIS_SLOT))
-      return get_current_epoch(state) - 1;
+    if (UnsignedLong.valueOf(get_current_epoch(state))
+            .compareTo(slot_to_epoch(Constants.GENESIS_SLOT))
+        > 0) return get_current_epoch(state) - 1;
     else return get_current_epoch(state);
   }
 
@@ -139,8 +142,8 @@ public class BeaconStateUtil {
    * @param epoch
    * @return
    */
-  public static long get_entry_exit_effect_epoch(long epoch) {
-    return epoch + 1 + Constants.ENTRY_EXIT_DELAY;
+  public static UnsignedLong get_entry_exit_effect_epoch(UnsignedLong epoch) {
+    return epoch.plus(UnsignedLong.ONE).plus(UnsignedLong.valueOf(Constants.ENTRY_EXIT_DELAY));
   }
 
   /**
@@ -164,13 +167,14 @@ public class BeaconStateUtil {
   public static void exit_validator(BeaconState state, int index) {
     Validator validator = state.getValidator_registry().get(index);
 
-    long exit_epoch = get_entry_exit_effect_epoch(get_current_epoch(state));
+    UnsignedLong exit_epoch =
+        get_entry_exit_effect_epoch(UnsignedLong.valueOf(get_current_epoch(state)));
     // The following updates only occur if not previous exited
-    if (validator.getExit_epoch().longValue() <= exit_epoch) {
+    if (validator.getExit_epoch().compareTo(exit_epoch) <= 0) {
       return;
     }
 
-    validator.setExit_epoch(UnsignedLong.valueOf(exit_epoch));
+    validator.setExit_epoch(exit_epoch);
   }
 
   /**
@@ -183,11 +187,7 @@ public class BeaconStateUtil {
     // TODO: implement from 0.1 spec
   }
 
-  /**
-   * Return the randao mix at a recent ``epoch``.
-   *
-   * @return
-   */
+  /** Return the randao mix at a recent ``epoch``. */
   public static Bytes32 get_randao_mix(BeaconState state, long epoch) {
     assert get_current_epoch(state) - Constants.LATEST_RANDAO_MIXES_LENGTH < epoch;
     assert epoch <= get_current_epoch(state);
@@ -199,8 +199,7 @@ public class BeaconStateUtil {
     // hacky work around for pass by index spec
     int index = state.getValidator_registry().indexOf(record);
     return Math.min(
-        state.getValidator_balances().get(index).intValue(),
-        Constants.MAX_DEPOSIT * Constants.GWEI_PER_ETH);
+        state.getValidator_balances().get(index).intValue(), Constants.MAX_DEPOSIT_AMOUNT);
   }
 
   // https://github.com/ethereum/eth2.0-specs/blob/master/specs/core/0_beacon-chain.md#get_block_root

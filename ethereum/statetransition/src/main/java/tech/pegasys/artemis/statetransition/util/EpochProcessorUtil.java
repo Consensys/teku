@@ -13,6 +13,8 @@
 
 package tech.pegasys.artemis.statetransition.util;
 
+import static tech.pegasys.artemis.datastructures.Constants.MAX_DEPOSIT_AMOUNT;
+
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -103,7 +105,7 @@ public class EpochProcessorUtil {
 
     double max_balance_churn =
         Math.max(
-            (double) (Constants.MAX_DEPOSIT * Constants.GWEI_PER_ETH),
+            (double) MAX_DEPOSIT_AMOUNT,
             total_balance / (2 * Constants.MAX_BALANCE_CHURN_QUOTIENT));
 
     updatePendingValidators(max_balance_churn, state);
