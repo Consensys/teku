@@ -88,7 +88,8 @@ public final class Constants {
       (int) Math.pow(2, 14); // 16,384 slots ~27 hours
   public static final int MAX_WITHDRAWALS_PER_EPOCH = 4;
 
-  public static final int GENESIS_SLOT = (int) Math.pow(2, 19); //
+  public static final long GENESIS_SLOT = (long) Math.pow(2, 19);
+  public static final long GENESIS_EPOCH = GENESIS_SLOT / Constants.EPOCH_LENGTH;
 
   public static String getConstantsAsString() {
     return "--Misc--"
