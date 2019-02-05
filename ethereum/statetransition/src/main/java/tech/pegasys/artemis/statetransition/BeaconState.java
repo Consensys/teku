@@ -15,7 +15,6 @@ package tech.pegasys.artemis.statetransition;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.lang.Math.toIntExact;
-import static tech.pegasys.artemis.datastructures.Constants.ACTIVATION;
 import static tech.pegasys.artemis.datastructures.Constants.DOMAIN_DEPOSIT;
 import static tech.pegasys.artemis.datastructures.Constants.EPOCH_LENGTH;
 import static tech.pegasys.artemis.datastructures.Constants.GWEI_PER_ETH;
@@ -228,7 +227,7 @@ public class BeaconState {
               deposit_input.getPoc_commitment());
 
       if (get_effective_balance(state, validator_index) >= (MAX_DEPOSIT * GWEI_PER_ETH)) {
-        activate_validator(validator_index);
+        activate_validator(state, validator_index, true);
       }
     }
 
@@ -409,22 +408,14 @@ public class BeaconState {
    * @param index The index of the validator.
    */
   @VisibleForTesting
-  public void activate_validator(int index) {
+  public void activate_validator(BeaconState state, int index, boolean is_genesis) {
     Validator validator = validator_registry.get(index);
-    // todo update methods following the 0.01 updates
-    //    if (validator.getStatus().longValue() != PENDING_ACTIVATION) {
-    //      return;
-    //    }
-    //
-    //    validator.setStatus(UnsignedLong.valueOf(ACTIVE));
-    //    validator.setLatest_status_change_slot(UnsignedLong.valueOf(slot));
-    validator_registry_delta_chain_tip =
-        get_new_validator_registry_delta_chain_tip(
-            validator_registry_delta_chain_tip,
-            index,
-            validator.getPubkey(),
-            ACTIVATION,
-            UnsignedLong.valueOf(slot));
+    long activation_epoch = Constants.GENESIS_EPOCH;
+    long current_epoch = BeaconStateUtil.get_current_epoch(this);
+    if (current_epoch > Constants.GENESIS_SLOT) {
+      activation_epoch = BeaconStateUtil.get_entry_exit_effect_epoch(current_epoch);
+      validator.setActivation_epoch(UnsignedLong.valueOf(activation_epoch));
+    }
   }
 
   /**
