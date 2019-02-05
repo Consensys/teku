@@ -306,9 +306,10 @@ class BeaconStateTest {
 
     exit_validator(state, validator_index);
     Validator validator = state.getValidator_registry().get(validator_index);
-    long testEpoch =
-        BeaconStateUtil.get_entry_exit_effect_epoch(BeaconStateUtil.get_current_epoch(state));
-    assertThat(validator.getExit_epoch().longValue()).isEqualTo(testEpoch);
+    UnsignedLong testEpoch =
+        BeaconStateUtil.get_entry_exit_effect_epoch(
+            UnsignedLong.valueOf(BeaconStateUtil.get_current_epoch(state)));
+    assertThat(validator.getExit_epoch()).isEqualTo(testEpoch);
   }
 
   @Test
