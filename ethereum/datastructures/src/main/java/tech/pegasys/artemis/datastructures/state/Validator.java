@@ -134,6 +134,6 @@ public class Validator {
    * @return
    */
   public double get_effective_balance() {
-    return Math.min(balance, Constants.MAX_DEPOSIT * Constants.GWEI_PER_ETH);
+    return Math.min(balance, Constants.MAX_DEPOSIT_AMOUNT);
   }
 }
