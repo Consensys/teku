@@ -32,6 +32,8 @@ public final class BeaconBlock {
   // Body
   private BeaconBlockBody body;
 
+  public BeaconBlock() {}
+
   public BeaconBlock(
       long slot,
       List<Bytes32> ancestor_hashes,
