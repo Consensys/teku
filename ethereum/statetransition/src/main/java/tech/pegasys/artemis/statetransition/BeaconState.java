@@ -245,6 +245,10 @@ public class BeaconState {
       //        //        update_validator_status(state, validator_index, ACTIVE);
       //      }
     }
+    // TODO
+    //  genesis_active_index_root = hash_tree_root(get_active_validator_indices(state, GENESIS_EPOCH))
+    //  for index in range(LATEST_INDEX_ROOTS_LENGTH):
+    //    state.latest_index_roots[index] = genesis_active_index_root
 
     state.current_epoch_seed = BeaconStateUtil.generate_seed(state, GENESIS_EPOCH);
 
@@ -704,6 +708,10 @@ public class BeaconState {
   }
 
   public ArrayList<Bytes32> getLatest_block_roots() {
+    return latest_block_roots;
+  }
+
+  public ArrayList<Bytes32> getLatest_index_roots() {
     return latest_block_roots;
   }
 
