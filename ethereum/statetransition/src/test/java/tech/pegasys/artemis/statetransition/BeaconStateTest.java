@@ -16,7 +16,9 @@ package tech.pegasys.artemis.statetransition;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static tech.pegasys.artemis.datastructures.Constants.EMPTY_SIGNATURE;
+import static tech.pegasys.artemis.datastructures.Constants.ENTRY_EXIT_DELAY;
 import static tech.pegasys.artemis.datastructures.Constants.GENESIS_EPOCH;
+import static tech.pegasys.artemis.datastructures.Constants.GENESIS_SLOT;
 import static tech.pegasys.artemis.statetransition.util.BeaconStateUtil.bytes3ToInt;
 import static tech.pegasys.artemis.statetransition.util.BeaconStateUtil.clamp;
 import static tech.pegasys.artemis.statetransition.util.BeaconStateUtil.exit_validator;
@@ -53,13 +55,12 @@ class BeaconStateTest {
     // Initialize state
     BeaconState state =
         new BeaconState(
-            0,
+            GENESIS_SLOT,
             0,
             new Fork(UnsignedLong.ZERO, UnsignedLong.ZERO, UnsignedLong.ZERO),
             new Validators(),
             new ArrayList<>(),
             0,
-            Bytes32.ZERO,
             new ArrayList<>(),
             0,
             0,
@@ -71,6 +72,7 @@ class BeaconStateTest {
             0,
             0,
             0,
+            new ArrayList<>(),
             new ArrayList<>(),
             new ArrayList<>(),
             new ArrayList<>(),
@@ -275,9 +277,15 @@ class BeaconStateTest {
   void activateValidator() {
     BeaconState state = newState();
     int validator_index = 0;
-    // TODO: need a better test for 0.1
-    // activate_validator(state,validator_index,true);
+    UnsignedLong activation_epoch;
 
+    state.activate_validator(state, validator_index, true);
+    activation_epoch = state.getValidator_registry().get(validator_index).getActivation_epoch();
+    assertThat(activation_epoch.intValue()).isEqualTo(GENESIS_EPOCH);
+
+    state.activate_validator(state, validator_index, false);
+    activation_epoch = state.getValidator_registry().get(validator_index).getActivation_epoch();
+    assertThat(activation_epoch.intValue()).isEqualTo(GENESIS_EPOCH + 1 + ENTRY_EXIT_DELAY);
   }
 
   @Test
