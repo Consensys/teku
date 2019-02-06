@@ -426,14 +426,15 @@ public class BeaconState {
   @VisibleForTesting
   public void activate_validator(BeaconState state, int index, boolean is_genesis) {
     Validator validator = validator_registry.get(index);
-    UnsignedLong activation_epoch = UnsignedLong.valueOf(Constants.GENESIS_EPOCH);
-    long current_epoch = BeaconStateUtil.get_current_epoch(this);
-    if (UnsignedLong.valueOf(current_epoch).compareTo(UnsignedLong.valueOf(Constants.GENESIS_SLOT))
-        > 0) {
+    UnsignedLong activation_epoch;
+    if (is_genesis) {
+      activation_epoch = UnsignedLong.valueOf(Constants.GENESIS_EPOCH);
+    } else {
+      long current_epoch = BeaconStateUtil.get_current_epoch(this);
       activation_epoch =
           BeaconStateUtil.get_entry_exit_effect_epoch(UnsignedLong.valueOf(current_epoch));
-      validator.setActivation_epoch(activation_epoch);
     }
+    validator.setActivation_epoch(activation_epoch);
   }
 
   /**
