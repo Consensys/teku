@@ -17,7 +17,6 @@ import static tech.pegasys.artemis.datastructures.Constants.MAX_DEPOSIT_AMOUNT;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
-import java.util.HashMap;
 import net.consensys.cava.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.state.CrosslinkRecord;
@@ -53,21 +52,19 @@ public class EpochProcessorUtil {
 
   public static void updateCrosslinks(BeaconState state) throws BlockValidationException {
     for (long n = (state.getSlot() - 2 * Constants.EPOCH_LENGTH); n < state.getSlot(); n++) {
-      ArrayList<HashMap<Long, ShardCommittee>> crosslink_committees_at_slot =
+      ArrayList<ShardCommittee> crosslink_committees_at_slot =
           BeaconStateUtil.get_crosslink_committees_at_slot(state, n);
-      for (HashMap<Long, ShardCommittee> crosslink_committees : crosslink_committees_at_slot) {
-        for (Long shard : crosslink_committees.keySet()) {
-          ShardCommittee crosslink_committee = crosslink_committees.get(shard);
+      for (ShardCommittee crosslink_committee : crosslink_committees_at_slot) {
+        UnsignedLong shard = crosslink_committee.getShard();
 
-          if (3 * AttestationUtil.getTotal_attesting_balance(state)
-              >= 2 * total_balance(crosslink_committee)) {
-            state
-                .getLatest_crosslinks()
-                .set(
-                    Math.toIntExact(shard),
-                    new CrosslinkRecord(
-                        winning_root(crosslink_committee), UnsignedLong.valueOf(state.getSlot())));
-          }
+        if (3 * AttestationUtil.getTotal_attesting_balance(state)
+            >= 2 * total_balance(crosslink_committee)) {
+          state
+              .getLatest_crosslinks()
+              .set(
+                  shard.intValue(),
+                  new CrosslinkRecord(
+                      winning_root(crosslink_committee), UnsignedLong.valueOf(state.getSlot())));
         }
       }
     }

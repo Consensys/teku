@@ -20,13 +20,10 @@ public class ShardCommittee {
 
   private UnsignedLong shard;
   private ArrayList<Integer> committee;
-  private UnsignedLong total_validator_count;
 
-  public ShardCommittee(
-      UnsignedLong shard, ArrayList<Integer> committee, UnsignedLong total_validator_count) {
+  public ShardCommittee(UnsignedLong shard, ArrayList<Integer> committee) {
     this.shard = shard;
     this.committee = committee;
-    this.total_validator_count = total_validator_count;
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */
@@ -42,11 +39,7 @@ public class ShardCommittee {
     this.committee = committee;
   }
 
-  public UnsignedLong getTotal_validator_count() {
-    return total_validator_count;
-  }
-
-  public void setTotal_validator_count(UnsignedLong total_validator_count) {
-    this.total_validator_count = total_validator_count;
+  public int getCommitteeSize() {
+    return committee.size();
   }
 }

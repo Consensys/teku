@@ -19,8 +19,6 @@ import static java.lang.Math.toIntExact;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.crypto.Hash;
@@ -36,69 +34,134 @@ public class BeaconStateUtil {
     return 0.0d;
   }
 
-  public static ArrayList<HashMap<Long, ShardCommittee>> get_crosslink_committees_at_slot(
-      BeaconState state, long slot) throws BlockValidationException {
-    long state_epoch_slot = slot - (slot % Constants.EPOCH_LENGTH);
+  /** Return the list of `(committee, shard)` tuples for the `slot`. */
+  public static ArrayList<ShardCommittee> get_crosslink_committees_at_slot(
+      //      BeaconState state, long slot, boolean registry_change) throws BlockValidationException
+      // {
+      BeaconState state, long slot, boolean registry_change) {
 
-    if (isOffsetEqualToSlot(slot, state_epoch_slot)) {
-      // problems with get_shuffling implementation. Should take 3 parameters and this version takes
-      // 4
-      // 0 has been entered as a place holder parameter to cover the difference
-      long committees_per_slot = get_previous_epoch_committee_count_per_slot(state);
-      ArrayList<ArrayList<ShardCommittee>> shuffling =
-          BeaconState.get_shuffling(
-              state.getPrevious_epoch_randao_mix(),
-              state.getValidator_registry(),
-              0,
-              state.getPrevious_epoch_calculation_slot());
-      long offset = slot % Constants.EPOCH_LENGTH;
-      long slot_start_shard = 0l;
+    long epoch = slot_to_epoch(slot);
+    long current_epoch = get_current_epoch(state);
+    long previous_epoch =
+        (current_epoch > Constants.GENESIS_EPOCH) ? current_epoch - 1 : current_epoch;
+    long next_epoch = current_epoch + 1;
 
-      if (slot < state_epoch_slot)
-        slot_start_shard =
-            (getPrevious_epoch_start_shard(state) + committees_per_slot * offset)
-                % Constants.EPOCH_LENGTH;
-      else
-        slot_start_shard =
-            (getCurrent_epoch_start_shard(state) + committees_per_slot * offset)
-                % Constants.EPOCH_LENGTH;
+    // TODO handle this exception properly
+    // if (!(previous_epoch <= epoch && epoch <= next_epoch)) {
+    //  throw new BlockValidationException(
+    //          "get_crosslink_committees_at_slot: Exception was thrown due to failure of
+    // previous_epoch <= epoch <= next_epoch check.");
+    // }
 
-      ArrayList<HashMap<Long, ShardCommittee>> crosslink_committees_at_slot =
-          new ArrayList<HashMap<Long, ShardCommittee>>();
-      Iterator<ArrayList<ShardCommittee>> itr = shuffling.iterator();
-      for (ArrayList<ShardCommittee> committees : shuffling) {
-        for (int i = 0; i < committees_per_slot; i++) {
-          HashMap<Long, ShardCommittee> committee = new HashMap<Long, ShardCommittee>();
-          committee.put(
-              committees_per_slot * offset + i,
-              committees.get(toIntExact(slot_start_shard + i) % Constants.SHARD_COUNT));
-          crosslink_committees_at_slot.add(committee);
-        }
+    long committees_per_epoch = 0;
+    Bytes32 seed = Bytes32.ZERO;
+    long shuffling_epoch = 0;
+    long shuffling_start_shard = 0;
+
+    if (epoch == previous_epoch) {
+
+      committees_per_epoch = get_previous_epoch_committee_count(state);
+      seed = state.getPrevious_epoch_seed();
+      shuffling_epoch = state.getPrevious_calculation_epoch();
+      shuffling_start_shard = state.getPrevious_epoch_start_shard();
+
+    } else if (epoch == current_epoch) {
+
+      committees_per_epoch = get_current_epoch_committee_count(state);
+      seed = state.getCurrent_epoch_seed();
+      shuffling_epoch = state.getCurrent_calculation_epoch();
+      shuffling_start_shard = state.getCurrent_epoch_start_shard();
+
+    } else if (epoch == next_epoch) {
+
+      long current_committees_per_epoch = get_current_epoch_committee_count(state);
+      committees_per_epoch = get_next_epoch_committee_count(state);
+      shuffling_epoch = next_epoch;
+      long epochs_since_last_registry_update =
+          current_epoch - state.getValidator_registry_update_epoch();
+
+      if (registry_change) {
+        seed = generate_seed(state, next_epoch);
+        shuffling_start_shard =
+            (state.getCurrent_epoch_start_shard() + current_committees_per_epoch)
+                % Constants.SHARD_COUNT;
+      } else if (epochs_since_last_registry_update > 1
+          && is_power_of_two(epochs_since_last_registry_update)) {
+        seed = generate_seed(state, next_epoch);
+        shuffling_start_shard = state.getCurrent_epoch_start_shard();
+      } else {
+        seed = state.getCurrent_epoch_seed();
+        shuffling_start_shard = state.getCurrent_epoch_start_shard();
       }
-      return crosslink_committees_at_slot;
-    } else
-      throw new BlockValidationException(
-          "calc_total_balance: Exception was thrown for failure of isOffsetEqualToSlot checking slot offset could not be calculated with values provided.");
+    }
+
+    ArrayList<ArrayList<Integer>> shuffling =
+        get_shuffling(seed, state.getValidator_registry(), shuffling_epoch);
+    long offset = slot % Constants.EPOCH_LENGTH;
+    long committees_per_slot = committees_per_epoch / Constants.EPOCH_LENGTH;
+    long slot_start_shard =
+        (shuffling_start_shard + committees_per_slot * offset) % Constants.SHARD_COUNT;
+
+    ArrayList<ShardCommittee> crosslink_committees_at_slot = new ArrayList<ShardCommittee>();
+    for (int i = 0; i < committees_per_slot; i++) {
+      ShardCommittee committee =
+          new ShardCommittee(
+              UnsignedLong.valueOf(committees_per_slot * offset + i),
+              shuffling.get(toIntExact(slot_start_shard + i) % Constants.SHARD_COUNT));
+      crosslink_committees_at_slot.add(committee);
+    }
+    return crosslink_committees_at_slot;
   }
 
-  private static long getCurrent_epoch_start_shard(BeaconState state) {
-    // TODO
-    return 0l;
+  /** This is a wrapper that defaults `registry_change` to false when it is not provided */
+  public static ArrayList<ShardCommittee> get_crosslink_committees_at_slot(
+      BeaconState state, long slot) {
+    return get_crosslink_committees_at_slot(state, slot, false);
   }
 
-  private static long get_previous_epoch_committee_count_per_slot(BeaconState state) {
-    // TODO
-    return 0l;
+  /* TODO: Note from spec -
+   * Note: this definition and the next few definitions make heavy use of repetitive computing.
+   * Production implementations are expected to appropriately use caching/memoization to avoid redoing work.
+   */
+
+  private static long get_previous_epoch_committee_count(BeaconState state) {
+    ArrayList<Integer> previous_active_validators =
+        ValidatorsUtil.get_active_validator_indices(
+            state.getValidator_registry(), state.getPrevious_calculation_epoch());
+    return get_epoch_committee_count(previous_active_validators.size());
   }
 
-  private static long getPrevious_epoch_start_shard(BeaconState state) {
-    // TODO
-    return 0l;
+  private static long get_current_epoch_committee_count(BeaconState state) {
+    ArrayList<Integer> current_active_validators =
+        ValidatorsUtil.get_active_validator_indices(
+            state.getValidator_registry(), state.getCurrent_calculation_epoch());
+    return get_epoch_committee_count(current_active_validators.size());
   }
 
-  private static boolean isOffsetEqualToSlot(long slot, long state_epoch_slot) {
-    return (state_epoch_slot <= slot + Constants.EPOCH_LENGTH)
-        && (slot < state_epoch_slot + Constants.EPOCH_LENGTH);
+  private static long get_next_epoch_committee_count(BeaconState state) {
+    ArrayList<Integer> next_active_validators =
+        ValidatorsUtil.get_active_validator_indices(
+            state.getValidator_registry(), get_current_epoch(state) + 1);
+    return get_epoch_committee_count(next_active_validators.size());
+  }
+
+  public static Bytes32 generate_seed(BeaconState state, long epoch) {
+    // TODO: I think this method is correct, but it breaks all the BeaconStateTests
+    // Bytes32 randao_mix = get_randao_mix(state, epoch - Constants.SEED_LOOKAHEAD);
+    // Bytes32 index_root = get_active_index_root(state, epoch);
+    // return Hash.keccak256(Bytes.wrap(randao_mix, index_root))
+    return Bytes32.ZERO;
+  }
+
+  public static Bytes32 get_active_index_root(BeaconState state, long epoch) {
+    assert get_current_epoch(state)
+            - Constants.LATEST_INDEX_ROOTS_LENGTH
+            + Constants.ENTRY_EXIT_DELAY
+        < epoch;
+    assert epoch <= get_current_epoch(state) + Constants.ENTRY_EXIT_DELAY;
+    // TODO turn this pseudocode into Java once latest_index_roots has been implemented
+    // return state.latest_index_roots[epoch % LATEST_INDEX_ROOTS_LENGTH]
+    return Bytes32.ZERO;
   }
 
   public static Bytes32 getShard_block_root(BeaconState state, Long shard) {
@@ -126,7 +189,7 @@ public class BeaconStateUtil {
 
   public static long get_previous_epoch(BeaconState state) {
     if (UnsignedLong.valueOf(get_current_epoch(state))
-            .compareTo(slot_to_epoch(Constants.GENESIS_SLOT))
+            .compareTo(slot_to_epoch(UnsignedLong.valueOf(Constants.GENESIS_SLOT)))
         > 0) return get_current_epoch(state) - 1;
     else return get_current_epoch(state);
   }
@@ -229,6 +292,20 @@ public class BeaconStateUtil {
   }
 
   /**
+   * Return the number of committees in one epoch.
+   *
+   * @param active_validator_count
+   * @return
+   */
+  public static int get_epoch_committee_count(int active_validator_count) {
+    return clamp(
+            1,
+            Constants.SHARD_COUNT / Constants.EPOCH_LENGTH,
+            active_validator_count / Constants.EPOCH_LENGTH / Constants.TARGET_COMMITTEE_SIZE)
+        * Constants.EPOCH_LENGTH;
+  }
+
+  /**
    * Shuffles ``validators`` into shard committees using ``seed`` as entropy.
    *
    * @param seed
@@ -236,48 +313,20 @@ public class BeaconStateUtil {
    * @param epoch
    * @return
    */
-  public static ArrayList<ArrayList<ShardCommittee>> get_new_shuffling(
+  public static ArrayList<ArrayList<Integer>> get_shuffling(
       Bytes32 seed, Validators validators, long epoch) {
-    ArrayList<Integer> active_validator_indices =
-        ValidatorsUtil.get_active_validator_indices_at_epoch(validators, epoch);
 
-    int committees_per_slot =
-        clamp(
-            1,
-            Constants.SHARD_COUNT / Constants.EPOCH_LENGTH,
-            active_validator_indices.size()
-                / Constants.EPOCH_LENGTH
-                / Constants.TARGET_COMMITTEE_SIZE);
+    ArrayList<Integer> active_validator_indices =
+        ValidatorsUtil.get_active_validator_indices(validators, epoch);
+
+    int committees_per_epoch = get_epoch_committee_count(active_validator_indices.size());
 
     // Shuffle with seed
+    // TODO: we may need to treat `epoch` as little-endian here. Revisit as the spec evolves.
+    seed.xor(Bytes32.wrap(Bytes.minimalBytes(epoch)));
     ArrayList<Integer> shuffled_active_validator_indices = shuffle(active_validator_indices, seed);
 
-    // Split the shuffled list into epoch_length pieces
-    ArrayList<ArrayList<Integer>> validators_per_slot =
-        split(shuffled_active_validator_indices, Constants.EPOCH_LENGTH);
-
-    ArrayList<ArrayList<ShardCommittee>> output = new ArrayList<>();
-    for (int slot = 0; slot < validators_per_slot.size(); slot++) {
-      // Split the shuffled list into committees_per_slot pieces
-      ArrayList<ArrayList<Integer>> shard_indices =
-          split(validators_per_slot.get(slot), committees_per_slot);
-      ArrayList<ShardCommittee> shard_committees = new ArrayList<>();
-
-      // todo after refactor of the spec this method requires rework
-      int shard_id_start = 0; // crosslinking_start_shard + slot * committees_per_slot;
-
-      for (int shard_position = 0; shard_position < shard_indices.size(); shard_position++) {
-        shard_committees.add(
-            new ShardCommittee(
-                UnsignedLong.valueOf((shard_id_start + shard_position) % Constants.SHARD_COUNT),
-                shard_indices.get(shard_position),
-                UnsignedLong.valueOf(active_validator_indices.size())));
-      }
-
-      output.add(shard_committees);
-    }
-
-    return output;
+    return split(shuffled_active_validator_indices, committees_per_epoch);
   }
 
   /**
@@ -386,5 +435,10 @@ public class BeaconStateUtil {
     if (x <= minval) return minval;
     if (x >= maxval) return maxval;
     return x;
+  }
+
+  /** Returns true if the operand is an exact power of two */
+  public static boolean is_power_of_two(long value) {
+    return (value != 0) && (Long.lowestOneBit(value) == Long.highestOneBit(value));
   }
 }
