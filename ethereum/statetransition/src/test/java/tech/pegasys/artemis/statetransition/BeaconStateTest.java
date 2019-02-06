@@ -75,6 +75,7 @@ class BeaconStateTest {
             new ArrayList<>(),
             new ArrayList<>(),
             new ArrayList<>(),
+            new ArrayList<>(),
             new Eth1Data(),
             new ArrayList<>());
 

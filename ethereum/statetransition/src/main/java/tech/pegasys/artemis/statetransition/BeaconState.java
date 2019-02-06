@@ -76,6 +76,7 @@ public class BeaconState {
   // Recent state
   private ArrayList<CrosslinkRecord> latest_crosslinks;
   private ArrayList<Bytes32> latest_block_roots = new ArrayList<>();
+  private ArrayList<Bytes32> latest_index_roots = new ArrayList<>();
   private ArrayList<Double> latest_penalized_balances;
   private ArrayList<PendingAttestationRecord> latest_attestations;
   private ArrayList<Bytes32> batched_block_roots = new ArrayList<>();
@@ -125,6 +126,7 @@ public class BeaconState {
       // Recent state
       ArrayList<CrosslinkRecord> latest_crosslinks,
       ArrayList<Bytes32> latest_block_roots,
+      ArrayList<Bytes32> latest_index_roots,
       ArrayList<Double> latest_penalized_balances,
       ArrayList<PendingAttestationRecord> latest_attestations,
       ArrayList<Bytes32> batched_block_roots,
@@ -708,7 +710,7 @@ public class BeaconState {
   }
 
   public ArrayList<Bytes32> getLatest_index_roots() {
-    return latest_block_roots;
+    return latest_index_roots;
   }
 
   public void setLatest_block_roots(ArrayList<Bytes32> latest_block_roots) {
