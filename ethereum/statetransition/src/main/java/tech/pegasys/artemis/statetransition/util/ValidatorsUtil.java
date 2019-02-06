@@ -36,13 +36,7 @@ public class ValidatorsUtil {
     return active_validators;
   }
 
-  public static ArrayList<Integer> get_active_validator_indices(BeaconState state) {
-    return get_active_validator_indices_at_epoch(
-        state.getValidator_registry(), BeaconStateUtil.get_current_epoch(state));
-  }
-
-  public static ArrayList<Integer> get_active_validator_indices_at_epoch(
-      Validators validators, long epoch) {
+  public static ArrayList<Integer> get_active_validator_indices(Validators validators, long epoch) {
     ArrayList<Integer> active_validator_indices = new ArrayList<>();
 
     IntStream.range(0, validators.size())
