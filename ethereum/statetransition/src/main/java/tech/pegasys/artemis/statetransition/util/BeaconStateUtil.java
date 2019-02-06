@@ -159,7 +159,9 @@ public class BeaconStateUtil {
             + Constants.ENTRY_EXIT_DELAY
         < epoch;
     assert epoch <= get_current_epoch(state) + Constants.ENTRY_EXIT_DELAY;
-    return state.getLatest_index_roots().get(toIntExact(epoch % Constants.LATEST_INDEX_ROOTS_LENGTH));
+    return state
+        .getLatest_index_roots()
+        .get(toIntExact(epoch % Constants.LATEST_INDEX_ROOTS_LENGTH));
   }
 
   public static Bytes32 getShard_block_root(BeaconState state, Long shard) {

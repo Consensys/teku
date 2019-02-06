@@ -246,7 +246,8 @@ public class BeaconState {
       //      }
     }
     // TODO
-    //  genesis_active_index_root = hash_tree_root(get_active_validator_indices(state, GENESIS_EPOCH))
+    //  genesis_active_index_root = hash_tree_root(get_active_validator_indices(state,
+    // GENESIS_EPOCH))
     //  for index in range(LATEST_INDEX_ROOTS_LENGTH):
     //    state.latest_index_roots[index] = genesis_active_index_root
 
