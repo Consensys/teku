@@ -20,6 +20,22 @@ import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.ssz.SSZ;
 
 public class AttestationData {
+//    # Slot number
+//    'slot': 'uint64',
+//        # Shard number
+//    'shard': 'uint64',
+//        # Hash of root of the signed beacon block
+//    'beacon_block_root': 'bytes32',
+//        # Hash of root of the ancestor at the epoch boundary
+//    'epoch_boundary_root': 'bytes32',
+//        # Shard block's hash of root
+//      'shard_block_root': 'bytes32',
+//      # Last crosslink
+//    'latest_crosslink': Crosslink,
+//      # Last justified epoch in the beacon state
+//    'justified_epoch': 'uint64',
+//        # Hash of the last justified beacon block
+//    'justified_block_root': 'bytes32',
 
   private UnsignedLong slot;
   private UnsignedLong shard;

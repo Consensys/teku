@@ -346,7 +346,7 @@ public class AttestationUtil {
       if (record.getData().getShard().compareTo(crosslink_committee.getShard()) == 0
           && record.getData().getShard_block_root() == shard_block_root) {
         return BeaconStateUtil.get_attestation_participants(
-            state, record.getData(), record.getParticipation_bitfield().toArray());
+            state, record.getData(), record.getAggregation_bitfield().toArray());
       }
     }
     throw new Exception("attesting_validator_indicies appear to be empty");

@@ -23,17 +23,17 @@ import tech.pegasys.artemis.datastructures.operations.AttestationData;
 public class PendingAttestation {
 
   private AttestationData data;
-  private Bytes32 participation_bitfield;
+  private Bytes32 aggregation_bitfield;
   private Bytes32 custody_bitfield;
   private UnsignedLong slot_included;
 
   public PendingAttestation(
       AttestationData data,
-      Bytes32 participation_bitfield,
+      Bytes32 aggregation_bitfield,
       Bytes32 custody_bitfield,
       UnsignedLong slot_included) {
     this.data = data;
-    this.participation_bitfield = participation_bitfield;
+    this.aggregation_bitfield = aggregation_bitfield;
     this.custody_bitfield = custody_bitfield;
     this.slot_included = slot_included;
   }
@@ -94,12 +94,12 @@ public class PendingAttestation {
     this.data = data;
   }
 
-  public Bytes32 getParticipation_bitfield() {
-    return participation_bitfield;
+  public Bytes32 getAggregation_bitfield() {
+    return aggregation_bitfield;
   }
 
-  public void setParticipation_bitfield(Bytes32 participation_bitfield) {
-    this.participation_bitfield = participation_bitfield;
+  public void setAggregation_bitfield(Bytes32 aggregation_bitfield) {
+    this.aggregation_bitfield = aggregation_bitfield;
   }
 
   public Bytes32 getCustody_bitfield() {

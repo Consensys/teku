@@ -928,7 +928,7 @@ public class BeaconStateUtil {
    * @param attestation_data_2
    * @return True if the provided 'AttestationData' are slashable due to a 'double vote'.
    */
-  private boolean is_double_vote(
+  public static boolean is_double_vote(
       AttestationData attestation_data_1, AttestationData attestation_data_2) {
     UnsignedLong target_epoch_1 =
         attestation_data_1.getSlot().dividedBy(UnsignedLong.valueOf(EPOCH_LENGTH));
@@ -945,7 +945,7 @@ public class BeaconStateUtil {
    * @param attestation_data_2
    * @return True if the provided 'AttestationData' are slashable due to a 'surround vote'.
    */
-  private boolean is_surround_vote(
+  public static boolean is_surround_vote(
       AttestationData attestation_data_1, AttestationData attestation_data_2) {
     long source_epoch_1 = attestation_data_1.getJustified_epoch().longValue() / EPOCH_LENGTH;
     long source_epoch_2 = attestation_data_2.getJustified_epoch().longValue() / EPOCH_LENGTH;
