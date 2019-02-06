@@ -15,11 +15,10 @@ package tech.pegasys.artemis.statetransition;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static java.lang.Math.toIntExact;
 import static tech.pegasys.artemis.datastructures.Constants.EMPTY_SIGNATURE;
-import static tech.pegasys.artemis.datastructures.Constants.GENESIS_SLOT;
-import static tech.pegasys.artemis.datastructures.Constants.GENESIS_EPOCH;
 import static tech.pegasys.artemis.datastructures.Constants.ENTRY_EXIT_DELAY;
+import static tech.pegasys.artemis.datastructures.Constants.GENESIS_EPOCH;
+import static tech.pegasys.artemis.datastructures.Constants.GENESIS_SLOT;
 import static tech.pegasys.artemis.statetransition.util.BeaconStateUtil.bytes3ToInt;
 import static tech.pegasys.artemis.statetransition.util.BeaconStateUtil.clamp;
 import static tech.pegasys.artemis.statetransition.util.BeaconStateUtil.exit_validator;
@@ -280,11 +279,11 @@ class BeaconStateTest {
     int validator_index = 0;
     UnsignedLong activation_epoch;
 
-    state.activate_validator(state,validator_index,true);
+    state.activate_validator(state, validator_index, true);
     activation_epoch = state.getValidator_registry().get(validator_index).getActivation_epoch();
     assertThat(activation_epoch.intValue()).isEqualTo(GENESIS_EPOCH);
 
-    state.activate_validator(state,validator_index,false);
+    state.activate_validator(state, validator_index, false);
     activation_epoch = state.getValidator_registry().get(validator_index).getActivation_epoch();
     assertThat(activation_epoch.intValue()).isEqualTo(GENESIS_EPOCH + 1 + ENTRY_EXIT_DELAY);
   }
