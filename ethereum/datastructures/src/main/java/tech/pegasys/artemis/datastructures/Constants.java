@@ -26,7 +26,7 @@ public final class Constants {
   // Misc
   public static final int SHARD_COUNT = 1024; // 2^10 shards
   public static final int TARGET_COMMITTEE_SIZE = 128; // 2^7 validators
-  public static final long EJECTION_BALANCE = 16000000000l; // 2^4 * 1e9 Gwei
+  public static final long EJECTION_BALANCE = 16000000000L; // 2^4 * 1e9 Gwei
   public static final int MAX_BALANCE_CHURN_QUOTIENT = 32; //
   public static final UnsignedLong BEACON_CHAIN_SHARD_NUMBER = UnsignedLong.MAX_VALUE; // 2^64 - 1
   public static final int MAX_INDICES_PER_SLASHABLE_VOTE = 4096; // 2^12 votes
@@ -35,13 +35,17 @@ public final class Constants {
   // Deposit contract
   public static final String DEPOSIT_CONTRACT_ADDRESS = "0x0";
   public static final int DEPOSIT_CONTRACT_TREE_DEPTH = 32; // 2^5
-  public static final long MIN_DEPOSIT_AMOUNT = 1000000000; // Gwei
-  public static final long MAX_DEPOSIT_AMOUNT = 32000000000l; // Gwei
+  public static final long MIN_DEPOSIT_AMOUNT = 1000000000L; // Gwei
+  public static final long MAX_DEPOSIT_AMOUNT = 32000000000L; // Gwei
 
   // Initial values
   public static int GENESIS_FORK_VERSION = 0; //
-  public static UnsignedLong GENESIS_SLOT = UnsignedLong.valueOf("9223372036854775808"); // 2^63
-  public static final UnsignedLong GENESIS_EPOCH = slot_to_epoch(GENESIS_SLOT);
+  // TODO v.0.1 has 2^19; this will be updated to 2^63 in a future version.
+  // TODO continued: Postpone change to UnsignedLong until that time
+  // public static UnsignedLong GENESIS_SLOT = UnsignedLong.valueOf("9223372036854775808"); // 2^63
+  // public static final UnsignedLong GENESIS_EPOCH = slot_to_epoch(GENESIS_SLOT);
+  public static long GENESIS_SLOT = 524288L; // 2^19
+  public static final long GENESIS_EPOCH = GENESIS_SLOT / Constants.EPOCH_LENGTH;
   public static int GENESIS_START_SHARD = 0; //
   public static UnsignedLong FAR_FUTURE_EPOCH = UnsignedLong.MAX_VALUE; //
   public static Bytes32 ZERO_HASH = Bytes32.ZERO; //
