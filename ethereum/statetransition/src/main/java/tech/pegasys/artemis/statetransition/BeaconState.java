@@ -17,9 +17,9 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static java.lang.Math.toIntExact;
 import static tech.pegasys.artemis.datastructures.Constants.DOMAIN_DEPOSIT;
 import static tech.pegasys.artemis.datastructures.Constants.EPOCH_LENGTH;
+import static tech.pegasys.artemis.datastructures.Constants.GENESIS_EPOCH;
 import static tech.pegasys.artemis.datastructures.Constants.GENESIS_SLOT;
 import static tech.pegasys.artemis.datastructures.Constants.SHARD_COUNT;
-import static tech.pegasys.artemis.datastructures.Constants.TARGET_COMMITTEE_SIZE;
 import static tech.pegasys.artemis.util.bls.BLSVerify.bls_verify;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -47,7 +47,6 @@ import tech.pegasys.artemis.datastructures.state.ValidatorRegistryDeltaBlock;
 import tech.pegasys.artemis.datastructures.state.Validators;
 import tech.pegasys.artemis.statetransition.util.BeaconStateUtil;
 import tech.pegasys.artemis.statetransition.util.TreeHashUtil;
-import tech.pegasys.artemis.statetransition.util.ValidatorsUtil;
 
 public class BeaconState {
 
@@ -64,7 +63,12 @@ public class BeaconState {
 
   // Randomness and committees
   private ArrayList<Bytes32> latest_randao_mixes;
-  private ArrayList<ArrayList<ShardCommittee>> shard_committees_at_slots = new ArrayList<>();
+  private long previous_epoch_start_shard;
+  private long current_epoch_start_shard;
+  private long previous_calculation_epoch;
+  private long current_calculation_epoch;
+  private Bytes32 previous_epoch_seed;
+  private Bytes32 current_epoch_seed;
 
   // Finality
   private long previous_justified_slot;
@@ -110,7 +114,13 @@ public class BeaconState {
       Bytes32 validator_registry_delta_chain_tip,
       // Randomness and committees
       ArrayList<Bytes32> latest_randao_mixes,
-      ArrayList<ArrayList<ShardCommittee>> shard_committees_at_slots,
+      long previous_epoch_start_shard,
+      long current_epoch_start_shard,
+      long previous_calculation_epoch,
+      long current_calculation_epoch,
+      Bytes32 previous_epoch_seed,
+      Bytes32 current_epoch_seed,
+
       // Finality
       long previous_justified_slot,
       long justified_slot,
@@ -139,7 +149,12 @@ public class BeaconState {
 
     // Randomness and committees
     this.latest_randao_mixes = latest_randao_mixes;
-    this.shard_committees_at_slots = shard_committees_at_slots;
+    this.previous_epoch_start_shard = previous_epoch_start_shard;
+    this.current_epoch_start_shard = current_epoch_start_shard;
+    this.previous_calculation_epoch = previous_calculation_epoch;
+    this.current_calculation_epoch = current_calculation_epoch;
+    this.previous_epoch_seed = previous_epoch_seed;
+    this.current_epoch_seed = current_epoch_seed;
 
     // Finality
     this.previous_justified_slot = previous_justified_slot;
@@ -170,10 +185,10 @@ public class BeaconState {
     ArrayList<CrosslinkRecord> latest_crosslinks = new ArrayList<>(SHARD_COUNT);
 
     for (int i = 0; i < SHARD_COUNT; i++) {
-      latest_crosslinks.add(new CrosslinkRecord(Bytes32.ZERO, GENESIS_SLOT));
+      latest_crosslinks.add(new CrosslinkRecord(Bytes32.ZERO, UnsignedLong.valueOf(GENESIS_SLOT)));
     }
 
-    // todo after update v0.01 constants no longer exist
+    // TODO after update v0.1 constants no longer exist
     BeaconState state = new BeaconState();
     //    BeaconState state =
     //        new BeaconState(
@@ -228,21 +243,15 @@ public class BeaconState {
               deposit_input.getWithdrawal_credentials(),
               deposit_input.getRandao_commitment(),
               deposit_input.getPoc_commitment());
-      // todo after update v0.01 constants no longer exist
+      // TODO after update v0.1 constants no longer exist
       //      if (state.getValidator_balances().get(validator_index) >= (MAX_DEPOSIT *
       // GWEI_PER_ETH)) {
-      // todo updates in v0.01 to constants removed necessary values
+      // TODO updates in v0.1 to constants removed necessary values
       //        //        update_validator_status(state, validator_index, ACTIVE);
       //      }
     }
 
-    // set initial committee shuffling
-    ArrayList<ArrayList<ShardCommittee>> initial_shuffling =
-        BeaconStateUtil.get_new_shuffling(Bytes32.ZERO, state.getValidator_registry(), 0);
-    ArrayList<ArrayList<ShardCommittee>> shard_committees = new ArrayList<>();
-    shard_committees.addAll(initial_shuffling);
-    shard_committees.addAll(initial_shuffling);
-    state.setShard_committees_at_slots(shard_committees);
+    state.current_epoch_seed = BeaconStateUtil.generate_seed(state, GENESIS_EPOCH);
 
     return state;
   }
@@ -333,7 +342,7 @@ public class BeaconState {
     if (indexOfPubkey(validator_pubkeys, pubkey) == -1) {
       // Add new validator
       Validator validator = new Validator();
-      // todo Validator constructor changes after the the 0.01 update
+      // TODO Validator constructor changes after the the 0.1 update
       // empty validator record declared in it's place
       //          new Validator(
       //              pubkey,
@@ -415,9 +424,10 @@ public class BeaconState {
   @VisibleForTesting
   public void activate_validator(BeaconState state, int index, boolean is_genesis) {
     Validator validator = validator_registry.get(index);
-    UnsignedLong activation_epoch = Constants.GENESIS_EPOCH;
+    UnsignedLong activation_epoch = UnsignedLong.valueOf(Constants.GENESIS_EPOCH);
     long current_epoch = BeaconStateUtil.get_current_epoch(this);
-    if (UnsignedLong.valueOf(current_epoch).compareTo(Constants.GENESIS_SLOT) > 0) {
+    if (UnsignedLong.valueOf(current_epoch).compareTo(UnsignedLong.valueOf(Constants.GENESIS_SLOT))
+        > 0) {
       activation_epoch =
           BeaconStateUtil.get_entry_exit_effect_epoch(UnsignedLong.valueOf(current_epoch));
       validator.setActivation_epoch(activation_epoch);
@@ -431,30 +441,10 @@ public class BeaconState {
    * @param slot
    * @return
    */
-  public static int get_beacon_proposer_index(BeaconState state, int slot) {
-    ArrayList<Integer> first_committee =
-        get_shard_committees_at_slot(state, slot).get(0).getCommittee();
-    return first_committee.get(slot % first_committee.size());
-  }
-
-  /**
-   * Returns the 'ShardCommittee' for the 'slot'.
-   *
-   * @param slot
-   * @return
-   */
-  public static ArrayList<ShardCommittee> get_shard_committees_at_slot(
-      BeaconState state, int slot) {
-    int earliest_slot_in_array =
-        toIntExact(state.getSlot()) - (toIntExact(state.getSlot()) % EPOCH_LENGTH) - EPOCH_LENGTH;
-    assert earliest_slot_in_array <= slot;
-    assert slot < (earliest_slot_in_array + EPOCH_LENGTH * 2);
-
-    int index = slot - earliest_slot_in_array;
-    if (index < 0) {
-      index = state.shard_committees_at_slots.size() + index;
-    }
-    return state.shard_committees_at_slots.get(index);
+  public static Integer get_beacon_proposer_index(BeaconState state, int slot) {
+    ShardCommittee first_committee =
+        BeaconStateUtil.get_crosslink_committees_at_slot(state, slot).get(0);
+    return first_committee.getCommittee().get(slot % first_committee.getCommitteeSize());
   }
 
   /**
@@ -465,25 +455,31 @@ public class BeaconState {
    * @param participation_bitfield
    * @return
    */
-  public static ArrayList<ShardCommittee> get_attestation_participants(
+  public static ArrayList<Integer> get_attestation_participants(
       BeaconState state, AttestationData attestation_data, byte[] participation_bitfield) {
     // Find the relevant committee
-    ArrayList<ShardCommittee> shard_committees =
-        get_shard_committees_at_slot(state, toIntExact(attestation_data.getSlot()));
-    ArrayList<ShardCommittee> shard_committee = new ArrayList<>();
-    for (ShardCommittee curr_shard_committee : shard_committees) {
-      if (curr_shard_committee.getShard().equals(attestation_data.getShard())) {
-        shard_committee.add(curr_shard_committee);
+    ArrayList<ShardCommittee> crosslink_committees =
+        BeaconStateUtil.get_crosslink_committees_at_slot(
+            state, toIntExact(attestation_data.getSlot()));
+
+    // TODO: assert attestation_data.shard in [shard for _, shard in crosslink_committees]
+
+    ShardCommittee crosslink_committee = null;
+    for (ShardCommittee curr_crosslink_committee : crosslink_committees) {
+      if (curr_crosslink_committee.getShard().equals(attestation_data.getShard())) {
+        crosslink_committee = curr_crosslink_committee;
+        break;
       }
     }
-    assert participation_bitfield.length == ceil_div8(shard_committee.toArray().length);
+    assert crosslink_committee != null;
+    assert participation_bitfield.length == ceil_div8(crosslink_committee.getCommitteeSize());
 
     // Find the participating attesters in the committee
-    ArrayList<ShardCommittee> participants = new ArrayList<>();
-    for (int i = 0; i < shard_committee.size(); i++) {
+    ArrayList<Integer> participants = new ArrayList<>();
+    for (int i = 0; i < crosslink_committee.getCommitteeSize(); i++) {
       int participation_bit = (participation_bitfield[i / 8] >> (7 - (i % 8))) % 2;
       if (participation_bit == 1) {
-        participants.add(shard_committee.get(i));
+        participants.add(crosslink_committee.getCommittee().get(i));
       }
     }
     return participants;
@@ -498,61 +494,6 @@ public class BeaconState {
   private static int ceil_div8(int div) {
     checkArgument(div > 0, "Expected positive div but got %s", div);
     return (int) Math.ceil(8.0 / div);
-  }
-
-  /**
-   * Shuffles 'validators' into shard committees using 'seed' as entropy.
-   *
-   * @param seed
-   * @param validators
-   * @param crosslinking_start_shard
-   * @return
-   */
-  public static ArrayList<ArrayList<ShardCommittee>> get_shuffling(
-      Bytes32 seed, ArrayList<Validator> validators, int crosslinking_start_shard, int slot) {
-    // Normalizes slot to start of epoch boundary
-    slot -= slot % EPOCH_LENGTH;
-
-    ArrayList<Integer> active_validator_indices =
-        ValidatorsUtil.get_active_validator_indices_at_epoch(
-            new Validators(validators), BeaconStateUtil.slot_to_epoch(slot));
-    int committees_per_slot =
-        BeaconStateUtil.clamp(
-            1,
-            SHARD_COUNT / EPOCH_LENGTH,
-            active_validator_indices.size() / EPOCH_LENGTH / TARGET_COMMITTEE_SIZE);
-
-    // Shuffle with seed
-    ArrayList<Integer> shuffled_active_validator_indices =
-        BeaconStateUtil.shuffle(active_validator_indices, seed);
-
-    // Split the shuffled list into epoch_length pieces
-    ArrayList<ArrayList<Integer>> validators_per_slot =
-        BeaconStateUtil.split(shuffled_active_validator_indices, EPOCH_LENGTH);
-
-    ArrayList<ArrayList<ShardCommittee>> output = new ArrayList<>();
-
-    for (int slot_position = 0; slot_position < validators_per_slot.size(); slot_position++) {
-      // Split the shuffled list into committees_per_slot pieces
-      ArrayList<ArrayList<Integer>> shard_indices =
-          BeaconStateUtil.split(validators_per_slot.get(slot_position), committees_per_slot);
-
-      long shard_id_start = (long) crosslinking_start_shard + slot_position * committees_per_slot;
-
-      ArrayList<ShardCommittee> shard_committees = new ArrayList<>();
-
-      for (int shard_position = 0; shard_position < shard_indices.size(); shard_position++) {
-        shard_committees.add(
-            new ShardCommittee(
-                UnsignedLong.valueOf((shard_id_start + shard_position) % SHARD_COUNT),
-                shard_indices.get(shard_position),
-                UnsignedLong.valueOf(active_validator_indices.size())));
-      }
-
-      output.add(shard_committees);
-    }
-
-    return output;
   }
 
   /**
@@ -712,6 +653,14 @@ public class BeaconState {
     this.validator_balances = validator_balances;
   }
 
+  public long getValidator_registry_update_epoch() {
+    return validator_registry_update_epoch;
+  }
+
+  public void setValidator_registry_update_epoch(long validator_registry_update_epoch) {
+    this.validator_registry_update_epoch = validator_registry_update_epoch;
+  }
+
   public Bytes32 getValidator_registry_delta_chain_tip() {
     return validator_registry_delta_chain_tip;
   }
@@ -720,12 +669,52 @@ public class BeaconState {
     this.validator_registry_delta_chain_tip = validator_registry_delta_chain_tip;
   }
 
-  public long getValidator_registry_update_epoch() {
-    return validator_registry_update_epoch;
+  public long getPrevious_epoch_start_shard() {
+    return previous_epoch_start_shard;
   }
 
-  public void setValidator_registry_update_epoch(long validator_registry_update_epoch) {
-    this.validator_registry_update_epoch = validator_registry_update_epoch;
+  public void setPrevious_epoch_start_shard(long previous_epoch_start_shard) {
+    this.previous_epoch_start_shard = previous_epoch_start_shard;
+  }
+
+  public long getCurrent_epoch_start_shard() {
+    return current_epoch_start_shard;
+  }
+
+  public void setCurrent_epoch_start_shard(long current_epoch_start_shard) {
+    this.current_epoch_start_shard = current_epoch_start_shard;
+  }
+
+  public long getPrevious_calculation_epoch() {
+    return previous_calculation_epoch;
+  }
+
+  public void setPrevious_calculation_epoch(long previous_calculation_epoch) {
+    this.previous_calculation_epoch = previous_calculation_epoch;
+  }
+
+  public long getCurrent_calculation_epoch() {
+    return current_calculation_epoch;
+  }
+
+  public void setCurrent_calculation_epoch(long current_calculation_epoch) {
+    this.current_calculation_epoch = current_calculation_epoch;
+  }
+
+  public Bytes32 getPrevious_epoch_seed() {
+    return previous_epoch_seed;
+  }
+
+  public void setPrevious_epoch_seed(Bytes32 previous_epoch_seed) {
+    this.previous_epoch_seed = previous_epoch_seed;
+  }
+
+  public Bytes32 getCurrent_epoch_seed() {
+    return current_epoch_seed;
+  }
+
+  public void setCurrent_epoch_seed(Bytes32 current_epoch_seed) {
+    this.current_epoch_seed = current_epoch_seed;
   }
 
   public long getPrevious_justified_slot() {
@@ -790,19 +779,6 @@ public class BeaconState {
 
   public void setFinalized_slot(long finalized_slot) {
     this.finalized_slot = finalized_slot;
-  }
-
-  public void setShard_committees_at_slots(
-      ArrayList<ArrayList<ShardCommittee>> shard_committees_at_slots) {
-    this.shard_committees_at_slots = shard_committees_at_slots;
-  }
-
-  public void setShard_committees_at_slot(int i, ArrayList<ShardCommittee> shard_committee) {
-    this.shard_committees_at_slots.set(i, shard_committee);
-  }
-
-  public ArrayList<ArrayList<ShardCommittee>> getShard_committees_at_slots() {
-    return shard_committees_at_slots;
   }
 
   public ArrayList<Double> getLatest_penalized_balances() {

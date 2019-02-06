@@ -14,13 +14,10 @@
 package tech.pegasys.artemis.statetransition.util;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import net.consensys.cava.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.Constants;
-import tech.pegasys.artemis.datastructures.operations.AttestationData;
 import tech.pegasys.artemis.datastructures.state.PendingAttestationRecord;
 import tech.pegasys.artemis.datastructures.state.ShardCommittee;
-import tech.pegasys.artemis.datastructures.state.Validators;
 import tech.pegasys.artemis.statetransition.BeaconState;
 
 public class AttestationUtil {
@@ -89,29 +86,6 @@ public class AttestationUtil {
     return 0.0d;
   }
 
-  public static Validators get_attestation_participants(
-      BeaconState state, AttestationData attestation_data, Bytes32 participation_bitfield)
-      throws BlockValidationException {
-    // Find the committee in the list with the desired shard
-    ArrayList<HashMap<Long, ShardCommittee>> crosslink_committees_at_slot =
-        BeaconStateUtil.get_crosslink_committees_at_slot(state, attestation_data.getSlot());
-    // todo
-    /*assert attestation_data.shard in [shard for _, shard in crosslink_committees]
-    crosslink_committee = [committee for committee, shard in crosslink_committees if shard == attestation_data.shard][0]
-    assert len(aggregation_bitfield) == (len(crosslink_committee) + 7) // 8
-
-    ArrayList<Integer> participants = new ArrayList<Integer>();
-    for(HashMap<Long, ShardCommittee> crosslink_committees : crosslink_committees_at_slot ){
-      for(Long shard: crosslink_committees.keySet()){
-        ShardCommittee crosslink_committee = crosslink_committees.get(shard);
-        for(Integer validator_index : crosslink_committee.getCommittee()){
-
-        }
-      }
-    }*/
-    return null;
-  }
-
   public static int ceil_div8(int input) {
     return (int) Math.ceil(((double) input) / 8.0d);
   }
@@ -122,7 +96,7 @@ public class AttestationUtil {
     return 0.0d;
   }
 
-  public static Validators attesting_validator_indices(
+  public static ArrayList<Integer> attesting_validator_indices(
       BeaconState state, ShardCommittee crosslink_committee, Bytes32 shard_block_root)
       throws BlockValidationException {
     ArrayList<PendingAttestationRecord> combined_attestations =
@@ -132,8 +106,8 @@ public class AttestationUtil {
     for (PendingAttestationRecord record : combined_attestations) {
       if (record.getData().getShard().compareTo(crosslink_committee.getShard()) == 0
           && record.getData().getShard_block_hash() == shard_block_root) {
-        return get_attestation_participants(
-            state, record.getData(), record.getParticipation_bitfield());
+        return BeaconState.get_attestation_participants(
+            state, record.getData(), record.getParticipation_bitfield().toArray());
       }
     }
     throw new BlockValidationException("attesting_validator_indicies appear to be empty");
