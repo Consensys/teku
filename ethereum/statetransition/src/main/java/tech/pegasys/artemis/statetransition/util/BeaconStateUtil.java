@@ -322,6 +322,7 @@ public class BeaconStateUtil {
     int committees_per_epoch = get_epoch_committee_count(active_validator_indices.size());
 
     // Shuffle with seed
+    // TODO: we may need to treat `epoch` as little-endian here. Revisit as the spec evolves.
     seed.xor(Bytes32.wrap(Bytes.minimalBytes(epoch)));
     ArrayList<Integer> shuffled_active_validator_indices = shuffle(active_validator_indices, seed);
 
