@@ -34,21 +34,11 @@ public class BeaconStateUtil {
     return 0.0d;
   }
 
-  /**
-   * Return the list of `(committee, shard)` tuples for the `slot`.
-   *
-   * @param state
-   * @param slot
-   * @param registry_change
-   * @return
-   * @throws BlockValidationException
-   */
+  /** Return the list of `(committee, shard)` tuples for the `slot`. */
   public static ArrayList<ShardCommittee> get_crosslink_committees_at_slot(
       //      BeaconState state, long slot, boolean registry_change) throws BlockValidationException
       // {
       BeaconState state, long slot, boolean registry_change) {
-
-    // Todo - registry change should default to False
 
     long epoch = slot_to_epoch(slot);
     long current_epoch = get_current_epoch(state);
@@ -56,7 +46,7 @@ public class BeaconStateUtil {
         (current_epoch > Constants.GENESIS_EPOCH) ? current_epoch - 1 : current_epoch;
     long next_epoch = current_epoch + 1;
 
-    // todo handle this exception properly
+    // TODO handle this exception properly
     // if (!(previous_epoch <= epoch && epoch <= next_epoch)) {
     //  throw new BlockValidationException(
     //          "get_crosslink_committees_at_slot: Exception was thrown due to failure of
@@ -67,22 +57,29 @@ public class BeaconStateUtil {
     Bytes32 seed = Bytes32.ZERO;
     long shuffling_epoch = 0;
     long shuffling_start_shard = 0;
+
     if (epoch == previous_epoch) {
+
       committees_per_epoch = get_previous_epoch_committee_count(state);
       seed = state.getPrevious_epoch_seed();
       shuffling_epoch = state.getPrevious_calculation_epoch();
       shuffling_start_shard = state.getPrevious_epoch_start_shard();
+
     } else if (epoch == current_epoch) {
+
       committees_per_epoch = get_current_epoch_committee_count(state);
       seed = state.getCurrent_epoch_seed();
       shuffling_epoch = state.getCurrent_calculation_epoch();
       shuffling_start_shard = state.getCurrent_epoch_start_shard();
+
     } else if (epoch == next_epoch) {
+
       long current_committees_per_epoch = get_current_epoch_committee_count(state);
       committees_per_epoch = get_next_epoch_committee_count(state);
       shuffling_epoch = next_epoch;
       long epochs_since_last_registry_update =
           current_epoch - state.getValidator_registry_update_epoch();
+
       if (registry_change) {
         seed = generate_seed(state, next_epoch);
         shuffling_start_shard =
@@ -116,36 +113,54 @@ public class BeaconStateUtil {
     return crosslink_committees_at_slot;
   }
 
-  /**
-   * Return the list of `(committee, shard)` tuples for the `slot`.
-   *
-   * @param state
-   * @param slot
-   * @return
-   * @throws BlockValidationException
-   */
+  /** This is a wrapper that defaults `registry_change` to false when it is not provided */
   public static ArrayList<ShardCommittee> get_crosslink_committees_at_slot(
       BeaconState state, long slot) {
     return get_crosslink_committees_at_slot(state, slot, false);
   }
 
+  /* TODO: Note from spec -
+   * Note: this definition and the next few definitions make heavy use of repetitive computing.
+   * Production implementations are expected to appropriately use caching/memoization to avoid redoing work.
+   */
+
   private static long get_previous_epoch_committee_count(BeaconState state) {
-    // todo
-    return 0L;
+    ArrayList<Integer> previous_active_validators =
+        ValidatorsUtil.get_active_validator_indices(
+            state.getValidator_registry(), state.getPrevious_calculation_epoch());
+    return get_epoch_committee_count(previous_active_validators.size());
   }
 
   private static long get_current_epoch_committee_count(BeaconState state) {
-    // todo
-    return 0L;
+    ArrayList<Integer> current_active_validators =
+        ValidatorsUtil.get_active_validator_indices(
+            state.getValidator_registry(), state.getCurrent_calculation_epoch());
+    return get_epoch_committee_count(current_active_validators.size());
   }
 
   private static long get_next_epoch_committee_count(BeaconState state) {
-    // todo
-    return 0L;
+    ArrayList<Integer> next_active_validators =
+        ValidatorsUtil.get_active_validator_indices(
+            state.getValidator_registry(), get_current_epoch(state) + 1);
+    return get_epoch_committee_count(next_active_validators.size());
   }
 
   public static Bytes32 generate_seed(BeaconState state, long epoch) {
-    // todo
+    // TODO: I think this method is correct, but it breaks all the BeaconStateTests
+    // Bytes32 randao_mix = get_randao_mix(state, epoch - Constants.SEED_LOOKAHEAD);
+    // Bytes32 index_root = get_active_index_root(state, epoch);
+    // return Hash.keccak256(Bytes.wrap(randao_mix, index_root))
+    return Bytes32.ZERO;
+  }
+
+  public static Bytes32 get_active_index_root(BeaconState state, long epoch) {
+    assert get_current_epoch(state)
+            - Constants.LATEST_INDEX_ROOTS_LENGTH
+            + Constants.ENTRY_EXIT_DELAY
+        < epoch;
+    assert epoch <= get_current_epoch(state) + Constants.ENTRY_EXIT_DELAY;
+    // TODO turn this pseudocode into Java once latest_index_roots has been implemented
+    // return state.latest_index_roots[epoch % LATEST_INDEX_ROOTS_LENGTH]
     return Bytes32.ZERO;
   }
 
@@ -174,7 +189,7 @@ public class BeaconStateUtil {
 
   public static long get_previous_epoch(BeaconState state) {
     if (UnsignedLong.valueOf(get_current_epoch(state))
-            .compareTo(slot_to_epoch(Constants.GENESIS_SLOT))
+            .compareTo(slot_to_epoch(UnsignedLong.valueOf(Constants.GENESIS_SLOT)))
         > 0) return get_current_epoch(state) - 1;
     else return get_current_epoch(state);
   }
@@ -421,6 +436,7 @@ public class BeaconStateUtil {
     return x;
   }
 
+  /** Returns true if the operand is an exact power of two */
   public static boolean is_power_of_two(long value) {
     return (value != 0) && (Long.lowestOneBit(value) == Long.highestOneBit(value));
   }

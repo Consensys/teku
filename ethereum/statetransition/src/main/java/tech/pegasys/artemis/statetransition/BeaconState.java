@@ -18,14 +18,8 @@ import static java.lang.Math.toIntExact;
 import static tech.pegasys.artemis.datastructures.Constants.DOMAIN_DEPOSIT;
 import static tech.pegasys.artemis.datastructures.Constants.EPOCH_LENGTH;
 import static tech.pegasys.artemis.datastructures.Constants.GENESIS_EPOCH;
-import static tech.pegasys.artemis.datastructures.Constants.GENESIS_START_SHARD;
-import static tech.pegasys.artemis.datastructures.Constants.GWEI_PER_ETH;
-import static tech.pegasys.artemis.datastructures.Constants.INITIAL_FORK_VERSION;
-import static tech.pegasys.artemis.datastructures.Constants.INITIAL_SLOT_NUMBER;
-import static tech.pegasys.artemis.datastructures.Constants.MAX_DEPOSIT;
 import static tech.pegasys.artemis.datastructures.Constants.GENESIS_SLOT;
 import static tech.pegasys.artemis.datastructures.Constants.SHARD_COUNT;
-import static tech.pegasys.artemis.datastructures.Constants.ZERO_HASH;
 import static tech.pegasys.artemis.util.bls.BLSVerify.bls_verify;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -191,10 +185,10 @@ public class BeaconState {
     ArrayList<CrosslinkRecord> latest_crosslinks = new ArrayList<>(SHARD_COUNT);
 
     for (int i = 0; i < SHARD_COUNT; i++) {
-      latest_crosslinks.add(new CrosslinkRecord(Bytes32.ZERO, GENESIS_SLOT));
+      latest_crosslinks.add(new CrosslinkRecord(Bytes32.ZERO, UnsignedLong.valueOf(GENESIS_SLOT)));
     }
 
-    // todo after update v0.01 constants no longer exist
+    // TODO after update v0.1 constants no longer exist
     BeaconState state = new BeaconState();
     //    BeaconState state =
     //        new BeaconState(
@@ -249,10 +243,10 @@ public class BeaconState {
               deposit_input.getWithdrawal_credentials(),
               deposit_input.getRandao_commitment(),
               deposit_input.getPoc_commitment());
-      // todo after update v0.01 constants no longer exist
+      // TODO after update v0.1 constants no longer exist
       //      if (state.getValidator_balances().get(validator_index) >= (MAX_DEPOSIT *
       // GWEI_PER_ETH)) {
-      // todo updates in v0.01 to constants removed necessary values
+      // TODO updates in v0.1 to constants removed necessary values
       //        //        update_validator_status(state, validator_index, ACTIVE);
       //      }
     }
@@ -348,7 +342,7 @@ public class BeaconState {
     if (indexOfPubkey(validator_pubkeys, pubkey) == -1) {
       // Add new validator
       Validator validator = new Validator();
-      // todo Validator constructor changes after the the 0.01 update
+      // TODO Validator constructor changes after the the 0.1 update
       // empty validator record declared in it's place
       //          new Validator(
       //              pubkey,
@@ -430,9 +424,10 @@ public class BeaconState {
   @VisibleForTesting
   public void activate_validator(BeaconState state, int index, boolean is_genesis) {
     Validator validator = validator_registry.get(index);
-    UnsignedLong activation_epoch = Constants.GENESIS_EPOCH;
+    UnsignedLong activation_epoch = UnsignedLong.valueOf(Constants.GENESIS_EPOCH);
     long current_epoch = BeaconStateUtil.get_current_epoch(this);
-    if (UnsignedLong.valueOf(current_epoch).compareTo(Constants.GENESIS_SLOT) > 0) {
+    if (UnsignedLong.valueOf(current_epoch).compareTo(UnsignedLong.valueOf(Constants.GENESIS_SLOT))
+        > 0) {
       activation_epoch =
           BeaconStateUtil.get_entry_exit_effect_epoch(UnsignedLong.valueOf(current_epoch));
       validator.setActivation_epoch(activation_epoch);
@@ -467,7 +462,7 @@ public class BeaconState {
         BeaconStateUtil.get_crosslink_committees_at_slot(
             state, toIntExact(attestation_data.getSlot()));
 
-    // todo: assert attestation_data.shard in [shard for _, shard in crosslink_committees]
+    // TODO: assert attestation_data.shard in [shard for _, shard in crosslink_committees]
 
     ShardCommittee crosslink_committee = null;
     for (ShardCommittee curr_crosslink_committee : crosslink_committees) {
@@ -708,12 +703,8 @@ public class BeaconState {
 
   public Bytes32 getPrevious_epoch_seed() {
     return previous_epoch_seed;
-  public long getValidator_registry_update_epoch() {
-    return validator_registry_update_epoch;
   }
 
-  public void setValidator_registry_update_epoch(long validator_registry_update_epoch) {
-    this.validator_registry_update_epoch = validator_registry_update_epoch;
   public void setPrevious_epoch_seed(Bytes32 previous_epoch_seed) {
     this.previous_epoch_seed = previous_epoch_seed;
   }

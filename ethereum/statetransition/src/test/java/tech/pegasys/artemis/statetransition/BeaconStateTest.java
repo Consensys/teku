@@ -86,7 +86,7 @@ class BeaconStateTest {
             Bytes48.ZERO,
             Bytes32.ZERO,
             UnsignedLong.ZERO,
-            GENESIS_EPOCH,
+            UnsignedLong.valueOf(GENESIS_EPOCH),
             UnsignedLong.ZERO,
             UnsignedLong.ZERO,
             UnsignedLong.valueOf(0)));
@@ -95,7 +95,7 @@ class BeaconStateTest {
             Bytes48.leftPad(Bytes.of(100)),
             Bytes32.ZERO,
             UnsignedLong.ZERO,
-            GENESIS_EPOCH,
+            UnsignedLong.valueOf(GENESIS_EPOCH),
             UnsignedLong.ZERO,
             UnsignedLong.ZERO,
             UnsignedLong.valueOf(0)));
@@ -104,7 +104,7 @@ class BeaconStateTest {
             Bytes48.leftPad(Bytes.of(200)),
             Bytes32.ZERO,
             UnsignedLong.ZERO,
-            GENESIS_EPOCH,
+            UnsignedLong.valueOf(GENESIS_EPOCH),
             UnsignedLong.ZERO,
             UnsignedLong.ZERO,
             UnsignedLong.valueOf(0)));
@@ -113,7 +113,7 @@ class BeaconStateTest {
             Bytes48.leftPad(Bytes.of(0)),
             Bytes32.ZERO,
             UnsignedLong.ZERO,
-            GENESIS_EPOCH,
+            UnsignedLong.valueOf(GENESIS_EPOCH),
             UnsignedLong.ZERO,
             UnsignedLong.ZERO,
             UnsignedLong.valueOf(0)));
@@ -122,7 +122,7 @@ class BeaconStateTest {
             Bytes48.leftPad(Bytes.of(0)),
             Bytes32.ZERO,
             UnsignedLong.ZERO,
-            GENESIS_EPOCH,
+            UnsignedLong.valueOf(GENESIS_EPOCH),
             UnsignedLong.ZERO,
             UnsignedLong.ZERO,
             UnsignedLong.valueOf(0)));
