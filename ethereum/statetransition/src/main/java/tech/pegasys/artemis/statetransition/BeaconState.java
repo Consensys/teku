@@ -31,7 +31,6 @@ import java.util.Arrays;
 import java.util.List;
 import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.bytes.Bytes48;
-import net.consensys.cava.crypto.Hash;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.datastructures.blocks.Eth1DataVote;
@@ -43,7 +42,6 @@ import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.datastructures.state.PendingAttestationRecord;
 import tech.pegasys.artemis.datastructures.state.ShardCommittee;
 import tech.pegasys.artemis.datastructures.state.Validator;
-import tech.pegasys.artemis.datastructures.state.ValidatorRegistryDeltaBlock;
 import tech.pegasys.artemis.datastructures.state.Validators;
 import tech.pegasys.artemis.statetransition.util.BeaconStateUtil;
 import tech.pegasys.artemis.statetransition.util.TreeHashUtil;
@@ -59,7 +57,6 @@ public class BeaconState {
   private Validators validator_registry;
   private ArrayList<Double> validator_balances;
   private long validator_registry_update_epoch;
-  private Bytes32 validator_registry_delta_chain_tip;
 
   // Randomness and committees
   private ArrayList<Bytes32> latest_randao_mixes;
@@ -79,6 +76,7 @@ public class BeaconState {
   // Recent state
   private ArrayList<CrosslinkRecord> latest_crosslinks;
   private ArrayList<Bytes32> latest_block_roots = new ArrayList<>();
+  private ArrayList<Bytes32> latest_index_roots = new ArrayList<>();
   private ArrayList<Double> latest_penalized_balances;
   private ArrayList<PendingAttestationRecord> latest_attestations;
   private ArrayList<Bytes32> batched_block_roots = new ArrayList<>();
@@ -111,7 +109,6 @@ public class BeaconState {
       Validators validator_registry,
       ArrayList<Double> validator_balances,
       long validator_registry_update_epoch,
-      Bytes32 validator_registry_delta_chain_tip,
       // Randomness and committees
       ArrayList<Bytes32> latest_randao_mixes,
       long previous_epoch_start_shard,
@@ -129,6 +126,7 @@ public class BeaconState {
       // Recent state
       ArrayList<CrosslinkRecord> latest_crosslinks,
       ArrayList<Bytes32> latest_block_roots,
+      ArrayList<Bytes32> latest_index_roots,
       ArrayList<Double> latest_penalized_balances,
       ArrayList<PendingAttestationRecord> latest_attestations,
       ArrayList<Bytes32> batched_block_roots,
@@ -145,7 +143,6 @@ public class BeaconState {
     this.validator_registry = validator_registry;
     this.validator_balances = validator_balances;
     this.validator_registry_update_epoch = validator_registry_update_epoch;
-    this.validator_registry_delta_chain_tip = validator_registry_delta_chain_tip;
 
     // Randomness and committees
     this.latest_randao_mixes = latest_randao_mixes;
@@ -250,6 +247,11 @@ public class BeaconState {
       //        //        update_validator_status(state, validator_index, ACTIVE);
       //      }
     }
+    // TODO
+    //  genesis_active_index_root = hash_tree_root(get_active_validator_indices(state,
+    // GENESIS_EPOCH))
+    //  for index in range(LATEST_INDEX_ROOTS_LENGTH):
+    //    state.latest_index_roots[index] = genesis_active_index_root
 
     state.current_epoch_seed = BeaconStateUtil.generate_seed(state, GENESIS_EPOCH);
 
@@ -424,14 +426,15 @@ public class BeaconState {
   @VisibleForTesting
   public void activate_validator(BeaconState state, int index, boolean is_genesis) {
     Validator validator = validator_registry.get(index);
-    UnsignedLong activation_epoch = UnsignedLong.valueOf(Constants.GENESIS_EPOCH);
-    long current_epoch = BeaconStateUtil.get_current_epoch(this);
-    if (UnsignedLong.valueOf(current_epoch).compareTo(UnsignedLong.valueOf(Constants.GENESIS_SLOT))
-        > 0) {
+    UnsignedLong activation_epoch;
+    if (is_genesis) {
+      activation_epoch = UnsignedLong.valueOf(Constants.GENESIS_EPOCH);
+    } else {
+      long current_epoch = BeaconStateUtil.get_current_epoch(this);
       activation_epoch =
           BeaconStateUtil.get_entry_exit_effect_epoch(UnsignedLong.valueOf(current_epoch));
-      validator.setActivation_epoch(activation_epoch);
     }
+    validator.setActivation_epoch(activation_epoch);
   }
 
   /**
@@ -546,31 +549,6 @@ public class BeaconState {
   }
 
   /**
-   * Compute the next root in the validator registry delta chain.
-   *
-   * @param current_validator_registry_delta_chain_tip
-   * @param validator_index
-   * @param pubkey
-   * @param flag
-   * @return The next root.
-   */
-  private Bytes32 get_new_validator_registry_delta_chain_tip(
-      Bytes32 current_validator_registry_delta_chain_tip,
-      int validator_index,
-      Bytes48 pubkey,
-      int flag,
-      UnsignedLong slot) {
-    return Hash.keccak256(
-        TreeHashUtil.hash_tree_root(
-            new ValidatorRegistryDeltaBlock(
-                    UnsignedLong.valueOf(flag),
-                    current_validator_registry_delta_chain_tip,
-                    pubkey,
-                    slot,
-                    validator_index)
-                .toBytes()));
-  }
-  /**
    * Returns the effective balance (also known as "balance at stake") for a 'validator' with the
    * given 'index'.
    *
@@ -580,11 +558,6 @@ public class BeaconState {
    */
   private double get_effective_balance(BeaconState state, int index) {
     return Math.min(state.validator_balances.get(index).intValue(), Constants.MAX_DEPOSIT_AMOUNT);
-  }
-
-  public Bytes32 getPrevious_epoch_randao_mix() {
-    // todo
-    return null;
   }
 
   public int getPrevious_epoch_calculation_slot() {
@@ -661,14 +634,6 @@ public class BeaconState {
     this.validator_registry_update_epoch = validator_registry_update_epoch;
   }
 
-  public Bytes32 getValidator_registry_delta_chain_tip() {
-    return validator_registry_delta_chain_tip;
-  }
-
-  public void setValidator_registry_delta_chain_tip(Bytes32 validator_registry_delta_chain_tip) {
-    this.validator_registry_delta_chain_tip = validator_registry_delta_chain_tip;
-  }
-
   public long getPrevious_epoch_start_shard() {
     return previous_epoch_start_shard;
   }
@@ -743,6 +708,10 @@ public class BeaconState {
 
   public ArrayList<Bytes32> getLatest_block_roots() {
     return latest_block_roots;
+  }
+
+  public ArrayList<Bytes32> getLatest_index_roots() {
+    return latest_index_roots;
   }
 
   public void setLatest_block_roots(ArrayList<Bytes32> latest_block_roots) {
