@@ -59,7 +59,6 @@ class BeaconStateTest {
             new Validators(),
             new ArrayList<>(),
             0,
-            Bytes32.ZERO,
             new ArrayList<>(),
             new ArrayList<>(),
             0,

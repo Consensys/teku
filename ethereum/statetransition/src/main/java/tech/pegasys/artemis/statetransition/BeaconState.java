@@ -60,7 +60,6 @@ public class BeaconState {
   private Validators validator_registry;
   private ArrayList<Double> validator_balances;
   private long validator_registry_update_epoch;
-  private Bytes32 validator_registry_delta_chain_tip;
 
   // Randomness and committees
   private ArrayList<Bytes32> latest_randao_mixes;
@@ -107,7 +106,6 @@ public class BeaconState {
       Validators validator_registry,
       ArrayList<Double> validator_balances,
       long validator_registry_update_epoch,
-      Bytes32 validator_registry_delta_chain_tip,
       // Randomness and committees
       ArrayList<Bytes32> latest_randao_mixes,
       ArrayList<ArrayList<ShardCommittee>> shard_committees_at_slots,
@@ -135,7 +133,6 @@ public class BeaconState {
     this.validator_registry = validator_registry;
     this.validator_balances = validator_balances;
     this.validator_registry_update_epoch = validator_registry_update_epoch;
-    this.validator_registry_delta_chain_tip = validator_registry_delta_chain_tip;
 
     // Randomness and committees
     this.latest_randao_mixes = latest_randao_mixes;
@@ -605,31 +602,6 @@ public class BeaconState {
   }
 
   /**
-   * Compute the next root in the validator registry delta chain.
-   *
-   * @param current_validator_registry_delta_chain_tip
-   * @param validator_index
-   * @param pubkey
-   * @param flag
-   * @return The next root.
-   */
-  private Bytes32 get_new_validator_registry_delta_chain_tip(
-      Bytes32 current_validator_registry_delta_chain_tip,
-      int validator_index,
-      Bytes48 pubkey,
-      int flag,
-      UnsignedLong slot) {
-    return Hash.keccak256(
-        TreeHashUtil.hash_tree_root(
-            new ValidatorRegistryDeltaBlock(
-                    UnsignedLong.valueOf(flag),
-                    current_validator_registry_delta_chain_tip,
-                    pubkey,
-                    slot,
-                    validator_index)
-                .toBytes()));
-  }
-  /**
    * Returns the effective balance (also known as "balance at stake") for a 'validator' with the
    * given 'index'.
    *
@@ -710,14 +682,6 @@ public class BeaconState {
 
   public void setValidator_balances(ArrayList<Double> validator_balances) {
     this.validator_balances = validator_balances;
-  }
-
-  public Bytes32 getValidator_registry_delta_chain_tip() {
-    return validator_registry_delta_chain_tip;
-  }
-
-  public void setValidator_registry_delta_chain_tip(Bytes32 validator_registry_delta_chain_tip) {
-    this.validator_registry_delta_chain_tip = validator_registry_delta_chain_tip;
   }
 
   public long getValidator_registry_update_epoch() {
