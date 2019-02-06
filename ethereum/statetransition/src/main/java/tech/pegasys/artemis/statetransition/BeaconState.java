@@ -557,11 +557,6 @@ public class BeaconState {
     return Math.min(state.validator_balances.get(index).intValue(), Constants.MAX_DEPOSIT_AMOUNT);
   }
 
-  public Bytes32 getPrevious_epoch_randao_mix() {
-    // todo
-    return null;
-  }
-
   public int getPrevious_epoch_calculation_slot() {
     // todo
     return 0;
