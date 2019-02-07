@@ -13,20 +13,13 @@
 
 package tech.pegasys.artemis.statetransition.util;
 
+import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.stream.IntStream;
-
-import com.google.common.primitives.UnsignedLong;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.datastructures.state.Validators;
-import tech.pegasys.artemis.statetransition.BeaconState;
 
 public class ValidatorsUtil {
-
-  public static Validators get_active_validators(BeaconState state) {
-    return get_active_validators(
-        state.getValidator_registry(), BeaconStateUtil.get_current_epoch(state));
-  }
 
   public static Validators get_active_validators(Validators validators, UnsignedLong epoch) {
     Validators active_validators = new Validators();
@@ -38,12 +31,7 @@ public class ValidatorsUtil {
     return active_validators;
   }
 
-  public static ArrayList<Integer> get_active_validator_indices(BeaconState state) {
-    return get_active_validator_indices_at_epoch(
-        state.getValidator_registry(), BeaconStateUtil.get_current_epoch(state));
-  }
-
-  public static ArrayList<Integer> get_active_validator_indices_at_epoch(
+  public static ArrayList<Integer> get_active_validator_indices(
       Validators validators, UnsignedLong epoch) {
     ArrayList<Integer> active_validator_indices = new ArrayList<>();
 
@@ -57,8 +45,10 @@ public class ValidatorsUtil {
   }
 
   public static double get_effective_balance(Validators validators) {
-    return validators != null
-        ? validators.stream().mapToDouble(Validator::get_effective_balance).sum()
-        : 0.0d;
+
+    //    return validators != null
+    //        ? validators.stream().mapToDouble(Validator::get_effective_balance).sum()
+    //        : 0.0d;
+    return 0.0d;
   }
 }

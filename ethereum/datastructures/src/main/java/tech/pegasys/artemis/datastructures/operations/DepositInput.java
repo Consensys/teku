@@ -16,7 +16,7 @@ package tech.pegasys.artemis.datastructures.operations;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-
+import java.util.stream.Collectors;
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.bytes.Bytes48;
@@ -24,26 +24,24 @@ import net.consensys.cava.ssz.SSZ;
 
 public final class DepositInput {
 
-  //TODO SSZ broken in DepositInput by v0.01
-//  public static DepositInput fromBytes(Bytes bytes) {
-//    return SSZ.decode(
-//        bytes,
-//        reader ->
-//            new DepositInput(
-//                Bytes32.wrap(reader.readBytes()),
-//                reader.readBytesList().stream().map(Bytes48::wrap).collect(Collectors.toList()),
-//                Bytes48.wrap(reader.readBytes()),
-//                Bytes32.wrap(reader.readBytes()),
-//                Bytes32.wrap(reader.readBytes())));
-//  }
-  //BLS pubkey
+  public static DepositInput fromBytes(Bytes bytes) {
+    return SSZ.decode(
+        bytes,
+        reader ->
+            new DepositInput(
+                Bytes48.wrap(reader.readBytes()),
+                Bytes32.wrap(reader.readBytes()),
+                reader.readBytesList().stream().map(Bytes48::wrap).collect(Collectors.toList())));
+  }
+  // BLS pubkey
   Bytes48 pubkey;
-  //Withdrawal credentials
+  // Withdrawal credentials
   Bytes32 withdrawal_credentials;
-  //A BLS signature of this `DepositInput`
+  // A BLS signature of this `DepositInput`
   List<Bytes48> proof_of_possession;
 
-  public DepositInput(Bytes48 pubkey, Bytes32 withdrawal_credentials, List<Bytes48> proof_of_possession) {
+  public DepositInput(
+      Bytes48 pubkey, Bytes32 withdrawal_credentials, List<Bytes48> proof_of_possession) {
     this.pubkey = pubkey;
     this.withdrawal_credentials = withdrawal_credentials;
     this.proof_of_possession = proof_of_possession;
@@ -99,6 +97,4 @@ public final class DepositInput {
           writer.writeBytes(withdrawal_credentials);
         });
   }
-
-
 }

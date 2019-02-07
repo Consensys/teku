@@ -13,12 +13,11 @@
 
 package tech.pegasys.artemis.datastructures.state;
 
+import static tech.pegasys.artemis.datastructures.Constants.MAX_DEPOSIT_AMOUNT;
+
 import com.google.common.primitives.UnsignedLong;
 import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.bytes.Bytes48;
-import tech.pegasys.artemis.datastructures.Constants;
-
-import static tech.pegasys.artemis.datastructures.Constants.MAX_DEPOSIT_AMOUNT;
 
 public class Validator {
 
@@ -41,7 +40,15 @@ public class Validator {
 
   public Validator() {}
 
-  public Validator(Bytes48 pubkey, Bytes32 withdrawal_credentials, UnsignedLong activation_epoch, UnsignedLong exit_epoch, UnsignedLong withdrawal_epoch, UnsignedLong penalized_epoch, UnsignedLong status_flags, UnsignedLong balance) {
+  public Validator(
+      Bytes48 pubkey,
+      Bytes32 withdrawal_credentials,
+      UnsignedLong activation_epoch,
+      UnsignedLong exit_epoch,
+      UnsignedLong withdrawal_epoch,
+      UnsignedLong penalized_epoch,
+      UnsignedLong status_flags,
+      UnsignedLong balance) {
     this.pubkey = pubkey;
     this.withdrawal_credentials = withdrawal_credentials;
     this.activation_epoch = activation_epoch;
@@ -111,8 +118,7 @@ public class Validator {
   public boolean is_active_validator(UnsignedLong epoch) {
     // checks validator status against the validator status constants for whether the validator is
     // active
-    return activation_epoch.compareTo(epoch) <= 0
-        && activation_epoch.compareTo(exit_epoch) < 0;
+    return activation_epoch.compareTo(epoch) <= 0 && activation_epoch.compareTo(exit_epoch) < 0;
   }
 
   /**
@@ -122,7 +128,7 @@ public class Validator {
    * @return
    */
   public UnsignedLong get_effective_balance() {
-    if(balance.compareTo(UnsignedLong.valueOf(MAX_DEPOSIT_AMOUNT)) <= 0) return balance;
+    if (balance.compareTo(UnsignedLong.valueOf(MAX_DEPOSIT_AMOUNT)) <= 0) return balance;
     else return UnsignedLong.valueOf(MAX_DEPOSIT_AMOUNT);
   }
 

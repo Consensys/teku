@@ -13,14 +13,12 @@
 
 package tech.pegasys.artemis.statetransition.util;
 
+import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
-import java.util.HashMap;
 import net.consensys.cava.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.Constants;
-import tech.pegasys.artemis.datastructures.operations.AttestationData;
 import tech.pegasys.artemis.datastructures.state.PendingAttestationRecord;
 import tech.pegasys.artemis.datastructures.state.ShardCommittee;
-import tech.pegasys.artemis.datastructures.state.Validators;
 import tech.pegasys.artemis.statetransition.BeaconState;
 
 public class AttestationUtil {
@@ -44,17 +42,24 @@ public class AttestationUtil {
         get_current_epoch_attestations(state);
 
     for (PendingAttestationRecord record : current_epoch_attestation) {
-      if ((state.getSlot() - 2 * Constants.EPOCH_LENGTH) <= record.getData().getSlot()
-          && record.getData().getSlot() < state.getSlot() - Constants.EPOCH_LENGTH)
-        previous_epoch_attestations.add(record);
+      if (state
+                  .getSlot()
+                  .minus(UnsignedLong.valueOf(2))
+                  .times(UnsignedLong.valueOf(Constants.EPOCH_LENGTH))
+                  .compareTo(UnsignedLong.valueOf(record.getData().getSlot()))
+              <= 0
+          && UnsignedLong.valueOf(record.getData().getSlot())
+                  .compareTo(state.getSlot().minus(UnsignedLong.valueOf(Constants.EPOCH_LENGTH)))
+              < 0) previous_epoch_attestations.add(record);
     }
     return previous_epoch_attestations;
   }
 
   private static boolean isAttestationCurrentEpoch(
       BeaconState state, PendingAttestationRecord record) {
-    long epoch_lower_boundary = state.getSlot() - Constants.EPOCH_LENGTH;
-    long epoch_upper_boundary = state.getSlot();
+    // TODO: Replace longValue wiht UnsignedLong
+    long epoch_lower_boundary = state.getSlot().longValue() - Constants.EPOCH_LENGTH;
+    long epoch_upper_boundary = state.getSlot().longValue();
     return (record.getData().getSlot() <= epoch_lower_boundary
         && record.getData().getSlot() > epoch_upper_boundary);
   }
@@ -71,7 +76,7 @@ public class AttestationUtil {
                 .equals(
                     BeaconStateUtil.get_block_root(
                         state, record.getData().getSlot() - Constants.EPOCH_LENGTH))
-            && record.getData().getJustified_slot().longValue() == state.getJustified_slot())
+            && record.getData().getJustified_slot().equals(state.getJustified_epoch()))
           current_epoch_attestations.add(record);
       }
     }
@@ -89,29 +94,6 @@ public class AttestationUtil {
     return 0.0d;
   }
 
-  public static Validators get_attestation_participants(
-      BeaconState state, AttestationData attestation_data, Bytes32 participation_bitfield)
-      throws BlockValidationException {
-    // Find the committee in the list with the desired shard
-    ArrayList<HashMap<Long, ShardCommittee>> crosslink_committees_at_slot =
-        BeaconStateUtil.get_crosslink_committees_at_slot(state, attestation_data.getSlot());
-    // todo
-    /*assert attestation_data.shard in [shard for _, shard in crosslink_committees]
-    crosslink_committee = [committee for committee, shard in crosslink_committees if shard == attestation_data.shard][0]
-    assert len(aggregation_bitfield) == (len(crosslink_committee) + 7) // 8
-
-    ArrayList<Integer> participants = new ArrayList<Integer>();
-    for(HashMap<Long, ShardCommittee> crosslink_committees : crosslink_committees_at_slot ){
-      for(Long shard: crosslink_committees.keySet()){
-        ShardCommittee crosslink_committee = crosslink_committees.get(shard);
-        for(Integer validator_index : crosslink_committee.getCommittee()){
-
-        }
-      }
-    }*/
-    return null;
-  }
-
   public static int ceil_div8(int input) {
     return (int) Math.ceil(((double) input) / 8.0d);
   }
@@ -122,7 +104,7 @@ public class AttestationUtil {
     return 0.0d;
   }
 
-  public static Validators attesting_validator_indices(
+  public static ArrayList<Integer> attesting_validator_indices(
       BeaconState state, ShardCommittee crosslink_committee, Bytes32 shard_block_root)
       throws BlockValidationException {
     ArrayList<PendingAttestationRecord> combined_attestations =
@@ -132,8 +114,8 @@ public class AttestationUtil {
     for (PendingAttestationRecord record : combined_attestations) {
       if (record.getData().getShard().compareTo(crosslink_committee.getShard()) == 0
           && record.getData().getShard_block_hash() == shard_block_root) {
-        return get_attestation_participants(
-            state, record.getData(), record.getParticipation_bitfield());
+        return BeaconStateUtil.get_attestation_participants(
+            state, record.getData(), record.getParticipation_bitfield().toArray());
       }
     }
     throw new BlockValidationException("attesting_validator_indicies appear to be empty");

@@ -15,6 +15,7 @@ package tech.pegasys.artemis.networking.p2p;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Random;
@@ -59,10 +60,10 @@ public class MockP2PNetwork implements P2PNetwork {
   }
 
   /**
-   * Connects to a {@link Peer}.
+   * Connects to a {@link String Peer}.
    *
    * @param peer Peer to connect to.
-   * @return Future of the established {@link PeerConnection}
+   * @return Future of the established {}
    */
   @Override
   public CompletableFuture<?> connect(String peer) {
@@ -194,8 +195,7 @@ public class MockP2PNetwork implements P2PNetwork {
   }
 
   private DepositInput createEmptyDepositInput() {
-    return new DepositInput(
-        Bytes32.ZERO, Constants.EMPTY_SIGNATURE, Bytes48.ZERO, Bytes32.ZERO, Bytes32.ZERO);
+    return new DepositInput(Bytes48.ZERO, Bytes32.ZERO, new ArrayList<Bytes48>());
   }
 
   private Exit createEmptyExit() {

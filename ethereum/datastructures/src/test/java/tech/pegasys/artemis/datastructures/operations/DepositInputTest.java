@@ -27,11 +27,9 @@ class DepositInputTest {
   void rountripSSZ() {
     DepositInput di =
         new DepositInput(
-            Bytes32.random(),
-            Arrays.asList(Bytes48.random(), Bytes48.random(), Bytes48.random()),
             Bytes48.random(),
             Bytes32.random(),
-            Bytes32.random());
+            Arrays.asList(Bytes48.random(), Bytes48.random(), Bytes48.random()));
     Bytes sszBytes = di.toBytes();
     assertEquals(di, DepositInput.fromBytes(sszBytes));
   }

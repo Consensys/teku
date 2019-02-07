@@ -25,8 +25,9 @@ public final class TreeHashUtil {
   public static Bytes32 hash_tree_root(Bytes value) {
     return SSZ.hashTreeRoot(value);
   }
+
   public static Bytes32 hash_tree_root(Validators validators) {
-    //TODO
+    // TODO
     return Bytes32.ZERO;
   }
 }

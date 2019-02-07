@@ -17,7 +17,6 @@ import static tech.pegasys.artemis.datastructures.Constants.MAX_DEPOSIT_AMOUNT;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
-import java.util.HashMap;
 import net.consensys.cava.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.state.CrosslinkRecord;
@@ -30,44 +29,48 @@ public class EpochProcessorUtil {
 
   // epoch processing
   public static void updateJustification(BeaconState state) throws Exception {
-    state.setPrevious_justified_slot(state.getJustified_slot());
+    state.setPrevious_justified_epoch(state.getJustified_epoch());
     state.setJustification_bitfield(
-        (state.getJustification_bitfield() * 2) % ((int) Math.pow(2, 64)));
+        state
+            .getJustification_bitfield()
+            .times(UnsignedLong.valueOf(2))
+            .mod(UnsignedLong.valueOf((long) Math.pow(2, 64))));
     double total_balance = BeaconStateUtil.calc_total_balance(state);
-
-    if (3 * AttestationUtil.get_previous_epoch_boundary_attesting_balance(state)
-        >= (2 * total_balance)) {
-      state.setJustification_bitfield(state.getJustification_bitfield() | 2);
-      state.setJustified_slot((state.getSlot() - 2) % Constants.EPOCH_LENGTH);
-    } else if (3 * AttestationUtil.get_current_epoch_boundary_attesting_balance(state)
-        >= (2 * total_balance)) {
-      state.setJustification_bitfield(state.getJustification_bitfield() | 1);
-      state.setJustified_slot((state.getSlot() - 2) % Constants.EPOCH_LENGTH);
-    }
+    // TODO: change values to UnsignedLong
+    // TODO: Method requires major changes following BeaconState refactor
+    //    if (3 * AttestationUtil.get_previous_epoch_boundary_attesting_balance(state)
+    //        >= (2 * total_balance)) {
+    //      state.setJustification_bitfield(state.getJustification_bitfield() | 2);
+    //      state.setJustified_slot((state.getSlot() - 2) % Constants.EPOCH_LENGTH);
+    //    } else if (3 * AttestationUtil.get_current_epoch_boundary_attesting_balance(state)
+    //        >= (2 * total_balance)) {
+    //      state.setJustification_bitfield(state.getJustification_bitfield() | 1);
+    //      state.setJustified_slot((state.getSlot() - 2) % Constants.EPOCH_LENGTH);
+    //    }
   }
 
   public static void updateFinalization(BeaconState state) {
     if (isPrevJustifiedSlotFinalized(state))
-      state.setFinalized_slot(state.getPrevious_justified_slot());
+      state.setFinalized_epoch(state.getPrevious_justified_epoch());
   }
 
   public static void updateCrosslinks(BeaconState state) throws BlockValidationException {
-    for (long n = (state.getSlot() - 2 * Constants.EPOCH_LENGTH); n < state.getSlot(); n++) {
-      ArrayList<HashMap<Long, ShardCommittee>> crosslink_committees_at_slot =
+    // TODO: change values to UnsignedLong
+    for (long n = (state.getSlot().longValue() - 2 * Constants.EPOCH_LENGTH);
+        n < state.getSlot().longValue();
+        n++) {
+      ArrayList<ShardCommittee> crosslink_committees_at_slot =
           BeaconStateUtil.get_crosslink_committees_at_slot(state, n);
-      for (HashMap<Long, ShardCommittee> crosslink_committees : crosslink_committees_at_slot) {
-        for (Long shard : crosslink_committees.keySet()) {
-          ShardCommittee crosslink_committee = crosslink_committees.get(shard);
+      for (ShardCommittee crosslink_committee : crosslink_committees_at_slot) {
+        UnsignedLong shard = crosslink_committee.getShard();
 
-          if (3 * AttestationUtil.getTotal_attesting_balance(state)
-              >= 2 * total_balance(crosslink_committee)) {
-            state
-                .getLatest_crosslinks()
-                .set(
-                    Math.toIntExact(shard),
-                    new CrosslinkRecord(
-                        winning_root(crosslink_committee), UnsignedLong.valueOf(state.getSlot())));
-          }
+        if (3 * AttestationUtil.getTotal_attesting_balance(state)
+            >= 2 * total_balance(crosslink_committee)) {
+          state
+              .getLatest_crosslinks()
+              .set(
+                  shard.intValue(),
+                  new CrosslinkRecord(winning_root(crosslink_committee), state.getSlot()));
         }
       }
     }
@@ -80,13 +83,19 @@ public class EpochProcessorUtil {
   }
 
   private static boolean isPrevJustifiedSlotFinalized(BeaconState state) {
-    return ((state.getPrevious_justified_slot() == ((state.getSlot() - 2) * Constants.EPOCH_LENGTH)
-            && (state.getJustification_bitfield() % 4) == 3)
-        || (state.getPrevious_justified_slot() == ((state.getSlot() - 3) * Constants.EPOCH_LENGTH)
-            && (state.getJustification_bitfield() % 8) == 7)
-        || (state.getPrevious_justified_slot() == ((state.getSlot() - 4) * Constants.EPOCH_LENGTH)
-            && ((state.getJustification_bitfield() % 16) == 14
-                || (state.getJustification_bitfield() % 16) == 15)));
+    // TODO: change values to UnsignedLong
+    // TODO: Method requires major changes following BeaconState refactor
+    return true;
+    //    return ((state.getPrevious_justified_slot() == ((state.getSlot() - 2) *
+    // Constants.EPOCH_LENGTH)
+    //            && (state.getJustification_bitfield() % 4) == 3)
+    //        || (state.getPrevious_justified_slot() == ((state.getSlot() - 3) *
+    // Constants.EPOCH_LENGTH)
+    //            && (state.getJustification_bitfield() % 8) == 7)
+    //        || (state.getPrevious_justified_slot() == ((state.getSlot() - 4) *
+    // Constants.EPOCH_LENGTH)
+    //            && ((state.getJustification_bitfield() % 16) == 14
+    //                || (state.getJustification_bitfield() % 16) == 15)));
   }
 
   private static Bytes32 winning_root(ShardCommittee crosslink_committee) {
@@ -100,7 +109,9 @@ public class EpochProcessorUtil {
   }
 
   public static void update_validator_registry(BeaconState state) {
-    Validators active_validators = ValidatorsUtil.get_active_validators(state);
+    Validators active_validators =
+        ValidatorsUtil.get_active_validators(
+            state.getValidator_registry(), BeaconStateUtil.get_current_epoch(state));
     double total_balance = ValidatorsUtil.get_effective_balance(active_validators);
 
     double max_balance_churn =
@@ -165,7 +176,8 @@ public class EpochProcessorUtil {
   private static void process_ejections(BeaconState state) {
     int index = 0;
     for (Validator validator : state.getValidator_registry()) {
-      if (validator.getBalance() < Constants.EJECTION_BALANCE) {
+      // TODO: change values to UnsignedLong
+      if (validator.getBalance().longValue() < Constants.EJECTION_BALANCE) {
         BeaconStateUtil.exit_validator(state, index);
       }
       index++;

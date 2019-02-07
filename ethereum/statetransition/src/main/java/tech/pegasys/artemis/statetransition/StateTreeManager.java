@@ -79,7 +79,8 @@ public class StateTreeManager {
   @Subscribe
   public void onNewBlock(BeaconBlock block) {
     LOG.info("New Beacon Block Event detected");
-    block.setSlot(this.state.getSlot());
+    // TODO: change values to UnsignedLong
+    block.setSlot(this.state.getSlot().longValue());
     unprocessedBlocks.add(block);
   }
 
