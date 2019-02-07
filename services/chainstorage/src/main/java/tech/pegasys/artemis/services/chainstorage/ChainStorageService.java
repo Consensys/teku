@@ -18,10 +18,11 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.artemis.services.ServiceInterface;
 import tech.pegasys.artemis.storage.ChainStorage;
+import tech.pegasys.artemis.storage.ChainStorageServer;
 
 public class ChainStorageService implements ServiceInterface {
   private EventBus eventBus;
-  private ChainStorage chainStore;
+  private ChainStorageServer chainStore;
   private static final Logger LOG = LogManager.getLogger();
 
   public ChainStorageService() {}
@@ -29,7 +30,7 @@ public class ChainStorageService implements ServiceInterface {
   @Override
   public void init(EventBus eventBus) {
     this.eventBus = eventBus;
-    this.chainStore = new ChainStorage(this.eventBus);
+    this.chainStore = ChainStorage.Create(ChainStorageServer.class, eventBus);
     this.eventBus.register(this);
   }
 
