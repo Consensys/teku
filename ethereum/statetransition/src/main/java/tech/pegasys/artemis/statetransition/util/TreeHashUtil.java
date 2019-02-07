@@ -16,6 +16,7 @@ package tech.pegasys.artemis.statetransition.util;
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.ssz.SSZ;
+import tech.pegasys.artemis.datastructures.state.Validators;
 
 public final class TreeHashUtil {
 
@@ -23,5 +24,9 @@ public final class TreeHashUtil {
 
   public static Bytes32 hash_tree_root(Bytes value) {
     return SSZ.hashTreeRoot(value);
+  }
+  public static Bytes32 hash_tree_root(Validators validators) {
+    //TODO
+    return Bytes32.ZERO;
   }
 }

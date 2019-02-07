@@ -15,6 +15,7 @@ package tech.pegasys.artemis.statetransition.util;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.lang.Math.toIntExact;
+import static tech.pegasys.artemis.datastructures.Constants.GENESIS_SLOT;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.primitives.UnsignedLong;
@@ -24,6 +25,7 @@ import java.util.Iterator;
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.crypto.Hash;
+import org.checkerframework.checker.signedness.qual.Unsigned;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.state.ShardCommittee;
 import tech.pegasys.artemis.datastructures.state.Validator;
@@ -110,28 +112,23 @@ public class BeaconStateUtil {
     return slot.dividedBy(UnsignedLong.valueOf(Constants.EPOCH_LENGTH));
   }
 
-  /** Return the epoch number of the given ``slot`` */
-  public static long slot_to_epoch(long slot) {
-    return slot / Constants.EPOCH_LENGTH;
-  }
-
   /**
    * Return the current epoch of the given ``state``.
    *
    * @param state
    */
-  public static long get_current_epoch(BeaconState state) {
+  public static UnsignedLong get_current_epoch(BeaconState state) {
     return slot_to_epoch(state.getSlot());
   }
 
-  public static long get_previous_epoch(BeaconState state) {
-    if (get_current_epoch(state) > slot_to_epoch(Constants.GENESIS_SLOT))
-      return get_current_epoch(state) - 1;
+  public static UnsignedLong get_previous_epoch(BeaconState state) {
+    if (get_current_epoch(state).compareTo(slot_to_epoch(UnsignedLong.valueOf(GENESIS_SLOT))) > 0)
+      return get_current_epoch(state).minus(UnsignedLong.ONE);
     else return get_current_epoch(state);
   }
 
-  public static long get_next_epoch(BeaconState state) {
-    return get_current_epoch(state) + 1;
+  public static UnsignedLong get_next_epoch(BeaconState state) {
+    return get_current_epoch(state).plus(UnsignedLong.ONE);
   }
 
   /**

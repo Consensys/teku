@@ -15,11 +15,7 @@ package tech.pegasys.artemis.statetransition;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.lang.Math.toIntExact;
-import static tech.pegasys.artemis.datastructures.Constants.DOMAIN_DEPOSIT;
-import static tech.pegasys.artemis.datastructures.Constants.EPOCH_LENGTH;
-import static tech.pegasys.artemis.datastructures.Constants.GENESIS_SLOT;
-import static tech.pegasys.artemis.datastructures.Constants.SHARD_COUNT;
-import static tech.pegasys.artemis.datastructures.Constants.TARGET_COMMITTEE_SIZE;
+import static tech.pegasys.artemis.datastructures.Constants.*;
 import static tech.pegasys.artemis.util.bls.BLSVerify.bls_verify;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -29,9 +25,15 @@ import com.google.gson.GsonBuilder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.IntStream;
+import java.util.stream.LongStream;
+import java.util.stream.Stream;
+
+import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.bytes.Bytes48;
 import net.consensys.cava.crypto.Hash;
+import org.checkerframework.checker.signedness.qual.Unsigned;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.datastructures.blocks.Eth1DataVote;
@@ -46,48 +48,47 @@ import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.datastructures.state.ValidatorRegistryDeltaBlock;
 import tech.pegasys.artemis.datastructures.state.Validators;
 import tech.pegasys.artemis.statetransition.util.BeaconStateUtil;
+import tech.pegasys.artemis.statetransition.util.CrosslinkCommitteeUtil;
 import tech.pegasys.artemis.statetransition.util.TreeHashUtil;
 import tech.pegasys.artemis.statetransition.util.ValidatorsUtil;
 
 public class BeaconState {
-
   // Misc
-  private long slot;
-  private long genesis_time;
-  private Fork fork;
+  UnsignedLong slot;
+  UnsignedLong genesis_time;
+  Fork fork; //For versioning hard forks
 
-  // Validator registry
-  private Validators validator_registry;
-  private ArrayList<Double> validator_balances;
-  private long validator_registry_update_epoch;
-  private Bytes32 validator_registry_delta_chain_tip;
+  //Validator registry
+  Validators validator_registry;
+  ArrayList<UnsignedLong> validator_balances;
+  UnsignedLong validator_registry_update_epoch;
 
-  // Randomness and committees
-  private ArrayList<Bytes32> latest_randao_mixes;
-  private ArrayList<ArrayList<ShardCommittee>> shard_committees_at_slots = new ArrayList<>();
+  //Randomness and committees
+  ArrayList<Bytes32> latest_randao_mixes;
+  UnsignedLong previous_epoch_start_shard;
+  UnsignedLong current_epoch_start_shard;
+  UnsignedLong previous_calculation_epoch;
+  UnsignedLong current_calculation_epoch;
 
-  // Finality
-  private long previous_justified_slot;
-  private long justified_slot;
-  private long justification_bitfield;
-  private long finalized_slot;
+  //Finality
+  Bytes32 previous_epoch_seed;
+  Bytes32 current_epoch_seed;
+  UnsignedLong previous_justified_epoch;
+  UnsignedLong justified_epoch;
+  UnsignedLong justification_bitfield;
+  UnsignedLong finalized_epoch;
 
-  // Recent state
-  private ArrayList<CrosslinkRecord> latest_crosslinks;
-  private ArrayList<Bytes32> latest_block_roots = new ArrayList<>();
-  private ArrayList<Double> latest_penalized_balances;
-  private ArrayList<PendingAttestationRecord> latest_attestations;
-  private ArrayList<Bytes32> batched_block_roots = new ArrayList<>();
+  //Recent state
+  ArrayList<CrosslinkRecord> latest_crosslinks;
+  ArrayList<Bytes32> latest_block_roots;
+  ArrayList<Bytes32> latest_index_roots;
+  ArrayList<UnsignedLong> latest_penalized_balances; //Balances penalized at every withdrawal period
+  ArrayList<PendingAttestationRecord> latest_attestations;
+  ArrayList<Bytes32> batched_block_roots;
 
-  // Ethereum 1.0 chain data
-  private Eth1Data latest_eth1_data;
-  private List<Eth1DataVote> eth1_data_votes;
-
-  // Default Constructor
-  public BeaconState() {
-    // TODO: temp to allow it to run in demo mode
-    this.slot = 0;
-  }
+  //Ethereum 1.0 chain data
+  Eth1Data latest_eth1_data;
+  ArrayList<Eth1DataVote> eth1_data_votes;
 
   public static BeaconState deepCopy(BeaconState state) {
     Gson gson =
@@ -100,61 +101,70 @@ public class BeaconState {
 
   public BeaconState(
       // Misc
-      long slot,
-      long genesis_time,
-      Fork fork,
-      // Validator registry
+      UnsignedLong slot,
+      UnsignedLong genesis_time,
+      Fork fork, //For versioning hard forks
+
+      //Validator registry
       Validators validator_registry,
-      ArrayList<Double> validator_balances,
-      long validator_registry_update_epoch,
-      Bytes32 validator_registry_delta_chain_tip,
-      // Randomness and committees
+      ArrayList<UnsignedLong> validator_balances,
+      UnsignedLong validator_registry_update_epoch,
+
+      //Randomness and committees
       ArrayList<Bytes32> latest_randao_mixes,
-      ArrayList<ArrayList<ShardCommittee>> shard_committees_at_slots,
-      // Finality
-      long previous_justified_slot,
-      long justified_slot,
-      long justification_bitfield,
-      long finalized_slot,
-      // Recent state
+      UnsignedLong previous_epoch_start_shard,
+      UnsignedLong current_epoch_start_shard,
+      UnsignedLong previous_calculation_epoch,
+      UnsignedLong current_calculation_epoch,
+
+      //Finality
+      Bytes32 previous_epoch_seed,
+      Bytes32 current_epoch_seed,
+      UnsignedLong previous_justified_epoch,
+      UnsignedLong justified_epoch,
+      UnsignedLong justification_bitfield,
+      UnsignedLong finalized_epoch,
+
+      //Recent state
       ArrayList<CrosslinkRecord> latest_crosslinks,
       ArrayList<Bytes32> latest_block_roots,
-      ArrayList<Double> latest_penalized_balances,
+      ArrayList<Bytes32> latest_index_roots,
+      ArrayList<UnsignedLong> latest_penalized_balances, //Balances penalized at every withdrawal period
       ArrayList<PendingAttestationRecord> latest_attestations,
       ArrayList<Bytes32> batched_block_roots,
-      // Ethereum 1.0 chain data
-      Eth1Data latest_eth1_data,
-      ArrayList<Eth1DataVote> eth1_data_votes) {
 
-    // Misc
+      //Ethereum 1.0 chain data
+      Eth1Data latest_eth1_data,
+      ArrayList<Eth1DataVote> eth1_data_votes)
+  {
     this.slot = slot;
     this.genesis_time = genesis_time;
     this.fork = fork;
 
-    // Validator registry
     this.validator_registry = validator_registry;
     this.validator_balances = validator_balances;
     this.validator_registry_update_epoch = validator_registry_update_epoch;
-    this.validator_registry_delta_chain_tip = validator_registry_delta_chain_tip;
 
-    // Randomness and committees
     this.latest_randao_mixes = latest_randao_mixes;
-    this.shard_committees_at_slots = shard_committees_at_slots;
+    this.previous_epoch_start_shard = previous_epoch_start_shard;
+    this.current_epoch_start_shard = current_epoch_start_shard;
+    this.previous_calculation_epoch = previous_calculation_epoch;
+    this.current_calculation_epoch = current_calculation_epoch;
 
-    // Finality
-    this.previous_justified_slot = previous_justified_slot;
-    this.justified_slot = justified_slot;
+    this.previous_epoch_seed = previous_epoch_seed;
+    this.current_epoch_seed = current_epoch_seed;
+    this.previous_justified_epoch = previous_justified_epoch;
+    this.justified_epoch = justified_epoch;
     this.justification_bitfield = justification_bitfield;
-    this.finalized_slot = finalized_slot;
+    this.finalized_epoch = finalized_epoch;
 
-    // Recent state
     this.latest_crosslinks = latest_crosslinks;
     this.latest_block_roots = latest_block_roots;
+    this.latest_index_roots = latest_index_roots;
     this.latest_penalized_balances = latest_penalized_balances;
     this.latest_attestations = latest_attestations;
     this.batched_block_roots = batched_block_roots;
 
-    // Ethereum 1.0 chain data
     this.latest_eth1_data = latest_eth1_data;
     this.eth1_data_votes = eth1_data_votes;
   }
@@ -162,9 +172,8 @@ public class BeaconState {
   @VisibleForTesting
   @SuppressWarnings("ModifiedButNotUsed")
   public BeaconState get_initial_beacon_state(
-      ArrayList<Deposit> initial_validator_deposits, int genesis_time, Eth1Data latest_eth1_data) {
+    ArrayList<Deposit> initial_validator_deposits, UnsignedLong genesis_time, Eth1Data latest_eth1_data) {
 
-    // TODO: this needs to be checked against 0.1 spec
     ArrayList<Bytes32> latest_randao_mixes = new ArrayList<>();
     ArrayList<Bytes32> latest_block_roots = new ArrayList<>();
     ArrayList<CrosslinkRecord> latest_crosslinks = new ArrayList<>(SHARD_COUNT);
@@ -174,78 +183,94 @@ public class BeaconState {
     }
 
     // todo after update v0.01 constants no longer exist
-    BeaconState state = new BeaconState();
-    //    BeaconState state =
-    //        new BeaconState(
-    //            // Misc
-    //            INITIAL_SLOT_NUMBER,
-    //            genesis_time,
-    //            new ForkData(
-    //                UnsignedLong.valueOf(INITIAL_FORK_VERSION),
-    //                UnsignedLong.valueOf(INITIAL_FORK_VERSION),
-    //                UnsignedLong.valueOf(INITIAL_SLOT_NUMBER)),
-    //
-    //            // Validator registry
-    //            new Validators(),
-    //            new ArrayList<>(),
-    //            INITIAL_SLOT_NUMBER,
-    //            0,
-    //            Bytes32.ZERO,
-    //
-    //            // Randomness and committees
-    //            latest_randao_mixes,
-    //            latest_vdf_outputs,
-    //            new ArrayList<>(),
-    //            new ArrayList<>(),
-    //            new ArrayList<>(),
-    //
-    //            // Finality
-    //            INITIAL_SLOT_NUMBER,
-    //            INITIAL_SLOT_NUMBER,
-    //            0,
-    //            INITIAL_SLOT_NUMBER,
-    //
-    //            // Recent state
-    //            latest_crosslinks,
-    //            latest_block_roots,
-    //            new ArrayList<>(),
-    //            new ArrayList<>(),
-    //            new ArrayList<>(),
-    //
-    //            // PoW receipt root
-    //            processed_pow_receipt_root,
-    //            new ArrayList<>());
+    //BeaconState state = new BeaconState();
+        BeaconState state =
+            new BeaconState(
+                // Misc
+                UnsignedLong.valueOf(GENESIS_SLOT),
+                genesis_time,
+                new Fork(
+                    UnsignedLong.valueOf(GENESIS_FORK_VERSION),
+                    UnsignedLong.valueOf(GENESIS_FORK_VERSION),
+                    UnsignedLong.valueOf(GENESIS_EPOCH)),
 
-    // handle initial deposits and activations
+                // Validator registry
+                new Validators(),
+                new ArrayList<UnsignedLong>(),
+                UnsignedLong.valueOf(GENESIS_EPOCH),
+
+                // Randomness and committees
+                latest_randao_mixes,
+                UnsignedLong.valueOf(GENESIS_START_SHARD),
+                UnsignedLong.valueOf(GENESIS_START_SHARD),
+                UnsignedLong.valueOf(GENESIS_EPOCH),
+                UnsignedLong.valueOf(GENESIS_EPOCH),
+                ZERO_HASH,
+                ZERO_HASH,
+
+                // Finality
+                UnsignedLong.valueOf(GENESIS_EPOCH),
+                UnsignedLong.valueOf(GENESIS_EPOCH),
+                UnsignedLong.ZERO,
+                UnsignedLong.valueOf(GENESIS_EPOCH),
+
+                // Recent state
+                latest_crosslinks,
+                latest_block_roots,
+                new ArrayList<Bytes32>(),
+                new ArrayList<UnsignedLong>(),
+                new ArrayList<PendingAttestationRecord>(),
+                new ArrayList<Bytes32>(),
+
+                // Ethereum 1.0 chain data
+                latest_eth1_data,
+                new ArrayList<>());
+
+    //Process initial deposits
     for (Deposit validator_deposit : initial_validator_deposits) {
       DepositInput deposit_input = validator_deposit.getDeposit_data().getDeposit_input();
-      int validator_index =
           process_deposit(
               state,
               deposit_input.getPubkey(),
-              validator_deposit.getDeposit_data().getValue().longValue(),
+              validator_deposit.getDeposit_data().getValue(),
               deposit_input.getProof_of_possession(),
-              deposit_input.getWithdrawal_credentials(),
-              deposit_input.getRandao_commitment(),
-              deposit_input.getPoc_commitment());
-      // todo after update v0.01 constants no longer exist
-      //      if (state.getValidator_balances().get(validator_index) >= (MAX_DEPOSIT *
-      // GWEI_PER_ETH)) {
-      // todo updates in v0.01 to constants removed necessary values
-      //        //        update_validator_status(state, validator_index, ACTIVE);
-      //      }
+              deposit_input.getWithdrawal_credentials());
     }
 
-    // set initial committee shuffling
-    ArrayList<ArrayList<ShardCommittee>> initial_shuffling =
-        BeaconStateUtil.get_new_shuffling(Bytes32.ZERO, state.getValidator_registry(), 0);
-    ArrayList<ArrayList<ShardCommittee>> shard_committees = new ArrayList<>();
-    shard_committees.addAll(initial_shuffling);
-    shard_committees.addAll(initial_shuffling);
-    state.setShard_committees_at_slots(shard_committees);
+    //Process initial activations
+    for(Validator validator: state.getValidator_registry()){
+      if(validator.get_effective_balance().compareTo(UnsignedLong.valueOf(MAX_DEPOSIT_AMOUNT)) >= 0) activate_validator(state, validator, true);
+    }
+
+    Bytes32 genesis_active_index_root = TreeHashUtil.hash_tree_root(ValidatorsUtil.get_active_validators(state.getValidator_registry(), UnsignedLong.valueOf(GENESIS_EPOCH)));
+    for(Bytes32 root: state.getLatest_index_roots()){
+      root = genesis_active_index_root;
+    }
+    state.setCurrent_epoch_seed(generate_seed(state, UnsignedLong.valueOf(GENESIS_EPOCH)));
 
     return state;
   }
+
+  public static Bytes32 generate_seed(BeaconState state, UnsignedLong epoch) {
+    return state.get_randao_mix(state, epoch.plus(UnsignedLong.valueOf(SEED_LOOKAHEAD))).and(state.get_active_index_root(state, epoch));
+  }
+
+  public static Bytes32 get_active_index_root(BeaconState state, UnsignedLong epoch) {
+    //Return the index root at a recent ``epoch``.
+    UnsignedLong current_epoch = BeaconStateUtil.get_current_epoch(state);
+    assert (current_epoch.minus(UnsignedLong.valueOf(LATEST_INDEX_ROOTS_LENGTH)).plus(UnsignedLong.valueOf(ENTRY_EXIT_DELAY)).compareTo(epoch) < 0) &&
+            (epoch.compareTo(current_epoch.plus(UnsignedLong.valueOf(ENTRY_EXIT_DELAY))) <= 0);
+    return state.getLatest_index_roots().get(epoch.mod(UnsignedLong.valueOf(LATEST_INDEX_ROOTS_LENGTH)).intValue());
+  }
+
+  public static Bytes32 get_randao_mix(BeaconState state, UnsignedLong epoch) {
+    //Return the randao mix at a recent ``epoch``.
+    UnsignedLong current_epoch = BeaconStateUtil.get_current_epoch(state);
+    assert (current_epoch.minus(UnsignedLong.valueOf(LATEST_RANDAO_MIXES_LENGTH)).compareTo(epoch) < 0) &&
+            (epoch.compareTo(current_epoch) <= 0);
+    return state.getLatest_randao_mixes().get(epoch.mod(UnsignedLong.valueOf(LATEST_RANDAO_MIXES_LENGTH)).intValue());
+  }
+
 
   /**
    * @param validators
@@ -272,26 +297,22 @@ public class BeaconState {
    * @param pubkey
    * @param proof_of_possession
    * @param withdrawal_credentials
-   * @param randao_commitment
    * @return
    */
-  private boolean validate_proof_of_possession(
-      BeaconState state,
-      Bytes48 pubkey,
-      List<Bytes48> proof_of_possession,
-      Bytes32 withdrawal_credentials,
-      Bytes32 randao_commitment,
-      Bytes32 poc_commitment) {
+  private static boolean validate_proof_of_possession(
+          BeaconState state,
+          Bytes48 pubkey,
+          List<Bytes48> proof_of_possession,
+          Bytes32 withdrawal_credentials) {
+    //Verify the given ``proof_of_possession``.
     DepositInput proof_of_possession_data =
-        new DepositInput(
-            poc_commitment, proof_of_possession, pubkey, randao_commitment, withdrawal_credentials);
+        new DepositInput(pubkey, withdrawal_credentials, proof_of_possession);
 
     List<Bytes48> signature =
         Arrays.asList(
             Bytes48.leftPad(proof_of_possession.get(0)),
             Bytes48.leftPad(proof_of_possession.get(1)));
-    UnsignedLong domain =
-        UnsignedLong.valueOf(get_domain(state.fork, toIntExact(state.getSlot()), DOMAIN_DEPOSIT));
+    UnsignedLong domain = get_domain(state.getFork(), state.getSlot(), DOMAIN_DEPOSIT);
     return bls_verify(
         pubkey, TreeHashUtil.hash_tree_root(proof_of_possession_data.toBytes()), signature, domain);
   }
@@ -301,71 +322,46 @@ public class BeaconState {
    *
    * @param state
    * @param pubkey
-   * @param deposit
    * @param proof_of_possession
    * @param withdrawal_credentials
-   * @param randao_commitment
+   * @param amount
    * @return
    */
-  public int process_deposit(
+  public static void process_deposit(
       BeaconState state,
       Bytes48 pubkey,
-      double deposit,
+      UnsignedLong amount,
       List<Bytes48> proof_of_possession,
-      Bytes32 withdrawal_credentials,
-      Bytes32 randao_commitment,
-      Bytes32 poc_commitment) {
-    assert validate_proof_of_possession(
+      Bytes32 withdrawal_credentials) {
+    assert BeaconState.validate_proof_of_possession(
         state,
         pubkey,
         proof_of_possession,
-        withdrawal_credentials,
-        randao_commitment,
-        poc_commitment);
+        withdrawal_credentials);
 
-    Bytes48[] validator_pubkeys = new Bytes48[state.validator_registry.size()];
-    for (int i = 0; i < validator_pubkeys.length; i++) {
-      validator_pubkeys[i] = state.validator_registry.get(i).getPubkey();
+    Validator validator = getValidatorByPubkey(state, pubkey);
+    if(validator == null){
+      validator = new Validator(pubkey, withdrawal_credentials, FAR_FUTURE_EPOCH, FAR_FUTURE_EPOCH, FAR_FUTURE_EPOCH, FAR_FUTURE_EPOCH, UnsignedLong.ZERO, amount);
+      state.getValidator_registry().add(validator);
     }
-
-    int index;
-
-    if (indexOfPubkey(validator_pubkeys, pubkey) == -1) {
-      // Add new validator
-      Validator validator = new Validator();
-      // todo Validator constructor changes after the the 0.01 update
-      // empty validator record declared in it's place
-      //          new Validator(
-      //              pubkey,
-      //              withdrawal_credentials,
-      //              randao_commitment,
-      //              UnsignedLong.ZERO,
-      //              UnsignedLong.valueOf(PENDING_ACTIVATION),
-      //              UnsignedLong.valueOf(state.getSlot()),
-      //              UnsignedLong.ZERO,
-      //              UnsignedLong.ZERO,
-      //              UnsignedLong.ZERO);
-
-      ArrayList<Validator> validators_copy = new ArrayList<>(validator_registry);
-      index = min_empty_validator_index(validators_copy, validator_balances, toIntExact(slot));
-      if (index == validators_copy.size()) {
-        state.validator_registry.add(validator);
-        state.validator_balances.add(deposit);
-        index = state.validator_registry.size() - 1;
-      } else {
-        state.validator_registry.set(index, validator);
-        state.validator_balances.set(index, deposit);
-      }
-    } else {
-      // Increase balance by deposit
-      index = indexOfPubkey(validator_pubkeys, pubkey);
-      Validator validator = state.validator_registry.get(index);
-      assert validator.getWithdrawal_credentials().equals(withdrawal_credentials);
-
-      state.validator_balances.set(index, state.validator_balances.get(index) + deposit);
+    else{
+      assert(validator.getWithdrawal_credentials().equals(withdrawal_credentials));
+      validator.getBalance().plus(amount);
     }
+  }
 
-    return index;
+  private static Validator getValidatorByPubkey(BeaconState state, Bytes48 pubkey) {
+    for(Validator validator: state.getValidator_registry()){
+      if(validator.getPubkey().equals(pubkey)) return validator;
+    }
+    return null;
+  }
+
+  public static boolean isValidatorKeyRegistered(BeaconState state, Bytes48 pubkey) {
+    for(Validator validator: state.getValidator_registry()){
+      if(validator.getPubkey().equals(pubkey)) return true;
+    }
+    return false;
   }
 
   /**
@@ -390,39 +386,30 @@ public class BeaconState {
    * @param domain_type
    * @return
    */
-  private int get_domain(Fork fork, int slot, int domain_type) {
-    return get_fork_version(fork, slot) * (int) Math.pow(2, 32) + domain_type;
+  private static UnsignedLong get_domain(Fork fork, UnsignedLong slot, int domain_type) {
+    return get_fork_version(fork, slot).times(UnsignedLong.valueOf((long) Math.pow(2, 32))).plus(UnsignedLong.valueOf(domain_type));
   }
 
   /**
    * @param fork
-   * @param slot
+   * @param epoch
    * @return
    */
-  private int get_fork_version(Fork fork, int slot) {
-    if (slot < fork.getFork_slot().longValue()) {
-      return toIntExact(fork.getPre_fork_version().longValue());
-    } else {
-      return toIntExact(fork.getPost_fork_version().longValue());
-    }
+  public static UnsignedLong get_fork_version(Fork fork, UnsignedLong epoch) {
+    if(epoch.compareTo(fork.getEpoch()) < 0) return fork.getPrevious_version();
+    else return fork.getCurrent_version();
   }
 
   /**
    * Activate the validator with the given 'index'. Note that this function mutates 'state'.
    *
-   * @param index The index of the validator.
+   * @param validator the validator.
    */
   @VisibleForTesting
-  public void activate_validator(BeaconState state, int index, boolean is_genesis) {
-    Validator validator = validator_registry.get(index);
-    UnsignedLong activation_epoch = UnsignedLong.valueOf(Constants.GENESIS_EPOCH);
-    long current_epoch = BeaconStateUtil.get_current_epoch(this);
-    if (UnsignedLong.valueOf(current_epoch).compareTo(UnsignedLong.valueOf(Constants.GENESIS_SLOT))
-        > 0) {
-      activation_epoch =
-          BeaconStateUtil.get_entry_exit_effect_epoch(UnsignedLong.valueOf(current_epoch));
-      validator.setActivation_epoch(activation_epoch);
-    }
+  public void activate_validator(BeaconState state, Validator validator, boolean is_genesis) {
+//    Activate the validator of the given ``index``.
+//    Note that this function mutates ``state``.
+    validator.setActivation_epoch((is_genesis) ? UnsignedLong.valueOf(GENESIS_EPOCH) : BeaconStateUtil.get_entry_exit_effect_epoch(BeaconStateUtil.get_current_epoch(state));
   }
 
   /**
@@ -434,7 +421,7 @@ public class BeaconState {
    */
   public static int get_beacon_proposer_index(BeaconState state, int slot) {
     ArrayList<Integer> first_committee =
-        get_shard_committees_at_slot(state, slot).get(0).getCommittee();
+        get_crosslink_committees_at_slot(state, slot).get(0).getCommittee();
     return first_committee.get(slot % first_committee.size());
   }
 
@@ -444,18 +431,67 @@ public class BeaconState {
    * @param slot
    * @return
    */
-  public static ArrayList<ShardCommittee> get_shard_committees_at_slot(
-      BeaconState state, int slot) {
-    int earliest_slot_in_array =
-        toIntExact(state.getSlot()) - (toIntExact(state.getSlot()) % EPOCH_LENGTH) - EPOCH_LENGTH;
-    assert earliest_slot_in_array <= slot;
-    assert slot < (earliest_slot_in_array + EPOCH_LENGTH * 2);
+  public static List<ShardCommittee> get_crosslink_committees_at_slot(
+      BeaconState state, UnsignedLong slot, boolean registry_change) {
+    //Return the list of ``(committee, shard)`` tuples for the ``slot``
 
-    int index = slot - earliest_slot_in_array;
-    if (index < 0) {
-      index = state.shard_committees_at_slots.size() + index;
+    //Note: There are two possible shufflings for crosslink committees for a
+    //``slot`` in the next epoch -- with and without a `registry_change`
+    UnsignedLong epoch = BeaconStateUtil.slot_to_epoch(slot);
+    UnsignedLong current_epoch = BeaconStateUtil.get_current_epoch(state);
+    UnsignedLong previous_epoch = ((current_epoch.compareTo(UnsignedLong.valueOf(GENESIS_EPOCH)) > 0) ? current_epoch.minus(UnsignedLong.ONE) : current_epoch);
+    UnsignedLong next_epoch = current_epoch.plus(UnsignedLong.ONE);
+
+    assert(previous_epoch.compareTo(epoch) <= 0 && epoch.compareTo(next_epoch) <= 0);
+
+    int committees_per_epoch = 0;
+    int current_committees_per_epoch = 0;
+    Bytes32 seed = null;
+    UnsignedLong shuffling_epoch = null;
+    UnsignedLong shuffling_start_shard = null;
+
+
+    if(epoch.equals(previous_epoch)){
+      committees_per_epoch = CrosslinkCommitteeUtil.get_previous_epoch_committee_count(state);
+      seed = state.getPrevious_epoch_seed();
+      shuffling_epoch = state.getPrevious_calculation_epoch();
+      shuffling_start_shard = state.getPrevious_epoch_start_shard();
     }
-    return state.shard_committees_at_slots.get(index);
+    else if(epoch.equals(current_epoch)){
+      committees_per_epoch = CrosslinkCommitteeUtil.get_current_epoch_committee_count(state);
+      seed = state.getCurrent_epoch_seed();
+      shuffling_epoch = state.getCurrent_calculation_epoch();
+      shuffling_start_shard = state.getCurrent_epoch_start_shard();
+    }
+    else if(epoch.equals(next_epoch)){
+      current_committees_per_epoch = CrosslinkCommitteeUtil.get_current_epoch_committee_count(state);
+      committees_per_epoch = CrosslinkCommitteeUtil.get_next_epoch_committee_count(state);
+      shuffling_epoch = next_epoch;
+    }
+
+    UnsignedLong epochs_since_last_registry_update = current_epoch.minus(state.getValidator_registry_update_epoch());
+
+    if(registry_change){
+      seed = generate_seed(state, next_epoch);
+      shuffling_start_shard = state.getCurrent_epoch_start_shard().plus(UnsignedLong.valueOf(current_committees_per_epoch)).mod(UnsignedLong.valueOf(SHARD_COUNT));
+    }
+    else if(epochs_since_last_registry_update.compareTo(UnsignedLong.ONE) > 0 && epochs_since_last_registry_update.mod(UnsignedLong.valueOf(2)).compareTo(UnsignedLong.ZERO) == 0){
+      seed = generate_seed(state, next_epoch);
+      shuffling_start_shard = state.getCurrent_epoch_start_shard();
+    }
+    else{
+      seed = state.getCurrent_epoch_seed();
+      shuffling_start_shard = state.getCurrent_epoch_start_shard();
+    }
+
+    List<ShardCommittee> shuffling = get_shuffling(seed, state.getValidator_registry(), shuffling_epoch);
+
+    UnsignedLong offset = slot.mod(UnsignedLong.valueOf(EPOCH_LENGTH));
+    int committees_per_slot = Math.round(committees_per_epoch/EPOCH_LENGTH);
+    UnsignedLong slot_start_shard = (shuffling_start_shard.plus(UnsignedLong.valueOf(committees_per_slot).times(offset))).mod(UnsignedLong.valueOf(SHARD_COUNT));
+
+    IntStream.range(committees_per_slot).forEach();
+
   }
 
   /**
@@ -470,7 +506,7 @@ public class BeaconState {
       BeaconState state, AttestationData attestation_data, byte[] participation_bitfield) {
     // Find the relevant committee
     ArrayList<ShardCommittee> shard_committees =
-        get_shard_committees_at_slot(state, toIntExact(attestation_data.getSlot()));
+        get_crosslink_committees_at_slot(state, toIntExact(attestation_data.getSlot()));
     ArrayList<ShardCommittee> shard_committee = new ArrayList<>();
     for (ShardCommittee curr_shard_committee : shard_committees) {
       if (curr_shard_committee.getShard().equals(attestation_data.getShard())) {
@@ -509,7 +545,7 @@ public class BeaconState {
    * @param crosslinking_start_shard
    * @return
    */
-  public static ArrayList<ArrayList<ShardCommittee>> get_shuffling(
+  public static ArrayList<ShardCommittee> get_shuffling(
       Bytes32 seed, ArrayList<Validator> validators, int crosslinking_start_shard, int slot) {
     // Normalizes slot to start of epoch boundary
     slot -= slot % EPOCH_LENGTH;
@@ -653,39 +689,19 @@ public class BeaconState {
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */
-  public Eth1Data getLatest_eth1_data() {
-    return this.latest_eth1_data;
+  public UnsignedLong getSlot() {
+    return slot;
   }
 
-  public void setLatest_eth1_data(Eth1Data data) {
-    this.latest_eth1_data = data;
-  }
-
-  public List<Eth1DataVote> getEth1_data_votes() {
-    return this.eth1_data_votes;
-  }
-
-  public void setEth1_data_votes(List<Eth1DataVote> votes) {
-    this.eth1_data_votes = votes;
-  }
-
-  public long getSlot() {
-    return this.slot;
-  }
-
-  public void setSlot(long slot) {
+  public void setSlot(UnsignedLong slot) {
     this.slot = slot;
   }
 
-  public void incrementSlot() {
-    this.slot++;
-  }
-
-  public long getGenesis_time() {
+  public UnsignedLong getGenesis_time() {
     return genesis_time;
   }
 
-  public void setGenesis_time(long genesis_time) {
+  public void setGenesis_time(UnsignedLong genesis_time) {
     this.genesis_time = genesis_time;
   }
 
@@ -701,48 +717,112 @@ public class BeaconState {
     return validator_registry;
   }
 
-  public void setValidator_registry(ArrayList<Validator> validator_registry) {
-    this.validator_registry = new Validators(validator_registry);
+  public void setValidator_registry(Validators validator_registry) {
+    this.validator_registry = validator_registry;
   }
 
-  public ArrayList<Double> getValidator_balances() {
+  public ArrayList<UnsignedLong> getValidator_balances() {
     return validator_balances;
   }
 
-  public void setValidator_balances(ArrayList<Double> validator_balances) {
+  public void setValidator_balances(ArrayList<UnsignedLong> validator_balances) {
     this.validator_balances = validator_balances;
   }
 
-  public Bytes32 getValidator_registry_delta_chain_tip() {
-    return validator_registry_delta_chain_tip;
-  }
-
-  public void setValidator_registry_delta_chain_tip(Bytes32 validator_registry_delta_chain_tip) {
-    this.validator_registry_delta_chain_tip = validator_registry_delta_chain_tip;
-  }
-
-  public long getValidator_registry_update_epoch() {
+  public UnsignedLong getValidator_registry_update_epoch() {
     return validator_registry_update_epoch;
   }
 
-  public void setValidator_registry_update_epoch(long validator_registry_update_epoch) {
+  public void setValidator_registry_update_epoch(UnsignedLong validator_registry_update_epoch) {
     this.validator_registry_update_epoch = validator_registry_update_epoch;
   }
 
-  public long getPrevious_justified_slot() {
-    return previous_justified_slot;
+  public ArrayList<Bytes32> getLatest_randao_mixes() {
+    return latest_randao_mixes;
   }
 
-  public void setPrevious_justified_slot(long previous_justified_slot) {
-    this.previous_justified_slot = previous_justified_slot;
+  public void setLatest_randao_mixes(ArrayList<Bytes32> latest_randao_mixes) {
+    this.latest_randao_mixes = latest_randao_mixes;
   }
 
-  public long getJustification_bitfield() {
+  public UnsignedLong getPrevious_epoch_start_shard() {
+    return previous_epoch_start_shard;
+  }
+
+  public void setPrevious_epoch_start_shard(UnsignedLong previous_epoch_start_shard) {
+    this.previous_epoch_start_shard = previous_epoch_start_shard;
+  }
+
+  public UnsignedLong getCurrent_epoch_start_shard() {
+    return current_epoch_start_shard;
+  }
+
+  public void setCurrent_epoch_start_shard(UnsignedLong current_epoch_start_shard) {
+    this.current_epoch_start_shard = current_epoch_start_shard;
+  }
+
+  public UnsignedLong getPrevious_calculation_epoch() {
+    return previous_calculation_epoch;
+  }
+
+  public void setPrevious_calculation_epoch(UnsignedLong previous_calculation_epoch) {
+    this.previous_calculation_epoch = previous_calculation_epoch;
+  }
+
+  public UnsignedLong getCurrent_calculation_epoch() {
+    return current_calculation_epoch;
+  }
+
+  public void setCurrent_calculation_epoch(UnsignedLong current_calculation_epoch) {
+    this.current_calculation_epoch = current_calculation_epoch;
+  }
+
+  public Bytes32 getPrevious_epoch_seed() {
+    return previous_epoch_seed;
+  }
+
+  public void setPrevious_epoch_seed(Bytes32 previous_epoch_seed) {
+    this.previous_epoch_seed = previous_epoch_seed;
+  }
+
+  public Bytes32 getCurrent_epoch_seed() {
+    return current_epoch_seed;
+  }
+
+  public void setCurrent_epoch_seed(Bytes32 current_epoch_seed) {
+    this.current_epoch_seed = current_epoch_seed;
+  }
+
+  public UnsignedLong getPrevious_justified_epoch() {
+    return previous_justified_epoch;
+  }
+
+  public void setPrevious_justified_epoch(UnsignedLong previous_justified_epoch) {
+    this.previous_justified_epoch = previous_justified_epoch;
+  }
+
+  public UnsignedLong getJustified_epoch() {
+    return justified_epoch;
+  }
+
+  public void setJustified_epoch(UnsignedLong justified_epoch) {
+    this.justified_epoch = justified_epoch;
+  }
+
+  public UnsignedLong getJustification_bitfield() {
     return justification_bitfield;
   }
 
-  public void setJustification_bitfield(long justification_bitfield) {
+  public void setJustification_bitfield(UnsignedLong justification_bitfield) {
     this.justification_bitfield = justification_bitfield;
+  }
+
+  public UnsignedLong getFinalized_epoch() {
+    return finalized_epoch;
+  }
+
+  public void setFinalized_epoch(UnsignedLong finalized_epoch) {
+    this.finalized_epoch = finalized_epoch;
   }
 
   public ArrayList<CrosslinkRecord> getLatest_crosslinks() {
@@ -761,6 +841,22 @@ public class BeaconState {
     this.latest_block_roots = latest_block_roots;
   }
 
+  public ArrayList<Bytes32> getLatest_index_roots() {
+    return latest_index_roots;
+  }
+
+  public void setLatest_index_roots(ArrayList<Bytes32> latest_index_roots) {
+    this.latest_index_roots = latest_index_roots;
+  }
+
+  public ArrayList<UnsignedLong> getLatest_penalized_balances() {
+    return latest_penalized_balances;
+  }
+
+  public void setLatest_penalized_balances(ArrayList<UnsignedLong> latest_penalized_balances) {
+    this.latest_penalized_balances = latest_penalized_balances;
+  }
+
   public ArrayList<PendingAttestationRecord> getLatest_attestations() {
     return latest_attestations;
   }
@@ -777,52 +873,19 @@ public class BeaconState {
     this.batched_block_roots = batched_block_roots;
   }
 
-  public long getJustified_slot() {
-    return justified_slot;
+  public Eth1Data getLatest_eth1_data() {
+    return latest_eth1_data;
   }
 
-  public void setJustified_slot(long justified_slot) {
-    this.justified_slot = justified_slot;
+  public void setLatest_eth1_data(Eth1Data latest_eth1_data) {
+    this.latest_eth1_data = latest_eth1_data;
   }
 
-  public long getFinalized_slot() {
-    return finalized_slot;
+  public ArrayList<Eth1DataVote> getEth1_data_votes() {
+    return eth1_data_votes;
   }
 
-  public void setFinalized_slot(long finalized_slot) {
-    this.finalized_slot = finalized_slot;
-  }
-
-  public void setShard_committees_at_slots(
-      ArrayList<ArrayList<ShardCommittee>> shard_committees_at_slots) {
-    this.shard_committees_at_slots = shard_committees_at_slots;
-  }
-
-  public void setShard_committees_at_slot(int i, ArrayList<ShardCommittee> shard_committee) {
-    this.shard_committees_at_slots.set(i, shard_committee);
-  }
-
-  public ArrayList<ArrayList<ShardCommittee>> getShard_committees_at_slots() {
-    return shard_committees_at_slots;
-  }
-
-  public ArrayList<Double> getLatest_penalized_balances() {
-    return latest_penalized_balances;
-  }
-
-  public void setLatest_penalized_balances(ArrayList<Double> latest_penalized_balances) {
-    this.latest_penalized_balances = latest_penalized_balances;
-  }
-
-  public ArrayList<Bytes32> getLatest_randao_mixes() {
-    return latest_randao_mixes;
-  }
-
-  public void setLatest_randao_mixes(ArrayList<Bytes32> latest_randao_mixes) {
-    this.latest_randao_mixes = latest_randao_mixes;
-  }
-
-  public void updateBatched_block_roots() {
-    batched_block_roots.add(BeaconStateUtil.merkle_root(latest_block_roots));
+  public void setEth1_data_votes(ArrayList<Eth1DataVote> eth1_data_votes) {
+    this.eth1_data_votes = eth1_data_votes;
   }
 }

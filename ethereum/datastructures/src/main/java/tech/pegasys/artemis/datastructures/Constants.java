@@ -42,6 +42,7 @@ public final class Constants {
   public static int GENESIS_FORK_VERSION = 0; //
   public static final long GENESIS_SLOT = 524288l; // 2^19
   public static final long GENESIS_EPOCH = slot_to_epoch(GENESIS_SLOT);
+  public static final long GENESIS_START_SHARD = 0;
   public static UnsignedLong FAR_FUTURE_EPOCH = UnsignedLong.MAX_VALUE; //
   public static Bytes32 ZERO_HASH = Bytes32.ZERO; //
   public static final List<Bytes48> EMPTY_SIGNATURE =

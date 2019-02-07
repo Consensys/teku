@@ -18,6 +18,8 @@ import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.bytes.Bytes48;
 import tech.pegasys.artemis.datastructures.Constants;
 
+import static tech.pegasys.artemis.datastructures.Constants.MAX_DEPOSIT_AMOUNT;
+
 public class Validator {
 
   // BLS public key
@@ -35,18 +37,11 @@ public class Validator {
   // Status flags
   private UnsignedLong status_flags;
   // Validator balace
-  private double balance = 0.0d;
+  private UnsignedLong balance = UnsignedLong.ZERO;
 
   public Validator() {}
 
-  public Validator(
-      Bytes48 pubkey,
-      Bytes32 withdrawal_credentials,
-      UnsignedLong activation_epoch,
-      UnsignedLong exit_epoch,
-      UnsignedLong withdrawal_epoch,
-      UnsignedLong penalized_epoch,
-      UnsignedLong status_flags) {
+  public Validator(Bytes48 pubkey, Bytes32 withdrawal_credentials, UnsignedLong activation_epoch, UnsignedLong exit_epoch, UnsignedLong withdrawal_epoch, UnsignedLong penalized_epoch, UnsignedLong status_flags, UnsignedLong balance) {
     this.pubkey = pubkey;
     this.withdrawal_credentials = withdrawal_credentials;
     this.activation_epoch = activation_epoch;
@@ -54,6 +49,7 @@ public class Validator {
     this.withdrawal_epoch = withdrawal_epoch;
     this.penalized_epoch = penalized_epoch;
     this.status_flags = status_flags;
+    this.balance = balance;
   }
 
   public Bytes48 getPubkey() {
@@ -112,18 +108,10 @@ public class Validator {
     this.status_flags = status_flags;
   }
 
-  public double getBalance() {
-    return balance;
-  }
-
-  public void setBalance(double balance) {
-    this.balance = balance;
-  }
-
-  public boolean is_active_validator(long epoch) {
+  public boolean is_active_validator(UnsignedLong epoch) {
     // checks validator status against the validator status constants for whether the validator is
     // active
-    return activation_epoch.compareTo(UnsignedLong.valueOf(epoch)) <= 0
+    return activation_epoch.compareTo(epoch) <= 0
         && activation_epoch.compareTo(exit_epoch) < 0;
   }
 
@@ -133,7 +121,16 @@ public class Validator {
    * @param
    * @return
    */
-  public double get_effective_balance() {
-    return Math.min(balance, Constants.MAX_DEPOSIT_AMOUNT);
+  public UnsignedLong get_effective_balance() {
+    if(balance.compareTo(UnsignedLong.valueOf(MAX_DEPOSIT_AMOUNT)) <= 0) return balance;
+    else return UnsignedLong.valueOf(MAX_DEPOSIT_AMOUNT);
+  }
+
+  public UnsignedLong getBalance() {
+    return balance;
+  }
+
+  public void setBalance(UnsignedLong balance) {
+    this.balance = balance;
   }
 }

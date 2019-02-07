@@ -15,6 +15,8 @@ package tech.pegasys.artemis.statetransition.util;
 
 import java.util.ArrayList;
 import java.util.stream.IntStream;
+
+import com.google.common.primitives.UnsignedLong;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.datastructures.state.Validators;
 import tech.pegasys.artemis.statetransition.BeaconState;
@@ -26,7 +28,7 @@ public class ValidatorsUtil {
         state.getValidator_registry(), BeaconStateUtil.get_current_epoch(state));
   }
 
-  public static Validators get_active_validators(Validators validators, long epoch) {
+  public static Validators get_active_validators(Validators validators, UnsignedLong epoch) {
     Validators active_validators = new Validators();
     if (validators != null) {
       for (Validator record : validators) {
@@ -42,7 +44,7 @@ public class ValidatorsUtil {
   }
 
   public static ArrayList<Integer> get_active_validator_indices_at_epoch(
-      Validators validators, long epoch) {
+      Validators validators, UnsignedLong epoch) {
     ArrayList<Integer> active_validator_indices = new ArrayList<>();
 
     IntStream.range(0, validators.size())
