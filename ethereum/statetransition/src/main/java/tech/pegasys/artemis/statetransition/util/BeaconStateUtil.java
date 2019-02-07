@@ -607,7 +607,7 @@ public class BeaconStateUtil {
     }
   }
 
-  private static Validator getValidatorByPubkey(BeaconState state, Bytes48 pubkey) {
+  public static Validator getValidatorByPubkey(BeaconState state, Bytes48 pubkey) {
     for (Validator validator : state.getValidator_registry()) {
       if (validator.getPubkey().equals(pubkey)) return validator;
     }
