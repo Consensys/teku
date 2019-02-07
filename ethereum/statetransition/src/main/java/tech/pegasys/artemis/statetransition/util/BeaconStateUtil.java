@@ -45,10 +45,10 @@ import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.DepositInput;
+import tech.pegasys.artemis.datastructures.state.CrosslinkCommittee;
 import tech.pegasys.artemis.datastructures.state.CrosslinkRecord;
 import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.datastructures.state.PendingAttestationRecord;
-import tech.pegasys.artemis.datastructures.state.ShardCommittee;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.datastructures.state.Validators;
 import tech.pegasys.artemis.statetransition.BeaconState;
@@ -148,7 +148,7 @@ public class BeaconStateUtil {
   }
 
   /** Return the list of `(committee, shard)` tuples for the `slot`. */
-  public static ArrayList<ShardCommittee> get_crosslink_committees_at_slot(
+  public static ArrayList<CrosslinkCommittee> get_crosslink_committees_at_slot(
       //      BeaconState state, long slot, boolean registry_change) throws BlockValidationException
       // {
       BeaconState state, long slot, boolean registry_change) {
@@ -216,10 +216,11 @@ public class BeaconStateUtil {
     long slot_start_shard =
         (shuffling_start_shard + committees_per_slot * offset) % Constants.SHARD_COUNT;
 
-    ArrayList<ShardCommittee> crosslink_committees_at_slot = new ArrayList<ShardCommittee>();
+    ArrayList<CrosslinkCommittee> crosslink_committees_at_slot =
+        new ArrayList<CrosslinkCommittee>();
     for (int i = 0; i < committees_per_slot; i++) {
-      ShardCommittee committee =
-          new ShardCommittee(
+      CrosslinkCommittee committee =
+          new CrosslinkCommittee(
               UnsignedLong.valueOf(committees_per_slot * offset + i),
               shuffling.get(toIntExact(slot_start_shard + i) % Constants.SHARD_COUNT));
       crosslink_committees_at_slot.add(committee);
@@ -228,7 +229,7 @@ public class BeaconStateUtil {
   }
 
   /** This is a wrapper that defaults `registry_change` to false when it is not provided */
-  public static ArrayList<ShardCommittee> get_crosslink_committees_at_slot(
+  public static ArrayList<CrosslinkCommittee> get_crosslink_committees_at_slot(
       BeaconState state, long slot) {
     return get_crosslink_committees_at_slot(state, slot, false);
   }
@@ -673,14 +674,14 @@ public class BeaconStateUtil {
       BeaconState state, AttestationData attestation_data, byte[] participation_bitfield) {
     // Find the relevant committee
 
-    ArrayList<ShardCommittee> crosslink_committees =
+    ArrayList<CrosslinkCommittee> crosslink_committees =
         BeaconStateUtil.get_crosslink_committees_at_slot(
             state, toIntExact(attestation_data.getSlot()));
 
     // TODO: assert attestation_data.shard in [shard for _, shard in crosslink_committees]
 
-    ShardCommittee crosslink_committee = null;
-    for (ShardCommittee curr_crosslink_committee : crosslink_committees) {
+    CrosslinkCommittee crosslink_committee = null;
+    for (CrosslinkCommittee curr_crosslink_committee : crosslink_committees) {
       if (curr_crosslink_committee.getShard().equals(attestation_data.getShard())) {
         crosslink_committee = curr_crosslink_committee;
         break;

@@ -17,8 +17,8 @@ import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import net.consensys.cava.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.Constants;
+import tech.pegasys.artemis.datastructures.state.CrosslinkCommittee;
 import tech.pegasys.artemis.datastructures.state.PendingAttestationRecord;
-import tech.pegasys.artemis.datastructures.state.ShardCommittee;
 import tech.pegasys.artemis.statetransition.BeaconState;
 
 public class AttestationUtil {
@@ -105,7 +105,7 @@ public class AttestationUtil {
   }
 
   public static ArrayList<Integer> attesting_validator_indices(
-      BeaconState state, ShardCommittee crosslink_committee, Bytes32 shard_block_root)
+      BeaconState state, CrosslinkCommittee crosslink_committee, Bytes32 shard_block_root)
       throws BlockValidationException {
     ArrayList<PendingAttestationRecord> combined_attestations =
         get_current_epoch_attestations(state);
