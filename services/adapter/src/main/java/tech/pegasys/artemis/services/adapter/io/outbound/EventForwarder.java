@@ -11,11 +11,16 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.services.adapter.io.client;
+package tech.pegasys.artemis.services.adapter.io.outbound;
 
+import com.google.common.eventbus.EventBus;
 import tech.pegasys.artemis.pow.api.PowEvent;
 
-public interface EventForwardingClient<T extends PowEvent> {
+public interface EventForwarder<T extends PowEvent<?>> {
 
-  void forwardEvent(T event);
+  void onEvent(T event);
+
+  void init(EventBus eventBus);
+
+  void stop();
 }

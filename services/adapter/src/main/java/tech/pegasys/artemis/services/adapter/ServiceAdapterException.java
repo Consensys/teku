@@ -15,6 +15,10 @@ package tech.pegasys.artemis.services.adapter;
 
 public class ServiceAdapterException extends RuntimeException {
 
+  public ServiceAdapterException(String msg) {
+    super(msg);
+  }
+
   public ServiceAdapterException(String msg, Throwable cause) {
     super(msg, cause);
   }

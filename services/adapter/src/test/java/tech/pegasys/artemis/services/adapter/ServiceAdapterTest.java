@@ -19,6 +19,7 @@ import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import java.io.IOException;
 import java.math.BigInteger;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -30,20 +31,17 @@ import tech.pegasys.artemis.pow.api.PowEvent;
 import tech.pegasys.artemis.pow.contract.ValidatorRegistrationContract.Eth1DepositEventResponse;
 import tech.pegasys.artemis.pow.event.ValidatorRegistration;
 import tech.pegasys.artemis.services.adapter.event.OutboundEvent;
-import tech.pegasys.artemis.services.adapter.event.ValidatorRegisteredEventDescriptor;
 
 public class ServiceAdapterTest {
 
-  private List<PowEvent> receivedEvents = new ArrayList<>();
+  private List<PowEvent<?>> receivedEvents = new ArrayList<>();
 
   @Test
   public void testForwardValidationEvent() throws IOException, InterruptedException {
 
     final ServiceAdapter adapter1 =
         new ServiceAdapter(
-            30000,
-            Collections.singleton(new ValidatorRegisteredEventDescriptor()),
-            Collections.emptySet());
+            30000, Collections.singleton(ValidatorRegistration.class), Collections.emptySet());
 
     final EventBus eventBus1 = new EventBus("bus1");
     eventBus1.register(this);
@@ -52,7 +50,7 @@ public class ServiceAdapterTest {
     adapter1.run();
 
     final OutboundEvent<ValidatorRegistration> outboundEvent =
-        new OutboundEvent<>(new ValidatorRegisteredEventDescriptor(), "dns:///localhost:30000");
+        new OutboundEvent<>(ValidatorRegistration.class, "dns:///localhost:30000");
 
     final ServiceAdapter adapter2 =
         new ServiceAdapter(Collections.emptySet(), Collections.singleton(outboundEvent));
@@ -73,16 +71,16 @@ public class ServiceAdapterTest {
   }
 
   @Subscribe
-  public void onEvent(PowEvent event) {
+  public void onEvent(PowEvent<?> event) {
     receivedEvents.add(event);
   }
 
   private ValidatorRegistration createValidatorRegistration() {
     final Eth1DepositEventResponse deposit = new Eth1DepositEventResponse();
 
-    deposit.data = "data".getBytes();
+    deposit.data = "data".getBytes(Charset.defaultCharset());
     deposit.deposit_count = BigInteger.TEN;
-    deposit.previous_receipt_root = "root".getBytes();
+    deposit.previous_receipt_root = "root".getBytes(Charset.defaultCharset());
 
     deposit.log =
         new Log(

@@ -14,91 +14,103 @@
 package tech.pegasys.artemis.services.adapter;
 
 import com.google.common.eventbus.EventBus;
-import com.google.common.eventbus.Subscribe;
-import io.grpc.BindableService;
+import io.grpc.Channel;
+import io.grpc.ManagedChannelBuilder;
 import io.grpc.MethodDescriptor;
-import io.grpc.ServerBuilder;
-import io.grpc.ServerServiceDefinition;
-import io.grpc.stub.ServerCalls;
-import io.grpc.stub.StreamObserver;
-import java.io.IOException;
 import java.util.HashSet;
-import java.util.Optional;
 import java.util.Set;
 import tech.pegasys.artemis.pow.api.PowEvent;
 import tech.pegasys.artemis.services.ServiceInterface;
 import tech.pegasys.artemis.services.adapter.dto.RemoteCallResponse;
-import tech.pegasys.artemis.services.adapter.event.EventDescriptor;
 import tech.pegasys.artemis.services.adapter.event.OutboundEvent;
-import tech.pegasys.artemis.services.adapter.io.GrpcServiceAdapterIO;
-import tech.pegasys.artemis.services.adapter.io.ServiceAdapterIO;
+import tech.pegasys.artemis.services.adapter.factory.MethodDescriptorFactory;
+import tech.pegasys.artemis.services.adapter.io.inbound.DefaultGrpcServer;
+import tech.pegasys.artemis.services.adapter.io.inbound.GrpcServer;
+import tech.pegasys.artemis.services.adapter.io.outbound.EventForwarder;
+import tech.pegasys.artemis.services.adapter.io.outbound.GrpcEventForwarder;
 
+/** Encapsulates receiving/delivering events from/to Artemis microservices */
 public class ServiceAdapter implements ServiceInterface {
 
-  private EventBus eventBus;
+  public static final String SERVICE_NAME = "tech.pegasys.artemis.serviceAdapter";
+
+  private GrpcServer server;
+
+  private Set<MethodDescriptor<? extends PowEvent<?>, RemoteCallResponse>> inboundDescriptors;
+
+  private Set<EventForwarder<?>> eventForwarders;
 
   private int serverPort;
 
-  private ServiceAdapterIO serviceAdapterIO;
+  private EventBus eventBus;
 
   private boolean hasRegisteredInboundEvents = false;
 
   public ServiceAdapter(
-      int serverPort, Set<EventDescriptor> inboundEvents, Set<OutboundEvent> outboundEvents) {
+      int serverPort,
+      Set<Class<? extends PowEvent<?>>> inboundEvents,
+      Set<OutboundEvent<?>> outboundEvents) {
     this.serverPort = serverPort;
-    this.serviceAdapterIO = buildServiceAdapterIO();
+    this.eventForwarders = new HashSet<>();
+    this.inboundDescriptors = new HashSet<>();
 
     if (inboundEvents != null && !inboundEvents.isEmpty()) {
       hasRegisteredInboundEvents = true;
     }
 
-    inboundEvents.forEach(inboundEvent ->
-        serviceAdapterIO.registerInboundEventEndpoint(
-            inboundEvent, (event) -> eventBus.post(event)));
+    server = createGrpcServer(serverPort);
 
-    outboundEvents.forEach(outboundEvent ->
-        serviceAdapterIO.registerOutboundEventClient(outboundEvent));
+    inboundEvents.forEach(
+        inboundEvent -> server.registerMethodDescriptor(createMethodDescriptor(inboundEvent)));
+
+    outboundEvents.forEach(outboundEvent -> registerEventForwarder(outboundEvent));
   }
 
-  public ServiceAdapter(Set<EventDescriptor> inboundEvents, Set<OutboundEvent> outboundEvents) {
+  public ServiceAdapter(
+      Set<Class<? extends PowEvent<?>>> inboundEvents, Set<OutboundEvent<?>> outboundEvents) {
     this(0, inboundEvents, outboundEvents);
   }
 
   @Override
   public void init(EventBus eventBus) {
     this.eventBus = eventBus;
-    this.eventBus.register(this);
+    eventForwarders.forEach(forwarder -> forwarder.init(eventBus));
   }
 
   @Override
   public void run() {
-
-    if (hasRegisteredInboundEvents) {
-      try {
-        serviceAdapterIO.startServer(serverPort);
-      } catch (IOException e) {
-        throw new ServiceAdapterException("An error occurred when starting the server", e);
-      }
-    }
+    server.run();
   }
 
   @Override
   public void stop() {
-    this.eventBus.unregister(this);
+    server.stop();
 
-    serviceAdapterIO.shutdownServer();
+    eventForwarders.forEach(forwarder -> forwarder.stop());
   }
 
-  @Subscribe
-  public void onEvent(PowEvent event) {
-
-    // If event type is registered as an outbound event, forward
-    serviceAdapterIO
-        .getOutboundEventClient(event.getType())
-        .ifPresent(client -> client.forwardEvent(event));
+  protected GrpcServer createGrpcServer(int serverPort) {
+    return new DefaultGrpcServer(SERVICE_NAME, serverPort, this::onInboundEvent);
   }
 
-  protected ServiceAdapterIO buildServiceAdapterIO() {
-    return new GrpcServiceAdapterIO();
+  protected MethodDescriptor<? extends PowEvent<?>, RemoteCallResponse> createMethodDescriptor(
+      Class<? extends PowEvent<?>> eventClass) {
+    return MethodDescriptorFactory.build(SERVICE_NAME, eventClass);
+  }
+
+  private void onInboundEvent(PowEvent<?> event) {
+    eventBus.post(event);
+  }
+
+  private void registerEventForwarder(OutboundEvent<?> outboundEvent) {
+    final Channel channel =
+        ManagedChannelBuilder.forTarget(outboundEvent.getUrl()).usePlaintext(true).build();
+
+    final MethodDescriptor<? extends PowEvent<?>, RemoteCallResponse> descriptor =
+        MethodDescriptorFactory.build(SERVICE_NAME, outboundEvent.getEventClass());
+
+    final EventForwarder<?> forwarder = new GrpcEventForwarder<>(channel, descriptor);
+
+    eventForwarders.add(forwarder);
   }
 }

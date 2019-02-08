@@ -11,8 +11,10 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.services.adapter.io.client;
+package tech.pegasys.artemis.services.adapter.io.outbound;
 
+import com.google.common.eventbus.EventBus;
+import com.google.common.eventbus.Subscribe;
 import io.grpc.CallOptions;
 import io.grpc.Channel;
 import io.grpc.ClientCall;
@@ -22,18 +24,26 @@ import tech.pegasys.artemis.pow.api.PowEvent;
 import tech.pegasys.artemis.services.adapter.ServiceAdapterException;
 import tech.pegasys.artemis.services.adapter.dto.RemoteCallResponse;
 
-public class GrpcEventForwardingClient<T extends PowEvent> implements EventForwardingClient<T> {
+public class GrpcEventForwarder<T extends PowEvent<?>> implements EventForwarder<T> {
 
   private Channel channel;
   private MethodDescriptor<T, RemoteCallResponse> descriptor;
+  private EventBus eventBus;
 
-  public GrpcEventForwardingClient(
-      Channel channel, MethodDescriptor<T, RemoteCallResponse> descriptor) {
+  public GrpcEventForwarder(Channel channel, MethodDescriptor<T, RemoteCallResponse> descriptor) {
     this.channel = channel;
     this.descriptor = descriptor;
   }
 
-  public void forwardEvent(T event) {
+  @Override
+  public void init(EventBus eventBus) {
+    this.eventBus = eventBus;
+    eventBus.register(this);
+  }
+
+  @Subscribe
+  @Override
+  public void onEvent(T event) {
     final ClientCall<T, RemoteCallResponse> call = channel.newCall(descriptor, CallOptions.DEFAULT);
 
     final RemoteCallResponse response = ClientCalls.blockingUnaryCall(call, event);
@@ -42,5 +52,10 @@ public class GrpcEventForwardingClient<T extends PowEvent> implements EventForwa
       throw new ServiceAdapterException(
           "An exception occured during event forwarding", response.getErrorCause());
     }
+  }
+
+  @Override
+  public void stop() {
+    eventBus.unregister(this);
   }
 }

@@ -13,19 +13,21 @@
 
 package tech.pegasys.artemis.services.adapter.event;
 
-public class OutboundEvent<T> {
+import tech.pegasys.artemis.pow.api.PowEvent;
 
-  private EventDescriptor<T> eventDescriptor;
+public class OutboundEvent<T extends PowEvent<?>> {
+
+  private Class<T> eventClass;
 
   private String url;
 
-  public OutboundEvent(EventDescriptor<T> eventDescriptor, String url) {
-    this.eventDescriptor = eventDescriptor;
+  public OutboundEvent(Class<T> eventClass, String url) {
+    this.eventClass = eventClass;
     this.url = url;
   }
 
-  public EventDescriptor<T> getEventDescriptor() {
-    return eventDescriptor;
+  public Class<T> getEventClass() {
+    return eventClass;
   }
 
   public String getUrl() {
