@@ -46,16 +46,14 @@ public class BlockProcessorUtil {
     // BEACON_CHAIN_SHARD_NUMBER,
     // block_without_signature_root)).
     ProposalSignedData signedData =
-        new ProposalSignedData(
-            UnsignedLong.valueOf(state.getSlot()), Constants.BEACON_CHAIN_SHARD_NUMBER, blockHash);
+        new ProposalSignedData(state.getSlot(), Constants.BEACON_CHAIN_SHARD_NUMBER, blockHash);
     Bytes32 proposalRoot = TreeHashUtil.hash_tree_root(signedData.getBlock_hash());
     // Verify that
     // bls_verify(pubkey=state.validator_registry[get_beacon_proposer_index(state,
     // state.slot)].pubkey, message=proposal_root, signature=block.signature,
     // domain=get_domain(state.fork,
     // state.slot, DOMAIN_PROPOSAL)).
-    int proposerIndex =
-        BeaconState.get_beacon_proposer_index(state, Math.toIntExact(state.getSlot()));
+    int proposerIndex = BeaconStateUtil.get_beacon_proposer_index(state, state.getSlot());
     Bytes48 pubkey = state.getValidator_registry().get(proposerIndex).getPubkey();
     // TODO: after v0.01 refactor constants no longer exists
     //    return BLSVerify.bls_verify(
@@ -71,10 +69,10 @@ public class BlockProcessorUtil {
    */
   public static void verify_and_update_randao(BeaconState state, BeaconBlock block) {
     // Let proposer = state.validator_registry[get_beacon_proposer_index(state, state.slot)].
-    int proposerIndex =
-        BeaconState.get_beacon_proposer_index(state, Math.toIntExact(state.getSlot()));
+    int proposerIndex = BeaconStateUtil.get_beacon_proposer_index(state, state.getSlot());
     Bytes48 pubkey = state.getValidator_registry().get(proposerIndex).getPubkey();
-    long epoch = BeaconStateUtil.get_current_epoch(state);
+    // TODO: convert these values to UnsignedLong
+    long epoch = BeaconStateUtil.get_current_epoch(state).longValue();
     Bytes32 epochBytes = Bytes32.wrap(Bytes.minimalBytes(epoch));
     // Verify that bls_verify(pubkey=proposer.pubkey,
     // message=int_to_bytes32(get_current_epoch(state)), signature=block.randao_reveal, domain=

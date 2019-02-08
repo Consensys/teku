@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.statetransition.util;
 
+import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import net.consensys.cava.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.Constants;
@@ -41,17 +42,24 @@ public class AttestationUtil {
         get_current_epoch_attestations(state);
 
     for (PendingAttestationRecord record : current_epoch_attestation) {
-      if ((state.getSlot() - 2 * Constants.EPOCH_LENGTH) <= record.getData().getSlot()
-          && record.getData().getSlot() < state.getSlot() - Constants.EPOCH_LENGTH)
-        previous_epoch_attestations.add(record);
+      if (state
+                  .getSlot()
+                  .minus(UnsignedLong.valueOf(2))
+                  .times(UnsignedLong.valueOf(Constants.EPOCH_LENGTH))
+                  .compareTo(UnsignedLong.valueOf(record.getData().getSlot()))
+              <= 0
+          && UnsignedLong.valueOf(record.getData().getSlot())
+                  .compareTo(state.getSlot().minus(UnsignedLong.valueOf(Constants.EPOCH_LENGTH)))
+              < 0) previous_epoch_attestations.add(record);
     }
     return previous_epoch_attestations;
   }
 
   private static boolean isAttestationCurrentEpoch(
       BeaconState state, PendingAttestationRecord record) {
-    long epoch_lower_boundary = state.getSlot() - Constants.EPOCH_LENGTH;
-    long epoch_upper_boundary = state.getSlot();
+    // TODO: Replace longValue wiht UnsignedLong
+    long epoch_lower_boundary = state.getSlot().longValue() - Constants.EPOCH_LENGTH;
+    long epoch_upper_boundary = state.getSlot().longValue();
     return (record.getData().getSlot() <= epoch_lower_boundary
         && record.getData().getSlot() > epoch_upper_boundary);
   }
@@ -68,7 +76,7 @@ public class AttestationUtil {
                 .equals(
                     BeaconStateUtil.get_block_root(
                         state, record.getData().getSlot() - Constants.EPOCH_LENGTH))
-            && record.getData().getJustified_slot().longValue() == state.getJustified_slot())
+            && record.getData().getJustified_slot().equals(state.getJustified_epoch()))
           current_epoch_attestations.add(record);
       }
     }
@@ -106,7 +114,7 @@ public class AttestationUtil {
     for (PendingAttestationRecord record : combined_attestations) {
       if (record.getData().getShard().compareTo(crosslink_committee.getShard()) == 0
           && record.getData().getShard_block_hash() == shard_block_root) {
-        return BeaconState.get_attestation_participants(
+        return BeaconStateUtil.get_attestation_participants(
             state, record.getData(), record.getParticipation_bitfield().toArray());
       }
     }
