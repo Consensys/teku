@@ -27,6 +27,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.state.Validator;
+import tech.pegasys.artemis.datastructures.state.Validators;
 import tech.pegasys.artemis.statetransition.util.SlotProcessorUtil;
 
 @ExtendWith(BouncyCastleExtension.class)
@@ -37,34 +38,7 @@ class StateTransitionTest {
     BeaconState state = new BeaconState();
 
     // Add validator records
-    ArrayList<Validator> validators = new ArrayList<Validator>();
-    validators.add(
-        new Validator(
-            Bytes48.ZERO,
-            Bytes32.ZERO,
-            UnsignedLong.ZERO,
-            UnsignedLong.ZERO,
-            UnsignedLong.ZERO,
-            UnsignedLong.ZERO,
-            UnsignedLong.valueOf(0)));
-    validators.add(
-        new Validator(
-            Bytes48.leftPad(Bytes.of(100)),
-            Bytes32.ZERO,
-            UnsignedLong.ZERO,
-            UnsignedLong.ZERO,
-            UnsignedLong.ZERO,
-            UnsignedLong.ZERO,
-            UnsignedLong.valueOf(0)));
-    validators.add(
-        new Validator(
-            Bytes48.leftPad(Bytes.of(200)),
-            Bytes32.ZERO,
-            UnsignedLong.ZERO,
-            UnsignedLong.ZERO,
-            UnsignedLong.ZERO,
-            UnsignedLong.ZERO,
-            UnsignedLong.valueOf(0)));
+    Validators validators = new Validators();
     validators.add(
         new Validator(
             Bytes48.leftPad(Bytes.of(0)),
@@ -73,7 +47,8 @@ class StateTransitionTest {
             UnsignedLong.ZERO,
             UnsignedLong.ZERO,
             UnsignedLong.ZERO,
-            UnsignedLong.valueOf(0)));
+            UnsignedLong.ZERO,
+            UnsignedLong.ZERO));
     validators.add(
         new Validator(
             Bytes48.leftPad(Bytes.of(0)),
@@ -82,7 +57,38 @@ class StateTransitionTest {
             UnsignedLong.ZERO,
             UnsignedLong.ZERO,
             UnsignedLong.ZERO,
-            UnsignedLong.valueOf(0)));
+            UnsignedLong.ZERO,
+            UnsignedLong.ZERO));
+    validators.add(
+        new Validator(
+            Bytes48.leftPad(Bytes.of(0)),
+            Bytes32.ZERO,
+            UnsignedLong.ZERO,
+            UnsignedLong.ZERO,
+            UnsignedLong.ZERO,
+            UnsignedLong.ZERO,
+            UnsignedLong.ZERO,
+            UnsignedLong.ZERO));
+    validators.add(
+        new Validator(
+            Bytes48.leftPad(Bytes.of(0)),
+            Bytes32.ZERO,
+            UnsignedLong.ZERO,
+            UnsignedLong.ZERO,
+            UnsignedLong.ZERO,
+            UnsignedLong.ZERO,
+            UnsignedLong.ZERO,
+            UnsignedLong.ZERO));
+    validators.add(
+        new Validator(
+            Bytes48.leftPad(Bytes.of(0)),
+            Bytes32.ZERO,
+            UnsignedLong.ZERO,
+            UnsignedLong.ZERO,
+            UnsignedLong.ZERO,
+            UnsignedLong.ZERO,
+            UnsignedLong.ZERO,
+            UnsignedLong.ZERO));
     state.setValidator_registry(validators);
 
     state.setLatest_block_roots(
@@ -98,7 +104,7 @@ class StateTransitionTest {
     state.setLatest_randao_mixes(
         new ArrayList<Bytes32>(
             Collections.nCopies(Constants.LATEST_RANDAO_MIXES_LENGTH, Bytes32.ZERO)));
-    state.setSlot(12);
+    state.setSlot(UnsignedLong.valueOf(12));
     ArrayList<Bytes32> latestRandaoMixes = state.getLatest_randao_mixes();
     latestRandaoMixes.set(11, Hash.keccak256(Bytes32.fromHexString("0x01")));
     latestRandaoMixes.set(12, Hash.keccak256(Bytes32.ZERO));

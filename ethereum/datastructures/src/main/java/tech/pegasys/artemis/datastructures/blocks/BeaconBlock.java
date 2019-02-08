@@ -54,7 +54,7 @@ public final class BeaconBlock {
   public Bytes toBytes() {
     return SSZ.encode(
         writer -> {
-          writer.writeUInt64(slot);
+          writer.writeUInt64(0l);
           writer.writeBytesList(ancestor_hashes.toArray(new Bytes32[0]));
           writer.writeBytes(state_root);
           writer.writeBytesList(randao_reveal.toArray(new Bytes48[0]));
