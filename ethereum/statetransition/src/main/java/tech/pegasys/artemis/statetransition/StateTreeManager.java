@@ -15,17 +15,16 @@ package tech.pegasys.artemis.statetransition;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
-import com.google.common.primitives.UnsignedLong;
 import java.util.Date;
 import java.util.NoSuchElementException;
 import java.util.Optional;
-import java.util.concurrent.LinkedBlockingQueue;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
-import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.pow.api.ChainStartEvent;
 import tech.pegasys.artemis.pow.api.ValidatorRegistrationEvent;
+import tech.pegasys.artemis.storage.ChainStorage;
+import tech.pegasys.artemis.storage.ChainStorageClient;
 
 /** Class to manage the state tree and initiate state transitions */
 public class StateTreeManager {
@@ -33,19 +32,15 @@ public class StateTreeManager {
   private final EventBus eventBus;
   private StateTransition stateTransition;
   private BeaconState state;
-  private LinkedBlockingQueue<BeaconBlock> unprocessedBlocks;
-  private LinkedBlockingQueue<Attestation> unprocessedAttestations;
+  private ChainStorageClient storage;
   private static final Logger LOG = LogManager.getLogger();
 
   public StateTreeManager(EventBus eventBus) {
     this.eventBus = eventBus;
     this.stateTransition = new StateTransition();
     this.state = new BeaconState();
-    state.setSlot(UnsignedLong.ZERO);
-    this.unprocessedBlocks = new LinkedBlockingQueue<BeaconBlock>();
-    this.unprocessedAttestations = new LinkedBlockingQueue<Attestation>();
-
     this.eventBus.register(this);
+    this.storage = ChainStorage.Create(ChainStorageClient.class, eventBus);
   }
 
   @Subscribe
@@ -64,31 +59,18 @@ public class StateTreeManager {
   public void onNewSlot(Date date) {
     LOG.info("****** New Slot at: " + date + " ******");
     // TODO: get canonical state
-    // deep copy beacon state
     this.state = BeaconState.deepCopy(state);
-    Optional<BeaconBlock> block = unprocessedBlocks.stream().findFirst();
+    Optional<BeaconBlock> block = this.storage.getUnprocessedBlock();
     if (block.isPresent()) {
+      LOG.info("Unprocessed block retrieved.");
       try {
         stateTransition.initiate(this.state, block.get());
+        this.storage.addProcessedBlock(block.get().getState_root(), block.get());
       } catch (NoSuchElementException e) {
         LOG.warn(e.toString());
       }
     } else {
       stateTransition.initiate(this.state, null);
     }
-  }
-
-  @Subscribe
-  public void onNewBlock(BeaconBlock block) {
-    LOG.info("New Beacon Block Event detected");
-    // TODO: change values to UnsignedLong
-    block.setSlot(this.state.getSlot().longValue());
-    unprocessedBlocks.add(block);
-  }
-
-  @Subscribe
-  public void onNewAttestation(Attestation attestation) {
-    LOG.info("New Attestation Event detected");
-    unprocessedAttestations.add(attestation);
   }
 }
