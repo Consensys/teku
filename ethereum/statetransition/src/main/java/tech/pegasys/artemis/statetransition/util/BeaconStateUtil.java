@@ -57,7 +57,7 @@ public class BeaconStateUtil {
 
   @VisibleForTesting
   @SuppressWarnings("ModifiedButNotUsed")
-  public BeaconState get_initial_beacon_state(
+  public static BeaconState get_initial_beacon_state(
       ArrayList<Deposit> initial_validator_deposits,
       UnsignedLong genesis_time,
       Eth1Data latest_eth1_data) {
@@ -70,8 +70,6 @@ public class BeaconStateUtil {
       latest_crosslinks.add(new CrosslinkRecord(Bytes32.ZERO, UnsignedLong.valueOf(GENESIS_SLOT)));
     }
 
-    // todo after update v0.01 constants no longer exist
-    // BeaconState state = new BeaconState();
     BeaconState state =
         new BeaconState(
             // Misc

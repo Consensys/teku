@@ -15,6 +15,7 @@ package tech.pegasys.artemis.statetransition;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
+import com.google.common.primitives.UnsignedLong;
 import java.util.Date;
 import java.util.NoSuchElementException;
 import java.util.Optional;
@@ -40,6 +41,7 @@ public class StateTreeManager {
     this.eventBus = eventBus;
     this.stateTransition = new StateTransition();
     this.state = new BeaconState();
+    state.setSlot(UnsignedLong.ZERO);
     this.unprocessedBlocks = new LinkedBlockingQueue<BeaconBlock>();
     this.unprocessedAttestations = new LinkedBlockingQueue<Attestation>();
 

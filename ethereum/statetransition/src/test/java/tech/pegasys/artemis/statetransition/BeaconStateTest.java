@@ -77,7 +77,7 @@ class BeaconStateTest {
             new ArrayList<>(),
             new ArrayList<>(),
             new ArrayList<>(),
-            new Eth1Data(),
+            new Eth1Data(Bytes32.ZERO, Bytes32.ZERO),
             new ArrayList<>());
 
     // Add validator records

@@ -93,10 +93,10 @@ public class BeaconState {
       UnsignedLong current_epoch_start_shard,
       UnsignedLong previous_calculation_epoch,
       UnsignedLong current_calculation_epoch,
-
-      // Finality
       Bytes32 previous_epoch_seed,
       Bytes32 current_epoch_seed,
+
+      // Finality
       UnsignedLong previous_justified_epoch,
       UnsignedLong justified_epoch,
       UnsignedLong justification_bitfield,
