@@ -17,9 +17,11 @@ import com.google.common.eventbus.EventBus;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.artemis.services.ServiceInterface;
+import tech.pegasys.artemis.storage.ChainStorage;
 
 public class ChainStorageService implements ServiceInterface {
   private EventBus eventBus;
+  private ChainStorage chainStore;
   private static final Logger LOG = LogManager.getLogger();
 
   public ChainStorageService() {}
@@ -27,12 +29,13 @@ public class ChainStorageService implements ServiceInterface {
   @Override
   public void init(EventBus eventBus) {
     this.eventBus = eventBus;
+    this.chainStore = new ChainStorage(this.eventBus);
     this.eventBus.register(this);
   }
 
   @Override
   public void run() {
-    // TODO Do something.
+    // TODO Still do something...maybe
   }
 
   @Override

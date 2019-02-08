@@ -8,6 +8,7 @@ jar {
 
 dependencies {
   implementation project(':services')
+  implementation project(':storage')
 
   implementation 'com.google.guava:guava'
   implementation 'org.apache.logging.log4j:log4j-api'

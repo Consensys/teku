@@ -68,7 +68,7 @@ allprojects {
         include '**/*.java'
         exclude '**/.gradle/**'
         exclude 'web3j'
-        //Excluding tech.pegasys.artemis.Constants due to preferred formatting overwritten by plugin in getConstantsAsString.
+        //Excluding tech.pegasys.artemis.datastructures due to preferred formatting overwritten by plugin in getConstantsAsString.
         exclude '**/src/main/java/tech/pegasys/artemis/Constants.java'
       }
       removeUnusedImports()
