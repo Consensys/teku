@@ -15,8 +15,8 @@ package tech.pegasys.artemis.datastructures.operations;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomAttestationData;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -139,25 +139,5 @@ class AttestationTest {
             Arrays.asList(Bytes48.random(), Bytes48.random()));
     Bytes sszAttestationBytes = attestation.toBytes();
     assertEquals(attestation, Attestation.fromBytes(sszAttestationBytes));
-  }
-
-  private long randomLong() {
-    return Math.round(Math.random() * 1000000);
-  }
-
-  private UnsignedLong randomUnsignedLong() {
-    return UnsignedLong.fromLongBits(randomLong());
-  }
-
-  private AttestationData randomAttestationData() {
-    return new AttestationData(
-        randomLong(),
-        randomUnsignedLong(),
-        Bytes32.random(),
-        Bytes32.random(),
-        Bytes32.random(),
-        Bytes32.random(),
-        randomUnsignedLong(),
-        Bytes32.random());
   }
 }

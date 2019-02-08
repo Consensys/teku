@@ -13,31 +13,17 @@
 
 package tech.pegasys.artemis.networking.p2p;
 
+import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomAttestation;
+import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomBeaconBlock;
+
 import com.google.common.eventbus.EventBus;
-import com.google.common.primitives.UnsignedLong;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Random;
 import java.util.concurrent.CompletableFuture;
-import net.consensys.cava.bytes.Bytes32;
-import net.consensys.cava.bytes.Bytes48;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
-import tech.pegasys.artemis.datastructures.blocks.BeaconBlockBody;
-import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
-import tech.pegasys.artemis.datastructures.blocks.ProposalSignedData;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
-import tech.pegasys.artemis.datastructures.operations.AttestationData;
-import tech.pegasys.artemis.datastructures.operations.CasperSlashing;
-import tech.pegasys.artemis.datastructures.operations.Deposit;
-import tech.pegasys.artemis.datastructures.operations.DepositData;
-import tech.pegasys.artemis.datastructures.operations.DepositInput;
-import tech.pegasys.artemis.datastructures.operations.Exit;
-import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
-import tech.pegasys.artemis.datastructures.operations.SlashableVoteData;
 import tech.pegasys.artemis.networking.p2p.api.P2PNetwork;
 
 public class MockP2PNetwork implements P2PNetwork {
@@ -110,95 +96,15 @@ public class MockP2PNetwork implements P2PNetwork {
         long n = 1000L * Integer.toUnsignedLong(random.nextInt(7) + 2);
         Thread.sleep(n);
         if (n % 3 == 0) {
-          BeaconBlock block = createEmptyBeaconBlock(n);
+          BeaconBlock block = randomBeaconBlock(n);
           this.eventBus.post(block);
         } else {
-          Attestation attestation = createEmptyAttestation(n);
+          Attestation attestation = randomAttestation(n);
           this.eventBus.post(attestation);
         }
       }
     } catch (InterruptedException e) {
       LOG.warn(e.toString());
     }
-  }
-
-  // TODO: These helper methods below almost certianly belong somewhere else.
-  private Attestation createEmptyAttestation(long slotNum) {
-    return new Attestation(
-        createEmptyAttestationData(slotNum), Bytes32.ZERO, Bytes32.ZERO, Constants.EMPTY_SIGNATURE);
-  }
-
-  private AttestationData createEmptyAttestationData(long slotNum) {
-    return new AttestationData(
-        slotNum,
-        UnsignedLong.ZERO,
-        Bytes32.ZERO,
-        Bytes32.ZERO,
-        Bytes32.ZERO,
-        Bytes32.ZERO,
-        UnsignedLong.ZERO,
-        Bytes32.ZERO);
-  }
-
-  private BeaconBlock createEmptyBeaconBlock(long slotNum) {
-    return new BeaconBlock(
-        slotNum,
-        Arrays.asList(Bytes32.ZERO),
-        Bytes32.ZERO,
-        Constants.EMPTY_SIGNATURE,
-        new Eth1Data(Bytes32.ZERO, Bytes32.ZERO),
-        Constants.EMPTY_SIGNATURE,
-        createEmptyBeaconBlockBody(slotNum));
-  }
-
-  private BeaconBlockBody createEmptyBeaconBlockBody(long slotNum) {
-    return new BeaconBlockBody(
-        Arrays.asList(createEmptyAttestation(slotNum)),
-        Arrays.asList(createEmptyProposerSlashing()),
-        Arrays.asList(createEmptyCasperSlashing(slotNum)),
-        Arrays.asList(createEmptyDeposit()),
-        Arrays.asList(createEmptyExit()));
-  }
-
-  private ProposerSlashing createEmptyProposerSlashing() {
-    return new ProposerSlashing(
-        0,
-        createEmptyProposalSignedData(),
-        Constants.EMPTY_SIGNATURE,
-        createEmptyProposalSignedData(),
-        Constants.EMPTY_SIGNATURE);
-  }
-
-  private ProposalSignedData createEmptyProposalSignedData() {
-    return new ProposalSignedData(UnsignedLong.ZERO, UnsignedLong.ZERO, Bytes32.ZERO);
-  }
-
-  private CasperSlashing createEmptyCasperSlashing(long slotNum) {
-    return new CasperSlashing(
-        createEmptySlashableVoteData(slotNum), createEmptySlashableVoteData(slotNum));
-  }
-
-  private SlashableVoteData createEmptySlashableVoteData(long slotNum) {
-    return new SlashableVoteData(
-        Arrays.asList(0),
-        Arrays.asList(0),
-        createEmptyAttestationData(slotNum),
-        Constants.EMPTY_SIGNATURE);
-  }
-
-  private Deposit createEmptyDeposit() {
-    return new Deposit(Arrays.asList(Bytes32.ZERO), UnsignedLong.ZERO, createEmptyDepositData());
-  }
-
-  private DepositData createEmptyDepositData() {
-    return new DepositData(createEmptyDepositInput(), UnsignedLong.ZERO, UnsignedLong.ZERO);
-  }
-
-  private DepositInput createEmptyDepositInput() {
-    return new DepositInput(Bytes48.ZERO, Bytes32.ZERO, new ArrayList<Bytes48>());
-  }
-
-  private Exit createEmptyExit() {
-    return new Exit(UnsignedLong.ZERO, UnsignedLong.ZERO, Constants.EMPTY_SIGNATURE);
   }
 }

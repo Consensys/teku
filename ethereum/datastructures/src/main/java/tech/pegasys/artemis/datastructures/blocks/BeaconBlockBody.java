@@ -29,9 +29,9 @@ import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
 
 /** A Beacon block body */
 public class BeaconBlockBody {
-  private List<Attestation> attestations;
   private List<ProposerSlashing> proposer_slashings;
   private List<CasperSlashing> casper_slashings;
+  private List<Attestation> attestations;
   private List<Deposit> deposits;
   private List<Exit> exits;
 
@@ -42,9 +42,9 @@ public class BeaconBlockBody {
   private List<ProofOfCustodyResponse> poc_responses;
 
   public BeaconBlockBody(
-      List<Attestation> attestations,
       List<ProposerSlashing> proposer_slashings,
       List<CasperSlashing> casper_slashings,
+      List<Attestation> attestations,
       List<Deposit> deposits,
       List<Exit> exits) {
     this.attestations = attestations;
@@ -62,11 +62,6 @@ public class BeaconBlockBody {
                 reader
                     .readBytesList()
                     .stream()
-                    .map(Attestation::fromBytes)
-                    .collect(Collectors.toList()),
-                reader
-                    .readBytesList()
-                    .stream()
                     .map(ProposerSlashing::fromBytes)
                     .collect(Collectors.toList()),
                 reader
@@ -77,27 +72,32 @@ public class BeaconBlockBody {
                 reader
                     .readBytesList()
                     .stream()
+                    .map(Attestation::fromBytes)
+                    .collect(Collectors.toList()),
+                reader
+                    .readBytesList()
+                    .stream()
                     .map(Deposit::fromBytes)
                     .collect(Collectors.toList()),
                 reader.readBytesList().stream().map(Exit::fromBytes).collect(Collectors.toList())));
   }
 
   public Bytes toBytes() {
-    List<Bytes> attestationsBytes =
-        attestations.stream().map(item -> item.toBytes()).collect(Collectors.toList());
     List<Bytes> proposerSlashingsBytes =
         proposer_slashings.stream().map(item -> item.toBytes()).collect(Collectors.toList());
     List<Bytes> casperSlashingsBytes =
         casper_slashings.stream().map(item -> item.toBytes()).collect(Collectors.toList());
+    List<Bytes> attestationsBytes =
+        attestations.stream().map(item -> item.toBytes()).collect(Collectors.toList());
     List<Bytes> depositsBytes =
         deposits.stream().map(item -> item.toBytes()).collect(Collectors.toList());
     List<Bytes> exitsBytes =
         exits.stream().map(item -> item.toBytes()).collect(Collectors.toList());
     return SSZ.encode(
         writer -> {
-          writer.writeBytesList(attestationsBytes);
           writer.writeBytesList(proposerSlashingsBytes);
           writer.writeBytesList(casperSlashingsBytes);
+          writer.writeBytesList(attestationsBytes);
           writer.writeBytesList(depositsBytes);
           writer.writeBytesList(exitsBytes);
         });

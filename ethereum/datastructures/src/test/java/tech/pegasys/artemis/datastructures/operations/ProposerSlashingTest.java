@@ -15,15 +15,15 @@ package tech.pegasys.artemis.datastructures.operations;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomInt;
+import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomProposalSignedData;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import net.consensys.cava.bytes.Bytes;
-import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.bytes.Bytes48;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.blocks.ProposalSignedData;
@@ -207,21 +207,5 @@ class ProposerSlashingTest {
             Arrays.asList(Bytes48.random(), Bytes48.random()));
     Bytes sszProposerSlashingBytes = proposerSlashing.toBytes();
     assertEquals(proposerSlashing, ProposerSlashing.fromBytes(sszProposerSlashingBytes));
-  }
-
-  private int randomInt() {
-    return (int) (Math.random() * 1000000);
-  }
-
-  private long randomLong() {
-    return Math.round(Math.random() * 1000000);
-  }
-
-  private UnsignedLong randomUnsignedLong() {
-    return UnsignedLong.fromLongBits(randomLong());
-  }
-
-  private ProposalSignedData randomProposalSignedData() {
-    return new ProposalSignedData(randomUnsignedLong(), randomUnsignedLong(), Bytes32.random());
   }
 }

@@ -15,6 +15,7 @@ package tech.pegasys.artemis.datastructures.operations;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomUnsignedLong;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
@@ -100,13 +101,5 @@ class ExitTest {
             Arrays.asList(Bytes48.random(), Bytes48.random()));
     Bytes sszExitBytes = exit.toBytes();
     assertEquals(exit, Exit.fromBytes(sszExitBytes));
-  }
-
-  private long randomLong() {
-    return Math.round(Math.random() * 1000000);
-  }
-
-  private UnsignedLong randomUnsignedLong() {
-    return UnsignedLong.fromLongBits(randomLong());
   }
 }

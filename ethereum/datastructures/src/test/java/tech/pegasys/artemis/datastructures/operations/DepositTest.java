@@ -15,6 +15,8 @@ package tech.pegasys.artemis.datastructures.operations;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomDepositData;
+import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomUnsignedLong;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
@@ -24,7 +26,6 @@ import java.util.List;
 import java.util.Objects;
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
-import net.consensys.cava.bytes.Bytes48;
 import org.junit.jupiter.api.Test;
 
 class DepositTest {
@@ -114,22 +115,5 @@ class DepositTest {
             randomDepositData());
     Bytes sszDepositBytes = deposit.toBytes();
     assertEquals(deposit, Deposit.fromBytes(sszDepositBytes));
-  }
-
-  private long randomLong() {
-    return Math.round(Math.random() * 1000000);
-  }
-
-  private UnsignedLong randomUnsignedLong() {
-    return UnsignedLong.fromLongBits(randomLong());
-  }
-
-  private DepositInput randomDepositInput() {
-    return new DepositInput(
-        Bytes48.random(), Bytes32.random(), Arrays.asList(Bytes48.random(), Bytes48.random()));
-  }
-
-  private DepositData randomDepositData() {
-    return new DepositData(randomDepositInput(), randomUnsignedLong(), randomUnsignedLong());
   }
 }

@@ -25,7 +25,7 @@ public final class BeaconBlock {
 
   // Header
   private long slot;
-  private List<Bytes32> ancestor_hashes;
+  private Bytes32 parent_root;
   private Bytes32 state_root;
   private List<Bytes48> randao_reveal;
   private Eth1Data eth1_data;
@@ -36,14 +36,14 @@ public final class BeaconBlock {
 
   public BeaconBlock(
       long slot,
-      List<Bytes32> ancestor_hashes,
+      Bytes32 parent_root,
       Bytes32 state_root,
       List<Bytes48> randao_reveal,
       Eth1Data eth1_data,
       List<Bytes48> signature,
       BeaconBlockBody body) {
     this.slot = slot;
-    this.ancestor_hashes = ancestor_hashes;
+    this.parent_root = parent_root;
     this.state_root = state_root;
     this.randao_reveal = randao_reveal;
     this.eth1_data = eth1_data;
@@ -57,7 +57,7 @@ public final class BeaconBlock {
         reader ->
             new BeaconBlock(
                 reader.readUInt64(),
-                reader.readBytesList().stream().map(Bytes32::wrap).collect(Collectors.toList()),
+                Bytes32.wrap(reader.readBytes()),
                 Bytes32.wrap(reader.readBytes()),
                 reader.readBytesList().stream().map(Bytes48::wrap).collect(Collectors.toList()),
                 Eth1Data.fromBytes(reader.readBytes()),
@@ -69,7 +69,7 @@ public final class BeaconBlock {
     return SSZ.encode(
         writer -> {
           writer.writeUInt64(slot);
-          writer.writeBytesList(ancestor_hashes);
+          writer.writeBytes(parent_root);
           writer.writeBytes(state_root);
           writer.writeBytesList(randao_reveal);
           writer.writeBytes(eth1_data.toBytes());
@@ -80,7 +80,7 @@ public final class BeaconBlock {
 
   @Override
   public int hashCode() {
-    return Objects.hash(slot, ancestor_hashes, state_root, randao_reveal, eth1_data, signature);
+    return Objects.hash(slot, parent_root, state_root, randao_reveal, eth1_data, signature);
   }
 
   @Override
@@ -99,7 +99,7 @@ public final class BeaconBlock {
 
     BeaconBlock other = (BeaconBlock) obj;
     return slot == other.getSlot()
-        && Objects.equals(this.getAncestor_hashes(), other.getAncestor_hashes())
+        && Objects.equals(this.getParent_root(), other.getParent_root())
         && Objects.equals(this.getState_root(), other.getState_root())
         && Objects.equals(this.getRandao_reveal(), other.getRandao_reveal())
         && Objects.equals(this.getEth1_data(), other.getEth1_data())
@@ -148,12 +148,12 @@ public final class BeaconBlock {
     this.state_root = state_root;
   }
 
-  public List<Bytes32> getAncestor_hashes() {
-    return ancestor_hashes;
+  public Bytes32 getParent_root() {
+    return parent_root;
   }
 
-  public void setAncestor_hashes(List<Bytes32> ancestor_hashes) {
-    this.ancestor_hashes = ancestor_hashes;
+  public void setParent_root(Bytes32 parent_root) {
+    this.parent_root = parent_root;
   }
 
   public long getSlot() {
