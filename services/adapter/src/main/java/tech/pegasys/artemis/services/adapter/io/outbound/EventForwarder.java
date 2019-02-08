@@ -14,9 +14,8 @@
 package tech.pegasys.artemis.services.adapter.io.outbound;
 
 import com.google.common.eventbus.EventBus;
-import tech.pegasys.artemis.pow.api.PowEvent;
 
-public interface EventForwarder<T extends PowEvent<?>> {
+public interface EventForwarder<T> {
 
   void onEvent(T event);
 

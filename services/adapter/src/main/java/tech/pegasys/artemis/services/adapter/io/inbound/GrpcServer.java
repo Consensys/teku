@@ -14,7 +14,6 @@
 package tech.pegasys.artemis.services.adapter.io.inbound;
 
 import io.grpc.MethodDescriptor;
-import tech.pegasys.artemis.pow.api.PowEvent;
 import tech.pegasys.artemis.services.adapter.dto.RemoteCallResponse;
 
 public interface GrpcServer {
@@ -23,6 +22,5 @@ public interface GrpcServer {
 
   void stop();
 
-  void registerMethodDescriptor(
-      MethodDescriptor<? extends PowEvent<?>, RemoteCallResponse> methodDescriptor);
+  void registerMethodDescriptor(MethodDescriptor<?, RemoteCallResponse> methodDescriptor);
 }

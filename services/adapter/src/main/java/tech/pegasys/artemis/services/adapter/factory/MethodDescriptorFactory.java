@@ -15,13 +15,12 @@ package tech.pegasys.artemis.services.adapter.factory;
 
 import io.grpc.MethodDescriptor;
 import io.grpc.MethodDescriptor.MethodType;
-import tech.pegasys.artemis.pow.api.PowEvent;
 import tech.pegasys.artemis.services.adapter.dto.RemoteCallResponse;
 import tech.pegasys.artemis.services.adapter.marshall.ProtoMarshaller;
 
 public class MethodDescriptorFactory {
 
-  public static <T extends PowEvent<?>> MethodDescriptor<T, RemoteCallResponse> build(
+  public static <T> MethodDescriptor<T, RemoteCallResponse> build(
       String serviceName, Class<T> eventClass) {
 
     final MethodDescriptor<T, RemoteCallResponse> descriptor =

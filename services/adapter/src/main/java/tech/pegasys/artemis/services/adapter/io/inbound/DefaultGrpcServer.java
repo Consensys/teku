@@ -25,7 +25,6 @@ import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
-import tech.pegasys.artemis.pow.api.PowEvent;
 import tech.pegasys.artemis.services.adapter.ServiceAdapterException;
 import tech.pegasys.artemis.services.adapter.dto.RemoteCallResponse;
 
@@ -35,16 +34,15 @@ public class DefaultGrpcServer implements GrpcServer, BindableService {
 
   int serverPort;
 
-  private Set<MethodDescriptor<? extends PowEvent<?>, RemoteCallResponse>> methodDescriptors;
+  private Set<MethodDescriptor<?, RemoteCallResponse>> methodDescriptors;
 
-  private Consumer<PowEvent<?>> eventConsumer;
+  private Consumer<Object> eventConsumer;
 
   private Optional<Server> server = Optional.empty();
 
   private boolean started = false;
 
-  public DefaultGrpcServer(
-      String serviceName, int serverPort, Consumer<PowEvent<?>> eventConsumer) {
+  public DefaultGrpcServer(String serviceName, int serverPort, Consumer<Object> eventConsumer) {
     this.serviceName = serviceName;
     this.serverPort = serverPort;
     this.eventConsumer = eventConsumer;
@@ -73,8 +71,7 @@ public class DefaultGrpcServer implements GrpcServer, BindableService {
   }
 
   @Override
-  public void registerMethodDescriptor(
-      MethodDescriptor<? extends PowEvent<?>, RemoteCallResponse> methodDescriptor) {
+  public void registerMethodDescriptor(MethodDescriptor<?, RemoteCallResponse> methodDescriptor) {
     if (started) {
       throw new ServiceAdapterException("Cannot register method descriptor as server is started");
     }
@@ -95,8 +92,7 @@ public class DefaultGrpcServer implements GrpcServer, BindableService {
     return ssd.build();
   }
 
-  private void onInboundEvent(
-      PowEvent<?> event, StreamObserver<RemoteCallResponse> responseObserver) {
+  private void onInboundEvent(Object event, StreamObserver<RemoteCallResponse> responseObserver) {
 
     try {
       eventConsumer.accept(event);

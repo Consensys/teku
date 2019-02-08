@@ -27,14 +27,13 @@ import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.web3j.protocol.core.methods.response.Log;
-import tech.pegasys.artemis.pow.api.PowEvent;
 import tech.pegasys.artemis.pow.contract.ValidatorRegistrationContract.Eth1DepositEventResponse;
 import tech.pegasys.artemis.pow.event.ValidatorRegistration;
 import tech.pegasys.artemis.services.adapter.event.OutboundEvent;
 
 public class ServiceAdapterTest {
 
-  private List<PowEvent<?>> receivedEvents = new ArrayList<>();
+  private List<Object> receivedEvents = new ArrayList<>();
 
   @Test
   public void testForwardValidationEvent() throws IOException, InterruptedException {
@@ -71,7 +70,7 @@ public class ServiceAdapterTest {
   }
 
   @Subscribe
-  public void onEvent(PowEvent<?> event) {
+  public void onEvent(Object event) {
     receivedEvents.add(event);
   }
 
@@ -101,7 +100,6 @@ public class ServiceAdapterTest {
   private void assertValidatorRegistration(
       ValidatorRegistration expected, ValidatorRegistration actual) {
 
-    assertEquals(expected.getType(), actual.getType());
     assertEquals(true, Arrays.equals(expected.getResponse().data, actual.getResponse().data));
     assertEquals(
         true,

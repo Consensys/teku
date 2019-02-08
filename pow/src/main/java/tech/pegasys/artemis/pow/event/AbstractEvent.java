@@ -17,18 +17,10 @@ import tech.pegasys.artemis.pow.api.PowEvent;
 
 public abstract class AbstractEvent<T> implements PowEvent<T> {
 
-  private String type;
-
   private T response;
 
-  public AbstractEvent(String type, T response) {
-    this.type = type;
+  public AbstractEvent(T response) {
     this.response = response;
-  }
-
-  @Override
-  public String getType() {
-    return type;
   }
 
   @Override
