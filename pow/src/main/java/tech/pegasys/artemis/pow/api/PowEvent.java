@@ -14,5 +14,6 @@
 package tech.pegasys.artemis.pow.api;
 
 public interface PowEvent<T> {
+
   T getResponse();
 }

@@ -11,14 +11,28 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.pow.event;
+package tech.pegasys.artemis.services.adapter.dto;
 
-import tech.pegasys.artemis.pow.api.ChainStartEvent;
-import tech.pegasys.artemis.pow.contract.ValidatorRegistrationContract.ChainStartEventResponse;
+public class RemoteCallResponse {
 
-public class ChainStart extends AbstractEvent<ChainStartEventResponse> implements ChainStartEvent {
+  private boolean success;
 
-  public ChainStart(ChainStartEventResponse response) {
-    super(response);
+  private Throwable errorCause;
+
+  public RemoteCallResponse(boolean success, Throwable errorCause) {
+    this.success = success;
+    this.errorCause = errorCause;
+  }
+
+  public RemoteCallResponse(boolean success) {
+    this(success, null);
+  }
+
+  public boolean isSuccess() {
+    return success;
+  }
+
+  public Throwable getErrorCause() {
+    return errorCause;
   }
 }
