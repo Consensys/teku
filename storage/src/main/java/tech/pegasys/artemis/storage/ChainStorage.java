@@ -24,10 +24,18 @@ import org.apache.logging.log4j.Logger;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 
+/** ChainStorage Interface class */
 public interface ChainStorage {
 
   static final Logger LOG = LogManager.getLogger();
 
+  /**
+   * Instantiate the ChainStorage
+   *
+   * @param type
+   * @param eventBus
+   * @return
+   */
   static <T> T Create(Class<T> type, EventBus eventBus) {
     try {
       return type.getDeclaredConstructor(EventBus.class).newInstance(eventBus);
@@ -36,6 +44,12 @@ public interface ChainStorage {
     }
   }
 
+  /**
+   * Add item to Queue
+   *
+   * @param item
+   * @param items
+   */
   static <S, T extends Queue<S>> void add(S item, T items) {
     try {
       items.add(item);
@@ -44,6 +58,13 @@ public interface ChainStorage {
     }
   }
 
+  /**
+   * Add a value to a HashMap
+   *
+   * @param key
+   * @param value
+   * @param items
+   */
   static <S extends Bytes, T extends HashMap<S, S>> void add(S key, S value, T items) {
     try {
       items.put(key, value);
@@ -52,6 +73,13 @@ public interface ChainStorage {
     }
   }
 
+  /**
+   * Retrieve a value from a HashMap
+   *
+   * @param key
+   * @param items
+   * @return
+   */
   static <S extends Bytes, T extends HashMap<S, S>> Optional<S> get(S key, T items) {
     Optional<S> result = Optional.ofNullable(null);
     try {
@@ -62,6 +90,12 @@ public interface ChainStorage {
     return result;
   }
 
+  /**
+   * Remove an item from a Queue
+   *
+   * @param items
+   * @return
+   */
   static <S, T extends Queue<S>> Optional<S> remove(T items) {
     Optional<S> result = Optional.ofNullable(null);
     try {
@@ -72,15 +106,47 @@ public interface ChainStorage {
     return result;
   }
 
+  /**
+   * Add processed block to storage
+   *
+   * @param blockHash
+   * @param block
+   */
   void addProcessedBlock(Bytes blockHash, BeaconBlock block);
 
+  /**
+   * Add unprocessed block to storage
+   *
+   * @param block
+   */
   void addUnprocessedBlock(BeaconBlock block);
 
+  /**
+   * Add unprocessed attestation to storage
+   *
+   * @param attestation
+   */
   void addUnprocessedAttestation(Attestation attestation);
 
+  /**
+   * Retrieves processed block
+   *
+   * @param blockHash
+   * @return
+   */
   Optional<Bytes> getProcessedBlock(Bytes blockHash);
 
+  /**
+   * Removes an unprocessed block (LIFO)
+   *
+   * @return
+   */
   Optional<BeaconBlock> getUnprocessedBlock();
 
+  /**
+   * Removes an unprocessed attestation (LIFO)
+   *
+   * @return
+   */
   Optional<Attestation> getUnprocessedAttestation();
 }

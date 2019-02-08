@@ -22,6 +22,7 @@ import net.consensys.cava.bytes.Bytes;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 
+/** TThis class is the ChainStorage client-side logic */
 public class ChainStorageClient implements ChainStorage {
 
   protected LinkedBlockingQueue<BeaconBlock> unprocessedBlocks;
