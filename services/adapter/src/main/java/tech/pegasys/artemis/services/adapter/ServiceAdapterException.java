@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.services.adapter;
 
+/** This class defines the ServiceAdapter classes excections */
 public class ServiceAdapterException extends RuntimeException {
 
   public ServiceAdapterException(String msg) {

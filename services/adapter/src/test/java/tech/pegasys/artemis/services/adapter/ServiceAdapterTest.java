@@ -58,7 +58,7 @@ public class ServiceAdapterTest {
     adapter2.init(eventBus2);
     adapter2.run();
 
-    final ValidatorRegistration validatorRegistration = createValidatorRegistration();
+    final ValidatorRegistration validatorRegistration = createValidatorRegistration(1);
     eventBus2.post(validatorRegistration);
 
     Thread.sleep(2000);
@@ -69,12 +69,74 @@ public class ServiceAdapterTest {
         validatorRegistration, (ValidatorRegistration) receivedEvents.get(0));
   }
 
+  @Test
+  public void testTwoWayEvent() throws IOException, InterruptedException {
+
+    ServiceAdapter adapter1 =
+        new ServiceAdapter(
+            30002, Collections.singleton(ValidatorRegistration.class), Collections.emptySet());
+
+    final EventBus eventBus1 = new EventBus("bus1");
+    eventBus1.register(this);
+
+    adapter1.init(eventBus1);
+    adapter1.run();
+
+    final OutboundEvent<ValidatorRegistration> outboundEvent2to1 =
+        new OutboundEvent<>(ValidatorRegistration.class, "dns:///localhost:30002");
+
+    ServiceAdapter adapter2 =
+        new ServiceAdapter(30003, Collections.emptySet(), Collections.singleton(outboundEvent2to1));
+
+    final EventBus eventBus2 = new EventBus("bus2");
+    adapter2.init(eventBus2);
+    adapter2.run();
+
+    Integer index = 1;
+    // Test adapter2 -> adapter1
+    final ValidatorRegistration validatorRegistration2to1 = createValidatorRegistration(index);
+    eventBus2.post(validatorRegistration2to1);
+
+    Thread.sleep(2000);
+
+    assertEquals(1, receivedEvents.size());
+    ValidatorRegistration rcvdEvent2to1 = (ValidatorRegistration) receivedEvents.get(0);
+    assertValidatorRegistration(validatorRegistration2to1, rcvdEvent2to1);
+    Integer rcvdIndex2to1 = Integer.valueOf(rcvdEvent2to1.getResponse().log.getLogIndexRaw());
+    assertEquals(Integer.valueOf(1), rcvdIndex2to1);
+
+    // Test adapter1 -> adapter2
+    adapter2 =
+        new ServiceAdapter(
+            30003, Collections.singleton(ValidatorRegistration.class), Collections.emptySet());
+
+    OutboundEvent<ValidatorRegistration> outboundEvent1to2 =
+        new OutboundEvent<>(ValidatorRegistration.class, "dns:///localhost:30003");
+
+    adapter1 =
+        new ServiceAdapter(30002, Collections.emptySet(), Collections.singleton(outboundEvent1to2));
+
+    final ValidatorRegistration validatorRegistration1to2 =
+        createValidatorRegistration(rcvdIndex2to1 + 1);
+
+    eventBus1.post(validatorRegistration1to2);
+
+    Thread.sleep(2000);
+
+    assertEquals(2, receivedEvents.size());
+
+    ValidatorRegistration rcvdEvent1to2 = (ValidatorRegistration) receivedEvents.get(1);
+    assertValidatorRegistration(validatorRegistration1to2, rcvdEvent1to2);
+    Integer rcvdIndex1to2 = Integer.valueOf(rcvdEvent1to2.getResponse().log.getLogIndexRaw());
+    assertEquals(Integer.valueOf(rcvdIndex2to1 + 1), rcvdIndex1to2);
+  }
+
   @Subscribe
   public void onEvent(Object event) {
     receivedEvents.add(event);
   }
 
-  private ValidatorRegistration createValidatorRegistration() {
+  private ValidatorRegistration createValidatorRegistration(Integer index) {
     final Eth1DepositEventResponse deposit = new Eth1DepositEventResponse();
 
     deposit.data = "data".getBytes(Charset.defaultCharset());
@@ -84,7 +146,7 @@ public class ServiceAdapterTest {
     deposit.log =
         new Log(
             true,
-            randomString(),
+            index.toString(),
             randomString(),
             randomString(),
             randomString(),
