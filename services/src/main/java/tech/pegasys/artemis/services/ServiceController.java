@@ -59,10 +59,6 @@ public class ServiceController {
     }
     beaconNodeService.init(eventBus);
     chainStorageService.init(eventBus);
-
-    // Validator Service
-
-    // RPC Service
   }
 
   public static void startAll(CommandLineArguments cliArgs) {
