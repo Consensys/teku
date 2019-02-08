@@ -14,6 +14,7 @@
 package tech.pegasys.artemis.datastructures.blocks;
 
 import com.google.common.primitives.UnsignedLong;
+import java.util.Objects;
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.ssz.SSZ;
@@ -30,6 +31,16 @@ public class ProposalSignedData {
     this.block_hash = block_hash;
   }
 
+  public static ProposalSignedData fromBytes(Bytes bytes) {
+    return SSZ.decode(
+        bytes,
+        reader ->
+            new ProposalSignedData(
+                UnsignedLong.fromLongBits(reader.readUInt64()),
+                UnsignedLong.fromLongBits(reader.readUInt64()),
+                Bytes32.wrap(reader.readBytes())));
+  }
+
   public Bytes toBytes() {
     return SSZ.encode(
         writer -> {
@@ -37,6 +48,31 @@ public class ProposalSignedData {
           writer.writeUInt64(shard.longValue());
           writer.writeBytes(block_hash);
         });
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(slot, shard, block_hash);
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (Objects.isNull(obj)) {
+      return false;
+    }
+
+    if (this == obj) {
+      return true;
+    }
+
+    if (!(obj instanceof ProposalSignedData)) {
+      return false;
+    }
+
+    ProposalSignedData other = (ProposalSignedData) obj;
+    return Objects.equals(this.getSlot(), other.getSlot())
+        && Objects.equals(this.getShard(), other.getShard())
+        && Objects.equals(this.getBlock_hash(), other.getBlock_hash());
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */

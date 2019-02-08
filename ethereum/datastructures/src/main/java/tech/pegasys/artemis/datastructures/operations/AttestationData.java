@@ -14,6 +14,7 @@
 package tech.pegasys.artemis.datastructures.operations;
 
 import com.google.common.primitives.UnsignedLong;
+import java.util.Objects;
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.ssz.SSZ;
@@ -48,6 +49,21 @@ public class AttestationData {
     this.justified_block_hash = justified_block_hash;
   }
 
+  public static AttestationData fromBytes(Bytes bytes) {
+    return SSZ.decode(
+        bytes,
+        reader ->
+            new AttestationData(
+                reader.readUInt64(),
+                UnsignedLong.valueOf(reader.readUInt64()),
+                Bytes32.wrap(reader.readBytes()),
+                Bytes32.wrap(reader.readBytes()),
+                Bytes32.wrap(reader.readBytes()),
+                Bytes32.wrap(reader.readBytes()),
+                UnsignedLong.valueOf(reader.readUInt64()),
+                Bytes32.wrap(reader.readBytes())));
+  }
+
   public Bytes toBytes() {
     return SSZ.encode(
         writer -> {
@@ -60,6 +76,44 @@ public class AttestationData {
           writer.writeUInt64(justified_slot.longValue());
           writer.writeBytes(justified_block_hash);
         });
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(
+        slot,
+        shard,
+        beacon_block_hash,
+        epoch_boundary_hash,
+        shard_block_hash,
+        last_crosslink_hash,
+        justified_slot,
+        justified_block_hash);
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (Objects.isNull(obj)) {
+      return false;
+    }
+
+    if (this == obj) {
+      return true;
+    }
+
+    if (!(obj instanceof AttestationData)) {
+      return false;
+    }
+
+    AttestationData other = (AttestationData) obj;
+    return Objects.equals(this.getSlot(), other.getSlot())
+        && Objects.equals(this.getShard(), other.getShard())
+        && Objects.equals(this.getBeacon_block_hash(), other.getBeacon_block_hash())
+        && Objects.equals(this.getEpoch_boundary_hash(), other.getEpoch_boundary_hash())
+        && Objects.equals(this.getShard_block_hash(), other.getShard_block_hash())
+        && Objects.equals(this.getLast_crosslink_hash(), other.getLast_crosslink_hash())
+        && Objects.equals(this.getJustified_slot(), other.getJustified_slot())
+        && Objects.equals(this.getJustified_block_hash(), other.getJustified_block_hash());
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */

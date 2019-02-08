@@ -15,6 +15,8 @@ package tech.pegasys.artemis.datastructures.operations;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.ssz.SSZ;
@@ -32,13 +34,48 @@ public class Deposit {
     this.deposit_data = deposit_data;
   }
 
+  public static Deposit fromBytes(Bytes bytes) {
+    return SSZ.decode(
+        bytes,
+        reader ->
+            new Deposit(
+                reader.readBytesList().stream().map(Bytes32::wrap).collect(Collectors.toList()),
+                UnsignedLong.fromLongBits(reader.readUInt64()),
+                DepositData.fromBytes(reader.readBytes())));
+  }
+
   public Bytes toBytes() {
     return SSZ.encode(
         writer -> {
-          writer.writeBytesList(merkle_branch.toArray(new Bytes32[0]));
+          writer.writeBytesList(merkle_branch);
           writer.writeUInt64(merkle_tree_index.longValue());
           writer.writeBytes(deposit_data.toBytes());
         });
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(merkle_branch, merkle_tree_index, deposit_data);
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (Objects.isNull(obj)) {
+      return false;
+    }
+
+    if (this == obj) {
+      return true;
+    }
+
+    if (!(obj instanceof Deposit)) {
+      return false;
+    }
+
+    Deposit other = (Deposit) obj;
+    return Objects.equals(this.getMerkle_branch(), other.getMerkle_branch())
+        && Objects.equals(this.getMerkle_tree_index(), other.getMerkle_tree_index())
+        && Objects.equals(this.getDeposit_data(), other.getDeposit_data());
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */

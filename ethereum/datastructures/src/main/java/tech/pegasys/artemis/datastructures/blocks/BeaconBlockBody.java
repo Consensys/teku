@@ -14,6 +14,8 @@
 package tech.pegasys.artemis.datastructures.blocks;
 
 import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.ssz.SSZ;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
@@ -32,9 +34,12 @@ public class BeaconBlockBody {
   private List<CasperSlashing> casper_slashings;
   private List<Deposit> deposits;
   private List<Exit> exits;
-  private ProofOfCustodySeedChange[] poc_seed_changes;
-  private ProofOfCustodyChallenge[] poc_challenges;
-  private ProofOfCustodyResponse[] poc_responses;
+
+  // ProofOfCustody fields are not yet used. When they are they should be added to the constructor,
+  // fromBytes, toBytes, hashCode, and equals.
+  private List<ProofOfCustodySeedChange> poc_seed_changes;
+  private List<ProofOfCustodyChallenge> poc_challenges;
+  private List<ProofOfCustodyResponse> poc_responses;
 
   public BeaconBlockBody(
       List<Attestation> attestations,
@@ -49,25 +54,80 @@ public class BeaconBlockBody {
     this.exits = exits;
   }
 
+  public static BeaconBlockBody fromBytes(Bytes bytes) {
+    return SSZ.decode(
+        bytes,
+        reader ->
+            new BeaconBlockBody(
+                reader
+                    .readBytesList()
+                    .stream()
+                    .map(Attestation::fromBytes)
+                    .collect(Collectors.toList()),
+                reader
+                    .readBytesList()
+                    .stream()
+                    .map(ProposerSlashing::fromBytes)
+                    .collect(Collectors.toList()),
+                reader
+                    .readBytesList()
+                    .stream()
+                    .map(CasperSlashing::fromBytes)
+                    .collect(Collectors.toList()),
+                reader
+                    .readBytesList()
+                    .stream()
+                    .map(Deposit::fromBytes)
+                    .collect(Collectors.toList()),
+                reader.readBytesList().stream().map(Exit::fromBytes).collect(Collectors.toList())));
+  }
+
   public Bytes toBytes() {
+    List<Bytes> attestationsBytes =
+        attestations.stream().map(item -> item.toBytes()).collect(Collectors.toList());
+    List<Bytes> proposerSlashingsBytes =
+        proposer_slashings.stream().map(item -> item.toBytes()).collect(Collectors.toList());
+    List<Bytes> casperSlashingsBytes =
+        casper_slashings.stream().map(item -> item.toBytes()).collect(Collectors.toList());
+    List<Bytes> depositsBytes =
+        deposits.stream().map(item -> item.toBytes()).collect(Collectors.toList());
+    List<Bytes> exitsBytes =
+        exits.stream().map(item -> item.toBytes()).collect(Collectors.toList());
     return SSZ.encode(
         writer -> {
-          for (ProposerSlashing item : proposer_slashings) {
-            writer.writeBytes(item.toBytes());
-          }
-          for (CasperSlashing item : casper_slashings) {
-            writer.writeBytes(item.toBytes());
-          }
-          for (Attestation item : attestations) {
-            writer.writeBytes(item.toBytes());
-          }
-          for (Deposit item : deposits) {
-            writer.writeBytes(item.toBytes());
-          }
-          for (Exit item : exits) {
-            writer.writeBytes(item.toBytes());
-          }
+          writer.writeBytesList(attestationsBytes);
+          writer.writeBytesList(proposerSlashingsBytes);
+          writer.writeBytesList(casperSlashingsBytes);
+          writer.writeBytesList(depositsBytes);
+          writer.writeBytesList(exitsBytes);
         });
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(attestations, proposer_slashings, casper_slashings, deposits, exits);
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (Objects.isNull(obj)) {
+      return false;
+    }
+
+    if (this == obj) {
+      return true;
+    }
+
+    if (!(obj instanceof BeaconBlockBody)) {
+      return false;
+    }
+
+    BeaconBlockBody other = (BeaconBlockBody) obj;
+    return Objects.equals(this.getProposer_slashings(), other.getProposer_slashings())
+        && Objects.equals(this.getCasper_slashings(), other.getCasper_slashings())
+        && Objects.equals(this.getAttestations(), other.getAttestations())
+        && Objects.equals(this.getDeposits(), other.getDeposits())
+        && Objects.equals(this.getExits(), other.getExits());
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */
