@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import tech.pegasys.artemis.services.adapter.ServiceAdapterException;
 
+/** This class converts a provided Java class into a ProtoBuff schema at runtime */
 public class ProtoMarshaller<T> implements Marshaller<T> {
 
   private Schema<T> schema;

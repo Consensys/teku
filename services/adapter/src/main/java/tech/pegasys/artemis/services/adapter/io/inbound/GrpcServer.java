@@ -16,6 +16,7 @@ package tech.pegasys.artemis.services.adapter.io.inbound;
 import io.grpc.MethodDescriptor;
 import tech.pegasys.artemis.services.adapter.dto.RemoteCallResponse;
 
+/** This interface defines the GrpcServer methods */
 public interface GrpcServer {
 
   void run();

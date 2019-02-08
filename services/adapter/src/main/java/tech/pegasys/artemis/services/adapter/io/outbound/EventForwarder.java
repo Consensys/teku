@@ -15,6 +15,7 @@ package tech.pegasys.artemis.services.adapter.io.outbound;
 
 import com.google.common.eventbus.EventBus;
 
+/** This interface defines the event forwarding methods */
 public interface EventForwarder<T> {
 
   void onEvent(T event);

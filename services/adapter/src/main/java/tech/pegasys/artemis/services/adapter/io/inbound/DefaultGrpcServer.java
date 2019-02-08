@@ -28,6 +28,7 @@ import java.util.function.Consumer;
 import tech.pegasys.artemis.services.adapter.ServiceAdapterException;
 import tech.pegasys.artemis.services.adapter.dto.RemoteCallResponse;
 
+/** This is the default implementation of a Grpc Server */
 public class DefaultGrpcServer implements GrpcServer, BindableService {
 
   private String serviceName;
