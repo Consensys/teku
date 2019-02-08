@@ -21,8 +21,6 @@ dependencies {
     implementation 'io.protostuff:protostuff-runtime:1.6.0'
 
     runtime 'org.apache.logging.log4j:log4j-core'
-
-    testSupportImplementation 'io.vertx:vertx-core'
 }
 
 configurations { testArtifacts }
