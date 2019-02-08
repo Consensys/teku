@@ -22,7 +22,10 @@ public final class Eth1Data {
   Bytes32 deposit_root;
   Bytes32 block_hash;
 
-  public Eth1Data() {}
+  public Eth1Data(Bytes32 deposit_root, Bytes32 block_hash) {
+    this.deposit_root = deposit_root;
+    this.block_hash = block_hash;
+  }
 
   public Bytes toBytes() {
     return SSZ.encode(
