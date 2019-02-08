@@ -19,7 +19,6 @@ import io.grpc.ManagedChannelBuilder;
 import io.grpc.MethodDescriptor;
 import java.util.HashSet;
 import java.util.Set;
-import tech.pegasys.artemis.pow.api.PowEvent;
 import tech.pegasys.artemis.services.ServiceInterface;
 import tech.pegasys.artemis.services.adapter.dto.RemoteCallResponse;
 import tech.pegasys.artemis.services.adapter.event.OutboundEvent;
@@ -36,7 +35,7 @@ public class ServiceAdapter implements ServiceInterface {
 
   private GrpcServer server;
 
-  private Set<MethodDescriptor<? extends PowEvent<?>, RemoteCallResponse>> inboundDescriptors;
+  private Set<MethodDescriptor<?, RemoteCallResponse>> inboundDescriptors;
 
   private Set<EventForwarder<?>> eventForwarders;
 
@@ -47,9 +46,7 @@ public class ServiceAdapter implements ServiceInterface {
   private boolean hasRegisteredInboundEvents = false;
 
   public ServiceAdapter(
-      int serverPort,
-      Set<Class<? extends PowEvent<?>>> inboundEvents,
-      Set<OutboundEvent<?>> outboundEvents) {
+      int serverPort, Set<Class<?>> inboundEvents, Set<OutboundEvent<?>> outboundEvents) {
     this.serverPort = serverPort;
     this.eventForwarders = new HashSet<>();
     this.inboundDescriptors = new HashSet<>();
@@ -66,8 +63,7 @@ public class ServiceAdapter implements ServiceInterface {
     outboundEvents.forEach(outboundEvent -> registerEventForwarder(outboundEvent));
   }
 
-  public ServiceAdapter(
-      Set<Class<? extends PowEvent<?>>> inboundEvents, Set<OutboundEvent<?>> outboundEvents) {
+  public ServiceAdapter(Set<Class<?>> inboundEvents, Set<OutboundEvent<?>> outboundEvents) {
     this(0, inboundEvents, outboundEvents);
   }
 
@@ -89,16 +85,15 @@ public class ServiceAdapter implements ServiceInterface {
     eventForwarders.forEach(forwarder -> forwarder.stop());
   }
 
+  protected MethodDescriptor<?, RemoteCallResponse> createMethodDescriptor(Class<?> eventClass) {
+    return MethodDescriptorFactory.build(SERVICE_NAME, eventClass);
+  }
+
   protected GrpcServer createGrpcServer(int serverPort) {
     return new DefaultGrpcServer(SERVICE_NAME, serverPort, this::onInboundEvent);
   }
 
-  protected MethodDescriptor<? extends PowEvent<?>, RemoteCallResponse> createMethodDescriptor(
-      Class<? extends PowEvent<?>> eventClass) {
-    return MethodDescriptorFactory.build(SERVICE_NAME, eventClass);
-  }
-
-  private void onInboundEvent(PowEvent<?> event) {
+  private void onInboundEvent(Object event) {
     eventBus.post(event);
   }
 
@@ -106,7 +101,7 @@ public class ServiceAdapter implements ServiceInterface {
     final Channel channel =
         ManagedChannelBuilder.forTarget(outboundEvent.getUrl()).usePlaintext(true).build();
 
-    final MethodDescriptor<? extends PowEvent<?>, RemoteCallResponse> descriptor =
+    final MethodDescriptor<?, RemoteCallResponse> descriptor =
         MethodDescriptorFactory.build(SERVICE_NAME, outboundEvent.getEventClass());
 
     final EventForwarder<?> forwarder = new GrpcEventForwarder<>(channel, descriptor);

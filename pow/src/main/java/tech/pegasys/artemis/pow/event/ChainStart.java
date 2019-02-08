@@ -18,9 +18,7 @@ import tech.pegasys.artemis.pow.contract.ValidatorRegistrationContract.ChainStar
 
 public class ChainStart extends AbstractEvent<ChainStartEventResponse> implements ChainStartEvent {
 
-  private static final String TYPE = "CHAIN_START";
-
   public ChainStart(ChainStartEventResponse response) {
-    super(TYPE, response);
+    super(response);
   }
 }

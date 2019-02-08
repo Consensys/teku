@@ -20,11 +20,10 @@ import io.grpc.Channel;
 import io.grpc.ClientCall;
 import io.grpc.MethodDescriptor;
 import io.grpc.stub.ClientCalls;
-import tech.pegasys.artemis.pow.api.PowEvent;
 import tech.pegasys.artemis.services.adapter.ServiceAdapterException;
 import tech.pegasys.artemis.services.adapter.dto.RemoteCallResponse;
 
-public class GrpcEventForwarder<T extends PowEvent<?>> implements EventForwarder<T> {
+public class GrpcEventForwarder<T> implements EventForwarder<T> {
 
   private Channel channel;
   private MethodDescriptor<T, RemoteCallResponse> descriptor;

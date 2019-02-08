@@ -13,9 +13,7 @@
 
 package tech.pegasys.artemis.services.adapter.event;
 
-import tech.pegasys.artemis.pow.api.PowEvent;
-
-public class OutboundEvent<T extends PowEvent<?>> {
+public class OutboundEvent<T> {
 
   private Class<T> eventClass;
 

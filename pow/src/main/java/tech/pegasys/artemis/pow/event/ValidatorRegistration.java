@@ -19,9 +19,7 @@ import tech.pegasys.artemis.pow.contract.ValidatorRegistrationContract.Eth1Depos
 public class ValidatorRegistration extends AbstractEvent<Eth1DepositEventResponse>
     implements ValidatorRegistrationEvent {
 
-  public static final String TYPE = "VALIDATOR_REGISTRATION";
-
   public ValidatorRegistration(Eth1DepositEventResponse response) {
-    super(TYPE, response);
+    super(response);
   }
 }
