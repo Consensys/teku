@@ -8,11 +8,9 @@ jar {
 
 dependencies {
 
-    implementation project(':ethereum:beaconchain')
     implementation project(':services')
     implementation project(':services:powchain')
     implementation project(':pow')
-    implementation project(':services:beaconnode')
 
     implementation 'com.google.guava:guava'
     implementation 'org.apache.logging.log4j:log4j-api'
