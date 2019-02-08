@@ -26,7 +26,8 @@ import tech.pegasys.artemis.statetransition.StateTransitionException;
 
 public class SlotProcessorUtil {
   public static void updateLatestRandaoMixes(BeaconState state) {
-    int currSlot = toIntExact(state.getSlot());
+    // TODO: change values to UnsignedLong
+    int currSlot = state.getSlot().intValue();
     ArrayList<Bytes32> latestRandaoMixes = state.getLatest_randao_mixes();
     Bytes32 prevSlotRandaoMix = latestRandaoMixes.get((currSlot - 1) % LATEST_RANDAO_MIXES_LENGTH);
     latestRandaoMixes.set(currSlot % LATEST_RANDAO_MIXES_LENGTH, prevSlotRandaoMix);
@@ -34,12 +35,14 @@ public class SlotProcessorUtil {
 
   public static void updateRecentBlockHashes(BeaconState state, BeaconBlock block)
       throws Exception {
-    Bytes32 previous_block_root = BeaconStateUtil.get_block_root(state, state.getSlot() - 1);
+    // TODO: change values to UnsignedLong
+    Bytes32 previous_block_root =
+        BeaconStateUtil.get_block_root(state, state.getSlot().intValue() - 1);
     if (previous_block_root != null) {
       ArrayList<Bytes32> latest_block_roots = state.getLatest_block_roots();
 
       latest_block_roots.set(
-          toIntExact(state.getSlot() - 1) % Constants.LATEST_BLOCK_ROOTS_LENGTH,
+          toIntExact(state.getSlot().intValue() - 1) % Constants.LATEST_BLOCK_ROOTS_LENGTH,
           previous_block_root);
       state.setLatest_block_roots(latest_block_roots);
     } else {
@@ -47,8 +50,8 @@ public class SlotProcessorUtil {
           "StateTransitionException: BeaconState cannot be updated due to "
               + "previous_block_root returning a null");
     }
-
-    if (state.getSlot() % LATEST_BLOCK_ROOTS_LENGTH == 0) {
+    // TODO: change values to UnsignedLong
+    if (state.getSlot().intValue() % LATEST_BLOCK_ROOTS_LENGTH == 0) {
       ArrayList<Bytes32> batched_block_roots = state.getBatched_block_roots();
       ArrayList<Bytes32> latest_block_roots = state.getLatest_block_roots();
       if (batched_block_roots != null && latest_block_roots != null) {

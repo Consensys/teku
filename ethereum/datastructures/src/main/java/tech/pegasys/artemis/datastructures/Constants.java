@@ -40,13 +40,9 @@ public final class Constants {
 
   // Initial values
   public static int GENESIS_FORK_VERSION = 0; //
-  // TODO v.0.1 has 2^19; this will be updated to 2^63 in a future version.
-  // TODO continued: Postpone change to UnsignedLong until that time
-  // public static UnsignedLong GENESIS_SLOT = UnsignedLong.valueOf("9223372036854775808"); // 2^63
-  // public static final UnsignedLong GENESIS_EPOCH = slot_to_epoch(GENESIS_SLOT);
-  public static long GENESIS_SLOT = 524288L; // 2^19
-  public static final long GENESIS_EPOCH = GENESIS_SLOT / Constants.EPOCH_LENGTH;
-  public static int GENESIS_START_SHARD = 0; //
+  public static final long GENESIS_SLOT = 524288l; // 2^19
+  public static final long GENESIS_EPOCH = slot_to_epoch(GENESIS_SLOT);
+  public static final long GENESIS_START_SHARD = 0;
   public static UnsignedLong FAR_FUTURE_EPOCH = UnsignedLong.MAX_VALUE; //
   public static Bytes32 ZERO_HASH = Bytes32.ZERO; //
   public static final List<Bytes48> EMPTY_SIGNATURE =
@@ -92,7 +88,7 @@ public final class Constants {
   public static final int DOMAIN_EXIT = 3; //
   public static final int MAX_DOMAIN_RANDAOEXITS = 4; //
 
-  private static UnsignedLong slot_to_epoch(UnsignedLong slot) {
-    return slot.dividedBy(UnsignedLong.valueOf(Constants.EPOCH_LENGTH));
+  private static long slot_to_epoch(long slot) {
+    return slot / Constants.EPOCH_LENGTH;
   }
 }

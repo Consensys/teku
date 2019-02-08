@@ -17,39 +17,38 @@ import com.google.common.primitives.UnsignedLong;
 
 public class Fork {
 
-  private UnsignedLong pre_fork_version;
-  private UnsignedLong post_fork_version;
-  private UnsignedLong fork_slot;
+  private UnsignedLong previous_version;
+  private UnsignedLong current_version;
+  private UnsignedLong epoch;
 
-  public Fork(
-      UnsignedLong pre_fork_version, UnsignedLong post_fork_version, UnsignedLong fork_slot) {
-    this.pre_fork_version = pre_fork_version;
-    this.post_fork_version = post_fork_version;
-    this.fork_slot = fork_slot;
+  public Fork(UnsignedLong previous_version, UnsignedLong current_version, UnsignedLong epoch) {
+    this.previous_version = previous_version;
+    this.current_version = current_version;
+    this.epoch = epoch;
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */
-  public UnsignedLong getPre_fork_version() {
-    return pre_fork_version;
+  public UnsignedLong getPrevious_version() {
+    return previous_version;
   }
 
-  public void setPre_fork_version(UnsignedLong pre_fork_version) {
-    this.pre_fork_version = pre_fork_version;
+  public void setPrevious_version(UnsignedLong previous_version) {
+    this.previous_version = previous_version;
   }
 
-  public UnsignedLong getPost_fork_version() {
-    return post_fork_version;
+  public UnsignedLong getCurrent_version() {
+    return current_version;
   }
 
-  public void setPost_fork_version(UnsignedLong post_fork_version) {
-    this.post_fork_version = post_fork_version;
+  public void setCurrent_version(UnsignedLong current_version) {
+    this.current_version = current_version;
   }
 
-  public UnsignedLong getFork_slot() {
-    return fork_slot;
+  public UnsignedLong getEpoch() {
+    return epoch;
   }
 
-  public void setFork_slot(UnsignedLong fork_slot) {
-    this.fork_slot = fork_slot;
+  public void setEpoch(UnsignedLong epoch) {
+    this.epoch = epoch;
   }
 }
