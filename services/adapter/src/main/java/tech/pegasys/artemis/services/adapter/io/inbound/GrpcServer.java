@@ -11,14 +11,17 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.pow.event;
+package tech.pegasys.artemis.services.adapter.io.inbound;
 
-import tech.pegasys.artemis.pow.api.ChainStartEvent;
-import tech.pegasys.artemis.pow.contract.ValidatorRegistrationContract.ChainStartEventResponse;
+import io.grpc.MethodDescriptor;
+import tech.pegasys.artemis.services.adapter.dto.RemoteCallResponse;
 
-public class ChainStart extends AbstractEvent<ChainStartEventResponse> implements ChainStartEvent {
+/** This interface defines the GrpcServer methods */
+public interface GrpcServer {
 
-  public ChainStart(ChainStartEventResponse response) {
-    super(response);
-  }
+  void run();
+
+  void stop();
+
+  void registerMethodDescriptor(MethodDescriptor<?, RemoteCallResponse> methodDescriptor);
 }
