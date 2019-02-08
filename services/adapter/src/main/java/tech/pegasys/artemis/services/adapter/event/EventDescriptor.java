@@ -13,7 +13,9 @@
 
 package tech.pegasys.artemis.services.adapter.event;
 
-public interface EventDescriptor<T> {
+import tech.pegasys.artemis.pow.api.PowEvent;
+
+public interface EventDescriptor<T extends PowEvent<?>> {
 
   String getEventType();
 

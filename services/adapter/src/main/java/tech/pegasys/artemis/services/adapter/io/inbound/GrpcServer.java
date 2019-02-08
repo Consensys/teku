@@ -11,19 +11,18 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.services.adapter.event;
+package tech.pegasys.artemis.services.adapter.io.inbound;
 
-import tech.pegasys.artemis.pow.event.ValidatorRegistration;
+import io.grpc.MethodDescriptor;
+import tech.pegasys.artemis.pow.api.PowEvent;
+import tech.pegasys.artemis.services.adapter.dto.RemoteCallResponse;
 
-public class ValidatorRegisteredEventDescriptor implements EventDescriptor<ValidatorRegistration> {
+public interface GrpcServer {
 
-  @Override
-  public String getEventType() {
-    return ValidatorRegistration.TYPE;
-  }
+  void run();
 
-  @Override
-  public Class<ValidatorRegistration> getEventClass() {
-    return ValidatorRegistration.class;
-  }
+  void stop();
+
+  void registerMethodDescriptor(
+      MethodDescriptor<? extends PowEvent<?>, RemoteCallResponse> methodDescriptor);
 }
