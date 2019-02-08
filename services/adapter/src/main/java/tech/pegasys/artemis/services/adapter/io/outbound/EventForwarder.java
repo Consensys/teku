@@ -11,14 +11,16 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.pow.event;
+package tech.pegasys.artemis.services.adapter.io.outbound;
 
-import tech.pegasys.artemis.pow.api.ChainStartEvent;
-import tech.pegasys.artemis.pow.contract.ValidatorRegistrationContract.ChainStartEventResponse;
+import com.google.common.eventbus.EventBus;
 
-public class ChainStart extends AbstractEvent<ChainStartEventResponse> implements ChainStartEvent {
+/** This interface defines the event forwarding methods */
+public interface EventForwarder<T> {
 
-  public ChainStart(ChainStartEventResponse response) {
-    super(response);
-  }
+  void onEvent(T event);
+
+  void init(EventBus eventBus);
+
+  void stop();
 }
