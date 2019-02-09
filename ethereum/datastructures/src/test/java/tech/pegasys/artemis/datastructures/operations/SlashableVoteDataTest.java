@@ -29,82 +29,57 @@ import org.junit.jupiter.api.Test;
 
 class SlashableVoteDataTest {
 
+  List<Integer> custodyBit0Indices = Arrays.asList(randomInt(), randomInt(), randomInt());
+  List<Integer> custodyBit1Indices = Arrays.asList(randomInt(), randomInt(), randomInt());
+  AttestationData data = randomAttestationData();
+  List<Bytes48> aggregateSignature = Arrays.asList(Bytes48.random(), Bytes48.random());
+
+  SlashableVoteData slashableVoteData =
+      new SlashableVoteData(custodyBit0Indices, custodyBit1Indices, data, aggregateSignature);
+
   @Test
   void equalsReturnsTrueWhenObjectAreSame() {
-    List<Integer> custodyBit0Indices = Arrays.asList(randomInt(), randomInt(), randomInt());
-    List<Integer> custodyBit1Indices = Arrays.asList(randomInt(), randomInt(), randomInt());
-    AttestationData data = randomAttestationData();
-    List<Bytes48> aggregateSignature = Arrays.asList(Bytes48.random(), Bytes48.random());
+    SlashableVoteData testSlashableVoteData = slashableVoteData;
 
-    SlashableVoteData svd1 =
-        new SlashableVoteData(custodyBit0Indices, custodyBit1Indices, data, aggregateSignature);
-    SlashableVoteData svd2 = svd1;
-
-    assertEquals(svd1, svd2);
+    assertEquals(slashableVoteData, testSlashableVoteData);
   }
 
   @Test
   void equalsReturnsTrueWhenObjectFieldsAreEqual() {
-    List<Integer> custodyBit0Indices = Arrays.asList(randomInt(), randomInt(), randomInt());
-    List<Integer> custodyBit1Indices = Arrays.asList(randomInt(), randomInt(), randomInt());
-    AttestationData data = randomAttestationData();
-    List<Bytes48> aggregateSignature = Arrays.asList(Bytes48.random(), Bytes48.random());
-
-    SlashableVoteData svd1 =
-        new SlashableVoteData(custodyBit0Indices, custodyBit1Indices, data, aggregateSignature);
-    SlashableVoteData svd2 =
+    SlashableVoteData testSlashableVoteData =
         new SlashableVoteData(custodyBit0Indices, custodyBit1Indices, data, aggregateSignature);
 
-    assertEquals(svd1, svd2);
+    assertEquals(slashableVoteData, testSlashableVoteData);
   }
 
   @Test
   void equalsReturnsFalseWhenCustodyBit0IndicesAreDifferent() {
-    List<Integer> custodyBit0Indices = Arrays.asList(randomInt(), randomInt(), randomInt());
-    List<Integer> custodyBit1Indices = Arrays.asList(randomInt(), randomInt(), randomInt());
-    AttestationData data = randomAttestationData();
-    List<Bytes48> aggregateSignature = Arrays.asList(Bytes48.random(), Bytes48.random());
-
     // Create copy of custodyBit0Indices and reverse to ensure it is different.
     List<Integer> reverseCustodyBit0Indices = new ArrayList<Integer>(custodyBit0Indices);
     Collections.reverse(reverseCustodyBit0Indices);
 
-    SlashableVoteData svd1 =
-        new SlashableVoteData(custodyBit0Indices, custodyBit1Indices, data, aggregateSignature);
-    SlashableVoteData svd2 =
+    SlashableVoteData testSlashableVoteData =
         new SlashableVoteData(
             reverseCustodyBit0Indices, custodyBit1Indices, data, aggregateSignature);
 
-    assertNotEquals(svd1, svd2);
+    assertNotEquals(slashableVoteData, testSlashableVoteData);
   }
 
   @Test
   void equalsReturnsFalseWhenCustodyBit1IndicesAreDifferent() {
-    List<Integer> custodyBit0Indices = Arrays.asList(randomInt(), randomInt(), randomInt());
-    List<Integer> custodyBit1Indices = Arrays.asList(randomInt(), randomInt(), randomInt());
-    AttestationData data = randomAttestationData();
-    List<Bytes48> aggregateSignature = Arrays.asList(Bytes48.random(), Bytes48.random());
-
     // Create copy of custodyBit1Indices and reverse to ensure it is different.
     List<Integer> reverseCustodyBit1Indices = new ArrayList<Integer>(custodyBit1Indices);
     Collections.reverse(reverseCustodyBit1Indices);
 
-    SlashableVoteData svd1 =
-        new SlashableVoteData(custodyBit0Indices, custodyBit1Indices, data, aggregateSignature);
-    SlashableVoteData svd2 =
+    SlashableVoteData testSlashableVoteData =
         new SlashableVoteData(
             custodyBit0Indices, reverseCustodyBit1Indices, data, aggregateSignature);
 
-    assertNotEquals(svd1, svd2);
+    assertNotEquals(slashableVoteData, testSlashableVoteData);
   }
 
   @Test
   void equalsReturnsFalseWhenAttestationDataIsDifferent() {
-    List<Integer> custodyBit0Indices = Arrays.asList(randomInt(), randomInt(), randomInt());
-    List<Integer> custodyBit1Indices = Arrays.asList(randomInt(), randomInt(), randomInt());
-    AttestationData data = randomAttestationData();
-    List<Bytes48> aggregateSignature = Arrays.asList(Bytes48.random(), Bytes48.random());
-
     // AttestationData is rather involved to create. Just create a random one until it is not the
     // same as the original.
     AttestationData otherData = randomAttestationData();
@@ -112,43 +87,28 @@ class SlashableVoteDataTest {
       otherData = randomAttestationData();
     }
 
-    SlashableVoteData svd1 =
-        new SlashableVoteData(custodyBit0Indices, custodyBit1Indices, data, aggregateSignature);
-    SlashableVoteData svd2 =
+    SlashableVoteData testSlashableVoteData =
         new SlashableVoteData(
             custodyBit0Indices, custodyBit1Indices, otherData, aggregateSignature);
 
-    assertNotEquals(svd1, svd2);
+    assertNotEquals(slashableVoteData, testSlashableVoteData);
   }
 
   @Test
   void equalsReturnsFalseWhenAggregrateSignaturesAreDifferent() {
-    List<Integer> custodyBit0Indices = Arrays.asList(randomInt(), randomInt(), randomInt());
-    List<Integer> custodyBit1Indices = Arrays.asList(randomInt(), randomInt(), randomInt());
-    AttestationData data = randomAttestationData();
-    List<Bytes48> aggregateSignature = Arrays.asList(Bytes48.random(), Bytes48.random());
-
     // Create copy of custodyBit1Indices and reverse to ensure it is different.
     List<Bytes48> reverseAggregateSignature = new ArrayList<Bytes48>(aggregateSignature);
     Collections.reverse(reverseAggregateSignature);
 
-    SlashableVoteData svd1 =
-        new SlashableVoteData(custodyBit0Indices, custodyBit1Indices, data, aggregateSignature);
-    SlashableVoteData svd2 =
+    SlashableVoteData testSlashableVoteData =
         new SlashableVoteData(
             custodyBit0Indices, custodyBit1Indices, data, reverseAggregateSignature);
 
-    assertNotEquals(svd1, svd2);
+    assertNotEquals(slashableVoteData, testSlashableVoteData);
   }
 
   @Test
   void rountripSSZ() {
-    SlashableVoteData slashableVoteData =
-        new SlashableVoteData(
-            Arrays.asList(randomInt(), randomInt(), randomInt()),
-            Arrays.asList(randomInt(), randomInt(), randomInt()),
-            randomAttestationData(),
-            Arrays.asList(Bytes48.random(), Bytes48.random()));
     Bytes sszSlashableVoteDataBytes = slashableVoteData.toBytes();
     assertEquals(slashableVoteData, SlashableVoteData.fromBytes(sszSlashableVoteDataBytes));
   }

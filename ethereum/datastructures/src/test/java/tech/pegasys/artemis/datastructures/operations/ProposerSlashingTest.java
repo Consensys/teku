@@ -30,52 +30,35 @@ import tech.pegasys.artemis.datastructures.blocks.ProposalSignedData;
 
 class ProposerSlashingTest {
 
+  int proposerIndex = randomInt();
+  ProposalSignedData proposalData1 = randomProposalSignedData();
+  List<Bytes48> proposalSignature1 = Arrays.asList(Bytes48.random(), Bytes48.random());
+  ProposalSignedData proposalData2 = randomProposalSignedData();
+  List<Bytes48> proposalSignature2 = Arrays.asList(Bytes48.random(), Bytes48.random());
+
+  ProposerSlashing proposerSlashing =
+      new ProposerSlashing(
+          proposerIndex, proposalData1, proposalSignature1, proposalData2, proposalSignature2);
+
   @Test
   void equalsReturnsTrueWhenObjectAreSame() {
-    int proposerIndex = randomInt();
-    ProposalSignedData proposalData1 = randomProposalSignedData();
-    List<Bytes48> proposalSignature1 = Arrays.asList(Bytes48.random(), Bytes48.random());
-    ProposalSignedData proposalData2 = randomProposalSignedData();
-    List<Bytes48> proposalSignature2 = Arrays.asList(Bytes48.random(), Bytes48.random());
+    ProposerSlashing testProposerSlashing = proposerSlashing;
 
-    ProposerSlashing ps1 =
-        new ProposerSlashing(
-            proposerIndex, proposalData1, proposalSignature1, proposalData2, proposalSignature2);
-    ProposerSlashing ps2 = ps1;
-
-    assertEquals(ps1, ps2);
+    assertEquals(proposerSlashing, testProposerSlashing);
   }
 
   @Test
   void equalsReturnsTrueWhenObjectFieldsAreEqual() {
-    int proposerIndex = randomInt();
-    ProposalSignedData proposalData1 = randomProposalSignedData();
-    List<Bytes48> proposalSignature1 = Arrays.asList(Bytes48.random(), Bytes48.random());
-    ProposalSignedData proposalData2 = randomProposalSignedData();
-    List<Bytes48> proposalSignature2 = Arrays.asList(Bytes48.random(), Bytes48.random());
-
-    ProposerSlashing ps1 =
-        new ProposerSlashing(
-            proposerIndex, proposalData1, proposalSignature1, proposalData2, proposalSignature2);
-    ProposerSlashing ps2 =
+    ProposerSlashing testProposerSlashing =
         new ProposerSlashing(
             proposerIndex, proposalData1, proposalSignature1, proposalData2, proposalSignature2);
 
-    assertEquals(ps1, ps2);
+    assertEquals(proposerSlashing, testProposerSlashing);
   }
 
   @Test
   void equalsReturnsFalseWhenProposerIndicesAreDifferent() {
-    int proposerIndex = randomInt();
-    ProposalSignedData proposalData1 = randomProposalSignedData();
-    List<Bytes48> proposalSignature1 = Arrays.asList(Bytes48.random(), Bytes48.random());
-    ProposalSignedData proposalData2 = randomProposalSignedData();
-    List<Bytes48> proposalSignature2 = Arrays.asList(Bytes48.random(), Bytes48.random());
-
-    ProposerSlashing ps1 =
-        new ProposerSlashing(
-            proposerIndex, proposalData1, proposalSignature1, proposalData2, proposalSignature2);
-    ProposerSlashing ps2 =
+    ProposerSlashing testProposerSlashing =
         new ProposerSlashing(
             proposerIndex + randomInt(),
             proposalData1,
@@ -83,17 +66,11 @@ class ProposerSlashingTest {
             proposalData2,
             proposalSignature2);
 
-    assertNotEquals(ps1, ps2);
+    assertNotEquals(proposerSlashing, testProposerSlashing);
   }
 
   @Test
   void equalsReturnsFalseWhenProposalData1IsDifferent() {
-    int proposerIndex = randomInt();
-    ProposalSignedData proposalData1 = randomProposalSignedData();
-    List<Bytes48> proposalSignature1 = Arrays.asList(Bytes48.random(), Bytes48.random());
-    ProposalSignedData proposalData2 = randomProposalSignedData();
-    List<Bytes48> proposalSignature2 = Arrays.asList(Bytes48.random(), Bytes48.random());
-
     // ProposalSignedData is rather involved to create. Just create a random one until it is not the
     // same as the original.
     ProposalSignedData otherProposalData1 = randomProposalSignedData();
@@ -101,10 +78,7 @@ class ProposerSlashingTest {
       otherProposalData1 = randomProposalSignedData();
     }
 
-    ProposerSlashing ps1 =
-        new ProposerSlashing(
-            proposerIndex, proposalData1, proposalSignature1, proposalData2, proposalSignature2);
-    ProposerSlashing ps2 =
+    ProposerSlashing testProposerSlashing =
         new ProposerSlashing(
             proposerIndex,
             otherProposalData1,
@@ -112,25 +86,16 @@ class ProposerSlashingTest {
             proposalData2,
             proposalSignature2);
 
-    assertNotEquals(ps1, ps2);
+    assertNotEquals(proposerSlashing, testProposerSlashing);
   }
 
   @Test
   void equalsReturnsFalseWhenProposalSignature1sAreDifferent() {
-    int proposerIndex = randomInt();
-    ProposalSignedData proposalData1 = randomProposalSignedData();
-    List<Bytes48> proposalSignature1 = Arrays.asList(Bytes48.random(), Bytes48.random());
-    ProposalSignedData proposalData2 = randomProposalSignedData();
-    List<Bytes48> proposalSignature2 = Arrays.asList(Bytes48.random(), Bytes48.random());
-
     // Create copy of proposalSignature1 and reverse to ensure it is different.
     List<Bytes48> reverseProposalSignature1 = new ArrayList<Bytes48>(proposalSignature1);
     Collections.reverse(reverseProposalSignature1);
 
-    ProposerSlashing ps1 =
-        new ProposerSlashing(
-            proposerIndex, proposalData1, proposalSignature1, proposalData2, proposalSignature2);
-    ProposerSlashing ps2 =
+    ProposerSlashing testProposerSlashing =
         new ProposerSlashing(
             proposerIndex,
             proposalData1,
@@ -138,17 +103,11 @@ class ProposerSlashingTest {
             proposalData2,
             proposalSignature2);
 
-    assertNotEquals(ps1, ps2);
+    assertNotEquals(proposerSlashing, testProposerSlashing);
   }
 
   @Test
   void equalsReturnsFalseWhenProposalData2IsDifferent() {
-    int proposerIndex = randomInt();
-    ProposalSignedData proposalData1 = randomProposalSignedData();
-    List<Bytes48> proposalSignature1 = Arrays.asList(Bytes48.random(), Bytes48.random());
-    ProposalSignedData proposalData2 = randomProposalSignedData();
-    List<Bytes48> proposalSignature2 = Arrays.asList(Bytes48.random(), Bytes48.random());
-
     // ProposalSignedData is rather involved to create. Just create a random one until it is not the
     // same as the original.
     ProposalSignedData otherProposalData2 = randomProposalSignedData();
@@ -156,10 +115,7 @@ class ProposerSlashingTest {
       otherProposalData2 = randomProposalSignedData();
     }
 
-    ProposerSlashing ps1 =
-        new ProposerSlashing(
-            proposerIndex, proposalData1, proposalSignature1, proposalData2, proposalSignature2);
-    ProposerSlashing ps2 =
+    ProposerSlashing testProposerSlashing =
         new ProposerSlashing(
             proposerIndex,
             proposalData1,
@@ -167,25 +123,16 @@ class ProposerSlashingTest {
             otherProposalData2,
             proposalSignature2);
 
-    assertNotEquals(ps1, ps2);
+    assertNotEquals(proposerSlashing, testProposerSlashing);
   }
 
   @Test
   void equalsReturnsFalseWhenProposalSignature2sAreDifferent() {
-    int proposerIndex = randomInt();
-    ProposalSignedData proposalData1 = randomProposalSignedData();
-    List<Bytes48> proposalSignature1 = Arrays.asList(Bytes48.random(), Bytes48.random());
-    ProposalSignedData proposalData2 = randomProposalSignedData();
-    List<Bytes48> proposalSignature2 = Arrays.asList(Bytes48.random(), Bytes48.random());
-
     // Create copy of proposalSignature1 and reverse to ensure it is different.
     List<Bytes48> reverseProposalSignature2 = new ArrayList<Bytes48>(proposalSignature2);
     Collections.reverse(reverseProposalSignature2);
 
-    ProposerSlashing ps1 =
-        new ProposerSlashing(
-            proposerIndex, proposalData1, proposalSignature1, proposalData2, proposalSignature2);
-    ProposerSlashing ps2 =
+    ProposerSlashing testProposerSlashing =
         new ProposerSlashing(
             proposerIndex,
             proposalData1,
@@ -193,18 +140,11 @@ class ProposerSlashingTest {
             proposalData2,
             reverseProposalSignature2);
 
-    assertNotEquals(ps1, ps2);
+    assertNotEquals(proposerSlashing, testProposerSlashing);
   }
 
   @Test
   void rountripSSZ() {
-    ProposerSlashing proposerSlashing =
-        new ProposerSlashing(
-            randomInt(),
-            randomProposalSignedData(),
-            Arrays.asList(Bytes48.random(), Bytes48.random()),
-            randomProposalSignedData(),
-            Arrays.asList(Bytes48.random(), Bytes48.random()));
     Bytes sszProposerSlashingBytes = proposerSlashing.toBytes();
     assertEquals(proposerSlashing, ProposerSlashing.fromBytes(sszProposerSlashingBytes));
   }

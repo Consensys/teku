@@ -27,77 +27,57 @@ import org.junit.jupiter.api.Test;
 
 class DepositInputTest {
 
+  Bytes48 pubkey = Bytes48.random();
+  Bytes32 withdrawalCredentials = Bytes32.random();
+  List<Bytes48> proofOfPossession = Arrays.asList(Bytes48.random(), Bytes48.random());
+
+  DepositInput depositInput = new DepositInput(pubkey, withdrawalCredentials, proofOfPossession);
+
   @Test
   void equalsReturnsTrueWhenObjectAreSame() {
-    Bytes48 pubkey = Bytes48.random();
-    Bytes32 withdrawalCredentials = Bytes32.random();
-    List<Bytes48> proofOfPossession = Arrays.asList(Bytes48.random(), Bytes48.random());
+    DepositInput testDepositInput = depositInput;
 
-    DepositInput di1 = new DepositInput(pubkey, withdrawalCredentials, proofOfPossession);
-    DepositInput di2 = di1;
-
-    assertEquals(di1, di2);
+    assertEquals(depositInput, testDepositInput);
   }
 
   @Test
   void equalsReturnsTrueWhenObjectFieldsAreEqual() {
-    Bytes48 pubkey = Bytes48.random();
-    Bytes32 withdrawalCredentials = Bytes32.random();
-    List<Bytes48> proofOfPossession = Arrays.asList(Bytes48.random(), Bytes48.random());
+    DepositInput testDepositInput =
+        new DepositInput(pubkey, withdrawalCredentials, proofOfPossession);
 
-    DepositInput di1 = new DepositInput(pubkey, withdrawalCredentials, proofOfPossession);
-    DepositInput di2 = new DepositInput(pubkey, withdrawalCredentials, proofOfPossession);
-
-    assertEquals(di1, di2);
+    assertEquals(depositInput, testDepositInput);
   }
 
   @Test
   void equalsReturnsFalseWhenPubkeysAreDifferent() {
-    Bytes48 pubkey = Bytes48.random();
-    Bytes32 withdrawalCredentials = Bytes32.random();
-    List<Bytes48> proofOfPossession = Arrays.asList(Bytes48.random(), Bytes48.random());
+    DepositInput testDepositInput =
+        new DepositInput(pubkey.not(), withdrawalCredentials, proofOfPossession);
 
-    DepositInput di1 = new DepositInput(pubkey, withdrawalCredentials, proofOfPossession);
-    DepositInput di2 = new DepositInput(pubkey.not(), withdrawalCredentials, proofOfPossession);
-
-    assertNotEquals(di1, di2);
+    assertNotEquals(depositInput, testDepositInput);
   }
 
   @Test
   void equalsReturnsFalseWhenWithdrawalCredentialsAreDifferent() {
-    Bytes48 pubkey = Bytes48.random();
-    Bytes32 withdrawalCredentials = Bytes32.random();
-    List<Bytes48> proofOfPossession = Arrays.asList(Bytes48.random(), Bytes48.random());
+    DepositInput testDepositInput =
+        new DepositInput(pubkey, withdrawalCredentials.not(), proofOfPossession);
 
-    DepositInput di1 = new DepositInput(pubkey, withdrawalCredentials, proofOfPossession);
-    DepositInput di2 = new DepositInput(pubkey, withdrawalCredentials.not(), proofOfPossession);
-
-    assertNotEquals(di1, di2);
+    assertNotEquals(depositInput, testDepositInput);
   }
 
   @Test
   void equalsReturnsFalseWhenProofsOfPosessionAreDifferent() {
-    Bytes48 pubkey = Bytes48.random();
-    Bytes32 withdrawalCredentials = Bytes32.random();
-    List<Bytes48> proofOfPossession = Arrays.asList(Bytes48.random(), Bytes48.random());
-
     // Create copy of signature and reverse to ensure it is different.
     List<Bytes48> reverseProofOfPossession = new ArrayList<Bytes48>(proofOfPossession);
     Collections.reverse(reverseProofOfPossession);
 
-    DepositInput di1 = new DepositInput(pubkey, withdrawalCredentials, proofOfPossession);
-    DepositInput di2 = new DepositInput(pubkey, withdrawalCredentials, reverseProofOfPossession);
+    DepositInput testDepositInput =
+        new DepositInput(pubkey, withdrawalCredentials, reverseProofOfPossession);
 
-    assertNotEquals(di1, di2);
+    assertNotEquals(depositInput, testDepositInput);
   }
 
   @Test
   void rountripSSZ() {
-    DepositInput depositInput =
-        new DepositInput(
-            Bytes48.random(),
-            Bytes32.random(),
-            Arrays.asList(Bytes48.random(), Bytes48.random(), Bytes48.random()));
     Bytes sszDepositInputBytes = depositInput.toBytes();
     assertEquals(depositInput, DepositInput.fromBytes(sszDepositInputBytes));
   }

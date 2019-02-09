@@ -29,42 +29,31 @@ import org.junit.jupiter.api.Test;
 
 class AttestationTest {
 
+  AttestationData data = randomAttestationData();
+  Bytes32 participationBitfield = Bytes32.random();
+  Bytes32 custodyBitfield = Bytes32.random();
+  List<Bytes48> aggregateSignature = Arrays.asList(Bytes48.random(), Bytes48.random());
+
+  Attestation attestation =
+      new Attestation(data, participationBitfield, custodyBitfield, aggregateSignature);
+
   @Test
   void equalsReturnsTrueWhenObjectAreSame() {
-    AttestationData data = randomAttestationData();
-    Bytes32 participationBitfield = Bytes32.random();
-    Bytes32 custodyBitfield = Bytes32.random();
-    List<Bytes48> aggregateSignature = Arrays.asList(Bytes48.random(), Bytes48.random());
+    Attestation testAttestation = attestation;
 
-    Attestation a1 =
-        new Attestation(data, participationBitfield, custodyBitfield, aggregateSignature);
-    Attestation a2 = a1;
-
-    assertEquals(a1, a2);
+    assertEquals(attestation, testAttestation);
   }
 
   @Test
   void equalsReturnsTrueWhenObjectFieldsAreEqual() {
-    AttestationData data = randomAttestationData();
-    Bytes32 participationBitfield = Bytes32.random();
-    Bytes32 custodyBitfield = Bytes32.random();
-    List<Bytes48> aggregateSignature = Arrays.asList(Bytes48.random(), Bytes48.random());
-
-    Attestation a1 =
-        new Attestation(data, participationBitfield, custodyBitfield, aggregateSignature);
-    Attestation a2 =
+    Attestation testAttestation =
         new Attestation(data, participationBitfield, custodyBitfield, aggregateSignature);
 
-    assertEquals(a1, a2);
+    assertEquals(attestation, testAttestation);
   }
 
   @Test
   void equalsReturnsFalseWhenAttestationDataIsDifferent() {
-    AttestationData data = randomAttestationData();
-    Bytes32 participationBitfield = Bytes32.random();
-    Bytes32 custodyBitfield = Bytes32.random();
-    List<Bytes48> aggregateSignature = Arrays.asList(Bytes48.random(), Bytes48.random());
-
     // AttestationData is rather involved to create. Just create a random one until it is not the
     // same as the original.
     AttestationData otherData = randomAttestationData();
@@ -72,71 +61,42 @@ class AttestationTest {
       otherData = randomAttestationData();
     }
 
-    Attestation a1 =
-        new Attestation(data, participationBitfield, custodyBitfield, aggregateSignature);
-    Attestation a2 =
+    Attestation testAttestation =
         new Attestation(otherData, participationBitfield, custodyBitfield, aggregateSignature);
 
-    assertNotEquals(a1, a2);
+    assertNotEquals(attestation, testAttestation);
   }
 
   @Test
   void equalsReturnsFalseWhenParticipationBitfieldsAreDifferent() {
-    AttestationData data = randomAttestationData();
-    Bytes32 participationBitfield = Bytes32.random();
-    Bytes32 custodyBitfield = Bytes32.random();
-    List<Bytes48> aggregateSignature = Arrays.asList(Bytes48.random(), Bytes48.random());
-
-    Attestation a1 =
-        new Attestation(data, participationBitfield, custodyBitfield, aggregateSignature);
-    Attestation a2 =
+    Attestation testAttestation =
         new Attestation(data, participationBitfield.not(), custodyBitfield, aggregateSignature);
 
-    assertNotEquals(a1, a2);
+    assertNotEquals(attestation, testAttestation);
   }
 
   @Test
   void equalsReturnsFalseWhenCustodyBitfieldsAreDifferent() {
-    AttestationData data = randomAttestationData();
-    Bytes32 participationBitfield = Bytes32.random();
-    Bytes32 custodyBitfield = Bytes32.random();
-    List<Bytes48> aggregateSignature = Arrays.asList(Bytes48.random(), Bytes48.random());
-
-    Attestation a1 =
-        new Attestation(data, participationBitfield, custodyBitfield, aggregateSignature);
-    Attestation a2 =
+    Attestation testAttestation =
         new Attestation(data, participationBitfield, custodyBitfield.not(), aggregateSignature);
 
-    assertNotEquals(a1, a2);
+    assertNotEquals(attestation, testAttestation);
   }
 
   @Test
   void equalsReturnsFalseWhenAggregrateSignaturesAreDifferent() {
-    AttestationData data = randomAttestationData();
-    Bytes32 participationBitfield = Bytes32.random();
-    Bytes32 custodyBitfield = Bytes32.random();
-    List<Bytes48> aggregateSignature = Arrays.asList(Bytes48.random(), Bytes48.random());
-
     // Create copy of aggregateSignature and reverse to ensure it is different.
     List<Bytes48> reverseAggregateSignature = new ArrayList<Bytes48>(aggregateSignature);
     Collections.reverse(reverseAggregateSignature);
 
-    Attestation a1 =
-        new Attestation(data, participationBitfield, custodyBitfield, aggregateSignature);
-    Attestation a2 =
+    Attestation testAttestation =
         new Attestation(data, participationBitfield, custodyBitfield, reverseAggregateSignature);
 
-    assertNotEquals(a1, a2);
+    assertNotEquals(attestation, testAttestation);
   }
 
   @Test
   void rountripSSZ() {
-    Attestation attestation =
-        new Attestation(
-            randomAttestationData(),
-            Bytes32.random(),
-            Bytes32.random(),
-            Arrays.asList(Bytes48.random(), Bytes48.random()));
     Bytes sszAttestationBytes = attestation.toBytes();
     assertEquals(attestation, Attestation.fromBytes(sszAttestationBytes));
   }

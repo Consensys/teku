@@ -35,174 +35,101 @@ import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
 
 class BeaconBlockBodyTest {
 
+  List<Attestation> attestations =
+      Arrays.asList(randomAttestation(), randomAttestation(), randomAttestation());
+  List<ProposerSlashing> proposerSlashings =
+      Arrays.asList(randomProposerSlashing(), randomProposerSlashing(), randomProposerSlashing());
+  List<CasperSlashing> casperSlashings =
+      Arrays.asList(randomCasperSlashing(), randomCasperSlashing(), randomCasperSlashing());
+  List<Deposit> deposits = Arrays.asList(randomDeposit(), randomDeposit(), randomDeposit());
+  List<Exit> exits = Arrays.asList(randomExit(), randomExit(), randomExit());
+
+  BeaconBlockBody beaconBlockBody =
+      new BeaconBlockBody(proposerSlashings, casperSlashings, attestations, deposits, exits);
+
   @Test
   void equalsReturnsTrueWhenObjectAreSame() {
-    List<Attestation> attestations =
-        Arrays.asList(randomAttestation(), randomAttestation(), randomAttestation());
-    List<ProposerSlashing> proposerSlashings =
-        Arrays.asList(randomProposerSlashing(), randomProposerSlashing(), randomProposerSlashing());
-    List<CasperSlashing> casperSlashings =
-        Arrays.asList(randomCasperSlashing(), randomCasperSlashing(), randomCasperSlashing());
-    List<Deposit> deposits = Arrays.asList(randomDeposit(), randomDeposit(), randomDeposit());
-    List<Exit> exits = Arrays.asList(randomExit(), randomExit(), randomExit());
+    BeaconBlockBody testBeaconBlockBody = beaconBlockBody;
 
-    BeaconBlockBody bbb1 =
-        new BeaconBlockBody(proposerSlashings, casperSlashings, attestations, deposits, exits);
-    BeaconBlockBody bbb2 = bbb1;
-
-    assertEquals(bbb1, bbb2);
+    assertEquals(beaconBlockBody, testBeaconBlockBody);
   }
 
   @Test
   void equalsReturnsTrueWhenObjectFieldsAreEqual() {
-    List<Attestation> attestations =
-        Arrays.asList(randomAttestation(), randomAttestation(), randomAttestation());
-    List<ProposerSlashing> proposerSlashings =
-        Arrays.asList(randomProposerSlashing(), randomProposerSlashing(), randomProposerSlashing());
-    List<CasperSlashing> casperSlashings =
-        Arrays.asList(randomCasperSlashing(), randomCasperSlashing(), randomCasperSlashing());
-    List<Deposit> deposits = Arrays.asList(randomDeposit(), randomDeposit(), randomDeposit());
-    List<Exit> exits = Arrays.asList(randomExit(), randomExit(), randomExit());
-
-    BeaconBlockBody bbb1 =
-        new BeaconBlockBody(proposerSlashings, casperSlashings, attestations, deposits, exits);
-    BeaconBlockBody bbb2 =
+    BeaconBlockBody testBeaconBlockBody =
         new BeaconBlockBody(proposerSlashings, casperSlashings, attestations, deposits, exits);
 
-    assertEquals(bbb1, bbb2);
+    assertEquals(beaconBlockBody, testBeaconBlockBody);
   }
 
   @Test
   void equalsReturnsFalseWhenProposerSlashingsAreDifferent() {
-    List<Attestation> attestations =
-        Arrays.asList(randomAttestation(), randomAttestation(), randomAttestation());
-    List<ProposerSlashing> proposerSlashings =
-        Arrays.asList(randomProposerSlashing(), randomProposerSlashing(), randomProposerSlashing());
-    List<CasperSlashing> casperSlashings =
-        Arrays.asList(randomCasperSlashing(), randomCasperSlashing(), randomCasperSlashing());
-    List<Deposit> deposits = Arrays.asList(randomDeposit(), randomDeposit(), randomDeposit());
-    List<Exit> exits = Arrays.asList(randomExit(), randomExit(), randomExit());
-
     // Create copy of proposerSlashings and reverse to ensure it is different.
     List<ProposerSlashing> reverseProposerSlashings =
         new ArrayList<ProposerSlashing>(proposerSlashings);
     Collections.reverse(reverseProposerSlashings);
 
-    BeaconBlockBody bbb1 =
-        new BeaconBlockBody(proposerSlashings, casperSlashings, attestations, deposits, exits);
-    BeaconBlockBody bbb2 =
+    BeaconBlockBody testBeaconBlockBody =
         new BeaconBlockBody(
             reverseProposerSlashings, casperSlashings, attestations, deposits, exits);
 
-    assertNotEquals(bbb1, bbb2);
+    assertNotEquals(beaconBlockBody, testBeaconBlockBody);
   }
 
   @Test
   void equalsReturnsFalseWhenCasperSlashingsAreDifferent() {
-    List<Attestation> attestations =
-        Arrays.asList(randomAttestation(), randomAttestation(), randomAttestation());
-    List<ProposerSlashing> proposerSlashings =
-        Arrays.asList(randomProposerSlashing(), randomProposerSlashing(), randomProposerSlashing());
-    List<CasperSlashing> casperSlashings =
-        Arrays.asList(randomCasperSlashing(), randomCasperSlashing(), randomCasperSlashing());
-    List<Deposit> deposits = Arrays.asList(randomDeposit(), randomDeposit(), randomDeposit());
-    List<Exit> exits = Arrays.asList(randomExit(), randomExit(), randomExit());
-
     // Create copy of casperSlashings and reverse to ensure it is different.
     List<CasperSlashing> reverseCasperSlashings = new ArrayList<CasperSlashing>(casperSlashings);
     Collections.reverse(reverseCasperSlashings);
 
-    BeaconBlockBody bbb1 =
-        new BeaconBlockBody(proposerSlashings, casperSlashings, attestations, deposits, exits);
-    BeaconBlockBody bbb2 =
+    BeaconBlockBody testBeaconBlockBody =
         new BeaconBlockBody(
             proposerSlashings, reverseCasperSlashings, attestations, deposits, exits);
 
-    assertNotEquals(bbb1, bbb2);
+    assertNotEquals(beaconBlockBody, testBeaconBlockBody);
   }
 
   @Test
   void equalsReturnsFalseWhenAttestationsAreDifferent() {
-    List<Attestation> attestations =
-        Arrays.asList(randomAttestation(), randomAttestation(), randomAttestation());
-    List<ProposerSlashing> proposerSlashings =
-        Arrays.asList(randomProposerSlashing(), randomProposerSlashing(), randomProposerSlashing());
-    List<CasperSlashing> casperSlashings =
-        Arrays.asList(randomCasperSlashing(), randomCasperSlashing(), randomCasperSlashing());
-    List<Deposit> deposits = Arrays.asList(randomDeposit(), randomDeposit(), randomDeposit());
-    List<Exit> exits = Arrays.asList(randomExit(), randomExit(), randomExit());
-
     // Create copy of attestations and reverse to ensure it is different.
     List<Attestation> reverseAttestations = new ArrayList<Attestation>(attestations);
     Collections.reverse(reverseAttestations);
 
-    BeaconBlockBody bbb1 =
-        new BeaconBlockBody(proposerSlashings, casperSlashings, attestations, deposits, exits);
-    BeaconBlockBody bbb2 =
+    BeaconBlockBody testBeaconBlockBody =
         new BeaconBlockBody(
             proposerSlashings, casperSlashings, reverseAttestations, deposits, exits);
 
-    assertNotEquals(bbb1, bbb2);
+    assertNotEquals(beaconBlockBody, testBeaconBlockBody);
   }
 
   @Test
   void equalsReturnsFalseWhenDepositsAreDifferent() {
-    List<Attestation> attestations =
-        Arrays.asList(randomAttestation(), randomAttestation(), randomAttestation());
-    List<ProposerSlashing> proposerSlashings =
-        Arrays.asList(randomProposerSlashing(), randomProposerSlashing(), randomProposerSlashing());
-    List<CasperSlashing> casperSlashings =
-        Arrays.asList(randomCasperSlashing(), randomCasperSlashing(), randomCasperSlashing());
-    List<Deposit> deposits = Arrays.asList(randomDeposit(), randomDeposit(), randomDeposit());
-    List<Exit> exits = Arrays.asList(randomExit(), randomExit(), randomExit());
-
     // Create copy of deposits and reverse to ensure it is different.
     List<Deposit> reverseDeposits = new ArrayList<Deposit>(deposits);
     Collections.reverse(reverseDeposits);
 
-    BeaconBlockBody bbb1 =
-        new BeaconBlockBody(proposerSlashings, casperSlashings, attestations, deposits, exits);
-    BeaconBlockBody bbb2 =
+    BeaconBlockBody testBeaconBlockBody =
         new BeaconBlockBody(
             proposerSlashings, casperSlashings, attestations, reverseDeposits, exits);
 
-    assertNotEquals(bbb1, bbb2);
+    assertNotEquals(beaconBlockBody, testBeaconBlockBody);
   }
 
   @Test
   void equalsReturnsFalseWhenExitsAreDifferent() {
-    List<Attestation> attestations =
-        Arrays.asList(randomAttestation(), randomAttestation(), randomAttestation());
-    List<ProposerSlashing> proposerSlashings =
-        Arrays.asList(randomProposerSlashing(), randomProposerSlashing(), randomProposerSlashing());
-    List<CasperSlashing> casperSlashings =
-        Arrays.asList(randomCasperSlashing(), randomCasperSlashing(), randomCasperSlashing());
-    List<Deposit> deposits = Arrays.asList(randomDeposit(), randomDeposit(), randomDeposit());
-    List<Exit> exits = Arrays.asList(randomExit(), randomExit(), randomExit());
-
     // Create copy of exits and reverse to ensure it is different.
     List<Exit> reverseExits = new ArrayList<Exit>(exits);
     Collections.reverse(reverseExits);
 
-    BeaconBlockBody bbb1 =
-        new BeaconBlockBody(proposerSlashings, casperSlashings, attestations, deposits, exits);
-    BeaconBlockBody bbb2 =
+    BeaconBlockBody testBeaconBlockBody =
         new BeaconBlockBody(
             proposerSlashings, casperSlashings, attestations, deposits, reverseExits);
 
-    assertNotEquals(bbb1, bbb2);
+    assertNotEquals(beaconBlockBody, testBeaconBlockBody);
   }
 
   @Test
   void rountripSSZ() {
-    BeaconBlockBody beaconBlockBody =
-        new BeaconBlockBody(
-            Arrays.asList(
-                randomProposerSlashing(), randomProposerSlashing(), randomProposerSlashing()),
-            Arrays.asList(randomCasperSlashing(), randomCasperSlashing(), randomCasperSlashing()),
-            Arrays.asList(randomAttestation(), randomAttestation(), randomAttestation()),
-            Arrays.asList(randomDeposit(), randomDeposit(), randomDeposit()),
-            Arrays.asList(randomExit(), randomExit(), randomExit()));
     Bytes sszBeaconBlockBodyBytes = beaconBlockBody.toBytes();
     assertEquals(beaconBlockBody, BeaconBlockBody.fromBytes(sszBeaconBlockBodyBytes));
   }

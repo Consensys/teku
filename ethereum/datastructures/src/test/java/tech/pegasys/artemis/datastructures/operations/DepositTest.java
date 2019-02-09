@@ -30,69 +30,47 @@ import org.junit.jupiter.api.Test;
 
 class DepositTest {
 
+  List<Bytes32> merkleBranch = Arrays.asList(Bytes32.random(), Bytes32.random(), Bytes32.random());
+  UnsignedLong merkleTreeIndex = randomUnsignedLong();
+  DepositData depositData = randomDepositData();
+
+  Deposit deposit = new Deposit(merkleBranch, merkleTreeIndex, depositData);
+
   @Test
   void equalsReturnsTrueWhenObjectAreSame() {
-    List<Bytes32> merkleBranch =
-        Arrays.asList(Bytes32.random(), Bytes32.random(), Bytes32.random());
-    UnsignedLong merkleTreeIndex = randomUnsignedLong();
-    DepositData depositData = randomDepositData();
+    Deposit testDeposit = deposit;
 
-    Deposit d1 = new Deposit(merkleBranch, merkleTreeIndex, depositData);
-    Deposit d2 = d1;
-
-    assertEquals(d1, d2);
+    assertEquals(deposit, testDeposit);
   }
 
   @Test
   void equalsReturnsTrueWhenObjectFieldsAreEqual() {
-    List<Bytes32> merkleBranch =
-        Arrays.asList(Bytes32.random(), Bytes32.random(), Bytes32.random());
-    UnsignedLong merkleTreeIndex = randomUnsignedLong();
-    DepositData depositData = randomDepositData();
+    Deposit testDeposit = new Deposit(merkleBranch, merkleTreeIndex, depositData);
 
-    Deposit d1 = new Deposit(merkleBranch, merkleTreeIndex, depositData);
-    Deposit d2 = new Deposit(merkleBranch, merkleTreeIndex, depositData);
-
-    assertEquals(d1, d2);
+    assertEquals(deposit, testDeposit);
   }
 
   @Test
   void equalsReturnsFalseWhenMerkleBranchesAreDifferent() {
-    List<Bytes32> merkleBranch =
-        Arrays.asList(Bytes32.random(), Bytes32.random(), Bytes32.random());
-    UnsignedLong merkleTreeIndex = randomUnsignedLong();
-    DepositData depositData = randomDepositData();
-
     // Create copy of signature and reverse to ensure it is different.
     List<Bytes32> reversemerkleBranch = new ArrayList<Bytes32>(merkleBranch);
     Collections.reverse(reversemerkleBranch);
 
-    Deposit d1 = new Deposit(merkleBranch, merkleTreeIndex, depositData);
-    Deposit d2 = new Deposit(reversemerkleBranch, merkleTreeIndex, depositData);
+    Deposit testDeposit = new Deposit(reversemerkleBranch, merkleTreeIndex, depositData);
 
-    assertNotEquals(d1, d2);
+    assertNotEquals(deposit, testDeposit);
   }
 
   @Test
   void equalsReturnsFalseWhenMerkleTreeIndicesAreDifferent() {
-    List<Bytes32> merkleBranch =
-        Arrays.asList(Bytes32.random(), Bytes32.random(), Bytes32.random());
-    UnsignedLong merkleTreeIndex = randomUnsignedLong();
-    DepositData depositData = randomDepositData();
+    Deposit testDeposit =
+        new Deposit(merkleBranch, merkleTreeIndex.plus(randomUnsignedLong()), depositData);
 
-    Deposit d1 = new Deposit(merkleBranch, merkleTreeIndex, depositData);
-    Deposit d2 = new Deposit(merkleBranch, merkleTreeIndex.plus(randomUnsignedLong()), depositData);
-
-    assertNotEquals(d1, d2);
+    assertNotEquals(deposit, testDeposit);
   }
 
   @Test
   void equalsReturnsFalseWhenDepositDataIsDifferent() {
-    List<Bytes32> merkleBranch =
-        Arrays.asList(Bytes32.random(), Bytes32.random(), Bytes32.random());
-    UnsignedLong merkleTreeIndex = randomUnsignedLong();
-    DepositData depositData = randomDepositData();
-
     // DepositData is rather involved to create. Just create a random one until it is not the same
     // as the original.
     DepositData otherDepositData = randomDepositData();
@@ -100,19 +78,13 @@ class DepositTest {
       otherDepositData = randomDepositData();
     }
 
-    Deposit d1 = new Deposit(merkleBranch, merkleTreeIndex, depositData);
-    Deposit d2 = new Deposit(merkleBranch, merkleTreeIndex, otherDepositData);
+    Deposit testDeposit = new Deposit(merkleBranch, merkleTreeIndex, otherDepositData);
 
-    assertNotEquals(d1, d2);
+    assertNotEquals(deposit, testDeposit);
   }
 
   @Test
   void rountripSSZ() {
-    Deposit deposit =
-        new Deposit(
-            Arrays.asList(Bytes32.random(), Bytes32.random(), Bytes32.random()),
-            randomUnsignedLong(),
-            randomDepositData());
     Bytes sszDepositBytes = deposit.toBytes();
     assertEquals(deposit, Deposit.fromBytes(sszDepositBytes));
   }

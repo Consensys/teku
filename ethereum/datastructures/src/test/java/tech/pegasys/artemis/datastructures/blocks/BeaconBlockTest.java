@@ -31,132 +31,73 @@ import org.junit.jupiter.api.Test;
 
 class BeaconBlockTest {
 
+  long slot = randomLong();
+  Bytes32 parentRoot = Bytes32.random();
+  Bytes32 stateRoot = Bytes32.random();
+  List<Bytes48> randaoReveal = Arrays.asList(Bytes48.random(), Bytes48.random());
+  Eth1Data eth1Data = randomEth1Data();
+  List<Bytes48> signature = Arrays.asList(Bytes48.random(), Bytes48.random());
+  BeaconBlockBody body = randomBeaconBlockBody();
+
+  BeaconBlock beaconBlock =
+      new BeaconBlock(slot, parentRoot, stateRoot, randaoReveal, eth1Data, signature, body);
+
   @Test
   void equalsReturnsTrueWhenObjectAreSame() {
-    long slot = randomLong();
-    Bytes32 parentRoot = Bytes32.random();
-    Bytes32 stateRoot = Bytes32.random();
-    List<Bytes48> randaoReveal = Arrays.asList(Bytes48.random(), Bytes48.random());
-    Eth1Data eth1Data = randomEth1Data();
-    List<Bytes48> signature = Arrays.asList(Bytes48.random(), Bytes48.random());
-    BeaconBlockBody body = randomBeaconBlockBody();
+    BeaconBlock testBeaconBlock = beaconBlock;
 
-    BeaconBlock b1 =
-        new BeaconBlock(slot, parentRoot, stateRoot, randaoReveal, eth1Data, signature, body);
-    BeaconBlock b2 = b1;
-
-    assertEquals(b1, b2);
+    assertEquals(beaconBlock, testBeaconBlock);
   }
 
   @Test
   void equalsReturnsTrueWhenObjectFieldsAreEqual() {
-    long slot = randomLong();
-    Bytes32 parentRoot = Bytes32.random();
-    Bytes32 stateRoot = Bytes32.random();
-    List<Bytes48> randaoReveal = Arrays.asList(Bytes48.random(), Bytes48.random());
-    Eth1Data eth1Data = randomEth1Data();
-    List<Bytes48> signature = Arrays.asList(Bytes48.random(), Bytes48.random());
-    BeaconBlockBody body = randomBeaconBlockBody();
-
-    BeaconBlock b1 =
-        new BeaconBlock(slot, parentRoot, stateRoot, randaoReveal, eth1Data, signature, body);
-    BeaconBlock b2 =
+    BeaconBlock testBeaconBlock =
         new BeaconBlock(slot, parentRoot, stateRoot, randaoReveal, eth1Data, signature, body);
 
-    assertEquals(b1, b2);
+    assertEquals(beaconBlock, testBeaconBlock);
   }
 
   @Test
   void equalsReturnsFalseWhenSlotsAreDifferent() {
-    long slot = randomLong();
-    Bytes32 parentRoot = Bytes32.random();
-    Bytes32 stateRoot = Bytes32.random();
-    List<Bytes48> randaoReveal = Arrays.asList(Bytes48.random(), Bytes48.random());
-    Eth1Data eth1Data = randomEth1Data();
-    List<Bytes48> signature = Arrays.asList(Bytes48.random(), Bytes48.random());
-    BeaconBlockBody body = randomBeaconBlockBody();
-
-    BeaconBlock b1 =
-        new BeaconBlock(slot, parentRoot, stateRoot, randaoReveal, eth1Data, signature, body);
-    BeaconBlock b2 =
+    BeaconBlock testBeaconBlock =
         new BeaconBlock(
             slot + randomLong(), parentRoot, stateRoot, randaoReveal, eth1Data, signature, body);
 
-    assertNotEquals(b1, b2);
+    assertNotEquals(beaconBlock, testBeaconBlock);
   }
 
   @Test
   void equalsReturnsFalseWhenAncestorHashesAreDifferent() {
-    long slot = randomLong();
-    Bytes32 parentRoot = Bytes32.random();
-    Bytes32 stateRoot = Bytes32.random();
-    List<Bytes48> randaoReveal = Arrays.asList(Bytes48.random(), Bytes48.random());
-    Eth1Data eth1Data = randomEth1Data();
-    List<Bytes48> signature = Arrays.asList(Bytes48.random(), Bytes48.random());
-    BeaconBlockBody body = randomBeaconBlockBody();
-
-    BeaconBlock b1 =
-        new BeaconBlock(slot, parentRoot, stateRoot, randaoReveal, eth1Data, signature, body);
-    BeaconBlock b2 =
+    BeaconBlock testBeaconBlock =
         new BeaconBlock(slot, parentRoot.not(), stateRoot, randaoReveal, eth1Data, signature, body);
 
-    assertNotEquals(b1, b2);
+    assertNotEquals(beaconBlock, testBeaconBlock);
   }
 
   @Test
   void equalsReturnsFalseWhenStateRootsAreDifferent() {
-    long slot = randomLong();
-    Bytes32 parentRoot = Bytes32.random();
-    Bytes32 stateRoot = Bytes32.random();
-    List<Bytes48> randaoReveal = Arrays.asList(Bytes48.random(), Bytes48.random());
-    Eth1Data eth1Data = randomEth1Data();
-    List<Bytes48> signature = Arrays.asList(Bytes48.random(), Bytes48.random());
-    BeaconBlockBody body = randomBeaconBlockBody();
-
-    BeaconBlock b1 =
-        new BeaconBlock(slot, parentRoot, stateRoot, randaoReveal, eth1Data, signature, body);
-    BeaconBlock b2 =
+    BeaconBlock testBeaconBlock =
         new BeaconBlock(slot, parentRoot, stateRoot.not(), randaoReveal, eth1Data, signature, body);
 
-    assertNotEquals(b1, b2);
+    assertNotEquals(beaconBlock, testBeaconBlock);
   }
 
   @Test
   void equalsReturnsFalseWhenRandaoRevealsAreDifferent() {
-    long slot = randomLong();
-    Bytes32 parentRoot = Bytes32.random();
-    Bytes32 stateRoot = Bytes32.random();
-    List<Bytes48> randaoReveal = Arrays.asList(Bytes48.random(), Bytes48.random());
-    Eth1Data eth1Data = randomEth1Data();
-    List<Bytes48> signature = Arrays.asList(Bytes48.random(), Bytes48.random());
-    BeaconBlockBody body = randomBeaconBlockBody();
-
     // Create copy of randaoReveal and reverse to ensure it is different.
     List<Bytes48> reverseRandaoReveal = new ArrayList<Bytes48>(randaoReveal);
     Collections.reverse(reverseRandaoReveal);
 
-    BeaconBlock b1 =
-        new BeaconBlock(slot, parentRoot, stateRoot, randaoReveal, eth1Data, signature, body);
-    BeaconBlock b2 =
+    BeaconBlock testBeaconBlock =
         new BeaconBlock(
             slot, parentRoot, stateRoot, reverseRandaoReveal, eth1Data, signature, body);
 
-    assertNotEquals(b1, b2);
+    assertNotEquals(beaconBlock, testBeaconBlock);
   }
 
   @Test
   void equalsReturnsFalseWhenEth1DataIsDifferent() {
-    long slot = randomLong();
-    Bytes32 parentRoot = Bytes32.random();
-    Bytes32 stateRoot = Bytes32.random();
-    List<Bytes48> randaoReveal = Arrays.asList(Bytes48.random(), Bytes48.random());
-    Eth1Data eth1Data = randomEth1Data();
-    List<Bytes48> signature = Arrays.asList(Bytes48.random(), Bytes48.random());
-    BeaconBlockBody body = randomBeaconBlockBody();
-
-    BeaconBlock b1 =
-        new BeaconBlock(slot, parentRoot, stateRoot, randaoReveal, eth1Data, signature, body);
-    BeaconBlock b2 =
+    BeaconBlock testBeaconBlock =
         new BeaconBlock(
             slot,
             parentRoot,
@@ -166,42 +107,24 @@ class BeaconBlockTest {
             signature,
             body);
 
-    assertNotEquals(b1, b2);
+    assertNotEquals(beaconBlock, testBeaconBlock);
   }
 
   @Test
   void equalsReturnsFalseWhenSignaturesAreDifferent() {
-    long slot = randomLong();
-    Bytes32 parentRoot = Bytes32.random();
-    Bytes32 stateRoot = Bytes32.random();
-    List<Bytes48> randaoReveal = Arrays.asList(Bytes48.random(), Bytes48.random());
-    Eth1Data eth1Data = randomEth1Data();
-    List<Bytes48> signature = Arrays.asList(Bytes48.random(), Bytes48.random());
-    BeaconBlockBody body = randomBeaconBlockBody();
-
     // Create copy of signature and reverse to ensure it is different.
     List<Bytes48> reverseSignature = new ArrayList<Bytes48>(signature);
     Collections.reverse(reverseSignature);
 
-    BeaconBlock b1 =
-        new BeaconBlock(slot, parentRoot, stateRoot, randaoReveal, eth1Data, signature, body);
-    BeaconBlock b2 =
+    BeaconBlock testBeaconBlock =
         new BeaconBlock(
             slot, parentRoot, stateRoot, randaoReveal, eth1Data, reverseSignature, body);
 
-    assertNotEquals(b1, b2);
+    assertNotEquals(beaconBlock, testBeaconBlock);
   }
 
   @Test
   void equalsReturnsFalseWhenBeaconBlockBodiesAreDifferent() {
-    long slot = randomLong();
-    Bytes32 parentRoot = Bytes32.random();
-    Bytes32 stateRoot = Bytes32.random();
-    List<Bytes48> randaoReveal = Arrays.asList(Bytes48.random(), Bytes48.random());
-    Eth1Data eth1Data = randomEth1Data();
-    List<Bytes48> signature = Arrays.asList(Bytes48.random(), Bytes48.random());
-    BeaconBlockBody body = randomBeaconBlockBody();
-
     // BeaconBlock is rather involved to create. Just create a random one until it is not the same
     // as the original.
     BeaconBlockBody otherBody = randomBeaconBlockBody();
@@ -209,25 +132,14 @@ class BeaconBlockTest {
       otherBody = randomBeaconBlockBody();
     }
 
-    BeaconBlock b1 =
-        new BeaconBlock(slot, parentRoot, stateRoot, randaoReveal, eth1Data, signature, body);
-    BeaconBlock b2 =
+    BeaconBlock testBeaconBlock =
         new BeaconBlock(slot, parentRoot, stateRoot, randaoReveal, eth1Data, signature, otherBody);
 
-    assertNotEquals(b1, b2);
+    assertNotEquals(beaconBlock, testBeaconBlock);
   }
 
   @Test
   void rountripSSZ() {
-    BeaconBlock beaconBlock =
-        new BeaconBlock(
-            randomLong(),
-            Bytes32.random(),
-            Bytes32.random(),
-            Arrays.asList(Bytes48.random(), Bytes48.random()),
-            randomEth1Data(),
-            Arrays.asList(Bytes48.random(), Bytes48.random()),
-            randomBeaconBlockBody());
     Bytes sszBeaconBlockBytes = beaconBlock.toBytes();
     assertEquals(beaconBlock, BeaconBlock.fromBytes(sszBeaconBlockBytes));
   }

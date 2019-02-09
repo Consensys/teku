@@ -25,36 +25,28 @@ import org.junit.jupiter.api.Test;
 
 class DepositDataTest {
 
+  DepositInput depositInput = randomDepositInput();
+  UnsignedLong value = randomUnsignedLong();
+  UnsignedLong timestamp = randomUnsignedLong();
+
+  DepositData depositData = new DepositData(depositInput, value, timestamp);
+
   @Test
   void equalsReturnsTrueWhenObjectAreSame() {
-    DepositInput depositInput = randomDepositInput();
-    UnsignedLong value = randomUnsignedLong();
-    UnsignedLong timestamp = randomUnsignedLong();
+    DepositData testDepositData = depositData;
 
-    DepositData dd1 = new DepositData(depositInput, value, timestamp);
-    DepositData dd2 = dd1;
-
-    assertEquals(dd1, dd2);
+    assertEquals(depositData, testDepositData);
   }
 
   @Test
   void equalsReturnsTrueWhenObjectFieldsAreEqual() {
-    DepositInput depositInput = randomDepositInput();
-    UnsignedLong value = randomUnsignedLong();
-    UnsignedLong timestamp = randomUnsignedLong();
+    DepositData testDepositData = new DepositData(depositInput, value, timestamp);
 
-    DepositData dd1 = new DepositData(depositInput, value, timestamp);
-    DepositData dd2 = new DepositData(depositInput, value, timestamp);
-
-    assertEquals(dd1, dd2);
+    assertEquals(depositData, testDepositData);
   }
 
   @Test
   void equalsReturnsFalseWhenDepositInputsAreDifferent() {
-    DepositInput depositInput = randomDepositInput();
-    UnsignedLong value = randomUnsignedLong();
-    UnsignedLong timestamp = randomUnsignedLong();
-
     // DepositInput is rather involved to create. Just create a random one until it is not the same
     // as the original.
     DepositInput otherDepositInput = randomDepositInput();
@@ -62,40 +54,29 @@ class DepositDataTest {
       otherDepositInput = randomDepositInput();
     }
 
-    DepositData dd1 = new DepositData(depositInput, value, timestamp);
-    DepositData dd2 = new DepositData(otherDepositInput, value, timestamp);
+    DepositData testDepositData = new DepositData(otherDepositInput, value, timestamp);
 
-    assertNotEquals(dd1, dd2);
+    assertNotEquals(depositData, testDepositData);
   }
 
   @Test
   void equalsReturnsFalseWhenValuesAreDifferent() {
-    DepositInput depositInput = randomDepositInput();
-    UnsignedLong value = randomUnsignedLong();
-    UnsignedLong timestamp = randomUnsignedLong();
+    DepositData testDepositData =
+        new DepositData(depositInput, value.plus(randomUnsignedLong()), timestamp);
 
-    DepositData dd1 = new DepositData(depositInput, value, timestamp);
-    DepositData dd2 = new DepositData(depositInput, value.plus(randomUnsignedLong()), timestamp);
-
-    assertNotEquals(dd1, dd2);
+    assertNotEquals(depositData, testDepositData);
   }
 
   @Test
   void equalsReturnsFalseWhenTimestampsAreDifferent() {
-    DepositInput depositInput = randomDepositInput();
-    UnsignedLong value = randomUnsignedLong();
-    UnsignedLong timestamp = randomUnsignedLong();
+    DepositData testDepositData =
+        new DepositData(depositInput, value, timestamp.plus(randomUnsignedLong()));
 
-    DepositData dd1 = new DepositData(depositInput, value, timestamp);
-    DepositData dd2 = new DepositData(depositInput, value, timestamp.plus(randomUnsignedLong()));
-
-    assertNotEquals(dd1, dd2);
+    assertNotEquals(depositData, testDepositData);
   }
 
   @Test
   void rountripSSZ() {
-    DepositData depositData =
-        new DepositData(randomDepositInput(), randomUnsignedLong(), randomUnsignedLong());
     Bytes sszDepositDataBytes = depositData.toBytes();
     assertEquals(depositData, DepositData.fromBytes(sszDepositDataBytes));
   }

@@ -25,54 +25,36 @@ import org.junit.jupiter.api.Test;
 
 class AttestationDataTest {
 
+  long slot = randomLong();
+  UnsignedLong shard = randomUnsignedLong();
+  Bytes32 beaconBlockHash = Bytes32.random();
+  Bytes32 epochBoundaryHash = Bytes32.random();
+  Bytes32 shardBlockHash = Bytes32.random();
+  Bytes32 lastCrosslinkHash = Bytes32.random();
+  UnsignedLong justifiedSlot = randomUnsignedLong();
+  Bytes32 justifiedBlockHash = Bytes32.random();
+
+  AttestationData attestationData =
+      new AttestationData(
+          slot,
+          shard,
+          beaconBlockHash,
+          epochBoundaryHash,
+          shardBlockHash,
+          lastCrosslinkHash,
+          justifiedSlot,
+          justifiedBlockHash);
+
   @Test
   void equalsReturnsTrueWhenObjectAreSame() {
-    long slot = randomLong();
-    UnsignedLong shard = randomUnsignedLong();
-    Bytes32 beaconBlockHash = Bytes32.random();
-    Bytes32 epochBoundaryHash = Bytes32.random();
-    Bytes32 shardBlockHash = Bytes32.random();
-    Bytes32 lastCrosslinkHash = Bytes32.random();
-    UnsignedLong justifiedSlot = randomUnsignedLong();
-    Bytes32 justifiedBlockHash = Bytes32.random();
+    AttestationData testAttestationData = attestationData;
 
-    AttestationData ad1 =
-        new AttestationData(
-            slot,
-            shard,
-            beaconBlockHash,
-            epochBoundaryHash,
-            shardBlockHash,
-            lastCrosslinkHash,
-            justifiedSlot,
-            justifiedBlockHash);
-    AttestationData ad2 = ad1;
-
-    assertEquals(ad1, ad2);
+    assertEquals(attestationData, testAttestationData);
   }
 
   @Test
   void equalsReturnsTrueWhenObjectFieldsAreEqual() {
-    long slot = randomLong();
-    UnsignedLong shard = randomUnsignedLong();
-    Bytes32 beaconBlockHash = Bytes32.random();
-    Bytes32 epochBoundaryHash = Bytes32.random();
-    Bytes32 shardBlockHash = Bytes32.random();
-    Bytes32 lastCrosslinkHash = Bytes32.random();
-    UnsignedLong justifiedSlot = randomUnsignedLong();
-    Bytes32 justifiedBlockHash = Bytes32.random();
-
-    AttestationData ad1 =
-        new AttestationData(
-            slot,
-            shard,
-            beaconBlockHash,
-            epochBoundaryHash,
-            shardBlockHash,
-            lastCrosslinkHash,
-            justifiedSlot,
-            justifiedBlockHash);
-    AttestationData ad2 =
+    AttestationData testAttestationData =
         new AttestationData(
             slot,
             shard,
@@ -83,31 +65,12 @@ class AttestationDataTest {
             justifiedSlot,
             justifiedBlockHash);
 
-    assertEquals(ad1, ad2);
+    assertEquals(attestationData, testAttestationData);
   }
 
   @Test
   void equalsReturnsFalseWhenSlotsAreDifferent() {
-    long slot = randomLong();
-    UnsignedLong shard = randomUnsignedLong();
-    Bytes32 beaconBlockHash = Bytes32.random();
-    Bytes32 epochBoundaryHash = Bytes32.random();
-    Bytes32 shardBlockHash = Bytes32.random();
-    Bytes32 lastCrosslinkHash = Bytes32.random();
-    UnsignedLong justifiedSlot = randomUnsignedLong();
-    Bytes32 justifiedBlockHash = Bytes32.random();
-
-    AttestationData ad1 =
-        new AttestationData(
-            slot,
-            shard,
-            beaconBlockHash,
-            epochBoundaryHash,
-            shardBlockHash,
-            lastCrosslinkHash,
-            justifiedSlot,
-            justifiedBlockHash);
-    AttestationData ad2 =
+    AttestationData testAttestationData =
         new AttestationData(
             slot + randomLong(),
             shard,
@@ -118,31 +81,12 @@ class AttestationDataTest {
             justifiedSlot,
             justifiedBlockHash);
 
-    assertNotEquals(ad1, ad2);
+    assertNotEquals(attestationData, testAttestationData);
   }
 
   @Test
   void equalsReturnsFalseWhenShardsAreDifferent() {
-    long slot = randomLong();
-    UnsignedLong shard = randomUnsignedLong();
-    Bytes32 beaconBlockHash = Bytes32.random();
-    Bytes32 epochBoundaryHash = Bytes32.random();
-    Bytes32 shardBlockHash = Bytes32.random();
-    Bytes32 lastCrosslinkHash = Bytes32.random();
-    UnsignedLong justifiedSlot = randomUnsignedLong();
-    Bytes32 justifiedBlockHash = Bytes32.random();
-
-    AttestationData ad1 =
-        new AttestationData(
-            slot,
-            shard,
-            beaconBlockHash,
-            epochBoundaryHash,
-            shardBlockHash,
-            lastCrosslinkHash,
-            justifiedSlot,
-            justifiedBlockHash);
-    AttestationData ad2 =
+    AttestationData testAttestationData =
         new AttestationData(
             slot,
             shard.plus(randomUnsignedLong()),
@@ -153,31 +97,12 @@ class AttestationDataTest {
             justifiedSlot,
             justifiedBlockHash);
 
-    assertNotEquals(ad1, ad2);
+    assertNotEquals(attestationData, testAttestationData);
   }
 
   @Test
   void equalsReturnsFalseWhenBeaconBlockHashesAreDifferent() {
-    long slot = randomLong();
-    UnsignedLong shard = randomUnsignedLong();
-    Bytes32 beaconBlockHash = Bytes32.random();
-    Bytes32 epochBoundaryHash = Bytes32.random();
-    Bytes32 shardBlockHash = Bytes32.random();
-    Bytes32 lastCrosslinkHash = Bytes32.random();
-    UnsignedLong justifiedSlot = randomUnsignedLong();
-    Bytes32 justifiedBlockHash = Bytes32.random();
-
-    AttestationData ad1 =
-        new AttestationData(
-            slot,
-            shard,
-            beaconBlockHash,
-            epochBoundaryHash,
-            shardBlockHash,
-            lastCrosslinkHash,
-            justifiedSlot,
-            justifiedBlockHash);
-    AttestationData ad2 =
+    AttestationData testAttestationData =
         new AttestationData(
             slot,
             shard,
@@ -188,31 +113,12 @@ class AttestationDataTest {
             justifiedSlot,
             justifiedBlockHash);
 
-    assertNotEquals(ad1, ad2);
+    assertNotEquals(attestationData, testAttestationData);
   }
 
   @Test
   void equalsReturnsFalseWhenEpochBoundaryHashesAreDifferent() {
-    long slot = randomLong();
-    UnsignedLong shard = randomUnsignedLong();
-    Bytes32 beaconBlockHash = Bytes32.random();
-    Bytes32 epochBoundaryHash = Bytes32.random();
-    Bytes32 shardBlockHash = Bytes32.random();
-    Bytes32 lastCrosslinkHash = Bytes32.random();
-    UnsignedLong justifiedSlot = randomUnsignedLong();
-    Bytes32 justifiedBlockHash = Bytes32.random();
-
-    AttestationData ad1 =
-        new AttestationData(
-            slot,
-            shard,
-            beaconBlockHash,
-            epochBoundaryHash,
-            shardBlockHash,
-            lastCrosslinkHash,
-            justifiedSlot,
-            justifiedBlockHash);
-    AttestationData ad2 =
+    AttestationData testAttestationData =
         new AttestationData(
             slot,
             shard,
@@ -223,31 +129,12 @@ class AttestationDataTest {
             justifiedSlot,
             justifiedBlockHash);
 
-    assertNotEquals(ad1, ad2);
+    assertNotEquals(attestationData, testAttestationData);
   }
 
   @Test
   void equalsReturnsFalseWhenShardBlockHashesAreDifferent() {
-    long slot = randomLong();
-    UnsignedLong shard = randomUnsignedLong();
-    Bytes32 beaconBlockHash = Bytes32.random();
-    Bytes32 epochBoundaryHash = Bytes32.random();
-    Bytes32 shardBlockHash = Bytes32.random();
-    Bytes32 lastCrosslinkHash = Bytes32.random();
-    UnsignedLong justifiedSlot = randomUnsignedLong();
-    Bytes32 justifiedBlockHash = Bytes32.random();
-
-    AttestationData ad1 =
-        new AttestationData(
-            slot,
-            shard,
-            beaconBlockHash,
-            epochBoundaryHash,
-            shardBlockHash,
-            lastCrosslinkHash,
-            justifiedSlot,
-            justifiedBlockHash);
-    AttestationData ad2 =
+    AttestationData testAttestationData =
         new AttestationData(
             slot,
             shard,
@@ -258,31 +145,12 @@ class AttestationDataTest {
             justifiedSlot,
             justifiedBlockHash);
 
-    assertNotEquals(ad1, ad2);
+    assertNotEquals(attestationData, testAttestationData);
   }
 
   @Test
   void equalsReturnsFalseWhenLastCrosslinkHashesAreDifferent() {
-    long slot = randomLong();
-    UnsignedLong shard = randomUnsignedLong();
-    Bytes32 beaconBlockHash = Bytes32.random();
-    Bytes32 epochBoundaryHash = Bytes32.random();
-    Bytes32 shardBlockHash = Bytes32.random();
-    Bytes32 lastCrosslinkHash = Bytes32.random();
-    UnsignedLong justifiedSlot = randomUnsignedLong();
-    Bytes32 justifiedBlockHash = Bytes32.random();
-
-    AttestationData ad1 =
-        new AttestationData(
-            slot,
-            shard,
-            beaconBlockHash,
-            epochBoundaryHash,
-            shardBlockHash,
-            lastCrosslinkHash,
-            justifiedSlot,
-            justifiedBlockHash);
-    AttestationData ad2 =
+    AttestationData testAttestationData =
         new AttestationData(
             slot,
             shard,
@@ -293,31 +161,12 @@ class AttestationDataTest {
             justifiedSlot,
             justifiedBlockHash);
 
-    assertNotEquals(ad1, ad2);
+    assertNotEquals(attestationData, testAttestationData);
   }
 
   @Test
   void equalsReturnsFalseWhenJustifiedSlotsAreDifferent() {
-    long slot = randomLong();
-    UnsignedLong shard = randomUnsignedLong();
-    Bytes32 beaconBlockHash = Bytes32.random();
-    Bytes32 epochBoundaryHash = Bytes32.random();
-    Bytes32 shardBlockHash = Bytes32.random();
-    Bytes32 lastCrosslinkHash = Bytes32.random();
-    UnsignedLong justifiedSlot = randomUnsignedLong();
-    Bytes32 justifiedBlockHash = Bytes32.random();
-
-    AttestationData ad1 =
-        new AttestationData(
-            slot,
-            shard,
-            beaconBlockHash,
-            epochBoundaryHash,
-            shardBlockHash,
-            lastCrosslinkHash,
-            justifiedSlot,
-            justifiedBlockHash);
-    AttestationData ad2 =
+    AttestationData testAttestationData =
         new AttestationData(
             slot,
             shard,
@@ -328,31 +177,12 @@ class AttestationDataTest {
             justifiedSlot.plus(randomUnsignedLong()),
             justifiedBlockHash);
 
-    assertNotEquals(ad1, ad2);
+    assertNotEquals(attestationData, testAttestationData);
   }
 
   @Test
   void equalsReturnsFalseWhenJustifiedBlockHashesAreDifferent() {
-    long slot = randomLong();
-    UnsignedLong shard = randomUnsignedLong();
-    Bytes32 beaconBlockHash = Bytes32.random();
-    Bytes32 epochBoundaryHash = Bytes32.random();
-    Bytes32 shardBlockHash = Bytes32.random();
-    Bytes32 lastCrosslinkHash = Bytes32.random();
-    UnsignedLong justifiedSlot = randomUnsignedLong();
-    Bytes32 justifiedBlockHash = Bytes32.random();
-
-    AttestationData ad1 =
-        new AttestationData(
-            slot,
-            shard,
-            beaconBlockHash,
-            epochBoundaryHash,
-            shardBlockHash,
-            lastCrosslinkHash,
-            justifiedSlot,
-            justifiedBlockHash);
-    AttestationData ad2 =
+    AttestationData testAttestationData =
         new AttestationData(
             slot,
             shard,
@@ -363,21 +193,11 @@ class AttestationDataTest {
             justifiedSlot,
             justifiedBlockHash.not());
 
-    assertNotEquals(ad1, ad2);
+    assertNotEquals(attestationData, testAttestationData);
   }
 
   @Test
   void rountripSSZ() {
-    AttestationData attestationData =
-        new AttestationData(
-            randomLong(),
-            randomUnsignedLong(),
-            Bytes32.random(),
-            Bytes32.random(),
-            Bytes32.random(),
-            Bytes32.random(),
-            randomUnsignedLong(),
-            Bytes32.random());
     Bytes sszAttestationDataBytes = attestationData.toBytes();
     assertEquals(attestationData, AttestationData.fromBytes(sszAttestationDataBytes));
   }

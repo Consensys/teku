@@ -28,77 +28,53 @@ import org.junit.jupiter.api.Test;
 
 class ExitTest {
 
+  UnsignedLong slot = randomUnsignedLong();
+  UnsignedLong validatorIndex = randomUnsignedLong();
+  List<Bytes48> signature = Arrays.asList(Bytes48.random(), Bytes48.random());
+
+  Exit exit = new Exit(slot, validatorIndex, signature);
+
   @Test
   void equalsReturnsTrueWhenObjectAreSame() {
-    UnsignedLong slot = randomUnsignedLong();
-    UnsignedLong validatorIndex = randomUnsignedLong();
-    List<Bytes48> signature = Arrays.asList(Bytes48.random(), Bytes48.random());
+    Exit testExit = exit;
 
-    Exit e1 = new Exit(slot, validatorIndex, signature);
-    Exit e2 = e1;
-
-    assertEquals(e1, e2);
+    assertEquals(exit, testExit);
   }
 
   @Test
   void equalsReturnsTrueWhenObjectFieldsAreEqual() {
-    UnsignedLong slot = randomUnsignedLong();
-    UnsignedLong validatorIndex = randomUnsignedLong();
-    List<Bytes48> signature = Arrays.asList(Bytes48.random(), Bytes48.random());
+    Exit testExit = new Exit(slot, validatorIndex, signature);
 
-    Exit e1 = new Exit(slot, validatorIndex, signature);
-    Exit e2 = new Exit(slot, validatorIndex, signature);
-
-    assertEquals(e1, e2);
+    assertEquals(exit, testExit);
   }
 
   @Test
   void equalsReturnsFalseWhenSlotsAreDifferent() {
-    UnsignedLong slot = randomUnsignedLong();
-    UnsignedLong validatorIndex = randomUnsignedLong();
-    List<Bytes48> signature = Arrays.asList(Bytes48.random(), Bytes48.random());
+    Exit testExit = new Exit(slot.plus(randomUnsignedLong()), validatorIndex, signature);
 
-    Exit e1 = new Exit(slot, validatorIndex, signature);
-    Exit e2 = new Exit(slot.plus(randomUnsignedLong()), validatorIndex, signature);
-
-    assertNotEquals(e1, e2);
+    assertNotEquals(exit, testExit);
   }
 
   @Test
   void equalsReturnsFalseWhenValidatorIndicesAreDifferent() {
-    UnsignedLong slot = randomUnsignedLong();
-    UnsignedLong validatorIndex = randomUnsignedLong();
-    List<Bytes48> signature = Arrays.asList(Bytes48.random(), Bytes48.random());
+    Exit testExit = new Exit(slot, validatorIndex.plus(randomUnsignedLong()), signature);
 
-    Exit e1 = new Exit(slot, validatorIndex, signature);
-    Exit e2 = new Exit(slot, validatorIndex.plus(randomUnsignedLong()), signature);
-
-    assertNotEquals(e1, e2);
+    assertNotEquals(exit, testExit);
   }
 
   @Test
   void equalsReturnsFalseWhenSignaturesAreDifferent() {
-    UnsignedLong slot = randomUnsignedLong();
-    UnsignedLong validatorIndex = randomUnsignedLong();
-    List<Bytes48> signature = Arrays.asList(Bytes48.random(), Bytes48.random());
-
     // Create copy of signature and reverse to ensure it is different.
     List<Bytes48> reverseSignature = new ArrayList<Bytes48>(signature);
     Collections.reverse(reverseSignature);
 
-    Exit e1 = new Exit(slot, validatorIndex, signature);
-    Exit e2 = new Exit(slot, validatorIndex, reverseSignature);
+    Exit testExit = new Exit(slot, validatorIndex, reverseSignature);
 
-    assertNotEquals(e1, e2);
+    assertNotEquals(exit, testExit);
   }
 
   @Test
   void rountripSSZ() {
-    Exit exit =
-        new Exit(
-            randomUnsignedLong(),
-            randomUnsignedLong(),
-            Arrays.asList(Bytes48.random(), Bytes48.random()));
     Bytes sszExitBytes = exit.toBytes();
     assertEquals(exit, Exit.fromBytes(sszExitBytes));
   }

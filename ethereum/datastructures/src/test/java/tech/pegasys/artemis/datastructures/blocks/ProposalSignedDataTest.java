@@ -24,72 +24,52 @@ import org.junit.jupiter.api.Test;
 
 class ProposalSignedDataTest {
 
+  UnsignedLong slot = randomUnsignedLong();
+  UnsignedLong shard = randomUnsignedLong();
+  Bytes32 blockHash = Bytes32.random();
+
+  ProposalSignedData proposalSignedData = new ProposalSignedData(slot, shard, blockHash);
+
   @Test
   void equalsReturnsTrueWhenObjectAreSame() {
-    UnsignedLong slot = randomUnsignedLong();
-    UnsignedLong shard = randomUnsignedLong();
-    Bytes32 blockHash = Bytes32.random();
+    ProposalSignedData testProposalSignedData = proposalSignedData;
 
-    ProposalSignedData psd1 = new ProposalSignedData(slot, shard, blockHash);
-    ProposalSignedData psd2 = psd1;
-
-    assertEquals(psd1, psd2);
+    assertEquals(proposalSignedData, testProposalSignedData);
   }
 
   @Test
   void equalsReturnsTrueWhenObjectFieldsAreEqual() {
-    UnsignedLong slot = randomUnsignedLong();
-    UnsignedLong shard = randomUnsignedLong();
-    Bytes32 blockHash = Bytes32.random();
+    ProposalSignedData testProposalSignedData = new ProposalSignedData(slot, shard, blockHash);
 
-    ProposalSignedData psd1 = new ProposalSignedData(slot, shard, blockHash);
-    ProposalSignedData psd2 = new ProposalSignedData(slot, shard, blockHash);
-
-    assertEquals(psd1, psd2);
+    assertEquals(proposalSignedData, testProposalSignedData);
   }
 
   @Test
   void equalsReturnsFalseWhenSlotsAreDifferent() {
-    UnsignedLong slot = randomUnsignedLong();
-    UnsignedLong shard = randomUnsignedLong();
-    Bytes32 blockHash = Bytes32.random();
-
-    ProposalSignedData psd1 = new ProposalSignedData(slot, shard, blockHash);
-    ProposalSignedData psd2 =
+    ProposalSignedData testProposalSignedData =
         new ProposalSignedData(slot.plus(randomUnsignedLong()), shard, blockHash);
 
-    assertNotEquals(psd1, psd2);
+    assertNotEquals(proposalSignedData, testProposalSignedData);
   }
 
   @Test
   void equalsReturnsFalseWhenShardsAreDifferent() {
-    UnsignedLong slot = randomUnsignedLong();
-    UnsignedLong shard = randomUnsignedLong();
-    Bytes32 blockHash = Bytes32.random();
-
-    ProposalSignedData psd1 = new ProposalSignedData(slot, shard, blockHash);
-    ProposalSignedData psd2 =
+    ProposalSignedData testProposalSignedData =
         new ProposalSignedData(slot, shard.plus(randomUnsignedLong()), blockHash);
 
-    assertNotEquals(psd1, psd2);
+    assertNotEquals(proposalSignedData, testProposalSignedData);
   }
 
   @Test
   void equalsReturnsFalseWhenBlockHashesAreDifferent() {
-    UnsignedLong slot = randomUnsignedLong();
-    UnsignedLong shard = randomUnsignedLong();
-    Bytes32 blockHash = Bytes32.random();
+    ProposalSignedData testProposalSignedData =
+        new ProposalSignedData(slot, shard, blockHash.not());
 
-    ProposalSignedData psd1 = new ProposalSignedData(slot, shard, blockHash);
-    ProposalSignedData psd2 = new ProposalSignedData(slot, shard, blockHash.not());
-
-    assertNotEquals(psd1, psd2);
+    assertNotEquals(proposalSignedData, testProposalSignedData);
   }
 
   @Test
   void rountripSSZ() {
-    ProposalSignedData proposalSignedData =
-        new ProposalSignedData(randomUnsignedLong(), randomUnsignedLong(), Bytes32.random());
     Bytes sszProposalSignedDataBytes = proposalSignedData.toBytes();
     assertEquals(proposalSignedData, ProposalSignedData.fromBytes(sszProposalSignedDataBytes));
   }

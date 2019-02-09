@@ -22,53 +22,41 @@ import org.junit.jupiter.api.Test;
 
 class Eth1DataTest {
 
+  Bytes32 depositRoot = Bytes32.random();
+  Bytes32 blockHash = Bytes32.random();
+
+  Eth1Data eth1Data = new Eth1Data(depositRoot, blockHash);
+
   @Test
   void equalsReturnsTrueWhenObjectAreSame() {
-    Bytes32 depositRoot = Bytes32.random();
-    Bytes32 blockHash = Bytes32.random();
+    Eth1Data testEth1Data = eth1Data;
 
-    Eth1Data ed1 = new Eth1Data(depositRoot, blockHash);
-    Eth1Data ed2 = ed1;
-
-    assertEquals(ed1, ed2);
+    assertEquals(eth1Data, testEth1Data);
   }
 
   @Test
   void equalsReturnsTrueWhenObjectFieldsAreEqual() {
-    Bytes32 depositRoot = Bytes32.random();
-    Bytes32 blockHash = Bytes32.random();
+    Eth1Data testEth1Data = new Eth1Data(depositRoot, blockHash);
 
-    Eth1Data ed1 = new Eth1Data(depositRoot, blockHash);
-    Eth1Data ed2 = new Eth1Data(depositRoot, blockHash);
-
-    assertEquals(ed1, ed2);
+    assertEquals(eth1Data, testEth1Data);
   }
 
   @Test
   void equalsReturnsFalseWhenDepositRootsAreDifferent() {
-    Bytes32 depositRoot = Bytes32.random();
-    Bytes32 blockHash = Bytes32.random();
+    Eth1Data testEth1Data = new Eth1Data(depositRoot.not(), blockHash);
 
-    Eth1Data ed1 = new Eth1Data(depositRoot, blockHash);
-    Eth1Data ed2 = new Eth1Data(depositRoot.not(), blockHash);
-
-    assertNotEquals(ed1, ed2);
+    assertNotEquals(eth1Data, testEth1Data);
   }
 
   @Test
   void equalsReturnsFalseWhenBlockHashesAreDifferent() {
-    Bytes32 depositRoot = Bytes32.random();
-    Bytes32 blockHash = Bytes32.random();
+    Eth1Data testEth1Data = new Eth1Data(depositRoot, blockHash.not());
 
-    Eth1Data ed1 = new Eth1Data(depositRoot, blockHash);
-    Eth1Data ed2 = new Eth1Data(depositRoot, blockHash.not());
-
-    assertNotEquals(ed1, ed2);
+    assertNotEquals(eth1Data, testEth1Data);
   }
 
   @Test
   void rountripSSZ() {
-    Eth1Data eth1Data = new Eth1Data(Bytes32.random(), Bytes32.random());
     Bytes sszEth1DataBytes = eth1Data.toBytes();
     assertEquals(eth1Data, Eth1Data.fromBytes(sszEth1DataBytes));
   }
