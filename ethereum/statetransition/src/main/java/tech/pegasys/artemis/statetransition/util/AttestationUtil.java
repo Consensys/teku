@@ -46,9 +46,9 @@ public class AttestationUtil {
                   .getSlot()
                   .minus(UnsignedLong.valueOf(2))
                   .times(UnsignedLong.valueOf(Constants.EPOCH_LENGTH))
-                  .compareTo(UnsignedLong.valueOf(record.getData().getSlot()))
+                  .compareTo(UnsignedLong.fromLongBits(record.getData().getSlot()))
               <= 0
-          && UnsignedLong.valueOf(record.getData().getSlot())
+          && UnsignedLong.fromLongBits(record.getData().getSlot())
                   .compareTo(state.getSlot().minus(UnsignedLong.valueOf(Constants.EPOCH_LENGTH)))
               < 0) previous_epoch_attestations.add(record);
     }
