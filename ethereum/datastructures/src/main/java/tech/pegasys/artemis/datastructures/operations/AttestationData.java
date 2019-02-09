@@ -55,12 +55,12 @@ public class AttestationData {
         reader ->
             new AttestationData(
                 reader.readUInt64(),
-                UnsignedLong.valueOf(reader.readUInt64()),
+                UnsignedLong.fromLongBits(reader.readUInt64()),
                 Bytes32.wrap(reader.readBytes()),
                 Bytes32.wrap(reader.readBytes()),
                 Bytes32.wrap(reader.readBytes()),
                 Bytes32.wrap(reader.readBytes()),
-                UnsignedLong.valueOf(reader.readUInt64()),
+                UnsignedLong.fromLongBits(reader.readUInt64()),
                 Bytes32.wrap(reader.readBytes())));
   }
 
