@@ -20,21 +20,22 @@ import tech.pegasys.artemis.services.ServiceInterface;
 public class PowchainService implements ServiceInterface {
 
   private EventBus eventBus;
-  private final ValidatorRegistrationClient vrc;
+  private ValidatorRegistrationClient vrc;
 
-  public PowchainService() {
-    this.vrc = new ValidatorRegistrationClient(eventBus);
-  }
+  public PowchainService() {}
 
   @Override
   public void init(EventBus eventBus) {
     this.eventBus = eventBus;
+    this.vrc = new ValidatorRegistrationClient(eventBus);
     this.eventBus.register(this);
   }
 
   @Override
   public void run() {
-    this.vrc.listenToPoWChain();
+    this.vrc.simulatePowChain();
+    // TODO: we need a simulation switch
+    // this.vrc.listenToPoWChain();
   }
 
   @Override

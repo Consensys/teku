@@ -29,7 +29,8 @@ public class SlotProcessorUtil {
     // TODO: change values to UnsignedLong
     int currSlot = state.getSlot().intValue();
     ArrayList<Bytes32> latestRandaoMixes = state.getLatest_randao_mixes();
-    Bytes32 prevSlotRandaoMix = latestRandaoMixes.get((currSlot - 1) % LATEST_RANDAO_MIXES_LENGTH);
+    int index = (currSlot - 1) % LATEST_RANDAO_MIXES_LENGTH;
+    Bytes32 prevSlotRandaoMix = latestRandaoMixes.get(index);
     latestRandaoMixes.set(currSlot % LATEST_RANDAO_MIXES_LENGTH, prevSlotRandaoMix);
   }
 
