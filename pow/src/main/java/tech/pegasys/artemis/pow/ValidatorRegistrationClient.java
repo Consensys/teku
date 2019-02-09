@@ -45,6 +45,13 @@ public class ValidatorRegistrationClient {
     this.eventBus = eventBus;
   }
 
+  public void simulatePowChain() {
+    // TODO: Move this simulated startup logic
+    ValidatorRegistrationContract.ChainStartEventResponse response =
+        new ValidatorRegistrationContract.ChainStartEventResponse();
+    chainStarted(response);
+  }
+
   public void listenToPoWChain() {
 
     // Setup provider and credentials

@@ -56,7 +56,6 @@ import tech.pegasys.artemis.statetransition.BeaconState;
 public class BeaconStateUtil {
 
   @VisibleForTesting
-  @SuppressWarnings("ModifiedButNotUsed")
   public static BeaconState get_initial_beacon_state(
       ArrayList<Deposit> initial_validator_deposits,
       UnsignedLong genesis_time,
@@ -267,6 +266,7 @@ public class BeaconStateUtil {
   }
 
   public static Bytes32 get_active_index_root(BeaconState state, UnsignedLong epoch) {
+    Bytes32 result = Bytes32.ZERO;
     assert get_current_epoch(state)
             .minus(UnsignedLong.valueOf(LATEST_RANDAO_MIXES_LENGTH))
             .plus(UnsignedLong.valueOf(ENTRY_EXIT_DELAY))
@@ -274,9 +274,14 @@ public class BeaconStateUtil {
         < 0;
     assert epoch.compareTo(get_current_epoch(state).plus(UnsignedLong.valueOf(ENTRY_EXIT_DELAY)))
         <= 0;
-    return state
-        .getLatest_index_roots()
-        .get(epoch.mod(UnsignedLong.valueOf(LATEST_INDEX_ROOTS_LENGTH)).intValue());
+
+    ArrayList<Bytes32> index_roots = state.getLatest_index_roots();
+    int index = epoch.mod(UnsignedLong.valueOf(LATEST_INDEX_ROOTS_LENGTH)).intValue();
+    // TODO: how do we want to handle index out of bounds?
+    if (index_roots.size() > index) {
+      result = state.getLatest_index_roots().get(index);
+    }
+    return result;
   }
 
   public static Bytes32 getShard_block_root(BeaconState state, Long shard) {
@@ -360,13 +365,19 @@ public class BeaconStateUtil {
 
   /** Return the randao mix at a recent ``epoch``. */
   public static Bytes32 get_randao_mix(BeaconState state, UnsignedLong epoch) {
+    Bytes32 result = Bytes32.ZERO;
     assert get_current_epoch(state)
             .minus(UnsignedLong.valueOf(LATEST_RANDAO_MIXES_LENGTH))
             .compareTo(epoch)
         < 0;
     assert epoch.compareTo(get_current_epoch(state)) <= 0;
     UnsignedLong index = epoch.mod(UnsignedLong.valueOf(LATEST_RANDAO_MIXES_LENGTH));
-    return state.getLatest_randao_mixes().get(index.intValue());
+    ArrayList<Bytes32> randao_mixes = state.getLatest_randao_mixes();
+    // TODO: how do we want to handle index out of bounds?
+    if (randao_mixes.size() > index.intValue()) {
+      result = randao_mixes.get(index.intValue());
+    }
+    return result;
   }
 
   public static double get_effective_balance(BeaconState state, Validator record) {
