@@ -34,7 +34,7 @@ public class EpochProcessorUtil {
         state
             .getJustification_bitfield()
             .times(UnsignedLong.valueOf(2))
-            .mod(UnsignedLong.valueOf((long) Math.pow(2, 64))));
+            .mod(UnsignedLong.fromLongBits((long) Math.pow(2, 64))));
     double total_balance = BeaconStateUtil.calc_total_balance(state);
     // TODO: change values to UnsignedLong
     // TODO: Method requires major changes following BeaconState refactor

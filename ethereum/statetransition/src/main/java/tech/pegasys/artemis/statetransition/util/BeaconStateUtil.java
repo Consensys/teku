@@ -219,7 +219,7 @@ public class BeaconStateUtil {
     for (int i = 0; i < committees_per_slot; i++) {
       CrosslinkCommittee committee =
           new CrosslinkCommittee(
-              UnsignedLong.valueOf(committees_per_slot * offset + i),
+              UnsignedLong.fromLongBits(committees_per_slot * offset + i),
               shuffling.get(toIntExact(slot_start_shard + i) % Constants.SHARD_COUNT));
       crosslink_committees_at_slot.add(committee);
     }
@@ -380,7 +380,7 @@ public class BeaconStateUtil {
   public static Bytes32 get_block_root(BeaconState state, long slot) throws Exception {
     long slot_upper_bound = slot + state.getLatest_block_roots().size();
     // TODO: change values to UnsignedLong
-    if ((state.getSlot().compareTo(UnsignedLong.valueOf(slot_upper_bound)) <= 0)
+    if ((state.getSlot().compareTo(UnsignedLong.fromLongBits(slot_upper_bound)) <= 0)
         || UnsignedLong.valueOf(slot).compareTo(state.getSlot()) < 0)
       return state
           .getLatest_block_roots()
