@@ -30,11 +30,8 @@ public class SlotProcessorUtil {
     int currSlot = state.getSlot().intValue();
     ArrayList<Bytes32> latestRandaoMixes = state.getLatest_randao_mixes();
     int index = (currSlot - 1) % LATEST_RANDAO_MIXES_LENGTH;
-    // TODO: how do we want to handle index out of bounds?
-    if (latestRandaoMixes.size() > index) {
-      Bytes32 prevSlotRandaoMix = latestRandaoMixes.get(index);
-      latestRandaoMixes.set(currSlot % LATEST_RANDAO_MIXES_LENGTH, prevSlotRandaoMix);
-    }
+    Bytes32 prevSlotRandaoMix = latestRandaoMixes.get(index);
+    latestRandaoMixes.set(currSlot % LATEST_RANDAO_MIXES_LENGTH, prevSlotRandaoMix);
   }
 
   public static void updateRecentBlockHashes(BeaconState state, BeaconBlock block)
