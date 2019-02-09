@@ -25,7 +25,7 @@ import tech.pegasys.artemis.statetransition.util.SlotProcessorUtil;
 
 public class StateTransition {
 
-  private static final Logger logger = LogManager.getLogger();
+  private static final Logger LOG = LogManager.getLogger();
 
   public StateTransition() {}
 
@@ -47,13 +47,13 @@ public class StateTransition {
         epochProcessor(state);
       }
     } catch (Exception e) {
-      // e.printStackTrace();
+      LOG.warn(e.toString());
     }
   }
 
   protected void slotProcessor(BeaconState state, BeaconBlock block) throws Exception {
     state.incrementSlot();
-    logger.info("Processing new slot: " + state.getSlot());
+    LOG.info("Processing new slot: " + state.getSlot());
     // Slots the proposer has skipped (i.e. layers of RANDAO expected)
     // should be in Validator.randao_skips
     SlotProcessorUtil.updateLatestRandaoMixes(state);
@@ -61,7 +61,7 @@ public class StateTransition {
   }
 
   protected void blockProcessor(BeaconState state, BeaconBlock block) {
-    logger.info("Processing new block in slot: " + block.getSlot());
+    LOG.info("Processing new block in slot: " + block.getSlot());
     // block header
     BlockProcessorUtil.verify_signature(state, block);
     // verifyAndUpdateRandao(state, block);
@@ -71,7 +71,7 @@ public class StateTransition {
   }
 
   protected void epochProcessor(BeaconState state) throws Exception {
-    logger.info("Processing new epoch in slot: " + state.getSlot());
+    LOG.info("Processing new epoch in slot: " + state.getSlot());
     EpochProcessorUtil.updateJustification(state);
     EpochProcessorUtil.updateFinalization(state);
     EpochProcessorUtil.updateCrosslinks(state);
