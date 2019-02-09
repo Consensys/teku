@@ -14,6 +14,8 @@
 package tech.pegasys.artemis.datastructures.operations;
 
 import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes48;
 import net.consensys.cava.ssz.SSZ;
@@ -40,15 +42,59 @@ public class ProposerSlashing {
     this.proposal_signature_2 = proposal_signature_2;
   }
 
+  public static ProposerSlashing fromBytes(Bytes bytes) {
+    return SSZ.decode(
+        bytes,
+        reader ->
+            new ProposerSlashing(
+                reader.readInt(24),
+                ProposalSignedData.fromBytes(reader.readBytes()),
+                reader.readBytesList().stream().map(Bytes48::wrap).collect(Collectors.toList()),
+                ProposalSignedData.fromBytes(reader.readBytes()),
+                reader.readBytesList().stream().map(Bytes48::wrap).collect(Collectors.toList())));
+  }
+
   public Bytes toBytes() {
     return SSZ.encode(
         writer -> {
           writer.writeInt(proposer_index, 24);
           writer.writeBytes(proposal_data_1.toBytes());
-          writer.writeBytesList(proposal_signature_1.toArray(new Bytes48[0]));
+          writer.writeBytesList(proposal_signature_1);
           writer.writeBytes(proposal_data_2.toBytes());
-          writer.writeBytesList(proposal_signature_2.toArray(new Bytes48[0]));
+          writer.writeBytesList(proposal_signature_2);
         });
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(
+        proposer_index,
+        proposal_data_1,
+        proposal_signature_1,
+        proposal_data_2,
+        proposal_signature_2);
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (Objects.isNull(obj)) {
+      return false;
+    }
+
+    if (this == obj) {
+      return true;
+    }
+
+    if (!(obj instanceof ProposerSlashing)) {
+      return false;
+    }
+
+    ProposerSlashing other = (ProposerSlashing) obj;
+    return Objects.equals(this.getProposer_index(), other.getProposer_index())
+        && Objects.equals(this.getProposal_data_1(), other.getProposal_data_1())
+        && Objects.equals(this.getProposal_signature_1(), other.getProposal_signature_1())
+        && Objects.equals(this.getProposal_data_2(), other.getProposal_data_2())
+        && Objects.equals(this.getProposal_signature_2(), other.getProposal_signature_2());
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */
