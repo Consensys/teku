@@ -24,15 +24,6 @@ import net.consensys.cava.ssz.SSZ;
 
 public final class DepositInput {
 
-  public static DepositInput fromBytes(Bytes bytes) {
-    return SSZ.decode(
-        bytes,
-        reader ->
-            new DepositInput(
-                Bytes48.wrap(reader.readBytes()),
-                Bytes32.wrap(reader.readBytes()),
-                reader.readBytesList().stream().map(Bytes48::wrap).collect(Collectors.toList())));
-  }
   // BLS pubkey
   Bytes48 pubkey;
   // Withdrawal credentials
@@ -45,6 +36,16 @@ public final class DepositInput {
     this.pubkey = pubkey;
     this.withdrawal_credentials = withdrawal_credentials;
     this.proof_of_possession = proof_of_possession;
+  }
+
+  public static DepositInput fromBytes(Bytes bytes) {
+    return SSZ.decode(
+        bytes,
+        reader ->
+            new DepositInput(
+                Bytes48.wrap(reader.readBytes()),
+                Bytes32.wrap(reader.readBytes()),
+                reader.readBytesList().stream().map(Bytes48::wrap).collect(Collectors.toList())));
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */
@@ -84,17 +85,15 @@ public final class DepositInput {
 
   @Override
   public int hashCode() {
-    int result = Objects.hash(pubkey, withdrawal_credentials);
-    result = 31 * result + proof_of_possession.hashCode();
-    return result;
+    return Objects.hash(pubkey, withdrawal_credentials, proof_of_possession);
   }
 
   public Bytes toBytes() {
     return SSZ.encode(
         writer -> {
-          writer.writeBytesList(proof_of_possession.toArray(new Bytes48[0]));
           writer.writeBytes(pubkey);
           writer.writeBytes(withdrawal_credentials);
+          writer.writeBytesList(proof_of_possession);
         });
   }
 }

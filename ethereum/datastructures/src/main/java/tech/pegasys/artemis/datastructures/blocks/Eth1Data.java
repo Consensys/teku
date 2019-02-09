@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.datastructures.blocks;
 
+import java.util.Objects;
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.ssz.SSZ;
@@ -27,12 +28,42 @@ public final class Eth1Data {
     this.block_hash = block_hash;
   }
 
+  public static Eth1Data fromBytes(Bytes bytes) {
+    return SSZ.decode(
+        bytes,
+        reader -> new Eth1Data(Bytes32.wrap(reader.readBytes()), Bytes32.wrap(reader.readBytes())));
+  }
+
   public Bytes toBytes() {
     return SSZ.encode(
         writer -> {
           writer.writeBytes(deposit_root);
           writer.writeBytes(block_hash);
         });
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(deposit_root, block_hash);
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (Objects.isNull(obj)) {
+      return false;
+    }
+
+    if (this == obj) {
+      return true;
+    }
+
+    if (!(obj instanceof Eth1Data)) {
+      return false;
+    }
+
+    Eth1Data other = (Eth1Data) obj;
+    return Objects.equals(this.getDeposit_root(), other.getDeposit_root())
+        && Objects.equals(this.getBlock_hash(), other.getBlock_hash());
   }
 
   /** @return the deposit_root */

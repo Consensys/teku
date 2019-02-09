@@ -13,7 +13,13 @@
 
 package tech.pegasys.artemis.datastructures.operations;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.bytes.Bytes48;
@@ -21,15 +27,58 @@ import org.junit.jupiter.api.Test;
 
 class DepositInputTest {
 
+  Bytes48 pubkey = Bytes48.random();
+  Bytes32 withdrawalCredentials = Bytes32.random();
+  List<Bytes48> proofOfPossession = Arrays.asList(Bytes48.random(), Bytes48.random());
+
+  DepositInput depositInput = new DepositInput(pubkey, withdrawalCredentials, proofOfPossession);
+
+  @Test
+  void equalsReturnsTrueWhenObjectAreSame() {
+    DepositInput testDepositInput = depositInput;
+
+    assertEquals(depositInput, testDepositInput);
+  }
+
+  @Test
+  void equalsReturnsTrueWhenObjectFieldsAreEqual() {
+    DepositInput testDepositInput =
+        new DepositInput(pubkey, withdrawalCredentials, proofOfPossession);
+
+    assertEquals(depositInput, testDepositInput);
+  }
+
+  @Test
+  void equalsReturnsFalseWhenPubkeysAreDifferent() {
+    DepositInput testDepositInput =
+        new DepositInput(pubkey.not(), withdrawalCredentials, proofOfPossession);
+
+    assertNotEquals(depositInput, testDepositInput);
+  }
+
+  @Test
+  void equalsReturnsFalseWhenWithdrawalCredentialsAreDifferent() {
+    DepositInput testDepositInput =
+        new DepositInput(pubkey, withdrawalCredentials.not(), proofOfPossession);
+
+    assertNotEquals(depositInput, testDepositInput);
+  }
+
+  @Test
+  void equalsReturnsFalseWhenProofsOfPosessionAreDifferent() {
+    // Create copy of signature and reverse to ensure it is different.
+    List<Bytes48> reverseProofOfPossession = new ArrayList<Bytes48>(proofOfPossession);
+    Collections.reverse(reverseProofOfPossession);
+
+    DepositInput testDepositInput =
+        new DepositInput(pubkey, withdrawalCredentials, reverseProofOfPossession);
+
+    assertNotEquals(depositInput, testDepositInput);
+  }
+
   @Test
   void rountripSSZ() {
-    DepositInput di =
-        new DepositInput(
-            Bytes48.random(),
-            Bytes32.random(),
-            Arrays.asList(Bytes48.random(), Bytes48.random(), Bytes48.random()));
-    Bytes sszBytes = di.toBytes();
-    // TODO: SSZ testing needs fix after v0.01
-    // assertEquals(di, DepositInput.fromBytes(sszBytes));
+    Bytes sszDepositInputBytes = depositInput.toBytes();
+    assertEquals(depositInput, DepositInput.fromBytes(sszDepositInputBytes));
   }
 }
