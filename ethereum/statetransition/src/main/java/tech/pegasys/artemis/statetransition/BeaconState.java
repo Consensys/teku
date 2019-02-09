@@ -348,6 +348,6 @@ public class BeaconState {
   }
 
   public void incrementSlot() {
-    setSlot(slot.plus(UnsignedLong.ONE));
+    this.slot = slot.plus(UnsignedLong.ONE);
   }
 }

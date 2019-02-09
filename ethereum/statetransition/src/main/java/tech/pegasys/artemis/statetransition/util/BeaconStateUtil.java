@@ -35,6 +35,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
@@ -56,14 +57,23 @@ import tech.pegasys.artemis.statetransition.BeaconState;
 public class BeaconStateUtil {
 
   @VisibleForTesting
-  @SuppressWarnings("ModifiedButNotUsed")
   public static BeaconState get_initial_beacon_state(
       ArrayList<Deposit> initial_validator_deposits,
       UnsignedLong genesis_time,
       Eth1Data latest_eth1_data) {
 
-    ArrayList<Bytes32> latest_randao_mixes = new ArrayList<>();
-    ArrayList<Bytes32> latest_block_roots = new ArrayList<>();
+    ArrayList<Bytes32> latest_randao_mixes =
+        new ArrayList<>(
+            Collections.nCopies(Constants.LATEST_RANDAO_MIXES_LENGTH, Constants.ZERO_HASH));
+    ArrayList<Bytes32> latest_block_roots =
+        new ArrayList<>(
+            Collections.nCopies(Constants.LATEST_BLOCK_ROOTS_LENGTH, Constants.ZERO_HASH));
+    ArrayList<Bytes32> latest_index_roots =
+        new ArrayList<>(
+            Collections.nCopies(Constants.LATEST_INDEX_ROOTS_LENGTH, Constants.ZERO_HASH));
+    ArrayList<UnsignedLong> latest_penalized_balances =
+        new ArrayList<>(
+            Collections.nCopies(Constants.LATEST_PENALIZED_EXIT_LENGTH, UnsignedLong.ZERO));
     ArrayList<CrosslinkRecord> latest_crosslinks = new ArrayList<>(SHARD_COUNT);
 
     for (int i = 0; i < SHARD_COUNT; i++) {
@@ -103,8 +113,8 @@ public class BeaconStateUtil {
             // Recent state
             latest_crosslinks,
             latest_block_roots,
-            new ArrayList<Bytes32>(),
-            new ArrayList<UnsignedLong>(),
+            latest_index_roots,
+            latest_penalized_balances,
             new ArrayList<PendingAttestationRecord>(),
             new ArrayList<Bytes32>(),
 
@@ -274,9 +284,10 @@ public class BeaconStateUtil {
         < 0;
     assert epoch.compareTo(get_current_epoch(state).plus(UnsignedLong.valueOf(ENTRY_EXIT_DELAY)))
         <= 0;
-    return state
-        .getLatest_index_roots()
-        .get(epoch.mod(UnsignedLong.valueOf(LATEST_INDEX_ROOTS_LENGTH)).intValue());
+
+    ArrayList<Bytes32> index_roots = state.getLatest_index_roots();
+    int index = epoch.mod(UnsignedLong.valueOf(LATEST_INDEX_ROOTS_LENGTH)).intValue();
+    return state.getLatest_index_roots().get(index);
   }
 
   public static Bytes32 getShard_block_root(BeaconState state, Long shard) {
@@ -366,7 +377,8 @@ public class BeaconStateUtil {
         < 0;
     assert epoch.compareTo(get_current_epoch(state)) <= 0;
     UnsignedLong index = epoch.mod(UnsignedLong.valueOf(LATEST_RANDAO_MIXES_LENGTH));
-    return state.getLatest_randao_mixes().get(index.intValue());
+    ArrayList<Bytes32> randao_mixes = state.getLatest_randao_mixes();
+    return randao_mixes.get(index.intValue());
   }
 
   public static double get_effective_balance(BeaconState state, Validator record) {
