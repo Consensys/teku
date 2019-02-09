@@ -31,7 +31,7 @@ dependencyManagement {
     dependency 'io.vertx:vertx-web:3.6.3'
 
 
-    dependencySet(group: 'net.consensys.cava', version: '1.0.0-425F50-snapshot') {
+    dependencySet(group: 'net.consensys.cava', version: '1.0.0-752375-snapshot') {
       entry 'cava-bytes'
       entry 'cava-crypto'
       entry 'cava-junit'

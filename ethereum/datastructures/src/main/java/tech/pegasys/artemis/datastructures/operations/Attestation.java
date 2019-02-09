@@ -14,6 +14,8 @@
 package tech.pegasys.artemis.datastructures.operations;
 
 import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.bytes.Bytes48;
@@ -37,14 +39,51 @@ public class Attestation {
     this.aggregate_signature = aggregate_signature;
   }
 
+  public static Attestation fromBytes(Bytes bytes) {
+    return SSZ.decode(
+        bytes,
+        reader ->
+            new Attestation(
+                AttestationData.fromBytes(reader.readBytes()),
+                Bytes32.wrap(reader.readBytes()),
+                Bytes32.wrap(reader.readBytes()),
+                reader.readBytesList().stream().map(Bytes48::wrap).collect(Collectors.toList())));
+  }
+
   public Bytes toBytes() {
     return SSZ.encode(
         writer -> {
           writer.writeBytes(data.toBytes());
           writer.writeBytes(participation_bitfield);
           writer.writeBytes(custody_bitfield);
-          writer.writeBytesList(aggregate_signature.toArray(new Bytes48[0]));
+          writer.writeBytesList(aggregate_signature);
         });
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(data, participation_bitfield, custody_bitfield, aggregate_signature);
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (Objects.isNull(obj)) {
+      return false;
+    }
+
+    if (this == obj) {
+      return true;
+    }
+
+    if (!(obj instanceof Attestation)) {
+      return false;
+    }
+
+    Attestation other = (Attestation) obj;
+    return Objects.equals(this.getData(), other.getData())
+        && Objects.equals(this.getParticipation_bitfield(), other.getParticipation_bitfield())
+        && Objects.equals(this.getCustody_bitfield(), other.getCustody_bitfield())
+        && Objects.equals(this.getAggregate_signature(), other.getAggregate_signature());
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */
