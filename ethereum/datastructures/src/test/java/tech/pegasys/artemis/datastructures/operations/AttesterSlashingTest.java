@@ -14,65 +14,64 @@
 package tech.pegasys.artemis.datastructures.operations;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomSlashableVoteData;
+import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomSlashableAttestation;
 
 import java.util.Objects;
 import net.consensys.cava.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 
-class CasperSlashingTest {
+class AttesterSlashingTest {
 
-  SlashableVoteData votes1 = randomSlashableVoteData();
-  SlashableVoteData votes2 = randomSlashableVoteData();
+  private SlashableAttestation votes1 = randomSlashableAttestation();
+  private SlashableAttestation votes2 = randomSlashableAttestation();
 
-  CasperSlashing casperSlashing = new CasperSlashing(votes1, votes2);
+  private AttesterSlashing attesterSlashing = new AttesterSlashing(votes1, votes2);
 
   @Test
   void equalsReturnsTrueWhenObjectAreSame() {
-    CasperSlashing testCasperSlashing = casperSlashing;
+    AttesterSlashing testAttesterSlashing = attesterSlashing;
 
-    assertEquals(casperSlashing, testCasperSlashing);
+    assertEquals(attesterSlashing, testAttesterSlashing);
   }
 
   @Test
   void equalsReturnsTrueWhenObjectFieldsAreEqual() {
-    CasperSlashing testCasperSlashing = new CasperSlashing(votes1, votes2);
+    AttesterSlashing testAttesterSlashing = new AttesterSlashing(votes1, votes2);
 
-    assertEquals(casperSlashing, testCasperSlashing);
+    assertEquals(attesterSlashing, testAttesterSlashing);
   }
 
   @Test
   void equalsReturnsFalseWhenVotes1IsDifferent() {
     // SlashableVoteData is rather involved to create. Just create a random one until it is not the
     // same as the original.
-    SlashableVoteData otherVotes1 = randomSlashableVoteData();
+    SlashableAttestation otherVotes1 = randomSlashableAttestation();
     while (Objects.equals(otherVotes1, votes1)) {
-      otherVotes1 = randomSlashableVoteData();
+      otherVotes1 = randomSlashableAttestation();
     }
 
-    CasperSlashing testCasperSlashing = new CasperSlashing(otherVotes1, votes2);
+    AttesterSlashing testAttesterSlashing = new AttesterSlashing(otherVotes1, votes2);
 
-    assertNotEquals(casperSlashing, testCasperSlashing);
+    assertEquals(attesterSlashing, testAttesterSlashing);
   }
 
   @Test
   void equalsReturnsFalseWhenVotes2IsDifferent() {
     // SlashableVoteData is rather involved to create. Just create a random one until it is not the
     // same as the original.
-    SlashableVoteData otherVotes2 = randomSlashableVoteData();
+    SlashableAttestation otherVotes2 = randomSlashableAttestation();
     while (Objects.equals(otherVotes2, votes2)) {
-      otherVotes2 = randomSlashableVoteData();
+      otherVotes2 = randomSlashableAttestation();
     }
 
-    CasperSlashing testCasperSlashing = new CasperSlashing(votes1, otherVotes2);
+    AttesterSlashing testAttesterSlashing = new AttesterSlashing(votes1, otherVotes2);
 
-    assertNotEquals(casperSlashing, testCasperSlashing);
+    assertEquals(attesterSlashing, testAttesterSlashing);
   }
 
   @Test
   void rountripSSZ() {
-    Bytes sszCasperSlashingBytes = casperSlashing.toBytes();
-    assertEquals(casperSlashing, CasperSlashing.fromBytes(sszCasperSlashingBytes));
+    Bytes sszCasperSlashingBytes = attesterSlashing.toBytes();
+    assertEquals(attesterSlashing, AttesterSlashing.fromBytes(sszCasperSlashingBytes));
   }
 }

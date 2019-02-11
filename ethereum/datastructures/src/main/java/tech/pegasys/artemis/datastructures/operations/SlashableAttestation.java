@@ -15,51 +15,61 @@ package tech.pegasys.artemis.datastructures.operations;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
+
+import com.google.common.primitives.UnsignedLong;
 import net.consensys.cava.bytes.Bytes;
+import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.ssz.SSZ;
 
-public class SlashableVoteData {
+public class SlashableAttestation {
 
-  private List<Integer> custody_bit_0_indices;
-  private List<Integer> custody_bit_1_indices;
+  private List<UnsignedLong> validator_indices;
   private AttestationData data;
+  private Bytes32 custody_bitfield;
   private BLSSignature aggregate_signature;
 
-  public SlashableVoteData(
-      List<Integer> custody_bit_0_indices,
-      List<Integer> custody_bit_1_indices,
+  public SlashableAttestation(
+      List<UnsignedLong> validator_indices,
       AttestationData data,
+      Bytes32 custody_bitfield,
       BLSSignature aggregate_signature) {
-    this.custody_bit_0_indices = custody_bit_0_indices;
-    this.custody_bit_1_indices = custody_bit_1_indices;
+    this.validator_indices = validator_indices;
     this.data = data;
+    this.custody_bitfield = custody_bitfield;
     this.aggregate_signature = aggregate_signature;
   }
 
-  public static SlashableVoteData fromBytes(Bytes bytes) {
+  public static SlashableAttestation fromBytes(Bytes bytes) {
     return SSZ.decode(
         bytes,
         reader ->
-            new SlashableVoteData(
-                reader.readIntList(24),
-                reader.readIntList(24),
+            new SlashableAttestation(
+              reader
+              .readUInt64List()
+              .stream()
+              .map(UnsignedLong::fromLongBits)
+              .collect(Collectors.toList()),
                 AttestationData.fromBytes(reader.readBytes()),
+                Bytes32.wrap(reader.readBytes()),
                 BLSSignature.fromBytes(reader.readBytes())));
   }
 
   public Bytes toBytes() {
     return SSZ.encode(
         writer -> {
-          writer.writeIntList(24, custody_bit_0_indices);
-          writer.writeIntList(24, custody_bit_1_indices);
+          writer.writeULongIntList(
+              64,
+              validator_indices.stream().map(UnsignedLong::longValue).collect(Collectors.toList()));
           writer.writeBytes(data.toBytes());
+          writer.writeBytes(custody_bitfield);
           writer.writeBytes(aggregate_signature.toBytes());
         });
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(custody_bit_0_indices, custody_bit_1_indices, data, aggregate_signature);
+    return Objects.hash(validator_indices, data, custody_bitfield, aggregate_signature);
   }
 
   @Override
@@ -72,25 +82,18 @@ public class SlashableVoteData {
       return true;
     }
 
-    if (!(obj instanceof SlashableVoteData)) {
+    if (!(obj instanceof SlashableAttestation)) {
       return false;
     }
 
-    SlashableVoteData other = (SlashableVoteData) obj;
-    return Objects.equals(this.getCustody_bit_0_indices(), other.getCustody_bit_0_indices())
-        && Objects.equals(this.getCustody_bit_1_indices(), other.getCustody_bit_1_indices())
+    SlashableAttestation other = (SlashableAttestation) obj;
+    return Objects.equals(this.getValidator_indices(), other.getValidator_indices())
         && Objects.equals(this.getData(), other.getData())
+        && Objects.equals(this.getCustody_bitfield(), other.getCustody_bitfield())
         && Objects.equals(this.getAggregate_signature(), other.getAggregate_signature());
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */
-  public List<Integer> getCustody_bit_0_indices() {
-    return custody_bit_0_indices;
-  }
-
-  public void setCustody_bit_0_indices(List<Integer> custody_bit_0_indices) {
-    this.custody_bit_0_indices = custody_bit_0_indices;
-  }
 
   public AttestationData getData() {
     return data;
@@ -108,11 +111,20 @@ public class SlashableVoteData {
     this.aggregate_signature = aggregate_signature;
   }
 
-  public List<Integer> getCustody_bit_1_indices() {
-    return custody_bit_1_indices;
+  public List<UnsignedLong> getValidator_indices() {
+    return validator_indices;
   }
 
-  public void setCustody_bit_1_indices(List<Integer> custody_bit_1_indices) {
-    this.custody_bit_1_indices = custody_bit_1_indices;
+  public void setValidator_indices(List<UnsignedLong> validator_indices) {
+    this.validator_indices = validator_indices;
   }
+
+  public Bytes32 getCustody_bitfield() {
+    return custody_bitfield;
+  }
+
+  public void setCustody_bitfield(Bytes32 custody_bitfield) {
+    this.custody_bitfield = custody_bitfield;
+  }
+
 }

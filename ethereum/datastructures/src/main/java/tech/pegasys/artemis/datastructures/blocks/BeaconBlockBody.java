@@ -22,9 +22,6 @@ import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.AttesterSlashing;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.Exit;
-import tech.pegasys.artemis.datastructures.operations.ProofOfCustodyChallenge;
-import tech.pegasys.artemis.datastructures.operations.ProofOfCustodyResponse;
-import tech.pegasys.artemis.datastructures.operations.ProofOfCustodySeedChange;
 import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
 
 /** A Beacon block body */
@@ -35,21 +32,15 @@ public class BeaconBlockBody {
   private List<Deposit> deposits;
   private List<Exit> exits;
 
-  // ProofOfCustody fields are not yet used. When they are they should be added to the constructor,
-  // fromBytes, toBytes, hashCode, and equals.
-  private List<ProofOfCustodySeedChange> poc_seed_changes;
-  private List<ProofOfCustodyChallenge> poc_challenges;
-  private List<ProofOfCustodyResponse> poc_responses;
-
   public BeaconBlockBody(
       List<ProposerSlashing> proposer_slashings,
       List<AttesterSlashing> attester_slashings,
       List<Attestation> attestations,
       List<Deposit> deposits,
       List<Exit> exits) {
-    this.attestations = attestations;
     this.proposer_slashings = proposer_slashings;
     this.attester_slashings = attester_slashings;
+    this.attestations = attestations;
     this.deposits = deposits;
     this.exits = exits;
   }
@@ -105,7 +96,7 @@ public class BeaconBlockBody {
 
   @Override
   public int hashCode() {
-    return Objects.hash(attestations, proposer_slashings, attester_slashings, deposits, exits);
+    return Objects.hash(proposer_slashings, attester_slashings, attestations, deposits, exits);
   }
 
   @Override

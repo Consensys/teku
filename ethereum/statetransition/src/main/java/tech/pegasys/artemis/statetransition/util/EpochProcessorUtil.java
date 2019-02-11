@@ -23,7 +23,7 @@ import java.util.ListIterator;
 import net.consensys.cava.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.state.CrosslinkCommittee;
-import tech.pegasys.artemis.datastructures.state.CrosslinkRecord;
+import tech.pegasys.artemis.datastructures.state.Crosslink;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.statetransition.BeaconState;
 
@@ -72,7 +72,7 @@ public class EpochProcessorUtil {
               .getLatest_crosslinks()
               .set(
                   shard.intValue(),
-                  new CrosslinkRecord(winning_root(crosslink_committee), state.getSlot()));
+                  new Crosslink(state.getSlot(), winning_root(crosslink_committee)));
         }
       }
     }

@@ -25,13 +25,13 @@ import org.junit.jupiter.api.Test;
 
 class AttestationTest {
 
-  AttestationData data = randomAttestationData();
-  Bytes32 participationBitfield = Bytes32.random();
-  Bytes32 custodyBitfield = Bytes32.random();
+  private Bytes32 aggregationBitfield = Bytes32.random();
+  private AttestationData data = randomAttestationData();
+  private Bytes32 custodyBitfield = Bytes32.random();
   BLSSignature aggregateSignature = new BLSSignature(Bytes48.random(), Bytes48.random());
 
-  Attestation attestation =
-      new Attestation(data, participationBitfield, custodyBitfield, aggregateSignature);
+  private Attestation attestation =
+      new Attestation(aggregationBitfield, data, custodyBitfield, aggregateSignature);
 
   @Test
   void equalsReturnsTrueWhenObjectAreSame() {
@@ -43,7 +43,7 @@ class AttestationTest {
   @Test
   void equalsReturnsTrueWhenObjectFieldsAreEqual() {
     Attestation testAttestation =
-        new Attestation(data, participationBitfield, custodyBitfield, aggregateSignature);
+        new Attestation(aggregationBitfield, data, custodyBitfield, aggregateSignature);
 
     assertEquals(attestation, testAttestation);
   }
@@ -58,7 +58,7 @@ class AttestationTest {
     }
 
     Attestation testAttestation =
-        new Attestation(otherData, participationBitfield, custodyBitfield, aggregateSignature);
+        new Attestation(aggregationBitfield, otherData, custodyBitfield, aggregateSignature);
 
     assertNotEquals(attestation, testAttestation);
   }
@@ -66,7 +66,7 @@ class AttestationTest {
   @Test
   void equalsReturnsFalseWhenParticipationBitfieldsAreDifferent() {
     Attestation testAttestation =
-        new Attestation(data, participationBitfield.not(), custodyBitfield, aggregateSignature);
+        new Attestation(aggregationBitfield.not(), data, custodyBitfield, aggregateSignature);
 
     assertNotEquals(attestation, testAttestation);
   }
@@ -74,7 +74,7 @@ class AttestationTest {
   @Test
   void equalsReturnsFalseWhenCustodyBitfieldsAreDifferent() {
     Attestation testAttestation =
-        new Attestation(data, participationBitfield, custodyBitfield.not(), aggregateSignature);
+        new Attestation(aggregationBitfield, data, custodyBitfield.not(), aggregateSignature);
 
     assertNotEquals(attestation, testAttestation);
   }
@@ -86,7 +86,7 @@ class AttestationTest {
         new BLSSignature(aggregateSignature.getC1(), aggregateSignature.getC0());
 
     Attestation testAttestation =
-        new Attestation(data, participationBitfield, custodyBitfield, reverseAggregateSignature);
+        new Attestation(aggregationBitfield, data, custodyBitfield, reverseAggregateSignature);
 
     assertNotEquals(attestation, testAttestation);
   }

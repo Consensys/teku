@@ -24,11 +24,11 @@ import org.junit.jupiter.api.Test;
 
 class ExitTest {
 
-  UnsignedLong slot = randomUnsignedLong();
-  UnsignedLong validatorIndex = randomUnsignedLong();
-  BLSSignature signature = new BLSSignature(Bytes48.random(), Bytes48.random());
+  private UnsignedLong slot = randomUnsignedLong();
+  private UnsignedLong validatorIndex = randomUnsignedLong();
+  private BLSSignature signature = new BLSSignature(Bytes48.random(), Bytes48.random());
 
-  Exit exit = new Exit(slot, validatorIndex, signature);
+  private Exit exit = new Exit(slot, validatorIndex, signature);
 
   @Test
   void equalsReturnsTrueWhenObjectAreSame() {

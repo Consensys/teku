@@ -23,11 +23,11 @@ import org.junit.jupiter.api.Test;
 
 class DepositInputTest {
 
-  Bytes48 pubkey = Bytes48.random();
-  Bytes32 withdrawalCredentials = Bytes32.random();
-  BLSSignature proofOfPossession = new BLSSignature(Bytes48.random(), Bytes48.random());
+  private Bytes48 pubkey = Bytes48.random();
+  private Bytes32 withdrawalCredentials = Bytes32.random();
+  private BLSSignature proofOfPossession = new BLSSignature(Bytes48.random(), Bytes48.random());
 
-  DepositInput depositInput = new DepositInput(pubkey, withdrawalCredentials, proofOfPossession);
+  private DepositInput depositInput = new DepositInput(pubkey, withdrawalCredentials, proofOfPossession);
 
   @Test
   void equalsReturnsTrueWhenObjectAreSame() {

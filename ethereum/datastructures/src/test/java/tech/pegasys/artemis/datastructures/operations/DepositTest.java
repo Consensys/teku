@@ -30,11 +30,11 @@ import org.junit.jupiter.api.Test;
 
 class DepositTest {
 
-  List<Bytes32> merkleBranch = Arrays.asList(Bytes32.random(), Bytes32.random(), Bytes32.random());
-  UnsignedLong merkleTreeIndex = randomUnsignedLong();
-  DepositData depositData = randomDepositData();
+  private List<Bytes32> merkleBranch = Arrays.asList(Bytes32.random(), Bytes32.random(), Bytes32.random());
+  private UnsignedLong merkleTreeIndex = randomUnsignedLong();
+  private DepositData depositData = randomDepositData();
 
-  Deposit deposit = new Deposit(merkleBranch, merkleTreeIndex, depositData);
+  private Deposit deposit = new Deposit(merkleBranch, merkleTreeIndex, depositData);
 
   @Test
   void equalsReturnsTrueWhenObjectAreSame() {

@@ -23,14 +23,14 @@ import net.consensys.cava.ssz.SSZ;
 
 public class Deposit {
 
-  private List<Bytes32> merkle_branch;
-  private UnsignedLong merkle_tree_index;
+  private List<Bytes32> branch;
+  private UnsignedLong index;
   private DepositData deposit_data;
 
   public Deposit(
-      List<Bytes32> merkle_branch, UnsignedLong merkle_tree_index, DepositData deposit_data) {
-    this.merkle_branch = merkle_branch;
-    this.merkle_tree_index = merkle_tree_index;
+      List<Bytes32> branch, UnsignedLong index, DepositData deposit_data) {
+    this.branch = branch;
+    this.index = index;
     this.deposit_data = deposit_data;
   }
 
@@ -47,15 +47,15 @@ public class Deposit {
   public Bytes toBytes() {
     return SSZ.encode(
         writer -> {
-          writer.writeBytesList(merkle_branch);
-          writer.writeUInt64(merkle_tree_index.longValue());
+          writer.writeBytesList(branch);
+          writer.writeUInt64(index.longValue());
           writer.writeBytes(deposit_data.toBytes());
         });
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(merkle_branch, merkle_tree_index, deposit_data);
+    return Objects.hash(branch, index, deposit_data);
   }
 
   @Override
@@ -73,26 +73,26 @@ public class Deposit {
     }
 
     Deposit other = (Deposit) obj;
-    return Objects.equals(this.getMerkle_branch(), other.getMerkle_branch())
-        && Objects.equals(this.getMerkle_tree_index(), other.getMerkle_tree_index())
+    return Objects.equals(this.getBranch(), other.getBranch())
+        && Objects.equals(this.getIndex(), other.getIndex())
         && Objects.equals(this.getDeposit_data(), other.getDeposit_data());
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */
-  public List<Bytes32> getMerkle_branch() {
-    return merkle_branch;
+  public List<Bytes32> getBranch() {
+    return branch;
   }
 
-  public void setMerkle_branch(List<Bytes32> merkle_branch) {
-    this.merkle_branch = merkle_branch;
+  public void setBranch(List<Bytes32> branch) {
+    this.branch = branch;
   }
 
-  public UnsignedLong getMerkle_tree_index() {
-    return merkle_tree_index;
+  public UnsignedLong getIndex() {
+    return index;
   }
 
-  public void setMerkle_tree_index(UnsignedLong merkle_tree_index) {
-    this.merkle_tree_index = merkle_tree_index;
+  public void setIndex(UnsignedLong index) {
+    this.index = index;
   }
 
   public DepositData getDeposit_data() {

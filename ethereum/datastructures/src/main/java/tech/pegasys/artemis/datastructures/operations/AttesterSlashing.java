@@ -19,12 +19,12 @@ import net.consensys.cava.ssz.SSZ;
 
 public class AttesterSlashing {
 
-  private SlashableVoteData votes_1;
-  private SlashableVoteData votes_2;
+  private SlashableAttestation slashable_attestation_1;
+  private SlashableAttestation slashable_attestation_2;
 
-  public AttesterSlashing(SlashableVoteData votes_1, SlashableVoteData votes_2) {
-    this.votes_1 = votes_1;
-    this.votes_2 = votes_2;
+  public AttesterSlashing(SlashableAttestation slashable_attestation_1, SlashableAttestation slashable_attestation_2) {
+    this.slashable_attestation_1 = slashable_attestation_1;
+    this.slashable_attestation_2 = slashable_attestation_2;
   }
 
   public static AttesterSlashing fromBytes(Bytes bytes) {
@@ -32,21 +32,21 @@ public class AttesterSlashing {
         bytes,
         reader ->
             new AttesterSlashing(
-                SlashableVoteData.fromBytes(reader.readBytes()),
-                SlashableVoteData.fromBytes(reader.readBytes())));
+                SlashableAttestation.fromBytes(reader.readBytes()),
+                SlashableAttestation.fromBytes(reader.readBytes())));
   }
 
   public Bytes toBytes() {
     return SSZ.encode(
         writer -> {
-          writer.writeBytes(votes_1.toBytes());
-          writer.writeBytes(votes_2.toBytes());
+          writer.writeBytes(slashable_attestation_1.toBytes());
+          writer.writeBytes(slashable_attestation_2.toBytes());
         });
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(votes_1, votes_2);
+    return Objects.hash(slashable_attestation_1, slashable_attestation_2);
   }
 
   @Override
@@ -64,24 +64,24 @@ public class AttesterSlashing {
     }
 
     AttesterSlashing other = (AttesterSlashing) obj;
-    return Objects.equals(this.getVotes_1(), other.getVotes_1())
-        && Objects.equals(this.getVotes_2(), other.getVotes_2());
+    return Objects.equals(this.getSlashable_attestation_1(), other.getSlashable_attestation_1())
+        && Objects.equals(this.getSlashable_attestation_2(), other.getSlashable_attestation_2());
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */
-  public SlashableVoteData getVotes_1() {
-    return votes_1;
+  public SlashableAttestation getSlashable_attestation_1() {
+    return slashable_attestation_1;
   }
 
-  public void setVotes_1(SlashableVoteData votes_1) {
-    this.votes_1 = votes_1;
+  public void setSlashable_attestation_1(SlashableAttestation slashable_attestation_1) {
+    this.slashable_attestation_1 = slashable_attestation_1;
   }
 
-  public SlashableVoteData getVotes_2() {
-    return votes_2;
+  public SlashableAttestation getSlashable_attestation_2() {
+    return slashable_attestation_2;
   }
 
-  public void setVotes_2(SlashableVoteData votes_2) {
-    this.votes_2 = votes_2;
+  public void setSlashable_attestation_2(SlashableAttestation slashable_attestation_2) {
+    this.slashable_attestation_2 = slashable_attestation_2;
   }
 }
