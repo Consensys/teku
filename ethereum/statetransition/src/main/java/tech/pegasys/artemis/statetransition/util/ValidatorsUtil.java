@@ -43,12 +43,4 @@ public class ValidatorsUtil {
 
     return active_validator_indices;
   }
-
-  public static double get_effective_balance(Validators validators) {
-
-    //    return validators != null
-    //        ? validators.stream().mapToDouble(Validator::get_effective_balance).sum()
-    //        : 0.0d;
-    return 0.0d;
-  }
 }

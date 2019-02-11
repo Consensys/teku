@@ -17,6 +17,8 @@ import static tech.pegasys.artemis.datastructures.Constants.MAX_DEPOSIT_AMOUNT;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.ListIterator;
 import net.consensys.cava.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.state.CrosslinkCommittee;
@@ -112,7 +114,7 @@ public class EpochProcessorUtil {
     Validators active_validators =
         ValidatorsUtil.get_active_validators(
             state.getValidator_registry(), BeaconStateUtil.get_current_epoch(state));
-    double total_balance = ValidatorsUtil.get_effective_balance(active_validators);
+    double total_balance = get_total_effective_balance(state, active_validators).doubleValue();
 
     double max_balance_churn =
         Math.max(
@@ -197,68 +199,94 @@ public class EpochProcessorUtil {
   }
 
   private static void process_penalties_and_exits(BeaconState state) {
-    // todo: penalized slot no longer exists in 0.1 spec
-    /*
+    UnsignedLong currentEpoch = BeaconStateUtil.get_current_epoch(state);
     Validators active_validators =
-        ValidatorsUtil.get_active_validators(state.getValidator_registry());
-    double total_balance = ValidatorsUtil.get_effective_balance(active_validators);
-    ListIterator<Validator> itr =
-        (ListIterator<Validator>) active_validators.iterator();
+        ValidatorsUtil.get_active_validators(state.getValidator_registry(), currentEpoch);
 
+    // total_balance = sum(get_effective_balance(state, i) for i in active_validator_indices)
+    UnsignedLong total_balance = get_total_effective_balance(state, active_validators);
+
+    ListIterator<Validator> itr =
+        (ListIterator<Validator>) state.getValidator_registry().iterator();
     while (itr.hasNext()) {
       int index = itr.nextIndex();
       Validator validator = itr.next();
 
-      if (Math.floor(state.getSlot() / Constants.EPOCH_LENGTH)
-          == Math.floor(validator.getPenalized_slot() / Constants.EPOCH_LENGTH)
-              + Math.floor(Constants.LATEST_PENALIZED_EXIT_LENGTH / 2)) {
-        int e =
-            (int) Math.floor(state.getSlot() / Constants.EPOCH_LENGTH)
-                % Constants.LATEST_PENALIZED_EXIT_LENGTH;
-        ;
-        double total_at_start =
+      if (currentEpoch.equals(
+          validator
+              .getPenalized_epoch()
+              .plus(UnsignedLong.valueOf(Constants.LATEST_PENALIZED_EXIT_LENGTH / 2)))) {
+        int epoch_index = currentEpoch.intValue() % Constants.LATEST_PENALIZED_EXIT_LENGTH;
+
+        UnsignedLong total_at_start =
             state
                 .getLatest_penalized_balances()
-                .get((e + 1) % Constants.LATEST_PENALIZED_EXIT_LENGTH);
-        double total_at_end = state.getLatest_penalized_balances().get(e);
-        double total_penalties = total_at_end - total_at_start;
-        double penalty =
-            BeaconStateUtil.get_effective_balance(state, validator)
-                * Math.min(total_penalties * 3, total_balance); // total_balance
+                .get((epoch_index + 1) % Constants.LATEST_PENALIZED_EXIT_LENGTH);
+        UnsignedLong total_at_end = state.getLatest_penalized_balances().get(epoch_index);
+        UnsignedLong total_penalties = total_at_end.minus(total_at_start);
+        UnsignedLong penalty =
+            get_effective_balance(state, validator)
+                .times(
+                    BeaconStateUtil.min(
+                        total_penalties.times(UnsignedLong.valueOf(3)), total_balance))
+                .dividedBy(total_balance);
         state
             .getValidator_balances()
-            .set(index, state.getValidator_balances().get(index) - penalty);
+            .set(index, state.getValidator_balances().get(index).minus(penalty));
       }
     }
+
     Validators eligible_validators = new Validators();
-    for (Validator validator : active_validators) {
+    for (Validator validator : state.getValidator_registry()) {
       if (eligible(state, validator)) eligible_validators.add(validator);
     }
     Collections.sort(
         eligible_validators,
         (a, b) -> {
-          return a.getExit_count().compareTo(b.getExit_count());
+          return a.getExit_epoch().compareTo(b.getExit_epoch());
         });
 
     int withdrawn_so_far = 0;
     for (Validator validator : eligible_validators) {
-      validator.setStatus(UnsignedLong.valueOf(Constants.WITHDRAWABLE));
+      validator.setStatus_flags(UnsignedLong.valueOf(Constants.WITHDRAWABLE));
       withdrawn_so_far += 1;
       if (withdrawn_so_far >= Constants.MAX_WITHDRAWALS_PER_EPOCH) break;
     }
-    */
   }
 
   private static boolean eligible(BeaconState state, Validator validator) {
-    // todo after the spec refactor status, penalized_slot no longer exists
-    //    if (validator.getPenalized_slot() <= state.getSlot()) {
-    //      long penalized_withdrawal_time =
-    //          (long) Math.floor(Constants.LATEST_PENALIZED_EXIT_LENGTH * Constants.EPOCH_LENGTH /
-    // 2);
-    //      return state.getSlot() >= validator.getPenalized_slot() + penalized_withdrawal_time;
-    //    } else
-    //      return state.getSlot()
-    //          >= validator.getPenalized_slot() + Constants.MIN_VALIDATOR_WITHDRAWAL_TIME;
-    return true;
+    UnsignedLong currentEpoch = BeaconStateUtil.get_current_epoch(state);
+    if (validator.getPenalized_epoch().compareTo(currentEpoch) <= 0) {
+      UnsignedLong penalized_withdrawal_epochs =
+          UnsignedLong.valueOf(
+              (long)
+                  Math.floor(Constants.LATEST_PENALIZED_EXIT_LENGTH * Constants.EPOCH_LENGTH / 2));
+      return state
+              .getSlot()
+              .compareTo(validator.getPenalized_epoch().plus(penalized_withdrawal_epochs))
+          >= 0;
+    } else {
+      return currentEpoch.compareTo(
+              validator
+                  .getPenalized_epoch()
+                  .plus(UnsignedLong.valueOf(Constants.MIN_VALIDATOR_WITHDRAWAL_EPOCHS)))
+          >= 0;
+    }
+  }
+
+  private static UnsignedLong get_effective_balance(BeaconState state, Validator record) {
+    int index = state.getValidator_registry().indexOf(record);
+    return BeaconStateUtil.min(
+        state.getValidator_balances().get(index),
+        UnsignedLong.valueOf(Constants.MAX_DEPOSIT_AMOUNT));
+  }
+
+  private static UnsignedLong get_total_effective_balance(
+      BeaconState state, Validators validators) {
+    UnsignedLong total_balance = UnsignedLong.ZERO;
+    for (Validator validator : validators) {
+      total_balance = total_balance.plus(get_effective_balance(state, validator));
+    }
+    return total_balance;
   }
 }
