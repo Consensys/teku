@@ -29,9 +29,21 @@ class BeaconStateUtilTest {
     assertEquals(expected, actual);
   }
 
+  void minReturnsMinWhenEqual() {
+    UnsignedLong actual = BeaconStateUtil.min(UnsignedLong.valueOf(12L), UnsignedLong.valueOf(12L));
+    UnsignedLong expected = UnsignedLong.valueOf(12L);
+    assertEquals(expected, actual);
+  }
+
   @Test
   void maxReturnsMax() {
     UnsignedLong actual = BeaconStateUtil.max(UnsignedLong.valueOf(13L), UnsignedLong.valueOf(12L));
+    UnsignedLong expected = UnsignedLong.valueOf(13L);
+    assertEquals(expected, actual);
+  }
+
+  void maxReturnsMaxWhenEqual() {
+    UnsignedLong actual = BeaconStateUtil.max(UnsignedLong.valueOf(13L), UnsignedLong.valueOf(13L));
     UnsignedLong expected = UnsignedLong.valueOf(13L);
     assertEquals(expected, actual);
   }
