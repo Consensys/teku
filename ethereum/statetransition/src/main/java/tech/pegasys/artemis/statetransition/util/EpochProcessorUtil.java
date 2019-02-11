@@ -115,15 +115,16 @@ public class EpochProcessorUtil {
     Validators active_validators =
         ValidatorsUtil.get_active_validators(
             state.getValidator_registry(), BeaconStateUtil.get_current_epoch(state));
-    double total_balance = get_total_effective_balance(state, active_validators).doubleValue();
+    UnsignedLong total_balance = get_total_effective_balance(state, active_validators);
 
-    double max_balance_churn =
-        Math.max(
-            (double) MAX_DEPOSIT_AMOUNT,
-            total_balance / (2 * Constants.MAX_BALANCE_CHURN_QUOTIENT));
+    UnsignedLong max_balance_churn =
+        BeaconStateUtil.max(
+            UnsignedLong.valueOf(MAX_DEPOSIT_AMOUNT),
+            total_balance.dividedBy(
+                UnsignedLong.valueOf((2 * Constants.MAX_BALANCE_CHURN_QUOTIENT))));
 
     // Activate validators within the allowable balance churn
-    double balance_churn = 0;
+    UnsignedLong balance_churn = UnsignedLong.ZERO;
     int index = 0;
     for (Validator validator : state.getValidator_registry()) {
       if (validator
@@ -135,15 +136,15 @@ public class EpochProcessorUtil {
                   .get(index)
                   .compareTo(UnsignedLong.valueOf(Constants.MAX_DEPOSIT_AMOUNT))
               >= 0) {
-        balance_churn += BeaconStateUtil.get_effective_balance(state, validator);
-        if (balance_churn > max_balance_churn) break;
+        balance_churn = balance_churn.plus(get_effective_balance(state, validator));
+        if (balance_churn.compareTo(max_balance_churn) > 0) break;
         BeaconStateUtil.activate_validator(state, validator, false);
       }
       index++;
     }
 
     // Exit validators within the allowable balance churn
-    balance_churn = 0;
+    balance_churn = UnsignedLong.ZERO;
     index = 0;
     for (Validator validator : state.getValidator_registry()) {
       if (validator
@@ -152,8 +153,8 @@ public class EpochProcessorUtil {
               > 0
           && validator.getStatus_flags().compareTo(UnsignedLong.valueOf(Constants.INITIATED_EXIT))
               == 0) {
-        balance_churn += BeaconStateUtil.get_effective_balance(state, validator);
-        if (balance_churn > max_balance_churn) break;
+        balance_churn = balance_churn.plus(get_effective_balance(state, validator));
+        if (balance_churn.compareTo(max_balance_churn) > 0) break;
         BeaconStateUtil.activate_validator(state, validator, false);
       }
       index++;
