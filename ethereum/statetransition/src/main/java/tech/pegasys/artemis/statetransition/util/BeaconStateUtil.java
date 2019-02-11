@@ -381,13 +381,6 @@ public class BeaconStateUtil {
     return randao_mixes.get(index.intValue());
   }
 
-  public static double get_effective_balance(BeaconState state, Validator record) {
-    // hacky work around for pass by index spec
-    int index = state.getValidator_registry().indexOf(record);
-    return Math.min(
-        state.getValidator_balances().get(index).intValue(), Constants.MAX_DEPOSIT_AMOUNT);
-  }
-
   // https://github.com/ethereum/eth2.0-specs/blob/master/specs/core/0_beacon-chain.md#get_block_root
   public static Bytes32 get_block_root(BeaconState state, long slot) throws Exception {
     long slot_upper_bound = slot + state.getLatest_block_roots().size();
@@ -626,6 +619,37 @@ public class BeaconStateUtil {
   }
 
   /**
+   * Return the min of two UnsignedLong values
+   *
+   * @param value1
+   * @param value2
+   * @return
+   */
+  @VisibleForTesting
+  public static UnsignedLong min(UnsignedLong value1, UnsignedLong value2) {
+    if (value1.compareTo(value2) <= 0) {
+      return value1;
+    } else {
+      return value2;
+    }
+  }
+
+  /**
+   * Return the max of two UnsignedLong values
+   *
+   * @param value1
+   * @param value2
+   * @return
+   */
+  public static UnsignedLong max(UnsignedLong value1, UnsignedLong value2) {
+    if (value1.compareTo(value2) >= 0) {
+      return value1;
+    } else {
+      return value2;
+    }
+  }
+
+  /**
    * @param state
    * @param pubkey
    * @param proof_of_possession
@@ -834,17 +858,5 @@ public class BeaconStateUtil {
       y = (x + n / x) / 2;
     }
     return x;
-  }
-
-  /**
-   * Returns the effective balance (also known as "balance at stake") for a 'validator' with the
-   * given 'index'.
-   *
-   * @param state The BeaconState.
-   * @param index The index at which the validator is at.
-   * @return The effective balance.
-   */
-  private static double get_effective_balance(BeaconState state, int index) {
-    return Math.min(state.getValidator_balances().get(index).intValue(), MAX_DEPOSIT_AMOUNT);
   }
 }
