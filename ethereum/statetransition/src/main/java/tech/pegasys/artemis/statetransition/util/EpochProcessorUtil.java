@@ -110,69 +110,56 @@ public class EpochProcessorUtil {
     return 0.0d;
   }
 
-  public static void update_validator_registry(BeaconState state) {
+  private static void update_validator_registry(BeaconState state) {
+    UnsignedLong currentEpoch = BeaconStateUtil.get_current_epoch(state);
     Validators active_validators =
         ValidatorsUtil.get_active_validators(
             state.getValidator_registry(), BeaconStateUtil.get_current_epoch(state));
-    double total_balance = get_total_effective_balance(state, active_validators).doubleValue();
+    UnsignedLong total_balance = get_total_effective_balance(state, active_validators);
 
-    double max_balance_churn =
-        Math.max(
-            (double) MAX_DEPOSIT_AMOUNT,
-            total_balance / (2 * Constants.MAX_BALANCE_CHURN_QUOTIENT));
+    UnsignedLong max_balance_churn =
+        BeaconStateUtil.max(
+            UnsignedLong.valueOf(MAX_DEPOSIT_AMOUNT),
+            total_balance.dividedBy(
+                UnsignedLong.valueOf((2 * Constants.MAX_BALANCE_CHURN_QUOTIENT))));
 
-    updatePendingValidators(max_balance_churn, state);
-    updateActivePendingExit(max_balance_churn, state);
+    // Activate validators within the allowable balance churn
+    UnsignedLong balance_churn = UnsignedLong.ZERO;
+    int index = 0;
+    for (Validator validator : state.getValidator_registry()) {
+      if (validator
+                  .getActivation_epoch()
+                  .compareTo(BeaconStateUtil.get_entry_exit_effect_epoch(currentEpoch))
+              > 0
+          && state
+                  .getValidator_balances()
+                  .get(index)
+                  .compareTo(UnsignedLong.valueOf(Constants.MAX_DEPOSIT_AMOUNT))
+              >= 0) {
+        balance_churn = balance_churn.plus(get_effective_balance(state, validator));
+        if (balance_churn.compareTo(max_balance_churn) > 0) break;
+        BeaconStateUtil.activate_validator(state, validator, false);
+      }
+      index++;
+    }
 
-    // TODO: Update to reflect spec version 0.1
-    /*int period_index =
-        Math.toIntExact(state.getSlot() / Constants.COLLECTIVE_PENALTY_CALCULATION_PERIOD);
-    ArrayList<Double> latest_penalized_exit_balances = state.getLatest_penalized_balances();
-
-    double total_penalties =
-        latest_penalized_exit_balances.get(period_index)
-            + latest_penalized_exit_balances.get(period_index - 1 < 0 ? period_index - 1 : 0)
-            + latest_penalized_exit_balances.get(period_index - 2 < 0 ? period_index - 2 : 0);
-    */
-    ArrayList<Validator> to_penalize = to_penalize(active_validators);
-  }
-
-  private static void updatePendingValidators(double max_balance_churn, BeaconState state) {
-    double balance_churn = 0.0d;
-    // todo after the spec refactor status no longer exists
-    //    for (Validator validator : state.getValidator_registry()) {
-    //      if (validator.getStatus().longValue() == Constants.PENDING_ACTIVATION
-    //          && validator.getBalance() >= Constants.MAX_DEPOSIT * Constants.GWEI_PER_ETH) {
-    //        balance_churn += validator.get_effective_balance();
-    //
-    //        if (balance_churn > max_balance_churn) break;
-    //
-    //        // temporary hack to pass by index to already in place code
-    //        // Java should pass by reference
-    //        state.update_validator_status(
-    //            state, state.getValidator_registry().indexOf(validator), Constants.ACTIVE);
-    //      }
-    //    }
-  }
-
-  private static void updateActivePendingExit(double max_balance_churn, BeaconState state) {
-    double balance_churn = 0.0d;
-    // todo after the spec refactor status no longer exists
-    //    for (Validator validator : state.getValidator_registry()) {
-    //      if (validator.getStatus().longValue() == Constants.ACTIVE_PENDING_EXIT
-    //          && validator.getBalance() >= Constants.MAX_DEPOSIT * Constants.GWEI_PER_ETH) {
-    //        balance_churn += validator.get_effective_balance();
-    //
-    //        if (balance_churn > max_balance_churn) break;
-    //
-    //        // temporary hack to pass by index to already in place code
-    //        // Java should pass by reference
-    //        state.update_validator_status(
-    //            state,
-    //            state.getValidator_registry().indexOf(validator),
-    //            Constants.EXITED_WITHOUT_PENALTY);
-    //      }
-    //    }
+    // Exit validators within the allowable balance churn
+    balance_churn = UnsignedLong.ZERO;
+    index = 0;
+    for (Validator validator : state.getValidator_registry()) {
+      if (validator
+                  .getExit_epoch()
+                  .compareTo(BeaconStateUtil.get_entry_exit_effect_epoch(currentEpoch))
+              > 0
+          && validator.getStatus_flags().compareTo(UnsignedLong.valueOf(Constants.INITIATED_EXIT))
+              == 0) {
+        balance_churn = balance_churn.plus(get_effective_balance(state, validator));
+        if (balance_churn.compareTo(max_balance_churn) > 0) break;
+        BeaconStateUtil.activate_validator(state, validator, false);
+      }
+      index++;
+    }
+    state.setValidator_registry_update_epoch(currentEpoch);
   }
 
   private static void process_ejections(BeaconState state) {
@@ -186,18 +173,6 @@ public class EpochProcessorUtil {
       }
       index++;
     }
-  }
-
-  private static ArrayList<Validator> to_penalize(ArrayList<Validator> validator_registry) {
-    ArrayList<Validator> to_penalize = new ArrayList<>();
-    // todo after the spec refactor status no longer exists
-    //    if (validator_registry != null) {
-    //      for (Validator validator : validator_registry) {
-    //        if (validator.getStatus().longValue() == Constants.EXITED_WITH_PENALTY)
-    //          to_penalize.add(validator);
-    //      }
-    //    }
-    return to_penalize;
   }
 
   private static void process_penalties_and_exits(BeaconState state) {
