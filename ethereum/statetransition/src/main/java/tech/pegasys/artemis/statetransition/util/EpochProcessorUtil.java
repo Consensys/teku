@@ -177,9 +177,11 @@ public class EpochProcessorUtil {
 
   private static void process_ejections(BeaconState state) {
     int index = 0;
-    for (Validator validator : state.getValidator_registry()) {
-      // TODO: change values to UnsignedLong
-      if (validator.getBalance().longValue() < Constants.EJECTION_BALANCE) {
+    UnsignedLong currentEpoch = BeaconStateUtil.get_current_epoch(state);
+    Validators active_validators =
+        ValidatorsUtil.get_active_validators(state.getValidator_registry(), currentEpoch);
+    for (Validator validator : active_validators) {
+      if (validator.getBalance().compareTo(UnsignedLong.valueOf(Constants.EJECTION_BALANCE)) < 0) {
         BeaconStateUtil.exit_validator(state, index);
       }
       index++;
