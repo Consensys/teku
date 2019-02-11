@@ -17,21 +17,21 @@ import java.util.Objects;
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.ssz.SSZ;
 
-public class CasperSlashing {
+public class AttesterSlashing {
 
   private SlashableVoteData votes_1;
   private SlashableVoteData votes_2;
 
-  public CasperSlashing(SlashableVoteData votes_1, SlashableVoteData votes_2) {
+  public AttesterSlashing(SlashableVoteData votes_1, SlashableVoteData votes_2) {
     this.votes_1 = votes_1;
     this.votes_2 = votes_2;
   }
 
-  public static CasperSlashing fromBytes(Bytes bytes) {
+  public static AttesterSlashing fromBytes(Bytes bytes) {
     return SSZ.decode(
         bytes,
         reader ->
-            new CasperSlashing(
+            new AttesterSlashing(
                 SlashableVoteData.fromBytes(reader.readBytes()),
                 SlashableVoteData.fromBytes(reader.readBytes())));
   }
@@ -59,11 +59,11 @@ public class CasperSlashing {
       return true;
     }
 
-    if (!(obj instanceof CasperSlashing)) {
+    if (!(obj instanceof AttesterSlashing)) {
       return false;
     }
 
-    CasperSlashing other = (CasperSlashing) obj;
+    AttesterSlashing other = (AttesterSlashing) obj;
     return Objects.equals(this.getVotes_1(), other.getVotes_1())
         && Objects.equals(this.getVotes_2(), other.getVotes_2());
   }
