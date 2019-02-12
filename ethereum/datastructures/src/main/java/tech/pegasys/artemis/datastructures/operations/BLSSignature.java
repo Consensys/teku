@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.datastructures.blocks;
+package tech.pegasys.artemis.datastructures.operations;
 
 import java.util.Objects;
 import net.consensys.cava.bytes.Bytes;
