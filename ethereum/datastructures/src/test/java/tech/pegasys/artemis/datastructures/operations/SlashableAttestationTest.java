@@ -15,14 +15,14 @@ package tech.pegasys.artemis.datastructures.operations;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomAttestationData;
-import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomUnsignedLong;
+import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomLong;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.bytes.Bytes48;
@@ -30,8 +30,7 @@ import org.junit.jupiter.api.Test;
 
 class SlashableAttestationTest {
 
-  private List<UnsignedLong> validatorIndices =
-      Arrays.asList(randomUnsignedLong(), randomUnsignedLong());
+  private long[] validatorIndices = new long[]{randomLong(), randomLong()};
   private AttestationData data = randomAttestationData();
   private Bytes32 custodyBitfield = Bytes32.random();
   private List<Bytes48> aggregateSignature = Arrays.asList(Bytes48.random(), Bytes48.random());
@@ -56,8 +55,7 @@ class SlashableAttestationTest {
 
   @Test
   void equalsReturnsFalseWhenValidatorIndicesAreDifferent() {
-    List<UnsignedLong> reverseValidatorIndices = new ArrayList<>(validatorIndices);
-    Collections.reverse(reverseValidatorIndices);
+    long[] reverseValidatorIndices = new long[]{randomLong(), randomLong()};
 
     SlashableAttestation testSlashableAttestation =
         new SlashableAttestation(
@@ -71,7 +69,8 @@ class SlashableAttestationTest {
     Bytes32 otherCustodyBitfield = custodyBitfield.and(Bytes32.random());
 
     SlashableAttestation testSlashableAttestation =
-        new SlashableAttestation(validatorIndices, data, otherCustodyBitfield, aggregateSignature);
+        new SlashableAttestation(
+            validatorIndices, data, otherCustodyBitfield, aggregateSignature);
 
     assertEquals(slashableAttestation, testSlashableAttestation);
   }
@@ -86,7 +85,8 @@ class SlashableAttestationTest {
     }
 
     SlashableAttestation testSlashableAttestation =
-        new SlashableAttestation(validatorIndices, otherData, custodyBitfield, aggregateSignature);
+        new SlashableAttestation(
+            validatorIndices, otherData, custodyBitfield, aggregateSignature);
 
     assertEquals(slashableAttestation, testSlashableAttestation);
   }

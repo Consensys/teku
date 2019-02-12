@@ -18,7 +18,6 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 import com.google.common.primitives.UnsignedLong;
-
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.ssz.SSZ;
@@ -95,6 +94,7 @@ public class SlashableAttestation {
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */
+
   public AttestationData getData() {
     return data;
   }
@@ -126,4 +126,5 @@ public class SlashableAttestation {
   public void setCustody_bitfield(Bytes32 custody_bitfield) {
     this.custody_bitfield = custody_bitfield;
   }
+
 }

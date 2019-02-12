@@ -52,9 +52,9 @@ public final class DataStructureUtil {
     return new Eth1Data(Bytes32.random(), Bytes32.random());
   }
 
-  public static AttestationData randomAttestationData(UnsignedLong slotNum) {
+  public static AttestationData randomAttestationData(long slotNum) {
     return new AttestationData(
-        slotNum,
+        UnsignedLong.valueOf(slotNum),
         randomUnsignedLong(),
         Bytes32.random(),
         Bytes32.random(),
@@ -76,7 +76,7 @@ public final class DataStructureUtil {
         Bytes32.random());
   }
 
-  public static Attestation randomAttestation(UnsignedLong slotNum) {
+  public static Attestation randomAttestation(long slotNum) {
     return new Attestation(
         Bytes32.random(),
         randomAttestationData(slotNum),
@@ -111,7 +111,7 @@ public final class DataStructureUtil {
 
   public static SlashableAttestation randomSlashableAttestation() {
     return new SlashableAttestation(
-        Arrays.asList(randomUnsignedLong(), randomUnsignedLong(), randomUnsignedLong()),
+        new long[]{randomLong(), randomLong(), randomLong()},
         randomAttestationData(),
         Bytes32.random(),
         new BLSSignature(Bytes48.random(), Bytes48.random()));
