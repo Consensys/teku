@@ -25,7 +25,7 @@ import tech.pegasys.artemis.datastructures.blocks.Eth1DataVote;
 import tech.pegasys.artemis.datastructures.state.CrosslinkRecord;
 import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.datastructures.state.PendingAttestationRecord;
-import tech.pegasys.artemis.datastructures.state.Validators;
+import tech.pegasys.artemis.datastructures.state.Validator;
 
 public class BeaconState {
   // Misc
@@ -34,7 +34,7 @@ public class BeaconState {
   private Fork fork; // For versioning hard forks
 
   // Validator registry
-  private Validators validator_registry;
+  private List<Validator> validator_registry;
   private List<UnsignedLong> validator_balances;
   private UnsignedLong validator_registry_update_epoch;
 
@@ -84,7 +84,7 @@ public class BeaconState {
       Fork fork, // For versioning hard forks
 
       // Validator registry
-      Validators validator_registry,
+      ArrayList<Validator> validator_registry,
       ArrayList<UnsignedLong> validator_balances,
       UnsignedLong validator_registry_update_epoch,
 
@@ -171,11 +171,11 @@ public class BeaconState {
     this.fork = fork;
   }
 
-  public Validators getValidator_registry() {
+  public List<Validator> getValidator_registry() {
     return validator_registry;
   }
 
-  public void setValidator_registry(Validators validator_registry) {
+  public void setValidator_registry(List<Validator> validator_registry) {
     this.validator_registry = validator_registry;
   }
 
