@@ -285,7 +285,7 @@ public class BeaconStateUtil {
     assert epoch.compareTo(get_current_epoch(state).plus(UnsignedLong.valueOf(ENTRY_EXIT_DELAY)))
         <= 0;
 
-    ArrayList<Bytes32> index_roots = state.getLatest_index_roots();
+    List<Bytes32> index_roots = state.getLatest_index_roots();
     int index = epoch.mod(UnsignedLong.valueOf(LATEST_INDEX_ROOTS_LENGTH)).intValue();
     return state.getLatest_index_roots().get(index);
   }
@@ -377,7 +377,7 @@ public class BeaconStateUtil {
         < 0;
     assert epoch.compareTo(get_current_epoch(state)) <= 0;
     UnsignedLong index = epoch.mod(UnsignedLong.valueOf(LATEST_RANDAO_MIXES_LENGTH));
-    ArrayList<Bytes32> randao_mixes = state.getLatest_randao_mixes();
+    List<Bytes32> randao_mixes = state.getLatest_randao_mixes();
     return randao_mixes.get(index.intValue());
   }
 
@@ -397,7 +397,7 @@ public class BeaconStateUtil {
    * @param values
    * @return The merkle root.
    */
-  public static Bytes32 merkle_root(ArrayList<Bytes32> list) {
+  public static Bytes32 merkle_root(List<Bytes32> list) {
     // https://github.com/ethereum/eth2.0-specs/blob/master/specs/core/0_beacon-chain.md#merkle_root
     Bytes32[] o = new Bytes32[list.size() * 2];
     for (int i = 0; i < list.size(); i++) {

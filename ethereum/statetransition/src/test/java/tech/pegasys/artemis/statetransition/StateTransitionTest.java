@@ -18,6 +18,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.bytes.Bytes48;
@@ -105,7 +106,7 @@ class StateTransitionTest {
         new ArrayList<Bytes32>(
             Collections.nCopies(Constants.LATEST_RANDAO_MIXES_LENGTH, Bytes32.ZERO)));
     state.setSlot(UnsignedLong.valueOf(12));
-    ArrayList<Bytes32> latestRandaoMixes = state.getLatest_randao_mixes();
+    List<Bytes32> latestRandaoMixes = state.getLatest_randao_mixes();
     latestRandaoMixes.set(11, Hash.keccak256(Bytes32.fromHexString("0x01")));
     latestRandaoMixes.set(12, Hash.keccak256(Bytes32.ZERO));
 

@@ -17,7 +17,7 @@ import static java.lang.Math.toIntExact;
 import static tech.pegasys.artemis.datastructures.Constants.LATEST_BLOCK_ROOTS_LENGTH;
 import static tech.pegasys.artemis.datastructures.Constants.LATEST_RANDAO_MIXES_LENGTH;
 
-import java.util.ArrayList;
+import java.util.List;
 import net.consensys.cava.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
@@ -28,7 +28,7 @@ public class SlotProcessorUtil {
   public static void updateLatestRandaoMixes(BeaconState state) {
     // TODO: change values to UnsignedLong
     int currSlot = state.getSlot().intValue();
-    ArrayList<Bytes32> latestRandaoMixes = state.getLatest_randao_mixes();
+    List<Bytes32> latestRandaoMixes = state.getLatest_randao_mixes();
     int index = (currSlot - 1) % LATEST_RANDAO_MIXES_LENGTH;
     Bytes32 prevSlotRandaoMix = latestRandaoMixes.get(index);
     latestRandaoMixes.set(currSlot % LATEST_RANDAO_MIXES_LENGTH, prevSlotRandaoMix);
@@ -40,7 +40,7 @@ public class SlotProcessorUtil {
     Bytes32 previous_block_root =
         BeaconStateUtil.get_block_root(state, state.getSlot().intValue() - 1);
     if (previous_block_root != null) {
-      ArrayList<Bytes32> latest_block_roots = state.getLatest_block_roots();
+      List<Bytes32> latest_block_roots = state.getLatest_block_roots();
 
       latest_block_roots.set(
           toIntExact(state.getSlot().intValue() - 1) % Constants.LATEST_BLOCK_ROOTS_LENGTH,
@@ -53,8 +53,8 @@ public class SlotProcessorUtil {
     }
     // TODO: change values to UnsignedLong
     if (state.getSlot().intValue() % LATEST_BLOCK_ROOTS_LENGTH == 0) {
-      ArrayList<Bytes32> batched_block_roots = state.getBatched_block_roots();
-      ArrayList<Bytes32> latest_block_roots = state.getLatest_block_roots();
+      List<Bytes32> batched_block_roots = state.getBatched_block_roots();
+      List<Bytes32> latest_block_roots = state.getLatest_block_roots();
       if (batched_block_roots != null && latest_block_roots != null) {
         Bytes32 merkle_root = BeaconStateUtil.merkle_root(latest_block_roots);
         batched_block_roots.add(merkle_root);

@@ -17,6 +17,7 @@ import com.google.common.primitives.UnsignedLong;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import java.util.ArrayList;
+import java.util.List;
 import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.bytes.Bytes48;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
@@ -34,11 +35,11 @@ public class BeaconState {
 
   // Validator registry
   private Validators validator_registry;
-  private ArrayList<UnsignedLong> validator_balances;
+  private List<UnsignedLong> validator_balances;
   private UnsignedLong validator_registry_update_epoch;
 
   // Randomness and committees
-  private ArrayList<Bytes32> latest_randao_mixes;
+  private List<Bytes32> latest_randao_mixes;
   private UnsignedLong previous_epoch_start_shard;
   private UnsignedLong current_epoch_start_shard;
   private UnsignedLong previous_calculation_epoch;
@@ -53,17 +54,17 @@ public class BeaconState {
   private UnsignedLong finalized_epoch;
 
   // Recent state
-  private ArrayList<CrosslinkRecord> latest_crosslinks;
-  private ArrayList<Bytes32> latest_block_roots;
-  private ArrayList<Bytes32> latest_index_roots;
-  private ArrayList<UnsignedLong>
+  private List<CrosslinkRecord> latest_crosslinks;
+  private List<Bytes32> latest_block_roots;
+  private List<Bytes32> latest_index_roots;
+  private List<UnsignedLong>
       latest_penalized_balances; // Balances penalized at every withdrawal period
-  private ArrayList<PendingAttestationRecord> latest_attestations;
-  private ArrayList<Bytes32> batched_block_roots;
+  private List<PendingAttestationRecord> latest_attestations;
+  private List<Bytes32> batched_block_roots;
 
   // Ethereum 1.0 chain data
   private Eth1Data latest_eth1_data;
-  private ArrayList<Eth1DataVote> eth1_data_votes;
+  private List<Eth1DataVote> eth1_data_votes;
 
   public static BeaconState deepCopy(BeaconState state) {
     Gson gson =
@@ -179,11 +180,11 @@ public class BeaconState {
     this.validator_registry = validator_registry;
   }
 
-  public ArrayList<UnsignedLong> getValidator_balances() {
+  public List<UnsignedLong> getValidator_balances() {
     return validator_balances;
   }
 
-  public void setValidator_balances(ArrayList<UnsignedLong> validator_balances) {
+  public void setValidator_balances(List<UnsignedLong> validator_balances) {
     this.validator_balances = validator_balances;
   }
 
@@ -195,11 +196,11 @@ public class BeaconState {
     this.validator_registry_update_epoch = validator_registry_update_epoch;
   }
 
-  public ArrayList<Bytes32> getLatest_randao_mixes() {
+  public List<Bytes32> getLatest_randao_mixes() {
     return latest_randao_mixes;
   }
 
-  public void setLatest_randao_mixes(ArrayList<Bytes32> latest_randao_mixes) {
+  public void setLatest_randao_mixes(List<Bytes32> latest_randao_mixes) {
     this.latest_randao_mixes = latest_randao_mixes;
   }
 
@@ -283,51 +284,51 @@ public class BeaconState {
     this.finalized_epoch = finalized_epoch;
   }
 
-  public ArrayList<CrosslinkRecord> getLatest_crosslinks() {
+  public List<CrosslinkRecord> getLatest_crosslinks() {
     return latest_crosslinks;
   }
 
-  public void setLatest_crosslinks(ArrayList<CrosslinkRecord> latest_crosslinks) {
+  public void setLatest_crosslinks(List<CrosslinkRecord> latest_crosslinks) {
     this.latest_crosslinks = latest_crosslinks;
   }
 
-  public ArrayList<Bytes32> getLatest_block_roots() {
+  public List<Bytes32> getLatest_block_roots() {
     return latest_block_roots;
   }
 
-  public void setLatest_block_roots(ArrayList<Bytes32> latest_block_roots) {
+  public void setLatest_block_roots(List<Bytes32> latest_block_roots) {
     this.latest_block_roots = latest_block_roots;
   }
 
-  public ArrayList<Bytes32> getLatest_index_roots() {
+  public List<Bytes32> getLatest_index_roots() {
     return latest_index_roots;
   }
 
-  public void setLatest_index_roots(ArrayList<Bytes32> latest_index_roots) {
+  public void setLatest_index_roots(List<Bytes32> latest_index_roots) {
     this.latest_index_roots = latest_index_roots;
   }
 
-  public ArrayList<UnsignedLong> getLatest_penalized_balances() {
+  public List<UnsignedLong> getLatest_penalized_balances() {
     return latest_penalized_balances;
   }
 
-  public void setLatest_penalized_balances(ArrayList<UnsignedLong> latest_penalized_balances) {
+  public void setLatest_penalized_balances(List<UnsignedLong> latest_penalized_balances) {
     this.latest_penalized_balances = latest_penalized_balances;
   }
 
-  public ArrayList<PendingAttestationRecord> getLatest_attestations() {
+  public List<PendingAttestationRecord> getLatest_attestations() {
     return latest_attestations;
   }
 
-  public void setLatest_attestations(ArrayList<PendingAttestationRecord> latest_attestations) {
+  public void setLatest_attestations(List<PendingAttestationRecord> latest_attestations) {
     this.latest_attestations = latest_attestations;
   }
 
-  public ArrayList<Bytes32> getBatched_block_roots() {
+  public List<Bytes32> getBatched_block_roots() {
     return batched_block_roots;
   }
 
-  public void setBatched_block_roots(ArrayList<Bytes32> batched_block_roots) {
+  public void setBatched_block_roots(List<Bytes32> batched_block_roots) {
     this.batched_block_roots = batched_block_roots;
   }
 
@@ -339,11 +340,11 @@ public class BeaconState {
     this.latest_eth1_data = latest_eth1_data;
   }
 
-  public ArrayList<Eth1DataVote> getEth1_data_votes() {
+  public List<Eth1DataVote> getEth1_data_votes() {
     return eth1_data_votes;
   }
 
-  public void setEth1_data_votes(ArrayList<Eth1DataVote> eth1_data_votes) {
+  public void setEth1_data_votes(List<Eth1DataVote> eth1_data_votes) {
     this.eth1_data_votes = eth1_data_votes;
   }
 
