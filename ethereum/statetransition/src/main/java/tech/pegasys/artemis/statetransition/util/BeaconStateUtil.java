@@ -51,7 +51,6 @@ import tech.pegasys.artemis.datastructures.state.CrosslinkRecord;
 import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.datastructures.state.PendingAttestationRecord;
 import tech.pegasys.artemis.datastructures.state.Validator;
-import tech.pegasys.artemis.datastructures.state.Validators;
 import tech.pegasys.artemis.statetransition.BeaconState;
 
 public class BeaconStateUtil {
@@ -90,7 +89,7 @@ public class BeaconStateUtil {
                 UnsignedLong.valueOf(GENESIS_EPOCH)),
 
             // Validator registry
-            new Validators(),
+            new ArrayList<Validator>(),
             new ArrayList<UnsignedLong>(),
             UnsignedLong.valueOf(GENESIS_EPOCH),
 
@@ -133,9 +132,13 @@ public class BeaconStateUtil {
     }
 
     // Process initial activations
+    int index = 0;
     for (Validator validator : state.getValidator_registry()) {
-      if (validator.get_effective_balance().compareTo(UnsignedLong.valueOf(MAX_DEPOSIT_AMOUNT))
-          >= 0) activate_validator(state, validator, true);
+      List<UnsignedLong> balances = state.getValidator_balances();
+      if (balances.get(index).compareTo(UnsignedLong.valueOf(MAX_DEPOSIT_AMOUNT)) >= 0) {
+        activate_validator(state, validator, true);
+      }
+      index++;
     }
 
     Bytes32 genesis_active_index_root =
@@ -216,7 +219,7 @@ public class BeaconStateUtil {
       }
     }
 
-    ArrayList<ArrayList<Integer>> shuffling =
+    List<List<Integer>> shuffling =
         get_shuffling(seed, state.getValidator_registry(), shuffling_epoch);
     long offset = slot % Constants.EPOCH_LENGTH;
     long committees_per_slot = committees_per_epoch / Constants.EPOCH_LENGTH;
@@ -247,21 +250,21 @@ public class BeaconStateUtil {
    */
 
   private static long get_previous_epoch_committee_count(BeaconState state) {
-    ArrayList<Integer> previous_active_validators =
+    List<Integer> previous_active_validators =
         ValidatorsUtil.get_active_validator_indices(
             state.getValidator_registry(), state.getPrevious_calculation_epoch());
     return get_epoch_committee_count(previous_active_validators.size());
   }
 
   private static long get_current_epoch_committee_count(BeaconState state) {
-    ArrayList<Integer> current_active_validators =
+    List<Integer> current_active_validators =
         ValidatorsUtil.get_active_validator_indices(
             state.getValidator_registry(), state.getCurrent_calculation_epoch());
     return get_epoch_committee_count(current_active_validators.size());
   }
 
   private static long get_next_epoch_committee_count(BeaconState state) {
-    ArrayList<Integer> next_active_validators =
+    List<Integer> next_active_validators =
         ValidatorsUtil.get_active_validator_indices(
             state.getValidator_registry(), get_current_epoch(state).plus(UnsignedLong.ONE));
     return get_epoch_committee_count(next_active_validators.size());
@@ -433,10 +436,10 @@ public class BeaconStateUtil {
    * @param epoch
    * @return
    */
-  public static ArrayList<ArrayList<Integer>> get_shuffling(
-      Bytes32 seed, Validators validators, long epoch) {
+  public static List<List<Integer>> get_shuffling(
+      Bytes32 seed, List<Validator> validators, long epoch) {
 
-    ArrayList<Integer> active_validator_indices =
+    List<Integer> active_validator_indices =
         ValidatorsUtil.get_active_validator_indices(validators, UnsignedLong.valueOf(epoch));
 
     int committees_per_epoch = get_epoch_committee_count(active_validator_indices.size());
@@ -444,7 +447,7 @@ public class BeaconStateUtil {
     // Shuffle with seed
     // TODO: we may need to treat `epoch` as little-endian here. Revisit as the spec evolves.
     seed.xor(Bytes32.wrap(Bytes.minimalBytes(epoch)));
-    ArrayList<Integer> shuffled_active_validator_indices = shuffle(active_validator_indices, seed);
+    List<Integer> shuffled_active_validator_indices = shuffle(active_validator_indices, seed);
 
     return split(shuffled_active_validator_indices, committees_per_epoch);
   }
@@ -473,7 +476,7 @@ public class BeaconStateUtil {
    * @return The shuffled array.
    */
   @VisibleForTesting
-  public static <T> ArrayList<T> shuffle(ArrayList<T> values, Bytes32 seed) {
+  public static <T> List<T> shuffle(List<T> values, Bytes32 seed) {
     int values_count = values.size();
 
     // Entropy is consumed from the seed in 3-byte (24 bit) chunks.
@@ -532,16 +535,16 @@ public class BeaconStateUtil {
    * @param split_count The number of pieces to split the array into.
    * @return The list of validators split into N pieces.
    */
-  public static <T> ArrayList<ArrayList<T>> split(ArrayList<T> values, int split_count) {
+  public static <T> List<List<T>> split(List<T> values, int split_count) {
     checkArgument(split_count > 0, "Expected positive split_count but got %s", split_count);
 
     int list_length = values.size();
-    ArrayList<ArrayList<T>> split_arr = new ArrayList<>(split_count);
+    List<List<T>> split_arr = new ArrayList<>(split_count);
 
     for (int i = 0; i < split_count; i++) {
       int startIndex = list_length * i / split_count;
       int endIndex = list_length * (i + 1) / split_count;
-      ArrayList<T> new_split = new ArrayList<>();
+      List<T> new_split = new ArrayList<>();
       for (int j = startIndex; j < endIndex; j++) {
         new_split.add(values.get(j));
       }
@@ -571,7 +574,7 @@ public class BeaconStateUtil {
    */
   public static int get_beacon_proposer_index(BeaconState state, UnsignedLong slot) {
     // TODO: convert these values to UnsignedLong
-    ArrayList<Integer> first_committee =
+    List<Integer> first_committee =
         get_crosslink_committees_at_slot(state, slot.longValue()).get(0).getCommittee();
     // TODO: replace slot.intValue() with an UnsignedLong value
     return first_committee.get(slot.intValue() % first_committee.size());
@@ -594,10 +597,11 @@ public class BeaconStateUtil {
       Bytes32 withdrawal_credentials) {
     assertTrue(
         validate_proof_of_possession(state, pubkey, proof_of_possession, withdrawal_credentials));
+    UnsignedLong currentEpoch = BeaconStateUtil.get_current_epoch(state);
+    int index = getValidatorIndexByPubkey(state, pubkey);
 
-    Validator validator = getValidatorByPubkey(state, pubkey);
-    if (validator == null) {
-      validator =
+    if (index < 0) {
+      Validator validator =
           new Validator(
               pubkey,
               withdrawal_credentials,
@@ -605,21 +609,50 @@ public class BeaconStateUtil {
               FAR_FUTURE_EPOCH,
               FAR_FUTURE_EPOCH,
               FAR_FUTURE_EPOCH,
-              UnsignedLong.ZERO,
-              amount);
+              UnsignedLong.ZERO);
       state.getValidator_registry().add(validator);
       state.getValidator_balances().add(amount);
     } else {
+      Validator validator = state.getValidator_registry().get(index);
       assertTrue(validator.getWithdrawal_credentials().equals(withdrawal_credentials));
-      validator.setBalance(validator.getBalance().plus(amount));
+      List<UnsignedLong> balances = state.getValidator_balances();
+      UnsignedLong balance = balances.get(index).plus(amount);
+      balances.set(index, balance);
     }
   }
 
+  /**
+   * get validator index by public key
+   *
+   * @param state
+   * @param pubkey
+   * @return
+   */
   public static Validator getValidatorByPubkey(BeaconState state, Bytes48 pubkey) {
     for (Validator validator : state.getValidator_registry()) {
       if (validator.getPubkey().equals(pubkey)) return validator;
     }
     return null;
+  }
+
+  /**
+   * get validator index by public key
+   *
+   * @param state
+   * @param pubkey
+   * @return
+   */
+  public static int getValidatorIndexByPubkey(BeaconState state, Bytes48 pubkey) {
+    int result = -1;
+    int index = 0;
+    for (Validator validator : state.getValidator_registry()) {
+      if (validator.getPubkey().toHexString().equals(pubkey.toHexString())) {
+        result = index;
+        break;
+      }
+      index++;
+    }
+    return result;
   }
 
   /**

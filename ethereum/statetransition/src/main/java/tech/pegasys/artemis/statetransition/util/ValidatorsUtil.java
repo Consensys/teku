@@ -15,14 +15,22 @@ package tech.pegasys.artemis.statetransition.util;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.stream.IntStream;
 import tech.pegasys.artemis.datastructures.state.Validator;
-import tech.pegasys.artemis.datastructures.state.Validators;
 
 public class ValidatorsUtil {
 
-  public static Validators get_active_validators(Validators validators, UnsignedLong epoch) {
-    Validators active_validators = new Validators();
+  /**
+   * Get list of active validators
+   *
+   * @param validators
+   * @param epoch
+   * @return
+   */
+  public static List<Validator> get_active_validators(
+      List<Validator> validators, UnsignedLong epoch) {
+    List<Validator> active_validators = new ArrayList<>();
     if (validators != null) {
       for (Validator record : validators) {
         if (record.is_active_validator(epoch)) active_validators.add(record);
@@ -31,10 +39,16 @@ public class ValidatorsUtil {
     return active_validators;
   }
 
-  public static ArrayList<Integer> get_active_validator_indices(
-      Validators validators, UnsignedLong epoch) {
+  /**
+   * Get list of active validator indeces
+   *
+   * @param validators
+   * @param epoch
+   * @return
+   */
+  public static List<Integer> get_active_validator_indices(
+      List<Validator> validators, UnsignedLong epoch) {
     ArrayList<Integer> active_validator_indices = new ArrayList<>();
-
     IntStream.range(0, validators.size())
         .forEachOrdered(
             n -> {
