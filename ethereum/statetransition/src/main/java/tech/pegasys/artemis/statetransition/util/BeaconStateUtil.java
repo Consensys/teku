@@ -56,7 +56,6 @@ import tech.pegasys.artemis.statetransition.BeaconState;
 
 public class BeaconStateUtil {
 
-  @VisibleForTesting
   public static BeaconState get_initial_beacon_state(
       ArrayList<Deposit> initial_validator_deposits,
       UnsignedLong genesis_time,
@@ -277,13 +276,15 @@ public class BeaconStateUtil {
   }
 
   public static Bytes32 get_active_index_root(BeaconState state, UnsignedLong epoch) {
-    assert get_current_epoch(state)
-            .minus(UnsignedLong.valueOf(LATEST_RANDAO_MIXES_LENGTH))
-            .plus(UnsignedLong.valueOf(ENTRY_EXIT_DELAY))
-            .compareTo(epoch)
-        < 0;
-    assert epoch.compareTo(get_current_epoch(state).plus(UnsignedLong.valueOf(ENTRY_EXIT_DELAY)))
-        <= 0;
+    assertTrue(
+        get_current_epoch(state)
+                .minus(UnsignedLong.valueOf(LATEST_RANDAO_MIXES_LENGTH))
+                .plus(UnsignedLong.valueOf(ENTRY_EXIT_DELAY))
+                .compareTo(epoch)
+            < 0);
+    assertTrue(
+        epoch.compareTo(get_current_epoch(state).plus(UnsignedLong.valueOf(ENTRY_EXIT_DELAY)))
+            <= 0);
 
     List<Bytes32> index_roots = state.getLatest_index_roots();
     int index = epoch.mod(UnsignedLong.valueOf(LATEST_INDEX_ROOTS_LENGTH)).intValue();
@@ -371,11 +372,12 @@ public class BeaconStateUtil {
 
   /** Return the randao mix at a recent ``epoch``. */
   public static Bytes32 get_randao_mix(BeaconState state, UnsignedLong epoch) {
-    assert get_current_epoch(state)
-            .minus(UnsignedLong.valueOf(LATEST_RANDAO_MIXES_LENGTH))
-            .compareTo(epoch)
-        < 0;
-    assert epoch.compareTo(get_current_epoch(state)) <= 0;
+    assertTrue(
+        get_current_epoch(state)
+                .minus(UnsignedLong.valueOf(LATEST_RANDAO_MIXES_LENGTH))
+                .compareTo(epoch)
+            < 0);
+    assertTrue(epoch.compareTo(get_current_epoch(state)) <= 0);
     UnsignedLong index = epoch.mod(UnsignedLong.valueOf(LATEST_RANDAO_MIXES_LENGTH));
     List<Bytes32> randao_mixes = state.getLatest_randao_mixes();
     return randao_mixes.get(index.intValue());
@@ -481,7 +483,7 @@ public class BeaconStateUtil {
 
     // The range of the RNG places an upper-bound on the size of the list that
     // may be shuffled. It is a logic error to supply an oversized list.
-    assert values_count < rand_max;
+    assertTrue(values_count < rand_max);
 
     ArrayList<T> output = new ArrayList<>(values);
 
@@ -590,7 +592,8 @@ public class BeaconStateUtil {
       UnsignedLong amount,
       List<Bytes48> proof_of_possession,
       Bytes32 withdrawal_credentials) {
-    assert validate_proof_of_possession(state, pubkey, proof_of_possession, withdrawal_credentials);
+    assertTrue(
+        validate_proof_of_possession(state, pubkey, proof_of_possession, withdrawal_credentials));
 
     Validator validator = getValidatorByPubkey(state, pubkey);
     if (validator == null) {
@@ -605,8 +608,9 @@ public class BeaconStateUtil {
               UnsignedLong.ZERO,
               amount);
       state.getValidator_registry().add(validator);
+      state.getValidator_balances().add(amount);
     } else {
-      assert (validator.getWithdrawal_credentials().equals(withdrawal_credentials));
+      assertTrue(validator.getWithdrawal_credentials().equals(withdrawal_credentials));
       validator.setBalance(validator.getBalance().plus(amount));
     }
   }
@@ -712,7 +716,7 @@ public class BeaconStateUtil {
         BeaconStateUtil.get_crosslink_committees_at_slot(
             state, toIntExact(attestation_data.getSlot()));
 
-    // TODO: assert attestation_data.shard in [shard for _, shard in crosslink_committees]
+    // TODO: assertTrue attestation_data.shard in [shard for _, shard in crosslink_committees]
 
     CrosslinkCommittee crosslink_committee = null;
     for (CrosslinkCommittee curr_crosslink_committee : crosslink_committees) {
@@ -721,8 +725,8 @@ public class BeaconStateUtil {
         break;
       }
     }
-    assert crosslink_committee != null;
-    assert participation_bitfield.length == ceil_div8(crosslink_committee.getCommitteeSize());
+    assertTrue(crosslink_committee != null);
+    assertTrue(participation_bitfield.length == ceil_div8(crosslink_committee.getCommitteeSize()));
 
     // Find the participating attesters in the committee
     ArrayList<Integer> participants = new ArrayList<>();
@@ -736,7 +740,7 @@ public class BeaconStateUtil {
   }
 
   public static Bytes32 generate_seed(BeaconState state, UnsignedLong epoch) {
-    return get_randao_mix(state, epoch.plus(UnsignedLong.valueOf(SEED_LOOKAHEAD)))
+    return get_randao_mix(state, epoch.minus(UnsignedLong.valueOf(SEED_LOOKAHEAD)))
         .and(get_active_index_root(state, epoch));
   }
 
@@ -859,4 +863,10 @@ public class BeaconStateUtil {
     }
     return x;
   }
+
+  private static void assertTrue(boolean value) {
+    if (!value) throw new AssertFailed();
+  }
+
+  public static class AssertFailed extends RuntimeException {}
 }
