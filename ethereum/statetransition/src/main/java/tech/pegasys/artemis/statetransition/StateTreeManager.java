@@ -13,24 +13,22 @@
 
 package tech.pegasys.artemis.statetransition;
 
+import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomDeposits;
+
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import net.consensys.cava.bytes.Bytes32;
-import net.consensys.cava.bytes.Bytes48;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
-import tech.pegasys.artemis.datastructures.operations.DepositData;
-import tech.pegasys.artemis.datastructures.operations.DepositInput;
 import tech.pegasys.artemis.pow.api.ChainStartEvent;
 import tech.pegasys.artemis.pow.api.ValidatorRegistrationEvent;
 import tech.pegasys.artemis.statetransition.util.BeaconStateUtil;
@@ -57,14 +55,8 @@ public class StateTreeManager {
   public void onChainStarted(ChainStartEvent event) {
     LOG.info("ChainStart Event Detected");
     // TODO: Startup Logic: Initial State Data
-    List<Bytes32> merkle_roots = new ArrayList<Bytes32>();
-    merkle_roots.add(Bytes32.ZERO);
-    DepositInput deposit_input =
-        new DepositInput(Bytes48.ZERO, Bytes32.ZERO, new ArrayList<Bytes48>());
-    DepositData deposit_data = new DepositData(deposit_input, UnsignedLong.ZERO, UnsignedLong.ZERO);
-    Deposit deposit = new Deposit(merkle_roots, UnsignedLong.ZERO, deposit_data);
-    ArrayList<Deposit> deposits = new ArrayList<Deposit>();
-    deposits.add(deposit);
+    ArrayList<Deposit> deposits = randomDeposits(100);
+
     this.state =
         BeaconStateUtil.get_initial_beacon_state(
             deposits,
