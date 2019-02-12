@@ -49,6 +49,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
+import tech.pegasys.artemis.datastructures.state.Crosslink;
 import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.statetransition.util.BeaconStateUtil;
@@ -118,12 +119,12 @@ class BeaconStateTest {
   void getAttestationParticipantsSizesNotEqual() {
     AttestationData attestationData =
         new AttestationData(
-            0,
+            UnsignedLong.ZERO,
             UnsignedLong.ZERO,
             Bytes32.ZERO,
             Bytes32.ZERO,
             Bytes32.ZERO,
-            Bytes32.ZERO,
+            Crosslink.random(),
             UnsignedLong.ZERO,
             Bytes32.ZERO);
     byte[] participation_bitfield = Bytes32.ZERO.toArrayUnsafe();

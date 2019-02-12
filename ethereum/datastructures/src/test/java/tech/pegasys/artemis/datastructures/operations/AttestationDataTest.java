@@ -46,10 +46,6 @@ class AttestationDataTest {
           justifiedEpoch,
           justifiedBlockRoot);
 
-  private void attestationData() {
-
-  }
-
   @Test
   void equalsReturnsTrueWhenObjectAreSame() {
     AttestationData testAttestationData = attestationData;
@@ -154,7 +150,7 @@ class AttestationDataTest {
   }
 
   @Test
-  void equalsReturnsFalseWhenLastCrosslinkHashesAreDifferent() {
+  void equalsReturnsFalseWhenLastCrosslinksAreDifferent() {
     AttestationData testAttestationData =
         new AttestationData(
             slot,
@@ -162,7 +158,7 @@ class AttestationDataTest {
             beaconBlockRoot,
             epochBoundaryRoot,
             shardBlockRoot,
-            latestCrosslink.not(),
+            Crosslink.random(),
             justifiedEpoch,
             justifiedBlockRoot);
 

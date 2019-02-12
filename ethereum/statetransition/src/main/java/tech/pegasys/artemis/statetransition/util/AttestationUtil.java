@@ -47,9 +47,9 @@ public class AttestationUtil {
                   .getSlot()
                   .minus(UnsignedLong.valueOf(2))
                   .times(UnsignedLong.valueOf(Constants.EPOCH_LENGTH))
-                  .compareTo(UnsignedLong.fromLongBits(record.getData().getSlot()))
+                  .compareTo(record.getData().getSlot())
               <= 0
-          && UnsignedLong.fromLongBits(record.getData().getSlot())
+          && record.getData().getSlot()
                   .compareTo(state.getSlot().minus(UnsignedLong.valueOf(Constants.EPOCH_LENGTH)))
               < 0) previous_epoch_attestations.add(record);
     }
@@ -61,8 +61,8 @@ public class AttestationUtil {
     // TODO: Replace longValue wiht UnsignedLong
     long epoch_lower_boundary = state.getSlot().longValue() - Constants.EPOCH_LENGTH;
     long epoch_upper_boundary = state.getSlot().longValue();
-    return (record.getData().getSlot() <= epoch_lower_boundary
-        && record.getData().getSlot() > epoch_upper_boundary);
+    return (record.getData().getSlot().intValue() <= epoch_lower_boundary
+        && record.getData().getSlot().intValue() > epoch_upper_boundary);
   }
 
   public static ArrayList<PendingAttestationRecord> get_current_epoch_boundary_attestations(
@@ -73,11 +73,11 @@ public class AttestationUtil {
       for (PendingAttestationRecord record : current_epoch_boundary_attestations) {
         if (record
                 .getData()
-                .getEpoch_boundary_hash()
+                .getEpoch_boundary_root()
                 .equals(
                     BeaconStateUtil.get_block_root(
-                        state, record.getData().getSlot() - Constants.EPOCH_LENGTH))
-            && record.getData().getJustified_slot().equals(state.getJustified_epoch()))
+                        state, record.getData().getSlot().intValue() - Constants.EPOCH_LENGTH))
+            && record.getData().getJustified_epoch().equals(state.getJustified_epoch()))
           current_epoch_attestations.add(record);
       }
     }
@@ -114,7 +114,7 @@ public class AttestationUtil {
 
     for (PendingAttestationRecord record : combined_attestations) {
       if (record.getData().getShard().compareTo(crosslink_committee.getShard()) == 0
-          && record.getData().getShard_block_hash() == shard_block_root) {
+          && record.getData().getShard_block_root() == shard_block_root) {
         return BeaconStateUtil.get_attestation_participants(
             state, record.getData(), record.getParticipation_bitfield().toArray());
       }

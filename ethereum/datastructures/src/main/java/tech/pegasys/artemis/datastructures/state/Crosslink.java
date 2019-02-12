@@ -14,9 +14,9 @@
 package tech.pegasys.artemis.datastructures.state;
 
 import com.google.common.primitives.UnsignedLong;
+import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
-
-import java.security.SecureRandom;
+import net.consensys.cava.ssz.SSZ;
 
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomUnsignedLong;
 
@@ -38,6 +38,25 @@ public class Crosslink {
   public static Crosslink random() {
     return new Crosslink(randomUnsignedLong(), Bytes32.random());
   }
+
+  public static Crosslink fromBytes(Bytes bytes) {
+    return SSZ.decode(
+        bytes,
+        reader ->
+            new Crosslink(
+                UnsignedLong.fromLongBits(reader.readUInt64()),
+                Bytes32.wrap(reader.readBytes())));
+  }
+
+  public Bytes toBytes() {
+    return SSZ.encode(
+        writer -> {
+          writer.writeUInt64(epoch.longValue());
+          // TODO: check this is right
+          writer.writeBytes(shard_block_root);
+        });
+  }
+
 
 
   /** ******************* * GETTERS & SETTERS * * ******************* */

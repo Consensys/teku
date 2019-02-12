@@ -16,7 +16,7 @@ package tech.pegasys.artemis.datastructures.blocks;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomAttestation;
-import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomCasperSlashing;
+import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomAttesterSlashing;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomDeposit;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomExit;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomProposerSlashing;
@@ -28,24 +28,24 @@ import java.util.List;
 import net.consensys.cava.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
-import tech.pegasys.artemis.datastructures.operations.CasperSlashing;
+import tech.pegasys.artemis.datastructures.operations.AttesterSlashing;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.Exit;
 import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
 
 class BeaconBlockBodyTest {
 
-  List<Attestation> attestations =
+  private List<Attestation> attestations =
       Arrays.asList(randomAttestation(), randomAttestation(), randomAttestation());
-  List<ProposerSlashing> proposerSlashings =
+  private List<ProposerSlashing> proposerSlashings =
       Arrays.asList(randomProposerSlashing(), randomProposerSlashing(), randomProposerSlashing());
-  List<CasperSlashing> casperSlashings =
-      Arrays.asList(randomCasperSlashing(), randomCasperSlashing(), randomCasperSlashing());
-  List<Deposit> deposits = Arrays.asList(randomDeposit(), randomDeposit(), randomDeposit());
-  List<Exit> exits = Arrays.asList(randomExit(), randomExit(), randomExit());
+  private List<AttesterSlashing> attesterSlashings =
+      Arrays.asList(randomAttesterSlashing(), randomAttesterSlashing(), randomAttesterSlashing());
+  private List<Deposit> deposits = Arrays.asList(randomDeposit(), randomDeposit(), randomDeposit());
+  private List<Exit> exits = Arrays.asList(randomExit(), randomExit(), randomExit());
 
-  BeaconBlockBody beaconBlockBody =
-      new BeaconBlockBody(proposerSlashings, casperSlashings, attestations, deposits, exits);
+  private BeaconBlockBody beaconBlockBody =
+      new BeaconBlockBody(proposerSlashings, attesterSlashings, attestations, deposits, exits);
 
   @Test
   void equalsReturnsTrueWhenObjectAreSame() {
@@ -57,7 +57,7 @@ class BeaconBlockBodyTest {
   @Test
   void equalsReturnsTrueWhenObjectFieldsAreEqual() {
     BeaconBlockBody testBeaconBlockBody =
-        new BeaconBlockBody(proposerSlashings, casperSlashings, attestations, deposits, exits);
+        new BeaconBlockBody(proposerSlashings, attesterSlashings, attestations, deposits, exits);
 
     assertEquals(beaconBlockBody, testBeaconBlockBody);
   }
@@ -66,12 +66,12 @@ class BeaconBlockBodyTest {
   void equalsReturnsFalseWhenProposerSlashingsAreDifferent() {
     // Create copy of proposerSlashings and reverse to ensure it is different.
     List<ProposerSlashing> reverseProposerSlashings =
-        new ArrayList<ProposerSlashing>(proposerSlashings);
+        new ArrayList<>(proposerSlashings);
     Collections.reverse(reverseProposerSlashings);
 
     BeaconBlockBody testBeaconBlockBody =
         new BeaconBlockBody(
-            reverseProposerSlashings, casperSlashings, attestations, deposits, exits);
+            reverseProposerSlashings, attesterSlashings, attestations, deposits, exits);
 
     assertNotEquals(beaconBlockBody, testBeaconBlockBody);
   }
@@ -79,12 +79,12 @@ class BeaconBlockBodyTest {
   @Test
   void equalsReturnsFalseWhenCasperSlashingsAreDifferent() {
     // Create copy of casperSlashings and reverse to ensure it is different.
-    List<CasperSlashing> reverseCasperSlashings = new ArrayList<CasperSlashing>(casperSlashings);
-    Collections.reverse(reverseCasperSlashings);
+    List<AttesterSlashing> reverseAttesterSlashings = new ArrayList<>(attesterSlashings);
+    Collections.reverse(reverseAttesterSlashings);
 
     BeaconBlockBody testBeaconBlockBody =
         new BeaconBlockBody(
-            proposerSlashings, reverseCasperSlashings, attestations, deposits, exits);
+            proposerSlashings, reverseAttesterSlashings, attestations, deposits, exits);
 
     assertNotEquals(beaconBlockBody, testBeaconBlockBody);
   }
@@ -92,12 +92,12 @@ class BeaconBlockBodyTest {
   @Test
   void equalsReturnsFalseWhenAttestationsAreDifferent() {
     // Create copy of attestations and reverse to ensure it is different.
-    List<Attestation> reverseAttestations = new ArrayList<Attestation>(attestations);
+    List<Attestation> reverseAttestations = new ArrayList<>(attestations);
     Collections.reverse(reverseAttestations);
 
     BeaconBlockBody testBeaconBlockBody =
         new BeaconBlockBody(
-            proposerSlashings, casperSlashings, reverseAttestations, deposits, exits);
+            proposerSlashings, attesterSlashings, reverseAttestations, deposits, exits);
 
     assertNotEquals(beaconBlockBody, testBeaconBlockBody);
   }
@@ -105,12 +105,12 @@ class BeaconBlockBodyTest {
   @Test
   void equalsReturnsFalseWhenDepositsAreDifferent() {
     // Create copy of deposits and reverse to ensure it is different.
-    List<Deposit> reverseDeposits = new ArrayList<Deposit>(deposits);
+    List<Deposit> reverseDeposits = new ArrayList<>(deposits);
     Collections.reverse(reverseDeposits);
 
     BeaconBlockBody testBeaconBlockBody =
         new BeaconBlockBody(
-            proposerSlashings, casperSlashings, attestations, reverseDeposits, exits);
+            proposerSlashings, attesterSlashings, attestations, reverseDeposits, exits);
 
     assertNotEquals(beaconBlockBody, testBeaconBlockBody);
   }
@@ -123,7 +123,7 @@ class BeaconBlockBodyTest {
 
     BeaconBlockBody testBeaconBlockBody =
         new BeaconBlockBody(
-            proposerSlashings, casperSlashings, attestations, deposits, reverseExits);
+            proposerSlashings, attesterSlashings, attestations, deposits, reverseExits);
 
     assertNotEquals(beaconBlockBody, testBeaconBlockBody);
   }

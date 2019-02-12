@@ -60,7 +60,7 @@ public class AttestationData {
                 Bytes32.wrap(reader.readBytes()),
                 Bytes32.wrap(reader.readBytes()),
                 Bytes32.wrap(reader.readBytes()),
-                Crosslink.wrap(reader.readBytes()),
+                Crosslink.fromBytes(reader.readBytes()),
                 UnsignedLong.fromLongBits(reader.readUInt64()),
                 Bytes32.wrap(reader.readBytes())));
   }
@@ -73,7 +73,7 @@ public class AttestationData {
           writer.writeBytes(beacon_block_root);
           writer.writeBytes(epoch_boundary_root);
           writer.writeBytes(shard_block_root);
-          writer.writeBytes(latest_crosslink);
+          writer.writeBytes(latest_crosslink.toBytes());
           writer.writeUInt64(justified_epoch.longValue());
           writer.writeBytes(justified_block_root);
         });

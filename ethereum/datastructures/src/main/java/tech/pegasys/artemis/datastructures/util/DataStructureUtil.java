@@ -92,6 +92,13 @@ public final class DataStructureUtil {
         new BLSSignature(Bytes48.random(), Bytes48.random()));
   }
 
+  public static AttesterSlashing randomAttesterSlashing() {
+    return new AttesterSlashing(
+        randomSlashableAttestation(),
+        randomSlashableAttestation()
+    );
+  }
+
   public static ProposalSignedData randomProposalSignedData() {
     return new ProposalSignedData(randomUnsignedLong(), randomUnsignedLong(), Bytes32.random());
   }
@@ -111,10 +118,6 @@ public final class DataStructureUtil {
         randomAttestationData(),
         Bytes32.random(),
         new BLSSignature(Bytes48.random(), Bytes48.random()));
-  }
-
-  public static AttesterSlashing randomAttesterSlashing() {
-    return new AttesterSlashing(randomSlashableAttestation(), randomSlashableAttestation());
   }
 
   public static DepositInput randomDepositInput() {

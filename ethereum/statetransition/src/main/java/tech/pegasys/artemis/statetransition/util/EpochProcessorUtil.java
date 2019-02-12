@@ -238,7 +238,7 @@ public class EpochProcessorUtil {
       UnsignedLong penalized_withdrawal_epochs =
           UnsignedLong.valueOf(
               (long)
-                  Math.floor(Constants.LATEST_PENALIZED_EXIT_LENGTH * Constants.EPOCH_LENGTH / 2));
+                  Math.floor(Constants.LATEST_PENALIZED_EXIT_LENGTH * Constants.EPOCH_LENGTH / 2.0));
       return state
               .getSlot()
               .compareTo(validator.getPenalized_epoch().plus(penalized_withdrawal_epochs))
