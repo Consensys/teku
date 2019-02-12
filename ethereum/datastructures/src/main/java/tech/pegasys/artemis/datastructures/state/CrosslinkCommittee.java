@@ -15,13 +15,14 @@ package tech.pegasys.artemis.datastructures.state;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
+import java.util.List;
 
 public class CrosslinkCommittee {
 
   private UnsignedLong shard;
-  private ArrayList<Integer> committee;
+  private List<Integer> committee;
 
-  public CrosslinkCommittee(UnsignedLong shard, ArrayList<Integer> committee) {
+  public CrosslinkCommittee(UnsignedLong shard, List<Integer> committee) {
     this.shard = shard;
     this.committee = committee;
   }
@@ -31,7 +32,7 @@ public class CrosslinkCommittee {
     return shard;
   }
 
-  public ArrayList<Integer> getCommittee() {
+  public List<Integer> getCommittee() {
     return committee;
   }
 

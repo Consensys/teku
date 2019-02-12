@@ -15,19 +15,18 @@ package tech.pegasys.artemis.statetransition.util;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomDeposits;
+import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomEth1Data;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
-import net.consensys.cava.bytes.Bytes32;
+import java.util.List;
 import net.consensys.cava.junit.BouncyCastleExtension;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import tech.pegasys.artemis.datastructures.Constants;
-import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.state.Validator;
-import tech.pegasys.artemis.datastructures.state.Validators;
 import tech.pegasys.artemis.statetransition.BeaconState;
 
 @ExtendWith(BouncyCastleExtension.class)
@@ -38,9 +37,7 @@ class EpochProcessingUtilTest {
     // get initial state
     BeaconState state =
         BeaconStateUtil.get_initial_beacon_state(
-            deposits,
-            UnsignedLong.valueOf(Constants.GENESIS_SLOT),
-            new Eth1Data(Bytes32.ZERO, Bytes32.ZERO));
+            deposits, UnsignedLong.valueOf(Constants.GENESIS_SLOT), randomEth1Data());
 
     UnsignedLong currentEpoch = BeaconStateUtil.get_current_epoch(state);
 
@@ -57,41 +54,36 @@ class EpochProcessingUtilTest {
     BeaconState state = createArbitraryBeaconState(25);
     UnsignedLong currentEpoch = BeaconStateUtil.get_current_epoch(state);
 
-    Validators before_active_validators =
-        ValidatorsUtil.get_active_validators(state.getValidator_registry(), currentEpoch);
-    UnsignedLong before_total_balance =
-        EpochProcessorUtil.get_total_effective_balance(state, before_active_validators);
-
+    List<UnsignedLong> lowBalances = new ArrayList<>();
+    lowBalances.add(UnsignedLong.valueOf(Constants.EJECTION_BALANCE / 4));
+    lowBalances.add(UnsignedLong.valueOf(Constants.EJECTION_BALANCE / 8));
+    lowBalances.add(UnsignedLong.valueOf(0L));
+    lowBalances.add(UnsignedLong.valueOf(Constants.EJECTION_BALANCE / 2));
+    lowBalances.add(UnsignedLong.valueOf(Constants.EJECTION_BALANCE));
     // make 4 validators have balance below threshold and 1 right at the threshhold
-    Validators validators =
-        ValidatorsUtil.get_active_validators(state.getValidator_registry(), currentEpoch);
     // validators to be ejected
-    validators.get(0).setBalance(UnsignedLong.valueOf(Constants.EJECTION_BALANCE / 4));
-    validators.get(5).setBalance(UnsignedLong.valueOf(Constants.EJECTION_BALANCE / 8));
-    validators.get(15).setBalance(UnsignedLong.valueOf(0L));
-    validators.get(20).setBalance(UnsignedLong.valueOf(Constants.EJECTION_BALANCE / 2));
+    state.getValidator_balances().set(0, lowBalances.get(0));
+    state.getValidator_balances().set(5, lowBalances.get(1));
+    state.getValidator_balances().set(15, lowBalances.get(2));
+    state.getValidator_balances().set(20, lowBalances.get(3));
     // validator stays active
-    validators.get(1).setBalance(UnsignedLong.valueOf(Constants.EJECTION_BALANCE));
+    state.getValidator_balances().set(1, lowBalances.get(4));
+
+    UnsignedLong lowBalance = UnsignedLong.ZERO;
+    for (int i = 0; i < lowBalances.size(); i++) {
+      lowBalance = lowBalance.plus(lowBalances.get(i));
+    }
 
     // flag the validators with a balance below the threshold
     EpochProcessorUtil.process_ejections(state);
     // increment the epoch to the time where the validator will be considered ejected
     currentEpoch = BeaconStateUtil.get_entry_exit_effect_epoch(currentEpoch);
 
-    Validators after_active_validators =
+    List<Validator> after_active_validators =
         ValidatorsUtil.get_active_validators(state.getValidator_registry(), currentEpoch);
-    UnsignedLong after_total_balance =
-        EpochProcessorUtil.get_total_effective_balance(state, after_active_validators);
-
     int expected_num_validators = 21;
-    UnsignedLong deposit_amount = UnsignedLong.valueOf(Constants.MAX_DEPOSIT_AMOUNT);
-    UnsignedLong expected_total_balance =
-        UnsignedLong.valueOf(expected_num_validators)
-            .times(deposit_amount)
-            .minus(UnsignedLong.valueOf(Constants.EJECTION_BALANCE));
 
     assertEquals(expected_num_validators, after_active_validators.size());
-    assertEquals(expected_total_balance, after_total_balance);
   }
 
   @Test
@@ -99,45 +91,32 @@ class EpochProcessingUtilTest {
     BeaconState state = createArbitraryBeaconState(25);
     UnsignedLong currentEpoch = BeaconStateUtil.get_current_epoch(state);
 
-    Validators before_active_validators =
-        ValidatorsUtil.get_active_validators(state.getValidator_registry(), currentEpoch);
-    UnsignedLong before_total_balance =
-        EpochProcessorUtil.get_total_effective_balance(state, before_active_validators);
-
     // make 4 validators have balance below threshold and 1 right at the threshhold
-    Validators validators =
+    List<Validator> validators =
         ValidatorsUtil.get_active_validators(state.getValidator_registry(), currentEpoch);
     // validators to be ejected
-    validators.get(0).setBalance(UnsignedLong.valueOf(Constants.EJECTION_BALANCE / 4));
+    state.getValidator_balances().set(0, UnsignedLong.valueOf(Constants.EJECTION_BALANCE / 4));
     validators.get(0).setStatus_flags(UnsignedLong.valueOf(Constants.INITIATED_EXIT));
-    validators.get(5).setBalance(UnsignedLong.valueOf(Constants.EJECTION_BALANCE / 8));
+    state.getValidator_balances().set(5, UnsignedLong.valueOf(Constants.EJECTION_BALANCE / 8));
     validators.get(5).setStatus_flags(UnsignedLong.valueOf(Constants.INITIATED_EXIT));
-    validators.get(15).setBalance(UnsignedLong.valueOf(0L));
+    state.getValidator_balances().set(15, UnsignedLong.valueOf(0L));
     validators.get(15).setStatus_flags(UnsignedLong.valueOf(Constants.INITIATED_EXIT));
-    validators.get(20).setBalance(UnsignedLong.valueOf(Constants.EJECTION_BALANCE / 2));
+    state.getValidator_balances().set(20, UnsignedLong.valueOf(Constants.EJECTION_BALANCE / 2));
     validators.get(20).setStatus_flags(UnsignedLong.valueOf(Constants.INITIATED_EXIT));
     // validator stays active
-    validators.get(1).setBalance(UnsignedLong.valueOf(Constants.EJECTION_BALANCE));
+    state.getValidator_balances().set(1, UnsignedLong.valueOf(Constants.EJECTION_BALANCE));
 
     // flag the validators with a balance below the threshold
     EpochProcessorUtil.update_validator_registry(state);
     // increment the epoch to the time where the validator will be considered ejected
     currentEpoch = BeaconStateUtil.get_entry_exit_effect_epoch(currentEpoch);
 
-    Validators after_active_validators =
+    List<Validator> after_active_validators =
         ValidatorsUtil.get_active_validators(state.getValidator_registry(), currentEpoch);
-    UnsignedLong after_total_balance =
-        EpochProcessorUtil.get_total_effective_balance(state, after_active_validators);
 
     int expected_num_validators = 21;
-    UnsignedLong deposit_amount = UnsignedLong.valueOf(Constants.MAX_DEPOSIT_AMOUNT);
-    UnsignedLong expected_total_balance =
-        UnsignedLong.valueOf(expected_num_validators)
-            .times(deposit_amount)
-            .minus(UnsignedLong.valueOf(Constants.EJECTION_BALANCE));
 
     assertEquals(expected_num_validators, after_active_validators.size());
-    assertEquals(expected_total_balance, after_total_balance);
   }
 
   @Test
@@ -145,37 +124,21 @@ class EpochProcessingUtilTest {
     BeaconState state = createArbitraryBeaconState(25);
     UnsignedLong currentEpoch = BeaconStateUtil.get_current_epoch(state);
 
-    Validators before_active_validators =
-        ValidatorsUtil.get_active_validators(state.getValidator_registry(), currentEpoch);
-    UnsignedLong before_total_balance =
-        EpochProcessorUtil.get_total_effective_balance(state, before_active_validators);
-
     // make 4 validators have balance below threshold and 1 right at the threshhold
-    Validators validators =
-        ValidatorsUtil.get_active_validators(state.getValidator_registry(), currentEpoch);
     // validators to be ejected
     long val_balance = Constants.EJECTION_BALANCE - 6;
-    validators.get(0).setBalance(UnsignedLong.valueOf(val_balance));
+    state.getValidator_balances().set(0, UnsignedLong.valueOf(val_balance));
 
     // flag the validators with a balance below the threshold
     EpochProcessorUtil.update_validator_registry(state);
     // increment the epoch to the time where the validator will be considered ejected
     currentEpoch = BeaconStateUtil.get_entry_exit_effect_epoch(currentEpoch);
 
-    Validators after_active_validators =
+    List<Validator> after_active_validators =
         ValidatorsUtil.get_active_validators(state.getValidator_registry(), currentEpoch);
-    UnsignedLong after_total_balance =
-        EpochProcessorUtil.get_total_effective_balance(state, after_active_validators);
 
     int expected_num_validators = 25;
-    UnsignedLong deposit_amount = UnsignedLong.valueOf(Constants.MAX_DEPOSIT_AMOUNT);
-    UnsignedLong expected_total_balance =
-        UnsignedLong.valueOf(expected_num_validators)
-            .times(deposit_amount)
-            .minus(UnsignedLong.valueOf(Constants.MAX_DEPOSIT_AMOUNT - val_balance));
-
     assertEquals(expected_num_validators, after_active_validators.size());
-    assertEquals(expected_total_balance, after_total_balance);
   }
 
   @Disabled
@@ -185,15 +148,15 @@ class EpochProcessingUtilTest {
     // TODO: Figure out how to test PenaltiesAndExits
     UnsignedLong currentEpoch = BeaconStateUtil.get_current_epoch(state);
 
-    Validators before_active_validators =
+    List<Validator> before_active_validators =
         ValidatorsUtil.get_active_validators(state.getValidator_registry(), currentEpoch);
     UnsignedLong before_total_balance =
         EpochProcessorUtil.get_total_effective_balance(state, before_active_validators);
 
-    Validators validators =
+    List<Validator> validators =
         ValidatorsUtil.get_active_validators(state.getValidator_registry(), currentEpoch);
     // validators to withdrawal
-    validators.get(0).setBalance(UnsignedLong.valueOf(Constants.MAX_DEPOSIT_AMOUNT));
+    state.getValidator_balances().set(0, UnsignedLong.valueOf(Constants.MAX_DEPOSIT_AMOUNT));
     validators.get(0).setStatus_flags(UnsignedLong.valueOf(Constants.WITHDRAWABLE));
 
     // flag the validators with a balance below the threshold
@@ -201,7 +164,7 @@ class EpochProcessingUtilTest {
     // increment the epoch to the time where the validator will be considered ejected
     currentEpoch = BeaconStateUtil.get_entry_exit_effect_epoch(currentEpoch);
 
-    Validators after_active_validators =
+    List<Validator> after_active_validators =
         ValidatorsUtil.get_active_validators(state.getValidator_registry(), currentEpoch);
     UnsignedLong after_total_balance =
         EpochProcessorUtil.get_total_effective_balance(state, after_active_validators);

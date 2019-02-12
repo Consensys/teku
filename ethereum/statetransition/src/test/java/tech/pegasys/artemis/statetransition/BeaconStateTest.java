@@ -44,7 +44,6 @@ import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
 import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.datastructures.state.Validator;
-import tech.pegasys.artemis.datastructures.state.Validators;
 import tech.pegasys.artemis.statetransition.util.BeaconStateUtil;
 
 @ExtendWith(BouncyCastleExtension.class)
@@ -57,7 +56,7 @@ class BeaconStateTest {
             UnsignedLong.valueOf(GENESIS_SLOT),
             UnsignedLong.ZERO,
             new Fork(UnsignedLong.ZERO, UnsignedLong.ZERO, UnsignedLong.ZERO),
-            new Validators(),
+            new ArrayList<Validator>(),
             new ArrayList<UnsignedLong>(),
             UnsignedLong.ZERO,
             new ArrayList<Bytes32>(),
@@ -81,14 +80,13 @@ class BeaconStateTest {
             new ArrayList<>());
 
     // Add validator records
-    Validators validators = new Validators();
+    ArrayList<Validator> validators = new ArrayList<>();
     validators.add(
         new Validator(
             Bytes48.ZERO,
             Bytes32.ZERO,
             UnsignedLong.ZERO,
             UnsignedLong.valueOf(GENESIS_EPOCH),
-            UnsignedLong.ZERO,
             UnsignedLong.ZERO,
             UnsignedLong.ZERO,
             UnsignedLong.ZERO));
@@ -100,6 +98,14 @@ class BeaconStateTest {
             UnsignedLong.valueOf(GENESIS_EPOCH),
             UnsignedLong.ZERO,
             UnsignedLong.ZERO,
+            UnsignedLong.ZERO));
+    validators.add(
+        new Validator(
+            Bytes48.ZERO,
+            Bytes32.ZERO,
+            UnsignedLong.ZERO,
+            UnsignedLong.valueOf(GENESIS_EPOCH),
+            UnsignedLong.ZERO,
             UnsignedLong.ZERO,
             UnsignedLong.ZERO));
     validators.add(
@@ -110,7 +116,6 @@ class BeaconStateTest {
             UnsignedLong.valueOf(GENESIS_EPOCH),
             UnsignedLong.ZERO,
             UnsignedLong.ZERO,
-            UnsignedLong.ZERO,
             UnsignedLong.ZERO));
     validators.add(
         new Validator(
@@ -118,17 +123,6 @@ class BeaconStateTest {
             Bytes32.ZERO,
             UnsignedLong.ZERO,
             UnsignedLong.valueOf(GENESIS_EPOCH),
-            UnsignedLong.ZERO,
-            UnsignedLong.ZERO,
-            UnsignedLong.ZERO,
-            UnsignedLong.ZERO));
-    validators.add(
-        new Validator(
-            Bytes48.ZERO,
-            Bytes32.ZERO,
-            UnsignedLong.ZERO,
-            UnsignedLong.valueOf(GENESIS_EPOCH),
-            UnsignedLong.ZERO,
             UnsignedLong.ZERO,
             UnsignedLong.ZERO,
             UnsignedLong.ZERO));
@@ -400,8 +394,8 @@ class BeaconStateTest {
         .isNotEqualTo(state.getFork().getPrevious_version());
 
     // Test validator registry
-    Validators new_records =
-        new Validators(
+    ArrayList<Validator> new_records =
+        new ArrayList<>(
             Collections.nCopies(
                 12,
                 new Validator(
@@ -409,7 +403,6 @@ class BeaconStateTest {
                     Bytes32.ZERO,
                     UnsignedLong.ZERO,
                     UnsignedLong.valueOf(GENESIS_EPOCH),
-                    UnsignedLong.ZERO,
                     UnsignedLong.ZERO,
                     UnsignedLong.ZERO,
                     UnsignedLong.ZERO)));
@@ -463,7 +456,7 @@ class BeaconStateTest {
     List<Integer> input = Arrays.asList(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
     ArrayList<Integer> sample = new ArrayList<>(input);
 
-    ArrayList<Integer> actual = shuffle(sample, hashSrc());
+    List<Integer> actual = shuffle(sample, hashSrc());
     List<Integer> expected_input = Arrays.asList(4, 7, 2, 1, 5, 10, 3, 6, 8, 9);
     ArrayList<Integer> expected = new ArrayList<>(expected_input);
     assertThat(actual).isEqualTo(expected);
@@ -482,7 +475,7 @@ class BeaconStateTest {
     List<Integer> input = Arrays.asList(0, 1, 2, 3, 4, 5, 6, 7);
     ArrayList<Integer> sample = new ArrayList<>(input);
 
-    ArrayList<ArrayList<Integer>> actual = split(sample, 3);
+    List<List<Integer>> actual = split(sample, 3);
 
     ArrayList<ArrayList<Integer>> expected = new ArrayList<>();
     List<Integer> one = Arrays.asList(0, 1);
@@ -500,7 +493,7 @@ class BeaconStateTest {
     List<Integer> input = Arrays.asList(0, 1, 2, 3, 4, 5, 6);
     ArrayList<Integer> sample = new ArrayList<>(input);
 
-    ArrayList<ArrayList<Integer>> actual = split(sample, 3);
+    List<List<Integer>> actual = split(sample, 3);
 
     ArrayList<ArrayList<Integer>> expected = new ArrayList<>();
     List<Integer> one = Arrays.asList(0, 1);
@@ -518,7 +511,7 @@ class BeaconStateTest {
     List<Integer> input = Arrays.asList(0, 1, 2, 3, 4, 5, 6, 7, 8);
     ArrayList<Integer> sample = new ArrayList<>(input);
 
-    ArrayList<ArrayList<Integer>> actual = split(sample, 3);
+    List<List<Integer>> actual = split(sample, 3);
 
     ArrayList<ArrayList<Integer>> expected = new ArrayList<>();
     List<Integer> one = Arrays.asList(0, 1, 2);
