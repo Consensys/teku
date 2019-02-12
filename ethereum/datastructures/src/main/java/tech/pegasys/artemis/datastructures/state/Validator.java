@@ -13,8 +13,6 @@
 
 package tech.pegasys.artemis.datastructures.state;
 
-import static tech.pegasys.artemis.datastructures.Constants.MAX_DEPOSIT_AMOUNT;
-
 import com.google.common.primitives.UnsignedLong;
 import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.bytes.Bytes48;
@@ -35,8 +33,6 @@ public class Validator {
   private UnsignedLong penalized_epoch;
   // Status flags
   private UnsignedLong status_flags;
-  // Validator balace
-  private UnsignedLong balance = UnsignedLong.ZERO;
 
   public Validator() {}
 
@@ -47,8 +43,7 @@ public class Validator {
       UnsignedLong exit_epoch,
       UnsignedLong withdrawal_epoch,
       UnsignedLong penalized_epoch,
-      UnsignedLong status_flags,
-      UnsignedLong balance) {
+      UnsignedLong status_flags) {
     this.pubkey = pubkey;
     this.withdrawal_credentials = withdrawal_credentials;
     this.activation_epoch = activation_epoch;
@@ -56,7 +51,6 @@ public class Validator {
     this.withdrawal_epoch = withdrawal_epoch;
     this.penalized_epoch = penalized_epoch;
     this.status_flags = status_flags;
-    this.balance = balance;
   }
 
   public Bytes48 getPubkey() {
@@ -119,24 +113,5 @@ public class Validator {
     // checks validator status against the validator status constants for whether the validator is
     // active
     return activation_epoch.compareTo(epoch) <= 0 && epoch.compareTo(exit_epoch) < 0;
-  }
-
-  /**
-   * Returns the effective balance (also known as "balance at stake") for the ``validator``.
-   *
-   * @param
-   * @return
-   */
-  public UnsignedLong get_effective_balance() {
-    if (balance.compareTo(UnsignedLong.valueOf(MAX_DEPOSIT_AMOUNT)) <= 0) return balance;
-    else return UnsignedLong.valueOf(MAX_DEPOSIT_AMOUNT);
-  }
-
-  public UnsignedLong getBalance() {
-    return balance;
-  }
-
-  public void setBalance(UnsignedLong balance) {
-    this.balance = balance;
   }
 }
