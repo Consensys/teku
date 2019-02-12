@@ -111,7 +111,7 @@ public final class DataStructureUtil {
 
   public static SlashableAttestation randomSlashableAttestation() {
     return new SlashableAttestation(
-        new long[]{randomLong(), randomLong(), randomLong()},
+        new long[] {randomLong(), randomLong(), randomLong()},
         randomAttestationData(),
         Bytes32.random(),
         new BLSSignature(Bytes48.random(), Bytes48.random()));

@@ -24,11 +24,11 @@ import org.junit.jupiter.api.Test;
 
 class ProposalSignedDataTest {
 
-  UnsignedLong slot = randomUnsignedLong();
-  UnsignedLong shard = randomUnsignedLong();
-  Bytes32 blockHash = Bytes32.random();
+  private UnsignedLong slot = randomUnsignedLong();
+  private UnsignedLong shard = randomUnsignedLong();
+  private Bytes32 blockHash = Bytes32.random();
 
-  ProposalSignedData proposalSignedData = new ProposalSignedData(slot, shard, blockHash);
+  private ProposalSignedData proposalSignedData = new ProposalSignedData(slot, shard, blockHash);
 
   @Test
   void equalsReturnsTrueWhenObjectAreSame() {
