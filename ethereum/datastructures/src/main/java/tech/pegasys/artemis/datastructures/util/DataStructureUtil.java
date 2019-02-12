@@ -14,9 +14,11 @@
 package tech.pegasys.artemis.datastructures.util;
 
 import com.google.common.primitives.UnsignedLong;
+import java.util.ArrayList;
 import java.util.Arrays;
 import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.bytes.Bytes48;
+import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockBody;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
@@ -120,7 +122,10 @@ public final class DataStructureUtil {
   }
 
   public static DepositData randomDepositData() {
-    return new DepositData(randomDepositInput(), randomUnsignedLong(), randomUnsignedLong());
+    return new DepositData(
+        randomDepositInput(),
+        UnsignedLong.valueOf(Constants.MAX_DEPOSIT_AMOUNT),
+        randomUnsignedLong());
   }
 
   public static Deposit randomDeposit() {
@@ -128,6 +133,16 @@ public final class DataStructureUtil {
         Arrays.asList(Bytes32.random(), Bytes32.random(), Bytes32.random()),
         randomUnsignedLong(),
         randomDepositData());
+  }
+
+  public static ArrayList<Deposit> randomDeposits(int num) {
+    ArrayList<Deposit> deposits = new ArrayList<Deposit>();
+
+    for (int i = 0; i < num; i++) {
+      deposits.add(randomDeposit());
+    }
+
+    return deposits;
   }
 
   public static Exit randomExit() {

@@ -118,7 +118,7 @@ public class Validator {
   public boolean is_active_validator(UnsignedLong epoch) {
     // checks validator status against the validator status constants for whether the validator is
     // active
-    return activation_epoch.compareTo(epoch) <= 0 && activation_epoch.compareTo(exit_epoch) < 0;
+    return activation_epoch.compareTo(epoch) <= 0 && epoch.compareTo(exit_epoch) < 0;
   }
 
   /**
