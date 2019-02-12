@@ -40,7 +40,7 @@ class DepositDataTest {
 
   @Test
   void equalsReturnsTrueWhenObjectFieldsAreEqual() {
-    DepositData testDepositData = new DepositData( amount, timestamp, depositInput);
+    DepositData testDepositData = new DepositData(amount, timestamp, depositInput);
 
     assertEquals(depositData, testDepositData);
   }

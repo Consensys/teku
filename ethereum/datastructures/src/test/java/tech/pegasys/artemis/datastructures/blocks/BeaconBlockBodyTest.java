@@ -65,8 +65,7 @@ class BeaconBlockBodyTest {
   @Test
   void equalsReturnsFalseWhenProposerSlashingsAreDifferent() {
     // Create copy of proposerSlashings and reverse to ensure it is different.
-    List<ProposerSlashing> reverseProposerSlashings =
-        new ArrayList<>(proposerSlashings);
+    List<ProposerSlashing> reverseProposerSlashings = new ArrayList<>(proposerSlashings);
     Collections.reverse(reverseProposerSlashings);
 
     BeaconBlockBody testBeaconBlockBody =

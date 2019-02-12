@@ -27,7 +27,8 @@ class DepositInputTest {
   private Bytes32 withdrawalCredentials = Bytes32.random();
   private BLSSignature proofOfPossession = new BLSSignature(Bytes48.random(), Bytes48.random());
 
-  private DepositInput depositInput = new DepositInput(pubkey, withdrawalCredentials, proofOfPossession);
+  private DepositInput depositInput =
+      new DepositInput(pubkey, withdrawalCredentials, proofOfPossession);
 
   @Test
   void equalsReturnsTrueWhenObjectAreSame() {

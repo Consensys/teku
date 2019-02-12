@@ -93,10 +93,7 @@ public final class DataStructureUtil {
   }
 
   public static AttesterSlashing randomAttesterSlashing() {
-    return new AttesterSlashing(
-        randomSlashableAttestation(),
-        randomSlashableAttestation()
-    );
+    return new AttesterSlashing(randomSlashableAttestation(), randomSlashableAttestation());
   }
 
   public static ProposalSignedData randomProposalSignedData() {

@@ -22,8 +22,8 @@ import java.util.List;
 import java.util.ListIterator;
 import net.consensys.cava.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.Constants;
-import tech.pegasys.artemis.datastructures.state.CrosslinkCommittee;
 import tech.pegasys.artemis.datastructures.state.Crosslink;
+import tech.pegasys.artemis.datastructures.state.CrosslinkCommittee;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.statetransition.BeaconState;
 
@@ -238,7 +238,8 @@ public class EpochProcessorUtil {
       UnsignedLong penalized_withdrawal_epochs =
           UnsignedLong.valueOf(
               (long)
-                  Math.floor(Constants.LATEST_PENALIZED_EXIT_LENGTH * Constants.EPOCH_LENGTH / 2.0));
+                  Math.floor(
+                      Constants.LATEST_PENALIZED_EXIT_LENGTH * Constants.EPOCH_LENGTH / 2.0));
       return state
               .getSlot()
               .compareTo(validator.getPenalized_epoch().plus(penalized_withdrawal_epochs))

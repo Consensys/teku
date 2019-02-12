@@ -27,8 +27,7 @@ public class Deposit {
   private UnsignedLong index;
   private DepositData deposit_data;
 
-  public Deposit(
-      List<Bytes32> branch, UnsignedLong index, DepositData deposit_data) {
+  public Deposit(List<Bytes32> branch, UnsignedLong index, DepositData deposit_data) {
     this.branch = branch;
     this.index = index;
     this.deposit_data = deposit_data;

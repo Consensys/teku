@@ -13,12 +13,12 @@
 
 package tech.pegasys.artemis.datastructures.state;
 
+import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomUnsignedLong;
+
 import com.google.common.primitives.UnsignedLong;
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.ssz.SSZ;
-
-import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomUnsignedLong;
 
 public class Crosslink {
 
@@ -44,8 +44,7 @@ public class Crosslink {
         bytes,
         reader ->
             new Crosslink(
-                UnsignedLong.fromLongBits(reader.readUInt64()),
-                Bytes32.wrap(reader.readBytes())));
+                UnsignedLong.fromLongBits(reader.readUInt64()), Bytes32.wrap(reader.readBytes())));
   }
 
   public Bytes toBytes() {
@@ -56,8 +55,6 @@ public class Crosslink {
           writer.writeBytes(shard_block_root);
         });
   }
-
-
 
   /** ******************* * GETTERS & SETTERS * * ******************* */
   public Bytes32 getShard_block_root() {

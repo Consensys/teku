@@ -22,7 +22,8 @@ public class AttesterSlashing {
   private SlashableAttestation slashable_attestation_1;
   private SlashableAttestation slashable_attestation_2;
 
-  public AttesterSlashing(SlashableAttestation slashable_attestation_1, SlashableAttestation slashable_attestation_2) {
+  public AttesterSlashing(
+      SlashableAttestation slashable_attestation_1, SlashableAttestation slashable_attestation_2) {
     this.slashable_attestation_1 = slashable_attestation_1;
     this.slashable_attestation_2 = slashable_attestation_2;
   }

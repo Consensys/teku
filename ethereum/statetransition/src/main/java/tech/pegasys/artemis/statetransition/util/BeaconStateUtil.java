@@ -46,8 +46,8 @@ import tech.pegasys.artemis.datastructures.operations.AttestationData;
 import tech.pegasys.artemis.datastructures.operations.BLSSignature;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.DepositInput;
-import tech.pegasys.artemis.datastructures.state.CrosslinkCommittee;
 import tech.pegasys.artemis.datastructures.state.Crosslink;
+import tech.pegasys.artemis.datastructures.state.CrosslinkCommittee;
 import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.datastructures.state.PendingAttestationRecord;
 import tech.pegasys.artemis.datastructures.state.Validator;
@@ -852,8 +852,10 @@ public class BeaconStateUtil {
    */
   private boolean is_double_vote(
       AttestationData attestation_data_1, AttestationData attestation_data_2) {
-    UnsignedLong target_epoch_1 = attestation_data_1.getSlot().dividedBy(UnsignedLong.valueOf(EPOCH_LENGTH));
-    UnsignedLong target_epoch_2 = attestation_data_2.getSlot().dividedBy(UnsignedLong.valueOf(EPOCH_LENGTH));
+    UnsignedLong target_epoch_1 =
+        attestation_data_1.getSlot().dividedBy(UnsignedLong.valueOf(EPOCH_LENGTH));
+    UnsignedLong target_epoch_2 =
+        attestation_data_2.getSlot().dividedBy(UnsignedLong.valueOf(EPOCH_LENGTH));
     return target_epoch_1.compareTo(target_epoch_2) == 0;
   }
 
@@ -869,8 +871,10 @@ public class BeaconStateUtil {
       AttestationData attestation_data_1, AttestationData attestation_data_2) {
     long source_epoch_1 = attestation_data_1.getJustified_epoch().longValue() / EPOCH_LENGTH;
     long source_epoch_2 = attestation_data_2.getJustified_epoch().longValue() / EPOCH_LENGTH;
-    UnsignedLong target_epoch_1 = attestation_data_1.getSlot().dividedBy(UnsignedLong.valueOf(EPOCH_LENGTH));
-    UnsignedLong target_epoch_2 = attestation_data_2.getSlot().dividedBy(UnsignedLong.valueOf(EPOCH_LENGTH));
+    UnsignedLong target_epoch_1 =
+        attestation_data_1.getSlot().dividedBy(UnsignedLong.valueOf(EPOCH_LENGTH));
+    UnsignedLong target_epoch_2 =
+        attestation_data_2.getSlot().dividedBy(UnsignedLong.valueOf(EPOCH_LENGTH));
     return source_epoch_1 < source_epoch_2
         && (UnsignedLong.valueOf(source_epoch_2 + 1).compareTo(target_epoch_2) == 0)
         && target_epoch_2.compareTo(target_epoch_1) < 0;

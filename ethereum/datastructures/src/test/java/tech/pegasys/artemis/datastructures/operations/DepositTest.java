@@ -30,7 +30,8 @@ import org.junit.jupiter.api.Test;
 
 class DepositTest {
 
-  private List<Bytes32> merkleBranch = Arrays.asList(Bytes32.random(), Bytes32.random(), Bytes32.random());
+  private List<Bytes32> merkleBranch =
+      Arrays.asList(Bytes32.random(), Bytes32.random(), Bytes32.random());
   private UnsignedLong merkleTreeIndex = randomUnsignedLong();
   private DepositData depositData = randomDepositData();
 
