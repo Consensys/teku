@@ -104,13 +104,12 @@ public class BeaconState {
       UnsignedLong finalized_epoch,
 
       // Recent state
-      ArrayList<CrosslinkRecord> latest_crosslinks,
-      ArrayList<Bytes32> latest_block_roots,
-      ArrayList<Bytes32> latest_index_roots,
-      ArrayList<UnsignedLong>
-          latest_penalized_balances, // Balances penalized at every withdrawal period
-      ArrayList<PendingAttestationRecord> latest_attestations,
-      ArrayList<Bytes32> batched_block_roots,
+      List<CrosslinkRecord> latest_crosslinks,
+      List<Bytes32> latest_block_roots,
+      List<Bytes32> latest_index_roots,
+      List<UnsignedLong> latest_penalized_balances, // Balances penalized at every withdrawal period
+      List<PendingAttestationRecord> latest_attestations,
+      List<Bytes32> batched_block_roots,
 
       // Ethereum 1.0 chain data
       Eth1Data latest_eth1_data,
