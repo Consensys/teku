@@ -21,8 +21,10 @@ import static tech.pegasys.artemis.datastructures.Constants.GENESIS_EPOCH;
 import static tech.pegasys.artemis.datastructures.Constants.INITIATED_EXIT;
 import static tech.pegasys.artemis.datastructures.Constants.LATEST_RANDAO_MIXES_LENGTH;
 import static tech.pegasys.artemis.datastructures.Constants.SEED_LOOKAHEAD;
+import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomDeposits;
 import static tech.pegasys.artemis.statetransition.util.BeaconStateUtil.bytes3ToInt;
 import static tech.pegasys.artemis.statetransition.util.BeaconStateUtil.clamp;
+import static tech.pegasys.artemis.statetransition.util.BeaconStateUtil.exit_validator;
 import static tech.pegasys.artemis.statetransition.util.BeaconStateUtil.generate_seed;
 import static tech.pegasys.artemis.statetransition.util.BeaconStateUtil.get_active_index_root;
 import static tech.pegasys.artemis.statetransition.util.BeaconStateUtil.get_current_epoch;
@@ -47,7 +49,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
-import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.statetransition.util.BeaconStateUtil;
@@ -60,29 +61,7 @@ class BeaconStateTest {
     // Initialize state
     BeaconState state =
         get_initial_beacon_state(
-            new ArrayList<Deposit>(), UnsignedLong.ZERO, new Eth1Data(Bytes32.ZERO, Bytes32.ZERO));
-
-    // Add validator records
-    ArrayList<Validator> validators = new ArrayList<>();
-    while (validators.size() < 5) {
-      validators.add(
-          new Validator(
-              Bytes48.ZERO,
-              Bytes32.ZERO,
-              UnsignedLong.ZERO,
-              UnsignedLong.valueOf(GENESIS_EPOCH),
-              UnsignedLong.ZERO,
-              UnsignedLong.ZERO,
-              UnsignedLong.ZERO));
-    }
-    state.setValidator_registry(validators);
-
-    // Add validator balances
-    state.setValidator_balances(
-        new ArrayList<UnsignedLong>(Collections.nCopies(5, UnsignedLong.valueOf(100))));
-
-    // Add penalized exit balances
-    state.getLatest_penalized_balances().add(UnsignedLong.valueOf(10));
+            randomDeposits(5), UnsignedLong.ZERO, new Eth1Data(Bytes32.ZERO, Bytes32.ZERO));
 
     return state;
   }
@@ -273,7 +252,7 @@ class BeaconStateTest {
     UnsignedLong before_balance = state.getValidator_balances().get(validator_index);
     //    Hash before_tip = state.validator_registry_delta_chain_tip;
 
-    BeaconStateUtil.exit_validator(state, validator_index);
+    exit_validator(state, validator_index);
 
     // TODO: update for 0.1
     // assertThat(state.getValidator_balances().get(validator_index)).isLessThan(before_balance);
@@ -531,7 +510,6 @@ class BeaconStateTest {
     latest_randao_mixes.set(0, Bytes32.fromHexString("0x42"));
     latest_randao_mixes.set(1, Bytes32.fromHexString("0x029a"));
     latest_randao_mixes.set(LATEST_RANDAO_MIXES_LENGTH - 1, Bytes32.fromHexString("0xdeadbeef"));
-    state.setLatest_randao_mixes(latest_randao_mixes);
 
     assertThat(get_randao_mix(state, UnsignedLong.valueOf(LATEST_RANDAO_MIXES_LENGTH)))
         .isEqualTo(Bytes32.fromHexString("0x42"));
@@ -549,7 +527,6 @@ class BeaconStateTest {
         .isEqualTo(0);
     List<Bytes32> latest_randao_mixes = state.getLatest_randao_mixes();
     latest_randao_mixes.set(ENTRY_EXIT_DELAY + 1, Bytes32.fromHexString("0x029a"));
-    state.setLatest_randao_mixes(latest_randao_mixes);
 
     UnsignedLong epoch = UnsignedLong.valueOf(ENTRY_EXIT_DELAY + SEED_LOOKAHEAD + 1);
     Bytes32 randao_mix = get_randao_mix(state, epoch.minus(UnsignedLong.valueOf(SEED_LOOKAHEAD)));
