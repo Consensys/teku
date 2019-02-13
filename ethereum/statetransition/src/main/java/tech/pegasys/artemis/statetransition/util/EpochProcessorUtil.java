@@ -99,17 +99,21 @@ public class EpochProcessorUtil {
   }
 
   public static void updateCrosslinks(BeaconState state) throws BlockValidationException {
-    // TODO: change values to UnsignedLong
-    for (long n = (state.getSlot().longValue() - 2 * Constants.EPOCH_LENGTH);
-        n < state.getSlot().longValue();
-        n++) {
-      ArrayList<CrosslinkCommittee> crosslink_committees_at_slot =
-          BeaconStateUtil.get_crosslink_committees_at_slot(state, n);
+    UnsignedLong slot = state.getSlot();
+    UnsignedLong end = UnsignedLong.valueOf(2*Constants.EPOCH_LENGTH);
+    while (slot.compareTo(end) < 0){
+      List<CrosslinkCommittee> crosslink_committees_at_slot = BeaconStateUtil.get_crosslink_committees_at_slot(state, slot);
       for (CrosslinkCommittee crosslink_committee : crosslink_committees_at_slot) {
         UnsignedLong shard = crosslink_committee.getShard();
-
+        UnsignedLong max_balance = UnsignedLong.ZERO;
         if (3 * AttestationUtil.getTotal_attesting_balance(state)
             >= 2 * total_balance(crosslink_committee)) {
+                Bytes32 shard_block_root = BeaconStateUtil.getShard_block_root(state, shard);
+                List<Integer> attesting_validator_indices = AttestationUtil.attesting_validator_indices(state, crosslink_committee,shard_block_root);
+                max_balance = get_total_effective_balance(state, attesting_validator_indices);
+
+                return null;
+              }
           state
               .getLatest_crosslinks()
               .set(
@@ -117,6 +121,7 @@ public class EpochProcessorUtil {
                   new Crosslink(state.getSlot(), winning_root(crosslink_committee)));
         }
       }
+      slot = slot.plus(UnsignedLong.ONE);
     }
   }
 
@@ -142,10 +147,6 @@ public class EpochProcessorUtil {
     //                || (state.getJustification_bitfield() % 16) == 15)));
   }
 
-  private static Bytes32 winning_root(CrosslinkCommittee crosslink_committee) {
-    // todo
-    return null;
-  }
 
   private static double total_balance(CrosslinkCommittee crosslink_committee) {
     // todo
@@ -295,11 +296,10 @@ public class EpochProcessorUtil {
     }
   }
 
-  static UnsignedLong get_total_effective_balance(BeaconState state, List<Validator> validators) {
+  static UnsignedLong get_total_effective_balance(BeaconState state, List<Integer> validator_indices) {
     UnsignedLong total_balance = UnsignedLong.ZERO;
-
-    for (int i = 0; i < validators.size(); i++) {
-      total_balance = total_balance.plus(get_effective_balance(state, i));
+    for(Integer index : validator_indices){
+      total_balance = total_balance.plus(get_effective_balance(state, index));
     }
     return total_balance;
   }

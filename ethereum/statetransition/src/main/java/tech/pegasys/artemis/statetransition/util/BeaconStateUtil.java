@@ -157,21 +157,23 @@ public class BeaconStateUtil {
     return 0.0d;
   }
 
-  /** Return the list of `(committee, shard)` tuples for the `slot`. */
-  public static ArrayList<CrosslinkCommittee> get_crosslink_committees_at_slot(
-      //      BeaconState state, long slot, boolean registry_change) throws BlockValidationException
-      // {
-      BeaconState state, long slot, boolean registry_change) {
-    // TODO: convert these values to UnsignedLong
-    long epoch = slot_to_epoch(UnsignedLong.valueOf(slot)).longValue();
-    long current_epoch = get_current_epoch(state).longValue();
-    long previous_epoch =
-        (current_epoch > Constants.GENESIS_EPOCH) ? current_epoch - 1 : current_epoch;
-    long next_epoch = current_epoch + 1;
 
-    assertTrue(previous_epoch <= epoch && epoch <= next_epoch);
+  /**
+   * Return the list of `(committee, shard)` tuples for the `slot`.
+   * @param state
+   * @param slot
+   * @param registry_change
+   * @return
+   */
+  public static ArrayList<CrosslinkCommittee> get_crosslink_committees_at_slot(BeaconState state, UnsignedLong slot, boolean registry_change) {
+    UnsignedLong epoch = slot_to_epoch(slot);
+    UnsignedLong current_epoch = get_current_epoch(state);
+    UnsignedLong previous_epoch = get_previous_epoch(state);
+    UnsignedLong next_epoch = get_next_epoch(state);
 
-    long committees_per_epoch = 0;
+    assertTrue(previous_epoch.compareTo(epoch) <= 0 && epoch.compareTo(next_epoch) <=0 );
+
+    UnsignedLong committees_per_epoch = 0;
     Bytes32 seed = Bytes32.ZERO;
     long shuffling_epoch = 0;
     long shuffling_start_shard = 0;
@@ -235,7 +237,7 @@ public class BeaconStateUtil {
 
   /** This is a wrapper that defaults `registry_change` to false when it is not provided */
   public static ArrayList<CrosslinkCommittee> get_crosslink_committees_at_slot(
-      BeaconState state, long slot) {
+      BeaconState state, UnsignedLong slot) {
     return get_crosslink_committees_at_slot(state, slot, false);
   }
 
@@ -251,7 +253,7 @@ public class BeaconStateUtil {
     return get_epoch_committee_count(previous_active_validators.size());
   }
 
-  private static long get_current_epoch_committee_count(BeaconState state) {
+  private static UnsignedLong get_current_epoch_committee_count(BeaconState state) {
     List<Integer> current_active_validators =
         ValidatorsUtil.get_active_validator_indices(
             state.getValidator_registry(), state.getCurrent_calculation_epoch());
@@ -293,8 +295,8 @@ public class BeaconStateUtil {
     return state.getLatest_index_roots().get(index);
   }
 
-  public static Bytes32 getShard_block_root(BeaconState state, Long shard) {
-    return state.getLatest_crosslinks().get(toIntExact(shard)).getShard_block_root();
+  public static Bytes32 getShard_block_root(BeaconState state, UnsignedLong shard) {
+    return state.getLatest_crosslinks().get(toIntExact(shard.longValue())).getShard_block_root();
   }
 
   /** Return the epoch number of the given ``slot`` */
@@ -575,7 +577,7 @@ public class BeaconStateUtil {
   public static int get_beacon_proposer_index(BeaconState state, UnsignedLong slot) {
     // TODO: convert these values to UnsignedLong
     List<Integer> first_committee =
-        get_crosslink_committees_at_slot(state, slot.longValue()).get(0).getCommittee();
+        get_crosslink_committees_at_slot(state, slot).get(0).getCommittee();
     // TODO: replace slot.intValue() with an UnsignedLong value
     return first_committee.get(slot.intValue() % first_committee.size());
   }
@@ -746,8 +748,7 @@ public class BeaconStateUtil {
     // Find the relevant committee
 
     ArrayList<CrosslinkCommittee> crosslink_committees =
-        BeaconStateUtil.get_crosslink_committees_at_slot(
-            state, toIntExact(attestation_data.getSlot().longValue()));
+        BeaconStateUtil.get_crosslink_committees_at_slot(state, attestation_data.getSlot());
 
     // TODO: assertTrue attestation_data.shard in [shard for _, shard in crosslink_committees]
 
