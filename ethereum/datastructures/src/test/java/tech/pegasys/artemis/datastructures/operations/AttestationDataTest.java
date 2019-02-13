@@ -15,9 +15,11 @@ package tech.pegasys.artemis.datastructures.operations;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomCrosslink;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomUnsignedLong;
 
 import com.google.common.primitives.UnsignedLong;
+import java.util.Objects;
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
@@ -30,7 +32,7 @@ class AttestationDataTest {
   private Bytes32 beaconBlockRoot = Bytes32.random();
   private Bytes32 epochBoundaryRoot = Bytes32.random();
   private Bytes32 shardBlockRoot = Bytes32.random();
-  private Crosslink latestCrosslink = Crosslink.random();
+  private Crosslink latestCrosslink = randomCrosslink();
   private UnsignedLong justifiedEpoch = randomUnsignedLong();
   private Bytes32 justifiedBlockRoot = Bytes32.random();
 
@@ -150,6 +152,11 @@ class AttestationDataTest {
 
   @Test
   void equalsReturnsFalseWhenLastCrosslinksAreDifferent() {
+    Crosslink otherCrosslink = randomCrosslink();
+    while (Objects.equals(latestCrosslink, otherCrosslink)) {
+      otherCrosslink = randomCrosslink();
+    }
+
     AttestationData testAttestationData =
         new AttestationData(
             slot,
@@ -157,7 +164,7 @@ class AttestationDataTest {
             beaconBlockRoot,
             epochBoundaryRoot,
             shardBlockRoot,
-            Crosslink.random(),
+            otherCrosslink,
             justifiedEpoch,
             justifiedBlockRoot);
 

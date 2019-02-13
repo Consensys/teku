@@ -15,13 +15,16 @@ package tech.pegasys.artemis.datastructures.operations;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomAttestationData;
-import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomLong;
+import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomUnsignedLong;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+
+import com.google.common.primitives.UnsignedLong;
+
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.bytes.Bytes48;
@@ -29,10 +32,10 @@ import org.junit.jupiter.api.Test;
 
 class SlashableAttestationTest {
 
-  private long[] validatorIndices = new long[] {randomLong(), randomLong()};
+  private List<UnsignedLong> validatorIndices = Arrays.asList(randomUnsignedLong(), randomUnsignedLong(), randomUnsignedLong());
   private AttestationData data = randomAttestationData();
   private Bytes32 custodyBitfield = Bytes32.random();
-  private List<Bytes48> aggregateSignature = Arrays.asList(Bytes48.random(), Bytes48.random());
+  private BLSSignature aggregateSignature = new BLSSignature(Bytes48.random(), Bytes48.random());
 
   private SlashableAttestation slashableAttestation =
       new SlashableAttestation(validatorIndices, data, custodyBitfield, aggregateSignature);
@@ -54,7 +57,8 @@ class SlashableAttestationTest {
 
   @Test
   void equalsReturnsFalseWhenValidatorIndicesAreDifferent() {
-    long[] reverseValidatorIndices = new long[] {randomLong(), randomLong()};
+    List<UnsignedLong> reverseValidatorIndices = new ArrayList<>(validatorIndices);
+    Collections.reverse(reverseValidatorIndices);
 
     SlashableAttestation testSlashableAttestation =
         new SlashableAttestation(
@@ -91,8 +95,7 @@ class SlashableAttestationTest {
   @Test
   void equalsReturnsFalseWhenAggregrateSignaturesAreDifferent() {
     // Create copy of custodyBit1Indices and reverse to ensure it is different.
-    List<Bytes48> reverseAggregateSignature = new ArrayList<>(aggregateSignature);
-    Collections.reverse(reverseAggregateSignature);
+    BLSSignature reverseAggregateSignature = new BLSSignature(aggregateSignature.getC1(), aggregateSignature.getC0());
 
     SlashableAttestation testSlashableAttestation =
         new SlashableAttestation(

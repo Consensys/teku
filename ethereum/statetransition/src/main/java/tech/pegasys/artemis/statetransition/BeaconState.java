@@ -57,7 +57,8 @@ public class BeaconState {
   private List<Crosslink> latest_crosslinks;
   private List<Bytes32> latest_block_roots;
   private List<Bytes32> latest_index_roots;
-  private List<UnsignedLong> latest_penalized_balances; // Balances penalized at every withdrawal period
+  private List<UnsignedLong>
+      latest_penalized_balances; // Balances penalized at every withdrawal period
   private List<PendingAttestationRecord> latest_attestations;
   private List<Bytes32> batched_block_roots;
 

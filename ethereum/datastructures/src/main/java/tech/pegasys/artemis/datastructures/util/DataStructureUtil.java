@@ -52,6 +52,15 @@ public final class DataStructureUtil {
     return new Eth1Data(Bytes32.random(), Bytes32.random());
   }
 
+  /**
+   * Generate random Crosslink.
+   *
+   * @return A Crosslink containing a random epoch and block root.
+   */
+  public static Crosslink randomCrosslink() {
+    return new Crosslink(randomUnsignedLong(), Bytes32.random());
+  }
+
   public static AttestationData randomAttestationData(long slotNum) {
     return new AttestationData(
         UnsignedLong.valueOf(slotNum),
@@ -59,7 +68,7 @@ public final class DataStructureUtil {
         Bytes32.random(),
         Bytes32.random(),
         Bytes32.random(),
-        Crosslink.random(),
+        randomCrosslink(),
         randomUnsignedLong(),
         Bytes32.random());
   }
@@ -71,7 +80,7 @@ public final class DataStructureUtil {
         Bytes32.random(),
         Bytes32.random(),
         Bytes32.random(),
-        Crosslink.random(),
+        randomCrosslink(),
         randomUnsignedLong(),
         Bytes32.random());
   }
@@ -111,7 +120,7 @@ public final class DataStructureUtil {
 
   public static SlashableAttestation randomSlashableAttestation() {
     return new SlashableAttestation(
-        new long[] {randomLong(), randomLong(), randomLong()},
+        Arrays.asList(randomUnsignedLong(), randomUnsignedLong(), randomUnsignedLong()),
         randomAttestationData(),
         Bytes32.random(),
         new BLSSignature(Bytes48.random(), Bytes48.random()));

@@ -13,9 +13,8 @@
 
 package tech.pegasys.artemis.datastructures.state;
 
-import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomUnsignedLong;
-
 import com.google.common.primitives.UnsignedLong;
+import java.util.Objects;
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.ssz.SSZ;
@@ -30,15 +29,6 @@ public class Crosslink {
     this.shard_block_root = shard_block_root;
   }
 
-  /**
-   * Generate random Crosslink.
-   *
-   * @return A Crosslink containing a random epoch and block root.
-   */
-  public static Crosslink random() {
-    return new Crosslink(randomUnsignedLong(), Bytes32.random());
-  }
-
   public static Crosslink fromBytes(Bytes bytes) {
     return SSZ.decode(
         bytes,
@@ -51,9 +41,32 @@ public class Crosslink {
     return SSZ.encode(
         writer -> {
           writer.writeUInt64(epoch.longValue());
-          // TODO: check this is right
           writer.writeBytes(shard_block_root);
         });
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(epoch, shard_block_root);
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (Objects.isNull(obj)) {
+      return false;
+    }
+
+    if (this == obj) {
+      return true;
+    }
+
+    if (!(obj instanceof Crosslink)) {
+      return false;
+    }
+
+    Crosslink other = (Crosslink) obj;
+    return Objects.equals(this.getEpoch(), other.getEpoch())
+        && Objects.equals(this.getShard_block_root(), other.getShard_block_root());
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */
