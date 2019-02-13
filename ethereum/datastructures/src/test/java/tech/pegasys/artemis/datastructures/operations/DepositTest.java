@@ -64,8 +64,7 @@ class DepositTest {
 
   @Test
   void equalsReturnsFalseWhenIndicesAreDifferent() {
-    Deposit testDeposit =
-        new Deposit(branch, index.plus(randomUnsignedLong()), depositData);
+    Deposit testDeposit = new Deposit(branch, index.plus(randomUnsignedLong()), depositData);
 
     assertNotEquals(deposit, testDeposit);
   }

@@ -26,7 +26,8 @@ class AttesterSlashingTest {
   private SlashableAttestation slashableAttestation1 = randomSlashableAttestation();
   private SlashableAttestation slashableAttestation2 = randomSlashableAttestation();
 
-  private AttesterSlashing attesterSlashing = new AttesterSlashing(slashableAttestation1, slashableAttestation2);
+  private AttesterSlashing attesterSlashing =
+      new AttesterSlashing(slashableAttestation1, slashableAttestation2);
 
   @Test
   void equalsReturnsTrueWhenObjectsAreSame() {
@@ -37,7 +38,8 @@ class AttesterSlashingTest {
 
   @Test
   void equalsReturnsTrueWhenObjectFieldsAreEqual() {
-    AttesterSlashing testAttesterSlashing = new AttesterSlashing(slashableAttestation1, slashableAttestation2);
+    AttesterSlashing testAttesterSlashing =
+        new AttesterSlashing(slashableAttestation1, slashableAttestation2);
 
     assertEquals(attesterSlashing, testAttesterSlashing);
   }
@@ -51,7 +53,8 @@ class AttesterSlashingTest {
       otherSlashableAttestation1 = randomSlashableAttestation();
     }
 
-    AttesterSlashing testAttesterSlashing = new AttesterSlashing(otherSlashableAttestation1, slashableAttestation2);
+    AttesterSlashing testAttesterSlashing =
+        new AttesterSlashing(otherSlashableAttestation1, slashableAttestation2);
 
     assertNotEquals(attesterSlashing, testAttesterSlashing);
   }
@@ -65,7 +68,8 @@ class AttesterSlashingTest {
       otherSlashableAttestation2 = randomSlashableAttestation();
     }
 
-    AttesterSlashing testAttesterSlashing = new AttesterSlashing(slashableAttestation1, otherSlashableAttestation2);
+    AttesterSlashing testAttesterSlashing =
+        new AttesterSlashing(slashableAttestation1, otherSlashableAttestation2);
 
     assertNotEquals(attesterSlashing, testAttesterSlashing);
   }
