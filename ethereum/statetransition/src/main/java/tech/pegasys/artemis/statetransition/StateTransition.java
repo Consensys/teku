@@ -73,7 +73,6 @@ public class StateTransition {
   protected void epochProcessor(BeaconState state) throws Exception {
     LOG.info("Processing new epoch in slot: " + state.getSlot());
     EpochProcessorUtil.updateJustification(state);
-    EpochProcessorUtil.updateFinalization(state);
     EpochProcessorUtil.updateCrosslinks(state);
     EpochProcessorUtil.finalBookKeeping(state);
   }

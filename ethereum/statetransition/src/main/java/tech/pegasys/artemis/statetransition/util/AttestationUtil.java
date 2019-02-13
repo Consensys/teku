@@ -84,15 +84,15 @@ public class AttestationUtil {
     return current_epoch_boundary_attestations;
   }
 
-  public static double get_previous_epoch_boundary_attesting_balance(BeaconState state)
+  public static UnsignedLong get_previous_epoch_boundary_attesting_balance(BeaconState state)
       throws Exception {
     // todo
-    return 0.0d;
+    return UnsignedLong.ZERO;
   }
 
-  public static double get_current_epoch_boundary_attesting_balance(BeaconState state) {
+  public static UnsignedLong get_current_epoch_boundary_attesting_balance(BeaconState state) {
     // todo
-    return 0.0d;
+    return UnsignedLong.ZERO;
   }
 
   public static int ceil_div8(int input) {
