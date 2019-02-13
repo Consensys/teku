@@ -26,7 +26,6 @@ import static tech.pegasys.artemis.datastructures.Constants.GENESIS_START_SHARD;
 import static tech.pegasys.artemis.datastructures.Constants.LATEST_INDEX_ROOTS_LENGTH;
 import static tech.pegasys.artemis.datastructures.Constants.LATEST_RANDAO_MIXES_LENGTH;
 import static tech.pegasys.artemis.datastructures.Constants.MAX_DEPOSIT_AMOUNT;
-import static tech.pegasys.artemis.datastructures.Constants.SEED_LOOKAHEAD;
 import static tech.pegasys.artemis.datastructures.Constants.SHARD_COUNT;
 import static tech.pegasys.artemis.datastructures.Constants.ZERO_HASH;
 import static tech.pegasys.artemis.util.bls.BLSVerify.bls_verify;
@@ -266,20 +265,24 @@ public class BeaconStateUtil {
     return get_epoch_committee_count(next_active_validators.size());
   }
 
+  public static Bytes32 generate_seed(BeaconState state, UnsignedLong epoch) {
+    Bytes32 randao_mix =
+        get_randao_mix(state, epoch.minus(UnsignedLong.valueOf(Constants.SEED_LOOKAHEAD)));
+    Bytes32 index_root = get_active_index_root(state, epoch);
+    return Hash.keccak256(Bytes.wrap(randao_mix, index_root));
+  }
+
+  // TODO remove this shim when long values are all consistent
   public static Bytes32 generate_seed(BeaconState state, long epoch) {
-    // TODO: I think this method is correct, but it breaks all the BeaconStateTests
-    // Bytes32 randao_mix = get_randao_mix(state, epoch - Constants.SEED_LOOKAHEAD);
-    // Bytes32 index_root = get_active_index_root(state, epoch);
-    // return Hash.keccak256(Bytes.wrap(randao_mix, index_root))
-    return Bytes32.ZERO;
+    return generate_seed(state, UnsignedLong.valueOf(epoch));
   }
 
   public static Bytes32 get_active_index_root(BeaconState state, UnsignedLong epoch) {
     assertTrue(
+        // Since we're using UnsignedLong here, we can't subtract LATEST_INDEX_ROOTS_LENGTH
         get_current_epoch(state)
-                .minus(UnsignedLong.valueOf(LATEST_RANDAO_MIXES_LENGTH))
                 .plus(UnsignedLong.valueOf(ENTRY_EXIT_DELAY))
-                .compareTo(epoch)
+                .compareTo(epoch.plus(UnsignedLong.valueOf(LATEST_INDEX_ROOTS_LENGTH)))
             < 0);
     assertTrue(
         epoch.compareTo(get_current_epoch(state).plus(UnsignedLong.valueOf(ENTRY_EXIT_DELAY)))
@@ -372,9 +375,10 @@ public class BeaconStateUtil {
   /** Return the randao mix at a recent ``epoch``. */
   public static Bytes32 get_randao_mix(BeaconState state, UnsignedLong epoch) {
     assertTrue(
+        // If we're going to use UnsignedLongs then we can't subtract LATEST_RANDAO_MIXES_LENGTH
+        // here
         get_current_epoch(state)
-                .minus(UnsignedLong.valueOf(LATEST_RANDAO_MIXES_LENGTH))
-                .compareTo(epoch)
+                .compareTo(epoch.plus(UnsignedLong.valueOf(LATEST_RANDAO_MIXES_LENGTH)))
             < 0);
     assertTrue(epoch.compareTo(get_current_epoch(state)) <= 0);
     UnsignedLong index = epoch.mod(UnsignedLong.valueOf(LATEST_RANDAO_MIXES_LENGTH));
@@ -766,11 +770,6 @@ public class BeaconStateUtil {
       }
     }
     return participants;
-  }
-
-  public static Bytes32 generate_seed(BeaconState state, UnsignedLong epoch) {
-    return get_randao_mix(state, epoch.minus(UnsignedLong.valueOf(SEED_LOOKAHEAD)))
-        .and(get_active_index_root(state, epoch));
   }
 
   /**
