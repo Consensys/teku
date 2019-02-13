@@ -13,12 +13,10 @@
 
 package tech.pegasys.artemis.datastructures.operations;
 
+import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
-
-import com.google.common.primitives.UnsignedLong;
-
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.ssz.SSZ;

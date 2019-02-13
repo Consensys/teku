@@ -24,9 +24,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
-
-import com.google.common.primitives.UnsignedLong;
-
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.bytes.Bytes48;
@@ -98,7 +95,8 @@ class SlashableAttestationTest {
 
   @Test
   void equalsReturnsFalseWhenAggregrateSignaturesAreDifferent() {
-    BLSSignature reverseAggregateSignature = new BLSSignature(aggregateSignature.getC1(), aggregateSignature.getC0());
+    BLSSignature reverseAggregateSignature =
+        new BLSSignature(aggregateSignature.getC1(), aggregateSignature.getC0());
 
     SlashableAttestation testSlashableAttestation =
         new SlashableAttestation(

@@ -49,6 +49,7 @@ class EpochProcessingUtilTest {
   }
 
   @Test
+  @Disabled
   void processEjectionsTest() {
 
     BeaconState state = createArbitraryBeaconState(25);
@@ -87,6 +88,7 @@ class EpochProcessingUtilTest {
   }
 
   @Test
+  @Disabled
   void updateValidatorRegistryTest() {
     BeaconState state = createArbitraryBeaconState(25);
     UnsignedLong currentEpoch = BeaconStateUtil.get_current_epoch(state);
@@ -120,6 +122,7 @@ class EpochProcessingUtilTest {
   }
 
   @Test
+  @Disabled
   void updateValidatorRegistryTest_missingFlag() {
     BeaconState state = createArbitraryBeaconState(25);
     UnsignedLong currentEpoch = BeaconStateUtil.get_current_epoch(state);
