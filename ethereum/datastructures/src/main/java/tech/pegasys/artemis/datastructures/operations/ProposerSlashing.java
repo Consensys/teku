@@ -13,11 +13,8 @@
 
 package tech.pegasys.artemis.datastructures.operations;
 
-import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 import net.consensys.cava.bytes.Bytes;
-import net.consensys.cava.bytes.Bytes48;
 import net.consensys.cava.ssz.SSZ;
 import tech.pegasys.artemis.datastructures.blocks.ProposalSignedData;
 
@@ -25,16 +22,16 @@ public class ProposerSlashing {
 
   private int proposer_index;
   private ProposalSignedData proposal_data_1;
-  private List<Bytes48> proposal_signature_1;
+  private BLSSignature proposal_signature_1;
   private ProposalSignedData proposal_data_2;
-  private List<Bytes48> proposal_signature_2;
+  private BLSSignature proposal_signature_2;
 
   public ProposerSlashing(
       int proposer_index,
       ProposalSignedData proposal_data_1,
-      List<Bytes48> proposal_signature_1,
+      BLSSignature proposal_signature_1,
       ProposalSignedData proposal_data_2,
-      List<Bytes48> proposal_signature_2) {
+      BLSSignature proposal_signature_2) {
     this.proposer_index = proposer_index;
     this.proposal_data_1 = proposal_data_1;
     this.proposal_signature_1 = proposal_signature_1;
@@ -49,9 +46,9 @@ public class ProposerSlashing {
             new ProposerSlashing(
                 reader.readInt(24),
                 ProposalSignedData.fromBytes(reader.readBytes()),
-                reader.readBytesList().stream().map(Bytes48::wrap).collect(Collectors.toList()),
+                BLSSignature.fromBytes(reader.readBytes()),
                 ProposalSignedData.fromBytes(reader.readBytes()),
-                reader.readBytesList().stream().map(Bytes48::wrap).collect(Collectors.toList())));
+                BLSSignature.fromBytes(reader.readBytes())));
   }
 
   public Bytes toBytes() {
@@ -59,9 +56,9 @@ public class ProposerSlashing {
         writer -> {
           writer.writeInt(proposer_index, 24);
           writer.writeBytes(proposal_data_1.toBytes());
-          writer.writeBytesList(proposal_signature_1);
+          writer.writeBytes(proposal_signature_1.toBytes());
           writer.writeBytes(proposal_data_2.toBytes());
-          writer.writeBytesList(proposal_signature_2);
+          writer.writeBytes(proposal_signature_2.toBytes());
         });
   }
 
@@ -114,11 +111,11 @@ public class ProposerSlashing {
     this.proposal_data_1 = proposal_data_1;
   }
 
-  public List<Bytes48> getProposal_signature_1() {
+  public BLSSignature getProposal_signature_1() {
     return proposal_signature_1;
   }
 
-  public void setProposal_signature_1(List<Bytes48> proposal_signature_1) {
+  public void setProposal_signature_1(BLSSignature proposal_signature_1) {
     this.proposal_signature_1 = proposal_signature_1;
   }
 
@@ -130,11 +127,11 @@ public class ProposerSlashing {
     this.proposal_data_2 = proposal_data_2;
   }
 
-  public List<Bytes48> getProposal_signature_2() {
+  public BLSSignature getProposal_signature_2() {
     return proposal_signature_2;
   }
 
-  public void setProposal_signature_2(List<Bytes48> proposal_signature_2) {
+  public void setProposal_signature_2(BLSSignature proposal_signature_2) {
     this.proposal_signature_2 = proposal_signature_2;
   }
 }

@@ -25,6 +25,7 @@ import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.datastructures.blocks.ProposalSignedData;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
+import tech.pegasys.artemis.datastructures.operations.BLSSignature;
 import tech.pegasys.artemis.datastructures.operations.CasperSlashing;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.DepositData;
@@ -80,7 +81,7 @@ public final class DataStructureUtil {
         randomAttestationData(slotNum),
         Bytes32.random(),
         Bytes32.random(),
-        Arrays.asList(Bytes48.random(), Bytes48.random()));
+        new BLSSignature(Bytes48.random(), Bytes48.random()));
   }
 
   public static Attestation randomAttestation() {
@@ -88,7 +89,7 @@ public final class DataStructureUtil {
         randomAttestationData(),
         Bytes32.random(),
         Bytes32.random(),
-        Arrays.asList(Bytes48.random(), Bytes48.random()));
+        new BLSSignature(Bytes48.random(), Bytes48.random()));
   }
 
   public static ProposalSignedData randomProposalSignedData() {
@@ -99,9 +100,9 @@ public final class DataStructureUtil {
     return new ProposerSlashing(
         randomInt(),
         randomProposalSignedData(),
-        Arrays.asList(Bytes48.random(), Bytes48.random()),
+        new BLSSignature(Bytes48.random(), Bytes48.random()),
         randomProposalSignedData(),
-        Arrays.asList(Bytes48.random(), Bytes48.random()));
+        new BLSSignature(Bytes48.random(), Bytes48.random()));
   }
 
   public static SlashableVoteData randomSlashableVoteData() {
@@ -109,7 +110,7 @@ public final class DataStructureUtil {
         Arrays.asList(randomInt(), randomInt(), randomInt()),
         Arrays.asList(randomInt(), randomInt(), randomInt()),
         randomAttestationData(),
-        Arrays.asList(Bytes48.random(), Bytes48.random()));
+        new BLSSignature(Bytes48.random(), Bytes48.random()));
   }
 
   public static CasperSlashing randomCasperSlashing() {
@@ -118,7 +119,7 @@ public final class DataStructureUtil {
 
   public static DepositInput randomDepositInput() {
     return new DepositInput(
-        Bytes48.random(), Bytes32.random(), Arrays.asList(Bytes48.random(), Bytes48.random()));
+        Bytes48.random(), Bytes32.random(), new BLSSignature(Bytes48.random(), Bytes48.random()));
   }
 
   public static DepositData randomDepositData() {
@@ -149,7 +150,7 @@ public final class DataStructureUtil {
     return new Exit(
         randomUnsignedLong(),
         randomUnsignedLong(),
-        Arrays.asList(Bytes48.random(), Bytes48.random()));
+        new BLSSignature(Bytes48.random(), Bytes48.random()));
   }
 
   public static BeaconBlockBody randomBeaconBlockBody() {
@@ -168,7 +169,7 @@ public final class DataStructureUtil {
         Bytes32.random(),
         Arrays.asList(Bytes48.random(), Bytes48.random()),
         randomEth1Data(),
-        Arrays.asList(Bytes48.random(), Bytes48.random()),
+        new BLSSignature(Bytes48.random(), Bytes48.random()),
         randomBeaconBlockBody());
   }
 
@@ -179,7 +180,7 @@ public final class DataStructureUtil {
         Bytes32.random(),
         Arrays.asList(Bytes48.random(), Bytes48.random()),
         randomEth1Data(),
-        Arrays.asList(Bytes48.random(), Bytes48.random()),
+        new BLSSignature(Bytes48.random(), Bytes48.random()),
         randomBeaconBlockBody());
   }
 }

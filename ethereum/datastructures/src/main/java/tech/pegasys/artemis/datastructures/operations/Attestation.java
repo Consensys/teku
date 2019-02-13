@@ -13,12 +13,9 @@
 
 package tech.pegasys.artemis.datastructures.operations;
 
-import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
-import net.consensys.cava.bytes.Bytes48;
 import net.consensys.cava.ssz.SSZ;
 
 public class Attestation {
@@ -26,13 +23,13 @@ public class Attestation {
   private AttestationData data;
   private Bytes32 participation_bitfield;
   private Bytes32 custody_bitfield;
-  private List<Bytes48> aggregate_signature;
+  private BLSSignature aggregate_signature;
 
   public Attestation(
       AttestationData data,
       Bytes32 participation_bitfield,
       Bytes32 custody_bitfield,
-      List<Bytes48> aggregate_signature) {
+      BLSSignature aggregate_signature) {
     this.data = data;
     this.participation_bitfield = participation_bitfield;
     this.custody_bitfield = custody_bitfield;
@@ -47,7 +44,7 @@ public class Attestation {
                 AttestationData.fromBytes(reader.readBytes()),
                 Bytes32.wrap(reader.readBytes()),
                 Bytes32.wrap(reader.readBytes()),
-                reader.readBytesList().stream().map(Bytes48::wrap).collect(Collectors.toList())));
+                BLSSignature.fromBytes(reader.readBytes())));
   }
 
   public Bytes toBytes() {
@@ -56,7 +53,7 @@ public class Attestation {
           writer.writeBytes(data.toBytes());
           writer.writeBytes(participation_bitfield);
           writer.writeBytes(custody_bitfield);
-          writer.writeBytesList(aggregate_signature);
+          writer.writeBytes(aggregate_signature.toBytes());
         });
   }
 
@@ -111,11 +108,11 @@ public class Attestation {
     this.custody_bitfield = custody_bitfield;
   }
 
-  public List<Bytes48> getAggregate_signature() {
+  public BLSSignature getAggregate_signature() {
     return aggregate_signature;
   }
 
-  public void setAggregate_signature(List<Bytes48> aggregate_signature) {
+  public void setAggregate_signature(BLSSignature aggregate_signature) {
     this.aggregate_signature = aggregate_signature;
   }
 }
