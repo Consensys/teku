@@ -103,7 +103,7 @@ class AttestationDataTest {
   }
 
   @Test
-  void equalsReturnsFalseWhenBeaconBlockHashesAreDifferent() {
+  void equalsReturnsFalseWhenBeaconBlockRootsAreDifferent() {
     AttestationData testAttestationData =
         new AttestationData(
             slot,
@@ -119,7 +119,7 @@ class AttestationDataTest {
   }
 
   @Test
-  void equalsReturnsFalseWhenEpochBoundaryHashesAreDifferent() {
+  void equalsReturnsFalseWhenEpochBoundaryRootAreDifferent() {
     AttestationData testAttestationData =
         new AttestationData(
             slot,
@@ -135,7 +135,7 @@ class AttestationDataTest {
   }
 
   @Test
-  void equalsReturnsFalseWhenShardBlockHashesAreDifferent() {
+  void equalsReturnsFalseWhenShardBlockRootsAreDifferent() {
     AttestationData testAttestationData =
         new AttestationData(
             slot,
@@ -151,7 +151,7 @@ class AttestationDataTest {
   }
 
   @Test
-  void equalsReturnsFalseWhenLastCrosslinksAreDifferent() {
+  void equalsReturnsFalseWhenLatestCrosslinksAreDifferent() {
     Crosslink otherCrosslink = randomCrosslink();
     while (Objects.equals(latestCrosslink, otherCrosslink)) {
       otherCrosslink = randomCrosslink();
@@ -172,7 +172,7 @@ class AttestationDataTest {
   }
 
   @Test
-  void equalsReturnsFalseWhenJustifiedSlotsAreDifferent() {
+  void equalsReturnsFalseWhenJustifiedEpochsAreDifferent() {
     AttestationData testAttestationData =
         new AttestationData(
             slot,
@@ -188,7 +188,7 @@ class AttestationDataTest {
   }
 
   @Test
-  void equalsReturnsFalseWhenJustifiedBlockHashesAreDifferent() {
+  void equalsReturnsFalseWhenJustifiedBlockRootsAreDifferent() {
     AttestationData testAttestationData =
         new AttestationData(
             slot,

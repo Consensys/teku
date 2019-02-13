@@ -23,13 +23,13 @@ import org.junit.jupiter.api.Test;
 
 class AttesterSlashingTest {
 
-  private SlashableAttestation votes1 = randomSlashableAttestation();
-  private SlashableAttestation votes2 = randomSlashableAttestation();
+  private SlashableAttestation slashableAttestation1 = randomSlashableAttestation();
+  private SlashableAttestation slashableAttestation2 = randomSlashableAttestation();
 
-  private AttesterSlashing attesterSlashing = new AttesterSlashing(votes1, votes2);
+  private AttesterSlashing attesterSlashing = new AttesterSlashing(slashableAttestation1, slashableAttestation2);
 
   @Test
-  void equalsReturnsTrueWhenObjectAreSame() {
+  void equalsReturnsTrueWhenObjectsAreSame() {
     AttesterSlashing testAttesterSlashing = attesterSlashing;
 
     assertEquals(attesterSlashing, testAttesterSlashing);
@@ -37,7 +37,7 @@ class AttesterSlashingTest {
 
   @Test
   void equalsReturnsTrueWhenObjectFieldsAreEqual() {
-    AttesterSlashing testAttesterSlashing = new AttesterSlashing(votes1, votes2);
+    AttesterSlashing testAttesterSlashing = new AttesterSlashing(slashableAttestation1, slashableAttestation2);
 
     assertEquals(attesterSlashing, testAttesterSlashing);
   }
@@ -46,12 +46,12 @@ class AttesterSlashingTest {
   void equalsReturnsFalseWhenVotes1IsDifferent() {
     // SlashableAttestation is rather involved to create. Just create a random one until it is not
     // the same as the original.
-    SlashableAttestation otherVotes1 = randomSlashableAttestation();
-    while (Objects.equals(otherVotes1, votes1)) {
-      otherVotes1 = randomSlashableAttestation();
+    SlashableAttestation otherSlashableAttestation1 = randomSlashableAttestation();
+    while (Objects.equals(otherSlashableAttestation1, slashableAttestation1)) {
+      otherSlashableAttestation1 = randomSlashableAttestation();
     }
 
-    AttesterSlashing testAttesterSlashing = new AttesterSlashing(otherVotes1, votes2);
+    AttesterSlashing testAttesterSlashing = new AttesterSlashing(otherSlashableAttestation1, slashableAttestation2);
 
     assertNotEquals(attesterSlashing, testAttesterSlashing);
   }
@@ -60,19 +60,19 @@ class AttesterSlashingTest {
   void equalsReturnsFalseWhenVotes2IsDifferent() {
     // SlashableAttestation is rather involved to create. Just create a random one until it is not
     // the ame as the original.
-    SlashableAttestation otherVotes2 = randomSlashableAttestation();
-    while (Objects.equals(otherVotes2, votes2)) {
-      otherVotes2 = randomSlashableAttestation();
+    SlashableAttestation otherSlashableAttestation2 = randomSlashableAttestation();
+    while (Objects.equals(otherSlashableAttestation2, slashableAttestation2)) {
+      otherSlashableAttestation2 = randomSlashableAttestation();
     }
 
-    AttesterSlashing testAttesterSlashing = new AttesterSlashing(votes1, otherVotes2);
+    AttesterSlashing testAttesterSlashing = new AttesterSlashing(slashableAttestation1, otherSlashableAttestation2);
 
     assertNotEquals(attesterSlashing, testAttesterSlashing);
   }
 
   @Test
   void rountripSSZ() {
-    Bytes sszCasperSlashingBytes = attesterSlashing.toBytes();
-    assertEquals(attesterSlashing, AttesterSlashing.fromBytes(sszCasperSlashingBytes));
+    Bytes sszAttesterSlashingBytes = attesterSlashing.toBytes();
+    assertEquals(attesterSlashing, AttesterSlashing.fromBytes(sszAttesterSlashingBytes));
   }
 }

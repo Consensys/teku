@@ -37,14 +37,14 @@ class BeaconBlockTest {
   private Bytes32 stateRoot = Bytes32.random();
   private List<Bytes48> randaoReveal = Arrays.asList(Bytes48.random(), Bytes48.random());
   private Eth1Data eth1Data = randomEth1Data();
-  BLSSignature signature = new BLSSignature(Bytes48.random(), Bytes48.random());
+  private BLSSignature signature = new BLSSignature(Bytes48.random(), Bytes48.random());
   private BeaconBlockBody body = randomBeaconBlockBody();
 
   private BeaconBlock beaconBlock =
       new BeaconBlock(slot, parentRoot, stateRoot, randaoReveal, eth1Data, signature, body);
 
   @Test
-  void equalsReturnsTrueWhenObjectAreSame() {
+  void equalsReturnsTrueWhenObjectsAreSame() {
     BeaconBlock testBeaconBlock = beaconBlock;
 
     assertEquals(beaconBlock, testBeaconBlock);
@@ -104,7 +104,7 @@ class BeaconBlockTest {
             parentRoot,
             stateRoot,
             randaoReveal,
-            new Eth1Data(eth1Data.getDeposit_root().not(), eth1Data.getBlock_hash().not()),
+            new Eth1Data(eth1Data.getDeposit_root().not(), eth1Data.getBlock_root().not()),
             signature,
             body);
 

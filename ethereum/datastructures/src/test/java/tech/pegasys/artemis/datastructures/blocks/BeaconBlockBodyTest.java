@@ -76,8 +76,8 @@ class BeaconBlockBodyTest {
   }
 
   @Test
-  void equalsReturnsFalseWhenCasperSlashingsAreDifferent() {
-    // Create copy of casperSlashings and reverse to ensure it is different.
+  void equalsReturnsFalseWhenAttesterSlashingsAreDifferent() {
+    // Create copy of attesterSlashings and reverse to ensure it is different.
     List<AttesterSlashing> reverseAttesterSlashings = new ArrayList<>(attesterSlashings);
     Collections.reverse(reverseAttesterSlashings);
 

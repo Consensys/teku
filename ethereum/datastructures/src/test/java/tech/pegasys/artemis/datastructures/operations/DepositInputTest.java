@@ -31,7 +31,7 @@ class DepositInputTest {
       new DepositInput(pubkey, withdrawalCredentials, proofOfPossession);
 
   @Test
-  void equalsReturnsTrueWhenObjectAreSame() {
+  void equalsReturnsTrueWhenObjectsAreSame() {
     DepositInput testDepositInput = depositInput;
 
     assertEquals(depositInput, testDepositInput);

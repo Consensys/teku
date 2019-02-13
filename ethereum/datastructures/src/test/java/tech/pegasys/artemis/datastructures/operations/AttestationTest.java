@@ -28,13 +28,13 @@ class AttestationTest {
   private Bytes32 aggregationBitfield = Bytes32.random();
   private AttestationData data = randomAttestationData();
   private Bytes32 custodyBitfield = Bytes32.random();
-  BLSSignature aggregateSignature = new BLSSignature(Bytes48.random(), Bytes48.random());
+  private BLSSignature aggregateSignature = new BLSSignature(Bytes48.random(), Bytes48.random());
 
   private Attestation attestation =
       new Attestation(aggregationBitfield, data, custodyBitfield, aggregateSignature);
 
   @Test
-  void equalsReturnsTrueWhenObjectAreSame() {
+  void equalsReturnsTrueWhenObjectsAreSame() {
     Attestation testAttestation = attestation;
 
     assertEquals(attestation, testAttestation);
@@ -64,7 +64,7 @@ class AttestationTest {
   }
 
   @Test
-  void equalsReturnsFalseWhenParticipationBitfieldsAreDifferent() {
+  void equalsReturnsFalseWhenAggregationBitfieldsAreDifferent() {
     Attestation testAttestation =
         new Attestation(aggregationBitfield.not(), data, custodyBitfield, aggregateSignature);
 
