@@ -16,10 +16,6 @@ package tech.pegasys.artemis.datastructures.operations;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.bytes.Bytes48;
@@ -29,7 +25,7 @@ class DepositInputTest {
 
   Bytes48 pubkey = Bytes48.random();
   Bytes32 withdrawalCredentials = Bytes32.random();
-  List<Bytes48> proofOfPossession = Arrays.asList(Bytes48.random(), Bytes48.random());
+  BLSSignature proofOfPossession = new BLSSignature(Bytes48.random(), Bytes48.random());
 
   DepositInput depositInput = new DepositInput(pubkey, withdrawalCredentials, proofOfPossession);
 
@@ -67,8 +63,8 @@ class DepositInputTest {
   @Test
   void equalsReturnsFalseWhenProofsOfPosessionAreDifferent() {
     // Create copy of signature and reverse to ensure it is different.
-    List<Bytes48> reverseProofOfPossession = new ArrayList<Bytes48>(proofOfPossession);
-    Collections.reverse(reverseProofOfPossession);
+    BLSSignature reverseProofOfPossession =
+        new BLSSignature(proofOfPossession.getC1(), proofOfPossession.getC0());
 
     DepositInput testDepositInput =
         new DepositInput(pubkey, withdrawalCredentials, reverseProofOfPossession);

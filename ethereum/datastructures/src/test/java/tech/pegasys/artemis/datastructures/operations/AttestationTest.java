@@ -17,10 +17,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomAttestationData;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
 import java.util.Objects;
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
@@ -32,7 +28,7 @@ class AttestationTest {
   AttestationData data = randomAttestationData();
   Bytes32 participationBitfield = Bytes32.random();
   Bytes32 custodyBitfield = Bytes32.random();
-  List<Bytes48> aggregateSignature = Arrays.asList(Bytes48.random(), Bytes48.random());
+  BLSSignature aggregateSignature = new BLSSignature(Bytes48.random(), Bytes48.random());
 
   Attestation attestation =
       new Attestation(data, participationBitfield, custodyBitfield, aggregateSignature);
@@ -86,8 +82,8 @@ class AttestationTest {
   @Test
   void equalsReturnsFalseWhenAggregrateSignaturesAreDifferent() {
     // Create copy of aggregateSignature and reverse to ensure it is different.
-    List<Bytes48> reverseAggregateSignature = new ArrayList<Bytes48>(aggregateSignature);
-    Collections.reverse(reverseAggregateSignature);
+    BLSSignature reverseAggregateSignature =
+        new BLSSignature(aggregateSignature.getC1(), aggregateSignature.getC0());
 
     Attestation testAttestation =
         new Attestation(data, participationBitfield, custodyBitfield, reverseAggregateSignature);

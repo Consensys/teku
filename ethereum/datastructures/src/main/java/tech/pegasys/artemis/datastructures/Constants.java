@@ -14,11 +14,10 @@
 package tech.pegasys.artemis.datastructures;
 
 import com.google.common.primitives.UnsignedLong;
-import java.util.Arrays;
-import java.util.List;
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.bytes.Bytes48;
+import tech.pegasys.artemis.datastructures.operations.BLSSignature;
 
 public final class Constants {
   // The constants below are correct as of spec v0.1
@@ -45,8 +44,8 @@ public final class Constants {
   public static final long GENESIS_START_SHARD = 0;
   public static UnsignedLong FAR_FUTURE_EPOCH = UnsignedLong.MAX_VALUE; //
   public static Bytes32 ZERO_HASH = Bytes32.ZERO; //
-  public static final List<Bytes48> EMPTY_SIGNATURE =
-      Arrays.asList(Bytes48.ZERO, Bytes48.ZERO); // Bytes96
+  public static final BLSSignature EMPTY_SIGNATURE =
+      new BLSSignature(Bytes48.ZERO, Bytes48.ZERO); // Bytes96
   public static Bytes BLS_WITHDRAWAL_PREFIX_BYTE = Bytes.EMPTY;
 
   // Time parameters
