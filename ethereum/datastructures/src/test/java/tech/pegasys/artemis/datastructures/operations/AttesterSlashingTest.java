@@ -14,6 +14,7 @@
 package tech.pegasys.artemis.datastructures.operations;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomSlashableAttestation;
 
 import java.util.Objects;
@@ -43,8 +44,8 @@ class AttesterSlashingTest {
 
   @Test
   void equalsReturnsFalseWhenVotes1IsDifferent() {
-    // SlashableVoteData is rather involved to create. Just create a random one until it is not the
-    // same as the original.
+    // SlashableAttestation is rather involved to create. Just create a random one until it is not
+    // the same as the original.
     SlashableAttestation otherVotes1 = randomSlashableAttestation();
     while (Objects.equals(otherVotes1, votes1)) {
       otherVotes1 = randomSlashableAttestation();
@@ -52,13 +53,13 @@ class AttesterSlashingTest {
 
     AttesterSlashing testAttesterSlashing = new AttesterSlashing(otherVotes1, votes2);
 
-    assertEquals(attesterSlashing, testAttesterSlashing);
+    assertNotEquals(attesterSlashing, testAttesterSlashing);
   }
 
   @Test
   void equalsReturnsFalseWhenVotes2IsDifferent() {
-    // SlashableVoteData is rather involved to create. Just create a random one until it is not the
-    // same as the original.
+    // SlashableAttestation is rather involved to create. Just create a random one until it is not
+    // the ame as the original.
     SlashableAttestation otherVotes2 = randomSlashableAttestation();
     while (Objects.equals(otherVotes2, votes2)) {
       otherVotes2 = randomSlashableAttestation();
@@ -66,7 +67,7 @@ class AttesterSlashingTest {
 
     AttesterSlashing testAttesterSlashing = new AttesterSlashing(votes1, otherVotes2);
 
-    assertEquals(attesterSlashing, testAttesterSlashing);
+    assertNotEquals(attesterSlashing, testAttesterSlashing);
   }
 
   @Test
