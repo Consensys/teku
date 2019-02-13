@@ -26,34 +26,76 @@ import tech.pegasys.artemis.datastructures.state.Crosslink;
 import tech.pegasys.artemis.datastructures.state.CrosslinkCommittee;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.statetransition.BeaconState;
+import tech.pegasys.artemis.util.bitwise.BitwiseOps;
 
 public class EpochProcessorUtil {
 
   // epoch processing
   public static void updateJustification(BeaconState state) throws Exception {
-    state.setPrevious_justified_epoch(state.getJustified_epoch());
-    state.setJustification_bitfield(
-        state
-            .getJustification_bitfield()
-            .times(UnsignedLong.valueOf(2))
-            .mod(UnsignedLong.fromLongBits((long) Math.pow(2, 64))));
-    double total_balance = BeaconStateUtil.calc_total_balance(state);
-    // TODO: change values to UnsignedLong
-    // TODO: Method requires major changes following BeaconState refactor
-    //    if (3 * AttestationUtil.get_previous_epoch_boundary_attesting_balance(state)
-    //        >= (2 * total_balance)) {
-    //      state.setJustification_bitfield(state.getJustification_bitfield() | 2);
-    //      state.setJustified_slot((state.getSlot() - 2) % Constants.EPOCH_LENGTH);
-    //    } else if (3 * AttestationUtil.get_current_epoch_boundary_attesting_balance(state)
-    //        >= (2 * total_balance)) {
-    //      state.setJustification_bitfield(state.getJustification_bitfield() | 1);
-    //      state.setJustified_slot((state.getSlot() - 2) % Constants.EPOCH_LENGTH);
-    //    }
-  }
+    // Get previous and current epoch
+    UnsignedLong current_epoch = BeaconStateUtil.get_current_epoch(state);
+    UnsignedLong previous_epoch = BeaconStateUtil.get_previous_epoch(state);
 
-  public static void updateFinalization(BeaconState state) {
-    if (isPrevJustifiedSlotFinalized(state))
-      state.setFinalized_epoch(state.getPrevious_justified_epoch());
+    // Get previous and current epoch total balances
+    List<Validator> current_active_validators =
+        ValidatorsUtil.get_active_validators(state.getValidator_registry(), current_epoch);
+    List<Validator> previous_active_validators =
+        ValidatorsUtil.get_active_validators(state.getValidator_registry(), previous_epoch);
+    UnsignedLong current_total_balance =
+        get_total_effective_balance(state, current_active_validators);
+    UnsignedLong previous_total_balance =
+        get_total_effective_balance(state, previous_active_validators);
+
+    // Update justification bitfield
+    UnsignedLong new_justified_epoch = state.getJustified_epoch();
+    UnsignedLong justification_bitfield = state.getJustification_bitfield();
+    justification_bitfield = BitwiseOps.leftShift(justification_bitfield, 1);
+
+    if (AttestationUtil.get_previous_epoch_boundary_attesting_balance(state)
+            .times(UnsignedLong.valueOf(3))
+            .compareTo(previous_total_balance.times(UnsignedLong.valueOf(2)))
+        >= 0) {
+      justification_bitfield = BitwiseOps.or(justification_bitfield, UnsignedLong.valueOf(2));
+      new_justified_epoch = previous_epoch;
+    }
+    if (AttestationUtil.get_current_epoch_boundary_attesting_balance(state)
+            .times(UnsignedLong.valueOf(3))
+            .compareTo(current_total_balance.times(UnsignedLong.valueOf(2)))
+        >= 0) {
+      justification_bitfield = BitwiseOps.or(justification_bitfield, UnsignedLong.ONE);
+      new_justified_epoch = current_epoch;
+    }
+
+    state.setJustification_bitfield(justification_bitfield);
+
+    // Update last finalized epoch if possible
+    UnsignedLong decimal4 = UnsignedLong.valueOf(4);
+    UnsignedLong decimal8 = UnsignedLong.valueOf(8);
+    UnsignedLong binary11 = UnsignedLong.valueOf(3);
+    UnsignedLong binary111 = UnsignedLong.valueOf(7);
+    UnsignedLong previous_justified_epoch = state.getPrevious_justified_epoch();
+    UnsignedLong justified_epoch = state.getJustified_epoch();
+
+    if (BitwiseOps.rightShift(justification_bitfield, 1).mod(decimal8).equals(binary111)
+        && previous_justified_epoch.equals(previous_epoch.minus(UnsignedLong.valueOf(2)))) {
+      state.setFinalized_epoch(previous_justified_epoch);
+    }
+    if (BitwiseOps.rightShift(justification_bitfield, 1).mod(decimal4).equals(binary11)
+        && previous_justified_epoch.equals(previous_epoch.minus(UnsignedLong.ONE))) {
+      state.setFinalized_epoch(previous_justified_epoch);
+    }
+    if (justification_bitfield.mod(decimal8).equals(binary111)
+        && justified_epoch.equals(previous_epoch.minus(UnsignedLong.ONE))) {
+      state.setFinalized_epoch(justified_epoch);
+    }
+    if (justification_bitfield.mod(decimal4).equals(binary11)
+        && justified_epoch.equals(previous_epoch)) {
+      state.setFinalized_epoch(justified_epoch);
+    }
+
+    // Update state justification variables
+    state.setPrevious_justified_epoch(state.getJustified_epoch());
+    state.setJustified_epoch(new_justified_epoch);
   }
 
   public static void updateCrosslinks(BeaconState state) throws BlockValidationException {
