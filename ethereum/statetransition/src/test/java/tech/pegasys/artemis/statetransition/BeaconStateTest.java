@@ -19,7 +19,6 @@ import static tech.pegasys.artemis.datastructures.Constants.ENTRY_EXIT_DELAY;
 import static tech.pegasys.artemis.datastructures.Constants.EPOCH_LENGTH;
 import static tech.pegasys.artemis.datastructures.Constants.GENESIS_EPOCH;
 import static tech.pegasys.artemis.datastructures.Constants.INITIATED_EXIT;
-import static tech.pegasys.artemis.datastructures.Constants.LATEST_INDEX_ROOTS_LENGTH;
 import static tech.pegasys.artemis.datastructures.Constants.LATEST_RANDAO_MIXES_LENGTH;
 import static tech.pegasys.artemis.datastructures.Constants.SEED_LOOKAHEAD;
 import static tech.pegasys.artemis.statetransition.util.BeaconStateUtil.bytes3ToInt;
@@ -558,7 +557,6 @@ class BeaconStateTest {
     assertThat(generate_seed(state, epoch))
         .isEqualTo(
             Hash.keccak256(
-                Bytes.wrap(Bytes32.fromHexString("0x029a"), get_active_index_root(state,
-    epoch))));
+                Bytes.wrap(Bytes32.fromHexString("0x029a"), get_active_index_root(state, epoch))));
   }
 }
