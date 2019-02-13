@@ -20,18 +20,18 @@ import net.consensys.cava.ssz.SSZ;
 
 public class Attestation {
 
+  private Bytes32 aggregation_bitfield;
   private AttestationData data;
-  private Bytes32 participation_bitfield;
   private Bytes32 custody_bitfield;
   private BLSSignature aggregate_signature;
 
   public Attestation(
+      Bytes32 aggregation_bitfield,
       AttestationData data,
-      Bytes32 participation_bitfield,
       Bytes32 custody_bitfield,
       BLSSignature aggregate_signature) {
+    this.aggregation_bitfield = aggregation_bitfield;
     this.data = data;
-    this.participation_bitfield = participation_bitfield;
     this.custody_bitfield = custody_bitfield;
     this.aggregate_signature = aggregate_signature;
   }
@@ -41,8 +41,8 @@ public class Attestation {
         bytes,
         reader ->
             new Attestation(
-                AttestationData.fromBytes(reader.readBytes()),
                 Bytes32.wrap(reader.readBytes()),
+                AttestationData.fromBytes(reader.readBytes()),
                 Bytes32.wrap(reader.readBytes()),
                 BLSSignature.fromBytes(reader.readBytes())));
   }
@@ -50,8 +50,8 @@ public class Attestation {
   public Bytes toBytes() {
     return SSZ.encode(
         writer -> {
+          writer.writeBytes(aggregation_bitfield);
           writer.writeBytes(data.toBytes());
-          writer.writeBytes(participation_bitfield);
           writer.writeBytes(custody_bitfield);
           writer.writeBytes(aggregate_signature.toBytes());
         });
@@ -59,7 +59,7 @@ public class Attestation {
 
   @Override
   public int hashCode() {
-    return Objects.hash(data, participation_bitfield, custody_bitfield, aggregate_signature);
+    return Objects.hash(aggregation_bitfield, data, custody_bitfield, aggregate_signature);
   }
 
   @Override
@@ -77,19 +77,19 @@ public class Attestation {
     }
 
     Attestation other = (Attestation) obj;
-    return Objects.equals(this.getData(), other.getData())
-        && Objects.equals(this.getParticipation_bitfield(), other.getParticipation_bitfield())
+    return Objects.equals(this.getAggregation_bitfield(), other.getAggregation_bitfield())
+        && Objects.equals(this.getData(), other.getData())
         && Objects.equals(this.getCustody_bitfield(), other.getCustody_bitfield())
         && Objects.equals(this.getAggregate_signature(), other.getAggregate_signature());
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */
-  public Bytes32 getParticipation_bitfield() {
-    return participation_bitfield;
+  public Bytes32 getAggregation_bitfield() {
+    return aggregation_bitfield;
   }
 
-  public void setParticipation_bitfield(Bytes32 participation_bitfield) {
-    this.participation_bitfield = participation_bitfield;
+  public void setAggregation_bitfield(Bytes32 aggregation_bitfield) {
+    this.aggregation_bitfield = aggregation_bitfield;
   }
 
   public AttestationData getData() {

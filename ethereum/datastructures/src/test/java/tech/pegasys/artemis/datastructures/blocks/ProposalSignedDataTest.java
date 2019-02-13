@@ -24,11 +24,11 @@ import org.junit.jupiter.api.Test;
 
 class ProposalSignedDataTest {
 
-  UnsignedLong slot = randomUnsignedLong();
-  UnsignedLong shard = randomUnsignedLong();
-  Bytes32 blockHash = Bytes32.random();
+  private UnsignedLong slot = randomUnsignedLong();
+  private UnsignedLong shard = randomUnsignedLong();
+  private Bytes32 blockRoot = Bytes32.random();
 
-  ProposalSignedData proposalSignedData = new ProposalSignedData(slot, shard, blockHash);
+  private ProposalSignedData proposalSignedData = new ProposalSignedData(slot, shard, blockRoot);
 
   @Test
   void equalsReturnsTrueWhenObjectAreSame() {
@@ -39,7 +39,7 @@ class ProposalSignedDataTest {
 
   @Test
   void equalsReturnsTrueWhenObjectFieldsAreEqual() {
-    ProposalSignedData testProposalSignedData = new ProposalSignedData(slot, shard, blockHash);
+    ProposalSignedData testProposalSignedData = new ProposalSignedData(slot, shard, blockRoot);
 
     assertEquals(proposalSignedData, testProposalSignedData);
   }
@@ -47,7 +47,7 @@ class ProposalSignedDataTest {
   @Test
   void equalsReturnsFalseWhenSlotsAreDifferent() {
     ProposalSignedData testProposalSignedData =
-        new ProposalSignedData(slot.plus(randomUnsignedLong()), shard, blockHash);
+        new ProposalSignedData(slot.plus(randomUnsignedLong()), shard, blockRoot);
 
     assertNotEquals(proposalSignedData, testProposalSignedData);
   }
@@ -55,15 +55,15 @@ class ProposalSignedDataTest {
   @Test
   void equalsReturnsFalseWhenShardsAreDifferent() {
     ProposalSignedData testProposalSignedData =
-        new ProposalSignedData(slot, shard.plus(randomUnsignedLong()), blockHash);
+        new ProposalSignedData(slot, shard.plus(randomUnsignedLong()), blockRoot);
 
     assertNotEquals(proposalSignedData, testProposalSignedData);
   }
 
   @Test
-  void equalsReturnsFalseWhenBlockHashesAreDifferent() {
+  void equalsReturnsFalseWhenBlockRootsAreDifferent() {
     ProposalSignedData testProposalSignedData =
-        new ProposalSignedData(slot, shard, blockHash.not());
+        new ProposalSignedData(slot, shard, blockRoot.not());
 
     assertNotEquals(proposalSignedData, testProposalSignedData);
   }

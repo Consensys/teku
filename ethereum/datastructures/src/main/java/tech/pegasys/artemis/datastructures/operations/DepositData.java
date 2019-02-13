@@ -20,14 +20,14 @@ import net.consensys.cava.ssz.SSZ;
 
 public class DepositData {
 
-  private DepositInput deposit_input;
-  private UnsignedLong value;
+  private UnsignedLong amount;
   private UnsignedLong timestamp;
+  private DepositInput deposit_input;
 
-  public DepositData(DepositInput deposit_input, UnsignedLong value, UnsignedLong timestamp) {
-    this.deposit_input = deposit_input;
-    this.value = value;
+  public DepositData(UnsignedLong amount, UnsignedLong timestamp, DepositInput deposit_input) {
+    this.amount = amount;
     this.timestamp = timestamp;
+    this.deposit_input = deposit_input;
   }
 
   public static DepositData fromBytes(Bytes bytes) {
@@ -35,23 +35,23 @@ public class DepositData {
         bytes,
         reader ->
             new DepositData(
-                DepositInput.fromBytes(reader.readBytes()),
                 UnsignedLong.fromLongBits(reader.readUInt64()),
-                UnsignedLong.fromLongBits(reader.readUInt64())));
+                UnsignedLong.fromLongBits(reader.readUInt64()),
+                DepositInput.fromBytes(reader.readBytes())));
   }
 
   public Bytes toBytes() {
     return SSZ.encode(
         writer -> {
-          writer.writeBytes(deposit_input.toBytes());
-          writer.writeUInt64(value.longValue());
+          writer.writeUInt64(amount.longValue());
           writer.writeUInt64(timestamp.longValue());
+          writer.writeBytes(deposit_input.toBytes());
         });
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(deposit_input, value, timestamp);
+    return Objects.hash(amount, timestamp, deposit_input);
   }
 
   @Override
@@ -69,9 +69,9 @@ public class DepositData {
     }
 
     DepositData other = (DepositData) obj;
-    return Objects.equals(this.getDeposit_input(), other.getDeposit_input())
-        && Objects.equals(this.getValue(), other.getValue())
-        && Objects.equals(this.getTimestamp(), other.getTimestamp());
+    return Objects.equals(this.getAmount(), other.getAmount())
+        && Objects.equals(this.getTimestamp(), other.getTimestamp())
+        && Objects.equals(this.getDeposit_input(), other.getDeposit_input());
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */
@@ -83,12 +83,12 @@ public class DepositData {
     this.deposit_input = deposit_input;
   }
 
-  public UnsignedLong getValue() {
-    return value;
+  public UnsignedLong getAmount() {
+    return amount;
   }
 
-  public void setValue(UnsignedLong value) {
-    this.value = value;
+  public void setAmount(UnsignedLong amount) {
+    this.amount = amount;
   }
 
   public UnsignedLong getTimestamp() {
