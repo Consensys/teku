@@ -44,6 +44,7 @@ import net.consensys.cava.crypto.Hash;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
+import tech.pegasys.artemis.datastructures.operations.BLSSignature;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.DepositInput;
 import tech.pegasys.artemis.datastructures.state.CrosslinkCommittee;
@@ -593,7 +594,7 @@ public class BeaconStateUtil {
       BeaconState state,
       Bytes48 pubkey,
       UnsignedLong amount,
-      List<Bytes48> proof_of_possession,
+      BLSSignature proof_of_possession,
       Bytes32 withdrawal_credentials) {
     assertTrue(
         validate_proof_of_possession(state, pubkey, proof_of_possession, withdrawal_credentials));
@@ -696,7 +697,7 @@ public class BeaconStateUtil {
   private static boolean validate_proof_of_possession(
       BeaconState state,
       Bytes48 pubkey,
-      List<Bytes48> proof_of_possession,
+      BLSSignature proof_of_possession,
       Bytes32 withdrawal_credentials) {
     // Verify the given ``proof_of_possession``.
     DepositInput proof_of_possession_data =
@@ -704,8 +705,8 @@ public class BeaconStateUtil {
 
     List<Bytes48> signature =
         Arrays.asList(
-            Bytes48.leftPad(proof_of_possession.get(0)),
-            Bytes48.leftPad(proof_of_possession.get(1)));
+            Bytes48.leftPad(proof_of_possession.getC0()),
+            Bytes48.leftPad(proof_of_possession.getC1()));
     UnsignedLong domain = get_domain(state.getFork(), state.getSlot(), DOMAIN_DEPOSIT);
     return bls_verify(
         pubkey, TreeHashUtil.hash_tree_root(proof_of_possession_data.toBytes()), signature, domain);

@@ -13,10 +13,7 @@
 
 package tech.pegasys.artemis.datastructures.operations;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.bytes.Bytes48;
@@ -29,10 +26,10 @@ public final class DepositInput {
   // Withdrawal credentials
   Bytes32 withdrawal_credentials;
   // A BLS signature of this `DepositInput`
-  List<Bytes48> proof_of_possession;
+  BLSSignature proof_of_possession;
 
   public DepositInput(
-      Bytes48 pubkey, Bytes32 withdrawal_credentials, List<Bytes48> proof_of_possession) {
+      Bytes48 pubkey, Bytes32 withdrawal_credentials, BLSSignature proof_of_possession) {
     this.pubkey = pubkey;
     this.withdrawal_credentials = withdrawal_credentials;
     this.proof_of_possession = proof_of_possession;
@@ -45,7 +42,7 @@ public final class DepositInput {
             new DepositInput(
                 Bytes48.wrap(reader.readBytes()),
                 Bytes32.wrap(reader.readBytes()),
-                reader.readBytesList().stream().map(Bytes48::wrap).collect(Collectors.toList())));
+                BLSSignature.fromBytes(reader.readBytes())));
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */
@@ -65,11 +62,11 @@ public final class DepositInput {
     this.withdrawal_credentials = withdrawal_credentials;
   }
 
-  public List<Bytes48> getProof_of_possession() {
+  public BLSSignature getProof_of_possession() {
     return proof_of_possession;
   }
 
-  public void setProof_of_possession(ArrayList<Bytes48> proof_of_possession) {
+  public void setProof_of_possession(BLSSignature proof_of_possession) {
     this.proof_of_possession = proof_of_possession;
   }
 
@@ -93,7 +90,7 @@ public final class DepositInput {
         writer -> {
           writer.writeBytes(pubkey);
           writer.writeBytes(withdrawal_credentials);
-          writer.writeBytesList(proof_of_possession);
+          writer.writeBytes(proof_of_possession.toBytes());
         });
   }
 }
