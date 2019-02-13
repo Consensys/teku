@@ -47,7 +47,7 @@ public class BlockProcessorUtil {
     // block_without_signature_root)).
     ProposalSignedData signedData =
         new ProposalSignedData(state.getSlot(), Constants.BEACON_CHAIN_SHARD_NUMBER, blockHash);
-    Bytes32 proposalRoot = TreeHashUtil.hash_tree_root(signedData.getBlock_hash());
+    Bytes32 proposalRoot = TreeHashUtil.hash_tree_root(signedData.getBlock_root());
     // Verify that
     // bls_verify(pubkey=state.validator_registry[get_beacon_proposer_index(state,
     // state.slot)].pubkey, message=proposal_root, signature=block.signature,

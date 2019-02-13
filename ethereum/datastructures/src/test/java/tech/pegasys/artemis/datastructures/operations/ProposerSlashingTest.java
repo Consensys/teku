@@ -26,13 +26,13 @@ import tech.pegasys.artemis.datastructures.blocks.ProposalSignedData;
 
 class ProposerSlashingTest {
 
-  int proposerIndex = randomInt();
-  ProposalSignedData proposalData1 = randomProposalSignedData();
-  BLSSignature proposalSignature1 = new BLSSignature(Bytes48.random(), Bytes48.random());
-  ProposalSignedData proposalData2 = randomProposalSignedData();
-  BLSSignature proposalSignature2 = new BLSSignature(Bytes48.random(), Bytes48.random());
+  private int proposerIndex = randomInt();
+  private ProposalSignedData proposalData1 = randomProposalSignedData();
+  private BLSSignature proposalSignature1 = new BLSSignature(Bytes48.random(), Bytes48.random());
+  private ProposalSignedData proposalData2 = randomProposalSignedData();
+  private BLSSignature proposalSignature2 = new BLSSignature(Bytes48.random(), Bytes48.random());
 
-  ProposerSlashing proposerSlashing =
+  private ProposerSlashing proposerSlashing =
       new ProposerSlashing(
           proposerIndex, proposalData1, proposalSignature1, proposalData2, proposalSignature2);
 

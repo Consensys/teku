@@ -24,14 +24,14 @@ import org.junit.jupiter.api.Test;
 
 class ExitTest {
 
-  UnsignedLong slot = randomUnsignedLong();
-  UnsignedLong validatorIndex = randomUnsignedLong();
-  BLSSignature signature = new BLSSignature(Bytes48.random(), Bytes48.random());
+  private UnsignedLong epoch = randomUnsignedLong();
+  private UnsignedLong validatorIndex = randomUnsignedLong();
+  private BLSSignature signature = new BLSSignature(Bytes48.random(), Bytes48.random());
 
-  Exit exit = new Exit(slot, validatorIndex, signature);
+  private Exit exit = new Exit(epoch, validatorIndex, signature);
 
   @Test
-  void equalsReturnsTrueWhenObjectAreSame() {
+  void equalsReturnsTrueWhenObjectsAreSame() {
     Exit testExit = exit;
 
     assertEquals(exit, testExit);
@@ -39,21 +39,21 @@ class ExitTest {
 
   @Test
   void equalsReturnsTrueWhenObjectFieldsAreEqual() {
-    Exit testExit = new Exit(slot, validatorIndex, signature);
+    Exit testExit = new Exit(epoch, validatorIndex, signature);
 
     assertEquals(exit, testExit);
   }
 
   @Test
-  void equalsReturnsFalseWhenSlotsAreDifferent() {
-    Exit testExit = new Exit(slot.plus(randomUnsignedLong()), validatorIndex, signature);
+  void equalsReturnsFalseWhenEpochsAreDifferent() {
+    Exit testExit = new Exit(epoch.plus(randomUnsignedLong()), validatorIndex, signature);
 
     assertNotEquals(exit, testExit);
   }
 
   @Test
   void equalsReturnsFalseWhenValidatorIndicesAreDifferent() {
-    Exit testExit = new Exit(slot, validatorIndex.plus(randomUnsignedLong()), signature);
+    Exit testExit = new Exit(epoch, validatorIndex.plus(randomUnsignedLong()), signature);
 
     assertNotEquals(exit, testExit);
   }
@@ -63,7 +63,7 @@ class ExitTest {
     // Create copy of signature and reverse to ensure it is different.
     BLSSignature reverseSignature = new BLSSignature(signature.getC1(), signature.getC0());
 
-    Exit testExit = new Exit(slot, validatorIndex, reverseSignature);
+    Exit testExit = new Exit(epoch, validatorIndex, reverseSignature);
 
     assertNotEquals(exit, testExit);
   }

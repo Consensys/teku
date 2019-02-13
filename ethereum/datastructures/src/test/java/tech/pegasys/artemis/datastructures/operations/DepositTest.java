@@ -30,14 +30,15 @@ import org.junit.jupiter.api.Test;
 
 class DepositTest {
 
-  List<Bytes32> merkleBranch = Arrays.asList(Bytes32.random(), Bytes32.random(), Bytes32.random());
-  UnsignedLong merkleTreeIndex = randomUnsignedLong();
-  DepositData depositData = randomDepositData();
+  private List<Bytes32> branch =
+      Arrays.asList(Bytes32.random(), Bytes32.random(), Bytes32.random());
+  private UnsignedLong index = randomUnsignedLong();
+  private DepositData depositData = randomDepositData();
 
-  Deposit deposit = new Deposit(merkleBranch, merkleTreeIndex, depositData);
+  private Deposit deposit = new Deposit(branch, index, depositData);
 
   @Test
-  void equalsReturnsTrueWhenObjectAreSame() {
+  void equalsReturnsTrueWhenObjectsAreSame() {
     Deposit testDeposit = deposit;
 
     assertEquals(deposit, testDeposit);
@@ -45,26 +46,25 @@ class DepositTest {
 
   @Test
   void equalsReturnsTrueWhenObjectFieldsAreEqual() {
-    Deposit testDeposit = new Deposit(merkleBranch, merkleTreeIndex, depositData);
+    Deposit testDeposit = new Deposit(branch, index, depositData);
 
     assertEquals(deposit, testDeposit);
   }
 
   @Test
-  void equalsReturnsFalseWhenMerkleBranchesAreDifferent() {
+  void equalsReturnsFalseWhenBranchesAreDifferent() {
     // Create copy of signature and reverse to ensure it is different.
-    List<Bytes32> reversemerkleBranch = new ArrayList<Bytes32>(merkleBranch);
-    Collections.reverse(reversemerkleBranch);
+    List<Bytes32> reverseBranch = new ArrayList<>(branch);
+    Collections.reverse(reverseBranch);
 
-    Deposit testDeposit = new Deposit(reversemerkleBranch, merkleTreeIndex, depositData);
+    Deposit testDeposit = new Deposit(reverseBranch, index, depositData);
 
     assertNotEquals(deposit, testDeposit);
   }
 
   @Test
-  void equalsReturnsFalseWhenMerkleTreeIndicesAreDifferent() {
-    Deposit testDeposit =
-        new Deposit(merkleBranch, merkleTreeIndex.plus(randomUnsignedLong()), depositData);
+  void equalsReturnsFalseWhenIndicesAreDifferent() {
+    Deposit testDeposit = new Deposit(branch, index.plus(randomUnsignedLong()), depositData);
 
     assertNotEquals(deposit, testDeposit);
   }
@@ -78,7 +78,7 @@ class DepositTest {
       otherDepositData = randomDepositData();
     }
 
-    Deposit testDeposit = new Deposit(merkleBranch, merkleTreeIndex, otherDepositData);
+    Deposit testDeposit = new Deposit(branch, index, otherDepositData);
 
     assertNotEquals(deposit, testDeposit);
   }

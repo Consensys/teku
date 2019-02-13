@@ -16,17 +16,17 @@ package tech.pegasys.artemis.datastructures.operations;
 public class AttestationDataAndCustodyBit {
 
   private AttestationData data;
-  private boolean poc_bit;
+  private boolean custody_bit;
 
   public AttestationDataAndCustodyBit() {}
 
   /** ******************* * GETTERS & SETTERS * * ******************* */
-  public boolean isPoc_bit() {
-    return poc_bit;
+  public boolean getCustody_bit() {
+    return custody_bit;
   }
 
-  public void setPoc_bit(boolean poc_bit) {
-    this.poc_bit = poc_bit;
+  public void setCustody_bit(boolean custody_bit) {
+    this.custody_bit = custody_bit;
   }
 
   public AttestationData getData() {
