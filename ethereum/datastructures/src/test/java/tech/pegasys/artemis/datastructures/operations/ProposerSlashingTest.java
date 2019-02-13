@@ -18,10 +18,6 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomInt;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomProposalSignedData;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
 import java.util.Objects;
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes48;
@@ -32,9 +28,9 @@ class ProposerSlashingTest {
 
   int proposerIndex = randomInt();
   ProposalSignedData proposalData1 = randomProposalSignedData();
-  List<Bytes48> proposalSignature1 = Arrays.asList(Bytes48.random(), Bytes48.random());
+  BLSSignature proposalSignature1 = new BLSSignature(Bytes48.random(), Bytes48.random());
   ProposalSignedData proposalData2 = randomProposalSignedData();
-  List<Bytes48> proposalSignature2 = Arrays.asList(Bytes48.random(), Bytes48.random());
+  BLSSignature proposalSignature2 = new BLSSignature(Bytes48.random(), Bytes48.random());
 
   ProposerSlashing proposerSlashing =
       new ProposerSlashing(
@@ -92,8 +88,8 @@ class ProposerSlashingTest {
   @Test
   void equalsReturnsFalseWhenProposalSignature1sAreDifferent() {
     // Create copy of proposalSignature1 and reverse to ensure it is different.
-    List<Bytes48> reverseProposalSignature1 = new ArrayList<Bytes48>(proposalSignature1);
-    Collections.reverse(reverseProposalSignature1);
+    BLSSignature reverseProposalSignature1 =
+        new BLSSignature(proposalSignature1.getC1(), proposalSignature1.getC0());
 
     ProposerSlashing testProposerSlashing =
         new ProposerSlashing(
@@ -129,8 +125,8 @@ class ProposerSlashingTest {
   @Test
   void equalsReturnsFalseWhenProposalSignature2sAreDifferent() {
     // Create copy of proposalSignature1 and reverse to ensure it is different.
-    List<Bytes48> reverseProposalSignature2 = new ArrayList<Bytes48>(proposalSignature2);
-    Collections.reverse(reverseProposalSignature2);
+    BLSSignature reverseProposalSignature2 =
+        new BLSSignature(proposalSignature2.getC1(), proposalSignature2.getC0());
 
     ProposerSlashing testProposerSlashing =
         new ProposerSlashing(

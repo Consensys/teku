@@ -14,20 +14,17 @@
 package tech.pegasys.artemis.datastructures.operations;
 
 import com.google.common.primitives.UnsignedLong;
-import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 import net.consensys.cava.bytes.Bytes;
-import net.consensys.cava.bytes.Bytes48;
 import net.consensys.cava.ssz.SSZ;
 
 public class Exit {
 
   private UnsignedLong slot;
   private UnsignedLong validator_index;
-  private List<Bytes48> signature;
+  private BLSSignature signature;
 
-  public Exit(UnsignedLong slot, UnsignedLong validator_index, List<Bytes48> signature) {
+  public Exit(UnsignedLong slot, UnsignedLong validator_index, BLSSignature signature) {
     this.slot = slot;
     this.validator_index = validator_index;
     this.signature = signature;
@@ -40,7 +37,7 @@ public class Exit {
             new Exit(
                 UnsignedLong.fromLongBits(reader.readUInt64()),
                 UnsignedLong.fromLongBits(reader.readUInt64()),
-                reader.readBytesList().stream().map(Bytes48::wrap).collect(Collectors.toList())));
+                BLSSignature.fromBytes(reader.readBytes())));
   }
 
   public Bytes toBytes() {
@@ -48,7 +45,7 @@ public class Exit {
         writer -> {
           writer.writeUInt64(slot.longValue());
           writer.writeUInt64(validator_index.longValue());
-          writer.writeBytesList(signature);
+          writer.writeBytes(signature.toBytes());
         });
   }
 
@@ -94,11 +91,11 @@ public class Exit {
     this.validator_index = validator_index;
   }
 
-  public List<Bytes48> getSignature() {
+  public BLSSignature getSignature() {
     return signature;
   }
 
-  public void setSignature(List<Bytes48> signature) {
+  public void setSignature(BLSSignature signature) {
     this.signature = signature;
   }
 }

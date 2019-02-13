@@ -20,6 +20,7 @@ import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.bytes.Bytes48;
 import net.consensys.cava.ssz.SSZ;
+import tech.pegasys.artemis.datastructures.operations.BLSSignature;
 
 public final class BeaconBlock {
 
@@ -29,7 +30,7 @@ public final class BeaconBlock {
   private Bytes32 state_root;
   private List<Bytes48> randao_reveal;
   private Eth1Data eth1_data;
-  private List<Bytes48> signature;
+  private BLSSignature signature;
 
   // Body
   private BeaconBlockBody body;
@@ -40,7 +41,7 @@ public final class BeaconBlock {
       Bytes32 state_root,
       List<Bytes48> randao_reveal,
       Eth1Data eth1_data,
-      List<Bytes48> signature,
+      BLSSignature signature,
       BeaconBlockBody body) {
     this.slot = slot;
     this.parent_root = parent_root;
@@ -61,7 +62,7 @@ public final class BeaconBlock {
                 Bytes32.wrap(reader.readBytes()),
                 reader.readBytesList().stream().map(Bytes48::wrap).collect(Collectors.toList()),
                 Eth1Data.fromBytes(reader.readBytes()),
-                reader.readBytesList().stream().map(Bytes48::wrap).collect(Collectors.toList()),
+                BLSSignature.fromBytes(reader.readBytes()),
                 BeaconBlockBody.fromBytes(reader.readBytes())));
   }
 
@@ -73,7 +74,7 @@ public final class BeaconBlock {
           writer.writeBytes(state_root);
           writer.writeBytesList(randao_reveal);
           writer.writeBytes(eth1_data.toBytes());
-          writer.writeBytesList(signature);
+          writer.writeBytes(signature.toBytes());
           writer.writeBytes(body.toBytes());
         });
   }
@@ -116,11 +117,11 @@ public final class BeaconBlock {
     this.body = body;
   }
 
-  public List<Bytes48> getSignature() {
+  public BLSSignature getSignature() {
     return signature;
   }
 
-  public void setSignature(List<Bytes48> signature) {
+  public void setSignature(BLSSignature signature) {
     this.signature = signature;
   }
 
