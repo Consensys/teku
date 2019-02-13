@@ -22,10 +22,10 @@ import org.junit.jupiter.api.Test;
 
 class Eth1DataTest {
 
-  Bytes32 depositRoot = Bytes32.random();
-  Bytes32 blockHash = Bytes32.random();
+  private Bytes32 depositRoot = Bytes32.random();
+  private Bytes32 blockRoot = Bytes32.random();
 
-  Eth1Data eth1Data = new Eth1Data(depositRoot, blockHash);
+  private Eth1Data eth1Data = new Eth1Data(depositRoot, blockRoot);
 
   @Test
   void equalsReturnsTrueWhenObjectAreSame() {
@@ -36,21 +36,21 @@ class Eth1DataTest {
 
   @Test
   void equalsReturnsTrueWhenObjectFieldsAreEqual() {
-    Eth1Data testEth1Data = new Eth1Data(depositRoot, blockHash);
+    Eth1Data testEth1Data = new Eth1Data(depositRoot, blockRoot);
 
     assertEquals(eth1Data, testEth1Data);
   }
 
   @Test
   void equalsReturnsFalseWhenDepositRootsAreDifferent() {
-    Eth1Data testEth1Data = new Eth1Data(depositRoot.not(), blockHash);
+    Eth1Data testEth1Data = new Eth1Data(depositRoot.not(), blockRoot);
 
     assertNotEquals(eth1Data, testEth1Data);
   }
 
   @Test
-  void equalsReturnsFalseWhenBlockHashesAreDifferent() {
-    Eth1Data testEth1Data = new Eth1Data(depositRoot, blockHash.not());
+  void equalsReturnsFalseWhenBlockRootsAreDifferent() {
+    Eth1Data testEth1Data = new Eth1Data(depositRoot, blockRoot.not());
 
     assertNotEquals(eth1Data, testEth1Data);
   }

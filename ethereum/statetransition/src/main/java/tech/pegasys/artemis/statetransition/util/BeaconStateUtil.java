@@ -46,8 +46,8 @@ import tech.pegasys.artemis.datastructures.operations.AttestationData;
 import tech.pegasys.artemis.datastructures.operations.BLSSignature;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.DepositInput;
+import tech.pegasys.artemis.datastructures.state.Crosslink;
 import tech.pegasys.artemis.datastructures.state.CrosslinkCommittee;
-import tech.pegasys.artemis.datastructures.state.CrosslinkRecord;
 import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.datastructures.state.PendingAttestationRecord;
 import tech.pegasys.artemis.datastructures.state.Validator;
@@ -72,10 +72,10 @@ public class BeaconStateUtil {
     ArrayList<UnsignedLong> latest_penalized_balances =
         new ArrayList<>(
             Collections.nCopies(Constants.LATEST_PENALIZED_EXIT_LENGTH, UnsignedLong.ZERO));
-    ArrayList<CrosslinkRecord> latest_crosslinks = new ArrayList<>(SHARD_COUNT);
+    ArrayList<Crosslink> latest_crosslinks = new ArrayList<>(SHARD_COUNT);
 
     for (int i = 0; i < SHARD_COUNT; i++) {
-      latest_crosslinks.add(new CrosslinkRecord(Bytes32.ZERO, UnsignedLong.valueOf(GENESIS_SLOT)));
+      latest_crosslinks.add(new Crosslink(UnsignedLong.valueOf(GENESIS_SLOT), Bytes32.ZERO));
     }
 
     BeaconState state =
@@ -126,7 +126,7 @@ public class BeaconStateUtil {
       process_deposit(
           state,
           deposit_input.getPubkey(),
-          validator_deposit.getDeposit_data().getValue(),
+          validator_deposit.getDeposit_data().getAmount(),
           deposit_input.getProof_of_possession(),
           deposit_input.getWithdrawal_credentials());
     }
@@ -294,7 +294,7 @@ public class BeaconStateUtil {
   }
 
   public static Bytes32 getShard_block_root(BeaconState state, Long shard) {
-    return state.getLatest_crosslinks().get(toIntExact(shard)).getShard_block_hash();
+    return state.getLatest_crosslinks().get(toIntExact(shard)).getShard_block_root();
   }
 
   /** Return the epoch number of the given ``slot`` */
@@ -747,7 +747,7 @@ public class BeaconStateUtil {
 
     ArrayList<CrosslinkCommittee> crosslink_committees =
         BeaconStateUtil.get_crosslink_committees_at_slot(
-            state, toIntExact(attestation_data.getSlot()));
+            state, toIntExact(attestation_data.getSlot().longValue()));
 
     // TODO: assertTrue attestation_data.shard in [shard for _, shard in crosslink_committees]
 
@@ -852,9 +852,11 @@ public class BeaconStateUtil {
    */
   private boolean is_double_vote(
       AttestationData attestation_data_1, AttestationData attestation_data_2) {
-    long target_epoch_1 = attestation_data_1.getSlot() / EPOCH_LENGTH;
-    long target_epoch_2 = attestation_data_2.getSlot() / EPOCH_LENGTH;
-    return target_epoch_1 == target_epoch_2;
+    UnsignedLong target_epoch_1 =
+        attestation_data_1.getSlot().dividedBy(UnsignedLong.valueOf(EPOCH_LENGTH));
+    UnsignedLong target_epoch_2 =
+        attestation_data_2.getSlot().dividedBy(UnsignedLong.valueOf(EPOCH_LENGTH));
+    return target_epoch_1.compareTo(target_epoch_2) == 0;
   }
 
   /**
@@ -867,13 +869,15 @@ public class BeaconStateUtil {
    */
   private boolean is_surround_vote(
       AttestationData attestation_data_1, AttestationData attestation_data_2) {
-    long source_epoch_1 = attestation_data_1.getJustified_slot().longValue() / EPOCH_LENGTH;
-    long source_epoch_2 = attestation_data_2.getJustified_slot().longValue() / EPOCH_LENGTH;
-    long target_epoch_1 = attestation_data_1.getSlot() / EPOCH_LENGTH;
-    long target_epoch_2 = attestation_data_2.getSlot() / EPOCH_LENGTH;
+    long source_epoch_1 = attestation_data_1.getJustified_epoch().longValue() / EPOCH_LENGTH;
+    long source_epoch_2 = attestation_data_2.getJustified_epoch().longValue() / EPOCH_LENGTH;
+    UnsignedLong target_epoch_1 =
+        attestation_data_1.getSlot().dividedBy(UnsignedLong.valueOf(EPOCH_LENGTH));
+    UnsignedLong target_epoch_2 =
+        attestation_data_2.getSlot().dividedBy(UnsignedLong.valueOf(EPOCH_LENGTH));
     return source_epoch_1 < source_epoch_2
-        && (source_epoch_2 + 1 == target_epoch_2)
-        && target_epoch_2 < target_epoch_1;
+        && (UnsignedLong.valueOf(source_epoch_2 + 1).compareTo(target_epoch_2) == 0)
+        && target_epoch_2.compareTo(target_epoch_1) < 0;
   }
 
   /**

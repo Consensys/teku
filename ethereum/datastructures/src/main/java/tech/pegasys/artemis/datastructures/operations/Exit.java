@@ -20,12 +20,12 @@ import net.consensys.cava.ssz.SSZ;
 
 public class Exit {
 
-  private UnsignedLong slot;
+  private UnsignedLong epoch;
   private UnsignedLong validator_index;
   private BLSSignature signature;
 
-  public Exit(UnsignedLong slot, UnsignedLong validator_index, BLSSignature signature) {
-    this.slot = slot;
+  public Exit(UnsignedLong epoch, UnsignedLong validator_index, BLSSignature signature) {
+    this.epoch = epoch;
     this.validator_index = validator_index;
     this.signature = signature;
   }
@@ -43,7 +43,7 @@ public class Exit {
   public Bytes toBytes() {
     return SSZ.encode(
         writer -> {
-          writer.writeUInt64(slot.longValue());
+          writer.writeUInt64(epoch.longValue());
           writer.writeUInt64(validator_index.longValue());
           writer.writeBytes(signature.toBytes());
         });
@@ -51,7 +51,7 @@ public class Exit {
 
   @Override
   public int hashCode() {
-    return Objects.hash(slot, validator_index, signature);
+    return Objects.hash(epoch, validator_index, signature);
   }
 
   @Override
@@ -69,18 +69,18 @@ public class Exit {
     }
 
     Exit other = (Exit) obj;
-    return Objects.equals(this.getSlot(), other.getSlot())
+    return Objects.equals(this.getEpoch(), other.getEpoch())
         && Objects.equals(this.getValidator_index(), other.getValidator_index())
         && Objects.equals(this.getSignature(), other.getSignature());
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */
-  public UnsignedLong getSlot() {
-    return slot;
+  public UnsignedLong getEpoch() {
+    return epoch;
   }
 
-  public void setSlot(UnsignedLong slot) {
-    this.slot = slot;
+  public void setEpoch(UnsignedLong epoch) {
+    this.epoch = epoch;
   }
 
   public UnsignedLong getValidator_index() {
