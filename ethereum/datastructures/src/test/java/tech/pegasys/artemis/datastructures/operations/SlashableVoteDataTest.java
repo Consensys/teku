@@ -32,7 +32,7 @@ class SlashableVoteDataTest {
   List<Integer> custodyBit0Indices = Arrays.asList(randomInt(), randomInt(), randomInt());
   List<Integer> custodyBit1Indices = Arrays.asList(randomInt(), randomInt(), randomInt());
   AttestationData data = randomAttestationData();
-  List<Bytes48> aggregateSignature = Arrays.asList(Bytes48.random(), Bytes48.random());
+  BLSSignature aggregateSignature = new BLSSignature(Bytes48.random(), Bytes48.random());
 
   SlashableVoteData slashableVoteData =
       new SlashableVoteData(custodyBit0Indices, custodyBit1Indices, data, aggregateSignature);
@@ -97,8 +97,8 @@ class SlashableVoteDataTest {
   @Test
   void equalsReturnsFalseWhenAggregrateSignaturesAreDifferent() {
     // Create copy of custodyBit1Indices and reverse to ensure it is different.
-    List<Bytes48> reverseAggregateSignature = new ArrayList<Bytes48>(aggregateSignature);
-    Collections.reverse(reverseAggregateSignature);
+    BLSSignature reverseAggregateSignature =
+        new BLSSignature(aggregateSignature.getC1(), aggregateSignature.getC0());
 
     SlashableVoteData testSlashableVoteData =
         new SlashableVoteData(

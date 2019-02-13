@@ -28,6 +28,7 @@ import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.bytes.Bytes48;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.artemis.datastructures.operations.BLSSignature;
 
 class BeaconBlockTest {
 
@@ -36,7 +37,7 @@ class BeaconBlockTest {
   Bytes32 stateRoot = Bytes32.random();
   List<Bytes48> randaoReveal = Arrays.asList(Bytes48.random(), Bytes48.random());
   Eth1Data eth1Data = randomEth1Data();
-  List<Bytes48> signature = Arrays.asList(Bytes48.random(), Bytes48.random());
+  BLSSignature signature = new BLSSignature(Bytes48.random(), Bytes48.random());
   BeaconBlockBody body = randomBeaconBlockBody();
 
   BeaconBlock beaconBlock =
@@ -113,8 +114,7 @@ class BeaconBlockTest {
   @Test
   void equalsReturnsFalseWhenSignaturesAreDifferent() {
     // Create copy of signature and reverse to ensure it is different.
-    List<Bytes48> reverseSignature = new ArrayList<Bytes48>(signature);
-    Collections.reverse(reverseSignature);
+    BLSSignature reverseSignature = new BLSSignature(signature.getC1(), signature.getC0());
 
     BeaconBlock testBeaconBlock =
         new BeaconBlock(

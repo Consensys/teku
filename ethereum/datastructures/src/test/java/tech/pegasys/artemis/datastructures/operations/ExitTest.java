@@ -18,10 +18,6 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomUnsignedLong;
 
 import com.google.common.primitives.UnsignedLong;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes48;
 import org.junit.jupiter.api.Test;
@@ -30,7 +26,7 @@ class ExitTest {
 
   UnsignedLong slot = randomUnsignedLong();
   UnsignedLong validatorIndex = randomUnsignedLong();
-  List<Bytes48> signature = Arrays.asList(Bytes48.random(), Bytes48.random());
+  BLSSignature signature = new BLSSignature(Bytes48.random(), Bytes48.random());
 
   Exit exit = new Exit(slot, validatorIndex, signature);
 
@@ -65,8 +61,7 @@ class ExitTest {
   @Test
   void equalsReturnsFalseWhenSignaturesAreDifferent() {
     // Create copy of signature and reverse to ensure it is different.
-    List<Bytes48> reverseSignature = new ArrayList<Bytes48>(signature);
-    Collections.reverse(reverseSignature);
+    BLSSignature reverseSignature = new BLSSignature(signature.getC1(), signature.getC0());
 
     Exit testExit = new Exit(slot, validatorIndex, reverseSignature);
 

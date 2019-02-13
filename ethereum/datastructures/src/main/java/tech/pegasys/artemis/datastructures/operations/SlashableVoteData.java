@@ -15,9 +15,7 @@ package tech.pegasys.artemis.datastructures.operations;
 
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 import net.consensys.cava.bytes.Bytes;
-import net.consensys.cava.bytes.Bytes48;
 import net.consensys.cava.ssz.SSZ;
 
 public class SlashableVoteData {
@@ -25,13 +23,13 @@ public class SlashableVoteData {
   private List<Integer> custody_bit_0_indices;
   private List<Integer> custody_bit_1_indices;
   private AttestationData data;
-  private List<Bytes48> aggregate_signature;
+  private BLSSignature aggregate_signature;
 
   public SlashableVoteData(
       List<Integer> custody_bit_0_indices,
       List<Integer> custody_bit_1_indices,
       AttestationData data,
-      List<Bytes48> aggregate_signature) {
+      BLSSignature aggregate_signature) {
     this.custody_bit_0_indices = custody_bit_0_indices;
     this.custody_bit_1_indices = custody_bit_1_indices;
     this.data = data;
@@ -46,7 +44,7 @@ public class SlashableVoteData {
                 reader.readIntList(24),
                 reader.readIntList(24),
                 AttestationData.fromBytes(reader.readBytes()),
-                reader.readBytesList().stream().map(Bytes48::wrap).collect(Collectors.toList())));
+                BLSSignature.fromBytes(reader.readBytes())));
   }
 
   public Bytes toBytes() {
@@ -55,7 +53,7 @@ public class SlashableVoteData {
           writer.writeIntList(24, custody_bit_0_indices);
           writer.writeIntList(24, custody_bit_1_indices);
           writer.writeBytes(data.toBytes());
-          writer.writeBytesList(aggregate_signature);
+          writer.writeBytes(aggregate_signature.toBytes());
         });
   }
 
@@ -102,11 +100,11 @@ public class SlashableVoteData {
     this.data = data;
   }
 
-  public List<Bytes48> getAggregate_signature() {
+  public BLSSignature getAggregate_signature() {
     return aggregate_signature;
   }
 
-  public void setAggregate_signature(List<Bytes48> aggregate_signature) {
+  public void setAggregate_signature(BLSSignature aggregate_signature) {
     this.aggregate_signature = aggregate_signature;
   }
 
