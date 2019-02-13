@@ -22,7 +22,7 @@ import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.bytes.Bytes48;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.datastructures.blocks.Eth1DataVote;
-import tech.pegasys.artemis.datastructures.state.CrosslinkRecord;
+import tech.pegasys.artemis.datastructures.state.Crosslink;
 import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.datastructures.state.PendingAttestationRecord;
 import tech.pegasys.artemis.datastructures.state.Validator;
@@ -54,7 +54,7 @@ public class BeaconState {
   private UnsignedLong finalized_epoch;
 
   // Recent state
-  private List<CrosslinkRecord> latest_crosslinks;
+  private List<Crosslink> latest_crosslinks;
   private List<Bytes32> latest_block_roots;
   private List<Bytes32> latest_index_roots;
   private List<UnsignedLong>
@@ -104,12 +104,13 @@ public class BeaconState {
       UnsignedLong finalized_epoch,
 
       // Recent state
-      List<CrosslinkRecord> latest_crosslinks,
-      List<Bytes32> latest_block_roots,
-      List<Bytes32> latest_index_roots,
-      List<UnsignedLong> latest_penalized_balances, // Balances penalized at every withdrawal period
-      List<PendingAttestationRecord> latest_attestations,
-      List<Bytes32> batched_block_roots,
+      ArrayList<Crosslink> latest_crosslinks,
+      ArrayList<Bytes32> latest_block_roots,
+      ArrayList<Bytes32> latest_index_roots,
+      ArrayList<UnsignedLong>
+          latest_penalized_balances, // Balances penalized at every withdrawal period
+      ArrayList<PendingAttestationRecord> latest_attestations,
+      ArrayList<Bytes32> batched_block_roots,
 
       // Ethereum 1.0 chain data
       Eth1Data latest_eth1_data,
@@ -283,11 +284,11 @@ public class BeaconState {
     this.finalized_epoch = finalized_epoch;
   }
 
-  public List<CrosslinkRecord> getLatest_crosslinks() {
+  public List<Crosslink> getLatest_crosslinks() {
     return latest_crosslinks;
   }
 
-  public void setLatest_crosslinks(List<CrosslinkRecord> latest_crosslinks) {
+  public void setLatest_crosslinks(ArrayList<Crosslink> latest_crosslinks) {
     this.latest_crosslinks = latest_crosslinks;
   }
 

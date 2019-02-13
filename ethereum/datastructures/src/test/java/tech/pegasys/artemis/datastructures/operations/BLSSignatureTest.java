@@ -22,13 +22,13 @@ import org.junit.jupiter.api.Test;
 
 class BLSSignatureTest {
 
-  Bytes48 c0 = Bytes48.random();
-  Bytes48 c1 = Bytes48.random();
+  private Bytes48 c0 = Bytes48.random();
+  private Bytes48 c1 = Bytes48.random();
 
-  BLSSignature signature = new BLSSignature(c0, c1);
+  private BLSSignature signature = new BLSSignature(c0, c1);
 
   @Test
-  void equalsReturnsTrueWhenObjectAreSame() {
+  void equalsReturnsTrueWhenObjectsAreSame() {
     BLSSignature testBLSSignature = signature;
 
     assertEquals(signature, testBLSSignature);

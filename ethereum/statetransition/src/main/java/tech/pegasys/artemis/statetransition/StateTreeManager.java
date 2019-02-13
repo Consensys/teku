@@ -56,7 +56,6 @@ public class StateTreeManager {
     LOG.info("ChainStart Event Detected");
     // TODO: Startup Logic: Initial State Data
     ArrayList<Deposit> deposits = randomDeposits(100);
-
     this.state =
         BeaconStateUtil.get_initial_beacon_state(
             deposits,

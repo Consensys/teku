@@ -23,12 +23,12 @@ public class ProposalSignedData {
 
   private UnsignedLong slot;
   private UnsignedLong shard;
-  private Bytes32 block_hash;
+  private Bytes32 block_root;
 
-  public ProposalSignedData(UnsignedLong slot, UnsignedLong shard, Bytes32 block_hash) {
+  public ProposalSignedData(UnsignedLong slot, UnsignedLong shard, Bytes32 block_root) {
     this.slot = slot;
     this.shard = shard;
-    this.block_hash = block_hash;
+    this.block_root = block_root;
   }
 
   public static ProposalSignedData fromBytes(Bytes bytes) {
@@ -46,13 +46,13 @@ public class ProposalSignedData {
         writer -> {
           writer.writeUInt64(slot.longValue());
           writer.writeUInt64(shard.longValue());
-          writer.writeBytes(block_hash);
+          writer.writeBytes(block_root);
         });
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(slot, shard, block_hash);
+    return Objects.hash(slot, shard, block_root);
   }
 
   @Override
@@ -72,7 +72,7 @@ public class ProposalSignedData {
     ProposalSignedData other = (ProposalSignedData) obj;
     return Objects.equals(this.getSlot(), other.getSlot())
         && Objects.equals(this.getShard(), other.getShard())
-        && Objects.equals(this.getBlock_hash(), other.getBlock_hash());
+        && Objects.equals(this.getBlock_root(), other.getBlock_root());
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */
@@ -92,11 +92,11 @@ public class ProposalSignedData {
     this.shard = shard;
   }
 
-  public Bytes32 getBlock_hash() {
-    return block_hash;
+  public Bytes32 getBlock_root() {
+    return block_root;
   }
 
-  public void setBlock_hash(Bytes32 block_hash) {
-    this.block_hash = block_hash;
+  public void setBlock_root(Bytes32 block_root) {
+    this.block_root = block_root;
   }
 }

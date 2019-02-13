@@ -51,6 +51,7 @@ import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
 import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.datastructures.state.Validator;
+import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.statetransition.util.BeaconStateUtil;
 
 @ExtendWith(BouncyCastleExtension.class)
@@ -118,12 +119,12 @@ class BeaconStateTest {
   void getAttestationParticipantsSizesNotEqual() {
     AttestationData attestationData =
         new AttestationData(
-            0,
+            UnsignedLong.ZERO,
             UnsignedLong.ZERO,
             Bytes32.ZERO,
             Bytes32.ZERO,
             Bytes32.ZERO,
-            Bytes32.ZERO,
+            DataStructureUtil.randomCrosslink(),
             UnsignedLong.ZERO,
             Bytes32.ZERO);
     byte[] participation_bitfield = Bytes32.ZERO.toArrayUnsafe();
@@ -201,12 +202,13 @@ class BeaconStateTest {
     BeaconStateUtil.activate_validator(
         state, state.getValidator_registry().get(validator_index), true);
     activation_epoch = state.getValidator_registry().get(validator_index).getActivation_epoch();
-    assertThat(activation_epoch.intValue()).isEqualTo(GENESIS_EPOCH);
+    assertThat(activation_epoch).isEqualTo(UnsignedLong.valueOf(GENESIS_EPOCH));
 
     BeaconStateUtil.activate_validator(
         state, state.getValidator_registry().get(validator_index), false);
     activation_epoch = state.getValidator_registry().get(validator_index).getActivation_epoch();
-    assertThat(activation_epoch.intValue()).isEqualTo(GENESIS_EPOCH + 1 + ENTRY_EXIT_DELAY);
+    assertThat(activation_epoch)
+        .isEqualTo(UnsignedLong.valueOf(GENESIS_EPOCH + 1 + ENTRY_EXIT_DELAY));
   }
 
   @Test
@@ -215,8 +217,8 @@ class BeaconStateTest {
     int validator_index = 0;
 
     BeaconStateUtil.initiate_validator_exit(state, validator_index);
-    assertThat(state.getValidator_registry().get(validator_index).getStatus_flags().intValue())
-        .isEqualTo(INITIATED_EXIT);
+    assertThat(state.getValidator_registry().get(validator_index).getStatus_flags())
+        .isEqualTo(UnsignedLong.valueOf(INITIATED_EXIT));
   }
 
   @Test
@@ -225,8 +227,8 @@ class BeaconStateTest {
     int validator_index = 2;
 
     BeaconStateUtil.initiate_validator_exit(state, validator_index);
-    assertThat(state.getValidator_registry().get(validator_index).getStatus_flags().intValue())
-        .isEqualTo(INITIATED_EXIT);
+    assertThat(state.getValidator_registry().get(validator_index).getStatus_flags())
+        .isEqualTo(UnsignedLong.valueOf(INITIATED_EXIT));
   }
 
   @Test

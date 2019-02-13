@@ -25,11 +25,11 @@ import org.junit.jupiter.api.Test;
 
 class DepositDataTest {
 
-  DepositInput depositInput = randomDepositInput();
-  UnsignedLong value = randomUnsignedLong();
-  UnsignedLong timestamp = randomUnsignedLong();
+  private DepositInput depositInput = randomDepositInput();
+  private UnsignedLong amount = randomUnsignedLong();
+  private UnsignedLong timestamp = randomUnsignedLong();
 
-  DepositData depositData = new DepositData(depositInput, value, timestamp);
+  private DepositData depositData = new DepositData(amount, timestamp, depositInput);
 
   @Test
   void equalsReturnsTrueWhenObjectAreSame() {
@@ -40,7 +40,7 @@ class DepositDataTest {
 
   @Test
   void equalsReturnsTrueWhenObjectFieldsAreEqual() {
-    DepositData testDepositData = new DepositData(depositInput, value, timestamp);
+    DepositData testDepositData = new DepositData(amount, timestamp, depositInput);
 
     assertEquals(depositData, testDepositData);
   }
@@ -54,7 +54,7 @@ class DepositDataTest {
       otherDepositInput = randomDepositInput();
     }
 
-    DepositData testDepositData = new DepositData(otherDepositInput, value, timestamp);
+    DepositData testDepositData = new DepositData(amount, timestamp, otherDepositInput);
 
     assertNotEquals(depositData, testDepositData);
   }
@@ -62,7 +62,7 @@ class DepositDataTest {
   @Test
   void equalsReturnsFalseWhenValuesAreDifferent() {
     DepositData testDepositData =
-        new DepositData(depositInput, value.plus(randomUnsignedLong()), timestamp);
+        new DepositData(amount.plus(randomUnsignedLong()), timestamp, depositInput);
 
     assertNotEquals(depositData, testDepositData);
   }
@@ -70,7 +70,7 @@ class DepositDataTest {
   @Test
   void equalsReturnsFalseWhenTimestampsAreDifferent() {
     DepositData testDepositData =
-        new DepositData(depositInput, value, timestamp.plus(randomUnsignedLong()));
+        new DepositData(amount, timestamp.plus(randomUnsignedLong()), depositInput);
 
     assertNotEquals(depositData, testDepositData);
   }
