@@ -46,11 +46,11 @@ public class SlashableAttestation {
         bytes,
         reader ->
             new SlashableAttestation(
-              reader
-              .readUInt64List()
-              .stream()
-              .map(UnsignedLong::fromLongBits)
-              .collect(Collectors.toList()),
+                reader
+                    .readUInt64List()
+                    .stream()
+                    .map(UnsignedLong::fromLongBits)
+                    .collect(Collectors.toList()),
                 AttestationData.fromBytes(reader.readBytes()),
                 Bytes32.wrap(reader.readBytes()),
                 BLSSignature.fromBytes(reader.readBytes())));

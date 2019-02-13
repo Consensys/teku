@@ -14,9 +14,11 @@
 package tech.pegasys.artemis.datastructures.operations;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomAttestationData;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomUnsignedLong;
 
+import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -32,7 +34,8 @@ import org.junit.jupiter.api.Test;
 
 class SlashableAttestationTest {
 
-  private List<UnsignedLong> validatorIndices = Arrays.asList(randomUnsignedLong(), randomUnsignedLong(), randomUnsignedLong());
+  private List<UnsignedLong> validatorIndices =
+      Arrays.asList(randomUnsignedLong(), randomUnsignedLong(), randomUnsignedLong());
   private AttestationData data = randomAttestationData();
   private Bytes32 custodyBitfield = Bytes32.random();
   private BLSSignature aggregateSignature = new BLSSignature(Bytes48.random(), Bytes48.random());
@@ -57,6 +60,7 @@ class SlashableAttestationTest {
 
   @Test
   void equalsReturnsFalseWhenValidatorIndicesAreDifferent() {
+    // Create copy of validatorIndices and reverse to ensure it is different.
     List<UnsignedLong> reverseValidatorIndices = new ArrayList<>(validatorIndices);
     Collections.reverse(reverseValidatorIndices);
 
@@ -64,7 +68,7 @@ class SlashableAttestationTest {
         new SlashableAttestation(
             reverseValidatorIndices, data, custodyBitfield, aggregateSignature);
 
-    assertEquals(slashableAttestation, testSlashableAttestation);
+    assertNotEquals(slashableAttestation, testSlashableAttestation);
   }
 
   @Test
@@ -74,7 +78,7 @@ class SlashableAttestationTest {
     SlashableAttestation testSlashableAttestation =
         new SlashableAttestation(validatorIndices, data, otherCustodyBitfield, aggregateSignature);
 
-    assertEquals(slashableAttestation, testSlashableAttestation);
+    assertNotEquals(slashableAttestation, testSlashableAttestation);
   }
 
   @Test
@@ -89,19 +93,18 @@ class SlashableAttestationTest {
     SlashableAttestation testSlashableAttestation =
         new SlashableAttestation(validatorIndices, otherData, custodyBitfield, aggregateSignature);
 
-    assertEquals(slashableAttestation, testSlashableAttestation);
+    assertNotEquals(slashableAttestation, testSlashableAttestation);
   }
 
   @Test
   void equalsReturnsFalseWhenAggregrateSignaturesAreDifferent() {
-    // Create copy of custodyBit1Indices and reverse to ensure it is different.
     BLSSignature reverseAggregateSignature = new BLSSignature(aggregateSignature.getC1(), aggregateSignature.getC0());
 
     SlashableAttestation testSlashableAttestation =
         new SlashableAttestation(
             validatorIndices, data, custodyBitfield, reverseAggregateSignature);
 
-    assertEquals(slashableAttestation, testSlashableAttestation);
+    assertNotEquals(slashableAttestation, testSlashableAttestation);
   }
 
   @Test
