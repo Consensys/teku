@@ -169,12 +169,7 @@ public class BeaconStateUtil {
         (current_epoch > Constants.GENESIS_EPOCH) ? current_epoch - 1 : current_epoch;
     long next_epoch = current_epoch + 1;
 
-    // TODO handle this exception properly
-    // if (!(previous_epoch <= epoch && epoch <= next_epoch)) {
-    //  throw new BlockValidationException(
-    //          "get_crosslink_committees_at_slot: Exception was thrown due to failure of
-    // previous_epoch <= epoch <= next_epoch check.");
-    // }
+    assertTrue(previous_epoch <= epoch && epoch <= next_epoch);
 
     long committees_per_epoch = 0;
     Bytes32 seed = Bytes32.ZERO;
