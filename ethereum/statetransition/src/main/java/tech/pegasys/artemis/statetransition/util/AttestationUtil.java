@@ -22,25 +22,33 @@ import net.consensys.cava.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.state.CrosslinkCommittee;
 import tech.pegasys.artemis.datastructures.state.PendingAttestation;
 import tech.pegasys.artemis.statetransition.BeaconState;
+import tech.pegasys.artemis.statetransition.StateTransitionException;
 
 public class AttestationUtil {
 
-  public static ArrayList<PendingAttestation> get_current_epoch_attestations(BeaconState state) {
-    List<PendingAttestation> latest_attestations = state.getLatest_attestations();
-    ArrayList<PendingAttestation> current_epoch_attestations = new ArrayList<>();
-    if (latest_attestations != null) {
-      for (PendingAttestation record : latest_attestations) {
-        if (isAttestationCurrentEpoch(state, record)) current_epoch_attestations.add(record);
+  public static List<PendingAttestationRecord> get_current_epoch_attestations(BeaconState state) {
+    // Get current epoch
+    UnsignedLong current_epoch = BeaconStateUtil.get_current_epoch(state);
+
+    List<PendingAttestationRecord> latest_attestations = state.getLatest_attestations();
+    List<PendingAttestationRecord> current_epoch_attestations = new ArrayList<>();
+
+    for (PendingAttestationRecord attestation : latest_attestations) {
+      if (current_epoch.equals(BeaconStateUtil.slot_to_epoch(attestation.getData().getSlot()))) {
+        current_epoch_attestations.add(attestation);
       }
     }
     return current_epoch_attestations;
   }
 
-  public static ArrayList<PendingAttestation> get_previous_epoch_attestations(BeaconState state) {
-    ArrayList<PendingAttestation> previous_epoch_attestations = new ArrayList<>();
-    ArrayList<PendingAttestation> current_epoch_attestation = get_current_epoch_attestations(state);
+  /*
+  public static ArrayList<PendingAttestationRecord> get_previous_epoch_attestations(
+      BeaconState state) {
+    ArrayList<PendingAttestationRecord> previous_epoch_attestations = new ArrayList<>();
+    ArrayList<PendingAttestationRecord> current_epoch_attestation =
+        get_current_epoch_attestations(state);
 
-    for (PendingAttestation record : current_epoch_attestation) {
+    for (PendingAttestationRecord record : current_epoch_attestation) {
       if (state
                   .getSlot()
                   .minus(UnsignedLong.valueOf(2))
@@ -55,47 +63,59 @@ public class AttestationUtil {
     }
     return previous_epoch_attestations;
   }
+  */
 
-  private static boolean isAttestationCurrentEpoch(BeaconState state, PendingAttestation record) {
-    // TODO: Replace longValue with UnsignedLong
-    long epoch_lower_boundary = state.getSlot().longValue() - EPOCH_LENGTH;
-    long epoch_upper_boundary = state.getSlot().longValue();
-    return (record.getData().getSlot().compareTo(UnsignedLong.valueOf(epoch_lower_boundary)) <= 0
-        && record.getData().getSlot().compareTo(UnsignedLong.valueOf(epoch_upper_boundary)) > 0);
-  }
-
-  public static ArrayList<PendingAttestation> get_current_epoch_boundary_attestations(
-      BeaconState state, ArrayList<PendingAttestation> current_epoch_attestations)
+  public static List<PendingAttestationRecord> get_current_epoch_boundary_attestations(
+      BeaconState state, List<PendingAttestationRecord> current_epoch_attestations)
       throws Exception {
-    ArrayList<PendingAttestation> current_epoch_boundary_attestations = new ArrayList<>();
-    if (current_epoch_attestations != null) {
-      // TODO: current_epoch_boundary_attestations is always empty. Update this.
-      for (PendingAttestation record : current_epoch_boundary_attestations) {
-        if (record
-                .getData()
-                .getEpoch_boundary_root()
-                .equals(
-                    BeaconStateUtil.get_block_root(
-                        state,
-                        record
-                            .getData()
-                            .getSlot()
-                            .minus(UnsignedLong.valueOf(EPOCH_LENGTH))
-                            .longValue()))
-            && record.getData().getJustified_epoch().equals(state.getJustified_epoch()))
-          current_epoch_attestations.add(record);
+    // Get current epoch
+    UnsignedLong current_epoch = BeaconStateUtil.get_current_epoch(state);
+
+    List<PendingAttestationRecord> current_epoch_boundary_attestations = new ArrayList<>();
+
+    for (PendingAttestationRecord attestation : current_epoch_attestations) {
+      if (attestation
+              .getData()
+              .getEpoch_boundary_root()
+              .equals(
+                  BeaconStateUtil.get_block_root(
+                      state, EpochProcessorUtil.get_epoch_start_slot(current_epoch)))
+          && attestation.getData().getJustified_epoch().equals(state.getJustified_epoch())) {
+        current_epoch_boundary_attestations.add(attestation);
       }
     }
-    return current_epoch_boundary_attestations;
+
+    if (current_epoch_boundary_attestations.isEmpty()) {
+      throw new StateTransitionException("No current epoch boundary attestation found");
+    }
+
+    return current_epoch_attestations;
+  }
+
+  public static List<Integer> get_current_epoch_boundary_attester_indices(
+      BeaconState state, List<PendingAttestationRecord> current_epoch_boundary_attestations) {
+
+    List<ArrayList<Integer>> validator_index_sets = new ArrayList<ArrayList<Integer>>();
+
+    for (PendingAttestationRecord attestation : current_epoch_boundary_attestations) {
+      validator_index_sets.add(
+          BeaconStateUtil.get_attestation_participants(
+              state, attestation.getData(), attestation.getParticipation_bitfield().toArray()));
+    }
+
+    List<Integer> current_epoch_boundary_attester_indices = new ArrayList<Integer>();
+    for (List<Integer> validator_index_set : validator_index_sets) {
+      for (Integer validator_index : validator_index_set) {
+        if (!current_epoch_boundary_attester_indices.contains(validator_index)) {
+          current_epoch_boundary_attester_indices.add(validator_index);
+        }
+      }
+    }
+    return current_epoch_boundary_attester_indices;
   }
 
   public static UnsignedLong get_previous_epoch_boundary_attesting_balance(BeaconState state)
       throws Exception {
-    // todo
-    return UnsignedLong.ZERO;
-  }
-
-  public static UnsignedLong get_current_epoch_boundary_attesting_balance(BeaconState state) {
     // todo
     return UnsignedLong.ZERO;
   }
@@ -121,6 +141,7 @@ public class AttestationUtil {
     return BeaconStateUtil.get_total_effective_balance(state, attesting_validator_indices);
   }
 
+  /*
   public static ArrayList<Integer> attesting_validator_indices(
       BeaconState state, CrosslinkCommittee crosslink_committee, Bytes32 shard_block_root)
       throws BlockValidationException {
@@ -136,4 +157,5 @@ public class AttestationUtil {
     }
     throw new BlockValidationException("attesting_validator_indicies appear to be empty");
   }
+  */
 }
