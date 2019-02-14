@@ -760,13 +760,21 @@ public class BeaconStateUtil {
   }
 
   /**
-   * @param fork
-   * @param slot
-   * @param domain_type
-   * @return the fork version of the given epoch
+   * TODO It seems to make sense to move this to {@link Fork}.
+   *
+   * <p>Get the domain number that represents the fork meta and signature domain.
+   * https://github.com/ethereum/eth2.0-specs/blob/v0.1/specs/core/0_beacon-chain.md#get_domain
+   *
+   * @param fork - The Fork to retrieve the verion for.
+   * @param epoch - The epoch to retrieve the fork version for. See {@link
+   *     #get_fork_version(Fork,UnsignedLong)}
+   * @param domain_type - The domain type. See
+   *     https://github.com/ethereum/eth2.0-specs/blob/v0.1/specs/core/0_beacon-chain.md#signature-domains
+   * @return The fork version and signature domain. This format ((fork version << 32) +
+   *     SignatureDomain) is used to partition BLS signatures.
    */
-  private static UnsignedLong get_domain(Fork fork, UnsignedLong slot, int domain_type) {
-    return get_fork_version(fork, slot)
+  static UnsignedLong get_domain(Fork fork, UnsignedLong epoch, int domain_type) {
+    return get_fork_version(fork, epoch)
         .times(UnsignedLong.valueOf((long) Math.pow(2, 32)))
         .plus(UnsignedLong.valueOf(domain_type));
   }
