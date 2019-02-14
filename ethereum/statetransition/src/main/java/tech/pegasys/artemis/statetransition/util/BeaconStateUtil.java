@@ -157,79 +157,84 @@ public class BeaconStateUtil {
     return 0.0d;
   }
 
-
   /**
    * Return the list of `(committee, shard)` tuples for the `slot`.
+   *
    * @param state
    * @param slot
    * @param registry_change
    * @return
    */
-  public static ArrayList<CrosslinkCommittee> get_crosslink_committees_at_slot(BeaconState state, UnsignedLong slot, boolean registry_change) {
+  public static ArrayList<CrosslinkCommittee> get_crosslink_committees_at_slot(
+      BeaconState state, UnsignedLong slot, boolean registry_change) {
     UnsignedLong epoch = slot_to_epoch(slot);
     UnsignedLong current_epoch = get_current_epoch(state);
     UnsignedLong previous_epoch = get_previous_epoch(state);
     UnsignedLong next_epoch = get_next_epoch(state);
 
-    assertTrue(previous_epoch.compareTo(epoch) <= 0 && epoch.compareTo(next_epoch) <=0 );
+    assertTrue(previous_epoch.compareTo(epoch) <= 0 && epoch.compareTo(next_epoch) <= 0);
 
-    UnsignedLong committees_per_epoch = 0;
+    UnsignedLong committees_per_epoch = UnsignedLong.ZERO;
     Bytes32 seed = Bytes32.ZERO;
-    long shuffling_epoch = 0;
-    long shuffling_start_shard = 0;
+    UnsignedLong shuffling_epoch = UnsignedLong.ZERO;
+    UnsignedLong shuffling_start_shard = UnsignedLong.ZERO;
 
-    if (epoch == previous_epoch) {
+    if (epoch.compareTo(previous_epoch) == 0) {
 
       committees_per_epoch = get_previous_epoch_committee_count(state);
       seed = state.getPrevious_epoch_seed();
-      // TODO: convert these values to UnsignedLong
-      shuffling_epoch = state.getPrevious_calculation_epoch().longValue();
-      shuffling_start_shard = state.getPrevious_epoch_start_shard().longValue();
+      shuffling_epoch = state.getPrevious_calculation_epoch();
+      shuffling_start_shard = state.getPrevious_epoch_start_shard();
 
-    } else if (epoch == current_epoch) {
-      // TODO: convert these values to UnsignedLong
+    } else if (epoch.compareTo(current_epoch) == 0) {
       committees_per_epoch = get_current_epoch_committee_count(state);
       seed = state.getCurrent_epoch_seed();
-      shuffling_epoch = state.getCurrent_calculation_epoch().longValue();
-      shuffling_start_shard = state.getCurrent_epoch_start_shard().longValue();
+      shuffling_epoch = state.getCurrent_calculation_epoch();
+      shuffling_start_shard = state.getCurrent_epoch_start_shard();
 
-    } else if (epoch == next_epoch) {
-      // TODO: convert these values to UnsignedLong
-      long current_committees_per_epoch = get_current_epoch_committee_count(state);
+    } else if (epoch.compareTo(next_epoch) == 0) {
+      UnsignedLong current_committees_per_epoch = get_current_epoch_committee_count(state);
       committees_per_epoch = get_next_epoch_committee_count(state);
       shuffling_epoch = next_epoch;
-      long epochs_since_last_registry_update =
-          current_epoch - state.getValidator_registry_update_epoch().longValue();
-      // TODO: convert these values to UnsignedLong
+      UnsignedLong epochs_since_last_registry_update =
+          current_epoch.minus(state.getValidator_registry_update_epoch());
       if (registry_change) {
         seed = generate_seed(state, next_epoch);
         shuffling_start_shard =
-            (state.getCurrent_epoch_start_shard().longValue() + current_committees_per_epoch)
-                % Constants.SHARD_COUNT;
-      } else if (epochs_since_last_registry_update > 1
+            state
+                .getCurrent_epoch_start_shard()
+                .plus(current_committees_per_epoch)
+                .mod(UnsignedLong.valueOf(Constants.SHARD_COUNT));
+      } else if (epochs_since_last_registry_update.compareTo(UnsignedLong.ONE) > 0
           && is_power_of_two(epochs_since_last_registry_update)) {
         seed = generate_seed(state, next_epoch);
-        shuffling_start_shard = state.getCurrent_epoch_start_shard().longValue();
+        shuffling_start_shard = state.getCurrent_epoch_start_shard();
       } else {
         seed = state.getCurrent_epoch_seed();
-        shuffling_start_shard = state.getCurrent_epoch_start_shard().longValue();
+        shuffling_start_shard = state.getCurrent_epoch_start_shard();
       }
     }
 
+    // TODO: revist when we have the final shuffling algorithm implemented
     List<List<Integer>> shuffling =
-        get_shuffling(seed, state.getValidator_registry(), shuffling_epoch);
-    long offset = slot % Constants.EPOCH_LENGTH;
-    long committees_per_slot = committees_per_epoch / Constants.EPOCH_LENGTH;
-    long slot_start_shard =
-        (shuffling_start_shard + committees_per_slot * offset) % Constants.SHARD_COUNT;
+        get_shuffling(seed, state.getValidator_registry(), shuffling_epoch.longValue());
+    UnsignedLong offset = slot.mod(UnsignedLong.valueOf(Constants.EPOCH_LENGTH));
+    UnsignedLong committees_per_slot =
+        committees_per_epoch.dividedBy(UnsignedLong.valueOf(Constants.EPOCH_LENGTH));
+    UnsignedLong slot_start_shard =
+        shuffling_start_shard
+            .plus(committees_per_slot)
+            .times(offset)
+            .mod(UnsignedLong.valueOf(Constants.SHARD_COUNT));
 
     ArrayList<CrosslinkCommittee> crosslink_committees_at_slot =
         new ArrayList<CrosslinkCommittee>();
-    for (int i = 0; i < committees_per_slot; i++) {
+    // TODO: revist when we have the final shuffling algorithm implemented
+    for (long i = 0; i < committees_per_slot.longValue(); i++) {
       CrosslinkCommittee committee =
           new CrosslinkCommittee(
-              UnsignedLong.fromLongBits(committees_per_slot * offset + i),
-              shuffling.get(toIntExact(slot_start_shard + i) % Constants.SHARD_COUNT));
+              committees_per_slot.times(offset).plus(UnsignedLong.valueOf(i)),
+              shuffling.get(toIntExact(slot_start_shard.longValue() + i) % Constants.SHARD_COUNT));
       crosslink_committees_at_slot.add(committee);
     }
     return crosslink_committees_at_slot;
@@ -246,25 +251,25 @@ public class BeaconStateUtil {
    * Production implementations are expected to appropriately use caching/memoization to avoid redoing work.
    */
 
-  private static long get_previous_epoch_committee_count(BeaconState state) {
+  private static UnsignedLong get_previous_epoch_committee_count(BeaconState state) {
     List<Integer> previous_active_validators =
         ValidatorsUtil.get_active_validator_indices(
             state.getValidator_registry(), state.getPrevious_calculation_epoch());
-    return get_epoch_committee_count(previous_active_validators.size());
+    return get_epoch_committee_count(UnsignedLong.valueOf(previous_active_validators.size()));
   }
 
   private static UnsignedLong get_current_epoch_committee_count(BeaconState state) {
     List<Integer> current_active_validators =
         ValidatorsUtil.get_active_validator_indices(
             state.getValidator_registry(), state.getCurrent_calculation_epoch());
-    return get_epoch_committee_count(current_active_validators.size());
+    return get_epoch_committee_count(UnsignedLong.valueOf(current_active_validators.size()));
   }
 
-  private static long get_next_epoch_committee_count(BeaconState state) {
+  private static UnsignedLong get_next_epoch_committee_count(BeaconState state) {
     List<Integer> next_active_validators =
         ValidatorsUtil.get_active_validator_indices(
             state.getValidator_registry(), get_current_epoch(state).plus(UnsignedLong.ONE));
-    return get_epoch_committee_count(next_active_validators.size());
+    return get_epoch_committee_count(UnsignedLong.valueOf(next_active_validators.size()));
   }
 
   public static Bytes32 generate_seed(BeaconState state, UnsignedLong epoch) {
@@ -297,6 +302,47 @@ public class BeaconStateUtil {
 
   public static Bytes32 getShard_block_root(BeaconState state, UnsignedLong shard) {
     return state.getLatest_crosslinks().get(toIntExact(shard.longValue())).getShard_block_root();
+  }
+
+  /**
+   * return the min(validator balance, MAX_DEPOSIT) for a given validator index
+   *
+   * @param state
+   * @param index
+   * @return
+   */
+  public static UnsignedLong get_effective_balance(BeaconState state, int index) {
+    return min(
+        state.getValidator_balances().get(index),
+        UnsignedLong.valueOf(Constants.MAX_DEPOSIT_AMOUNT));
+  }
+
+  /**
+   * return the min(validator balance, MAX_DEPOSIT) for a given validator
+   *
+   * @param state
+   * @param record
+   * @return
+   */
+  public static UnsignedLong get_effective_balance(BeaconState state, Validator record) {
+    int index = state.getValidator_registry().indexOf(record);
+    return get_effective_balance(state, index);
+  }
+
+  /**
+   * return the Sum(min(validator balance, MAX_DEPOSIT) validator_indices)
+   *
+   * @param state
+   * @param validator_indices
+   * @return
+   */
+  public static UnsignedLong get_total_effective_balance(
+      BeaconState state, List<Integer> validator_indices) {
+    UnsignedLong total_balance = UnsignedLong.ZERO;
+    for (Integer index : validator_indices) {
+      total_balance = total_balance.plus(BeaconStateUtil.get_effective_balance(state, index));
+    }
+    return total_balance;
   }
 
   /** Return the epoch number of the given ``slot`` */
@@ -422,12 +468,17 @@ public class BeaconStateUtil {
    * @param active_validator_count
    * @return
    */
-  public static int get_epoch_committee_count(int active_validator_count) {
-    return clamp(
-            1,
-            Constants.SHARD_COUNT / Constants.EPOCH_LENGTH,
-            active_validator_count / Constants.EPOCH_LENGTH / Constants.TARGET_COMMITTEE_SIZE)
-        * Constants.EPOCH_LENGTH;
+  public static UnsignedLong get_epoch_committee_count(UnsignedLong active_validator_count) {
+
+    return max(
+            UnsignedLong.ONE,
+            min(
+                UnsignedLong.valueOf(Constants.SHARD_COUNT)
+                    .dividedBy(UnsignedLong.valueOf(Constants.EPOCH_LENGTH)),
+                active_validator_count
+                    .dividedBy(UnsignedLong.valueOf(Constants.EPOCH_LENGTH))
+                    .dividedBy(UnsignedLong.valueOf(Constants.TARGET_COMMITTEE_SIZE))))
+        .times(UnsignedLong.valueOf(Constants.EPOCH_LENGTH));
   }
 
   /**
@@ -444,7 +495,9 @@ public class BeaconStateUtil {
     List<Integer> active_validator_indices =
         ValidatorsUtil.get_active_validator_indices(validators, UnsignedLong.valueOf(epoch));
 
-    int committees_per_epoch = get_epoch_committee_count(active_validator_indices.size());
+    // TODO: revisit when we figure out what to do about integer indexes.
+    int committees_per_epoch =
+        get_epoch_committee_count(UnsignedLong.valueOf(active_validator_indices.size())).intValue();
 
     // Shuffle with seed
     // TODO: we may need to treat `epoch` as little-endian here. Revisit as the spec evolves.
@@ -555,16 +608,10 @@ public class BeaconStateUtil {
     return split_arr;
   }
 
-  /** A helper method for readability. */
-  public static int clamp(int minval, int maxval, int x) {
-    if (x <= minval) return minval;
-    if (x >= maxval) return maxval;
-    return x;
-  }
-
   /** Returns true if the operand is an exact power of two */
-  public static boolean is_power_of_two(long value) {
-    return (value != 0) && (Long.lowestOneBit(value) == Long.highestOneBit(value));
+  public static boolean is_power_of_two(UnsignedLong value) {
+    return (value.compareTo(UnsignedLong.ZERO) != 0)
+        && (Long.lowestOneBit(value.longValue()) == Long.highestOneBit(value.longValue()));
   }
 
   /**
