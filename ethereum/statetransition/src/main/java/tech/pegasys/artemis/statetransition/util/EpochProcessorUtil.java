@@ -28,7 +28,7 @@ import net.consensys.cava.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.state.Crosslink;
 import tech.pegasys.artemis.datastructures.state.CrosslinkCommittee;
-import tech.pegasys.artemis.datastructures.state.PendingAttestationRecord;
+import tech.pegasys.artemis.datastructures.state.PendingAttestation;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.statetransition.BeaconState;
 import tech.pegasys.artemis.util.bitwise.BitwiseOps;
@@ -103,7 +103,7 @@ public class EpochProcessorUtil {
     state.setJustified_epoch(new_justified_epoch);
   }
 
-  public static void updateCrosslinks(BeaconState state) throws BlockValidationException {
+  public static void updateCrosslinks(BeaconState state) throws Exception {
     UnsignedLong current_epoch = BeaconStateUtil.get_current_epoch(state);
     UnsignedLong slot = state.getSlot();
     UnsignedLong end = UnsignedLong.valueOf(2 * Constants.EPOCH_LENGTH);
@@ -312,11 +312,11 @@ public class EpochProcessorUtil {
     UnsignedLong current_epoch = BeaconStateUtil.get_current_epoch(state);
 
     // Get current_epoch_attestations
-    List<PendingAttestationRecord> current_epoch_attestations =
+    List<PendingAttestation> current_epoch_attestations =
         AttestationUtil.get_epoch_attestations(state, current_epoch);
 
     // Get current epoch_boundary_attestations
-    List<PendingAttestationRecord> current_epoch_boundary_attestations =
+    List<PendingAttestation> current_epoch_boundary_attestations =
         AttestationUtil.get_current_epoch_boundary_attestations(state, current_epoch_attestations);
 
     // Get current_epoch_boundary_attester_indices
@@ -344,11 +344,11 @@ public class EpochProcessorUtil {
     UnsignedLong previous_epoch = BeaconStateUtil.get_previous_epoch(state);
 
     // Get previous_epoch_attestations
-    List<PendingAttestationRecord> previous_epoch_attestations =
+    List<PendingAttestation> previous_epoch_attestations =
         AttestationUtil.get_epoch_attestations(state, previous_epoch);
 
     // Get previous_epoch_boundary_attestations
-    List<PendingAttestationRecord> previous_epoch_boundary_attestations =
+    List<PendingAttestation> previous_epoch_boundary_attestations =
         AttestationUtil.get_previous_epoch_boundary_attestations(
             state, previous_epoch_attestations);
 
@@ -364,19 +364,6 @@ public class EpochProcessorUtil {
     return previous_epoch_boundary_attesting_balance;
   }
 
-  static UnsignedLong get_total_effective_balance(BeaconState state, List<Validator> validators) {
-    UnsignedLong total_balance = UnsignedLong.ZERO;
-
-    for (int i = 0; i < validators.size(); i++) {
-      total_balance = total_balance.plus(get_effective_balance(state, i));
-    }
-    return total_balance;
-  }
-
-  static UnsignedLong get_effective_balance(BeaconState state, int index) {
-    return BeaconStateUtil.min(
-        state.getValidator_balances().get(index),
-        UnsignedLong.valueOf(Constants.MAX_DEPOSIT_AMOUNT));
   /**
    * calculates the base reward for the supplied validator index
    *
