@@ -14,6 +14,9 @@
 package tech.pegasys.artemis.datastructures.state;
 
 import com.google.common.primitives.UnsignedLong;
+import java.util.Objects;
+import net.consensys.cava.bytes.Bytes;
+import net.consensys.cava.ssz.SSZ;
 
 public class Fork {
 
@@ -25,6 +28,50 @@ public class Fork {
     this.previous_version = previous_version;
     this.current_version = current_version;
     this.epoch = epoch;
+  }
+
+  public static Fork fromBytes(Bytes bytes) {
+    return SSZ.decode(
+        bytes,
+        reader ->
+            new Fork(
+                UnsignedLong.fromLongBits(reader.readUInt64()),
+                UnsignedLong.fromLongBits(reader.readUInt64()),
+                UnsignedLong.fromLongBits(reader.readUInt64())));
+  }
+
+  public Bytes toBytes() {
+    return SSZ.encode(
+        writer -> {
+          writer.writeUInt64(previous_version.longValue());
+          writer.writeUInt64(current_version.longValue());
+          writer.writeUInt64(epoch.longValue());
+        });
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(previous_version, current_version, epoch);
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (Objects.isNull(obj)) {
+      return false;
+    }
+
+    if (this == obj) {
+      return true;
+    }
+
+    if (!(obj instanceof Fork)) {
+      return false;
+    }
+
+    Fork other = (Fork) obj;
+    return Objects.equals(this.getPrevious_version(), other.getPrevious_version())
+        && Objects.equals(this.getCurrent_version(), other.getCurrent_version())
+        && Objects.equals(this.getEpoch(), other.getEpoch());
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */

@@ -45,7 +45,7 @@ class AttesterSlashingTest {
   }
 
   @Test
-  void equalsReturnsFalseWhenVotes1IsDifferent() {
+  void equalsReturnsFalseWhenSlashableAttestation1IsDifferent() {
     // SlashableAttestation is rather involved to create. Just create a random one until it is not
     // the same as the original.
     SlashableAttestation otherSlashableAttestation1 = randomSlashableAttestation();
@@ -60,7 +60,7 @@ class AttesterSlashingTest {
   }
 
   @Test
-  void equalsReturnsFalseWhenVotes2IsDifferent() {
+  void equalsReturnsFalseWhenSlashableAttestation2IsDifferent() {
     // SlashableAttestation is rather involved to create. Just create a random one until it is not
     // the ame as the original.
     SlashableAttestation otherSlashableAttestation2 = randomSlashableAttestation();

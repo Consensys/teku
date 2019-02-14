@@ -13,12 +13,59 @@
 
 package tech.pegasys.artemis.datastructures.operations;
 
+import java.util.Objects;
+import net.consensys.cava.bytes.Bytes;
+import net.consensys.cava.ssz.SSZ;
+
 public class AttestationDataAndCustodyBit {
 
   private AttestationData data;
   private boolean custody_bit;
 
-  public AttestationDataAndCustodyBit() {}
+  public AttestationDataAndCustodyBit(AttestationData data, boolean custody_bit) {
+    this.data = data;
+    this.custody_bit = custody_bit;
+  }
+
+  public static AttestationDataAndCustodyBit fromBytes(Bytes bytes) {
+    return SSZ.decode(
+        bytes,
+        reader ->
+            new AttestationDataAndCustodyBit(
+                AttestationData.fromBytes(reader.readBytes()), reader.readBoolean()));
+  }
+
+  public Bytes toBytes() {
+    return SSZ.encode(
+        writer -> {
+          writer.writeBytes(data.toBytes());
+          writer.writeBoolean(custody_bit);
+        });
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(data, custody_bit);
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (Objects.isNull(obj)) {
+      return false;
+    }
+
+    if (this == obj) {
+      return true;
+    }
+
+    if (!(obj instanceof AttestationDataAndCustodyBit)) {
+      return false;
+    }
+
+    AttestationDataAndCustodyBit other = (AttestationDataAndCustodyBit) obj;
+    return Objects.equals(this.getData(), other.getData())
+        && Objects.equals(this.getCustody_bit(), other.getCustody_bit());
+  }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */
   public boolean getCustody_bit() {

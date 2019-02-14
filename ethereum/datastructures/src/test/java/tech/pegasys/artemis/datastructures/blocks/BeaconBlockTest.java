@@ -68,7 +68,7 @@ class BeaconBlockTest {
   }
 
   @Test
-  void equalsReturnsFalseWhenAncestorHashesAreDifferent() {
+  void equalsReturnsFalseWhenParentRootsAreDifferent() {
     BeaconBlock testBeaconBlock =
         new BeaconBlock(slot, parentRoot.not(), stateRoot, randaoReveal, eth1Data, signature, body);
 

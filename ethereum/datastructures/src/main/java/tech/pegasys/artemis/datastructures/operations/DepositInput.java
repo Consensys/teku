@@ -45,6 +45,40 @@ public final class DepositInput {
                 BLSSignature.fromBytes(reader.readBytes())));
   }
 
+  public Bytes toBytes() {
+    return SSZ.encode(
+        writer -> {
+          writer.writeBytes(pubkey);
+          writer.writeBytes(withdrawal_credentials);
+          writer.writeBytes(proof_of_possession.toBytes());
+        });
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(pubkey, withdrawal_credentials, proof_of_possession);
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (Objects.isNull(obj)) {
+      return false;
+    }
+
+    if (this == obj) {
+      return true;
+    }
+
+    if (!(obj instanceof DepositInput)) {
+      return false;
+    }
+
+    DepositInput other = (DepositInput) obj;
+    return Objects.equals(this.getPubkey(), other.getPubkey())
+        && Objects.equals(this.getWithdrawal_credentials(), other.getWithdrawal_credentials())
+        && Objects.equals(this.getProof_of_possession(), other.getProof_of_possession());
+  }
+
   /** ******************* * GETTERS & SETTERS * * ******************* */
   public Bytes48 getPubkey() {
     return pubkey;
@@ -68,29 +102,5 @@ public final class DepositInput {
 
   public void setProof_of_possession(BLSSignature proof_of_possession) {
     this.proof_of_possession = proof_of_possession;
-  }
-
-  @Override
-  public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
-    DepositInput that = (DepositInput) o;
-    return Objects.equals(pubkey, that.pubkey)
-        && Objects.equals(withdrawal_credentials, that.withdrawal_credentials)
-        && Objects.equals(proof_of_possession, that.proof_of_possession);
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(pubkey, withdrawal_credentials, proof_of_possession);
-  }
-
-  public Bytes toBytes() {
-    return SSZ.encode(
-        writer -> {
-          writer.writeBytes(pubkey);
-          writer.writeBytes(withdrawal_credentials);
-          writer.writeBytes(proof_of_possession.toBytes());
-        });
   }
 }
