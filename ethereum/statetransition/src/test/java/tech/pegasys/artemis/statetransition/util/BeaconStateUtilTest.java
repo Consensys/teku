@@ -17,16 +17,23 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomUnsignedLong;
+import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomValidator;
 
 import com.google.common.primitives.UnsignedLong;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.bytes.Bytes48;
 import net.consensys.cava.junit.BouncyCastleExtension;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.operations.BLSSignature;
 import tech.pegasys.artemis.datastructures.state.Fork;
+import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.statetransition.BeaconState;
 
 @ExtendWith(BouncyCastleExtension.class)
@@ -179,6 +186,7 @@ class BeaconStateUtilTest {
               (BeaconStateUtil.get_fork_version(fork, givenEpoch).longValue() << 32) + domain));
     }
   }
+  // *************** END Fork Tests ***************
 
   @Test
   @Disabled
@@ -206,5 +214,105 @@ class BeaconStateUtilTest {
     assertFalse(
         BeaconStateUtil.validate_proof_of_possession(
             beaconState, pubkey, proofOfPossession, withdrawalCredentials));
+  }
+
+  @Test
+  void processDepositAddsNewValidatorWhenPubkeyIsNotFoundInRegistry() {
+    // Data Setup
+    BeaconState beaconState = new BeaconState();
+    beaconState.setSlot(randomUnsignedLong());
+    beaconState.setFork(new Fork(randomUnsignedLong(), randomUnsignedLong(), randomUnsignedLong()));
+
+    List<Validator> validatorList =
+        new ArrayList<>(Arrays.asList(randomValidator(), randomValidator(), randomValidator()));
+    List<UnsignedLong> balanceList =
+        new ArrayList<>(
+            Arrays.asList(randomUnsignedLong(), randomUnsignedLong(), randomUnsignedLong()));
+
+    beaconState.setValidator_registry(validatorList);
+    beaconState.setValidator_balances(balanceList);
+
+    int originalValidatorRegistrySize = beaconState.getValidator_registry().size();
+    int originalValidatorBalancesSize = beaconState.getValidator_balances().size();
+
+    Bytes48 pubkey = Bytes48.random();
+    UnsignedLong amount = UnsignedLong.valueOf(100L);
+    BLSSignature proofOfPossession = Constants.EMPTY_SIGNATURE;
+    Bytes32 withdrawalCredentials = Bytes32.random();
+
+    // Attempt to process deposit with above data.
+    BeaconStateUtil.process_deposit(
+        beaconState, pubkey, amount, proofOfPossession, withdrawalCredentials);
+
+    assertTrue(
+        beaconState.getValidator_registry().size() == (originalValidatorRegistrySize + 1),
+        "No validator was added to the validator registry.");
+    assertTrue(
+        beaconState.getValidator_balances().size() == (originalValidatorBalancesSize + 1),
+        "No balance was added to the validator balances.");
+    assertEquals(
+        new Validator(
+            pubkey,
+            withdrawalCredentials,
+            Constants.FAR_FUTURE_EPOCH,
+            Constants.FAR_FUTURE_EPOCH,
+            Constants.FAR_FUTURE_EPOCH,
+            Constants.FAR_FUTURE_EPOCH,
+            UnsignedLong.ZERO),
+        beaconState.getValidator_registry().get(originalValidatorRegistrySize));
+    assertEquals(amount, beaconState.getValidator_balances().get(originalValidatorBalancesSize));
+  }
+
+  @Test
+  void processDepositTopsUpValidatorBalanceWhenPubkeyIsFoundInRegistry() {
+    // Data Setup
+    Bytes48 pubkey = Bytes48.random();
+    UnsignedLong amount = UnsignedLong.valueOf(100L);
+    BLSSignature proofOfPossession = Constants.EMPTY_SIGNATURE;
+    Bytes32 withdrawalCredentials = Bytes32.random();
+
+    Validator knownValidator =
+        new Validator(
+            pubkey,
+            withdrawalCredentials,
+            Constants.FAR_FUTURE_EPOCH,
+            Constants.FAR_FUTURE_EPOCH,
+            Constants.FAR_FUTURE_EPOCH,
+            Constants.FAR_FUTURE_EPOCH,
+            UnsignedLong.ZERO);
+
+    BeaconState beaconState = new BeaconState();
+    beaconState.setSlot(randomUnsignedLong());
+    beaconState.setFork(new Fork(randomUnsignedLong(), randomUnsignedLong(), randomUnsignedLong()));
+
+    List<Validator> validatorList =
+        new ArrayList<>(
+            Arrays.asList(randomValidator(), randomValidator(), randomValidator(), knownValidator));
+    List<UnsignedLong> balanceList =
+        new ArrayList<>(
+            Arrays.asList(
+                randomUnsignedLong(), randomUnsignedLong(), randomUnsignedLong(), amount));
+
+    beaconState.setValidator_registry(validatorList);
+    beaconState.setValidator_balances(balanceList);
+
+    int originalValidatorRegistrySize = beaconState.getValidator_registry().size();
+    int originalValidatorBalancesSize = beaconState.getValidator_balances().size();
+
+    // Attempt to process deposit with above data.
+    BeaconStateUtil.process_deposit(
+        beaconState, pubkey, amount, proofOfPossession, withdrawalCredentials);
+
+    assertTrue(
+        beaconState.getValidator_registry().size() == originalValidatorRegistrySize,
+        "A new validator was added to the validator registry, but should not have been.");
+    assertTrue(
+        beaconState.getValidator_balances().size() == originalValidatorBalancesSize,
+        "A new balance was added to the validator balances, but should not have been.");
+    assertEquals(
+        knownValidator, beaconState.getValidator_registry().get(originalValidatorRegistrySize - 1));
+    assertEquals(
+        amount.times(UnsignedLong.valueOf(2L)),
+        beaconState.getValidator_balances().get(originalValidatorBalancesSize - 1));
   }
 }

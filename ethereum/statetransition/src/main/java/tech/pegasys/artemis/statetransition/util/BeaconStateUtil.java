@@ -35,6 +35,7 @@ import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.bytes.Bytes48;
@@ -629,13 +630,14 @@ public class BeaconStateUtil {
   }
 
   /**
-   * Process a deposit from Ethereum 1.0. Note that this function mutates 'state'.
+   * Process a deposit from Ethereum 1.0 (and add a new validator) or tops up an existing
+   * validator's balance. NOTE: This function has side-effects and mutates 'state'.
    *
-   * @param state
-   * @param pubkey
-   * @param proof_of_possession
-   * @param withdrawal_credentials
-   * @param amount
+   * @param state - The current BeaconState. NOTE: State will be mutated per spec logic.
+   * @param pubkey - The validator's public key.
+   * @param amount - The amount to add to the validator's balance (in Gwei).
+   * @param proof_of_possession - The validator's proof of posession
+   * @param withdrawal_credentials - The withdrawal credentials for the deposit to be processed.
    */
   public static void process_deposit(
       BeaconState state,
@@ -643,13 +645,28 @@ public class BeaconStateUtil {
       UnsignedLong amount,
       BLSSignature proof_of_possession,
       Bytes32 withdrawal_credentials) {
+
+    // Retrieve validatorRegistry and validatorBalances references.
+    List<Validator> validatorRegistry = state.getValidator_registry();
+    List<UnsignedLong> validatorBalances = state.getValidator_balances();
+
+    // Verify that the proof of posession is valid before processing the deposit.
     checkArgument(
         validate_proof_of_possession(state, pubkey, proof_of_possession, withdrawal_credentials));
-    UnsignedLong currentEpoch = BeaconStateUtil.get_current_epoch(state);
-    int index = getValidatorIndexByPubkey(state, pubkey);
 
-    if (index < 0) {
-      Validator validator =
+    // Retrieve the list of validator's public keys from the current state.
+    List<Bytes48> validator_pubkeys =
+        validatorRegistry
+            .stream()
+            .map(validator -> validator.getPubkey())
+            .collect(Collectors.toList());
+
+    // If the provided pubkey isn't in the state, add a new validator to the registry.
+    // Otherwise, top up the balance for the validator whose pubkey was provided.
+    if (!validator_pubkeys.contains(pubkey)) {
+      // We depend on our add operation appending the below objects at the same index.
+      checkArgument(validatorRegistry.size() == validatorBalances.size());
+      validatorRegistry.add(
           new Validator(
               pubkey,
               withdrawal_credentials,
@@ -657,50 +674,17 @@ public class BeaconStateUtil {
               FAR_FUTURE_EPOCH,
               FAR_FUTURE_EPOCH,
               FAR_FUTURE_EPOCH,
-              UnsignedLong.ZERO);
-      state.getValidator_registry().add(validator);
-      state.getValidator_balances().add(amount);
+              UnsignedLong.ZERO));
+      validatorBalances.add(amount);
     } else {
-      Validator validator = state.getValidator_registry().get(index);
-      checkArgument(validator.getWithdrawal_credentials().equals(withdrawal_credentials));
-      List<UnsignedLong> balances = state.getValidator_balances();
-      UnsignedLong balance = balances.get(index).plus(amount);
-      balances.set(index, balance);
+      int validatorIndex = validator_pubkeys.indexOf(pubkey);
+      checkArgument(
+          validatorRegistry
+              .get(validatorIndex)
+              .getWithdrawal_credentials()
+              .equals(withdrawal_credentials));
+      validatorBalances.set(validatorIndex, validatorBalances.get(validatorIndex).plus(amount));
     }
-  }
-
-  /**
-   * get validator index by public key
-   *
-   * @param state
-   * @param pubkey
-   * @return
-   */
-  public static Validator getValidatorByPubkey(BeaconState state, Bytes48 pubkey) {
-    for (Validator validator : state.getValidator_registry()) {
-      if (validator.getPubkey().equals(pubkey)) return validator;
-    }
-    return null;
-  }
-
-  /**
-   * get validator index by public key
-   *
-   * @param state
-   * @param pubkey
-   * @return
-   */
-  public static int getValidatorIndexByPubkey(BeaconState state, Bytes48 pubkey) {
-    int result = -1;
-    int index = 0;
-    for (Validator validator : state.getValidator_registry()) {
-      if (validator.getPubkey().toHexString().equals(pubkey.toHexString())) {
-        result = index;
-        break;
-      }
-      index++;
-    }
-    return result;
   }
 
   /**
