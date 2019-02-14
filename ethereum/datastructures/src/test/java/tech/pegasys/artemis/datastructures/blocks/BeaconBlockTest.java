@@ -19,10 +19,6 @@ import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomB
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomEth1Data;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomLong;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
 import java.util.Objects;
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
@@ -35,7 +31,7 @@ class BeaconBlockTest {
   private long slot = randomLong();
   private Bytes32 parentRoot = Bytes32.random();
   private Bytes32 stateRoot = Bytes32.random();
-  private List<Bytes48> randaoReveal = Arrays.asList(Bytes48.random(), Bytes48.random());
+  private BLSSignature randaoReveal = new BLSSignature(Bytes48.random(), Bytes48.random());
   private Eth1Data eth1Data = randomEth1Data();
   private BLSSignature signature = new BLSSignature(Bytes48.random(), Bytes48.random());
   private BeaconBlockBody body = randomBeaconBlockBody();
@@ -85,9 +81,8 @@ class BeaconBlockTest {
 
   @Test
   void equalsReturnsFalseWhenRandaoRevealsAreDifferent() {
-    // Create copy of randaoReveal and reverse to ensure it is different.
-    List<Bytes48> reverseRandaoReveal = new ArrayList<Bytes48>(randaoReveal);
-    Collections.reverse(reverseRandaoReveal);
+    // Create copy of signature and reverse to ensure it is different.
+    BLSSignature reverseRandaoReveal = new BLSSignature(randaoReveal.getC1(), randaoReveal.getC0());
 
     BeaconBlock testBeaconBlock =
         new BeaconBlock(

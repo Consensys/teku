@@ -64,15 +64,7 @@ public final class DataStructureUtil {
   }
 
   public static AttestationData randomAttestationData() {
-    return new AttestationData(
-        randomUnsignedLong(),
-        randomUnsignedLong(),
-        Bytes32.random(),
-        Bytes32.random(),
-        Bytes32.random(),
-        Bytes32.random(),
-        randomUnsignedLong(),
-        Bytes32.random());
+    return randomAttestationData(randomLong());
   }
 
   public static Attestation randomAttestation(long slotNum) {
@@ -84,11 +76,7 @@ public final class DataStructureUtil {
   }
 
   public static Attestation randomAttestation() {
-    return new Attestation(
-        Bytes32.random(),
-        randomAttestationData(),
-        Bytes32.random(),
-        new BLSSignature(Bytes48.random(), Bytes48.random()));
+    return randomAttestation(randomLong());
   }
 
   public static AttesterSlashing randomAttesterSlashing() {
@@ -163,20 +151,13 @@ public final class DataStructureUtil {
         slotNum,
         Bytes32.random(),
         Bytes32.random(),
-        Arrays.asList(Bytes48.random(), Bytes48.random()),
+        new BLSSignature(Bytes48.random(), Bytes48.random()),
         randomEth1Data(),
         new BLSSignature(Bytes48.random(), Bytes48.random()),
         randomBeaconBlockBody());
   }
 
   public static BeaconBlock randomBeaconBlock() {
-    return new BeaconBlock(
-        randomLong(),
-        Bytes32.random(),
-        Bytes32.random(),
-        Arrays.asList(Bytes48.random(), Bytes48.random()),
-        randomEth1Data(),
-        new BLSSignature(Bytes48.random(), Bytes48.random()),
-        randomBeaconBlockBody());
+    return randomBeaconBlock(randomLong());
   }
 }
