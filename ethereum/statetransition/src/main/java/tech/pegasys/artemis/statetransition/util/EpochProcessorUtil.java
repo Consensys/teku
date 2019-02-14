@@ -14,6 +14,8 @@
 package tech.pegasys.artemis.statetransition.util;
 
 import static tech.pegasys.artemis.datastructures.Constants.MAX_DEPOSIT_AMOUNT;
+import static tech.pegasys.artemis.statetransition.util.BeaconStateUtil.get_effective_balance;
+import static tech.pegasys.artemis.statetransition.util.BeaconStateUtil.get_total_effective_balance;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
@@ -35,12 +37,11 @@ public class EpochProcessorUtil {
     // Get previous and current epoch
     UnsignedLong current_epoch = BeaconStateUtil.get_current_epoch(state);
     UnsignedLong previous_epoch = BeaconStateUtil.get_previous_epoch(state);
-
     // Get previous and current epoch total balances
-    List<Validator> current_active_validators =
-        ValidatorsUtil.get_active_validators(state.getValidator_registry(), current_epoch);
-    List<Validator> previous_active_validators =
-        ValidatorsUtil.get_active_validators(state.getValidator_registry(), previous_epoch);
+    List<Integer> current_active_validators =
+        ValidatorsUtil.get_active_validator_indices(state.getValidator_registry(), current_epoch);
+    List<Integer> previous_active_validators =
+        ValidatorsUtil.get_active_validator_indices(state.getValidator_registry(), previous_epoch);
     UnsignedLong current_total_balance =
         get_total_effective_balance(state, current_active_validators);
     UnsignedLong previous_total_balance =
@@ -99,24 +100,34 @@ public class EpochProcessorUtil {
   }
 
   public static void updateCrosslinks(BeaconState state) throws BlockValidationException {
-    // TODO: change values to UnsignedLong
-    for (long n = (state.getSlot().longValue() - 2 * Constants.EPOCH_LENGTH);
-        n < state.getSlot().longValue();
-        n++) {
-      ArrayList<CrosslinkCommittee> crosslink_committees_at_slot =
-          BeaconStateUtil.get_crosslink_committees_at_slot(state, n);
+    UnsignedLong current_epoch = BeaconStateUtil.get_current_epoch(state);
+    UnsignedLong slot = state.getSlot();
+    UnsignedLong end = UnsignedLong.valueOf(2 * Constants.EPOCH_LENGTH);
+    while (slot.compareTo(end) < 0) {
+      List<CrosslinkCommittee> crosslink_committees_at_slot =
+          BeaconStateUtil.get_crosslink_committees_at_slot(state, slot);
       for (CrosslinkCommittee crosslink_committee : crosslink_committees_at_slot) {
         UnsignedLong shard = crosslink_committee.getShard();
-
-        if (3 * AttestationUtil.getTotal_attesting_balance(state)
-            >= 2 * total_balance(crosslink_committee)) {
+        // TODO: This doesn't seem right. How is the winning root calculated?
+        Bytes32 shard_block_root =
+            state
+                .getLatest_crosslinks()
+                .get(Math.toIntExact(shard.longValue()))
+                .getShard_block_root();
+        UnsignedLong total_attesting_balance =
+            AttestationUtil.total_attesting_balance(state, crosslink_committee, shard_block_root);
+        if (UnsignedLong.valueOf(3L)
+                .times(total_attesting_balance)
+                .compareTo(total_balance(crosslink_committee))
+            >= 0) {
           state
               .getLatest_crosslinks()
               .set(
-                  shard.intValue(),
-                  new Crosslink(state.getSlot(), winning_root(crosslink_committee)));
+                  Math.toIntExact(shard.longValue()),
+                  new Crosslink(current_epoch, shard_block_root));
         }
       }
+      slot = slot.plus(UnsignedLong.ONE);
     }
   }
 
@@ -142,21 +153,15 @@ public class EpochProcessorUtil {
     //                || (state.getJustification_bitfield() % 16) == 15)));
   }
 
-  private static Bytes32 winning_root(CrosslinkCommittee crosslink_committee) {
+  private static UnsignedLong total_balance(CrosslinkCommittee crosslink_committee) {
     // todo
-    return null;
-  }
-
-  private static double total_balance(CrosslinkCommittee crosslink_committee) {
-    // todo
-    return 0.0d;
+    return UnsignedLong.ZERO;
   }
 
   static void update_validator_registry(BeaconState state) {
     UnsignedLong currentEpoch = BeaconStateUtil.get_current_epoch(state);
-    List<Validator> active_validators =
-        ValidatorsUtil.get_active_validators(
-            state.getValidator_registry(), BeaconStateUtil.get_current_epoch(state));
+    List<Integer> active_validators =
+        ValidatorsUtil.get_active_validator_indices(state.getValidator_registry(), currentEpoch);
     UnsignedLong total_balance = get_total_effective_balance(state, active_validators);
 
     UnsignedLong max_balance_churn =
@@ -221,8 +226,8 @@ public class EpochProcessorUtil {
 
   static void process_penalties_and_exits(BeaconState state) {
     UnsignedLong currentEpoch = BeaconStateUtil.get_current_epoch(state);
-    List<Validator> active_validators =
-        ValidatorsUtil.get_active_validators(state.getValidator_registry(), currentEpoch);
+    List<Integer> active_validators =
+        ValidatorsUtil.get_active_validator_indices(state.getValidator_registry(), currentEpoch);
 
     // total_balance = sum(get_effective_balance(state, i) for i in active_validator_indices)
     UnsignedLong total_balance = get_total_effective_balance(state, active_validators);
@@ -293,25 +298,5 @@ public class EpochProcessorUtil {
                   .plus(UnsignedLong.valueOf(Constants.MIN_VALIDATOR_WITHDRAWAL_EPOCHS)))
           >= 0;
     }
-  }
-
-  static UnsignedLong get_total_effective_balance(BeaconState state, List<Validator> validators) {
-    UnsignedLong total_balance = UnsignedLong.ZERO;
-
-    for (int i = 0; i < validators.size(); i++) {
-      total_balance = total_balance.plus(get_effective_balance(state, i));
-    }
-    return total_balance;
-  }
-
-  static UnsignedLong get_effective_balance(BeaconState state, int index) {
-    return BeaconStateUtil.min(
-        state.getValidator_balances().get(index),
-        UnsignedLong.valueOf(Constants.MAX_DEPOSIT_AMOUNT));
-  }
-
-  static UnsignedLong get_effective_balance(BeaconState state, Validator record) {
-    int index = state.getValidator_registry().indexOf(record);
-    return get_effective_balance(state, index);
   }
 }
