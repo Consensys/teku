@@ -24,7 +24,7 @@ import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.datastructures.blocks.Eth1DataVote;
 import tech.pegasys.artemis.datastructures.state.Crosslink;
 import tech.pegasys.artemis.datastructures.state.Fork;
-import tech.pegasys.artemis.datastructures.state.PendingAttestationRecord;
+import tech.pegasys.artemis.datastructures.state.PendingAttestation;
 import tech.pegasys.artemis.datastructures.state.Validator;
 
 public class BeaconState {
@@ -59,7 +59,7 @@ public class BeaconState {
   private List<Bytes32> latest_index_roots;
   private List<UnsignedLong>
       latest_penalized_balances; // Balances penalized at every withdrawal period
-  private List<PendingAttestationRecord> latest_attestations;
+  private List<PendingAttestation> latest_attestations;
   private List<Bytes32> batched_block_roots;
 
   // Ethereum 1.0 chain data
@@ -109,7 +109,7 @@ public class BeaconState {
       ArrayList<Bytes32> latest_index_roots,
       ArrayList<UnsignedLong>
           latest_penalized_balances, // Balances penalized at every withdrawal period
-      ArrayList<PendingAttestationRecord> latest_attestations,
+      ArrayList<PendingAttestation> latest_attestations,
       ArrayList<Bytes32> batched_block_roots,
 
       // Ethereum 1.0 chain data
@@ -316,11 +316,11 @@ public class BeaconState {
     this.latest_penalized_balances = latest_penalized_balances;
   }
 
-  public List<PendingAttestationRecord> getLatest_attestations() {
+  public List<PendingAttestation> getLatest_attestations() {
     return latest_attestations;
   }
 
-  public void setLatest_attestations(List<PendingAttestationRecord> latest_attestations) {
+  public void setLatest_attestations(List<PendingAttestation> latest_attestations) {
     this.latest_attestations = latest_attestations;
   }
 
