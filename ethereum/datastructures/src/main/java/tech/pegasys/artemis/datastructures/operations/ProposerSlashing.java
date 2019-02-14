@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.datastructures.operations;
 
+import com.google.common.primitives.UnsignedLong;
 import java.util.Objects;
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.ssz.SSZ;
@@ -20,14 +21,14 @@ import tech.pegasys.artemis.datastructures.blocks.ProposalSignedData;
 
 public class ProposerSlashing {
 
-  private int proposer_index;
+  private UnsignedLong proposer_index;
   private ProposalSignedData proposal_data_1;
   private BLSSignature proposal_signature_1;
   private ProposalSignedData proposal_data_2;
   private BLSSignature proposal_signature_2;
 
   public ProposerSlashing(
-      int proposer_index,
+      UnsignedLong proposer_index,
       ProposalSignedData proposal_data_1,
       BLSSignature proposal_signature_1,
       ProposalSignedData proposal_data_2,
@@ -44,7 +45,7 @@ public class ProposerSlashing {
         bytes,
         reader ->
             new ProposerSlashing(
-                reader.readInt(24),
+                UnsignedLong.fromLongBits(reader.readUInt64()),
                 ProposalSignedData.fromBytes(reader.readBytes()),
                 BLSSignature.fromBytes(reader.readBytes()),
                 ProposalSignedData.fromBytes(reader.readBytes()),
@@ -54,7 +55,7 @@ public class ProposerSlashing {
   public Bytes toBytes() {
     return SSZ.encode(
         writer -> {
-          writer.writeInt(proposer_index, 24);
+          writer.writeUInt64(proposer_index.longValue());
           writer.writeBytes(proposal_data_1.toBytes());
           writer.writeBytes(proposal_signature_1.toBytes());
           writer.writeBytes(proposal_data_2.toBytes());
@@ -95,11 +96,11 @@ public class ProposerSlashing {
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */
-  public int getProposer_index() {
+  public UnsignedLong getProposer_index() {
     return proposer_index;
   }
 
-  public void setProposer_index(int proposer_index) {
+  public void setProposer_index(UnsignedLong proposer_index) {
     this.proposer_index = proposer_index;
   }
 

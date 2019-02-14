@@ -89,7 +89,7 @@ public final class DataStructureUtil {
 
   public static ProposerSlashing randomProposerSlashing() {
     return new ProposerSlashing(
-        randomInt(),
+        randomUnsignedLong(),
         randomProposalSignedData(),
         new BLSSignature(Bytes48.random(), Bytes48.random()),
         randomProposalSignedData(),
