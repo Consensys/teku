@@ -13,19 +13,15 @@
 
 package tech.pegasys.artemis.datastructures.operations;
 
-import java.util.Objects;
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes48;
 import net.consensys.cava.ssz.SSZ;
+import tech.pegasys.artemis.util.bls.Signature;
 
-public final class BLSSignature {
-
-  Bytes48 c0;
-  Bytes48 c1;
+public final class BLSSignature extends Signature {
 
   public BLSSignature(Bytes48 c0, Bytes48 c1) {
-    this.c0 = c0;
-    this.c1 = c1;
+    super(c0, c1);
   }
 
   public static BLSSignature fromBytes(Bytes bytes) {
@@ -41,49 +37,5 @@ public final class BLSSignature {
           writer.writeBytes(c0);
           writer.writeBytes(c1);
         });
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(c0, c1);
-  }
-
-  @Override
-  public boolean equals(Object obj) {
-    if (Objects.isNull(obj)) {
-      return false;
-    }
-
-    if (this == obj) {
-      return true;
-    }
-
-    if (!(obj instanceof BLSSignature)) {
-      return false;
-    }
-
-    BLSSignature other = (BLSSignature) obj;
-    return Objects.equals(this.getC0(), other.getC0())
-        && Objects.equals(this.getC1(), other.getC1());
-  }
-
-  /** @return the c0 */
-  public Bytes48 getC0() {
-    return c0;
-  }
-
-  /** @param c0 the c0 to set */
-  public void setC0(Bytes48 c0) {
-    this.c0 = c0;
-  }
-
-  /** @return the c1 */
-  public Bytes48 getC1() {
-    return c1;
-  }
-
-  /** @param c1 the c1 to set */
-  public void setC1(Bytes48 c1) {
-    this.c1 = c1;
   }
 }
