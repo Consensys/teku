@@ -108,10 +108,21 @@ public class AttestationUtil {
     return (int) Math.ceil(((double) input) / 8.0d);
   }
 
-  public static double getTotal_attesting_balance(BeaconState state) {
-    //    total_attesting_balance(crosslink_committee) = sum([get_effective_balance(state, i) for i
-    // in attesting_validators(crosslink_committee)])
-    return 0.0d;
+  /**
+   * return the total balance of all attesting validators
+   *
+   * @param state
+   * @param crosslink_committee
+   * @param shard
+   * @return
+   * @throws BlockValidationException
+   */
+  public static UnsignedLong total_attesting_balance(
+      BeaconState state, CrosslinkCommittee crosslink_committee, Bytes32 shard_block_root)
+      throws BlockValidationException {
+    List<Integer> attesting_validator_indices =
+        attesting_validator_indices(state, crosslink_committee, shard_block_root);
+    return BeaconStateUtil.get_total_effective_balance(state, attesting_validator_indices);
   }
 
   public static ArrayList<Integer> attesting_validator_indices(

@@ -23,7 +23,6 @@ import static tech.pegasys.artemis.datastructures.Constants.LATEST_RANDAO_MIXES_
 import static tech.pegasys.artemis.datastructures.Constants.SEED_LOOKAHEAD;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomDeposits;
 import static tech.pegasys.artemis.statetransition.util.BeaconStateUtil.bytes3ToInt;
-import static tech.pegasys.artemis.statetransition.util.BeaconStateUtil.clamp;
 import static tech.pegasys.artemis.statetransition.util.BeaconStateUtil.exit_validator;
 import static tech.pegasys.artemis.statetransition.util.BeaconStateUtil.generate_seed;
 import static tech.pegasys.artemis.statetransition.util.BeaconStateUtil.get_active_index_root;
@@ -453,37 +452,14 @@ class BeaconStateTest {
   }
 
   @Test
-  void clampReturnsMinVal() {
-    int actual = clamp(3, 5, 0);
-    int expected = 3;
-    assertThat(actual).isEqualTo(expected);
-  }
-
-  @Test
-  void clampReturnsMaxVal() {
-    int actual = clamp(3, 5, 6);
-    int expected = 5;
-    assertThat(actual).isEqualTo(expected);
-  }
-
-  @Test
-  void clampReturnsX() {
-    int actual = clamp(3, 5, 4);
-    int expected = 4;
-    assertThat(actual).isEqualTo(expected);
-  }
-
-  @Test
   void isPowerOfTwo() {
-    assertThat(is_power_of_two(0L)).isEqualTo(false);
-    assertThat(is_power_of_two(42L)).isEqualTo(false);
-    assertThat(is_power_of_two(Long.MAX_VALUE)).isEqualTo(false);
-    // This is 2^63 when treated as unsigned long:
-    assertThat(is_power_of_two(Long.MIN_VALUE)).isEqualTo(true);
-    assertThat(is_power_of_two(1L)).isEqualTo(true);
-    assertThat(is_power_of_two(2L)).isEqualTo(true);
-    assertThat(is_power_of_two(65536L)).isEqualTo(true);
-    assertThat(is_power_of_two(4611686018427387904L)).isEqualTo(true);
+    assertThat(is_power_of_two(UnsignedLong.ZERO)).isEqualTo(false);
+    assertThat(is_power_of_two(UnsignedLong.valueOf(42L))).isEqualTo(false);
+    assertThat(is_power_of_two(UnsignedLong.valueOf(Long.MAX_VALUE))).isEqualTo(false);
+    assertThat(is_power_of_two(UnsignedLong.ONE)).isEqualTo(true);
+    assertThat(is_power_of_two(UnsignedLong.ONE.plus(UnsignedLong.ONE))).isEqualTo(true);
+    assertThat(is_power_of_two(UnsignedLong.valueOf(65536L))).isEqualTo(true);
+    assertThat(is_power_of_two(UnsignedLong.valueOf(4611686018427387904L))).isEqualTo(true);
   }
 
   @Test
