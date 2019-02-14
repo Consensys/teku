@@ -14,8 +14,11 @@
 package tech.pegasys.artemis.datastructures.state;
 
 import com.google.common.primitives.UnsignedLong;
+import java.util.Objects;
+import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.bytes.Bytes48;
+import net.consensys.cava.ssz.SSZ;
 
 public class Validator {
 
@@ -34,8 +37,6 @@ public class Validator {
   // Status flags
   private UnsignedLong status_flags;
 
-  public Validator() {}
-
   public Validator(
       Bytes48 pubkey,
       Bytes32 withdrawal_credentials,
@@ -51,6 +52,69 @@ public class Validator {
     this.withdrawal_epoch = withdrawal_epoch;
     this.penalized_epoch = penalized_epoch;
     this.status_flags = status_flags;
+  }
+
+  public static Validator fromBytes(Bytes bytes) {
+    return SSZ.decode(
+        bytes,
+        reader ->
+            new Validator(
+                Bytes48.wrap(reader.readBytes()),
+                Bytes32.wrap(reader.readBytes()),
+                UnsignedLong.fromLongBits(reader.readUInt64()),
+                UnsignedLong.fromLongBits(reader.readUInt64()),
+                UnsignedLong.fromLongBits(reader.readUInt64()),
+                UnsignedLong.fromLongBits(reader.readUInt64()),
+                UnsignedLong.fromLongBits(reader.readUInt64())));
+  }
+
+  public Bytes toBytes() {
+    return SSZ.encode(
+        writer -> {
+          writer.writeBytes(pubkey);
+          writer.writeBytes(withdrawal_credentials);
+          writer.writeUInt64(activation_epoch.longValue());
+          writer.writeUInt64(exit_epoch.longValue());
+          writer.writeUInt64(withdrawal_epoch.longValue());
+          writer.writeUInt64(penalized_epoch.longValue());
+          writer.writeUInt64(status_flags.longValue());
+        });
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(
+        pubkey,
+        withdrawal_credentials,
+        activation_epoch,
+        exit_epoch,
+        withdrawal_epoch,
+        penalized_epoch,
+        status_flags);
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (Objects.isNull(obj)) {
+      return false;
+    }
+
+    if (this == obj) {
+      return true;
+    }
+
+    if (!(obj instanceof Validator)) {
+      return false;
+    }
+
+    Validator other = (Validator) obj;
+    return Objects.equals(this.getPubkey(), other.getPubkey())
+        && Objects.equals(this.getWithdrawal_credentials(), other.getWithdrawal_credentials())
+        && Objects.equals(this.getActivation_epoch(), other.getActivation_epoch())
+        && Objects.equals(this.getExit_epoch(), other.getExit_epoch())
+        && Objects.equals(this.getWithdrawal_epoch(), other.getWithdrawal_epoch())
+        && Objects.equals(this.getPenalized_epoch(), other.getPenalized_epoch())
+        && Objects.equals(this.getStatus_flags(), other.getStatus_flags());
   }
 
   public Bytes48 getPubkey() {

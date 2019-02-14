@@ -14,17 +14,20 @@
 package tech.pegasys.artemis.datastructures.state;
 
 import com.google.common.primitives.UnsignedLong;
+import java.util.Objects;
+import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
+import net.consensys.cava.ssz.SSZ;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
 
-public class PendingAttestationRecord {
+public class PendingAttestation {
 
   private AttestationData data;
   private Bytes32 participation_bitfield;
   private Bytes32 custody_bitfield;
   private UnsignedLong slot_included;
 
-  public PendingAttestationRecord(
+  public PendingAttestation(
       AttestationData data,
       Bytes32 participation_bitfield,
       Bytes32 custody_bitfield,
@@ -33,6 +36,53 @@ public class PendingAttestationRecord {
     this.participation_bitfield = participation_bitfield;
     this.custody_bitfield = custody_bitfield;
     this.slot_included = slot_included;
+  }
+
+  public static PendingAttestation fromBytes(Bytes bytes) {
+    return SSZ.decode(
+        bytes,
+        reader ->
+            new PendingAttestation(
+                AttestationData.fromBytes(reader.readBytes()),
+                Bytes32.wrap(reader.readBytes()),
+                Bytes32.wrap(reader.readBytes()),
+                UnsignedLong.fromLongBits(reader.readUInt64())));
+  }
+
+  public Bytes toBytes() {
+    return SSZ.encode(
+        writer -> {
+          writer.writeBytes(data.toBytes());
+          writer.writeBytes(participation_bitfield);
+          writer.writeBytes(custody_bitfield);
+          writer.writeUInt64(slot_included.longValue());
+        });
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(data, participation_bitfield, custody_bitfield, slot_included);
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (Objects.isNull(obj)) {
+      return false;
+    }
+
+    if (this == obj) {
+      return true;
+    }
+
+    if (!(obj instanceof PendingAttestation)) {
+      return false;
+    }
+
+    PendingAttestation other = (PendingAttestation) obj;
+    return Objects.equals(this.getData(), other.getData())
+        && Objects.equals(this.getParticipation_bitfield(), other.getParticipation_bitfield())
+        && Objects.equals(this.getCustody_bitfield(), other.getCustody_bitfield())
+        && Objects.equals(this.getSlot_included(), other.getSlot_included());
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */
