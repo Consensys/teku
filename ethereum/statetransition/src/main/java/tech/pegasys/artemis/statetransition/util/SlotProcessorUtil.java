@@ -17,6 +17,7 @@ import static java.lang.Math.toIntExact;
 import static tech.pegasys.artemis.datastructures.Constants.LATEST_BLOCK_ROOTS_LENGTH;
 import static tech.pegasys.artemis.datastructures.Constants.LATEST_RANDAO_MIXES_LENGTH;
 
+import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import net.consensys.cava.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.Constants;
@@ -38,7 +39,7 @@ public class SlotProcessorUtil {
       throws Exception {
     // TODO: change values to UnsignedLong
     Bytes32 previous_block_root =
-        BeaconStateUtil.get_block_root(state, state.getSlot().intValue() - 1);
+        BeaconStateUtil.get_block_root(state, state.getSlot().minus(UnsignedLong.ONE));
     if (previous_block_root != null) {
       List<Bytes32> latest_block_roots = state.getLatest_block_roots();
 

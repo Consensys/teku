@@ -429,16 +429,20 @@ public class BeaconStateUtil {
     return randao_mixes.get(index.intValue());
   }
 
-  // https://github.com/ethereum/eth2.0-specs/blob/master/specs/core/0_beacon-chain.md#get_block_root
-  public static Bytes32 get_block_root(BeaconState state, long slot) throws Exception {
-    long slot_upper_bound = slot + state.getLatest_block_roots().size();
-    // TODO: change values to UnsignedLong
-    if ((state.getSlot().compareTo(UnsignedLong.fromLongBits(slot_upper_bound)) <= 0)
-        || UnsignedLong.valueOf(slot).compareTo(state.getSlot()) < 0)
-      return state
-          .getLatest_block_roots()
-          .get(toIntExact(slot) % state.getLatest_block_roots().size());
-    throw new BlockValidationException("Desired block root not within the provided bounds");
+  //  Return the block root at a recent ``slot``.
+  public static Bytes32 get_block_root(BeaconState state, UnsignedLong slot) throws Exception {
+    if ((state
+                .getSlot()
+                .compareTo(slot.plus(UnsignedLong.valueOf(Constants.LATEST_BLOCK_ROOTS_LENGTH)))
+            <= 0)
+        || (slot.compareTo(state.getSlot()) < 0)) {
+      throw new BlockValidationException("Desired block root not within the provided bounds");
+    }
+
+    // Todo: Remove .intValue() as soon as our list wrapper supports unsigned longs
+    return state
+        .getLatest_block_roots()
+        .get(slot.mod(UnsignedLong.valueOf(Constants.LATEST_BLOCK_ROOTS_LENGTH)).intValue());
   }
 
   /*
