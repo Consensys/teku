@@ -35,12 +35,12 @@ import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
 
 class BeaconBlockBodyTest {
 
-  private List<Attestation> attestations =
-      Arrays.asList(randomAttestation(), randomAttestation(), randomAttestation());
   private List<ProposerSlashing> proposerSlashings =
       Arrays.asList(randomProposerSlashing(), randomProposerSlashing(), randomProposerSlashing());
   private List<AttesterSlashing> attesterSlashings =
       Arrays.asList(randomAttesterSlashing(), randomAttesterSlashing(), randomAttesterSlashing());
+  private List<Attestation> attestations =
+      Arrays.asList(randomAttestation(), randomAttestation(), randomAttestation());
   private List<Deposit> deposits = Arrays.asList(randomDeposit(), randomDeposit(), randomDeposit());
   private List<Exit> exits = Arrays.asList(randomExit(), randomExit(), randomExit());
 

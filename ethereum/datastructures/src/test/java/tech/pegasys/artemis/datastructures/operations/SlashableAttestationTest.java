@@ -69,16 +69,6 @@ class SlashableAttestationTest {
   }
 
   @Test
-  void equalsReturnsFalseWhenCustodyBitfieldIsDifferent() {
-    Bytes32 otherCustodyBitfield = custodyBitfield.and(Bytes32.random());
-
-    SlashableAttestation testSlashableAttestation =
-        new SlashableAttestation(validatorIndices, data, otherCustodyBitfield, aggregateSignature);
-
-    assertNotEquals(slashableAttestation, testSlashableAttestation);
-  }
-
-  @Test
   void equalsReturnsFalseWhenAttestationDataIsDifferent() {
     // AttestationData is rather involved to create. Just create a random one until it is not the
     // same as the original.
@@ -89,6 +79,16 @@ class SlashableAttestationTest {
 
     SlashableAttestation testSlashableAttestation =
         new SlashableAttestation(validatorIndices, otherData, custodyBitfield, aggregateSignature);
+
+    assertNotEquals(slashableAttestation, testSlashableAttestation);
+  }
+
+  @Test
+  void equalsReturnsFalseWhenCustodyBitfieldIsDifferent() {
+    Bytes32 otherCustodyBitfield = custodyBitfield.and(Bytes32.random());
+
+    SlashableAttestation testSlashableAttestation =
+        new SlashableAttestation(validatorIndices, data, otherCustodyBitfield, aggregateSignature);
 
     assertNotEquals(slashableAttestation, testSlashableAttestation);
   }

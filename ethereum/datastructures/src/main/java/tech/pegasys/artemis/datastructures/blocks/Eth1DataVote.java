@@ -14,6 +14,9 @@
 package tech.pegasys.artemis.datastructures.blocks;
 
 import com.google.common.primitives.UnsignedLong;
+import java.util.Objects;
+import net.consensys.cava.bytes.Bytes;
+import net.consensys.cava.ssz.SSZ;
 
 public final class Eth1DataVote {
 
@@ -23,6 +26,47 @@ public final class Eth1DataVote {
   public Eth1DataVote(Eth1Data eth1_data, UnsignedLong vote_count) {
     this.eth1_data = eth1_data;
     this.vote_count = vote_count;
+  }
+
+  public static Eth1DataVote fromBytes(Bytes bytes) {
+    return SSZ.decode(
+        bytes,
+        reader ->
+            new Eth1DataVote(
+                Eth1Data.fromBytes(reader.readBytes()),
+                UnsignedLong.fromLongBits(reader.readUInt64())));
+  }
+
+  public Bytes toBytes() {
+    return SSZ.encode(
+        writer -> {
+          writer.writeBytes(eth1_data.toBytes());
+          writer.writeUInt64(vote_count.longValue());
+        });
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(eth1_data, vote_count);
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (Objects.isNull(obj)) {
+      return false;
+    }
+
+    if (this == obj) {
+      return true;
+    }
+
+    if (!(obj instanceof Eth1DataVote)) {
+      return false;
+    }
+
+    Eth1DataVote other = (Eth1DataVote) obj;
+    return Objects.equals(this.getEth1_data(), other.getEth1_data())
+        && Objects.equals(this.getVote_count(), other.getVote_count());
   }
 
   /** @return the eth1_data */

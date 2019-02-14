@@ -25,9 +25,9 @@ import org.junit.jupiter.api.Test;
 
 class DepositDataTest {
 
-  private DepositInput depositInput = randomDepositInput();
   private UnsignedLong amount = randomUnsignedLong();
   private UnsignedLong timestamp = randomUnsignedLong();
+  private DepositInput depositInput = randomDepositInput();
 
   private DepositData depositData = new DepositData(amount, timestamp, depositInput);
 
@@ -46,21 +46,7 @@ class DepositDataTest {
   }
 
   @Test
-  void equalsReturnsFalseWhenDepositInputsAreDifferent() {
-    // DepositInput is rather involved to create. Just create a random one until it is not the same
-    // as the original.
-    DepositInput otherDepositInput = randomDepositInput();
-    while (Objects.equals(otherDepositInput, depositInput)) {
-      otherDepositInput = randomDepositInput();
-    }
-
-    DepositData testDepositData = new DepositData(amount, timestamp, otherDepositInput);
-
-    assertNotEquals(depositData, testDepositData);
-  }
-
-  @Test
-  void equalsReturnsFalseWhenValuesAreDifferent() {
+  void equalsReturnsFalseWhenAmountsAreDifferent() {
     DepositData testDepositData =
         new DepositData(amount.plus(randomUnsignedLong()), timestamp, depositInput);
 
@@ -71,6 +57,20 @@ class DepositDataTest {
   void equalsReturnsFalseWhenTimestampsAreDifferent() {
     DepositData testDepositData =
         new DepositData(amount, timestamp.plus(randomUnsignedLong()), depositInput);
+
+    assertNotEquals(depositData, testDepositData);
+  }
+
+  @Test
+  void equalsReturnsFalseWhenDepositInputsAreDifferent() {
+    // DepositInput is rather involved to create. Just create a random one until it is not the same
+    // as the original.
+    DepositInput otherDepositInput = randomDepositInput();
+    while (Objects.equals(otherDepositInput, depositInput)) {
+      otherDepositInput = randomDepositInput();
+    }
+
+    DepositData testDepositData = new DepositData(amount, timestamp, otherDepositInput);
 
     assertNotEquals(depositData, testDepositData);
   }
