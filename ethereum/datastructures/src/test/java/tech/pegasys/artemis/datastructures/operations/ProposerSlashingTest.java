@@ -57,7 +57,7 @@ class ProposerSlashingTest {
   void equalsReturnsFalseWhenProposerIndicesAreDifferent() {
     ProposerSlashing testProposerSlashing =
         new ProposerSlashing(
-            randomUnsignedLong(),
+            proposerIndex.plus(randomUnsignedLong()),
             proposalData1,
             proposalSignature1,
             proposalData2,
