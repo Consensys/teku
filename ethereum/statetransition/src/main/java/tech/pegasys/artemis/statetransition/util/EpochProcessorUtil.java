@@ -56,7 +56,7 @@ public class EpochProcessorUtil {
     UnsignedLong justification_bitfield = state.getJustification_bitfield();
     justification_bitfield = BitwiseOps.leftShift(justification_bitfield, 1);
 
-    if (AttestationUtil.get_previous_epoch_boundary_attesting_balance(state)
+    if (get_previous_epoch_boundary_attesting_balance(state)
             .times(UnsignedLong.valueOf(3))
             .compareTo(previous_total_balance.times(UnsignedLong.valueOf(2)))
         >= 0) {
@@ -313,7 +313,7 @@ public class EpochProcessorUtil {
 
     // Get current_epoch_attestations
     List<PendingAttestationRecord> current_epoch_attestations =
-        AttestationUtil.get_current_epoch_attestations(state);
+        AttestationUtil.get_epoch_attestations(state, current_epoch);
 
     // Get current epoch_boundary_attestations
     List<PendingAttestationRecord> current_epoch_boundary_attestations =
@@ -321,18 +321,47 @@ public class EpochProcessorUtil {
 
     // Get current_epoch_boundary_attester_indices
     List<Integer> current_epoch_boundary_attester_indices =
-        AttestationUtil.get_current_epoch_boundary_attester_indices(
-            state, current_epoch_boundary_attestations);
+        AttestationUtil.get_attester_indices(state, current_epoch_boundary_attestations);
 
     // Get current_epoch_boundary_attesting_balance
-    UnsignedLong current_epoch_boundary_attesting_balance = UnsignedLong.ZERO;
-    for (Integer attester_index : current_epoch_boundary_attester_indices) {
-      current_epoch_boundary_attesting_balance =
-          current_epoch_boundary_attesting_balance.plus(
-              get_effective_balance(state, attester_index));
-    }
+    UnsignedLong current_epoch_boundary_attesting_balance =
+        AttestationUtil.get_total_attesting_balance(state, current_epoch_boundary_attester_indices);
 
     return current_epoch_boundary_attesting_balance;
+  }
+
+  /**
+   * Returns the sum of balances for all the attesters that were active at the previous epoch
+   * boundary
+   *
+   * @param state
+   * @return previous_epoch_boundary_attesting_balance
+   */
+  public static UnsignedLong get_previous_epoch_boundary_attesting_balance(BeaconState state)
+      throws Exception {
+
+    // Get previous epoch
+    UnsignedLong previous_epoch = BeaconStateUtil.get_previous_epoch(state);
+
+    // Get previous_epoch_attestations
+    List<PendingAttestationRecord> previous_epoch_attestations =
+        AttestationUtil.get_epoch_attestations(state, previous_epoch);
+
+    // Get previous_epoch_boundary_attestations
+    List<PendingAttestationRecord> previous_epoch_boundary_attestations =
+        AttestationUtil.get_previous_epoch_boundary_attestations(
+            state, previous_epoch_attestations);
+
+    // Get previous_epoch_boundary_attester_indices
+    List<Integer> previous_epoch_boundary_attester_indices =
+        AttestationUtil.get_attester_indices(state, previous_epoch_boundary_attestations);
+
+    // Get previous_epoch_boundary_attesting_balance
+    UnsignedLong previous_epoch_boundary_attesting_balance =
+        AttestationUtil.get_total_attesting_balance(
+            state, previous_epoch_boundary_attester_indices);
+
+    return previous_epoch_boundary_attesting_balance;
   }
 
   static UnsignedLong get_total_effective_balance(BeaconState state, List<Validator> validators) {
