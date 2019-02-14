@@ -930,12 +930,14 @@ public class BeaconStateUtil {
    * @param n highest bound of x.
    * @return x
    */
-  private int integer_squareroot(int n) {
-    int x = n;
-    int y = (x + 1) / 2;
-    while (y < x) {
+  public static UnsignedLong integer_squareroot(UnsignedLong n) {
+    checkArgument(n.compareTo(UnsignedLong.ZERO) >= 0);
+    UnsignedLong TWO = UnsignedLong.valueOf(2L);
+    UnsignedLong x = n;
+    UnsignedLong y = x.plus(UnsignedLong.ONE).dividedBy(TWO);
+    while (y.compareTo(x) < 0) {
       x = y;
-      y = (x + n / x) / 2;
+      y = x.plus(n.dividedBy(x)).dividedBy(TWO);
     }
     return x;
   }
