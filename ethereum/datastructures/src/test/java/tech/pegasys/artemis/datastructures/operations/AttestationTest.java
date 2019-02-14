@@ -49,6 +49,14 @@ class AttestationTest {
   }
 
   @Test
+  void equalsReturnsFalseWhenAggregationBitfieldsAreDifferent() {
+    Attestation testAttestation =
+        new Attestation(aggregationBitfield.not(), data, custodyBitfield, aggregateSignature);
+
+    assertNotEquals(attestation, testAttestation);
+  }
+
+  @Test
   void equalsReturnsFalseWhenAttestationDataIsDifferent() {
     // AttestationData is rather involved to create. Just create a random one until it is not the
     // same as the original.
@@ -59,14 +67,6 @@ class AttestationTest {
 
     Attestation testAttestation =
         new Attestation(aggregationBitfield, otherData, custodyBitfield, aggregateSignature);
-
-    assertNotEquals(attestation, testAttestation);
-  }
-
-  @Test
-  void equalsReturnsFalseWhenAggregationBitfieldsAreDifferent() {
-    Attestation testAttestation =
-        new Attestation(aggregationBitfield.not(), data, custodyBitfield, aggregateSignature);
 
     assertNotEquals(attestation, testAttestation);
   }
