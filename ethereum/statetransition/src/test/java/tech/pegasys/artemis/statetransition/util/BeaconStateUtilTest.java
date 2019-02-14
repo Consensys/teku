@@ -14,13 +14,20 @@
 package tech.pegasys.artemis.statetransition.util;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.google.common.primitives.UnsignedLong;
+import net.consensys.cava.bytes.Bytes32;
+import net.consensys.cava.bytes.Bytes48;
 import net.consensys.cava.junit.BouncyCastleExtension;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import tech.pegasys.artemis.datastructures.operations.BLSSignature;
 import tech.pegasys.artemis.datastructures.state.Fork;
+import tech.pegasys.artemis.statetransition.BeaconState;
 
 @ExtendWith(BouncyCastleExtension.class)
 class BeaconStateUtilTest {
@@ -171,5 +178,33 @@ class BeaconStateUtilTest {
           UnsignedLong.valueOf(
               (BeaconStateUtil.get_fork_version(fork, givenEpoch).longValue() << 32) + domain));
     }
+  }
+
+  @Test
+  @Disabled
+  // TODO Fill out and enable this test case when bls_verify is complete.
+  void validateProofOfPosessionReturnsTrueIfTheBLSSignatureIsValidForGivenDepositInputData() {
+    BeaconState beaconState = null;
+    Bytes48 pubkey = null;
+    BLSSignature proofOfPossession = null;
+    Bytes32 withdrawalCredentials = null;
+
+    assertTrue(
+        BeaconStateUtil.validate_proof_of_possession(
+            beaconState, pubkey, proofOfPossession, withdrawalCredentials));
+  }
+
+  @Test
+  @Disabled
+  // TODO Fill out and enable this test case when bls_verify is complete.
+  void validateProofOfPosessionReturnsFalseIfTheBLSSignatureIsNotValidForGivenDepositInputData() {
+    BeaconState beaconState = null;
+    Bytes48 pubkey = null;
+    BLSSignature proofOfPossession = null;
+    Bytes32 withdrawalCredentials = null;
+
+    assertFalse(
+        BeaconStateUtil.validate_proof_of_possession(
+            beaconState, pubkey, proofOfPossession, withdrawalCredentials));
   }
 }

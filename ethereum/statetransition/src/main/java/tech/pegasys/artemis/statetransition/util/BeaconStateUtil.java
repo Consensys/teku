@@ -735,28 +735,33 @@ public class BeaconStateUtil {
   }
 
   /**
-   * @param state
-   * @param pubkey
-   * @param proof_of_possession
-   * @param withdrawal_credentials
-   * @return
+   * Validates the supplied proof_of_possession is the valid BLS signature for the DepositInput
+   * (pubkey and withdrawal credentials).
+   *
+   * @param state - The current Beaconstate.
+   * @param pubkey - The pubkey for the current deposit data to verify.
+   * @param proof_of_possession - The BLS signature proof of possession to validate.
+   * @param withdrawal_credentials - The withdrawal credentials for the current deposit data to
+   *     verify.
+   * @return True if the BLS signature is a valid proof of posession, false otherwise.
    */
-  private static boolean validate_proof_of_possession(
+  static boolean validate_proof_of_possession(
       BeaconState state,
       Bytes48 pubkey,
       BLSSignature proof_of_possession,
       Bytes32 withdrawal_credentials) {
-    // Verify the given ``proof_of_possession``.
+    // Create a new DepositInput with the pubkey and withdrawal_credentials.
+    // The signature is empty as per spec, since it is verified in the bls_verify subsequent step.
     DepositInput proof_of_possession_data =
-        new DepositInput(pubkey, withdrawal_credentials, proof_of_possession);
+        new DepositInput(pubkey, withdrawal_credentials, Constants.EMPTY_SIGNATURE);
 
-    BLSSignature signature =
-        new BLSSignature(
-            Bytes48.leftPad(proof_of_possession.getC0()),
-            Bytes48.leftPad(proof_of_possession.getC1()));
-    UnsignedLong domain = get_domain(state.getFork(), state.getSlot(), DOMAIN_DEPOSIT);
+    UnsignedLong domain = get_domain(state.getFork(), get_current_epoch(state), DOMAIN_DEPOSIT);
+
     return bls_verify(
-        pubkey, TreeHashUtil.hash_tree_root(proof_of_possession_data.toBytes()), signature, domain);
+        pubkey,
+        TreeHashUtil.hash_tree_root(proof_of_possession_data.toBytes()),
+        proof_of_possession,
+        domain);
   }
 
   /**
