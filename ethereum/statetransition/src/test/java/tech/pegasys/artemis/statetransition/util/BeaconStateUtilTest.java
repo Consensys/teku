@@ -14,6 +14,7 @@
 package tech.pegasys.artemis.statetransition.util;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.primitives.UnsignedLong;
 import net.consensys.cava.junit.BouncyCastleExtension;
@@ -29,6 +30,7 @@ class BeaconStateUtilTest {
     assertEquals(expected, actual);
   }
 
+  @Test
   void minReturnsMinWhenEqual() {
     UnsignedLong actual = BeaconStateUtil.min(UnsignedLong.valueOf(12L), UnsignedLong.valueOf(12L));
     UnsignedLong expected = UnsignedLong.valueOf(12L);
@@ -42,9 +44,33 @@ class BeaconStateUtilTest {
     assertEquals(expected, actual);
   }
 
+  @Test
   void maxReturnsMaxWhenEqual() {
     UnsignedLong actual = BeaconStateUtil.max(UnsignedLong.valueOf(13L), UnsignedLong.valueOf(13L));
     UnsignedLong expected = UnsignedLong.valueOf(13L);
     assertEquals(expected, actual);
+  }
+
+  @Test
+  void sqrtOfSquareNumber() {
+    UnsignedLong actual = BeaconStateUtil.integer_squareroot(UnsignedLong.valueOf(3481L));
+    UnsignedLong expected = UnsignedLong.valueOf(59L);
+    assertEquals(expected, actual);
+  }
+
+  @Test
+  void sqrtOfANonSquareNumber() {
+    UnsignedLong actual = BeaconStateUtil.integer_squareroot(UnsignedLong.valueOf(27L));
+    UnsignedLong expected = UnsignedLong.valueOf(5L);
+    assertEquals(expected, actual);
+  }
+
+  @Test
+  void sqrtOfANegativeNumber() {
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> {
+          BeaconStateUtil.integer_squareroot(UnsignedLong.valueOf(-1L));
+        });
   }
 }

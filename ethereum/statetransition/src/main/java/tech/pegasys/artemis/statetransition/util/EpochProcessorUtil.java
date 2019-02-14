@@ -13,6 +13,8 @@
 
 package tech.pegasys.artemis.statetransition.util;
 
+import static tech.pegasys.artemis.datastructures.Constants.BASE_REWARD_QUOTIENT;
+import static tech.pegasys.artemis.datastructures.Constants.INACTIVITY_PENALTY_QUOTIENT;
 import static tech.pegasys.artemis.datastructures.Constants.MAX_DEPOSIT_AMOUNT;
 import static tech.pegasys.artemis.statetransition.util.BeaconStateUtil.get_effective_balance;
 import static tech.pegasys.artemis.statetransition.util.BeaconStateUtil.get_total_effective_balance;
@@ -292,5 +294,44 @@ public class EpochProcessorUtil {
                   .plus(UnsignedLong.valueOf(Constants.MIN_VALIDATOR_WITHDRAWAL_EPOCHS)))
           >= 0;
     }
+  }
+
+  /**
+   * calculates the base reward for the supplied validator index
+   *
+   * @param state
+   * @param index
+   * @param previous_total_balance
+   * @return
+   */
+  static UnsignedLong base_reward(
+      BeaconState state, int index, UnsignedLong previous_total_balance) {
+    UnsignedLong base_reward_quotient =
+        BeaconStateUtil.integer_squareroot(previous_total_balance)
+            .dividedBy(UnsignedLong.valueOf(BASE_REWARD_QUOTIENT));
+    return get_effective_balance(state, index)
+        .dividedBy(base_reward_quotient)
+        .dividedBy(UnsignedLong.valueOf(5L));
+  }
+
+  /**
+   * calculates the inactivity penalty for the supplied validator index
+   *
+   * @param state
+   * @param index
+   * @param epochs_since_finality
+   * @param previous_total_balance
+   * @return
+   */
+  static UnsignedLong inactivity_penality(
+      BeaconState state,
+      int index,
+      UnsignedLong epochs_since_finality,
+      UnsignedLong previous_total_balance) {
+    return base_reward(state, index, previous_total_balance)
+        .plus(get_effective_balance(state, index))
+        .times(epochs_since_finality)
+        .dividedBy(UnsignedLong.valueOf(INACTIVITY_PENALTY_QUOTIENT))
+        .dividedBy(UnsignedLong.valueOf(2L));
   }
 }
