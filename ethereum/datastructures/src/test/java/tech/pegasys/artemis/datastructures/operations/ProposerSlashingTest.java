@@ -15,9 +15,10 @@ package tech.pegasys.artemis.datastructures.operations;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomInt;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomProposalSignedData;
+import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomUnsignedLong;
 
+import com.google.common.primitives.UnsignedLong;
 import java.util.Objects;
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes48;
@@ -26,7 +27,7 @@ import tech.pegasys.artemis.datastructures.blocks.ProposalSignedData;
 
 class ProposerSlashingTest {
 
-  private int proposerIndex = randomInt();
+  private UnsignedLong proposerIndex = randomUnsignedLong();
   private ProposalSignedData proposalData1 = randomProposalSignedData();
   private BLSSignature proposalSignature1 = new BLSSignature(Bytes48.random(), Bytes48.random());
   private ProposalSignedData proposalData2 = randomProposalSignedData();
@@ -56,7 +57,7 @@ class ProposerSlashingTest {
   void equalsReturnsFalseWhenProposerIndicesAreDifferent() {
     ProposerSlashing testProposerSlashing =
         new ProposerSlashing(
-            proposerIndex + randomInt(),
+            proposerIndex.plus(randomUnsignedLong()),
             proposalData1,
             proposalSignature1,
             proposalData2,
