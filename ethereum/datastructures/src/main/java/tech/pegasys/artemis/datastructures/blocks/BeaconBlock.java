@@ -13,12 +13,9 @@
 
 package tech.pegasys.artemis.datastructures.blocks;
 
-import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
-import net.consensys.cava.bytes.Bytes48;
 import net.consensys.cava.ssz.SSZ;
 import tech.pegasys.artemis.datastructures.operations.BLSSignature;
 
@@ -28,7 +25,7 @@ public final class BeaconBlock {
   private long slot;
   private Bytes32 parent_root;
   private Bytes32 state_root;
-  private List<Bytes48> randao_reveal;
+  private BLSSignature randao_reveal;
   private Eth1Data eth1_data;
   private BLSSignature signature;
 
@@ -39,7 +36,7 @@ public final class BeaconBlock {
       long slot,
       Bytes32 parent_root,
       Bytes32 state_root,
-      List<Bytes48> randao_reveal,
+      BLSSignature randao_reveal,
       Eth1Data eth1_data,
       BLSSignature signature,
       BeaconBlockBody body) {
@@ -60,7 +57,7 @@ public final class BeaconBlock {
                 reader.readUInt64(),
                 Bytes32.wrap(reader.readBytes()),
                 Bytes32.wrap(reader.readBytes()),
-                reader.readBytesList().stream().map(Bytes48::wrap).collect(Collectors.toList()),
+                BLSSignature.fromBytes(reader.readBytes()),
                 Eth1Data.fromBytes(reader.readBytes()),
                 BLSSignature.fromBytes(reader.readBytes()),
                 BeaconBlockBody.fromBytes(reader.readBytes())));
@@ -72,7 +69,7 @@ public final class BeaconBlock {
           writer.writeUInt64(slot);
           writer.writeBytes(parent_root);
           writer.writeBytes(state_root);
-          writer.writeBytesList(randao_reveal);
+          writer.writeBytes(randao_reveal.toBytes());
           writer.writeBytes(eth1_data.toBytes());
           writer.writeBytes(signature.toBytes());
           writer.writeBytes(body.toBytes());
@@ -133,11 +130,11 @@ public final class BeaconBlock {
     this.eth1_data = eth1_data;
   }
 
-  public List<Bytes48> getRandao_reveal() {
+  public BLSSignature getRandao_reveal() {
     return randao_reveal;
   }
 
-  public void setRandao_reveal(List<Bytes48> randao_reveal) {
+  public void setRandao_reveal(BLSSignature randao_reveal) {
     this.randao_reveal = randao_reveal;
   }
 
