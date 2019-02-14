@@ -131,12 +131,6 @@ public class EpochProcessorUtil {
     }
   }
 
-  public static void finalBookKeeping(BeaconState state) {
-    process_ejections(state);
-    update_validator_registry(state);
-    process_penalties_and_exits(state);
-  }
-
   private static boolean isPrevJustifiedSlotFinalized(BeaconState state) {
     // TODO: change values to UnsignedLong
     // TODO: Method requires major changes following BeaconState refactor
@@ -158,7 +152,7 @@ public class EpochProcessorUtil {
     return UnsignedLong.ZERO;
   }
 
-  static void update_validator_registry(BeaconState state) {
+  public static void update_validator_registry(BeaconState state) {
     UnsignedLong currentEpoch = BeaconStateUtil.get_current_epoch(state);
     List<Integer> active_validators =
         ValidatorsUtil.get_active_validator_indices(state.getValidator_registry(), currentEpoch);
@@ -210,7 +204,7 @@ public class EpochProcessorUtil {
     state.setValidator_registry_update_epoch(currentEpoch);
   }
 
-  static void process_ejections(BeaconState state) {
+  public static void process_ejections(BeaconState state) {
     int index = 0;
     UnsignedLong currentEpoch = BeaconStateUtil.get_current_epoch(state);
     List<Validator> active_validators =
@@ -224,7 +218,7 @@ public class EpochProcessorUtil {
     }
   }
 
-  static void process_penalties_and_exits(BeaconState state) {
+  public static void process_penalties_and_exits(BeaconState state) {
     UnsignedLong currentEpoch = BeaconStateUtil.get_current_epoch(state);
     List<Integer> active_validators =
         ValidatorsUtil.get_active_validator_indices(state.getValidator_registry(), currentEpoch);

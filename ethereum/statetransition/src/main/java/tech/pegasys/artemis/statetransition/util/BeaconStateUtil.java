@@ -152,10 +152,6 @@ public class BeaconStateUtil {
     return state;
   }
 
-  public static double calc_total_balance(BeaconState state) {
-    return 0.0d;
-  }
-
   /**
    * Return the list of `(committee, shard)` tuples for the `slot`.
    *
@@ -171,7 +167,7 @@ public class BeaconStateUtil {
     UnsignedLong previous_epoch = get_previous_epoch(state);
     UnsignedLong next_epoch = get_next_epoch(state);
 
-    assertTrue(previous_epoch.compareTo(epoch) <= 0 && epoch.compareTo(next_epoch) <= 0);
+    checkArgument(previous_epoch.compareTo(epoch) <= 0 && epoch.compareTo(next_epoch) <= 0);
 
     UnsignedLong committees_per_epoch = UnsignedLong.ZERO;
     Bytes32 seed = Bytes32.ZERO;
@@ -284,13 +280,13 @@ public class BeaconStateUtil {
   }
 
   public static Bytes32 get_active_index_root(BeaconState state, UnsignedLong epoch) {
-    assertTrue(
+    checkArgument(
         // Since we're using UnsignedLong here, we can't subtract LATEST_INDEX_ROOTS_LENGTH
         get_current_epoch(state)
                 .plus(UnsignedLong.valueOf(ENTRY_EXIT_DELAY))
                 .compareTo(epoch.plus(UnsignedLong.valueOf(LATEST_INDEX_ROOTS_LENGTH)))
             < 0);
-    assertTrue(
+    checkArgument(
         epoch.compareTo(get_current_epoch(state).plus(UnsignedLong.valueOf(ENTRY_EXIT_DELAY)))
             <= 0);
 
@@ -421,13 +417,13 @@ public class BeaconStateUtil {
 
   /** Return the randao mix at a recent ``epoch``. */
   public static Bytes32 get_randao_mix(BeaconState state, UnsignedLong epoch) {
-    assertTrue(
+    checkArgument(
         // If we're going to use UnsignedLongs then we can't subtract LATEST_RANDAO_MIXES_LENGTH
         // here
         get_current_epoch(state)
                 .compareTo(epoch.plus(UnsignedLong.valueOf(LATEST_RANDAO_MIXES_LENGTH)))
             < 0);
-    assertTrue(epoch.compareTo(get_current_epoch(state)) <= 0);
+    checkArgument(epoch.compareTo(get_current_epoch(state)) <= 0);
     UnsignedLong index = epoch.mod(UnsignedLong.valueOf(LATEST_RANDAO_MIXES_LENGTH));
     List<Bytes32> randao_mixes = state.getLatest_randao_mixes();
     return randao_mixes.get(index.intValue());
@@ -540,7 +536,7 @@ public class BeaconStateUtil {
 
     // The range of the RNG places an upper-bound on the size of the list that
     // may be shuffled. It is a logic error to supply an oversized list.
-    assertTrue(values_count < rand_max);
+    checkArgument(values_count < rand_max);
 
     ArrayList<T> output = new ArrayList<>(values);
 
@@ -643,7 +639,7 @@ public class BeaconStateUtil {
       UnsignedLong amount,
       BLSSignature proof_of_possession,
       Bytes32 withdrawal_credentials) {
-    assertTrue(
+    checkArgument(
         validate_proof_of_possession(state, pubkey, proof_of_possession, withdrawal_credentials));
     UnsignedLong currentEpoch = BeaconStateUtil.get_current_epoch(state);
     int index = getValidatorIndexByPubkey(state, pubkey);
@@ -662,7 +658,7 @@ public class BeaconStateUtil {
       state.getValidator_balances().add(amount);
     } else {
       Validator validator = state.getValidator_registry().get(index);
-      assertTrue(validator.getWithdrawal_credentials().equals(withdrawal_credentials));
+      checkArgument(validator.getWithdrawal_credentials().equals(withdrawal_credentials));
       List<UnsignedLong> balances = state.getValidator_balances();
       UnsignedLong balance = balances.get(index).plus(amount);
       balances.set(index, balance);
@@ -796,7 +792,7 @@ public class BeaconStateUtil {
     ArrayList<CrosslinkCommittee> crosslink_committees =
         BeaconStateUtil.get_crosslink_committees_at_slot(state, attestation_data.getSlot());
 
-    // TODO: assertTrue attestation_data.shard in [shard for _, shard in crosslink_committees]
+    // TODO: checkArgument attestation_data.shard in [shard for _, shard in crosslink_committees]
 
     CrosslinkCommittee crosslink_committee = null;
     for (CrosslinkCommittee curr_crosslink_committee : crosslink_committees) {
@@ -805,8 +801,9 @@ public class BeaconStateUtil {
         break;
       }
     }
-    assertTrue(crosslink_committee != null);
-    assertTrue(participation_bitfield.length == ceil_div8(crosslink_committee.getCommitteeSize()));
+    checkArgument(crosslink_committee != null);
+    checkArgument(
+        participation_bitfield.length == ceil_div8(crosslink_committee.getCommitteeSize()));
 
     // Find the participating attesters in the committee
     ArrayList<Integer> participants = new ArrayList<>();
@@ -942,10 +939,4 @@ public class BeaconStateUtil {
     }
     return x;
   }
-
-  private static void assertTrue(boolean value) {
-    if (!value) throw new AssertFailed();
-  }
-
-  public static class AssertFailed extends RuntimeException {}
 }
