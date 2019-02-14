@@ -763,7 +763,7 @@ public class BeaconStateUtil {
    * @param fork
    * @param slot
    * @param domain_type
-   * @return
+   * @return the fork version of the given epoch
    */
   private static UnsignedLong get_domain(Fork fork, UnsignedLong slot, int domain_type) {
     return get_fork_version(fork, slot)
@@ -772,13 +772,21 @@ public class BeaconStateUtil {
   }
 
   /**
-   * @param fork
-   * @param epoch
-   * @return
+   * TODO It seems to make sense to move this to {@link Fork}.
+   *
+   * <p>Returns the fork version of the given epoch.
+   *
+   * @param fork - The Fork to retrieve the version for.
+   * @param epoch - The epoch to retrieve the fork version for.
+   * @return The fork version of the given epoch. (previousVersion if epoch < fork.epoch, otherwise
+   *     currentVersion)
    */
   public static UnsignedLong get_fork_version(Fork fork, UnsignedLong epoch) {
-    if (epoch.compareTo(fork.getEpoch()) < 0) return fork.getPrevious_version();
-    else return fork.getCurrent_version();
+    if (epoch.compareTo(fork.getEpoch()) < 0) {
+      return fork.getPrevious_version();
+    } else {
+      return fork.getCurrent_version();
+    }
   }
 
   /**

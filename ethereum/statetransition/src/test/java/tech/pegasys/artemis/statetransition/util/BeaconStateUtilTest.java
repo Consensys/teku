@@ -20,6 +20,7 @@ import com.google.common.primitives.UnsignedLong;
 import net.consensys.cava.junit.BouncyCastleExtension;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import tech.pegasys.artemis.datastructures.state.Fork;
 
 @ExtendWith(BouncyCastleExtension.class)
 class BeaconStateUtilTest {
@@ -72,5 +73,45 @@ class BeaconStateUtilTest {
         () -> {
           BeaconStateUtil.integer_squareroot(UnsignedLong.valueOf(-1L));
         });
+  }
+
+  // TODO It may make sense to move these tests to a Fork specific test class in the future.
+  // *************** START Fork Tests ***************
+  @Test
+  void getForkVersionReturnsPreviousVersionWhenGivenEpochIsLessThanForkEpoch() {
+    // Setup Fork Versions
+    // The values of these don't really matter, it just makes sense that
+    // previous version is less than current version.
+    UnsignedLong previousVersion = UnsignedLong.ZERO;
+    UnsignedLong currentVersion = previousVersion.plus(UnsignedLong.valueOf(1L));
+
+    // Setup Epochs
+    // It is necessary for this test that givenEpoch is less than forkEpoch.
+    UnsignedLong givenEpoch = UnsignedLong.valueOf(100L);
+    UnsignedLong forkEpoch = givenEpoch.plus(UnsignedLong.valueOf(1L));
+
+    // Setup Fork
+    Fork fork = new Fork(previousVersion, currentVersion, forkEpoch);
+
+    assertEquals(BeaconStateUtil.get_fork_version(fork, givenEpoch), previousVersion);
+  }
+
+  @Test
+  void getForkVersionReturnsCurrentVersionWhenGivenEpochIsGreaterThanForkEpoch() {
+    // Setup Fork Versions
+    // The values of these don't really matter, it just makes sense that
+    // previous version is less than current version.
+    UnsignedLong previousVersion = UnsignedLong.ZERO;
+    UnsignedLong currentVersion = previousVersion.plus(UnsignedLong.valueOf(1L));
+
+    // Setup Epochs
+    // It is necessary for this test that givenEpoch is greater than forkEpoch.
+    UnsignedLong forkEpoch = UnsignedLong.valueOf(100L);
+    UnsignedLong givenEpoch = forkEpoch.plus(UnsignedLong.valueOf(1L));
+
+    // Setup Fork
+    Fork fork = new Fork(previousVersion, currentVersion, forkEpoch);
+
+    assertEquals(BeaconStateUtil.get_fork_version(fork, givenEpoch), currentVersion);
   }
 }
