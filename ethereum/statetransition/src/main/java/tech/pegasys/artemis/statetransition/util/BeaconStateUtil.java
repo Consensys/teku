@@ -33,7 +33,6 @@ import static tech.pegasys.artemis.util.bls.BLSVerify.bls_verify;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import net.consensys.cava.bytes.Bytes;
@@ -751,8 +750,8 @@ public class BeaconStateUtil {
     DepositInput proof_of_possession_data =
         new DepositInput(pubkey, withdrawal_credentials, proof_of_possession);
 
-    List<Bytes48> signature =
-        Arrays.asList(
+    BLSSignature signature =
+        new BLSSignature(
             Bytes48.leftPad(proof_of_possession.getC0()),
             Bytes48.leftPad(proof_of_possession.getC1()));
     UnsignedLong domain = get_domain(state.getFork(), state.getSlot(), DOMAIN_DEPOSIT);
