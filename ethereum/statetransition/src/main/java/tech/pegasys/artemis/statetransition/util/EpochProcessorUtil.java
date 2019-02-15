@@ -20,9 +20,12 @@ import static tech.pegasys.artemis.datastructures.Constants.MIN_ATTESTATION_INCL
 import static tech.pegasys.artemis.statetransition.util.BeaconStateUtil.get_effective_balance;
 import static tech.pegasys.artemis.statetransition.util.BeaconStateUtil.get_total_effective_balance;
 
+import com.google.common.base.Predicate;
+import com.google.common.collect.Collections2;
 import com.google.common.collect.Sets;
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.ListIterator;
@@ -220,18 +223,7 @@ public class EpochProcessorUtil {
             }
           };
 
-      // prev epoch justified attester
-      List<Integer> validator_indices =
-          AttestationUtil.get_previous_epoch_justified_attester_indices(state);
-      case_two_penalties_and_rewards(state, balances, validator_indices, inactivity_penalty);
-      // prev epoch boundary attester
-      validator_indices = AttestationUtil.get_previous_epoch_boundary_attester_indices(state);
-      case_two_penalties_and_rewards(state, balances, validator_indices, inactivity_penalty);
-      // prev epoch head attester
-      validator_indices = AttestationUtil.get_previous_epoch_head_attester_indices(state);
-      case_two_penalties_and_rewards(state, balances, validator_indices, base_penalty);
-
-      Function<Integer, UnsignedLong> composite_penalty =
+        Function<Integer, UnsignedLong> inactivity_base_penalty =
           new Function<Integer, UnsignedLong>() {
             @Override
             public UnsignedLong apply(Integer index) {
@@ -243,16 +235,69 @@ public class EpochProcessorUtil {
             }
           };
 
-      validator_indices =
+        Function<Integer, UnsignedLong> inclusion_base_penalty =
+        new Function<Integer, UnsignedLong>() {
+          @Override
+          public UnsignedLong apply(Integer index) {
+            UnsignedLong inclusion_distance = AttestationUtil.inclusion_distance(state, index);
+            return base_reward(state, index, previous_total_balance)
+                    .times(UnsignedLong.valueOf(MIN_ATTESTATION_INCLUSION_DELAY))
+                    .dividedBy(inclusion_distance);
+          }
+        };
+
+        Predicate<Integer> active_validators_filter = new Predicate<Integer>() {
+          @Override
+          public boolean apply(Integer index) {
+            return ValidatorsUtil.is_active_validator_index(state, index, BeaconStateUtil.get_current_epoch(state));
+          }
+        };
+
+        Predicate<Integer> slashed_filter = new Predicate<Integer>() {
+          @Override
+          public boolean apply(Integer index) {
+            Validator validator = state.getValidator_registry().get(index);
+            return validator.getSlashed_epoch().compareTo(BeaconStateUtil.get_current_epoch(state)) <= 0;
+          }
+        };
+
+      // prev epoch justified attester
+      List<Integer> validator_indices = AttestationUtil.get_previous_epoch_justified_attester_indices(state);
+      //remove inactive validator indices
+      validator_indices = (List<Integer>)Collections2.filter(validator_indices, active_validators_filter);
+      //apply penalty
+      case_two_penalties_and_rewards(state, balances, validator_indices, inactivity_penalty);
+
+      // prev epoch boundary attester
+      validator_indices = AttestationUtil.get_previous_epoch_boundary_attester_indices(state);
+      //remove inactive validator indices
+      validator_indices = (List<Integer>)Collections2.filter(validator_indices, active_validators_filter);
+      //apply penalty
+      case_two_penalties_and_rewards(state, balances, validator_indices, inactivity_penalty);
+
+      // prev epoch head attester
+      validator_indices = AttestationUtil.get_previous_epoch_head_attester_indices(state);
+      //remove inactive validator indices
+      validator_indices = (List<Integer>)Collections2.filter(validator_indices, active_validators_filter);
+      //apply penalty
+      case_two_penalties_and_rewards(state, balances, validator_indices, base_penalty);
+
+      // all validator indices
+      List<Integer> all_validator_indices =
           IntStream.range(0, state.getValidator_registry().size())
               .boxed()
               .collect(Collectors.toList());
-      case_two_penalties_and_rewards(state, balances, validator_indices, composite_penalty);
-
-      // TODO: implement this on the next rewards and penalties PR.  tracked in issue #296
-      // Any validator index in previous_epoch_attester_indices loses base_reward(state, index) -
-      // base_reward(state, index) * MIN_ATTESTATION_INCLUSION_DELAY // inclusion_distance(state,
-      // index)
+      //remove inactive validator indices
+      validator_indices = (List<Integer>)Collections2.filter(all_validator_indices, active_validators_filter);
+      //remove validators that were not slashed in this epoch or a previous one
+      validator_indices = (List<Integer>)Collections2.filter(validator_indices, slashed_filter);
+      //apply penalty
+      case_two_penalties_and_rewards(state, balances, validator_indices, inactivity_base_penalty);
+      
+      // prev epoch attester indices
+      validator_indices = AttestationUtil.get_previous_epoch_head_attester_indices(state);
+      //apply penalty
+      case_two_penalties_and_rewards(state, balances, validator_indices, inclusion_base_penalty);
 
     }
   }
@@ -296,22 +341,11 @@ public class EpochProcessorUtil {
       List<UnsignedLong> balances,
       List<Integer> validator_indices,
       Function<Integer, UnsignedLong> penalty) {
-    // make a list of integers from 0 to numberOfValidators
-    List<Integer> all_indices =
-        IntStream.range(0, validator_indices.size()).boxed().collect(Collectors.toList());
-    Set<Integer> set_of_indices = Sets.newHashSet(all_indices);
-    Set<Integer> set_of_validator_indices = Sets.newHashSet(validator_indices);
-    // remove all validator indices provided and we are left with missing validator indices
-    set_of_indices.removeAll(set_of_validator_indices);
-    List<Integer> missing_indices = new ArrayList<>(set_of_indices);
 
     UnsignedLong penalty_delta = UnsignedLong.ZERO;
-    for (int index : missing_indices) {
-      if (ValidatorsUtil.is_active_validator_index(
-          state, index, BeaconStateUtil.get_current_epoch(state))) {
+    for (int index : validator_indices) {
         penalty_delta = penalty.apply(index);
         apply_penalty_or_reward(balances, index, penalty_delta, false);
-      }
     }
   }
 

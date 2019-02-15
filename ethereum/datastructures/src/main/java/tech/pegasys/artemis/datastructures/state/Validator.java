@@ -32,8 +32,8 @@ public class Validator {
   private UnsignedLong exit_epoch;
   // Epoch when validator withdrew
   private UnsignedLong withdrawal_epoch;
-  // Epoch when validator was penalized
-  private UnsignedLong penalized_epoch;
+  // Epoch when validator was slashed
+  private UnsignedLong slashed_epoch;
   // Status flags
   private UnsignedLong status_flags;
 
@@ -43,14 +43,14 @@ public class Validator {
       UnsignedLong activation_epoch,
       UnsignedLong exit_epoch,
       UnsignedLong withdrawal_epoch,
-      UnsignedLong penalized_epoch,
+      UnsignedLong slashed_epoch,
       UnsignedLong status_flags) {
     this.pubkey = pubkey;
     this.withdrawal_credentials = withdrawal_credentials;
     this.activation_epoch = activation_epoch;
     this.exit_epoch = exit_epoch;
     this.withdrawal_epoch = withdrawal_epoch;
-    this.penalized_epoch = penalized_epoch;
+    this.slashed_epoch = slashed_epoch;
     this.status_flags = status_flags;
   }
 
@@ -76,7 +76,7 @@ public class Validator {
           writer.writeUInt64(activation_epoch.longValue());
           writer.writeUInt64(exit_epoch.longValue());
           writer.writeUInt64(withdrawal_epoch.longValue());
-          writer.writeUInt64(penalized_epoch.longValue());
+          writer.writeUInt64(slashed_epoch.longValue());
           writer.writeUInt64(status_flags.longValue());
         });
   }
@@ -89,7 +89,7 @@ public class Validator {
         activation_epoch,
         exit_epoch,
         withdrawal_epoch,
-        penalized_epoch,
+        slashed_epoch,
         status_flags);
   }
 
@@ -157,12 +157,12 @@ public class Validator {
     this.withdrawal_epoch = withdrawal_epoch;
   }
 
-  public UnsignedLong getPenalized_epoch() {
-    return penalized_epoch;
+  public UnsignedLong getSlashed_epoch() {
+    return slashed_epoch;
   }
 
-  public void setPenalized_epoch(UnsignedLong penalized_epoch) {
-    this.penalized_epoch = penalized_epoch;
+  public void setSlashed_epoch(UnsignedLong slashed_epoch) {
+    this.slashed_epoch = slashed_epoch;
   }
 
   public UnsignedLong getStatus_flags() {
