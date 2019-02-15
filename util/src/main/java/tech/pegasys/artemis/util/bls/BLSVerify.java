@@ -21,6 +21,7 @@ public class BLSVerify {
 
   public static boolean bls_verify(
       Bytes48 pubkey, Bytes32 message, Signature signature, UnsignedLong domain) {
+    // todo
     return true;
   }
 }
