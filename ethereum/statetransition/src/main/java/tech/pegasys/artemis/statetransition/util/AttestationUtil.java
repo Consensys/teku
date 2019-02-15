@@ -99,24 +99,62 @@ public class AttestationUtil {
   }
 
   public static List<PendingAttestation> get_previous_epoch_justified_attestations(
-      BeaconState state) {
-    // todo
-    return new ArrayList<PendingAttestation>();
+      BeaconState state) throws Exception {
+    // Get previous and current epoch
+    UnsignedLong current_epoch = BeaconStateUtil.get_current_epoch(state);
+    UnsignedLong previous_epoch = BeaconStateUtil.get_previous_epoch(state);
+
+    // Get previous and current_epoch_attestations
+    List<PendingAttestation> attestations =
+        AttestationUtil.get_epoch_attestations(state, previous_epoch);
+
+    attestations.addAll(AttestationUtil.get_epoch_attestations(state, current_epoch));
+
+    UnsignedLong justified_epoch = state.getJustified_epoch();
+    List<PendingAttestation> previous_epoch_justified_attestations = new ArrayList<>();
+    for (PendingAttestation attestation : attestations) {
+      if (attestation.getData().getJustified_epoch().equals(justified_epoch)) {
+        previous_epoch_justified_attestations.add(attestation);
+      }
+    }
+
+    return previous_epoch_justified_attestations;
   }
 
-  public static List<Integer> get_previous_epoch_justified_attester_indices(BeaconState state) {
-    // todo
-    return new ArrayList<Integer>();
+  public static List<Integer> get_previous_epoch_justified_attester_indices(BeaconState state)
+      throws Exception {
+    // Get previous_epoch_justified_attestations
+    List<PendingAttestation> previous_epoch_justified_attestations =
+        AttestationUtil.get_previous_epoch_justified_attestations(state);
+
+    return AttestationUtil.get_attester_indices(state, previous_epoch_justified_attestations);
   }
 
-  public static UnsignedLong get_previous_epoch_justified_attesting_balance(BeaconState state) {
-    // todo
-    return UnsignedLong.ZERO;
+  public static UnsignedLong get_previous_epoch_justified_attesting_balance(BeaconState state)
+      throws Exception {
+    // Get previous_epoch_justified_attester_indices
+    List<Integer> current_epoch_justified_attester_indices =
+        get_previous_epoch_justified_attester_indices(state);
+
+    return AttestationUtil.get_total_attesting_balance(
+        state, current_epoch_justified_attester_indices);
   }
 
-  public static List<Integer> get_previous_epoch_boundary_attester_indices(BeaconState state) {
-    // todo
-    return new ArrayList<Integer>();
+  public static List<Integer> get_previous_epoch_boundary_attester_indices(BeaconState state)
+      throws Exception {
+    // Get previous epoch
+    UnsignedLong previous_epoch = BeaconStateUtil.get_previous_epoch(state);
+
+    // Get previous_epoch_attestations
+    List<PendingAttestation> previous_epoch_attestations =
+        AttestationUtil.get_epoch_attestations(state, previous_epoch);
+
+    // Get previous_epoch_boundary_attestations
+    List<PendingAttestation> previous_epoch_boundary_attestations =
+        AttestationUtil.get_previous_epoch_boundary_attestations(
+            state, previous_epoch_attestations);
+
+    return AttestationUtil.get_attester_indices(state, previous_epoch_boundary_attestations);
   }
 
   /**
@@ -144,11 +182,8 @@ public class AttestationUtil {
     List<Integer> current_epoch_boundary_attester_indices =
         AttestationUtil.get_attester_indices(state, current_epoch_boundary_attestations);
 
-    // Get current_epoch_boundary_attesting_balance
-    UnsignedLong current_epoch_boundary_attesting_balance =
-        AttestationUtil.get_total_attesting_balance(state, current_epoch_boundary_attester_indices);
-
-    return current_epoch_boundary_attesting_balance;
+    return AttestationUtil.get_total_attesting_balance(
+        state, current_epoch_boundary_attester_indices);
   }
 
   /**
@@ -161,43 +196,58 @@ public class AttestationUtil {
   public static UnsignedLong get_previous_epoch_boundary_attesting_balance(BeaconState state)
       throws Exception {
 
+    List<Integer> previous_epoch_boundary_attester_indices =
+        get_previous_epoch_boundary_attester_indices(state);
+
+    return AttestationUtil.get_total_attesting_balance(
+        state, previous_epoch_boundary_attester_indices);
+  }
+
+  public static List<PendingAttestation> get_previous_epoch_head_attestations(BeaconState state)
+      throws Exception {
     // Get previous epoch
     UnsignedLong previous_epoch = BeaconStateUtil.get_previous_epoch(state);
 
-    // Get previous_epoch_attestations
+    // Get current_epoch_attestations
     List<PendingAttestation> previous_epoch_attestations =
         AttestationUtil.get_epoch_attestations(state, previous_epoch);
 
-    // Get previous_epoch_boundary_attestations
-    List<PendingAttestation> previous_epoch_boundary_attestations =
-        AttestationUtil.get_previous_epoch_boundary_attestations(
-            state, previous_epoch_attestations);
-
-    // Get previous_epoch_boundary_attester_indices
-    List<Integer> previous_epoch_boundary_attester_indices =
-        AttestationUtil.get_attester_indices(state, previous_epoch_boundary_attestations);
-
-    // Get previous_epoch_boundary_attesting_balance
-    UnsignedLong previous_epoch_boundary_attesting_balance =
-        AttestationUtil.get_total_attesting_balance(
-            state, previous_epoch_boundary_attester_indices);
-
-    return previous_epoch_boundary_attesting_balance;
+    List<PendingAttestation> previous_epoch_head_attestations = new ArrayList<>();
+    for (PendingAttestation attestation : previous_epoch_attestations) {
+      if (attestation
+          .getData()
+          .getBeacon_block_root()
+          .equals(BeaconStateUtil.get_block_root(state, attestation.getData().getSlot()))) {
+        previous_epoch_head_attestations.add(attestation);
+      }
+    }
+    return previous_epoch_head_attestations;
   }
 
-  public static List<Integer> get_previous_epoch_head_attester_indices(BeaconState state) {
-    // todo
-    return new ArrayList<Integer>();
+  public static List<Integer> get_previous_epoch_head_attester_indices(BeaconState state)
+      throws Exception {
+    List<PendingAttestation> previous_epoch_head_attestations =
+        get_previous_epoch_head_attestations(state);
+
+    return get_attester_indices(state, previous_epoch_head_attestations);
   }
 
-  public static UnsignedLong get_previous_epoch_head_attesting_balance(BeaconState state) {
-    // todo
-    return UnsignedLong.ZERO;
+  public static UnsignedLong get_previous_epoch_head_attesting_balance(BeaconState state)
+      throws Exception {
+    List<Integer> previous_epoch_head_attester_indices =
+        get_previous_epoch_head_attester_indices(state);
+
+    return AttestationUtil.get_total_attesting_balance(state, previous_epoch_head_attester_indices);
   }
 
-  public static List<Integer> get_previous_epoch_attester_indices(BeaconState state) {
-    // todo
-    return new ArrayList<Integer>();
+  public static List<Integer> get_previous_epoch_attester_indices(BeaconState state)
+      throws Exception {
+    UnsignedLong previous_epoch = BeaconStateUtil.get_previous_epoch(state);
+
+    List<PendingAttestation> previous_epoch_attestations =
+        AttestationUtil.get_epoch_attestations(state, previous_epoch);
+
+    return get_attester_indices(state, previous_epoch_attestations);
   }
 
   public static UnsignedLong inclusion_slot(BeaconState state, Integer index) {

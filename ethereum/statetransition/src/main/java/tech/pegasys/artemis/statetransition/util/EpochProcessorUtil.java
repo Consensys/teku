@@ -410,7 +410,8 @@ public class EpochProcessorUtil {
    * @param state
    * @param previous_total_balance
    */
-  public static void attestionInclusion(BeaconState state, UnsignedLong previous_total_balance) {
+  public static void attestionInclusion(BeaconState state, UnsignedLong previous_total_balance)
+      throws Exception {
     List<Integer> previous_indices = AttestationUtil.get_previous_epoch_attester_indices(state);
     for (int index : previous_indices) {
       UnsignedLong inclusion_slot = AttestationUtil.inclusion_slot(state, index);
