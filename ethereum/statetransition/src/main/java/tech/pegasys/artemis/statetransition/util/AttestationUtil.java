@@ -98,6 +98,113 @@ public class AttestationUtil {
     return previous_epoch_attestations;
   }
 
+  public static List<PendingAttestation> get_previous_epoch_justified_attestations(
+      BeaconState state) {
+    // todo
+    return new ArrayList<PendingAttestation>();
+  }
+
+  public static List<Integer> get_previous_epoch_justified_attester_indices(BeaconState state) {
+    // todo
+    return new ArrayList<Integer>();
+  }
+
+  public static UnsignedLong get_previous_epoch_justified_attesting_balance(BeaconState state) {
+    // todo
+    return UnsignedLong.ZERO;
+  }
+
+  public static List<Integer> get_previous_epoch_boundary_attester_indices(BeaconState state) {
+    // todo
+    return new ArrayList<Integer>();
+  }
+
+  /**
+   * Returns the sum of balances for all the attesters that were active at the current epoch
+   * boundary
+   *
+   * @param state
+   * @return current_epoch_boundary_attesting_balance
+   */
+  public static UnsignedLong get_current_epoch_boundary_attesting_balance(BeaconState state)
+      throws Exception {
+
+    // Get current epoch
+    UnsignedLong current_epoch = BeaconStateUtil.get_current_epoch(state);
+
+    // Get current_epoch_attestations
+    List<PendingAttestation> current_epoch_attestations =
+        AttestationUtil.get_epoch_attestations(state, current_epoch);
+
+    // Get current epoch_boundary_attestations
+    List<PendingAttestation> current_epoch_boundary_attestations =
+        AttestationUtil.get_current_epoch_boundary_attestations(state, current_epoch_attestations);
+
+    // Get current_epoch_boundary_attester_indices
+    List<Integer> current_epoch_boundary_attester_indices =
+        AttestationUtil.get_attester_indices(state, current_epoch_boundary_attestations);
+
+    // Get current_epoch_boundary_attesting_balance
+    UnsignedLong current_epoch_boundary_attesting_balance =
+        AttestationUtil.get_total_attesting_balance(state, current_epoch_boundary_attester_indices);
+
+    return current_epoch_boundary_attesting_balance;
+  }
+
+  /**
+   * Returns the sum of balances for all the attesters that were active at the previous epoch
+   * boundary
+   *
+   * @param state
+   * @return previous_epoch_boundary_attesting_balance
+   */
+  public static UnsignedLong get_previous_epoch_boundary_attesting_balance(BeaconState state)
+      throws Exception {
+
+    // Get previous epoch
+    UnsignedLong previous_epoch = BeaconStateUtil.get_previous_epoch(state);
+
+    // Get previous_epoch_attestations
+    List<PendingAttestation> previous_epoch_attestations =
+        AttestationUtil.get_epoch_attestations(state, previous_epoch);
+
+    // Get previous_epoch_boundary_attestations
+    List<PendingAttestation> previous_epoch_boundary_attestations =
+        AttestationUtil.get_previous_epoch_boundary_attestations(
+            state, previous_epoch_attestations);
+
+    // Get previous_epoch_boundary_attester_indices
+    List<Integer> previous_epoch_boundary_attester_indices =
+        AttestationUtil.get_attester_indices(state, previous_epoch_boundary_attestations);
+
+    // Get previous_epoch_boundary_attesting_balance
+    UnsignedLong previous_epoch_boundary_attesting_balance =
+        AttestationUtil.get_total_attesting_balance(
+            state, previous_epoch_boundary_attester_indices);
+
+    return previous_epoch_boundary_attesting_balance;
+  }
+
+  public static List<Integer> get_previous_epoch_head_attester_indices(BeaconState state) {
+    // todo
+    return new ArrayList<Integer>();
+  }
+
+  public static UnsignedLong get_previous_epoch_head_attesting_balance(BeaconState state) {
+    // todo
+    return UnsignedLong.ZERO;
+  }
+
+  public static List<Integer> get_previous_epoch_attester_indices(BeaconState state) {
+    // todo
+    return new ArrayList<Integer>();
+  }
+
+  public static UnsignedLong inclusion_distance(BeaconState state, Integer index) {
+    // todo
+    return UnsignedLong.ZERO;
+  }
+
   /**
    * Returns the union of validator index sets, where the sets are the attestation participants of
    * attestations passed in TODO: the union part takes O(n^2) time, where n is the number of
@@ -152,7 +259,7 @@ public class AttestationUtil {
   }
 
   /**
-   * return the total balance of all attesting validators
+   * get total balance of validators attesting to state for the given block_root
    *
    * @param state
    * @param crosslink_committee
@@ -168,6 +275,15 @@ public class AttestationUtil {
     return BeaconStateUtil.get_total_effective_balance(state, attesting_validator_indices);
   }
 
+  /**
+   * get indices of validators attesting to state for the given block_root
+   *
+   * @param state
+   * @param crosslink_committee
+   * @param shard_block_root
+   * @return
+   * @throws BlockValidationException
+   */
   public static ArrayList<Integer> attesting_validator_indices(
       BeaconState state, CrosslinkCommittee crosslink_committee, Bytes32 shard_block_root)
       throws Exception {

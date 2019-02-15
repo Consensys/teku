@@ -74,6 +74,7 @@ public class StateTransition {
     LOG.info("Processing new epoch in slot: " + state.getSlot());
     EpochProcessorUtil.updateJustification(state);
     EpochProcessorUtil.updateCrosslinks(state);
+    EpochProcessorUtil.justificationAndFinalization(state);
     EpochProcessorUtil.process_ejections(state);
     EpochProcessorUtil.update_validator_registry(state);
     EpochProcessorUtil.process_penalties_and_exits(state);
