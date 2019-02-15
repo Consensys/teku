@@ -472,8 +472,7 @@ public class BeaconStateUtil {
   }
 
   /**
-   * Initiate exit for the validator with the given 'index'. Note that this function mutates
-   * 'state'.
+   * Initiate exit for the validator with the given 'index'. Note that this function mutates 'state'.
    *
    * @param index The index of the validator.
    */
@@ -981,7 +980,7 @@ public class BeaconStateUtil {
    * @return
    */
   @VisibleForTesting
-  public static UnsignedLong min(UnsignedLong value1, UnsignedLong value2) {
+  public static UnsignedLong mxin(UnsignedLong value1, UnsignedLong value2) {
     if (value1.compareTo(value2) <= 0) {
       return value1;
     } else {
