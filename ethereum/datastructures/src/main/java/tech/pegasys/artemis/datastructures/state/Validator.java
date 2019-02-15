@@ -113,7 +113,7 @@ public class Validator {
         && Objects.equals(this.getActivation_epoch(), other.getActivation_epoch())
         && Objects.equals(this.getExit_epoch(), other.getExit_epoch())
         && Objects.equals(this.getWithdrawal_epoch(), other.getWithdrawal_epoch())
-        && Objects.equals(this.getPenalized_epoch(), other.getPenalized_epoch())
+        && Objects.equals(this.getSlashed_epoch(), other.getSlashed_epoch())
         && Objects.equals(this.getStatus_flags(), other.getStatus_flags());
   }
 
