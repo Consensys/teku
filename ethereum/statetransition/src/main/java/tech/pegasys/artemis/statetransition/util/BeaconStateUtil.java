@@ -35,6 +35,7 @@ import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.bytes.Bytes48;
@@ -629,13 +630,14 @@ public class BeaconStateUtil {
   }
 
   /**
-   * Process a deposit from Ethereum 1.0. Note that this function mutates 'state'.
+   * Process a deposit from Ethereum 1.0 (and add a new validator) or tops up an existing
+   * validator's balance. NOTE: This function has side-effects and mutates 'state'.
    *
-   * @param state
-   * @param pubkey
-   * @param proof_of_possession
-   * @param withdrawal_credentials
-   * @param amount
+   * @param state - The current BeaconState. NOTE: State will be mutated per spec logic.
+   * @param pubkey - The validator's public key.
+   * @param amount - The amount to add to the validator's balance (in Gwei).
+   * @param proof_of_possession - The validator's proof of posession
+   * @param withdrawal_credentials - The withdrawal credentials for the deposit to be processed.
    */
   public static void process_deposit(
       BeaconState state,
@@ -643,13 +645,28 @@ public class BeaconStateUtil {
       UnsignedLong amount,
       BLSSignature proof_of_possession,
       Bytes32 withdrawal_credentials) {
+
+    // Retrieve validatorRegistry and validatorBalances references.
+    List<Validator> validatorRegistry = state.getValidator_registry();
+    List<UnsignedLong> validatorBalances = state.getValidator_balances();
+
+    // Verify that the proof of posession is valid before processing the deposit.
     checkArgument(
         validate_proof_of_possession(state, pubkey, proof_of_possession, withdrawal_credentials));
-    UnsignedLong currentEpoch = BeaconStateUtil.get_current_epoch(state);
-    int index = getValidatorIndexByPubkey(state, pubkey);
 
-    if (index < 0) {
-      Validator validator =
+    // Retrieve the list of validator's public keys from the current state.
+    List<Bytes48> validator_pubkeys =
+        validatorRegistry
+            .stream()
+            .map(validator -> validator.getPubkey())
+            .collect(Collectors.toList());
+
+    // If the provided pubkey isn't in the state, add a new validator to the registry.
+    // Otherwise, top up the balance for the validator whose pubkey was provided.
+    if (!validator_pubkeys.contains(pubkey)) {
+      // We depend on our add operation appending the below objects at the same index.
+      checkArgument(validatorRegistry.size() == validatorBalances.size());
+      validatorRegistry.add(
           new Validator(
               pubkey,
               withdrawal_credentials,
@@ -657,50 +674,17 @@ public class BeaconStateUtil {
               FAR_FUTURE_EPOCH,
               FAR_FUTURE_EPOCH,
               FAR_FUTURE_EPOCH,
-              UnsignedLong.ZERO);
-      state.getValidator_registry().add(validator);
-      state.getValidator_balances().add(amount);
+              UnsignedLong.ZERO));
+      validatorBalances.add(amount);
     } else {
-      Validator validator = state.getValidator_registry().get(index);
-      checkArgument(validator.getWithdrawal_credentials().equals(withdrawal_credentials));
-      List<UnsignedLong> balances = state.getValidator_balances();
-      UnsignedLong balance = balances.get(index).plus(amount);
-      balances.set(index, balance);
+      int validatorIndex = validator_pubkeys.indexOf(pubkey);
+      checkArgument(
+          validatorRegistry
+              .get(validatorIndex)
+              .getWithdrawal_credentials()
+              .equals(withdrawal_credentials));
+      validatorBalances.set(validatorIndex, validatorBalances.get(validatorIndex).plus(amount));
     }
-  }
-
-  /**
-   * get validator index by public key
-   *
-   * @param state
-   * @param pubkey
-   * @return
-   */
-  public static Validator getValidatorByPubkey(BeaconState state, Bytes48 pubkey) {
-    for (Validator validator : state.getValidator_registry()) {
-      if (validator.getPubkey().equals(pubkey)) return validator;
-    }
-    return null;
-  }
-
-  /**
-   * get validator index by public key
-   *
-   * @param state
-   * @param pubkey
-   * @return
-   */
-  public static int getValidatorIndexByPubkey(BeaconState state, Bytes48 pubkey) {
-    int result = -1;
-    int index = 0;
-    for (Validator validator : state.getValidator_registry()) {
-      if (validator.getPubkey().toHexString().equals(pubkey.toHexString())) {
-        result = index;
-        break;
-      }
-      index++;
-    }
-    return result;
   }
 
   /**
@@ -735,50 +719,71 @@ public class BeaconStateUtil {
   }
 
   /**
-   * @param state
-   * @param pubkey
-   * @param proof_of_possession
-   * @param withdrawal_credentials
-   * @return
+   * Validates the supplied proof_of_possession is the valid BLS signature for the DepositInput
+   * (pubkey and withdrawal credentials).
+   *
+   * @param state - The current Beaconstate.
+   * @param pubkey - The pubkey for the current deposit data to verify.
+   * @param proof_of_possession - The BLS signature proof of possession to validate.
+   * @param withdrawal_credentials - The withdrawal credentials for the current deposit data to
+   *     verify.
+   * @return True if the BLS signature is a valid proof of posession, false otherwise.
    */
-  private static boolean validate_proof_of_possession(
+  static boolean validate_proof_of_possession(
       BeaconState state,
       Bytes48 pubkey,
       BLSSignature proof_of_possession,
       Bytes32 withdrawal_credentials) {
-    // Verify the given ``proof_of_possession``.
+    // Create a new DepositInput with the pubkey and withdrawal_credentials.
+    // The signature is empty as per spec, since it is verified in the bls_verify subsequent step.
     DepositInput proof_of_possession_data =
-        new DepositInput(pubkey, withdrawal_credentials, proof_of_possession);
+        new DepositInput(pubkey, withdrawal_credentials, Constants.EMPTY_SIGNATURE);
 
-    BLSSignature signature =
-        new BLSSignature(
-            Bytes48.leftPad(proof_of_possession.getC0()),
-            Bytes48.leftPad(proof_of_possession.getC1()));
-    UnsignedLong domain = get_domain(state.getFork(), state.getSlot(), DOMAIN_DEPOSIT);
+    UnsignedLong domain = get_domain(state.getFork(), get_current_epoch(state), DOMAIN_DEPOSIT);
+
     return bls_verify(
-        pubkey, TreeHashUtil.hash_tree_root(proof_of_possession_data.toBytes()), signature, domain);
+        pubkey,
+        TreeHashUtil.hash_tree_root(proof_of_possession_data.toBytes()),
+        proof_of_possession,
+        domain);
   }
 
   /**
-   * @param fork
-   * @param slot
-   * @param domain_type
-   * @return
+   * TODO It seems to make sense to move this to {@link Fork}.
+   *
+   * <p>Get the domain number that represents the fork meta and signature domain.
+   * https://github.com/ethereum/eth2.0-specs/blob/v0.1/specs/core/0_beacon-chain.md#get_domain
+   *
+   * @param fork - The Fork to retrieve the verion for.
+   * @param epoch - The epoch to retrieve the fork version for. See {@link
+   *     #get_fork_version(Fork,UnsignedLong)}
+   * @param domain_type - The domain type. See
+   *     https://github.com/ethereum/eth2.0-specs/blob/v0.1/specs/core/0_beacon-chain.md#signature-domains
+   * @return The fork version and signature domain. This format ((fork version << 32) +
+   *     SignatureDomain) is used to partition BLS signatures.
    */
-  private static UnsignedLong get_domain(Fork fork, UnsignedLong slot, int domain_type) {
-    return get_fork_version(fork, slot)
+  static UnsignedLong get_domain(Fork fork, UnsignedLong epoch, int domain_type) {
+    return get_fork_version(fork, epoch)
         .times(UnsignedLong.valueOf((long) Math.pow(2, 32)))
         .plus(UnsignedLong.valueOf(domain_type));
   }
 
   /**
-   * @param fork
-   * @param epoch
-   * @return
+   * TODO It seems to make sense to move this to {@link Fork}.
+   *
+   * <p>Returns the fork version of the given epoch.
+   *
+   * @param fork - The Fork to retrieve the version for.
+   * @param epoch - The epoch to retrieve the fork version for.
+   * @return The fork version of the given epoch. (previousVersion if epoch < fork.epoch, otherwise
+   *     currentVersion)
    */
   public static UnsignedLong get_fork_version(Fork fork, UnsignedLong epoch) {
-    if (epoch.compareTo(fork.getEpoch()) < 0) return fork.getPrevious_version();
-    else return fork.getCurrent_version();
+    if (epoch.compareTo(fork.getEpoch()) < 0) {
+      return fork.getPrevious_version();
+    } else {
+      return fork.getCurrent_version();
+    }
   }
 
   /**
