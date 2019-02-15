@@ -219,26 +219,15 @@ class BeaconStateUtilTest {
   @Test
   void processDepositAddsNewValidatorWhenPubkeyIsNotFoundInRegistry() {
     // Data Setup
-    BeaconState beaconState = new BeaconState();
-    beaconState.setSlot(randomUnsignedLong());
-    beaconState.setFork(new Fork(randomUnsignedLong(), randomUnsignedLong(), randomUnsignedLong()));
-
-    List<Validator> validatorList =
-        new ArrayList<>(Arrays.asList(randomValidator(), randomValidator(), randomValidator()));
-    List<UnsignedLong> balanceList =
-        new ArrayList<>(
-            Arrays.asList(randomUnsignedLong(), randomUnsignedLong(), randomUnsignedLong()));
-
-    beaconState.setValidator_registry(validatorList);
-    beaconState.setValidator_balances(balanceList);
-
-    int originalValidatorRegistrySize = beaconState.getValidator_registry().size();
-    int originalValidatorBalancesSize = beaconState.getValidator_balances().size();
-
     Bytes48 pubkey = Bytes48.random();
     UnsignedLong amount = UnsignedLong.valueOf(100L);
     BLSSignature proofOfPossession = Constants.EMPTY_SIGNATURE;
     Bytes32 withdrawalCredentials = Bytes32.random();
+
+    BeaconState beaconState = createBeaconState();
+
+    int originalValidatorRegistrySize = beaconState.getValidator_registry().size();
+    int originalValidatorBalancesSize = beaconState.getValidator_balances().size();
 
     // Attempt to process deposit with above data.
     BeaconStateUtil.process_deposit(
@@ -281,20 +270,7 @@ class BeaconStateUtilTest {
             Constants.FAR_FUTURE_EPOCH,
             UnsignedLong.ZERO);
 
-    BeaconState beaconState = new BeaconState();
-    beaconState.setSlot(randomUnsignedLong());
-    beaconState.setFork(new Fork(randomUnsignedLong(), randomUnsignedLong(), randomUnsignedLong()));
-
-    List<Validator> validatorList =
-        new ArrayList<>(
-            Arrays.asList(randomValidator(), randomValidator(), randomValidator(), knownValidator));
-    List<UnsignedLong> balanceList =
-        new ArrayList<>(
-            Arrays.asList(
-                randomUnsignedLong(), randomUnsignedLong(), randomUnsignedLong(), amount));
-
-    beaconState.setValidator_registry(validatorList);
-    beaconState.setValidator_balances(balanceList);
+    BeaconState beaconState = createBeaconState(amount, knownValidator);
 
     int originalValidatorRegistrySize = beaconState.getValidator_registry().size();
     int originalValidatorBalancesSize = beaconState.getValidator_balances().size();
@@ -314,5 +290,35 @@ class BeaconStateUtilTest {
     assertEquals(
         amount.times(UnsignedLong.valueOf(2L)),
         beaconState.getValidator_balances().get(originalValidatorBalancesSize - 1));
+  }
+
+  private BeaconState createBeaconState() {
+    return createBeaconState(false, null, null);
+  }
+
+  private BeaconState createBeaconState(UnsignedLong amount, Validator knownValidator) {
+    return createBeaconState(true, amount, knownValidator);
+  }
+
+  private BeaconState createBeaconState(
+      boolean addToList, UnsignedLong amount, Validator knownValidator) {
+    BeaconState beaconState = new BeaconState();
+    beaconState.setSlot(randomUnsignedLong());
+    beaconState.setFork(new Fork(randomUnsignedLong(), randomUnsignedLong(), randomUnsignedLong()));
+
+    List<Validator> validatorList =
+        new ArrayList<>(Arrays.asList(randomValidator(), randomValidator(), randomValidator()));
+    List<UnsignedLong> balanceList =
+        new ArrayList<>(
+            Arrays.asList(randomUnsignedLong(), randomUnsignedLong(), randomUnsignedLong()));
+
+    if (addToList) {
+      validatorList.add(knownValidator);
+      balanceList.add(amount);
+    }
+
+    beaconState.setValidator_registry(validatorList);
+    beaconState.setValidator_balances(balanceList);
+    return beaconState;
   }
 }
