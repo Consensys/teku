@@ -406,7 +406,6 @@ public class BeaconStateUtil {
    *
    * @param index The index of the validator.
    */
-  @VisibleForTesting
   public static void initiate_validator_exit(BeaconState state, int index) {
     Validator validator = state.getValidator_registry().get(index);
     validator.setStatus_flags(UnsignedLong.valueOf(Constants.INITIATED_EXIT));
