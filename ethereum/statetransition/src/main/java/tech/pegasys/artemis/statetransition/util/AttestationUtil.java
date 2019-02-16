@@ -200,6 +200,11 @@ public class AttestationUtil {
     return new ArrayList<Integer>();
   }
 
+  public static UnsignedLong inclusion_slot(BeaconState state, Integer index) {
+    // todo
+    return UnsignedLong.ZERO;
+  }
+
   public static UnsignedLong inclusion_distance(BeaconState state, Integer index) {
     // todo
     return UnsignedLong.ZERO;

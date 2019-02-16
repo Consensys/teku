@@ -15,6 +15,7 @@ package tech.pegasys.artemis.statetransition.util;
 
 import static tech.pegasys.artemis.datastructures.Constants.BASE_REWARD_QUOTIENT;
 import static tech.pegasys.artemis.datastructures.Constants.INACTIVITY_PENALTY_QUOTIENT;
+import static tech.pegasys.artemis.datastructures.Constants.INCLUDER_REWARD_QUOTIENT;
 import static tech.pegasys.artemis.datastructures.Constants.MAX_DEPOSIT_AMOUNT;
 import static tech.pegasys.artemis.datastructures.Constants.MIN_ATTESTATION_INCLUSION_DELAY;
 import static tech.pegasys.artemis.statetransition.util.BeaconStateUtil.get_effective_balance;
@@ -152,6 +153,25 @@ public class EpochProcessorUtil {
     }
   }
 
+  /**
+   * applys the attestation inclusion reward to all eligible attestors
+   *
+   * @param state
+   * @param previous_total_balance
+   */
+  public static void attestionInclusion(BeaconState state, UnsignedLong previous_total_balance) {
+    List<Integer> previous_indices = AttestationUtil.get_previous_epoch_attester_indices(state);
+    for (int index : previous_indices) {
+      UnsignedLong inclusion_slot = AttestationUtil.inclusion_slot(state, index);
+      int proposer_index = BeaconStateUtil.get_beacon_proposer_index(state, inclusion_slot);
+      List<UnsignedLong> balances = state.getValidator_balances();
+      UnsignedLong balance = balances.get(proposer_index);
+      UnsignedLong reward =
+          base_reward(state, index, previous_total_balance)
+              .dividedBy(UnsignedLong.valueOf(INCLUDER_REWARD_QUOTIENT));
+      balance = balance.plus(reward);
+    }
+  }
   /**
    * Rewards and penalties applied with respect to justification and finalization. Spec:
    * https://github.com/ethereum/eth2.0-specs/blob/v0.1/specs/core/0_beacon-chain.md#justification-and-finalization

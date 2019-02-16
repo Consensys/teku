@@ -622,7 +622,6 @@ public class BeaconStateUtil {
    * @return
    */
   public static int get_beacon_proposer_index(BeaconState state, UnsignedLong slot) {
-    // TODO: convert these values to UnsignedLong
     List<Integer> first_committee =
         get_crosslink_committees_at_slot(state, slot).get(0).getCommittee();
     // TODO: replace slot.intValue() with an UnsignedLong value
