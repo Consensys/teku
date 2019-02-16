@@ -13,9 +13,12 @@
 
 package tech.pegasys.artemis.statetransition.util;
 
+import com.google.common.collect.Sets;
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.statetransition.BeaconState;
@@ -73,5 +76,22 @@ public class ValidatorsUtil {
       BeaconState state, int index, UnsignedLong epoch) {
     List<Validator> all_validators = state.getValidator_registry();
     return all_validators.get(index).is_active_validator(epoch);
+  }
+
+  /**
+   * find all validators not present in the provided list
+   *
+   * @param validator_indices
+   * @return
+   */
+  public static List<Integer> get_validators_not_present(List<Integer> validator_indices) {
+    List<Integer> all_indices =
+        IntStream.range(0, validator_indices.size()).boxed().collect(Collectors.toList());
+    Set<Integer> set_of_indices = Sets.newHashSet(all_indices);
+    Set<Integer> set_of_validator_indices = Sets.newHashSet(validator_indices);
+    // remove all validator indices provided and we are left with validator indices not present in
+    // the list provided
+    set_of_indices.removeAll(set_of_validator_indices);
+    return new ArrayList<>(set_of_indices);
   }
 }
