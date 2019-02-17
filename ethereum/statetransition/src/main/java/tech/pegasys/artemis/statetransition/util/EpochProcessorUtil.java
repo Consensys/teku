@@ -35,6 +35,7 @@ import net.consensys.cava.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.state.Crosslink;
 import tech.pegasys.artemis.datastructures.state.CrosslinkCommittee;
+import tech.pegasys.artemis.datastructures.state.PendingAttestation;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.statetransition.BeaconState;
 import tech.pegasys.artemis.util.bitwise.BitwiseOps;
@@ -172,6 +173,47 @@ public class EpochProcessorUtil {
       balance = balance.plus(reward);
     }
   }
+
+  /**
+   * Rewards and penalties applied with respect to crosslinks. Spec:
+   * https://github.com/ethereum/eth2.0-specs/blob/v0.1/specs/core/0_beacon-chain.md#justification-and-finalization
+   *
+   * @param state
+   */
+  public static void crosslinkRewards(BeaconState state) throws Exception {
+    UnsignedLong current_epoch = BeaconStateUtil.get_current_epoch(state);
+    UnsignedLong previous_epoch = BeaconStateUtil.get_previous_epoch(state);
+    List<Integer> slot_range =
+        IntStream.range(0, Constants.EPOCH_LENGTH).boxed().collect(Collectors.toList());
+    List<PendingAttestation> attestations =
+        AttestationUtil.get_epoch_attestations(state, current_epoch);
+    List<Integer> attester_indices = AttestationUtil.get_attester_indices(state, attestations);
+    for (Integer slot_incr : slot_range) {
+      UnsignedLong slot = get_epoch_start_slot(previous_epoch);
+      List<CrosslinkCommittee> crosslink_committees_at_slot =
+          BeaconStateUtil.get_crosslink_committees_at_slot(state, slot, false);
+      for (CrosslinkCommittee crosslink_committee : crosslink_committees_at_slot) {
+        for (Integer index : crosslink_committee.getCommittee()) {
+          List<UnsignedLong> balances = state.getValidator_balances();
+          UnsignedLong balance = balances.get(index);
+          UnsignedLong previous_balance = previous_total_balance(state);
+          // TODO: it would be good to replace this indexOf with an O(1) lookup
+          if (attester_indices.indexOf(index) > -1) {
+            UnsignedLong reward =
+                base_reward(state, index, previous_balance)
+                    .times(
+                        AttestationUtil.get_total_attesting_balance(
+                            state, crosslink_committee.getCommittee()))
+                    .dividedBy(total_balance(crosslink_committee));
+            balance = balance.plus(reward);
+          } else {
+            balance = balance.minus(base_reward(state, index, previous_balance));
+          }
+        }
+      }
+    }
+  }
+
   /**
    * Rewards and penalties applied with respect to justification and finalization. Spec:
    * https://github.com/ethereum/eth2.0-specs/blob/v0.1/specs/core/0_beacon-chain.md#justification-and-finalization
