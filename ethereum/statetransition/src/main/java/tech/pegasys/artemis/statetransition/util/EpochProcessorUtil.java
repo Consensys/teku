@@ -35,6 +35,7 @@ import net.consensys.cava.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.state.Crosslink;
 import tech.pegasys.artemis.datastructures.state.CrosslinkCommittee;
+import tech.pegasys.artemis.datastructures.state.PendingAttestation;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.statetransition.BeaconState;
 import tech.pegasys.artemis.util.bitwise.BitwiseOps;
@@ -153,37 +154,108 @@ public class EpochProcessorUtil {
     }
   }
 
-  /**
-   * applys the attestation inclusion reward to all eligible attestors
-   *
-   * @param state
-   * @param previous_total_balance
-   */
-  public static void attestionInclusion(BeaconState state, UnsignedLong previous_total_balance) {
-    List<Integer> previous_indices = AttestationUtil.get_previous_epoch_attester_indices(state);
+  static Function<Integer, UnsignedLong> apply_inactivity_penalty(
+      BeaconState state, UnsignedLong epochs_since_finality, UnsignedLong previous_total_balance) {
+    return index ->
+        inactivity_penality(state, index, epochs_since_finality, previous_total_balance);
+  }
+
+  static Function<Integer, UnsignedLong> apply_base_penalty(
+      BeaconState state, UnsignedLong epochs_since_finality, UnsignedLong previous_total_balance) {
+    return index -> base_reward(state, index, previous_total_balance);
+  }
+
+  static Function<Integer, UnsignedLong> apply_inactivity_base_penalty(
+      BeaconState state, UnsignedLong epochs_since_finality, UnsignedLong previous_total_balance) {
+    return index ->
+        UnsignedLong.valueOf(2L)
+            .times(inactivity_penality(state, index, epochs_since_finality, previous_total_balance))
+            .plus(base_reward(state, index, previous_total_balance));
+  }
+
+  static Function<Integer, UnsignedLong> apply_inclusion_base_penalty(
+      BeaconState state, UnsignedLong epochs_since_finality, UnsignedLong previous_total_balance) {
+    return index -> {
+      UnsignedLong inclusion_distance = AttestationUtil.inclusion_distance(state, index);
+      return base_reward(state, index, previous_total_balance)
+          .times(UnsignedLong.valueOf(MIN_ATTESTATION_INCLUSION_DELAY))
+          .dividedBy(inclusion_distance);
+    };
+  }
+
+  // Helper method for justificationAndFinalization()
+  static void case_one_penalties_and_rewards(
+      BeaconState state,
+      List<UnsignedLong> balances,
+      UnsignedLong previous_total_balance,
+      UnsignedLong previous_balance,
+      List<Integer> previous_indices) {
+    UnsignedLong reward_delta = UnsignedLong.ZERO;
+    // make a list of integers from 0 to numberOfValidators
+    List<Integer> missing_indices =
+        IntStream.range(0, previous_indices.size()).boxed().collect(Collectors.toList());
+    // apply rewards to validator indices in the list
     for (int index : previous_indices) {
-      UnsignedLong inclusion_slot = AttestationUtil.inclusion_slot(state, index);
-      int proposer_index = BeaconStateUtil.get_beacon_proposer_index(state, inclusion_slot);
-      List<UnsignedLong> balances = state.getValidator_balances();
-      UnsignedLong balance = balances.get(proposer_index);
-      UnsignedLong reward =
+      reward_delta =
           base_reward(state, index, previous_total_balance)
-              .dividedBy(UnsignedLong.valueOf(INCLUDER_REWARD_QUOTIENT));
-      balance = balance.plus(reward);
+              .times(previous_balance)
+              .dividedBy(previous_total_balance);
+      apply_penalty_or_reward(balances, index, reward_delta, true);
+      missing_indices.remove(index);
+    }
+    // apply penalties to active validator indices not in the list
+    for (int index : missing_indices) {
+      if (ValidatorsUtil.is_active_validator_index(
+          state, index, BeaconStateUtil.get_current_epoch(state))) {
+        reward_delta =
+            base_reward(state, index, previous_total_balance)
+                .times(previous_balance)
+                .dividedBy(previous_total_balance);
+        apply_penalty_or_reward(balances, index, reward_delta, false);
+      }
     }
   }
+
+  // Helper method for justificationAndFinalization()
+  static void case_two_penalties(
+      BeaconState state,
+      List<UnsignedLong> balances,
+      List<Integer> validator_indices,
+      Function<Integer, UnsignedLong> penalty) {
+
+    UnsignedLong penalty_delta = UnsignedLong.ZERO;
+    for (int index : validator_indices) {
+      penalty_delta = penalty.apply(index);
+      apply_penalty_or_reward(balances, index, penalty_delta, false);
+    }
+  }
+
+  // Helper method for justificationAndFinalization()
+  static void apply_penalty_or_reward(
+      List<UnsignedLong> balances, int index, UnsignedLong delta_balance, Boolean reward) {
+    UnsignedLong balance = balances.get(index);
+    if (reward) {
+      // TODO: add check for overflow
+      balance = balance.plus(delta_balance);
+    } else {
+      // TODO: add check for underflow
+      balance = balance.minus(delta_balance);
+    }
+    balances.set(index, balance);
+  }
+
   /**
    * Rewards and penalties applied with respect to justification and finalization. Spec:
    * https://github.com/ethereum/eth2.0-specs/blob/v0.1/specs/core/0_beacon-chain.md#justification-and-finalization
    *
    * @param state
    */
-  public static void justificationAndFinalization(BeaconState state) throws Exception {
+  public static void justificationAndFinalization(
+      BeaconState state, UnsignedLong previous_total_balance) throws Exception {
 
     final UnsignedLong FOUR = UnsignedLong.valueOf(4L);
     UnsignedLong epochs_since_finality =
         BeaconStateUtil.get_next_epoch(state).minus(state.getFinalized_epoch());
-    UnsignedLong previous_total_balance = previous_total_balance(state);
     List<UnsignedLong> balances = state.getValidator_balances();
 
     // Case 1: epochs_since_finality <= 4:
@@ -307,117 +379,72 @@ public class EpochProcessorUtil {
     }
   }
 
-  static Function<Integer, UnsignedLong> apply_inactivity_penalty(
-      BeaconState state, UnsignedLong epochs_since_finality, UnsignedLong previous_total_balance) {
-    return index ->
-        inactivity_penality(state, index, epochs_since_finality, previous_total_balance);
-  }
-
-  static Function<Integer, UnsignedLong> apply_base_penalty(
-      BeaconState state, UnsignedLong epochs_since_finality, UnsignedLong previous_total_balance) {
-    return index -> base_reward(state, index, previous_total_balance);
-  }
-
-  static Function<Integer, UnsignedLong> apply_inactivity_base_penalty(
-      BeaconState state, UnsignedLong epochs_since_finality, UnsignedLong previous_total_balance) {
-    return index ->
-        UnsignedLong.valueOf(2L)
-            .times(inactivity_penality(state, index, epochs_since_finality, previous_total_balance))
-            .plus(base_reward(state, index, previous_total_balance));
-  }
-
-  static Function<Integer, UnsignedLong> apply_inclusion_base_penalty(
-      BeaconState state, UnsignedLong epochs_since_finality, UnsignedLong previous_total_balance) {
-    return index -> {
-      UnsignedLong inclusion_distance = AttestationUtil.inclusion_distance(state, index);
-      return base_reward(state, index, previous_total_balance)
-          .times(UnsignedLong.valueOf(MIN_ATTESTATION_INCLUSION_DELAY))
-          .dividedBy(inclusion_distance);
-    };
-  }
-
-  // Helper method for justificationAndFinalization()
-  static void case_one_penalties_and_rewards(
-      BeaconState state,
-      List<UnsignedLong> balances,
-      UnsignedLong previous_total_balance,
-      UnsignedLong previous_balance,
-      List<Integer> previous_indices) {
-    UnsignedLong reward_delta = UnsignedLong.ZERO;
-    // make a list of integers from 0 to numberOfValidators
-    List<Integer> missing_indices =
-        IntStream.range(0, previous_indices.size()).boxed().collect(Collectors.toList());
-    // apply rewards to validator indices in the list
+  /**
+   * applys the attestation inclusion reward to all eligible attestors
+   *
+   * @param state
+   * @param previous_total_balance
+   */
+  public static void attestionInclusion(BeaconState state, UnsignedLong previous_total_balance) {
+    List<Integer> previous_indices = AttestationUtil.get_previous_epoch_attester_indices(state);
     for (int index : previous_indices) {
-      reward_delta =
+      UnsignedLong inclusion_slot = AttestationUtil.inclusion_slot(state, index);
+      int proposer_index = BeaconStateUtil.get_beacon_proposer_index(state, inclusion_slot);
+      List<UnsignedLong> balances = state.getValidator_balances();
+      UnsignedLong balance = balances.get(proposer_index);
+      UnsignedLong reward =
           base_reward(state, index, previous_total_balance)
-              .times(previous_balance)
-              .dividedBy(previous_total_balance);
-      apply_penalty_or_reward(balances, index, reward_delta, true);
-      missing_indices.remove(index);
+              .dividedBy(UnsignedLong.valueOf(INCLUDER_REWARD_QUOTIENT));
+      balance = balance.plus(reward);
     }
-    // apply penalties to active validator indices not in the list
-    for (int index : missing_indices) {
-      if (ValidatorsUtil.is_active_validator_index(
-          state, index, BeaconStateUtil.get_current_epoch(state))) {
-        reward_delta =
-            base_reward(state, index, previous_total_balance)
-                .times(previous_balance)
-                .dividedBy(previous_total_balance);
-        apply_penalty_or_reward(balances, index, reward_delta, false);
+  }
+
+  /**
+   * Rewards and penalties applied with respect to crosslinks. Spec:
+   * https://github.com/ethereum/eth2.0-specs/blob/v0.1/specs/core/0_beacon-chain.md#justification-and-finalization
+   *
+   * @param state
+   */
+  public static void crosslinkRewards(BeaconState state, UnsignedLong previous_total_balance)
+      throws Exception {
+    UnsignedLong current_epoch = BeaconStateUtil.get_current_epoch(state);
+    UnsignedLong previous_epoch = BeaconStateUtil.get_previous_epoch(state);
+    List<Integer> slot_range =
+        IntStream.range(0, Constants.EPOCH_LENGTH).boxed().collect(Collectors.toList());
+    List<PendingAttestation> attestations =
+        AttestationUtil.get_epoch_attestations(state, current_epoch);
+    List<Integer> attester_indices = AttestationUtil.get_attester_indices(state, attestations);
+    UnsignedLong slot = get_epoch_start_slot(previous_epoch);
+    for (Integer slot_incr : slot_range) {
+      slot = slot.plus(UnsignedLong.valueOf(slot_incr));
+      List<CrosslinkCommittee> crosslink_committees_at_slot =
+          BeaconStateUtil.get_crosslink_committees_at_slot(state, slot, false);
+      for (CrosslinkCommittee crosslink_committee : crosslink_committees_at_slot) {
+        for (Integer index : crosslink_committee.getCommittee()) {
+          List<UnsignedLong> balances = state.getValidator_balances();
+          UnsignedLong balance = balances.get(index);
+          // TODO: it would be good to replace this indexOf with an O(1) lookup
+          if (attester_indices.indexOf(index) > -1) {
+            UnsignedLong reward =
+                base_reward(state, index, previous_total_balance)
+                    .times(
+                        AttestationUtil.get_total_attesting_balance(
+                            state, crosslink_committee.getCommittee()))
+                    .dividedBy(total_balance(crosslink_committee));
+            balance = balance.plus(reward);
+          } else {
+            balance = balance.minus(base_reward(state, index, previous_total_balance));
+          }
+        }
       }
     }
   }
 
-  // Helper method for justificationAndFinalization()
-  static void case_two_penalties(
-      BeaconState state,
-      List<UnsignedLong> balances,
-      List<Integer> validator_indices,
-      Function<Integer, UnsignedLong> penalty) {
-
-    UnsignedLong penalty_delta = UnsignedLong.ZERO;
-    for (int index : validator_indices) {
-      penalty_delta = penalty.apply(index);
-      apply_penalty_or_reward(balances, index, penalty_delta, false);
-    }
-  }
-
-  // Helper method for justificationAndFinalization()
-  static void apply_penalty_or_reward(
-      List<UnsignedLong> balances, int index, UnsignedLong delta_balance, Boolean reward) {
-    UnsignedLong balance = balances.get(index);
-    if (reward) {
-      // TODO: add check for overflow
-      balance = balance.plus(delta_balance);
-    } else {
-      // TODO: add check for underflow
-      balance = balance.minus(delta_balance);
-    }
-    balances.set(index, balance);
-  }
-
-  private static boolean isPrevJustifiedSlotFinalized(BeaconState state) {
-    // TODO: change values to UnsignedLong
-    // TODO: Method requires major changes following BeaconState refactor
-    return true;
-    //    return ((state.getPrevious_justified_slot() == ((state.getSlot() - 2) *
-    // Constants.EPOCH_LENGTH)
-    //            && (state.getJustification_bitfield() % 4) == 3)
-    //        || (state.getPrevious_justified_slot() == ((state.getSlot() - 3) *
-    // Constants.EPOCH_LENGTH)
-    //            && (state.getJustification_bitfield() % 8) == 7)
-    //        || (state.getPrevious_justified_slot() == ((state.getSlot() - 4) *
-    // Constants.EPOCH_LENGTH)
-    //            && ((state.getJustification_bitfield() % 16) == 14
-    //                || (state.getJustification_bitfield() % 16) == 15)));
-  }
-
-  private static UnsignedLong total_balance(CrosslinkCommittee crosslink_committee) {
-    // todo
-    return UnsignedLong.ZERO;
-  }
-
+  /**
+   * updates the validator registry and associated fields
+   *
+   * @param state
+   */
   public static void update_validator_registry(BeaconState state) {
     UnsignedLong currentEpoch = BeaconStateUtil.get_current_epoch(state);
     List<Integer> active_validators =
@@ -484,12 +511,16 @@ public class EpochProcessorUtil {
     }
   }
 
+  /**
+   * process the validator penalties and exits
+   *
+   * @param state
+   */
   public static void process_penalties_and_exits(BeaconState state) {
     UnsignedLong currentEpoch = BeaconStateUtil.get_current_epoch(state);
     List<Integer> active_validators =
         ValidatorsUtil.get_active_validator_indices(state.getValidator_registry(), currentEpoch);
 
-    // total_balance = sum(get_effective_balance(state, i) for i in active_validator_indices)
     UnsignedLong total_balance = get_total_effective_balance(state, active_validators);
 
     ListIterator<Validator> itr = state.getValidator_registry().listIterator();
@@ -566,11 +597,16 @@ public class EpochProcessorUtil {
    * @param state
    * @return
    */
-  static UnsignedLong previous_total_balance(BeaconState state) {
+  public static UnsignedLong previous_total_balance(BeaconState state) {
     UnsignedLong previous_epoch = BeaconStateUtil.get_previous_epoch(state);
     List<Integer> previous_active_validators =
         ValidatorsUtil.get_active_validator_indices(state.getValidator_registry(), previous_epoch);
     return get_total_effective_balance(state, previous_active_validators);
+  }
+
+  public static UnsignedLong total_balance(CrosslinkCommittee crosslink_committee) {
+    // todo
+    return UnsignedLong.ZERO;
   }
 
   /**
