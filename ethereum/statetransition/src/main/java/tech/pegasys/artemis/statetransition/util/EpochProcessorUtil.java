@@ -460,6 +460,7 @@ public class EpochProcessorUtil {
           } else {
             balance = balance.minus(base_reward(state, index, previous_total_balance));
           }
+          balances.set(index, balance);
         }
       }
     }
@@ -614,6 +615,50 @@ public class EpochProcessorUtil {
                   .plus(UnsignedLong.valueOf(Constants.MIN_VALIDATOR_WITHDRAWAL_EPOCHS)))
           >= 0;
     }
+  }
+
+  /**
+   * perform the final state updates for epoch processing
+   *
+   * @param state
+   */
+  public static void finalUpdates(BeaconState state) {
+    UnsignedLong current_epoch = BeaconStateUtil.get_current_epoch(state);
+    UnsignedLong next_epoch = BeaconStateUtil.get_next_epoch(state);
+    UnsignedLong ENTRY_EXIT_DELAY = UnsignedLong.valueOf(Constants.ENTRY_EXIT_DELAY);
+    UnsignedLong LATEST_INDEX_ROOTS_LENGTH =
+        UnsignedLong.valueOf(Constants.LATEST_INDEX_ROOTS_LENGTH);
+    UnsignedLong LATEST_RANDAO_MIXES_LENGTH =
+        UnsignedLong.valueOf(Constants.LATEST_RANDAO_MIXES_LENGTH);
+    UnsignedLong index = next_epoch.plus(ENTRY_EXIT_DELAY).mod(LATEST_INDEX_ROOTS_LENGTH);
+    // update hash tree root
+    List<Bytes32> index_roots = state.getLatest_index_roots();
+    Bytes32 root =
+        TreeHashUtil.hash_tree_root(
+            ValidatorsUtil.get_active_validators(
+                state.getValidator_registry(), next_epoch.plus(ENTRY_EXIT_DELAY)));
+    index_roots.set(index.intValue(), root);
+    // update latest penalized balances
+    List<UnsignedLong> latest_penalized_balances = state.getLatest_penalized_balances();
+    UnsignedLong balance =
+        latest_penalized_balances.get(current_epoch.plus(ENTRY_EXIT_DELAY).intValue());
+    latest_penalized_balances.set(next_epoch.plus(ENTRY_EXIT_DELAY).intValue(), balance);
+    // update latest randao mixes
+    List<Bytes32> latest_randao_mixes = state.getLatest_randao_mixes();
+    Bytes32 randao_mix = BeaconStateUtil.get_randao_mix(state, current_epoch);
+    latest_randao_mixes.set(next_epoch.mod(LATEST_RANDAO_MIXES_LENGTH).intValue(), randao_mix);
+    // remove old attestations
+    List<PendingAttestation> pendingAttestations = new ArrayList<>(state.getLatest_attestations());
+    UnsignedLong indexToRemove = UnsignedLong.ZERO;
+    for (PendingAttestation attestation : state.getLatest_attestations()) {
+      if (attestation.getData().getSlot().compareTo(current_epoch) < 0) {
+        // this has to be an int or else it tries to search for an UnsignedLong to remove rather
+        // than removing it by the indexed int value
+        pendingAttestations.remove(indexToRemove.intValue());
+      }
+      indexToRemove = indexToRemove.plus(UnsignedLong.ONE);
+    }
+    state.setLatest_attestations(pendingAttestations);
   }
 
   /**
