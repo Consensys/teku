@@ -72,9 +72,15 @@ public class StateTransition {
 
   protected void epochProcessor(BeaconState state) throws Exception {
     LOG.info("Processing new epoch in slot: " + state.getSlot());
+
     EpochProcessorUtil.updateJustification(state);
     EpochProcessorUtil.updateCrosslinks(state);
-    EpochProcessorUtil.justificationAndFinalization(state);
+
+    UnsignedLong previous_total_balance = EpochProcessorUtil.previous_total_balance(state);
+    EpochProcessorUtil.justificationAndFinalization(state, previous_total_balance);
+    EpochProcessorUtil.attestionInclusion(state, previous_total_balance);
+    EpochProcessorUtil.crosslinkRewards(state, previous_total_balance);
+
     EpochProcessorUtil.process_ejections(state);
     EpochProcessorUtil.update_validator_registry(state);
     EpochProcessorUtil.process_penalties_and_exits(state);
