@@ -33,6 +33,8 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import net.consensys.cava.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.Constants;
+import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
+import tech.pegasys.artemis.datastructures.blocks.Eth1DataVote;
 import tech.pegasys.artemis.datastructures.state.Crosslink;
 import tech.pegasys.artemis.datastructures.state.CrosslinkCommittee;
 import tech.pegasys.artemis.datastructures.state.PendingAttestation;
@@ -41,6 +43,29 @@ import tech.pegasys.artemis.statetransition.BeaconState;
 import tech.pegasys.artemis.util.bitwise.BitwiseOps;
 
 public class EpochProcessorUtil {
+
+  /**
+   * update eth1Data state fields. spec:
+   * https://github.com/ethereum/eth2.0-specs/blob/v0.1/specs/core/0_beacon-chain.md#eth1-data-1
+   *
+   * @param state
+   * @throws Exception
+   */
+  public static void updateEth1Data(BeaconState state) throws Exception {
+    UnsignedLong next_epoch = BeaconStateUtil.get_next_epoch(state);
+    if (next_epoch
+            .mod(UnsignedLong.valueOf(Constants.ETH1_DATA_VOTING_PERIOD))
+            .compareTo(UnsignedLong.ZERO)
+        == 0) {
+      if (state.getEth1_data_votes().size() * 2
+          > Constants.ETH1_DATA_VOTING_PERIOD * Constants.EPOCH_LENGTH) {
+        // TODO: this doesn't seem right
+        Eth1Data latest_eth1_data = state.getEth1_data_votes().get(0).getEth1_data();
+        state.setLatest_eth1_data(latest_eth1_data);
+        state.setEth1_data_votes(new ArrayList<Eth1DataVote>());
+      }
+    }
+  }
 
   /**
    * Update Justification state fields
