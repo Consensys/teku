@@ -166,7 +166,7 @@ public class EpochProcessorUtil {
             AttestationUtil.total_attesting_balance(state, crosslink_committee, shard_block_root);
         if (UnsignedLong.valueOf(3L)
                 .times(total_attesting_balance)
-                .compareTo(total_balance(crosslink_committee))
+                .compareTo(BeaconStateUtil.total_balance(crosslink_committee))
             >= 0) {
           state
               .getLatest_crosslinks()
@@ -455,7 +455,7 @@ public class EpochProcessorUtil {
                     .times(
                         AttestationUtil.get_total_attesting_balance(
                             state, crosslink_committee.getCommittee()))
-                    .dividedBy(total_balance(crosslink_committee));
+                    .dividedBy(BeaconStateUtil.total_balance(crosslink_committee));
             balance = balance.plus(reward);
           } else {
             balance = balance.minus(base_reward(state, index, previous_total_balance));
@@ -464,6 +464,75 @@ public class EpochProcessorUtil {
         }
       }
     }
+  }
+
+  /**
+   * Iterate through the validator registry and eject active validators with balance below
+   * ``EJECTION_BALANCE``.
+   *
+   * @param state
+   */
+  public static void process_ejections(BeaconState state) {
+    int index = 0;
+    UnsignedLong currentEpoch = BeaconStateUtil.get_current_epoch(state);
+    List<Validator> active_validators =
+        ValidatorsUtil.get_active_validators(state.getValidator_registry(), currentEpoch);
+    for (Validator validator : active_validators) {
+      List<UnsignedLong> balances = state.getValidator_balances();
+      if (balances.get(index).compareTo(UnsignedLong.valueOf(Constants.EJECTION_BALANCE)) < 0) {
+        BeaconStateUtil.exit_validator(state, index);
+      }
+      index++;
+    }
+  }
+
+  /**
+   * This method updates various state variables before it is determined if the validator_regictry
+   * needs to be updated
+   *
+   * @param state
+   */
+  public static void previousStateUpdates(BeaconState state) {
+    UnsignedLong current_calculation_epoch = state.getCurrent_calculation_epoch();
+    state.setPrevious_calculation_epoch(current_calculation_epoch);
+
+    UnsignedLong current_epoch_start_shard = state.getCurrent_epoch_start_shard();
+    state.setPrevious_epoch_start_shard(current_epoch_start_shard);
+
+    Bytes32 previous_epoch_seed = state.getCurrent_epoch_seed();
+    state.setPrevious_epoch_seed(previous_epoch_seed);
+  }
+
+  /**
+   * This method determins if the validator registry should be updated
+   *
+   * @param state
+   */
+  public static Boolean shouldUpdateValidatorRegistry(BeaconState state) {
+
+    Boolean check1 = false;
+    UnsignedLong finalized_epoch = state.getFinalized_epoch();
+    UnsignedLong validator_registry_update_epoch = state.getValidator_registry_update_epoch();
+    check1 = finalized_epoch.compareTo(validator_registry_update_epoch) > 0;
+
+    Boolean check2 = false;
+    UnsignedLong committee_count = BeaconStateUtil.get_current_epoch_committee_count(state);
+    List<Integer> comnmittee_range =
+        IntStream.range(0, committee_count.intValue()).boxed().collect(Collectors.toList());
+    UnsignedLong SHARD_COUNT = UnsignedLong.valueOf(Constants.SHARD_COUNT);
+    for (Integer committee_offset : comnmittee_range) {
+      UnsignedLong offset = UnsignedLong.valueOf(committee_offset);
+      UnsignedLong shard = state.getCurrent_epoch_start_shard().plus(offset).mod(SHARD_COUNT);
+      UnsignedLong crosslink_epoch = state.getLatest_crosslinks().get(shard.intValue()).getEpoch();
+      if (crosslink_epoch.compareTo(validator_registry_update_epoch) > 0) {
+        check2 = true;
+      } else {
+        check2 = false;
+        break;
+      }
+    }
+
+    return check1 && check2;
   }
 
   /**
@@ -523,17 +592,39 @@ public class EpochProcessorUtil {
     state.setValidator_registry_update_epoch(currentEpoch);
   }
 
-  public static void process_ejections(BeaconState state) {
-    int index = 0;
-    UnsignedLong currentEpoch = BeaconStateUtil.get_current_epoch(state);
-    List<Validator> active_validators =
-        ValidatorsUtil.get_active_validators(state.getValidator_registry(), currentEpoch);
-    for (Validator validator : active_validators) {
-      List<UnsignedLong> balances = state.getValidator_balances();
-      if (balances.get(index).compareTo(UnsignedLong.valueOf(Constants.EJECTION_BALANCE)) < 0) {
-        BeaconStateUtil.exit_validator(state, index);
-      }
-      index++;
+  /**
+   * this method updates state variables if the validator registry is updated
+   *
+   * @param state
+   */
+  public static void currentStateUpdatesAlt1(BeaconState state) {
+    UnsignedLong epoch = BeaconStateUtil.get_next_epoch(state);
+    state.setCurrent_calculation_epoch(epoch);
+
+    UnsignedLong SHARD_COUNT = UnsignedLong.valueOf(Constants.SHARD_COUNT);
+    UnsignedLong committee_count = BeaconStateUtil.get_current_epoch_committee_count(state);
+    UnsignedLong current_epoch_start_shard =
+        state.getCurrent_epoch_start_shard().plus(committee_count).mod(SHARD_COUNT);
+    state.setCurrent_epoch_start_shard(current_epoch_start_shard);
+
+    Bytes32 current_epoch_seed = BeaconStateUtil.generate_seed(state, epoch);
+    state.setCurrent_epoch_seed(current_epoch_seed);
+  }
+
+  /**
+   * this method updates state variables if the validator registry is NOT updated
+   *
+   * @param state
+   */
+  public static void currentStateUpdatesAlt2(BeaconState state) {
+    UnsignedLong epochs_since_last_registry_update =
+        BeaconStateUtil.get_current_epoch(state).minus(state.getValidator_registry_update_epoch());
+    if (epochs_since_last_registry_update.compareTo(UnsignedLong.ONE) > 0
+        && BeaconStateUtil.is_power_of_two(epochs_since_last_registry_update)) {
+      UnsignedLong next_epoch = BeaconStateUtil.get_next_epoch(state);
+      state.setCurrent_calculation_epoch(next_epoch);
+      Bytes32 current_epoch_seed = BeaconStateUtil.generate_seed(state, next_epoch);
+      state.setCurrent_epoch_seed(current_epoch_seed);
     }
   }
 
@@ -659,24 +750,6 @@ public class EpochProcessorUtil {
       indexToRemove = indexToRemove.plus(UnsignedLong.ONE);
     }
     state.setLatest_attestations(pendingAttestations);
-  }
-
-  /**
-   * calculate the total balance from the previous epoch
-   *
-   * @param state
-   * @return
-   */
-  public static UnsignedLong previous_total_balance(BeaconState state) {
-    UnsignedLong previous_epoch = BeaconStateUtil.get_previous_epoch(state);
-    List<Integer> previous_active_validators =
-        ValidatorsUtil.get_active_validator_indices(state.getValidator_registry(), previous_epoch);
-    return get_total_effective_balance(state, previous_active_validators);
-  }
-
-  public static UnsignedLong total_balance(CrosslinkCommittee crosslink_committee) {
-    // todo
-    return UnsignedLong.ZERO;
   }
 
   /**

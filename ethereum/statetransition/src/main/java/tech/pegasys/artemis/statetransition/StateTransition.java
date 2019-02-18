@@ -13,15 +13,18 @@
 
 package tech.pegasys.artemis.statetransition;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.artemis.datastructures.Constants.EPOCH_LENGTH;
 
 import com.google.common.primitives.UnsignedLong;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.statetransition.util.BeaconStateUtil;
 import tech.pegasys.artemis.statetransition.util.BlockProcessorUtil;
 import tech.pegasys.artemis.statetransition.util.EpochProcessorUtil;
 import tech.pegasys.artemis.statetransition.util.SlotProcessorUtil;
+import tech.pegasys.artemis.statetransition.util.TreeHashUtil;
 
 public class StateTransition {
 
@@ -45,6 +48,12 @@ public class StateTransition {
           .mod(UnsignedLong.valueOf(EPOCH_LENGTH))
           .equals(UnsignedLong.ZERO)) {
         epochProcessor(state);
+      }
+      // state root verification
+      if (block != null) {
+        checkArgument(
+            block.getState_root().equals(TreeHashUtil.hash_tree_root(state)),
+            StateTransitionException.class);
       }
     } catch (Exception e) {
       LOG.warn(e.toString());
@@ -77,13 +86,21 @@ public class StateTransition {
     EpochProcessorUtil.updateJustification(state);
     EpochProcessorUtil.updateCrosslinks(state);
 
-    UnsignedLong previous_total_balance = EpochProcessorUtil.previous_total_balance(state);
+    UnsignedLong previous_total_balance = BeaconStateUtil.previous_total_balance(state);
     EpochProcessorUtil.justificationAndFinalization(state, previous_total_balance);
     EpochProcessorUtil.attestionInclusion(state, previous_total_balance);
     EpochProcessorUtil.crosslinkRewards(state, previous_total_balance);
 
     EpochProcessorUtil.process_ejections(state);
-    EpochProcessorUtil.update_validator_registry(state);
+
+    EpochProcessorUtil.previousStateUpdates(state);
+    if (EpochProcessorUtil.shouldUpdateValidatorRegistry(state)) {
+      EpochProcessorUtil.update_validator_registry(state);
+      EpochProcessorUtil.currentStateUpdatesAlt1(state);
+    } else {
+      EpochProcessorUtil.currentStateUpdatesAlt2(state);
+    }
     EpochProcessorUtil.process_penalties_and_exits(state);
+    EpochProcessorUtil.finalUpdates(state);
   }
 }
