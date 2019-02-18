@@ -1,3 +1,6 @@
 [submodule "eth-reference-tests/src/test/resources/eth2.0-tests"]
 	path = eth-reference-tests/src/test/resources/eth2.0-tests
 	url = https://github.com/ethereum/eth2.0-tests.git
+[submodule ".submodules/deposit_contract"]
+	path = .submodules/deposit_contract
+	url = git@github.com:ethereum/deposit_contract.git
