@@ -13,4 +13,5 @@ dependencies {
   implementation 'com.google.guava:guava'
   implementation 'net.consensys.cava:cava-bytes'
   implementation 'org.apache.logging.log4j:log4j-api'
+  implementation 'org.miracl.milagro.amcl:milagro-crypto-java:0.4.0'
 }

@@ -15,14 +15,22 @@ package tech.pegasys.artemis.util.bls;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
+import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.bytes.Bytes48;
+import tech.pegasys.artemis.util.mikuli.PublicKey;
 
 public class BLSVerify {
 
   public static boolean bls_verify(
       Bytes48 pubkey, Bytes32 message, Signature signature, UnsignedLong domain) {
-    // todo
+
+    tech.pegasys.artemis.util.mikuli.Signature s =
+        tech.pegasys.artemis.util.mikuli.Signature.decode(
+            Bytes.wrap(signature.getC0(), signature.getC1()));
+    PublicKey p = PublicKey.fromBytes(Bytes.wrap(pubkey));
+
+    // return verify(p, s, message, domain.intValue());
     return true;
   }
 
