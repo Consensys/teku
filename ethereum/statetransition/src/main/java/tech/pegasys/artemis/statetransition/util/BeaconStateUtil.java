@@ -254,7 +254,13 @@ public class BeaconStateUtil {
     return get_epoch_committee_count(UnsignedLong.valueOf(previous_active_validators.size()));
   }
 
-  private static UnsignedLong get_current_epoch_committee_count(BeaconState state) {
+  /**
+   * returns the number of crosslink committees active in this epoch
+   *
+   * @param state
+   * @return
+   */
+  public static UnsignedLong get_current_epoch_committee_count(BeaconState state) {
     List<Integer> current_active_validators =
         ValidatorsUtil.get_active_validator_indices(
             state.getValidator_registry(), state.getCurrent_calculation_epoch());
@@ -339,6 +345,24 @@ public class BeaconStateUtil {
       total_balance = total_balance.plus(BeaconStateUtil.get_effective_balance(state, index));
     }
     return total_balance;
+  }
+
+  /**
+   * calculate the total balance from the previous epoch
+   *
+   * @param state
+   * @return
+   */
+  public static UnsignedLong previous_total_balance(BeaconState state) {
+    UnsignedLong previous_epoch = BeaconStateUtil.get_previous_epoch(state);
+    List<Integer> previous_active_validators =
+        ValidatorsUtil.get_active_validator_indices(state.getValidator_registry(), previous_epoch);
+    return get_total_effective_balance(state, previous_active_validators);
+  }
+
+  public static UnsignedLong total_balance(CrosslinkCommittee crosslink_committee) {
+    // todo
+    return UnsignedLong.ZERO;
   }
 
   /** Return the epoch number of the given ``slot`` */

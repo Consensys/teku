@@ -49,6 +49,42 @@ class EpochProcessingUtilTest {
     return state;
   }
 
+  @Disabled
+  @Test
+  void updateEth1DataTests() {
+    // todo
+  }
+
+  @Disabled
+  @Test
+  void updateJustificationTests() {
+    // todo
+  }
+
+  @Disabled
+  @Test
+  void updateCrosslinksTests() {
+    // todo
+  }
+
+  @Disabled
+  @Test
+  void justificationAndFinalizationTests() {
+    // todo
+  }
+
+  @Disabled
+  @Test
+  void attestionInclusionTests() {
+    // todo
+  }
+
+  @Disabled
+  @Test
+  void crosslinkRewardsTests() {
+    // todo
+  }
+
   @Test
   @Disabled
   void processEjectionsTest() {
@@ -88,6 +124,30 @@ class EpochProcessingUtilTest {
     assertEquals(expected_num_validators, after_active_validators.size());
   }
 
+  @Disabled
+  @Test
+  void previousStateUpdatesTests() {
+    // todo
+  }
+
+  @Disabled
+  @Test
+  void shouldUpdateValidatorRegistryTests() {
+    // todo
+  }
+
+  @Disabled
+  @Test
+  void currentStateUpdatesAlt1Tests() {
+    // todo
+  }
+
+  @Disabled
+  @Test
+  void currentStateUpdatesAlt2Tests() {
+    // todo
+  }
+
   @Test
   @Disabled
   void updateValidatorRegistryTest() {
@@ -124,7 +184,7 @@ class EpochProcessingUtilTest {
 
   @Test
   @Disabled
-  void updateValidatorRegistryTest_missingFlag() {
+  void updateValidatorRegistryTestWithMissingFlag() {
     BeaconState state = createArbitraryBeaconState(25);
     UnsignedLong currentEpoch = BeaconStateUtil.get_current_epoch(state);
 
@@ -179,5 +239,11 @@ class EpochProcessingUtilTest {
 
     assertEquals(expected_num_validators, after_active_validators.size());
     assertEquals(expected_total_balance, after_total_balance);
+  }
+
+  @Disabled
+  @Test
+  void finalUpdatesTests() {
+    // todo
   }
 }
