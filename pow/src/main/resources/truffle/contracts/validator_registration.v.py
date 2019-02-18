@@ -1,1 +1,1 @@
-.submodules/deposit_contract/deposit_contract/contracts/validator_registration.v.py
+../../../../../../.submodules/deposit_contract/deposit_contract/contracts/validator_registration.v.py
