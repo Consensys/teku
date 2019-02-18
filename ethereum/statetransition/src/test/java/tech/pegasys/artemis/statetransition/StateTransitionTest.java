@@ -34,6 +34,12 @@ import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.statetransition.util.SlotProcessorUtil;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
 @ExtendWith(BouncyCastleExtension.class)
 class StateTransitionTest {
 
@@ -83,6 +89,7 @@ class StateTransitionTest {
     /* todo: rework test - shard_committees_at_slots no longer exists
     BeaconState state = newState();
     state.setSlot(8192);
+
     ArrayList<ArrayList<ShardCommittee>> shard_committees_at_slots =
         new ArrayList<ArrayList<ShardCommittee>>();
     for (int i = 0; i < 1000; i++) {
