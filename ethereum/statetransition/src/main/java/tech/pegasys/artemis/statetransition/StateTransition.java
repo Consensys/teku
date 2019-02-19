@@ -28,7 +28,7 @@ import tech.pegasys.artemis.statetransition.util.TreeHashUtil;
 
 public class StateTransition {
 
-  private static final Logger LOG = LogManager.getLogger();
+  private static final Logger LOG = LogManager.getLogger(StateTransition.class.getName());
 
   public StateTransition() {}
 
@@ -69,7 +69,7 @@ public class StateTransition {
     SlotProcessorUtil.updateRecentBlockHashes(state, block);
   }
 
-  protected void blockProcessor(BeaconState state, BeaconBlock block) {
+  protected void blockProcessor(BeaconState state, BeaconBlock block) throws Exception {
     LOG.info("Processing new block in slot: " + block.getSlot());
     // block header
     BlockProcessorUtil.verify_signature(state, block);

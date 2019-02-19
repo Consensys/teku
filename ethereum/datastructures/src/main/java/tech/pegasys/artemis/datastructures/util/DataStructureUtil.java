@@ -13,6 +13,8 @@
 
 package tech.pegasys.artemis.datastructures.util;
 
+import static tech.pegasys.artemis.datastructures.Constants.MAX_DEPOSIT_AMOUNT;
+
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -112,7 +114,8 @@ public final class DataStructureUtil {
   }
 
   public static DepositData randomDepositData() {
-    return new DepositData(randomUnsignedLong(), randomUnsignedLong(), randomDepositInput());
+    return new DepositData(
+        UnsignedLong.valueOf(MAX_DEPOSIT_AMOUNT), randomUnsignedLong(), randomDepositInput());
   }
 
   public static Deposit randomDeposit() {

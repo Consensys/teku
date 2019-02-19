@@ -24,7 +24,7 @@ import tech.pegasys.artemis.services.ServiceInterface;
 public class BeaconNodeService implements ServiceInterface {
 
   private EventBus eventBus;
-  private static final Logger LOG = LogManager.getLogger();
+  private static final Logger LOG = LogManager.getLogger(BeaconNodeService.class.getName());
   private P2PNetwork p2pNetwork;
 
   public BeaconNodeService() {}

@@ -37,9 +37,11 @@ public class SlotProcessorUtil {
 
   public static void updateRecentBlockHashes(BeaconState state, BeaconBlock block)
       throws Exception {
-    // TODO: change values to UnsignedLong
-    Bytes32 previous_block_root =
-        BeaconStateUtil.get_block_root(state, state.getSlot().minus(UnsignedLong.ONE));
+    Bytes32 previous_block_root = Bytes32.ZERO;
+    if (state.getSlot().compareTo(UnsignedLong.valueOf(Constants.GENESIS_SLOT)) > 0) {
+      previous_block_root =
+          BeaconStateUtil.get_block_root(state, state.getSlot().minus(UnsignedLong.ONE));
+    }
     if (previous_block_root != null) {
       List<Bytes32> latest_block_roots = state.getLatest_block_roots();
 
@@ -52,8 +54,12 @@ public class SlotProcessorUtil {
           "StateTransitionException: BeaconState cannot be updated due to "
               + "previous_block_root returning a null");
     }
-    // TODO: change values to UnsignedLong
-    if (state.getSlot().intValue() % LATEST_BLOCK_ROOTS_LENGTH == 0) {
+
+    if (state
+            .getSlot()
+            .mod(UnsignedLong.valueOf(LATEST_BLOCK_ROOTS_LENGTH))
+            .compareTo(UnsignedLong.ZERO)
+        == 0) {
       List<Bytes32> batched_block_roots = state.getBatched_block_roots();
       List<Bytes32> latest_block_roots = state.getLatest_block_roots();
       if (batched_block_roots != null && latest_block_roots != null) {

@@ -15,6 +15,7 @@ package tech.pegasys.artemis.statetransition;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.fail;
 import static tech.pegasys.artemis.datastructures.Constants.ENTRY_EXIT_DELAY;
 import static tech.pegasys.artemis.datastructures.Constants.EPOCH_LENGTH;
 import static tech.pegasys.artemis.datastructures.Constants.GENESIS_EPOCH;
@@ -35,6 +36,7 @@ import static tech.pegasys.artemis.statetransition.util.BeaconStateUtil.split;
 
 import com.google.common.primitives.UnsignedLong;
 import com.google.gson.Gson;
+import java.security.Security;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -44,6 +46,7 @@ import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.bytes.Bytes48;
 import net.consensys.cava.crypto.Hash;
 import net.consensys.cava.junit.BouncyCastleExtension;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
@@ -57,12 +60,17 @@ class BeaconStateTest {
 
   private BeaconState newState() {
 
-    // Initialize state
-    BeaconState state =
-        get_initial_beacon_state(
-            randomDeposits(5), UnsignedLong.ZERO, new Eth1Data(Bytes32.ZERO, Bytes32.ZERO));
+    try {
+      // Initialize state
+      BeaconState state =
+          get_initial_beacon_state(
+              randomDeposits(5), UnsignedLong.ZERO, new Eth1Data(Bytes32.ZERO, Bytes32.ZERO));
 
-    return state;
+      return state;
+    } catch (Exception e) {
+      fail("get_initial_beacon_state() failed");
+      return null;
+    }
   }
 
   @Test
@@ -340,6 +348,7 @@ class BeaconStateTest {
 
   private Bytes32 hashSrc() {
     Bytes bytes = Bytes.wrap(new byte[] {(byte) 1, (byte) 256, (byte) 65656});
+    Security.addProvider(new BouncyCastleProvider());
     return Hash.keccak256(bytes);
   }
 
@@ -382,10 +391,14 @@ class BeaconStateTest {
     List<Integer> input = Arrays.asList(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
     ArrayList<Integer> sample = new ArrayList<>(input);
 
-    List<Integer> actual = shuffle(sample, hashSrc());
-    List<Integer> expected_input = Arrays.asList(4, 7, 2, 1, 5, 10, 3, 6, 8, 9);
-    ArrayList<Integer> expected = new ArrayList<>(expected_input);
-    assertThat(actual).isEqualTo(expected);
+    try {
+      List<Integer> actual = shuffle(sample, hashSrc());
+      List<Integer> expected_input = Arrays.asList(4, 7, 2, 1, 5, 10, 3, 6, 8, 9);
+      ArrayList<Integer> expected = new ArrayList<>(expected_input);
+      assertThat(actual).isEqualTo(expected);
+    } catch (IllegalStateException e) {
+      fail(e.toString());
+    }
   }
 
   @Test
@@ -508,9 +521,23 @@ class BeaconStateTest {
     UnsignedLong epoch = UnsignedLong.valueOf(ENTRY_EXIT_DELAY + SEED_LOOKAHEAD + 1);
     Bytes32 randao_mix = get_randao_mix(state, epoch.minus(UnsignedLong.valueOf(SEED_LOOKAHEAD)));
     assertThat(randao_mix).isEqualTo(Bytes32.fromHexString("0x029a"));
-    assertThat(generate_seed(state, epoch))
-        .isEqualTo(
-            Hash.keccak256(
-                Bytes.wrap(Bytes32.fromHexString("0x029a"), get_active_index_root(state, epoch))));
+    try {
+      Security.addProvider(new BouncyCastleProvider());
+      assertThat(generate_seed(state, epoch))
+          .isEqualTo(
+              Hash.keccak256(
+                  Bytes.wrap(
+                      Bytes32.fromHexString("0x029a"), get_active_index_root(state, epoch))));
+    } catch (IllegalStateException e) {
+      fail(e.toString());
+    }
+  }
+
+  @Test
+  void testkeccak256Hashof0() {
+    Bytes32 randao_mix = Bytes32.ZERO;
+    Bytes32 index_root = Bytes32.ZERO;
+    Security.addProvider(new BouncyCastleProvider());
+    Bytes32 hash = Hash.keccak256(Bytes.wrap(randao_mix, index_root));
   }
 }
