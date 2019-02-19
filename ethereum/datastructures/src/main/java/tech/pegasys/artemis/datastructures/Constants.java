@@ -16,8 +16,7 @@ package tech.pegasys.artemis.datastructures;
 import com.google.common.primitives.UnsignedLong;
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
-import net.consensys.cava.bytes.Bytes48;
-import tech.pegasys.artemis.datastructures.operations.BLSSignature;
+import tech.pegasys.artemis.util.bls.BLSSignature;
 
 public final class Constants {
   // The constants below are correct as of spec v0.1
@@ -39,13 +38,12 @@ public final class Constants {
 
   // Initial values
   public static int GENESIS_FORK_VERSION = 0; //
-  public static final long GENESIS_SLOT = 524288l; // 2^19
+  public static final long GENESIS_SLOT = 524288L; // 2^19
   public static final long GENESIS_EPOCH = slot_to_epoch(GENESIS_SLOT);
   public static final long GENESIS_START_SHARD = 0;
   public static UnsignedLong FAR_FUTURE_EPOCH = UnsignedLong.MAX_VALUE; //
   public static Bytes32 ZERO_HASH = Bytes32.ZERO; //
-  public static final BLSSignature EMPTY_SIGNATURE =
-      new BLSSignature(Bytes48.ZERO, Bytes48.ZERO); // Bytes96
+  public static final BLSSignature EMPTY_SIGNATURE = BLSSignature.empty();
   public static Bytes BLS_WITHDRAWAL_PREFIX_BYTE = Bytes.EMPTY;
 
   // Time parameters

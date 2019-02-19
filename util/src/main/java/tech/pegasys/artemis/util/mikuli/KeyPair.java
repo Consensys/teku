@@ -30,6 +30,7 @@ public final class KeyPair {
    * @return a new random key pair
    */
   public static KeyPair random() {
+    // TODO: this always generates the same "random" number. Fix it.
     RAND rng = new RAND();
     Scalar secret = new Scalar(BIG.randomnum(curveOrder, rng));
 

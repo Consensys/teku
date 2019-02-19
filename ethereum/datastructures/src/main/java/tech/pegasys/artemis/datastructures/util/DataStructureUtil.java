@@ -28,7 +28,6 @@ import tech.pegasys.artemis.datastructures.blocks.ProposalSignedData;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
 import tech.pegasys.artemis.datastructures.operations.AttesterSlashing;
-import tech.pegasys.artemis.datastructures.operations.BLSSignature;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.DepositData;
 import tech.pegasys.artemis.datastructures.operations.DepositInput;
@@ -36,6 +35,7 @@ import tech.pegasys.artemis.datastructures.operations.Exit;
 import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
 import tech.pegasys.artemis.datastructures.operations.SlashableAttestation;
 import tech.pegasys.artemis.datastructures.state.Validator;
+import tech.pegasys.artemis.util.bls.BLSSignature;
 
 public final class DataStructureUtil {
 
@@ -73,10 +73,7 @@ public final class DataStructureUtil {
 
   public static Attestation randomAttestation(long slotNum) {
     return new Attestation(
-        Bytes32.random(),
-        randomAttestationData(slotNum),
-        Bytes32.random(),
-        new BLSSignature(Bytes48.random(), Bytes48.random()));
+        Bytes32.random(), randomAttestationData(slotNum), Bytes32.random(), BLSSignature.random());
   }
 
   public static Attestation randomAttestation() {
@@ -95,9 +92,9 @@ public final class DataStructureUtil {
     return new ProposerSlashing(
         randomUnsignedLong(),
         randomProposalSignedData(),
-        new BLSSignature(Bytes48.random(), Bytes48.random()),
+        BLSSignature.random(),
         randomProposalSignedData(),
-        new BLSSignature(Bytes48.random(), Bytes48.random()));
+        BLSSignature.random());
   }
 
   public static SlashableAttestation randomSlashableAttestation() {
@@ -105,12 +102,11 @@ public final class DataStructureUtil {
         Arrays.asList(randomUnsignedLong(), randomUnsignedLong(), randomUnsignedLong()),
         randomAttestationData(),
         Bytes32.random(),
-        new BLSSignature(Bytes48.random(), Bytes48.random()));
+        BLSSignature.random());
   }
 
   public static DepositInput randomDepositInput() {
-    return new DepositInput(
-        Bytes48.random(), Bytes32.random(), new BLSSignature(Bytes48.random(), Bytes48.random()));
+    return new DepositInput(Bytes48.random(), Bytes32.random(), BLSSignature.random());
   }
 
   public static DepositData randomDepositData() {
@@ -136,10 +132,7 @@ public final class DataStructureUtil {
   }
 
   public static Exit randomExit() {
-    return new Exit(
-        randomUnsignedLong(),
-        randomUnsignedLong(),
-        new BLSSignature(Bytes48.random(), Bytes48.random()));
+    return new Exit(randomUnsignedLong(), randomUnsignedLong(), BLSSignature.random());
   }
 
   public static BeaconBlockBody randomBeaconBlockBody() {
@@ -156,9 +149,9 @@ public final class DataStructureUtil {
         slotNum,
         Bytes32.random(),
         Bytes32.random(),
-        new BLSSignature(Bytes48.random(), Bytes48.random()),
+        BLSSignature.random(),
         randomEth1Data(),
-        new BLSSignature(Bytes48.random(), Bytes48.random()),
+        BLSSignature.random(),
         randomBeaconBlockBody());
   }
 

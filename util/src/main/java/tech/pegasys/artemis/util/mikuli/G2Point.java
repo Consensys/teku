@@ -55,7 +55,7 @@ final class G2Point implements Group<G2Point> {
     return new G2Point(ECP2.fromBytes(bytes.toArrayUnsafe()));
   }
 
-  ECP2 ecp2Point() {
+  public ECP2 ecp2Point() {
     return point;
   }
 
