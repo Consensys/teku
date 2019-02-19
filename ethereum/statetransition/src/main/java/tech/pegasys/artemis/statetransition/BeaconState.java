@@ -19,6 +19,7 @@ import com.google.gson.GsonBuilder;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.bytes.Bytes48;
@@ -148,6 +149,209 @@ public class BeaconState {
 
     this.latest_eth1_data = latest_eth1_data;
     this.eth1_data_votes = eth1_data_votes;
+  }
+
+  public static BeaconState fromBytes(Bytes bytes) {
+    return SSZ.decode(
+        bytes,
+        reader ->
+            new BeaconState(
+                // Misc
+                UnsignedLong.fromLongBits(reader.readUInt64()),
+                UnsignedLong.fromLongBits(reader.readUInt64()),
+                Fork.fromBytes(reader.readBytes()),
+                // Validator registry
+                (ArrayList<Validator>)
+                    reader
+                        .readBytesList()
+                        .stream()
+                        .map(Validator::fromBytes)
+                        .collect(Collectors.toList()),
+                (ArrayList<UnsignedLong>)
+                    reader
+                        .readUInt64List()
+                        .stream()
+                        .map(UnsignedLong::fromLongBits)
+                        .collect(Collectors.toList()),
+                UnsignedLong.fromLongBits(reader.readUInt64()),
+                // Randomness and committees
+                (ArrayList<Bytes32>)
+                    reader.readBytesList().stream().map(Bytes32::wrap).collect(Collectors.toList()),
+                UnsignedLong.fromLongBits(reader.readUInt64()),
+                UnsignedLong.fromLongBits(reader.readUInt64()),
+                UnsignedLong.fromLongBits(reader.readUInt64()),
+                UnsignedLong.fromLongBits(reader.readUInt64()),
+                Bytes32.wrap(reader.readBytes()),
+                Bytes32.wrap(reader.readBytes()),
+                // Finality
+                UnsignedLong.fromLongBits(reader.readUInt64()),
+                UnsignedLong.fromLongBits(reader.readUInt64()),
+                UnsignedLong.fromLongBits(reader.readUInt64()),
+                UnsignedLong.fromLongBits(reader.readUInt64()),
+                // Recent state
+                (ArrayList<Crosslink>)
+                    reader
+                        .readBytesList()
+                        .stream()
+                        .map(Crosslink::fromBytes)
+                        .collect(Collectors.toList()),
+                (ArrayList<Bytes32>)
+                    reader.readBytesList().stream().map(Bytes32::wrap).collect(Collectors.toList()),
+                (ArrayList<Bytes32>)
+                    reader.readBytesList().stream().map(Bytes32::wrap).collect(Collectors.toList()),
+                (ArrayList<UnsignedLong>)
+                    reader
+                        .readUInt64List()
+                        .stream()
+                        .map(UnsignedLong::fromLongBits)
+                        .collect(Collectors.toList()),
+                (ArrayList<PendingAttestation>)
+                    reader
+                        .readBytesList()
+                        .stream()
+                        .map(PendingAttestation::fromBytes)
+                        .collect(Collectors.toList()),
+                (ArrayList<Bytes32>)
+                    reader.readBytesList().stream().map(Bytes32::wrap).collect(Collectors.toList()),
+                // Ethereum 1.0 chain data
+                Eth1Data.fromBytes(reader.readBytes()),
+                (ArrayList<Eth1DataVote>)
+                    reader
+                        .readBytesList()
+                        .stream()
+                        .map(Eth1DataVote::fromBytes)
+                        .collect(Collectors.toList())));
+  }
+
+  public Bytes toBytes() {
+    List<Bytes> validator_registryBytes =
+        validator_registry.stream().map(item -> item.toBytes()).collect(Collectors.toList());
+    List<Bytes> latest_crosslinksBytes =
+        latest_crosslinks.stream().map(item -> item.toBytes()).collect(Collectors.toList());
+    List<Bytes> latest_attestationBytes =
+        latest_attestations.stream().map(item -> item.toBytes()).collect(Collectors.toList());
+    List<Bytes> eth1_data_votesBytes =
+        eth1_data_votes.stream().map(item -> item.toBytes()).collect(Collectors.toList());
+
+    return SSZ.encode(
+        writer -> {
+          // Misc
+          writer.writeUInt64(slot.longValue());
+          writer.writeUInt64(genesis_time.longValue());
+          writer.writeBytes(fork.toBytes());
+          // Validator registry
+          writer.writeBytesList(validator_registryBytes);
+          writer.writeULongIntList(
+              64,
+              validator_balances
+                  .stream()
+                  .map(UnsignedLong::longValue)
+                  .collect(Collectors.toList()));
+          writer.writeUInt64(validator_registry_update_epoch.longValue());
+          // Randomness and committees
+          writer.writeBytesList(latest_randao_mixes);
+          writer.writeUInt64(previous_epoch_start_shard.longValue());
+          writer.writeUInt64(current_epoch_start_shard.longValue());
+          writer.writeUInt64(previous_calculation_epoch.longValue());
+          writer.writeUInt64(current_calculation_epoch.longValue());
+          writer.writeBytes(previous_epoch_seed);
+          writer.writeBytes(current_epoch_seed);
+          // Finality
+          writer.writeUInt64(previous_justified_epoch.longValue());
+          writer.writeUInt64(justified_epoch.longValue());
+          writer.writeUInt64(justification_bitfield.longValue());
+          writer.writeUInt64(finalized_epoch.longValue());
+          // Recent state
+          writer.writeBytesList(latest_crosslinksBytes);
+          writer.writeBytesList(latest_block_roots);
+          writer.writeBytesList(latest_index_roots);
+          writer.writeULongIntList(
+              64,
+              latest_penalized_balances
+                  .stream()
+                  .map(UnsignedLong::longValue)
+                  .collect(Collectors.toList()));
+          writer.writeBytesList(latest_attestationBytes);
+          writer.writeBytesList(batched_block_roots);
+          // Ethereum 1.0 chain data
+          writer.writeBytes(latest_eth1_data.toBytes());
+          writer.writeBytesList(eth1_data_votesBytes);
+        });
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(
+        slot,
+        genesis_time,
+        fork,
+        validator_registry,
+        validator_balances,
+        validator_registry_update_epoch,
+        latest_randao_mixes,
+        previous_epoch_start_shard,
+        current_epoch_start_shard,
+        previous_calculation_epoch,
+        current_calculation_epoch,
+        previous_epoch_seed,
+        current_epoch_seed,
+        previous_justified_epoch,
+        justified_epoch,
+        justification_bitfield,
+        finalized_epoch,
+        latest_crosslinks,
+        latest_block_roots,
+        latest_index_roots,
+        latest_penalized_balances,
+        latest_attestations,
+        batched_block_roots,
+        latest_eth1_data,
+        eth1_data_votes);
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (Objects.isNull(obj)) {
+      return false;
+    }
+
+    if (this == obj) {
+      return true;
+    }
+
+    if (!(obj instanceof BeaconState)) {
+      return false;
+    }
+
+    BeaconState other = (BeaconState) obj;
+    return Objects.equals(slot, other.getSlot())
+        && Objects.equals(this.getGenesis_time(), other.getGenesis_time())
+        && Objects.equals(this.getFork(), other.getFork())
+        && Objects.equals(this.getValidator_registry(), other.getValidator_registry())
+        && Objects.equals(this.getValidator_balances(), other.getValidator_balances())
+        && Objects.equals(
+            this.getValidator_registry_update_epoch(), other.getValidator_registry_update_epoch())
+        && Objects.equals(this.getLatest_randao_mixes(), other.getLatest_randao_mixes())
+        && Objects.equals(
+            this.getPrevious_epoch_start_shard(), other.getPrevious_epoch_start_shard())
+        && Objects.equals(this.getCurrent_epoch_start_shard(), other.getCurrent_epoch_start_shard())
+        && Objects.equals(
+            this.getPrevious_calculation_epoch(), other.getPrevious_calculation_epoch())
+        && Objects.equals(this.getCurrent_calculation_epoch(), other.getCurrent_calculation_epoch())
+        && Objects.equals(this.getPrevious_epoch_seed(), other.getPrevious_epoch_seed())
+        && Objects.equals(this.getCurrent_epoch_seed(), other.getCurrent_epoch_seed())
+        && Objects.equals(this.getPrevious_justified_epoch(), other.getPrevious_justified_epoch())
+        && Objects.equals(this.getJustified_epoch(), other.getJustified_epoch())
+        && Objects.equals(this.getJustification_bitfield(), other.getJustification_bitfield())
+        && Objects.equals(this.getFinalized_epoch(), other.getFinalized_epoch())
+        && Objects.equals(this.getLatest_crosslinks(), other.getLatest_crosslinks())
+        && Objects.equals(this.getLatest_block_roots(), other.getLatest_block_roots())
+        && Objects.equals(this.getLatest_index_roots(), other.getLatest_index_roots())
+        && Objects.equals(this.getLatest_penalized_balances(), other.getLatest_penalized_balances())
+        && Objects.equals(this.getLatest_attestations(), other.getLatest_attestations())
+        && Objects.equals(this.getBatched_block_roots(), other.getBatched_block_roots())
+        && Objects.equals(this.getLatest_eth1_data(), other.getLatest_eth1_data())
+        && Objects.equals(this.getEth1_data_votes(), other.getEth1_data_votes());
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */
@@ -353,90 +557,5 @@ public class BeaconState {
 
   public void incrementSlot() {
     this.slot = slot.plus(UnsignedLong.ONE);
-  }
-
-  public static BeaconState fromBytes(Bytes bytes) {
-    // todo
-    return SSZ.decode(bytes, reader -> new BeaconState());
-  }
-
-  public Bytes toBytes() {
-    // todo
-    return Bytes32.ZERO;
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(
-        slot,
-        genesis_time,
-        fork,
-        validator_registry,
-        validator_balances,
-        validator_registry_update_epoch,
-        latest_randao_mixes,
-        previous_epoch_start_shard,
-        current_epoch_start_shard,
-        previous_calculation_epoch,
-        current_calculation_epoch,
-        previous_epoch_seed,
-        current_epoch_seed,
-        previous_justified_epoch,
-        justified_epoch,
-        justification_bitfield,
-        finalized_epoch,
-        latest_crosslinks,
-        latest_block_roots,
-        latest_index_roots,
-        latest_penalized_balances,
-        latest_attestations,
-        batched_block_roots,
-        latest_eth1_data,
-        eth1_data_votes);
-  }
-
-  @Override
-  public boolean equals(Object obj) {
-    if (Objects.isNull(obj)) {
-      return false;
-    }
-
-    if (this == obj) {
-      return true;
-    }
-
-    if (!(obj instanceof BeaconState)) {
-      return false;
-    }
-
-    BeaconState other = (BeaconState) obj;
-    return Objects.equals(slot, other.getSlot())
-        && Objects.equals(this.getGenesis_time(), other.getGenesis_time())
-        && Objects.equals(this.getFork(), other.getFork())
-        && Objects.equals(this.getValidator_registry(), other.getValidator_registry())
-        && Objects.equals(this.getValidator_balances(), other.getValidator_balances())
-        && Objects.equals(
-            this.getValidator_registry_update_epoch(), other.getValidator_registry_update_epoch())
-        && Objects.equals(this.getLatest_randao_mixes(), other.getLatest_randao_mixes())
-        && Objects.equals(
-            this.getPrevious_epoch_start_shard(), other.getPrevious_epoch_start_shard())
-        && Objects.equals(this.getCurrent_epoch_start_shard(), other.getCurrent_epoch_start_shard())
-        && Objects.equals(
-            this.getPrevious_calculation_epoch(), other.getPrevious_calculation_epoch())
-        && Objects.equals(this.getCurrent_calculation_epoch(), other.getCurrent_calculation_epoch())
-        && Objects.equals(this.getPrevious_epoch_seed(), other.getPrevious_epoch_seed())
-        && Objects.equals(this.getCurrent_epoch_seed(), other.getCurrent_epoch_seed())
-        && Objects.equals(this.getPrevious_justified_epoch(), other.getPrevious_justified_epoch())
-        && Objects.equals(this.getJustified_epoch(), other.getJustified_epoch())
-        && Objects.equals(this.getJustification_bitfield(), other.getJustification_bitfield())
-        && Objects.equals(this.getFinalized_epoch(), other.getFinalized_epoch())
-        && Objects.equals(this.getLatest_crosslinks(), other.getLatest_crosslinks())
-        && Objects.equals(this.getLatest_block_roots(), other.getLatest_block_roots())
-        && Objects.equals(this.getLatest_index_roots(), other.getLatest_index_roots())
-        && Objects.equals(this.getLatest_penalized_balances(), other.getLatest_penalized_balances())
-        && Objects.equals(this.getLatest_attestations(), other.getLatest_attestations())
-        && Objects.equals(this.getBatched_block_roots(), other.getBatched_block_roots())
-        && Objects.equals(this.getLatest_eth1_data(), other.getLatest_eth1_data())
-        && Objects.equals(this.getEth1_data_votes(), other.getEth1_data_votes());
   }
 }
