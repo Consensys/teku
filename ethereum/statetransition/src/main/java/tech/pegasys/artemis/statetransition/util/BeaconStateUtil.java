@@ -430,14 +430,14 @@ public class BeaconStateUtil {
   }
 
   /**
-   * Penalize the validator of the given ``index``. Note that this function mutates ``state``.
+   * Penalize the validator of the given index. NOTE: This function has side-effects and mutates
+   * 'state'. This functions adds whistleblower reward to the whistleblower balance and subtracts
+   * whistleblower reward from the bad validator.
    *
-   * @param state
-   * @param index
+   * @param state - The current BeaconState. NOTE: State will be mutated per spec logic.
+   * @param index - The index of the validator that will be penalized.
    */
-  public static void penalize_validator(BeaconState state, int index) {
-    // TODO: implement from 0.1 spec
-  }
+  public static void penalize_validator(BeaconState state, int index) {}
 
   /** Return the randao mix at a recent ``epoch``. */
   public static Bytes32 get_randao_mix(BeaconState state, UnsignedLong epoch) {
@@ -516,7 +516,7 @@ public class BeaconStateUtil {
       Bytes32 seed, List<Validator> validators, long epoch) {
 
     List<Integer> active_validator_indices =
-        ValidatorsUtil.get_active_validator_indices(validators, UnsignedLong.valueOf(epoch));
+        ValidatorsUtil.get_active_validator_indices(validators, UnsignedLong.fromLongBits(epoch));
 
     // TODO: revisit when we figure out what to do about integer indexes.
     int committees_per_epoch =

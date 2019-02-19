@@ -292,6 +292,41 @@ class BeaconStateUtilTest {
         beaconState.getValidator_balances().get(originalValidatorBalancesSize - 1));
   }
 
+  @Test
+  @Disabled // Pending resolution of Issue #347.
+  void penalizeValidatorDecrementsBadActorAndIncrementsWhistleblower() {
+    // Actual Data Setup
+    BeaconState beaconState = createBeaconState();
+    int validatorIndex = 1;
+
+    beaconState.setCurrent_calculation_epoch(Constants.FAR_FUTURE_EPOCH);
+    beaconState.setPrevious_calculation_epoch(Constants.FAR_FUTURE_EPOCH);
+    List<UnsignedLong> latestPenalizedBalances =
+        new ArrayList<>(
+            Arrays.asList(randomUnsignedLong(), randomUnsignedLong(), randomUnsignedLong()));
+    beaconState.setLatest_penalized_balances(latestPenalizedBalances);
+
+    // Expected Data Setup
+    int whistleblowerIndex =
+        BeaconStateUtil.get_beacon_proposer_index(beaconState, beaconState.getSlot());
+    UnsignedLong whistleblowerReward =
+        BeaconStateUtil.get_effective_balance(beaconState, validatorIndex)
+            .dividedBy(UnsignedLong.valueOf(Constants.WHISTLEBLOWER_REWARD_QUOTIENT));
+    UnsignedLong whistleblowerBalance = beaconState.getValidator_balances().get(whistleblowerIndex);
+
+    UnsignedLong validatorBalance = beaconState.getValidator_balances().get(validatorIndex);
+
+    UnsignedLong expectedWhistleblowerBalance = whistleblowerBalance.plus(whistleblowerReward);
+    UnsignedLong expectedBadActorBalance = validatorBalance.minus(whistleblowerReward);
+
+    // Penalize validator in above beacon state at validatorIndex.
+    BeaconStateUtil.penalize_validator(beaconState, validatorIndex);
+
+    assertEquals(expectedBadActorBalance, beaconState.getValidator_balances().get(validatorIndex));
+    assertEquals(
+        expectedWhistleblowerBalance, beaconState.getValidator_balances().get(whistleblowerIndex));
+  }
+
   private BeaconState createBeaconState() {
     return createBeaconState(false, null, null);
   }
