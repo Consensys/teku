@@ -23,7 +23,7 @@ import tech.pegasys.artemis.storage.ChainStorageServer;
 public class ChainStorageService implements ServiceInterface {
   private EventBus eventBus;
   private ChainStorageServer chainStore;
-  private static final Logger LOG = LogManager.getLogger();
+  private static final Logger LOG = LogManager.getLogger(ChainStorageService.class.getName());
 
   public ChainStorageService() {}
 

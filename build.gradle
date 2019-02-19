@@ -12,12 +12,18 @@ plugins {
 
 defaultTasks 'build','checkLicenses'
 
-def buildAliases = ['dev': [
+def buildAliases = [
+  'dev': [
     'spotlessApply',
     'build',
     'checkLicenses',
-    'javadoc'
-  ]]
+    'javadoc'],
+  'mash': [ 
+    'spotlessApply',
+    'clean',
+    'build',
+    'test']
+  ]
 
 def expandedTaskList = []
 gradle.startParameter.taskNames.each {

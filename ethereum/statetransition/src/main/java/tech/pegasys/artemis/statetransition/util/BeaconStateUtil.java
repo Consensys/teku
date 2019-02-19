@@ -32,6 +32,7 @@ import static tech.pegasys.artemis.util.bls.BLSVerify.bls_verify;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.primitives.UnsignedLong;
+import java.security.Security;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -40,6 +41,9 @@ import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.bytes.Bytes48;
 import net.consensys.cava.crypto.Hash;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
@@ -55,10 +59,13 @@ import tech.pegasys.artemis.statetransition.BeaconState;
 
 public class BeaconStateUtil {
 
+  private static final Logger LOG = LogManager.getLogger(BeaconStateUtil.class.getName());
+
   public static BeaconState get_initial_beacon_state(
       ArrayList<Deposit> initial_validator_deposits,
       UnsignedLong genesis_time,
-      Eth1Data latest_eth1_data) {
+      Eth1Data latest_eth1_data)
+      throws IllegalStateException {
 
     ArrayList<Bytes32> latest_randao_mixes =
         new ArrayList<>(
@@ -162,7 +169,7 @@ public class BeaconStateUtil {
    * @return
    */
   public static ArrayList<CrosslinkCommittee> get_crosslink_committees_at_slot(
-      BeaconState state, UnsignedLong slot, boolean registry_change) {
+      BeaconState state, UnsignedLong slot, boolean registry_change) throws IllegalStateException {
     UnsignedLong epoch = slot_to_epoch(slot);
     UnsignedLong current_epoch = get_current_epoch(state);
     UnsignedLong previous_epoch = get_previous_epoch(state);
@@ -238,7 +245,7 @@ public class BeaconStateUtil {
 
   /** This is a wrapper that defaults `registry_change` to false when it is not provided */
   public static ArrayList<CrosslinkCommittee> get_crosslink_committees_at_slot(
-      BeaconState state, UnsignedLong slot) {
+      BeaconState state, UnsignedLong slot) throws IllegalStateException {
     return get_crosslink_committees_at_slot(state, slot, false);
   }
 
@@ -274,16 +281,13 @@ public class BeaconStateUtil {
     return get_epoch_committee_count(UnsignedLong.valueOf(next_active_validators.size()));
   }
 
-  public static Bytes32 generate_seed(BeaconState state, UnsignedLong epoch) {
+  public static Bytes32 generate_seed(BeaconState state, UnsignedLong epoch)
+      throws IllegalStateException {
     Bytes32 randao_mix =
         get_randao_mix(state, epoch.minus(UnsignedLong.valueOf(Constants.SEED_LOOKAHEAD)));
     Bytes32 index_root = get_active_index_root(state, epoch);
+    Security.addProvider(new BouncyCastleProvider());
     return Hash.keccak256(Bytes.wrap(randao_mix, index_root));
-  }
-
-  // TODO remove this shim when long values are all consistent
-  public static Bytes32 generate_seed(BeaconState state, long epoch) {
-    return generate_seed(state, UnsignedLong.valueOf(epoch));
   }
 
   public static Bytes32 get_active_index_root(BeaconState state, UnsignedLong epoch) {
@@ -455,14 +459,12 @@ public class BeaconStateUtil {
 
   //  Return the block root at a recent ``slot``.
   public static Bytes32 get_block_root(BeaconState state, UnsignedLong slot) throws Exception {
-    if ((state
+    checkArgument(
+        state
                 .getSlot()
                 .compareTo(slot.plus(UnsignedLong.valueOf(Constants.LATEST_BLOCK_ROOTS_LENGTH)))
-            <= 0)
-        || (slot.compareTo(state.getSlot()) < 0)) {
-      throw new BlockValidationException("Desired block root not within the provided bounds");
-    }
-
+            <= 0);
+    checkArgument(slot.compareTo(state.getSlot()) < 0);
     // Todo: Remove .intValue() as soon as our list wrapper supports unsigned longs
     return state
         .getLatest_block_roots()
@@ -473,13 +475,14 @@ public class BeaconStateUtil {
    * @param values
    * @return The merkle root.
    */
-  public static Bytes32 merkle_root(List<Bytes32> list) {
+  public static Bytes32 merkle_root(List<Bytes32> list) throws IllegalStateException {
     // https://github.com/ethereum/eth2.0-specs/blob/master/specs/core/0_beacon-chain.md#merkle_root
     Bytes32[] o = new Bytes32[list.size() * 2];
     for (int i = 0; i < list.size(); i++) {
       o[i + list.size()] = list.get(i);
     }
     for (int i = list.size() - 1; i > 0; i--) {
+      Security.addProvider(new BouncyCastleProvider());
       o[i] = Hash.keccak256(Bytes.wrap(o[i * 2], o[i * 2 + 1]));
     }
     return o[1];
@@ -513,7 +516,7 @@ public class BeaconStateUtil {
    * @return
    */
   public static List<List<Integer>> get_shuffling(
-      Bytes32 seed, List<Validator> validators, long epoch) {
+      Bytes32 seed, List<Validator> validators, long epoch) throws IllegalStateException {
 
     List<Integer> active_validator_indices =
         ValidatorsUtil.get_active_validator_indices(validators, UnsignedLong.fromLongBits(epoch));
@@ -554,7 +557,7 @@ public class BeaconStateUtil {
    * @return The shuffled array.
    */
   @VisibleForTesting
-  public static <T> List<T> shuffle(List<T> values, Bytes32 seed) {
+  public static <T> List<T> shuffle(List<T> values, Bytes32 seed) throws IllegalStateException {
     int values_count = values.size();
 
     // Entropy is consumed from the seed in 3-byte (24 bit) chunks.
@@ -572,8 +575,8 @@ public class BeaconStateUtil {
     int index = 0;
     while (index < values_count - 1) {
       // Re-hash the `source` to obtain a new pattern of bytes.
+      Security.addProvider(new BouncyCastleProvider());
       source = Hash.keccak256(source);
-
       // List to hold values for swap below.
       T tmp;
 
@@ -644,7 +647,8 @@ public class BeaconStateUtil {
    * @param slot
    * @return
    */
-  public static int get_beacon_proposer_index(BeaconState state, UnsignedLong slot) {
+  public static int get_beacon_proposer_index(BeaconState state, UnsignedLong slot)
+      throws IllegalStateException {
     List<Integer> first_committee =
         get_crosslink_committees_at_slot(state, slot).get(0).getCommittee();
     // TODO: replace slot.intValue() with an UnsignedLong value
@@ -762,12 +766,14 @@ public class BeaconStateUtil {
         new DepositInput(pubkey, withdrawal_credentials, Constants.EMPTY_SIGNATURE);
 
     UnsignedLong domain = get_domain(state.getFork(), get_current_epoch(state), DOMAIN_DEPOSIT);
-
-    return bls_verify(
-        pubkey,
-        TreeHashUtil.hash_tree_root(proof_of_possession_data.toBytes()),
-        proof_of_possession,
-        domain);
+    Bytes32 message = Bytes32.ZERO;
+    try {
+      message = TreeHashUtil.hash_tree_root(proof_of_possession_data.toBytes());
+    } catch (Exception e) {
+      LOG.debug("Error when calculating the message inside: validate_proof_of_possession()");
+      LOG.debug(e.toString());
+    }
+    return bls_verify(pubkey, message, proof_of_possession, domain);
   }
 
   /**
@@ -817,7 +823,8 @@ public class BeaconStateUtil {
    * @return
    */
   public static ArrayList<Integer> get_attestation_participants(
-      BeaconState state, AttestationData attestation_data, byte[] participation_bitfield) {
+      BeaconState state, AttestationData attestation_data, byte[] participation_bitfield)
+      throws IllegalStateException {
     // Find the relevant committee
 
     ArrayList<CrosslinkCommittee> crosslink_committees =

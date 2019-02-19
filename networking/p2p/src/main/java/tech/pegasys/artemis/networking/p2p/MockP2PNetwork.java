@@ -22,6 +22,7 @@ import java.util.Random;
 import java.util.concurrent.CompletableFuture;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.networking.p2p.api.P2PNetwork;
@@ -29,7 +30,7 @@ import tech.pegasys.artemis.networking.p2p.api.P2PNetwork;
 public class MockP2PNetwork implements P2PNetwork {
 
   private final EventBus eventBus;
-  private static final Logger LOG = LogManager.getLogger();
+  private static final Logger LOG = LogManager.getLogger(MockP2PNetwork.class.getName());
 
   public MockP2PNetwork(EventBus eventBus) {
     this.eventBus = eventBus;
@@ -81,7 +82,6 @@ public class MockP2PNetwork implements P2PNetwork {
   @Override
   public void run() {
     this.simulateNewMessages();
-    // this.simulateNewAttestations();
   }
 
   @Override
@@ -91,15 +91,17 @@ public class MockP2PNetwork implements P2PNetwork {
 
   private void simulateNewMessages() {
     try {
+      long blockNumber = Constants.GENESIS_SLOT;
       while (true) {
         Random random = new Random();
         long n = 1000L * Integer.toUnsignedLong(random.nextInt(7) + 2);
         Thread.sleep(n);
         if (n % 3 == 0) {
-          BeaconBlock block = randomBeaconBlock(n);
+          blockNumber += 1;
+          BeaconBlock block = randomBeaconBlock(blockNumber);
           this.eventBus.post(block);
         } else {
-          Attestation attestation = randomAttestation(n);
+          Attestation attestation = randomAttestation(blockNumber);
           this.eventBus.post(attestation);
         }
       }

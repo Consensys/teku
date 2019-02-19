@@ -27,7 +27,7 @@ import tech.pegasys.artemis.datastructures.operations.Attestation;
 /** ChainStorage Interface class */
 public interface ChainStorage {
 
-  static final Logger LOG = LogManager.getLogger();
+  static final Logger LOG = LogManager.getLogger(ChainStorage.class.getName());
 
   /**
    * Instantiate the ChainStorage
