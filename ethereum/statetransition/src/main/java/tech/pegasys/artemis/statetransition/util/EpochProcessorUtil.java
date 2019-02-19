@@ -32,6 +32,8 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import net.consensys.cava.bytes.Bytes32;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.datastructures.blocks.Eth1DataVote;
@@ -43,6 +45,8 @@ import tech.pegasys.artemis.statetransition.BeaconState;
 import tech.pegasys.artemis.util.bitwise.BitwiseOps;
 
 public class EpochProcessorUtil {
+
+  private static final Logger LOG = LogManager.getLogger(EpochProcessorUtil.class.getName());
 
   /**
    * update eth1Data state fields. spec:
