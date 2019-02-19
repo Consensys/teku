@@ -53,7 +53,7 @@ public class PendingAttestation {
     return SSZ.encode(
         writer -> {
           writer.writeBytes(data.toBytes());
-          writer.writeBytes(participation_bitfield);
+          writer.writeBytes(aggregation_bitfield);
           writer.writeBytes(custody_bitfield);
           writer.writeUInt64(slot_included.longValue());
         });
@@ -61,7 +61,7 @@ public class PendingAttestation {
 
   @Override
   public int hashCode() {
-    return Objects.hash(data, participation_bitfield, custody_bitfield, slot_included);
+    return Objects.hash(data, aggregation_bitfield, custody_bitfield, slot_included);
   }
 
   @Override
@@ -80,7 +80,7 @@ public class PendingAttestation {
 
     PendingAttestation other = (PendingAttestation) obj;
     return Objects.equals(this.getData(), other.getData())
-        && Objects.equals(this.getParticipation_bitfield(), other.getParticipation_bitfield())
+        && Objects.equals(this.getAggregation_bitfield(), other.getAggregation_bitfield())
         && Objects.equals(this.getCustody_bitfield(), other.getCustody_bitfield())
         && Objects.equals(this.getSlot_included(), other.getSlot_included());
   }

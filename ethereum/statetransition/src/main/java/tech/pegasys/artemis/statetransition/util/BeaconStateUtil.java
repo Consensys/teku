@@ -17,7 +17,6 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static java.lang.Math.toIntExact;
 import static tech.pegasys.artemis.datastructures.Constants.DOMAIN_DEPOSIT;
 import static tech.pegasys.artemis.datastructures.Constants.ENTRY_EXIT_DELAY;
-import static tech.pegasys.artemis.datastructures.Constants.EPOCH_LENGTH;
 import static tech.pegasys.artemis.datastructures.Constants.FAR_FUTURE_EPOCH;
 import static tech.pegasys.artemis.datastructures.Constants.GENESIS_EPOCH;
 import static tech.pegasys.artemis.datastructures.Constants.GENESIS_FORK_VERSION;
@@ -27,6 +26,7 @@ import static tech.pegasys.artemis.datastructures.Constants.LATEST_INDEX_ROOTS_L
 import static tech.pegasys.artemis.datastructures.Constants.LATEST_RANDAO_MIXES_LENGTH;
 import static tech.pegasys.artemis.datastructures.Constants.MAX_DEPOSIT_AMOUNT;
 import static tech.pegasys.artemis.datastructures.Constants.SHARD_COUNT;
+import static tech.pegasys.artemis.datastructures.Constants.EPOCH_LENGTH;
 import static tech.pegasys.artemis.datastructures.Constants.ZERO_HASH;
 import static tech.pegasys.artemis.util.bls.BLSVerify.bls_verify;
 
@@ -48,6 +48,7 @@ import tech.pegasys.artemis.datastructures.operations.AttestationData;
 import tech.pegasys.artemis.datastructures.operations.BLSSignature;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.DepositInput;
+import tech.pegasys.artemis.datastructures.operations.SlashableAttestation;
 import tech.pegasys.artemis.datastructures.state.Crosslink;
 import tech.pegasys.artemis.datastructures.state.CrosslinkCommittee;
 import tech.pegasys.artemis.datastructures.state.Fork;
@@ -219,9 +220,9 @@ public class BeaconStateUtil {
     // TODO: revist when we have the final shuffling algorithm implemented
     List<List<Integer>> shuffling =
         get_shuffling(seed, state.getValidator_registry(), shuffling_epoch);
-    UnsignedLong offset = slot.mod(UnsignedLong.valueOf(Constants.EPOCH_LENGTH));
+    UnsignedLong offset = slot.mod(UnsignedLong.valueOf(EPOCH_LENGTH));
     UnsignedLong committees_per_slot =
-        committees_per_epoch.dividedBy(UnsignedLong.valueOf(Constants.EPOCH_LENGTH));
+        committees_per_epoch.dividedBy(UnsignedLong.valueOf(EPOCH_LENGTH));
     UnsignedLong slot_start_shard =
         shuffling_start_shard
             .plus(committees_per_slot)
@@ -368,7 +369,7 @@ public class BeaconStateUtil {
 
   /** Return the epoch number of the given ``slot`` */
   public static UnsignedLong slot_to_epoch(UnsignedLong slot) {
-    return slot.dividedBy(UnsignedLong.valueOf(Constants.EPOCH_LENGTH));
+    return slot.dividedBy(UnsignedLong.valueOf(EPOCH_LENGTH));
   }
 
   /**
@@ -496,11 +497,11 @@ public class BeaconStateUtil {
             UnsignedLong.ONE,
             min(
                 UnsignedLong.valueOf(Constants.SHARD_COUNT)
-                    .dividedBy(UnsignedLong.valueOf(Constants.EPOCH_LENGTH)),
+                    .dividedBy(UnsignedLong.valueOf(EPOCH_LENGTH)),
                 active_validator_count
-                    .dividedBy(UnsignedLong.valueOf(Constants.EPOCH_LENGTH))
+                    .dividedBy(UnsignedLong.valueOf(EPOCH_LENGTH))
                     .dividedBy(UnsignedLong.valueOf(Constants.TARGET_COMMITTEE_SIZE))))
-        .times(UnsignedLong.valueOf(Constants.EPOCH_LENGTH));
+        .times(UnsignedLong.valueOf(EPOCH_LENGTH));
   }
 
   /**
@@ -793,6 +794,13 @@ public class BeaconStateUtil {
   }
 
   /**
+   * Extract the bit in ``bitfield`` at position ``i``.
+   */
+  public static int get_bitfield_bit(Bytes bitfield, int i) {
+    return (bitfield.get(i / 8) >> (i % 8)) % 2;
+  }
+
+  /**
    * TODO It seems to make sense to move this to {@link Fork}.
    *
    * <p>Returns the fork version of the given epoch.
@@ -919,6 +927,16 @@ public class BeaconStateUtil {
   private static int ceil_div8(int div) {
     checkArgument(div > 0, "Expected positive div but got %s", div);
     return (int) Math.ceil(8.0 / div);
+  }
+
+  /**
+   * Verify validity of ``slashable_attestation`` fields.
+   * @param state
+   * @param slashableAttestation
+   */
+  public static boolean verify_slashable_attestation(BeaconState state, SlashableAttestation slashableAttestation) {
+    // todo: complete
+    return true;
   }
 
   /**

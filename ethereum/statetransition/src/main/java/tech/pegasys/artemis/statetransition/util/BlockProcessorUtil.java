@@ -19,15 +19,17 @@ import static tech.pegasys.artemis.datastructures.Constants.DOMAIN_ATTESTATION;
 import static tech.pegasys.artemis.datastructures.Constants.DOMAIN_EXIT;
 import static tech.pegasys.artemis.datastructures.Constants.DOMAIN_PROPOSAL;
 import static tech.pegasys.artemis.datastructures.Constants.EMPTY_SIGNATURE;
-import static tech.pegasys.artemis.datastructures.Constants.EPOCH_LENGTH;
 import static tech.pegasys.artemis.datastructures.Constants.MAX_ATTESTATIONS;
 import static tech.pegasys.artemis.datastructures.Constants.MAX_ATTESTER_SLASHINGS;
 import static tech.pegasys.artemis.datastructures.Constants.MAX_DEPOSITS;
 import static tech.pegasys.artemis.datastructures.Constants.MAX_PROPOSER_SLASHINGS;
 import static tech.pegasys.artemis.datastructures.Constants.MIN_ATTESTATION_INCLUSION_DELAY;
+import static tech.pegasys.artemis.datastructures.Constants.EPOCH_LENGTH;;
 import static tech.pegasys.artemis.datastructures.Constants.ZERO_HASH;
 import static tech.pegasys.artemis.statetransition.util.BeaconStateUtil.get_attestation_participants;
+import static tech.pegasys.artemis.statetransition.util.BeaconStateUtil.get_bitfield_bit;
 import static tech.pegasys.artemis.statetransition.util.BeaconStateUtil.get_block_root;
+import static tech.pegasys.artemis.statetransition.util.BeaconStateUtil.get_crosslink_committees_at_slot;
 import static tech.pegasys.artemis.statetransition.util.BeaconStateUtil.get_current_epoch;
 import static tech.pegasys.artemis.statetransition.util.BeaconStateUtil.get_domain;
 import static tech.pegasys.artemis.statetransition.util.BeaconStateUtil.get_entry_exit_effect_epoch;
@@ -37,6 +39,8 @@ import static tech.pegasys.artemis.statetransition.util.BeaconStateUtil.is_surro
 import static tech.pegasys.artemis.statetransition.util.BeaconStateUtil.penalize_validator;
 import static tech.pegasys.artemis.statetransition.util.BeaconStateUtil.process_deposit;
 import static tech.pegasys.artemis.statetransition.util.BeaconStateUtil.slot_to_epoch;
+import static tech.pegasys.artemis.statetransition.util.BeaconStateUtil.verify_slashable_attestation;
+import static tech.pegasys.artemis.statetransition.util.EpochProcessorUtil.get_epoch_start_slot;
 import static tech.pegasys.artemis.statetransition.util.TreeHashUtil.hash_tree_root;
 import static tech.pegasys.artemis.util.bls.BLSVerify.bls_verify;
 
@@ -49,8 +53,6 @@ import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.bytes.Bytes48;
 import net.consensys.cava.crypto.Hash;
-import org.bouncycastle.crypto.Committer;
-import org.checkerframework.checker.signedness.qual.Unsigned;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.Eth1DataVote;
@@ -63,6 +65,7 @@ import tech.pegasys.artemis.datastructures.operations.Exit;
 import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
 import tech.pegasys.artemis.datastructures.operations.SlashableAttestation;
 import tech.pegasys.artemis.datastructures.state.CrosslinkCommittee;
+import tech.pegasys.artemis.datastructures.state.PendingAttestation;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.statetransition.BeaconState;
 import tech.pegasys.artemis.util.bls.BLSVerify;
@@ -159,12 +162,16 @@ public class BlockProcessorUtil {
     }
   }
 
-
+  /**
+   *
+   * @param state
+   * @param block
+   */
   public static void proposer_slashing(BeaconState state, BeaconBlock block) {
     assert block.getBody().getProposer_slashings().size() <= MAX_PROPOSER_SLASHINGS;
 
     for (ProposerSlashing proposer_slashing : block.getBody().getProposer_slashings()) {
-      Validator proposer = state.getValidator_registry().get(proposer_slashing.getProposer_index());
+      Validator proposer = state.getValidator_registry().get(proposer_slashing.getProposer_index().intValue());
 
       assert proposer_slashing.getProposal_data_1().getSlot().equals(proposer_slashing.getProposal_data_2().getSlot());
       assert proposer_slashing.getProposal_data_1().getShard().equals(proposer_slashing.getProposal_data_2().getShard());
@@ -180,10 +187,15 @@ public class BlockProcessorUtil {
           Bytes48.wrap(proposer_slashing.getProposal_signature_2()), get_domain(state.getFork(),
               slot_to_epoch(proposer_slashing.getProposal_data_2().getSlot()), DOMAIN_PROPOSAL));
 
-      penalize_validator(state, proposer_slashing.getProposer_index());
+      penalize_validator(state, proposer_slashing.getProposer_index().intValue());
     }
   }
 
+  /**
+   *
+   * @param state
+   * @param block
+   */
   public static void attester_slashing(BeaconState state, BeaconBlock block) {
     assert block.getBody().getAttester_slashings().size() <= MAX_ATTESTER_SLASHINGS;
 
@@ -215,60 +227,109 @@ public class BlockProcessorUtil {
     }
   }
 
+  /**
+   *
+   * @param state
+   * @param block
+   */
   public static void attestations(BeaconState state, BeaconBlock block) {
     assert block.getBody().getAttestations().size() <= MAX_ATTESTATIONS;
     for (Attestation attestation : block.getBody().getAttestations()) {
       assert attestation.getData().getSlot().compareTo(state.getSlot()
           .minus(UnsignedLong.valueOf(MIN_ATTESTATION_INCLUSION_DELAY))) <= 0;
       assert state.getSlot().minus(UnsignedLong.valueOf(MIN_ATTESTATION_INCLUSION_DELAY))
-          .compareTo(attestation.getData().getSlot().plus(UnsignedLong.valueOf(EPOCH_LENGTH))) < 0;
+          .compareTo(attestation.getData().getSlot().plus(UnsignedLong.valueOf(SLOTS_PER_EPOCH))) < 0;
 
-      // todo: Verify that attestation.data.justified_epoch is equal to state.justified_epoch if attestation.data.slot >= get_epoch_start_slot(get_current_epoch(state)) else state.previous_justified_epoch.
-      assert attestation.getData().getJustified_block_root() == get_block_root(state,
-          get_epoch_start_slot(attestation.getData().getJustified_epoch()));
-      assert attestation.getData().getLatest_crosslink() ==
+      if (slot_to_epoch(attestation.getData().getSlot().plus(UnsignedLong.valueOf(1)))
+          .compareTo(get_current_epoch(state)) >= 0) {
+        assert attestation.getData().getJustified_epoch().equals(state.getJustified_epoch());
+      } else {
+        assert attestation.getData().getJustified_epoch().equals(state.getPrevious_justified_epoch());
+      }
+
+      try {
+        assert attestation.getData().getJustified_block_root() == get_block_root(state,
+            get_epoch_start_slot(attestation.getData().getJustified_epoch()));
+      } catch (Exception e) {
+        // todo: throw error
+      }
+
+      assert attestation.getData().getLatest_crosslink_root() ==
           state.getLatest_crosslinks().get(attestation.getData().getShard().intValue()).getShard_block_root() ||
           attestation.getData().getShard_block_root() ==
               state.getLatest_crosslinks().get(attestation.getData().getShard().intValue()).getShard_block_root();
 
-      assert attestation.getCustody_bitfield() == b'\x00' * attestation.getCustody_bitfield().size();  // [TO BE REMOVED IN PHASE 1]
-      assert attestation.getAggregation_bitfield() != b'\x00' * attestation.getAggregation_bitfield().size();
+      assert verify_bitfields_and_aggregate_signature(attestation, state);
 
+      assert attestation.getData().getShard_block_root() == ZERO_HASH; //[TO BE REMOVED IN PHASE 1]
 
-      ArrayList<CrosslinkCommittee> crosslink_committee;
-
-
-//      crosslink_committee = [committee for committee, shard in get_crosslink_committees_at_slot(state, attestation.getData().getSlot())
-//      if shard == attestation.getData().getShard()][0]
-      for (int i = 0; i < crosslink_committee.size(); i++) {
-        assert get_bitfield_bit(attestation.getAggregation_bitfield(), i) != 0b0
-            || get_bitfield_bit(attestation.getCustody_bitfield(), i) == 0b0;
-      }
-
-      ArrayList<Integer> participants = get_attestation_participants(state, attestation.getData(),
-          attestation.getAggregation_bitfield().toArray());
-      ArrayList<Integer> custody_bit_1_participants = get_attestation_participants(state, attestation.getData(),
-          attestation.getCustody_bitfield().toArray());
-      ArrayList<Integer> custody_bit_0_participants;
-      //     custody_bit_0_participants = [i in participants for i not in custody_bit_1_participants]
-      // pubkey1 = [state.getValidator_registry().get(i).getPubkey() for i in custody_bit_0_participants]
-      // pubkey2 = [state.getValidator_registry().get(i).getPubkey() for i in custody_bit_1_participants]
-
-      assert bls_verify_multiple(
-          bls_aggregate_pubkeys(pubkey1),
-      bls_aggregate_pubkeys(pubkey2),
-      hash_tree_root(new AttestationDataAndCustodyBit(attestation.getData(), 0b0)),
-            hash_tree_root(new AttestationDataAndCustodyBit(attestation.getData(), 0b1)),
-        attestation.getAggregate_signature(), get_domain(state.getFork(),
-          slot_to_epoch(attestation.getData().getSlot()), DOMAIN_ATTESTATION));
-//[TO BE REMOVED IN PHASE 1]
-    assert attestation.getData().getShard_block_root() == ZERO_HASH;
-        // Append PendingAttestation(data=attestation.data, aggregation_bitfield=attestation.aggregation_bitfield, custody_bitfield=attestation.custody_bitfield, inclusion_slot=state.slot) to state.latest_attestations.
-
+      PendingAttestation pendingAttestation = new PendingAttestation(attestation.getData(),
+          attestation.getAggregation_bitfield(), attestation.getCustody_bitfield(), state.getSlot());
+      state.setLatest_attestations(state.getLatest_attestations().add(pendingAttestation));
     }
 
   }
 
+  /**
+   * Helper function for attestations.
+   * @param attestation
+   * @param state
+   * @return true if bitfields and aggregate signature verified. Otherwise, false.
+   */
+  static boolean verify_bitfields_and_aggregate_signature(Attestation attestation, BeaconState state) {
+    assert attestation.getCustody_bitfield() == b'\x00' * attestation.getCustody_bitfield().size();  // [TO BE REMOVED IN PHASE 1]
+    assert attestation.getAggregation_bitfield() != b'\x00' * attestation.getAggregation_bitfield().size();
+
+    ArrayList<List<Integer>> crosslink_committees = new ArrayList<>();
+    for (CrosslinkCommittee crosslink_committee : get_crosslink_committees_at_slot(state, attestation.getData().getSlot())) {
+      if (crosslink_committee.getShard() == attestation.getData().getShard()) {
+        crosslink_committees.add(crosslink_committee.getCommittee());
+      }
+    }
+    List<Integer> crosslink_committee = crosslink_committees.get(0);
+
+    for (int i = 0; i < crosslink_committee.size(); i++) {
+      assert get_bitfield_bit(attestation.getAggregation_bitfield(), i) != 0b0
+          || get_bitfield_bit(attestation.getCustody_bitfield(), i) == 0b0;
+    }
+
+    ArrayList<Integer> participants = get_attestation_participants(state, attestation.getData(),
+        attestation.getAggregation_bitfield().toArray());
+    ArrayList<Integer> custody_bit_1_participants = get_attestation_participants(state, attestation.getData(),
+        attestation.getCustody_bitfield().toArray());
+    ArrayList<Integer> custody_bit_0_participants = new ArrayList<>();
+    for (Integer participant : participants) {
+      if (custody_bit_1_participants.indexOf(participant) != -1) {
+        custody_bit_0_participants.add(participant);
+      }
+    }
+
+    ArrayList<Bytes48> pubkey0 = new ArrayList<>();
+    for (int i = 0; i < custody_bit_0_participants.size(); i++) {
+      pubkey0.add(state.getValidator_registry().get(i).getPubkey());
+    }
+
+    ArrayList<Bytes48> pubkey1 = new ArrayList<>();
+    for (int i = 0; i < custody_bit_1_participants.size(); i++) {
+      pubkey1.add(state.getValidator_registry().get(i).getPubkey());
+    }
+
+    assert bls_verify_multiple(
+        bls_aggregate_pubkeys(pubkey0),
+        bls_aggregate_pubkeys(pubkey1),
+        hash_tree_root(new AttestationDataAndCustodyBit(attestation.getData(), 0b0)),
+        hash_tree_root(new AttestationDataAndCustodyBit(attestation.getData(), 0b1)),
+        attestation.getAggregate_signature(), get_domain(state.getFork(),
+            slot_to_epoch(attestation.getData().getSlot()), DOMAIN_ATTESTATION));
+
+    return true;
+  }
+
+  /**
+   *
+   * @param state
+   * @param block
+   */
   public static void deposits(BeaconState state, BeaconBlock block) {
     assert block.getBody().getDeposits().size() <= MAX_DEPOSITS;
     // todo: add logic to ensure that deposits from 1.0 chain are processed in order
@@ -290,6 +351,11 @@ public class BlockProcessorUtil {
     }
   }
 
+  /**
+   *
+   * @param state
+   * @param block
+   */
   public static void exits(BeaconState state, BeaconBlock block) {
     assert block.getBody().getExits().size() <= Constants.MAX_EXITS;
     for (Exit exit : block.getBody().getExits()) {
@@ -304,6 +370,7 @@ public class BlockProcessorUtil {
       initiate_validator_exit(state, exit.getValidator_index().intValue());
     }
   }
+
 
   /**
    * Verify that the given ``leaf`` is on the merkle branch ``branch``.
