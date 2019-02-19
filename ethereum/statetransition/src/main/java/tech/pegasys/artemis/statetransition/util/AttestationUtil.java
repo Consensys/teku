@@ -15,6 +15,8 @@ package tech.pegasys.artemis.statetransition.util;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import net.consensys.cava.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.state.CrosslinkCommittee;
@@ -245,14 +247,39 @@ public class AttestationUtil {
     return get_attester_indices(state, previous_epoch_attestations);
   }
 
-  public static UnsignedLong inclusion_slot(BeaconState state, Integer index) {
+  public static PendingAttestation inclusion_slot_attestation(BeaconState state, Integer index)
+      throws Exception {
+    UnsignedLong previous_epoch = BeaconStateUtil.get_previous_epoch(state);
 
-    return UnsignedLong.ZERO;
+    List<PendingAttestation> previous_epoch_attestations =
+        get_epoch_attestations(state, previous_epoch);
+
+    List<PendingAttestation> possible_attestations = new ArrayList<>();
+    for (PendingAttestation attestation : previous_epoch_attestations) {
+      List<Integer> attestation_participants =
+          BeaconStateUtil.get_attestation_participants(
+              state, attestation.getData(), attestation.getParticipation_bitfield().toArray());
+      if (attestation_participants.contains(index)) {
+        possible_attestations.add(attestation);
+      }
+    }
+
+    PendingAttestation lowest_inclusion_slot_attestation =
+        Collections.min(possible_attestations, Comparator.comparing(a -> a.getSlot_included()));
+
+    return lowest_inclusion_slot_attestation;
   }
 
-  public static UnsignedLong inclusion_distance(BeaconState state, Integer index) {
-    // todo
-    return UnsignedLong.ZERO;
+  public static UnsignedLong inclusion_slot(BeaconState state, Integer index) throws Exception {
+    PendingAttestation lowest_inclusion_slot_attestation = inclusion_slot_attestation(state, index);
+    return lowest_inclusion_slot_attestation.getSlot_included();
+  }
+
+  public static UnsignedLong inclusion_distance(BeaconState state, Integer index) throws Exception {
+    PendingAttestation lowest_inclusion_slot_attestation = inclusion_slot_attestation(state, index);
+    return lowest_inclusion_slot_attestation
+        .getSlot_included()
+        .minus(lowest_inclusion_slot_attestation.getData().getSlot());
   }
 
   /**

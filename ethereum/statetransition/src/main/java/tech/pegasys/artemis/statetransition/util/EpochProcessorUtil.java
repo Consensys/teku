@@ -46,6 +46,7 @@ import tech.pegasys.artemis.statetransition.BeaconState;
 import tech.pegasys.artemis.util.bitwise.BitwiseOps;
 
 public class EpochProcessorUtil {
+  private static final Logger LOG = LogManager.getLogger(EpochProcessorUtil.class.getName());
 
   private static final Logger LOG = LogManager.getLogger(EpochProcessorUtil.class.getName());
 
@@ -206,7 +207,12 @@ public class EpochProcessorUtil {
   static Function<Integer, UnsignedLong> apply_inclusion_base_penalty(
       BeaconState state, UnsignedLong epochs_since_finality, UnsignedLong previous_total_balance) {
     return index -> {
-      UnsignedLong inclusion_distance = AttestationUtil.inclusion_distance(state, index);
+      UnsignedLong inclusion_distance = UnsignedLong.ZERO;
+      try {
+        inclusion_distance = AttestationUtil.inclusion_distance(state, index);
+      } catch (Exception e) {
+        LOG.info("apply_inclusion_base_penalty(): " + e);
+      }
       return base_reward(state, index, previous_total_balance)
           .times(UnsignedLong.valueOf(MIN_ATTESTATION_INCLUSION_DELAY))
           .dividedBy(inclusion_distance);
