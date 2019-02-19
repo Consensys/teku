@@ -220,7 +220,7 @@ public class BeaconStateUtil {
 
     // TODO: revist when we have the final shuffling algorithm implemented
     List<List<Integer>> shuffling =
-        get_shuffling(seed, state.getValidator_registry(), shuffling_epoch.longValue());
+        get_shuffling(seed, state.getValidator_registry(), shuffling_epoch);
     UnsignedLong offset = slot.mod(UnsignedLong.valueOf(Constants.EPOCH_LENGTH));
     UnsignedLong committees_per_slot =
         committees_per_epoch.dividedBy(UnsignedLong.valueOf(Constants.EPOCH_LENGTH));
@@ -516,10 +516,10 @@ public class BeaconStateUtil {
    * @return
    */
   public static List<List<Integer>> get_shuffling(
-      Bytes32 seed, List<Validator> validators, long epoch) throws IllegalStateException {
+      Bytes32 seed, List<Validator> validators, UnsignedLong epoch) throws IllegalStateException {
 
     List<Integer> active_validator_indices =
-        ValidatorsUtil.get_active_validator_indices(validators, UnsignedLong.fromLongBits(epoch));
+        ValidatorsUtil.get_active_validator_indices(validators, epoch);
 
     // TODO: revisit when we figure out what to do about integer indexes.
     int committees_per_epoch =
@@ -527,7 +527,7 @@ public class BeaconStateUtil {
 
     // Shuffle with seed
     // TODO: we may need to treat `epoch` as little-endian here. Revisit as the spec evolves.
-    seed.xor(Bytes32.wrap(Bytes.minimalBytes(epoch)));
+    seed.xor(Bytes32.leftPad(Bytes.ofUnsignedLong(epoch.longValue())));
     List<Integer> shuffled_active_validator_indices = shuffle(active_validator_indices, seed);
 
     return split(shuffled_active_validator_indices, committees_per_epoch);
@@ -770,8 +770,9 @@ public class BeaconStateUtil {
     try {
       message = TreeHashUtil.hash_tree_root(proof_of_possession_data.toBytes());
     } catch (Exception e) {
-      LOG.debug("Error when calculating the message inside: validate_proof_of_possession()");
-      LOG.debug(e.toString());
+      LOG.fatal(
+          "validate_proof_of_possession(): Error calculating the hash_tree_root(proof_of_possession). "
+              + e);
     }
     return bls_verify(pubkey, message, proof_of_possession, domain);
   }

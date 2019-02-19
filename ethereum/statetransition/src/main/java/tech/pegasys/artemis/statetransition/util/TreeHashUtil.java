@@ -54,7 +54,6 @@ public final class TreeHashUtil {
    * @return
    */
   public static Bytes32 hash_tree_root(BeaconState state) {
-    // TODO
-    return Bytes32.ZERO;
+    return hash_tree_root(state.toBytes());
   }
 }
