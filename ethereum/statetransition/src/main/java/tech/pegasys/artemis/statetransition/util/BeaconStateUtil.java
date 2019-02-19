@@ -37,14 +37,18 @@ import static tech.pegasys.artemis.datastructures.Constants.ZERO_HASH;
 import static tech.pegasys.artemis.statetransition.util.TreeHashUtil.hash_tree_root;
 import static tech.pegasys.artemis.util.bls.BLSAggregate.bls_aggregate_pubkeys;
 import static tech.pegasys.artemis.util.bls.BLSVerify.bls_verify;
+import static tech.pegasys.artemis.util.bls.BLSVerify.bls_verify_multiple;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.ListIterator;
+import java.util.Objects;
+
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.bytes.Bytes48;
@@ -866,7 +870,10 @@ public class BeaconStateUtil {
    * @param slashable_attestation
    */
   public boolean verify_slashable_attestation(BeaconState state, SlashableAttestation slashable_attestation) {
-    if (slashable_attestation.getCustody_bitfield() != (b '\x00' * slashable_attestation.getCustody_bitfield().size()))
+    // NOTE: The spec defines this verification in terms of the custody bitfield length,
+    // however because we've implemented the bitfield as a static Bytes32 value
+    // instead of a variable length bitfield, checking against Bytes32.ZERO will suffice.
+    if (!Objects.equals(slashable_attestation.getCustody_bitfield(), Bytes32.ZERO))
       return false;
 
     if (slashable_attestation.getValidator_indices().size() == 0) return false;
@@ -904,15 +911,15 @@ public class BeaconStateUtil {
       custody_bit_1_pubkeys.add(state.getValidator_registry().get(i).getPubkey());
     }
 
-    Bytes48[] pubkeys = new Bytes48[]{bls_aggregate_pubkeys(custody_bit_0_pubkeys),
-        bls_aggregate_pubkeys(custody_bit_1_pubkeys)};
-    Bytes32[] messages = new Bytes32[]{
-      hash_tree_root(new AttestationDataAndCustodyBit(slashable_attestation.getData(), false)),
-          hash_tree_root(new AttestationDataAndCustodyBit(slashable_attestation.getData(), true))}
+    List<Bytes48> pubkeys = Arrays.asList(bls_aggregate_pubkeys(custody_bit_0_pubkeys),
+        bls_aggregate_pubkeys(custody_bit_1_pubkeys));
+    List<Bytes32> messages = Arrays.asList(
+        hash_tree_root(new AttestationDataAndCustodyBit(slashable_attestation.getData(), false)),
+        hash_tree_root(new AttestationDataAndCustodyBit(slashable_attestation.getData(), true)));
     Signature signature = slashable_attestation.getAggregate_signature();
     UnsignedLong domain = get_domain(state.getFork(), slot_to_epoch(vote_data.data.slot), DOMAIN_ATTESTATION);
 
-    return bls_verify(pubkeys, messages, signature, domain);
+    return bls_verify_multiple(pubkeys, messages, signature, domain);
   }
 
   /**

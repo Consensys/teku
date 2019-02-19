@@ -13,6 +13,8 @@
 
 package tech.pegasys.artemis.util.bls;
 
+import java.util.List;
+
 import com.google.common.primitives.UnsignedLong;
 import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.bytes.Bytes48;
@@ -21,6 +23,15 @@ public class BLSVerify {
 
   public static boolean bls_verify(
       Bytes48 pubkey, Bytes32 message, Signature signature, UnsignedLong domain) {
+    // todo
+    return true;
+  }
+
+  public static boolean bls_verify_multiple(
+      List<Bytes48> pubkeys,
+      List<Bytes32> messages,
+      Signature aggregateSignature,
+      UnsignedLong domain) {
     // todo
     return true;
   }

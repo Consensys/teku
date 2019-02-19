@@ -18,6 +18,7 @@ import java.util.stream.Collectors;
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.ssz.SSZ;
+import tech.pegasys.artemis.datastructures.operations.AttestationDataAndCustodyBit;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.statetransition.BeaconState;
 
@@ -57,5 +58,16 @@ public final class TreeHashUtil {
    */
   public static Bytes32 hash_tree_root(BeaconState state) {
     return hash_tree_root(state.toBytes());
+  }
+
+  /**
+   * Calculate the hash tree root of the BeaconState provided
+   *
+   * @param state
+   * @return
+   */
+  public static Bytes32 hash_tree_root(AttestationDataAndCustodyBit attestationDataAndCustodyBit) {
+    // TODO
+    return Bytes32.ZERO;
   }
 }
