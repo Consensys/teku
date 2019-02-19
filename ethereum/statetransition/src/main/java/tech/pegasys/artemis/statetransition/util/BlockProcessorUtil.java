@@ -24,7 +24,7 @@ import static tech.pegasys.artemis.datastructures.Constants.MAX_ATTESTER_SLASHIN
 import static tech.pegasys.artemis.datastructures.Constants.MAX_DEPOSITS;
 import static tech.pegasys.artemis.datastructures.Constants.MAX_PROPOSER_SLASHINGS;
 import static tech.pegasys.artemis.datastructures.Constants.MIN_ATTESTATION_INCLUSION_DELAY;
-import static tech.pegasys.artemis.datastructures.Constants.EPOCH_LENGTH;;
+import static tech.pegasys.artemis.datastructures.Constants.EPOCH_LENGTH;
 import static tech.pegasys.artemis.datastructures.Constants.ZERO_HASH;
 import static tech.pegasys.artemis.statetransition.util.BeaconStateUtil.get_attestation_participants;
 import static tech.pegasys.artemis.statetransition.util.BeaconStateUtil.get_bitfield_bit;
@@ -68,7 +68,7 @@ import tech.pegasys.artemis.datastructures.state.CrosslinkCommittee;
 import tech.pegasys.artemis.datastructures.state.PendingAttestation;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.statetransition.BeaconState;
-import tech.pegasys.artemis.util.bls.BLSVerify;
+import tech.pegasys.artemis.util.bls.Signature;
 
 public class BlockProcessorUtil {
 
@@ -99,7 +99,7 @@ public class BlockProcessorUtil {
     // state.slot, DOMAIN_PROPOSAL)).
     int proposerIndex = BeaconStateUtil.get_beacon_proposer_index(state, state.getSlot());
     Bytes48 pubkey = state.getValidator_registry().get(proposerIndex).getPubkey();
-    return BLSVerify.bls_verify(
+    return bls_verify(
         pubkey,
         proposalRoot,
         block.getSignature(),
@@ -181,10 +181,10 @@ public class BlockProcessorUtil {
       assert proposer.getPenalized_epoch().compareTo(get_current_epoch(state)) > 0;
 
       assert bls_verify(proposer.getPubkey(), hash_tree_root(proposer_slashing.getProposal_data_1().toBytes()),
-          Bytes48.wrap(proposer_slashing.getProposal_signature_1().toBytes()), get_domain(state.getFork(),
+          proposer_slashing.getProposal_signature_1(), get_domain(state.getFork(),
               slot_to_epoch(proposer_slashing.getProposal_data_1().getSlot()), DOMAIN_PROPOSAL));
       assert bls_verify(proposer.getPubkey(), hash_tree_root(proposer_slashing.getProposal_data_2().toBytes()),
-          Bytes48.wrap(proposer_slashing.getProposal_signature_2()), get_domain(state.getFork(),
+          proposer_slashing.getProposal_signature_2(), get_domain(state.getFork(),
               slot_to_epoch(proposer_slashing.getProposal_data_2().getSlot()), DOMAIN_PROPOSAL));
 
       penalize_validator(state, proposer_slashing.getProposer_index().intValue());
@@ -238,7 +238,7 @@ public class BlockProcessorUtil {
       assert attestation.getData().getSlot().compareTo(state.getSlot()
           .minus(UnsignedLong.valueOf(MIN_ATTESTATION_INCLUSION_DELAY))) <= 0;
       assert state.getSlot().minus(UnsignedLong.valueOf(MIN_ATTESTATION_INCLUSION_DELAY))
-          .compareTo(attestation.getData().getSlot().plus(UnsignedLong.valueOf(SLOTS_PER_EPOCH))) < 0;
+          .compareTo(attestation.getData().getSlot().plus(UnsignedLong.valueOf(EPOCH_LENGTH))) < 0;
 
       if (slot_to_epoch(attestation.getData().getSlot().plus(UnsignedLong.valueOf(1)))
           .compareTo(get_current_epoch(state)) >= 0) {
@@ -265,7 +265,7 @@ public class BlockProcessorUtil {
 
       PendingAttestation pendingAttestation = new PendingAttestation(attestation.getData(),
           attestation.getAggregation_bitfield(), attestation.getCustody_bitfield(), state.getSlot());
-      state.setLatest_attestations(state.getLatest_attestations().add(pendingAttestation));
+      state.getLatest_attestations().add(pendingAttestation);
     }
 
   }
@@ -276,9 +276,9 @@ public class BlockProcessorUtil {
    * @param state
    * @return true if bitfields and aggregate signature verified. Otherwise, false.
    */
-  static boolean verify_bitfields_and_aggregate_signature(Attestation attestation, BeaconState state) {
-    assert attestation.getCustody_bitfield() == b'\x00' * attestation.getCustody_bitfield().size();  // [TO BE REMOVED IN PHASE 1]
-    assert attestation.getAggregation_bitfield() != b'\x00' * attestation.getAggregation_bitfield().size();
+  private static boolean verify_bitfields_and_aggregate_signature(Attestation attestation, BeaconState state) {
+    assert attestation.getCustody_bitfield() == 0x00 * attestation.getCustody_bitfield().size();  // [TO BE REMOVED IN PHASE 1]
+    assert attestation.getAggregation_bitfield() != 0x00 * attestation.getAggregation_bitfield().size();
 
     ArrayList<List<Integer>> crosslink_committees = new ArrayList<>();
     for (CrosslinkCommittee crosslink_committee : get_crosslink_committees_at_slot(state, attestation.getData().getSlot())) {
@@ -317,8 +317,8 @@ public class BlockProcessorUtil {
     assert bls_verify_multiple(
         bls_aggregate_pubkeys(pubkey0),
         bls_aggregate_pubkeys(pubkey1),
-        hash_tree_root(new AttestationDataAndCustodyBit(attestation.getData(), 0b0)),
-        hash_tree_root(new AttestationDataAndCustodyBit(attestation.getData(), 0b1)),
+        hash_tree_root(new AttestationDataAndCustodyBit(attestation.getData(), false)),
+        hash_tree_root(new AttestationDataAndCustodyBit(attestation.getData(), true)),
         attestation.getAggregate_signature(), get_domain(state.getFork(),
             slot_to_epoch(attestation.getData().getSlot()), DOMAIN_ATTESTATION));
 
@@ -332,17 +332,12 @@ public class BlockProcessorUtil {
    */
   public static void deposits(BeaconState state, BeaconBlock block) {
     assert block.getBody().getDeposits().size() <= MAX_DEPOSITS;
-    // todo: add logic to ensure that deposits from 1.0 chain are processed in order
-    // todo: update the call to verify_merkle_branch below if it needs to change after we process deposits in order
+
     for (Deposit deposit : block.getBody().getDeposits()) {
-      // todo: Let serialized_deposit_data be the serialized form of deposit.deposit_data.
-      Bytes serialized_deposit_data;
-      // It should be 8 bytes for deposit_data.amount followed by 8 bytes for deposit_data.timestamp
-      // and then the DepositInput bytes. That is, it should match deposit_data in the Ethereum 1.0
-      // deposit contract of which the hash was placed into the Merkle tree.
+      Bytes serialized_deposit_data = deposit.getDeposit_data().toBytes();
 
       assert verify_merkle_branch(Hash.keccak256(serialized_deposit_data),
-          deposit.getBranch(), DEPOSIT_CONTRACT_TREE_DEPTH, deposit.getIndex(),
+          deposit.getBranch(), DEPOSIT_CONTRACT_TREE_DEPTH, deposit.getIndex().intValue(),
           state.getLatest_eth1_data().getDeposit_root());
 
       process_deposit(state, deposit.getDeposit_data().getDeposit_input().getPubkey(),
@@ -364,7 +359,7 @@ public class BlockProcessorUtil {
       assert get_current_epoch(state).compareTo(exit.getEpoch()) >= 0;
 
       Bytes32 exit_message = hash_tree_root(new Exit(exit.getEpoch(), exit.getValidator_index(), EMPTY_SIGNATURE));
-      assert bls_verify(validator.getPubkey(), exit_message, Bytes48.wrap(exit.getSignature().toBytes()),
+      assert bls_verify(validator.getPubkey(), exit_message, exit.getSignature(),
           get_domain(state.getFork(), exit.getEpoch(), DOMAIN_EXIT));
 
       initiate_validator_exit(state, exit.getValidator_index().intValue());
@@ -381,13 +376,13 @@ public class BlockProcessorUtil {
    * @param root
    * @return
    */
-  public static boolean verify_merkle_branch(Bytes32 leaf, Bytes32[] branch, int depth, int index, Bytes32 root) {
+  private static boolean verify_merkle_branch(Bytes32 leaf, List<Bytes32> branch, int depth, int index, Bytes32 root) {
     Bytes32 value = leaf;
     for (int i = 0; i < depth; i ++) {
       if (index / Math.pow(2, i) % 2 == 0) {
-        value = Hash.keccak256(branch[i] + value);
+        value = Hash.keccak256(Bytes.concatenate(branch.get(i), value));
       } else {
-        value = Hash.keccak256(value + branch[i]);
+        value = Hash.keccak256(Bytes.concatenate(value, branch.get(i)));
       }
     }
     return value == root;
