@@ -26,6 +26,7 @@ import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.Eth1DataVote;
 import tech.pegasys.artemis.datastructures.blocks.ProposalSignedData;
 import tech.pegasys.artemis.statetransition.BeaconState;
+import tech.pegasys.artemis.util.bls.BLSVerify;
 
 public class BlockProcessorUtil {
 
@@ -36,7 +37,8 @@ public class BlockProcessorUtil {
    * @param state
    * @param block
    */
-  public static boolean verify_signature(BeaconState state, BeaconBlock block) {
+  public static boolean verify_signature(BeaconState state, BeaconBlock block)
+      throws IllegalStateException {
     // Let block_without_signature_root be the hash_tree_root of block where
     // block.signature is set
     // to EMPTY_SIGNATURE.
@@ -47,7 +49,7 @@ public class BlockProcessorUtil {
     // block_without_signature_root)).
     ProposalSignedData signedData =
         new ProposalSignedData(state.getSlot(), Constants.BEACON_CHAIN_SHARD_NUMBER, blockHash);
-    Bytes32 proposalRoot = TreeHashUtil.hash_tree_root(signedData.getBlock_root());
+    Bytes32 proposalRoot = signedData.getBlock_root();
     // Verify that
     // bls_verify(pubkey=state.validator_registry[get_beacon_proposer_index(state,
     // state.slot)].pubkey, message=proposal_root, signature=block.signature,
@@ -55,10 +57,11 @@ public class BlockProcessorUtil {
     // state.slot, DOMAIN_PROPOSAL)).
     int proposerIndex = BeaconStateUtil.get_beacon_proposer_index(state, state.getSlot());
     Bytes48 pubkey = state.getValidator_registry().get(proposerIndex).getPubkey();
-    // TODO: after v0.01 refactor constants no longer exists
-    //    return BLSVerify.bls_verify(
-    //        pubkey, proposalRoot, block.getSignature(), Constants.DOMAIN_PROPOSAL);
-    return true;
+    return BLSVerify.bls_verify(
+        pubkey,
+        proposalRoot,
+        block.getSignature(),
+        UnsignedLong.valueOf(Constants.DOMAIN_PROPOSAL));
   }
 
   /**
@@ -67,7 +70,8 @@ public class BlockProcessorUtil {
    * @param state
    * @param block
    */
-  public static void verify_and_update_randao(BeaconState state, BeaconBlock block) {
+  public static void verify_and_update_randao(BeaconState state, BeaconBlock block)
+      throws IllegalStateException {
     // Let proposer = state.validator_registry[get_beacon_proposer_index(state, state.slot)].
     int proposerIndex = BeaconStateUtil.get_beacon_proposer_index(state, state.getSlot());
     Bytes48 pubkey = state.getValidator_registry().get(proposerIndex).getPubkey();

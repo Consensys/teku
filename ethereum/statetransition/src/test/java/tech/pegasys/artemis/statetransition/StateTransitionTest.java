@@ -14,83 +14,44 @@
 package tech.pegasys.artemis.statetransition;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.fail;
+import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomDeposits;
 
 import com.google.common.primitives.UnsignedLong;
+import java.security.Security;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
-import net.consensys.cava.bytes.Bytes48;
 import net.consensys.cava.crypto.Hash;
 import net.consensys.cava.junit.BouncyCastleExtension;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import tech.pegasys.artemis.datastructures.Constants;
-import tech.pegasys.artemis.datastructures.state.Validator;
+import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
+import tech.pegasys.artemis.statetransition.util.BeaconStateUtil;
 import tech.pegasys.artemis.statetransition.util.SlotProcessorUtil;
 
 @ExtendWith(BouncyCastleExtension.class)
 class StateTransitionTest {
 
   private BeaconState newState() {
-    // Initialize state
-    BeaconState state = new BeaconState();
+    try {
+      // Initialize state
+      BeaconState state =
+          BeaconStateUtil.get_initial_beacon_state(
+              randomDeposits(5), UnsignedLong.ZERO, new Eth1Data(Bytes32.ZERO, Bytes32.ZERO));
 
-    // Add validator records
-    List<Validator> validators = new ArrayList<>();
-    validators.add(
-        new Validator(
-            Bytes48.leftPad(Bytes.of(0)),
-            Bytes32.ZERO,
-            UnsignedLong.ZERO,
-            UnsignedLong.ZERO,
-            UnsignedLong.ZERO,
-            UnsignedLong.ZERO,
-            UnsignedLong.ZERO));
-    validators.add(
-        new Validator(
-            Bytes48.leftPad(Bytes.of(0)),
-            Bytes32.ZERO,
-            UnsignedLong.ZERO,
-            UnsignedLong.ZERO,
-            UnsignedLong.ZERO,
-            UnsignedLong.ZERO,
-            UnsignedLong.ZERO));
-    validators.add(
-        new Validator(
-            Bytes48.leftPad(Bytes.of(0)),
-            Bytes32.ZERO,
-            UnsignedLong.ZERO,
-            UnsignedLong.ZERO,
-            UnsignedLong.ZERO,
-            UnsignedLong.ZERO,
-            UnsignedLong.ZERO));
-    validators.add(
-        new Validator(
-            Bytes48.leftPad(Bytes.of(0)),
-            Bytes32.ZERO,
-            UnsignedLong.ZERO,
-            UnsignedLong.ZERO,
-            UnsignedLong.ZERO,
-            UnsignedLong.ZERO,
-            UnsignedLong.ZERO));
-    validators.add(
-        new Validator(
-            Bytes48.leftPad(Bytes.of(0)),
-            Bytes32.ZERO,
-            UnsignedLong.ZERO,
-            UnsignedLong.ZERO,
-            UnsignedLong.ZERO,
-            UnsignedLong.ZERO,
-            UnsignedLong.ZERO));
-    state.setValidator_registry(validators);
+      state.setLatest_block_roots(
+          new ArrayList<Bytes32>(
+              Collections.nCopies(Constants.LATEST_BLOCK_ROOTS_LENGTH, Constants.ZERO_HASH)));
 
-    state.setLatest_block_roots(
-        new ArrayList<Bytes32>(
-            Collections.nCopies(Constants.LATEST_BLOCK_ROOTS_LENGTH, Constants.ZERO_HASH)));
-
-    return state;
+      return state;
+    } catch (Exception e) {
+      fail("get_initial_beacon_state() failed");
+      return null;
+    }
   }
 
   @Test
@@ -101,6 +62,7 @@ class StateTransitionTest {
             Collections.nCopies(Constants.LATEST_RANDAO_MIXES_LENGTH, Bytes32.ZERO)));
     state.setSlot(UnsignedLong.valueOf(12));
     List<Bytes32> latestRandaoMixes = state.getLatest_randao_mixes();
+    Security.addProvider(new BouncyCastleProvider());
     latestRandaoMixes.set(11, Hash.keccak256(Bytes32.fromHexString("0x01")));
     latestRandaoMixes.set(12, Hash.keccak256(Bytes32.ZERO));
 

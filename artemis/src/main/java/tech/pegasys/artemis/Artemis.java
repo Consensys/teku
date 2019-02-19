@@ -14,6 +14,8 @@
 package tech.pegasys.artemis;
 
 import org.apache.logging.log4j.core.config.Configurator;
+import java.security.Security;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import picocli.CommandLine;
 import tech.pegasys.artemis.services.ServiceController;
 import tech.pegasys.artemis.services.beaconchain.BeaconChainService;
@@ -26,6 +28,7 @@ public final class Artemis {
 
   public static void main(final String... args) {
     try {
+      Security.addProvider(new BouncyCastleProvider());
       // Process Command Line Args
       CommandLineArguments cliArgs = new CommandLineArguments();
       CommandLine commandLine = new CommandLine(cliArgs);
