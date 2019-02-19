@@ -17,6 +17,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static java.lang.Math.toIntExact;
 import static tech.pegasys.artemis.datastructures.Constants.DOMAIN_DEPOSIT;
 import static tech.pegasys.artemis.datastructures.Constants.ENTRY_EXIT_DELAY;
+import static tech.pegasys.artemis.datastructures.Constants.EPOCH_LENGTH;
 import static tech.pegasys.artemis.datastructures.Constants.FAR_FUTURE_EPOCH;
 import static tech.pegasys.artemis.datastructures.Constants.GENESIS_EPOCH;
 import static tech.pegasys.artemis.datastructures.Constants.GENESIS_FORK_VERSION;
@@ -26,7 +27,6 @@ import static tech.pegasys.artemis.datastructures.Constants.LATEST_INDEX_ROOTS_L
 import static tech.pegasys.artemis.datastructures.Constants.LATEST_RANDAO_MIXES_LENGTH;
 import static tech.pegasys.artemis.datastructures.Constants.MAX_DEPOSIT_AMOUNT;
 import static tech.pegasys.artemis.datastructures.Constants.SHARD_COUNT;
-import static tech.pegasys.artemis.datastructures.Constants.EPOCH_LENGTH;
 import static tech.pegasys.artemis.datastructures.Constants.ZERO_HASH;
 import static tech.pegasys.artemis.util.bls.BLSVerify.bls_verify;
 
@@ -793,9 +793,7 @@ public class BeaconStateUtil {
         .plus(UnsignedLong.valueOf(domain_type));
   }
 
-  /**
-   * Extract the bit in ``bitfield`` at position ``i``.
-   */
+  /** Extract the bit in ``bitfield`` at position ``i``. */
   public static int get_bitfield_bit(Bytes bitfield, int i) {
     return (bitfield.get(i / 8) >> (i % 8)) % 2;
   }
@@ -931,10 +929,12 @@ public class BeaconStateUtil {
 
   /**
    * Verify validity of ``slashable_attestation`` fields.
+   *
    * @param state
    * @param slashableAttestation
    */
-  public static boolean verify_slashable_attestation(BeaconState state, SlashableAttestation slashableAttestation) {
+  public static boolean verify_slashable_attestation(
+      BeaconState state, SlashableAttestation slashableAttestation) {
     // todo: complete
     return true;
   }

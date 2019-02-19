@@ -272,7 +272,7 @@ public class AttestationUtil {
     for (PendingAttestation attestation : attestations) {
       validator_index_sets.add(
           BeaconStateUtil.get_attestation_participants(
-              state, attestation.getData(), attestation.getParticipation_bitfield().toArray()));
+              state, attestation.getData(), attestation.getAggregation_bitfield().toArray()));
     }
 
     List<Integer> attester_indices = new ArrayList<Integer>();

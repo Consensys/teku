@@ -14,11 +14,11 @@
 package tech.pegasys.artemis.statetransition.util;
 
 import static tech.pegasys.artemis.datastructures.Constants.BASE_REWARD_QUOTIENT;
+import static tech.pegasys.artemis.datastructures.Constants.EPOCH_LENGTH;
 import static tech.pegasys.artemis.datastructures.Constants.INACTIVITY_PENALTY_QUOTIENT;
 import static tech.pegasys.artemis.datastructures.Constants.INCLUDER_REWARD_QUOTIENT;
 import static tech.pegasys.artemis.datastructures.Constants.MAX_DEPOSIT_AMOUNT;
 import static tech.pegasys.artemis.datastructures.Constants.MIN_ATTESTATION_INCLUSION_DELAY;
-import static tech.pegasys.artemis.datastructures.Constants.EPOCH_LENGTH;
 import static tech.pegasys.artemis.statetransition.util.BeaconStateUtil.get_effective_balance;
 import static tech.pegasys.artemis.statetransition.util.BeaconStateUtil.get_total_effective_balance;
 
@@ -698,9 +698,7 @@ public class EpochProcessorUtil {
     if (validator.getPenalized_epoch().compareTo(currentEpoch) <= 0) {
       UnsignedLong penalized_withdrawal_epochs =
           UnsignedLong.valueOf(
-              (long)
-                  Math.floor(
-                      Constants.LATEST_PENALIZED_EXIT_LENGTH * EPOCH_LENGTH / 2.0));
+              (long) Math.floor(Constants.LATEST_PENALIZED_EXIT_LENGTH * EPOCH_LENGTH / 2.0));
       return state
               .getSlot()
               .compareTo(validator.getPenalized_epoch().plus(penalized_withdrawal_epochs))

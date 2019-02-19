@@ -22,18 +22,18 @@ import tech.pegasys.artemis.datastructures.operations.AttestationData;
 
 public class PendingAttestation {
 
-  private AttestationData data;
   private Bytes32 aggregation_bitfield;
+  private AttestationData data;
   private Bytes32 custody_bitfield;
   private UnsignedLong slot_included;
 
   public PendingAttestation(
-      AttestationData data,
       Bytes32 aggregation_bitfield,
+      AttestationData data,
       Bytes32 custody_bitfield,
       UnsignedLong slot_included) {
-    this.data = data;
     this.aggregation_bitfield = aggregation_bitfield;
+    this.data = data;
     this.custody_bitfield = custody_bitfield;
     this.slot_included = slot_included;
   }
@@ -43,8 +43,8 @@ public class PendingAttestation {
         bytes,
         reader ->
             new PendingAttestation(
-                AttestationData.fromBytes(reader.readBytes()),
                 Bytes32.wrap(reader.readBytes()),
+                AttestationData.fromBytes(reader.readBytes()),
                 Bytes32.wrap(reader.readBytes()),
                 UnsignedLong.fromLongBits(reader.readUInt64())));
   }
@@ -52,8 +52,8 @@ public class PendingAttestation {
   public Bytes toBytes() {
     return SSZ.encode(
         writer -> {
-          writer.writeBytes(data.toBytes());
           writer.writeBytes(aggregation_bitfield);
+          writer.writeBytes(data.toBytes());
           writer.writeBytes(custody_bitfield);
           writer.writeUInt64(slot_included.longValue());
         });
@@ -61,7 +61,7 @@ public class PendingAttestation {
 
   @Override
   public int hashCode() {
-    return Objects.hash(data, aggregation_bitfield, custody_bitfield, slot_included);
+    return Objects.hash(aggregation_bitfield, data, custody_bitfield, slot_included);
   }
 
   @Override
@@ -79,27 +79,27 @@ public class PendingAttestation {
     }
 
     PendingAttestation other = (PendingAttestation) obj;
-    return Objects.equals(this.getData(), other.getData())
-        && Objects.equals(this.getAggregation_bitfield(), other.getAggregation_bitfield())
+    return Objects.equals(this.getAggregation_bitfield(), other.getAggregation_bitfield())
+        && Objects.equals(this.getData(), other.getData())
         && Objects.equals(this.getCustody_bitfield(), other.getCustody_bitfield())
         && Objects.equals(this.getSlot_included(), other.getSlot_included());
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */
-  public AttestationData getData() {
-    return data;
-  }
-
-  public void setData(AttestationData data) {
-    this.data = data;
-  }
-
   public Bytes32 getAggregation_bitfield() {
     return aggregation_bitfield;
   }
 
   public void setAggregation_bitfield(Bytes32 aggregation_bitfield) {
     this.aggregation_bitfield = aggregation_bitfield;
+  }
+
+  public AttestationData getData() {
+    return data;
+  }
+
+  public void setData(AttestationData data) {
+    this.data = data;
   }
 
   public Bytes32 getCustody_bitfield() {

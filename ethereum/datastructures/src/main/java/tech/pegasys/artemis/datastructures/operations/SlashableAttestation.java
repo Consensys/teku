@@ -20,8 +20,6 @@ import java.util.stream.Collectors;
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.ssz.SSZ;
-import tech.pegasys.artemis.datastructures.operations.AttestationData;
-import tech.pegasys.artemis.datastructures.operations.BLSSignature;
 
 public class SlashableAttestation {
 

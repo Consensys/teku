@@ -35,18 +35,13 @@ public final class TreeHashUtil {
     return SSZ.hashTreeRoot(value);
   }
 
-  /**
-   *
-   */
+  /** */
   public static Bytes32 hash_tree_root(Exit exit) {
     // todo: check that this is right
     return SSZ.hashTreeRoot(exit.toBytes());
   }
 
-  /**
-   *
-   * @param attestationDataAndCustodyBit
-   */
+  /** @param attestationDataAndCustodyBit */
   public static Bytes32 hash_tree_root(AttestationDataAndCustodyBit attestationDataAndCustodyBit) {
     // todo: check that this is right
     return SSZ.hashTreeRoot(attestationDataAndCustodyBit.toBytes());

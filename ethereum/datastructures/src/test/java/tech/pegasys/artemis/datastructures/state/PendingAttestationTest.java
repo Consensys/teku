@@ -27,13 +27,13 @@ import tech.pegasys.artemis.datastructures.operations.AttestationData;
 
 class PendingAttestationTest {
 
-  private AttestationData data = randomAttestationData();
   private Bytes32 participationBitfield = Bytes32.random();
+  private AttestationData data = randomAttestationData();
   private Bytes32 custodyBitfield = Bytes32.random();
   private UnsignedLong slotIncluded = randomUnsignedLong();
 
   private PendingAttestation pendingAttestation =
-      new PendingAttestation(data, participationBitfield, custodyBitfield, slotIncluded);
+      new PendingAttestation(participationBitfield, data, custodyBitfield, slotIncluded);
 
   @Test
   void equalsReturnsTrueWhenObjectAreSame() {
@@ -45,7 +45,7 @@ class PendingAttestationTest {
   @Test
   void equalsReturnsTrueWhenObjectFieldsAreEqual() {
     PendingAttestation testPendingAttestation =
-        new PendingAttestation(data, participationBitfield, custodyBitfield, slotIncluded);
+        new PendingAttestation(participationBitfield, data, custodyBitfield, slotIncluded);
 
     assertEquals(pendingAttestation, testPendingAttestation);
   }
@@ -60,7 +60,7 @@ class PendingAttestationTest {
     }
     PendingAttestation testPendingAttestation =
         new PendingAttestation(
-            otherAttestationData, participationBitfield, custodyBitfield, slotIncluded);
+            participationBitfield, otherAttestationData, custodyBitfield, slotIncluded);
 
     assertNotEquals(pendingAttestation, testPendingAttestation);
   }
@@ -68,7 +68,7 @@ class PendingAttestationTest {
   @Test
   void equalsReturnsFalseWhenParticipationBitfieldsAreDifferent() {
     PendingAttestation testPendingAttestation =
-        new PendingAttestation(data, participationBitfield.not(), custodyBitfield, slotIncluded);
+        new PendingAttestation(participationBitfield.not(), data, custodyBitfield, slotIncluded);
 
     assertNotEquals(pendingAttestation, testPendingAttestation);
   }
@@ -76,7 +76,7 @@ class PendingAttestationTest {
   @Test
   void equalsReturnsFalseWhenCustodyBitfieldsAreDifferent() {
     PendingAttestation testPendingAttestation =
-        new PendingAttestation(data, participationBitfield, custodyBitfield.not(), slotIncluded);
+        new PendingAttestation(participationBitfield, data, custodyBitfield.not(), slotIncluded);
 
     assertNotEquals(pendingAttestation, testPendingAttestation);
   }
@@ -85,7 +85,7 @@ class PendingAttestationTest {
   void equalsReturnsFalseWhenSlotIncludedsAreDifferent() {
     PendingAttestation testPendingAttestation =
         new PendingAttestation(
-            data, participationBitfield, custodyBitfield, slotIncluded.plus(randomUnsignedLong()));
+            participationBitfield, data, custodyBitfield, slotIncluded.plus(randomUnsignedLong()));
 
     assertNotEquals(pendingAttestation, testPendingAttestation);
   }
