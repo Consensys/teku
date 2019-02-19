@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis;
 
+import org.apache.logging.log4j.core.config.Configurator;
 import picocli.CommandLine;
 import tech.pegasys.artemis.services.ServiceController;
 import tech.pegasys.artemis.services.beaconchain.BeaconChainService;
@@ -32,6 +33,11 @@ public final class Artemis {
       if (commandLine.isUsageHelpRequested()) {
         commandLine.usage(System.out);
         return;
+      }
+      // set log level per CLI flags
+      if (cliArgs.getLoggingLevel() != null) {
+        System.out.println("Setting logging level to " + cliArgs.getLoggingLevel().name());
+        Configurator.setAllLevels("", cliArgs.getLoggingLevel());
       }
       // Detect SIGTERM
       Runtime.getRuntime()

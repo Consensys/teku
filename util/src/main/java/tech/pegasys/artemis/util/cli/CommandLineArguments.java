@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.util.cli;
 
+import org.apache.logging.log4j.Level;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 
@@ -24,7 +25,19 @@ public class CommandLineArguments {
   )
   private Boolean PoWChainServiceDisabled = false;
 
+  @Option(
+    names = {"--logging", "-l"},
+    paramLabel = "<LOG VERBOSITY LEVEL>",
+    description =
+        "Logging verbosity levels: OFF, FATAL, WARN, INFO, DEBUG, TRACE, ALL (default: INFO)."
+  )
+  private final Level logLevel = null;
+
   public Boolean getPoWChainServiceDisabled() {
     return this.PoWChainServiceDisabled;
+  }
+
+  public Level getLoggingLevel() {
+    return this.logLevel;
   }
 }
