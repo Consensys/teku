@@ -12,4 +12,5 @@ dependencies {
   implementation 'info.picocli:picocli'
   implementation 'com.google.guava:guava'
   implementation 'net.consensys.cava:cava-bytes'
+  implementation 'org.apache.logging.log4j:log4j-api'
 }
