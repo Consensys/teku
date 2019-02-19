@@ -18,8 +18,11 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.bytes.Bytes48;
+import net.consensys.cava.ssz.SSZ;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.datastructures.blocks.Eth1DataVote;
 import tech.pegasys.artemis.datastructures.state.Crosslink;
@@ -350,5 +353,90 @@ public class BeaconState {
 
   public void incrementSlot() {
     this.slot = slot.plus(UnsignedLong.ONE);
+  }
+
+  public static BeaconState fromBytes(Bytes bytes) {
+    // todo
+    return SSZ.decode(bytes, reader -> new BeaconState());
+  }
+
+  public Bytes toBytes() {
+    // todo
+    return Bytes32.ZERO;
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(
+        slot,
+        genesis_time,
+        fork,
+        validator_registry,
+        validator_balances,
+        validator_registry_update_epoch,
+        latest_randao_mixes,
+        previous_epoch_start_shard,
+        current_epoch_start_shard,
+        previous_calculation_epoch,
+        current_calculation_epoch,
+        previous_epoch_seed,
+        current_epoch_seed,
+        previous_justified_epoch,
+        justified_epoch,
+        justification_bitfield,
+        finalized_epoch,
+        latest_crosslinks,
+        latest_block_roots,
+        latest_index_roots,
+        latest_penalized_balances,
+        latest_attestations,
+        batched_block_roots,
+        latest_eth1_data,
+        eth1_data_votes);
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (Objects.isNull(obj)) {
+      return false;
+    }
+
+    if (this == obj) {
+      return true;
+    }
+
+    if (!(obj instanceof BeaconState)) {
+      return false;
+    }
+
+    BeaconState other = (BeaconState) obj;
+    return Objects.equals(slot, other.getSlot())
+        && Objects.equals(this.getGenesis_time(), other.getGenesis_time())
+        && Objects.equals(this.getFork(), other.getFork())
+        && Objects.equals(this.getValidator_registry(), other.getValidator_registry())
+        && Objects.equals(this.getValidator_balances(), other.getValidator_balances())
+        && Objects.equals(
+            this.getValidator_registry_update_epoch(), other.getValidator_registry_update_epoch())
+        && Objects.equals(this.getLatest_randao_mixes(), other.getLatest_randao_mixes())
+        && Objects.equals(
+            this.getPrevious_epoch_start_shard(), other.getPrevious_epoch_start_shard())
+        && Objects.equals(this.getCurrent_epoch_start_shard(), other.getCurrent_epoch_start_shard())
+        && Objects.equals(
+            this.getPrevious_calculation_epoch(), other.getPrevious_calculation_epoch())
+        && Objects.equals(this.getCurrent_calculation_epoch(), other.getCurrent_calculation_epoch())
+        && Objects.equals(this.getPrevious_epoch_seed(), other.getPrevious_epoch_seed())
+        && Objects.equals(this.getCurrent_epoch_seed(), other.getCurrent_epoch_seed())
+        && Objects.equals(this.getPrevious_justified_epoch(), other.getPrevious_justified_epoch())
+        && Objects.equals(this.getJustified_epoch(), other.getJustified_epoch())
+        && Objects.equals(this.getJustification_bitfield(), other.getJustification_bitfield())
+        && Objects.equals(this.getFinalized_epoch(), other.getFinalized_epoch())
+        && Objects.equals(this.getLatest_crosslinks(), other.getLatest_crosslinks())
+        && Objects.equals(this.getLatest_block_roots(), other.getLatest_block_roots())
+        && Objects.equals(this.getLatest_index_roots(), other.getLatest_index_roots())
+        && Objects.equals(this.getLatest_penalized_balances(), other.getLatest_penalized_balances())
+        && Objects.equals(this.getLatest_attestations(), other.getLatest_attestations())
+        && Objects.equals(this.getBatched_block_roots(), other.getBatched_block_roots())
+        && Objects.equals(this.getLatest_eth1_data(), other.getLatest_eth1_data())
+        && Objects.equals(this.getEth1_data_votes(), other.getEth1_data_votes());
   }
 }

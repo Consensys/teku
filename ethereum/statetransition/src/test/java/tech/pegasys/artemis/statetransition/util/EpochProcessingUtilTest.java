@@ -35,18 +35,21 @@ class EpochProcessingUtilTest {
 
   BeaconState createArbitraryBeaconState(int numValidators) {
     ArrayList<Deposit> deposits = randomDeposits(numValidators);
-    // get initial state
-    BeaconState state =
-        BeaconStateUtil.get_initial_beacon_state(
-            deposits, UnsignedLong.valueOf(Constants.GENESIS_SLOT), randomEth1Data());
+    try {
+      // get initial state
+      BeaconState state =
+          BeaconStateUtil.get_initial_beacon_state(
+              deposits, UnsignedLong.valueOf(Constants.GENESIS_SLOT), randomEth1Data());
+      UnsignedLong currentEpoch = BeaconStateUtil.get_current_epoch(state);
 
-    UnsignedLong currentEpoch = BeaconStateUtil.get_current_epoch(state);
-
-    // set validators to active
-    for (Validator validator : state.getValidator_registry()) {
-      validator.setActivation_epoch(currentEpoch);
+      // set validators to active
+      for (Validator validator : state.getValidator_registry()) {
+        validator.setActivation_epoch(currentEpoch);
+      }
+      return state;
+    } catch (Exception e) {
+      return null;
     }
-    return state;
   }
 
   @Disabled

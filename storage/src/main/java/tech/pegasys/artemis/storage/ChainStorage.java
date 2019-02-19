@@ -27,7 +27,7 @@ import tech.pegasys.artemis.datastructures.operations.Attestation;
 /** ChainStorage Interface class */
 public interface ChainStorage {
 
-  static final Logger LOG = LogManager.getLogger();
+  static final Logger LOG = LogManager.getLogger(ChainStorage.class.getName());
 
   /**
    * Instantiate the ChainStorage
@@ -99,7 +99,9 @@ public interface ChainStorage {
   static <S, T extends Queue<S>> Optional<S> remove(T items) {
     Optional<S> result = Optional.ofNullable(null);
     try {
-      result = Optional.of(items.remove());
+      if (items.size() > 0) {
+        result = Optional.of(items.remove());
+      }
     } catch (NoSuchElementException e) {
       LOG.debug(items.getClass().toString() + ": There is nothing to remove");
     }
