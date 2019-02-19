@@ -13,8 +13,8 @@
 
 package tech.pegasys.artemis;
 
-import org.apache.logging.log4j.core.config.Configurator;
 import java.security.Security;
+import org.apache.logging.log4j.core.config.Configurator;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import picocli.CommandLine;
 import tech.pegasys.artemis.services.ServiceController;
