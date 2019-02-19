@@ -329,7 +329,9 @@ public class EpochProcessorUtil {
       Predicate<Integer> slashed_filter =
           index -> {
             Validator validator = state.getValidator_registry().get(index);
-            return validator.getSlashed_epoch().compareTo(BeaconStateUtil.get_current_epoch(state))
+            return validator
+                    .getPenalized_epoch()
+                    .compareTo(BeaconStateUtil.get_current_epoch(state))
                 <= 0;
           };
 
@@ -648,7 +650,7 @@ public class EpochProcessorUtil {
 
       if (currentEpoch.equals(
           validator
-              .getSlashed_epoch()
+              .getPenalized_epoch()
               .plus(UnsignedLong.valueOf(Constants.LATEST_PENALIZED_EXIT_LENGTH / 2)))) {
         int epoch_index = currentEpoch.intValue() % Constants.LATEST_PENALIZED_EXIT_LENGTH;
 
@@ -690,7 +692,7 @@ public class EpochProcessorUtil {
 
   static boolean eligible(BeaconState state, Validator validator) {
     UnsignedLong currentEpoch = BeaconStateUtil.get_current_epoch(state);
-    if (validator.getSlashed_epoch().compareTo(currentEpoch) <= 0) {
+    if (validator.getPenalized_epoch().compareTo(currentEpoch) <= 0) {
       UnsignedLong penalized_withdrawal_epochs =
           UnsignedLong.valueOf(
               (long)
@@ -698,7 +700,7 @@ public class EpochProcessorUtil {
                       Constants.LATEST_PENALIZED_EXIT_LENGTH * Constants.EPOCH_LENGTH / 2.0));
       return state
               .getSlot()
-              .compareTo(validator.getSlashed_epoch().plus(penalized_withdrawal_epochs))
+              .compareTo(validator.getPenalized_epoch().plus(penalized_withdrawal_epochs))
           >= 0;
     } else {
       return currentEpoch.compareTo(
