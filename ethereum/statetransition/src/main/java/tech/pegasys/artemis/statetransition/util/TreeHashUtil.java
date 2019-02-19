@@ -13,12 +13,10 @@
 
 package tech.pegasys.artemis.statetransition.util;
 
-import java.security.Security;
 import java.util.List;
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.ssz.SSZ;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.statetransition.BeaconState;
 
@@ -32,7 +30,6 @@ public final class TreeHashUtil {
    * @return
    */
   public static Bytes32 hash_tree_root(Bytes value) {
-    Security.addProvider(new BouncyCastleProvider());
     return SSZ.hashTreeRoot(value);
   }
 

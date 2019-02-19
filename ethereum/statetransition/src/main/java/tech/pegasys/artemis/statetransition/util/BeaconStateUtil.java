@@ -32,7 +32,6 @@ import static tech.pegasys.artemis.util.bls.BLSVerify.bls_verify;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.primitives.UnsignedLong;
-import java.security.Security;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -43,7 +42,6 @@ import net.consensys.cava.bytes.Bytes48;
 import net.consensys.cava.crypto.Hash;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
@@ -286,7 +284,6 @@ public class BeaconStateUtil {
     Bytes32 randao_mix =
         get_randao_mix(state, epoch.minus(UnsignedLong.valueOf(Constants.SEED_LOOKAHEAD)));
     Bytes32 index_root = get_active_index_root(state, epoch);
-    Security.addProvider(new BouncyCastleProvider());
     return Hash.keccak256(Bytes.wrap(randao_mix, index_root));
   }
 
@@ -482,7 +479,6 @@ public class BeaconStateUtil {
       o[i + list.size()] = list.get(i);
     }
     for (int i = list.size() - 1; i > 0; i--) {
-      Security.addProvider(new BouncyCastleProvider());
       o[i] = Hash.keccak256(Bytes.wrap(o[i * 2], o[i * 2 + 1]));
     }
     return o[1];
@@ -575,7 +571,6 @@ public class BeaconStateUtil {
     int index = 0;
     while (index < values_count - 1) {
       // Re-hash the `source` to obtain a new pattern of bytes.
-      Security.addProvider(new BouncyCastleProvider());
       source = Hash.keccak256(source);
       // List to hold values for swap below.
       T tmp;

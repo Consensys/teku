@@ -16,13 +16,11 @@ package tech.pegasys.artemis.statetransition.util;
 import static java.lang.Math.toIntExact;
 
 import com.google.common.primitives.UnsignedLong;
-import java.security.Security;
 import java.util.List;
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.bytes.Bytes48;
 import net.consensys.cava.crypto.Hash;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.Eth1DataVote;
@@ -90,7 +88,6 @@ public class BlockProcessorUtil {
     // xor(get_randao_mix(state, get_current_epoch(state)), hash(block.randao_reveal))
     int index = toIntExact(epoch) % Constants.LATEST_RANDAO_MIXES_LENGTH;
     Bytes32 latest_randao_mixes = state.getLatest_randao_mixes().get(index);
-    Security.addProvider(new BouncyCastleProvider());
     state.getLatest_randao_mixes().set(index, latest_randao_mixes.xor(Hash.keccak256(epochBytes)));
   }
   /**
