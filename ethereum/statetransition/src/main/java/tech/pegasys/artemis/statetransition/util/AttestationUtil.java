@@ -354,6 +354,8 @@ public class AttestationUtil {
 
   /**
    * get indices of validators attesting to state for the given block_root
+   * TODO: the union part takes O(n^2) time, where n is the number of
+   * validators. OPTIMIZE
    *
    * @param state
    * @param crosslink_committee
@@ -361,7 +363,7 @@ public class AttestationUtil {
    * @return
    * @throws BlockValidationException
    */
-  public static ArrayList<Integer> attesting_validator_indices(
+  public static List<Integer> attesting_validator_indices(
       BeaconState state, CrosslinkCommittee crosslink_committee, Bytes32 shard_block_root)
       throws Exception {
     UnsignedLong current_epoch = BeaconStateUtil.get_current_epoch(state);
@@ -369,14 +371,26 @@ public class AttestationUtil {
     List<PendingAttestation> combined_attestations = get_epoch_attestations(state, current_epoch);
     combined_attestations.addAll(get_epoch_attestations(state, previous_epoch));
 
-    for (PendingAttestation record : combined_attestations) {
-      if (record.getData().getShard().compareTo(crosslink_committee.getShard()) == 0
-          && record.getData().getShard_block_root() == shard_block_root) {
-        return BeaconStateUtil.get_attestation_participants(
-            state, record.getData(), record.getAggregation_bitfield().toArray());
+    List<ArrayList<Integer>> validator_index_sets = new ArrayList<>();
+
+    for (PendingAttestation attestation : combined_attestations) {
+      if (attestation.getData().getShard().compareTo(crosslink_committee.getShard()) == 0
+          && attestation.getData().getShard_block_root() == shard_block_root) {
+        validator_index_sets.add(
+            BeaconStateUtil.get_attestation_participants(
+                state, attestation.getData(), attestation.getParticipation_bitfield().toArray()));
       }
     }
-    throw new Exception("attesting_validator_indicies appear to be empty");
+
+    List<Integer> attesting_validator_indices = new ArrayList<Integer>();
+    for (List<Integer> validator_index_set : validator_index_sets) {
+      for (Integer validator_index : validator_index_set) {
+        if (!attesting_validator_indices.contains(validator_index)) {
+          attesting_validator_indices.add(validator_index);
+        }
+      }
+    }
+    return attesting_validator_indices;
   }
 
   /**
