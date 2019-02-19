@@ -439,13 +439,11 @@ public class EpochProcessorUtil {
    */
   public static void crosslinkRewards(BeaconState state, UnsignedLong previous_total_balance)
       throws Exception {
-    UnsignedLong current_epoch = BeaconStateUtil.get_current_epoch(state);
     UnsignedLong previous_epoch = BeaconStateUtil.get_previous_epoch(state);
     List<Integer> slot_range =
         IntStream.range(0, Constants.EPOCH_LENGTH).boxed().collect(Collectors.toList());
-    List<PendingAttestation> attestations =
-        AttestationUtil.get_epoch_attestations(state, current_epoch);
-    List<Integer> attester_indices = AttestationUtil.get_attester_indices(state, attestations);
+    List<Integer> attester_indices =
+        AttestationUtil.get_previous_epoch_boundary_attester_indices(state);
     UnsignedLong slot = get_epoch_start_slot(previous_epoch);
     for (Integer slot_incr : slot_range) {
       slot = slot.plus(UnsignedLong.valueOf(slot_incr));

@@ -264,7 +264,7 @@ public class AttestationUtil {
    * @param attestations
    * @return attester_indices
    */
-  public static List<Integer> get_attester_indices(
+  static List<Integer> get_attester_indices(
       BeaconState state, List<PendingAttestation> attestations) throws IllegalStateException {
 
     List<ArrayList<Integer>> validator_index_sets = new ArrayList<ArrayList<Integer>>();
