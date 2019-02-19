@@ -351,4 +351,28 @@ public class AttestationUtil {
     }
     throw new Exception("attesting_validator_indicies appear to be empty");
   }
+
+  /**
+   * get indices of validators attesting to state for the winning block root
+   *
+   * @param state
+   * @param crosslink_committee
+   * @return
+   */
+  public static ArrayList<Integer> attesting_validators(
+      BeaconState state, CrosslinkCommittee crosslink_committee) throws Exception {
+    return attesting_validator_indices(
+        state, crosslink_committee, winning_root(state, crosslink_committee));
+  }
+
+  /**
+   * is the shard_block_root that was voted on by the most validators (by balance).
+   *
+   * @param state
+   * @param crosslink_committee
+   * @return
+   */
+  static Bytes32 winning_root(BeaconState state, CrosslinkCommittee crosslink_committee) {
+    return Bytes32.ZERO;
+  }
 }

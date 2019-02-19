@@ -442,14 +442,14 @@ public class EpochProcessorUtil {
     UnsignedLong previous_epoch = BeaconStateUtil.get_previous_epoch(state);
     List<Integer> slot_range =
         IntStream.range(0, Constants.EPOCH_LENGTH).boxed().collect(Collectors.toList());
-    List<Integer> attester_indices =
-        AttestationUtil.get_previous_epoch_boundary_attester_indices(state);
     UnsignedLong slot = get_epoch_start_slot(previous_epoch);
     for (Integer slot_incr : slot_range) {
       slot = slot.plus(UnsignedLong.valueOf(slot_incr));
       List<CrosslinkCommittee> crosslink_committees_at_slot =
           BeaconStateUtil.get_crosslink_committees_at_slot(state, slot, false);
       for (CrosslinkCommittee crosslink_committee : crosslink_committees_at_slot) {
+        List<Integer> attester_indices =
+            AttestationUtil.attesting_validators(state, crosslink_committee);
         for (Integer index : crosslink_committee.getCommittee()) {
           List<UnsignedLong> balances = state.getValidator_balances();
           UnsignedLong balance = balances.get(index);
