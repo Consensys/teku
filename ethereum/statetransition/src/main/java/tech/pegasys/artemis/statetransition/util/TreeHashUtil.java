@@ -50,6 +50,10 @@ public final class TreeHashUtil {
             }));
   }
 
+  public static Bytes32 hash_tree_root(AttestationDataAndCustodyBit attestationDataAndCustodyBit) {
+    // TODO
+    return Bytes32.ZERO;
+  }
   /**
    * Calculate the hash tree root of the BeaconState provided
    *
