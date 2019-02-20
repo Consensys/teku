@@ -14,6 +14,7 @@
 package tech.pegasys.artemis.statetransition;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 import static tech.pegasys.artemis.datastructures.Constants.ENTRY_EXIT_DELAY;
@@ -539,5 +540,12 @@ class BeaconStateTest {
     Bytes32 index_root = Bytes32.ZERO;
     Security.addProvider(new BouncyCastleProvider());
     Bytes32 hash = Hash.keccak256(Bytes.wrap(randao_mix, index_root));
+  }
+
+  @Test
+  void rountripSSZ() {
+    BeaconState state = newState();
+    Bytes sszBeaconBlockBytes = state.toBytes();
+    assertEquals(state, BeaconState.fromBytes(sszBeaconBlockBytes));
   }
 }
