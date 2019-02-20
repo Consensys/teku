@@ -795,7 +795,7 @@ public class BeaconStateUtil {
 
   /** Extract the bit in ``bitfield`` at position ``i``. */
   public static int get_bitfield_bit(Bytes bitfield, int i) {
-    return (bitfield.get(i / 8) >> (i % 8)) % 2;
+    return (bitfield.get(i / 8) >> (7 - (i % 8))) % 2;
   }
 
   /**

@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.statetransition.util;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static java.lang.Math.toIntExact;
 import static tech.pegasys.artemis.datastructures.Constants.DEPOSIT_CONTRACT_TREE_DEPTH;
 import static tech.pegasys.artemis.datastructures.Constants.DOMAIN_ATTESTATION;
@@ -168,41 +169,46 @@ public class BlockProcessorUtil {
    * @param block
    */
   public static void proposer_slashing(BeaconState state, BeaconBlock block) {
-    assert block.getBody().getProposer_slashings().size() <= MAX_PROPOSER_SLASHINGS;
+    checkArgument(block.getBody().getProposer_slashings().size() <= MAX_PROPOSER_SLASHINGS);
 
     for (ProposerSlashing proposer_slashing : block.getBody().getProposer_slashings()) {
       Validator proposer =
           state.getValidator_registry().get(proposer_slashing.getProposer_index().intValue());
 
-      assert proposer_slashing
-          .getProposal_data_1()
-          .getSlot()
-          .equals(proposer_slashing.getProposal_data_2().getSlot());
-      assert proposer_slashing
-          .getProposal_data_1()
-          .getShard()
-          .equals(proposer_slashing.getProposal_data_2().getShard());
-      assert proposer_slashing.getProposal_data_1().getBlock_root()
-          != proposer_slashing.getProposal_data_2().getBlock_root();
+      checkArgument(
+          proposer_slashing
+              .getProposal_data_1()
+              .getSlot()
+              .equals(proposer_slashing.getProposal_data_2().getSlot()));
+      checkArgument(
+          proposer_slashing
+              .getProposal_data_1()
+              .getShard()
+              .equals(proposer_slashing.getProposal_data_2().getShard()));
+      checkArgument(
+          proposer_slashing.getProposal_data_1().getBlock_root()
+              != proposer_slashing.getProposal_data_2().getBlock_root());
 
-      assert proposer.getPenalized_epoch().compareTo(get_current_epoch(state)) > 0;
+      checkArgument(proposer.getPenalized_epoch().compareTo(get_current_epoch(state)) > 0);
 
-      assert bls_verify(
-          proposer.getPubkey(),
-          hash_tree_root(proposer_slashing.getProposal_data_1().toBytes()),
-          proposer_slashing.getProposal_signature_1(),
-          get_domain(
-              state.getFork(),
-              slot_to_epoch(proposer_slashing.getProposal_data_1().getSlot()),
-              DOMAIN_PROPOSAL));
-      assert bls_verify(
-          proposer.getPubkey(),
-          hash_tree_root(proposer_slashing.getProposal_data_2().toBytes()),
-          proposer_slashing.getProposal_signature_2(),
-          get_domain(
-              state.getFork(),
-              slot_to_epoch(proposer_slashing.getProposal_data_2().getSlot()),
-              DOMAIN_PROPOSAL));
+      checkArgument(
+          bls_verify(
+              proposer.getPubkey(),
+              hash_tree_root(proposer_slashing.getProposal_data_1().toBytes()),
+              proposer_slashing.getProposal_signature_1(),
+              get_domain(
+                  state.getFork(),
+                  slot_to_epoch(proposer_slashing.getProposal_data_1().getSlot()),
+                  DOMAIN_PROPOSAL)));
+      checkArgument(
+          bls_verify(
+              proposer.getPubkey(),
+              hash_tree_root(proposer_slashing.getProposal_data_2().toBytes()),
+              proposer_slashing.getProposal_signature_2(),
+              get_domain(
+                  state.getFork(),
+                  slot_to_epoch(proposer_slashing.getProposal_data_2().getSlot()),
+                  DOMAIN_PROPOSAL)));
 
       penalize_validator(state, proposer_slashing.getProposer_index().intValue());
     }
@@ -213,18 +219,21 @@ public class BlockProcessorUtil {
    * @param block
    */
   public static void attester_slashing(BeaconState state, BeaconBlock block) {
-    assert block.getBody().getAttester_slashings().size() <= MAX_ATTESTER_SLASHINGS;
+    checkArgument(block.getBody().getAttester_slashings().size() <= MAX_ATTESTER_SLASHINGS);
 
     for (AttesterSlashing attester_slashing : block.getBody().getAttester_slashings()) {
       SlashableAttestation slashable_attestation_1 = attester_slashing.getSlashable_attestation_1();
       SlashableAttestation slashable_attestation_2 = attester_slashing.getSlashable_attestation_2();
 
-      assert !Objects.equals(slashable_attestation_1.getData(), slashable_attestation_2.getData());
-      assert is_double_vote(slashable_attestation_1.getData(), slashable_attestation_2.getData())
-          || is_surround_vote(slashable_attestation_1.getData(), slashable_attestation_2.getData());
+      checkArgument(
+          !Objects.equals(slashable_attestation_1.getData(), slashable_attestation_2.getData()));
+      checkArgument(
+          is_double_vote(slashable_attestation_1.getData(), slashable_attestation_2.getData())
+              || is_surround_vote(
+                  slashable_attestation_1.getData(), slashable_attestation_2.getData()));
 
-      assert verify_slashable_attestation(state, slashable_attestation_1);
-      assert verify_slashable_attestation(state, slashable_attestation_2);
+      checkArgument(verify_slashable_attestation(state, slashable_attestation_1));
+      checkArgument(verify_slashable_attestation(state, slashable_attestation_2));
 
       ArrayList<Integer> slashable_indices = new ArrayList<>();
       for (UnsignedLong index : slashable_attestation_1.getValidator_indices()) {
@@ -240,7 +249,7 @@ public class BlockProcessorUtil {
         }
       }
 
-      assert slashable_indices.size() >= 1;
+      checkArgument(slashable_indices.size() >= 1);
       for (int index : slashable_indices) {
         penalize_validator(state, index);
       }
@@ -252,53 +261,58 @@ public class BlockProcessorUtil {
    * @param block
    */
   public static void attestations(BeaconState state, BeaconBlock block) {
-    assert block.getBody().getAttestations().size() <= MAX_ATTESTATIONS;
+    checkArgument(block.getBody().getAttestations().size() <= MAX_ATTESTATIONS);
     for (Attestation attestation : block.getBody().getAttestations()) {
-      assert attestation
-              .getData()
-              .getSlot()
-              .compareTo(
-                  state.getSlot().minus(UnsignedLong.valueOf(MIN_ATTESTATION_INCLUSION_DELAY)))
-          <= 0;
-      assert state
-              .getSlot()
-              .minus(UnsignedLong.valueOf(MIN_ATTESTATION_INCLUSION_DELAY))
-              .compareTo(attestation.getData().getSlot().plus(UnsignedLong.valueOf(EPOCH_LENGTH)))
-          < 0;
+      checkArgument(
+          attestation
+                  .getData()
+                  .getSlot()
+                  .compareTo(
+                      state.getSlot().minus(UnsignedLong.valueOf(MIN_ATTESTATION_INCLUSION_DELAY)))
+              <= 0);
+      checkArgument(
+          state
+                  .getSlot()
+                  .minus(UnsignedLong.valueOf(MIN_ATTESTATION_INCLUSION_DELAY))
+                  .compareTo(
+                      attestation.getData().getSlot().plus(UnsignedLong.valueOf(EPOCH_LENGTH)))
+              < 0);
 
       if (slot_to_epoch(attestation.getData().getSlot().plus(UnsignedLong.valueOf(1)))
               .compareTo(get_current_epoch(state))
           >= 0) {
-        assert attestation.getData().getJustified_epoch().equals(state.getJustified_epoch());
+        checkArgument(
+            attestation.getData().getJustified_epoch().equals(state.getJustified_epoch()));
       } else {
-        assert attestation
-            .getData()
-            .getJustified_epoch()
-            .equals(state.getPrevious_justified_epoch());
+        checkArgument(
+            attestation.getData().getJustified_epoch().equals(state.getPrevious_justified_epoch()));
       }
 
       try {
-        assert attestation.getData().getJustified_block_root()
-            == get_block_root(
-                state, get_epoch_start_slot(attestation.getData().getJustified_epoch()));
+        checkArgument(
+            attestation.getData().getJustified_block_root()
+                == get_block_root(
+                    state, get_epoch_start_slot(attestation.getData().getJustified_epoch())));
       } catch (Exception e) {
-        // todo: throw error
+        throw new AssertionError();
       }
 
-      assert attestation.getData().getLatest_crosslink_root()
-              == state
-                  .getLatest_crosslinks()
-                  .get(attestation.getData().getShard().intValue())
-                  .getShard_block_root()
-          || attestation.getData().getShard_block_root()
-              == state
-                  .getLatest_crosslinks()
-                  .get(attestation.getData().getShard().intValue())
-                  .getShard_block_root();
+      checkArgument(
+          attestation.getData().getLatest_crosslink_root()
+                  == state
+                      .getLatest_crosslinks()
+                      .get(attestation.getData().getShard().intValue())
+                      .getShard_block_root()
+              || attestation.getData().getShard_block_root()
+                  == state
+                      .getLatest_crosslinks()
+                      .get(attestation.getData().getShard().intValue())
+                      .getShard_block_root());
 
-      assert verify_bitfields_and_aggregate_signature(attestation, state);
+      checkArgument(verify_bitfields_and_aggregate_signature(attestation, state));
 
-      assert attestation.getData().getShard_block_root() == ZERO_HASH; // [TO BE REMOVED IN PHASE 1]
+      checkArgument(
+          attestation.getData().getShard_block_root() == ZERO_HASH); // [TO BE REMOVED IN PHASE 1]
 
       PendingAttestation pendingAttestation =
           new PendingAttestation(
@@ -322,9 +336,10 @@ public class BlockProcessorUtil {
     // NOTE: The spec defines this verification in terms of the custody bitfield length,
     // however because we've implemented the bitfield as a static Bytes32 value
     // instead of a variable length bitfield, checking against Bytes32.ZERO will suffice.
-    assert Objects.equals(
-        attestation.getCustody_bitfield(), Bytes32.ZERO); // [TO BE REMOVED IN PHASE 1]
-    assert !Objects.equals(attestation.getAggregation_bitfield(), Bytes32.ZERO);
+    checkArgument(
+        Objects.equals(
+            attestation.getCustody_bitfield(), Bytes32.ZERO)); // [TO BE REMOVED IN PHASE 1]
+    checkArgument(!Objects.equals(attestation.getAggregation_bitfield(), Bytes32.ZERO));
 
     List<List<Integer>> crosslink_committees = new ArrayList<>();
     for (CrosslinkCommittee crosslink_committee :
@@ -336,8 +351,9 @@ public class BlockProcessorUtil {
     List<Integer> crosslink_committee = crosslink_committees.get(0);
 
     for (int i = 0; i < crosslink_committee.size(); i++) {
-      assert get_bitfield_bit(attestation.getAggregation_bitfield(), i) != 0b0
-          || get_bitfield_bit(attestation.getCustody_bitfield(), i) == 0b0;
+      checkArgument(
+          get_bitfield_bit(attestation.getAggregation_bitfield(), i) != 0b0
+              || get_bitfield_bit(attestation.getCustody_bitfield(), i) == 0b0);
     }
 
     List<Integer> participants =
@@ -363,14 +379,17 @@ public class BlockProcessorUtil {
       pubkey1.add(state.getValidator_registry().get(i).getPubkey());
     }
 
-    assert bls_verify_multiple(
-        Arrays.asList(bls_aggregate_pubkeys(pubkey0), bls_aggregate_pubkeys(pubkey1)),
-        Arrays.asList(
-            hash_tree_root(new AttestationDataAndCustodyBit(attestation.getData(), false)),
-            hash_tree_root(new AttestationDataAndCustodyBit(attestation.getData(), true))),
-        attestation.getAggregate_signature(),
-        get_domain(
-            state.getFork(), slot_to_epoch(attestation.getData().getSlot()), DOMAIN_ATTESTATION));
+    checkArgument(
+        bls_verify_multiple(
+            Arrays.asList(bls_aggregate_pubkeys(pubkey0), bls_aggregate_pubkeys(pubkey1)),
+            Arrays.asList(
+                hash_tree_root(new AttestationDataAndCustodyBit(attestation.getData(), false)),
+                hash_tree_root(new AttestationDataAndCustodyBit(attestation.getData(), true))),
+            attestation.getAggregate_signature(),
+            get_domain(
+                state.getFork(),
+                slot_to_epoch(attestation.getData().getSlot()),
+                DOMAIN_ATTESTATION)));
 
     return true;
   }
@@ -380,17 +399,18 @@ public class BlockProcessorUtil {
    * @param block
    */
   public static void deposits(BeaconState state, BeaconBlock block) {
-    assert block.getBody().getDeposits().size() <= MAX_DEPOSITS;
+    checkArgument(block.getBody().getDeposits().size() <= MAX_DEPOSITS);
 
     for (Deposit deposit : block.getBody().getDeposits()) {
       Bytes serialized_deposit_data = deposit.getDeposit_data().toBytes();
 
-      assert verify_merkle_branch(
-          Hash.keccak256(serialized_deposit_data),
-          deposit.getBranch(),
-          DEPOSIT_CONTRACT_TREE_DEPTH,
-          deposit.getIndex().intValue(),
-          state.getLatest_eth1_data().getDeposit_root());
+      checkArgument(
+          verify_merkle_branch(
+              Hash.keccak256(serialized_deposit_data),
+              deposit.getBranch(),
+              DEPOSIT_CONTRACT_TREE_DEPTH,
+              deposit.getIndex().intValue(),
+              state.getLatest_eth1_data().getDeposit_root()));
 
       process_deposit(
           state,
@@ -406,22 +426,22 @@ public class BlockProcessorUtil {
    * @param block
    */
   public static void exits(BeaconState state, BeaconBlock block) {
-    assert block.getBody().getExits().size() <= Constants.MAX_EXITS;
+    checkArgument(block.getBody().getExits().size() <= Constants.MAX_EXITS);
     for (Exit exit : block.getBody().getExits()) {
       Validator validator = state.getValidator_registry().get(exit.getValidator_index().intValue());
-      assert validator
-              .getExit_epoch()
-              .compareTo(get_entry_exit_effect_epoch(get_current_epoch(state)))
-          > 0;
-      assert get_current_epoch(state).compareTo(exit.getEpoch()) >= 0;
+      checkArgument(
+          validator.getExit_epoch().compareTo(get_entry_exit_effect_epoch(get_current_epoch(state)))
+              > 0);
+      checkArgument(get_current_epoch(state).compareTo(exit.getEpoch()) >= 0);
 
       Bytes32 exit_message =
           hash_tree_root(new Exit(exit.getEpoch(), exit.getValidator_index(), EMPTY_SIGNATURE));
-      assert bls_verify(
-          validator.getPubkey(),
-          exit_message,
-          exit.getSignature(),
-          get_domain(state.getFork(), exit.getEpoch(), DOMAIN_EXIT));
+      checkArgument(
+          bls_verify(
+              validator.getPubkey(),
+              exit_message,
+              exit.getSignature(),
+              get_domain(state.getFork(), exit.getEpoch(), DOMAIN_EXIT)));
 
       initiate_validator_exit(state, exit.getValidator_index().intValue());
     }
