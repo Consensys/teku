@@ -34,4 +34,17 @@ public class BLSVerify {
     // todo
     return true;
   }
+
+  public static boolean bls_verify_multiple(
+      List<Bytes48> pubkeys,
+      List<Bytes32> messages,
+      Signature aggregateSignature,
+      UnsignedLong domain) {
+    // todo
+    return true;
+  }
+
+  public static Bytes48 bls_aggregate_pubkeys(List<Bytes48> pubkeys) {
+    return Bytes48.ZERO;
+  }
 }

@@ -233,9 +233,9 @@ public class BeaconStateUtil {
     // TODO: revist when we have the final shuffling algorithm implemented
     List<List<Integer>> shuffling =
         get_shuffling(seed, state.getValidator_registry(), shuffling_epoch);
-    UnsignedLong offset = slot.mod(UnsignedLong.valueOf(Constants.EPOCH_LENGTH));
+    UnsignedLong offset = slot.mod(UnsignedLong.valueOf(EPOCH_LENGTH));
     UnsignedLong committees_per_slot =
-        committees_per_epoch.dividedBy(UnsignedLong.valueOf(Constants.EPOCH_LENGTH));
+        committees_per_epoch.dividedBy(UnsignedLong.valueOf(EPOCH_LENGTH));
     UnsignedLong slot_start_shard =
         shuffling_start_shard
             .plus(committees_per_slot)
@@ -382,7 +382,7 @@ public class BeaconStateUtil {
 
   /** Return the epoch number of the given ``slot`` */
   public static UnsignedLong slot_to_epoch(UnsignedLong slot) {
-    return slot.dividedBy(UnsignedLong.valueOf(Constants.EPOCH_LENGTH));
+    return slot.dividedBy(UnsignedLong.valueOf(EPOCH_LENGTH));
   }
 
   /**
@@ -560,11 +560,11 @@ public class BeaconStateUtil {
             UnsignedLong.ONE,
             min(
                 UnsignedLong.valueOf(Constants.SHARD_COUNT)
-                    .dividedBy(UnsignedLong.valueOf(Constants.EPOCH_LENGTH)),
+                    .dividedBy(UnsignedLong.valueOf(EPOCH_LENGTH)),
                 active_validator_count
-                    .dividedBy(UnsignedLong.valueOf(Constants.EPOCH_LENGTH))
+                    .dividedBy(UnsignedLong.valueOf(EPOCH_LENGTH))
                     .dividedBy(UnsignedLong.valueOf(Constants.TARGET_COMMITTEE_SIZE))))
-        .times(UnsignedLong.valueOf(Constants.EPOCH_LENGTH));
+        .times(UnsignedLong.valueOf(EPOCH_LENGTH));
   }
 
   /**
@@ -856,6 +856,11 @@ public class BeaconStateUtil {
         .plus(UnsignedLong.valueOf(domain_type));
   }
 
+  /** Extract the bit in ``bitfield`` at position ``i``. */
+  public static int get_bitfield_bit(Bytes bitfield, int i) {
+    return (bitfield.get(i / 8) >> (7 - (i % 8))) % 2;
+  }
+
   /**
    * Extract the bit in ``bitfield`` at position ``i``.
    *
@@ -1037,13 +1042,25 @@ public class BeaconStateUtil {
   }
 
   /**
+   * Verify validity of ``slashable_attestation`` fields.
+   *
+   * @param state
+   * @param slashableAttestation
+   */
+  public static boolean verify_slashable_attestation(
+      BeaconState state, SlashableAttestation slashableAttestation) {
+    // todo: complete
+    return true;
+  }
+
+  /**
    * Assumes 'attestation_data_1' is distinct from 'attestation_data_2'.
    *
    * @param attestation_data_1
    * @param attestation_data_2
    * @return True if the provided 'AttestationData' are slashable due to a 'double vote'.
    */
-  private boolean is_double_vote(
+  public static boolean is_double_vote(
       AttestationData attestation_data_1, AttestationData attestation_data_2) {
     UnsignedLong target_epoch_1 =
         attestation_data_1.getSlot().dividedBy(UnsignedLong.valueOf(EPOCH_LENGTH));
@@ -1060,7 +1077,7 @@ public class BeaconStateUtil {
    * @param attestation_data_2
    * @return True if the provided 'AttestationData' are slashable due to a 'surround vote'.
    */
-  private boolean is_surround_vote(
+  public static boolean is_surround_vote(
       AttestationData attestation_data_1, AttestationData attestation_data_2) {
     long source_epoch_1 = attestation_data_1.getJustified_epoch().longValue() / EPOCH_LENGTH;
     long source_epoch_2 = attestation_data_2.getJustified_epoch().longValue() / EPOCH_LENGTH;

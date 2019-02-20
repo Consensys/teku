@@ -14,6 +14,7 @@
 package tech.pegasys.artemis.statetransition.util;
 
 import static tech.pegasys.artemis.datastructures.Constants.BASE_REWARD_QUOTIENT;
+import static tech.pegasys.artemis.datastructures.Constants.EPOCH_LENGTH;
 import static tech.pegasys.artemis.datastructures.Constants.INACTIVITY_PENALTY_QUOTIENT;
 import static tech.pegasys.artemis.datastructures.Constants.INCLUDER_REWARD_QUOTIENT;
 import static tech.pegasys.artemis.datastructures.Constants.MAX_DEPOSIT_AMOUNT;
@@ -62,7 +63,7 @@ public class EpochProcessorUtil {
             .compareTo(UnsignedLong.ZERO)
         == 0) {
       if (state.getEth1_data_votes().size() * 2
-          > Constants.ETH1_DATA_VOTING_PERIOD * Constants.EPOCH_LENGTH) {
+          > Constants.ETH1_DATA_VOTING_PERIOD * EPOCH_LENGTH) {
         // TODO: this doesn't seem right
         Eth1Data latest_eth1_data = state.getEth1_data_votes().get(0).getEth1_data();
         state.setLatest_eth1_data(latest_eth1_data);
@@ -154,7 +155,7 @@ public class EpochProcessorUtil {
   public static void updateCrosslinks(BeaconState state) throws Exception {
     UnsignedLong current_epoch = BeaconStateUtil.get_current_epoch(state);
     UnsignedLong slot = state.getSlot();
-    UnsignedLong end = UnsignedLong.valueOf(2 * Constants.EPOCH_LENGTH);
+    UnsignedLong end = UnsignedLong.valueOf(2 * EPOCH_LENGTH);
     while (slot.compareTo(end) < 0) {
       List<CrosslinkCommittee> crosslink_committees_at_slot =
           BeaconStateUtil.get_crosslink_committees_at_slot(state, slot);
@@ -697,9 +698,7 @@ public class EpochProcessorUtil {
     if (validator.getPenalized_epoch().compareTo(currentEpoch) <= 0) {
       UnsignedLong penalized_withdrawal_epochs =
           UnsignedLong.valueOf(
-              (long)
-                  Math.floor(
-                      Constants.LATEST_PENALIZED_EXIT_LENGTH * Constants.EPOCH_LENGTH / 2.0));
+              (long) Math.floor(Constants.LATEST_PENALIZED_EXIT_LENGTH * EPOCH_LENGTH / 2.0));
       return state
               .getSlot()
               .compareTo(validator.getPenalized_epoch().plus(penalized_withdrawal_epochs))
@@ -798,6 +797,6 @@ public class EpochProcessorUtil {
 
   // Return the starting slot of the given ``epoch``.
   static UnsignedLong get_epoch_start_slot(UnsignedLong epoch) {
-    return epoch.times(UnsignedLong.valueOf(Constants.EPOCH_LENGTH));
+    return epoch.times(UnsignedLong.valueOf(EPOCH_LENGTH));
   }
 }
