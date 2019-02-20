@@ -93,19 +93,19 @@ class SlashableAttestationTest {
     assertNotEquals(slashableAttestation, testSlashableAttestation);
   }
 
-  /* TODO: Fix this test
-    @Test
-    void equalsReturnsFalseWhenAggregrateSignaturesAreDifferent() {
-      BLSSignature reverseAggregateSignature =
-          new BLSSignature(aggregateSignature.getC1(), aggregateSignature.getC0());
-
-      SlashableAttestation testSlashableAttestation =
-          new SlashableAttestation(
-              validatorIndices, data, custodyBitfield, reverseAggregateSignature);
-
-      assertNotEquals(slashableAttestation, testSlashableAttestation);
+  @Test
+  void equalsReturnsFalseWhenAggregrateSignaturesAreDifferent() {
+    BLSSignature differentAggregateSignature = BLSSignature.random();
+    while (differentAggregateSignature.equals(aggregateSignature)) {
+      differentAggregateSignature = BLSSignature.random();
     }
-  */
+
+    SlashableAttestation testSlashableAttestation =
+        new SlashableAttestation(
+            validatorIndices, data, custodyBitfield, differentAggregateSignature);
+
+    assertNotEquals(slashableAttestation, testSlashableAttestation);
+  }
 
   @Test
   void rountripSSZ() {

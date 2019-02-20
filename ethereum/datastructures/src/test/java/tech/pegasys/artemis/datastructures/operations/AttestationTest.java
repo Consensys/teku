@@ -79,19 +79,18 @@ class AttestationTest {
     assertNotEquals(attestation, testAttestation);
   }
 
-  /* TODO: Fix this test
-    @Test
-    void equalsReturnsFalseWhenAggregrateSignaturesAreDifferent() {
-      // Create copy of aggregateSignature and reverse to ensure it is different.
-      BLSSignature reverseAggregateSignature =
-          new BLSSignature(aggregateSignature.getC1(), aggregateSignature.getC0());
-
-      Attestation testAttestation =
-          new Attestation(aggregationBitfield, data, custodyBitfield, reverseAggregateSignature);
-
-      assertNotEquals(attestation, testAttestation);
+  @Test
+  void equalsReturnsFalseWhenAggregrateSignaturesAreDifferent() {
+    BLSSignature differentAggregateSignature = BLSSignature.random();
+    while (differentAggregateSignature.equals(aggregateSignature)) {
+      differentAggregateSignature = BLSSignature.random();
     }
-  */
+
+    Attestation testAttestation =
+        new Attestation(aggregationBitfield, data, custodyBitfield, differentAggregateSignature);
+
+    assertNotEquals(attestation, testAttestation);
+  }
 
   @Test
   void rountripSSZ() {

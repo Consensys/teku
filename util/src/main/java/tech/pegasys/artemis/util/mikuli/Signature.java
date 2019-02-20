@@ -13,15 +13,12 @@
 
 package tech.pegasys.artemis.util.mikuli;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.apache.milagro.amcl.BLS381.BIG.comp;
 
 import java.util.List;
 import java.util.Objects;
 import net.consensys.cava.bytes.Bytes;
-import org.apache.milagro.amcl.BLS381.BIG;
-import org.apache.milagro.amcl.BLS381.ECP2;
-import org.apache.milagro.amcl.BLS381.FP2;
 
 /** This class represents a Signature on G2 */
 public final class Signature {
@@ -47,89 +44,40 @@ public final class Signature {
    *
    * @param bytes the bytes of the signature
    * @return the signature
-   * @throws IllegalArgumentException if the wrong number of bytes is provided
    */
   public static Signature decode(Bytes bytes) {
-    if (bytes.size() != 192) {
-      throw new IllegalArgumentException("Signatures need 192 bytes of input");
-    }
-    G2Point point = G2Point.fromBytes(bytes);
-    return new Signature(point);
+    checkArgument(bytes.size() == 192, "Expected 192 bytes of input but got %s", bytes.size());
+    return new Signature(G2Point.fromBytes(bytes));
   }
 
   /**
-   * Decode a signature from its <em>compressed</em> serialized representation.
+   * Decode a signature from its <em>compressed</em> form serialized representation.
    *
    * @param bytes the bytes of the signature
    * @return the signature
-   * @throws IllegalArgumentException if the wrong number of bytes is provided
    */
   public static Signature decodeCompressed(Bytes bytes) {
-    if (bytes.size() != 96) {
-      throw new IllegalArgumentException("Signatures need 192 bytes of input");
-    }
-
-    Bytes x1 = bytes.slice(0, 48);
-    Bytes x2 = bytes.slice(48, 48);
-    FP2 x = new FP2(BIG.fromBytes(x1.toArray()), BIG.fromBytes(x2.toArray()));
-
-    // Construct a Y point based on this X. This may be one of two possibilities. The Signature
-    // constructor takes care of choosing the correct one.
-    G2Point point = new G2Point(new ECP2(x));
-
-    return new Signature(point);
-  }
-
-  /**
-   * Normalise the signature to have the correct Y value as defined in the spec
-   *
-   * <p>For any given X value, we have a choice of two Y values. Milagro returns one or the other of
-   * them arbitrarily.
-   *
-   * <p>We need to choose the one with greater imaginary part, or greater real if imaginaries are
-   * the same.
-   *
-   * @param point the point that needs the correct Y coord setting
-   * @return the signature
-   */
-  private static G2Point normalise(G2Point point) {
-    FP2 x = point.ecp2Point().getX();
-    FP2 y1 = point.ecp2Point().getY();
-
-    // The alternative Y value is the additive inverse of the one we have
-    FP2 y2 = new FP2(y1);
-    y2.neg();
-
-    FP2 y;
-    if (comp(y1.getB(), y2.getB()) == 0) {
-      // Imaginary parts equal, so choose the one with greater real part
-      y = (comp(y1.getA(), y2.getA()) > 0) ? y1 : y2;
-    } else {
-      // Choose the one with greater imaginary part
-      y = (comp(y1.getB(), y2.getB()) > 0) ? y1 : y2;
-    }
-
-    return new G2Point(new ECP2(x, y));
+    checkArgument(bytes.size() == 96, "Expected 96 bytes of input but got %s", bytes.size());
+    return new Signature(G2Point.fromBytesCompressed(bytes));
   }
 
   /**
    * Create a random signature for testing
    *
-   * @return the signature
+   * @return a random, valid signature
    */
   public static Signature random() {
     KeyPair keyPair = KeyPair.random();
     byte[] message = "Hello, world!".getBytes(UTF_8);
     SignatureAndPublicKey sigAndPubKey = BLS12381.sign(keyPair, message, 48);
 
-    // System.out.println(sigAndPubKey.signature());
     return sigAndPubKey.signature();
   }
 
   private final G2Point point;
 
   Signature(G2Point point) {
-    this.point = normalise(point);
+    this.point = point;
   }
 
   /**
@@ -149,6 +97,15 @@ public final class Signature {
    */
   public Bytes encode() {
     return point.toBytes();
+  }
+
+  /**
+   * Signature serialization to compressed form
+   *
+   * @return byte array representation of the signature, not null
+   */
+  public Bytes encodeCompressed() {
+    return point.toBytesCompressed();
   }
 
   @Override

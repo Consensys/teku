@@ -86,24 +86,23 @@ class ProposerSlashingTest {
     assertNotEquals(proposerSlashing, testProposerSlashing);
   }
 
-  /* TODO: Fix this test
-    @Test
-    void equalsReturnsFalseWhenProposalSignature1sAreDifferent() {
-      // Create copy of proposalSignature1 and reverse to ensure it is different.
-      BLSSignature reverseProposalSignature1 =
-          new BLSSignature(proposalSignature1.getC1(), proposalSignature1.getC0());
-
-      ProposerSlashing testProposerSlashing =
-          new ProposerSlashing(
-              proposerIndex,
-              proposalData1,
-              reverseProposalSignature1,
-              proposalData2,
-              proposalSignature2);
-
-      assertNotEquals(proposerSlashing, testProposerSlashing);
+  @Test
+  void equalsReturnsFalseWhenProposalSignature1sAreDifferent() {
+    BLSSignature differentProposalSignature1 = BLSSignature.random();
+    while (differentProposalSignature1.equals(proposalSignature2)) {
+      differentProposalSignature1 = BLSSignature.random();
     }
-  */
+
+    ProposerSlashing testProposerSlashing =
+        new ProposerSlashing(
+            proposerIndex,
+            proposalData1,
+            differentProposalSignature1,
+            proposalData2,
+            proposalSignature2);
+
+    assertNotEquals(proposerSlashing, testProposerSlashing);
+  }
 
   @Test
   void equalsReturnsFalseWhenProposalData2IsDifferent() {
@@ -125,24 +124,23 @@ class ProposerSlashingTest {
     assertNotEquals(proposerSlashing, testProposerSlashing);
   }
 
-  /* TODO: Fix this test
-    @Test
-    void equalsReturnsFalseWhenProposalSignature2sAreDifferent() {
-      // Create copy of proposalSignature1 and reverse to ensure it is different.
-      BLSSignature reverseProposalSignature2 =
-          new BLSSignature(proposalSignature2.getC1(), proposalSignature2.getC0());
-
-      ProposerSlashing testProposerSlashing =
-          new ProposerSlashing(
-              proposerIndex,
-              proposalData1,
-              proposalSignature1,
-              proposalData2,
-              reverseProposalSignature2);
-
-      assertNotEquals(proposerSlashing, testProposerSlashing);
+  @Test
+  void equalsReturnsFalseWhenProposalSignature2sAreDifferent() {
+    BLSSignature differentProposalSignature2 = BLSSignature.random();
+    while (differentProposalSignature2.equals(proposalSignature2)) {
+      differentProposalSignature2 = BLSSignature.random();
     }
-  */
+
+    ProposerSlashing testProposerSlashing =
+        new ProposerSlashing(
+            proposerIndex,
+            proposalData1,
+            proposalSignature1,
+            proposalData2,
+            differentProposalSignature2);
+
+    assertNotEquals(proposerSlashing, testProposerSlashing);
+  }
 
   @Test
   void rountripSSZ() {

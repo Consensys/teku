@@ -62,19 +62,18 @@ class DepositInputTest {
     assertNotEquals(depositInput, testDepositInput);
   }
 
-  /* TODO: Fix this test
-    @Test
-    void equalsReturnsFalseWhenProofsOfPosessionAreDifferent() {
-      // Create copy of signature and reverse to ensure it is different.
-      BLSSignature reverseProofOfPossession =
-          new BLSSignature(proofOfPossession.getC1(), proofOfPossession.getC0());
-
-      DepositInput testDepositInput =
-          new DepositInput(pubkey, withdrawalCredentials, reverseProofOfPossession);
-
-      assertNotEquals(depositInput, testDepositInput);
+  @Test
+  void equalsReturnsFalseWhenProofsOfPosessionAreDifferent() {
+    BLSSignature differentProofOfPossession = BLSSignature.random();
+    while (differentProofOfPossession.equals(proofOfPossession)) {
+      differentProofOfPossession = BLSSignature.random();
     }
-  */
+
+    DepositInput testDepositInput =
+        new DepositInput(pubkey, withdrawalCredentials, differentProofOfPossession);
+
+    assertNotEquals(depositInput, testDepositInput);
+  }
 
   @Test
   void rountripSSZ() {

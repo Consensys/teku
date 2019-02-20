@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.util.mikuli;
 
+import java.security.SecureRandom;
 import org.apache.milagro.amcl.BLS381.BIG;
 import org.apache.milagro.amcl.BLS381.ECP;
 import org.apache.milagro.amcl.BLS381.ROM;
@@ -32,6 +33,11 @@ public final class KeyPair {
   public static KeyPair random() {
     // TODO: this always generates the same "random" number. Fix it.
     RAND rng = new RAND();
+    // TODO: this "fixes" it, but there may be a more elegant way
+    byte[] b = new byte[128];
+    SecureRandom srng = new SecureRandom();
+    srng.nextBytes(b);
+    rng.seed(128, b);
     Scalar secret = new Scalar(BIG.randomnum(curveOrder, rng));
 
     SecretKey secretKey = new SecretKey(secret);

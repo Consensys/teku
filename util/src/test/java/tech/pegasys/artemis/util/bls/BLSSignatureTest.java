@@ -15,24 +15,14 @@ package tech.pegasys.artemis.util.bls;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import net.consensys.cava.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 
 public class BLSSignatureTest {
 
-  private BLSSignature blsSignature = BLSSignature.random();
-
   @Test
   void rountripSSZ() {
-    Bytes sszBLSSignatureBytes = blsSignature.toBytes();
-    //    System.out.println(
-    //        blsSignature
-    //            + "\n"
-    //            + sszBLSSignatureBytes
-    //            + "\n"
-    //            + sszBLSSignatureBytes.size()
-    //            + "\n"
-    //            + BLSSignature.fromBytes(sszBLSSignatureBytes));
-    assertEquals(blsSignature, BLSSignature.fromBytes(sszBLSSignatureBytes));
+    BLSSignature signature1 = BLSSignature.random();
+    BLSSignature signature2 = BLSSignature.fromBytes(signature1.toBytes());
+    assertEquals(signature1, signature2);
   }
 }

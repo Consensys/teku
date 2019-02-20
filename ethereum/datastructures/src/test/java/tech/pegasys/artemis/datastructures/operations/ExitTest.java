@@ -58,17 +58,17 @@ class ExitTest {
     assertNotEquals(exit, testExit);
   }
 
-  /* TODO: Fix this test
-    @Test
-    void equalsReturnsFalseWhenSignaturesAreDifferent() {
-      // Create copy of signature and reverse to ensure it is different.
-      BLSSignature reverseSignature = new BLSSignature(signature.getC1(), signature.getC0());
-
-      Exit testExit = new Exit(epoch, validatorIndex, reverseSignature);
-
-      assertNotEquals(exit, testExit);
+  @Test
+  void equalsReturnsFalseWhenSignaturesAreDifferent() {
+    BLSSignature differentSignature = BLSSignature.random();
+    while (differentSignature.equals(signature)) {
+      differentSignature = BLSSignature.random();
     }
-  */
+
+    Exit testExit = new Exit(epoch, validatorIndex, differentSignature);
+
+    assertNotEquals(exit, testExit);
+  }
 
   @Test
   void rountripSSZ() {

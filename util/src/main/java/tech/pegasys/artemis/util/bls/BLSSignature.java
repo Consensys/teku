@@ -50,15 +50,6 @@ public final class BLSSignature {
   }
 
   /**
-   * Returns a 96 byte array containing the <em>compressed</em> form of the signature
-   *
-   * @return the compressed form of the signature as a 96 byte array.
-   */
-  public Bytes getCompressed() {
-    return signature.encode().slice(0, 96);
-  }
-
-  /**
    * Returns the SSZ serialisation of the <em>compressed</em> form of the signature
    *
    * @return the serialisation of the compressed form of the signature.
@@ -66,7 +57,7 @@ public final class BLSSignature {
   public Bytes toBytes() {
     return SSZ.encode(
         writer -> {
-          writer.writeBytes(getCompressed());
+          writer.writeBytes(signature.encodeCompressed());
         });
   }
 

@@ -78,19 +78,19 @@ class BeaconBlockTest {
     assertNotEquals(beaconBlock, testBeaconBlock);
   }
 
-  /* TODO: Fix this test
-    @Test
-    void equalsReturnsFalseWhenRandaoRevealsAreDifferent() {
-      // Create copy of signature and reverse to ensure it is different.
-      BLSSignature reverseRandaoReveal = new BLSSignature(randaoReveal.getC1(), randaoReveal.getC0());
-
-      BeaconBlock testBeaconBlock =
-          new BeaconBlock(
-              slot, parentRoot, stateRoot, reverseRandaoReveal, eth1Data, signature, body);
-
-      assertNotEquals(beaconBlock, testBeaconBlock);
+  @Test
+  void equalsReturnsFalseWhenRandaoRevealsAreDifferent() {
+    BLSSignature differentRandaoReveal = BLSSignature.random();
+    while (differentRandaoReveal.equals(randaoReveal)) {
+      differentRandaoReveal = BLSSignature.random();
     }
-  */
+
+    BeaconBlock testBeaconBlock =
+        new BeaconBlock(
+            slot, parentRoot, stateRoot, differentRandaoReveal, eth1Data, signature, body);
+
+    assertNotEquals(beaconBlock, testBeaconBlock);
+  }
 
   @Test
   void equalsReturnsFalseWhenEth1DataIsDifferent() {
@@ -107,19 +107,19 @@ class BeaconBlockTest {
     assertNotEquals(beaconBlock, testBeaconBlock);
   }
 
-  /* TODO: Fix this test
-    @Test
-    void equalsReturnsFalseWhenSignaturesAreDifferent() {
-      // Create copy of signature and reverse to ensure it is different.
-      BLSSignature reverseSignature = new BLSSignature(signature.getC1(), signature.getC0());
-
-      BeaconBlock testBeaconBlock =
-          new BeaconBlock(
-              slot, parentRoot, stateRoot, randaoReveal, eth1Data, reverseSignature, body);
-
-      assertNotEquals(beaconBlock, testBeaconBlock);
+  @Test
+  void equalsReturnsFalseWhenSignaturesAreDifferent() {
+    BLSSignature differentSignature = BLSSignature.random();
+    while (differentSignature.equals(signature)) {
+      differentSignature = BLSSignature.random();
     }
-  */
+
+    BeaconBlock testBeaconBlock =
+        new BeaconBlock(
+            slot, parentRoot, stateRoot, randaoReveal, eth1Data, differentSignature, body);
+
+    assertNotEquals(beaconBlock, testBeaconBlock);
+  }
 
   @Test
   void equalsReturnsFalseWhenBeaconBlockBodiesAreDifferent() {
