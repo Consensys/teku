@@ -66,8 +66,8 @@ import tech.pegasys.artemis.datastructures.state.CrosslinkCommittee;
 import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.statetransition.BeaconState;
-import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.bitwise.BitwiseOps;
+import tech.pegasys.artemis.util.bls.BLSSignature;
 
 public class BeaconStateUtil {
 
@@ -941,7 +941,7 @@ public class BeaconStateUtil {
                 new AttestationDataAndCustodyBit(slashable_attestation.getData(), false)),
             hash_tree_root(
                 new AttestationDataAndCustodyBit(slashable_attestation.getData(), true)));
-    Signature signature = slashable_attestation.getAggregate_signature();
+    BLSSignature signature = slashable_attestation.getAggregate_signature();
     UnsignedLong domain =
         get_domain(
             state.getFork(),

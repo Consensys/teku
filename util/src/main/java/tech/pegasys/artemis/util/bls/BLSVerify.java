@@ -46,7 +46,7 @@ public class BLSVerify {
   public static boolean bls_verify_multiple(
       List<Bytes48> pubkeys,
       List<Bytes32> messages,
-      Signature aggregateSignature,
+      BLSSignature aggregateSignature,
       UnsignedLong domain) {
     // todo
     return true;

@@ -70,9 +70,17 @@ final class G2Point implements Group<G2Point> {
     Bytes domainBytes = Bytes.ofUnsignedLong(domain);
     Bytes padding = Bytes.wrap(new byte[16]);
     byte[] xReBytes =
-            Bytes.concatenate(padding, Hash.keccak256(Bytes.concatenate(messageHash, domainBytes, Bytes.fromHexString("0x01")))).toArray();
+        Bytes.concatenate(
+                padding,
+                Hash.keccak256(
+                    Bytes.concatenate(messageHash, domainBytes, Bytes.fromHexString("0x01"))))
+            .toArray();
     byte[] xImBytes =
-            Bytes.concatenate(padding, Hash.keccak256(Bytes.concatenate(messageHash, domainBytes, Bytes.fromHexString("0x02")))).toArray();
+        Bytes.concatenate(
+                padding,
+                Hash.keccak256(
+                    Bytes.concatenate(messageHash, domainBytes, Bytes.fromHexString("0x02"))))
+            .toArray();
 
     BIG xRe = BIG.fromBytes(xReBytes);
     BIG xIm = BIG.fromBytes(xImBytes);

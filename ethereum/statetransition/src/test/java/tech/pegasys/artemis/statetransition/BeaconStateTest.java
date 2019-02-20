@@ -544,7 +544,6 @@ class BeaconStateTest {
   }
 
   @Test
-  @Disabled
   void roundtripSSZ() {
     BeaconState state = newState();
     Bytes sszBeaconBlockBytes = state.toBytes();
