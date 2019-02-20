@@ -48,8 +48,6 @@ import tech.pegasys.artemis.util.bitwise.BitwiseOps;
 public class EpochProcessorUtil {
   private static final Logger LOG = LogManager.getLogger(EpochProcessorUtil.class.getName());
 
-  private static final Logger LOG = LogManager.getLogger(EpochProcessorUtil.class.getName());
-
   /**
    * update eth1Data state fields. spec:
    * https://github.com/ethereum/eth2.0-specs/blob/v0.1/specs/core/0_beacon-chain.md#eth1-data-1

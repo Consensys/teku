@@ -14,6 +14,7 @@
 package tech.pegasys.artemis.statetransition.util;
 
 import com.google.common.primitives.UnsignedLong;
+import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -445,7 +446,10 @@ public class AttestationUtil {
         winning_root_balance = shard_balances.get(shard_block_root);
         winning_root = shard_block_root;
       } else if (shard_balances.get(shard_block_root).compareTo(winning_root_balance) == 0) {
-        if (shard_block_root.toHexString().compareTo(winning_root.toHexString()) > 0) {
+        if (shard_block_root
+                .toUnsignedBigInteger(ByteOrder.LITTLE_ENDIAN)
+                .compareTo(winning_root.toUnsignedBigInteger(ByteOrder.LITTLE_ENDIAN))
+            > 0) {
           winning_root = shard_block_root;
         }
       }
