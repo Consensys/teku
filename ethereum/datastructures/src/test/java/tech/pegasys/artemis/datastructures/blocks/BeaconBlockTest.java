@@ -22,18 +22,17 @@ import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomL
 import java.util.Objects;
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
-import net.consensys.cava.bytes.Bytes48;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.artemis.datastructures.operations.BLSSignature;
+import tech.pegasys.artemis.util.bls.BLSSignature;
 
 class BeaconBlockTest {
 
   private long slot = randomLong();
   private Bytes32 parentRoot = Bytes32.random();
   private Bytes32 stateRoot = Bytes32.random();
-  private BLSSignature randaoReveal = new BLSSignature(Bytes48.random(), Bytes48.random());
+  private BLSSignature randaoReveal = BLSSignature.random();
   private Eth1Data eth1Data = randomEth1Data();
-  private BLSSignature signature = new BLSSignature(Bytes48.random(), Bytes48.random());
+  private BLSSignature signature = BLSSignature.random();
   private BeaconBlockBody body = randomBeaconBlockBody();
 
   private BeaconBlock beaconBlock =
@@ -81,12 +80,14 @@ class BeaconBlockTest {
 
   @Test
   void equalsReturnsFalseWhenRandaoRevealsAreDifferent() {
-    // Create copy of signature and reverse to ensure it is different.
-    BLSSignature reverseRandaoReveal = new BLSSignature(randaoReveal.getC1(), randaoReveal.getC0());
+    BLSSignature differentRandaoReveal = BLSSignature.random();
+    while (differentRandaoReveal.equals(randaoReveal)) {
+      differentRandaoReveal = BLSSignature.random();
+    }
 
     BeaconBlock testBeaconBlock =
         new BeaconBlock(
-            slot, parentRoot, stateRoot, reverseRandaoReveal, eth1Data, signature, body);
+            slot, parentRoot, stateRoot, differentRandaoReveal, eth1Data, signature, body);
 
     assertNotEquals(beaconBlock, testBeaconBlock);
   }
@@ -108,12 +109,14 @@ class BeaconBlockTest {
 
   @Test
   void equalsReturnsFalseWhenSignaturesAreDifferent() {
-    // Create copy of signature and reverse to ensure it is different.
-    BLSSignature reverseSignature = new BLSSignature(signature.getC1(), signature.getC0());
+    BLSSignature differentSignature = BLSSignature.random();
+    while (differentSignature.equals(signature)) {
+      differentSignature = BLSSignature.random();
+    }
 
     BeaconBlock testBeaconBlock =
         new BeaconBlock(
-            slot, parentRoot, stateRoot, randaoReveal, eth1Data, reverseSignature, body);
+            slot, parentRoot, stateRoot, randaoReveal, eth1Data, differentSignature, body);
 
     assertNotEquals(beaconBlock, testBeaconBlock);
   }

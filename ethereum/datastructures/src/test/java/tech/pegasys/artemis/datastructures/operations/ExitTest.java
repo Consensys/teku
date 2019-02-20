@@ -19,14 +19,14 @@ import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomU
 
 import com.google.common.primitives.UnsignedLong;
 import net.consensys.cava.bytes.Bytes;
-import net.consensys.cava.bytes.Bytes48;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.artemis.util.bls.BLSSignature;
 
 class ExitTest {
 
   private UnsignedLong epoch = randomUnsignedLong();
   private UnsignedLong validatorIndex = randomUnsignedLong();
-  private BLSSignature signature = new BLSSignature(Bytes48.random(), Bytes48.random());
+  private BLSSignature signature = BLSSignature.random();
 
   private Exit exit = new Exit(epoch, validatorIndex, signature);
 
@@ -60,10 +60,12 @@ class ExitTest {
 
   @Test
   void equalsReturnsFalseWhenSignaturesAreDifferent() {
-    // Create copy of signature and reverse to ensure it is different.
-    BLSSignature reverseSignature = new BLSSignature(signature.getC1(), signature.getC0());
+    BLSSignature differentSignature = BLSSignature.random();
+    while (differentSignature.equals(signature)) {
+      differentSignature = BLSSignature.random();
+    }
 
-    Exit testExit = new Exit(epoch, validatorIndex, reverseSignature);
+    Exit testExit = new Exit(epoch, validatorIndex, differentSignature);
 
     assertNotEquals(exit, testExit);
   }
