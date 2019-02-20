@@ -14,18 +14,34 @@
 package tech.pegasys.artemis.util.mikuli;
 
 import java.security.SecureRandom;
+import java.security.Security;
 import java.util.Objects;
 import net.consensys.cava.bytes.Bytes;
+import net.consensys.cava.bytes.Bytes32;
+import net.consensys.cava.crypto.Hash;
 import org.apache.milagro.amcl.BLS381.BIG;
 import org.apache.milagro.amcl.BLS381.ECP2;
 import org.apache.milagro.amcl.BLS381.FP2;
 import org.apache.milagro.amcl.BLS381.ROM;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 /**
  * G2 is the subgroup of elliptic curve similar to G1 and the points are identical except for where
  * they are elements of the extension field Fq12.
  */
 final class G2Point implements Group<G2Point> {
+
+  // This is the G2 cofactor as defined in the spec.
+  public static final long[] cofactor = {
+    0xcf1c38e31c7238e5L,
+    0x1616ec6e786f0c70L,
+    0x21537e293a6691aeL,
+    0xa628f1cb4d9e82efL,
+    0xa68a205b2e5a7ddfL,
+    0xcd91de4547085abaL,
+    0x091d50792876a202L,
+    0x05d543a95414e7f1L
+  };
 
   /**
    * Generate a random point on the curve
@@ -47,6 +63,53 @@ final class G2Point implements Group<G2Point> {
     } while (point.is_infinity());
 
     return new G2Point(point);
+  }
+
+  public static G2Point hashToG2(Bytes32 messageHash, long domain) {
+    Security.addProvider(new BouncyCastleProvider());
+    Bytes domainBytes = Bytes.ofUnsignedLong(domain);
+    Bytes padding = Bytes.wrap(new byte[16]);
+    byte[] xReBytes =
+            Bytes.concatenate(padding, Hash.keccak256(Bytes.concatenate(messageHash, domainBytes, Bytes.fromHexString("0x01")))).toArray();
+    byte[] xImBytes =
+            Bytes.concatenate(padding, Hash.keccak256(Bytes.concatenate(messageHash, domainBytes, Bytes.fromHexString("0x02")))).toArray();
+
+    BIG xRe = BIG.fromBytes(xReBytes);
+    BIG xIm = BIG.fromBytes(xImBytes);
+    BIG one = new BIG(1);
+
+    ECP2 point = new ECP2(new FP2(xRe, xIm));
+    while (point.is_infinity()) {
+      xRe.add(one);
+      point = new ECP2(new FP2(xRe, xIm));
+    }
+
+    // Check we chose the right root for Y as per spec, and adjust if not
+    FP2 y1 = point.getY();
+    FP2 y2 = new FP2(y1);
+    y2.neg();
+    if (BIG.comp(y1.getB(), y2.getB()) < 0
+        || ((BIG.comp(y1.getB(), y2.getB()) == 0) && BIG.comp(y1.getA(), y2.getA()) < 0)) {
+      point = new ECP2(point.getX(), y2);
+    }
+
+    // Now scale by the cofactor
+    ECP2 part = new ECP2(point);
+    ECP2 sum = new ECP2();
+    sum.inf(); // This is zero (I think)
+
+    // This is a naive double-and-bitshift. There may be faster ways.
+    for (long w : cofactor) {
+      for (int bit = 0; bit < 64; bit++) {
+        if (w % 2 == 1) {
+          sum.add(part);
+        }
+        part.dbl();
+        w = Long.divideUnsigned(w, 2);
+      }
+    }
+
+    return new G2Point(sum);
   }
 
   private final ECP2 point;
@@ -190,9 +253,9 @@ final class G2Point implements Group<G2Point> {
   }
 
   /**
-   * Calculate (y_im * 2) // q (which corresponds to the a_flag1)
+   * Calculate (y_im * 2) // q (which corresponds to the a1 flag)
    *
-   * <p>This is used to disambiguate Y, given X, as per the spec.
+   * <p>This is used to disambiguate Y, given X, as per the spec. q is the curve modulus.
    *
    * @param yIm the imaginary part of the Y coordinate of the point
    * @return true if the a1 flag and yIm correspond

@@ -13,10 +13,17 @@
 
 package tech.pegasys.artemis.util.mikuli;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import net.consensys.cava.bytes.Bytes;
+import net.consensys.cava.bytes.Bytes32;
+import net.consensys.cava.crypto.Hash;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.junit.jupiter.api.Test;
+
+import java.security.Security;
 
 public class G2PointTest {
 
@@ -38,6 +45,15 @@ public class G2PointTest {
     G2Point point1 = G2Point.random();
     G2Point point2 = G2Point.fromBytesCompressed(point1.toBytesCompressed());
     assertEquals(point1, point2);
+  }
+
+  @Test
+  void testHashToG2() {
+    Security.addProvider(new BouncyCastleProvider());
+    Bytes32 messageHash = Hash.keccak256(Bytes.fromHexString("0x6d657373616765"));
+    // Bytes message = Bytes.fromHexString("0x6d657373616765");
+    G2Point point = G2Point.hashToG2(messageHash, 0L);
+    System.out.println(point);
   }
 
   // TODO: tests for equal/not equal

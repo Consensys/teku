@@ -16,7 +16,6 @@ package tech.pegasys.artemis.util.mikuli;
 import net.consensys.cava.bytes.Bytes;
 import org.apache.milagro.amcl.BLS381.ECP;
 import org.apache.milagro.amcl.BLS381.ECP2;
-import org.apache.milagro.amcl.BLS381.FP2;
 import org.apache.milagro.amcl.BLS381.MPIN;
 
 /*
@@ -86,12 +85,7 @@ public final class BLS12381 {
     GTPoint e1 = AtePairing.pair(publicKey.g1Point(), hashInGroup2);
     GTPoint e2 = AtePairing.pair(g1Generator, signature.g2Point());
 
-    // TODO: Temp - check the sig with the other Y value
-    FP2 x = signature.g2Point().ecp2Point().getX();
-    FP2 y = signature.g2Point().ecp2Point().getY();
-    y.neg();
-    GTPoint e3 = AtePairing.pair(g1Generator, new G2Point(new ECP2(x, y)));
-    return e1.equals(e2) || e1.equals(e3);
+    return e1.equals(e2);
   }
 
   /**

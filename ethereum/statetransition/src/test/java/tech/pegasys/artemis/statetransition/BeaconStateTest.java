@@ -48,6 +48,7 @@ import net.consensys.cava.bytes.Bytes48;
 import net.consensys.cava.crypto.Hash;
 import net.consensys.cava.junit.BouncyCastleExtension;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
@@ -543,7 +544,8 @@ class BeaconStateTest {
   }
 
   @Test
-  void rountripSSZ() {
+  @Disabled
+  void roundtripSSZ() {
     BeaconState state = newState();
     Bytes sszBeaconBlockBytes = state.toBytes();
     assertEquals(state, BeaconState.fromBytes(sszBeaconBlockBytes));
