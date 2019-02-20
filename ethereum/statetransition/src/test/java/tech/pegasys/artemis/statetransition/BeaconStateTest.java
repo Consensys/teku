@@ -542,7 +542,6 @@ class BeaconStateTest {
     Bytes32 hash = Hash.keccak256(Bytes.wrap(randao_mix, index_root));
   }
 
-
   @Test
   void rountripSSZ() {
     BeaconState state = newState();
