@@ -332,6 +332,7 @@ public class AttestationUtil {
       }
     }
 
+    // TODO: .contains() method call is an O(n) operation. OPTIMIZE
     List<Integer> attesting_validator_indices = new ArrayList<Integer>();
     for (List<Integer> validator_index_set : validator_index_sets) {
       for (Integer validator_index : validator_index_set) {
