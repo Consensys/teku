@@ -41,7 +41,12 @@ public final class TreeHashUtil {
     return SSZ.hashTreeRoot(exit.toBytes());
   }
 
-  /** @param attestationDataAndCustodyBit */
+  /**
+   * Calculate the hash tree root of the BeaconState provided
+   *
+   * @param attestationDataAndCustodyBit
+   * @return
+   */
   public static Bytes32 hash_tree_root(AttestationDataAndCustodyBit attestationDataAndCustodyBit) {
     // todo: check that this is right
     return SSZ.hashTreeRoot(attestationDataAndCustodyBit.toBytes());
@@ -68,16 +73,5 @@ public final class TreeHashUtil {
    */
   public static Bytes32 hash_tree_root(BeaconState state) {
     return hash_tree_root(state.toBytes());
-  }
-
-  /**
-   * Calculate the hash tree root of the BeaconState provided
-   *
-   * @param attestationDataAndCustodyBit
-   * @return
-   */
-  public static Bytes32 hash_tree_root(AttestationDataAndCustodyBit attestationDataAndCustodyBit) {
-    // TODO
-    return Bytes32.ZERO;
   }
 }

@@ -856,18 +856,13 @@ public class BeaconStateUtil {
         .plus(UnsignedLong.valueOf(domain_type));
   }
 
-  /** Extract the bit in ``bitfield`` at position ``i``. */
-  public static int get_bitfield_bit(Bytes bitfield, int i) {
-    return (bitfield.get(i / 8) >> (7 - (i % 8))) % 2;
-  }
-
   /**
    * Extract the bit in ``bitfield`` at position ``i``.
    *
    * @param bitfield - The Bytes value that describes the bitfield to operate on.
    * @param bitPosition - The index.
    */
-  public int get_bitfield_bit(Bytes bitfield, int bitPosition) {
+  public static int get_bitfield_bit(Bytes bitfield, int bitPosition) {
     return (bitfield.get(bitPosition / 8) >> (7 - (bitPosition % 8))) % 2;
   }
 
@@ -877,7 +872,7 @@ public class BeaconStateUtil {
    * @param bitfield
    * @param committee_size
    */
-  public boolean verify_bitfield(Bytes bitfield, int committee_size) {
+  public static boolean verify_bitfield(Bytes bitfield, int committee_size) {
     if (bitfield.size() != (committee_size + 7) / 8) return false;
 
     for (int i = committee_size + 1; i < committee_size - committee_size % 8 + 8; i++) {
@@ -892,7 +887,7 @@ public class BeaconStateUtil {
    * @param state
    * @param slashable_attestation
    */
-  public boolean verify_slashable_attestation(
+  public static boolean verify_slashable_attestation(
       BeaconState state, SlashableAttestation slashable_attestation) {
     // NOTE: The spec defines this verification in terms of the custody bitfield length,
     // however because we've implemented the bitfield as a static Bytes32 value
@@ -1039,18 +1034,6 @@ public class BeaconStateUtil {
   private static int ceil_div8(int div) {
     checkArgument(div > 0, "Expected positive div but got %s", div);
     return (int) Math.ceil(8.0 / div);
-  }
-
-  /**
-   * Verify validity of ``slashable_attestation`` fields.
-   *
-   * @param state
-   * @param slashableAttestation
-   */
-  public static boolean verify_slashable_attestation(
-      BeaconState state, SlashableAttestation slashableAttestation) {
-    // todo: complete
-    return true;
   }
 
   /**
