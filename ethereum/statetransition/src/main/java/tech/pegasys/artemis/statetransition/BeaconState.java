@@ -88,12 +88,12 @@ public class BeaconState {
       Fork fork, // For versioning hard forks
 
       // Validator registry
-      ArrayList<Validator> validator_registry,
-      ArrayList<UnsignedLong> validator_balances,
+      List<Validator> validator_registry,
+      List<UnsignedLong> validator_balances,
       UnsignedLong validator_registry_update_epoch,
 
       // Randomness and committees
-      ArrayList<Bytes32> latest_randao_mixes,
+      List<Bytes32> latest_randao_mixes,
       UnsignedLong previous_epoch_start_shard,
       UnsignedLong current_epoch_start_shard,
       UnsignedLong previous_calculation_epoch,
@@ -108,17 +108,16 @@ public class BeaconState {
       UnsignedLong finalized_epoch,
 
       // Recent state
-      ArrayList<Crosslink> latest_crosslinks,
-      ArrayList<Bytes32> latest_block_roots,
-      ArrayList<Bytes32> latest_index_roots,
-      ArrayList<UnsignedLong>
-          latest_penalized_balances, // Balances penalized at every withdrawal period
-      ArrayList<PendingAttestation> latest_attestations,
-      ArrayList<Bytes32> batched_block_roots,
+      List<Crosslink> latest_crosslinks,
+      List<Bytes32> latest_block_roots,
+      List<Bytes32> latest_index_roots,
+      List<UnsignedLong> latest_penalized_balances, // Balances penalized at every withdrawal period
+      List<PendingAttestation> latest_attestations,
+      List<Bytes32> batched_block_roots,
 
       // Ethereum 1.0 chain data
       Eth1Data latest_eth1_data,
-      ArrayList<Eth1DataVote> eth1_data_votes) {
+      List<Eth1DataVote> eth1_data_votes) {
     this.slot = slot;
     this.genesis_time = genesis_time;
     this.fork = fork;
@@ -161,22 +160,19 @@ public class BeaconState {
                 UnsignedLong.fromLongBits(reader.readUInt64()),
                 Fork.fromBytes(reader.readBytes()),
                 // Validator registry
-                (ArrayList<Validator>)
-                    reader
-                        .readBytesList()
-                        .stream()
-                        .map(Validator::fromBytes)
-                        .collect(Collectors.toList()),
-                (ArrayList<UnsignedLong>)
-                    reader
-                        .readUInt64List()
-                        .stream()
-                        .map(UnsignedLong::fromLongBits)
-                        .collect(Collectors.toList()),
+                reader
+                    .readBytesList()
+                    .stream()
+                    .map(Validator::fromBytes)
+                    .collect(Collectors.toList()),
+                reader
+                    .readUInt64List()
+                    .stream()
+                    .map(UnsignedLong::fromLongBits)
+                    .collect(Collectors.toList()),
                 UnsignedLong.fromLongBits(reader.readUInt64()),
                 // Randomness and committees
-                (ArrayList<Bytes32>)
-                    reader.readBytesList().stream().map(Bytes32::wrap).collect(Collectors.toList()),
+                reader.readBytesList().stream().map(Bytes32::wrap).collect(Collectors.toList()),
                 UnsignedLong.fromLongBits(reader.readUInt64()),
                 UnsignedLong.fromLongBits(reader.readUInt64()),
                 UnsignedLong.fromLongBits(reader.readUInt64()),
@@ -189,38 +185,31 @@ public class BeaconState {
                 UnsignedLong.fromLongBits(reader.readUInt64()),
                 UnsignedLong.fromLongBits(reader.readUInt64()),
                 // Recent state
-                (ArrayList<Crosslink>)
-                    reader
-                        .readBytesList()
-                        .stream()
-                        .map(Crosslink::fromBytes)
-                        .collect(Collectors.toList()),
-                (ArrayList<Bytes32>)
-                    reader.readBytesList().stream().map(Bytes32::wrap).collect(Collectors.toList()),
-                (ArrayList<Bytes32>)
-                    reader.readBytesList().stream().map(Bytes32::wrap).collect(Collectors.toList()),
-                (ArrayList<UnsignedLong>)
-                    reader
-                        .readUInt64List()
-                        .stream()
-                        .map(UnsignedLong::fromLongBits)
-                        .collect(Collectors.toList()),
-                (ArrayList<PendingAttestation>)
-                    reader
-                        .readBytesList()
-                        .stream()
-                        .map(PendingAttestation::fromBytes)
-                        .collect(Collectors.toList()),
-                (ArrayList<Bytes32>)
-                    reader.readBytesList().stream().map(Bytes32::wrap).collect(Collectors.toList()),
+                reader
+                    .readBytesList()
+                    .stream()
+                    .map(Crosslink::fromBytes)
+                    .collect(Collectors.toList()),
+                reader.readBytesList().stream().map(Bytes32::wrap).collect(Collectors.toList()),
+                reader.readBytesList().stream().map(Bytes32::wrap).collect(Collectors.toList()),
+                reader
+                    .readUInt64List()
+                    .stream()
+                    .map(UnsignedLong::fromLongBits)
+                    .collect(Collectors.toList()),
+                reader
+                    .readBytesList()
+                    .stream()
+                    .map(PendingAttestation::fromBytes)
+                    .collect(Collectors.toList()),
+                reader.readBytesList().stream().map(Bytes32::wrap).collect(Collectors.toList()),
                 // Ethereum 1.0 chain data
                 Eth1Data.fromBytes(reader.readBytes()),
-                (ArrayList<Eth1DataVote>)
-                    reader
-                        .readBytesList()
-                        .stream()
-                        .map(Eth1DataVote::fromBytes)
-                        .collect(Collectors.toList())));
+                reader
+                    .readBytesList()
+                    .stream()
+                    .map(Eth1DataVote::fromBytes)
+                    .collect(Collectors.toList())));
   }
 
   public Bytes toBytes() {
