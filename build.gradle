@@ -26,6 +26,7 @@ def buildAliases = [
   ]
 
 def expandedTaskList = []
+
 gradle.startParameter.taskNames.each {
   expandedTaskList << (buildAliases[it] ? buildAliases[it] : it)
 }
