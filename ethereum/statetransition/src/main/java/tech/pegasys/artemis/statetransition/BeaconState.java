@@ -160,19 +160,20 @@ public class BeaconState {
                 UnsignedLong.fromLongBits(reader.readUInt64()),
                 Fork.fromBytes(reader.readBytes()),
                 // Validator registry
-                reader
-                    .readBytesList()
-                    .stream()
+                reader.readBytesList().stream()
+                    // .parallel()
                     .map(Validator::fromBytes)
                     .collect(Collectors.toList()),
-                reader
-                    .readUInt64List()
-                    .stream()
+                reader.readUInt64List().stream()
+                    // .parallel()
                     .map(UnsignedLong::fromLongBits)
                     .collect(Collectors.toList()),
                 UnsignedLong.fromLongBits(reader.readUInt64()),
                 // Randomness and committees
-                reader.readBytesList().stream().map(Bytes32::wrap).collect(Collectors.toList()),
+                reader.readBytesList().stream()
+                    // .parallel()
+                    .map(Bytes32::wrap)
+                    .collect(Collectors.toList()),
                 UnsignedLong.fromLongBits(reader.readUInt64()),
                 UnsignedLong.fromLongBits(reader.readUInt64()),
                 UnsignedLong.fromLongBits(reader.readUInt64()),
@@ -185,29 +186,34 @@ public class BeaconState {
                 UnsignedLong.fromLongBits(reader.readUInt64()),
                 UnsignedLong.fromLongBits(reader.readUInt64()),
                 // Recent state
-                reader
-                    .readBytesList()
-                    .stream()
+                reader.readBytesList().stream()
+                    // .parallel()
                     .map(Crosslink::fromBytes)
                     .collect(Collectors.toList()),
-                reader.readBytesList().stream().map(Bytes32::wrap).collect(Collectors.toList()),
-                reader.readBytesList().stream().map(Bytes32::wrap).collect(Collectors.toList()),
-                reader
-                    .readUInt64List()
-                    .stream()
+                reader.readBytesList().stream()
+                    // .parallel()
+                    .map(Bytes32::wrap)
+                    .collect(Collectors.toList()),
+                reader.readBytesList().stream()
+                    // .parallel()
+                    .map(Bytes32::wrap)
+                    .collect(Collectors.toList()),
+                reader.readUInt64List().stream()
+                    // .parallel()
                     .map(UnsignedLong::fromLongBits)
                     .collect(Collectors.toList()),
-                reader
-                    .readBytesList()
-                    .stream()
+                reader.readBytesList().stream()
+                    // .parallel()
                     .map(PendingAttestation::fromBytes)
                     .collect(Collectors.toList()),
-                reader.readBytesList().stream().map(Bytes32::wrap).collect(Collectors.toList()),
+                reader.readBytesList().stream()
+                    // .parallel()
+                    .map(Bytes32::wrap)
+                    .collect(Collectors.toList()),
                 // Ethereum 1.0 chain data
                 Eth1Data.fromBytes(reader.readBytes()),
-                reader
-                    .readBytesList()
-                    .stream()
+                reader.readBytesList().stream()
+                    // .parallel()
                     .map(Eth1DataVote::fromBytes)
                     .collect(Collectors.toList())));
   }
@@ -232,8 +238,7 @@ public class BeaconState {
           writer.writeBytesList(validator_registryBytes);
           writer.writeULongIntList(
               64,
-              validator_balances
-                  .stream()
+              validator_balances.stream()
                   .map(UnsignedLong::longValue)
                   .collect(Collectors.toList()));
           writer.writeUInt64(validator_registry_update_epoch.longValue());
@@ -256,8 +261,7 @@ public class BeaconState {
           writer.writeBytesList(latest_index_roots);
           writer.writeULongIntList(
               64,
-              latest_penalized_balances
-                  .stream()
+              latest_penalized_balances.stream()
                   .map(UnsignedLong::longValue)
                   .collect(Collectors.toList()));
           writer.writeBytesList(latest_attestationBytes);
