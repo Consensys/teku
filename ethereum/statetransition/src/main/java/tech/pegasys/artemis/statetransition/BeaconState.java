@@ -187,33 +187,20 @@ public class BeaconState {
                 UnsignedLong.fromLongBits(reader.readUInt64()),
                 // Recent state
                 reader.readBytesList().stream()
-                    // .parallel()
                     .map(Crosslink::fromBytes)
                     .collect(Collectors.toList()),
-                reader.readBytesList().stream()
-                    // .parallel()
-                    .map(Bytes32::wrap)
-                    .collect(Collectors.toList()),
-                reader.readBytesList().stream()
-                    // .parallel()
-                    .map(Bytes32::wrap)
-                    .collect(Collectors.toList()),
+                reader.readBytesList().stream().map(Bytes32::wrap).collect(Collectors.toList()),
+                reader.readBytesList().stream().map(Bytes32::wrap).collect(Collectors.toList()),
                 reader.readUInt64List().stream()
-                    // .parallel()
                     .map(UnsignedLong::fromLongBits)
                     .collect(Collectors.toList()),
                 reader.readBytesList().stream()
-                    // .parallel()
                     .map(PendingAttestation::fromBytes)
                     .collect(Collectors.toList()),
-                reader.readBytesList().stream()
-                    // .parallel()
-                    .map(Bytes32::wrap)
-                    .collect(Collectors.toList()),
+                reader.readBytesList().stream().map(Bytes32::wrap).collect(Collectors.toList()),
                 // Ethereum 1.0 chain data
                 Eth1Data.fromBytes(reader.readBytes()),
                 reader.readBytesList().stream()
-                    // .parallel()
                     .map(Eth1DataVote::fromBytes)
                     .collect(Collectors.toList())));
   }

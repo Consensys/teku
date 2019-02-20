@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.statetransition.util;
 
+import static java.lang.Math.toIntExact;
 import static tech.pegasys.artemis.datastructures.Constants.BASE_REWARD_QUOTIENT;
 import static tech.pegasys.artemis.datastructures.Constants.EPOCH_LENGTH;
 import static tech.pegasys.artemis.datastructures.Constants.INACTIVITY_PENALTY_QUOTIENT;
@@ -145,41 +146,36 @@ public class EpochProcessorUtil {
   }
 
   /**
-   * TODO: FIX THIS FUNCTION Update latest crosslinks per shard in the state Spec:
    * https://github.com/ethereum/eth2.0-specs/blob/v0.1/specs/core/0_beacon-chain.md#crosslinks
    *
    * @param state
    * @throws Exception
    */
   public static void updateCrosslinks(BeaconState state) throws Exception {
-    UnsignedLong current_epoch = BeaconStateUtil.get_current_epoch(state);
-    UnsignedLong slot = state.getSlot();
-    UnsignedLong end = UnsignedLong.valueOf(2 * EPOCH_LENGTH);
-    while (slot.compareTo(end) < 0) {
+    UnsignedLong previous_epoch = BeaconStateUtil.get_previous_epoch(state);
+    UnsignedLong next_epoch = BeaconStateUtil.get_next_epoch(state);
+
+    for (UnsignedLong curr_slot = BeaconStateUtil.get_epoch_start_slot(previous_epoch);
+        curr_slot.compareTo(BeaconStateUtil.get_epoch_start_slot(next_epoch)) < 0;
+        curr_slot = curr_slot.plus(UnsignedLong.ONE)) {
       List<CrosslinkCommittee> crosslink_committees_at_slot =
-          BeaconStateUtil.get_crosslink_committees_at_slot(state, slot);
-      for (CrosslinkCommittee crosslink_committee : crosslink_committees_at_slot) {
-        UnsignedLong shard = crosslink_committee.getShard();
-        // TODO: This doesn't seem right. How is the winning root calculated?
-        Bytes32 shard_block_root =
-            state
-                .getLatest_crosslinks()
-                .get(Math.toIntExact(shard.longValue()))
-                .getShard_block_root();
-        UnsignedLong total_attesting_balance =
-            AttestationUtil.total_attesting_balance(state, crosslink_committee);
-        if (UnsignedLong.valueOf(3L)
-                .times(total_attesting_balance)
-                .compareTo(BeaconStateUtil.total_balance(crosslink_committee))
+          BeaconStateUtil.get_crosslink_committees_at_slot(state, curr_slot);
+      for (CrosslinkCommittee committee : crosslink_committees_at_slot) {
+        if (AttestationUtil.total_attesting_balance(state, committee)
+                .times(UnsignedLong.valueOf(3L))
+                .compareTo(
+                    BeaconStateUtil.total_balance(state, committee).times(UnsignedLong.valueOf(2L)))
             >= 0) {
+          UnsignedLong shard = committee.getShard();
           state
               .getLatest_crosslinks()
               .set(
-                  Math.toIntExact(shard.longValue()),
-                  new Crosslink(current_epoch, shard_block_root));
+                  toIntExact(shard.longValue()),
+                  new Crosslink(
+                      BeaconStateUtil.get_current_epoch(state),
+                      AttestationUtil.winning_root(state, committee)));
         }
       }
-      slot = slot.plus(UnsignedLong.ONE);
     }
   }
 
@@ -465,7 +461,7 @@ public class EpochProcessorUtil {
                     .times(
                         AttestationUtil.get_total_attesting_balance(
                             state, crosslink_committee.getCommittee()))
-                    .dividedBy(BeaconStateUtil.total_balance(crosslink_committee));
+                    .dividedBy(BeaconStateUtil.total_balance(state, crosslink_committee));
             balance = balance.plus(reward);
           } else {
             balance = balance.minus(base_reward(state, index, previous_total_balance));

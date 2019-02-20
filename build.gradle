@@ -27,6 +27,7 @@ def buildAliases = [
   ]
 
 def expandedTaskList = []
+
 gradle.startParameter.taskNames.each {
   expandedTaskList << (buildAliases[it] ? buildAliases[it] : it)
 }
@@ -165,7 +166,6 @@ allprojects {
 
   // Normalise Xdoclint behaviour across JDKs (OpenJDK 8 is more lenient than Oracle JDK by default).
   javadoc {
-    tasks.findByName('javadoc').mustRunAfter 'build'
     options.addStringOption('Xdoclint:all', '-quiet')
     if (JavaVersion.current() == JavaVersion.VERSION_1_8) {
       options.addStringOption('Xwerror', '-quiet')
@@ -181,10 +181,10 @@ task deploy() {}
 
 subprojects {
 
-  //tasks.withType(Test) {
-    // If GRADLE_MAX_TEST_FORKS is not set, use all the available processors
-   //maxParallelForks = (System.getenv('GRADLE_MAX_TEST_FORKS') ?: (Runtime.runtime.availableProcessors() ?: 1)).toInteger()
- // }
+  tasks.withType(Test) {
+    // If GRADLE_MAX_TEST_FORKS is not set, use half the available processors
+   maxParallelForks = (System.getenv('GRADLE_MAX_TEST_FORKS') ?: (Runtime.runtime.availableProcessors().intdiv(2) ?: 1)).toInteger()
+  }
 
     test {
         useJUnitPlatform()
