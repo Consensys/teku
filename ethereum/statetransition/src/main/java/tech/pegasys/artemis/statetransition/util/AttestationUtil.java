@@ -17,7 +17,9 @@ import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import net.consensys.cava.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.state.CrosslinkCommittee;
 import tech.pegasys.artemis.datastructures.state.PendingAttestation;
@@ -353,9 +355,8 @@ public class AttestationUtil {
   }
 
   /**
-   * get indices of validators attesting to state for the given block_root
-   * TODO: the union part takes O(n^2) time, where n is the number of
-   * validators. OPTIMIZE
+   * get indices of validators attesting to state for the given block_root TODO: the union part
+   * takes O(n^2) time, where n is the number of validators. OPTIMIZE
    *
    * @param state
    * @param crosslink_committee
@@ -400,7 +401,7 @@ public class AttestationUtil {
    * @param crosslink_committee
    * @return
    */
-  public static ArrayList<Integer> attesting_validators(
+  public static List<Integer> attesting_validators(
       BeaconState state, CrosslinkCommittee crosslink_committee) throws Exception {
     return attesting_validator_indices(
         state, crosslink_committee, winning_root(state, crosslink_committee));
@@ -413,7 +414,42 @@ public class AttestationUtil {
    * @param crosslink_committee
    * @return
    */
-  static Bytes32 winning_root(BeaconState state, CrosslinkCommittee crosslink_committee) {
-    return Bytes32.ZERO;
+  public static Bytes32 winning_root(BeaconState state, CrosslinkCommittee crosslink_committee)
+      throws Exception {
+    UnsignedLong current_epoch = BeaconStateUtil.get_current_epoch(state);
+    UnsignedLong previous_epoch = BeaconStateUtil.get_previous_epoch(state);
+    List<PendingAttestation> combined_attestations = get_epoch_attestations(state, current_epoch);
+    combined_attestations.addAll(get_epoch_attestations(state, previous_epoch));
+
+    Map<Bytes32, UnsignedLong> shard_balances = new HashMap<>();
+    for (PendingAttestation attestation : combined_attestations) {
+      if (attestation.getData().getShard().compareTo(crosslink_committee.getShard()) == 0) {
+        List<Integer> attesting_indices =
+            BeaconStateUtil.get_attestation_participants(
+                state, attestation.getData(), attestation.getParticipation_bitfield().toArray());
+        UnsignedLong attesting_balance =
+            BeaconStateUtil.get_total_effective_balance(state, attesting_indices);
+        shard_balances.put(
+            attestation.getData().getShard_block_root(),
+            shard_balances
+                .get(attestation.getData().getShard_block_root())
+                .plus(attesting_balance));
+      }
+    }
+
+    UnsignedLong winning_root_balance = UnsignedLong.ZERO;
+    // The spec currently has no way of handling uninitialized winning_root
+    Bytes32 winning_root = Bytes32.ZERO;
+    for (Bytes32 shard_block_root : shard_balances.keySet()) {
+      if (shard_balances.get(shard_block_root).compareTo(winning_root_balance) > 0) {
+        winning_root_balance = shard_balances.get(shard_block_root);
+        winning_root = shard_block_root;
+      } else if (shard_balances.get(shard_block_root).compareTo(winning_root_balance) == 0) {
+        if (shard_block_root.toHexString().compareTo(winning_root.toHexString()) > 0) {
+          winning_root = shard_block_root;
+        }
+      }
+    }
+    return winning_root;
   }
 }
