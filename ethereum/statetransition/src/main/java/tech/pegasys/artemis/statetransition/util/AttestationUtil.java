@@ -36,8 +36,8 @@ public class AttestationUtil {
    * @param epoch
    * @return
    */
-  public static List<PendingAttestation> get_epoch_attestations(
-      BeaconState state, UnsignedLong epoch) throws Exception {
+  static List<PendingAttestation> get_epoch_attestations(BeaconState state, UnsignedLong epoch)
+      throws Exception {
     List<PendingAttestation> latest_attestations = state.getLatest_attestations();
     List<PendingAttestation> epoch_attestations = new ArrayList<>();
 
@@ -52,10 +52,12 @@ public class AttestationUtil {
     return epoch_attestations;
   }
 
-  public static List<PendingAttestation> get_current_epoch_boundary_attestations(
-      BeaconState state, List<PendingAttestation> current_epoch_attestations) throws Exception {
+  public static List<PendingAttestation> get_current_epoch_boundary_attestations(BeaconState state)
+      throws Exception {
 
     UnsignedLong current_epoch = BeaconStateUtil.get_current_epoch(state);
+    List<PendingAttestation> current_epoch_attestations =
+        get_epoch_attestations(state, current_epoch);
 
     List<PendingAttestation> current_epoch_boundary_attestations = new ArrayList<>();
 
@@ -78,10 +80,12 @@ public class AttestationUtil {
     return current_epoch_boundary_attestations;
   }
 
-  public static List<PendingAttestation> get_previous_epoch_boundary_attestations(
-      BeaconState state, List<PendingAttestation> previous_epoch_attestations) throws Exception {
+  public static List<PendingAttestation> get_previous_epoch_boundary_attestations(BeaconState state)
+      throws Exception {
 
     UnsignedLong previous_epoch = BeaconStateUtil.get_previous_epoch(state);
+    List<PendingAttestation> previous_epoch_attestations =
+        get_epoch_attestations(state, previous_epoch);
 
     List<PendingAttestation> previous_epoch_boundary_attestations = new ArrayList<>();
 
@@ -145,16 +149,10 @@ public class AttestationUtil {
 
   public static List<Integer> get_previous_epoch_boundary_attester_indices(BeaconState state)
       throws Exception {
-    // Get previous epoch
-    UnsignedLong previous_epoch = BeaconStateUtil.get_previous_epoch(state);
-
-    // Get previous_epoch_attestations
-    List<PendingAttestation> previous_epoch_attestations =
-        get_epoch_attestations(state, previous_epoch);
 
     // Get previous_epoch_boundary_attestations
     List<PendingAttestation> previous_epoch_boundary_attestations =
-        get_previous_epoch_boundary_attestations(state, previous_epoch_attestations);
+        get_previous_epoch_boundary_attestations(state);
 
     return get_attester_indices(state, previous_epoch_boundary_attestations);
   }
@@ -169,16 +167,9 @@ public class AttestationUtil {
   public static UnsignedLong get_current_epoch_boundary_attesting_balance(BeaconState state)
       throws Exception {
 
-    // Get current epoch
-    UnsignedLong current_epoch = BeaconStateUtil.get_current_epoch(state);
-
-    // Get current_epoch_attestations
-    List<PendingAttestation> current_epoch_attestations =
-        get_epoch_attestations(state, current_epoch);
-
     // Get current epoch_boundary_attestations
     List<PendingAttestation> current_epoch_boundary_attestations =
-        get_current_epoch_boundary_attestations(state, current_epoch_attestations);
+        get_current_epoch_boundary_attestations(state);
 
     // Get current_epoch_boundary_attester_indices
     List<Integer> current_epoch_boundary_attester_indices =

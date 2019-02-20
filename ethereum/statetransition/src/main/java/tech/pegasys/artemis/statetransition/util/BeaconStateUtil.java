@@ -374,9 +374,9 @@ public class BeaconStateUtil {
     return get_total_effective_balance(state, previous_active_validators);
   }
 
-  public static UnsignedLong total_balance(CrosslinkCommittee crosslink_committee) {
-    // todo
-    return UnsignedLong.ZERO;
+  public static UnsignedLong total_balance(BeaconState state, CrosslinkCommittee crosslink_committe)
+      throws Exception {
+    return BeaconStateUtil.get_total_effective_balance(state, crosslink_committe.getCommittee());
   }
 
   /** Return the epoch number of the given ``slot`` */
