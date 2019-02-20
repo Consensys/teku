@@ -26,8 +26,8 @@ import java.util.List;
 import java.util.Objects;
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
-import net.consensys.cava.bytes.Bytes48;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.artemis.util.bls.BLSSignature;
 
 class SlashableAttestationTest {
 
@@ -35,7 +35,7 @@ class SlashableAttestationTest {
       Arrays.asList(randomUnsignedLong(), randomUnsignedLong(), randomUnsignedLong());
   private AttestationData data = randomAttestationData();
   private Bytes32 custodyBitfield = Bytes32.random();
-  private BLSSignature aggregateSignature = new BLSSignature(Bytes48.random(), Bytes48.random());
+  private BLSSignature aggregateSignature = BLSSignature.random();
 
   private SlashableAttestation slashableAttestation =
       new SlashableAttestation(validatorIndices, data, custodyBitfield, aggregateSignature);
@@ -95,12 +95,14 @@ class SlashableAttestationTest {
 
   @Test
   void equalsReturnsFalseWhenAggregrateSignaturesAreDifferent() {
-    BLSSignature reverseAggregateSignature =
-        new BLSSignature(aggregateSignature.getC1(), aggregateSignature.getC0());
+    BLSSignature differentAggregateSignature = BLSSignature.random();
+    while (differentAggregateSignature.equals(aggregateSignature)) {
+      differentAggregateSignature = BLSSignature.random();
+    }
 
     SlashableAttestation testSlashableAttestation =
         new SlashableAttestation(
-            validatorIndices, data, custodyBitfield, reverseAggregateSignature);
+            validatorIndices, data, custodyBitfield, differentAggregateSignature);
 
     assertNotEquals(slashableAttestation, testSlashableAttestation);
   }

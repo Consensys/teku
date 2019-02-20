@@ -20,12 +20,13 @@ import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.bytes.Bytes48;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.artemis.util.bls.BLSSignature;
 
 class DepositInputTest {
 
   private Bytes48 pubkey = Bytes48.random();
   private Bytes32 withdrawalCredentials = Bytes32.random();
-  private BLSSignature proofOfPossession = new BLSSignature(Bytes48.random(), Bytes48.random());
+  private BLSSignature proofOfPossession = BLSSignature.random();
 
   private DepositInput depositInput =
       new DepositInput(pubkey, withdrawalCredentials, proofOfPossession);
@@ -63,12 +64,13 @@ class DepositInputTest {
 
   @Test
   void equalsReturnsFalseWhenProofsOfPosessionAreDifferent() {
-    // Create copy of signature and reverse to ensure it is different.
-    BLSSignature reverseProofOfPossession =
-        new BLSSignature(proofOfPossession.getC1(), proofOfPossession.getC0());
+    BLSSignature differentProofOfPossession = BLSSignature.random();
+    while (differentProofOfPossession.equals(proofOfPossession)) {
+      differentProofOfPossession = BLSSignature.random();
+    }
 
     DepositInput testDepositInput =
-        new DepositInput(pubkey, withdrawalCredentials, reverseProofOfPossession);
+        new DepositInput(pubkey, withdrawalCredentials, differentProofOfPossession);
 
     assertNotEquals(depositInput, testDepositInput);
   }

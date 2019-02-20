@@ -11,24 +11,29 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.util.bls;
+package tech.pegasys.artemis.util.mikuli;
 
 import java.util.Objects;
-import net.consensys.cava.bytes.Bytes48;
+import org.apache.milagro.amcl.BLS381.FP12;
 
-public class Signature {
+/**
+ * GT is the object that holds the result of the pairing operation. Points in GT are elements of
+ * Fq12.
+ */
+final class GTPoint {
 
-  protected final Bytes48 c0;
-  protected final Bytes48 c1;
+  private final FP12 point;
 
-  public Signature(Bytes48 c0, Bytes48 c1) {
-    this.c0 = c0;
-    this.c1 = c1;
+  GTPoint(FP12 point) {
+    this.point = point;
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(c0, c1);
+    final int prime = 31;
+    int result = 1;
+    result = prime * result + ((point == null) ? 0 : point.hashCode());
+    return result;
   }
 
   @Override
@@ -36,27 +41,13 @@ public class Signature {
     if (Objects.isNull(obj)) {
       return false;
     }
-
     if (this == obj) {
       return true;
     }
-
-    if (!(obj instanceof Signature)) {
+    if (!(obj instanceof GTPoint)) {
       return false;
     }
-
-    Signature other = (Signature) obj;
-    return Objects.equals(this.getC0(), other.getC0())
-        && Objects.equals(this.getC1(), other.getC1());
-  }
-
-  /** @return the c0 */
-  public Bytes48 getC0() {
-    return c0;
-  }
-
-  /** @return the c1 */
-  public Bytes48 getC1() {
-    return c1;
+    GTPoint other = (GTPoint) obj;
+    return point.equals(other.point);
   }
 }
