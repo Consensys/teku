@@ -46,7 +46,6 @@ import tech.pegasys.artemis.statetransition.BeaconState;
 import tech.pegasys.artemis.util.bitwise.BitwiseOps;
 
 public class EpochProcessorUtil {
-
   private static final Logger LOG = LogManager.getLogger(EpochProcessorUtil.class.getName());
 
   /**
@@ -146,7 +145,7 @@ public class EpochProcessorUtil {
   }
 
   /**
-   * Update latest crosslinks per shard in the state Spec:
+   * TODO: FIX THIS FUNCTION Update latest crosslinks per shard in the state Spec:
    * https://github.com/ethereum/eth2.0-specs/blob/v0.1/specs/core/0_beacon-chain.md#crosslinks
    *
    * @param state
@@ -168,7 +167,7 @@ public class EpochProcessorUtil {
                 .get(Math.toIntExact(shard.longValue()))
                 .getShard_block_root();
         UnsignedLong total_attesting_balance =
-            AttestationUtil.total_attesting_balance(state, crosslink_committee, shard_block_root);
+            AttestationUtil.total_attesting_balance(state, crosslink_committee);
         if (UnsignedLong.valueOf(3L)
                 .times(total_attesting_balance)
                 .compareTo(BeaconStateUtil.total_balance(crosslink_committee))
@@ -206,7 +205,12 @@ public class EpochProcessorUtil {
   static Function<Integer, UnsignedLong> apply_inclusion_base_penalty(
       BeaconState state, UnsignedLong epochs_since_finality, UnsignedLong previous_total_balance) {
     return index -> {
-      UnsignedLong inclusion_distance = AttestationUtil.inclusion_distance(state, index);
+      UnsignedLong inclusion_distance = UnsignedLong.ZERO;
+      try {
+        inclusion_distance = AttestationUtil.inclusion_distance(state, index);
+      } catch (Exception e) {
+        LOG.info("apply_inclusion_base_penalty(): " + e);
+      }
       return base_reward(state, index, previous_total_balance)
           .times(UnsignedLong.valueOf(MIN_ATTESTATION_INCLUSION_DELAY))
           .dividedBy(inclusion_distance);

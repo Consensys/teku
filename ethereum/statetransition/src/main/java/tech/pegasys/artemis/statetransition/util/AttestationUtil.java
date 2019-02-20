@@ -14,8 +14,13 @@
 package tech.pegasys.artemis.statetransition.util;
 
 import com.google.common.primitives.UnsignedLong;
+import java.nio.ByteOrder;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import net.consensys.cava.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.state.CrosslinkCommittee;
 import tech.pegasys.artemis.datastructures.state.PendingAttestation;
@@ -245,16 +250,6 @@ public class AttestationUtil {
     return get_attester_indices(state, previous_epoch_attestations);
   }
 
-  public static UnsignedLong inclusion_slot(BeaconState state, Integer index) {
-
-    return UnsignedLong.ZERO;
-  }
-
-  public static UnsignedLong inclusion_distance(BeaconState state, Integer index) {
-    // todo
-    return UnsignedLong.ZERO;
-  }
-
   /**
    * Returns the union of validator index sets, where the sets are the attestation participants of
    * attestations passed in TODO: the union part takes O(n^2) time, where n is the number of
@@ -309,24 +304,8 @@ public class AttestationUtil {
   }
 
   /**
-   * get total balance of validators attesting to state for the given block_root
-   *
-   * @param state
-   * @param crosslink_committee
-   * @param shard
-   * @return
-   * @throws BlockValidationException
-   */
-  public static UnsignedLong total_attesting_balance(
-      BeaconState state, CrosslinkCommittee crosslink_committee, Bytes32 shard_block_root)
-      throws Exception {
-    List<Integer> attesting_validator_indices =
-        attesting_validator_indices(state, crosslink_committee, shard_block_root);
-    return BeaconStateUtil.get_total_effective_balance(state, attesting_validator_indices);
-  }
-
-  /**
-   * get indices of validators attesting to state for the given block_root
+   * get indices of validators attesting to state for the given block_root TODO: the union part
+   * takes O(n^2) time, where n is the number of validators. OPTIMIZE
    *
    * @param state
    * @param crosslink_committee
@@ -334,7 +313,7 @@ public class AttestationUtil {
    * @return
    * @throws BlockValidationException
    */
-  public static ArrayList<Integer> attesting_validator_indices(
+  public static List<Integer> attesting_validator_indices(
       BeaconState state, CrosslinkCommittee crosslink_committee, Bytes32 shard_block_root)
       throws Exception {
     UnsignedLong current_epoch = BeaconStateUtil.get_current_epoch(state);
@@ -342,27 +321,27 @@ public class AttestationUtil {
     List<PendingAttestation> combined_attestations = get_epoch_attestations(state, current_epoch);
     combined_attestations.addAll(get_epoch_attestations(state, previous_epoch));
 
-    for (PendingAttestation record : combined_attestations) {
-      if (record.getData().getShard().compareTo(crosslink_committee.getShard()) == 0
-          && record.getData().getShard_block_root() == shard_block_root) {
-        return BeaconStateUtil.get_attestation_participants(
-            state, record.getData(), record.getAggregation_bitfield().toArray());
+    List<ArrayList<Integer>> validator_index_sets = new ArrayList<>();
+
+    for (PendingAttestation attestation : combined_attestations) {
+      if (attestation.getData().getShard().compareTo(crosslink_committee.getShard()) == 0
+          && attestation.getData().getShard_block_root() == shard_block_root) {
+        validator_index_sets.add(
+            BeaconStateUtil.get_attestation_participants(
+                state, attestation.getData(), attestation.getAggregation_bitfield().toArray()));
       }
     }
-    throw new Exception("attesting_validator_indicies appear to be empty");
-  }
 
-  /**
-   * get indices of validators attesting to state for the winning block root
-   *
-   * @param state
-   * @param crosslink_committee
-   * @return
-   */
-  public static ArrayList<Integer> attesting_validators(
-      BeaconState state, CrosslinkCommittee crosslink_committee) throws Exception {
-    return attesting_validator_indices(
-        state, crosslink_committee, winning_root(state, crosslink_committee));
+    // TODO: .contains() method call is an O(n) operation. OPTIMIZE
+    List<Integer> attesting_validator_indices = new ArrayList<Integer>();
+    for (List<Integer> validator_index_set : validator_index_sets) {
+      for (Integer validator_index : validator_index_set) {
+        if (!attesting_validator_indices.contains(validator_index)) {
+          attesting_validator_indices.add(validator_index);
+        }
+      }
+    }
+    return attesting_validator_indices;
   }
 
   /**
@@ -372,7 +351,108 @@ public class AttestationUtil {
    * @param crosslink_committee
    * @return
    */
-  static Bytes32 winning_root(BeaconState state, CrosslinkCommittee crosslink_committee) {
-    return Bytes32.ZERO;
+  public static Bytes32 winning_root(BeaconState state, CrosslinkCommittee crosslink_committee)
+      throws Exception {
+    UnsignedLong current_epoch = BeaconStateUtil.get_current_epoch(state);
+    UnsignedLong previous_epoch = BeaconStateUtil.get_previous_epoch(state);
+    List<PendingAttestation> combined_attestations = get_epoch_attestations(state, current_epoch);
+    combined_attestations.addAll(get_epoch_attestations(state, previous_epoch));
+
+    Map<Bytes32, UnsignedLong> shard_balances = new HashMap<>();
+    for (PendingAttestation attestation : combined_attestations) {
+      if (attestation.getData().getShard().compareTo(crosslink_committee.getShard()) == 0) {
+        List<Integer> attesting_indices =
+            BeaconStateUtil.get_attestation_participants(
+                state, attestation.getData(), attestation.getAggregation_bitfield().toArray());
+        UnsignedLong attesting_balance =
+            BeaconStateUtil.get_total_effective_balance(state, attesting_indices);
+        shard_balances.put(
+            attestation.getData().getShard_block_root(),
+            shard_balances
+                .get(attestation.getData().getShard_block_root())
+                .plus(attesting_balance));
+      }
+    }
+
+    UnsignedLong winning_root_balance = UnsignedLong.ZERO;
+    // The spec currently has no way of handling uninitialized winning_root
+    Bytes32 winning_root = Bytes32.ZERO;
+    for (Bytes32 shard_block_root : shard_balances.keySet()) {
+      if (shard_balances.get(shard_block_root).compareTo(winning_root_balance) > 0) {
+        winning_root_balance = shard_balances.get(shard_block_root);
+        winning_root = shard_block_root;
+      } else if (shard_balances.get(shard_block_root).compareTo(winning_root_balance) == 0) {
+        if (shard_block_root
+                .toUnsignedBigInteger(ByteOrder.LITTLE_ENDIAN)
+                .compareTo(winning_root.toUnsignedBigInteger(ByteOrder.LITTLE_ENDIAN))
+            > 0) {
+          winning_root = shard_block_root;
+        }
+      }
+    }
+    return winning_root;
+  }
+
+  /**
+   * get indices of validators attesting to state for the winning block root
+   *
+   * @param state
+   * @param crosslink_committee
+   * @return
+   */
+  public static List<Integer> attesting_validators(
+      BeaconState state, CrosslinkCommittee crosslink_committee) throws Exception {
+    return attesting_validator_indices(
+        state, crosslink_committee, winning_root(state, crosslink_committee));
+  }
+
+  /**
+   * get total balance of validators attesting to state for the given block_root
+   *
+   * @param state
+   * @param crosslink_committee
+   * @param shard
+   * @return
+   * @throws BlockValidationException
+   */
+  public static UnsignedLong total_attesting_balance(
+      BeaconState state, CrosslinkCommittee crosslink_committee) throws Exception {
+    List<Integer> attesting_validators = attesting_validators(state, crosslink_committee);
+    return BeaconStateUtil.get_total_effective_balance(state, attesting_validators);
+  }
+
+  public static PendingAttestation inclusion_slot_attestation(BeaconState state, Integer index)
+      throws Exception {
+    UnsignedLong previous_epoch = BeaconStateUtil.get_previous_epoch(state);
+
+    List<PendingAttestation> previous_epoch_attestations =
+        get_epoch_attestations(state, previous_epoch);
+
+    List<PendingAttestation> possible_attestations = new ArrayList<>();
+    for (PendingAttestation attestation : previous_epoch_attestations) {
+      List<Integer> attestation_participants =
+          BeaconStateUtil.get_attestation_participants(
+              state, attestation.getData(), attestation.getAggregation_bitfield().toArray());
+      if (attestation_participants.contains(index)) {
+        possible_attestations.add(attestation);
+      }
+    }
+
+    PendingAttestation lowest_inclusion_slot_attestation =
+        Collections.min(possible_attestations, Comparator.comparing(a -> a.getSlot_included()));
+
+    return lowest_inclusion_slot_attestation;
+  }
+
+  public static UnsignedLong inclusion_slot(BeaconState state, Integer index) throws Exception {
+    PendingAttestation lowest_inclusion_slot_attestation = inclusion_slot_attestation(state, index);
+    return lowest_inclusion_slot_attestation.getSlot_included();
+  }
+
+  public static UnsignedLong inclusion_distance(BeaconState state, Integer index) throws Exception {
+    PendingAttestation lowest_inclusion_slot_attestation = inclusion_slot_attestation(state, index);
+    return lowest_inclusion_slot_attestation
+        .getSlot_included()
+        .minus(lowest_inclusion_slot_attestation.getData().getSlot());
   }
 }
