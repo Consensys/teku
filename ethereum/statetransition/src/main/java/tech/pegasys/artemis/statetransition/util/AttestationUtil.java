@@ -250,41 +250,6 @@ public class AttestationUtil {
     return get_attester_indices(state, previous_epoch_attestations);
   }
 
-  public static PendingAttestation inclusion_slot_attestation(BeaconState state, Integer index)
-      throws Exception {
-    UnsignedLong previous_epoch = BeaconStateUtil.get_previous_epoch(state);
-
-    List<PendingAttestation> previous_epoch_attestations =
-        get_epoch_attestations(state, previous_epoch);
-
-    List<PendingAttestation> possible_attestations = new ArrayList<>();
-    for (PendingAttestation attestation : previous_epoch_attestations) {
-      List<Integer> attestation_participants =
-          BeaconStateUtil.get_attestation_participants(
-              state, attestation.getData(), attestation.getParticipation_bitfield().toArray());
-      if (attestation_participants.contains(index)) {
-        possible_attestations.add(attestation);
-      }
-    }
-
-    PendingAttestation lowest_inclusion_slot_attestation =
-        Collections.min(possible_attestations, Comparator.comparing(a -> a.getSlot_included()));
-
-    return lowest_inclusion_slot_attestation;
-  }
-
-  public static UnsignedLong inclusion_slot(BeaconState state, Integer index) throws Exception {
-    PendingAttestation lowest_inclusion_slot_attestation = inclusion_slot_attestation(state, index);
-    return lowest_inclusion_slot_attestation.getSlot_included();
-  }
-
-  public static UnsignedLong inclusion_distance(BeaconState state, Integer index) throws Exception {
-    PendingAttestation lowest_inclusion_slot_attestation = inclusion_slot_attestation(state, index);
-    return lowest_inclusion_slot_attestation
-        .getSlot_included()
-        .minus(lowest_inclusion_slot_attestation.getData().getSlot());
-  }
-
   /**
    * Returns the union of validator index sets, where the sets are the attestation participants of
    * attestations passed in TODO: the union part takes O(n^2) time, where n is the number of
@@ -379,19 +344,6 @@ public class AttestationUtil {
   }
 
   /**
-   * get indices of validators attesting to state for the winning block root
-   *
-   * @param state
-   * @param crosslink_committee
-   * @return
-   */
-  public static List<Integer> attesting_validators(
-      BeaconState state, CrosslinkCommittee crosslink_committee) throws Exception {
-    return attesting_validator_indices(
-        state, crosslink_committee, winning_root(state, crosslink_committee));
-  }
-
-  /**
    * is the shard_block_root that was voted on by the most validators (by balance).
    *
    * @param state
@@ -440,6 +392,20 @@ public class AttestationUtil {
     return winning_root;
   }
 
+
+  /**
+   * get indices of validators attesting to state for the winning block root
+   *
+   * @param state
+   * @param crosslink_committee
+   * @return
+   */
+  public static List<Integer> attesting_validators(
+          BeaconState state, CrosslinkCommittee crosslink_committee) throws Exception {
+    return attesting_validator_indices(
+            state, crosslink_committee, winning_root(state, crosslink_committee));
+  }
+
   /**
    * get total balance of validators attesting to state for the given block_root
    *
@@ -453,5 +419,40 @@ public class AttestationUtil {
       BeaconState state, CrosslinkCommittee crosslink_committee) throws Exception {
     List<Integer> attesting_validators = attesting_validators(state, crosslink_committee);
     return BeaconStateUtil.get_total_effective_balance(state, attesting_validators);
+  }
+
+  public static PendingAttestation inclusion_slot_attestation(BeaconState state, Integer index)
+      throws Exception {
+    UnsignedLong previous_epoch = BeaconStateUtil.get_previous_epoch(state);
+
+    List<PendingAttestation> previous_epoch_attestations =
+        get_epoch_attestations(state, previous_epoch);
+
+    List<PendingAttestation> possible_attestations = new ArrayList<>();
+    for (PendingAttestation attestation : previous_epoch_attestations) {
+      List<Integer> attestation_participants =
+          BeaconStateUtil.get_attestation_participants(
+              state, attestation.getData(), attestation.getParticipation_bitfield().toArray());
+      if (attestation_participants.contains(index)) {
+        possible_attestations.add(attestation);
+      }
+    }
+
+    PendingAttestation lowest_inclusion_slot_attestation =
+        Collections.min(possible_attestations, Comparator.comparing(a -> a.getSlot_included()));
+
+    return lowest_inclusion_slot_attestation;
+  }
+
+  public static UnsignedLong inclusion_slot(BeaconState state, Integer index) throws Exception {
+    PendingAttestation lowest_inclusion_slot_attestation = inclusion_slot_attestation(state, index);
+    return lowest_inclusion_slot_attestation.getSlot_included();
+  }
+
+  public static UnsignedLong inclusion_distance(BeaconState state, Integer index) throws Exception {
+    PendingAttestation lowest_inclusion_slot_attestation = inclusion_slot_attestation(state, index);
+    return lowest_inclusion_slot_attestation
+        .getSlot_included()
+        .minus(lowest_inclusion_slot_attestation.getData().getSlot());
   }
 }
