@@ -339,23 +339,6 @@ public class AttestationUtil {
   }
 
   /**
-   * get total balance of validators attesting to state for the given block_root
-   *
-   * @param state
-   * @param crosslink_committee
-   * @param shard
-   * @return
-   * @throws BlockValidationException
-   */
-  public static UnsignedLong total_attesting_balance(
-      BeaconState state, CrosslinkCommittee crosslink_committee, Bytes32 shard_block_root)
-      throws Exception {
-    List<Integer> attesting_validator_indices =
-        attesting_validator_indices(state, crosslink_committee, shard_block_root);
-    return BeaconStateUtil.get_total_effective_balance(state, attesting_validator_indices);
-  }
-
-  /**
    * get indices of validators attesting to state for the given block_root TODO: the union part
    * takes O(n^2) time, where n is the number of validators. OPTIMIZE
    *
@@ -455,5 +438,20 @@ public class AttestationUtil {
       }
     }
     return winning_root;
+  }
+
+  /**
+   * get total balance of validators attesting to state for the given block_root
+   *
+   * @param state
+   * @param crosslink_committee
+   * @param shard
+   * @return
+   * @throws BlockValidationException
+   */
+  public static UnsignedLong total_attesting_balance(
+      BeaconState state, CrosslinkCommittee crosslink_committee) throws Exception {
+    List<Integer> attesting_validators = attesting_validators(state, crosslink_committee);
+    return BeaconStateUtil.get_total_effective_balance(state, attesting_validators);
   }
 }

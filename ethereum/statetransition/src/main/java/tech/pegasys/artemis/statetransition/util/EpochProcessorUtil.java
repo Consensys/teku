@@ -144,13 +144,13 @@ public class EpochProcessorUtil {
     state.setJustified_epoch(new_justified_epoch);
   }
 
-  /**
+  /** TODO: FIX THIS FUNCTION
    * Update latest crosslinks per shard in the state Spec:
    * https://github.com/ethereum/eth2.0-specs/blob/v0.1/specs/core/0_beacon-chain.md#crosslinks
    *
    * @param state
    * @throws Exception
-   */
+   * */
   public static void updateCrosslinks(BeaconState state) throws Exception {
     UnsignedLong current_epoch = BeaconStateUtil.get_current_epoch(state);
     UnsignedLong slot = state.getSlot();
@@ -167,7 +167,7 @@ public class EpochProcessorUtil {
                 .get(Math.toIntExact(shard.longValue()))
                 .getShard_block_root();
         UnsignedLong total_attesting_balance =
-            AttestationUtil.total_attesting_balance(state, crosslink_committee, shard_block_root);
+            AttestationUtil.total_attesting_balance(state, crosslink_committee);
         if (UnsignedLong.valueOf(3L)
                 .times(total_attesting_balance)
                 .compareTo(BeaconStateUtil.total_balance(crosslink_committee))
