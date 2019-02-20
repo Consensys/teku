@@ -134,14 +134,14 @@ class BeaconStateTest {
             Bytes32.ZERO,
             UnsignedLong.ZERO,
             Bytes32.ZERO);
-    byte[] participation_bitfield = Bytes32.ZERO.toArrayUnsafe();
+    byte[] aggregation_bitfield = Bytes32.ZERO.toArrayUnsafe();
 
     /* todo: fix this test
     assertThrows(
         AssertionError.class,
         () ->
             BeaconState.get_attestation_participants(
-                newState(), attestationData, participation_bitfield));
+                newState(), attestationData, aggregation_bitfield));
     */
   }
 
@@ -158,11 +158,11 @@ class BeaconStateTest {
             Bytes32.ZERO,
             UnsignedLong.ZERO,
             Bytes32.ZERO);
-    byte[] participation_bitfield = new byte[] {1, 1, 1, 1};
+    byte[] aggregation_bitfield = new byte[] {1, 1, 1, 1};
 
     ArrayList<Integer> actual =
         BeaconState.get_attestation_participants(
-            newState(), attestationData, participation_bitfield);
+            newState(), attestationData, aggregation_bitfield);
     ArrayList<ShardCommittee> expected = new ArrayList<>();
 
     assertThat(actual).isEqualTo(expected);
@@ -189,10 +189,10 @@ class BeaconStateTest {
             Bytes32.ZERO,
             UnsignedLong.ZERO,
             Bytes32.ZERO);
-    byte[] participation_bitfield = new byte[] {127, 1, 1};
+    byte[] aggregation_bitfield = new byte[] {127, 1, 1};
 
     ArrayList<ShardCommittee> actual =
-        BeaconState.get_attestation_participants(state, attestationData, participation_bitfield);
+        BeaconState.get_attestation_participants(state, attestationData, aggregation_bitfield);
 
     assertThat(actual.get(1).getShard()).isEqualTo(UnsignedLong.ZERO);
     assertThat(actual.get(1).getCommittee()).isEqualTo(new ArrayList<>(Collections.nCopies(1, 0)));
