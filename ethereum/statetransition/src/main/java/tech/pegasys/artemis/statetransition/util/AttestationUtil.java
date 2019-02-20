@@ -328,7 +328,7 @@ public class AttestationUtil {
           && attestation.getData().getShard_block_root() == shard_block_root) {
         validator_index_sets.add(
             BeaconStateUtil.get_attestation_participants(
-                state, attestation.getData(), attestation.getParticipation_bitfield().toArray()));
+                state, attestation.getData(), attestation.getAggregation_bitfield().toArray()));
       }
     }
 
@@ -362,7 +362,7 @@ public class AttestationUtil {
       if (attestation.getData().getShard().compareTo(crosslink_committee.getShard()) == 0) {
         List<Integer> attesting_indices =
             BeaconStateUtil.get_attestation_participants(
-                state, attestation.getData(), attestation.getParticipation_bitfield().toArray());
+                state, attestation.getData(), attestation.getAggregation_bitfield().toArray());
         UnsignedLong attesting_balance =
             BeaconStateUtil.get_total_effective_balance(state, attesting_indices);
         shard_balances.put(
@@ -392,7 +392,6 @@ public class AttestationUtil {
     return winning_root;
   }
 
-
   /**
    * get indices of validators attesting to state for the winning block root
    *
@@ -401,9 +400,9 @@ public class AttestationUtil {
    * @return
    */
   public static List<Integer> attesting_validators(
-          BeaconState state, CrosslinkCommittee crosslink_committee) throws Exception {
+      BeaconState state, CrosslinkCommittee crosslink_committee) throws Exception {
     return attesting_validator_indices(
-            state, crosslink_committee, winning_root(state, crosslink_committee));
+        state, crosslink_committee, winning_root(state, crosslink_committee));
   }
 
   /**
@@ -432,7 +431,7 @@ public class AttestationUtil {
     for (PendingAttestation attestation : previous_epoch_attestations) {
       List<Integer> attestation_participants =
           BeaconStateUtil.get_attestation_participants(
-              state, attestation.getData(), attestation.getParticipation_bitfield().toArray());
+              state, attestation.getData(), attestation.getAggregation_bitfield().toArray());
       if (attestation_participants.contains(index)) {
         possible_attestations.add(attestation);
       }
