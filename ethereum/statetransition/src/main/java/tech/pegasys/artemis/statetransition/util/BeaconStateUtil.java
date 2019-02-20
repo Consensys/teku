@@ -398,6 +398,7 @@ public class BeaconStateUtil {
    * Return the slot that the given ``epoch`` starts at.
    *
    * @param epoch
+   * @return
    */
   public static UnsignedLong get_epoch_start_slot(UnsignedLong epoch) {
     return epoch.times(UnsignedLong.valueOf(EPOCH_LENGTH));
@@ -418,6 +419,7 @@ public class BeaconStateUtil {
    * by the output.
    *
    * @param epoch
+   * @return
    */
   public static UnsignedLong get_entry_exit_effect_epoch(UnsignedLong epoch) {
     return epoch.plus(UnsignedLong.ONE).plus(UnsignedLong.valueOf(ENTRY_EXIT_DELAY));
@@ -857,11 +859,11 @@ public class BeaconStateUtil {
   /**
    * Extract the bit in ``bitfield`` at position ``i``.
    *
-   * @param bitfield
-   * @param i
+   * @param bitfield - The Bytes value that describes the bitfield to operate on.
+   * @param bitPosition - The index.
    */
-  public int get_bitfield_bit(Bytes bitfield, int i) {
-    return (bitfield.get(i / 8) >> (7 - (i % 8))) % 2;
+  public int get_bitfield_bit(Bytes bitfield, int bitPosition) {
+    return (bitfield.get(bitPosition / 8) >> (7 - (bitPosition % 8))) % 2;
   }
 
   /**
@@ -873,7 +875,7 @@ public class BeaconStateUtil {
   public boolean verify_bitfield(Bytes bitfield, int committee_size) {
     if (bitfield.size() != (committee_size + 7) / 8) return false;
 
-    for (int i = committee_size + 1; i < committee_size - committee_size % 8 + 8; i++) {
+    for (int i = committee_size; i < bitfield.size() * 8; i++) {
       if (get_bitfield_bit(bitfield, i) == 0b1) return false;
     }
     return true;
@@ -1027,6 +1029,7 @@ public class BeaconStateUtil {
    * Return the smallest integer r such that r * div >= 8.
    *
    * @param div
+   * @return
    */
   private static int ceil_div8(int div) {
     checkArgument(div > 0, "Expected positive div but got %s", div);
