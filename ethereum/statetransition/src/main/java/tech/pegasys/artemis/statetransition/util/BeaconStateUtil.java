@@ -45,10 +45,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 import java.util.ListIterator;
 import java.util.Objects;
-
+import java.util.stream.Collectors;
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.bytes.Bytes48;
@@ -91,8 +90,7 @@ public class BeaconStateUtil {
         new ArrayList<>(
             Collections.nCopies(Constants.LATEST_INDEX_ROOTS_LENGTH, Constants.ZERO_HASH));
     ArrayList<UnsignedLong> latest_penalized_balances =
-        new ArrayList<>(
-            Collections.nCopies(LATEST_PENALIZED_EXIT_LENGTH, UnsignedLong.ZERO));
+        new ArrayList<>(Collections.nCopies(LATEST_PENALIZED_EXIT_LENGTH, UnsignedLong.ZERO));
     ArrayList<Crosslink> latest_crosslinks = new ArrayList<>(SHARD_COUNT);
 
     for (int i = 0; i < SHARD_COUNT; i++) {
@@ -426,13 +424,15 @@ public class BeaconStateUtil {
   }
 
   /**
-   * Initiate exit for the validator with the given 'index'. Note that this function mutates 'state'.
+   * Initiate exit for the validator with the given 'index'. Note that this function mutates
+   * 'state'.
    *
    * @param index The index of the validator.
    */
   public static void initiate_validator_exit(BeaconState state, int index) {
     Validator validator = state.getValidator_registry().get(index);
-    validator.setStatus_flags(BitwiseOps.or(validator.getStatus_flags(), UnsignedLong.valueOf(INITIATED_EXIT)));
+    validator.setStatus_flags(
+        BitwiseOps.or(validator.getStatus_flags(), UnsignedLong.valueOf(INITIATED_EXIT)));
   }
 
   /**
@@ -464,29 +464,42 @@ public class BeaconStateUtil {
   public static void penalize_validator(BeaconState state, int index) {
     exit_validator(state, index);
     Validator validator = state.getValidator_registry().get(index);
-    state.getLatest_penalized_balances().set(get_current_epoch(state).intValue() % LATEST_PENALIZED_EXIT_LENGTH,
-        state.getLatest_penalized_balances().get(get_current_epoch(state).intValue() % LATEST_PENALIZED_EXIT_LENGTH)
-            .plus(get_effective_balance(state, index)));
+    state
+        .getLatest_penalized_balances()
+        .set(
+            get_current_epoch(state).intValue() % LATEST_PENALIZED_EXIT_LENGTH,
+            state
+                .getLatest_penalized_balances()
+                .get(get_current_epoch(state).intValue() % LATEST_PENALIZED_EXIT_LENGTH)
+                .plus(get_effective_balance(state, index)));
 
     int whistleblower_index = get_beacon_proposer_index(state, state.getSlot());
-    UnsignedLong whistleblower_reward = get_effective_balance(state, index)
-        .dividedBy(UnsignedLong.valueOf(WHISTLEBLOWER_REWARD_QUOTIENT));
+    UnsignedLong whistleblower_reward =
+        get_effective_balance(state, index)
+            .dividedBy(UnsignedLong.valueOf(WHISTLEBLOWER_REWARD_QUOTIENT));
 
-    state.getValidator_balances().set(whistleblower_index, state.getValidator_balances().get(whistleblower_index)
-        .plus(whistleblower_reward));
-    state.getValidator_balances().set(index, state.getValidator_balances().get(index).minus(whistleblower_reward));
+    state
+        .getValidator_balances()
+        .set(
+            whistleblower_index,
+            state.getValidator_balances().get(whistleblower_index).plus(whistleblower_reward));
+    state
+        .getValidator_balances()
+        .set(index, state.getValidator_balances().get(index).minus(whistleblower_reward));
     validator.setPenalized_epoch(get_current_epoch(state));
   }
 
   /**
-   * Set the validator with the given ``index`` with ``WITHDRAWABLE`` flag. Note that this function mutates ``state``.
+   * Set the validator with the given ``index`` with ``WITHDRAWABLE`` flag. Note that this function
+   * mutates ``state``.
    *
    * @param state
    * @param index
    */
   public static void prepare_validator_for_withdrawal(BeaconState state, int index) {
     Validator validator = state.getValidator_registry().get(index);
-    validator.setStatus_flags(BitwiseOps.or(validator.getStatus_flags(), UnsignedLong.valueOf(WITHDRAWABLE)));
+    validator.setStatus_flags(
+        BitwiseOps.or(validator.getStatus_flags(), UnsignedLong.valueOf(WITHDRAWABLE)));
   }
 
   /** Return the randao mix at a recent ``epoch``. */
@@ -843,6 +856,7 @@ public class BeaconStateUtil {
 
   /**
    * Extract the bit in ``bitfield`` at position ``i``.
+   *
    * @param bitfield
    * @param i
    */
@@ -852,6 +866,7 @@ public class BeaconStateUtil {
 
   /**
    * Verify ``bitfield`` against the ``committee_size``.
+   *
    * @param bitfield
    * @param committee_size
    */
@@ -866,26 +881,30 @@ public class BeaconStateUtil {
 
   /**
    * Verify validity of ``slashable_attestation`` fields.
+   *
    * @param state
    * @param slashable_attestation
    */
-  public boolean verify_slashable_attestation(BeaconState state, SlashableAttestation slashable_attestation) {
+  public boolean verify_slashable_attestation(
+      BeaconState state, SlashableAttestation slashable_attestation) {
     // NOTE: The spec defines this verification in terms of the custody bitfield length,
     // however because we've implemented the bitfield as a static Bytes32 value
     // instead of a variable length bitfield, checking against Bytes32.ZERO will suffice.
-    if (!Objects.equals(slashable_attestation.getCustody_bitfield(), Bytes32.ZERO))
-      return false;
+    if (!Objects.equals(slashable_attestation.getCustody_bitfield(), Bytes32.ZERO)) return false;
 
     if (slashable_attestation.getValidator_indices().size() == 0) return false;
 
     for (int i = 0; i < slashable_attestation.getValidator_indices().size() - 1; i++) {
-      if (slashable_attestation.getValidator_indices().get(i)
-          .compareTo(slashable_attestation.getValidator_indices().get(i + 1)) >= 0)
-        return false;
+      if (slashable_attestation
+              .getValidator_indices()
+              .get(i)
+              .compareTo(slashable_attestation.getValidator_indices().get(i + 1))
+          >= 0) return false;
     }
 
-    if (!verify_bitfield(slashable_attestation.getCustody_bitfield(), slashable_attestation.getValidator_indices().size()))
-      return false;
+    if (!verify_bitfield(
+        slashable_attestation.getCustody_bitfield(),
+        slashable_attestation.getValidator_indices().size())) return false;
 
     if (slashable_attestation.getValidator_indices().size() > MAX_INDICES_PER_SLASHABLE_VOTE)
       return false;
@@ -911,13 +930,22 @@ public class BeaconStateUtil {
       custody_bit_1_pubkeys.add(state.getValidator_registry().get(i).getPubkey());
     }
 
-    List<Bytes48> pubkeys = Arrays.asList(bls_aggregate_pubkeys(custody_bit_0_pubkeys),
-        bls_aggregate_pubkeys(custody_bit_1_pubkeys));
-    List<Bytes32> messages = Arrays.asList(
-        hash_tree_root(new AttestationDataAndCustodyBit(slashable_attestation.getData(), false)),
-        hash_tree_root(new AttestationDataAndCustodyBit(slashable_attestation.getData(), true)));
+    List<Bytes48> pubkeys =
+        Arrays.asList(
+            bls_aggregate_pubkeys(custody_bit_0_pubkeys),
+            bls_aggregate_pubkeys(custody_bit_1_pubkeys));
+    List<Bytes32> messages =
+        Arrays.asList(
+            hash_tree_root(
+                new AttestationDataAndCustodyBit(slashable_attestation.getData(), false)),
+            hash_tree_root(
+                new AttestationDataAndCustodyBit(slashable_attestation.getData(), true)));
     Signature signature = slashable_attestation.getAggregate_signature();
-    UnsignedLong domain = get_domain(state.getFork(), slot_to_epoch(vote_data.data.slot), DOMAIN_ATTESTATION);
+    UnsignedLong domain =
+        get_domain(
+            state.getFork(),
+            slot_to_epoch(slashable_attestation.getData().getSlot()),
+            DOMAIN_ATTESTATION);
 
     return bls_verify_multiple(pubkeys, messages, signature, domain);
   }

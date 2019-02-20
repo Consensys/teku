@@ -13,9 +13,8 @@
 
 package tech.pegasys.artemis.util.bls;
 
-import java.util.List;
-
 import com.google.common.primitives.UnsignedLong;
+import java.util.List;
 import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.bytes.Bytes48;
 
