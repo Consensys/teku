@@ -484,16 +484,14 @@ public class EpochProcessorUtil {
    * @param state
    */
   public static void process_ejections(BeaconState state) {
-    int index = 0;
     UnsignedLong currentEpoch = BeaconStateUtil.get_current_epoch(state);
-    List<Validator> active_validators =
-        ValidatorsUtil.get_active_validators(state.getValidator_registry(), currentEpoch);
-    for (Validator validator : active_validators) {
-      List<UnsignedLong> balances = state.getValidator_balances();
+    List<Integer> active_validator_indices =
+        ValidatorsUtil.get_active_validator_indices(state.getValidator_registry(), currentEpoch);
+    List<UnsignedLong> balances = state.getValidator_balances();
+    for (Integer index : active_validator_indices) {
       if (balances.get(index).compareTo(UnsignedLong.valueOf(Constants.EJECTION_BALANCE)) < 0) {
         BeaconStateUtil.exit_validator(state, index);
       }
-      index++;
     }
   }
 
