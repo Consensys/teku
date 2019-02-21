@@ -35,7 +35,7 @@ import static tech.pegasys.artemis.datastructures.Constants.WHISTLEBLOWER_REWARD
 import static tech.pegasys.artemis.datastructures.Constants.WITHDRAWABLE;
 import static tech.pegasys.artemis.datastructures.Constants.ZERO_HASH;
 import static tech.pegasys.artemis.statetransition.util.TreeHashUtil.hash_tree_root;
-import static tech.pegasys.artemis.statetransition.util.TreeHashUtil.validatorListHashTreeRoot;
+import static tech.pegasys.artemis.statetransition.util.TreeHashUtil.integerListHashTreeRoot;
 import static tech.pegasys.artemis.util.bls.BLSAggregate.bls_aggregate_pubkeys;
 import static tech.pegasys.artemis.util.bls.BLSVerify.bls_verify;
 import static tech.pegasys.artemis.util.bls.BLSVerify.bls_verify_multiple;
@@ -161,8 +161,8 @@ public class BeaconStateUtil {
     }
 
     Bytes32 genesis_active_index_root =
-        validatorListHashTreeRoot(
-            ValidatorsUtil.get_active_validators(
+        integerListHashTreeRoot(
+            ValidatorsUtil.get_active_validator_indices(
                 state.getValidator_registry(), UnsignedLong.valueOf(GENESIS_EPOCH)));
     for (Bytes32 root : state.getLatest_index_roots()) {
       root = genesis_active_index_root;
