@@ -377,7 +377,7 @@ public class BlockProcessorUtil {
 
       // - Verify that attestation.data.shard_block_root == ZERO_HASH
       // TO BE REMOVED IN PHASE 1
-      checkArgument(attestation.getData().getShard_block_root() == ZERO_HASH);
+      checkArgument(attestation.getData().getShard_block_root().equals(ZERO_HASH));
 
       // - Append PendingAttestation(data=attestation.data,
       //     aggregation_bitfield=attestation.aggregation_bitfield,
@@ -582,6 +582,6 @@ public class BlockProcessorUtil {
         value = Hash.keccak256(Bytes.concatenate(value, branch.get(i)));
       }
     }
-    return value == root;
+    return value.equals(root);
   }
 }
