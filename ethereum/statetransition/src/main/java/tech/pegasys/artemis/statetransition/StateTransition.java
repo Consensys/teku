@@ -82,7 +82,10 @@ public class StateTransition {
     // Update Eth1 Data
     BlockProcessorUtil.update_eth1_data(state, block);
 
-    // block body operations
+    // Block Body - Operations
+    // Execute Proposer Slashings
+    BlockProcessorUtil.proposer_slashing(state, block);
+
     // processAttestations(state, block);
   }
 

@@ -99,20 +99,20 @@ public class BlockProcessorUtil {
   public static void verify_signature(BeaconState state, BeaconBlock block)
       throws IllegalStateException, IllegalArgumentException {
     // Let block_without_signature_root be the hash_tree_root of block where
-    // block.signature is set to EMPTY_SIGNATURE.
+    //   block.signature is set to EMPTY_SIGNATURE.
     block.setSignature(EMPTY_SIGNATURE);
     Bytes32 blockWithoutSignatureRootHash = hash_tree_root(block.toBytes());
 
     // Let proposal_root = hash_tree_root(ProposalSignedData(state.slot,
-    // BEACON_CHAIN_SHARD_NUMBER, block_without_signature_root)).
+    //   BEACON_CHAIN_SHARD_NUMBER, block_without_signature_root)).
     ProposalSignedData proposalSignedData =
         new ProposalSignedData(
             state.getSlot(), Constants.BEACON_CHAIN_SHARD_NUMBER, blockWithoutSignatureRootHash);
     Bytes32 proposalRoot = hash_tree_root(proposalSignedData.toBytes());
 
     // Verify that bls_verify(pubkey=state.validator_registry[get_beacon_proposer_index(state,
-    // state.slot)].pubkey, message=proposal_root, signature=block.signature,
-    // domain=get_domain(state.fork, state.slot, DOMAIN_PROPOSAL)) is valid.
+    //   state.slot)].pubkey, message=proposal_root, signature=block.signature,
+    //   domain=get_domain(state.fork, state.slot, DOMAIN_PROPOSAL)) is valid.
     int proposerIndex = BeaconStateUtil.get_beacon_proposer_index(state, state.getSlot());
     Bytes48 pubkey = state.getValidator_registry().get(proposerIndex).getPubkey();
     UnsignedLong domain = get_domain(state.getFork(), get_current_epoch(state), DOMAIN_PROPOSAL);
@@ -172,32 +172,54 @@ public class BlockProcessorUtil {
   }
 
   /**
+   * Spec:
+   * https://github.com/ethereum/eth2.0-specs/blob/v0.1/specs/core/0_beacon-chain.md#proposer-slashings-1
+   *
    * @param state
    * @param block
    */
   public static void proposer_slashing(BeaconState state, BeaconBlock block) {
+    // Verify that len(block.body.proposer_slashings) <= MAX_PROPOSER_SLASHINGS
     checkArgument(block.getBody().getProposer_slashings().size() <= MAX_PROPOSER_SLASHINGS);
 
+    // For each proposer_slashing in block.body.proposer_slashings:
     for (ProposerSlashing proposer_slashing : block.getBody().getProposer_slashings()) {
+      // - Let proposer = state.validator_registry[proposer_slashing.proposer_index]
       Validator proposer =
-          state.getValidator_registry().get(proposer_slashing.getProposer_index().intValue());
+          state
+              .getValidator_registry()
+              .get(toIntExact(proposer_slashing.getProposer_index().longValue()));
 
+      // - Verify that proposer_slashing.proposal_data_1.slot ==
+      //     proposer_slashing.proposal_data_2.slot
       checkArgument(
           proposer_slashing
               .getProposal_data_1()
               .getSlot()
               .equals(proposer_slashing.getProposal_data_2().getSlot()));
+
+      // - Verify that proposer_slashing.proposal_data_1.shard ==
+      //     proposer_slashing.proposal_data_2.shard
       checkArgument(
           proposer_slashing
               .getProposal_data_1()
               .getShard()
               .equals(proposer_slashing.getProposal_data_2().getShard()));
-      checkArgument(
-          proposer_slashing.getProposal_data_1().getBlock_root()
-              != proposer_slashing.getProposal_data_2().getBlock_root());
 
+      // - Verify that proposer_slashing.proposal_data_1.block_root !=
+      //     proposer_slashing.proposal_data_2.block_root
+      checkArgument(
+          !Objects.equals(
+              proposer_slashing.getProposal_data_1().getBlock_root(),
+              proposer_slashing.getProposal_data_2().getBlock_root()));
+
+      // - Verify that proposer.penalized_epoch > get_current_epoch(state)
       checkArgument(proposer.getPenalized_epoch().compareTo(get_current_epoch(state)) > 0);
 
+      // - Verify that bls_verify(pubkey=proposer.pubkey,
+      //     message=hash_tree_root(proposer_slashing.proposal_data_1),
+      //     signature=proposer_slashing.proposal_signature_1, domain=get_domain(state.fork,
+      //     slot_to_epoch(proposer_slashing.proposal_data_1.slot), DOMAIN_PROPOSAL)) is valid.
       checkArgument(
           bls_verify(
               proposer.getPubkey(),
@@ -207,6 +229,11 @@ public class BlockProcessorUtil {
                   state.getFork(),
                   slot_to_epoch(proposer_slashing.getProposal_data_1().getSlot()),
                   DOMAIN_PROPOSAL)));
+
+      // - Verify that bls_verify(pubkey=proposer.pubkey,
+      //     message=hash_tree_root(proposer_slashing.proposal_data_2),
+      //     signature=proposer_slashing.proposal_signature_2, domain=get_domain(state.fork,
+      //     slot_to_epoch(proposer_slashing.proposal_data_2.slot), DOMAIN_PROPOSAL)) is valid.
       checkArgument(
           bls_verify(
               proposer.getPubkey(),
@@ -217,6 +244,7 @@ public class BlockProcessorUtil {
                   slot_to_epoch(proposer_slashing.getProposal_data_2().getSlot()),
                   DOMAIN_PROPOSAL)));
 
+      // - Run penalize_validator(state, proposer_slashing.proposer_index)
       penalize_validator(state, proposer_slashing.getProposer_index().intValue());
     }
   }
@@ -339,8 +367,8 @@ public class BlockProcessorUtil {
     Validator proposer = state.getValidator_registry().get(proposerIndex);
 
     // Verify that bls_verify(pubkey=proposer.pubkey,
-    // message=int_to_bytes32(get_current_epoch(state)), signature=block.randao_reveal, domain=
-    // get_domain(state.fork, get_current_epoch(state), DOMAIN_RANDAO)).
+    //   message=int_to_bytes32(get_current_epoch(state)), signature=block.randao_reveal, domain=
+    //   get_domain(state.fork, get_current_epoch(state), DOMAIN_RANDAO)).
     UnsignedLong domain = get_domain(state.getFork(), currentEpoch, DOMAIN_RANDAO);
     return bls_verify(proposer.getPubkey(), currentEpochBytes, block.getRandao_reveal(), domain);
   }
