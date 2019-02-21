@@ -127,46 +127,45 @@ public class BlockProcessorUtil {
    */
   public static void verify_and_update_randao(BeaconState state, BeaconBlock block)
       throws IllegalStateException, IllegalArgumentException {
-    
+
     UnsignedLong currentEpoch = BeaconStateUtil.get_current_epoch(state);
     Bytes32 currentEpochBytes = Bytes32.leftPad(Bytes.ofUnsignedLong(currentEpoch.longValue()));
     // - Let proposer = state.validator_registry[get_beacon_proposer_index(state, state.slot)].
-    // - Verify that bls_verify(pubkey=proposer.pubkey, 
+    // - Verify that bls_verify(pubkey=proposer.pubkey,
     //    message=int_to_bytes32(get_current_epoch(state)), signature=block.randao_reveal,
     //    domain=get_domain(state.fork, get_current_epoch(state), DOMAIN_RANDAO)).
     checkArgument(verify_randao(state, block, currentEpoch, currentEpochBytes));
 
-    // - Set state.latest_randao_mixes[get_current_epoch(state) % LATEST_RANDAO_MIXES_LENGTH] 
+    // - Set state.latest_randao_mixes[get_current_epoch(state) % LATEST_RANDAO_MIXES_LENGTH]
     //    = xor(get_randao_mix(state, get_current_epoch(state)), hash(block.randao_reveal)).
-    int randaoMixesIndex = toIntExact(currentEpoch.longValue()) % Constants.LATEST_RANDAO_MIXES_LENGTH;
-    Bytes32 newLatestRandaoMixes = get_randao_mix(state, currentEpoch).xor(Hash.keccak256(block.getRandao_reveal().toBytes()));
+    int randaoMixesIndex =
+        toIntExact(currentEpoch.longValue()) % Constants.LATEST_RANDAO_MIXES_LENGTH;
+    Bytes32 newLatestRandaoMixes =
+        get_randao_mix(state, currentEpoch).xor(Hash.keccak256(block.getRandao_reveal().toBytes()));
     state.getLatest_randao_mixes().set(randaoMixesIndex, newLatestRandaoMixes);
   }
   /**
-   * https://github.com/ethereum/eth2.0-specs/blob/master/specs/core/0_beacon-chain.md#eth1-data
+   * Spec: https://github.com/ethereum/eth2.0-specs/blob/v0.1/specs/core/0_beacon-chain.md#eth1-data
    *
    * @param state
    * @param block
    */
-  public static void tally_eth1_receipt_root_vote(BeaconState state, BeaconBlock block) {
-    /*
-     Eth1 data
-     If block.eth1_data equals eth1_data_vote.eth1_data for some eth1_data_vote
-       in state.eth1_data_votes, set eth1_data_vote.vote_count += 1.
-     Otherwise, append to state.eth1_data_votes
-       a new Eth1DataVote(eth1_data=block.eth1_data, vote_count=1).
-    */
-
+  public static void update_eth1_data(BeaconState state, BeaconBlock block) {
+    // If block.eth1_data equals eth1_data_vote.eth1_data for some eth1_data_vote
+    //   in state.eth1_data_votes, set eth1_data_vote.vote_count += 1.
     boolean exists = false;
     List<Eth1DataVote> votes = state.getEth1_data_votes();
     for (Eth1DataVote vote : votes) {
       if (block.getEth1_data().equals(vote.getEth1_data())) {
-        UnsignedLong voteCount = vote.getVote_count().plus(UnsignedLong.ONE);
-        vote.setVote_count(voteCount);
         exists = true;
+        UnsignedLong voteCount = vote.getVote_count();
+        vote.setVote_count(voteCount.plus(UnsignedLong.ONE));
         break;
       }
     }
+
+    // Otherwise, append to state.eth1_data_votes
+    //   a new Eth1DataVote(eth1_data=block.eth1_data, vote_count=1).
     if (!exists) {
       votes.add(new Eth1DataVote(block.getEth1_data(), UnsignedLong.ONE));
     }
@@ -333,7 +332,8 @@ public class BlockProcessorUtil {
   }
 
   @VisibleForTesting
-  static boolean verify_randao(BeaconState state, BeaconBlock block, UnsignedLong currentEpoch, Bytes32 currentEpochBytes) {
+  static boolean verify_randao(
+      BeaconState state, BeaconBlock block, UnsignedLong currentEpoch, Bytes32 currentEpochBytes) {
     // Let proposer = state.validator_registry[get_beacon_proposer_index(state, state.slot)].
     int proposerIndex = BeaconStateUtil.get_beacon_proposer_index(state, state.getSlot());
     Validator proposer = state.getValidator_registry().get(proposerIndex);

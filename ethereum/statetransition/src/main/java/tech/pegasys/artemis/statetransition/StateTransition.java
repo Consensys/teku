@@ -79,6 +79,8 @@ public class StateTransition {
     BlockProcessorUtil.verify_signature(state, block);
     // Verify and Update RANDAO
     BlockProcessorUtil.verify_and_update_randao(state, block);
+    // Update Eth1 Data
+    BlockProcessorUtil.update_eth1_data(state, block);
 
     // block body operations
     // processAttestations(state, block);
