@@ -19,6 +19,7 @@ import static tech.pegasys.artemis.datastructures.Constants.DEPOSIT_CONTRACT_TRE
 import static tech.pegasys.artemis.datastructures.Constants.DOMAIN_ATTESTATION;
 import static tech.pegasys.artemis.datastructures.Constants.DOMAIN_EXIT;
 import static tech.pegasys.artemis.datastructures.Constants.DOMAIN_PROPOSAL;
+import static tech.pegasys.artemis.datastructures.Constants.DOMAIN_RANDAO;
 import static tech.pegasys.artemis.datastructures.Constants.EMPTY_SIGNATURE;
 import static tech.pegasys.artemis.datastructures.Constants.EPOCH_LENGTH;
 import static tech.pegasys.artemis.datastructures.Constants.MAX_ATTESTATIONS;
@@ -34,6 +35,7 @@ import static tech.pegasys.artemis.statetransition.util.BeaconStateUtil.get_cros
 import static tech.pegasys.artemis.statetransition.util.BeaconStateUtil.get_current_epoch;
 import static tech.pegasys.artemis.statetransition.util.BeaconStateUtil.get_domain;
 import static tech.pegasys.artemis.statetransition.util.BeaconStateUtil.get_entry_exit_effect_epoch;
+import static tech.pegasys.artemis.statetransition.util.BeaconStateUtil.get_randao_mix;
 import static tech.pegasys.artemis.statetransition.util.BeaconStateUtil.initiate_validator_exit;
 import static tech.pegasys.artemis.statetransition.util.BeaconStateUtil.is_double_vote;
 import static tech.pegasys.artemis.statetransition.util.BeaconStateUtil.is_surround_vote;
@@ -47,6 +49,7 @@ import static tech.pegasys.artemis.util.bls.BLSVerify.bls_aggregate_pubkeys;
 import static tech.pegasys.artemis.util.bls.BLSVerify.bls_verify;
 import static tech.pegasys.artemis.util.bls.BLSVerify.bls_verify_multiple;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -75,14 +78,15 @@ import tech.pegasys.artemis.statetransition.BeaconState;
 public class BlockProcessorUtil {
 
   /**
-   * Spec:
-   * https://github.com/ethereum/eth2.0-specs/blob/v0.1/specs/core/0_beacon-chain.md#slot-1
+   * Spec: https://github.com/ethereum/eth2.0-specs/blob/v0.1/specs/core/0_beacon-chain.md#slot-1
    *
    * @param state
    * @param block
    */
-  public static boolean verify_slot(BeaconState state, BeaconBlock block) {
-    return Objects.equals(state.getSlot(), UnsignedLong.fromLongBits(block.getSlot()));
+  public static void verify_slot(BeaconState state, BeaconBlock block)
+      throws IllegalArgumentException {
+    // Verify that block.slot == state.slot
+    checkArgument(Objects.equals(state.getSlot(), UnsignedLong.fromLongBits(block.getSlot())));
   }
 
   /**
@@ -92,8 +96,8 @@ public class BlockProcessorUtil {
    * @param state
    * @param block
    */
-  public static boolean verify_signature(BeaconState state, BeaconBlock block)
-      throws IllegalStateException {
+  public static void verify_signature(BeaconState state, BeaconBlock block)
+      throws IllegalStateException, IllegalArgumentException {
     // Let block_without_signature_root be the hash_tree_root of block where
     // block.signature is set to EMPTY_SIGNATURE.
     block.setSignature(EMPTY_SIGNATURE);
@@ -102,7 +106,8 @@ public class BlockProcessorUtil {
     // Let proposal_root = hash_tree_root(ProposalSignedData(state.slot,
     // BEACON_CHAIN_SHARD_NUMBER, block_without_signature_root)).
     ProposalSignedData proposalSignedData =
-        new ProposalSignedData(state.getSlot(), Constants.BEACON_CHAIN_SHARD_NUMBER, blockWithoutSignatureRootHash);
+        new ProposalSignedData(
+            state.getSlot(), Constants.BEACON_CHAIN_SHARD_NUMBER, blockWithoutSignatureRootHash);
     Bytes32 proposalRoot = hash_tree_root(proposalSignedData.toBytes());
 
     // Verify that bls_verify(pubkey=state.validator_registry[get_beacon_proposer_index(state,
@@ -111,38 +116,31 @@ public class BlockProcessorUtil {
     int proposerIndex = BeaconStateUtil.get_beacon_proposer_index(state, state.getSlot());
     Bytes48 pubkey = state.getValidator_registry().get(proposerIndex).getPubkey();
     UnsignedLong domain = get_domain(state.getFork(), get_current_epoch(state), DOMAIN_PROPOSAL);
-    return bls_verify(
-        pubkey,
-        proposalRoot,
-        block.getSignature(),
-        domain);
+    checkArgument(bls_verify(pubkey, proposalRoot, block.getSignature(), domain));
   }
 
   /**
-   * Spec: https://github.com/ethereum/eth2.0-specs/blob/master/specs/core/0_beacon-chain.md#randao
+   * Spec: https://github.com/ethereum/eth2.0-specs/blob/v0.1/specs/core/0_beacon-chain.md#randao
    *
    * @param state
    * @param block
    */
   public static void verify_and_update_randao(BeaconState state, BeaconBlock block)
-      throws IllegalStateException {
-    // Let proposer = state.validator_registry[get_beacon_proposer_index(state, state.slot)].
-    int proposerIndex = BeaconStateUtil.get_beacon_proposer_index(state, state.getSlot());
-    Bytes48 pubkey = state.getValidator_registry().get(proposerIndex).getPubkey();
-    // TODO: convert these values to UnsignedLong
-    long epoch = BeaconStateUtil.get_current_epoch(state).longValue();
-    Bytes32 epochBytes = Bytes32.wrap(Bytes.minimalBytes(epoch));
-    // Verify that bls_verify(pubkey=proposer.pubkey,
-    // message=int_to_bytes32(get_current_epoch(state)), signature=block.randao_reveal, domain=
-    // get_domain(state.fork, get_current_epoch(state), DOMAIN_RANDAO)).
-    // TODO: after v0.01 refactor constants no longer exists
-    //    BLSVerify.bls_verify(pubkey, epochBytes, block.getRandao_reveal(),
-    // Constants.DOMAIN_RANDAO);
-    // state.latest_randao_mixes[get_current_epoch(state) % LATEST_RANDAO_MIXES_LENGTH] =
-    // xor(get_randao_mix(state, get_current_epoch(state)), hash(block.randao_reveal))
-    int index = toIntExact(epoch) % Constants.LATEST_RANDAO_MIXES_LENGTH;
-    Bytes32 latest_randao_mixes = state.getLatest_randao_mixes().get(index);
-    state.getLatest_randao_mixes().set(index, latest_randao_mixes.xor(Hash.keccak256(epochBytes)));
+      throws IllegalStateException, IllegalArgumentException {
+    
+    UnsignedLong currentEpoch = BeaconStateUtil.get_current_epoch(state);
+    Bytes32 currentEpochBytes = Bytes32.leftPad(Bytes.ofUnsignedLong(currentEpoch.longValue()));
+    // - Let proposer = state.validator_registry[get_beacon_proposer_index(state, state.slot)].
+    // - Verify that bls_verify(pubkey=proposer.pubkey, 
+    //    message=int_to_bytes32(get_current_epoch(state)), signature=block.randao_reveal,
+    //    domain=get_domain(state.fork, get_current_epoch(state), DOMAIN_RANDAO)).
+    checkArgument(verify_randao(state, block, currentEpoch, currentEpochBytes));
+
+    // - Set state.latest_randao_mixes[get_current_epoch(state) % LATEST_RANDAO_MIXES_LENGTH] 
+    //    = xor(get_randao_mix(state, get_current_epoch(state)), hash(block.randao_reveal)).
+    int randaoMixesIndex = toIntExact(currentEpoch.longValue()) % Constants.LATEST_RANDAO_MIXES_LENGTH;
+    Bytes32 newLatestRandaoMixes = get_randao_mix(state, currentEpoch).xor(Hash.keccak256(block.getRandao_reveal().toBytes()));
+    state.getLatest_randao_mixes().set(randaoMixesIndex, newLatestRandaoMixes);
   }
   /**
    * https://github.com/ethereum/eth2.0-specs/blob/master/specs/core/0_beacon-chain.md#eth1-data
@@ -332,6 +330,19 @@ public class BlockProcessorUtil {
               state.getSlot());
       state.getLatest_attestations().add(pendingAttestation);
     }
+  }
+
+  @VisibleForTesting
+  static boolean verify_randao(BeaconState state, BeaconBlock block, UnsignedLong currentEpoch, Bytes32 currentEpochBytes) {
+    // Let proposer = state.validator_registry[get_beacon_proposer_index(state, state.slot)].
+    int proposerIndex = BeaconStateUtil.get_beacon_proposer_index(state, state.getSlot());
+    Validator proposer = state.getValidator_registry().get(proposerIndex);
+
+    // Verify that bls_verify(pubkey=proposer.pubkey,
+    // message=int_to_bytes32(get_current_epoch(state)), signature=block.randao_reveal, domain=
+    // get_domain(state.fork, get_current_epoch(state), DOMAIN_RANDAO)).
+    UnsignedLong domain = get_domain(state.getFork(), currentEpoch, DOMAIN_RANDAO);
+    return bls_verify(proposer.getPubkey(), currentEpochBytes, block.getRandao_reveal(), domain);
   }
 
   /**
