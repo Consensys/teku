@@ -13,11 +13,13 @@
 
 package tech.pegasys.artemis.util.mikuli;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
+import com.google.common.annotations.VisibleForTesting;
 import java.security.SecureRandom;
 import java.security.Security;
 import java.util.Objects;
 import net.consensys.cava.bytes.Bytes;
-import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.crypto.Hash;
 import org.apache.milagro.amcl.BLS381.BIG;
 import org.apache.milagro.amcl.BLS381.ECP2;
@@ -30,18 +32,6 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
  * they are elements of the extension field Fq12.
  */
 final class G2Point implements Group<G2Point> {
-
-  // This is the G2 cofactor as defined in the spec.
-  public static final long[] cofactor = {
-    0xcf1c38e31c7238e5L,
-    0x1616ec6e786f0c70L,
-    0x21537e293a6691aeL,
-    0xa628f1cb4d9e82efL,
-    0xa68a205b2e5a7ddfL,
-    0xcd91de4547085abaL,
-    0x091d50792876a202L,
-    0x05d543a95414e7f1L
-  };
 
   /**
    * Generate a random point on the curve
@@ -65,21 +55,36 @@ final class G2Point implements Group<G2Point> {
     return new G2Point(point);
   }
 
-  public static G2Point hashToG2(Bytes32 messageHash, long domain) {
+  /**
+   * Hashes to the G2 curve as described in the Eth2 spec
+   *
+   * @param message
+   * @param domain
+   * @return
+   */
+  // TODO: latest spec says that we pass Bytes32 messageHash in. But the test cases are older and
+  // use the message itself
+  // public static G2Point hashToG2(Bytes32 messageHash, long domain) {
+  public static G2Point hashToG2(Bytes message, long domain) {
     Security.addProvider(new BouncyCastleProvider());
     Bytes domainBytes = Bytes.ofUnsignedLong(domain);
     Bytes padding = Bytes.wrap(new byte[16]);
+
     byte[] xReBytes =
         Bytes.concatenate(
                 padding,
                 Hash.keccak256(
-                    Bytes.concatenate(messageHash, domainBytes, Bytes.fromHexString("0x01"))))
+                    // TODO:
+                    // Bytes.concatenate(messageHash, domainBytes, Bytes.fromHexString("0x01"))))
+                    Bytes.concatenate(message, domainBytes, Bytes.fromHexString("0x01"))))
             .toArray();
     byte[] xImBytes =
         Bytes.concatenate(
                 padding,
                 Hash.keccak256(
-                    Bytes.concatenate(messageHash, domainBytes, Bytes.fromHexString("0x02"))))
+                    // TODO:
+                    // Bytes.concatenate(messageHash, domainBytes, Bytes.fromHexString("0x02"))))
+                    Bytes.concatenate(message, domainBytes, Bytes.fromHexString("0x02"))))
             .toArray();
 
     BIG xRe = BIG.fromBytes(xReBytes);
@@ -89,35 +94,70 @@ final class G2Point implements Group<G2Point> {
     ECP2 point = new ECP2(new FP2(xRe, xIm));
     while (point.is_infinity()) {
       xRe.add(one);
+      xRe.norm();
       point = new ECP2(new FP2(xRe, xIm));
     }
 
-    // Check we chose the right root for Y as per spec, and adjust if not
-    FP2 y1 = point.getY();
-    FP2 y2 = new FP2(y1);
-    y2.neg();
-    if (BIG.comp(y1.getB(), y2.getB()) < 0
-        || ((BIG.comp(y1.getB(), y2.getB()) == 0) && BIG.comp(y1.getA(), y2.getA()) < 0)) {
-      point = new ECP2(point.getX(), y2);
+    return new G2Point(scaleWithCofactor(normaliseY(point)));
+  }
+
+  /**
+   * Correct the Y coordinate of a point if necessary in accordance with the Eth2 spec
+   *
+   * <p>After creating a point from only its X value, there is a choice of two Y values. The Milagro
+   * library sometimes returns the wrong one, so we need to correct. The Eth2 spec specifies that we
+   * need to choose the Y value with greater imaginary part, or with greater real part iof the
+   * imaginaries are equal.
+   *
+   * @param point the point whose Y coordinate is to be normalised.
+   * @return a new point with the correct Y coordinate, which may the original.
+   */
+  @VisibleForTesting
+  static ECP2 normaliseY(ECP2 point) {
+    FP2 y = point.getY();
+    FP2 yNeg = new FP2(y);
+    yNeg.neg();
+    if (BIG.comp(y.getB(), yNeg.getB()) < 0
+        || ((BIG.comp(y.getB(), yNeg.getB()) == 0) && BIG.comp(y.getA(), yNeg.getA()) < 0)) {
+      return new ECP2(point.getX(), yNeg);
+    } else {
+      return point;
     }
+  }
 
-    // Now scale by the cofactor
-    ECP2 part = new ECP2(point);
-    ECP2 sum = new ECP2();
-    sum.inf(); // This is zero (I think)
+  /**
+   * Multiply the point by the group cofactor.
+   *
+   * <p>Since the group cofactor is extremely large, we do a long multiplication.
+   *
+   * @param point the point to be scaled
+   * @return a scaled point
+   */
+  @VisibleForTesting
+  static ECP2 scaleWithCofactor(ECP2 point) {
 
-    // This is a naive double-and-bitshift. There may be faster ways.
-    for (long w : cofactor) {
-      for (int bit = 0; bit < 64; bit++) {
-        if (w % 2 == 1) {
-          sum.add(part);
-        }
-        part.dbl();
-        w = Long.divideUnsigned(w, 2);
-      }
-    }
+    // These are a representation of the G2 cofactor (a 512 bit number)
+    String upperHex =
+        "0x0000000000000000000000000000000005d543a95414e7f1091d50792876a202cd91de4547085abaa68a205b2e5a7ddf";
+    String lowerHex =
+        "0x00000000000000000000000000000000a628f1cb4d9e82ef21537e293a6691ae1616ec6e786f0c70cf1c38e31c7238e5";
+    String shiftHex =
+        "0x000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000";
 
-    return new G2Point(sum);
+    BIG upper = BIG.fromBytes(Bytes.fromHexString(upperHex).toArray());
+    BIG lower = BIG.fromBytes(Bytes.fromHexString(lowerHex).toArray());
+    BIG shift = BIG.fromBytes(Bytes.fromHexString(shiftHex).toArray());
+
+    ECP2 sum = new ECP2(point);
+    sum = sum.mul(upper);
+    sum = sum.mul(shift);
+
+    ECP2 tmp = new ECP2(point);
+    tmp = tmp.mul(lower);
+
+    sum.add(tmp);
+
+    return sum;
   }
 
   private final ECP2 point;
@@ -132,13 +172,28 @@ final class G2Point implements Group<G2Point> {
   private static final int fpPointSize = BIG.MODBYTES;
 
   G2Point(ECP2 point) {
-    this.point = point;
-    this.a1 = calculateA1flag(point.getY().getB());
-    this.b1 = point.is_infinity();
-    this.c1 = true;
+    this(
+        point,
+        !point.is_infinity() && calculateA1flag(point.getY().getB()),
+        point.is_infinity(),
+        true);
   }
 
+  /**
+   * Constructor for point with flags as per Eth2 Spec
+   *
+   * <p>Will throw an exception if an invalid point is specified. We don't want to crash since this
+   * may simply be due to bad data that has been sent to us, so the exception needs to be caught and
+   * handled higher up the stack.
+   *
+   * @param point the ec2p point
+   * @param a1 the Y coordinate branch flag
+   * @param b1 the infinity flag
+   * @param c1 always true
+   * @throws IllegalArgumentException
+   */
   G2Point(ECP2 point, boolean a1, boolean b1, boolean c1) {
+    checkArgument(isValid(point, a1, b1, c1));
     this.point = point;
     this.a1 = a1;
     this.b1 = b1;
@@ -208,23 +263,19 @@ final class G2Point implements Group<G2Point> {
     boolean c = (xIm[0] & (byte) (1 << 7)) != 0;
     xIm[0] &= (byte) 31;
 
-    G2Point point = new G2Point(new ECP2(new FP2(BIG.fromBytes(xRe), BIG.fromBytes(xIm))), a, b, c);
+    ECP2 point = new ECP2(new FP2(BIG.fromBytes(xRe), BIG.fromBytes(xIm)));
 
     // Did we get the right branch of the sqrt?
-    if (a != calculateA1flag(point.ecp2Point().getY().getB())) {
+    if (!point.is_infinity() && a != calculateA1flag(point.getY().getB())) {
       // We didn't: so choose the other branch of the sqrt.
-      FP2 x = point.ecp2Point().getX();
-      FP2 y1 = point.ecp2Point().getY();
+      FP2 x = point.getX();
+      FP2 y1 = point.getY();
       FP2 y2 = new FP2(y1);
       y2.neg();
-      point = new G2Point(new ECP2(x, y2));
+      point = new ECP2(x, y2);
     }
 
-    if (!isValid(point)) {
-      throw new RuntimeException("Invalid point deserialised.");
-    }
-
-    return point;
+    return new G2Point(point);
   }
 
   /**
@@ -233,31 +284,39 @@ final class G2Point implements Group<G2Point> {
    * @return true if this is a valid point
    */
   static boolean isValid(G2Point point) {
+    return isValid(point.ecp2Point(), point.a1, point.b1, point.c1);
+  }
 
-    BIG xRe = point.ecp2Point().getX().getA();
-    BIG xIm = point.ecp2Point().getX().getB();
-    BIG yIm = point.ecp2Point().getY().getB();
+  /**
+   * Check the validity of an ECP2 point and its flags according to the Eth2 spec.
+   *
+   * @return true if point is consistent with the flags
+   */
+  private static boolean isValid(ECP2 point, boolean a1, boolean b1, boolean c1) {
+    BIG xRe = point.getX().getA();
+    BIG xIm = point.getX().getB();
+    BIG yIm = point.getY().getB();
 
     // Check xIm and xRe are both < q (the field modulus)
     // TODO: Check xIm and xRe are both < q (the field modulus)
 
-    if (!point.c1) {
+    if (!c1) {
       return false;
     }
 
-    // Deal with point at infinity
-    if (point.b1) {
-      return (!point.a1 && xRe.iszilch() && xIm.iszilch());
+    // Point at infinity
+    if (b1) {
+      return (!a1 && xRe.iszilch() && xIm.iszilch());
     }
 
-    //
-    if (point.a1 != calculateA1flag(yIm)) {
+    // Check that we have the right branch for Y
+    if (a1 != calculateA1flag(yIm)) {
       return false;
     }
 
-    // Check both X and Y are on the curve
-    ECP2 newPoint = new ECP2(point.ecp2Point().getX(), point.ecp2Point().getY());
-    return point.ecp2Point().equals(newPoint);
+    // Check that both X and Y are on the curve
+    ECP2 newPoint = new ECP2(point.getX(), point.getY());
+    return point.equals(newPoint);
   }
 
   /**
