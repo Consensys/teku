@@ -480,21 +480,36 @@ public class BlockProcessorUtil {
   /**
    * @param state
    * @param block
+   * @see https://github.com/ethereum/eth2.0-specs/blob/v0.1/specs/core/0_beacon-chain.md#deposits-1
    */
-  public static void deposits(BeaconState state, BeaconBlock block) {
+  public static void processDeposits(BeaconState state, BeaconBlock block) {
+    // Verify that len(block.body.deposits) <= MAX_DEPOSITS
     checkArgument(block.getBody().getDeposits().size() <= MAX_DEPOSITS);
 
+    // SPEC TODO: add logic to ensure that deposits from 1.0 chain are processed in order
+    // SPEC TODO: update the call to verify_merkle_branch below if it needs to change
+    //   after we process deposits in order
+
+    // For each deposit in block.body.deposits:
     for (Deposit deposit : block.getBody().getDeposits()) {
+      // - Let serialized_deposit_data be the serialized form of deposit.deposit_data.
+      //     It should be 8 bytes for deposit_data.amount followed by 8 bytes for
+      //     deposit_data.timestamp and then the DepositInput bytes. That is,
+      //     it should match deposit_data in the Ethereum 1.0 deposit contract of which
+      //     the hash was placed into the Merkle tree.
       Bytes serialized_deposit_data = deposit.getDeposit_data().toBytes();
 
+      // - Vadliate verify_merkle_branch(hash(serialized_deposit_data), deposit.branch,
+      //     DEPOSIT_CONTRACT_TREE_DEPTH, deposit.index, state.latest_eth1_data.deposit_root)
       checkArgument(
           verify_merkle_branch(
               Hash.keccak256(serialized_deposit_data),
               deposit.getBranch(),
               DEPOSIT_CONTRACT_TREE_DEPTH,
-              deposit.getIndex().intValue(),
+              toIntExact(deposit.getIndex().longValue()),
               state.getLatest_eth1_data().getDeposit_root()));
 
+      // - Run process_deposit
       process_deposit(
           state,
           deposit.getDeposit_data().getDeposit_input().getPubkey(),
