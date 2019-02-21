@@ -508,8 +508,8 @@ public class EpochProcessorUtil {
     UnsignedLong current_epoch_start_shard = state.getCurrent_epoch_start_shard();
     state.setPrevious_epoch_start_shard(current_epoch_start_shard);
 
-    Bytes32 previous_epoch_seed = state.getCurrent_epoch_seed();
-    state.setPrevious_epoch_seed(previous_epoch_seed);
+    Bytes32 current_epoch_seed = state.getCurrent_epoch_seed();
+    state.setPrevious_epoch_seed(current_epoch_seed);
   }
 
   /**
@@ -590,8 +590,10 @@ public class EpochProcessorUtil {
                   .getExit_epoch()
                   .compareTo(BeaconStateUtil.get_entry_exit_effect_epoch(currentEpoch))
               > 0
-          && validator.getStatus_flags().compareTo(UnsignedLong.valueOf(Constants.INITIATED_EXIT))
-              == 0) {
+          && BitwiseOps.and(
+                      validator.getStatus_flags(), UnsignedLong.valueOf(Constants.INITIATED_EXIT))
+                  .compareTo(UnsignedLong.ZERO)
+              != 0) {
         balance_churn = balance_churn.plus(get_effective_balance(state, validator));
         if (balance_churn.compareTo(max_balance_churn) > 0) break;
         BeaconStateUtil.exit_validator(state, index);

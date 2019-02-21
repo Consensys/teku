@@ -22,6 +22,11 @@ public class BitwiseOps {
     return UnsignedLong.fromLongBits(a.longValue() | b.longValue());
   }
 
+  /** Returns a bitwiseAnd of the parameters a and b */
+  public static UnsignedLong and(UnsignedLong a, UnsignedLong b) {
+    return UnsignedLong.fromLongBits(a.longValue() & b.longValue());
+  }
+
   // Shift methods below might differ from actual bitwise implementations
   // i.e. leftShift might result in an overflow, where it should only
   // slide the bits to the left, and drop the one at most significant position

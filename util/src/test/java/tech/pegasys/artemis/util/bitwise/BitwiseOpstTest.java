@@ -60,6 +60,16 @@ class BitwiseOpstTest {
   }
 
   @Test
+  void bitwiseAnd() {
+    UnsignedLong binary1 = UnsignedLong.ONE;
+    UnsignedLong binary10 = UnsignedLong.valueOf(2);
+    UnsignedLong binary0 = UnsignedLong.valueOf(0);
+    UnsignedLong result = BitwiseOps.and(binary1, binary10);
+
+    assertThat(result).isEqualTo(binary0);
+  }
+
+  @Test
   void bitwiseLeftShift() {
     // Define random variables
     Random rand = new Random();
