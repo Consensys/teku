@@ -433,6 +433,7 @@ public class EpochProcessorUtil {
           base_reward(state, index, previous_total_balance)
               .dividedBy(UnsignedLong.valueOf(INCLUDER_REWARD_QUOTIENT));
       balance = balance.plus(reward);
+      balances.set(proposer_index, balance);
     }
   }
 
