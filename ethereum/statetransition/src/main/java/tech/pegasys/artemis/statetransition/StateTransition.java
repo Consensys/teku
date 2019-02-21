@@ -87,8 +87,8 @@ public class StateTransition {
     BlockProcessorUtil.proposer_slashing(state, block);
     // Execute Attester Slashings
     BlockProcessorUtil.attester_slashing(state, block);
-
-    // processAttestations(state, block);
+    // Process Attestations
+    BlockProcessorUtil.processAttestations(state, block);
   }
 
   protected void epochProcessor(BeaconState state) throws Exception {

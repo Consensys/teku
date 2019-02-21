@@ -521,7 +521,7 @@ public class BeaconStateUtil {
   }
 
   //  Return the block root at a recent ``slot``.
-  public static Bytes32 get_block_root(BeaconState state, UnsignedLong slot) throws Exception {
+  public static Bytes32 get_block_root(BeaconState state, UnsignedLong slot) {
     checkArgument(
         state
                 .getSlot()

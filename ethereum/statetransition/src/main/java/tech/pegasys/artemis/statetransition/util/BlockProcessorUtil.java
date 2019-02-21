@@ -309,27 +309,32 @@ public class BlockProcessorUtil {
   /**
    * @param state
    * @param block
+   * @see
+   *     https://github.com/ethereum/eth2.0-specs/blob/v0.1/specs/core/0_beacon-chain.md#attestations-1
    */
-  public static void attestations(BeaconState state, BeaconBlock block) {
+  public static void processAttestations(BeaconState state, BeaconBlock block)
+      throws IllegalArgumentException {
+    // Verify that len(block.body.attestations) <= MAX_ATTESTATIONS
     checkArgument(block.getBody().getAttestations().size() <= MAX_ATTESTATIONS);
-    for (Attestation attestation : block.getBody().getAttestations()) {
-      checkArgument(
-          attestation
-                  .getData()
-                  .getSlot()
-                  .compareTo(
-                      state.getSlot().minus(UnsignedLong.valueOf(MIN_ATTESTATION_INCLUSION_DELAY)))
-              <= 0);
-      checkArgument(
-          state
-                  .getSlot()
-                  .minus(UnsignedLong.valueOf(MIN_ATTESTATION_INCLUSION_DELAY))
-                  .compareTo(
-                      attestation.getData().getSlot().plus(UnsignedLong.valueOf(EPOCH_LENGTH)))
-              < 0);
 
-      if (slot_to_epoch(attestation.getData().getSlot().plus(UnsignedLong.valueOf(1)))
-              .compareTo(get_current_epoch(state))
+    // For each attestation in block.body.attestations:
+    for (Attestation attestation : block.getBody().getAttestations()) {
+      // - Verify that attestation.data.slot
+      //     <= state.slot - MIN_ATTESTATION_INCLUSION_DELAY
+      //     < attestation.data.slot + EPOCH_LENGTH.
+      UnsignedLong attestationDataSlot = attestation.getData().getSlot();
+      UnsignedLong slotMinusInclusionDelay =
+          state.getSlot().minus(UnsignedLong.valueOf(MIN_ATTESTATION_INCLUSION_DELAY));
+      UnsignedLong slotPlusEpochLength =
+          attestationDataSlot.plus(UnsignedLong.valueOf(EPOCH_LENGTH));
+      checkArgument(
+          (attestationDataSlot.compareTo(slotMinusInclusionDelay) <= 0)
+              && (slotMinusInclusionDelay.compareTo(slotPlusEpochLength) < 0));
+
+      // - Verify that attestation.data.justified_epoch is equal to state.justified_epoch
+      //     if attestation.data.slot >= get_epoch_start_slot(get_current_epoch(state))
+      //     else state.previous_justified_epoch.
+      if (attestation.getData().getSlot().compareTo(get_epoch_start_slot(get_current_epoch(state)))
           >= 0) {
         checkArgument(
             attestation.getData().getJustified_epoch().equals(state.getJustified_epoch()));
@@ -338,32 +343,46 @@ public class BlockProcessorUtil {
             attestation.getData().getJustified_epoch().equals(state.getPrevious_justified_epoch()));
       }
 
-      try {
-        checkArgument(
-            attestation.getData().getJustified_block_root()
-                == get_block_root(
-                    state, get_epoch_start_slot(attestation.getData().getJustified_epoch())));
-      } catch (Exception e) {
-        throw new AssertionError();
-      }
-
+      // - Verify that attestation.data.justified_block_root is equal to
+      //     get_block_root(state, get_epoch_start_slot(attestation.data.justified_epoch)).
       checkArgument(
-          attestation.getData().getLatest_crosslink_root()
-                  == state
-                      .getLatest_crosslinks()
-                      .get(attestation.getData().getShard().intValue())
-                      .getShard_block_root()
-              || attestation.getData().getShard_block_root()
-                  == state
-                      .getLatest_crosslinks()
-                      .get(attestation.getData().getShard().intValue())
-                      .getShard_block_root());
+          Objects.equals(
+              attestation.getData().getJustified_block_root(),
+              get_block_root(
+                  state, get_epoch_start_slot(attestation.getData().getJustified_epoch()))));
 
+      // - Verify that either attestation.data.latest_crosslink_root or
+      // attestation.data.shard_block_root
+      //     equals state.latest_crosslinks[shard].shard_block_root.
+      checkArgument(
+          attestation
+                  .getData()
+                  .getLatest_crosslink_root()
+                  .equals(
+                      state
+                          .getLatest_crosslinks()
+                          .get(attestation.getData().getShard().intValue())
+                          .getShard_block_root())
+              || attestation
+                  .getData()
+                  .getShard_block_root()
+                  .equals(
+                      state
+                          .getLatest_crosslinks()
+                          .get(attestation.getData().getShard().intValue())
+                          .getShard_block_root()));
+
+      // - Verify bitfields and aggregate signature
       checkArgument(verify_bitfields_and_aggregate_signature(attestation, state));
 
-      checkArgument(
-          attestation.getData().getShard_block_root() == ZERO_HASH); // [TO BE REMOVED IN PHASE 1]
+      // - Verify that attestation.data.shard_block_root == ZERO_HASH
+      // TO BE REMOVED IN PHASE 1
+      checkArgument(attestation.getData().getShard_block_root() == ZERO_HASH);
 
+      // - Append PendingAttestation(data=attestation.data,
+      //     aggregation_bitfield=attestation.aggregation_bitfield,
+      //     custody_bitfield=attestation.custody_bitfield, inclusion_slot=state.slot) to
+      //     state.latest_attestations.
       PendingAttestation pendingAttestation =
           new PendingAttestation(
               attestation.getAggregation_bitfield(),
@@ -398,8 +417,8 @@ public class BlockProcessorUtil {
   private static boolean verify_bitfields_and_aggregate_signature(
       Attestation attestation, BeaconState state) {
     // NOTE: The spec defines this verification in terms of the custody bitfield length,
-    // however because we've implemented the bitfield as a static Bytes32 value
-    // instead of a variable length bitfield, checking against Bytes32.ZERO will suffice.
+    //   however because we've implemented the bitfield as a static Bytes32 value
+    //   instead of a variable length bitfield, checking against Bytes32.ZERO will suffice.
     checkArgument(
         Objects.equals(
             attestation.getCustody_bitfield(), Bytes32.ZERO)); // [TO BE REMOVED IN PHASE 1]
