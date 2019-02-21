@@ -508,8 +508,8 @@ public class EpochProcessorUtil {
     UnsignedLong current_epoch_start_shard = state.getCurrent_epoch_start_shard();
     state.setPrevious_epoch_start_shard(current_epoch_start_shard);
 
-    Bytes32 previous_epoch_seed = state.getCurrent_epoch_seed();
-    state.setPrevious_epoch_seed(previous_epoch_seed);
+    Bytes32 current_epoch_seed = state.getCurrent_epoch_seed();
+    state.setPrevious_epoch_seed(current_epoch_seed);
   }
 
   /**
