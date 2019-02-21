@@ -83,7 +83,7 @@ public final class Constants {
   public static final int DOMAIN_ATTESTATION = 1; //
   public static final int DOMAIN_PROPOSAL = 2; //
   public static final int DOMAIN_EXIT = 3; //
-  public static final int MAX_DOMAIN_RANDAOEXITS = 4; //
+  public static final int DOMAIN_RANDAO = 4; //
 
   private static long slot_to_epoch(long slot) {
     return slot / Constants.EPOCH_LENGTH;

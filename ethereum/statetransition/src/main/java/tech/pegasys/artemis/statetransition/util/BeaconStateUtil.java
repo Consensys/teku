@@ -462,6 +462,8 @@ public class BeaconStateUtil {
    *
    * @param state - The current BeaconState. NOTE: State will be mutated per spec logic.
    * @param index - The index of the validator that will be penalized.
+   * @see
+   *     https://github.com/ethereum/eth2.0-specs/blob/v0.1/specs/core/0_beacon-chain.md#penalize_validator
    */
   public static void penalize_validator(BeaconState state, int index) {
     exit_validator(state, index);
@@ -479,7 +481,6 @@ public class BeaconStateUtil {
     UnsignedLong whistleblower_reward =
         get_effective_balance(state, index)
             .dividedBy(UnsignedLong.valueOf(WHISTLEBLOWER_REWARD_QUOTIENT));
-
     state
         .getValidator_balances()
         .set(
@@ -488,6 +489,7 @@ public class BeaconStateUtil {
     state
         .getValidator_balances()
         .set(index, state.getValidator_balances().get(index).minus(whistleblower_reward));
+
     validator.setPenalized_epoch(get_current_epoch(state));
   }
 
@@ -519,7 +521,7 @@ public class BeaconStateUtil {
   }
 
   //  Return the block root at a recent ``slot``.
-  public static Bytes32 get_block_root(BeaconState state, UnsignedLong slot) throws Exception {
+  public static Bytes32 get_block_root(BeaconState state, UnsignedLong slot) {
     checkArgument(
         state
                 .getSlot()

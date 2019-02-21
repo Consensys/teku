@@ -71,12 +71,28 @@ public class StateTransition {
 
   protected void blockProcessor(BeaconState state, BeaconBlock block) throws Exception {
     LOG.info("Processing new block in slot: " + block.getSlot());
-    // block header
-    BlockProcessorUtil.verify_signature(state, block);
-    // verifyAndUpdateRandao(state, block);
 
-    // block body operations
-    // processAttestations(state, block);
+    // Block Header
+    // Verify Slot
+    BlockProcessorUtil.verify_slot(state, block);
+    // Verify Proposer Signature
+    BlockProcessorUtil.verify_signature(state, block);
+    // Verify and Update RANDAO
+    BlockProcessorUtil.verify_and_update_randao(state, block);
+    // Update Eth1 Data
+    BlockProcessorUtil.update_eth1_data(state, block);
+
+    // Block Body - Operations
+    // Execute Proposer Slashings
+    BlockProcessorUtil.proposer_slashing(state, block);
+    // Execute Attester Slashings
+    BlockProcessorUtil.attester_slashing(state, block);
+    // Process Attestations
+    BlockProcessorUtil.processAttestations(state, block);
+    // Process Deposits
+    BlockProcessorUtil.processDeposits(state, block);
+    // Process Exits
+    BlockProcessorUtil.processExits(state, block);
   }
 
   protected void epochProcessor(BeaconState state) throws Exception {
