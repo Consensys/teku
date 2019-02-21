@@ -50,24 +50,16 @@ public class BeaconBlockBody {
         bytes,
         reader ->
             new BeaconBlockBody(
-                reader
-                    .readBytesList()
-                    .stream()
+                reader.readBytesList().stream()
                     .map(ProposerSlashing::fromBytes)
                     .collect(Collectors.toList()),
-                reader
-                    .readBytesList()
-                    .stream()
+                reader.readBytesList().stream()
                     .map(AttesterSlashing::fromBytes)
                     .collect(Collectors.toList()),
-                reader
-                    .readBytesList()
-                    .stream()
+                reader.readBytesList().stream()
                     .map(Attestation::fromBytes)
                     .collect(Collectors.toList()),
-                reader
-                    .readBytesList()
-                    .stream()
+                reader.readBytesList().stream()
                     .map(Deposit::fromBytes)
                     .collect(Collectors.toList()),
                 reader.readBytesList().stream().map(Exit::fromBytes).collect(Collectors.toList())));

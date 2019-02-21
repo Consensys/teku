@@ -25,7 +25,6 @@ import static tech.pegasys.artemis.datastructures.Constants.LATEST_RANDAO_MIXES_
 import static tech.pegasys.artemis.datastructures.Constants.SEED_LOOKAHEAD;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomDeposits;
 import static tech.pegasys.artemis.statetransition.util.BeaconStateUtil.bytes3ToInt;
-import static tech.pegasys.artemis.statetransition.util.BeaconStateUtil.exit_validator;
 import static tech.pegasys.artemis.statetransition.util.BeaconStateUtil.generate_seed;
 import static tech.pegasys.artemis.statetransition.util.BeaconStateUtil.get_active_index_root;
 import static tech.pegasys.artemis.statetransition.util.BeaconStateUtil.get_current_epoch;
@@ -36,7 +35,6 @@ import static tech.pegasys.artemis.statetransition.util.BeaconStateUtil.shuffle;
 import static tech.pegasys.artemis.statetransition.util.BeaconStateUtil.split;
 
 import com.google.common.primitives.UnsignedLong;
-import com.google.gson.Gson;
 import java.security.Security;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -48,6 +46,7 @@ import net.consensys.cava.bytes.Bytes48;
 import net.consensys.cava.crypto.Hash;
 import net.consensys.cava.junit.BouncyCastleExtension;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
@@ -59,13 +58,15 @@ import tech.pegasys.artemis.statetransition.util.BeaconStateUtil;
 @ExtendWith(BouncyCastleExtension.class)
 class BeaconStateTest {
 
-  private BeaconState newState() {
+  private BeaconState newState(int numDeposits) {
 
     try {
       // Initialize state
       BeaconState state =
           get_initial_beacon_state(
-              randomDeposits(5), UnsignedLong.ZERO, new Eth1Data(Bytes32.ZERO, Bytes32.ZERO));
+              randomDeposits(numDeposits),
+              UnsignedLong.ZERO,
+              new Eth1Data(Bytes32.ZERO, Bytes32.ZERO));
 
       return state;
     } catch (Exception e) {
@@ -74,6 +75,7 @@ class BeaconStateTest {
     }
   }
 
+  @Disabled
   @Test
   void processDepositValidatorPubkeysDoesNotContainPubkeyAndMinEmptyValidatorIndexIsNegative() {
     // TODO: update for 0.1 spec
@@ -90,9 +92,10 @@ class BeaconStateTest {
         .isEqualTo(5);*/
   }
 
+  @Disabled
   @Test
   void processDepositValidatorPubkeysDoesNotContainPubkey() {
-    BeaconState state = newState();
+    // BeaconState state = newState();
     // update for 0.1
     /*
     assertThat(
@@ -108,6 +111,7 @@ class BeaconStateTest {
         */
   }
 
+  @Disabled
   @Test
   void processDepositValidatorPubkeysContainsPubkey() {
     // TODO: test broken after v0.01 update
@@ -122,6 +126,7 @@ class BeaconStateTest {
     //        .isEqualTo(oldBalance.plus(UnsignedLong.valueOf(100)));
   }
 
+  @Disabled
   @Test
   void getAttestationParticipantsSizesNotEqual() {
     AttestationData attestationData =
@@ -145,6 +150,7 @@ class BeaconStateTest {
     */
   }
 
+  @Disabled
   @Test
   void getAttestationParticipantsReturnsEmptyArrayList() {
     /* todo: fix this test
@@ -169,6 +175,7 @@ class BeaconStateTest {
     */
   }
 
+  @Disabled
   @Test
   void getAttestationParticipantsSuccessful() {
     /* todo Update test for new crosslink committee structure
@@ -202,7 +209,7 @@ class BeaconStateTest {
 
   @Test
   void activateValidator() {
-    BeaconState state = newState();
+    BeaconState state = newState(5);
     int validator_index = 0;
     UnsignedLong activation_epoch;
 
@@ -220,7 +227,7 @@ class BeaconStateTest {
 
   @Test
   void initiateValidatorExitNotActive() {
-    BeaconState state = newState();
+    BeaconState state = newState(5);
     int validator_index = 0;
 
     BeaconStateUtil.initiate_validator_exit(state, validator_index);
@@ -230,7 +237,7 @@ class BeaconStateTest {
 
   @Test
   void initiateValidatorExit() {
-    BeaconState state = newState();
+    BeaconState state = newState(5);
     int validator_index = 2;
 
     BeaconStateUtil.initiate_validator_exit(state, validator_index);
@@ -239,85 +246,9 @@ class BeaconStateTest {
   }
 
   @Test
-  void exitValidator() {
-    /* todo: fixup test for 0.1 spec
-    BeaconState state = newState();
-    int validator_index = 4;
-
-    exit_validator(state, validator_index);
-    Validator validator = state.getValidator_registry().get(validator_index);
-    UnsignedLong testEpoch =
-        BeaconStateUtil.get_entry_exit_effect_epoch(
-            UnsignedLong.valueOf(BeaconStateUtil.get_current_epoch(state)));
-    assertThat(validator.getExit_epoch()).isEqualTo(testEpoch);
-    */
-  }
-
-  @Test
-  void exitValidatorPrevStatusExitedWithoutPenaltyNewStatusExitedWithPenalty() {
-    BeaconState state = newState();
-    int validator_index = 3;
-
-    UnsignedLong before_balance = state.getValidator_balances().get(validator_index);
-    //    Hash before_tip = state.validator_registry_delta_chain_tip;
-
-    exit_validator(state, validator_index);
-
-    // TODO: update for 0.1
-    // assertThat(state.getValidator_balances().get(validator_index)).isLessThan(before_balance);
-    // TODO: Uncomment this when tree_root_hash is working.
-    //    assertThat(before_tip).isNotEqualTo(state.validator_registry_delta_chain_tip);
-  }
-
-  @Test
-  void exitValidatorPrevStatusDidNotExitNewStatusExitedWithPenalty() {
-    BeaconState state = newState();
-    // TODO: update for 0.1
-    /*
-    int validator_index = 2;
-
-    double before_balance = state.getValidator_balances().get(validator_index);
-    //    Hash before_tip = state.validator_registry_delta_chain_tip;
-
-    exit_validator(state, validator_index);
-
-    assertThat(state.getValidator_balances().get(validator_index)).isLessThan(before_balance);
-    // TODO: Uncomment this when tree_root_hash is working.
-    //    assertThat(before_tip).isNotEqualTo(state.validator_registry_delta_chain_tip);
-    */
-  }
-
-  @Test
-  void exitValidatorPrevStatusDidNotExitNewStatusExitedWithoutPenalty() {
-    BeaconState state = newState();
-    int validator_index = 0;
-
-    // TODO: update for 0.1
-    /*long before_exit_count = state.getValidator_registry_exit_count();
-    int before_persistent_committees_size =
-        state.getPersistent_committees().get(validator_index).size();
-    //    Hash before_tip = state.validator_registry_delta_chain_tip;
-
-    initiate_validator_exit(state, validator_index);
-    exit_validator(state, validator_index);
-
-    assertThat(state.getPersistent_committees().get(validator_index).size())
-        .isEqualTo(before_persistent_committees_size - 1);
-    // TODO: Uncomment this when tree_root_hash is working.
-    //    assertThat(before_tip).isNotEqualTo(state.validator_registry_delta_chain_tip);
-    */
-  }
-
-  @Test
   void deepCopyBeaconState() {
-    BeaconState state = newState();
+    BeaconState state = newState(1);
     BeaconState deepCopy = BeaconState.deepCopy(state);
-
-    // Test if deepCopy has the same values as the original state
-    Gson gson = new Gson();
-    String stateJson = gson.toJson(state);
-    String deepCopyJson = gson.toJson(deepCopy);
-    assertThat(stateJson).isEqualTo(deepCopyJson);
 
     // Test slot
     state.incrementSlot();
@@ -342,9 +273,8 @@ class BeaconStateTest {
                     UnsignedLong.ZERO,
                     UnsignedLong.ZERO)));
     deepCopy.setValidator_registry(new_records);
-    // TODO: DeepCopy broken after v0.01 update
-    //    assertThat(deepCopy.getValidator_registry().get(0).getPubkey())
-    //        .isNotEqualTo(state.getValidator_registry().get(0).getPubkey());
+    assertThat(deepCopy.getValidator_registry().get(0).getPubkey())
+        .isNotEqualTo(state.getValidator_registry().get(0).getPubkey());
   }
 
   private Bytes32 hashSrc() {
@@ -477,7 +407,7 @@ class BeaconStateTest {
 
   @Test
   void getRandaoMixThrowsExceptions() {
-    BeaconState state = newState();
+    BeaconState state = newState(5);
     state.setSlot(UnsignedLong.valueOf(LATEST_RANDAO_MIXES_LENGTH * EPOCH_LENGTH));
     assertThat(get_current_epoch(state).compareTo(UnsignedLong.valueOf(LATEST_RANDAO_MIXES_LENGTH)))
         .isEqualTo(0);
@@ -493,7 +423,7 @@ class BeaconStateTest {
 
   @Test
   void getRandaoMixReturnsCorrectValue() {
-    BeaconState state = newState();
+    BeaconState state = newState(5);
     state.setSlot(UnsignedLong.valueOf(LATEST_RANDAO_MIXES_LENGTH * EPOCH_LENGTH));
     assertThat(get_current_epoch(state).compareTo(UnsignedLong.valueOf(LATEST_RANDAO_MIXES_LENGTH)))
         .isEqualTo(0);
@@ -512,7 +442,7 @@ class BeaconStateTest {
 
   @Test
   void generateSeedReturnsCorrectValue() {
-    BeaconState state = newState();
+    BeaconState state = newState(5);
     state.setSlot(UnsignedLong.valueOf(LATEST_RANDAO_MIXES_LENGTH * EPOCH_LENGTH));
     assertThat(get_current_epoch(state).compareTo(UnsignedLong.valueOf(LATEST_RANDAO_MIXES_LENGTH)))
         .isEqualTo(0);
@@ -535,16 +465,8 @@ class BeaconStateTest {
   }
 
   @Test
-  void testkeccak256Hashof0() {
-    Bytes32 randao_mix = Bytes32.ZERO;
-    Bytes32 index_root = Bytes32.ZERO;
-    Security.addProvider(new BouncyCastleProvider());
-    Bytes32 hash = Hash.keccak256(Bytes.wrap(randao_mix, index_root));
-  }
-
-  @Test
-  void roundtripSSZ() {
-    BeaconState state = newState();
+  void rountripSSZ() {
+    BeaconState state = newState(1);
     Bytes sszBeaconBlockBytes = state.toBytes();
     assertEquals(state, BeaconState.fromBytes(sszBeaconBlockBytes));
   }
