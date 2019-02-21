@@ -85,6 +85,8 @@ public class StateTransition {
     // Block Body - Operations
     // Execute Proposer Slashings
     BlockProcessorUtil.proposer_slashing(state, block);
+    // Execute Attester Slashings
+    BlockProcessorUtil.attester_slashing(state, block);
 
     // processAttestations(state, block);
   }

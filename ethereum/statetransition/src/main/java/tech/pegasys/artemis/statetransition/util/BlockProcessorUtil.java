@@ -252,31 +252,46 @@ public class BlockProcessorUtil {
   /**
    * @param state
    * @param block
+   * @see
+   *     https://github.com/ethereum/eth2.0-specs/blob/v0.1/specs/core/0_beacon-chain.md#attester-slashings-1
    */
-  public static void attester_slashing(BeaconState state, BeaconBlock block) {
+  public static void attester_slashing(BeaconState state, BeaconBlock block)
+      throws IllegalArgumentException {
+    // Verify that len(block.body.attester_slashings) <= MAX_ATTESTER_SLASHINGS
     checkArgument(block.getBody().getAttester_slashings().size() <= MAX_ATTESTER_SLASHINGS);
 
+    // For each attester_slashing in block.body.attester_slashings:
     for (AttesterSlashing attester_slashing : block.getBody().getAttester_slashings()) {
+      // - Let slashable_attestation_1 = attester_slashing.slashable_attestation_1
+      // - Let slashable_attestation_2 = attester_slashing.slashable_attestation_2
       SlashableAttestation slashable_attestation_1 = attester_slashing.getSlashable_attestation_1();
       SlashableAttestation slashable_attestation_2 = attester_slashing.getSlashable_attestation_2();
 
+      // - Verify that slashable_attestation_1.data != slashable_attestation_2.data
       checkArgument(
           !Objects.equals(slashable_attestation_1.getData(), slashable_attestation_2.getData()));
+
+      // - Verify that is_double_vote(slashable_attestation_1.data, slashable_attestation_2.data)
+      //     or is_surround_vote(slashable_attestation_1.data, slashable_attestation_2.data)
       checkArgument(
           is_double_vote(slashable_attestation_1.getData(), slashable_attestation_2.getData())
               || is_surround_vote(
                   slashable_attestation_1.getData(), slashable_attestation_2.getData()));
 
+      // - Verify that verify_slashable_attestation(state, slashable_attestation_1)
       checkArgument(verify_slashable_attestation(state, slashable_attestation_1));
+      // - Verify that verify_slashable_attestation(state, slashable_attestation_2)
       checkArgument(verify_slashable_attestation(state, slashable_attestation_2));
 
+      // - Let slashable_indices = [index for index in slashable_attestation_1.validator_indices
+      //     if index in slashable_attestation_2.validator_indices and
+      //     state.validator_registry[index].penalized_epoch > get_current_epoch(state)].
       ArrayList<Integer> slashable_indices = new ArrayList<>();
       for (UnsignedLong index : slashable_attestation_1.getValidator_indices()) {
-
         if (slashable_attestation_2.getValidator_indices().contains(index)
             && state
                     .getValidator_registry()
-                    .get(index.intValue())
+                    .get(toIntExact(index.longValue()))
                     .getPenalized_epoch()
                     .compareTo(get_current_epoch(state))
                 > 0) {
