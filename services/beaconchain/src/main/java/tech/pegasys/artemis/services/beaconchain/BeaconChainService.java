@@ -14,6 +14,7 @@
 package tech.pegasys.artemis.services.beaconchain;
 
 import com.google.common.eventbus.EventBus;
+import com.google.common.eventbus.Subscribe;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -39,16 +40,24 @@ public class BeaconChainService implements ServiceInterface {
   }
 
   @Override
-  public void run() {
-    // slot scheduler fires an event that tells us when it is time for a new slot
-    int initialDelay = 6;
-    scheduler.scheduleAtFixedRate(
-        new SlotScheduler(this.eventBus), initialDelay, Constants.SLOT_DURATION, TimeUnit.SECONDS);
-  }
+  public void run() {}
 
   @Override
   public void stop() {
     this.scheduler.shutdown();
     this.eventBus.unregister(this);
+  }
+
+  @Subscribe
+  public void afterChainStart(Boolean chainStarted) {
+    if (chainStarted) {
+      // slot scheduler fires an event that tells us when it is time for a new slot
+      int initialDelay = 0;
+      scheduler.scheduleAtFixedRate(
+          new SlotScheduler(this.eventBus),
+          initialDelay,
+          Constants.SLOT_DURATION,
+          TimeUnit.SECONDS);
+    }
   }
 }
