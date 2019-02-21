@@ -84,28 +84,27 @@ public class BlockProcessorUtil {
   public static boolean verify_signature(BeaconState state, BeaconBlock block)
       throws IllegalStateException {
     // Let block_without_signature_root be the hash_tree_root of block where
-    // block.signature is set
-    // to EMPTY_SIGNATURE.
+    // block.signature is set to EMPTY_SIGNATURE.
     block.setSignature(EMPTY_SIGNATURE);
-    Bytes32 blockHash = hash_tree_root(block.toBytes());
+    Bytes32 blockWithoutSignatureRootHash = hash_tree_root(block.toBytes());
+
     // Let proposal_root = hash_tree_root(ProposalSignedData(state.slot,
-    // BEACON_CHAIN_SHARD_NUMBER,
-    // block_without_signature_root)).
-    ProposalSignedData signedData =
-        new ProposalSignedData(state.getSlot(), Constants.BEACON_CHAIN_SHARD_NUMBER, blockHash);
-    Bytes32 proposalRoot = signedData.getBlock_root();
-    // Verify that
-    // bls_verify(pubkey=state.validator_registry[get_beacon_proposer_index(state,
+    // BEACON_CHAIN_SHARD_NUMBER, block_without_signature_root)).
+    ProposalSignedData proposalSignedData =
+        new ProposalSignedData(state.getSlot(), Constants.BEACON_CHAIN_SHARD_NUMBER, blockWithoutSignatureRootHash);
+    Bytes32 proposalRoot = hash_tree_root(proposalSignedData.toBytes());
+
+    // Verify that bls_verify(pubkey=state.validator_registry[get_beacon_proposer_index(state,
     // state.slot)].pubkey, message=proposal_root, signature=block.signature,
-    // domain=get_domain(state.fork,
-    // state.slot, DOMAIN_PROPOSAL)).
+    // domain=get_domain(state.fork, state.slot, DOMAIN_PROPOSAL)) is valid.
     int proposerIndex = BeaconStateUtil.get_beacon_proposer_index(state, state.getSlot());
     Bytes48 pubkey = state.getValidator_registry().get(proposerIndex).getPubkey();
+    UnsignedLong domain = get_domain(state.getFork(), get_current_epoch(state), DOMAIN_PROPOSAL);
     return bls_verify(
         pubkey,
         proposalRoot,
         block.getSignature(),
-        UnsignedLong.valueOf(Constants.DOMAIN_PROPOSAL));
+        domain);
   }
 
   /**
