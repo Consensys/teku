@@ -401,8 +401,8 @@ public class BlockProcessorUtil {
     Validator proposer = state.getValidator_registry().get(proposerIndex);
 
     // Verify that bls_verify(pubkey=proposer.pubkey,
-    //   message=int_to_bytes32(get_current_epoch(state)), signature=block.randao_reveal, domain=
-    //   get_domain(state.fork, get_current_epoch(state), DOMAIN_RANDAO)).
+    //   message=int_to_bytes32(get_current_epoch(state)), signature=block.randao_reveal,
+    //   domain=get_domain(state.fork, get_current_epoch(state), DOMAIN_RANDAO)).
     UnsignedLong domain = get_domain(state.getFork(), currentEpoch, DOMAIN_RANDAO);
     return bls_verify(proposer.getPubkey(), currentEpochBytes, block.getRandao_reveal(), domain);
   }
@@ -522,18 +522,34 @@ public class BlockProcessorUtil {
   /**
    * @param state
    * @param block
+   * @see https://github.com/ethereum/eth2.0-specs/blob/v0.1/specs/core/0_beacon-chain.md#exits-1
    */
-  public static void exits(BeaconState state, BeaconBlock block) {
+  public static void processExits(BeaconState state, BeaconBlock block) {
+    // Verify that len(block.body.exits) <= MAX_EXITS
     checkArgument(block.getBody().getExits().size() <= Constants.MAX_EXITS);
+
+    // For each exit in block.body.exits:
     for (Exit exit : block.getBody().getExits()) {
-      Validator validator = state.getValidator_registry().get(exit.getValidator_index().intValue());
+      // - Let validator = state.validator_registry[exit.validator_index]
+      Validator validator =
+          state.getValidator_registry().get(toIntExact(exit.getValidator_index().longValue()));
+
+      // - Verify that validator.exit_epoch > get_entry_exit_effect_epoch(get_current_epoch(state))
       checkArgument(
           validator.getExit_epoch().compareTo(get_entry_exit_effect_epoch(get_current_epoch(state)))
               > 0);
+
+      // - Verify that get_current_epoch(state) >= exit.epoch
       checkArgument(get_current_epoch(state).compareTo(exit.getEpoch()) >= 0);
 
+      // - Let exit_message = hash_tree_root(Exit(epoch=exit.epoch,
+      //     validator_index=exit.validator_index, signature=EMPTY_SIGNATURE))
       Bytes32 exit_message =
           hash_tree_root(new Exit(exit.getEpoch(), exit.getValidator_index(), EMPTY_SIGNATURE));
+
+      // - Verify that bls_verify(
+      //     pubkey=validator.pubkey, message=exit_message, signature=exit.signature,
+      //     domain=get_domain(state.fork, exit.epoch, DOMAIN_EXIT)) is valid
       checkArgument(
           bls_verify(
               validator.getPubkey(),
@@ -541,7 +557,8 @@ public class BlockProcessorUtil {
               exit.getSignature(),
               get_domain(state.getFork(), exit.getEpoch(), DOMAIN_EXIT)));
 
-      initiate_validator_exit(state, exit.getValidator_index().intValue());
+      // - Run initiate_validator_exit(state, exit.validator_index)
+      initiate_validator_exit(state, toIntExact(exit.getValidator_index().longValue()));
     }
   }
 

@@ -91,6 +91,8 @@ public class StateTransition {
     BlockProcessorUtil.processAttestations(state, block);
     // Process Deposits
     BlockProcessorUtil.processDeposits(state, block);
+    // Process Exits
+    BlockProcessorUtil.processExits(state, block);
   }
 
   protected void epochProcessor(BeaconState state) throws Exception {
