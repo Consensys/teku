@@ -1,13 +1,14 @@
 import net.ltgt.gradle.errorprone.CheckSeverity
 
 plugins {
-  id 'com.diffplug.gradle.spotless' version '3.13.0'
+  id 'com.diffplug.gradle.spotless' version '3.18.0'
   id 'com.jfrog.bintray' version '1.8.4'
   id 'com.github.ben-manes.versions' version '0.20.0'
   id 'com.github.hierynomus.license' version '0.15.0'
   id 'io.spring.dependency-management' version '1.0.6.RELEASE'
-  id 'net.ltgt.errorprone' version '0.6' apply false
+  id 'net.ltgt.errorprone' version '0.7' apply false
   id 'net.researchgate.release' version '2.7.0'
+  id 'com.gradle.build-scan' version '2.1'
 }
 
 defaultTasks 'build','checkLicenses'
@@ -19,8 +20,8 @@ def buildAliases = [
     'checkLicenses',
     'javadoc'],
   'mash': [ 
-    'spotlessApply',
     'clean',
+    'spotlessApply',
     'build',
     'test']
   ]
@@ -67,6 +68,11 @@ allprojects {
     }
   }
 
+  buildScan { 
+    termsOfServiceUrl = "https://gradle.com/terms-of-service"; 
+    termsOfServiceAgree = "yes" 
+  }
+
   apply plugin: 'com.diffplug.gradle.spotless'
   spotless {
     java {
@@ -78,12 +84,13 @@ allprojects {
         //Excluding tech.pegasys.artemis.datastructures due to preferred formatting overwritten by plugin in getConstantsAsString.
         exclude '**/src/main/java/tech/pegasys/artemis/Constants.java'
       }
-      removeUnusedImports()
-      importOrder 'tech.pegasys', 'java', ''
+      
+
+      importOrder 'tech.pegasys', 'net.consensys', 'java', ''
       trimTrailingWhitespace()
       endWithNewline()
       licenseHeaderFile "${rootDir}/gradle/spotless.java.license"
-      googleJavaFormat()
+      googleJavaFormat('1.7')
     }
   }
 
@@ -172,12 +179,11 @@ allprojects {
 
 task deploy() {}
 
-
 subprojects {
 
   tasks.withType(Test) {
     // If GRADLE_MAX_TEST_FORKS is not set, use half the available processors
-    maxParallelForks = (System.getenv('GRADLE_MAX_TEST_FORKS') ?: (Runtime.runtime.availableProcessors().intdiv(2) ?: 1)).toInteger()
+   maxParallelForks = (System.getenv('GRADLE_MAX_TEST_FORKS') ?: (Runtime.runtime.availableProcessors().intdiv(2) ?: 1)).toInteger()
   }
 
     test {

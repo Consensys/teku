@@ -740,8 +740,7 @@ public class BeaconStateUtil {
 
     // Retrieve the list of validator's public keys from the current state.
     List<Bytes48> validator_pubkeys =
-        validatorRegistry
-            .stream()
+        validatorRegistry.stream()
             .map(validator -> validator.getPubkey())
             .collect(Collectors.toList());
 

@@ -45,9 +45,7 @@ public class SlashableAttestation {
         bytes,
         reader ->
             new SlashableAttestation(
-                reader
-                    .readUInt64List()
-                    .stream()
+                reader.readUInt64List().stream()
                     .map(UnsignedLong::fromLongBits)
                     .collect(Collectors.toList()),
                 AttestationData.fromBytes(reader.readBytes()),
