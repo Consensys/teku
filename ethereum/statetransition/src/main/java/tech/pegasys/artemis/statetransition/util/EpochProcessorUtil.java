@@ -728,7 +728,7 @@ public class EpochProcessorUtil {
     // update hash tree root
     List<Bytes32> index_roots = state.getLatest_index_roots();
     Bytes32 root =
-        TreeHashUtil.hash_tree_root(
+        TreeHashUtil.validatorListHashTreeRoot(
             ValidatorsUtil.get_active_validators(
                 state.getValidator_registry(), next_epoch.plus(ENTRY_EXIT_DELAY)));
     index_roots.set(index.intValue(), root);
