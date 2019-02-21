@@ -76,7 +76,18 @@ public class BlockProcessorUtil {
 
   /**
    * Spec:
-   * https://github.com/ethereum/eth2.0-specs/blob/master/specs/core/0_beacon-chain.md#proposer-signature
+   * https://github.com/ethereum/eth2.0-specs/blob/v0.1/specs/core/0_beacon-chain.md#slot-1
+   *
+   * @param state
+   * @param block
+   */
+  public static boolean verify_slot(BeaconState state, BeaconBlock block) {
+    return Objects.equals(state.getSlot(), UnsignedLong.fromLongBits(block.getSlot()));
+  }
+
+  /**
+   * Spec:
+   * https://github.com/ethereum/eth2.0-specs/blob/v0.1/specs/core/0_beacon-chain.md#proposer-signature
    *
    * @param state
    * @param block

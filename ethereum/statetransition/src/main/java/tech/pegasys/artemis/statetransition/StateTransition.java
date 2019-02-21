@@ -19,6 +19,7 @@ import static tech.pegasys.artemis.datastructures.Constants.EPOCH_LENGTH;
 import com.google.common.primitives.UnsignedLong;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.statetransition.util.BeaconStateUtil;
 import tech.pegasys.artemis.statetransition.util.BlockProcessorUtil;
@@ -71,8 +72,12 @@ public class StateTransition {
 
   protected void blockProcessor(BeaconState state, BeaconBlock block) throws Exception {
     LOG.info("Processing new block in slot: " + block.getSlot());
-    // block header
-    BlockProcessorUtil.verify_signature(state, block);
+
+    // Block Header
+    // Verify Slot
+    checkArgument(BlockProcessorUtil.verify_slot(state, block));
+    // Verify Proposer Signature
+    checkArgument(BlockProcessorUtil.verify_signature(state, block));
     // verifyAndUpdateRandao(state, block);
 
     // block body operations
