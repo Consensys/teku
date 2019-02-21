@@ -28,6 +28,7 @@ import com.google.common.collect.Collections2;
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.function.Function;
@@ -585,7 +586,6 @@ public class EpochProcessorUtil {
     balance_churn = UnsignedLong.ZERO;
     index = 0;
     for (Validator validator : state.getValidator_registry()) {
-      List<UnsignedLong> balances = state.getValidator_balances();
       if (validator
                   .getExit_epoch()
                   .compareTo(BeaconStateUtil.get_entry_exit_effect_epoch(currentEpoch))
@@ -684,11 +684,7 @@ public class EpochProcessorUtil {
     for (Validator validator : state.getValidator_registry()) {
       if (eligible(state, validator)) eligible_validators.add(validator);
     }
-    Collections.sort(
-        eligible_validators,
-        (a, b) -> {
-          return a.getExit_epoch().compareTo(b.getExit_epoch());
-        });
+    Collections.sort(eligible_validators, Comparator.comparing(Validator::getExit_epoch));
 
     int withdrawn_so_far = 0;
     for (Validator validator : eligible_validators) {
@@ -702,11 +698,9 @@ public class EpochProcessorUtil {
     UnsignedLong currentEpoch = BeaconStateUtil.get_current_epoch(state);
     if (validator.getPenalized_epoch().compareTo(currentEpoch) <= 0) {
       UnsignedLong penalized_withdrawal_epochs =
-          UnsignedLong.valueOf(
-              (long) Math.floor(Constants.LATEST_PENALIZED_EXIT_LENGTH * EPOCH_LENGTH / 2.0));
-      return state
-              .getSlot()
-              .compareTo(validator.getPenalized_epoch().plus(penalized_withdrawal_epochs))
+          UnsignedLong.valueOf(Constants.LATEST_PENALIZED_EXIT_LENGTH / 2);
+      return currentEpoch.compareTo(
+              validator.getPenalized_epoch().plus(penalized_withdrawal_epochs))
           >= 0;
     } else {
       return currentEpoch.compareTo(
