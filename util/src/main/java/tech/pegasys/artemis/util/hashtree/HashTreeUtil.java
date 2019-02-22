@@ -11,20 +11,15 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.statetransition.util;
+package tech.pegasys.artemis.util.hashtree;
 
 import java.util.List;
-import java.util.stream.Collectors;
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.ssz.SSZ;
-import tech.pegasys.artemis.datastructures.operations.AttestationDataAndCustodyBit;
-import tech.pegasys.artemis.datastructures.operations.Exit;
-import tech.pegasys.artemis.datastructures.state.Validator;
-import tech.pegasys.artemis.statetransition.BeaconState;
 
 /** This class is a collection of tree hash root convenience methods */
-public final class TreeHashUtil {
+public final class HashTreeUtil {
 
   /**
    * Calculate the hash tree root of the provided value
@@ -35,34 +30,16 @@ public final class TreeHashUtil {
     return SSZ.hashTreeRoot(value);
   }
 
-  /** */
-  public static Bytes32 hash_tree_root(Exit exit) {
-    // todo: check that this is right
-    return SSZ.hashTreeRoot(exit.toBytes());
-  }
-
-  /**
-   * Calculate the hash tree root of the BeaconState provided
-   *
-   * @param attestationDataAndCustodyBit
-   * @return
-   */
-  public static Bytes32 hash_tree_root(AttestationDataAndCustodyBit attestationDataAndCustodyBit) {
-    // todo: check that this is right
-    return SSZ.hashTreeRoot(attestationDataAndCustodyBit.toBytes());
-  }
-
   /**
    * Calculate the hash tree root of the list of validators provided
    *
    * @param validators
    */
-  public static Bytes32 validatorListHashTreeRoot(List<Validator> validators) {
+  public static Bytes32 hash_tree_root(List<Bytes> list) {
     return hash_tree_root(
         SSZ.encode(
             writer -> {
-              writer.writeBytesList(
-                  validators.stream().map(item -> item.toBytes()).collect(Collectors.toList()));
+              writer.writeBytesList(list);
             }));
   }
 
@@ -81,14 +58,5 @@ public final class TreeHashUtil {
             writer -> {
               writer.writeUIntList(64, integers);
             }));
-  }
-
-  /**
-   * Calculate the hash tree root of the BeaconState provided
-   *
-   * @param state
-   */
-  public static Bytes32 hash_tree_root(BeaconState state) {
-    return hash_tree_root(state.toBytes());
   }
 }

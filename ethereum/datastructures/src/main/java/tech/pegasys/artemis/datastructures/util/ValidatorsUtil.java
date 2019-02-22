@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.statetransition.util;
+package tech.pegasys.artemis.datastructures.util;
 
 import com.google.common.collect.Sets;
 import com.google.common.primitives.UnsignedLong;
@@ -20,8 +20,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Validator;
-import tech.pegasys.artemis.statetransition.BeaconState;
 
 public class ValidatorsUtil {
 

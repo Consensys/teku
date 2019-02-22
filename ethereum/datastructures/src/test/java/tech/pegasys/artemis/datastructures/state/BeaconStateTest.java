@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.statetransition;
+package tech.pegasys.artemis.datastructures.state;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -23,16 +23,16 @@ import static tech.pegasys.artemis.datastructures.Constants.GENESIS_EPOCH;
 import static tech.pegasys.artemis.datastructures.Constants.INITIATED_EXIT;
 import static tech.pegasys.artemis.datastructures.Constants.LATEST_RANDAO_MIXES_LENGTH;
 import static tech.pegasys.artemis.datastructures.Constants.SEED_LOOKAHEAD;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.bytes3ToInt;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.generate_seed;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_active_index_root;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_current_epoch;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_initial_beacon_state;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_randao_mix;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.is_power_of_two;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.shuffle;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.split;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomDeposits;
-import static tech.pegasys.artemis.statetransition.util.BeaconStateUtil.bytes3ToInt;
-import static tech.pegasys.artemis.statetransition.util.BeaconStateUtil.generate_seed;
-import static tech.pegasys.artemis.statetransition.util.BeaconStateUtil.get_active_index_root;
-import static tech.pegasys.artemis.statetransition.util.BeaconStateUtil.get_current_epoch;
-import static tech.pegasys.artemis.statetransition.util.BeaconStateUtil.get_initial_beacon_state;
-import static tech.pegasys.artemis.statetransition.util.BeaconStateUtil.get_randao_mix;
-import static tech.pegasys.artemis.statetransition.util.BeaconStateUtil.is_power_of_two;
-import static tech.pegasys.artemis.statetransition.util.BeaconStateUtil.shuffle;
-import static tech.pegasys.artemis.statetransition.util.BeaconStateUtil.split;
 
 import com.google.common.primitives.UnsignedLong;
 import java.security.Security;
@@ -51,9 +51,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
-import tech.pegasys.artemis.datastructures.state.Fork;
-import tech.pegasys.artemis.datastructures.state.Validator;
-import tech.pegasys.artemis.statetransition.util.BeaconStateUtil;
+import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 
 @ExtendWith(BouncyCastleExtension.class)
 class BeaconStateTest {

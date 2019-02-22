@@ -21,8 +21,6 @@ import java.util.Queue;
 import net.consensys.cava.bytes.Bytes;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
-import tech.pegasys.artemis.datastructures.operations.Attestation;
 
 /** ChainStorage Interface class */
 public interface ChainStorage {
@@ -65,7 +63,7 @@ public interface ChainStorage {
    * @param value
    * @param items
    */
-  static <S extends Bytes, T extends HashMap<S, S>> void add(S key, S value, T items) {
+  static <S extends Bytes, T, U extends HashMap<S, T>> void add(S key, T value, U items) {
     try {
       items.put(key, value);
     } catch (IllegalStateException e) {
@@ -80,8 +78,8 @@ public interface ChainStorage {
    * @param items
    * @return
    */
-  static <S extends Bytes, T extends HashMap<S, S>> Optional<S> get(S key, T items) {
-    Optional<S> result = Optional.ofNullable(null);
+  static <S extends Bytes, T, U extends HashMap<S, T>> Optional<T> get(S key, U items) {
+    Optional<T> result = Optional.ofNullable(null);
     try {
       result = Optional.of(items.get(key));
     } catch (NoSuchElementException e) {
@@ -107,48 +105,4 @@ public interface ChainStorage {
     }
     return result;
   }
-
-  /**
-   * Add processed block to storage
-   *
-   * @param blockHash
-   * @param block
-   */
-  void addProcessedBlock(Bytes blockHash, BeaconBlock block);
-
-  /**
-   * Add unprocessed block to storage
-   *
-   * @param block
-   */
-  void addUnprocessedBlock(BeaconBlock block);
-
-  /**
-   * Add unprocessed attestation to storage
-   *
-   * @param attestation
-   */
-  void addUnprocessedAttestation(Attestation attestation);
-
-  /**
-   * Retrieves processed block
-   *
-   * @param blockHash
-   * @return
-   */
-  Optional<Bytes> getProcessedBlock(Bytes blockHash);
-
-  /**
-   * Removes an unprocessed block (LIFO)
-   *
-   * @return
-   */
-  Optional<BeaconBlock> getUnprocessedBlock();
-
-  /**
-   * Removes an unprocessed attestation (LIFO)
-   *
-   * @return
-   */
-  Optional<Attestation> getUnprocessedAttestation();
 }
