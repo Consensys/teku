@@ -64,7 +64,7 @@ public class ChainStorageClient implements ChainStorage {
     ChainStorage.<Bytes, BeaconState, HashMap<Bytes, BeaconState>>add(
         state_root, state, this.stateLookup);
     LOG.info(
-        "Block with state root: " + state_root.toHexString() + " has been added to ChainStorage.");
+        "State with state root: " + state_root.toHexString() + " has been added to ChainStorage.");
     // todo: post event to eventbus to notify the server that a new processed block has been added
   }
 

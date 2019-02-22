@@ -14,12 +14,6 @@
 package tech.pegasys.artemis.statetransition.util;
 
 import static java.lang.Math.toIntExact;
-import static tech.pegasys.artemis.datastructures.Constants.BASE_REWARD_QUOTIENT;
-import static tech.pegasys.artemis.datastructures.Constants.EPOCH_LENGTH;
-import static tech.pegasys.artemis.datastructures.Constants.INACTIVITY_PENALTY_QUOTIENT;
-import static tech.pegasys.artemis.datastructures.Constants.INCLUDER_REWARD_QUOTIENT;
-import static tech.pegasys.artemis.datastructures.Constants.MAX_DEPOSIT_AMOUNT;
-import static tech.pegasys.artemis.datastructures.Constants.MIN_ATTESTATION_INCLUSION_DELAY;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_effective_balance;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_total_effective_balance;
 

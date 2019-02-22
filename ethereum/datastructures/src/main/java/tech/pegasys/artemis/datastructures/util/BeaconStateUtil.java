@@ -38,6 +38,7 @@ import static tech.pegasys.artemis.util.bls.BLSAggregate.bls_aggregate_pubkeys;
 import static tech.pegasys.artemis.util.bls.BLSVerify.bls_verify;
 import static tech.pegasys.artemis.util.bls.BLSVerify.bls_verify_multiple;
 import static tech.pegasys.artemis.util.hashtree.HashTreeUtil.hash_tree_root;
+import static tech.pegasys.artemis.util.hashtree.HashTreeUtil.integerListHashTreeRoot;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.primitives.UnsignedLong;

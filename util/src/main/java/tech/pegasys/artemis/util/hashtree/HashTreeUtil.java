@@ -42,4 +42,21 @@ public final class HashTreeUtil {
               writer.writeBytesList(list);
             }));
   }
+
+  /**
+   * Calculate the hash tree root of the list of integers provided.
+   *
+   * <p><b>WARNING: This assume 64-bit encoding is intended for the integers provided.</b>
+   *
+   * @param integers
+   * @return
+   */
+  public static Bytes32 integerListHashTreeRoot(List<Integer> integers) {
+    return hash_tree_root(
+        SSZ.encode(
+            // TODO This can be replaced with writeUInt64List(List) once implemented in Cava.
+            writer -> {
+              writer.writeUIntList(64, integers);
+            }));
+  }
 }
