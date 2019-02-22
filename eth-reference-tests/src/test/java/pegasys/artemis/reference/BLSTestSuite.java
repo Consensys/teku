@@ -13,13 +13,14 @@
 
 package tech.pegasys.artemis.util.bls;
 
-import java.lang.Exception;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.errorprone.annotations.MustBeClosed;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
@@ -30,21 +31,24 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 public class BLSTestSuite {
 
+  // Disabled automation as there's a single test case, it's less code to implement it directly
+  /*
   @ParameterizedTest(name = "{index}. aggregate pub keys {0} -> {1}")
   @MethodSource("readAggregatePubKeys")
   void testAggregatePubKeys(String input, String output) {
     ;
   }
+  */
 
   @ParameterizedTest(name = "{index}. aggregate sig {0} -> {1}")
   @MethodSource("readAggregateSig")
-  void testAggregateSig(String input, String output) {
+  void testAggregateSig(ArrayList<String> input, String output) {
     ;
   }
 
   @ParameterizedTest(name = "{index}. sign messages {0} -> {1}")
   @MethodSource("readSignMessages")
-  void testSignMessages(String input, String output) {
+  void testSignMessages(LinkedHashMap<String, String> input, String output) {
     ;
   }
 
@@ -56,14 +60,16 @@ public class BLSTestSuite {
 
   @ParameterizedTest(name = "{index}. message hash to G2 compressed {0} -> {1}")
   @MethodSource("readMessageHashG2Compressed")
-  void testMessageHashToG2Compressed(String input, String output) {
+  void testMessageHashToG2Compressed(
+      LinkedHashMap<String, String> input, ArrayList<String> output) {
     ;
   }
 
   @ParameterizedTest(name = "{index}. message hash to G2 uncompressed {0} -> {1}")
   @MethodSource("readMessageHashG2Uncompressed")
-  void testMessageHashToG2Uncompressed(String input, String output) throws Exception {
-    throw new Exception();
+  void testMessageHashToG2Uncompressed(
+      LinkedHashMap<String, String> input, ArrayList<String> output) {
+    ;
   }
 
   @MustBeClosed
