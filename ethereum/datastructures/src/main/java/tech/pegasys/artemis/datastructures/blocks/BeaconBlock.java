@@ -13,6 +13,11 @@
 
 package tech.pegasys.artemis.datastructures.blocks;
 
+import static tech.pegasys.artemis.datastructures.Constants.EMPTY_SIGNATURE;
+import static tech.pegasys.artemis.datastructures.Constants.GENESIS_SLOT;
+import static tech.pegasys.artemis.datastructures.Constants.ZERO_HASH;
+
+import java.util.ArrayList;
 import java.util.Objects;
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
@@ -47,6 +52,22 @@ public final class BeaconBlock {
     this.eth1_data = eth1_data;
     this.signature = signature;
     this.body = body;
+  }
+
+  public static BeaconBlock createGenesis(Bytes32 state_root) {
+    return new BeaconBlock(
+        GENESIS_SLOT,
+        ZERO_HASH,
+        state_root,
+        EMPTY_SIGNATURE,
+        new Eth1Data(ZERO_HASH, ZERO_HASH),
+        EMPTY_SIGNATURE,
+        new BeaconBlockBody(
+            new ArrayList<>(),
+            new ArrayList<>(),
+            new ArrayList<>(),
+            new ArrayList<>(),
+            new ArrayList<>()));
   }
 
   public static BeaconBlock fromBytes(Bytes bytes) {

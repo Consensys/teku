@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.statetransition.util;
+package tech.pegasys.artemis.datastructures.util;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.lang.Math.toIntExact;
@@ -34,11 +34,10 @@ import static tech.pegasys.artemis.datastructures.Constants.SHARD_COUNT;
 import static tech.pegasys.artemis.datastructures.Constants.WHISTLEBLOWER_REWARD_QUOTIENT;
 import static tech.pegasys.artemis.datastructures.Constants.WITHDRAWABLE;
 import static tech.pegasys.artemis.datastructures.Constants.ZERO_HASH;
-import static tech.pegasys.artemis.statetransition.util.TreeHashUtil.hash_tree_root;
-import static tech.pegasys.artemis.statetransition.util.TreeHashUtil.integerListHashTreeRoot;
 import static tech.pegasys.artemis.util.bls.BLSAggregate.bls_aggregate_pubkeys;
 import static tech.pegasys.artemis.util.bls.BLSVerify.bls_verify;
 import static tech.pegasys.artemis.util.bls.BLSVerify.bls_verify_multiple;
+import static tech.pegasys.artemis.util.hashtree.HashTreeUtil.hash_tree_root;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.primitives.UnsignedLong;
@@ -62,11 +61,11 @@ import tech.pegasys.artemis.datastructures.operations.AttestationDataAndCustodyB
 import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.DepositInput;
 import tech.pegasys.artemis.datastructures.operations.SlashableAttestation;
+import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Crosslink;
 import tech.pegasys.artemis.datastructures.state.CrosslinkCommittee;
 import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.datastructures.state.Validator;
-import tech.pegasys.artemis.statetransition.BeaconState;
 import tech.pegasys.artemis.util.bitwise.BitwiseOps;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 
@@ -160,6 +159,9 @@ public class BeaconStateUtil {
       index++;
     }
 
+    List<Validator> activeValidators =
+        ValidatorsUtil.get_active_validators(
+            state.getValidator_registry(), UnsignedLong.valueOf(GENESIS_EPOCH));
     Bytes32 genesis_active_index_root =
         integerListHashTreeRoot(
             ValidatorsUtil.get_active_validator_indices(
@@ -828,7 +830,7 @@ public class BeaconStateUtil {
     UnsignedLong domain = get_domain(state.getFork(), get_current_epoch(state), DOMAIN_DEPOSIT);
     Bytes32 message = Bytes32.ZERO;
     try {
-      message = TreeHashUtil.hash_tree_root(proof_of_possession_data.toBytes());
+      message = hash_tree_root(proof_of_possession_data.toBytes());
     } catch (Exception e) {
       LOG.fatal(
           "validate_proof_of_possession(): Error calculating the hash_tree_root(proof_of_possession). "
@@ -851,7 +853,7 @@ public class BeaconStateUtil {
    * @return The fork version and signature domain. This format ((fork version << 32) +
    *     SignatureDomain) is used to partition BLS signatures.
    */
-  static UnsignedLong get_domain(Fork fork, UnsignedLong epoch, int domain_type) {
+  public static UnsignedLong get_domain(Fork fork, UnsignedLong epoch, int domain_type) {
     return get_fork_version(fork, epoch)
         .times(UnsignedLong.valueOf((long) Math.pow(2, 32)))
         .plus(UnsignedLong.valueOf(domain_type));
@@ -940,9 +942,9 @@ public class BeaconStateUtil {
     List<Bytes32> messages =
         Arrays.asList(
             hash_tree_root(
-                new AttestationDataAndCustodyBit(slashable_attestation.getData(), false)),
+                new AttestationDataAndCustodyBit(slashable_attestation.getData(), false).toBytes()),
             hash_tree_root(
-                new AttestationDataAndCustodyBit(slashable_attestation.getData(), true)));
+                new AttestationDataAndCustodyBit(slashable_attestation.getData(), true).toBytes()));
     BLSSignature signature = slashable_attestation.getAggregate_signature();
     UnsignedLong domain =
         get_domain(

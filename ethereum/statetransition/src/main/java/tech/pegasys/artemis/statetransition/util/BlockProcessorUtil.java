@@ -28,26 +28,26 @@ import static tech.pegasys.artemis.datastructures.Constants.MAX_DEPOSITS;
 import static tech.pegasys.artemis.datastructures.Constants.MAX_PROPOSER_SLASHINGS;
 import static tech.pegasys.artemis.datastructures.Constants.MIN_ATTESTATION_INCLUSION_DELAY;
 import static tech.pegasys.artemis.datastructures.Constants.ZERO_HASH;
-import static tech.pegasys.artemis.statetransition.util.BeaconStateUtil.get_attestation_participants;
-import static tech.pegasys.artemis.statetransition.util.BeaconStateUtil.get_bitfield_bit;
-import static tech.pegasys.artemis.statetransition.util.BeaconStateUtil.get_block_root;
-import static tech.pegasys.artemis.statetransition.util.BeaconStateUtil.get_crosslink_committees_at_slot;
-import static tech.pegasys.artemis.statetransition.util.BeaconStateUtil.get_current_epoch;
-import static tech.pegasys.artemis.statetransition.util.BeaconStateUtil.get_domain;
-import static tech.pegasys.artemis.statetransition.util.BeaconStateUtil.get_entry_exit_effect_epoch;
-import static tech.pegasys.artemis.statetransition.util.BeaconStateUtil.get_randao_mix;
-import static tech.pegasys.artemis.statetransition.util.BeaconStateUtil.initiate_validator_exit;
-import static tech.pegasys.artemis.statetransition.util.BeaconStateUtil.is_double_vote;
-import static tech.pegasys.artemis.statetransition.util.BeaconStateUtil.is_surround_vote;
-import static tech.pegasys.artemis.statetransition.util.BeaconStateUtil.penalize_validator;
-import static tech.pegasys.artemis.statetransition.util.BeaconStateUtil.process_deposit;
-import static tech.pegasys.artemis.statetransition.util.BeaconStateUtil.slot_to_epoch;
-import static tech.pegasys.artemis.statetransition.util.BeaconStateUtil.verify_slashable_attestation;
-import static tech.pegasys.artemis.statetransition.util.EpochProcessorUtil.get_epoch_start_slot;
-import static tech.pegasys.artemis.statetransition.util.TreeHashUtil.hash_tree_root;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_attestation_participants;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_bitfield_bit;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_block_root;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_crosslink_committees_at_slot;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_current_epoch;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_domain;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_entry_exit_effect_epoch;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_epoch_start_slot;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_randao_mix;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.initiate_validator_exit;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.is_double_vote;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.is_surround_vote;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.penalize_validator;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.process_deposit;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.slot_to_epoch;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.verify_slashable_attestation;
 import static tech.pegasys.artemis.util.bls.BLSVerify.bls_aggregate_pubkeys;
 import static tech.pegasys.artemis.util.bls.BLSVerify.bls_verify;
 import static tech.pegasys.artemis.util.bls.BLSVerify.bls_verify_multiple;
+import static tech.pegasys.artemis.util.hashtree.HashTreeUtil.hash_tree_root;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.primitives.UnsignedLong;
@@ -70,10 +70,11 @@ import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.Exit;
 import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
 import tech.pegasys.artemis.datastructures.operations.SlashableAttestation;
+import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.CrosslinkCommittee;
 import tech.pegasys.artemis.datastructures.state.PendingAttestation;
 import tech.pegasys.artemis.datastructures.state.Validator;
-import tech.pegasys.artemis.statetransition.BeaconState;
+import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 
 public class BlockProcessorUtil {
 
@@ -466,8 +467,10 @@ public class BlockProcessorUtil {
         bls_verify_multiple(
             Arrays.asList(bls_aggregate_pubkeys(pubkey0), bls_aggregate_pubkeys(pubkey1)),
             Arrays.asList(
-                hash_tree_root(new AttestationDataAndCustodyBit(attestation.getData(), false)),
-                hash_tree_root(new AttestationDataAndCustodyBit(attestation.getData(), true))),
+                hash_tree_root(
+                    new AttestationDataAndCustodyBit(attestation.getData(), false).toBytes()),
+                hash_tree_root(
+                    new AttestationDataAndCustodyBit(attestation.getData(), true).toBytes())),
             attestation.getAggregate_signature(),
             get_domain(
                 state.getFork(),
@@ -545,8 +548,8 @@ public class BlockProcessorUtil {
       // - Let exit_message = hash_tree_root(Exit(epoch=exit.epoch,
       //     validator_index=exit.validator_index, signature=EMPTY_SIGNATURE))
       Bytes32 exit_message =
-          hash_tree_root(new Exit(exit.getEpoch(), exit.getValidator_index(), EMPTY_SIGNATURE));
-
+          hash_tree_root(
+              new Exit(exit.getEpoch(), exit.getValidator_index(), EMPTY_SIGNATURE).toBytes());
       // - Verify that bls_verify(
       //     pubkey=validator.pubkey, message=exit_message, signature=exit.signature,
       //     domain=get_domain(state.fork, exit.epoch, DOMAIN_EXIT)) is valid

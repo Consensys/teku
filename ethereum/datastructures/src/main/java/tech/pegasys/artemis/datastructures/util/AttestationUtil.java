@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.statetransition.util;
+package tech.pegasys.artemis.datastructures.util;
 
 import com.google.common.primitives.UnsignedLong;
 import java.nio.ByteOrder;
@@ -22,10 +22,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import net.consensys.cava.bytes.Bytes32;
+import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.CrosslinkCommittee;
 import tech.pegasys.artemis.datastructures.state.PendingAttestation;
-import tech.pegasys.artemis.statetransition.BeaconState;
-import tech.pegasys.artemis.statetransition.StateTransitionException;
 
 public class AttestationUtil {
 
@@ -67,14 +66,14 @@ public class AttestationUtil {
               .getEpoch_boundary_root()
               .equals(
                   BeaconStateUtil.get_block_root(
-                      state, EpochProcessorUtil.get_epoch_start_slot(current_epoch)))
+                      state, BeaconStateUtil.get_epoch_start_slot(current_epoch)))
           && attestation.getData().getJustified_epoch().equals(state.getJustified_epoch())) {
         current_epoch_boundary_attestations.add(attestation);
       }
     }
 
     if (current_epoch_boundary_attestations.isEmpty()) {
-      throw new StateTransitionException("No current epoch boundary attestation found");
+      throw new Exception("No current epoch boundary attestation found");
     }
 
     return current_epoch_boundary_attestations;
@@ -95,13 +94,13 @@ public class AttestationUtil {
           .getEpoch_boundary_root()
           .equals(
               BeaconStateUtil.get_block_root(
-                  state, EpochProcessorUtil.get_epoch_start_slot(previous_epoch)))) {
+                  state, BeaconStateUtil.get_epoch_start_slot(previous_epoch)))) {
         previous_epoch_boundary_attestations.add(attestation);
       }
     }
 
     if (previous_epoch_boundary_attestations.isEmpty()) {
-      throw new StateTransitionException("No previous epoch boundary attestation found");
+      throw new Exception("No previous epoch boundary attestation found");
     }
 
     return previous_epoch_boundary_attestations;

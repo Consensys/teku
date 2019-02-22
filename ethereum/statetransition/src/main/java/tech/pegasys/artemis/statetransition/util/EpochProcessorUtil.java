@@ -14,8 +14,14 @@
 package tech.pegasys.artemis.statetransition.util;
 
 import static java.lang.Math.toIntExact;
-import static tech.pegasys.artemis.statetransition.util.BeaconStateUtil.get_effective_balance;
-import static tech.pegasys.artemis.statetransition.util.BeaconStateUtil.get_total_effective_balance;
+import static tech.pegasys.artemis.datastructures.Constants.BASE_REWARD_QUOTIENT;
+import static tech.pegasys.artemis.datastructures.Constants.EPOCH_LENGTH;
+import static tech.pegasys.artemis.datastructures.Constants.INACTIVITY_PENALTY_QUOTIENT;
+import static tech.pegasys.artemis.datastructures.Constants.INCLUDER_REWARD_QUOTIENT;
+import static tech.pegasys.artemis.datastructures.Constants.MAX_DEPOSIT_AMOUNT;
+import static tech.pegasys.artemis.datastructures.Constants.MIN_ATTESTATION_INCLUSION_DELAY;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_effective_balance;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_total_effective_balance;
 
 import com.google.common.base.Predicate;
 import com.google.common.collect.Collections2;
@@ -33,12 +39,16 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.Eth1DataVote;
+import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Crosslink;
 import tech.pegasys.artemis.datastructures.state.CrosslinkCommittee;
 import tech.pegasys.artemis.datastructures.state.PendingAttestation;
 import tech.pegasys.artemis.datastructures.state.Validator;
-import tech.pegasys.artemis.statetransition.BeaconState;
+import tech.pegasys.artemis.datastructures.util.AttestationUtil;
+import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
+import tech.pegasys.artemis.datastructures.util.ValidatorsUtil;
 import tech.pegasys.artemis.util.bitwise.BitwiseOps;
+import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 
 public class EpochProcessorUtil {
   private static final Logger LOG = LogManager.getLogger(EpochProcessorUtil.class.getName());
@@ -445,7 +455,7 @@ public class EpochProcessorUtil {
     UnsignedLong previous_epoch = BeaconStateUtil.get_previous_epoch(state);
     List<Integer> slot_range =
         IntStream.range(0, Constants.EPOCH_LENGTH).boxed().collect(Collectors.toList());
-    UnsignedLong slot = get_epoch_start_slot(previous_epoch);
+    UnsignedLong slot = BeaconStateUtil.get_epoch_start_slot(previous_epoch);
     for (Integer slot_incr : slot_range) {
       slot = slot.plus(UnsignedLong.valueOf(slot_incr));
       List<CrosslinkCommittee> crosslink_committees_at_slot =
@@ -727,7 +737,7 @@ public class EpochProcessorUtil {
     int index = next_epoch.plus(ENTRY_EXIT_DELAY).mod(LATEST_INDEX_ROOTS_LENGTH).intValue();
     List<Bytes32> latest_index_roots = state.getLatest_index_roots();
     Bytes32 root =
-        TreeHashUtil.integerListHashTreeRoot(
+        HashTreeUtil.integerListHashTreeRoot(
             ValidatorsUtil.get_active_validator_indices(
                 state.getValidator_registry(), next_epoch.plus(ENTRY_EXIT_DELAY)));
     latest_index_roots.set(index, root);
@@ -794,10 +804,5 @@ public class EpochProcessorUtil {
         .times(epochs_since_finality)
         .dividedBy(UnsignedLong.valueOf(Constants.INACTIVITY_PENALTY_QUOTIENT))
         .dividedBy(UnsignedLong.valueOf(2L));
-  }
-
-  // Return the starting slot of the given ``epoch``.
-  static UnsignedLong get_epoch_start_slot(UnsignedLong epoch) {
-    return epoch.times(UnsignedLong.valueOf(Constants.EPOCH_LENGTH));
   }
 }
