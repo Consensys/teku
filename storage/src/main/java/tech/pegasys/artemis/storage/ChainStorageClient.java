@@ -40,6 +40,10 @@ public class ChainStorageClient implements ChainStorage {
     this.eventBus.register(this);
   }
 
+  public BeaconBlock getParent(BeaconBlock block) {
+    Bytes parent_root = block.getParent_root();
+    return processedBlockLookup.get(parent_root);
+  }
   /**
    * Add processed block to storage
    *

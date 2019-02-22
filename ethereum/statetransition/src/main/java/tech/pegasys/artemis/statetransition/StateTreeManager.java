@@ -101,4 +101,20 @@ public class StateTreeManager {
       stateTransition.initiate(this.state, null);
     }
   }
+
+  /*
+   * Get the ancestor of ``block`` with slot number ``slot``; return ``None`` if not found.
+   */
+  public static BeaconBlock get_ancestor(
+      ChainStorageClient store, BeaconBlock block, UnsignedLong slotNumber) {
+
+    UnsignedLong blockSlot = UnsignedLong.valueOf(block.getSlot());
+    if (blockSlot.compareTo(slotNumber) == 0) {
+      return block;
+    } else if (blockSlot.compareTo(slotNumber) < 0) {
+      return null;
+    } else {
+      return get_ancestor(store, store.getParent(block), slotNumber);
+    }
+  }
 }
