@@ -14,12 +14,6 @@
 package tech.pegasys.artemis.statetransition.util;
 
 import static java.lang.Math.toIntExact;
-import static tech.pegasys.artemis.datastructures.Constants.BASE_REWARD_QUOTIENT;
-import static tech.pegasys.artemis.datastructures.Constants.EPOCH_LENGTH;
-import static tech.pegasys.artemis.datastructures.Constants.INACTIVITY_PENALTY_QUOTIENT;
-import static tech.pegasys.artemis.datastructures.Constants.INCLUDER_REWARD_QUOTIENT;
-import static tech.pegasys.artemis.datastructures.Constants.MAX_DEPOSIT_AMOUNT;
-import static tech.pegasys.artemis.datastructures.Constants.MIN_ATTESTATION_INCLUSION_DELAY;
 import static tech.pegasys.artemis.statetransition.util.BeaconStateUtil.get_effective_balance;
 import static tech.pegasys.artemis.statetransition.util.BeaconStateUtil.get_total_effective_balance;
 
@@ -67,7 +61,9 @@ public class EpochProcessorUtil {
         if (eth1_data_vote
                 .getVote_count()
                 .times(UnsignedLong.valueOf(2))
-                .compareTo(UnsignedLong.valueOf(Constants.ETH1_DATA_VOTING_PERIOD * EPOCH_LENGTH))
+                .compareTo(
+                    UnsignedLong.valueOf(
+                        Constants.ETH1_DATA_VOTING_PERIOD * Constants.EPOCH_LENGTH))
             > 0) {
           state.setLatest_eth1_data(eth1_data_vote.getEth1_data());
         }
@@ -213,7 +209,7 @@ public class EpochProcessorUtil {
         LOG.info("apply_inclusion_base_penalty(): " + e);
       }
       return base_reward(state, index, previous_total_balance)
-          .times(UnsignedLong.valueOf(MIN_ATTESTATION_INCLUSION_DELAY))
+          .times(UnsignedLong.valueOf(Constants.MIN_ATTESTATION_INCLUSION_DELAY))
           .dividedBy(inclusion_distance);
     };
   }
@@ -322,7 +318,7 @@ public class EpochProcessorUtil {
         UnsignedLong inclusion_distance = AttestationUtil.inclusion_distance(state, index);
         reward_delta =
             base_reward(state, index, previous_total_balance)
-                .times(UnsignedLong.valueOf(MIN_ATTESTATION_INCLUSION_DELAY))
+                .times(UnsignedLong.valueOf(Constants.MIN_ATTESTATION_INCLUSION_DELAY))
                 .dividedBy(inclusion_distance);
         apply_penalty_or_reward(balances, index, reward_delta, true);
       }
@@ -432,7 +428,7 @@ public class EpochProcessorUtil {
       UnsignedLong balance = balances.get(proposer_index);
       UnsignedLong reward =
           base_reward(state, index, previous_total_balance)
-              .dividedBy(UnsignedLong.valueOf(INCLUDER_REWARD_QUOTIENT));
+              .dividedBy(UnsignedLong.valueOf(Constants.INCLUDER_REWARD_QUOTIENT));
       balance = balance.plus(reward);
       balances.set(proposer_index, balance);
     }
@@ -558,7 +554,7 @@ public class EpochProcessorUtil {
 
     UnsignedLong max_balance_churn =
         BeaconStateUtil.max(
-            UnsignedLong.valueOf(MAX_DEPOSIT_AMOUNT),
+            UnsignedLong.valueOf(Constants.MAX_DEPOSIT_AMOUNT),
             total_balance.dividedBy(
                 UnsignedLong.valueOf((2 * Constants.MAX_BALANCE_CHURN_QUOTIENT))));
 
@@ -724,35 +720,41 @@ public class EpochProcessorUtil {
         UnsignedLong.valueOf(Constants.LATEST_INDEX_ROOTS_LENGTH);
     UnsignedLong LATEST_RANDAO_MIXES_LENGTH =
         UnsignedLong.valueOf(Constants.LATEST_RANDAO_MIXES_LENGTH);
-    UnsignedLong index = next_epoch.plus(ENTRY_EXIT_DELAY).mod(LATEST_INDEX_ROOTS_LENGTH);
+    UnsignedLong LATEST_PENALIZED_EXIT_LENGTH =
+        UnsignedLong.valueOf(Constants.LATEST_PENALIZED_EXIT_LENGTH);
+
     // update hash tree root
-    List<Bytes32> index_roots = state.getLatest_index_roots();
+    int index = next_epoch.plus(ENTRY_EXIT_DELAY).mod(LATEST_INDEX_ROOTS_LENGTH).intValue();
+    List<Bytes32> latest_index_roots = state.getLatest_index_roots();
     Bytes32 root =
-        TreeHashUtil.validatorListHashTreeRoot(
-            ValidatorsUtil.get_active_validators(
+        TreeHashUtil.integerListHashTreeRoot(
+            ValidatorsUtil.get_active_validator_indices(
                 state.getValidator_registry(), next_epoch.plus(ENTRY_EXIT_DELAY)));
-    index_roots.set(index.intValue(), root);
+    latest_index_roots.set(index, root);
+
     // update latest penalized balances
+    index = next_epoch.mod(LATEST_PENALIZED_EXIT_LENGTH).intValue();
     List<UnsignedLong> latest_penalized_balances = state.getLatest_penalized_balances();
     UnsignedLong balance =
-        latest_penalized_balances.get(current_epoch.plus(ENTRY_EXIT_DELAY).intValue());
-    latest_penalized_balances.set(next_epoch.plus(ENTRY_EXIT_DELAY).intValue(), balance);
+        latest_penalized_balances.get(current_epoch.mod(LATEST_PENALIZED_EXIT_LENGTH).intValue());
+    latest_penalized_balances.set(index, balance);
+
     // update latest randao mixes
     List<Bytes32> latest_randao_mixes = state.getLatest_randao_mixes();
+    index = next_epoch.mod(LATEST_RANDAO_MIXES_LENGTH).intValue();
     Bytes32 randao_mix = BeaconStateUtil.get_randao_mix(state, current_epoch);
-    latest_randao_mixes.set(next_epoch.mod(LATEST_RANDAO_MIXES_LENGTH).intValue(), randao_mix);
+    latest_randao_mixes.set(index, randao_mix);
+
     // remove old attestations
-    List<PendingAttestation> pendingAttestations = new ArrayList<>(state.getLatest_attestations());
-    UnsignedLong indexToRemove = UnsignedLong.ZERO;
-    for (PendingAttestation attestation : state.getLatest_attestations()) {
-      if (attestation.getData().getSlot().compareTo(current_epoch) < 0) {
-        // this has to be an int or else it tries to search for an UnsignedLong to remove rather
-        // than removing it by the indexed int value
-        pendingAttestations.remove(indexToRemove.intValue());
+    List<PendingAttestation> pending_attestations = state.getLatest_attestations();
+    List<PendingAttestation> remaining_attestations = new ArrayList<>();
+    for (PendingAttestation attestation : pending_attestations) {
+      if (!(BeaconStateUtil.slot_to_epoch(attestation.getData().getSlot()).compareTo(current_epoch)
+          < 0)) {
+        remaining_attestations.add(attestation);
       }
-      indexToRemove = indexToRemove.plus(UnsignedLong.ONE);
     }
-    state.setLatest_attestations(pendingAttestations);
+    state.setLatest_attestations(remaining_attestations);
   }
 
   /**
@@ -767,7 +769,7 @@ public class EpochProcessorUtil {
       BeaconState state, int index, UnsignedLong previous_total_balance) {
     UnsignedLong base_reward_quotient =
         BeaconStateUtil.integer_squareroot(previous_total_balance)
-            .dividedBy(UnsignedLong.valueOf(BASE_REWARD_QUOTIENT));
+            .dividedBy(UnsignedLong.valueOf(Constants.BASE_REWARD_QUOTIENT));
     return get_effective_balance(state, index)
         .dividedBy(base_reward_quotient)
         .dividedBy(UnsignedLong.valueOf(5L));
@@ -790,12 +792,12 @@ public class EpochProcessorUtil {
     return base_reward(state, index, previous_total_balance)
         .plus(get_effective_balance(state, index))
         .times(epochs_since_finality)
-        .dividedBy(UnsignedLong.valueOf(INACTIVITY_PENALTY_QUOTIENT))
+        .dividedBy(UnsignedLong.valueOf(Constants.INACTIVITY_PENALTY_QUOTIENT))
         .dividedBy(UnsignedLong.valueOf(2L));
   }
 
   // Return the starting slot of the given ``epoch``.
   static UnsignedLong get_epoch_start_slot(UnsignedLong epoch) {
-    return epoch.times(UnsignedLong.valueOf(EPOCH_LENGTH));
+    return epoch.times(UnsignedLong.valueOf(Constants.EPOCH_LENGTH));
   }
 }
