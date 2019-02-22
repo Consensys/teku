@@ -49,6 +49,6 @@ public class BLSKeyPair {
   }
 
   public Bytes48 publicKeyAsBytes() {
-    return Bytes48.wrap(publicKey().toBytes());
+    return Bytes48.wrap(Bytes48.leftPad(publicKey().toBytes()));
   }
 }
