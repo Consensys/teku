@@ -16,9 +16,19 @@ package tech.pegasys.artemis.util.bls;
 import java.util.Objects;
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.ssz.SSZ;
+import tech.pegasys.artemis.util.mikuli.BLS12381;
+import tech.pegasys.artemis.util.mikuli.KeyPair;
 import tech.pegasys.artemis.util.mikuli.Signature;
 
 public final class BLSSignature {
+
+  /** Signs a message */
+  public static BLSSignature sign(BLSKeyPair keyPair, Bytes message, long domain) {
+    return new BLSSignature(
+        BLS12381
+            .sign(new KeyPair(keyPair.secretKey(), keyPair.publicKey()), message, domain)
+            .signature());
+  }
 
   /**
    * Creates a random, but valid, signature
@@ -59,6 +69,10 @@ public final class BLSSignature {
         writer -> {
           writer.writeBytes(signature.encodeCompressed());
         });
+  }
+
+  public Signature getSignature() {
+    return signature;
   }
 
   @Override

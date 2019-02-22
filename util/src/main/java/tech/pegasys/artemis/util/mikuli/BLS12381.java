@@ -13,10 +13,9 @@
 
 package tech.pegasys.artemis.util.mikuli;
 
+import static tech.pegasys.artemis.util.mikuli.G2Point.hashToG2;
+
 import net.consensys.cava.bytes.Bytes;
-import org.apache.milagro.amcl.BLS381.ECP;
-import org.apache.milagro.amcl.BLS381.ECP2;
-import org.apache.milagro.amcl.BLS381.MPIN;
 
 /*
  * Adapted from the ConsenSys/mikuli (Apache 2 License) implementation:
@@ -47,11 +46,8 @@ public final class BLS12381 {
    * @param domain The domain value added to the message
    * @return The SignatureAndPublicKey, not null
    */
-  public static SignatureAndPublicKey sign(KeyPair keyPair, byte[] message, int domain) {
+  public static SignatureAndPublicKey sign(KeyPair keyPair, Bytes message, long domain) {
     G2Point hashInGroup2 = hashFunction(message, domain);
-    /*
-     * The signature is hash point in G2 multiplied by the private key.
-     */
     G2Point sig = keyPair.secretKey().sign(hashInGroup2);
     return new SignatureAndPublicKey(new Signature(sig), keyPair.publicKey());
   }
@@ -64,8 +60,8 @@ public final class BLS12381 {
    * @param domain The domain value added to the message
    * @return The SignatureAndPublicKey, not null
    */
-  public static SignatureAndPublicKey sign(KeyPair keyPair, Bytes message, int domain) {
-    return sign(keyPair, message.toArray(), domain);
+  public static SignatureAndPublicKey sign(KeyPair keyPair, byte[] message, long domain) {
+    return sign(keyPair, Bytes.wrap(message), domain);
   }
 
   /**
@@ -78,8 +74,13 @@ public final class BLS12381 {
    * @return True if the verification is successful.
    */
   public static boolean verify(
-      PublicKey publicKey, Signature signature, byte[] message, int domain) {
+      PublicKey publicKey, Signature signature, Bytes message, long domain) {
     G1Point g1Generator = KeyPair.g1Generator;
+
+    if (!signature.isValidG2Point()) {
+      return false;
+    }
+    // TODO: Check that G1 point of publicKey is valid. need to put flags into G1Point definition
 
     G2Point hashInGroup2 = hashFunction(message, domain);
     GTPoint e1 = AtePairing.pair(publicKey.g1Point(), hashInGroup2);
@@ -98,8 +99,8 @@ public final class BLS12381 {
    * @return True if the verification is successful.
    */
   public static boolean verify(
-      PublicKey publicKey, Signature signature, Bytes message, int domain) {
-    return verify(publicKey, signature, message.toArray(), domain);
+      PublicKey publicKey, Signature signature, byte[] message, long domain) {
+    return verify(publicKey, signature, Bytes.wrap(message), domain);
   }
 
   /**
@@ -110,7 +111,7 @@ public final class BLS12381 {
    * @param domain The domain value added to the message
    * @return True if the verification is successful, not null
    */
-  public static boolean verify(SignatureAndPublicKey sigAndPubKey, byte[] message, int domain) {
+  public static boolean verify(SignatureAndPublicKey sigAndPubKey, byte[] message, long domain) {
     return verify(sigAndPubKey.publicKey(), sigAndPubKey.signature(), message, domain);
   }
 
@@ -122,12 +123,11 @@ public final class BLS12381 {
    * @param domain The domain value added to the message
    * @return True if the verification is successful.
    */
-  public static boolean verify(SignatureAndPublicKey sigAndPubKey, Bytes message, int domain) {
+  public static boolean verify(SignatureAndPublicKey sigAndPubKey, Bytes message, long domain) {
     return verify(sigAndPubKey.publicKey(), sigAndPubKey.signature(), message, domain);
   }
 
-  private static G2Point hashFunction(byte[] message, int domain) {
-    byte[] hashByte = MPIN.HASH_ID(ECP.SHA256, message, domain);
-    return new G2Point(ECP2.mapit(hashByte));
+  private static G2Point hashFunction(Bytes message, long domain) {
+    return hashToG2(message, domain);
   }
 }

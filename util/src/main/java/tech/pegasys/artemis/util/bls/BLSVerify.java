@@ -13,34 +13,19 @@
 
 package tech.pegasys.artemis.util.bls;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
-import static tech.pegasys.artemis.util.mikuli.BLS12381.sign;
-import static tech.pegasys.artemis.util.mikuli.BLS12381.verify;
-
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
+import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.bytes.Bytes48;
-import tech.pegasys.artemis.util.mikuli.KeyPair;
+import tech.pegasys.artemis.util.mikuli.BLS12381;
 import tech.pegasys.artemis.util.mikuli.PublicKey;
-import tech.pegasys.artemis.util.mikuli.Signature;
 
 public class BLSVerify {
 
   public static boolean bls_verify(
-      Bytes48 pubkey, Bytes32 message, BLSSignature signature, UnsignedLong domain) {
-
-    // TODO: This is currently faked. Implement it properly
-
-    KeyPair keyPair = KeyPair.random();
-    byte[] m = "Hello".getBytes(UTF_8);
-    Signature s = sign(keyPair, m, 48).signature();
-
-    // TODO: use the real public key
-    PublicKey p = keyPair.publicKey();
-
-    // TODO: return verify() result
-    return verify(p, s, m, 48);
+      Bytes48 pubkey, Bytes message, BLSSignature signature, UnsignedLong domain) {
+    return blsVerify(pubkey, message, signature, domain.longValue());
   }
 
   public static boolean bls_verify_multiple(
@@ -52,7 +37,9 @@ public class BLSVerify {
     return true;
   }
 
-  public static Bytes48 bls_aggregate_pubkeys(List<Bytes48> pubkeys) {
-    return Bytes48.ZERO;
+  private static boolean blsVerify(
+      Bytes48 publicKey, Bytes message, BLSSignature signature, long domain) {
+    return BLS12381.verify(
+        PublicKey.fromBytes(publicKey), signature.getSignature(), message, domain);
   }
 }

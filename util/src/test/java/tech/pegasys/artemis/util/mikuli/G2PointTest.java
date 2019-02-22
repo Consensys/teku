@@ -15,6 +15,7 @@ package tech.pegasys.artemis.util.mikuli;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static tech.pegasys.artemis.util.mikuli.G2Point.normaliseY;
 import static tech.pegasys.artemis.util.mikuli.G2Point.scaleWithCofactor;
 
 import net.consensys.cava.bytes.Bytes;
@@ -24,18 +25,6 @@ import org.apache.milagro.amcl.BLS381.FP2;
 import org.junit.jupiter.api.Test;
 
 public class G2PointTest {
-
-  // This is the G2 cofactor as defined in the spec. It's too big for a BIG.
-  private static final long[] cofactor = {
-    0x05d543a95414e7f1L,
-    0x091d50792876a202L,
-    0xcd91de4547085abaL,
-    0xa68a205b2e5a7ddfL,
-    0xa628f1cb4d9e82efL,
-    0x21537e293a6691aeL,
-    0x1616ec6e786f0c70L,
-    0xcf1c38e31c7238e5L
-  };
 
   @Test
   void succeedsWhenIsValidReturnsTrueForARandomPoint() {
@@ -57,16 +46,16 @@ public class G2PointTest {
     assertEquals(point1, point2);
   }
 
-  /** Sanity check for the scaleTestReference() reference test function */
+  // Sanity check for the scaleTestReference() reference test function
   @Test
   void testScale2a() {
     ECP2 point = G2Point.random().ecp2Point();
-    long[] factor = {0x0000000000000001};
+    long[] factor = {0x0000000000000001L};
     ECP2 scaledPoint = scaleTestReference(point, factor);
     assertTrue(point.equals(scaledPoint));
   }
 
-  /** Sanity check for the scale() reference test function */
+  // Sanity check for the scale() reference test function
   @Test
   void testScale2b() {
     ECP2 point = G2Point.random().ecp2Point();
@@ -82,7 +71,7 @@ public class G2PointTest {
     assertTrue(scaledPoint2.equals(scaledPoint1));
   }
 
-  /** Sanity check for the scale() reference test function */
+  // Sanity check for the scale() reference test function
   @Test
   void testScale2c() {
     ECP2 point = G2Point.random().ecp2Point();
@@ -100,7 +89,7 @@ public class G2PointTest {
   }
 
   @Test
-  void compareScalingByCofactorResults() {
+  void succeedsWhenTwoMethodsForScalingByCofactorAgree() {
     ECP2 point = G2Point.random().ecp2Point();
 
     // Scale point using scale2()
@@ -113,14 +102,14 @@ public class G2PointTest {
   }
 
   /**
-   * The data here comes from the reference Eth2 reference BLS tests
+   * The data in the tests below comes from the reference Eth2 reference BLS tests
    * https://github.com/ethereum/eth2.0-tests/blob/df7888e658943d3e733f660bb7ace7d829d70011/test_vectors/test_bls.yml
-   * It's the first test-case. We should find a way to automate this. Note that these test cases are
-   * out of date, and will need need updating when we start passing the hash of the message rather
-   * than the message.
+   * We should find a way to automate this. Note that these test cases are out of date, and will
+   * need need updating when we start passing the hash of the message rather than the message. There
+   * are also bugs in the tests around the selection of Y coordinate.
    */
   @Test
-  void testHashToG2() {
+  void testHashToG2Case01a() {
     // TODO: Update to latest spec when we have new test cases
     Bytes message = Bytes.fromHexString("0x6d657373616765");
     G2Point point = G2Point.hashToG2(message, 0L);
@@ -138,11 +127,70 @@ public class G2PointTest {
     assertTrue(point.ecp2Point().equals(expected));
   }
 
+  @Test
+  void testHashToG2Case01b() {
+    // TODO: Update to latest spec when we have new test cases
+    Bytes message = Bytes.fromHexString("0x6d657373616765");
+    G2Point point = G2Point.hashToG2(message, 1L);
+
+    String[] testCasesResult = {
+      "0x0c4efb2057400f7316bdfd6a89aa3afd34411b045e81bc75fa7f6a6bc5736f6528ceb5857c04866b98a43f6fdf08037c",
+      "0x1539234325ccfd75fda86b1acd449af4a954b0ce45840c4a1e7596f41a99d12735b69968ebe998b4379aa3c3cdc9a8c4",
+      "0x05488381cf53bd9f750451eb40c6bdd04b86689b8b6374a8df30c7d1a2ecc4a33dbe4f13ce7ed6f7e21c123480c4e959",
+      "0x180d467a582e8fd8e766ed90d9a993ae22503fa0358af72ba405350f7e97b910fc2f849a77f0b9ba869fec3d65c4331a",
+      "0x143c969735b29ecb356f2406d001d220d54c3e90d254769a350e7da60de287d4a89ca6dc1bff53e825fa6b889a0801b5",
+      "0x048daeee78cefb03a26e382c7dd582d61a873461b3b1b79c3dc5706cac133666b1cc3b923fed6de46fb63f399d985a1c"
+    };
+
+    ECP2 expected = makePoint(testCasesResult);
+    assertTrue(point.ecp2Point().equals(expected));
+  }
+
+  @Test
+  void testHashToG2Case01c() {
+    // TODO: Update to latest spec when we have new test cases
+    Bytes message =
+        Bytes.fromHexString(
+            "0x"
+                + "56657279202e2e2e2e2e2e2e2e2e2e2e2e2e2e206c6f6e67202e2e2e2e2e2e2e"
+                + "2e2e2e2e2e2e206d657373616765202e2e2e2e207769746820656e74726f7079"
+                + "3a20313233343536373839302d626561636f6e2d636861696e");
+    G2Point point = G2Point.hashToG2(message, 0xffffffffL);
+
+    String[] testCasesResult = {
+      "0x1735fa1eeb8f5927bfbd50497a0f5d0dda9b77e044bbdc2305ad4fed35a2e7fad2f97aa43a0c25e19741481acf836973",
+      "0x06a71fb5c75ca78fefe799c8951e24fde9feb58f07e0da3165a73c40f6cd48eb7d82f6d95c18e3c10abd4e293d3ec6b3",
+      "0x0a852998b4535f26f3dd91af9d0ec9a19cf692ed90523f288f5600cbc8c1a6694d9525b714af12e55ee02ba408ba451a",
+      "0x015a8507b42edd62bd82a12a59bdb9b9ae4b2c53c94bcadaa693a8c0c920718e035f849fd70e5d4c74cce782d3eb2096",
+      "0x1422202b89e51c324096d038174fdf2f1671b09ee9315054d000b500db4c992de5aa9b333a54d1b1cfc73069ee634c14",
+      "0x0af76bfd57821e779b7f2fbed3b314c5b3407be1b4a703396c2afa95e6465b46881b459aca082e72a4613b31b98f7467"
+    };
+
+    ECP2 expected = makePoint(testCasesResult);
+    assertTrue(point.ecp2Point().equals(expected));
+  }
+
+  // TODO: tests for equal/not equal
+
+  /* ==== Helper Functions ===================================================================== */
+
+  // This is the G2 cofactor as defined in the spec. It's too big for a BIG.
+  private static final long[] cofactor = {
+    0x05d543a95414e7f1L,
+    0x091d50792876a202L,
+    0xcd91de4547085abaL,
+    0xa68a205b2e5a7ddfL,
+    0xa628f1cb4d9e82efL,
+    0x21537e293a6691aeL,
+    0x1616ec6e786f0c70L,
+    0xcf1c38e31c7238e5L
+  };
+
   /**
    * Hacky conversion of array of long to array of 48 bytes for input into BIG.fromBytes()
    *
    * @param longs an array of upto 6 longs
-   * @return an array of 48 bytes
+   * @return the data in the longs as an array of 48 bytes
    */
   private static byte[] longsToBytes(long[] longs) {
     Bytes bytes = Bytes.EMPTY;
@@ -171,6 +219,7 @@ public class G2PointTest {
     FP2 y = new FP2(yRe, yIm);
     FP2 z = new FP2(zRe, zIm);
 
+    // Normalise the point (affine transformation) so that Z = 1
     FP2 one = new FP2(1);
     if (z.equals(one)) {
       x.reduce();
@@ -182,7 +231,12 @@ public class G2PointTest {
       x.reduce();
       y.mul(z);
       y.reduce();
-      return new ECP2(x, y);
+
+      // It should not be necessary to normaliseY here: is the test case wrong, or have I got
+      // normaliseY() implementation wrong?
+      // Turns out to be a bug in py_ecc: https://github.com/ethereum/eth2.0-specs/issues/508
+      // TODO: Check that this is fixed in the test suite sometime and remove normaliseY when it is.
+      return normaliseY(new ECP2(x, y));
     }
   }
 
@@ -195,7 +249,7 @@ public class G2PointTest {
    * @param point the point to be scaled
    * @param factor the scaling factor as an array of long
    */
-  static ECP2 scaleTestReference(ECP2 point, long[] factor) {
+  private static ECP2 scaleTestReference(ECP2 point, long[] factor) {
     Bytes padding = Bytes.wrap(new byte[40]);
     ECP2 sum = new ECP2();
     sum.inf(); // This is zero
@@ -217,6 +271,4 @@ public class G2PointTest {
     }
     return sum;
   }
-
-  // TODO: tests for equal/not equal
 }

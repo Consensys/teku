@@ -91,6 +91,15 @@ public final class Signature {
   }
 
   /**
+   * Create a random signature for testing
+   *
+   * @return a random, valid signature
+   */
+  public boolean isValidG2Point() {
+    return G2Point.isValid(point);
+  }
+
+  /**
    * Signature serialization
    *
    * @return byte array representation of the signature, not null
