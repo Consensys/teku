@@ -22,7 +22,8 @@ import java.util.List;
 import net.consensys.cava.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
-import tech.pegasys.artemis.statetransition.BeaconState;
+import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.statetransition.StateTransitionException;
 
 public class SlotProcessorUtil {

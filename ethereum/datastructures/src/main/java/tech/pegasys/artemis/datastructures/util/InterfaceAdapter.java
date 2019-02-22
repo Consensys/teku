@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.statetransition;
+package tech.pegasys.artemis.datastructures.util;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonDeserializationContext;

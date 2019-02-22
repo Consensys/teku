@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.statetransition;
+package tech.pegasys.artemis.datastructures.state;
 
 import com.google.common.primitives.UnsignedLong;
 import com.google.gson.Gson;
@@ -26,10 +26,7 @@ import net.consensys.cava.bytes.Bytes48;
 import net.consensys.cava.ssz.SSZ;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.datastructures.blocks.Eth1DataVote;
-import tech.pegasys.artemis.datastructures.state.Crosslink;
-import tech.pegasys.artemis.datastructures.state.Fork;
-import tech.pegasys.artemis.datastructures.state.PendingAttestation;
-import tech.pegasys.artemis.datastructures.state.Validator;
+import tech.pegasys.artemis.datastructures.util.InterfaceAdapter;
 
 public class BeaconState {
   // Misc

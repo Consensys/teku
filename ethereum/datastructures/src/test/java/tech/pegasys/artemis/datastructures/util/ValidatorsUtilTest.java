@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.statetransition.util;
+package tech.pegasys.artemis.datastructures.util;
 
 class ValidatorsUtilTest {
   // todo after v0.01 the Validator constructor has changed

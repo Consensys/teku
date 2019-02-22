@@ -16,7 +16,6 @@ package tech.pegasys.artemis.statetransition.util;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomDeposits;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomEth1Data;
-import static tech.pegasys.artemis.statetransition.util.BeaconStateUtil.get_total_effective_balance;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
@@ -27,8 +26,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
+import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Validator;
-import tech.pegasys.artemis.statetransition.BeaconState;
+import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
+import tech.pegasys.artemis.datastructures.util.ValidatorsUtil;
 
 @ExtendWith(BouncyCastleExtension.class)
 class EpochProcessingUtilTest {
@@ -218,7 +219,7 @@ class EpochProcessingUtilTest {
     List<Integer> before_active_validators =
         ValidatorsUtil.get_active_validator_indices(state.getValidator_registry(), currentEpoch);
     UnsignedLong before_total_balance =
-        get_total_effective_balance(state, before_active_validators);
+        BeaconStateUtil.get_total_effective_balance(state, before_active_validators);
 
     List<Validator> validators =
         ValidatorsUtil.get_active_validators(state.getValidator_registry(), currentEpoch);
@@ -233,7 +234,8 @@ class EpochProcessingUtilTest {
 
     List<Integer> after_active_validators =
         ValidatorsUtil.get_active_validator_indices(state.getValidator_registry(), currentEpoch);
-    UnsignedLong after_total_balance = get_total_effective_balance(state, after_active_validators);
+    UnsignedLong after_total_balance =
+        BeaconStateUtil.get_total_effective_balance(state, after_active_validators);
 
     int expected_num_validators = 24;
     UnsignedLong deposit_amount = UnsignedLong.valueOf(Constants.MAX_DEPOSIT_AMOUNT);

@@ -28,11 +28,13 @@ import org.apache.logging.log4j.Logger;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
+import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.pow.api.ChainStartEvent;
 import tech.pegasys.artemis.pow.api.ValidatorRegistrationEvent;
-import tech.pegasys.artemis.statetransition.util.BeaconStateUtil;
 import tech.pegasys.artemis.storage.ChainStorage;
 import tech.pegasys.artemis.storage.ChainStorageClient;
+import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 
 /** Class to manage the state tree and initiate state transitions */
 public class StateTreeManager {
@@ -55,13 +57,17 @@ public class StateTreeManager {
     LOG.info("ChainStart Event Detected");
     Boolean result = false;
     try {
-      this.state =
+      BeaconState initial_state =
           BeaconStateUtil.get_initial_beacon_state(
               randomDeposits(100),
               UnsignedLong.valueOf(Constants.GENESIS_SLOT),
               new Eth1Data(Bytes32.ZERO, Bytes32.ZERO));
-      result = true;
 
+      Bytes32 initial_state_root = HashTreeUtil.hash_tree_root(initial_state.toBytes());
+
+      BeaconBlock initial_block = BeaconBlock.createGenesis(initial_state_root);
+      this.storage.addProcessedBlock(initial_block.getState_root(), initial_block);
+      result = true;
     } catch (IllegalStateException e) {
       LOG.fatal("IllegalStateException thrown in StateTreeManager.java.");
       LOG.fatal(e.toString());
