@@ -84,16 +84,16 @@ public final class Signature {
    * Combines this signature with another signature, creating a new signature.
    *
    * @param signature the signature to combine with
-   * @return a new signature as combination of both signatures.
+   * @return a new signature as combination of both signatures
    */
   public Signature combine(Signature signature) {
     return new Signature(point.add(signature.point));
   }
 
   /**
-   * Create a random signature for testing
+   * Check whether the signature is a valid point on the curve
    *
-   * @return a random, valid signature
+   * @return true if the signature is a valid point, false otherwise
    */
   public boolean isValidG2Point() {
     return G2Point.isValid(point);

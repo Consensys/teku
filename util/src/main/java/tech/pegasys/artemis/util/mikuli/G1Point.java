@@ -105,10 +105,6 @@ final class G1Point implements Group<G1Point> {
     this.c = c1;
   }
 
-  // G1Point(ECP point) {
-  //   this.point = point;
-  // }
-
   @Override
   public G1Point add(G1Point other) {
     ECP sum = new ECP();

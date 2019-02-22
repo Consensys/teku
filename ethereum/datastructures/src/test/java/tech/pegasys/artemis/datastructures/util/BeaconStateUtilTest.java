@@ -17,6 +17,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomDepositInput;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomUnsignedLong;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomValidator;
 
@@ -35,9 +36,7 @@ import tech.pegasys.artemis.datastructures.operations.DepositInput;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.datastructures.state.Validator;
-import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.bls.BLSSignature;
-import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 
 @ExtendWith(BouncyCastleExtension.class)
 class BeaconStateUtilTest {
@@ -222,18 +221,11 @@ class BeaconStateUtilTest {
   @Test
   void processDepositAddsNewValidatorWhenPubkeyIsNotFoundInRegistry() {
     // Data Setup
-    BLSKeyPair keyPair = BLSKeyPair.random();
-    Bytes48 pubkey = keyPair.publicKeyAsBytes();
+    DepositInput depositInput = randomDepositInput();
+    Bytes48 pubkey = depositInput.getPubkey();
+    BLSSignature proofOfPossession = depositInput.getProof_of_possession();
+    Bytes32 withdrawalCredentials = depositInput.getWithdrawal_credentials();
     UnsignedLong amount = UnsignedLong.valueOf(100L);
-    Bytes32 withdrawalCredentials = Bytes32.random();
-    DepositInput proofOfPossessionData =
-        new DepositInput(pubkey, withdrawalCredentials, Constants.EMPTY_SIGNATURE);
-
-    BLSSignature proofOfPossession =
-        BLSSignature.sign(
-            keyPair,
-            HashTreeUtil.hash_tree_root(proofOfPossessionData.toBytes()),
-            Constants.DOMAIN_DEPOSIT);
 
     BeaconState beaconState = createBeaconState();
 
@@ -266,18 +258,11 @@ class BeaconStateUtilTest {
   @Test
   void processDepositTopsUpValidatorBalanceWhenPubkeyIsFoundInRegistry() {
     // Data Setup
-    BLSKeyPair keyPair = BLSKeyPair.random();
-    Bytes48 pubkey = keyPair.publicKeyAsBytes();
+    DepositInput depositInput = randomDepositInput();
+    Bytes48 pubkey = depositInput.getPubkey();
+    BLSSignature proofOfPossession = depositInput.getProof_of_possession();
+    Bytes32 withdrawalCredentials = depositInput.getWithdrawal_credentials();
     UnsignedLong amount = UnsignedLong.valueOf(100L);
-    Bytes32 withdrawalCredentials = Bytes32.random();
-    DepositInput proofOfPossessionData =
-        new DepositInput(pubkey, withdrawalCredentials, Constants.EMPTY_SIGNATURE);
-
-    BLSSignature proofOfPossession =
-        BLSSignature.sign(
-            keyPair,
-            HashTreeUtil.hash_tree_root(proofOfPossessionData.toBytes()),
-            Constants.DOMAIN_DEPOSIT);
 
     Validator knownValidator =
         new Validator(
