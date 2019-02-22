@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.util.bls;
 
+import java.lang.Exception;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.errorprone.annotations.MustBeClosed;
@@ -61,8 +62,8 @@ public class BLSTestSuite {
 
   @ParameterizedTest(name = "{index}. message hash to G2 uncompressed {0} -> {1}")
   @MethodSource("readMessageHashG2Uncompressed")
-  void testMessageHashToG2Uncompressed(String input, String output) {
-    ;
+  void testMessageHashToG2Uncompressed(String input, String output) throws Exception {
+    throw new Exception();
   }
 
   @MustBeClosed
@@ -81,32 +82,32 @@ public class BLSTestSuite {
 
   @MustBeClosed
   private static Stream<Arguments> readMessageHashG2Uncompressed() throws IOException {
-    return findTests("**/bls/test_bls.yaml", "case01_message_hash_G2_uncompressed");
+    return findTests("**/bls/test_bls.yml", "case01_message_hash_G2_uncompressed");
   }
 
   @MustBeClosed
   private static Stream<Arguments> readMessageHashG2Compressed() throws IOException {
-    return findTests("**/bls/test_bls.yaml", "case02_message_hash_G2_compressed");
+    return findTests("**/bls/test_bls.yml", "case02_message_hash_G2_compressed");
   }
 
   @MustBeClosed
   private static Stream<Arguments> readPrivateToPublicKey() throws IOException {
-    return findTests("**/bls/test_bls.yaml", "case03_private_to_public_key");
+    return findTests("**/bls/test_bls.yml", "case03_private_to_public_key");
   }
 
   @MustBeClosed
   private static Stream<Arguments> readSignMessages() throws IOException {
-    return findTests("**/bls/test_bls.yaml", "case04_sign_messages");
+    return findTests("**/bls/test_bls.yml", "case04_sign_messages");
   }
 
   @MustBeClosed
   private static Stream<Arguments> readAggregateSig() throws IOException {
-    return findTests("**/bls/test_bls.yaml", "case06_aggregate_sigs");
+    return findTests("**/bls/test_bls.yml", "case06_aggregate_sigs");
   }
 
   @MustBeClosed
   private static Stream<Arguments> readAggregatePubKeys() throws IOException {
-    return findTests("**/bls/test_bls.yaml", "case07_aggregate_pubkeys");
+    return findTests("**/bls/test_bls.yml", "case07_aggregate_pubkeys");
   }
 
   @SuppressWarnings({"unchecked", "rawtypes"})
