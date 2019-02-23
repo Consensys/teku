@@ -24,7 +24,14 @@ import tech.pegasys.artemis.util.mikuli.Signature;
 
 public final class BLSSignature {
 
-  /** Signs a message */
+  /**
+   * Create a signature by signing the given message and domain with the given private key
+   *
+   * @param keyPair the public and private key
+   * @param message ***This will change to the digest of the message***
+   * @param domain the signature domain as per the Eth2 spec
+   * @return the resulting signature
+   */
   public static BLSSignature sign(BLSKeyPair keyPair, Bytes message, long domain) {
     return new BLSSignature(
         BLS12381
@@ -33,16 +40,16 @@ public final class BLSSignature {
   }
 
   /**
-   * Creates a random, but valid, signature
+   * Create a random, but valid, signature
    *
-   * @return the signature
+   * @return a random signature
    */
   public static BLSSignature random() {
     return new BLSSignature(Signature.random());
   }
 
   /**
-   * Creates an empty signature (all zero bytes)
+   * Create an empty signature (all zero bytes) as defined in the Eth2 BLS spec
    *
    * <p>Due to the flags, this is not actually a valid signature, so we need some extra logic to
    * flag it as empty
@@ -103,7 +110,7 @@ public final class BLSSignature {
     return signature;
   }
 
-  public boolean isEmpty() {
+  boolean isEmpty() {
     return isEmpty;
   }
 
@@ -114,6 +121,7 @@ public final class BLSSignature {
 
   @Override
   public int hashCode() {
+    // TODO incorporate isEmpty into hashcode
     return signature.hashCode();
   }
 
