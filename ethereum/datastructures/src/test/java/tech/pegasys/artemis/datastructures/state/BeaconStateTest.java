@@ -463,7 +463,7 @@ class BeaconStateTest {
   }
 
   @Test
-  void rountripSSZ() {
+  void roundtripSSZ() {
     BeaconState state = newState(1);
     Bytes sszBeaconBlockBytes = state.toBytes();
     assertEquals(state, BeaconState.fromBytes(sszBeaconBlockBytes));

@@ -14,53 +14,51 @@
 package tech.pegasys.artemis.util.mikuli;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
-import net.consensys.cava.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 
 class SignatureTest {
 
-  private Signature signature = Signature.random();
-
-  // TODO: Check all these still make sense
   @Test
-  void equalsReturnsTrueWhenObjectsAreSame() {
-    Signature testBLSSignature = signature;
-
-    assertEquals(signature, testBLSSignature);
+  void succeedsWhenEqualsReturnsTrueForTheSameSignature() {
+    Signature signature = Signature.random();
+    assertEquals(signature, signature);
   }
 
   @Test
-  void equalsTrueWhenEncodedSignaturesAre192BytesLong() {
+  void succeedsWhenEqualsReturnsTrueForIdenticalSignatures() {
+    Signature signature = Signature.random();
+    Signature copyOfSignature = new Signature(signature);
+    assertEquals(signature, copyOfSignature);
+  }
+
+  @Test
+  void succeedsWhenEqualsReturnsFalseForDifferentSignatures() {
+    Signature signature1 = Signature.random();
+    Signature signature2 = Signature.random();
+    // Ensure that we have two different signatures, without assuming too much about .equals
+    while (signature1.g2Point().ecp2Point().equals(signature2.g2Point().ecp2Point())) {
+      signature2 = Signature.random();
+    }
+    assertNotEquals(signature1, signature2);
+  }
+
+  @Test
+  void succeedsWhenEncodedSignaturesAre192BytesLong() {
+    Signature signature = Signature.random();
     assertEquals(signature.encode().size(), 192);
   }
 
-  /* TODO: Fix these tests
-    @Test
-    void equalsReturnsTrueWhenObjectFieldsAreEqual() {
-      Signature testBLSSignature = Signature.decode(Bytes.concatenate(c0, c1));
-
-      assertEquals(signature, testBLSSignature);
-    }
-
-    @Test
-    void equalsReturnsFalseWhenC0IsDifferent() {
-      Signature testBLSSignature = Signature.decode(Bytes.concatenate(c0.not(), c1));
-
-      assertNotEquals(signature, testBLSSignature);
-    }
-
-    @Test
-    void equalsReturnsFalseWhenC1IsDifferent() {
-      Signature testBLSSignature = Signature.decode(Bytes.concatenate(c0, c1.not()));
-
-      assertNotEquals(signature, testBLSSignature);
-    }
-
-  */
   @Test
-  void roundtripSSZ() {
-    Bytes sszBLSSignatureBytes = signature.encode();
-    assertEquals(signature, Signature.decode(sszBLSSignatureBytes));
+  void roundtripEncodeDecode() {
+    Signature signature = Signature.random();
+    assertEquals(signature, Signature.decode(signature.encode()));
+  }
+
+  @Test
+  void roundtripEncodeDecodeCompressed() {
+    Signature signature = Signature.random();
+    assertEquals(signature, Signature.decodeCompressed(signature.encodeCompressed()));
   }
 }

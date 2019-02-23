@@ -44,7 +44,7 @@ import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.penalize_
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.process_deposit;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.slot_to_epoch;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.verify_slashable_attestation;
-import static tech.pegasys.artemis.util.bls.BLSVerify.bls_aggregate_pubkeys;
+import static tech.pegasys.artemis.util.bls.BLSAggregate.bls_aggregate_pubkeys;
 import static tech.pegasys.artemis.util.bls.BLSVerify.bls_verify;
 import static tech.pegasys.artemis.util.bls.BLSVerify.bls_verify_multiple;
 import static tech.pegasys.artemis.util.hashtree.HashTreeUtil.hash_tree_root;

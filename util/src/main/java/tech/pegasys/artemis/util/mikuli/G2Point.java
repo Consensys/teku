@@ -14,6 +14,7 @@
 package tech.pegasys.artemis.util.mikuli;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static tech.pegasys.artemis.util.mikuli.Util.calculateYFlag;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.security.SecureRandom;
@@ -24,7 +25,6 @@ import net.consensys.cava.crypto.Hash;
 import org.apache.milagro.amcl.BLS381.BIG;
 import org.apache.milagro.amcl.BLS381.ECP2;
 import org.apache.milagro.amcl.BLS381.FP2;
-import org.apache.milagro.amcl.BLS381.ROM;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 /**
@@ -58,14 +58,14 @@ final class G2Point implements Group<G2Point> {
   /**
    * Hashes to the G2 curve as described in the Eth2 spec
    *
-   * @param message
-   * @param domain
-   * @return
+   * @param message the message to be hashed. ***This will be changing to the message digest***
+   * @param domain the signature domain as defined in the Eth2 spec
+   * @return a point from the G2 group representing the message hash
    */
   // TODO: latest spec says that we pass Bytes32 messageHash in. But the test cases are older and
   // use the message itself
   // public static G2Point hashToG2(Bytes32 messageHash, long domain) {
-  public static G2Point hashToG2(Bytes message, long domain) {
+  static G2Point hashToG2(Bytes message, long domain) {
     Security.addProvider(new BouncyCastleProvider());
     Bytes domainBytes = Bytes.ofUnsignedLong(domain);
     Bytes padding = Bytes.wrap(new byte[16]);
@@ -162,6 +162,10 @@ final class G2Point implements Group<G2Point> {
 
   private final ECP2 point;
 
+  /**
+   * The following are the flags defined in the Eth2 BLS spec. There are also a2, b2 and c2 flags
+   * defined, but these are always zero, so we omit tem here
+   */
   // Bit 381 of the imaginary part of X. Equal to ((y_im * 2) / q == 1)
   private final boolean a1;
   // Bit 382 of the imaginary part of X. True only for the point at infinity.
@@ -171,10 +175,20 @@ final class G2Point implements Group<G2Point> {
 
   private static final int fpPointSize = BIG.MODBYTES;
 
+  /**
+   * Constructor for point that calculates the correct flags as per Eth2 Spec
+   *
+   * <p>Will throw an exception if an invalid point is specified. We don't want to crash since this
+   * may simply be due to bad data that has been sent to us, so the exception needs to be caught and
+   * handled higher up the stack.
+   *
+   * @param point the ec2p point
+   * @throws IllegalArgumentException if the point is not on the curve
+   */
   G2Point(ECP2 point) {
     this(
         point,
-        !point.is_infinity() && calculateA1flag(point.getY().getB()),
+        !point.is_infinity() && calculateYFlag(point.getY().getB()),
         point.is_infinity(),
         true);
   }
@@ -190,9 +204,9 @@ final class G2Point implements Group<G2Point> {
    * @param a1 the Y coordinate branch flag
    * @param b1 the infinity flag
    * @param c1 always true
-   * @throws IllegalArgumentException
+   * @throws IllegalArgumentException if the point is not on the curve or the flags are incorrect
    */
-  G2Point(ECP2 point, boolean a1, boolean b1, boolean c1) {
+  private G2Point(ECP2 point, boolean a1, boolean b1, boolean c1) {
     checkArgument(isValid(point, a1, b1, c1));
     this.point = point;
     this.a1 = a1;
@@ -255,33 +269,39 @@ final class G2Point implements Group<G2Point> {
    * @return the point
    */
   static G2Point fromBytesCompressed(Bytes bytes) {
-    byte[] xIm = bytes.slice(0, fpPointSize).toArray();
-    byte[] xRe = bytes.slice(fpPointSize, fpPointSize).toArray();
+    checkArgument(
+        bytes.size() == 2 * fpPointSize,
+        "Expected %s bytes but received %s",
+        2 * fpPointSize,
+        bytes.size());
+    byte[] xImBytes = bytes.slice(0, fpPointSize).toArray();
+    byte[] xReBytes = bytes.slice(fpPointSize, fpPointSize).toArray();
 
-    boolean a = (xIm[0] & (byte) (1 << 5)) != 0;
-    boolean b = (xIm[0] & (byte) (1 << 6)) != 0;
-    boolean c = (xIm[0] & (byte) (1 << 7)) != 0;
-    xIm[0] &= (byte) 31;
+    boolean a = (xImBytes[0] & (byte) (1 << 5)) != 0;
+    boolean b = (xImBytes[0] & (byte) (1 << 6)) != 0;
+    boolean c = (xImBytes[0] & (byte) (1 << 7)) != 0;
+    xImBytes[0] &= (byte) 31;
+    checkArgument(
+        (xReBytes[0] & (byte) 224) == 0, "The input has non-zero a2, b2 or c2 flag on xRe");
 
-    ECP2 point = new ECP2(new FP2(BIG.fromBytes(xRe), BIG.fromBytes(xIm)));
+    ECP2 point = new ECP2(new FP2(BIG.fromBytes(xReBytes), BIG.fromBytes(xImBytes)));
 
     // Did we get the right branch of the sqrt?
-    if (!point.is_infinity() && a != calculateA1flag(point.getY().getB())) {
+    if (!point.is_infinity() && a != calculateYFlag(point.getY().getB())) {
       // We didn't: so choose the other branch of the sqrt.
       FP2 x = point.getX();
-      FP2 y1 = point.getY();
-      FP2 y2 = new FP2(y1);
-      y2.neg();
-      point = new ECP2(x, y2);
+      FP2 yneg = point.getY();
+      yneg.neg();
+      point = new ECP2(x, yneg);
     }
 
-    return new G2Point(point);
+    return new G2Point(point, a, b, c);
   }
 
   /**
-   * Check the validity of a G2 point according to the Eth2 spec.
+   * Check the validity of a G2 point according to the Eth2 spec
    *
-   * @return true if this is a valid point
+   * @return true if the given point and its flags are valid according to the Eth2 spec
    */
   static boolean isValid(G2Point point) {
     return isValid(point.ecp2Point(), point.a1, point.b1, point.c1);
@@ -292,7 +312,8 @@ final class G2Point implements Group<G2Point> {
    *
    * @return true if point is consistent with the flags
    */
-  private static boolean isValid(ECP2 point, boolean a1, boolean b1, boolean c1) {
+  @VisibleForTesting
+  static boolean isValid(ECP2 point, boolean a1, boolean b1, boolean c1) {
     BIG xRe = point.getX().getA();
     BIG xIm = point.getX().getB();
     BIG yIm = point.getY().getB();
@@ -305,33 +326,21 @@ final class G2Point implements Group<G2Point> {
     }
 
     // Point at infinity
+    if (b1 != point.is_infinity()) {
+      return false;
+    }
     if (b1) {
       return (!a1 && xRe.iszilch() && xIm.iszilch());
     }
 
     // Check that we have the right branch for Y
-    if (a1 != calculateA1flag(yIm)) {
+    if (a1 != calculateYFlag(yIm)) {
       return false;
     }
 
     // Check that both X and Y are on the curve
     ECP2 newPoint = new ECP2(point.getX(), point.getY());
     return point.equals(newPoint);
-  }
-
-  /**
-   * Calculate (y_im * 2) // q (which corresponds to the a1 flag)
-   *
-   * <p>This is used to disambiguate Y, given X, as per the spec. q is the curve modulus.
-   *
-   * @param yIm the imaginary part of the Y coordinate of the point
-   * @return true if the a1 flag and yIm correspond
-   */
-  private static boolean calculateA1flag(BIG yIm) {
-    BIG tmp = new BIG(yIm);
-    tmp.add(yIm);
-    tmp.div(new BIG(ROM.Modulus));
-    return tmp.isunity();
   }
 
   ECP2 ecp2Point() {
@@ -372,5 +381,19 @@ final class G2Point implements Group<G2Point> {
     result = prime * result + (int) (xb ^ (xb >>> 32));
     result = prime * result + (int) (yb ^ (yb >>> 32));
     return result;
+  }
+
+  // Getters used only for testing
+
+  boolean getA1() {
+    return a1;
+  }
+
+  boolean getB1() {
+    return b1;
+  }
+
+  boolean getC1() {
+    return c1;
   }
 }

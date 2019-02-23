@@ -21,6 +21,15 @@ import net.consensys.cava.bytes.Bytes;
 public final class PublicKey {
 
   /**
+   * Generates a random, valid public key
+   *
+   * @return PublicKey The public key, not null
+   */
+  public static PublicKey random() {
+    return KeyPair.random().publicKey();
+  }
+
+  /**
    * Aggregates list of PublicKey pairs
    *
    * @param keys The list of public keys to aggregate, not null
@@ -51,7 +60,7 @@ public final class PublicKey {
    * @return a valid public key
    */
   public static PublicKey fromBytes(Bytes bytes) {
-    G1Point point = G1Point.fromBytes(bytes);
+    G1Point point = G1Point.fromBytesCompressed(bytes);
     return new PublicKey(point);
   }
 
@@ -80,7 +89,7 @@ public final class PublicKey {
    * @return byte array representation of the public key
    */
   public Bytes toBytes() {
-    return point.toBytes();
+    return point.toBytesCompressed();
   }
 
   G1Point g1Point() {
