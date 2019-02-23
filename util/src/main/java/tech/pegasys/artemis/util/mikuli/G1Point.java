@@ -16,6 +16,8 @@ package tech.pegasys.artemis.util.mikuli;
 import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.artemis.util.mikuli.Util.calculateYFlag;
 
+import com.google.common.annotations.VisibleForTesting;
+import java.security.SecureRandom;
 import java.util.Objects;
 import net.consensys.cava.bytes.Bytes;
 import org.apache.milagro.amcl.BLS381.BIG;
@@ -27,6 +29,26 @@ import org.apache.milagro.amcl.BLS381.FP;
  * numbers mod some prime p. The curve is defined by: y^2 = x^3 + 4
  */
 final class G1Point implements Group<G1Point> {
+
+  /**
+   * Generate a random point on the curve
+   *
+   * @return a random point on the curve.
+   */
+  public static G1Point random() {
+    SecureRandom rng = new SecureRandom();
+    ECP point;
+    byte[] xBytes = new byte[48];
+
+    // Repeatedly choose random X coords until one is on the curve. This generally takes only a
+    // couple of attempts.
+    do {
+      rng.nextBytes(xBytes);
+      point = new ECP(BIG.fromBytes(xBytes));
+    } while (point.is_infinity());
+
+    return new G1Point(point);
+  }
 
   static G1Point fromBytes(Bytes bytes) {
     return new G1Point(ECP.fromBytes(bytes.toArrayUnsafe()));
@@ -147,7 +169,7 @@ final class G1Point implements Group<G1Point> {
     xBytes[0] &= mask;
     xBytes[0] |= flags;
 
-    return Bytes.concatenate(Bytes.wrap(xBytes));
+    return Bytes.wrap(xBytes);
   }
 
   /**
@@ -164,7 +186,8 @@ final class G1Point implements Group<G1Point> {
    *
    * @return true if point is consistent with the flags
    */
-  private static boolean isValid(ECP point, boolean a, boolean b, boolean c) {
+  @VisibleForTesting
+  static boolean isValid(ECP point, boolean a, boolean b, boolean c) {
     BIG x = point.getX();
     BIG y = point.getY();
 
@@ -227,5 +250,19 @@ final class G1Point implements Group<G1Point> {
     }
     G1Point other = (G1Point) obj;
     return point.equals(other.point) && a == other.a && b == other.b && c == other.c;
+  }
+
+  // Getters used only for testing
+
+  boolean getA() {
+    return a;
+  }
+
+  boolean getB() {
+    return b;
+  }
+
+  boolean getC() {
+    return c;
   }
 }

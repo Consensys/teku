@@ -15,9 +15,11 @@ package tech.pegasys.artemis.util.bls;
 
 import java.util.Objects;
 import net.consensys.cava.bytes.Bytes;
+import net.consensys.cava.bytes.Bytes48;
 import net.consensys.cava.ssz.SSZ;
 import tech.pegasys.artemis.util.mikuli.BLS12381;
 import tech.pegasys.artemis.util.mikuli.KeyPair;
+import tech.pegasys.artemis.util.mikuli.PublicKey;
 import tech.pegasys.artemis.util.mikuli.Signature;
 
 public final class BLSSignature {
@@ -42,21 +44,40 @@ public final class BLSSignature {
   /**
    * Creates an empty signature (all zero bytes)
    *
-   * @return the signature
+   * <p>Due to the flags, this is not actually a valid signature, so we need some extra logic to
+   * flag it as empty
+   *
+   * @return the empty signature as per the Eth2 spec
    */
   public static BLSSignature empty() {
-    return new BLSSignature(Signature.decode(Bytes.of(new byte[192])));
+    BLSSignature signature = new BLSSignature(Signature.decode(Bytes.of(new byte[192])));
+    signature.isEmpty = true;
+    return signature;
   }
 
   public static BLSSignature fromBytes(Bytes bytes) {
+    // TODO: this doesn't handle the empty signature. Do we ever need to SSZ deserialise this?
     return SSZ.decode(
         bytes, reader -> new BLSSignature(Signature.decodeCompressed(reader.readBytes())));
   }
 
-  private Signature signature;
+  private final Signature signature;
+  private boolean isEmpty = false;
 
   public BLSSignature(Signature signature) {
     this.signature = signature;
+  }
+
+  /**
+   * Verify the signature against the given public key, message and domain
+   *
+   * @param publicKey the public key of the key pair that signed the message
+   * @param message the message
+   * @param domain the domain as specified in the Eth2 spec
+   * @return true if the signature is valid, false if it is not
+   */
+  boolean checkSignature(Bytes48 publicKey, Bytes message, long domain) {
+    return !isEmpty && BLS12381.verify(PublicKey.fromBytes(publicKey), signature, message, domain);
   }
 
   /**
@@ -65,14 +86,25 @@ public final class BLSSignature {
    * @return the serialisation of the compressed form of the signature.
    */
   public Bytes toBytes() {
-    return SSZ.encode(
-        writer -> {
-          writer.writeBytes(signature.encodeCompressed());
-        });
+    if (isEmpty) {
+      return SSZ.encode(
+          writer -> {
+            writer.writeBytes(Bytes.wrap(new byte[96]));
+          });
+    } else {
+      return SSZ.encode(
+          writer -> {
+            writer.writeBytes(signature.encodeCompressed());
+          });
+    }
   }
 
   public Signature getSignature() {
     return signature;
+  }
+
+  public boolean isEmpty() {
+    return isEmpty;
   }
 
   @Override

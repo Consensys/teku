@@ -33,7 +33,7 @@ public class BLSPublicKey {
     this.publicKey = publicKey;
   }
 
-  public PublicKey getPublicKey() {
+  PublicKey getPublicKey() {
     return publicKey;
   }
 }

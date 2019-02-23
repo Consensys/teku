@@ -185,7 +185,7 @@ final class G2Point implements Group<G2Point> {
    * @param point the ec2p point
    * @throws IllegalArgumentException if the point is not on the curve
    */
-  private G2Point(ECP2 point) {
+  G2Point(ECP2 point) {
     this(
         point,
         !point.is_infinity() && calculateYFlag(point.getY().getB()),
@@ -299,9 +299,9 @@ final class G2Point implements Group<G2Point> {
   }
 
   /**
-   * Check the validity of a G2 point according to the Eth2 spec.
+   * Check the validity of a G2 point according to the Eth2 spec
    *
-   * @return true if this is a valid point
+   * @return true if the given point and its flags are valid according to the Eth2 spec
    */
   static boolean isValid(G2Point point) {
     return isValid(point.ecp2Point(), point.a1, point.b1, point.c1);
@@ -312,7 +312,8 @@ final class G2Point implements Group<G2Point> {
    *
    * @return true if point is consistent with the flags
    */
-  private static boolean isValid(ECP2 point, boolean a1, boolean b1, boolean c1) {
+  @VisibleForTesting
+  static boolean isValid(ECP2 point, boolean a1, boolean b1, boolean c1) {
     BIG xRe = point.getX().getA();
     BIG xIm = point.getX().getB();
     BIG yIm = point.getY().getB();
@@ -380,5 +381,19 @@ final class G2Point implements Group<G2Point> {
     result = prime * result + (int) (xb ^ (xb >>> 32));
     result = prime * result + (int) (yb ^ (yb >>> 32));
     return result;
+  }
+
+  // Getters used only for testing
+
+  boolean getA1() {
+    return a1;
+  }
+
+  boolean getB1() {
+    return b1;
+  }
+
+  boolean getC1() {
+    return c1;
   }
 }

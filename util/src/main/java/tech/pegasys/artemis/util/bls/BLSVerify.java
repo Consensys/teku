@@ -18,14 +18,12 @@ import java.util.List;
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.bytes.Bytes48;
-import tech.pegasys.artemis.util.mikuli.BLS12381;
-import tech.pegasys.artemis.util.mikuli.PublicKey;
 
 public class BLSVerify {
 
   public static boolean bls_verify(
       Bytes48 pubkey, Bytes message, BLSSignature signature, UnsignedLong domain) {
-    return blsVerify(pubkey, message, signature, domain.longValue());
+    return signature.checkSignature(pubkey, message, domain.longValue());
   }
 
   public static boolean bls_verify_multiple(
@@ -35,11 +33,5 @@ public class BLSVerify {
       UnsignedLong domain) {
     // todo
     return true;
-  }
-
-  private static boolean blsVerify(
-      Bytes48 publicKey, Bytes message, BLSSignature signature, long domain) {
-    return BLS12381.verify(
-        PublicKey.fromBytes(publicKey), signature.getSignature(), message, domain);
   }
 }

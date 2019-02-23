@@ -70,14 +70,27 @@ public final class Signature {
     KeyPair keyPair = KeyPair.random();
     byte[] message = "Hello, world!".getBytes(UTF_8);
     SignatureAndPublicKey sigAndPubKey = BLS12381.sign(keyPair, message, 48);
-
     return sigAndPubKey.signature();
   }
 
   private final G2Point point;
 
+  /**
+   * Construct signature from a given G2 point
+   *
+   * @param point the G2 point corresponding to the signature
+   */
   Signature(G2Point point) {
     this.point = point;
+  }
+
+  /**
+   * Construct a copy of a signature
+   *
+   * @param signature the signature to be copied
+   */
+  Signature(Signature signature) {
+    this.point = signature.point;
   }
 
   /**
@@ -88,15 +101,6 @@ public final class Signature {
    */
   public Signature combine(Signature signature) {
     return new Signature(point.add(signature.point));
-  }
-
-  /**
-   * Check whether the signature is a valid point on the curve
-   *
-   * @return true if the signature is a valid point, false otherwise
-   */
-  public boolean isValidG2Point() {
-    return G2Point.isValid(point);
   }
 
   /**

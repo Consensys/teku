@@ -77,10 +77,9 @@ public final class BLS12381 {
       PublicKey publicKey, Signature signature, Bytes message, long domain) {
     G1Point g1Generator = KeyPair.g1Generator;
 
-    if (!signature.isValidG2Point()) {
+    if (!G2Point.isValid(signature.g2Point()) || !G1Point.isValid(publicKey.g1Point())) {
       return false;
     }
-    // TODO: Check that G1 point of publicKey is valid. need to put flags into G1Point definition
 
     G2Point hashInGroup2 = hashFunction(message, domain);
     GTPoint e1 = AtePairing.pair(publicKey.g1Point(), hashInGroup2);

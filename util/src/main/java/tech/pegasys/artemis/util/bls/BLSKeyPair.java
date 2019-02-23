@@ -48,7 +48,12 @@ public class BLSKeyPair {
     return blsSecretKey.getSecretKey();
   }
 
+  // TODO: find out why this causes the deepCopyBeaconState test to fail
+  public Bytes48 publicKeyAsBytesBroken() {
+    return Bytes48.wrap(publicKey().toBytes());
+  }
+
   public Bytes48 publicKeyAsBytes() {
-    return Bytes48.wrap(Bytes48.leftPad(publicKey().toBytes()));
+    return Bytes48.wrap(publicKey().toBytes()).copy();
   }
 }
