@@ -26,8 +26,11 @@ import java.util.List;
 import java.util.Objects;
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
+import net.consensys.cava.junit.BouncyCastleExtension;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
+@ExtendWith(BouncyCastleExtension.class)
 class DepositTest {
 
   private List<Bytes32> branch =

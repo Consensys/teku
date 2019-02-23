@@ -17,6 +17,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomDepositInput;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomUnsignedLong;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomValidator;
 
@@ -31,6 +32,7 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import tech.pegasys.artemis.datastructures.Constants;
+import tech.pegasys.artemis.datastructures.operations.DepositInput;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.datastructures.state.Validator;
@@ -219,10 +221,11 @@ class BeaconStateUtilTest {
   @Test
   void processDepositAddsNewValidatorWhenPubkeyIsNotFoundInRegistry() {
     // Data Setup
-    Bytes48 pubkey = Bytes48.random();
+    DepositInput depositInput = randomDepositInput();
+    Bytes48 pubkey = depositInput.getPubkey();
+    BLSSignature proofOfPossession = depositInput.getProof_of_possession();
+    Bytes32 withdrawalCredentials = depositInput.getWithdrawal_credentials();
     UnsignedLong amount = UnsignedLong.valueOf(100L);
-    BLSSignature proofOfPossession = Constants.EMPTY_SIGNATURE;
-    Bytes32 withdrawalCredentials = Bytes32.random();
 
     BeaconState beaconState = createBeaconState();
 
@@ -255,10 +258,11 @@ class BeaconStateUtilTest {
   @Test
   void processDepositTopsUpValidatorBalanceWhenPubkeyIsFoundInRegistry() {
     // Data Setup
-    Bytes48 pubkey = Bytes48.random();
+    DepositInput depositInput = randomDepositInput();
+    Bytes48 pubkey = depositInput.getPubkey();
+    BLSSignature proofOfPossession = depositInput.getProof_of_possession();
+    Bytes32 withdrawalCredentials = depositInput.getWithdrawal_credentials();
     UnsignedLong amount = UnsignedLong.valueOf(100L);
-    BLSSignature proofOfPossession = Constants.EMPTY_SIGNATURE;
-    Bytes32 withdrawalCredentials = Bytes32.random();
 
     Validator knownValidator =
         new Validator(
@@ -339,7 +343,11 @@ class BeaconStateUtilTest {
       boolean addToList, UnsignedLong amount, Validator knownValidator) {
     BeaconState beaconState = new BeaconState();
     beaconState.setSlot(randomUnsignedLong());
-    beaconState.setFork(new Fork(randomUnsignedLong(), randomUnsignedLong(), randomUnsignedLong()));
+    beaconState.setFork(
+        new Fork(
+            UnsignedLong.valueOf(Constants.GENESIS_FORK_VERSION),
+            UnsignedLong.valueOf(Constants.GENESIS_FORK_VERSION),
+            UnsignedLong.valueOf(Constants.GENESIS_EPOCH)));
 
     List<Validator> validatorList =
         new ArrayList<>(Arrays.asList(randomValidator(), randomValidator(), randomValidator()));

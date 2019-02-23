@@ -21,8 +21,11 @@ import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomU
 import com.google.common.primitives.UnsignedLong;
 import java.util.Objects;
 import net.consensys.cava.bytes.Bytes;
+import net.consensys.cava.junit.BouncyCastleExtension;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
+@ExtendWith(BouncyCastleExtension.class)
 class DepositDataTest {
 
   private UnsignedLong amount = randomUnsignedLong();

@@ -15,38 +15,76 @@ package tech.pegasys.artemis.util.bls;
 
 import java.util.Objects;
 import net.consensys.cava.bytes.Bytes;
+import net.consensys.cava.bytes.Bytes48;
 import net.consensys.cava.ssz.SSZ;
+import tech.pegasys.artemis.util.mikuli.BLS12381;
+import tech.pegasys.artemis.util.mikuli.KeyPair;
+import tech.pegasys.artemis.util.mikuli.PublicKey;
 import tech.pegasys.artemis.util.mikuli.Signature;
 
 public final class BLSSignature {
 
   /**
-   * Creates a random, but valid, signature
+   * Create a signature by signing the given message and domain with the given private key
    *
-   * @return the signature
+   * @param keyPair the public and private key
+   * @param message ***This will change to the digest of the message***
+   * @param domain the signature domain as per the Eth2 spec
+   * @return the resulting signature
+   */
+  public static BLSSignature sign(BLSKeyPair keyPair, Bytes message, long domain) {
+    return new BLSSignature(
+        BLS12381
+            .sign(new KeyPair(keyPair.secretKey(), keyPair.publicKey()), message, domain)
+            .signature());
+  }
+
+  /**
+   * Create a random, but valid, signature
+   *
+   * @return a random signature
    */
   public static BLSSignature random() {
     return new BLSSignature(Signature.random());
   }
 
   /**
-   * Creates an empty signature (all zero bytes)
+   * Create an empty signature (all zero bytes) as defined in the Eth2 BLS spec
    *
-   * @return the signature
+   * <p>Due to the flags, this is not actually a valid signature, so we need some extra logic to
+   * flag it as empty
+   *
+   * @return the empty signature as per the Eth2 spec
    */
   public static BLSSignature empty() {
-    return new BLSSignature(Signature.decode(Bytes.of(new byte[192])));
+    BLSSignature signature = new BLSSignature(Signature.decode(Bytes.of(new byte[192])));
+    signature.isEmpty = true;
+    return signature;
   }
 
   public static BLSSignature fromBytes(Bytes bytes) {
+    // TODO: this doesn't handle the empty signature. Do we ever need to SSZ deserialise this?
     return SSZ.decode(
         bytes, reader -> new BLSSignature(Signature.decodeCompressed(reader.readBytes())));
   }
 
-  private Signature signature;
+  private final Signature signature;
+  private boolean isEmpty = false;
 
   public BLSSignature(Signature signature) {
     this.signature = signature;
+  }
+
+  /**
+   * Verify the signature against the given public key, message and domain
+   *
+   * @param publicKey the public key of the key pair that signed the message
+   * @param message the message
+   * @param domain the domain as specified in the Eth2 spec
+   * @return true if the signature is valid, false if it is not
+   */
+  boolean checkSignature(Bytes48 publicKey, Bytes message, long domain) {
+    return !isEmpty && BLS12381.verify(PublicKey.fromBytes(publicKey), signature, message, domain);
   }
 
   /**
@@ -55,10 +93,25 @@ public final class BLSSignature {
    * @return the serialisation of the compressed form of the signature.
    */
   public Bytes toBytes() {
-    return SSZ.encode(
-        writer -> {
-          writer.writeBytes(signature.encodeCompressed());
-        });
+    if (isEmpty) {
+      return SSZ.encode(
+          writer -> {
+            writer.writeBytes(Bytes.wrap(new byte[96]));
+          });
+    } else {
+      return SSZ.encode(
+          writer -> {
+            writer.writeBytes(signature.encodeCompressed());
+          });
+    }
+  }
+
+  public Signature getSignature() {
+    return signature;
+  }
+
+  boolean isEmpty() {
+    return isEmpty;
   }
 
   @Override
@@ -68,6 +121,7 @@ public final class BLSSignature {
 
   @Override
   public int hashCode() {
+    // TODO incorporate isEmpty into hashcode
     return signature.hashCode();
   }
 

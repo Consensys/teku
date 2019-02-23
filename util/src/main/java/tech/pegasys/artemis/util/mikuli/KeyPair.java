@@ -31,9 +31,7 @@ public final class KeyPair {
    * @return a new random key pair
    */
   public static KeyPair random() {
-    // TODO: this always generates the same "random" number. Fix it.
     RAND rng = new RAND();
-    // TODO: this "fixes" it, but there may be a more elegant way
     byte[] b = new byte[128];
     SecureRandom srng = new SecureRandom();
     srng.nextBytes(b);
@@ -49,7 +47,7 @@ public final class KeyPair {
   private final SecretKey secretKey;
   private final PublicKey publicKey;
 
-  private KeyPair(SecretKey secretKey, PublicKey publicKey) {
+  public KeyPair(SecretKey secretKey, PublicKey publicKey) {
     this.secretKey = secretKey;
     this.publicKey = publicKey;
   }
