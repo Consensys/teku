@@ -13,18 +13,17 @@
 
 package tech.pegasys.artemis.util.bls;
 
-import java.util.List;
-import net.consensys.cava.bytes.Bytes48;
+import tech.pegasys.artemis.util.mikuli.SecretKey;
 
-public class BLSAggregate {
+public class BLSSecretKey {
 
-  public static Bytes48 bls_aggregate_pubkeys(List<Bytes48> pubkeys) {
-    // todo
-    return Bytes48.ZERO;
+  private SecretKey secretKey;
+
+  BLSSecretKey(SecretKey secretKey) {
+    this.secretKey = secretKey;
   }
 
-  public static Bytes48[] bls_aggregate_signatures(List<Bytes48> signatures) {
-    // todo
-    return new Bytes48[] {Bytes48.ZERO};
+  SecretKey getSecretKey() {
+    return secretKey;
   }
 }

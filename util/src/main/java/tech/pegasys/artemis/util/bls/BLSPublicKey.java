@@ -13,18 +13,27 @@
 
 package tech.pegasys.artemis.util.bls;
 
-import java.util.List;
 import net.consensys.cava.bytes.Bytes48;
+import tech.pegasys.artemis.util.mikuli.PublicKey;
 
-public class BLSAggregate {
+public class BLSPublicKey {
 
-  public static Bytes48 bls_aggregate_pubkeys(List<Bytes48> pubkeys) {
-    // todo
-    return Bytes48.ZERO;
+  /**
+   * Generates a compressed, serialised, random, valid public key
+   *
+   * @return PublicKey The public key, not null
+   */
+  public static Bytes48 random() {
+    return Bytes48.wrap(PublicKey.random().toBytes());
   }
 
-  public static Bytes48[] bls_aggregate_signatures(List<Bytes48> signatures) {
-    // todo
-    return new Bytes48[] {Bytes48.ZERO};
+  private PublicKey publicKey;
+
+  BLSPublicKey(PublicKey publicKey) {
+    this.publicKey = publicKey;
+  }
+
+  PublicKey getPublicKey() {
+    return publicKey;
   }
 }
