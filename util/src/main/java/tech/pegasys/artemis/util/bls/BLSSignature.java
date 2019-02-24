@@ -63,6 +63,9 @@ public final class BLSSignature {
   /**
    * Creates an empty signature (all zero bytes)
    *
+   * <p>Due to the flags, this is not actually a valid signature, so we use null to flag that the
+   * signature is empty.
+   *
    * @return the empty signature as per the Eth2 spec
    */
   public static BLSSignature empty() {
