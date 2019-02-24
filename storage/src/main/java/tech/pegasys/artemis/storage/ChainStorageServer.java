@@ -25,7 +25,6 @@ public class ChainStorageServer extends ChainStorageClient implements ChainStora
 
   public ChainStorageServer(EventBus eventBus) {
     this.eventBus = eventBus;
-    this.eventBus.register(this);
   }
 
   @Subscribe
