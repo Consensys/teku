@@ -17,18 +17,47 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import net.consensys.cava.bytes.Bytes;
-import org.junit.jupiter.api.Disabled;
+import net.consensys.cava.bytes.Bytes48;
 import org.junit.jupiter.api.Test;
 
-public class BLSSignatureTest {
+class BLSSignatureTest {
+
+  // Tests for BLSEmptySignature subclass
+
+  @Test
+  void succeedsWhenEqualsReturnsTrueForTheSameEmptySignature() {
+    BLSEmptySignature signature = new BLSEmptySignature();
+    assertEquals(signature, signature);
+  }
+
+  @Test
+  void succeedsWhenEqualsReturnsTrueForTwoEmptySignatures() {
+    BLSEmptySignature signature1 = new BLSEmptySignature();
+    BLSEmptySignature signature2 = new BLSEmptySignature();
+    assertEquals(signature1, signature2);
+  }
+
+  @Test
+  void succeedsWhenCallingCheckSignatureOnEmptySignatureThrowsRuntimeException() {
+    BLSEmptySignature signature = new BLSEmptySignature();
+    assertThrows(
+        RuntimeException.class,
+        () -> signature.checkSignature(Bytes48.random(), Bytes.wrap("Test".getBytes(UTF_8)), 0));
+  }
+
+  @Test
+  void succeedsWhenCallingGetSignatureOnEmptySignatureThrowsRuntimeException() {
+    BLSEmptySignature signature = new BLSEmptySignature();
+    assertThrows(RuntimeException.class, () -> signature.getSignature());
+  }
 
   @Test
   void succeedsIfEmptySignatureIsCorrectlyFormed() {
-    BLSSignature emptySignature = BLSSignature.empty();
-    assertTrue(emptySignature.isEmpty());
+    BLSEmptySignature emptySignature = new BLSEmptySignature();
     // SSZ prepends the length as four little-endian bytes
     assertEquals(
         "0x60000000"
@@ -38,11 +67,7 @@ public class BLSSignatureTest {
         emptySignature.toBytes().toHexString());
   }
 
-  @Test
-  void succeedsIfValidSignatureIsNotEmpty() {
-    BLSSignature signature = BLSSignature.random();
-    assertTrue(!signature.isEmpty());
-  }
+  // Tests for BLSSignature class
 
   @Test
   void succeedsWhenEqualsReturnsTrueForTheSameSignature() {
@@ -113,15 +138,6 @@ public class BLSSignatureTest {
   @Test
   void succeedsWhenSSZDecodeEncodeReturnsTheSameSignature() {
     BLSSignature signature1 = BLSSignature.random();
-    BLSSignature signature2 = BLSSignature.fromBytes(signature1.toBytes());
-    assertEquals(signature1, signature2);
-  }
-
-  @Test
-  @Disabled
-  // This is not yet implemented
-  void succeedsWhenSSZDecodeEncodeReturnsTheSameSignatureForTheEmptySignature() {
-    BLSSignature signature1 = BLSSignature.empty();
     BLSSignature signature2 = BLSSignature.fromBytes(signature1.toBytes());
     assertEquals(signature1, signature2);
   }

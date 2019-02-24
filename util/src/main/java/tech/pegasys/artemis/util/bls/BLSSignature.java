@@ -22,7 +22,7 @@ import tech.pegasys.artemis.util.mikuli.KeyPair;
 import tech.pegasys.artemis.util.mikuli.PublicKey;
 import tech.pegasys.artemis.util.mikuli.Signature;
 
-public final class BLSSignature {
+public class BLSSignature {
 
   /**
    * Create a signature by signing the given message and domain with the given private key
@@ -48,31 +48,19 @@ public final class BLSSignature {
     return new BLSSignature(Signature.random());
   }
 
-  /**
-   * Create an empty signature (all zero bytes) as defined in the Eth2 BLS spec
-   *
-   * <p>Due to the flags, this is not actually a valid signature, so we need some extra logic to
-   * flag it as empty
-   *
-   * @return the empty signature as per the Eth2 spec
-   */
-  public static BLSSignature empty() {
-    BLSSignature signature = new BLSSignature(Signature.decode(Bytes.of(new byte[192])));
-    signature.isEmpty = true;
-    return signature;
-  }
-
   public static BLSSignature fromBytes(Bytes bytes) {
-    // TODO: this doesn't handle the empty signature. Do we ever need to SSZ deserialise this?
     return SSZ.decode(
         bytes, reader -> new BLSSignature(Signature.decodeCompressed(reader.readBytes())));
   }
 
   private final Signature signature;
-  private boolean isEmpty = false;
 
   public BLSSignature(Signature signature) {
     this.signature = signature;
+  }
+
+  public BLSSignature() {
+    this.signature = Signature.random();
   }
 
   /**
@@ -84,7 +72,7 @@ public final class BLSSignature {
    * @return true if the signature is valid, false if it is not
    */
   boolean checkSignature(Bytes48 publicKey, Bytes message, long domain) {
-    return !isEmpty && BLS12381.verify(PublicKey.fromBytes(publicKey), signature, message, domain);
+    return BLS12381.verify(PublicKey.fromBytes(publicKey), signature, message, domain);
   }
 
   /**
@@ -93,25 +81,14 @@ public final class BLSSignature {
    * @return the serialisation of the compressed form of the signature.
    */
   public Bytes toBytes() {
-    if (isEmpty) {
-      return SSZ.encode(
-          writer -> {
-            writer.writeBytes(Bytes.wrap(new byte[96]));
-          });
-    } else {
-      return SSZ.encode(
-          writer -> {
-            writer.writeBytes(signature.encodeCompressed());
-          });
-    }
+    return SSZ.encode(
+        writer -> {
+          writer.writeBytes(signature.encodeCompressed());
+        });
   }
 
   public Signature getSignature() {
     return signature;
-  }
-
-  boolean isEmpty() {
-    return isEmpty;
   }
 
   @Override
@@ -121,7 +98,6 @@ public final class BLSSignature {
 
   @Override
   public int hashCode() {
-    // TODO incorporate isEmpty into hashcode
     return signature.hashCode();
   }
 
