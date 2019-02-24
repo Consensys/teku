@@ -17,13 +17,35 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import net.consensys.cava.bytes.Bytes;
-import org.junit.jupiter.api.Disabled;
+import net.consensys.cava.bytes.Bytes48;
 import org.junit.jupiter.api.Test;
 
-public class BLSSignatureTest {
+class BLSSignatureTest {
+
+  @Test
+  void succeedsWhenEqualsReturnsTrueForTheSameEmptySignature() {
+    BLSSignature signature = BLSSignature.empty();
+    assertEquals(signature, signature);
+  }
+
+  @Test
+  void succeedsWhenEqualsReturnsTrueForTwoEmptySignatures() {
+    BLSSignature signature1 = BLSSignature.empty();
+    BLSSignature signature2 = BLSSignature.empty();
+    assertEquals(signature1, signature2);
+  }
+
+  @Test
+  void succeedsWhenCallingCheckSignatureOnEmptySignatureThrowsRuntimeException() {
+    BLSSignature signature = BLSSignature.empty();
+    assertThrows(
+        RuntimeException.class,
+        () -> signature.checkSignature(Bytes48.random(), Bytes.wrap("Test".getBytes(UTF_8)), 0));
+  }
 
   @Test
   void succeedsIfEmptySignatureIsCorrectlyFormed() {
@@ -113,15 +135,6 @@ public class BLSSignatureTest {
   @Test
   void succeedsWhenSSZDecodeEncodeReturnsTheSameSignature() {
     BLSSignature signature1 = BLSSignature.random();
-    BLSSignature signature2 = BLSSignature.fromBytes(signature1.toBytes());
-    assertEquals(signature1, signature2);
-  }
-
-  @Test
-  @Disabled
-  // This is not yet implemented
-  void succeedsWhenSSZDecodeEncodeReturnsTheSameSignatureForTheEmptySignature() {
-    BLSSignature signature1 = BLSSignature.empty();
     BLSSignature signature2 = BLSSignature.fromBytes(signature1.toBytes());
     assertEquals(signature1, signature2);
   }

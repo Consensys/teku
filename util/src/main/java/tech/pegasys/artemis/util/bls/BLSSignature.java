@@ -13,7 +13,8 @@
 
 package tech.pegasys.artemis.util.bls;
 
-import java.util.Objects;
+import static java.util.Objects.isNull;
+
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes48;
 import net.consensys.cava.ssz.SSZ;
@@ -51,25 +52,21 @@ public final class BLSSignature {
   /**
    * Create an empty signature (all zero bytes) as defined in the Eth2 BLS spec
    *
-   * <p>Due to the flags, this is not actually a valid signature, so we need some extra logic to
-   * flag it as empty
+   * <p>Due to the flags, this is not actually a valid signature, so we use null to flag that the
+   * signature is empty.
    *
    * @return the empty signature as per the Eth2 spec
    */
   public static BLSSignature empty() {
-    BLSSignature signature = new BLSSignature(Signature.decode(Bytes.of(new byte[192])));
-    signature.isEmpty = true;
-    return signature;
+    return new BLSSignature(null);
   }
 
   public static BLSSignature fromBytes(Bytes bytes) {
-    // TODO: this doesn't handle the empty signature. Do we ever need to SSZ deserialise this?
     return SSZ.decode(
         bytes, reader -> new BLSSignature(Signature.decodeCompressed(reader.readBytes())));
   }
 
   private final Signature signature;
-  private boolean isEmpty = false;
 
   public BLSSignature(Signature signature) {
     this.signature = signature;
@@ -84,7 +81,10 @@ public final class BLSSignature {
    * @return true if the signature is valid, false if it is not
    */
   boolean checkSignature(Bytes48 publicKey, Bytes message, long domain) {
-    return !isEmpty && BLS12381.verify(PublicKey.fromBytes(publicKey), signature, message, domain);
+    if (isNull(signature)) {
+      throw new RuntimeException("The checkSignature method was called on an empty signature.");
+    }
+    return BLS12381.verify(PublicKey.fromBytes(publicKey), signature, message, domain);
   }
 
   /**
@@ -93,7 +93,7 @@ public final class BLSSignature {
    * @return the serialisation of the compressed form of the signature.
    */
   public Bytes toBytes() {
-    if (isEmpty) {
+    if (isNull(signature)) {
       return SSZ.encode(
           writer -> {
             writer.writeBytes(Bytes.wrap(new byte[96]));
@@ -111,23 +111,22 @@ public final class BLSSignature {
   }
 
   boolean isEmpty() {
-    return isEmpty;
+    return isNull(signature);
   }
 
   @Override
   public String toString() {
-    return signature.toString();
+    return isNull(signature) ? "Empty Signature" : signature.toString();
   }
 
   @Override
   public int hashCode() {
-    // TODO incorporate isEmpty into hashcode
-    return signature.hashCode();
+    return isNull(signature) ? 42 : signature.hashCode();
   }
 
   @Override
   public boolean equals(Object obj) {
-    if (Objects.isNull(obj)) {
+    if (isNull(obj)) {
       return false;
     }
     if (this == obj) {
@@ -137,6 +136,6 @@ public final class BLSSignature {
       return false;
     }
     BLSSignature other = (BLSSignature) obj;
-    return signature.equals(other.signature);
+    return isNull(signature) ? isNull(other.signature) : signature.equals(other.signature);
   }
 }
