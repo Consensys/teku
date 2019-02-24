@@ -109,8 +109,8 @@ public class StateTreeManager {
           }
         }
 
-      } catch (NoSuchElementException | IllegalArgumentException e) {
-        LOG.warn(e.toString());
+      } catch (NoSuchElementException | IllegalArgumentException | StateTransitionException e) {
+        LOG.warn(e);
       }
     } else {
       // TODO: If there is no block for the current slot, should i just get the canonical state?

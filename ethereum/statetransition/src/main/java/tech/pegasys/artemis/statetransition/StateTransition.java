@@ -21,8 +21,11 @@ import org.apache.logging.log4j.Logger;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
+import tech.pegasys.artemis.statetransition.util.BlockProcessingException;
 import tech.pegasys.artemis.statetransition.util.BlockProcessorUtil;
+import tech.pegasys.artemis.statetransition.util.EpochProcessingException;
 import tech.pegasys.artemis.statetransition.util.EpochProcessorUtil;
+import tech.pegasys.artemis.statetransition.util.SlotProcessingException;
 import tech.pegasys.artemis.statetransition.util.SlotProcessorUtil;
 
 public class StateTransition {
@@ -31,7 +34,7 @@ public class StateTransition {
 
   public StateTransition() {}
 
-  public void initiate(BeaconState state, BeaconBlock block) {
+  public void initiate(BeaconState state, BeaconBlock block) throws StateTransitionException {
     // per-slot processing
     slotProcessor(state, block);
     // per-block processing
@@ -56,8 +59,10 @@ public class StateTransition {
       // should be in Validator.randao_skips
       SlotProcessorUtil.updateLatestRandaoMixes(state);
       SlotProcessorUtil.updateRecentBlockHashes(state, block);
-    } catch (Exception e) {
+    } catch (SlotProcessingException e) {
       LOG.warn("Slot processing error: " + e);
+    } catch (Exception e) {
+      LOG.warn("Unexpected slot processing error: " + e);
     }
   }
 
@@ -88,8 +93,10 @@ public class StateTransition {
       BlockProcessorUtil.processDeposits(state, block);
       // Process Exits
       BlockProcessorUtil.processExits(state, block);
-    } catch (Exception e) {
+    } catch (BlockProcessingException e) {
       LOG.warn("Block processing error: " + e);
+    } catch (Exception e) {
+      LOG.warn("Unexpected block processing error: " + e);
     }
   }
 
@@ -117,8 +124,10 @@ public class StateTransition {
       }
       EpochProcessorUtil.process_penalties_and_exits(state);
       EpochProcessorUtil.finalUpdates(state);
-    } catch (Exception e) {
+    } catch (EpochProcessingException e) {
       LOG.warn("Epoch processing error: " + e);
+    } catch (Exception e) {
+      LOG.warn("Unexpected epoch processing error: " + e);
     }
   }
 }
