@@ -40,10 +40,6 @@ public class ChainStorageClient implements ChainStorage {
     this.eventBus.register(this);
   }
 
-  public BeaconBlock getParent(BeaconBlock block) {
-    Bytes parent_root = block.getParent_root();
-    return processedBlockLookup.get(parent_root);
-  }
   /**
    * Add processed block to storage
    *
@@ -53,8 +49,6 @@ public class ChainStorageClient implements ChainStorage {
   public void addProcessedBlock(Bytes state_root, BeaconBlock block) {
     ChainStorage.<Bytes, BeaconBlock, HashMap<Bytes, BeaconBlock>>add(
         state_root, block, this.processedBlockLookup);
-    LOG.info(
-        "Block with state root: " + state_root.toHexString() + " has been added to ChainStorage.");
     // todo: post event to eventbus to notify the server that a new processed block has been added
   }
 
@@ -67,8 +61,6 @@ public class ChainStorageClient implements ChainStorage {
   public void addState(Bytes state_root, BeaconState state) {
     ChainStorage.<Bytes, BeaconState, HashMap<Bytes, BeaconState>>add(
         state_root, state, this.stateLookup);
-    LOG.info(
-        "State with state root: " + state_root.toHexString() + " has been added to ChainStorage.");
     // todo: post event to eventbus to notify the server that a new processed block has been added
   }
 
@@ -98,8 +90,20 @@ public class ChainStorageClient implements ChainStorage {
    * @return
    */
   public Optional<BeaconBlock> getProcessedBlock(Bytes state_root) {
+
     return ChainStorage.<Bytes, BeaconBlock, HashMap<Bytes, BeaconBlock>>get(
         state_root, this.processedBlockLookup);
+  }
+
+  /**
+   * Retrieves processed block's parent block
+   *
+   * @param state_root
+   * @return
+   */
+  public Optional<BeaconBlock> getParent(BeaconBlock block) {
+    Bytes parent_root = block.getParent_root();
+    return this.getProcessedBlock(parent_root);
   }
 
   /**

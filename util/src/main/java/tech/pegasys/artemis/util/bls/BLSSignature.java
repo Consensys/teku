@@ -51,10 +51,17 @@ public final class BLSSignature {
   }
 
   /**
-   * Create an empty signature (all zero bytes) as defined in the Eth2 BLS spec
+   * Creates a random, but valid, signature
    *
-   * <p>Due to the flags, this is not actually a valid signature, so we use null to flag that the
-   * signature is empty.
+   * @param entropy to seed the key pair generation
+   * @return the signature
+   */
+  public static BLSSignature random(int entropy) {
+    return new BLSSignature(Signature.random(entropy));
+  }
+
+  /**
+   * Creates an empty signature (all zero bytes)
    *
    * @return the empty signature as per the Eth2 spec
    */
