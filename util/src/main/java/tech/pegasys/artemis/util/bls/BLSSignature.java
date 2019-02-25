@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.util.bls;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Objects.isNull;
 
 import net.consensys.cava.bytes.Bytes;
@@ -62,8 +63,13 @@ public final class BLSSignature {
   }
 
   public static BLSSignature fromBytes(Bytes bytes) {
-    return SSZ.decode(
-        bytes, reader -> new BLSSignature(Signature.decodeCompressed(reader.readBytes())));
+    checkArgument(bytes.size() == 100, "Expected 100 bytes but received %s.", bytes.size());
+    if (SSZ.decodeBytes(bytes).isZero()) {
+        return BLSSignature.empty();
+    } else {
+        return SSZ.decode(
+                bytes, reader -> new BLSSignature(Signature.decodeCompressed(reader.readBytes())));
+    }
   }
 
   private final Signature signature;
