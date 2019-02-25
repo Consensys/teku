@@ -13,8 +13,8 @@
 
 package tech.pegasys.artemis.statetransition;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Objects.requireNonNull;
-import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomDeposits;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
@@ -25,11 +25,9 @@ import java.util.Optional;
 import net.consensys.cava.bytes.Bytes32;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
-import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
+import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.pow.api.ChainStartEvent;
 import tech.pegasys.artemis.pow.api.ValidatorRegistrationEvent;
 import tech.pegasys.artemis.storage.ChainStorage;
@@ -41,15 +39,14 @@ public class StateTreeManager {
 
   private final EventBus eventBus;
   private StateTransition stateTransition;
-  private BeaconState state;
-  private ChainStorageClient storage;
+  private ChainStorageClient store;
   private static final Logger LOG = LogManager.getLogger(StateTreeManager.class.getName());
 
   public StateTreeManager(EventBus eventBus) {
     this.eventBus = eventBus;
     this.stateTransition = new StateTransition();
     this.eventBus.register(this);
-    this.storage = ChainStorage.Create(ChainStorageClient.class, eventBus);
+    this.store = ChainStorage.Create(ChainStorageClient.class, eventBus);
   }
 
   @Subscribe
@@ -57,20 +54,13 @@ public class StateTreeManager {
     LOG.info("ChainStart Event Detected");
     Boolean result = false;
     try {
-      BeaconState initial_state =
-          BeaconStateUtil.get_initial_beacon_state(
-              randomDeposits(100),
-              UnsignedLong.valueOf(Constants.GENESIS_SLOT),
-              new Eth1Data(Bytes32.ZERO, Bytes32.ZERO));
-
+      BeaconState initial_state = DataStructureUtil.createInitialBeaconState();
       Bytes32 initial_state_root = HashTreeUtil.hash_tree_root(initial_state.toBytes());
-
-      BeaconBlock initial_block = BeaconBlock.createGenesis(initial_state_root);
-      this.storage.addProcessedBlock(initial_block.getState_root(), initial_block);
+      LOG.info("OnChainStart: initial state root is " + initial_state_root.toHexString());
+      this.store.addState(initial_state_root, initial_state);
       result = true;
     } catch (IllegalStateException e) {
-      LOG.fatal("IllegalStateException thrown in StateTreeManager.java.");
-      LOG.fatal(e.toString());
+      LOG.fatal(e);
     } finally {
       this.eventBus.post(result);
     }
@@ -84,37 +74,62 @@ public class StateTreeManager {
 
   @Subscribe
   public void onNewSlot(Date date) {
-    requireNonNull(state);
     LOG.info("****** New Slot at: " + date + " ******");
-    Optional<BeaconBlock> block = this.storage.getUnprocessedBlock();
+    Optional<BeaconBlock> block = this.store.getUnprocessedBlock();
     if (block.isPresent()) {
-      LOG.info("Unprocessed block retrieved.");
+      Bytes32 blockStateRoot = block.get().getState_root();
       try {
-        // get state corresponding to the block
-        this.state = BeaconState.deepCopy(state);
-        stateTransition.initiate(this.state, block.get());
-        this.storage.addProcessedBlock(block.get().getState_root(), block.get());
-      } catch (NoSuchElementException e) {
-        LOG.warn(e.toString());
+        Optional<BeaconBlock> parentBlock = this.store.getParent(block.get());
+        Bytes32 blockRoot = HashTreeUtil.hash_tree_root(block.get().toBytes());
+        if (parentBlock.isPresent()) {
+          // get state corresponding to the parent block
+          Optional<BeaconState> state = this.store.getState(parentBlock.get().getState_root());
+          BeaconState newState = BeaconState.deepCopy(state.get());
+          stateTransition.initiate(newState, block.get());
+          Bytes32 stateRoot = HashTreeUtil.hash_tree_root(newState.toBytes());
+          LOG.info("New state root: " + stateRoot.toHexString());
+          // state root verification
+          checkArgument(
+              blockStateRoot.equals(stateRoot),
+              "The block's state root %s does not match the calculated state root %s!",
+              blockStateRoot.toHexString(),
+              stateRoot.toHexString());
+          // TODO: storing block and state together as a tuple would be more convenient
+          this.store.addState(stateRoot, newState);
+          this.store.addProcessedBlock(blockStateRoot, block.get());
+          this.store.addProcessedBlock(blockRoot, block.get());
+        } else {
+          LOG.info(
+              "Receieved a block without a parent.  Checking to see if state root matches this clients initial state root");
+          Optional<BeaconState> state = this.store.getState(block.get().getState_root());
+          if (state.isPresent()) {
+            LOG.info("State roots match! Saving genesis block in storage");
+            this.store.addProcessedBlock(blockStateRoot, block.get());
+            this.store.addProcessedBlock(blockRoot, block.get());
+          }
+        }
+
+      } catch (NoSuchElementException | IllegalArgumentException | StateTransitionException e) {
+        LOG.warn(e);
       }
     } else {
-      stateTransition.initiate(this.state, null);
+      // TODO: If there is no block for the current slot, should i just get the canonical state?
+      // stateTransition.initiate(state, null);
     }
   }
 
   /*
    * Get the ancestor of ``block`` with slot number ``slot``; return ``None`` if not found.
    */
-  public static BeaconBlock get_ancestor(
-      ChainStorageClient store, BeaconBlock block, UnsignedLong slotNumber) {
-
+  public Optional<BeaconBlock> get_ancestor(BeaconBlock block, UnsignedLong slotNumber) {
+    requireNonNull(block);
     UnsignedLong blockSlot = UnsignedLong.valueOf(block.getSlot());
     if (blockSlot.compareTo(slotNumber) == 0) {
-      return block;
+      return Optional.of(block);
     } else if (blockSlot.compareTo(slotNumber) < 0) {
-      return null;
+      return Optional.ofNullable(null);
     } else {
-      return get_ancestor(store, store.getParent(block), slotNumber);
+      return get_ancestor(this.store.getParent(block).get(), slotNumber);
     }
   }
 }
