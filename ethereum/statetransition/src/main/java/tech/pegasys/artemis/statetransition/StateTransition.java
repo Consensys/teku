@@ -13,7 +13,6 @@
 
 package tech.pegasys.artemis.statetransition;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.artemis.datastructures.Constants.EPOCH_LENGTH;
 
 import com.google.common.primitives.UnsignedLong;
@@ -22,10 +21,12 @@ import org.apache.logging.log4j.Logger;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
+import tech.pegasys.artemis.statetransition.util.BlockProcessingException;
 import tech.pegasys.artemis.statetransition.util.BlockProcessorUtil;
+import tech.pegasys.artemis.statetransition.util.EpochProcessingException;
 import tech.pegasys.artemis.statetransition.util.EpochProcessorUtil;
+import tech.pegasys.artemis.statetransition.util.SlotProcessingException;
 import tech.pegasys.artemis.statetransition.util.SlotProcessorUtil;
-import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 
 public class StateTransition {
 
@@ -33,91 +34,100 @@ public class StateTransition {
 
   public StateTransition() {}
 
-  public void initiate(BeaconState state, BeaconBlock block) {
+  public void initiate(BeaconState state, BeaconBlock block) throws StateTransitionException {
+    // per-slot processing
+    slotProcessor(state, block);
+    // per-block processing
+    if (block != null) {
+      blockProcessor(state, block);
+    }
+    // per-epoch processing
+    if (state
+        .getSlot()
+        .plus(UnsignedLong.ONE)
+        .mod(UnsignedLong.valueOf(EPOCH_LENGTH))
+        .equals(UnsignedLong.ZERO)) {
+      epochProcessor(state);
+    }
+  }
 
+  protected void slotProcessor(BeaconState state, BeaconBlock block) {
     try {
-      // per-slot processing
-      slotProcessor(state, block);
-      // per-block processing
-      if (block != null) {
-        blockProcessor(state, block);
-      }
-      // per-epoch processing
-      if (state
-          .getSlot()
-          .plus(UnsignedLong.ONE)
-          .mod(UnsignedLong.valueOf(EPOCH_LENGTH))
-          .equals(UnsignedLong.ZERO)) {
-        epochProcessor(state);
-      }
-      // state root verification
-      if (block != null) {
-        checkArgument(
-            block.getState_root().equals(HashTreeUtil.hash_tree_root(state.toBytes())),
-            StateTransitionException.class);
-      }
+      state.incrementSlot();
+      LOG.info("Processing new slot: " + state.getSlot());
+      // Slots the proposer has skipped (i.e. layers of RANDAO expected)
+      // should be in Validator.randao_skips
+      SlotProcessorUtil.updateLatestRandaoMixes(state);
+      SlotProcessorUtil.updateRecentBlockHashes(state, block);
+    } catch (SlotProcessingException e) {
+      LOG.warn("Slot processing error: " + e);
     } catch (Exception e) {
-      LOG.warn(e.toString());
+      LOG.warn("Unexpected slot processing error: " + e);
     }
   }
 
-  protected void slotProcessor(BeaconState state, BeaconBlock block) throws Exception {
-    state.incrementSlot();
-    LOG.info("Processing new slot: " + state.getSlot());
-    // Slots the proposer has skipped (i.e. layers of RANDAO expected)
-    // should be in Validator.randao_skips
-    SlotProcessorUtil.updateLatestRandaoMixes(state);
-    SlotProcessorUtil.updateRecentBlockHashes(state, block);
-  }
+  protected void blockProcessor(BeaconState state, BeaconBlock block) {
+    try {
+      LOG.info("Processing new block with state root: " + block.getState_root());
 
-  protected void blockProcessor(BeaconState state, BeaconBlock block) throws Exception {
-    LOG.info("Processing new block in slot: " + block.getSlot());
+      // Block Header
+      LOG.info("Processing block header.");
+      // Verify Slot
+      BlockProcessorUtil.verify_slot(state, block);
+      // Verify Proposer Signature
+      BlockProcessorUtil.verify_signature(state, block);
+      // Verify and Update RANDAO
+      BlockProcessorUtil.verify_and_update_randao(state, block);
+      // Update Eth1 Data
+      BlockProcessorUtil.update_eth1_data(state, block);
 
-    // Block Header
-    // Verify Slot
-    BlockProcessorUtil.verify_slot(state, block);
-    // Verify Proposer Signature
-    BlockProcessorUtil.verify_signature(state, block);
-    // Verify and Update RANDAO
-    BlockProcessorUtil.verify_and_update_randao(state, block);
-    // Update Eth1 Data
-    BlockProcessorUtil.update_eth1_data(state, block);
-
-    // Block Body - Operations
-    // Execute Proposer Slashings
-    BlockProcessorUtil.proposer_slashing(state, block);
-    // Execute Attester Slashings
-    BlockProcessorUtil.attester_slashing(state, block);
-    // Process Attestations
-    BlockProcessorUtil.processAttestations(state, block);
-    // Process Deposits
-    BlockProcessorUtil.processDeposits(state, block);
-    // Process Exits
-    BlockProcessorUtil.processExits(state, block);
-  }
-
-  protected void epochProcessor(BeaconState state) throws Exception {
-    LOG.info("Processing new epoch in slot: " + state.getSlot());
-
-    EpochProcessorUtil.updateEth1Data(state);
-    EpochProcessorUtil.updateJustification(state);
-    EpochProcessorUtil.updateCrosslinks(state);
-
-    UnsignedLong previous_total_balance = BeaconStateUtil.previous_total_balance(state);
-    EpochProcessorUtil.justificationAndFinalization(state, previous_total_balance);
-    EpochProcessorUtil.attestionInclusion(state, previous_total_balance);
-    EpochProcessorUtil.crosslinkRewards(state, previous_total_balance);
-
-    EpochProcessorUtil.process_ejections(state);
-
-    EpochProcessorUtil.previousStateUpdates(state);
-    if (EpochProcessorUtil.shouldUpdateValidatorRegistry(state)) {
-      EpochProcessorUtil.update_validator_registry(state);
-      EpochProcessorUtil.currentStateUpdatesAlt1(state);
-    } else {
-      EpochProcessorUtil.currentStateUpdatesAlt2(state);
+      // Block Body - Operations
+      LOG.info("Processing block body.");
+      // Execute Proposer Slashings
+      BlockProcessorUtil.proposer_slashing(state, block);
+      // Execute Attester Slashings
+      BlockProcessorUtil.attester_slashing(state, block);
+      // Process Attestations
+      BlockProcessorUtil.processAttestations(state, block);
+      // Process Deposits
+      BlockProcessorUtil.processDeposits(state, block);
+      // Process Exits
+      BlockProcessorUtil.processExits(state, block);
+    } catch (BlockProcessingException e) {
+      LOG.warn("Block processing error: " + e);
+    } catch (Exception e) {
+      LOG.warn("Unexpected block processing error: " + e);
     }
-    EpochProcessorUtil.process_penalties_and_exits(state);
-    EpochProcessorUtil.finalUpdates(state);
+  }
+
+  protected void epochProcessor(BeaconState state) {
+    try {
+      LOG.info("Processing new epoch: " + BeaconStateUtil.get_current_epoch(state));
+
+      EpochProcessorUtil.updateEth1Data(state);
+      EpochProcessorUtil.updateJustification(state);
+      EpochProcessorUtil.updateCrosslinks(state);
+
+      UnsignedLong previous_total_balance = BeaconStateUtil.previous_total_balance(state);
+      EpochProcessorUtil.justificationAndFinalization(state, previous_total_balance);
+      EpochProcessorUtil.attestionInclusion(state, previous_total_balance);
+      EpochProcessorUtil.crosslinkRewards(state, previous_total_balance);
+
+      EpochProcessorUtil.process_ejections(state);
+
+      EpochProcessorUtil.previousStateUpdates(state);
+      if (EpochProcessorUtil.shouldUpdateValidatorRegistry(state)) {
+        EpochProcessorUtil.update_validator_registry(state);
+        EpochProcessorUtil.currentStateUpdatesAlt1(state);
+      } else {
+        EpochProcessorUtil.currentStateUpdatesAlt2(state);
+      }
+      EpochProcessorUtil.process_penalties_and_exits(state);
+      EpochProcessorUtil.finalUpdates(state);
+    } catch (EpochProcessingException e) {
+      LOG.warn("Epoch processing error: " + e);
+    } catch (Exception e) {
+      LOG.warn("Unexpected epoch processing error: " + e);
+    }
   }
 }
