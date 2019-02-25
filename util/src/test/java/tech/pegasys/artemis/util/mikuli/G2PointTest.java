@@ -359,8 +359,8 @@ class G2PointTest {
   /**
    * Multiply the point by the scaling factor. Used for multiplying by the group cofactor.
    *
-   * <p>This uses repeated doubling and addition, similar to the ZCash implementation.
-   * It's not quick, but serves as a reference test for scaleWithCofactor().
+   * <p>This uses repeated doubling and addition, similar to the ZCash implementation. It's not
+   * quick, but serves as a reference test for scaleWithCofactor().
    *
    * @param point the point to be scaled
    * @param factor the scaling factor as an array of long
