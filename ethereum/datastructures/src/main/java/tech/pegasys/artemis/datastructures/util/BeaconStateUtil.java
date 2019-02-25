@@ -68,6 +68,7 @@ import tech.pegasys.artemis.datastructures.state.CrosslinkCommittee;
 import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.util.bitwise.BitwiseOps;
+import tech.pegasys.artemis.util.bls.BLSException;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 
 public class BeaconStateUtil {
@@ -264,9 +265,10 @@ public class BeaconStateUtil {
     return get_crosslink_committees_at_slot(state, slot, false);
   }
 
-  /* TODO: Note from spec -
-   * Note: this definition and the next few definitions make heavy use of repetitive computing.
-   * Production implementations are expected to appropriately use caching/memoization to avoid redoing work.
+  /*
+   * TODO: Note from spec - Note: this definition and the next few definitions
+   * make heavy use of repetitive computing. Production implementations are
+   * expected to appropriately use caching/memoization to avoid redoing work.
    */
 
   private static UnsignedLong get_previous_epoch_committee_count(BeaconState state) {
@@ -306,7 +308,8 @@ public class BeaconStateUtil {
 
   public static Bytes32 get_active_index_root(BeaconState state, UnsignedLong epoch) {
     checkArgument(
-        // Since we're using UnsignedLong here, we can't subtract LATEST_INDEX_ROOTS_LENGTH
+        // Since we're using UnsignedLong here, we can't subtract
+        // LATEST_INDEX_ROOTS_LENGTH
         get_current_epoch(state)
                 .plus(UnsignedLong.valueOf(ENTRY_EXIT_DELAY))
                 .compareTo(epoch.plus(UnsignedLong.valueOf(LATEST_INDEX_ROOTS_LENGTH)))
@@ -512,7 +515,8 @@ public class BeaconStateUtil {
   /** Return the randao mix at a recent ``epoch``. */
   public static Bytes32 get_randao_mix(BeaconState state, UnsignedLong epoch) {
     checkArgument(
-        // If we're going to use UnsignedLongs then we can't subtract LATEST_RANDAO_MIXES_LENGTH
+        // If we're going to use UnsignedLongs then we can't subtract
+        // LATEST_RANDAO_MIXES_LENGTH
         // here
         get_current_epoch(state)
                 .compareTo(epoch.plus(UnsignedLong.valueOf(LATEST_RANDAO_MIXES_LENGTH)))
@@ -523,7 +527,7 @@ public class BeaconStateUtil {
     return randao_mixes.get(index.intValue());
   }
 
-  //  Return the block root at a recent ``slot``.
+  // Return the block root at a recent ``slot``.
   public static Bytes32 get_block_root(BeaconState state, UnsignedLong slot) {
     checkArgument(
         state
@@ -539,6 +543,7 @@ public class BeaconStateUtil {
 
   /*
    * @param values
+   *
    * @return The merkle root.
    */
   public static Bytes32 merkle_root(List<Bytes32> list) throws IllegalStateException {
@@ -591,7 +596,8 @@ public class BeaconStateUtil {
         get_epoch_committee_count(UnsignedLong.valueOf(active_validator_indices.size())).intValue();
 
     // Shuffle with seed
-    // TODO: we may need to treat `epoch` as little-endian here. Revisit as the spec evolves.
+    // TODO: we may need to treat `epoch` as little-endian here. Revisit as the spec
+    // evolves.
     seed.xor(Bytes32.leftPad(Bytes.ofUnsignedLong(epoch.longValue())));
     List<Integer> shuffled_active_validator_indices = shuffle(active_validator_indices, seed);
 
@@ -728,6 +734,7 @@ public class BeaconStateUtil {
    * @param amount - The amount to add to the validator's balance (in Gwei).
    * @param proof_of_possession - The validator's proof of posession
    * @param withdrawal_credentials - The withdrawal credentials for the deposit to be processed.
+   * @throws BLSException
    */
   public static void process_deposit(
       BeaconState state,
@@ -750,7 +757,8 @@ public class BeaconStateUtil {
             .map(validator -> validator.getPubkey())
             .collect(Collectors.toList());
 
-    // If the provided pubkey isn't in the state, add a new validator to the registry.
+    // If the provided pubkey isn't in the state, add a new validator to the
+    // registry.
     // Otherwise, top up the balance for the validator whose pubkey was provided.
     if (!validator_pubkeys.contains(pubkey)) {
       // We depend on our add operation appending the below objects at the same index.
@@ -817,6 +825,7 @@ public class BeaconStateUtil {
    * @param withdrawal_credentials - The withdrawal credentials for the current deposit data to
    *     verify.
    * @return True if the BLS signature is a valid proof of posession, false otherwise.
+   * @throws BLSException
    */
   static boolean validate_proof_of_possession(
       BeaconState state,

@@ -79,10 +79,11 @@ public final class BLSSignature {
    * @param message the message
    * @param domain the domain as specified in the Eth2 spec
    * @return true if the signature is valid, false if it is not
+   * @throws BLSException
    */
-  boolean checkSignature(Bytes48 publicKey, Bytes message, long domain) {
+  boolean checkSignature(Bytes48 publicKey, Bytes message, long domain) throws BLSException {
     if (isNull(signature)) {
-      throw new RuntimeException("The checkSignature method was called on an empty signature.");
+      throw new BLSException("The checkSignature method was called on an empty signature.");
     }
     return BLS12381.verify(PublicKey.fromBytes(publicKey), signature, message, domain);
   }
