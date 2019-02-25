@@ -65,10 +65,10 @@ public final class BLSSignature {
   public static BLSSignature fromBytes(Bytes bytes) {
     checkArgument(bytes.size() == 100, "Expected 100 bytes but received %s.", bytes.size());
     if (SSZ.decodeBytes(bytes).isZero()) {
-        return BLSSignature.empty();
+      return BLSSignature.empty();
     } else {
-        return SSZ.decode(
-                bytes, reader -> new BLSSignature(Signature.decodeCompressed(reader.readBytes())));
+      return SSZ.decode(
+          bytes, reader -> new BLSSignature(Signature.decodeCompressed(reader.readBytes())));
     }
   }
 
