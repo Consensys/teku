@@ -13,8 +13,8 @@
 
 package tech.pegasys.artemis.statetransition.util;
 
-public class BlockValidationException extends Exception {
-  public BlockValidationException(String err) {
+public class SlotProcessingException extends Exception {
+  public SlotProcessingException(String err) {
     super(err);
   }
 }

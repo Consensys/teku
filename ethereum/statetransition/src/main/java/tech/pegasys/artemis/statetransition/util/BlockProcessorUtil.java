@@ -86,7 +86,7 @@ public class BlockProcessorUtil {
    * @param block
    */
   public static void verify_slot(BeaconState state, BeaconBlock block)
-      throws IllegalArgumentException {
+      throws IllegalArgumentException, BlockProcessingException {
     // Verify that block.slot == state.slot
     checkArgument(Objects.equals(state.getSlot(), UnsignedLong.fromLongBits(block.getSlot())));
   }
@@ -100,7 +100,8 @@ public class BlockProcessorUtil {
    * @throws BLSException
    */
   public static void verify_signature(BeaconState state, BeaconBlock block)
-      throws IllegalStateException, IllegalArgumentException, BLSException {
+      throws IllegalStateException, IllegalArgumentException, BLSException,
+          BlockProcessingException {
     // Let block_without_signature_root be the hash_tree_root of block where
     //   block.signature is set to EMPTY_SIGNATURE.
     block.setSignature(EMPTY_SIGNATURE);
@@ -129,7 +130,7 @@ public class BlockProcessorUtil {
    * @param block
    */
   public static void verify_and_update_randao(BeaconState state, BeaconBlock block)
-      throws IllegalStateException, IllegalArgumentException {
+      throws IllegalStateException, IllegalArgumentException, BlockProcessingException {
 
     UnsignedLong currentEpoch = BeaconStateUtil.get_current_epoch(state);
     Bytes32 currentEpochBytes = Bytes32.leftPad(Bytes.ofUnsignedLong(currentEpoch.longValue()));
@@ -153,7 +154,8 @@ public class BlockProcessorUtil {
    * @param state
    * @param block
    */
-  public static void update_eth1_data(BeaconState state, BeaconBlock block) {
+  public static void update_eth1_data(BeaconState state, BeaconBlock block)
+      throws BlockProcessingException {
     // If block.eth1_data equals eth1_data_vote.eth1_data for some eth1_data_vote
     //   in state.eth1_data_votes, set eth1_data_vote.vote_count += 1.
     boolean exists = false;
@@ -181,7 +183,8 @@ public class BlockProcessorUtil {
    * @param state
    * @param block
    */
-  public static void proposer_slashing(BeaconState state, BeaconBlock block) {
+  public static void proposer_slashing(BeaconState state, BeaconBlock block)
+      throws BlockProcessingException {
     // Verify that len(block.body.proposer_slashings) <= MAX_PROPOSER_SLASHINGS
     checkArgument(block.getBody().getProposer_slashings().size() <= MAX_PROPOSER_SLASHINGS);
 
@@ -259,7 +262,7 @@ public class BlockProcessorUtil {
    *     https://github.com/ethereum/eth2.0-specs/blob/v0.1/specs/core/0_beacon-chain.md#attester-slashings-1
    */
   public static void attester_slashing(BeaconState state, BeaconBlock block)
-      throws IllegalArgumentException {
+      throws IllegalArgumentException, BlockProcessingException {
     // Verify that len(block.body.attester_slashings) <= MAX_ATTESTER_SLASHINGS
     checkArgument(block.getBody().getAttester_slashings().size() <= MAX_ATTESTER_SLASHINGS);
 
@@ -316,7 +319,7 @@ public class BlockProcessorUtil {
    *     https://github.com/ethereum/eth2.0-specs/blob/v0.1/specs/core/0_beacon-chain.md#attestations-1
    */
   public static void processAttestations(BeaconState state, BeaconBlock block)
-      throws IllegalArgumentException {
+      throws IllegalArgumentException, BlockProcessingException {
     // Verify that len(block.body.attestations) <= MAX_ATTESTATIONS
     checkArgument(block.getBody().getAttestations().size() <= MAX_ATTESTATIONS);
 
@@ -398,7 +401,8 @@ public class BlockProcessorUtil {
 
   @VisibleForTesting
   static boolean verify_randao(
-      BeaconState state, BeaconBlock block, UnsignedLong currentEpoch, Bytes32 currentEpochBytes) {
+      BeaconState state, BeaconBlock block, UnsignedLong currentEpoch, Bytes32 currentEpochBytes)
+      throws BlockProcessingException {
     // Let proposer = state.validator_registry[get_beacon_proposer_index(state, state.slot)].
     int proposerIndex = BeaconStateUtil.get_beacon_proposer_index(state, state.getSlot());
     Validator proposer = state.getValidator_registry().get(proposerIndex);
@@ -418,7 +422,7 @@ public class BlockProcessorUtil {
    * @return true if bitfields and aggregate signature verified. Otherwise, false.
    */
   private static boolean verify_bitfields_and_aggregate_signature(
-      Attestation attestation, BeaconState state) {
+      Attestation attestation, BeaconState state) throws BlockProcessingException {
     // NOTE: The spec defines this verification in terms of the custody bitfield length,
     //   however because we've implemented the bitfield as a static Bytes32 value
     //   instead of a variable length bitfield, checking against Bytes32.ZERO will suffice.
@@ -487,7 +491,8 @@ public class BlockProcessorUtil {
    * @param block
    * @see https://github.com/ethereum/eth2.0-specs/blob/v0.1/specs/core/0_beacon-chain.md#deposits-1
    */
-  public static void processDeposits(BeaconState state, BeaconBlock block) {
+  public static void processDeposits(BeaconState state, BeaconBlock block)
+      throws BlockProcessingException {
     // Verify that len(block.body.deposits) <= MAX_DEPOSITS
     checkArgument(block.getBody().getDeposits().size() <= MAX_DEPOSITS);
 
@@ -529,7 +534,8 @@ public class BlockProcessorUtil {
    * @param block
    * @see https://github.com/ethereum/eth2.0-specs/blob/v0.1/specs/core/0_beacon-chain.md#exits-1
    */
-  public static void processExits(BeaconState state, BeaconBlock block) {
+  public static void processExits(BeaconState state, BeaconBlock block)
+      throws BlockProcessingException {
     // Verify that len(block.body.exits) <= MAX_EXITS
     checkArgument(block.getBody().getExits().size() <= Constants.MAX_EXITS);
 
