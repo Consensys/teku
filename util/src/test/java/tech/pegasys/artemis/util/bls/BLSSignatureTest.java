@@ -22,6 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes48;
+import net.consensys.cava.ssz.SSZ;
 import org.junit.jupiter.api.Test;
 
 class BLSSignatureTest {
@@ -48,7 +49,7 @@ class BLSSignatureTest {
   }
 
   @Test
-  void succeedsIfEmptySignatureIsCorrectlyFormed() {
+  void succeedsIfSerialisationOfEmptySignatureIsCorrect() {
     BLSSignature emptySignature = BLSSignature.empty();
     assertTrue(emptySignature.isEmpty());
     // SSZ prepends the length as four little-endian bytes
@@ -58,6 +59,22 @@ class BLSSignatureTest {
             + "0000000000000000000000000000000000000000000000000000000000000000"
             + "0000000000000000000000000000000000000000000000000000000000000000",
         emptySignature.toBytes().toHexString());
+  }
+
+  @Test
+  void succeedsIfDeserialisationOfEmptySignatureIsCorrect() {
+    BLSSignature emptySignature = BLSSignature.empty();
+    assertTrue(emptySignature.isEmpty());
+    Bytes zeroBytes = Bytes.wrap(new byte[96]);
+    Bytes emptyBytesSsz = SSZ.encodeBytes(zeroBytes);
+    BLSSignature deserialisedSignature = BLSSignature.fromBytes(emptyBytesSsz);
+    assertEquals(emptySignature, deserialisedSignature);
+  }
+
+  @Test
+  void succeedsIfDeserialisationThrowsWithTooFewBytes() {
+    Bytes tooFewBytes = Bytes.wrap(new byte[99]);
+    assertThrows(IllegalArgumentException.class, () -> BLSSignature.fromBytes(tooFewBytes));
   }
 
   @Test
@@ -133,8 +150,15 @@ class BLSSignatureTest {
   }
 
   @Test
-  void succeedsWhenSSZDecodeEncodeReturnsTheSameSignature() {
+  void succeedsWhenRoundtripSSZReturnsTheSameSignature() {
     BLSSignature signature1 = BLSSignature.random();
+    BLSSignature signature2 = BLSSignature.fromBytes(signature1.toBytes());
+    assertEquals(signature1, signature2);
+  }
+
+  @Test
+  void succeedsWhenRoundtripSSZReturnsTheEmptySignature() {
+    BLSSignature signature1 = BLSSignature.empty();
     BLSSignature signature2 = BLSSignature.fromBytes(signature1.toBytes());
     assertEquals(signature1, signature2);
   }
