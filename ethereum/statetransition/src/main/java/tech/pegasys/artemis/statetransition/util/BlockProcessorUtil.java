@@ -75,6 +75,7 @@ import tech.pegasys.artemis.datastructures.state.CrosslinkCommittee;
 import tech.pegasys.artemis.datastructures.state.PendingAttestation;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
+import tech.pegasys.artemis.util.bls.BLSException;
 
 public class BlockProcessorUtil {
 
@@ -96,9 +97,10 @@ public class BlockProcessorUtil {
    *
    * @param state
    * @param block
+   * @throws BLSException
    */
   public static void verify_signature(BeaconState state, BeaconBlock block)
-      throws IllegalStateException, IllegalArgumentException {
+      throws IllegalStateException, IllegalArgumentException, BLSException {
     // Let block_without_signature_root be the hash_tree_root of block where
     //   block.signature is set to EMPTY_SIGNATURE.
     block.setSignature(EMPTY_SIGNATURE);
