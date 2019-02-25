@@ -44,6 +44,23 @@ public final class KeyPair {
     return new KeyPair(secretKey, publicKey);
   }
 
+  /**
+   * Generate a new random key pair given entropy
+   *
+   * @param entropy to seed the key pair generation
+   * @return a new random key pair
+   */
+  public static KeyPair random(int entropy) {
+    RAND rng = new RAND();
+    rng.sirand(entropy);
+    Scalar secret = new Scalar(BIG.randomnum(curveOrder, rng));
+
+    SecretKey secretKey = new SecretKey(secret);
+    G1Point g1Point = g1Generator.mul(secret);
+    PublicKey publicKey = new PublicKey(g1Point);
+    return new KeyPair(secretKey, publicKey);
+  }
+
   private final SecretKey secretKey;
   private final PublicKey publicKey;
 

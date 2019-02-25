@@ -82,8 +82,8 @@ public interface ChainStorage {
     Optional<T> result = Optional.ofNullable(null);
     try {
       result = Optional.of(items.get(key));
-    } catch (NoSuchElementException e) {
-      LOG.debug(items.getClass().toString() + ": There is nothing to remove");
+    } catch (NullPointerException e) {
+      LOG.debug(items.getClass().toString() + ": " + key.toHexString() + " not found.");
     }
     return result;
   }

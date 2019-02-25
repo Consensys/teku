@@ -11,10 +11,10 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.statetransition.util;
+package tech.pegasys.artemis.util.bls;
 
-public class BlockValidationException extends Exception {
-  public BlockValidationException(String err) {
+public class BLSException extends Exception {
+  public BLSException(String err) {
     super(err);
   }
 }

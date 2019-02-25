@@ -73,6 +73,20 @@ public final class Signature {
     return sigAndPubKey.signature();
   }
 
+  /**
+   * Create a random signature for testing
+   *
+   * @param entropy to seed the key pair generation
+   * @return a random, valid signature
+   */
+  public static Signature random(int entropy) {
+    KeyPair keyPair = KeyPair.random(entropy);
+    byte[] message = "Hello, world!".getBytes(UTF_8);
+    SignatureAndPublicKey sigAndPubKey = BLS12381.sign(keyPair, message, 48);
+
+    return sigAndPubKey.signature();
+  }
+
   private final G2Point point;
 
   /**

@@ -17,16 +17,39 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import net.consensys.cava.bytes.Bytes;
-import org.junit.jupiter.api.Disabled;
+import net.consensys.cava.bytes.Bytes48;
+import net.consensys.cava.ssz.SSZ;
 import org.junit.jupiter.api.Test;
 
-public class BLSSignatureTest {
+class BLSSignatureTest {
 
   @Test
-  void succeedsIfEmptySignatureIsCorrectlyFormed() {
+  void succeedsWhenEqualsReturnsTrueForTheSameEmptySignature() {
+    BLSSignature signature = BLSSignature.empty();
+    assertEquals(signature, signature);
+  }
+
+  @Test
+  void succeedsWhenEqualsReturnsTrueForTwoEmptySignatures() {
+    BLSSignature signature1 = BLSSignature.empty();
+    BLSSignature signature2 = BLSSignature.empty();
+    assertEquals(signature1, signature2);
+  }
+
+  @Test
+  void succeedsWhenCallingCheckSignatureOnEmptySignatureThrowsRuntimeException() {
+    BLSSignature signature = BLSSignature.empty();
+    assertThrows(
+        BLSException.class,
+        () -> signature.checkSignature(Bytes48.random(), Bytes.wrap("Test".getBytes(UTF_8)), 0));
+  }
+
+  @Test
+  void succeedsIfSerialisationOfEmptySignatureIsCorrect() {
     BLSSignature emptySignature = BLSSignature.empty();
     assertTrue(emptySignature.isEmpty());
     // SSZ prepends the length as four little-endian bytes
@@ -36,6 +59,22 @@ public class BLSSignatureTest {
             + "0000000000000000000000000000000000000000000000000000000000000000"
             + "0000000000000000000000000000000000000000000000000000000000000000",
         emptySignature.toBytes().toHexString());
+  }
+
+  @Test
+  void succeedsIfDeserialisationOfEmptySignatureIsCorrect() {
+    BLSSignature emptySignature = BLSSignature.empty();
+    assertTrue(emptySignature.isEmpty());
+    Bytes zeroBytes = Bytes.wrap(new byte[96]);
+    Bytes emptyBytesSsz = SSZ.encodeBytes(zeroBytes);
+    BLSSignature deserialisedSignature = BLSSignature.fromBytes(emptyBytesSsz);
+    assertEquals(emptySignature, deserialisedSignature);
+  }
+
+  @Test
+  void succeedsIfDeserialisationThrowsWithTooFewBytes() {
+    Bytes tooFewBytes = Bytes.wrap(new byte[99]);
+    assertThrows(IllegalArgumentException.class, () -> BLSSignature.fromBytes(tooFewBytes));
   }
 
   @Test
@@ -69,7 +108,7 @@ public class BLSSignatureTest {
   }
 
   @Test
-  void succeedsWhenAMessageSignsAndVerifies() {
+  void succeedsWhenAMessageSignsAndVerifies() throws BLSException {
     BLSKeyPair keyPair = BLSKeyPair.random();
     Bytes message = Bytes.wrap("Hello, world!".getBytes(UTF_8));
     long domain = 42;
@@ -78,7 +117,7 @@ public class BLSSignatureTest {
   }
 
   @Test
-  void succeedsWhenVerifyingDifferentDomainFails() {
+  void succeedsWhenVerifyingDifferentDomainFails() throws BLSException {
     BLSKeyPair keyPair = BLSKeyPair.random();
     Bytes message = Bytes.wrap("Hello, world!".getBytes(UTF_8));
     long domain1 = 42;
@@ -88,7 +127,7 @@ public class BLSSignatureTest {
   }
 
   @Test
-  void succeedsWhenVerifyingDifferentMessageFails() {
+  void succeedsWhenVerifyingDifferentMessageFails() throws BLSException {
     BLSKeyPair keyPair = BLSKeyPair.random();
     Bytes message1 = Bytes.wrap("Hello, world!".getBytes(UTF_8));
     Bytes message2 = Bytes.wrap("Hello, world?".getBytes(UTF_8));
@@ -98,7 +137,7 @@ public class BLSSignatureTest {
   }
 
   @Test
-  void succeedsWhenVerifyingDifferentPublicKeyFails() {
+  void succeedsWhenVerifyingDifferentPublicKeyFails() throws BLSException {
     BLSKeyPair keyPair1 = BLSKeyPair.random();
     BLSKeyPair keyPair2 = BLSKeyPair.random();
     while (keyPair1.equals(keyPair2)) {
@@ -111,16 +150,14 @@ public class BLSSignatureTest {
   }
 
   @Test
-  void succeedsWhenSSZDecodeEncodeReturnsTheSameSignature() {
+  void succeedsWhenRoundtripSSZReturnsTheSameSignature() {
     BLSSignature signature1 = BLSSignature.random();
     BLSSignature signature2 = BLSSignature.fromBytes(signature1.toBytes());
     assertEquals(signature1, signature2);
   }
 
   @Test
-  @Disabled
-  // This is not yet implemented
-  void succeedsWhenSSZDecodeEncodeReturnsTheSameSignatureForTheEmptySignature() {
+  void succeedsWhenRoundtripSSZReturnsTheEmptySignature() {
     BLSSignature signature1 = BLSSignature.empty();
     BLSSignature signature2 = BLSSignature.fromBytes(signature1.toBytes());
     assertEquals(signature1, signature2);
