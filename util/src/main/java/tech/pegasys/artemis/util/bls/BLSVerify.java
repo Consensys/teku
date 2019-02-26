@@ -15,7 +15,9 @@ package tech.pegasys.artemis.util.bls;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
+import java.util.stream.Collectors;
 import net.consensys.cava.bytes.Bytes;
+import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.bytes.Bytes48;
 
 public class BLSVerify {
@@ -24,15 +26,15 @@ public class BLSVerify {
    * The bls_verify() function as defined in the Eth2 specification
    *
    * @param pubkey the compressed public key
-   * @param message the message signed ***TODO: this will be changing to the digest***
+   * @param messageHash the message digest signed
    * @param signature the signature
    * @param domain the domain parameter defined by the spec
    * @return true if the signature is valid over these parameters, false if not
    */
   public static boolean bls_verify(
-      Bytes48 pubkey, Bytes message, BLSSignature signature, UnsignedLong domain) {
+      Bytes48 pubkey, Bytes32 messageHash, BLSSignature signature, UnsignedLong domain) {
     try {
-      return signature.checkSignature(pubkey, message, domain.longValue());
+      return signature.checkSignature(pubkey, Bytes.wrap(messageHash), domain.longValue());
     } catch (BLSException e) {
       // TODO: once we stop using random (unseeded signatures) keypairs,
       // then the signatures will be predictable and the resulting state can be precomputed
@@ -46,18 +48,20 @@ public class BLSVerify {
    * <p>The bls_verify_multiple() function as defined in the Eth2 specification
    *
    * @param pubkeys a list of compressed public keys
-   * @param messages a list of the same number of messages ***TODO: this will change to digests**
+   * @param messageHashes a list of the same number of messages
    * @param aggregateSignature the single signature over these public keys and messages
    * @param domain the domain parameter defined by the spec
    * @return true if the signature is valid over these parameters, false if not
    */
   public static boolean bls_verify_multiple(
       List<Bytes48> pubkeys,
-      List<Bytes> messages,
+      List<Bytes32> messageHashes,
       BLSSignature aggregateSignature,
       UnsignedLong domain) {
     try {
-      return aggregateSignature.checkSignature(pubkeys, messages, domain.longValue());
+      List<Bytes> messageHashesAsBytes =
+          messageHashes.stream().map(x -> Bytes.wrap(x)).collect(Collectors.toList());
+      return aggregateSignature.checkSignature(pubkeys, messageHashesAsBytes, domain.longValue());
     } catch (BLSException e) {
       // TODO: once we stop using random (unseeded signatures) keypairs,
       // then the signatures will be predictable and the resulting state can be precomputed
