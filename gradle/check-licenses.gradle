@@ -114,6 +114,7 @@ downloadLicenses {
           'EPL 2.0',
           'Eclipse Public License 2.0',
           'Eclipse Public License - v 2.0',
+          'Eclipse Public License v2.0',
           license('Eclipse Public License - v 2.0','https://www.eclipse.org/legal/epl-2.0/')
       ]
 

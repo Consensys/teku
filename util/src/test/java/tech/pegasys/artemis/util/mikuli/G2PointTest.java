@@ -103,12 +103,12 @@ class G2PointTest {
     assertEquals(point1, point2);
   }
 
-  // Sanity check for the scaleTestReference() reference test function
+  // Sanity check for the scaleTestReference1() reference test function
   @Test
   void succeedsWhenScalingReferenceTestCorrectlyMultipliesByOne() {
     G2Point point = G2Point.random();
     long[] factor = {0x0000000000000001L};
-    G2Point scaledPoint = scaleTestReference(point, factor);
+    G2Point scaledPoint = scaleTestReference1(point, factor);
     assertEquals(point, scaledPoint);
   }
 
@@ -116,13 +116,13 @@ class G2PointTest {
   @Test
   void succeedsWhenScalingReferenceTestCorrectlyMultipliesByLong() {
     G2Point point = G2Point.random();
-    long[] factor = {0x1100110011001100L};
+    long[] factor = {0xcf1c38e31c7238e5L};
 
     // Scale point using our routine
-    G2Point scaledPoint1 = scaleTestReference(point, factor);
+    G2Point scaledPoint1 = scaleTestReference1(point, factor);
 
     // Scale point using multiplication by BIG
-    Scalar scaleFactor = new Scalar(BIG.fromBytes(longsToBytes(factor)));
+    Scalar scaleFactor = new Scalar(longsToBig(factor));
     G2Point scaledPoint2 = point.mul(scaleFactor);
 
     assertEquals(scaledPoint2, scaledPoint1);
@@ -132,15 +132,44 @@ class G2PointTest {
   @Test
   void succeedsWhenScalingReferenceTestCorrectlyMultipliesByArrayOfLong() {
     G2Point point = G2Point.random();
-    long[] factor = {0x1010101010101010L, 0x0101010101010101L, 0x1100110011001100L};
-    long[] factorRev = {0x1100110011001100L, 0x0101010101010101L, 0x1010101010101010L};
+    long[] factor = {0xf0f0f0f0f0f0f0f0L, 0x0f0f0f0f0f0f0f0fL, 0xaa00aa00aa00aa00L};
+    long[] factorRev = {0xaa00aa00aa00aa00L, 0x0f0f0f0f0f0f0f0fL, 0xf0f0f0f0f0f0f0f0L};
 
     // Scale point using our routine
-    G2Point scaledPoint1 = scaleTestReference(point, factorRev);
+    G2Point scaledPoint1 = scaleTestReference1(point, factorRev);
 
     // Scale point using multiplication by BIG
-    Scalar scaleFactor = new Scalar(BIG.fromBytes(longsToBytes(factor)));
+    Scalar scaleFactor = new Scalar(longsToBig(factor));
     G2Point scaledPoint2 = point.mul(scaleFactor);
+
+    assertEquals(scaledPoint2, scaledPoint1);
+  }
+
+  // Sanity check for the scale() reference test functions
+  @Test
+  void succeedsWhenScalingReferenceTestsAgreeForLong() {
+    G2Point point = G2Point.random();
+    long[] factor = {0xcf1c38e31c7238e5L};
+
+    // Scale point using our long multiplication routine
+    G2Point scaledPoint1 = scaleTestReference1(point, factor);
+
+    // Scale point using our repeated doubling routine
+    G2Point scaledPoint2 = scaleTestReference2(point, factor);
+
+    assertEquals(scaledPoint2, scaledPoint1);
+  }
+
+  // Sanity check for the scale() reference test functions
+  @Test
+  void succeedsWhenScalingReferenceTestsAgreeForCofactor() {
+    G2Point point = G2Point.random();
+
+    // Scale point using our long multiplication routine
+    G2Point scaledPoint1 = scaleTestReference1(point, cofactor);
+
+    // Scale point using our repeated doubling routine
+    G2Point scaledPoint2 = scaleTestReference2(point, cofactor);
 
     assertEquals(scaledPoint2, scaledPoint1);
   }
@@ -150,7 +179,7 @@ class G2PointTest {
     G2Point point = G2Point.random();
 
     // Scale point using scale2()
-    G2Point scaledPoint1 = scaleTestReference(point, cofactor);
+    G2Point scaledPoint1 = scaleTestReference2(point, cofactor);
 
     // Scale point using scaleWithCofactor()
     G2Point scaledPoint2 = new G2Point(scaleWithCofactor(point.ecp2Point()));
@@ -249,13 +278,15 @@ class G2PointTest {
    * @param longs an array of upto 6 longs
    * @return the data in the longs as an array of 48 bytes
    */
-  private static byte[] longsToBytes(long[] longs) {
+  private static BIG longsToBig(long[] longs) {
     Bytes bytes = Bytes.EMPTY;
     for (long w : longs) {
       bytes = Bytes.concatenate(Bytes.ofUnsignedLong(w), bytes);
     }
     bytes = Bytes.concatenate(Bytes.wrap(new byte[48 - 8 * longs.length]), bytes);
-    return bytes.toArray();
+    BIG newBig = BIG.fromBytes(bytes.toArray());
+    newBig.norm();
+    return newBig;
   }
 
   /**
@@ -302,7 +333,7 @@ class G2PointTest {
    * @param point the point to be scaled
    * @param factor the scaling factor as an array of long
    */
-  private static G2Point scaleTestReference(G2Point point, long[] factor) {
+  private static G2Point scaleTestReference1(G2Point point, long[] factor) {
     Bytes padding = Bytes.wrap(new byte[40]);
     ECP2 sum = new ECP2();
     sum.inf(); // This is zero
@@ -321,6 +352,33 @@ class G2PointTest {
       tmp = tmp.mul(big);
 
       sum.add(tmp);
+    }
+    return new G2Point(sum);
+  }
+
+  /**
+   * Multiply the point by the scaling factor. Used for multiplying by the group cofactor.
+   *
+   * <p>This uses repeated doubling and addition, similar to the ZCash implementation. It's not
+   * quick, but serves as a reference test for scaleWithCofactor().
+   *
+   * @param point the point to be scaled
+   * @param factor the scaling factor as an array of long
+   */
+  private static G2Point scaleTestReference2(G2Point point, long[] factor) {
+    ECP2 tmp = new ECP2(point.ecp2Point());
+    ECP2 sum = new ECP2();
+    sum.inf(); // This is zero
+
+    for (int i = factor.length - 1; i >= 0; i--) {
+      long w = factor[i];
+      for (int j = 0; j < Long.SIZE; j++) {
+        if (Long.remainderUnsigned(w, 2) == 1) {
+          sum.add(tmp);
+        }
+        w = Long.divideUnsigned(w, 2);
+        tmp.dbl();
+      }
     }
     return new G2Point(sum);
   }

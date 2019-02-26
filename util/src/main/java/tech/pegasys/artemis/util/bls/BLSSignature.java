@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.util.bls;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Objects.isNull;
 
 import net.consensys.cava.bytes.Bytes;
@@ -50,10 +51,17 @@ public final class BLSSignature {
   }
 
   /**
-   * Create an empty signature (all zero bytes) as defined in the Eth2 BLS spec
+   * Creates a random, but valid, signature
    *
-   * <p>Due to the flags, this is not actually a valid signature, so we use null to flag that the
-   * signature is empty.
+   * @param entropy to seed the key pair generation
+   * @return the signature
+   */
+  public static BLSSignature random(int entropy) {
+    return new BLSSignature(Signature.random(entropy));
+  }
+
+  /**
+   * Creates an empty signature (all zero bytes)
    *
    * @return the empty signature as per the Eth2 spec
    */
@@ -62,8 +70,13 @@ public final class BLSSignature {
   }
 
   public static BLSSignature fromBytes(Bytes bytes) {
-    return SSZ.decode(
-        bytes, reader -> new BLSSignature(Signature.decodeCompressed(reader.readBytes())));
+    checkArgument(bytes.size() == 100, "Expected 100 bytes but received %s.", bytes.size());
+    if (SSZ.decodeBytes(bytes).isZero()) {
+      return BLSSignature.empty();
+    } else {
+      return SSZ.decode(
+          bytes, reader -> new BLSSignature(Signature.decodeCompressed(reader.readBytes())));
+    }
   }
 
   private final Signature signature;
