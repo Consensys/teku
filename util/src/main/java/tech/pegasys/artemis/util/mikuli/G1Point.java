@@ -92,6 +92,11 @@ final class G1Point implements Group<G1Point> {
 
   private static final int fpPointSize = BIG.MODBYTES;
 
+  /** Default constructor creates the point at infinity (the zero point) */
+  public G1Point() {
+    this(new ECP(), false, true, true);
+  }
+
   /**
    * Constructor for point that calculates the correct flags as per Eth2 Spec
    *

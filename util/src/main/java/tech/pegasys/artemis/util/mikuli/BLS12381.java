@@ -15,7 +15,9 @@ package tech.pegasys.artemis.util.mikuli;
 
 import static tech.pegasys.artemis.util.mikuli.G2Point.hashToG2;
 
+import java.util.List;
 import net.consensys.cava.bytes.Bytes;
+import org.apache.milagro.amcl.BLS381.FP12;
 
 /*
  * Adapted from the ConsenSys/mikuli (Apache 2 License) implementation:
@@ -86,6 +88,39 @@ public final class BLS12381 {
     GTPoint e2 = AtePairing.pair(g1Generator, signature.g2Point());
 
     return e1.equals(e2);
+  }
+
+  /**
+   * Verifies the given BLS signature against the message bytes using the public key.
+   *
+   * @param publicKeys The list of public keys, not null
+   * @param signature The signature, not null
+   * @param messages The list of lmessage data to verify, not null
+   * @param domain The domain value added to the message
+   * @return True if the verification is successful.
+   */
+  public static boolean verifyMultiple(
+      List<PublicKey> publicKeys, Signature signature, List<Bytes> messages, long domain) {
+    if (!G2Point.isValid(signature.g2Point())
+        || publicKeys.size() == 0
+        || publicKeys.size() != messages.size()) {
+      return false;
+    }
+
+    G1Point g1Generator = KeyPair.g1Generator;
+
+    GTPoint eCombined = new GTPoint(new FP12(1));
+    for (int i = 0; i < publicKeys.size(); i++) {
+      if (!G1Point.isValid(publicKeys.get(i).g1Point())) {
+        return false;
+      }
+      G2Point hashInGroup2 = hashFunction(messages.get(i), domain);
+      eCombined = eCombined.mul(AtePairing.pair(publicKeys.get(i).g1Point(), hashInGroup2));
+    }
+
+    GTPoint e2 = AtePairing.pair(g1Generator, signature.g2Point());
+
+    return e2.equals(eCombined);
   }
 
   /**

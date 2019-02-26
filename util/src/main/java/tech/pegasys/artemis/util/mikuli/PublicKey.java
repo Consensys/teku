@@ -30,7 +30,7 @@ public final class PublicKey {
   }
 
   /**
-   * Aggregates list of PublicKey pairs
+   * Aggregates list of PublicKeys
    *
    * @param keys The list of public keys to aggregate, not null
    * @return PublicKey The public key, not null

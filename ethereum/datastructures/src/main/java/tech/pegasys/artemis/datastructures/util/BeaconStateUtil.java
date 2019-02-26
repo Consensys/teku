@@ -949,7 +949,7 @@ public class BeaconStateUtil {
         Arrays.asList(
             bls_aggregate_pubkeys(custody_bit_0_pubkeys),
             bls_aggregate_pubkeys(custody_bit_1_pubkeys));
-    List<Bytes32> messages =
+    List<Bytes> messages =
         Arrays.asList(
             hash_tree_root(
                 new AttestationDataAndCustodyBit(slashable_attestation.getData(), false).toBytes()),

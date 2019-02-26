@@ -175,6 +175,11 @@ final class G2Point implements Group<G2Point> {
 
   private static final int fpPointSize = BIG.MODBYTES;
 
+  /** Default constructor creates the point at infinity (the zero point) */
+  public G2Point() {
+    this(new ECP2(), false, true, true);
+  }
+
   /**
    * Constructor for point that calculates the correct flags as per Eth2 Spec
    *
