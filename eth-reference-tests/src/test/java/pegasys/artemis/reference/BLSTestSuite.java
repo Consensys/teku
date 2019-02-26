@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.util.bls;
+package tech.pegasys.artemis.util.mikuli;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
@@ -24,10 +24,28 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
+
+import net.consensys.cava.bytes.Bytes;
+import net.consensys.cava.bytes.Bytes32;
+import net.consensys.cava.bytes.Bytes48;
 import net.consensys.cava.io.Resources;
+import org.apache.milagro.amcl.BLS381.BIG;
+import org.apache.milagro.amcl.BLS381.ECP2;
+import org.apache.milagro.amcl.BLS381.FP2;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+/*
+ * The "official" BLS reference test data is from https://github.com/ethereum/eth2.0-tests/
+ *
+ * TODO: As of 2019-02-26 there are various issues with the reference data
+ *  > I think the flags are incorrectly applied to real rather than the imaginary coords
+ *    when dealing with compressed points
+ *  > Test case 05 is missing
+ */
 
 public class BLSTestSuite {
 
@@ -62,14 +80,57 @@ public class BLSTestSuite {
   @MethodSource("readMessageHashG2Compressed")
   void testMessageHashToG2Compressed(
       LinkedHashMap<String, String> input, ArrayList<String> output) {
-    ;
+
+    long domain = Bytes32.fromHexString(input.get("domain")).getLong(24);
+    Bytes message = Bytes.fromHexString(input.get("message"));
+
+    G2Point actual = G2Point.hashToG2(message, domain);
+    Bytes48 xReExpected = Bytes48.leftPad(Bytes.fromHexString(output.get(0)));
+    Bytes48 xImExpected = Bytes48.leftPad(Bytes.fromHexString(output.get(1)));
+
+
+    /*
+    // TODO the test should look like this, but there is an issue with the test data
+    // and compressed coordinates.
+    // See https://github.com/ethereum/eth2.0-tests/issues/20
+
+    Bytes expectedBytes = Bytes.concatenate(xReExpected, xImExpected);
+    Bytes actualBytes = actual.toBytesCompressed();
+
+    assertEquals(expectedBytes, actualBytes);
+    */
+
+    // TODO temporarily work around issue with the test data
+
+    byte[] xReBytes = new byte[48];
+    byte[] xImBytes = new byte[48];
+    actual.ecp2Point().getX().getA().toBytes(xReBytes);
+    actual.ecp2Point().getX().getB().toBytes(xImBytes);
+    Bytes48 xReActual = Bytes48.leftPad(Bytes48.wrap(xReBytes));
+    Bytes48 xImActual = Bytes48.leftPad(Bytes48.wrap(xImBytes));
+
+    // Mask the faulty flag bits
+    xReExpected = xReExpected.and(Bytes48.fromHexString(
+            "0x" +
+            "1fffffffffffffffffffffffffffffff" +
+            "ffffffffffffffffffffffffffffffff" +
+            "ffffffffffffffffffffffffffffffff"));
+
+    assertEquals(xReExpected, xReActual);
+    assertEquals(xImExpected, xImActual);
   }
 
   @ParameterizedTest(name = "{index}. message hash to G2 uncompressed {0} -> {1}")
   @MethodSource("readMessageHashG2Uncompressed")
   void testMessageHashToG2Uncompressed(
-      LinkedHashMap<String, String> input, ArrayList<String> output) {
-    ;
+      LinkedHashMap<String, String> input, ArrayList<ArrayList<String>> output) {
+
+    long domain = Bytes32.fromHexString(input.get("domain")).getLong(24);
+    Bytes message = Bytes.fromHexString(input.get("message"));
+
+    G2Point referencePoint = makePoint(output);
+
+    assertEquals(referencePoint, G2Point.hashToG2(message, domain));
   }
 
   @MustBeClosed
@@ -123,5 +184,36 @@ public class BLSTestSuite {
 
     return ((List<Map>) allTests.get(tcase))
         .stream().map(testCase -> Arguments.of(testCase.get("input"), testCase.get("output")));
+  }
+
+  /**
+   * Utility for converting uncompressed test case data to a point
+   *
+   * <p>The test case data is not in standard form (Z = 1). This routine converts the input to a
+   * point and applies the affine transformation. This routine is for uncompressed input.
+   *
+   * @param coords an array of strings {xRe, xIm, yRe, yIm, zRe, zIm}
+   * @return the point corresponding to the input
+   */
+  private static G2Point makePoint(ArrayList<ArrayList<String>> coords) {
+    BIG xRe = BIG.fromBytes(Bytes48.leftPad(Bytes.fromHexString(coords.get(0).get(0))).toArray());
+    BIG xIm = BIG.fromBytes(Bytes48.leftPad(Bytes.fromHexString(coords.get(0).get(1))).toArray());
+    BIG yRe = BIG.fromBytes(Bytes48.leftPad(Bytes.fromHexString(coords.get(1).get(0))).toArray());
+    BIG yIm = BIG.fromBytes(Bytes48.leftPad(Bytes.fromHexString(coords.get(1).get(1))).toArray());
+    BIG zRe = BIG.fromBytes(Bytes48.leftPad(Bytes.fromHexString(coords.get(2).get(0))).toArray());
+    BIG zIm = BIG.fromBytes(Bytes48.leftPad(Bytes.fromHexString(coords.get(2).get(1))).toArray());
+
+    FP2 x = new FP2(xRe, xIm);
+    FP2 y = new FP2(yRe, yIm);
+    FP2 z = new FP2(zRe, zIm);
+
+    // Normalise the point (affine transformation) so that Z = 1
+    z.inverse();
+    x.mul(z);
+    x.reduce();
+    y.mul(z);
+    y.reduce();
+
+    return new G2Point(new ECP2(x, y));
   }
 }
