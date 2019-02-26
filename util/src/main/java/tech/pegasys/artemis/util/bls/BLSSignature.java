@@ -16,6 +16,8 @@ package tech.pegasys.artemis.util.bls;
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Objects.isNull;
 
+import java.util.List;
+import java.util.stream.Collectors;
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes48;
 import net.consensys.cava.ssz.SSZ;
@@ -63,10 +65,29 @@ public final class BLSSignature {
   /**
    * Creates an empty signature (all zero bytes)
    *
+   * <p>Due to the flags, this is not actually a valid signature, so we use null to flag that the
+   * signature is empty.
+   *
    * @return the empty signature as per the Eth2 spec
    */
   public static BLSSignature empty() {
     return new BLSSignature(null);
+  }
+
+  /**
+   * Aggregates a list of signatures into a single signature using BLS magic.
+   *
+   * @param signatures the list of signatures to be aggregated
+   * @return the aggregated signature
+   * @throws BLSException if an empty signature is found in the list to be aggregated
+   */
+  static BLSSignature aggregate(List<BLSSignature> signatures) throws BLSException {
+    if (signatures.stream().anyMatch(BLSSignature::isEmpty)) {
+      throw new BLSException("Empty signature found while aggregating signatures.");
+    }
+    List<Signature> signatureObjects =
+        signatures.stream().map(x -> x.signature).collect(Collectors.toList());
+    return new BLSSignature(Signature.aggregate(signatureObjects));
   }
 
   public static BLSSignature fromBytes(Bytes bytes) {
@@ -99,6 +120,31 @@ public final class BLSSignature {
       throw new BLSException("The checkSignature method was called on an empty signature.");
     }
     return BLS12381.verify(PublicKey.fromBytes(publicKey), signature, message, domain);
+  }
+
+  /**
+   * Verify the aggregate signature against the given list of public keys, list of messages and
+   * domain
+   *
+   * @param publicKeys the list of public keys signed the messages
+   * @param messages the messages to be authenticated
+   * @param domain the domain as specified in the Eth2 spec
+   * @return true if the signature is valid, false if it is not
+   * @throws BLSException
+   */
+  boolean checkSignature(List<Bytes48> publicKeys, List<Bytes> messages, long domain)
+      throws BLSException {
+    checkArgument(
+        publicKeys.size() == messages.size(),
+        "Differing numbers of public keys and messages: %s and %s",
+        publicKeys.size(),
+        messages.size());
+    if (isNull(signature)) {
+      throw new BLSException("The checkSignature method was called on an empty signature.");
+    }
+    List<PublicKey> publicKeyObjects =
+        publicKeys.stream().map(x -> PublicKey.fromBytes(x)).collect(Collectors.toList());
+    return BLS12381.verifyMultiple(publicKeyObjects, signature, messages, domain);
   }
 
   /**

@@ -13,6 +13,8 @@
 
 package tech.pegasys.artemis.util.bls;
 
+import java.util.List;
+import java.util.stream.Collectors;
 import net.consensys.cava.bytes.Bytes48;
 import tech.pegasys.artemis.util.mikuli.PublicKey;
 
@@ -25,6 +27,13 @@ public class BLSPublicKey {
    */
   public static Bytes48 random() {
     return Bytes48.wrap(PublicKey.random().toBytes());
+  }
+
+  public static Bytes48 aggregate(List<Bytes48> publicKeys) {
+    List<PublicKey> publicKeyObjects =
+        publicKeys.stream().map(x -> PublicKey.fromBytes(x)).collect(Collectors.toList());
+    PublicKey aggregateKey = PublicKey.aggregate(publicKeyObjects);
+    return Bytes48.wrap(aggregateKey.toBytes());
   }
 
   private PublicKey publicKey;

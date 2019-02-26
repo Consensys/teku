@@ -19,7 +19,6 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static tech.pegasys.artemis.util.mikuli.G1Point.isValid;
 
-import org.apache.milagro.amcl.BLS381.ECP;
 import org.junit.jupiter.api.Test;
 
 class G1PointTest {
@@ -76,7 +75,7 @@ class G1PointTest {
 
   @Test
   void succeedsWhenPointAtInfinityHasCorrectFlags() {
-    G1Point infinity = new G1Point(new ECP());
+    G1Point infinity = new G1Point();
     assertTrue(infinity.ecpPoint().is_infinity());
     assertFalse(infinity.getA());
     assertTrue(infinity.getB());
