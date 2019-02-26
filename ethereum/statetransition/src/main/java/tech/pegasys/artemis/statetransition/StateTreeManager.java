@@ -14,6 +14,7 @@
 package tech.pegasys.artemis.statetransition;
 
 import static java.util.Objects.requireNonNull;
+import static com.google.common.base.Preconditions.checkArgument;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
