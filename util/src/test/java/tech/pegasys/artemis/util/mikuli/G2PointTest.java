@@ -81,7 +81,7 @@ class G2PointTest {
 
   @Test
   void succeedsWhenPointAtInfinityHasCorrectFlags() {
-    G2Point infinity = new G2Point(new ECP2());
+    G2Point infinity = new G2Point();
     assertTrue(infinity.ecp2Point().is_infinity());
     assertFalse(infinity.getA1());
     assertTrue(infinity.getB1());
@@ -336,7 +336,6 @@ class G2PointTest {
   private static G2Point scaleTestReference1(G2Point point, long[] factor) {
     Bytes padding = Bytes.wrap(new byte[40]);
     ECP2 sum = new ECP2();
-    sum.inf(); // This is zero
 
     byte[] foo = new byte[48];
     foo[39] = 1;

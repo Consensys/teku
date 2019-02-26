@@ -15,7 +15,9 @@ package tech.pegasys.artemis.util.mikuli;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.util.Arrays;
 import org.junit.jupiter.api.Test;
 
 class SignatureTest {
@@ -48,6 +50,11 @@ class SignatureTest {
   void succeedsWhenEncodedSignaturesAre192BytesLong() {
     Signature signature = Signature.random();
     assertEquals(signature.encode().size(), 192);
+  }
+
+  @Test
+  void succeedsWhenPassingEmptyListToAggregateSignaturesThrowsIllegalArgumentException() {
+    assertThrows(IllegalArgumentException.class, () -> Signature.aggregate(Arrays.asList()));
   }
 
   @Test

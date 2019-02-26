@@ -18,13 +18,29 @@ import net.consensys.cava.bytes.Bytes48;
 
 public class BLSAggregate {
 
-  public static Bytes48 bls_aggregate_pubkeys(List<Bytes48> pubkeys) {
-    // todo
-    return Bytes48.ZERO;
+  /**
+   * The bls_aggregate_pubkeys() function as defined in the Eth2 specification
+   *
+   * @param pubKeys the list of compressed public keys
+   * @return the aggregated public key
+   */
+  public static Bytes48 bls_aggregate_pubkeys(List<Bytes48> pubKeys) {
+    return BLSPublicKey.aggregate(pubKeys);
   }
 
-  public static Bytes48[] bls_aggregate_signatures(List<Bytes48> signatures) {
-    // todo
-    return new Bytes48[] {Bytes48.ZERO};
+  /**
+   * The bls_aggregate_signatures() function as defined in the Eth2 specification
+   *
+   * @param signatures the list of signature objects
+   * @return the aggregated signature
+   */
+  public static BLSSignature bls_aggregate_signatures(List<BLSSignature> signatures) {
+    try {
+      return BLSSignature.aggregate(signatures);
+    } catch (BLSException e) {
+      // TODO: once we stop using random (unseeded signatures) keypairs,
+      // then the signatures will be predictable and the resulting state can be precomputed
+      return BLSSignature.random();
+    }
   }
 }
