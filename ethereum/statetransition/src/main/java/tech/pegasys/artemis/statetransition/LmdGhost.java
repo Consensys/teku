@@ -18,7 +18,6 @@ import static java.util.Objects.requireNonNull;
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
@@ -29,7 +28,6 @@ import tech.pegasys.artemis.datastructures.util.ValidatorsUtil;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 
 public class LmdGhost {
-  protected final HashMap<Integer, Attestation> latestAttestations = new HashMap<>();
 
   public BeaconBlock lmd_ghost(
       ChainStorageClient store, BeaconState start_state, BeaconBlock start_block)
@@ -117,10 +115,12 @@ public class LmdGhost {
    *  several such attestations exist, use the one the validator v observed first.
    */
   public Attestation get_latest_attestation(int validatorIndex) throws StateTransitionException {
-    if (!latestAttestations.containsKey(validatorIndex)) {
+    Optional<Attestation> latestAttestation =
+        ChainStorageClient.getLatestAttestation(validatorIndex);
+    if (!latestAttestation.isPresent()) {
       throw new StateTransitionException("validatorIndex not found in latestAttestations mapping");
     }
-    return latestAttestations.get(validatorIndex);
+    return latestAttestation.get();
   }
 
   /*

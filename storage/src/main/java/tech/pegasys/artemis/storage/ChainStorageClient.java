@@ -16,16 +16,20 @@ package tech.pegasys.artemis.storage;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.LinkedBlockingQueue;
 import net.consensys.cava.bytes.Bytes;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.datastructures.util.AttestationUtil;
+import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 
 /** This class is the ChainStorage client-side logic */
 public class ChainStorageClient implements ChainStorage {
 
+  protected static final HashMap<Integer, Attestation> latestAttestations = new HashMap<>();
   protected final LinkedBlockingQueue<BeaconBlock> unprocessedBlocks = new LinkedBlockingQueue<>();
   protected final LinkedBlockingQueue<Attestation> unprocessedAttestations =
       new LinkedBlockingQueue<>();
@@ -144,8 +148,37 @@ public class ChainStorageClient implements ChainStorage {
   }
 
   @Subscribe
-  public void onNewUnprocessedAttestation(Attestation attestation) {
+  public void onNewUnprocessedAttestation(BeaconState state, Attestation attestation) {
     LOG.info("ChainStorage: new unprocessed Attestation detected");
     addUnprocessedAttestation(attestation);
+
+    // TODO: verify attestation is stubbed out, needs to be implemented
+    if (AttestationUtil.verifyAttestation(state, attestation)) {
+      List<Integer> attestation_participants =
+          BeaconStateUtil.get_attestation_participants(
+              state, attestation.getData(), attestation.getAggregation_bitfield().toArray());
+
+      for (Integer participantIndex : attestation_participants) {
+        Optional<Attestation> latest_attestation = getLatestAttestation(participantIndex);
+        if (!latest_attestation.isPresent()
+            || latest_attestation
+                    .get()
+                    .getData()
+                    .getSlot()
+                    .compareTo(attestation.getData().getSlot())
+                < 0) {
+          latestAttestations.put(participantIndex, attestation);
+        }
+      }
+    }
+  }
+
+  public static Optional<Attestation> getLatestAttestation(int validatorIndex) {
+    Attestation attestation = latestAttestations.get(validatorIndex);
+    if (attestation == null) {
+      return Optional.ofNullable(null);
+    } else {
+      return Optional.of(attestation);
+    }
   }
 }
