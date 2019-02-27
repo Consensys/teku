@@ -35,6 +35,7 @@ public class StateTransition {
   public StateTransition() {}
 
   public void initiate(BeaconState state, BeaconBlock block) throws StateTransitionException {
+    LOG.info("Begin state transition");
     // per-slot processing
     slotProcessor(state, block);
     // per-block processing
@@ -49,30 +50,31 @@ public class StateTransition {
         .equals(UnsignedLong.ZERO)) {
       epochProcessor(state);
     }
+    LOG.info("End state transition");
   }
 
   protected void slotProcessor(BeaconState state, BeaconBlock block) {
     try {
       state.incrementSlot();
-      LOG.info("Processing new slot: " + state.getSlot());
+      LOG.info("  Processing new slot: " + state.getSlot());
       // Slots the proposer has skipped (i.e. layers of RANDAO expected)
       // should be in Validator.randao_skips
       SlotProcessorUtil.updateLatestRandaoMixes(state);
       SlotProcessorUtil.updateRecentBlockHashes(state, block);
     } catch (SlotProcessingException e) {
-      LOG.warn("Slot processing error: " + e);
+      LOG.warn("  Slot processing error: " + e);
     } catch (Exception e) {
-      LOG.warn("Unexpected slot processing error: " + e);
+      LOG.warn("  Unexpected slot processing error: " + e);
     }
   }
 
   protected void blockProcessor(BeaconState state, BeaconBlock block) {
     if (BlockProcessorUtil.verify_slot(state, block)) {
       try {
-        LOG.info("Processing new block with state root: " + block.getState_root());
+        LOG.info("  Processing new block with state root: " + block.getState_root());
 
         // Block Header
-        LOG.info("Processing block header.");
+        LOG.info("  Processing block header.");
         // Verify Proposer Signature
         BlockProcessorUtil.verify_signature(state, block);
         // Verify and Update RANDAO
@@ -81,7 +83,7 @@ public class StateTransition {
         BlockProcessorUtil.update_eth1_data(state, block);
 
         // Block Body - Operations
-        LOG.info("Processing block body.");
+        LOG.info("  Processing block body.");
         // Execute Proposer Slashings
         BlockProcessorUtil.proposer_slashing(state, block);
         // Execute Attester Slashings
@@ -93,18 +95,18 @@ public class StateTransition {
         // Process Exits
         BlockProcessorUtil.processExits(state, block);
       } catch (BlockProcessingException e) {
-        LOG.warn("Block processing error: " + e);
+        LOG.warn("  Block processing error: " + e);
       } catch (Exception e) {
-        LOG.warn("Unexpected block processing error: " + e);
+        LOG.warn("  Unexpected block processing error: " + e);
       }
     } else {
-      LOG.info("Skipping block processing for this slot.");
+      LOG.info("  Skipping block processing for this slot.");
     }
   }
 
   protected void epochProcessor(BeaconState state) {
     try {
-      LOG.info("Processing new epoch: " + BeaconStateUtil.get_current_epoch(state));
+      LOG.info("  Processing new epoch: " + BeaconStateUtil.get_current_epoch(state));
 
       EpochProcessorUtil.updateEth1Data(state);
       EpochProcessorUtil.updateJustification(state);
@@ -127,9 +129,9 @@ public class StateTransition {
       EpochProcessorUtil.process_penalties_and_exits(state);
       EpochProcessorUtil.finalUpdates(state);
     } catch (EpochProcessingException e) {
-      LOG.warn("Epoch processing error: " + e);
+      LOG.warn("  Epoch processing error: " + e);
     } catch (Exception e) {
-      LOG.warn("Unexpected epoch processing error: " + e);
+      LOG.warn("  Unexpected epoch processing error: " + e);
     }
   }
 }
