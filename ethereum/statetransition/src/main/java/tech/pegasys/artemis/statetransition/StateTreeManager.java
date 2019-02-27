@@ -132,7 +132,6 @@ public class StateTreeManager {
               blockStateRoot.toHexString(),
               newStateRoot.toHexString());
           // TODO: storing block and state together as a tuple would be more convenient
-          this.store.addState(newStateRoot, newState);
           this.store.addProcessedBlock(blockStateRoot, block.get());
           this.store.addProcessedBlock(blockRoot, block.get());
         } else {
@@ -152,8 +151,8 @@ public class StateTreeManager {
         stateTransition.initiate(newState, null);
       }
       this.canonical_state = newState;
-      Bytes32 stateRoot = HashTreeUtil.hash_tree_root(newState.toBytes());
-      this.store.addState(stateRoot, newState);
+      Bytes32 newStateRoot = HashTreeUtil.hash_tree_root(newState.toBytes());
+      this.store.addState(newStateRoot, newState);
     } catch (NoSuchElementException | IllegalArgumentException | StateTransitionException e) {
       LOG.warn(e);
     }
