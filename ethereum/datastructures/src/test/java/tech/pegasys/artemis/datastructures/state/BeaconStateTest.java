@@ -456,7 +456,9 @@ class BeaconStateTest {
           .isEqualTo(
               Hash.keccak256(
                   Bytes.wrap(
-                      Bytes32.fromHexString("0x029a"), get_active_index_root(state, epoch))));
+                      Bytes.wrap(
+                          Bytes32.fromHexString("0x029a"), get_active_index_root(state, epoch)),
+                      Bytes.ofUnsignedLong(epoch.longValue()))));
     } catch (IllegalStateException e) {
       fail(e.toString());
     }
