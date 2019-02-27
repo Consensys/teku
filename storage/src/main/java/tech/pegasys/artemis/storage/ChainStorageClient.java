@@ -35,7 +35,7 @@ public class ChainStorageClient implements ChainStorage {
   protected final LinkedBlockingQueue<BeaconBlock> unprocessedBlocks = new LinkedBlockingQueue<>();
   protected final LinkedBlockingQueue<Attestation> unprocessedAttestations =
       new LinkedBlockingQueue<>();
-  public final HashMap<Bytes, BeaconBlock> processedBlockLookup = new HashMap<>();
+  protected final HashMap<Bytes, BeaconBlock> processedBlockLookup = new HashMap<>();
   protected final HashMap<Bytes, BeaconState> stateLookup = new HashMap<>();
   protected EventBus eventBus;
 
@@ -150,9 +150,15 @@ public class ChainStorageClient implements ChainStorage {
   }
 
   @Subscribe
-  public void onNewUnprocessedAttestation(BeaconState state, Attestation attestation) {
+  public void onNewUnprocessedAttestation(Attestation attestation) {
     LOG.info("ChainStorage: new unprocessed Attestation detected");
     addUnprocessedAttestation(attestation);
+
+    // TODO: verify the assumption below:
+    // ASSUMPTION: the state with which we can find the attestation participants
+    // using get_attestation_participants is the state associated with the beacon
+    // block being attested in the attestation.
+    BeaconState state = stateLookup.get(attestation.getData().getBeacon_block_root());
 
     // TODO: verify attestation is stubbed out, needs to be implemented
     if (AttestationUtil.verifyAttestation(state, attestation)) {

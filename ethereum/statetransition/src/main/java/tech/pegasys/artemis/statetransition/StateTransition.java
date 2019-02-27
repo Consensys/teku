@@ -37,7 +37,6 @@ public class StateTransition {
 
   public void initiate(BeaconState state, BeaconBlock block, ChainStorageClient store)
       throws StateTransitionException {
-  public void initiate(BeaconState state, BeaconBlock block) throws StateTransitionException {
     LOG.info("Begin state transition");
     // per-slot processing
     slotProcessor(state, block);
