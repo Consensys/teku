@@ -13,6 +13,8 @@
 
 package tech.pegasys.artemis.util.mikuli;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.errorprone.annotations.MustBeClosed;
@@ -24,101 +26,30 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
-
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.bytes.Bytes48;
 import net.consensys.cava.io.Resources;
 import org.apache.milagro.amcl.BLS381.BIG;
+import org.apache.milagro.amcl.BLS381.ECP;
 import org.apache.milagro.amcl.BLS381.ECP2;
+import org.apache.milagro.amcl.BLS381.FP;
 import org.apache.milagro.amcl.BLS381.FP2;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
 /*
  * The "official" BLS reference test data is from https://github.com/ethereum/eth2.0-tests/
  *
- * TODO: As of 2019-02-26 there are various issues with the reference data
- *  > I think the flags are incorrectly applied to real rather than the imaginary coords
- *    when dealing with compressed points
- *  > Test case 05 is missing
+ * TODO: As of 2019-02-26 there are some issues with the reference data
+ *  > The point compression used is broken. See https://github.com/ethereum/eth2.0-tests/issues/20
+ *    This leads to extensive and tedious work-arounds in the below. Test 06 is too hard to fix
+ *  > Test case 07 input data is malformed.
+ *  Also note that the spec and test data will likely be changing.
  */
 
-public class BLSTestSuite {
-
-  // Disabled automation as there's a single test case, it's less code to implement it directly
-  /*
-  @ParameterizedTest(name = "{index}. aggregate pub keys {0} -> {1}")
-  @MethodSource("readAggregatePubKeys")
-  void testAggregatePubKeys(String input, String output) {
-    ;
-  }
-  */
-
-  @ParameterizedTest(name = "{index}. aggregate sig {0} -> {1}")
-  @MethodSource("readAggregateSig")
-  void testAggregateSig(ArrayList<String> input, String output) {
-    ;
-  }
-
-  @ParameterizedTest(name = "{index}. sign messages {0} -> {1}")
-  @MethodSource("readSignMessages")
-  void testSignMessages(LinkedHashMap<String, String> input, String output) {
-    ;
-  }
-
-  @ParameterizedTest(name = "{index}. private to public key {0} -> {1}")
-  @MethodSource("readPrivateToPublicKey")
-  void testPrivateToPublicKey(String input, String output) {
-    ;
-  }
-
-  @ParameterizedTest(name = "{index}. message hash to G2 compressed {0} -> {1}")
-  @MethodSource("readMessageHashG2Compressed")
-  void testMessageHashToG2Compressed(
-      LinkedHashMap<String, String> input, ArrayList<String> output) {
-
-    long domain = Bytes32.fromHexString(input.get("domain")).getLong(24);
-    Bytes message = Bytes.fromHexString(input.get("message"));
-
-    G2Point actual = G2Point.hashToG2(message, domain);
-    Bytes48 xReExpected = Bytes48.leftPad(Bytes.fromHexString(output.get(0)));
-    Bytes48 xImExpected = Bytes48.leftPad(Bytes.fromHexString(output.get(1)));
-
-
-    /*
-    // TODO the test should look like this, but there is an issue with the test data
-    // and compressed coordinates.
-    // See https://github.com/ethereum/eth2.0-tests/issues/20
-
-    Bytes expectedBytes = Bytes.concatenate(xReExpected, xImExpected);
-    Bytes actualBytes = actual.toBytesCompressed();
-
-    assertEquals(expectedBytes, actualBytes);
-    */
-
-    // TODO temporarily work around issue with the test data
-
-    byte[] xReBytes = new byte[48];
-    byte[] xImBytes = new byte[48];
-    actual.ecp2Point().getX().getA().toBytes(xReBytes);
-    actual.ecp2Point().getX().getB().toBytes(xImBytes);
-    Bytes48 xReActual = Bytes48.leftPad(Bytes48.wrap(xReBytes));
-    Bytes48 xImActual = Bytes48.leftPad(Bytes48.wrap(xImBytes));
-
-    // Mask the faulty flag bits
-    xReExpected = xReExpected.and(Bytes48.fromHexString(
-            "0x" +
-            "1fffffffffffffffffffffffffffffff" +
-            "ffffffffffffffffffffffffffffffff" +
-            "ffffffffffffffffffffffffffffffff"));
-
-    assertEquals(xReExpected, xReActual);
-    assertEquals(xImExpected, xImActual);
-  }
+class BLSTestSuite {
 
   @ParameterizedTest(name = "{index}. message hash to G2 uncompressed {0} -> {1}")
   @MethodSource("readMessageHashG2Uncompressed")
@@ -133,13 +64,138 @@ public class BLSTestSuite {
     assertEquals(referencePoint, G2Point.hashToG2(message, domain));
   }
 
+  @ParameterizedTest(name = "{index}. message hash to G2 compressed {0} -> {1}")
+  @MethodSource("readMessageHashG2Compressed")
+  void testMessageHashToG2Compressed(
+      LinkedHashMap<String, String> input, ArrayList<String> output) {
+
+    long domain = Bytes32.fromHexString(input.get("domain")).getLong(24);
+    Bytes message = Bytes.fromHexString(input.get("message"));
+
+    G2Point actual = G2Point.hashToG2(message, domain);
+    Bytes48 xReExpected = Bytes48.leftPad(Bytes.fromHexString(output.get(0)));
+    Bytes48 xImExpected = Bytes48.leftPad(Bytes.fromHexString(output.get(1)));
+
+    /*
+    // TODO the test should look like this when the test data have been fixed
+
+    Bytes expectedBytes = Bytes.concatenate(xReExpected, xImExpected);
+    Bytes actualBytes = actual.toBytesCompressed();
+
+    assertEquals(expectedBytes, actualBytes);
+    */
+
+    // TODO Remove the following when the test data are fixed
+
+    byte[] xReBytes = new byte[48];
+    byte[] xImBytes = new byte[48];
+    actual.ecp2Point().getX().getA().toBytes(xReBytes);
+    actual.ecp2Point().getX().getB().toBytes(xImBytes);
+    Bytes48 xReActual = Bytes48.leftPad(Bytes48.wrap(xReBytes));
+    Bytes48 xImActual = Bytes48.leftPad(Bytes48.wrap(xImBytes));
+
+    // Mask the faulty flag bits
+    xReExpected =
+        xReExpected.and(
+            Bytes48.fromHexString(
+                "0x"
+                    + "1fffffffffffffffffffffffffffffff"
+                    + "ffffffffffffffffffffffffffffffff"
+                    + "ffffffffffffffffffffffffffffffff"));
+
+    assertEquals(xReExpected, xReActual);
+    assertEquals(xImExpected, xImActual);
+  }
+
+  @ParameterizedTest(name = "{index}. private to public key {0} -> {1}")
+  @MethodSource("readPrivateToPublicKey")
+  void testPrivateToPublicKey(String input, String output) {
+    SecretKey privateKey = SecretKey.fromBytes(Bytes48.leftPad(Bytes.fromHexString(input)));
+
+    PublicKey publicKeyActual = new PublicKey(privateKey);
+
+    // TODO: The flags are broken on the test data, so we need to manually create the point.
+    // The correct approach is something like:
+    //   PublicKey publicKeyExpected = new PublicKey(fromBytes(Bytes.fromHexString(output)));
+    //   assertEquals(publicKeyExpected, publicKeyActual);
+
+    // TODO Remove the following when the test data are fixed
+
+    G1Point point = new G1Point(new ECP(BIG.fromBytes(Bytes.fromHexString(output).toArray())));
+
+    // If necessary, fix up the Y coords so the A flag matches
+    if (point.getA() != publicKeyActual.g1Point().getA()) {
+      FP yNeg = new FP(point.ecpPoint().getY());
+      yNeg.neg();
+      point = new G1Point(new ECP(point.ecpPoint().getX(), yNeg.redc()));
+    }
+    assertEquals(publicKeyActual, new PublicKey(point));
+  }
+
+  @ParameterizedTest(name = "{index}. sign messages {0} -> {1}")
+  @MethodSource("readSignMessages")
+  void testSignMessages(LinkedHashMap<String, String> input, String output) {
+
+    long domain = Bytes32.fromHexString(input.get("domain")).getLong(24);
+    Bytes message = Bytes.fromHexString(input.get("message"));
+    SecretKey privateKey =
+        SecretKey.fromBytes(Bytes48.leftPad(Bytes.fromHexString(input.get("privkey"))));
+
+    Signature signatureActual =
+        BLS12381.sign(new KeyPair(privateKey), message.toArray(), domain).signature();
+
+    String expected = output;
+    // TODO: Once again, we need to fix things up with the flags
+    // Signature signatureExpected = new
+    // Signature(G2Point.fromBytesCompressed(Bytes.fromHexString(output)));
+
+    // TODO Remove the following when the test data are fixed
+
+    byte[] tmp = Bytes.fromHexString(output).toArray();
+    tmp[0] &= (byte) 0x1f;
+    BIG xRe = BIG.frombytearray(tmp, 0);
+    BIG xIm = BIG.frombytearray(tmp, 48);
+    G2Point point = new G2Point(new ECP2(new FP2(xRe, xIm)));
+    // If necessary, fix up the Y coords so the A flag matches
+    if (point.getA1() != signatureActual.g2Point().getA1()) {
+      FP2 yNeg = new FP2(point.ecp2Point().getY());
+      yNeg.neg();
+      point = new G2Point(new ECP2(point.ecp2Point().getX(), yNeg));
+    }
+    Signature signatureExpected = new Signature(point);
+
+    assertEquals(signatureExpected, signatureActual);
+  }
+
+  @ParameterizedTest(name = "{index}. aggregate sig {0} -> {1}")
+  @MethodSource("readAggregateSig")
+  void testAggregateSig(ArrayList<String> input, String output) {
+
+    // TODO: Too arduous to tackle until the flags are cleared up in the input data: basically, it's
+    // not clear in the input data which Y branch is being selected give the compressed input (it's
+    // not as per the spec), and fixing this would be horrible: basically 8 possibilities to
+    // generate
+    // and test for each input set.
+    ;
+  }
+
+  /* The input data yml is malformed for this case - it needs a "- " before "input"
+    @ParameterizedTest(name = "{index}. aggregate pub keys {0} -> {1}")
+    @MethodSource("readAggregatePubKeys")
+    void testAggregatePubKeys(ArrayList<String> input, String output) {
+
+      // TODO: See above
+      ;
+
+    }
+  */
+
   @MustBeClosed
   private static Stream<Arguments> findTests(String glob, String tcase) throws IOException {
     return Resources.find(glob)
         .flatMap(
             url -> {
               try (InputStream in = url.openConnection().getInputStream()) {
-                System.out.println(url);
                 return prepareTests(in, tcase);
               } catch (IOException e) {
                 throw new UncheckedIOException(e);

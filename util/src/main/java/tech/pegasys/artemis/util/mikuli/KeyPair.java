@@ -39,9 +39,7 @@ public final class KeyPair {
     Scalar secret = new Scalar(BIG.randomnum(curveOrder, rng));
 
     SecretKey secretKey = new SecretKey(secret);
-    G1Point g1Point = g1Generator.mul(secret);
-    PublicKey publicKey = new PublicKey(g1Point);
-    return new KeyPair(secretKey, publicKey);
+    return new KeyPair(secretKey);
   }
 
   /**
@@ -56,9 +54,7 @@ public final class KeyPair {
     Scalar secret = new Scalar(BIG.randomnum(curveOrder, rng));
 
     SecretKey secretKey = new SecretKey(secret);
-    G1Point g1Point = g1Generator.mul(secret);
-    PublicKey publicKey = new PublicKey(g1Point);
-    return new KeyPair(secretKey, publicKey);
+    return new KeyPair(secretKey);
   }
 
   private final SecretKey secretKey;
@@ -67,6 +63,18 @@ public final class KeyPair {
   public KeyPair(SecretKey secretKey, PublicKey publicKey) {
     this.secretKey = secretKey;
     this.publicKey = publicKey;
+  }
+
+  public KeyPair(SecretKey secretKey) {
+    this.secretKey = secretKey;
+    this.publicKey = new PublicKey(this.secretKey);
+    ;
+  }
+
+  public KeyPair(Scalar secretKey) {
+    this.secretKey = new SecretKey(secretKey);
+    this.publicKey = new PublicKey(this.secretKey);
+    ;
   }
 
   public PublicKey publicKey() {

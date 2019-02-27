@@ -57,7 +57,7 @@ final class G1Point implements Group<G1Point> {
   static G1Point fromBytesCompressed(Bytes bytes) {
     checkArgument(
         bytes.size() == fpPointSize,
-        "Expected %s bytes but received %s",
+        "Expected %s bytes but received %s.",
         fpPointSize,
         bytes.size());
     byte[] xBytes = bytes.toArray();
@@ -125,7 +125,7 @@ final class G1Point implements Group<G1Point> {
    * @throws IllegalArgumentException if the point is not on the curve or the flags are incorrect
    */
   private G1Point(ECP point, boolean a1, boolean b1, boolean c1) {
-    checkArgument(isValid(point, a1, b1, c1));
+    checkArgument(isValid(point, a1, b1, c1), "Trying to create invalid point.");
     this.point = point;
     this.a = a1;
     this.b = b1;
