@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.util.mikuli;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static org.apache.milagro.amcl.BLS381.BIG.MODBYTES;
 
 import java.util.Objects;
@@ -39,6 +40,8 @@ public final class SecretKey {
    * @return a new SecretKey object
    */
   public static SecretKey fromBytes(Bytes bytes) {
+    checkArgument(
+        bytes.size() == MODBYTES, "Expected %s bytes, received %s.", MODBYTES, bytes.size());
     return new SecretKey(new Scalar(BIG.fromBytes(bytes.toArrayUnsafe())));
   }
 
@@ -56,6 +59,10 @@ public final class SecretKey {
     byte[] bytea = new byte[MODBYTES];
     scalarValue.value().toBytes(bytea);
     return Bytes.wrap(bytea);
+  }
+
+  Scalar getScalarValue() {
+    return scalarValue;
   }
 
   @Override
