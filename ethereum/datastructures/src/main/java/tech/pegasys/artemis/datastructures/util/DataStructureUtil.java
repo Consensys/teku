@@ -302,27 +302,8 @@ public final class DataStructureUtil {
         randomBeaconBlockBody());
   }
 
-  public static BeaconBlock newBeaconBlock(
-      UnsignedLong slotNum, Bytes32 parent_root, Bytes32 state_root) {
-    return new BeaconBlock(
-        slotNum.longValue(),
-        parent_root,
-        state_root,
-        BLSSignature.empty(),
-        new Eth1Data(Bytes32.ZERO, Bytes32.ZERO),
-        BLSSignature.empty(),
-        new BeaconBlockBody(
-            new ArrayList<ProposerSlashing>(),
-            new ArrayList<AttesterSlashing>(),
-            new ArrayList<Attestation>(),
-            new ArrayList<Deposit>(),
-            new ArrayList<Exit>()));
-  }
-
-  public static BeaconState createInitialBeaconState() {
-
+  public static ArrayList<Deposit> newDeposits(int numDeposits) {
     ArrayList<Deposit> deposits = new ArrayList<Deposit>();
-    int numDeposits = 100;
 
     for (int i = 0; i < numDeposits; i++) {
       DepositInput deposit_input =
@@ -335,9 +316,30 @@ public final class DataStructureUtil {
       Deposit deposit = new Deposit(branch, index, deposit_data);
       deposits.add(deposit);
     }
+    return deposits;
+  }
+
+  public static BeaconBlock newBeaconBlock(
+      UnsignedLong slotNum, Bytes32 parent_root, Bytes32 state_root, ArrayList<Deposit> deposits) {
+    return new BeaconBlock(
+        slotNum.longValue(),
+        parent_root,
+        state_root,
+        BLSSignature.empty(),
+        new Eth1Data(Bytes32.ZERO, Bytes32.ZERO),
+        BLSSignature.empty(),
+        new BeaconBlockBody(
+            new ArrayList<ProposerSlashing>(),
+            new ArrayList<AttesterSlashing>(),
+            new ArrayList<Attestation>(),
+            deposits,
+            new ArrayList<Exit>()));
+  }
+
+  public static BeaconState createInitialBeaconState() {
 
     return BeaconStateUtil.get_initial_beacon_state(
-        deposits,
+        newDeposits(100),
         UnsignedLong.valueOf(Constants.GENESIS_SLOT),
         new Eth1Data(Bytes32.ZERO, Bytes32.ZERO));
   }

@@ -67,36 +67,38 @@ public class StateTransition {
   }
 
   protected void blockProcessor(BeaconState state, BeaconBlock block) {
-    try {
-      LOG.info("Processing new block with state root: " + block.getState_root());
+    if (BlockProcessorUtil.verify_slot(state, block)) {
+      try {
+        LOG.info("Processing new block with state root: " + block.getState_root());
 
-      // Block Header
-      LOG.info("Processing block header.");
-      // Verify Slot
-      BlockProcessorUtil.verify_slot(state, block);
-      // Verify Proposer Signature
-      BlockProcessorUtil.verify_signature(state, block);
-      // Verify and Update RANDAO
-      BlockProcessorUtil.verify_and_update_randao(state, block);
-      // Update Eth1 Data
-      BlockProcessorUtil.update_eth1_data(state, block);
+        // Block Header
+        LOG.info("Processing block header.");
+        // Verify Proposer Signature
+        BlockProcessorUtil.verify_signature(state, block);
+        // Verify and Update RANDAO
+        BlockProcessorUtil.verify_and_update_randao(state, block);
+        // Update Eth1 Data
+        BlockProcessorUtil.update_eth1_data(state, block);
 
-      // Block Body - Operations
-      LOG.info("Processing block body.");
-      // Execute Proposer Slashings
-      BlockProcessorUtil.proposer_slashing(state, block);
-      // Execute Attester Slashings
-      BlockProcessorUtil.attester_slashing(state, block);
-      // Process Attestations
-      BlockProcessorUtil.processAttestations(state, block);
-      // Process Deposits
-      BlockProcessorUtil.processDeposits(state, block);
-      // Process Exits
-      BlockProcessorUtil.processExits(state, block);
-    } catch (BlockProcessingException e) {
-      LOG.warn("Block processing error: " + e);
-    } catch (Exception e) {
-      LOG.warn("Unexpected block processing error: " + e);
+        // Block Body - Operations
+        LOG.info("Processing block body.");
+        // Execute Proposer Slashings
+        BlockProcessorUtil.proposer_slashing(state, block);
+        // Execute Attester Slashings
+        BlockProcessorUtil.attester_slashing(state, block);
+        // Process Attestations
+        BlockProcessorUtil.processAttestations(state, block);
+        // Process Deposits
+        BlockProcessorUtil.processDeposits(state, block);
+        // Process Exits
+        BlockProcessorUtil.processExits(state, block);
+      } catch (BlockProcessingException e) {
+        LOG.warn("Block processing error: " + e);
+      } catch (Exception e) {
+        LOG.warn("Unexpected block processing error: " + e);
+      }
+    } else {
+      LOG.info("Skipping block processing for this slot.");
     }
   }
 
