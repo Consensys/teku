@@ -205,7 +205,7 @@ final class G2Point implements Group<G2Point> {
    * @throws IllegalArgumentException if the point is not on the curve or the flags are incorrect
    */
   private G2Point(ECP2 point, boolean a1, boolean b1, boolean c1) {
-    checkArgument(isValid(point, a1, b1, c1));
+    checkArgument(isValid(point, a1, b1, c1), "Trying to create invalid point.");
     this.point = point;
     this.a1 = a1;
     this.b1 = b1;

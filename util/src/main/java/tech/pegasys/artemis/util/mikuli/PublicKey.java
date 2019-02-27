@@ -70,6 +70,10 @@ public final class PublicKey {
     this.point = point;
   }
 
+  PublicKey(SecretKey secretKey) {
+    this.point = KeyPair.g1Generator.mul(secretKey.getScalarValue());
+  }
+
   PublicKey combine(PublicKey pk) {
     return new PublicKey(point.add(pk.point));
   }
