@@ -31,9 +31,7 @@ import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.bytes.Bytes48;
 import net.consensys.cava.io.Resources;
 import org.apache.milagro.amcl.BLS381.BIG;
-import org.apache.milagro.amcl.BLS381.ECP;
 import org.apache.milagro.amcl.BLS381.ECP2;
-import org.apache.milagro.amcl.BLS381.FP;
 import org.apache.milagro.amcl.BLS381.FP2;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -43,10 +41,17 @@ import org.junit.jupiter.params.provider.MethodSource;
  * The "official" BLS reference test data is from https://github.com/ethereum/eth2.0-tests/
  *
  * TODO: As of 2019-02-26 there are some issues with the reference data
- *  > The point compression used is broken. See https://github.com/ethereum/eth2.0-tests/issues/20
- *    This leads to extensive and tedious work-arounds in the below. Test 06 is too hard to fix
- *  > Test case 07 input data is malformed.
- *  Also note that the spec and test data will likely be changing.
+ * The point compression used is broken. See https://github.com/ethereum/eth2.0-tests/issues/20
+ * This leads to extensive and tedious work-arounds in the below. Test 06 is too hard to fix
+ * Specifically:
+ *   > The c flag is missing
+ *   > The a flag is inverted and is at the wrong bit position
+ *   > The compressed coordinate ordering is inverted: should be [Im, Re], but is [Re, Im]
+ *   > The a flag doesn't always match the Y-coordinate, which matters when interpreting
+ *     compressed input data, such as for the aggregation tests.
+ * Also
+ *   > Test case 07 input data is malformed.
+ * Finally, note that the spec and test data will likely be changing.
  */
 
 class BLSTestSuite {
@@ -114,22 +119,13 @@ class BLSTestSuite {
 
     PublicKey publicKeyActual = new PublicKey(privateKey);
 
-    // TODO: The flags are broken on the test data, so we need to manually create the point.
-    // The correct approach is something like:
-    //   PublicKey publicKeyExpected = new PublicKey(fromBytes(Bytes.fromHexString(output)));
-    //   assertEquals(publicKeyExpected, publicKeyActual);
-
-    // TODO Remove the following when the test data are fixed
-
-    G1Point point = new G1Point(new ECP(BIG.fromBytes(Bytes.fromHexString(output).toArray())));
-
-    // If necessary, fix up the Y coords so the A flag matches
-    if (point.getA() != publicKeyActual.g1Point().getA()) {
-      FP yNeg = new FP(point.ecpPoint().getY());
-      yNeg.neg();
-      point = new G1Point(new ECP(point.ecpPoint().getX(), yNeg.redc()));
-    }
-    assertEquals(publicKeyActual, new PublicKey(point));
+    // TODO: Remove workaround when test data are fixed
+    // We'd like to do this, but need to fix up the flags
+    //   PublicKey publicKeyExpected = PublicKey.fromBytes(Bytes.fromHexString(output));
+    byte[] tmp = Bytes.fromHexString(output).toArray();
+    tmp[0] |= (byte) 0xa0;
+    PublicKey publicKeyExpected = PublicKey.fromBytes(tmp);
+    assertEquals(publicKeyExpected, publicKeyActual);
   }
 
   @ParameterizedTest(name = "{index}. sign messages {0} -> {1}")
@@ -141,28 +137,27 @@ class BLSTestSuite {
     SecretKey privateKey =
         SecretKey.fromBytes(Bytes48.leftPad(Bytes.fromHexString(input.get("privkey"))));
 
-    Signature signatureActual =
-        BLS12381.sign(new KeyPair(privateKey), message.toArray(), domain).signature();
+    Bytes signatureActualBytes =
+        BLS12381
+            .sign(new KeyPair(privateKey), message.toArray(), domain)
+            .signature()
+            .g2Point()
+            .toBytesCompressed();
 
-    String expected = output;
-    // TODO: Once again, we need to fix things up with the flags
-    // Signature signatureExpected = new
-    // Signature(G2Point.fromBytesCompressed(Bytes.fromHexString(output)));
+    // TODO: remove the following temporary fixes when the test data is good
 
-    // TODO Remove the following when the test data are fixed
+    // Swap Re & Im to match broken test data
+    byte[] tmp =
+        Bytes.concatenate(signatureActualBytes.slice(48, 48), signatureActualBytes.slice(0, 48))
+            .toArray();
 
-    byte[] tmp = Bytes.fromHexString(output).toArray();
-    tmp[0] &= (byte) 0x1f;
-    BIG xRe = BIG.frombytearray(tmp, 0);
-    BIG xIm = BIG.frombytearray(tmp, 48);
-    G2Point point = new G2Point(new ECP2(new FP2(xRe, xIm)));
-    // If necessary, fix up the Y coords so the A flag matches
-    if (point.getA1() != signatureActual.g2Point().getA1()) {
-      FP2 yNeg = new FP2(point.ecp2Point().getY());
-      yNeg.neg();
-      point = new G2Point(new ECP2(point.ecp2Point().getX(), yNeg));
-    }
-    Signature signatureExpected = new Signature(point);
+    // Ignore the flags entirely until the data are fixed
+    byte[] expectedBytes = Bytes.fromHexString(output).toArray();
+    expectedBytes[0] &= (byte) 0x1f;
+    tmp[48] &= (byte) 0x1f;
+
+    Bytes signatureActual = Bytes.wrap(tmp);
+    Bytes signatureExpected = Bytes.wrap(expectedBytes);
 
     assertEquals(signatureExpected, signatureActual);
   }
@@ -171,12 +166,33 @@ class BLSTestSuite {
   @MethodSource("readAggregateSig")
   void testAggregateSig(ArrayList<String> input, String output) {
 
-    // TODO: Too arduous to tackle until the flags are cleared up in the input data: basically, it's
-    // not clear in the input data which Y branch is being selected give the compressed input (it's
-    // not as per the spec), and fixing this would be horrible: basically 8 possibilities to
-    // generate
-    // and test for each input set.
-    ;
+    ArrayList<Signature> signatures = new ArrayList<>();
+    for (String sig : input) {
+      signatures.add(new Signature(fixInput(sig)));
+    }
+
+    Signature aggregateSignatureActual = Signature.aggregate(signatures);
+
+    Bytes aggregateSignatureActualBytes = aggregateSignatureActual.g2Point().toBytesCompressed();
+    // TODO: We need to swap real and imaginary parts to match the input data
+    aggregateSignatureActualBytes =
+        Bytes.concatenate(
+            aggregateSignatureActualBytes.slice(48, 48),
+            aggregateSignatureActualBytes.slice(0, 48));
+    byte[] tmpActual = aggregateSignatureActualBytes.toArray();
+
+    Bytes aggregateSignatureExpectedBytes = Bytes.fromHexString(output);
+    byte[] tmpExpected = aggregateSignatureExpectedBytes.toArray();
+
+    // TODO: Ignore flags for now
+    tmpActual[48] &= (byte) 0x1f;
+    tmpExpected[0] &= (byte) 0x1f;
+
+    // TODO: Reinstate this test when teh test data are fixed.
+    // Some tests pass, but the majority fail. I believe this is due to the test data being
+    // generated with incorrect Y value. We could run all 8 possibilities, but it's not worth
+    // it for now.
+    // assertEquals(Bytes.wrap(tmpExpected), Bytes.wrap(tmpActual));
   }
 
   /* The input data yml is malformed for this case - it needs a "- " before "input"
@@ -271,5 +287,33 @@ class BLSTestSuite {
     y.reduce();
 
     return new G2Point(new ECP2(x, y));
+  }
+
+  // Temporary function for creating a G2 point from broken input data
+  private static G2Point fixInput(String pointData) {
+
+    Bytes foo = Bytes.fromHexString(pointData);
+    // Invert the Re, Im ordering
+    byte[] tmp = Bytes.concatenate(foo.slice(48, 48), foo.slice(0, 48)).toArray();
+
+    boolean aflag = ((tmp[48] & (byte) 0x80) == 0);
+    tmp[0] &= (byte) 0x1f;
+    tmp[0] = (byte) (tmp[0] | (byte) 0x80 | (byte) (aflag ? 0x20 : 0x00));
+    tmp[48] &= (byte) 0x1f;
+    G2Point point = G2Point.fromBytesCompressed(Bytes.wrap(tmp));
+
+    /*
+        // Check we got the right branch of the sqrt per the spec
+        FP2 yOrg = new FP2(point.ecp2Point().getY());
+        FP2 yNeg = new FP2(yOrg);
+        yNeg.neg();
+
+        if ((BIG.comp(yOrg.getB(), yNeg.getB()) < 0) || ((BIG.comp(yOrg.getB(), yNeg.getB()) == 0) && (BIG.comp(yOrg.getA(), yNeg.getA()) < 0))) {
+          System.out.println("Wrong branch!!!");
+          point = new G2Point(new ECP2(point.ecp2Point().getX(), yNeg));
+        }
+    */
+
+    return point;
   }
 }
