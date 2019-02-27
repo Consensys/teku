@@ -13,8 +13,6 @@
 
 package tech.pegasys.artemis.statetransition;
 
-import static java.util.Objects.requireNonNull;
-
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.google.common.primitives.UnsignedLong;
@@ -119,7 +117,7 @@ public class StateTreeManager {
                     + " to slot: "
                     + UnsignedLong.valueOf(block.get().getSlot() - 1));
           }
-          stateTransition.initiate(newState, null);
+          stateTransition.initiate(newState, null, store);
           newStateRoot = HashTreeUtil.hash_tree_root(newState.toBytes());
           this.store.addState(newStateRoot, newState);
           newState = BeaconState.deepCopy(newState);
@@ -127,7 +125,7 @@ public class StateTreeManager {
         }
 
         // run stateTransition.initiate() on block.slot
-        stateTransition.initiate(newState, block.get());
+        stateTransition.initiate(newState, block.get(), store);
         newStateRoot = HashTreeUtil.hash_tree_root(newState.toBytes());
 
         // state root verification
@@ -148,7 +146,7 @@ public class StateTreeManager {
                   "Transitioning state from slot: " + newState.getSlot() + " to slot: " + nodeSlot);
             }
             newState = BeaconState.deepCopy(newState);
-            stateTransition.initiate(newState, null);
+            stateTransition.initiate(newState, null, store);
             newStateRoot = HashTreeUtil.hash_tree_root(newState.toBytes());
             this.store.addState(newStateRoot, newState);
             counter++;
@@ -162,7 +160,7 @@ public class StateTreeManager {
         }
       } else {
         newState = BeaconState.deepCopy(this.canonical_state);
-        stateTransition.initiate(newState, null);
+        stateTransition.initiate(newState, null, store);
         newStateRoot = HashTreeUtil.hash_tree_root(newState.toBytes());
         this.store.addState(newStateRoot, newState);
         LOG.info("latest state root: " + newStateRoot.toHexString());
@@ -187,20 +185,5 @@ public class StateTreeManager {
       return false;
     }
     return true;
-  }
-
-  /*
-   * Get the ancestor of ``block`` with slot number ``slot``; return ``None`` if not found.
-   */
-  public Optional<BeaconBlock> get_ancestor(BeaconBlock block, UnsignedLong slotNumber) {
-    requireNonNull(block);
-    UnsignedLong blockSlot = UnsignedLong.valueOf(block.getSlot());
-    if (blockSlot.compareTo(slotNumber) == 0) {
-      return Optional.of(block);
-    } else if (blockSlot.compareTo(slotNumber) < 0) {
-      return Optional.ofNullable(null);
-    } else {
-      return get_ancestor(this.store.getParent(block).get(), slotNumber);
-    }
   }
 }
