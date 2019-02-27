@@ -120,7 +120,7 @@ public class StateTreeManager {
           stateTransition.initiate(newState, null, store);
           newStateRoot = HashTreeUtil.hash_tree_root(newState.toBytes());
           this.store.addState(newStateRoot, newState);
-          newState = BeaconState.deepCopy(parentState);
+          newState = BeaconState.deepCopy(newState);
           counter++;
         }
 
