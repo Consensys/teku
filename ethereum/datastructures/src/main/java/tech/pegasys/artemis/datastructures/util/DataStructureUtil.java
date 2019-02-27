@@ -325,9 +325,9 @@ public final class DataStructureUtil {
         slotNum.longValue(),
         parent_root,
         state_root,
-        BLSSignature.empty(),
+        BLSSignature.random(1),
         new Eth1Data(Bytes32.ZERO, Bytes32.ZERO),
-        BLSSignature.empty(),
+        BLSSignature.random(2),
         new BeaconBlockBody(
             new ArrayList<ProposerSlashing>(),
             new ArrayList<AttesterSlashing>(),
