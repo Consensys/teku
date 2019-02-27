@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import net.consensys.cava.bytes.Bytes32;
+import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.CrosslinkCommittee;
 import tech.pegasys.artemis.datastructures.state.PendingAttestation;
@@ -444,5 +445,9 @@ public class AttestationUtil {
     return lowest_inclusion_slot_attestation
         .getSlot_included()
         .minus(lowest_inclusion_slot_attestation.getData().getSlot());
+  }
+
+  public static boolean verifyAttestation(BeaconState state, Attestation attestation) {
+    return true;
   }
 }
