@@ -888,7 +888,7 @@ public class BeaconStateUtil {
   public static boolean verify_bitfield(Bytes bitfield, int committee_size) {
     if (bitfield.size() != (committee_size + 7) / 8) return false;
 
-    for (int i = committee_size + 1; i < committee_size - committee_size % 8 + 8; i++) {
+    for (int i = committee_size; i < bitfield.bitLength() * 8; i++) {
       if (get_bitfield_bit(bitfield, i) == 0b1) return false;
     }
     return true;
