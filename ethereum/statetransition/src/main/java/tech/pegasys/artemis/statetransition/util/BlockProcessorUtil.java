@@ -160,7 +160,7 @@ public class BlockProcessorUtil {
     boolean exists = false;
     List<Eth1DataVote> votes = state.getEth1_data_votes();
     for (Eth1DataVote vote : votes) {
-      if (block.getEth1_data().equals(vote.getEth1_data())) {
+      if (vote.getEth1_data().equals(block.getEth1_data())) {
         exists = true;
         UnsignedLong voteCount = vote.getVote_count();
         vote.setVote_count(voteCount.plus(UnsignedLong.ONE));
