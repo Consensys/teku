@@ -19,7 +19,9 @@ import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import net.consensys.cava.bytes.Bytes;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
@@ -88,8 +90,17 @@ public class LmdGhost {
    *  Let get_children(store: Store, block: BeaconBlock) -> List[BeaconBlock] returns
    *  the child blocks of the given block.
    */
+  // TODO: OPTIMIZE: currently goes through all the values in processedBlockLookup
   public List<BeaconBlock> get_children(ChainStorageClient store, BeaconBlock block) {
-    return new ArrayList<>();
+    List<BeaconBlock> children = new ArrayList<>();
+    for (Map.Entry<Bytes, BeaconBlock> entry : store.getProcessedBlockLookup().entrySet()) {
+      BeaconBlock potential_child = entry.getValue();
+      if (store.getParent(potential_child).isPresent()
+          && store.getParent(potential_child).get().equals(block)) {
+        children.add(potential_child);
+      }
+    }
+    return children;
   }
 
   /*

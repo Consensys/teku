@@ -35,7 +35,7 @@ public class ChainStorageClient implements ChainStorage {
   protected final LinkedBlockingQueue<BeaconBlock> unprocessedBlocks = new LinkedBlockingQueue<>();
   protected final LinkedBlockingQueue<Attestation> unprocessedAttestations =
       new LinkedBlockingQueue<>();
-  protected final HashMap<Bytes, BeaconBlock> processedBlockLookup = new HashMap<>();
+  public final HashMap<Bytes, BeaconBlock> processedBlockLookup = new HashMap<>();
   protected final HashMap<Bytes, BeaconState> stateLookup = new HashMap<>();
   protected EventBus eventBus;
 
@@ -182,6 +182,10 @@ public class ChainStorageClient implements ChainStorage {
     } else {
       return Optional.of(attestation);
     }
+  }
+
+  public HashMap<Bytes, BeaconBlock> getProcessedBlockLookup() {
+    return processedBlockLookup;
   }
 
   // TODO: THESE FUNCTIONS MAKE ASSUMPTIONS TO FILL THE GAPS NOT OUTLINED IN SPEC:
