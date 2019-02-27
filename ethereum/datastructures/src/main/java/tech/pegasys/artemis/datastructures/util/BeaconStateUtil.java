@@ -303,7 +303,8 @@ public class BeaconStateUtil {
     Bytes32 randao_mix =
         get_randao_mix(state, epoch.minus(UnsignedLong.valueOf(Constants.SEED_LOOKAHEAD)));
     Bytes32 index_root = get_active_index_root(state, epoch);
-    return Hash.keccak256(Bytes.wrap(randao_mix, index_root));
+    Bytes epochBytes = Bytes.ofUnsignedLong(epoch.longValue());
+    return Hash.keccak256(Bytes.wrap(Bytes.wrap(randao_mix, index_root), epochBytes));
   }
 
   public static Bytes32 get_active_index_root(BeaconState state, UnsignedLong epoch) {
