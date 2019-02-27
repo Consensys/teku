@@ -97,10 +97,9 @@ public class MockP2PNetwork implements P2PNetwork {
       BeaconBlock block = BeaconBlock.createGenesis(state_root);
       Bytes32 parent_root = HashTreeUtil.hash_tree_root(block.toBytes());
 
-      this.eventBus.post(block);
-      state.incrementSlot();
-      state.incrementSlot();
-      Thread.sleep(6000);
+      // state.incrementSlot();
+      // state.incrementSlot();
+      // Thread.sleep(6000);
       // ArrayList<Deposit> deposits = DataStructureUtil.newDeposits(100);
       ArrayList<Deposit> deposits = new ArrayList<>();
       while (true) {
