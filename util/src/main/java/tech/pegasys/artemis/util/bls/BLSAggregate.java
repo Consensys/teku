@@ -14,7 +14,6 @@
 package tech.pegasys.artemis.util.bls;
 
 import java.util.List;
-import net.consensys.cava.bytes.Bytes48;
 
 public class BLSAggregate {
 
@@ -24,7 +23,7 @@ public class BLSAggregate {
    * @param pubKeys the list of compressed public keys
    * @return the aggregated public key
    */
-  public static Bytes48 bls_aggregate_pubkeys(List<Bytes48> pubKeys) {
+  public static BLSPublicKey bls_aggregate_pubkeys(List<BLSPublicKey> pubKeys) {
     return BLSPublicKey.aggregate(pubKeys);
   }
 
