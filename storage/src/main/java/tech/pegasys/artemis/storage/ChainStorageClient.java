@@ -29,7 +29,9 @@ import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 /** This class is the ChainStorage client-side logic */
 public class ChainStorageClient implements ChainStorage {
 
-  protected static final HashMap<Integer, Attestation> latestAttestations = new HashMap<>();
+  protected BeaconBlock justified_head_block;
+  protected BeaconState justified_head_state;
+  protected final HashMap<Integer, Attestation> latestAttestations = new HashMap<>();
   protected final LinkedBlockingQueue<BeaconBlock> unprocessedBlocks = new LinkedBlockingQueue<>();
   protected final LinkedBlockingQueue<Attestation> unprocessedAttestations =
       new LinkedBlockingQueue<>();
@@ -173,12 +175,31 @@ public class ChainStorageClient implements ChainStorage {
     }
   }
 
-  public static Optional<Attestation> getLatestAttestation(int validatorIndex) {
+  public Optional<Attestation> getLatestAttestation(int validatorIndex) {
     Attestation attestation = latestAttestations.get(validatorIndex);
     if (attestation == null) {
       return Optional.ofNullable(null);
     } else {
       return Optional.of(attestation);
     }
+  }
+
+  // TODO: THESE FUNCTIONS MAKE ASSUMPTIONS TO FILL THE GAPS NOT OUTLINED IN SPEC:
+  // To be specific, here we assume that there can only be one justified head
+  // block and state.
+
+  // Getter for the second argument of lmd_ghost
+  public BeaconState get_justified_head_state() {
+    return justified_head_state;
+  }
+
+  // Getter for the third argument of lmd_ghost
+  public BeaconBlock get_justified_head_block() {
+    return justified_head_block;
+  }
+
+  public void setJustifiedHead(BeaconState state, BeaconBlock block) {
+    justified_head_state = state;
+    justified_head_block = block;
   }
 }

@@ -27,6 +27,7 @@ import tech.pegasys.artemis.statetransition.util.EpochProcessingException;
 import tech.pegasys.artemis.statetransition.util.EpochProcessorUtil;
 import tech.pegasys.artemis.statetransition.util.SlotProcessingException;
 import tech.pegasys.artemis.statetransition.util.SlotProcessorUtil;
+import tech.pegasys.artemis.storage.ChainStorageClient;
 
 public class StateTransition {
 
@@ -34,6 +35,8 @@ public class StateTransition {
 
   public StateTransition() {}
 
+  public void initiate(BeaconState state, BeaconBlock block, ChainStorageClient store)
+      throws StateTransitionException {
   public void initiate(BeaconState state, BeaconBlock block) throws StateTransitionException {
     LOG.info("Begin state transition");
     // per-slot processing
@@ -48,7 +51,7 @@ public class StateTransition {
         .plus(UnsignedLong.ONE)
         .mod(UnsignedLong.valueOf(EPOCH_LENGTH))
         .equals(UnsignedLong.ZERO)) {
-      epochProcessor(state);
+      epochProcessor(state, block, store);
     }
     LOG.info("End state transition");
   }
@@ -104,12 +107,12 @@ public class StateTransition {
     }
   }
 
-  protected void epochProcessor(BeaconState state) {
+  protected void epochProcessor(BeaconState state, BeaconBlock block, ChainStorageClient store) {
     try {
       LOG.info("  Processing new epoch: " + BeaconStateUtil.get_current_epoch(state));
 
       EpochProcessorUtil.updateEth1Data(state);
-      EpochProcessorUtil.updateJustification(state);
+      EpochProcessorUtil.updateJustification(state, block, store);
       EpochProcessorUtil.updateCrosslinks(state);
 
       UnsignedLong previous_total_balance = BeaconStateUtil.previous_total_balance(state);

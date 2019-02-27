@@ -99,7 +99,7 @@ public class LmdGhost {
    */
   public BeaconBlock get_latest_attestation_target(ChainStorageClient store, int validatorIndex)
       throws StateTransitionException {
-    Attestation latest_attestation = get_latest_attestation(validatorIndex);
+    Attestation latest_attestation = get_latest_attestation(store, validatorIndex);
     Optional<BeaconBlock> latest_attestation_target =
         store.getProcessedBlock(latest_attestation.getData().getBeacon_block_root());
     if (!latest_attestation_target.isPresent()) {
@@ -114,9 +114,9 @@ public class LmdGhost {
    *  be the attestation with the highest slot number in store from validator. If
    *  several such attestations exist, use the one the validator v observed first.
    */
-  public Attestation get_latest_attestation(int validatorIndex) throws StateTransitionException {
-    Optional<Attestation> latestAttestation =
-        ChainStorageClient.getLatestAttestation(validatorIndex);
+  public Attestation get_latest_attestation(ChainStorageClient store, int validatorIndex)
+      throws StateTransitionException {
+    Optional<Attestation> latestAttestation = store.getLatestAttestation(validatorIndex);
     if (!latestAttestation.isPresent()) {
       throw new StateTransitionException("validatorIndex not found in latestAttestations mapping");
     }
