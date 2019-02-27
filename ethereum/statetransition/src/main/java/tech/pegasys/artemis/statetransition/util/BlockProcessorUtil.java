@@ -85,10 +85,9 @@ public class BlockProcessorUtil {
    * @param state
    * @param block
    */
-  public static void verify_slot(BeaconState state, BeaconBlock block)
-      throws IllegalArgumentException, BlockProcessingException {
+  public static boolean verify_slot(BeaconState state, BeaconBlock block) {
     // Verify that block.slot == state.slot
-    checkArgument(Objects.equals(state.getSlot(), UnsignedLong.fromLongBits(block.getSlot())));
+    return state.getSlot().compareTo(UnsignedLong.valueOf(block.getSlot())) == 0;
   }
 
   /**
