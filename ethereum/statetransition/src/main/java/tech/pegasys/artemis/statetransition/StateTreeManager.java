@@ -26,8 +26,10 @@ import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
-import tech.pegasys.artemis.pow.api.ChainStartEvent;
-import tech.pegasys.artemis.pow.api.ValidatorRegistrationEvent;
+import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
+import tech.pegasys.artemis.datastructures.operations.Deposit;
+import tech.pegasys.artemis.pow.api.DepositEvent;
+import tech.pegasys.artemis.pow.api.Eth2GenesisEvent;
 import tech.pegasys.artemis.storage.ChainStorage;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
@@ -51,12 +53,12 @@ public class StateTreeManager {
   }
 
   @Subscribe
-  public void onChainStarted(ChainStartEvent event) {
+  public void onChainStarted(Eth2GenesisEvent event) {
     LOG.info("******* ChainStart Event Detected *******");
     this.nodeSlot = UnsignedLong.valueOf(Constants.GENESIS_SLOT);
     this.nodeTime =
-        UnsignedLong.valueOf(Constants.GENESIS_SLOT)
-            .times(UnsignedLong.valueOf(Constants.SLOT_DURATION));
+            UnsignedLong.valueOf(Constants.GENESIS_SLOT)
+                    .times(UnsignedLong.valueOf(Constants.SLOT_DURATION));
     LOG.info("node time: " + nodeTime.longValue());
     Boolean result = false;
     try {
@@ -79,7 +81,7 @@ public class StateTreeManager {
   }
 
   @Subscribe
-  public void onValidatorRegistered(ValidatorRegistrationEvent event) {
+  public void onValidatorRegistered(DepositEvent event) {
     LOG.info("Validator Registration Event detected");
     LOG.info("   Validator Number: " + event.getResponse().log.toString());
   }

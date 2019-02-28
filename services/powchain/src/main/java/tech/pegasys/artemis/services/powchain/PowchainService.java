@@ -33,9 +33,9 @@ public class PowchainService implements ServiceInterface {
 
   @Override
   public void run() {
-    this.vrc.simulatePowChain();
+    // this.vrc.simulatePowChain();
     // TODO: we need a simulation switch
-    // this.vrc.listenToPoWChain();
+    this.vrc.listenToPoWChain();
   }
 
   @Override

@@ -26,6 +26,8 @@ tmp/
 build/
 out/
 web3j/
+.submodules/ganache/node_modules/
+pow/src/main/resources/keys.json
 
 *.vscode/
 pow/truffle/.vscode/

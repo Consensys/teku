@@ -14,6 +14,7 @@
 package tech.pegasys.artemis.statetransition;
 
 import static org.assertj.core.api.Assertions.assertThat;
+
 import static org.junit.jupiter.api.Assertions.fail;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomDeposits;
 
@@ -33,12 +34,6 @@ import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.statetransition.util.SlotProcessorUtil;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 @ExtendWith(BouncyCastleExtension.class)
 class StateTransitionTest {

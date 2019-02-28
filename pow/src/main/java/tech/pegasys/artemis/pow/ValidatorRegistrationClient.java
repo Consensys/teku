@@ -14,29 +14,37 @@
 package tech.pegasys.artemis.pow;
 
 import com.google.common.eventbus.EventBus;
-import java.math.BigInteger;
-import java.util.ResourceBundle;
+import io.reactivex.disposables.Disposable;
+import org.web3j.abi.EventEncoder;
 import org.web3j.crypto.Credentials;
-import org.web3j.crypto.WalletUtils;
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.core.DefaultBlockParameterName;
 import org.web3j.protocol.core.methods.request.EthFilter;
 import org.web3j.protocol.http.HttpService;
 import org.web3j.tx.gas.ContractGasProvider;
 import org.web3j.tx.gas.DefaultGasProvider;
-import rx.Subscription;
-import tech.pegasys.artemis.pow.api.ChainStartEvent;
-import tech.pegasys.artemis.pow.api.ValidatorRegistrationEvent;
+import tech.pegasys.artemis.ganache.GanacheController;
+import tech.pegasys.artemis.pow.api.DepositEvent;
+import tech.pegasys.artemis.pow.api.Eth2GenesisEvent;
 import tech.pegasys.artemis.pow.contract.ValidatorRegistrationContract;
-import tech.pegasys.artemis.pow.event.ChainStart;
-import tech.pegasys.artemis.pow.event.ValidatorRegistration;
+import tech.pegasys.artemis.pow.contract.ValidatorRegistrationContract.DepositEventResponse;
+import tech.pegasys.artemis.pow.contract.ValidatorRegistrationContract.Eth2GenesisEventResponse;
+import tech.pegasys.artemis.pow.event.Deposit;
+import tech.pegasys.artemis.pow.event.Eth2Genesis;
+
+import java.io.IOException;
+import java.math.BigInteger;
+import java.util.ResourceBundle;
+
+import static tech.pegasys.artemis.pow.contract.ValidatorRegistrationContract.DEPOSIT_EVENT;
+import static tech.pegasys.artemis.pow.contract.ValidatorRegistrationContract.ETH2GENESIS_EVENT;
 
 public class ValidatorRegistrationClient {
 
   private final EventBus eventBus;
 
-  public Subscription eth1DepositSub;
-  public Subscription chainStartSub;
+  public Disposable depositEventSub;
+  public Disposable eth2GenesisEventSub;
 
   private static final ResourceBundle rb = ResourceBundle.getBundle("config");
   boolean debug = (rb.getString("debug").compareTo("true") == 0);
@@ -45,58 +53,104 @@ public class ValidatorRegistrationClient {
     this.eventBus = eventBus;
   }
 
-  public void simulatePowChain() {
-    // TODO: Move this simulated startup logic
-    ValidatorRegistrationContract.ChainStartEventResponse response =
-        new ValidatorRegistrationContract.ChainStartEventResponse();
-    chainStarted(response);
-  }
+  //  skip the foreplay
+  //  public void simulatePowChain() {
+  //    // TODO: Move this simulated startup logic
+  //    ValidatorRegistrationContract.ChainStartEventResponse response =
+  //        new ValidatorRegistrationContract.ChainStartEventResponse();
+  //    chainStarted(response);
+  //  }
 
+  @SuppressWarnings("unchecked")
   public void listenToPoWChain() {
-
-    // Setup provider and credentials
-    Web3j web3j = Web3j.build(new HttpService(rb.getString("provider")));
-    Credentials credentials = WalletUtils.loadBip39Credentials(null, rb.getString("mnemonic"));
-
     ValidatorRegistrationContract contract = null;
-
-    if (debug) contract = deployVRC(web3j, credentials);
-    else contract = getDeployedVRC(web3j, credentials);
+    if (debug) {
+      GanacheController ganacheController = null;
+      try {
+        ganacheController = new GanacheController(25, 6000);
+      } catch (IOException e) {
+        System.err.println(e);
+      }
+      contract =
+          contractInit(
+              ganacheController.getProvider(),
+              ganacheController.getAccounts().get(0).getPrivateKey(),
+              debug);
+    } else {
+      String provider = rb.getString("hostname") + ":" + rb.getString("port");
+      contract = contractInit(provider, rb.getString("key"), debug);
+    }
 
     // Filter by the contract address and by begin/end blocks
-    EthFilter filter =
+    EthFilter depositEventFilter =
         new EthFilter(
-            DefaultBlockParameterName.EARLIEST,
-            DefaultBlockParameterName.LATEST,
-            contract.getContractAddress().substring(2));
+                DefaultBlockParameterName.EARLIEST,
+                DefaultBlockParameterName.LATEST,
+                contract.getContractAddress().substring(2))
+            .addSingleTopic(EventEncoder.encode(DEPOSIT_EVENT));
 
-    // Subscribe to the event of a validator being registered in the ValidatorRegistrationContract
-    eth1DepositSub =
+    EthFilter eth2GenesisEventFilter =
+        new EthFilter(
+                DefaultBlockParameterName.EARLIEST,
+                DefaultBlockParameterName.LATEST,
+                contract.getContractAddress().substring(2))
+            .addSingleTopic(EventEncoder.encode(ETH2GENESIS_EVENT));
+
+    // Subscribe to the event of a validator being registered in the
+    // ValidatorRegistrationContract
+    depositEventSub =
         contract
-            .eth1DepositEventObservable(filter)
+            .depositEventFlowable(depositEventFilter)
             .subscribe(
                 response -> {
-                  validatorRegistered(response);
+                  DepositEvent(response);
                 });
 
     // Subscribe to the event when 2^14 validators have been registered in the
     // ValidatorRegistrationContract
-    chainStartSub =
+    eth2GenesisEventSub =
         contract
-            .chainStartEventObservable(filter)
+            .eth2GenesisEventFlowable(eth2GenesisEventFilter)
             .subscribe(
                 response -> {
-                  chainStarted(response);
+                  Eth2GenesisEvent(response);
                 });
 
     if (debug) sendDepositTransactions(contract);
   }
 
+  private static ValidatorRegistrationContract contractInit(
+      String provider, String privateKey, boolean debug) {
+    Web3j web3j = Web3j.build(new HttpService(provider));
+    Credentials credentials = Credentials.create(privateKey);
+
+    ContractGasProvider contractGasProvider = new DefaultGasProvider();
+    ValidatorRegistrationContract contract = null;
+    if (debug) {
+      try {
+        contract =
+            ValidatorRegistrationContract.deploy(web3j, credentials, contractGasProvider).send();
+      } catch (Exception e) {
+        System.err.println(e);
+      }
+    } else {
+      try {
+        contract =
+            ValidatorRegistrationContract.load(
+                rb.getString("vrc_contract_address"), web3j, credentials, contractGasProvider);
+      } catch (Exception e) {
+        System.err.println(e);
+      }
+    }
+    return contract;
+  }
+
   // method only used for debugging
   // calls a deposit transaction on the ValidatorRegistrationContract every 10 seconds
+  // simulate depositors
   private void sendDepositTransactions(ValidatorRegistrationContract contract) {
-    byte[] depositParams = new byte[2048];
-    for (int i = 0; i < 2048; i++) depositParams[i] = (byte) 0x0;
+    byte[] depositParams = new byte[512];
+    for (int i = 0; i < 512; i++) depositParams[i] = (byte) 0x0;
 
     while (true) {
 
@@ -115,41 +169,13 @@ public class ValidatorRegistrationClient {
     }
   }
 
-  public ValidatorRegistrationContract deployVRC(Web3j web3j, Credentials credentials) {
-
-    ContractGasProvider contractGasProvider = new DefaultGasProvider();
-    ValidatorRegistrationContract contract = null;
-    try {
-      contract =
-          ValidatorRegistrationContract.deploy(web3j, credentials, contractGasProvider).send();
-    } catch (Exception e) {
-      System.err.println(e);
-    }
-
-    return contract;
-  }
-
-  public ValidatorRegistrationContract getDeployedVRC(Web3j web3j, Credentials credentials) {
-    ContractGasProvider contractGasProvider = new DefaultGasProvider();
-    ValidatorRegistrationContract contract = null;
-    try {
-      contract =
-          ValidatorRegistrationContract.load(
-              rb.getString("vrc_contract_address"), web3j, credentials, contractGasProvider);
-    } catch (Exception e) {
-      System.err.println(e);
-    }
-
-    return contract;
-  }
-
-  public void validatorRegistered(ValidatorRegistrationContract.Eth1DepositEventResponse response) {
-    ValidatorRegistrationEvent event = new ValidatorRegistration(response);
+  public void DepositEvent(DepositEventResponse response) {
+    DepositEvent event = new Deposit(response);
     this.eventBus.post(event);
   }
 
-  public void chainStarted(ValidatorRegistrationContract.ChainStartEventResponse response) {
-    ChainStartEvent event = new ChainStart(response);
+  public void Eth2GenesisEvent(Eth2GenesisEventResponse response) {
+    Eth2GenesisEvent event = new Eth2Genesis(response);
     this.eventBus.post(event);
   }
 }
