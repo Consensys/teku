@@ -88,18 +88,6 @@ public final class DataStructureUtil {
     return BLSPublicKey.random(seed);
   }
 
-  /*
-    public static Bytes48 randomBytes48(long seed) {
-      ByteBuffer buffer = ByteBuffer.allocate(Long.BYTES);
-      buffer.putLong(seed);
-      return Bytes48.random(new SecureRandom(buffer.array()));
-    }
-
-    public static Bytes48 randomBytes48() {
-      return Bytes48.random();
-    }
-  */
-
   public static Eth1Data randomEth1Data() {
     return new Eth1Data(randomBytes32(), randomBytes32());
   }
@@ -211,9 +199,6 @@ public final class DataStructureUtil {
             keyPair,
             HashTreeUtil.hash_tree_root(proof_of_possession_data.toBytes()),
             Constants.DOMAIN_DEPOSIT);
-
-    // BLSSignature proof_of_possession =
-    //    BLSSignature.sign(keyPair, withdrawal_credentials, Constants.DOMAIN_DEPOSIT);
 
     return new DepositInput(keyPair.getPublicKey(), withdrawal_credentials, proof_of_possession);
   }
