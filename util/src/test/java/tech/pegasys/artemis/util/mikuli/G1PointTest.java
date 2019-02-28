@@ -13,12 +13,15 @@
 
 package tech.pegasys.artemis.util.mikuli;
 
+import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static tech.pegasys.artemis.util.mikuli.G1Point.isValid;
 
+import net.consensys.cava.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 
 class G1PointTest {
@@ -95,5 +98,31 @@ class G1PointTest {
     G1Point point1 = G1Point.random();
     G1Point point2 = G1Point.fromBytesCompressed(point1.toBytesCompressed());
     assertEquals(point1, point2);
+  }
+
+  @Test
+  void succeedsWhenAttemptToDeserialiseXEqualToModulusThrowsIllegalArgumentException() {
+    // Exactly the modulus, q
+    String x =
+        "0x01a0111ea397fe69a4b1ba7b6434bacd764774b84f38512bf6730d2a0f6b0f6241eabfffeb153ffffb9feffffffffaab";
+    assertThrows(
+        IllegalArgumentException.class, () -> G1Point.fromBytesCompressed(Bytes.fromHexString(x)));
+  }
+
+  @Test
+  void succeedsWhenAttemptToDeserialiseXGreaterThanModulusThrowsIllegalArgumentException() {
+    // One more than the modulus, q
+    String x =
+        "0x01a0111ea397fe69a4b1ba7b6434bacd764774b84f38512bf6730d2a0f6b0f6241eabfffeb153ffffb9feffffffffaac";
+    assertThrows(
+        IllegalArgumentException.class, () -> G1Point.fromBytesCompressed(Bytes.fromHexString(x)));
+  }
+
+  @Test
+  void succeedsWhenAttemptToDeserialiseXLessThanModulusDoesNotThrowIllegalArgumentException() {
+    // There's a valid X two less than the modulus. We prepend the c flag.
+    String x =
+        "0x81a0111ea397fe69a4b1ba7b6434bacd764774b84f38512bf6730d2a0f6b0f6241eabfffeb153ffffb9feffffffffaa9";
+    assertAll(() -> G1Point.fromBytesCompressed(Bytes.fromHexString(x)));
   }
 }
