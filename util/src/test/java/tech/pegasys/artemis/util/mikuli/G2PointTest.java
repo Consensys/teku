@@ -16,6 +16,7 @@ package tech.pegasys.artemis.util.mikuli;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static tech.pegasys.artemis.util.mikuli.G2Point.isValid;
 import static tech.pegasys.artemis.util.mikuli.G2Point.normaliseY;
@@ -256,7 +257,47 @@ class G2PointTest {
     assertEquals(expected, point);
   }
 
-  // More rigorous higher level tests will be performed using the Ethereum 2.0 BLS test data suite
+  @Test
+  void succeedsWhenAttemptToDeserialiseXReEqualToModulusThrowsIllegalArgumentException() {
+    // xRe is exactly the modulus, q, xIm is zero
+    String x =
+        "0x000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+            + "0x01a0111ea397fe69a4b1ba7b6434bacd764774b84f38512bf6730d2a0f6b0f6241eabfffeb153ffffb9feffffffffaab";
+    assertThrows(
+        IllegalArgumentException.class, () -> G2Point.fromBytesCompressed(Bytes.fromHexString(x)));
+  }
+
+  @Test
+  void succeedsWhenAttemptToDeserialiseXImEqualToModulusThrowsIllegalArgumentException() {
+    // xIm is exactly the modulus, q, xRe is zero
+    String x =
+        "0x01a0111ea397fe69a4b1ba7b6434bacd764774b84f38512bf6730d2a0f6b0f6241eabfffeb153ffffb9feffffffffaab"
+            + "0x000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000";
+    assertThrows(
+        IllegalArgumentException.class, () -> G2Point.fromBytesCompressed(Bytes.fromHexString(x)));
+  }
+
+  @Test
+  void succeedsWhenAttemptToDeserialiseXReGreaterThanModulusThrowsIllegalArgumentException() {
+    // xRe is the modulus plus 1, xIm is zero
+    String x =
+        "0x000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+            + "0x01a0111ea397fe69a4b1ba7b6434bacd764774b84f38512bf6730d2a0f6b0f6241eabfffeb153ffffb9feffffffffaac";
+    assertThrows(
+        IllegalArgumentException.class, () -> G2Point.fromBytesCompressed(Bytes.fromHexString(x)));
+  }
+
+  @Test
+  void succeedsWhenAttemptToDeserialiseXImGreaterThanModulusThrowsIllegalArgumentException() {
+    // xIm is the modulus plus 1, xRe is zero
+    String x =
+        "0x01a0111ea397fe69a4b1ba7b6434bacd764774b84f38512bf6730d2a0f6b0f6241eabfffeb153ffffb9feffffffffaac"
+            + "0x000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000";
+    assertThrows(
+        IllegalArgumentException.class, () -> G2Point.fromBytesCompressed(Bytes.fromHexString(x)));
+  }
+
+  // More rigorous higher level tests are performed using the Ethereum 2.0 BLS test data suite
 
   /* ==== Helper Functions ===================================================================== */
 
