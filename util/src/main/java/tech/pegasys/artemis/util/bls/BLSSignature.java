@@ -17,6 +17,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Objects.isNull;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.ssz.SSZ;
@@ -187,7 +188,7 @@ public final class BLSSignature {
 
   @Override
   public int hashCode() {
-    return isNull(signature) ? 42 : signature.hashCode();
+    return Objects.hash(signature);
   }
 
   @Override
@@ -202,6 +203,6 @@ public final class BLSSignature {
       return false;
     }
     BLSSignature other = (BLSSignature) obj;
-    return isNull(signature) ? isNull(other.signature) : signature.equals(other.signature);
+    return Objects.equals(this.signature, other.signature);
   }
 }

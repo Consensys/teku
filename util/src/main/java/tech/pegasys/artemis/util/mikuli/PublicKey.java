@@ -116,10 +116,7 @@ public final class PublicKey {
 
   @Override
   public int hashCode() {
-    final int prime = 31;
-    int result = 1;
-    result = prime * result + Objects.hashCode(point);
-    return result;
+    return Objects.hash(point);
   }
 
   @Override
