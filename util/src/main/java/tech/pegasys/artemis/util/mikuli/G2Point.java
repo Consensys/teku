@@ -25,6 +25,7 @@ import net.consensys.cava.crypto.Hash;
 import org.apache.milagro.amcl.BLS381.BIG;
 import org.apache.milagro.amcl.BLS381.ECP2;
 import org.apache.milagro.amcl.BLS381.FP2;
+import org.apache.milagro.amcl.BLS381.ROM;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 /**
@@ -282,7 +283,17 @@ final class G2Point implements Group<G2Point> {
     checkArgument(
         (xReBytes[0] & (byte) 224) == 0, "The input has non-zero a2, b2 or c2 flag on xRe");
 
-    ECP2 point = new ECP2(new FP2(BIG.fromBytes(xReBytes), BIG.fromBytes(xImBytes)));
+    // Per the spec, we must check that x < q (the curve modulus) for this serialisation to be valid
+    // We raise an exception (that should be caught) if this check fails: somebody might feed us
+    // faulty input.
+    BIG xImBig = BIG.fromBytes(xImBytes);
+    BIG xReBig = BIG.fromBytes(xReBytes);
+    BIG modulus = new BIG(ROM.Modulus);
+    checkArgument(BIG.comp(xReBig, modulus) < 0, "Deserialised Real X coordinate is too large.");
+    checkArgument(
+        BIG.comp(xImBig, modulus) < 0, "Deserialised Imaginary X coordinate is too large.");
+
+    ECP2 point = new ECP2(new FP2(xReBig, xImBig));
 
     // Did we get the right branch of the sqrt?
     if (!point.is_infinity() && a != calculateYFlag(point.getY().getB())) {
@@ -315,9 +326,6 @@ final class G2Point implements Group<G2Point> {
     BIG xRe = point.getX().getA();
     BIG xIm = point.getX().getB();
     BIG yIm = point.getY().getB();
-
-    // Check xIm and xRe are both < q (the field modulus)
-    // TODO: Check xIm and xRe are both < q (the field modulus)
 
     if (!c1) {
       return false;
@@ -367,7 +375,6 @@ final class G2Point implements Group<G2Point> {
 
   @Override
   public int hashCode() {
-    // TODO: add a1, b1, c1
     final int prime = 31;
     int result = 1;
     long xa = point.getX().getA().norm();

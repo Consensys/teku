@@ -23,6 +23,7 @@ import net.consensys.cava.bytes.Bytes;
 import org.apache.milagro.amcl.BLS381.BIG;
 import org.apache.milagro.amcl.BLS381.ECP;
 import org.apache.milagro.amcl.BLS381.FP;
+import org.apache.milagro.amcl.BLS381.ROM;
 
 /**
  * G1 is a subgroup of an elliptic curve whose points are elements of the finite field Fp - simple
@@ -67,7 +68,14 @@ final class G1Point implements Group<G1Point> {
     boolean c = (xBytes[0] & (byte) (1 << 7)) != 0;
     xBytes[0] &= (byte) 31;
 
-    ECP point = new ECP(BIG.fromBytes(xBytes));
+    // Per the spec, we must check that x < q (the curve modulus) for this serialisation to be valid
+    // We raise an exception (that should be caught) if this check fails: somebody might feed us
+    // faulty input.
+    BIG xBig = BIG.fromBytes(xBytes);
+    BIG modulus = new BIG(ROM.Modulus);
+    checkArgument(BIG.comp(xBig, modulus) < 0, "Deserialised X coordinate is too large.");
+
+    ECP point = new ECP(xBig);
 
     // Did we get the right branch of the sqrt?
     if (!point.is_infinity() && a != calculateYFlag(point.getY())) {
@@ -196,9 +204,6 @@ final class G1Point implements Group<G1Point> {
     BIG x = point.getX();
     BIG y = point.getY();
 
-    // Check xIm and xRe are both < q (the field modulus)
-    // TODO: Check x < q (the field modulus)
-
     if (!c) {
       return false;
     }
@@ -232,7 +237,6 @@ final class G1Point implements Group<G1Point> {
 
   @Override
   public int hashCode() {
-    // TODO: add a, b, c
     final int prime = 31;
     int result = 1;
     long x = point.getX().norm();
