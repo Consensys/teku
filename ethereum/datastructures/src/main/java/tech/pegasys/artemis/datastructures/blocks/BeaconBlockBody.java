@@ -84,7 +84,7 @@ public class BeaconBlockBody {
     List<Bytes> exitsBytes =
         exits.stream().map(item -> item.toBytes()).collect(Collectors.toList());
     List<Bytes> transfersBytes =
-            transfers.stream().map(item -> item.toBytes()).collect(Collectors.toList());
+        transfers.stream().map(item -> item.toBytes()).collect(Collectors.toList());
 
     return SSZ.encode(
         writer -> {
@@ -99,7 +99,8 @@ public class BeaconBlockBody {
 
   @Override
   public int hashCode() {
-    return Objects.hash(proposer_slashings, attester_slashings, attestations, deposits, exits, transfers);
+    return Objects.hash(
+        proposer_slashings, attester_slashings, attestations, deposits, exits, transfers);
   }
 
   @Override

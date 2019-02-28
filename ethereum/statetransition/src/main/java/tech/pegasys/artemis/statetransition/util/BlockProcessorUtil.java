@@ -51,9 +51,11 @@ import static tech.pegasys.artemis.util.hashtree.HashTreeUtil.hash_tree_root;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.primitives.UnsignedLong;
-
-import java.util.*;
-
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Objects;
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.crypto.Hash;
@@ -61,7 +63,14 @@ import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.Eth1DataVote;
 import tech.pegasys.artemis.datastructures.blocks.ProposalSignedData;
-import tech.pegasys.artemis.datastructures.operations.*;
+import tech.pegasys.artemis.datastructures.operations.Attestation;
+import tech.pegasys.artemis.datastructures.operations.AttestationDataAndCustodyBit;
+import tech.pegasys.artemis.datastructures.operations.AttesterSlashing;
+import tech.pegasys.artemis.datastructures.operations.Deposit;
+import tech.pegasys.artemis.datastructures.operations.Exit;
+import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
+import tech.pegasys.artemis.datastructures.operations.SlashableAttestation;
+import tech.pegasys.artemis.datastructures.operations.Transfer;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.CrosslinkCommittee;
 import tech.pegasys.artemis.datastructures.state.PendingAttestation;
@@ -570,21 +579,45 @@ public class BlockProcessorUtil {
   /**
    * @param state
    * @param block
-   * @see https://github.com/ethereum/eth2.0-specs/blob/v0.1/specs/core/0_beacon-chain.md#transfers-1
+   * @see
+   *     https://github.com/ethereum/eth2.0-specs/blob/v0.1/specs/core/0_beacon-chain.md#transfers-1
    */
   public static void processTransfers(BeaconState state, BeaconBlock block)
-          throws BlockProcessingException {
+      throws BlockProcessingException {
     // Verify that len(block.body.exits) <= MAX_EXITS
     checkArgument(block.getBody().getTransfers().size() <= Constants.MAX_TRANSFERS);
     checkArgument(allDistinct(block.getBody().getTransfers()));
 
     for (Transfer transfer : block.getBody().getTransfers()) {
-      checkArgument(state.getValidator_balances().get(toIntExact(transfer.getFrom().longValue())).longValue() >= transfer.getAmount().longValue());
-      checkArgument(state.getValidator_balances().get(toIntExact(transfer.getFrom().longValue())).longValue() >= transfer.getFee().longValue());
       checkArgument(
-              state.getValidator_balances().get(toIntExact(transfer.getFrom().longValue())).longValue() == transfer.getAmount().longValue() + transfer.getFee().longValue()
-              || state.getValidator_balances().get(toIntExact(transfer.getFrom().longValue())).longValue() >= transfer.getAmount().longValue() + transfer.getFee().longValue() + Constants.MIN_DEPOSIT_AMOUNT
-      );
+          state.getValidator_balances().get(toIntExact(transfer.getFrom().longValue())).longValue()
+              >= transfer.getAmount().longValue());
+      checkArgument(
+          state.getValidator_balances().get(toIntExact(transfer.getFrom().longValue())).longValue()
+              >= transfer.getFee().longValue());
+      checkArgument(
+          state.getValidator_balances().get(toIntExact(transfer.getFrom().longValue())).longValue()
+                  == transfer.getAmount().longValue() + transfer.getFee().longValue()
+              || state
+                      .getValidator_balances()
+                      .get(toIntExact(transfer.getFrom().longValue()))
+                      .longValue()
+                  >= transfer.getAmount().longValue()
+                      + transfer.getFee().longValue()
+                      + Constants.MIN_DEPOSIT_AMOUNT);
+      checkArgument(state.getSlot().equals(transfer.getSlot()));
+      checkArgument(
+          BeaconStateUtil.get_current_epoch(state).longValue()
+              >= state
+                      .getValidator_registry()
+                      .get(toIntExact(transfer.getFrom().longValue()))
+                      .getExit_epoch()
+                      .longValue()
+                  + Constants.MIN_EXIT_EPOCHS_BEFORE_TRANSFER);
+      // checkArgument(state.getValidator_registry().get(toIntExact(transfer.getFrom().longValue())).getWithdrawal_credentials().equals(
+      //       transfer.getPubkey().toBytes().slice(1) // .. //
+      // Constants.BLS_WITHDRAWAL_PREFIX_BYTE
+      // ));
     }
   }
 
