@@ -23,6 +23,7 @@ import tech.pegasys.artemis.datastructures.operations.AttesterSlashing;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.Exit;
 import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
+import tech.pegasys.artemis.datastructures.operations.Transfer;
 
 /** A Beacon block body */
 public class BeaconBlockBody {
@@ -31,18 +32,21 @@ public class BeaconBlockBody {
   private List<Attestation> attestations;
   private List<Deposit> deposits;
   private List<Exit> exits;
+  private List<Transfer> transfers;
 
   public BeaconBlockBody(
       List<ProposerSlashing> proposer_slashings,
       List<AttesterSlashing> attester_slashings,
       List<Attestation> attestations,
       List<Deposit> deposits,
-      List<Exit> exits) {
+      List<Exit> exits,
+      List<Transfer> transfers) {
     this.proposer_slashings = proposer_slashings;
     this.attester_slashings = attester_slashings;
     this.attestations = attestations;
     this.deposits = deposits;
     this.exits = exits;
+    this.transfers = transfers;
   }
 
   public static BeaconBlockBody fromBytes(Bytes bytes) {
@@ -62,7 +66,10 @@ public class BeaconBlockBody {
                 reader.readBytesList().stream()
                     .map(Deposit::fromBytes)
                     .collect(Collectors.toList()),
-                reader.readBytesList().stream().map(Exit::fromBytes).collect(Collectors.toList())));
+                reader.readBytesList().stream().map(Exit::fromBytes).collect(Collectors.toList()),
+                reader.readBytesList().stream()
+                    .map(Transfer::fromBytes)
+                    .collect(Collectors.toList())));
   }
 
   public Bytes toBytes() {
@@ -76,6 +83,9 @@ public class BeaconBlockBody {
         deposits.stream().map(item -> item.toBytes()).collect(Collectors.toList());
     List<Bytes> exitsBytes =
         exits.stream().map(item -> item.toBytes()).collect(Collectors.toList());
+    List<Bytes> transfersBytes =
+            transfers.stream().map(item -> item.toBytes()).collect(Collectors.toList());
+
     return SSZ.encode(
         writer -> {
           writer.writeBytesList(proposerSlashingsBytes);
@@ -83,12 +93,13 @@ public class BeaconBlockBody {
           writer.writeBytesList(attestationsBytes);
           writer.writeBytesList(depositsBytes);
           writer.writeBytesList(exitsBytes);
+          writer.writeBytesList(transfersBytes);
         });
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(proposer_slashings, attester_slashings, attestations, deposits, exits);
+    return Objects.hash(proposer_slashings, attester_slashings, attestations, deposits, exits, transfers);
   }
 
   @Override
@@ -110,7 +121,8 @@ public class BeaconBlockBody {
         && Objects.equals(this.getAttester_slashings(), other.getAttester_slashings())
         && Objects.equals(this.getAttestations(), other.getAttestations())
         && Objects.equals(this.getDeposits(), other.getDeposits())
-        && Objects.equals(this.getExits(), other.getExits());
+        && Objects.equals(this.getExits(), other.getExits())
+        && Objects.equals(this.getTransfers(), other.getTransfers());
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */
@@ -152,5 +164,13 @@ public class BeaconBlockBody {
 
   public void setExits(List<Exit> exits) {
     this.exits = exits;
+  }
+
+  public List<Transfer> getTransfers() {
+    return transfers;
+  }
+
+  public void setTransfers(List<Transfer> transfers) {
+    this.transfers = transfers;
   }
 }

@@ -67,7 +67,8 @@ public final class BeaconBlock {
             new ArrayList<>(),
             new ArrayList<>(),
             new ArrayList<>(),
-            new ArrayList<>()));
+            new ArrayList<>(),
+                new ArrayList<>()));
   }
 
   public static BeaconBlock fromBytes(Bytes bytes) {
