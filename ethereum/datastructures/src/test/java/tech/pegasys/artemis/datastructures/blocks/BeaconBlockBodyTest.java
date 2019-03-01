@@ -45,7 +45,7 @@ class BeaconBlockBodyTest {
       Arrays.asList(randomAttestation(), randomAttestation(), randomAttestation());
   private List<Deposit> deposits = Arrays.asList(randomDeposit(), randomDeposit(), randomDeposit());
   private List<Exit> exits = Arrays.asList(randomExit(), randomExit(), randomExit());
-  private List<Transfer> transfers = Arrays.asList(randomTransfer());
+  private List<Transfer> transfers = Arrays.asList(randomTransfer(), randomTransfer());
 
   private BeaconBlockBody beaconBlockBody =
       new BeaconBlockBody(
@@ -128,6 +128,19 @@ class BeaconBlockBodyTest {
     BeaconBlockBody testBeaconBlockBody =
         new BeaconBlockBody(
             proposerSlashings, attesterSlashings, attestations, deposits, reverseExits, transfers);
+
+    assertNotEquals(beaconBlockBody, testBeaconBlockBody);
+  }
+
+  @Test
+  void equalsReturnsFalseWhenTransfersAreDifferent() {
+    // Create copy of exits and reverse to ensure it is different.
+    List<Transfer> reverseTransfers = new ArrayList<Transfer>(transfers);
+    Collections.reverse(reverseTransfers);
+
+    BeaconBlockBody testBeaconBlockBody =
+        new BeaconBlockBody(
+            proposerSlashings, attesterSlashings, attestations, deposits, exits, reverseTransfers);
 
     assertNotEquals(beaconBlockBody, testBeaconBlockBody);
   }
