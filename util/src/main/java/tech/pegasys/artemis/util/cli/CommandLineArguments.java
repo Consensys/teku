@@ -25,11 +25,12 @@ public class CommandLineArguments {
   private Boolean PoWChainServiceDisabled = false;
 
   @Option(
-      names = {"--logging", "-l"},
+      names = {"-l", "--logging"},
+      converter = LogTypeConverter.class,
       paramLabel = "<LOG VERBOSITY LEVEL>",
       description =
           "Logging verbosity levels: OFF, FATAL, WARN, INFO, DEBUG, TRACE, ALL (default: INFO).")
-  private final Level logLevel = null;
+  private Level logLevel = Level.INFO;
 
   public Boolean getPoWChainServiceDisabled() {
     return this.PoWChainServiceDisabled;
