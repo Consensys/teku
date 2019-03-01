@@ -38,10 +38,8 @@ public final class Artemis {
         return;
       }
       // set log level per CLI flags
-      if (cliArgs.getLoggingLevel() != null) {
-        System.out.println("Setting logging level to " + cliArgs.getLoggingLevel().name());
-        Configurator.setAllLevels("", cliArgs.getLoggingLevel());
-      }
+      System.out.println("Setting logging level to " + cliArgs.getLoggingLevel().name());
+      Configurator.setAllLevels("", cliArgs.getLoggingLevel());
       // Detect SIGTERM
       Runtime.getRuntime()
           .addShutdownHook(

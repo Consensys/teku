@@ -50,10 +50,11 @@ To view the run menu:
 ```
 $ ./gradlew run --args='-h'
 
-Usage: Artemis [-hpV]
-  -h, --help                       Show this help message and exit.
-  -p, --PoWChainServiceDisabled    If this option is enabled then the PoW Chain service is disabled.
-  -V, --version                    Print version information and exit.
+Usage: Artemis [-hpV] [-l=<LOG VERBOSITY LEVEL>]
+  -h, --help      Show this help message and exit.
+  -l, --logging=<LOG VERBOSITY LEVEL> Logging verbosity levels: OFF, FATAL, WARN, INFO, DEBUG, TRACE, ALL (default: INFO).
+  -p, --PoWChainServiceDisabled If this option is enabled then the PoW Chain service is disabled.
+  -V, --version  Print version information and exit.
 ```
 
 You can run the executable from the CLI with this command:
@@ -65,4 +66,10 @@ To run without a PoW Chain:
 
 ```
 $ ./gradlew run --args='-p'
+```
+
+To run with loggin level set to ALL
+
+```
+$ ./gradlew run --args='-l=ALL'
 ```
