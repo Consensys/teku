@@ -15,6 +15,11 @@ package tech.pegasys.artemis.pow.contract;
 
 import io.reactivex.Flowable;
 import io.reactivex.functions.Function;
+import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import org.web3j.abi.EventEncoder;
 import org.web3j.abi.TypeReference;
 import org.web3j.abi.datatypes.Bool;
@@ -33,12 +38,6 @@ import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.tx.Contract;
 import org.web3j.tx.TransactionManager;
 import org.web3j.tx.gas.ContractGasProvider;
-
-import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
 
 /**
  * Auto generated code.
@@ -253,8 +252,7 @@ public class DepositContract extends Contract {
       Credentials credentials,
       BigInteger gasPrice,
       BigInteger gasLimit) {
-    return new DepositContract(
-        contractAddress, web3j, credentials, gasPrice, gasLimit);
+    return new DepositContract(contractAddress, web3j, credentials, gasPrice, gasLimit);
   }
 
   @Deprecated
@@ -264,8 +262,7 @@ public class DepositContract extends Contract {
       TransactionManager transactionManager,
       BigInteger gasPrice,
       BigInteger gasLimit) {
-    return new DepositContract(
-        contractAddress, web3j, transactionManager, gasPrice, gasLimit);
+    return new DepositContract(contractAddress, web3j, transactionManager, gasPrice, gasLimit);
   }
 
   public static DepositContract load(
@@ -273,8 +270,7 @@ public class DepositContract extends Contract {
       Web3j web3j,
       Credentials credentials,
       ContractGasProvider contractGasProvider) {
-    return new DepositContract(
-        contractAddress, web3j, credentials, contractGasProvider);
+    return new DepositContract(contractAddress, web3j, credentials, contractGasProvider);
   }
 
   public static DepositContract load(
@@ -282,8 +278,7 @@ public class DepositContract extends Contract {
       Web3j web3j,
       TransactionManager transactionManager,
       ContractGasProvider contractGasProvider) {
-    return new DepositContract(
-        contractAddress, web3j, transactionManager, contractGasProvider);
+    return new DepositContract(contractAddress, web3j, transactionManager, contractGasProvider);
   }
 
   public static RemoteCall<DepositContract> deploy(
@@ -295,12 +290,7 @@ public class DepositContract extends Contract {
   public static RemoteCall<DepositContract> deploy(
       Web3j web3j, TransactionManager transactionManager, ContractGasProvider contractGasProvider) {
     return deployRemoteCall(
-        DepositContract.class,
-        web3j,
-        transactionManager,
-        contractGasProvider,
-        BINARY,
-        "");
+        DepositContract.class, web3j, transactionManager, contractGasProvider, BINARY, "");
   }
 
   @Deprecated
@@ -317,13 +307,7 @@ public class DepositContract extends Contract {
       BigInteger gasPrice,
       BigInteger gasLimit) {
     return deployRemoteCall(
-        DepositContract.class,
-        web3j,
-        transactionManager,
-        gasPrice,
-        gasLimit,
-        BINARY,
-        "");
+        DepositContract.class, web3j, transactionManager, gasPrice, gasLimit, BINARY, "");
   }
 
   public static class DepositEventResponse {

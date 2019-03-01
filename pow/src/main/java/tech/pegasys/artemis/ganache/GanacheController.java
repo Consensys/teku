@@ -13,22 +13,21 @@
 
 package tech.pegasys.artemis.ganache;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
 
 public class GanacheController {
 
   final String keysPath = System.getProperty("user.dir") + "/pow/src/main/resources/keys.json";
-  final String ganachePath = System.getProperty("user.dir") + "/.submodules/ganache-cli";
+  final String ganachePath = System.getProperty("user.dir") + "/ganache-cli";
   private static final String DEFAULT_HOST_NAME = "http://127.0.0.1";
   private static final String DEFAULT_PORT = "8545";
 
@@ -72,6 +71,7 @@ public class GanacheController {
       ganacheThread =
           new Thread() {
             Process process = pb.start();
+
             @Override
             public void run() {
               process.destroy();
@@ -79,7 +79,11 @@ public class GanacheController {
             }
           };
     } catch (IOException e) {
-      LOG.fatal("GanacheController.constructor: IOException thrown when attempting \"" + pb.command() + "\" to start ganache-cli instance\n" + e);
+      LOG.fatal(
+          "GanacheController.constructor: IOException thrown when attempting \""
+              + pb.command()
+              + "\" to start ganache-cli instance\n"
+              + e);
     }
     // calls the cleanup thread after a shutdown signal is detected
     Runtime.getRuntime().addShutdownHook(ganacheThread);
@@ -90,13 +94,17 @@ public class GanacheController {
   // work around for a bug documented about the shutdown vs stop process
   // https://youtrack.jetbrains.com/issue/IDEA-75946
   // removes any remaining files and cleanup orphaned processes
-  public void cleanUp(){
+  public void cleanUp() {
     new File(keysPath).delete();
     ProcessBuilder pb = new ProcessBuilder("killall", "-9", "node", "cli.js");
     try {
       pb.start();
     } catch (IOException e) {
-      LOG.warn("GanacheController.cleanUp: IOException thrown when attempting \"" + pb.command() + "\" cleanup of hung ganache-cli instance\n" + e);
+      LOG.warn(
+          "GanacheController.cleanUp: IOException thrown when attempting \""
+              + pb.command()
+              + "\" cleanup of hung ganache-cli instance\n"
+              + e);
     }
   }
 
@@ -117,8 +125,12 @@ public class GanacheController {
       accountsJSON =
           (JSONObject) ((JSONObject) parser.parse(new FileReader(keysPath))).get("private_keys");
     } catch (Exception e) {
-      if(!keyFile.exists()) LOG.fatal("GanacheController.initkeys: Timedout when waiting for keys.json filet\n" + e);
-      else LOG.fatal("GanacheController.initkeys: Exception thrown when reading/parsing keys.json file\n" + e);
+      if (!keyFile.exists())
+        LOG.fatal("GanacheController.initkeys: Timedout when waiting for keys.json filet\n" + e);
+      else
+        LOG.fatal(
+            "GanacheController.initkeys: Exception thrown when reading/parsing keys.json file\n"
+                + e);
     }
     Set<String> keys = accountsJSON.keySet();
     for (String key : keys) accounts.add(new Account(key, accountsJSON.get(key).toString()));

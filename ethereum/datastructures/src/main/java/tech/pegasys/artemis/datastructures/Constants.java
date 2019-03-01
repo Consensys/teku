@@ -85,6 +85,10 @@ public final class Constants {
   public static final int DOMAIN_EXIT = 3; //
   public static final int DOMAIN_RANDAO = 4; //
 
+  // Artemis specific
+  public static final String SIM_DEPOSIT_VALUE = "1000000000000000000";
+  public static final int DEPOSIT_DATA_SIZE = 512; //
+
   private static long slot_to_epoch(long slot) {
     return slot / Constants.EPOCH_LENGTH;
   }

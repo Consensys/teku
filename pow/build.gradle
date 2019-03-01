@@ -10,12 +10,10 @@ jar {
   }
 }
 
-//def stdout = new ByteArrayOutputStream()
-//exec {
-//  executable './vyper.build.sh'
-//  standardOutput = stdout;
-//}
-//println "Output:\n$stdout";
+exec {
+  workingDir '../ganache-cli'
+  commandLine 'npm', 'install'
+}
 
 dependencies {
   //TODO org.web3j.abi and org.web3j.cyprto are used by org.web3j.core. Given that, is it necessary to export all 3 as API dependencies, or will just org.web3j.core suffice?

@@ -13,15 +13,24 @@
 
 package tech.pegasys.artemis.services.powchain;
 
+import static tech.pegasys.artemis.datastructures.Constants.DEPOSIT_DATA_SIZE;
+import static tech.pegasys.artemis.datastructures.Constants.SIM_DEPOSIT_VALUE;
+
 import com.google.common.eventbus.EventBus;
+import java.math.BigInteger;
+import net.consensys.cava.bytes.Bytes;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.artemis.ganache.GanacheController;
 import tech.pegasys.artemis.pow.DepositContractListener;
 import tech.pegasys.artemis.pow.DepositContractListenerFactory;
+import tech.pegasys.artemis.pow.contract.DepositContract;
 import tech.pegasys.artemis.services.ServiceInterface;
 
 public class PowchainService implements ServiceInterface {
 
   private EventBus eventBus;
+  private static final Logger LOG = LogManager.getLogger();
 
   private GanacheController controller;
   private DepositContractListener listener;
@@ -36,23 +45,44 @@ public class PowchainService implements ServiceInterface {
   public void init(EventBus eventBus) {
     this.eventBus = eventBus;
     this.eventBus.register(this);
-
-    if(simulation){
-      controller = new GanacheController(25, 6000);
-      listener = DepositContractListenerFactory.simulationDepositContract(eventBus, controller);
-    }
-    else listener = DepositContractListenerFactory.eth1DepositContract(eventBus, provider, privateKey);
   }
 
   @Override
   public void run() {
-
+    // if(simulation){
+    controller = new GanacheController(25, 6000);
+    listener = DepositContractListenerFactory.simulationDepositContract(eventBus, controller);
+    simulateDepositActivity(listener.getContract());
+    // }
+    // else listener = DepositContractListenerFactory.eth1DepositContract(this, provider,
+    // privateKey);
   }
-  //new DepositContractListener(eventBus, null).Eth2GenesisEvent(new Eth2GenesisEventResponse());
+
+  // method only used for debugging
+  // calls a deposit transaction on the DepositContract every 10 seconds
+  // simulate depositors
+  private static void simulateDepositActivity(DepositContract contract) {
+    Bytes bytes = Bytes.random(DEPOSIT_DATA_SIZE);
+    while (true) {
+      try {
+        contract.deposit(bytes.toArray(), new BigInteger(SIM_DEPOSIT_VALUE)).send();
+      } catch (Exception e) {
+        LOG.warn(
+            "PowchainService.simulateDepositActivity: Exception thrown when attempting to send a deposit transaction during a deposit simulation\n"
+                + e);
+      }
+      try {
+        Thread.sleep(10000);
+      } catch (InterruptedException e) {
+        LOG.warn(
+            "PowchainService.simulateDepositActivity: Exception thrown when attempting a thread sleep during a deposit simulation\n"
+                + e);
+      }
+    }
+  }
 
   @Override
   public void stop() {
     this.eventBus.unregister(this);
   }
-
 }

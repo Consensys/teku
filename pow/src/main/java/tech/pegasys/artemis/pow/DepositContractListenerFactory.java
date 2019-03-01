@@ -23,11 +23,10 @@ import org.web3j.tx.gas.DefaultGasProvider;
 import tech.pegasys.artemis.ganache.GanacheController;
 import tech.pegasys.artemis.pow.contract.DepositContract;
 
-import java.math.BigInteger;
-
 public class DepositContractListenerFactory {
 
-  public static DepositContractListener simulationDepositContract(EventBus eventBus, GanacheController controller) {
+  public static DepositContractListener simulationDepositContract(
+      EventBus eventBus, GanacheController controller) {
     Logger LOG = LogManager.getLogger();
     Web3j web3j = Web3j.build(new HttpService(controller.getProvider()));
     Credentials credentials = Credentials.create(controller.getAccounts().get(0).getPrivateKey());
@@ -35,38 +34,18 @@ public class DepositContractListenerFactory {
     try {
       contract = DepositContract.deploy(web3j, credentials, new DefaultGasProvider()).send();
     } catch (Exception e) {
-      LOG.fatal("DepositContractListenerFactory.simulationDepositContract: DepositContract failed to deploy in the simulation environment\n" + e);
+      LOG.fatal(
+          "DepositContractListenerFactory.simulationDepositContract: DepositContract failed to deploy in the simulation environment\n"
+              + e);
     }
     return new DepositContractListener(eventBus, contract);
   }
 
-  public static DepositContractListener eth1DepositContract(EventBus eventBus, String provider, String address){
+  public static DepositContractListener eth1DepositContract(
+      EventBus eventBus, String provider, String address) {
     Web3j web3j = Web3j.build(new HttpService(provider));
-    DepositContract contract = DepositContract.load(
-                    address, web3j, (Credentials) null, new DefaultGasProvider());
+    DepositContract contract =
+        DepositContract.load(address, web3j, (Credentials) null, new DefaultGasProvider());
     return new DepositContractListener(eventBus, contract);
-  }
-
-  // method only used for debugging
-  // calls a deposit transaction on the DepositContract every 10 seconds
-  // simulate depositors
-  private void sendDepositTransactions(DepositContract contract) {
-	byte[] depositParams = new byte[512];
-	for (int i = 0; i < 512; i++) depositParams[i] = (byte) 0x0;
-    while (true) {
-
-      System.err.println("Deposit Transaction Sent");
-      try {
-      contract.deposit(depositParams, new BigInteger("1000000000000000000")).send();
-      } catch (Exception e) {
-      System.out.println(e);
-      }
-
-      try {
-      Thread.sleep(10000);
-      } catch (InterruptedException e) {
-      System.out.println(e);
-      }
-    }
   }
 }

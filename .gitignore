@@ -26,7 +26,7 @@ tmp/
 build/
 out/
 web3j/
-.submodules/ganache/node_modules/
+ganache-cli/
 pow/src/main/resources/keys.json
 
 *.vscode/
