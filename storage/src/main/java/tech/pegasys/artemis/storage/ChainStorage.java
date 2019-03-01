@@ -15,7 +15,6 @@ package tech.pegasys.artemis.storage;
 
 import com.google.common.eventbus.EventBus;
 import java.util.HashMap;
-import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Queue;
 import net.consensys.cava.bytes.Bytes;
@@ -96,12 +95,8 @@ public interface ChainStorage {
    */
   static <S, T extends Queue<S>> Optional<S> remove(T items) {
     Optional<S> result = Optional.ofNullable(null);
-    try {
-      if (items.size() > 0) {
-        result = Optional.of(items.remove());
-      }
-    } catch (NoSuchElementException e) {
-      LOG.debug(items.getClass().toString() + ": There is nothing to remove");
+    if (items.size() > 0) {
+      result = Optional.of(items.poll());
     }
     return result;
   }
