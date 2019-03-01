@@ -4,3 +4,6 @@
 [submodule ".submodules/deposit_contract"]
 	path = .submodules/deposit_contract
 	url = git@github.com:ethereum/deposit_contract.git
+[submodule "ganache-cli"]
+	path = ganache-cli
+	url = git@github.com:trufflesuite/ganache-cli.git
