@@ -15,6 +15,8 @@ package tech.pegasys.artemis.storage;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
+import com.google.common.primitives.UnsignedLong;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -131,8 +133,22 @@ public class ChainStorageClient implements ChainStorage {
    *
    * @return
    */
-  public Optional<BeaconBlock> getUnprocessedBlock() {
-    return ChainStorage.<BeaconBlock, PriorityQueue<BeaconBlock>>remove(this.unprocessedBlocks);
+  public List<Optional<BeaconBlock>> getUnprocessedBlocksUntilSlot(UnsignedLong slot) {
+    List<Optional<BeaconBlock>> unprocessedBlocks = new ArrayList<>();
+    boolean unproccesedBlocksLeft = true;
+    Optional<BeaconBlock> currentBlock;
+    while (unproccesedBlocksLeft) {
+      currentBlock =
+          ChainStorage.<BeaconBlock, PriorityQueue<BeaconBlock>>peek(this.unprocessedBlocks);
+      if (currentBlock.isPresent()
+          && UnsignedLong.valueOf(currentBlock.get().getSlot()).compareTo(slot) <= 0) {
+        unprocessedBlocks.add(
+            ChainStorage.<BeaconBlock, PriorityQueue<BeaconBlock>>remove(this.unprocessedBlocks));
+      } else {
+        unproccesedBlocksLeft = false;
+      }
+    }
+    return unprocessedBlocks;
   }
 
   /**

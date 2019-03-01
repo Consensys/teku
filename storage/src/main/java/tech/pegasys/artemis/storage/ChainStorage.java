@@ -100,4 +100,18 @@ public interface ChainStorage {
     }
     return result;
   }
+
+  /**
+   * Peek an item from a Queue
+   *
+   * @param items
+   * @return
+   */
+  static <S, T extends Queue<S>> Optional<S> peek(T items) {
+    Optional<S> result = Optional.ofNullable(null);
+    if (items.size() > 0) {
+      result = Optional.of(items.peek());
+    }
+    return result;
+  }
 }

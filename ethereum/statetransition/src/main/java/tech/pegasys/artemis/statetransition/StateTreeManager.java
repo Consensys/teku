@@ -17,6 +17,7 @@ import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.google.common.primitives.UnsignedLong;
 import java.util.Date;
+import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import net.consensys.cava.bytes.Bytes32;
@@ -93,8 +94,9 @@ public class StateTreeManager {
     LOG.info("node time: " + nodeTime.longValue());
     LOG.info("node slot: " + nodeSlot.longValue());
 
-    Optional<BeaconBlock> block = this.store.getUnprocessedBlock();
-    processFork(this.nodeSlot, block);
+    List<Optional<BeaconBlock>> unprocessedBlocks =
+        this.store.getUnprocessedBlocksUntilSlot(nodeSlot);
+    unprocessedBlocks.stream().forEach((block) -> processFork(this.nodeSlot, block));
   }
 
   protected Boolean inspectBlock(Optional<BeaconBlock> block) {
