@@ -623,6 +623,16 @@ public class BlockProcessorUtil {
                   Bytes.concatenate(
                       Constants.BLS_WITHDRAWAL_PREFIX_BYTE,
                       transfer.getPubkey().toBytes().slice(1))));
+      Bytes32 transfer_message = hash_tree_root((new Transfer(
+              transfer.getFrom(),
+              transfer.getTo(),
+              transfer.getAmount(),
+              transfer.getFee(),
+              transfer.getSlot(),
+              transfer.getPubkey(),
+              EMPTY_SIGNATURE
+      ).toBytes()));
+      checkArgument(bls_verify(transfer.getPubkey(), transfer_message, transfer.getSignature(), get_domain(state.getFork(), slot_to_epoch(transfer.getSlot()), Constants.DOMAIN_TRANSFER)));
     }
   }
 
