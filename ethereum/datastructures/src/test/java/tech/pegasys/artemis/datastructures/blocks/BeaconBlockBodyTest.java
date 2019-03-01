@@ -20,6 +20,7 @@ import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomA
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomDeposit;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomExit;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomProposerSlashing;
+import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomTransfer;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -32,6 +33,7 @@ import tech.pegasys.artemis.datastructures.operations.AttesterSlashing;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.Exit;
 import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
+import tech.pegasys.artemis.datastructures.operations.Transfer;
 
 class BeaconBlockBodyTest {
 
@@ -43,9 +45,11 @@ class BeaconBlockBodyTest {
       Arrays.asList(randomAttestation(), randomAttestation(), randomAttestation());
   private List<Deposit> deposits = Arrays.asList(randomDeposit(), randomDeposit(), randomDeposit());
   private List<Exit> exits = Arrays.asList(randomExit(), randomExit(), randomExit());
+  private List<Transfer> transfers = Arrays.asList(randomTransfer());
 
   private BeaconBlockBody beaconBlockBody =
-      new BeaconBlockBody(proposerSlashings, attesterSlashings, attestations, deposits, exits);
+      new BeaconBlockBody(
+          proposerSlashings, attesterSlashings, attestations, deposits, exits, transfers);
 
   @Test
   void equalsReturnsTrueWhenObjectAreSame() {
@@ -57,7 +61,8 @@ class BeaconBlockBodyTest {
   @Test
   void equalsReturnsTrueWhenObjectFieldsAreEqual() {
     BeaconBlockBody testBeaconBlockBody =
-        new BeaconBlockBody(proposerSlashings, attesterSlashings, attestations, deposits, exits);
+        new BeaconBlockBody(
+            proposerSlashings, attesterSlashings, attestations, deposits, exits, transfers);
 
     assertEquals(beaconBlockBody, testBeaconBlockBody);
   }
@@ -70,7 +75,7 @@ class BeaconBlockBodyTest {
 
     BeaconBlockBody testBeaconBlockBody =
         new BeaconBlockBody(
-            reverseProposerSlashings, attesterSlashings, attestations, deposits, exits);
+            reverseProposerSlashings, attesterSlashings, attestations, deposits, exits, transfers);
 
     assertNotEquals(beaconBlockBody, testBeaconBlockBody);
   }
@@ -83,7 +88,7 @@ class BeaconBlockBodyTest {
 
     BeaconBlockBody testBeaconBlockBody =
         new BeaconBlockBody(
-            proposerSlashings, reverseAttesterSlashings, attestations, deposits, exits);
+            proposerSlashings, reverseAttesterSlashings, attestations, deposits, exits, transfers);
 
     assertNotEquals(beaconBlockBody, testBeaconBlockBody);
   }
@@ -96,7 +101,7 @@ class BeaconBlockBodyTest {
 
     BeaconBlockBody testBeaconBlockBody =
         new BeaconBlockBody(
-            proposerSlashings, attesterSlashings, reverseAttestations, deposits, exits);
+            proposerSlashings, attesterSlashings, reverseAttestations, deposits, exits, transfers);
 
     assertNotEquals(beaconBlockBody, testBeaconBlockBody);
   }
@@ -109,7 +114,7 @@ class BeaconBlockBodyTest {
 
     BeaconBlockBody testBeaconBlockBody =
         new BeaconBlockBody(
-            proposerSlashings, attesterSlashings, attestations, reverseDeposits, exits);
+            proposerSlashings, attesterSlashings, attestations, reverseDeposits, exits, transfers);
 
     assertNotEquals(beaconBlockBody, testBeaconBlockBody);
   }
@@ -122,7 +127,7 @@ class BeaconBlockBodyTest {
 
     BeaconBlockBody testBeaconBlockBody =
         new BeaconBlockBody(
-            proposerSlashings, attesterSlashings, attestations, deposits, reverseExits);
+            proposerSlashings, attesterSlashings, attestations, deposits, reverseExits, transfers);
 
     assertNotEquals(beaconBlockBody, testBeaconBlockBody);
   }

@@ -123,4 +123,27 @@ public class BLSPublicKey {
     BLSPublicKey other = (BLSPublicKey) obj;
     return Objects.equals(this.publicKey, other.publicKey);
   }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (Objects.isNull(obj)) {
+      return false;
+    }
+
+    if (this == obj) {
+      return true;
+    }
+
+    if (!(obj instanceof BLSPublicKey)) {
+      return false;
+    }
+
+    BLSPublicKey other = (BLSPublicKey) obj;
+    return Objects.equals(this.getPublicKey(), other.getPublicKey());
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(publicKey);
+  }
 }
