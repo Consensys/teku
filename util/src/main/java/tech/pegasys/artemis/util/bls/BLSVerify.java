@@ -18,7 +18,6 @@ import java.util.List;
 import java.util.stream.Collectors;
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
-import net.consensys.cava.bytes.Bytes48;
 
 public class BLSVerify {
 
@@ -32,7 +31,7 @@ public class BLSVerify {
    * @return true if the signature is valid over these parameters, false if not
    */
   public static boolean bls_verify(
-      Bytes48 pubkey, Bytes32 messageHash, BLSSignature signature, UnsignedLong domain) {
+      BLSPublicKey pubkey, Bytes32 messageHash, BLSSignature signature, UnsignedLong domain) {
     try {
       return signature.checkSignature(pubkey, Bytes.wrap(messageHash), domain.longValue());
     } catch (BLSException e) {
@@ -54,7 +53,7 @@ public class BLSVerify {
    * @return true if the signature is valid over these parameters, false if not
    */
   public static boolean bls_verify_multiple(
-      List<Bytes48> pubkeys,
+      List<BLSPublicKey> pubkeys,
       List<Bytes32> messageHashes,
       BLSSignature aggregateSignature,
       UnsignedLong domain) {

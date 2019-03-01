@@ -17,13 +17,13 @@ import com.google.common.primitives.UnsignedLong;
 import java.util.Objects;
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
-import net.consensys.cava.bytes.Bytes48;
 import net.consensys.cava.ssz.SSZ;
+import tech.pegasys.artemis.util.bls.BLSPublicKey;
 
 public class Validator {
 
   // BLS public key
-  private Bytes48 pubkey;
+  private BLSPublicKey pubkey;
   // Withdrawal credentials
   private Bytes32 withdrawal_credentials;
   // Epoch when validator activated
@@ -38,7 +38,7 @@ public class Validator {
   private UnsignedLong status_flags;
 
   public Validator(
-      Bytes48 pubkey,
+      BLSPublicKey pubkey,
       Bytes32 withdrawal_credentials,
       UnsignedLong activation_epoch,
       UnsignedLong exit_epoch,
@@ -59,7 +59,7 @@ public class Validator {
         bytes,
         reader ->
             new Validator(
-                Bytes48.wrap(reader.readBytes()),
+                BLSPublicKey.fromBytes(reader.readBytes()),
                 Bytes32.wrap(reader.readBytes()),
                 UnsignedLong.fromLongBits(reader.readUInt64()),
                 UnsignedLong.fromLongBits(reader.readUInt64()),
@@ -71,7 +71,7 @@ public class Validator {
   public Bytes toBytes() {
     return SSZ.encode(
         writer -> {
-          writer.writeBytes(pubkey);
+          writer.writeBytes(pubkey.toBytes());
           writer.writeBytes(withdrawal_credentials);
           writer.writeUInt64(activation_epoch.longValue());
           writer.writeUInt64(exit_epoch.longValue());
@@ -117,11 +117,11 @@ public class Validator {
         && Objects.equals(this.getStatus_flags(), other.getStatus_flags());
   }
 
-  public Bytes48 getPubkey() {
+  public BLSPublicKey getPubkey() {
     return pubkey;
   }
 
-  public void setPubkey(Bytes48 pubkey) {
+  public void setPubkey(BLSPublicKey pubkey) {
     this.pubkey = pubkey;
   }
 

@@ -30,6 +30,15 @@ public final class PublicKey {
   }
 
   /**
+   * Generates a random, valid public key given entropy
+   *
+   * @return PublicKey The public key, not null
+   */
+  public static PublicKey random(int entropy) {
+    return KeyPair.random(entropy).publicKey();
+  }
+
+  /**
    * Aggregates list of PublicKeys
    *
    * @param keys The list of public keys to aggregate, not null
@@ -49,8 +58,8 @@ public final class PublicKey {
    * @param bytes the bytes to read the public key from
    * @return a valid public key
    */
-  public static PublicKey fromBytes(byte[] bytes) {
-    return fromBytes(Bytes.wrap(bytes));
+  public static PublicKey fromBytesCompressed(byte[] bytes) {
+    return fromBytesCompressed(Bytes.wrap(bytes));
   }
 
   /**
@@ -59,7 +68,7 @@ public final class PublicKey {
    * @param bytes the bytes to read the public key from
    * @return a valid public key
    */
-  public static PublicKey fromBytes(Bytes bytes) {
+  public static PublicKey fromBytesCompressed(Bytes bytes) {
     G1Point point = G1Point.fromBytesCompressed(bytes);
     return new PublicKey(point);
   }
@@ -92,7 +101,7 @@ public final class PublicKey {
    *
    * @return byte array representation of the public key
    */
-  public Bytes toBytes() {
+  public Bytes toBytesCompressed() {
     return point.toBytesCompressed();
   }
 
@@ -101,11 +110,13 @@ public final class PublicKey {
   }
 
   @Override
+  public String toString() {
+    return "Signature [ecpPoint=" + point.toString() + "]";
+  }
+
+  @Override
   public int hashCode() {
-    final int prime = 31;
-    int result = 1;
-    result = prime * result + Objects.hashCode(point);
-    return result;
+    return Objects.hash(point);
   }
 
   @Override

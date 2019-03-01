@@ -18,13 +18,13 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
-import net.consensys.cava.bytes.Bytes48;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 
 class DepositInputTest {
 
-  private Bytes48 pubkey = Bytes48.random();
+  private BLSPublicKey pubkey = BLSPublicKey.random();
   private Bytes32 withdrawalCredentials = Bytes32.random();
   private BLSSignature proofOfPossession = BLSSignature.random();
 
@@ -48,8 +48,12 @@ class DepositInputTest {
 
   @Test
   void equalsReturnsFalseWhenPubkeysAreDifferent() {
+    BLSPublicKey differentPublicKey = BLSPublicKey.random();
+    while (pubkey.equals(differentPublicKey)) {
+      differentPublicKey = BLSPublicKey.random();
+    }
     DepositInput testDepositInput =
-        new DepositInput(pubkey.not(), withdrawalCredentials, proofOfPossession);
+        new DepositInput(differentPublicKey, withdrawalCredentials, proofOfPossession);
 
     assertNotEquals(depositInput, testDepositInput);
   }

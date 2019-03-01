@@ -20,12 +20,12 @@ import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomU
 import com.google.common.primitives.UnsignedLong;
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
-import net.consensys.cava.bytes.Bytes48;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.artemis.util.bls.BLSPublicKey;
 
 class ValidatorTest {
 
-  private Bytes48 pubkey = Bytes48.random();
+  private BLSPublicKey pubkey = BLSPublicKey.random();
   private Bytes32 withdrawalCredentials = Bytes32.random();
   private UnsignedLong activationEpoch = randomUnsignedLong();
   private UnsignedLong exitEpoch = randomUnsignedLong();
@@ -67,9 +67,13 @@ class ValidatorTest {
 
   @Test
   void equalsReturnsFalseWhenPubkeysAreDifferent() {
+    BLSPublicKey differentPublicKey = BLSPublicKey.random();
+    while (pubkey.equals(differentPublicKey)) {
+      differentPublicKey = BLSPublicKey.random();
+    }
     Validator testValidator =
         new Validator(
-            pubkey.not(),
+            differentPublicKey,
             withdrawalCredentials,
             activationEpoch,
             exitEpoch,

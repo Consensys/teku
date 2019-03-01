@@ -22,9 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.util.Arrays;
 import java.util.List;
 import net.consensys.cava.bytes.Bytes;
-import net.consensys.cava.bytes.Bytes48;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.artemis.util.mikuli.PublicKey;
 
 public class BLSAggregationTest {
 
@@ -36,7 +34,7 @@ public class BLSAggregationTest {
 
   @Test
   void succeedsWhenAggregatingASinglePublicKeyReturnsTheSamePublicKey() {
-    Bytes48 publicKeyCompressed = Bytes48.wrap(BLSKeyPair.random().publicKey().toBytes());
+    BLSPublicKey publicKeyCompressed = BLSPublicKey.random();
     assertEquals(publicKeyCompressed, BLSPublicKey.aggregate(Arrays.asList(publicKeyCompressed)));
   }
 
@@ -55,8 +53,8 @@ public class BLSAggregationTest {
     BLSSignature signature = BLSSignature.random();
 
     // Two keys
-    Bytes48 publicKey = Bytes48.wrap(PublicKey.random().toBytes());
-    List<Bytes48> publicKeys = Arrays.asList(publicKey, publicKey);
+    BLSPublicKey publicKey = BLSPublicKey.random();
+    List<BLSPublicKey> publicKeys = Arrays.asList(publicKey, publicKey);
 
     // Three messages
     Bytes message = Bytes.wrap("Ceci n'est pas une pipe".getBytes(UTF_8));
@@ -84,16 +82,10 @@ public class BLSAggregationTest {
     BLSSignature signature4 = BLSSignature.sign(keyPair4, message2, 0);
 
     // Aggregate keys 1 & 2, and keys 3 & 4
-    Bytes48 aggregatePublicKey12 =
-        BLSPublicKey.aggregate(
-            Arrays.asList(
-                Bytes48.wrap(keyPair1.getBlsPublicKey().getPublicKey().toBytes()),
-                Bytes48.wrap(keyPair2.getBlsPublicKey().getPublicKey().toBytes())));
-    Bytes48 aggregatePublicKey34 =
-        BLSPublicKey.aggregate(
-            Arrays.asList(
-                Bytes48.wrap(keyPair3.getBlsPublicKey().getPublicKey().toBytes()),
-                Bytes48.wrap(keyPair4.getBlsPublicKey().getPublicKey().toBytes())));
+    BLSPublicKey aggregatePublicKey12 =
+        BLSPublicKey.aggregate(Arrays.asList(keyPair1.getPublicKey(), keyPair2.getPublicKey()));
+    BLSPublicKey aggregatePublicKey34 =
+        BLSPublicKey.aggregate(Arrays.asList(keyPair3.getPublicKey(), keyPair4.getPublicKey()));
 
     // Aggregate the signatures
     BLSSignature aggregateSignature =
@@ -125,16 +117,10 @@ public class BLSAggregationTest {
     BLSSignature signature4 = BLSSignature.sign(keyPair4, message2, 0);
 
     // Aggregate keys 1 & 2, and keys 3 & 4
-    Bytes48 aggregatePublicKey12 =
-        BLSPublicKey.aggregate(
-            Arrays.asList(
-                Bytes48.wrap(keyPair1.getBlsPublicKey().getPublicKey().toBytes()),
-                Bytes48.wrap(keyPair2.getBlsPublicKey().getPublicKey().toBytes())));
-    Bytes48 aggregatePublicKey34 =
-        BLSPublicKey.aggregate(
-            Arrays.asList(
-                Bytes48.wrap(keyPair3.getBlsPublicKey().getPublicKey().toBytes()),
-                Bytes48.wrap(keyPair4.getBlsPublicKey().getPublicKey().toBytes())));
+    BLSPublicKey aggregatePublicKey12 =
+        BLSPublicKey.aggregate(Arrays.asList(keyPair1.getPublicKey(), keyPair2.getPublicKey()));
+    BLSPublicKey aggregatePublicKey34 =
+        BLSPublicKey.aggregate(Arrays.asList(keyPair3.getPublicKey(), keyPair4.getPublicKey()));
 
     // Aggregate the signatures
     BLSSignature aggregateSignature =
