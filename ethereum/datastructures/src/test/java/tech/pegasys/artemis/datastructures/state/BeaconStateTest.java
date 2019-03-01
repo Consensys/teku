@@ -42,7 +42,6 @@ import java.util.Collections;
 import java.util.List;
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
-import net.consensys.cava.bytes.Bytes48;
 import net.consensys.cava.crypto.Hash;
 import net.consensys.cava.junit.BouncyCastleExtension;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -52,6 +51,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
+import tech.pegasys.artemis.util.bls.BLSPublicKey;
 
 @ExtendWith(BouncyCastleExtension.class)
 class BeaconStateTest {
@@ -263,7 +263,7 @@ class BeaconStateTest {
             Collections.nCopies(
                 12,
                 new Validator(
-                    Bytes48.ZERO,
+                    BLSPublicKey.empty(),
                     Bytes32.ZERO,
                     UnsignedLong.ZERO,
                     UnsignedLong.valueOf(GENESIS_EPOCH),

@@ -51,7 +51,6 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
-import net.consensys.cava.bytes.Bytes48;
 import net.consensys.cava.crypto.Hash;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -69,6 +68,7 @@ import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.util.bitwise.BitwiseOps;
 import tech.pegasys.artemis.util.bls.BLSException;
+import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 
 public class BeaconStateUtil {
@@ -738,7 +738,7 @@ public class BeaconStateUtil {
    */
   public static void process_deposit(
       BeaconState state,
-      Bytes48 pubkey,
+      BLSPublicKey pubkey,
       UnsignedLong amount,
       BLSSignature proof_of_possession,
       Bytes32 withdrawal_credentials) {
@@ -752,7 +752,7 @@ public class BeaconStateUtil {
         validate_proof_of_possession(state, pubkey, proof_of_possession, withdrawal_credentials));
 
     // Retrieve the list of validator's public keys from the current state.
-    List<Bytes48> validator_pubkeys =
+    List<BLSPublicKey> validator_pubkeys =
         validatorRegistry.stream()
             .map(validator -> validator.getPubkey())
             .collect(Collectors.toList());
@@ -829,7 +829,7 @@ public class BeaconStateUtil {
    */
   static boolean validate_proof_of_possession(
       BeaconState state,
-      Bytes48 pubkey,
+      BLSPublicKey pubkey,
       BLSSignature proof_of_possession,
       Bytes32 withdrawal_credentials) {
     // Create a new DepositInput with the pubkey and withdrawal_credentials.
@@ -936,16 +936,16 @@ public class BeaconStateUtil {
       }
     }
 
-    ArrayList<Bytes48> custody_bit_0_pubkeys = new ArrayList<>();
+    ArrayList<BLSPublicKey> custody_bit_0_pubkeys = new ArrayList<>();
     for (int i = 0; i < custody_bit_0_indices.size(); i++) {
       custody_bit_0_pubkeys.add(state.getValidator_registry().get(i).getPubkey());
     }
-    ArrayList<Bytes48> custody_bit_1_pubkeys = new ArrayList<>();
+    ArrayList<BLSPublicKey> custody_bit_1_pubkeys = new ArrayList<>();
     for (int i = 0; i < custody_bit_1_indices.size(); i++) {
       custody_bit_1_pubkeys.add(state.getValidator_registry().get(i).getPubkey());
     }
 
-    List<Bytes48> pubkeys =
+    List<BLSPublicKey> pubkeys =
         Arrays.asList(
             bls_aggregate_pubkeys(custody_bit_0_pubkeys),
             bls_aggregate_pubkeys(custody_bit_1_pubkeys));
