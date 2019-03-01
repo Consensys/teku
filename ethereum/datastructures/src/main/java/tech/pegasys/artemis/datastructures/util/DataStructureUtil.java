@@ -279,7 +279,7 @@ public final class DataStructureUtil {
         randomUnsignedLong(),
         randomUnsignedLong(),
         randomUnsignedLong(),
-        BLSPublicKey.randomPublicKey(),
+        BLSPublicKey.random(),
         BLSSignature.random());
   }
 
@@ -290,8 +290,8 @@ public final class DataStructureUtil {
         randomUnsignedLong(seed + 2),
         randomUnsignedLong(seed + 3),
         randomUnsignedLong(seed + 4),
-        BLSPublicKey.randomPublicKey(),
-        BLSSignature.random());
+        BLSPublicKey.random(seed + 5),
+        BLSSignature.random(seed + 6));
   }
 
   public static BeaconBlockBody randomBeaconBlockBody() {

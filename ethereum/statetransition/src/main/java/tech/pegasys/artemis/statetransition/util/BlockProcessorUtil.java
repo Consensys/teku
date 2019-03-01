@@ -29,6 +29,7 @@ import static tech.pegasys.artemis.datastructures.Constants.MAX_PROPOSER_SLASHIN
 import static tech.pegasys.artemis.datastructures.Constants.MIN_ATTESTATION_INCLUSION_DELAY;
 import static tech.pegasys.artemis.datastructures.Constants.ZERO_HASH;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_attestation_participants;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_beacon_proposer_index;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_bitfield_bit;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_block_root;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_crosslink_committees_at_slot;
@@ -623,16 +624,41 @@ public class BlockProcessorUtil {
                   Bytes.concatenate(
                       Constants.BLS_WITHDRAWAL_PREFIX_BYTE,
                       transfer.getPubkey().toBytes().slice(1))));
-      Bytes32 transfer_message = hash_tree_root((new Transfer(
-              transfer.getFrom(),
-              transfer.getTo(),
-              transfer.getAmount(),
-              transfer.getFee(),
-              transfer.getSlot(),
+      Bytes32 transfer_message =
+          hash_tree_root(
+              new Transfer(
+                      transfer.getFrom(),
+                      transfer.getTo(),
+                      transfer.getAmount(),
+                      transfer.getFee(),
+                      transfer.getSlot(),
+                      transfer.getPubkey(),
+                      EMPTY_SIGNATURE)
+                  .toBytes());
+      checkArgument(
+          bls_verify(
               transfer.getPubkey(),
-              EMPTY_SIGNATURE
-      ).toBytes()));
-      checkArgument(bls_verify(transfer.getPubkey(), transfer_message, transfer.getSignature(), get_domain(state.getFork(), slot_to_epoch(transfer.getSlot()), Constants.DOMAIN_TRANSFER)));
+              transfer_message,
+              transfer.getSignature(),
+              get_domain(
+                  state.getFork(), slot_to_epoch(transfer.getSlot()), Constants.DOMAIN_TRANSFER)));
+
+      UnsignedLong fromBalance =
+          state.getValidator_balances().get(toIntExact(transfer.getFrom().longValue()));
+      fromBalance = fromBalance.minus(transfer.getAmount()).minus(transfer.getFee());
+      state.getValidator_balances().set(toIntExact(transfer.getFrom().longValue()), fromBalance);
+
+      UnsignedLong toBalance =
+          state.getValidator_balances().get(toIntExact(transfer.getFrom().longValue()));
+      toBalance = toBalance.plus(transfer.getAmount());
+      state.getValidator_balances().set(toIntExact(transfer.getTo().longValue()), toBalance);
+
+      UnsignedLong proposerBalance =
+          state.getValidator_balances().get(get_beacon_proposer_index(state, state.getSlot()));
+      proposerBalance = proposerBalance.plus(transfer.getFee());
+      state
+          .getValidator_balances()
+          .set(get_beacon_proposer_index(state, state.getSlot()), proposerBalance);
     }
   }
 
