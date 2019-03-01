@@ -13,12 +13,13 @@
 
 package tech.pegasys.artemis.pow.event;
 
-import java.util.ArrayList;
-import java.util.List;
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
 import tech.pegasys.artemis.pow.api.DepositEvent;
-import tech.pegasys.artemis.pow.contract.ValidatorRegistrationContract.DepositEventResponse;
+import tech.pegasys.artemis.pow.contract.DepositContract.DepositEventResponse;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class Deposit extends AbstractEvent<DepositEventResponse> implements DepositEvent {
 

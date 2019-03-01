@@ -14,32 +14,45 @@
 package tech.pegasys.artemis.services.powchain;
 
 import com.google.common.eventbus.EventBus;
-import tech.pegasys.artemis.pow.ValidatorRegistrationClient;
+import tech.pegasys.artemis.ganache.GanacheController;
+import tech.pegasys.artemis.pow.DepositContractListener;
+import tech.pegasys.artemis.pow.DepositContractListenerFactory;
 import tech.pegasys.artemis.services.ServiceInterface;
 
 public class PowchainService implements ServiceInterface {
 
   private EventBus eventBus;
-  private ValidatorRegistrationClient vrc;
+
+  private GanacheController controller;
+  private DepositContractListener listener;
+
+  private boolean simulation = true;
+  String privateKey;
+  String provider;
 
   public PowchainService() {}
 
   @Override
   public void init(EventBus eventBus) {
     this.eventBus = eventBus;
-    this.vrc = new ValidatorRegistrationClient(eventBus);
     this.eventBus.register(this);
+
+    if(simulation){
+      controller = new GanacheController(25, 6000);
+      listener = DepositContractListenerFactory.simulationDepositContract(eventBus, controller);
+    }
+    else listener = DepositContractListenerFactory.eth1DepositContract(eventBus, provider, privateKey);
   }
 
   @Override
   public void run() {
-    // this.vrc.simulatePowChain();
-    // TODO: we need a simulation switch
-    this.vrc.listenToPoWChain();
+
   }
+  //new DepositContractListener(eventBus, null).Eth2GenesisEvent(new Eth2GenesisEventResponse());
 
   @Override
   public void stop() {
     this.eventBus.unregister(this);
   }
+
 }

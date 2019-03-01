@@ -13,15 +13,17 @@
 
 package tech.pegasys.artemis.ganache;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
 
 public class GanacheController {
 
@@ -42,14 +44,14 @@ public class GanacheController {
 
   private List<Account> accounts;
   private String provider;
-  final Process process;
 
-  public GanacheController(int accountSize, int balance) throws IOException {
+  private static final Logger LOG = LogManager.getLogger();
+
+  public GanacheController(int accountSize, int balance) {
     this(DEFAULT_HOST_NAME, DEFAULT_PORT, accountSize, balance);
   }
 
-  public GanacheController(String hostName, String port, int accountSize, int balance)
-      throws IOException {
+  public GanacheController(String hostName, String port, int accountSize, int balance) {
     provider = hostName + ":" + port;
     cleanUp();
     // starts a child process of ganache-cli and generates a keys.json file
@@ -64,17 +66,21 @@ public class GanacheController {
             KEY_PATH_PARAM,
             keysPath);
     pb.directory(new File(ganachePath));
-    process = pb.start();
 
     // cleans up process and deletes keys.json
-    ganacheThread =
-        new Thread() {
-          @Override
-          public void run() {
-            process.destroy();
-            new File(keysPath).delete();
-          }
-        };
+    try {
+      ganacheThread =
+          new Thread() {
+            Process process = pb.start();
+            @Override
+            public void run() {
+              process.destroy();
+              new File(keysPath).delete();
+            }
+          };
+    } catch (IOException e) {
+      LOG.fatal("GanacheController.constructor: IOException thrown when attempting \"" + pb.command() + "\" to start ganache-cli instance\n" + e);
+    }
     // calls the cleanup thread after a shutdown signal is detected
     Runtime.getRuntime().addShutdownHook(ganacheThread);
     // waits for keys.json for 10 second and then reads in keys.json from a file
@@ -84,10 +90,14 @@ public class GanacheController {
   // work around for a bug documented about the shutdown vs stop process
   // https://youtrack.jetbrains.com/issue/IDEA-75946
   // removes any remaining files and cleanup orphaned processes
-  public void cleanUp() throws IOException {
+  public void cleanUp(){
     new File(keysPath).delete();
     ProcessBuilder pb = new ProcessBuilder("killall", "-9", "node", "cli.js");
-    pb.start();
+    try {
+      pb.start();
+    } catch (IOException e) {
+      LOG.warn("GanacheController.cleanUp: IOException thrown when attempting \"" + pb.command() + "\" cleanup of hung ganache-cli instance\n" + e);
+    }
   }
 
   // Wait for keys.json file to be copied to the keysPath directory
@@ -95,8 +105,8 @@ public class GanacheController {
   public void initKeys() {
     accounts = new ArrayList<Account>();
     JSONObject accountsJSON = null;
+    File keyFile = new File(keysPath);
     try {
-      File keyFile = new File(keysPath);
       int waitInterval = 0;
       while (waitInterval < 20) {
         if (keyFile.exists()) break;
@@ -106,12 +116,9 @@ public class GanacheController {
       JSONParser parser = new JSONParser();
       accountsJSON =
           (JSONObject) ((JSONObject) parser.parse(new FileReader(keysPath))).get("private_keys");
-    } catch (InterruptedException e) {
-      System.err.println(e);
-    } catch (ParseException e) {
-      System.err.println(e);
-    } catch (IOException e) {
-      System.err.println(e);
+    } catch (Exception e) {
+      if(!keyFile.exists()) LOG.fatal("GanacheController.initkeys: Timedout when waiting for keys.json filet\n" + e);
+      else LOG.fatal("GanacheController.initkeys: Exception thrown when reading/parsing keys.json file\n" + e);
     }
     Set<String> keys = accountsJSON.keySet();
     for (String key : keys) accounts.add(new Account(key, accountsJSON.get(key).toString()));

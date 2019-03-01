@@ -16,7 +16,7 @@ package tech.pegasys.artemis.pow.event;
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
 import tech.pegasys.artemis.pow.api.Eth2GenesisEvent;
-import tech.pegasys.artemis.pow.contract.ValidatorRegistrationContract.Eth2GenesisEventResponse;
+import tech.pegasys.artemis.pow.contract.DepositContract.Eth2GenesisEventResponse;
 
 public class Eth2Genesis extends AbstractEvent<Eth2GenesisEventResponse>
     implements Eth2GenesisEvent {

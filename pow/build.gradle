@@ -34,4 +34,5 @@ dependencies {
 
   implementation 'org.apache.logging.log4j:log4j-api'
   runtime 'org.apache.logging.log4j:log4j-core'
+  compile group: 'io.github.ganchix', name: 'testcontainers-java-module-ganache', version: '0.0.4'
 }
