@@ -134,7 +134,7 @@ class BeaconStateTest {
             Bytes32.ZERO,
             Bytes32.ZERO,
             Bytes32.ZERO,
-            Bytes32.ZERO,
+            new Crosslink(UnsignedLong.ZERO, Bytes32.ZERO),
             UnsignedLong.ZERO,
             Bytes32.ZERO);
     byte[] aggregation_bitfield = Bytes32.ZERO.toArrayUnsafe();
