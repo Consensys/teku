@@ -155,7 +155,8 @@ public class BlockProcessorUtil {
    */
   public static void update_eth1_data(BeaconState state, BeaconBlock block)
       throws BlockProcessingException {
-    // If there exists an `eth1_data_vote` in `states.eth1_data_votes` for which `eth1_data_vote.eth1_data == block.eth1_data` 
+    // If there exists an `eth1_data_vote` in `states.eth1_data_votes` for which
+    // `eth1_data_vote.eth1_data == block.eth1_data`
     //  (there will be at most one), set `eth1_data_vote.vote_count += 1`.
     boolean exists = false;
     List<Eth1DataVote> votes = state.getEth1_data_votes();
