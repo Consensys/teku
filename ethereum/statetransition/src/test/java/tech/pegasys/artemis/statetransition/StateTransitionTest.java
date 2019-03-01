@@ -14,7 +14,6 @@
 package tech.pegasys.artemis.statetransition;
 
 import static org.assertj.core.api.Assertions.assertThat;
-
 import static org.junit.jupiter.api.Assertions.fail;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomDeposits;
 

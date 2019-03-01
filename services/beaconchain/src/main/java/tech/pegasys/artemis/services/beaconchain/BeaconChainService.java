@@ -21,7 +21,7 @@ import java.util.concurrent.TimeUnit;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.services.ServiceInterface;
 import tech.pegasys.artemis.statetransition.SlotScheduler;
-import tech.pegasys.artemis.statetransition.Validator_Registration;
+import tech.pegasys.artemis.statetransition.StateTreeManager;
 
 public class BeaconChainService implements ServiceInterface {
 
