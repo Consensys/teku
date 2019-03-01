@@ -26,7 +26,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import net.consensys.cava.bytes.Bytes32;
-import net.consensys.cava.bytes.Bytes48;
 import net.consensys.cava.junit.BouncyCastleExtension;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -36,6 +35,7 @@ import tech.pegasys.artemis.datastructures.operations.DepositInput;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.datastructures.state.Validator;
+import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 
 @ExtendWith(BouncyCastleExtension.class)
@@ -195,7 +195,7 @@ class BeaconStateUtilTest {
   // TODO Fill out and enable this test case when bls_verify is complete.
   void validateProofOfPosessionReturnsTrueIfTheBLSSignatureIsValidForGivenDepositInputData() {
     BeaconState beaconState = null;
-    Bytes48 pubkey = null;
+    BLSPublicKey pubkey = null;
     BLSSignature proofOfPossession = null;
     Bytes32 withdrawalCredentials = null;
 
@@ -209,7 +209,7 @@ class BeaconStateUtilTest {
   // TODO Fill out and enable this test case when bls_verify is complete.
   void validateProofOfPosessionReturnsFalseIfTheBLSSignatureIsNotValidForGivenDepositInputData() {
     BeaconState beaconState = null;
-    Bytes48 pubkey = null;
+    BLSPublicKey pubkey = null;
     BLSSignature proofOfPossession = null;
     Bytes32 withdrawalCredentials = null;
 
@@ -222,7 +222,7 @@ class BeaconStateUtilTest {
   void processDepositAddsNewValidatorWhenPubkeyIsNotFoundInRegistry() {
     // Data Setup
     DepositInput depositInput = randomDepositInput();
-    Bytes48 pubkey = depositInput.getPubkey();
+    BLSPublicKey pubkey = depositInput.getPubkey();
     BLSSignature proofOfPossession = depositInput.getProof_of_possession();
     Bytes32 withdrawalCredentials = depositInput.getWithdrawal_credentials();
     UnsignedLong amount = UnsignedLong.valueOf(100L);
@@ -259,7 +259,7 @@ class BeaconStateUtilTest {
   void processDepositTopsUpValidatorBalanceWhenPubkeyIsFoundInRegistry() {
     // Data Setup
     DepositInput depositInput = randomDepositInput();
-    Bytes48 pubkey = depositInput.getPubkey();
+    BLSPublicKey pubkey = depositInput.getPubkey();
     BLSSignature proofOfPossession = depositInput.getProof_of_possession();
     Bytes32 withdrawalCredentials = depositInput.getWithdrawal_credentials();
     UnsignedLong amount = UnsignedLong.valueOf(100L);
