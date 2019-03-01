@@ -614,10 +614,15 @@ public class BlockProcessorUtil {
                       .getExit_epoch()
                       .longValue()
                   + Constants.MIN_EXIT_EPOCHS_BEFORE_TRANSFER);
-      // checkArgument(state.getValidator_registry().get(toIntExact(transfer.getFrom().longValue())).getWithdrawal_credentials().equals(
-      //       transfer.getPubkey().toBytes().slice(1) // .. //
-      // Constants.BLS_WITHDRAWAL_PREFIX_BYTE
-      // ));
+      checkArgument(
+          state
+              .getValidator_registry()
+              .get(toIntExact(transfer.getFrom().longValue()))
+              .getWithdrawal_credentials()
+              .equals(
+                  Bytes.concatenate(
+                      Constants.BLS_WITHDRAWAL_PREFIX_BYTE,
+                      transfer.getPubkey().toBytes().slice(1))));
     }
   }
 
