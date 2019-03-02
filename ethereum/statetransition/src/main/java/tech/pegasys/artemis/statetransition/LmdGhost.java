@@ -31,7 +31,7 @@ import tech.pegasys.artemis.storage.ChainStorageClient;
 
 public class LmdGhost {
 
-  public BeaconBlock lmd_ghost(
+  public static BeaconBlock lmd_ghost(
       ChainStorageClient store, BeaconState start_state, BeaconBlock start_block)
       throws StateTransitionException {
     List<Integer> active_validator_indices =
@@ -71,7 +71,7 @@ public class LmdGhost {
   /*
    * This function is defined inside lmd_ghost in spec. It is defined here separately for legibility.
    */
-  public UnsignedLong get_vote_count(
+  public static UnsignedLong get_vote_count(
       ChainStorageClient store, BeaconBlock block, List<BeaconBlock> attestation_targets) {
     UnsignedLong vote_count = UnsignedLong.ZERO;
     for (BeaconBlock target : attestation_targets) {
@@ -91,7 +91,7 @@ public class LmdGhost {
    *  the child blocks of the given block.
    */
   // TODO: OPTIMIZE: currently goes through all the values in processedBlockLookup
-  public List<BeaconBlock> get_children(ChainStorageClient store, BeaconBlock block) {
+  public static List<BeaconBlock> get_children(ChainStorageClient store, BeaconBlock block) {
     List<BeaconBlock> children = new ArrayList<>();
     for (Map.Entry<Bytes, BeaconBlock> entry : store.getProcessedBlockLookup().entrySet()) {
       BeaconBlock potential_child = entry.getValue();
@@ -108,7 +108,7 @@ public class LmdGhost {
    *  Let get_latest_attestation_target(store: Store, validator: Validator) -> BeaconBlock
    *  be the target block in the attestation get_latest_attestation(store, validator).
    */
-  public BeaconBlock get_latest_attestation_target(ChainStorageClient store, int validatorIndex)
+  public static BeaconBlock get_latest_attestation_target(ChainStorageClient store, int validatorIndex)
       throws StateTransitionException {
     Attestation latest_attestation = get_latest_attestation(store, validatorIndex);
     Optional<BeaconBlock> latest_attestation_target =
@@ -125,7 +125,7 @@ public class LmdGhost {
    *  be the attestation with the highest slot number in store from validator. If
    *  several such attestations exist, use the one the validator v observed first.
    */
-  public Attestation get_latest_attestation(ChainStorageClient store, int validatorIndex)
+  public static Attestation get_latest_attestation(ChainStorageClient store, int validatorIndex)
       throws StateTransitionException {
     Optional<Attestation> latestAttestation = store.getLatestAttestation(validatorIndex);
     if (!latestAttestation.isPresent()) {
@@ -140,7 +140,7 @@ public class LmdGhost {
    *  be the ancestor of block with slot number slot. The get_ancestor function can be
    *  defined recursively as:
    */
-  public Optional<BeaconBlock> get_ancestor(
+  public static Optional<BeaconBlock> get_ancestor(
       ChainStorageClient store, BeaconBlock block, UnsignedLong slotNumber) {
     requireNonNull(block);
     UnsignedLong blockSlot = UnsignedLong.valueOf(block.getSlot());
