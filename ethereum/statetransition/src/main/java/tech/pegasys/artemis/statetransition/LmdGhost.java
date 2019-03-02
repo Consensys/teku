@@ -108,8 +108,8 @@ public class LmdGhost {
    *  Let get_latest_attestation_target(store: Store, validator: Validator) -> BeaconBlock
    *  be the target block in the attestation get_latest_attestation(store, validator).
    */
-  public static BeaconBlock get_latest_attestation_target(ChainStorageClient store, int validatorIndex)
-      throws StateTransitionException {
+  public static BeaconBlock get_latest_attestation_target(
+      ChainStorageClient store, int validatorIndex) throws StateTransitionException {
     Attestation latest_attestation = get_latest_attestation(store, validatorIndex);
     Optional<BeaconBlock> latest_attestation_target =
         store.getProcessedBlock(latest_attestation.getData().getBeacon_block_root());

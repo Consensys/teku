@@ -16,12 +16,10 @@ package tech.pegasys.artemis.statetransition;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.google.common.primitives.UnsignedLong;
-
 import java.util.Date;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
-
 import net.consensys.cava.bytes.Bytes32;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -35,9 +33,7 @@ import tech.pegasys.artemis.storage.ChainStorage;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 
-/**
- * Class to manage the state tree and initiate state transitions
- */
+/** Class to manage the state tree and initiate state transitions */
 public class StateTreeManager {
 
   private BeaconBlock head;
@@ -63,7 +59,7 @@ public class StateTreeManager {
       LOG.info("  initial state root is " + initial_state_root.toHexString());
       this.store.addState(initial_state_root, initial_state);
       this.store.addProcessedBlock(genesis_block_root, genesis_block);
-      this.head = genesis_block;
+      this.store.setJustifiedHead(initial_state, genesis_block);
     } catch (IllegalStateException e) {
       LOG.fatal(e);
     }
@@ -74,8 +70,9 @@ public class StateTreeManager {
     LOG.info("******* ChainStart Event Detected *******");
     this.nodeSlot = UnsignedLong.valueOf(Constants.GENESIS_SLOT);
     this.nodeTime =
-            UnsignedLong.valueOf(Constants.GENESIS_SLOT)
-                    .times(UnsignedLong.valueOf(Constants.SLOT_DURATION));
+        UnsignedLong.valueOf(Constants.GENESIS_SLOT)
+            .times(UnsignedLong.valueOf(Constants.SLOT_DURATION));
+    LOG.info("node slot: " + nodeSlot.longValue());
     LOG.info("node time: " + nodeTime.longValue());
     boolean result = true;
     this.eventBus.post(result);
@@ -88,7 +85,7 @@ public class StateTreeManager {
   }
 
   @Subscribe
-  public void onNewSlot(Date date) throws StateTransitionException{
+  public void onNewSlot(Date date) throws StateTransitionException {
     this.nodeSlot = this.nodeSlot.plus(UnsignedLong.ONE);
     this.nodeTime = this.nodeTime.plus(UnsignedLong.valueOf(Constants.SLOT_DURATION));
 
@@ -97,12 +94,14 @@ public class StateTreeManager {
     LOG.info("node slot: " + nodeSlot.longValue());
 
     List<Optional<BeaconBlock>> unprocessedBlocks =
-            this.store.getUnprocessedBlocksUntilSlot(nodeSlot);
+        this.store.getUnprocessedBlocksUntilSlot(nodeSlot);
     unprocessedBlocks.forEach((block) -> processFork(block));
 
     // Run lmd_ghost to get the head
     try {
-      this.head = LmdGhost.lmd_ghost(store, store.get_justified_head_state(), store.get_justified_head_block());
+      this.head =
+          LmdGhost.lmd_ghost(
+              store, store.get_justified_head_state(), store.get_justified_head_block());
     } catch (StateTransitionException e) {
       LOG.fatal(e);
     }
@@ -114,8 +113,7 @@ public class StateTreeManager {
     boolean firstLoop = true;
     while (newState.getSlot().compareTo(nodeSlot) < 0) {
       if (firstLoop) {
-        LOG.info(
-                "Transitioning state from slot: " + newState.getSlot() + " to slot: " + nodeSlot);
+        LOG.info("Transitioning state from slot: " + newState.getSlot() + " to slot: " + nodeSlot);
         firstLoop = false;
       }
       newState = BeaconState.deepCopy(newState);
@@ -135,8 +133,8 @@ public class StateTreeManager {
       return false;
     }
     UnsignedLong blockTime =
-            UnsignedLong.valueOf(block.get().getSlot())
-                    .times(UnsignedLong.valueOf(Constants.SLOT_DURATION));
+        UnsignedLong.valueOf(block.get().getSlot())
+            .times(UnsignedLong.valueOf(Constants.SLOT_DURATION));
     // TODO: Here we reject block because time is not there,
     // however, the block is already removed from queue, so
     // we're losing a valid block here.
@@ -173,17 +171,17 @@ public class StateTreeManager {
         // TODO: check if the fork_head's parent slot is further back than the weak subjectivity
         // period, should we check?
 
-        // Run state transition from block’s parentState and parent’s slot with no blocks until block.slot - 1
+        // Run state transition from block’s parentState and parent’s slot with no blocks until
+        // block.slot - 1
         Bytes32 currentStateRoot;
         boolean firstLoop = true;
-        while (currentState.getSlot().compareTo(UnsignedLong.valueOf(block.getSlot() - 1))
-                < 0) {
+        while (currentState.getSlot().compareTo(UnsignedLong.valueOf(block.getSlot() - 1)) < 0) {
           if (firstLoop) {
             LOG.info(
-                    "Transitioning state from slot: "
-                            + currentState.getSlot()
-                            + " to slot: "
-                            + UnsignedLong.valueOf(block.getSlot() - 1));
+                "Transitioning state from slot: "
+                    + currentState.getSlot()
+                    + " to slot: "
+                    + UnsignedLong.valueOf(block.getSlot() - 1));
             firstLoop = false;
           }
           stateTransition.initiate(currentState, null, store);

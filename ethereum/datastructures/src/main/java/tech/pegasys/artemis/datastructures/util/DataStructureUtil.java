@@ -334,7 +334,7 @@ public final class DataStructureUtil {
   public static BeaconState createInitialBeaconState() {
 
     return BeaconStateUtil.get_initial_beacon_state(
-        newDeposits(100),
+        newDeposits(0),
         UnsignedLong.valueOf(Constants.GENESIS_SLOT),
         new Eth1Data(Bytes32.ZERO, Bytes32.ZERO));
   }
