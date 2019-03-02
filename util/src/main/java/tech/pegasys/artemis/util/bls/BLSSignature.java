@@ -188,7 +188,7 @@ public final class BLSSignature {
 
   @Override
   public int hashCode() {
-    return Objects.hash(signature);
+    return isEmpty() ? 0 : signature.hashCode();
   }
 
   @Override

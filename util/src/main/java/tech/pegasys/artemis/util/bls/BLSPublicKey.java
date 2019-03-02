@@ -106,7 +106,7 @@ public class BLSPublicKey {
 
   @Override
   public int hashCode() {
-    return Objects.hash(publicKey);
+    return isEmpty() ? 0 : publicKey.hashCode();
   }
 
   @Override

@@ -13,12 +13,11 @@
 
 package tech.pegasys.artemis.util.mikuli;
 
+import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static tech.pegasys.artemis.util.mikuli.G2Point.isValid;
 import static tech.pegasys.artemis.util.mikuli.G2Point.normaliseY;
 import static tech.pegasys.artemis.util.mikuli.G2Point.scaleWithCofactor;
 
@@ -55,38 +54,9 @@ class G2PointTest {
   }
 
   @Test
-  void succeedsWhenIsValidReturnsTrueForARandomPoint() {
-    G2Point point = G2Point.random();
-    assertTrue(G2Point.isValid(point));
-  }
-
-  @Test
-  void succeedsWhenPointWithC1FalseIsInvalid() {
-    G2Point point = G2Point.random();
-    // C1 should always be true
-    assertFalse(isValid(point.ecp2Point(), point.getA1(), point.getB1(), false));
-  }
-
-  @Test
-  void succeedsWhenPointWithB1TrueIsInvalid() {
-    G2Point point = G2Point.random();
-    // B1 is true only for the point at infinity
-    assertFalse(isValid(point.ecp2Point(), point.getA1(), true, true));
-  }
-
-  @Test
-  void succeedsWhenPointWithA1InvertedIsInvalid() {
-    G2Point point = G2Point.random();
-    assertFalse(isValid(point.ecp2Point(), !point.getA1(), false, true));
-  }
-
-  @Test
-  void succeedsWhenPointAtInfinityHasCorrectFlags() {
+  void succeedsWhenDefaultConstructorReturnsThePointAtInfinity() {
     G2Point infinity = new G2Point();
     assertTrue(infinity.ecp2Point().is_infinity());
-    assertFalse(infinity.getA1());
-    assertTrue(infinity.getB1());
-    assertTrue(infinity.getC1());
     assertTrue(infinity.ecp2Point().getX().iszilch());
   }
 
@@ -188,75 +158,6 @@ class G2PointTest {
     assertEquals(scaledPoint1, scaledPoint2);
   }
 
-  /**
-   * The data in the tests below comes from the reference Eth2 reference BLS tests
-   * https://github.com/ethereum/eth2.0-tests/blob/df7888e658943d3e733f660bb7ace7d829d70011/test_vectors/test_bls.yml
-   * We should find a way to automate this. Note that these test cases are out of date, and will
-   * need need updating when we start passing the hash of the message rather than the message. There
-   * are also bugs in the tests around the selection of Y coordinate.
-   */
-  @Test
-  void succeedsWhenHashToG2MatchesTestDataCase1() {
-    // TODO: Update to latest spec when we have new test cases
-    Bytes message = Bytes.fromHexString("0x6d657373616765");
-    G2Point point = G2Point.hashToG2(message, 0L);
-
-    String[] testCasesResult = {
-      "0x0e34a428411c115e094b51afa596b0e594fb325dfe42d481a87a1e89ab35f531aadc7b4f8eb5ce9d3973d2cfef8f20fd",
-      "0x12830258cc04219871cd71eb9478eb1f1971104bcf49ac60ec6e3368e9047e10acef61b75d803849942bea06e3bc99a8",
-      "0x162f48744b91343105f5b1830f3346da815ada6b615afc57c611b423470fb53d26c9e8a1e6288b524f75a8e69492cd31",
-      "0x129b6b431d1d3dabda12739eadac269e7d85e2940f270b5486bfddf2c36109164dd20ba5369e9305ef16e470d0eafad0",
-      "0x05825be2264001369d47bfac0fef4735d4cbbc8e6e0cd2f25b68948122b94a856473f07b9e6d16af7a7286bab41fc9d6",
-      "0x0a2fba34dddfa47d0363fdf88d6d7fdb9db3d914f70275ea6923b3fceffee565dd7de1b2109293a72139bf3b82126a52"
-    };
-
-    G2Point expected = makePoint(testCasesResult);
-    assertEquals(expected, point);
-  }
-
-  @Test
-  void succeedsWhenHashToG2MatchesTestDataCase2() {
-    // TODO: Update to latest spec when we have new test cases
-    Bytes message = Bytes.fromHexString("0x6d657373616765");
-    G2Point point = G2Point.hashToG2(message, 1L);
-
-    String[] testCasesResult = {
-      "0x0c4efb2057400f7316bdfd6a89aa3afd34411b045e81bc75fa7f6a6bc5736f6528ceb5857c04866b98a43f6fdf08037c",
-      "0x1539234325ccfd75fda86b1acd449af4a954b0ce45840c4a1e7596f41a99d12735b69968ebe998b4379aa3c3cdc9a8c4",
-      "0x05488381cf53bd9f750451eb40c6bdd04b86689b8b6374a8df30c7d1a2ecc4a33dbe4f13ce7ed6f7e21c123480c4e959",
-      "0x180d467a582e8fd8e766ed90d9a993ae22503fa0358af72ba405350f7e97b910fc2f849a77f0b9ba869fec3d65c4331a",
-      "0x143c969735b29ecb356f2406d001d220d54c3e90d254769a350e7da60de287d4a89ca6dc1bff53e825fa6b889a0801b5",
-      "0x048daeee78cefb03a26e382c7dd582d61a873461b3b1b79c3dc5706cac133666b1cc3b923fed6de46fb63f399d985a1c"
-    };
-
-    G2Point expected = makePoint(testCasesResult);
-    assertEquals(expected, point);
-  }
-
-  @Test
-  void succeedsWhenHashToG2MatchesTestDataCase3() {
-    // TODO: Update to latest spec when we have new test cases
-    Bytes message =
-        Bytes.fromHexString(
-            "0x"
-                + "56657279202e2e2e2e2e2e2e2e2e2e2e2e2e2e206c6f6e67202e2e2e2e2e2e2e"
-                + "2e2e2e2e2e2e206d657373616765202e2e2e2e207769746820656e74726f7079"
-                + "3a20313233343536373839302d626561636f6e2d636861696e");
-    G2Point point = G2Point.hashToG2(message, 0xffffffffL);
-
-    String[] testCasesResult = {
-      "0x1735fa1eeb8f5927bfbd50497a0f5d0dda9b77e044bbdc2305ad4fed35a2e7fad2f97aa43a0c25e19741481acf836973",
-      "0x06a71fb5c75ca78fefe799c8951e24fde9feb58f07e0da3165a73c40f6cd48eb7d82f6d95c18e3c10abd4e293d3ec6b3",
-      "0x0a852998b4535f26f3dd91af9d0ec9a19cf692ed90523f288f5600cbc8c1a6694d9525b714af12e55ee02ba408ba451a",
-      "0x015a8507b42edd62bd82a12a59bdb9b9ae4b2c53c94bcadaa693a8c0c920718e035f849fd70e5d4c74cce782d3eb2096",
-      "0x1422202b89e51c324096d038174fdf2f1671b09ee9315054d000b500db4c992de5aa9b333a54d1b1cfc73069ee634c14",
-      "0x0af76bfd57821e779b7f2fbed3b314c5b3407be1b4a703396c2afa95e6465b46881b459aca082e72a4613b31b98f7467"
-    };
-
-    G2Point expected = makePoint(testCasesResult);
-    assertEquals(expected, point);
-  }
-
   @Test
   void succeedsWhenAttemptToDeserialiseXReEqualToModulusThrowsIllegalArgumentException() {
     // xRe is exactly the modulus, q, xIm is zero
@@ -297,7 +198,200 @@ class G2PointTest {
         IllegalArgumentException.class, () -> G2Point.fromBytesCompressed(Bytes.fromHexString(x)));
   }
 
-  // More rigorous higher level tests are performed using the Ethereum 2.0 BLS test data suite
+  @Test
+  void succeedsWhenDeserialisingACorrectPointDoesNotThrow() {
+    String xInput =
+        "0x"
+            + "8123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+            + "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
+    assertAll(() -> G2Point.fromBytesCompressed(Bytes.fromHexString(xInput)));
+  }
+
+  @Test
+  void succeedsWhenDeserialisingAnIncorrectPointThrowsIllegalArgumentException() {
+    String xInput =
+        "0x"
+            + "8123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+            + "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcde0";
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> G2Point.fromBytesCompressed(Bytes.fromHexString(xInput)));
+  }
+
+  @Test
+  void succeedsWhenProvidingTooFewBytesToFromBytesCompressedThrowsIllegalArgumentException() {
+    String xInput =
+        "0x"
+            + "8123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+            + "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcd";
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> G2Point.fromBytesCompressed(Bytes.fromHexString(xInput)));
+  }
+
+  @Test
+  void succeedsWhenProvidingTooManyBytesToFromBytesCompressedThrowsIllegalArgumentException() {
+    String xInput =
+        "0x"
+            + "8123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+            + "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdefff";
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> G2Point.fromBytesCompressed(Bytes.fromHexString(xInput)));
+  }
+
+  @Test
+  void succeedsWhenRoundTripDeserialiseSerialiseCompressedReturnsTheOriginalInput() {
+    String xInput =
+        "0x"
+            + "8123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+            + "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
+    String xOutput =
+        G2Point.fromBytesCompressed(Bytes.fromHexString(xInput))
+            .toBytesCompressed()
+            .toHexString()
+            .toLowerCase();
+    assertEquals(xInput, xOutput);
+  }
+
+  @Test
+  void succeedsWhenDeserialiseCompressedInfinityWithTrueBFlagCreatesPointAtInfinity() {
+    String xInput =
+        "0x"
+            + "c00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+            + "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000";
+    G2Point point = G2Point.fromBytesCompressed(Bytes.fromHexString(xInput));
+    assertTrue(point.ecp2Point().is_infinity());
+  }
+
+  @Test
+  void succeedsWhenDeserialiseCompressedInfinityWithFalseBFlagDoesNotCreatePointAtInfinity() {
+    String xInput =
+        "0x"
+            + "800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+            + "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000";
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> G2Point.fromBytesCompressed(Bytes.fromHexString(xInput)));
+  }
+
+  @Test
+  void succeedsWhenSerialiseDeserialiseCompressedInfinityGivesOriginalInput() {
+    G2Point point = new G2Point();
+    assertEquals(point, G2Point.fromBytesCompressed(point.toBytesCompressed()));
+  }
+
+  @Test
+  void succeedsWhenDeserialiseSerialiseCompressedInfinityGivesOriginalInput() {
+    String xInput =
+        "0x"
+            + "c00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+            + "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000";
+    String xOutput =
+        G2Point.fromBytesCompressed(Bytes.fromHexString(xInput))
+            .toBytesCompressed()
+            .toHexString()
+            .toLowerCase();
+    assertEquals(xInput, xOutput);
+  }
+
+  @Test
+  void succeedsWhenAttemptToDeserialiseWithWrongCFlagThrowsIllegalArgumentException() {
+    String xInput =
+        "0x"
+            + "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+            + "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> G2Point.fromBytesCompressed(Bytes.fromHexString(xInput)));
+  }
+
+  @Test
+  void succeedsWhenAttemptToDeserialiseWithBFlagAndXNonzeroThrowsIllegalArgumentException1() {
+    String xInput =
+        "0x"
+            + "c123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+            + "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> G2Point.fromBytesCompressed(Bytes.fromHexString(xInput)));
+  }
+
+  @Test
+  void succeedsWhenAttemptToDeserialiseWithBFlagAndAFlagTrueThrowsIllegalArgumentException1() {
+    String xInput =
+        "0x"
+            + "e00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+            + "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000";
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> G2Point.fromBytesCompressed(Bytes.fromHexString(xInput)));
+  }
+
+  /*
+   * The data in the tests below is based on the reference Eth2 reference BLS tests
+   * https://github.com/ethereum/eth2.0-tests/blob/df7888e658943d3e733f660bb7ace7d829d70011/test_vectors/test_bls.yml
+   * The tests have since changed, and are now automated, but these remain here for reference.
+   */
+
+  @Test
+  void succeedsWhenHashToG2MatchesTestDataCase1() {
+    Bytes message = Bytes.fromHexString("0x6d657373616765");
+    G2Point point = G2Point.hashToG2(message, 0L);
+
+    String[] testCasesResult = {
+      "0x0e34a428411c115e094b51afa596b0e594fb325dfe42d481a87a1e89ab35f531aadc7b4f8eb5ce9d3973d2cfef8f20fd",
+      "0x12830258cc04219871cd71eb9478eb1f1971104bcf49ac60ec6e3368e9047e10acef61b75d803849942bea06e3bc99a8",
+      "0x162f48744b91343105f5b1830f3346da815ada6b615afc57c611b423470fb53d26c9e8a1e6288b524f75a8e69492cd31",
+      "0x129b6b431d1d3dabda12739eadac269e7d85e2940f270b5486bfddf2c36109164dd20ba5369e9305ef16e470d0eafad0",
+      "0x05825be2264001369d47bfac0fef4735d4cbbc8e6e0cd2f25b68948122b94a856473f07b9e6d16af7a7286bab41fc9d6",
+      "0x0a2fba34dddfa47d0363fdf88d6d7fdb9db3d914f70275ea6923b3fceffee565dd7de1b2109293a72139bf3b82126a52"
+    };
+
+    G2Point expected = makePoint(testCasesResult);
+    assertEquals(expected, point);
+  }
+
+  @Test
+  void succeedsWhenHashToG2MatchesTestDataCase2() {
+    Bytes message = Bytes.fromHexString("0x6d657373616765");
+    G2Point point = G2Point.hashToG2(message, 1L);
+
+    String[] testCasesResult = {
+      "0x0c4efb2057400f7316bdfd6a89aa3afd34411b045e81bc75fa7f6a6bc5736f6528ceb5857c04866b98a43f6fdf08037c",
+      "0x1539234325ccfd75fda86b1acd449af4a954b0ce45840c4a1e7596f41a99d12735b69968ebe998b4379aa3c3cdc9a8c4",
+      "0x05488381cf53bd9f750451eb40c6bdd04b86689b8b6374a8df30c7d1a2ecc4a33dbe4f13ce7ed6f7e21c123480c4e959",
+      "0x180d467a582e8fd8e766ed90d9a993ae22503fa0358af72ba405350f7e97b910fc2f849a77f0b9ba869fec3d65c4331a",
+      "0x143c969735b29ecb356f2406d001d220d54c3e90d254769a350e7da60de287d4a89ca6dc1bff53e825fa6b889a0801b5",
+      "0x048daeee78cefb03a26e382c7dd582d61a873461b3b1b79c3dc5706cac133666b1cc3b923fed6de46fb63f399d985a1c"
+    };
+
+    G2Point expected = makePoint(testCasesResult);
+    assertEquals(expected, point);
+  }
+
+  @Test
+  void succeedsWhenHashToG2MatchesTestDataCase3() {
+    Bytes message =
+        Bytes.fromHexString(
+            "0x"
+                + "56657279202e2e2e2e2e2e2e2e2e2e2e2e2e2e206c6f6e67202e2e2e2e2e2e2e"
+                + "2e2e2e2e2e2e206d657373616765202e2e2e2e207769746820656e74726f7079"
+                + "3a20313233343536373839302d626561636f6e2d636861696e");
+    G2Point point = G2Point.hashToG2(message, 0xffffffffL);
+
+    String[] testCasesResult = {
+      "0x1735fa1eeb8f5927bfbd50497a0f5d0dda9b77e044bbdc2305ad4fed35a2e7fad2f97aa43a0c25e19741481acf836973",
+      "0x06a71fb5c75ca78fefe799c8951e24fde9feb58f07e0da3165a73c40f6cd48eb7d82f6d95c18e3c10abd4e293d3ec6b3",
+      "0x0a852998b4535f26f3dd91af9d0ec9a19cf692ed90523f288f5600cbc8c1a6694d9525b714af12e55ee02ba408ba451a",
+      "0x015a8507b42edd62bd82a12a59bdb9b9ae4b2c53c94bcadaa693a8c0c920718e035f849fd70e5d4c74cce782d3eb2096",
+      "0x1422202b89e51c324096d038174fdf2f1671b09ee9315054d000b500db4c992de5aa9b333a54d1b1cfc73069ee634c14",
+      "0x0af76bfd57821e779b7f2fbed3b314c5b3407be1b4a703396c2afa95e6465b46881b459aca082e72a4613b31b98f7467"
+    };
+
+    G2Point expected = makePoint(testCasesResult);
+    assertEquals(expected, point);
+  }
 
   /* ==== Helper Functions ===================================================================== */
 

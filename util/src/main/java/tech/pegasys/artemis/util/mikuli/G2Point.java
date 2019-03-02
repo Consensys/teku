@@ -156,61 +156,20 @@ final class G2Point implements Group<G2Point> {
 
   private final ECP2 point;
 
-  /**
-   * The following are the flags defined in the Eth2 BLS spec. There are also a2, b2 and c2 flags
-   * defined, but these are always zero, so we omit tem here
-   */
-  // Bit 381 of the imaginary part of X. Equal to ((y_im * 2) / q == 1)
-  private final boolean a1;
-  // Bit 382 of the imaginary part of X. True only for the point at infinity.
-  private final boolean b1;
-  // Bit 383 of the imaginary part of X. Always true.
-  private final boolean c1;
-
   private static final int fpPointSize = BIG.MODBYTES;
 
   /** Default constructor creates the point at infinity (the zero point) */
-  public G2Point() {
-    this(new ECP2(), false, true, true);
+  G2Point() {
+    this(new ECP2());
   }
 
   /**
-   * Constructor for point that calculates the correct flags as per Eth2 Spec
-   *
-   * <p>Will throw an exception if an invalid point is specified. We don't want to crash since this
-   * may simply be due to bad data that has been sent to us, so the exception needs to be caught and
-   * handled higher up the stack.
+   * Constructor for point
    *
    * @param point the ec2p point
-   * @throws IllegalArgumentException if the point is not on the curve
    */
   G2Point(ECP2 point) {
-    this(
-        point,
-        !point.is_infinity() && calculateYFlag(point.getY().getB()),
-        point.is_infinity(),
-        true);
-  }
-
-  /**
-   * Constructor for point with flags as per Eth2 Spec
-   *
-   * <p>Will throw an exception if an invalid point is specified. We don't want to crash since this
-   * may simply be due to bad data that has been sent to us, so the exception needs to be caught and
-   * handled higher up the stack.
-   *
-   * @param point the ec2p point
-   * @param a1 the Y coordinate branch flag
-   * @param b1 the infinity flag
-   * @param c1 always true
-   * @throws IllegalArgumentException if the point is not on the curve or the flags are incorrect
-   */
-  private G2Point(ECP2 point, boolean a1, boolean b1, boolean c1) {
-    checkArgument(isValid(point, a1, b1, c1), "Trying to create invalid point.");
     this.point = point;
-    this.a1 = a1;
-    this.b1 = b1;
-    this.c1 = c1;
   }
 
   @Override
@@ -249,15 +208,22 @@ final class G2Point implements Group<G2Point> {
     point.getX().getA().toBytes(xReBytes);
     point.getX().getB().toBytes(xImBytes);
 
+    // Serialisation flags as defined in the Eth2 specs
+    boolean c1 = true;
+    boolean b1 = point.is_infinity();
+    boolean a1 = !b1 && calculateYFlag(point.getY().getB());
+
     byte flags = (byte) ((a1 ? 1 << 5 : 0) | (b1 ? 1 << 6 : 0) | (c1 ? 1 << 7 : 0));
     byte mask = (byte) 31;
     xImBytes[0] &= mask;
     xImBytes[0] |= flags;
+    xReBytes[0] &= mask;
 
     return Bytes.concatenate(Bytes.wrap(xImBytes), Bytes.wrap(xReBytes));
   }
 
   static G2Point fromBytes(Bytes bytes) {
+    checkArgument(bytes.size() == 192, "Expected 192 bytes, received %s.", bytes.size());
     return new G2Point(ECP2.fromBytes(bytes.toArrayUnsafe()));
   }
 
@@ -276,12 +242,29 @@ final class G2Point implements Group<G2Point> {
     byte[] xImBytes = bytes.slice(0, fpPointSize).toArray();
     byte[] xReBytes = bytes.slice(fpPointSize, fpPointSize).toArray();
 
-    boolean a = (xImBytes[0] & (byte) (1 << 5)) != 0;
-    boolean b = (xImBytes[0] & (byte) (1 << 6)) != 0;
-    boolean c = (xImBytes[0] & (byte) (1 << 7)) != 0;
+    boolean aIn = (xImBytes[0] & (byte) (1 << 5)) != 0;
+    boolean bIn = (xImBytes[0] & (byte) (1 << 6)) != 0;
+    boolean cIn = (xImBytes[0] & (byte) (1 << 7)) != 0;
     xImBytes[0] &= (byte) 31;
-    checkArgument(
-        (xReBytes[0] & (byte) 224) == 0, "The input has non-zero a2, b2 or c2 flag on xRe");
+
+    if ((xReBytes[0] & (byte) 224) != 0) {
+      throw new IllegalArgumentException("The input has non-zero a2, b2 or c2 flag on xRe");
+    }
+
+    if (!cIn) {
+      throw new IllegalArgumentException("The serialised input does not have the C flag set.");
+    }
+
+    if (bIn) {
+      if (!aIn && Bytes.wrap(xImBytes).isZero() && Bytes.wrap(xReBytes).isZero()) {
+        // This is a correctly formed serialisation of infinity
+        return new G2Point();
+      } else {
+        // The input is malformed
+        throw new IllegalArgumentException(
+            "The serialised input has B flag set, but A flag is set, or X is non-zero.");
+      }
+    }
 
     // Per the spec, we must check that x < q (the curve modulus) for this serialisation to be valid
     // We raise an exception (that should be caught) if this check fails: somebody might feed us
@@ -289,14 +272,19 @@ final class G2Point implements Group<G2Point> {
     BIG xImBig = BIG.fromBytes(xImBytes);
     BIG xReBig = BIG.fromBytes(xReBytes);
     BIG modulus = new BIG(ROM.Modulus);
-    checkArgument(BIG.comp(xReBig, modulus) < 0, "Deserialised Real X coordinate is too large.");
-    checkArgument(
-        BIG.comp(xImBig, modulus) < 0, "Deserialised Imaginary X coordinate is too large.");
+    if (BIG.comp(modulus, xReBig) < 0 || BIG.comp(modulus, xImBig) < 0) {
+      throw new IllegalArgumentException(
+          "The deserialised X real or imaginary coordinate is too large.");
+    }
 
     ECP2 point = new ECP2(new FP2(xReBig, xImBig));
 
+    if (point.is_infinity()) {
+      throw new IllegalArgumentException("X coordinate is not on the curve.");
+    }
+
     // Did we get the right branch of the sqrt?
-    if (!point.is_infinity() && a != calculateYFlag(point.getY().getB())) {
+    if (!point.is_infinity() && aIn != calculateYFlag(point.getY().getB())) {
       // We didn't: so choose the other branch of the sqrt.
       FP2 x = point.getX();
       FP2 yneg = point.getY();
@@ -304,49 +292,7 @@ final class G2Point implements Group<G2Point> {
       point = new ECP2(x, yneg);
     }
 
-    return new G2Point(point, a, b, c);
-  }
-
-  /**
-   * Check the validity of a G2 point according to the Eth2 spec
-   *
-   * @return true if the given point and its flags are valid according to the Eth2 spec
-   */
-  static boolean isValid(G2Point point) {
-    return isValid(point.ecp2Point(), point.a1, point.b1, point.c1);
-  }
-
-  /**
-   * Check the validity of an ECP2 point and its flags according to the Eth2 spec.
-   *
-   * @return true if point is consistent with the flags
-   */
-  @VisibleForTesting
-  static boolean isValid(ECP2 point, boolean a1, boolean b1, boolean c1) {
-    BIG xRe = point.getX().getA();
-    BIG xIm = point.getX().getB();
-    BIG yIm = point.getY().getB();
-
-    if (!c1) {
-      return false;
-    }
-
-    // Point at infinity
-    if (b1 != point.is_infinity()) {
-      return false;
-    }
-    if (b1) {
-      return (!a1 && xRe.iszilch() && xIm.iszilch());
-    }
-
-    // Check that we have the right branch for Y
-    if (a1 != calculateYFlag(yIm)) {
-      return false;
-    }
-
-    // Check that both X and Y are on the curve
-    ECP2 newPoint = new ECP2(point.getX(), point.getY());
-    return point.equals(newPoint);
+    return new G2Point(point);
   }
 
   ECP2 ecp2Point() {
@@ -355,7 +301,7 @@ final class G2Point implements Group<G2Point> {
 
   @Override
   public String toString() {
-    return point.toString() + " a1:" + a1 + " b1:" + b1 + " c1:" + c1;
+    return point.toString();
   }
 
   @Override
@@ -370,35 +316,15 @@ final class G2Point implements Group<G2Point> {
       return false;
     }
     G2Point other = (G2Point) obj;
-    return point.equals(other.point) && a1 == other.a1 && b1 == other.b1 && c1 == other.c1;
+    return point.equals(other.point);
   }
 
   @Override
   public int hashCode() {
-    final int prime = 31;
-    int result = 1;
-    long xa = point.getX().getA().norm();
-    long ya = point.getY().getA().norm();
-    long xb = point.getX().getB().norm();
-    long yb = point.getY().getB().norm();
-    result = prime * result + (int) (xa ^ (xa >>> 32));
-    result = prime * result + (int) (ya ^ (ya >>> 32));
-    result = prime * result + (int) (xb ^ (xb >>> 32));
-    result = prime * result + (int) (yb ^ (yb >>> 32));
-    return result;
-  }
-
-  // Getters used only for testing
-
-  boolean getA1() {
-    return a1;
-  }
-
-  boolean getB1() {
-    return b1;
-  }
-
-  boolean getC1() {
-    return c1;
+    return Objects.hash(
+        point.getX().getA().norm(),
+        point.getY().getA().norm(),
+        point.getX().getB().norm(),
+        point.getY().getB().norm());
   }
 }
