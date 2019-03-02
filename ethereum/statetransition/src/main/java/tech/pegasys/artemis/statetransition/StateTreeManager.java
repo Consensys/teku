@@ -16,10 +16,12 @@ package tech.pegasys.artemis.statetransition;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.google.common.primitives.UnsignedLong;
+
 import java.util.Date;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
+
 import net.consensys.cava.bytes.Bytes32;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -33,10 +35,12 @@ import tech.pegasys.artemis.storage.ChainStorage;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 
-/** Class to manage the state tree and initiate state transitions */
+/**
+ * Class to manage the state tree and initiate state transitions
+ */
 public class StateTreeManager {
 
-  private BeaconState canonical_state;
+  private BeaconBlock head;
   private UnsignedLong nodeTime;
   private UnsignedLong nodeSlot;
   private final EventBus eventBus;
@@ -49,17 +53,7 @@ public class StateTreeManager {
     this.stateTransition = new StateTransition();
     this.eventBus.register(this);
     this.store = ChainStorage.Create(ChainStorageClient.class, eventBus);
-  }
 
-  @Subscribe
-  public void onChainStarted(ChainStartEvent event) {
-    LOG.info("******* ChainStart Event Detected *******");
-    this.nodeSlot = UnsignedLong.valueOf(Constants.GENESIS_SLOT);
-    this.nodeTime =
-        UnsignedLong.valueOf(Constants.GENESIS_SLOT)
-            .times(UnsignedLong.valueOf(Constants.SLOT_DURATION));
-    LOG.info("node time: " + nodeTime.longValue());
-    Boolean result = false;
     try {
       BeaconState initial_state = DataStructureUtil.createInitialBeaconState();
       Bytes32 initial_state_root = HashTreeUtil.hash_tree_root(initial_state.toBytes());
@@ -68,15 +62,23 @@ public class StateTreeManager {
       LOG.info("Initial State:");
       LOG.info("  initial state root is " + initial_state_root.toHexString());
       this.store.addState(initial_state_root, initial_state);
-      this.store.addProcessedBlock(initial_state_root, genesis_block);
       this.store.addProcessedBlock(genesis_block_root, genesis_block);
-      this.canonical_state = initial_state;
-      result = true;
+      this.head = genesis_block;
     } catch (IllegalStateException e) {
       LOG.fatal(e);
-    } finally {
-      this.eventBus.post(result);
     }
+  }
+
+  @Subscribe
+  public void onChainStarted(ChainStartEvent event) {
+    LOG.info("******* ChainStart Event Detected *******");
+    this.nodeSlot = UnsignedLong.valueOf(Constants.GENESIS_SLOT);
+    this.nodeTime =
+            UnsignedLong.valueOf(Constants.GENESIS_SLOT)
+                    .times(UnsignedLong.valueOf(Constants.SLOT_DURATION));
+    LOG.info("node time: " + nodeTime.longValue());
+    boolean result = true;
+    this.eventBus.post(result);
   }
 
   @Subscribe
@@ -86,7 +88,7 @@ public class StateTreeManager {
   }
 
   @Subscribe
-  public void onNewSlot(Date date) {
+  public void onNewSlot(Date date) throws StateTransitionException{
     this.nodeSlot = this.nodeSlot.plus(UnsignedLong.ONE);
     this.nodeTime = this.nodeTime.plus(UnsignedLong.valueOf(Constants.SLOT_DURATION));
 
@@ -95,8 +97,34 @@ public class StateTreeManager {
     LOG.info("node slot: " + nodeSlot.longValue());
 
     List<Optional<BeaconBlock>> unprocessedBlocks =
-        this.store.getUnprocessedBlocksUntilSlot(nodeSlot);
-    unprocessedBlocks.stream().forEach((block) -> processFork(this.nodeSlot, block));
+            this.store.getUnprocessedBlocksUntilSlot(nodeSlot);
+    unprocessedBlocks.forEach((block) -> processFork(block));
+
+    // Run lmd_ghost to get the head
+    try {
+      this.head = LmdGhost.lmd_ghost(store, store.get_justified_head_state(), store.get_justified_head_block());
+    } catch (StateTransitionException e) {
+      LOG.fatal(e);
+    }
+
+    // Run state transition from the new head to node.slot
+    Bytes32 head_block_root = this.head.getState_root();
+    BeaconState newState = store.getState(head_block_root).get();
+    Bytes32 newStateRoot = HashTreeUtil.hash_tree_root(newState.toBytes());
+    boolean firstLoop = true;
+    while (newState.getSlot().compareTo(nodeSlot) < 0) {
+      if (firstLoop) {
+        LOG.info(
+                "Transitioning state from slot: " + newState.getSlot() + " to slot: " + nodeSlot);
+        firstLoop = false;
+      }
+      newState = BeaconState.deepCopy(newState);
+      stateTransition.initiate(newState, null, store);
+      newStateRoot = HashTreeUtil.hash_tree_root(newState.toBytes());
+      this.store.addState(newStateRoot, newState);
+    }
+    LOG.info("latest block root: " + head_block_root);
+    LOG.info("latest state root: " + newStateRoot.toHexString());
   }
 
   protected Boolean inspectBlock(Optional<BeaconBlock> block) {
@@ -107,8 +135,8 @@ public class StateTreeManager {
       return false;
     }
     UnsignedLong blockTime =
-        UnsignedLong.valueOf(block.get().getSlot())
-            .times(UnsignedLong.valueOf(Constants.SLOT_DURATION));
+            UnsignedLong.valueOf(block.get().getSlot())
+                    .times(UnsignedLong.valueOf(Constants.SLOT_DURATION));
     // TODO: Here we reject block because time is not there,
     // however, the block is already removed from queue, so
     // we're losing a valid block here.
@@ -118,90 +146,67 @@ public class StateTreeManager {
     return true;
   }
 
-  protected void processFork(UnsignedLong current_slot, Optional<BeaconBlock> fork_head) {
+  protected void processFork(Optional<BeaconBlock> unprocessedBlock) {
     try {
-      BeaconState newState = null;
-      Bytes32 newStateRoot = Bytes32.ZERO;
-      Boolean shouldProcessBlock = inspectBlock(fork_head);
+      Boolean shouldProcessBlock = inspectBlock(unprocessedBlock);
       if (shouldProcessBlock) {
-        Bytes32 blockStateRoot = fork_head.get().getState_root();
-        Bytes32 blockRoot = HashTreeUtil.hash_tree_root(fork_head.get().toBytes());
-        BeaconBlock parentBlock = this.store.getParent(fork_head.get()).get();
+
+        // Get block, block root and block state root
+        BeaconBlock block = unprocessedBlock.get();
+        Bytes32 blockStateRoot = block.getState_root();
+        Bytes32 blockRoot = HashTreeUtil.hash_tree_root(block.toBytes());
+
+        // Get parent block and parent block state root
+        BeaconBlock parentBlock = this.store.getParent(block).get();
         Bytes32 parentBlockStateRoot = parentBlock.getState_root();
-        // get state corresponding to the parent fork_head
+
+        // Get parent block state
         BeaconState parentState = this.store.getState(parentBlockStateRoot).get();
+
         LOG.info("parent fork_head slot: " + parentState.getSlot());
         LOG.info("parent fork_head state root: " + parentBlockStateRoot.toHexString());
-        LOG.info("fork_head slot: " + fork_head.get().getSlot());
+        LOG.info("fork_head slot: " + block.getSlot());
         LOG.info("fork_head state root: " + blockStateRoot.toHexString());
-        newState = BeaconState.deepCopy(parentState);
+
+        BeaconState currentState = BeaconState.deepCopy(parentState);
 
         // TODO: check if the fork_head's parent slot is further back than the weak subjectivity
         // period, should we check?
-        // run stateTransition.initiate() on empty slots from parentBlock.slot to fork_head.slot-1
-        int counter = 0;
-        while (newState.getSlot().compareTo(UnsignedLong.valueOf(fork_head.get().getSlot() - 1))
-            < 0) {
-          if (counter == 0) {
+
+        // Run state transition from block’s parentState and parent’s slot with no blocks until block.slot - 1
+        Bytes32 currentStateRoot;
+        boolean firstLoop = true;
+        while (currentState.getSlot().compareTo(UnsignedLong.valueOf(block.getSlot() - 1))
+                < 0) {
+          if (firstLoop) {
             LOG.info(
-                "Transitioning state from slot: "
-                    + newState.getSlot()
-                    + " to slot: "
-                    + UnsignedLong.valueOf(fork_head.get().getSlot() - 1));
+                    "Transitioning state from slot: "
+                            + currentState.getSlot()
+                            + " to slot: "
+                            + UnsignedLong.valueOf(block.getSlot() - 1));
+            firstLoop = false;
           }
-          stateTransition.initiate(newState, null, store);
-          newStateRoot = HashTreeUtil.hash_tree_root(newState.toBytes());
-          this.store.addState(newStateRoot, newState);
-          newState = BeaconState.deepCopy(newState);
-          counter++;
+          stateTransition.initiate(currentState, null, store);
+          currentStateRoot = HashTreeUtil.hash_tree_root(currentState.toBytes());
+          this.store.addState(currentStateRoot, currentState);
+          currentState = BeaconState.deepCopy(currentState);
         }
 
-        // run stateTransition.initiate() on fork_head.slot
-        stateTransition.initiate(newState, fork_head.get(), store);
-        newStateRoot = HashTreeUtil.hash_tree_root(newState.toBytes());
+        // Run state transition using the block
+        stateTransition.initiate(currentState, block, store);
+        currentStateRoot = HashTreeUtil.hash_tree_root(currentState.toBytes());
 
-        // state root verification
-        if (blockStateRoot.equals(newStateRoot)) {
+        // Verify that the state root we have computed is the state root that block is
+        // claiming us we should reach, save the block and the state if its correct.
+        if (blockStateRoot.equals(currentStateRoot)) {
           LOG.info("The fork_head's state root matches the calculated state root!");
-          LOG.info("  new state root: " + newStateRoot.toHexString());
+          LOG.info("  new state root: " + currentStateRoot.toHexString());
           LOG.info("  fork_head state root: " + blockStateRoot.toHexString());
           // TODO: storing fork_head and state together as a tuple would be more convenient
-          this.store.addProcessedBlock(blockStateRoot, fork_head.get());
-          this.store.addProcessedBlock(blockRoot, fork_head.get());
-          this.store.addState(newStateRoot, newState);
-
-          // run stateTransition.initiate() on slots from fork_head.slot to node.slot
-          counter = 0;
-          while (newState.getSlot().compareTo(nodeSlot) < 0) {
-            if (counter == 0) {
-              LOG.info(
-                  "Transitioning state from slot: " + newState.getSlot() + " to slot: " + nodeSlot);
-            }
-            newState = BeaconState.deepCopy(newState);
-            stateTransition.initiate(newState, null, store);
-            newStateRoot = HashTreeUtil.hash_tree_root(newState.toBytes());
-            this.store.addState(newStateRoot, newState);
-            counter++;
-          }
-          LOG.info("latest state root: " + newStateRoot.toHexString());
-          this.canonical_state = newState;
-        } else {
-          LOG.info("The fork_head's state root does not match the calculated state root!");
-          LOG.info("  new state root: " + newStateRoot.toHexString());
-          LOG.info("  fork_head state root: " + blockStateRoot.toHexString());
-          shouldProcessBlock = false;
+          this.store.addProcessedBlock(blockStateRoot, block);
+          this.store.addProcessedBlock(blockRoot, block);
+          this.store.addState(currentStateRoot, currentState);
         }
-      }
-      // this conditional evaluates true if:
-      // 1. inspectBlock returns false
-      // 2. state root verification fails on a fork_head
-      if (!shouldProcessBlock) {
-        newState = BeaconState.deepCopy(this.canonical_state);
-        stateTransition.initiate(newState, null, store);
-        newStateRoot = HashTreeUtil.hash_tree_root(newState.toBytes());
-        this.store.addState(newStateRoot, newState);
-        LOG.info("latest state root: " + newStateRoot.toHexString());
-        this.canonical_state = newState;
       }
     } catch (NoSuchElementException | IllegalArgumentException | StateTransitionException e) {
       LOG.warn(e);
