@@ -94,7 +94,7 @@ final class G1Point implements Group<G1Point> {
     // faulty input.
     BIG xBig = BIG.fromBytes(xBytes);
     BIG modulus = new BIG(ROM.Modulus);
-    if (BIG.comp(modulus, xBig) < 0) {
+    if (BIG.comp(modulus, xBig) <= 0) {
       throw new IllegalArgumentException("X coordinate is too large.");
     }
 

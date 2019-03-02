@@ -272,7 +272,7 @@ final class G2Point implements Group<G2Point> {
     BIG xImBig = BIG.fromBytes(xImBytes);
     BIG xReBig = BIG.fromBytes(xReBytes);
     BIG modulus = new BIG(ROM.Modulus);
-    if (BIG.comp(modulus, xReBig) < 0 || BIG.comp(modulus, xImBig) < 0) {
+    if (BIG.comp(modulus, xReBig) <= 0 || BIG.comp(modulus, xImBig) <= 0) {
       throw new IllegalArgumentException(
           "The deserialised X real or imaginary coordinate is too large.");
     }

@@ -162,8 +162,8 @@ class G2PointTest {
   void succeedsWhenAttemptToDeserialiseXReEqualToModulusThrowsIllegalArgumentException() {
     // xRe is exactly the modulus, q, xIm is zero
     String x =
-        "0x000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
-            + "0x01a0111ea397fe69a4b1ba7b6434bacd764774b84f38512bf6730d2a0f6b0f6241eabfffeb153ffffb9feffffffffaab";
+        "0x800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+            + "0x1a0111ea397fe69a4b1ba7b6434bacd764774b84f38512bf6730d2a0f6b0f6241eabfffeb153ffffb9feffffffffaaab";
     assertThrows(
         IllegalArgumentException.class, () -> G2Point.fromBytesCompressed(Bytes.fromHexString(x)));
   }
@@ -172,7 +172,7 @@ class G2PointTest {
   void succeedsWhenAttemptToDeserialiseXImEqualToModulusThrowsIllegalArgumentException() {
     // xIm is exactly the modulus, q, xRe is zero
     String x =
-        "0x01a0111ea397fe69a4b1ba7b6434bacd764774b84f38512bf6730d2a0f6b0f6241eabfffeb153ffffb9feffffffffaab"
+        "0x9a0111ea397fe69a4b1ba7b6434bacd764774b84f38512bf6730d2a0f6b0f6241eabfffeb153ffffb9feffffffffaaab"
             + "0x000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000";
     assertThrows(
         IllegalArgumentException.class, () -> G2Point.fromBytesCompressed(Bytes.fromHexString(x)));
@@ -182,8 +182,8 @@ class G2PointTest {
   void succeedsWhenAttemptToDeserialiseXReGreaterThanModulusThrowsIllegalArgumentException() {
     // xRe is the modulus plus 1, xIm is zero
     String x =
-        "0x000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
-            + "0x01a0111ea397fe69a4b1ba7b6434bacd764774b84f38512bf6730d2a0f6b0f6241eabfffeb153ffffb9feffffffffaac";
+        "0x800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+            + "0x1a0111ea397fe69a4b1ba7b6434bacd764774b84f38512bf6730d2a0f6b0f6241eabfffeb153ffffb9feffffffffaaac";
     assertThrows(
         IllegalArgumentException.class, () -> G2Point.fromBytesCompressed(Bytes.fromHexString(x)));
   }
@@ -192,7 +192,7 @@ class G2PointTest {
   void succeedsWhenAttemptToDeserialiseXImGreaterThanModulusThrowsIllegalArgumentException() {
     // xIm is the modulus plus 1, xRe is zero
     String x =
-        "0x01a0111ea397fe69a4b1ba7b6434bacd764774b84f38512bf6730d2a0f6b0f6241eabfffeb153ffffb9feffffffffaac"
+        "0x9a0111ea397fe69a4b1ba7b6434bacd764774b84f38512bf6730d2a0f6b0f6241eabfffeb153ffffb9feffffffffaaac"
             + "0x000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000";
     assertThrows(
         IllegalArgumentException.class, () -> G2Point.fromBytesCompressed(Bytes.fromHexString(x)));

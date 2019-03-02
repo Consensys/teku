@@ -90,7 +90,7 @@ class G1PointTest {
   void succeedsWhenAttemptToDeserialiseXEqualToModulusThrowsIllegalArgumentException() {
     // Exactly the modulus, q
     String xInput =
-        "0x01a0111ea397fe69a4b1ba7b6434bacd764774b84f38512bf6730d2a0f6b0f6241eabfffeb153ffffb9feffffffffaab";
+        "0x9a0111ea397fe69a4b1ba7b6434bacd764774b84f38512bf6730d2a0f6b0f6241eabfffeb153ffffb9feffffffffaaab";
     assertThrows(
         IllegalArgumentException.class,
         () -> G1Point.fromBytesCompressed(Bytes.fromHexString(xInput)));
@@ -100,7 +100,7 @@ class G1PointTest {
   void succeedsWhenAttemptToDeserialiseXGreaterThanModulusThrowsIllegalArgumentException() {
     // One more than the modulus, q
     String xInput =
-        "0x01a0111ea397fe69a4b1ba7b6434bacd764774b84f38512bf6730d2a0f6b0f6241eabfffeb153ffffb9feffffffffaac";
+        "0x9a0111ea397fe69a4b1ba7b6434bacd764774b84f38512bf6730d2a0f6b0f6241eabfffeb153ffffb9feffffffffaaac";
     assertThrows(
         IllegalArgumentException.class,
         () -> G1Point.fromBytesCompressed(Bytes.fromHexString(xInput)));
@@ -108,16 +108,16 @@ class G1PointTest {
 
   @Test
   void succeedsWhenAttemptToDeserialiseXLessThanModulusDoesNotThrowIllegalArgumentException() {
-    // There's a valid X two less than the modulus. We prepend the c flag.
+    // There's a valid X three less than the modulus. We prepend the c flag.
     String xInput =
-        "0x81a0111ea397fe69a4b1ba7b6434bacd764774b84f38512bf6730d2a0f6b0f6241eabfffeb153ffffb9feffffffffaa9";
+        "0x9a0111ea397fe69a4b1ba7b6434bacd764774b84f38512bf6730d2a0f6b0f6241eabfffeb153ffffb9feffffffffaaa8";
     assertAll(() -> G1Point.fromBytesCompressed(Bytes.fromHexString(xInput)));
   }
 
   @Test
   void succeedsWhenProvidingTooFewBytesToFromBytesCompressedThrowsIllegalArgumentException() {
     String xInput =
-        "0x81a0111ea397fe69a4b1ba7b6434bacd764774b84f38512bf6730d2a0f6b0f6241eabfffeb153ffffb9feffffffffa";
+        "0x9a0111ea397fe69a4b1ba7b6434bacd764774b84f38512bf6730d2a0f6b0f6241eabfffeb153ffffb9feffffffffaa";
     assertThrows(
         IllegalArgumentException.class,
         () -> G1Point.fromBytesCompressed(Bytes.fromHexString(xInput)));
@@ -126,7 +126,7 @@ class G1PointTest {
   @Test
   void succeedsWhenProvidingTooManyBytesToFromBytesCompressedThrowsIllegalArgumentException() {
     String xInput =
-        "0x81a0111ea397fe69a4b1ba7b6434bacd764774b84f38512bf6730d2a0f6b0f6241eabfffeb153ffffb9feffffffffaa900";
+        "0x9a0111ea397fe69a4b1ba7b6434bacd764774b84f38512bf6730d2a0f6b0f6241eabfffeb153ffffb9feffffffffaaa900";
     assertThrows(
         IllegalArgumentException.class,
         () -> G1Point.fromBytesCompressed(Bytes.fromHexString(xInput)));
