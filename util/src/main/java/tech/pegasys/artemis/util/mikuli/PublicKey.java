@@ -116,7 +116,7 @@ public final class PublicKey {
 
   @Override
   public int hashCode() {
-    return Objects.hash(point);
+    return point.hashCode();
   }
 
   @Override
