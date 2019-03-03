@@ -297,12 +297,12 @@ public final class DataStructureUtil {
         randomBeaconBlockBody());
   }
 
-  public static ArrayList<Deposit> newDeposits(int numDeposits) {
+  public static ArrayList<Deposit> newDeposits(int numDeposits, int slot) {
     ArrayList<Deposit> deposits = new ArrayList<Deposit>();
 
     for (int i = 0; i < numDeposits; i++) {
       DepositInput deposit_input =
-          new DepositInput(BLSPublicKey.empty(), Bytes32.ZERO, BLSSignature.empty());
+          new DepositInput(BLSPublicKey.random(i + slot), Bytes32.ZERO, BLSSignature.empty());
       UnsignedLong timestamp = UnsignedLong.valueOf(i);
       DepositData deposit_data =
           new DepositData(UnsignedLong.valueOf(MAX_DEPOSIT_AMOUNT), timestamp, deposit_input);
@@ -332,9 +332,8 @@ public final class DataStructureUtil {
   }
 
   public static BeaconState createInitialBeaconState() {
-
     return BeaconStateUtil.get_initial_beacon_state(
-        newDeposits(100),
+        newDeposits(50, Math.toIntExact(Constants.GENESIS_SLOT)),
         UnsignedLong.valueOf(Constants.GENESIS_SLOT),
         new Eth1Data(Bytes32.ZERO, Bytes32.ZERO));
   }
