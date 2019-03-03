@@ -14,14 +14,12 @@
 package tech.pegasys.artemis.networking.p2p;
 
 import com.google.common.eventbus.EventBus;
-import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
 import net.consensys.cava.bytes.Bytes32;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
@@ -109,21 +107,11 @@ public class MockP2PNetwork implements P2PNetwork {
         state.incrementSlot();
         // Block Processing
         state_root = HashTreeUtil.hash_tree_root(state.toBytes());
-        if (state
-                .getSlot()
-                .compareTo(
-                    UnsignedLong.valueOf(Constants.GENESIS_SLOT).plus(UnsignedLong.valueOf(5)))
-            == 0) {
-          deposits = DataStructureUtil.newDeposits(64);
-        }
+
         block =
             DataStructureUtil.newBeaconBlock(state.getSlot(), parent_root, state_root, deposits);
         parent_root = HashTreeUtil.hash_tree_root(block.toBytes());
         this.eventBus.post(block);
-
-        // Attestation attestation = randomAttestation(state.getSlot());
-        // this.eventBus.post(attestation);
-
       }
     } catch (InterruptedException e) {
       LOG.warn(e.toString());

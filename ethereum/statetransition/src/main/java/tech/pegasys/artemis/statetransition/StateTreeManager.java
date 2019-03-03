@@ -121,8 +121,8 @@ public class StateTreeManager {
       newStateRoot = HashTreeUtil.hash_tree_root(newState.toBytes());
       this.store.addState(newStateRoot, newState);
     }
-    LOG.info("latest block root: " + head_block_root);
-    LOG.info("latest state root: " + newStateRoot.toHexString());
+    LOG.info("latest head block root: " + head_block_root);
+    LOG.info("latest head state root: " + newStateRoot.toHexString());
   }
 
   protected Boolean inspectBlock(Optional<BeaconBlock> block) {

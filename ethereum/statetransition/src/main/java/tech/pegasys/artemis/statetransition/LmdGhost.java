@@ -111,10 +111,9 @@ public class LmdGhost {
     Optional<Attestation> latest_attestation = get_latest_attestation(store, validatorIndex);
     if (latest_attestation.isPresent()) {
       Optional<BeaconBlock> latest_attestation_target =
-              store.getProcessedBlock(latest_attestation.get().getData().getBeacon_block_root());
+          store.getProcessedBlock(latest_attestation.get().getData().getBeacon_block_root());
       return latest_attestation_target;
-    }
-    else {
+    } else {
       return Optional.empty();
     }
   }
@@ -125,8 +124,8 @@ public class LmdGhost {
    *  be the attestation with the highest slot number in store from validator. If
    *  several such attestations exist, use the one the validator v observed first.
    */
-  public static Optional<Attestation> get_latest_attestation(ChainStorageClient store, int validatorIndex)
-      throws StateTransitionException {
+  public static Optional<Attestation> get_latest_attestation(
+      ChainStorageClient store, int validatorIndex) throws StateTransitionException {
     Optional<Attestation> latestAttestation = store.getLatestAttestation(validatorIndex);
     return latestAttestation;
   }
