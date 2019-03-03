@@ -15,9 +15,13 @@ package tech.pegasys.artemis.storage;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
+import com.google.common.primitives.UnsignedLong;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
+import java.util.PriorityQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import net.consensys.cava.bytes.Bytes;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
@@ -32,7 +36,8 @@ public class ChainStorageClient implements ChainStorage {
   protected BeaconBlock justified_head_block;
   protected BeaconState justified_head_state;
   protected final HashMap<Integer, Attestation> latestAttestations = new HashMap<>();
-  protected final LinkedBlockingQueue<BeaconBlock> unprocessedBlocks = new LinkedBlockingQueue<>();
+  protected final PriorityQueue<BeaconBlock> unprocessedBlocks =
+      new PriorityQueue<>(Comparator.comparing(BeaconBlock::getSlot));
   protected final LinkedBlockingQueue<Attestation> unprocessedAttestations =
       new LinkedBlockingQueue<>();
   protected final HashMap<Bytes, BeaconBlock> processedBlockLookup = new HashMap<>();
@@ -76,7 +81,7 @@ public class ChainStorageClient implements ChainStorage {
    * @param block
    */
   public void addUnprocessedBlock(BeaconBlock block) {
-    ChainStorage.<BeaconBlock, LinkedBlockingQueue<BeaconBlock>>add(block, this.unprocessedBlocks);
+    ChainStorage.<BeaconBlock, PriorityQueue<BeaconBlock>>add(block, this.unprocessedBlocks);
   }
 
   /**
@@ -128,9 +133,22 @@ public class ChainStorageClient implements ChainStorage {
    *
    * @return
    */
-  public Optional<BeaconBlock> getUnprocessedBlock() {
-    return ChainStorage.<BeaconBlock, LinkedBlockingQueue<BeaconBlock>>remove(
-        this.unprocessedBlocks);
+  public List<Optional<BeaconBlock>> getUnprocessedBlocksUntilSlot(UnsignedLong slot) {
+    List<Optional<BeaconBlock>> unprocessedBlocks = new ArrayList<>();
+    boolean unproccesedBlocksLeft = true;
+    Optional<BeaconBlock> currentBlock;
+    while (unproccesedBlocksLeft) {
+      currentBlock =
+          ChainStorage.<BeaconBlock, PriorityQueue<BeaconBlock>>peek(this.unprocessedBlocks);
+      if (currentBlock.isPresent()
+          && UnsignedLong.valueOf(currentBlock.get().getSlot()).compareTo(slot) <= 0) {
+        unprocessedBlocks.add(
+            ChainStorage.<BeaconBlock, PriorityQueue<BeaconBlock>>remove(this.unprocessedBlocks));
+      } else {
+        unproccesedBlocksLeft = false;
+      }
+    }
+    return unprocessedBlocks;
   }
 
   /**
