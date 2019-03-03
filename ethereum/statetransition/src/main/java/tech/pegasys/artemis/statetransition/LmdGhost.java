@@ -41,10 +41,8 @@ public class LmdGhost {
 
     List<BeaconBlock> attestation_targets = new ArrayList<>();
     for (Integer validatorIndex : active_validator_indices) {
-      try {
-        attestation_targets.add(get_latest_attestation_target(store, validatorIndex));
-      } catch (Error err) {
-        System.err.println(err);
+      if (get_latest_attestation_target(store, validatorIndex).isPresent()) {
+        attestation_targets.add(get_latest_attestation_target(store, validatorIndex).get());
       }
     }
 
@@ -108,15 +106,17 @@ public class LmdGhost {
    *  Let get_latest_attestation_target(store: Store, validator: Validator) -> BeaconBlock
    *  be the target block in the attestation get_latest_attestation(store, validator).
    */
-  public static BeaconBlock get_latest_attestation_target(
+  public static Optional<BeaconBlock> get_latest_attestation_target(
       ChainStorageClient store, int validatorIndex) throws StateTransitionException {
-    Attestation latest_attestation = get_latest_attestation(store, validatorIndex);
-    Optional<BeaconBlock> latest_attestation_target =
-        store.getProcessedBlock(latest_attestation.getData().getBeacon_block_root());
-    if (!latest_attestation_target.isPresent()) {
-      throw new StateTransitionException("Latest attestation target empty");
+    Optional<Attestation> latest_attestation = get_latest_attestation(store, validatorIndex);
+    if (latest_attestation.isPresent()) {
+      Optional<BeaconBlock> latest_attestation_target =
+              store.getProcessedBlock(latest_attestation.get().getData().getBeacon_block_root());
+      return latest_attestation_target;
     }
-    return latest_attestation_target.get();
+    else {
+      return Optional.empty();
+    }
   }
 
   /*
@@ -125,13 +125,10 @@ public class LmdGhost {
    *  be the attestation with the highest slot number in store from validator. If
    *  several such attestations exist, use the one the validator v observed first.
    */
-  public static Attestation get_latest_attestation(ChainStorageClient store, int validatorIndex)
+  public static Optional<Attestation> get_latest_attestation(ChainStorageClient store, int validatorIndex)
       throws StateTransitionException {
     Optional<Attestation> latestAttestation = store.getLatestAttestation(validatorIndex);
-    if (!latestAttestation.isPresent()) {
-      throw new StateTransitionException("validatorIndex not found in latestAttestations mapping");
-    }
-    return latestAttestation.get();
+    return latestAttestation;
   }
 
   /*
