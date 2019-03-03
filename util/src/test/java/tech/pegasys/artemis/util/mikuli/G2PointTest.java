@@ -13,12 +13,11 @@
 
 package tech.pegasys.artemis.util.mikuli;
 
+import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static tech.pegasys.artemis.util.mikuli.G2Point.isValid;
 import static tech.pegasys.artemis.util.mikuli.G2Point.normaliseY;
 import static tech.pegasys.artemis.util.mikuli.G2Point.scaleWithCofactor;
 
@@ -55,38 +54,9 @@ class G2PointTest {
   }
 
   @Test
-  void succeedsWhenIsValidReturnsTrueForARandomPoint() {
-    G2Point point = G2Point.random();
-    assertTrue(G2Point.isValid(point));
-  }
-
-  @Test
-  void succeedsWhenPointWithC1FalseIsInvalid() {
-    G2Point point = G2Point.random();
-    // C1 should always be true
-    assertFalse(isValid(point.ecp2Point(), point.getA1(), point.getB1(), false));
-  }
-
-  @Test
-  void succeedsWhenPointWithB1TrueIsInvalid() {
-    G2Point point = G2Point.random();
-    // B1 is true only for the point at infinity
-    assertFalse(isValid(point.ecp2Point(), point.getA1(), true, true));
-  }
-
-  @Test
-  void succeedsWhenPointWithA1InvertedIsInvalid() {
-    G2Point point = G2Point.random();
-    assertFalse(isValid(point.ecp2Point(), !point.getA1(), false, true));
-  }
-
-  @Test
-  void succeedsWhenPointAtInfinityHasCorrectFlags() {
+  void succeedsWhenDefaultConstructorReturnsThePointAtInfinity() {
     G2Point infinity = new G2Point();
     assertTrue(infinity.ecp2Point().is_infinity());
-    assertFalse(infinity.getA1());
-    assertTrue(infinity.getB1());
-    assertTrue(infinity.getC1());
     assertTrue(infinity.ecp2Point().getX().iszilch());
   }
 
@@ -188,16 +158,184 @@ class G2PointTest {
     assertEquals(scaledPoint1, scaledPoint2);
   }
 
-  /**
-   * The data in the tests below comes from the reference Eth2 reference BLS tests
+  @Test
+  void succeedsWhenAttemptToDeserialiseXReEqualToModulusThrowsIllegalArgumentException() {
+    // xRe is exactly the modulus, q, xIm is zero
+    String x =
+        "0x800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+            + "0x1a0111ea397fe69a4b1ba7b6434bacd764774b84f38512bf6730d2a0f6b0f6241eabfffeb153ffffb9feffffffffaaab";
+    assertThrows(
+        IllegalArgumentException.class, () -> G2Point.fromBytesCompressed(Bytes.fromHexString(x)));
+  }
+
+  @Test
+  void succeedsWhenAttemptToDeserialiseXImEqualToModulusThrowsIllegalArgumentException() {
+    // xIm is exactly the modulus, q, xRe is zero
+    String x =
+        "0x9a0111ea397fe69a4b1ba7b6434bacd764774b84f38512bf6730d2a0f6b0f6241eabfffeb153ffffb9feffffffffaaab"
+            + "0x000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000";
+    assertThrows(
+        IllegalArgumentException.class, () -> G2Point.fromBytesCompressed(Bytes.fromHexString(x)));
+  }
+
+  @Test
+  void succeedsWhenAttemptToDeserialiseXReGreaterThanModulusThrowsIllegalArgumentException() {
+    // xRe is the modulus plus 1, xIm is zero
+    String x =
+        "0x800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+            + "0x1a0111ea397fe69a4b1ba7b6434bacd764774b84f38512bf6730d2a0f6b0f6241eabfffeb153ffffb9feffffffffaaac";
+    assertThrows(
+        IllegalArgumentException.class, () -> G2Point.fromBytesCompressed(Bytes.fromHexString(x)));
+  }
+
+  @Test
+  void succeedsWhenAttemptToDeserialiseXImGreaterThanModulusThrowsIllegalArgumentException() {
+    // xIm is the modulus plus 1, xRe is zero
+    String x =
+        "0x9a0111ea397fe69a4b1ba7b6434bacd764774b84f38512bf6730d2a0f6b0f6241eabfffeb153ffffb9feffffffffaaac"
+            + "0x000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000";
+    assertThrows(
+        IllegalArgumentException.class, () -> G2Point.fromBytesCompressed(Bytes.fromHexString(x)));
+  }
+
+  @Test
+  void succeedsWhenDeserialisingACorrectPointDoesNotThrow() {
+    String xInput =
+        "0x"
+            + "8123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+            + "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
+    assertAll(() -> G2Point.fromBytesCompressed(Bytes.fromHexString(xInput)));
+  }
+
+  @Test
+  void succeedsWhenDeserialisingAnIncorrectPointThrowsIllegalArgumentException() {
+    String xInput =
+        "0x"
+            + "8123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+            + "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcde0";
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> G2Point.fromBytesCompressed(Bytes.fromHexString(xInput)));
+  }
+
+  @Test
+  void succeedsWhenProvidingTooFewBytesToFromBytesCompressedThrowsIllegalArgumentException() {
+    String xInput =
+        "0x"
+            + "8123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+            + "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcd";
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> G2Point.fromBytesCompressed(Bytes.fromHexString(xInput)));
+  }
+
+  @Test
+  void succeedsWhenProvidingTooManyBytesToFromBytesCompressedThrowsIllegalArgumentException() {
+    String xInput =
+        "0x"
+            + "8123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+            + "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdefff";
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> G2Point.fromBytesCompressed(Bytes.fromHexString(xInput)));
+  }
+
+  @Test
+  void succeedsWhenRoundTripDeserialiseSerialiseCompressedReturnsTheOriginalInput() {
+    String xInput =
+        "0x"
+            + "8123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+            + "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
+    String xOutput =
+        G2Point.fromBytesCompressed(Bytes.fromHexString(xInput))
+            .toBytesCompressed()
+            .toHexString()
+            .toLowerCase();
+    assertEquals(xInput, xOutput);
+  }
+
+  @Test
+  void succeedsWhenDeserialiseCompressedInfinityWithTrueBFlagCreatesPointAtInfinity() {
+    String xInput =
+        "0x"
+            + "c00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+            + "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000";
+    G2Point point = G2Point.fromBytesCompressed(Bytes.fromHexString(xInput));
+    assertTrue(point.ecp2Point().is_infinity());
+  }
+
+  @Test
+  void succeedsWhenDeserialiseCompressedInfinityWithFalseBFlagDoesNotCreatePointAtInfinity() {
+    String xInput =
+        "0x"
+            + "800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+            + "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000";
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> G2Point.fromBytesCompressed(Bytes.fromHexString(xInput)));
+  }
+
+  @Test
+  void succeedsWhenSerialiseDeserialiseCompressedInfinityGivesOriginalInput() {
+    G2Point point = new G2Point();
+    assertEquals(point, G2Point.fromBytesCompressed(point.toBytesCompressed()));
+  }
+
+  @Test
+  void succeedsWhenDeserialiseSerialiseCompressedInfinityGivesOriginalInput() {
+    String xInput =
+        "0x"
+            + "c00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+            + "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000";
+    String xOutput =
+        G2Point.fromBytesCompressed(Bytes.fromHexString(xInput))
+            .toBytesCompressed()
+            .toHexString()
+            .toLowerCase();
+    assertEquals(xInput, xOutput);
+  }
+
+  @Test
+  void succeedsWhenAttemptToDeserialiseWithWrongCFlagThrowsIllegalArgumentException() {
+    String xInput =
+        "0x"
+            + "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+            + "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> G2Point.fromBytesCompressed(Bytes.fromHexString(xInput)));
+  }
+
+  @Test
+  void succeedsWhenAttemptToDeserialiseWithBFlagAndXNonzeroThrowsIllegalArgumentException1() {
+    String xInput =
+        "0x"
+            + "c123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+            + "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> G2Point.fromBytesCompressed(Bytes.fromHexString(xInput)));
+  }
+
+  @Test
+  void succeedsWhenAttemptToDeserialiseWithBFlagAndAFlagTrueThrowsIllegalArgumentException1() {
+    String xInput =
+        "0x"
+            + "e00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+            + "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000";
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> G2Point.fromBytesCompressed(Bytes.fromHexString(xInput)));
+  }
+
+  /*
+   * The data in the tests below is based on the reference Eth2 reference BLS tests
    * https://github.com/ethereum/eth2.0-tests/blob/df7888e658943d3e733f660bb7ace7d829d70011/test_vectors/test_bls.yml
-   * We should find a way to automate this. Note that these test cases are out of date, and will
-   * need need updating when we start passing the hash of the message rather than the message. There
-   * are also bugs in the tests around the selection of Y coordinate.
+   * The tests have since changed, and are now automated, but these remain here for reference.
    */
+
   @Test
   void succeedsWhenHashToG2MatchesTestDataCase1() {
-    // TODO: Update to latest spec when we have new test cases
     Bytes message = Bytes.fromHexString("0x6d657373616765");
     G2Point point = G2Point.hashToG2(message, 0L);
 
@@ -216,7 +354,6 @@ class G2PointTest {
 
   @Test
   void succeedsWhenHashToG2MatchesTestDataCase2() {
-    // TODO: Update to latest spec when we have new test cases
     Bytes message = Bytes.fromHexString("0x6d657373616765");
     G2Point point = G2Point.hashToG2(message, 1L);
 
@@ -235,7 +372,6 @@ class G2PointTest {
 
   @Test
   void succeedsWhenHashToG2MatchesTestDataCase3() {
-    // TODO: Update to latest spec when we have new test cases
     Bytes message =
         Bytes.fromHexString(
             "0x"
@@ -256,48 +392,6 @@ class G2PointTest {
     G2Point expected = makePoint(testCasesResult);
     assertEquals(expected, point);
   }
-
-  @Test
-  void succeedsWhenAttemptToDeserialiseXReEqualToModulusThrowsIllegalArgumentException() {
-    // xRe is exactly the modulus, q, xIm is zero
-    String x =
-        "0x000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
-            + "0x01a0111ea397fe69a4b1ba7b6434bacd764774b84f38512bf6730d2a0f6b0f6241eabfffeb153ffffb9feffffffffaab";
-    assertThrows(
-        IllegalArgumentException.class, () -> G2Point.fromBytesCompressed(Bytes.fromHexString(x)));
-  }
-
-  @Test
-  void succeedsWhenAttemptToDeserialiseXImEqualToModulusThrowsIllegalArgumentException() {
-    // xIm is exactly the modulus, q, xRe is zero
-    String x =
-        "0x01a0111ea397fe69a4b1ba7b6434bacd764774b84f38512bf6730d2a0f6b0f6241eabfffeb153ffffb9feffffffffaab"
-            + "0x000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000";
-    assertThrows(
-        IllegalArgumentException.class, () -> G2Point.fromBytesCompressed(Bytes.fromHexString(x)));
-  }
-
-  @Test
-  void succeedsWhenAttemptToDeserialiseXReGreaterThanModulusThrowsIllegalArgumentException() {
-    // xRe is the modulus plus 1, xIm is zero
-    String x =
-        "0x000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
-            + "0x01a0111ea397fe69a4b1ba7b6434bacd764774b84f38512bf6730d2a0f6b0f6241eabfffeb153ffffb9feffffffffaac";
-    assertThrows(
-        IllegalArgumentException.class, () -> G2Point.fromBytesCompressed(Bytes.fromHexString(x)));
-  }
-
-  @Test
-  void succeedsWhenAttemptToDeserialiseXImGreaterThanModulusThrowsIllegalArgumentException() {
-    // xIm is the modulus plus 1, xRe is zero
-    String x =
-        "0x01a0111ea397fe69a4b1ba7b6434bacd764774b84f38512bf6730d2a0f6b0f6241eabfffeb153ffffb9feffffffffaac"
-            + "0x000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000";
-    assertThrows(
-        IllegalArgumentException.class, () -> G2Point.fromBytesCompressed(Bytes.fromHexString(x)));
-  }
-
-  // More rigorous higher level tests are performed using the Ethereum 2.0 BLS test data suite
 
   /* ==== Helper Functions ===================================================================== */
 

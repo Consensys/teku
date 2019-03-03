@@ -79,10 +79,6 @@ public final class BLS12381 {
       PublicKey publicKey, Signature signature, Bytes message, long domain) {
     G1Point g1Generator = KeyPair.g1Generator;
 
-    if (!G2Point.isValid(signature.g2Point()) || !G1Point.isValid(publicKey.g1Point())) {
-      return false;
-    }
-
     G2Point hashInGroup2 = hashFunction(message, domain);
     GTPoint e1 = AtePairing.pair(publicKey.g1Point(), hashInGroup2);
     GTPoint e2 = AtePairing.pair(g1Generator, signature.g2Point());
@@ -101,9 +97,7 @@ public final class BLS12381 {
    */
   public static boolean verifyMultiple(
       List<PublicKey> publicKeys, Signature signature, List<Bytes> messages, long domain) {
-    if (!G2Point.isValid(signature.g2Point())
-        || publicKeys.size() == 0
-        || publicKeys.size() != messages.size()) {
+    if (publicKeys.size() == 0 || publicKeys.size() != messages.size()) {
       return false;
     }
 
@@ -111,9 +105,6 @@ public final class BLS12381 {
 
     GTPoint eCombined = new GTPoint(new FP12(1));
     for (int i = 0; i < publicKeys.size(); i++) {
-      if (!G1Point.isValid(publicKeys.get(i).g1Point())) {
-        return false;
-      }
       G2Point hashInGroup2 = hashFunction(messages.get(i), domain);
       eCombined = eCombined.mul(AtePairing.pair(publicKeys.get(i).g1Point(), hashInGroup2));
     }

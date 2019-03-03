@@ -142,7 +142,7 @@ public final class Signature {
 
   @Override
   public int hashCode() {
-    return Objects.hash(point);
+    return point.hashCode();
   }
 
   G2Point g2Point() {
