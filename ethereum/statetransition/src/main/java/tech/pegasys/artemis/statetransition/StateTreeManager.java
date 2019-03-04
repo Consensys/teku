@@ -74,9 +74,9 @@ public class StateTreeManager {
       LOG.info("  initial state root is " + initial_state_root.toHexString());
       this.store.addState(initial_state_root, initial_state);
       this.store.addProcessedBlock(initial_state_root, genesis_block);
+      this.store.addProcessedBlock(genesis_block_root, genesis_block);
       this.head = genesis_block;
       this.store.addProcessedBlock(genesis_block_root, genesis_block);
-      this.store.setJustifiedHead(initial_state, genesis_block);
       this.eventBus.post(true);
     } catch (IllegalStateException e) {
       LOG.fatal(e);
@@ -126,9 +126,8 @@ public class StateTreeManager {
     }
 
     // Run state transition from the new head to node.slot
-    Bytes32 head_block_root = this.head.getState_root();
-    BeaconState newState = store.getState(head_block_root).get();
-    Bytes32 newStateRoot = HashTreeUtil.hash_tree_root(newState.toBytes());
+    Bytes32 newStateRoot = this.head.getState_root();
+    BeaconState newState = store.getState(newStateRoot).get();
     boolean firstLoop = true;
     while (newState.getSlot().compareTo(nodeSlot) < 0) {
       if (firstLoop) {
@@ -136,12 +135,14 @@ public class StateTreeManager {
         firstLoop = false;
       }
       newState = BeaconState.deepCopy(newState);
-      stateTransition.initiate(newState, null, store);
+      stateTransition.initiate(newState, null);
       newStateRoot = HashTreeUtil.hash_tree_root(newState.toBytes());
       this.store.addState(newStateRoot, newState);
     }
-    LOG.info("latest head block root: " + head_block_root);
-    LOG.info("latest head state root: " + newStateRoot.toHexString());
+    LOG.info("LMD Ghost Head Block Root:        " + HashTreeUtil.hash_tree_root(this.head.toBytes()).toHexString());
+    LOG.info("LMD Ghost Head Parent Block Root: " + this.head.getParent_root().toHexString());
+    LOG.info("LMD Ghost Head State Root:        " + this.head.getState_root().toHexString());
+    LOG.info("Updated Head State Root:          " + newStateRoot.toHexString());
   }
 
   protected Boolean inspectBlock(Optional<BeaconBlock> block) {
@@ -203,14 +204,14 @@ public class StateTreeManager {
                     + UnsignedLong.valueOf(block.getSlot() - 1));
             firstLoop = false;
           }
-          stateTransition.initiate(currentState, null, store);
+          stateTransition.initiate(currentState, null);
           currentStateRoot = HashTreeUtil.hash_tree_root(currentState.toBytes());
           this.store.addState(currentStateRoot, currentState);
           currentState = BeaconState.deepCopy(currentState);
         }
 
         // Run state transition using the block
-        stateTransition.initiate(currentState, block, store);
+        stateTransition.initiate(currentState, block);
         currentStateRoot = HashTreeUtil.hash_tree_root(currentState.toBytes());
 
         // Verify that the state root we have computed is the state root that block is
@@ -219,6 +220,7 @@ public class StateTreeManager {
           LOG.info("The fork_head's state root matches the calculated state root!");
           // TODO: storing fork_head and state together as a tuple would be more convenient
           this.store.addProcessedBlock(blockStateRoot, block);
+          this.store.addProcessedBlock(blockRoot, block);
           this.store.addState(currentStateRoot, currentState);
         } else {
           LOG.info("The fork_head's state root does NOT matches the calculated state root!");
