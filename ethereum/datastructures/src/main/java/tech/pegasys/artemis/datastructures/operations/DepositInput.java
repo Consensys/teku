@@ -16,21 +16,21 @@ package tech.pegasys.artemis.datastructures.operations;
 import java.util.Objects;
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
-import net.consensys.cava.bytes.Bytes48;
 import net.consensys.cava.ssz.SSZ;
+import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 
 public final class DepositInput {
 
   // BLS pubkey
-  Bytes48 pubkey;
+  BLSPublicKey pubkey;
   // Withdrawal credentials
   Bytes32 withdrawal_credentials;
   // A BLS signature of this `DepositInput`
   BLSSignature proof_of_possession;
 
   public DepositInput(
-      Bytes48 pubkey, Bytes32 withdrawal_credentials, BLSSignature proof_of_possession) {
+      BLSPublicKey pubkey, Bytes32 withdrawal_credentials, BLSSignature proof_of_possession) {
     this.pubkey = pubkey;
     this.withdrawal_credentials = withdrawal_credentials;
     this.proof_of_possession = proof_of_possession;
@@ -41,7 +41,7 @@ public final class DepositInput {
         bytes,
         reader ->
             new DepositInput(
-                Bytes48.wrap(reader.readBytes()),
+                BLSPublicKey.fromBytes(reader.readBytes()),
                 Bytes32.wrap(reader.readBytes()),
                 BLSSignature.fromBytes(reader.readBytes())));
   }
@@ -49,7 +49,7 @@ public final class DepositInput {
   public Bytes toBytes() {
     return SSZ.encode(
         writer -> {
-          writer.writeBytes(pubkey);
+          writer.writeBytes(pubkey.toBytes());
           writer.writeBytes(withdrawal_credentials);
           writer.writeBytes(proof_of_possession.toBytes());
         });
@@ -81,11 +81,11 @@ public final class DepositInput {
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */
-  public Bytes48 getPubkey() {
+  public BLSPublicKey getPubkey() {
     return pubkey;
   }
 
-  public void setPubkey(Bytes48 pubkey) {
+  public void setPubkey(BLSPublicKey pubkey) {
     this.pubkey = pubkey;
   }
 

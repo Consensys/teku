@@ -57,7 +57,6 @@ import java.util.List;
 import java.util.Objects;
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
-import net.consensys.cava.bytes.Bytes48;
 import net.consensys.cava.crypto.Hash;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
@@ -76,6 +75,7 @@ import tech.pegasys.artemis.datastructures.state.PendingAttestation;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.util.bls.BLSException;
+import tech.pegasys.artemis.util.bls.BLSPublicKey;
 
 public class BlockProcessorUtil {
 
@@ -117,7 +117,7 @@ public class BlockProcessorUtil {
     //   state.slot)].pubkey, message=proposal_root, signature=block.signature,
     //   domain=get_domain(state.fork, state.slot, DOMAIN_PROPOSAL)) is valid.
     int proposerIndex = BeaconStateUtil.get_beacon_proposer_index(state, state.getSlot());
-    Bytes48 pubkey = state.getValidator_registry().get(proposerIndex).getPubkey();
+    BLSPublicKey pubkey = state.getValidator_registry().get(proposerIndex).getPubkey();
     UnsignedLong domain = get_domain(state.getFork(), get_current_epoch(state), DOMAIN_PROPOSAL);
     checkArgument(bls_verify(pubkey, proposalRoot, block.getSignature(), domain));
   }
@@ -460,12 +460,12 @@ public class BlockProcessorUtil {
       }
     }
 
-    List<Bytes48> pubkey0 = new ArrayList<>();
+    List<BLSPublicKey> pubkey0 = new ArrayList<>();
     for (int i = 0; i < custody_bit_0_participants.size(); i++) {
       pubkey0.add(state.getValidator_registry().get(i).getPubkey());
     }
 
-    List<Bytes48> pubkey1 = new ArrayList<>();
+    List<BLSPublicKey> pubkey1 = new ArrayList<>();
     for (int i = 0; i < custody_bit_1_participants.size(); i++) {
       pubkey1.add(state.getValidator_registry().get(i).getPubkey());
     }

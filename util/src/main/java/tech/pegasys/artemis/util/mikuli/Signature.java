@@ -45,7 +45,7 @@ public final class Signature {
    * @param bytes the bytes of the signature
    * @return the signature
    */
-  public static Signature decode(Bytes bytes) {
+  public static Signature fromBytes(Bytes bytes) {
     checkArgument(bytes.size() == 192, "Expected 192 bytes of input but got %s", bytes.size());
     return new Signature(G2Point.fromBytes(bytes));
   }
@@ -56,7 +56,7 @@ public final class Signature {
    * @param bytes the bytes of the signature
    * @return the signature
    */
-  public static Signature decodeCompressed(Bytes bytes) {
+  public static Signature fromBytesCompressed(Bytes bytes) {
     checkArgument(bytes.size() == 96, "Expected 96 bytes of input but got %s", bytes.size());
     return new Signature(G2Point.fromBytesCompressed(bytes));
   }
@@ -122,7 +122,7 @@ public final class Signature {
    *
    * @return byte array representation of the signature, not null
    */
-  public Bytes encode() {
+  public Bytes toBytes() {
     return point.toBytes();
   }
 
@@ -131,21 +131,18 @@ public final class Signature {
    *
    * @return byte array representation of the signature, not null
    */
-  public Bytes encodeCompressed() {
+  public Bytes toBytesCompressed() {
     return point.toBytesCompressed();
   }
 
   @Override
   public String toString() {
-    return "Signature [ecpPoint=" + point.toString() + "]";
+    return "Signature [ecp2Point=" + point.toString() + "]";
   }
 
   @Override
   public int hashCode() {
-    final int prime = 31;
-    int result = 1;
-    result = prime * result + ((point == null) ? 0 : point.hashCode());
-    return result;
+    return point.hashCode();
   }
 
   G2Point g2Point() {

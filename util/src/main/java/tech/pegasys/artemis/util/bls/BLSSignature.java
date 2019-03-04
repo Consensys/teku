@@ -17,9 +17,9 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Objects.isNull;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import net.consensys.cava.bytes.Bytes;
-import net.consensys.cava.bytes.Bytes48;
 import net.consensys.cava.ssz.SSZ;
 import tech.pegasys.artemis.util.mikuli.BLS12381;
 import tech.pegasys.artemis.util.mikuli.KeyPair;
@@ -39,7 +39,11 @@ public final class BLSSignature {
   public static BLSSignature sign(BLSKeyPair keyPair, Bytes message, long domain) {
     return new BLSSignature(
         BLS12381
-            .sign(new KeyPair(keyPair.secretKey(), keyPair.publicKey()), message, domain)
+            .sign(
+                new KeyPair(
+                    keyPair.getSecretKey().getSecretKey(), keyPair.getPublicKey().getPublicKey()),
+                message,
+                domain)
             .signature());
   }
 
@@ -96,7 +100,7 @@ public final class BLSSignature {
       return BLSSignature.empty();
     } else {
       return SSZ.decode(
-          bytes, reader -> new BLSSignature(Signature.decodeCompressed(reader.readBytes())));
+          bytes, reader -> new BLSSignature(Signature.fromBytesCompressed(reader.readBytes())));
     }
   }
 
@@ -115,11 +119,14 @@ public final class BLSSignature {
    * @return true if the signature is valid, false if it is not
    * @throws BLSException
    */
-  boolean checkSignature(Bytes48 publicKey, Bytes message, long domain) throws BLSException {
+  boolean checkSignature(BLSPublicKey publicKey, Bytes message, long domain) throws BLSException {
     if (isNull(signature)) {
       throw new BLSException("The checkSignature method was called on an empty signature.");
     }
-    return BLS12381.verify(PublicKey.fromBytes(publicKey), signature, message, domain);
+    if (isNull(publicKey)) {
+      throw new BLSException("The checkSignature method was called with an empty public key.");
+    }
+    return BLS12381.verify(publicKey.getPublicKey(), signature, message, domain);
   }
 
   /**
@@ -132,7 +139,7 @@ public final class BLSSignature {
    * @return true if the signature is valid, false if it is not
    * @throws BLSException
    */
-  boolean checkSignature(List<Bytes48> publicKeys, List<Bytes> messages, long domain)
+  boolean checkSignature(List<BLSPublicKey> publicKeys, List<Bytes> messages, long domain)
       throws BLSException {
     checkArgument(
         publicKeys.size() == messages.size(),
@@ -143,7 +150,7 @@ public final class BLSSignature {
       throw new BLSException("The checkSignature method was called on an empty signature.");
     }
     List<PublicKey> publicKeyObjects =
-        publicKeys.stream().map(x -> PublicKey.fromBytes(x)).collect(Collectors.toList());
+        publicKeys.stream().map(x -> x.getPublicKey()).collect(Collectors.toList());
     return BLS12381.verifyMultiple(publicKeyObjects, signature, messages, domain);
   }
 
@@ -161,7 +168,7 @@ public final class BLSSignature {
     } else {
       return SSZ.encode(
           writer -> {
-            writer.writeBytes(signature.encodeCompressed());
+            writer.writeBytes(signature.toBytesCompressed());
           });
     }
   }
@@ -181,7 +188,7 @@ public final class BLSSignature {
 
   @Override
   public int hashCode() {
-    return isNull(signature) ? 42 : signature.hashCode();
+    return isEmpty() ? 0 : signature.hashCode();
   }
 
   @Override
@@ -196,6 +203,6 @@ public final class BLSSignature {
       return false;
     }
     BLSSignature other = (BLSSignature) obj;
-    return isNull(signature) ? isNull(other.signature) : signature.equals(other.signature);
+    return Objects.equals(this.signature, other.signature);
   }
 }

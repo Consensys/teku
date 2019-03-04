@@ -124,7 +124,7 @@ class BLSTestSuite {
     //   PublicKey publicKeyExpected = PublicKey.fromBytes(Bytes.fromHexString(output));
     byte[] tmp = Bytes.fromHexString(output).toArray();
     tmp[0] |= (byte) 0xa0;
-    PublicKey publicKeyExpected = PublicKey.fromBytes(tmp);
+    PublicKey publicKeyExpected = PublicKey.fromBytesCompressed(tmp);
     assertEquals(publicKeyExpected, publicKeyActual);
   }
 
