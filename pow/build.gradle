@@ -21,9 +21,6 @@ dependencies {
   api 'org.web3j:abi:4.1.1'
   api 'org.web3j:crypto:4.1.1'
 
-  implementation 'io.reactivex:rxjava:1.2.4'
-  implementation 'com.squareup.okhttp3:okhttp:3.8.1'
-  implementation 'com.squareup.okhttp3:logging-interceptor:3.8.1'
   implementation 'com.google.guava:guava'
   compile group: 'com.googlecode.json-simple', name: 'json-simple', version: '1.1'
 
@@ -32,5 +29,4 @@ dependencies {
 
   implementation 'org.apache.logging.log4j:log4j-api'
   runtime 'org.apache.logging.log4j:log4j-core'
-  compile group: 'io.github.ganchix', name: 'testcontainers-java-module-ganache', version: '0.0.4'
 }
