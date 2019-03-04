@@ -25,10 +25,13 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.web3j.abi.datatypes.generated.Bytes32;
 import org.web3j.protocol.core.methods.response.Log;
-import tech.pegasys.artemis.pow.contract.ValidatorRegistrationContract.Eth1DepositEventResponse;
-import tech.pegasys.artemis.pow.event.ValidatorRegistration;
+import tech.pegasys.artemis.pow.contract.DepositContract;
+import tech.pegasys.artemis.pow.event.Deposit;
+import tech.pegasys.artemis.pow.event.Eth2Genesis;
 import tech.pegasys.artemis.services.adapter.event.OutboundEvent;
 
 public class ServiceAdapterTest {
@@ -39,8 +42,7 @@ public class ServiceAdapterTest {
   public void testForwardValidationEvent() throws IOException, InterruptedException {
 
     final ServiceAdapter adapter1 =
-        new ServiceAdapter(
-            30000, Collections.singleton(ValidatorRegistration.class), Collections.emptySet());
+        new ServiceAdapter(30000, Collections.singleton(Deposit.class), Collections.emptySet());
 
     final EventBus eventBus1 = new EventBus("bus1");
     eventBus1.register(this);
@@ -48,8 +50,8 @@ public class ServiceAdapterTest {
     adapter1.init(eventBus1);
     adapter1.run();
 
-    final OutboundEvent<ValidatorRegistration> outboundEvent =
-        new OutboundEvent<>(ValidatorRegistration.class, "dns:///localhost:30000");
+    final OutboundEvent<Deposit> outboundEvent =
+        new OutboundEvent<>(Deposit.class, "dns:///localhost:30000");
 
     final ServiceAdapter adapter2 =
         new ServiceAdapter(Collections.emptySet(), Collections.singleton(outboundEvent));
@@ -58,17 +60,74 @@ public class ServiceAdapterTest {
     adapter2.init(eventBus2);
     adapter2.run();
 
-    final ValidatorRegistration validatorRegistration = createValidatorRegistration(1);
+    final Deposit validatorRegistration = createValidatorRegistration(1);
     eventBus2.post(validatorRegistration);
 
-    Thread.sleep(500);
+    Thread.sleep(2000);
 
     assertEquals(1, receivedEvents.size());
-    adapter1.stop();
-    adapter2.stop();
 
-    //  assertValidatorRegistration(
-    //      validatorRegistration, (ValidatorRegistration) receivedEvents.get(0));
+    assertValidatorRegistration(validatorRegistration, (Deposit) receivedEvents.get(0));
+  }
+
+  @Disabled
+  @Test
+  public void testTwoWayEvent() throws IOException, InterruptedException {
+
+    ServiceAdapter adapter1 =
+        new ServiceAdapter(30002, Collections.singleton(Deposit.class), Collections.emptySet());
+
+    final EventBus eventBus1 = new EventBus("bus1");
+    eventBus1.register(this);
+
+    adapter1.init(eventBus1);
+    adapter1.run();
+
+    final OutboundEvent<Deposit> outboundEvent2to1 =
+        new OutboundEvent<>(Deposit.class, "dns:///localhost:30002");
+
+    ServiceAdapter adapter2 =
+        new ServiceAdapter(30003, Collections.emptySet(), Collections.singleton(outboundEvent2to1));
+
+    final EventBus eventBus2 = new EventBus("bus2");
+    adapter2.init(eventBus2);
+    adapter2.run();
+
+    Integer index = 1;
+    // Test adapter2 -> adapter1
+    final Deposit validatorRegistration2to1 = createValidatorRegistration(index);
+    eventBus2.post(validatorRegistration2to1);
+
+    Thread.sleep(2000);
+
+    assertEquals(1, receivedEvents.size());
+    Deposit rcvdEvent2to1 = (Deposit) receivedEvents.get(0);
+    assertValidatorRegistration(validatorRegistration2to1, rcvdEvent2to1);
+    Integer rcvdIndex2to1 = Integer.valueOf(rcvdEvent2to1.getResponse().log.getLogIndexRaw());
+    assertEquals(Integer.valueOf(1), rcvdIndex2to1);
+
+    // Test adapter1 -> adapter2
+    adapter2 =
+        new ServiceAdapter(30003, Collections.singleton(Deposit.class), Collections.emptySet());
+
+    OutboundEvent<Deposit> outboundEvent1to2 =
+        new OutboundEvent<>(Deposit.class, "dns:///localhost:30003");
+
+    adapter1 =
+        new ServiceAdapter(30002, Collections.emptySet(), Collections.singleton(outboundEvent1to2));
+
+    final Deposit validatorRegistration1to2 = createValidatorRegistration(rcvdIndex2to1 + 1);
+
+    eventBus1.post(validatorRegistration1to2);
+
+    Thread.sleep(2000);
+
+    assertEquals(2, receivedEvents.size());
+
+    Deposit rcvdEvent1to2 = (Deposit) receivedEvents.get(1);
+    assertValidatorRegistration(validatorRegistration1to2, rcvdEvent1to2);
+    Integer rcvdIndex1to2 = Integer.valueOf(rcvdEvent1to2.getResponse().log.getLogIndexRaw());
+    assertEquals(Integer.valueOf(rcvdIndex2to1 + 1), rcvdIndex1to2);
   }
 
   @Subscribe
@@ -76,14 +135,16 @@ public class ServiceAdapterTest {
     receivedEvents.add(event);
   }
 
-  private ValidatorRegistration createValidatorRegistration(Integer index) {
-    final Eth1DepositEventResponse deposit = new Eth1DepositEventResponse();
+  private Deposit createValidatorRegistration(Integer index) {
+    DepositContract.DepositEventResponse response = new DepositContract.DepositEventResponse();
 
-    deposit.data = "data".getBytes(Charset.defaultCharset());
-    deposit.deposit_count = BigInteger.TEN;
-    deposit.previous_receipt_root = "root".getBytes(Charset.defaultCharset());
+    response.deposit_root = new byte[32];
+    response.data = "data".getBytes(Charset.defaultCharset());
+    response.merkle_tree_index = BigInteger.TEN.toByteArray();
+    response.branch = new ArrayList<>();
+    response.branch.add(new Bytes32(new byte[32]));
 
-    deposit.log =
+    response.log =
         new Log(
             true,
             index.toString(),
@@ -95,19 +156,38 @@ public class ServiceAdapterTest {
             randomString(),
             randomString(),
             Collections.singletonList(randomString()));
-
-    return new ValidatorRegistration(deposit);
+    return new Deposit(response);
   }
 
-  private void assertValidatorRegistration(
-      ValidatorRegistration expected, ValidatorRegistration actual) {
+  private Eth2Genesis createEth2Genesis(Integer index) {
+    DepositContract.Eth2GenesisEventResponse response =
+        new DepositContract.Eth2GenesisEventResponse();
+    response.log =
+        new Log(
+            true,
+            index.toString(),
+            randomString(),
+            randomString(),
+            randomString(),
+            randomString(),
+            randomString(),
+            randomString(),
+            randomString(),
+            Collections.singletonList(randomString()));
+    response.time = "time".getBytes(Charset.defaultCharset());
+    response.deposit_root = "root".getBytes(Charset.defaultCharset());
+    final Eth2Genesis deposit = new Eth2Genesis(response);
+    return deposit;
+  }
+
+  private void assertValidatorRegistration(Deposit expected, Deposit actual) {
 
     assertEquals(true, Arrays.equals(expected.getResponse().data, actual.getResponse().data));
-    assertEquals(
-        true,
-        Arrays.equals(
-            expected.getResponse().previous_receipt_root,
-            actual.getResponse().previous_receipt_root));
+    //          assertEquals(
+    //              true,
+    //              Arrays.equals(
+    //                  expected.getResponse().previous_receipt_root,
+    //                  actual.getResponse().previous_receipt_root));
 
     final Log expectedLog = expected.getResponse().log;
     final Log actualLog = actual.getResponse().log;

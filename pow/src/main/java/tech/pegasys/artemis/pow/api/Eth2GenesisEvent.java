@@ -13,7 +13,6 @@
 
 package tech.pegasys.artemis.pow.api;
 
-import tech.pegasys.artemis.pow.contract.ValidatorRegistrationContract;
+import tech.pegasys.artemis.pow.contract.DepositContract.Eth2GenesisEventResponse;
 
-public interface ChainStartEvent
-    extends PowEvent<ValidatorRegistrationContract.ChainStartEventResponse> {}
+public interface Eth2GenesisEvent extends PowEvent<Eth2GenesisEventResponse> {}

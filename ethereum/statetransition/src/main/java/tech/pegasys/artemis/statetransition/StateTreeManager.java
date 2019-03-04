@@ -27,8 +27,8 @@ import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
-import tech.pegasys.artemis.pow.api.ChainStartEvent;
-import tech.pegasys.artemis.pow.api.ValidatorRegistrationEvent;
+import tech.pegasys.artemis.pow.api.DepositEvent;
+import tech.pegasys.artemis.pow.api.Eth2GenesisEvent;
 import tech.pegasys.artemis.storage.ChainStorage;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
@@ -49,7 +49,19 @@ public class StateTreeManager {
     this.stateTransition = new StateTransition();
     this.eventBus.register(this);
     this.store = ChainStorage.Create(ChainStorageClient.class, eventBus);
+  }
 
+  @Subscribe
+  public void onEth2GenesisEvent(Eth2GenesisEvent event) {
+    LOG.info(
+        "******* Eth2Genesis Event detected ******* : "
+            + ((tech.pegasys.artemis.pow.event.Eth2Genesis) event).getDeposit_root().toString());
+    this.nodeSlot = UnsignedLong.valueOf(Constants.GENESIS_SLOT);
+    this.nodeTime =
+        UnsignedLong.valueOf(Constants.GENESIS_SLOT)
+            .times(UnsignedLong.valueOf(Constants.SLOT_DURATION));
+    LOG.info("node slot: " + nodeSlot.longValue());
+    LOG.info("node time: " + nodeTime.longValue());
     try {
       BeaconState initial_state = DataStructureUtil.createInitialBeaconState();
       Bytes32 initial_state_root = HashTreeUtil.hash_tree_root(initial_state.toBytes());
@@ -60,28 +72,17 @@ public class StateTreeManager {
       this.store.addState(initial_state_root, initial_state);
       this.store.addProcessedBlock(genesis_block_root, genesis_block);
       this.store.setJustifiedHead(initial_state, genesis_block);
+      this.eventBus.post(true);
     } catch (IllegalStateException e) {
       LOG.fatal(e);
     }
   }
 
   @Subscribe
-  public void onChainStarted(ChainStartEvent event) {
-    LOG.info("******* ChainStart Event Detected *******");
-    this.nodeSlot = UnsignedLong.valueOf(Constants.GENESIS_SLOT);
-    this.nodeTime =
-        UnsignedLong.valueOf(Constants.GENESIS_SLOT)
-            .times(UnsignedLong.valueOf(Constants.SLOT_DURATION));
-    LOG.info("node slot: " + nodeSlot.longValue());
-    LOG.info("node time: " + nodeTime.longValue());
-    boolean result = true;
-    this.eventBus.post(result);
-  }
-
-  @Subscribe
-  public void onValidatorRegistered(ValidatorRegistrationEvent event) {
-    LOG.info("Validator Registration Event detected");
-    LOG.info("   Validator Number: " + event.getResponse().log.toString());
+  public void onDepositEvent(DepositEvent event) {
+    LOG.info(
+        "Deposit Event detected: "
+            + ((tech.pegasys.artemis.pow.event.Deposit) event).getDeposit_root().toString());
   }
 
   @Subscribe

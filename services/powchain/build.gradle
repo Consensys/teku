@@ -9,10 +9,14 @@ jar {
 dependencies {
   implementation project(':services')
   implementation project(':pow')
+  implementation project(':ethereum:datastructures')
 
   implementation 'com.google.guava:guava'
   implementation 'org.apache.logging.log4j:log4j-api'
   runtime 'org.apache.logging.log4j:log4j-core'
+
+  implementation 'net.consensys.cava:cava-crypto'
+  implementation 'net.consensys.cava:cava-units'
 
   testImplementation 'org.mockito:mockito-core'
 
