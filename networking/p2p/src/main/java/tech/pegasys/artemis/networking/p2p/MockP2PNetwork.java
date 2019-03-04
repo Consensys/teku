@@ -14,6 +14,7 @@
 package tech.pegasys.artemis.networking.p2p;
 
 import com.google.common.eventbus.EventBus;
+import com.google.common.eventbus.Subscribe;
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -26,6 +27,7 @@ import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.networking.p2p.api.P2PNetwork;
+import tech.pegasys.artemis.pow.api.Eth2GenesisEvent;
 import tech.pegasys.artemis.statetransition.StateTransition;
 import tech.pegasys.artemis.statetransition.StateTransitionException;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
@@ -37,6 +39,7 @@ public class MockP2PNetwork implements P2PNetwork {
 
   public MockP2PNetwork(EventBus eventBus) {
     this.eventBus = eventBus;
+    this.eventBus.register(this);
   }
 
   /**
@@ -83,13 +86,16 @@ public class MockP2PNetwork implements P2PNetwork {
   }
 
   @Override
-  public void run() {
-    this.simulateNewMessages();
-  }
+  public void run() {}
 
   @Override
   public void close() {
     this.stop();
+  }
+
+  @Subscribe
+  public void onEth2GenesisEvent(Eth2GenesisEvent event) {
+    simulateNewMessages();
   }
 
   private void simulateNewMessages() {
