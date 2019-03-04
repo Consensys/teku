@@ -26,8 +26,8 @@ public class Eth2Genesis extends AbstractEvent<Eth2GenesisEventResponse>
 
   public Eth2Genesis(Eth2GenesisEventResponse response) {
     super(response);
-    deposit_root = Bytes32.wrap(response.deposit_root);
-    time = Bytes.wrap(response.time);
+    deposit_root = Bytes32.leftPad(Bytes.wrap(response.deposit_root));
+    time = Bytes32.leftPad(Bytes.wrap(response.time));
   }
 
   public Bytes32 getDeposit_root() {

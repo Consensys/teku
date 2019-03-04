@@ -25,6 +25,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.web3j.abi.datatypes.generated.Bytes32;
 import org.web3j.protocol.core.methods.response.Log;
@@ -69,6 +70,7 @@ public class ServiceAdapterTest {
     assertValidatorRegistration(validatorRegistration, (Deposit) receivedEvents.get(0));
   }
 
+  @Disabled
   @Test
   public void testTwoWayEvent() throws IOException, InterruptedException {
 

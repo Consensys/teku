@@ -54,9 +54,7 @@ public class ServiceController {
 
     EventBus eventBus = new AsyncEventBus(Executors.newCachedThreadPool());
     beaconChainService.init(eventBus);
-    if (!cliArgs.getPoWChainServiceDisabled()) {
-      powchainService.init(eventBus);
-    }
+    powchainService.init(eventBus);
     beaconNodeService.init(eventBus);
     chainStorageService.init(eventBus);
   }

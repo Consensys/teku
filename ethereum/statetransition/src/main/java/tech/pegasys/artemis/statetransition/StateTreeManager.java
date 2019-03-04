@@ -60,8 +60,8 @@ public class StateTreeManager {
     this.nodeTime =
         UnsignedLong.valueOf(Constants.GENESIS_SLOT)
             .times(UnsignedLong.valueOf(Constants.SLOT_DURATION));
+    LOG.info("node slot: " + nodeSlot.longValue());
     LOG.info("node time: " + nodeTime.longValue());
-    Boolean result = false;
     try {
       BeaconState initial_state = DataStructureUtil.createInitialBeaconState();
       Bytes32 initial_state_root = HashTreeUtil.hash_tree_root(initial_state.toBytes());
@@ -72,6 +72,7 @@ public class StateTreeManager {
       this.store.addState(initial_state_root, initial_state);
       this.store.addProcessedBlock(genesis_block_root, genesis_block);
       this.store.setJustifiedHead(initial_state, genesis_block);
+      this.eventBus.post(true);
     } catch (IllegalStateException e) {
       LOG.fatal(e);
     }
