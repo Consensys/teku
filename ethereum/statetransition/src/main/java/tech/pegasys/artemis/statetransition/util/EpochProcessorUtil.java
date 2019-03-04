@@ -151,9 +151,6 @@ public class EpochProcessorUtil {
     // Update state justification variables
     state.setPrevious_justified_epoch(state.getJustified_epoch());
     state.setJustified_epoch(new_justified_epoch);
-
-    // Update justified head block and state
-    store.setJustifiedHead(state, block);
   }
 
   /**

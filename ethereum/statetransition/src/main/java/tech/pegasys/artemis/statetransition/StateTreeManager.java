@@ -20,12 +20,15 @@ import java.util.Date;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
+
+import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.pow.api.ChainStartEvent;
 import tech.pegasys.artemis.pow.api.ValidatorRegistrationEvent;
@@ -58,8 +61,8 @@ public class StateTreeManager {
       LOG.info("Initial State:");
       LOG.info("  initial state root is " + initial_state_root.toHexString());
       this.store.addState(initial_state_root, initial_state);
-      this.store.addProcessedBlock(genesis_block_root, genesis_block);
-      this.store.setJustifiedHead(initial_state, genesis_block);
+      this.store.addProcessedBlock(initial_state_root, genesis_block);
+      this.head = genesis_block;
     } catch (IllegalStateException e) {
       LOG.fatal(e);
     }
@@ -97,11 +100,24 @@ public class StateTreeManager {
         this.store.getUnprocessedBlocksUntilSlot(nodeSlot);
     unprocessedBlocks.forEach((block) -> processFork(block));
 
+    // If it is the genesis epoch, keep the justified state root as genesis state root
+    // because get_block _root gives an error if the slot is not less than state.slot
+    Bytes justifiedStateRoot;
+    if (BeaconStateUtil.get_epoch_start_slot(BeaconStateUtil.slot_to_epoch(nodeSlot)).compareTo(UnsignedLong.valueOf(Constants.GENESIS_SLOT)) == 0) {
+      justifiedStateRoot = head.getState_root();
+    } else {
+      BeaconState headState = store.getState(head.getState_root()).get();
+      justifiedStateRoot = BeaconStateUtil.get_block_root(headState, BeaconStateUtil.get_epoch_start_slot(headState.getJustified_epoch()));
+    }
+
+    if (!store.getProcessedBlock(justifiedStateRoot).isPresent()) throw new StateTransitionException("Justified block not found");
+    if (!store.getState(justifiedStateRoot).isPresent()) throw new StateTransitionException("Justified block state not found");
+
     // Run lmd_ghost to get the head
     try {
       this.head =
           LmdGhost.lmd_ghost(
-              store, store.get_justified_head_state(), store.get_justified_head_block());
+                  store, store.getState(justifiedStateRoot).get(), store.getProcessedBlock(justifiedStateRoot).get());
     } catch (StateTransitionException e) {
       LOG.fatal(e);
     }
@@ -200,7 +216,6 @@ public class StateTreeManager {
           LOG.info("The fork_head's state root matches the calculated state root!");
           // TODO: storing fork_head and state together as a tuple would be more convenient
           this.store.addProcessedBlock(blockStateRoot, block);
-          this.store.addProcessedBlock(blockRoot, block);
           this.store.addState(currentStateRoot, currentState);
         } else {
           LOG.info("The fork_head's state root does NOT matches the calculated state root!");
