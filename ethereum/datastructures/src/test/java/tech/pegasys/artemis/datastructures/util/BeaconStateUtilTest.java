@@ -364,4 +364,20 @@ class BeaconStateUtilTest {
     beaconState.setValidator_balances(balanceList);
     return beaconState;
   }
+
+  // *************** START Shuffling Tests ***************
+
+  @Test
+  void succeedsWhenARandomShufflingIsAPermutation() {
+    Bytes32 seed = Bytes32.random();
+    int listSize = 1000;
+    boolean[] done = new boolean[listSize]; // Initialised to false
+    for (int i = 0; i < listSize; i++) {
+      int idx = (int) BeaconStateUtil.get_permuted_index(i, listSize, seed);
+      assertFalse(done[idx]);
+      done[idx] = true;
+    }
+  }
+
+  // *************** END Shuffling Tests *****************
 }

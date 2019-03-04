@@ -30,6 +30,7 @@ import static tech.pegasys.artemis.datastructures.Constants.LATEST_SLASHED_EXIT_
 import static tech.pegasys.artemis.datastructures.Constants.MAX_DEPOSIT_AMOUNT;
 import static tech.pegasys.artemis.datastructures.Constants.MAX_INDICES_PER_SLASHABLE_VOTE;
 import static tech.pegasys.artemis.datastructures.Constants.SHARD_COUNT;
+import static tech.pegasys.artemis.datastructures.Constants.SHUFFLE_ROUND_COUNT;
 import static tech.pegasys.artemis.datastructures.Constants.SLOTS_PER_EPOCH;
 import static tech.pegasys.artemis.datastructures.Constants.WHISTLEBLOWER_REWARD_QUOTIENT;
 import static tech.pegasys.artemis.datastructures.Constants.WITHDRAWABLE;
@@ -42,6 +43,7 @@ import static tech.pegasys.artemis.util.hashtree.HashTreeUtil.integerListHashTre
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.primitives.UnsignedLong;
+import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -677,6 +679,77 @@ public class BeaconStateUtil {
     }
 
     return output;
+  }
+
+  /**
+   * Return `p(index)` in a pseudorandom permutation `p` of `0...list_size-1` with ``seed`` as
+   * entropy.
+   *
+   * <p>Utilizes 'swap or not' shuffling found in
+   * https://link.springer.com/content/pdf/10.1007%2F978-3-642-32009-5_1.pdf See the 'generalized
+   * domain' algorithm on page 3.
+   *
+   * @param index The index in the permuatation we wish to get the value of.
+   * @param listSize The size of the list from which the element is taken.
+   * @param seed Initial seed value used for randomization.
+   * @return The shuffled array.
+   */
+  @VisibleForTesting
+  public static long get_permuted_index(long index, long listSize, Bytes32 seed) {
+    checkArgument(index < listSize);
+    checkArgument(listSize <= 1099511627776L); // 2^40
+
+    /*
+     * In the following, great care is needed around signed and unsigned values.
+     * Note that the % (modulo) operator in Java behaves differently from the
+     * modulo operator in python:
+     *   Python -1 % 13 = 12
+     *   Java   -1 % 13 = -1
+     *
+     * Using UnsignedLong doesn't help us as some quantities can legitimately be negative.
+     */
+
+    long indexRet = index;
+
+    for (int round = 0; round < SHUFFLE_ROUND_COUNT; round++) {
+
+      // TODO: This is unwieldy. Can we just make a Bytes from `(byte) round`?
+      Bytes roundAsByte = Bytes.ofUnsignedShort(round, ByteOrder.LITTLE_ENDIAN).slice(0, 1).copy();
+
+      // This should be handled LITTLE_ENDIAN, but it also should work BIG_ENDIAN with due regard to
+      // the slice indices, and is much simpler to implement.
+      long pivot =
+          Hash.keccak256(Bytes.concatenate(seed, roundAsByte))
+                  .slice(24, 8)
+                  .toLong(ByteOrder.BIG_ENDIAN)
+              % listSize;
+      // Account for pivot possibly being negative
+      if (pivot < 0) {
+        pivot += listSize;
+      }
+
+      long flip = (pivot - indexRet) % listSize;
+      // Account for flip possibly being negative
+      if (flip < 0) {
+        flip += listSize;
+      }
+
+      long position = (indexRet < flip) ? flip : indexRet;
+
+      // We skip the first byte which is equivalent to dividing by 256
+      Bytes positionDiv256 = Bytes.ofUnsignedLong(position, ByteOrder.LITTLE_ENDIAN).slice(1, 4);
+      Bytes source = Hash.keccak256(Bytes.concatenate(seed, roundAsByte, positionDiv256));
+
+      // byte is signed in Java, but the right shift should be fine as we just take the last bit
+      // but we can't use % normally because of this, so we `& 1` instead.
+      byte theByte = source.get((int) (position % 256) / 8);
+      boolean bit = ((theByte >> (position % 8)) & 1) == 1;
+      if (bit) {
+        indexRet = flip;
+      }
+    }
+
+    return indexRet;
   }
 
   /**
