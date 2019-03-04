@@ -110,13 +110,13 @@ public class MockP2PNetwork implements P2PNetwork {
             DataStructureUtil.newBeaconBlock(
                 state.getSlot().plus(UnsignedLong.ONE), parent_root, state_root, deposits);
         LOG.info("In MockP2PNetwork");
-        stateTransition.initiate(state, block, null);
+        stateTransition.initiate(state, block);
         state_root = HashTreeUtil.hash_tree_root(state.toBytes());
         block.setState_root(state_root);
 
         parent_root = HashTreeUtil.hash_tree_root(block.toBytes());
         this.eventBus.post(block);
-        Thread.sleep(7000);
+        Thread.sleep(6000);
       }
     } catch (InterruptedException | StateTransitionException e) {
       LOG.warn(e.toString());
