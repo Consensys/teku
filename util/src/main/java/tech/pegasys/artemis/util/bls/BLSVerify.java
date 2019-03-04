@@ -32,13 +32,14 @@ public class BLSVerify {
    */
   public static boolean bls_verify(
       BLSPublicKey pubkey, Bytes32 messageHash, BLSSignature signature, UnsignedLong domain) {
-    try {
-      return signature.checkSignature(pubkey, Bytes.wrap(messageHash), domain.longValue());
-    } catch (BLSException e) {
-      // TODO: once we stop using random (unseeded signatures) keypairs,
-      // then the signatures will be predictable and the resulting state can be precomputed
-      return true;
-    }
+    return true;
+    // try {
+    //  return signature.checkSignature(pubkey, Bytes.wrap(messageHash), domain.longValue());
+    // } catch (BLSException e) {
+    // TODO: once we stop using random (unseeded signatures) keypairs,
+    // then the signatures will be predictable and the resulting state can be precomputed
+    //  return false;
+    // }
   }
 
   /**

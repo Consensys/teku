@@ -198,13 +198,15 @@ public class StateTreeManager {
         // claiming us we should reach, save the block and the state if its correct.
         if (blockStateRoot.equals(currentStateRoot)) {
           LOG.info("The fork_head's state root matches the calculated state root!");
-          LOG.info("  new state root: " + currentStateRoot.toHexString());
-          LOG.info("  fork_head state root: " + blockStateRoot.toHexString());
           // TODO: storing fork_head and state together as a tuple would be more convenient
           this.store.addProcessedBlock(blockStateRoot, block);
           this.store.addProcessedBlock(blockRoot, block);
           this.store.addState(currentStateRoot, currentState);
+        } else {
+          LOG.info("The fork_head's state root does NOT matches the calculated state root!");
         }
+        LOG.info("  new state root: " + currentStateRoot.toHexString());
+        LOG.info("  fork_head state root: " + blockStateRoot.toHexString());
       }
     } catch (NoSuchElementException | IllegalArgumentException | StateTransitionException e) {
       LOG.warn(e);
