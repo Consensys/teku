@@ -22,7 +22,6 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
-import net.consensys.cava.bytes.Bytes48;
 import net.consensys.cava.ssz.SSZ;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.datastructures.blocks.Eth1DataVote;
@@ -71,7 +70,6 @@ public class BeaconState {
     Gson gson =
         new GsonBuilder()
             .registerTypeAdapter(Bytes32.class, new InterfaceAdapter<Bytes32>())
-            .registerTypeAdapter(Bytes48.class, new InterfaceAdapter<Bytes48>())
             .create();
     return gson.fromJson(gson.toJson(state), BeaconState.class);
   }

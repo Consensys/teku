@@ -47,9 +47,9 @@ class SignatureTest {
   }
 
   @Test
-  void succeedsWhenEncodedSignaturesAre192BytesLong() {
+  void succeedsWhenSerialisedSignaturesAre192BytesLong() {
     Signature signature = Signature.random();
-    assertEquals(signature.encode().size(), 192);
+    assertEquals(signature.toBytes().size(), 192);
   }
 
   @Test
@@ -60,12 +60,12 @@ class SignatureTest {
   @Test
   void roundtripEncodeDecode() {
     Signature signature = Signature.random();
-    assertEquals(signature, Signature.decode(signature.encode()));
+    assertEquals(signature, Signature.fromBytes(signature.toBytes()));
   }
 
   @Test
   void roundtripEncodeDecodeCompressed() {
     Signature signature = Signature.random();
-    assertEquals(signature, Signature.decodeCompressed(signature.encodeCompressed()));
+    assertEquals(signature, Signature.fromBytesCompressed(signature.toBytesCompressed()));
   }
 }

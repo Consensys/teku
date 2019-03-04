@@ -13,12 +13,14 @@
 
 package tech.pegasys.artemis.util.mikuli;
 
+import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static tech.pegasys.artemis.util.mikuli.G1Point.isValid;
 
+import net.consensys.cava.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 
 class G1PointTest {
@@ -48,38 +50,9 @@ class G1PointTest {
   }
 
   @Test
-  void succeedsWhenIsValidReturnsTrueForARandomPoint() {
-    G1Point point = G1Point.random();
-    assertTrue(G1Point.isValid(point));
-  }
-
-  @Test
-  void succeedsWhenPointWithCFalseIsInvalid() {
-    G1Point point = G1Point.random();
-    // C1 should always be true
-    assertFalse(isValid(point.ecpPoint(), point.getA(), point.getB(), false));
-  }
-
-  @Test
-  void succeedsWhenPointWithBTrueIsInvalid() {
-    G1Point point = G1Point.random();
-    // B1 is true only for the point at infinity
-    assertFalse(isValid(point.ecpPoint(), point.getA(), true, true));
-  }
-
-  @Test
-  void succeedsWhenPointWithAInvertedIsInvalid() {
-    G1Point point = G1Point.random();
-    assertFalse(isValid(point.ecpPoint(), !point.getA(), false, true));
-  }
-
-  @Test
-  void succeedsWhenPointAtInfinityHasCorrectFlags() {
+  void succeedsWhenDefaultConstructorReturnsThePointAtInfinity() {
     G1Point infinity = new G1Point();
     assertTrue(infinity.ecpPoint().is_infinity());
-    assertFalse(infinity.getA());
-    assertTrue(infinity.getB());
-    assertTrue(infinity.getC());
     assertTrue(infinity.ecpPoint().getX().iszilch());
   }
 
@@ -95,5 +68,140 @@ class G1PointTest {
     G1Point point1 = G1Point.random();
     G1Point point2 = G1Point.fromBytesCompressed(point1.toBytesCompressed());
     assertEquals(point1, point2);
+  }
+
+  @Test
+  void succeedsWhenDeserialisingACorrectPointDoesNotThrow() {
+    String xInput =
+        "0x8123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
+    assertAll(() -> G1Point.fromBytesCompressed(Bytes.fromHexString(xInput)));
+  }
+
+  @Test
+  void succeedsWhenDeserialisingAnIncorrectPointThrowsIllegalArgumentException() {
+    String xInput =
+        "0x8123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcde0";
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> G1Point.fromBytesCompressed(Bytes.fromHexString(xInput)));
+  }
+
+  @Test
+  void succeedsWhenAttemptToDeserialiseXEqualToModulusThrowsIllegalArgumentException() {
+    // Exactly the modulus, q
+    String xInput =
+        "0x9a0111ea397fe69a4b1ba7b6434bacd764774b84f38512bf6730d2a0f6b0f6241eabfffeb153ffffb9feffffffffaaab";
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> G1Point.fromBytesCompressed(Bytes.fromHexString(xInput)));
+  }
+
+  @Test
+  void succeedsWhenAttemptToDeserialiseXGreaterThanModulusThrowsIllegalArgumentException() {
+    // One more than the modulus, q
+    String xInput =
+        "0x9a0111ea397fe69a4b1ba7b6434bacd764774b84f38512bf6730d2a0f6b0f6241eabfffeb153ffffb9feffffffffaaac";
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> G1Point.fromBytesCompressed(Bytes.fromHexString(xInput)));
+  }
+
+  @Test
+  void succeedsWhenAttemptToDeserialiseXLessThanModulusDoesNotThrowIllegalArgumentException() {
+    // There's a valid X three less than the modulus. We prepend the c flag.
+    String xInput =
+        "0x9a0111ea397fe69a4b1ba7b6434bacd764774b84f38512bf6730d2a0f6b0f6241eabfffeb153ffffb9feffffffffaaa8";
+    assertAll(() -> G1Point.fromBytesCompressed(Bytes.fromHexString(xInput)));
+  }
+
+  @Test
+  void succeedsWhenProvidingTooFewBytesToFromBytesCompressedThrowsIllegalArgumentException() {
+    String xInput =
+        "0x9a0111ea397fe69a4b1ba7b6434bacd764774b84f38512bf6730d2a0f6b0f6241eabfffeb153ffffb9feffffffffaa";
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> G1Point.fromBytesCompressed(Bytes.fromHexString(xInput)));
+  }
+
+  @Test
+  void succeedsWhenProvidingTooManyBytesToFromBytesCompressedThrowsIllegalArgumentException() {
+    String xInput =
+        "0x9a0111ea397fe69a4b1ba7b6434bacd764774b84f38512bf6730d2a0f6b0f6241eabfffeb153ffffb9feffffffffaaa900";
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> G1Point.fromBytesCompressed(Bytes.fromHexString(xInput)));
+  }
+
+  @Test
+  void succeedsWhenRoundTripDeserialiseSerialiseCompressedReturnsTheOriginalInput() {
+    String xInput =
+        "0x8123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
+    String xOutput =
+        G1Point.fromBytesCompressed(Bytes.fromHexString(xInput))
+            .toBytesCompressed()
+            .toHexString()
+            .toLowerCase();
+    assertEquals(xInput, xOutput);
+  }
+
+  @Test
+  void succeedsWhenDeserialiseCompressedInfinityWithTrueBFlagCreatesPointAtInfinity() {
+    String xInput =
+        "0xc00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000";
+    G1Point point = G1Point.fromBytesCompressed(Bytes.fromHexString(xInput));
+    assertTrue(point.ecpPoint().is_infinity());
+  }
+
+  @Test
+  void succeedsWhenDeserialiseCompressedInfinityWithFalseBFlagDoesNotCreatePointAtInfinity() {
+    String xInput =
+        "0x800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000";
+    G1Point point = G1Point.fromBytesCompressed(Bytes.fromHexString(xInput));
+    assertFalse(point.ecpPoint().is_infinity());
+  }
+
+  @Test
+  void succeedsWhenSerialiseDeserialiseCompressedInfinityGivesOriginalInput() {
+    G1Point point = new G1Point();
+    assertEquals(point, G1Point.fromBytesCompressed(point.toBytesCompressed()));
+  }
+
+  @Test
+  void succeedsWhenDeserialiseSerialiseCompressedInfinityGivesOriginalInput() {
+    String xInput =
+        "0xc00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000";
+    String xOutput =
+        G1Point.fromBytesCompressed(Bytes.fromHexString(xInput))
+            .toBytesCompressed()
+            .toHexString()
+            .toLowerCase();
+    assertEquals(xInput, xOutput);
+  }
+
+  @Test
+  void succeedsWhenAttemptToDeserialiseWithWrongCFlagThrowsIllegalArgumentException() {
+    String xInput =
+        "0x0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> G1Point.fromBytesCompressed(Bytes.fromHexString(xInput)));
+  }
+
+  @Test
+  void succeedsWhenAttemptToDeserialiseWithBFlagAndXNonzeroThrowsIllegalArgumentException1() {
+    String xInput =
+        "0xc123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> G1Point.fromBytesCompressed(Bytes.fromHexString(xInput)));
+  }
+
+  @Test
+  void succeedsWhenAttemptToDeserialiseWithBFlagAndAFlagTrueThrowsIllegalArgumentException1() {
+    String xInput =
+        "0xe00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000";
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> G1Point.fromBytesCompressed(Bytes.fromHexString(xInput)));
   }
 }

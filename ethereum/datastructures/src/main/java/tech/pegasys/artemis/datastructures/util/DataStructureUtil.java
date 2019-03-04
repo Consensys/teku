@@ -23,7 +23,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 import net.consensys.cava.bytes.Bytes32;
-import net.consensys.cava.bytes.Bytes48;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockBody;
@@ -42,6 +41,7 @@ import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Crosslink;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
+import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 
@@ -81,14 +81,12 @@ public final class DataStructureUtil {
     return Bytes32.random();
   }
 
-  public static Bytes48 randomBytes48(long seed) {
-    ByteBuffer buffer = ByteBuffer.allocate(Long.BYTES);
-    buffer.putLong(seed);
-    return Bytes48.random(new SecureRandom(buffer.array()));
+  public static BLSPublicKey randomPublicKey() {
+    return BLSPublicKey.random();
   }
 
-  public static Bytes48 randomBytes48() {
-    return Bytes48.random();
+  public static BLSPublicKey randomPublicKey(int seed) {
+    return BLSPublicKey.random(seed);
   }
 
   public static Eth1Data randomEth1Data() {
@@ -199,7 +197,7 @@ public final class DataStructureUtil {
 
   public static DepositInput randomDepositInput() {
     BLSKeyPair keyPair = BLSKeyPair.random();
-    Bytes48 pubkey = keyPair.publicKeyAsBytes();
+    BLSPublicKey pubkey = keyPair.getPublicKey();
     Bytes32 withdrawal_credentials = Bytes32.random();
 
     DepositInput proof_of_possession_data =
@@ -211,15 +209,12 @@ public final class DataStructureUtil {
             HashTreeUtil.hash_tree_root(proof_of_possession_data.toBytes()),
             Constants.DOMAIN_DEPOSIT);
 
-    // BLSSignature proof_of_possession =
-    //    BLSSignature.sign(keyPair, withdrawal_credentials, Constants.DOMAIN_DEPOSIT);
-
-    return new DepositInput(
-        keyPair.publicKeyAsBytes(), withdrawal_credentials, proof_of_possession);
+    return new DepositInput(keyPair.getPublicKey(), withdrawal_credentials, proof_of_possession);
   }
 
   public static DepositInput randomDepositInput(int seed) {
-    return new DepositInput(randomBytes48(seed), randomBytes32(seed++), BLSSignature.random(seed));
+    return new DepositInput(
+        randomPublicKey(seed), randomBytes32(seed++), BLSSignature.random(seed));
   }
 
   public static DepositData randomDepositData() {
@@ -311,12 +306,12 @@ public final class DataStructureUtil {
         randomBeaconBlockBody());
   }
 
-  public static ArrayList<Deposit> newDeposits(int numDeposits) {
+  public static ArrayList<Deposit> newDeposits(int numDeposits, int slot) {
     ArrayList<Deposit> deposits = new ArrayList<Deposit>();
 
     for (int i = 0; i < numDeposits; i++) {
       DepositInput deposit_input =
-          new DepositInput(Bytes48.ZERO, Bytes32.ZERO, BLSSignature.empty());
+          new DepositInput(BLSPublicKey.random(i + slot), Bytes32.ZERO, BLSSignature.empty());
       UnsignedLong timestamp = UnsignedLong.valueOf(i);
       DepositData deposit_data =
           new DepositData(UnsignedLong.valueOf(MAX_DEPOSIT_AMOUNT), timestamp, deposit_input);
@@ -346,16 +341,15 @@ public final class DataStructureUtil {
   }
 
   public static BeaconState createInitialBeaconState() {
-
     return BeaconStateUtil.get_initial_beacon_state(
-        newDeposits(100),
+        newDeposits(50, Math.toIntExact(Constants.GENESIS_SLOT)),
         UnsignedLong.valueOf(Constants.GENESIS_SLOT),
         new Eth1Data(Bytes32.ZERO, Bytes32.ZERO));
   }
 
   public static Validator randomValidator() {
     return new Validator(
-        randomBytes48(),
+        randomPublicKey(),
         randomBytes32(),
         Constants.FAR_FUTURE_EPOCH,
         Constants.FAR_FUTURE_EPOCH,
@@ -366,7 +360,7 @@ public final class DataStructureUtil {
 
   public static Validator randomValidator(int seed) {
     return new Validator(
-        randomBytes48(seed),
+        randomPublicKey(seed),
         randomBytes32(seed++),
         Constants.FAR_FUTURE_EPOCH,
         Constants.FAR_FUTURE_EPOCH,

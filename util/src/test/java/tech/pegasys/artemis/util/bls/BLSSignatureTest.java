@@ -21,7 +21,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import net.consensys.cava.bytes.Bytes;
-import net.consensys.cava.bytes.Bytes48;
 import net.consensys.cava.ssz.SSZ;
 import org.junit.jupiter.api.Test;
 
@@ -45,7 +44,8 @@ class BLSSignatureTest {
     BLSSignature signature = BLSSignature.empty();
     assertThrows(
         BLSException.class,
-        () -> signature.checkSignature(Bytes48.random(), Bytes.wrap("Test".getBytes(UTF_8)), 0));
+        () ->
+            signature.checkSignature(BLSPublicKey.random(), Bytes.wrap("Test".getBytes(UTF_8)), 0));
   }
 
   @Test
@@ -113,7 +113,7 @@ class BLSSignatureTest {
     Bytes message = Bytes.wrap("Hello, world!".getBytes(UTF_8));
     long domain = 42;
     BLSSignature signature = BLSSignature.sign(keyPair, message, domain);
-    assertTrue(signature.checkSignature(keyPair.publicKeyAsBytes(), message, domain));
+    assertTrue(signature.checkSignature(keyPair.getPublicKey(), message, domain));
   }
 
   @Test
@@ -123,7 +123,7 @@ class BLSSignatureTest {
     long domain1 = 42;
     long domain2 = 43;
     BLSSignature signature = BLSSignature.sign(keyPair, message, domain1);
-    assertFalse(signature.checkSignature(keyPair.publicKeyAsBytes(), message, domain2));
+    assertFalse(signature.checkSignature(keyPair.getPublicKey(), message, domain2));
   }
 
   @Test
@@ -133,7 +133,7 @@ class BLSSignatureTest {
     Bytes message2 = Bytes.wrap("Hello, world?".getBytes(UTF_8));
     long domain = 42;
     BLSSignature signature = BLSSignature.sign(keyPair, message1, domain);
-    assertFalse(signature.checkSignature(keyPair.publicKeyAsBytes(), message2, domain));
+    assertFalse(signature.checkSignature(keyPair.getPublicKey(), message2, domain));
   }
 
   @Test
@@ -146,7 +146,7 @@ class BLSSignatureTest {
     Bytes message = Bytes.wrap("Hello, world!".getBytes(UTF_8));
     long domain = 42;
     BLSSignature signature = BLSSignature.sign(keyPair1, message, domain);
-    assertFalse(signature.checkSignature(keyPair2.publicKeyAsBytes(), message, domain));
+    assertFalse(signature.checkSignature(keyPair2.getPublicKey(), message, domain));
   }
 
   @Test

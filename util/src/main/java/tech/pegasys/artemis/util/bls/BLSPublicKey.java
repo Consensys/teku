@@ -13,9 +13,14 @@
 
 package tech.pegasys.artemis.util.bls;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static java.util.Objects.isNull;
+
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
-import net.consensys.cava.bytes.Bytes48;
+import net.consensys.cava.bytes.Bytes;
+import net.consensys.cava.ssz.SSZ;
 import tech.pegasys.artemis.util.mikuli.PublicKey;
 
 public class BLSPublicKey {
@@ -25,24 +30,97 @@ public class BLSPublicKey {
    *
    * @return PublicKey The public key, not null
    */
-  public static Bytes48 random() {
-    return Bytes48.wrap(PublicKey.random().toBytes());
+  public static BLSPublicKey random() {
+    return new BLSPublicKey(PublicKey.random());
   }
 
-  public static Bytes48 aggregate(List<Bytes48> publicKeys) {
+  public static BLSPublicKey random(int seed) {
+    return new BLSPublicKey(PublicKey.random(seed));
+  }
+
+  /**
+   * Creates an empty public key (all zero bytes)
+   *
+   * <p>Due to the flags, this is not actually a valid key, so we use null to flag that the public
+   * key is empty.
+   *
+   * @return the empty public key as per the Eth2 spec
+   */
+  public static BLSPublicKey empty() {
+    return new BLSPublicKey(null);
+  }
+
+  public static BLSPublicKey aggregate(List<BLSPublicKey> publicKeys) {
     List<PublicKey> publicKeyObjects =
-        publicKeys.stream().map(x -> PublicKey.fromBytes(x)).collect(Collectors.toList());
-    PublicKey aggregateKey = PublicKey.aggregate(publicKeyObjects);
-    return Bytes48.wrap(aggregateKey.toBytes());
+        publicKeys.stream().map(x -> x.publicKey).collect(Collectors.toList());
+    return new BLSPublicKey(PublicKey.aggregate(publicKeyObjects));
   }
 
-  private PublicKey publicKey;
+  public static BLSPublicKey fromBytes(Bytes bytes) {
+    checkArgument(bytes.size() == 52, "Expected 52 bytes but received %s.", bytes.size());
+    if (SSZ.decodeBytes(bytes).isZero()) {
+      return BLSPublicKey.empty();
+    } else {
+      return SSZ.decode(
+          bytes, reader -> new BLSPublicKey(PublicKey.fromBytesCompressed(reader.readBytes())));
+    }
+  }
+
+  private final PublicKey publicKey;
 
   BLSPublicKey(PublicKey publicKey) {
     this.publicKey = publicKey;
   }
 
+  /**
+   * Returns the SSZ serialisation of the <em>compressed</em> form of the signature
+   *
+   * @return the serialisation of the compressed form of the signature.
+   */
+  public Bytes toBytes() {
+    if (isNull(publicKey)) {
+      return SSZ.encode(
+          writer -> {
+            writer.writeBytes(Bytes.wrap(new byte[48]));
+          });
+    } else {
+      return SSZ.encode(
+          writer -> {
+            writer.writeBytes(publicKey.toBytesCompressed());
+          });
+    }
+  }
+
   PublicKey getPublicKey() {
     return publicKey;
+  }
+
+  boolean isEmpty() {
+    return isNull(publicKey);
+  }
+
+  @Override
+  public String toString() {
+    return isNull(publicKey) ? "Empty Public Key" : publicKey.toString();
+  }
+
+  @Override
+  public int hashCode() {
+    return isEmpty() ? 0 : publicKey.hashCode();
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (isNull(obj)) {
+      return false;
+    }
+    if (this == obj) {
+      return true;
+    }
+    if (!(obj instanceof BLSPublicKey)) {
+      return false;
+    }
+    BLSPublicKey other = (BLSPublicKey) obj;
+    return Objects.equals(this.publicKey, other.publicKey);
   }
 }

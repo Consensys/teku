@@ -13,47 +13,27 @@
 
 package tech.pegasys.artemis.util.bls;
 
-import net.consensys.cava.bytes.Bytes48;
 import tech.pegasys.artemis.util.mikuli.KeyPair;
-import tech.pegasys.artemis.util.mikuli.PublicKey;
-import tech.pegasys.artemis.util.mikuli.SecretKey;
 
 public class BLSKeyPair {
 
-  private BLSPublicKey blsPublicKey;
-  private BLSSecretKey blsSecretKey;
+  private BLSPublicKey publicKey;
+  private BLSSecretKey secretKey;
 
   public static BLSKeyPair random() {
     return new BLSKeyPair(KeyPair.random());
   }
 
   BLSKeyPair(KeyPair keyPair) {
-    this.blsPublicKey = new BLSPublicKey(keyPair.publicKey());
-    this.blsSecretKey = new BLSSecretKey(keyPair.secretKey());
+    this.publicKey = new BLSPublicKey(keyPair.publicKey());
+    this.secretKey = new BLSSecretKey(keyPair.secretKey());
   }
 
-  public BLSPublicKey getBlsPublicKey() {
-    return blsPublicKey;
+  public BLSPublicKey getPublicKey() {
+    return publicKey;
   }
 
-  public BLSSecretKey getBlsSecretKey() {
-    return blsSecretKey;
-  }
-
-  public PublicKey publicKey() {
-    return blsPublicKey.getPublicKey();
-  }
-
-  public SecretKey secretKey() {
-    return blsSecretKey.getSecretKey();
-  }
-
-  // TODO: find out why this causes the deepCopyBeaconState test to fail
-  public Bytes48 publicKeyAsBytesBroken() {
-    return Bytes48.wrap(publicKey().toBytes());
-  }
-
-  public Bytes48 publicKeyAsBytes() {
-    return Bytes48.wrap(publicKey().toBytes()).copy();
+  public BLSSecretKey getSecretKey() {
+    return secretKey;
   }
 }
