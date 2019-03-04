@@ -86,7 +86,7 @@ public class EpochProcessorUtil {
    * @throws Exception
    */
   public static void updateJustification(
-      BeaconState state, BeaconBlock block, ChainStorageClient store) throws Exception {
+      BeaconState state, BeaconBlock block) throws Exception {
     // Get previous and current epoch
     UnsignedLong current_epoch = BeaconStateUtil.get_current_epoch(state);
     UnsignedLong previous_epoch = BeaconStateUtil.get_previous_epoch(state);
@@ -151,9 +151,6 @@ public class EpochProcessorUtil {
     // Update state justification variables
     state.setPrevious_justified_epoch(state.getJustified_epoch());
     state.setJustified_epoch(new_justified_epoch);
-
-    // Update justified head block and state
-    store.setJustifiedHead(state, block);
   }
 
   /**
