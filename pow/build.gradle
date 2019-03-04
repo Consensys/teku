@@ -17,9 +17,9 @@ jar {
 
 dependencies {
   //TODO org.web3j.abi and org.web3j.cyprto are used by org.web3j.core. Given that, is it necessary to export all 3 as API dependencies, or will just org.web3j.core suffice?
-  api 'org.web3j:core:4.1.1'
-  api 'org.web3j:abi:4.1.1'
-  api 'org.web3j:crypto:4.1.1'
+  api 'org.web3j:core'
+  api 'org.web3j:abi'
+  api 'org.web3j:crypto'
 
   implementation 'com.google.guava:guava'
   compile group: 'com.googlecode.json-simple', name: 'json-simple', version: '1.1'
