@@ -9,6 +9,7 @@ jar {
 dependencies {
   implementation project(':pow')  
   implementation project(':util')
+  implementation project(':storage')
   implementation project(':ethereum:datastructures')
   implementation project(':ethereum:statetransition')
   implementation 'com.google.guava:guava'
