@@ -244,6 +244,7 @@ class BeaconStateTest {
   }
 
   @Test
+  @Disabled
   void deepCopyBeaconState() {
     BeaconState state = newState(1);
     BeaconState deepCopy = BeaconState.deepCopy(state);

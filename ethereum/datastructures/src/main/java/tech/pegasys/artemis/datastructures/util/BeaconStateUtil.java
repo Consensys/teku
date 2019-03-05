@@ -707,6 +707,9 @@ public class BeaconStateUtil {
      *   Java   -1 % 13 = -1
      *
      * Using UnsignedLong doesn't help us as some quantities can legitimately be negative.
+     *
+     * Also note that we are using SHA256 rather than Keccak as this is what protolambda's
+     * test data generator uses. TODO: update hash algorithm
      */
 
     long indexRet = index;
@@ -716,18 +719,13 @@ public class BeaconStateUtil {
       // TODO: This is unwieldy. Can we just make a Bytes from `(byte) round`?
       Bytes roundAsByte = Bytes.ofUnsignedShort(round, ByteOrder.LITTLE_ENDIAN).slice(0, 1).copy();
 
-      // This should be handled LITTLE_ENDIAN, but it also should work BIG_ENDIAN with due regard to
-      // the slice indices, and is much simpler to implement.
+      // This needs to be unsigned modulo.
       long pivot =
-          Hash.keccak256(Bytes.concatenate(seed, roundAsByte))
-                  .slice(24, 8)
-                  .toLong(ByteOrder.BIG_ENDIAN)
-              % listSize;
-      // Account for pivot possibly being negative
-      if (pivot < 0) {
-        pivot += listSize;
-      }
-
+          Long.remainderUnsigned(
+              Hash.sha2_256(Bytes.concatenate(seed, roundAsByte))
+                  .slice(0, 8)
+                  .toLong(ByteOrder.LITTLE_ENDIAN),
+              listSize);
       long flip = (pivot - indexRet) % listSize;
       // Account for flip possibly being negative
       if (flip < 0) {
@@ -738,10 +736,10 @@ public class BeaconStateUtil {
 
       // We skip the first byte which is equivalent to dividing by 256
       Bytes positionDiv256 = Bytes.ofUnsignedLong(position, ByteOrder.LITTLE_ENDIAN).slice(1, 4);
-      Bytes source = Hash.keccak256(Bytes.concatenate(seed, roundAsByte, positionDiv256));
+      Bytes source = Hash.sha2_256(Bytes.concatenate(seed, roundAsByte, positionDiv256));
 
-      // byte is signed in Java, but the right shift should be fine as we just take the last bit
-      // but we can't use % normally because of this, so we `& 1` instead.
+      // The byte type is signed in Java, but the right shift should be fine as we just use bit 0.
+      // But we can't use % in the normal way because of signedness, so we `& 1` instead.
       byte theByte = source.get((int) (position % 256) / 8);
       boolean bit = ((theByte >> (position % 8)) & 1) == 1;
       if (bit) {
