@@ -116,6 +116,10 @@ public class MockP2PNetwork implements P2PNetwork {
     UnsignedLong domain =
         BeaconStateUtil.get_domain(state.getFork(), epoch, Constants.DOMAIN_RANDAO);
     Bytes32 currentEpochBytes = Bytes32.leftPad(Bytes.ofUnsignedLong(epoch.longValue()));
+    LOG.info("Sign Epoch");
+    LOG.info("Proposer pubkey: " + keypair.getPublicKey());
+    LOG.info("state: " + HashTreeUtil.hash_tree_root(state.toBytes()));
+    LOG.info("slot: " + state.getSlot().longValue());
     return BLSSignature.sign(keypair, currentEpochBytes, domain.longValue());
   }
 
@@ -143,8 +147,10 @@ public class MockP2PNetwork implements P2PNetwork {
             state.getFork(),
             BeaconStateUtil.slot_to_epoch(state.getSlot()),
             Constants.DOMAIN_PROPOSAL);
-    // LOG.info(
-    //    "BlockProposer with public key: " + keypair.getPublicKey().toString() + " is signining");
+    LOG.info("Sign Proposal");
+    LOG.info("Proposer pubkey: " + keypair.getPublicKey());
+    LOG.info("state: " + HashTreeUtil.hash_tree_root(state.toBytes()));
+    LOG.info("slot: " + state.getSlot().longValue());
     return BLSSignature.sign(keypair, proposalRoot, domain.longValue());
   }
 
@@ -164,8 +170,7 @@ public class MockP2PNetwork implements P2PNetwork {
         state = BeaconState.deepCopy(state);
         state_root = Bytes32.ZERO;
         block =
-            DataStructureUtil.newBeaconBlock(
-                state.getSlot().plus(UnsignedLong.ONE), parent_root, state_root, deposits);
+            DataStructureUtil.newBeaconBlock(state.getSlot(), parent_root, state_root, deposits);
         LOG.info("In MockP2PNetwork");
         BLSSignature epoch_signature = setEpochSignature(state, i);
         block.setRandao_reveal(epoch_signature);

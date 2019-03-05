@@ -78,6 +78,7 @@ import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.util.bls.BLSException;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
+import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 
 public class BlockProcessorUtil {
 
@@ -122,7 +123,10 @@ public class BlockProcessorUtil {
     int proposerIndex = BeaconStateUtil.get_beacon_proposer_index(state, state.getSlot());
     BLSPublicKey pubkey = state.getValidator_registry().get(proposerIndex).getPubkey();
     UnsignedLong domain = get_domain(state.getFork(), get_current_epoch(state), DOMAIN_PROPOSAL);
-    // LOG.info("Checking BlockProposer's signature with public key: " + pubkey.toString() + ".");
+    LOG.info("In Verify Signatures");
+    LOG.info("Proposer pubkey: " + pubkey);
+    LOG.info("state: " + HashTreeUtil.hash_tree_root(state.toBytes()));
+    LOG.info("slot: " + state.getSlot().longValue());
     checkArgument(
         bls_verify(pubkey, proposalRoot, block.getSignature(), domain), "verify signature failed");
   }
@@ -416,6 +420,10 @@ public class BlockProcessorUtil {
     //   message=int_to_bytes32(get_current_epoch(state)), signature=block.randao_reveal,
     //   domain=get_domain(state.fork, get_current_epoch(state), DOMAIN_RANDAO)).
     UnsignedLong domain = get_domain(state.getFork(), currentEpoch, DOMAIN_RANDAO);
+    LOG.info("In Verify Randao");
+    LOG.info("Proposer pubkey: " + proposer.getPubkey());
+    LOG.info("state: " + HashTreeUtil.hash_tree_root(state.toBytes()));
+    LOG.info("slot: " + state.getSlot().longValue());
     return bls_verify(proposer.getPubkey(), currentEpochBytes, block.getRandao_reveal(), domain);
   }
 
