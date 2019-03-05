@@ -692,7 +692,7 @@ public class BeaconStateUtil {
    * @param index The index in the permuatation we wish to get the value of.
    * @param listSize The size of the list from which the element is taken.
    * @param seed Initial seed value used for randomization.
-   * @return The shuffled array.
+   * @return The index from the original list that is now at position `index`
    */
   @VisibleForTesting
   public static long get_permuted_index(long index, long listSize, Bytes32 seed) {
@@ -708,16 +708,19 @@ public class BeaconStateUtil {
      *
      * Using UnsignedLong doesn't help us as some quantities can legitimately be negative.
      *
-     * Also note that we are using SHA256 rather than Keccak as this is what protolambda's
-     * test data generator uses. TODO: update hash algorithm
+     * TODO: update hash algorithm
+     * We are using SHA256 rather than Keccak as this is what protolambda's
+     * test data generator uses.
      */
 
     long indexRet = index;
+    byte[] byteTmp = new byte[1];
+    byte[] powerOfTwoNumbers = {1, 2, 4, 8, 16, 32, 64, (byte) 128};
 
     for (int round = 0; round < SHUFFLE_ROUND_COUNT; round++) {
 
-      // TODO: This is unwieldy. Can we just make a Bytes from `(byte) round`?
-      Bytes roundAsByte = Bytes.ofUnsignedShort(round, ByteOrder.LITTLE_ENDIAN).slice(0, 1).copy();
+      byteTmp[0] = (byte) round;
+      Bytes roundAsByte = Bytes.wrap(byteTmp);
 
       // This needs to be unsigned modulo.
       long pivot =
@@ -727,8 +730,8 @@ public class BeaconStateUtil {
                   .toLong(ByteOrder.LITTLE_ENDIAN),
               listSize);
       long flip = (pivot - indexRet) % listSize;
-      // Account for flip possibly being negative
       if (flip < 0) {
+        // Account for flip being negative
         flip += listSize;
       }
 
@@ -740,14 +743,97 @@ public class BeaconStateUtil {
 
       // The byte type is signed in Java, but the right shift should be fine as we just use bit 0.
       // But we can't use % in the normal way because of signedness, so we `& 1` instead.
-      byte theByte = source.get((int) (position % 256) / 8);
-      boolean bit = ((theByte >> (position % 8)) & 1) == 1;
-      if (bit) {
+      byte theByte = source.get((int) position % 256 / 8);
+      byte theMask = powerOfTwoNumbers[(int) position % 8];
+      if ((theByte & theMask) != 0) {
         indexRet = flip;
       }
     }
 
     return indexRet;
+  }
+
+  /**
+   * Return shuffled indices in a pseudorandom permutation `0...list_size-1` with ``seed`` as
+   * entropy.
+   *
+   * <p>Utilizes 'swap or not' shuffling found in
+   * https://link.springer.com/content/pdf/10.1007%2F978-3-642-32009-5_1.pdf See the 'generalized
+   * domain' algorithm on page 3.
+   *
+   * <p>The result of this should be the same as calling get_permuted_index() for each index in the
+   * list
+   *
+   * @param listSize The size of the list from which the element is taken. Must not exceed 2^31.
+   * @param seed Initial seed value used for randomization.
+   * @return The permuted arrays of indices
+   */
+  @VisibleForTesting
+  public static long[] shuffle(long listSize, Bytes32 seed) {
+
+    checkArgument(listSize <= 2147483648L); // 2^31
+
+    /*
+     * In the following, great care is needed around signed and unsigned values.
+     * Note that the % (modulo) operator in Java behaves differently from the
+     * modulo operator in python:
+     *   Python -1 % 13 = 12
+     *   Java   -1 % 13 = -1
+     *
+     * Using UnsignedLong doesn't help us as some quantities can legitimately be negative.
+     *
+     * TODO: update hash algorithm
+     * We are using SHA256 rather than Keccak as this is what protolambda's
+     * test data generator uses.
+     */
+
+    long[] indices = new long[(int) listSize];
+    for (int i = 0; i < listSize; i++) {
+      indices[i] = i;
+    }
+
+    byte[] byteTmp = new byte[1];
+    byte[] powerOfTwoNumbers = {1, 2, 4, 8, 16, 32, 64, (byte) 128};
+
+    for (int round = 0; round < SHUFFLE_ROUND_COUNT; round++) {
+
+      byteTmp[0] = (byte) round;
+      Bytes roundAsByte = Bytes.wrap(byteTmp);
+
+      Bytes hashBytes = Bytes.EMPTY;
+      for (int i = 0; i < (listSize + 255) / 256; i++) {
+        Bytes iAsBytes4 = Bytes.ofUnsignedInt(i, ByteOrder.LITTLE_ENDIAN);
+        hashBytes =
+            Bytes.concatenate(
+                hashBytes, Hash.sha2_256(Bytes.concatenate(seed, roundAsByte, iAsBytes4)));
+      }
+
+      // This needs to be unsigned modulo.
+      long pivot =
+          Long.remainderUnsigned(
+              Hash.sha2_256(Bytes.concatenate(seed, roundAsByte))
+                  .slice(0, 8)
+                  .toLong(ByteOrder.LITTLE_ENDIAN),
+              listSize);
+
+      for (int i = 0; i < listSize; i++) {
+
+        long flip = (pivot - indices[i]) % listSize;
+        if (flip < 0) {
+          // Account for flip being negative
+          flip += listSize;
+        }
+
+        long hashPosition = (indices[i] < flip) ? flip : indices[i];
+        byte theByte = hashBytes.get((int) hashPosition / 8);
+        byte theMask = powerOfTwoNumbers[(int) hashPosition % 8];
+        if ((theByte & theMask) != 0) {
+          indices[i] = flip;
+        }
+      }
+    }
+
+    return indices;
   }
 
   /**
