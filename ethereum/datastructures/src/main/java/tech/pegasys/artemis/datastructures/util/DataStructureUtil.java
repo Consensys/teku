@@ -301,8 +301,17 @@ public final class DataStructureUtil {
     ArrayList<Deposit> deposits = new ArrayList<Deposit>();
 
     for (int i = 0; i < numDeposits; i++) {
+      // https://github.com/ethereum/eth2.0-specs/blob/0.4.0/specs/validator/0_beacon-chain-validator.md#submit-deposit
+      BLSKeyPair keypair = BLSKeyPair.random(slot + i);
       DepositInput deposit_input =
-          new DepositInput(BLSPublicKey.random(i + slot), Bytes32.ZERO, BLSSignature.empty());
+          new DepositInput(keypair.getPublicKey(), Bytes32.ZERO, BLSSignature.empty());
+      BLSSignature proof_of_possession =
+          BLSSignature.sign(
+              keypair,
+              HashTreeUtil.hash_tree_root(deposit_input.toBytes()),
+              Constants.DOMAIN_DEPOSIT);
+      deposit_input.setProof_of_possession(proof_of_possession);
+
       UnsignedLong timestamp = UnsignedLong.valueOf(i);
       DepositData deposit_data =
           new DepositData(UnsignedLong.valueOf(MAX_DEPOSIT_AMOUNT), timestamp, deposit_input);
@@ -320,9 +329,9 @@ public final class DataStructureUtil {
         slotNum.longValue(),
         parent_root,
         state_root,
-        BLSSignature.random(1),
+        BLSSignature.random(slotNum.intValue()),
         new Eth1Data(Bytes32.ZERO, Bytes32.ZERO),
-        BLSSignature.random(2),
+        BLSSignature.empty(),
         new BeaconBlockBody(
             new ArrayList<ProposerSlashing>(),
             new ArrayList<AttesterSlashing>(),
@@ -333,7 +342,7 @@ public final class DataStructureUtil {
 
   public static BeaconState createInitialBeaconState() {
     return BeaconStateUtil.get_initial_beacon_state(
-        newDeposits(50, Math.toIntExact(Constants.GENESIS_SLOT)),
+        newDeposits(64, Math.toIntExact(Constants.GENESIS_SLOT)),
         UnsignedLong.valueOf(Constants.GENESIS_SLOT),
         new Eth1Data(Bytes32.ZERO, Bytes32.ZERO));
   }

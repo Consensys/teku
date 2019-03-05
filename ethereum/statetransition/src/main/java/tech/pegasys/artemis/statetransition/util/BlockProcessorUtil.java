@@ -58,6 +58,8 @@ import java.util.Objects;
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.crypto.Hash;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.Eth1DataVote;
@@ -79,6 +81,7 @@ import tech.pegasys.artemis.util.bls.BLSPublicKey;
 
 public class BlockProcessorUtil {
 
+  private static final Logger LOG = LogManager.getLogger(BlockProcessorUtil.class.getName());
   /**
    * Spec: https://github.com/ethereum/eth2.0-specs/blob/v0.1/specs/core/0_beacon-chain.md#slot-1
    *
@@ -119,7 +122,9 @@ public class BlockProcessorUtil {
     int proposerIndex = BeaconStateUtil.get_beacon_proposer_index(state, state.getSlot());
     BLSPublicKey pubkey = state.getValidator_registry().get(proposerIndex).getPubkey();
     UnsignedLong domain = get_domain(state.getFork(), get_current_epoch(state), DOMAIN_PROPOSAL);
-    checkArgument(bls_verify(pubkey, proposalRoot, block.getSignature(), domain));
+    // LOG.info("Checking BlockProposer's signature with public key: " + pubkey.toString() + ".");
+    checkArgument(
+        bls_verify(pubkey, proposalRoot, block.getSignature(), domain), "verify signature failed");
   }
 
   /**
@@ -137,7 +142,8 @@ public class BlockProcessorUtil {
     // - Verify that bls_verify(pubkey=proposer.pubkey,
     //    message=int_to_bytes32(get_current_epoch(state)), signature=block.randao_reveal,
     //    domain=get_domain(state.fork, get_current_epoch(state), DOMAIN_RANDAO)).
-    checkArgument(verify_randao(state, block, currentEpoch, currentEpochBytes));
+    checkArgument(
+        verify_randao(state, block, currentEpoch, currentEpochBytes), "verify randao failed");
 
     // - Set state.latest_randao_mixes[get_current_epoch(state) % LATEST_RANDAO_MIXES_LENGTH]
     //    = xor(get_randao_mix(state, get_current_epoch(state)), hash(block.randao_reveal)).

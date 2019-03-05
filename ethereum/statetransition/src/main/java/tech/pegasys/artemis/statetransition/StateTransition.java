@@ -16,6 +16,7 @@ package tech.pegasys.artemis.statetransition;
 import static tech.pegasys.artemis.datastructures.Constants.EPOCH_LENGTH;
 
 import com.google.common.primitives.UnsignedLong;
+import net.consensys.cava.bytes.Bytes32;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
@@ -75,8 +76,12 @@ public class StateTransition {
 
         // Block Header
         LOG.info("  Processing block header.");
-        // Verify Proposer Signature
-        BlockProcessorUtil.verify_signature(state, block);
+
+        // Only verify the proposer's signature if we are processing blocks (not proposing them)
+        if (!block.getState_root().equals(Bytes32.ZERO)) {
+          // Verify Proposer Signature
+          BlockProcessorUtil.verify_signature(state, block);
+        }
         // Verify and Update RANDAO
         BlockProcessorUtil.verify_and_update_randao(state, block);
         // Update Eth1 Data
