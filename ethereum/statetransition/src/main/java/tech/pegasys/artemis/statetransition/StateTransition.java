@@ -27,7 +27,6 @@ import tech.pegasys.artemis.statetransition.util.EpochProcessingException;
 import tech.pegasys.artemis.statetransition.util.EpochProcessorUtil;
 import tech.pegasys.artemis.statetransition.util.SlotProcessingException;
 import tech.pegasys.artemis.statetransition.util.SlotProcessorUtil;
-import tech.pegasys.artemis.storage.ChainStorageClient;
 
 public class StateTransition {
 
@@ -35,8 +34,7 @@ public class StateTransition {
 
   public StateTransition() {}
 
-  public void initiate(BeaconState state, BeaconBlock block)
-      throws StateTransitionException {
+  public void initiate(BeaconState state, BeaconBlock block) throws StateTransitionException {
     LOG.info("Begin state transition");
     // per-slot processing
     slotProcessor(state, block);
