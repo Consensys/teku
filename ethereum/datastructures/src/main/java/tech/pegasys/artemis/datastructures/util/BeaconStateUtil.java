@@ -425,7 +425,6 @@ public class BeaconStateUtil {
    * by the output.
    *
    * @param epoch
-   * @return
    */
   public static UnsignedLong get_entry_exit_effect_epoch(UnsignedLong epoch) {
     return epoch.plus(UnsignedLong.ONE).plus(UnsignedLong.valueOf(ENTRY_EXIT_DELAY));
@@ -1042,7 +1041,6 @@ public class BeaconStateUtil {
    * Return the smallest integer r such that r * div >= 8.
    *
    * @param div
-   * @return
    */
   private static int ceil_div8(int div) {
     checkArgument(div > 0, "Expected positive div but got %s", div);

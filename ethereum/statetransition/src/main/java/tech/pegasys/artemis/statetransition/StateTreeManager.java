@@ -20,7 +20,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
-
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
 import org.apache.logging.log4j.LogManager;
@@ -106,21 +105,29 @@ public class StateTreeManager {
     // If it is the genesis epoch, keep the justified state root as genesis state root
     // because get_block _root gives an error if the slot is not less than state.slot
     Bytes justifiedStateRoot;
-    if (BeaconStateUtil.get_epoch_start_slot(BeaconStateUtil.slot_to_epoch(nodeSlot)).compareTo(UnsignedLong.valueOf(Constants.GENESIS_SLOT)) == 0) {
+    if (BeaconStateUtil.get_epoch_start_slot(BeaconStateUtil.slot_to_epoch(nodeSlot))
+            .compareTo(UnsignedLong.valueOf(Constants.GENESIS_SLOT))
+        == 0) {
       justifiedStateRoot = head.getState_root();
     } else {
       BeaconState headState = store.getState(head.getState_root()).get();
-      justifiedStateRoot = BeaconStateUtil.get_block_root(headState, BeaconStateUtil.get_epoch_start_slot(headState.getJustified_epoch()));
+      justifiedStateRoot =
+          BeaconStateUtil.get_block_root(
+              headState, BeaconStateUtil.get_epoch_start_slot(headState.getJustified_epoch()));
     }
 
-    if (!store.getProcessedBlock(justifiedStateRoot).isPresent()) throw new StateTransitionException("Justified block not found");
-    if (!store.getState(justifiedStateRoot).isPresent()) throw new StateTransitionException("Justified block state not found");
+    if (!store.getProcessedBlock(justifiedStateRoot).isPresent())
+      throw new StateTransitionException("Justified block not found");
+    if (!store.getState(justifiedStateRoot).isPresent())
+      throw new StateTransitionException("Justified block state not found");
 
     // Run lmd_ghost to get the head
     try {
       this.head =
           LmdGhost.lmd_ghost(
-                  store, store.getState(justifiedStateRoot).get(), store.getProcessedBlock(justifiedStateRoot).get());
+              store,
+              store.getState(justifiedStateRoot).get(),
+              store.getProcessedBlock(justifiedStateRoot).get());
     } catch (StateTransitionException e) {
       LOG.fatal(e);
     }
@@ -139,7 +146,9 @@ public class StateTreeManager {
       newStateRoot = HashTreeUtil.hash_tree_root(newState.toBytes());
       this.store.addState(newStateRoot, newState);
     }
-    LOG.info("LMD Ghost Head Block Root:        " + HashTreeUtil.hash_tree_root(this.head.toBytes()).toHexString());
+    LOG.info(
+        "LMD Ghost Head Block Root:        "
+            + HashTreeUtil.hash_tree_root(this.head.toBytes()).toHexString());
     LOG.info("LMD Ghost Head Parent Block Root: " + this.head.getParent_root().toHexString());
     LOG.info("LMD Ghost Head State Root:        " + this.head.getState_root().toHexString());
     LOG.info("Updated Head State Root:          " + newStateRoot.toHexString());
