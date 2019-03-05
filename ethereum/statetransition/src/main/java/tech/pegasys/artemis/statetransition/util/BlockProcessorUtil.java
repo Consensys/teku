@@ -581,21 +581,27 @@ public class BlockProcessorUtil {
    * @param state
    * @param block
    * @see
-   *     https://github.com/ethereum/eth2.0-specs/blob/v0.1/specs/core/0_beacon-chain.md#transfers-1
+   *     https://github.com/ethereum/eth2.0-specs/blob/v0.3/specs/core/0_beacon-chain.md#transfers-1
    */
   public static void processTransfers(BeaconState state, BeaconBlock block)
       throws BlockProcessingException {
-    // Verify that len(block.body.exits) <= MAX_EXITS
+    // Verify that len(block.body.transfers) <= MAX_TRANSFERS and that all transfers are distinct.
     checkArgument(block.getBody().getTransfers().size() <= Constants.MAX_TRANSFERS);
     checkArgument(allDistinct(block.getBody().getTransfers()));
 
+    // For each transfer in block.body.transfers:
     for (Transfer transfer : block.getBody().getTransfers()) {
+      // - Verify that state.validator_balances[transfer.from] >= transfer.amount
       checkArgument(
           state.getValidator_balances().get(toIntExact(transfer.getFrom().longValue())).longValue()
               >= transfer.getAmount().longValue());
+      // - Verify that state.validator_balances[transfer.from] >= transfer.fee
       checkArgument(
           state.getValidator_balances().get(toIntExact(transfer.getFrom().longValue())).longValue()
               >= transfer.getFee().longValue());
+      // - Verify that state.validator_balances[transfer.from] == transfer.amount + transfer.fee or
+      //     state.validator_balances[transfer.from]
+      //     >= transfer.amount + transfer.fee + MIN_DEPOSIT_AMOUNT
       checkArgument(
           state.getValidator_balances().get(toIntExact(transfer.getFrom().longValue())).longValue()
                   == transfer.getAmount().longValue() + transfer.getFee().longValue()
@@ -606,7 +612,10 @@ public class BlockProcessorUtil {
                   >= transfer.getAmount().longValue()
                       + transfer.getFee().longValue()
                       + Constants.MIN_DEPOSIT_AMOUNT);
+      // - Verify that transfer.slot == state.slot
       checkArgument(state.getSlot().equals(transfer.getSlot()));
+      // - Verify that get_current_epoch(state) >=
+      //     state.validator_registry[transfer.from].exit_epoch + MIN_EXIT_EPOCHS_BEFORE_TRANSFER
       checkArgument(
           BeaconStateUtil.get_current_epoch(state).longValue()
               >= state
@@ -615,6 +624,8 @@ public class BlockProcessorUtil {
                       .getExit_epoch()
                       .longValue()
                   + Constants.MIN_EXIT_EPOCHS_BEFORE_TRANSFER);
+      // - Verify that state.validator_registry[transfer.from].withdrawal_credentials ==
+      //     BLS_WITHDRAWAL_PREFIX_BYTE + hash(transfer.pubkey)[1:]
       checkArgument(
           state
               .getValidator_registry()
@@ -624,6 +635,9 @@ public class BlockProcessorUtil {
                   Bytes.concatenate(
                       Constants.BLS_WITHDRAWAL_PREFIX_BYTE,
                       transfer.getPubkey().toBytes().slice(1))));
+      // - Let transfer_message = hash_tree_root(Transfer(from=transfer.from, to=transfer.to,
+      //     amount=transfer.amount, fee=transfer.fee, slot=transfer.slot,
+      //     signature=EMPTY_SIGNATURE))
       Bytes32 transfer_message =
           hash_tree_root(
               new Transfer(
@@ -635,6 +649,9 @@ public class BlockProcessorUtil {
                       transfer.getPubkey(),
                       EMPTY_SIGNATURE)
                   .toBytes());
+      // - Perform bls_verify(pubkey=transfer.pubkey, message_hash=transfer_message,
+      //     signature=transfer.signature, domain=get_domain(state.fork,
+      //     slot_to_epoch(transfer.slot), DOMAIN_TRANSFER))
       checkArgument(
           bls_verify(
               transfer.getPubkey(),
@@ -643,16 +660,20 @@ public class BlockProcessorUtil {
               get_domain(
                   state.getFork(), slot_to_epoch(transfer.getSlot()), Constants.DOMAIN_TRANSFER)));
 
+      // - Set state.validator_balances[transfer.from] -= transfer.amount + transfer.fee
       UnsignedLong fromBalance =
           state.getValidator_balances().get(toIntExact(transfer.getFrom().longValue()));
       fromBalance = fromBalance.minus(transfer.getAmount()).minus(transfer.getFee());
       state.getValidator_balances().set(toIntExact(transfer.getFrom().longValue()), fromBalance);
 
+      // - Set state.validator_balances[transfer.to] += transfer.amount
       UnsignedLong toBalance =
           state.getValidator_balances().get(toIntExact(transfer.getFrom().longValue()));
       toBalance = toBalance.plus(transfer.getAmount());
       state.getValidator_balances().set(toIntExact(transfer.getTo().longValue()), toBalance);
 
+      // - Set state.validator_balances[get_beacon_proposer_index(state, state.slot)]
+      //     += transfer.fee
       UnsignedLong proposerBalance =
           state.getValidator_balances().get(get_beacon_proposer_index(state, state.getSlot()));
       proposerBalance = proposerBalance.plus(transfer.getFee());
