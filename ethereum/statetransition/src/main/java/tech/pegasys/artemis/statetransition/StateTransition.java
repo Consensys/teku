@@ -96,6 +96,8 @@ public class StateTransition {
         BlockProcessorUtil.processDeposits(state, block);
         // Process Exits
         BlockProcessorUtil.processExits(state, block);
+        // Process Transfers
+        BlockProcessorUtil.processTransfers(state, block);
       } catch (BlockProcessingException e) {
         LOG.warn("  Block processing error: " + e);
       } catch (Exception e) {
