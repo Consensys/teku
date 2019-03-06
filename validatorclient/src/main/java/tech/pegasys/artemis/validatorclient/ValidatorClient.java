@@ -44,7 +44,7 @@ public class ValidatorClient {
    * @param registry_change whether there has been a validator registry change.
    * @return
    */
-  public CommitteeAssignmentTuple get_coCmmittee_assignment(
+  public CommitteeAssignmentTuple get_committee_assignment(
       BeaconState state, int epoch, int validator_index, boolean registry_change) {
     int previous_epoch = get_previous_epoch(state).intValue();
     int next_epoch = get_current_epoch(state).intValue();
