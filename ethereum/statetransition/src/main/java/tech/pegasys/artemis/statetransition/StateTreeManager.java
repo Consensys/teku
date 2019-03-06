@@ -34,6 +34,7 @@ import tech.pegasys.artemis.pow.api.Eth2GenesisEvent;
 import tech.pegasys.artemis.storage.ChainStorage;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
+import tech.pegasys.artemis.validatorclient.ValidatorClient;
 
 /** Class to manage the state tree and initiate state transitions */
 public class StateTreeManager {
@@ -44,6 +45,7 @@ public class StateTreeManager {
   private final EventBus eventBus;
   private StateTransition stateTransition;
   private ChainStorageClient store;
+  private ValidatorClient validatorClient;
   private static final Logger LOG = LogManager.getLogger(StateTreeManager.class.getName());
 
   public StateTreeManager(EventBus eventBus) {
@@ -51,6 +53,7 @@ public class StateTreeManager {
     this.stateTransition = new StateTransition();
     this.eventBus.register(this);
     this.store = ChainStorage.Create(ChainStorageClient.class, eventBus);
+    this.validatorClient = new ValidatorClient();
   }
 
   @Subscribe
