@@ -83,6 +83,7 @@ public final class Constants {
   public static final int MAX_DEPOSITS = 16; // 2^4
   public static final int MAX_VOLUNTARY_EXITS = 16; // 2^4
   public static final int MAX_EXITS = 16; // 2^4
+  public static final int MAX_TRANSFERS = 16; // 2^4
 
   // Signature domains
   public static final int DOMAIN_DEPOSIT = 0;

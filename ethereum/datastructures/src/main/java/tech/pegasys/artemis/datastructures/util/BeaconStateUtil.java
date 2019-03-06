@@ -303,7 +303,8 @@ public class BeaconStateUtil {
     Bytes32 randao_mix =
         get_randao_mix(state, epoch.minus(UnsignedLong.valueOf(Constants.MIN_SEED_LOOKAHEAD)));
     Bytes32 index_root = get_active_index_root(state, epoch);
-    return Hash.keccak256(Bytes.wrap(randao_mix, index_root));
+    Bytes epochBytes = Bytes.ofUnsignedLong(epoch.longValue());
+    return Hash.keccak256(Bytes.wrap(Bytes.wrap(randao_mix, index_root), epochBytes));
   }
 
   public static Bytes32 get_active_index_root(BeaconState state, UnsignedLong epoch) {
@@ -887,7 +888,7 @@ public class BeaconStateUtil {
   public static boolean verify_bitfield(Bytes bitfield, int committee_size) {
     if (bitfield.size() != (committee_size + 7) / 8) return false;
 
-    for (int i = committee_size + 1; i < committee_size - committee_size % 8 + 8; i++) {
+    for (int i = committee_size; i < bitfield.bitLength() * 8; i++) {
       if (get_bitfield_bit(bitfield, i) == 0b1) return false;
     }
     return true;
