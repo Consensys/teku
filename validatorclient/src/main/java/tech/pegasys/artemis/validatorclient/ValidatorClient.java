@@ -21,6 +21,7 @@ import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_previ
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.CrosslinkCommittee;
 
@@ -42,18 +43,17 @@ public class ValidatorClient {
    * @param epoch either on or between previous or current epoch.
    * @param validator_index the validator that is calling this function.
    * @param registry_change whether there has been a validator registry change.
-   * @return
+   * @return Optional.of(CommitteeAssignmentTuple) or Optional.empty.
    */
-  public CommitteeAssignmentTuple get_committee_assignment(
-      BeaconState state, int epoch, int validator_index, boolean registry_change) {
-    int previous_epoch = get_previous_epoch(state).intValue();
-    int next_epoch = get_current_epoch(state).intValue();
-    assert previous_epoch <= epoch && epoch <= next_epoch;
+  public Optional<CommitteeAssignmentTuple> get_committee_assignment(
+      BeaconState state, UnsignedLong epoch, int validator_index, boolean registry_change) {
+    UnsignedLong previous_epoch = get_previous_epoch(state);
+    UnsignedLong next_epoch = get_current_epoch(state);
+    assert previous_epoch.compareTo(epoch) <= 0 && epoch.compareTo(next_epoch) <= 0;
 
-    int epoch_start_slot = get_epoch_start_slot(UnsignedLong.valueOf(epoch)).intValue();
+    int epoch_start_slot = get_epoch_start_slot(epoch).intValue();
 
-    for (int slot = epoch_start_slot; slot < epoch_start_slot + SLOTS_PER_EPOCH; slot++) {
-
+    for (int slot = epoch_start_slot; slot < epoch_start_slot + EPOCH_LENGTH; slot++) {
       ArrayList<CrosslinkCommittee> crosslink_committees =
           get_crosslink_committees_at_slot(state, UnsignedLong.valueOf(slot), registry_change);
       ArrayList<CrosslinkCommittee> selected_committees = new ArrayList<>();
@@ -72,9 +72,9 @@ public class ValidatorClient {
         boolean is_proposer =
             first_committee_at_slot.get(slot % first_committee_at_slot.size()) == validator_index;
 
-        return new CommitteeAssignmentTuple(validators, shard, slot, is_proposer);
+        return Optional.of(new CommitteeAssignmentTuple(validators, shard, slot, is_proposer));
       }
     }
-    return null;
+    return Optional.empty();
   }
 }
