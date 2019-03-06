@@ -119,10 +119,10 @@ public class MockP2PNetwork implements P2PNetwork {
     Validator proposer = state.getValidator_registry().get(proposerIndex);
     int slot = Math.toIntExact(Constants.GENESIS_SLOT);
     BLSKeyPair keypair = BLSKeyPair.random();
+    // TODO: silly to do this in practice.  in reality we will have the keypair in the validator
     for (int i = 0; i < 128; i++) {
       keypair = BLSKeyPair.random(slot + i);
       if (keypair.getPublicKey().equals(proposer.getPubkey())) {
-        LOG.info("found matching key");
         break;
       }
     }
@@ -160,10 +160,10 @@ public class MockP2PNetwork implements P2PNetwork {
     Validator proposer = state.getValidator_registry().get(proposerIndex);
     int slot = Math.toIntExact(Constants.GENESIS_SLOT);
     BLSKeyPair keypair = BLSKeyPair.random();
+    // TODO: silly to do this in practice.  in reality we will have the keypair in the validator
     for (int i = 0; i < 128; i++) {
       keypair = BLSKeyPair.random(slot + i);
       if (keypair.getPublicKey().equals(proposer.getPubkey())) {
-        LOG.info("found matching key");
         break;
       }
     }
