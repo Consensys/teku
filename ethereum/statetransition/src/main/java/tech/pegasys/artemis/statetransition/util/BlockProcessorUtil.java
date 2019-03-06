@@ -78,6 +78,8 @@ import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.util.bls.BLSException;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
+import tech.pegasys.artemis.util.bls.BLSSignature;
+import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 
 public class BlockProcessorUtil {
 
@@ -106,8 +108,10 @@ public class BlockProcessorUtil {
           BlockProcessingException {
     // Let block_without_signature_root be the hash_tree_root of block where
     //   block.signature is set to EMPTY_SIGNATURE.
+    BLSSignature blockSig = block.getSignature();
     block.setSignature(EMPTY_SIGNATURE);
     Bytes32 blockWithoutSignatureRootHash = hash_tree_root(block.toBytes());
+    block.setSignature(blockSig);
 
     // Let proposal_root = hash_tree_root(ProposalSignedData(state.slot,
     //   BEACON_CHAIN_SHARD_NUMBER, block_without_signature_root)).
@@ -122,6 +126,14 @@ public class BlockProcessorUtil {
     int proposerIndex = BeaconStateUtil.get_beacon_proposer_index(state, state.getSlot());
     BLSPublicKey pubkey = state.getValidator_registry().get(proposerIndex).getPubkey();
     UnsignedLong domain = get_domain(state.getFork(), get_current_epoch(state), DOMAIN_PROPOSAL);
+
+    LOG.info("In Verify Signatures");
+    LOG.info("Proposer pubkey: " + pubkey);
+    LOG.info("state: " + HashTreeUtil.hash_tree_root(state.toBytes()));
+    LOG.info("proposal root: " + proposalRoot.toHexString());
+    LOG.info("block signature: " + block.getSignature().toString());
+    LOG.info("slot: " + state.getSlot().longValue());
+    LOG.info("domain: " + domain);
 
     checkArgument(
         bls_verify(pubkey, proposalRoot, block.getSignature(), domain), "verify signature failed");

@@ -119,7 +119,7 @@ public class MockP2PNetwork implements P2PNetwork {
     Validator proposer = state.getValidator_registry().get(proposerIndex);
     int slot = Math.toIntExact(Constants.GENESIS_SLOT);
     BLSKeyPair keypair = BLSKeyPair.random();
-    // TODO: silly to do this in practice.  in reality we will have the keypair in the validator
+    // TODO: O(n), but in reality we will have the keypair in the validator
     for (int i = 0; i < 128; i++) {
       keypair = BLSKeyPair.random(slot + i);
       if (keypair.getPublicKey().equals(proposer.getPubkey())) {
@@ -130,11 +130,11 @@ public class MockP2PNetwork implements P2PNetwork {
     UnsignedLong domain =
         BeaconStateUtil.get_domain(state.getFork(), epoch, Constants.DOMAIN_RANDAO);
     Bytes32 currentEpochBytes = Bytes32.leftPad(Bytes.ofUnsignedLong(epoch.longValue()));
-    // LOG.info("Sign Epoch");
-    // LOG.info("Proposer pubkey: " + keypair.getPublicKey());
-    // LOG.info("state: " + HashTreeUtil.hash_tree_root(state.toBytes()));
-    // LOG.info("slot: " + state.getSlot().longValue());
-    // LOG.info("domain: " + domain);
+    LOG.info("Sign Epoch");
+    LOG.info("Proposer pubkey: " + keypair.getPublicKey());
+    LOG.info("state: " + HashTreeUtil.hash_tree_root(state.toBytes()));
+    LOG.info("slot: " + state.getSlot().longValue());
+    LOG.info("domain: " + domain);
     return BLSSignature.sign(keypair, currentEpochBytes, domain.longValue());
   }
 
@@ -160,7 +160,7 @@ public class MockP2PNetwork implements P2PNetwork {
     Validator proposer = state.getValidator_registry().get(proposerIndex);
     int slot = Math.toIntExact(Constants.GENESIS_SLOT);
     BLSKeyPair keypair = BLSKeyPair.random();
-    // TODO: silly to do this in practice.  in reality we will have the keypair in the validator
+    // TODO: O(n), but in reality we will have the keypair in the validator
     for (int i = 0; i < 128; i++) {
       keypair = BLSKeyPair.random(slot + i);
       if (keypair.getPublicKey().equals(proposer.getPubkey())) {
@@ -173,12 +173,15 @@ public class MockP2PNetwork implements P2PNetwork {
             state.getFork(),
             BeaconStateUtil.slot_to_epoch(state.getSlot()),
             Constants.DOMAIN_PROPOSAL);
-    // LOG.info("Sign Proposal");
-    // LOG.info("Proposer pubkey: " + keypair.getPublicKey());
-    // LOG.info("state: " + HashTreeUtil.hash_tree_root(state.toBytes()));
-    // LOG.info("slot: " + state.getSlot().longValue());
-    // LOG.info("domain: " + domain);
-    return BLSSignature.sign(keypair, proposalRoot, domain.longValue());
+    BLSSignature signature = BLSSignature.sign(keypair, proposalRoot, domain.longValue());
+    LOG.info("Sign Proposal");
+    LOG.info("Proposer pubkey: " + keypair.getPublicKey());
+    LOG.info("state: " + HashTreeUtil.hash_tree_root(state.toBytes()));
+    LOG.info("proposal root: " + proposalRoot.toHexString());
+    LOG.info("block signature: " + signature.toString());
+    LOG.info("slot: " + state.getSlot().longValue());
+    LOG.info("domain: " + domain);
+    return signature;
   }
 
   private void simulateNewMessages() {
@@ -200,12 +203,12 @@ public class MockP2PNetwork implements P2PNetwork {
                 state.getSlot().plus(UnsignedLong.ONE), parent_root, state_root, deposits);
 
         stateTransition.initiate(state, block);
+        state_root = HashTreeUtil.hash_tree_root(state.toBytes());
+        block.setState_root(state_root);
         BLSSignature epoch_signature = setEpochSignature(state);
         block.setRandao_reveal(epoch_signature);
         BLSSignature signed_proposal = signProposalData(state, block);
         block.setSignature(signed_proposal);
-        state_root = HashTreeUtil.hash_tree_root(state.toBytes());
-        block.setState_root(state_root);
 
         LOG.info("MockP2PNetwork - NEWLY PRODUCED BLOCK");
         LOG.info("MockP2PNetwork - block.slot: " + block.getSlot());

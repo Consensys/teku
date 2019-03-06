@@ -309,13 +309,13 @@ public final class DataStructureUtil {
       BLSKeyPair keypair = BLSKeyPair.random(slot + i);
       DepositInput deposit_input =
           new DepositInput(keypair.getPublicKey(), Bytes32.ZERO, BLSSignature.empty());
-      /*BLSSignature proof_of_possession =
+      BLSSignature proof_of_possession =
           BLSSignature.sign(
               keypair,
               HashTreeUtil.hash_tree_root(deposit_input.toBytes()),
               Constants.DOMAIN_DEPOSIT);
       deposit_input.setProof_of_possession(proof_of_possession);
-      */
+
       UnsignedLong timestamp = UnsignedLong.valueOf(i);
       DepositData deposit_data =
           new DepositData(UnsignedLong.valueOf(MAX_DEPOSIT_AMOUNT), timestamp, deposit_input);
