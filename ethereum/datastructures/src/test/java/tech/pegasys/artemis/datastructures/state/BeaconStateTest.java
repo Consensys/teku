@@ -17,12 +17,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
-import static tech.pegasys.artemis.datastructures.Constants.ENTRY_EXIT_DELAY;
-import static tech.pegasys.artemis.datastructures.Constants.EPOCH_LENGTH;
+import static tech.pegasys.artemis.datastructures.Constants.ACTIVATION_EXIT_DELAY;
 import static tech.pegasys.artemis.datastructures.Constants.GENESIS_EPOCH;
 import static tech.pegasys.artemis.datastructures.Constants.INITIATED_EXIT;
 import static tech.pegasys.artemis.datastructures.Constants.LATEST_RANDAO_MIXES_LENGTH;
-import static tech.pegasys.artemis.datastructures.Constants.SEED_LOOKAHEAD;
+import static tech.pegasys.artemis.datastructures.Constants.MIN_SEED_LOOKAHEAD;
+import static tech.pegasys.artemis.datastructures.Constants.SLOTS_PER_EPOCH;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.bytes3ToInt;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.generate_seed;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_active_index_root;
@@ -220,7 +220,7 @@ class BeaconStateTest {
         state, state.getValidator_registry().get(validator_index), false);
     activation_epoch = state.getValidator_registry().get(validator_index).getActivation_epoch();
     assertThat(activation_epoch)
-        .isEqualTo(UnsignedLong.valueOf(GENESIS_EPOCH + 1 + ENTRY_EXIT_DELAY));
+        .isEqualTo(UnsignedLong.valueOf(GENESIS_EPOCH + 1 + ACTIVATION_EXIT_DELAY));
   }
 
   @Test
@@ -406,7 +406,7 @@ class BeaconStateTest {
   @Test
   void getRandaoMixThrowsExceptions() {
     BeaconState state = newState(5);
-    state.setSlot(UnsignedLong.valueOf(LATEST_RANDAO_MIXES_LENGTH * EPOCH_LENGTH));
+    state.setSlot(UnsignedLong.valueOf(LATEST_RANDAO_MIXES_LENGTH * SLOTS_PER_EPOCH));
     assertThat(get_current_epoch(state).compareTo(UnsignedLong.valueOf(LATEST_RANDAO_MIXES_LENGTH)))
         .isEqualTo(0);
     // Test `assert get_current_epoch(state) - LATEST_RANDAO_MIXES_LENGTH < epoch`
@@ -422,7 +422,7 @@ class BeaconStateTest {
   @Test
   void getRandaoMixReturnsCorrectValue() {
     BeaconState state = newState(5);
-    state.setSlot(UnsignedLong.valueOf(LATEST_RANDAO_MIXES_LENGTH * EPOCH_LENGTH));
+    state.setSlot(UnsignedLong.valueOf(LATEST_RANDAO_MIXES_LENGTH * SLOTS_PER_EPOCH));
     assertThat(get_current_epoch(state).compareTo(UnsignedLong.valueOf(LATEST_RANDAO_MIXES_LENGTH)))
         .isEqualTo(0);
     List<Bytes32> latest_randao_mixes = state.getLatest_randao_mixes();
@@ -441,14 +441,15 @@ class BeaconStateTest {
   @Test
   void generateSeedReturnsCorrectValue() {
     BeaconState state = newState(5);
-    state.setSlot(UnsignedLong.valueOf(LATEST_RANDAO_MIXES_LENGTH * EPOCH_LENGTH));
+    state.setSlot(UnsignedLong.valueOf(LATEST_RANDAO_MIXES_LENGTH * SLOTS_PER_EPOCH));
     assertThat(get_current_epoch(state).compareTo(UnsignedLong.valueOf(LATEST_RANDAO_MIXES_LENGTH)))
         .isEqualTo(0);
     List<Bytes32> latest_randao_mixes = state.getLatest_randao_mixes();
-    latest_randao_mixes.set(ENTRY_EXIT_DELAY + 1, Bytes32.fromHexString("0x029a"));
+    latest_randao_mixes.set(ACTIVATION_EXIT_DELAY + 1, Bytes32.fromHexString("0x029a"));
 
-    UnsignedLong epoch = UnsignedLong.valueOf(ENTRY_EXIT_DELAY + SEED_LOOKAHEAD + 1);
-    Bytes32 randao_mix = get_randao_mix(state, epoch.minus(UnsignedLong.valueOf(SEED_LOOKAHEAD)));
+    UnsignedLong epoch = UnsignedLong.valueOf(ACTIVATION_EXIT_DELAY + MIN_SEED_LOOKAHEAD + 1);
+    Bytes32 randao_mix =
+        get_randao_mix(state, epoch.minus(UnsignedLong.valueOf(MIN_SEED_LOOKAHEAD)));
     assertThat(randao_mix).isEqualTo(Bytes32.fromHexString("0x029a"));
     try {
       Security.addProvider(new BouncyCastleProvider());

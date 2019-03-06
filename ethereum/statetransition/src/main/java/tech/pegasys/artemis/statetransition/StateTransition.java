@@ -13,7 +13,7 @@
 
 package tech.pegasys.artemis.statetransition;
 
-import static tech.pegasys.artemis.datastructures.Constants.EPOCH_LENGTH;
+import static tech.pegasys.artemis.datastructures.Constants.SLOTS_PER_EPOCH;
 
 import com.google.common.primitives.UnsignedLong;
 import org.apache.logging.log4j.LogManager;
@@ -46,7 +46,7 @@ public class StateTransition {
     if (state
         .getSlot()
         .plus(UnsignedLong.ONE)
-        .mod(UnsignedLong.valueOf(EPOCH_LENGTH))
+        .mod(UnsignedLong.valueOf(SLOTS_PER_EPOCH))
         .equals(UnsignedLong.ZERO)) {
       epochProcessor(state, block);
     }
