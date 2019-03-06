@@ -123,10 +123,12 @@ public class BlockProcessorUtil {
     int proposerIndex = BeaconStateUtil.get_beacon_proposer_index(state, state.getSlot());
     BLSPublicKey pubkey = state.getValidator_registry().get(proposerIndex).getPubkey();
     UnsignedLong domain = get_domain(state.getFork(), get_current_epoch(state), DOMAIN_PROPOSAL);
+
     LOG.info("In Verify Signatures");
     LOG.info("Proposer pubkey: " + pubkey);
     LOG.info("state: " + HashTreeUtil.hash_tree_root(state.toBytes()));
     LOG.info("slot: " + state.getSlot().longValue());
+    LOG.info("domain: " + domain);
     checkArgument(
         bls_verify(pubkey, proposalRoot, block.getSignature(), domain), "verify signature failed");
   }
@@ -146,8 +148,10 @@ public class BlockProcessorUtil {
     // - Verify that bls_verify(pubkey=proposer.pubkey,
     //    message=int_to_bytes32(get_current_epoch(state)), signature=block.randao_reveal,
     //    domain=get_domain(state.fork, get_current_epoch(state), DOMAIN_RANDAO)).
-    checkArgument(
-        verify_randao(state, block, currentEpoch, currentEpochBytes), "verify randao failed");
+    if (!block.getState_root().equals(Bytes32.ZERO)) {
+      checkArgument(
+          verify_randao(state, block, currentEpoch, currentEpochBytes), "verify randao failed");
+    }
 
     // - Set state.latest_randao_mixes[get_current_epoch(state) % LATEST_RANDAO_MIXES_LENGTH]
     //    = xor(get_randao_mix(state, get_current_epoch(state)), hash(block.randao_reveal)).
@@ -424,6 +428,7 @@ public class BlockProcessorUtil {
     LOG.info("Proposer pubkey: " + proposer.getPubkey());
     LOG.info("state: " + HashTreeUtil.hash_tree_root(state.toBytes()));
     LOG.info("slot: " + state.getSlot().longValue());
+    LOG.info("domain: " + domain);
     return bls_verify(proposer.getPubkey(), currentEpochBytes, block.getRandao_reveal(), domain);
   }
 

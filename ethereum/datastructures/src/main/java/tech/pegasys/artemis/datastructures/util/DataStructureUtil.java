@@ -23,6 +23,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 import net.consensys.cava.bytes.Bytes32;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockBody;
@@ -45,6 +47,8 @@ import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 
 public final class DataStructureUtil {
+
+  private static final Logger LOG = LogManager.getLogger(DataStructureUtil.class.getName());
 
   public static long randomInt() {
     return Math.round(Math.random() * 1000000);
@@ -303,6 +307,10 @@ public final class DataStructureUtil {
     for (int i = 0; i < numDeposits; i++) {
       // https://github.com/ethereum/eth2.0-specs/blob/0.4.0/specs/validator/0_beacon-chain-validator.md#submit-deposit
       BLSKeyPair keypair = BLSKeyPair.random(slot + i);
+      // LOG.info("newDeposits()");
+      // LOG.info("pubkey: " + keypair.getPublicKey());
+      // LOG.info("slot: " + slot);
+      // LOG.info("i: " + i);
       DepositInput deposit_input =
           new DepositInput(keypair.getPublicKey(), Bytes32.ZERO, BLSSignature.empty());
       BLSSignature proof_of_possession =
@@ -342,7 +350,7 @@ public final class DataStructureUtil {
 
   public static BeaconState createInitialBeaconState() {
     return BeaconStateUtil.get_initial_beacon_state(
-        newDeposits(64, Math.toIntExact(Constants.GENESIS_SLOT)),
+        newDeposits(128, Math.toIntExact(Constants.GENESIS_SLOT)),
         UnsignedLong.valueOf(Constants.GENESIS_SLOT),
         new Eth1Data(Bytes32.ZERO, Bytes32.ZERO));
   }

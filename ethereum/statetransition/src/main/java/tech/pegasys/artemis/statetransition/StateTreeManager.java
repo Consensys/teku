@@ -158,10 +158,14 @@ public class StateTreeManager {
   }
 
   protected Boolean inspectBlock(Optional<BeaconBlock> block) {
+    LOG.info("inspectBlock()");
     if (!block.isPresent()) {
+      LOG.info("  block not present");
       return false;
     }
     if (!this.store.getParent(block.get()).isPresent()) {
+      LOG.info("  parent block not present");
+      LOG.info("    slot:" + block.get().getSlot());
       return false;
     }
     UnsignedLong blockTime =
@@ -171,6 +175,10 @@ public class StateTreeManager {
     // however, the block is already removed from queue, so
     // we're losing a valid block here.
     if (this.nodeTime.compareTo(blockTime) < 0) {
+      LOG.info("  too early to process block ");
+      LOG.info("    slot:" + block.get().getSlot());
+      LOG.info("    block time:" + blockTime);
+      LOG.info("    node time:" + nodeTime);
       return false;
     }
     return true;
@@ -223,6 +231,11 @@ public class StateTreeManager {
         }
 
         // Run state transition using the block
+        LOG.info(
+            "Process Fork: Running State Stransition for currentState.slot: "
+                + currentState.getSlot()
+                + " block.slot: "
+                + block.getSlot());
         stateTransition.initiate(currentState, block);
         currentStateRoot = HashTreeUtil.hash_tree_root(currentState.toBytes());
 
@@ -239,6 +252,8 @@ public class StateTreeManager {
         }
         LOG.info("  new state root: " + currentStateRoot.toHexString());
         LOG.info("  fork_head state root: " + blockStateRoot.toHexString());
+      } else {
+        LOG.info("Skipped processing block");
       }
     } catch (NoSuchElementException | IllegalArgumentException | StateTransitionException e) {
       LOG.warn(e);
