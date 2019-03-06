@@ -71,7 +71,7 @@ public class StateTreeManager {
     this.nodeSlot = UnsignedLong.valueOf(Constants.GENESIS_SLOT);
     this.nodeTime =
         UnsignedLong.valueOf(Constants.GENESIS_SLOT)
-            .times(UnsignedLong.valueOf(Constants.SLOT_DURATION));
+            .times(UnsignedLong.valueOf(Constants.SECONDS_PER_SLOT));
     LOG.info("node slot: " + nodeSlot.longValue());
     LOG.info("node time: " + nodeTime.longValue());
     boolean result = true;
@@ -87,7 +87,7 @@ public class StateTreeManager {
   @Subscribe
   public void onNewSlot(Date date) throws StateTransitionException {
     this.nodeSlot = this.nodeSlot.plus(UnsignedLong.ONE);
-    this.nodeTime = this.nodeTime.plus(UnsignedLong.valueOf(Constants.SLOT_DURATION));
+    this.nodeTime = this.nodeTime.plus(UnsignedLong.valueOf(Constants.SECONDS_PER_SLOT));
 
     LOG.info("******* Slot Event Detected *******");
     LOG.info("node time: " + nodeTime.longValue());
@@ -134,7 +134,7 @@ public class StateTreeManager {
     }
     UnsignedLong blockTime =
         UnsignedLong.valueOf(block.get().getSlot())
-            .times(UnsignedLong.valueOf(Constants.SLOT_DURATION));
+            .times(UnsignedLong.valueOf(Constants.SECONDS_PER_SLOT));
     // TODO: Here we reject block because time is not there,
     // however, the block is already removed from queue, so
     // we're losing a valid block here.

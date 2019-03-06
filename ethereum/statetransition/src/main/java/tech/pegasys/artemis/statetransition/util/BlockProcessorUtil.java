@@ -21,12 +21,12 @@ import static tech.pegasys.artemis.datastructures.Constants.DOMAIN_EXIT;
 import static tech.pegasys.artemis.datastructures.Constants.DOMAIN_PROPOSAL;
 import static tech.pegasys.artemis.datastructures.Constants.DOMAIN_RANDAO;
 import static tech.pegasys.artemis.datastructures.Constants.EMPTY_SIGNATURE;
-import static tech.pegasys.artemis.datastructures.Constants.EPOCH_LENGTH;
 import static tech.pegasys.artemis.datastructures.Constants.MAX_ATTESTATIONS;
 import static tech.pegasys.artemis.datastructures.Constants.MAX_ATTESTER_SLASHINGS;
 import static tech.pegasys.artemis.datastructures.Constants.MAX_DEPOSITS;
 import static tech.pegasys.artemis.datastructures.Constants.MAX_PROPOSER_SLASHINGS;
 import static tech.pegasys.artemis.datastructures.Constants.MIN_ATTESTATION_INCLUSION_DELAY;
+import static tech.pegasys.artemis.datastructures.Constants.SLOTS_PER_EPOCH;
 import static tech.pegasys.artemis.datastructures.Constants.ZERO_HASH;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_attestation_participants;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_beacon_proposer_index;
@@ -330,12 +330,12 @@ public class BlockProcessorUtil {
     for (Attestation attestation : block.getBody().getAttestations()) {
       // - Verify that attestation.data.slot
       //     <= state.slot - MIN_ATTESTATION_INCLUSION_DELAY
-      //     < attestation.data.slot + EPOCH_LENGTH.
+      //     < attestation.data.slot + SLOTS_PER_EPOCH.
       UnsignedLong attestationDataSlot = attestation.getData().getSlot();
       UnsignedLong slotMinusInclusionDelay =
           state.getSlot().minus(UnsignedLong.valueOf(MIN_ATTESTATION_INCLUSION_DELAY));
       UnsignedLong slotPlusEpochLength =
-          attestationDataSlot.plus(UnsignedLong.valueOf(EPOCH_LENGTH));
+          attestationDataSlot.plus(UnsignedLong.valueOf(SLOTS_PER_EPOCH));
       checkArgument(
           (attestationDataSlot.compareTo(slotMinusInclusionDelay) <= 0)
               && (slotMinusInclusionDelay.compareTo(slotPlusEpochLength) < 0));
