@@ -13,7 +13,68 @@
 
 package tech.pegasys.artemis.validatorclient;
 
+import com.google.common.primitives.UnsignedLong;
+import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.datastructures.state.CrosslinkCommittee;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_crosslink_committees_at_slot;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_current_epoch;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_epoch_start_slot;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_previous_epoch;
+
 public class ValidatorClient {
 
+  private static final int SLOTS_PER_EPOCH = 64; // 2^6
+
   public ValidatorClient() {}
+
+  /**
+   * Return the committee assignment in the ``epoch`` for ``validator_index`` and ``registry_change``.
+   *  ``assignment`` returned is a tuple of the following form:
+   *     * ``assignment[0]`` is the list of validators in the committee
+   *     * ``assignment[1]`` is the shard to which the committee is assigned
+   *     * ``assignment[2]`` is the slot at which the committee is assigned
+   *     * ``assignment[3]`` is a bool signalling if the validator is expected to propose
+   *         a beacon block at the assigned slot.
+   * @param state   the BeaconState.
+   * @param epoch   either on or between previous or current epoch.
+   * @param validator_index the validator that is calling this function.
+   * @param registry_change whether there has been a validator registry change.
+   * @return
+   */
+  public CommitteeAssignmentTuple get_committee_assignment(BeaconState state, int epoch, int validator_index,
+                                                           boolean registry_change) {
+    int previous_epoch = get_previous_epoch(state).intValue();
+    int next_epoch = get_current_epoch(state).intValue();
+    assert previous_epoch <= epoch && epoch <= next_epoch;
+
+    int epoch_start_slot = get_epoch_start_slot(UnsignedLong.valueOf(epoch)).intValue();
+
+    for (int slot = epoch_start_slot; slot < epoch_start_slot + SLOTS_PER_EPOCH; slot++) {
+
+      ArrayList<CrosslinkCommittee> crosslink_committees = get_crosslink_committees_at_slot(state,
+          UnsignedLong.valueOf(slot), registry_change);
+      ArrayList<CrosslinkCommittee> selected_committees = new ArrayList<>();
+
+      for (CrosslinkCommittee committee : crosslink_committees) {
+        if (committee.getCommittee().contains(validator_index)) {
+          selected_committees.add(committee);
+        }
+      }
+
+      if (selected_committees.size() > 0) {
+        List<Integer> validators = selected_committees.get(0).getCommittee();
+        int shard = selected_committees.get(0).getShard().intValue();
+        List<Integer> first_committee_at_slot = crosslink_committees.get(0).getCommittee();  // List[ValidatorIndex]
+        boolean is_proposer = first_committee_at_slot.get(slot % first_committee_at_slot.size()) == validator_index;
+
+        return new CommitteeAssignmentTuple(validators, shard, slot, is_proposer);
+      }
+    }
+    return null;
+  }
+
 }
