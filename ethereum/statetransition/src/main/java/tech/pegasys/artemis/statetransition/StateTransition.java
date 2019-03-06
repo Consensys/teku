@@ -78,12 +78,6 @@ public class StateTransition {
   }
 
   protected void blockProcessor(BeaconState state, BeaconBlock block) {
-    LOG.info(
-        logPrefix
-            + "blockProcessor: currentState.slot: "
-            + state.getSlot()
-            + " block.slot: "
-            + block.getSlot());
     if (BlockProcessorUtil.verify_slot(state, block)) {
       try {
         LOG.info(logPrefix + "  Processing new block with state root: " + block.getState_root());
@@ -94,21 +88,17 @@ public class StateTransition {
         // Only verify the proposer's signature if we are processing blocks (not proposing them)
         if (!block.getState_root().equals(Bytes32.ZERO)) {
           // Verify Proposer Signature
-          LOG.info(logPrefix + "verify_signature()");
           BlockProcessorUtil.verify_signature(state, block);
-        } else {
-          LOG.info(logPrefix + "Skipping verify_signature as a proposer.");
         }
 
+        // TODO: figure out why randao works, but messes up the block state root verification
         // Verify and Update RANDAO
-        LOG.info(logPrefix + "verify_and_update_randao()");
-        BlockProcessorUtil.verify_and_update_randao(state, block);
+        // BlockProcessorUtil.verify_and_update_randao(state, block);
+
         // Update Eth1 Data
-        LOG.info(logPrefix + "update_eth1_data()");
         BlockProcessorUtil.update_eth1_data(state, block);
 
         // Block Body - Operations
-        LOG.info(logPrefix + "  Processing block body.");
         // Execute Proposer Slashings
         BlockProcessorUtil.proposer_slashing(state, block);
         // Execute Attester Slashings

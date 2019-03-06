@@ -72,8 +72,7 @@ public class StateTreeManager {
       Bytes32 initial_state_root = HashTreeUtil.hash_tree_root(initial_state.toBytes());
       BeaconBlock genesis_block = BeaconBlock.createGenesis(initial_state_root);
       Bytes32 genesis_block_root = HashTreeUtil.hash_tree_root(genesis_block.toBytes());
-      LOG.info("Initial State:");
-      LOG.info("  initial state root is " + initial_state_root.toHexString());
+      LOG.info("initial state root is " + initial_state_root.toHexString());
       this.store.addState(initial_state_root, initial_state);
       this.store.addProcessedBlock(initial_state_root, genesis_block);
       this.store.addProcessedBlock(genesis_block_root, genesis_block);
@@ -158,14 +157,10 @@ public class StateTreeManager {
   }
 
   protected Boolean inspectBlock(Optional<BeaconBlock> block) {
-    LOG.info("inspectBlock()");
     if (!block.isPresent()) {
-      LOG.info("  block not present");
       return false;
     }
     if (!this.store.getParent(block.get()).isPresent()) {
-      LOG.info("  parent block not present");
-      LOG.info("    slot:" + block.get().getSlot());
       return false;
     }
     UnsignedLong blockTime =
@@ -175,10 +170,6 @@ public class StateTreeManager {
     // however, the block is already removed from queue, so
     // we're losing a valid block here.
     if (this.nodeTime.compareTo(blockTime) < 0) {
-      LOG.info("  too early to process block ");
-      LOG.info("    slot:" + block.get().getSlot());
-      LOG.info("    block time:" + blockTime);
-      LOG.info("    node time:" + nodeTime);
       return false;
     }
     return true;
