@@ -93,7 +93,7 @@ public class StateTransition {
 
         // TODO: figure out why randao works, but messes up the block state root verification
         // Verify and Update RANDAO
-        // BlockProcessorUtil.verify_and_update_randao(state, block);
+        BlockProcessorUtil.verify_and_update_randao(state, block);
 
         // Update Eth1 Data
         BlockProcessorUtil.update_eth1_data(state, block);

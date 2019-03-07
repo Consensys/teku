@@ -154,10 +154,8 @@ public class BlockProcessorUtil {
     // - Verify that bls_verify(pubkey=proposer.pubkey,
     //    message=int_to_bytes32(get_current_epoch(state)), signature=block.randao_reveal,
     //    domain=get_domain(state.fork, get_current_epoch(state), DOMAIN_RANDAO)).
-    if (!block.getState_root().equals(Bytes32.ZERO)) {
-      checkArgument(
-          verify_randao(state, block, currentEpoch, currentEpochBytes), "verify randao failed");
-    }
+    checkArgument(
+        verify_randao(state, block, currentEpoch, currentEpochBytes), "verify randao failed");
 
     // - Set state.latest_randao_mixes[get_current_epoch(state) % LATEST_RANDAO_MIXES_LENGTH]
     //    = xor(get_randao_mix(state, get_current_epoch(state)), hash(block.randao_reveal)).
