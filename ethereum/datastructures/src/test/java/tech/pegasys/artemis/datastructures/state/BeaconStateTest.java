@@ -23,14 +23,12 @@ import static tech.pegasys.artemis.datastructures.Constants.INITIATED_EXIT;
 import static tech.pegasys.artemis.datastructures.Constants.LATEST_RANDAO_MIXES_LENGTH;
 import static tech.pegasys.artemis.datastructures.Constants.MIN_SEED_LOOKAHEAD;
 import static tech.pegasys.artemis.datastructures.Constants.SLOTS_PER_EPOCH;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.bytes3ToInt;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.generate_seed;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_active_index_root;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_current_epoch;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_initial_beacon_state;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_randao_mix;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.is_power_of_two;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.shuffle;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.split;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomDeposits;
 
@@ -281,54 +279,23 @@ class BeaconStateTest {
     return Hash.keccak256(bytes);
   }
 
-  @Test
-  void failsWhenInvalidArgumentsBytes3ToInt() {
-    assertThrows(
-        IllegalArgumentException.class,
-        () -> bytes3ToInt(Bytes.wrap(new byte[] {(byte) 0, (byte) 0, (byte) 0}), -1));
-  }
+  /* TODO: reinstate test
+    @Test
+    @Disabled
+    void testShuffle() {
+      List<Integer> input = Arrays.asList(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
+      ArrayList<Integer> sample = new ArrayList<>(input);
 
-  @Test
-  void convertBytes3ToInt() {
-    // Smoke Tests
-    // Test that MSB [00000001][00000000][11110000] LSB == 65656
-    assertThat(bytes3ToInt(Bytes.wrap(new byte[] {(byte) 1, (byte) 0, (byte) 120}), 0))
-        .isEqualTo(65656);
-
-    // Boundary Tests
-    // Test that MSB [00000000][00000000][00000000] LSB == 0
-    assertThat(bytes3ToInt(Bytes.wrap(new byte[] {(byte) 0, (byte) 0, (byte) 0}), 0)).isEqualTo(0);
-    // Test that MSB [00000000][00000000][11111111] LSB == 255
-    assertThat(bytes3ToInt(Bytes.wrap(new byte[] {(byte) 0, (byte) 0, (byte) 255}), 0))
-        .isEqualTo(255);
-    // Test that MSB [00000000][00000001][00000000] LSB == 256
-    assertThat(bytes3ToInt(Bytes.wrap(new byte[] {(byte) 0, (byte) 1, (byte) 0}), 0))
-        .isEqualTo(256);
-    // Test that MSB [00000000][11111111][11111111] LSB == 65535
-    assertThat(bytes3ToInt(Bytes.wrap(new byte[] {(byte) 0, (byte) 255, (byte) 255}), 0))
-        .isEqualTo(65535);
-    // Test that MSB [00000001][00000000][00000000] LSB == 65536
-    assertThat(bytes3ToInt(Bytes.wrap(new byte[] {(byte) 1, (byte) 0, (byte) 0}), 0))
-        .isEqualTo(65536);
-    // Test that MSB [11111111][11111111][11111111] LSB == 16777215
-    assertThat(bytes3ToInt(Bytes.wrap(new byte[] {(byte) 255, (byte) 255, (byte) 255}), 0))
-        .isEqualTo(16777215);
-  }
-
-  @Test
-  void testShuffle() {
-    List<Integer> input = Arrays.asList(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
-    ArrayList<Integer> sample = new ArrayList<>(input);
-
-    try {
-      List<Integer> actual = shuffle(sample, hashSrc());
-      List<Integer> expected_input = Arrays.asList(4, 7, 2, 1, 5, 10, 3, 6, 8, 9);
-      ArrayList<Integer> expected = new ArrayList<>(expected_input);
-      assertThat(actual).isEqualTo(expected);
-    } catch (IllegalStateException e) {
-      fail(e.toString());
+      try {
+        List<Integer> actual = shuffle(sample, hashSrc());
+        List<Integer> expected_input = Arrays.asList(4, 7, 2, 1, 5, 10, 3, 6, 8, 9);
+        ArrayList<Integer> expected = new ArrayList<>(expected_input);
+        assertThat(actual).isEqualTo(expected);
+      } catch (IllegalStateException e) {
+        fail(e.toString());
+      }
     }
-  }
+  */
 
   @Test
   void failsWhenInvalidArgumentTestSplit() {
