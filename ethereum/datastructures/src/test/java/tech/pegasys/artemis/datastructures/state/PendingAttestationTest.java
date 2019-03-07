@@ -95,4 +95,45 @@ class PendingAttestationTest {
     Bytes sszPendingAttestationBytes = pendingAttestation.toBytes();
     assertEquals(pendingAttestation, PendingAttestation.fromBytes(sszPendingAttestationBytes));
   }
+
+  @Test
+  void rountripSSZVariableLengthBitfield() {
+    PendingAttestation byte1BitfieldPendingAttestation =
+        new PendingAttestation(
+            Bytes.fromHexString("0x00"), data, Bytes.fromHexString("0x00"), slotIncluded);
+    PendingAttestation byte4BitfieldPendingAttestation =
+        new PendingAttestation(
+            Bytes.fromHexString("0x00000000"),
+            data,
+            Bytes.fromHexString("0x00000000"),
+            slotIncluded);
+    PendingAttestation byte8BitfieldPendingAttestation =
+        new PendingAttestation(
+            Bytes.fromHexString("0x0000000000000000"),
+            data,
+            Bytes.fromHexString("0x0000000000000000"),
+            slotIncluded);
+    PendingAttestation byte16BitfieldPendingAttestation =
+        new PendingAttestation(
+            Bytes.fromHexString("0x00000000000000000000000000000000"),
+            data,
+            Bytes.fromHexString("0x00000000000000000000000000000000"),
+            slotIncluded);
+    Bytes byte1BitfieldPendingAttestationBytes = byte1BitfieldPendingAttestation.toBytes();
+    Bytes byte4BitfieldPendingAttestationBytes = byte4BitfieldPendingAttestation.toBytes();
+    Bytes byte8BitfieldPendingAttestationBytes = byte8BitfieldPendingAttestation.toBytes();
+    Bytes byte16BitfieldPendingAttestationBytes = byte16BitfieldPendingAttestation.toBytes();
+    assertEquals(
+        byte1BitfieldPendingAttestation,
+        PendingAttestation.fromBytes(byte1BitfieldPendingAttestationBytes));
+    assertEquals(
+        byte4BitfieldPendingAttestation,
+        PendingAttestation.fromBytes(byte4BitfieldPendingAttestationBytes));
+    assertEquals(
+        byte8BitfieldPendingAttestation,
+        PendingAttestation.fromBytes(byte8BitfieldPendingAttestationBytes));
+    assertEquals(
+        byte16BitfieldPendingAttestation,
+        PendingAttestation.fromBytes(byte16BitfieldPendingAttestationBytes));
+  }
 }

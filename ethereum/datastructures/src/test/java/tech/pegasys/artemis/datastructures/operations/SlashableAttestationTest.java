@@ -110,4 +110,36 @@ class SlashableAttestationTest {
     Bytes sszSlashableVoteDataBytes = slashableAttestation.toBytes();
     assertEquals(slashableAttestation, SlashableAttestation.fromBytes(sszSlashableVoteDataBytes));
   }
+
+  @Test
+  void rountripSSZVariableLengthBitfield() {
+    SlashableAttestation byte1BitfieldSlashableAttestation =
+        new SlashableAttestation(
+            validatorIndices, data, Bytes.fromHexString("0x00"), aggregateSignature);
+    SlashableAttestation byte4BitfieldSlashableAttestation =
+        new SlashableAttestation(
+            validatorIndices, data, Bytes.fromHexString("0x00"), aggregateSignature);
+    SlashableAttestation byte8BitfieldSlashableAttestation =
+        new SlashableAttestation(
+            validatorIndices, data, Bytes.fromHexString("0x00"), aggregateSignature);
+    SlashableAttestation byte16BitfieldSlashableAttestation =
+        new SlashableAttestation(
+            validatorIndices, data, Bytes.fromHexString("0x00"), aggregateSignature);
+    Bytes byte1BitfieldSlashableAttestationBytes = byte1BitfieldSlashableAttestation.toBytes();
+    Bytes byte4BitfieldSlashableAttestationBytes = byte4BitfieldSlashableAttestation.toBytes();
+    Bytes byte8BitfieldSlashableAttestationBytes = byte8BitfieldSlashableAttestation.toBytes();
+    Bytes byte16BitfieldSlashableAttestationBytes = byte16BitfieldSlashableAttestation.toBytes();
+    assertEquals(
+        byte1BitfieldSlashableAttestation,
+        SlashableAttestation.fromBytes(byte1BitfieldSlashableAttestationBytes));
+    assertEquals(
+        byte4BitfieldSlashableAttestation,
+        SlashableAttestation.fromBytes(byte4BitfieldSlashableAttestationBytes));
+    assertEquals(
+        byte8BitfieldSlashableAttestation,
+        SlashableAttestation.fromBytes(byte8BitfieldSlashableAttestationBytes));
+    assertEquals(
+        byte16BitfieldSlashableAttestation,
+        SlashableAttestation.fromBytes(byte16BitfieldSlashableAttestationBytes));
+  }
 }
