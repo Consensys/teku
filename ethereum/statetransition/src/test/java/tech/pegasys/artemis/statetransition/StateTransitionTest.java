@@ -83,6 +83,7 @@ class StateTransitionTest {
     /* todo: rework test - shard_committees_at_slots no longer exists
     BeaconState state = newState();
     state.setSlot(8192);
+
     ArrayList<ArrayList<ShardCommittee>> shard_committees_at_slots =
         new ArrayList<ArrayList<ShardCommittee>>();
     for (int i = 0; i < 1000; i++) {

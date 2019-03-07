@@ -11,6 +11,7 @@ dependencies {
   implementation project(':util')
   implementation project(':storage')
   implementation project(':ethereum:datastructures')
+  implementation project(':validatorclient')
 
   implementation 'net.consensys.cava:cava-crypto'
   implementation 'net.consensys.cava:cava-units'

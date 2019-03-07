@@ -11,14 +11,22 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.pow.event;
+package tech.pegasys.artemis.ganache;
 
-import tech.pegasys.artemis.pow.api.ChainStartEvent;
-import tech.pegasys.artemis.pow.contract.ValidatorRegistrationContract.ChainStartEventResponse;
+public class Account {
+  private String publicKey;
+  private String privateKey;
 
-public class ChainStart extends AbstractEvent<ChainStartEventResponse> implements ChainStartEvent {
+  public Account(String publicKey, String privateKey) {
+    this.publicKey = publicKey;
+    this.privateKey = privateKey;
+  }
 
-  public ChainStart(ChainStartEventResponse response) {
-    super(response);
+  public String getPublicKey() {
+    return publicKey;
+  }
+
+  public String getPrivateKey() {
+    return privateKey;
   }
 }
