@@ -25,9 +25,9 @@ import tech.pegasys.artemis.util.bls.BLSSignature;
 
 class AttestationTest {
 
-  private Bytes32 aggregationBitfield = Bytes32.random();
+  private Bytes aggregationBitfield = Bytes32.random();
   private AttestationData data = randomAttestationData();
-  private Bytes32 custodyBitfield = Bytes32.random();
+  private Bytes custodyBitfield = Bytes32.random();
   private BLSSignature aggregateSignature = BLSSignature.random();
 
   private Attestation attestation =
@@ -93,8 +93,41 @@ class AttestationTest {
   }
 
   @Test
-  void rountripSSZ() {
+  void roundtripSSZ() {
     Bytes sszAttestationBytes = attestation.toBytes();
     assertEquals(attestation, Attestation.fromBytes(sszAttestationBytes));
+  }
+
+  @Test
+  void roundtripSSZVariableLengthBitfield() {
+    Attestation byte1BitfieldAttestation =
+        new Attestation(
+            Bytes.fromHexString("0x00"), data, Bytes.fromHexString("0x00"), aggregateSignature);
+    Attestation byte4BitfieldAttestation =
+        new Attestation(
+            Bytes.fromHexString("0x00000000"),
+            data,
+            Bytes.fromHexString("0x00000000"),
+            aggregateSignature);
+    Attestation byte8BitfieldAttestation =
+        new Attestation(
+            Bytes.fromHexString("0x0000000000000000"),
+            data,
+            Bytes.fromHexString("0x0000000000000000"),
+            aggregateSignature);
+    Attestation byte16BitfieldAttestation =
+        new Attestation(
+            Bytes.fromHexString("0x00000000000000000000000000000000"),
+            data,
+            Bytes.fromHexString("0x00000000000000000000000000000000"),
+            aggregateSignature);
+    Bytes byte1BitfieldAttestationBytes = byte1BitfieldAttestation.toBytes();
+    Bytes byte4BitfieldAttestationBytes = byte4BitfieldAttestation.toBytes();
+    Bytes byte8BitfieldAttestationBytes = byte8BitfieldAttestation.toBytes();
+    Bytes byte16BitfieldAttestationBytes = byte16BitfieldAttestation.toBytes();
+    assertEquals(byte1BitfieldAttestation, Attestation.fromBytes(byte1BitfieldAttestationBytes));
+    assertEquals(byte4BitfieldAttestation, Attestation.fromBytes(byte4BitfieldAttestationBytes));
+    assertEquals(byte8BitfieldAttestation, Attestation.fromBytes(byte8BitfieldAttestationBytes));
+    assertEquals(byte16BitfieldAttestation, Attestation.fromBytes(byte16BitfieldAttestationBytes));
   }
 }

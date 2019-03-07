@@ -69,7 +69,7 @@ class ProposalSignedDataTest {
   }
 
   @Test
-  void rountripSSZ() {
+  void roundtripSSZ() {
     Bytes sszProposalSignedDataBytes = proposalSignedData.toBytes();
     assertEquals(proposalSignedData, ProposalSignedData.fromBytes(sszProposalSignedDataBytes));
   }

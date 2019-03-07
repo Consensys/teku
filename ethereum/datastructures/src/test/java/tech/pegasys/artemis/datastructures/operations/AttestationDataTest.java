@@ -204,7 +204,7 @@ class AttestationDataTest {
   }
 
   @Test
-  void rountripSSZ() {
+  void roundtripSSZ() {
     Bytes sszAttestationDataBytes = attestationData.toBytes();
     assertEquals(attestationData, AttestationData.fromBytes(sszAttestationDataBytes));
   }

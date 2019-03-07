@@ -58,7 +58,7 @@ class CrosslinkTest {
   }
 
   @Test
-  void rountripSSZ() {
+  void roundtripSSZ() {
     Bytes sszCrosslinkBytes = crosslink.toBytes();
     assertEquals(crosslink, Crosslink.fromBytes(sszCrosslinkBytes));
   }

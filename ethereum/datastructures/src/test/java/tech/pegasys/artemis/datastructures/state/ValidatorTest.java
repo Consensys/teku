@@ -175,7 +175,7 @@ class ValidatorTest {
   }
 
   @Test
-  void rountripSSZ() {
+  void roundtripSSZ() {
     Bytes sszValidatorBytes = validator.toBytes();
     assertEquals(validator, Validator.fromBytes(sszValidatorBytes));
   }
