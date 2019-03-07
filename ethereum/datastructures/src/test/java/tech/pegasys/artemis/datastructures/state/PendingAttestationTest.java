@@ -91,13 +91,13 @@ class PendingAttestationTest {
   }
 
   @Test
-  void rountripSSZ() {
+  void roundtripSSZ() {
     Bytes sszPendingAttestationBytes = pendingAttestation.toBytes();
     assertEquals(pendingAttestation, PendingAttestation.fromBytes(sszPendingAttestationBytes));
   }
 
   @Test
-  void rountripSSZVariableLengthBitfield() {
+  void roundtripSSZVariableLengthBitfield() {
     PendingAttestation byte1BitfieldPendingAttestation =
         new PendingAttestation(
             Bytes.fromHexString("0x00"), data, Bytes.fromHexString("0x00"), slotIncluded);

@@ -93,13 +93,13 @@ class AttestationTest {
   }
 
   @Test
-  void rountripSSZ() {
+  void roundtripSSZ() {
     Bytes sszAttestationBytes = attestation.toBytes();
     assertEquals(attestation, Attestation.fromBytes(sszAttestationBytes));
   }
 
   @Test
-  void rountripSSZVariableLengthBitfield() {
+  void roundtripSSZVariableLengthBitfield() {
     Attestation byte1BitfieldAttestation =
         new Attestation(
             Bytes.fromHexString("0x00"), data, Bytes.fromHexString("0x00"), aggregateSignature);

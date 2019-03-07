@@ -106,13 +106,13 @@ class SlashableAttestationTest {
   }
 
   @Test
-  void rountripSSZ() {
+  void roundtripSSZ() {
     Bytes sszSlashableVoteDataBytes = slashableAttestation.toBytes();
     assertEquals(slashableAttestation, SlashableAttestation.fromBytes(sszSlashableVoteDataBytes));
   }
 
   @Test
-  void rountripSSZVariableLengthBitfield() {
+  void roundtripSSZVariableLengthBitfield() {
     SlashableAttestation byte1BitfieldSlashableAttestation =
         new SlashableAttestation(
             validatorIndices, data, Bytes.fromHexString("0x00"), aggregateSignature);
