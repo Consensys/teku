@@ -1,3 +1,7 @@
+plugins {
+  id "org.web3j" version "4.1.1"
+}
+
 jar {
   baseName 'artemis-pow'
   manifest {
@@ -6,14 +10,23 @@ jar {
   }
 }
 
+//exec {
+//  workingDir '../ganache-cli'
+//  commandLine 'npm', 'install'
+//}
+
 dependencies {
   //TODO org.web3j.abi and org.web3j.cyprto are used by org.web3j.core. Given that, is it necessary to export all 3 as API dependencies, or will just org.web3j.core suffice?
-  api 'org.web3j:core:3.6.0'
-  api 'org.web3j:abi:3.6.0'
-  api 'org.web3j:crypto:3.6.0'
+  api 'org.web3j:core'
+  api 'org.web3j:abi'
+  api 'org.web3j:crypto'
 
-  implementation 'io.reactivex:rxjava:1.2.4'
-  implementation 'com.squareup.okhttp3:okhttp:3.8.1'
-  implementation 'com.squareup.okhttp3:logging-interceptor:3.8.1'
   implementation 'com.google.guava:guava'
+  compile group: 'com.googlecode.json-simple', name: 'json-simple', version: '1.1'
+
+  implementation 'net.consensys.cava:cava-crypto'
+  implementation 'net.consensys.cava:cava-units'
+
+  implementation 'org.apache.logging.log4j:log4j-api'
+  runtime 'org.apache.logging.log4j:log4j-core'
 }

@@ -24,7 +24,7 @@ try {
         docker.image('openjdk:11-jdk-stretch').inside {
             try {
                 stage('Build') {
-                    sh './gradlew --no-daemon --parallel spotlessApply build'
+                    sh './gradlew --no-daemon --parallel build'
                 }
                 stage('Test') {
                     sh './gradlew --no-daemon --parallel test'

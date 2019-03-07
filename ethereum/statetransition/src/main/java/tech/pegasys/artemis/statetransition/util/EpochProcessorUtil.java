@@ -42,7 +42,6 @@ import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.datastructures.util.AttestationUtil;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.datastructures.util.ValidatorsUtil;
-import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.util.bitwise.BitwiseOps;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 
@@ -85,8 +84,7 @@ public class EpochProcessorUtil {
    * @param state
    * @throws Exception
    */
-  public static void updateJustification(
-      BeaconState state, BeaconBlock block, ChainStorageClient store) throws Exception {
+  public static void updateJustification(BeaconState state, BeaconBlock block) throws Exception {
     // Get previous and current epoch
     UnsignedLong current_epoch = BeaconStateUtil.get_current_epoch(state);
     UnsignedLong previous_epoch = BeaconStateUtil.get_previous_epoch(state);
@@ -151,9 +149,6 @@ public class EpochProcessorUtil {
     // Update state justification variables
     state.setPrevious_justified_epoch(state.getJustified_epoch());
     state.setJustified_epoch(new_justified_epoch);
-
-    // Update justified head block and state
-    store.setJustifiedHead(state, block);
   }
 
   /**
