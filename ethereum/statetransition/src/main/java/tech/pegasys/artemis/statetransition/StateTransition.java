@@ -16,6 +16,7 @@ package tech.pegasys.artemis.statetransition;
 import static tech.pegasys.artemis.datastructures.Constants.EPOCH_LENGTH;
 
 import com.google.common.primitives.UnsignedLong;
+import net.consensys.cava.bytes.Bytes32;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
@@ -31,11 +32,19 @@ import tech.pegasys.artemis.statetransition.util.SlotProcessorUtil;
 public class StateTransition {
 
   private static final Logger LOG = LogManager.getLogger(StateTransition.class.getName());
+  private final String logPrefix;
 
-  public StateTransition() {}
+  public StateTransition(String... logPrefix) {
+    if (logPrefix.length == 0) {
+      this.logPrefix = "";
+    } else {
+      this.logPrefix = logPrefix[0];
+    }
+  }
 
   public void initiate(BeaconState state, BeaconBlock block) throws StateTransitionException {
-    LOG.info("Begin state transition");
+    LOG.info(logPrefix + "Begin state transition");
+
     // per-slot processing
     slotProcessor(state, block);
     // per-block processing
@@ -50,40 +59,46 @@ public class StateTransition {
         .equals(UnsignedLong.ZERO)) {
       epochProcessor(state, block);
     }
-    LOG.info("End state transition");
+    LOG.info(logPrefix + "End state transition");
   }
 
   protected void slotProcessor(BeaconState state, BeaconBlock block) {
     try {
       state.incrementSlot();
-      LOG.info("  Processing new slot: " + state.getSlot());
+      LOG.info(logPrefix + "  Processing new slot: " + state.getSlot());
       // Slots the proposer has skipped (i.e. layers of RANDAO expected)
       // should be in Validator.randao_skips
       SlotProcessorUtil.updateLatestRandaoMixes(state);
       SlotProcessorUtil.updateRecentBlockHashes(state, block);
     } catch (SlotProcessingException e) {
-      LOG.warn("  Slot processing error: " + e);
+      LOG.warn(logPrefix + "  Slot processing error: " + e);
     } catch (Exception e) {
-      LOG.warn("  Unexpected slot processing error: " + e);
+      LOG.warn(logPrefix + "  Unexpected slot processing error: " + e);
     }
   }
 
   protected void blockProcessor(BeaconState state, BeaconBlock block) {
     if (BlockProcessorUtil.verify_slot(state, block)) {
       try {
-        LOG.info("  Processing new block with state root: " + block.getState_root());
+        LOG.info(logPrefix + "  Processing new block with state root: " + block.getState_root());
 
         // Block Header
-        LOG.info("  Processing block header.");
-        // Verify Proposer Signature
-        BlockProcessorUtil.verify_signature(state, block);
+        LOG.info(logPrefix + "  Processing block header.");
+
+        // Only verify the proposer's signature if we are processing blocks (not proposing them)
+        if (!block.getState_root().equals(Bytes32.ZERO)) {
+          // Verify Proposer Signature
+          BlockProcessorUtil.verify_signature(state, block);
+        }
+
+        // TODO: figure out why randao works, but messes up the block state root verification
         // Verify and Update RANDAO
-        BlockProcessorUtil.verify_and_update_randao(state, block);
+        // BlockProcessorUtil.verify_and_update_randao(state, block);
+
         // Update Eth1 Data
         BlockProcessorUtil.update_eth1_data(state, block);
 
         // Block Body - Operations
-        LOG.info("  Processing block body.");
         // Execute Proposer Slashings
         BlockProcessorUtil.proposer_slashing(state, block);
         // Execute Attester Slashings
@@ -95,12 +110,12 @@ public class StateTransition {
         // Process Exits
         BlockProcessorUtil.processExits(state, block);
       } catch (BlockProcessingException e) {
-        LOG.warn("  Block processing error: " + e);
+        LOG.warn(logPrefix + "  Block processing error: " + e);
       } catch (Exception e) {
-        LOG.warn("  Unexpected block processing error: " + e);
+        LOG.warn(logPrefix + "  Unexpected block processing error: " + e);
       }
     } else {
-      LOG.info("  Skipping block processing for this slot.");
+      LOG.info(logPrefix + "  Skipping block processing for this slot.");
     }
   }
 

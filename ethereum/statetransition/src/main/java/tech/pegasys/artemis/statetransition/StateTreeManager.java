@@ -72,8 +72,7 @@ public class StateTreeManager {
       Bytes32 initial_state_root = HashTreeUtil.hash_tree_root(initial_state.toBytes());
       BeaconBlock genesis_block = BeaconBlock.createGenesis(initial_state_root);
       Bytes32 genesis_block_root = HashTreeUtil.hash_tree_root(genesis_block.toBytes());
-      LOG.info("Initial State:");
-      LOG.info("  initial state root is " + initial_state_root.toHexString());
+      LOG.info("initial state root is " + initial_state_root.toHexString());
       this.store.addState(initial_state_root, initial_state);
       this.store.addProcessedBlock(initial_state_root, genesis_block);
       this.store.addProcessedBlock(genesis_block_root, genesis_block);
@@ -223,6 +222,11 @@ public class StateTreeManager {
         }
 
         // Run state transition using the block
+        LOG.info(
+            "Process Fork: Running State Stransition for currentState.slot: "
+                + currentState.getSlot()
+                + " block.slot: "
+                + block.getSlot());
         stateTransition.initiate(currentState, block);
         currentStateRoot = HashTreeUtil.hash_tree_root(currentState.toBytes());
 
@@ -239,6 +243,8 @@ public class StateTreeManager {
         }
         LOG.info("  new state root: " + currentStateRoot.toHexString());
         LOG.info("  fork_head state root: " + blockStateRoot.toHexString());
+      } else {
+        LOG.info("Skipped processing block");
       }
     } catch (NoSuchElementException | IllegalArgumentException | StateTransitionException e) {
       LOG.warn(e);
