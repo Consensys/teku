@@ -112,16 +112,21 @@ public class MockP2PNetwork implements P2PNetwork {
      * `fork` is the fork object at the slot `block.slot` epoch=slot_to_epoch(block.slot),
      * domain_type=DOMAIN_RANDAO, ))
      */
+
+    // State hasn't been updated(transition initiated) when its passed to setEpochSignature,
+    // and thus the slot is one less than what it should be for the new block, that is why we
+    // increment it here.
+    UnsignedLong slot = state.getSlot().plus(UnsignedLong.ONE);
     UnsignedLong epoch = BeaconStateUtil.slot_to_epoch(state.getSlot());
     // BLSKeyPair keypair = BLSKeyPair.random(Math.toIntExact(Constants.GENESIS_SLOT) + i);
 
-    int proposerIndex = BeaconStateUtil.get_beacon_proposer_index(state, state.getSlot());
+    int proposerIndex = BeaconStateUtil.get_beacon_proposer_index(state, slot);
     Validator proposer = state.getValidator_registry().get(proposerIndex);
-    int slot = Math.toIntExact(Constants.GENESIS_SLOT);
+    int genesisSlot = Math.toIntExact(Constants.GENESIS_SLOT);
     BLSKeyPair keypair = BLSKeyPair.random();
     // TODO: O(n), but in reality we will have the keypair in the validator
     for (int i = 0; i < 128; i++) {
-      keypair = BLSKeyPair.random(slot + i);
+      keypair = BLSKeyPair.random(genesisSlot + i);
       if (keypair.getPublicKey().equals(proposer.getPubkey())) {
         break;
       }
@@ -133,7 +138,7 @@ public class MockP2PNetwork implements P2PNetwork {
     LOG.info("Sign Epoch");
     LOG.info("Proposer pubkey: " + keypair.getPublicKey());
     LOG.info("state: " + HashTreeUtil.hash_tree_root(state.toBytes()));
-    LOG.info("slot: " + state.getSlot().longValue());
+    LOG.info("slot: " + slot);
     LOG.info("domain: " + domain);
     return BLSSignature.sign(keypair, currentEpochBytes, domain.longValue());
   }
@@ -202,11 +207,11 @@ public class MockP2PNetwork implements P2PNetwork {
             DataStructureUtil.newBeaconBlock(
                 state.getSlot().plus(UnsignedLong.ONE), parent_root, state_root, deposits);
 
+        BLSSignature epoch_signature = setEpochSignature(state);
+        block.setRandao_reveal(epoch_signature);
         stateTransition.initiate(state, block);
         state_root = HashTreeUtil.hash_tree_root(state.toBytes());
         block.setState_root(state_root);
-        BLSSignature epoch_signature = setEpochSignature(state);
-        block.setRandao_reveal(epoch_signature);
         BLSSignature signed_proposal = signProposalData(state, block);
         block.setSignature(signed_proposal);
 
