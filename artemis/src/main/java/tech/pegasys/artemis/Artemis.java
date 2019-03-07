@@ -19,7 +19,6 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import picocli.CommandLine;
 import tech.pegasys.artemis.services.ServiceController;
 import tech.pegasys.artemis.services.beaconchain.BeaconChainService;
-import tech.pegasys.artemis.services.beaconnode.BeaconNodeService;
 import tech.pegasys.artemis.services.chainstorage.ChainStorageService;
 import tech.pegasys.artemis.services.powchain.PowchainService;
 import tech.pegasys.artemis.util.cli.CommandLineArguments;
@@ -55,7 +54,6 @@ public final class Artemis {
           cliArgs,
           BeaconChainService.class,
           PowchainService.class,
-          BeaconNodeService.class,
           ChainStorageService.class);
       // Start services
       ServiceController.startAll(cliArgs);

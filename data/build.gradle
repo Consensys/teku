@@ -1,5 +1,5 @@
 jar {
-  baseName 'artemis-ethereum-statetransition'
+  baseName 'artemis-data'
   manifest {
     attributes('Implementation-Title': baseName,
     'Implementation-Version': project.version)
@@ -7,22 +7,11 @@ jar {
 }
 
 dependencies {
-  implementation project(':pow')
-  implementation project(':util')
-  implementation project(':storage')
   implementation project(':ethereum:datastructures')
 
-  implementation 'net.consensys.cava:cava-crypto'
-  implementation 'net.consensys.cava:cava-units'
-  implementation 'net.consensys.cava:cava-ssz'
   implementation 'com.google.guava:guava'
-  implementation 'com.google.code.gson:gson:2.8.5'
   implementation 'org.apache.logging.log4j:log4j-api'
   runtime 'org.apache.logging.log4j:log4j-core'
-
-  test {
-    testLogging.showStandardStreams = true
-  }
 }
 
 configurations { testArtifacts }

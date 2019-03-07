@@ -99,7 +99,6 @@ public class ChainStorageClient implements ChainStorage {
    * @return
    */
   public Optional<BeaconBlock> getProcessedBlock(Bytes state_root) {
-
     return ChainStorage.<Bytes, BeaconBlock, HashMap<Bytes, BeaconBlock>>get(
         state_root, this.processedBlockLookup);
   }
@@ -159,6 +158,24 @@ public class ChainStorageClient implements ChainStorage {
         unprocessedAttestations);
   }
 
+  /**
+   * Returns a validator's latest attestation
+   * @param validatorIndex
+   * @return
+   */
+  public Optional<Attestation> getLatestAttestation(int validatorIndex) {
+    Attestation attestation = latestAttestations.get(validatorIndex);
+    if (attestation == null) {
+      return Optional.ofNullable(null);
+    } else {
+      return Optional.of(attestation);
+    }
+  }
+
+  public HashMap<Bytes, BeaconBlock> getProcessedBlockLookup() {
+    return processedBlockLookup;
+  }
+
   @Subscribe
   public void onNewUnprocessedBlock(BeaconBlock block) {
     LOG.info("ChainStorage: new unprocessed BeaconBlock detected");
@@ -195,18 +212,5 @@ public class ChainStorageClient implements ChainStorage {
         }
       }
     }
-  }
-
-  public Optional<Attestation> getLatestAttestation(int validatorIndex) {
-    Attestation attestation = latestAttestations.get(validatorIndex);
-    if (attestation == null) {
-      return Optional.ofNullable(null);
-    } else {
-      return Optional.of(attestation);
-    }
-  }
-
-  public HashMap<Bytes, BeaconBlock> getProcessedBlockLookup() {
-    return processedBlockLookup;
   }
 }
