@@ -150,6 +150,18 @@ class BLSSignatureTest {
   }
 
   @Test
+  void succeedsWhenVerifyingKeyPairsAreSeededTheSame() throws BLSException {
+    BLSKeyPair keyPair1 = BLSKeyPair.random(1);
+    BLSKeyPair keyPair2 = BLSKeyPair.random(1);
+    assertEquals(keyPair1.getPublicKey(), keyPair2.getPublicKey());
+    Bytes message = Bytes.wrap("Hello, world!".getBytes(UTF_8));
+    long domain = 42;
+    BLSSignature signature1 = BLSSignature.sign(keyPair1, message, domain);
+    BLSSignature signature2 = BLSSignature.sign(keyPair2, message, domain);
+    assertEquals(signature1, signature2);
+  }
+
+  @Test
   void succeedsWhenRoundtripSSZReturnsTheSameSignature() {
     BLSSignature signature1 = BLSSignature.random();
     BLSSignature signature2 = BLSSignature.fromBytes(signature1.toBytes());
