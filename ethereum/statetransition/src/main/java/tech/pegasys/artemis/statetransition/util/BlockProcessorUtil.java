@@ -427,13 +427,15 @@ public class BlockProcessorUtil {
    */
   private static boolean verify_bitfields_and_aggregate_signature(
       Attestation attestation, BeaconState state) throws BlockProcessingException {
-    // NOTE: The spec defines this verification in terms of the custody bitfield length,
-    //   however because we've implemented the bitfield as a static Bytes32 value
-    //   instead of a variable length bitfield, checking against Bytes32.ZERO will suffice.
     checkArgument(
         Objects.equals(
-            attestation.getCustody_bitfield(), Bytes32.ZERO)); // [TO BE REMOVED IN PHASE 1]
-    checkArgument(!Objects.equals(attestation.getAggregation_bitfield(), Bytes32.ZERO));
+            attestation.getCustody_bitfield(),
+            Bytes.wrap(
+                new byte[attestation.getCustody_bitfield().size()]))); // [TO BE REMOVED IN PHASE 1]
+    checkArgument(
+        !Objects.equals(
+            attestation.getAggregation_bitfield(),
+            Bytes.wrap(new byte[attestation.getAggregation_bitfield().size()])));
 
     List<List<Integer>> crosslink_committees = new ArrayList<>();
     for (CrosslinkCommittee crosslink_committee :

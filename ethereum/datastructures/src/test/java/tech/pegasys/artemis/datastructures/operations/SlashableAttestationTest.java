@@ -34,7 +34,7 @@ class SlashableAttestationTest {
   private List<UnsignedLong> validatorIndices =
       Arrays.asList(randomUnsignedLong(), randomUnsignedLong(), randomUnsignedLong());
   private AttestationData data = randomAttestationData();
-  private Bytes32 custodyBitfield = Bytes32.random();
+  private Bytes custodyBitfield = Bytes32.random();
   private BLSSignature aggregateSignature = BLSSignature.random();
 
   private SlashableAttestation slashableAttestation =
@@ -85,10 +85,8 @@ class SlashableAttestationTest {
 
   @Test
   void equalsReturnsFalseWhenCustodyBitfieldIsDifferent() {
-    Bytes32 otherCustodyBitfield = custodyBitfield.and(Bytes32.random());
-
     SlashableAttestation testSlashableAttestation =
-        new SlashableAttestation(validatorIndices, data, otherCustodyBitfield, aggregateSignature);
+        new SlashableAttestation(validatorIndices, data, custodyBitfield.not(), aggregateSignature);
 
     assertNotEquals(slashableAttestation, testSlashableAttestation);
   }

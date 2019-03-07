@@ -27,9 +27,9 @@ import tech.pegasys.artemis.datastructures.operations.AttestationData;
 
 class PendingAttestationTest {
 
-  private Bytes32 participationBitfield = Bytes32.random();
+  private Bytes participationBitfield = Bytes32.random();
   private AttestationData data = randomAttestationData();
-  private Bytes32 custodyBitfield = Bytes32.random();
+  private Bytes custodyBitfield = Bytes32.random();
   private UnsignedLong slotIncluded = randomUnsignedLong();
 
   private PendingAttestation pendingAttestation =

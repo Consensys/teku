@@ -18,7 +18,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import net.consensys.cava.bytes.Bytes;
-import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.ssz.SSZ;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 
@@ -26,13 +25,13 @@ public class SlashableAttestation {
 
   private List<UnsignedLong> validator_indices;
   private AttestationData data;
-  private Bytes32 custody_bitfield;
+  private Bytes custody_bitfield;
   private BLSSignature aggregate_signature;
 
   public SlashableAttestation(
       List<UnsignedLong> validator_indices,
       AttestationData data,
-      Bytes32 custody_bitfield,
+      Bytes custody_bitfield,
       BLSSignature aggregate_signature) {
     this.validator_indices = validator_indices;
     this.data = data;
@@ -49,7 +48,7 @@ public class SlashableAttestation {
                     .map(UnsignedLong::fromLongBits)
                     .collect(Collectors.toList()),
                 AttestationData.fromBytes(reader.readBytes()),
-                Bytes32.wrap(reader.readBytes()),
+                Bytes.wrap(reader.readBytes()),
                 BLSSignature.fromBytes(reader.readBytes())));
   }
 
@@ -116,11 +115,11 @@ public class SlashableAttestation {
     this.validator_indices = validator_indices;
   }
 
-  public Bytes32 getCustody_bitfield() {
+  public Bytes getCustody_bitfield() {
     return custody_bitfield;
   }
 
-  public void setCustody_bitfield(Bytes32 custody_bitfield) {
+  public void setCustody_bitfield(Bytes custody_bitfield) {
     this.custody_bitfield = custody_bitfield;
   }
 }
