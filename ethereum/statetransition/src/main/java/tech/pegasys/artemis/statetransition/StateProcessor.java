@@ -35,18 +35,18 @@ import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 
 /** Class to manage the state tree and initiate state transitions */
-public class StateTreeManager {
+public class StateProcessor {
 
-  private BeaconBlock head; // block chosen by lmd ghost to build and attest on
+  private BeaconBlock headBlock; // block chosen by lmd ghost to build and attest on
   private Bytes32 justifiedStateRoot; // most recent justified state root
   private UnsignedLong nodeTime;
   private UnsignedLong nodeSlot;
   private final EventBus eventBus;
   private StateTransition stateTransition;
   private ChainStorageClient store;
-  private static final Logger LOG = LogManager.getLogger(StateTreeManager.class.getName());
+  private static final Logger LOG = LogManager.getLogger(StateProcessor.class.getName());
 
-  public StateTreeManager(EventBus eventBus) {
+  public StateProcessor(EventBus eventBus) {
     this.eventBus = eventBus;
     this.stateTransition = new StateTransition();
     this.eventBus.register(this);
@@ -73,7 +73,7 @@ public class StateTreeManager {
       this.store.addState(initial_state_root, initial_state);
       this.store.addProcessedBlock(initial_state_root, genesis_block);
       this.store.addProcessedBlock(genesis_block_root, genesis_block);
-      this.head = genesis_block;
+      this.headBlock = genesis_block;
       this.justifiedStateRoot = initial_state_root;
       this.eventBus.post(true);
     } catch (IllegalStateException e) {
@@ -108,7 +108,7 @@ public class StateTreeManager {
     updateHeadBlockUsingLMDGhost();
 
     // Run state transition from the new head to node.slot
-    Bytes32 newStateRoot = this.head.getState_root();
+    Bytes32 newStateRoot = this.headBlock.getState_root();
     BeaconState newState = store.getState(newStateRoot).get();
     boolean firstLoop = true;
     while (newState.getSlot().compareTo(nodeSlot) < 0) {
@@ -123,9 +123,9 @@ public class StateTreeManager {
     }
     LOG.info(
         "LMD Ghost Head Block Root:        "
-            + HashTreeUtil.hash_tree_root(this.head.toBytes()).toHexString());
-    LOG.info("LMD Ghost Head Parent Block Root: " + this.head.getParent_root().toHexString());
-    LOG.info("LMD Ghost Head State Root:        " + this.head.getState_root().toHexString());
+            + HashTreeUtil.hash_tree_root(this.headBlock.toBytes()).toHexString());
+    LOG.info("LMD Ghost Head Parent Block Root: " + this.headBlock.getParent_root().toHexString());
+    LOG.info("LMD Ghost Head State Root:        " + this.headBlock.getState_root().toHexString());
     LOG.info("Updated Head State Root:          " + newStateRoot.toHexString());
   }
 
@@ -234,7 +234,7 @@ public class StateTreeManager {
       BeaconBlock justifiedBlock = store.getProcessedBlock(justifiedStateRoot).get();
 
       // Run lmd_ghost to get the head block
-      this.head = LmdGhost.lmd_ghost(store, justifiedState, justifiedBlock);
+      this.headBlock = LmdGhost.lmd_ghost(store, justifiedState, justifiedBlock);
     } catch (StateTransitionException e) {
       LOG.fatal("Can't update head block using lmd ghost");
     }
@@ -247,7 +247,7 @@ public class StateTreeManager {
             .compareTo(UnsignedLong.valueOf(Constants.GENESIS_EPOCH))
         != 0) {
       try {
-        BeaconState headState = store.getState(head.getState_root()).get();
+        BeaconState headState = store.getState(headBlock.getState_root()).get();
         this.justifiedStateRoot =
             BeaconStateUtil.get_block_root(
                 headState, BeaconStateUtil.get_epoch_start_slot(headState.getJustified_epoch()));
