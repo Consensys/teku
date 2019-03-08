@@ -200,20 +200,22 @@ public class BeaconStateUtil {
     UnsignedLong shuffling_epoch = UnsignedLong.ZERO;
     UnsignedLong shuffling_start_shard = UnsignedLong.ZERO;
 
-    if (epoch.compareTo(previous_epoch) == 0) {
+    if (epoch.compareTo(current_epoch) == 0) {
+
+      committees_per_epoch = get_current_epoch_committee_count(state);
+      seed = state.getCurrent_epoch_seed();
+      shuffling_epoch = state.getCurrent_calculation_epoch();
+      shuffling_start_shard = state.getCurrent_epoch_start_shard();
+
+    } else if (epoch.compareTo(previous_epoch) == 0) {
 
       committees_per_epoch = get_previous_epoch_committee_count(state);
       seed = state.getPrevious_epoch_seed();
       shuffling_epoch = state.getPrevious_calculation_epoch();
       shuffling_start_shard = state.getPrevious_epoch_start_shard();
 
-    } else if (epoch.compareTo(current_epoch) == 0) {
-      committees_per_epoch = get_current_epoch_committee_count(state);
-      seed = state.getCurrent_epoch_seed();
-      shuffling_epoch = state.getCurrent_calculation_epoch();
-      shuffling_start_shard = state.getCurrent_epoch_start_shard();
-
     } else if (epoch.compareTo(next_epoch) == 0) {
+
       UnsignedLong current_committees_per_epoch = get_current_epoch_committee_count(state);
       committees_per_epoch = get_next_epoch_committee_count(state);
       shuffling_epoch = next_epoch;
@@ -236,7 +238,6 @@ public class BeaconStateUtil {
       }
     }
 
-    // TODO: revist when we have the final shuffling algorithm implemented
     List<List<Integer>> shuffling =
         get_shuffling(seed, state.getValidator_registry(), shuffling_epoch);
     UnsignedLong offset = slot.mod(UnsignedLong.valueOf(SLOTS_PER_EPOCH));
@@ -248,9 +249,7 @@ public class BeaconStateUtil {
             .times(offset)
             .mod(UnsignedLong.valueOf(Constants.SHARD_COUNT));
 
-    ArrayList<CrosslinkCommittee> crosslink_committees_at_slot =
-        new ArrayList<CrosslinkCommittee>();
-    // TODO: revist when we have the final shuffling algorithm implemented
+    ArrayList<CrosslinkCommittee> crosslink_committees_at_slot = new ArrayList<>();
     for (long i = 0; i < committees_per_slot.longValue(); i++) {
       CrosslinkCommittee committee =
           new CrosslinkCommittee(
