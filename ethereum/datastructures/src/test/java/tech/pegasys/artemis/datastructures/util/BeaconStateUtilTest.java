@@ -331,6 +331,34 @@ class BeaconStateUtilTest {
         expectedWhistleblowerBalance, beaconState.getValidator_balances().get(whistleblowerIndex));
   }
 
+  @Test
+  void succeedsWhenGetPreviousSlotReturnsGenesisSlot1() {
+    BeaconState beaconState = createBeaconState();
+    beaconState.setSlot(UnsignedLong.valueOf(Constants.GENESIS_SLOT));
+    assertEquals(
+        UnsignedLong.valueOf(Constants.GENESIS_EPOCH),
+        BeaconStateUtil.get_previous_epoch(beaconState));
+  }
+
+  @Test
+  void succeedsWhenGetPreviousSlotReturnsGenesisSlot2() {
+    BeaconState beaconState = createBeaconState();
+    beaconState.setSlot(UnsignedLong.valueOf(Constants.GENESIS_SLOT + Constants.SLOTS_PER_EPOCH));
+    assertEquals(
+        UnsignedLong.valueOf(Constants.GENESIS_EPOCH),
+        BeaconStateUtil.get_previous_epoch(beaconState));
+  }
+
+  @Test
+  void succeedsWhenGetPreviousSlotReturnsGenesisSlotPlusOne() {
+    BeaconState beaconState = createBeaconState();
+    beaconState.setSlot(
+        UnsignedLong.valueOf(Constants.GENESIS_SLOT + 2 * Constants.SLOTS_PER_EPOCH));
+    assertEquals(
+        UnsignedLong.valueOf(Constants.GENESIS_EPOCH + 1),
+        BeaconStateUtil.get_previous_epoch(beaconState));
+  }
+
   private BeaconState createBeaconState() {
     return createBeaconState(false, null, null);
   }
