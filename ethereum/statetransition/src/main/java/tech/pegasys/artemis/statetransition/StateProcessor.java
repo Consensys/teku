@@ -132,6 +132,9 @@ public class StateProcessor {
     LOG.info("LMD Ghost Head Parent Block Root: " + this.headBlock.getParent_root().toHexString());
     LOG.info("LMD Ghost Head State Root:        " + this.headBlock.getState_root().toHexString());
     LOG.info("Updated Head State Root:          " + newStateRoot.toHexString());
+    RawRecord record =
+        new RawRecord(this.nodeTime.longValue(), this.nodeSlot.longValue(), newState, headBlock);
+    this.eventBus.post(record);
   }
 
   protected Boolean inspectBlock(Optional<BeaconBlock> block) {
@@ -216,10 +219,6 @@ public class StateProcessor {
           this.store.addProcessedBlock(blockStateRoot, block);
           this.store.addProcessedBlock(blockRoot, block);
           this.store.addState(currentStateRoot, currentState);
-          RawRecord record =
-              new RawRecord(
-                  this.nodeTime.longValue(), this.nodeSlot.longValue(), currentState, block);
-          this.eventBus.post(record);
         } else {
           LOG.info("The fork_head's state root does NOT matches the calculated state root!");
         }
