@@ -23,6 +23,7 @@ import java.util.Optional;
 import net.consensys.cava.bytes.Bytes32;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import tech.pegasys.artemis.data.RawRecord;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
@@ -76,6 +77,10 @@ public class StateProcessor {
       this.headBlock = genesis_block;
       this.justifiedStateRoot = initial_state_root;
       this.eventBus.post(true);
+      RawRecord record =
+          new RawRecord(
+              this.nodeTime.longValue(), this.nodeSlot.longValue(), initial_state, genesis_block);
+      this.eventBus.post(record);
     } catch (IllegalStateException e) {
       LOG.fatal(e);
     }
@@ -127,6 +132,9 @@ public class StateProcessor {
     LOG.info("LMD Ghost Head Parent Block Root: " + this.headBlock.getParent_root().toHexString());
     LOG.info("LMD Ghost Head State Root:        " + this.headBlock.getState_root().toHexString());
     LOG.info("Updated Head State Root:          " + newStateRoot.toHexString());
+    RawRecord record =
+        new RawRecord(this.nodeTime.longValue(), this.nodeSlot.longValue(), newState, headBlock);
+    this.eventBus.post(record);
   }
 
   protected Boolean inspectBlock(Optional<BeaconBlock> block) {

@@ -1,5 +1,5 @@
 jar {
-  baseName 'artemis-ethereum-statetransition'
+  baseName 'artemis-data-adapter'
   manifest {
     attributes('Implementation-Title': baseName,
     'Implementation-Version': project.version)
@@ -7,10 +7,9 @@ jar {
 }
 
 dependencies {
-  implementation project(':data')
-  implementation project(':pow')
+
   implementation project(':util')
-  implementation project(':storage')
+  implementation project(':data')
   implementation project(':ethereum:datastructures')
 
   implementation 'net.consensys.cava:cava-crypto'
