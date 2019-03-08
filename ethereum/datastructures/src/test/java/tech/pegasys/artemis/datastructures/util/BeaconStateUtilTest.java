@@ -331,6 +331,43 @@ class BeaconStateUtilTest {
         expectedWhistleblowerBalance, beaconState.getValidator_balances().get(whistleblowerIndex));
   }
 
+  @Test
+  void succeedsWhenGetPreviousSlotReturnsGenesisSlot1() {
+    BeaconState beaconState = createBeaconState();
+    beaconState.setSlot(UnsignedLong.valueOf(Constants.GENESIS_SLOT));
+    assertEquals(
+        UnsignedLong.valueOf(Constants.GENESIS_EPOCH),
+        BeaconStateUtil.get_previous_epoch(beaconState));
+  }
+
+  @Test
+  void succeedsWhenGetPreviousSlotReturnsGenesisSlot2() {
+    BeaconState beaconState = createBeaconState();
+    beaconState.setSlot(UnsignedLong.valueOf(Constants.GENESIS_SLOT + Constants.SLOTS_PER_EPOCH));
+    assertEquals(
+        UnsignedLong.valueOf(Constants.GENESIS_EPOCH),
+        BeaconStateUtil.get_previous_epoch(beaconState));
+  }
+
+  @Test
+  void succeedsWhenGetPreviousSlotReturnsGenesisSlotPlusOne() {
+    BeaconState beaconState = createBeaconState();
+    beaconState.setSlot(
+        UnsignedLong.valueOf(Constants.GENESIS_SLOT + 2 * Constants.SLOTS_PER_EPOCH));
+    assertEquals(
+        UnsignedLong.valueOf(Constants.GENESIS_EPOCH + 1),
+        BeaconStateUtil.get_previous_epoch(beaconState));
+  }
+
+  @Test
+  void succeedsWhenGetNextEpochReturnsTheEpochPlusOne() {
+    BeaconState beaconState = createBeaconState();
+    beaconState.setSlot(UnsignedLong.valueOf(Constants.GENESIS_SLOT));
+    assertEquals(
+        UnsignedLong.valueOf(Constants.GENESIS_EPOCH + 1),
+        BeaconStateUtil.get_next_epoch(beaconState));
+  }
+
   private BeaconState createBeaconState() {
     return createBeaconState(false, null, null);
   }
@@ -387,7 +424,7 @@ class BeaconStateUtilTest {
   @Test
   void succeedsWhenGetPermutedIndexAndShuffleGiveTheSameResults() {
     Bytes32 seed = Bytes32.random();
-    int listSize = (int) randomUnsignedLong().longValue() % 1000;
+    int listSize = 1 + (int) randomUnsignedLong().longValue() % 1000;
     int[] shuffling = BeaconStateUtil.shuffle(listSize, seed);
     for (int i = 0; i < listSize; i++) {
       int idx = BeaconStateUtil.get_permuted_index(i, listSize, seed);

@@ -394,12 +394,39 @@ public class BeaconStateUtil {
   }
 
   /**
+   * Return the previous epoch of the given ``state``.
+   *
+   * @param state The beacon state under consideration.
+   * @return The previous epoch number.
+   */
+  public static UnsignedLong get_previous_epoch(BeaconState state) {
+    UnsignedLong current_epoch = get_current_epoch(state);
+    UnsignedLong genesis_epoch = UnsignedLong.valueOf(GENESIS_EPOCH);
+    return current_epoch.compareTo(genesis_epoch) == 0
+        ? genesis_epoch
+        : current_epoch.minus(UnsignedLong.ONE);
+  }
+
+  /**
    * Return the current epoch of the given ``state``.
    *
-   * @param state
+   * @param state The beacon state under consideration.
+   * @return The current epoch number.
    */
   public static UnsignedLong get_current_epoch(BeaconState state) {
     return slot_to_epoch(state.getSlot());
+  }
+
+  /**
+   * Return the next ``epoch`` of the given state.
+   *
+   * <p>This method is no longer in the spec as of v0.4, but is retained here for convenience.
+   *
+   * @param state The beacon state under consideration.
+   * @return The next epoch number.
+   */
+  public static UnsignedLong get_next_epoch(BeaconState state) {
+    return get_current_epoch(state).plus(UnsignedLong.ONE);
   }
 
   /**
@@ -410,16 +437,6 @@ public class BeaconStateUtil {
    */
   public static UnsignedLong get_epoch_start_slot(UnsignedLong epoch) {
     return epoch.times(UnsignedLong.valueOf(SLOTS_PER_EPOCH));
-  }
-
-  public static UnsignedLong get_previous_epoch(BeaconState state) {
-    if (get_current_epoch(state).compareTo(slot_to_epoch(UnsignedLong.valueOf(GENESIS_SLOT))) > 0)
-      return get_current_epoch(state).minus(UnsignedLong.ONE);
-    else return get_current_epoch(state);
-  }
-
-  public static UnsignedLong get_next_epoch(BeaconState state) {
-    return get_current_epoch(state).plus(UnsignedLong.ONE);
   }
 
   /**
