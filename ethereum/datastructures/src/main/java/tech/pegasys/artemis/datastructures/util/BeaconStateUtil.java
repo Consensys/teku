@@ -419,6 +419,18 @@ public class BeaconStateUtil {
   }
 
   /**
+   * Return the next ``epoch`` of the given state.
+   *
+   * <p>This method is no longer in the spec as of v0.4, but is retained here for convenience.
+   *
+   * @param state The beacon state under consideration.
+   * @return The next epoch number.
+   */
+  public static UnsignedLong get_next_epoch(BeaconState state) {
+    return get_current_epoch(state).plus(UnsignedLong.ONE);
+  }
+
+  /**
    * Return the slot that the given ``epoch`` starts at.
    *
    * @param epoch
@@ -426,10 +438,6 @@ public class BeaconStateUtil {
    */
   public static UnsignedLong get_epoch_start_slot(UnsignedLong epoch) {
     return epoch.times(UnsignedLong.valueOf(SLOTS_PER_EPOCH));
-  }
-
-  public static UnsignedLong get_next_epoch(BeaconState state) {
-    return get_current_epoch(state).plus(UnsignedLong.ONE);
   }
 
   /**
