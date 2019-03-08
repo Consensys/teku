@@ -62,10 +62,10 @@ You can run the executable from the CLI with this command:
 ./gradlew run
 ```
 
-To run without a PoW Chain:
+To run formatted output to a file
 
 ```
-$ ./gradlew run --args='-p'
+$ ./gradlew run --args='-o=artemis.csv'
 ```
 
 To run with loggin level set to ALL

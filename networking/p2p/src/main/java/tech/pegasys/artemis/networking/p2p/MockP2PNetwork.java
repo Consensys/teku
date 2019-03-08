@@ -198,7 +198,7 @@ public class MockP2PNetwork implements P2PNetwork {
 
   private void simulateNewMessages() {
     try {
-      StateTransition stateTransition = new StateTransition();
+      StateTransition stateTransition = new StateTransition(false);
 
       BeaconState state = DataStructureUtil.createInitialBeaconState();
       Bytes32 state_root = HashTreeUtil.hash_tree_root(state.toBytes());
