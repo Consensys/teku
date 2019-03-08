@@ -37,8 +37,7 @@ public class DepositContractListenerFactory {
       LOG.log(
           Level.FATAL,
           "DepositContractListenerFactory.simulationDepositContract: DepositContract failed to deploy in the simulation environment\n"
-              + e,
-          true);
+              + e);
     }
     return new DepositContractListener(eventBus, contract);
   }

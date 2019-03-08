@@ -33,16 +33,16 @@ public class StateTransition {
 
   private static final ALogger LOG = new ALogger(StateTransition.class.getName());
 
-  private boolean printDuringDemo = true;
+  private boolean printEnabled = true;
 
   public StateTransition() {}
 
-  public StateTransition(boolean printDuringDemo) {
-    this.printDuringDemo = printDuringDemo;
+  public StateTransition(boolean printEnabled) {
+    this.printEnabled = printEnabled;
   }
 
   public void initiate(BeaconState state, BeaconBlock block) throws StateTransitionException {
-    LOG.log(Level.INFO, "Begin state transition", printDuringDemo);
+    LOG.log(Level.INFO, "Begin state transition", printEnabled);
 
     // per-slot processing
     slotProcessor(state, block);
@@ -58,21 +58,21 @@ public class StateTransition {
         .equals(UnsignedLong.ZERO)) {
       epochProcessor(state, block);
     }
-    LOG.log(Level.INFO, "End state transition", printDuringDemo);
+    LOG.log(Level.INFO, "End state transition", printEnabled);
   }
 
   private void slotProcessor(BeaconState state, BeaconBlock block) {
     try {
       state.incrementSlot();
-      LOG.log(Level.INFO, "Processing new slot: " + state.getSlot(), printDuringDemo);
+      LOG.log(Level.INFO, "Processing new slot: " + state.getSlot(), printEnabled);
       // Slots the proposer has skipped (i.e. layers of RANDAO expected)
       // should be in Validator.randao_skips
       SlotProcessorUtil.updateLatestRandaoMixes(state);
       SlotProcessorUtil.updateRecentBlockHashes(state, block);
     } catch (SlotProcessingException e) {
-      LOG.log(Level.WARN, "Slot processing error: " + e, printDuringDemo);
+      LOG.log(Level.WARN, "Slot processing error: " + e, printEnabled);
     } catch (Exception e) {
-      LOG.log(Level.WARN, "Unexpected slot processing error: " + e, printDuringDemo);
+      LOG.log(Level.WARN, "Unexpected slot processing error: " + e, printEnabled);
     }
   }
 
@@ -82,10 +82,10 @@ public class StateTransition {
         LOG.log(
             Level.INFO,
             "Processing new block with state root: " + block.getState_root(),
-            printDuringDemo);
+            printEnabled);
 
         // Block Header
-        LOG.log(Level.INFO, "Processing block header.", printDuringDemo);
+        LOG.log(Level.INFO, "Processing block header.", printEnabled);
 
         // Only verify the proposer's signature if we are processing blocks (not proposing them)
         if (!block.getState_root().equals(Bytes32.ZERO)) {
@@ -112,12 +112,12 @@ public class StateTransition {
         // Process Exits
         BlockProcessorUtil.processExits(state, block);
       } catch (BlockProcessingException e) {
-        LOG.log(Level.WARN, "Block processing error: " + e, printDuringDemo);
+        LOG.log(Level.WARN, "Block processing error: " + e, printEnabled);
       } catch (Exception e) {
-        LOG.log(Level.WARN, "Unexpected block processing error: " + e, printDuringDemo);
+        LOG.log(Level.WARN, "Unexpected block processing error: " + e, printEnabled);
       }
     } else {
-      LOG.log(Level.INFO, "Skipping block processing for this slot.", printDuringDemo);
+      LOG.log(Level.INFO, "Skipping block processing for this slot.", printEnabled);
     }
   }
 
@@ -126,7 +126,7 @@ public class StateTransition {
       LOG.log(
           Level.INFO,
           "Processing new epoch: " + BeaconStateUtil.get_current_epoch(state),
-          printDuringDemo);
+          printEnabled);
 
       EpochProcessorUtil.updateEth1Data(state);
       EpochProcessorUtil.updateJustification(state, block);
@@ -149,9 +149,9 @@ public class StateTransition {
       EpochProcessorUtil.process_penalties_and_exits(state);
       EpochProcessorUtil.finalUpdates(state);
     } catch (EpochProcessingException e) {
-      LOG.log(Level.WARN, "Epoch processing error: " + e, printDuringDemo);
+      LOG.log(Level.WARN, "Epoch processing error: " + e, printEnabled);
     } catch (Exception e) {
-      LOG.log(Level.WARN, "Unexpected epoch processing error: " + e, printDuringDemo);
+      LOG.log(Level.WARN, "Unexpected epoch processing error: " + e, printEnabled);
     }
   }
 }

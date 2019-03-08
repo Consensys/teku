@@ -211,7 +211,7 @@ public class EpochProcessorUtil {
       try {
         inclusion_distance = AttestationUtil.inclusion_distance(state, index);
       } catch (Exception e) {
-        LOG.log(Level.INFO, "apply_inclusion_base_penalty(): " + e, true);
+        LOG.log(Level.WARN, "apply_inclusion_base_penalty(): " + e);
       }
       return base_reward(state, index, previous_total_balance)
           .times(UnsignedLong.valueOf(Constants.MIN_ATTESTATION_INCLUSION_DELAY))

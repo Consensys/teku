@@ -45,7 +45,6 @@ public class GanacheController {
   private String provider;
 
   private static final ALogger LOG = new ALogger();
-  private static boolean printDuringDemo = true;
 
   public GanacheController(int accountSize, int balance) {
     this(DEFAULT_HOST_NAME, DEFAULT_PORT, accountSize, balance);
@@ -85,8 +84,7 @@ public class GanacheController {
           "GanacheController.constructor: IOException thrown when attempting \""
               + pb.command()
               + "\" to start ganache-cli instance\n"
-              + e,
-          printDuringDemo);
+              + e);
     }
     // calls the cleanup thread after a shutdown signal is detected
     Runtime.getRuntime().addShutdownHook(ganacheThread);
@@ -108,8 +106,7 @@ public class GanacheController {
           "GanacheController.cleanUp: IOException thrown when attempting \""
               + pb.command()
               + "\" cleanup of hung ganache-cli instance\n"
-              + e,
-          printDuringDemo);
+              + e);
     }
   }
 
@@ -133,14 +130,12 @@ public class GanacheController {
       if (!keyFile.exists())
         LOG.log(
             Level.FATAL,
-            "GanacheController.initkeys: Timedout when waiting for keys.json filet\n" + e,
-            printDuringDemo);
+            "GanacheController.initkeys: Timedout when waiting for keys.json filet\n" + e);
       else
         LOG.log(
             Level.FATAL,
             "GanacheController.initkeys: Exception thrown when reading/parsing keys.json file\n"
-                + e,
-            printDuringDemo);
+                + e);
     }
     Set<String> keys = accountsJSON.keySet();
     for (String key : keys) accounts.add(new Account(key, accountsJSON.get(key).toString()));

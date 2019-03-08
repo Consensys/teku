@@ -84,7 +84,6 @@ import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 public class BlockProcessorUtil {
 
   private static final ALogger LOG = new ALogger(BlockProcessorUtil.class.getName());
-  private static boolean printDuringDemo = true;
 
   /**
    * Spec: https://github.com/ethereum/eth2.0-specs/blob/v0.1/specs/core/0_beacon-chain.md#slot-1
@@ -129,13 +128,13 @@ public class BlockProcessorUtil {
     BLSPublicKey pubkey = state.getValidator_registry().get(proposerIndex).getPubkey();
     UnsignedLong domain = get_domain(state.getFork(), get_current_epoch(state), DOMAIN_PROPOSAL);
 
-    LOG.log(Level.INFO, "In Verify Signatures", printDuringDemo);
-    LOG.log(Level.INFO, "Proposer pubkey: " + pubkey, printDuringDemo);
-    LOG.log(Level.INFO, "state: " + HashTreeUtil.hash_tree_root(state.toBytes()), printDuringDemo);
-    LOG.log(Level.INFO, "proposal root: " + proposalRoot.toHexString(), printDuringDemo);
-    LOG.log(Level.INFO, "block signature: " + block.getSignature().toString(), printDuringDemo);
-    LOG.log(Level.INFO, "slot: " + state.getSlot().longValue(), printDuringDemo);
-    LOG.log(Level.INFO, "domain: " + domain, printDuringDemo);
+    LOG.log(Level.DEBUG, "In Verify Signatures");
+    LOG.log(Level.DEBUG, "Proposer pubkey: " + pubkey);
+    LOG.log(Level.DEBUG, "state: " + HashTreeUtil.hash_tree_root(state.toBytes()));
+    LOG.log(Level.DEBUG, "proposal root: " + proposalRoot.toHexString());
+    LOG.log(Level.DEBUG, "block signature: " + block.getSignature().toString());
+    LOG.log(Level.DEBUG, "slot: " + state.getSlot().longValue());
+    LOG.log(Level.DEBUG, "domain: " + domain);
 
     checkArgument(
         bls_verify(pubkey, proposalRoot, block.getSignature(), domain), "verify signature failed");

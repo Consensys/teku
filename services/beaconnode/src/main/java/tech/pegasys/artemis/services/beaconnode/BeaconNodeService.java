@@ -46,7 +46,7 @@ public class BeaconNodeService implements ServiceInterface {
     try {
       this.p2pNetwork.close();
     } catch (IOException e) {
-      LOG.log(Level.WARN, e.toString(), true);
+      LOG.log(Level.WARN, e.toString());
     }
   }
 }

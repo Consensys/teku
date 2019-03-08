@@ -29,8 +29,12 @@ public class ALogger {
     this.logger = LogManager.getLogger(className);
   }
 
-  public void log(Level level, String message, boolean printDuringDemo) {
-    if (printDuringDemo) {
+  public void log(Level level, String message) {
+    this.logger.log(level, message);
+  }
+
+  public void log(Level level, String message, boolean printEnabled) {
+    if (printEnabled) {
       this.logger.log(level, message);
     }
   }

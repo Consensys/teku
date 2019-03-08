@@ -85,7 +85,6 @@ public class PowchainService implements ServiceInterface {
   // simulate depositors
   private static void simulateDepositActivity(DepositContract contract, EventBus eventBus) {
     Bytes bytes = Bytes.random(DEPOSIT_DATA_SIZE);
-    boolean printDuringDemo = true;
     while (true) {
       try {
         contract.deposit(bytes.toArray(), new BigInteger(SIM_DEPOSIT_VALUE)).send();
@@ -93,8 +92,7 @@ public class PowchainService implements ServiceInterface {
         LOG.log(
             Level.WARN,
             "PowchainService.simulateDepositActivity: Exception thrown when attempting to send a deposit transaction during a deposit simulation\n"
-                + e,
-            printDuringDemo);
+                + e);
       }
       try {
         Thread.sleep(10000);
@@ -102,8 +100,7 @@ public class PowchainService implements ServiceInterface {
         LOG.log(
             Level.WARN,
             "PowchainService.simulateDepositActivity: Exception thrown when attempting a thread sleep during a deposit simulation\n"
-                + e,
-            printDuringDemo);
+                + e);
       }
     }
   }

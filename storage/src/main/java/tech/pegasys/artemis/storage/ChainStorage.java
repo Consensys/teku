@@ -51,7 +51,7 @@ public interface ChainStorage {
     try {
       items.add(item);
     } catch (IllegalStateException e) {
-      LOG.log(Level.DEBUG, items.getClass().toString() + ": " + e.getMessage().toString(), true);
+      LOG.log(Level.DEBUG, items.getClass().toString() + ": " + e.getMessage().toString());
     }
   }
 
@@ -82,10 +82,7 @@ public interface ChainStorage {
     try {
       result = Optional.of(items.get(key));
     } catch (NullPointerException e) {
-      LOG.log(
-          Level.DEBUG,
-          items.getClass().toString() + ": " + key.toHexString() + " not found.",
-          true);
+      LOG.log(Level.DEBUG, items.getClass().toString() + ": " + key.toHexString() + " not found.");
     }
     return result;
   }

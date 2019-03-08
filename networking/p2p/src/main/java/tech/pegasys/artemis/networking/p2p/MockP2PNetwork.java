@@ -43,17 +43,17 @@ public class MockP2PNetwork implements P2PNetwork {
 
   private final EventBus eventBus;
   private static final ALogger LOG = new ALogger(MockP2PNetwork.class.getName());
-  private boolean printDuringDemo = false;
+  private boolean printEnabled = false;
 
   public MockP2PNetwork(EventBus eventBus) {
     this.eventBus = eventBus;
     this.eventBus.register(this);
   }
 
-  public MockP2PNetwork(EventBus eventBus, boolean printDuringDemo) {
+  public MockP2PNetwork(EventBus eventBus, boolean printEnabled) {
     this.eventBus = eventBus;
     this.eventBus.register(this);
-    this.printDuringDemo = printDuringDemo;
+    this.printEnabled = printEnabled;
   }
 
   /**
@@ -142,11 +142,11 @@ public class MockP2PNetwork implements P2PNetwork {
     UnsignedLong domain =
         BeaconStateUtil.get_domain(state.getFork(), epoch, Constants.DOMAIN_RANDAO);
     Bytes32 currentEpochBytes = Bytes32.leftPad(Bytes.ofUnsignedLong(epoch.longValue()));
-    LOG.log(Level.INFO, "Sign Epoch", printDuringDemo);
-    LOG.log(Level.INFO, "Proposer pubkey: " + keypair.getPublicKey(), printDuringDemo);
-    LOG.log(Level.INFO, "state: " + HashTreeUtil.hash_tree_root(state.toBytes()), printDuringDemo);
-    LOG.log(Level.INFO, "slot: " + slot, printDuringDemo);
-    LOG.log(Level.INFO, "domain: " + domain, printDuringDemo);
+    LOG.log(Level.INFO, "Sign Epoch", printEnabled);
+    LOG.log(Level.INFO, "Proposer pubkey: " + keypair.getPublicKey(), printEnabled);
+    LOG.log(Level.INFO, "state: " + HashTreeUtil.hash_tree_root(state.toBytes()), printEnabled);
+    LOG.log(Level.INFO, "slot: " + slot, printEnabled);
+    LOG.log(Level.INFO, "domain: " + domain, printEnabled);
     return BLSSignature.sign(keypair, currentEpochBytes, domain.longValue());
   }
 
@@ -186,13 +186,13 @@ public class MockP2PNetwork implements P2PNetwork {
             BeaconStateUtil.slot_to_epoch(state.getSlot()),
             Constants.DOMAIN_PROPOSAL);
     BLSSignature signature = BLSSignature.sign(keypair, proposalRoot, domain.longValue());
-    LOG.log(Level.INFO, "Sign Proposal", printDuringDemo);
-    LOG.log(Level.INFO, "Proposer pubkey: " + keypair.getPublicKey(), printDuringDemo);
-    LOG.log(Level.INFO, "state: " + HashTreeUtil.hash_tree_root(state.toBytes()), printDuringDemo);
-    LOG.log(Level.INFO, "proposal root: " + proposalRoot.toHexString(), printDuringDemo);
-    LOG.log(Level.INFO, "block signature: " + signature.toString(), printDuringDemo);
-    LOG.log(Level.INFO, "slot: " + state.getSlot().longValue(), printDuringDemo);
-    LOG.log(Level.INFO, "domain: " + domain, printDuringDemo);
+    LOG.log(Level.INFO, "Sign Proposal", printEnabled);
+    LOG.log(Level.INFO, "Proposer pubkey: " + keypair.getPublicKey(), printEnabled);
+    LOG.log(Level.INFO, "state: " + HashTreeUtil.hash_tree_root(state.toBytes()), printEnabled);
+    LOG.log(Level.INFO, "proposal root: " + proposalRoot.toHexString(), printEnabled);
+    LOG.log(Level.INFO, "block signature: " + signature.toString(), printEnabled);
+    LOG.log(Level.INFO, "slot: " + state.getSlot().longValue(), printEnabled);
+    LOG.log(Level.INFO, "domain: " + domain, printEnabled);
     return signature;
   }
 
@@ -207,7 +207,7 @@ public class MockP2PNetwork implements P2PNetwork {
 
       ArrayList<Deposit> deposits = new ArrayList<>();
       while (true) {
-        LOG.log(Level.INFO, "In MockP2PNetwork", printDuringDemo);
+        LOG.log(Level.INFO, "In MockP2PNetwork", printEnabled);
         state = BeaconState.deepCopy(state);
         state_root = Bytes32.ZERO;
         block =
@@ -222,25 +222,25 @@ public class MockP2PNetwork implements P2PNetwork {
         BLSSignature signed_proposal = signProposalData(state, block);
         block.setSignature(signed_proposal);
 
-        LOG.log(Level.INFO, "MockP2PNetwork - NEWLY PRODUCED BLOCK", printDuringDemo);
-        LOG.log(Level.INFO, "MockP2PNetwork - block.slot: " + block.getSlot(), printDuringDemo);
+        LOG.log(Level.INFO, "MockP2PNetwork - NEWLY PRODUCED BLOCK", printEnabled);
+        LOG.log(Level.INFO, "MockP2PNetwork - block.slot: " + block.getSlot(), printEnabled);
         LOG.log(
             Level.INFO,
             "MockP2PNetwork - block.parent_root: " + block.getParent_root(),
-            printDuringDemo);
+            printEnabled);
         LOG.log(
             Level.INFO,
             "MockP2PNetwork - block.state_root: " + block.getState_root(),
-            printDuringDemo);
+            printEnabled);
         parent_root = HashTreeUtil.hash_tree_root(block.toBytes());
-        LOG.log(Level.INFO, "MockP2PNetwork - block.block_root: " + parent_root, printDuringDemo);
+        LOG.log(Level.INFO, "MockP2PNetwork - block.block_root: " + parent_root, printEnabled);
 
         this.eventBus.post(block);
-        LOG.log(Level.INFO, "End MockP2PNetwork", printDuringDemo);
+        LOG.log(Level.INFO, "End MockP2PNetwork", printEnabled);
         Thread.sleep(6000);
       }
     } catch (InterruptedException | StateTransitionException e) {
-      LOG.log(Level.WARN, e.toString(), printDuringDemo);
+      LOG.log(Level.WARN, e.toString(), printEnabled);
     }
   }
 }

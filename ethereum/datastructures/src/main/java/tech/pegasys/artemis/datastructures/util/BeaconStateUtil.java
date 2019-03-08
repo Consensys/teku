@@ -844,8 +844,7 @@ public class BeaconStateUtil {
       LOG.log(
           Level.FATAL,
           "validate_proof_of_possession(): Error calculating the hash_tree_root(proof_of_possession). "
-              + e,
-          true);
+              + e);
     }
     return bls_verify(pubkey, message, proof_of_possession, domain);
   }
