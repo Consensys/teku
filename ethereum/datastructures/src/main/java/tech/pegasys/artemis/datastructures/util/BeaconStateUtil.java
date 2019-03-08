@@ -30,6 +30,7 @@ import static tech.pegasys.artemis.datastructures.Constants.LATEST_SLASHED_EXIT_
 import static tech.pegasys.artemis.datastructures.Constants.MAX_DEPOSIT_AMOUNT;
 import static tech.pegasys.artemis.datastructures.Constants.MAX_INDICES_PER_SLASHABLE_VOTE;
 import static tech.pegasys.artemis.datastructures.Constants.SHARD_COUNT;
+import static tech.pegasys.artemis.datastructures.Constants.SHUFFLE_ROUND_COUNT;
 import static tech.pegasys.artemis.datastructures.Constants.SLOTS_PER_EPOCH;
 import static tech.pegasys.artemis.datastructures.Constants.WHISTLEBLOWER_REWARD_QUOTIENT;
 import static tech.pegasys.artemis.datastructures.Constants.WITHDRAWABLE;
@@ -42,6 +43,7 @@ import static tech.pegasys.artemis.util.hashtree.HashTreeUtil.integerListHashTre
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.primitives.UnsignedLong;
+import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -591,92 +593,166 @@ public class BeaconStateUtil {
     List<Integer> active_validator_indices =
         ValidatorsUtil.get_active_validator_indices(validators, epoch);
 
-    // TODO: revisit when we figure out what to do about integer indexes.
-    int committees_per_epoch =
-        get_epoch_committee_count(UnsignedLong.valueOf(active_validator_indices.size())).intValue();
+    int length = active_validator_indices.size();
+    List<Integer> shuffled_indices =
+        active_validator_indices
+            .parallelStream()
+            .map(i -> active_validator_indices.get(get_permuted_index(i, length, seed)))
+            .collect(Collectors.toList());
 
-    // Shuffle with seed
-    // TODO: we may need to treat `epoch` as little-endian here. Revisit as the spec
-    // evolves.
-    seed.xor(Bytes32.leftPad(Bytes.ofUnsignedLong(epoch.longValue())));
-    List<Integer> shuffled_active_validator_indices = shuffle(active_validator_indices, seed);
+    int committeesPerEpoch = get_epoch_committee_count(UnsignedLong.valueOf(length)).intValue();
 
-    return split(shuffled_active_validator_indices, committees_per_epoch);
+    return split(shuffled_indices, committeesPerEpoch);
   }
 
   /**
-   * Converts byte[] (wrapped by BytesValue) to int.
+   * Return `p(index)` in a pseudorandom permutation `p` of `0...list_size-1` with ``seed`` as
+   * entropy.
    *
-   * @param src byte[] (wrapped by BytesValue)
-   * @param pos Index in Byte[] array
-   * @return converted int
-   * @throws IllegalArgumentException if pos is a negative value.
-   */
-  @VisibleForTesting
-  public static int bytes3ToInt(Bytes src, int pos) {
-    checkArgument(pos >= 0, "Expected positive pos but got %s", pos);
-    return ((src.get(pos) & 0xFF) << 16)
-        | ((src.get(pos + 1) & 0xFF) << 8)
-        | (src.get(pos + 2) & 0xFF);
-  }
-
-  /**
-   * Returns the shuffled 'values' with seed as entropy.
+   * <p>Utilizes 'swap or not' shuffling found in
+   * https://link.springer.com/content/pdf/10.1007%2F978-3-642-32009-5_1.pdf See the 'generalized
+   * domain' algorithm on page 3.
    *
-   * @param values The array.
+   * @param index The index in the permuatation we wish to get the value of.
+   * @param listSize The size of the list from which the element is taken.
    * @param seed Initial seed value used for randomization.
-   * @return The shuffled array.
+   * @return The index from the original list that is now at position `index`
    */
   @VisibleForTesting
-  public static <T> List<T> shuffle(List<T> values, Bytes32 seed) throws IllegalStateException {
-    int values_count = values.size();
+  public static int get_permuted_index(int index, int listSize, Bytes32 seed) {
+    checkArgument(index < listSize);
 
-    // Entropy is consumed from the seed in 3-byte (24 bit) chunks.
-    int rand_bytes = 3;
-    // The highest possible result of the RNG.
-    int rand_max = (int) Math.pow(2, (rand_bytes * 8) - 1);
+    // The spec says that we should handle up to 2^40 validators, but we can't do this,
+    // so we just fall back to int (2^31 validators).
+    // checkArgument(listSize <= 1099511627776L); // 2^40
 
-    // The range of the RNG places an upper-bound on the size of the list that
-    // may be shuffled. It is a logic error to supply an oversized list.
-    checkArgument(values_count < rand_max);
+    /*
+     * In the following, great care is needed around signed and unsigned values.
+     * Note that the % (modulo) operator in Java behaves differently from the
+     * modulo operator in python:
+     *   Python -1 % 13 = 12
+     *   Java   -1 % 13 = -1
+     *
+     * Using UnsignedLong doesn't help us as some quantities can legitimately be negative.
+     */
 
-    ArrayList<T> output = new ArrayList<>(values);
+    int indexRet = index;
+    byte[] byteTmp = new byte[1];
+    byte[] powerOfTwoNumbers = {1, 2, 4, 8, 16, 32, 64, (byte) 128};
 
-    Bytes32 source = seed;
-    int index = 0;
-    while (index < values_count - 1) {
-      // Re-hash the `source` to obtain a new pattern of bytes.
-      source = Hash.keccak256(source);
-      // List to hold values for swap below.
-      T tmp;
+    for (int round = 0; round < SHUFFLE_ROUND_COUNT; round++) {
 
-      // Iterate through the `source` bytes in 3-byte chunks
-      for (int position = 0; position < (32 - (32 % rand_bytes)); position += rand_bytes) {
-        // Determine the number of indices remaining in `values` and exit
-        // once the last index is reached.
-        int remaining = values_count - index;
-        if (remaining == 1) break;
+      byteTmp[0] = (byte) round;
+      Bytes roundAsByte = Bytes.wrap(byteTmp);
 
-        // Read 3-bytes of `source` as a 24-bit big-endian integer.
-        int sample_from_source = bytes3ToInt(source, position);
+      // This needs to be unsigned modulo.
+      int pivot =
+          (int)
+              Long.remainderUnsigned(
+                  Hash.keccak256(Bytes.concatenate(seed, roundAsByte))
+                      .slice(0, 8)
+                      .toLong(ByteOrder.LITTLE_ENDIAN),
+                  listSize);
+      int flip = (pivot - indexRet) % listSize;
+      if (flip < 0) {
+        // Account for flip being negative
+        flip += listSize;
+      }
 
-        // Sample values greater than or equal to `sample_max` will cause
-        // modulo bias when mapped into the `remaining` range.
-        int sample_max = rand_max - rand_max % remaining;
-        // Perform a swap if the consumed entropy will not cause modulo bias.
-        if (sample_from_source < sample_max) {
-          // Select a replacement index for the current index
-          int replacement_position = (sample_from_source % remaining) + index;
-          // Swap the current index with the replacement index.
-          tmp = output.get(index);
-          output.set(index, output.get(replacement_position));
-          output.set(replacement_position, tmp);
-          index += 1;
+      int position = (indexRet < flip) ? flip : indexRet;
+
+      // We skip the first byte which is equivalent to dividing by 256
+      Bytes positionDiv256 = Bytes.ofUnsignedLong(position, ByteOrder.LITTLE_ENDIAN).slice(1, 4);
+      Bytes source = Hash.keccak256(Bytes.concatenate(seed, roundAsByte, positionDiv256));
+
+      // The byte type is signed in Java, but the right shift should be fine as we just use bit 0.
+      // But we can't use % in the normal way because of signedness, so we `& 1` instead.
+      byte theByte = source.get(position % 256 / 8);
+      byte theMask = powerOfTwoNumbers[position % 8];
+      if ((theByte & theMask) != 0) {
+        indexRet = flip;
+      }
+    }
+
+    return indexRet;
+  }
+
+  /**
+   * Return shuffled indices in a pseudorandom permutation `0...list_size-1` with ``seed`` as
+   * entropy.
+   *
+   * <p>Utilizes 'swap or not' shuffling found in
+   * https://link.springer.com/content/pdf/10.1007%2F978-3-642-32009-5_1.pdf See the 'generalized
+   * domain' algorithm on page 3.
+   *
+   * <p>The result of this should be the same as calling get_permuted_index() for each index in the
+   * list
+   *
+   * @param listSize The size of the list from which the element is taken. Must not exceed 2^31.
+   * @param seed Initial seed value used for randomization.
+   * @return The permuted arrays of indices
+   */
+  @VisibleForTesting
+  public static int[] shuffle(int listSize, Bytes32 seed) {
+
+    /*
+     * In the following, great care is needed around signed and unsigned values.
+     * Note that the % (modulo) operator in Java behaves differently from the
+     * modulo operator in python:
+     *   Python -1 % 13 = 12
+     *   Java   -1 % 13 = -1
+     *
+     * Using UnsignedLong doesn't help us as some quantities can legitimately be negative.
+     */
+
+    int[] indices = new int[listSize];
+    for (int i = 0; i < listSize; i++) {
+      indices[i] = i;
+    }
+
+    byte[] byteTmp = new byte[1];
+    byte[] powerOfTwoNumbers = {1, 2, 4, 8, 16, 32, 64, (byte) 128};
+
+    for (int round = 0; round < SHUFFLE_ROUND_COUNT; round++) {
+
+      byteTmp[0] = (byte) round;
+      Bytes roundAsByte = Bytes.wrap(byteTmp);
+
+      Bytes hashBytes = Bytes.EMPTY;
+      for (int i = 0; i < (listSize + 255) / 256; i++) {
+        Bytes iAsBytes4 = Bytes.ofUnsignedInt(i, ByteOrder.LITTLE_ENDIAN);
+        hashBytes =
+            Bytes.concatenate(
+                hashBytes, Hash.keccak256(Bytes.concatenate(seed, roundAsByte, iAsBytes4)));
+      }
+
+      // This needs to be unsigned modulo.
+      int pivot =
+          (int)
+              Long.remainderUnsigned(
+                  Hash.keccak256(Bytes.concatenate(seed, roundAsByte))
+                      .slice(0, 8)
+                      .toLong(ByteOrder.LITTLE_ENDIAN),
+                  listSize);
+
+      for (int i = 0; i < listSize; i++) {
+
+        int flip = (pivot - indices[i]) % listSize;
+        if (flip < 0) {
+          // Account for flip being negative
+          flip += listSize;
+        }
+
+        int hashPosition = (indices[i] < flip) ? flip : indices[i];
+        byte theByte = hashBytes.get(hashPosition / 8);
+        byte theMask = powerOfTwoNumbers[hashPosition % 8];
+        if ((theByte & theMask) != 0) {
+          indices[i] = flip;
         }
       }
     }
 
-    return output;
+    return indices;
   }
 
   /**
