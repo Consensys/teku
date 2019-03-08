@@ -24,14 +24,17 @@ import java.util.Optional;
 import java.util.PriorityQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import net.consensys.cava.bytes.Bytes;
+import org.apache.logging.log4j.Level;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.util.AttestationUtil;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
+import tech.pegasys.artemis.util.alogger.ALogger;
 
 /** This class is the ChainStorage client-side logic */
 public class ChainStorageClient implements ChainStorage {
+  static final ALogger LOG = new ALogger(ChainStorageClient.class.getName());
 
   protected final HashMap<Integer, Attestation> latestAttestations = new HashMap<>();
   protected final PriorityQueue<BeaconBlock> unprocessedBlocks =
@@ -179,13 +182,13 @@ public class ChainStorageClient implements ChainStorage {
 
   @Subscribe
   public void onNewUnprocessedBlock(BeaconBlock block) {
-    LOG.info("ChainStorage: new unprocessed BeaconBlock detected");
+    LOG.log(Level.INFO, "ChainStorage: new unprocessed BeaconBlock detected");
     addUnprocessedBlock(block);
   }
 
   @Subscribe
   public void onNewUnprocessedAttestation(Attestation attestation) {
-    LOG.info("ChainStorage: new unprocessed Attestation detected");
+    LOG.log(Level.INFO, "ChainStorage: new unprocessed Attestation detected");
     addUnprocessedAttestation(attestation);
 
     // TODO: verify the assumption below:

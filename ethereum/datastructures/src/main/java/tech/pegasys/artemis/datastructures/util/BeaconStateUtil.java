@@ -52,8 +52,7 @@ import java.util.stream.Collectors;
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.crypto.Hash;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.Level;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
@@ -66,6 +65,7 @@ import tech.pegasys.artemis.datastructures.state.Crosslink;
 import tech.pegasys.artemis.datastructures.state.CrosslinkCommittee;
 import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.datastructures.state.Validator;
+import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.bitwise.BitwiseOps;
 import tech.pegasys.artemis.util.bls.BLSException;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
@@ -73,7 +73,7 @@ import tech.pegasys.artemis.util.bls.BLSSignature;
 
 public class BeaconStateUtil {
 
-  private static final Logger LOG = LogManager.getLogger(BeaconStateUtil.class.getName());
+  private static final ALogger LOG = new ALogger(BeaconStateUtil.class.getName());
 
   public static BeaconState get_initial_beacon_state(
       ArrayList<Deposit> initial_validator_deposits,
@@ -841,7 +841,8 @@ public class BeaconStateUtil {
     try {
       message = hash_tree_root(proof_of_possession_data.toBytes());
     } catch (Exception e) {
-      LOG.fatal(
+      LOG.log(
+          Level.FATAL,
           "validate_proof_of_possession(): Error calculating the hash_tree_root(proof_of_possession). "
               + e);
     }
