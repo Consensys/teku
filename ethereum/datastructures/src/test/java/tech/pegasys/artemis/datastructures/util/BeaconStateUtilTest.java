@@ -364,4 +364,36 @@ class BeaconStateUtilTest {
     beaconState.setValidator_balances(balanceList);
     return beaconState;
   }
+
+  // *************** START Shuffling Tests ***************
+
+  // TODO: tests for get_shuffling() - the reference tests are out of date.
+
+  // The following are just sanity checks. The real testing is against the official test vectors,
+  // elsewhere.
+
+  @Test
+  void succeedsWhenGetPermutedIndexReturnsAPermutation() {
+    Bytes32 seed = Bytes32.random();
+    int listSize = 1000;
+    boolean[] done = new boolean[listSize]; // Initialised to false
+    for (int i = 0; i < listSize; i++) {
+      int idx = BeaconStateUtil.get_permuted_index(i, listSize, seed);
+      assertFalse(done[idx]);
+      done[idx] = true;
+    }
+  }
+
+  @Test
+  void succeedsWhenGetPermutedIndexAndShuffleGiveTheSameResults() {
+    Bytes32 seed = Bytes32.random();
+    int listSize = (int) randomUnsignedLong().longValue() % 1000;
+    int[] shuffling = BeaconStateUtil.shuffle(listSize, seed);
+    for (int i = 0; i < listSize; i++) {
+      int idx = BeaconStateUtil.get_permuted_index(i, listSize, seed);
+      assertEquals(shuffling[i], idx);
+    }
+  }
+
+  // *************** END Shuffling Tests *****************
 }
