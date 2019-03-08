@@ -8,6 +8,7 @@ jar {
 
 dependencies {
   implementation project(':ethereum:datastructures')
+  implementation project(':util')
 
   implementation 'net.consensys.cava:cava-kv'
   implementation 'net.consensys.cava:cava-bytes'

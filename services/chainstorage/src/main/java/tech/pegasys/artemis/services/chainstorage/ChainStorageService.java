@@ -14,16 +14,15 @@
 package tech.pegasys.artemis.services.chainstorage;
 
 import com.google.common.eventbus.EventBus;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import tech.pegasys.artemis.services.ServiceInterface;
 import tech.pegasys.artemis.storage.ChainStorage;
 import tech.pegasys.artemis.storage.ChainStorageServer;
+import tech.pegasys.artemis.util.alogger.ALogger;
 
 public class ChainStorageService implements ServiceInterface {
   private EventBus eventBus;
   private ChainStorageServer chainStore;
-  private static final Logger LOG = LogManager.getLogger(ChainStorageService.class.getName());
+  private static final ALogger LOG = new ALogger(ChainStorageService.class.getName());
 
   public ChainStorageService() {}
 

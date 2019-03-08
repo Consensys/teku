@@ -10,6 +10,7 @@ dependencies {
   implementation project(':services')
   implementation project(':pow')
   implementation project(':ethereum:datastructures')
+  implementation project(':util')
 
   implementation 'com.google.guava:guava'
   implementation 'org.apache.logging.log4j:log4j-api'

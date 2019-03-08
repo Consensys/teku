@@ -9,6 +9,7 @@ jar {
 dependencies {
   implementation project(':networking:p2p')
   implementation project(':services')
+  implementation project(':util')
 
   implementation 'com.google.guava:guava'
   implementation 'org.apache.logging.log4j:log4j-api'
