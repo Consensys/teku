@@ -50,7 +50,8 @@ public class BeaconNode {
     this.eventBus = new AsyncEventBus(Executors.newCachedThreadPool());
     this.p2pNetwork = new MockP2PNetwork(eventBus);
     this.eventBus.register(this);
-    this.path = "/Users/jonny/projects/consensys/pegasys/artemis/";
+    // TODO: make path and filename a commandline argument
+    this.path = "/Users/jonny/projects/consensys/pegasys/artemis/output";
     this.filename = "artemis";
     this.cliArgs = cliArgs;
     this.commandLine = commandLine;

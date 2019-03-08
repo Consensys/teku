@@ -13,21 +13,15 @@
 
 package tech.pegasys.artemis.data.provider;
 
-import com.google.common.eventbus.Subscribe;
 import java.io.BufferedWriter;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.util.List;
 import java.util.Objects;
-import net.consensys.cava.bytes.Bytes32;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import tech.pegasys.artemis.data.RawRecord;
 import tech.pegasys.artemis.data.TimeSeriesRecord;
-import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
-import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 
 public class CSVProvider {
   private static final Logger LOG = LogManager.getLogger(CSVProvider.class.getName());
@@ -113,22 +107,5 @@ public class CSVProvider {
     } catch (IOException e) {
       LOG.warn(e);
     }
-  }
-
-  @Subscribe
-  public void onDataEvent(RawRecord record) {
-    BeaconBlock block = record.getBlock();
-    BeaconState state = record.getState();
-    Bytes32 block_root = HashTreeUtil.hash_tree_root(block.toBytes());
-    TimeSeriesRecord tsRecord =
-        new TimeSeriesRecord(
-            record.getNodeTime(),
-            record.getNodeSlot(),
-            block_root,
-            block.getState_root(),
-            block.getParent_root());
-    CSVProvider csvRecord = new CSVProvider(tsRecord);
-    CSVProvider.output(
-        "/Users/jonny/projects/consensys/pegasys/artemis/", "artemis.csv", csvRecord);
   }
 }
