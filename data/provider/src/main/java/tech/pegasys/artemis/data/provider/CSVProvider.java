@@ -13,31 +13,16 @@
 
 package tech.pegasys.artemis.data.provider;
 
-import java.io.BufferedWriter;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.util.List;
 import java.util.Objects;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import tech.pegasys.artemis.data.TimeSeriesRecord;
+import tech.pegasys.artemis.util.alogger.ALogger;
 
-public class CSVProvider {
-  private static final Logger LOG = LogManager.getLogger(CSVProvider.class.getName());
-  TimeSeriesRecord record;
+public class CSVProvider extends FileProvider<CSVProvider> {
+  private static final ALogger LOG = new ALogger(CSVProvider.class.getName());
 
   public CSVProvider() {}
 
   public CSVProvider(TimeSeriesRecord record) {
-    this.record = record;
-  }
-
-  public TimeSeriesRecord getRecord() {
-    return this.record;
-  }
-
-  public void setRecord(TimeSeriesRecord record) {
     this.record = record;
   }
 
@@ -73,39 +58,5 @@ public class CSVProvider {
         + ", '"
         + record.getParentBlockRoot().toHexString()
         + "'";
-  }
-
-  public static void output(String path, String filename, List<CSVProvider> records) {
-    try {
-      BufferedWriter bw =
-          new BufferedWriter(
-              new OutputStreamWriter(
-                  new FileOutputStream(path + "/" + filename + ".csv"), "UTF-8"));
-      for (CSVProvider record : records) {
-        StringBuilder line = new StringBuilder(record.toString());
-        bw.write(line.toString());
-        bw.newLine();
-      }
-      bw.flush();
-      bw.close();
-    } catch (IOException e) {
-      LOG.warn(e);
-    }
-  }
-
-  public static void output(String path, String filename, CSVProvider record) {
-    try {
-      BufferedWriter bw =
-          new BufferedWriter(
-              new OutputStreamWriter(
-                  new FileOutputStream(path + "/" + filename + ".csv", true), "UTF-8"));
-      StringBuilder line = new StringBuilder(record.toString());
-      bw.write(line.toString());
-      bw.newLine();
-      bw.flush();
-      bw.close();
-    } catch (IOException e) {
-      LOG.warn(e);
-    }
   }
 }

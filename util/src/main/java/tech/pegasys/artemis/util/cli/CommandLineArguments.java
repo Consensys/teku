@@ -20,9 +20,10 @@ import picocli.CommandLine.Option;
 @Command(name = "Artemis", mixinStandardHelpOptions = true)
 public class CommandLineArguments {
   @Option(
-      names = {"-p", "--PoWChainServiceDisabled"},
-      description = "If this option is enabled then the PoW Chain service is disabled.")
-  private Boolean PoWChainServiceDisabled = false;
+      names = {"-o", "--output"},
+      paramLabel = "<FILENAME>",
+      description = "the path/filename of the output file")
+  private String outputFile = "";
 
   @Option(
       names = {"-l", "--logging"},
@@ -32,8 +33,12 @@ public class CommandLineArguments {
           "Logging verbosity levels: OFF, FATAL, WARN, INFO, DEBUG, TRACE, ALL (default: INFO).")
   private Level logLevel = Level.INFO;
 
-  public Boolean getPoWChainServiceDisabled() {
-    return this.PoWChainServiceDisabled;
+  public String getOutputFile() {
+    return this.outputFile;
+  }
+
+  public Boolean isOutputEnabled() {
+    return this.outputFile.length() > 0;
   }
 
   public Level getLoggingLevel() {

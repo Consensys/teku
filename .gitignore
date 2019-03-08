@@ -28,8 +28,7 @@ out/
 web3j/
 ganache-cli/
 pow/src/main/resources/keys.json
-output/
-
+artemis.csv*
 *.vscode/
 pow/truffle/.vscode/
 pow/truffle/node_modules/

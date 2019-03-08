@@ -162,6 +162,9 @@ public class StateProcessor {
         Level.INFO,
         "Updated Head State Root:          " + newStateRoot.toHexString(),
         this.printEnabled);
+    RawRecord record =
+        new RawRecord(this.nodeTime.longValue(), this.nodeSlot.longValue(), newState, headBlock);
+    this.eventBus.post(record);
   }
 
   protected Boolean inspectBlock(Optional<BeaconBlock> block) {
