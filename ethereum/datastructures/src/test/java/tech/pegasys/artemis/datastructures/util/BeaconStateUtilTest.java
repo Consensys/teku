@@ -359,6 +359,15 @@ class BeaconStateUtilTest {
         BeaconStateUtil.get_previous_epoch(beaconState));
   }
 
+  @Test
+  void succeedsWhenGetNextEpochReturnsTheEpochPlusOne() {
+    BeaconState beaconState = createBeaconState();
+    beaconState.setSlot(UnsignedLong.valueOf(Constants.GENESIS_SLOT));
+    assertEquals(
+        UnsignedLong.valueOf(Constants.GENESIS_EPOCH + 1),
+        BeaconStateUtil.get_next_epoch(beaconState));
+  }
+
   private BeaconState createBeaconState() {
     return createBeaconState(false, null, null);
   }
