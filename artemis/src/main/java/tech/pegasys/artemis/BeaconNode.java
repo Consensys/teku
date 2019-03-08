@@ -16,8 +16,11 @@ package tech.pegasys.artemis;
 import com.google.common.eventbus.AsyncEventBus;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
+import java.io.IOException;
 import java.util.concurrent.Executors;
 import net.consensys.cava.bytes.Bytes32;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.core.config.Configurator;
 import picocli.CommandLine;
 import tech.pegasys.artemis.data.RawRecord;
@@ -25,6 +28,8 @@ import tech.pegasys.artemis.data.TimeSeriesRecord;
 import tech.pegasys.artemis.data.provider.CSVProvider;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.networking.p2p.MockP2PNetwork;
+import tech.pegasys.artemis.networking.p2p.api.P2PNetwork;
 import tech.pegasys.artemis.services.ServiceController;
 import tech.pegasys.artemis.services.beaconchain.BeaconChainService;
 import tech.pegasys.artemis.services.chainstorage.ChainStorageService;
@@ -33,6 +38,8 @@ import tech.pegasys.artemis.util.cli.CommandLineArguments;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 
 public class BeaconNode {
+  private static final Logger LOG = LogManager.getLogger(CSVProvider.class.getName());
+  P2PNetwork p2pNetwork;
   EventBus eventBus;
   String path;
   String filename;
@@ -41,7 +48,7 @@ public class BeaconNode {
 
   public BeaconNode(CommandLine commandLine, CommandLineArguments cliArgs) {
     this.eventBus = new AsyncEventBus(Executors.newCachedThreadPool());
-    ;
+    this.p2pNetwork = new MockP2PNetwork(eventBus);
     this.eventBus.register(this);
     this.path = "/Users/jonny/projects/consensys/pegasys/artemis/";
     this.filename = "artemis";
@@ -79,9 +86,19 @@ public class BeaconNode {
           ChainStorageService.class);
       // Start services
       ServiceController.startAll(cliArgs);
+      // Start p2p adapter
+      this.p2pNetwork.run();
 
     } catch (Exception e) {
       System.out.println(e.toString());
+    }
+  }
+
+  public void stop() {
+    try {
+      this.p2pNetwork.close();
+    } catch (IOException e) {
+      LOG.warn(e);
     }
   }
 
