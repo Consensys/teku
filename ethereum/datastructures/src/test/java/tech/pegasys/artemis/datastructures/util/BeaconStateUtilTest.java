@@ -367,7 +367,10 @@ class BeaconStateUtilTest {
 
   // *************** START Shuffling Tests ***************
 
-  // TODO: tests for get_shuffling()
+  // TODO: tests for get_shuffling() - the reference tests are out of date.
+
+  // The following are just sanity checks. The real testing is against the official test vectors,
+  // elsewhere.
 
   @Test
   void succeedsWhenGetPermutedIndexReturnsAPermutation() {
@@ -378,44 +381,6 @@ class BeaconStateUtilTest {
       int idx = BeaconStateUtil.get_permuted_index(i, listSize, seed);
       assertFalse(done[idx]);
       done[idx] = true;
-    }
-  }
-
-  @Test
-  void succeedsWhenGetPermutedIndexResultMatchesTestDataForOneHundredElements() {
-    // TODO: this is from protolambda's test data based on SHA256 - to be updated
-    Bytes32 seed =
-        Bytes32.fromHexString("0xdf3f619804a92fdb4057192dc43dd748ea778adc52bc498ce80524c014b81119");
-    int listSize = 100;
-    int[] shuffling = {
-      3, 61, 89, 23, 54, 47, 20, 58, 68, 95, 31, 4, 46, 55, 98, 2, 67, 15, 8, 19, 72, 56, 79, 64,
-      96, 45, 42, 71, 22, 87, 6, 29, 70, 53, 24, 5, 41, 81, 59, 90, 86, 10, 51, 83, 44, 91, 26, 97,
-      9, 85, 36, 21, 88, 18, 94, 0, 14, 82, 30, 65, 78, 28, 63, 92, 12, 76, 84, 25, 52, 33, 49, 50,
-      7, 40, 35, 77, 62, 27, 38, 73, 11, 17, 99, 75, 32, 43, 74, 60, 48, 16, 13, 69, 80, 34, 93, 39,
-      1, 37, 57, 66
-    };
-    for (int i = 0; i < listSize; i++) {
-      int idx = BeaconStateUtil.get_permuted_index(i, listSize, seed);
-      assertEquals(shuffling[i], idx);
-    }
-  }
-
-  @Test
-  void succeedsWhenShuffleResultMatchesTestDataForOneHundredElements() {
-    // TODO: this is from protolambda's test data based on SHA256 - to be updated
-    Bytes32 seed =
-        Bytes32.fromHexString("0xdf3f619804a92fdb4057192dc43dd748ea778adc52bc498ce80524c014b81119");
-    int listSize = 100;
-    int[] shuffling = {
-      3, 61, 89, 23, 54, 47, 20, 58, 68, 95, 31, 4, 46, 55, 98, 2, 67, 15, 8, 19, 72, 56, 79, 64,
-      96, 45, 42, 71, 22, 87, 6, 29, 70, 53, 24, 5, 41, 81, 59, 90, 86, 10, 51, 83, 44, 91, 26, 97,
-      9, 85, 36, 21, 88, 18, 94, 0, 14, 82, 30, 65, 78, 28, 63, 92, 12, 76, 84, 25, 52, 33, 49, 50,
-      7, 40, 35, 77, 62, 27, 38, 73, 11, 17, 99, 75, 32, 43, 74, 60, 48, 16, 13, 69, 80, 34, 93, 39,
-      1, 37, 57, 66
-    };
-    int[] indices = BeaconStateUtil.shuffle(listSize, seed);
-    for (int i = 0; i < listSize; i++) {
-      assertEquals(shuffling[i], indices[i]);
     }
   }
 
