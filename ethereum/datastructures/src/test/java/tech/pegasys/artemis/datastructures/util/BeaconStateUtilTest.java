@@ -415,7 +415,7 @@ class BeaconStateUtilTest {
   @Test
   void succeedsWhenGetPermutedIndexAndShuffleGiveTheSameResults() {
     Bytes32 seed = Bytes32.random();
-    int listSize = (int) randomUnsignedLong().longValue() % 1000;
+    int listSize = 1 + (int) randomUnsignedLong().longValue() % 1000;
     int[] shuffling = BeaconStateUtil.shuffle(listSize, seed);
     for (int i = 0; i < listSize; i++) {
       int idx = BeaconStateUtil.get_permuted_index(i, listSize, seed);
