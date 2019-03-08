@@ -160,6 +160,7 @@ public class ChainStorageClient implements ChainStorage {
 
   /**
    * Returns a validator's latest attestation
+   *
    * @param validatorIndex
    * @return
    */

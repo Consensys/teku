@@ -11,15 +11,9 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.data.provider;
+package tech.pegasys.artemis.data.adapter;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
-
-public class CSVProvider {
-  
-  public CSVProvider(){
-
-  }
+/** Data Adapter Interface class */
+public interface DataAdapter<T> {
+  T transform();
 }

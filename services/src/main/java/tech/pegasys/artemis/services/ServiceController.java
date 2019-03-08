@@ -13,7 +13,6 @@
 
 package tech.pegasys.artemis.services;
 
-import com.google.common.eventbus.AsyncEventBus;
 import com.google.common.eventbus.EventBus;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -33,11 +32,9 @@ public class ServiceController {
       Executors.newSingleThreadExecutor();
 
   // initialize/register all services
-  public static <
-          U extends ServiceInterface,
-          V extends ServiceInterface,
-          W extends ServiceInterface>
+  public static <U extends ServiceInterface, V extends ServiceInterface, W extends ServiceInterface>
       void initAll(
+          EventBus eventBus,
           CommandLineArguments cliArgs,
           Class<U> beaconChainServiceType,
           Class<V> powchainServiceType,
@@ -46,7 +43,6 @@ public class ServiceController {
     powchainService = ServiceFactory.getInstance(powchainServiceType).getInstance();
     chainStorageService = ServiceFactory.getInstance(chainStorageServiceType).getInstance();
 
-    EventBus eventBus = new AsyncEventBus(Executors.newCachedThreadPool());
     beaconChainService.init(eventBus);
     powchainService.init(eventBus);
     chainStorageService.init(eventBus);

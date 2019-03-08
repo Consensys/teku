@@ -23,6 +23,7 @@ import java.util.Optional;
 import net.consensys.cava.bytes.Bytes32;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import tech.pegasys.artemis.data.RawRecord;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
@@ -76,6 +77,10 @@ public class StateProcessor {
       this.headBlock = genesis_block;
       this.justifiedStateRoot = initial_state_root;
       this.eventBus.post(true);
+      RawRecord record =
+          new RawRecord(
+              this.nodeTime.longValue(), this.nodeSlot.longValue(), initial_state, genesis_block);
+      this.eventBus.post(record);
     } catch (IllegalStateException e) {
       LOG.fatal(e);
     }
@@ -211,6 +216,10 @@ public class StateProcessor {
           this.store.addProcessedBlock(blockStateRoot, block);
           this.store.addProcessedBlock(blockRoot, block);
           this.store.addState(currentStateRoot, currentState);
+          RawRecord record =
+              new RawRecord(
+                  this.nodeTime.longValue(), this.nodeSlot.longValue(), currentState, block);
+          this.eventBus.post(record);
         } else {
           LOG.info("The fork_head's state root does NOT matches the calculated state root!");
         }

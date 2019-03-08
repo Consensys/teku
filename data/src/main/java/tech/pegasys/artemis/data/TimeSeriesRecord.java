@@ -13,6 +13,8 @@
 
 package tech.pegasys.artemis.data;
 
+import java.util.Objects;
+import net.consensys.cava.bytes.Bytes;
 
 public class TimeSeriesRecord {
 
@@ -22,7 +24,10 @@ public class TimeSeriesRecord {
   private Bytes stateRoot;
   private Bytes parentBlockRoot;
 
-  public TimeSeriesRecord(Long time, Long slot, Bytes blockRoot, Bytes stateRoot, Bytes parentBlockRoot) {
+  public TimeSeriesRecord() {}
+
+  public TimeSeriesRecord(
+      Long time, Long slot, Bytes blockRoot, Bytes stateRoot, Bytes parentBlockRoot) {
     this.time = time;
     this.slot = slot;
     this.blockRoot = blockRoot;
@@ -71,39 +76,21 @@ public class TimeSeriesRecord {
   }
 
   @Override
-    public boolean equals(Object o) {
-        if (o == this)
-            return true;
-        if (!(o instanceof TimeSeriesRecord)) {
-            return false;
-        }
-        TimeSeriesRecord timeSeriesRecord = (TimeSeriesRecord) o;
-        return Objects.equals(time, timeSeriesRecord.time) && Objects.equals(slot, timeSeriesRecord.slot) && Objects.equals(blockRoot, timeSeriesRecord.blockRoot) && Objects.equals(stateRoot, timeSeriesRecord.stateRoot) && Objects.equals(parentBlockRoot, timeSeriesRecord.parentBlockRoot);
+  public boolean equals(Object o) {
+    if (o == this) return true;
+    if (!(o instanceof TimeSeriesRecord)) {
+      return false;
+    }
+    TimeSeriesRecord timeSeriesRecord = (TimeSeriesRecord) o;
+    return Objects.equals(time, timeSeriesRecord.time)
+        && Objects.equals(slot, timeSeriesRecord.slot)
+        && Objects.equals(blockRoot, timeSeriesRecord.blockRoot)
+        && Objects.equals(stateRoot, timeSeriesRecord.stateRoot)
+        && Objects.equals(parentBlockRoot, timeSeriesRecord.parentBlockRoot);
   }
 
   @Override
   public int hashCode() {
     return Objects.hash(time, slot, blockRoot, stateRoot, parentBlockRoot);
   }
-
-  @Override
-  public String toString() {
-    return "{" +
-      " time='" + getTime() + "'" +
-      ", slot='" + getSlot() + "'" +
-      ", blockRoot='" + getBlockRoot() + "'" +
-      ", stateRoot='" + getStateRoot() + "'" +
-      ", parentBlockRoot='" + getParentBlockRoot() + "'" +
-      "}";
-  }
-
-  public TimeSeriesRecord() {
-    
-  }
-
-  public TimeSeriesRecord(BeaconState state, BeaconBlock block) {
-
-  }
-
- 
 }
