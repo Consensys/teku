@@ -28,5 +28,16 @@ public final class Artemis {
     commandLine.parse(args);
     BeaconNode node = new BeaconNode(commandLine, cliArgs);
     node.start();
+
+    // Detect SIGTERM
+    Runtime.getRuntime()
+        .addShutdownHook(
+            new Thread() {
+              @Override
+              public void run() {
+                System.out.println("Artemis is shutting down");
+                node.stop();
+              }
+            });
   }
 }

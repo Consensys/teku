@@ -57,45 +57,30 @@ public class BeaconNode {
   }
 
   public void start() {
-    try {
-
-      if (commandLine.isUsageHelpRequested()) {
-        commandLine.usage(System.out);
-        return;
-      }
-      // set log level per CLI flags
-      System.out.println("Setting logging level to " + cliArgs.getLoggingLevel().name());
-      Configurator.setAllLevels("", cliArgs.getLoggingLevel());
-      // Detect SIGTERM
-      Runtime.getRuntime()
-          .addShutdownHook(
-              new Thread() {
-                @Override
-                public void run() {
-                  System.out.println("Artemis is shutting down");
-                  ServiceController.stopAll(cliArgs);
-                }
-              });
-
-      // Initialize services
-      ServiceController.initAll(
-          eventBus,
-          cliArgs,
-          BeaconChainService.class,
-          PowchainService.class,
-          ChainStorageService.class);
-      // Start services
-      ServiceController.startAll(cliArgs);
-      // Start p2p adapter
-      this.p2pNetwork.run();
-
-    } catch (Exception e) {
-      System.out.println(e.toString());
+    if (commandLine.isUsageHelpRequested()) {
+      commandLine.usage(System.out);
+      return;
     }
+    // set log level per CLI flags
+    System.out.println("Setting logging level to " + cliArgs.getLoggingLevel().name());
+    Configurator.setAllLevels("", cliArgs.getLoggingLevel());
+
+    // Initialize services
+    ServiceController.initAll(
+        eventBus,
+        cliArgs,
+        BeaconChainService.class,
+        PowchainService.class,
+        ChainStorageService.class);
+    // Start services
+    ServiceController.startAll(cliArgs);
+    // Start p2p adapter
+    this.p2pNetwork.run();
   }
 
   public void stop() {
     try {
+      ServiceController.stopAll(cliArgs);
       this.p2pNetwork.close();
     } catch (IOException e) {
       LOG.warn(e);
