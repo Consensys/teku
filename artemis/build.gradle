@@ -14,8 +14,16 @@ dependencies {
   implementation project(':services:beaconchain')
   implementation project(':services:chainstorage')
   implementation project(':util')
+  implementation project(':data')
+  implementation project(':data:adapter')
+  implementation project(':data:provider')
+  implementation project(':ethereum:datastructures')
+
   
   api 'com.google.guava:guava:27.0.1-jre'
+  implementation 'net.consensys.cava:cava-crypto'
+  implementation 'net.consensys.cava:cava-units'
+  implementation 'net.consensys.cava:cava-ssz'
   implementation 'info.picocli:picocli'
   implementation 'com.google.guava:guava'
   implementation 'net.consensys.cava:cava-toml'
