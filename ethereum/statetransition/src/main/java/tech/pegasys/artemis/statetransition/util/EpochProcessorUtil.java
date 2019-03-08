@@ -29,8 +29,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import net.consensys.cava.bytes.Bytes32;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.Level;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.Eth1DataVote;
@@ -42,11 +41,12 @@ import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.datastructures.util.AttestationUtil;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.datastructures.util.ValidatorsUtil;
+import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.bitwise.BitwiseOps;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 
 public class EpochProcessorUtil {
-  private static final Logger LOG = LogManager.getLogger(EpochProcessorUtil.class.getName());
+  private static final ALogger LOG = new ALogger(EpochProcessorUtil.class.getName());
 
   /**
    * update eth1Data state fields. spec:
@@ -74,7 +74,7 @@ public class EpochProcessorUtil {
         }
       }
 
-      state.setEth1_data_votes(new ArrayList<Eth1DataVote>());
+      state.setEth1_data_votes(new ArrayList<>());
     }
   }
 
@@ -211,7 +211,7 @@ public class EpochProcessorUtil {
       try {
         inclusion_distance = AttestationUtil.inclusion_distance(state, index);
       } catch (Exception e) {
-        LOG.info("apply_inclusion_base_penalty(): " + e);
+        LOG.log(Level.INFO, "apply_inclusion_base_penalty(): " + e, true);
       }
       return base_reward(state, index, previous_total_balance)
           .times(UnsignedLong.valueOf(Constants.MIN_ATTESTATION_INCLUSION_DELAY))

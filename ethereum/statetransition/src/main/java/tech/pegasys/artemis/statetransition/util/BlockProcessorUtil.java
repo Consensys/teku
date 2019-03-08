@@ -58,8 +58,7 @@ import java.util.Objects;
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.crypto.Hash;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.Level;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.Eth1DataVote;
@@ -76,6 +75,7 @@ import tech.pegasys.artemis.datastructures.state.CrosslinkCommittee;
 import tech.pegasys.artemis.datastructures.state.PendingAttestation;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
+import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.bls.BLSException;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
@@ -83,7 +83,9 @@ import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 
 public class BlockProcessorUtil {
 
-  private static final Logger LOG = LogManager.getLogger(BlockProcessorUtil.class.getName());
+  private static final ALogger LOG = new ALogger(BlockProcessorUtil.class.getName());
+  private static boolean printDuringDemo = true;
+
   /**
    * Spec: https://github.com/ethereum/eth2.0-specs/blob/v0.1/specs/core/0_beacon-chain.md#slot-1
    *
@@ -127,13 +129,13 @@ public class BlockProcessorUtil {
     BLSPublicKey pubkey = state.getValidator_registry().get(proposerIndex).getPubkey();
     UnsignedLong domain = get_domain(state.getFork(), get_current_epoch(state), DOMAIN_PROPOSAL);
 
-    LOG.info("In Verify Signatures");
-    LOG.info("Proposer pubkey: " + pubkey);
-    LOG.info("state: " + HashTreeUtil.hash_tree_root(state.toBytes()));
-    LOG.info("proposal root: " + proposalRoot.toHexString());
-    LOG.info("block signature: " + block.getSignature().toString());
-    LOG.info("slot: " + state.getSlot().longValue());
-    LOG.info("domain: " + domain);
+    LOG.log(Level.INFO, "In Verify Signatures", printDuringDemo);
+    LOG.log(Level.INFO, "Proposer pubkey: " + pubkey, printDuringDemo);
+    LOG.log(Level.INFO, "state: " + HashTreeUtil.hash_tree_root(state.toBytes()), printDuringDemo);
+    LOG.log(Level.INFO, "proposal root: " + proposalRoot.toHexString(), printDuringDemo);
+    LOG.log(Level.INFO, "block signature: " + block.getSignature().toString(), printDuringDemo);
+    LOG.log(Level.INFO, "slot: " + state.getSlot().longValue(), printDuringDemo);
+    LOG.log(Level.INFO, "domain: " + domain, printDuringDemo);
 
     checkArgument(
         bls_verify(pubkey, proposalRoot, block.getSignature(), domain), "verify signature failed");
@@ -275,8 +277,9 @@ public class BlockProcessorUtil {
   /**
    * @param state
    * @param block
-   * @see
-   *     https://github.com/ethereum/eth2.0-specs/blob/v0.1/specs/core/0_beacon-chain.md#attester-slashings-1
+   * @see <a
+   *     href="https://github.com/ethereum/eth2.0-specs/blob/v0.1/specs/core/0_beacon-chain.md#attester-slashings-1">
+   *     this link</a>
    */
   public static void attester_slashing(BeaconState state, BeaconBlock block)
       throws IllegalArgumentException, BlockProcessingException {
@@ -332,8 +335,9 @@ public class BlockProcessorUtil {
   /**
    * @param state
    * @param block
-   * @see
-   *     https://github.com/ethereum/eth2.0-specs/blob/v0.1/specs/core/0_beacon-chain.md#attestations-1
+   * @see <a
+   *     href="https://github.com/ethereum/eth2.0-specs/blob/v0.1/specs/core/0_beacon-chain.md#attestations-1">
+   *     this link</a>
    */
   public static void processAttestations(BeaconState state, BeaconBlock block)
       throws IllegalArgumentException, BlockProcessingException {
@@ -506,7 +510,9 @@ public class BlockProcessorUtil {
   /**
    * @param state
    * @param block
-   * @see https://github.com/ethereum/eth2.0-specs/blob/v0.1/specs/core/0_beacon-chain.md#deposits-1
+   * @see <a
+   *     href="https://github.com/ethereum/eth2.0-specs/blob/v0.1/specs/core/0_beacon-chain.md#deposits-1">this
+   *     link</a>
    */
   public static void processDeposits(BeaconState state, BeaconBlock block)
       throws BlockProcessingException {
@@ -549,7 +555,9 @@ public class BlockProcessorUtil {
   /**
    * @param state
    * @param block
-   * @see https://github.com/ethereum/eth2.0-specs/blob/v0.1/specs/core/0_beacon-chain.md#exits-1
+   * @see <a
+   *     href="https://github.com/ethereum/eth2.0-specs/blob/v0.1/specs/core/0_beacon-chain.md#exits-1">this
+   *     link </a>
    */
   public static void processExits(BeaconState state, BeaconBlock block)
       throws BlockProcessingException {

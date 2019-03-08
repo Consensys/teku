@@ -21,8 +21,7 @@ import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.Level;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.ProposalSignedData;
@@ -35,6 +34,7 @@ import tech.pegasys.artemis.networking.p2p.api.P2PNetwork;
 import tech.pegasys.artemis.pow.api.Eth2GenesisEvent;
 import tech.pegasys.artemis.statetransition.StateTransition;
 import tech.pegasys.artemis.statetransition.StateTransitionException;
+import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
@@ -42,11 +42,18 @@ import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 public class MockP2PNetwork implements P2PNetwork {
 
   private final EventBus eventBus;
-  private static final Logger LOG = LogManager.getLogger(MockP2PNetwork.class.getName());
+  private static final ALogger LOG = new ALogger(MockP2PNetwork.class.getName());
+  private boolean printDuringDemo = false;
 
   public MockP2PNetwork(EventBus eventBus) {
     this.eventBus = eventBus;
     this.eventBus.register(this);
+  }
+
+  public MockP2PNetwork(EventBus eventBus, boolean printDuringDemo) {
+    this.eventBus = eventBus;
+    this.eventBus.register(this);
+    this.printDuringDemo = printDuringDemo;
   }
 
   /**
@@ -135,11 +142,11 @@ public class MockP2PNetwork implements P2PNetwork {
     UnsignedLong domain =
         BeaconStateUtil.get_domain(state.getFork(), epoch, Constants.DOMAIN_RANDAO);
     Bytes32 currentEpochBytes = Bytes32.leftPad(Bytes.ofUnsignedLong(epoch.longValue()));
-    LOG.info("Sign Epoch");
-    LOG.info("Proposer pubkey: " + keypair.getPublicKey());
-    LOG.info("state: " + HashTreeUtil.hash_tree_root(state.toBytes()));
-    LOG.info("slot: " + slot);
-    LOG.info("domain: " + domain);
+    LOG.log(Level.INFO, "Sign Epoch", printDuringDemo);
+    LOG.log(Level.INFO, "Proposer pubkey: " + keypair.getPublicKey(), printDuringDemo);
+    LOG.log(Level.INFO, "state: " + HashTreeUtil.hash_tree_root(state.toBytes()), printDuringDemo);
+    LOG.log(Level.INFO, "slot: " + slot, printDuringDemo);
+    LOG.log(Level.INFO, "domain: " + domain, printDuringDemo);
     return BLSSignature.sign(keypair, currentEpochBytes, domain.longValue());
   }
 
@@ -179,19 +186,19 @@ public class MockP2PNetwork implements P2PNetwork {
             BeaconStateUtil.slot_to_epoch(state.getSlot()),
             Constants.DOMAIN_PROPOSAL);
     BLSSignature signature = BLSSignature.sign(keypair, proposalRoot, domain.longValue());
-    LOG.info("Sign Proposal");
-    LOG.info("Proposer pubkey: " + keypair.getPublicKey());
-    LOG.info("state: " + HashTreeUtil.hash_tree_root(state.toBytes()));
-    LOG.info("proposal root: " + proposalRoot.toHexString());
-    LOG.info("block signature: " + signature.toString());
-    LOG.info("slot: " + state.getSlot().longValue());
-    LOG.info("domain: " + domain);
+    LOG.log(Level.INFO, "Sign Proposal", printDuringDemo);
+    LOG.log(Level.INFO, "Proposer pubkey: " + keypair.getPublicKey(), printDuringDemo);
+    LOG.log(Level.INFO, "state: " + HashTreeUtil.hash_tree_root(state.toBytes()), printDuringDemo);
+    LOG.log(Level.INFO, "proposal root: " + proposalRoot.toHexString(), printDuringDemo);
+    LOG.log(Level.INFO, "block signature: " + signature.toString(), printDuringDemo);
+    LOG.log(Level.INFO, "slot: " + state.getSlot().longValue(), printDuringDemo);
+    LOG.log(Level.INFO, "domain: " + domain, printDuringDemo);
     return signature;
   }
 
   private void simulateNewMessages() {
     try {
-      StateTransition stateTransition = new StateTransition("MockP2PNetwork - ");
+      StateTransition stateTransition = new StateTransition();
 
       BeaconState state = DataStructureUtil.createInitialBeaconState();
       Bytes32 state_root = HashTreeUtil.hash_tree_root(state.toBytes());
@@ -200,7 +207,7 @@ public class MockP2PNetwork implements P2PNetwork {
 
       ArrayList<Deposit> deposits = new ArrayList<>();
       while (true) {
-        LOG.info("In MockP2PNetwork");
+        LOG.log(Level.INFO, "In MockP2PNetwork", printDuringDemo);
         state = BeaconState.deepCopy(state);
         state_root = Bytes32.ZERO;
         block =
@@ -215,19 +222,25 @@ public class MockP2PNetwork implements P2PNetwork {
         BLSSignature signed_proposal = signProposalData(state, block);
         block.setSignature(signed_proposal);
 
-        LOG.info("MockP2PNetwork - NEWLY PRODUCED BLOCK");
-        LOG.info("MockP2PNetwork - block.slot: " + block.getSlot());
-        LOG.info("MockP2PNetwork - block.parent_root: " + block.getParent_root());
-        LOG.info("MockP2PNetwork - block.state_root: " + block.getState_root());
+        LOG.log(Level.INFO, "MockP2PNetwork - NEWLY PRODUCED BLOCK", printDuringDemo);
+        LOG.log(Level.INFO, "MockP2PNetwork - block.slot: " + block.getSlot(), printDuringDemo);
+        LOG.log(
+            Level.INFO,
+            "MockP2PNetwork - block.parent_root: " + block.getParent_root(),
+            printDuringDemo);
+        LOG.log(
+            Level.INFO,
+            "MockP2PNetwork - block.state_root: " + block.getState_root(),
+            printDuringDemo);
         parent_root = HashTreeUtil.hash_tree_root(block.toBytes());
-        LOG.info("MockP2PNetwork - block.block_root: " + parent_root);
+        LOG.log(Level.INFO, "MockP2PNetwork - block.block_root: " + parent_root, printDuringDemo);
 
         this.eventBus.post(block);
-        LOG.info("End MockP2PNetwork");
+        LOG.log(Level.INFO, "End MockP2PNetwork", printDuringDemo);
         Thread.sleep(6000);
       }
     } catch (InterruptedException | StateTransitionException e) {
-      LOG.warn(e.toString());
+      LOG.log(Level.WARN, e.toString(), printDuringDemo);
     }
   }
 }

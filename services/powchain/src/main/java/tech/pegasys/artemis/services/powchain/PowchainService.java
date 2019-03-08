@@ -21,8 +21,7 @@ import java.math.BigInteger;
 import java.nio.charset.Charset;
 import java.util.Collections;
 import net.consensys.cava.bytes.Bytes;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.Level;
 import org.web3j.protocol.core.methods.response.Log;
 import tech.pegasys.artemis.ganache.GanacheController;
 import tech.pegasys.artemis.pow.DepositContractListener;
@@ -32,11 +31,12 @@ import tech.pegasys.artemis.pow.contract.DepositContract;
 import tech.pegasys.artemis.pow.contract.DepositContract.Eth2GenesisEventResponse;
 import tech.pegasys.artemis.pow.event.Eth2Genesis;
 import tech.pegasys.artemis.services.ServiceInterface;
+import tech.pegasys.artemis.util.alogger.ALogger;
 
 public class PowchainService implements ServiceInterface {
 
   private EventBus eventBus;
-  private static final Logger LOG = LogManager.getLogger();
+  private static final ALogger LOG = new ALogger();
 
   private GanacheController controller;
   private DepositContractListener listener;
@@ -85,20 +85,25 @@ public class PowchainService implements ServiceInterface {
   // simulate depositors
   private static void simulateDepositActivity(DepositContract contract, EventBus eventBus) {
     Bytes bytes = Bytes.random(DEPOSIT_DATA_SIZE);
+    boolean printDuringDemo = true;
     while (true) {
       try {
         contract.deposit(bytes.toArray(), new BigInteger(SIM_DEPOSIT_VALUE)).send();
       } catch (Exception e) {
-        LOG.warn(
+        LOG.log(
+            Level.WARN,
             "PowchainService.simulateDepositActivity: Exception thrown when attempting to send a deposit transaction during a deposit simulation\n"
-                + e);
+                + e,
+            printDuringDemo);
       }
       try {
         Thread.sleep(10000);
       } catch (InterruptedException e) {
-        LOG.warn(
+        LOG.log(
+            Level.WARN,
             "PowchainService.simulateDepositActivity: Exception thrown when attempting a thread sleep during a deposit simulation\n"
-                + e);
+                + e,
+            printDuringDemo);
       }
     }
   }

@@ -23,8 +23,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 import net.consensys.cava.bytes.Bytes32;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockBody;
@@ -41,6 +39,7 @@ import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
 import tech.pegasys.artemis.datastructures.operations.SlashableAttestation;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Validator;
+import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
@@ -48,7 +47,7 @@ import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 
 public final class DataStructureUtil {
 
-  private static final Logger LOG = LogManager.getLogger(DataStructureUtil.class.getName());
+  private static final ALogger LOG = new ALogger(DataStructureUtil.class.getName());
 
   public static long randomInt() {
     return Math.round(Math.random() * 1000000);

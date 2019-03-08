@@ -14,29 +14,31 @@
 package tech.pegasys.artemis.pow;
 
 import com.google.common.eventbus.EventBus;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.Level;
 import org.web3j.crypto.Credentials;
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.http.HttpService;
 import org.web3j.tx.gas.DefaultGasProvider;
 import tech.pegasys.artemis.ganache.GanacheController;
 import tech.pegasys.artemis.pow.contract.DepositContract;
+import tech.pegasys.artemis.util.alogger.ALogger;
 
 public class DepositContractListenerFactory {
 
   public static DepositContractListener simulationDepositContract(
       EventBus eventBus, GanacheController controller) {
-    Logger LOG = LogManager.getLogger();
+    ALogger LOG = new ALogger();
     Web3j web3j = Web3j.build(new HttpService(controller.getProvider()));
     Credentials credentials = Credentials.create(controller.getAccounts().get(0).getPrivateKey());
     DepositContract contract = null;
     try {
       contract = DepositContract.deploy(web3j, credentials, new DefaultGasProvider()).send();
     } catch (Exception e) {
-      LOG.fatal(
+      LOG.log(
+          Level.FATAL,
           "DepositContractListenerFactory.simulationDepositContract: DepositContract failed to deploy in the simulation environment\n"
-              + e);
+              + e,
+          true);
     }
     return new DepositContractListener(eventBus, contract);
   }
