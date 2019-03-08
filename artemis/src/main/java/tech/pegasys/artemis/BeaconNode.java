@@ -39,12 +39,12 @@ import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 
 public class BeaconNode {
   private static final Logger LOG = LogManager.getLogger(CSVProvider.class.getName());
-  P2PNetwork p2pNetwork;
-  EventBus eventBus;
-  String path;
-  String filename;
-  CommandLineArguments cliArgs;
-  CommandLine commandLine;
+  private P2PNetwork p2pNetwork;
+  private EventBus eventBus;
+  private String path;
+  private String filename;
+  private CommandLineArguments cliArgs;
+  private CommandLine commandLine;
 
   public BeaconNode(CommandLine commandLine, CommandLineArguments cliArgs) {
     this.eventBus = new AsyncEventBus(Executors.newCachedThreadPool());
