@@ -305,8 +305,8 @@ public class BeaconStateUtil {
     Bytes32 randao_mix =
         get_randao_mix(state, epoch.minus(UnsignedLong.valueOf(Constants.MIN_SEED_LOOKAHEAD)));
     Bytes32 index_root = get_active_index_root(state, epoch);
-    Bytes epochBytes = Bytes.ofUnsignedLong(epoch.longValue());
-    return Hash.keccak256(Bytes.wrap(Bytes.wrap(randao_mix, index_root), epochBytes));
+    Bytes32 epochBytes = int_to_bytes32(epoch.longValue());
+    return Hash.keccak256(Bytes.concatenate(randao_mix, index_root, epochBytes));
   }
 
   public static Bytes32 get_active_index_root(BeaconState state, UnsignedLong epoch) {
@@ -666,9 +666,7 @@ public class BeaconStateUtil {
       int pivot =
           (int)
               Long.remainderUnsigned(
-                  Hash.keccak256(Bytes.concatenate(seed, roundAsByte))
-                      .slice(0, 8)
-                      .toLong(ByteOrder.LITTLE_ENDIAN),
+                  bytes_to_int(Hash.keccak256(Bytes.concatenate(seed, roundAsByte)).slice(0, 8)),
                   listSize);
       int flip = (pivot - indexRet) % listSize;
       if (flip < 0) {
@@ -747,9 +745,7 @@ public class BeaconStateUtil {
       int pivot =
           (int)
               Long.remainderUnsigned(
-                  Hash.keccak256(Bytes.concatenate(seed, roundAsByte))
-                      .slice(0, 8)
-                      .toLong(ByteOrder.LITTLE_ENDIAN),
+                  bytes_to_int(Hash.keccak256(Bytes.concatenate(seed, roundAsByte)).slice(0, 8)),
                   listSize);
 
       for (int i = 0; i < listSize; i++) {
@@ -1194,5 +1190,17 @@ public class BeaconStateUtil {
       y = x.plus(n.dividedBy(x)).dividedBy(TWO);
     }
     return x;
+  }
+
+  public static Bytes32 int_to_bytes32(long value) {
+    return Bytes32.rightPad(Bytes.ofUnsignedLong(value, ByteOrder.LITTLE_ENDIAN));
+  }
+
+  public static Bytes32 int_to_bytes32(UnsignedLong value) {
+    return int_to_bytes32(value.longValue());
+  }
+
+  public static long bytes_to_int(Bytes bytes) {
+    return bytes.toLong(ByteOrder.LITTLE_ENDIAN);
   }
 }
