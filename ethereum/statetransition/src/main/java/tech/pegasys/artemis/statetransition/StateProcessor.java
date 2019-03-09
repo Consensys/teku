@@ -39,6 +39,7 @@ import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 public class StateProcessor {
 
   private BeaconBlock headBlock; // block chosen by lmd ghost to build and attest on
+  private Bytes32 finalizedStateRoot; // most recent finalized state root
   private Bytes32 justifiedStateRoot; // most recent justified state root
   private UnsignedLong nodeTime;
   private UnsignedLong nodeSlot;
@@ -91,6 +92,10 @@ public class StateProcessor {
       this.store.addProcessedBlock(genesis_block_root, genesis_block);
       this.headBlock = genesis_block;
       this.justifiedStateRoot = initial_state_root;
+      this.finalizedStateRoot = initial_state_root;
+      List<Bytes32> latest_block_roots = initial_state.getLatest_block_roots();
+      latest_block_roots.set(0, genesis_block_root);
+      initial_state.setLatest_block_roots(latest_block_roots);
       this.eventBus.post(true);
     } catch (IllegalStateException e) {
       LOG.log(Level.FATAL, e.toString(), this.printEnabled);
@@ -162,9 +167,17 @@ public class StateProcessor {
     this.nodeIndex = this.nodeIndex.plus(UnsignedLong.ONE);
     BeaconState justifiedState = store.getState(justifiedStateRoot).get();
     BeaconBlock justifiedBlock = store.getProcessedBlock(justifiedStateRoot).get();
+    BeaconState finalizedState = store.getState(finalizedStateRoot).get();
+    BeaconBlock finalizedBlock = store.getProcessedBlock(finalizedStateRoot).get();
     RawRecord record =
         new RawRecord(
-            this.nodeIndex.longValue(), newState, headBlock, justifiedState, justifiedBlock);
+            this.nodeIndex.longValue(),
+            newState,
+            headBlock,
+            justifiedState,
+            justifiedBlock,
+            finalizedState,
+            finalizedBlock);
     this.eventBus.post(record);
   }
 
@@ -182,6 +195,7 @@ public class StateProcessor {
     // however, the block is already removed from queue, so
     // we're losing a valid block here.
     if (this.nodeTime.compareTo(blockTime) < 0) {
+      LOG.log(Level.FATAL, "We lost a valid block!");
       return false;
     }
     return true;
@@ -283,7 +297,11 @@ public class StateProcessor {
 
   protected void updateHeadBlockUsingLMDGhost() {
     // Update justifiedStateRoot
-    updateJustifiedStateRoot();
+    // TODO: We need to double check the finalization logic
+    Bytes32 tmpStateRoot = this.justifiedStateRoot.copy();
+    if (updateJustifiedStateRoot()) {
+      this.finalizedStateRoot = tmpStateRoot;
+    }
 
     try {
       // Obtain latest justified block and state that will be passed into lmd_ghost
@@ -292,12 +310,12 @@ public class StateProcessor {
 
       // Run lmd_ghost to get the head block
       this.headBlock = LmdGhost.lmd_ghost(store, justifiedState, justifiedBlock);
-    } catch (StateTransitionException e) {
+    } catch (NoSuchElementException | StateTransitionException e) {
       LOG.log(Level.FATAL, "Can't update head block using lmd ghost", this.printEnabled);
     }
   }
 
-  protected void updateJustifiedStateRoot() {
+  protected Boolean updateJustifiedStateRoot() {
     // If it is the genesis epoch, keep the justified state root as genesis state root
     // because get_block_root gives an error if the slot is not less than state.slot
     if (BeaconStateUtil.slot_to_epoch(nodeSlot)
@@ -305,12 +323,18 @@ public class StateProcessor {
         != 0) {
       try {
         BeaconState headState = store.getState(headBlock.getState_root()).get();
-        this.justifiedStateRoot =
+
+        Bytes32 justifiedBlockRoot =
             BeaconStateUtil.get_block_root(
                 headState, BeaconStateUtil.get_epoch_start_slot(headState.getJustified_epoch()));
+
+        this.justifiedStateRoot =
+            HashTreeUtil.hash_tree_root(store.getState(justifiedBlockRoot).get().toBytes());
+        return true;
       } catch (Exception e) {
         LOG.log(Level.FATAL, "Can't update justified state root", this.printEnabled);
       }
     }
+    return false;
   }
 }

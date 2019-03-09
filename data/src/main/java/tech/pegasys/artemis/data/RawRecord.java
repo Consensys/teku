@@ -24,6 +24,8 @@ public class RawRecord {
   private BeaconBlock headBlock;
   private BeaconState justifiedState;
   private BeaconBlock justifiedBlock;
+  private BeaconState finalizedState;
+  private BeaconBlock finalizedBlock;
 
   public RawRecord() {}
 
@@ -32,12 +34,16 @@ public class RawRecord {
       BeaconState headState,
       BeaconBlock headBlock,
       BeaconState justifiedState,
-      BeaconBlock justifiedBlock) {
+      BeaconBlock justifiedBlock,
+      BeaconState finalizedState,
+      BeaconBlock finalizedBlock) {
     this.index = index;
     this.headState = headState;
     this.headBlock = headBlock;
     this.justifiedState = justifiedState;
     this.justifiedBlock = justifiedBlock;
+    this.finalizedState = finalizedState;
+    this.finalizedBlock = finalizedBlock;
   }
 
   public Long getIndex() {
@@ -80,6 +86,57 @@ public class RawRecord {
     this.justifiedBlock = justifiedBlock;
   }
 
+  public BeaconState getFinalizedState() {
+    return this.finalizedState;
+  }
+
+  public void setFinalizedState(BeaconState finalizedState) {
+    this.finalizedState = finalizedState;
+  }
+
+  public BeaconBlock getFinalizedBlock() {
+    return this.finalizedBlock;
+  }
+
+  public void setFinalizedBlock(BeaconBlock finalizedBlock) {
+    this.finalizedBlock = finalizedBlock;
+  }
+
+  public RawRecord index(Long index) {
+    this.index = index;
+    return this;
+  }
+
+  public RawRecord headState(BeaconState headState) {
+    this.headState = headState;
+    return this;
+  }
+
+  public RawRecord headBlock(BeaconBlock headBlock) {
+    this.headBlock = headBlock;
+    return this;
+  }
+
+  public RawRecord justifiedState(BeaconState justifiedState) {
+    this.justifiedState = justifiedState;
+    return this;
+  }
+
+  public RawRecord justifiedBlock(BeaconBlock justifiedBlock) {
+    this.justifiedBlock = justifiedBlock;
+    return this;
+  }
+
+  public RawRecord finalizedState(BeaconState finalizedState) {
+    this.finalizedState = finalizedState;
+    return this;
+  }
+
+  public RawRecord finalizedBlock(BeaconBlock finalizedBlock) {
+    this.finalizedBlock = finalizedBlock;
+    return this;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (o == this) return true;
@@ -91,11 +148,20 @@ public class RawRecord {
         && Objects.equals(headState, rawRecord.headState)
         && Objects.equals(headBlock, rawRecord.headBlock)
         && Objects.equals(justifiedState, rawRecord.justifiedState)
-        && Objects.equals(justifiedBlock, rawRecord.justifiedBlock);
+        && Objects.equals(justifiedBlock, rawRecord.justifiedBlock)
+        && Objects.equals(finalizedState, rawRecord.finalizedState)
+        && Objects.equals(finalizedBlock, rawRecord.finalizedBlock);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(index, headState, headBlock, justifiedState, justifiedBlock);
+    return Objects.hash(
+        index,
+        headState,
+        headBlock,
+        justifiedState,
+        justifiedBlock,
+        finalizedState,
+        finalizedBlock);
   }
 }
