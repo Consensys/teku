@@ -370,6 +370,22 @@ class BeaconStateUtilTest {
   }
 
   @Test
+  void intToBytes() {
+    long value = 0x0123456789abcdefL;
+    assertEquals(Bytes.EMPTY, BeaconStateUtil.int_to_bytes(value, 0));
+    assertEquals(Bytes.fromHexString("0xef"), BeaconStateUtil.int_to_bytes(value, 1));
+    assertEquals(Bytes.fromHexString("0xefcd"), BeaconStateUtil.int_to_bytes(value, 2));
+    assertEquals(Bytes.fromHexString("0xefcdab89"), BeaconStateUtil.int_to_bytes(value, 4));
+    assertEquals(Bytes.fromHexString("0xefcdab8967452301"), BeaconStateUtil.int_to_bytes(value, 8));
+    assertEquals(
+        Bytes.fromHexString("0xefcdab89674523010000000000000000"),
+        BeaconStateUtil.int_to_bytes(value, 16));
+    assertEquals(
+        Bytes.fromHexString("0xefcdab8967452301000000000000000000000000000000000000000000000000"),
+        BeaconStateUtil.int_to_bytes(value, 32));
+  }
+
+  @Test
   void intToBytes32Long() {
     assertEquals(
         Bytes32.fromHexString("0x0000000000000000000000000000000000000000000000000000000000000000"),

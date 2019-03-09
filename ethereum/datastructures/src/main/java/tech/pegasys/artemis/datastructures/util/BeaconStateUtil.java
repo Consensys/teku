@@ -654,13 +654,11 @@ public class BeaconStateUtil {
      */
 
     int indexRet = index;
-    byte[] byteTmp = new byte[1];
     byte[] powerOfTwoNumbers = {1, 2, 4, 8, 16, 32, 64, (byte) 128};
 
     for (int round = 0; round < SHUFFLE_ROUND_COUNT; round++) {
 
-      byteTmp[0] = (byte) round;
-      Bytes roundAsByte = Bytes.wrap(byteTmp);
+      Bytes roundAsByte = Bytes.of((byte) round);
 
       // This needs to be unsigned modulo.
       int pivot =
@@ -676,8 +674,7 @@ public class BeaconStateUtil {
 
       int position = (indexRet < flip) ? flip : indexRet;
 
-      // We skip the first byte which is equivalent to dividing by 256
-      Bytes positionDiv256 = Bytes.ofUnsignedLong(position, ByteOrder.LITTLE_ENDIAN).slice(1, 4);
+      Bytes positionDiv256 = int_to_bytes(position / 256, 4);
       Bytes source = Hash.keccak256(Bytes.concatenate(seed, roundAsByte, positionDiv256));
 
       // The byte type is signed in Java, but the right shift should be fine as we just use bit 0.
@@ -725,17 +722,15 @@ public class BeaconStateUtil {
       indices[i] = i;
     }
 
-    byte[] byteTmp = new byte[1];
     byte[] powerOfTwoNumbers = {1, 2, 4, 8, 16, 32, 64, (byte) 128};
 
     for (int round = 0; round < SHUFFLE_ROUND_COUNT; round++) {
 
-      byteTmp[0] = (byte) round;
-      Bytes roundAsByte = Bytes.wrap(byteTmp);
+      Bytes roundAsByte = Bytes.of((byte) round);
 
       Bytes hashBytes = Bytes.EMPTY;
       for (int i = 0; i < (listSize + 255) / 256; i++) {
-        Bytes iAsBytes4 = Bytes.ofUnsignedInt(i, ByteOrder.LITTLE_ENDIAN);
+        Bytes iAsBytes4 = int_to_bytes(i, 4);
         hashBytes =
             Bytes.concatenate(
                 hashBytes, Hash.keccak256(Bytes.concatenate(seed, roundAsByte, iAsBytes4)));
@@ -1192,8 +1187,28 @@ public class BeaconStateUtil {
     return x;
   }
 
+  /**
+   * Convert a long value into a number of bytes, little endian.
+   *
+   * <p>If numBytes is more than the size of a long then the returned value is right-padded with
+   * zero bytes. If numBytes is less than the size of a long then the value is truncated.
+   *
+   * @param value The value to be converted to bytes.
+   * @param numBytes The number of bytes to be returned.
+   * @return The requested number of bytes.
+   */
+  public static Bytes int_to_bytes(long value, int numBytes) {
+    final int longBytes = Long.SIZE / 8;
+    Bytes valueBytes = Bytes.ofUnsignedLong(value, ByteOrder.LITTLE_ENDIAN);
+    if (numBytes <= longBytes) {
+      return valueBytes.slice(0, numBytes);
+    } else {
+      return Bytes.concatenate(valueBytes, Bytes.wrap(new byte[numBytes - longBytes]));
+    }
+  }
+
   public static Bytes32 int_to_bytes32(long value) {
-    return Bytes32.rightPad(Bytes.ofUnsignedLong(value, ByteOrder.LITTLE_ENDIAN));
+    return Bytes32.wrap(int_to_bytes(value, 32));
   }
 
   public static Bytes32 int_to_bytes32(UnsignedLong value) {
