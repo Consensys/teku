@@ -29,42 +29,42 @@ import tech.pegasys.artemis.datastructures.util.InterfaceAdapter;
 
 public class BeaconState {
   // Misc
-  private UnsignedLong slot;
-  private UnsignedLong genesis_time;
-  private Fork fork; // For versioning hard forks
+  protected UnsignedLong slot;
+  protected UnsignedLong genesis_time;
+  protected Fork fork; // For versioning hard forks
 
   // Validator registry
-  private List<Validator> validator_registry;
-  private List<UnsignedLong> validator_balances;
-  private UnsignedLong validator_registry_update_epoch;
+  protected List<Validator> validator_registry;
+  protected List<UnsignedLong> validator_balances;
+  protected UnsignedLong validator_registry_update_epoch;
 
   // Randomness and committees
-  private List<Bytes32> latest_randao_mixes;
-  private UnsignedLong previous_epoch_start_shard;
-  private UnsignedLong current_epoch_start_shard;
-  private UnsignedLong previous_calculation_epoch;
-  private UnsignedLong current_calculation_epoch;
+  protected List<Bytes32> latest_randao_mixes;
+  protected UnsignedLong previous_epoch_start_shard;
+  protected UnsignedLong current_epoch_start_shard;
+  protected UnsignedLong previous_calculation_epoch;
+  protected UnsignedLong current_calculation_epoch;
 
   // Finality
-  private Bytes32 previous_epoch_seed;
-  private Bytes32 current_epoch_seed;
-  private UnsignedLong previous_justified_epoch;
-  private UnsignedLong justified_epoch;
-  private UnsignedLong justification_bitfield;
-  private UnsignedLong finalized_epoch;
+  protected Bytes32 previous_epoch_seed;
+  protected Bytes32 current_epoch_seed;
+  protected UnsignedLong previous_justified_epoch;
+  protected UnsignedLong justified_epoch;
+  protected UnsignedLong justification_bitfield;
+  protected UnsignedLong finalized_epoch;
 
   // Recent state
-  private List<Crosslink> latest_crosslinks;
-  private List<Bytes32> latest_block_roots;
-  private List<Bytes32> latest_index_roots;
-  private List<UnsignedLong>
+  protected List<Crosslink> latest_crosslinks;
+  protected List<Bytes32> latest_block_roots;
+  protected List<Bytes32> latest_index_roots;
+  protected List<UnsignedLong>
       latest_penalized_balances; // Balances penalized at every withdrawal period
-  private List<PendingAttestation> latest_attestations;
-  private List<Bytes32> batched_block_roots;
+  protected List<PendingAttestation> latest_attestations;
+  protected List<Bytes32> batched_block_roots;
 
   // Ethereum 1.0 chain data
-  private Eth1Data latest_eth1_data;
-  private List<Eth1DataVote> eth1_data_votes;
+  protected Eth1Data latest_eth1_data;
+  protected List<Eth1DataVote> eth1_data_votes;
 
   public static BeaconState deepCopy(BeaconState state) {
     Gson gson =

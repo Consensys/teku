@@ -202,27 +202,23 @@ public class MockP2PNetwork implements P2PNetwork {
       StateTransition stateTransition = new StateTransition(false);
 
       BeaconState state = DataStructureUtil.createInitialBeaconState();
-      Bytes32 state_root = HashTreeUtil.hash_tree_root(state.toBytes());
-      BeaconBlock block = BeaconBlock.createGenesis(state_root);
-      Bytes32 parent_root = HashTreeUtil.hash_tree_root(block.toBytes());
-      List<Bytes32> latest_block_roots = state.getLatest_block_roots();
-      latest_block_roots.set(0, parent_root);
-      state.setLatest_block_roots(latest_block_roots);
+      Bytes32 stateRoot = HashTreeUtil.hash_tree_root(state.toBytes());
+      BeaconBlock block = BeaconBlock.createGenesis(stateRoot);
+      Bytes32 blockRoot = HashTreeUtil.hash_tree_root(block.toBytes());
 
+      Bytes32 MockStateRoot = Bytes32.ZERO;
       ArrayList<Deposit> deposits = new ArrayList<>();
       while (true) {
         LOG.log(Level.INFO, "In MockP2PNetwork", printEnabled);
-        state = BeaconState.deepCopy(state);
-        state_root = Bytes32.ZERO;
         block =
             DataStructureUtil.newBeaconBlock(
-                state.getSlot().plus(UnsignedLong.ONE), parent_root, state_root, deposits);
+                state.getSlot().plus(UnsignedLong.ONE), blockRoot, MockStateRoot, deposits);
 
         BLSSignature epoch_signature = setEpochSignature(state);
         block.setRandao_reveal(epoch_signature);
-        stateTransition.initiate(state, block);
-        state_root = HashTreeUtil.hash_tree_root(state.toBytes());
-        block.setState_root(state_root);
+        stateTransition.initiate(state, block, blockRoot);
+        stateRoot = HashTreeUtil.hash_tree_root(state.toBytes());
+        block.setState_root(stateRoot);
         BLSSignature signed_proposal = signProposalData(state, block);
         block.setSignature(signed_proposal);
 
@@ -236,8 +232,8 @@ public class MockP2PNetwork implements P2PNetwork {
             Level.INFO,
             "MockP2PNetwork - block.state_root: " + block.getState_root(),
             printEnabled);
-        parent_root = HashTreeUtil.hash_tree_root(block.toBytes());
-        LOG.log(Level.INFO, "MockP2PNetwork - block.block_root: " + parent_root, printEnabled);
+            blockRoot = HashTreeUtil.hash_tree_root(block.toBytes());
+        LOG.log(Level.INFO, "MockP2PNetwork - block.block_root: " + blockRoot, printEnabled);
 
         this.eventBus.post(block);
         LOG.log(Level.INFO, "End MockP2PNetwork", printEnabled);
