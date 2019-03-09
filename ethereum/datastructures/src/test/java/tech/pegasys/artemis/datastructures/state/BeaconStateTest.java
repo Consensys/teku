@@ -29,7 +29,6 @@ import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_activ
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_current_epoch;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_initial_beacon_state;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_randao_mix;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.is_power_of_two;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.shuffle;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.split;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomDeposits;
@@ -390,17 +389,6 @@ class BeaconStateTest {
     expected.add(new ArrayList<>(three));
 
     assertThat(actual).isEqualTo(expected);
-  }
-
-  @Test
-  void isPowerOfTwo() {
-    assertThat(is_power_of_two(UnsignedLong.ZERO)).isEqualTo(false);
-    assertThat(is_power_of_two(UnsignedLong.valueOf(42L))).isEqualTo(false);
-    assertThat(is_power_of_two(UnsignedLong.valueOf(Long.MAX_VALUE))).isEqualTo(false);
-    assertThat(is_power_of_two(UnsignedLong.ONE)).isEqualTo(true);
-    assertThat(is_power_of_two(UnsignedLong.ONE.plus(UnsignedLong.ONE))).isEqualTo(true);
-    assertThat(is_power_of_two(UnsignedLong.valueOf(65536L))).isEqualTo(true);
-    assertThat(is_power_of_two(UnsignedLong.valueOf(4611686018427387904L))).isEqualTo(true);
   }
 
   @Test
