@@ -306,7 +306,7 @@ public class BeaconStateUtil {
         get_randao_mix(state, epoch.minus(UnsignedLong.valueOf(Constants.MIN_SEED_LOOKAHEAD)));
     Bytes32 index_root = get_active_index_root(state, epoch);
     Bytes32 epochBytes = int_to_bytes32(epoch.longValue());
-    return Hash.keccak256(Bytes.concatenate(randao_mix, index_root, epochBytes));
+    return Hash.keccak256(Bytes.wrap(randao_mix, index_root, epochBytes));
   }
 
   public static Bytes32 get_active_index_root(BeaconState state, UnsignedLong epoch) {
@@ -664,7 +664,7 @@ public class BeaconStateUtil {
       int pivot =
           (int)
               Long.remainderUnsigned(
-                  bytes_to_int(Hash.keccak256(Bytes.concatenate(seed, roundAsByte)).slice(0, 8)),
+                  bytes_to_int(Hash.keccak256(Bytes.wrap(seed, roundAsByte)).slice(0, 8)),
                   listSize);
       int flip = (pivot - indexRet) % listSize;
       if (flip < 0) {
@@ -675,7 +675,7 @@ public class BeaconStateUtil {
       int position = (indexRet < flip) ? flip : indexRet;
 
       Bytes positionDiv256 = int_to_bytes(position / 256, 4);
-      Bytes source = Hash.keccak256(Bytes.concatenate(seed, roundAsByte, positionDiv256));
+      Bytes source = Hash.keccak256(Bytes.wrap(seed, roundAsByte, positionDiv256));
 
       // The byte type is signed in Java, but the right shift should be fine as we just use bit 0.
       // But we can't use % in the normal way because of signedness, so we `& 1` instead.
@@ -731,16 +731,14 @@ public class BeaconStateUtil {
       Bytes hashBytes = Bytes.EMPTY;
       for (int i = 0; i < (listSize + 255) / 256; i++) {
         Bytes iAsBytes4 = int_to_bytes(i, 4);
-        hashBytes =
-            Bytes.concatenate(
-                hashBytes, Hash.keccak256(Bytes.concatenate(seed, roundAsByte, iAsBytes4)));
+        hashBytes = Bytes.wrap(hashBytes, Hash.keccak256(Bytes.wrap(seed, roundAsByte, iAsBytes4)));
       }
 
       // This needs to be unsigned modulo.
       int pivot =
           (int)
               Long.remainderUnsigned(
-                  bytes_to_int(Hash.keccak256(Bytes.concatenate(seed, roundAsByte)).slice(0, 8)),
+                  bytes_to_int(Hash.keccak256(Bytes.wrap(seed, roundAsByte)).slice(0, 8)),
                   listSize);
 
       for (int i = 0; i < listSize; i++) {
@@ -1203,7 +1201,7 @@ public class BeaconStateUtil {
     if (numBytes <= longBytes) {
       return valueBytes.slice(0, numBytes);
     } else {
-      return Bytes.concatenate(valueBytes, Bytes.wrap(new byte[numBytes - longBytes]));
+      return Bytes.wrap(valueBytes, Bytes.wrap(new byte[numBytes - longBytes]));
     }
   }
 

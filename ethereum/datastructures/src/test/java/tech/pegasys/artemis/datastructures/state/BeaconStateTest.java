@@ -424,7 +424,7 @@ class BeaconStateTest {
       assertThat(generate_seed(state, epoch))
           .isEqualTo(
               Hash.keccak256(
-                  Bytes.concatenate(
+                  Bytes.wrap(
                       Bytes32.fromHexString("0x029a"),
                       get_active_index_root(state, epoch),
                       int_to_bytes32(epoch))));
