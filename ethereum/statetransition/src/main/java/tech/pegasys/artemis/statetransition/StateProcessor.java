@@ -42,6 +42,7 @@ public class StateProcessor {
   private Bytes32 justifiedStateRoot; // most recent justified state root
   private UnsignedLong nodeTime;
   private UnsignedLong nodeSlot;
+  private UnsignedLong nodeIndex = UnsignedLong.ZERO;
   private final EventBus eventBus;
   private StateTransition stateTransition;
   private ChainStorageClient store;
@@ -55,12 +56,12 @@ public class StateProcessor {
     this.store = ChainStorage.Create(ChainStorageClient.class, eventBus);
   }
 
-  public StateProcessor(EventBus eventBus, boolean demoEnabled) {
+  public StateProcessor(EventBus eventBus, boolean printEnabled) {
     this.eventBus = eventBus;
     this.stateTransition = new StateTransition();
     this.eventBus.register(this);
     this.store = ChainStorage.Create(ChainStorageClient.class, eventBus);
-    this.printEnabled = demoEnabled;
+    this.printEnabled = printEnabled;
   }
 
   @Subscribe
@@ -91,10 +92,6 @@ public class StateProcessor {
       this.headBlock = genesis_block;
       this.justifiedStateRoot = initial_state_root;
       this.eventBus.post(true);
-      RawRecord record =
-          new RawRecord(
-              this.nodeTime.longValue(), this.nodeSlot.longValue(), initial_state, genesis_block);
-      this.eventBus.post(record);
     } catch (IllegalStateException e) {
       LOG.log(Level.FATAL, e.toString(), this.printEnabled);
     }
@@ -162,8 +159,12 @@ public class StateProcessor {
         Level.INFO,
         "Updated Head State Root:          " + newStateRoot.toHexString(),
         this.printEnabled);
+    this.nodeIndex = this.nodeIndex.plus(UnsignedLong.ONE);
+    BeaconState justifiedState = store.getState(justifiedStateRoot).get();
+    BeaconBlock justifiedBlock = store.getProcessedBlock(justifiedStateRoot).get();
     RawRecord record =
-        new RawRecord(this.nodeTime.longValue(), this.nodeSlot.longValue(), newState, headBlock);
+        new RawRecord(
+            this.nodeIndex.longValue(), newState, headBlock, justifiedState, justifiedBlock);
     this.eventBus.post(record);
   }
 
