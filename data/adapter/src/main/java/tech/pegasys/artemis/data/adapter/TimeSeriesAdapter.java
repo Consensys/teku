@@ -13,17 +13,19 @@
 
 package tech.pegasys.artemis.data.adapter;
 
+import com.google.common.primitives.UnsignedLong;
 import net.consensys.cava.bytes.Bytes32;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import tech.pegasys.artemis.data.RawRecord;
 import tech.pegasys.artemis.data.TimeSeriesRecord;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
+import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 
 /** Transforms a data record into a time series record */
 public class TimeSeriesAdapter implements DataAdapter<TimeSeriesRecord> {
-  private static final Logger LOG = LogManager.getLogger(TimeSeriesAdapter.class.getName());
+  private static final ALogger LOG = new ALogger(TimeSeriesAdapter.class.getName());
   RawRecord input;
 
   public TimeSeriesAdapter(RawRecord input) {
@@ -32,16 +34,30 @@ public class TimeSeriesAdapter implements DataAdapter<TimeSeriesRecord> {
 
   @Override
   public TimeSeriesRecord transform() {
-    // BeaconState state = this.input.getState();
-    BeaconBlock block = this.input.getBlock();
-    // state = input.getState();
-    block = input.getBlock();
-    Bytes32 block_root = HashTreeUtil.hash_tree_root(block.toBytes());
+
+    long slot = this.input.getHeadBlock().getSlot();
+    // TODO: fix this war crime
+    long epoch =
+        BeaconStateUtil.slot_to_epoch(UnsignedLong.valueOf(this.input.getHeadBlock().getSlot()))
+            .longValue();
+    BeaconBlock headBlock = this.input.getHeadBlock();
+    BeaconState headState = this.input.getHeadState();
+    BeaconBlock justifiedBlock = this.input.getJustifiedBlock();
+    BeaconState justifiedState = this.input.getJustifiedState();
+    long numValidators = headState.getValidator_registry().size();
+
+    Bytes32 headBlockRoot = HashTreeUtil.hash_tree_root(headBlock.toBytes());
+    Bytes32 justifiedBlockRoot = HashTreeUtil.hash_tree_root(justifiedBlock.toBytes());
+    Bytes32 justifiedStateRoot = HashTreeUtil.hash_tree_root(justifiedState.toBytes());
     return new TimeSeriesRecord(
-        input.getNodeTime(),
-        input.getNodeSlot(),
-        block_root,
-        block.getState_root(),
-        block.getParent_root());
+        this.input.getIndex(),
+        slot,
+        epoch,
+        headBlockRoot.toHexString(),
+        headBlock.getState_root().toHexString(),
+        headBlock.getParent_root().toHexString(),
+        numValidators,
+        justifiedBlockRoot.toHexString(),
+        justifiedStateRoot.toHexString());
   }
 }

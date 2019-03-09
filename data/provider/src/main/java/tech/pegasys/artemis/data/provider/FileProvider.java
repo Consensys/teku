@@ -41,6 +41,9 @@ public abstract class FileProvider<T> {
     this.record = record;
   }
 
+  @Override
+  public abstract String toString();
+
   public static String uniqueFilename(String filename) {
     String newFilename = filename;
     File f = new File(filename);

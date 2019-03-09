@@ -19,50 +19,65 @@ import tech.pegasys.artemis.datastructures.state.BeaconState;
 
 public class RawRecord {
 
-  private Long nodeTime;
-  private Long nodeSlot;
-  private BeaconState state;
-  private BeaconBlock block;
+  private Long index;
+  private BeaconState headState;
+  private BeaconBlock headBlock;
+  private BeaconState justifiedState;
+  private BeaconBlock justifiedBlock;
 
   public RawRecord() {}
 
-  public RawRecord(Long nodeTime, Long nodeSlot, BeaconState state, BeaconBlock block) {
-    this.nodeTime = nodeTime;
-    this.nodeSlot = nodeSlot;
-    this.state = state;
-    this.block = block;
+  public RawRecord(
+      Long index,
+      BeaconState headState,
+      BeaconBlock headBlock,
+      BeaconState justifiedState,
+      BeaconBlock justifiedBlock) {
+    this.index = index;
+    this.headState = headState;
+    this.headBlock = headBlock;
+    this.justifiedState = justifiedState;
+    this.justifiedBlock = justifiedBlock;
   }
 
-  public Long getNodeTime() {
-    return this.nodeTime;
+  public Long getIndex() {
+    return this.index;
   }
 
-  public void setNodeTime(Long nodeTime) {
-    this.nodeTime = nodeTime;
+  public void setIndex(Long index) {
+    this.index = index;
   }
 
-  public Long getNodeSlot() {
-    return this.nodeSlot;
+  public BeaconState getHeadState() {
+    return this.headState;
   }
 
-  public void setNodeSlot(Long nodeSlot) {
-    this.nodeSlot = nodeSlot;
+  public void setHeadState(BeaconState headState) {
+    this.headState = headState;
   }
 
-  public BeaconState getState() {
-    return this.state;
+  public BeaconBlock getHeadBlock() {
+    return this.headBlock;
   }
 
-  public void setState(BeaconState state) {
-    this.state = state;
+  public void setHeadBlock(BeaconBlock headBlock) {
+    this.headBlock = headBlock;
   }
 
-  public BeaconBlock getBlock() {
-    return this.block;
+  public BeaconState getJustifiedState() {
+    return this.justifiedState;
   }
 
-  public void setBlock(BeaconBlock block) {
-    this.block = block;
+  public void setJustifiedState(BeaconState justifiedState) {
+    this.justifiedState = justifiedState;
+  }
+
+  public BeaconBlock getJustifiedBlock() {
+    return this.justifiedBlock;
+  }
+
+  public void setJustifiedBlock(BeaconBlock justifiedBlock) {
+    this.justifiedBlock = justifiedBlock;
   }
 
   @Override
@@ -72,14 +87,15 @@ public class RawRecord {
       return false;
     }
     RawRecord rawRecord = (RawRecord) o;
-    return Objects.equals(nodeTime, rawRecord.nodeTime)
-        && Objects.equals(nodeSlot, rawRecord.nodeSlot)
-        && Objects.equals(state, rawRecord.state)
-        && Objects.equals(block, rawRecord.block);
+    return Objects.equals(index, rawRecord.index)
+        && Objects.equals(headState, rawRecord.headState)
+        && Objects.equals(headBlock, rawRecord.headBlock)
+        && Objects.equals(justifiedState, rawRecord.justifiedState)
+        && Objects.equals(justifiedBlock, rawRecord.justifiedBlock);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(nodeTime, nodeSlot, state, block);
+    return Objects.hash(index, headState, headBlock, justifiedState, justifiedBlock);
   }
 }
