@@ -13,27 +13,29 @@
 
 package tech.pegasys.artemis.data.provider;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import java.util.Objects;
 import tech.pegasys.artemis.data.TimeSeriesRecord;
 import tech.pegasys.artemis.util.alogger.ALogger;
 
-public class CSVProvider extends FileProvider<CSVProvider> {
-  private static final ALogger LOG = new ALogger(CSVProvider.class.getName());
+public class JSONProvider extends FileProvider<JSONProvider> {
+  private static final ALogger LOG = new ALogger(JSONProvider.class.getName());
 
-  public CSVProvider() {}
+  public JSONProvider() {}
 
-  public CSVProvider(TimeSeriesRecord record) {
+  public JSONProvider(TimeSeriesRecord record) {
     this.record = record;
   }
 
   @Override
   public boolean equals(Object o) {
     if (o == this) return true;
-    if (!(o instanceof CSVProvider)) {
+    if (!(o instanceof JSONProvider)) {
       return false;
     }
-    CSVProvider cSVProvider = (CSVProvider) o;
-    return Objects.equals(record, cSVProvider.record);
+    JSONProvider jSONProvider = (JSONProvider) o;
+    return Objects.equals(record, jSONProvider.record);
   }
 
   @Override
@@ -43,32 +45,7 @@ public class CSVProvider extends FileProvider<CSVProvider> {
 
   @Override
   public String toString() {
-    return " '"
-        + record.getIndex()
-        + "'"
-        + ", '"
-        + record.getSlot()
-        + "'"
-        + ", '"
-        + record.getEpoch()
-        + "'"
-        + ", '"
-        + record.getHeadBlockRoot()
-        + "'"
-        + ", '"
-        + record.getHeadStateRoot()
-        + "'"
-        + ", '"
-        + record.getParentHeadBlockRoot()
-        + "'"
-        + ", '"
-        + record.getNumValidators()
-        + "'"
-        + ", '"
-        + record.getJustifiedBlockRoot()
-        + "'"
-        + ", '"
-        + record.getJustifiedStateRoot()
-        + "'";
+    Gson gson = new GsonBuilder().create();
+    return gson.toJson(record);
   }
 }
