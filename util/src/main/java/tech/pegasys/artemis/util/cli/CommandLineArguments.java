@@ -20,9 +20,15 @@ import picocli.CommandLine.Option;
 @Command(name = "Artemis", mixinStandardHelpOptions = true)
 public class CommandLineArguments {
   @Option(
+      names = {"-p", "--provider"},
+      paramLabel = "<PROVIDER TYPE>",
+      description = "Output provider types: CSV, JSON (default: JSON).")
+  private String providerType = "JSON";
+
+  @Option(
       names = {"-o", "--output"},
       paramLabel = "<FILENAME>",
-      description = "the path/filename of the output file")
+      description = "Path/filename of the output file")
   private String outputFile = "";
 
   @Option(
@@ -32,6 +38,10 @@ public class CommandLineArguments {
       description =
           "Logging verbosity levels: OFF, FATAL, WARN, INFO, DEBUG, TRACE, ALL (default: INFO).")
   private Level logLevel = Level.INFO;
+
+  public String getProviderType() {
+    return this.providerType;
+  }
 
   public String getOutputFile() {
     return this.outputFile;
