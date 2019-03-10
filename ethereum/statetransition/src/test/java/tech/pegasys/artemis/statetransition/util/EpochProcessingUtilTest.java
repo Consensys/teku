@@ -219,7 +219,7 @@ class EpochProcessingUtilTest {
     List<Integer> before_active_validators =
         ValidatorsUtil.get_active_validator_indices(state.getValidator_registry(), currentEpoch);
     UnsignedLong before_total_balance =
-        BeaconStateUtil.get_total_effective_balance(state, before_active_validators);
+        BeaconStateUtil.get_total_balance(state, before_active_validators);
 
     List<Validator> validators =
         ValidatorsUtil.get_active_validators(state.getValidator_registry(), currentEpoch);
@@ -235,7 +235,7 @@ class EpochProcessingUtilTest {
     List<Integer> after_active_validators =
         ValidatorsUtil.get_active_validator_indices(state.getValidator_registry(), currentEpoch);
     UnsignedLong after_total_balance =
-        BeaconStateUtil.get_total_effective_balance(state, after_active_validators);
+        BeaconStateUtil.get_total_balance(state, after_active_validators);
 
     int expected_num_validators = 24;
     UnsignedLong deposit_amount = UnsignedLong.valueOf(Constants.MAX_DEPOSIT_AMOUNT);
