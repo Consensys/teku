@@ -995,10 +995,10 @@ public class BeaconStateUtil {
    */
   public static boolean verify_slashable_attestation(
       BeaconState state, SlashableAttestation slashable_attestation) {
-    // NOTE: The spec defines this verification in terms of the custody bitfield length,
-    // however because we've implemented the bitfield as a static Bytes32 value
-    // instead of a variable length bitfield, checking against Bytes32.ZERO will suffice.
-    if (!Objects.equals(slashable_attestation.getCustody_bitfield(), Bytes32.ZERO)) return false;
+    if (!Objects.equals(
+        slashable_attestation.getCustody_bitfield(),
+        Bytes.wrap(new byte[slashable_attestation.getCustody_bitfield().size()])))
+      return false; // [TO BE REMOVED IN PHASE 1]
 
     if (slashable_attestation.getValidator_indices().size() == 0) return false;
 
