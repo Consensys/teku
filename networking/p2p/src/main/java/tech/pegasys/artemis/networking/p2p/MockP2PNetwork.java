@@ -18,6 +18,7 @@ import com.google.common.eventbus.Subscribe;
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
@@ -204,6 +205,9 @@ public class MockP2PNetwork implements P2PNetwork {
       Bytes32 state_root = HashTreeUtil.hash_tree_root(state.toBytes());
       BeaconBlock block = BeaconBlock.createGenesis(state_root);
       Bytes32 parent_root = HashTreeUtil.hash_tree_root(block.toBytes());
+      List<Bytes32> latest_block_roots = state.getLatest_block_roots();
+      latest_block_roots.set(0, parent_root);
+      state.setLatest_block_roots(latest_block_roots);
 
       ArrayList<Deposit> deposits = new ArrayList<>();
       while (true) {

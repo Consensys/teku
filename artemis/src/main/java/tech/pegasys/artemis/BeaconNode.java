@@ -27,6 +27,7 @@ import tech.pegasys.artemis.data.adapter.TimeSeriesAdapter;
 import tech.pegasys.artemis.data.provider.CSVProvider;
 import tech.pegasys.artemis.data.provider.FileProvider;
 import tech.pegasys.artemis.data.provider.JSONProvider;
+import tech.pegasys.artemis.data.provider.ProviderTypes;
 import tech.pegasys.artemis.networking.p2p.MockP2PNetwork;
 import tech.pegasys.artemis.networking.p2p.api.P2PNetwork;
 import tech.pegasys.artemis.services.ServiceController;
@@ -41,6 +42,7 @@ public class BeaconNode {
   private P2PNetwork p2pNetwork;
   private EventBus eventBus;
   private String outputFilename;
+  private FileProvider<?> fileProvider;
 
   private CommandLineArguments cliArgs;
   private CommandLine commandLine;
@@ -52,7 +54,12 @@ public class BeaconNode {
     this.commandLine = commandLine;
     if (cliArgs.isOutputEnabled()) {
       this.eventBus.register(this);
-      this.outputFilename = CSVProvider.uniqueFilename(cliArgs.getOutputFile());
+      this.outputFilename = FileProvider.uniqueFilename(cliArgs.getOutputFile());
+      if (ProviderTypes.compare(CSVProvider.class, cliArgs.getProviderType())) {
+        this.fileProvider = new CSVProvider();
+      } else {
+        this.fileProvider = new JSONProvider();
+      }
     }
   }
 
@@ -93,6 +100,7 @@ public class BeaconNode {
   public void onDataEvent(RawRecord record) {
     TimeSeriesAdapter adapter = new TimeSeriesAdapter(record);
     TimeSeriesRecord tsRecord = adapter.transform();
-    FileProvider.output(outputFilename, new JSONProvider(tsRecord));
+    fileProvider.setRecord(tsRecord);
+    FileProvider.output(outputFilename, fileProvider);
   }
 }
