@@ -181,9 +181,12 @@ public class BeaconStateUtil {
   /**
    * Return the list of `(committee, shard)` tuples for the `slot`.
    *
-   * @param state
-   * @param slot
-   * @param registry_change
+   * <p>Note: There are two possible shufflings for crosslink committees for a ``slot`` in the next
+   * epoch -- with and without a `registry_change`
+   *
+   * @param state The beacon state under consideration.
+   * @param slot The slot number.
+   * @param registry_change True if we are considering a registry change.
    * @return
    */
   public static ArrayList<CrosslinkCommittee> get_crosslink_committees_at_slot(
@@ -202,10 +205,10 @@ public class BeaconStateUtil {
 
     if (epoch.compareTo(current_epoch) == 0) {
 
-      committees_per_epoch = get_previous_epoch_committee_count(state);
-      seed = state.getPrevious_shuffling_seed();
-      shuffling_epoch = state.getPrevious_shuffling_epoch();
-      shuffling_start_shard = state.getPrevious_shuffling_start_shard();
+      committees_per_epoch = get_current_epoch_committee_count(state);
+      seed = state.getCurrent_shuffling_seed();
+      shuffling_epoch = state.getCurrent_shuffling_epoch();
+      shuffling_start_shard = state.getCurrent_shuffling_start_shard();
 
     } else if (epoch.compareTo(previous_epoch) == 0) {
 
