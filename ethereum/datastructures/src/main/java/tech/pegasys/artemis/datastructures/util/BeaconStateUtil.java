@@ -140,7 +140,8 @@ public class BeaconStateUtil {
 
             // Ethereum 1.0 chain data
             latest_eth1_data,
-            new ArrayList<>());
+            new ArrayList<>(),
+            UnsignedLong.valueOf(initial_validator_deposits.size()));
 
     // Process initial deposits
     for (Deposit validator_deposit : initial_validator_deposits) {
@@ -847,8 +848,9 @@ public class BeaconStateUtil {
     List<UnsignedLong> validatorBalances = state.getValidator_balances();
 
     // Verify that the proof of posession is valid before processing the deposit.
-    checkArgument(
-        validate_proof_of_possession(state, pubkey, proof_of_possession, withdrawal_credentials));
+    if (!validate_proof_of_possession(state, pubkey, proof_of_possession, withdrawal_credentials)) {
+      return;
+    }
 
     // Retrieve the list of validator's public keys from the current state.
     List<BLSPublicKey> validator_pubkeys =
