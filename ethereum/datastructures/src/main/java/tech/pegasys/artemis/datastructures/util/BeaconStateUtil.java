@@ -355,22 +355,6 @@ public class BeaconStateUtil {
   }
 
   /**
-   * return the Sum(min(validator balance, MAX_DEPOSIT) validator_indices)
-   *
-   * @param state
-   * @param validator_indices
-   * @return
-   */
-  public static UnsignedLong get_total_effective_balance(
-      BeaconState state, List<Integer> validator_indices) {
-    UnsignedLong total_balance = UnsignedLong.ZERO;
-    for (Integer index : validator_indices) {
-      total_balance = total_balance.plus(BeaconStateUtil.get_effective_balance(state, index));
-    }
-    return total_balance;
-  }
-
-  /**
    * calculate the total balance from the previous epoch
    *
    * @param state
@@ -380,12 +364,35 @@ public class BeaconStateUtil {
     UnsignedLong previous_epoch = BeaconStateUtil.get_previous_epoch(state);
     List<Integer> previous_active_validators =
         ValidatorsUtil.get_active_validator_indices(state.getValidator_registry(), previous_epoch);
-    return get_total_effective_balance(state, previous_active_validators);
+    return get_total_balance(state, previous_active_validators);
   }
 
-  public static UnsignedLong total_balance(BeaconState state, CrosslinkCommittee crosslink_committe)
-      throws Exception {
-    return BeaconStateUtil.get_total_effective_balance(state, crosslink_committe.getCommittee());
+  /**
+   * Adds and returns the effective balances for the validators in the given CrossLinkCommittee.
+   *
+   * @param state - The current BeaconState.
+   * @param crosslink_committee - The CrosslinkCommittee with the committee of validators to get the
+   *     total balance for.
+   * @return The combined effective balance of the list of validators.
+   */
+  public static UnsignedLong get_total_balance(
+      BeaconState state, CrosslinkCommittee crosslink_committee) {
+    return get_total_balance(state, crosslink_committee.getCommittee());
+  }
+
+  /**
+   * Adds and returns the effective balances for the validators referenced by the given indices.
+   *
+   * @param state - The current BeaconState.
+   * @param validator_indices - A list of validator indices to get the total balance for.
+   * @return The combined effective balance of the list of validators.
+   */
+  public static UnsignedLong get_total_balance(BeaconState state, List<Integer> validator_indices) {
+    UnsignedLong total_balance = UnsignedLong.ZERO;
+    for (Integer index : validator_indices) {
+      total_balance = total_balance.plus(BeaconStateUtil.get_effective_balance(state, index));
+    }
+    return total_balance;
   }
 
   /** Return the epoch number of the given ``slot`` */

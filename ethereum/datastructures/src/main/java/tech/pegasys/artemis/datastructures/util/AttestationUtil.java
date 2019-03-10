@@ -356,7 +356,7 @@ public class AttestationUtil {
             BeaconStateUtil.get_attestation_participants(
                 state, attestation.getData(), attestation.getAggregation_bitfield().toArray());
         UnsignedLong attesting_balance =
-            BeaconStateUtil.get_total_effective_balance(state, attesting_indices);
+            BeaconStateUtil.get_total_balance(state, attesting_indices);
         shard_balances.put(
             attestation.getData().getShard_block_root(),
             shard_balances
@@ -409,7 +409,7 @@ public class AttestationUtil {
   public static UnsignedLong total_attesting_balance(
       BeaconState state, CrosslinkCommittee crosslink_committee) throws Exception {
     List<Integer> attesting_validators = attesting_validators(state, crosslink_committee);
-    return BeaconStateUtil.get_total_effective_balance(state, attesting_validators);
+    return BeaconStateUtil.get_total_balance(state, attesting_validators);
   }
 
   public static PendingAttestation inclusion_slot_attestation(BeaconState state, Integer index)
