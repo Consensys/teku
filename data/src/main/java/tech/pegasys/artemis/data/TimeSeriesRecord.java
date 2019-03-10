@@ -26,6 +26,8 @@ public class TimeSeriesRecord {
   private Long numValidators;
   private String justifiedBlockRoot;
   private String justifiedStateRoot;
+  private String finalizedBlockRoot;
+  private String finalizedStateRoot;
 
   public TimeSeriesRecord() {}
 
@@ -38,7 +40,9 @@ public class TimeSeriesRecord {
       String parentHeadBlockRoot,
       Long numValidators,
       String justifiedBlockRoot,
-      String justifiedStateRoot) {
+      String justifiedStateRoot,
+      String finalizedBlockRoot,
+      String finalizedStateRoot) {
     this.index = index;
     this.slot = slot;
     this.epoch = epoch;
@@ -48,6 +52,8 @@ public class TimeSeriesRecord {
     this.numValidators = numValidators;
     this.justifiedBlockRoot = justifiedBlockRoot;
     this.justifiedStateRoot = justifiedStateRoot;
+    this.finalizedBlockRoot = finalizedBlockRoot;
+    this.finalizedStateRoot = finalizedStateRoot;
   }
 
   public Long getIndex() {
@@ -122,6 +128,22 @@ public class TimeSeriesRecord {
     this.justifiedStateRoot = justifiedStateRoot;
   }
 
+  public String getFinalizedBlockRoot() {
+    return this.finalizedBlockRoot;
+  }
+
+  public void setFinalizedBlockRoot(String finalizedBlockRoot) {
+    this.finalizedBlockRoot = finalizedBlockRoot;
+  }
+
+  public String getFinalizedStateRoot() {
+    return this.finalizedStateRoot;
+  }
+
+  public void setFinalizedStateRoot(String finalizedStateRoot) {
+    this.finalizedStateRoot = finalizedStateRoot;
+  }
+
   public TimeSeriesRecord index(Long index) {
     this.index = index;
     return this;
@@ -167,6 +189,16 @@ public class TimeSeriesRecord {
     return this;
   }
 
+  public TimeSeriesRecord finalizedBlockRoot(String finalizedBlockRoot) {
+    this.finalizedBlockRoot = finalizedBlockRoot;
+    return this;
+  }
+
+  public TimeSeriesRecord finalizedStateRoot(String finalizedStateRoot) {
+    this.finalizedStateRoot = finalizedStateRoot;
+    return this;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (o == this) return true;
@@ -182,7 +214,9 @@ public class TimeSeriesRecord {
         && Objects.equals(parentHeadBlockRoot, timeSeriesRecord.parentHeadBlockRoot)
         && Objects.equals(numValidators, timeSeriesRecord.numValidators)
         && Objects.equals(justifiedBlockRoot, timeSeriesRecord.justifiedBlockRoot)
-        && Objects.equals(justifiedStateRoot, timeSeriesRecord.justifiedStateRoot);
+        && Objects.equals(justifiedStateRoot, timeSeriesRecord.justifiedStateRoot)
+        && Objects.equals(finalizedBlockRoot, timeSeriesRecord.finalizedBlockRoot)
+        && Objects.equals(finalizedStateRoot, timeSeriesRecord.finalizedStateRoot);
   }
 
   @Override
@@ -196,6 +230,8 @@ public class TimeSeriesRecord {
         parentHeadBlockRoot,
         numValidators,
         justifiedBlockRoot,
-        justifiedStateRoot);
+        justifiedStateRoot,
+        finalizedBlockRoot,
+        finalizedStateRoot);
   }
 }

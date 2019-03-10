@@ -62,10 +62,18 @@ You can run the executable from the CLI with this command:
 ./gradlew run
 ```
 
-To run formatted output to a file
+To run and send formatted output to a json file
 
 ```
-$ ./gradlew run --args='-o=artemis.csv'
+$ ./gradlew run --args='-p=JSON -o=artemis.json'
+```
+
+>NOTE: If no -p isn't provided then it defaults to JSON
+
+To run and send formatted output to a csv file
+
+```
+$ ./gradlew run --args='-p=CSV -o=artemis.csv'
 ```
 
 To run with loggin level set to ALL
