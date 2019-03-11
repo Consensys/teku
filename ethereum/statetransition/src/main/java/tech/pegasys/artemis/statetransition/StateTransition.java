@@ -41,7 +41,8 @@ public class StateTransition {
     this.printEnabled = printEnabled;
   }
 
-  public void initiate(BeaconState state, BeaconBlock block, Bytes32 previous_block_root) throws StateTransitionException {
+  public void initiate(BeaconState state, BeaconBlock block, Bytes32 previous_block_root)
+      throws StateTransitionException {
     LOG.log(Level.INFO, "Begin state transition", printEnabled);
 
     // per-slot processing
@@ -122,10 +123,12 @@ public class StateTransition {
 
   private void epochProcessor(BeaconState state, BeaconBlock block) {
     try {
-      LOG.log(Level.INFO,
+      LOG.log(
+          Level.INFO,
           "\n ******** \n  Processing new epoch: "
               + BeaconStateUtil.get_current_epoch(state)
-              + " \n ********* ", printEnabled);
+              + " \n ********* ",
+          printEnabled);
 
       EpochProcessorUtil.updateEth1Data(state);
       EpochProcessorUtil.updateJustification(state, block);

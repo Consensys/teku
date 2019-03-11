@@ -18,22 +18,20 @@ import static tech.pegasys.artemis.datastructures.Constants.LATEST_BLOCK_ROOTS_L
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
-import java.util.Objects;
 import net.consensys.cava.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.statetransition.StateTransitionException;
-import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 
 public class SlotProcessorUtil {
 
-  public static void updateBlockRoots(
-      BeaconState state, Bytes32 previous_block_root) throws Exception {
+  public static void updateBlockRoots(BeaconState state, Bytes32 previous_block_root)
+      throws Exception {
 
     if (state.getSlot().compareTo(UnsignedLong.valueOf(Constants.GENESIS_SLOT)) > 0) {
       List<Bytes32> latest_block_roots = state.getLatest_block_roots();
-  
+
       latest_block_roots.set(
           toIntExact(state.getSlot().intValue() - 1) % Constants.LATEST_BLOCK_ROOTS_LENGTH,
           previous_block_root);

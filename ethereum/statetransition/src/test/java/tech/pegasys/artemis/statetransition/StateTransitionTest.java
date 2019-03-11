@@ -13,20 +13,14 @@
 
 package tech.pegasys.artemis.statetransition;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.fail;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomDeposits;
 
 import com.google.common.primitives.UnsignedLong;
-import java.security.Security;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.List;
 import net.consensys.cava.bytes.Bytes32;
-import net.consensys.cava.crypto.Hash;
 import net.consensys.cava.junit.BouncyCastleExtension;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import tech.pegasys.artemis.datastructures.Constants;

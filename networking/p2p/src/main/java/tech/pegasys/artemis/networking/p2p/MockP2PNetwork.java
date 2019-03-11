@@ -18,7 +18,6 @@ import com.google.common.eventbus.Subscribe;
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
@@ -232,7 +231,7 @@ public class MockP2PNetwork implements P2PNetwork {
             Level.INFO,
             "MockP2PNetwork - block.state_root: " + block.getState_root(),
             printEnabled);
-            blockRoot = HashTreeUtil.hash_tree_root(block.toBytes());
+        blockRoot = HashTreeUtil.hash_tree_root(block.toBytes());
         LOG.log(Level.INFO, "MockP2PNetwork - block.block_root: " + blockRoot, printEnabled);
 
         this.eventBus.post(block);
