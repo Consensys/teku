@@ -533,6 +533,8 @@ public class BlockProcessorUtil {
       //     the hash was placed into the Merkle tree.
       Bytes serialized_deposit_data = deposit.getDeposit_data().toBytes();
 
+      checkArgument(Objects.equals(state.getDeposit_index(), deposit.getIndex()));
+
       // - Vadliate verify_merkle_branch(hash(serialized_deposit_data), deposit.branch,
       //     DEPOSIT_CONTRACT_TREE_DEPTH, deposit.index, state.latest_eth1_data.deposit_root)
       checkArgument(
@@ -550,6 +552,8 @@ public class BlockProcessorUtil {
           deposit.getDeposit_data().getAmount(),
           deposit.getDeposit_data().getDeposit_input().getProof_of_possession(),
           deposit.getDeposit_data().getDeposit_input().getWithdrawal_credentials());
+
+      state.setDeposit_index(state.getDeposit_index().plus(UnsignedLong.ONE));
     }
   }
 
