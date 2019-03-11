@@ -978,7 +978,7 @@ public class BeaconStateUtil {
    * @param bitPosition - The index.
    */
   public static int get_bitfield_bit(Bytes bitfield, int bitPosition) {
-    return (bitfield.get(bitPosition / 8) >> (7 - (bitPosition % 8))) % 2;
+    return (bitfield.get(bitPosition / 8) >> (bitPosition % 8)) % 2;
   }
 
   /**
