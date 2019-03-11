@@ -41,11 +41,12 @@ public class StateTransition {
     this.printEnabled = printEnabled;
   }
 
-  public void initiate(BeaconState state, BeaconBlock block) throws StateTransitionException {
+  public void initiate(BeaconState state, BeaconBlock block, Bytes32 previous_block_root)
+      throws StateTransitionException {
     LOG.log(Level.INFO, "Begin state transition", printEnabled);
 
     // per-slot processing
-    slotProcessor(state, block);
+    slotProcessor(state, previous_block_root);
     // per-block processing
     if (block != null) {
       blockProcessor(state, block);
@@ -61,14 +62,13 @@ public class StateTransition {
     LOG.log(Level.INFO, "End state transition", printEnabled);
   }
 
-  private void slotProcessor(BeaconState state, BeaconBlock block) {
+  protected void slotProcessor(BeaconState state, Bytes32 previous_block_root) {
     try {
       state.incrementSlot();
       LOG.log(Level.INFO, "  Processing new slot: " + state.getSlot(), printEnabled);
       // Slots the proposer has skipped (i.e. layers of RANDAO expected)
       // should be in Validator.randao_skips
-      SlotProcessorUtil.updateLatestRandaoMixes(state);
-      SlotProcessorUtil.updateRecentBlockHashes(state, block);
+      SlotProcessorUtil.updateBlockRoots(state, previous_block_root);
     } catch (SlotProcessingException e) {
       LOG.log(Level.WARN, "  Slot processing error: " + e, printEnabled);
     } catch (Exception e) {
@@ -93,7 +93,6 @@ public class StateTransition {
           BlockProcessorUtil.verify_signature(state, block);
         }
 
-        // TODO: figure out why randao works, but messes up the block state root verification
         // Verify and Update RANDAO
         BlockProcessorUtil.verify_and_update_randao(state, block);
 
@@ -111,6 +110,7 @@ public class StateTransition {
         BlockProcessorUtil.processDeposits(state, block);
         // Process Exits
         BlockProcessorUtil.processExits(state, block);
+
       } catch (BlockProcessingException e) {
         LOG.log(Level.WARN, "  Block processing error: " + e, printEnabled);
       } catch (Exception e) {
@@ -125,7 +125,9 @@ public class StateTransition {
     try {
       LOG.log(
           Level.INFO,
-          "Processing new epoch: " + BeaconStateUtil.get_current_epoch(state),
+          "\n ******** \n  Processing new epoch: "
+              + BeaconStateUtil.get_current_epoch(state)
+              + " \n ********* ",
           printEnabled);
 
       EpochProcessorUtil.updateEth1Data(state);

@@ -13,26 +13,20 @@
 
 package tech.pegasys.artemis.statetransition;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.fail;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomDeposits;
 
 import com.google.common.primitives.UnsignedLong;
-import java.security.Security;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.List;
 import net.consensys.cava.bytes.Bytes32;
-import net.consensys.cava.crypto.Hash;
 import net.consensys.cava.junit.BouncyCastleExtension;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
-import tech.pegasys.artemis.statetransition.util.SlotProcessorUtil;
 
 @ExtendWith(BouncyCastleExtension.class)
 class StateTransitionTest {
@@ -53,28 +47,6 @@ class StateTransitionTest {
       fail("get_initial_beacon_state() failed");
       return null;
     }
-  }
-
-  @Test
-  void testUpdateLatestRandaoMixes() {
-    BeaconState state = newState();
-    state.setLatest_randao_mixes(
-        new ArrayList<Bytes32>(
-            Collections.nCopies(Constants.LATEST_RANDAO_MIXES_LENGTH, Bytes32.ZERO)));
-    state.setSlot(UnsignedLong.valueOf(12));
-    List<Bytes32> latestRandaoMixes = state.getLatest_randao_mixes();
-    Security.addProvider(new BouncyCastleProvider());
-    latestRandaoMixes.set(11, Hash.keccak256(Bytes32.fromHexString("0x01")));
-    latestRandaoMixes.set(12, Hash.keccak256(Bytes32.ZERO));
-
-    Bytes32 prevSlotRandaoMix = latestRandaoMixes.get(11);
-    Bytes32 currSlotRandaoMix = latestRandaoMixes.get(12);
-    assertThat(prevSlotRandaoMix).isNotEqualTo(currSlotRandaoMix);
-
-    SlotProcessorUtil.updateLatestRandaoMixes(state);
-    prevSlotRandaoMix = latestRandaoMixes.get(11);
-    currSlotRandaoMix = latestRandaoMixes.get(12);
-    assertThat(prevSlotRandaoMix).isEqualTo(currSlotRandaoMix);
   }
 
   @Test
