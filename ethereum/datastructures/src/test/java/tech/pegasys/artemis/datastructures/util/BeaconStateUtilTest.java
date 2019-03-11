@@ -34,6 +34,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.operations.DepositInput;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.datastructures.state.CrosslinkCommittee;
 import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
@@ -295,6 +296,26 @@ class BeaconStateUtilTest {
     assertEquals(
         amount.times(UnsignedLong.valueOf(2L)),
         beaconState.getValidator_balances().get(originalValidatorBalancesSize - 1));
+  }
+
+  @Test
+  void getTotalBalanceAddsAndReturnsEffectiveTotalBalancesCorrectly() {
+    // Data Setup
+    BeaconState state = createBeaconState();
+    CrosslinkCommittee crosslinkCommittee =
+        new CrosslinkCommittee(UnsignedLong.ONE, Arrays.asList(0, 1, 2));
+
+    // Calculate Expected Results
+    UnsignedLong expectedBalance = UnsignedLong.ZERO;
+    for (UnsignedLong balance : state.getValidator_balances()) {
+      if (balance.compareTo(UnsignedLong.valueOf(Constants.MAX_DEPOSIT_AMOUNT)) < 0) {
+        expectedBalance = expectedBalance.plus(balance);
+      } else {
+        expectedBalance = expectedBalance.plus(UnsignedLong.valueOf(Constants.MAX_DEPOSIT_AMOUNT));
+      }
+    }
+
+    assertEquals(expectedBalance, BeaconStateUtil.get_total_balance(state, crosslinkCommittee));
   }
 
   @Test
