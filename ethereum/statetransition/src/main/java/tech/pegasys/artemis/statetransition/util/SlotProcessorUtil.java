@@ -15,45 +15,26 @@ package tech.pegasys.artemis.statetransition.util;
 
 import static java.lang.Math.toIntExact;
 import static tech.pegasys.artemis.datastructures.Constants.LATEST_BLOCK_ROOTS_LENGTH;
-import static tech.pegasys.artemis.datastructures.Constants.LATEST_RANDAO_MIXES_LENGTH;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
-import java.util.Objects;
 import net.consensys.cava.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.Constants;
-import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.statetransition.StateTransitionException;
-import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 
 public class SlotProcessorUtil {
-  public static void updateLatestRandaoMixes(BeaconState state) {
-    // TODO: change values to UnsignedLong
-    int currSlot = state.getSlot().intValue();
-    List<Bytes32> latestRandaoMixes = state.getLatest_randao_mixes();
-    int index = (currSlot - 1) % LATEST_RANDAO_MIXES_LENGTH;
-    Bytes32 prevSlotRandaoMix = latestRandaoMixes.get(index);
-    latestRandaoMixes.set(currSlot % LATEST_RANDAO_MIXES_LENGTH, prevSlotRandaoMix);
-  }
 
-  public static void updateRecentBlockHashes(BeaconState state, BeaconBlock block)
+  public static void updateBlockRoots(BeaconState state, Bytes32 previous_block_root)
       throws Exception {
 
-    Bytes32 previous_block_root = Bytes32.ZERO;
     if (state.getSlot().compareTo(UnsignedLong.valueOf(Constants.GENESIS_SLOT)) > 0) {
-      previous_block_root =
-          BeaconStateUtil.get_block_root(state, state.getSlot().minus(UnsignedLong.ONE));
-    } else if (!Objects.isNull(block)) {
-      previous_block_root = HashTreeUtil.hash_tree_root(block.toBytes());
-    }
-
-    if (!previous_block_root.equals(Bytes32.ZERO)) {
-      long index = state.getSlot().minus(UnsignedLong.ONE).longValue() % LATEST_BLOCK_ROOTS_LENGTH;
       List<Bytes32> latest_block_roots = state.getLatest_block_roots();
 
-      latest_block_roots.set(toIntExact(index), previous_block_root);
+      latest_block_roots.set(
+          toIntExact(state.getSlot().intValue() - 1) % Constants.LATEST_BLOCK_ROOTS_LENGTH,
+          previous_block_root);
       state.setLatest_block_roots(latest_block_roots);
     }
 
