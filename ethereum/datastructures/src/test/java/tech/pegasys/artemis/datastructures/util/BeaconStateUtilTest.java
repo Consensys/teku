@@ -325,12 +325,12 @@ class BeaconStateUtilTest {
     BeaconState beaconState = createBeaconState();
     int validatorIndex = 1;
 
-    beaconState.setCurrent_calculation_epoch(Constants.FAR_FUTURE_EPOCH);
-    beaconState.setPrevious_calculation_epoch(Constants.FAR_FUTURE_EPOCH);
+    beaconState.setCurrent_shuffling_epoch(Constants.FAR_FUTURE_EPOCH);
+    beaconState.setPrevious_shuffling_epoch(Constants.FAR_FUTURE_EPOCH);
     List<UnsignedLong> latestPenalizedBalances =
         new ArrayList<>(
             Arrays.asList(randomUnsignedLong(), randomUnsignedLong(), randomUnsignedLong()));
-    beaconState.setLatest_penalized_balances(latestPenalizedBalances);
+    beaconState.setLatest_slashed_balances(latestPenalizedBalances);
 
     // Expected Data Setup
     int whistleblowerIndex =

@@ -503,14 +503,14 @@ public class EpochProcessorUtil {
    * @param state
    */
   public static void previousStateUpdates(BeaconState state) {
-    UnsignedLong current_calculation_epoch = state.getCurrent_calculation_epoch();
-    state.setPrevious_calculation_epoch(current_calculation_epoch);
+    UnsignedLong current_calculation_epoch = state.getCurrent_shuffling_epoch();
+    state.setPrevious_shuffling_epoch(current_calculation_epoch);
 
-    UnsignedLong current_epoch_start_shard = state.getCurrent_epoch_start_shard();
-    state.setPrevious_epoch_start_shard(current_epoch_start_shard);
+    UnsignedLong current_epoch_start_shard = state.getCurrent_shuffling_start_shard();
+    state.setPrevious_shuffling_start_shard(current_epoch_start_shard);
 
-    Bytes32 current_epoch_seed = state.getCurrent_epoch_seed();
-    state.setPrevious_epoch_seed(current_epoch_seed);
+    Bytes32 current_epoch_seed = state.getCurrent_shuffling_seed();
+    state.setPrevious_shuffling_seed(current_epoch_seed);
   }
 
   /**
@@ -532,7 +532,7 @@ public class EpochProcessorUtil {
     UnsignedLong SHARD_COUNT = UnsignedLong.valueOf(Constants.SHARD_COUNT);
     for (Integer committee_offset : comnmittee_range) {
       UnsignedLong offset = UnsignedLong.valueOf(committee_offset);
-      UnsignedLong shard = state.getCurrent_epoch_start_shard().plus(offset).mod(SHARD_COUNT);
+      UnsignedLong shard = state.getCurrent_shuffling_start_shard().plus(offset).mod(SHARD_COUNT);
       UnsignedLong crosslink_epoch = state.getLatest_crosslinks().get(shard.intValue()).getEpoch();
       if (crosslink_epoch.compareTo(validator_registry_update_epoch) > 0) {
         check2 = true;
@@ -610,16 +610,16 @@ public class EpochProcessorUtil {
    */
   public static void currentStateUpdatesAlt1(BeaconState state) throws IllegalStateException {
     UnsignedLong epoch = BeaconStateUtil.get_next_epoch(state);
-    state.setCurrent_calculation_epoch(epoch);
+    state.setCurrent_shuffling_epoch(epoch);
 
     UnsignedLong SHARD_COUNT = UnsignedLong.valueOf(Constants.SHARD_COUNT);
     UnsignedLong committee_count = BeaconStateUtil.get_current_epoch_committee_count(state);
     UnsignedLong current_epoch_start_shard =
-        state.getCurrent_epoch_start_shard().plus(committee_count).mod(SHARD_COUNT);
-    state.setCurrent_epoch_start_shard(current_epoch_start_shard);
+        state.getCurrent_shuffling_start_shard().plus(committee_count).mod(SHARD_COUNT);
+    state.setCurrent_shuffling_start_shard(current_epoch_start_shard);
 
     Bytes32 current_epoch_seed = BeaconStateUtil.generate_seed(state, epoch);
-    state.setCurrent_epoch_seed(current_epoch_seed);
+    state.setCurrent_shuffling_seed(current_epoch_seed);
   }
 
   /**
@@ -633,9 +633,9 @@ public class EpochProcessorUtil {
     if (epochs_since_last_registry_update.compareTo(UnsignedLong.ONE) > 0
         && BeaconStateUtil.is_power_of_two(epochs_since_last_registry_update)) {
       UnsignedLong next_epoch = BeaconStateUtil.get_next_epoch(state);
-      state.setCurrent_calculation_epoch(next_epoch);
+      state.setCurrent_shuffling_epoch(next_epoch);
       Bytes32 current_epoch_seed = BeaconStateUtil.generate_seed(state, next_epoch);
-      state.setCurrent_epoch_seed(current_epoch_seed);
+      state.setCurrent_shuffling_seed(current_epoch_seed);
     }
   }
 
@@ -664,9 +664,9 @@ public class EpochProcessorUtil {
 
         UnsignedLong total_at_start =
             state
-                .getLatest_penalized_balances()
+                .getLatest_slashed_balances()
                 .get((epoch_index + 1) % Constants.LATEST_SLASHED_EXIT_LENGTH);
-        UnsignedLong total_at_end = state.getLatest_penalized_balances().get(epoch_index);
+        UnsignedLong total_at_end = state.getLatest_slashed_balances().get(epoch_index);
         UnsignedLong total_penalties = total_at_end.minus(total_at_start);
         UnsignedLong penalty =
             BeaconStateUtil.get_effective_balance(state, validator)
@@ -729,7 +729,7 @@ public class EpochProcessorUtil {
 
     // update hash tree root
     int index = next_epoch.plus(ENTRY_EXIT_DELAY).mod(LATEST_INDEX_ROOTS_LENGTH).intValue();
-    List<Bytes32> latest_index_roots = state.getLatest_index_roots();
+    List<Bytes32> latest_index_roots = state.getLatest_active_index_roots();
     Bytes32 root =
         HashTreeUtil.integerListHashTreeRoot(
             ValidatorsUtil.get_active_validator_indices(
@@ -738,7 +738,7 @@ public class EpochProcessorUtil {
 
     // update latest penalized balances
     index = next_epoch.mod(LATEST_PENALIZED_EXIT_LENGTH).intValue();
-    List<UnsignedLong> latest_penalized_balances = state.getLatest_penalized_balances();
+    List<UnsignedLong> latest_penalized_balances = state.getLatest_slashed_balances();
     UnsignedLong balance =
         latest_penalized_balances.get(current_epoch.mod(LATEST_PENALIZED_EXIT_LENGTH).intValue());
     latest_penalized_balances.set(index, balance);
