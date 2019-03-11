@@ -65,6 +65,8 @@ public class BeaconState {
   private Eth1Data latest_eth1_data;
   private List<Eth1DataVote> eth1_data_votes;
 
+  private UnsignedLong deposit_index;
+
   public static BeaconState deepCopy(BeaconState state) {
     Gson gson =
         new GsonBuilder()
@@ -111,7 +113,8 @@ public class BeaconState {
 
       // Ethereum 1.0 chain data
       Eth1Data latest_eth1_data,
-      List<Eth1DataVote> eth1_data_votes) {
+      List<Eth1DataVote> eth1_data_votes,
+      UnsignedLong deposit_index) {
     this.slot = slot;
     this.genesis_time = genesis_time;
     this.fork = fork;
@@ -142,6 +145,8 @@ public class BeaconState {
 
     this.latest_eth1_data = latest_eth1_data;
     this.eth1_data_votes = eth1_data_votes;
+
+    this.deposit_index = deposit_index;
   }
 
   public static BeaconState fromBytes(Bytes bytes) {
@@ -196,7 +201,8 @@ public class BeaconState {
                 Eth1Data.fromBytes(reader.readBytes()),
                 reader.readBytesList().stream()
                     .map(Eth1DataVote::fromBytes)
-                    .collect(Collectors.toList())));
+                    .collect(Collectors.toList()),
+                UnsignedLong.fromLongBits(reader.readUInt64())));
   }
 
   public Bytes toBytes() {
@@ -250,6 +256,7 @@ public class BeaconState {
           // Ethereum 1.0 chain data
           writer.writeBytes(latest_eth1_data.toBytes());
           writer.writeBytesList(eth1_data_votesBytes);
+          writer.writeUInt64(deposit_index.longValue());
         });
   }
 
@@ -280,7 +287,8 @@ public class BeaconState {
         latest_attestations,
         batched_block_roots,
         latest_eth1_data,
-        eth1_data_votes);
+        eth1_data_votes,
+        deposit_index);
   }
 
   @Override
@@ -325,7 +333,8 @@ public class BeaconState {
         && Objects.equals(this.getLatest_attestations(), other.getLatest_attestations())
         && Objects.equals(this.getBatched_block_roots(), other.getBatched_block_roots())
         && Objects.equals(this.getLatest_eth1_data(), other.getLatest_eth1_data())
-        && Objects.equals(this.getEth1_data_votes(), other.getEth1_data_votes());
+        && Objects.equals(this.getEth1_data_votes(), other.getEth1_data_votes())
+        && Objects.equals(this.getDeposit_index(), other.getDeposit_index());
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */
@@ -527,6 +536,14 @@ public class BeaconState {
 
   public void setEth1_data_votes(List<Eth1DataVote> eth1_data_votes) {
     this.eth1_data_votes = eth1_data_votes;
+  }
+
+  public UnsignedLong getDeposit_index() {
+    return deposit_index;
+  }
+
+  public void setDeposit_index(UnsignedLong deposit_index) {
+    this.deposit_index = deposit_index;
   }
 
   public void incrementSlot() {
