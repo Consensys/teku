@@ -705,8 +705,8 @@ public class BeaconStateUtil {
 
   /** Returns true if the operand is an exact power of two */
   public static boolean is_power_of_two(UnsignedLong value) {
-    return (value.compareTo(UnsignedLong.ZERO) != 0)
-        && (Long.lowestOneBit(value.longValue()) == Long.highestOneBit(value.longValue()));
+    long longValue = value.longValue();
+    return longValue != 0 && ((longValue - 1) & longValue) == 0;
   }
 
   /**
