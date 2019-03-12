@@ -35,7 +35,7 @@ gradle.startParameter.taskNames = expandedTaskList.flatten()
 
 def baseVersion = '1.0.0';
 project.version = baseVersion + '-SNAPSHOT'
-
+def userHome = System.getProperty("user.home")
 allprojects {
   apply plugin: 'java-library'
   apply plugin: 'io.spring.dependency-management'
@@ -124,7 +124,6 @@ allprojects {
     }
     options.encoding = 'UTF-8'
   }
-
   /*
    * Pass some system properties provided on the gradle command line to test executions for
    * convenience.
@@ -178,7 +177,6 @@ allprojects {
     }
     options.encoding = 'UTF-8'
   }
-
 }
 
 task deploy() {}
@@ -269,6 +267,16 @@ applicationDefaultJvmArgs = [
 ]
 
 run {
+  if(project.hasProperty('generateFlow')){
+    def flowJVMArgs = [
+      "-javaagent:${userHome}/.flow/resources/javaagent.jar",
+      "-Dflow.agent.include=tech.pegasys.artemis,tech.pegasys.artemis.services.beaconchain,tech.pegasys.artemis.statetransition,tech.pegasys.artemis.statetransition.util",
+      "-Dflow.agent.exclude=tech.pegasys.artemis.datastructures.blocks,tech.pegasys.artemis.datastructures.operations,tech.pegasys.artemis.datastructures.state,tech.pegasys.artemis.datastructures.util.bitwise,tech.pegasys.artemis.util.hashtree,tech.pegasys.artemis.util.alogger,tech.pegasys.artemis.storage,tech.pegasys.artemis.util.bls,tech.pegasys.artemis.util.mikuli,tech.pegasys.artemis.networking.p2p",
+      "-Dflow.agent.autostart",
+      "-Dflow.agent.execution-name=artemis"
+      ]
+   applicationDefaultJvmArgs.addAll(flowJVMArgs)
+  }
   args project.hasProperty("artemis.run.args") ? project.property("artemis.run.args").toString().split("\\s+") : []
   doFirst {
     applicationDefaultJvmArgs = applicationDefaultJvmArgs.collect{it.replace('ARTEMIS_HOME', "$buildDir/artemis")}
