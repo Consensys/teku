@@ -15,9 +15,9 @@ Based on the (evolving) [specification](https://github.com/ethereum/eth2.0-specs
 To build, clone this repo and run with `gradle` like so:
 
 ```
-git clone --recursive https://github.com/PegaSysEng/artemis.git
-cd artemis
-./gradlew
+$ git clone --recursive https://github.com/PegaSysEng/artemis.git
+$ cd artemis
+$ ./gradlew
 ```
 
 After a successful build, distribution packages will be available in `build/distributions`.
@@ -27,7 +27,7 @@ After a successful build, distribution packages will be available in `build/dist
 We use Google's Java coding conventions for the project. To reformat code, run: 
 
 ```
-./gradlew spotlessApply
+$ ./gradlew spotlessApply
 ```
 
 Code style will be checked automatically during a build.
@@ -36,11 +36,11 @@ Code style will be checked automatically during a build.
 
 All the unit tests are run as part of the build, but can be explicitly triggered with:
 ```
-./gradlew test
+$ ./gradlew test
 ```
 The integration tests can be triggered with:
 ```
-./gradlew integrationTest
+$ ./gradlew integrationTest
 ```
 
 ## Run Options
@@ -59,7 +59,7 @@ Usage: Artemis [-hpV] [-l=<LOG VERBOSITY LEVEL>]
 
 You can run the executable from the CLI with this command:
 ```
-./gradlew run
+$ ./gradlew run
 ```
 
 To run and send formatted output to a json file
@@ -81,3 +81,9 @@ To run with loggin level set to ALL
 ```
 $ ./gradlew run --args='-l=ALL'
 ```
+
+To run and generate flow diagrams for Artemis
+```
+$ ./gradlew run -PgenerateFlow
+```
+Note: You must be running [flow](http://findtheflow.io/)
