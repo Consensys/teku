@@ -17,5 +17,6 @@ ENV JAVA_HOME="/usr/lib/jvm/java-8-oracle"
 RUN git clone --recursive https://github.com/PegaSysEng/artemis.git 
 WORKDIR artemis/
 RUN ./gradlew --no-daemon
+RUN ./gradlew mash
 
 ENTRYPOINT ["/bin/bash"]
