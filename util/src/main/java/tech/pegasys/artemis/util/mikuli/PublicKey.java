@@ -16,6 +16,7 @@ package tech.pegasys.artemis.util.mikuli;
 import java.util.List;
 import java.util.Objects;
 import net.consensys.cava.bytes.Bytes;
+import org.apache.milagro.amcl.BLS381.ECP;
 
 /** This class represents a BLS12-381 public key. */
 public final class PublicKey {
@@ -39,15 +40,15 @@ public final class PublicKey {
   }
 
   /**
-   * Aggregates list of PublicKeys
+   * Aggregates list of PublicKeys, returns the public key that
+   * corresponds to G1 point at infinity if list is empty
    *
-   * @param keys The list of public keys to aggregate, not null
-   * @return PublicKey The public key, not null
-   * @throws IllegalArgumentException if parameter list is empty
+   * @param keys The list of public keys to aggregate
+   * @return PublicKey The public key
    */
   public static PublicKey aggregate(List<PublicKey> keys) {
     if (keys.isEmpty()) {
-      throw new IllegalArgumentException("Parameter list is empty");
+      return new PublicKey(new G1Point());
     }
     return keys.stream().reduce((a, b) -> a.combine(b)).get();
   }

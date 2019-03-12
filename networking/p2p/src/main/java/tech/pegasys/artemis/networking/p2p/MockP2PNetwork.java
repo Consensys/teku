@@ -15,10 +15,24 @@ package tech.pegasys.artemis.networking.p2p;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
+import com.google.common.primitives.UnsignedLong;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import org.apache.logging.log4j.Level;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+<<<<<<< HEAD
+=======
+import tech.pegasys.artemis.datastructures.blocks.ProposalSignedData;
+import tech.pegasys.artemis.datastructures.operations.Attestation;
+import tech.pegasys.artemis.datastructures.operations.Deposit;
+import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.datastructures.state.Validator;
+import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
+import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
+>>>>>>> Run attestations through an epoch
 import tech.pegasys.artemis.networking.p2p.api.P2PNetwork;
 import tech.pegasys.artemis.util.alogger.ALogger;
 

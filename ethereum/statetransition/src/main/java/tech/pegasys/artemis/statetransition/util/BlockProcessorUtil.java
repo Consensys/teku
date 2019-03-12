@@ -104,40 +104,31 @@ public class BlockProcessorUtil {
    * @throws BLSException
    */
   public static void verify_signature(BeaconState state, BeaconBlock block)
-      throws BlockProcessingException {
+      throws  BlockProcessingException {
     try {
-      // Let block_without_signature_root be the hash_tree_root of block where
-      //   block.signature is set to EMPTY_SIGNATURE.
-      BLSSignature blockSig = block.getSignature();
-      block.setSignature(EMPTY_SIGNATURE);
-      Bytes32 blockWithoutSignatureRootHash = hash_tree_root(block.toBytes());
-      block.setSignature(blockSig);
+    // Let block_without_signature_root be the hash_tree_root of block where
+    //   block.signature is set to EMPTY_SIGNATURE.
+    BLSSignature blockSig = block.getSignature();
+    block.setSignature(EMPTY_SIGNATURE);
+    Bytes32 blockWithoutSignatureRootHash = hash_tree_root(block.toBytes());
+    block.setSignature(blockSig);
 
-      // Let proposal_root = hash_tree_root(ProposalSignedData(state.slot,
-      //   BEACON_CHAIN_SHARD_NUMBER, block_without_signature_root)).
-      ProposalSignedData proposalSignedData =
-          new ProposalSignedData(
-              state.getSlot(), Constants.BEACON_CHAIN_SHARD_NUMBER, blockWithoutSignatureRootHash);
-      Bytes32 proposalRoot = hash_tree_root(proposalSignedData.toBytes());
+    // Let proposal_root = hash_tree_root(ProposalSignedData(state.slot,
+    //   BEACON_CHAIN_SHARD_NUMBER, block_without_signature_root)).
+    ProposalSignedData proposalSignedData =
+        new ProposalSignedData(
+            state.getSlot(), Constants.BEACON_CHAIN_SHARD_NUMBER, blockWithoutSignatureRootHash);
+    Bytes32 proposalRoot = hash_tree_root(proposalSignedData.toBytes());
 
-      // Verify that bls_verify(pubkey=state.validator_registry[get_beacon_proposer_index(state,
-      //   state.slot)].pubkey, message=proposal_root, signature=block.signature,
-      //   domain=get_domain(state.fork, state.slot, DOMAIN_PROPOSAL)) is valid.
-      int proposerIndex = BeaconStateUtil.get_beacon_proposer_index(state, state.getSlot());
-      BLSPublicKey pubkey = state.getValidator_registry().get(proposerIndex).getPubkey();
-      UnsignedLong domain = get_domain(state.getFork(), get_current_epoch(state), DOMAIN_PROPOSAL);
+    // Verify that bls_verify(pubkey=state.validator_registry[get_beacon_proposer_index(state,
+    //   state.slot)].pubkey, message=proposal_root, signature=block.signature,
+    //   domain=get_domain(state.fork, state.slot, DOMAIN_PROPOSAL)) is valid.
+    int proposerIndex = BeaconStateUtil.get_beacon_proposer_index(state, state.getSlot());
+    BLSPublicKey pubkey = state.getValidator_registry().get(proposerIndex).getPubkey();
+    UnsignedLong domain = get_domain(state.getFork(), get_current_epoch(state), DOMAIN_PROPOSAL);
 
-      LOG.log(Level.DEBUG, "In Verify Signatures");
-      LOG.log(Level.DEBUG, "Proposer pubkey: " + pubkey);
-      LOG.log(Level.DEBUG, "state: " + HashTreeUtil.hash_tree_root(state.toBytes()));
-      LOG.log(Level.DEBUG, "proposal root: " + proposalRoot.toHexString());
-      LOG.log(Level.DEBUG, "block signature: " + block.getSignature().toString());
-      LOG.log(Level.DEBUG, "slot: " + state.getSlot().longValue());
-      LOG.log(Level.DEBUG, "domain: " + domain);
-
-      checkArgument(
-          bls_verify(pubkey, proposalRoot, block.getSignature(), domain),
-          "checkArgument threw and exception in verify_signature()");
+    checkArgument(
+        bls_verify(pubkey, proposalRoot, block.getSignature(), domain), "verify signature failed");
     } catch (IllegalStateException | IllegalArgumentException e) {
       LOG.log(Level.WARN, "BlockProcessingException thrown in verify_signature()");
       throw new BlockProcessingException(e);
@@ -383,9 +374,7 @@ public class BlockProcessorUtil {
       throws BlockProcessingException {
     try {
       // Verify that len(block.body.attestations) <= MAX_ATTESTATIONS
-      checkArgument(
-          block.getBody().getAttestations().size() <= MAX_ATTESTATIONS,
-          "checkArgument threw and exception in processAttestations()");
+      checkArgument(block.getBody().getAttestations().size() <= MAX_ATTESTATIONS, "in process attestations0");
 
       // For each attestation in block.body.attestations:
       for (Attestation attestation : block.getBody().getAttestations()) {
@@ -394,86 +383,71 @@ public class BlockProcessorUtil {
         //     < attestation.data.slot + EPOCH_LENGTH.
         UnsignedLong attestationDataSlot = attestation.getData().getSlot();
         UnsignedLong slotMinusInclusionDelay =
-            state.getSlot().minus(UnsignedLong.valueOf(MIN_ATTESTATION_INCLUSION_DELAY));
+                state.getSlot().minus(UnsignedLong.valueOf(MIN_ATTESTATION_INCLUSION_DELAY));
         UnsignedLong slotPlusEpochLength =
-            attestationDataSlot.plus(UnsignedLong.valueOf(EPOCH_LENGTH));
+                attestationDataSlot.plus(UnsignedLong.valueOf(EPOCH_LENGTH));
         checkArgument(
-            (attestationDataSlot.compareTo(slotMinusInclusionDelay) <= 0)
-                && (slotMinusInclusionDelay.compareTo(slotPlusEpochLength) < 0),
-            "checkArgument threw and exception in processAttestations()");
+                (attestationDataSlot.compareTo(slotMinusInclusionDelay) <= 0)
+                        && (slotMinusInclusionDelay.compareTo(slotPlusEpochLength) < 0), "in process attestations1");
 
         // - Verify that attestation.data.justified_epoch is equal to state.justified_epoch
         //     if attestation.data.slot >= get_epoch_start_slot(get_current_epoch(state))
         //     else state.previous_justified_epoch.
-        if (attestation
-                .getData()
-                .getSlot()
-                .compareTo(get_epoch_start_slot(get_current_epoch(state)))
-            >= 0) {
+        if (attestation.getData().getSlot().compareTo(get_epoch_start_slot(get_current_epoch(state)))
+                >= 0) {
           checkArgument(
-              attestation.getData().getJustified_epoch().equals(state.getJustified_epoch()),
-              "checkArgument threw and exception in processAttestations()");
+                  attestation.getData().getJustified_epoch().equals(state.getJustified_epoch()), "in process attestations2");
         } else {
           checkArgument(
-              attestation
-                  .getData()
-                  .getJustified_epoch()
-                  .equals(state.getPrevious_justified_epoch()),
-              "checkArgument threw and exception in processAttestations()");
+                  attestation.getData().getJustified_epoch().equals(state.getPrevious_justified_epoch()), "in process attestations3");
         }
 
         // - Verify that attestation.data.justified_block_root is equal to
         //     get_block_root(state, get_epoch_start_slot(attestation.data.justified_epoch)).
         checkArgument(
-            Objects.equals(
-                attestation.getData().getJustified_block_root(),
-                get_block_root(
-                    state, get_epoch_start_slot(attestation.getData().getJustified_epoch()))),
-            "checkArgument threw and exception in processAttestations()");
+                Objects.equals(
+                        attestation.getData().getJustified_block_root(),
+                        get_block_root(
+                                state, get_epoch_start_slot(attestation.getData().getJustified_epoch()))), "in process attestations4");
 
         // - Verify that either attestation.data.latest_crosslink_root or
         // attestation.data.shard_block_root
         //     equals state.latest_crosslinks[shard].shard_block_root.
         checkArgument(
-            attestation
-                    .getData()
-                    .getLatest_crosslink_root()
-                    .equals(
-                        state
-                            .getLatest_crosslinks()
-                            .get(attestation.getData().getShard().intValue())
-                            .getShard_block_root())
-                || attestation
-                    .getData()
-                    .getShard_block_root()
-                    .equals(
-                        state
-                            .getLatest_crosslinks()
-                            .get(attestation.getData().getShard().intValue())
-                            .getShard_block_root()),
-            "checkArgument threw and exception in processAttestations()");
+                attestation
+                        .getData()
+                        .getLatest_crosslink_root()
+                        .equals(
+                                state
+                                        .getLatest_crosslinks()
+                                        .get(attestation.getData().getShard().intValue())
+                                        .getShard_block_root())
+                        || attestation
+                        .getData()
+                        .getShard_block_root()
+                        .equals(
+                                state
+                                        .getLatest_crosslinks()
+                                        .get(attestation.getData().getShard().intValue())
+                                        .getShard_block_root()), "in process attestations5");
 
         // - Verify bitfields and aggregate signature
-        checkArgument(
-            verify_bitfields_and_aggregate_signature(attestation, state),
-            "checkArgument threw and exception in processAttesations()");
+        checkArgument(verify_bitfields_and_aggregate_signature(attestation, state), "in process attestations6");
 
         // - Verify that attestation.data.shard_block_root == ZERO_HASH
         // TO BE REMOVED IN PHASE 1
-        checkArgument(
-            attestation.getData().getShard_block_root().equals(ZERO_HASH),
-            "checkArgument threw and exception in processAttestations()");
+        checkArgument(attestation.getData().getShard_block_root().equals(ZERO_HASH), "in process attestations7");
 
         // - Append PendingAttestation(data=attestation.data,
         //     aggregation_bitfield=attestation.aggregation_bitfield,
         //     custody_bitfield=attestation.custody_bitfield, inclusion_slot=state.slot) to
         //     state.latest_attestations.
         PendingAttestation pendingAttestation =
-            new PendingAttestation(
-                attestation.getAggregation_bitfield(),
-                attestation.getData(),
-                attestation.getCustody_bitfield(),
-                state.getSlot());
+                new PendingAttestation(
+                        attestation.getAggregation_bitfield(),
+                        attestation.getData(),
+                        attestation.getCustody_bitfield(),
+                        state.getSlot());
         state.getLatest_attestations().add(pendingAttestation);
       }
     } catch (IllegalArgumentException e) {
@@ -509,13 +483,11 @@ public class BlockProcessorUtil {
     //   however because we've implemented the bitfield as a static Bytes32 value
     //   instead of a variable length bitfield, checking against Bytes32.ZERO will suffice.
     checkArgument(
-        Objects.equals(attestation.getCustody_bitfield(), Bytes32.ZERO),
-        "checkArgument threw and exception in verify_bitfields_and_aggregate_signature()"); // [TO
-    // BE
-    // REMOVED IN PHASE 1]
-    checkArgument(
-        !Objects.equals(attestation.getAggregation_bitfield(), Bytes32.ZERO),
-        "checkArgument threw and exception in verify_bitfields_and_aggregate_signature()");
+        Objects.equals(
+            attestation.getCustody_bitfield(), Bytes.wrap(new byte[attestation.getCustody_bitfield().size()])),
+            "checkArgument threw and exception in verify_bitfields_and_aggregate_signature()"); // [TO BE REMOVED IN PHASE 1]
+    checkArgument(!Objects.equals(attestation.getAggregation_bitfield(), Bytes.wrap(new byte[attestation.getAggregation_bitfield().size()])),
+    "checkArgument threw and exception in verify_bitfields_and_aggregate_signature()");
 
     List<List<Integer>> crosslink_committees = new ArrayList<>();
     for (CrosslinkCommittee crosslink_committee :
@@ -541,19 +513,19 @@ public class BlockProcessorUtil {
             state, attestation.getData(), attestation.getCustody_bitfield().toArray());
     List<Integer> custody_bit_0_participants = new ArrayList<>();
     for (Integer participant : participants) {
-      if (custody_bit_1_participants.indexOf(participant) != -1) {
+      if (custody_bit_1_participants.indexOf(participant) == -1) {
         custody_bit_0_participants.add(participant);
       }
     }
 
     List<BLSPublicKey> pubkey0 = new ArrayList<>();
     for (int i = 0; i < custody_bit_0_participants.size(); i++) {
-      pubkey0.add(state.getValidator_registry().get(i).getPubkey());
+      pubkey0.add(state.getValidator_registry().get(custody_bit_0_participants.get(i)).getPubkey());
     }
 
     List<BLSPublicKey> pubkey1 = new ArrayList<>();
     for (int i = 0; i < custody_bit_1_participants.size(); i++) {
-      pubkey1.add(state.getValidator_registry().get(i).getPubkey());
+      pubkey1.add(state.getValidator_registry().get(custody_bit_1_participants.get(i)).getPubkey());
     }
 
     checkArgument(

@@ -70,6 +70,7 @@ public class BeaconState {
     Gson gson =
         new GsonBuilder()
             .registerTypeAdapter(Bytes32.class, new InterfaceAdapter<Bytes32>())
+            .registerTypeAdapter(Bytes.class, new InterfaceAdapter<Bytes>())
             .create();
     return gson.fromJson(gson.toJson(state), BeaconState.class);
   }

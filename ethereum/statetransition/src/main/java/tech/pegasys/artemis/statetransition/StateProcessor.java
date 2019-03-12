@@ -266,7 +266,7 @@ public class StateProcessor {
                 headState, BeaconStateUtil.get_epoch_start_slot(headState.getJustified_epoch()));
 
         this.justifiedStateRoot = store.getProcessedBlock(justifiedBlockRoot).get().getState_root();
-        this.finalizedBlockRoot = store.getProcessedBlock(finalizedBlockRoot).get().getState_root();
+        this.finalizedStateRoot = store.getProcessedBlock(finalizedBlockRoot).get().getState_root();
       } catch (Exception e) {
         LOG.log(Level.FATAL, "Can't update justified");
       }
