@@ -14,9 +14,12 @@
 package tech.pegasys.artemis.services;
 
 import com.google.common.eventbus.EventBus;
+import net.consensys.cava.config.Configuration;
 
 public interface ServiceInterface extends Runnable {
   void init(EventBus eventBus);
+
+  void init(EventBus eventBus, Configuration config);
 
   @Override
   void run();

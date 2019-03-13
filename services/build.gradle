@@ -11,6 +11,7 @@ dependencies {
   implementation project(':ethereum:statetransition')
   implementation project(':util')
 
+  implementation 'net.consensys.cava:cava-config'
   implementation 'com.google.guava:guava'
   implementation 'org.apache.logging.log4j:log4j-api'
   runtime 'org.apache.logging.log4j:log4j-core'

@@ -14,6 +14,7 @@ dependencies {
 
   implementation 'net.consensys.cava:cava-kv'
   implementation 'net.consensys.cava:cava-bytes'
+  implementation 'net.consensys.cava:cava-crypto'
   implementation 'com.google.guava:guava'
   implementation 'org.apache.logging.log4j:log4j-api'
   runtime 'org.apache.logging.log4j:log4j-core'

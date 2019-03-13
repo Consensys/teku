@@ -14,6 +14,7 @@ dependencies {
   implementation 'com.google.guava:guava'
   implementation 'org.apache.logging.log4j:log4j-api'
   runtime 'org.apache.logging.log4j:log4j-core'
+  implementation 'net.consensys.cava:cava-config'
 }
 
 configurations { testArtifacts }

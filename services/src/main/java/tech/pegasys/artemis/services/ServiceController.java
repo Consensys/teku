@@ -16,6 +16,7 @@ package tech.pegasys.artemis.services;
 import com.google.common.eventbus.EventBus;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import net.consensys.cava.config.Configuration;
 import tech.pegasys.artemis.util.cli.CommandLineArguments;
 
 public class ServiceController {
@@ -36,6 +37,7 @@ public class ServiceController {
       void initAll(
           EventBus eventBus,
           CommandLineArguments cliArgs,
+          Configuration config,
           Class<U> beaconChainServiceType,
           Class<V> powchainServiceType,
           Class<W> chainStorageServiceType) {
@@ -43,7 +45,7 @@ public class ServiceController {
     powchainService = ServiceFactory.getInstance(powchainServiceType).getInstance();
     chainStorageService = ServiceFactory.getInstance(chainStorageServiceType).getInstance();
 
-    beaconChainService.init(eventBus);
+    beaconChainService.init(eventBus, config);
     powchainService.init(eventBus);
     chainStorageService.init(eventBus);
   }

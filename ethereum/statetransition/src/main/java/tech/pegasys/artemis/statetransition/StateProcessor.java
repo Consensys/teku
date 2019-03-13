@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import net.consensys.cava.bytes.Bytes32;
+import net.consensys.cava.config.Configuration;
 import org.apache.logging.log4j.Level;
 import tech.pegasys.artemis.data.RawRecord;
 import tech.pegasys.artemis.datastructures.Constants;
@@ -49,18 +50,13 @@ public class StateProcessor {
   private final EventBus eventBus;
   private StateTransition stateTransition;
   private ChainStorageClient store;
+  private Configuration config;
   private static final ALogger LOG = new ALogger(StateProcessor.class.getName());
 
-  public StateProcessor(EventBus eventBus) {
+  public StateProcessor(EventBus eventBus, Configuration config) {
     this.eventBus = eventBus;
+    this.config = config;
     this.stateTransition = new StateTransition(true);
-    this.eventBus.register(this);
-    this.store = ChainStorage.Create(ChainStorageClient.class, eventBus);
-  }
-
-  public StateProcessor(EventBus eventBus, boolean printEnabled) {
-    this.eventBus = eventBus;
-    this.stateTransition = new StateTransition();
     this.eventBus.register(this);
     this.store = ChainStorage.Create(ChainStorageClient.class, eventBus);
   }
@@ -78,7 +74,9 @@ public class StateProcessor {
     LOG.log(Level.INFO, "node slot: " + nodeSlot.longValue());
     LOG.log(Level.INFO, "node time: " + nodeTime.longValue());
     try {
-      BeaconState initial_state = DataStructureUtil.createInitialBeaconState();
+      BeaconState initial_state =
+          DataStructureUtil.createInitialBeaconState(
+              config.getInteger("numValidators"), config.getInteger("numNodes"));
       Bytes32 initial_state_root = HashTreeUtil.hash_tree_root(initial_state.toBytes());
       BeaconBlock genesis_block = BeaconBlock.createGenesis(initial_state_root);
       Bytes32 genesis_block_root = HashTreeUtil.hash_tree_root(genesis_block.toBytes());

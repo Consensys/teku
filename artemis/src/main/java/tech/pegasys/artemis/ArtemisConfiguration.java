@@ -35,6 +35,16 @@ final class ArtemisConfiguration {
         9000,
         "Peer to peer advertised port",
         PropertyValidator.inRange(0, 65535));
+    builder.addInteger(
+        "numValidators",
+        128,
+        "represents the total number of validators in the network",
+        PropertyValidator.inRange(1, 16384));
+    builder.addInteger(
+        "numNodes",
+        1,
+        "represents the total number of nodes on the network",
+        PropertyValidator.inRange(1, 16384));
     return builder.toSchema();
   }
 
