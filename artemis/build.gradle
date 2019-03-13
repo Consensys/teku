@@ -27,6 +27,7 @@ dependencies {
   implementation 'net.consensys.cava:cava-ssz'
   implementation 'info.picocli:picocli'
   implementation 'com.google.guava:guava'
+  implementation 'net.consensys.cava:cava-config'
   implementation 'net.consensys.cava:cava-toml'
   implementation 'io.vertx:vertx-core'
   implementation 'io.vertx:vertx-web'

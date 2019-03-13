@@ -39,6 +39,12 @@ public class CommandLineArguments {
           "Logging verbosity levels: OFF, FATAL, WARN, INFO, DEBUG, TRACE, ALL (default: INFO).")
   private Level logLevel = Level.INFO;
 
+  @Option(
+      names = {"-c", "--config"},
+      paramLabel = "<FILENAME>",
+      description = "Path/filename of the config file")
+  private String configFile = "config.toml";
+
   public String getProviderType() {
     return this.providerType;
   }
@@ -53,5 +59,9 @@ public class CommandLineArguments {
 
   public Level getLoggingLevel() {
     return this.logLevel;
+  }
+
+  public String getConfigFile() {
+    return configFile;
   }
 }

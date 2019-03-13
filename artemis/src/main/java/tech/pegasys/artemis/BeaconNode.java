@@ -16,10 +16,17 @@ package tech.pegasys.artemis;
 import com.google.common.eventbus.AsyncEventBus;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
+import io.vertx.core.Vertx;
 import java.io.IOException;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
+import net.consensys.cava.bytes.Bytes32;
+import net.consensys.cava.config.Configuration;
+import net.consensys.cava.crypto.SECP256K1;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.core.config.Configurator;
+import org.jetbrains.annotations.NotNull;
 import picocli.CommandLine;
 import tech.pegasys.artemis.data.RawRecord;
 import tech.pegasys.artemis.data.TimeSeriesRecord;
@@ -40,6 +47,19 @@ import tech.pegasys.artemis.validator.coordinator.ValidatorCoordinator;
 
 public class BeaconNode {
   private static final ALogger LOG = new ALogger(BeaconNode.class.getName());
+  private final Vertx vertx = Vertx.vertx();
+  private final ExecutorService threadPool =
+      Executors.newCachedThreadPool(
+          new ThreadFactory() {
+            @Override
+            public Thread newThread(@NotNull Runnable r) {
+              Thread t = new Thread(r);
+              t.setDaemon(true);
+              return t;
+            }
+          });
+
+  private final Configuration config;
   private P2PNetwork p2pNetwork;
   private ValidatorCoordinator validatorCoordinator;
   private EventBus eventBus;
@@ -50,8 +70,17 @@ public class BeaconNode {
   private CommandLine commandLine;
 
   public BeaconNode(CommandLine commandLine, CommandLineArguments cliArgs) {
-    this.eventBus = new AsyncEventBus(Executors.newCachedThreadPool());
-    this.p2pNetwork = new RLPxP2PNetwork(eventBus);
+    this.config = ArtemisConfiguration.fromFile(cliArgs.getConfigFile());
+    this.eventBus = new AsyncEventBus(threadPool);
+    this.p2pNetwork =
+        new RLPxP2PNetwork(
+            eventBus,
+            vertx,
+            SECP256K1.KeyPair.fromSecretKey(
+                SECP256K1.SecretKey.fromBytes(Bytes32.fromHexString(config.getString("identity")))),
+            config.getInteger("port"),
+            config.getInteger("advertisedPort"),
+            config.getString("networkInterface"));
     this.validatorCoordinator = new ValidatorCoordinator(eventBus);
     this.cliArgs = cliArgs;
     this.commandLine = commandLine;
