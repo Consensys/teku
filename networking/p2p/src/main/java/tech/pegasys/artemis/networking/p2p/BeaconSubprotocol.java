@@ -29,16 +29,18 @@ final class BeaconSubprotocol implements SubProtocol {
 
   @Override
   public boolean supports(SubProtocolIdentifier subProtocolIdentifier) {
-    return BEACON_ID.name().equals(subProtocolIdentifier.name());
+    return BEACON_ID.name().equals(subProtocolIdentifier.name())
+        && BEACON_ID.version() == subProtocolIdentifier.version();
   }
 
   @Override
   public int versionRange(int version) {
-    throw new UnsupportedOperationException();
+    return 6; // TODO change this number according to the number of type of messages defined in the
+    // handler.
   }
 
   @Override
   public SubProtocolHandler createHandler(RLPxService service) {
-    throw new UnsupportedOperationException();
+    return new BeaconSubprotocolHandler(service);
   }
 }

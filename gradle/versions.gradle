@@ -18,6 +18,8 @@ dependencyManagement {
 
     dependency 'commons-cli:commons-cli:1.4'
 
+    dependency 'de.undercouch:bson4jackson:2.9.2'
+
     dependency 'info.picocli:picocli:3.8.0'
     
     dependency 'io.pkts:pkts-core:3.0.3'
@@ -35,7 +37,7 @@ dependencyManagement {
       entry 'logl-logl'
     }
 
-    dependencySet(group: 'net.consensys.cava', version: '1.0.0-752375-snapshot') {
+    dependencySet(group: 'net.consensys.cava', version: '1.0.0-C01FE1-snapshot') {
       entry 'cava-bytes'
       entry 'cava-crypto'
       entry 'cava-junit'

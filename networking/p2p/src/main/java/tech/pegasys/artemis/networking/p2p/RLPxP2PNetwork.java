@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.networking.p2p;
 
+import com.google.common.eventbus.EventBus;
 import io.vertx.core.Vertx;
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -34,6 +35,13 @@ import net.consensys.cava.rlpx.wire.WireConnection;
 import org.logl.log4j2.Log4j2LoggerProvider;
 import tech.pegasys.artemis.networking.p2p.api.P2PNetwork;
 
+/**
+ * Peer to peer network for beacon nodes, over a RLPx connection.
+ *
+ * <p>This service exposes services over the subprotocol "bea".
+ *
+ * @see BeaconSubprotocolHandler
+ */
 public final class RLPxP2PNetwork implements P2PNetwork {
 
   private final AtomicBoolean started = new AtomicBoolean(false);
@@ -43,20 +51,23 @@ public final class RLPxP2PNetwork implements P2PNetwork {
   private final int advertisedPort;
   private final String networkInterface;
   private final Log4j2LoggerProvider loggerProvider;
+  private final EventBus eventBus;
 
   private WireConnectionRepository wireConnectionRepository;
   private VertxRLPxService service;
 
-  public RLPxP2PNetwork() {
-    this(Vertx.vertx(), SECP256K1.KeyPair.random(), 9000, 9000, "127.0.0.1");
+  public RLPxP2PNetwork(EventBus eventBus) {
+    this(eventBus, Vertx.vertx(), SECP256K1.KeyPair.random(), 9000, 9000, "127.0.0.1");
   }
 
   public RLPxP2PNetwork(
+      EventBus eventBus,
       Vertx vertx,
       SECP256K1.KeyPair keyPair,
       int port,
       int advertisedPort,
       String networkInterface) {
+    this.eventBus = eventBus;
     this.vertx = vertx;
     this.keyPair = keyPair;
     this.port = port;
@@ -89,6 +100,8 @@ public final class RLPxP2PNetwork implements P2PNetwork {
         service.stop().join(10, TimeUnit.SECONDS);
       } catch (TimeoutException | InterruptedException e) {
         throw new RuntimeException(e);
+      } finally {
+        vertx.close();
       }
     }
   }

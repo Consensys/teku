@@ -23,6 +23,9 @@ dependencies {
   runtime 'org.apache.logging.log4j:log4j-core'
   implementation 'org.logl:logl-logl'
   implementation 'org.logl:logl-log4j2'
+
+  implementation 'com.fasterxml.jackson.core:jackson-databind'
+  implementation 'de.undercouch:bson4jackson'
 }
 
 configurations { testArtifacts }
