@@ -46,7 +46,6 @@ public class StateProcessor {
   private Bytes32 justifiedBlockRoot; // most recent justified block root
   private UnsignedLong nodeTime;
   private UnsignedLong nodeSlot;
-  private UnsignedLong nodeIndex = UnsignedLong.ZERO;
   private final EventBus eventBus;
   private StateTransition stateTransition;
   private ChainStorageClient store;
@@ -144,25 +143,7 @@ public class StateProcessor {
       stateTransition.initiate(newHeadState, null, previousBlockRoot);
     }
     this.headState = newHeadState;
-    // TODO: This is not appropriate for StateProcessor.  This index field should be implemented in
-    // the data adapter.
-    // TODO: move all this data provider logic to a new method
-    this.nodeIndex = this.nodeIndex.plus(UnsignedLong.ONE);
-    BeaconState justifiedState = store.getState(justifiedStateRoot).get();
-    BeaconBlock justifiedBlock = store.getProcessedBlock(justifiedBlockRoot).get();
-    BeaconState finalizedState = store.getState(finalizedStateRoot).get();
-    BeaconBlock finalizedBlock = store.getProcessedBlock(finalizedBlockRoot).get();
-
-    RawRecord record =
-        new RawRecord(
-            this.nodeIndex.longValue(),
-            newHeadState,
-            headBlock,
-            justifiedState,
-            justifiedBlock,
-            finalizedState,
-            finalizedBlock);
-    this.eventBus.post(record);
+    recordData();
   }
 
   protected Boolean inspectBlock(Optional<BeaconBlock> block) {
@@ -289,5 +270,22 @@ public class StateProcessor {
         LOG.log(Level.FATAL, "Can't update justified");
       }
     }
+  }
+
+  protected void recordData() {
+    BeaconState justifiedState = store.getState(justifiedStateRoot).get();
+    BeaconBlock justifiedBlock = store.getProcessedBlock(justifiedBlockRoot).get();
+    BeaconState finalizedState = store.getState(finalizedStateRoot).get();
+    BeaconBlock finalizedBlock = store.getProcessedBlock(finalizedBlockRoot).get();
+    RawRecord record =
+        new RawRecord(
+            this.nodeSlot.minus(UnsignedLong.valueOf(Constants.GENESIS_SLOT)).longValue(),
+            headState,
+            headBlock,
+            justifiedState,
+            justifiedBlock,
+            finalizedState,
+            finalizedBlock);
+    this.eventBus.post(record);
   }
 }
