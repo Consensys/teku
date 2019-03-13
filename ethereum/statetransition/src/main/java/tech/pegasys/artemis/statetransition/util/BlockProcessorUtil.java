@@ -39,6 +39,7 @@ import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_entry
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_epoch_start_slot;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_randao_mix;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.initiate_validator_exit;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.int_to_bytes;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.is_double_vote;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.is_surround_vote;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.penalize_validator;
@@ -152,13 +153,12 @@ public class BlockProcessorUtil {
       throws IllegalStateException, IllegalArgumentException, BlockProcessingException {
 
     UnsignedLong currentEpoch = BeaconStateUtil.get_current_epoch(state);
-    Bytes32 currentEpochBytes = Bytes32.leftPad(Bytes.ofUnsignedLong(currentEpoch.longValue()));
+    Bytes32 messageHash = hash_tree_root(int_to_bytes(currentEpoch.longValue(), 8));
     // - Let proposer = state.validator_registry[get_beacon_proposer_index(state, state.slot)].
     // - Verify that bls_verify(pubkey=proposer.pubkey,
     //    message=int_to_bytes32(get_current_epoch(state)), signature=block.randao_reveal,
     //    domain=get_domain(state.fork, get_current_epoch(state), DOMAIN_RANDAO)).
-    checkArgument(
-        verify_randao(state, block, currentEpoch, currentEpochBytes), "verify randao failed");
+    checkArgument(verify_randao(state, block, currentEpoch, messageHash), "verify randao failed");
 
     // - Set state.latest_randao_mixes[get_current_epoch(state) % LATEST_RANDAO_MIXES_LENGTH]
     //    = xor(get_randao_mix(state, get_current_epoch(state)), hash(block.randao_reveal)).
