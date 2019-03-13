@@ -39,6 +39,7 @@ dependencyManagement {
 
     dependencySet(group: 'net.consensys.cava', version: '1.0.0-C01FE1-snapshot') {
       entry 'cava-bytes'
+      entry 'cava-config'
       entry 'cava-crypto'
       entry 'cava-junit'
       entry 'cava-kv'

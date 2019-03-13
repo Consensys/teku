@@ -56,10 +56,6 @@ public final class RLPxP2PNetwork implements P2PNetwork {
   private WireConnectionRepository wireConnectionRepository;
   private VertxRLPxService service;
 
-  public RLPxP2PNetwork(EventBus eventBus) {
-    this(eventBus, Vertx.vertx(), SECP256K1.KeyPair.random(), 9000, 9000, "127.0.0.1");
-  }
-
   public RLPxP2PNetwork(
       EventBus eventBus,
       Vertx vertx,
