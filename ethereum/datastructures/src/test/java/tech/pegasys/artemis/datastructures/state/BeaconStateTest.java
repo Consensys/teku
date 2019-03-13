@@ -28,6 +28,7 @@ import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_activ
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_current_epoch;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_initial_beacon_state;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_randao_mix;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.int_to_bytes32;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.is_power_of_two;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.split;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomDeposits;
@@ -424,9 +425,9 @@ class BeaconStateTest {
           .isEqualTo(
               Hash.keccak256(
                   Bytes.wrap(
-                      Bytes.wrap(
-                          Bytes32.fromHexString("0x029a"), get_active_index_root(state, epoch)),
-                      Bytes.ofUnsignedLong(epoch.longValue()))));
+                      Bytes32.fromHexString("0x029a"),
+                      get_active_index_root(state, epoch),
+                      int_to_bytes32(epoch))));
     } catch (IllegalStateException e) {
       fail(e.toString());
     }

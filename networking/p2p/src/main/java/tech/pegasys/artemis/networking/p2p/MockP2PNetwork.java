@@ -13,6 +13,8 @@
 
 package tech.pegasys.artemis.networking.p2p;
 
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.int_to_bytes;
+
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.google.common.primitives.UnsignedLong;
@@ -134,13 +136,13 @@ public class MockP2PNetwork implements P2PNetwork {
 
     UnsignedLong domain =
         BeaconStateUtil.get_domain(state.getFork(), epoch, Constants.DOMAIN_RANDAO);
-    Bytes32 currentEpochBytes = Bytes32.leftPad(Bytes.ofUnsignedLong(epoch.longValue()));
+    Bytes32 messageHash = HashTreeUtil.hash_tree_root(int_to_bytes(epoch.longValue(), 8));
     LOG.info("Sign Epoch");
     LOG.info("Proposer pubkey: " + keypair.getPublicKey());
     LOG.info("state: " + HashTreeUtil.hash_tree_root(state.toBytes()));
     LOG.info("slot: " + slot);
     LOG.info("domain: " + domain);
-    return BLSSignature.sign(keypair, currentEpochBytes, domain.longValue());
+    return BLSSignature.sign(keypair, messageHash, domain.longValue());
   }
 
   private BLSSignature signProposalData(BeaconState state, BeaconBlock block) {

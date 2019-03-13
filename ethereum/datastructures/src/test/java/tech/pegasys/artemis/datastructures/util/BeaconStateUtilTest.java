@@ -25,6 +25,7 @@ import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.junit.BouncyCastleExtension;
 import org.junit.jupiter.api.Disabled;
@@ -387,6 +388,64 @@ class BeaconStateUtilTest {
     assertEquals(
         UnsignedLong.valueOf(Constants.GENESIS_EPOCH + 1),
         BeaconStateUtil.get_next_epoch(beaconState));
+  }
+
+  @Test
+  void intToBytes() {
+    long value = 0x0123456789abcdefL;
+    assertEquals(Bytes.EMPTY, BeaconStateUtil.int_to_bytes(value, 0));
+    assertEquals(Bytes.fromHexString("0xef"), BeaconStateUtil.int_to_bytes(value, 1));
+    assertEquals(Bytes.fromHexString("0xefcd"), BeaconStateUtil.int_to_bytes(value, 2));
+    assertEquals(Bytes.fromHexString("0xefcdab89"), BeaconStateUtil.int_to_bytes(value, 4));
+    assertEquals(Bytes.fromHexString("0xefcdab8967452301"), BeaconStateUtil.int_to_bytes(value, 8));
+    assertEquals(
+        Bytes.fromHexString("0xefcdab89674523010000000000000000"),
+        BeaconStateUtil.int_to_bytes(value, 16));
+    assertEquals(
+        Bytes.fromHexString("0xefcdab8967452301000000000000000000000000000000000000000000000000"),
+        BeaconStateUtil.int_to_bytes(value, 32));
+  }
+
+  @Test
+  void intToBytes32Long() {
+    assertEquals(
+        Bytes32.fromHexString("0x0000000000000000000000000000000000000000000000000000000000000000"),
+        BeaconStateUtil.int_to_bytes32(0L));
+    assertEquals(
+        Bytes32.fromHexString("0x0100000000000000000000000000000000000000000000000000000000000000"),
+        BeaconStateUtil.int_to_bytes32(1L));
+    assertEquals(
+        Bytes32.fromHexString("0xffffffffffffffff000000000000000000000000000000000000000000000000"),
+        BeaconStateUtil.int_to_bytes32(-1L));
+    assertEquals(
+        Bytes32.fromHexString("0xefcdab8967452301000000000000000000000000000000000000000000000000"),
+        BeaconStateUtil.int_to_bytes32(0x0123456789abcdefL));
+  }
+
+  @Test
+  void intToBytes32UnsignedLong() {
+    assertEquals(
+        Bytes32.fromHexString("0x0000000000000000000000000000000000000000000000000000000000000000"),
+        BeaconStateUtil.int_to_bytes32(UnsignedLong.ZERO));
+    assertEquals(
+        Bytes32.fromHexString("0x0100000000000000000000000000000000000000000000000000000000000000"),
+        BeaconStateUtil.int_to_bytes32(UnsignedLong.ONE));
+    assertEquals(
+        Bytes32.fromHexString("0xffffffffffffffff000000000000000000000000000000000000000000000000"),
+        BeaconStateUtil.int_to_bytes32(UnsignedLong.MAX_VALUE));
+    assertEquals(
+        Bytes32.fromHexString("0xefcdab8967452301000000000000000000000000000000000000000000000000"),
+        BeaconStateUtil.int_to_bytes32(UnsignedLong.valueOf(0x0123456789abcdefL)));
+  }
+
+  @Test
+  void bytesToInt() {
+    assertEquals(0L, BeaconStateUtil.bytes_to_int(Bytes.fromHexString("0x00")));
+    assertEquals(1L, BeaconStateUtil.bytes_to_int(Bytes.fromHexString("0x01")));
+    assertEquals(1L, BeaconStateUtil.bytes_to_int(Bytes.fromHexString("0x0100000000000000")));
+    assertEquals(
+        0x123456789abcdef0L,
+        BeaconStateUtil.bytes_to_int(Bytes.fromHexString("0xf0debc9a78563412")));
   }
 
   private BeaconState createBeaconState() {
