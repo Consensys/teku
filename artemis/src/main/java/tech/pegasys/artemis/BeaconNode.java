@@ -28,7 +28,7 @@ import tech.pegasys.artemis.data.provider.CSVProvider;
 import tech.pegasys.artemis.data.provider.FileProvider;
 import tech.pegasys.artemis.data.provider.JSONProvider;
 import tech.pegasys.artemis.data.provider.ProviderTypes;
-import tech.pegasys.artemis.networking.p2p.MockP2PNetwork;
+import tech.pegasys.artemis.networking.p2p.RLPxP2PNetwork;
 import tech.pegasys.artemis.networking.p2p.api.P2PNetwork;
 import tech.pegasys.artemis.services.ServiceController;
 import tech.pegasys.artemis.services.beaconchain.BeaconChainService;
@@ -51,8 +51,7 @@ public class BeaconNode {
 
   public BeaconNode(CommandLine commandLine, CommandLineArguments cliArgs) {
     this.eventBus = new AsyncEventBus(Executors.newCachedThreadPool());
-    // TODO: change this to the REAL P2PNetwork
-    this.p2pNetwork = new MockP2PNetwork(eventBus);
+    this.p2pNetwork = new RLPxP2PNetwork(eventBus);
     this.validatorCoordinator = new ValidatorCoordinator(eventBus);
     this.cliArgs = cliArgs;
     this.commandLine = commandLine;
