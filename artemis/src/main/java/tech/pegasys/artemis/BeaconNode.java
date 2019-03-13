@@ -36,10 +36,12 @@ import tech.pegasys.artemis.services.chainstorage.ChainStorageService;
 import tech.pegasys.artemis.services.powchain.PowchainService;
 import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.cli.CommandLineArguments;
+import tech.pegasys.artemis.validator.coordinator.ValidatorCoordinator;
 
 public class BeaconNode {
   private static final ALogger LOG = new ALogger(BeaconNode.class.getName());
   private P2PNetwork p2pNetwork;
+  private ValidatorCoordinator validatorCoordinator;
   private EventBus eventBus;
   private String outputFilename;
   private FileProvider<?> fileProvider;
@@ -49,7 +51,9 @@ public class BeaconNode {
 
   public BeaconNode(CommandLine commandLine, CommandLineArguments cliArgs) {
     this.eventBus = new AsyncEventBus(Executors.newCachedThreadPool());
+    // TODO: change this to the REAL P2PNetwork
     this.p2pNetwork = new MockP2PNetwork(eventBus);
+    this.validatorCoordinator = new ValidatorCoordinator(eventBus);
     this.cliArgs = cliArgs;
     this.commandLine = commandLine;
     if (cliArgs.isOutputEnabled()) {

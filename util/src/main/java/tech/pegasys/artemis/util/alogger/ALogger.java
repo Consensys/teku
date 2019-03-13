@@ -33,9 +33,9 @@ public class ALogger {
     this.logger.log(level, message);
   }
 
-  public void log(Level level, String message, boolean printEnabled) {
+  public void log(Level info, String message, boolean printEnabled) {
     if (printEnabled) {
-      this.logger.log(level, message);
+      this.logger.log(info, message);
     }
   }
 }
