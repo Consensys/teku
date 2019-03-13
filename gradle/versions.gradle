@@ -30,15 +30,20 @@ dependencyManagement {
     dependency 'io.vertx:vertx-unit:3.6.3'
     dependency 'io.vertx:vertx-web:3.6.3'
 
+    dependencySet(group: 'org.logl', version : '0.3.1') {
+      entry 'logl-log4j2'
+      entry 'logl-logl'
+    }
 
     dependencySet(group: 'net.consensys.cava', version: '1.0.0-752375-snapshot') {
       entry 'cava-bytes'
       entry 'cava-crypto'
       entry 'cava-junit'
+      entry 'cava-kv'
+      entry 'cava-rlpx'
       entry 'cava-ssz'
       entry 'cava-toml'
       entry 'cava-units'
-      entry 'cava-kv'
     }
 
     dependency 'org.apache.commons:commons-text:1.6'
