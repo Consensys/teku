@@ -21,6 +21,7 @@ import java.math.BigInteger;
 import java.nio.charset.Charset;
 import java.util.Collections;
 import net.consensys.cava.bytes.Bytes;
+import net.consensys.cava.config.Configuration;
 import org.apache.logging.log4j.Level;
 import org.web3j.protocol.core.methods.response.Log;
 import tech.pegasys.artemis.ganache.GanacheController;
@@ -54,6 +55,9 @@ public class PowchainService implements ServiceInterface {
     this.eventBus = eventBus;
     this.eventBus.register(this);
   }
+
+  @Override
+  public void init(EventBus eventBus, Configuration config) {}
 
   @Override
   public void run() {

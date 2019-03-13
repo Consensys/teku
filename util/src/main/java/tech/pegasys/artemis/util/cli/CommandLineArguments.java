@@ -43,7 +43,7 @@ public class CommandLineArguments {
       names = {"-c", "--config"},
       paramLabel = "<FILENAME>",
       description = "Path/filename of the config file")
-  private String configFile = "config.toml";
+  private String configFile = "./config/config.toml";
 
   public String getProviderType() {
     return this.providerType;

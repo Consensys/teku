@@ -72,16 +72,20 @@ public class BeaconNode {
   public BeaconNode(CommandLine commandLine, CommandLineArguments cliArgs) {
     this.config = ArtemisConfiguration.fromFile(cliArgs.getConfigFile());
     this.eventBus = new AsyncEventBus(threadPool);
-    this.p2pNetwork =
-        new RLPxP2PNetwork(
-            eventBus,
-            vertx,
-            SECP256K1.KeyPair.fromSecretKey(
-                SECP256K1.SecretKey.fromBytes(Bytes32.fromHexString(config.getString("identity")))),
-            config.getInteger("port"),
-            config.getInteger("advertisedPort"),
-            config.getString("networkInterface"));
-    this.validatorCoordinator = new ValidatorCoordinator(eventBus);
+    SECP256K1.KeyPair keyPair =
+        SECP256K1.KeyPair.fromSecretKey(
+            SECP256K1.SecretKey.fromBytes(Bytes32.fromHexString(config.getString("identity"))));
+    // this.p2pNetwork = new MockP2PNetwork(eventBus);
+    new RLPxP2PNetwork(
+        eventBus,
+        vertx,
+        keyPair,
+        config.getInteger("port"),
+        config.getInteger("advertisedPort"),
+        config.getString("networkInterface"));
+    this.validatorCoordinator =
+        new ValidatorCoordinator(
+            eventBus, keyPair, config.getInteger("numValidators"), config.getInteger("numNodes"));
     this.cliArgs = cliArgs;
     this.commandLine = commandLine;
     if (cliArgs.isOutputEnabled()) {
@@ -110,6 +114,7 @@ public class BeaconNode {
     ServiceController.initAll(
         eventBus,
         cliArgs,
+        config,
         BeaconChainService.class,
         PowchainService.class,
         ChainStorageService.class);
