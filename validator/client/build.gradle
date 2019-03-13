@@ -1,5 +1,5 @@
 jar {
-  baseName 'validatorclient'
+  baseName 'validator-client'
   manifest {
     attributes('Implementation-Title': baseName,
     'Implementation-Version': project.version)
