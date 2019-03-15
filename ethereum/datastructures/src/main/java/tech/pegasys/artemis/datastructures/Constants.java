@@ -58,8 +58,6 @@ public final class Constants {
   public static final int ACTIVATION_EXIT_DELAY = 4; // 2^2 epochs 25.6 minutes
   public static final int EPOCHS_PER_ETH1_VOTING_PERIOD = 16; // 2^4 epochs ~1.7 hours
   public static final int MIN_VALIDATOR_WITHDRAWABILITY_DELAY = 256; // 2^8 epochs ~27 hours
-  // todo: the below constant needs to be removed
-  public static final int MIN_EXIT_EPOCHS_BEFORE_TRANSFER = 8192; // 2^13 epochs ~36 days
 
   // State list lengths
   public static final int LATEST_BLOCK_ROOTS_LENGTH = 8192; // 2^13 slots ~13 hours
