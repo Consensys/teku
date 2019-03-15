@@ -21,6 +21,7 @@ import static tech.pegasys.artemis.datastructures.Constants.DOMAIN_EXIT;
 import static tech.pegasys.artemis.datastructures.Constants.DOMAIN_PROPOSAL;
 import static tech.pegasys.artemis.datastructures.Constants.DOMAIN_RANDAO;
 import static tech.pegasys.artemis.datastructures.Constants.EMPTY_SIGNATURE;
+import static tech.pegasys.artemis.datastructures.Constants.FAR_FUTURE_EPOCH;
 import static tech.pegasys.artemis.datastructures.Constants.MAX_ATTESTATIONS;
 import static tech.pegasys.artemis.datastructures.Constants.MAX_ATTESTER_SLASHINGS;
 import static tech.pegasys.artemis.datastructures.Constants.MAX_DEPOSITS;
@@ -641,13 +642,18 @@ public class BlockProcessorUtil {
       // - Verify that get_current_epoch(state) >=
       //     state.validator_registry[transfer.from].exit_epoch + MIN_EXIT_EPOCHS_BEFORE_TRANSFER
       checkArgument(
-          BeaconStateUtil.get_current_epoch(state).longValue()
-              >= state
-                      .getValidator_registry()
-                      .get(toIntExact(transfer.getFrom().longValue()))
-                      .getExit_epoch()
-                      .longValue()
-                  + Constants.MIN_EXIT_EPOCHS_BEFORE_TRANSFER);
+          BeaconStateUtil.get_current_epoch(state)
+                      .compareTo(
+                          state
+                              .getValidator_registry()
+                              .get(toIntExact(transfer.getFrom().longValue()))
+                              .getWithdrawal_epoch())
+                  >= 0
+              || state
+                  .getValidator_registry()
+                  .get(toIntExact(transfer.getFrom().longValue()))
+                  .getActivation_epoch()
+                  .equals(FAR_FUTURE_EPOCH));
       // - Verify that state.validator_registry[transfer.from].withdrawal_credentials ==
       //     BLS_WITHDRAWAL_PREFIX_BYTE + hash(transfer.pubkey)[1:]
       checkArgument(
