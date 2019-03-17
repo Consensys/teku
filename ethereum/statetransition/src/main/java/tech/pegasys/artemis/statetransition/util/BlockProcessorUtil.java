@@ -137,7 +137,7 @@ public class BlockProcessorUtil {
 
       checkArgument(
           bls_verify(pubkey, proposalRoot, block.getSignature(), domain),
-          "verify signature failed");
+          "checkArgument threw and exception in verify_signature()");
     } catch (IllegalStateException | IllegalArgumentException e) {
       LOG.log(Level.WARN, "BlockProcessingException thrown in verify_signature()");
       throw new BlockProcessingException(e);
@@ -160,7 +160,8 @@ public class BlockProcessorUtil {
       //    message=int_to_bytes32(get_current_epoch(state)), signature=block.randao_reveal,
       //    domain=get_domain(state.fork, get_current_epoch(state), DOMAIN_RANDAO)).
       checkArgument(
-          verify_randao(state, block, currentEpoch, currentEpochBytes), "verify randao failed");
+          verify_randao(state, block, currentEpoch, currentEpochBytes),
+          "checkArgument threw and exception in verify_and_update_randao()");
 
       // - Set state.latest_randao_mixes[get_current_epoch(state) % LATEST_RANDAO_MIXES_LENGTH]
       //    = xor(get_randao_mix(state, get_current_epoch(state)), hash(block.randao_reveal)).
@@ -214,7 +215,9 @@ public class BlockProcessorUtil {
       throws BlockProcessingException {
     try {
       // Verify that len(block.body.proposer_slashings) <= MAX_PROPOSER_SLASHINGS
-      checkArgument(block.getBody().getProposer_slashings().size() <= MAX_PROPOSER_SLASHINGS);
+      checkArgument(
+          block.getBody().getProposer_slashings().size() <= MAX_PROPOSER_SLASHINGS,
+          "checkArgument threw and exception in proposer_slashing()");
 
       // For each proposer_slashing in block.body.proposer_slashings:
       for (ProposerSlashing proposer_slashing : block.getBody().getProposer_slashings()) {
@@ -230,7 +233,8 @@ public class BlockProcessorUtil {
             proposer_slashing
                 .getProposal_data_1()
                 .getSlot()
-                .equals(proposer_slashing.getProposal_data_2().getSlot()));
+                .equals(proposer_slashing.getProposal_data_2().getSlot()),
+            "checkArgument threw and exception in proposer_slashing()");
 
         // - Verify that proposer_slashing.proposal_data_1.shard ==
         //     proposer_slashing.proposal_data_2.shard
@@ -238,17 +242,21 @@ public class BlockProcessorUtil {
             proposer_slashing
                 .getProposal_data_1()
                 .getShard()
-                .equals(proposer_slashing.getProposal_data_2().getShard()));
+                .equals(proposer_slashing.getProposal_data_2().getShard()),
+            "checkArgument threw and exception in proposer_slashing()");
 
         // - Verify that proposer_slashing.proposal_data_1.block_root !=
         //     proposer_slashing.proposal_data_2.block_root
         checkArgument(
             !Objects.equals(
                 proposer_slashing.getProposal_data_1().getBlock_root(),
-                proposer_slashing.getProposal_data_2().getBlock_root()));
+                proposer_slashing.getProposal_data_2().getBlock_root()),
+            "checkArgument threw and exception in proposer_slashing()");
 
         // - Verify that proposer.penalized_epoch > get_current_epoch(state)
-        checkArgument(proposer.getPenalized_epoch().compareTo(get_current_epoch(state)) > 0);
+        checkArgument(
+            proposer.getPenalized_epoch().compareTo(get_current_epoch(state)) > 0,
+            "checkArgument threw and exception in proposer_slashing()");
 
         // - Verify that bls_verify(pubkey=proposer.pubkey,
         //     message=hash_tree_root(proposer_slashing.proposal_data_1),
@@ -262,7 +270,8 @@ public class BlockProcessorUtil {
                 get_domain(
                     state.getFork(),
                     slot_to_epoch(proposer_slashing.getProposal_data_1().getSlot()),
-                    DOMAIN_PROPOSAL)));
+                    DOMAIN_PROPOSAL)),
+            "checkArgument threw and exception in proposer_slashing()");
 
         // - Verify that bls_verify(pubkey=proposer.pubkey,
         //     message=hash_tree_root(proposer_slashing.proposal_data_2),
@@ -276,7 +285,8 @@ public class BlockProcessorUtil {
                 get_domain(
                     state.getFork(),
                     slot_to_epoch(proposer_slashing.getProposal_data_2().getSlot()),
-                    DOMAIN_PROPOSAL)));
+                    DOMAIN_PROPOSAL)),
+            "checkArgument threw and exception in proposer_slashing()");
 
         // - Run penalize_validator(state, proposer_slashing.proposer_index)
         penalize_validator(state, proposer_slashing.getProposer_index().intValue());
@@ -298,7 +308,9 @@ public class BlockProcessorUtil {
       throws BlockProcessingException {
     try {
       // Verify that len(block.body.attester_slashings) <= MAX_ATTESTER_SLASHINGS
-      checkArgument(block.getBody().getAttester_slashings().size() <= MAX_ATTESTER_SLASHINGS);
+      checkArgument(
+          block.getBody().getAttester_slashings().size() <= MAX_ATTESTER_SLASHINGS,
+          "checkArgument threw and exception in attester_slashing()");
 
       // For each attester_slashing in block.body.attester_slashings:
       for (AttesterSlashing attester_slashing : block.getBody().getAttester_slashings()) {
@@ -311,19 +323,25 @@ public class BlockProcessorUtil {
 
         // - Verify that slashable_attestation_1.data != slashable_attestation_2.data
         checkArgument(
-            !Objects.equals(slashable_attestation_1.getData(), slashable_attestation_2.getData()));
+            !Objects.equals(slashable_attestation_1.getData(), slashable_attestation_2.getData()),
+            "checkArgument threw and exception in atttester_slashing()");
 
         // - Verify that is_double_vote(slashable_attestation_1.data, slashable_attestation_2.data)
         //     or is_surround_vote(slashable_attestation_1.data, slashable_attestation_2.data)
         checkArgument(
             is_double_vote(slashable_attestation_1.getData(), slashable_attestation_2.getData())
                 || is_surround_vote(
-                    slashable_attestation_1.getData(), slashable_attestation_2.getData()));
+                    slashable_attestation_1.getData(), slashable_attestation_2.getData()),
+            "checkArgument threw and exception in attester_slashing()");
 
         // - Verify that verify_slashable_attestation(state, slashable_attestation_1)
-        checkArgument(verify_slashable_attestation(state, slashable_attestation_1));
+        checkArgument(
+            verify_slashable_attestation(state, slashable_attestation_1),
+            "checkArgument threw and exception in attester_slashing()");
         // - Verify that verify_slashable_attestation(state, slashable_attestation_2)
-        checkArgument(verify_slashable_attestation(state, slashable_attestation_2));
+        checkArgument(
+            verify_slashable_attestation(state, slashable_attestation_2),
+            "checkArgument threw and exception in attester_slashing()");
 
         // - Let slashable_indices = [index for index in slashable_attestation_1.validator_indices
         //     if index in slashable_attestation_2.validator_indices and
@@ -341,7 +359,9 @@ public class BlockProcessorUtil {
           }
         }
 
-        checkArgument(slashable_indices.size() >= 1);
+        checkArgument(
+            slashable_indices.size() >= 1,
+            "checkArgument threw and exception in attester_slashing()");
         for (int index : slashable_indices) {
           penalize_validator(state, index);
         }
@@ -363,7 +383,9 @@ public class BlockProcessorUtil {
       throws BlockProcessingException {
     try {
       // Verify that len(block.body.attestations) <= MAX_ATTESTATIONS
-      checkArgument(block.getBody().getAttestations().size() <= MAX_ATTESTATIONS);
+      checkArgument(
+          block.getBody().getAttestations().size() <= MAX_ATTESTATIONS,
+          "checkArgument threw and exception in processAttestations()");
 
       // For each attestation in block.body.attestations:
       for (Attestation attestation : block.getBody().getAttestations()) {
@@ -377,7 +399,8 @@ public class BlockProcessorUtil {
             attestationDataSlot.plus(UnsignedLong.valueOf(EPOCH_LENGTH));
         checkArgument(
             (attestationDataSlot.compareTo(slotMinusInclusionDelay) <= 0)
-                && (slotMinusInclusionDelay.compareTo(slotPlusEpochLength) < 0));
+                && (slotMinusInclusionDelay.compareTo(slotPlusEpochLength) < 0),
+            "checkArgument threw and exception in processAttestations()");
 
         // - Verify that attestation.data.justified_epoch is equal to state.justified_epoch
         //     if attestation.data.slot >= get_epoch_start_slot(get_current_epoch(state))
@@ -388,13 +411,15 @@ public class BlockProcessorUtil {
                 .compareTo(get_epoch_start_slot(get_current_epoch(state)))
             >= 0) {
           checkArgument(
-              attestation.getData().getJustified_epoch().equals(state.getJustified_epoch()));
+              attestation.getData().getJustified_epoch().equals(state.getJustified_epoch()),
+              "checkArgument threw and exception in processAttestations()");
         } else {
           checkArgument(
               attestation
                   .getData()
                   .getJustified_epoch()
-                  .equals(state.getPrevious_justified_epoch()));
+                  .equals(state.getPrevious_justified_epoch()),
+              "checkArgument threw and exception in processAttestations()");
         }
 
         // - Verify that attestation.data.justified_block_root is equal to
@@ -403,7 +428,8 @@ public class BlockProcessorUtil {
             Objects.equals(
                 attestation.getData().getJustified_block_root(),
                 get_block_root(
-                    state, get_epoch_start_slot(attestation.getData().getJustified_epoch()))));
+                    state, get_epoch_start_slot(attestation.getData().getJustified_epoch()))),
+            "checkArgument threw and exception in processAttestations()");
 
         // - Verify that either attestation.data.latest_crosslink_root or
         // attestation.data.shard_block_root
@@ -424,14 +450,19 @@ public class BlockProcessorUtil {
                         state
                             .getLatest_crosslinks()
                             .get(attestation.getData().getShard().intValue())
-                            .getShard_block_root()));
+                            .getShard_block_root()),
+            "checkArgument threw and exception in processAttestations()");
 
         // - Verify bitfields and aggregate signature
-        checkArgument(verify_bitfields_and_aggregate_signature(attestation, state));
+        checkArgument(
+            verify_bitfields_and_aggregate_signature(attestation, state),
+            "checkArgument threw and exception in processAttesations()");
 
         // - Verify that attestation.data.shard_block_root == ZERO_HASH
         // TO BE REMOVED IN PHASE 1
-        checkArgument(attestation.getData().getShard_block_root().equals(ZERO_HASH));
+        checkArgument(
+            attestation.getData().getShard_block_root().equals(ZERO_HASH),
+            "checkArgument threw and exception in processAttestations()");
 
         // - Append PendingAttestation(data=attestation.data,
         //     aggregation_bitfield=attestation.aggregation_bitfield,
@@ -478,9 +509,13 @@ public class BlockProcessorUtil {
     //   however because we've implemented the bitfield as a static Bytes32 value
     //   instead of a variable length bitfield, checking against Bytes32.ZERO will suffice.
     checkArgument(
-        Objects.equals(
-            attestation.getCustody_bitfield(), Bytes32.ZERO)); // [TO BE REMOVED IN PHASE 1]
-    checkArgument(!Objects.equals(attestation.getAggregation_bitfield(), Bytes32.ZERO));
+        Objects.equals(attestation.getCustody_bitfield(), Bytes32.ZERO),
+        "checkArgument threw and exception in verify_bitfields_and_aggregate_signature()"); // [TO
+    // BE
+    // REMOVED IN PHASE 1]
+    checkArgument(
+        !Objects.equals(attestation.getAggregation_bitfield(), Bytes32.ZERO),
+        "checkArgument threw and exception in verify_bitfields_and_aggregate_signature()");
 
     List<List<Integer>> crosslink_committees = new ArrayList<>();
     for (CrosslinkCommittee crosslink_committee :
@@ -494,7 +529,8 @@ public class BlockProcessorUtil {
     for (int i = 0; i < crosslink_committee.size(); i++) {
       checkArgument(
           get_bitfield_bit(attestation.getAggregation_bitfield(), i) != 0b0
-              || get_bitfield_bit(attestation.getCustody_bitfield(), i) == 0b0);
+              || get_bitfield_bit(attestation.getCustody_bitfield(), i) == 0b0,
+          "checkArgument threw and exception in verify_bitfields_and_aggregate_signature()");
     }
 
     List<Integer> participants =
@@ -532,7 +568,8 @@ public class BlockProcessorUtil {
             get_domain(
                 state.getFork(),
                 slot_to_epoch(attestation.getData().getSlot()),
-                DOMAIN_ATTESTATION)));
+                DOMAIN_ATTESTATION)),
+        "checkArgument threw and exception in verify_bitfields_and_aggregate_signature()");
 
     return true;
   }
@@ -548,7 +585,9 @@ public class BlockProcessorUtil {
       throws BlockProcessingException {
     try {
       // Verify that len(block.body.deposits) <= MAX_DEPOSITS
-      checkArgument(block.getBody().getDeposits().size() <= MAX_DEPOSITS);
+      checkArgument(
+          block.getBody().getDeposits().size() <= MAX_DEPOSITS,
+          "checkArgument threw and exception in processDeposits()");
 
       // SPEC TODO: add logic to ensure that deposits from 1.0 chain are processed in order
       // SPEC TODO: update the call to verify_merkle_branch below if it needs to change
@@ -571,7 +610,8 @@ public class BlockProcessorUtil {
                 deposit.getBranch(),
                 DEPOSIT_CONTRACT_TREE_DEPTH,
                 toIntExact(deposit.getIndex().longValue()),
-                state.getLatest_eth1_data().getDeposit_root()));
+                state.getLatest_eth1_data().getDeposit_root()),
+            "checkArgument threw and exception in processDeposits()");
 
         // - Run process_deposit
         process_deposit(
@@ -598,7 +638,9 @@ public class BlockProcessorUtil {
       throws BlockProcessingException {
     try {
       // Verify that len(block.body.exits) <= MAX_EXITS
-      checkArgument(block.getBody().getExits().size() <= Constants.MAX_EXITS);
+      checkArgument(
+          block.getBody().getExits().size() <= Constants.MAX_EXITS,
+          "checkArgument threw and exception in processExits()");
 
       // For each exit in block.body.exits:
       for (Exit exit : block.getBody().getExits()) {
@@ -612,10 +654,13 @@ public class BlockProcessorUtil {
             validator
                     .getExit_epoch()
                     .compareTo(get_entry_exit_effect_epoch(get_current_epoch(state)))
-                > 0);
+                > 0,
+            "checkArgument threw and exception in processExits()");
 
         // - Verify that get_current_epoch(state) >= exit.epoch
-        checkArgument(get_current_epoch(state).compareTo(exit.getEpoch()) >= 0);
+        checkArgument(
+            get_current_epoch(state).compareTo(exit.getEpoch()) >= 0,
+            "checkArgument threw and exception in processExits()");
 
         // - Let exit_message = hash_tree_root(Exit(epoch=exit.epoch,
         //     validator_index=exit.validator_index, signature=EMPTY_SIGNATURE))
@@ -630,7 +675,8 @@ public class BlockProcessorUtil {
                 validator.getPubkey(),
                 exit_message,
                 exit.getSignature(),
-                get_domain(state.getFork(), exit.getEpoch(), DOMAIN_EXIT)));
+                get_domain(state.getFork(), exit.getEpoch(), DOMAIN_EXIT)),
+            "checkArgument threw and exception in processExits()");
 
         // - Run initiate_validator_exit(state, exit.validator_index)
         initiate_validator_exit(state, toIntExact(exit.getValidator_index().longValue()));
