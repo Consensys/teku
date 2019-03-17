@@ -53,6 +53,13 @@ public class AttestationUtil {
     return epoch_attestations;
   }
 
+  /**
+   * Returns the current epoch boundary attestations.
+   *
+   * @param state
+   * @return List<PendingAttestation>
+   * @throws IllegalArgumentException
+   */
   public static List<PendingAttestation> get_current_epoch_boundary_attestations(BeaconState state)
       throws IllegalArgumentException {
 
@@ -79,6 +86,13 @@ public class AttestationUtil {
     return current_epoch_boundary_attestations;
   }
 
+  /**
+   * Returns the previous epoch boundary attestations.
+   *
+   * @param state
+   * @return List<PendingAttestation>
+   * @throws IllegalArgumentException
+   */
   public static List<PendingAttestation> get_previous_epoch_boundary_attestations(BeaconState state)
       throws IllegalArgumentException {
 
@@ -104,6 +118,13 @@ public class AttestationUtil {
     return previous_epoch_boundary_attestations;
   }
 
+  /**
+   * Returns the previous epoch justified attestations.
+   *
+   * @param state
+   * @return List<PendingAttestation>
+   * @throws IllegalArgumentException
+   */
   public static List<PendingAttestation> get_previous_epoch_justified_attestations(
       BeaconState state) throws IllegalArgumentException {
     // Get previous and current epoch
@@ -126,7 +147,15 @@ public class AttestationUtil {
     return previous_epoch_justified_attestations;
   }
 
-  public static List<Integer> get_previous_epoch_justified_attester_indices(BeaconState state) {
+  /**
+   * Returns the previous epoch justified attestation indices.
+   *
+   * @param state
+   * @return List<Integer>
+   * @throws IllegalArgumentException
+   */
+  public static List<Integer> get_previous_epoch_justified_attester_indices(BeaconState state)
+      throws IllegalArgumentException {
     // Get previous_epoch_justified_attestations
     List<PendingAttestation> previous_epoch_justified_attestations =
         get_previous_epoch_justified_attestations(state);
@@ -134,7 +163,15 @@ public class AttestationUtil {
     return get_attester_indices(state, previous_epoch_justified_attestations);
   }
 
-  public static UnsignedLong get_previous_epoch_justified_attesting_balance(BeaconState state) {
+  /**
+   * Returns the previous epoch justified attesting balance.
+   *
+   * @param state
+   * @return UnsignedLong
+   * @throws IllegalArgumentException
+   */
+  public static UnsignedLong get_previous_epoch_justified_attesting_balance(BeaconState state)
+      throws IllegalArgumentException {
     // Get previous_epoch_justified_attester_indices
     List<Integer> previous_epoch_justified_attester_indices =
         get_previous_epoch_justified_attester_indices(state);
@@ -142,6 +179,13 @@ public class AttestationUtil {
     return get_total_attesting_balance(state, previous_epoch_justified_attester_indices);
   }
 
+  /**
+   * Returns the previous epoch boundary attester indices.
+   *
+   * @param state
+   * @return List<Integer>
+   * @throws IllegalArgumentException
+   */
   public static List<Integer> get_previous_epoch_boundary_attester_indices(BeaconState state)
       throws IllegalArgumentException {
 
@@ -157,7 +201,8 @@ public class AttestationUtil {
    * boundary
    *
    * @param state
-   * @return current_epoch_boundary_attesting_balance
+   * @return UnsignedLong
+   * @throws IllegalArgumentException
    */
   public static UnsignedLong get_current_epoch_boundary_attesting_balance(BeaconState state)
       throws IllegalArgumentException {
@@ -179,6 +224,7 @@ public class AttestationUtil {
    *
    * @param state
    * @return previous_epoch_boundary_attesting_balance
+   * @throws IllegalArgumentException
    */
   public static UnsignedLong get_previous_epoch_boundary_attesting_balance(BeaconState state)
       throws IllegalArgumentException {
@@ -189,6 +235,13 @@ public class AttestationUtil {
     return get_total_attesting_balance(state, previous_epoch_boundary_attester_indices);
   }
 
+  /**
+   * Returns the previous epoch head attestations
+   *
+   * @param state
+   * @return List<PendingAttestation>
+   * @throws IllegalArgumentException
+   */
   public static List<PendingAttestation> get_previous_epoch_head_attestations(BeaconState state)
       throws IllegalArgumentException {
     // Get previous epoch
@@ -210,6 +263,13 @@ public class AttestationUtil {
     return previous_epoch_head_attestations;
   }
 
+  /**
+   * Returns the previous epoch head attestor indices
+   *
+   * @param state
+   * @return List<Integer>
+   * @throws IllegalArgumentException
+   */
   public static List<Integer> get_previous_epoch_head_attester_indices(BeaconState state)
       throws IllegalArgumentException {
     List<PendingAttestation> previous_epoch_head_attestations =
@@ -218,6 +278,13 @@ public class AttestationUtil {
     return get_attester_indices(state, previous_epoch_head_attestations);
   }
 
+  /**
+   * Returns the previous epoch head attesting balance
+   *
+   * @param state
+   * @return UnsignedLong
+   * @throws IllegalArgumentException
+   */
   public static UnsignedLong get_previous_epoch_head_attesting_balance(BeaconState state)
       throws IllegalArgumentException {
     List<Integer> previous_epoch_head_attester_indices =
@@ -226,6 +293,13 @@ public class AttestationUtil {
     return get_total_attesting_balance(state, previous_epoch_head_attester_indices);
   }
 
+  /**
+   * Returns the previous epoch attester indices
+   *
+   * @param state
+   * @return List<Integer>
+   * @throws IllegalArgumentException
+   */
   public static List<Integer> get_previous_epoch_attester_indices(BeaconState state)
       throws IllegalArgumentException {
     UnsignedLong previous_epoch = BeaconStateUtil.get_previous_epoch(state);
@@ -244,6 +318,7 @@ public class AttestationUtil {
    * @param state
    * @param attestations
    * @return attester_indices
+   * @throws IllegalArgumentException
    */
   static List<Integer> get_attester_indices(
       BeaconState state, List<PendingAttestation> attestations) throws IllegalArgumentException {
@@ -272,7 +347,7 @@ public class AttestationUtil {
    *
    * @param state
    * @param attester_indices
-   * @return total_attesting_balance
+   * @return UnsignedLong TOTAL_ATTESTING_BALANCE
    */
   public static UnsignedLong get_total_attesting_balance(
       BeaconState state, List<Integer> attester_indices) {
@@ -296,7 +371,8 @@ public class AttestationUtil {
    * @param state
    * @param crosslink_committee
    * @param shard_block_root
-   * @return
+   * @return List<Integer>
+   * @throws IllegalArgumentException
    */
   public static List<Integer> attesting_validator_indices(
       BeaconState state, CrosslinkCommittee crosslink_committee, Bytes32 shard_block_root)
@@ -334,7 +410,8 @@ public class AttestationUtil {
    *
    * @param state
    * @param crosslink_committee
-   * @return
+   * @return Bytes32
+   * @throws IllegalArgumentException
    */
   public static Bytes32 winning_root(BeaconState state, CrosslinkCommittee crosslink_committee)
       throws IllegalArgumentException {
@@ -383,10 +460,11 @@ public class AttestationUtil {
    *
    * @param state
    * @param crosslink_committee
-   * @return
+   * @return List<Integer>
+   * @throws IllegalArgumentException
    */
   public static List<Integer> attesting_validators(
-      BeaconState state, CrosslinkCommittee crosslink_committee) {
+      BeaconState state, CrosslinkCommittee crosslink_committee) throws IllegalArgumentException {
     return attesting_validator_indices(
         state, crosslink_committee, winning_root(state, crosslink_committee));
   }
@@ -396,8 +474,7 @@ public class AttestationUtil {
    *
    * @param state
    * @param crosslink_committee
-   * @param shard
-   * @return
+   * @return UnsignedLong
    */
   public static UnsignedLong total_attesting_balance(
       BeaconState state, CrosslinkCommittee crosslink_committee) {
@@ -405,6 +482,14 @@ public class AttestationUtil {
     return BeaconStateUtil.get_total_effective_balance(state, attesting_validators);
   }
 
+  /**
+   * Returns a pendingAttestion
+   *
+   * @param state
+   * @param index
+   * @return PendingAttestation
+   * @throws IllegalArgumentException
+   */
   public static PendingAttestation inclusion_slot_attestation(BeaconState state, Integer index)
       throws IllegalArgumentException {
     UnsignedLong previous_epoch = BeaconStateUtil.get_previous_epoch(state);
@@ -428,11 +513,27 @@ public class AttestationUtil {
     return lowest_inclusion_slot_attestation;
   }
 
-  public static UnsignedLong inclusion_slot(BeaconState state, Integer index) {
+  /**
+   * Returns the inclusion slot.
+   *
+   * @param state
+   * @param index
+   * @return UnsignedLong
+   * @throws IllegalArgumentException
+   */
+  public static UnsignedLong inclusion_slot(BeaconState state, Integer index)
+      throws IllegalArgumentException {
     PendingAttestation lowest_inclusion_slot_attestation = inclusion_slot_attestation(state, index);
     return lowest_inclusion_slot_attestation.getSlot_included();
   }
 
+  /**
+   * Returns the inclusion distance.
+   *
+   * @param state
+   * @param index
+   * @return UnsignedLong
+   */
   public static UnsignedLong inclusion_distance(BeaconState state, Integer index) {
     PendingAttestation lowest_inclusion_slot_attestation = inclusion_slot_attestation(state, index);
     return lowest_inclusion_slot_attestation
@@ -440,6 +541,13 @@ public class AttestationUtil {
         .minus(lowest_inclusion_slot_attestation.getData().getSlot());
   }
 
+  /**
+   * Returns true if the attestation is verified
+   *
+   * @param state
+   * @param attestation
+   * @return boolean
+   */
   public static boolean verifyAttestation(BeaconState state, Attestation attestation) {
     return true;
   }
