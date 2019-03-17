@@ -27,7 +27,12 @@ final class ArtemisConfiguration {
   static final Schema createSchema() {
     SchemaBuilder builder =
         SchemaBuilder.create()
-            .addString("identity", null, "Identity of the peer", PropertyValidator.isPresent());
+            .addInteger(
+                "networkMode",
+                0,
+                "represents what network to use",
+                PropertyValidator.inRange(0, 1));
+    builder.addString("identity", null, "Identity of the peer", PropertyValidator.isPresent());
     builder.addString("networkInterface", "0.0.0.0", "Peer to peer network interface", null);
     builder.addInteger("port", 9000, "Peer to peer port", PropertyValidator.inRange(0, 65535));
     builder.addInteger(

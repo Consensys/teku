@@ -35,6 +35,7 @@ import tech.pegasys.artemis.data.provider.CSVProvider;
 import tech.pegasys.artemis.data.provider.FileProvider;
 import tech.pegasys.artemis.data.provider.JSONProvider;
 import tech.pegasys.artemis.data.provider.ProviderTypes;
+import tech.pegasys.artemis.networking.p2p.MockP2PNetwork;
 import tech.pegasys.artemis.networking.p2p.RLPxP2PNetwork;
 import tech.pegasys.artemis.networking.p2p.api.P2PNetwork;
 import tech.pegasys.artemis.services.ServiceController;
@@ -75,14 +76,18 @@ public class BeaconNode {
     SECP256K1.KeyPair keyPair =
         SECP256K1.KeyPair.fromSecretKey(
             SECP256K1.SecretKey.fromBytes(Bytes32.fromHexString(config.getString("identity"))));
-    // this.p2pNetwork = new MockP2PNetwork(eventBus);
-    new RLPxP2PNetwork(
-        eventBus,
-        vertx,
-        keyPair,
-        config.getInteger("port"),
-        config.getInteger("advertisedPort"),
-        config.getString("networkInterface"));
+    if (config.getInteger("networkMode") == 0) {
+      this.p2pNetwork = new MockP2PNetwork(eventBus);
+    } else if (config.getInteger("networkMode") == 1) {
+      this.p2pNetwork =
+          new RLPxP2PNetwork(
+              eventBus,
+              vertx,
+              keyPair,
+              config.getInteger("port"),
+              config.getInteger("advertisedPort"),
+              config.getString("networkInterface"));
+    }
     this.validatorCoordinator =
         new ValidatorCoordinator(
             eventBus, keyPair, config.getInteger("numValidators"), config.getInteger("numNodes"));
