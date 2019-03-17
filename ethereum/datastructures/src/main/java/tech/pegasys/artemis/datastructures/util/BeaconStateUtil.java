@@ -185,7 +185,8 @@ public class BeaconStateUtil {
    * @return
    */
   public static ArrayList<CrosslinkCommittee> get_crosslink_committees_at_slot(
-      BeaconState state, UnsignedLong slot, boolean registry_change) throws IllegalStateException {
+      BeaconState state, UnsignedLong slot, boolean registry_change)
+      throws IllegalArgumentException {
     UnsignedLong epoch = slot_to_epoch(slot);
     UnsignedLong current_epoch = get_current_epoch(state);
     UnsignedLong previous_epoch = get_previous_epoch(state);
@@ -261,7 +262,7 @@ public class BeaconStateUtil {
 
   /** This is a wrapper that defaults `registry_change` to false when it is not provided */
   public static ArrayList<CrosslinkCommittee> get_crosslink_committees_at_slot(
-      BeaconState state, UnsignedLong slot) throws IllegalStateException {
+      BeaconState state, UnsignedLong slot) throws IllegalArgumentException {
     return get_crosslink_committees_at_slot(state, slot, false);
   }
 
@@ -299,7 +300,7 @@ public class BeaconStateUtil {
   }
 
   public static Bytes32 generate_seed(BeaconState state, UnsignedLong epoch)
-      throws IllegalStateException {
+      throws IllegalArgumentException {
     Bytes32 randao_mix =
         get_randao_mix(state, epoch.minus(UnsignedLong.valueOf(Constants.SEED_LOOKAHEAD)));
     Bytes32 index_root = get_active_index_root(state, epoch);
@@ -357,7 +358,7 @@ public class BeaconStateUtil {
    *
    * @param state
    * @param validator_indices
-   * @return
+   * @return UnsignedLong
    */
   public static UnsignedLong get_total_effective_balance(
       BeaconState state, List<Integer> validator_indices) {
@@ -381,8 +382,8 @@ public class BeaconStateUtil {
     return get_total_effective_balance(state, previous_active_validators);
   }
 
-  public static UnsignedLong total_balance(BeaconState state, CrosslinkCommittee crosslink_committe)
-      throws Exception {
+  public static UnsignedLong total_balance(
+      BeaconState state, CrosslinkCommittee crosslink_committe) {
     return BeaconStateUtil.get_total_effective_balance(state, crosslink_committe.getCommittee());
   }
 
@@ -717,7 +718,7 @@ public class BeaconStateUtil {
    * @return
    */
   public static int get_beacon_proposer_index(BeaconState state, UnsignedLong slot)
-      throws IllegalStateException {
+      throws IllegalArgumentException {
     List<Integer> first_committee =
         get_crosslink_committees_at_slot(state, slot).get(0).getCommittee();
     // TODO: replace slot.intValue() with an UnsignedLong value
@@ -993,7 +994,7 @@ public class BeaconStateUtil {
    */
   public static ArrayList<Integer> get_attestation_participants(
       BeaconState state, AttestationData attestation_data, byte[] participation_bitfield)
-      throws IllegalStateException {
+      throws IllegalArgumentException {
     // Find the relevant committee
 
     ArrayList<CrosslinkCommittee> crosslink_committees =
