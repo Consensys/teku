@@ -280,8 +280,8 @@ public class BlockProcessorUtil {
   /**
    * @param state
    * @param block
-   * @see
-   *     https://github.com/ethereum/eth2.0-specs/blob/v0.1/specs/core/0_beacon-chain.md#attester-slashings-1
+   * @see <a href=
+   *     "https://github.com/ethereum/eth2.0-specs/blob/v0.1/specs/core/0_beacon-chain.md#attester-slashings-1">spec</a>
    */
   public static void attester_slashing(BeaconState state, BeaconBlock block)
       throws IllegalArgumentException, BlockProcessingException {
@@ -337,8 +337,8 @@ public class BlockProcessorUtil {
   /**
    * @param state
    * @param block
-   * @see
-   *     https://github.com/ethereum/eth2.0-specs/blob/v0.1/specs/core/0_beacon-chain.md#attestations-1
+   * @see <a
+   *     href="https://github.com/ethereum/eth2.0-specs/blob/v0.1/specs/core/0_beacon-chain.md#attestations-1">spec</a>
    */
   public static void processAttestations(BeaconState state, BeaconBlock block)
       throws IllegalArgumentException, BlockProcessingException {
@@ -381,7 +381,7 @@ public class BlockProcessorUtil {
 
       // - Verify that either attestation.data.latest_crosslink_root or
       // attestation.data.shard_block_root
-      //     equals state.latest_crosslinks[shard].shard_block_root.
+      //     equals state.latest_crosslinks[attestation.data.shard].shard_block_root.
       checkArgument(
           attestation
                   .getData()
@@ -514,7 +514,8 @@ public class BlockProcessorUtil {
   /**
    * @param state
    * @param block
-   * @see https://github.com/ethereum/eth2.0-specs/blob/v0.1/specs/core/0_beacon-chain.md#deposits-1
+   * @see <a
+   *     href="https://github.com/ethereum/eth2.0-specs/blob/v0.1/specs/core/0_beacon-chain.md#deposits-1">spec</a>
    */
   public static void processDeposits(BeaconState state, BeaconBlock block)
       throws BlockProcessingException {
@@ -561,7 +562,8 @@ public class BlockProcessorUtil {
   /**
    * @param state
    * @param block
-   * @see https://github.com/ethereum/eth2.0-specs/blob/v0.1/specs/core/0_beacon-chain.md#exits-1
+   * @see <a
+   *     href="https://github.com/ethereum/eth2.0-specs/blob/v0.1/specs/core/0_beacon-chain.md#exits-1">spec</a>
    */
   public static void processExits(BeaconState state, BeaconBlock block)
       throws BlockProcessingException {
@@ -605,8 +607,9 @@ public class BlockProcessorUtil {
   /**
    * @param state
    * @param block
-   * @see
-   *     https://github.com/ethereum/eth2.0-specs/blob/v0.3/specs/core/0_beacon-chain.md#transfers-1
+   * @see <a
+   *     href="https://github.com/ethereum/eth2.0-specs/blob/v0.3/specs/core/0_beacon-chain.md#transfers-1">spec
+   *     </a>
    */
   public static void processTransfers(BeaconState state, BeaconBlock block)
       throws BlockProcessingException {
