@@ -497,8 +497,9 @@ public class BeaconStateUtil {
    *
    * @param state - The current BeaconState. NOTE: State will be mutated per spec logic.
    * @param index - The index of the validator that will be penalized.
-   * @see
-   *     https://github.com/ethereum/eth2.0-specs/blob/v0.1/specs/core/0_beacon-chain.md#penalize_validator
+   * @see <a
+   *     href="https://github.com/ethereum/eth2.0-specs/blob/v0.1/specs/core/0_beacon-chain.md#penalize_validator">
+   *     spec</a>
    */
   public static void penalize_validator(BeaconState state, int index) {
     exit_validator(state, index);
