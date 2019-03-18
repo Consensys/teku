@@ -296,10 +296,8 @@ public class EpochProcessorUtil {
     // Case 1: epochs_since_finality <= 4:
     if (epochs_since_finality.compareTo(FOUR) <= 0) {
       // Expected FFG source
-      UnsignedLong previous_balance =
-          AttestationUtil.get_previous_epoch_justified_attesting_balance(state);
-      List<Integer> previous_indices =
-          AttestationUtil.get_previous_epoch_justified_attester_indices(state);
+      UnsignedLong previous_balance = AttestationUtil.get_previous_epoch_attesting_balance(state);
+      List<Integer> previous_indices = AttestationUtil.get_previous_epoch_attester_indices(state);
       case_one_penalties_and_rewards(
           state, balances, previous_total_balance, previous_balance, previous_indices);
 
@@ -346,8 +344,7 @@ public class EpochProcessorUtil {
           };
 
       // prev epoch justified attester
-      List<Integer> validator_indices =
-          AttestationUtil.get_previous_epoch_justified_attester_indices(state);
+      List<Integer> validator_indices = AttestationUtil.get_previous_epoch_attester_indices(state);
       // find all validators not present in the list
       validator_indices = ValidatorsUtil.get_validators_not_present(validator_indices);
       // remove inactive validator indices
