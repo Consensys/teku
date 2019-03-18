@@ -36,6 +36,7 @@ public class ServiceController {
       void initAll(
           EventBus eventBus,
           CommandLineArguments cliArgs,
+          ServiceConfig config,
           Class<U> beaconChainServiceType,
           Class<V> powchainServiceType,
           Class<W> chainStorageServiceType) {
@@ -43,9 +44,9 @@ public class ServiceController {
     powchainService = ServiceFactory.getInstance(powchainServiceType).getInstance();
     chainStorageService = ServiceFactory.getInstance(chainStorageServiceType).getInstance();
 
-    beaconChainService.init(eventBus);
-    powchainService.init(eventBus);
-    chainStorageService.init(eventBus);
+    beaconChainService.init(config);
+    powchainService.init(config);
+    chainStorageService.init(config);
   }
 
   public static void startAll(CommandLineArguments cliArgs) {

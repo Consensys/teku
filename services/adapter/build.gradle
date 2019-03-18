@@ -19,6 +19,7 @@ dependencies {
     implementation 'io.grpc:grpc-netty:1.18.0'
     implementation 'io.protostuff:protostuff-core:1.6.0'
     implementation 'io.protostuff:protostuff-runtime:1.6.0'
+    implementation 'net.consensys.cava:cava-config'
 
     runtime 'org.apache.logging.log4j:log4j-core'
 }

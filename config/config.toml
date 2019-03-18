@@ -1,0 +1,14 @@
+# This is a TOML document. Boom.
+
+
+# networkMode options:
+# 0: use MockP2PNetwork
+# 1: use RLPxP2PNetwork
+networkMode = 0
+identity = "0x01"
+networkInterface = "0.0.0.0"
+port = 9000
+advertisedPort = 9000
+numValidators = 128
+numNodes = 1
+
