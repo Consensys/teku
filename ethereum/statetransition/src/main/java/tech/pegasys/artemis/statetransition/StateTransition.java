@@ -71,8 +71,6 @@ public class StateTransition {
       SlotProcessorUtil.updateBlockRoots(state, previous_block_root);
     } catch (SlotProcessingException e) {
       LOG.log(Level.WARN, "  Slot processing error: " + e, printEnabled);
-    } catch (Exception e) {
-      LOG.log(Level.WARN, "  Unexpected slot processing error: " + e, printEnabled);
     }
   }
 
@@ -113,8 +111,6 @@ public class StateTransition {
 
       } catch (BlockProcessingException e) {
         LOG.log(Level.WARN, "  Block processing error: " + e, printEnabled);
-      } catch (Exception e) {
-        LOG.log(Level.WARN, "  Unexpected block processing error: " + e, printEnabled);
       }
     } else {
       LOG.log(Level.INFO, "  Skipping block processing for this slot.", printEnabled);
@@ -152,8 +148,6 @@ public class StateTransition {
       EpochProcessorUtil.finalUpdates(state);
     } catch (EpochProcessingException e) {
       LOG.log(Level.WARN, "  Epoch processing error: " + e, printEnabled);
-    } catch (Exception e) {
-      LOG.log(Level.WARN, "  Unexpected epoch processing error: " + e, printEnabled);
     }
   }
 }
