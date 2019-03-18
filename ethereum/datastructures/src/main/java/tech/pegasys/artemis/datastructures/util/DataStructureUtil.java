@@ -23,6 +23,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 import net.consensys.cava.bytes.Bytes32;
+import net.consensys.cava.crypto.Hash;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockBody;
@@ -300,12 +301,15 @@ public final class DataStructureUtil {
         randomBeaconBlockBody());
   }
 
-  public static ArrayList<Deposit> newDeposits(int numDeposits, int slot, int entropy) {
+  public static ArrayList<Deposit> newDeposits(int numDeposits, int slot, Integer entropy) {
     ArrayList<Deposit> deposits = new ArrayList<Deposit>();
 
     for (int i = 0; i < numDeposits; i++) {
       // https://github.com/ethereum/eth2.0-specs/blob/0.4.0/specs/validator/0_beacon-chain-validator.md#submit-deposit
-      BLSKeyPair keypair = BLSKeyPair.random(slot + entropy + i);
+      ByteBuffer buffer = ByteBuffer.allocate(Integer.BYTES);
+      buffer.putInt(entropy);
+      entropy = ByteBuffer.wrap(Hash.keccak256(buffer.array())).getInt();
+      BLSKeyPair keypair = BLSKeyPair.random(entropy);
       DepositInput deposit_input =
           new DepositInput(keypair.getPublicKey(), Bytes32.ZERO, BLSSignature.empty());
       BLSSignature proof_of_possession =

@@ -38,6 +38,7 @@ import tech.pegasys.artemis.data.provider.ProviderTypes;
 import tech.pegasys.artemis.networking.p2p.MockP2PNetwork;
 import tech.pegasys.artemis.networking.p2p.RLPxP2PNetwork;
 import tech.pegasys.artemis.networking.p2p.api.P2PNetwork;
+import tech.pegasys.artemis.services.ServiceConfig;
 import tech.pegasys.artemis.services.ServiceController;
 import tech.pegasys.artemis.services.beaconchain.BeaconChainService;
 import tech.pegasys.artemis.services.chainstorage.ChainStorageService;
@@ -60,7 +61,7 @@ public class BeaconNode {
             }
           });
 
-  private final Configuration config;
+  private final ServiceConfig serviceConfig;
   private P2PNetwork p2pNetwork;
   private ValidatorCoordinator validatorCoordinator;
   private EventBus eventBus;
@@ -71,7 +72,7 @@ public class BeaconNode {
   private CommandLine commandLine;
 
   public BeaconNode(CommandLine commandLine, CommandLineArguments cliArgs) {
-    this.config = ArtemisConfiguration.fromFile(cliArgs.getConfigFile());
+    Configuration config = ArtemisConfiguration.fromFile(cliArgs.getConfigFile());
     this.eventBus = new AsyncEventBus(threadPool);
     SECP256K1.KeyPair keyPair =
         SECP256K1.KeyPair.fromSecretKey(
@@ -88,9 +89,8 @@ public class BeaconNode {
               config.getInteger("advertisedPort"),
               config.getString("networkInterface"));
     }
-    this.validatorCoordinator =
-        new ValidatorCoordinator(
-            eventBus, keyPair, config.getInteger("numValidators"), config.getInteger("numNodes"));
+    this.serviceConfig = new ServiceConfig(eventBus, config, keyPair);
+    this.validatorCoordinator = new ValidatorCoordinator(serviceConfig);
     this.cliArgs = cliArgs;
     this.commandLine = commandLine;
     if (cliArgs.isOutputEnabled()) {
@@ -119,7 +119,7 @@ public class BeaconNode {
     ServiceController.initAll(
         eventBus,
         cliArgs,
-        config,
+        serviceConfig,
         BeaconChainService.class,
         PowchainService.class,
         ChainStorageService.class);

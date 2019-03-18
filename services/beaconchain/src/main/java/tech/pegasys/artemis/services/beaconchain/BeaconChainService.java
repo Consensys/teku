@@ -18,7 +18,7 @@ import com.google.common.eventbus.Subscribe;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import net.consensys.cava.config.Configuration;
+import tech.pegasys.artemis.services.ServiceConfig;
 import tech.pegasys.artemis.services.ServiceInterface;
 import tech.pegasys.artemis.statetransition.SlotScheduler;
 import tech.pegasys.artemis.statetransition.StateProcessor;
@@ -32,20 +32,12 @@ public class BeaconChainService implements ServiceInterface {
   public BeaconChainService() {}
 
   @Override
-  public void init(EventBus eventBus) {
-    this.eventBus = eventBus;
-    this.scheduler = Executors.newScheduledThreadPool(1);
-    this.stateProcessor = new StateProcessor(this.eventBus, null);
+  public void init(ServiceConfig config) {
+    this.eventBus = config.getEventBus();
     this.eventBus.register(this);
-  }
-
-  // TODO: Need to create a default initObject to pass to all services
-  @Override
-  public void init(EventBus eventBus, Configuration config) {
-    this.eventBus = eventBus;
     this.scheduler = Executors.newScheduledThreadPool(1);
-    this.stateProcessor = new StateProcessor(this.eventBus, config);
-    this.eventBus.register(this);
+    this.stateProcessor =
+        new StateProcessor(this.eventBus, config.getConfig(), config.getKeyPair().publicKey());
   }
 
   @Override
