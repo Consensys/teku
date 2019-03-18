@@ -18,6 +18,7 @@ dependencies {
 
   implementation 'net.consensys.cava:cava-crypto'
   implementation 'net.consensys.cava:cava-units'
+  implementation 'net.consensys.cava:cava-config'
 
   testImplementation 'org.mockito:mockito-core'
 

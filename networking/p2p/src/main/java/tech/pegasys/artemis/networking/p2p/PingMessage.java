@@ -11,20 +11,22 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.networking.p2p.api;
+package tech.pegasys.artemis.networking.p2p;
 
-// TODO: Finish defining proper return types and params
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
-public interface P2PClient {
-  public void Connect();
+final class PingMessage {
 
-  public void SetStreamHandler();
+  private final long timestamp;
 
-  public void NewStream();
+  @JsonCreator
+  public PingMessage(@JsonProperty("timestamp") long timestamp) {
+    this.timestamp = timestamp;
+  }
 
-  public void FindPeer();
-
-  public String PeerID();
-
-  public String[] Peerstore();
+  @JsonProperty
+  public long timestamp() {
+    return timestamp;
+  }
 }

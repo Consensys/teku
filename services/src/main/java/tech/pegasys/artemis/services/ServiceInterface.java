@@ -13,10 +13,8 @@
 
 package tech.pegasys.artemis.services;
 
-import com.google.common.eventbus.EventBus;
-
 public interface ServiceInterface extends Runnable {
-  void init(EventBus eventBus);
+  void init(ServiceConfig config);
 
   @Override
   void run();

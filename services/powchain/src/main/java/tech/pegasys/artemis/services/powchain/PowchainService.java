@@ -30,6 +30,7 @@ import tech.pegasys.artemis.pow.api.Eth2GenesisEvent;
 import tech.pegasys.artemis.pow.contract.DepositContract;
 import tech.pegasys.artemis.pow.contract.DepositContract.Eth2GenesisEventResponse;
 import tech.pegasys.artemis.pow.event.Eth2Genesis;
+import tech.pegasys.artemis.services.ServiceConfig;
 import tech.pegasys.artemis.services.ServiceInterface;
 import tech.pegasys.artemis.util.alogger.ALogger;
 
@@ -50,8 +51,8 @@ public class PowchainService implements ServiceInterface {
   }
 
   @Override
-  public void init(EventBus eventBus) {
-    this.eventBus = eventBus;
+  public void init(ServiceConfig config) {
+    this.eventBus = config.getEventBus();
     this.eventBus.register(this);
   }
 

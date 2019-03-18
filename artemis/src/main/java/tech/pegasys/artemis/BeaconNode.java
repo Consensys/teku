@@ -16,10 +16,17 @@ package tech.pegasys.artemis;
 import com.google.common.eventbus.AsyncEventBus;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
+import io.vertx.core.Vertx;
 import java.io.IOException;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
+import net.consensys.cava.bytes.Bytes32;
+import net.consensys.cava.config.Configuration;
+import net.consensys.cava.crypto.SECP256K1;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.core.config.Configurator;
+import org.jetbrains.annotations.NotNull;
 import picocli.CommandLine;
 import tech.pegasys.artemis.data.RawRecord;
 import tech.pegasys.artemis.data.TimeSeriesRecord;
@@ -29,7 +36,9 @@ import tech.pegasys.artemis.data.provider.FileProvider;
 import tech.pegasys.artemis.data.provider.JSONProvider;
 import tech.pegasys.artemis.data.provider.ProviderTypes;
 import tech.pegasys.artemis.networking.p2p.MockP2PNetwork;
+import tech.pegasys.artemis.networking.p2p.RLPxP2PNetwork;
 import tech.pegasys.artemis.networking.p2p.api.P2PNetwork;
+import tech.pegasys.artemis.services.ServiceConfig;
 import tech.pegasys.artemis.services.ServiceController;
 import tech.pegasys.artemis.services.beaconchain.BeaconChainService;
 import tech.pegasys.artemis.services.chainstorage.ChainStorageService;
@@ -40,6 +49,19 @@ import tech.pegasys.artemis.validator.coordinator.ValidatorCoordinator;
 
 public class BeaconNode {
   private static final ALogger LOG = new ALogger(BeaconNode.class.getName());
+  private final Vertx vertx = Vertx.vertx();
+  private final ExecutorService threadPool =
+      Executors.newCachedThreadPool(
+          new ThreadFactory() {
+            @Override
+            public Thread newThread(@NotNull Runnable r) {
+              Thread t = new Thread(r);
+              t.setDaemon(true);
+              return t;
+            }
+          });
+
+  private final ServiceConfig serviceConfig;
   private P2PNetwork p2pNetwork;
   private ValidatorCoordinator validatorCoordinator;
   private EventBus eventBus;
@@ -50,10 +72,25 @@ public class BeaconNode {
   private CommandLine commandLine;
 
   public BeaconNode(CommandLine commandLine, CommandLineArguments cliArgs) {
-    this.eventBus = new AsyncEventBus(Executors.newCachedThreadPool());
-    // TODO: change this to the REAL P2PNetwork
-    this.p2pNetwork = new MockP2PNetwork(eventBus);
-    this.validatorCoordinator = new ValidatorCoordinator(eventBus);
+    Configuration config = ArtemisConfiguration.fromFile(cliArgs.getConfigFile());
+    this.eventBus = new AsyncEventBus(threadPool);
+    SECP256K1.KeyPair keyPair =
+        SECP256K1.KeyPair.fromSecretKey(
+            SECP256K1.SecretKey.fromBytes(Bytes32.fromHexString(config.getString("identity"))));
+    if (config.getInteger("networkMode") == 0) {
+      this.p2pNetwork = new MockP2PNetwork(eventBus);
+    } else if (config.getInteger("networkMode") == 1) {
+      this.p2pNetwork =
+          new RLPxP2PNetwork(
+              eventBus,
+              vertx,
+              keyPair,
+              config.getInteger("port"),
+              config.getInteger("advertisedPort"),
+              config.getString("networkInterface"));
+    }
+    this.serviceConfig = new ServiceConfig(eventBus, config, keyPair);
+    this.validatorCoordinator = new ValidatorCoordinator(serviceConfig);
     this.cliArgs = cliArgs;
     this.commandLine = commandLine;
     if (cliArgs.isOutputEnabled()) {
@@ -82,6 +119,7 @@ public class BeaconNode {
     ServiceController.initAll(
         eventBus,
         cliArgs,
+        serviceConfig,
         BeaconChainService.class,
         PowchainService.class,
         ChainStorageService.class);
