@@ -22,12 +22,11 @@ import net.consensys.cava.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
-import tech.pegasys.artemis.statetransition.StateTransitionException;
 
 public class SlotProcessorUtil {
 
   public static void updateBlockRoots(BeaconState state, Bytes32 previous_block_root)
-      throws Exception {
+      throws SlotProcessingException {
 
     if (state.getSlot().compareTo(UnsignedLong.valueOf(Constants.GENESIS_SLOT)) > 0) {
       List<Bytes32> latest_block_roots = state.getLatest_block_roots();
@@ -49,8 +48,8 @@ public class SlotProcessorUtil {
         Bytes32 merkle_root = BeaconStateUtil.merkle_root(latest_block_roots);
         batched_block_roots.add(merkle_root);
       } else
-        throw new StateTransitionException(
-            "StateTransitionException: BeaconState cannot be updated due to "
+        throw new SlotProcessingException(
+            "SlotProcessingException: BeaconState cannot be updated due to "
                 + "batched_block_roots and latest_block_roots returning a null");
     }
   }

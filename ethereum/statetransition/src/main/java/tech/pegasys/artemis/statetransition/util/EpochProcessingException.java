@@ -17,4 +17,8 @@ public class EpochProcessingException extends Exception {
   public EpochProcessingException(String err) {
     super(err);
   }
+
+  public EpochProcessingException(RuntimeException e) {
+    super(e.toString());
+  }
 }
