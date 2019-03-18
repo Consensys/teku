@@ -185,13 +185,16 @@ public class BeaconStateUtil {
    * @return
    */
   public static ArrayList<CrosslinkCommittee> get_crosslink_committees_at_slot(
-      BeaconState state, UnsignedLong slot, boolean registry_change) throws IllegalStateException {
+      BeaconState state, UnsignedLong slot, boolean registry_change)
+      throws IllegalArgumentException {
     UnsignedLong epoch = slot_to_epoch(slot);
     UnsignedLong current_epoch = get_current_epoch(state);
     UnsignedLong previous_epoch = get_previous_epoch(state);
     UnsignedLong next_epoch = get_next_epoch(state);
 
-    checkArgument(previous_epoch.compareTo(epoch) <= 0 && epoch.compareTo(next_epoch) <= 0);
+    checkArgument(
+        previous_epoch.compareTo(epoch) <= 0 && epoch.compareTo(next_epoch) <= 0,
+        "checkArgument threw and exception in get_crosslink_committees_at_slot()");
 
     UnsignedLong committees_per_epoch = UnsignedLong.ZERO;
     Bytes32 seed = Bytes32.ZERO;
@@ -261,7 +264,7 @@ public class BeaconStateUtil {
 
   /** This is a wrapper that defaults `registry_change` to false when it is not provided */
   public static ArrayList<CrosslinkCommittee> get_crosslink_committees_at_slot(
-      BeaconState state, UnsignedLong slot) throws IllegalStateException {
+      BeaconState state, UnsignedLong slot) throws IllegalArgumentException {
     return get_crosslink_committees_at_slot(state, slot, false);
   }
 
@@ -299,7 +302,7 @@ public class BeaconStateUtil {
   }
 
   public static Bytes32 generate_seed(BeaconState state, UnsignedLong epoch)
-      throws IllegalStateException {
+      throws IllegalArgumentException {
     Bytes32 randao_mix =
         get_randao_mix(state, epoch.minus(UnsignedLong.valueOf(Constants.SEED_LOOKAHEAD)));
     Bytes32 index_root = get_active_index_root(state, epoch);
@@ -313,10 +316,11 @@ public class BeaconStateUtil {
         get_current_epoch(state)
                 .plus(UnsignedLong.valueOf(ENTRY_EXIT_DELAY))
                 .compareTo(epoch.plus(UnsignedLong.valueOf(LATEST_INDEX_ROOTS_LENGTH)))
-            < 0);
+            < 0,
+        "checkArgument threw and exception in get_active_indesx_root()");
     checkArgument(
-        epoch.compareTo(get_current_epoch(state).plus(UnsignedLong.valueOf(ENTRY_EXIT_DELAY)))
-            <= 0);
+        epoch.compareTo(get_current_epoch(state).plus(UnsignedLong.valueOf(ENTRY_EXIT_DELAY))) <= 0,
+        "checkArgument threw and exception in get_active_index_root()");
 
     List<Bytes32> index_roots = state.getLatest_index_roots();
     int index = epoch.mod(UnsignedLong.valueOf(LATEST_INDEX_ROOTS_LENGTH)).intValue();
@@ -357,7 +361,7 @@ public class BeaconStateUtil {
    *
    * @param state
    * @param validator_indices
-   * @return
+   * @return UnsignedLong
    */
   public static UnsignedLong get_total_effective_balance(
       BeaconState state, List<Integer> validator_indices) {
@@ -381,8 +385,8 @@ public class BeaconStateUtil {
     return get_total_effective_balance(state, previous_active_validators);
   }
 
-  public static UnsignedLong total_balance(BeaconState state, CrosslinkCommittee crosslink_committe)
-      throws Exception {
+  public static UnsignedLong total_balance(
+      BeaconState state, CrosslinkCommittee crosslink_committe) {
     return BeaconStateUtil.get_total_effective_balance(state, crosslink_committe.getCommittee());
   }
 
@@ -519,8 +523,11 @@ public class BeaconStateUtil {
         // here
         get_current_epoch(state)
                 .compareTo(epoch.plus(UnsignedLong.valueOf(LATEST_RANDAO_MIXES_LENGTH)))
-            < 0);
-    checkArgument(epoch.compareTo(get_current_epoch(state)) <= 0);
+            < 0,
+        "checkArgument threw and exception in get_randao_mix()");
+    checkArgument(
+        epoch.compareTo(get_current_epoch(state)) <= 0,
+        "checkArgument threw and exception in get_randao_mix()");
     UnsignedLong index = epoch.mod(UnsignedLong.valueOf(LATEST_RANDAO_MIXES_LENGTH));
     List<Bytes32> randao_mixes = state.getLatest_randao_mixes();
     return randao_mixes.get(index.intValue());
@@ -533,7 +540,9 @@ public class BeaconStateUtil {
                 .getSlot()
                 .compareTo(slot.plus(UnsignedLong.valueOf(Constants.LATEST_BLOCK_ROOTS_LENGTH)))
             <= 0);
-    checkArgument(slot.compareTo(state.getSlot()) < 0);
+    checkArgument(
+        slot.compareTo(state.getSlot()) < 0,
+        "checkArgument threw and exception in get_block_root()");
     // Todo: Remove .intValue() as soon as our list wrapper supports unsigned longs
     return state
         .getLatest_block_roots()
@@ -717,7 +726,7 @@ public class BeaconStateUtil {
    * @return
    */
   public static int get_beacon_proposer_index(BeaconState state, UnsignedLong slot)
-      throws IllegalStateException {
+      throws IllegalArgumentException {
     List<Integer> first_committee =
         get_crosslink_committees_at_slot(state, slot).get(0).getCommittee();
     // TODO: replace slot.intValue() with an UnsignedLong value
@@ -748,7 +757,8 @@ public class BeaconStateUtil {
 
     // Verify that the proof of posession is valid before processing the deposit.
     checkArgument(
-        validate_proof_of_possession(state, pubkey, proof_of_possession, withdrawal_credentials));
+        validate_proof_of_possession(state, pubkey, proof_of_possession, withdrawal_credentials),
+        "checkArgument threw and exception in process_deposit()");
 
     // Retrieve the list of validator's public keys from the current state.
     List<BLSPublicKey> validator_pubkeys =
@@ -761,7 +771,9 @@ public class BeaconStateUtil {
     // Otherwise, top up the balance for the validator whose pubkey was provided.
     if (!validator_pubkeys.contains(pubkey)) {
       // We depend on our add operation appending the below objects at the same index.
-      checkArgument(validatorRegistry.size() == validatorBalances.size());
+      checkArgument(
+          validatorRegistry.size() == validatorBalances.size(),
+          "checkArgument threw and exception in process_deposit()");
       validatorRegistry.add(
           new Validator(
               pubkey,
@@ -778,7 +790,8 @@ public class BeaconStateUtil {
           validatorRegistry
               .get(validatorIndex)
               .getWithdrawal_credentials()
-              .equals(withdrawal_credentials));
+              .equals(withdrawal_credentials),
+          "checkArgument threw and exception in process_deposit()");
       validatorBalances.set(validatorIndex, validatorBalances.get(validatorIndex).plus(amount));
     }
   }
@@ -993,7 +1006,7 @@ public class BeaconStateUtil {
    */
   public static ArrayList<Integer> get_attestation_participants(
       BeaconState state, AttestationData attestation_data, byte[] participation_bitfield)
-      throws IllegalStateException {
+      throws IllegalArgumentException {
     // Find the relevant committee
 
     ArrayList<CrosslinkCommittee> crosslink_committees =
@@ -1008,9 +1021,12 @@ public class BeaconStateUtil {
         break;
       }
     }
-    checkArgument(crosslink_committee != null);
     checkArgument(
-        participation_bitfield.length == ceil_div8(crosslink_committee.getCommitteeSize()));
+        crosslink_committee != null,
+        "checkArgument threw and exception in get_attestation_participants()");
+    checkArgument(
+        participation_bitfield.length == ceil_div8(crosslink_committee.getCommitteeSize()),
+        "checkArgument threw and exception in get_attestation_participants()");
 
     // Find the participating attesters in the committee
     ArrayList<Integer> participants = new ArrayList<>();
@@ -1092,7 +1108,9 @@ public class BeaconStateUtil {
    * @return x
    */
   public static UnsignedLong integer_squareroot(UnsignedLong n) {
-    checkArgument(n.compareTo(UnsignedLong.ZERO) >= 0);
+    checkArgument(
+        n.compareTo(UnsignedLong.ZERO) >= 0,
+        "checkArgument threw and exception in integer_squareroot()");
     UnsignedLong TWO = UnsignedLong.valueOf(2L);
     UnsignedLong x = n;
     UnsignedLong y = x.plus(UnsignedLong.ONE).dividedBy(TWO);

@@ -91,7 +91,7 @@ class EpochProcessingUtilTest {
 
   @Test
   @Disabled
-  void processEjectionsTest() {
+  void processEjectionsTest() throws EpochProcessingException {
 
     BeaconState state = createArbitraryBeaconState(25);
     UnsignedLong currentEpoch = BeaconStateUtil.get_current_epoch(state);
@@ -154,7 +154,7 @@ class EpochProcessingUtilTest {
 
   @Test
   @Disabled
-  void updateValidatorRegistryTest() {
+  void updateValidatorRegistryTest() throws EpochProcessingException {
     BeaconState state = createArbitraryBeaconState(25);
     UnsignedLong currentEpoch = BeaconStateUtil.get_current_epoch(state);
 
@@ -188,7 +188,7 @@ class EpochProcessingUtilTest {
 
   @Test
   @Disabled
-  void updateValidatorRegistryTestWithMissingFlag() {
+  void updateValidatorRegistryTestWithMissingFlag() throws EpochProcessingException {
     BeaconState state = createArbitraryBeaconState(25);
     UnsignedLong currentEpoch = BeaconStateUtil.get_current_epoch(state);
 
@@ -211,7 +211,7 @@ class EpochProcessingUtilTest {
 
   @Disabled
   @Test
-  void processPenaltiesAndExitsTest() {
+  void processPenaltiesAndExitsTest() throws EpochProcessingException {
     BeaconState state = createArbitraryBeaconState(25);
     // TODO: Figure out how to test PenaltiesAndExits
     UnsignedLong currentEpoch = BeaconStateUtil.get_current_epoch(state);
