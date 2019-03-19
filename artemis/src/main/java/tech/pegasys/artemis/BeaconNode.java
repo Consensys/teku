@@ -59,6 +59,7 @@ public class BeaconNode {
             }
           });
 
+  private final ServiceController serviceController = new ServiceController();
   private final ServiceConfig serviceConfig;
   private P2PNetwork p2pNetwork;
   private ValidatorCoordinator validatorCoordinator;
@@ -113,7 +114,7 @@ public class BeaconNode {
     // Check output file
 
     // Initialize services
-    ServiceController.initAll(
+    serviceController.initAll(
         eventBus,
         cliArgs,
         serviceConfig,
@@ -121,14 +122,14 @@ public class BeaconNode {
         PowchainService.class,
         ChainStorageService.class);
     // Start services
-    ServiceController.startAll(cliArgs);
+    serviceController.startAll(cliArgs);
     // Start p2p adapter
     this.p2pNetwork.run();
   }
 
   public void stop() {
     try {
-      ServiceController.stopAll(cliArgs);
+      serviceController.stopAll(cliArgs);
       this.p2pNetwork.close();
     } catch (IOException e) {
       LOG.log(Level.WARN, e.toString());

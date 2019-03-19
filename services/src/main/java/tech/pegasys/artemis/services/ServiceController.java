@@ -20,19 +20,16 @@ import tech.pegasys.artemis.util.cli.CommandLineArguments;
 
 public class ServiceController {
 
-  private static ServiceInterface beaconChainService;
-  private static ServiceInterface powchainService;
-  private static ServiceInterface chainStorageService;
+  private ServiceInterface beaconChainService;
+  private ServiceInterface powchainService;
+  private ServiceInterface chainStorageService;
 
-  private static final ExecutorService beaconChainExecuterService =
-      Executors.newSingleThreadExecutor();
-  private static final ExecutorService powchainExecuterService =
-      Executors.newSingleThreadExecutor();
-  private static final ExecutorService chainStorageExecutorService =
-      Executors.newSingleThreadExecutor();
+  private final ExecutorService beaconChainExecuterService = Executors.newSingleThreadExecutor();
+  private final ExecutorService powchainExecuterService = Executors.newSingleThreadExecutor();
+  private final ExecutorService chainStorageExecutorService = Executors.newSingleThreadExecutor();
 
   // initialize/register all services
-  public static <U extends ServiceInterface, V extends ServiceInterface, W extends ServiceInterface>
+  public <U extends ServiceInterface, V extends ServiceInterface, W extends ServiceInterface>
       void initAll(
           EventBus eventBus,
           CommandLineArguments cliArgs,
@@ -49,7 +46,7 @@ public class ServiceController {
     chainStorageService.init(config);
   }
 
-  public static void startAll(CommandLineArguments cliArgs) {
+  public void startAll(CommandLineArguments cliArgs) {
 
     // start all services
     beaconChainExecuterService.execute(beaconChainService);
@@ -57,7 +54,7 @@ public class ServiceController {
     chainStorageExecutorService.execute(chainStorageService);
   }
 
-  public static void stopAll(CommandLineArguments cliArgs) {
+  public void stopAll(CommandLineArguments cliArgs) {
     // stop all services
     beaconChainExecuterService.shutdown();
     beaconChainService.stop();
