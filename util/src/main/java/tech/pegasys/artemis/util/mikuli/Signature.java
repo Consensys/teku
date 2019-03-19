@@ -24,15 +24,15 @@ import net.consensys.cava.bytes.Bytes;
 public final class Signature {
 
   /**
-   * Aggregates list of Signature pairs
+   * Aggregates list of Signature pairs, returns the signature that corresponds to G2 point at
+   * infinity if list is empty
    *
-   * @param signatures The list of signatures to aggregate, not null
-   * @throws IllegalArgumentException if parameter list is empty
-   * @return Signature, not null
+   * @param signatures The list of signatures to aggregate
+   * @return Signature
    */
   public static Signature aggregate(List<Signature> signatures) {
     if (signatures.isEmpty()) {
-      throw new IllegalArgumentException("Parameter list is empty");
+      return new Signature(new G2Point());
     }
     return signatures.stream().reduce(Signature::combine).get();
   }

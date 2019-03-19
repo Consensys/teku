@@ -15,21 +15,20 @@ package tech.pegasys.artemis.datastructures.operations;
 
 import java.util.Objects;
 import net.consensys.cava.bytes.Bytes;
-import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.ssz.SSZ;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 
 public class Attestation {
 
-  private Bytes32 aggregation_bitfield;
+  private Bytes aggregation_bitfield;
   private AttestationData data;
-  private Bytes32 custody_bitfield;
+  private Bytes custody_bitfield;
   private BLSSignature aggregate_signature;
 
   public Attestation(
-      Bytes32 aggregation_bitfield,
+      Bytes aggregation_bitfield,
       AttestationData data,
-      Bytes32 custody_bitfield,
+      Bytes custody_bitfield,
       BLSSignature aggregate_signature) {
     this.aggregation_bitfield = aggregation_bitfield;
     this.data = data;
@@ -42,9 +41,9 @@ public class Attestation {
         bytes,
         reader ->
             new Attestation(
-                Bytes32.wrap(reader.readBytes()),
+                Bytes.wrap(reader.readBytes()),
                 AttestationData.fromBytes(reader.readBytes()),
-                Bytes32.wrap(reader.readBytes()),
+                Bytes.wrap(reader.readBytes()),
                 BLSSignature.fromBytes(reader.readBytes())));
   }
 
@@ -85,11 +84,11 @@ public class Attestation {
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */
-  public Bytes32 getAggregation_bitfield() {
+  public Bytes getAggregation_bitfield() {
     return aggregation_bitfield;
   }
 
-  public void setAggregation_bitfield(Bytes32 aggregation_bitfield) {
+  public void setAggregation_bitfield(Bytes aggregation_bitfield) {
     this.aggregation_bitfield = aggregation_bitfield;
   }
 
@@ -101,11 +100,11 @@ public class Attestation {
     this.data = data;
   }
 
-  public Bytes32 getCustody_bitfield() {
+  public Bytes getCustody_bitfield() {
     return custody_bitfield;
   }
 
-  public void setCustody_bitfield(Bytes32 custody_bitfield) {
+  public void setCustody_bitfield(Bytes custody_bitfield) {
     this.custody_bitfield = custody_bitfield;
   }
 

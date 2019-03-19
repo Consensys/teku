@@ -13,9 +13,9 @@
 
 package tech.pegasys.artemis.util.mikuli;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.Arrays;
 import org.junit.jupiter.api.Test;
@@ -53,8 +53,8 @@ class SignatureTest {
   }
 
   @Test
-  void succeedsWhenPassingEmptyListToAggregateSignaturesThrowsIllegalArgumentException() {
-    assertThrows(IllegalArgumentException.class, () -> Signature.aggregate(Arrays.asList()));
+  void succeedsWhenPassingEmptyListToAggregateSignaturesDoesNotThrowException() {
+    assertDoesNotThrow(() -> Signature.aggregate(Arrays.asList()));
   }
 
   @Test
