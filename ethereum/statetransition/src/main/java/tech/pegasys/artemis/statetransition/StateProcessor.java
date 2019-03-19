@@ -21,7 +21,6 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import net.consensys.cava.bytes.Bytes32;
-import net.consensys.cava.config.Configuration;
 import net.consensys.cava.crypto.SECP256K1.PublicKey;
 import org.apache.logging.log4j.Level;
 import tech.pegasys.artemis.data.RawRecord;
@@ -35,6 +34,7 @@ import tech.pegasys.artemis.pow.api.Eth2GenesisEvent;
 import tech.pegasys.artemis.storage.ChainStorage;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.util.alogger.ALogger;
+import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 
 /** Class to manage the state tree and initiate state transitions */
@@ -51,11 +51,11 @@ public class StateProcessor {
   private final EventBus eventBus;
   private StateTransition stateTransition;
   private ChainStorageClient store;
-  private Configuration config;
+  private ArtemisConfiguration config;
   private PublicKey publicKey;
   private static final ALogger LOG = new ALogger(StateProcessor.class.getName());
 
-  public StateProcessor(EventBus eventBus, Configuration config, PublicKey publicKey) {
+  public StateProcessor(EventBus eventBus, ArtemisConfiguration config, PublicKey publicKey) {
     this.eventBus = eventBus;
     this.config = config;
     this.publicKey = publicKey;
@@ -79,7 +79,7 @@ public class StateProcessor {
     try {
       BeaconState initial_state =
           DataStructureUtil.createInitialBeaconState(
-              config.getInteger("numValidators"), publicKey.hashCode());
+              config.getNumValidators(), publicKey.hashCode());
       Bytes32 initial_state_root = HashTreeUtil.hash_tree_root(initial_state.toBytes());
       BeaconBlock genesis_block = BeaconBlock.createGenesis(initial_state_root);
       Bytes32 genesis_block_root = HashTreeUtil.hash_tree_root(genesis_block.toBytes());
