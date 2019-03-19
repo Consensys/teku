@@ -53,7 +53,7 @@ public class ValidatorCoordinator {
   private Bytes32 stateRoot;
   private ArrayList<Deposit> deposits;
   private final Bytes32 MockStateRoot = Bytes32.ZERO;
-  private final Boolean printEnabled = true;
+  private final Boolean printEnabled = false;
   private PublicKey nodeIdentity;
   private int numValidators;
   private int numNodes;
