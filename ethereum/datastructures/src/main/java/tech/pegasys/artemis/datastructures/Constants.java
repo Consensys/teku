@@ -48,8 +48,8 @@ public final class Constants {
 
   // Time parameters
   public static final int SLOT_DURATION = 6; // 6 seconds
-  public static final int MIN_ATTESTATION_INCLUSION_DELAY = 1; // 2^2 slots
-  public static final int EPOCH_LENGTH = 8; // 2^6 slots
+  public static final int MIN_ATTESTATION_INCLUSION_DELAY = 4; // 2^2 slots
+  public static final int EPOCH_LENGTH = 64; // 2^6 slots
   public static final int SEED_LOOKAHEAD = 1; // epochs 6.4 minutes
   public static final int ENTRY_EXIT_DELAY = 4; // 2^2 epochs 25.6 minutes
   public static final int ETH1_DATA_VOTING_PERIOD = 16; // 2^4 epochs ~1.7 hours
