@@ -388,15 +388,12 @@ public final class DataStructureUtil {
         randomBeaconBlockBody());
   }
 
-  public static ArrayList<Deposit> newDeposits(int numDeposits, Integer entropy) {
+  public static ArrayList<Deposit> newDeposits(int numDeposits) {
     ArrayList<Deposit> deposits = new ArrayList<Deposit>();
 
     for (int i = 0; i < numDeposits; i++) {
       // https://github.com/ethereum/eth2.0-specs/blob/0.4.0/specs/validator/0_beacon-chain-validator.md#submit-deposit
-      ByteBuffer buffer = ByteBuffer.allocate(Integer.BYTES);
-      buffer.putInt(entropy);
-      entropy = ByteBuffer.wrap(Hash.keccak256(buffer.array())).getInt();
-      BLSKeyPair keypair = BLSKeyPair.random(entropy);
+      BLSKeyPair keypair = BLSKeyPair.random(i);
       DepositInput deposit_input =
           new DepositInput(keypair.getPublicKey(), Bytes32.ZERO, BLSSignature.empty());
       BLSSignature proof_of_possession =
@@ -438,9 +435,9 @@ public final class DataStructureUtil {
             new ArrayList<Exit>()));
   }
 
-  public static BeaconState createInitialBeaconState(int numValidators, int entropy) {
+  public static BeaconState createInitialBeaconState(int numValidators) {
     return BeaconStateUtil.get_initial_beacon_state(
-        newDeposits(numValidators, entropy),
+        newDeposits(numValidators),
         UnsignedLong.valueOf(Constants.GENESIS_SLOT),
         new Eth1Data(Bytes32.ZERO, Bytes32.ZERO));
   }

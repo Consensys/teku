@@ -80,8 +80,7 @@ public class ValidatorCoordinator {
 
   private void initializeValidators() {
     stateTransition = new StateTransition(false);
-    int entropy = nodeIdentity.hashCode();
-    state = DataStructureUtil.createInitialBeaconState(numValidators, entropy);
+    state = DataStructureUtil.createInitialBeaconState(numValidators);
     stateRoot = HashTreeUtil.hash_tree_root(state.toBytes());
     block = BeaconBlock.createGenesis(stateRoot);
     blockRoot = HashTreeUtil.hash_tree_root(block.toBytes());
@@ -155,13 +154,9 @@ public class ValidatorCoordinator {
     int proposerIndex = BeaconStateUtil.get_beacon_proposer_index(state, slot);
     Validator proposer = state.getValidator_registry().get(proposerIndex);
     BLSKeyPair keypair = BLSKeyPair.random();
-    Integer entropy = this.nodeIdentity.hashCode();
     // TODO: O(n), but in reality we will have the keypair in the validator
     for (int i = 0; i < numValidators; i++) {
-      ByteBuffer buffer = ByteBuffer.allocate(Integer.BYTES);
-      buffer.putInt(entropy);
-      entropy = ByteBuffer.wrap(Hash.keccak256(buffer.array())).getInt();
-      keypair = BLSKeyPair.random(entropy);
+      keypair = BLSKeyPair.random(i);
       if (keypair.getPublicKey().equals(proposer.getPubkey())) {
         break;
       }

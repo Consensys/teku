@@ -78,8 +78,7 @@ public class StateProcessor {
     LOG.log(Level.INFO, "node time: " + nodeTime.longValue());
     try {
       BeaconState initial_state =
-          DataStructureUtil.createInitialBeaconState(
-              config.getNumValidators(), publicKey.hashCode());
+          DataStructureUtil.createInitialBeaconState(config.getNumValidators());
       Bytes32 initial_state_root = HashTreeUtil.hash_tree_root(initial_state.toBytes());
       BeaconBlock genesis_block = BeaconBlock.createGenesis(initial_state_root);
       Bytes32 genesis_block_root = HashTreeUtil.hash_tree_root(genesis_block.toBytes());

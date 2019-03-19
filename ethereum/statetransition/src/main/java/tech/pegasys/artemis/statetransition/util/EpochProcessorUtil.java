@@ -153,7 +153,7 @@ public class EpochProcessorUtil {
       state.setPrevious_justified_epoch(state.getJustified_epoch());
       state.setJustified_epoch(new_justified_epoch);
     } catch (IllegalArgumentException e) {
-      LOG.log(Level.WARN, "EpochProcessingException thrown in currentStateUpdatesAlt1()");
+      LOG.log(Level.WARN, "EpochProcessingException thrown in updateJustification()");
       throw new EpochProcessingException(e);
     }
   }
@@ -192,7 +192,7 @@ public class EpochProcessorUtil {
         }
       }
     } catch (IllegalArgumentException e) {
-      LOG.log(Level.WARN, "EpochProcessingException thrown in currentStateUpdatesAlt1()");
+      LOG.log(Level.WARN, "EpochProcessingException thrown in updateCrosslinks()");
       throw new EpochProcessingException(e);
     }
   }

@@ -49,7 +49,7 @@ public class AttestationUtil {
       }
     }
 
-    checkArgument(epoch_attestations.size() == 0, "There are no epoch_attestations");
+    checkArgument(epoch_attestations.size() != 0, "There are no epoch_attestations");
     return epoch_attestations;
   }
 
@@ -81,7 +81,7 @@ public class AttestationUtil {
       }
     }
     checkArgument(
-        current_epoch_boundary_attestations.size() == 0,
+        current_epoch_boundary_attestations.size() != 0,
         "There are no current_epoch_boundary_attestations");
     return current_epoch_boundary_attestations;
   }
@@ -113,7 +113,7 @@ public class AttestationUtil {
       }
     }
     checkArgument(
-        previous_epoch_boundary_attestations.size() == 0,
+        previous_epoch_boundary_attestations.size() != 0,
         "There are no previous_epoch_boundary_attestations");
     return previous_epoch_boundary_attestations;
   }
