@@ -20,7 +20,6 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.crypto.Hash;
@@ -44,10 +43,7 @@ import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 
-/**
- * This class coordinates the activity between the validator clients and the the
- * beacon chain
- */
+/** This class coordinates the activity between the validator clients and the the beacon chain */
 public class ValidatorCoordinator {
   private static final ALogger LOG = new ALogger(ValidatorCoordinator.class.getName());
   private final EventBus eventBus;
@@ -59,7 +55,7 @@ public class ValidatorCoordinator {
   private Bytes32 stateRoot;
   private ArrayList<Deposit> deposits;
   private final Bytes32 MockStateRoot = Bytes32.ZERO;
-  private final Boolean printEnabled = false;
+  private final Boolean printEnabled = true;
   private PublicKey nodeIdentity;
   private int numValidators;
   private int numNodes;
@@ -96,16 +92,31 @@ public class ValidatorCoordinator {
     List<Attestation> current_attestations;
     try {
       LOG.log(Level.INFO, "In MockP2PNetwork", printEnabled);
-      if(state.getSlot().compareTo(UnsignedLong.valueOf(Constants.GENESIS_SLOT+Constants.MIN_ATTESTATION_INCLUSION_DELAY + 1)) > 0){
+      if (state
+              .getSlot()
+              .compareTo(
+                  UnsignedLong.valueOf(
+                      Constants.GENESIS_SLOT + Constants.MIN_ATTESTATION_INCLUSION_DELAY + 1))
+          > 0) {
         LOG.log(Level.INFO, "Here comes an attestation", printEnabled);
-        current_attestations = DataStructureUtil.createAttestations(state, state.getSlot().minus(UnsignedLong.valueOf(2L)));
+        current_attestations =
+            DataStructureUtil.createAttestations(
+                state, state.getSlot().minus(UnsignedLong.valueOf(2L)));
         block =
-                DataStructureUtil.newBeaconBlock(
-                        state.getSlot().plus(UnsignedLong.ONE), blockRoot, MockStateRoot, deposits, current_attestations);
+            DataStructureUtil.newBeaconBlock(
+                state.getSlot().plus(UnsignedLong.ONE),
+                blockRoot,
+                MockStateRoot,
+                deposits,
+                current_attestations);
       } else {
         block =
-        DataStructureUtil.newBeaconBlock(
-                state.getSlot().plus(UnsignedLong.ONE), blockRoot, MockStateRoot, deposits, new ArrayList<>());
+            DataStructureUtil.newBeaconBlock(
+                state.getSlot().plus(UnsignedLong.ONE),
+                blockRoot,
+                MockStateRoot,
+                deposits,
+                new ArrayList<>());
       }
       BLSKeyPair keypair = getProposerKeyPair(state);
       BLSSignature epoch_signature = setEpochSignature(state, keypair);
@@ -116,7 +127,6 @@ public class ValidatorCoordinator {
       BLSSignature signed_proposal = signProposalData(state, block, keypair);
       block.setSignature(signed_proposal);
       blockRoot = HashTreeUtil.hash_tree_root(block.toBytes());
-      this.eventBus.post(block);
 
       LOG.log(Level.INFO, "MockP2PNetwork - NEWLY PRODUCED BLOCK", printEnabled);
       LOG.log(Level.INFO, "MockP2PNetwork - block.slot: " + block.getSlot(), printEnabled);
@@ -125,9 +135,7 @@ public class ValidatorCoordinator {
           "MockP2PNetwork - block.parent_root: " + block.getParent_root(),
           printEnabled);
       LOG.log(
-          Level.INFO,
-          "MockP2PNetwork - block.state_root: " + block.getState_root(),
-          printEnabled);
+          Level.INFO, "MockP2PNetwork - block.state_root: " + block.getState_root(), printEnabled);
       LOG.log(Level.INFO, "MockP2PNetwork - block.block_root: " + blockRoot, printEnabled);
 
       this.eventBus.post(block);

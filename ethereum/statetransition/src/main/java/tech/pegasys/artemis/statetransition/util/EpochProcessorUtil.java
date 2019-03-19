@@ -14,9 +14,9 @@
 package tech.pegasys.artemis.statetransition.util;
 
 import static java.lang.Math.toIntExact;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_total_effective_balance;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_epoch_start_slot;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_effective_balance;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_epoch_start_slot;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_total_effective_balance;
 
 import com.google.common.base.Predicate;
 import com.google.common.collect.Collections2;
@@ -241,7 +241,10 @@ public class EpochProcessorUtil {
     UnsignedLong reward_delta = UnsignedLong.ZERO;
 
     // make a list of integers from 0 to numberOfValidators
-    List<Integer> missing_indices = IntStream.range(0, state.getValidator_registry().size()).boxed().collect(Collectors.toList());
+    List<Integer> missing_indices =
+        IntStream.range(0, state.getValidator_registry().size())
+            .boxed()
+            .collect(Collectors.toList());
 
     // apply rewards to validator indices in the list
     for (int index : previous_indices) {
@@ -469,12 +472,16 @@ public class EpochProcessorUtil {
    * @param state
    */
   public static void crosslinkRewards(BeaconState state, UnsignedLong previous_total_balance)
-    throws EpochProcessingException {
-    try{
-      int previous_epoch_start_slot = get_epoch_start_slot(BeaconStateUtil.get_previous_epoch(state)).intValue();
-      int current_epoch_start_slot = get_epoch_start_slot(BeaconStateUtil.get_current_epoch(state)).intValue();
+      throws EpochProcessingException {
+    try {
+      int previous_epoch_start_slot =
+          get_epoch_start_slot(BeaconStateUtil.get_previous_epoch(state)).intValue();
+      int current_epoch_start_slot =
+          get_epoch_start_slot(BeaconStateUtil.get_current_epoch(state)).intValue();
       List<Integer> slot_range =
-          IntStream.range(previous_epoch_start_slot, current_epoch_start_slot).boxed().collect(Collectors.toList());
+          IntStream.range(previous_epoch_start_slot, current_epoch_start_slot)
+              .boxed()
+              .collect(Collectors.toList());
       for (Integer slot : slot_range) {
         List<CrosslinkCommittee> crosslink_committees_at_slot =
             BeaconStateUtil.get_crosslink_committees_at_slot(state, UnsignedLong.valueOf(slot));

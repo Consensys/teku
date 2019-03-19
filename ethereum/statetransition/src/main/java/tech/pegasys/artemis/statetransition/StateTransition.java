@@ -123,7 +123,8 @@ public class StateTransition {
           Level.INFO,
           "\n ******** \n  Processing new epoch: "
               + BeaconStateUtil.get_current_epoch(state)
-              + " \n *********  \n slot at: " + state.getSlot(),
+              + " \n *********  \n slot at: "
+              + state.getSlot(),
           printEnabled);
 
       EpochProcessorUtil.updateEth1Data(state);

@@ -19,14 +19,13 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import java.util.List;
 import java.util.Objects;
 import net.consensys.cava.bytes.Bytes;
-import org.apache.milagro.amcl.BLS381.ECP2;
 
 /** This class represents a Signature on G2 */
 public final class Signature {
 
   /**
-   * Aggregates list of Signature pairs, returns the signature that
-   * corresponds to G2 point at infinity if list is empty
+   * Aggregates list of Signature pairs, returns the signature that corresponds to G2 point at
+   * infinity if list is empty
    *
    * @param signatures The list of signatures to aggregate
    * @return Signature

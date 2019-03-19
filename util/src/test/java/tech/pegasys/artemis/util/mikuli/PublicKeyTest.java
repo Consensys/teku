@@ -13,17 +13,14 @@
 
 package tech.pegasys.artemis.util.mikuli;
 
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 import java.util.Arrays;
 import org.junit.jupiter.api.Test;
 
 public class PublicKeyTest {
-
-  /*
   @Test
-  void succeedsWhenPassingEmptyListToAggregatePublicKeysThrowsIllegalArgumentException() {
-    assertThrows(IllegalArgumentException.class, () -> PublicKey.aggregate(Arrays.asList()));
+  void succeedsWhenPassingEmptyListToAggregatePublicKeysDoesNotThrowException() {
+    assertDoesNotThrow(() -> PublicKey.aggregate(Arrays.asList()));
   }
-  */
 }

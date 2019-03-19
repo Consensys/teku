@@ -901,7 +901,7 @@ public class BeaconStateUtil {
   public static boolean verify_bitfield(Bytes bitfield, int committee_size) {
     if (bitfield.size() != (committee_size + 7) / 8) return false;
 
-    for (int i = committee_size; i < bitfield.size()*8; i++) {
+    for (int i = committee_size; i < bitfield.size() * 8; i++) {
       if (get_bitfield_bit(bitfield, i) == 0b1) return false;
     }
     return true;
@@ -1028,7 +1028,7 @@ public class BeaconStateUtil {
     // Find the participating attesters in the committee
     ArrayList<Integer> participants = new ArrayList<>();
     for (int i = 0; i < crosslink_committee.getCommitteeSize(); i++) {
-      int participation_bit = get_bitfield_bit(Bytes.wrap(participation_bitfield),i);
+      int participation_bit = get_bitfield_bit(Bytes.wrap(participation_bitfield), i);
       if (participation_bit == 1 || participation_bit == -1) {
         participants.add(crosslink_committee.getCommittee().get(i));
       }

@@ -430,18 +430,13 @@ public class AttestationUtil {
             BeaconStateUtil.get_total_effective_balance(state, attesting_indices);
         if (shard_balances.containsKey(attestation.getData().getShard_block_root())) {
           shard_balances.put(
-                  attestation.getData().getShard_block_root(),
-                  shard_balances
-                          .get(attestation.getData().getShard_block_root())
-                          .plus(attesting_balance)
-          );
+              attestation.getData().getShard_block_root(),
+              shard_balances
+                  .get(attestation.getData().getShard_block_root())
+                  .plus(attesting_balance));
         } else {
-          shard_balances.put(
-                  attestation.getData().getShard_block_root(),
-                  attesting_balance
-          );
+          shard_balances.put(attestation.getData().getShard_block_root(), attesting_balance);
         }
-
       }
     }
 
