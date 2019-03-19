@@ -62,8 +62,8 @@ public class ValidatorCoordinator {
     this.eventBus = config.getEventBus();
     this.eventBus.register(this);
     this.nodeIdentity = config.getKeyPair().publicKey();
-    this.numValidators = config.getConfig().getInteger("numValidators");
-    this.numNodes = config.getConfig().getInteger("numNodes");
+    this.numValidators = config.getConfig().getNumValidators();
+    this.numNodes = config.getConfig().getNumNodes();
   }
 
   @Subscribe
