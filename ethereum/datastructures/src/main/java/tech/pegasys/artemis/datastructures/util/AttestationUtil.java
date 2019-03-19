@@ -241,6 +241,13 @@ public class AttestationUtil {
     return get_attester_indices(state, previous_epoch_attestations);
   }
 
+  public static UnsignedLong get_previous_epoch_attesting_balance(BeaconState state)
+      throws Exception {
+    List<Integer> previous_epoch_attester_indices = get_previous_epoch_attester_indices(state);
+
+    return get_total_attesting_balance(state, previous_epoch_attester_indices);
+  }
+
   /**
    * Returns the union of validator index sets, where the sets are the attestation participants of
    * attestations passed in TODO: the union part takes O(n^2) time, where n is the number of
