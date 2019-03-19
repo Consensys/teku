@@ -78,8 +78,7 @@ public class StateProcessor {
     LOG.log(Level.INFO, "node time: " + nodeTime.longValue());
     try {
       BeaconState initial_state =
-          DataStructureUtil.createInitialBeaconState(
-              config.getNumValidators(), publicKey.hashCode());
+          DataStructureUtil.createInitialBeaconState(config.getNumValidators());
       Bytes32 initial_state_root = HashTreeUtil.hash_tree_root(initial_state.toBytes());
       BeaconBlock genesis_block = BeaconBlock.createGenesis(initial_state_root);
       Bytes32 genesis_block_root = HashTreeUtil.hash_tree_root(genesis_block.toBytes());
@@ -266,7 +265,7 @@ public class StateProcessor {
                 headState, BeaconStateUtil.get_epoch_start_slot(headState.getJustified_epoch()));
 
         this.justifiedStateRoot = store.getProcessedBlock(justifiedBlockRoot).get().getState_root();
-        this.finalizedBlockRoot = store.getProcessedBlock(finalizedBlockRoot).get().getState_root();
+        this.finalizedStateRoot = store.getProcessedBlock(finalizedBlockRoot).get().getState_root();
       } catch (Exception e) {
         LOG.log(Level.FATAL, "Can't update justified");
       }

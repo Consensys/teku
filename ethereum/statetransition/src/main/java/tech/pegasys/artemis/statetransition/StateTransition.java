@@ -33,7 +33,7 @@ public class StateTransition {
 
   private static final ALogger LOG = new ALogger(StateTransition.class.getName());
 
-  private boolean printEnabled = true;
+  private boolean printEnabled = false;
 
   public StateTransition() {}
 
@@ -123,7 +123,8 @@ public class StateTransition {
           Level.INFO,
           "\n ******** \n  Processing new epoch: "
               + BeaconStateUtil.get_current_epoch(state)
-              + " \n ********* ",
+              + " \n *********  \n slot at: "
+              + state.getSlot(),
           printEnabled);
 
       EpochProcessorUtil.updateEth1Data(state);

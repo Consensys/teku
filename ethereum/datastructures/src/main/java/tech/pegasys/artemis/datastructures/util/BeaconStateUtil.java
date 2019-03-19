@@ -889,7 +889,7 @@ public class BeaconStateUtil {
    * @param bitPosition - The index.
    */
   public static int get_bitfield_bit(Bytes bitfield, int bitPosition) {
-    return (bitfield.get(bitPosition / 8) >> (7 - (bitPosition % 8))) % 2;
+    return (bitfield.get(bitPosition / 8) >> (bitPosition % 8)) % 2;
   }
 
   /**
@@ -901,7 +901,7 @@ public class BeaconStateUtil {
   public static boolean verify_bitfield(Bytes bitfield, int committee_size) {
     if (bitfield.size() != (committee_size + 7) / 8) return false;
 
-    for (int i = committee_size + 1; i < committee_size - committee_size % 8 + 8; i++) {
+    for (int i = committee_size; i < bitfield.size() * 8; i++) {
       if (get_bitfield_bit(bitfield, i) == 0b1) return false;
     }
     return true;
@@ -1022,17 +1022,14 @@ public class BeaconStateUtil {
       }
     }
     checkArgument(
-        crosslink_committee != null,
-        "checkArgument threw and exception in get_attestation_participants()");
-    checkArgument(
-        participation_bitfield.length == ceil_div8(crosslink_committee.getCommitteeSize()),
+        verify_bitfield(Bytes.wrap(participation_bitfield), crosslink_committee.getCommitteeSize()),
         "checkArgument threw and exception in get_attestation_participants()");
 
     // Find the participating attesters in the committee
     ArrayList<Integer> participants = new ArrayList<>();
     for (int i = 0; i < crosslink_committee.getCommitteeSize(); i++) {
-      int participation_bit = (participation_bitfield[i / 8] >> (7 - (i % 8))) % 2;
-      if (participation_bit == 1) {
+      int participation_bit = get_bitfield_bit(Bytes.wrap(participation_bitfield), i);
+      if (participation_bit == 1 || participation_bit == -1) {
         participants.add(crosslink_committee.getCommittee().get(i));
       }
     }

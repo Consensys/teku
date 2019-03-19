@@ -16,17 +16,17 @@ package tech.pegasys.artemis.validator.coordinator;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.google.common.primitives.UnsignedLong;
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
-import net.consensys.cava.crypto.Hash;
 import net.consensys.cava.crypto.SECP256K1.PublicKey;
 import org.apache.logging.log4j.Level;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.ProposalSignedData;
+import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Validator;
@@ -53,7 +53,7 @@ public class ValidatorCoordinator {
   private Bytes32 stateRoot;
   private ArrayList<Deposit> deposits;
   private final Bytes32 MockStateRoot = Bytes32.ZERO;
-  private final Boolean printEnabled = false;
+  private final Boolean printEnabled = true;
   private PublicKey nodeIdentity;
   private int numValidators;
   private int numNodes;
@@ -78,8 +78,7 @@ public class ValidatorCoordinator {
 
   private void initializeValidators() {
     stateTransition = new StateTransition(false);
-    int entropy = nodeIdentity.hashCode();
-    state = DataStructureUtil.createInitialBeaconState(numValidators, entropy);
+    state = DataStructureUtil.createInitialBeaconState(numValidators);
     stateRoot = HashTreeUtil.hash_tree_root(state.toBytes());
     block = BeaconBlock.createGenesis(stateRoot);
     blockRoot = HashTreeUtil.hash_tree_root(block.toBytes());
@@ -87,23 +86,44 @@ public class ValidatorCoordinator {
   }
 
   private void simulateNewMessages() {
+    List<Attestation> current_attestations;
     try {
       LOG.log(Level.INFO, "In MockP2PNetwork", printEnabled);
-      block =
-          DataStructureUtil.newBeaconBlock(
-              state.getSlot().plus(UnsignedLong.ONE), blockRoot, MockStateRoot, deposits);
-
-      BLSSignature epoch_signature = setEpochSignature(state);
-      // If the signature is missing it isnt our validator
-      if (epoch_signature.equals(BLSSignature.empty())) {
-        return;
+      if (state
+              .getSlot()
+              .compareTo(
+                  UnsignedLong.valueOf(
+                      Constants.GENESIS_SLOT + Constants.MIN_ATTESTATION_INCLUSION_DELAY + 1))
+          > 0) {
+        LOG.log(Level.INFO, "Here comes an attestation", printEnabled);
+        current_attestations =
+            DataStructureUtil.createAttestations(
+                state, state.getSlot().minus(UnsignedLong.valueOf(2L)));
+        block =
+            DataStructureUtil.newBeaconBlock(
+                state.getSlot().plus(UnsignedLong.ONE),
+                blockRoot,
+                MockStateRoot,
+                deposits,
+                current_attestations);
+      } else {
+        block =
+            DataStructureUtil.newBeaconBlock(
+                state.getSlot().plus(UnsignedLong.ONE),
+                blockRoot,
+                MockStateRoot,
+                deposits,
+                new ArrayList<>());
       }
+      BLSKeyPair keypair = getProposerKeyPair(state);
+      BLSSignature epoch_signature = setEpochSignature(state, keypair);
       block.setRandao_reveal(epoch_signature);
       stateTransition.initiate(state, block, blockRoot);
       stateRoot = HashTreeUtil.hash_tree_root(state.toBytes());
       block.setState_root(stateRoot);
-      BLSSignature signed_proposal = signProposalData(state, block);
+      BLSSignature signed_proposal = signProposalData(state, block, keypair);
       block.setSignature(signed_proposal);
+      blockRoot = HashTreeUtil.hash_tree_root(block.toBytes());
 
       LOG.log(Level.INFO, "MockP2PNetwork - NEWLY PRODUCED BLOCK", printEnabled);
       LOG.log(Level.INFO, "MockP2PNetwork - block.slot: " + block.getSlot(), printEnabled);
@@ -113,7 +133,6 @@ public class ValidatorCoordinator {
           printEnabled);
       LOG.log(
           Level.INFO, "MockP2PNetwork - block.state_root: " + block.getState_root(), printEnabled);
-      blockRoot = HashTreeUtil.hash_tree_root(block.toBytes());
       LOG.log(Level.INFO, "MockP2PNetwork - block.block_root: " + blockRoot, printEnabled);
 
       this.eventBus.post(block);
@@ -123,38 +142,35 @@ public class ValidatorCoordinator {
     }
   }
 
-  private BLSSignature setEpochSignature(BeaconState state) {
+  private BLSKeyPair getProposerKeyPair(BeaconState state) {
+    // State hasn't been updated(transition initiated) when its passed to setEpochSignature,
+    // and thus the slot is one less than what it should be for the new block, that is why we
+    // increment it here.
+    UnsignedLong slot = state.getSlot().plus(UnsignedLong.ONE);
+    // BLSKeyPair keypair = BLSKeyPair.random(Math.toIntExact(Constants.GENESIS_SLOT) + i);
+
+    int proposerIndex = BeaconStateUtil.get_beacon_proposer_index(state, slot);
+    Validator proposer = state.getValidator_registry().get(proposerIndex);
+    BLSKeyPair keypair = BLSKeyPair.random();
+    // TODO: O(n), but in reality we will have the keypair in the validator
+    for (int i = 0; i < numValidators; i++) {
+      keypair = BLSKeyPair.random(i);
+      if (keypair.getPublicKey().equals(proposer.getPubkey())) {
+        break;
+      }
+    }
+    return keypair;
+  }
+
+  private BLSSignature setEpochSignature(BeaconState state, BLSKeyPair keypair) {
     /**
      * epoch_signature = bls_sign( privkey=validator.privkey, # privkey store locally, not in state
      * message_hash=int_to_bytes32(slot_to_epoch(block.slot)), domain=get_domain( fork=fork, #
      * `fork` is the fork object at the slot `block.slot` epoch=slot_to_epoch(block.slot),
      * domain_type=DOMAIN_RANDAO, ))
      */
-
-    // State hasn't been updated(transition initiated) when its passed to setEpochSignature,
-    // and thus the slot is one less than what it should be for the new block, that is why we
-    // increment it here.
     UnsignedLong slot = state.getSlot().plus(UnsignedLong.ONE);
-    UnsignedLong epoch = BeaconStateUtil.slot_to_epoch(state.getSlot());
-    // BLSKeyPair keypair = BLSKeyPair.random(Math.toIntExact(Constants.GENESIS_SLOT) + i);
-
-    int proposerIndex = BeaconStateUtil.get_beacon_proposer_index(state, slot);
-    Validator proposer = state.getValidator_registry().get(proposerIndex);
-    int genesisSlot = Math.toIntExact(Constants.GENESIS_SLOT);
-    BLSKeyPair keypair = BLSKeyPair.random();
-    Integer entropy = nodeIdentity.hashCode();
-    Boolean isMyValidator = false;
-    // TODO: O(n), but in reality we will have the keypair in the validator
-    for (int i = 0; i < numValidators; i++) {
-      ByteBuffer buffer = ByteBuffer.allocate(Integer.BYTES);
-      buffer.putInt(entropy);
-      entropy = ByteBuffer.wrap(Hash.keccak256(buffer.array())).getInt();
-      keypair = BLSKeyPair.random(entropy);
-      if (keypair.getPublicKey().equals(proposer.getPubkey())) {
-        isMyValidator = true;
-        break;
-      }
-    }
+    UnsignedLong epoch = BeaconStateUtil.slot_to_epoch(slot);
 
     UnsignedLong domain =
         BeaconStateUtil.get_domain(state.getFork(), epoch, Constants.DOMAIN_RANDAO);
@@ -164,14 +180,10 @@ public class ValidatorCoordinator {
     LOG.log(Level.INFO, "state: " + HashTreeUtil.hash_tree_root(state.toBytes()), printEnabled);
     LOG.log(Level.INFO, "slot: " + slot, printEnabled);
     LOG.log(Level.INFO, "domain: " + domain, printEnabled);
-    if (isMyValidator) {
-      return BLSSignature.sign(keypair, currentEpochBytes, domain.longValue());
-    } else {
-      return BLSSignature.empty();
-    }
+    return BLSSignature.sign(keypair, currentEpochBytes, domain.longValue());
   }
 
-  private BLSSignature signProposalData(BeaconState state, BeaconBlock block) {
+  private BLSSignature signProposalData(BeaconState state, BeaconBlock block, BLSKeyPair keypair) {
     // Let block_without_signature_root be the hash_tree_root of block where
     //   block.signature is set to EMPTY_SIGNATURE.
     block.setSignature(Constants.EMPTY_SIGNATURE);
@@ -183,27 +195,6 @@ public class ValidatorCoordinator {
         new ProposalSignedData(
             state.getSlot(), Constants.BEACON_CHAIN_SHARD_NUMBER, blockWithoutSignatureRootHash);
     Bytes proposalRoot = HashTreeUtil.hash_tree_root(proposalSignedData.toBytes());
-
-    // Verify that bls_verify(pubkey=state.validator_registry[get_beacon_proposer_index(state,
-    //   state.slot)].pubkey, message=proposal_root, signature=block.signature,
-    //   domain=get_domain(state.fork, state.slot, DOMAIN_PROPOSAL)) is valid.
-    //    BLSKeyPair keypair = BLSKeyPair.random(Math.toIntExact(Constants.GENESIS_SLOT) + i);
-
-    int proposerIndex = BeaconStateUtil.get_beacon_proposer_index(state, state.getSlot());
-    Validator proposer = state.getValidator_registry().get(proposerIndex);
-    int slot = Math.toIntExact(Constants.GENESIS_SLOT);
-    BLSKeyPair keypair = BLSKeyPair.random();
-    Integer entropy = nodeIdentity.hashCode();
-    // TODO: O(n), but in reality we will have the keypair in the validator
-    for (int i = 0; i < numValidators; i++) {
-      ByteBuffer buffer = ByteBuffer.allocate(Integer.BYTES);
-      buffer.putInt(entropy);
-      entropy = ByteBuffer.wrap(Hash.keccak256(buffer.array())).getInt();
-      keypair = BLSKeyPair.random(entropy);
-      if (keypair.getPublicKey().equals(proposer.getPubkey())) {
-        break;
-      }
-    }
 
     UnsignedLong domain =
         BeaconStateUtil.get_domain(
