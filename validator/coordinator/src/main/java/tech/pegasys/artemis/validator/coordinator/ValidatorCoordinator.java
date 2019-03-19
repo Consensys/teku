@@ -98,7 +98,10 @@ public class ValidatorCoordinator {
         LOG.log(Level.INFO, "Here comes an attestation", printEnabled);
         current_attestations =
             DataStructureUtil.createAttestations(
-                state, state.getSlot().minus(UnsignedLong.valueOf(2L)));
+                state,
+                state
+                    .getSlot()
+                    .minus(UnsignedLong.valueOf(Constants.MIN_ATTESTATION_INCLUSION_DELAY)));
         block =
             DataStructureUtil.newBeaconBlock(
                 state.getSlot().plus(UnsignedLong.ONE),
