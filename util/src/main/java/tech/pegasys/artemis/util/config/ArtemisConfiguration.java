@@ -37,11 +37,11 @@ public final class ArtemisConfiguration {
   static final Schema createSchema() {
     SchemaBuilder builder =
         SchemaBuilder.create()
-            .addInteger(
+            .addString(
                 "networkMode",
-                0,
+                "mock",
                 "represents what network to use",
-                PropertyValidator.inRange(0, 1));
+                PropertyValidator.anyOf("mock", "rlpx", "hobbits"));
     builder.addString("identity", null, "Identity of the peer", PropertyValidator.isPresent());
     builder.addString("networkInterface", "0.0.0.0", "Peer to peer network interface", null);
     builder.addInteger("port", 9000, "Peer to peer port", PropertyValidator.inRange(0, 65535));
@@ -181,8 +181,8 @@ public final class ArtemisConfiguration {
     return config.getLong("networkID");
   }
 
-  /** @return the mode of the network to use - 0 for mock, or 1 for rlpx */
-  public int getNetworkMode() {
-    return config.getInteger("networkMode");
+  /** @return the mode of the network to use - mock, rlpx or hobbits */
+  public String getNetworkMode() {
+    return config.getString("networkMode");
   }
 }
