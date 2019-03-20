@@ -32,6 +32,7 @@ import tech.pegasys.artemis.data.provider.CSVProvider;
 import tech.pegasys.artemis.data.provider.FileProvider;
 import tech.pegasys.artemis.data.provider.JSONProvider;
 import tech.pegasys.artemis.data.provider.ProviderTypes;
+import tech.pegasys.artemis.networking.p2p.HobbitsP2PNetwork;
 import tech.pegasys.artemis.networking.p2p.MockP2PNetwork;
 import tech.pegasys.artemis.networking.p2p.RLPxP2PNetwork;
 import tech.pegasys.artemis.networking.p2p.api.P2PNetwork;
@@ -73,14 +74,22 @@ public class BeaconNode {
   public BeaconNode(CommandLine commandLine, CommandLineArguments cliArgs) {
     ArtemisConfiguration config = ArtemisConfiguration.fromFile(cliArgs.getConfigFile());
     this.eventBus = new AsyncEventBus(threadPool);
-    if (config.getNetworkMode() == 0) {
+    if ("mock".equals(config.getNetworkMode())) {
       this.p2pNetwork = new MockP2PNetwork(eventBus);
-    } else if (config.getNetworkMode() == 1) {
+    } else if ("rlpx".equals(config.getNetworkMode())) {
       this.p2pNetwork =
           new RLPxP2PNetwork(
               eventBus,
               vertx,
               config.getKeyPair(),
+              config.getPort(),
+              config.getAdvertisedPort(),
+              config.getNetworkInterface());
+    } else if ("hobbits".equals(config.getNetworkMode())) {
+      this.p2pNetwork =
+          new HobbitsP2PNetwork(
+              eventBus,
+              vertx,
               config.getPort(),
               config.getAdvertisedPort(),
               config.getNetworkInterface());
