@@ -62,8 +62,6 @@ final class ArtemisConfigurationTest {
   void invalidNetworkMode() {
     assertThrows(
         IllegalArgumentException.class,
-        () ->
-            ArtemisConfiguration.fromString(
-                "identity=\"2345\"\nnetworkMode=\"tcpblah\""));
+        () -> ArtemisConfiguration.fromString("identity=\"2345\"\nnetworkMode=\"tcpblah\""));
   }
 }

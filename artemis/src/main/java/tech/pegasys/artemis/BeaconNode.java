@@ -86,7 +86,13 @@ public class BeaconNode {
               config.getAdvertisedPort(),
               config.getNetworkInterface());
     } else if ("hobbits".equals(config.getNetworkMode())) {
-      this.p2pNetwork = new HobbitsP2PNetwork(eventBus, vertx, config.getPort(), config.getAdvertisedPort(), config.getNetworkInterface());
+      this.p2pNetwork =
+          new HobbitsP2PNetwork(
+              eventBus,
+              vertx,
+              config.getPort(),
+              config.getAdvertisedPort(),
+              config.getNetworkInterface());
     } else {
       throw new IllegalArgumentException("Unsupported network mode " + config.getNetworkMode());
     }
