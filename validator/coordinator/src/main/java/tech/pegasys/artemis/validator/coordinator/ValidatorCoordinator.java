@@ -100,7 +100,8 @@ public class ValidatorCoordinator {
                 state,
                 state
                     .getSlot()
-                    .minus(UnsignedLong.valueOf(Constants.MIN_ATTESTATION_INCLUSION_DELAY)));
+                    .minus(UnsignedLong.valueOf(Constants.MIN_ATTESTATION_INCLUSION_DELAY)),
+                numValidators);
         block =
             DataStructureUtil.newBeaconBlock(
                 state.getSlot().plus(UnsignedLong.ONE),

@@ -145,7 +145,8 @@ public final class DataStructureUtil {
         randomBytes32(), randomAttestationData(), randomBytes32(), BLSSignature.random());
   }
 
-  public static List<Attestation> createAttestations(BeaconState state, UnsignedLong slot) {
+  public static List<Attestation> createAttestations(
+      BeaconState state, UnsignedLong slot, int numValidators) {
     List<CrosslinkCommittee> crosslink_committees =
         BeaconStateUtil.get_crosslink_committees_at_slot(state, slot);
     UnsignedLong shard = crosslink_committees.get(0).getShard();
@@ -198,7 +199,7 @@ public final class DataStructureUtil {
           Validator attester = state.getValidator_registry().get(attesterIndex);
           BLSKeyPair keypair = BLSKeyPair.random();
           // TODO: O(n), but in reality we will have the keypair in the validator
-          for (int i = 0; i < 128; i++) {
+          for (int i = 0; i < numValidators; i++) {
             keypair = BLSKeyPair.random(i);
             if (keypair.getPublicKey().equals(attester.getPubkey())) {
               break;
