@@ -21,11 +21,11 @@ import net.consensys.cava.ssz.SSZ;
 public final class Eth1Data {
 
   private Bytes32 deposit_root;
-  private Bytes32 block_root;
+  private Bytes32 block_hash;
 
-  public Eth1Data(Bytes32 deposit_root, Bytes32 block_root) {
+  public Eth1Data(Bytes32 deposit_root, Bytes32 block_hash) {
     this.deposit_root = deposit_root;
-    this.block_root = block_root;
+    this.block_hash = block_hash;
   }
 
   public static Eth1Data fromBytes(Bytes bytes) {
@@ -38,13 +38,13 @@ public final class Eth1Data {
     return SSZ.encode(
         writer -> {
           writer.writeBytes(deposit_root);
-          writer.writeBytes(block_root);
+          writer.writeBytes(block_hash);
         });
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(deposit_root, block_root);
+    return Objects.hash(deposit_root, block_hash);
   }
 
   @Override
@@ -63,7 +63,7 @@ public final class Eth1Data {
 
     Eth1Data other = (Eth1Data) obj;
     return Objects.equals(this.getDeposit_root(), other.getDeposit_root())
-        && Objects.equals(this.getBlock_root(), other.getBlock_root());
+        && Objects.equals(this.getBlock_hash(), other.getBlock_hash());
   }
 
   /** @return the deposit_root */
@@ -76,13 +76,13 @@ public final class Eth1Data {
     this.deposit_root = deposit_root;
   }
 
-  /** @return the block_root */
-  public Bytes32 getBlock_root() {
-    return block_root;
+  /** @return the block_hash */
+  public Bytes32 getBlock_hash() {
+    return block_hash;
   }
 
-  /** @param block_root the block_hash to set */
-  public void setBlock_root(Bytes32 block_root) {
-    this.block_root = block_root;
+  /** @param block_hash the block_hash to set */
+  public void setBlock_hash(Bytes32 block_hash) {
+    this.block_hash = block_hash;
   }
 }

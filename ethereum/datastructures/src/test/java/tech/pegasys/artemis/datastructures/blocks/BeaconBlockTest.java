@@ -32,11 +32,11 @@ class BeaconBlockTest {
   private Bytes32 stateRoot = Bytes32.random();
   private BLSSignature randaoReveal = BLSSignature.random();
   private Eth1Data eth1Data = randomEth1Data();
-  private BLSSignature signature = BLSSignature.random();
   private BeaconBlockBody body = randomBeaconBlockBody();
+  private BLSSignature signature = BLSSignature.random();
 
   private BeaconBlock beaconBlock =
-      new BeaconBlock(slot, parentRoot, stateRoot, randaoReveal, eth1Data, signature, body);
+      new BeaconBlock(slot, parentRoot, stateRoot, randaoReveal, eth1Data, body, signature);
 
   @Test
   void equalsReturnsTrueWhenObjectsAreSame() {
@@ -48,7 +48,7 @@ class BeaconBlockTest {
   @Test
   void equalsReturnsTrueWhenObjectFieldsAreEqual() {
     BeaconBlock testBeaconBlock =
-        new BeaconBlock(slot, parentRoot, stateRoot, randaoReveal, eth1Data, signature, body);
+        new BeaconBlock(slot, parentRoot, stateRoot, randaoReveal, eth1Data, body, signature);
 
     assertEquals(beaconBlock, testBeaconBlock);
   }
@@ -57,7 +57,7 @@ class BeaconBlockTest {
   void equalsReturnsFalseWhenSlotsAreDifferent() {
     BeaconBlock testBeaconBlock =
         new BeaconBlock(
-            slot + randomLong(), parentRoot, stateRoot, randaoReveal, eth1Data, signature, body);
+            slot + randomLong(), parentRoot, stateRoot, randaoReveal, eth1Data, body, signature);
 
     assertNotEquals(beaconBlock, testBeaconBlock);
   }
@@ -65,7 +65,7 @@ class BeaconBlockTest {
   @Test
   void equalsReturnsFalseWhenParentRootsAreDifferent() {
     BeaconBlock testBeaconBlock =
-        new BeaconBlock(slot, parentRoot.not(), stateRoot, randaoReveal, eth1Data, signature, body);
+        new BeaconBlock(slot, parentRoot.not(), stateRoot, randaoReveal, eth1Data, body, signature);
 
     assertNotEquals(beaconBlock, testBeaconBlock);
   }
@@ -73,7 +73,7 @@ class BeaconBlockTest {
   @Test
   void equalsReturnsFalseWhenStateRootsAreDifferent() {
     BeaconBlock testBeaconBlock =
-        new BeaconBlock(slot, parentRoot, stateRoot.not(), randaoReveal, eth1Data, signature, body);
+        new BeaconBlock(slot, parentRoot, stateRoot.not(), randaoReveal, eth1Data, body, signature);
 
     assertNotEquals(beaconBlock, testBeaconBlock);
   }
@@ -87,7 +87,7 @@ class BeaconBlockTest {
 
     BeaconBlock testBeaconBlock =
         new BeaconBlock(
-            slot, parentRoot, stateRoot, differentRandaoReveal, eth1Data, signature, body);
+            slot, parentRoot, stateRoot, differentRandaoReveal, eth1Data, body, signature);
 
     assertNotEquals(beaconBlock, testBeaconBlock);
   }
@@ -100,9 +100,25 @@ class BeaconBlockTest {
             parentRoot,
             stateRoot,
             randaoReveal,
-            new Eth1Data(eth1Data.getDeposit_root().not(), eth1Data.getBlock_root().not()),
-            signature,
-            body);
+            new Eth1Data(eth1Data.getDeposit_root().not(), eth1Data.getBlock_hash().not()),
+            body,
+            signature);
+
+    assertNotEquals(beaconBlock, testBeaconBlock);
+  }
+
+  @Test
+  void equalsReturnsFalseWhenBeaconBlockBodiesAreDifferent() {
+    // BeaconBlockBody is rather involved to create. Just create a random one until it is not the
+    // same
+    // as the original.
+    BeaconBlockBody otherBody = randomBeaconBlockBody();
+    while (Objects.equals(otherBody, body)) {
+      otherBody = randomBeaconBlockBody();
+    }
+
+    BeaconBlock testBeaconBlock =
+        new BeaconBlock(slot, parentRoot, stateRoot, randaoReveal, eth1Data, otherBody, signature);
 
     assertNotEquals(beaconBlock, testBeaconBlock);
   }
@@ -116,28 +132,13 @@ class BeaconBlockTest {
 
     BeaconBlock testBeaconBlock =
         new BeaconBlock(
-            slot, parentRoot, stateRoot, randaoReveal, eth1Data, differentSignature, body);
+            slot, parentRoot, stateRoot, randaoReveal, eth1Data, body, differentSignature);
 
     assertNotEquals(beaconBlock, testBeaconBlock);
   }
 
   @Test
-  void equalsReturnsFalseWhenBeaconBlockBodiesAreDifferent() {
-    // BeaconBlock is rather involved to create. Just create a random one until it is not the same
-    // as the original.
-    BeaconBlockBody otherBody = randomBeaconBlockBody();
-    while (Objects.equals(otherBody, body)) {
-      otherBody = randomBeaconBlockBody();
-    }
-
-    BeaconBlock testBeaconBlock =
-        new BeaconBlock(slot, parentRoot, stateRoot, randaoReveal, eth1Data, signature, otherBody);
-
-    assertNotEquals(beaconBlock, testBeaconBlock);
-  }
-
-  @Test
-  void rountripSSZ() {
+  void roundtripSSZ() {
     Bytes sszBeaconBlockBytes = beaconBlock.toBytes();
     assertEquals(beaconBlock, BeaconBlock.fromBytes(sszBeaconBlockBytes));
   }

@@ -24,17 +24,17 @@ public class PendingAttestation {
   private Bytes aggregation_bitfield;
   private AttestationData data;
   private Bytes custody_bitfield;
-  private UnsignedLong slot_included;
+  private UnsignedLong inclusion_slot;
 
   public PendingAttestation(
       Bytes aggregation_bitfield,
       AttestationData data,
       Bytes custody_bitfield,
-      UnsignedLong slot_included) {
+      UnsignedLong inclusion_slot) {
     this.aggregation_bitfield = aggregation_bitfield;
     this.data = data;
     this.custody_bitfield = custody_bitfield;
-    this.slot_included = slot_included;
+    this.inclusion_slot = inclusion_slot;
   }
 
   public static PendingAttestation fromBytes(Bytes bytes) {
@@ -54,13 +54,13 @@ public class PendingAttestation {
           writer.writeBytes(aggregation_bitfield);
           writer.writeBytes(data.toBytes());
           writer.writeBytes(custody_bitfield);
-          writer.writeUInt64(slot_included.longValue());
+          writer.writeUInt64(inclusion_slot.longValue());
         });
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(aggregation_bitfield, data, custody_bitfield, slot_included);
+    return Objects.hash(aggregation_bitfield, data, custody_bitfield, inclusion_slot);
   }
 
   @Override
@@ -81,7 +81,7 @@ public class PendingAttestation {
     return Objects.equals(this.getAggregation_bitfield(), other.getAggregation_bitfield())
         && Objects.equals(this.getData(), other.getData())
         && Objects.equals(this.getCustody_bitfield(), other.getCustody_bitfield())
-        && Objects.equals(this.getSlot_included(), other.getSlot_included());
+        && Objects.equals(this.getInclusionSlot(), other.getInclusionSlot());
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */
@@ -109,11 +109,11 @@ public class PendingAttestation {
     this.custody_bitfield = custody_bitfield;
   }
 
-  public UnsignedLong getSlot_included() {
-    return slot_included;
+  public UnsignedLong getInclusionSlot() {
+    return inclusion_slot;
   }
 
-  public void setSlot_included(UnsignedLong slot_included) {
-    this.slot_included = slot_included;
+  public void setInclusionSlot(UnsignedLong inclusion_slot) {
+    this.inclusion_slot = inclusion_slot;
   }
 }

@@ -17,28 +17,18 @@ import com.google.common.primitives.UnsignedLong;
 import java.util.Objects;
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.ssz.SSZ;
-import tech.pegasys.artemis.datastructures.blocks.ProposalSignedData;
-import tech.pegasys.artemis.util.bls.BLSSignature;
+import tech.pegasys.artemis.datastructures.blocks.Proposal;
 
 public class ProposerSlashing {
 
   private UnsignedLong proposer_index;
-  private ProposalSignedData proposal_data_1;
-  private BLSSignature proposal_signature_1;
-  private ProposalSignedData proposal_data_2;
-  private BLSSignature proposal_signature_2;
+  private Proposal proposal_1;
+  private Proposal proposal_2;
 
-  public ProposerSlashing(
-      UnsignedLong proposer_index,
-      ProposalSignedData proposal_data_1,
-      BLSSignature proposal_signature_1,
-      ProposalSignedData proposal_data_2,
-      BLSSignature proposal_signature_2) {
+  public ProposerSlashing(UnsignedLong proposer_index, Proposal proposal_1, Proposal proposal_2) {
     this.proposer_index = proposer_index;
-    this.proposal_data_1 = proposal_data_1;
-    this.proposal_signature_1 = proposal_signature_1;
-    this.proposal_data_2 = proposal_data_2;
-    this.proposal_signature_2 = proposal_signature_2;
+    this.proposal_1 = proposal_1;
+    this.proposal_2 = proposal_2;
   }
 
   public static ProposerSlashing fromBytes(Bytes bytes) {
@@ -47,31 +37,22 @@ public class ProposerSlashing {
         reader ->
             new ProposerSlashing(
                 UnsignedLong.fromLongBits(reader.readUInt64()),
-                ProposalSignedData.fromBytes(reader.readBytes()),
-                BLSSignature.fromBytes(reader.readBytes()),
-                ProposalSignedData.fromBytes(reader.readBytes()),
-                BLSSignature.fromBytes(reader.readBytes())));
+                Proposal.fromBytes(reader.readBytes()),
+                Proposal.fromBytes(reader.readBytes())));
   }
 
   public Bytes toBytes() {
     return SSZ.encode(
         writer -> {
           writer.writeUInt64(proposer_index.longValue());
-          writer.writeBytes(proposal_data_1.toBytes());
-          writer.writeBytes(proposal_signature_1.toBytes());
-          writer.writeBytes(proposal_data_2.toBytes());
-          writer.writeBytes(proposal_signature_2.toBytes());
+          writer.writeBytes(proposal_1.toBytes());
+          writer.writeBytes(proposal_2.toBytes());
         });
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(
-        proposer_index,
-        proposal_data_1,
-        proposal_signature_1,
-        proposal_data_2,
-        proposal_signature_2);
+    return Objects.hash(proposer_index, proposal_1, proposal_2);
   }
 
   @Override
@@ -90,10 +71,8 @@ public class ProposerSlashing {
 
     ProposerSlashing other = (ProposerSlashing) obj;
     return Objects.equals(this.getProposer_index(), other.getProposer_index())
-        && Objects.equals(this.getProposal_data_1(), other.getProposal_data_1())
-        && Objects.equals(this.getProposal_signature_1(), other.getProposal_signature_1())
-        && Objects.equals(this.getProposal_data_2(), other.getProposal_data_2())
-        && Objects.equals(this.getProposal_signature_2(), other.getProposal_signature_2());
+        && Objects.equals(this.getProposal_1(), other.getProposal_1())
+        && Objects.equals(this.getProposal_2(), other.getProposal_2());
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */
@@ -105,35 +84,19 @@ public class ProposerSlashing {
     this.proposer_index = proposer_index;
   }
 
-  public ProposalSignedData getProposal_data_1() {
-    return proposal_data_1;
+  public Proposal getProposal_1() {
+    return proposal_1;
   }
 
-  public void setProposal_data_1(ProposalSignedData proposal_data_1) {
-    this.proposal_data_1 = proposal_data_1;
+  public void setProposal_1(Proposal proposal_1) {
+    this.proposal_1 = proposal_1;
   }
 
-  public BLSSignature getProposal_signature_1() {
-    return proposal_signature_1;
+  public Proposal getProposal_2() {
+    return proposal_2;
   }
 
-  public void setProposal_signature_1(BLSSignature proposal_signature_1) {
-    this.proposal_signature_1 = proposal_signature_1;
-  }
-
-  public ProposalSignedData getProposal_data_2() {
-    return proposal_data_2;
-  }
-
-  public void setProposal_data_2(ProposalSignedData proposal_data_2) {
-    this.proposal_data_2 = proposal_data_2;
-  }
-
-  public BLSSignature getProposal_signature_2() {
-    return proposal_signature_2;
-  }
-
-  public void setProposal_signature_2(BLSSignature proposal_signature_2) {
-    this.proposal_signature_2 = proposal_signature_2;
+  public void setProposal_2(Proposal proposal_2) {
+    this.proposal_2 = proposal_2;
   }
 }

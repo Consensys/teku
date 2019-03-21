@@ -21,56 +21,69 @@ import com.google.common.primitives.UnsignedLong;
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.artemis.util.bls.BLSSignature;
 
-class ProposalSignedDataTest {
+class ProposalTest {
 
   private UnsignedLong slot = randomUnsignedLong();
   private UnsignedLong shard = randomUnsignedLong();
   private Bytes32 blockRoot = Bytes32.random();
+  private BLSSignature signature = BLSSignature.random();
 
-  private ProposalSignedData proposalSignedData = new ProposalSignedData(slot, shard, blockRoot);
+  private Proposal proposal = new Proposal(slot, shard, blockRoot, signature);
 
   @Test
   void equalsReturnsTrueWhenObjectAreSame() {
-    ProposalSignedData testProposalSignedData = proposalSignedData;
+    Proposal testProposalSignedData = proposal;
 
-    assertEquals(proposalSignedData, testProposalSignedData);
+    assertEquals(proposal, testProposalSignedData);
   }
 
   @Test
   void equalsReturnsTrueWhenObjectFieldsAreEqual() {
-    ProposalSignedData testProposalSignedData = new ProposalSignedData(slot, shard, blockRoot);
+    Proposal testProposal = new Proposal(slot, shard, blockRoot, signature);
 
-    assertEquals(proposalSignedData, testProposalSignedData);
+    assertEquals(proposal, testProposal);
   }
 
   @Test
   void equalsReturnsFalseWhenSlotsAreDifferent() {
-    ProposalSignedData testProposalSignedData =
-        new ProposalSignedData(slot.plus(randomUnsignedLong()), shard, blockRoot);
+    Proposal testProposal =
+        new Proposal(slot.plus(randomUnsignedLong()), shard, blockRoot, signature);
 
-    assertNotEquals(proposalSignedData, testProposalSignedData);
+    assertNotEquals(proposal, testProposal);
   }
 
   @Test
   void equalsReturnsFalseWhenShardsAreDifferent() {
-    ProposalSignedData testProposalSignedData =
-        new ProposalSignedData(slot, shard.plus(randomUnsignedLong()), blockRoot);
+    Proposal testProposal =
+        new Proposal(slot, shard.plus(randomUnsignedLong()), blockRoot, signature);
 
-    assertNotEquals(proposalSignedData, testProposalSignedData);
+    assertNotEquals(proposal, testProposal);
   }
 
   @Test
   void equalsReturnsFalseWhenBlockRootsAreDifferent() {
-    ProposalSignedData testProposalSignedData =
-        new ProposalSignedData(slot, shard, blockRoot.not());
+    Proposal testProposal = new Proposal(slot, shard, blockRoot.not(), signature);
 
-    assertNotEquals(proposalSignedData, testProposalSignedData);
+    assertNotEquals(proposal, testProposal);
   }
 
   @Test
-  void rountripSSZ() {
-    Bytes sszProposalSignedDataBytes = proposalSignedData.toBytes();
-    assertEquals(proposalSignedData, ProposalSignedData.fromBytes(sszProposalSignedDataBytes));
+  void equalsReturnsFalseWhenSignaturesAreDifferent() {
+    BLSSignature differentSignature = BLSSignature.random();
+    while (differentSignature.equals(signature)) {
+      differentSignature = BLSSignature.random();
+    }
+
+    Proposal testProposal = new Proposal(slot, shard, blockRoot, differentSignature);
+
+    assertNotEquals(proposal, testProposal);
+  }
+
+  @Test
+  void roundtripSSZ() {
+    Bytes sszProposalBytes = proposal.toBytes();
+    assertEquals(proposal, Proposal.fromBytes(sszProposalBytes));
   }
 }

@@ -13,7 +13,7 @@
 
 package tech.pegasys.artemis.statetransition;
 
-import static tech.pegasys.artemis.datastructures.Constants.EPOCH_LENGTH;
+import static tech.pegasys.artemis.datastructures.Constants.SLOTS_PER_EPOCH;
 
 import com.google.common.primitives.UnsignedLong;
 import net.consensys.cava.bytes.Bytes32;
@@ -55,7 +55,7 @@ public class StateTransition {
     if (state
         .getSlot()
         .plus(UnsignedLong.ONE)
-        .mod(UnsignedLong.valueOf(EPOCH_LENGTH))
+        .mod(UnsignedLong.valueOf(SLOTS_PER_EPOCH))
         .equals(UnsignedLong.ZERO)) {
       epochProcessor(state, block);
     }
@@ -107,8 +107,9 @@ public class StateTransition {
         // Process Deposits
         BlockProcessorUtil.processDeposits(state, block);
         // Process Exits
-        BlockProcessorUtil.processExits(state, block);
-
+        BlockProcessorUtil.processVoluntaryExits(state, block);
+        // Process Transfers
+        BlockProcessorUtil.processTransfers(state, block);
       } catch (BlockProcessingException e) {
         LOG.log(Level.WARN, "  Block processing error: " + e, printEnabled);
       }

@@ -65,7 +65,7 @@ class ForkTest {
   }
 
   @Test
-  void rountripSSZ() {
+  void roundtripSSZ() {
     Bytes sszForkBytes = fork.toBytes();
     assertEquals(fork, Fork.fromBytes(sszForkBytes));
   }

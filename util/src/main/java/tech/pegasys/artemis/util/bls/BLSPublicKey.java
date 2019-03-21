@@ -105,22 +105,25 @@ public class BLSPublicKey {
   }
 
   @Override
-  public int hashCode() {
-    return isEmpty() ? 0 : publicKey.hashCode();
-  }
-
-  @Override
   public boolean equals(Object obj) {
-    if (isNull(obj)) {
+    if (Objects.isNull(obj)) {
       return false;
     }
+
     if (this == obj) {
       return true;
     }
+
     if (!(obj instanceof BLSPublicKey)) {
       return false;
     }
+
     BLSPublicKey other = (BLSPublicKey) obj;
-    return Objects.equals(this.publicKey, other.publicKey);
+    return Objects.equals(this.getPublicKey(), other.getPublicKey());
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(publicKey);
   }
 }

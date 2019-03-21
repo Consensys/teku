@@ -22,40 +22,42 @@ import net.consensys.cava.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 
-class ExitTest {
+class VoluntaryExitTest {
 
   private UnsignedLong epoch = randomUnsignedLong();
   private UnsignedLong validatorIndex = randomUnsignedLong();
   private BLSSignature signature = BLSSignature.random();
 
-  private Exit exit = new Exit(epoch, validatorIndex, signature);
+  private VoluntaryExit voluntaryExit = new VoluntaryExit(epoch, validatorIndex, signature);
 
   @Test
   void equalsReturnsTrueWhenObjectsAreSame() {
-    Exit testExit = exit;
+    VoluntaryExit testVoluntaryExit = voluntaryExit;
 
-    assertEquals(exit, testExit);
+    assertEquals(voluntaryExit, testVoluntaryExit);
   }
 
   @Test
   void equalsReturnsTrueWhenObjectFieldsAreEqual() {
-    Exit testExit = new Exit(epoch, validatorIndex, signature);
+    VoluntaryExit testVoluntaryExit = new VoluntaryExit(epoch, validatorIndex, signature);
 
-    assertEquals(exit, testExit);
+    assertEquals(voluntaryExit, testVoluntaryExit);
   }
 
   @Test
   void equalsReturnsFalseWhenEpochsAreDifferent() {
-    Exit testExit = new Exit(epoch.plus(randomUnsignedLong()), validatorIndex, signature);
+    VoluntaryExit testVoluntaryExit =
+        new VoluntaryExit(epoch.plus(randomUnsignedLong()), validatorIndex, signature);
 
-    assertNotEquals(exit, testExit);
+    assertNotEquals(voluntaryExit, testVoluntaryExit);
   }
 
   @Test
   void equalsReturnsFalseWhenValidatorIndicesAreDifferent() {
-    Exit testExit = new Exit(epoch, validatorIndex.plus(randomUnsignedLong()), signature);
+    VoluntaryExit testVoluntaryExit =
+        new VoluntaryExit(epoch, validatorIndex.plus(randomUnsignedLong()), signature);
 
-    assertNotEquals(exit, testExit);
+    assertNotEquals(voluntaryExit, testVoluntaryExit);
   }
 
   @Test
@@ -65,14 +67,14 @@ class ExitTest {
       differentSignature = BLSSignature.random();
     }
 
-    Exit testExit = new Exit(epoch, validatorIndex, differentSignature);
+    VoluntaryExit testVoluntaryExit = new VoluntaryExit(epoch, validatorIndex, differentSignature);
 
-    assertNotEquals(exit, testExit);
+    assertNotEquals(voluntaryExit, testVoluntaryExit);
   }
 
   @Test
-  void rountripSSZ() {
-    Bytes sszExitBytes = exit.toBytes();
-    assertEquals(exit, Exit.fromBytes(sszExitBytes));
+  void roundtripSSZ() {
+    Bytes sszVoluntaryExitBytes = voluntaryExit.toBytes();
+    assertEquals(voluntaryExit, VoluntaryExit.fromBytes(sszVoluntaryExitBytes));
   }
 }

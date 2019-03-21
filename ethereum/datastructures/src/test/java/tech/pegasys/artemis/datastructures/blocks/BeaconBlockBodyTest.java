@@ -18,8 +18,9 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomAttestation;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomAttesterSlashing;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomDeposit;
-import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomExit;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomProposerSlashing;
+import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomTransfer;
+import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomVoluntaryExit;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -30,8 +31,9 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.AttesterSlashing;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
-import tech.pegasys.artemis.datastructures.operations.Exit;
 import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
+import tech.pegasys.artemis.datastructures.operations.Transfer;
+import tech.pegasys.artemis.datastructures.operations.VoluntaryExit;
 
 class BeaconBlockBodyTest {
 
@@ -42,10 +44,13 @@ class BeaconBlockBodyTest {
   private List<Attestation> attestations =
       Arrays.asList(randomAttestation(), randomAttestation(), randomAttestation());
   private List<Deposit> deposits = Arrays.asList(randomDeposit(), randomDeposit(), randomDeposit());
-  private List<Exit> exits = Arrays.asList(randomExit(), randomExit(), randomExit());
+  private List<VoluntaryExit> voluntaryExits =
+      Arrays.asList(randomVoluntaryExit(), randomVoluntaryExit(), randomVoluntaryExit());
+  private List<Transfer> transfers = Arrays.asList(randomTransfer(), randomTransfer());
 
   private BeaconBlockBody beaconBlockBody =
-      new BeaconBlockBody(proposerSlashings, attesterSlashings, attestations, deposits, exits);
+      new BeaconBlockBody(
+          proposerSlashings, attesterSlashings, attestations, deposits, voluntaryExits, transfers);
 
   @Test
   void equalsReturnsTrueWhenObjectAreSame() {
@@ -57,7 +62,13 @@ class BeaconBlockBodyTest {
   @Test
   void equalsReturnsTrueWhenObjectFieldsAreEqual() {
     BeaconBlockBody testBeaconBlockBody =
-        new BeaconBlockBody(proposerSlashings, attesterSlashings, attestations, deposits, exits);
+        new BeaconBlockBody(
+            proposerSlashings,
+            attesterSlashings,
+            attestations,
+            deposits,
+            voluntaryExits,
+            transfers);
 
     assertEquals(beaconBlockBody, testBeaconBlockBody);
   }
@@ -70,7 +81,12 @@ class BeaconBlockBodyTest {
 
     BeaconBlockBody testBeaconBlockBody =
         new BeaconBlockBody(
-            reverseProposerSlashings, attesterSlashings, attestations, deposits, exits);
+            reverseProposerSlashings,
+            attesterSlashings,
+            attestations,
+            deposits,
+            voluntaryExits,
+            transfers);
 
     assertNotEquals(beaconBlockBody, testBeaconBlockBody);
   }
@@ -83,7 +99,12 @@ class BeaconBlockBodyTest {
 
     BeaconBlockBody testBeaconBlockBody =
         new BeaconBlockBody(
-            proposerSlashings, reverseAttesterSlashings, attestations, deposits, exits);
+            proposerSlashings,
+            reverseAttesterSlashings,
+            attestations,
+            deposits,
+            voluntaryExits,
+            transfers);
 
     assertNotEquals(beaconBlockBody, testBeaconBlockBody);
   }
@@ -96,7 +117,12 @@ class BeaconBlockBodyTest {
 
     BeaconBlockBody testBeaconBlockBody =
         new BeaconBlockBody(
-            proposerSlashings, attesterSlashings, reverseAttestations, deposits, exits);
+            proposerSlashings,
+            attesterSlashings,
+            reverseAttestations,
+            deposits,
+            voluntaryExits,
+            transfers);
 
     assertNotEquals(beaconBlockBody, testBeaconBlockBody);
   }
@@ -109,7 +135,12 @@ class BeaconBlockBodyTest {
 
     BeaconBlockBody testBeaconBlockBody =
         new BeaconBlockBody(
-            proposerSlashings, attesterSlashings, attestations, reverseDeposits, exits);
+            proposerSlashings,
+            attesterSlashings,
+            attestations,
+            reverseDeposits,
+            voluntaryExits,
+            transfers);
 
     assertNotEquals(beaconBlockBody, testBeaconBlockBody);
   }
@@ -117,18 +148,41 @@ class BeaconBlockBodyTest {
   @Test
   void equalsReturnsFalseWhenExitsAreDifferent() {
     // Create copy of exits and reverse to ensure it is different.
-    List<Exit> reverseExits = new ArrayList<Exit>(exits);
-    Collections.reverse(reverseExits);
+    List<VoluntaryExit> reverseVoluntaryExits = new ArrayList<VoluntaryExit>(voluntaryExits);
+    Collections.reverse(reverseVoluntaryExits);
 
     BeaconBlockBody testBeaconBlockBody =
         new BeaconBlockBody(
-            proposerSlashings, attesterSlashings, attestations, deposits, reverseExits);
+            proposerSlashings,
+            attesterSlashings,
+            attestations,
+            deposits,
+            reverseVoluntaryExits,
+            transfers);
 
     assertNotEquals(beaconBlockBody, testBeaconBlockBody);
   }
 
   @Test
-  void rountripSSZ() {
+  void equalsReturnsFalseWhenTransfersAreDifferent() {
+    // Create copy of exits and reverse to ensure it is different.
+    List<Transfer> reverseTransfers = new ArrayList<Transfer>(transfers);
+    Collections.reverse(reverseTransfers);
+
+    BeaconBlockBody testBeaconBlockBody =
+        new BeaconBlockBody(
+            proposerSlashings,
+            attesterSlashings,
+            attestations,
+            deposits,
+            voluntaryExits,
+            reverseTransfers);
+
+    assertNotEquals(beaconBlockBody, testBeaconBlockBody);
+  }
+
+  @Test
+  void roundtripSSZ() {
     Bytes sszBeaconBlockBodyBytes = beaconBlockBody.toBytes();
     assertEquals(beaconBlockBody, BeaconBlockBody.fromBytes(sszBeaconBlockBodyBytes));
   }
