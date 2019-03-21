@@ -14,53 +14,30 @@
 package tech.pegasys.artemis;
 
 import java.security.Security;
-import org.apache.logging.log4j.core.config.Configurator;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import picocli.CommandLine;
-import tech.pegasys.artemis.services.ServiceController;
-import tech.pegasys.artemis.services.beaconchain.BeaconChainService;
-import tech.pegasys.artemis.services.beaconnode.BeaconNodeService;
-import tech.pegasys.artemis.services.chainstorage.ChainStorageService;
-import tech.pegasys.artemis.services.powchain.PowchainService;
 import tech.pegasys.artemis.util.cli.CommandLineArguments;
 
 public final class Artemis {
 
   public static void main(final String... args) {
-    try {
-      Security.addProvider(new BouncyCastleProvider());
-      // Process Command Line Args
-      CommandLineArguments cliArgs = new CommandLineArguments();
-      CommandLine commandLine = new CommandLine(cliArgs);
-      commandLine.parse(args);
-      if (commandLine.isUsageHelpRequested()) {
-        commandLine.usage(System.out);
-        return;
-      }
-      // set log level per CLI flags
-      System.out.println("Setting logging level to " + cliArgs.getLoggingLevel().name());
-      Configurator.setAllLevels("", cliArgs.getLoggingLevel());
-      // Detect SIGTERM
-      Runtime.getRuntime()
-          .addShutdownHook(
-              new Thread() {
-                @Override
-                public void run() {
-                  System.out.println("Artemis is shutting down");
-                  ServiceController.stopAll(cliArgs);
-                }
-              });
-      // Initialize services
-      ServiceController.initAll(
-          cliArgs,
-          BeaconChainService.class,
-          PowchainService.class,
-          BeaconNodeService.class,
-          ChainStorageService.class);
-      // Start services
-      ServiceController.startAll(cliArgs);
-    } catch (Exception e) {
-      System.out.println(e.toString());
-    }
+    Security.addProvider(new BouncyCastleProvider());
+    // Process Command Line Args
+    CommandLineArguments cliArgs = new CommandLineArguments();
+    CommandLine commandLine = new CommandLine(cliArgs);
+    commandLine.parse(args);
+    BeaconNode node = new BeaconNode(commandLine, cliArgs);
+    node.start();
+
+    // Detect SIGTERM
+    Runtime.getRuntime()
+        .addShutdownHook(
+            new Thread() {
+              @Override
+              public void run() {
+                System.out.println("Artemis is shutting down");
+                node.stop();
+              }
+            });
   }
 }

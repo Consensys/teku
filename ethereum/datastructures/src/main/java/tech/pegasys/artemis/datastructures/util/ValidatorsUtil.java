@@ -26,38 +26,46 @@ import tech.pegasys.artemis.datastructures.state.Validator;
 public class ValidatorsUtil {
 
   /**
-   * Get list of active validators
+   * Returns the list of active validators from the provided list of validators at the given epoch.
    *
-   * @param validators
-   * @param epoch
-   * @return
+   * <p><b>This method is defined for convenience and is not mentioned in the spec.</b>
+   *
+   * @param validators - The list of validators under consideration.
+   * @param epoch - The epoch under consideration.
+   * @return A list of active validators for the given epoch.
    */
   public static List<Validator> get_active_validators(
       List<Validator> validators, UnsignedLong epoch) {
     List<Validator> active_validators = new ArrayList<>();
     if (validators != null) {
       for (Validator record : validators) {
-        if (record.is_active_validator(epoch)) active_validators.add(record);
+        if (record.is_active_validator(epoch)) {
+          active_validators.add(record);
+        }
       }
     }
     return active_validators;
   }
 
   /**
-   * Get list of active validator indeces
+   * Returns the list of indices of active validators from the provided list of validators at the
+   * given epoch.
    *
-   * @param validators
-   * @param epoch
-   * @return
+   * @param validators - The list of validators under consideration.
+   * @param epoch - The epoch under consideration.
+   * @return A list of indices representing the active validators for the given epoch.
+   * @see <a
+   *     href="https://github.com/ethereum/eth2.0-specs/blob/v0.4.0/specs/core/0_beacon-chain.md#get_active_validator_indices">get_active_validator_indices
+   *     - Spec v0.4</a>
    */
   public static List<Integer> get_active_validator_indices(
       List<Validator> validators, UnsignedLong epoch) {
     List<Integer> active_validator_indices = new ArrayList<>();
     IntStream.range(0, validators.size())
         .forEachOrdered(
-            n -> {
-              if (validators.get(n).is_active_validator(epoch)) {
-                active_validator_indices.add(n);
+            index -> {
+              if (validators.get(index).is_active_validator(epoch)) {
+                active_validator_indices.add(index);
               }
             });
 

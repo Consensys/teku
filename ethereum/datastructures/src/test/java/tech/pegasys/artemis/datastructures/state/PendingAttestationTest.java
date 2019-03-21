@@ -30,10 +30,10 @@ class PendingAttestationTest {
   private Bytes participationBitfield = Bytes32.random();
   private AttestationData data = randomAttestationData();
   private Bytes custodyBitfield = Bytes32.random();
-  private UnsignedLong slotIncluded = randomUnsignedLong();
+  private UnsignedLong inclusionSlot = randomUnsignedLong();
 
   private PendingAttestation pendingAttestation =
-      new PendingAttestation(participationBitfield, data, custodyBitfield, slotIncluded);
+      new PendingAttestation(participationBitfield, data, custodyBitfield, inclusionSlot);
 
   @Test
   void equalsReturnsTrueWhenObjectAreSame() {
@@ -45,7 +45,7 @@ class PendingAttestationTest {
   @Test
   void equalsReturnsTrueWhenObjectFieldsAreEqual() {
     PendingAttestation testPendingAttestation =
-        new PendingAttestation(participationBitfield, data, custodyBitfield, slotIncluded);
+        new PendingAttestation(participationBitfield, data, custodyBitfield, inclusionSlot);
 
     assertEquals(pendingAttestation, testPendingAttestation);
   }
@@ -60,7 +60,7 @@ class PendingAttestationTest {
     }
     PendingAttestation testPendingAttestation =
         new PendingAttestation(
-            participationBitfield, otherAttestationData, custodyBitfield, slotIncluded);
+            participationBitfield, otherAttestationData, custodyBitfield, inclusionSlot);
 
     assertNotEquals(pendingAttestation, testPendingAttestation);
   }
@@ -68,7 +68,7 @@ class PendingAttestationTest {
   @Test
   void equalsReturnsFalseWhenParticipationBitfieldsAreDifferent() {
     PendingAttestation testPendingAttestation =
-        new PendingAttestation(participationBitfield.not(), data, custodyBitfield, slotIncluded);
+        new PendingAttestation(participationBitfield.not(), data, custodyBitfield, inclusionSlot);
 
     assertNotEquals(pendingAttestation, testPendingAttestation);
   }
@@ -76,16 +76,16 @@ class PendingAttestationTest {
   @Test
   void equalsReturnsFalseWhenCustodyBitfieldsAreDifferent() {
     PendingAttestation testPendingAttestation =
-        new PendingAttestation(participationBitfield, data, custodyBitfield.not(), slotIncluded);
+        new PendingAttestation(participationBitfield, data, custodyBitfield.not(), inclusionSlot);
 
     assertNotEquals(pendingAttestation, testPendingAttestation);
   }
 
   @Test
-  void equalsReturnsFalseWhenSlotIncludedsAreDifferent() {
+  void equalsReturnsFalseWhenInclusionSlotsAreDifferent() {
     PendingAttestation testPendingAttestation =
         new PendingAttestation(
-            participationBitfield, data, custodyBitfield, slotIncluded.plus(randomUnsignedLong()));
+            participationBitfield, data, custodyBitfield, inclusionSlot.plus(randomUnsignedLong()));
 
     assertNotEquals(pendingAttestation, testPendingAttestation);
   }
@@ -100,25 +100,25 @@ class PendingAttestationTest {
   void roundtripSSZVariableLengthBitfield() {
     PendingAttestation byte1BitfieldPendingAttestation =
         new PendingAttestation(
-            Bytes.fromHexString("0x00"), data, Bytes.fromHexString("0x00"), slotIncluded);
+            Bytes.fromHexString("0x00"), data, Bytes.fromHexString("0x00"), inclusionSlot);
     PendingAttestation byte4BitfieldPendingAttestation =
         new PendingAttestation(
             Bytes.fromHexString("0x00000000"),
             data,
             Bytes.fromHexString("0x00000000"),
-            slotIncluded);
+            inclusionSlot);
     PendingAttestation byte8BitfieldPendingAttestation =
         new PendingAttestation(
             Bytes.fromHexString("0x0000000000000000"),
             data,
             Bytes.fromHexString("0x0000000000000000"),
-            slotIncluded);
+            inclusionSlot);
     PendingAttestation byte16BitfieldPendingAttestation =
         new PendingAttestation(
             Bytes.fromHexString("0x00000000000000000000000000000000"),
             data,
             Bytes.fromHexString("0x00000000000000000000000000000000"),
-            slotIncluded);
+            inclusionSlot);
     Bytes byte1BitfieldPendingAttestationBytes = byte1BitfieldPendingAttestation.toBytes();
     Bytes byte4BitfieldPendingAttestationBytes = byte4BitfieldPendingAttestation.toBytes();
     Bytes byte8BitfieldPendingAttestationBytes = byte8BitfieldPendingAttestation.toBytes();

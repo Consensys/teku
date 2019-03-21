@@ -91,7 +91,7 @@ class EpochProcessingUtilTest {
 
   @Test
   @Disabled
-  void processEjectionsTest() {
+  void processEjectionsTest() throws EpochProcessingException {
 
     BeaconState state = createArbitraryBeaconState(25);
     UnsignedLong currentEpoch = BeaconStateUtil.get_current_epoch(state);
@@ -154,7 +154,7 @@ class EpochProcessingUtilTest {
 
   @Test
   @Disabled
-  void updateValidatorRegistryTest() {
+  void updateValidatorRegistryTest() throws EpochProcessingException {
     BeaconState state = createArbitraryBeaconState(25);
     UnsignedLong currentEpoch = BeaconStateUtil.get_current_epoch(state);
 
@@ -163,13 +163,13 @@ class EpochProcessingUtilTest {
         ValidatorsUtil.get_active_validators(state.getValidator_registry(), currentEpoch);
     // validators to be ejected
     state.getValidator_balances().set(0, UnsignedLong.valueOf(Constants.EJECTION_BALANCE / 4));
-    validators.get(0).setStatus_flags(UnsignedLong.valueOf(Constants.INITIATED_EXIT));
+    validators.get(0).setInitiatedExit(true);
     state.getValidator_balances().set(5, UnsignedLong.valueOf(Constants.EJECTION_BALANCE / 8));
-    validators.get(5).setStatus_flags(UnsignedLong.valueOf(Constants.INITIATED_EXIT));
+    validators.get(5).setInitiatedExit(true);
     state.getValidator_balances().set(15, UnsignedLong.valueOf(0L));
-    validators.get(15).setStatus_flags(UnsignedLong.valueOf(Constants.INITIATED_EXIT));
+    validators.get(15).setInitiatedExit(true);
     state.getValidator_balances().set(20, UnsignedLong.valueOf(Constants.EJECTION_BALANCE / 2));
-    validators.get(20).setStatus_flags(UnsignedLong.valueOf(Constants.INITIATED_EXIT));
+    validators.get(20).setInitiatedExit(true);
     // validator stays active
     state.getValidator_balances().set(1, UnsignedLong.valueOf(Constants.EJECTION_BALANCE));
 
@@ -188,7 +188,7 @@ class EpochProcessingUtilTest {
 
   @Test
   @Disabled
-  void updateValidatorRegistryTestWithMissingFlag() {
+  void updateValidatorRegistryTestWithMissingFlag() throws EpochProcessingException {
     BeaconState state = createArbitraryBeaconState(25);
     UnsignedLong currentEpoch = BeaconStateUtil.get_current_epoch(state);
 
@@ -211,7 +211,7 @@ class EpochProcessingUtilTest {
 
   @Disabled
   @Test
-  void processPenaltiesAndExitsTest() {
+  void processPenaltiesAndExitsTest() throws EpochProcessingException {
     BeaconState state = createArbitraryBeaconState(25);
     // TODO: Figure out how to test PenaltiesAndExits
     UnsignedLong currentEpoch = BeaconStateUtil.get_current_epoch(state);
@@ -225,7 +225,7 @@ class EpochProcessingUtilTest {
         ValidatorsUtil.get_active_validators(state.getValidator_registry(), currentEpoch);
     // validators to withdrawal
     state.getValidator_balances().set(0, UnsignedLong.valueOf(Constants.MAX_DEPOSIT_AMOUNT));
-    validators.get(0).setStatus_flags(UnsignedLong.valueOf(Constants.WITHDRAWABLE));
+    validators.get(0).setSlashed(true);
 
     // flag the validators with a balance below the threshold
     EpochProcessorUtil.process_penalties_and_exits(state);

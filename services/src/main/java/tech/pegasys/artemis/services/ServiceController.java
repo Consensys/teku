@@ -13,7 +13,6 @@
 
 package tech.pegasys.artemis.services;
 
-import com.google.common.eventbus.AsyncEventBus;
 import com.google.common.eventbus.EventBus;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -21,63 +20,46 @@ import tech.pegasys.artemis.util.cli.CommandLineArguments;
 
 public class ServiceController {
 
-  private static ServiceInterface beaconChainService;
-  private static ServiceInterface powchainService;
-  private static ServiceInterface beaconNodeService;
-  private static ServiceInterface chainStorageService;
+  private ServiceInterface beaconChainService;
+  private ServiceInterface powchainService;
+  private ServiceInterface chainStorageService;
 
-  private static final ExecutorService beaconChainExecuterService =
-      Executors.newSingleThreadExecutor();
-  private static final ExecutorService powchainExecuterService =
-      Executors.newSingleThreadExecutor();
-  private static final ExecutorService beaconNodeExecuterService =
-      Executors.newSingleThreadExecutor();
-  private static final ExecutorService chainStorageExecutorService =
-      Executors.newSingleThreadExecutor();
+  private final ExecutorService beaconChainExecuterService = Executors.newSingleThreadExecutor();
+  private final ExecutorService powchainExecuterService = Executors.newSingleThreadExecutor();
+  private final ExecutorService chainStorageExecutorService = Executors.newSingleThreadExecutor();
 
   // initialize/register all services
-  public static <
-          U extends ServiceInterface,
-          V extends ServiceInterface,
-          W extends ServiceInterface,
-          X extends ServiceInterface>
+  public <U extends ServiceInterface, V extends ServiceInterface, W extends ServiceInterface>
       void initAll(
+          EventBus eventBus,
           CommandLineArguments cliArgs,
+          ServiceConfig config,
           Class<U> beaconChainServiceType,
           Class<V> powchainServiceType,
-          Class<W> p2pServiceType,
-          Class<X> chainStorageServiceType) {
+          Class<W> chainStorageServiceType) {
     beaconChainService = ServiceFactory.getInstance(beaconChainServiceType).getInstance();
     powchainService = ServiceFactory.getInstance(powchainServiceType).getInstance();
-    beaconNodeService = ServiceFactory.getInstance(p2pServiceType).getInstance();
     chainStorageService = ServiceFactory.getInstance(chainStorageServiceType).getInstance();
 
-    EventBus eventBus = new AsyncEventBus(Executors.newCachedThreadPool());
-    beaconChainService.init(eventBus);
-    powchainService.init(eventBus);
-    beaconNodeService.init(eventBus);
-    chainStorageService.init(eventBus);
+    beaconChainService.init(config);
+    powchainService.init(config);
+    chainStorageService.init(config);
   }
 
-  public static void startAll(CommandLineArguments cliArgs) {
+  public void startAll(CommandLineArguments cliArgs) {
 
     // start all services
     beaconChainExecuterService.execute(beaconChainService);
-    if (!cliArgs.getPoWChainServiceDisabled()) {
-      powchainExecuterService.execute(powchainService);
-    }
-    beaconNodeExecuterService.execute(beaconNodeService);
+    powchainExecuterService.execute(powchainService);
     chainStorageExecutorService.execute(chainStorageService);
   }
 
-  public static void stopAll(CommandLineArguments cliArgs) {
+  public void stopAll(CommandLineArguments cliArgs) {
     // stop all services
     beaconChainExecuterService.shutdown();
     beaconChainService.stop();
     powchainExecuterService.shutdown();
     powchainService.stop();
-    beaconNodeExecuterService.shutdown();
-    beaconNodeService.stop();
     chainStorageExecutorService.shutdown();
     chainStorageService.stop();
   }

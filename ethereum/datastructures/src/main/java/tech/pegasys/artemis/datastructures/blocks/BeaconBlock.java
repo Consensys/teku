@@ -18,11 +18,13 @@ import static tech.pegasys.artemis.datastructures.Constants.GENESIS_SLOT;
 import static tech.pegasys.artemis.datastructures.Constants.ZERO_HASH;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Objects;
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.ssz.SSZ;
 import tech.pegasys.artemis.util.bls.BLSSignature;
+import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 
 public final class BeaconBlock {
 
@@ -32,10 +34,12 @@ public final class BeaconBlock {
   private Bytes32 state_root;
   private BLSSignature randao_reveal;
   private Eth1Data eth1_data;
-  private BLSSignature signature;
 
   // Body
   private BeaconBlockBody body;
+
+  // Signature
+  private BLSSignature signature;
 
   public BeaconBlock(
       long slot,
@@ -43,15 +47,15 @@ public final class BeaconBlock {
       Bytes32 state_root,
       BLSSignature randao_reveal,
       Eth1Data eth1_data,
-      BLSSignature signature,
-      BeaconBlockBody body) {
+      BeaconBlockBody body,
+      BLSSignature signature) {
     this.slot = slot;
     this.parent_root = parent_root;
     this.state_root = state_root;
     this.randao_reveal = randao_reveal;
     this.eth1_data = eth1_data;
-    this.signature = signature;
     this.body = body;
+    this.signature = signature;
   }
 
   public static BeaconBlock createGenesis(Bytes32 state_root) {
@@ -61,14 +65,14 @@ public final class BeaconBlock {
         state_root,
         EMPTY_SIGNATURE,
         new Eth1Data(ZERO_HASH, ZERO_HASH),
-        EMPTY_SIGNATURE,
         new BeaconBlockBody(
             new ArrayList<>(),
             new ArrayList<>(),
             new ArrayList<>(),
             new ArrayList<>(),
             new ArrayList<>(),
-            new ArrayList<>()));
+            new ArrayList<>()),
+        EMPTY_SIGNATURE);
   }
 
   public static BeaconBlock fromBytes(Bytes bytes) {
@@ -81,8 +85,8 @@ public final class BeaconBlock {
                 Bytes32.wrap(reader.readBytes()),
                 BLSSignature.fromBytes(reader.readBytes()),
                 Eth1Data.fromBytes(reader.readBytes()),
-                BLSSignature.fromBytes(reader.readBytes()),
-                BeaconBlockBody.fromBytes(reader.readBytes())));
+                BeaconBlockBody.fromBytes(reader.readBytes()),
+                BLSSignature.fromBytes(reader.readBytes())));
   }
 
   public Bytes toBytes() {
@@ -93,14 +97,14 @@ public final class BeaconBlock {
           writer.writeBytes(state_root);
           writer.writeBytes(randao_reveal.toBytes());
           writer.writeBytes(eth1_data.toBytes());
-          writer.writeBytes(signature.toBytes());
           writer.writeBytes(body.toBytes());
+          writer.writeBytes(signature.toBytes());
         });
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(slot, parent_root, state_root, randao_reveal, eth1_data, signature);
+    return Objects.hash(slot, parent_root, state_root, randao_reveal, eth1_data, body, signature);
   }
 
   @Override
@@ -123,8 +127,8 @@ public final class BeaconBlock {
         && Objects.equals(this.getState_root(), other.getState_root())
         && Objects.equals(this.getRandao_reveal(), other.getRandao_reveal())
         && Objects.equals(this.getEth1_data(), other.getEth1_data())
-        && Objects.equals(this.getSignature(), other.getSignature())
-        && Objects.equals(this.getBody(), other.getBody());
+        && Objects.equals(this.getBody(), other.getBody())
+        && Objects.equals(this.getSignature(), other.getSignature());
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */
@@ -182,5 +186,26 @@ public final class BeaconBlock {
 
   public void setSlot(long slot) {
     this.slot = slot;
+  }
+
+  public Bytes32 signedRoot(String truncationParam) {
+    if (!truncationParam.equals("signature")) {
+      throw new UnsupportedOperationException(
+          "Only signed_root(beaconBlock, \"signature\") is currently supported for type BeaconBlock.");
+    }
+
+    return Bytes32.rightPad(
+        HashTreeUtil.merkleHash(
+            Arrays.asList(
+                HashTreeUtil.hash_tree_root(
+                    SSZ.encode(
+                        writer -> {
+                          writer.writeUInt64(slot);
+                        })),
+                HashTreeUtil.hash_tree_root(parent_root),
+                HashTreeUtil.hash_tree_root(state_root),
+                HashTreeUtil.hash_tree_root(randao_reveal.toBytes()),
+                HashTreeUtil.hash_tree_root(eth1_data.toBytes()),
+                HashTreeUtil.hash_tree_root(body.toBytes()))));
   }
 }

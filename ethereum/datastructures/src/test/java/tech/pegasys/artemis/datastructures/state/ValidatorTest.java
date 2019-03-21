@@ -30,8 +30,8 @@ class ValidatorTest {
   private UnsignedLong activationEpoch = randomUnsignedLong();
   private UnsignedLong exitEpoch = randomUnsignedLong();
   private UnsignedLong withdrawalEpoch = randomUnsignedLong();
-  private UnsignedLong penalizedEpoch = randomUnsignedLong();
-  private UnsignedLong statusFlags = randomUnsignedLong();
+  private boolean initiatedExit = false;
+  private boolean slashed = false;
 
   private Validator validator =
       new Validator(
@@ -40,8 +40,8 @@ class ValidatorTest {
           activationEpoch,
           exitEpoch,
           withdrawalEpoch,
-          penalizedEpoch,
-          statusFlags);
+          initiatedExit,
+          slashed);
 
   @Test
   void equalsReturnsTrueWhenObjectAreSame() {
@@ -59,8 +59,8 @@ class ValidatorTest {
             activationEpoch,
             exitEpoch,
             withdrawalEpoch,
-            penalizedEpoch,
-            statusFlags);
+            initiatedExit,
+            slashed);
 
     assertEquals(validator, testValidator);
   }
@@ -78,8 +78,8 @@ class ValidatorTest {
             activationEpoch,
             exitEpoch,
             withdrawalEpoch,
-            penalizedEpoch,
-            statusFlags);
+            initiatedExit,
+            slashed);
 
     assertNotEquals(validator, testValidator);
   }
@@ -93,8 +93,8 @@ class ValidatorTest {
             activationEpoch,
             exitEpoch,
             withdrawalEpoch,
-            penalizedEpoch,
-            statusFlags);
+            initiatedExit,
+            slashed);
 
     assertNotEquals(validator, testValidator);
   }
@@ -108,8 +108,8 @@ class ValidatorTest {
             activationEpoch.plus(randomUnsignedLong()),
             exitEpoch,
             withdrawalEpoch,
-            penalizedEpoch,
-            statusFlags);
+            initiatedExit,
+            slashed);
 
     assertNotEquals(validator, testValidator);
   }
@@ -123,8 +123,8 @@ class ValidatorTest {
             activationEpoch,
             exitEpoch.plus(randomUnsignedLong()),
             withdrawalEpoch,
-            penalizedEpoch,
-            statusFlags);
+            initiatedExit,
+            slashed);
 
     assertNotEquals(validator, testValidator);
   }
@@ -138,14 +138,14 @@ class ValidatorTest {
             activationEpoch,
             exitEpoch,
             withdrawalEpoch.plus(randomUnsignedLong()),
-            penalizedEpoch,
-            statusFlags);
+            initiatedExit,
+            slashed);
 
     assertNotEquals(validator, testValidator);
   }
 
   @Test
-  void equalsReturnsFalseWhenPenalizedEpochsAreDifferent() {
+  void equalsReturnsFalseWhenInitiatedExitIsDifferent() {
     Validator testValidator =
         new Validator(
             pubkey,
@@ -153,14 +153,14 @@ class ValidatorTest {
             activationEpoch,
             exitEpoch,
             withdrawalEpoch,
-            penalizedEpoch.plus(randomUnsignedLong()),
-            statusFlags);
+            !initiatedExit,
+            slashed);
 
     assertNotEquals(validator, testValidator);
   }
 
   @Test
-  void equalsReturnsFalseWhenStatusFlagsaAreDifferent() {
+  void equalsReturnsFalseWhenSlashedIsDifferent() {
     Validator testValidator =
         new Validator(
             pubkey,
@@ -168,8 +168,8 @@ class ValidatorTest {
             activationEpoch,
             exitEpoch,
             withdrawalEpoch,
-            penalizedEpoch,
-            statusFlags.plus(randomUnsignedLong()));
+            initiatedExit,
+            !slashed);
 
     assertNotEquals(validator, testValidator);
   }

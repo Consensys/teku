@@ -32,10 +32,10 @@ public class Validator {
   private UnsignedLong exit_epoch;
   // Epoch when validator withdrew
   private UnsignedLong withdrawal_epoch;
-  // Epoch when validator was slashed
-  private UnsignedLong penalized_epoch;
-  // Status flags
-  private UnsignedLong status_flags;
+  // Did the validator initiate an exit
+  private boolean initiated_exit;
+  // Was the validator slashed
+  private boolean slashed;
 
   public Validator(
       BLSPublicKey pubkey,
@@ -43,15 +43,15 @@ public class Validator {
       UnsignedLong activation_epoch,
       UnsignedLong exit_epoch,
       UnsignedLong withdrawal_epoch,
-      UnsignedLong penalized_epoch,
-      UnsignedLong status_flags) {
+      boolean initiated_exit,
+      boolean slashed) {
     this.pubkey = pubkey;
     this.withdrawal_credentials = withdrawal_credentials;
     this.activation_epoch = activation_epoch;
     this.exit_epoch = exit_epoch;
     this.withdrawal_epoch = withdrawal_epoch;
-    this.penalized_epoch = penalized_epoch;
-    this.status_flags = status_flags;
+    this.initiated_exit = initiated_exit;
+    this.slashed = slashed;
   }
 
   public static Validator fromBytes(Bytes bytes) {
@@ -64,8 +64,8 @@ public class Validator {
                 UnsignedLong.fromLongBits(reader.readUInt64()),
                 UnsignedLong.fromLongBits(reader.readUInt64()),
                 UnsignedLong.fromLongBits(reader.readUInt64()),
-                UnsignedLong.fromLongBits(reader.readUInt64()),
-                UnsignedLong.fromLongBits(reader.readUInt64())));
+                reader.readBoolean(),
+                reader.readBoolean()));
   }
 
   public Bytes toBytes() {
@@ -76,8 +76,8 @@ public class Validator {
           writer.writeUInt64(activation_epoch.longValue());
           writer.writeUInt64(exit_epoch.longValue());
           writer.writeUInt64(withdrawal_epoch.longValue());
-          writer.writeUInt64(penalized_epoch.longValue());
-          writer.writeUInt64(status_flags.longValue());
+          writer.writeBoolean(initiated_exit);
+          writer.writeBoolean(slashed);
         });
   }
 
@@ -89,8 +89,8 @@ public class Validator {
         activation_epoch,
         exit_epoch,
         withdrawal_epoch,
-        penalized_epoch,
-        status_flags);
+        initiated_exit,
+        slashed);
   }
 
   @Override
@@ -113,8 +113,8 @@ public class Validator {
         && Objects.equals(this.getActivation_epoch(), other.getActivation_epoch())
         && Objects.equals(this.getExit_epoch(), other.getExit_epoch())
         && Objects.equals(this.getWithdrawal_epoch(), other.getWithdrawal_epoch())
-        && Objects.equals(this.getPenalized_epoch(), other.getPenalized_epoch())
-        && Objects.equals(this.getStatus_flags(), other.getStatus_flags());
+        && Objects.equals(this.hasInitiatedExit(), other.hasInitiatedExit())
+        && Objects.equals(this.isSlashed(), other.isSlashed());
   }
 
   public BLSPublicKey getPubkey() {
@@ -157,25 +157,32 @@ public class Validator {
     this.withdrawal_epoch = withdrawal_epoch;
   }
 
-  public UnsignedLong getPenalized_epoch() {
-    return penalized_epoch;
+  public boolean hasInitiatedExit() {
+    return initiated_exit;
   }
 
-  public void setPenalized_epoch(UnsignedLong penalized_epoch) {
-    this.penalized_epoch = penalized_epoch;
+  public void setInitiatedExit(boolean initiated_exit) {
+    this.initiated_exit = initiated_exit;
   }
 
-  public UnsignedLong getStatus_flags() {
-    return status_flags;
+  public boolean isSlashed() {
+    return slashed;
   }
 
-  public void setStatus_flags(UnsignedLong status_flags) {
-    this.status_flags = status_flags;
+  public void setSlashed(boolean slashed) {
+    this.slashed = slashed;
   }
 
+  /**
+   * Check if (this) validator is active in the given epoch.
+   *
+   * @param epoch - The epoch under consideration.
+   * @return A boolean indicating if the validator is active.
+   * @see <a
+   *     href="https://github.com/ethereum/eth2.0-specs/blob/v0.4.0/specs/core/0_beacon-chain.md#is_active_validator">is_active_validator
+   *     - Spec v0.4</a>
+   */
   public boolean is_active_validator(UnsignedLong epoch) {
-    // checks validator status against the validator status constants for whether the validator is
-    // active
     return activation_epoch.compareTo(epoch) <= 0 && epoch.compareTo(exit_epoch) < 0;
   }
 }

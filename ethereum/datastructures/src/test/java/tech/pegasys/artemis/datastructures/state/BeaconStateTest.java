@@ -19,7 +19,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 import static tech.pegasys.artemis.datastructures.Constants.ACTIVATION_EXIT_DELAY;
 import static tech.pegasys.artemis.datastructures.Constants.GENESIS_EPOCH;
-import static tech.pegasys.artemis.datastructures.Constants.INITIATED_EXIT;
 import static tech.pegasys.artemis.datastructures.Constants.LATEST_RANDAO_MIXES_LENGTH;
 import static tech.pegasys.artemis.datastructures.Constants.MIN_SEED_LOOKAHEAD;
 import static tech.pegasys.artemis.datastructures.Constants.SLOTS_PER_EPOCH;
@@ -29,7 +28,6 @@ import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_curre
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_initial_beacon_state;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_randao_mix;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.int_to_bytes32;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.is_power_of_two;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.split;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomDeposits;
 
@@ -228,8 +226,8 @@ class BeaconStateTest {
     int validator_index = 0;
 
     BeaconStateUtil.initiate_validator_exit(state, validator_index);
-    assertThat(state.getValidator_registry().get(validator_index).getStatus_flags())
-        .isEqualTo(UnsignedLong.valueOf(INITIATED_EXIT));
+    assertThat(state.getValidator_registry().get(validator_index).hasInitiatedExit())
+        .isEqualTo(true);
   }
 
   @Test
@@ -238,8 +236,8 @@ class BeaconStateTest {
     int validator_index = 2;
 
     BeaconStateUtil.initiate_validator_exit(state, validator_index);
-    assertThat(state.getValidator_registry().get(validator_index).getStatus_flags())
-        .isEqualTo(UnsignedLong.valueOf(INITIATED_EXIT));
+    assertThat(state.getValidator_registry().get(validator_index).hasInitiatedExit())
+        .isEqualTo(true);
   }
 
   @Test
@@ -267,8 +265,8 @@ class BeaconStateTest {
                     UnsignedLong.ZERO,
                     UnsignedLong.valueOf(GENESIS_EPOCH),
                     UnsignedLong.ZERO,
-                    UnsignedLong.ZERO,
-                    UnsignedLong.ZERO)));
+                    false,
+                    false)));
     deepCopy.setValidator_registry(new_records);
     assertThat(deepCopy.getValidator_registry().get(0).getPubkey())
         .isNotEqualTo(state.getValidator_registry().get(0).getPubkey());
@@ -358,17 +356,6 @@ class BeaconStateTest {
     expected.add(new ArrayList<>(three));
 
     assertThat(actual).isEqualTo(expected);
-  }
-
-  @Test
-  void isPowerOfTwo() {
-    assertThat(is_power_of_two(UnsignedLong.ZERO)).isEqualTo(false);
-    assertThat(is_power_of_two(UnsignedLong.valueOf(42L))).isEqualTo(false);
-    assertThat(is_power_of_two(UnsignedLong.valueOf(Long.MAX_VALUE))).isEqualTo(false);
-    assertThat(is_power_of_two(UnsignedLong.ONE)).isEqualTo(true);
-    assertThat(is_power_of_two(UnsignedLong.ONE.plus(UnsignedLong.ONE))).isEqualTo(true);
-    assertThat(is_power_of_two(UnsignedLong.valueOf(65536L))).isEqualTo(true);
-    assertThat(is_power_of_two(UnsignedLong.valueOf(4611686018427387904L))).isEqualTo(true);
   }
 
   @Test
