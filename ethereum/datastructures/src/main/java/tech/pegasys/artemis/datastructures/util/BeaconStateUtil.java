@@ -759,7 +759,12 @@ public class BeaconStateUtil {
 
     // Note: this should be faster than manually creating the list in a for loop
     // https://stackoverflow.com/questions/10242380/how-can-i-generate-a-list-or-array-of-sequential-integers-in-java
-    int[] indices = IntStream.rangeClosed(0, listSize).toArray();
+    int[] indices = IntStream.rangeClosed(0, listSize - 1).toArray();
+
+    // int[] indices = new int[listSize];
+    // for (int i = 0; i < listSize; i++) {
+    //   indices[i] = i;
+    // }
 
     byte[] powerOfTwoNumbers = {1, 2, 4, 8, 16, 32, 64, (byte) 128};
 
