@@ -17,19 +17,17 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
-import static tech.pegasys.artemis.datastructures.Constants.ENTRY_EXIT_DELAY;
-import static tech.pegasys.artemis.datastructures.Constants.EPOCH_LENGTH;
+import static tech.pegasys.artemis.datastructures.Constants.ACTIVATION_EXIT_DELAY;
 import static tech.pegasys.artemis.datastructures.Constants.GENESIS_EPOCH;
-import static tech.pegasys.artemis.datastructures.Constants.INITIATED_EXIT;
 import static tech.pegasys.artemis.datastructures.Constants.LATEST_RANDAO_MIXES_LENGTH;
-import static tech.pegasys.artemis.datastructures.Constants.SEED_LOOKAHEAD;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.bytes3ToInt;
+import static tech.pegasys.artemis.datastructures.Constants.MIN_SEED_LOOKAHEAD;
+import static tech.pegasys.artemis.datastructures.Constants.SLOTS_PER_EPOCH;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.generate_seed;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_active_index_root;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_current_epoch;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_initial_beacon_state;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_randao_mix;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.shuffle;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.int_to_bytes32;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.split;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomDeposits;
 
@@ -133,7 +131,7 @@ class BeaconStateTest {
             Bytes32.ZERO,
             Bytes32.ZERO,
             Bytes32.ZERO,
-            Bytes32.ZERO,
+            new Crosslink(UnsignedLong.ZERO, Bytes32.ZERO),
             UnsignedLong.ZERO,
             Bytes32.ZERO);
     byte[] aggregation_bitfield = Bytes32.ZERO.toArrayUnsafe();
@@ -219,7 +217,7 @@ class BeaconStateTest {
         state, state.getValidator_registry().get(validator_index), false);
     activation_epoch = state.getValidator_registry().get(validator_index).getActivation_epoch();
     assertThat(activation_epoch)
-        .isEqualTo(UnsignedLong.valueOf(GENESIS_EPOCH + 1 + ENTRY_EXIT_DELAY));
+        .isEqualTo(UnsignedLong.valueOf(GENESIS_EPOCH + 1 + ACTIVATION_EXIT_DELAY));
   }
 
   @Test
@@ -228,8 +226,8 @@ class BeaconStateTest {
     int validator_index = 0;
 
     BeaconStateUtil.initiate_validator_exit(state, validator_index);
-    assertThat(state.getValidator_registry().get(validator_index).getStatus_flags())
-        .isEqualTo(UnsignedLong.valueOf(INITIATED_EXIT));
+    assertThat(state.getValidator_registry().get(validator_index).hasInitiatedExit())
+        .isEqualTo(true);
   }
 
   @Test
@@ -238,8 +236,8 @@ class BeaconStateTest {
     int validator_index = 2;
 
     BeaconStateUtil.initiate_validator_exit(state, validator_index);
-    assertThat(state.getValidator_registry().get(validator_index).getStatus_flags())
-        .isEqualTo(UnsignedLong.valueOf(INITIATED_EXIT));
+    assertThat(state.getValidator_registry().get(validator_index).hasInitiatedExit())
+        .isEqualTo(true);
   }
 
   @Test
@@ -267,8 +265,8 @@ class BeaconStateTest {
                     UnsignedLong.ZERO,
                     UnsignedLong.valueOf(GENESIS_EPOCH),
                     UnsignedLong.ZERO,
-                    UnsignedLong.ZERO,
-                    UnsignedLong.ZERO)));
+                    false,
+                    false)));
     deepCopy.setValidator_registry(new_records);
     assertThat(deepCopy.getValidator_registry().get(0).getPubkey())
         .isNotEqualTo(state.getValidator_registry().get(0).getPubkey());
@@ -280,54 +278,23 @@ class BeaconStateTest {
     return Hash.keccak256(bytes);
   }
 
-  @Test
-  void failsWhenInvalidArgumentsBytes3ToInt() {
-    assertThrows(
-        IllegalArgumentException.class,
-        () -> bytes3ToInt(Bytes.wrap(new byte[] {(byte) 0, (byte) 0, (byte) 0}), -1));
-  }
+  /* TODO: reinstate test
+    @Test
+    @Disabled
+    void testShuffle() {
+      List<Integer> input = Arrays.asList(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
+      ArrayList<Integer> sample = new ArrayList<>(input);
 
-  @Test
-  void convertBytes3ToInt() {
-    // Smoke Tests
-    // Test that MSB [00000001][00000000][11110000] LSB == 65656
-    assertThat(bytes3ToInt(Bytes.wrap(new byte[] {(byte) 1, (byte) 0, (byte) 120}), 0))
-        .isEqualTo(65656);
-
-    // Boundary Tests
-    // Test that MSB [00000000][00000000][00000000] LSB == 0
-    assertThat(bytes3ToInt(Bytes.wrap(new byte[] {(byte) 0, (byte) 0, (byte) 0}), 0)).isEqualTo(0);
-    // Test that MSB [00000000][00000000][11111111] LSB == 255
-    assertThat(bytes3ToInt(Bytes.wrap(new byte[] {(byte) 0, (byte) 0, (byte) 255}), 0))
-        .isEqualTo(255);
-    // Test that MSB [00000000][00000001][00000000] LSB == 256
-    assertThat(bytes3ToInt(Bytes.wrap(new byte[] {(byte) 0, (byte) 1, (byte) 0}), 0))
-        .isEqualTo(256);
-    // Test that MSB [00000000][11111111][11111111] LSB == 65535
-    assertThat(bytes3ToInt(Bytes.wrap(new byte[] {(byte) 0, (byte) 255, (byte) 255}), 0))
-        .isEqualTo(65535);
-    // Test that MSB [00000001][00000000][00000000] LSB == 65536
-    assertThat(bytes3ToInt(Bytes.wrap(new byte[] {(byte) 1, (byte) 0, (byte) 0}), 0))
-        .isEqualTo(65536);
-    // Test that MSB [11111111][11111111][11111111] LSB == 16777215
-    assertThat(bytes3ToInt(Bytes.wrap(new byte[] {(byte) 255, (byte) 255, (byte) 255}), 0))
-        .isEqualTo(16777215);
-  }
-
-  @Test
-  void testShuffle() {
-    List<Integer> input = Arrays.asList(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
-    ArrayList<Integer> sample = new ArrayList<>(input);
-
-    try {
-      List<Integer> actual = shuffle(sample, hashSrc());
-      List<Integer> expected_input = Arrays.asList(4, 7, 2, 1, 5, 10, 3, 6, 8, 9);
-      ArrayList<Integer> expected = new ArrayList<>(expected_input);
-      assertThat(actual).isEqualTo(expected);
-    } catch (IllegalStateException e) {
-      fail(e.toString());
+      try {
+        List<Integer> actual = shuffle(sample, hashSrc());
+        List<Integer> expected_input = Arrays.asList(4, 7, 2, 1, 5, 10, 3, 6, 8, 9);
+        ArrayList<Integer> expected = new ArrayList<>(expected_input);
+        assertThat(actual).isEqualTo(expected);
+      } catch (IllegalStateException e) {
+        fail(e.toString());
+      }
     }
-  }
+  */
 
   @Test
   void failsWhenInvalidArgumentTestSplit() {
@@ -394,7 +361,7 @@ class BeaconStateTest {
   @Test
   void getRandaoMixThrowsExceptions() {
     BeaconState state = newState(5);
-    state.setSlot(UnsignedLong.valueOf(LATEST_RANDAO_MIXES_LENGTH * EPOCH_LENGTH));
+    state.setSlot(UnsignedLong.valueOf(LATEST_RANDAO_MIXES_LENGTH * SLOTS_PER_EPOCH));
     assertThat(get_current_epoch(state).compareTo(UnsignedLong.valueOf(LATEST_RANDAO_MIXES_LENGTH)))
         .isEqualTo(0);
     // Test `assert get_current_epoch(state) - LATEST_RANDAO_MIXES_LENGTH < epoch`
@@ -410,7 +377,7 @@ class BeaconStateTest {
   @Test
   void getRandaoMixReturnsCorrectValue() {
     BeaconState state = newState(5);
-    state.setSlot(UnsignedLong.valueOf(LATEST_RANDAO_MIXES_LENGTH * EPOCH_LENGTH));
+    state.setSlot(UnsignedLong.valueOf(LATEST_RANDAO_MIXES_LENGTH * SLOTS_PER_EPOCH));
     assertThat(get_current_epoch(state).compareTo(UnsignedLong.valueOf(LATEST_RANDAO_MIXES_LENGTH)))
         .isEqualTo(0);
     List<Bytes32> latest_randao_mixes = state.getLatest_randao_mixes();
@@ -429,14 +396,15 @@ class BeaconStateTest {
   @Test
   void generateSeedReturnsCorrectValue() {
     BeaconState state = newState(5);
-    state.setSlot(UnsignedLong.valueOf(LATEST_RANDAO_MIXES_LENGTH * EPOCH_LENGTH));
+    state.setSlot(UnsignedLong.valueOf(LATEST_RANDAO_MIXES_LENGTH * SLOTS_PER_EPOCH));
     assertThat(get_current_epoch(state).compareTo(UnsignedLong.valueOf(LATEST_RANDAO_MIXES_LENGTH)))
         .isEqualTo(0);
     List<Bytes32> latest_randao_mixes = state.getLatest_randao_mixes();
-    latest_randao_mixes.set(ENTRY_EXIT_DELAY + 1, Bytes32.fromHexString("0x029a"));
+    latest_randao_mixes.set(ACTIVATION_EXIT_DELAY + 1, Bytes32.fromHexString("0x029a"));
 
-    UnsignedLong epoch = UnsignedLong.valueOf(ENTRY_EXIT_DELAY + SEED_LOOKAHEAD + 1);
-    Bytes32 randao_mix = get_randao_mix(state, epoch.minus(UnsignedLong.valueOf(SEED_LOOKAHEAD)));
+    UnsignedLong epoch = UnsignedLong.valueOf(ACTIVATION_EXIT_DELAY + MIN_SEED_LOOKAHEAD + 1);
+    Bytes32 randao_mix =
+        get_randao_mix(state, epoch.minus(UnsignedLong.valueOf(MIN_SEED_LOOKAHEAD)));
     assertThat(randao_mix).isEqualTo(Bytes32.fromHexString("0x029a"));
     try {
       Security.addProvider(new BouncyCastleProvider());
@@ -444,7 +412,9 @@ class BeaconStateTest {
           .isEqualTo(
               Hash.keccak256(
                   Bytes.wrap(
-                      Bytes32.fromHexString("0x029a"), get_active_index_root(state, epoch))));
+                      Bytes32.fromHexString("0x029a"),
+                      get_active_index_root(state, epoch),
+                      int_to_bytes32(epoch))));
     } catch (IllegalStateException e) {
       fail(e.toString());
     }

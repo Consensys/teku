@@ -15,12 +15,15 @@ package tech.pegasys.artemis.datastructures.operations;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomCrosslink;
+import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomInt;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomUnsignedLong;
 
 import com.google.common.primitives.UnsignedLong;
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.artemis.datastructures.state.Crosslink;
 
 class AttestationDataTest {
 
@@ -28,8 +31,8 @@ class AttestationDataTest {
   private UnsignedLong shard = randomUnsignedLong();
   private Bytes32 beaconBlockRoot = Bytes32.random();
   private Bytes32 epochBoundaryRoot = Bytes32.random();
-  private Bytes32 shardBlockRoot = Bytes32.random();
-  private Bytes32 latestCrosslinkRoot = Bytes32.random();
+  private Bytes32 crosslinkDataRoot = Bytes32.random();
+  private Crosslink latestCrosslink = randomCrosslink();
   private UnsignedLong justifiedEpoch = randomUnsignedLong();
   private Bytes32 justifiedBlockRoot = Bytes32.random();
 
@@ -39,8 +42,8 @@ class AttestationDataTest {
           shard,
           beaconBlockRoot,
           epochBoundaryRoot,
-          shardBlockRoot,
-          latestCrosslinkRoot,
+          crosslinkDataRoot,
+          latestCrosslink,
           justifiedEpoch,
           justifiedBlockRoot);
 
@@ -59,8 +62,8 @@ class AttestationDataTest {
             shard,
             beaconBlockRoot,
             epochBoundaryRoot,
-            shardBlockRoot,
-            latestCrosslinkRoot,
+            crosslinkDataRoot,
+            latestCrosslink,
             justifiedEpoch,
             justifiedBlockRoot);
 
@@ -75,8 +78,8 @@ class AttestationDataTest {
             shard,
             beaconBlockRoot,
             epochBoundaryRoot,
-            shardBlockRoot,
-            latestCrosslinkRoot,
+            crosslinkDataRoot,
+            latestCrosslink,
             justifiedEpoch,
             justifiedBlockRoot);
 
@@ -91,8 +94,8 @@ class AttestationDataTest {
             shard.plus(randomUnsignedLong()),
             beaconBlockRoot,
             epochBoundaryRoot,
-            shardBlockRoot,
-            latestCrosslinkRoot,
+            crosslinkDataRoot,
+            latestCrosslink,
             justifiedEpoch,
             justifiedBlockRoot);
 
@@ -107,8 +110,8 @@ class AttestationDataTest {
             shard,
             beaconBlockRoot.not(),
             epochBoundaryRoot,
-            shardBlockRoot,
-            latestCrosslinkRoot,
+            crosslinkDataRoot,
+            latestCrosslink,
             justifiedEpoch,
             justifiedBlockRoot);
 
@@ -123,8 +126,8 @@ class AttestationDataTest {
             shard,
             beaconBlockRoot,
             epochBoundaryRoot.not(),
-            shardBlockRoot,
-            latestCrosslinkRoot,
+            crosslinkDataRoot,
+            latestCrosslink,
             justifiedEpoch,
             justifiedBlockRoot);
 
@@ -132,15 +135,15 @@ class AttestationDataTest {
   }
 
   @Test
-  void equalsReturnsFalseWhenShardBlockRootsAreDifferent() {
+  void equalsReturnsFalseWhenCrosslinkDataRootsAreDifferent() {
     AttestationData testAttestationData =
         new AttestationData(
             slot,
             shard,
             beaconBlockRoot,
             epochBoundaryRoot,
-            shardBlockRoot.not(),
-            latestCrosslinkRoot,
+            crosslinkDataRoot.not(),
+            latestCrosslink,
             justifiedEpoch,
             justifiedBlockRoot);
 
@@ -149,14 +152,19 @@ class AttestationDataTest {
 
   @Test
   void equalsReturnsFalseWhenLatestCrosslinkRootsAreDifferent() {
+    Crosslink diffCrosslink =
+        new Crosslink(
+            latestCrosslink.getEpoch().plus(randomUnsignedLong()),
+            Bytes32.wrap(latestCrosslink.getCrosslink_data_root(), randomInt(0)));
+
     AttestationData testAttestationData =
         new AttestationData(
             slot,
             shard,
             beaconBlockRoot,
             epochBoundaryRoot,
-            shardBlockRoot,
-            latestCrosslinkRoot.not(),
+            crosslinkDataRoot,
+            diffCrosslink,
             justifiedEpoch,
             justifiedBlockRoot);
 
@@ -171,8 +179,8 @@ class AttestationDataTest {
             shard,
             beaconBlockRoot,
             epochBoundaryRoot,
-            shardBlockRoot,
-            latestCrosslinkRoot,
+            crosslinkDataRoot,
+            latestCrosslink,
             justifiedEpoch.plus(randomUnsignedLong()),
             justifiedBlockRoot);
 
@@ -187,8 +195,8 @@ class AttestationDataTest {
             shard,
             beaconBlockRoot,
             epochBoundaryRoot,
-            shardBlockRoot,
-            latestCrosslinkRoot,
+            crosslinkDataRoot,
+            latestCrosslink,
             justifiedEpoch,
             justifiedBlockRoot.not());
 
@@ -196,7 +204,7 @@ class AttestationDataTest {
   }
 
   @Test
-  void rountripSSZ() {
+  void roundtripSSZ() {
     Bytes sszAttestationDataBytes = attestationData.toBytes();
     assertEquals(attestationData, AttestationData.fromBytes(sszAttestationDataBytes));
   }

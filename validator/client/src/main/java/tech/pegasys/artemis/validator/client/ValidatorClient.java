@@ -13,7 +13,7 @@
 
 package tech.pegasys.artemis.validator.client;
 
-import static tech.pegasys.artemis.datastructures.Constants.EPOCH_LENGTH;
+import static tech.pegasys.artemis.datastructures.Constants.SLOTS_PER_EPOCH;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_crosslink_committees_at_slot;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_current_epoch;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_epoch_start_slot;
@@ -52,7 +52,7 @@ public class ValidatorClient {
 
     int epoch_start_slot = get_epoch_start_slot(epoch).intValue();
 
-    for (int slot = epoch_start_slot; slot < epoch_start_slot + EPOCH_LENGTH; slot++) {
+    for (int slot = epoch_start_slot; slot < epoch_start_slot + SLOTS_PER_EPOCH; slot++) {
 
       ArrayList<CrosslinkCommittee> crosslink_committees =
           get_crosslink_committees_at_slot(state, UnsignedLong.valueOf(slot), registry_change);

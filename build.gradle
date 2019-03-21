@@ -271,7 +271,7 @@ run {
     def flowJVMArgs = [
       "-javaagent:${userHome}/.flow/resources/javaagent.jar",
       "-Dflow.agent.include=tech.pegasys.artemis,tech.pegasys.artemis.services.beaconchain,tech.pegasys.artemis.statetransition,tech.pegasys.artemis.statetransition.util",
-      "-Dflow.agent.exclude=tech.pegasys.artemis.datastructures.blocks,tech.pegasys.artemis.datastructures.operations,tech.pegasys.artemis.datastructures.state,tech.pegasys.artemis.datastructures.util.bitwise,tech.pegasys.artemis.util.hashtree,tech.pegasys.artemis.util.alogger,tech.pegasys.artemis.storage,tech.pegasys.artemis.util.bls,tech.pegasys.artemis.util.mikuli,tech.pegasys.artemis.networking.p2p",
+      "-Dflow.agent.exclude=tech.pegasys.artemis.datastructures.blocks,tech.pegasys.artemis.datastructures.operations,tech.pegasys.artemis.datastructures.state,tech.pegasys.artemis.datastructures.util.bitwise,tech.pegasys.artemis.util.hashtree,tech.pegasys.artemis.util.alogger,tech.pegasys.artemis.storage,tech.pegasys.artemis.util.bls,tech.pegasys.artemis.util.mikuli,tech.pegasys.artemis.networking.p2p,tech.pegasys.artemis.validator.coordinator",
       "-Dflow.agent.autostart",
       "-Dflow.agent.execution-name=artemis"
       ]

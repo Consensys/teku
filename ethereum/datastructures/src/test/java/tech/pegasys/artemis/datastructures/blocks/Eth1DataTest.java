@@ -23,9 +23,9 @@ import org.junit.jupiter.api.Test;
 class Eth1DataTest {
 
   private Bytes32 depositRoot = Bytes32.random();
-  private Bytes32 blockRoot = Bytes32.random();
+  private Bytes32 blockHash = Bytes32.random();
 
-  private Eth1Data eth1Data = new Eth1Data(depositRoot, blockRoot);
+  private Eth1Data eth1Data = new Eth1Data(depositRoot, blockHash);
 
   @Test
   void equalsReturnsTrueWhenObjectAreSame() {
@@ -36,27 +36,27 @@ class Eth1DataTest {
 
   @Test
   void equalsReturnsTrueWhenObjectFieldsAreEqual() {
-    Eth1Data testEth1Data = new Eth1Data(depositRoot, blockRoot);
+    Eth1Data testEth1Data = new Eth1Data(depositRoot, blockHash);
 
     assertEquals(eth1Data, testEth1Data);
   }
 
   @Test
   void equalsReturnsFalseWhenDepositRootsAreDifferent() {
-    Eth1Data testEth1Data = new Eth1Data(depositRoot.not(), blockRoot);
+    Eth1Data testEth1Data = new Eth1Data(depositRoot.not(), blockHash);
 
     assertNotEquals(eth1Data, testEth1Data);
   }
 
   @Test
-  void equalsReturnsFalseWhenBlockRootsAreDifferent() {
-    Eth1Data testEth1Data = new Eth1Data(depositRoot, blockRoot.not());
+  void equalsReturnsFalseWhenBlockHashesAreDifferent() {
+    Eth1Data testEth1Data = new Eth1Data(depositRoot, blockHash.not());
 
     assertNotEquals(eth1Data, testEth1Data);
   }
 
   @Test
-  void rountripSSZ() {
+  void roundtripSSZ() {
     Bytes sszEth1DataBytes = eth1Data.toBytes();
     assertEquals(eth1Data, Eth1Data.fromBytes(sszEth1DataBytes));
   }

@@ -25,9 +25,9 @@ import org.junit.jupiter.api.Test;
 class CrosslinkTest {
 
   UnsignedLong epoch = randomUnsignedLong();
-  Bytes32 shardBlockRoot = Bytes32.random();
+  Bytes32 crosslinkDataRoot = Bytes32.random();
 
-  private Crosslink crosslink = new Crosslink(epoch, shardBlockRoot);
+  private Crosslink crosslink = new Crosslink(epoch, crosslinkDataRoot);
 
   @Test
   void equalsReturnsTrueWhenObjectAreSame() {
@@ -38,27 +38,27 @@ class CrosslinkTest {
 
   @Test
   void equalsReturnsTrueWhenObjectFieldsAreEqual() {
-    Crosslink testCrosslink = new Crosslink(epoch, shardBlockRoot);
+    Crosslink testCrosslink = new Crosslink(epoch, crosslinkDataRoot);
 
     assertEquals(crosslink, testCrosslink);
   }
 
   @Test
   void equalsReturnsFalseWhenEpochsAreDifferent() {
-    Crosslink testCrosslink = new Crosslink(epoch.plus(randomUnsignedLong()), shardBlockRoot);
+    Crosslink testCrosslink = new Crosslink(epoch.plus(randomUnsignedLong()), crosslinkDataRoot);
 
     assertNotEquals(crosslink, testCrosslink);
   }
 
   @Test
-  void equalsReturnsFalseWhenShardBlockRootsAreDifferent() {
-    Crosslink testCrosslink = new Crosslink(epoch, shardBlockRoot.not());
+  void equalsReturnsFalseWhenCrosslinkDataRootsAreDifferent() {
+    Crosslink testCrosslink = new Crosslink(epoch, crosslinkDataRoot.not());
 
     assertNotEquals(crosslink, testCrosslink);
   }
 
   @Test
-  void rountripSSZ() {
+  void roundtripSSZ() {
     Bytes sszCrosslinkBytes = crosslink.toBytes();
     assertEquals(crosslink, Crosslink.fromBytes(sszCrosslinkBytes));
   }

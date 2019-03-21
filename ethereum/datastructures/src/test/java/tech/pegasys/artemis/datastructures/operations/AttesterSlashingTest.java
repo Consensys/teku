@@ -75,7 +75,7 @@ class AttesterSlashingTest {
   }
 
   @Test
-  void rountripSSZ() {
+  void roundtripSSZ() {
     Bytes sszAttesterSlashingBytes = attesterSlashing.toBytes();
     assertEquals(attesterSlashing, AttesterSlashing.fromBytes(sszAttesterSlashingBytes));
   }

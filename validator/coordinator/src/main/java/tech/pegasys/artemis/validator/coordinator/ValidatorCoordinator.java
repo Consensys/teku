@@ -19,13 +19,12 @@ import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.crypto.SECP256K1.PublicKey;
 import org.apache.logging.log4j.Level;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
-import tech.pegasys.artemis.datastructures.blocks.ProposalSignedData;
+import tech.pegasys.artemis.datastructures.blocks.Proposal;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
@@ -93,7 +92,7 @@ public class ValidatorCoordinator {
               .getSlot()
               .compareTo(
                   UnsignedLong.valueOf(
-                      Constants.GENESIS_SLOT + Constants.MIN_ATTESTATION_INCLUSION_DELAY + 1))
+                      Constants.GENESIS_SLOT + Constants.MIN_ATTESTATION_INCLUSION_DELAY))
           > 0) {
         LOG.log(Level.INFO, "Here comes an attestation", printEnabled);
         current_attestations =
@@ -177,27 +176,26 @@ public class ValidatorCoordinator {
 
     UnsignedLong domain =
         BeaconStateUtil.get_domain(state.getFork(), epoch, Constants.DOMAIN_RANDAO);
-    Bytes32 currentEpochBytes = Bytes32.leftPad(Bytes.ofUnsignedLong(epoch.longValue()));
+    Bytes32 messageHash =
+        HashTreeUtil.hash_tree_root(BeaconStateUtil.int_to_bytes(epoch.longValue(), 8));
     LOG.log(Level.INFO, "Sign Epoch", printEnabled);
     LOG.log(Level.INFO, "Proposer pubkey: " + keypair.getPublicKey(), printEnabled);
     LOG.log(Level.INFO, "state: " + HashTreeUtil.hash_tree_root(state.toBytes()), printEnabled);
     LOG.log(Level.INFO, "slot: " + slot, printEnabled);
     LOG.log(Level.INFO, "domain: " + domain, printEnabled);
-    return BLSSignature.sign(keypair, currentEpochBytes, domain.longValue());
+    return BLSSignature.sign(keypair, messageHash, domain.longValue());
   }
 
   private BLSSignature signProposalData(BeaconState state, BeaconBlock block, BLSKeyPair keypair) {
-    // Let block_without_signature_root be the hash_tree_root of block where
-    //   block.signature is set to EMPTY_SIGNATURE.
-    block.setSignature(Constants.EMPTY_SIGNATURE);
-    Bytes32 blockWithoutSignatureRootHash = HashTreeUtil.hash_tree_root(block.toBytes());
-
-    // Let proposal_root = hash_tree_root(ProposalSignedData(state.slot,
-    //   BEACON_CHAIN_SHARD_NUMBER, block_without_signature_root)).
-    ProposalSignedData proposalSignedData =
-        new ProposalSignedData(
-            state.getSlot(), Constants.BEACON_CHAIN_SHARD_NUMBER, blockWithoutSignatureRootHash);
-    Bytes proposalRoot = HashTreeUtil.hash_tree_root(proposalSignedData.toBytes());
+    // Let proposal = Proposal(block.slot, BEACON_CHAIN_SHARD_NUMBER,
+    //   signed_root(block, "signature"), block.signature).
+    Proposal proposal =
+        new Proposal(
+            UnsignedLong.fromLongBits(block.getSlot()),
+            Constants.BEACON_CHAIN_SHARD_NUMBER,
+            block.signedRoot("signature"),
+            block.getSignature());
+    Bytes32 proposalRoot = proposal.signedRoot("signature");
 
     UnsignedLong domain =
         BeaconStateUtil.get_domain(

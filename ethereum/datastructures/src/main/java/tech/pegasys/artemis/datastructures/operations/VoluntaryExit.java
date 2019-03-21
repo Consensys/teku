@@ -14,28 +14,31 @@
 package tech.pegasys.artemis.datastructures.operations;
 
 import com.google.common.primitives.UnsignedLong;
+import java.util.Arrays;
 import java.util.Objects;
 import net.consensys.cava.bytes.Bytes;
+import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.ssz.SSZ;
 import tech.pegasys.artemis.util.bls.BLSSignature;
+import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 
-public class Exit {
+public class VoluntaryExit {
 
   private UnsignedLong epoch;
   private UnsignedLong validator_index;
   private BLSSignature signature;
 
-  public Exit(UnsignedLong epoch, UnsignedLong validator_index, BLSSignature signature) {
+  public VoluntaryExit(UnsignedLong epoch, UnsignedLong validator_index, BLSSignature signature) {
     this.epoch = epoch;
     this.validator_index = validator_index;
     this.signature = signature;
   }
 
-  public static Exit fromBytes(Bytes bytes) {
+  public static VoluntaryExit fromBytes(Bytes bytes) {
     return SSZ.decode(
         bytes,
         reader ->
-            new Exit(
+            new VoluntaryExit(
                 UnsignedLong.fromLongBits(reader.readUInt64()),
                 UnsignedLong.fromLongBits(reader.readUInt64()),
                 BLSSignature.fromBytes(reader.readBytes())));
@@ -65,11 +68,11 @@ public class Exit {
       return true;
     }
 
-    if (!(obj instanceof Exit)) {
+    if (!(obj instanceof VoluntaryExit)) {
       return false;
     }
 
-    Exit other = (Exit) obj;
+    VoluntaryExit other = (VoluntaryExit) obj;
     return Objects.equals(this.getEpoch(), other.getEpoch())
         && Objects.equals(this.getValidator_index(), other.getValidator_index())
         && Objects.equals(this.getSignature(), other.getSignature());
@@ -98,5 +101,26 @@ public class Exit {
 
   public void setSignature(BLSSignature signature) {
     this.signature = signature;
+  }
+
+  public Bytes32 signedRoot(String truncationParam) {
+    if (!truncationParam.equals("signature")) {
+      throw new UnsupportedOperationException(
+          "Only signed_root(proposal, \"signature\") is currently supported for type Proposal.");
+    }
+
+    return Bytes32.rightPad(
+        HashTreeUtil.merkleHash(
+            Arrays.asList(
+                HashTreeUtil.hash_tree_root(
+                    SSZ.encode(
+                        writer -> {
+                          writer.writeUInt64(epoch.longValue());
+                        })),
+                HashTreeUtil.hash_tree_root(
+                    SSZ.encode(
+                        writer -> {
+                          writer.writeUInt64(validator_index.longValue());
+                        })))));
   }
 }

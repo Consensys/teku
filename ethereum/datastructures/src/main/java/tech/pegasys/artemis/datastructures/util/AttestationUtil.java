@@ -311,6 +311,20 @@ public class AttestationUtil {
   }
 
   /**
+   * Returns the previous epoch attesting balance
+   *
+   * @param state
+   * @return UnsignedLong
+   * @throws IllegalArgumentException
+   */
+  public static UnsignedLong get_previous_epoch_attesting_balance(BeaconState state)
+      throws IllegalArgumentException {
+    List<Integer> previous_epoch_attester_indices = get_previous_epoch_attester_indices(state);
+
+    return get_total_attesting_balance(state, previous_epoch_attester_indices);
+  }
+
+  /**
    * Returns the union of validator index sets, where the sets are the attestation participants of
    * attestations passed in TODO: the union part takes O(n^2) time, where n is the number of
    * validators. OPTIMIZE
@@ -386,7 +400,7 @@ public class AttestationUtil {
 
     for (PendingAttestation attestation : combined_attestations) {
       if (attestation.getData().getShard().compareTo(crosslink_committee.getShard()) == 0
-          && attestation.getData().getShard_block_root() == shard_block_root) {
+          && attestation.getData().getCrosslink_data_root() == shard_block_root) {
         validator_index_sets.add(
             BeaconStateUtil.get_attestation_participants(
                 state, attestation.getData(), attestation.getAggregation_bitfield().toArray()));
@@ -426,16 +440,17 @@ public class AttestationUtil {
         List<Integer> attesting_indices =
             BeaconStateUtil.get_attestation_participants(
                 state, attestation.getData(), attestation.getAggregation_bitfield().toArray());
+        // TODO: v0.4 merge - should I use get_total_balance or get_total_effective_balance?
         UnsignedLong attesting_balance =
-            BeaconStateUtil.get_total_effective_balance(state, attesting_indices);
-        if (shard_balances.containsKey(attestation.getData().getShard_block_root())) {
+            BeaconStateUtil.get_total_balance(state, attesting_indices);
+        if (shard_balances.containsKey(attestation.getData().getCrosslink_data_root())) {
           shard_balances.put(
-              attestation.getData().getShard_block_root(),
+              attestation.getData().getCrosslink_data_root(),
               shard_balances
-                  .get(attestation.getData().getShard_block_root())
+                  .get(attestation.getData().getCrosslink_data_root())
                   .plus(attesting_balance));
         } else {
-          shard_balances.put(attestation.getData().getShard_block_root(), attesting_balance);
+          shard_balances.put(attestation.getData().getCrosslink_data_root(), attesting_balance);
         }
       }
     }
@@ -483,7 +498,7 @@ public class AttestationUtil {
   public static UnsignedLong total_attesting_balance(
       BeaconState state, CrosslinkCommittee crosslink_committee) {
     List<Integer> attesting_validators = attesting_validators(state, crosslink_committee);
-    return BeaconStateUtil.get_total_effective_balance(state, attesting_validators);
+    return BeaconStateUtil.get_total_balance(state, attesting_validators);
   }
 
   /**
@@ -512,7 +527,7 @@ public class AttestationUtil {
     }
 
     PendingAttestation lowest_inclusion_slot_attestation =
-        Collections.min(possible_attestations, Comparator.comparing(a -> a.getSlot_included()));
+        Collections.min(possible_attestations, Comparator.comparing(a -> a.getInclusionSlot()));
 
     return lowest_inclusion_slot_attestation;
   }
@@ -528,7 +543,7 @@ public class AttestationUtil {
   public static UnsignedLong inclusion_slot(BeaconState state, Integer index)
       throws IllegalArgumentException {
     PendingAttestation lowest_inclusion_slot_attestation = inclusion_slot_attestation(state, index);
-    return lowest_inclusion_slot_attestation.getSlot_included();
+    return lowest_inclusion_slot_attestation.getInclusionSlot();
   }
 
   /**
@@ -541,7 +556,7 @@ public class AttestationUtil {
   public static UnsignedLong inclusion_distance(BeaconState state, Integer index) {
     PendingAttestation lowest_inclusion_slot_attestation = inclusion_slot_attestation(state, index);
     return lowest_inclusion_slot_attestation
-        .getSlot_included()
+        .getInclusionSlot()
         .minus(lowest_inclusion_slot_attestation.getData().getSlot());
   }
 
