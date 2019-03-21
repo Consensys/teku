@@ -22,11 +22,11 @@ import net.consensys.cava.ssz.SSZ;
 public class Crosslink {
 
   private UnsignedLong epoch;
-  private Bytes32 shard_block_root;
+  private Bytes32 crosslink_data_root;
 
-  public Crosslink(UnsignedLong epoch, Bytes32 shard_block_root) {
+  public Crosslink(UnsignedLong epoch, Bytes32 crosslink_data_root) {
     this.epoch = epoch;
-    this.shard_block_root = shard_block_root;
+    this.crosslink_data_root = crosslink_data_root;
   }
 
   public static Crosslink fromBytes(Bytes bytes) {
@@ -41,13 +41,13 @@ public class Crosslink {
     return SSZ.encode(
         writer -> {
           writer.writeUInt64(epoch.longValue());
-          writer.writeBytes(shard_block_root);
+          writer.writeBytes(crosslink_data_root);
         });
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(epoch, shard_block_root);
+    return Objects.hash(epoch, crosslink_data_root);
   }
 
   @Override
@@ -66,16 +66,16 @@ public class Crosslink {
 
     Crosslink other = (Crosslink) obj;
     return Objects.equals(this.getEpoch(), other.getEpoch())
-        && Objects.equals(this.getShard_block_root(), other.getShard_block_root());
+        && Objects.equals(this.getCrosslink_data_root(), other.getCrosslink_data_root());
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */
-  public Bytes32 getShard_block_root() {
-    return shard_block_root;
+  public Bytes32 getCrosslink_data_root() {
+    return crosslink_data_root;
   }
 
-  public void setShard_block_root(Bytes32 shard_block_root) {
-    this.shard_block_root = shard_block_root;
+  public void setCrosslink_data_root(Bytes32 shard_block_root) {
+    this.crosslink_data_root = shard_block_root;
   }
 
   public UnsignedLong getEpoch() {

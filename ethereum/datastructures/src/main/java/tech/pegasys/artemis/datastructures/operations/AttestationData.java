@@ -26,7 +26,7 @@ public class AttestationData {
   private UnsignedLong shard;
   private Bytes32 beacon_block_root;
   private Bytes32 epoch_boundary_root;
-  private Bytes32 shard_block_root;
+  private Bytes32 crosslink_data_root;
   private Crosslink latest_crosslink;
   private UnsignedLong justified_epoch;
   private Bytes32 justified_block_root;
@@ -36,7 +36,7 @@ public class AttestationData {
       UnsignedLong shard,
       Bytes32 beacon_block_root,
       Bytes32 epoch_boundary_root,
-      Bytes32 shard_block_root,
+      Bytes32 crosslink_data_root,
       Crosslink latest_crosslink,
       UnsignedLong justified_epoch,
       Bytes32 justified_block_root) {
@@ -44,7 +44,7 @@ public class AttestationData {
     this.shard = shard;
     this.beacon_block_root = beacon_block_root;
     this.epoch_boundary_root = epoch_boundary_root;
-    this.shard_block_root = shard_block_root;
+    this.crosslink_data_root = crosslink_data_root;
     this.latest_crosslink = latest_crosslink;
     this.justified_epoch = justified_epoch;
     this.justified_block_root = justified_block_root;
@@ -72,7 +72,7 @@ public class AttestationData {
           writer.writeUInt64(shard.longValue());
           writer.writeBytes(beacon_block_root);
           writer.writeBytes(epoch_boundary_root);
-          writer.writeBytes(shard_block_root);
+          writer.writeBytes(crosslink_data_root);
           writer.writeBytes(latest_crosslink.toBytes());
           writer.writeUInt64(justified_epoch.longValue());
           writer.writeBytes(justified_block_root);
@@ -86,7 +86,7 @@ public class AttestationData {
         shard,
         beacon_block_root,
         epoch_boundary_root,
-        shard_block_root,
+        crosslink_data_root,
         latest_crosslink,
         justified_epoch,
         justified_block_root);
@@ -111,7 +111,7 @@ public class AttestationData {
         && Objects.equals(this.getShard(), other.getShard())
         && Objects.equals(this.getBeacon_block_root(), other.getBeacon_block_root())
         && Objects.equals(this.getEpoch_boundary_root(), other.getEpoch_boundary_root())
-        && Objects.equals(this.getShard_block_root(), other.getShard_block_root())
+        && Objects.equals(this.getCrosslink_data_root(), other.getCrosslink_data_root())
         && Objects.equals(this.getLatest_crosslink(), other.getLatest_crosslink())
         && Objects.equals(this.getJustified_epoch(), other.getJustified_epoch())
         && Objects.equals(this.getJustified_block_root(), other.getJustified_block_root());
@@ -142,12 +142,12 @@ public class AttestationData {
     this.epoch_boundary_root = epoch_boundary_root;
   }
 
-  public Bytes32 getShard_block_root() {
-    return shard_block_root;
+  public Bytes32 getCrosslink_data_root() {
+    return crosslink_data_root;
   }
 
-  public void setShard_block_root(Bytes32 shard_block_root) {
-    this.shard_block_root = shard_block_root;
+  public void setCrosslink_data_root(Bytes32 crosslink_data_root) {
+    this.crosslink_data_root = crosslink_data_root;
   }
 
   public UnsignedLong getShard() {

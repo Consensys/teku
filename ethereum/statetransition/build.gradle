@@ -7,15 +7,16 @@ jar {
 }
 
 dependencies {
+  implementation project(':data')
   implementation project(':pow')
   implementation project(':util')
   implementation project(':storage')
   implementation project(':ethereum:datastructures')
-  implementation project(':validatorclient')
 
   implementation 'net.consensys.cava:cava-crypto'
   implementation 'net.consensys.cava:cava-units'
   implementation 'net.consensys.cava:cava-ssz'
+  implementation 'net.consensys.cava:cava-config'
   implementation 'com.google.guava:guava'
   implementation 'com.google.code.gson:gson:2.8.5'
   implementation 'org.apache.logging.log4j:log4j-api'

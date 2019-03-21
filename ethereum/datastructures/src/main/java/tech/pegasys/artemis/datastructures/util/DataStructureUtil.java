@@ -22,27 +22,29 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
+import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockBody;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
-import tech.pegasys.artemis.datastructures.blocks.ProposalSignedData;
+import tech.pegasys.artemis.datastructures.blocks.Proposal;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
+import tech.pegasys.artemis.datastructures.operations.AttestationDataAndCustodyBit;
 import tech.pegasys.artemis.datastructures.operations.AttesterSlashing;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.DepositData;
 import tech.pegasys.artemis.datastructures.operations.DepositInput;
-import tech.pegasys.artemis.datastructures.operations.Exit;
 import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
 import tech.pegasys.artemis.datastructures.operations.SlashableAttestation;
 import tech.pegasys.artemis.datastructures.operations.Transfer;
+import tech.pegasys.artemis.datastructures.operations.VoluntaryExit;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Crosslink;
+import tech.pegasys.artemis.datastructures.state.CrosslinkCommittee;
 import tech.pegasys.artemis.datastructures.state.Validator;
+import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
@@ -50,7 +52,7 @@ import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 
 public final class DataStructureUtil {
 
-  private static final Logger LOG = LogManager.getLogger(DataStructureUtil.class.getName());
+  private static final ALogger LOG = new ALogger(DataStructureUtil.class.getName());
 
   public static long randomInt() {
     return Math.round(Math.random() * 1000000);
@@ -143,6 +145,89 @@ public final class DataStructureUtil {
         randomBytes32(), randomAttestationData(), randomBytes32(), BLSSignature.random());
   }
 
+  public static List<Attestation> createAttestations(BeaconState state, UnsignedLong slot) {
+    List<CrosslinkCommittee> crosslink_committees =
+        BeaconStateUtil.get_crosslink_committees_at_slot(state, slot);
+    UnsignedLong shard = crosslink_committees.get(0).getShard();
+    Bytes32 head_block_root = BeaconStateUtil.get_block_root(state, slot);
+    Bytes32 epoch_boundary_root =
+        BeaconStateUtil.get_block_root(
+            state, BeaconStateUtil.get_epoch_start_slot(BeaconStateUtil.slot_to_epoch(slot)));
+    Bytes32 shard_block_root = Bytes32.ZERO;
+    Crosslink latest_crosslink = state.getLatest_crosslinks().get(shard.intValue());
+    UnsignedLong justified_epoch = state.getJustified_epoch();
+    Bytes32 justified_block_root =
+        BeaconStateUtil.get_block_root(
+            state, BeaconStateUtil.get_epoch_start_slot(justified_epoch));
+
+    List<Attestation> attestations = new ArrayList<>();
+    Integer block_proposer = BeaconStateUtil.get_beacon_proposer_index(state, slot);
+    for (CrosslinkCommittee crosslink_committee : crosslink_committees) {
+      int index_into_committee = 0;
+      for (Integer validator_index : crosslink_committee.getCommittee()) {
+        if (!validator_index.equals(block_proposer)) {
+          shard = crosslink_committee.getShard();
+          AttestationData attestationData =
+              new AttestationData(
+                  slot,
+                  shard,
+                  head_block_root,
+                  epoch_boundary_root,
+                  shard_block_root,
+                  latest_crosslink,
+                  justified_epoch,
+                  justified_block_root);
+
+          int array_length = Math.toIntExact((crosslink_committee.getCommittee().size() + 7) / 8);
+          byte[] aggregation_bitfield = new byte[array_length];
+          aggregation_bitfield[index_into_committee / 8] =
+              (byte)
+                  (aggregation_bitfield[index_into_committee / 8]
+                      | (byte) Math.pow(2, (index_into_committee % 8)));
+          Integer attesterIndex =
+              BeaconStateUtil.get_attestation_participants(
+                      state, attestationData, aggregation_bitfield)
+                  .get(0);
+          assert attesterIndex.equals(validator_index);
+
+          Bytes custody_bitfield = Bytes.wrap(new byte[array_length]);
+          AttestationDataAndCustodyBit attestation_data_and_custody_bit =
+              new AttestationDataAndCustodyBit(attestationData, false);
+          Bytes32 attestation_message_to_sign =
+              HashTreeUtil.hash_tree_root(attestation_data_and_custody_bit.toBytes());
+          Validator attester = state.getValidator_registry().get(attesterIndex);
+          BLSKeyPair keypair = BLSKeyPair.random();
+          // TODO: O(n), but in reality we will have the keypair in the validator
+          for (int i = 0; i < 128; i++) {
+            keypair = BLSKeyPair.random(i);
+            if (keypair.getPublicKey().equals(attester.getPubkey())) {
+              break;
+            }
+          }
+
+          BLSSignature signed_attestation_data =
+              BLSSignature.sign(
+                  keypair,
+                  attestation_message_to_sign,
+                  BeaconStateUtil.get_domain(
+                          state.getFork(),
+                          BeaconStateUtil.slot_to_epoch(attestationData.getSlot()),
+                          Constants.DOMAIN_ATTESTATION)
+                      .longValue());
+          Attestation attestation =
+              new Attestation(
+                  Bytes.wrap(aggregation_bitfield),
+                  attestationData,
+                  custody_bitfield,
+                  signed_attestation_data);
+          attestations.add(attestation);
+        }
+        index_into_committee++;
+      }
+    }
+    return attestations;
+  }
+
   public static Attestation randomAttestation() {
     return randomAttestation(UnsignedLong.valueOf(randomLong()));
   }
@@ -156,31 +241,26 @@ public final class DataStructureUtil {
         randomSlashableAttestation(seed), randomSlashableAttestation(seed++));
   }
 
-  public static ProposalSignedData randomProposalSignedData() {
-    return new ProposalSignedData(randomUnsignedLong(), randomUnsignedLong(), randomBytes32());
+  public static Proposal randomProposal() {
+    return new Proposal(
+        randomUnsignedLong(), randomUnsignedLong(), randomBytes32(), BLSSignature.random());
   }
 
-  public static ProposalSignedData randomProposalSignedData(int seed) {
-    return new ProposalSignedData(
-        randomUnsignedLong(seed), randomUnsignedLong(seed++), randomBytes32(seed++));
+  public static Proposal randomProposal(int seed) {
+    return new Proposal(
+        randomUnsignedLong(seed++),
+        randomUnsignedLong(seed++),
+        randomBytes32(seed++),
+        BLSSignature.random(seed));
   }
 
   public static ProposerSlashing randomProposerSlashing() {
-    return new ProposerSlashing(
-        randomUnsignedLong(),
-        randomProposalSignedData(),
-        BLSSignature.random(),
-        randomProposalSignedData(),
-        BLSSignature.random());
+    return new ProposerSlashing(randomUnsignedLong(), randomProposal(), randomProposal());
   }
 
   public static ProposerSlashing randomProposerSlashing(int seed) {
     return new ProposerSlashing(
-        randomUnsignedLong(seed),
-        randomProposalSignedData(seed++),
-        BLSSignature.random(seed),
-        randomProposalSignedData(seed++),
-        BLSSignature.random(seed));
+        randomUnsignedLong(seed++), randomProposal(seed++), randomProposal(seed));
   }
 
   public static SlashableAttestation randomSlashableAttestation() {
@@ -268,12 +348,13 @@ public final class DataStructureUtil {
     return deposits;
   }
 
-  public static Exit randomExit() {
-    return new Exit(randomUnsignedLong(), randomUnsignedLong(), BLSSignature.random());
+  public static VoluntaryExit randomVoluntaryExit() {
+    return new VoluntaryExit(randomUnsignedLong(), randomUnsignedLong(), BLSSignature.random());
   }
 
-  public static Exit randomExit(int seed) {
-    return new Exit(randomUnsignedLong(seed), randomUnsignedLong(seed++), BLSSignature.random());
+  public static VoluntaryExit randomVoluntaryExit(int seed) {
+    return new VoluntaryExit(
+        randomUnsignedLong(seed), randomUnsignedLong(seed++), BLSSignature.random());
   }
 
   public static Transfer randomTransfer() {
@@ -304,7 +385,7 @@ public final class DataStructureUtil {
         Arrays.asList(randomAttesterSlashing(), randomAttesterSlashing(), randomAttesterSlashing()),
         Arrays.asList(randomAttestation(), randomAttestation(), randomAttestation()),
         randomDeposits(100),
-        Arrays.asList(randomExit(), randomExit(), randomExit()),
+        Arrays.asList(randomVoluntaryExit(), randomVoluntaryExit(), randomVoluntaryExit()),
         Arrays.asList(randomTransfer()));
   }
 
@@ -320,7 +401,8 @@ public final class DataStructureUtil {
             randomAttesterSlashing(seed++)),
         Arrays.asList(randomAttestation(), randomAttestation(), randomAttestation()),
         randomDeposits(100, seed++),
-        Arrays.asList(randomExit(seed++), randomExit(seed++), randomExit(seed++)),
+        Arrays.asList(
+            randomVoluntaryExit(seed++), randomVoluntaryExit(seed++), randomVoluntaryExit(seed++)),
         Arrays.asList(randomTransfer(seed++)));
   }
 
@@ -331,16 +413,16 @@ public final class DataStructureUtil {
         randomBytes32(),
         BLSSignature.random(),
         randomEth1Data(),
-        BLSSignature.random(),
-        randomBeaconBlockBody());
+        randomBeaconBlockBody(),
+        BLSSignature.random());
   }
 
-  public static ArrayList<Deposit> newDeposits(int numDeposits, int slot) {
+  public static ArrayList<Deposit> newDeposits(int numDeposits) {
     ArrayList<Deposit> deposits = new ArrayList<Deposit>();
 
     for (int i = 0; i < numDeposits; i++) {
       // https://github.com/ethereum/eth2.0-specs/blob/0.4.0/specs/validator/0_beacon-chain-validator.md#submit-deposit
-      BLSKeyPair keypair = BLSKeyPair.random(slot + i);
+      BLSKeyPair keypair = BLSKeyPair.random(i);
       DepositInput deposit_input =
           new DepositInput(keypair.getPublicKey(), Bytes32.ZERO, BLSSignature.empty());
       BLSSignature proof_of_possession =
@@ -362,26 +444,30 @@ public final class DataStructureUtil {
   }
 
   public static BeaconBlock newBeaconBlock(
-      UnsignedLong slotNum, Bytes32 parent_root, Bytes32 state_root, ArrayList<Deposit> deposits) {
+      UnsignedLong slotNum,
+      Bytes32 parent_root,
+      Bytes32 state_root,
+      ArrayList<Deposit> deposits,
+      List<Attestation> attestations) {
     return new BeaconBlock(
         slotNum.longValue(),
         parent_root,
         state_root,
         BLSSignature.random(slotNum.intValue()),
         new Eth1Data(Bytes32.ZERO, Bytes32.ZERO),
-        BLSSignature.empty(),
         new BeaconBlockBody(
             new ArrayList<ProposerSlashing>(),
             new ArrayList<AttesterSlashing>(),
-            new ArrayList<Attestation>(),
+            attestations,
             deposits,
-            new ArrayList<Exit>(),
-            new ArrayList<Transfer>()));
+            new ArrayList<VoluntaryExit>(),
+            new ArrayList<Transfer>()),
+        BLSSignature.empty());
   }
 
-  public static BeaconState createInitialBeaconState() {
+  public static BeaconState createInitialBeaconState(int numValidators) {
     return BeaconStateUtil.get_initial_beacon_state(
-        newDeposits(128, Math.toIntExact(Constants.GENESIS_SLOT)),
+        newDeposits(numValidators),
         UnsignedLong.valueOf(Constants.GENESIS_SLOT),
         new Eth1Data(Bytes32.ZERO, Bytes32.ZERO));
   }
@@ -393,8 +479,8 @@ public final class DataStructureUtil {
         Constants.FAR_FUTURE_EPOCH,
         Constants.FAR_FUTURE_EPOCH,
         Constants.FAR_FUTURE_EPOCH,
-        Constants.FAR_FUTURE_EPOCH,
-        randomUnsignedLong());
+        false,
+        false);
   }
 
   public static Validator randomValidator(int seed) {
@@ -404,7 +490,7 @@ public final class DataStructureUtil {
         Constants.FAR_FUTURE_EPOCH,
         Constants.FAR_FUTURE_EPOCH,
         Constants.FAR_FUTURE_EPOCH,
-        Constants.FAR_FUTURE_EPOCH,
-        randomUnsignedLong(seed++));
+        false,
+        false);
   }
 }

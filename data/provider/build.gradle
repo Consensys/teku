@@ -1,0 +1,38 @@
+jar {
+  baseName 'artemis-data-provider'
+  manifest {
+    attributes('Implementation-Title': baseName,
+    'Implementation-Version': project.version)
+  }
+}
+
+dependencies {
+  implementation project(':util')
+  implementation project(':data')
+  implementation project(':ethereum:datastructures')
+
+  implementation 'net.consensys.cava:cava-crypto'
+  implementation 'net.consensys.cava:cava-units'
+  implementation 'net.consensys.cava:cava-ssz'
+  implementation 'com.google.guava:guava'
+  implementation 'com.google.code.gson:gson:2.8.5'
+  implementation 'org.apache.logging.log4j:log4j-api'
+  implementation 'org.apache.commons:commons-lang3'
+  runtime 'org.apache.logging.log4j:log4j-core'
+
+  test {
+    testLogging.showStandardStreams = true
+  }
+}
+
+configurations { testArtifacts }
+task testJar (type: Jar) {
+  baseName = "${project.name}-test"
+  from sourceSets.test.output
+}
+
+
+artifacts {
+  testArtifacts testJar
+  testSupportArtifacts testSupportJar
+}

@@ -1,0 +1,13 @@
+# This is a TOML document. Boom.
+
+# networkMode options:
+# "mock": use MockP2PNetwork
+# "rlpx": use RLPxP2PNetwork
+# "hobbits": use HobbitsP2PNetwork
+networkMode = "mock"
+identity = "0x01"
+networkInterface = "0.0.0.0"
+port = 9000
+advertisedPort = 9000
+numValidators = 128
+numNodes = 1

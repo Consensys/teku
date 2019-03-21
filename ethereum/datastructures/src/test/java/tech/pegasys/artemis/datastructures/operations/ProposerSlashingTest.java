@@ -15,27 +15,23 @@ package tech.pegasys.artemis.datastructures.operations;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomProposalSignedData;
+import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomProposal;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomUnsignedLong;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.Objects;
 import net.consensys.cava.bytes.Bytes;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.artemis.datastructures.blocks.ProposalSignedData;
-import tech.pegasys.artemis.util.bls.BLSSignature;
+import tech.pegasys.artemis.datastructures.blocks.Proposal;
 
 class ProposerSlashingTest {
 
   private UnsignedLong proposerIndex = randomUnsignedLong();
-  private ProposalSignedData proposalData1 = randomProposalSignedData();
-  private BLSSignature proposalSignature1 = BLSSignature.random();
-  private ProposalSignedData proposalData2 = randomProposalSignedData();
-  private BLSSignature proposalSignature2 = BLSSignature.random();
+  private Proposal proposal1 = randomProposal();
+  private Proposal proposal2 = randomProposal();
 
   private ProposerSlashing proposerSlashing =
-      new ProposerSlashing(
-          proposerIndex, proposalData1, proposalSignature1, proposalData2, proposalSignature2);
+      new ProposerSlashing(proposerIndex, proposal1, proposal2);
 
   @Test
   void equalsReturnsTrueWhenObjectAreSame() {
@@ -47,8 +43,7 @@ class ProposerSlashingTest {
   @Test
   void equalsReturnsTrueWhenObjectFieldsAreEqual() {
     ProposerSlashing testProposerSlashing =
-        new ProposerSlashing(
-            proposerIndex, proposalData1, proposalSignature1, proposalData2, proposalSignature2);
+        new ProposerSlashing(proposerIndex, proposal1, proposal2);
 
     assertEquals(proposerSlashing, testProposerSlashing);
   }
@@ -56,88 +51,37 @@ class ProposerSlashingTest {
   @Test
   void equalsReturnsFalseWhenProposerIndicesAreDifferent() {
     ProposerSlashing testProposerSlashing =
-        new ProposerSlashing(
-            proposerIndex.plus(randomUnsignedLong()),
-            proposalData1,
-            proposalSignature1,
-            proposalData2,
-            proposalSignature2);
+        new ProposerSlashing(proposerIndex.plus(randomUnsignedLong()), proposal1, proposal2);
 
     assertNotEquals(proposerSlashing, testProposerSlashing);
   }
 
   @Test
   void equalsReturnsFalseWhenProposalData1IsDifferent() {
-    // ProposalSignedData is rather involved to create. Just create a random one until it is not the
+    // Proposalis rather involved to create. Just create a random one until it is not the
     // same as the original.
-    ProposalSignedData otherProposalData1 = randomProposalSignedData();
-    while (Objects.equals(otherProposalData1, proposalData1)) {
-      otherProposalData1 = randomProposalSignedData();
+    Proposal otherProposal1 = randomProposal();
+    while (Objects.equals(otherProposal1, proposal1)) {
+      otherProposal1 = randomProposal();
     }
 
     ProposerSlashing testProposerSlashing =
-        new ProposerSlashing(
-            proposerIndex,
-            otherProposalData1,
-            proposalSignature1,
-            proposalData2,
-            proposalSignature2);
-
-    assertNotEquals(proposerSlashing, testProposerSlashing);
-  }
-
-  @Test
-  void equalsReturnsFalseWhenProposalSignature1sAreDifferent() {
-    BLSSignature differentProposalSignature1 = BLSSignature.random();
-    while (differentProposalSignature1.equals(proposalSignature2)) {
-      differentProposalSignature1 = BLSSignature.random();
-    }
-
-    ProposerSlashing testProposerSlashing =
-        new ProposerSlashing(
-            proposerIndex,
-            proposalData1,
-            differentProposalSignature1,
-            proposalData2,
-            proposalSignature2);
+        new ProposerSlashing(proposerIndex, otherProposal1, proposal2);
 
     assertNotEquals(proposerSlashing, testProposerSlashing);
   }
 
   @Test
   void equalsReturnsFalseWhenProposalData2IsDifferent() {
-    // ProposalSignedData is rather involved to create. Just create a random one until it is not the
+    // Proposal is rather involved to create. Just create a random one until it is not the
     // same as the original.
-    ProposalSignedData otherProposalData2 = randomProposalSignedData();
-    while (Objects.equals(otherProposalData2, proposalData2)) {
-      otherProposalData2 = randomProposalSignedData();
+    Proposal otherProposal2 = randomProposal();
+    while (Objects.equals(otherProposal2, proposal2)) {
+      otherProposal2 = randomProposal();
     }
 
     ProposerSlashing testProposerSlashing =
-        new ProposerSlashing(
-            proposerIndex,
-            proposalData1,
-            proposalSignature1,
-            otherProposalData2,
-            proposalSignature2);
-
-    assertNotEquals(proposerSlashing, testProposerSlashing);
-  }
-
-  @Test
-  void equalsReturnsFalseWhenProposalSignature2sAreDifferent() {
-    BLSSignature differentProposalSignature2 = BLSSignature.random();
-    while (differentProposalSignature2.equals(proposalSignature2)) {
-      differentProposalSignature2 = BLSSignature.random();
-    }
-
-    ProposerSlashing testProposerSlashing =
-        new ProposerSlashing(
-            proposerIndex,
-            proposalData1,
-            proposalSignature1,
-            proposalData2,
-            differentProposalSignature2);
+        new ProposerSlashing(proposerIndex, proposal1, otherProposal2);
 
     assertNotEquals(proposerSlashing, testProposerSlashing);
   }
