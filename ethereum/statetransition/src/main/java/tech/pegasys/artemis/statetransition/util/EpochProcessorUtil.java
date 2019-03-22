@@ -619,12 +619,10 @@ public class EpochProcessorUtil {
                     .get(index)
                     .compareTo(UnsignedLong.valueOf(Constants.MAX_DEPOSIT_AMOUNT))
                 >= 0) {
-          // TODO: v0.4 merge note - Should this be get_total_balance now?
           balance_churn = balance_churn.plus(BeaconStateUtil.get_effective_balance(state, index));
           if (balance_churn.compareTo(max_balance_churn) > 0) break;
           BeaconStateUtil.activate_validator(state, validator, false);
         }
-        // TODO: v0.4 merge note - why was this deleted?
         index++;
       }
 
@@ -639,7 +637,6 @@ public class EpochProcessorUtil {
           if (balance_churn.compareTo(max_balance_churn) > 0) break;
           BeaconStateUtil.exit_validator(state, index);
         }
-        // TODO: v0.4 merge note - why was this deleted?
         index++;
       }
       state.setValidator_registry_update_epoch(currentEpoch);
