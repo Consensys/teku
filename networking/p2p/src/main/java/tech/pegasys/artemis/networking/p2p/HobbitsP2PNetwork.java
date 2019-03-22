@@ -22,14 +22,21 @@ import io.vertx.core.net.NetServer;
 import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.NetSocket;
 import java.io.IOException;
+import java.net.URI;
 import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 import net.consensys.cava.concurrent.AsyncCompletion;
 import net.consensys.cava.concurrent.CompletableAsyncCompletion;
 import tech.pegasys.artemis.networking.p2p.api.P2PNetwork;
+import tech.pegasys.artemis.networking.p2p.hobbits.HobbitsSocketHandler;
+import tech.pegasys.artemis.networking.p2p.hobbits.Peer;
 
 /**
  * Hobbits Ethereum Wire Protocol implementation.
@@ -44,8 +51,11 @@ public final class HobbitsP2PNetwork implements P2PNetwork {
   private final int port;
   private final int advertisedPort;
   private final String networkInterface;
+  private final String userAgent = "Artemis SNAPSHOT";
   private NetServer server;
   private NetClient client;
+  private List<URI> staticPeers;
+  private Map<URI, HobbitsSocketHandler> handlersMap = new ConcurrentHashMap<>();
 
   /**
    * Default constructor
@@ -55,14 +65,22 @@ public final class HobbitsP2PNetwork implements P2PNetwork {
    * @param port the port to bind to
    * @param advertisedPort the port to advertise on
    * @param networkInterface the network interface to bind to
+   * @param staticPeers the static peers this network will connect to
    */
   public HobbitsP2PNetwork(
-      EventBus eventBus, Vertx vertx, int port, int advertisedPort, String networkInterface) {
+      EventBus eventBus,
+      Vertx vertx,
+      int port,
+      int advertisedPort,
+      String networkInterface,
+      List<URI> staticPeers) {
     this.eventBus = eventBus;
     this.vertx = vertx;
     this.port = port;
     this.advertisedPort = advertisedPort;
     this.networkInterface = networkInterface;
+    this.staticPeers = staticPeers;
+    eventBus.register(this);
   }
 
   @Override
@@ -77,6 +95,20 @@ public final class HobbitsP2PNetwork implements P2PNetwork {
                       .setHost(networkInterface)
                       .setTcpKeepAlive(true))
               .connectHandler(this::receiveMessage);
+      server.listen(
+          res -> {
+            if (res.failed()) {
+              throw new RuntimeException(res.cause());
+            } else {
+              connectStaticPeers();
+            }
+          });
+    }
+  }
+
+  private void connectStaticPeers() {
+    for (URI peer : staticPeers) {
+      connect(peer);
     }
   }
 
@@ -86,12 +118,36 @@ public final class HobbitsP2PNetwork implements P2PNetwork {
 
   @Override
   public Collection<?> getPeers() {
-    return null;
+    return handlersMap.values().stream()
+        .map(handler -> handler.peer())
+        .collect(Collectors.toList());
+  }
+
+  CompletableFuture<?> connect(URI peerURI) {
+    CompletableFuture<Peer> connected = new CompletableFuture<>();
+    client.connect(
+        peerURI.getPort(),
+        peerURI.getHost(),
+        res -> {
+          if (res.failed()) {
+            connected.completeExceptionally(res.cause());
+          } else {
+            NetSocket socket = res.result();
+            Peer peer = new Peer(peerURI);
+            HobbitsSocketHandler handler = new HobbitsSocketHandler(socket, userAgent, peer);
+            handlersMap.put(peerURI, handler);
+            handler.sendHello();
+            handler.sendStatus();
+            connected.complete(peer);
+          }
+        });
+
+    return connected;
   }
 
   @Override
   public CompletableFuture<?> connect(String peer) {
-    return null;
+    return connect(URI.create(peer));
   }
 
   @Override
@@ -101,6 +157,9 @@ public final class HobbitsP2PNetwork implements P2PNetwork {
   public void stop() {
     if (started.compareAndSet(true, false)) {
       try {
+        for (HobbitsSocketHandler handler : handlersMap.values()) {
+          handler.disconnect();
+        }
         CompletableAsyncCompletion completed = AsyncCompletion.incomplete();
         server.close(
             res -> {

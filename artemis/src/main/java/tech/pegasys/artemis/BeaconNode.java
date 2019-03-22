@@ -92,7 +92,8 @@ public class BeaconNode {
               vertx,
               config.getPort(),
               config.getAdvertisedPort(),
-              config.getNetworkInterface());
+              config.getNetworkInterface(),
+              config.getStaticPeers());
     } else {
       throw new IllegalArgumentException("Unsupported network mode " + config.getNetworkMode());
     }
