@@ -20,7 +20,7 @@ import static tech.pegasys.artemis.datastructures.Constants.DOMAIN_ATTESTATION;
 import static tech.pegasys.artemis.datastructures.Constants.DOMAIN_DEPOSIT;
 import static tech.pegasys.artemis.datastructures.Constants.FAR_FUTURE_EPOCH;
 import static tech.pegasys.artemis.datastructures.Constants.GENESIS_EPOCH;
-import static tech.pegasys.artemis.datastructures.Constants.LATEST_INDEX_ROOTS_LENGTH;
+import static tech.pegasys.artemis.datastructures.Constants.LATEST_ACTIVE_INDEX_ROOTS_LENGTH;
 import static tech.pegasys.artemis.datastructures.Constants.LATEST_RANDAO_MIXES_LENGTH;
 import static tech.pegasys.artemis.datastructures.Constants.LATEST_SLASHED_EXIT_LENGTH;
 import static tech.pegasys.artemis.datastructures.Constants.MAX_DEPOSIT_AMOUNT;
@@ -113,15 +113,18 @@ public class BeaconStateUtil {
   }
 
   /**
-   * Return the list of `(committee, shard)` tuples for the `slot`.
+   * Return the list of (committee, shard) tuples (implemented as CrosslinkCommittee) for the slot.
    *
    * <p>Note: There are two possible shufflings for crosslink committees for a ``slot`` in the next
    * epoch -- with and without a `registry_change`
    *
-   * @param state The beacon state under consideration.
-   * @param slot The slot number.
-   * @param registry_change True if we are considering a registry change.
-   * @return
+   * @param state - The beacon state under consideration.
+   * @param slot - The slot number.
+   * @param registry_change - True if we are considering a registry change.
+   * @return The list of CrosslinkCommittees for the slot.
+   * @see <a
+   *     href="https://github.com/ethereum/eth2.0-specs/blob/v0.4.0/specs/core/0_beacon-chain.md#get_crosslink_committees_at_slot">get_crosslink_committees_at_slot
+   *     - Spec v0.4</a>
    */
   public static ArrayList<CrosslinkCommittee> get_crosslink_committees_at_slot(
       BeaconState state, UnsignedLong slot, boolean registry_change)
@@ -183,6 +186,7 @@ public class BeaconStateUtil {
     UnsignedLong offset = slot.mod(UnsignedLong.valueOf(SLOTS_PER_EPOCH));
     UnsignedLong committees_per_slot =
         committees_per_epoch.dividedBy(UnsignedLong.valueOf(SLOTS_PER_EPOCH));
+    // TODO: Double check the order of operations here. The spec may be ambiguous.
     UnsignedLong slot_start_shard =
         shuffling_start_shard
             .plus(committees_per_slot)
@@ -215,6 +219,15 @@ public class BeaconStateUtil {
    * expected to appropriately use caching/memoization to avoid redoing work.
    */
 
+  /**
+   * Return the number of committees in the previous epoch of the given state.
+   *
+   * @param state - The state under consideration.
+   * @return The number of committees in the previous epoch.
+   * @see <a
+   *     href="https://github.com/ethereum/eth2.0-specs/blob/v0.4.0/specs/core/0_beacon-chain.md#get_previous_epoch_committee_count">get_previous_epoch_committee_count
+   *     - Spec v0.4</a>
+   */
   private static UnsignedLong get_previous_epoch_committee_count(BeaconState state) {
     List<Integer> previous_active_validators =
         ValidatorsUtil.get_active_validator_indices(
@@ -223,10 +236,13 @@ public class BeaconStateUtil {
   }
 
   /**
-   * returns the number of crosslink committees active in this epoch
+   * Returns the number of committees in the current epoch of the given state.
    *
-   * @param state
-   * @return
+   * @param state - The state under consideration.
+   * @return The number of committees in the current epoch.
+   * @see <a
+   *     href="https://github.com/ethereum/eth2.0-specs/blob/v0.4.0/specs/core/0_beacon-chain.md#get_current_epoch_committee_count">get_current_epoch_committee_count
+   *     - Spec v0.4</a>
    */
   public static UnsignedLong get_current_epoch_committee_count(BeaconState state) {
     List<Integer> current_active_validators =
@@ -235,6 +251,15 @@ public class BeaconStateUtil {
     return get_epoch_committee_count(UnsignedLong.valueOf(current_active_validators.size()));
   }
 
+  /**
+   * Returns the number of committees in the next epoch of the given state.
+   *
+   * @param state - The state under consideration.
+   * @return The number of committees in the next epoch.
+   * @see <a
+   *     href="https://github.com/ethereum/eth2.0-specs/blob/v0.4.0/specs/core/0_beacon-chain.md#get_next_epoch_committee_count">get_next_epoch_committee_count
+   *     - Spec v0.4</a>
+   */
   private static UnsignedLong get_next_epoch_committee_count(BeaconState state) {
     List<Integer> next_active_validators =
         ValidatorsUtil.get_active_validator_indices(
@@ -242,6 +267,16 @@ public class BeaconStateUtil {
     return get_epoch_committee_count(UnsignedLong.valueOf(next_active_validators.size()));
   }
 
+  /**
+   * Generate a seed for the given epoch.
+   *
+   * @param state - The BeaconState under consideration.
+   * @param epoch - The epoch to generate a seed for.
+   * @return A generated seed for the given epoch.
+   * @see <a
+   *     href="https://github.com/ethereum/eth2.0-specs/blob/v0.4.0/specs/core/0_beacon-chain.md#generate_seed">generate_seed
+   *     - Spec v0.4</a>
+   */
   public static Bytes32 generate_seed(BeaconState state, UnsignedLong epoch)
       throws IllegalArgumentException {
     Bytes32 randao_mix =
@@ -251,13 +286,23 @@ public class BeaconStateUtil {
     return Hash.keccak256(Bytes.wrap(randao_mix, index_root, epochBytes));
   }
 
+  /**
+   * Returns the index root at a recent epoch.
+   *
+   * @param state - The BeaconState under consideration.
+   * @param epoch - The epoch to get the index root for.
+   * @return The index root at a given recent epoch.
+   * @see <a
+   *     href="https://github.com/ethereum/eth2.0-specs/blob/v0.4.0/specs/core/0_beacon-chain.md#get_active_index_root">get_active_index_root
+   *     - Spec v0.4</a>
+   */
   public static Bytes32 get_active_index_root(BeaconState state, UnsignedLong epoch) {
     checkArgument(
         // Since we're using UnsignedLong here, we can't subtract
         // LATEST_INDEX_ROOTS_LENGTH
         get_current_epoch(state)
                 .plus(UnsignedLong.valueOf(ACTIVATION_EXIT_DELAY))
-                .compareTo(epoch.plus(UnsignedLong.valueOf(LATEST_INDEX_ROOTS_LENGTH)))
+                .compareTo(epoch.plus(UnsignedLong.valueOf(LATEST_ACTIVE_INDEX_ROOTS_LENGTH)))
             < 0,
         "checkArgument threw and exception in get_active_indesx_root()");
     checkArgument(
@@ -265,8 +310,7 @@ public class BeaconStateUtil {
             <= 0,
         "checkArgument threw and exception in get_active_index_root()");
 
-    List<Bytes32> index_roots = state.getLatest_active_index_roots();
-    int index = epoch.mod(UnsignedLong.valueOf(LATEST_INDEX_ROOTS_LENGTH)).intValue();
+    int index = epoch.mod(UnsignedLong.valueOf(LATEST_ACTIVE_INDEX_ROOTS_LENGTH)).intValue();
     return state.getLatest_active_index_roots().get(index);
   }
 
@@ -505,12 +549,20 @@ public class BeaconStateUtil {
             .plus(UnsignedLong.valueOf(Constants.MIN_VALIDATOR_WITHDRAWABILITY_DELAY)));
   }
 
-  /** Return the randao mix at a recent ``epoch``. */
+  /**
+   * Returns the randao mix at a recent epoch.
+   *
+   * @param state - The BeaconState under consideration.
+   * @param epoch - The epoch to get the randao mix for.
+   * @return The randao mix at the given epoch.
+   * @see <a
+   *     href="https://github.com/ethereum/eth2.0-specs/blob/v0.4.0/specs/core/0_beacon-chain.md#get_randao_mix">get_randao_mix
+   *     - Spec v0.4</a>
+   */
   public static Bytes32 get_randao_mix(BeaconState state, UnsignedLong epoch) {
     checkArgument(
         // If we're going to use UnsignedLongs then we can't subtract
-        // LATEST_RANDAO_MIXES_LENGTH
-        // here
+        // LATEST_RANDAO_MIXES_LENGTH here
         get_current_epoch(state)
                 .compareTo(epoch.plus(UnsignedLong.valueOf(LATEST_RANDAO_MIXES_LENGTH)))
             < 0,
@@ -523,7 +575,16 @@ public class BeaconStateUtil {
     return randao_mixes.get(index.intValue());
   }
 
-  // Return the block root at a recent ``slot``.
+  /**
+   * Returns the block root at a recent slot.
+   *
+   * @param state - The BeaconState under consideration.
+   * @param slot - The slot to return the block root for.
+   * @return The block root at the given slot.
+   * @see <a
+   *     href="https://github.com/ethereum/eth2.0-specs/blob/v0.4.0/specs/core/0_beacon-chain.md#get_block_root">get_block_root
+   *     - Spec v0.4</a>
+   */
   public static Bytes32 get_block_root(BeaconState state, UnsignedLong slot) {
     checkArgument(
         state
@@ -557,10 +618,13 @@ public class BeaconStateUtil {
   }
 
   /**
-   * Return the number of committees in one epoch.
+   * Returns the number of committees in one epoch.
    *
-   * @param active_validator_count
-   * @return
+   * @param active_validator_count - The number of active validators.
+   * @return The number of committees in one epoch.
+   * @see <a
+   *     href="https://github.com/ethereum/eth2.0-specs/blob/v0.4.0/specs/core/0_beacon-chain.md#get_epoch_committee_count">get_epoch_committee_count
+   *     - Spec v0.4</a>
    */
   public static UnsignedLong get_epoch_committee_count(UnsignedLong active_validator_count) {
 
@@ -576,12 +640,15 @@ public class BeaconStateUtil {
   }
 
   /**
-   * Shuffles ``validators`` into shard committees using ``seed`` as entropy.
+   * Shuffle active validators and splits into crosslink committees.
    *
-   * @param seed
-   * @param validators
-   * @param epoch
-   * @return
+   * @param seed - A shuffling seed.
+   * @param validators - The list of validators to shuffle.
+   * @param epoch - Epoch under consideration.
+   * @return A list of committees (each of list of validator indices)
+   * @see <a
+   *     href="https://github.com/ethereum/eth2.0-specs/blob/v0.4.0/specs/core/0_beacon-chain.md#get_shuffling">get_shuffling
+   *     - Spec v0.4</a>
    */
   public static List<List<Integer>> get_shuffling(
       Bytes32 seed, List<Validator> validators, UnsignedLong epoch) throws IllegalStateException {

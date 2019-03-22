@@ -72,7 +72,7 @@ public final class Constants {
   // State list lengths
   public static final int LATEST_BLOCK_ROOTS_LENGTH = 8192; // 2^13 slots (~13 hours)
   public static final int LATEST_RANDAO_MIXES_LENGTH = 8192; // 2^13 epochs (~36 days)
-  public static final int LATEST_INDEX_ROOTS_LENGTH = 8192; // 2^13 epochs (~36 days)
+  public static final int LATEST_ACTIVE_INDEX_ROOTS_LENGTH = 8192; // 2^13 epochs (~36 days)
   public static final int LATEST_SLASHED_EXIT_LENGTH = 8192; // 2^13 epochs (~36 days)
 
   // Reward and penalty quotients
