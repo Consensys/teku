@@ -23,11 +23,13 @@ public final class RPCMessage {
   private final long requestId;
   private final RPCMethod method;
   private final JsonNode body;
+  private final int length;
 
-  public RPCMessage(long requestId, RPCMethod method, JsonNode body) {
+  public RPCMessage(long requestId, RPCMethod method, JsonNode body, int length) {
     this.requestId = requestId;
     this.method = method;
     this.body = body;
+    this.length = length;
   }
 
   /** @return the request identifier */
@@ -54,5 +56,10 @@ public final class RPCMessage {
     } catch (IOException e) {
       throw new UncheckedIOException(e);
     }
+  }
+
+  /** @return the length of the message in bytes */
+  public int length() {
+    return length;
   }
 }
