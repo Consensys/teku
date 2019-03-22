@@ -139,18 +139,31 @@ public final class RPCCodec {
    */
   public static Bytes encode(
       RPCMethod methodId, Object request, @Nullable Set<Long> pendingResponses) {
-    ObjectNode node = mapper.createObjectNode();
     long requestNumber = nextRequestNumber();
     if (pendingResponses != null) {
       pendingResponses.add(requestNumber);
     }
+    return encode(methodId, request, requestNumber);
+  }
+
+  /**
+   * Encodes a message into a RPC request
+   *
+   * @param methodId the RPC method
+   * @param request the payload of the request
+   * @param requestNumber a request number
+   * @return the encoded RPC message
+   */
+  public static Bytes encode(RPCMethod methodId, Object request, long requestNumber) {
+    ObjectNode node = mapper.createObjectNode();
+
     node.put("id", requestNumber);
     node.put("method_id", methodId.code());
     node.putPOJO("body", request);
     try {
       Bytes body = Bytes.wrap(Snappy.compress(mapper.writer().writeValueAsBytes(node)));
       return Bytes.concatenate(
-          Bytes.wrap(new byte[] {1, 2}), Bytes.ofUnsignedLong(body.size()), body);
+          Bytes.wrap(new byte[] {(byte) 1, (byte) 2}), Bytes.ofUnsignedLong(body.size()), body);
     } catch (IOException e) {
       throw new IllegalArgumentException(e);
     }
@@ -163,15 +176,15 @@ public final class RPCCodec {
    * @return the payload, decoded
    */
   public static RPCMessage decode(Bytes message) {
-    boolean applySnappyCompression = message.get(0) == 1;
-    if (message.get(1) != 2) {
-      throw new UnsupportedOperationException(
-          "Payload with encoding nibble unsupported " + message.get(1));
+    boolean applySnappyCompression = message.get(0) == (byte) 1;
+    if (message.get(1) != (byte) 2) {
+      return null;
     }
     long bodySize = message.getLong(2);
     if (message.size() < bodySize + 10) {
       return null;
     }
+    // TODO add max body size checks.
     try {
       byte[] payload = message.slice(10, (int) bodySize).toArrayUnsafe();
       if (applySnappyCompression) {
@@ -180,7 +193,8 @@ public final class RPCCodec {
       ObjectNode rpcmessage = (ObjectNode) mapper.readTree(payload);
       long id = rpcmessage.get("id").longValue();
       int methodId = rpcmessage.get("method_id").intValue();
-      return new RPCMessage(id, RPCMethod.valueOf(methodId), rpcmessage.get("body"));
+      return new RPCMessage(
+          id, RPCMethod.valueOf(methodId), rpcmessage.get("body"), (int) (bodySize + 10));
     } catch (IOException e) {
       throw new UncheckedIOException(e);
     }

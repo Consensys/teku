@@ -15,7 +15,6 @@ package tech.pegasys.artemis.networking.p2p;
 
 import com.google.common.eventbus.EventBus;
 import io.vertx.core.Vertx;
-import io.vertx.core.buffer.Buffer;
 import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetServer;
@@ -113,7 +112,16 @@ public final class HobbitsP2PNetwork implements P2PNetwork {
   }
 
   private void receiveMessage(NetSocket netSocket) {
-    netSocket.write(Buffer.buffer("there and back again")); // TODO
+    URI peerURI =
+        URI.create(
+            "hobs://" + netSocket.remoteAddress().host() + ":" + netSocket.remoteAddress().port());
+    handlersMap.computeIfAbsent(
+        peerURI,
+        uri -> {
+          Peer peer = new Peer(peerURI);
+          HobbitsSocketHandler handler = new HobbitsSocketHandler(netSocket, userAgent, peer);
+          return handler;
+        });
   }
 
   @Override
@@ -125,23 +133,28 @@ public final class HobbitsP2PNetwork implements P2PNetwork {
 
   CompletableFuture<?> connect(URI peerURI) {
     CompletableFuture<Peer> connected = new CompletableFuture<>();
-    client.connect(
-        peerURI.getPort(),
-        peerURI.getHost(),
-        res -> {
-          if (res.failed()) {
-            connected.completeExceptionally(res.cause());
-          } else {
-            NetSocket socket = res.result();
-            Peer peer = new Peer(peerURI);
-            HobbitsSocketHandler handler = new HobbitsSocketHandler(socket, userAgent, peer);
-            handlersMap.put(peerURI, handler);
-            handler.sendHello();
-            handler.sendStatus();
-            connected.complete(peer);
-          }
-        });
+    HobbitsSocketHandler existingHandler = handlersMap.get(peerURI);
+    if (existingHandler != null) {
+      connected.complete(existingHandler.peer());
+    } else {
 
+      client.connect(
+          peerURI.getPort(),
+          peerURI.getHost(),
+          res -> {
+            if (res.failed()) {
+              connected.completeExceptionally(res.cause());
+            } else {
+              NetSocket socket = res.result();
+              Peer peer = new Peer(peerURI);
+              HobbitsSocketHandler handler = new HobbitsSocketHandler(socket, userAgent, peer);
+              handlersMap.put(peerURI, handler);
+              handler.sendHello();
+              handler.sendStatus();
+              connected.complete(peer);
+            }
+          });
+    }
     return connected;
   }
 
