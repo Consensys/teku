@@ -20,19 +20,14 @@ import static tech.pegasys.artemis.datastructures.Constants.DOMAIN_ATTESTATION;
 import static tech.pegasys.artemis.datastructures.Constants.DOMAIN_DEPOSIT;
 import static tech.pegasys.artemis.datastructures.Constants.FAR_FUTURE_EPOCH;
 import static tech.pegasys.artemis.datastructures.Constants.GENESIS_EPOCH;
-import static tech.pegasys.artemis.datastructures.Constants.GENESIS_FORK_VERSION;
-import static tech.pegasys.artemis.datastructures.Constants.GENESIS_SLOT;
-import static tech.pegasys.artemis.datastructures.Constants.GENESIS_START_SHARD;
 import static tech.pegasys.artemis.datastructures.Constants.LATEST_INDEX_ROOTS_LENGTH;
 import static tech.pegasys.artemis.datastructures.Constants.LATEST_RANDAO_MIXES_LENGTH;
 import static tech.pegasys.artemis.datastructures.Constants.LATEST_SLASHED_EXIT_LENGTH;
 import static tech.pegasys.artemis.datastructures.Constants.MAX_DEPOSIT_AMOUNT;
 import static tech.pegasys.artemis.datastructures.Constants.MAX_INDICES_PER_SLASHABLE_VOTE;
-import static tech.pegasys.artemis.datastructures.Constants.SHARD_COUNT;
 import static tech.pegasys.artemis.datastructures.Constants.SHUFFLE_ROUND_COUNT;
 import static tech.pegasys.artemis.datastructures.Constants.SLOTS_PER_EPOCH;
 import static tech.pegasys.artemis.datastructures.Constants.WHISTLEBLOWER_REWARD_QUOTIENT;
-import static tech.pegasys.artemis.datastructures.Constants.ZERO_HASH;
 import static tech.pegasys.artemis.util.bls.BLSAggregate.bls_aggregate_pubkeys;
 import static tech.pegasys.artemis.util.bls.BLSVerify.bls_verify;
 import static tech.pegasys.artemis.util.bls.BLSVerify.bls_verify_multiple;
@@ -44,7 +39,6 @@ import com.google.common.primitives.UnsignedLong;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Objects;
@@ -62,7 +56,7 @@ import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.DepositInput;
 import tech.pegasys.artemis.datastructures.operations.SlashableAttestation;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.datastructures.state.Crosslink;
+import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.state.CrosslinkCommittee;
 import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.datastructures.state.Validator;
@@ -75,71 +69,12 @@ public class BeaconStateUtil {
 
   private static final ALogger LOG = new ALogger(BeaconStateUtil.class.getName());
 
-  public static BeaconState get_initial_beacon_state(
+  public static BeaconStateWithCache get_initial_beacon_state(
+      BeaconStateWithCache state,
       ArrayList<Deposit> initial_validator_deposits,
       UnsignedLong genesis_time,
       Eth1Data latest_eth1_data)
       throws IllegalStateException {
-
-    ArrayList<Bytes32> latest_randao_mixes =
-        new ArrayList<>(
-            Collections.nCopies(Constants.LATEST_RANDAO_MIXES_LENGTH, Constants.ZERO_HASH));
-    ArrayList<Bytes32> latest_block_roots =
-        new ArrayList<>(
-            Collections.nCopies(Constants.LATEST_BLOCK_ROOTS_LENGTH, Constants.ZERO_HASH));
-    ArrayList<Bytes32> latest_index_roots =
-        new ArrayList<>(
-            Collections.nCopies(Constants.LATEST_INDEX_ROOTS_LENGTH, Constants.ZERO_HASH));
-    ArrayList<UnsignedLong> latest_penalized_balances =
-        new ArrayList<>(Collections.nCopies(LATEST_SLASHED_EXIT_LENGTH, UnsignedLong.ZERO));
-    ArrayList<Crosslink> latest_crosslinks = new ArrayList<>(SHARD_COUNT);
-
-    for (int i = 0; i < SHARD_COUNT; i++) {
-      latest_crosslinks.add(new Crosslink(UnsignedLong.valueOf(GENESIS_SLOT), Bytes32.ZERO));
-    }
-
-    BeaconState state =
-        new BeaconState(
-            // Misc
-            UnsignedLong.valueOf(GENESIS_SLOT),
-            genesis_time,
-            new Fork(
-                UnsignedLong.valueOf(GENESIS_FORK_VERSION),
-                UnsignedLong.valueOf(GENESIS_FORK_VERSION),
-                UnsignedLong.valueOf(GENESIS_EPOCH)),
-
-            // Validator registry
-            new ArrayList<>(),
-            new ArrayList<>(),
-            UnsignedLong.valueOf(GENESIS_EPOCH),
-
-            // Randomness and committees
-            latest_randao_mixes,
-            UnsignedLong.valueOf(GENESIS_START_SHARD),
-            UnsignedLong.valueOf(GENESIS_START_SHARD),
-            UnsignedLong.valueOf(GENESIS_EPOCH),
-            UnsignedLong.valueOf(GENESIS_EPOCH),
-            ZERO_HASH,
-            ZERO_HASH,
-
-            // Finality
-            UnsignedLong.valueOf(GENESIS_EPOCH),
-            UnsignedLong.valueOf(GENESIS_EPOCH),
-            UnsignedLong.ZERO,
-            UnsignedLong.valueOf(GENESIS_EPOCH),
-
-            // Recent state
-            latest_crosslinks,
-            latest_block_roots,
-            latest_index_roots,
-            latest_penalized_balances,
-            new ArrayList<>(),
-            new ArrayList<>(),
-
-            // Ethereum 1.0 chain data
-            latest_eth1_data,
-            new ArrayList<>(),
-            UnsignedLong.valueOf(initial_validator_deposits.size()));
 
     // Process initial deposits
     for (Deposit validator_deposit : initial_validator_deposits) {
@@ -173,7 +108,7 @@ public class BeaconStateUtil {
       root = genesis_active_index_root;
     }
     state.setCurrent_shuffling_seed(generate_seed(state, UnsignedLong.valueOf(GENESIS_EPOCH)));
-
+    state.setDeposit_index(UnsignedLong.valueOf(initial_validator_deposits.size()));
     return state;
   }
 
@@ -864,10 +799,15 @@ public class BeaconStateUtil {
    */
   public static int get_beacon_proposer_index(BeaconState state, UnsignedLong slot)
       throws IllegalArgumentException {
-    List<Integer> first_committee =
-        get_crosslink_committees_at_slot(state, slot).get(0).getCommittee();
-    // TODO: replace slot.intValue() with an UnsignedLong value
-    return first_committee.get(slot.intValue() % first_committee.size());
+    if (state instanceof BeaconStateWithCache
+        && ((BeaconStateWithCache) state).getCurrentBeaconProposerIndex() > -1) {
+      return ((BeaconStateWithCache) state).getCurrentBeaconProposerIndex();
+    } else {
+      List<Integer> first_committee =
+          get_crosslink_committees_at_slot(state, slot).get(0).getCommittee();
+      // TODO: replace slot.intValue() with an UnsignedLong value
+      return first_committee.get(slot.intValue() % first_committee.size());
+    }
   }
 
   /**

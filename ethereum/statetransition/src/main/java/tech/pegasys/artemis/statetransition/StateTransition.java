@@ -19,12 +19,13 @@ import com.google.common.primitives.UnsignedLong;
 import net.consensys.cava.bytes.Bytes32;
 import org.apache.logging.log4j.Level;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
-import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.statetransition.util.BlockProcessingException;
 import tech.pegasys.artemis.statetransition.util.BlockProcessorUtil;
 import tech.pegasys.artemis.statetransition.util.EpochProcessingException;
 import tech.pegasys.artemis.statetransition.util.EpochProcessorUtil;
+import tech.pegasys.artemis.statetransition.util.PreProcessingUtil;
 import tech.pegasys.artemis.statetransition.util.SlotProcessingException;
 import tech.pegasys.artemis.statetransition.util.SlotProcessorUtil;
 import tech.pegasys.artemis.util.alogger.ALogger;
@@ -41,10 +42,12 @@ public class StateTransition {
     this.printEnabled = printEnabled;
   }
 
-  public void initiate(BeaconState state, BeaconBlock block, Bytes32 previous_block_root)
+  public void initiate(BeaconStateWithCache state, BeaconBlock block, Bytes32 previous_block_root)
       throws StateTransitionException {
     LOG.log(Level.INFO, "Begin state transition", printEnabled);
-
+    state.incrementSlot();
+    // pre-process and cache selected state transition calculations
+    preProcessor(state);
     // per-slot processing
     slotProcessor(state, previous_block_root);
     // per-block processing
@@ -59,12 +62,18 @@ public class StateTransition {
         .equals(UnsignedLong.ZERO)) {
       epochProcessor(state, block);
     }
+    // reset all cached state variables
+    state.invalidateCache();
     LOG.log(Level.INFO, "End state transition", printEnabled);
   }
 
-  protected void slotProcessor(BeaconState state, Bytes32 previous_block_root) {
+  protected void preProcessor(BeaconStateWithCache state) {
+    // calcualte currentBeaconProposerIndex
+    PreProcessingUtil.cacheCurrentBeaconProposerIndex(state);
+  }
+
+  protected void slotProcessor(BeaconStateWithCache state, Bytes32 previous_block_root) {
     try {
-      state.incrementSlot();
       LOG.log(Level.INFO, "  Processing new slot: " + state.getSlot(), printEnabled);
       // Slots the proposer has skipped (i.e. layers of RANDAO expected)
       // should be in Validator.randao_skips
@@ -74,7 +83,7 @@ public class StateTransition {
     }
   }
 
-  private void blockProcessor(BeaconState state, BeaconBlock block) {
+  private void blockProcessor(BeaconStateWithCache state, BeaconBlock block) {
     if (BlockProcessorUtil.verify_slot(state, block)) {
       try {
         LOG.log(
@@ -118,7 +127,7 @@ public class StateTransition {
     }
   }
 
-  private void epochProcessor(BeaconState state, BeaconBlock block) {
+  private void epochProcessor(BeaconStateWithCache state, BeaconBlock block) {
     try {
       LOG.log(
           Level.INFO,

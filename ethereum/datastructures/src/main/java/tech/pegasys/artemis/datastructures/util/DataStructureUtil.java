@@ -41,6 +41,7 @@ import tech.pegasys.artemis.datastructures.operations.SlashableAttestation;
 import tech.pegasys.artemis.datastructures.operations.Transfer;
 import tech.pegasys.artemis.datastructures.operations.VoluntaryExit;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.state.Crosslink;
 import tech.pegasys.artemis.datastructures.state.CrosslinkCommittee;
 import tech.pegasys.artemis.datastructures.state.Validator;
@@ -466,8 +467,10 @@ public final class DataStructureUtil {
         BLSSignature.empty());
   }
 
-  public static BeaconState createInitialBeaconState(int numValidators) {
+  public static BeaconStateWithCache createInitialBeaconState(int numValidators) {
+    BeaconStateWithCache state = new BeaconStateWithCache();
     return BeaconStateUtil.get_initial_beacon_state(
+        state,
         newDeposits(numValidators),
         UnsignedLong.valueOf(Constants.GENESIS_SLOT),
         new Eth1Data(Bytes32.ZERO, Bytes32.ZERO));

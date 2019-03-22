@@ -45,7 +45,7 @@ import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.bitwise.BitwiseOps;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 
-public class EpochProcessorUtil {
+public final class EpochProcessorUtil {
   private static final ALogger LOG = new ALogger(EpochProcessorUtil.class.getName());
 
   /**

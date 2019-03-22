@@ -13,70 +13,141 @@
 
 package tech.pegasys.artemis.datastructures.state;
 
+import static tech.pegasys.artemis.datastructures.Constants.ZERO_HASH;
+
 import com.google.common.primitives.UnsignedLong;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.ssz.SSZ;
+import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.datastructures.blocks.Eth1DataVote;
-import tech.pegasys.artemis.datastructures.util.InterfaceAdapter;
 
 public class BeaconState {
   // Misc
-  private UnsignedLong slot;
-  private UnsignedLong genesis_time;
-  private Fork fork; // For versioning hard forks
+  protected UnsignedLong slot;
+  protected UnsignedLong genesis_time;
+  protected Fork fork; // For versioning hard forks
 
   // Validator registry
-  private List<Validator> validator_registry;
-  private List<UnsignedLong> validator_balances;
-  private UnsignedLong validator_registry_update_epoch;
+  protected List<Validator> validator_registry;
+  protected List<UnsignedLong> validator_balances;
+  protected UnsignedLong validator_registry_update_epoch;
 
   // Randomness and committees
-  private List<Bytes32> latest_randao_mixes;
-  private UnsignedLong previous_shuffling_start_shard;
-  private UnsignedLong current_shuffling_start_shard;
-  private UnsignedLong previous_shuffling_epoch;
-  private UnsignedLong current_shuffling_epoch;
-  private Bytes32 previous_shuffling_seed;
-  private Bytes32 current_shuffling_seed;
+  protected List<Bytes32> latest_randao_mixes;
+  protected UnsignedLong previous_shuffling_start_shard;
+  protected UnsignedLong current_shuffling_start_shard;
+  protected UnsignedLong previous_shuffling_epoch;
+  protected UnsignedLong current_shuffling_epoch;
+  protected Bytes32 previous_shuffling_seed;
+  protected Bytes32 current_shuffling_seed;
 
   // Finality
-  private UnsignedLong previous_justified_epoch;
-  private UnsignedLong justified_epoch;
-  private UnsignedLong justification_bitfield;
-  private UnsignedLong finalized_epoch;
+  protected UnsignedLong previous_justified_epoch;
+  protected UnsignedLong justified_epoch;
+  protected UnsignedLong justification_bitfield;
+  protected UnsignedLong finalized_epoch;
 
   // Recent state
-  private List<Crosslink> latest_crosslinks;
-  private List<Bytes32> latest_block_roots;
-  private List<Bytes32> latest_active_index_roots;
-  private List<UnsignedLong> latest_slashed_balances; // Balances slashed at every withdrawal period
-  private List<PendingAttestation> latest_attestations;
-  private List<Bytes32> batched_block_roots;
+  protected List<Crosslink> latest_crosslinks;
+  protected List<Bytes32> latest_block_roots;
+  protected List<Bytes32> latest_active_index_roots;
+  protected List<UnsignedLong>
+      latest_slashed_balances; // Balances slashed at every withdrawal period
+  protected List<PendingAttestation> latest_attestations;
+  protected List<Bytes32> batched_block_roots;
 
   // Ethereum 1.0 chain data
-  private Eth1Data latest_eth1_data;
-  private List<Eth1DataVote> eth1_data_votes;
+  protected Eth1Data latest_eth1_data;
+  protected List<Eth1DataVote> eth1_data_votes;
 
-  private UnsignedLong deposit_index;
+  protected UnsignedLong deposit_index;
 
-  public static BeaconState deepCopy(BeaconState state) {
-    Gson gson =
-        new GsonBuilder()
-            .registerTypeAdapter(Bytes32.class, new InterfaceAdapter<Bytes32>())
-            .registerTypeAdapter(Bytes.class, new InterfaceAdapter<Bytes>())
-            .create();
-    return gson.fromJson(gson.toJson(state), BeaconState.class);
+  public BeaconState() {
+
+    this.slot = UnsignedLong.valueOf(Constants.GENESIS_SLOT);
+    this.genesis_time = UnsignedLong.ZERO;
+    this.fork =
+        new Fork(
+            UnsignedLong.valueOf(Constants.GENESIS_FORK_VERSION),
+            UnsignedLong.valueOf(Constants.GENESIS_FORK_VERSION),
+            UnsignedLong.valueOf(Constants.GENESIS_EPOCH));
+
+    this.validator_registry = new ArrayList<>();
+    this.validator_balances = new ArrayList<>();
+    this.validator_registry_update_epoch = UnsignedLong.valueOf(Constants.GENESIS_EPOCH);
+
+    this.latest_randao_mixes =
+        new ArrayList<>(
+            Collections.nCopies(Constants.LATEST_RANDAO_MIXES_LENGTH, Constants.ZERO_HASH));
+    this.previous_shuffling_start_shard = UnsignedLong.valueOf(Constants.GENESIS_START_SHARD);
+    this.current_shuffling_start_shard = UnsignedLong.valueOf(Constants.GENESIS_START_SHARD);
+    this.previous_shuffling_epoch = UnsignedLong.valueOf(Constants.GENESIS_EPOCH);
+    this.current_shuffling_epoch = UnsignedLong.valueOf(Constants.GENESIS_EPOCH);
+    this.previous_shuffling_seed = ZERO_HASH;
+    this.current_shuffling_seed = ZERO_HASH;
+
+    this.previous_justified_epoch = UnsignedLong.valueOf(Constants.GENESIS_EPOCH);
+    this.justified_epoch = UnsignedLong.valueOf(Constants.GENESIS_EPOCH);
+    this.justification_bitfield = UnsignedLong.ZERO;
+    this.finalized_epoch = UnsignedLong.valueOf(Constants.GENESIS_EPOCH);
+
+    this.latest_crosslinks = new ArrayList<>(Constants.SHARD_COUNT);
+    this.latest_block_roots =
+        new ArrayList<>(
+            Collections.nCopies(Constants.LATEST_BLOCK_ROOTS_LENGTH, Constants.ZERO_HASH));
+    this.latest_active_index_roots =
+        new ArrayList<>(
+            Collections.nCopies(Constants.LATEST_INDEX_ROOTS_LENGTH, Constants.ZERO_HASH));
+    this.latest_slashed_balances =
+        new ArrayList<>(
+            Collections.nCopies(Constants.LATEST_SLASHED_EXIT_LENGTH, UnsignedLong.ZERO));
+    this.latest_attestations = new ArrayList<>();
+    this.batched_block_roots = new ArrayList<>();
+
+    this.latest_eth1_data = new Eth1Data(Bytes32.ZERO, Bytes32.ZERO);
+    this.eth1_data_votes = new ArrayList<>();
+    this.deposit_index = UnsignedLong.ZERO;
+    for (int i = 0; i < Constants.SHARD_COUNT; i++) {
+      this.latest_crosslinks.add(
+          new Crosslink(UnsignedLong.valueOf(Constants.GENESIS_SLOT), Bytes32.ZERO));
+    }
   }
 
-  public BeaconState() {}
+  public BeaconState(BeaconState state) {
+    this.slot = state.getSlot();
+    this.genesis_time = state.getGenesis_time();
+    this.fork = state.getFork();
+    this.validator_registry = state.getValidator_registry();
+    this.validator_balances = state.getValidator_balances();
+    this.validator_registry_update_epoch = state.getValidator_registry_update_epoch();
+    this.latest_randao_mixes = state.getLatest_randao_mixes();
+    this.previous_shuffling_start_shard = state.getPrevious_shuffling_start_shard();
+    this.current_shuffling_start_shard = state.getCurrent_shuffling_start_shard();
+    this.previous_shuffling_epoch = state.getPrevious_shuffling_epoch();
+    this.current_shuffling_epoch = state.getCurrent_shuffling_epoch();
+    this.previous_shuffling_seed = state.getPrevious_shuffling_seed();
+    this.current_shuffling_seed = state.getCurrent_shuffling_seed();
+    this.previous_justified_epoch = state.getPrevious_justified_epoch();
+    this.justified_epoch = state.getPrevious_justified_epoch();
+    this.justification_bitfield = state.getJustification_bitfield();
+    this.finalized_epoch = state.getFinalized_epoch();
+    this.latest_crosslinks = state.getLatest_crosslinks();
+    this.latest_block_roots = state.getLatest_block_roots();
+    this.latest_active_index_roots = state.getLatest_active_index_roots();
+    this.latest_slashed_balances = state.getLatest_slashed_balances();
+    this.latest_attestations = state.getLatest_attestations();
+    this.batched_block_roots = state.getBatched_block_roots();
+    this.latest_eth1_data = state.getLatest_eth1_data();
+    this.eth1_data_votes = state.getEth1_data_votes();
+    this.deposit_index = state.getDeposit_index();
+  }
 
   public BeaconState(
       // Misc
