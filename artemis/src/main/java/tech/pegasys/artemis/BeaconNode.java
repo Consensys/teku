@@ -72,7 +72,10 @@ public class BeaconNode {
   private CommandLine commandLine;
 
   public BeaconNode(CommandLine commandLine, CommandLineArguments cliArgs) {
-    ArtemisConfiguration config = ArtemisConfiguration.fromFile(cliArgs.getConfigFile());
+    this(commandLine, cliArgs, ArtemisConfiguration.fromFile(cliArgs.getConfigFile()));
+  }
+
+  BeaconNode(CommandLine commandLine, CommandLineArguments cliArgs, ArtemisConfiguration config) {
     this.eventBus = new AsyncEventBus(threadPool);
     if ("mock".equals(config.getNetworkMode())) {
       this.p2pNetwork = new MockP2PNetwork(eventBus);
@@ -152,5 +155,9 @@ public class BeaconNode {
     TimeSeriesRecord tsRecord = adapter.transform();
     fileProvider.setRecord(tsRecord);
     FileProvider.output(outputFilename, fileProvider);
+  }
+
+  P2PNetwork p2pNetwork() {
+    return p2pNetwork;
   }
 }
