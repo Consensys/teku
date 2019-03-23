@@ -13,11 +13,8 @@
 
 package tech.pegasys.artemis.datastructures.state;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import net.consensys.cava.bytes.Bytes;
-import net.consensys.cava.bytes.Bytes32;
-import tech.pegasys.artemis.datastructures.util.InterfaceAdapter;
+import java.util.stream.Collectors;
+import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 
 public final class BeaconStateWithCache extends BeaconState {
 
@@ -28,18 +25,39 @@ public final class BeaconStateWithCache extends BeaconState {
     this.currentBeaconProposerIndex = -1;
   }
 
-  public BeaconStateWithCache(BeaconState state, int currentBeaconProposerIndex) {
-    super(state);
-    this.currentBeaconProposerIndex = currentBeaconProposerIndex;
+  public BeaconStateWithCache(BeaconStateWithCache state) {
+    this.slot = state.getSlot();
+    this.genesis_time = state.getGenesis_time();
+    this.fork = new Fork(state.getFork());
+    this.validator_registry = state.getValidator_registry().stream().collect(Collectors.toList());
+    this.validator_balances = state.getValidator_balances().stream().collect(Collectors.toList());
+    this.validator_registry_update_epoch = state.getValidator_registry_update_epoch();
+    this.latest_randao_mixes = state.getLatest_randao_mixes().stream().collect(Collectors.toList());
+    this.previous_shuffling_start_shard = state.getPrevious_shuffling_start_shard();
+    this.current_shuffling_start_shard = state.getCurrent_shuffling_start_shard();
+    this.previous_shuffling_epoch = state.getPrevious_shuffling_epoch();
+    this.current_shuffling_epoch = state.getCurrent_shuffling_epoch();
+    this.previous_shuffling_seed = state.getPrevious_shuffling_seed();
+    this.current_shuffling_seed = state.getCurrent_shuffling_seed();
+    this.previous_justified_epoch = state.getPrevious_justified_epoch();
+    this.justified_epoch = state.getPrevious_justified_epoch();
+    this.justification_bitfield = state.getJustification_bitfield();
+    this.finalized_epoch = state.getFinalized_epoch();
+    this.latest_crosslinks = state.getLatest_crosslinks().stream().collect(Collectors.toList());
+    this.latest_block_roots = state.getLatest_block_roots().stream().collect(Collectors.toList());
+    this.latest_active_index_roots =
+        state.getLatest_active_index_roots().stream().collect(Collectors.toList());
+    this.latest_slashed_balances =
+        state.getLatest_slashed_balances().stream().collect(Collectors.toList());
+    this.latest_attestations = state.getLatest_attestations().stream().collect(Collectors.toList());
+    this.batched_block_roots = state.getBatched_block_roots().stream().collect(Collectors.toList());
+    this.latest_eth1_data = new Eth1Data(state.getLatest_eth1_data());
+    this.eth1_data_votes = state.getEth1_data_votes().stream().collect(Collectors.toList());
+    this.deposit_index = state.getDeposit_index();
   }
 
   public static BeaconStateWithCache deepCopy(BeaconStateWithCache state) {
-    Gson gson =
-        new GsonBuilder()
-            .registerTypeAdapter(Bytes32.class, new InterfaceAdapter<Bytes32>())
-            .registerTypeAdapter(Bytes.class, new InterfaceAdapter<Bytes>())
-            .create();
-    return gson.fromJson(gson.toJson(state), BeaconStateWithCache.class);
+    return new BeaconStateWithCache(state);
   }
 
   public int getCurrentBeaconProposerIndex() {

@@ -28,6 +28,11 @@ public final class Eth1DataVote {
     this.vote_count = vote_count;
   }
 
+  public Eth1DataVote(Eth1DataVote eth1DataVote) {
+    this.eth1_data = new Eth1Data(eth1DataVote.getEth1_data());
+    this.vote_count = eth1DataVote.getVote_count();
+  }
+
   public static Eth1DataVote fromBytes(Bytes bytes) {
     return SSZ.decode(
         bytes,

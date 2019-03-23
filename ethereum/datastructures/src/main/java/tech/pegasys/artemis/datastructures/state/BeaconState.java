@@ -120,35 +120,6 @@ public class BeaconState {
     }
   }
 
-  public BeaconState(BeaconState state) {
-    this.slot = state.getSlot();
-    this.genesis_time = state.getGenesis_time();
-    this.fork = state.getFork();
-    this.validator_registry = state.getValidator_registry();
-    this.validator_balances = state.getValidator_balances();
-    this.validator_registry_update_epoch = state.getValidator_registry_update_epoch();
-    this.latest_randao_mixes = state.getLatest_randao_mixes();
-    this.previous_shuffling_start_shard = state.getPrevious_shuffling_start_shard();
-    this.current_shuffling_start_shard = state.getCurrent_shuffling_start_shard();
-    this.previous_shuffling_epoch = state.getPrevious_shuffling_epoch();
-    this.current_shuffling_epoch = state.getCurrent_shuffling_epoch();
-    this.previous_shuffling_seed = state.getPrevious_shuffling_seed();
-    this.current_shuffling_seed = state.getCurrent_shuffling_seed();
-    this.previous_justified_epoch = state.getPrevious_justified_epoch();
-    this.justified_epoch = state.getPrevious_justified_epoch();
-    this.justification_bitfield = state.getJustification_bitfield();
-    this.finalized_epoch = state.getFinalized_epoch();
-    this.latest_crosslinks = state.getLatest_crosslinks();
-    this.latest_block_roots = state.getLatest_block_roots();
-    this.latest_active_index_roots = state.getLatest_active_index_roots();
-    this.latest_slashed_balances = state.getLatest_slashed_balances();
-    this.latest_attestations = state.getLatest_attestations();
-    this.batched_block_roots = state.getBatched_block_roots();
-    this.latest_eth1_data = state.getLatest_eth1_data();
-    this.eth1_data_votes = state.getEth1_data_votes();
-    this.deposit_index = state.getDeposit_index();
-  }
-
   public BeaconState(
       // Misc
       UnsignedLong slot,
