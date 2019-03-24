@@ -52,7 +52,7 @@ public final class Constants {
 
   // Time parameters
   public static final int SECONDS_PER_SLOT = 6; // 6 seconds
-  public static final int MIN_ATTESTATION_INCLUSION_DELAY = 4; // 2^2 slots
+  public static final int MIN_ATTESTATION_INCLUSION_DELAY = 1; // 2^2 slots
   public static final int SLOTS_PER_EPOCH = 8; // 2^6 slots
   public static final int MIN_SEED_LOOKAHEAD = 1; // 2^0 epochs (6.4 minutes)
   public static final int ACTIVATION_EXIT_DELAY = 4; // 2^2 epochs (25.6 minutes)

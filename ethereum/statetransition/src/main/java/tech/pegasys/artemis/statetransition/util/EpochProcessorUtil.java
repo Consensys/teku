@@ -24,6 +24,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -392,7 +393,7 @@ public final class EpochProcessorUtil {
         validator_indices = ValidatorsUtil.get_validators_not_present(validator_indices);
         // remove inactive validator indices
         validator_indices =
-            (List<Integer>) Collections2.filter(validator_indices, active_validators_filter);
+            Lists.newArrayList(Collections2.filter(validator_indices, active_validators_filter));
         // apply penalty
         case_two_penalties(
             state,
@@ -444,22 +445,17 @@ public final class EpochProcessorUtil {
       throws EpochProcessingException {
     try {
       List<Integer> previous_indices = AttestationUtil.get_previous_epoch_attester_indices(state);
-      previous_indices
-          .parallelStream()
-          .forEach(
-              index -> {
-                UnsignedLong inclusion_slot = AttestationUtil.inclusion_slot(state, index);
-                int proposer_index =
-                    BeaconStateUtil.get_beacon_proposer_index(state, inclusion_slot);
-                List<UnsignedLong> balances = state.getValidator_balances();
-                UnsignedLong balance = balances.get(proposer_index);
-                UnsignedLong reward =
-                    base_reward(state, index, previous_total_balance)
-                        .dividedBy(
-                            UnsignedLong.valueOf(Constants.ATTESTATION_INCLUSION_REWARD_QUOTIENT));
-                balance = balance.plus(reward);
-                balances.set(proposer_index, balance);
-              });
+      for (int index : previous_indices) {
+        UnsignedLong inclusion_slot = AttestationUtil.inclusion_slot(state, index);
+        int proposer_index = BeaconStateUtil.get_beacon_proposer_index(state, inclusion_slot);
+        List<UnsignedLong> balances = state.getValidator_balances();
+        UnsignedLong balance = balances.get(proposer_index);
+        UnsignedLong reward =
+            base_reward(state, index, previous_total_balance)
+                .dividedBy(UnsignedLong.valueOf(Constants.ATTESTATION_INCLUSION_REWARD_QUOTIENT));
+        balance = balance.plus(reward);
+        balances.set(proposer_index, balance);
+      }
     } catch (IllegalArgumentException e) {
       LOG.log(Level.WARN, "EpochProcessingException thrown in attestationInclusion()");
       throw new EpochProcessingException(e);
@@ -490,13 +486,13 @@ public final class EpochProcessorUtil {
             BeaconStateUtil.get_crosslink_committees_at_slot(
                 state, UnsignedLong.valueOf(slot), false);
         for (CrosslinkCommittee crosslink_committee : crosslink_committees_at_slot) {
-          List<Integer> attester_indices =
-              AttestationUtil.attesting_validators(state, crosslink_committee);
+          Map<Integer, Integer> attester_indices =
+              AttestationUtil.attesting_validators(state, crosslink_committee).stream()
+                  .collect(Collectors.toMap(i -> i, i -> i));
           for (Integer index : crosslink_committee.getCommittee()) {
             List<UnsignedLong> balances = state.getValidator_balances();
             UnsignedLong balance = balances.get(index);
-            // TODO: it would be good to replace this indexOf with an O(1) lookup
-            if (attester_indices.indexOf(index) > -1) {
+            if (attester_indices.containsKey(index)) {
               UnsignedLong reward =
                   base_reward(state, index, previous_total_balance)
                       .times(

@@ -76,7 +76,7 @@ public class Crosslink {
 
   /** ******************* * GETTERS & SETTERS * * ******************* */
   public Bytes32 getCrosslink_data_root() {
-    return crosslink_data_root.copy();
+    return crosslink_data_root;
   }
 
   public void setCrosslink_data_root(Bytes32 shard_block_root) {
