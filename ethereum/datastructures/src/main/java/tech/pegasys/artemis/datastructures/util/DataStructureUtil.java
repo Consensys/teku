@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Random;
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
+import org.apache.logging.log4j.Level;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockBody;
@@ -156,7 +157,9 @@ public final class DataStructureUtil {
         BeaconStateUtil.get_block_root(
             state, BeaconStateUtil.get_epoch_start_slot(BeaconStateUtil.slot_to_epoch(slot)));
     Bytes32 shard_block_root = Bytes32.ZERO;
-    Crosslink latest_crosslink = state.getLatest_crosslinks().get(shard.intValue());
+    LOG.log(Level.INFO, "from ValidatorCoordinator: shard =" + shard, true);
+    Crosslink latest_crosslink =
+        state.getLatest_crosslinks().get(shard.intValue());
     UnsignedLong justified_epoch = state.getJustified_epoch();
     Bytes32 justified_block_root =
         BeaconStateUtil.get_block_root(

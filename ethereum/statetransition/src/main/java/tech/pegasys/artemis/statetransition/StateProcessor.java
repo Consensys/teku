@@ -113,7 +113,8 @@ public class StateProcessor {
     LOG.log(Level.INFO, "******* Slot Event Detected *******");
     LOG.log(Level.INFO, "node time: " + nodeTime.longValue());
     LOG.log(Level.INFO, "node slot: " + nodeSlot.longValue());
-
+    LOG.log(Level.INFO, "waiting 2 seconds for block to arrive");
+    Thread.sleep(2000);
     // Get all the unprocessed blocks that are for slots <= nodeSlot
     List<Optional<BeaconBlock>> unprocessedBlocks =
         this.store.getUnprocessedBlocksUntilSlot(nodeSlot);
@@ -122,6 +123,7 @@ public class StateProcessor {
     unprocessedBlocks.forEach((block) -> processFork(block));
 
     // Update the block that is subjectively the head of the chain  using lmd_ghost
+    LOG.log(Level.INFO, "updateHeadBlockUsingLMDGhost()");
     updateHeadBlockUsingLMDGhost();
 
     // Get head block's state, and initialize a newHeadState variable to run state transition on

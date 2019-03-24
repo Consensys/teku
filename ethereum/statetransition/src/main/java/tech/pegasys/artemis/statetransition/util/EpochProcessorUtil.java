@@ -444,17 +444,22 @@ public final class EpochProcessorUtil {
       throws EpochProcessingException {
     try {
       List<Integer> previous_indices = AttestationUtil.get_previous_epoch_attester_indices(state);
-      for (int index : previous_indices) {
-        UnsignedLong inclusion_slot = AttestationUtil.inclusion_slot(state, index);
-        int proposer_index = BeaconStateUtil.get_beacon_proposer_index(state, inclusion_slot);
-        List<UnsignedLong> balances = state.getValidator_balances();
-        UnsignedLong balance = balances.get(proposer_index);
-        UnsignedLong reward =
-            base_reward(state, index, previous_total_balance)
-                .dividedBy(UnsignedLong.valueOf(Constants.ATTESTATION_INCLUSION_REWARD_QUOTIENT));
-        balance = balance.plus(reward);
-        balances.set(proposer_index, balance);
-      }
+      previous_indices
+          .parallelStream()
+          .forEach(
+              index -> {
+                UnsignedLong inclusion_slot = AttestationUtil.inclusion_slot(state, index);
+                int proposer_index =
+                    BeaconStateUtil.get_beacon_proposer_index(state, inclusion_slot);
+                List<UnsignedLong> balances = state.getValidator_balances();
+                UnsignedLong balance = balances.get(proposer_index);
+                UnsignedLong reward =
+                    base_reward(state, index, previous_total_balance)
+                        .dividedBy(
+                            UnsignedLong.valueOf(Constants.ATTESTATION_INCLUSION_REWARD_QUOTIENT));
+                balance = balance.plus(reward);
+                balances.set(proposer_index, balance);
+              });
     } catch (IllegalArgumentException e) {
       LOG.log(Level.WARN, "EpochProcessingException thrown in attestationInclusion()");
       throw new EpochProcessingException(e);
@@ -482,6 +487,7 @@ public final class EpochProcessorUtil {
               .collect(Collectors.toList());
       LOG.log(Level.INFO, "previous_epoch_start_slot: " + previous_epoch_start_slot);
       LOG.log(Level.INFO, "current_epoch_start_slot: " + current_epoch_start_slot);
+      LOG.log(Level.INFO, "slot_range: " + slot_range.size());
       for (Long slot : slot_range) {
         List<CrosslinkCommittee> crosslink_committees_at_slot =
             BeaconStateUtil.get_crosslink_committees_at_slot(
@@ -525,11 +531,16 @@ public final class EpochProcessorUtil {
       List<Integer> active_validator_indices =
           ValidatorsUtil.get_active_validator_indices(state.getValidator_registry(), currentEpoch);
       List<UnsignedLong> balances = state.getValidator_balances();
-      for (Integer index : active_validator_indices) {
-        if (balances.get(index).compareTo(UnsignedLong.valueOf(Constants.EJECTION_BALANCE)) < 0) {
-          BeaconStateUtil.exit_validator(state, index);
-        }
-      }
+
+      active_validator_indices
+          .parallelStream()
+          .forEach(
+              index -> {
+                if (balances.get(index).compareTo(UnsignedLong.valueOf(Constants.EJECTION_BALANCE))
+                    < 0) {
+                  BeaconStateUtil.exit_validator(state, index);
+                }
+              });
     } catch (IllegalArgumentException e) {
       LOG.log(Level.WARN, "EpochProcessingException thrown in process_ejections()");
       throw new EpochProcessingException(e);

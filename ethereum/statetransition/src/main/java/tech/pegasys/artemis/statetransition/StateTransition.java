@@ -138,24 +138,37 @@ public class StateTransition {
           printEnabled);
 
       EpochProcessorUtil.updateEth1Data(state);
+      LOG.log(Level.INFO, "updateEth1Data()", printEnabled);
       EpochProcessorUtil.updateJustification(state, block);
+      LOG.log(Level.INFO, "updateJustification()", printEnabled);
       EpochProcessorUtil.updateCrosslinks(state);
+      LOG.log(Level.INFO, "updateCrosslinks()", printEnabled);
 
       UnsignedLong previous_total_balance = BeaconStateUtil.previous_total_balance(state);
+      LOG.log(Level.INFO, "justificationAndFinalization()", printEnabled);
       EpochProcessorUtil.justificationAndFinalization(state, previous_total_balance);
+      LOG.log(Level.INFO, "attestionInclusion()", printEnabled);
       EpochProcessorUtil.attestionInclusion(state, previous_total_balance);
+      LOG.log(Level.INFO, "crosslinkRewards()", printEnabled);
       EpochProcessorUtil.crosslinkRewards(state, previous_total_balance);
 
+      LOG.log(Level.INFO, "process_ejections()", printEnabled);
       EpochProcessorUtil.process_ejections(state);
 
+      LOG.log(Level.INFO, "previousStateUpdates()", printEnabled);
       EpochProcessorUtil.previousStateUpdates(state);
       if (EpochProcessorUtil.shouldUpdateValidatorRegistry(state)) {
+        LOG.log(Level.INFO, "update_validator_registry()", printEnabled);
         EpochProcessorUtil.update_validator_registry(state);
+        LOG.log(Level.INFO, "currentStateUpdatesAlt1()", printEnabled);
         EpochProcessorUtil.currentStateUpdatesAlt1(state);
       } else {
+        LOG.log(Level.INFO, "currentStateUpdatesAlt2()", printEnabled);
         EpochProcessorUtil.currentStateUpdatesAlt2(state);
       }
+      LOG.log(Level.INFO, "process_penalties_and_exits()", printEnabled);
       EpochProcessorUtil.process_penalties_and_exits(state);
+      LOG.log(Level.INFO, "finalUpdates()", printEnabled);
       EpochProcessorUtil.finalUpdates(state);
     } catch (EpochProcessingException e) {
       LOG.log(Level.WARN, "  Epoch processing error: " + e, printEnabled);
