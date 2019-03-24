@@ -183,7 +183,7 @@ public final class EpochProcessorUtil {
             state
                 .getLatest_crosslinks()
                 .set(
-                    toIntExact(shard.longValue()),
+                    toIntExact(shard.longValue()) % Constants.SHARD_COUNT,
                     new Crosslink(
                         BeaconStateUtil.get_current_epoch(state),
                         AttestationUtil.winning_root(state, committee)));
@@ -485,9 +485,6 @@ public final class EpochProcessorUtil {
           LongStream.range(previous_epoch_start_slot, current_epoch_start_slot)
               .boxed()
               .collect(Collectors.toList());
-      LOG.log(Level.INFO, "previous_epoch_start_slot: " + previous_epoch_start_slot);
-      LOG.log(Level.INFO, "current_epoch_start_slot: " + current_epoch_start_slot);
-      LOG.log(Level.INFO, "slot_range: " + slot_range.size());
       for (Long slot : slot_range) {
         List<CrosslinkCommittee> crosslink_committees_at_slot =
             BeaconStateUtil.get_crosslink_committees_at_slot(

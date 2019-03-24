@@ -424,7 +424,8 @@ public final class BlockProcessorUtil {
                     .equals(
                         state
                             .getLatest_crosslinks()
-                            .get(attestation.getData().getShard().intValue())
+                            .get(
+                                attestation.getData().getShard().intValue() % Constants.SHARD_COUNT)
                             .getCrosslink_data_root())
                 || attestation
                     .getData()
@@ -432,7 +433,8 @@ public final class BlockProcessorUtil {
                     .equals(
                         state
                             .getLatest_crosslinks()
-                            .get(attestation.getData().getShard().intValue())
+                            .get(
+                                attestation.getData().getShard().intValue() % Constants.SHARD_COUNT)
                             .getCrosslink_data_root()),
             "in process attestations(): 6");
 

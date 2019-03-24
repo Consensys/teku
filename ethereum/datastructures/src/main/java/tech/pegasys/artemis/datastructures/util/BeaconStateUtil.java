@@ -193,7 +193,10 @@ public class BeaconStateUtil {
     for (long i = 0; i < committees_per_slot.longValue(); i++) {
       CrosslinkCommittee committee =
           new CrosslinkCommittee(
-              committees_per_slot.times(offset).plus(UnsignedLong.valueOf(i)),
+              committees_per_slot
+                  .times(offset)
+                  .plus(UnsignedLong.valueOf(i))
+                  .mod(UnsignedLong.valueOf(Constants.SHARD_COUNT)),
               shuffling.get(toIntExact(slot_start_shard.longValue() + i) % Constants.SHARD_COUNT));
       crosslink_committees_at_slot.add(committee);
     }
@@ -268,7 +271,10 @@ public class BeaconStateUtil {
   }
 
   public static Bytes32 getShard_block_root(BeaconState state, UnsignedLong shard) {
-    return state.getLatest_crosslinks().get(toIntExact(shard.longValue())).getCrosslink_data_root();
+    return state
+        .getLatest_crosslinks()
+        .get(toIntExact(shard.longValue()) % Constants.SHARD_COUNT)
+        .getCrosslink_data_root();
   }
 
   /**
