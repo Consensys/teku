@@ -18,9 +18,10 @@ import java.util.Objects;
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.ssz.SSZ;
+import tech.pegasys.artemis.datastructures.Copyable;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 
-public final class Validator {
+public final class Validator implements Copyable<Validator> {
 
   // BLS public key
   private BLSPublicKey pubkey;
@@ -62,6 +63,11 @@ public final class Validator {
     this.withdrawal_epoch = validator.getWithdrawal_epoch();
     this.initiated_exit = validator.hasInitiatedExit();
     this.slashed = validator.isSlashed();
+  }
+
+  @Override
+  public Validator copy() {
+    return new Validator(this);
   }
 
   public static Validator fromBytes(Bytes bytes) {

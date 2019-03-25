@@ -17,9 +17,10 @@ import com.google.common.primitives.UnsignedLong;
 import java.util.Objects;
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.ssz.SSZ;
+import tech.pegasys.artemis.datastructures.Copyable;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
 
-public class PendingAttestation {
+public class PendingAttestation implements Copyable<PendingAttestation> {
 
   private Bytes aggregation_bitfield;
   private AttestationData data;
@@ -42,6 +43,11 @@ public class PendingAttestation {
     this.data = new AttestationData(pendingAttestation.getData());
     this.custody_bitfield = pendingAttestation.getCustody_bitfield().copy();
     this.inclusion_slot = pendingAttestation.getInclusionSlot();
+  }
+
+  @Override
+  public PendingAttestation copy() {
+    return new PendingAttestation(this);
   }
 
   public static PendingAttestation fromBytes(Bytes bytes) {

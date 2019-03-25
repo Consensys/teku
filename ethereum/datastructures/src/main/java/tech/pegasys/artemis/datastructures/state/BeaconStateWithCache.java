@@ -13,7 +13,12 @@
 
 package tech.pegasys.artemis.datastructures.state;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.stream.Collectors;
+import net.consensys.cava.bytes.Bytes;
+import net.consensys.cava.bytes.Bytes32;
+import tech.pegasys.artemis.datastructures.Copyable;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 
 public final class BeaconStateWithCache extends BeaconState {
@@ -29,10 +34,11 @@ public final class BeaconStateWithCache extends BeaconState {
     this.slot = state.getSlot();
     this.genesis_time = state.getGenesis_time();
     this.fork = new Fork(state.getFork());
-    this.validator_registry = state.getValidator_registry().stream().collect(Collectors.toList());
+    this.validator_registry = this.copyList(state.getValidator_registry(), new ArrayList<>());
     this.validator_balances = state.getValidator_balances().stream().collect(Collectors.toList());
     this.validator_registry_update_epoch = state.getValidator_registry_update_epoch();
-    this.latest_randao_mixes = state.getLatest_randao_mixes().stream().collect(Collectors.toList());
+    this.latest_randao_mixes =
+        this.copyBytesList(state.getLatest_randao_mixes(), new ArrayList<>());
     this.previous_shuffling_start_shard = state.getPrevious_shuffling_start_shard();
     this.current_shuffling_start_shard = state.getCurrent_shuffling_start_shard();
     this.previous_shuffling_epoch = state.getPrevious_shuffling_epoch();
@@ -43,17 +49,32 @@ public final class BeaconStateWithCache extends BeaconState {
     this.justified_epoch = state.getPrevious_justified_epoch();
     this.justification_bitfield = state.getJustification_bitfield();
     this.finalized_epoch = state.getFinalized_epoch();
-    this.latest_crosslinks = state.getLatest_crosslinks().stream().collect(Collectors.toList());
-    this.latest_block_roots = state.getLatest_block_roots().stream().collect(Collectors.toList());
+    this.latest_crosslinks = this.copyList(state.getLatest_crosslinks(), new ArrayList<>());
+    this.latest_block_roots = this.copyBytesList(state.getLatest_block_roots(), new ArrayList<>());
     this.latest_active_index_roots =
-        state.getLatest_active_index_roots().stream().collect(Collectors.toList());
+        this.copyBytesList(state.getLatest_active_index_roots(), new ArrayList<>());
     this.latest_slashed_balances =
         state.getLatest_slashed_balances().stream().collect(Collectors.toList());
-    this.latest_attestations = state.getLatest_attestations().stream().collect(Collectors.toList());
-    this.batched_block_roots = state.getBatched_block_roots().stream().collect(Collectors.toList());
+    this.latest_attestations = this.copyList(state.getLatest_attestations(), new ArrayList<>());
+    this.batched_block_roots =
+        this.copyBytesList(state.getBatched_block_roots(), new ArrayList<>());
     this.latest_eth1_data = new Eth1Data(state.getLatest_eth1_data());
-    this.eth1_data_votes = state.getEth1_data_votes().stream().collect(Collectors.toList());
+    this.eth1_data_votes = this.copyList(state.getEth1_data_votes(), new ArrayList<>());
     this.deposit_index = state.getDeposit_index();
+  }
+
+  private <S extends Copyable<S>, T extends List<S>> T copyList(T sourceList, T destinationList) {
+    for (S sourceItem : sourceList) {
+      destinationList.add(sourceItem.copy());
+    }
+    return destinationList;
+  }
+
+  private <T extends List<Bytes32>> T copyBytesList(T sourceList, T destinationList) {
+    for (Bytes sourceItem : sourceList) {
+      destinationList.add((Bytes32) sourceItem.copy());
+    }
+    return destinationList;
   }
 
   public static BeaconStateWithCache deepCopy(BeaconStateWithCache state) {
