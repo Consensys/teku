@@ -63,7 +63,7 @@ public class ValidatorsUtil {
     List<Integer> active_validator_indices = new ArrayList<>();
     IntStream.range(0, validators.size())
         .parallel()
-        .forEachOrdered(
+        .forEach(
             index -> {
               if (validators.get(index).is_active_validator(epoch)) {
                 active_validator_indices.add(index);
