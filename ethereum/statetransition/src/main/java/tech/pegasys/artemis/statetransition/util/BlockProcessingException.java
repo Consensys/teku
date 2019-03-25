@@ -13,7 +13,7 @@
 
 package tech.pegasys.artemis.statetransition.util;
 
-public class BlockProcessingException extends Exception {
+public final class BlockProcessingException extends Exception {
   public BlockProcessingException(String err) {
     super(err);
   }

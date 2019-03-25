@@ -30,6 +30,12 @@ public class Fork {
     this.epoch = epoch;
   }
 
+  public Fork(Fork fork) {
+    this.previous_version = fork.getPrevious_version();
+    this.current_version = fork.getCurrent_version();
+    this.epoch = fork.getEpoch();
+  }
+
   public static Fork fromBytes(Bytes bytes) {
     return SSZ.decode(
         bytes,

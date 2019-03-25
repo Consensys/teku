@@ -68,7 +68,7 @@ public class BLSPublicKey {
 
   private final PublicKey publicKey;
 
-  BLSPublicKey(PublicKey publicKey) {
+  public BLSPublicKey(PublicKey publicKey) {
     this.publicKey = publicKey;
   }
 
@@ -91,11 +91,11 @@ public class BLSPublicKey {
     }
   }
 
-  PublicKey getPublicKey() {
+  public PublicKey getPublicKey() {
     return publicKey;
   }
 
-  boolean isEmpty() {
+  public boolean isEmpty() {
     return isNull(publicKey);
   }
 

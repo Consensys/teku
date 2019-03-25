@@ -22,8 +22,8 @@ public final class Constants {
   // The constants below are correct as of spec v0.1
 
   // Misc
-  public static final int SHARD_COUNT = 1024; // 2^10 shards
-  public static final int TARGET_COMMITTEE_SIZE = 128; // 2^7 validators
+  public static final int SHARD_COUNT = 4; // 2^10 shards
+  public static final int TARGET_COMMITTEE_SIZE = 2; // 2^7 validators
   public static final int MAX_BALANCE_CHURN_QUOTIENT = 32; // 2^5
   public static final UnsignedLong BEACON_CHAIN_SHARD_NUMBER = UnsignedLong.MAX_VALUE; // 2^64 - 1
   public static final int MAX_INDICES_PER_SLASHABLE_VOTE = 4096; // 2^12 votes
@@ -52,18 +52,18 @@ public final class Constants {
 
   // Time parameters
   public static final int SECONDS_PER_SLOT = 6; // 6 seconds
-  public static final int MIN_ATTESTATION_INCLUSION_DELAY = 4; // 2^2 slots
-  public static final int SLOTS_PER_EPOCH = 64; // 2^6 slots
+  public static final int MIN_ATTESTATION_INCLUSION_DELAY = 1; // 2^2 slots
+  public static final int SLOTS_PER_EPOCH = 8; // 2^6 slots
   public static final int MIN_SEED_LOOKAHEAD = 1; // 2^0 epochs (6.4 minutes)
   public static final int ACTIVATION_EXIT_DELAY = 4; // 2^2 epochs (25.6 minutes)
   public static final int EPOCHS_PER_ETH1_VOTING_PERIOD = 16; // 2^4 epochs (~1.7 hours)
   public static final int MIN_VALIDATOR_WITHDRAWABILITY_DELAY = 256; // 2^8 epochs (~27 hours)
 
   // State list lengths
-  public static final int LATEST_BLOCK_ROOTS_LENGTH = 8192; // 2^13 slots (~13 hours)
-  public static final int LATEST_RANDAO_MIXES_LENGTH = 8192; // 2^13 epochs (~36 days)
-  public static final int LATEST_INDEX_ROOTS_LENGTH = 8192; // 2^13 epochs (~36 days)
-  public static final int LATEST_SLASHED_EXIT_LENGTH = 8192; // 2^13 epochs (~36 days)
+  public static final int LATEST_BLOCK_ROOTS_LENGTH = 64; // 2^13 slots (~13 hours)
+  public static final int LATEST_RANDAO_MIXES_LENGTH = 64; // 2^13 epochs (~36 days)
+  public static final int LATEST_INDEX_ROOTS_LENGTH = 64; // 2^13 epochs (~36 days)
+  public static final int LATEST_SLASHED_EXIT_LENGTH = 64; // 2^13 epochs (~36 days)
 
   // Reward and penalty quotients
   public static final int BASE_REWARD_QUOTIENT = 32; // 2^5

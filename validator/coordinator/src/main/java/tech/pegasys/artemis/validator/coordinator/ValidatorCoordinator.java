@@ -28,6 +28,7 @@ import tech.pegasys.artemis.datastructures.blocks.Proposal;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
@@ -46,7 +47,7 @@ public class ValidatorCoordinator {
   private final EventBus eventBus;
 
   private StateTransition stateTransition;
-  private BeaconState state;
+  private BeaconStateWithCache state;
   private BeaconBlock block;
   private Bytes32 blockRoot;
   private Bytes32 stateRoot;
@@ -87,7 +88,7 @@ public class ValidatorCoordinator {
   private void simulateNewMessages() {
     List<Attestation> current_attestations;
     try {
-      LOG.log(Level.INFO, "In MockP2PNetwork", printEnabled);
+      LOG.log(Level.INFO, "In ValidatorCoordinator", printEnabled);
       if (state
               .getSlot()
               .compareTo(
@@ -128,18 +129,20 @@ public class ValidatorCoordinator {
       block.setSignature(signed_proposal);
       blockRoot = HashTreeUtil.hash_tree_root(block.toBytes());
 
-      LOG.log(Level.INFO, "MockP2PNetwork - NEWLY PRODUCED BLOCK", printEnabled);
-      LOG.log(Level.INFO, "MockP2PNetwork - block.slot: " + block.getSlot(), printEnabled);
+      LOG.log(Level.INFO, "ValidatorCoordinator - NEWLY PRODUCED BLOCK", printEnabled);
+      LOG.log(Level.INFO, "ValidatorCoordinator - block.slot: " + block.getSlot(), printEnabled);
       LOG.log(
           Level.INFO,
-          "MockP2PNetwork - block.parent_root: " + block.getParent_root(),
+          "ValidatorCoordinator - block.parent_root: " + block.getParent_root(),
           printEnabled);
       LOG.log(
-          Level.INFO, "MockP2PNetwork - block.state_root: " + block.getState_root(), printEnabled);
-      LOG.log(Level.INFO, "MockP2PNetwork - block.block_root: " + blockRoot, printEnabled);
+          Level.INFO,
+          "ValidatorCoordinator - block.state_root: " + block.getState_root(),
+          printEnabled);
+      LOG.log(Level.INFO, "ValidatorCoordinator - block.block_root: " + blockRoot, printEnabled);
 
       this.eventBus.post(block);
-      LOG.log(Level.INFO, "End MockP2PNetwork", printEnabled);
+      LOG.log(Level.INFO, "End ValidatorCoordinator", printEnabled);
     } catch (StateTransitionException e) {
       LOG.log(Level.WARN, e.toString(), printEnabled);
     }

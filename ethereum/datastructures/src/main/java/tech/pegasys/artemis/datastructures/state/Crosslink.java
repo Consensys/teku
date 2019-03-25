@@ -29,6 +29,11 @@ public class Crosslink {
     this.crosslink_data_root = crosslink_data_root;
   }
 
+  public Crosslink(Crosslink crosslink) {
+    this.epoch = crosslink.getEpoch();
+    this.crosslink_data_root = crosslink.getCrosslink_data_root().copy();
+  }
+
   public static Crosslink fromBytes(Bytes bytes) {
     return SSZ.decode(
         bytes,

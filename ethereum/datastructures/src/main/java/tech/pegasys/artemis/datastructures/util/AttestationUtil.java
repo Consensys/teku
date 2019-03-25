@@ -440,7 +440,6 @@ public class AttestationUtil {
         List<Integer> attesting_indices =
             BeaconStateUtil.get_attestation_participants(
                 state, attestation.getData(), attestation.getAggregation_bitfield().toArray());
-        // TODO: v0.4 merge - should I use get_total_balance or get_total_effective_balance?
         UnsignedLong attesting_balance =
             BeaconStateUtil.get_total_balance(state, attesting_indices);
         if (shard_balances.containsKey(attestation.getData().getCrosslink_data_root())) {

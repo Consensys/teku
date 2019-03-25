@@ -37,6 +37,13 @@ public class PendingAttestation {
     this.inclusion_slot = inclusion_slot;
   }
 
+  public PendingAttestation(PendingAttestation pendingAttestation) {
+    this.aggregation_bitfield = pendingAttestation.getAggregation_bitfield().copy();
+    this.data = new AttestationData(pendingAttestation.getData());
+    this.custody_bitfield = pendingAttestation.getCustody_bitfield().copy();
+    this.inclusion_slot = pendingAttestation.getInclusionSlot();
+  }
+
   public static PendingAttestation fromBytes(Bytes bytes) {
     return SSZ.decode(
         bytes,
