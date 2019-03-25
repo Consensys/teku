@@ -525,15 +525,13 @@ public final class EpochProcessorUtil {
           ValidatorsUtil.get_active_validator_indices(state.getValidator_registry(), currentEpoch);
       List<UnsignedLong> balances = state.getValidator_balances();
 
-      active_validator_indices
-          .parallelStream()
-          .forEach(
-              index -> {
-                if (balances.get(index).compareTo(UnsignedLong.valueOf(Constants.EJECTION_BALANCE))
-                    < 0) {
-                  BeaconStateUtil.exit_validator(state, index);
-                }
-              });
+      active_validator_indices.forEach(
+          index -> {
+            if (balances.get(index).compareTo(UnsignedLong.valueOf(Constants.EJECTION_BALANCE))
+                < 0) {
+              BeaconStateUtil.exit_validator(state, index);
+            }
+          });
     } catch (IllegalArgumentException e) {
       LOG.log(Level.WARN, "EpochProcessingException thrown in process_ejections()");
       throw new EpochProcessingException(e);
