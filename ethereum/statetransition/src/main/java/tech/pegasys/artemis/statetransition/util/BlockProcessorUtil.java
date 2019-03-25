@@ -598,12 +598,7 @@ public final class BlockProcessorUtil {
                 state.getLatest_eth1_data().getDeposit_root()));
 
         // - Run process_deposit
-        process_deposit(
-            state,
-            deposit.getDeposit_data().getDeposit_input().getPubkey(),
-            deposit.getDeposit_data().getAmount(),
-            deposit.getDeposit_data().getDeposit_input().getProof_of_possession(),
-            deposit.getDeposit_data().getDeposit_input().getWithdrawal_credentials());
+        process_deposit(state, deposit);
 
         state.setDeposit_index(state.getDeposit_index().plus(UnsignedLong.ONE));
       }

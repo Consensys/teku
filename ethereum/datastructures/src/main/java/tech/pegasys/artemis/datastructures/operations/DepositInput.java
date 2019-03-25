@@ -13,12 +13,14 @@
 
 package tech.pegasys.artemis.datastructures.operations;
 
+import java.util.Arrays;
 import java.util.Objects;
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.ssz.SSZ;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
+import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 
 public final class DepositInput {
 
@@ -103,5 +105,18 @@ public final class DepositInput {
 
   public void setProof_of_possession(BLSSignature proof_of_possession) {
     this.proof_of_possession = proof_of_possession;
+  }
+
+  public Bytes32 signedRoot(String truncationParam) {
+    if (!truncationParam.equals("proof_of_possession")) {
+      throw new UnsupportedOperationException(
+          "Only signed_root(proposal, \"proof_of_possession\") is currently supported for type Proposal.");
+    }
+
+    return Bytes32.rightPad(
+        HashTreeUtil.merkleHash(
+            Arrays.asList(
+                HashTreeUtil.hash_tree_root(pubkey.toBytes()),
+                HashTreeUtil.hash_tree_root(withdrawal_credentials))));
   }
 }

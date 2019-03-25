@@ -297,7 +297,7 @@ public final class DataStructureUtil {
     BLSSignature proof_of_possession =
         BLSSignature.sign(
             keyPair,
-            HashTreeUtil.hash_tree_root(proof_of_possession_data.toBytes()),
+            proof_of_possession_data.signedRoot("proof_of_possession"),
             Constants.DOMAIN_DEPOSIT);
 
     return new DepositInput(keyPair.getPublicKey(), withdrawal_credentials, proof_of_possession);
@@ -433,9 +433,7 @@ public final class DataStructureUtil {
           new DepositInput(keypair.getPublicKey(), Bytes32.ZERO, BLSSignature.empty());
       BLSSignature proof_of_possession =
           BLSSignature.sign(
-              keypair,
-              HashTreeUtil.hash_tree_root(deposit_input.toBytes()),
-              Constants.DOMAIN_DEPOSIT);
+              keypair, deposit_input.signedRoot("proof_of_possession"), Constants.DOMAIN_DEPOSIT);
       deposit_input.setProof_of_possession(proof_of_possession);
 
       UnsignedLong timestamp = UnsignedLong.valueOf(i);
