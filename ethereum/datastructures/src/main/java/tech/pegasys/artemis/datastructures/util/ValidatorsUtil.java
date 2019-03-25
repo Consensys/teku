@@ -16,6 +16,7 @@ package tech.pegasys.artemis.datastructures.util;
 import com.google.common.collect.Sets;
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -60,10 +61,10 @@ public class ValidatorsUtil {
    */
   public static List<Integer> get_active_validator_indices(
       List<Validator> validators, UnsignedLong epoch) {
-    List<Integer> active_validator_indices = new ArrayList<>();
+    List<Integer> active_validator_indices = Collections.synchronizedList(new ArrayList<Integer>());
     IntStream.range(0, validators.size())
         .parallel()
-        .forEachOrdered(
+        .forEach(
             index -> {
               if (validators.get(index).is_active_validator(epoch)) {
                 active_validator_indices.add(index);
