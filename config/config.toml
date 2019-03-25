@@ -9,5 +9,5 @@ identity = "0x01"
 networkInterface = "0.0.0.0"
 port = 9000
 advertisedPort = 9000
-numValidators = 128
+numValidators = 16
 numNodes = 1

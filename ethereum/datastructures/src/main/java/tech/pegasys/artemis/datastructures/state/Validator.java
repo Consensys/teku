@@ -20,7 +20,7 @@ import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.ssz.SSZ;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 
-public class Validator {
+public final class Validator {
 
   // BLS public key
   private BLSPublicKey pubkey;
@@ -52,6 +52,16 @@ public class Validator {
     this.withdrawal_epoch = withdrawal_epoch;
     this.initiated_exit = initiated_exit;
     this.slashed = slashed;
+  }
+
+  public Validator(Validator validator) {
+    this.pubkey = new BLSPublicKey(validator.getPubkey().getPublicKey());
+    this.withdrawal_credentials = validator.getWithdrawal_credentials().copy();
+    this.activation_epoch = validator.getActivation_epoch();
+    this.exit_epoch = validator.getExit_epoch();
+    this.withdrawal_epoch = validator.getWithdrawal_epoch();
+    this.initiated_exit = validator.hasInitiatedExit();
+    this.slashed = validator.isSlashed();
   }
 
   public static Validator fromBytes(Bytes bytes) {
@@ -118,7 +128,7 @@ public class Validator {
   }
 
   public BLSPublicKey getPubkey() {
-    return pubkey;
+    return new BLSPublicKey(pubkey.getPublicKey());
   }
 
   public void setPubkey(BLSPublicKey pubkey) {
@@ -126,7 +136,7 @@ public class Validator {
   }
 
   public Bytes32 getWithdrawal_credentials() {
-    return withdrawal_credentials;
+    return withdrawal_credentials.copy();
   }
 
   public void setWithdrawal_credentials(Bytes32 withdrawal_credentials) {

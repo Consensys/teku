@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Random;
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
+import org.apache.logging.log4j.Level;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockBody;
@@ -41,6 +42,7 @@ import tech.pegasys.artemis.datastructures.operations.SlashableAttestation;
 import tech.pegasys.artemis.datastructures.operations.Transfer;
 import tech.pegasys.artemis.datastructures.operations.VoluntaryExit;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.state.Crosslink;
 import tech.pegasys.artemis.datastructures.state.CrosslinkCommittee;
 import tech.pegasys.artemis.datastructures.state.Validator;
@@ -155,7 +157,9 @@ public final class DataStructureUtil {
         BeaconStateUtil.get_block_root(
             state, BeaconStateUtil.get_epoch_start_slot(BeaconStateUtil.slot_to_epoch(slot)));
     Bytes32 shard_block_root = Bytes32.ZERO;
-    Crosslink latest_crosslink = state.getLatest_crosslinks().get(shard.intValue());
+    LOG.log(Level.INFO, "from ValidatorCoordinator: crosslink_committee shard =" + shard, true);
+    Crosslink latest_crosslink =
+        state.getLatest_crosslinks().get(shard.intValue() % Constants.SHARD_COUNT);
     UnsignedLong justified_epoch = state.getJustified_epoch();
     Bytes32 justified_block_root =
         BeaconStateUtil.get_block_root(
@@ -168,6 +172,7 @@ public final class DataStructureUtil {
       for (Integer validator_index : crosslink_committee.getCommittee()) {
         if (!validator_index.equals(block_proposer)) {
           shard = crosslink_committee.getShard();
+          LOG.log(Level.INFO, "from ValidatorCoordinator: attestationData shard =" + shard, true);
           AttestationData attestationData =
               new AttestationData(
                   slot,
@@ -466,8 +471,10 @@ public final class DataStructureUtil {
         BLSSignature.empty());
   }
 
-  public static BeaconState createInitialBeaconState(int numValidators) {
+  public static BeaconStateWithCache createInitialBeaconState(int numValidators) {
+    BeaconStateWithCache state = new BeaconStateWithCache();
     return BeaconStateUtil.get_initial_beacon_state(
+        state,
         newDeposits(numValidators),
         UnsignedLong.valueOf(Constants.GENESIS_SLOT),
         new Eth1Data(Bytes32.ZERO, Bytes32.ZERO));

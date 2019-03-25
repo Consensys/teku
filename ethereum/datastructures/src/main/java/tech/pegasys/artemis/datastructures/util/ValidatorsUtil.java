@@ -62,6 +62,7 @@ public class ValidatorsUtil {
       List<Validator> validators, UnsignedLong epoch) {
     List<Integer> active_validator_indices = new ArrayList<>();
     IntStream.range(0, validators.size())
+        .parallel()
         .forEachOrdered(
             index -> {
               if (validators.get(index).is_active_validator(epoch)) {
