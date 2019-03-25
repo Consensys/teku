@@ -110,7 +110,7 @@ public class BeaconNode {
       if (ProviderTypes.compare(CSVProvider.class, cliArgs.getProviderType())) {
         this.fileProvider = new CSVProvider();
       } else {
-        this.fileProvider = new JSONProvider();
+        this.fileProvider = new JSONProvider(outputFilename);
       }
     }
   }
@@ -154,7 +154,7 @@ public class BeaconNode {
     TimeSeriesAdapter adapter = new TimeSeriesAdapter(record);
     TimeSeriesRecord tsRecord = adapter.transform();
     fileProvider.setRecord(tsRecord);
-    FileProvider.output(outputFilename, fileProvider);
+    JSONProvider.output(outputFilename, fileProvider);
   }
 
   P2PNetwork p2pNetwork() {
