@@ -46,7 +46,7 @@ public final class BeaconStateWithCache extends BeaconState {
     this.previous_shuffling_seed = state.getPrevious_shuffling_seed();
     this.current_shuffling_seed = state.getCurrent_shuffling_seed();
     this.previous_justified_epoch = state.getPrevious_justified_epoch();
-    this.justified_epoch = state.getPrevious_justified_epoch();
+    this.justified_epoch = state.getJustified_epoch();
     this.justification_bitfield = state.getJustification_bitfield();
     this.finalized_epoch = state.getFinalized_epoch();
     this.latest_crosslinks = this.copyList(state.getLatest_crosslinks(), new ArrayList<>());

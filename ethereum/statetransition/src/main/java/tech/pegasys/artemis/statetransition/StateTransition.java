@@ -18,6 +18,7 @@ import static tech.pegasys.artemis.datastructures.Constants.SLOTS_PER_EPOCH;
 import com.google.common.primitives.UnsignedLong;
 import net.consensys.cava.bytes.Bytes32;
 import org.apache.logging.log4j.Level;
+import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
@@ -44,7 +45,6 @@ public class StateTransition {
 
   public void initiate(BeaconStateWithCache state, BeaconBlock block, Bytes32 previous_block_root)
       throws StateTransitionException {
-    LOG.log(Level.INFO, "Begin state transition", printEnabled);
     state.incrementSlot();
     // pre-process and cache selected state transition calculations
     preProcessor(state);
@@ -64,17 +64,15 @@ public class StateTransition {
     }
     // reset all cached state variables
     state.invalidateCache();
-    LOG.log(Level.INFO, "End state transition", printEnabled);
   }
 
   protected void preProcessor(BeaconStateWithCache state) {
-    // calcualte currentBeaconProposerIndex
+    // calculate currentBeaconProposerIndex
     PreProcessingUtil.cacheCurrentBeaconProposerIndex(state);
   }
 
   protected void slotProcessor(BeaconStateWithCache state, Bytes32 previous_block_root) {
     try {
-      LOG.log(Level.INFO, "  Processing new slot: " + state.getSlot(), printEnabled);
       // Slots the proposer has skipped (i.e. layers of RANDAO expected)
       // should be in Validator.randao_skips
       SlotProcessorUtil.updateBlockRoots(state, previous_block_root);
@@ -86,13 +84,6 @@ public class StateTransition {
   private void blockProcessor(BeaconStateWithCache state, BeaconBlock block) {
     if (BlockProcessorUtil.verify_slot(state, block)) {
       try {
-        LOG.log(
-            Level.INFO,
-            "  Processing new block with state root: " + block.getState_root(),
-            printEnabled);
-
-        // Block Header
-        LOG.log(Level.INFO, "  Processing block header.", printEnabled);
 
         // Only verify the proposer's signature if we are processing blocks (not proposing them)
         if (!block.getState_root().equals(Bytes32.ZERO)) {
@@ -129,12 +120,20 @@ public class StateTransition {
 
   private void epochProcessor(BeaconStateWithCache state, BeaconBlock block) {
     try {
+      String ANSI_YELLOW_BOLD = "\033[1;33m";
+      String ANSI_RESET = "\033[0m";
+      if (printEnabled) System.out.println();
       LOG.log(
           Level.INFO,
-          "\n ******** \n  Processing new epoch: "
+          ANSI_YELLOW_BOLD + "********  Processing new epoch: " + " ********* " + ANSI_RESET,
+          printEnabled);
+
+      LOG.log(
+          Level.INFO,
+          "Epoch:                                  "
               + BeaconStateUtil.get_current_epoch(state)
-              + " \n *********  \n slot at: "
-              + state.getSlot(),
+              + " |  "
+              + BeaconStateUtil.get_current_epoch(state).longValue() % Constants.GENESIS_EPOCH,
           printEnabled);
 
       EpochProcessorUtil.updateEth1Data(state);

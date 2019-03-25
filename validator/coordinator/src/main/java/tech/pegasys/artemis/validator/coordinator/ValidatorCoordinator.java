@@ -18,6 +18,7 @@ import com.google.common.eventbus.Subscribe;
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.crypto.SECP256K1.PublicKey;
@@ -57,6 +58,8 @@ public class ValidatorCoordinator {
   private PublicKey nodeIdentity;
   private int numValidators;
   private int numNodes;
+  private final HashMap<UnsignedLong, BeaconState> stateLookup = new HashMap<>();
+  private final HashMap<UnsignedLong, BeaconBlock> blockLookup = new HashMap<>();
 
   public ValidatorCoordinator(ServiceConfig config) {
     this.eventBus = config.getEventBus();
@@ -77,7 +80,7 @@ public class ValidatorCoordinator {
   }
 
   private void initializeValidators() {
-    stateTransition = new StateTransition(false);
+    stateTransition = new StateTransition(printEnabled);
     state = DataStructureUtil.createInitialBeaconState(numValidators);
     stateRoot = HashTreeUtil.hash_tree_root(state.toBytes());
     block = BeaconBlock.createGenesis(stateRoot);
@@ -96,13 +99,14 @@ public class ValidatorCoordinator {
                       Constants.GENESIS_SLOT + Constants.MIN_ATTESTATION_INCLUSION_DELAY))
           > 0) {
         LOG.log(Level.INFO, "Here comes an attestation", printEnabled);
+        UnsignedLong attestation_slot =
+            state.getSlot().minus(UnsignedLong.valueOf(Constants.MIN_ATTESTATION_INCLUSION_DELAY));
         current_attestations =
             DataStructureUtil.createAttestations(
-                state,
-                state
-                    .getSlot()
-                    .minus(UnsignedLong.valueOf(Constants.MIN_ATTESTATION_INCLUSION_DELAY)),
-                numValidators);
+                stateLookup.get(attestation_slot),
+                attestation_slot,
+                numValidators,
+                blockLookup.get(attestation_slot));
         block =
             DataStructureUtil.newBeaconBlock(
                 state.getSlot().plus(UnsignedLong.ONE),
@@ -124,10 +128,13 @@ public class ValidatorCoordinator {
       block.setRandao_reveal(epoch_signature);
       stateTransition.initiate(state, block, blockRoot);
       stateRoot = HashTreeUtil.hash_tree_root(state.toBytes());
+      BeaconState newState = BeaconStateWithCache.deepCopy(state);
+      stateLookup.put(state.getSlot(), newState);
       block.setState_root(stateRoot);
       BLSSignature signed_proposal = signProposalData(state, block, keypair);
       block.setSignature(signed_proposal);
       blockRoot = HashTreeUtil.hash_tree_root(block.toBytes());
+      blockLookup.put(state.getSlot(), block);
 
       LOG.log(Level.INFO, "ValidatorCoordinator - NEWLY PRODUCED BLOCK", printEnabled);
       LOG.log(Level.INFO, "ValidatorCoordinator - block.slot: " + block.getSlot(), printEnabled);

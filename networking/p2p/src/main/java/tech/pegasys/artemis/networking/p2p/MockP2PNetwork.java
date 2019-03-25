@@ -17,7 +17,6 @@ import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
-import org.apache.logging.log4j.Level;
 import tech.pegasys.artemis.data.RawRecord;
 import tech.pegasys.artemis.data.TimeSeriesRecord;
 import tech.pegasys.artemis.data.adapter.TimeSeriesAdapter;
@@ -99,10 +98,6 @@ public class MockP2PNetwork implements P2PNetwork {
   @Subscribe
   public void onNewUnprocessedBlock(BeaconBlock block) {
     // now send it out into the p2p world
-    LOG.log(
-        Level.INFO,
-        "Beacon Block you are free to congest the p2p network: "
-            + block.getState_root().toHexString());
   }
 
   @Override
