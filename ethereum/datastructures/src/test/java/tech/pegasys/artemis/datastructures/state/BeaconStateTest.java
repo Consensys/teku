@@ -42,11 +42,9 @@ import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.crypto.Hash;
 import net.consensys.cava.junit.BouncyCastleExtension;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
-import tech.pegasys.artemis.datastructures.operations.AttestationData;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 
@@ -56,150 +54,20 @@ class BeaconStateTest {
   private BeaconState newState(int numDeposits) {
 
     try {
+
       // Initialize state
-      BeaconState state =
-          get_initial_beacon_state(
-              randomDeposits(numDeposits),
-              UnsignedLong.ZERO,
-              new Eth1Data(Bytes32.ZERO, Bytes32.ZERO));
+      BeaconStateWithCache state = new BeaconStateWithCache();
+      get_initial_beacon_state(
+          state,
+          randomDeposits(numDeposits),
+          UnsignedLong.ZERO,
+          new Eth1Data(Bytes32.ZERO, Bytes32.ZERO));
 
       return state;
     } catch (Exception e) {
       fail("get_initial_beacon_state() failed");
       return null;
     }
-  }
-
-  @Disabled
-  @Test
-  void processDepositValidatorPubkeysDoesNotContainPubkeyAndMinEmptyValidatorIndexIsNegative() {
-    // TODO: update for 0.1 spec
-    /*BeaconState state = newState();
-    assertThat(
-            state.process_deposit(
-                state,
-                Bytes48.leftPad(Bytes.of(20)),
-                100,
-                EMPTY_SIGNATURE,
-                Bytes32.ZERO,
-                Bytes32.ZERO,
-                Bytes32.ZERO))
-        .isEqualTo(5);*/
-  }
-
-  @Disabled
-  @Test
-  void processDepositValidatorPubkeysDoesNotContainPubkey() {
-    // BeaconState state = newState();
-    // update for 0.1
-    /*
-    assertThat(
-            state.process_deposit(
-                state,
-                Bytes48.leftPad(Bytes.of(20)),
-                100,
-                EMPTY_SIGNATURE,
-                Bytes32.ZERO,
-                Bytes32.ZERO,
-                Bytes32.ZERO))
-        .isEqualTo(5);
-        */
-  }
-
-  @Disabled
-  @Test
-  void processDepositValidatorPubkeysContainsPubkey() {
-    // TODO: test broken after v0.01 update
-    //    BeaconState state = newState();
-    //
-    //    UnsignedLong oldBalance = state.getValidator_balances().get(2);
-    //    Bytes48 pubkey = Bytes48.leftPad(Bytes.of(200));
-    //    BeaconStateUtil.process_deposit(
-    //        state, pubkey, UnsignedLong.valueOf(100), EMPTY_SIGNATURE, Bytes32.ZERO);
-    //
-    //    assertThat(state.getValidator_balances().get(2))
-    //        .isEqualTo(oldBalance.plus(UnsignedLong.valueOf(100)));
-  }
-
-  @Disabled
-  @Test
-  void getAttestationParticipantsSizesNotEqual() {
-    AttestationData attestationData =
-        new AttestationData(
-            UnsignedLong.ZERO,
-            UnsignedLong.ZERO,
-            Bytes32.ZERO,
-            Bytes32.ZERO,
-            Bytes32.ZERO,
-            new Crosslink(UnsignedLong.ZERO, Bytes32.ZERO),
-            UnsignedLong.ZERO,
-            Bytes32.ZERO);
-    byte[] aggregation_bitfield = Bytes32.ZERO.toArrayUnsafe();
-
-    /* todo: fix this test
-    assertThrows(
-        AssertionError.class,
-        () ->
-            BeaconState.get_attestation_participants(
-                newState(), attestationData, aggregation_bitfield));
-    */
-  }
-
-  @Disabled
-  @Test
-  void getAttestationParticipantsReturnsEmptyArrayList() {
-    /* todo: fix this test
-    AttestationData attestationData =
-        new AttestationData(
-            0,
-            UnsignedLong.ZERO,
-            Bytes32.ZERO,
-            Bytes32.ZERO,
-            Bytes32.ZERO,
-            Bytes32.ZERO,
-            UnsignedLong.ZERO,
-            Bytes32.ZERO);
-    byte[] aggregation_bitfield = new byte[] {1, 1, 1, 1};
-
-    ArrayList<Integer> actual =
-        BeaconState.get_attestation_participants(
-            newState(), attestationData, aggregation_bitfield);
-    ArrayList<ShardCommittee> expected = new ArrayList<>();
-
-    assertThat(actual).isEqualTo(expected);
-    */
-  }
-
-  @Disabled
-  @Test
-  void getAttestationParticipantsSuccessful() {
-    /* todo Update test for new crosslink committee structure
-    BeaconState state = newState();
-    ArrayList<ShardCommittee> shard_committee = state.getShard_committees_at_slots().get(64);
-    shard_committee.add(
-        new ShardCommittee(
-            UnsignedLong.ZERO, new ArrayList<>(Collections.nCopies(1, 0)), UnsignedLong.ZERO));
-    state.setShard_committees_at_slot(64, shard_committee);
-
-    AttestationData attestationData =
-        new AttestationData(
-            0,
-            UnsignedLong.ZERO,
-            Bytes32.ZERO,
-            Bytes32.ZERO,
-            Bytes32.ZERO,
-            Bytes32.ZERO,
-            UnsignedLong.ZERO,
-            Bytes32.ZERO);
-    byte[] aggregation_bitfield = new byte[] {127, 1, 1};
-
-    ArrayList<ShardCommittee> actual =
-        BeaconState.get_attestation_participants(state, attestationData, aggregation_bitfield);
-
-    assertThat(actual.get(1).getShard()).isEqualTo(UnsignedLong.ZERO);
-    assertThat(actual.get(1).getCommittee()).isEqualTo(new ArrayList<>(Collections.nCopies(1, 0)));
-    assertThat(actual.get(1).getTotal_validator_count()).isEqualTo(UnsignedLong.ZERO);
-    */
   }
 
   @Test
@@ -242,8 +110,8 @@ class BeaconStateTest {
 
   @Test
   void deepCopyBeaconState() {
-    BeaconState state = newState(1);
-    BeaconState deepCopy = BeaconState.deepCopy(state);
+    BeaconStateWithCache state = (BeaconStateWithCache) newState(1);
+    BeaconState deepCopy = BeaconStateWithCache.deepCopy(state);
 
     // Test slot
     state.incrementSlot();

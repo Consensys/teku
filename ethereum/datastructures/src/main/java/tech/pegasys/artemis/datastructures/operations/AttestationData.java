@@ -50,6 +50,17 @@ public class AttestationData {
     this.justified_block_root = justified_block_root;
   }
 
+  public AttestationData(AttestationData attestationData) {
+    this.slot = attestationData.getSlot();
+    this.shard = attestationData.getShard();
+    this.beacon_block_root = attestationData.getBeacon_block_root();
+    this.epoch_boundary_root = attestationData.getEpoch_boundary_root();
+    this.crosslink_data_root = attestationData.getCrosslink_data_root();
+    this.latest_crosslink = new Crosslink(attestationData.getLatest_crosslink());
+    this.justified_epoch = attestationData.getJustified_epoch();
+    this.justified_block_root = attestationData.getJustified_block_root();
+  }
+
   public static AttestationData fromBytes(Bytes bytes) {
     return SSZ.decode(
         bytes,

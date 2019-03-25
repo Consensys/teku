@@ -17,8 +17,9 @@ import com.google.common.primitives.UnsignedLong;
 import java.util.Objects;
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.ssz.SSZ;
+import tech.pegasys.artemis.datastructures.Copyable;
 
-public final class Eth1DataVote {
+public final class Eth1DataVote implements Copyable<Eth1DataVote> {
 
   private Eth1Data eth1_data;
   private UnsignedLong vote_count;
@@ -26,6 +27,16 @@ public final class Eth1DataVote {
   public Eth1DataVote(Eth1Data eth1_data, UnsignedLong vote_count) {
     this.eth1_data = eth1_data;
     this.vote_count = vote_count;
+  }
+
+  public Eth1DataVote(Eth1DataVote eth1DataVote) {
+    this.eth1_data = new Eth1Data(eth1DataVote.getEth1_data());
+    this.vote_count = eth1DataVote.getVote_count();
+  }
+
+  @Override
+  public Eth1DataVote copy() {
+    return new Eth1DataVote(this);
   }
 
   public static Eth1DataVote fromBytes(Bytes bytes) {

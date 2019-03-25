@@ -18,8 +18,9 @@ import java.util.Objects;
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.ssz.SSZ;
+import tech.pegasys.artemis.datastructures.Copyable;
 
-public class Crosslink {
+public class Crosslink implements Copyable<Crosslink> {
 
   private UnsignedLong epoch;
   private Bytes32 crosslink_data_root;
@@ -29,12 +30,22 @@ public class Crosslink {
     this.crosslink_data_root = crosslink_data_root;
   }
 
+  public Crosslink(Crosslink crosslink) {
+    this.epoch = crosslink.getEpoch();
+    this.crosslink_data_root = crosslink.getCrosslink_data_root().copy();
+  }
+
   public static Crosslink fromBytes(Bytes bytes) {
     return SSZ.decode(
         bytes,
         reader ->
             new Crosslink(
                 UnsignedLong.fromLongBits(reader.readUInt64()), Bytes32.wrap(reader.readBytes())));
+  }
+
+  @Override
+  public Crosslink copy() {
+    return new Crosslink(this);
   }
 
   public Bytes toBytes() {

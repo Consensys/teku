@@ -13,8 +13,13 @@
 
 package tech.pegasys.artemis.statetransition.util;
 
-public final class SlotProcessingException extends Exception {
-  public SlotProcessingException(String err) {
-    super(err);
+import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
+import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
+
+public final class PreProcessingUtil {
+
+  public static void cacheCurrentBeaconProposerIndex(BeaconStateWithCache state) {
+    int beaconProposerIndex = BeaconStateUtil.get_beacon_proposer_index(state, state.getSlot());
+    state.setCurrentBeaconProposerIndex(beaconProposerIndex);
   }
 }

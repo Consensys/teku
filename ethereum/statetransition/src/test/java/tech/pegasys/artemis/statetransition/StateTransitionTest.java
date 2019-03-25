@@ -26,6 +26,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 
 @ExtendWith(BouncyCastleExtension.class)
@@ -34,9 +35,9 @@ class StateTransitionTest {
   private BeaconState newState() {
     try {
       // Initialize state
-      BeaconState state =
-          BeaconStateUtil.get_initial_beacon_state(
-              randomDeposits(5), UnsignedLong.ZERO, new Eth1Data(Bytes32.ZERO, Bytes32.ZERO));
+      BeaconStateWithCache state = new BeaconStateWithCache();
+      BeaconStateUtil.get_initial_beacon_state(
+          state, randomDeposits(5), UnsignedLong.ZERO, new Eth1Data(Bytes32.ZERO, Bytes32.ZERO));
 
       state.setLatest_block_roots(
           new ArrayList<Bytes32>(

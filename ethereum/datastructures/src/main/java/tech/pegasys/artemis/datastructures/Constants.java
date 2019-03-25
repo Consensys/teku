@@ -19,7 +19,17 @@ import net.consensys.cava.bytes.Bytes32;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 
 public final class Constants {
-  // The constants below are correct as of spec v0.1
+  // The constants below are correct as of spec v0.4.0
+
+  // Test Values
+  /*public static final int SHARD_COUNT = 4;
+  public static final int TARGET_COMMITTEE_SIZE = 2;
+  public static final int MIN_ATTESTATION_INCLUSION_DELAY = 1;
+  public static final int SLOTS_PER_EPOCH = 8;
+  public static final int LATEST_BLOCK_ROOTS_LENGTH = 64;
+  public static final int LATEST_RANDAO_MIXES_LENGTH = 64;
+  public static final int LATEST_INDEX_ROOTS_LENGTH = 64;
+  public static final int LATEST_SLASHED_EXIT_LENGTH = 64;*/
 
   // Misc
   public static final int SHARD_COUNT = 1024; // 2^10 shards

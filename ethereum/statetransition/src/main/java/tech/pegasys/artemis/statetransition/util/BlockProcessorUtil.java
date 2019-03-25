@@ -83,7 +83,7 @@ import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.bls.BLSException;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 
-public class BlockProcessorUtil {
+public final class BlockProcessorUtil {
 
   private static final ALogger LOG = new ALogger(BlockProcessorUtil.class.getName());
 
@@ -424,7 +424,8 @@ public class BlockProcessorUtil {
                     .equals(
                         state
                             .getLatest_crosslinks()
-                            .get(attestation.getData().getShard().intValue())
+                            .get(
+                                attestation.getData().getShard().intValue() % Constants.SHARD_COUNT)
                             .getCrosslink_data_root())
                 || attestation
                     .getData()
@@ -432,7 +433,8 @@ public class BlockProcessorUtil {
                     .equals(
                         state
                             .getLatest_crosslinks()
-                            .get(attestation.getData().getShard().intValue())
+                            .get(
+                                attestation.getData().getShard().intValue() % Constants.SHARD_COUNT)
                             .getCrosslink_data_root()),
             "in process attestations(): 6");
 

@@ -13,7 +13,7 @@
 
 package tech.pegasys.artemis.statetransition.util;
 
-public class EpochProcessingException extends Exception {
+public final class EpochProcessingException extends Exception {
   public EpochProcessingException(String err) {
     super(err);
   }
