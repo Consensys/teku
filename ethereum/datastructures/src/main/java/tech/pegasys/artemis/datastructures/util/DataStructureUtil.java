@@ -157,7 +157,7 @@ public final class DataStructureUtil {
         BeaconStateUtil.get_block_root(
             state, BeaconStateUtil.get_epoch_start_slot(BeaconStateUtil.slot_to_epoch(slot)));
     Bytes32 shard_block_root = Bytes32.ZERO;
-    LOG.log(Level.INFO, "from ValidatorCoordinator: crosslink_committee shard =" + shard, true);
+    //LOG.log(Level.INFO, "from ValidatorCoordinator: crosslink_committee shard =" + shard, true);
     Crosslink latest_crosslink =
         state.getLatest_crosslinks().get(shard.intValue() % Constants.SHARD_COUNT);
     UnsignedLong justified_epoch = state.getJustified_epoch();
@@ -172,7 +172,7 @@ public final class DataStructureUtil {
       for (Integer validator_index : crosslink_committee.getCommittee()) {
         if (!validator_index.equals(block_proposer)) {
           shard = crosslink_committee.getShard();
-          LOG.log(Level.INFO, "from ValidatorCoordinator: attestationData shard =" + shard, true);
+          //LOG.log(Level.INFO, "from ValidatorCoordinator: attestationData shard =" + shard, true);
           AttestationData attestationData =
               new AttestationData(
                   slot,

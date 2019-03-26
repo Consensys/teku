@@ -75,8 +75,8 @@ public class StateProcessor {
     this.nodeTime =
         UnsignedLong.valueOf(Constants.GENESIS_SLOT)
             .times(UnsignedLong.valueOf(Constants.SECONDS_PER_SLOT));
-    LOG.log(Level.INFO, "node slot: " + nodeSlot.longValue());
-    LOG.log(Level.INFO, "node time: " + nodeTime.longValue());
+    LOG.log(Level.INFO, "node slot: " + nodeSlot.longValue() % Constants.GENESIS_SLOT);
+    LOG.log(Level.INFO, "node time: " + nodeTime.longValue() % (Constants.GENESIS_SLOT * Constants.SECONDS_PER_SLOT));
     try {
       BeaconState initial_state =
           DataStructureUtil.createInitialBeaconState(config.getNumValidators());
@@ -111,10 +111,10 @@ public class StateProcessor {
     this.nodeTime = this.nodeTime.plus(UnsignedLong.valueOf(Constants.SECONDS_PER_SLOT));
 
     LOG.log(Level.INFO, "******* Slot Event Detected *******");
-    LOG.log(Level.INFO, "node time: " + nodeTime.longValue());
-    LOG.log(Level.INFO, "node slot: " + nodeSlot.longValue());
-    LOG.log(Level.INFO, "waiting 2 seconds for block to arrive");
-    Thread.sleep(2000);
+    LOG.log(Level.INFO, "node slot: " + nodeSlot.longValue() % Constants.GENESIS_SLOT);
+    LOG.log(Level.INFO, "node time: " + nodeTime.longValue() % (Constants.GENESIS_SLOT * Constants.SECONDS_PER_SLOT));
+    LOG.log(Level.INFO, "waiting 3 seconds for block to arrive");
+    Thread.sleep(3000);
     // Get all the unprocessed blocks that are for slots <= nodeSlot
     List<Optional<BeaconBlock>> unprocessedBlocks =
         this.store.getUnprocessedBlocksUntilSlot(nodeSlot);
@@ -198,7 +198,7 @@ public class StateProcessor {
                 "Transitioning state from slot: "
                     + currentState.getSlot()
                     + " to slot: "
-                    + UnsignedLong.valueOf(block.getSlot() - 1));
+                    + UnsignedLong.valueOf(block.getSlot() - 1).mod(UnsignedLong.valueOf(Constants.GENESIS_SLOT)));
             firstLoop = false;
           }
           stateTransition.initiate((BeaconStateWithCache) currentState, null, parentBlockRoot);
@@ -208,9 +208,9 @@ public class StateProcessor {
         LOG.log(
             Level.INFO,
             "Process Fork: Running State transition for currentState.slot: "
-                + currentState.getSlot()
+                + currentState.getSlot().mod(UnsignedLong.valueOf(Constants.GENESIS_SLOT))
                 + " block.slot: "
-                + block.getSlot());
+                + (block.getSlot() % Constants.GENESIS_SLOT));
         stateTransition.initiate((BeaconStateWithCache) currentState, block, parentBlockRoot);
 
         Bytes32 newStateRoot = HashTreeUtil.hash_tree_root(currentState.toBytes());
@@ -242,8 +242,8 @@ public class StateProcessor {
       BeaconState justifiedState = store.getState(justifiedStateRoot).get();
       BeaconBlock justifiedBlock = store.getProcessedBlock(justifiedBlockRoot).get();
 
-      LOG.log(Level.INFO, "justifiedState slot : " + justifiedState.getSlot());
-      LOG.log(Level.INFO, "justifiedBlock slot : " + justifiedBlock.getSlot());
+      //LOG.log(Level.INFO, "justifiedState slot : " + justifiedState.getSlot());
+      //LOG.log(Level.INFO, "justifiedBlock slot : " + justifiedBlock.getSlot());
 
       // Run lmd_ghost to get the head block
       this.headBlock = LmdGhost.lmd_ghost(store, justifiedState, justifiedBlock);

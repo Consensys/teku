@@ -93,9 +93,11 @@ public class MockP2PNetwork implements P2PNetwork {
   @Subscribe
   public void onNewUnprocessedBlock(BeaconBlock block) {
     // now send it out into the p2p world
+    /*
     LOG.log(
         Level.INFO,
         "Beacon Block you are free to congest the p2p network: "
             + block.getState_root().toHexString());
+  */
   }
 }
