@@ -12,6 +12,9 @@ dependencies {
   implementation project(':storage')
   implementation project(':ethereum:datastructures')
   implementation project(':ethereum:statetransition')
+  implementation project(':data')
+  implementation project(':data:adapter')
+  implementation project(':data:provider')
   implementation 'com.google.guava:guava'
 
   implementation 'io.vertx:vertx-core'

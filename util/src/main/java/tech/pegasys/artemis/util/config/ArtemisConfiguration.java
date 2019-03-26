@@ -38,30 +38,30 @@ public final class ArtemisConfiguration {
     SchemaBuilder builder =
         SchemaBuilder.create()
             .addString(
-                "networkMode",
+                "node.networkMode",
                 "mock",
                 "represents what network to use",
                 PropertyValidator.anyOf("mock", "rlpx", "hobbits"));
-    builder.addString("identity", null, "Identity of the peer", PropertyValidator.isPresent());
-    builder.addString("networkInterface", "0.0.0.0", "Peer to peer network interface", null);
-    builder.addInteger("port", 9000, "Peer to peer port", PropertyValidator.inRange(0, 65535));
+    builder.addString("node.identity", null, "Identity of the peer", PropertyValidator.isPresent());
+    builder.addString("node.networkInterface", "0.0.0.0", "Peer to peer network interface", null);
+    builder.addInteger("node.port", 9000, "Peer to peer port", PropertyValidator.inRange(0, 65535));
     builder.addInteger(
-        "advertisedPort",
+        "node.advertisedPort",
         9000,
         "Peer to peer advertised port",
         PropertyValidator.inRange(0, 65535));
     builder.addInteger(
-        "numValidators",
+        "sim.numValidators",
         128,
         "represents the total number of validators in the network",
         PropertyValidator.inRange(1, 16384));
     builder.addInteger(
-        "numNodes",
+        "sim.numNodes",
         1,
         "represents the total number of nodes on the network",
         PropertyValidator.inRange(1, 16384));
     builder.addListOfString(
-        "peers",
+        "node.peers",
         Collections.emptyList(),
         "Static peers",
         (key, position, peers) ->
@@ -82,7 +82,7 @@ public final class ArtemisConfiguration {
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList()));
     builder.addLong(
-        "networkID", 1L, "The identifier of the network (mainnet, testnet, sidechain)", null);
+        "node.networkID", 1L, "The identifier of the network (mainnet, testnet, sidechain)", null);
     return builder.toSchema();
   }
 
@@ -128,37 +128,37 @@ public final class ArtemisConfiguration {
 
   /** @return the identity of the node, the hexadecimal representation of its secret key */
   public String getIdentity() {
-    return config.getString("identity");
+    return config.getString("node.identity");
   }
 
   /** @return the port this node will listen to */
   public int getPort() {
-    return config.getInteger("port");
+    return config.getInteger("node.port");
   }
 
   /** @return the port this node will advertise as its own */
   public int getAdvertisedPort() {
-    return config.getInteger("advertisedPort");
+    return config.getInteger("node.advertisedPort");
   }
 
   /** @return the network interface this node will bind to */
   public String getNetworkInterface() {
-    return config.getString("networkInterface");
+    return config.getString("node.networkInterface");
   }
 
   /** @return the total number of validators in the network */
   public int getNumValidators() {
-    return config.getInteger("numValidators");
+    return config.getInteger("sim.numValidators");
   }
 
   /** @return the total number of nodes on the network */
   public int getNumNodes() {
-    return config.getInteger("numNodes");
+    return config.getInteger("sim.numNodes");
   }
 
   /** @return the list of static peers associated with this node */
   public List<URI> getStaticPeers() {
-    return config.getListOfString("peers").stream()
+    return config.getListOfString("node.peers").stream()
         .map(
             (peer) -> {
               try {
@@ -178,11 +178,11 @@ public final class ArtemisConfiguration {
 
   /** @return the identifier of the network (mainnet, testnet, sidechain) */
   public long getNetworkID() {
-    return config.getLong("networkID");
+    return config.getLong("node.networkID");
   }
 
   /** @return the mode of the network to use - mock, rlpx or hobbits */
   public String getNetworkMode() {
-    return config.getString("networkMode");
+    return config.getString("node.networkMode");
   }
 }
