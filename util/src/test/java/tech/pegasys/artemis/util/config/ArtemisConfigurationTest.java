@@ -26,27 +26,28 @@ final class ArtemisConfigurationTest {
 
   @Test
   void validMinimum() {
-    ArtemisConfiguration.fromString("identity=\"a3e4b1c5\"");
+    ArtemisConfiguration.fromString("node.identity=\"a3e4b1c5\"");
   }
 
   @Test
   void wrongPort() {
     assertThrows(
         IllegalArgumentException.class,
-        () -> ArtemisConfiguration.fromString("identity=\"2345\"\nport=100000"));
+        () -> ArtemisConfiguration.fromString("node.identity=\"2345\"\nnode.port=100000"));
   }
 
   @Test
   void invalidAdvertisedPort() {
     assertThrows(
         IllegalArgumentException.class,
-        () -> ArtemisConfiguration.fromString("identity=\"2345\"\nadvertisedPort=100000"));
+        () ->
+            ArtemisConfiguration.fromString("node.identity=\"2345\"\nnode.advertisedPort=100000"));
   }
 
   @Test
   void validPeer() {
     ArtemisConfiguration.fromString(
-        "identity=\"2345\"\npeers=[\"enode://a0b0e0f099@localhost:9000\"]");
+        "node.identity=\"2345\"\nnode.peers=[\"enode://a0b0e0f099@localhost:9000\"]");
   }
 
   @Test
@@ -55,13 +56,15 @@ final class ArtemisConfigurationTest {
         IllegalArgumentException.class,
         () ->
             ArtemisConfiguration.fromString(
-                "identity=\"2345\"\npeers=[\"enode://localhost:9000\"]"));
+                "node.identity=\"2345\"\nnode.peers=[\"enode://localhost:9000\"]"));
   }
 
   @Test
   void invalidNetworkMode() {
     assertThrows(
         IllegalArgumentException.class,
-        () -> ArtemisConfiguration.fromString("identity=\"2345\"\nnetworkMode=\"tcpblah\""));
+        () ->
+            ArtemisConfiguration.fromString(
+                "node.identity=\"2345\"\nnode.networkMode=\"tcpblah\""));
   }
 }

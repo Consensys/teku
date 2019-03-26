@@ -33,6 +33,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 import net.consensys.cava.concurrent.AsyncCompletion;
 import net.consensys.cava.concurrent.CompletableAsyncCompletion;
+import tech.pegasys.artemis.data.RawRecord;
+import tech.pegasys.artemis.data.TimeSeriesRecord;
+import tech.pegasys.artemis.data.adapter.TimeSeriesAdapter;
 import tech.pegasys.artemis.networking.p2p.api.P2PNetwork;
 import tech.pegasys.artemis.networking.p2p.hobbits.HobbitsSocketHandler;
 import tech.pegasys.artemis.networking.p2p.hobbits.Peer;
@@ -54,6 +57,7 @@ public final class HobbitsP2PNetwork implements P2PNetwork {
   private NetServer server;
   private NetClient client;
   private List<URI> staticPeers;
+  private TimeSeriesRecord chainData;
   private Map<URI, HobbitsSocketHandler> handlersMap = new ConcurrentHashMap<>();
 
   /**
@@ -79,6 +83,7 @@ public final class HobbitsP2PNetwork implements P2PNetwork {
     this.advertisedPort = advertisedPort;
     this.networkInterface = networkInterface;
     this.staticPeers = staticPeers;
+    this.chainData = new TimeSeriesRecord();
     eventBus.register(this);
   }
 
@@ -119,7 +124,8 @@ public final class HobbitsP2PNetwork implements P2PNetwork {
         peerURI,
         uri -> {
           Peer peer = new Peer(peerURI);
-          HobbitsSocketHandler handler = new HobbitsSocketHandler(netSocket, userAgent, peer);
+          HobbitsSocketHandler handler =
+              new HobbitsSocketHandler(netSocket, userAgent, peer, chainData);
           return handler;
         });
   }
@@ -147,7 +153,8 @@ public final class HobbitsP2PNetwork implements P2PNetwork {
             } else {
               NetSocket socket = res.result();
               Peer peer = new Peer(peerURI);
-              HobbitsSocketHandler handler = new HobbitsSocketHandler(socket, userAgent, peer);
+              HobbitsSocketHandler handler =
+                  new HobbitsSocketHandler(socket, userAgent, peer, chainData);
               handlersMap.put(peerURI, handler);
               handler.sendHello();
               handler.sendStatus();
@@ -199,5 +206,11 @@ public final class HobbitsP2PNetwork implements P2PNetwork {
   @Override
   public void close() throws IOException {
     stop();
+  }
+
+  @Override
+  public synchronized void onDataEvent(RawRecord record) {
+    TimeSeriesAdapter adapter = new TimeSeriesAdapter(record);
+    chainData = adapter.transform();
   }
 }

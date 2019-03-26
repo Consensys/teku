@@ -23,6 +23,7 @@ import javax.annotation.Nullable;
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.units.bigints.UInt64;
+import tech.pegasys.artemis.data.TimeSeriesRecord;
 
 /** TCP persistent connection handler for hobbits messages. */
 public final class HobbitsSocketHandler {
@@ -30,13 +31,16 @@ public final class HobbitsSocketHandler {
   private final NetSocket netSocket;
   private final String userAgent;
   private final Peer peer;
+  private TimeSeriesRecord chainData;
   private final Set<Long> pendingResponses = new HashSet<>();
   private final AtomicBoolean status = new AtomicBoolean(true);
 
-  public HobbitsSocketHandler(NetSocket netSocket, String userAgent, Peer peer) {
+  public HobbitsSocketHandler(
+      NetSocket netSocket, String userAgent, Peer peer, TimeSeriesRecord chainData) {
     this.netSocket = netSocket;
     this.userAgent = userAgent;
     this.peer = peer;
+    this.chainData = chainData;
     netSocket.handler(this::handleMessage);
     netSocket.closeHandler(this::closed);
   }
@@ -101,15 +105,26 @@ public final class HobbitsSocketHandler {
   public void replyHello(long requestId) {
     sendReply(
         RPCMethod.HELLO,
-        new Hello(1, 1, Bytes32.random(), UInt64.valueOf(0), Bytes32.random(), UInt64.valueOf(0)),
+        new Hello(
+            1,
+            1,
+            Bytes32.fromHexString(chainData.getFinalizedBlockRoot()),
+            UInt64.valueOf(chainData.getEpoch()),
+            Bytes32.fromHexString(chainData.getHeadBlockRoot()),
+            UInt64.valueOf(chainData.getSlot())),
         requestId);
   }
 
   public void sendHello() {
-    // TODO connect to data
     sendMessage(
         RPCMethod.HELLO,
-        new Hello(1, 1, Bytes32.random(), UInt64.valueOf(0), Bytes32.random(), UInt64.valueOf(0)));
+        new Hello(
+            1,
+            1,
+            Bytes32.fromHexString(chainData.getFinalizedBlockRoot()),
+            UInt64.valueOf(chainData.getEpoch()),
+            Bytes32.fromHexString(chainData.getHeadBlockRoot()),
+            UInt64.valueOf(chainData.getSlot())));
   }
 
   public void replyStatus(long requestId) {

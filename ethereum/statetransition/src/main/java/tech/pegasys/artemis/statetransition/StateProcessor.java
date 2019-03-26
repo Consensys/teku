@@ -113,8 +113,8 @@ public class StateProcessor {
     LOG.log(Level.INFO, "******* Slot Event Detected *******");
     LOG.log(Level.INFO, "node time: " + nodeTime.longValue());
     LOG.log(Level.INFO, "node slot: " + nodeSlot.longValue());
-    LOG.log(Level.INFO, "waiting 2 seconds for block to arrive");
-    Thread.sleep(2000);
+    LOG.log(Level.INFO, "waiting 3 seconds for block to arrive");
+    Thread.sleep(3000);
     // Get all the unprocessed blocks that are for slots <= nodeSlot
     List<Optional<BeaconBlock>> unprocessedBlocks =
         this.store.getUnprocessedBlocksUntilSlot(nodeSlot);

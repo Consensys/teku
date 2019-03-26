@@ -42,32 +42,32 @@ class BeaconNodeIntegrationTest {
 
     ArtemisConfiguration config1 =
         ArtemisConfiguration.fromString(
-            "networkMode=\"hobbits\"\n"
-                + "identity=\""
+            "node.networkMode=\"hobbits\"\n"
+                + "node.identity=\""
                 + randomId.toHexString()
                 + "\"\n"
-                + "networkInterface=\"127.0.0.1\"\n"
-                + "port=19000\n"
-                + "peers=[\"hobs://abcf@localhost:19001\", \"hobs://abcf@localhost:19002\"]");
+                + "node.networkInterface=\"127.0.0.1\"\n"
+                + "node.port=19000\n"
+                + "node.peers=[\"hobs://abcf@localhost:19001\", \"hobs://abcf@localhost:19002\"]");
 
     ArtemisConfiguration config2 =
         ArtemisConfiguration.fromString(
-            "networkMode=\"hobbits\"\n"
-                + "identity=\""
+            "node.networkMode=\"hobbits\"\n"
+                + "node.identity=\""
                 + randomId.toHexString()
                 + "\"\n"
-                + "networkInterface=\"127.0.0.1\"\n"
-                + "port=19001\n"
-                + "peers=[\"hobs://abcf@localhost:19000\", \"hobs://abcf@localhost:19002\"]");
+                + "node.networkInterface=\"127.0.0.1\"\n"
+                + "node.port=19001\n"
+                + "node.peers=[\"hobs://abcf@localhost:19000\", \"hobs://abcf@localhost:19002\"]");
     ArtemisConfiguration config3 =
         ArtemisConfiguration.fromString(
-            "networkMode=\"hobbits\"\n"
-                + "identity=\""
+            "node.networkMode=\"hobbits\"\n"
+                + "node.identity=\""
                 + randomId.toHexString()
                 + "\"\n"
-                + "networkInterface=\"127.0.0.1\"\n"
-                + "port=19002\n"
-                + "peers=[\"hobs://abcf@localhost:19001\", \"hobs://abcf@localhost:19000\"]");
+                + "node.networkInterface=\"127.0.0.1\"\n"
+                + "node.port=19002\n"
+                + "node.peers=[\"hobs://abcf@localhost:19001\", \"hobs://abcf@localhost:19000\"]");
 
     BeaconNode node1 = new BeaconNode(commandLine, cliArgs, config1);
     BeaconNode node2 = new BeaconNode(commandLine, cliArgs, config2);
