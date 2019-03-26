@@ -163,7 +163,7 @@ public final class RPCCodec {
     try {
       Bytes body = Bytes.wrap(Snappy.compress(mapper.writer().writeValueAsBytes(node)));
       return Bytes.concatenate(
-          Bytes.wrap(new byte[] {(byte) 1, (byte) 2}), Bytes.ofUnsignedLong(body.size()), body);
+          Bytes.wrap(new byte[] {(byte) 1, (byte) 2}), Bytes.ofUnsignedInt(body.size()), body);
     } catch (IOException e) {
       throw new IllegalArgumentException(e);
     }
@@ -180,13 +180,13 @@ public final class RPCCodec {
     if (message.get(1) != (byte) 2) {
       return null;
     }
-    long bodySize = message.getLong(2);
-    if (message.size() < bodySize + 10) {
+    int bodySize = message.getInt(2);
+    if (message.size() < bodySize + 6) {
       return null;
     }
     // TODO add max body size checks.
     try {
-      byte[] payload = message.slice(10, (int) bodySize).toArrayUnsafe();
+      byte[] payload = message.slice(6, bodySize).toArrayUnsafe();
       if (applySnappyCompression) {
         payload = Snappy.uncompress(payload);
       }
@@ -194,7 +194,7 @@ public final class RPCCodec {
       long id = rpcmessage.get("id").longValue();
       int methodId = rpcmessage.get("method_id").intValue();
       return new RPCMessage(
-          id, RPCMethod.valueOf(methodId), rpcmessage.get("body"), (int) (bodySize + 10));
+          id, RPCMethod.valueOf(methodId), rpcmessage.get("body"), (bodySize + 6));
     } catch (IOException e) {
       throw new UncheckedIOException(e);
     }
