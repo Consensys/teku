@@ -14,6 +14,7 @@
 package tech.pegasys.artemis.data;
 
 import java.util.Objects;
+import net.consensys.cava.bytes.Bytes32;
 
 public class TimeSeriesRecord {
 
@@ -29,7 +30,20 @@ public class TimeSeriesRecord {
   private String finalizedBlockRoot;
   private String finalizedStateRoot;
 
-  public TimeSeriesRecord() {}
+  public TimeSeriesRecord() {
+    // new Hello(1, 1, Bytes32.random(), UInt64.valueOf(0), Bytes32.random(), UInt64.valueOf(0))
+    this.index = Long.MAX_VALUE;
+    this.slot = Long.MAX_VALUE;
+    this.epoch = Long.MAX_VALUE;
+    this.headBlockRoot = Bytes32.ZERO.toHexString();
+    this.headStateRoot = Bytes32.ZERO.toHexString();
+    this.parentHeadBlockRoot = Bytes32.ZERO.toHexString();
+    this.numValidators = Long.MAX_VALUE;
+    this.justifiedBlockRoot = Bytes32.ZERO.toHexString();
+    this.justifiedStateRoot = Bytes32.ZERO.toHexString();
+    this.finalizedBlockRoot = Bytes32.ZERO.toHexString();
+    this.finalizedStateRoot = Bytes32.ZERO.toHexString();
+  }
 
   public TimeSeriesRecord(
       Long index,
