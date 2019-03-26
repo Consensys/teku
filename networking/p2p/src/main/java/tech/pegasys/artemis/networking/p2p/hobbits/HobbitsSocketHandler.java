@@ -19,6 +19,7 @@ import java.time.Instant;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
+import javax.annotation.Nullable;
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.units.bigints.UInt64;
@@ -40,7 +41,7 @@ public final class HobbitsSocketHandler {
     netSocket.closeHandler(this::closed);
   }
 
-  private void closed(Void nothing) {
+  private void closed(@Nullable Void nothing) {
     if (status.compareAndSet(true, false)) {
       peer.setInactive();
     }
@@ -64,8 +65,7 @@ public final class HobbitsSocketHandler {
   private void handleRPCMessage(RPCMessage rpcMessage) {
 
     if (RPCMethod.GOODBYE.equals(rpcMessage.method())) {
-      peer.setInactive();
-      netSocket.close();
+      closed(null);
     } else if (RPCMethod.HELLO.equals(rpcMessage.method())) {
       if (!pendingResponses.remove(rpcMessage.requestId())) {
         replyHello(rpcMessage.requestId());
