@@ -782,7 +782,7 @@ public final class EpochProcessorUtil {
       UnsignedLong next_epoch = BeaconStateUtil.get_next_epoch(state);
       UnsignedLong ENTRY_EXIT_DELAY = UnsignedLong.valueOf(Constants.ACTIVATION_EXIT_DELAY);
       UnsignedLong LATEST_INDEX_ROOTS_LENGTH =
-          UnsignedLong.valueOf(Constants.LATEST_INDEX_ROOTS_LENGTH);
+          UnsignedLong.valueOf(Constants.LATEST_ACTIVE_INDEX_ROOTS_LENGTH);
       UnsignedLong LATEST_RANDAO_MIXES_LENGTH =
           UnsignedLong.valueOf(Constants.LATEST_RANDAO_MIXES_LENGTH);
       UnsignedLong LATEST_PENALIZED_EXIT_LENGTH =
