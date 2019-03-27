@@ -14,6 +14,7 @@
 package tech.pegasys.artemis.datastructures.util;
 
 import static tech.pegasys.artemis.datastructures.Constants.MAX_DEPOSIT_AMOUNT;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_block_root;
 
 import com.google.common.primitives.UnsignedLong;
 import java.nio.ByteBuffer;
@@ -24,7 +25,6 @@ import java.util.List;
 import java.util.Random;
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
-import org.apache.logging.log4j.Level;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockBody;
@@ -148,86 +148,85 @@ public final class DataStructureUtil {
   }
 
   public static List<Attestation> createAttestations(
-      BeaconState state, UnsignedLong slot, int numValidators) {
+      BeaconState state, UnsignedLong slot, int numValidators, BeaconBlock head_block) {
     List<CrosslinkCommittee> crosslink_committees =
         BeaconStateUtil.get_crosslink_committees_at_slot(state, slot);
-    UnsignedLong shard = crosslink_committees.get(0).getShard();
-    Bytes32 head_block_root = BeaconStateUtil.get_block_root(state, slot);
-    Bytes32 epoch_boundary_root =
-        BeaconStateUtil.get_block_root(
-            state, BeaconStateUtil.get_epoch_start_slot(BeaconStateUtil.slot_to_epoch(slot)));
+    Bytes32 head_block_root = HashTreeUtil.hash_tree_root(head_block.toBytes());
+    UnsignedLong epoch_start_slot =
+        BeaconStateUtil.get_epoch_start_slot(
+            BeaconStateUtil.slot_to_epoch(UnsignedLong.valueOf(head_block.getSlot())));
+    Bytes32 epoch_boundary_root;
+    if (epoch_start_slot.compareTo(UnsignedLong.valueOf(head_block.getSlot())) == 0) {
+      epoch_boundary_root = HashTreeUtil.hash_tree_root(head_block.toBytes());
+    } else {
+      epoch_boundary_root = get_block_root(state, epoch_start_slot);
+    }
     Bytes32 shard_block_root = Bytes32.ZERO;
-    LOG.log(Level.INFO, "from ValidatorCoordinator: crosslink_committee shard =" + shard, true);
-    Crosslink latest_crosslink =
-        state.getLatest_crosslinks().get(shard.intValue() % Constants.SHARD_COUNT);
     UnsignedLong justified_epoch = state.getJustified_epoch();
     Bytes32 justified_block_root =
-        BeaconStateUtil.get_block_root(
-            state, BeaconStateUtil.get_epoch_start_slot(justified_epoch));
+        get_block_root(state, BeaconStateUtil.get_epoch_start_slot(justified_epoch));
 
     List<Attestation> attestations = new ArrayList<>();
-    Integer block_proposer = BeaconStateUtil.get_beacon_proposer_index(state, slot);
     for (CrosslinkCommittee crosslink_committee : crosslink_committees) {
       int index_into_committee = 0;
       for (Integer validator_index : crosslink_committee.getCommittee()) {
-        if (!validator_index.equals(block_proposer)) {
-          shard = crosslink_committee.getShard();
-          LOG.log(Level.INFO, "from ValidatorCoordinator: attestationData shard =" + shard, true);
-          AttestationData attestationData =
-              new AttestationData(
-                  slot,
-                  shard,
-                  head_block_root,
-                  epoch_boundary_root,
-                  shard_block_root,
-                  latest_crosslink,
-                  justified_epoch,
-                  justified_block_root);
+        UnsignedLong shard = crosslink_committee.getShard();
+        Crosslink latest_crosslink =
+            state.getLatest_crosslinks().get(shard.intValue() % Constants.SHARD_COUNT);
+        AttestationData attestationData =
+            new AttestationData(
+                slot,
+                shard,
+                head_block_root,
+                epoch_boundary_root,
+                shard_block_root,
+                latest_crosslink,
+                justified_epoch,
+                justified_block_root);
 
-          int array_length = Math.toIntExact((crosslink_committee.getCommittee().size() + 7) / 8);
-          byte[] aggregation_bitfield = new byte[array_length];
-          aggregation_bitfield[index_into_committee / 8] =
-              (byte)
-                  (aggregation_bitfield[index_into_committee / 8]
-                      | (byte) Math.pow(2, (index_into_committee % 8)));
-          Integer attesterIndex =
-              BeaconStateUtil.get_attestation_participants(
-                      state, attestationData, aggregation_bitfield)
-                  .get(0);
-          assert attesterIndex.equals(validator_index);
+        int array_length = Math.toIntExact((crosslink_committee.getCommittee().size() + 7) / 8);
+        byte[] aggregation_bitfield = new byte[array_length];
+        aggregation_bitfield[index_into_committee / 8] =
+            (byte)
+                (aggregation_bitfield[index_into_committee / 8]
+                    | (byte) Math.pow(2, (index_into_committee % 8)));
+        Integer attesterIndex =
+            BeaconStateUtil.get_attestation_participants(
+                    state, attestationData, aggregation_bitfield)
+                .get(0);
+        assert attesterIndex.equals(validator_index);
 
-          Bytes custody_bitfield = Bytes.wrap(new byte[array_length]);
-          AttestationDataAndCustodyBit attestation_data_and_custody_bit =
-              new AttestationDataAndCustodyBit(attestationData, false);
-          Bytes32 attestation_message_to_sign =
-              HashTreeUtil.hash_tree_root(attestation_data_and_custody_bit.toBytes());
-          Validator attester = state.getValidator_registry().get(attesterIndex);
-          BLSKeyPair keypair = BLSKeyPair.random();
-          // TODO: O(n), but in reality we will have the keypair in the validator
-          for (int i = 0; i < numValidators; i++) {
-            keypair = BLSKeyPair.random(i);
-            if (keypair.getPublicKey().equals(attester.getPubkey())) {
-              break;
-            }
+        Bytes custody_bitfield = Bytes.wrap(new byte[array_length]);
+        AttestationDataAndCustodyBit attestation_data_and_custody_bit =
+            new AttestationDataAndCustodyBit(attestationData, false);
+        Bytes32 attestation_message_to_sign =
+            HashTreeUtil.hash_tree_root(attestation_data_and_custody_bit.toBytes());
+        Validator attester = state.getValidator_registry().get(attesterIndex);
+        BLSKeyPair keypair = BLSKeyPair.random();
+        // TODO: O(n), but in reality we will have the keypair in the validator
+        for (int i = 0; i < numValidators; i++) {
+          keypair = BLSKeyPair.random(i);
+          if (keypair.getPublicKey().equals(attester.getPubkey())) {
+            break;
           }
-
-          BLSSignature signed_attestation_data =
-              BLSSignature.sign(
-                  keypair,
-                  attestation_message_to_sign,
-                  BeaconStateUtil.get_domain(
-                          state.getFork(),
-                          BeaconStateUtil.slot_to_epoch(attestationData.getSlot()),
-                          Constants.DOMAIN_ATTESTATION)
-                      .longValue());
-          Attestation attestation =
-              new Attestation(
-                  Bytes.wrap(aggregation_bitfield),
-                  attestationData,
-                  custody_bitfield,
-                  signed_attestation_data);
-          attestations.add(attestation);
         }
+
+        BLSSignature signed_attestation_data =
+            BLSSignature.sign(
+                keypair,
+                attestation_message_to_sign,
+                BeaconStateUtil.get_domain(
+                        state.getFork(),
+                        BeaconStateUtil.slot_to_epoch(attestationData.getSlot()),
+                        Constants.DOMAIN_ATTESTATION)
+                    .longValue());
+        Attestation attestation =
+            new Attestation(
+                Bytes.wrap(aggregation_bitfield),
+                attestationData,
+                custody_bitfield,
+                signed_attestation_data);
+        attestations.add(attestation);
         index_into_committee++;
       }
     }

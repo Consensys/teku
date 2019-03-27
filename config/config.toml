@@ -12,5 +12,5 @@ port = 9000
 advertisedPort = 9000
 
 [sim]
-numValidators = 128
+numValidators = 16
 numNodes = 1
