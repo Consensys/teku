@@ -40,6 +40,7 @@ import tech.pegasys.artemis.statetransition.StateTransition;
 import tech.pegasys.artemis.statetransition.StateTransitionException;
 import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
+import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 
@@ -61,6 +62,7 @@ public class ValidatorCoordinator {
   private int numNodes;
   private final HashMap<UnsignedLong, BeaconState> stateLookup = new HashMap<>();
   private final HashMap<UnsignedLong, BeaconBlock> blockLookup = new HashMap<>();
+  private final HashMap<BLSPublicKey, BLSKeyPair> validatorSet = new HashMap<>();
 
   public ValidatorCoordinator(ServiceConfig config) {
     this.eventBus = config.getEventBus();
@@ -92,6 +94,12 @@ public class ValidatorCoordinator {
     block = BeaconBlock.createGenesis(stateRoot);
     blockRoot = HashTreeUtil.hash_tree_root(block.toBytes());
     deposits = new ArrayList<>();
+
+    // Add validators to validatorSet hashMap
+    for (int i = 0; i < numValidators; i++) {
+      BLSKeyPair keypair = BLSKeyPair.random(i);
+      validatorSet.put(keypair.getPublicKey(), keypair);
+    }
   }
 
   private void simulateNewMessages() {
@@ -170,15 +178,7 @@ public class ValidatorCoordinator {
 
     int proposerIndex = BeaconStateUtil.get_beacon_proposer_index(state, slot);
     Validator proposer = state.getValidator_registry().get(proposerIndex);
-    BLSKeyPair keypair = BLSKeyPair.random();
-    // TODO: O(n), but in reality we will have the keypair in the validator
-    for (int i = 0; i < numValidators; i++) {
-      keypair = BLSKeyPair.random(i);
-      if (keypair.getPublicKey().equals(proposer.getPubkey())) {
-        break;
-      }
-    }
-    return keypair;
+    return validatorSet.get(proposer.getPubkey());
   }
 
   private BLSSignature setEpochSignature(BeaconState state, BLSKeyPair keypair) {
