@@ -15,6 +15,7 @@ package tech.pegasys.artemis.networking.p2p.hobbits;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import java.util.Arrays;
 import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.units.bigints.UInt64;
 import org.junit.jupiter.api.Test;
@@ -38,5 +39,27 @@ class JsonRoundtripTest {
     Hello read = RPCCodec.mapper.readerFor(Hello.class).readValue(value);
     assertEquals(hello.bestRoot(), read.bestRoot());
     assertEquals(hello.networkId(), read.networkId());
+  }
+
+  @Test
+  void roundtripRequestBlocks() throws Exception {
+    RequestBlocks requestBlocks = new RequestBlocks(Bytes32.random(), 123, 3, 2, 1);
+    byte[] value = RPCCodec.mapper.writerFor(RequestBlocks.class).writeValueAsBytes(requestBlocks);
+    RequestBlocks read = RPCCodec.mapper.readerFor(RequestBlocks.class).readValue(value);
+    assertEquals(requestBlocks.startRoot(), read.startRoot());
+    assertEquals(requestBlocks.direction(), read.direction());
+  }
+
+  @Test
+  void roundtripBlockRoots() throws Exception {
+    BlockRoots roots =
+        new BlockRoots(
+            Arrays.asList(
+                new BlockRoots.BlockRootAndSlot(Bytes32.random(), 1223),
+                new BlockRoots.BlockRootAndSlot(Bytes32.random(), 2234)));
+    byte[] value = RPCCodec.mapper.writerFor(BlockRoots.class).writeValueAsBytes(roots);
+    BlockRoots read = RPCCodec.mapper.readerFor(BlockRoots.class).readValue(value);
+    assertEquals(2, read.rootsAndSlots().size());
+    assertEquals(roots.rootsAndSlots().get(1).blockRoot(), read.rootsAndSlots().get(1).blockRoot());
   }
 }

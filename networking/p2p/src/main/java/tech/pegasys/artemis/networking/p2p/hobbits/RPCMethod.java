@@ -19,9 +19,11 @@ public enum RPCMethod {
   GOODBYE(1),
   GET_STATUS(2),
   REQUEST_BLOCK_ROOTS(10),
-  REQUEST_BLOCK_HEADERS(11),
-  REQUEST_BLOCK_BODIES(12),
-  REQUEST_STATE(13);
+  BLOCK_ROOTS(11),
+  REQUEST_BLOCK_HEADERS(12),
+  BLOCK_HEADERS(13),
+  REQUEST_BLOCK_BODIES(14),
+  BLOCK_BODIES(15);
 
   private int code;
 
@@ -52,11 +54,15 @@ public enum RPCMethod {
       case 10:
         return REQUEST_BLOCK_ROOTS;
       case 11:
-        return REQUEST_BLOCK_HEADERS;
+        return BLOCK_ROOTS;
       case 12:
-        return REQUEST_BLOCK_BODIES;
+        return REQUEST_BLOCK_HEADERS;
       case 13:
-        return REQUEST_STATE;
+        return BLOCK_HEADERS;
+      case 14:
+        return REQUEST_BLOCK_BODIES;
+      case 15:
+        return BLOCK_BODIES;
       default:
         throw new IllegalArgumentException("Unsupported code " + code);
     }

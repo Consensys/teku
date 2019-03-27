@@ -119,21 +119,22 @@ public final class HobbitsP2PNetwork implements P2PNetwork {
   private void receiveMessage(NetSocket netSocket) {
     URI peerURI =
         URI.create(
-            "hobs://" + netSocket.remoteAddress().host() + ":" + netSocket.remoteAddress().port());
+            "hob+tcp://"
+                + netSocket.remoteAddress().host()
+                + ":"
+                + netSocket.remoteAddress().port());
     handlersMap.computeIfAbsent(
         peerURI,
         uri -> {
           Peer peer = new Peer(peerURI);
-          HobbitsSocketHandler handler =
-              new HobbitsSocketHandler(netSocket, userAgent, peer, chainData);
-          return handler;
+          return new HobbitsSocketHandler(netSocket, userAgent, peer, chainData);
         });
   }
 
   @Override
   public Collection<?> getPeers() {
     return handlersMap.values().stream()
-        .map(handler -> handler.peer())
+        .map(HobbitsSocketHandler::peer)
         .collect(Collectors.toList());
   }
 
