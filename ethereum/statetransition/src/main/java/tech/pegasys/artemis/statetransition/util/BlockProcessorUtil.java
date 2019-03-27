@@ -26,7 +26,6 @@ import static tech.pegasys.artemis.datastructures.Constants.MAX_ATTESTATIONS;
 import static tech.pegasys.artemis.datastructures.Constants.MAX_ATTESTER_SLASHINGS;
 import static tech.pegasys.artemis.datastructures.Constants.MAX_DEPOSITS;
 import static tech.pegasys.artemis.datastructures.Constants.MAX_PROPOSER_SLASHINGS;
-import static tech.pegasys.artemis.datastructures.Constants.MIN_ATTESTATION_INCLUSION_DELAY;
 import static tech.pegasys.artemis.datastructures.Constants.SLOTS_PER_EPOCH;
 import static tech.pegasys.artemis.datastructures.Constants.ZERO_HASH;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_attestation_participants;
@@ -75,6 +74,7 @@ import tech.pegasys.artemis.datastructures.operations.SlashableAttestation;
 import tech.pegasys.artemis.datastructures.operations.Transfer;
 import tech.pegasys.artemis.datastructures.operations.VoluntaryExit;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.datastructures.state.Crosslink;
 import tech.pegasys.artemis.datastructures.state.CrosslinkCommittee;
 import tech.pegasys.artemis.datastructures.state.PendingAttestation;
 import tech.pegasys.artemis.datastructures.state.Validator;
@@ -375,22 +375,24 @@ public final class BlockProcessorUtil {
         //     <= state.slot - MIN_ATTESTATION_INCLUSION_DELAY
         //     < attestation.data.slot + SLOTS_PER_EPOCH.
         UnsignedLong attestationDataSlot = attestation.getData().getSlot();
-        UnsignedLong slotMinusInclusionDelay =
-            state.getSlot().minus(UnsignedLong.valueOf(MIN_ATTESTATION_INCLUSION_DELAY));
-        UnsignedLong slotPlusEpochLength =
-            attestationDataSlot.plus(UnsignedLong.valueOf(SLOTS_PER_EPOCH));
         checkArgument(
-            (attestationDataSlot.compareTo(slotMinusInclusionDelay) <= 0)
-                && (slotMinusInclusionDelay.compareTo(slotPlusEpochLength) < 0),
-            "in process attestations(): 2");
+            attestationDataSlot.compareTo(UnsignedLong.valueOf(Constants.GENESIS_EPOCH)) >= 0);
+        checkArgument(
+            attestationDataSlot
+                    .plus(UnsignedLong.valueOf(Constants.MIN_ATTESTATION_INCLUSION_DELAY))
+                    .compareTo(state.getSlot())
+                <= 0);
+        checkArgument(
+            state
+                    .getSlot()
+                    .compareTo(attestationDataSlot.plus(UnsignedLong.valueOf(SLOTS_PER_EPOCH)))
+                < 0);
 
-        // - Verify that attestation.data.justified_epoch is equal to state.justified_epoch
-        //     if attestation.data.slot >= get_epoch_start_slot(get_current_epoch(state))
-        //     else state.previous_justified_epoch.
-        if (attestation
-                .getData()
-                .getSlot()
-                .compareTo(get_epoch_start_slot(get_current_epoch(state)))
+        // Verify that attestation.data.justified_epoch is equal to state.justified_epoch
+        // if slot_to_epoch(attestation.data.slot + 1) >= get_current_epoch(state) else
+        // state.previous_justified_epoch.
+        if (slot_to_epoch(attestation.getData().getSlot().plus(UnsignedLong.ONE))
+                .compareTo(get_current_epoch(state))
             >= 0) {
           checkArgument(
               attestation.getData().getJustified_epoch().equals(state.getJustified_epoch()),
@@ -401,7 +403,10 @@ public final class BlockProcessorUtil {
                   .getData()
                   .getJustified_epoch()
                   .equals(state.getPrevious_justified_epoch()),
-              "in process attestations(): 4");
+              "in process attestations(): 4 attestation justified epoch:"
+                  + attestation.getData().getJustified_epoch()
+                  + " state prev justified epoch:"
+                  + state.getPrevious_justified_epoch());
         }
 
         // - Verify that attestation.data.justified_block_root is equal to
@@ -413,30 +418,22 @@ public final class BlockProcessorUtil {
                     state, get_epoch_start_slot(attestation.getData().getJustified_epoch()))),
             "in process attestations(): 5");
 
-        // - Verify that either attestation.data.latest_crosslink_root or
-        // attestation.data.shard_block_root
-        //     equals state.latest_crosslinks[attestation.data.shard].shard_block_root.
+        // Verify that either (i) state.latest_crosslinks[attestation.data.shard] ==
+        // attestation.data.latest_crosslink or (ii) state.latest_crosslinks[attestation.data.shard]
+        // == Crosslink(crosslink_data_root=attestation.data.crosslink_data_root,
+        // epoch=slot_to_epoch(attestation.data.slot)).
         checkArgument(
-            attestation
-                    .getData()
-                    .getLatest_crosslink()
-                    .getCrosslink_data_root()
+            state
+                    .getLatest_crosslinks()
+                    .get(toIntExact(attestation.getData().getShard().longValue()))
+                    .equals(attestation.getData().getLatest_crosslink())
+                || state
+                    .getLatest_crosslinks()
+                    .get(toIntExact(attestation.getData().getShard().longValue()))
                     .equals(
-                        state
-                            .getLatest_crosslinks()
-                            .get(
-                                attestation.getData().getShard().intValue() % Constants.SHARD_COUNT)
-                            .getCrosslink_data_root())
-                || attestation
-                    .getData()
-                    .getCrosslink_data_root()
-                    .equals(
-                        state
-                            .getLatest_crosslinks()
-                            .get(
-                                attestation.getData().getShard().intValue() % Constants.SHARD_COUNT)
-                            .getCrosslink_data_root()),
-            "in process attestations(): 6");
+                        new Crosslink(
+                            slot_to_epoch(attestationDataSlot),
+                            attestation.getData().getCrosslink_data_root())));
 
         // - Verify bitfields and aggregate signature
         checkArgument(

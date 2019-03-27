@@ -186,7 +186,9 @@ public class ChainStorageClient implements ChainStorage {
 
   @Subscribe
   public void onNewUnprocessedBlock(BeaconBlock block) {
-    LOG.log(Level.INFO, "ChainStorage: new unprocessed BeaconBlock detected");
+    String ANSI_GREEN = "\u001B[32m";
+    String ANSI_RESET = "\033[0m";
+    LOG.log(Level.INFO, ANSI_GREEN + "New BeaconBlock detected." + ANSI_RESET);
     addUnprocessedBlock(block);
   }
 
