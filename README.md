@@ -50,11 +50,13 @@ To view the run menu:
 ```
 $ ./gradlew run --args='-h'
 
-Usage: Artemis [-hpV] [-l=<LOG VERBOSITY LEVEL>]
-  -h, --help      Show this help message and exit.
-  -l, --logging=<LOG VERBOSITY LEVEL> Logging verbosity levels: OFF, FATAL, WARN, INFO, DEBUG, TRACE, ALL (default: INFO).
-  -p, --PoWChainServiceDisabled If this option is enabled then the PoW Chain service is disabled.
-  -V, --version  Print version information and exit.
+Usage: Artemis [-hV] [-c=<FILENAME>] [-l=<LOG VERBOSITY LEVEL>] [-o=<FILENAME>] [-p=<PROVIDER TYPE>]
+  -c, --config=<FILENAME>               Path/filename of the config file
+  -h, --help                            Show this help message and exit.
+  -l, --logging=<LOG VERBOSITY LEVEL>   Logging verbosity levels: OFF, FATAL, WARN, INFO, DEBUG, TRACE, ALL (default: INFO).
+  -o, --output=<FILENAME>               Path/filename of the output file
+  -p, --provider=<PROVIDER TYPE>        Output provider types: CSV, JSON (default: JSON).
+  -V, --version                         Print version information and exit.
 ```
 
 You can run the executable from the CLI with this command:

@@ -14,6 +14,7 @@
 package tech.pegasys.artemis.services;
 
 import com.google.common.eventbus.EventBus;
+import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import tech.pegasys.artemis.util.cli.CommandLineArguments;
@@ -57,10 +58,16 @@ public class ServiceController {
   public void stopAll(CommandLineArguments cliArgs) {
     // stop all services
     beaconChainExecuterService.shutdown();
-    beaconChainService.stop();
+    if (!Objects.isNull(beaconChainService)) {
+      beaconChainService.stop();
+    }
     powchainExecuterService.shutdown();
-    powchainService.stop();
+    if (!Objects.isNull(powchainService)) {
+      powchainService.stop();
+    }
     chainStorageExecutorService.shutdown();
-    chainStorageService.stop();
+    if (!Objects.isNull(chainStorageService)) {
+      chainStorageService.stop();
+    }
   }
 }
