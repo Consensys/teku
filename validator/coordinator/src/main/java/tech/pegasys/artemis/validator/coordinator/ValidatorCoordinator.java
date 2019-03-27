@@ -35,6 +35,7 @@ import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.pow.api.Eth2GenesisEvent;
 import tech.pegasys.artemis.services.ServiceConfig;
+import tech.pegasys.artemis.statetransition.HeadStateEvent;
 import tech.pegasys.artemis.statetransition.StateTransition;
 import tech.pegasys.artemis.statetransition.StateTransitionException;
 import tech.pegasys.artemis.util.alogger.ALogger;
@@ -77,6 +78,11 @@ public class ValidatorCoordinator {
   @Subscribe
   public void onNewSlot(Date date) {
     simulateNewMessages();
+  }
+
+  @Subscribe
+  public void onNewHeadStateEvent(HeadStateEvent headStateEvent) {
+    System.out.println(headStateEvent);
   }
 
   private void initializeValidators() {
