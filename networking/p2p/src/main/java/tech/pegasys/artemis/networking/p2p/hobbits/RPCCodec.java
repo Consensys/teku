@@ -94,7 +94,7 @@ public final class RPCCodec {
     }
   }
 
-  private static final class BytesModule extends SimpleModule {
+  static final class BytesModule extends SimpleModule {
 
     BytesModule() {
       super("bytes");

@@ -16,6 +16,7 @@ package tech.pegasys.artemis.networking.p2p.hobbits;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.net.NetSocket;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -80,6 +81,15 @@ public final class HobbitsSocketHandler {
         replyStatus(rpcMessage.requestId());
       }
       peer.setPeerStatus(rpcMessage.bodyAs(GetStatus.class));
+    } else if (RPCMethod.REQUEST_BLOCK_ROOTS.equals(rpcMessage.method())) {
+      // TODO provide data
+      sendReply(RPCMethod.BLOCK_ROOTS, new BlockRoots(new ArrayList<>()), rpcMessage.requestId());
+    } else if (RPCMethod.REQUEST_BLOCK_HEADERS.equals(rpcMessage.method())) {
+      // TODO provide data
+      sendReply(RPCMethod.BLOCK_HEADERS, null, rpcMessage.requestId());
+    } else if (RPCMethod.REQUEST_BLOCK_BODIES.equals(rpcMessage.method())) {
+      // TODO provide data
+      sendReply(RPCMethod.BLOCK_BODIES, null, rpcMessage.requestId());
     }
   }
 
