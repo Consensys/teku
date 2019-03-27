@@ -88,17 +88,21 @@ public final class ArtemisConfiguration {
     // Misc
     builder.addInteger("constants.SHARD_COUNT", Integer.MIN_VALUE, null, null);
     builder.addInteger("constants.TARGET_COMMITTEE_SIZE", Integer.MIN_VALUE, null, null);
-    builder.addLong("constants.EJECTION_BALANCE", Long.MIN_VALUE, null, null);
     builder.addInteger("constants.MAX_BALANCE_CHURN_QUOTIENT", Integer.MIN_VALUE, null, null);
     builder.addDefault("constants.BEACON_CHAIN_SHARD_NUMBER", "");
     builder.addInteger("constants.MAX_INDICES_PER_SLASHABLE_VOTE", Integer.MIN_VALUE, null, null);
-    builder.addInteger("constants.MAX_WITHDRAWALS_PER_EPOCH", Integer.MIN_VALUE, null, null);
+    builder.addInteger("constants.MAX_EXIT_DEQUEUES_PER_EPOCH", Integer.MIN_VALUE, null, null);
+    builder.addInteger("constants.SHUFFLE_ROUND_COUNT", Integer.MIN_VALUE, null, null);
 
     // Deposit Contract
     builder.addString("constants.DEPOSIT_CONTRACT_ADDRESS", "", null, null);
     builder.addInteger("constants.DEPOSIT_CONTRACT_TREE_DEPTH", Integer.MIN_VALUE, null, null);
+
+    // Gwei values
     builder.addLong("constants.MIN_DEPOSIT_AMOUNT", Long.MIN_VALUE, null, null);
     builder.addLong("constants.MAX_DEPOSIT_AMOUNT", Long.MIN_VALUE, null, null);
+    builder.addLong("constants.FORK_CHOICE_BALANCE_INCREMENT", Long.MIN_VALUE, null, null);
+    builder.addLong("constants.EJECTION_BALANCE", Long.MIN_VALUE, null, null);
 
     // Initial Values
     builder.addInteger("constants.GENESIS_FORK_VERSION", Integer.MIN_VALUE, null, null);
@@ -111,25 +115,28 @@ public final class ArtemisConfiguration {
     builder.addDefault("constants.BLS_WITHDRAWAL_PREFIX_BYTE", "");
 
     // Time parameters
-    builder.addInteger("constants.SLOT_DURATION", Integer.MIN_VALUE, null, null);
+    builder.addInteger("constants.SECONDS_PER_SLOT", Integer.MIN_VALUE, null, null);
     builder.addInteger("constants.MIN_ATTESTATION_INCLUSION_DELAY", Integer.MIN_VALUE, null, null);
-    builder.addInteger("constants.EPOCH_LENGTH", Integer.MIN_VALUE, null, null);
-    builder.addInteger("constants.SEED_LOOKAHEAD", Integer.MIN_VALUE, null, null);
-    builder.addInteger("constants.ENTRY_EXIT_DELAY", Integer.MIN_VALUE, null, null);
-    builder.addInteger("constants.ETH1_DATA_VOTING_PERIOD", Integer.MIN_VALUE, null, null);
-    builder.addInteger("constants.MIN_VALIDATOR_WITHDRAWAL_EPOCHS", Integer.MIN_VALUE, null, null);
+    builder.addInteger("constants.SLOTS_PER_EPOCH", Integer.MIN_VALUE, null, null);
+    builder.addInteger("constants.MIN_SEED_LOOKAHEAD", Integer.MIN_VALUE, null, null);
+    builder.addInteger("constants.ACTIVATION_EXIT_DELAY", Integer.MIN_VALUE, null, null);
+    builder.addInteger("constants.EPOCHS_PER_ETH1_VOTING_PERIOD", Integer.MIN_VALUE, null, null);
+    builder.addInteger(
+        "constants.MIN_VALIDATOR_WITHDRAWABILITY_DELAY", Integer.MIN_VALUE, null, null);
 
     // State list lengths
     builder.addInteger("constants.LATEST_BLOCK_ROOTS_LENGTH", Integer.MIN_VALUE, null, null);
     builder.addInteger("constants.LATEST_RANDAO_MIXES_LENGTH", Integer.MIN_VALUE, null, null);
-    builder.addInteger("constants.LATEST_INDEX_ROOTS_LENGTH", Integer.MIN_VALUE, null, null);
-    builder.addInteger("constants.LATEST_PENALIZED_EXIT_LENGTH", Integer.MIN_VALUE, null, null);
+    builder.addInteger("constants.LATEST_ACTIVE_INDEX_ROOTS_LENGTH", Integer.MIN_VALUE, null, null);
+    builder.addInteger("constants.LATEST_SLASHED_EXIT_LENGTH", Integer.MIN_VALUE, null, null);
 
     // Reward and penalty quotients
     builder.addInteger("constants.BASE_REWARD_QUOTIENT", Integer.MIN_VALUE, null, null);
     builder.addInteger("constants.WHISTLEBLOWER_REWARD_QUOTIENT", Integer.MIN_VALUE, null, null);
-    builder.addInteger("constants.INCLUDER_REWARD_QUOTIENT", Integer.MIN_VALUE, null, null);
+    builder.addInteger(
+        "constants.ATTESTATION_INCLUSION_REWARD_QUOTIENT", Integer.MIN_VALUE, null, null);
     builder.addInteger("constants.INACTIVITY_PENALTY_QUOTIENT", Integer.MIN_VALUE, null, null);
+    builder.addInteger("constants.MIN_PENALTY_QUOTIENT", Integer.MIN_VALUE, null, null);
 
     // Status flags
     builder.addInteger("constants.INITIATED_EXIT", Integer.MIN_VALUE, null, null);
@@ -140,7 +147,8 @@ public final class ArtemisConfiguration {
     builder.addInteger("constants.MAX_ATTESTER_SLASHINGS", Integer.MIN_VALUE, null, null);
     builder.addInteger("constants.MAX_ATTESTATIONS", Integer.MIN_VALUE, null, null);
     builder.addInteger("constants.MAX_DEPOSITS", Integer.MIN_VALUE, null, null);
-    builder.addInteger("constants.MAX_EXITS", Integer.MIN_VALUE, null, null);
+    builder.addInteger("constants.MAX_VOLUNTARY_EXITS", Integer.MIN_VALUE, null, null);
+    builder.addInteger("constants.MAX_TRANSFERS", Integer.MIN_VALUE, null, null);
 
     // Signature domains
     builder.addInteger("constants.DOMAIN_DEPOSIT", Integer.MIN_VALUE, null, null);
@@ -148,6 +156,7 @@ public final class ArtemisConfiguration {
     builder.addInteger("constants.DOMAIN_PROPOSAL", Integer.MIN_VALUE, null, null);
     builder.addInteger("constants.DOMAIN_EXIT", Integer.MIN_VALUE, null, null);
     builder.addInteger("constants.DOMAIN_RANDAO", Integer.MIN_VALUE, null, null);
+    builder.addInteger("constants.DOMAIN_TRANSFER", Integer.MIN_VALUE, null, null);
 
     // Artemis specific
     builder.addString("constants.SIM_DEPOSIT_VALUE", "", null, null);
@@ -235,10 +244,6 @@ public final class ArtemisConfiguration {
     return config.getInteger("TARGET_COMMITTEE_SIZE");
   }
 
-  public long getEjectionBalance() {
-    return config.getLong("EJECTION_BALANCE");
-  }
-
   public int getMaxBalanceChurnQuotient() {
     return config.getInteger("MAX_BALANCE_CHURN_QUOTIENT");
   }
@@ -251,8 +256,12 @@ public final class ArtemisConfiguration {
     return config.getInteger("MAX_INDICES_PER_SLASHABLE_VOTE");
   }
 
-  public int getMaxWithdrawalsPerEpoch() {
-    return config.getInteger("MAX_WITHDRAWALS_PER_EPOCH");
+  public int getMaxExitDequeuesPerEpoch() {
+    return config.getInteger("MAX_EXIT_DEQUEUES_PER_EPOCH");
+  }
+
+  public int getShuffleRoundCount() {
+    return config.getInteger("SHUFFLE_ROUND_COUNT");
   }
 
   /** @return deposit contract constants */
@@ -264,12 +273,21 @@ public final class ArtemisConfiguration {
     return config.getInteger("DEPOSIT_CONTRACT_TREE_DEPTH");
   }
 
+  /** @return gwei value constants */
   public long getMinDepositAmount() {
     return config.getInteger("MIN_DEPOSIT_AMOUNT");
   }
 
   public long getMaxDepositAmount() {
     return config.getInteger("MAX_DEPOSIT_AMOUNT");
+  }
+
+  public long getForkChoiceBalanceIncrement() {
+    return config.getInteger("FORK_CHOICE_BALANCE_INCREMENT");
+  }
+
+  public long getEjectionBalance() {
+    return config.getLong("EJECTION_BALANCE");
   }
 
   /** @return initial value constants */
@@ -306,32 +324,32 @@ public final class ArtemisConfiguration {
   }
 
   /** @return time parameter constants */
-  public int getSlotDuration() {
-    return config.getInteger("SLOT_DURATION");
+  public int getSecondsPerSlot() {
+    return config.getInteger("SECONDS_PER_SLOT");
   }
 
   public int getMinAttestationInclusionDelay() {
     return config.getInteger("MIN_ATTESTATION_INCLUSION_DELAY");
   }
 
-  public int getEpochLength() {
-    return config.getInteger("EPOCH_LENGTH");
+  public int getSlotsPerEpoch() {
+    return config.getInteger("SLOTS_PER_EPOCH");
   }
 
-  public int getSeedLookahead() {
-    return config.getInteger("SEED_LOOKAHEAD");
+  public int getMinSeedLookahead() {
+    return config.getInteger("MIN_SEED_LOOKAHEAD");
   }
 
-  public int getEntryExitDelay() {
-    return config.getInteger("ENTRY_EXIT_DELAY");
+  public int getActivationExitDelay() {
+    return config.getInteger("ACTIVATION_EXIT_DELAY");
   }
 
-  public int getEth1DataVotingPeriod() {
-    return config.getInteger("ETH1_DATA_VOTING_PERIOD");
+  public int getEpochsPerEth1VotingPeriod() {
+    return config.getInteger("EPOCHS_PER_ETH1_VOTING_PERIOD");
   }
 
-  public int getMinValidatorWithdrawalEpochs() {
-    return config.getInteger("MIN_VALIDATOR_WITHDRAWAL_EPOCHS");
+  public int getMinValidatorWithdrawabilityDelay() {
+    return config.getInteger("MIN_VALIDATOR_WITHDRAWABILITY_DELAY");
   }
 
   /** @return state list length constants */
@@ -343,12 +361,12 @@ public final class ArtemisConfiguration {
     return config.getInteger("LATEST_RANDAO_MIXES_LENGTH");
   }
 
-  public int getLatestIndexRootsLength() {
-    return config.getInteger("LATEST_INDEX_ROOTS_LENGTH");
+  public int getLatestActiveIndexRootsLength() {
+    return config.getInteger("LATEST_ACTIVE_INDEX_ROOTS_LENGTH");
   }
 
-  public int getLatestPenalizedExitLength() {
-    return config.getInteger("LATEST_PENALIZED_EXIT_LENGTH");
+  public int getLatestSlashedExitLength() {
+    return config.getInteger("LATEST_SLASHED_EXIT_LENGTH");
   }
 
   /** @return reward and penalty quotient constants */
@@ -360,12 +378,16 @@ public final class ArtemisConfiguration {
     return config.getInteger("WHISTLEBLOWER_REWARD_QUOTIENT");
   }
 
-  public int getIncluderRewardQuotient() {
-    return config.getInteger("INCLUDER_REWARD_QUOTIENT");
+  public int getAttestationInclusionRewardQuotient() {
+    return config.getInteger("ATTESTATION_INCLUSION_REWARD_QUOTIENT");
   }
 
   public int getInactivityPenaltyQuotient() {
     return config.getInteger("INACTIVITY_PENALTY_QUOTIENT");
+  }
+
+  public int getMinPenaltyQuotient() {
+    return config.getInteger("MIN_PENALTY_QUOTIENT");
   }
 
   /** @return status flag constants */
@@ -394,8 +416,12 @@ public final class ArtemisConfiguration {
     return config.getInteger("MAX_DEPOSITS");
   }
 
-  public int getMaxExits() {
-    return config.getInteger("MAX_EXITS");
+  public int getMaxVoluntaryExits() {
+    return config.getInteger("MAX_VOLUNTARY_EXITS");
+  }
+
+  public int getMaxTransfers() {
+    return config.getInteger("MAX_TRANSFERS");
   }
 
   /** @return signature domain constants */
@@ -417,6 +443,10 @@ public final class ArtemisConfiguration {
 
   public int getDomainRandao() {
     return config.getInteger("DOMAIN_RANDAO");
+  }
+
+  public int getDomainTransfer() {
+    return config.getInteger("DOMAIN_TRANSFER");
   }
 
   /** @return Artemis specific constants */
