@@ -18,6 +18,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Map;
 import net.consensys.cava.bytes.Bytes;
+import net.consensys.cava.bytes.Bytes32;
+import net.consensys.cava.units.bigints.UInt64;
 import org.junit.jupiter.api.Test;
 
 final class RPCCodecTest {
@@ -33,5 +35,13 @@ final class RPCCodecTest {
   }
 
   @Test
-  void testHello() {}
+  void testHello() {
+    Hello hello =
+        new Hello(1, 1, Bytes32.random(), UInt64.valueOf(0), Bytes32.random(), UInt64.valueOf(0));
+    Bytes encoded = RPCCodec.encode(RPCMethod.HELLO, hello, 23);
+    RPCMessage message = RPCCodec.decode(encoded);
+    assertEquals(RPCMethod.HELLO, message.method());
+    Hello read = message.bodyAs(Hello.class);
+    assertEquals(read.bestRoot(), hello.bestRoot());
+  }
 }

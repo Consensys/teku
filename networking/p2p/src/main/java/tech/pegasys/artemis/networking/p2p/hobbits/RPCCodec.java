@@ -23,10 +23,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.google.common.base.Splitter;
 import de.undercouch.bson4jackson.BsonFactory;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 import javax.annotation.Nullable;
@@ -155,6 +158,8 @@ public final class RPCCodec {
    * @return the encoded RPC message
    */
   public static Bytes encode(RPCMethod methodId, Object request, long requestNumber) {
+
+    String requestLine = "EWP 0.2 RPC snappy bson 0 ";
     ObjectNode node = mapper.createObjectNode();
 
     node.put("id", requestNumber);
@@ -162,8 +167,9 @@ public final class RPCCodec {
     node.putPOJO("body", request);
     try {
       Bytes body = Bytes.wrap(Snappy.compress(mapper.writer().writeValueAsBytes(node)));
-      return Bytes.concatenate(
-          Bytes.wrap(new byte[] {(byte) 1, (byte) 2}), Bytes.ofUnsignedInt(body.size()), body);
+      requestLine += body.size();
+      requestLine += "\n";
+      return Bytes.concatenate(Bytes.wrap(requestLine.getBytes(StandardCharsets.UTF_8)), body);
     } catch (IOException e) {
       throw new IllegalArgumentException(e);
     }
@@ -176,25 +182,48 @@ public final class RPCCodec {
    * @return the payload, decoded
    */
   public static RPCMessage decode(Bytes message) {
-    boolean applySnappyCompression = message.get(0) == (byte) 1;
-    if (message.get(1) != (byte) 2) {
+    Bytes requestLineBytes = null;
+    for (int i = 0; i < message.size(); i++) {
+      if (message.get(i) == (byte) '\n') {
+        requestLineBytes = message.slice(0, i);
+        break;
+      }
+    }
+    if (requestLineBytes == null) {
       return null;
     }
-    int bodySize = message.getInt(2);
-    if (message.size() < bodySize + 6) {
+    String requestLine = new String(requestLineBytes.toArrayUnsafe(), StandardCharsets.UTF_8);
+    Iterator<String> segments = Splitter.on(" ").split(requestLine).iterator();
+    String protocol = segments.next();
+    String version = segments.next();
+    String command = segments.next();
+    String compression = segments.next();
+    String encoding = segments.next();
+    int headerLength = Integer.parseInt(segments.next());
+    int bodyLength = Integer.parseInt(segments.next());
+
+    if (!"bson".equals(encoding)) {
+      throw new UnsupportedOperationException();
+    }
+
+    if (message.size() < bodyLength + headerLength + requestLineBytes.size()) {
       return null;
     }
-    // TODO add max body size checks.
+
     try {
-      byte[] payload = message.slice(6, bodySize).toArrayUnsafe();
-      if (applySnappyCompression) {
+      byte[] payload =
+          message.slice(requestLineBytes.size() + 1 + headerLength, bodyLength).toArrayUnsafe();
+      if ("snappy".equals(compression)) {
         payload = Snappy.uncompress(payload);
       }
       ObjectNode rpcmessage = (ObjectNode) mapper.readTree(payload);
       long id = rpcmessage.get("id").longValue();
       int methodId = rpcmessage.get("method_id").intValue();
       return new RPCMessage(
-          id, RPCMethod.valueOf(methodId), rpcmessage.get("body"), (bodySize + 6));
+          id,
+          RPCMethod.valueOf(methodId),
+          rpcmessage.get("body"),
+          (bodyLength + requestLineBytes.size() + headerLength));
     } catch (IOException e) {
       throw new UncheckedIOException(e);
     }
