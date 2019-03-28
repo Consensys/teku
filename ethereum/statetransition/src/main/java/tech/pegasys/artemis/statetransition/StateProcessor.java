@@ -186,6 +186,9 @@ public class StateProcessor {
     }
     this.headState = newHeadState;
     recordData();
+
+    // Send event that headState has been updated
+    this.eventBus.post(new HeadStateEvent(headState, headBlock));
   }
 
   protected Boolean inspectBlock(Optional<BeaconBlock> block) {
@@ -281,7 +284,6 @@ public class StateProcessor {
 
       // Run lmd_ghost to get the head block
       this.headBlock = LmdGhost.lmd_ghost(store, justifiedState, justifiedBlock);
-      BeaconState headBlockState = store.getState(headBlock.getState_root()).get();
     } catch (NoSuchElementException | StateTransitionException e) {
       LOG.log(Level.FATAL, "Can't update head block using LMDGhost");
     }
