@@ -85,12 +85,16 @@ public class ValidatorCoordinator {
 
   @Subscribe
   public void onNewHeadStateEvent(HeadStateEvent headStateEvent) {
+    /*
     // Retrieve headState and headBlock from event
     BeaconState headState = headStateEvent.getHeadState();
     BeaconBlock headBlock = headStateEvent.getHeadBlock();
 
     List<Attestation> attestations =
-        DataStructureUtil.createAttestations2(headState, headBlock, validatorSet);
+        AttestationUtil.createAttestations(headState, headBlock, validatorSet);
+    */
+
+    // TODO: use eventBus to post attestations (for use in both block creation and lmd ghost)
   }
 
   private void initializeValidators() {
