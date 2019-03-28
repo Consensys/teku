@@ -67,7 +67,7 @@ public class ValidatorCoordinator {
   private final HashMap<UnsignedLong, BeaconState> stateLookup = new HashMap<>();
   private final HashMap<UnsignedLong, BeaconBlock> blockLookup = new HashMap<>();
   private final HashMap<BLSPublicKey, BLSKeyPair> validatorSet = new HashMap<>();
-  private final PriorityQueue<Attestation> attestationQueue = new PriorityQueue<>(Comparator.comparing(Attestation::getSlot));
+  private final PriorityQueue<Attestation> attestationsQueue = new PriorityQueue<>(Comparator.comparing(Attestation::getSlot));
 
   public ValidatorCoordinator(ServiceConfig config) {
     this.eventBus = config.getEventBus();
@@ -103,8 +103,10 @@ public class ValidatorCoordinator {
 
   @Subscribe
   public void onNewAttestation(Attestation attestation) {
-    // Store attestation in priority queue
-    attestationQueue.add(attestation);
+    // Store attestations in a priority queue
+    if (!attestationsQueue.contains(attestation)) {
+      attestationsQueue.add(attestation);
+    }
   }
 
   private void initializeValidators() {
@@ -115,7 +117,8 @@ public class ValidatorCoordinator {
     blockRoot = HashTreeUtil.hash_tree_root(block.toBytes());
     deposits = new ArrayList<>();
 
-    // Add validators to validatorSet hashMap
+    // TODO: make a way to tailor which validators are ours
+    // Add all validators to validatorSet hashMap
     for (int i = 0; i < numValidators; i++) {
       BLSKeyPair keypair = BLSKeyPair.random(i);
       validatorSet.put(keypair.getPublicKey(), keypair);
@@ -135,9 +138,9 @@ public class ValidatorCoordinator {
         LOG.log(Level.INFO, "Here comes an attestation", printEnabled);
         UnsignedLong attestation_slot =
             state.getSlot().minus(UnsignedLong.valueOf(Constants.MIN_ATTESTATION_INCLUSION_DELAY));
-        current_attestations =
-            AttestationUtil.createAttestations(
-                stateLookup.get(attestation_slot), blockLookup.get(attestation_slot), validatorSet);
+
+        current_attestations = AttestationUtil
+                .getAttestationsUntilSlot(attestationsQueue, attestation_slot);
         block =
             DataStructureUtil.newBeaconBlock(
                 state.getSlot().plus(UnsignedLong.ONE),
