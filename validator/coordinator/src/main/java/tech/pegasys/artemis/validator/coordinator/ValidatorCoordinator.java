@@ -31,6 +31,7 @@ import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.state.Validator;
+import tech.pegasys.artemis.datastructures.util.AttestationUtil;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.pow.api.Eth2GenesisEvent;
@@ -84,7 +85,12 @@ public class ValidatorCoordinator {
 
   @Subscribe
   public void onNewHeadStateEvent(HeadStateEvent headStateEvent) {
-    System.out.println(headStateEvent);
+    // Retrieve headState and headBlock from event
+    BeaconState headState = headStateEvent.getHeadState();
+    BeaconBlock headBlock = headStateEvent.getHeadBlock();
+
+    List<Attestation> attestations =
+        DataStructureUtil.createAttestations2(headState, headBlock, validatorSet);
   }
 
   private void initializeValidators() {
@@ -116,11 +122,8 @@ public class ValidatorCoordinator {
         UnsignedLong attestation_slot =
             state.getSlot().minus(UnsignedLong.valueOf(Constants.MIN_ATTESTATION_INCLUSION_DELAY));
         current_attestations =
-            DataStructureUtil.createAttestations(
-                stateLookup.get(attestation_slot),
-                attestation_slot,
-                numValidators,
-                blockLookup.get(attestation_slot));
+            AttestationUtil.createAttestations(
+                stateLookup.get(attestation_slot), blockLookup.get(attestation_slot), validatorSet);
         block =
             DataStructureUtil.newBeaconBlock(
                 state.getSlot().plus(UnsignedLong.ONE),
