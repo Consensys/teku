@@ -14,6 +14,8 @@
 package tech.pegasys.artemis.datastructures.operations;
 
 import java.util.Objects;
+
+import com.google.common.primitives.UnsignedLong;
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.ssz.SSZ;
 import tech.pegasys.artemis.util.bls.BLSSignature;
@@ -114,5 +116,9 @@ public class Attestation {
 
   public void setAggregate_signature(BLSSignature aggregate_signature) {
     this.aggregate_signature = aggregate_signature;
+  }
+
+  public UnsignedLong getSlot() {
+    return data.getSlot();
   }
 }

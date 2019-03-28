@@ -17,9 +17,12 @@ import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.PriorityQueue;
+
 import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.crypto.SECP256K1.PublicKey;
 import org.apache.logging.log4j.Level;
@@ -64,6 +67,7 @@ public class ValidatorCoordinator {
   private final HashMap<UnsignedLong, BeaconState> stateLookup = new HashMap<>();
   private final HashMap<UnsignedLong, BeaconBlock> blockLookup = new HashMap<>();
   private final HashMap<BLSPublicKey, BLSKeyPair> validatorSet = new HashMap<>();
+  private final PriorityQueue<Attestation> attestationQueue = new PriorityQueue<>(Comparator.comparing(Attestation::getSlot));
 
   public ValidatorCoordinator(ServiceConfig config) {
     this.eventBus = config.getEventBus();
@@ -85,16 +89,22 @@ public class ValidatorCoordinator {
 
   @Subscribe
   public void onNewHeadStateEvent(HeadStateEvent headStateEvent) {
-    /*
     // Retrieve headState and headBlock from event
     BeaconState headState = headStateEvent.getHeadState();
     BeaconBlock headBlock = headStateEvent.getHeadBlock();
 
     List<Attestation> attestations =
         AttestationUtil.createAttestations(headState, headBlock, validatorSet);
-    */
 
-    // TODO: use eventBus to post attestations (for use in both block creation and lmd ghost)
+    for (Attestation attestation : attestations) {
+      this.eventBus.post(attestation);
+    }
+  }
+
+  @Subscribe
+  public void onNewAttestation(Attestation attestation) {
+    // Store attestation in priority queue
+    attestationQueue.add(attestation);
   }
 
   private void initializeValidators() {

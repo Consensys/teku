@@ -183,6 +183,7 @@ public class StateProcessor {
       }
       stateTransition.initiate((BeaconStateWithCache) newHeadState, null, previousBlockRoot);
     }
+    this.store.addState(HashTreeUtil.hash_tree_root(newHeadState.toBytes()), newHeadState);
     this.headState = newHeadState;
     recordData();
 
