@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.util.config;
 
+import com.google.common.primitives.UnsignedLong;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URI;
@@ -23,9 +24,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
-
-import com.google.common.primitives.UnsignedLong;
-import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.config.Configuration;
 import net.consensys.cava.config.ConfigurationError;
@@ -116,7 +114,7 @@ public final class ArtemisConfiguration {
     builder.addDefault("constants.FAR_FUTURE_EPOCH", UnsignedLong.MAX_VALUE);
     builder.addDefault("constants.ZERO_HASH", Bytes32.ZERO);
     builder.addDefault("constants.EMPTY_SIGNATURE", BLSSignature.empty());
-    builder.addString("constants.BLS_WITHDRAWAL_PREFIX_BYTE", "", null, null);
+    builder.addDefault("constants.BLS_WITHDRAWAL_PREFIX_BYTE", Bytes32.EMPTY);
 
     // Time parameters
     builder.addInteger("constants.SECONDS_PER_SLOT", Integer.MIN_VALUE, null, null);
@@ -319,8 +317,8 @@ public final class ArtemisConfiguration {
     return config.get("constants.EMPTY_SIGNATURE");
   }
 
-  public String getBlsWithdrawalPrefixByte() {
-    return config.getString("constants.BLS_WITHDRAWAL_PREFIX_BYTE");
+  public Object getBlsWithdrawalPrefixByte() {
+    return config.get("constants.BLS_WITHDRAWAL_PREFIX_BYTE");
   }
 
   /** @return time parameter constants */

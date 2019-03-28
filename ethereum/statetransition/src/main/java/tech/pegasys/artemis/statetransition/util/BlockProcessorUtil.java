@@ -725,8 +725,7 @@ public final class BlockProcessorUtil {
               .getWithdrawal_credentials()
               .equals(
                   Bytes.concatenate(
-                      Bytes.fromHexString(BLS_WITHDRAWAL_PREFIX_BYTE),
-                      transfer.getPubkey().toBytes().slice(1))));
+                      BLS_WITHDRAWAL_PREFIX_BYTE, transfer.getPubkey().toBytes().slice(1))));
       // - Let transfer_message = hash_tree_root(Transfer(from=transfer.from, to=transfer.to,
       //     amount=transfer.amount, fee=transfer.fee, slot=transfer.slot,
       //     signature=EMPTY_SIGNATURE))

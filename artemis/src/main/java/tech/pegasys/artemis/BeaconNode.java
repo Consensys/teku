@@ -13,8 +13,6 @@
 
 package tech.pegasys.artemis;
 
-import static tech.pegasys.artemis.datastructures.Constants.ACTIVATION_EXIT_DELAY;
-
 import com.google.common.eventbus.AsyncEventBus;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
