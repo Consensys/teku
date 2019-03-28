@@ -31,14 +31,17 @@ import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.state.Validator;
+import tech.pegasys.artemis.datastructures.util.AttestationUtil;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.pow.api.Eth2GenesisEvent;
 import tech.pegasys.artemis.services.ServiceConfig;
+import tech.pegasys.artemis.statetransition.HeadStateEvent;
 import tech.pegasys.artemis.statetransition.StateTransition;
 import tech.pegasys.artemis.statetransition.StateTransitionException;
 import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
+import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 
@@ -60,6 +63,7 @@ public class ValidatorCoordinator {
   private int numNodes;
   private final HashMap<UnsignedLong, BeaconState> stateLookup = new HashMap<>();
   private final HashMap<UnsignedLong, BeaconBlock> blockLookup = new HashMap<>();
+  private final HashMap<BLSPublicKey, BLSKeyPair> validatorSet = new HashMap<>();
 
   public ValidatorCoordinator(ServiceConfig config) {
     this.eventBus = config.getEventBus();
@@ -79,6 +83,20 @@ public class ValidatorCoordinator {
     simulateNewMessages();
   }
 
+  @Subscribe
+  public void onNewHeadStateEvent(HeadStateEvent headStateEvent) {
+    /*
+    // Retrieve headState and headBlock from event
+    BeaconState headState = headStateEvent.getHeadState();
+    BeaconBlock headBlock = headStateEvent.getHeadBlock();
+
+    List<Attestation> attestations =
+        AttestationUtil.createAttestations(headState, headBlock, validatorSet);
+    */
+
+    // TODO: use eventBus to post attestations (for use in both block creation and lmd ghost)
+  }
+
   private void initializeValidators() {
     stateTransition = new StateTransition(printEnabled);
     state = DataStructureUtil.createInitialBeaconState(numValidators);
@@ -86,6 +104,12 @@ public class ValidatorCoordinator {
     block = BeaconBlock.createGenesis(stateRoot);
     blockRoot = HashTreeUtil.hash_tree_root(block.toBytes());
     deposits = new ArrayList<>();
+
+    // Add validators to validatorSet hashMap
+    for (int i = 0; i < numValidators; i++) {
+      BLSKeyPair keypair = BLSKeyPair.random(i);
+      validatorSet.put(keypair.getPublicKey(), keypair);
+    }
   }
 
   private void simulateNewMessages() {
@@ -102,11 +126,8 @@ public class ValidatorCoordinator {
         UnsignedLong attestation_slot =
             state.getSlot().minus(UnsignedLong.valueOf(Constants.MIN_ATTESTATION_INCLUSION_DELAY));
         current_attestations =
-            DataStructureUtil.createAttestations(
-                stateLookup.get(attestation_slot),
-                attestation_slot,
-                numValidators,
-                blockLookup.get(attestation_slot));
+            AttestationUtil.createAttestations(
+                stateLookup.get(attestation_slot), blockLookup.get(attestation_slot), validatorSet);
         block =
             DataStructureUtil.newBeaconBlock(
                 state.getSlot().plus(UnsignedLong.ONE),
@@ -164,15 +185,7 @@ public class ValidatorCoordinator {
 
     int proposerIndex = BeaconStateUtil.get_beacon_proposer_index(state, slot);
     Validator proposer = state.getValidator_registry().get(proposerIndex);
-    BLSKeyPair keypair = BLSKeyPair.random();
-    // TODO: O(n), but in reality we will have the keypair in the validator
-    for (int i = 0; i < numValidators; i++) {
-      keypair = BLSKeyPair.random(i);
-      if (keypair.getPublicKey().equals(proposer.getPubkey())) {
-        break;
-      }
-    }
-    return keypair;
+    return validatorSet.get(proposer.getPubkey());
   }
 
   private BLSSignature setEpochSignature(BeaconState state, BLSKeyPair keypair) {
