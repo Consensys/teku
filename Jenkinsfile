@@ -28,6 +28,7 @@ try {
                 }
                 stage('Test') {
                     sh './gradlew --no-daemon --parallel test'
+                    sh './artemis/src/main/resources/artemisTestScript.sh'
                 }
             } finally {
                 archiveArtifacts '**/build/reports/**'
