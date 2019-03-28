@@ -20,7 +20,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.Arrays;
 import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.junit.BouncyCastleExtension;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.extension.ExtendWith;
 import picocli.CommandLine;
 import tech.pegasys.artemis.networking.p2p.api.P2PNetwork;
@@ -33,7 +33,8 @@ class BeaconNodeIntegrationTest {
 
   private static ObjectMapper mapper = new ObjectMapper();
 
-  @Test
+  //  @Test
+  @Disabled
   void testThreeNodes() throws InterruptedException, JsonProcessingException {
     CommandLineArguments cliArgs = new CommandLineArguments();
     CommandLine commandLine = new CommandLine(cliArgs);

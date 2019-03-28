@@ -20,7 +20,7 @@ import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 
 public class Constants {
-  // The constants below are correct as of spec v0.1
+  // The constants below are correct as of spec v0.4
 
   // Misc
   public static int SHARD_COUNT;
@@ -49,7 +49,7 @@ public class Constants {
   public static UnsignedLong FAR_FUTURE_EPOCH;
   public static Bytes32 ZERO_HASH;
   public static BLSSignature EMPTY_SIGNATURE;
-  public static Bytes BLS_WITHDRAWAL_PREFIX_BYTE;
+  public static String BLS_WITHDRAWAL_PREFIX_BYTE;
 
   // Time parameters
   public static int SECONDS_PER_SLOT;
@@ -73,10 +73,6 @@ public class Constants {
   public static int INACTIVITY_PENALTY_QUOTIENT;
   public static int MIN_PENALTY_QUOTIENT;
 
-  // Status flags
-  public static int INITIATED_EXIT;
-  public static int WITHDRAWABLE;
-
   // Max transactions per block
   public static int MAX_PROPOSER_SLASHINGS;
   public static int MAX_ATTESTER_SLASHINGS;
@@ -97,8 +93,7 @@ public class Constants {
   public static String SIM_DEPOSIT_VALUE;
   public static int DEPOSIT_DATA_SIZE;
 
-  public Constants(ArtemisConfiguration config) {
-
+  public static void init(ArtemisConfiguration config) {
     // Misc
     SHARD_COUNT =
         config.getShardCount() != Integer.MIN_VALUE ? config.getShardCount() : 1024; // 2^10 shards
@@ -111,7 +106,7 @@ public class Constants {
             ? config.getMaxBalanceChurnQuotient()
             : 32; // 2^5
     BEACON_CHAIN_SHARD_NUMBER =
-        !config.getBeaconChainShardNumber().equals("")
+        !config.getBeaconChainShardNumber().equals(UnsignedLong.MAX_VALUE)
             ? (UnsignedLong) config.getBeaconChainShardNumber()
             : UnsignedLong.MAX_VALUE; // 2^64 - 1
     MAX_INDICES_PER_SLASHABLE_VOTE =
@@ -153,34 +148,6 @@ public class Constants {
             ? config.getEjectionBalance()
             : 16000000000L; // 2^4 * 1E9 Gwei
 
-    // Initial values
-    GENESIS_FORK_VERSION =
-        config.getGenesisForkVersion() != Integer.MIN_VALUE ? config.getGenesisForkVersion() : 0;
-    GENESIS_SLOT =
-        config.getGenesisSlot() != Long.MIN_VALUE ? config.getGenesisSlot() : 4294967296L; // 2^32
-    GENESIS_EPOCH =
-        config.getGenesisEpoch() != Long.MIN_VALUE
-            ? config.getGenesisEpoch()
-            : slot_to_epoch(GENESIS_SLOT);
-    GENESIS_START_SHARD =
-        config.getGenesisStartShard() != Integer.MIN_VALUE ? config.getGenesisStartShard() : 0;
-    FAR_FUTURE_EPOCH =
-        !config.getFarFutureEpoch().equals("")
-            ? (UnsignedLong) config.getFarFutureEpoch()
-            : UnsignedLong.MAX_VALUE;
-    ZERO_HASH =
-        !config.getZeroHash().equals("")
-            ? (Bytes32) config.getZeroHash()
-            : Bytes32.ZERO; // TODO Verify
-    EMPTY_SIGNATURE =
-        !config.getEmptySignature().equals("")
-            ? (BLSSignature) config.getEmptySignature()
-            : BLSSignature.empty();
-    BLS_WITHDRAWAL_PREFIX_BYTE =
-        !config.getBlsWithdrawalPrefixByte().equals("")
-            ? (Bytes) config.getBlsWithdrawalPrefixByte()
-            : Bytes.EMPTY; // TODO Verify
-
     // Time parameters
     SECONDS_PER_SLOT =
         config.getSecondsPerSlot() != Integer.MIN_VALUE
@@ -210,6 +177,34 @@ public class Constants {
         config.getMinValidatorWithdrawabilityDelay() != Integer.MIN_VALUE
             ? config.getMinValidatorWithdrawabilityDelay()
             : 256; // 2^8 epochs (~27 hours)
+
+    // Initial values
+    GENESIS_FORK_VERSION =
+        config.getGenesisForkVersion() != Integer.MIN_VALUE ? config.getGenesisForkVersion() : 0;
+    GENESIS_SLOT =
+        config.getGenesisSlot() != Long.MIN_VALUE ? config.getGenesisSlot() : 4294967296L; // 2^32
+    GENESIS_EPOCH =
+        config.getGenesisEpoch() != Long.MIN_VALUE
+            ? config.getGenesisEpoch()
+            : slot_to_epoch(GENESIS_SLOT);
+    GENESIS_START_SHARD =
+        config.getGenesisStartShard() != Integer.MIN_VALUE ? config.getGenesisStartShard() : 0;
+    FAR_FUTURE_EPOCH =
+        !config.getFarFutureEpoch().equals(UnsignedLong.MAX_VALUE)
+            ? (UnsignedLong) config.getFarFutureEpoch()
+            : UnsignedLong.MAX_VALUE;
+    Bytes32 ZERO_HASH =
+        !config.getZeroHash().equals(Bytes32.ZERO)
+            ? (Bytes32) config.getZeroHash()
+            : Bytes32.ZERO; // TODO Verify
+    BLSSignature EMPTY_SIGNATURE =
+        !config.getEmptySignature().equals(BLSSignature.empty())
+            ? (BLSSignature) config.getEmptySignature()
+            : BLSSignature.empty();
+    BLS_WITHDRAWAL_PREFIX_BYTE =
+        !config.getBlsWithdrawalPrefixByte().equals("")
+            ? config.getBlsWithdrawalPrefixByte()
+            : "0x00"; // TODO Verify
 
     // State list lengths
     LATEST_BLOCK_ROOTS_LENGTH =
@@ -250,11 +245,6 @@ public class Constants {
         config.getMinPenaltyQuotient() != Integer.MIN_VALUE
             ? config.getMinPenaltyQuotient()
             : 32; // 2^5
-
-    // TODO: status flags need to be moved to Validator class.
-    // Status flags
-    INITIATED_EXIT = config.getInitiatedExit() != Integer.MIN_VALUE ? config.getInitiatedExit() : 1;
-    WITHDRAWABLE = config.getWithdrawable() != Integer.MIN_VALUE ? config.getWithdrawable() : 2;
 
     // Max transactions per block
     MAX_PROPOSER_SLASHINGS =
@@ -297,6 +287,6 @@ public class Constants {
   }
 
   public static long slot_to_epoch(long slot) {
-    return slot / Constants.SLOTS_PER_EPOCH;
+    return slot / SLOTS_PER_EPOCH;
   }
 }
