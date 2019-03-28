@@ -159,7 +159,7 @@ public final class RPCCodec {
    */
   public static Bytes encode(RPCMethod methodId, Object request, long requestNumber) {
 
-    String requestLine = "EWP 0.2 RPC snappy bson 0 ";
+    String requestLine = "EWP 0.2 RPC 0 ";
     ObjectNode node = mapper.createObjectNode();
 
     node.put("id", requestNumber);
@@ -197,14 +197,8 @@ public final class RPCCodec {
     String protocol = segments.next();
     String version = segments.next();
     String command = segments.next();
-    String compression = segments.next();
-    String encoding = segments.next();
     int headerLength = Integer.parseInt(segments.next());
     int bodyLength = Integer.parseInt(segments.next());
-
-    if (!"bson".equals(encoding)) {
-      throw new UnsupportedOperationException();
-    }
 
     if (message.size() < bodyLength + headerLength + requestLineBytes.size()) {
       return null;
@@ -213,9 +207,7 @@ public final class RPCCodec {
     try {
       byte[] payload =
           message.slice(requestLineBytes.size() + 1 + headerLength, bodyLength).toArrayUnsafe();
-      if ("snappy".equals(compression)) {
-        payload = Snappy.uncompress(payload);
-      }
+      payload = Snappy.uncompress(payload);
       ObjectNode rpcmessage = (ObjectNode) mapper.readTree(payload);
       long id = rpcmessage.get("id").longValue();
       int methodId = rpcmessage.get("method_id").intValue();
