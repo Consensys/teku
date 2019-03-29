@@ -13,7 +13,6 @@
 
 package tech.pegasys.artemis.datastructures.blocks;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.Arrays;
 import java.util.Objects;
 import net.consensys.cava.bytes.Bytes;
@@ -24,13 +23,12 @@ import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 
 public class Proposal {
 
-  private UnsignedLong slot;
-  private UnsignedLong shard;
+  private long slot;
+  private long shard;
   private Bytes32 block_root;
   private BLSSignature signature;
 
-  public Proposal(
-      UnsignedLong slot, UnsignedLong shard, Bytes32 block_root, BLSSignature signature) {
+  public Proposal(long slot, long shard, Bytes32 block_root, BLSSignature signature) {
     this.slot = slot;
     this.shard = shard;
     this.block_root = block_root;
@@ -42,8 +40,8 @@ public class Proposal {
         bytes,
         reader ->
             new Proposal(
-                UnsignedLong.fromLongBits(reader.readUInt64()),
-                UnsignedLong.fromLongBits(reader.readUInt64()),
+                reader.readUInt64(),
+                reader.readUInt64(),
                 Bytes32.wrap(reader.readBytes()),
                 BLSSignature.fromBytes(reader.readBytes())));
   }
@@ -51,8 +49,8 @@ public class Proposal {
   public Bytes toBytes() {
     return SSZ.encode(
         writer -> {
-          writer.writeUInt64(slot.longValue());
-          writer.writeUInt64(shard.longValue());
+          writer.writeUInt64(slot);
+          writer.writeUInt64(shard);
           writer.writeBytes(block_root);
           writer.writeBytes(signature.toBytes());
         });
@@ -85,19 +83,19 @@ public class Proposal {
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */
-  public UnsignedLong getSlot() {
+  public long getSlot() {
     return slot;
   }
 
-  public void setSlot(UnsignedLong slot) {
+  public void setSlot(long slot) {
     this.slot = slot;
   }
 
-  public UnsignedLong getShard() {
+  public long getShard() {
     return shard;
   }
 
-  public void setShard(UnsignedLong shard) {
+  public void setShard(long shard) {
     this.shard = shard;
   }
 
@@ -129,12 +127,12 @@ public class Proposal {
                 HashTreeUtil.hash_tree_root(
                     SSZ.encode(
                         writer -> {
-                          writer.writeUInt64(slot.longValue());
+                          writer.writeUInt64(slot);
                         })),
                 HashTreeUtil.hash_tree_root(
                     SSZ.encode(
                         writer -> {
-                          writer.writeUInt64(shard.longValue());
+                          writer.writeUInt64(shard);
                         })),
                 HashTreeUtil.hash_tree_root(block_root))));
   }

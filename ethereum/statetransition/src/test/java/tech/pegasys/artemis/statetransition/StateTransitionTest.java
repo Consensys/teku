@@ -16,7 +16,6 @@ package tech.pegasys.artemis.statetransition;
 import static org.junit.jupiter.api.Assertions.fail;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomDeposits;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.Collections;
 import net.consensys.cava.bytes.Bytes32;
@@ -37,7 +36,7 @@ class StateTransitionTest {
       // Initialize state
       BeaconStateWithCache state = new BeaconStateWithCache();
       BeaconStateUtil.get_initial_beacon_state(
-          state, randomDeposits(5), UnsignedLong.ZERO, new Eth1Data(Bytes32.ZERO, Bytes32.ZERO));
+          state, randomDeposits(5), 0, new Eth1Data(Bytes32.ZERO, Bytes32.ZERO));
 
       state.setLatest_block_roots(
           new ArrayList<Bytes32>(
@@ -69,7 +68,7 @@ class StateTransitionTest {
           committee.add(Integer.valueOf((int) Math.round(Math.random() * 64)));
         }
         shard_commitees.add(
-            new ShardCommittee(UnsignedLong.valueOf(Math.round(Math.random() * 5000)), committee));
+            new ShardCommittee(Math.round(Math.random() * 5000), committee));
       }
       shard_committees_at_slots.add(shard_commitees);
     }

@@ -13,7 +13,6 @@
 
 package tech.pegasys.artemis.datastructures.operations;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.Objects;
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.ssz.SSZ;
@@ -21,20 +20,20 @@ import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 
 public class Transfer {
-  private UnsignedLong from;
-  private UnsignedLong to;
-  private UnsignedLong amount;
-  private UnsignedLong fee;
-  private UnsignedLong slot;
+  private long from;
+  private long to;
+  private long amount;
+  private long fee;
+  private long slot;
   private BLSPublicKey pubkey;
   private BLSSignature signature;
 
   public Transfer(
-      UnsignedLong from,
-      UnsignedLong to,
-      UnsignedLong amount,
-      UnsignedLong fee,
-      UnsignedLong slot,
+      long from,
+      long to,
+      long amount,
+      long fee,
+      long slot,
       BLSPublicKey pubkey,
       BLSSignature signature) {
     this.setFrom(from);
@@ -51,11 +50,11 @@ public class Transfer {
         bytes,
         reader ->
             new Transfer(
-                UnsignedLong.fromLongBits(reader.readUInt64()),
-                UnsignedLong.fromLongBits(reader.readUInt64()),
-                UnsignedLong.fromLongBits(reader.readUInt64()),
-                UnsignedLong.fromLongBits(reader.readUInt64()),
-                UnsignedLong.fromLongBits(reader.readUInt64()),
+                reader.readUInt64(),
+                reader.readUInt64(),
+                reader.readUInt64(),
+                reader.readUInt64(),
+                reader.readUInt64(),
                 BLSPublicKey.fromBytes(reader.readBytes()),
                 BLSSignature.fromBytes(reader.readBytes())));
   }
@@ -63,11 +62,11 @@ public class Transfer {
   public Bytes toBytes() {
     return SSZ.encode(
         writer -> {
-          writer.writeUInt64(from.longValue());
-          writer.writeUInt64(to.longValue());
-          writer.writeUInt64(amount.longValue());
-          writer.writeUInt64(fee.longValue());
-          writer.writeUInt64(slot.longValue());
+          writer.writeUInt64(from);
+          writer.writeUInt64(to);
+          writer.writeUInt64(amount);
+          writer.writeUInt64(fee);
+          writer.writeUInt64(slot);
           writer.writeBytes(pubkey.toBytes());
           writer.writeBytes(signature.toBytes());
         });
@@ -103,43 +102,43 @@ public class Transfer {
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */
-  public UnsignedLong getFrom() {
+  public long getFrom() {
     return from;
   }
 
-  public void setFrom(UnsignedLong from) {
+  public void setFrom(long from) {
     this.from = from;
   }
 
-  public UnsignedLong getTo() {
+  public long getTo() {
     return to;
   }
 
-  public void setTo(UnsignedLong to) {
+  public void setTo(long to) {
     this.to = to;
   }
 
-  public UnsignedLong getAmount() {
+  public long getAmount() {
     return amount;
   }
 
-  public void setAmount(UnsignedLong amount) {
+  public void setAmount(long amount) {
     this.amount = amount;
   }
 
-  public UnsignedLong getFee() {
+  public long getFee() {
     return fee;
   }
 
-  public void setFee(UnsignedLong fee) {
+  public void setFee(long fee) {
     this.fee = fee;
   }
 
-  public UnsignedLong getSlot() {
+  public long getSlot() {
     return slot;
   }
 
-  public void setSlot(UnsignedLong slot) {
+  public void setSlot(long slot) {
     this.slot = slot;
   }
 

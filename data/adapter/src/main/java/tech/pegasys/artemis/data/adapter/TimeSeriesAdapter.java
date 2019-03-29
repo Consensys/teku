@@ -13,7 +13,6 @@
 
 package tech.pegasys.artemis.data.adapter;
 
-import com.google.common.primitives.UnsignedLong;
 import net.consensys.cava.bytes.Bytes32;
 import tech.pegasys.artemis.data.RawRecord;
 import tech.pegasys.artemis.data.TimeSeriesRecord;
@@ -37,9 +36,7 @@ public class TimeSeriesAdapter implements DataAdapter<TimeSeriesRecord> {
 
     long slot = this.input.getHeadBlock().getSlot();
     // TODO: fix this war crime
-    long epoch =
-        BeaconStateUtil.slot_to_epoch(UnsignedLong.valueOf(this.input.getHeadBlock().getSlot()))
-            .longValue();
+    long epoch = BeaconStateUtil.slot_to_epoch(this.input.getHeadBlock().getSlot());
     BeaconBlock headBlock = this.input.getHeadBlock();
     BeaconState headState = this.input.getHeadState();
     BeaconBlock justifiedBlock = this.input.getJustifiedBlock();

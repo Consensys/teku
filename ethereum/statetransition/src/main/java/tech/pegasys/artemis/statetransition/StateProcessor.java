@@ -15,7 +15,6 @@ package tech.pegasys.artemis.statetransition;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
-import com.google.common.primitives.UnsignedLong;
 import java.util.Date;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -47,8 +46,8 @@ public class StateProcessor {
   private Bytes32 finalizedBlockRoot; // most recent finalized block root
   private Bytes32 justifiedStateRoot; // most recent justified state root
   private Bytes32 justifiedBlockRoot; // most recent justified block root
-  private UnsignedLong nodeTime;
-  private UnsignedLong nodeSlot;
+  private long nodeTime;
+  private long nodeSlot;
   private final EventBus eventBus;
   private StateTransition stateTransition;
   private ChainStorageClient store;
@@ -78,12 +77,10 @@ public class StateProcessor {
         "******* Eth2Genesis Event detected ******* : "
             + ((tech.pegasys.artemis.pow.event.Eth2Genesis) event).getDeposit_root().toString()
             + ANSI_RESET);
-    this.nodeSlot = UnsignedLong.valueOf(Constants.GENESIS_SLOT);
-    this.nodeTime =
-        UnsignedLong.valueOf(Constants.GENESIS_SLOT)
-            .times(UnsignedLong.valueOf(Constants.SECONDS_PER_SLOT));
-    LOG.log(Level.INFO, "Node slot: " + nodeSlot.longValue());
-    LOG.log(Level.INFO, "Node time: " + nodeTime.longValue());
+    this.nodeSlot = Constants.GENESIS_SLOT;
+    this.nodeTime = Constants.GENESIS_SLOT * Constants.SECONDS_PER_SLOT;
+    LOG.log(Level.INFO, "Node slot: " + nodeSlot);
+    LOG.log(Level.INFO, "Node time: " + nodeTime);
     try {
       BeaconState initial_state =
           DataStructureUtil.createInitialBeaconState(config.getNumValidators());
@@ -113,23 +110,23 @@ public class StateProcessor {
 
   @Subscribe
   public void onNewSlot(Date date) throws StateTransitionException, InterruptedException {
-    this.nodeSlot = this.nodeSlot.plus(UnsignedLong.ONE);
-    this.nodeTime = this.nodeTime.plus(UnsignedLong.valueOf(Constants.SECONDS_PER_SLOT));
+    this.nodeSlot = this.nodeSlot + 1;
+    this.nodeTime = this.nodeTime + Constants.SECONDS_PER_SLOT;
 
     System.out.println("");
     LOG.log(Level.INFO, ANSI_WHITE_BOLD + "******* Slot Event *******" + ANSI_RESET);
     LOG.log(
         Level.INFO,
         "Node time:                            "
-            + nodeTime.longValue()
+            + nodeTime
             + " |  "
-            + nodeTime.longValue() % (Constants.GENESIS_SLOT * Constants.SECONDS_PER_SLOT));
+            + nodeTime % (Constants.GENESIS_SLOT * Constants.SECONDS_PER_SLOT));
     LOG.log(
         Level.INFO,
         "Node slot:                             "
-            + nodeSlot.longValue()
+            + nodeSlot
             + " |  "
-            + nodeSlot.longValue() % Constants.GENESIS_SLOT);
+            + nodeSlot % Constants.GENESIS_SLOT);
     Thread.sleep(3000);
     // Get all the unprocessed blocks that are for slots <= nodeSlot
     List<Optional<BeaconBlock>> unprocessedBlocks =
@@ -151,9 +148,9 @@ public class StateProcessor {
     // Get head block's state, and initialize a newHeadState variable to run state transition on
     BeaconState headBlockState = store.getState(headBlock.getState_root()).get();
     Long justifiedBlockSlot =
-        BeaconStateUtil.get_epoch_start_slot(headBlockState.getJustified_epoch()).longValue();
+        BeaconStateUtil.get_epoch_start_slot(headBlockState.getJustified_epoch());
     Long finalizedBlockSlot =
-        BeaconStateUtil.get_epoch_start_slot(headBlockState.getFinalized_epoch()).longValue();
+        BeaconStateUtil.get_epoch_start_slot(headBlockState.getFinalized_epoch());
     LOG.log(
         Level.INFO,
         "Justified block slot:                 "
@@ -174,7 +171,7 @@ public class StateProcessor {
 
     // Run state transition with no blocks from the newHeadState.slot to node.slot
     boolean firstLoop = true;
-    while (newHeadState.getSlot().compareTo(nodeSlot) < 0) {
+    while (newHeadState.getSlot() < nodeSlot) {
       if (firstLoop) {
         LOG.log(
             Level.INFO,
@@ -199,13 +196,11 @@ public class StateProcessor {
     if (!this.store.getParent(block.get()).isPresent()) {
       return false;
     }
-    UnsignedLong blockTime =
-        UnsignedLong.valueOf(block.get().getSlot())
-            .times(UnsignedLong.valueOf(Constants.SECONDS_PER_SLOT));
+    long blockTime = block.get().getSlot() * Constants.SECONDS_PER_SLOT;
     // TODO: Here we reject block because time is not there,
     // however, the block is already removed from queue, so
     // we're losing a valid block here.
-    if (this.nodeTime.compareTo(blockTime) < 0) {
+    if (this.nodeTime < blockTime) {
       LOG.log(Level.FATAL, "We lost a valid block!");
       return false;
     }
@@ -232,14 +227,14 @@ public class StateProcessor {
         boolean firstLoop = true;
         BeaconState currentState =
             BeaconStateWithCache.deepCopy((BeaconStateWithCache) parentBlockState);
-        while (currentState.getSlot().compareTo(UnsignedLong.valueOf(block.getSlot() - 1)) < 0) {
+        while (currentState.getSlot() < block.getSlot() - 1) {
           if (firstLoop) {
             LOG.log(
                 Level.INFO,
                 "Running state transition with no blocks from parent block slot: "
                     + currentState.getSlot()
                     + " to slot: "
-                    + UnsignedLong.valueOf(block.getSlot() - 1));
+                    + (block.getSlot() - 1));
             firstLoop = false;
           }
           stateTransition.initiate((BeaconStateWithCache) currentState, null, parentBlockRoot);
@@ -291,9 +286,7 @@ public class StateProcessor {
   protected void updateJustifiedAndFinalized() {
     // If it is the genesis epoch, keep the justified state root as genesis state root
     // because get_block_root gives an error if the slot is not less than state.slot
-    if (BeaconStateUtil.slot_to_epoch(nodeSlot)
-            .compareTo(UnsignedLong.valueOf(Constants.GENESIS_EPOCH))
-        != 0) {
+    if (BeaconStateUtil.slot_to_epoch(nodeSlot) != Constants.GENESIS_EPOCH) {
       try {
         BeaconState headState = store.getState(headBlock.getState_root()).get();
         this.finalizedBlockRoot =
@@ -318,7 +311,7 @@ public class StateProcessor {
     BeaconBlock finalizedBlock = store.getProcessedBlock(finalizedBlockRoot).get();
     RawRecord record =
         new RawRecord(
-            this.nodeSlot.minus(UnsignedLong.valueOf(Constants.GENESIS_SLOT)).longValue(),
+            this.nodeSlot - Constants.GENESIS_SLOT,
             headState,
             headBlock,
             justifiedState,

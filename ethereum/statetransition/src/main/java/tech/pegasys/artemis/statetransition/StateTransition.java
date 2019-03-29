@@ -15,7 +15,6 @@ package tech.pegasys.artemis.statetransition;
 
 import static tech.pegasys.artemis.datastructures.Constants.SLOTS_PER_EPOCH;
 
-import com.google.common.primitives.UnsignedLong;
 import net.consensys.cava.bytes.Bytes32;
 import org.apache.logging.log4j.Level;
 import tech.pegasys.artemis.datastructures.Constants;
@@ -55,11 +54,7 @@ public class StateTransition {
       blockProcessor(state, block);
     }
     // per-epoch processing
-    if (state
-        .getSlot()
-        .plus(UnsignedLong.ONE)
-        .mod(UnsignedLong.valueOf(SLOTS_PER_EPOCH))
-        .equals(UnsignedLong.ZERO)) {
+    if (state.getSlot() + 1 % SLOTS_PER_EPOCH == 0) {
       epochProcessor(state, block);
     }
     // reset all cached state variables
@@ -133,7 +128,7 @@ public class StateTransition {
           "Epoch:                                  "
               + BeaconStateUtil.get_current_epoch(state)
               + " |  "
-              + BeaconStateUtil.get_current_epoch(state).longValue() % Constants.GENESIS_EPOCH,
+              + BeaconStateUtil.get_current_epoch(state) % Constants.GENESIS_EPOCH,
           printEnabled);
 
       EpochProcessorUtil.updateEth1Data(state);
@@ -143,7 +138,7 @@ public class StateTransition {
       EpochProcessorUtil.updateCrosslinks(state);
       LOG.log(Level.DEBUG, "updateCrosslinks()", printEnabled);
 
-      UnsignedLong previous_total_balance = BeaconStateUtil.previous_total_balance(state);
+      long previous_total_balance = BeaconStateUtil.previous_total_balance(state);
       LOG.log(Level.DEBUG, "justificationAndFinalization()", printEnabled);
       EpochProcessorUtil.justificationAndFinalization(state, previous_total_balance);
       LOG.log(Level.DEBUG, "attestionInclusion()", printEnabled);

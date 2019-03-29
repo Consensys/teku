@@ -13,7 +13,6 @@
 
 package tech.pegasys.artemis.datastructures.state;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.Objects;
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.ssz.SSZ;
@@ -25,13 +24,13 @@ public class PendingAttestation implements Copyable<PendingAttestation> {
   private Bytes aggregation_bitfield;
   private AttestationData data;
   private Bytes custody_bitfield;
-  private UnsignedLong inclusion_slot;
+  private long inclusion_slot;
 
   public PendingAttestation(
       Bytes aggregation_bitfield,
       AttestationData data,
       Bytes custody_bitfield,
-      UnsignedLong inclusion_slot) {
+      long inclusion_slot) {
     this.aggregation_bitfield = aggregation_bitfield;
     this.data = data;
     this.custody_bitfield = custody_bitfield;
@@ -58,7 +57,7 @@ public class PendingAttestation implements Copyable<PendingAttestation> {
                 Bytes.wrap(reader.readBytes()),
                 AttestationData.fromBytes(reader.readBytes()),
                 Bytes.wrap(reader.readBytes()),
-                UnsignedLong.fromLongBits(reader.readUInt64())));
+                reader.readUInt64()));
   }
 
   public Bytes toBytes() {
@@ -67,7 +66,7 @@ public class PendingAttestation implements Copyable<PendingAttestation> {
           writer.writeBytes(aggregation_bitfield);
           writer.writeBytes(data.toBytes());
           writer.writeBytes(custody_bitfield);
-          writer.writeUInt64(inclusion_slot.longValue());
+          writer.writeUInt64(inclusion_slot);
         });
   }
 
@@ -122,11 +121,11 @@ public class PendingAttestation implements Copyable<PendingAttestation> {
     this.custody_bitfield = custody_bitfield;
   }
 
-  public UnsignedLong getInclusionSlot() {
+  public long getInclusionSlot() {
     return inclusion_slot;
   }
 
-  public void setInclusionSlot(UnsignedLong inclusion_slot) {
+  public void setInclusionSlot(long inclusion_slot) {
     this.inclusion_slot = inclusion_slot;
   }
 }

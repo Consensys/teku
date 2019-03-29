@@ -13,7 +13,6 @@
 
 package tech.pegasys.artemis.datastructures.state;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.Objects;
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
@@ -28,11 +27,11 @@ public final class Validator implements Copyable<Validator> {
   // Withdrawal credentials
   private Bytes32 withdrawal_credentials;
   // Epoch when validator activated
-  private UnsignedLong activation_epoch;
+  private long activation_epoch;
   // Epoch when validator exited
-  private UnsignedLong exit_epoch;
+  private long exit_epoch;
   // Epoch when validator withdrew
-  private UnsignedLong withdrawal_epoch;
+  private long withdrawal_epoch;
   // Did the validator initiate an exit
   private boolean initiated_exit;
   // Was the validator slashed
@@ -41,9 +40,9 @@ public final class Validator implements Copyable<Validator> {
   public Validator(
       BLSPublicKey pubkey,
       Bytes32 withdrawal_credentials,
-      UnsignedLong activation_epoch,
-      UnsignedLong exit_epoch,
-      UnsignedLong withdrawal_epoch,
+      long activation_epoch,
+      long exit_epoch,
+      long withdrawal_epoch,
       boolean initiated_exit,
       boolean slashed) {
     this.pubkey = pubkey;
@@ -77,9 +76,10 @@ public final class Validator implements Copyable<Validator> {
             new Validator(
                 BLSPublicKey.fromBytes(reader.readBytes()),
                 Bytes32.wrap(reader.readBytes()),
-                UnsignedLong.fromLongBits(reader.readUInt64()),
-                UnsignedLong.fromLongBits(reader.readUInt64()),
-                UnsignedLong.fromLongBits(reader.readUInt64()),
+                // TODO: akhila check this before submitting PR
+                reader.readUInt64(),
+                reader.readUInt64(),
+                reader.readUInt64(),
                 reader.readBoolean(),
                 reader.readBoolean()));
   }
@@ -89,9 +89,9 @@ public final class Validator implements Copyable<Validator> {
         writer -> {
           writer.writeBytes(pubkey.toBytes());
           writer.writeBytes(withdrawal_credentials);
-          writer.writeUInt64(activation_epoch.longValue());
-          writer.writeUInt64(exit_epoch.longValue());
-          writer.writeUInt64(withdrawal_epoch.longValue());
+          writer.writeUInt64(activation_epoch);
+          writer.writeUInt64(exit_epoch);
+          writer.writeUInt64(withdrawal_epoch);
           writer.writeBoolean(initiated_exit);
           writer.writeBoolean(slashed);
         });
@@ -149,27 +149,27 @@ public final class Validator implements Copyable<Validator> {
     this.withdrawal_credentials = withdrawal_credentials;
   }
 
-  public UnsignedLong getActivation_epoch() {
+  public long getActivation_epoch() {
     return activation_epoch;
   }
 
-  public void setActivation_epoch(UnsignedLong activation_epoch) {
+  public void setActivation_epoch(long activation_epoch) {
     this.activation_epoch = activation_epoch;
   }
 
-  public UnsignedLong getExit_epoch() {
+  public long getExit_epoch() {
     return exit_epoch;
   }
 
-  public void setExit_epoch(UnsignedLong exit_epoch) {
+  public void setExit_epoch(long exit_epoch) {
     this.exit_epoch = exit_epoch;
   }
 
-  public UnsignedLong getWithdrawal_epoch() {
+  public long getWithdrawal_epoch() {
     return withdrawal_epoch;
   }
 
-  public void setWithdrawal_epoch(UnsignedLong withdrawal_epoch) {
+  public void setWithdrawal_epoch(long withdrawal_epoch) {
     this.withdrawal_epoch = withdrawal_epoch;
   }
 
@@ -198,7 +198,7 @@ public final class Validator implements Copyable<Validator> {
    *     href="https://github.com/ethereum/eth2.0-specs/blob/v0.4.0/specs/core/0_beacon-chain.md#is_active_validator">is_active_validator
    *     - Spec v0.4</a>
    */
-  public boolean is_active_validator(UnsignedLong epoch) {
-    return activation_epoch.compareTo(epoch) <= 0 && epoch.compareTo(exit_epoch) < 0;
+  public boolean is_active_validator(long epoch) {
+    return activation_epoch <= epoch && epoch < exit_epoch;
   }
 }

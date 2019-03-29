@@ -15,7 +15,6 @@ package tech.pegasys.artemis.validator.coordinator;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
-import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -61,8 +60,8 @@ public class ValidatorCoordinator {
   private PublicKey nodeIdentity;
   private int numValidators;
   private int numNodes;
-  private final HashMap<UnsignedLong, BeaconState> stateLookup = new HashMap<>();
-  private final HashMap<UnsignedLong, BeaconBlock> blockLookup = new HashMap<>();
+  private final HashMap<Long, BeaconState> stateLookup = new HashMap<>();
+  private final HashMap<Long, BeaconBlock> blockLookup = new HashMap<>();
   private final HashMap<BLSPublicKey, BLSKeyPair> validatorSet = new HashMap<>();
 
   public ValidatorCoordinator(ServiceConfig config) {
@@ -116,33 +115,19 @@ public class ValidatorCoordinator {
     List<Attestation> current_attestations;
     try {
       LOG.log(Level.INFO, "In ValidatorCoordinator", printEnabled);
-      if (state
-              .getSlot()
-              .compareTo(
-                  UnsignedLong.valueOf(
-                      Constants.GENESIS_SLOT + Constants.MIN_ATTESTATION_INCLUSION_DELAY))
-          > 0) {
+      if (state.getSlot() > Constants.GENESIS_SLOT + Constants.MIN_ATTESTATION_INCLUSION_DELAY) {
         LOG.log(Level.INFO, "Here comes an attestation", printEnabled);
-        UnsignedLong attestation_slot =
-            state.getSlot().minus(UnsignedLong.valueOf(Constants.MIN_ATTESTATION_INCLUSION_DELAY));
+        long attestation_slot = state.getSlot() - Constants.MIN_ATTESTATION_INCLUSION_DELAY;
         current_attestations =
             AttestationUtil.createAttestations(
                 stateLookup.get(attestation_slot), blockLookup.get(attestation_slot), validatorSet);
         block =
             DataStructureUtil.newBeaconBlock(
-                state.getSlot().plus(UnsignedLong.ONE),
-                blockRoot,
-                MockStateRoot,
-                deposits,
-                current_attestations);
+                state.getSlot() + 1, blockRoot, MockStateRoot, deposits, current_attestations);
       } else {
         block =
             DataStructureUtil.newBeaconBlock(
-                state.getSlot().plus(UnsignedLong.ONE),
-                blockRoot,
-                MockStateRoot,
-                deposits,
-                new ArrayList<>());
+                state.getSlot() + 1, blockRoot, MockStateRoot, deposits, new ArrayList<>());
       }
       BLSKeyPair keypair = getProposerKeyPair(state);
       BLSSignature epoch_signature = setEpochSignature(state, keypair);
@@ -180,7 +165,7 @@ public class ValidatorCoordinator {
     // State hasn't been updated(transition initiated) when its passed to setEpochSignature,
     // and thus the slot is one less than what it should be for the new block, that is why we
     // increment it here.
-    UnsignedLong slot = state.getSlot().plus(UnsignedLong.ONE);
+    long slot = state.getSlot() + 1;
     // BLSKeyPair keypair = BLSKeyPair.random(Math.toIntExact(Constants.GENESIS_SLOT) + i);
 
     int proposerIndex = BeaconStateUtil.get_beacon_proposer_index(state, slot);
@@ -195,19 +180,17 @@ public class ValidatorCoordinator {
      * `fork` is the fork object at the slot `block.slot` epoch=slot_to_epoch(block.slot),
      * domain_type=DOMAIN_RANDAO, ))
      */
-    UnsignedLong slot = state.getSlot().plus(UnsignedLong.ONE);
-    UnsignedLong epoch = BeaconStateUtil.slot_to_epoch(slot);
+    long slot = state.getSlot() + 1;
+    long epoch = BeaconStateUtil.slot_to_epoch(slot);
 
-    UnsignedLong domain =
-        BeaconStateUtil.get_domain(state.getFork(), epoch, Constants.DOMAIN_RANDAO);
-    Bytes32 messageHash =
-        HashTreeUtil.hash_tree_root(BeaconStateUtil.int_to_bytes(epoch.longValue(), 8));
+    long domain = BeaconStateUtil.get_domain(state.getFork(), epoch, Constants.DOMAIN_RANDAO);
+    Bytes32 messageHash = HashTreeUtil.hash_tree_root(BeaconStateUtil.int_to_bytes(epoch, 8));
     LOG.log(Level.INFO, "Sign Epoch", printEnabled);
     LOG.log(Level.INFO, "Proposer pubkey: " + keypair.getPublicKey(), printEnabled);
     LOG.log(Level.INFO, "state: " + HashTreeUtil.hash_tree_root(state.toBytes()), printEnabled);
     LOG.log(Level.INFO, "slot: " + slot, printEnabled);
     LOG.log(Level.INFO, "domain: " + domain, printEnabled);
-    return BLSSignature.sign(keypair, messageHash, domain.longValue());
+    return BLSSignature.sign(keypair, messageHash, domain);
   }
 
   private BLSSignature signProposalData(BeaconState state, BeaconBlock block, BLSKeyPair keypair) {
@@ -215,24 +198,24 @@ public class ValidatorCoordinator {
     //   signed_root(block, "signature"), block.signature).
     Proposal proposal =
         new Proposal(
-            UnsignedLong.fromLongBits(block.getSlot()),
+            block.getSlot(),
             Constants.BEACON_CHAIN_SHARD_NUMBER,
             block.signedRoot("signature"),
             block.getSignature());
     Bytes32 proposalRoot = proposal.signedRoot("signature");
 
-    UnsignedLong domain =
+    long domain =
         BeaconStateUtil.get_domain(
             state.getFork(),
             BeaconStateUtil.slot_to_epoch(state.getSlot()),
             Constants.DOMAIN_PROPOSAL);
-    BLSSignature signature = BLSSignature.sign(keypair, proposalRoot, domain.longValue());
+    BLSSignature signature = BLSSignature.sign(keypair, proposalRoot, domain);
     LOG.log(Level.INFO, "Sign Proposal", printEnabled);
     LOG.log(Level.INFO, "Proposer pubkey: " + keypair.getPublicKey(), printEnabled);
     LOG.log(Level.INFO, "state: " + HashTreeUtil.hash_tree_root(state.toBytes()), printEnabled);
     LOG.log(Level.INFO, "proposal root: " + proposalRoot.toHexString(), printEnabled);
     LOG.log(Level.INFO, "block signature: " + signature.toString(), printEnabled);
-    LOG.log(Level.INFO, "slot: " + state.getSlot().longValue(), printEnabled);
+    LOG.log(Level.INFO, "slot: " + state.getSlot(), printEnabled);
     LOG.log(Level.INFO, "domain: " + domain, printEnabled);
     return signature;
   }

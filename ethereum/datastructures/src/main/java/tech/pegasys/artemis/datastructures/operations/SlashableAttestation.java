@@ -13,23 +13,21 @@
 
 package tech.pegasys.artemis.datastructures.operations;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.ssz.SSZ;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 
 public class SlashableAttestation {
 
-  private List<UnsignedLong> validator_indices;
+  private List<Long> validator_indices;
   private AttestationData data;
   private Bytes custody_bitfield;
   private BLSSignature aggregate_signature;
 
   public SlashableAttestation(
-      List<UnsignedLong> validator_indices,
+      List<Long> validator_indices,
       AttestationData data,
       Bytes custody_bitfield,
       BLSSignature aggregate_signature) {
@@ -39,14 +37,13 @@ public class SlashableAttestation {
     this.aggregate_signature = aggregate_signature;
   }
 
+  // TODO: akhila
   public static SlashableAttestation fromBytes(Bytes bytes) {
     return SSZ.decode(
         bytes,
         reader ->
             new SlashableAttestation(
-                reader.readUInt64List().stream()
-                    .map(UnsignedLong::fromLongBits)
-                    .collect(Collectors.toList()),
+                reader.readInt64List(),
                 AttestationData.fromBytes(reader.readBytes()),
                 Bytes.wrap(reader.readBytes()),
                 BLSSignature.fromBytes(reader.readBytes())));
@@ -55,9 +52,7 @@ public class SlashableAttestation {
   public Bytes toBytes() {
     return SSZ.encode(
         writer -> {
-          writer.writeULongIntList(
-              64,
-              validator_indices.stream().map(UnsignedLong::longValue).collect(Collectors.toList()));
+          writer.writeLongIntList(64, validator_indices);
           writer.writeBytes(data.toBytes());
           writer.writeBytes(custody_bitfield);
           writer.writeBytes(aggregate_signature.toBytes());
@@ -107,11 +102,11 @@ public class SlashableAttestation {
     this.aggregate_signature = aggregate_signature;
   }
 
-  public List<UnsignedLong> getValidator_indices() {
+  public List<Long> getValidator_indices() {
     return validator_indices;
   }
 
-  public void setValidator_indices(List<UnsignedLong> validator_indices) {
+  public void setValidator_indices(List<Long> validator_indices) {
     this.validator_indices = validator_indices;
   }
 

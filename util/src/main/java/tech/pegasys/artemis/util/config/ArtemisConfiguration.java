@@ -13,7 +13,6 @@
 
 package tech.pegasys.artemis.util.config;
 
-import com.google.common.primitives.UnsignedLong;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URI;
@@ -91,7 +90,7 @@ public final class ArtemisConfiguration {
     builder.addInteger("constants.SHARD_COUNT", Integer.MIN_VALUE, null, null);
     builder.addInteger("constants.TARGET_COMMITTEE_SIZE", Integer.MIN_VALUE, null, null);
     builder.addInteger("constants.MAX_BALANCE_CHURN_QUOTIENT", Integer.MIN_VALUE, null, null);
-    builder.addDefault("constants.BEACON_CHAIN_SHARD_NUMBER", UnsignedLong.MAX_VALUE);
+    builder.addLong("constants.BEACON_CHAIN_SHARD_NUMBER", Long.MAX_VALUE, null, null);
     builder.addInteger("constants.MAX_INDICES_PER_SLASHABLE_VOTE", Integer.MIN_VALUE, null, null);
     builder.addInteger("constants.MAX_EXIT_DEQUEUES_PER_EPOCH", Integer.MIN_VALUE, null, null);
     builder.addInteger("constants.SHUFFLE_ROUND_COUNT", Integer.MIN_VALUE, null, null);
@@ -111,7 +110,7 @@ public final class ArtemisConfiguration {
     builder.addLong("constants.GENESIS_SLOT", Long.MIN_VALUE, null, null);
     builder.addLong("constants.GENESIS_EPOCH", Long.MIN_VALUE, null, null);
     builder.addInteger("constants.GENESIS_START_SHARD", Integer.MIN_VALUE, null, null);
-    builder.addDefault("constants.FAR_FUTURE_EPOCH", UnsignedLong.MAX_VALUE);
+    builder.addLong("constants.FAR_FUTURE_EPOCH", Long.MAX_VALUE, null, null);
     builder.addDefault("constants.ZERO_HASH", Bytes32.ZERO);
     builder.addDefault("constants.EMPTY_SIGNATURE", BLSSignature.empty());
     builder.addDefault("constants.BLS_WITHDRAWAL_PREFIX_BYTE", Bytes32.EMPTY);
@@ -246,8 +245,8 @@ public final class ArtemisConfiguration {
     return config.getInteger("constants.MAX_BALANCE_CHURN_QUOTIENT");
   }
 
-  public Object getBeaconChainShardNumber() {
-    return config.get("constants.BEACON_CHAIN_SHARD_NUMBER");
+  public long getBeaconChainShardNumber() {
+    return config.getLong("constants.BEACON_CHAIN_SHARD_NUMBER");
   }
 
   public int getMaxIndicesPerSlashableVote() {
@@ -305,8 +304,8 @@ public final class ArtemisConfiguration {
     return config.getInteger("constants.GENESIS_START_SHARD");
   }
 
-  public Object getFarFutureEpoch() {
-    return config.get("constants.FAR_FUTURE_EPOCH");
+  public long getFarFutureEpoch() {
+    return config.getLong("constants.FAR_FUTURE_EPOCH");
   }
 
   public Object getZeroHash() {

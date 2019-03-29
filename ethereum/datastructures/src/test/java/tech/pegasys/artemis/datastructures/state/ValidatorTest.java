@@ -15,9 +15,8 @@ package tech.pegasys.artemis.datastructures.state;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomUnsignedLong;
+import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomLong;
 
-import com.google.common.primitives.UnsignedLong;
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
@@ -27,9 +26,9 @@ class ValidatorTest {
 
   private BLSPublicKey pubkey = BLSPublicKey.random();
   private Bytes32 withdrawalCredentials = Bytes32.random();
-  private UnsignedLong activationEpoch = randomUnsignedLong();
-  private UnsignedLong exitEpoch = randomUnsignedLong();
-  private UnsignedLong withdrawalEpoch = randomUnsignedLong();
+  private long activationEpoch = randomLong();
+  private long exitEpoch = randomLong();
+  private long withdrawalEpoch = randomLong();
   private boolean initiatedExit = false;
   private boolean slashed = false;
 
@@ -105,7 +104,7 @@ class ValidatorTest {
         new Validator(
             pubkey,
             withdrawalCredentials,
-            activationEpoch.plus(randomUnsignedLong()),
+            activationEpoch + randomLong(),
             exitEpoch,
             withdrawalEpoch,
             initiatedExit,
@@ -121,7 +120,7 @@ class ValidatorTest {
             pubkey,
             withdrawalCredentials,
             activationEpoch,
-            exitEpoch.plus(randomUnsignedLong()),
+            exitEpoch + randomLong(),
             withdrawalEpoch,
             initiatedExit,
             slashed);
@@ -137,7 +136,7 @@ class ValidatorTest {
             withdrawalCredentials,
             activationEpoch,
             exitEpoch,
-            withdrawalEpoch.plus(randomUnsignedLong()),
+            withdrawalEpoch + randomLong(),
             initiatedExit,
             slashed);
 

@@ -20,10 +20,9 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.is_power_of_two;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.newDeposits;
-import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomUnsignedLong;
+import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomLong;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomValidator;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -48,44 +47,16 @@ import tech.pegasys.artemis.util.bls.BLSVerify;
 @ExtendWith(BouncyCastleExtension.class)
 class BeaconStateUtilTest {
   @Test
-  void minReturnsMin() {
-    UnsignedLong actual = BeaconStateUtil.min(UnsignedLong.valueOf(13L), UnsignedLong.valueOf(12L));
-    UnsignedLong expected = UnsignedLong.valueOf(12L);
-    assertEquals(expected, actual);
-  }
-
-  @Test
-  void minReturnsMinWhenEqual() {
-    UnsignedLong actual = BeaconStateUtil.min(UnsignedLong.valueOf(12L), UnsignedLong.valueOf(12L));
-    UnsignedLong expected = UnsignedLong.valueOf(12L);
-    assertEquals(expected, actual);
-  }
-
-  @Test
-  void maxReturnsMax() {
-    UnsignedLong actual = BeaconStateUtil.max(UnsignedLong.valueOf(13L), UnsignedLong.valueOf(12L));
-    UnsignedLong expected = UnsignedLong.valueOf(13L);
-    assertEquals(expected, actual);
-  }
-
-  @Test
-  void maxReturnsMaxWhenEqual() {
-    UnsignedLong actual = BeaconStateUtil.max(UnsignedLong.valueOf(13L), UnsignedLong.valueOf(13L));
-    UnsignedLong expected = UnsignedLong.valueOf(13L);
-    assertEquals(expected, actual);
-  }
-
-  @Test
   void sqrtOfSquareNumber() {
-    UnsignedLong actual = BeaconStateUtil.integer_squareroot(UnsignedLong.valueOf(3481L));
-    UnsignedLong expected = UnsignedLong.valueOf(59L);
+    long actual = BeaconStateUtil.integer_squareroot(3481L);
+    long expected = 59L;
     assertEquals(expected, actual);
   }
 
   @Test
   void sqrtOfANonSquareNumber() {
-    UnsignedLong actual = BeaconStateUtil.integer_squareroot(UnsignedLong.valueOf(27L));
-    UnsignedLong expected = UnsignedLong.valueOf(5L);
+    long actual = BeaconStateUtil.integer_squareroot(27L);
+    long expected = 5L;
     assertEquals(expected, actual);
   }
 
@@ -94,7 +65,7 @@ class BeaconStateUtilTest {
     assertThrows(
         IllegalArgumentException.class,
         () -> {
-          BeaconStateUtil.integer_squareroot(UnsignedLong.valueOf(-1L));
+          BeaconStateUtil.integer_squareroot(-1L);
         });
   }
 
@@ -105,13 +76,13 @@ class BeaconStateUtilTest {
     // Setup Fork Versions
     // The values of these don't really matter, it just makes sense that
     // previous version is less than current version.
-    UnsignedLong previousVersion = UnsignedLong.ZERO;
-    UnsignedLong currentVersion = previousVersion.plus(UnsignedLong.valueOf(1L));
+    long previousVersion = 0;
+    long currentVersion = previousVersion + 1L;
 
     // Setup Epochs
     // It is necessary for this test that givenEpoch is less than forkEpoch.
-    UnsignedLong givenEpoch = UnsignedLong.valueOf(100L);
-    UnsignedLong forkEpoch = givenEpoch.plus(UnsignedLong.valueOf(1L));
+    long givenEpoch = 100L;
+    long forkEpoch = givenEpoch + 1L;
 
     // Setup Fork
     Fork fork = new Fork(previousVersion, currentVersion, forkEpoch);
@@ -124,13 +95,13 @@ class BeaconStateUtilTest {
     // Setup Fork Versions
     // The values of these don't really matter, it just makes sense that
     // previous version is less than current version.
-    UnsignedLong previousVersion = UnsignedLong.ZERO;
-    UnsignedLong currentVersion = previousVersion.plus(UnsignedLong.valueOf(1L));
+    long previousVersion = 0;
+    long currentVersion = previousVersion + 1L;
 
     // Setup Epochs
     // It is necessary for this test that givenEpoch is greater than forkEpoch.
-    UnsignedLong forkEpoch = UnsignedLong.valueOf(100L);
-    UnsignedLong givenEpoch = forkEpoch.plus(UnsignedLong.valueOf(1L));
+    long forkEpoch = 100L;
+    long givenEpoch = forkEpoch + 1L;
 
     // Setup Fork
     Fork fork = new Fork(previousVersion, currentVersion, forkEpoch);
@@ -143,12 +114,12 @@ class BeaconStateUtilTest {
     // Setup Fork Versions
     // The values of these don't really matter, it just makes sense that
     // previous version is less than current version.
-    UnsignedLong previousVersion = UnsignedLong.ZERO;
-    UnsignedLong currentVersion = previousVersion.plus(UnsignedLong.valueOf(1L));
+    long previousVersion = 0;
+    long currentVersion = previousVersion + 1L;
 
     // Setup Epochs
-    UnsignedLong givenEpoch = UnsignedLong.valueOf(100L);
-    UnsignedLong forkEpoch = givenEpoch.plus(UnsignedLong.valueOf(1L));
+    long givenEpoch = 100L;
+    long forkEpoch = givenEpoch + 1L;
 
     // Setup Fork
     Fork fork = new Fork(previousVersion, currentVersion, forkEpoch);
@@ -162,8 +133,7 @@ class BeaconStateUtilTest {
     for (int domain = 0; domain <= 4; ++domain) {
       assertEquals(
           BeaconStateUtil.get_domain(fork, givenEpoch, domain),
-          UnsignedLong.valueOf(
-              (BeaconStateUtil.get_fork_version(fork, givenEpoch).longValue() << 32) + domain));
+          (BeaconStateUtil.get_fork_version(fork, givenEpoch) << 32) + domain);
     }
   }
 
@@ -172,12 +142,12 @@ class BeaconStateUtilTest {
     // Setup Fork Versions
     // The values of these don't really matter, it just makes sense that
     // previous version is less than current version.
-    UnsignedLong previousVersion = UnsignedLong.ZERO;
-    UnsignedLong currentVersion = previousVersion.plus(UnsignedLong.valueOf(1L));
+    long previousVersion = 0;
+    long currentVersion = previousVersion + 1L;
 
     // Setup Epochs
-    UnsignedLong forkEpoch = UnsignedLong.valueOf(100L);
-    UnsignedLong givenEpoch = forkEpoch.plus(UnsignedLong.valueOf(1L));
+    long forkEpoch = 100L;
+    long givenEpoch = forkEpoch + 1L;
 
     // Setup Fork
     Fork fork = new Fork(previousVersion, currentVersion, forkEpoch);
@@ -191,8 +161,7 @@ class BeaconStateUtilTest {
     for (int domain = 0; domain <= 4; ++domain) {
       assertEquals(
           BeaconStateUtil.get_domain(fork, givenEpoch, domain),
-          UnsignedLong.valueOf(
-              (BeaconStateUtil.get_fork_version(fork, givenEpoch).longValue() << 32) + domain));
+          (BeaconStateUtil.get_fork_version(fork, givenEpoch) << 32) + domain);
     }
   }
   // *************** END Fork Tests ***************
@@ -203,13 +172,13 @@ class BeaconStateUtilTest {
     BLSPublicKey pubkey = deposit.getDeposit_data().getDeposit_input().getPubkey();
     BLSSignature proofOfPossession =
         deposit.getDeposit_data().getDeposit_input().getProof_of_possession();
-    UnsignedLong domain =
+    long domain =
         BeaconStateUtil.get_domain(
             new Fork(
-                UnsignedLong.valueOf(Constants.GENESIS_FORK_VERSION),
-                UnsignedLong.valueOf(Constants.GENESIS_FORK_VERSION),
-                UnsignedLong.valueOf(Constants.GENESIS_EPOCH)),
-            UnsignedLong.fromLongBits(Constants.GENESIS_EPOCH),
+                Constants.GENESIS_FORK_VERSION,
+                Constants.GENESIS_FORK_VERSION,
+                Constants.GENESIS_EPOCH),
+            Constants.GENESIS_EPOCH,
             Constants.DOMAIN_DEPOSIT);
 
     assertTrue(
@@ -226,13 +195,13 @@ class BeaconStateUtilTest {
     BLSPublicKey pubkey = BLSPublicKey.random();
     BLSSignature proofOfPossession =
         deposit.getDeposit_data().getDeposit_input().getProof_of_possession();
-    UnsignedLong domain =
+    long domain =
         BeaconStateUtil.get_domain(
             new Fork(
-                UnsignedLong.valueOf(Constants.GENESIS_FORK_VERSION),
-                UnsignedLong.valueOf(Constants.GENESIS_FORK_VERSION),
-                UnsignedLong.valueOf(Constants.GENESIS_EPOCH)),
-            UnsignedLong.fromLongBits(Constants.GENESIS_EPOCH),
+                Constants.GENESIS_FORK_VERSION,
+                Constants.GENESIS_FORK_VERSION,
+                Constants.GENESIS_EPOCH),
+            Constants.GENESIS_EPOCH,
             Constants.DOMAIN_DEPOSIT);
 
     assertFalse(
@@ -250,7 +219,7 @@ class BeaconStateUtilTest {
     DepositInput depositInput = deposit.getDeposit_data().getDeposit_input();
     BLSPublicKey pubkey = depositInput.getPubkey();
     Bytes32 withdrawalCredentials = depositInput.getWithdrawal_credentials();
-    UnsignedLong amount = deposit.getDeposit_data().getAmount();
+    long amount = deposit.getDeposit_data().getAmount();
 
     BeaconState beaconState = createBeaconState();
 
@@ -276,7 +245,8 @@ class BeaconStateUtilTest {
             false,
             false),
         beaconState.getValidator_registry().get(originalValidatorRegistrySize));
-    assertEquals(amount, beaconState.getValidator_balances().get(originalValidatorBalancesSize));
+    assertEquals(
+        amount, (long) beaconState.getValidator_balances().get(originalValidatorBalancesSize));
   }
 
   @Test
@@ -286,7 +256,7 @@ class BeaconStateUtilTest {
     DepositInput depositInput = deposit.getDeposit_data().getDeposit_input();
     BLSPublicKey pubkey = depositInput.getPubkey();
     Bytes32 withdrawalCredentials = depositInput.getWithdrawal_credentials();
-    UnsignedLong amount = deposit.getDeposit_data().getAmount();
+    long amount = deposit.getDeposit_data().getAmount();
 
     Validator knownValidator =
         new Validator(
@@ -315,24 +285,23 @@ class BeaconStateUtilTest {
     assertEquals(
         knownValidator, beaconState.getValidator_registry().get(originalValidatorRegistrySize - 1));
     assertEquals(
-        amount.times(UnsignedLong.valueOf(2L)),
-        beaconState.getValidator_balances().get(originalValidatorBalancesSize - 1));
+        amount * 2L,
+        (long) beaconState.getValidator_balances().get(originalValidatorBalancesSize - 1));
   }
 
   @Test
   void getTotalBalanceAddsAndReturnsEffectiveTotalBalancesCorrectly() {
     // Data Setup
     BeaconState state = createBeaconState();
-    CrosslinkCommittee crosslinkCommittee =
-        new CrosslinkCommittee(UnsignedLong.ONE, Arrays.asList(0, 1, 2));
+    CrosslinkCommittee crosslinkCommittee = new CrosslinkCommittee(1, Arrays.asList(0, 1, 2));
 
     // Calculate Expected Results
-    UnsignedLong expectedBalance = UnsignedLong.ZERO;
-    for (UnsignedLong balance : state.getValidator_balances()) {
-      if (balance.compareTo(UnsignedLong.valueOf(Constants.MAX_DEPOSIT_AMOUNT)) < 0) {
-        expectedBalance = expectedBalance.plus(balance);
+    long expectedBalance = 0;
+    for (long balance : state.getValidator_balances()) {
+      if (balance < Constants.MAX_DEPOSIT_AMOUNT) {
+        expectedBalance = expectedBalance + balance;
       } else {
-        expectedBalance = expectedBalance.plus(UnsignedLong.valueOf(Constants.MAX_DEPOSIT_AMOUNT));
+        expectedBalance = expectedBalance + Constants.MAX_DEPOSIT_AMOUNT;
       }
     }
 
@@ -348,67 +317,59 @@ class BeaconStateUtilTest {
 
     beaconState.setCurrent_shuffling_epoch(Constants.FAR_FUTURE_EPOCH);
     beaconState.setPrevious_shuffling_epoch(Constants.FAR_FUTURE_EPOCH);
-    List<UnsignedLong> latestPenalizedBalances =
-        new ArrayList<>(
-            Arrays.asList(randomUnsignedLong(), randomUnsignedLong(), randomUnsignedLong()));
+    List<Long> latestPenalizedBalances =
+        new ArrayList<>(Arrays.asList(randomLong(), randomLong(), randomLong()));
     beaconState.setLatest_slashed_balances(latestPenalizedBalances);
 
     // Expected Data Setup
     int whistleblowerIndex =
         BeaconStateUtil.get_beacon_proposer_index(beaconState, beaconState.getSlot());
-    UnsignedLong whistleblowerReward =
+    long whistleblowerReward =
         BeaconStateUtil.get_effective_balance(beaconState, validatorIndex)
-            .dividedBy(UnsignedLong.valueOf(Constants.WHISTLEBLOWER_REWARD_QUOTIENT));
-    UnsignedLong whistleblowerBalance = beaconState.getValidator_balances().get(whistleblowerIndex);
+            / Constants.WHISTLEBLOWER_REWARD_QUOTIENT;
+    long whistleblowerBalance = beaconState.getValidator_balances().get(whistleblowerIndex);
 
-    UnsignedLong validatorBalance = beaconState.getValidator_balances().get(validatorIndex);
+    long validatorBalance = beaconState.getValidator_balances().get(validatorIndex);
 
-    UnsignedLong expectedWhistleblowerBalance = whistleblowerBalance.plus(whistleblowerReward);
-    UnsignedLong expectedBadActorBalance = validatorBalance.minus(whistleblowerReward);
+    long expectedWhistleblowerBalance = whistleblowerBalance + whistleblowerReward;
+    long expectedBadActorBalance = validatorBalance - whistleblowerReward;
 
     // Penalize validator in above beacon state at validatorIndex.
     BeaconStateUtil.penalize_validator(beaconState, validatorIndex);
 
-    assertEquals(expectedBadActorBalance, beaconState.getValidator_balances().get(validatorIndex));
     assertEquals(
-        expectedWhistleblowerBalance, beaconState.getValidator_balances().get(whistleblowerIndex));
+        expectedBadActorBalance, (long) beaconState.getValidator_balances().get(validatorIndex));
+    assertEquals(
+        expectedWhistleblowerBalance,
+        (long) beaconState.getValidator_balances().get(whistleblowerIndex));
   }
 
   @Test
   void succeedsWhenGetPreviousSlotReturnsGenesisSlot1() {
     BeaconState beaconState = createBeaconState();
-    beaconState.setSlot(UnsignedLong.valueOf(Constants.GENESIS_SLOT));
-    assertEquals(
-        UnsignedLong.valueOf(Constants.GENESIS_EPOCH),
-        BeaconStateUtil.get_previous_epoch(beaconState));
+    beaconState.setSlot(Constants.GENESIS_SLOT);
+    assertEquals(Constants.GENESIS_EPOCH, BeaconStateUtil.get_previous_epoch(beaconState));
   }
 
   @Test
   void succeedsWhenGetPreviousSlotReturnsGenesisSlot2() {
     BeaconState beaconState = createBeaconState();
-    beaconState.setSlot(UnsignedLong.valueOf(Constants.GENESIS_SLOT + Constants.SLOTS_PER_EPOCH));
-    assertEquals(
-        UnsignedLong.valueOf(Constants.GENESIS_EPOCH),
-        BeaconStateUtil.get_previous_epoch(beaconState));
+    beaconState.setSlot(Constants.GENESIS_SLOT + Constants.SLOTS_PER_EPOCH);
+    assertEquals(Constants.GENESIS_EPOCH, BeaconStateUtil.get_previous_epoch(beaconState));
   }
 
   @Test
   void succeedsWhenGetPreviousSlotReturnsGenesisSlotPlusOne() {
     BeaconState beaconState = createBeaconState();
-    beaconState.setSlot(
-        UnsignedLong.valueOf(Constants.GENESIS_SLOT + 2 * Constants.SLOTS_PER_EPOCH));
-    assertEquals(
-        UnsignedLong.valueOf(Constants.GENESIS_EPOCH + 1),
-        BeaconStateUtil.get_previous_epoch(beaconState));
+    beaconState.setSlot(Constants.GENESIS_SLOT + 2 * Constants.SLOTS_PER_EPOCH);
+    assertEquals(Constants.GENESIS_EPOCH + 1, BeaconStateUtil.get_previous_epoch(beaconState));
   }
 
   @Test
   void succeedsWhenGetNextEpochReturnsTheEpochPlusOne() {
     BeaconState beaconState = createBeaconState();
-    beaconState.setSlot(UnsignedLong.valueOf(Constants.GENESIS_SLOT));
-    assertEquals(
-        UnsignedLong.valueOf(Constants.GENESIS_EPOCH + 1),
-        BeaconStateUtil.get_next_epoch(beaconState));
+    beaconState.setSlot(Constants.GENESIS_SLOT);
+    assertEquals(Constants.GENESIS_EPOCH + 1, BeaconStateUtil.get_next_epoch(beaconState));
   }
 
   @Test
@@ -444,22 +405,6 @@ class BeaconStateUtilTest {
   }
 
   @Test
-  void intToBytes32UnsignedLong() {
-    assertEquals(
-        Bytes32.fromHexString("0x0000000000000000000000000000000000000000000000000000000000000000"),
-        BeaconStateUtil.int_to_bytes32(UnsignedLong.ZERO));
-    assertEquals(
-        Bytes32.fromHexString("0x0100000000000000000000000000000000000000000000000000000000000000"),
-        BeaconStateUtil.int_to_bytes32(UnsignedLong.ONE));
-    assertEquals(
-        Bytes32.fromHexString("0xffffffffffffffff000000000000000000000000000000000000000000000000"),
-        BeaconStateUtil.int_to_bytes32(UnsignedLong.MAX_VALUE));
-    assertEquals(
-        Bytes32.fromHexString("0xefcdab8967452301000000000000000000000000000000000000000000000000"),
-        BeaconStateUtil.int_to_bytes32(UnsignedLong.valueOf(0x0123456789abcdefL)));
-  }
-
-  @Test
   void bytesToInt() {
     assertEquals(0L, BeaconStateUtil.bytes_to_int(Bytes.fromHexString("0x00")));
     assertEquals(1L, BeaconStateUtil.bytes_to_int(Bytes.fromHexString("0x01")));
@@ -471,40 +416,38 @@ class BeaconStateUtilTest {
 
   void isPowerOfTwo() {
     // Not powers of two:
-    assertThat(is_power_of_two(UnsignedLong.ZERO)).isEqualTo(false);
-    assertThat(is_power_of_two(UnsignedLong.valueOf(42L))).isEqualTo(false);
-    assertThat(is_power_of_two(UnsignedLong.valueOf(Long.MAX_VALUE))).isEqualTo(false);
+    assertThat(is_power_of_two(0)).isEqualTo(false);
+    assertThat(is_power_of_two(42L)).isEqualTo(false);
+    assertThat(is_power_of_two(Long.MAX_VALUE)).isEqualTo(false);
     // Powers of two:
-    assertThat(is_power_of_two(UnsignedLong.ONE)).isEqualTo(true);
-    assertThat(is_power_of_two(UnsignedLong.ONE.plus(UnsignedLong.ONE))).isEqualTo(true);
-    assertThat(is_power_of_two(UnsignedLong.valueOf(0x040000L))).isEqualTo(true);
-    assertThat(is_power_of_two(UnsignedLong.valueOf(0x0100000000L))).isEqualTo(true);
-    assertThat(is_power_of_two(UnsignedLong.fromLongBits(0x8000000000000000L))).isEqualTo(true);
+    assertThat(is_power_of_two(1)).isEqualTo(true);
+    assertThat(is_power_of_two(1 + 1)).isEqualTo(true);
+    assertThat(is_power_of_two(0x040000L)).isEqualTo(true);
+    assertThat(is_power_of_two(0x0100000000L)).isEqualTo(true);
+    assertThat(is_power_of_two(0x8000000000000000L)).isEqualTo(true);
   }
 
   private BeaconState createBeaconState() {
-    return createBeaconState(false, null, null);
+    return createBeaconState(false, 0, null);
   }
 
-  private BeaconState createBeaconState(UnsignedLong amount, Validator knownValidator) {
+  private BeaconState createBeaconState(long amount, Validator knownValidator) {
     return createBeaconState(true, amount, knownValidator);
   }
 
-  private BeaconState createBeaconState(
-      boolean addToList, UnsignedLong amount, Validator knownValidator) {
+  private BeaconState createBeaconState(boolean addToList, long amount, Validator knownValidator) {
     BeaconState beaconState = new BeaconStateWithCache();
-    beaconState.setSlot(randomUnsignedLong());
+    beaconState.setSlot(randomLong());
     beaconState.setFork(
         new Fork(
-            UnsignedLong.valueOf(Constants.GENESIS_FORK_VERSION),
-            UnsignedLong.valueOf(Constants.GENESIS_FORK_VERSION),
-            UnsignedLong.valueOf(Constants.GENESIS_EPOCH)));
+            Constants.GENESIS_FORK_VERSION,
+            Constants.GENESIS_FORK_VERSION,
+            Constants.GENESIS_EPOCH));
 
     List<Validator> validatorList =
         new ArrayList<>(Arrays.asList(randomValidator(), randomValidator(), randomValidator()));
-    List<UnsignedLong> balanceList =
-        new ArrayList<>(
-            Arrays.asList(randomUnsignedLong(), randomUnsignedLong(), randomUnsignedLong()));
+    List<Long> balanceList =
+        new ArrayList<>(Arrays.asList(randomLong(), randomLong(), randomLong()));
 
     if (addToList) {
       validatorList.add(knownValidator);
@@ -538,7 +481,7 @@ class BeaconStateUtilTest {
   @Test
   void succeedsWhenGetPermutedIndexAndShuffleGiveTheSameResults() {
     Bytes32 seed = Bytes32.random();
-    int listSize = 1 + (int) randomUnsignedLong().longValue() % 1000;
+    int listSize = 1 + (int) randomLong() % 1000;
     int[] shuffling = BeaconStateUtil.shuffle(listSize, seed);
     for (int i = 0; i < listSize; i++) {
       int idx = BeaconStateUtil.get_permuted_index(i, listSize, seed);

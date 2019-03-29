@@ -15,7 +15,6 @@ package tech.pegasys.artemis.statetransition;
 
 import static java.util.Objects.requireNonNull;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -37,7 +36,7 @@ public class LmdGhost {
     List<Integer> active_validator_indices =
         ValidatorsUtil.get_active_validator_indices(
             start_state.getValidator_registry(),
-            BeaconStateUtil.slot_to_epoch(UnsignedLong.valueOf(start_block.getSlot())));
+            BeaconStateUtil.slot_to_epoch(start_block.getSlot()));
 
     List<BeaconBlock> attestation_targets = new ArrayList<>();
     for (Integer validatorIndex : active_validator_indices) {
@@ -60,8 +59,7 @@ public class LmdGhost {
               .max(
                   Comparator.comparing(
                       child_block ->
-                          Math.toIntExact(
-                              get_vote_count(store, child_block, attestation_targets).longValue())))
+                          Math.toIntExact(get_vote_count(store, child_block, attestation_targets))))
               .get();
     }
   }
@@ -69,15 +67,14 @@ public class LmdGhost {
   /*
    * This function is defined inside lmd_ghost in spec. It is defined here separately for legibility.
    */
-  public static UnsignedLong get_vote_count(
+  public static long get_vote_count(
       ChainStorageClient store, BeaconBlock block, List<BeaconBlock> attestation_targets) {
-    UnsignedLong vote_count = UnsignedLong.ZERO;
+    long vote_count = 0;
     for (BeaconBlock target : attestation_targets) {
-      Optional<BeaconBlock> ancestor =
-          get_ancestor(store, target, UnsignedLong.valueOf(block.getSlot()));
+      Optional<BeaconBlock> ancestor = get_ancestor(store, target, block.getSlot());
       if (!ancestor.isPresent()) continue;
       if (ancestor.get().equals(block)) {
-        vote_count = vote_count.plus(UnsignedLong.ONE);
+        vote_count = vote_count + 1;
       }
     }
     return vote_count;
@@ -137,12 +134,12 @@ public class LmdGhost {
    *  defined recursively as:
    */
   public static Optional<BeaconBlock> get_ancestor(
-      ChainStorageClient store, BeaconBlock block, UnsignedLong slotNumber) {
+      ChainStorageClient store, BeaconBlock block, long slotNumber) {
     requireNonNull(block);
-    UnsignedLong blockSlot = UnsignedLong.valueOf(block.getSlot());
-    if (blockSlot.compareTo(slotNumber) == 0) {
+    long blockSlot = block.getSlot();
+    if (blockSlot == slotNumber) {
       return Optional.of(block);
-    } else if (blockSlot.compareTo(slotNumber) < 0) {
+    } else if (blockSlot < slotNumber) {
       return Optional.ofNullable(null);
     } else {
       return get_ancestor(store, store.getParent(block).get(), slotNumber);
