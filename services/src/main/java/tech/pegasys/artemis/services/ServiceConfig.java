@@ -16,19 +16,27 @@ package tech.pegasys.artemis.services;
 import com.google.common.eventbus.EventBus;
 import java.util.Objects;
 import net.consensys.cava.crypto.SECP256K1;
+import tech.pegasys.artemis.util.cli.CommandLineArguments;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 
 public class ServiceConfig {
   EventBus eventBus;
   ArtemisConfiguration config;
   SECP256K1.KeyPair keyPair;
+  CommandLineArguments cliArgs;
 
   public ServiceConfig() {}
 
-  public ServiceConfig(EventBus eventBus, ArtemisConfiguration config) {
+  public ServiceConfig(
+      EventBus eventBus, ArtemisConfiguration config, CommandLineArguments cliArgs) {
     this.eventBus = eventBus;
     this.config = config;
     this.keyPair = config.getKeyPair();
+    this.cliArgs = cliArgs;
+  }
+
+  public CommandLineArguments getCliArgs() {
+    return cliArgs;
   }
 
   public EventBus getEventBus() {
