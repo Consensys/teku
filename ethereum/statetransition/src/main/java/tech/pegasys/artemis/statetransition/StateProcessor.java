@@ -168,6 +168,7 @@ public class StateProcessor {
             + finalizedBlockSlot % Constants.GENESIS_SLOT);
 
     BeaconState newHeadState = BeaconStateWithCache.deepCopy((BeaconStateWithCache) headBlockState);
+
     // Hash headBlock to obtain previousBlockRoot that will be used
     // as previous_block_root in all state transitions
     Bytes32 previousBlockRoot = HashTreeUtil.hash_tree_root(headBlock.toBytes());
@@ -188,7 +189,7 @@ public class StateProcessor {
     recordData();
 
     // Send event that headState has been updated
-    this.eventBus.post(new HeadStateEvent(headState, headBlock));
+    this.eventBus.post(new HeadStateEvent((BeaconStateWithCache) headState, headBlock));
   }
 
   protected Boolean inspectBlock(Optional<BeaconBlock> block) {
@@ -241,6 +242,7 @@ public class StateProcessor {
                     + currentState.getSlot()
                     + " to slot: "
                     + UnsignedLong.valueOf(block.getSlot() - 1));
+
             firstLoop = false;
           }
           stateTransition.initiate((BeaconStateWithCache) currentState, null, parentBlockRoot);

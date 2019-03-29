@@ -194,7 +194,7 @@ public class ChainStorageClient implements ChainStorage {
 
   @Subscribe
   public void onNewUnprocessedAttestation(Attestation attestation) {
-    LOG.log(Level.INFO, "ChainStorage: new unprocessed Attestation detected");
+    // LOG.log(Level.INFO, "ChainStorage: new unprocessed Attestation detected");
     addUnprocessedAttestation(attestation);
 
     // TODO: verify the assumption below:
