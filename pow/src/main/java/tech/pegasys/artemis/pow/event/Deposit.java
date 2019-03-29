@@ -13,31 +13,19 @@
 
 package tech.pegasys.artemis.pow.event;
 
-import java.util.ArrayList;
-import java.util.List;
 import net.consensys.cava.bytes.Bytes;
-import net.consensys.cava.bytes.Bytes32;
 import tech.pegasys.artemis.pow.api.DepositEvent;
 import tech.pegasys.artemis.pow.contract.DepositContract.DepositEventResponse;
 
 public class Deposit extends AbstractEvent<DepositEventResponse> implements DepositEvent {
 
-  private Bytes32 deposit_root;
   private Bytes data;
   private Bytes merkel_tree_index;
-  private List<Bytes32> branch;
 
   public Deposit(DepositEventResponse response) {
     super(response);
-    deposit_root = Bytes32.wrap(response.deposit_root);
     data = Bytes.wrap(response.data);
     merkel_tree_index = Bytes.wrap(response.merkle_tree_index);
-    branch = new ArrayList<Bytes32>();
-    response.branch.forEach(item -> branch.add(Bytes32.wrap(item.getValue())));
-  }
-
-  public Bytes32 getDeposit_root() {
-    return deposit_root;
   }
 
   public Bytes getData() {
@@ -48,19 +36,10 @@ public class Deposit extends AbstractEvent<DepositEventResponse> implements Depo
     return merkel_tree_index;
   }
 
-  public List<Bytes32> getBranch() {
-    return branch;
-  }
-
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder();
-    sb.append(deposit_root.toString())
-        .append("\n")
-        .append(data.toString())
-        .append("\n")
-        .append(merkel_tree_index.toString());
-    branch.forEach(bytes -> sb.append("\n").append(bytes.toString()));
+    sb.append(data.toString()).append("\n").append(merkel_tree_index.toString());
     return sb.toString();
   }
 }

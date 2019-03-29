@@ -27,7 +27,6 @@ import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-import org.web3j.abi.datatypes.generated.Bytes32;
 import org.web3j.protocol.core.methods.response.Log;
 import tech.pegasys.artemis.pow.contract.DepositContract;
 import tech.pegasys.artemis.pow.event.Deposit;
@@ -145,11 +144,8 @@ public class ServiceAdapterTest {
   private Deposit createValidatorRegistration(Integer index) {
     DepositContract.DepositEventResponse response = new DepositContract.DepositEventResponse();
 
-    response.deposit_root = new byte[32];
     response.data = "data".getBytes(Charset.defaultCharset());
     response.merkle_tree_index = BigInteger.TEN.toByteArray();
-    response.branch = new ArrayList<>();
-    response.branch.add(new Bytes32(new byte[32]));
 
     response.log =
         new Log(

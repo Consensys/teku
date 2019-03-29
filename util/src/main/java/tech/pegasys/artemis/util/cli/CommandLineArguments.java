@@ -45,6 +45,11 @@ public class CommandLineArguments {
       description = "Path/filename of the config file")
   private String configFile = "./config/config.toml";
 
+  @Option(
+      names = {"-s", "--sim"},
+      description = "PoW simulation flag")
+  private boolean simulation = false;
+
   public String getProviderType() {
     return this.providerType;
   }
@@ -63,5 +68,9 @@ public class CommandLineArguments {
 
   public String getConfigFile() {
     return configFile;
+  }
+
+  public boolean isSimulation() {
+    return simulation;
   }
 }
