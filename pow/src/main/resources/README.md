@@ -1,8 +1,14 @@
+#Proof of Work Chain Environmental Setup
+1. `cd` to the artemis root directory
+2. `git submodule update --init --recursive`
+3. `cd ganache-cli`
+4. `npm install`
+
 # VRC Environmental Setup
 
 Ensure you have Python3 installed before proceeding `python --version`
 
-## Install Vyper Environment
+##Auto-generate DepositContract class from Vyper contract
 
 ```
 sudo apt install virtualenv
@@ -10,27 +16,10 @@ virtualenv -p python3.6 --no-site-packages ~/vyper-venv
 source ~/vyper-venv/bin/activate
 ```
 
-Install this specific version as it is needed to compile the VRC contract
+Install this specific version as it is needed to compile the deposit_contract contract
 
-`pip install vyper==0.1.0b6`
+`pip install vyper==0.1.0b9`
 
-## Install NPM Dependancies
-`npm i -g truffle`
-
-Truper is a utility to compile Vyper contracts for Truffle
-```
-npm i -g truper
-cd pow
-npm install
-```
-
-## Compile and Test
-```
-truffle compile
-truper
-truffle deploy
-truffle test
-```
 ## Running
 Accessing the contracts from the Artemis Environment, edit the following attributes of `pow/config.properties`
 ```

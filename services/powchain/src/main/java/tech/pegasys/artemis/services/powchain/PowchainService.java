@@ -47,7 +47,7 @@ public class PowchainService implements ServiceInterface {
   String provider;
 
   public PowchainService() {
-    depositSimulation = false;
+    depositSimulation = true;
   }
 
   @Override
