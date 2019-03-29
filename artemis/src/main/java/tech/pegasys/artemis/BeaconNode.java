@@ -103,10 +103,10 @@ public class BeaconNode {
       throw new IllegalArgumentException("Unsupported network mode " + config.getNetworkMode());
     }
     this.serviceConfig = new ServiceConfig(eventBus, config, cliArgs);
+    Constants.init(config);
     this.validatorCoordinator = new ValidatorCoordinator(serviceConfig);
     this.cliArgs = cliArgs;
     this.commandLine = commandLine;
-    Constants.init(config);
     if (cliArgs.isOutputEnabled()) {
       this.eventBus.register(this);
       this.outputFilename = FileProvider.uniqueFilename(cliArgs.getOutputFile());
