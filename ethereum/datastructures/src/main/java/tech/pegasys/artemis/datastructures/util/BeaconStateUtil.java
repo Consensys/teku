@@ -292,7 +292,7 @@ public class BeaconStateUtil {
   public static Bytes32 get_active_index_root(BeaconState state, UnsignedLong epoch) {
     checkArgument(
         // Since we're using UnsignedLong here, we can't subtract
-        // LATEST_INDEX_ROOTS_LENGTH
+        // LATEST_ACTIVE_INDEX_ROOTS_LENGTH
         get_current_epoch(state)
                 .plus(UnsignedLong.valueOf(ACTIVATION_EXIT_DELAY))
                 .compareTo(epoch.plus(UnsignedLong.valueOf(LATEST_ACTIVE_INDEX_ROOTS_LENGTH)))

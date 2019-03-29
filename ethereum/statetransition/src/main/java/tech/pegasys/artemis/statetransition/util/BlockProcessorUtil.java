@@ -15,6 +15,7 @@ package tech.pegasys.artemis.statetransition.util;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.lang.Math.toIntExact;
+import static tech.pegasys.artemis.datastructures.Constants.BLS_WITHDRAWAL_PREFIX_BYTE;
 import static tech.pegasys.artemis.datastructures.Constants.DEPOSIT_CONTRACT_TREE_DEPTH;
 import static tech.pegasys.artemis.datastructures.Constants.DOMAIN_ATTESTATION;
 import static tech.pegasys.artemis.datastructures.Constants.DOMAIN_EXIT;
@@ -724,8 +725,7 @@ public final class BlockProcessorUtil {
               .getWithdrawal_credentials()
               .equals(
                   Bytes.concatenate(
-                      Constants.BLS_WITHDRAWAL_PREFIX_BYTE,
-                      transfer.getPubkey().toBytes().slice(1))));
+                      BLS_WITHDRAWAL_PREFIX_BYTE, transfer.getPubkey().toBytes().slice(1))));
       // - Let transfer_message = hash_tree_root(Transfer(from=transfer.from, to=transfer.to,
       //     amount=transfer.amount, fee=transfer.fee, slot=transfer.slot,
       //     signature=EMPTY_SIGNATURE))
