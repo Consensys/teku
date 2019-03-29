@@ -102,7 +102,7 @@ public class BeaconNode {
     } else {
       throw new IllegalArgumentException("Unsupported network mode " + config.getNetworkMode());
     }
-    this.serviceConfig = new ServiceConfig(eventBus, config);
+    this.serviceConfig = new ServiceConfig(eventBus, config, cliArgs);
     this.validatorCoordinator = new ValidatorCoordinator(serviceConfig);
     this.cliArgs = cliArgs;
     this.commandLine = commandLine;
@@ -132,7 +132,6 @@ public class BeaconNode {
     // Initialize services
     serviceController.initAll(
         eventBus,
-        cliArgs,
         serviceConfig,
         BeaconChainService.class,
         PowchainService.class,
