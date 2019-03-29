@@ -33,7 +33,6 @@ public class ServiceController {
   public <U extends ServiceInterface, V extends ServiceInterface, W extends ServiceInterface>
       void initAll(
           EventBus eventBus,
-          CommandLineArguments cliArgs,
           ServiceConfig config,
           Class<U> beaconChainServiceType,
           Class<V> powchainServiceType,

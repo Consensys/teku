@@ -13,9 +13,6 @@
 
 package tech.pegasys.artemis.services.powchain;
 
-import static tech.pegasys.artemis.datastructures.Constants.DEPOSIT_DATA_SIZE;
-import static tech.pegasys.artemis.datastructures.Constants.SIM_DEPOSIT_VALUE;
-
 import com.google.common.eventbus.EventBus;
 import java.math.BigInteger;
 import java.nio.charset.Charset;
@@ -36,6 +33,9 @@ import tech.pegasys.artemis.util.alogger.ALogger;
 
 public class PowchainService implements ServiceInterface {
 
+  public static final String SIM_DEPOSIT_VALUE = "1000000000000000000";
+  public static final int DEPOSIT_DATA_SIZE = 512;
+
   private EventBus eventBus;
   private static final ALogger LOG = new ALogger();
 
@@ -54,6 +54,7 @@ public class PowchainService implements ServiceInterface {
   public void init(ServiceConfig config) {
     this.eventBus = config.getEventBus();
     this.eventBus.register(this);
+    this.depositSimulation = config.getCliArgs().isSimulation();
   }
 
   @Override
@@ -78,9 +79,6 @@ public class PowchainService implements ServiceInterface {
     this.eventBus.unregister(this);
   }
 
-  public void setDepositSimulation(boolean depositSimulation) {
-    this.depositSimulation = depositSimulation;
-  }
   // method only used for debugging
   // calls a deposit transaction on the DepositContract every 10 seconds
   // simulate depositors

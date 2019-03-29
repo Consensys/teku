@@ -108,8 +108,7 @@ public class StateProcessor {
   public void onDepositEvent(DepositEvent event) {
     LOG.log(
         Level.INFO,
-        "Deposit Event detected: "
-            + ((tech.pegasys.artemis.pow.event.Deposit) event).getDeposit_root().toString());
+        "Deposit Event detected: " + ((tech.pegasys.artemis.pow.event.Deposit) event).toString());
   }
 
   @Subscribe
