@@ -1,14 +1,11 @@
-#Proof of Work Chain Environmental Setup
+##Proof of Work Chain Environmental Setup
 1. `cd` to the artemis root directory
 2. `git submodule update --init --recursive`
 3. `cd ganache-cli`
 4. `npm install`
 
-# VRC Environmental Setup
-
-Ensure you have Python3 installed before proceeding `python --version`
-
 ##Auto-generate DepositContract class from Vyper contract
+Ensure you have Python3 installed before proceeding `python --version`
 
 ```
 sudo apt install virtualenv
@@ -19,6 +16,19 @@ source ~/vyper-venv/bin/activate
 Install this specific version as it is needed to compile the deposit_contract contract
 
 `pip install vyper==0.1.0b9`
+
+Generate the ABI
+
+`vyper -f abi validator_registration.v.py > DepositContract.abi`
+
+Generate the binary
+
+`vyper -f bytecode validator_registration.v.py > DepositContract.bin`
+
+Auto-generate the DepositContract class
+`web3j solidity generate -b DepositContract.bin -a DepositContract.abi -o [PATH_TO_ARTEMIS_ROOT]/pow/src/main/java/tech/pegasys/artemis/pow/contract -p ""`
+
+The package that it generates will be wrong, due to a bug in web3j that tries to create the packages on demand
 
 ## Running
 Accessing the contracts from the Artemis Environment, edit the following attributes of `pow/config.properties`
