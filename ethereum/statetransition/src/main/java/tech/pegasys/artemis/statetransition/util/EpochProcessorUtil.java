@@ -546,10 +546,10 @@ public final class EpochProcessorUtil {
 
       Boolean check2 = false;
       long committee_count = BeaconStateUtil.get_current_epoch_committee_count(state);
-      List<Integer> comnmittee_range =
+      List<Integer> committee_range =
           IntStream.range(0, toIntExact(committee_count)).boxed().collect(Collectors.toList());
       long SHARD_COUNT = Constants.SHARD_COUNT;
-      for (Integer committee_offset : comnmittee_range) {
+      for (Integer committee_offset : committee_range) {
         long shard = (state.getCurrent_shuffling_start_shard() + committee_offset) % SHARD_COUNT;
         long crosslink_epoch = state.getLatest_crosslinks().get(toIntExact(shard)).getEpoch();
         if (crosslink_epoch > validator_registry_update_epoch) {

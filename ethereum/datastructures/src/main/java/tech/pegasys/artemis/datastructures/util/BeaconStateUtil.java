@@ -134,7 +134,6 @@ public class BeaconStateUtil {
     long shuffling_start_shard = 0;
 
     if (epoch == current_epoch) {
-
       committees_per_epoch = get_current_epoch_committee_count(state);
       seed = state.getCurrent_shuffling_seed();
       shuffling_epoch = state.getCurrent_shuffling_epoch();

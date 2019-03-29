@@ -13,7 +13,6 @@
 
 package tech.pegasys.artemis.datastructures;
 
-import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.util.bls.BLSSignature;

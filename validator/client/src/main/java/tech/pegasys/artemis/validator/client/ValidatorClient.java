@@ -87,7 +87,11 @@ public class ValidatorClient {
   }
 
   public static void registerValidatorEth1(
-      Validator validator, long amount, String address, Web3j web3j, DefaultGasProvider gasProvider)
+      Validator validator,
+      long amount,
+      String address,
+      Web3j web3j,
+      DefaultGasProvider gasProvider)
       throws Exception {
     Credentials credentials =
         Credentials.create(validator.getSecpKeys().secretKey().bytes().toHexString());
@@ -105,6 +109,8 @@ public class ValidatorClient {
                 .sign(validator.getBlsKeys(), deposit_data, Constants.DOMAIN_DEPOSIT)
                 .signature()
                 .toBytesCompressed());
-    contract.deposit(deposit_data.toArray(), new BigInteger(amount + "000000000")).send();
+    contract
+        .deposit(deposit_data.toArray(), new BigInteger(amount + "000000000"))
+        .send();
   }
 }
