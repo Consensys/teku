@@ -194,14 +194,15 @@ public class ChainStorageClient implements ChainStorage {
 
   @Subscribe
   public void onNewUnprocessedAttestation(Attestation attestation) {
-    LOG.log(Level.INFO, "ChainStorage: new unprocessed Attestation detected");
+    // LOG.log(Level.INFO, "ChainStorage: new unprocessed Attestation detected");
     addUnprocessedAttestation(attestation);
 
     // TODO: verify the assumption below:
     // ASSUMPTION: the state with which we can find the attestation participants
     // using get_attestation_participants is the state associated with the beacon
     // block being attested in the attestation.
-    BeaconState state = stateLookup.get(attestation.getData().getBeacon_block_root());
+    BeaconBlock block = processedBlockLookup.get(attestation.getData().getBeacon_block_root());
+    BeaconState state = stateLookup.get(block.getState_root());
 
     // TODO: verify attestation is stubbed out, needs to be implemented
     if (AttestationUtil.verifyAttestation(state, attestation)) {
