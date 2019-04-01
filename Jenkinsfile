@@ -1,5 +1,9 @@
 #!/usr/bin/env groovy
 
+import hudson.model.Result
+import hudson.model.Run
+import jenkins.model.CauseOfInterruption.UserInterruption
+
 if (env.BRANCH_NAME == "master") {
     properties([
         buildDiscarder(
