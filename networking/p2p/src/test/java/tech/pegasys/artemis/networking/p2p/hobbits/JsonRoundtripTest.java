@@ -19,8 +19,19 @@ import java.util.Arrays;
 import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.units.bigints.UInt64;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.artemis.datastructures.Constants;
+import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 
 class JsonRoundtripTest {
+
+  @Test
+  void roundtripGossip() throws Exception {
+    SSZBlock sszBlock =
+        new SSZBlock(DataStructureUtil.randomBeaconBlock(Constants.GENESIS_SLOT).toBytes());
+    byte[] value = GossipCodec.mapper.writerFor(SSZBlock.class).writeValueAsBytes(sszBlock);
+    SSZBlock read = RPCCodec.mapper.readerFor(SSZBlock.class).readValue(value);
+    assertEquals(sszBlock.block().toHexString(), read.block().toHexString());
+  }
 
   @Test
   void roundtripGetStatus() throws Exception {
