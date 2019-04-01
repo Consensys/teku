@@ -337,7 +337,7 @@ public class BeaconState {
               latest_slashed_balances.stream()
                   .map(UnsignedLong::longValue)
                   .collect(Collectors.toList()));
-          writer.writeBytesList(latest_block_header.toBytes());
+          writer.writeBytes(latest_block_header.toBytes());
           writer.writeBytesList(historical_roots);
           // Ethereum 1.0 chain data
           writer.writeBytes(latest_eth1_data.toBytes());
