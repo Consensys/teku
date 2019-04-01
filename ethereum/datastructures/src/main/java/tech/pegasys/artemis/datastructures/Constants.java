@@ -50,7 +50,7 @@ public class Constants {
   public static int EPOCHS_PER_ETH1_VOTING_PERIOD = 16; // 2^4 epochs (~1.7 hours)
   public static int SLOTS_PER_HISTORICAL_ROOT = 8192; // 2^13 slots (~13 hours)
   public static int MIN_VALIDATOR_WITHDRAWABILITY_DELAY = 256; // 2^8 epochs (~27 hours)
-  public static int PERSISTENT_COMMITTEE_PERIOD = 2048; // 2^8 epochs (~27 hours)
+  public static int PERSISTENT_COMMITTEE_PERIOD = 2048; // 2^11 epochs (~9 days)
 
   // Initial values
   public static int GENESIS_FORK_VERSION = 0;
