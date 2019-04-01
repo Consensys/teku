@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.datastructures.state;
 
+import static tech.pegasys.artemis.datastructures.Constants.EMPTY_SIGNATURE;
 import static tech.pegasys.artemis.datastructures.Constants.ZERO_HASH;
 
 import com.google.common.primitives.UnsignedLong;
@@ -25,6 +26,7 @@ import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.ssz.SSZ;
 import tech.pegasys.artemis.datastructures.Constants;
+import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.datastructures.blocks.Eth1DataVote;
 
@@ -49,24 +51,30 @@ public class BeaconState {
   protected Bytes32 current_shuffling_seed;
 
   // Finality
+  protected List<PendingAttestation> previous_epoch_attestations;
+  protected List<PendingAttestation> current_epoch_attestations;
   protected UnsignedLong previous_justified_epoch;
-  protected UnsignedLong justified_epoch;
+  protected UnsignedLong current_justified_epoch;
+  protected Bytes32 previous_justified_root;
+  protected Bytes32 current_justified_root;
   protected UnsignedLong justification_bitfield;
   protected UnsignedLong finalized_epoch;
+  protected Bytes32 finalized_root;
 
   // Recent state
   protected List<Crosslink> latest_crosslinks;
   protected List<Bytes32> latest_block_roots;
+  protected List<Bytes32> latest_state_roots;
   protected List<Bytes32> latest_active_index_roots;
   protected List<UnsignedLong>
       latest_slashed_balances; // Balances slashed at every withdrawal period
-  protected List<PendingAttestation> latest_attestations;
-  protected List<Bytes32> batched_block_roots;
+  protected BeaconBlockHeader
+      latest_block_header; // `latest_block_header.state_root == ZERO_HASH` temporarily
+  protected List<Bytes32> historical_roots;
 
   // Ethereum 1.0 chain data
   protected Eth1Data latest_eth1_data;
   protected List<Eth1DataVote> eth1_data_votes;
-
   protected UnsignedLong deposit_index;
 
   public BeaconState() {
@@ -93,25 +101,34 @@ public class BeaconState {
     this.previous_shuffling_seed = ZERO_HASH;
     this.current_shuffling_seed = ZERO_HASH;
 
+    this.previous_epoch_attestations = new ArrayList<>();
+    this.current_epoch_attestations = new ArrayList<>();
     this.previous_justified_epoch = UnsignedLong.valueOf(Constants.GENESIS_EPOCH);
-    this.justified_epoch = UnsignedLong.valueOf(Constants.GENESIS_EPOCH);
+    this.current_justified_epoch = UnsignedLong.valueOf(Constants.GENESIS_EPOCH);
+    this.previous_justified_root = Constants.ZERO_HASH;
+    this.current_justified_root = Constants.ZERO_HASH;
     this.justification_bitfield = UnsignedLong.ZERO;
     this.finalized_epoch = UnsignedLong.valueOf(Constants.GENESIS_EPOCH);
+    this.finalized_root = Constants.ZERO_HASH;
 
     this.latest_crosslinks = new ArrayList<>(Constants.SHARD_COUNT);
     this.latest_block_roots =
         new ArrayList<>(
-            Collections.nCopies(Constants.LATEST_BLOCK_ROOTS_LENGTH, Constants.ZERO_HASH));
+            Collections.nCopies(Constants.SLOTS_PER_HISTORICAL_ROOT, Constants.ZERO_HASH));
+    this.latest_state_roots =
+        new ArrayList<>(
+            Collections.nCopies(Constants.SLOTS_PER_HISTORICAL_ROOT, Constants.ZERO_HASH));
     this.latest_active_index_roots =
         new ArrayList<>(
             Collections.nCopies(Constants.LATEST_ACTIVE_INDEX_ROOTS_LENGTH, Constants.ZERO_HASH));
     this.latest_slashed_balances =
         new ArrayList<>(
             Collections.nCopies(Constants.LATEST_SLASHED_EXIT_LENGTH, UnsignedLong.ZERO));
-    this.latest_attestations = new ArrayList<>();
-    this.batched_block_roots = new ArrayList<>();
+    this.latest_block_header =
+        new BeaconBlockHeader(UnsignedLong.ZERO, ZERO_HASH, ZERO_HASH, ZERO_HASH, EMPTY_SIGNATURE);
+    this.historical_roots = new ArrayList<>();
 
-    this.latest_eth1_data = new Eth1Data(Bytes32.ZERO, Bytes32.ZERO);
+    this.latest_eth1_data = new Eth1Data(ZERO_HASH, ZERO_HASH);
     this.eth1_data_votes = new ArrayList<>();
     this.deposit_index = UnsignedLong.ZERO;
     for (int i = 0; i < Constants.SHARD_COUNT; i++) {
@@ -141,18 +158,24 @@ public class BeaconState {
       Bytes32 current_shuffling_seed,
 
       // Finality
+      List<PendingAttestation> previous_epoch_attestations,
+      List<PendingAttestation> current_epoch_attestations,
       UnsignedLong previous_justified_epoch,
-      UnsignedLong justified_epoch,
+      UnsignedLong current_justified_epoch,
+      Bytes32 previous_justified_root,
+      Bytes32 current_justified_root,
       UnsignedLong justification_bitfield,
       UnsignedLong finalized_epoch,
+      Bytes32 finalized_root,
 
       // Recent state
       List<Crosslink> latest_crosslinks,
       List<Bytes32> latest_block_roots,
+      List<Bytes32> latest_state_roots,
       List<Bytes32> latest_active_index_roots,
       List<UnsignedLong> latest_slashed_balances, // Balances slashed at every withdrawal period
-      List<PendingAttestation> latest_attestations,
-      List<Bytes32> batched_block_roots,
+      BeaconBlockHeader latest_block_header,
+      List<Bytes32> historical_roots,
 
       // Ethereum 1.0 chain data
       Eth1Data latest_eth1_data,
@@ -171,24 +194,29 @@ public class BeaconState {
     this.current_shuffling_start_shard = current_shuffling_start_shard;
     this.previous_shuffling_epoch = previous_shuffling_epoch;
     this.current_shuffling_epoch = current_shuffling_epoch;
-
     this.previous_shuffling_seed = previous_shuffling_seed;
     this.current_shuffling_seed = current_shuffling_seed;
+
+    this.previous_epoch_attestations = previous_epoch_attestations;
+    this.current_epoch_attestations = current_epoch_attestations;
     this.previous_justified_epoch = previous_justified_epoch;
-    this.justified_epoch = justified_epoch;
+    this.current_justified_epoch = current_justified_epoch;
+    this.previous_justified_root = previous_justified_root;
+    this.current_justified_root = current_justified_root;
     this.justification_bitfield = justification_bitfield;
     this.finalized_epoch = finalized_epoch;
+    this.finalized_root = finalized_root;
 
     this.latest_crosslinks = latest_crosslinks;
     this.latest_block_roots = latest_block_roots;
+    this.latest_state_roots = latest_state_roots;
     this.latest_active_index_roots = latest_active_index_roots;
     this.latest_slashed_balances = latest_slashed_balances;
-    this.latest_attestations = latest_attestations;
-    this.batched_block_roots = batched_block_roots;
+    this.latest_block_header = latest_block_header;
+    this.historical_roots = historical_roots;
 
     this.latest_eth1_data = latest_eth1_data;
     this.eth1_data_votes = eth1_data_votes;
-
     this.deposit_index = deposit_index;
   }
 
@@ -203,19 +231,14 @@ public class BeaconState {
                 Fork.fromBytes(reader.readBytes()),
                 // Validator registry
                 reader.readBytesList().stream()
-                    // .parallel()
                     .map(Validator::fromBytes)
                     .collect(Collectors.toList()),
                 reader.readUInt64List().stream()
-                    // .parallel()
                     .map(UnsignedLong::fromLongBits)
                     .collect(Collectors.toList()),
                 UnsignedLong.fromLongBits(reader.readUInt64()),
                 // Randomness and committees
-                reader.readBytesList().stream()
-                    // .parallel()
-                    .map(Bytes32::wrap)
-                    .collect(Collectors.toList()),
+                reader.readBytesList().stream().map(Bytes32::wrap).collect(Collectors.toList()),
                 UnsignedLong.fromLongBits(reader.readUInt64()),
                 UnsignedLong.fromLongBits(reader.readUInt64()),
                 UnsignedLong.fromLongBits(reader.readUInt64()),
@@ -223,22 +246,30 @@ public class BeaconState {
                 Bytes32.wrap(reader.readBytes()),
                 Bytes32.wrap(reader.readBytes()),
                 // Finality
+                reader.readBytesList().stream()
+                    .map(PendingAttestation::fromBytes)
+                    .collect(Collectors.toList()),
+                reader.readBytesList().stream()
+                    .map(PendingAttestation::fromBytes)
+                    .collect(Collectors.toList()),
                 UnsignedLong.fromLongBits(reader.readUInt64()),
                 UnsignedLong.fromLongBits(reader.readUInt64()),
+                Bytes32.wrap(reader.readBytes()),
+                Bytes32.wrap(reader.readBytes()),
                 UnsignedLong.fromLongBits(reader.readUInt64()),
                 UnsignedLong.fromLongBits(reader.readUInt64()),
+                Bytes32.wrap(reader.readBytes()),
                 // Recent state
                 reader.readBytesList().stream()
                     .map(Crosslink::fromBytes)
                     .collect(Collectors.toList()),
                 reader.readBytesList().stream().map(Bytes32::wrap).collect(Collectors.toList()),
                 reader.readBytesList().stream().map(Bytes32::wrap).collect(Collectors.toList()),
+                reader.readBytesList().stream().map(Bytes32::wrap).collect(Collectors.toList()),
                 reader.readUInt64List().stream()
                     .map(UnsignedLong::fromLongBits)
                     .collect(Collectors.toList()),
-                reader.readBytesList().stream()
-                    .map(PendingAttestation::fromBytes)
-                    .collect(Collectors.toList()),
+                BeaconBlockHeader.fromBytes(reader.readBytes()),
                 reader.readBytesList().stream().map(Bytes32::wrap).collect(Collectors.toList()),
                 // Ethereum 1.0 chain data
                 Eth1Data.fromBytes(reader.readBytes()),
@@ -253,10 +284,16 @@ public class BeaconState {
         validator_registry.stream().map(item -> item.toBytes()).collect(Collectors.toList());
     List<Bytes> latest_crosslinksBytes =
         latest_crosslinks.stream().map(item -> item.toBytes()).collect(Collectors.toList());
-    List<Bytes> latest_attestationBytes =
-        latest_attestations.stream().map(item -> item.toBytes()).collect(Collectors.toList());
     List<Bytes> eth1_data_votesBytes =
         eth1_data_votes.stream().map(item -> item.toBytes()).collect(Collectors.toList());
+    List<Bytes> previous_epoch_attestationsBytes =
+        previous_epoch_attestations.stream()
+            .map(item -> item.toBytes())
+            .collect(Collectors.toList());
+    List<Bytes> current_epoch_attestationsBytes =
+        current_epoch_attestations.stream()
+            .map(item -> item.toBytes())
+            .collect(Collectors.toList());
 
     return SSZ.encode(
         writer -> {
@@ -281,21 +318,27 @@ public class BeaconState {
           writer.writeBytes(previous_shuffling_seed);
           writer.writeBytes(current_shuffling_seed);
           // Finality
+          writer.writeBytesList(previous_epoch_attestationsBytes);
+          writer.writeBytesList(current_epoch_attestationsBytes);
           writer.writeUInt64(previous_justified_epoch.longValue());
-          writer.writeUInt64(justified_epoch.longValue());
+          writer.writeUInt64(current_justified_epoch.longValue());
+          writer.writeBytes(previous_justified_root);
+          writer.writeBytes(current_justified_root);
           writer.writeUInt64(justification_bitfield.longValue());
           writer.writeUInt64(finalized_epoch.longValue());
+          writer.writeBytes(finalized_root);
           // Recent state
           writer.writeBytesList(latest_crosslinksBytes);
           writer.writeBytesList(latest_block_roots);
+          writer.writeBytesList(latest_state_roots);
           writer.writeBytesList(latest_active_index_roots);
           writer.writeULongIntList(
               64,
               latest_slashed_balances.stream()
                   .map(UnsignedLong::longValue)
                   .collect(Collectors.toList()));
-          writer.writeBytesList(latest_attestationBytes);
-          writer.writeBytesList(batched_block_roots);
+          writer.writeBytes(latest_block_header.toBytes());
+          writer.writeBytesList(historical_roots);
           // Ethereum 1.0 chain data
           writer.writeBytes(latest_eth1_data.toBytes());
           writer.writeBytesList(eth1_data_votesBytes);
@@ -319,16 +362,22 @@ public class BeaconState {
         current_shuffling_epoch,
         previous_shuffling_seed,
         current_shuffling_seed,
+        previous_epoch_attestations,
+        current_epoch_attestations,
         previous_justified_epoch,
-        justified_epoch,
+        current_justified_epoch,
+        previous_justified_root,
+        current_justified_root,
         justification_bitfield,
         finalized_epoch,
+        finalized_root,
         latest_crosslinks,
         latest_block_roots,
+        latest_state_roots,
         latest_active_index_roots,
         latest_slashed_balances,
-        latest_attestations,
-        batched_block_roots,
+        latest_block_header,
+        historical_roots,
         latest_eth1_data,
         eth1_data_votes,
         deposit_index);
@@ -365,16 +414,24 @@ public class BeaconState {
         && Objects.equals(this.getCurrent_shuffling_epoch(), other.getCurrent_shuffling_epoch())
         && Objects.equals(this.getPrevious_shuffling_seed(), other.getPrevious_shuffling_seed())
         && Objects.equals(this.getCurrent_shuffling_seed(), other.getCurrent_shuffling_seed())
+        && Objects.equals(
+            this.getPrevious_epoch_attestations(), other.getPrevious_epoch_attestations())
+        && Objects.equals(
+            this.getCurrent_epoch_attestations(), other.getCurrent_epoch_attestations())
         && Objects.equals(this.getPrevious_justified_epoch(), other.getPrevious_justified_epoch())
-        && Objects.equals(this.getJustified_epoch(), other.getJustified_epoch())
+        && Objects.equals(this.getCurrent_justified_epoch(), other.getCurrent_justified_epoch())
+        && Objects.equals(this.getPrevious_justified_root(), other.getPrevious_justified_root())
+        && Objects.equals(this.getCurrent_justified_root(), other.getCurrent_justified_root())
         && Objects.equals(this.getJustification_bitfield(), other.getJustification_bitfield())
         && Objects.equals(this.getFinalized_epoch(), other.getFinalized_epoch())
+        && Objects.equals(this.getFinalized_root(), other.getFinalized_root())
         && Objects.equals(this.getLatest_crosslinks(), other.getLatest_crosslinks())
         && Objects.equals(this.getLatest_block_roots(), other.getLatest_block_roots())
+        && Objects.equals(this.getLatest_state_roots(), other.getLatest_state_roots())
         && Objects.equals(this.getLatest_active_index_roots(), other.getLatest_active_index_roots())
         && Objects.equals(this.getLatest_slashed_balances(), other.getLatest_slashed_balances())
-        && Objects.equals(this.getLatest_attestations(), other.getLatest_attestations())
-        && Objects.equals(this.getBatched_block_roots(), other.getBatched_block_roots())
+        && Objects.equals(this.getLatest_slashed_balances(), other.getLatest_slashed_balances())
+        && Objects.equals(this.getHistorical_roots(), other.getHistorical_roots())
         && Objects.equals(this.getLatest_eth1_data(), other.getLatest_eth1_data())
         && Objects.equals(this.getEth1_data_votes(), other.getEth1_data_votes())
         && Objects.equals(this.getDeposit_index(), other.getDeposit_index());
@@ -485,6 +542,22 @@ public class BeaconState {
     this.current_shuffling_seed = current_shuffling_seed;
   }
 
+  public List<PendingAttestation> getPrevious_epoch_attestations() {
+    return previous_epoch_attestations;
+  }
+
+  public void setPrevious_epoch_attestations(Bytes32 previous_epoch_attestations) {
+    this.previous_epoch_attestations = previous_epoch_attestations;
+  }
+
+  public List<PendingAttestation> getCurrent_epoch_attestations() {
+    return current_epoch_attestations;
+  }
+
+  public void setCurrent_epoch_attestations(Bytes32 current_epoch_attestations) {
+    this.current_epoch_attestations = current_epoch_attestations;
+  }
+
   public UnsignedLong getPrevious_justified_epoch() {
     return previous_justified_epoch;
   }
@@ -493,12 +566,28 @@ public class BeaconState {
     this.previous_justified_epoch = previous_justified_epoch;
   }
 
-  public UnsignedLong getJustified_epoch() {
-    return justified_epoch;
+  public UnsignedLong getCurrent_justified_epoch() {
+    return current_justified_epoch;
   }
 
-  public void setJustified_epoch(UnsignedLong justified_epoch) {
-    this.justified_epoch = justified_epoch;
+  public void setCurrent_justified_epoch(UnsignedLong current_justified_epoch) {
+    this.current_justified_epoch = current_justified_epoch;
+  }
+
+  public Bytes32 getPrevious_justified_root() {
+    return previous_justified_root;
+  }
+
+  public void setPrevious_justified_root(Bytes32 previous_justified_root) {
+    this.previous_justified_root = previous_justified_root;
+  }
+
+  public Bytes32 getCurrent_justified_root() {
+    return current_justified_root;
+  }
+
+  public void setCurrent_justified_root(Bytes32 current_justified_root) {
+    this.current_justified_root = current_justified_root;
   }
 
   public UnsignedLong getJustification_bitfield() {
@@ -517,6 +606,14 @@ public class BeaconState {
     this.finalized_epoch = finalized_epoch;
   }
 
+  public Bytes32 getFinalized_root() {
+    return finalized_root;
+  }
+
+  public void setFinalized_root(Bytes32 finalized_root) {
+    this.finalized_root = finalized_root;
+  }
+
   public List<Crosslink> getLatest_crosslinks() {
     return latest_crosslinks;
   }
@@ -531,6 +628,14 @@ public class BeaconState {
 
   public void setLatest_block_roots(List<Bytes32> latest_block_roots) {
     this.latest_block_roots = latest_block_roots;
+  }
+
+  public List<Bytes32> getLatest_state_roots() {
+    return latest_state_roots;
+  }
+
+  public void setLatest_state_roots(List<Bytes32> latest_state_roots) {
+    this.latest_state_roots = latest_state_roots;
   }
 
   public List<Bytes32> getLatest_active_index_roots() {
@@ -549,20 +654,20 @@ public class BeaconState {
     this.latest_slashed_balances = latest_slashed_balances;
   }
 
-  public List<PendingAttestation> getLatest_attestations() {
-    return latest_attestations;
+  public BeaconBlockHeader getLatest_block_header() {
+    return latest_block_header;
   }
 
-  public void setLatest_attestations(List<PendingAttestation> latest_attestations) {
-    this.latest_attestations = latest_attestations;
+  public void setLatest_block_header(BeaconBlockHeader latest_block_header) {
+    this.latest_block_header = latest_block_header;
   }
 
-  public List<Bytes32> getBatched_block_roots() {
-    return batched_block_roots;
+  public List<Bytes32> getHistorical_roots() {
+    return historical_roots;
   }
 
-  public void setBatched_block_roots(List<Bytes32> batched_block_roots) {
-    this.batched_block_roots = batched_block_roots;
+  public void setHistorical_roots(List<Bytes32> historical_roots) {
+    this.historical_roots = historical_roots;
   }
 
   public Eth1Data getLatest_eth1_data() {
