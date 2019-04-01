@@ -48,7 +48,7 @@ public class Constants {
   public static int MIN_SEED_LOOKAHEAD = 1; // 2^0 epochs (6.4 minutes)
   public static int ACTIVATION_EXIT_DELAY = 4; // 2^2 epochs (25.6 minutes)
   public static int EPOCHS_PER_ETH1_VOTING_PERIOD = 16; // 2^4 epochs (~1.7 hours)
-  public static int SLOTS_PER_HISTORICAL_ROOT = 8192; // 2^4 epochs (~1.7 hours)
+  public static int SLOTS_PER_HISTORICAL_ROOT = 8192; // 2^13 slots (~13 hours)
   public static int MIN_VALIDATOR_WITHDRAWABILITY_DELAY = 256; // 2^8 epochs (~27 hours)
   public static int PERSISTENT_COMMITTEE_PERIOD = 2048; // 2^8 epochs (~27 hours)
 
