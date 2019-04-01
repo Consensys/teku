@@ -214,10 +214,6 @@ public class Constants {
             : BLS_WITHDRAWAL_PREFIX_BYTE; // TODO Verify
 
     // State list lengths
-    LATEST_BLOCK_ROOTS_LENGTH =
-        config.getLatestBlockRootsLength() != Integer.MIN_VALUE
-            ? config.getLatestBlockRootsLength()
-            : LATEST_BLOCK_ROOTS_LENGTH; // 2^13 slots (~13 hours)
     LATEST_RANDAO_MIXES_LENGTH =
         config.getLatestRandaoMixesLength() != Integer.MIN_VALUE
             ? config.getLatestRandaoMixesLength()
