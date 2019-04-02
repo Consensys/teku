@@ -21,8 +21,8 @@ import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 
 public class Transfer {
-  private UnsignedLong from;
-  private UnsignedLong to;
+  private UnsignedLong sender;
+  private UnsignedLong recipient;
   private UnsignedLong amount;
   private UnsignedLong fee;
   private UnsignedLong slot;
@@ -30,15 +30,15 @@ public class Transfer {
   private BLSSignature signature;
 
   public Transfer(
-      UnsignedLong from,
-      UnsignedLong to,
+      UnsignedLong sender,
+      UnsignedLong recipient,
       UnsignedLong amount,
       UnsignedLong fee,
       UnsignedLong slot,
       BLSPublicKey pubkey,
       BLSSignature signature) {
-    this.setFrom(from);
-    this.setTo(to);
+    this.setSender(sender);
+    this.setRecipient(recipient);
     this.setAmount(amount);
     this.setFee(fee);
     this.setSlot(slot);
@@ -63,8 +63,8 @@ public class Transfer {
   public Bytes toBytes() {
     return SSZ.encode(
         writer -> {
-          writer.writeUInt64(from.longValue());
-          writer.writeUInt64(to.longValue());
+          writer.writeUInt64(sender.longValue());
+          writer.writeUInt64(recipient.longValue());
           writer.writeUInt64(amount.longValue());
           writer.writeUInt64(fee.longValue());
           writer.writeUInt64(slot.longValue());
@@ -75,7 +75,7 @@ public class Transfer {
 
   @Override
   public int hashCode() {
-    return Objects.hash(from, to, amount, fee, slot, pubkey, signature);
+    return Objects.hash(sender, recipient, amount, fee, slot, pubkey, signature);
   }
 
   @Override
@@ -93,8 +93,8 @@ public class Transfer {
     }
 
     Transfer other = (Transfer) obj;
-    return Objects.equals(this.getFrom(), other.getFrom())
-        && Objects.equals(this.getTo(), other.getTo())
+    return Objects.equals(this.getSender(), other.getSender())
+        && Objects.equals(this.getRecipient(), other.getRecipient())
         && Objects.equals(this.getAmount(), other.getAmount())
         && Objects.equals(this.getFee(), other.getFee())
         && Objects.equals(this.getSlot(), other.getSlot())
@@ -103,20 +103,20 @@ public class Transfer {
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */
-  public UnsignedLong getFrom() {
-    return from;
+  public UnsignedLong getSender() {
+    return sender;
   }
 
-  public void setFrom(UnsignedLong from) {
-    this.from = from;
+  public void setSender(UnsignedLong sender) {
+    this.sender = sender;
   }
 
-  public UnsignedLong getTo() {
-    return to;
+  public UnsignedLong getRecipient() {
+    return recipient;
   }
 
-  public void setTo(UnsignedLong to) {
-    this.to = to;
+  public void setRecipient(UnsignedLong recipient) {
+    this.recipient = recipient;
   }
 
   public UnsignedLong getAmount() {

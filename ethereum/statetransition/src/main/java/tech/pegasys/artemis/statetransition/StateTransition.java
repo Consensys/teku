@@ -13,8 +13,6 @@
 
 package tech.pegasys.artemis.statetransition;
 
-import static tech.pegasys.artemis.datastructures.Constants.SLOTS_PER_EPOCH;
-
 import com.google.common.primitives.UnsignedLong;
 import net.consensys.cava.bytes.Bytes32;
 import org.apache.logging.log4j.Level;
@@ -30,6 +28,9 @@ import tech.pegasys.artemis.statetransition.util.PreProcessingUtil;
 import tech.pegasys.artemis.statetransition.util.SlotProcessingException;
 import tech.pegasys.artemis.statetransition.util.SlotProcessorUtil;
 import tech.pegasys.artemis.util.alogger.ALogger;
+import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
+
+import static tech.pegasys.artemis.datastructures.Constants.*;
 
 public class StateTransition {
 
@@ -69,6 +70,15 @@ public class StateTransition {
   protected void preProcessor(BeaconStateWithCache state) {
     // calculate currentBeaconProposerIndex
     PreProcessingUtil.cacheCurrentBeaconProposerIndex(state);
+  }
+
+  protected void advance_slot(BeaconStateWithCache state) {
+    state.getLatest_state_roots().set(state.getSlot().mod(UnsignedLong.valueOf(SLOTS_PER_HISTORICAL_ROOT)).intValue(), HashTreeUtil.hash_tree_root(state.toBytes()));
+    state.incrementSlot();
+    if (state.getLatest_block_header().getState_root() == ZERO_HASH) {
+      state.getLatest_block_header().setState_root(BeaconStateUtil.get_state_root(state, state.getSlot().minus(UnsignedLong.ONE)));
+    }
+    state.getLatest_block_roots().set((state.getSlot().minus(UnsignedLong.ONE).mod(UnsignedLong.valueOf(SLOTS_PER_HISTORICAL_ROOT)).intValue()), HashTreeUtil.hash_tree_root(state.getLatest_block_header().toBytes()));)
   }
 
   protected void slotProcessor(BeaconStateWithCache state, Bytes32 previous_block_root) {

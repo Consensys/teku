@@ -68,15 +68,15 @@ public class BeaconStateUtil {
 
   private static final ALogger LOG = new ALogger(BeaconStateUtil.class.getName());
 
-  public static BeaconStateWithCache get_initial_beacon_state(
+  public static BeaconStateWithCache get_genesis_beacon_state(
       BeaconStateWithCache state,
-      ArrayList<Deposit> initial_validator_deposits,
+      ArrayList<Deposit> genesis_validator_deposits,
       UnsignedLong genesis_time,
-      Eth1Data latest_eth1_data)
+      Eth1Data genesis_eth1_data)
       throws IllegalStateException {
 
     // Process initial deposits
-    for (Deposit validator_deposit : initial_validator_deposits) {
+    for (Deposit validator_deposit : genesis_validator_deposits) {
       process_deposit(state, validator_deposit);
     }
 
@@ -101,7 +101,7 @@ public class BeaconStateUtil {
       root = genesis_active_index_root;
     }
     state.setCurrent_shuffling_seed(generate_seed(state, UnsignedLong.valueOf(GENESIS_EPOCH)));
-    state.setDeposit_index(UnsignedLong.valueOf(initial_validator_deposits.size()));
+    state.setDeposit_index(UnsignedLong.valueOf(genesis_validator_deposits.size()));
     return state;
   }
 
@@ -416,10 +416,7 @@ public class BeaconStateUtil {
    */
   public static UnsignedLong get_previous_epoch(BeaconState state) {
     UnsignedLong current_epoch_minus_one = get_current_epoch(state).minus(UnsignedLong.ONE);
-    UnsignedLong genesis_epoch = UnsignedLong.valueOf(GENESIS_EPOCH);
-    return current_epoch_minus_one.compareTo(genesis_epoch) >= 0
-        ? current_epoch_minus_one
-        : genesis_epoch;
+    return current_epoch_minus_one;
   }
 
   /**
@@ -511,16 +508,15 @@ public class BeaconStateUtil {
    *     href="https://github.com/ethereum/eth2.0-specs/blob/v0.1/specs/core/0_beacon-chain.md#penalize_validator">
    *     spec</a>
    */
-  public static void penalize_validator(BeaconState state, int index) {
-    exit_validator(state, index);
+  public static void slash_validator(BeaconState state, int index) {
     Validator validator = state.getValidator_registry().get(index);
-    state
-        .getLatest_slashed_balances()
-        .set(
-            get_current_epoch(state).intValue() % LATEST_SLASHED_EXIT_LENGTH,
-            state
+    checkArgument(state.getSlot().compareTo(get_epoch_start_slot(validator.getWithdrawal_epoch())) < 0);
+    exit_validator(state, index);
+    int slashed_balances_index = get_current_epoch(state).intValue() % LATEST_SLASHED_EXIT_LENGTH;
+    state.getLatest_slashed_balances()
+            .set(slashed_balances_index, state
                 .getLatest_slashed_balances()
-                .get(get_current_epoch(state).intValue() % LATEST_SLASHED_EXIT_LENGTH)
+                .get(slashed_balances_index)
                 .plus(get_effective_balance(state, index)));
 
     int whistleblower_index = get_beacon_proposer_index(state, state.getSlot());
@@ -537,6 +533,8 @@ public class BeaconStateUtil {
         .set(index, state.getValidator_balances().get(index).minus(whistleblower_reward));
 
     validator.setSlashed(true);
+
+    validator.setWithdrawal_epoch(get_current_epoch(state).plus(UnsignedLong.valueOf(LATEST_SLASHED_EXIT_LENGTH)));
   }
 
   /**
@@ -594,15 +592,36 @@ public class BeaconStateUtil {
     checkArgument(
         state
                 .getSlot()
-                .compareTo(slot.plus(UnsignedLong.valueOf(Constants.LATEST_BLOCK_ROOTS_LENGTH)))
-            <= 0);
+                .compareTo(slot.plus(UnsignedLong.valueOf(Constants.SLOTS_PER_HISTORICAL_ROOT)))
+            <= 0, "checkArgument threw an exception in get_block_root()");
     checkArgument(
         slot.compareTo(state.getSlot()) < 0,
-        "checkArgument threw and exception in get_block_root()");
+        "checkArgument threw an exception in get_block_root()");
     // Todo: Remove .intValue() as soon as our list wrapper supports unsigned longs
     return state
         .getLatest_block_roots()
-        .get(slot.mod(UnsignedLong.valueOf(Constants.LATEST_BLOCK_ROOTS_LENGTH)).intValue());
+        .get(slot.mod(UnsignedLong.valueOf(Constants.SLOTS_PER_HISTORICAL_ROOT)).intValue());
+  }
+
+  /**
+   * Return the state root at a recent ``slot``.
+   * @param state
+   * @param slot
+   * @return
+   */
+  public static Bytes32 get_state_root(BeaconState state, UnsignedLong slot) {
+    checkArgument(
+            state
+                    .getSlot()
+                    .compareTo(slot.plus(UnsignedLong.valueOf(Constants.SLOTS_PER_HISTORICAL_ROOT)))
+                    <= 0, "checkArgument threw an exception in get_state_root()");
+    checkArgument(
+            slot.compareTo(state.getSlot()) < 0,
+            "checkArgument threw an exception in get_state_root()");
+    // Todo: Remove .intValue() as soon as our list wrapper supports unsigned longs
+    return state
+            .getLatest_state_roots()
+            .get(slot.mod(UnsignedLong.valueOf(Constants.SLOTS_PER_HISTORICAL_ROOT)).intValue());
   }
 
   /**

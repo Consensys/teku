@@ -29,6 +29,7 @@ import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.datastructures.blocks.Eth1DataVote;
+import tech.pegasys.artemis.datastructures.util.BeaconBlockUtil;
 
 public class BeaconState {
   // Misc
@@ -124,8 +125,7 @@ public class BeaconState {
     this.latest_slashed_balances =
         new ArrayList<>(
             Collections.nCopies(Constants.LATEST_SLASHED_EXIT_LENGTH, UnsignedLong.ZERO));
-    this.latest_block_header =
-        new BeaconBlockHeader(UnsignedLong.ZERO, ZERO_HASH, ZERO_HASH, ZERO_HASH, EMPTY_SIGNATURE);
+    this.latest_block_header = BeaconBlockUtil.get_temporary_block_header(BeaconBlockUtil.get_empty_block());
     this.historical_roots = new ArrayList<>();
 
     this.latest_eth1_data = new Eth1Data(ZERO_HASH, ZERO_HASH);
