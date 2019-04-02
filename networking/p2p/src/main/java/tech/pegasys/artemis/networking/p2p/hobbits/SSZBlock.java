@@ -17,7 +17,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import net.consensys.cava.bytes.Bytes;
 
-final class SSZBlock {
+public final class SSZBlock {
 
   private final Bytes block;
 

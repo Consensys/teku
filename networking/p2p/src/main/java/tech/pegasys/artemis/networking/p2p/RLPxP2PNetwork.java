@@ -33,9 +33,7 @@ import net.consensys.cava.rlpx.WireConnectionRepository;
 import net.consensys.cava.rlpx.vertx.VertxRLPxService;
 import net.consensys.cava.rlpx.wire.WireConnection;
 import org.logl.log4j2.Log4j2LoggerProvider;
-import tech.pegasys.artemis.data.RawRecord;
 import tech.pegasys.artemis.data.TimeSeriesRecord;
-import tech.pegasys.artemis.data.adapter.TimeSeriesAdapter;
 import tech.pegasys.artemis.networking.p2p.api.P2PNetwork;
 
 /**
@@ -125,6 +123,11 @@ public final class RLPxP2PNetwork implements P2PNetwork {
   }
 
   @Override
+  public Collection<?> getHandlers() {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
   public CompletableFuture<?> connect(String peer) {
     if (!started.get()) {
       throw new IllegalStateException();
@@ -160,11 +163,5 @@ public final class RLPxP2PNetwork implements P2PNetwork {
   @Override
   public boolean isListening() {
     return started.get();
-  }
-
-  @Override
-  public synchronized void onDataEvent(RawRecord record) {
-    TimeSeriesAdapter adapter = new TimeSeriesAdapter(record);
-    chainData = adapter.transform();
   }
 }

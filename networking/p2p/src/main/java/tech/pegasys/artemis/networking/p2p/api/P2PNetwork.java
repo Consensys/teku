@@ -16,7 +16,6 @@ package tech.pegasys.artemis.networking.p2p.api;
 import java.io.Closeable;
 import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
-import tech.pegasys.artemis.data.RawRecord;
 
 // TODO: Finish defining proper return types and params
 
@@ -28,6 +27,13 @@ public interface P2PNetwork extends Closeable, Runnable {
    * @return Peers currently connected.
    */
   Collection<?> getPeers();
+
+  /**
+   * Returns a snapshot of the socket handlers.
+   *
+   * @return Socket handlers
+   */
+  public Collection<?> getHandlers();
 
   /**
    * Connects to a {@link Peer}.
@@ -53,6 +59,4 @@ public interface P2PNetwork extends Closeable, Runnable {
    * @return true if the node is listening for network connections, false, otherwise.
    */
   boolean isListening();
-
-  void onDataEvent(RawRecord record);
 }

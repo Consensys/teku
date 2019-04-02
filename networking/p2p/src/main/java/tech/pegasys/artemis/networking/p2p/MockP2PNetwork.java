@@ -17,9 +17,7 @@ import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
-import tech.pegasys.artemis.data.RawRecord;
 import tech.pegasys.artemis.data.TimeSeriesRecord;
-import tech.pegasys.artemis.data.adapter.TimeSeriesAdapter;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.networking.p2p.api.P2PNetwork;
 import tech.pegasys.artemis.util.alogger.ALogger;
@@ -44,32 +42,21 @@ public class MockP2PNetwork implements P2PNetwork {
     this.chainData = new TimeSeriesRecord();
   }
 
-  /**
-   * Returns a snapshot of the currently connected peer connections.
-   *
-   * @return Peers currently connected.
-   */
   @Override
   public Collection<?> getPeers() {
     return null;
   }
 
-  /**
-   * Connects to a {@link String Peer}.
-   *
-   * @param peer Peer to connect to.
-   * @return Future of the established {}
-   */
+  @Override
+  public Collection<?> getHandlers() {
+    throw new UnsupportedOperationException();
+  }
+
   @Override
   public CompletableFuture<?> connect(String peer) {
     return null;
   }
 
-  /**
-   * Subscribe a to all incoming events.
-   *
-   * @param event to subscribe to.
-   */
   @Override
   public void subscribe(String event) {}
 
@@ -77,11 +64,6 @@ public class MockP2PNetwork implements P2PNetwork {
   @Override
   public void stop() {}
 
-  /**
-   * Checks if the node is listening for network connections
-   *
-   * @return true if the node is listening for network connections, false, otherwise.
-   */
   @Override
   public boolean isListening() {
     return false;
@@ -98,11 +80,5 @@ public class MockP2PNetwork implements P2PNetwork {
   @Subscribe
   public void onNewUnprocessedBlock(BeaconBlock block) {
     // now send it out into the p2p world
-  }
-
-  @Override
-  public synchronized void onDataEvent(RawRecord record) {
-    TimeSeriesAdapter adapter = new TimeSeriesAdapter(record);
-    chainData = adapter.transform();
   }
 }
