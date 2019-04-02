@@ -59,17 +59,6 @@ public final class BlockProcessorUtil {
 
   private static final ALogger LOG = new ALogger(BlockProcessorUtil.class.getName());
 
-  /**
-   * Spec: https://github.com/ethereum/eth2.0-specs/blob/v0.1/specs/core/0_beacon-chain.md#slot-1
-   *
-   * @param state
-   * @param block
-   */
-  public static boolean verify_slot(BeaconState state, BeaconBlock block) {
-    // Verify that block.slot == state.slot
-    return state.getSlot().compareTo(UnsignedLong.valueOf(block.getSlot())) == 0;
-  }
-
   public static void process_block_header(BeaconState state, BeaconBlock block) {
     checkArgument(verify_slot(state, block), "Slots don't match");
     checkArgument(block.getPrevious_block_root() ==
@@ -79,17 +68,25 @@ public final class BlockProcessorUtil {
     state.setLatest_block_header(BeaconBlockUtil.get_temporary_block_header(block));
 
     // Verify proposer signature
-    Validator proposer = state.getValidator_registry()
-            .get(get_beacon_proposer_index(state, state.getSlot()));
-    checkArgument(bls_verify(
-            proposer.getPubkey(),
-            block.signedRoot("signature"),
-            block.getSignature(),
-            get_domain(
-                    state.getFork(),
-                    get_current_epoch(state),
-                    Constants.DOMAIN_BEACON_BLOCK
-            )), "Proposer signature invalid";
+    // Only verify the proposer's signature if we are processing blocks (not proposing them)
+    if (!block.getState_root().equals(Bytes32.ZERO)) {
+      Validator proposer = state.getValidator_registry()
+              .get(get_beacon_proposer_index(state, state.getSlot()));
+      checkArgument(bls_verify(
+              proposer.getPubkey(),
+              block.signedRoot("signature"),
+              block.getSignature(),
+              get_domain(
+                      state.getFork(),
+                      get_current_epoch(state),
+                      Constants.DOMAIN_BEACON_BLOCK
+              )), "Proposer signature invalid");
+    }
+  }
+
+  public static boolean verify_slot(BeaconState state, BeaconBlock block) {
+    // Verify that block.slot == state.slot
+    return state.getSlot().compareTo(UnsignedLong.valueOf(block.getSlot())) == 0;
   }
 
   public static void process_randao(BeaconState state, BeaconBlock block) {
@@ -123,110 +120,6 @@ public final class BlockProcessorUtil {
     state.getEth1_data_votes().add(new Eth1DataVote(block.getBody().getEth1_data(), UnsignedLong.ONE))
   }
 
-  /**
-   * Spec:
-   * https://github.com/ethereum/eth2.0-specs/blob/v0.1/specs/core/0_beacon-chain.md#proposer-signature
-   *
-   * @param state
-   * @param block
-   * @throws BLSException
-   */
-  public static void verify_signature(BeaconState state, BeaconBlock block)
-      throws BlockProcessingException {
-    try {
-      // Let proposal = Proposal(block.slot, BEACON_CHAIN_SHARD_NUMBER,
-      //   signed_root(block, "signature"), block.signature).
-      Proposal proposal =
-          new Proposal(
-              UnsignedLong.fromLongBits(block.getSlot()),
-              Constants.BEACON_CHAIN_SHARD_NUMBER,
-              block.signedRoot("signature"),
-              block.getSignature());
-
-      // Verify that bls_verify(pubkey=state.validator_registry[get_beacon_proposer_index(state,
-      //   state.slot)].pubkey, message_hash=signed_root(proposal, "signature"),
-      // signature=block.signature,
-      //   domain=get_domain(state.fork, state.slot, DOMAIN_PROPOSAL)) is valid.
-      int proposerIndex = BeaconStateUtil.get_beacon_proposer_index(state, state.getSlot());
-      BLSPublicKey pubkey = state.getValidator_registry().get(proposerIndex).getPubkey();
-      UnsignedLong domain = get_domain(state.getFork(), get_current_epoch(state), DOMAIN_PROPOSAL);
-      Bytes32 messageHash = proposal.signedRoot("signature");
-
-      checkArgument(
-          bls_verify(pubkey, messageHash, block.getSignature(), domain), "verify signature failed");
-    } catch (IllegalStateException | IllegalArgumentException e) {
-      LOG.log(Level.WARN, "BlockProcessingException thrown in verify_signature()");
-      throw new BlockProcessingException(e);
-    }
-  }
-
-  /**
-   * Spec: https://github.com/ethereum/eth2.0-specs/blob/v0.1/specs/core/0_beacon-chain.md#randao
-   *
-   * @param state
-   * @param block
-   */
-  public static void verify_and_update_randao(BeaconState state, BeaconBlock block)
-      throws BlockProcessingException {
-    try {
-      UnsignedLong currentEpoch = BeaconStateUtil.get_current_epoch(state);
-      Bytes32 messageHash = hash_tree_root(int_to_bytes(currentEpoch.longValue(), 8));
-      // - Let proposer = state.validator_registry[get_beacon_proposer_index(state, state.slot)].
-      // - Verify that bls_verify(pubkey=proposer.pubkey,
-      //    message=int_to_bytes32(get_current_epoch(state)), signature=block.randao_reveal,
-      //    domain=get_domain(state.fork, get_current_epoch(state), DOMAIN_RANDAO)).
-      checkArgument(
-          verify_randao(state, block, currentEpoch, messageHash), "in verify_and_update_randao()");
-
-      // - Set state.latest_randao_mixes[get_current_epoch(state) % LATEST_RANDAO_MIXES_LENGTH]
-      //    = xor(get_randao_mix(state, get_current_epoch(state)), hash(block.randao_reveal)).
-      int randaoMixesIndex =
-          toIntExact(currentEpoch.longValue()) % Constants.LATEST_RANDAO_MIXES_LENGTH;
-      Bytes32 newLatestRandaoMixes =
-          get_randao_mix(state, currentEpoch)
-              .xor(Hash.keccak256(block.getRandao_reveal().toBytes()));
-      state.getLatest_randao_mixes().set(randaoMixesIndex, newLatestRandaoMixes);
-    } catch (IllegalStateException | IllegalArgumentException e) {
-      LOG.log(Level.WARN, "BlockProcessingException thrown in verify_and_update_randao()");
-      throw new BlockProcessingException(e);
-    }
-  }
-  /**
-   * Spec: https://github.com/ethereum/eth2.0-specs/blob/v0.1/specs/core/0_beacon-chain.md#eth1-data
-   *
-   * @param state
-   * @param block
-   */
-  public static void update_eth1_data(BeaconState state, BeaconBlock block)
-      throws BlockProcessingException {
-    // If there exists an `eth1_data_vote` in `states.eth1_data_votes` for which
-    // `eth1_data_vote.eth1_data == block.eth1_data`
-    //  (there will be at most one), set `eth1_data_vote.vote_count += 1`.
-    boolean exists = false;
-    List<Eth1DataVote> votes = state.getEth1_data_votes();
-    for (Eth1DataVote vote : votes) {
-      if (vote.getEth1_data().equals(block.getEth1_data())) {
-        exists = true;
-        UnsignedLong voteCount = vote.getVote_count();
-        vote.setVote_count(voteCount.plus(UnsignedLong.ONE));
-        break;
-      }
-    }
-
-    // Otherwise, append to state.eth1_data_votes
-    //   a new Eth1DataVote(eth1_data=block.eth1_data, vote_count=1).
-    if (!exists) {
-      votes.add(new Eth1DataVote(block.getEth1_data(), UnsignedLong.ONE));
-    }
-  }
-
-  /**
-   * Spec:
-   * https://github.com/ethereum/eth2.0-specs/blob/v0.1/specs/core/0_beacon-chain.md#proposer-slashings-1
-   *
-   * @param state
-   * @param block
-   */
   public static void proposer_slashing(BeaconState state, BeaconBlock block)
       throws BlockProcessingException {
     try {
@@ -775,6 +668,11 @@ public final class BlockProcessorUtil {
           .getValidator_balances()
           .set(get_beacon_proposer_index(state, state.getSlot()), proposerBalance);
     }
+  }
+
+  public static void verify_block_state_root(BeaconState state, BeaconBlock block) {
+    checkArgument(block.getState_root().equals(hash_tree_root(state.toBytes())),
+            "State roots don't match in verify_block_state_root");
   }
 
   private static <T> boolean allDistinct(List<T> list) {
