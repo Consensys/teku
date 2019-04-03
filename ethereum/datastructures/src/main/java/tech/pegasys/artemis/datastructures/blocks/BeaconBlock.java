@@ -52,21 +52,6 @@ public final class BeaconBlock {
     this.signature = signature;
   }
 
-  public static BeaconBlock createGenesis(Bytes32 state_root) {
-    return new BeaconBlock(
-        GENESIS_SLOT,
-        ZERO_HASH,
-        state_root,
-        new BeaconBlockBody(
-            new ArrayList<>(),
-            new ArrayList<>(),
-            new ArrayList<>(),
-            new ArrayList<>(),
-            new ArrayList<>(),
-            new ArrayList<>()),
-        EMPTY_SIGNATURE);
-  }
-
   public static BeaconBlock fromBytes(Bytes bytes) {
     return SSZ.decode(
         bytes,

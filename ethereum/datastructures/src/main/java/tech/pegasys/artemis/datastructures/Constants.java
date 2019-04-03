@@ -175,10 +175,10 @@ public class Constants {
         config.getEpochsPerEth1VotingPeriod() != Integer.MIN_VALUE
             ? config.getEpochsPerEth1VotingPeriod()
             : EPOCHS_PER_ETH1_VOTING_PERIOD; // 2^4 epochs (~1.7 hours)
-    SLOTS_PER_HISTORICAL_ROOT
-            config.getSlotsPerHistoricalRoot() != Integer.MIN_VALUE
-                    ? config.getSlotsPerHistoricalRoot()
-                    : SLOTS_PER_HISTORICAL_ROOT;
+    SLOTS_PER_HISTORICAL_ROOT =
+        config.getSlotsPerHistoricalRoot() != Integer.MIN_VALUE
+            ? config.getSlotsPerHistoricalRoot()
+            : SLOTS_PER_HISTORICAL_ROOT;
     MIN_VALIDATOR_WITHDRAWABILITY_DELAY =
         config.getMinValidatorWithdrawabilityDelay() != Integer.MIN_VALUE
             ? config.getMinValidatorWithdrawabilityDelay()
@@ -278,17 +278,21 @@ public class Constants {
 
     // Signature domains
     DOMAIN_BEACON_BLOCK =
-            config.getDomainBeaconBlock() != Integer.MIN_VALUE ? config.getDomainBeaconBlock() : DOMAIN_BEACON_BLOCK;
+        config.getDomainBeaconBlock() != Integer.MIN_VALUE
+            ? config.getDomainBeaconBlock()
+            : DOMAIN_BEACON_BLOCK;
     DOMAIN_RANDAO =
-            config.getDomainRandao() != Integer.MIN_VALUE ? config.getDomainRandao() : DOMAIN_RANDAO;
+        config.getDomainRandao() != Integer.MIN_VALUE ? config.getDomainRandao() : DOMAIN_RANDAO;
     DOMAIN_ATTESTATION =
         config.getDomainAttestation() != Integer.MIN_VALUE
             ? config.getDomainAttestation()
             : DOMAIN_ATTESTATION;
     DOMAIN_DEPOSIT =
-            config.getDomainDeposit() != Integer.MIN_VALUE ? config.getDomainDeposit() : DOMAIN_DEPOSIT;
+        config.getDomainDeposit() != Integer.MIN_VALUE ? config.getDomainDeposit() : DOMAIN_DEPOSIT;
     DOMAIN_VOLUNTARY_EXIT =
-            config.getDomainVoluntaryExit() != Integer.MIN_VALUE ? config.getDomainVoluntaryExit() : DOMAIN_VOLUNTARY_EXIT;
+        config.getDomainVoluntaryExit() != Integer.MIN_VALUE
+            ? config.getDomainVoluntaryExit()
+            : DOMAIN_VOLUNTARY_EXIT;
     DOMAIN_TRANSFER =
         config.getDomainTransfer() != Integer.MIN_VALUE
             ? config.getDomainTransfer()

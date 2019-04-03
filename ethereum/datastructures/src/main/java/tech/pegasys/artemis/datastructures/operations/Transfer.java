@@ -14,11 +14,14 @@
 package tech.pegasys.artemis.datastructures.operations;
 
 import com.google.common.primitives.UnsignedLong;
+import java.util.Arrays;
 import java.util.Objects;
 import net.consensys.cava.bytes.Bytes;
+import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.ssz.SSZ;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
+import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 
 public class Transfer {
   private UnsignedLong sender;
@@ -157,5 +160,22 @@ public class Transfer {
 
   public void setSignature(BLSSignature signature) {
     this.signature = signature;
+  }
+
+  public Bytes32 signedRoot(String truncationParam) {
+    if (!truncationParam.equals("signature")) {
+      throw new UnsupportedOperationException(
+          "Only signed_root(BeaconBlockHeader, \"signature\") is currently supported for type BeaconBlockHeader.");
+    }
+
+    return Bytes32.rightPad(
+        HashTreeUtil.merkleHash(
+            Arrays.asList(
+                HashTreeUtil.hash_tree_root(sender),
+                HashTreeUtil.hash_tree_root(recipient),
+                HashTreeUtil.hash_tree_root(amount),
+                HashTreeUtil.hash_tree_root(fee),
+                HashTreeUtil.hash_tree_root(slot),
+                HashTreeUtil.hash_tree_root(pubkey.toBytes()))));
   }
 }

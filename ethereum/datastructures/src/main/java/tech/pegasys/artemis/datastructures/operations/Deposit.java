@@ -23,12 +23,12 @@ import net.consensys.cava.ssz.SSZ;
 
 public class Deposit {
 
-  private List<Bytes32> branch;
+  private List<Bytes32> proof;
   private UnsignedLong index;
   private DepositData deposit_data;
 
-  public Deposit(List<Bytes32> branch, UnsignedLong index, DepositData deposit_data) {
-    this.branch = branch;
+  public Deposit(List<Bytes32> proof, UnsignedLong index, DepositData deposit_data) {
+    this.proof = proof;
     this.index = index;
     this.deposit_data = deposit_data;
   }
@@ -46,7 +46,7 @@ public class Deposit {
   public Bytes toBytes() {
     return SSZ.encode(
         writer -> {
-          writer.writeBytesList(branch);
+          writer.writeBytesList(proof);
           writer.writeUInt64(index.longValue());
           writer.writeBytes(deposit_data.toBytes());
         });
@@ -54,7 +54,7 @@ public class Deposit {
 
   @Override
   public int hashCode() {
-    return Objects.hash(branch, index, deposit_data);
+    return Objects.hash(proof, index, deposit_data);
   }
 
   @Override
@@ -72,18 +72,18 @@ public class Deposit {
     }
 
     Deposit other = (Deposit) obj;
-    return Objects.equals(this.getBranch(), other.getBranch())
+    return Objects.equals(this.getProof(), other.getProof())
         && Objects.equals(this.getIndex(), other.getIndex())
         && Objects.equals(this.getDeposit_data(), other.getDeposit_data());
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */
-  public List<Bytes32> getBranch() {
-    return branch;
+  public List<Bytes32> getProof() {
+    return proof;
   }
 
-  public void setBranch(List<Bytes32> branch) {
-    this.branch = branch;
+  public void setProof(List<Bytes32> branch) {
+    this.proof = branch;
   }
 
   public UnsignedLong getIndex() {

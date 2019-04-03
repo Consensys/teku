@@ -17,7 +17,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
-
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.ssz.SSZ;
@@ -43,8 +42,8 @@ public class HistoricalBatch implements Copyable<HistoricalBatch> {
         bytes,
         reader ->
             new HistoricalBatch(
-              reader.readBytesList().stream().map(Bytes32::wrap).collect(Collectors.toList()),
-              reader.readBytesList().stream().map(Bytes32::wrap).collect(Collectors.toList())));
+                reader.readBytesList().stream().map(Bytes32::wrap).collect(Collectors.toList()),
+                reader.readBytesList().stream().map(Bytes32::wrap).collect(Collectors.toList())));
   }
 
   @Override

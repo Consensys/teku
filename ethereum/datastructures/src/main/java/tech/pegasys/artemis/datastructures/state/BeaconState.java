@@ -430,7 +430,7 @@ public class BeaconState {
         && Objects.equals(this.getLatest_state_roots(), other.getLatest_state_roots())
         && Objects.equals(this.getLatest_active_index_roots(), other.getLatest_active_index_roots())
         && Objects.equals(this.getLatest_slashed_balances(), other.getLatest_slashed_balances())
-        && Objects.equals(this.getLatest_slashed_balances(), other.getLatest_slashed_balances())
+        && Objects.equals(this.getLatest_block_header(), other.getLatest_block_header())
         && Objects.equals(this.getHistorical_roots(), other.getHistorical_roots())
         && Objects.equals(this.getLatest_eth1_data(), other.getLatest_eth1_data())
         && Objects.equals(this.getEth1_data_votes(), other.getEth1_data_votes())

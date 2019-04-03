@@ -27,12 +27,12 @@ import net.consensys.cava.crypto.SECP256K1.PublicKey;
 import org.apache.logging.log4j.Level;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
-import tech.pegasys.artemis.datastructures.blocks.Proposal;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.util.AttestationUtil;
+import tech.pegasys.artemis.datastructures.util.BeaconBlockUtil;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.services.ServiceConfig;
@@ -74,7 +74,7 @@ public class ValidatorCoordinator {
     BeaconStateWithCache initialBeaconState =
         DataStructureUtil.createInitialBeaconState(numValidators);
     Bytes32 initialStateRoot = HashTreeUtil.hash_tree_root(initialBeaconState.toBytes());
-    BeaconBlock genesisBlock = BeaconBlock.createGenesis(initialStateRoot);
+    BeaconBlock genesisBlock = BeaconBlockUtil.get_empty_block();
 
     createBlockIfNecessary(initialBeaconState, genesisBlock);
   }
@@ -173,7 +173,7 @@ public class ValidatorCoordinator {
       }
 
       BLSSignature epoch_signature = setEpochSignature(headState, keypair);
-      block.setRandao_reveal(epoch_signature);
+      block.getBody().setRandao_reveal(epoch_signature);
       stateTransition.initiate(headState, block, blockRoot);
       Bytes32 stateRoot = HashTreeUtil.hash_tree_root(headState.toBytes());
       block.setState_root(stateRoot);
@@ -185,7 +185,7 @@ public class ValidatorCoordinator {
       LOG.log(Level.INFO, "ValidatorCoordinator - block.slot: " + block.getSlot(), printEnabled);
       LOG.log(
           Level.INFO,
-          "ValidatorCoordinator - block.parent_root: " + block.getParent_root(),
+          "ValidatorCoordinator - block.parent_root: " + block.getPrevious_block_root(),
           printEnabled);
       LOG.log(
           Level.INFO,

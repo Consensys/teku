@@ -13,10 +13,10 @@
 
 package tech.pegasys.artemis.statetransition;
 
+
 import com.google.common.primitives.UnsignedLong;
 import net.consensys.cava.bytes.Bytes32;
 import org.apache.logging.log4j.Level;
-import sun.jvm.hotspot.opto.Block;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
@@ -27,12 +27,12 @@ import tech.pegasys.artemis.statetransition.util.BlockProcessorUtil;
 import tech.pegasys.artemis.statetransition.util.EpochProcessingException;
 import tech.pegasys.artemis.statetransition.util.EpochProcessorUtil;
 import tech.pegasys.artemis.statetransition.util.PreProcessingUtil;
-import tech.pegasys.artemis.statetransition.util.SlotProcessingException;
-import tech.pegasys.artemis.statetransition.util.SlotProcessorUtil;
 import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 
-import static tech.pegasys.artemis.datastructures.Constants.*;
+import static tech.pegasys.artemis.datastructures.Constants.SLOTS_PER_EPOCH;
+import static tech.pegasys.artemis.datastructures.Constants.SLOTS_PER_HISTORICAL_ROOT;
+import static tech.pegasys.artemis.datastructures.Constants.ZERO_HASH;
 
 public class StateTransition {
 
@@ -48,16 +48,11 @@ public class StateTransition {
 
   public void initiate(BeaconStateWithCache state, BeaconBlock block, Bytes32 previous_block_root)
       throws StateTransitionException {
-    state.incrementSlot();
-    // pre-process and cache selected state transition calculations
+    // Client specific optimization
     preProcessor(state);
-    // per-slot processing
-    slotProcessor(state, previous_block_root);
-    // per-block processing
-    if (block != null) {
-      blockProcessor(state, block);
-    }
-    // per-epoch processing
+
+    cache_state(state);
+
     if (state
         .getSlot()
         .plus(UnsignedLong.ONE)
@@ -65,7 +60,14 @@ public class StateTransition {
         .equals(UnsignedLong.ZERO)) {
       epochProcessor(state, block);
     }
-    // reset all cached state variables
+
+    slotProcessor(state);
+
+    if (block != null) {
+      blockProcessor(state, block);
+    }
+
+    // Client specific optimization
     state.invalidateCache();
   }
 
@@ -78,9 +80,9 @@ public class StateTransition {
     Bytes32 previous_slot_state_root = HashTreeUtil.hash_tree_root(state.toBytes());
 
     // Store the previous slot's post state transition root
-    int prev_slot_index = state.getSlot().mod(UnsignedLong.valueOf(SLOTS_PER_HISTORICAL_ROOT)).intValue();
-    state.getLatest_state_roots()
-            .set(prev_slot_index, previous_slot_state_root);
+    int prev_slot_index =
+        state.getSlot().mod(UnsignedLong.valueOf(SLOTS_PER_HISTORICAL_ROOT)).intValue();
+    state.getLatest_state_roots().set(prev_slot_index, previous_slot_state_root);
 
     // Cache state root in stored latest_block_header if empty
     if (state.getLatest_block_header().getState_root() == ZERO_HASH) {
@@ -88,26 +90,13 @@ public class StateTransition {
     }
 
     // Store latest known block for previous slot
-    state.getLatest_block_roots().set(prev_slot_index, state.getLatest_block_header().signedRoot("signature"))
+    state
+        .getLatest_block_roots()
+        .set(prev_slot_index, state.getLatest_block_header().signedRoot("signature"));
   }
 
-  protected void advance_slot(BeaconStateWithCache state) {
-    state.getLatest_state_roots().set(state.getSlot().mod(UnsignedLong.valueOf(SLOTS_PER_HISTORICAL_ROOT)).intValue(), HashTreeUtil.hash_tree_root(state.toBytes()));
-    state.incrementSlot();
-    if (state.getLatest_block_header().getState_root() == ZERO_HASH) {
-      state.getLatest_block_header().setState_root(BeaconStateUtil.get_state_root(state, state.getSlot().minus(UnsignedLong.ONE)));
-    }
-    state.getLatest_block_roots().set((state.getSlot().minus(UnsignedLong.ONE).mod(UnsignedLong.valueOf(SLOTS_PER_HISTORICAL_ROOT)).intValue()), HashTreeUtil.hash_tree_root(state.getLatest_block_header().toBytes()));)
-  }
-
-  protected void slotProcessor(BeaconStateWithCache state, Bytes32 previous_block_root) {
-    try {
-      // Slots the proposer has skipped (i.e. layers of RANDAO expected)
-      // should be in Validator.randao_skips
-      SlotProcessorUtil.updateBlockRoots(state, previous_block_root);
-    } catch (SlotProcessingException e) {
-      LOG.log(Level.WARN, "  Slot processing error: " + e, printEnabled);
-    }
+  protected void slotProcessor(BeaconStateWithCache state) {
+      advance_slot(state);
   }
 
   private void blockProcessor(BeaconStateWithCache state, BeaconBlock block) {
@@ -116,17 +105,17 @@ public class StateTransition {
       BlockProcessorUtil.process_block_header(state, block);
       BlockProcessorUtil.process_randao(state, block);
       BlockProcessorUtil.process_eth1_data(state, block);
-      BlockProcessorUtil.proposer_slashing(state, block);
-      BlockProcessorUtil.attester_slashing(state, block);
-      BlockProcessorUtil.processAttestations(state, block);
-      BlockProcessorUtil.processDeposits(state, block);
-      BlockProcessorUtil.processVoluntaryExits(state, block);
-      BlockProcessorUtil.processTransfers(state, block);
+      BlockProcessorUtil.process_proposer_slashings(state, block);
+      BlockProcessorUtil.process_attester_slashings(state, block);
+      BlockProcessorUtil.process_attestations(state, block);
+      BlockProcessorUtil.process_deposits(state, block);
+      BlockProcessorUtil.process_voluntary_exits(state, block);
+      BlockProcessorUtil.process_transfers(state, block);
       BlockProcessorUtil.verify_block_state_root(state, block);
 
-      } catch (BlockProcessingException e) {
-        LOG.log(Level.WARN, "  Block processing error: " + e, printEnabled);
-      }
+    } catch (BlockProcessingException e) {
+      LOG.log(Level.WARN, "  Block processing error: " + e, printEnabled);
+    }
   }
 
   private void epochProcessor(BeaconStateWithCache state, BeaconBlock block) {
@@ -160,5 +149,9 @@ public class StateTransition {
     } catch (EpochProcessingException e) {
       LOG.log(Level.WARN, "  Epoch processing error: " + e, printEnabled);
     }
+  }
+
+  private void advance_slot(BeaconStateWithCache state) {
+    state.incrementSlot();
   }
 }

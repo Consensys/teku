@@ -51,12 +51,12 @@ public class BeaconBlockUtil {
         new BeaconBlockBody(
             Constants.EMPTY_SIGNATURE,
             new Eth1Data(Constants.ZERO_HASH, Constants.ZERO_HASH),
-            new ArrayList(),
-            new ArrayList(),
-            new ArrayList(),
-            new ArrayList(),
-            new ArrayList(),
-            new ArrayList()),
+            new ArrayList<>(),
+            new ArrayList<>(),
+            new ArrayList<>(),
+            new ArrayList<>(),
+            new ArrayList<>(),
+            new ArrayList<>()),
         Constants.EMPTY_SIGNATURE);
   }
 }

@@ -38,7 +38,7 @@ public class BeaconBlockBody {
   private List<Transfer> transfers;
 
   public BeaconBlockBody(
-      BLSSignature signature,
+      BLSSignature randao_reveal,
       Eth1Data eth1_data,
       List<ProposerSlashing> proposer_slashings,
       List<AttesterSlashing> attester_slashings,
@@ -46,6 +46,8 @@ public class BeaconBlockBody {
       List<Deposit> deposits,
       List<VoluntaryExit> voluntaryExits,
       List<Transfer> transfers) {
+    this.randao_reveal = randao_reveal;
+    this.eth1_data = eth1_data;
     this.proposer_slashings = proposer_slashings;
     this.attester_slashings = attester_slashings;
     this.attestations = attestations;
