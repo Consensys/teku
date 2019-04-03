@@ -33,7 +33,7 @@ import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
 import org.xerial.snappy.Snappy;
 
-public final class GossipCodec {
+public final class GossipCodec implements Codec {
 
   private static class Bytes32Serializer extends JsonSerializer<Bytes32> {
 
@@ -121,6 +121,7 @@ public final class GossipCodec {
    * @return the payload, decoded
    */
   public static GossipMessage decode(Bytes message) {
+    // TODO: refactor RPC/Gossip decode logic
     Bytes requestLineBytes = null;
     for (int i = 0; i < message.size(); i++) {
       if (message.get(i) == (byte) '\n') {

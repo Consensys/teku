@@ -18,11 +18,13 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.Arrays;
-import net.consensys.cava.bytes.Bytes32;
+import java.util.Objects;
+import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.junit.BouncyCastleExtension;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import picocli.CommandLine;
+import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.networking.p2p.api.P2PNetwork;
 import tech.pegasys.artemis.networking.p2p.hobbits.Peer;
 import tech.pegasys.artemis.util.cli.CommandLineArguments;
@@ -38,36 +40,9 @@ class BeaconNodeIntegrationTest {
     CommandLineArguments cliArgs = new CommandLineArguments();
     CommandLine commandLine = new CommandLine(cliArgs);
 
-    Bytes32 randomId = Bytes32.random();
-
-    ArtemisConfiguration config1 =
-        ArtemisConfiguration.fromString(
-            "node.networkMode=\"hobbits\"\n"
-                + "node.identity=\""
-                + randomId.toHexString()
-                + "\"\n"
-                + "node.networkInterface=\"127.0.0.1\"\n"
-                + "node.port=19000\n"
-                + "node.peers=[\"hobs://abcf@localhost:19001\", \"hobs://abcf@localhost:19002\"]");
-
-    ArtemisConfiguration config2 =
-        ArtemisConfiguration.fromString(
-            "node.networkMode=\"hobbits\"\n"
-                + "node.identity=\""
-                + randomId.toHexString()
-                + "\"\n"
-                + "node.networkInterface=\"127.0.0.1\"\n"
-                + "node.port=19001\n"
-                + "node.peers=[\"hobs://abcf@localhost:19000\", \"hobs://abcf@localhost:19002\"]");
-    ArtemisConfiguration config3 =
-        ArtemisConfiguration.fromString(
-            "node.networkMode=\"hobbits\"\n"
-                + "node.identity=\""
-                + randomId.toHexString()
-                + "\"\n"
-                + "node.networkInterface=\"127.0.0.1\"\n"
-                + "node.port=19002\n"
-                + "node.peers=[\"hobs://abcf@localhost:19001\", \"hobs://abcf@localhost:19000\"]");
+    ArtemisConfiguration config1 = ArtemisConfiguration.fromFile("../config/testConfig.0.toml");
+    ArtemisConfiguration config2 = ArtemisConfiguration.fromFile("../config/testConfig.1.toml");
+    ArtemisConfiguration config3 = ArtemisConfiguration.fromFile("../config/testConfig.2.toml");
 
     BeaconNode node1 = new BeaconNode(commandLine, cliArgs, config1);
     BeaconNode node2 = new BeaconNode(commandLine, cliArgs, config2);
@@ -83,14 +58,19 @@ class BeaconNodeIntegrationTest {
     P2PNetwork net2 = node2.p2pNetwork();
     P2PNetwork net3 = node3.p2pNetwork();
 
+    BeaconBlock block = null;
     for (P2PNetwork net : Arrays.asList(net1, net2, net3)) {
       for (Object p : net.getPeers()) {
-        assertNotNull(((Peer) p).peerHello());
-        assertNotNull(((Peer) p).peerStatus());
-        System.out.println(mapper.writer().writeValueAsString(((Peer) p).peerStatus()));
+        Peer peer = (Peer) p;
+        Bytes message = peer.peerGossip();
+        if (!Objects.isNull(message)) {
+          block = BeaconBlock.fromBytes(message);
+          System.out.println(
+              "Received block with state root:" + block.getState_root().toHexString());
+        }
       }
     }
-
+    assertNotNull(block);
     node1.stop();
     node2.stop();
     node3.stop();
