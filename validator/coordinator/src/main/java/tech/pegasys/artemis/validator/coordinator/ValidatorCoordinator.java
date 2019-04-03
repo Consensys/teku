@@ -20,7 +20,7 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
-import java.util.PriorityQueue;
+import java.util.concurrent.PriorityBlockingQueue;
 import net.consensys.cava.bytes.Bytes32;
 import org.apache.logging.log4j.Level;
 import tech.pegasys.artemis.datastructures.Constants;
@@ -56,8 +56,10 @@ public class ValidatorCoordinator {
   private BeaconBlock validatorBlock;
   private ArrayList<Deposit> newDeposits = new ArrayList<>();
   private final HashMap<BLSPublicKey, BLSKeyPair> validatorSet = new HashMap<>();
-  private final PriorityQueue<Attestation> attestationsQueue =
-      new PriorityQueue<>(Comparator.comparing(Attestation::getSlot));
+  static final Integer UNPROCESSED_BLOCKS_LENGTH = 100;
+  private final PriorityBlockingQueue<Attestation> attestationsQueue =
+      new PriorityBlockingQueue<Attestation>(
+          UNPROCESSED_BLOCKS_LENGTH, Comparator.comparing(Attestation::getSlot));
 
   public ValidatorCoordinator(ServiceConfig config) {
     this.eventBus = config.getEventBus();
@@ -121,7 +123,8 @@ public class ValidatorCoordinator {
         startIndex
             + (numValidators / numNodes - 1)
             + (int) Math.floor(nodeIdentity / Math.max(1, numNodes - 1));
-    LOG.log(Level.INFO, "startIndex: " + startIndex + " endIndex: " + endIndex);
+    endIndex = Math.min(endIndex, numValidators - 1);
+    LOG.log(Level.DEBUG, "startIndex: " + startIndex + " endIndex: " + endIndex);
     for (int i = startIndex; i < endIndex; i++) {
       BLSKeyPair keypair = BLSKeyPair.random(i);
       validatorSet.put(keypair.getPublicKey(), keypair);
