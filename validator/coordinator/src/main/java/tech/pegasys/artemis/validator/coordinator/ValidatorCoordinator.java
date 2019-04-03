@@ -122,6 +122,7 @@ public class ValidatorCoordinator {
         startIndex
             + (numValidators / numNodes - 1)
             + (int) Math.floor(nodeIdentity / Math.max(1, numNodes - 1));
+    endIndex = Math.min(endIndex, numValidators - 1);
     LOG.log(Level.INFO, "startIndex: " + startIndex + " endIndex: " + endIndex);
     for (int i = startIndex; i < endIndex; i++) {
       BLSKeyPair keypair = BLSKeyPair.random(i);
