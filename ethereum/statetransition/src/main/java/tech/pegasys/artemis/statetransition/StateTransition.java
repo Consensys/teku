@@ -147,39 +147,16 @@ public class StateTransition {
               + BeaconStateUtil.get_current_epoch(state).longValue() % Constants.GENESIS_EPOCH,
           printEnabled);
 
-      EpochProcessorUtil.updateEth1Data(state);
-      LOG.log(Level.DEBUG, "updateEth1Data()", printEnabled);
-      EpochProcessorUtil.updateJustificationAndFinalization(state, block);
-      LOG.log(Level.DEBUG, "updateJustification()", printEnabled);
-      EpochProcessorUtil.updateCrosslinks(state);
-      LOG.log(Level.DEBUG, "updateCrosslinks()", printEnabled);
-
-      UnsignedLong previous_total_balance = BeaconStateUtil.previous_total_balance(state);
-      LOG.log(Level.DEBUG, "justificationAndFinalization()", printEnabled);
-      EpochProcessorUtil.justificationAndFinalization(state, previous_total_balance);
-      LOG.log(Level.DEBUG, "attestionInclusion()", printEnabled);
-      EpochProcessorUtil.attestionInclusion(state, previous_total_balance);
-      LOG.log(Level.DEBUG, "crosslinkRewards()", printEnabled);
-      EpochProcessorUtil.crosslinkRewards(state, previous_total_balance);
-
-      LOG.log(Level.DEBUG, "process_ejections()", printEnabled);
+      EpochProcessorUtil.update_justification_and_finalization(state);
+      EpochProcessorUtil.process_crosslinks(state);
+      EpochProcessorUtil.maybe_reset_eth1_period(state);
+      EpochProcessorUtil.apply_rewards(state);
       EpochProcessorUtil.process_ejections(state);
+      EpochProcessorUtil.update_registry_and_shuffling_data(state);
+      EpochProcessorUtil.process_slashings(state);
+      EpochProcessorUtil.process_exit_queue(state);
+      EpochProcessorUtil.finish_epoch_update(state);
 
-      LOG.log(Level.DEBUG, "previousStateUpdates()", printEnabled);
-      EpochProcessorUtil.previousStateUpdates(state);
-      if (EpochProcessorUtil.shouldUpdateValidatorRegistry(state)) {
-        LOG.log(Level.DEBUG, "update_validator_registry()", printEnabled);
-        EpochProcessorUtil.update_validator_registry(state);
-        LOG.log(Level.DEBUG, "currentStateUpdatesAlt1()", printEnabled);
-        EpochProcessorUtil.currentStateUpdatesAlt1(state);
-      } else {
-        LOG.log(Level.DEBUG, "currentStateUpdatesAlt2()", printEnabled);
-        EpochProcessorUtil.currentStateUpdatesAlt2(state);
-      }
-      LOG.log(Level.DEBUG, "process_penalties_and_exits()", printEnabled);
-      EpochProcessorUtil.process_penalties_and_exits(state);
-      LOG.log(Level.DEBUG, "finalUpdates()", printEnabled);
-      EpochProcessorUtil.finalUpdates(state);
     } catch (EpochProcessingException e) {
       LOG.log(Level.WARN, "  Epoch processing error: " + e, printEnabled);
     }
