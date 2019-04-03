@@ -23,7 +23,8 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.PriorityQueue;
+import java.util.Objects;
+import java.util.concurrent.PriorityBlockingQueue;
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.Constants;
@@ -687,10 +688,13 @@ public class AttestationUtil {
   }
 
   public static List<Attestation> getAttestationsUntilSlot(
-      PriorityQueue<Attestation> attestationsQueue, UnsignedLong slot) {
+      PriorityBlockingQueue<Attestation> attestationsQueue, UnsignedLong slot) {
     List<Attestation> attestations = new ArrayList<>();
-    while (attestationsQueue.peek().getSlot().compareTo(slot) <= 0) {
-      attestations.add(attestationsQueue.remove());
+    if (Objects.nonNull(attestationsQueue) && attestationsQueue.size() > 0) {
+      while (Objects.nonNull(attestationsQueue.peek())
+          && attestationsQueue.peek().getSlot().compareTo(slot) <= 0) {
+        attestations.add(attestationsQueue.remove());
+      }
     }
     return attestations;
   }
