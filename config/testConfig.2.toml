@@ -5,15 +5,15 @@
 # "mock": use MockP2PNetwork
 # "rlpx": use RLPxP2PNetwork
 # "hobbits": use HobbitsP2PNetwork
-networkMode = "mock"
-identity = "0x01"
-networkInterface = "0.0.0.0"
-port = 9000
-advertisedPort = 9000
+networkMode = "hobbits"
+identity = "0x02"
+networkInterface = "127.0.0.1"
+port = 19002
+peers = ["hobs://abcf@localhost:19001", "hobs://abcf@localhost:19000"]
 
 [sim]
 numValidators = 16
-numNodes = 1
+numNodes = 3
 
 # Modify constants in Constants.java
 [constants]

@@ -186,20 +186,34 @@ public class ChainStorageClient implements ChainStorage {
   public void onNewUnprocessedBlock(BeaconBlock block) {
     String ANSI_GREEN = "\u001B[32m";
     String ANSI_RESET = "\033[0m";
-    LOG.log(Level.INFO, ANSI_GREEN + "New BeaconBlock detected." + ANSI_RESET);
+    LOG.log(
+        Level.INFO,
+        ANSI_GREEN + "New BeaconBlock with slot " + block.getSlot() + " detected." + ANSI_RESET);
+    addUnprocessedBlock(block);
+  }
+
+  @Subscribe
+  public void onReceievedUnprocessedBlock(Bytes bytes) {
+    String ANSI_GREEN = "\u001B[32m";
+    String ANSI_RESET = "\033[0m";
+    BeaconBlock block = BeaconBlock.fromBytes(bytes);
+    LOG.log(
+        Level.INFO,
+        ANSI_GREEN + "New BeaconBlock with slot " + block.getSlot() + " received." + ANSI_RESET);
     addUnprocessedBlock(block);
   }
 
   @Subscribe
   public void onNewUnprocessedAttestation(Attestation attestation) {
-    LOG.log(Level.INFO, "ChainStorage: new unprocessed Attestation detected");
+    // LOG.log(Level.INFO, "ChainStorage: new unprocessed Attestation detected");
     addUnprocessedAttestation(attestation);
 
     // TODO: verify the assumption below:
     // ASSUMPTION: the state with which we can find the attestation participants
     // using get_attestation_participants is the state associated with the beacon
     // block being attested in the attestation.
-    BeaconState state = stateLookup.get(attestation.getData().getBeacon_block_root());
+    BeaconBlock block = processedBlockLookup.get(attestation.getData().getBeacon_block_root());
+    BeaconState state = stateLookup.get(block.getState_root());
 
     // TODO: verify attestation is stubbed out, needs to be implemented
     if (AttestationUtil.verifyAttestation(state, attestation)) {

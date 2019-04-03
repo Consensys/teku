@@ -28,35 +28,12 @@ import de.undercouch.bson4jackson.BsonFactory;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
-import java.util.Collections;
 import java.util.Iterator;
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicLong;
-import javax.annotation.Nullable;
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
-import net.consensys.cava.units.bigints.UInt64;
 import org.xerial.snappy.Snappy;
 
-public final class RPCCodec implements Codec {
-
-  private static class UInt64Serializer extends JsonSerializer<UInt64> {
-
-    @Override
-    public void serialize(UInt64 bytes, JsonGenerator jGen, SerializerProvider serializerProvider)
-        throws IOException {
-      jGen.writeString(bytes.toHexString());
-    }
-  }
-
-  private static class UInt64Deserializer extends JsonDeserializer<UInt64> {
-
-    @Override
-    public UInt64 deserialize(JsonParser p, DeserializationContext ctxt)
-        throws IOException, JsonProcessingException {
-      return UInt64.fromHexString(p.getValueAsString());
-    }
-  }
+public final class GossipCodec implements Codec {
 
   private static class Bytes32Serializer extends JsonSerializer<Bytes32> {
 
@@ -102,68 +79,30 @@ public final class RPCCodec implements Codec {
       addDeserializer(Bytes.class, new BytesDeserializer());
       addSerializer(Bytes32.class, new Bytes32Serializer());
       addDeserializer(Bytes32.class, new Bytes32Deserializer());
-      addSerializer(UInt64.class, new UInt64Serializer());
-      addDeserializer(UInt64.class, new UInt64Deserializer());
     }
   }
 
   static final ObjectMapper mapper =
       new ObjectMapper(new BsonFactory()).registerModule(new BytesModule());
 
-  private static final AtomicLong counter = new AtomicLong(1);
-
-  private static long nextRequestNumber() {
-    long requestNumber = counter.getAndIncrement();
-    if (requestNumber < 1) {
-      counter.set(1);
-      return 1;
-    }
-    return requestNumber;
-  }
-
-  private RPCCodec() {}
+  private GossipCodec() {}
 
   /**
-   * Creates an empty goodbye message.
+   * Encodes a payload into a Gossip request
    *
-   * @return the encoded bytes of a goodbye message.
-   */
-  public static Bytes createGoodbye() {
-    return encode(RPCMethod.GOODBYE, Collections.emptyMap(), null);
-  }
-
-  /**
-   * Encodes a message into a RPC request
-   *
-   * @param methodId the RPC method
+   * @param methodId the Gossip method
    * @param request the payload of the request
-   * @param pendingResponses the set of pending responses code to update
-   * @return the encoded RPC message
+   * @return the encoded Gossip message
    */
   public static Bytes encode(
-      RPCMethod methodId, Object request, @Nullable Set<Long> pendingResponses) {
-    long requestNumber = nextRequestNumber();
-    if (pendingResponses != null) {
-      pendingResponses.add(requestNumber);
-    }
-    return encode(methodId, request, requestNumber);
-  }
+      GossipMethod methodId, Bytes32 messageHash, Bytes32 hashSignature, Object request) {
 
-  /**
-   * Encodes a message into a RPC request
-   *
-   * @param methodId the RPC method
-   * @param request the payload of the request
-   * @param requestNumber a request number
-   * @return the encoded RPC message
-   */
-  public static Bytes encode(RPCMethod methodId, Object request, long requestNumber) {
-
-    String requestLine = "EWP 0.2 RPC 0 ";
+    String requestLine = "EWP 0.2 Gossip 0 ";
     ObjectNode node = mapper.createObjectNode();
 
-    node.put("id", requestNumber);
     node.put("method_id", methodId.code());
+    node.put("message_hash", messageHash.toHexString());
+    node.put("hash_signature", hashSignature.toHexString());
     node.putPOJO("body", request);
     try {
       Bytes body = Bytes.wrap(Snappy.compress(mapper.writer().writeValueAsBytes(node)));
@@ -176,12 +115,12 @@ public final class RPCCodec implements Codec {
   }
 
   /**
-   * Decodes a RPC message into a payload.
+   * Decodes a Gossip message into a payload.
    *
    * @param message the bytes of the message to read
    * @return the payload, decoded
    */
-  public static RPCMessage decode(Bytes message) {
+  public static GossipMessage decode(Bytes message) {
     // TODO: refactor RPC/Gossip decode logic
     Bytes requestLineBytes = null;
     for (int i = 0; i < message.size(); i++) {
@@ -209,13 +148,15 @@ public final class RPCCodec implements Codec {
       byte[] payload =
           message.slice(requestLineBytes.size() + 1 + headerLength, bodyLength).toArrayUnsafe();
       payload = Snappy.uncompress(payload);
-      ObjectNode rpcmessage = (ObjectNode) mapper.readTree(payload);
-      long id = rpcmessage.get("id").longValue();
-      int methodId = rpcmessage.get("method_id").intValue();
-      return new RPCMessage(
-          id,
-          RPCMethod.valueOf(methodId),
-          rpcmessage.get("body"),
+      ObjectNode gossipmessage = (ObjectNode) mapper.readTree(payload);
+      int methodId = gossipmessage.get("method_id").intValue();
+      Bytes32 messageHash = Bytes32.fromHexString(gossipmessage.get("message_hash").asText());
+      Bytes32 hashSignature = Bytes32.fromHexString(gossipmessage.get("hash_signature").asText());
+      return new GossipMessage(
+          GossipMethod.valueOf(methodId),
+          messageHash,
+          hashSignature,
+          gossipmessage.get("body"),
           (bodyLength + requestLineBytes.size() + headerLength));
     } catch (IOException e) {
       throw new UncheckedIOException(e);
