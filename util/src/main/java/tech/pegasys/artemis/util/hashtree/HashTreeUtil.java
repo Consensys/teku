@@ -56,7 +56,7 @@ public final class HashTreeUtil {
    * @param integers
    * @return
    */
-  public static Bytes32 integerListHashTreeRoot(List<Integer> integers) {
+  public static Bytes32 hash_tree_root(List<Integer> integers) {
     return hash_tree_root(
         SSZ.encode(
             // TODO This can be replaced with writeUInt64List(List) once implemented in Cava.

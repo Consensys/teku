@@ -105,8 +105,7 @@ public class AttestationData {
         target_root,
         shard,
         previous_crosslink,
-        crosslink_data_root
-    );
+        crosslink_data_root);
   }
 
   @Override
@@ -131,7 +130,7 @@ public class AttestationData {
         && Objects.equals(this.getTarget_root(), other.getTarget_root())
         && Objects.equals(this.getShard(), other.getShard())
         && Objects.equals(this.getPrevious_crosslink(), other.getPrevious_crosslink())
-        && Objects.equals(this.getCrosslink_data_root(), other.getCrosslink_data_root())
+        && Objects.equals(this.getCrosslink_data_root(), other.getCrosslink_data_root());
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */

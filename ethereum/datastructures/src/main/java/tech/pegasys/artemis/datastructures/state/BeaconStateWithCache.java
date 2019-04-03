@@ -66,9 +66,9 @@ public final class BeaconStateWithCache extends BeaconState {
         this.copyBytesList(state.getLatest_active_index_roots(), new ArrayList<>());
     this.latest_slashed_balances =
         state.getLatest_slashed_balances().stream().collect(Collectors.toList());
-    this.latest_block_header = BeaconBlockHeader.fromBytes(state.getLatest_block_header().toBytes());
-    this.historical_roots =
-        this.copyBytesList(state.getHistorical_roots(), new ArrayList<>());
+    this.latest_block_header =
+        BeaconBlockHeader.fromBytes(state.getLatest_block_header().toBytes());
+    this.historical_roots = this.copyBytesList(state.getHistorical_roots(), new ArrayList<>());
     this.latest_eth1_data = new Eth1Data(state.getLatest_eth1_data());
     this.eth1_data_votes = this.copyList(state.getEth1_data_votes(), new ArrayList<>());
     this.deposit_index = state.getDeposit_index();

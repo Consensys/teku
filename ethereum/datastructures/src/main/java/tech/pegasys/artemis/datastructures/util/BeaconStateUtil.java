@@ -510,11 +510,15 @@ public class BeaconStateUtil {
    */
   public static void slash_validator(BeaconState state, int index) {
     Validator validator = state.getValidator_registry().get(index);
-    checkArgument(state.getSlot().compareTo(get_epoch_start_slot(validator.getWithdrawal_epoch())) < 0);
+    checkArgument(
+        state.getSlot().compareTo(get_epoch_start_slot(validator.getWithdrawal_epoch())) < 0);
     exit_validator(state, index);
     int slashed_balances_index = get_current_epoch(state).intValue() % LATEST_SLASHED_EXIT_LENGTH;
-    state.getLatest_slashed_balances()
-            .set(slashed_balances_index, state
+    state
+        .getLatest_slashed_balances()
+        .set(
+            slashed_balances_index,
+            state
                 .getLatest_slashed_balances()
                 .get(slashed_balances_index)
                 .plus(get_effective_balance(state, index)));
@@ -534,7 +538,8 @@ public class BeaconStateUtil {
 
     validator.setSlashed(true);
 
-    validator.setWithdrawal_epoch(get_current_epoch(state).plus(UnsignedLong.valueOf(LATEST_SLASHED_EXIT_LENGTH)));
+    validator.setWithdrawal_epoch(
+        get_current_epoch(state).plus(UnsignedLong.valueOf(LATEST_SLASHED_EXIT_LENGTH)));
   }
 
   /**
@@ -593,7 +598,8 @@ public class BeaconStateUtil {
         state
                 .getSlot()
                 .compareTo(slot.plus(UnsignedLong.valueOf(Constants.SLOTS_PER_HISTORICAL_ROOT)))
-            <= 0, "checkArgument threw an exception in get_block_root()");
+            <= 0,
+        "checkArgument threw an exception in get_block_root()");
     checkArgument(
         slot.compareTo(state.getSlot()) < 0,
         "checkArgument threw an exception in get_block_root()");
@@ -605,23 +611,25 @@ public class BeaconStateUtil {
 
   /**
    * Return the state root at a recent ``slot``.
+   *
    * @param state
    * @param slot
    * @return
    */
   public static Bytes32 get_state_root(BeaconState state, UnsignedLong slot) {
     checkArgument(
-            state
-                    .getSlot()
-                    .compareTo(slot.plus(UnsignedLong.valueOf(Constants.SLOTS_PER_HISTORICAL_ROOT)))
-                    <= 0, "checkArgument threw an exception in get_state_root()");
+        state
+                .getSlot()
+                .compareTo(slot.plus(UnsignedLong.valueOf(Constants.SLOTS_PER_HISTORICAL_ROOT)))
+            <= 0,
+        "checkArgument threw an exception in get_state_root()");
     checkArgument(
-            slot.compareTo(state.getSlot()) < 0,
-            "checkArgument threw an exception in get_state_root()");
+        slot.compareTo(state.getSlot()) < 0,
+        "checkArgument threw an exception in get_state_root()");
     // Todo: Remove .intValue() as soon as our list wrapper supports unsigned longs
     return state
-            .getLatest_state_roots()
-            .get(slot.mod(UnsignedLong.valueOf(Constants.SLOTS_PER_HISTORICAL_ROOT)).intValue());
+        .getLatest_state_roots()
+        .get(slot.mod(UnsignedLong.valueOf(Constants.SLOTS_PER_HISTORICAL_ROOT)).intValue());
   }
 
   /**

@@ -336,38 +336,6 @@ public class AttestationUtil {
   }
 
   /**
-   * Returns the union of validator index sets, where the sets are the attestation participants of
-   * attestations passed in TODO: the union part takes O(n^2) time, where n is the number of
-   * validators. OPTIMIZE
-   *
-   * @param state
-   * @param attestations
-   * @return attester_indices
-   * @throws IllegalArgumentException
-   */
-  static List<Integer> get_attester_indices(
-      BeaconState state, List<PendingAttestation> attestations) throws IllegalArgumentException {
-
-    List<ArrayList<Integer>> validator_index_sets = new ArrayList<ArrayList<Integer>>();
-
-    for (PendingAttestation attestation : attestations) {
-      validator_index_sets.add(
-          BeaconStateUtil.get_attestation_participants(
-              state, attestation.getData(), attestation.getAggregation_bitfield().toArray()));
-    }
-
-    List<Integer> attester_indices = new ArrayList<Integer>();
-    for (List<Integer> validator_index_set : validator_index_sets) {
-      for (Integer validator_index : validator_index_set) {
-        if (!attester_indices.contains(validator_index)) {
-          attester_indices.add(validator_index);
-        }
-      }
-    }
-    return attester_indices;
-  }
-
-  /**
    * Returns the total attesting for the attester indices
    *
    * @param state

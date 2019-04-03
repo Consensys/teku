@@ -74,6 +74,23 @@ public class StateTransition {
     PreProcessingUtil.cacheCurrentBeaconProposerIndex(state);
   }
 
+  protected void cache_state(BeaconState state) {
+    Bytes32 previous_slot_state_root = HashTreeUtil.hash_tree_root(state.toBytes());
+
+    // Store the previous slot's post state transition root
+    int prev_slot_index = state.getSlot().mod(UnsignedLong.valueOf(SLOTS_PER_HISTORICAL_ROOT)).intValue();
+    state.getLatest_state_roots()
+            .set(prev_slot_index, previous_slot_state_root);
+
+    // Cache state root in stored latest_block_header if empty
+    if (state.getLatest_block_header().getState_root() == ZERO_HASH) {
+      state.getLatest_block_header().setState_root(previous_slot_state_root);
+    }
+
+    // Store latest known block for previous slot
+    state.getLatest_block_roots().set(prev_slot_index, state.getLatest_block_header().signedRoot("signature"))
+  }
+
   protected void advance_slot(BeaconStateWithCache state) {
     state.getLatest_state_roots().set(state.getSlot().mod(UnsignedLong.valueOf(SLOTS_PER_HISTORICAL_ROOT)).intValue(), HashTreeUtil.hash_tree_root(state.toBytes()));
     state.incrementSlot();
@@ -132,7 +149,7 @@ public class StateTransition {
 
       EpochProcessorUtil.updateEth1Data(state);
       LOG.log(Level.DEBUG, "updateEth1Data()", printEnabled);
-      EpochProcessorUtil.updateJustification(state, block);
+      EpochProcessorUtil.updateJustificationAndFinalization(state, block);
       LOG.log(Level.DEBUG, "updateJustification()", printEnabled);
       EpochProcessorUtil.updateCrosslinks(state);
       LOG.log(Level.DEBUG, "updateCrosslinks()", printEnabled);

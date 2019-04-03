@@ -25,7 +25,8 @@ public class ProposerSlashing {
   private BeaconBlockHeader header_1;
   private BeaconBlockHeader header_2;
 
-  public ProposerSlashing(UnsignedLong proposer_index, BeaconBlockHeader header_1, BeaconBlockHeader header_2) {
+  public ProposerSlashing(
+      UnsignedLong proposer_index, BeaconBlockHeader header_1, BeaconBlockHeader header_2) {
     this.proposer_index = proposer_index;
     this.header_1 = header_1;
     this.header_2 = header_2;

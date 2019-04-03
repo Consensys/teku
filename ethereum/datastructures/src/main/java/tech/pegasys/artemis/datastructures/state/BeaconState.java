@@ -13,7 +13,6 @@
 
 package tech.pegasys.artemis.datastructures.state;
 
-import static tech.pegasys.artemis.datastructures.Constants.EMPTY_SIGNATURE;
 import static tech.pegasys.artemis.datastructures.Constants.ZERO_HASH;
 
 import com.google.common.primitives.UnsignedLong;
@@ -125,7 +124,8 @@ public class BeaconState {
     this.latest_slashed_balances =
         new ArrayList<>(
             Collections.nCopies(Constants.LATEST_SLASHED_EXIT_LENGTH, UnsignedLong.ZERO));
-    this.latest_block_header = BeaconBlockUtil.get_temporary_block_header(BeaconBlockUtil.get_empty_block());
+    this.latest_block_header =
+        BeaconBlockUtil.get_temporary_block_header(BeaconBlockUtil.get_empty_block());
     this.historical_roots = new ArrayList<>();
 
     this.latest_eth1_data = new Eth1Data(ZERO_HASH, ZERO_HASH);
@@ -546,7 +546,7 @@ public class BeaconState {
     return previous_epoch_attestations;
   }
 
-  public void setPrevious_epoch_attestations(Bytes32 previous_epoch_attestations) {
+  public void setPrevious_epoch_attestations(List<PendingAttestation> previous_epoch_attestations) {
     this.previous_epoch_attestations = previous_epoch_attestations;
   }
 
@@ -554,7 +554,7 @@ public class BeaconState {
     return current_epoch_attestations;
   }
 
-  public void setCurrent_epoch_attestations(Bytes32 current_epoch_attestations) {
+  public void setCurrent_epoch_attestations(List<PendingAttestation> current_epoch_attestations) {
     this.current_epoch_attestations = current_epoch_attestations;
   }
 

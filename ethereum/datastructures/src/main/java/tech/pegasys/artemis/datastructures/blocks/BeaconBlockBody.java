@@ -111,7 +111,14 @@ public class BeaconBlockBody {
   @Override
   public int hashCode() {
     return Objects.hash(
-        randao_reveal, eth1_data, proposer_slashings, attester_slashings, attestations, deposits, voluntaryExits, transfers);
+        randao_reveal,
+        eth1_data,
+        proposer_slashings,
+        attester_slashings,
+        attestations,
+        deposits,
+        voluntaryExits,
+        transfers);
   }
 
   @Override
@@ -140,7 +147,9 @@ public class BeaconBlockBody {
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */
-  public BLSSignature getRandao_reveal() { return randao_reveal; }
+  public BLSSignature getRandao_reveal() {
+    return randao_reveal;
+  }
 
   public void setRandao_reveal(BLSSignature randao_reveal) {
     this.randao_reveal = randao_reveal;
