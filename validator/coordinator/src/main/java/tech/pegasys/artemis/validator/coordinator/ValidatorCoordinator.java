@@ -135,8 +135,7 @@ public class ValidatorCoordinator {
     // Calculate the block proposer index, and if we have the
     // block proposer in our set of validators, produce the block
     Integer proposerIndex =
-        BeaconStateUtil.get_beacon_proposer_index(
-            headState, headState.getSlot().plus(UnsignedLong.ONE));
+        BeaconStateUtil.get_beacon_proposer_index(headState, headState.getSlot() + 1);
     BLSPublicKey proposerPubkey = headState.getValidator_registry().get(proposerIndex).getPubkey();
     if (validatorSet.containsKey(proposerPubkey)) {
       Bytes32 blockRoot = HashTreeUtil.hash_tree_root(headBlock.toBytes());
@@ -150,7 +149,8 @@ public class ValidatorCoordinator {
       List<Attestation> current_attestations;
       final Bytes32 MockStateRoot = Bytes32.ZERO;
       BeaconBlock block;
-      if (headState.getSlot() > Constants.GENESIS_SLOT + Constants.MIN_ATTESTATION_INCLUSION_DELAY) {
+      if (headState.getSlot()
+          > Constants.GENESIS_SLOT + Constants.MIN_ATTESTATION_INCLUSION_DELAY) {
         long attestation_slot = headState.getSlot() - Constants.MIN_ATTESTATION_INCLUSION_DELAY;
 
         current_attestations =
@@ -165,11 +165,7 @@ public class ValidatorCoordinator {
       } else {
         block =
             DataStructureUtil.newBeaconBlock(
-                headState.getSlot() + 1,
-                blockRoot,
-                MockStateRoot,
-                newDeposits,
-                new ArrayList<>());
+                headState.getSlot() + 1, blockRoot, MockStateRoot, newDeposits, new ArrayList<>());
       }
 
       BLSSignature epoch_signature = setEpochSignature(headState, keypair);
