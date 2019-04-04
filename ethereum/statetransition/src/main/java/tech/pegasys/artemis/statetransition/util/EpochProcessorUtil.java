@@ -986,7 +986,7 @@ public final class EpochProcessorUtil {
     }
   }
 
-  private static boolean eligible(BeaconState state, Integer index) {
+  private static boolean eligible(BeaconState state, int index) {
     Validator validator = state.getValidator_registry().get(index);
     // Filter out dequeued validators
     if (!validator.getWithdrawal_epoch().equals(FAR_FUTURE_EPOCH)) {
@@ -1008,7 +1008,7 @@ public final class EpochProcessorUtil {
     UnsignedLong next_epoch = current_epoch.plus(UnsignedLong.ONE);
 
     // Set active index root
-    Integer index_root_position =
+    int index_root_position =
         (next_epoch.intValue() + ACTIVATION_EXIT_DELAY) % LATEST_ACTIVE_INDEX_ROOTS_LENGTH;
     state
         .getLatest_active_index_roots()
