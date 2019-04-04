@@ -59,7 +59,7 @@ public class TimeSeriesAdapter implements DataAdapter<TimeSeriesRecord> {
         epoch,
         headBlockRoot.toHexString(),
         headBlock.getState_root().toHexString(),
-        headBlock.getParent_root().toHexString(),
+        headBlock.getPrevious_block_root().toHexString(),
         numValidators,
         justifiedBlockRoot.toHexString(),
         justifiedStateRoot.toHexString(),

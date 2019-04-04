@@ -15,24 +15,25 @@ package tech.pegasys.artemis.datastructures.util;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.lang.Math.toIntExact;
-import static tech.pegasys.artemis.datastructures.Constants.ACTIVATION_EXIT_DELAY;
-import static tech.pegasys.artemis.datastructures.Constants.DOMAIN_ATTESTATION;
-import static tech.pegasys.artemis.datastructures.Constants.DOMAIN_DEPOSIT;
-import static tech.pegasys.artemis.datastructures.Constants.FAR_FUTURE_EPOCH;
-import static tech.pegasys.artemis.datastructures.Constants.GENESIS_EPOCH;
-import static tech.pegasys.artemis.datastructures.Constants.LATEST_ACTIVE_INDEX_ROOTS_LENGTH;
-import static tech.pegasys.artemis.datastructures.Constants.LATEST_RANDAO_MIXES_LENGTH;
-import static tech.pegasys.artemis.datastructures.Constants.LATEST_SLASHED_EXIT_LENGTH;
 import static tech.pegasys.artemis.datastructures.Constants.MAX_DEPOSIT_AMOUNT;
-import static tech.pegasys.artemis.datastructures.Constants.MAX_INDICES_PER_SLASHABLE_VOTE;
-import static tech.pegasys.artemis.datastructures.Constants.SHUFFLE_ROUND_COUNT;
+import static tech.pegasys.artemis.datastructures.Constants.GENESIS_EPOCH;
+import static tech.pegasys.artemis.datastructures.Constants.DOMAIN_DEPOSIT;
+import static tech.pegasys.artemis.datastructures.Constants.DEPOSIT_CONTRACT_TREE_DEPTH;
+import static tech.pegasys.artemis.datastructures.Constants.FAR_FUTURE_EPOCH;
 import static tech.pegasys.artemis.datastructures.Constants.SLOTS_PER_EPOCH;
+import static tech.pegasys.artemis.datastructures.Constants.ACTIVATION_EXIT_DELAY;
+import static tech.pegasys.artemis.datastructures.Constants.LATEST_ACTIVE_INDEX_ROOTS_LENGTH;
+import static tech.pegasys.artemis.datastructures.Constants.LATEST_SLASHED_EXIT_LENGTH;
+import static tech.pegasys.artemis.datastructures.Constants.LATEST_RANDAO_MIXES_LENGTH;
+import static tech.pegasys.artemis.datastructures.Constants.SHUFFLE_ROUND_COUNT;
 import static tech.pegasys.artemis.datastructures.Constants.WHISTLEBLOWER_REWARD_QUOTIENT;
+import static tech.pegasys.artemis.datastructures.Constants.MAX_INDICES_PER_SLASHABLE_VOTE;
+import static tech.pegasys.artemis.datastructures.Constants.DOMAIN_ATTESTATION;
 import static tech.pegasys.artemis.util.bls.BLSAggregate.bls_aggregate_pubkeys;
 import static tech.pegasys.artemis.util.bls.BLSVerify.bls_verify;
 import static tech.pegasys.artemis.util.bls.BLSVerify.bls_verify_multiple;
 import static tech.pegasys.artemis.util.hashtree.HashTreeUtil.hash_tree_root;
-import static tech.pegasys.artemis.util.hashtree.HashTreeUtil.integerListHashTreeRoot;
+import static tech.pegasys.artemis.util.hashtree.HashTreeUtil.hash_tree_root_list_integers;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.primitives.UnsignedLong;
@@ -60,7 +61,6 @@ import tech.pegasys.artemis.datastructures.state.CrosslinkCommittee;
 import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.util.alogger.ALogger;
-import tech.pegasys.artemis.util.bls.BLSException;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 
@@ -68,15 +68,15 @@ public class BeaconStateUtil {
 
   private static final ALogger LOG = new ALogger(BeaconStateUtil.class.getName());
 
-  public static BeaconStateWithCache get_initial_beacon_state(
+  public static BeaconStateWithCache get_genesis_beacon_state(
       BeaconStateWithCache state,
-      ArrayList<Deposit> initial_validator_deposits,
+      ArrayList<Deposit> genesis_validator_deposits,
       UnsignedLong genesis_time,
-      Eth1Data latest_eth1_data)
+      Eth1Data genesis_eth1_data)
       throws IllegalStateException {
 
     // Process initial deposits
-    for (Deposit validator_deposit : initial_validator_deposits) {
+    for (Deposit validator_deposit : genesis_validator_deposits) {
       process_deposit(state, validator_deposit);
     }
 
@@ -94,15 +94,112 @@ public class BeaconStateUtil {
         ValidatorsUtil.get_active_validators(
             state.getValidator_registry(), UnsignedLong.valueOf(GENESIS_EPOCH));
     Bytes32 genesis_active_index_root =
-        integerListHashTreeRoot(
+        hash_tree_root_list_integers(
             ValidatorsUtil.get_active_validator_indices(
                 state.getValidator_registry(), UnsignedLong.valueOf(GENESIS_EPOCH)));
     for (Bytes32 root : state.getLatest_active_index_roots()) {
       root = genesis_active_index_root;
     }
     state.setCurrent_shuffling_seed(generate_seed(state, UnsignedLong.valueOf(GENESIS_EPOCH)));
-    state.setDeposit_index(UnsignedLong.valueOf(initial_validator_deposits.size()));
+    state.setDeposit_index(UnsignedLong.valueOf(genesis_validator_deposits.size()));
     return state;
+  }
+
+  public static void process_deposit(BeaconState state, Deposit deposit) {
+    DepositInput deposit_input = deposit.getDeposit_data().getDeposit_input();
+
+    //   Should equal 8 bytes for deposit_data.amount +
+    //                8 bytes for deposit_data.timestamp +
+    //                176 bytes for deposit_data.deposit_input
+    //   It should match the deposit_data in the eth1.0 deposit contract
+    Bytes serialized_deposit_data = deposit.getDeposit_data().toBytes();
+
+    // Deposits must be processed in order
+    checkArgument(
+        Objects.equals(state.getDeposit_index(), deposit.getIndex()), "Deposits not in order");
+
+    // Verify the Merkle branch
+    checkArgument(
+        verify_merkle_branch(
+            Hash.keccak256(serialized_deposit_data),
+            deposit.getProof(),
+            DEPOSIT_CONTRACT_TREE_DEPTH,
+            toIntExact(deposit.getIndex().longValue()),
+            state.getLatest_eth1_data().getDeposit_root()),
+        "Merkle branch is not valid");
+
+    //  Increment the next deposit index we are expecting. Note that this
+    //  needs to be done here because while the deposit contract will never
+    //  create an invalid Merkle branch, it may admit an invalid deposit
+    //  object, and we need to be able to skip over it
+    state.setDeposit_index(state.getDeposit_index().plus(UnsignedLong.ONE));
+
+    List<BLSPublicKey> validator_pubkeys =
+        state.getValidator_registry().stream()
+            .map(Validator::getPubkey)
+            .collect(Collectors.toList());
+
+    BLSPublicKey pubkey = deposit_input.getPubkey();
+    UnsignedLong amount = deposit.getDeposit_data().getAmount();
+    Bytes32 withdrawal_credentials = deposit_input.getWithdrawal_credentials();
+
+    if (!validator_pubkeys.contains(pubkey)) {
+      // Verify the proof of possession
+      boolean proof_is_valid =
+          bls_verify(
+              pubkey,
+              deposit_input.signedRoot("proof_of_possession"),
+              deposit_input.getProof_of_possession(),
+              get_domain(state.getFork(), get_current_epoch(state), DOMAIN_DEPOSIT));
+      if (!proof_is_valid) {
+        return;
+      }
+
+      // Add new validator
+      Validator validator =
+          new Validator(
+              pubkey,
+              withdrawal_credentials,
+              FAR_FUTURE_EPOCH,
+              FAR_FUTURE_EPOCH,
+              FAR_FUTURE_EPOCH,
+              false,
+              false);
+
+      // Note: In phase 2 registry indices that have been withdrawn for a long time will be
+      // recycled.
+      state.getValidator_registry().add(validator);
+      state.getValidator_balances().add(amount);
+    } else {
+      // Increase balance by deposit amount
+      int index = validator_pubkeys.indexOf(pubkey);
+      state
+          .getValidator_balances()
+          .set(index, state.getValidator_balances().get(index).plus(amount));
+    }
+  }
+
+  /**
+   * Verify that the given ``leaf`` is on the merkle branch ``branch``.
+   *
+   * @param leaf
+   * @param branch
+   * @param depth
+   * @param index
+   * @param root
+   * @return
+   */
+  private static boolean verify_merkle_branch(
+      Bytes32 leaf, List<Bytes32> branch, int depth, int index, Bytes32 root) {
+    Bytes32 value = leaf;
+    for (int i = 0; i < depth; i++) {
+      if (index / Math.pow(2, i) % 2 == 0) {
+        value = Hash.keccak256(Bytes.concatenate(branch.get(i), value));
+      } else {
+        value = Hash.keccak256(Bytes.concatenate(value, branch.get(i)));
+      }
+    }
+    return value.equals(root);
   }
 
   /**
@@ -416,10 +513,7 @@ public class BeaconStateUtil {
    */
   public static UnsignedLong get_previous_epoch(BeaconState state) {
     UnsignedLong current_epoch_minus_one = get_current_epoch(state).minus(UnsignedLong.ONE);
-    UnsignedLong genesis_epoch = UnsignedLong.valueOf(GENESIS_EPOCH);
-    return current_epoch_minus_one.compareTo(genesis_epoch) >= 0
-        ? current_epoch_minus_one
-        : genesis_epoch;
+    return current_epoch_minus_one;
   }
 
   /**
@@ -511,16 +605,19 @@ public class BeaconStateUtil {
    *     href="https://github.com/ethereum/eth2.0-specs/blob/v0.1/specs/core/0_beacon-chain.md#penalize_validator">
    *     spec</a>
    */
-  public static void penalize_validator(BeaconState state, int index) {
-    exit_validator(state, index);
+  public static void slash_validator(BeaconState state, int index) {
     Validator validator = state.getValidator_registry().get(index);
+    checkArgument(
+        state.getSlot().compareTo(get_epoch_start_slot(validator.getWithdrawal_epoch())) < 0);
+    exit_validator(state, index);
+    int slashed_balances_index = get_current_epoch(state).intValue() % LATEST_SLASHED_EXIT_LENGTH;
     state
         .getLatest_slashed_balances()
         .set(
-            get_current_epoch(state).intValue() % LATEST_SLASHED_EXIT_LENGTH,
+            slashed_balances_index,
             state
                 .getLatest_slashed_balances()
-                .get(get_current_epoch(state).intValue() % LATEST_SLASHED_EXIT_LENGTH)
+                .get(slashed_balances_index)
                 .plus(get_effective_balance(state, index)));
 
     int whistleblower_index = get_beacon_proposer_index(state, state.getSlot());
@@ -537,6 +634,9 @@ public class BeaconStateUtil {
         .set(index, state.getValidator_balances().get(index).minus(whistleblower_reward));
 
     validator.setSlashed(true);
+
+    validator.setWithdrawal_epoch(
+        get_current_epoch(state).plus(UnsignedLong.valueOf(LATEST_SLASHED_EXIT_LENGTH)));
   }
 
   /**
@@ -594,15 +694,39 @@ public class BeaconStateUtil {
     checkArgument(
         state
                 .getSlot()
-                .compareTo(slot.plus(UnsignedLong.valueOf(Constants.LATEST_BLOCK_ROOTS_LENGTH)))
-            <= 0);
+                .compareTo(slot.plus(UnsignedLong.valueOf(Constants.SLOTS_PER_HISTORICAL_ROOT)))
+            <= 0,
+        "checkArgument threw an exception in get_block_root()");
     checkArgument(
         slot.compareTo(state.getSlot()) < 0,
-        "checkArgument threw and exception in get_block_root()");
+        "checkArgument threw an exception in get_block_root()");
     // Todo: Remove .intValue() as soon as our list wrapper supports unsigned longs
     return state
         .getLatest_block_roots()
-        .get(slot.mod(UnsignedLong.valueOf(Constants.LATEST_BLOCK_ROOTS_LENGTH)).intValue());
+        .get(slot.mod(UnsignedLong.valueOf(Constants.SLOTS_PER_HISTORICAL_ROOT)).intValue());
+  }
+
+  /**
+   * Return the state root at a recent ``slot``.
+   *
+   * @param state
+   * @param slot
+   * @return
+   */
+  public static Bytes32 get_state_root(BeaconState state, UnsignedLong slot) {
+    checkArgument(
+        state
+                .getSlot()
+                .compareTo(slot.plus(UnsignedLong.valueOf(Constants.SLOTS_PER_HISTORICAL_ROOT)))
+            <= 0,
+        "checkArgument threw an exception in get_state_root()");
+    checkArgument(
+        slot.compareTo(state.getSlot()) < 0,
+        "checkArgument threw an exception in get_state_root()");
+    // Todo: Remove .intValue() as soon as our list wrapper supports unsigned longs
+    return state
+        .getLatest_state_roots()
+        .get(slot.mod(UnsignedLong.valueOf(Constants.SLOTS_PER_HISTORICAL_ROOT)).intValue());
   }
 
   /**
@@ -905,75 +1029,6 @@ public class BeaconStateUtil {
   }
 
   /**
-   * Process a deposit from Ethereum 1.0 (and add a new validator) or tops up an existing
-   * validator's balance. NOTE: This function has side-effects and mutates 'state'.
-   *
-   * @param state - The current BeaconState. NOTE: State will be mutated per spec logic.
-   * @param deposit - The deposit information to add as a new validator or top up.
-   * @throws BLSException
-   * @see <a
-   *     href="https://github.com/ethereum/eth2.0-specs/blob/v0.4.0/specs/core/0_beacon-chain.md#process_deposit">process_deposit
-   *     - Spec v0.4</a>
-   */
-  public static void process_deposit(BeaconState state, Deposit deposit) {
-    // Retrieve DepositInput reference from Deposit
-    DepositInput depositInput = deposit.getDeposit_data().getDeposit_input();
-
-    // Validates the proof_of_possession is the valid BLS signature for the DepositInput (pubkey and
-    // withdrawal credentials).
-    UnsignedLong domain = get_domain(state.getFork(), get_current_epoch(state), DOMAIN_DEPOSIT);
-    checkArgument(
-        bls_verify(
-            depositInput.getPubkey(),
-            depositInput.signedRoot("proof_of_possession"),
-            depositInput.getProof_of_possession(),
-            domain));
-
-    // Get Pubkey, Deposit Amount, and Withdrawal Credentials from Deposit
-    BLSPublicKey pubkey = depositInput.getPubkey();
-    UnsignedLong amount = deposit.getDeposit_data().getAmount();
-    Bytes32 withdrawal_credentials = depositInput.getWithdrawal_credentials();
-
-    // Retrieve validatorRegistry and validatorBalances references.
-    List<Validator> validatorRegistry = state.getValidator_registry();
-    List<UnsignedLong> validatorBalances = state.getValidator_balances();
-
-    // Retrieve the list of validator's public keys from the current state.
-    List<BLSPublicKey> validator_pubkeys =
-        validatorRegistry.stream()
-            .map(validator -> validator.getPubkey())
-            .collect(Collectors.toList());
-
-    // If the pubkey isn't in the state, add a new validator to the registry.
-    // Otherwise, top up the balance for the validator whose pubkey was provided.
-    if (!validator_pubkeys.contains(pubkey)) {
-      // We depend on our add operation appending the below objects at the same index.
-      checkArgument(
-          validatorRegistry.size() == validatorBalances.size(),
-          "checkArgument threw and exception in process_deposit()");
-      validatorRegistry.add(
-          new Validator(
-              pubkey,
-              withdrawal_credentials,
-              FAR_FUTURE_EPOCH,
-              FAR_FUTURE_EPOCH,
-              FAR_FUTURE_EPOCH,
-              false,
-              false));
-      validatorBalances.add(amount);
-    } else {
-      int validatorIndex = validator_pubkeys.indexOf(pubkey);
-      checkArgument(
-          validatorRegistry
-              .get(validatorIndex)
-              .getWithdrawal_credentials()
-              .equals(withdrawal_credentials),
-          "checkArgument threw and exception in process_deposit()");
-      validatorBalances.set(validatorIndex, validatorBalances.get(validatorIndex).plus(amount));
-    }
-  }
-
-  /**
    * Return the min of two UnsignedLong values
    *
    * @param value1
@@ -1256,22 +1311,10 @@ public class BeaconStateUtil {
     return target_epoch_1.compareTo(target_epoch_2) == 0;
   }
 
-  /**
-   * Note: parameter order matters as this function only checks that 'attestation_data_1' surrounds
-   * 'attestation_data_2'.
-   *
-   * @param attestation_data_1 - The first AttestationData to check.
-   * @param attestation_data_2 - The second AttestationData to check.
-   * @return True if the provided 'AttestationData' are slashable due to a 'surround vote', false
-   *     otherwise.
-   * @see <a
-   *     href="https://github.com/ethereum/eth2.0-specs/blob/v0.4.0/specs/core/0_beacon-chain.md#is_surround_vote">is_surround_vote
-   *     - Spec v0.4</a>
-   */
   public static boolean is_surround_vote(
       AttestationData attestation_data_1, AttestationData attestation_data_2) {
-    UnsignedLong source_epoch_1 = attestation_data_1.getJustified_epoch();
-    UnsignedLong source_epoch_2 = attestation_data_2.getJustified_epoch();
+    UnsignedLong source_epoch_1 = attestation_data_1.getSource_epoch();
+    UnsignedLong source_epoch_2 = attestation_data_2.getSource_epoch();
     UnsignedLong target_epoch_1 = slot_to_epoch(attestation_data_1.getSlot());
     UnsignedLong target_epoch_2 = slot_to_epoch(attestation_data_2.getSlot());
     return source_epoch_1.compareTo(source_epoch_2) < 0

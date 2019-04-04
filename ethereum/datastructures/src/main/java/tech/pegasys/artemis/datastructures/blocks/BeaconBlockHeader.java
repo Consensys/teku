@@ -122,7 +122,7 @@ public class BeaconBlockHeader {
     return block_body_root;
   }
 
-  public void setBlock_block_root(Bytes32 block_bodyjj_root) {
+  public void setBlock_block_root(Bytes32 block_body_root) {
     this.block_body_root = block_body_root;
   }
 
@@ -143,11 +143,7 @@ public class BeaconBlockHeader {
     return Bytes32.rightPad(
         HashTreeUtil.merkleHash(
             Arrays.asList(
-                HashTreeUtil.hash_tree_root(
-                    SSZ.encode(
-                        writer -> {
-                          writer.writeUInt64(slot.longValue());
-                        })),
+                HashTreeUtil.hash_tree_root(slot),
                 HashTreeUtil.hash_tree_root(previous_block_root),
                 HashTreeUtil.hash_tree_root(state_root),
                 HashTreeUtil.hash_tree_root(block_body_root))));
