@@ -109,9 +109,9 @@ public class StateTransition {
       BlockProcessorUtil.process_block_header(state, block);
       BlockProcessorUtil.process_randao(state, block);
       BlockProcessorUtil.process_eth1_data(state, block);
-      BlockProcessorUtil.process_proposer_slashing(state, block);
-      BlockProcessorUtil.process_attester_slashing(state, block);
-      BlockProcessorUtil.process_attestation(state, block);
+      BlockProcessorUtil.process_proposer_slashings(state, block);
+      BlockProcessorUtil.process_attester_slashings(state, block);
+      BlockProcessorUtil.process_attestations(state, block);
       BlockProcessorUtil.process_voluntary_exit(state, block);
       BlockProcessorUtil.process_transfer(state, block);
       BlockProcessorUtil.verify_block_state_root(state, block);

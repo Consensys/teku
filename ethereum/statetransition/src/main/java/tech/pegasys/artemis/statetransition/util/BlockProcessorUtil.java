@@ -169,7 +169,7 @@ public final class BlockProcessorUtil {
    * @param block
    * @throws BlockProcessingException
    */
-  public static void process_proposer_slashing(BeaconState state, BeaconBlock block)
+  public static void process_proposer_slashings(BeaconState state, BeaconBlock block)
       throws BlockProcessingException {
     try {
       // Verify that len(block.body.proposer_slashings) <= MAX_PROPOSER_SLASHINGS
@@ -254,7 +254,7 @@ public final class BlockProcessorUtil {
    */
   // TODO: Parameter needs to be changed from BeaconBlock block to AttesterSlashing
   // attester_slashing.
-  public static void process_attester_slashing(BeaconState state, BeaconBlock block)
+  public static void process_attester_slashings(BeaconState state, BeaconBlock block)
       throws BlockProcessingException {
     try {
       // Verify that len(block.body.attester_slashings) <= MAX_ATTESTER_SLASHINGS
@@ -323,7 +323,7 @@ public final class BlockProcessorUtil {
    * @see <a
    *     href="https://github.com/ethereum/eth2.0-specs/blob/v0.1/specs/core/0_beacon-chain.md#attestations-1">spec</a>
    */
-  public static void process_attestation(BeaconState state, BeaconBlock block)
+  public static void process_attestations(BeaconState state, BeaconBlock block)
       throws BlockProcessingException {
     try {
       // Verify that len(block.body.attestations) <= MAX_ATTESTATIONS
