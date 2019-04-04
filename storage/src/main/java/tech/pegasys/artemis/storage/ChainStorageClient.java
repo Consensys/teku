@@ -115,7 +115,7 @@ public class ChainStorageClient implements ChainStorage {
    * @return
    */
   public Optional<BeaconBlock> getParent(BeaconBlock block) {
-    Bytes parent_root = block.getParent_root();
+    Bytes parent_root = block.getPrevious_block_root();
     return this.getProcessedBlock(parent_root);
   }
 

@@ -15,38 +15,37 @@ package tech.pegasys.artemis.statetransition.util;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.lang.Math.toIntExact;
-import static tech.pegasys.artemis.datastructures.Constants.BLS_WITHDRAWAL_PREFIX_BYTE;
-import static tech.pegasys.artemis.datastructures.Constants.DEPOSIT_CONTRACT_TREE_DEPTH;
-import static tech.pegasys.artemis.datastructures.Constants.DOMAIN_ATTESTATION;
-import static tech.pegasys.artemis.datastructures.Constants.DOMAIN_EXIT;
-import static tech.pegasys.artemis.datastructures.Constants.DOMAIN_PROPOSAL;
 import static tech.pegasys.artemis.datastructures.Constants.DOMAIN_RANDAO;
-import static tech.pegasys.artemis.datastructures.Constants.EMPTY_SIGNATURE;
-import static tech.pegasys.artemis.datastructures.Constants.FAR_FUTURE_EPOCH;
-import static tech.pegasys.artemis.datastructures.Constants.MAX_ATTESTATIONS;
-import static tech.pegasys.artemis.datastructures.Constants.MAX_ATTESTER_SLASHINGS;
-import static tech.pegasys.artemis.datastructures.Constants.MAX_DEPOSITS;
 import static tech.pegasys.artemis.datastructures.Constants.MAX_PROPOSER_SLASHINGS;
+import static tech.pegasys.artemis.datastructures.Constants.DOMAIN_BEACON_BLOCK;
+import static tech.pegasys.artemis.datastructures.Constants.MAX_ATTESTER_SLASHINGS;
+import static tech.pegasys.artemis.datastructures.Constants.MAX_ATTESTATIONS;
 import static tech.pegasys.artemis.datastructures.Constants.SLOTS_PER_EPOCH;
 import static tech.pegasys.artemis.datastructures.Constants.ZERO_HASH;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_attestation_participants;
+import static tech.pegasys.artemis.datastructures.Constants.DOMAIN_ATTESTATION;
+import static tech.pegasys.artemis.datastructures.Constants.MAX_DEPOSITS;
+import static tech.pegasys.artemis.datastructures.Constants.FAR_FUTURE_EPOCH;
+import static tech.pegasys.artemis.datastructures.Constants.PERSISTENT_COMMITTEE_PERIOD;
+import static tech.pegasys.artemis.datastructures.Constants.DOMAIN_VOLUNTARY_EXIT;
+import static tech.pegasys.artemis.datastructures.Constants.DOMAIN_TRANSFER;
+import static tech.pegasys.artemis.datastructures.Constants.MIN_DEPOSIT_AMOUNT;
+import static tech.pegasys.artemis.datastructures.Constants.MAX_TRANSFERS;
+import static tech.pegasys.artemis.datastructures.Constants.BLS_WITHDRAWAL_PREFIX_BYTE;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_beacon_proposer_index;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_bitfield_bit;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_block_root;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_crosslink_committees_at_slot;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_current_epoch;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_domain;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_entry_exit_effect_epoch;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_epoch_start_slot;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_randao_mix;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.initiate_validator_exit;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.int_to_bytes;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.slot_to_epoch;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.slash_validator;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.is_double_vote;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.is_surround_vote;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.penalize_validator;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.process_deposit;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.slot_to_epoch;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.verify_slashable_attestation;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_domain;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_randao_mix;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_previous_epoch;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_crosslink_committees_at_slot;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_bitfield_bit;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_attestation_participants;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.initiate_validator_exit;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.max;
 import static tech.pegasys.artemis.util.bls.BLSAggregate.bls_aggregate_pubkeys;
 import static tech.pegasys.artemis.util.bls.BLSVerify.bls_verify;
 import static tech.pegasys.artemis.util.bls.BLSVerify.bls_verify_multiple;
@@ -65,7 +64,6 @@ import org.apache.logging.log4j.Level;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.Eth1DataVote;
-import tech.pegasys.artemis.datastructures.blocks.Proposal;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.AttestationDataAndCustodyBit;
 import tech.pegasys.artemis.datastructures.operations.AttesterSlashing;
@@ -79,137 +77,89 @@ import tech.pegasys.artemis.datastructures.state.Crosslink;
 import tech.pegasys.artemis.datastructures.state.CrosslinkCommittee;
 import tech.pegasys.artemis.datastructures.state.PendingAttestation;
 import tech.pegasys.artemis.datastructures.state.Validator;
+import tech.pegasys.artemis.datastructures.util.BeaconBlockUtil;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.util.alogger.ALogger;
-import tech.pegasys.artemis.util.bls.BLSException;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 
 public final class BlockProcessorUtil {
 
   private static final ALogger LOG = new ALogger(BlockProcessorUtil.class.getName());
 
-  /**
-   * Spec: https://github.com/ethereum/eth2.0-specs/blob/v0.1/specs/core/0_beacon-chain.md#slot-1
-   *
-   * @param state
-   * @param block
-   */
-  public static boolean verify_slot(BeaconState state, BeaconBlock block) {
+  public static void process_block_header(BeaconState state, BeaconBlock block) {
+    checkArgument(verify_slot(state, block), "Slots don't match");
+    checkArgument(
+        block.getPrevious_block_root() == state.getLatest_block_header().signedRoot("signature"),
+        "Parent doesn't matches");
+
+    // Save the current block as the new latest block
+    state.setLatest_block_header(BeaconBlockUtil.get_temporary_block_header(block));
+
+    // Verify proposer signature
+    // Only verify the proposer's signature if we are processing blocks (not proposing them)
+    if (!block.getState_root().equals(Bytes32.ZERO)) {
+      Validator proposer =
+          state.getValidator_registry().get(get_beacon_proposer_index(state, state.getSlot()));
+      checkArgument(
+          bls_verify(
+              proposer.getPubkey(),
+              block.signedRoot("signature"),
+              block.getSignature(),
+              get_domain(state.getFork(), get_current_epoch(state), Constants.DOMAIN_BEACON_BLOCK)),
+          "Proposer signature invalid");
+    }
+  }
+
+  private static boolean verify_slot(BeaconState state, BeaconBlock block) {
     // Verify that block.slot == state.slot
     return state.getSlot().compareTo(UnsignedLong.valueOf(block.getSlot())) == 0;
   }
 
-  /**
-   * Spec:
-   * https://github.com/ethereum/eth2.0-specs/blob/v0.1/specs/core/0_beacon-chain.md#proposer-signature
-   *
-   * @param state
-   * @param block
-   * @throws BLSException
-   */
-  public static void verify_signature(BeaconState state, BeaconBlock block)
-      throws BlockProcessingException {
-    try {
-      // Let proposal = Proposal(block.slot, BEACON_CHAIN_SHARD_NUMBER,
-      //   signed_root(block, "signature"), block.signature).
-      Proposal proposal =
-          new Proposal(
-              UnsignedLong.fromLongBits(block.getSlot()),
-              Constants.BEACON_CHAIN_SHARD_NUMBER,
-              block.signedRoot("signature"),
-              block.getSignature());
+  public static void process_randao(BeaconState state, BeaconBlock block) {
+    Validator proposer =
+        state.getValidator_registry().get(get_beacon_proposer_index(state, state.getSlot()));
 
-      // Verify that bls_verify(pubkey=state.validator_registry[get_beacon_proposer_index(state,
-      //   state.slot)].pubkey, message_hash=signed_root(proposal, "signature"),
-      // signature=block.signature,
-      //   domain=get_domain(state.fork, state.slot, DOMAIN_PROPOSAL)) is valid.
-      int proposerIndex = BeaconStateUtil.get_beacon_proposer_index(state, state.getSlot());
-      BLSPublicKey pubkey = state.getValidator_registry().get(proposerIndex).getPubkey();
-      UnsignedLong domain = get_domain(state.getFork(), get_current_epoch(state), DOMAIN_PROPOSAL);
-      Bytes32 messageHash = proposal.signedRoot("signature");
+    checkArgument(
+        bls_verify(
+            proposer.getPubkey(),
+            hash_tree_root(get_current_epoch(state)),
+            block.getBody().getRandao_reveal(),
+            get_domain(state.getFork(), get_current_epoch(state), DOMAIN_RANDAO)),
+        "Provided randao value is invalid");
 
-      checkArgument(
-          bls_verify(pubkey, messageHash, block.getSignature(), domain), "verify signature failed");
-    } catch (IllegalStateException | IllegalArgumentException e) {
-      LOG.log(Level.WARN, "BlockProcessingException thrown in verify_signature()");
-      throw new BlockProcessingException(e);
-    }
+    // Mix Randao value in
+    int index =
+        get_current_epoch(state)
+            .mod(UnsignedLong.valueOf(Constants.LATEST_RANDAO_MIXES_LENGTH))
+            .intValue();
+    Bytes32 newRandaoMix =
+        get_randao_mix(state, get_current_epoch(state))
+            .xor(Hash.keccak256(block.getBody().getRandao_reveal().toBytes()));
+    state.getLatest_randao_mixes().set(index, newRandaoMix);
   }
 
-  /**
-   * Spec: https://github.com/ethereum/eth2.0-specs/blob/v0.1/specs/core/0_beacon-chain.md#randao
-   *
-   * @param state
-   * @param block
-   */
-  public static void verify_and_update_randao(BeaconState state, BeaconBlock block)
-      throws BlockProcessingException {
-    try {
-      UnsignedLong currentEpoch = BeaconStateUtil.get_current_epoch(state);
-      Bytes32 messageHash = hash_tree_root(int_to_bytes(currentEpoch.longValue(), 8));
-      // - Let proposer = state.validator_registry[get_beacon_proposer_index(state, state.slot)].
-      // - Verify that bls_verify(pubkey=proposer.pubkey,
-      //    message=int_to_bytes32(get_current_epoch(state)), signature=block.randao_reveal,
-      //    domain=get_domain(state.fork, get_current_epoch(state), DOMAIN_RANDAO)).
-      checkArgument(
-          verify_randao(state, block, currentEpoch, messageHash), "in verify_and_update_randao()");
-
-      // - Set state.latest_randao_mixes[get_current_epoch(state) % LATEST_RANDAO_MIXES_LENGTH]
-      //    = xor(get_randao_mix(state, get_current_epoch(state)), hash(block.randao_reveal)).
-      int randaoMixesIndex =
-          toIntExact(currentEpoch.longValue()) % Constants.LATEST_RANDAO_MIXES_LENGTH;
-      Bytes32 newLatestRandaoMixes =
-          get_randao_mix(state, currentEpoch)
-              .xor(Hash.keccak256(block.getRandao_reveal().toBytes()));
-      state.getLatest_randao_mixes().set(randaoMixesIndex, newLatestRandaoMixes);
-    } catch (IllegalStateException | IllegalArgumentException e) {
-      LOG.log(Level.WARN, "BlockProcessingException thrown in verify_and_update_randao()");
-      throw new BlockProcessingException(e);
-    }
-  }
-  /**
-   * Spec: https://github.com/ethereum/eth2.0-specs/blob/v0.1/specs/core/0_beacon-chain.md#eth1-data
-   *
-   * @param state
-   * @param block
-   */
-  public static void update_eth1_data(BeaconState state, BeaconBlock block)
-      throws BlockProcessingException {
-    // If there exists an `eth1_data_vote` in `states.eth1_data_votes` for which
-    // `eth1_data_vote.eth1_data == block.eth1_data`
-    //  (there will be at most one), set `eth1_data_vote.vote_count += 1`.
-    boolean exists = false;
-    List<Eth1DataVote> votes = state.getEth1_data_votes();
-    for (Eth1DataVote vote : votes) {
-      if (vote.getEth1_data().equals(block.getEth1_data())) {
-        exists = true;
-        UnsignedLong voteCount = vote.getVote_count();
-        vote.setVote_count(voteCount.plus(UnsignedLong.ONE));
-        break;
+  public static void process_eth1_data(BeaconState state, BeaconBlock block) {
+    for (Eth1DataVote eth1DataVote : state.getEth1_data_votes()) {
+      // If someone else has already voted for the same hash, add to its counter
+      if (eth1DataVote.getEth1_data().equals(block.getBody().getEth1_data())) {
+        eth1DataVote.setVote_count(eth1DataVote.getVote_count().plus(UnsignedLong.ONE));
+        return;
       }
     }
 
-    // Otherwise, append to state.eth1_data_votes
-    //   a new Eth1DataVote(eth1_data=block.eth1_data, vote_count=1).
-    if (!exists) {
-      votes.add(new Eth1DataVote(block.getEth1_data(), UnsignedLong.ONE));
-    }
+    // If we're seeing this hash for the first time, make a new counter
+    state
+        .getEth1_data_votes()
+        .add(new Eth1DataVote(block.getBody().getEth1_data(), UnsignedLong.ONE));
   }
 
-  /**
-   * Spec:
-   * https://github.com/ethereum/eth2.0-specs/blob/v0.1/specs/core/0_beacon-chain.md#proposer-slashings-1
-   *
-   * @param state
-   * @param block
-   */
-  public static void proposer_slashing(BeaconState state, BeaconBlock block)
+  public static void process_proposer_slashings(BeaconState state, BeaconBlock block)
       throws BlockProcessingException {
     try {
       // Verify that len(block.body.proposer_slashings) <= MAX_PROPOSER_SLASHINGS
       checkArgument(
           block.getBody().getProposer_slashings().size() <= MAX_PROPOSER_SLASHINGS,
-          "checkArgument threw and exception in proposer_slashing()");
+          "Proposer slashings more than limit in proposer_slashing()");
 
       // For each proposer_slashing in block.body.proposer_slashings:
       for (ProposerSlashing proposer_slashing : block.getBody().getProposer_slashings()) {
@@ -223,30 +173,21 @@ public final class BlockProcessorUtil {
         //     proposer_slashing.proposal_data_2.slot
         checkArgument(
             proposer_slashing
-                .getProposal_1()
+                .getHeader_1()
                 .getSlot()
-                .equals(proposer_slashing.getProposal_2().getSlot()),
-            "checkArgument threw and exception in proposer_slashing()");
-
-        // - Verify that proposer_slashing.proposal_data_1.shard ==
-        //     proposer_slashing.proposal_data_2.shard
-        checkArgument(
-            proposer_slashing
-                .getProposal_1()
-                .getShard()
-                .equals(proposer_slashing.getProposal_2().getShard()),
-            "checkArgument threw and exception in proposer_slashing()");
+                .equals(proposer_slashing.getHeader_2().getSlot()),
+            "Slot is not the same in proposer slashings");
 
         // - Verify that proposer_slashing.proposal_data_1.block_root !=
         //     proposer_slashing.proposal_data_2.block_root
         checkArgument(
             !Objects.equals(
-                proposer_slashing.getProposal_1().getBlock_root(),
-                proposer_slashing.getProposal_2().getBlock_root()),
-            "checkArgument threw and exception in proposer_slashing()");
+                hash_tree_root(proposer_slashing.getHeader_1().toBytes()),
+                hash_tree_root(proposer_slashing.getHeader_2().toBytes())),
+            "Roots are the same in proposer slashings");
 
         // - Verify that proposer.slashed == false
-        checkArgument(!proposer.isSlashed());
+        checkArgument(!proposer.isSlashed(), "Proposer is already slashed in proposer slashings");
 
         // - Verify that bls_verify(pubkey=proposer.pubkey,
         //     message=hash_tree_root(proposer_slashing.proposal_data_1),
@@ -255,13 +196,13 @@ public final class BlockProcessorUtil {
         checkArgument(
             bls_verify(
                 proposer.getPubkey(),
-                hash_tree_root(proposer_slashing.getProposal_1().toBytes()),
-                proposer_slashing.getProposal_1().getSignature(),
+                hash_tree_root(proposer_slashing.getHeader_1().toBytes()),
+                proposer_slashing.getHeader_1().getSignature(),
                 get_domain(
                     state.getFork(),
-                    slot_to_epoch(proposer_slashing.getProposal_1().getSlot()),
-                    DOMAIN_PROPOSAL)),
-            "checkArgument threw and exception in proposer_slashing()");
+                    slot_to_epoch(proposer_slashing.getHeader_1().getSlot()),
+                    DOMAIN_BEACON_BLOCK)),
+            "BLSVerify fail for proposal header 1");
 
         // - Verify that bls_verify(pubkey=proposer.pubkey,
         //     message=hash_tree_root(proposer_slashing.proposal_data_2),
@@ -270,16 +211,16 @@ public final class BlockProcessorUtil {
         checkArgument(
             bls_verify(
                 proposer.getPubkey(),
-                hash_tree_root(proposer_slashing.getProposal_2().toBytes()),
-                proposer_slashing.getProposal_2().getSignature(),
+                hash_tree_root(proposer_slashing.getHeader_2().toBytes()),
+                proposer_slashing.getHeader_2().getSignature(),
                 get_domain(
                     state.getFork(),
-                    slot_to_epoch(proposer_slashing.getProposal_2().getSlot()),
-                    DOMAIN_PROPOSAL)),
-            "checkArgument threw and exception in proposer_slashing()");
+                    slot_to_epoch(proposer_slashing.getHeader_2().getSlot()),
+                    DOMAIN_BEACON_BLOCK)),
+            "BLSVerify fail for proposal header 2");
 
         // - Run penalize_validator(state, proposer_slashing.proposer_index)
-        penalize_validator(state, proposer_slashing.getProposer_index().intValue());
+        slash_validator(state, proposer_slashing.getProposer_index().intValue());
       }
     } catch (IllegalArgumentException e) {
       LOG.log(Level.WARN, "BlockProcessingException thrown in proposer_slashing()");
@@ -293,13 +234,13 @@ public final class BlockProcessorUtil {
    * @see <a href=
    *     "https://github.com/ethereum/eth2.0-specs/blob/v0.1/specs/core/0_beacon-chain.md#attester-slashings-1">spec</a>
    */
-  public static void attester_slashing(BeaconState state, BeaconBlock block)
+  public static void process_attester_slashings(BeaconState state, BeaconBlock block)
       throws BlockProcessingException {
     try {
       // Verify that len(block.body.attester_slashings) <= MAX_ATTESTER_SLASHINGS
       checkArgument(
           block.getBody().getAttester_slashings().size() <= MAX_ATTESTER_SLASHINGS,
-          "checkArgument threw and exception in attester_slashing()");
+          "Number of attester slashings more than limit in attester slashing");
 
       // For each attester_slashing in block.body.attester_slashings:
       for (AttesterSlashing attester_slashing : block.getBody().getAttester_slashings()) {
@@ -313,7 +254,7 @@ public final class BlockProcessorUtil {
         // - Verify that slashable_attestation_1.data != slashable_attestation_2.data
         checkArgument(
             !Objects.equals(slashable_attestation_1.getData(), slashable_attestation_2.getData()),
-            "checkArgument threw and exception in atttester_slashing()");
+            "Data are equal in attester slashing");
 
         // - Verify that is_double_vote(slashable_attestation_1.data, slashable_attestation_2.data)
         //     or is_surround_vote(slashable_attestation_1.data, slashable_attestation_2.data)
@@ -321,16 +262,16 @@ public final class BlockProcessorUtil {
             is_double_vote(slashable_attestation_1.getData(), slashable_attestation_2.getData())
                 || is_surround_vote(
                     slashable_attestation_1.getData(), slashable_attestation_2.getData()),
-            "checkArgument threw and exception in attester_slashing()");
+            "Neither double nor surround vote in attester slashing");
 
         // - Verify that verify_slashable_attestation(state, slashable_attestation_1)
         checkArgument(
             verify_slashable_attestation(state, slashable_attestation_1),
-            "checkArgument threw and exception in attester_slashing()");
+            "Not slashable in attester_slashing() 1");
         // - Verify that verify_slashable_attestation(state, slashable_attestation_2)
         checkArgument(
             verify_slashable_attestation(state, slashable_attestation_2),
-            "checkArgument threw and exception in attester_slashing()");
+            "Not slashable in attester_slashing() 2");
 
         // - Let slashable_indices = [index for index in slashable_attestation_1.validator_indices
         //     if index in slashable_attestation_2.validator_indices and
@@ -343,11 +284,9 @@ public final class BlockProcessorUtil {
           }
         }
 
-        checkArgument(
-            slashable_indices.size() >= 1,
-            "checkArgument threw and exception in attester_slashing()");
+        checkArgument(slashable_indices.size() >= 1, "Could not find slashable indices");
         for (int index : slashable_indices) {
-          penalize_validator(state, index);
+          slash_validator(state, index);
         }
       }
     } catch (IllegalArgumentException e) {
@@ -362,121 +301,97 @@ public final class BlockProcessorUtil {
    * @see <a
    *     href="https://github.com/ethereum/eth2.0-specs/blob/v0.1/specs/core/0_beacon-chain.md#attestations-1">spec</a>
    */
-  public static void processAttestations(BeaconState state, BeaconBlock block)
+  public static void process_attestations(BeaconState state, BeaconBlock block)
       throws BlockProcessingException {
     try {
       // Verify that len(block.body.attestations) <= MAX_ATTESTATIONS
       checkArgument(
           block.getBody().getAttestations().size() <= MAX_ATTESTATIONS,
-          "in process attestations(): 1");
+          "Number of attestations more than limit in processAttestations()");
 
-      // For each attestation in block.body.attestations:
       for (Attestation attestation : block.getBody().getAttestations()) {
-        // - Verify that attestation.data.slot
-        //     <= state.slot - MIN_ATTESTATION_INCLUSION_DELAY
-        //     < attestation.data.slot + SLOTS_PER_EPOCH.
         UnsignedLong attestationDataSlot = attestation.getData().getSlot();
         checkArgument(
-            attestationDataSlot.compareTo(UnsignedLong.valueOf(Constants.GENESIS_EPOCH)) >= 0);
-        checkArgument(
-            attestationDataSlot
-                    .plus(UnsignedLong.valueOf(Constants.MIN_ATTESTATION_INCLUSION_DELAY))
-                    .compareTo(state.getSlot())
-                <= 0);
+            attestationDataSlot.compareTo(UnsignedLong.valueOf(Constants.GENESIS_EPOCH)) >= 0,
+            "Attestation in pre-history");
         checkArgument(
             state
                     .getSlot()
                     .compareTo(attestationDataSlot.plus(UnsignedLong.valueOf(SLOTS_PER_EPOCH)))
-                < 0);
+                <= 0,
+            "Attestation submitted too far in history");
+        checkArgument(
+            attestationDataSlot
+                    .plus(UnsignedLong.valueOf(Constants.MIN_ATTESTATION_INCLUSION_DELAY))
+                    .compareTo(state.getSlot())
+                <= 0,
+            "Attestation submitted too quickly");
 
         // Verify that attestation.data.justified_epoch is equal to state.justified_epoch
         // if slot_to_epoch(attestation.data.slot + 1) >= get_current_epoch(state) else
         // state.previous_justified_epoch.
-        if (slot_to_epoch(attestation.getData().getSlot().plus(UnsignedLong.ONE))
-                .compareTo(get_current_epoch(state))
+        if (slot_to_epoch(attestation.getData().getSlot()).compareTo(get_current_epoch(state))
             >= 0) {
           checkArgument(
-              attestation.getData().getJustified_epoch().equals(state.getJustified_epoch()),
-              "in process attestations(): 3");
+              attestation.getData().getSource_epoch().equals(state.getCurrent_justified_epoch()),
+              "Current epoch attestation epoch number error");
+          checkArgument(
+              attestation.getData().getSource_root().equals(state.getCurrent_justified_root()),
+              "Current epoch attestation root error");
         } else {
           checkArgument(
-              attestation
-                  .getData()
-                  .getJustified_epoch()
-                  .equals(state.getPrevious_justified_epoch()),
-              "in process attestations(): 4 attestation justified epoch:"
-                  + attestation.getData().getJustified_epoch()
-                  + " state prev justified epoch:"
-                  + state.getPrevious_justified_epoch());
+              attestation.getData().getSource_epoch().equals(state.getPrevious_justified_epoch()),
+              "Previous epoch attestation epoch number error");
+          checkArgument(
+              attestation.getData().getSource_root().equals(state.getPrevious_justified_root()),
+              "Previous epoch attestation root error");
         }
 
-        // - Verify that attestation.data.justified_block_root is equal to
-        //     get_block_root(state, get_epoch_start_slot(attestation.data.justified_epoch)).
-        checkArgument(
-            Objects.equals(
-                attestation.getData().getJustified_block_root(),
-                get_block_root(
-                    state, get_epoch_start_slot(attestation.getData().getJustified_epoch()))),
-            "in process attestations(): 5");
-
-        // Verify that either (i) state.latest_crosslinks[attestation.data.shard] ==
-        // attestation.data.latest_crosslink or (ii) state.latest_crosslinks[attestation.data.shard]
-        // == Crosslink(crosslink_data_root=attestation.data.crosslink_data_root,
-        // epoch=slot_to_epoch(attestation.data.slot)).
-        checkArgument(
+        // Check that the crosslink data is valid
+        Crosslink latest_crosslink =
             state
-                    .getLatest_crosslinks()
-                    .get(toIntExact(attestation.getData().getShard().longValue()))
-                    .equals(attestation.getData().getLatest_crosslink())
-                || state
-                    .getLatest_crosslinks()
-                    .get(toIntExact(attestation.getData().getShard().longValue()))
-                    .equals(
-                        new Crosslink(
-                            slot_to_epoch(attestationDataSlot),
-                            attestation.getData().getCrosslink_data_root())));
+                .getLatest_crosslinks()
+                .get(toIntExact(attestation.getData().getShard().longValue()));
+        checkArgument(
+            latest_crosslink.equals(attestation.getData().getPrevious_crosslink())
+                || latest_crosslink.equals(
+                    new Crosslink(
+                        slot_to_epoch(attestationDataSlot),
+                        attestation.getData().getCrosslink_data_root())),
+            "Crosslink data is invalid");
 
         // - Verify bitfields and aggregate signature
         checkArgument(
             verify_bitfields_and_aggregate_signature(attestation, state),
-            "in process attestations(): 7");
+            "Verify bitfield and aggregate signature has failed");
 
         // - Verify that attestation.data.shard_block_root == ZERO_HASH
         // TO BE REMOVED IN PHASE 1
         checkArgument(
             attestation.getData().getCrosslink_data_root().equals(ZERO_HASH),
-            "in process attestations(): 8");
+            "Crosslink data root is not zero");
 
-        // - Append PendingAttestation(data=attestation.data,
-        //     aggregation_bitfield=attestation.aggregation_bitfield,
-        //     custody_bitfield=attestation.custody_bitfield, inclusion_slot=state.slot) to
-        //     state.latest_attestations.
+        // - Apply the attestation
         PendingAttestation pendingAttestation =
             new PendingAttestation(
                 attestation.getAggregation_bitfield(),
                 attestation.getData(),
                 attestation.getCustody_bitfield(),
                 state.getSlot());
-        state.getLatest_attestations().add(pendingAttestation);
+
+        if (slot_to_epoch(attestation.getData().getSlot()).compareTo(get_current_epoch(state))
+            == 0) {
+          state.getCurrent_epoch_attestations().add(pendingAttestation);
+        } else if (slot_to_epoch(attestation.getData().getSlot())
+                .compareTo(get_previous_epoch(state))
+            == 0) {
+          state.getCurrent_epoch_attestations().add(pendingAttestation);
+        }
       }
     } catch (IllegalArgumentException e) {
       LOG.log(Level.WARN, "BlockProcessingException thrown in processAttestations()");
       throw new BlockProcessingException(e);
     }
-  }
-
-  static boolean verify_randao(
-      BeaconState state, BeaconBlock block, UnsignedLong currentEpoch, Bytes32 currentEpochBytes)
-      throws IllegalStateException {
-    // Let proposer = state.validator_registry[get_beacon_proposer_index(state, state.slot)].
-    int proposerIndex = BeaconStateUtil.get_beacon_proposer_index(state, state.getSlot());
-    Validator proposer = state.getValidator_registry().get(proposerIndex);
-
-    // Verify that bls_verify(pubkey=proposer.pubkey,
-    //   message=int_to_bytes32(get_current_epoch(state)), signature=block.randao_reveal,
-    //   domain=get_domain(state.fork, get_current_epoch(state), DOMAIN_RANDAO)).
-    UnsignedLong domain = get_domain(state.getFork(), currentEpoch, DOMAIN_RANDAO);
-    return bls_verify(proposer.getPubkey(), currentEpochBytes, block.getRandao_reveal(), domain);
   }
 
   /**
@@ -501,6 +416,7 @@ public final class BlockProcessorUtil {
             Bytes.wrap(new byte[attestation.getAggregation_bitfield().size()])),
         "checkArgument threw and exception in verify_bitfields_and_aggregate_signature()");
 
+    // Get the committee for the specific shard that this attestation is for
     List<List<Integer>> crosslink_committees = new ArrayList<>();
     for (CrosslinkCommittee crosslink_committee :
         get_crosslink_committees_at_slot(state, attestation.getData().getSlot())) {
@@ -558,47 +474,19 @@ public final class BlockProcessorUtil {
     return true;
   }
 
-  /**
-   * @param state
-   * @param block
-   * @see <a
-   *     href="https://github.com/ethereum/eth2.0-specs/blob/v0.1/specs/core/0_beacon-chain.md#deposits-1">spec</a>
-   */
-  public static void processDeposits(BeaconState state, BeaconBlock block)
+  public static void process_deposits(BeaconState state, BeaconBlock block)
       throws BlockProcessingException {
     try {
       // Verify that len(block.body.deposits) <= MAX_DEPOSITS
-      checkArgument(block.getBody().getDeposits().size() <= MAX_DEPOSITS);
+      checkArgument(
+          block.getBody().getDeposits().size() <= MAX_DEPOSITS,
+          "More deposits than the limit in process_deposits()");
 
       // SPEC TODO: add logic to ensure that deposits from 1.0 chain are processed in order
-      // SPEC TODO: update the call to verify_merkle_branch below if it needs to change
-      //   after we process deposits in order
 
       // For each deposit in block.body.deposits:
       for (Deposit deposit : block.getBody().getDeposits()) {
-        // - Let serialized_deposit_data be the serialized form of deposit.deposit_data.
-        //     It should be 8 bytes for deposit_data.amount followed by 8 bytes for
-        //     deposit_data.timestamp and then the DepositInput bytes. That is,
-        //     it should match deposit_data in the Ethereum 1.0 deposit contract of which
-        //     the hash was placed into the Merkle tree.
-        Bytes serialized_deposit_data = deposit.getDeposit_data().toBytes();
-
-        checkArgument(Objects.equals(state.getDeposit_index(), deposit.getIndex()));
-
-        // - Vadliate verify_merkle_branch(hash(serialized_deposit_data), deposit.branch,
-        //     DEPOSIT_CONTRACT_TREE_DEPTH, deposit.index, state.latest_eth1_data.deposit_root)
-        checkArgument(
-            verify_merkle_branch(
-                Hash.keccak256(serialized_deposit_data),
-                deposit.getBranch(),
-                DEPOSIT_CONTRACT_TREE_DEPTH,
-                toIntExact(deposit.getIndex().longValue()),
-                state.getLatest_eth1_data().getDeposit_root()));
-
-        // - Run process_deposit
-        process_deposit(state, deposit);
-
-        state.setDeposit_index(state.getDeposit_index().plus(UnsignedLong.ONE));
+        BeaconStateUtil.process_deposit(state, deposit);
       }
     } catch (IllegalArgumentException e) {
       LOG.log(Level.WARN, "BlockProcessingException thrown in processExits()");
@@ -606,13 +494,7 @@ public final class BlockProcessorUtil {
     }
   }
 
-  /**
-   * @param state
-   * @param block
-   * @see <a
-   *     href="https://github.com/ethereum/eth2.0-specs/blob/v0.1/specs/core/0_beacon-chain.md#exits-1">spec</a>
-   */
-  public static void processVoluntaryExits(BeaconState state, BeaconBlock block)
+  public static void process_voluntary_exits(BeaconState state, BeaconBlock block)
       throws BlockProcessingException {
     try {
       // Verify that len(block.body.voluntary_exits) <= MAX_VOLUNTARY_EXITS
@@ -622,36 +504,39 @@ public final class BlockProcessorUtil {
 
       // For each exit in block.body.voluntaryExits:
       for (VoluntaryExit voluntaryExit : block.getBody().getVoluntaryExits()) {
-        // - Let validator = state.validator_registry[exit.validator_index]
+
         Validator validator =
             state
                 .getValidator_registry()
                 .get(toIntExact(voluntaryExit.getValidator_index().longValue()));
 
-        // - Verify that validator.exit_epoch >
-        // get_entry_exit_effect_epoch(get_current_epoch(state))
+        // Verify the validator has not yet exited
         checkArgument(
-            validator
-                    .getExit_epoch()
-                    .compareTo(get_entry_exit_effect_epoch(get_current_epoch(state)))
-                > 0,
-            "checkArgument threw and exception in processExits()");
+            validator.getExit_epoch().compareTo(FAR_FUTURE_EPOCH) == 0, "Validator has exited");
 
-        // - Verify that get_current_epoch(state) >= exit.epoch
+        // Verify the validator has not initiated an exit
+        checkArgument(!validator.hasInitiatedExit(), "Validator has initiated exit already");
+
+        // Exits must specify an epoch when they become valid; they are not valid before then
         checkArgument(
             get_current_epoch(state).compareTo(voluntaryExit.getEpoch()) >= 0,
-            "checkArgument threw and exception in processExits()");
+            "Exit is not valid yet");
 
-        // - Verify that bls_verify(
-        //     pubkey=validator.pubkey, message_hash=signed_root(exit,"signatre"),
-        // signature=exit.signature,
-        //     domain=get_domain(state.fork, exit.epoch, DOMAIN_EXIT)) is valid
+        // Must have been in the validator set long enough
+        checkArgument(
+            get_current_epoch(state)
+                    .minus(voluntaryExit.getEpoch())
+                    .compareTo(UnsignedLong.valueOf(PERSISTENT_COMMITTEE_PERIOD))
+                >= 0,
+            "Validator was not in validator set long enough");
+
+        // Verify signature
         checkArgument(
             bls_verify(
                 validator.getPubkey(),
                 voluntaryExit.signedRoot("signature"),
                 voluntaryExit.getSignature(),
-                get_domain(state.getFork(), voluntaryExit.getEpoch(), DOMAIN_EXIT)),
+                get_domain(state.getFork(), voluntaryExit.getEpoch(), DOMAIN_VOLUNTARY_EXIT)),
             "checkArgument threw and exception in processExits()");
 
         // - Run initiate_validator_exit(state, exit.validator_index)
@@ -663,108 +548,99 @@ public final class BlockProcessorUtil {
     }
   }
 
-  /**
-   * @param state
-   * @param block
-   * @see <a
-   *     href="https://github.com/ethereum/eth2.0-specs/blob/v0.3/specs/core/0_beacon-chain.md#transfers-1">spec
-   *     </a>
-   */
-  public static void processTransfers(BeaconState state, BeaconBlock block)
+  public static void process_transfers(BeaconState state, BeaconBlock block)
       throws BlockProcessingException {
     // Verify that len(block.body.transfers) <= MAX_TRANSFERS and that all transfers are distinct.
-    checkArgument(block.getBody().getTransfers().size() <= Constants.MAX_TRANSFERS);
-    checkArgument(allDistinct(block.getBody().getTransfers()));
+    checkArgument(
+        block.getBody().getTransfers().size() <= MAX_TRANSFERS,
+        "More transfers in block than the limit");
+    checkArgument(allDistinct(block.getBody().getTransfers()), "Transfers are not distinct");
 
     // For each transfer in block.body.transfers:
     for (Transfer transfer : block.getBody().getTransfers()) {
-      // - Verify that state.validator_balances[transfer.from] >= transfer.amount
+      // Verify the amount and fee aren't individually too big (for anti-overflow purposes)
       checkArgument(
-          state.getValidator_balances().get(toIntExact(transfer.getFrom().longValue())).longValue()
-              >= transfer.getAmount().longValue());
-      // - Verify that state.validator_balances[transfer.from] >= transfer.fee
+          state
+                  .getValidator_balances()
+                  .get(transfer.getSender().intValue())
+                  .compareTo(max(transfer.getAmount(), transfer.getFee()))
+              >= 0,
+          "Amount or fee too big");
+
+      // Verify that we have enough ETH to send, and that after the transfer the balance will be
+      // either
+      //  exactly zero or at least MIN_DEPOSIT_AMOUNT
       checkArgument(
-          state.getValidator_balances().get(toIntExact(transfer.getFrom().longValue())).longValue()
-              >= transfer.getFee().longValue());
-      // - Verify that state.validator_balances[transfer.from] == transfer.amount + transfer.fee or
-      //     state.validator_balances[transfer.from]
-      //     >= transfer.amount + transfer.fee + MIN_DEPOSIT_AMOUNT
-      checkArgument(
-          state.getValidator_balances().get(toIntExact(transfer.getFrom().longValue())).longValue()
-                  == transfer.getAmount().longValue() + transfer.getFee().longValue()
+          state
+                      .getValidator_balances()
+                      .get(transfer.getSender().intValue())
+                      .compareTo(transfer.getAmount().plus(transfer.getFee()))
+                  == 0
               || state
                       .getValidator_balances()
-                      .get(toIntExact(transfer.getFrom().longValue()))
-                      .longValue()
-                  >= transfer.getAmount().longValue()
-                      + transfer.getFee().longValue()
-                      + Constants.MIN_DEPOSIT_AMOUNT);
-      // - Verify that transfer.slot == state.slot
-      checkArgument(state.getSlot().equals(transfer.getSlot()));
-      // - Verify that get_current_epoch(state) >=
-      //     state.validator_registry[transfer.from].exit_epoch + MIN_EXIT_EPOCHS_BEFORE_TRANSFER
+                      .get(transfer.getSender().intValue())
+                      .compareTo(
+                          transfer
+                              .getAmount()
+                              .plus(transfer.getFee())
+                              .plus(UnsignedLong.valueOf(MIN_DEPOSIT_AMOUNT)))
+                  >= 0,
+          "Not enought ETH to send deposit");
+
+      // A transfer is valid in only one slot
+      checkArgument(state.getSlot().equals(transfer.getSlot()), "Not the transfer slot");
+
+      // Only withdrawn or not-yet-deposited accounts can transfer
       checkArgument(
-          BeaconStateUtil.get_current_epoch(state)
+          get_current_epoch(state)
                       .compareTo(
                           state
                               .getValidator_registry()
-                              .get(toIntExact(transfer.getFrom().longValue()))
+                              .get(transfer.getSender().intValue())
                               .getWithdrawal_epoch())
                   >= 0
               || state
                   .getValidator_registry()
-                  .get(toIntExact(transfer.getFrom().longValue()))
+                  .get(transfer.getSender().intValue())
                   .getActivation_epoch()
-                  .equals(FAR_FUTURE_EPOCH));
-      // - Verify that state.validator_registry[transfer.from].withdrawal_credentials ==
-      //     BLS_WITHDRAWAL_PREFIX_BYTE + hash(transfer.pubkey)[1:]
+                  .equals(FAR_FUTURE_EPOCH),
+          "Account neither withdrawn nor not-yet-deposited");
+
+      // Verify that the pubkey is valid
       checkArgument(
           state
               .getValidator_registry()
-              .get(toIntExact(transfer.getFrom().longValue()))
+              .get(transfer.getSender().intValue())
               .getWithdrawal_credentials()
               .equals(
                   Bytes.concatenate(
-                      BLS_WITHDRAWAL_PREFIX_BYTE, transfer.getPubkey().toBytes().slice(1))));
-      // - Let transfer_message = hash_tree_root(Transfer(from=transfer.from, to=transfer.to,
-      //     amount=transfer.amount, fee=transfer.fee, slot=transfer.slot,
-      //     signature=EMPTY_SIGNATURE))
-      Bytes32 transfer_message =
-          hash_tree_root(
-              new Transfer(
-                      transfer.getFrom(),
-                      transfer.getTo(),
-                      transfer.getAmount(),
-                      transfer.getFee(),
-                      transfer.getSlot(),
-                      transfer.getPubkey(),
-                      EMPTY_SIGNATURE)
-                  .toBytes());
-      // - Perform bls_verify(pubkey=transfer.pubkey, message_hash=transfer_message,
-      //     signature=transfer.signature, domain=get_domain(state.fork,
-      //     slot_to_epoch(transfer.slot), DOMAIN_TRANSFER))
+                      BLS_WITHDRAWAL_PREFIX_BYTE, transfer.getPubkey().toBytes().slice(1))),
+          "Pubkey is not valid");
+
+      // Verify that the signature is valid
       checkArgument(
           bls_verify(
               transfer.getPubkey(),
-              transfer_message,
+              transfer.signedRoot("signature"),
               transfer.getSignature(),
-              get_domain(
-                  state.getFork(), slot_to_epoch(transfer.getSlot()), Constants.DOMAIN_TRANSFER)));
+              get_domain(state.getFork(), slot_to_epoch(transfer.getSlot()), DOMAIN_TRANSFER)),
+          "Transfer signature invalid");
 
-      // - Set state.validator_balances[transfer.from] -= transfer.amount + transfer.fee
-      UnsignedLong fromBalance =
-          state.getValidator_balances().get(toIntExact(transfer.getFrom().longValue()));
-      fromBalance = fromBalance.minus(transfer.getAmount()).minus(transfer.getFee());
-      state.getValidator_balances().set(toIntExact(transfer.getFrom().longValue()), fromBalance);
+      // Process the transfer
+      UnsignedLong senderBalance =
+          state.getValidator_balances().get(transfer.getSender().intValue());
+      senderBalance = senderBalance.minus(transfer.getAmount()).minus(transfer.getFee());
+      state
+          .getValidator_balances()
+          .set(toIntExact(transfer.getSender().longValue()), senderBalance);
 
-      // - Set state.validator_balances[transfer.to] += transfer.amount
-      UnsignedLong toBalance =
-          state.getValidator_balances().get(toIntExact(transfer.getFrom().longValue()));
-      toBalance = toBalance.plus(transfer.getAmount());
-      state.getValidator_balances().set(toIntExact(transfer.getTo().longValue()), toBalance);
+      UnsignedLong recipientBalance =
+          state.getValidator_balances().get(transfer.getSender().intValue());
+      recipientBalance = recipientBalance.plus(transfer.getAmount());
+      state
+          .getValidator_balances()
+          .set(toIntExact(transfer.getRecipient().longValue()), recipientBalance);
 
-      // - Set state.validator_balances[get_beacon_proposer_index(state, state.slot)]
-      //     += transfer.fee
       UnsignedLong proposerBalance =
           state.getValidator_balances().get(get_beacon_proposer_index(state, state.getSlot()));
       proposerBalance = proposerBalance.plus(transfer.getFee());
@@ -772,6 +648,12 @@ public final class BlockProcessorUtil {
           .getValidator_balances()
           .set(get_beacon_proposer_index(state, state.getSlot()), proposerBalance);
     }
+  }
+
+  public static void verify_block_state_root(BeaconState state, BeaconBlock block) {
+    checkArgument(
+        block.getState_root().equals(hash_tree_root(state.toBytes())),
+        "State roots don't match in verify_block_state_root");
   }
 
   private static <T> boolean allDistinct(List<T> list) {
@@ -786,28 +668,5 @@ public final class BlockProcessorUtil {
     }
 
     return true;
-  }
-
-  /**
-   * Verify that the given ``leaf`` is on the merkle branch ``branch``.
-   *
-   * @param leaf
-   * @param branch
-   * @param depth
-   * @param index
-   * @param root
-   * @return
-   */
-  private static boolean verify_merkle_branch(
-      Bytes32 leaf, List<Bytes32> branch, int depth, int index, Bytes32 root) {
-    Bytes32 value = leaf;
-    for (int i = 0; i < depth; i++) {
-      if (index / Math.pow(2, i) % 2 == 0) {
-        value = Hash.keccak256(Bytes.concatenate(branch.get(i), value));
-      } else {
-        value = Hash.keccak256(Bytes.concatenate(value, branch.get(i)));
-      }
-    }
-    return value.equals(root);
   }
 }
