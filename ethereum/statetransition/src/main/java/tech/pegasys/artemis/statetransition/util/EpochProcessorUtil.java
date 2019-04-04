@@ -34,7 +34,6 @@ import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_effec
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_epoch_start_slot;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_previous_epoch;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_randao_mix;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_total_balance;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.is_power_of_two;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.max;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.min;
@@ -96,7 +95,7 @@ public final class EpochProcessorUtil {
     for (PendingAttestation attestation : attestations) {
       validator_index_sets.add(
           get_attestation_participants(
-              state, attestation.getData(), attestation.getAggregation_bitfield().toArray()));
+              state, attestation.getData(), attestation.getAggregation_bitfield()));
     }
 
     List<Integer> attester_indices = new ArrayList<Integer>();
@@ -205,7 +204,7 @@ public final class EpochProcessorUtil {
     List<PendingAttestation> attestations = new ArrayList<>();
     for (PendingAttestation attestation : state.getPrevious_epoch_attestations()) {
       if (get_attestation_participants(
-              state, attestation.getData(), attestation.getAggregation_bitfield().toArray())
+              state, attestation.getData(), attestation.getAggregation_bitfield())
           .contains(validator_index)) {
         attestations.add(attestation);
       }
@@ -753,7 +752,7 @@ public final class EpochProcessorUtil {
                 >= 0) {
           balance_churn = balance_churn.plus(get_effective_balance(state, index));
           if (balance_churn.compareTo(max_balance_churn) > 0) break;
-          BeaconStateUtil.activate_validator(state, validator, false);
+          BeaconStateUtil.activate_validator(state, index, false);
         }
         index++;
       }
