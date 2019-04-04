@@ -6,9 +6,9 @@
 # "rlpx": use RLPxP2PNetwork
 # "hobbits": use HobbitsP2PNetwork
 networkMode = "hobbits"
-identity = "0x01"
 networkInterface = "127.0.0.1"
 port = 19001
+identity = "0x01"
 peers = ["hobs://abcf@localhost:19000", "hobs://abcf@localhost:19002"]
 
 [sim]
