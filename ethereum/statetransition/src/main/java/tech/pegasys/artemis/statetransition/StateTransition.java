@@ -13,6 +13,9 @@
 
 package tech.pegasys.artemis.statetransition;
 
+import static tech.pegasys.artemis.datastructures.Constants.SLOTS_PER_EPOCH;
+import static tech.pegasys.artemis.datastructures.Constants.SLOTS_PER_HISTORICAL_ROOT;
+import static tech.pegasys.artemis.datastructures.Constants.ZERO_HASH;
 
 import com.google.common.primitives.UnsignedLong;
 import net.consensys.cava.bytes.Bytes32;
@@ -29,10 +32,6 @@ import tech.pegasys.artemis.statetransition.util.EpochProcessorUtil;
 import tech.pegasys.artemis.statetransition.util.PreProcessingUtil;
 import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
-
-import static tech.pegasys.artemis.datastructures.Constants.SLOTS_PER_EPOCH;
-import static tech.pegasys.artemis.datastructures.Constants.SLOTS_PER_HISTORICAL_ROOT;
-import static tech.pegasys.artemis.datastructures.Constants.ZERO_HASH;
 
 public class StateTransition {
 
@@ -76,6 +75,11 @@ public class StateTransition {
     PreProcessingUtil.cacheCurrentBeaconProposerIndex(state);
   }
 
+  /**
+   * Caches the given state.
+   *
+   * @param state
+   */
   protected void cache_state(BeaconState state) {
     Bytes32 previous_slot_state_root = HashTreeUtil.hash_tree_root(state.toBytes());
 
@@ -96,7 +100,7 @@ public class StateTransition {
   }
 
   protected void slotProcessor(BeaconStateWithCache state) {
-      advance_slot(state);
+    advance_slot(state);
   }
 
   private void blockProcessor(BeaconStateWithCache state, BeaconBlock block) {
@@ -105,12 +109,11 @@ public class StateTransition {
       BlockProcessorUtil.process_block_header(state, block);
       BlockProcessorUtil.process_randao(state, block);
       BlockProcessorUtil.process_eth1_data(state, block);
-      BlockProcessorUtil.process_proposer_slashings(state, block);
-      BlockProcessorUtil.process_attester_slashings(state, block);
-      BlockProcessorUtil.process_attestations(state, block);
-      BlockProcessorUtil.process_deposits(state, block);
-      BlockProcessorUtil.process_voluntary_exits(state, block);
-      BlockProcessorUtil.process_transfers(state, block);
+      BlockProcessorUtil.process_proposer_slashing(state, block);
+      BlockProcessorUtil.process_attester_slashing(state, block);
+      BlockProcessorUtil.process_attestation(state, block);
+      BlockProcessorUtil.process_voluntary_exit(state, block);
+      BlockProcessorUtil.process_transfer(state, block);
       BlockProcessorUtil.verify_block_state_root(state, block);
 
     } catch (BlockProcessingException e) {
@@ -151,6 +154,11 @@ public class StateTransition {
     }
   }
 
+  /**
+   * Runs at every slot > GENESIS_SLOT.
+   *
+   * @param state
+   */
   private void advance_slot(BeaconStateWithCache state) {
     state.incrementSlot();
   }

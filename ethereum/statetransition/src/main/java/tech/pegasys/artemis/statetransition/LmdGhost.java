@@ -31,6 +31,15 @@ import tech.pegasys.artemis.storage.ChainStorageClient;
 
 public class LmdGhost {
 
+  /**
+   * Execute the LMD-GHOST algorithm to find the head ``BeaconBlock``.
+   *
+   * @param store
+   * @param start_state
+   * @param start_block
+   * @return
+   * @throws StateTransitionException
+   */
   public static BeaconBlock lmd_ghost(
       ChainStorageClient store, BeaconState start_state, BeaconBlock start_block)
       throws StateTransitionException {
@@ -66,11 +75,17 @@ public class LmdGhost {
     }
   }
 
-  /*
-   * This function is defined inside lmd_ghost in spec. It is defined here separately for legibility.
+  /**
+   * @param store
+   * @param block
+   * @param attestation_targets
+   * @return
    */
   public static UnsignedLong get_vote_count(
       ChainStorageClient store, BeaconBlock block, List<BeaconBlock> attestation_targets) {
+    /*
+     * This function is defined inside lmd_ghost in spec. It is defined here separately for legibility.
+     */
     UnsignedLong vote_count = UnsignedLong.ZERO;
     for (BeaconBlock target : attestation_targets) {
       Optional<BeaconBlock> ancestor =
@@ -83,10 +98,12 @@ public class LmdGhost {
     return vote_count;
   }
 
-  /*
-   * Spec pseudo-code:
-   *  Let get_children(store: Store, block: BeaconBlock) -> List[BeaconBlock] returns
-   *  the child blocks of the given block.
+  /**
+   * Returns the child blocks of the given block
+   *
+   * @param store
+   * @param block
+   * @return
    */
   // TODO: OPTIMIZE: currently goes through all the values in processedBlockLookup
   public static List<BeaconBlock> get_children(ChainStorageClient store, BeaconBlock block) {
@@ -101,10 +118,13 @@ public class LmdGhost {
     return children;
   }
 
-  /*
-   * Spec pseudo-code:
-   *  Let get_latest_attestation_target(store: Store, validator: Validator) -> BeaconBlock
-   *  be the target block in the attestation get_latest_attestation(store, validator).
+  /**
+   * Returns the target block in the attestation get_latest_attestation(store, validator).
+   *
+   * @param store
+   * @param validatorIndex
+   * @return
+   * @throws StateTransitionException
    */
   public static Optional<BeaconBlock> get_latest_attestation_target(
       ChainStorageClient store, int validatorIndex) throws StateTransitionException {
@@ -118,11 +138,14 @@ public class LmdGhost {
     }
   }
 
-  /*
-   * Spec pseudo-code:
-   *  Let get_latest_attestation(store: Store, validator: Validator) -> Attestation
-   *  be the attestation with the highest slot number in store from validator. If
-   *  several such attestations exist, use the one the validator v observed first.
+  /**
+   * Returns the attestation with the highest slot number in store from validator. If several such
+   * attestations exist, use the one the validator v observed first.
+   *
+   * @param store
+   * @param validatorIndex
+   * @return
+   * @throws StateTransitionException
    */
   public static Optional<Attestation> get_latest_attestation(
       ChainStorageClient store, int validatorIndex) throws StateTransitionException {
@@ -130,22 +153,24 @@ public class LmdGhost {
     return latestAttestation;
   }
 
-  /*
-   * Spec pseudo-code:
-   *  Let get_ancestor(store: Store, block: BeaconBlock, slot: SlotNumber) -> BeaconBlock
-   *  be the ancestor of block with slot number slot. The get_ancestor function can be
-   *  defined recursively as:
+  /**
+   * Get the ancestor of ``block`` with slot number ``slot``; return ``None`` if not found.
+   *
+   * @param store
+   * @param block
+   * @param slot
+   * @return
    */
   public static Optional<BeaconBlock> get_ancestor(
-      ChainStorageClient store, BeaconBlock block, UnsignedLong slotNumber) {
+      ChainStorageClient store, BeaconBlock block, UnsignedLong slot) {
     requireNonNull(block);
     UnsignedLong blockSlot = UnsignedLong.valueOf(block.getSlot());
-    if (blockSlot.compareTo(slotNumber) == 0) {
+    if (blockSlot.compareTo(slot) == 0) {
       return Optional.of(block);
-    } else if (blockSlot.compareTo(slotNumber) < 0) {
+    } else if (blockSlot.compareTo(slot) < 0) {
       return Optional.ofNullable(null);
     } else {
-      return get_ancestor(store, store.getParent(block).get(), slotNumber);
+      return get_ancestor(store, store.getParent(block).get(), slot);
     }
   }
 }
