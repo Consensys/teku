@@ -38,7 +38,7 @@ dependencyManagement {
       entry 'logl-logl'
     }
 
-    dependencySet(group: 'net.consensys.cava', version: '1.0.0-C01FE1-snapshot') {
+    dependencySet(group: 'net.consensys.cava', version: '1.0.0-1D0015-snapshot') {
       entry 'cava-bytes'
       entry 'cava-config'
       entry 'cava-crypto'

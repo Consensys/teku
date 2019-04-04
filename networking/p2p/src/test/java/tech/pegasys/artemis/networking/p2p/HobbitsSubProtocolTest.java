@@ -16,21 +16,25 @@ package tech.pegasys.artemis.networking.p2p;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.google.common.eventbus.EventBus;
 import net.consensys.cava.rlpx.wire.SubProtocolIdentifier;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.artemis.data.TimeSeriesRecord;
 
-final class BeaconSubprotocolTest {
+final class HobbitsSubProtocolTest {
 
   @Test
   void testId() {
-    BeaconSubprotocol subprotocol = new BeaconSubprotocol();
-    assertEquals("bea", subprotocol.id().name());
+    HobbitsSubProtocol subprotocol =
+        new HobbitsSubProtocol(new EventBus(), "", new TimeSeriesRecord());
+    assertEquals("hob", subprotocol.id().name());
     assertEquals(1, subprotocol.id().version());
   }
 
   @Test
   void supportsCheck() {
-    BeaconSubprotocol subprotocol = new BeaconSubprotocol();
-    assertTrue(subprotocol.supports(SubProtocolIdentifier.of("bea", 1)));
+    HobbitsSubProtocol subprotocol =
+        new HobbitsSubProtocol(new EventBus(), "", new TimeSeriesRecord());
+    assertTrue(subprotocol.supports(SubProtocolIdentifier.of("hob", 1)));
   }
 }

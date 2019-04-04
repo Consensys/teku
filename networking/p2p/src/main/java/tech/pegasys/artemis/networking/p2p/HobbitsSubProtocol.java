@@ -13,14 +13,26 @@
 
 package tech.pegasys.artemis.networking.p2p;
 
+import com.google.common.eventbus.EventBus;
 import net.consensys.cava.rlpx.RLPxService;
 import net.consensys.cava.rlpx.wire.SubProtocol;
 import net.consensys.cava.rlpx.wire.SubProtocolHandler;
 import net.consensys.cava.rlpx.wire.SubProtocolIdentifier;
+import tech.pegasys.artemis.data.TimeSeriesRecord;
 
-final class BeaconSubprotocol implements SubProtocol {
+final class HobbitsSubProtocol implements SubProtocol {
 
-  static final SubProtocolIdentifier BEACON_ID = SubProtocolIdentifier.of("bea", 1);
+  static final SubProtocolIdentifier BEACON_ID = SubProtocolIdentifier.of("hob", 1);
+  private final EventBus eventBus;
+  private final String userAgent;
+  private final TimeSeriesRecord chainData;
+  private HobbitsSubProtocolHandler handler;
+
+  HobbitsSubProtocol(EventBus eventBus, String userAgent, TimeSeriesRecord chainData) {
+    this.eventBus = eventBus;
+    this.userAgent = userAgent;
+    this.chainData = chainData;
+  }
 
   @Override
   public SubProtocolIdentifier id() {
@@ -35,12 +47,16 @@ final class BeaconSubprotocol implements SubProtocol {
 
   @Override
   public int versionRange(int version) {
-    return 6; // TODO change this number according to the number of type of messages defined in the
-    // handler.
+    return 1;
   }
 
   @Override
   public SubProtocolHandler createHandler(RLPxService service) {
-    return new BeaconSubprotocolHandler(service);
+    handler = new HobbitsSubProtocolHandler(service, eventBus, userAgent, chainData);
+    return handler;
+  }
+
+  public HobbitsSubProtocolHandler handler() {
+    return handler;
   }
 }
