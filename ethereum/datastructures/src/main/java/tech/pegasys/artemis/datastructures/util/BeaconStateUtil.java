@@ -617,7 +617,7 @@ public class BeaconStateUtil {
 
     validator.setSlashed(true);
 
-    validator.setWithdrawal_epoch(
+    validator.setWithdrawable_epoch(
         get_current_epoch(state).plus(UnsignedLong.valueOf(LATEST_SLASHED_EXIT_LENGTH)));
   }
 
@@ -631,7 +631,7 @@ public class BeaconStateUtil {
    */
   public static void prepare_validator_for_withdrawal(BeaconState state, int index) {
     Validator validator = state.getValidator_registry().get(index);
-    validator.setWithdrawal_epoch(
+    validator.setWithdrawable_epoch(
         get_current_epoch(state)
             .plus(UnsignedLong.valueOf(Constants.MIN_VALIDATOR_WITHDRAWABILITY_DELAY)));
   }

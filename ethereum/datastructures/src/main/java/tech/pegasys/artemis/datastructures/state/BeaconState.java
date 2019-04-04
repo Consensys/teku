@@ -42,6 +42,7 @@ public class BeaconState {
   protected UnsignedLong validator_registry_update_epoch;
 
   // Randomness and committees
+  // TODO This is bounded by LATEST_RANDAO_MIXES_LENGTH
   protected List<Bytes32> latest_randao_mixes;
   protected UnsignedLong previous_shuffling_start_shard;
   protected UnsignedLong current_shuffling_start_shard;
@@ -62,10 +63,15 @@ public class BeaconState {
   protected Bytes32 finalized_root;
 
   // Recent state
+  // TODO This is bounded by SHARD_COUNT
   protected List<Crosslink> latest_crosslinks;
+  // TODO This is bounded by SLOTS_PER_HISTORICAL_ROOT
   protected List<Bytes32> latest_block_roots;
+  // TODO This is bounded by SLOTS_PER_HISTORICAL_ROOT
   protected List<Bytes32> latest_state_roots;
+  // TODO This is bounded by LATEST_ACTIVE_INDEX_ROOTS_LENGTH
   protected List<Bytes32> latest_active_index_roots;
+  // TODO This is bounded by LATEST_SLASHED_EXIT_LENGTH
   protected List<UnsignedLong>
       latest_slashed_balances; // Balances slashed at every withdrawal period
   protected BeaconBlockHeader

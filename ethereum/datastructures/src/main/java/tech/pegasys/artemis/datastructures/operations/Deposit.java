@@ -23,6 +23,7 @@ import net.consensys.cava.ssz.SSZ;
 
 public class Deposit {
 
+  // TODO This is bounded by DEPOSIT_CONTRACT_TREE_DEPTH
   private List<Bytes32> proof;
   private UnsignedLong index;
   private DepositData deposit_data;

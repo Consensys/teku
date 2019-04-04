@@ -32,7 +32,7 @@ public final class Validator implements Copyable<Validator> {
   // Epoch when validator exited
   private UnsignedLong exit_epoch;
   // Epoch when validator withdrew
-  private UnsignedLong withdrawal_epoch;
+  private UnsignedLong withdrawable_epoch;
   // Did the validator initiate an exit
   private boolean initiated_exit;
   // Was the validator slashed
@@ -50,7 +50,7 @@ public final class Validator implements Copyable<Validator> {
     this.withdrawal_credentials = withdrawal_credentials;
     this.activation_epoch = activation_epoch;
     this.exit_epoch = exit_epoch;
-    this.withdrawal_epoch = withdrawal_epoch;
+    this.withdrawable_epoch = withdrawal_epoch;
     this.initiated_exit = initiated_exit;
     this.slashed = slashed;
   }
@@ -60,7 +60,7 @@ public final class Validator implements Copyable<Validator> {
     this.withdrawal_credentials = validator.getWithdrawal_credentials().copy();
     this.activation_epoch = validator.getActivation_epoch();
     this.exit_epoch = validator.getExit_epoch();
-    this.withdrawal_epoch = validator.getWithdrawal_epoch();
+    this.withdrawable_epoch = validator.getWithdrawable_epoch();
     this.initiated_exit = validator.hasInitiatedExit();
     this.slashed = validator.isSlashed();
   }
@@ -91,7 +91,7 @@ public final class Validator implements Copyable<Validator> {
           writer.writeBytes(withdrawal_credentials);
           writer.writeUInt64(activation_epoch.longValue());
           writer.writeUInt64(exit_epoch.longValue());
-          writer.writeUInt64(withdrawal_epoch.longValue());
+          writer.writeUInt64(withdrawable_epoch.longValue());
           writer.writeBoolean(initiated_exit);
           writer.writeBoolean(slashed);
         });
@@ -104,7 +104,7 @@ public final class Validator implements Copyable<Validator> {
         withdrawal_credentials,
         activation_epoch,
         exit_epoch,
-        withdrawal_epoch,
+        withdrawable_epoch,
         initiated_exit,
         slashed);
   }
@@ -128,7 +128,7 @@ public final class Validator implements Copyable<Validator> {
         && Objects.equals(this.getWithdrawal_credentials(), other.getWithdrawal_credentials())
         && Objects.equals(this.getActivation_epoch(), other.getActivation_epoch())
         && Objects.equals(this.getExit_epoch(), other.getExit_epoch())
-        && Objects.equals(this.getWithdrawal_epoch(), other.getWithdrawal_epoch())
+        && Objects.equals(this.getWithdrawable_epoch(), other.getWithdrawable_epoch())
         && Objects.equals(this.hasInitiatedExit(), other.hasInitiatedExit())
         && Objects.equals(this.isSlashed(), other.isSlashed());
   }
@@ -165,12 +165,12 @@ public final class Validator implements Copyable<Validator> {
     this.exit_epoch = exit_epoch;
   }
 
-  public UnsignedLong getWithdrawal_epoch() {
-    return withdrawal_epoch;
+  public UnsignedLong getWithdrawable_epoch() {
+    return withdrawable_epoch;
   }
 
-  public void setWithdrawal_epoch(UnsignedLong withdrawal_epoch) {
-    this.withdrawal_epoch = withdrawal_epoch;
+  public void setWithdrawable_epoch(UnsignedLong withdrawable_epoch) {
+    this.withdrawable_epoch = withdrawable_epoch;
   }
 
   public boolean hasInitiatedExit() {

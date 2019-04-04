@@ -24,7 +24,9 @@ import tech.pegasys.artemis.datastructures.Copyable;
 
 public class HistoricalBatch implements Copyable<HistoricalBatch> {
 
+  // TODO This is bounded by SLOTS_PER_HISTORICAL_ROOT
   private List<Bytes32> block_roots;
+  // TODO This is bounded by SLOTS_PER_HISTORICAL_ROOT
   private List<Bytes32> state_roots;
 
   public HistoricalBatch(List<Bytes32> block_roots, List<Bytes32> state_roots) {

@@ -20,7 +20,9 @@ import net.consensys.cava.ssz.SSZ;
 
 public class Fork {
 
+  // TODO previous_version should be a bytes4 (this has serialization impacts)
   private Bytes previous_version;
+  // TODO previous_version should be a bytes4 (this has serialization impacts)
   private Bytes current_version;
   private UnsignedLong epoch;
 
