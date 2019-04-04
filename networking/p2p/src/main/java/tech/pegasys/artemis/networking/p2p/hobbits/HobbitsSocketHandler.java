@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
 import javax.annotation.Nullable;
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
@@ -34,12 +35,13 @@ import tech.pegasys.artemis.util.alogger.ALogger;
 public final class HobbitsSocketHandler {
   private static final ALogger LOG = new ALogger(HobbitsSocketHandler.class.getName());
   private final EventBus eventBus;
-  private final NetSocket netSocket;
   private final String userAgent;
   private final Peer peer;
   private TimeSeriesRecord chainData;
   private final Set<Long> pendingResponses = new HashSet<>();
   private final AtomicBoolean status = new AtomicBoolean(true);
+  private final Consumer<Bytes> messageSender;
+  private final Runnable handlerTermination;
 
   public HobbitsSocketHandler(
       EventBus eventBus,
@@ -47,14 +49,31 @@ public final class HobbitsSocketHandler {
       String userAgent,
       Peer peer,
       TimeSeriesRecord chainData) {
-    this.netSocket = netSocket;
+    this(
+        eventBus,
+        userAgent,
+        peer,
+        chainData,
+        (bytes) -> netSocket.write(Buffer.buffer(bytes.toArrayUnsafe())),
+        netSocket::close);
+    netSocket.handler(this::handleMessage);
+    netSocket.closeHandler(this::closed);
+  }
+
+  public HobbitsSocketHandler(
+      EventBus eventBus,
+      String userAgent,
+      Peer peer,
+      TimeSeriesRecord chainData,
+      Consumer<Bytes> messageSender,
+      Runnable handlerTermination) {
     this.userAgent = userAgent;
     this.peer = peer;
     this.chainData = chainData;
     this.eventBus = eventBus;
     this.eventBus.register(this);
-    netSocket.handler(this::handleMessage);
-    netSocket.closeHandler(this::closed);
+    this.messageSender = messageSender;
+    this.handlerTermination = handlerTermination;
   }
 
   private void closed(@Nullable Void nothing) {
@@ -65,7 +84,7 @@ public final class HobbitsSocketHandler {
 
   private Bytes buffer = Bytes.EMPTY;
 
-  private void handleMessage(Buffer message) {
+  public void handleMessage(Buffer message) {
     Bytes messageBytes = Bytes.wrapBuffer(message);
     buffer = Bytes.concatenate(buffer, messageBytes);
     while (!buffer.isEmpty()) {
@@ -141,13 +160,13 @@ public final class HobbitsSocketHandler {
   }
 
   private void sendBytes(Bytes bytes) {
-    netSocket.write(Buffer.buffer(bytes.toArrayUnsafe()));
+    messageSender.accept(bytes);
   }
 
   public void disconnect() {
     if (status.get()) {
-      netSocket.write(Buffer.buffer(RPCCodec.createGoodbye().toArrayUnsafe()));
-      netSocket.close();
+      sendBytes(RPCCodec.createGoodbye());
+      handlerTermination.run();
     }
   }
 

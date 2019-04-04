@@ -23,6 +23,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.PriorityBlockingQueue;
 import net.consensys.cava.bytes.Bytes32;
+import net.consensys.cava.crypto.SECP256K1;
+import net.consensys.cava.units.bigints.UInt256;
 import org.apache.logging.log4j.Level;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
@@ -44,14 +46,14 @@ import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 
-/** This class coordinates the activity between the validator clients and the the beacon chain */
+/** This class coordinates the activity between the validator clients and the beacon chain */
 public class ValidatorCoordinator {
   private static final ALogger LOG = new ALogger(ValidatorCoordinator.class.getName());
   private final EventBus eventBus;
 
   private StateTransition stateTransition;
   private final Boolean printEnabled = false;
-  private int nodeIdentity;
+  private SECP256K1.SecretKey nodeIdentity;
   private int numValidators;
   private int numNodes;
   private BeaconBlock validatorBlock;
@@ -65,7 +67,8 @@ public class ValidatorCoordinator {
   public ValidatorCoordinator(ServiceConfig config) {
     this.eventBus = config.getEventBus();
     this.eventBus.register(this);
-    this.nodeIdentity = Integer.decode(config.getConfig().getIdentity());
+    this.nodeIdentity =
+        SECP256K1.SecretKey.fromBytes(Bytes32.fromHexString(config.getConfig().getIdentity()));
     this.numValidators = config.getConfig().getNumValidators();
     this.numNodes = config.getConfig().getNumNodes();
 
@@ -118,12 +121,13 @@ public class ValidatorCoordinator {
   private void initializeValidators() {
     // TODO: make a way to tailor which validators are ours
     // Add all validators to validatorSet hashMap
+    int nodeCounter = UInt256.fromBytes(nodeIdentity.bytes()).mod(numNodes).intValue();
 
-    int startIndex = nodeIdentity * (numValidators / numNodes);
+    int startIndex = nodeCounter * (numValidators / numNodes);
     int endIndex =
         startIndex
             + (numValidators / numNodes - 1)
-            + (int) Math.floor(nodeIdentity / Math.max(1, numNodes - 1));
+            + (int) Math.floor(nodeCounter / Math.max(1, numNodes - 1));
     endIndex = Math.min(endIndex, numValidators - 1);
     LOG.log(Level.DEBUG, "startIndex: " + startIndex + " endIndex: " + endIndex);
     for (int i = startIndex; i < endIndex; i++) {
