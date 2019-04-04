@@ -86,32 +86,29 @@ public class BeaconStateUtil {
       throws IllegalStateException {
 
     // Process initial deposits
-    for (Deposit validator_deposit : genesis_validator_deposits) {
-      process_deposit(state, validator_deposit);
+    for (Deposit deposit : genesis_validator_deposits) {
+      process_deposit(state, deposit);
     }
 
-    // Process initial activations
-    int index = 0;
+    // Process genesis activations
+    int validator_index = 0;
     for (Validator validator : state.getValidator_registry()) {
       List<UnsignedLong> balances = state.getValidator_balances();
-      if (balances.get(index).compareTo(UnsignedLong.valueOf(MAX_DEPOSIT_AMOUNT)) >= 0) {
+      if (balances.get(validator_index).compareTo(UnsignedLong.valueOf(MAX_DEPOSIT_AMOUNT)) >= 0) {
         activate_validator(state, validator, true);
       }
-      index++;
+      validator_index++;
     }
 
-    List<Validator> activeValidators =
-        ValidatorsUtil.get_active_validators(
-            state.getValidator_registry(), UnsignedLong.valueOf(GENESIS_EPOCH));
     Bytes32 genesis_active_index_root =
         hash_tree_root_list_integers(
             ValidatorsUtil.get_active_validator_indices(
                 state.getValidator_registry(), UnsignedLong.valueOf(GENESIS_EPOCH)));
-    for (Bytes32 root : state.getLatest_active_index_roots()) {
-      root = genesis_active_index_root;
+    for (int index = 0; index < state.getLatest_active_index_roots().size(); index++) {
+      state.getLatest_active_index_roots().set(index, genesis_active_index_root);
     }
     state.setCurrent_shuffling_seed(generate_seed(state, UnsignedLong.valueOf(GENESIS_EPOCH)));
-    state.setDeposit_index(UnsignedLong.valueOf(genesis_validator_deposits.size()));
+
     return state;
   }
 
@@ -164,7 +161,7 @@ public class BeaconStateUtil {
       boolean proof_is_valid =
           bls_verify(
               pubkey,
-              deposit_input.signedRoot("proof_of_possession"),
+              deposit_input.signed_root("proof_of_possession"),
               deposit_input.getProof_of_possession(),
               get_domain(state.getFork(), get_current_epoch(state), DOMAIN_DEPOSIT));
       if (!proof_is_valid) {
@@ -571,13 +568,13 @@ public class BeaconStateUtil {
   public static void exit_validator(BeaconState state, int index) {
     Validator validator = state.getValidator_registry().get(index);
 
-    UnsignedLong exit_epoch = get_entry_exit_effect_epoch(get_current_epoch(state));
+    UnsignedLong delayed_activation_exit_epoch = get_delayed_activation_exit_epoch(get_current_epoch(state));
     // The following updates only occur if not previous exited
-    if (validator.getExit_epoch().compareTo(exit_epoch) <= 0) {
+    if (validator.getExit_epoch().compareTo(delayed_activation_exit_epoch) <= 0) {
       return;
     }
 
-    validator.setExit_epoch(exit_epoch);
+    validator.setExit_epoch(delayed_activation_exit_epoch);
   }
 
   /**
@@ -592,7 +589,8 @@ public class BeaconStateUtil {
   public static void slash_validator(BeaconState state, int index) {
     Validator validator = state.getValidator_registry().get(index);
     checkArgument(
-        state.getSlot().compareTo(get_epoch_start_slot(validator.getWithdrawal_epoch())) < 0);
+        state.getSlot().compareTo(get_epoch_start_slot(validator.getWithdrawal_epoch())) < 0); // [TO BE
+                  // REMOVED IN PHASE 2]
     exit_validator(state, index);
     int slashed_balances_index = get_current_epoch(state).intValue() % LATEST_SLASHED_EXIT_LENGTH;
     state
@@ -1126,7 +1124,7 @@ public class BeaconStateUtil {
     if (!Objects.equals(
         slashable_attestation.getCustody_bitfield(),
         Bytes.wrap(new byte[slashable_attestation.getCustody_bitfield().size()])))
-      return false; // [TO BE REMOVED IN PHASE 1]
+      return false;
 
     if (slashable_attestation.getValidator_indices().size() == 0) return false;
 
@@ -1147,7 +1145,6 @@ public class BeaconStateUtil {
 
     ArrayList<UnsignedLong> custody_bit_0_indices = new ArrayList<>();
     ArrayList<UnsignedLong> custody_bit_1_indices = new ArrayList<>();
-
     ListIterator<UnsignedLong> it = slashable_attestation.getValidator_indices().listIterator();
     while (it.hasNext()) {
       if (get_bitfield_bit(slashable_attestation.getCustody_bitfield(), it.nextIndex()) == 0b0) {
@@ -1170,7 +1167,7 @@ public class BeaconStateUtil {
         Arrays.asList(
             bls_aggregate_pubkeys(custody_bit_0_pubkeys),
             bls_aggregate_pubkeys(custody_bit_1_pubkeys));
-    List<Bytes32> messages =
+    List<Bytes32> message_hashes =
         Arrays.asList(
             hash_tree_root(
                 new AttestationDataAndCustodyBit(slashable_attestation.getData(), false).toBytes()),
@@ -1183,7 +1180,7 @@ public class BeaconStateUtil {
             slot_to_epoch(slashable_attestation.getData().getSlot()),
             DOMAIN_ATTESTATION);
 
-    return bls_verify_multiple(pubkeys, messages, signature, domain);
+    return bls_verify_multiple(pubkeys, message_hashes, signature, domain);
   }
 
   /**
@@ -1262,7 +1259,7 @@ public class BeaconStateUtil {
     validator.setActivation_epoch(
         is_genesis
             ? UnsignedLong.valueOf(GENESIS_EPOCH)
-            : BeaconStateUtil.get_entry_exit_effect_epoch(
+            : BeaconStateUtil.get_delayed_activation_exit_epoch(
                 BeaconStateUtil.get_current_epoch(state)));
   }
 

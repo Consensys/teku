@@ -46,12 +46,12 @@ public class LmdGhost {
     List<Integer> active_validator_indices =
         ValidatorsUtil.get_active_validator_indices(
             start_state.getValidator_registry(),
-            BeaconStateUtil.slot_to_epoch(UnsignedLong.valueOf(start_block.getSlot())));
+            BeaconStateUtil.slot_to_epoch(start_state.getSlot()));
 
     List<BeaconBlock> attestation_targets = new ArrayList<>();
-    for (Integer validatorIndex : active_validator_indices) {
-      if (get_latest_attestation_target(store, validatorIndex).isPresent()) {
-        attestation_targets.add(get_latest_attestation_target(store, validatorIndex).get());
+    for (int validator_index : active_validator_indices) {
+      if (get_latest_attestation_target(store, validator_index).isPresent()) {
+        attestation_targets.add(get_latest_attestation_target(store, validator_index).get());
       }
     }
 
@@ -64,6 +64,7 @@ public class LmdGhost {
         return head;
       }
 
+      // TODO: this is missing hash_tree_root(child_block).
       head =
           children.stream()
               .max(
@@ -76,6 +77,8 @@ public class LmdGhost {
   }
 
   /**
+   * Helper function for lmd_ghost.
+   *
    * @param store
    * @param block
    * @param attestation_targets
