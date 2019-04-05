@@ -134,7 +134,7 @@ public class BeaconBlockHeader {
     this.signature = signature;
   }
 
-  public Bytes32 signed_root(String truncationParam) {
+  public Bytes32 signedRoot(String truncationParam) {
     if (!truncationParam.equals("signature")) {
       throw new UnsupportedOperationException(
           "Only signed_root(BeaconBlockHeader, \"signature\") is currently supported for type BeaconBlockHeader.");

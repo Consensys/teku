@@ -47,7 +47,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -69,23 +68,14 @@ import tech.pegasys.artemis.util.bitwise.BitwiseOps;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 
 public final class EpochProcessorUtil {
-
   private static final ALogger LOG = new ALogger(EpochProcessorUtil.class.getName());
 
-  /**
-   * @param state
-   * @return
-   */
   public static UnsignedLong get_current_total_balance(BeaconState state) {
     return get_total_balance(
         state,
         get_active_validator_indices(state.getValidator_registry(), get_current_epoch(state)));
   }
 
-  /**
-   * @param state
-   * @return
-   */
   public static UnsignedLong get_previous_total_balance(BeaconState state) {
     return get_total_balance(
         state,
@@ -94,82 +84,72 @@ public final class EpochProcessorUtil {
 
   /**
    * Returns the union of validator index sets, where the sets are the attestation participants of
-   * attestations passed in.
+   * attestations passed in TODO: the union part takes O(n^2) time, where n is the number of
+   * validators. OPTIMIZE
    */
   public static List<Integer> get_attesting_indices(
       BeaconState state, List<PendingAttestation> attestations) throws IllegalArgumentException {
-    HashSet<Integer> output = new HashSet<>();
-    for (PendingAttestation a : attestations) {
-      output.addAll(get_attestation_participants(state, a.getData(), a.getAggregation_bitfield().toArray()));
+
+    List<ArrayList<Integer>> validator_index_sets = new ArrayList<>();
+
+    for (PendingAttestation attestation : attestations) {
+      validator_index_sets.add(
+          get_attestation_participants(
+              state, attestation.getData(), attestation.getAggregation_bitfield()));
     }
-    List<Integer> output_list = new ArrayList<>(output);
-    Collections.sort(output_list);
-    return output_list;
+
+    List<Integer> attester_indices = new ArrayList<Integer>();
+    for (List<Integer> validator_index_set : validator_index_sets) {
+      for (Integer validator_index : validator_index_set) {
+        if (!attester_indices.contains(validator_index)) {
+          attester_indices.add(validator_index);
+        }
+      }
+    }
+    return attester_indices;
   }
 
-  /**
-   * @param state
-   * @param attestations
-   * @return
-   */
   public static UnsignedLong get_attesting_balance(
       BeaconState state, List<PendingAttestation> attestations) {
     return get_total_balance(state, get_attesting_indices(state, attestations));
   }
 
-  /**
-   * @param state
-   * @return
-   */
   public static List<PendingAttestation> get_current_epoch_boundary_attestations(
       BeaconState state) {
     List<PendingAttestation> attestations = new ArrayList<>();
-    for (PendingAttestation a : state.getCurrent_epoch_attestations()) {
-      if (a.getData().getTarget_root()
+    for (PendingAttestation attestation : state.getCurrent_epoch_attestations()) {
+      if (attestation.getData().getTarget_root()
           == get_block_root(state, get_epoch_start_slot(get_current_epoch(state)))) {
-        attestations.add(a);
+        attestations.add(attestation);
       }
     }
     return attestations;
   }
 
-  /**
-   * @param state
-   * @return
-   */
   public static List<PendingAttestation> get_previous_epoch_boundary_attestations(
       BeaconState state) {
     List<PendingAttestation> attestations = new ArrayList<>();
-    for (PendingAttestation a : state.getPrevious_epoch_attestations()) {
-      if (a.getData().getTarget_root()
+    for (PendingAttestation attestation : state.getPrevious_epoch_attestations()) {
+      if (attestation.getData().getTarget_root()
           == get_block_root(state, get_epoch_start_slot(get_previous_epoch(state)))) {
-        attestations.add(a);
+        attestations.add(attestation);
       }
     }
     return attestations;
   }
 
-  /**
-   * @param state
-   * @return
-   */
   public static List<PendingAttestation> get_previous_epoch_matching_head_attestations(
       BeaconState state) {
     List<PendingAttestation> attestations = new ArrayList<>();
-    for (PendingAttestation a : state.getPrevious_epoch_attestations()) {
-      if (a.getData().getBeacon_block_root()
-          == get_block_root(state, a.getData().getSlot())) {
-        attestations.add(a);
+    for (PendingAttestation attestation : state.getPrevious_epoch_attestations()) {
+      if (attestation.getData().getBeacon_block_root()
+          == get_block_root(state, attestation.getData().getSlot())) {
+        attestations.add(attestation);
       }
     }
     return attestations;
   }
 
-  /**
-   * @param state
-   * @param shard
-   * @return
-   */
   public static MutablePair<Bytes32, List<Integer>> get_winning_root_and_participants(
       BeaconState state, UnsignedLong shard) {
     List<PendingAttestation> all_attestations = new ArrayList<>();
@@ -177,18 +157,18 @@ public final class EpochProcessorUtil {
     all_attestations.addAll(state.getPrevious_epoch_attestations());
 
     List<PendingAttestation> valid_attestations = new ArrayList<>();
-    for (PendingAttestation a : all_attestations) {
-      if (a
+    for (PendingAttestation attestation : all_attestations) {
+      if (attestation
           .getData()
           .getPrevious_crosslink()
           .equals(state.getLatest_crosslinks().get(shard.intValue()))) {
-        valid_attestations.add(a);
+        valid_attestations.add(attestation);
       }
     }
 
     List<Bytes32> all_roots = new ArrayList<>();
-    for (PendingAttestation a : valid_attestations) {
-      all_roots.add(a.getData().getCrosslink_data_root());
+    for (PendingAttestation attestation : valid_attestations) {
+      all_roots.add(attestation.getData().getCrosslink_data_root());
     }
 
     if (all_roots.size() == 0) {
@@ -205,64 +185,42 @@ public final class EpochProcessorUtil {
     Bytes32 winning_root =
         Collections.max(root_balances.entrySet(), Map.Entry.comparingByValue()).getKey();
     return new MutablePair<>(
-        winning_root,
-        get_attesting_indices(state, get_attestations_for(winning_root, valid_attestations)));
+        winning_root, get_attesting_indices(state, get_attestations_for(winning_root, valid_attestations)));
   }
 
-  /**
-   * Helper function for get_winning_root_and_participants.
-   *
-   * @param root
-   * @param valid_attestations
-   * @return
-   */
   public static List<PendingAttestation> get_attestations_for(
       Bytes32 root, List<PendingAttestation> valid_attestations) {
     List<PendingAttestation> attestations = new ArrayList<>();
-    for (PendingAttestation a : valid_attestations) {
-      if (a.getData().getCrosslink_data_root().equals(root)) {
-        attestations.add(a);
+    for (PendingAttestation attestation : valid_attestations) {
+      if (attestation.getData().getCrosslink_data_root().equals(root)) {
+        attestations.add(attestation);
       }
     }
     return attestations;
   }
 
-  /**
-   * @param state
-   * @param validator_index
-   * @return
-   */
-  public static PendingAttestation earliest_attestation(BeaconState state, int validator_index) {
+  public static PendingAttestation earliest_attestation(
+      BeaconState state, Integer validator_index) {
     List<PendingAttestation> attestations = new ArrayList<>();
-    for (PendingAttestation a : state.getPrevious_epoch_attestations()) {
+    for (PendingAttestation attestation : state.getPrevious_epoch_attestations()) {
       if (get_attestation_participants(
-              state, a.getData(), a.getAggregation_bitfield().toArray())
+              state, attestation.getData(), attestation.getAggregation_bitfield())
           .contains(validator_index)) {
-        attestations.add(a);
+        attestations.add(attestation);
       }
     }
 
     return Collections.min(
-        attestations, Comparator.comparing(PendingAttestation::getInclusion_slot));
+        attestations, Comparator.comparing(PendingAttestation::getInclusionSlot));
   }
 
-  /**
-   * @param state
-   * @param validator_index
-   * @return
-   */
-  public static UnsignedLong inclusion_slot(BeaconState state, int validator_index) {
-    return earliest_attestation(state, validator_index).getInclusion_slot();
+  public static UnsignedLong inclusion_slot(BeaconState state, Integer validator_index) {
+    return earliest_attestation(state, validator_index).getInclusionSlot();
   }
 
-  /**
-   * @param state
-   * @param validator_index
-   * @return
-   */
-  public static UnsignedLong inclusion_distance(BeaconState state, int validator_index) {
+  public static UnsignedLong inclusion_distance(BeaconState state, Integer validator_index) {
     PendingAttestation attestation = earliest_attestation(state, validator_index);
-    return attestation.getInclusion_slot().minus(attestation.getData().getSlot());
+    return attestation.getInclusionSlot().minus(attestation.getData().getSlot());
   }
 
   /**
@@ -352,21 +310,17 @@ public final class EpochProcessorUtil {
     }
   }
 
-  /**
-   * @param state
-   * @throws EpochProcessingException
-   */
   public static void process_crosslinks(BeaconState state) throws EpochProcessingException {
     try {
       UnsignedLong current_epoch = get_current_epoch(state);
       UnsignedLong previous_epoch = current_epoch.minus(UnsignedLong.ONE);
       UnsignedLong next_epoch = current_epoch.plus(UnsignedLong.ONE);
 
-      for (UnsignedLong slot = get_epoch_start_slot(previous_epoch);
-           slot.compareTo(get_epoch_start_slot(next_epoch)) < 0;
-           slot = slot.plus(UnsignedLong.ONE)) {
+      for (UnsignedLong curr_slot = get_epoch_start_slot(previous_epoch);
+          curr_slot.compareTo(get_epoch_start_slot(next_epoch)) < 0;
+          curr_slot = curr_slot.plus(UnsignedLong.ONE)) {
         List<CrosslinkCommittee> crosslink_committees_at_slot =
-            get_crosslink_committees_at_slot(state, slot);
+            get_crosslink_committees_at_slot(state, curr_slot);
         for (CrosslinkCommittee committee : crosslink_committees_at_slot) {
           MutablePair<Bytes32, List<Integer>> winning_root_and_participants =
               get_winning_root_and_participants(state, committee.getShard());
@@ -379,10 +333,11 @@ public final class EpochProcessorUtil {
                   .times(UnsignedLong.valueOf(3L))
                   .compareTo(total_balance.times(UnsignedLong.valueOf(2L)))
               >= 0) {
+            UnsignedLong shard = committee.getShard();
             state
                 .getLatest_crosslinks()
                 .set(
-                    toIntExact(committee.getShard().longValue()),
+                    toIntExact(shard.longValue()),
                     new Crosslink(slot_to_epoch(state.getSlot()), winning_root));
           }
         }
@@ -393,7 +348,6 @@ public final class EpochProcessorUtil {
     }
   }
 
-  /** @param state */
   public static void maybe_reset_eth1_period(BeaconState state) {
     if (get_current_epoch(state)
         .plus(UnsignedLong.ONE)
@@ -406,7 +360,8 @@ public final class EpochProcessorUtil {
                 .getVote_count()
                 .times(UnsignedLong.valueOf(2L))
                 .compareTo(
-                    UnsignedLong.valueOf(Constants.EPOCHS_PER_ETH1_VOTING_PERIOD * SLOTS_PER_EPOCH))
+                    UnsignedLong.valueOf(
+                        Constants.EPOCHS_PER_ETH1_VOTING_PERIOD * SLOTS_PER_EPOCH))
             > 0) {
           state.setLatest_eth1_data(eth1DataVote.getEth1_data());
         }
@@ -415,11 +370,6 @@ public final class EpochProcessorUtil {
     }
   }
 
-  /**
-   * @param state
-   * @param index
-   * @return
-   */
   private static UnsignedLong get_base_reward(BeaconState state, int index) {
     if (get_previous_total_balance(state).equals(UnsignedLong.ZERO)) {
       return UnsignedLong.ZERO;
@@ -432,12 +382,6 @@ public final class EpochProcessorUtil {
         .dividedBy(UnsignedLong.valueOf(5L));
   }
 
-  /**
-   * @param state
-   * @param index
-   * @param epochs_since_finality
-   * @return
-   */
   private static UnsignedLong get_inactivity_penalty(
       BeaconState state, int index, UnsignedLong epochs_since_finality) {
     UnsignedLong intermediate_value =
@@ -448,27 +392,19 @@ public final class EpochProcessorUtil {
     return get_base_reward(state, index).plus(intermediate_value);
   }
 
-  /**
-   * @param state
-   * @return
-   */
   private static MutablePair<List<UnsignedLong>, List<UnsignedLong>>
       get_justification_and_finalization_deltas(BeaconState state) {
     UnsignedLong epochs_since_finality =
         get_current_epoch(state).plus(UnsignedLong.ONE).minus(state.getFinalized_epoch());
     if (epochs_since_finality.compareTo(UnsignedLong.valueOf(4L)) <= 0) {
-      return compute_normal_justification_and_finalization_deltas(state);
+      return compute_normal_justification_delta(state);
     } else {
       return compute_inactivity_leak_deltas(state);
     }
   }
 
-  /**
-   * @param state
-   * @return
-   */
   private static MutablePair<List<UnsignedLong>, List<UnsignedLong>>
-      compute_normal_justification_and_finalization_deltas(BeaconState state) {
+      compute_normal_justification_delta(BeaconState state) {
     List<UnsignedLong> rewards =
         Arrays.asList(new UnsignedLong[state.getValidator_registry().size()]);
     List<UnsignedLong> penalties =
@@ -577,10 +513,6 @@ public final class EpochProcessorUtil {
     return deltas;
   }
 
-  /**
-   * @param state
-   * @return
-   */
   private static MutablePair<List<UnsignedLong>, List<UnsignedLong>> compute_inactivity_leak_deltas(
       BeaconState state) {
     List<UnsignedLong> rewards =
@@ -672,10 +604,6 @@ public final class EpochProcessorUtil {
     return deltas;
   }
 
-  /**
-   * @param state
-   * @return
-   */
   private static MutablePair<List<UnsignedLong>, List<UnsignedLong>> get_crosslink_deltas(
       BeaconState state) {
     List<UnsignedLong> rewards =
@@ -721,7 +649,6 @@ public final class EpochProcessorUtil {
     return deltas;
   }
 
-  /** @param state */
   public static void apply_rewards(BeaconState state) {
     MutablePair<List<UnsignedLong>, List<UnsignedLong>> deltas1 =
         get_justification_and_finalization_deltas(state);
@@ -745,9 +672,6 @@ public final class EpochProcessorUtil {
   /**
    * Iterate through the validator registry and eject active validators with balance below
    * ``EJECTION_BALANCE``.
-   *
-   * @param state
-   * @throws EpochProcessingException
    */
   public static void process_ejections(BeaconState state) throws EpochProcessingException {
     try {
@@ -769,10 +693,6 @@ public final class EpochProcessorUtil {
     }
   }
 
-  /**
-   * @param state
-   * @return
-   */
   private static boolean should_update_validator_registry(BeaconState state) {
     // Must have finalized a new block
     if (state.getFinalized_epoch().compareTo(state.getValidator_registry_update_epoch()) <= 0) {
@@ -803,7 +723,7 @@ public final class EpochProcessorUtil {
   }
 
   /**
-   * Update the validator registry, Note that this function mutates ``state``.
+   * Update the validator registry
    *
    * @param state
    */
@@ -859,10 +779,6 @@ public final class EpochProcessorUtil {
     }
   }
 
-  /**
-   * @param state
-   * @throws EpochProcessingException
-   */
   public static void update_registry_and_shuffling_data(BeaconState state)
       throws EpochProcessingException {
     try {
@@ -901,11 +817,6 @@ public final class EpochProcessorUtil {
     }
   }
 
-  /**
-   * Process the slashings. Note that this function mutates ``state``.
-   *
-   * @param state
-   */
   public static void process_slashings(BeaconState state) {
     UnsignedLong current_epoch = get_current_epoch(state);
     List<Integer> active_validator_indices =
@@ -924,7 +835,10 @@ public final class EpochProcessorUtil {
     UnsignedLong total_at_end =
         state
             .getLatest_slashed_balances()
-            .get(current_epoch.mod(UnsignedLong.valueOf(LATEST_SLASHED_EXIT_LENGTH)).intValue());
+            .get(
+                current_epoch
+                    .mod(UnsignedLong.valueOf(LATEST_SLASHED_EXIT_LENGTH))
+                    .intValue());
     UnsignedLong total_penalties = total_at_end.minus(total_at_start);
 
     int index = 0;
@@ -949,11 +863,6 @@ public final class EpochProcessorUtil {
     }
   }
 
-  /**
-   * Process the exit queue. Note that this function mutates ``state``.
-   *
-   * @param state
-   */
   public static void process_exit_queue(BeaconState state) {
     // Sort in order of exit epoch, and validators that exit within the same epoch exit in order of
     // validator index
@@ -973,7 +882,7 @@ public final class EpochProcessorUtil {
     }
   }
 
-  private static boolean eligible(BeaconState state, int index) {
+  private static boolean eligible(BeaconState state, Integer index) {
     Validator validator = state.getValidator_registry().get(index);
     // Filter out dequeued validators
     if (!validator.getWithdrawal_epoch().equals(FAR_FUTURE_EPOCH)) {
@@ -989,14 +898,14 @@ public final class EpochProcessorUtil {
     }
   }
 
-  /** @param state */
   public static void finish_epoch_update(BeaconState state) {
     UnsignedLong current_epoch = get_current_epoch(state);
     UnsignedLong next_epoch = current_epoch.plus(UnsignedLong.ONE);
 
     // Set active index root
-    int index_root_position =
-        (next_epoch.intValue() + ACTIVATION_EXIT_DELAY) % LATEST_ACTIVE_INDEX_ROOTS_LENGTH;
+    Integer index_root_position =
+        (next_epoch.intValue() + ACTIVATION_EXIT_DELAY)
+            % LATEST_ACTIVE_INDEX_ROOTS_LENGTH;
     state
         .getLatest_active_index_roots()
         .set(
