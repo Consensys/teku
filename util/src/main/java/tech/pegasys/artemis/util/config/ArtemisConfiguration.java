@@ -432,7 +432,7 @@ public final class ArtemisConfiguration {
   }
 
   public int getDomainVoluntaryExit() {
-    return config.getInteger("constants.DOMAIN_EXIT");
+    return config.getInteger("constants.DOMAIN_VOLUNTARY_EXIT");
   }
 
   public int getDomainTransfer() {

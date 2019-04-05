@@ -34,7 +34,6 @@ import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_effec
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_epoch_start_slot;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_previous_epoch;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_randao_mix;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_total_balance;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.is_power_of_two;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.max;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.min;
@@ -833,7 +832,7 @@ public final class EpochProcessorUtil {
                 >= 0) {
           balance_churn = balance_churn.plus(get_effective_balance(state, index));
           if (balance_churn.compareTo(max_balance_churn) > 0) break;
-          BeaconStateUtil.activate_validator(state, validator, false);
+          BeaconStateUtil.activate_validator(state, index, false);
         }
         index++;
       }

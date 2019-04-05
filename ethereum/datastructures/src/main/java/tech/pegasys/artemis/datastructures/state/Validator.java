@@ -188,17 +188,4 @@ public final class Validator implements Copyable<Validator> {
   public void setSlashed(boolean slashed) {
     this.slashed = slashed;
   }
-
-  /**
-   * Check if (this) validator is active in the given epoch.
-   *
-   * @param epoch - The epoch under consideration.
-   * @return A boolean indicating if the validator is active.
-   * @see <a
-   *     href="https://github.com/ethereum/eth2.0-specs/blob/v0.4.0/specs/core/0_beacon-chain.md#is_active_validator">is_active_validator
-   *     - Spec v0.4</a>
-   */
-  public boolean is_active_validator(UnsignedLong epoch) {
-    return activation_epoch.compareTo(epoch) <= 0 && epoch.compareTo(exit_epoch) < 0;
-  }
 }
