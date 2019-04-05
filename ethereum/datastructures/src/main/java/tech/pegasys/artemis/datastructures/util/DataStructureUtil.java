@@ -29,13 +29,9 @@ import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockBody;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
-import tech.pegasys.artemis.datastructures.operations.AttestationData;
-import tech.pegasys.artemis.datastructures.operations.AttesterSlashing;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.DepositData;
 import tech.pegasys.artemis.datastructures.operations.DepositInput;
-import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
-import tech.pegasys.artemis.datastructures.operations.SlashableAttestation;
 import tech.pegasys.artemis.datastructures.operations.Transfer;
 import tech.pegasys.artemis.datastructures.operations.VoluntaryExit;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
@@ -119,7 +115,7 @@ public final class DataStructureUtil {
     BLSSignature proof_of_possession =
         BLSSignature.sign(
             keyPair,
-            proof_of_possession_data.signedRoot("proof_of_possession"),
+            proof_of_possession_data.signed_root("proof_of_possession"),
             Constants.DOMAIN_DEPOSIT);
 
     return new DepositInput(keyPair.getPublicKey(), withdrawal_credentials, proof_of_possession);
@@ -217,7 +213,7 @@ public final class DataStructureUtil {
           new DepositInput(keypair.getPublicKey(), Bytes32.ZERO, BLSSignature.empty());
       BLSSignature proof_of_possession =
           BLSSignature.sign(
-              keypair, deposit_input.signedRoot("proof_of_possession"), Constants.DOMAIN_DEPOSIT);
+              keypair, deposit_input.signed_root("proof_of_possession"), Constants.DOMAIN_DEPOSIT);
       deposit_input.setProof_of_possession(proof_of_possession);
 
       UnsignedLong timestamp = UnsignedLong.valueOf(i);
@@ -243,10 +239,7 @@ public final class DataStructureUtil {
         state_root,
         new BeaconBlockBody(
             Constants.EMPTY_SIGNATURE,
-            new Eth1Data(
-                    ZERO_HASH,
-                    ZERO_HASH
-            ),
+            new Eth1Data(ZERO_HASH, ZERO_HASH),
             new ArrayList<>(),
             new ArrayList<>(),
             attestations,

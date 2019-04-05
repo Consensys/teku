@@ -13,11 +13,6 @@
 
 package tech.pegasys.artemis.datastructures.blocks;
 
-import static tech.pegasys.artemis.datastructures.Constants.EMPTY_SIGNATURE;
-import static tech.pegasys.artemis.datastructures.Constants.GENESIS_SLOT;
-import static tech.pegasys.artemis.datastructures.Constants.ZERO_HASH;
-
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Objects;
 import net.consensys.cava.bytes.Bytes;
