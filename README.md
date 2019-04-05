@@ -8,10 +8,6 @@ Implementation of the Ethereum 2.0 Beacon Chain.
 
 Based on the (evolving) [specification](https://github.com/ethereum/eth2.0-specs/blob/master/specs/core/0_beacon-chain.md).
 
-## About Artemis
-
-<iframe src="https://docs.google.com/presentation/d/e/2PACX-1vQj21NcNngWNKCXL4k_ZBpHPLQhE1YceE9I6BbVWYNyXStAAPMj-1Zx5wfNiaNHYX8tUl7t2FyJD8Qr/embed?start=false&loop=false&delayms=3000" frameborder="0" width="960" height="569" allowfullscreen="true" mozallowfullscreen="true" webkitallowfullscreen="true"></iframe>
-
 ## Build Instructions
 
 To build, clone this repo and run with `gradle` like so:
