@@ -42,8 +42,7 @@ public class BeaconState {
   protected UnsignedLong validator_registry_update_epoch;
 
   // Randomness and committees
-  // TODO This is bounded by LATEST_RANDAO_MIXES_LENGTH
-  protected List<Bytes32> latest_randao_mixes;
+  protected List<Bytes32> latest_randao_mixes; // Bounded by LATEST_RANDAO_MIXES_LENGTH
   protected UnsignedLong previous_shuffling_start_shard;
   protected UnsignedLong current_shuffling_start_shard;
   protected UnsignedLong previous_shuffling_epoch;
@@ -65,12 +64,9 @@ public class BeaconState {
   // Recent state
   // TODO This is bounded by SHARD_COUNT
   protected List<Crosslink> latest_crosslinks;
-  // TODO This is bounded by SLOTS_PER_HISTORICAL_ROOT
-  protected List<Bytes32> latest_block_roots;
-  // TODO This is bounded by SLOTS_PER_HISTORICAL_ROOT
-  protected List<Bytes32> latest_state_roots;
-  // TODO This is bounded by LATEST_ACTIVE_INDEX_ROOTS_LENGTH
-  protected List<Bytes32> latest_active_index_roots;
+  protected List<Bytes32> latest_block_roots; // Bounded by SLOTS_PER_HISTORICAL_ROOT
+  protected List<Bytes32> latest_state_roots; // Bounded by SLOTS_PER_HISTORICAL_ROOT
+  protected List<Bytes32> latest_active_index_roots; // Bounded by LATEST_ACTIVE_INDEX_ROOTS_LENGTH
   // TODO This is bounded by LATEST_SLASHED_EXIT_LENGTH
   protected List<UnsignedLong>
       latest_slashed_balances; // Balances slashed at every withdrawal period
@@ -244,7 +240,7 @@ public class BeaconState {
                     .collect(Collectors.toList()),
                 UnsignedLong.fromLongBits(reader.readUInt64()),
                 // Randomness and committees
-                reader.readBytesList().stream().map(Bytes32::wrap).collect(Collectors.toList()),
+                reader.readFixedBytesList(Constants.LATEST_RANDAO_MIXES_LENGTH, 32).stream().map(Bytes32::wrap).collect(Collectors.toList()),
                 UnsignedLong.fromLongBits(reader.readUInt64()),
                 UnsignedLong.fromLongBits(reader.readUInt64()),
                 UnsignedLong.fromLongBits(reader.readUInt64()),
@@ -269,14 +265,14 @@ public class BeaconState {
                 reader.readBytesList().stream()
                     .map(Crosslink::fromBytes)
                     .collect(Collectors.toList()),
-                reader.readBytesList().stream().map(Bytes32::wrap).collect(Collectors.toList()),
-                reader.readBytesList().stream().map(Bytes32::wrap).collect(Collectors.toList()),
-                reader.readBytesList().stream().map(Bytes32::wrap).collect(Collectors.toList()),
+                reader.readFixedBytesList(Constants.SLOTS_PER_HISTORICAL_ROOT, 32).stream().map(Bytes32::wrap).collect(Collectors.toList()),
+                reader.readFixedBytesList(Constants.SLOTS_PER_HISTORICAL_ROOT, 32).stream().map(Bytes32::wrap).collect(Collectors.toList()),
+                reader.readFixedBytesList(Constants.LATEST_ACTIVE_INDEX_ROOTS_LENGTH, 32).stream().map(Bytes32::wrap).collect(Collectors.toList()),
                 reader.readUInt64List().stream()
                     .map(UnsignedLong::fromLongBits)
                     .collect(Collectors.toList()),
                 BeaconBlockHeader.fromBytes(reader.readBytes()),
-                reader.readBytesList().stream().map(Bytes32::wrap).collect(Collectors.toList()),
+                reader.readFixedBytesList(32).stream().map(Bytes32::wrap).collect(Collectors.toList()),
                 // Ethereum 1.0 chain data
                 Eth1Data.fromBytes(reader.readBytes()),
                 reader.readBytesList().stream()
@@ -316,7 +312,7 @@ public class BeaconState {
                   .collect(Collectors.toList()));
           writer.writeUInt64(validator_registry_update_epoch.longValue());
           // Randomness and committees
-          writer.writeBytesList(latest_randao_mixes);
+          writer.writeFixedBytesList(Constants.LATEST_RANDAO_MIXES_LENGTH ,32, latest_randao_mixes);
           writer.writeUInt64(previous_shuffling_start_shard.longValue());
           writer.writeUInt64(current_shuffling_start_shard.longValue());
           writer.writeUInt64(previous_shuffling_epoch.longValue());
@@ -335,16 +331,16 @@ public class BeaconState {
           writer.writeFixedBytes(32, finalized_root);
           // Recent state
           writer.writeBytesList(latest_crosslinksBytes);
-          writer.writeBytesList(latest_block_roots);
-          writer.writeBytesList(latest_state_roots);
-          writer.writeBytesList(latest_active_index_roots);
+          writer.writeFixedBytesList(Constants.SLOTS_PER_HISTORICAL_ROOT, 32, latest_block_roots);
+          writer.writeFixedBytesList(Constants.SLOTS_PER_HISTORICAL_ROOT, 32, latest_state_roots);
+          writer.writeFixedBytesList(Constants.LATEST_ACTIVE_INDEX_ROOTS_LENGTH, 32, latest_active_index_roots);
           writer.writeULongIntList(
               64,
               latest_slashed_balances.stream()
                   .map(UnsignedLong::longValue)
                   .collect(Collectors.toList()));
           writer.writeBytes(latest_block_header.toBytes());
-          writer.writeBytesList(historical_roots);
+          writer.writeFixedBytesList(32, historical_roots);
           // Ethereum 1.0 chain data
           writer.writeBytes(latest_eth1_data.toBytes());
           writer.writeBytesList(eth1_data_votesBytes);
