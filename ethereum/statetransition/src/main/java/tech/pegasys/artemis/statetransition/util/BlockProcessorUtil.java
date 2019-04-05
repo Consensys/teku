@@ -24,6 +24,7 @@ import static tech.pegasys.artemis.datastructures.Constants.DOMAIN_VOLUNTARY_EXI
 import static tech.pegasys.artemis.datastructures.Constants.FAR_FUTURE_EPOCH;
 import static tech.pegasys.artemis.datastructures.Constants.MAX_ATTESTATIONS;
 import static tech.pegasys.artemis.datastructures.Constants.MAX_ATTESTER_SLASHINGS;
+import static tech.pegasys.artemis.datastructures.Constants.MAX_DEPOSITS;
 import static tech.pegasys.artemis.datastructures.Constants.MAX_PROPOSER_SLASHINGS;
 import static tech.pegasys.artemis.datastructures.Constants.MAX_TRANSFERS;
 import static tech.pegasys.artemis.datastructures.Constants.MIN_DEPOSIT_AMOUNT;
@@ -66,6 +67,7 @@ import tech.pegasys.artemis.datastructures.blocks.Eth1DataVote;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.AttestationDataAndCustodyBit;
 import tech.pegasys.artemis.datastructures.operations.AttesterSlashing;
+import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
 import tech.pegasys.artemis.datastructures.operations.SlashableAttestation;
 import tech.pegasys.artemis.datastructures.operations.Transfer;
@@ -76,6 +78,7 @@ import tech.pegasys.artemis.datastructures.state.CrosslinkCommittee;
 import tech.pegasys.artemis.datastructures.state.PendingAttestation;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.datastructures.util.BeaconBlockUtil;
+import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 
@@ -496,6 +499,26 @@ public final class BlockProcessorUtil {
     return true;
   }
 
+  public static void process_deposits(BeaconState state, BeaconBlock block)
+      throws BlockProcessingException {
+    try {
+      // Verify that len(block.body.deposits) <= MAX_DEPOSITS
+      checkArgument(
+          block.getBody().getDeposits().size() <= MAX_DEPOSITS,
+          "More deposits than the limit in process_deposits()");
+
+      // SPEC TODO: add logic to ensure that deposits from 1.0 chain are processed in order
+
+      // For each deposit in block.body.deposits:
+      for (Deposit deposit : block.getBody().getDeposits()) {
+        BeaconStateUtil.process_deposit(state, deposit);
+      }
+    } catch (IllegalArgumentException e) {
+      LOG.log(Level.WARN, "BlockProcessingException thrown in processExits()");
+      throw new BlockProcessingException(e);
+    }
+  }
+
   /**
    * Process ``VoluntaryExit`` transaction. Note that this function mutates ``state``.
    *
@@ -504,7 +527,7 @@ public final class BlockProcessorUtil {
    * @throws BlockProcessingException
    */
   // TODO: Parameter BeaconBlock block needs to be updated to VoluntaryExit exit.
-  public static void process_voluntary_exit(BeaconState state, BeaconBlock block)
+  public static void process_voluntary_exits(BeaconState state, BeaconBlock block)
       throws BlockProcessingException {
     try {
       // Verify that len(block.body.voluntary_exits) <= MAX_VOLUNTARY_EXITS
@@ -566,7 +589,7 @@ public final class BlockProcessorUtil {
    * @throws BlockProcessingException
    */
   // TODO: Parameter BeaconBlock block needs to be updated to Transfer transfer.
-  public static void process_transfer(BeaconState state, BeaconBlock block)
+  public static void process_transfers(BeaconState state, BeaconBlock block)
       throws BlockProcessingException {
     // Verify that len(block.body.transfers) <= MAX_TRANSFERS and that all transfers are distinct.
     checkArgument(

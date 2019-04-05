@@ -685,7 +685,7 @@ public class BeaconStateUtil {
             <= 0,
         "checkArgument threw an exception in get_block_root()");
     return state
-        .getLatest_state_roots()
+        .getLatest_block_roots()
         .get(slot.mod(UnsignedLong.valueOf(Constants.SLOTS_PER_HISTORICAL_ROOT)).intValue());
   }
 
