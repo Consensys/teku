@@ -684,6 +684,7 @@ public class BeaconStateUtil {
                 .compareTo(slot.plus(UnsignedLong.valueOf(Constants.SLOTS_PER_HISTORICAL_ROOT)))
             <= 0,
         "checkArgument threw an exception in get_block_root()");
+    // Todo: Remove .intValue() as soon as our list wrapper supports unsigned longs	
     return state
         .getLatest_block_roots()
         .get(slot.mod(UnsignedLong.valueOf(Constants.SLOTS_PER_HISTORICAL_ROOT)).intValue());
