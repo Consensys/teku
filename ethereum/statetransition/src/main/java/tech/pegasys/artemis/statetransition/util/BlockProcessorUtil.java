@@ -15,37 +15,37 @@ package tech.pegasys.artemis.statetransition.util;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.lang.Math.toIntExact;
-import static tech.pegasys.artemis.datastructures.Constants.DOMAIN_RANDAO;
-import static tech.pegasys.artemis.datastructures.Constants.MAX_PROPOSER_SLASHINGS;
+import static tech.pegasys.artemis.datastructures.Constants.BLS_WITHDRAWAL_PREFIX_BYTE;
+import static tech.pegasys.artemis.datastructures.Constants.DOMAIN_ATTESTATION;
 import static tech.pegasys.artemis.datastructures.Constants.DOMAIN_BEACON_BLOCK;
-import static tech.pegasys.artemis.datastructures.Constants.MAX_ATTESTER_SLASHINGS;
+import static tech.pegasys.artemis.datastructures.Constants.DOMAIN_RANDAO;
+import static tech.pegasys.artemis.datastructures.Constants.DOMAIN_TRANSFER;
+import static tech.pegasys.artemis.datastructures.Constants.DOMAIN_VOLUNTARY_EXIT;
+import static tech.pegasys.artemis.datastructures.Constants.FAR_FUTURE_EPOCH;
 import static tech.pegasys.artemis.datastructures.Constants.MAX_ATTESTATIONS;
+import static tech.pegasys.artemis.datastructures.Constants.MAX_ATTESTER_SLASHINGS;
+import static tech.pegasys.artemis.datastructures.Constants.MAX_DEPOSITS;
+import static tech.pegasys.artemis.datastructures.Constants.MAX_PROPOSER_SLASHINGS;
+import static tech.pegasys.artemis.datastructures.Constants.MAX_TRANSFERS;
+import static tech.pegasys.artemis.datastructures.Constants.MIN_DEPOSIT_AMOUNT;
+import static tech.pegasys.artemis.datastructures.Constants.PERSISTENT_COMMITTEE_PERIOD;
 import static tech.pegasys.artemis.datastructures.Constants.SLOTS_PER_EPOCH;
 import static tech.pegasys.artemis.datastructures.Constants.ZERO_HASH;
-import static tech.pegasys.artemis.datastructures.Constants.DOMAIN_ATTESTATION;
-import static tech.pegasys.artemis.datastructures.Constants.MAX_DEPOSITS;
-import static tech.pegasys.artemis.datastructures.Constants.FAR_FUTURE_EPOCH;
-import static tech.pegasys.artemis.datastructures.Constants.PERSISTENT_COMMITTEE_PERIOD;
-import static tech.pegasys.artemis.datastructures.Constants.DOMAIN_VOLUNTARY_EXIT;
-import static tech.pegasys.artemis.datastructures.Constants.DOMAIN_TRANSFER;
-import static tech.pegasys.artemis.datastructures.Constants.MIN_DEPOSIT_AMOUNT;
-import static tech.pegasys.artemis.datastructures.Constants.MAX_TRANSFERS;
-import static tech.pegasys.artemis.datastructures.Constants.BLS_WITHDRAWAL_PREFIX_BYTE;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_attestation_participants;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_beacon_proposer_index;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_bitfield_bit;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_crosslink_committees_at_slot;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_current_epoch;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.slot_to_epoch;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.slash_validator;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_domain;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_previous_epoch;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_randao_mix;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.initiate_validator_exit;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.is_double_vote;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.is_surround_vote;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.verify_slashable_attestation;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_domain;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_randao_mix;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_previous_epoch;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_crosslink_committees_at_slot;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_bitfield_bit;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_attestation_participants;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.initiate_validator_exit;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.max;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.slash_validator;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.slot_to_epoch;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.verify_slashable_attestation;
 import static tech.pegasys.artemis.util.bls.BLSAggregate.bls_aggregate_pubkeys;
 import static tech.pegasys.artemis.util.bls.BLSVerify.bls_verify;
 import static tech.pegasys.artemis.util.bls.BLSVerify.bls_verify_multiple;
@@ -86,6 +86,10 @@ public final class BlockProcessorUtil {
 
   private static final ALogger LOG = new ALogger(BlockProcessorUtil.class.getName());
 
+  /**
+   * @param state
+   * @param block
+   */
   public static void process_block_header(BeaconState state, BeaconBlock block) {
     checkArgument(verify_slot(state, block), "Slots don't match");
     checkArgument(
@@ -115,6 +119,10 @@ public final class BlockProcessorUtil {
     return state.getSlot().compareTo(UnsignedLong.valueOf(block.getSlot())) == 0;
   }
 
+  /**
+   * @param state
+   * @param block
+   */
   public static void process_randao(BeaconState state, BeaconBlock block) {
     Validator proposer =
         state.getValidator_registry().get(get_beacon_proposer_index(state, state.getSlot()));
@@ -138,6 +146,10 @@ public final class BlockProcessorUtil {
     state.getLatest_randao_mixes().set(index, newRandaoMix);
   }
 
+  /**
+   * @param state
+   * @param block
+   */
   public static void process_eth1_data(BeaconState state, BeaconBlock block) {
     for (Eth1DataVote eth1DataVote : state.getEth1_data_votes()) {
       // If someone else has already voted for the same hash, add to its counter
@@ -153,6 +165,13 @@ public final class BlockProcessorUtil {
         .add(new Eth1DataVote(block.getBody().getEth1_data(), UnsignedLong.ONE));
   }
 
+  /**
+   * Process ``ProposerSlashing`` transaction. Note that this function mutates ``state``.
+   *
+   * @param state
+   * @param block
+   * @throws BlockProcessingException
+   */
   public static void process_proposer_slashings(BeaconState state, BeaconBlock block)
       throws BlockProcessingException {
     try {
@@ -229,11 +248,15 @@ public final class BlockProcessorUtil {
   }
 
   /**
+   * Process ``AttesterSlashing`` transaction. Note that this function mutates ``state``.
+   *
    * @param state
    * @param block
    * @see <a href=
    *     "https://github.com/ethereum/eth2.0-specs/blob/v0.1/specs/core/0_beacon-chain.md#attester-slashings-1">spec</a>
    */
+  // TODO: Parameter needs to be changed from BeaconBlock block to AttesterSlashing
+  // attester_slashing.
   public static void process_attester_slashings(BeaconState state, BeaconBlock block)
       throws BlockProcessingException {
     try {
@@ -296,6 +319,8 @@ public final class BlockProcessorUtil {
   }
 
   /**
+   * Process ``Attestation`` transaction. Note that this function mutates ``state``.
+   *
    * @param state
    * @param block
    * @see <a
@@ -494,16 +519,24 @@ public final class BlockProcessorUtil {
     }
   }
 
+  /**
+   * Process ``VoluntaryExit`` transaction. Note that this function mutates ``state``.
+   *
+   * @param state
+   * @param block
+   * @throws BlockProcessingException
+   */
+  // TODO: Parameter BeaconBlock block needs to be updated to VoluntaryExit exit.
   public static void process_voluntary_exits(BeaconState state, BeaconBlock block)
       throws BlockProcessingException {
     try {
       // Verify that len(block.body.voluntary_exits) <= MAX_VOLUNTARY_EXITS
       checkArgument(
-          block.getBody().getVoluntaryExits().size() <= Constants.MAX_VOLUNTARY_EXITS,
+          block.getBody().getVoluntary_exits().size() <= Constants.MAX_VOLUNTARY_EXITS,
           "checkArgument threw and exception in processExits()");
 
       // For each exit in block.body.voluntaryExits:
-      for (VoluntaryExit voluntaryExit : block.getBody().getVoluntaryExits()) {
+      for (VoluntaryExit voluntaryExit : block.getBody().getVoluntary_exits()) {
 
         Validator validator =
             state
@@ -548,6 +581,14 @@ public final class BlockProcessorUtil {
     }
   }
 
+  /**
+   * Process ``Transfer`` transaction. Note that this function mutates ``state``.
+   *
+   * @param state
+   * @param block
+   * @throws BlockProcessingException
+   */
+  // TODO: Parameter BeaconBlock block needs to be updated to Transfer transfer.
   public static void process_transfers(BeaconState state, BeaconBlock block)
       throws BlockProcessingException {
     // Verify that len(block.body.transfers) <= MAX_TRANSFERS and that all transfers are distinct.
@@ -650,6 +691,10 @@ public final class BlockProcessorUtil {
     }
   }
 
+  /**
+   * @param state
+   * @param block
+   */
   public static void verify_block_state_root(BeaconState state, BeaconBlock block) {
     checkArgument(
         block.getState_root().equals(hash_tree_root(state.toBytes())),

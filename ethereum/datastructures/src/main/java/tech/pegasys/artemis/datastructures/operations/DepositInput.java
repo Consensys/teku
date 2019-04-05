@@ -25,11 +25,11 @@ import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 public final class DepositInput {
 
   // BLS pubkey
-  BLSPublicKey pubkey;
+  private BLSPublicKey pubkey;
   // Withdrawal credentials
-  Bytes32 withdrawal_credentials;
+  private Bytes32 withdrawal_credentials;
   // A BLS signature of this `DepositInput`
-  BLSSignature proof_of_possession;
+  private BLSSignature proof_of_possession;
 
   public DepositInput(
       BLSPublicKey pubkey, Bytes32 withdrawal_credentials, BLSSignature proof_of_possession) {

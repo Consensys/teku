@@ -13,9 +13,4 @@
 
 package tech.pegasys.artemis.statetransition.util;
 
-import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
-
-public final class SlotProcessorUtil {
-
-
-}
+public final class SlotProcessorUtil {}
