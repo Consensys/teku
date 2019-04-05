@@ -223,24 +223,16 @@ public class ValidatorCoordinator {
   private BLSSignature signProposalData(BeaconState state, BeaconBlock block, BLSKeyPair keypair) {
     // Let proposal = Proposal(block.slot, BEACON_CHAIN_SHARD_NUMBER,
     //   signed_root(block, "signature"), block.signature).
-    Proposal proposal =
-        new Proposal(
-            UnsignedLong.fromLongBits(block.getSlot()),
-            Constants.BEACON_CHAIN_SHARD_NUMBER,
-            block.signedRoot("signature"),
-            block.getSignature());
-    Bytes32 proposalRoot = proposal.signedRoot("signature");
 
     UnsignedLong domain =
         BeaconStateUtil.get_domain(
             state.getFork(),
-            BeaconStateUtil.slot_to_epoch(state.getSlot()),
-            Constants.DOMAIN_PROPOSAL);
-    BLSSignature signature = BLSSignature.sign(keypair, proposalRoot, domain.longValue());
+            BeaconStateUtil.slot_to_epoch(UnsignedLong.valueOf(block.getSlot())),
+            Constants.DOMAIN_BEACON_BLOCK);
+    BLSSignature signature = BLSSignature.sign(keypair, block.signedRoot("signature"), domain.longValue());
     LOG.log(Level.INFO, "Sign Proposal", printEnabled);
     LOG.log(Level.INFO, "Proposer pubkey: " + keypair.getPublicKey(), printEnabled);
     LOG.log(Level.INFO, "state: " + HashTreeUtil.hash_tree_root(state.toBytes()), printEnabled);
-    LOG.log(Level.INFO, "proposal root: " + proposalRoot.toHexString(), printEnabled);
     LOG.log(Level.INFO, "block signature: " + signature.toString(), printEnabled);
     LOG.log(Level.INFO, "slot: " + state.getSlot().longValue(), printEnabled);
     LOG.log(Level.INFO, "domain: " + domain, printEnabled);

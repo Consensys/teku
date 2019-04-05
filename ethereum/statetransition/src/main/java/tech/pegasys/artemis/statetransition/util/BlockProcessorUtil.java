@@ -460,10 +460,10 @@ public final class BlockProcessorUtil {
 
     List<Integer> participants =
         get_attestation_participants(
-            state, attestation.getData(), attestation.getAggregation_bitfield().toArray());
+            state, attestation.getData(), attestation.getAggregation_bitfield());
     List<Integer> custody_bit_1_participants =
         get_attestation_participants(
-            state, attestation.getData(), attestation.getCustody_bitfield().toArray());
+            state, attestation.getData(), attestation.getCustody_bitfield());
     List<Integer> custody_bit_0_participants = new ArrayList<>();
     for (Integer participant : participants) {
       if (custody_bit_1_participants.indexOf(participant) == -1) {
