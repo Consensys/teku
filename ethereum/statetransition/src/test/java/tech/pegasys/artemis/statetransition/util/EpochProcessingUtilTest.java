@@ -15,6 +15,7 @@ package tech.pegasys.artemis.statetransition.util;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomDeposits;
+import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomEth1Data;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
@@ -39,8 +40,8 @@ class EpochProcessingUtilTest {
     try {
       // get initial state
       BeaconStateWithCache state = new BeaconStateWithCache();
-      //      BeaconStateUtil.get_initial_beacon_state(
-      //          state, deposits, UnsignedLong.valueOf(Constants.GENESIS_SLOT), randomEth1Data());
+      BeaconStateUtil.get_initial_beacon_state(
+          state, deposits, UnsignedLong.valueOf(Constants.GENESIS_SLOT), randomEth1Data());
       UnsignedLong currentEpoch = BeaconStateUtil.get_current_epoch(state);
 
       // set validators to active
@@ -228,7 +229,7 @@ class EpochProcessingUtilTest {
     validators.get(0).setSlashed(true);
 
     // flag the validators with a balance below the threshold
-    //    EpochProcessorUtil.process_penalties_and_exits(state);
+    EpochProcessorUtil.process_penalties_and_exits(state);
     // increment the epoch to the time where the validator will be considered ejected
     currentEpoch = BeaconStateUtil.get_entry_exit_effect_epoch(currentEpoch);
 

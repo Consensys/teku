@@ -34,7 +34,7 @@ public class BeaconBlockBody {
   private List<AttesterSlashing> attester_slashings;
   private List<Attestation> attestations;
   private List<Deposit> deposits;
-  private List<VoluntaryExit> voluntary_exits;
+  private List<VoluntaryExit> voluntaryExits;
   private List<Transfer> transfers;
 
   public BeaconBlockBody(
@@ -44,7 +44,7 @@ public class BeaconBlockBody {
       List<AttesterSlashing> attester_slashings,
       List<Attestation> attestations,
       List<Deposit> deposits,
-      List<VoluntaryExit> voluntary_exits,
+      List<VoluntaryExit> voluntaryExits,
       List<Transfer> transfers) {
     this.randao_reveal = randao_reveal;
     this.eth1_data = eth1_data;
@@ -52,7 +52,7 @@ public class BeaconBlockBody {
     this.attester_slashings = attester_slashings;
     this.attestations = attestations;
     this.deposits = deposits;
-    this.voluntary_exits = voluntary_exits;
+    this.voluntaryExits = voluntaryExits;
     this.transfers = transfers;
   }
 
@@ -93,7 +93,7 @@ public class BeaconBlockBody {
     List<Bytes> depositsBytes =
         deposits.stream().map(item -> item.toBytes()).collect(Collectors.toList());
     List<Bytes> voluntaryExitsBytes =
-        voluntary_exits.stream().map(item -> item.toBytes()).collect(Collectors.toList());
+        voluntaryExits.stream().map(item -> item.toBytes()).collect(Collectors.toList());
     List<Bytes> transfersBytes =
         transfers.stream().map(item -> item.toBytes()).collect(Collectors.toList());
 
@@ -119,7 +119,7 @@ public class BeaconBlockBody {
         attester_slashings,
         attestations,
         deposits,
-        voluntary_exits,
+        voluntaryExits,
         transfers);
   }
 
@@ -144,7 +144,7 @@ public class BeaconBlockBody {
         && Objects.equals(this.getAttester_slashings(), other.getAttester_slashings())
         && Objects.equals(this.getAttestations(), other.getAttestations())
         && Objects.equals(this.getDeposits(), other.getDeposits())
-        && Objects.equals(this.getVoluntary_exits(), other.getVoluntary_exits())
+        && Objects.equals(this.getVoluntaryExits(), other.getVoluntaryExits())
         && Objects.equals(this.getTransfers(), other.getTransfers());
   }
 
@@ -197,12 +197,12 @@ public class BeaconBlockBody {
     this.deposits = deposits;
   }
 
-  public List<VoluntaryExit> getVoluntary_exits() {
-    return voluntary_exits;
+  public List<VoluntaryExit> getVoluntaryExits() {
+    return voluntaryExits;
   }
 
-  public void setVoluntary_exits(List<VoluntaryExit> voluntary_exits) {
-    this.voluntary_exits = voluntary_exits;
+  public void setVoluntaryExits(List<VoluntaryExit> voluntaryExits) {
+    this.voluntaryExits = voluntaryExits;
   }
 
   public List<Transfer> getTransfers() {
