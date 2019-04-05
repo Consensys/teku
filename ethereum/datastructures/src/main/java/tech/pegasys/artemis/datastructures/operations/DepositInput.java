@@ -25,11 +25,11 @@ import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 public final class DepositInput {
 
   // BLS pubkey
-  BLSPublicKey pubkey;
+  private BLSPublicKey pubkey;
   // Withdrawal credentials
-  Bytes32 withdrawal_credentials;
+  private Bytes32 withdrawal_credentials;
   // A BLS signature of this `DepositInput`
-  BLSSignature proof_of_possession;
+  private BLSSignature proof_of_possession;
 
   public DepositInput(
       BLSPublicKey pubkey, Bytes32 withdrawal_credentials, BLSSignature proof_of_possession) {
@@ -107,7 +107,7 @@ public final class DepositInput {
     this.proof_of_possession = proof_of_possession;
   }
 
-  public Bytes32 signedRoot(String truncationParam) {
+  public Bytes32 signed_root(String truncationParam) {
     if (!truncationParam.equals("proof_of_possession")) {
       throw new UnsupportedOperationException(
           "Only signed_root(proposal, \"proof_of_possession\") is currently supported for type Proposal.");
