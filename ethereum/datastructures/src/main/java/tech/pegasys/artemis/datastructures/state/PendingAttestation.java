@@ -42,7 +42,7 @@ public class PendingAttestation implements Copyable<PendingAttestation> {
     this.aggregation_bitfield = pendingAttestation.getAggregation_bitfield().copy();
     this.data = new AttestationData(pendingAttestation.getData());
     this.custody_bitfield = pendingAttestation.getCustody_bitfield().copy();
-    this.inclusion_slot = pendingAttestation.getInclusion_slot();
+    this.inclusion_slot = pendingAttestation.getInclusionSlot();
   }
 
   @Override
@@ -94,7 +94,7 @@ public class PendingAttestation implements Copyable<PendingAttestation> {
     return Objects.equals(this.getAggregation_bitfield(), other.getAggregation_bitfield())
         && Objects.equals(this.getData(), other.getData())
         && Objects.equals(this.getCustody_bitfield(), other.getCustody_bitfield())
-        && Objects.equals(this.getInclusion_slot(), other.getInclusion_slot());
+        && Objects.equals(this.getInclusionSlot(), other.getInclusionSlot());
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */
@@ -122,7 +122,7 @@ public class PendingAttestation implements Copyable<PendingAttestation> {
     this.custody_bitfield = custody_bitfield;
   }
 
-  public UnsignedLong getInclusion_slot() {
+  public UnsignedLong getInclusionSlot() {
     return inclusion_slot;
   }
 

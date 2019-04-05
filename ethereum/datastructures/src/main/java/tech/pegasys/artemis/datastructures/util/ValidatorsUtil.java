@@ -63,7 +63,8 @@ public class ValidatorsUtil {
   }
 
   /**
-   * Get indices of active validators from ``validators``.
+   * Returns the list of indices of active validators from the provided list of validators at the
+   * given epoch.
    *
    * @param validators - The list of validators under consideration.
    * @param epoch - The epoch under consideration.
