@@ -21,14 +21,12 @@ import static tech.pegasys.artemis.datastructures.Constants.DOMAIN_ATTESTATION;
 import static tech.pegasys.artemis.datastructures.Constants.DOMAIN_DEPOSIT;
 import static tech.pegasys.artemis.datastructures.Constants.FAR_FUTURE_EPOCH;
 import static tech.pegasys.artemis.datastructures.Constants.GENESIS_EPOCH;
-import static tech.pegasys.artemis.datastructures.Constants.SHARD_COUNT;
-import static tech.pegasys.artemis.datastructures.Constants.SLOTS_PER_EPOCH;
-import static tech.pegasys.artemis.datastructures.Constants.ACTIVATION_EXIT_DELAY;
 import static tech.pegasys.artemis.datastructures.Constants.LATEST_ACTIVE_INDEX_ROOTS_LENGTH;
 import static tech.pegasys.artemis.datastructures.Constants.LATEST_RANDAO_MIXES_LENGTH;
 import static tech.pegasys.artemis.datastructures.Constants.LATEST_SLASHED_EXIT_LENGTH;
 import static tech.pegasys.artemis.datastructures.Constants.MAX_DEPOSIT_AMOUNT;
 import static tech.pegasys.artemis.datastructures.Constants.MAX_INDICES_PER_SLASHABLE_VOTE;
+import static tech.pegasys.artemis.datastructures.Constants.SHARD_COUNT;
 import static tech.pegasys.artemis.datastructures.Constants.SHUFFLE_ROUND_COUNT;
 import static tech.pegasys.artemis.datastructures.Constants.SLOTS_PER_EPOCH;
 import static tech.pegasys.artemis.datastructures.Constants.WHISTLEBLOWER_REWARD_QUOTIENT;
@@ -89,18 +87,18 @@ public class BeaconStateUtil {
       throws IllegalStateException {
 
     // Process initial deposits
-    for (Deposit validator_deposit : genesis_validator_deposits) {
-      process_deposit(state, validator_deposit);
+    for (Deposit deposit : genesis_validator_deposits) {
+      process_deposit(state, deposit);
     }
 
     // Process initial activations
-    int index = 0;
+    int validator_index = 0;
     for (Validator validator : state.getValidator_registry()) {
       List<UnsignedLong> balances = state.getValidator_balances();
-      if (balances.get(index).compareTo(UnsignedLong.valueOf(MAX_DEPOSIT_AMOUNT)) >= 0) {
-        activate_validator(state, index, true);
+      if (balances.get(validator_index).compareTo(UnsignedLong.valueOf(MAX_DEPOSIT_AMOUNT)) >= 0) {
+        activate_validator(state, validator_index, true);
       }
-      index++;
+      validator_index++;
     }
 
     List<Validator> activeValidators =
@@ -110,11 +108,12 @@ public class BeaconStateUtil {
         hash_tree_root_list_integers(
             ValidatorsUtil.get_active_validator_indices(
                 state.getValidator_registry(), UnsignedLong.valueOf(GENESIS_EPOCH)));
-    for (Bytes32 root : state.getLatest_active_index_roots()) {
-      root = genesis_active_index_root;
+    for (int index = 0; index < state.getLatest_active_index_roots().size(); index++) {
+      state.getLatest_active_index_roots().set(index, genesis_active_index_root);
     }
+
     state.setCurrent_shuffling_seed(generate_seed(state, UnsignedLong.valueOf(GENESIS_EPOCH)));
-    state.setDeposit_index(UnsignedLong.valueOf(genesis_validator_deposits.size()));
+
     return state;
   }
 
@@ -135,8 +134,7 @@ public class BeaconStateUtil {
 
     // Deposits must be processed in order
     checkArgument(
-        Objects.equals(state.getDeposit_index(), deposit.getIndex()),
-            "Deposits not in order");
+        Objects.equals(state.getDeposit_index(), deposit.getIndex()), "Deposits not in order");
 
     // Verify the Merkle branch
     checkArgument(
@@ -168,7 +166,7 @@ public class BeaconStateUtil {
       boolean proof_is_valid =
           bls_verify(
               pubkey,
-              deposit_input.signedRoot("proof_of_possession"),
+              deposit_input.signed_root("proof_of_possession"),
               deposit_input.getProof_of_possession(),
               get_domain(state.getFork(), get_current_epoch(state), DOMAIN_DEPOSIT));
       if (!proof_is_valid) {
@@ -271,14 +269,18 @@ public class BeaconStateUtil {
 
     } else if (epoch.compareTo(next_epoch) == 0) {
 
-      UnsignedLong epochs_since_last_registry_update = current_epoch.minus(state.getValidator_registry_update_epoch());
+      UnsignedLong epochs_since_last_registry_update =
+          current_epoch.minus(state.getValidator_registry_update_epoch());
       if (registry_change) {
         committees_per_epoch = get_next_epoch_committee_count(state);
         seed = generate_seed(state, next_epoch);
         shuffling_epoch = next_epoch;
         current_committees_per_epoch = get_current_epoch_committee_count(state);
-        shuffling_start_shard = (state.getCurrent_shuffling_start_shard().plus(current_committees_per_epoch)).mod(UnsignedLong.valueOf(SHARD_COUNT));
-      } else if (epochs_since_last_registry_update.compareTo(UnsignedLong.ONE) > 0 && is_power_of_two(epochs_since_last_registry_update)) {
+        shuffling_start_shard =
+            (state.getCurrent_shuffling_start_shard().plus(current_committees_per_epoch))
+                .mod(UnsignedLong.valueOf(SHARD_COUNT));
+      } else if (epochs_since_last_registry_update.compareTo(UnsignedLong.ONE) > 0
+          && is_power_of_two(epochs_since_last_registry_update)) {
         committees_per_epoch = get_next_epoch_committee_count(state);
         seed = generate_seed(state, next_epoch);
         shuffling_epoch = next_epoch;
@@ -291,11 +293,8 @@ public class BeaconStateUtil {
       }
     }
 
-    List<List<Integer>> shuffling = get_shuffling(
-            seed,
-            state.getValidator_registry(),
-            shuffling_epoch
-    );
+    List<List<Integer>> shuffling =
+        get_shuffling(seed, state.getValidator_registry(), shuffling_epoch);
 
     UnsignedLong offset = slot.mod(UnsignedLong.valueOf(SLOTS_PER_EPOCH));
     UnsignedLong committees_per_slot =
@@ -310,8 +309,8 @@ public class BeaconStateUtil {
     for (long i = 0; i < committees_per_slot.longValue(); i++) {
       CrosslinkCommittee committee =
           new CrosslinkCommittee(
-                  slot_start_shard.plus(UnsignedLong.ONE).mod(UnsignedLong.valueOf(SHARD_COUNT)),
-                  shuffling.get(committees_per_slot.mod(UnsignedLong.valueOf(SHARD_COUNT)).intValue());
+              slot_start_shard.plus(UnsignedLong.ONE).mod(UnsignedLong.valueOf(SHARD_COUNT)),
+              shuffling.get(committees_per_slot.mod(UnsignedLong.valueOf(SHARD_COUNT)).intValue()));
       crosslink_committees_at_slot.add(committee);
     }
     return crosslink_committees_at_slot;
@@ -573,11 +572,10 @@ public class BeaconStateUtil {
   public static void exit_validator(BeaconState state, int index) {
     Validator validator = state.getValidator_registry().get(index);
 
-    UnsignedLong delayed_activation_exit_epoch = get_delayed_activation_exit_epoch(get_current_epoch(state));
+    UnsignedLong delayed_activation_exit_epoch =
+        get_delayed_activation_exit_epoch(get_current_epoch(state));
     // The following updates only occur if not previous exited
-    if (validator.getExit_epoch().compareTo(delayed_activation_exit_epoch) <= 0) {
-      return;
-    } else {
+    if (validator.getExit_epoch().compareTo(delayed_activation_exit_epoch) > 0) {
       validator.setExit_epoch(delayed_activation_exit_epoch);
     }
   }
@@ -594,7 +592,9 @@ public class BeaconStateUtil {
   public static void slash_validator(BeaconState state, int index) {
     Validator validator = state.getValidator_registry().get(index);
     checkArgument(
-        state.getSlot().compareTo(get_epoch_start_slot(validator.getWithdrawal_epoch())) < 0);
+        state.getSlot().compareTo(get_epoch_start_slot(validator.getWithdrawal_epoch()))
+            < 0); // [TO BE
+    // REMOVED IN PHASE 2]
     exit_validator(state, index);
     int slashed_balances_index = get_current_epoch(state).intValue() % LATEST_SLASHED_EXIT_LENGTH;
     state
@@ -641,10 +641,13 @@ public class BeaconStateUtil {
   }
 
   public static Bytes32 get_randao_mix(BeaconState state, UnsignedLong epoch) {
-    checkArgument(get_current_epoch(state).minus(UnsignedLong.valueOf(LATEST_RANDAO_MIXES_LENGTH))
-                    .compareTo(epoch) < 0, "get_randao_mix: first check");
-    checkArgument(epoch.compareTo(get_current_epoch(state)) <= 0,
-        "get_randao_mix: second check");
+    checkArgument(
+        get_current_epoch(state)
+                .minus(UnsignedLong.valueOf(LATEST_RANDAO_MIXES_LENGTH))
+                .compareTo(epoch)
+            < 0,
+        "get_randao_mix: first check");
+    checkArgument(epoch.compareTo(get_current_epoch(state)) <= 0, "get_randao_mix: second check");
     UnsignedLong index = epoch.mod(UnsignedLong.valueOf(LATEST_RANDAO_MIXES_LENGTH));
     return state.getLatest_randao_mixes().get(index.intValue());
   }
@@ -669,7 +672,7 @@ public class BeaconStateUtil {
                 .compareTo(slot.plus(UnsignedLong.valueOf(Constants.SLOTS_PER_HISTORICAL_ROOT)))
             <= 0,
         "checkArgument threw an exception in get_block_root()");
-    // Todo: Remove .intValue() as soon as our list wrapper supports unsigned longs	
+    // Todo: Remove .intValue() as soon as our list wrapper supports unsigned longs
     return state
         .getLatest_block_roots()
         .get(slot.mod(UnsignedLong.valueOf(Constants.SLOTS_PER_HISTORICAL_ROOT)).intValue());
@@ -790,13 +793,12 @@ public class BeaconStateUtil {
    *     - Spec v0.4</a>
    */
   @VisibleForTesting
-  public static int get_permuted_index(int index, int listSize, Bytes32 seed) {
-    checkArgument(index < listSize,
-            "get_permuted_index(): index greater than list size");
+  public static int get_permuted_index(int index, int list_size, Bytes32 seed) {
+    checkArgument(index < list_size, "get_permuted_index(): index greater than list size");
 
     // The spec says that we should handle up to 2^40 validators, but we can't do this,
     // so we just fall back to int (2^31 validators).
-    // checkArgument(listSize <= 1099511627776L); // 2^40
+    // checkArgument(list_size <= 1099511627776L); // 2^40
 
     /*
      * In the following, great care is needed around signed and unsigned values.
@@ -855,11 +857,11 @@ public class BeaconStateUtil {
    * <p>The result of this should be the same as calling get_permuted_index() for each index in the
    * list
    *
-   * @param listSize The size of the list from which the element is taken. Must not exceed 2^31.
+   * @param list_size The size of the list from which the element is taken. Must not exceed 2^31.
    * @param seed Initial seed value used for randomization.
    * @return The permuted arrays of indices
    */
-  public static int[] shuffle(int listSize, Bytes32 seed) {
+  public static int[] shuffle(int list_size, Bytes32 seed) {
 
     //  In the following, great care is needed around signed and unsigned values.
     //  Note that the % (modulo) operator in Java behaves differently from the
@@ -871,10 +873,10 @@ public class BeaconStateUtil {
 
     // Note: this should be faster than manually creating the list in a for loop
     // https://stackoverflow.com/questions/10242380/how-can-i-generate-a-list-or-array-of-sequential-integers-in-java
-    int[] indices = IntStream.rangeClosed(0, listSize - 1).toArray();
+    int[] indices = IntStream.rangeClosed(0, list_size - 1).toArray();
 
-    // int[] indices = new int[listSize];
-    // for (int i = 0; i < listSize; i++) {
+    // int[] indices = new int[list_size];
+    // for (int i = 0; i < list_size; i++) {
     //   indices[i] = i;
     // }
 
@@ -885,7 +887,7 @@ public class BeaconStateUtil {
       Bytes roundAsByte = Bytes.of((byte) round);
 
       Bytes hashBytes = Bytes.EMPTY;
-      for (int i = 0; i < (listSize + 255) / 256; i++) {
+      for (int i = 0; i < (list_size + 255) / 256; i++) {
         Bytes iAsBytes4 = int_to_bytes(i, 4);
         hashBytes = Bytes.wrap(hashBytes, Hash.keccak256(Bytes.wrap(seed, roundAsByte, iAsBytes4)));
       }
@@ -895,14 +897,14 @@ public class BeaconStateUtil {
           (int)
               Long.remainderUnsigned(
                   bytes_to_int(Hash.keccak256(Bytes.wrap(seed, roundAsByte)).slice(0, 8)),
-                  listSize);
+                  list_size);
 
-      for (int i = 0; i < listSize; i++) {
+      for (int i = 0; i < list_size; i++) {
 
-        int flip = (pivot - indices[i]) % listSize;
+        int flip = (pivot - indices[i]) % list_size;
         if (flip < 0) {
           // Account for flip being negative
-          flip += listSize;
+          flip += list_size;
         }
 
         int hashPosition = (indices[i] < flip) ? flip : indices[i];
@@ -975,9 +977,8 @@ public class BeaconStateUtil {
     return longValue > 0 && (longValue & (longValue - 1)) == 0;
   }
 
-  public static int get_beacon_proposer_index(BeaconState state,
-                                              UnsignedLong slot,
-                                              boolean registry_change)
+  public static int get_beacon_proposer_index(
+      BeaconState state, UnsignedLong slot, boolean registry_change)
       throws IllegalArgumentException {
     if (state instanceof BeaconStateWithCache
         && ((BeaconStateWithCache) state).getCurrentBeaconProposerIndex() > -1) {
@@ -988,9 +989,9 @@ public class BeaconStateUtil {
       UnsignedLong previous_epoch = get_previous_epoch(state);
       UnsignedLong next_epoch = current_epoch.plus(UnsignedLong.ONE);
 
-      checkArgument(previous_epoch.compareTo(epoch) <= 0
-              && epoch.compareTo(next_epoch) <= 0,
-              "get_beacon_proposer_index: slot not in range");
+      checkArgument(
+          previous_epoch.compareTo(epoch) <= 0 && epoch.compareTo(next_epoch) <= 0,
+          "get_beacon_proposer_index: slot not in range");
 
       List<Integer> first_committee =
           get_crosslink_committees_at_slot(state, slot, registry_change).get(0).getCommittee();
@@ -1051,12 +1052,9 @@ public class BeaconStateUtil {
    *     - Spec v0.4</a>
    */
   public static UnsignedLong get_domain(Fork fork, UnsignedLong epoch, int domain_type) {
-    return bytes_to_int(
-            Bytes.wrap(
-                    get_fork_version(fork, epoch),
-                    int_to_bytes(domain_type,4)
-            )
-    );
+    return get_fork_version(fork, epoch)
+        .times(UnsignedLong.valueOf(4294967296L))
+        .plus(UnsignedLong.valueOf(domain_type));
   }
 
   /**
@@ -1120,8 +1118,7 @@ public class BeaconStateUtil {
       BeaconState state, SlashableAttestation slashable_attestation) {
     if (!Objects.equals(
         slashable_attestation.getCustody_bitfield(),
-        Bytes.wrap(new byte[slashable_attestation.getCustody_bitfield().size()])))
-      return false; // [TO BE REMOVED IN PHASE 1]
+        Bytes.wrap(new byte[slashable_attestation.getCustody_bitfield().size()]))) return false;
 
     if (slashable_attestation.getValidator_indices().size() == 0) return false;
 
@@ -1165,7 +1162,7 @@ public class BeaconStateUtil {
         Arrays.asList(
             bls_aggregate_pubkeys(custody_bit_0_pubkeys),
             bls_aggregate_pubkeys(custody_bit_1_pubkeys));
-    List<Bytes32> messages =
+    List<Bytes32> message_hashes =
         Arrays.asList(
             hash_tree_root(
                 new AttestationDataAndCustodyBit(slashable_attestation.getData(), false).toBytes()),
@@ -1178,7 +1175,7 @@ public class BeaconStateUtil {
             slot_to_epoch(slashable_attestation.getData().getSlot()),
             DOMAIN_ATTESTATION);
 
-    return bls_verify_multiple(pubkeys, messages, signature, domain);
+    return bls_verify_multiple(pubkeys, message_hashes, signature, domain);
   }
 
   /**
@@ -1221,11 +1218,12 @@ public class BeaconStateUtil {
     ArrayList<CrosslinkCommittee> crosslink_committees =
         BeaconStateUtil.get_crosslink_committees_at_slot(state, attestation_data.getSlot());
 
-    checkArgument(crosslink_committees.stream()
+    checkArgument(
+        crosslink_committees.stream()
             .map(i -> i.getShard())
             .collect(Collectors.toList())
             .contains(attestation_data.getShard()),
-            "get_attestation_participants: first check");
+        "get_attestation_participants: first check");
 
     CrosslinkCommittee crosslink_committee = null;
     for (CrosslinkCommittee committee : crosslink_committees) {
@@ -1250,13 +1248,9 @@ public class BeaconStateUtil {
     return participants;
   }
 
-  /**
-   * Activate the validator with the given 'index'. Note that this function mutates 'state'.
-   *
-   */
+  /** Activate the validator with the given 'index'. Note that this function mutates 'state'. */
   @VisibleForTesting
-  public static void activate_validator(
-      BeaconState state, int index, boolean is_genesis) {
+  public static void activate_validator(BeaconState state, int index, boolean is_genesis) {
     Validator validator = state.getValidator_registry().get(index);
     validator.setActivation_epoch(
         is_genesis

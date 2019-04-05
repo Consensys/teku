@@ -26,7 +26,6 @@ import tech.pegasys.artemis.datastructures.state.Validator;
 
 public class ValidatorsUtil {
 
-
   /**
    * Check if (this) validator is active in the given epoch.
    *
@@ -37,7 +36,8 @@ public class ValidatorsUtil {
    *     - Spec v0.4</a>
    */
   public static boolean is_active_validator(Validator validator, UnsignedLong epoch) {
-    return validator.getActivation_epoch().compareTo(epoch) <= 0 && epoch.compareTo(validator.getExit_epoch()) < 0;
+    return validator.getActivation_epoch().compareTo(epoch) <= 0
+        && epoch.compareTo(validator.getExit_epoch()) < 0;
   }
 
   /**
@@ -79,7 +79,7 @@ public class ValidatorsUtil {
         .parallel()
         .forEachOrdered(
             index -> {
-              if (is_active_validator(validators.get(index),epoch)) {
+              if (is_active_validator(validators.get(index), epoch)) {
                 active_validator_indices.add(index);
               }
             });

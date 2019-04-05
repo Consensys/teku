@@ -229,7 +229,8 @@ public class ValidatorCoordinator {
             state.getFork(),
             BeaconStateUtil.slot_to_epoch(UnsignedLong.valueOf(block.getSlot())),
             Constants.DOMAIN_BEACON_BLOCK);
-    BLSSignature signature = BLSSignature.sign(keypair, block.signedRoot("signature"), domain.longValue());
+    BLSSignature signature =
+        BLSSignature.sign(keypair, block.signed_root("signature"), domain.longValue());
     LOG.log(Level.INFO, "Sign Proposal", printEnabled);
     LOG.log(Level.INFO, "Proposer pubkey: " + keypair.getPublicKey(), printEnabled);
     LOG.log(Level.INFO, "state: " + HashTreeUtil.hash_tree_root(state.toBytes()), printEnabled);

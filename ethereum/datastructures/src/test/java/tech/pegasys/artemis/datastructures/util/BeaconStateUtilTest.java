@@ -213,7 +213,7 @@ class BeaconStateUtilTest {
     assertTrue(
         BLSVerify.bls_verify(
             pubkey,
-            deposit.getDeposit_data().getDeposit_input().signedRoot("proof_of_possession"),
+            deposit.getDeposit_data().getDeposit_input().signed_root("proof_of_possession"),
             proofOfPossession,
             domain));
   }
@@ -236,7 +236,7 @@ class BeaconStateUtilTest {
     assertFalse(
         BLSVerify.bls_verify(
             pubkey,
-            deposit.getDeposit_data().getDeposit_input().signedRoot("proof_of_possession"),
+            deposit.getDeposit_data().getDeposit_input().signed_root("proof_of_possession"),
             proofOfPossession,
             domain));
   }
