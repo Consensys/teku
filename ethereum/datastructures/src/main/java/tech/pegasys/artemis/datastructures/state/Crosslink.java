@@ -40,7 +40,7 @@ public class Crosslink implements Copyable<Crosslink> {
         bytes,
         reader ->
             new Crosslink(
-                UnsignedLong.fromLongBits(reader.readUInt64()), Bytes32.wrap(reader.readBytes())));
+                UnsignedLong.fromLongBits(reader.readUInt64()), Bytes32.wrap(reader.readFixedBytes(32))));
   }
 
   @Override
@@ -52,7 +52,7 @@ public class Crosslink implements Copyable<Crosslink> {
     return SSZ.encode(
         writer -> {
           writer.writeUInt64(epoch.longValue());
-          writer.writeBytes(crosslink_data_root);
+          writer.writeFixedBytes(32, crosslink_data_root);
         });
   }
 

@@ -76,7 +76,7 @@ public final class Validator implements Copyable<Validator> {
         reader ->
             new Validator(
                 BLSPublicKey.fromBytes(reader.readBytes()),
-                Bytes32.wrap(reader.readBytes()),
+                Bytes32.wrap(reader.readFixedBytes(32)),
                 UnsignedLong.fromLongBits(reader.readUInt64()),
                 UnsignedLong.fromLongBits(reader.readUInt64()),
                 UnsignedLong.fromLongBits(reader.readUInt64()),
@@ -88,7 +88,7 @@ public final class Validator implements Copyable<Validator> {
     return SSZ.encode(
         writer -> {
           writer.writeBytes(pubkey.toBytes());
-          writer.writeBytes(withdrawal_credentials);
+          writer.writeFixedBytes(32, withdrawal_credentials);
           writer.writeUInt64(activation_epoch.longValue());
           writer.writeUInt64(exit_epoch.longValue());
           writer.writeUInt64(withdrawable_epoch.longValue());

@@ -249,8 +249,8 @@ public class BeaconState {
                 UnsignedLong.fromLongBits(reader.readUInt64()),
                 UnsignedLong.fromLongBits(reader.readUInt64()),
                 UnsignedLong.fromLongBits(reader.readUInt64()),
-                Bytes32.wrap(reader.readBytes()),
-                Bytes32.wrap(reader.readBytes()),
+                Bytes32.wrap(reader.readFixedBytes(32)),
+                Bytes32.wrap(reader.readFixedBytes(32)),
                 // Finality
                 reader.readBytesList().stream()
                     .map(PendingAttestation::fromBytes)
@@ -260,11 +260,11 @@ public class BeaconState {
                     .collect(Collectors.toList()),
                 UnsignedLong.fromLongBits(reader.readUInt64()),
                 UnsignedLong.fromLongBits(reader.readUInt64()),
-                Bytes32.wrap(reader.readBytes()),
-                Bytes32.wrap(reader.readBytes()),
+                Bytes32.wrap(reader.readFixedBytes(32)),
+                Bytes32.wrap(reader.readFixedBytes(32)),
                 UnsignedLong.fromLongBits(reader.readUInt64()),
                 UnsignedLong.fromLongBits(reader.readUInt64()),
-                Bytes32.wrap(reader.readBytes()),
+                Bytes32.wrap(reader.readFixedBytes(32)),
                 // Recent state
                 reader.readBytesList().stream()
                     .map(Crosslink::fromBytes)
@@ -321,18 +321,18 @@ public class BeaconState {
           writer.writeUInt64(current_shuffling_start_shard.longValue());
           writer.writeUInt64(previous_shuffling_epoch.longValue());
           writer.writeUInt64(current_shuffling_epoch.longValue());
-          writer.writeBytes(previous_shuffling_seed);
-          writer.writeBytes(current_shuffling_seed);
+          writer.writeFixedBytes(32, previous_shuffling_seed);
+          writer.writeFixedBytes(32, current_shuffling_seed);
           // Finality
           writer.writeBytesList(previous_epoch_attestationsBytes);
           writer.writeBytesList(current_epoch_attestationsBytes);
           writer.writeUInt64(previous_justified_epoch.longValue());
           writer.writeUInt64(current_justified_epoch.longValue());
-          writer.writeBytes(previous_justified_root);
-          writer.writeBytes(current_justified_root);
+          writer.writeFixedBytes(32, previous_justified_root);
+          writer.writeFixedBytes(32, current_justified_root);
           writer.writeUInt64(justification_bitfield.longValue());
           writer.writeUInt64(finalized_epoch.longValue());
-          writer.writeBytes(finalized_root);
+          writer.writeFixedBytes(32, finalized_root);
           // Recent state
           writer.writeBytesList(latest_crosslinksBytes);
           writer.writeBytesList(latest_block_roots);

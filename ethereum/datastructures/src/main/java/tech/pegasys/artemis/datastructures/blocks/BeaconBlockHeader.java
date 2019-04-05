@@ -49,9 +49,9 @@ public class BeaconBlockHeader {
         reader ->
             new BeaconBlockHeader(
                 UnsignedLong.fromLongBits(reader.readUInt64()),
-                Bytes32.wrap(reader.readBytes()),
-                Bytes32.wrap(reader.readBytes()),
-                Bytes32.wrap(reader.readBytes()),
+                Bytes32.wrap(reader.readFixedBytes(32)),
+                Bytes32.wrap(reader.readFixedBytes(32)),
+                Bytes32.wrap(reader.readFixedBytes(32)),
                 BLSSignature.fromBytes(reader.readBytes())));
   }
 
@@ -59,9 +59,9 @@ public class BeaconBlockHeader {
     return SSZ.encode(
         writer -> {
           writer.writeUInt64(slot.longValue());
-          writer.writeBytes(previous_block_root);
-          writer.writeBytes(state_root);
-          writer.writeBytes(block_body_root);
+          writer.writeFixedBytes(32, previous_block_root);
+          writer.writeFixedBytes(32, state_root);
+          writer.writeFixedBytes(32, block_body_root);
           writer.writeBytes(signature.toBytes());
         });
   }
