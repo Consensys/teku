@@ -57,6 +57,10 @@ public final class Peer {
     return this.peerGossip;
   }
 
+  public URI uri() {
+    return this.uri;
+  }
+
   public boolean active() {
     return active;
   }
