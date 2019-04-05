@@ -307,6 +307,12 @@ public class Constants {
             : DEPOSIT_DATA_SIZE;
   }
 
+  /**
+   * Return the epoch number of the given ``slot``.
+   *
+   * @param slot
+   * @return
+   */
   public static long slot_to_epoch(long slot) {
     return slot / SLOTS_PER_EPOCH;
   }
