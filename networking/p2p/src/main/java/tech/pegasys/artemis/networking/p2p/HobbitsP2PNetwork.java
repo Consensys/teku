@@ -35,6 +35,7 @@ import java.util.stream.Collectors;
 import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.concurrent.AsyncCompletion;
 import net.consensys.cava.concurrent.CompletableAsyncCompletion;
+import org.apache.logging.log4j.Level;
 import tech.pegasys.artemis.data.TimeSeriesRecord;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.networking.p2p.api.P2PNetwork;
@@ -222,6 +223,7 @@ public final class HobbitsP2PNetwork implements P2PNetwork {
   @Subscribe
   public void onNewUnprocessedBlock(BeaconBlock block) {
     for (HobbitsSocketHandler handler : handlersMap.values()) {
+      LOG.log(Level.INFO, "Gossiping new block with state root: " + block.getState_root());
       // TODO: implement messageHash and signature
       handler.gossipMessage(
           GossipMethod.GOSSIP, Bytes32.random(), Bytes32.random(), block.toBytes());

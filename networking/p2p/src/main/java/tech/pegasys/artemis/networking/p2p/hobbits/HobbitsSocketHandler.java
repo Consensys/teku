@@ -135,10 +135,8 @@ public final class HobbitsSocketHandler {
   }
 
   private void handleGossipMessage(GossipMessage gossipMessage) {
+    LOG.log(Level.INFO, "Received new gossip message from peer: " + peer.uri());
     if (GossipMethod.GOSSIP.equals(gossipMessage.method())) {
-      LOG.log(
-          Level.DEBUG,
-          "Received new block over the wire:" + gossipMessage.bodyAs(Bytes.class).toHexString());
       Bytes bytes = gossipMessage.bodyAs(Bytes.class);
       peer.setPeerGossip(bytes);
       this.eventBus.post(bytes);
@@ -173,7 +171,6 @@ public final class HobbitsSocketHandler {
   public void gossipMessage(
       GossipMethod method, Bytes32 messageHash, Bytes32 hashSignature, Object payload) {
     Bytes bytes = GossipCodec.encode(method, messageHash, hashSignature, payload);
-    LOG.log(Level.DEBUG, "Sending new block over the wire: " + ((Bytes) payload).toHexString());
     sendBytes(bytes);
   }
 
