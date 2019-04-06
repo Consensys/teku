@@ -13,9 +13,10 @@
 
 package tech.pegasys.artemis.data.provider;
 
+import tech.pegasys.artemis.data.IRecordAdapter;
+
 import java.io.File;
 import java.io.IOException;
-import tech.pegasys.artemis.data.IRecordAdapter;
 
 public interface FileProvider {
   static String uniqueFilename(String filename) throws IOException {
