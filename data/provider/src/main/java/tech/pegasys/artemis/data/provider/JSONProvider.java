@@ -22,7 +22,7 @@ import org.apache.logging.log4j.Level;
 import tech.pegasys.artemis.data.IRecordAdapter;
 import tech.pegasys.artemis.util.alogger.ALogger;
 
-public class JSONProvider extends FileProvider {
+public class JSONProvider implements FileProvider {
   private static final ALogger LOG = new ALogger(JSONProvider.class.getName());
 
   public JSONProvider() {}

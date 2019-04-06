@@ -17,11 +17,9 @@ import java.io.File;
 import java.io.IOException;
 import tech.pegasys.artemis.data.IRecordAdapter;
 
-public abstract class FileProvider {
+public interface FileProvider {
 
-  public FileProvider() {}
-
-  public static String uniqueFilename(String filename) throws IOException {
+  static String uniqueFilename(String filename) throws IOException {
     String newFilename = filename;
     File f = new File(filename);
     int version = 1;
@@ -34,6 +32,5 @@ public abstract class FileProvider {
     return newFilename;
   }
 
-  @SuppressWarnings({"TypeParameterShadowing"})
-  public abstract void output(String filename, IRecordAdapter record);
+  void output(String filename, IRecordAdapter record);
 }

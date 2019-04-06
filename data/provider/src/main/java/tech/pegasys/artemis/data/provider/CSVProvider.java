@@ -21,7 +21,7 @@ import org.apache.logging.log4j.Level;
 import tech.pegasys.artemis.data.IRecordAdapter;
 import tech.pegasys.artemis.util.alogger.ALogger;
 
-public class CSVProvider extends FileProvider {
+public class CSVProvider implements FileProvider {
   private static final ALogger LOG = new ALogger(CSVProvider.class.getName());
 
   public CSVProvider() {}
