@@ -16,7 +16,6 @@ package tech.pegasys.artemis.storage;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import net.consensys.cava.bytes.Bytes;
-import org.apache.logging.log4j.Level;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.util.alogger.ALogger;
 
@@ -32,7 +31,6 @@ public class ChainStorageServer extends ChainStorageClient implements ChainStora
 
   @Subscribe
   public void onNewProcessedBlock(Bytes blockHash, BeaconBlock block) {
-    LOG.log(Level.INFO, "ChainStorage: new block processed");
     addProcessedBlock(blockHash, block);
   }
 }

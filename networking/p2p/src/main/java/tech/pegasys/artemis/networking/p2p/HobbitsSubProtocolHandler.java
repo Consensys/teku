@@ -23,12 +23,15 @@ import java.util.concurrent.ConcurrentHashMap;
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.concurrent.AsyncCompletion;
+import net.consensys.cava.crypto.Hash;
+import net.consensys.cava.plumtree.EphemeralPeerRepository;
+import net.consensys.cava.plumtree.MessageSender;
+import net.consensys.cava.plumtree.State;
 import net.consensys.cava.rlpx.RLPxService;
 import net.consensys.cava.rlpx.wire.DisconnectReason;
 import net.consensys.cava.rlpx.wire.SubProtocolHandler;
 import tech.pegasys.artemis.data.TimeSeriesRecord;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
-import tech.pegasys.artemis.networking.p2p.hobbits.GossipMethod;
 import tech.pegasys.artemis.networking.p2p.hobbits.HobbitsSocketHandler;
 import tech.pegasys.artemis.networking.p2p.hobbits.Peer;
 
@@ -39,6 +42,7 @@ final class HobbitsSubProtocolHandler implements SubProtocolHandler {
   private final EventBus eventBus;
   private final String userAgent;
   private final TimeSeriesRecord chainData;
+  private final State state;
 
   HobbitsSubProtocolHandler(
       RLPxService service, EventBus eventBus, String userAgent, TimeSeriesRecord chainData) {
@@ -46,12 +50,29 @@ final class HobbitsSubProtocolHandler implements SubProtocolHandler {
     this.eventBus = eventBus;
     this.userAgent = userAgent;
     this.chainData = chainData;
+    this.state =
+        new State(
+            new EphemeralPeerRepository(),
+            Hash::sha2_256,
+            this::sendMessage,
+            this::processGossip,
+            (bytes, peer) -> true);
     eventBus.register(this);
+  }
+
+  private void processGossip(Bytes bytes) {
+    // TODO handle the new message
+  }
+
+  private void sendMessage(
+      MessageSender.Verb verb, net.consensys.cava.plumtree.Peer peer, Bytes bytes) {
+    HobbitsSocketHandler handler = handlerMap.get(((Peer) peer).uri().toString());
+    handler.gossipMessage(verb, Bytes32.random(), Bytes32.random(), bytes);
   }
 
   @Override
   public AsyncCompletion handle(String connectionId, int messageType, Bytes message) {
-    HobbitsSocketHandler handler = handlerMap.get(connectionId);
+    HobbitsSocketHandler handler = handlerMap.get("hob+rlpx://" + connectionId);
     handler.handleMessage(Buffer.buffer(message.toArrayUnsafe()));
     return AsyncCompletion.completed();
   }
@@ -60,15 +81,18 @@ final class HobbitsSubProtocolHandler implements SubProtocolHandler {
   public AsyncCompletion handleNewPeerConnection(String connectionId) {
     Peer peer = new Peer(URI.create("hob+rlpx://" + connectionId));
     handlerMap.computeIfAbsent(
-        connectionId,
-        (id) ->
-            new HobbitsSocketHandler(
-                eventBus,
-                userAgent,
-                peer,
-                chainData,
-                bytes -> service.send(HobbitsSubProtocol.BEACON_ID, 1, id, bytes),
-                () -> service.disconnect(id, DisconnectReason.CLIENT_QUITTING)));
+        peer.uri().toString(),
+        (id) -> {
+          state.addPeer(peer);
+          return new HobbitsSocketHandler(
+              eventBus,
+              userAgent,
+              peer,
+              chainData,
+              bytes -> service.send(HobbitsSubProtocol.BEACON_ID, 1, connectionId, bytes),
+              () -> service.disconnect(id, DisconnectReason.CLIENT_QUITTING),
+              state);
+        });
     return AsyncCompletion.completed();
   }
 
@@ -79,11 +103,7 @@ final class HobbitsSubProtocolHandler implements SubProtocolHandler {
 
   @Subscribe
   public void onNewUnprocessedBlock(BeaconBlock block) {
-    for (HobbitsSocketHandler handler : handlerMap.values()) {
-      // TODO: implement messageHash and signature
-      handler.gossipMessage(
-          GossipMethod.GOSSIP, Bytes32.random(), Bytes32.random(), block.toBytes());
-    }
+    state.sendGossipMessage(block.toBytes());
   }
 
   Collection<HobbitsSocketHandler> handlers() {
