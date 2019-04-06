@@ -13,9 +13,7 @@
 
 package tech.pegasys.artemis.networking.p2p.hobbits;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import java.io.IOException;
-import java.io.UncheckedIOException;
+import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
 
 /** Representation of a Gossip message that was received from a remote peer. */
@@ -24,11 +22,11 @@ public final class GossipMessage {
   private final GossipMethod method;
   private final Bytes32 messageHash;
   private final Bytes32 hashSignature;
-  private final JsonNode body;
+  private final Bytes body;
   private final int length;
 
   public GossipMessage(
-      GossipMethod method, Bytes32 messageHash, Bytes32 hashSignature, JsonNode body, int length) {
+      GossipMethod method, Bytes32 messageHash, Bytes32 hashSignature, Bytes body, int length) {
     this.method = method;
     this.messageHash = messageHash;
     this.hashSignature = hashSignature;
@@ -51,20 +49,9 @@ public final class GossipMessage {
     return hashSignature;
   }
 
-  /**
-   * Reads the body of the message into a
-   *
-   * @param T the type of the body to unmarshall
-   * @param <T> the type of the body to unmarshall
-   * @return the body, unmarshalled.
-   * @throws UncheckedIOException if the body cannot be successfully unmarshalled
-   */
-  public <T> T bodyAs(Class<T> T) {
-    try {
-      return GossipCodec.mapper.treeToValue(body, T);
-    } catch (IOException e) {
-      throw new UncheckedIOException(e);
-    }
+  /** @return the body of the message if present */
+  public Bytes body() {
+    return body;
   }
 
   /** @return the length of the message in bytes */

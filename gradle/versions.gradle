@@ -44,6 +44,7 @@ dependencyManagement {
       entry 'cava-crypto'
       entry 'cava-junit'
       entry 'cava-kv'
+      entry 'cava-plumtree'
       entry 'cava-rlpx'
       entry 'cava-ssz'
       entry 'cava-toml'

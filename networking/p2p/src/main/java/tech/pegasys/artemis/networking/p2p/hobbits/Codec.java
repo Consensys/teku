@@ -25,7 +25,7 @@ interface Codec {
   }
 
   /**
-   * Determins the message protocol type
+   * Determines the message protocol type
    *
    * @param message
    * @return the protocol type
