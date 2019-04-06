@@ -13,38 +13,15 @@
 
 package tech.pegasys.artemis.data.provider;
 
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.util.List;
-import org.apache.logging.log4j.Level;
-import tech.pegasys.artemis.data.TimeSeriesRecord;
-import tech.pegasys.artemis.util.alogger.ALogger;
+import tech.pegasys.artemis.data.IRecordAdapter;
 
-public abstract class FileProvider<T> {
-  private static final ALogger LOG = new ALogger(FileProvider.class.getName());
-  protected TimeSeriesRecord record;
+public abstract class FileProvider {
 
   public FileProvider() {}
 
-  public FileProvider(TimeSeriesRecord record) {
-    this.record = record;
-  }
-
-  public TimeSeriesRecord getRecord() {
-    return this.record;
-  }
-
-  public void setRecord(TimeSeriesRecord record) {
-    this.record = record;
-  }
-
-  @Override
-  public abstract String toString();
-
-  public static String uniqueFilename(String filename) {
+  public static String uniqueFilename(String filename) throws IOException {
     String newFilename = filename;
     File f = new File(filename);
     int version = 1;
@@ -53,41 +30,10 @@ public abstract class FileProvider<T> {
       f = new File(newFilename);
       version++;
     }
-    try {
-      f.createNewFile();
-    } catch (IOException e) {
-      LOG.log(Level.WARN, e.toString());
-    }
+    f.createNewFile();
     return newFilename;
   }
 
-  public static <T> void output(String filename, List<T> records) {
-    try {
-      BufferedWriter bw =
-          new BufferedWriter(new OutputStreamWriter(new FileOutputStream(filename), "UTF-8"));
-      for (T record : records) {
-        StringBuilder line = new StringBuilder(record.toString());
-        bw.write(line.toString());
-        bw.newLine();
-      }
-      bw.flush();
-      bw.close();
-    } catch (IOException e) {
-      LOG.log(Level.WARN, e.toString());
-    }
-  }
-
-  public static <T> void output(String filename, T record) {
-    try {
-      BufferedWriter bw =
-          new BufferedWriter(new OutputStreamWriter(new FileOutputStream(filename, true), "UTF-8"));
-      StringBuilder line = new StringBuilder(record.toString());
-      bw.write(line.toString());
-      bw.newLine();
-      bw.flush();
-      bw.close();
-    } catch (IOException e) {
-      LOG.log(Level.WARN, e.toString());
-    }
-  }
+  @SuppressWarnings({"TypeParameterShadowing"})
+  public abstract void output(String filename, IRecordAdapter record);
 }

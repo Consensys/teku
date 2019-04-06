@@ -17,10 +17,6 @@ import com.google.common.eventbus.AsyncEventBus;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import io.vertx.core.Vertx;
-import java.io.IOException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.core.config.Configurator;
 import org.jetbrains.annotations.NotNull;
@@ -47,6 +43,11 @@ import tech.pegasys.artemis.util.cli.CommandLineArguments;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 import tech.pegasys.artemis.validator.coordinator.ValidatorCoordinator;
 
+import java.io.IOException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
+
 public class BeaconNode {
   private static final ALogger LOG = new ALogger(BeaconNode.class.getName());
   private final Vertx vertx = Vertx.vertx();
@@ -68,7 +69,7 @@ public class BeaconNode {
   private ValidatorCoordinator validatorCoordinator;
   private EventBus eventBus;
   private String outputFilename;
-  private FileProvider<?> fileProvider;
+  private FileProvider fileProvider;
 
   private CommandLineArguments cliArgs;
   private CommandLine commandLine;
@@ -111,11 +112,15 @@ public class BeaconNode {
     this.commandLine = commandLine;
     if (cliArgs.isOutputEnabled()) {
       this.eventBus.register(this);
-      this.outputFilename = FileProvider.uniqueFilename(cliArgs.getOutputFile());
+      try {
+        this.outputFilename = FileProvider.uniqueFilename(cliArgs.getOutputFile());
+      } catch (IOException e) {
+        LOG.log(Level.ERROR, e.getMessage());
+      }
       if (ProviderTypes.compare(CSVProvider.class, cliArgs.getProviderType())) {
         this.fileProvider = new CSVProvider();
       } else {
-        this.fileProvider = new JSONProvider(outputFilename);
+        this.fileProvider = new JSONProvider();
       }
     }
   }
@@ -157,8 +162,7 @@ public class BeaconNode {
   public void onDataEvent(RawRecord record) {
     TimeSeriesAdapter adapter = new TimeSeriesAdapter(record);
     TimeSeriesRecord tsRecord = adapter.transform();
-    fileProvider.setRecord(tsRecord);
-    JSONProvider.output(outputFilename, fileProvider);
+    fileProvider.output(outputFilename, tsRecord);
   }
 
   P2PNetwork p2pNetwork() {
