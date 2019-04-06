@@ -17,7 +17,7 @@ import java.net.URI;
 import net.consensys.cava.bytes.Bytes;
 
 /** A hobbits peer */
-public final class Peer {
+public final class Peer implements net.consensys.cava.plumtree.Peer {
 
   private final URI uri;
   private Hello peerHello;
