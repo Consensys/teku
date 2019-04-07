@@ -40,6 +40,7 @@ import net.consensys.cava.crypto.Hash;
 import net.consensys.cava.plumtree.EphemeralPeerRepository;
 import net.consensys.cava.plumtree.MessageSender;
 import net.consensys.cava.plumtree.State;
+import org.apache.logging.log4j.Level;
 import tech.pegasys.artemis.data.TimeSeriesRecord;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.networking.p2p.api.P2PNetwork;
@@ -248,6 +249,8 @@ public final class HobbitsP2PNetwork implements P2PNetwork {
 
   @Subscribe
   public void onNewUnprocessedBlock(BeaconBlock block) {
+    LOG.log(
+        Level.INFO, "Gossiping new block with state root: " + block.getState_root().toHexString());
     state.sendGossipMessage(block.toBytes());
   }
 }

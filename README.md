@@ -20,6 +20,17 @@ $ ./gradlew
 
 After a successful build, distribution packages will be available in `build/distributions`.
 
+## Run Demo
+
+After building, follow these instructions:
+
+```bash
+$ cd scripts
+$ sh demo.sh
+```
+
+> Note:  You will need tmux installed for this demo to work
+
 ## Code Style
 
 We use Google's Java coding conventions for the project. To reformat code, run: 
