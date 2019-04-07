@@ -106,7 +106,6 @@ public class BeaconNode {
     }
     this.serviceConfig = new ServiceConfig(eventBus, config, cliArgs);
     Constants.init(config);
-    this.validatorCoordinator = new ValidatorCoordinator(serviceConfig);
     this.cliArgs = cliArgs;
     this.commandLine = commandLine;
     if (cliArgs.isOutputEnabled()) {
@@ -122,18 +121,18 @@ public class BeaconNode {
         this.fileProvider = new JSONProvider();
       }
     }
+    if (commandLine.isUsageHelpRequested()) {
+      commandLine.usage(System.out);
+      return;
+    }
+    // set log level per CLI flags
+    System.out.println("Setting logging level to " + cliArgs.getLoggingLevel().name());
+    Configurator.setAllLevels("", cliArgs.getLoggingLevel());
+    this.validatorCoordinator = new ValidatorCoordinator(serviceConfig);
   }
 
   public void start() {
     try {
-      if (commandLine.isUsageHelpRequested()) {
-        commandLine.usage(System.out);
-        return;
-      }
-      // set log level per CLI flags
-      System.out.println("Setting logging level to " + cliArgs.getLoggingLevel().name());
-      Configurator.setAllLevels("", cliArgs.getLoggingLevel());
-
       // Check output file
 
       // Initialize services

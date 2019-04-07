@@ -119,7 +119,6 @@ public class ValidatorCoordinator {
   }
 
   private void initializeValidators() {
-    // TODO: make a way to tailor which validators are ours
     // Add all validators to validatorSet hashMap
     int nodeCounter = UInt256.fromBytes(nodeIdentity.bytes()).mod(numNodes).intValue();
 
@@ -165,7 +164,8 @@ public class ValidatorCoordinator {
             headState
                 .getSlot()
                 .minus(UnsignedLong.valueOf(Constants.MIN_ATTESTATION_INCLUSION_DELAY));
-
+        LOG.log(
+            Level.DEBUG, "AttestationsQueue.size() = " + attestationsQueue.size(), printEnabled);
         current_attestations =
             AttestationUtil.getAttestationsUntilSlot(attestationsQueue, attestation_slot);
         block =
