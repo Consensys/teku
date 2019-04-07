@@ -11,26 +11,11 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.data.provider;
+package tech.pegasys.artemis.data;
 
-import java.io.File;
-import java.io.IOException;
-import tech.pegasys.artemis.data.IRecordAdapter;
+public interface IRecordAdapter {
 
-public interface FileProvider {
+  String toJSON();
 
-  static String uniqueFilename(String filename) throws IOException {
-    String newFilename = filename;
-    File f = new File(filename);
-    int version = 1;
-    while (f.exists()) {
-      newFilename = filename + "." + version;
-      f = new File(newFilename);
-      version++;
-    }
-    f.createNewFile();
-    return newFilename;
-  }
-
-  void output(String filename, IRecordAdapter record);
+  String toCSV();
 }
