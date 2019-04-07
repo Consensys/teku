@@ -30,13 +30,15 @@ import net.consensys.cava.plumtree.State;
 import net.consensys.cava.rlpx.RLPxService;
 import net.consensys.cava.rlpx.wire.DisconnectReason;
 import net.consensys.cava.rlpx.wire.SubProtocolHandler;
+import org.apache.logging.log4j.Level;
 import tech.pegasys.artemis.data.TimeSeriesRecord;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.networking.p2p.hobbits.HobbitsSocketHandler;
 import tech.pegasys.artemis.networking.p2p.hobbits.Peer;
+import tech.pegasys.artemis.util.alogger.ALogger;
 
 final class HobbitsSubProtocolHandler implements SubProtocolHandler {
-
+  private static final ALogger LOG = new ALogger(HobbitsSocketHandler.class.getName());
   private final Map<String, HobbitsSocketHandler> handlerMap = new ConcurrentHashMap<>();
   private final RLPxService service;
   private final EventBus eventBus;
@@ -103,6 +105,8 @@ final class HobbitsSubProtocolHandler implements SubProtocolHandler {
 
   @Subscribe
   public void onNewUnprocessedBlock(BeaconBlock block) {
+    LOG.log(
+        Level.INFO, "Gossiping new block with state root: " + block.getState_root().toHexString());
     state.sendGossipMessage(block.toBytes());
   }
 
