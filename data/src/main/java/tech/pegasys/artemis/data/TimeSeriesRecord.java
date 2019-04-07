@@ -13,10 +13,12 @@
 
 package tech.pegasys.artemis.data;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import java.util.Objects;
 import net.consensys.cava.bytes.Bytes32;
 
-public class TimeSeriesRecord {
+public class TimeSeriesRecord implements IRecordAdapter {
 
   private Long index;
   private Long slot;
@@ -247,5 +249,42 @@ public class TimeSeriesRecord {
         justifiedStateRoot,
         finalizedBlockRoot,
         finalizedStateRoot);
+  }
+
+  @Override
+  public String toJSON() {
+    Gson gson = new GsonBuilder().create();
+    return gson.toJson(this);
+  }
+
+  @Override
+  public String toCSV() {
+    return " '"
+        + this.getIndex()
+        + "'"
+        + ", '"
+        + this.getSlot()
+        + "'"
+        + ", '"
+        + this.getEpoch()
+        + "'"
+        + ", '"
+        + this.getHeadBlockRoot()
+        + "'"
+        + ", '"
+        + this.getHeadStateRoot()
+        + "'"
+        + ", '"
+        + this.getParentHeadBlockRoot()
+        + "'"
+        + ", '"
+        + this.getNumValidators()
+        + "'"
+        + ", '"
+        + this.getJustifiedBlockRoot()
+        + "'"
+        + ", '"
+        + this.getJustifiedStateRoot()
+        + "'";
   }
 }

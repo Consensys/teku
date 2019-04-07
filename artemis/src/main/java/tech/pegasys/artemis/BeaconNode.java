@@ -68,7 +68,7 @@ public class BeaconNode {
   private ValidatorCoordinator validatorCoordinator;
   private EventBus eventBus;
   private String outputFilename;
-  private FileProvider<?> fileProvider;
+  private FileProvider fileProvider;
 
   private CommandLineArguments cliArgs;
   private CommandLine commandLine;
@@ -111,11 +111,15 @@ public class BeaconNode {
     this.commandLine = commandLine;
     if (cliArgs.isOutputEnabled()) {
       this.eventBus.register(this);
-      this.outputFilename = FileProvider.uniqueFilename(cliArgs.getOutputFile());
+      try {
+        this.outputFilename = FileProvider.uniqueFilename(cliArgs.getOutputFile());
+      } catch (IOException e) {
+        LOG.log(Level.ERROR, e.getMessage());
+      }
       if (ProviderTypes.compare(CSVProvider.class, cliArgs.getProviderType())) {
         this.fileProvider = new CSVProvider();
       } else {
-        this.fileProvider = new JSONProvider(outputFilename);
+        this.fileProvider = new JSONProvider();
       }
     }
   }
@@ -161,8 +165,7 @@ public class BeaconNode {
   public void onDataEvent(RawRecord record) {
     TimeSeriesAdapter adapter = new TimeSeriesAdapter(record);
     TimeSeriesRecord tsRecord = adapter.transform();
-    fileProvider.setRecord(tsRecord);
-    JSONProvider.output(outputFilename, fileProvider);
+    fileProvider.output(outputFilename, tsRecord);
   }
 
   P2PNetwork p2pNetwork() {
