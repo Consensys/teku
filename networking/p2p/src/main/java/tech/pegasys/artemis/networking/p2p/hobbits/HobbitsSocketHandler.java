@@ -177,7 +177,7 @@ public final class HobbitsSocketHandler {
   }
 
   public void gossipMessage(
-      MessageSender.Verb method, Bytes32 messageHash, Bytes32 hashSignature, Bytes payload) {
+      MessageSender.Verb method, Bytes messageHash, Bytes32 hashSignature, Bytes payload) {
     Bytes bytes = GossipCodec.encode(method, messageHash, hashSignature, payload);
     sendBytes(bytes);
   }

@@ -104,13 +104,13 @@ public final class HobbitsP2PNetwork implements P2PNetwork {
   }
 
   private void sendMessage(
-      MessageSender.Verb verb, net.consensys.cava.plumtree.Peer peer, Bytes bytes) {
+      MessageSender.Verb verb, net.consensys.cava.plumtree.Peer peer, Bytes hash, Bytes bytes) {
     if (!started.get()) {
       return;
     }
     HobbitsSocketHandler handler = handlersMap.get(((Peer) peer).uri());
     if (handler != null) {
-      handler.gossipMessage(verb, Bytes32.random(), Bytes32.random(), bytes);
+      handler.gossipMessage(verb, hash, Bytes32.random(), bytes);
     }
   }
 
