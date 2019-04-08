@@ -20,6 +20,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import javax.annotation.Nullable;
@@ -45,6 +46,7 @@ public final class HobbitsSocketHandler {
   private final Consumer<Bytes> messageSender;
   private final Runnable handlerTermination;
   private final State p2pState;
+  private final ConcurrentHashMap<String, Boolean> receivedMessages;
 
   public HobbitsSocketHandler(
       EventBus eventBus,
@@ -52,7 +54,8 @@ public final class HobbitsSocketHandler {
       String userAgent,
       Peer peer,
       TimeSeriesRecord chainData,
-      State p2pState) {
+      State p2pState,
+      ConcurrentHashMap<String, Boolean> receivedMessages) {
     this(
         eventBus,
         userAgent,
@@ -60,7 +63,8 @@ public final class HobbitsSocketHandler {
         chainData,
         (bytes) -> netSocket.write(Buffer.buffer(bytes.toArrayUnsafe())),
         netSocket::close,
-        p2pState);
+        p2pState,
+        receivedMessages);
     netSocket.handler(this::handleMessage);
     netSocket.closeHandler(this::closed);
   }
@@ -72,7 +76,8 @@ public final class HobbitsSocketHandler {
       TimeSeriesRecord chainData,
       Consumer<Bytes> messageSender,
       Runnable handlerTermination,
-      State state) {
+      State state,
+      ConcurrentHashMap<String, Boolean> receivedMessages) {
     this.userAgent = userAgent;
     this.peer = peer;
     this.chainData = chainData;
@@ -81,6 +86,7 @@ public final class HobbitsSocketHandler {
     this.messageSender = messageSender;
     this.handlerTermination = handlerTermination;
     this.p2pState = state;
+    this.receivedMessages = receivedMessages;
   }
 
   private void closed(@Nullable Void nothing) {
@@ -142,18 +148,26 @@ public final class HobbitsSocketHandler {
   }
 
   private void handleGossipMessage(GossipMessage gossipMessage) {
-    LOG.log(Level.INFO, "Received new gossip message from peer: " + peer.uri());
-    if (GossipMethod.GOSSIP.equals(gossipMessage.method())) {
-      Bytes bytes = gossipMessage.body();
-      peer.setPeerGossip(bytes);
-      this.eventBus.post(bytes);
-      p2pState.receiveGossipMessage(peer, gossipMessage.body());
-    } else if (GossipMethod.PRUNE.equals(gossipMessage.method())) {
-      p2pState.receivePruneMessage(peer);
-    } else if (GossipMethod.GRAFT.equals(gossipMessage.method())) {
-      p2pState.receiveGraftMessage(peer, gossipMessage.messageHash());
-    } else if (GossipMethod.IHAVE.equals(gossipMessage.method())) {
-      p2pState.receiveIHaveMessage(peer, gossipMessage.messageHash());
+    if (!receivedMessages.containsKey(gossipMessage.messageHash().toHexString())) {
+      receivedMessages.put(gossipMessage.messageHash().toHexString(), true);
+      LOG.log(
+          Level.INFO,
+          "Received new gossip message: "
+              + gossipMessage.messageHash().toShortHexString()
+              + " from peer: "
+              + peer.uri());
+      if (GossipMethod.GOSSIP.equals(gossipMessage.method())) {
+        Bytes bytes = gossipMessage.body();
+        peer.setPeerGossip(bytes);
+        this.eventBus.post(bytes);
+        p2pState.receiveGossipMessage(peer, gossipMessage.body());
+      } else if (GossipMethod.PRUNE.equals(gossipMessage.method())) {
+        p2pState.receivePruneMessage(peer);
+      } else if (GossipMethod.GRAFT.equals(gossipMessage.method())) {
+        p2pState.receiveGraftMessage(peer, gossipMessage.messageHash());
+      } else if (GossipMethod.IHAVE.equals(gossipMessage.method())) {
+        p2pState.receiveIHaveMessage(peer, gossipMessage.messageHash());
+      }
     }
   }
 

@@ -45,9 +45,14 @@ final class HobbitsSubProtocolHandler implements SubProtocolHandler {
   private final String userAgent;
   private final TimeSeriesRecord chainData;
   private final State state;
+  private final ConcurrentHashMap<String, Boolean> receivedMessages;
 
   HobbitsSubProtocolHandler(
-      RLPxService service, EventBus eventBus, String userAgent, TimeSeriesRecord chainData) {
+      RLPxService service,
+      EventBus eventBus,
+      String userAgent,
+      TimeSeriesRecord chainData,
+      ConcurrentHashMap<String, Boolean> receivedMessages) {
     this.service = service;
     this.eventBus = eventBus;
     this.userAgent = userAgent;
@@ -59,6 +64,7 @@ final class HobbitsSubProtocolHandler implements SubProtocolHandler {
             this::sendMessage,
             this::processGossip,
             (bytes, peer) -> true);
+    this.receivedMessages = receivedMessages;
     eventBus.register(this);
   }
 
@@ -93,7 +99,8 @@ final class HobbitsSubProtocolHandler implements SubProtocolHandler {
               chainData,
               bytes -> service.send(HobbitsSubProtocol.BEACON_ID, 1, connectionId, bytes),
               () -> service.disconnect(id, DisconnectReason.CLIENT_QUITTING),
-              state);
+              state,
+              receivedMessages);
         });
     return AsyncCompletion.completed();
   }
@@ -107,7 +114,11 @@ final class HobbitsSubProtocolHandler implements SubProtocolHandler {
   public void onNewUnprocessedBlock(BeaconBlock block) {
     LOG.log(
         Level.INFO, "Gossiping new block with state root: " + block.getState_root().toHexString());
-    state.sendGossipMessage(block.toBytes());
+    Bytes bytes = block.toBytes();
+    state.sendGossipMessage(bytes);
+    // TODO: this will be modified once Tuweni merges
+    // https://github.com/apache/incubator-tuweni/pull/3
+    this.receivedMessages.put(Hash.sha2_256(bytes).toHexString(), true);
   }
 
   Collection<HobbitsSocketHandler> handlers() {
