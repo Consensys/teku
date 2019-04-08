@@ -33,6 +33,7 @@ import org.apache.logging.log4j.Level;
 import tech.pegasys.artemis.data.TimeSeriesRecord;
 import tech.pegasys.artemis.networking.p2p.hobbits.Codec.ProtocolType;
 import tech.pegasys.artemis.util.alogger.ALogger;
+import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 
 /** TCP persistent connection handler for hobbits messages. */
 public final class HobbitsSocketHandler {
@@ -127,7 +128,7 @@ public final class HobbitsSocketHandler {
       closed(null);
     } else if (RPCMethod.HELLO.equals(rpcMessage.method())) {
       if (!pendingResponses.remove(rpcMessage.requestId())) {
-        // replyHello(rpcMessage.requestId());
+        replyHello(rpcMessage.requestId());
       }
       peer.setPeerHello(rpcMessage.bodyAs(Hello.class));
     } else if (RPCMethod.GET_STATUS.equals(rpcMessage.method())) {
@@ -196,30 +197,32 @@ public final class HobbitsSocketHandler {
     sendBytes(bytes);
   }
 
-  //  public void replyHello(long requestId) {
-  //    RPCCodec.encode(
-  //        RPCMethod.HELLO,
-  //        new Hello(
-  //            1,
-  //            1,
-  //            Bytes32.fromHexString(chainData.getFinalizedBlockRoot()),
-  //            UInt64.valueOf(chainData.getEpoch()),
-  //            Bytes32.fromHexString(chainData.getHeadBlockRoot()),
-  //            UInt64.valueOf(chainData.getSlot())),
-  //        requestId);
-  //  }
-  //
-  //  public void sendHello() {
-  //    sendMessage(
-  //        RPCMethod.HELLO,
-  //        new Hello(
-  //            1,
-  //            1,
-  //            Bytes32.fromHexString(chainData.getFinalizedBlockRoot()),
-  //            UInt64.valueOf(chainData.getEpoch()),
-  //            Bytes32.fromHexString(chainData.getHeadBlockRoot()),
-  //            UInt64.valueOf(chainData.getSlot())));
-  //  }
+  public void replyHello(long requestId) {
+    RPCCodec.encode(
+        RPCMethod.HELLO,
+        new Hello(
+            1,
+            1,
+            Bytes32.fromHexString(chainData.getLastFinalizedBlockRoot()),
+            UInt64.valueOf(chainData.getEpoch()),
+            Bytes32.fromHexString(
+                HashTreeUtil.hash_tree_root(chainData.getState().toBytes()).toHexString()),
+            UInt64.valueOf(chainData.getSlot())),
+        requestId);
+  }
+
+  public void sendHello() {
+    sendMessage(
+        RPCMethod.HELLO,
+        new Hello(
+            1,
+            1,
+            Bytes32.fromHexString(chainData.getLastFinalizedBlockRoot()),
+            UInt64.valueOf(chainData.getEpoch()),
+            Bytes32.fromHexString(
+                HashTreeUtil.hash_tree_root(chainData.getState().toBytes()).toHexString()),
+            UInt64.valueOf(chainData.getSlot())));
+  }
 
   public void replyStatus(long requestId) {
     sendReply(
