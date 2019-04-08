@@ -17,6 +17,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.google.common.eventbus.EventBus;
+import java.util.concurrent.ConcurrentHashMap;
 import net.consensys.cava.rlpx.wire.SubProtocolIdentifier;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.data.TimeSeriesRecord;
@@ -26,7 +27,8 @@ final class HobbitsSubProtocolTest {
   @Test
   void testId() {
     HobbitsSubProtocol subprotocol =
-        new HobbitsSubProtocol(new EventBus(), "", new TimeSeriesRecord());
+        new HobbitsSubProtocol(
+            new EventBus(), "", new TimeSeriesRecord(), new ConcurrentHashMap<String, Boolean>());
     assertEquals("hob", subprotocol.id().name());
     assertEquals(1, subprotocol.id().version());
   }
@@ -34,7 +36,8 @@ final class HobbitsSubProtocolTest {
   @Test
   void supportsCheck() {
     HobbitsSubProtocol subprotocol =
-        new HobbitsSubProtocol(new EventBus(), "", new TimeSeriesRecord());
+        new HobbitsSubProtocol(
+            new EventBus(), "", new TimeSeriesRecord(), new ConcurrentHashMap<String, Boolean>());
     assertTrue(subprotocol.supports(SubProtocolIdentifier.of("hob", 1)));
   }
 }

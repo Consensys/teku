@@ -68,6 +68,7 @@ public final class HobbitsP2PNetwork implements P2PNetwork {
   private List<URI> staticPeers;
   private TimeSeriesRecord chainData;
   private Map<URI, HobbitsSocketHandler> handlersMap = new ConcurrentHashMap<>();
+  private final ConcurrentHashMap<String, Boolean> receivedMessages = new ConcurrentHashMap<>();
 
   /**
    * Default constructor
@@ -157,7 +158,8 @@ public final class HobbitsP2PNetwork implements P2PNetwork {
         uri -> {
           Peer peer = new Peer(peerURI);
           state.addPeer(peer);
-          return new HobbitsSocketHandler(eventBus, netSocket, userAgent, peer, chainData, state);
+          return new HobbitsSocketHandler(
+              eventBus, netSocket, userAgent, peer, chainData, state, receivedMessages);
         });
   }
 
@@ -190,10 +192,9 @@ public final class HobbitsP2PNetwork implements P2PNetwork {
               NetSocket socket = res.result();
               Peer peer = new Peer(peerURI);
               HobbitsSocketHandler handler =
-                  new HobbitsSocketHandler(eventBus, socket, userAgent, peer, chainData, state);
+                  new HobbitsSocketHandler(
+                      eventBus, socket, userAgent, peer, chainData, state, receivedMessages);
               handlersMap.put(peerURI, handler);
-              // handler.sendHello();
-              // handler.sendStatus();
               state.addPeer(peer);
               connected.complete(peer);
             }
@@ -251,6 +252,10 @@ public final class HobbitsP2PNetwork implements P2PNetwork {
   public void onNewUnprocessedBlock(BeaconBlock block) {
     LOG.log(
         Level.INFO, "Gossiping new block with state root: " + block.getState_root().toHexString());
-    state.sendGossipMessage(block.toBytes());
+    Bytes bytes = block.toBytes();
+    state.sendGossipMessage(bytes);
+    // TODO: this will be modified once Tuweni merges
+    // https://github.com/apache/incubator-tuweni/pull/3
+    this.receivedMessages.put(Hash.sha2_256(bytes).toHexString(), true);
   }
 }
