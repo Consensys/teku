@@ -128,7 +128,7 @@ public final class HobbitsSocketHandler {
       closed(null);
     } else if (RPCMethod.HELLO.equals(rpcMessage.method())) {
       if (!pendingResponses.remove(rpcMessage.requestId())) {
-        replyHello(rpcMessage.requestId());
+        // replyHello(rpcMessage.requestId());
       }
       peer.setPeerHello(rpcMessage.bodyAs(Hello.class));
     } else if (RPCMethod.GET_STATUS.equals(rpcMessage.method())) {
