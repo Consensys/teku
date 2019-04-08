@@ -16,5 +16,6 @@ package tech.pegasys.artemis.data;
 public interface IRecordAdapter {
 
   String toJSON();
+
   String toCSV();
 }
