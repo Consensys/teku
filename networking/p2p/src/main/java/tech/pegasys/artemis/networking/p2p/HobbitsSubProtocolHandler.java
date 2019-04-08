@@ -67,9 +67,9 @@ final class HobbitsSubProtocolHandler implements SubProtocolHandler {
   }
 
   private void sendMessage(
-      MessageSender.Verb verb, net.consensys.cava.plumtree.Peer peer, Bytes bytes) {
+      MessageSender.Verb verb, net.consensys.cava.plumtree.Peer peer, Bytes hash, Bytes bytes) {
     HobbitsSocketHandler handler = handlerMap.get(((Peer) peer).uri().toString());
-    handler.gossipMessage(verb, Bytes32.random(), Bytes32.random(), bytes);
+    handler.gossipMessage(verb, hash, Bytes32.random(), bytes);
   }
 
   @Override
