@@ -14,6 +14,7 @@
 package tech.pegasys.artemis.networking.p2p;
 
 import com.google.common.eventbus.EventBus;
+import java.util.concurrent.ConcurrentHashMap;
 import net.consensys.cava.rlpx.RLPxService;
 import net.consensys.cava.rlpx.wire.SubProtocol;
 import net.consensys.cava.rlpx.wire.SubProtocolHandler;
@@ -27,11 +28,17 @@ final class HobbitsSubProtocol implements SubProtocol {
   private final String userAgent;
   private final TimeSeriesRecord chainData;
   private HobbitsSubProtocolHandler handler;
+  private final ConcurrentHashMap<String, Boolean> receivedMessages;
 
-  HobbitsSubProtocol(EventBus eventBus, String userAgent, TimeSeriesRecord chainData) {
+  HobbitsSubProtocol(
+      EventBus eventBus,
+      String userAgent,
+      TimeSeriesRecord chainData,
+      ConcurrentHashMap<String, Boolean> receivedMessages) {
     this.eventBus = eventBus;
     this.userAgent = userAgent;
     this.chainData = chainData;
+    this.receivedMessages = receivedMessages;
   }
 
   @Override
@@ -52,7 +59,8 @@ final class HobbitsSubProtocol implements SubProtocol {
 
   @Override
   public SubProtocolHandler createHandler(RLPxService service) {
-    handler = new HobbitsSubProtocolHandler(service, eventBus, userAgent, chainData);
+    handler =
+        new HobbitsSubProtocolHandler(service, eventBus, userAgent, chainData, receivedMessages);
     return handler;
   }
 

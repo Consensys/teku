@@ -23,6 +23,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -58,6 +59,7 @@ public final class RLPxP2PNetwork implements P2PNetwork {
   private final Log4j2LoggerProvider loggerProvider;
   private final EventBus eventBus;
   private final HobbitsSubProtocol subProtocol;
+  private final ConcurrentHashMap<String, Boolean> receivedMessages = new ConcurrentHashMap<>();
 
   private WireConnectionRepository wireConnectionRepository;
   private VertxRLPxService service;
@@ -81,7 +83,7 @@ public final class RLPxP2PNetwork implements P2PNetwork {
     this.loggerProvider = new Log4j2LoggerProvider();
     this.userAgent = userAgent;
     this.staticPeers = staticPeers;
-    this.subProtocol = new HobbitsSubProtocol(eventBus, userAgent, chainData);
+    this.subProtocol = new HobbitsSubProtocol(eventBus, userAgent, chainData, receivedMessages);
   }
 
   @Override
