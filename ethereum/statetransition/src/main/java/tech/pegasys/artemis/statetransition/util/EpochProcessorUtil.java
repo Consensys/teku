@@ -737,7 +737,7 @@ public final class EpochProcessorUtil {
       long LATEST_PENALIZED_EXIT_LENGTH = Constants.LATEST_SLASHED_EXIT_LENGTH;
 
       // update hash tree root
-      long index = next_epoch + ENTRY_EXIT_DELAY % LATEST_INDEX_ROOTS_LENGTH;
+      long index = (next_epoch + ENTRY_EXIT_DELAY) % LATEST_INDEX_ROOTS_LENGTH;
       List<Bytes32> latest_index_roots = state.getLatest_active_index_roots();
       Bytes32 root =
           HashTreeUtil.integerListHashTreeRoot(

@@ -54,7 +54,7 @@ public class StateTransition {
       blockProcessor(state, block);
     }
     // per-epoch processing
-    if (state.getSlot() + 1 % SLOTS_PER_EPOCH == 0) {
+    if ((state.getSlot() + 1) % SLOTS_PER_EPOCH == 0) {
       epochProcessor(state, block);
     }
     // reset all cached state variables

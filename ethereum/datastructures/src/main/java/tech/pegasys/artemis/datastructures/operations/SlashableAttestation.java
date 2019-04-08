@@ -52,7 +52,7 @@ public class SlashableAttestation {
   public Bytes toBytes() {
     return SSZ.encode(
         writer -> {
-          writer.writeLongIntList(64, validator_indices);
+          writer.writeInt64List(validator_indices);
           writer.writeBytes(data.toBytes());
           writer.writeBytes(custody_bitfield);
           writer.writeBytes(aggregate_signature.toBytes());
