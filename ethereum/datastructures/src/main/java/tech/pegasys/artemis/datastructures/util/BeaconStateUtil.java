@@ -92,18 +92,15 @@ public class BeaconStateUtil {
     }
 
     // Process initial activations
-    int validator_index = 0;
-    for (Validator validator : state.getValidator_registry()) {
+    for (int validator_index = 0;
+        validator_index < state.getValidator_registry().size();
+        validator_index++) {
       List<UnsignedLong> balances = state.getValidator_balances();
       if (balances.get(validator_index).compareTo(UnsignedLong.valueOf(MAX_DEPOSIT_AMOUNT)) >= 0) {
         activate_validator(state, validator_index, true);
       }
-      validator_index++;
     }
 
-    List<Validator> activeValidators =
-        ValidatorsUtil.get_active_validators(
-            state.getValidator_registry(), UnsignedLong.valueOf(GENESIS_EPOCH));
     Bytes32 genesis_active_index_root =
         hash_tree_root_list_integers(
             ValidatorsUtil.get_active_validator_indices(
@@ -111,7 +108,6 @@ public class BeaconStateUtil {
     for (int index = 0; index < state.getLatest_active_index_roots().size(); index++) {
       state.getLatest_active_index_roots().set(index, genesis_active_index_root);
     }
-
     state.setCurrent_shuffling_seed(generate_seed(state, UnsignedLong.valueOf(GENESIS_EPOCH)));
 
     return state;
@@ -1052,13 +1048,12 @@ public class BeaconStateUtil {
    *     - Spec v0.4</a>
    */
   public static UnsignedLong get_domain(Fork fork, UnsignedLong epoch, int domain_type) {
-    return get_fork_version(fork, epoch)
-        .times(UnsignedLong.valueOf(4294967296L))
-        .plus(UnsignedLong.valueOf(domain_type));
+    // Below error is to be fixed in changes being made in Steven's open PR.
+    return bytes_to_int(Bytes.wrap(get_fork_version(fork, epoch), int_to_bytes(domain_type, 4)));
   }
 
   /**
-   * Return the epoch at which an activation or exit triggered in `epoch` takes effect.
+   * Return the epoch at which an activation or exit triggered in `epoch` takes effect. g
    *
    * @param epoch - The epoch under consideration.
    * @return The epoch at which an activation or exit in the given `epoch` will take effect.
