@@ -538,11 +538,11 @@ public final class EpochProcessorUtil {
       Boolean check2 = false;
       long committee_count = BeaconStateUtil.get_current_epoch_committee_count(state);
       List<Integer> comnmittee_range =
-          IntStream.range(0, (int) committee_count).boxed().collect(Collectors.toList());
+          IntStream.range(0, toIntExact(committee_count)).boxed().collect(Collectors.toList());
       long SHARD_COUNT = Constants.SHARD_COUNT;
       for (Integer committee_offset : comnmittee_range) {
         long shard = state.getCurrent_shuffling_start_shard() + committee_offset % SHARD_COUNT;
-        long crosslink_epoch = state.getLatest_crosslinks().get((int) shard).getEpoch();
+        long crosslink_epoch = state.getLatest_crosslinks().get(toIntExact(shard)).getEpoch();
         if (crosslink_epoch > validator_registry_update_epoch) {
           check2 = true;
         } else {
@@ -675,7 +675,7 @@ public final class EpochProcessorUtil {
         if (validator.isSlashed()
             && currentEpoch
                 == validator.getWithdrawal_epoch() - Constants.LATEST_SLASHED_EXIT_LENGTH / 2) {
-          int epoch_index = (int) currentEpoch % Constants.LATEST_SLASHED_EXIT_LENGTH;
+          int epoch_index = toIntExact(currentEpoch) % Constants.LATEST_SLASHED_EXIT_LENGTH;
 
           long total_at_start =
               state
@@ -743,20 +743,20 @@ public final class EpochProcessorUtil {
           HashTreeUtil.integerListHashTreeRoot(
               ValidatorsUtil.get_active_validator_indices(
                   state.getValidator_registry(), next_epoch + ENTRY_EXIT_DELAY));
-      latest_index_roots.set((int) index, root);
+      latest_index_roots.set(toIntExact(index), root);
 
       // update latest penalized balances
       index = next_epoch % LATEST_PENALIZED_EXIT_LENGTH;
       List<Long> latest_penalized_balances = state.getLatest_slashed_balances();
       long balance =
-          latest_penalized_balances.get((int) (current_epoch % LATEST_PENALIZED_EXIT_LENGTH));
-      latest_penalized_balances.set((int) index, balance);
+          latest_penalized_balances.get(toIntExact(current_epoch % LATEST_PENALIZED_EXIT_LENGTH));
+      latest_penalized_balances.set(toIntExact(index), balance);
 
       // update latest randao mixes
       List<Bytes32> latest_randao_mixes = state.getLatest_randao_mixes();
       index = next_epoch % LATEST_RANDAO_MIXES_LENGTH;
       Bytes32 randao_mix = BeaconStateUtil.get_randao_mix(state, current_epoch);
-      latest_randao_mixes.set((int) index, randao_mix);
+      latest_randao_mixes.set(toIntExact(index), randao_mix);
 
       // remove old attestations
       List<PendingAttestation> pending_attestations = state.getLatest_attestations();

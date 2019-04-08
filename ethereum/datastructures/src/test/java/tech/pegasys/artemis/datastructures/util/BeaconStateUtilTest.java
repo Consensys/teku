@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.datastructures.util;
 
+import static java.lang.Math.toIntExact;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -481,7 +482,7 @@ class BeaconStateUtilTest {
   @Test
   void succeedsWhenGetPermutedIndexAndShuffleGiveTheSameResults() {
     Bytes32 seed = Bytes32.random();
-    int listSize = 1 + (int) randomLong() % 1000;
+    int listSize = 1 + toIntExact(randomLong()) % 1000;
     int[] shuffling = BeaconStateUtil.shuffle(listSize, seed);
     for (int i = 0; i < listSize; i++) {
       int idx = BeaconStateUtil.get_permuted_index(i, listSize, seed);

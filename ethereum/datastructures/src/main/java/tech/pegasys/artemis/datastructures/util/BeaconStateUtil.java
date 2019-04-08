@@ -284,7 +284,7 @@ public class BeaconStateUtil {
         epoch <= get_current_epoch(state) + ACTIVATION_EXIT_DELAY,
         "checkArgument threw and exception in get_active_index_root()");
 
-    int index = (int) epoch % LATEST_ACTIVE_INDEX_ROOTS_LENGTH;
+    int index = toIntExact(epoch) % LATEST_ACTIVE_INDEX_ROOTS_LENGTH;
     return state.getLatest_active_index_roots().get(index);
   }
 
@@ -492,10 +492,10 @@ public class BeaconStateUtil {
     state
         .getLatest_slashed_balances()
         .set(
-            (int) get_current_epoch(state) % LATEST_SLASHED_EXIT_LENGTH,
+            toIntExact(get_current_epoch(state)) % LATEST_SLASHED_EXIT_LENGTH,
             state
                     .getLatest_slashed_balances()
-                    .get((int) get_current_epoch(state) % LATEST_SLASHED_EXIT_LENGTH)
+                    .get(toIntExact(get_current_epoch(state)) % LATEST_SLASHED_EXIT_LENGTH)
                 + get_effective_balance(state, index));
 
     int whistleblower_index = get_beacon_proposer_index(state, state.getSlot());
@@ -544,7 +544,7 @@ public class BeaconStateUtil {
         epoch <= get_current_epoch(state), "checkArgument threw and exception in get_randao_mix()");
     long index = epoch % LATEST_RANDAO_MIXES_LENGTH;
     List<Bytes32> randao_mixes = state.getLatest_randao_mixes();
-    return randao_mixes.get((int) index);
+    return randao_mixes.get(toIntExact(index));
   }
 
   /**
@@ -561,7 +561,9 @@ public class BeaconStateUtil {
     checkArgument(state.getSlot() <= slot + Constants.LATEST_BLOCK_ROOTS_LENGTH);
     checkArgument(slot < state.getSlot(), "checkArgument threw and exception in get_block_root()");
     // Todo: Remove .intValue() as soon as our list wrapper supports unsigned longs
-    return state.getLatest_block_roots().get((int) slot % Constants.LATEST_BLOCK_ROOTS_LENGTH);
+    return state
+        .getLatest_block_roots()
+        .get(toIntExact(slot) % Constants.LATEST_BLOCK_ROOTS_LENGTH);
   }
 
   /**
@@ -631,7 +633,7 @@ public class BeaconStateUtil {
             .map(i -> active_validator_indices.get(shuffled_indices.get(i)))
             .collect(Collectors.toList());
 
-    int committeesPerEpoch = (int) get_epoch_committee_count(length);
+    int committeesPerEpoch = toIntExact(get_epoch_committee_count(length));
 
     return split(shuffled_active_validator_indices, committeesPerEpoch);
   }
@@ -679,10 +681,10 @@ public class BeaconStateUtil {
 
       // This needs to be unsigned modulo.
       int pivot =
-          (int)
+          toIntExact(
               Long.remainderUnsigned(
                   bytes_to_int(Hash.keccak256(Bytes.wrap(seed, roundAsByte)).slice(0, 8)),
-                  listSize);
+                  listSize));
       int flip = (pivot - indexRet) % listSize;
       if (flip < 0) {
         // Account for flip being negative
@@ -754,10 +756,10 @@ public class BeaconStateUtil {
 
       // This needs to be unsigned modulo.
       int pivot =
-          (int)
+          toIntExact(
               Long.remainderUnsigned(
                   bytes_to_int(Hash.keccak256(Bytes.wrap(seed, roundAsByte)).slice(0, 8)),
-                  listSize);
+                  listSize));
 
       for (int i = 0; i < listSize; i++) {
 
@@ -854,7 +856,7 @@ public class BeaconStateUtil {
     } else {
       List<Integer> first_committee =
           get_crosslink_committees_at_slot(state, slot).get(0).getCommittee();
-      return first_committee.get((int) slot % first_committee.size());
+      return first_committee.get(toIntExact(slot) % first_committee.size());
     }
   }
 
@@ -1156,7 +1158,7 @@ public class BeaconStateUtil {
    */
   private static int ceil_div8(int div) {
     checkArgument(div > 0, "Expected positive div but got %s", div);
-    return (int) Math.ceil(8.0 / div);
+    return toIntExact(Double.valueOf(Math.ceil(8.0 / div)).longValue());
   }
 
   /**

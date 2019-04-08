@@ -61,11 +61,11 @@ class StateTransitionTest {
     for (int i = 0; i < 1000; i++) {
       ArrayList<ShardCommittee> shard_commitees = new ArrayList<ShardCommittee>();
       for (int j = 0; j < 64; j++) {
-        int total_validator_count = (int) Math.round(Math.random() * 64);
+        int total_validator_count = toIntExact(Math.round(Math.random() * 64));
 
         ArrayList<Integer> committee = new ArrayList<Integer>();
         for (int k = 0; k < total_validator_count; k++) {
-          committee.add(Integer.valueOf((int) Math.round(Math.random() * 64)));
+          committee.add(Integer.valueOf(toIntExact(Math.round(Math.random() * 64))));
         }
         shard_commitees.add(
             new ShardCommittee(Math.round(Math.random() * 5000), committee));

@@ -14,6 +14,7 @@
 package tech.pegasys.artemis.datastructures.util;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static java.lang.Math.toIntExact;
 
 import java.nio.ByteOrder;
 import java.util.ArrayList;
@@ -386,7 +387,7 @@ public class AttestationUtil {
   }
 
   public static int ceil_div8(int input) {
-    return (int) Math.ceil(((double) input) / 8.0d);
+    return toIntExact(Double.valueOf(Math.ceil(((double) input) / 8.0d)).longValue());
   }
 
   /**
@@ -626,7 +627,7 @@ public class AttestationUtil {
         // Get variables specific to each Attestation
         long shard = crosslinkCommittee.getShard();
         Crosslink latestCrosslink =
-            headState.getLatest_crosslinks().get((int) shard % Constants.SHARD_COUNT);
+            headState.getLatest_crosslinks().get(toIntExact(shard) % Constants.SHARD_COUNT);
 
         // Set attestation data
         AttestationData attestationData =

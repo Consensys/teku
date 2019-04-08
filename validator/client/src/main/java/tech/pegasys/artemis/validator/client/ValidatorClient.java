@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.validator.client;
 
+import static java.lang.Math.toIntExact;
 import static tech.pegasys.artemis.datastructures.Constants.SLOTS_PER_EPOCH;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_crosslink_committees_at_slot;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_current_epoch;
@@ -49,7 +50,7 @@ public class ValidatorClient {
     long next_epoch = get_current_epoch(state);
     assert previous_epoch <= epoch && epoch <= next_epoch;
 
-    int epoch_start_slot = (int) get_epoch_start_slot(epoch);
+    int epoch_start_slot = toIntExact(get_epoch_start_slot(epoch));
 
     for (int slot = epoch_start_slot; slot < epoch_start_slot + SLOTS_PER_EPOCH; slot++) {
 
@@ -65,7 +66,7 @@ public class ValidatorClient {
 
       if (selected_committees.size() > 0) {
         List<Integer> validators = selected_committees.get(0).getCommittee();
-        int shard = (int) selected_committees.get(0).getShard();
+        int shard = toIntExact(selected_committees.get(0).getShard());
         List<Integer> first_committee_at_slot =
             crosslink_committees.get(0).getCommittee(); // List[ValidatorIndex]
         boolean is_proposer =

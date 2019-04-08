@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.statetransition.util;
 
+import static java.lang.Math.toIntExact;
 import static tech.pegasys.artemis.datastructures.Constants.LATEST_BLOCK_ROOTS_LENGTH;
 
 import java.util.List;
@@ -30,7 +31,8 @@ public final class SlotProcessorUtil {
       List<Bytes32> latest_block_roots = state.getLatest_block_roots();
 
       latest_block_roots.set(
-          ((int) state.getSlot() - 1) % Constants.LATEST_BLOCK_ROOTS_LENGTH, previous_block_root);
+          (toIntExact(state.getSlot()) - 1) % Constants.LATEST_BLOCK_ROOTS_LENGTH,
+          previous_block_root);
       state.setLatest_block_roots(latest_block_roots);
     }
 
