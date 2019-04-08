@@ -18,7 +18,6 @@ import java.io.IOException;
 import tech.pegasys.artemis.data.IRecordAdapter;
 
 public interface FileProvider {
-
   static String uniqueFilename(String filename) throws IOException {
     String newFilename = filename;
     File f = new File(filename);

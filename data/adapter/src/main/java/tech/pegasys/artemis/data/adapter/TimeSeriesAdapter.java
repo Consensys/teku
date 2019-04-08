@@ -46,24 +46,21 @@ public class TimeSeriesAdapter implements DataAdapter<TimeSeriesRecord> {
     BeaconState justifiedState = this.input.getJustifiedState();
     BeaconBlock finalizedBlock = this.input.getFinalizedBlock();
     BeaconState finalizedState = this.input.getFinalizedState();
-    long numValidators = headState.getValidator_registry().size();
+    // long numValidators = headState.getValidator_registry().size();
 
-    Bytes32 headBlockRoot = HashTreeUtil.hash_tree_root(headBlock.toBytes());
-    Bytes32 justifiedBlockRoot = HashTreeUtil.hash_tree_root(justifiedBlock.toBytes());
-    Bytes32 justifiedStateRoot = HashTreeUtil.hash_tree_root(justifiedState.toBytes());
-    Bytes32 finalizedBlockRoot = HashTreeUtil.hash_tree_root(finalizedBlock.toBytes());
-    Bytes32 finalizedStateRoot = HashTreeUtil.hash_tree_root(finalizedState.toBytes());
+    Bytes32 lastJustifiedBlockRoot = HashTreeUtil.hash_tree_root(justifiedBlock.toBytes());
+    Bytes32 lastJustifiedStateRoot = HashTreeUtil.hash_tree_root(justifiedState.toBytes());
+    Bytes32 lastFinalizedBlockRoot = HashTreeUtil.hash_tree_root(finalizedBlock.toBytes());
+    Bytes32 lastFinalizedStateRoot = HashTreeUtil.hash_tree_root(finalizedState.toBytes());
     return new TimeSeriesRecord(
         this.input.getIndex(),
         slot,
         epoch,
-        headBlockRoot.toHexString(),
-        headBlock.getState_root().toHexString(),
-        headBlock.getParent_root().toHexString(),
-        numValidators,
-        justifiedBlockRoot.toHexString(),
-        justifiedStateRoot.toHexString(),
-        finalizedBlockRoot.toHexString(),
-        finalizedStateRoot.toHexString());
+        this.input.getHeadBlock(),
+        this.input.getHeadState(),
+        lastJustifiedBlockRoot.toHexString(),
+        lastJustifiedStateRoot.toHexString(),
+        lastFinalizedBlockRoot.toHexString(),
+        lastFinalizedStateRoot.toHexString());
   }
 }
