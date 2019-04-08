@@ -96,7 +96,7 @@ public final class GossipCodec implements Codec {
    * @return the encoded Gossip message
    */
   public static Bytes encode(
-      MessageSender.Verb verb, Bytes32 messageHash, Bytes32 hashSignature, Bytes payload) {
+      MessageSender.Verb verb, Bytes messageHash, Bytes32 hashSignature, Bytes payload) {
 
     String requestLine = "EWP 0.2 GOSSIP ";
     ObjectNode node = mapper.createObjectNode();
