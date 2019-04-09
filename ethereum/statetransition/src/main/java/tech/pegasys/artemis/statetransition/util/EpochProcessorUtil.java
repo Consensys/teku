@@ -171,9 +171,18 @@ public final class EpochProcessorUtil {
       for (UnsignedLong curr_slot = BeaconStateUtil.get_epoch_start_slot(previous_epoch);
           curr_slot.compareTo(BeaconStateUtil.get_epoch_start_slot(next_epoch)) < 0;
           curr_slot = curr_slot.plus(UnsignedLong.ONE)) {
+        LOG.log(Level.DEBUG, "current slot: " + curr_slot.toString());
         List<CrosslinkCommittee> crosslink_committees_at_slot =
             BeaconStateUtil.get_crosslink_committees_at_slot(state, curr_slot);
         for (CrosslinkCommittee committee : crosslink_committees_at_slot) {
+          LOG.log(Level.DEBUG, "Committee Shard: " + committee.getShard().toString());
+          LOG.log(
+              Level.DEBUG,
+              "Total Attesting Balance: "
+                  + AttestationUtil.total_attesting_balance(state, committee));
+          LOG.log(Level.DEBUG, "committee: " + committee.getCommittee());
+          LOG.log(
+              Level.DEBUG, "Total Balance: " + BeaconStateUtil.get_total_balance(state, committee));
           if (AttestationUtil.total_attesting_balance(state, committee)
                   .times(UnsignedLong.valueOf(3L))
                   .compareTo(

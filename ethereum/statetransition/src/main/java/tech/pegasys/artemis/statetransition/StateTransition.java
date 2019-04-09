@@ -30,6 +30,7 @@ import tech.pegasys.artemis.statetransition.util.PreProcessingUtil;
 import tech.pegasys.artemis.statetransition.util.SlotProcessingException;
 import tech.pegasys.artemis.statetransition.util.SlotProcessorUtil;
 import tech.pegasys.artemis.util.alogger.ALogger;
+import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 
 public class StateTransition {
 
@@ -50,10 +51,16 @@ public class StateTransition {
     preProcessor(state);
     // per-slot processing
     slotProcessor(state, previous_block_root);
+    LOG.log(
+        Level.DEBUG,
+        "State root after slotProcessing: " + HashTreeUtil.hash_tree_root(state.toBytes()));
     // per-block processing
     if (block != null) {
       blockProcessor(state, block);
     }
+    LOG.log(
+        Level.DEBUG,
+        "State root after blockProcessing: " + HashTreeUtil.hash_tree_root(state.toBytes()));
     // per-epoch processing
     if (state
         .getSlot()
@@ -61,6 +68,9 @@ public class StateTransition {
         .mod(UnsignedLong.valueOf(SLOTS_PER_EPOCH))
         .equals(UnsignedLong.ZERO)) {
       epochProcessor(state, block);
+      LOG.log(
+          Level.DEBUG,
+          "State root after epochProcessing: " + HashTreeUtil.hash_tree_root(state.toBytes()));
     }
     // reset all cached state variables
     state.invalidateCache();
@@ -135,39 +145,83 @@ public class StateTransition {
               + " |  "
               + BeaconStateUtil.get_current_epoch(state).longValue() % Constants.GENESIS_EPOCH,
           printEnabled);
-
       EpochProcessorUtil.updateEth1Data(state);
-      LOG.log(Level.DEBUG, "updateEth1Data()", printEnabled);
+      LOG.log(
+          Level.DEBUG,
+          "State root after updateEth1Data(): " + HashTreeUtil.hash_tree_root(state.toBytes()),
+          printEnabled);
       EpochProcessorUtil.updateJustification(state, block);
-      LOG.log(Level.DEBUG, "updateJustification()", printEnabled);
+      LOG.log(
+          Level.DEBUG,
+          "State root after updateJustification(): " + HashTreeUtil.hash_tree_root(state.toBytes()),
+          printEnabled);
       EpochProcessorUtil.updateCrosslinks(state);
-      LOG.log(Level.DEBUG, "updateCrosslinks()", printEnabled);
+      LOG.log(
+          Level.DEBUG,
+          "State root after updateCrosslinks(): " + HashTreeUtil.hash_tree_root(state.toBytes()),
+          printEnabled);
 
       UnsignedLong previous_total_balance = BeaconStateUtil.previous_total_balance(state);
-      LOG.log(Level.DEBUG, "justificationAndFinalization()", printEnabled);
+      LOG.log(
+          Level.DEBUG,
+          "State root after justificationAndFinalization(): "
+              + HashTreeUtil.hash_tree_root(state.toBytes()),
+          printEnabled);
       EpochProcessorUtil.justificationAndFinalization(state, previous_total_balance);
-      LOG.log(Level.DEBUG, "attestionInclusion()", printEnabled);
+      LOG.log(
+          Level.DEBUG,
+          "State root after attestionInclusion(): " + HashTreeUtil.hash_tree_root(state.toBytes()),
+          printEnabled);
       EpochProcessorUtil.attestionInclusion(state, previous_total_balance);
-      LOG.log(Level.DEBUG, "crosslinkRewards()", printEnabled);
+      LOG.log(
+          Level.DEBUG,
+          "State root after crosslinkRewards(): " + HashTreeUtil.hash_tree_root(state.toBytes()),
+          printEnabled);
       EpochProcessorUtil.crosslinkRewards(state, previous_total_balance);
 
-      LOG.log(Level.DEBUG, "process_ejections()", printEnabled);
+      LOG.log(
+          Level.DEBUG,
+          "State root after process_ejections(): " + HashTreeUtil.hash_tree_root(state.toBytes()),
+          printEnabled);
       EpochProcessorUtil.process_ejections(state);
 
-      LOG.log(Level.DEBUG, "previousStateUpdates()", printEnabled);
+      LOG.log(
+          Level.DEBUG,
+          "State root after previousStateUpdates(): "
+              + HashTreeUtil.hash_tree_root(state.toBytes()),
+          printEnabled);
       EpochProcessorUtil.previousStateUpdates(state);
       if (EpochProcessorUtil.shouldUpdateValidatorRegistry(state)) {
-        LOG.log(Level.DEBUG, "update_validator_registry()", printEnabled);
+        LOG.log(
+            Level.DEBUG,
+            "State root after update_validator_registry(): "
+                + HashTreeUtil.hash_tree_root(state.toBytes()),
+            printEnabled);
         EpochProcessorUtil.update_validator_registry(state);
-        LOG.log(Level.DEBUG, "currentStateUpdatesAlt1()", printEnabled);
+        LOG.log(
+            Level.DEBUG,
+            "State root after currentStateUpdatesAlt1(): "
+                + HashTreeUtil.hash_tree_root(state.toBytes()),
+            printEnabled);
         EpochProcessorUtil.currentStateUpdatesAlt1(state);
       } else {
-        LOG.log(Level.DEBUG, "currentStateUpdatesAlt2()", printEnabled);
+        LOG.log(
+            Level.DEBUG,
+            "State root after currentStateUpdatesAlt2(): "
+                + HashTreeUtil.hash_tree_root(state.toBytes()),
+            printEnabled);
         EpochProcessorUtil.currentStateUpdatesAlt2(state);
       }
-      LOG.log(Level.DEBUG, "process_penalties_and_exits()", printEnabled);
+      LOG.log(
+          Level.DEBUG,
+          "State root after process_penalties_and_exits(): "
+              + HashTreeUtil.hash_tree_root(state.toBytes()),
+          printEnabled);
       EpochProcessorUtil.process_penalties_and_exits(state);
-      LOG.log(Level.DEBUG, "finalUpdates()", printEnabled);
+      LOG.log(
+          Level.DEBUG,
+          "State root after finalUpdates(): " + HashTreeUtil.hash_tree_root(state.toBytes()),
+          printEnabled);
       EpochProcessorUtil.finalUpdates(state);
     } catch (EpochProcessingException e) {
       LOG.log(Level.WARN, "  Epoch processing error: " + e, printEnabled);
