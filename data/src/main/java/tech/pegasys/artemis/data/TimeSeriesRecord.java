@@ -15,10 +15,15 @@ package tech.pegasys.artemis.data;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonSerializer;
+import com.google.gson.reflect.TypeToken;
+import java.lang.reflect.Type;
 import net.consensys.cava.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 
 public class TimeSeriesRecord implements IRecordAdapter {
@@ -79,7 +84,36 @@ public class TimeSeriesRecord implements IRecordAdapter {
   @Override
   public String toJSON() {
     Gson gson = new GsonBuilder().create();
-    return gson.toJson(this);
+    GsonBuilder gsonBuilder = new GsonBuilder();
+
+    Type bytes32Type = new TypeToken<Bytes32>() {}.getType();
+    JsonSerializer<Bytes32> serializer =
+        (src, typeOfSrc, context) -> {
+          JsonObject obj = new JsonObject();
+          obj.addProperty("Bytes32", src.toHexString());
+          return obj;
+        };
+
+    Type blsSignatureType = new TypeToken<BLSSignature>() {}.getType();
+    JsonSerializer<BLSSignature> blsSerializer =
+        (src, typeOfSrc, context) -> {
+          JsonObject obj = new JsonObject();
+          obj.addProperty("BLSSignature", src.toString());
+          return obj;
+        };
+
+    Type blsPublicKeyType = new TypeToken<BLSPublicKey>() {}.getType();
+    JsonSerializer<BLSPublicKey> blsPubKeySerializer =
+        (src, typeOfSrc, context) -> {
+          JsonObject obj = new JsonObject();
+          obj.addProperty("BLSPublicKey", src.toString());
+          return obj;
+        };
+
+    gsonBuilder.registerTypeAdapter(blsPublicKeyType, blsPubKeySerializer);
+
+    Gson customGson = gsonBuilder.create();
+    return customGson.toJson(this);
   }
 
   @Override

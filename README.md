@@ -87,10 +87,10 @@ To run and send formatted output to a csv file
 $ ./gradlew run --args='-p=CSV -o=artemis.csv'
 ```
 
-To run with loggin level set to ALL
+To run with loggin level set to DEBUG
 
 ```
-$ ./gradlew run --args='-l=ALL'
+$ ./gradlew run --args='-l=DEBUG'
 ```
 
 To run and generate flow diagrams for Artemis
