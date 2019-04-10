@@ -121,6 +121,8 @@ public class ValidatorCoordinator {
   private void initializeValidators() {
     // Add all validators to validatorSet hashMap
     int nodeCounter = UInt256.fromBytes(nodeIdentity.bytes()).mod(numNodes).intValue();
+    // LOG.log(Level.DEBUG, "nodeCounter: " + nodeCounter);
+    // if (nodeCounter == 0) {
 
     int startIndex = nodeCounter * (numValidators / numNodes);
     int endIndex =
@@ -128,11 +130,14 @@ public class ValidatorCoordinator {
             + (numValidators / numNodes - 1)
             + (int) Math.floor(nodeCounter / Math.max(1, numNodes - 1));
     endIndex = Math.min(endIndex, numValidators - 1);
+    // int startIndex = 0;
+    // int endIndex = numValidators;
     LOG.log(Level.DEBUG, "startIndex: " + startIndex + " endIndex: " + endIndex);
     for (int i = startIndex; i < endIndex; i++) {
       BLSKeyPair keypair = BLSKeyPair.random(i);
       validatorSet.put(keypair.getPublicKey(), keypair);
     }
+    // }
   }
 
   private void createBlockIfNecessary(BeaconStateWithCache headState, BeaconBlock headBlock) {
