@@ -107,8 +107,8 @@ public final class DepositInput {
     this.proof_of_possession = proof_of_possession;
   }
 
-  public Bytes32 signedRoot(String truncationParam) {
-    if (!truncationParam.equals("proof_of_possession")) {
+  public Bytes32 signed_root(String truncation_param) {
+    if (!truncation_param.equals("proof_of_possession")) {
       throw new UnsupportedOperationException(
           "Only signed_root(proposal, \"proof_of_possession\") is currently supported for type Proposal.");
     }

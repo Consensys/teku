@@ -96,7 +96,7 @@ public class StateTransition {
     // Store latest known block for previous slot
     state
         .getLatest_block_roots()
-        .set(prev_slot_index, state.getLatest_block_header().signedRoot("signature"));
+        .set(prev_slot_index, state.getLatest_block_header().signed_root("signature"));
   }
 
   protected void slotProcessor(BeaconStateWithCache state) {
