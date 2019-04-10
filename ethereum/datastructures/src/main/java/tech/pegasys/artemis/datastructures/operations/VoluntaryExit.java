@@ -103,8 +103,8 @@ public class VoluntaryExit {
     this.signature = signature;
   }
 
-  public Bytes32 signedRoot(String truncationParam) {
-    if (!truncationParam.equals("signature")) {
+  public Bytes32 signed_root(String truncation_param) {
+    if (!truncation_param.equals("signature")) {
       throw new UnsupportedOperationException(
           "Only signed_root(proposal, \"signature\") is currently supported for type Proposal.");
     }

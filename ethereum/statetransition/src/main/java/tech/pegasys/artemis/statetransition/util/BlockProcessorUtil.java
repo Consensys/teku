@@ -93,7 +93,7 @@ public final class BlockProcessorUtil {
   public static void process_block_header(BeaconState state, BeaconBlock block) {
     checkArgument(verify_slot(state, block), "Slots don't match");
     checkArgument(
-        block.getPrevious_block_root() == state.getLatest_block_header().signedRoot("signature"),
+        block.getPrevious_block_root() == state.getLatest_block_header().signed_root("signature"),
         "Parent doesn't matches");
 
     // Save the current block as the new latest block
@@ -107,7 +107,7 @@ public final class BlockProcessorUtil {
       checkArgument(
           bls_verify(
               proposer.getPubkey(),
-              block.signedRoot("signature"),
+              block.signed_root("signature"),
               block.getSignature(),
               get_domain(state.getFork(), get_current_epoch(state), Constants.DOMAIN_BEACON_BLOCK)),
           "Proposer signature invalid");
@@ -567,7 +567,7 @@ public final class BlockProcessorUtil {
         checkArgument(
             bls_verify(
                 validator.getPubkey(),
-                voluntaryExit.signedRoot("signature"),
+                voluntaryExit.signed_root("signature"),
                 voluntaryExit.getSignature(),
                 get_domain(state.getFork(), voluntaryExit.getEpoch(), DOMAIN_VOLUNTARY_EXIT)),
             "checkArgument threw and exception in processExits()");
@@ -662,7 +662,7 @@ public final class BlockProcessorUtil {
       checkArgument(
           bls_verify(
               transfer.getPubkey(),
-              transfer.signedRoot("signature"),
+              transfer.signed_root("signature"),
               transfer.getSignature(),
               get_domain(state.getFork(), slot_to_epoch(transfer.getSlot()), DOMAIN_TRANSFER)),
           "Transfer signature invalid");
