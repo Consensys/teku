@@ -137,21 +137,18 @@ public class BeaconStateUtil {
     UnsignedLong shuffling_start_shard = UnsignedLong.ZERO;
 
     if (epoch.compareTo(current_epoch) == 0) {
-
       committees_per_epoch = get_current_epoch_committee_count(state);
       seed = state.getCurrent_shuffling_seed();
       shuffling_epoch = state.getCurrent_shuffling_epoch();
       shuffling_start_shard = state.getCurrent_shuffling_start_shard();
 
     } else if (epoch.compareTo(previous_epoch) == 0) {
-
       committees_per_epoch = get_previous_epoch_committee_count(state);
       seed = state.getPrevious_shuffling_seed();
       shuffling_epoch = state.getPrevious_shuffling_epoch();
       shuffling_start_shard = state.getPrevious_shuffling_start_shard();
 
     } else if (epoch.compareTo(next_epoch) == 0) {
-
       UnsignedLong current_committees_per_epoch = get_current_epoch_committee_count(state);
       committees_per_epoch = get_next_epoch_committee_count(state);
       shuffling_epoch = next_epoch;
@@ -173,7 +170,6 @@ public class BeaconStateUtil {
         shuffling_start_shard = state.getCurrent_shuffling_start_shard();
       }
     }
-
     List<List<Integer>> shuffling =
         get_shuffling(seed, state.getValidator_registry(), shuffling_epoch);
     UnsignedLong offset = slot.mod(UnsignedLong.valueOf(SLOTS_PER_EPOCH));
@@ -185,7 +181,6 @@ public class BeaconStateUtil {
             .plus(committees_per_slot)
             .times(offset)
             .mod(UnsignedLong.valueOf(Constants.SHARD_COUNT));
-
     ArrayList<CrosslinkCommittee> crosslink_committees_at_slot = new ArrayList<>();
     for (long i = 0; i < committees_per_slot.longValue(); i++) {
       CrosslinkCommittee committee =
@@ -571,10 +566,10 @@ public class BeaconStateUtil {
         get_current_epoch(state)
                 .compareTo(epoch.plus(UnsignedLong.valueOf(LATEST_RANDAO_MIXES_LENGTH)))
             < 0,
-        "checkArgument threw and exception in get_randao_mix()");
+        "checkArgument threw an exception in get_randao_mix()");
     checkArgument(
         epoch.compareTo(get_current_epoch(state)) <= 0,
-        "checkArgument threw and exception in get_randao_mix()");
+        "checkArgument threw an exception in get_randao_mix()");
     UnsignedLong index = epoch.mod(UnsignedLong.valueOf(LATEST_RANDAO_MIXES_LENGTH));
     List<Bytes32> randao_mixes = state.getLatest_randao_mixes();
     return randao_mixes.get(index.intValue());

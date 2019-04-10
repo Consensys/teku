@@ -82,7 +82,11 @@ public interface ChainStorage {
     try {
       result = Optional.of(items.get(key));
     } catch (NullPointerException e) {
-      LOG.log(Level.DEBUG, items.getClass().toString() + ": " + key.toHexString() + " not found.");
+      if (!key.toHexString()
+          .equalsIgnoreCase("0x0000000000000000000000000000000000000000000000000000000000000000")) {
+        LOG.log(
+            Level.DEBUG, items.getClass().toString() + ": " + key.toHexString() + " not found.");
+      }
     }
     return result;
   }
