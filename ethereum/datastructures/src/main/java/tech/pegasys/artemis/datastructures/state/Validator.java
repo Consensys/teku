@@ -76,7 +76,6 @@ public final class Validator implements Copyable<Validator> {
             new Validator(
                 BLSPublicKey.fromBytes(reader.readBytes()),
                 Bytes32.wrap(reader.readBytes()),
-                // TODO: akhila check this before submitting PR
                 reader.readUInt64(),
                 reader.readUInt64(),
                 reader.readUInt64(),

@@ -25,7 +25,7 @@ public class Constants {
   public static int SHARD_COUNT = 1024; // 2^10 shards
   public static int TARGET_COMMITTEE_SIZE = 128; // 2^7 validators
   public static int MAX_BALANCE_CHURN_QUOTIENT = 32; // 2^5
-  public static long BEACON_CHAIN_SHARD_NUMBER = Long.MAX_VALUE; // 2^64 - 1
+  public static long BEACON_CHAIN_SHARD_NUMBER = -1L; // 2^64 - 1
   public static int MAX_INDICES_PER_SLASHABLE_VOTE = 4096; // 2^12 votes
   public static int MAX_EXIT_DEQUEUES_PER_EPOCH = 4; // 2^2 withdrawals
   public static int SHUFFLE_ROUND_COUNT = 90;
@@ -51,10 +51,10 @@ public class Constants {
 
   // Initial values
   public static int GENESIS_FORK_VERSION = 0;
-  public static long GENESIS_SLOT = 4294967296L; // 2^32
+  public static long GENESIS_SLOT = 0; // 2^32
   public static long GENESIS_EPOCH = slot_to_epoch(GENESIS_SLOT);
   public static long GENESIS_START_SHARD = 0;
-  public static long FAR_FUTURE_EPOCH = Long.MAX_VALUE;
+  public static long FAR_FUTURE_EPOCH = -1L;
   public static Bytes32 ZERO_HASH = Bytes32.ZERO;
   public static BLSSignature EMPTY_SIGNATURE = BLSSignature.empty();
   public static Bytes BLS_WITHDRAWAL_PREFIX_BYTE = Bytes.EMPTY;
@@ -107,7 +107,7 @@ public class Constants {
             ? config.getMaxBalanceChurnQuotient()
             : MAX_BALANCE_CHURN_QUOTIENT; // 2^5
     BEACON_CHAIN_SHARD_NUMBER =
-        config.getBeaconChainShardNumber() != Long.MAX_VALUE
+        config.getBeaconChainShardNumber() != -1L
             ? config.getBeaconChainShardNumber()
             : BEACON_CHAIN_SHARD_NUMBER; // 2^64 - 1
     MAX_INDICES_PER_SLASHABLE_VOTE =
@@ -195,9 +195,7 @@ public class Constants {
             ? config.getGenesisStartShard()
             : GENESIS_START_SHARD;
     FAR_FUTURE_EPOCH =
-        config.getFarFutureEpoch() != Long.MAX_VALUE
-            ? config.getFarFutureEpoch()
-            : FAR_FUTURE_EPOCH;
+        config.getFarFutureEpoch() != -1L ? config.getFarFutureEpoch() : FAR_FUTURE_EPOCH;
     ZERO_HASH =
         !config.getZeroHash().equals(Bytes32.ZERO)
             ? (Bytes32) config.getZeroHash()

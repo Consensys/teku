@@ -419,7 +419,7 @@ class BeaconStateUtilTest {
     // Not powers of two:
     assertThat(is_power_of_two(0)).isEqualTo(false);
     assertThat(is_power_of_two(42L)).isEqualTo(false);
-    assertThat(is_power_of_two(Long.MAX_VALUE)).isEqualTo(false);
+    assertThat(is_power_of_two(-1L)).isEqualTo(false);
     // Powers of two:
     assertThat(is_power_of_two(1)).isEqualTo(true);
     assertThat(is_power_of_two(1 + 1)).isEqualTo(true);

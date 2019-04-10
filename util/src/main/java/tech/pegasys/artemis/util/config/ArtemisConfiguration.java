@@ -90,7 +90,7 @@ public final class ArtemisConfiguration {
     builder.addInteger("constants.SHARD_COUNT", Integer.MIN_VALUE, null, null);
     builder.addInteger("constants.TARGET_COMMITTEE_SIZE", Integer.MIN_VALUE, null, null);
     builder.addInteger("constants.MAX_BALANCE_CHURN_QUOTIENT", Integer.MIN_VALUE, null, null);
-    builder.addLong("constants.BEACON_CHAIN_SHARD_NUMBER", Long.MAX_VALUE, null, null);
+    builder.addLong("constants.BEACON_CHAIN_SHARD_NUMBER", -1L, null, null);
     builder.addInteger("constants.MAX_INDICES_PER_SLASHABLE_VOTE", Integer.MIN_VALUE, null, null);
     builder.addInteger("constants.MAX_EXIT_DEQUEUES_PER_EPOCH", Integer.MIN_VALUE, null, null);
     builder.addInteger("constants.SHUFFLE_ROUND_COUNT", Integer.MIN_VALUE, null, null);
@@ -110,7 +110,7 @@ public final class ArtemisConfiguration {
     builder.addLong("constants.GENESIS_SLOT", Long.MIN_VALUE, null, null);
     builder.addLong("constants.GENESIS_EPOCH", Long.MIN_VALUE, null, null);
     builder.addInteger("constants.GENESIS_START_SHARD", Integer.MIN_VALUE, null, null);
-    builder.addLong("constants.FAR_FUTURE_EPOCH", Long.MAX_VALUE, null, null);
+    builder.addLong("constants.FAR_FUTURE_EPOCH", -1L, null, null);
     builder.addDefault("constants.ZERO_HASH", Bytes32.ZERO);
     builder.addDefault("constants.EMPTY_SIGNATURE", BLSSignature.empty());
     builder.addDefault("constants.BLS_WITHDRAWAL_PREFIX_BYTE", Bytes32.EMPTY);

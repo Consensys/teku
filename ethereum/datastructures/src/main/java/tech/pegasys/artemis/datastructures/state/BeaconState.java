@@ -112,7 +112,7 @@ public class BeaconState {
     this.eth1_data_votes = new ArrayList<>();
     this.deposit_index = 0;
     for (int i = 0; i < Constants.SHARD_COUNT; i++) {
-      this.latest_crosslinks.add(new Crosslink(Constants.GENESIS_SLOT, Bytes32.ZERO));
+      this.latest_crosslinks.add(new Crosslink(Constants.GENESIS_EPOCH, Bytes32.ZERO));
     }
   }
 

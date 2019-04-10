@@ -18,13 +18,13 @@ import net.consensys.cava.bytes.Bytes32;
 
 public class TimeSeriesRecord {
 
-  private Long index;
-  private Long slot;
-  private Long epoch;
+  private long index;
+  private long slot;
+  private long epoch;
   private String headBlockRoot;
   private String headStateRoot;
   private String parentHeadBlockRoot;
-  private Long numValidators;
+  private long numValidators;
   private String justifiedBlockRoot;
   private String justifiedStateRoot;
   private String finalizedBlockRoot;
@@ -32,13 +32,13 @@ public class TimeSeriesRecord {
 
   public TimeSeriesRecord() {
     // new Hello(1, 1, Bytes32.random(), UInt64.valueOf(0), Bytes32.random(), UInt64.valueOf(0))
-    this.index = Long.MAX_VALUE;
-    this.slot = Long.MAX_VALUE;
-    this.epoch = Long.MAX_VALUE;
+    this.index = -1;
+    this.slot = -1;
+    this.epoch = -1;
     this.headBlockRoot = Bytes32.ZERO.toHexString();
     this.headStateRoot = Bytes32.ZERO.toHexString();
     this.parentHeadBlockRoot = Bytes32.ZERO.toHexString();
-    this.numValidators = Long.MAX_VALUE;
+    this.numValidators = -1;
     this.justifiedBlockRoot = Bytes32.ZERO.toHexString();
     this.justifiedStateRoot = Bytes32.ZERO.toHexString();
     this.finalizedBlockRoot = Bytes32.ZERO.toHexString();
@@ -46,13 +46,13 @@ public class TimeSeriesRecord {
   }
 
   public TimeSeriesRecord(
-      Long index,
-      Long slot,
-      Long epoch,
+      long index,
+      long slot,
+      long epoch,
       String headBlockRoot,
       String headStateRoot,
       String parentHeadBlockRoot,
-      Long numValidators,
+      long numValidators,
       String justifiedBlockRoot,
       String justifiedStateRoot,
       String finalizedBlockRoot,
@@ -70,7 +70,7 @@ public class TimeSeriesRecord {
     this.finalizedStateRoot = finalizedStateRoot;
   }
 
-  public Long getIndex() {
+  public long getIndex() {
     return this.index;
   }
 
@@ -78,7 +78,7 @@ public class TimeSeriesRecord {
     this.index = index;
   }
 
-  public Long getSlot() {
+  public long getSlot() {
     return this.slot;
   }
 
@@ -86,7 +86,7 @@ public class TimeSeriesRecord {
     this.slot = slot;
   }
 
-  public Long getEpoch() {
+  public long getEpoch() {
     return this.epoch;
   }
 
@@ -118,11 +118,11 @@ public class TimeSeriesRecord {
     this.parentHeadBlockRoot = parentHeadBlockRoot;
   }
 
-  public Long getNumValidators() {
+  public long getNumValidators() {
     return this.numValidators;
   }
 
-  public void setNumValidators(Long numValidators) {
+  public void setNumValidators(long numValidators) {
     this.numValidators = numValidators;
   }
 
@@ -158,17 +158,17 @@ public class TimeSeriesRecord {
     this.finalizedStateRoot = finalizedStateRoot;
   }
 
-  public TimeSeriesRecord index(Long index) {
+  public TimeSeriesRecord index(long index) {
     this.index = index;
     return this;
   }
 
-  public TimeSeriesRecord slot(Long slot) {
+  public TimeSeriesRecord slot(long slot) {
     this.slot = slot;
     return this;
   }
 
-  public TimeSeriesRecord epoch(Long epoch) {
+  public TimeSeriesRecord epoch(long epoch) {
     this.epoch = epoch;
     return this;
   }
@@ -188,7 +188,7 @@ public class TimeSeriesRecord {
     return this;
   }
 
-  public TimeSeriesRecord numValidators(Long numValidators) {
+  public TimeSeriesRecord numValidators(long numValidators) {
     this.numValidators = numValidators;
     return this;
   }

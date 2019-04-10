@@ -114,10 +114,10 @@ public final class EpochProcessorUtil {
       long previous_justified_epoch = state.getPrevious_justified_epoch();
       long justified_epoch = state.getJustified_epoch();
 
-      if (justification_bitfield >> 1 % 8 == 7 && previous_justified_epoch == previous_epoch - 2) {
+      if (justification_bitfield >>> 1 % 8 == 7 && previous_justified_epoch == previous_epoch - 2) {
         state.setFinalized_epoch(previous_justified_epoch);
       }
-      if (justification_bitfield >> 1 % 4 == 3 && previous_justified_epoch == previous_epoch - 1) {
+      if (justification_bitfield >>> 1 % 4 == 3 && previous_justified_epoch == previous_epoch - 1) {
         state.setFinalized_epoch(previous_justified_epoch);
       }
       if (justification_bitfield % 8 == 7 && justified_epoch == previous_epoch - 1) {
@@ -174,7 +174,7 @@ public final class EpochProcessorUtil {
   static Function<Integer, Long> apply_inactivity_penalty(
       BeaconState state, long epochs_since_finality, long previous_total_balance) {
     return index ->
-        inactivity_penality(state, index, epochs_since_finality, previous_total_balance);
+        get_inactivity_penality(state, index, epochs_since_finality, previous_total_balance);
   }
 
   static Function<Integer, Long> apply_base_penalty(
@@ -185,7 +185,7 @@ public final class EpochProcessorUtil {
   static Function<Integer, Long> apply_inactivity_base_penalty(
       BeaconState state, long epochs_since_finality, long previous_total_balance) {
     return index ->
-        2L * inactivity_penality(state, index, epochs_since_finality, previous_total_balance)
+        2L * get_inactivity_penality(state, index, epochs_since_finality, previous_total_balance)
             + base_reward(state, index, previous_total_balance);
   }
 
@@ -425,7 +425,7 @@ public final class EpochProcessorUtil {
         long reward =
             base_reward(state, index, previous_total_balance)
                 / Constants.ATTESTATION_INCLUSION_REWARD_QUOTIENT;
-        balance = balance + reward;
+        balance += reward;
         balances.set(proposer_index, balance);
       }
     } catch (IllegalArgumentException e) {
@@ -467,9 +467,9 @@ public final class EpochProcessorUtil {
                       * AttestationUtil.get_total_attesting_balance(
                           state, crosslink_committee.getCommittee())
                       / BeaconStateUtil.get_total_balance(state, crosslink_committee);
-              balance = balance + reward;
+              balance += reward;
             } else {
-              balance = balance - base_reward(state, index, previous_total_balance);
+              balance -= base_reward(state, index, previous_total_balance);
             }
           }
         }
@@ -573,7 +573,7 @@ public final class EpochProcessorUtil {
       long max_balance_churn =
           Math.max(
               Constants.MAX_DEPOSIT_AMOUNT,
-              total_balance / 2 * Constants.MAX_BALANCE_CHURN_QUOTIENT);
+              total_balance / (2 * Constants.MAX_BALANCE_CHURN_QUOTIENT));
 
       // Activate validators within the allowable balance churn
       long balance_churn = 0;
@@ -620,7 +620,7 @@ public final class EpochProcessorUtil {
       long SHARD_COUNT = Constants.SHARD_COUNT;
       long committee_count = BeaconStateUtil.get_current_epoch_committee_count(state);
       long current_epoch_start_shard =
-          state.getCurrent_shuffling_start_shard() + committee_count % SHARD_COUNT;
+          (state.getCurrent_shuffling_start_shard() + committee_count) % SHARD_COUNT;
       state.setCurrent_shuffling_start_shard(current_epoch_start_shard);
 
       Bytes32 current_epoch_seed = BeaconStateUtil.generate_seed(state, epoch);
@@ -796,7 +796,7 @@ public final class EpochProcessorUtil {
    * @param previous_total_balance
    * @return
    */
-  static long inactivity_penality(
+  static long get_inactivity_penality(
       BeaconState state, int index, long epochs_since_finality, long previous_total_balance) {
     return base_reward(state, index, previous_total_balance)
         + BeaconStateUtil.get_effective_balance(state, index)

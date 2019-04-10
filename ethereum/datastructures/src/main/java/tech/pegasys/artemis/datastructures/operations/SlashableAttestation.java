@@ -37,7 +37,6 @@ public class SlashableAttestation {
     this.aggregate_signature = aggregate_signature;
   }
 
-  // TODO: akhila
   public static SlashableAttestation fromBytes(Bytes bytes) {
     return SSZ.decode(
         bytes,
