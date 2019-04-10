@@ -680,7 +680,6 @@ public class AttestationUtil {
                 signed_attestation_data);
 
         attestations.add(attestation);
-
         indexIntoCommittee++;
       }
     }
