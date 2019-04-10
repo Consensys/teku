@@ -14,9 +14,11 @@
 package tech.pegasys.artemis.util.bls;
 
 import java.util.List;
+import org.apache.logging.log4j.Level;
+import tech.pegasys.artemis.util.alogger.ALogger;
 
 public class BLSAggregate {
-
+  private static final ALogger LOG = new ALogger(BLSAggregate.class.getName());
   /**
    * The bls_aggregate_pubkeys() function as defined in the Eth2 specification
    *
@@ -37,9 +39,8 @@ public class BLSAggregate {
     try {
       return BLSSignature.aggregate(signatures);
     } catch (BLSException e) {
-      // TODO: once we stop using random (unseeded signatures) keypairs,
-      // then the signatures will be predictable and the resulting state can be precomputed
-      return BLSSignature.random();
+      LOG.log(Level.WARN, e.toString());
+      return BLSSignature.random(0);
     }
   }
 }

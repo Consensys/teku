@@ -83,6 +83,7 @@ import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.bls.BLSException;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
+import tech.pegasys.artemis.util.bls.BLSSignature;
 
 public final class BlockProcessorUtil {
 
@@ -540,19 +541,27 @@ public final class BlockProcessorUtil {
       pubkey1.add(state.getValidator_registry().get(custody_bit_1_participants.get(i)).getPubkey());
     }
 
+    List<BLSPublicKey> pubkeys =
+        Arrays.asList(bls_aggregate_pubkeys(pubkey0), bls_aggregate_pubkeys(pubkey1));
+    List<Bytes32> messages =
+        Arrays.asList(
+            hash_tree_root(
+                new AttestationDataAndCustodyBit(attestation.getData(), false).toBytes()),
+            hash_tree_root(
+                new AttestationDataAndCustodyBit(attestation.getData(), true).toBytes()));
+    BLSSignature signature = attestation.getAggregate_signature();
+    UnsignedLong domain =
+        get_domain(
+            state.getFork(), slot_to_epoch(attestation.getData().getSlot()), DOMAIN_ATTESTATION);
+
+    LOG.log(Level.DEBUG, "pubkey0: " + pubkeys.get(0));
+    LOG.log(Level.DEBUG, "pubkey1: " + pubkeys.get(1));
+    LOG.log(Level.DEBUG, "message0: " + messages.get(0).toHexString());
+    LOG.log(Level.DEBUG, "message1: " + messages.get(1).toHexString());
+    LOG.log(Level.DEBUG, "signature: " + signature);
+    LOG.log(Level.DEBUG, "domain: " + domain);
     checkArgument(
-        bls_verify_multiple(
-            Arrays.asList(bls_aggregate_pubkeys(pubkey0), bls_aggregate_pubkeys(pubkey1)),
-            Arrays.asList(
-                hash_tree_root(
-                    new AttestationDataAndCustodyBit(attestation.getData(), false).toBytes()),
-                hash_tree_root(
-                    new AttestationDataAndCustodyBit(attestation.getData(), true).toBytes())),
-            attestation.getAggregate_signature(),
-            get_domain(
-                state.getFork(),
-                slot_to_epoch(attestation.getData().getSlot()),
-                DOMAIN_ATTESTATION)),
+        bls_verify_multiple(pubkeys, messages, signature, domain),
         "checkArgument threw and exception in verify_bitfields_and_aggregate_signature() 4");
 
     return true;
