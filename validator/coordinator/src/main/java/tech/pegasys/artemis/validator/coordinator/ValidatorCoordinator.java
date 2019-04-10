@@ -131,10 +131,11 @@ public class ValidatorCoordinator {
             + (int) Math.floor(nodeCounter / Math.max(1, numNodes - 1));
     endIndex = Math.min(endIndex, numValidators - 1);
     // int startIndex = 0;
-    // int endIndex = numValidators;
+    // int endIndex = numValidators-1;
     LOG.log(Level.DEBUG, "startIndex: " + startIndex + " endIndex: " + endIndex);
-    for (int i = startIndex; i < endIndex; i++) {
+    for (int i = startIndex; i <= endIndex; i++) {
       BLSKeyPair keypair = BLSKeyPair.random(i);
+      LOG.log(Level.DEBUG, "i = " + i + ": " + keypair.getPublicKey().toString());
       validatorSet.put(keypair.getPublicKey(), keypair);
     }
     // }
