@@ -178,7 +178,7 @@ public final class BlockProcessorUtil {
       // Verify that len(block.body.proposer_slashings) <= MAX_PROPOSER_SLASHINGS
       checkArgument(
           block.getBody().getProposer_slashings().size() <= MAX_PROPOSER_SLASHINGS,
-          "Proposer slashings more than limit in proposer_slashing()");
+          "Proposer slashings more than limit in process_proposer_slashings()");
 
       // For each proposer_slashing in block.body.proposer_slashings:
       for (ProposerSlashing proposer_slashing : block.getBody().getProposer_slashings()) {
@@ -188,30 +188,25 @@ public final class BlockProcessorUtil {
                 .getValidator_registry()
                 .get(toIntExact(proposer_slashing.getProposer_index().longValue()));
 
-        // - Verify that proposer_slashing.proposal_data_1.slot ==
-        //     proposer_slashing.proposal_data_2.slot
+        // Verify that the epoch is the same
         checkArgument(
-            proposer_slashing
+            slot_to_epoch(proposer_slashing
                 .getHeader_1()
-                .getSlot()
-                .equals(proposer_slashing.getHeader_2().getSlot()),
-            "Slot is not the same in proposer slashings");
+                .getSlot())
+                .equals(slot_to_epoch(proposer_slashing.getHeader_2().getSlot())),
+            "Slot is not the same in process_proposer_slashings");
 
-        // - Verify that proposer_slashing.proposal_data_1.block_root !=
-        //     proposer_slashing.proposal_data_2.block_root
+        // But the headers are different
         checkArgument(
             !Objects.equals(
                 hash_tree_root(proposer_slashing.getHeader_1().toBytes()),
                 hash_tree_root(proposer_slashing.getHeader_2().toBytes())),
-            "Roots are the same in proposer slashings");
+            "Headers are the same in process_proposer_slashings");
 
-        // - Verify that proposer.slashed == false
-        checkArgument(!proposer.isSlashed(), "Proposer is already slashed in proposer slashings");
+        // Proposer is not yet slashed
+        checkArgument(!proposer.isSlashed(), "Proposer is already slashed in process_proposer_slashings");
 
-        // - Verify that bls_verify(pubkey=proposer.pubkey,
-        //     message=hash_tree_root(proposer_slashing.proposal_data_1),
-        //     signature=proposer_slashing.proposal_signature_1, domain=get_domain(state.fork,
-        //     slot_to_epoch(proposer_slashing.proposal_data_1.slot), DOMAIN_PROPOSAL)) is valid.
+        // Signatures are valid
         checkArgument(
             bls_verify(
                 proposer.getPubkey(),
@@ -223,10 +218,6 @@ public final class BlockProcessorUtil {
                     DOMAIN_BEACON_BLOCK)),
             "BLSVerify fail for proposal header 1");
 
-        // - Verify that bls_verify(pubkey=proposer.pubkey,
-        //     message=hash_tree_root(proposer_slashing.proposal_data_2),
-        //     signature=proposer_slashing.proposal_signature_2, domain=get_domain(state.fork,
-        //     slot_to_epoch(proposer_slashing.proposal_data_2.slot), DOMAIN_PROPOSAL)) is valid.
         checkArgument(
             bls_verify(
                 proposer.getPubkey(),
@@ -238,8 +229,7 @@ public final class BlockProcessorUtil {
                     DOMAIN_BEACON_BLOCK)),
             "BLSVerify fail for proposal header 2");
 
-        // - Run penalize_validator(state, proposer_slashing.proposer_index)
-        slash_validator(state, proposer_slashing.getProposer_index().intValue());
+\        slash_validator(state, proposer_slashing.getProposer_index().intValue());
       }
     } catch (IllegalArgumentException e) {
       LOG.log(Level.WARN, "BlockProcessingException thrown in proposer_slashing()");
