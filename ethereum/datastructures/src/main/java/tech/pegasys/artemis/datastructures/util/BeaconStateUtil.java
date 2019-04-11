@@ -1049,7 +1049,8 @@ public class BeaconStateUtil {
    */
   public static UnsignedLong get_domain(Fork fork, UnsignedLong epoch, int domain_type) {
     // Below error is to be fixed in changes being made in Steven's open PR.
-    return bytes_to_int(Bytes.wrap(get_fork_version(fork, epoch), int_to_bytes(domain_type, 4)));
+    return UnsignedLong.valueOf(bytes_to_int(
+        Bytes.wrap(get_fork_version(fork, epoch), int_to_bytes(domain_type, 4))));
   }
 
   /**
@@ -1186,7 +1187,7 @@ public class BeaconStateUtil {
    *     href="https://github.com/ethereum/eth2.0-specs/blob/v0.4.0/specs/core/0_beacon-chain.md#get_fork_version">get_fork_version
    *     - Spec v0.4</a>
    */
-  public static UnsignedLong get_fork_version(Fork fork, UnsignedLong epoch) {
+  public static Bytes get_fork_version(Fork fork, UnsignedLong epoch) {
     if (epoch.compareTo(fork.getEpoch()) < 0) {
       return fork.getPrevious_version();
     } else {

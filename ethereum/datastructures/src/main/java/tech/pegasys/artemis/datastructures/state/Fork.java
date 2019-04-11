@@ -20,11 +20,11 @@ import net.consensys.cava.ssz.SSZ;
 
 public class Fork {
 
-  private UnsignedLong previous_version;
-  private UnsignedLong current_version;
+  private Bytes previous_version;
+  private Bytes current_version;
   private UnsignedLong epoch;
 
-  public Fork(UnsignedLong previous_version, UnsignedLong current_version, UnsignedLong epoch) {
+  public Fork(Bytes previous_version, Bytes current_version, UnsignedLong epoch) {
     this.previous_version = previous_version;
     this.current_version = current_version;
     this.epoch = epoch;
@@ -41,16 +41,16 @@ public class Fork {
         bytes,
         reader ->
             new Fork(
-                UnsignedLong.fromLongBits(reader.readUInt64()),
-                UnsignedLong.fromLongBits(reader.readUInt64()),
+                Bytes.wrap(reader.readBytes()),
+                Bytes.wrap(reader.readBytes()),
                 UnsignedLong.fromLongBits(reader.readUInt64())));
   }
 
   public Bytes toBytes() {
     return SSZ.encode(
         writer -> {
-          writer.writeUInt64(previous_version.longValue());
-          writer.writeUInt64(current_version.longValue());
+          writer.writeBytes(previous_version);
+          writer.writeBytes(current_version);
           writer.writeUInt64(epoch.longValue());
         });
   }
@@ -81,19 +81,19 @@ public class Fork {
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */
-  public UnsignedLong getPrevious_version() {
+  public Bytes getPrevious_version() {
     return previous_version;
   }
 
-  public void setPrevious_version(UnsignedLong previous_version) {
+  public void setPrevious_version(Bytes previous_version) {
     this.previous_version = previous_version;
   }
 
-  public UnsignedLong getCurrent_version() {
+  public Bytes getCurrent_version() {
     return current_version;
   }
 
-  public void setCurrent_version(UnsignedLong current_version) {
+  public void setCurrent_version(Bytes current_version) {
     this.current_version = current_version;
   }
 
