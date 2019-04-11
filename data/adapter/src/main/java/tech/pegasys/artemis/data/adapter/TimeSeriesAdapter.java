@@ -14,9 +14,13 @@
 package tech.pegasys.artemis.data.adapter;
 
 import com.google.common.primitives.UnsignedLong;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.IntStream;
 import net.consensys.cava.bytes.Bytes32;
 import tech.pegasys.artemis.data.RawRecord;
 import tech.pegasys.artemis.data.TimeSeriesRecord;
+import tech.pegasys.artemis.data.ValidatorJoin;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
@@ -52,15 +56,29 @@ public class TimeSeriesAdapter implements DataAdapter<TimeSeriesRecord> {
     Bytes32 lastJustifiedStateRoot = HashTreeUtil.hash_tree_root(justifiedState.toBytes());
     Bytes32 lastFinalizedBlockRoot = HashTreeUtil.hash_tree_root(finalizedBlock.toBytes());
     Bytes32 lastFinalizedStateRoot = HashTreeUtil.hash_tree_root(finalizedState.toBytes());
+
+    List<ValidatorJoin> validators = new ArrayList<ValidatorJoin>();
+
+    IntStream.range(0, headState.getValidator_registry().size())
+        .parallel()
+        .forEach(
+            i -> {
+              validators.add(
+                  new ValidatorJoin(
+                      headState.getValidator_registry().get(i),
+                      headState.getValidator_balances().get(i)));
+            });
     return new TimeSeriesRecord(
         this.input.getIndex(),
         slot,
         epoch,
-        this.input.getHeadBlock(),
-        this.input.getHeadState(),
+        this.input.getHeadBlock().getState_root().toHexString(),
+        this.input.getHeadBlock().getParent_root().toHexString(),
+        HashTreeUtil.hash_tree_root(this.input.getHeadBlock().toBytes()).toHexString(),
         lastJustifiedBlockRoot.toHexString(),
         lastJustifiedStateRoot.toHexString(),
         lastFinalizedBlockRoot.toHexString(),
-        lastFinalizedStateRoot.toHexString());
+        lastFinalizedStateRoot.toHexString(),
+        validators);
   }
 }

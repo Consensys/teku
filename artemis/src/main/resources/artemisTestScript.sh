@@ -37,17 +37,17 @@ while read line ; do
         exit 2
     fi
     # Fail on Unable to Update Justified and Finalized Roots
-    if [[ $line =~ .*Can\'t\ update\ justified\ and\ finalized\ block\ roots.* ]]
+    if [[ $line =~ .*Can\'t\ update\ justified\ and\ finalized\ block_body\ roots.* ]]
     then
         # Error
-        echo $'\nFAILED: Failed to update justified or finalized block roots.\n'
+        echo $'\nFAILED: Failed to update justified or finalized block_body roots.\n'
         exit 3
     fi
     # Fail on Unable to Update Block Using LMDGhost
-    if [[ $line =~ .*Can\'t\ update\ head\ block\ using\ LMDGhost.* ]]
+    if [[ $line =~ .*Can\'t\ update\ head\ block_body\ using\ LMDGhost.* ]]
     then
         # Error
-        echo $'\nFAILED: Failed to update block head using LMDGhost\n'
+        echo $'\nFAILED: Failed to update block_body head using LMDGhost\n'
         exit 4
     fi
 done
