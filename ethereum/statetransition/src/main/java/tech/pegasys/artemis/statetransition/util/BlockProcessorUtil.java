@@ -194,7 +194,7 @@ public final class BlockProcessorUtil {
                 .getHeader_1()
                 .getSlot())
                 .equals(slot_to_epoch(proposer_slashing.getHeader_2().getSlot())),
-            "Slot is not the same in process_proposer_slashings");
+            "Epoch is not the same in process_proposer_slashings");
 
         // But the headers are different
         checkArgument(
@@ -229,7 +229,7 @@ public final class BlockProcessorUtil {
                     DOMAIN_BEACON_BLOCK)),
             "BLSVerify fail for proposal header 2");
 
-\        slash_validator(state, proposer_slashing.getProposer_index().intValue());
+        slash_validator(state, proposer_slashing.getProposer_index().intValue());
       }
     } catch (IllegalArgumentException e) {
       LOG.log(Level.WARN, "BlockProcessingException thrown in proposer_slashing()");
