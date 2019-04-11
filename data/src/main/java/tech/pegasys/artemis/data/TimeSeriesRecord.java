@@ -15,45 +15,43 @@ package tech.pegasys.artemis.data;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
 import com.google.gson.reflect.TypeToken;
 import java.lang.reflect.Type;
+import java.util.List;
 import net.consensys.cava.bytes.Bytes32;
-import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
-import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
-import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 
 public class TimeSeriesRecord implements IRecordAdapter {
 
-  private Long index;
-  private Long slot;
-  private Long epoch;
-  private BeaconBlock block;
-  private BeaconState state;
+  private long index;
+  private long slot;
+  private long epoch;
+
+  private String block_root;
+  private String block_parent_root;
+  private String block_body;
 
   private String lastJustifiedBlockRoot;
   private String lastJustifiedStateRoot;
   private String lastFinalizedBlockRoot;
   private String lastFinalizedStateRoot;
 
+  private List<ValidatorJoin> validators;
+
   public TimeSeriesRecord() {
     // new Hello(1, 1, Bytes32.random(), UInt64.valueOf(0), Bytes32.random(), UInt64.valueOf(0))
     this.index = Long.MAX_VALUE;
     this.slot = Long.MAX_VALUE;
     this.epoch = Long.MAX_VALUE;
-    this.block =
-        new BeaconBlock(
-            1,
-            Bytes32.random(),
-            Bytes32.random(),
-            BLSSignature.random(),
-            new Eth1Data(Bytes32.random(), Bytes32.random()),
-            null,
-            BLSSignature.random());
-    this.state = new BeaconState();
+
+    this.block_root = Bytes32.random().toHexString();
+    this.block_parent_root = Bytes32.random().toHexString();
+
     this.lastJustifiedBlockRoot = Bytes32.random().toHexString();
     this.lastJustifiedStateRoot = Bytes32.random().toHexString();
     this.lastFinalizedBlockRoot = Bytes32.random().toHexString();
@@ -61,24 +59,28 @@ public class TimeSeriesRecord implements IRecordAdapter {
   }
 
   public TimeSeriesRecord(
-      Long index,
-      Long slot,
-      Long epoch,
-      BeaconBlock block,
-      BeaconState state,
+      long index,
+      long slot,
+      long epoch,
+      String block_root,
+      String block_parent_root,
+      String block_body,
       String lastJustifiedBlockRoot,
       String lastJustifiedStateRoot,
       String lastFinalizedBlockRoot,
-      String lastFinalizedStateRoot) {
+      String lastFinalizedStateRoot,
+      List<ValidatorJoin> validators) {
     this.index = index;
     this.slot = slot;
     this.epoch = epoch;
-    this.block = block;
-    this.state = state;
+    this.block_root = block_root;
+    this.block_parent_root = block_parent_root;
+    this.block_body = block_body;
     this.lastJustifiedBlockRoot = lastJustifiedBlockRoot;
     this.lastJustifiedStateRoot = lastJustifiedStateRoot;
     this.lastFinalizedBlockRoot = lastFinalizedBlockRoot;
     this.lastFinalizedStateRoot = lastFinalizedStateRoot;
+    this.validators = validators;
   }
 
   @Override
@@ -110,9 +112,21 @@ public class TimeSeriesRecord implements IRecordAdapter {
           return obj;
         };
 
-    gsonBuilder.registerTypeAdapter(blsPublicKeyType, blsPubKeySerializer);
+    Type validatorJoinType = new TypeToken<ValidatorJoin>() {}.getType();
+    JsonSerializer<ValidatorJoin> validatorJoinJsonSerializer =
+        new JsonSerializer<ValidatorJoin>() {
+          @Override
+          public JsonElement serialize(
+              ValidatorJoin src, Type typeOfSrc, JsonSerializationContext context) {
+            JsonObject obj = new JsonObject();
+            obj.addProperty("pubkey", src.getValidator().getPubkey().toString());
+            obj.addProperty("balance", src.getBalance().toString());
+            return obj;
+          }
+        };
+    gsonBuilder.registerTypeAdapter(validatorJoinType, validatorJoinJsonSerializer);
 
-    Gson customGson = gsonBuilder.create();
+    Gson customGson = gsonBuilder.setPrettyPrinting().create();
     return customGson.toJson(this);
   }
 
@@ -121,44 +135,52 @@ public class TimeSeriesRecord implements IRecordAdapter {
     return null;
   }
 
-  public Long getIndex() {
+  public long getIndex() {
     return index;
   }
 
-  public void setIndex(Long index) {
+  public void setIndex(long index) {
     this.index = index;
   }
 
-  public Long getSlot() {
+  public long getSlot() {
     return slot;
   }
 
-  public void setSlot(Long slot) {
+  public void setSlot(long slot) {
     this.slot = slot;
   }
 
-  public Long getEpoch() {
+  public long getEpoch() {
     return epoch;
   }
 
-  public void setEpoch(Long epoch) {
+  public void setEpoch(long epoch) {
     this.epoch = epoch;
   }
 
-  public BeaconBlock getBlock() {
-    return block;
+  public String getBlock_root() {
+    return block_root;
   }
 
-  public void setBlock(BeaconBlock block) {
-    this.block = block;
+  public void setBlock_root(String block_root) {
+    this.block_root = block_root;
   }
 
-  public BeaconState getState() {
-    return state;
+  public String getBlock_parent_root() {
+    return block_parent_root;
   }
 
-  public void setState(BeaconState state) {
-    this.state = state;
+  public void setBlock_parent_root(String block_parent_root) {
+    this.block_parent_root = block_parent_root;
+  }
+
+  public String getBlock_body() {
+    return block_body;
+  }
+
+  public void setBlock_body(String block_body) {
+    this.block_body = block_body;
   }
 
   public String getLastJustifiedBlockRoot() {
@@ -191,5 +213,13 @@ public class TimeSeriesRecord implements IRecordAdapter {
 
   public void setLastFinalizedStateRoot(String lastFinalizedStateRoot) {
     this.lastFinalizedStateRoot = lastFinalizedStateRoot;
+  }
+
+  public List<ValidatorJoin> getValidators() {
+    return validators;
+  }
+
+  public void setValidators(List<ValidatorJoin> validators) {
+    this.validators = validators;
   }
 }

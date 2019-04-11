@@ -33,7 +33,6 @@ import org.apache.logging.log4j.Level;
 import tech.pegasys.artemis.data.TimeSeriesRecord;
 import tech.pegasys.artemis.networking.p2p.hobbits.Codec.ProtocolType;
 import tech.pegasys.artemis.util.alogger.ALogger;
-import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 
 /** TCP persistent connection handler for hobbits messages. */
 public final class HobbitsSocketHandler {
@@ -205,8 +204,7 @@ public final class HobbitsSocketHandler {
             1,
             Bytes32.fromHexString(chainData.getLastFinalizedBlockRoot()),
             UInt64.valueOf(chainData.getEpoch()),
-            Bytes32.fromHexString(
-                HashTreeUtil.hash_tree_root(chainData.getState().toBytes()).toHexString()),
+            Bytes32.fromHexString(chainData.getBlock_root()),
             UInt64.valueOf(chainData.getSlot())),
         requestId);
   }
@@ -219,8 +217,7 @@ public final class HobbitsSocketHandler {
             1,
             Bytes32.fromHexString(chainData.getLastFinalizedBlockRoot()),
             UInt64.valueOf(chainData.getEpoch()),
-            Bytes32.fromHexString(
-                HashTreeUtil.hash_tree_root(chainData.getState().toBytes()).toHexString()),
+            Bytes32.fromHexString(chainData.getBlock_root()),
             UInt64.valueOf(chainData.getSlot())));
   }
 
