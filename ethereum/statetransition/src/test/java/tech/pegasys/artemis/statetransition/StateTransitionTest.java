@@ -41,7 +41,7 @@ class StateTransitionTest {
 
       state.setLatest_block_roots(
           new ArrayList<>(
-              Collections.nCopies(Constants.LATEST_BLOCK_ROOTS_LENGTH, Constants.ZERO_HASH)));
+              Collections.nCopies(Constants.SLOTS_PER_HISTORICAL_ROOT, Constants.ZERO_HASH)));
 
       return state;
     } catch (Exception e) {
