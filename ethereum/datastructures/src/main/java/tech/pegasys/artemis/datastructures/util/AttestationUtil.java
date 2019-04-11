@@ -14,6 +14,7 @@
 package tech.pegasys.artemis.datastructures.util;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_attestation_participants;
 
 import com.google.common.primitives.UnsignedLong;
 import java.nio.ByteOrder;
@@ -356,7 +357,7 @@ public class AttestationUtil {
 
     for (PendingAttestation attestation : attestations) {
       validator_index_sets.add(
-          BeaconStateUtil.get_attestation_participants(
+          get_attestation_participants(
               state, attestation.getData(), attestation.getAggregation_bitfield().toArray()));
     }
 
@@ -415,7 +416,7 @@ public class AttestationUtil {
       if (attestation.getData().getShard().compareTo(crosslink_committee.getShard()) == 0
           && attestation.getData().getCrosslink_data_root().equals(shard_block_root)) {
         validator_index_sets.add(
-            BeaconStateUtil.get_attestation_participants(
+            get_attestation_participants(
                 state, attestation.getData(), attestation.getAggregation_bitfield().toArray()));
       }
     }
@@ -451,7 +452,7 @@ public class AttestationUtil {
     for (PendingAttestation attestation : combined_attestations) {
       if (attestation.getData().getShard().compareTo(crosslink_committee.getShard()) == 0) {
         List<Integer> attesting_indices =
-            BeaconStateUtil.get_attestation_participants(
+            get_attestation_participants(
                 state, attestation.getData(), attestation.getAggregation_bitfield().toArray());
         UnsignedLong attesting_balance =
             BeaconStateUtil.get_total_balance(state, attesting_indices);
@@ -532,7 +533,7 @@ public class AttestationUtil {
     List<PendingAttestation> possible_attestations = new ArrayList<>();
     for (PendingAttestation attestation : previous_epoch_attestations) {
       List<Integer> attestation_participants =
-          BeaconStateUtil.get_attestation_participants(
+          get_attestation_participants(
               state, attestation.getData(), attestation.getAggregation_bitfield().toArray());
       if (attestation_participants.contains(index)) {
         possible_attestations.add(attestation);
@@ -620,7 +621,6 @@ public class AttestationUtil {
     // Create attestations specific to each Validator
     List<Attestation> attestations = new ArrayList<>();
     for (CrosslinkCommittee crosslinkCommittee : crosslinkCommittees) {
-      int indexIntoCommittee = 0;
       for (Integer validatorIndex : crosslinkCommittee.getCommittee()) {
 
         // Skip if attester is in not in our validatorSet
@@ -648,6 +648,7 @@ public class AttestationUtil {
                 justifiedBlockRoot);
 
         // Create aggregation bitfield
+        int indexIntoCommittee = crosslinkCommittee.getCommittee().indexOf(validatorIndex);
         int array_length = Math.toIntExact((crosslinkCommittee.getCommittee().size() + 7) / 8);
         byte[] aggregation_bitfield = new byte[array_length];
         aggregation_bitfield[indexIntoCommittee / 8] =
@@ -682,7 +683,6 @@ public class AttestationUtil {
                 signed_attestation_data);
 
         attestations.add(attestation);
-        indexIntoCommittee++;
       }
     }
     return attestations;
