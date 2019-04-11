@@ -112,6 +112,7 @@ public class ValidatorCoordinator {
 
   @Subscribe
   public void onNewAttestation(Attestation attestation) {
+    LOG.log(Level.DEBUG, "onNewAttestation");
     // Store attestations in a priority queue
     if (!attestationsQueue.contains(attestation)) {
       attestationsQueue.add(attestation);
