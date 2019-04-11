@@ -36,16 +36,16 @@ class StateTransitionTest {
     try {
       // Initialize state
       BeaconStateWithCache state = new BeaconStateWithCache();
-      BeaconStateUtil.get_initial_beacon_state(
+      BeaconStateUtil.get_genesis_beacon_state(
           state, randomDeposits(5), UnsignedLong.ZERO, new Eth1Data(Bytes32.ZERO, Bytes32.ZERO));
 
       state.setLatest_block_roots(
-          new ArrayList<Bytes32>(
+          new ArrayList<>(
               Collections.nCopies(Constants.LATEST_BLOCK_ROOTS_LENGTH, Constants.ZERO_HASH)));
 
       return state;
     } catch (Exception e) {
-      fail("get_initial_beacon_state() failed");
+      fail("get_genesis_beacon_state() failed");
       return null;
     }
   }
