@@ -39,7 +39,7 @@ class EpochProcessingUtilTest {
     try {
       // get initial state
       BeaconStateWithCache state = new BeaconStateWithCache();
-      //      BeaconStateUtil.get_initial_beacon_state(
+      //      BeaconStateUtil.get_genesis_beacon_state(
       //          state, deposits, UnsignedLong.valueOf(Constants.GENESIS_SLOT), randomEth1Data());
       UnsignedLong currentEpoch = BeaconStateUtil.get_current_epoch(state);
 

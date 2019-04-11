@@ -103,8 +103,8 @@ class BeaconStateUtilTest {
     // Setup Fork Versions
     // The values of these don't really matter, it just makes sense that
     // previous version is less than current version.
-    UnsignedLong previousVersion = UnsignedLong.ZERO;
-    UnsignedLong currentVersion = previousVersion.plus(UnsignedLong.valueOf(1L));
+    Bytes previousVersion = Bytes.ofUnsignedInt(0);
+    Bytes currentVersion = previousVersion.and(Bytes.ofUnsignedInt(1));
 
     // Setup Epochs
     // It is necessary for this test that givenEpoch is less than forkEpoch.
@@ -122,8 +122,8 @@ class BeaconStateUtilTest {
     // Setup Fork Versions
     // The values of these don't really matter, it just makes sense that
     // previous version is less than current version.
-    UnsignedLong previousVersion = UnsignedLong.ZERO;
-    UnsignedLong currentVersion = previousVersion.plus(UnsignedLong.valueOf(1L));
+    Bytes previousVersion = Bytes.ofUnsignedInt(0);
+    Bytes currentVersion = previousVersion.and(Bytes.ofUnsignedInt(1));
 
     // Setup Epochs
     // It is necessary for this test that givenEpoch is greater than forkEpoch.
@@ -141,8 +141,8 @@ class BeaconStateUtilTest {
     // Setup Fork Versions
     // The values of these don't really matter, it just makes sense that
     // previous version is less than current version.
-    UnsignedLong previousVersion = UnsignedLong.ZERO;
-    UnsignedLong currentVersion = previousVersion.plus(UnsignedLong.valueOf(1L));
+    Bytes previousVersion = Bytes.ofUnsignedInt(0);
+    Bytes currentVersion = previousVersion.and(Bytes.ofUnsignedInt(1));
 
     // Setup Epochs
     UnsignedLong givenEpoch = UnsignedLong.valueOf(100L);
@@ -161,7 +161,7 @@ class BeaconStateUtilTest {
       assertEquals(
           BeaconStateUtil.get_domain(fork, givenEpoch, domain),
           UnsignedLong.valueOf(
-              (BeaconStateUtil.get_fork_version(fork, givenEpoch).longValue() << 32) + domain));
+              (BeaconStateUtil.get_fork_version(fork, givenEpoch).toLong() << 32) + domain));
     }
   }
 
@@ -170,8 +170,8 @@ class BeaconStateUtilTest {
     // Setup Fork Versions
     // The values of these don't really matter, it just makes sense that
     // previous version is less than current version.
-    UnsignedLong previousVersion = UnsignedLong.ZERO;
-    UnsignedLong currentVersion = previousVersion.plus(UnsignedLong.valueOf(1L));
+    Bytes previousVersion = Bytes.ofUnsignedInt(0);
+    Bytes currentVersion = previousVersion.and(Bytes.ofUnsignedInt(1));
 
     // Setup Epochs
     UnsignedLong forkEpoch = UnsignedLong.valueOf(100L);
@@ -190,7 +190,7 @@ class BeaconStateUtilTest {
       assertEquals(
           BeaconStateUtil.get_domain(fork, givenEpoch, domain),
           UnsignedLong.valueOf(
-              (BeaconStateUtil.get_fork_version(fork, givenEpoch).longValue() << 32) + domain));
+              (BeaconStateUtil.get_fork_version(fork, givenEpoch).toLong() << 32) + domain));
     }
   }
   // *************** END Fork Tests ***************
@@ -204,8 +204,8 @@ class BeaconStateUtilTest {
     UnsignedLong domain =
         BeaconStateUtil.get_domain(
             new Fork(
-                UnsignedLong.valueOf(Constants.GENESIS_FORK_VERSION),
-                UnsignedLong.valueOf(Constants.GENESIS_FORK_VERSION),
+                Bytes.ofUnsignedInt(Constants.GENESIS_FORK_VERSION),
+                Bytes.ofUnsignedInt(Constants.GENESIS_FORK_VERSION),
                 UnsignedLong.valueOf(Constants.GENESIS_EPOCH)),
             UnsignedLong.fromLongBits(Constants.GENESIS_EPOCH),
             Constants.DOMAIN_DEPOSIT);
@@ -227,8 +227,8 @@ class BeaconStateUtilTest {
     UnsignedLong domain =
         BeaconStateUtil.get_domain(
             new Fork(
-                UnsignedLong.valueOf(Constants.GENESIS_FORK_VERSION),
-                UnsignedLong.valueOf(Constants.GENESIS_FORK_VERSION),
+                Bytes.ofUnsignedInt(Constants.GENESIS_FORK_VERSION),
+                Bytes.ofUnsignedInt(Constants.GENESIS_FORK_VERSION),
                 UnsignedLong.valueOf(Constants.GENESIS_EPOCH)),
             UnsignedLong.fromLongBits(Constants.GENESIS_EPOCH),
             Constants.DOMAIN_DEPOSIT);
@@ -496,8 +496,8 @@ class BeaconStateUtilTest {
     beaconState.setSlot(randomUnsignedLong());
     beaconState.setFork(
         new Fork(
-            UnsignedLong.valueOf(Constants.GENESIS_FORK_VERSION),
-            UnsignedLong.valueOf(Constants.GENESIS_FORK_VERSION),
+            Bytes.ofUnsignedInt(Constants.GENESIS_FORK_VERSION),
+            Bytes.ofUnsignedInt(Constants.GENESIS_FORK_VERSION),
             UnsignedLong.valueOf(Constants.GENESIS_EPOCH)));
 
     List<Validator> validatorList =
