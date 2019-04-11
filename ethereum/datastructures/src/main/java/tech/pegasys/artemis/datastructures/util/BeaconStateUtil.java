@@ -1187,7 +1187,7 @@ public class BeaconStateUtil {
 
     CrosslinkCommittee crosslink_committee = null;
     for (CrosslinkCommittee curr_crosslink_committee : crosslink_committees) {
-      if (curr_crosslink_committee.getShard().equals(attestation_data.getShard())) {
+      if (curr_crosslink_committee.getShard().compareTo(attestation_data.getShard()) == 0) {
         crosslink_committee = curr_crosslink_committee;
         break;
       }

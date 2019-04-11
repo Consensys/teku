@@ -378,17 +378,20 @@ public final class BlockProcessorUtil {
         //     < attestation.data.slot + SLOTS_PER_EPOCH.
         UnsignedLong attestationDataSlot = attestation.getData().getSlot();
         checkArgument(
-            attestationDataSlot.compareTo(UnsignedLong.valueOf(Constants.GENESIS_EPOCH)) >= 0);
+            attestationDataSlot.compareTo(UnsignedLong.valueOf(Constants.GENESIS_EPOCH)) >= 0,
+            "in process attestations(): 2.1");
         checkArgument(
             attestationDataSlot
                     .plus(UnsignedLong.valueOf(Constants.MIN_ATTESTATION_INCLUSION_DELAY))
                     .compareTo(state.getSlot())
-                <= 0);
+                <= 0,
+            "in process attestations(): 2.2");
         checkArgument(
             state
                     .getSlot()
                     .compareTo(attestationDataSlot.plus(UnsignedLong.valueOf(SLOTS_PER_EPOCH)))
-                < 0);
+                < 0,
+            "in process attestations(): 2.3");
 
         // Verify that attestation.data.justified_epoch is equal to state.justified_epoch
         // if slot_to_epoch(attestation.data.slot + 1) >= get_current_epoch(state) else
@@ -435,7 +438,8 @@ public final class BlockProcessorUtil {
                     .equals(
                         new Crosslink(
                             slot_to_epoch(attestationDataSlot),
-                            attestation.getData().getCrosslink_data_root())));
+                            attestation.getData().getCrosslink_data_root())),
+            "in process attestations(): 6");
 
         // - Verify bitfields and aggregate signature
         checkArgument(
@@ -560,6 +564,7 @@ public final class BlockProcessorUtil {
     LOG.log(Level.DEBUG, "message1: " + messages.get(1).toHexString());
     LOG.log(Level.DEBUG, "signature: " + signature);
     LOG.log(Level.DEBUG, "domain: " + domain);
+
     checkArgument(
         bls_verify_multiple(pubkeys, messages, signature, domain),
         "checkArgument threw and exception in verify_bitfields_and_aggregate_signature() 4");
