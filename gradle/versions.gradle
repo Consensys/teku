@@ -45,6 +45,7 @@ dependencyManagement {
       entry 'cava-junit'
       entry 'cava-kv'
       entry 'cava-rlpx'
+      // Commented out in favor of a precompiled jar for v0.5.1 spec
       // entry 'cava-ssz'
       entry 'cava-toml'
       entry 'cava-units'
