@@ -50,7 +50,7 @@ public class LmdGhost {
     List<Validator> validators = start_state.getValidator_registry();
     List<Integer> active_validator_indices =
         ValidatorsUtil.get_active_validator_indices(
-            validators, slot_to_epoch(UnsignedLong.valueOf(start_block.getSlot())));
+            validators, slot_to_epoch(start_state.getSlot()));
 
     List<MutablePair<Integer, BeaconBlock>> attestation_targets = new ArrayList<>();
     for (Integer validator_index : active_validator_indices) {
