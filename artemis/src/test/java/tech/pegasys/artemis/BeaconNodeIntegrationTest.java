@@ -24,7 +24,6 @@ import net.consensys.cava.junit.BouncyCastleExtension;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import picocli.CommandLine;
-import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.networking.p2p.api.P2PNetwork;
 import tech.pegasys.artemis.networking.p2p.hobbits.Peer;
 import tech.pegasys.artemis.util.cli.CommandLineArguments;
@@ -52,21 +51,20 @@ class BeaconNodeIntegrationTest {
     node2.start();
     node3.start();
 
-    Thread.sleep(5000);
+    Thread.sleep(10000);
 
     P2PNetwork net1 = node1.p2pNetwork();
     P2PNetwork net2 = node2.p2pNetwork();
     P2PNetwork net3 = node3.p2pNetwork();
 
-    BeaconBlock block = null;
+    Bytes block = null;
     for (P2PNetwork net : Arrays.asList(net1, net2, net3)) {
       for (Object p : net.getPeers()) {
         Peer peer = (Peer) p;
         Bytes message = peer.peerGossip();
         if (!Objects.isNull(message)) {
-          block = BeaconBlock.fromBytes(message);
-          System.out.println(
-              "Received block with state root:" + block.getState_root().toHexString());
+          block = message;
+          break;
         }
       }
     }
@@ -99,15 +97,14 @@ class BeaconNodeIntegrationTest {
     P2PNetwork net2 = node2.p2pNetwork();
     P2PNetwork net3 = node3.p2pNetwork();
 
-    BeaconBlock block = null;
+    Bytes block = null;
     for (P2PNetwork net : Arrays.asList(net1, net2, net3)) {
       for (Object p : net.getPeers()) {
         Peer peer = (Peer) p;
         Bytes message = peer.peerGossip();
         if (!Objects.isNull(message)) {
-          block = BeaconBlock.fromBytes(message);
-          System.out.println(
-              "Received block with state root:" + block.getState_root().toHexString());
+          block = message;
+          break;
         }
       }
     }
