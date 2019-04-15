@@ -40,7 +40,8 @@ public class Crosslink implements Copyable<Crosslink> {
         bytes,
         reader ->
             new Crosslink(
-                UnsignedLong.fromLongBits(reader.readUInt64()), Bytes32.wrap(reader.readFixedBytes(32))));
+                UnsignedLong.fromLongBits(reader.readUInt64()),
+                Bytes32.wrap(reader.readFixedBytes(32))));
   }
 
   @Override

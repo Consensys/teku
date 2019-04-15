@@ -240,7 +240,9 @@ public class BeaconState {
                     .collect(Collectors.toList()),
                 UnsignedLong.fromLongBits(reader.readUInt64()),
                 // Randomness and committees
-                reader.readFixedBytesList(Constants.LATEST_RANDAO_MIXES_LENGTH, 32).stream().map(Bytes32::wrap).collect(Collectors.toList()),
+                reader.readFixedBytesList(Constants.LATEST_RANDAO_MIXES_LENGTH, 32).stream()
+                    .map(Bytes32::wrap)
+                    .collect(Collectors.toList()),
                 UnsignedLong.fromLongBits(reader.readUInt64()),
                 UnsignedLong.fromLongBits(reader.readUInt64()),
                 UnsignedLong.fromLongBits(reader.readUInt64()),
@@ -265,14 +267,22 @@ public class BeaconState {
                 reader.readBytesList(Constants.SHARD_COUNT).stream()
                     .map(Crosslink::fromBytes)
                     .collect(Collectors.toList()),
-                reader.readFixedBytesList(Constants.SLOTS_PER_HISTORICAL_ROOT, 32).stream().map(Bytes32::wrap).collect(Collectors.toList()),
-                reader.readFixedBytesList(Constants.SLOTS_PER_HISTORICAL_ROOT, 32).stream().map(Bytes32::wrap).collect(Collectors.toList()),
-                reader.readFixedBytesList(Constants.LATEST_ACTIVE_INDEX_ROOTS_LENGTH, 32).stream().map(Bytes32::wrap).collect(Collectors.toList()),
+                reader.readFixedBytesList(Constants.SLOTS_PER_HISTORICAL_ROOT, 32).stream()
+                    .map(Bytes32::wrap)
+                    .collect(Collectors.toList()),
+                reader.readFixedBytesList(Constants.SLOTS_PER_HISTORICAL_ROOT, 32).stream()
+                    .map(Bytes32::wrap)
+                    .collect(Collectors.toList()),
+                reader.readFixedBytesList(Constants.LATEST_ACTIVE_INDEX_ROOTS_LENGTH, 32).stream()
+                    .map(Bytes32::wrap)
+                    .collect(Collectors.toList()),
                 reader.readUInt64List().stream()
                     .map(UnsignedLong::fromLongBits)
                     .collect(Collectors.toList()),
                 BeaconBlockHeader.fromBytes(reader.readBytes()),
-                reader.readFixedBytesList(32).stream().map(Bytes32::wrap).collect(Collectors.toList()),
+                reader.readFixedBytesList(32).stream()
+                    .map(Bytes32::wrap)
+                    .collect(Collectors.toList()),
                 // Ethereum 1.0 chain data
                 Eth1Data.fromBytes(reader.readBytes()),
                 reader.readBytesList().stream()
@@ -312,7 +322,7 @@ public class BeaconState {
                   .collect(Collectors.toList()));
           writer.writeUInt64(validator_registry_update_epoch.longValue());
           // Randomness and committees
-          writer.writeFixedBytesList(Constants.LATEST_RANDAO_MIXES_LENGTH ,32, latest_randao_mixes);
+          writer.writeFixedBytesList(Constants.LATEST_RANDAO_MIXES_LENGTH, 32, latest_randao_mixes);
           writer.writeUInt64(previous_shuffling_start_shard.longValue());
           writer.writeUInt64(current_shuffling_start_shard.longValue());
           writer.writeUInt64(previous_shuffling_epoch.longValue());
@@ -333,7 +343,8 @@ public class BeaconState {
           writer.writeBytesList(Constants.SHARD_COUNT, latest_crosslinksBytes);
           writer.writeFixedBytesList(Constants.SLOTS_PER_HISTORICAL_ROOT, 32, latest_block_roots);
           writer.writeFixedBytesList(Constants.SLOTS_PER_HISTORICAL_ROOT, 32, latest_state_roots);
-          writer.writeFixedBytesList(Constants.LATEST_ACTIVE_INDEX_ROOTS_LENGTH, 32, latest_active_index_roots);
+          writer.writeFixedBytesList(
+              Constants.LATEST_ACTIVE_INDEX_ROOTS_LENGTH, 32, latest_active_index_roots);
           writer.writeULongIntList(
               64,
               latest_slashed_balances.stream()

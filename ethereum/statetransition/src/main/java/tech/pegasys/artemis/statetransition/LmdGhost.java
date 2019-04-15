@@ -14,18 +14,24 @@
 package tech.pegasys.artemis.statetransition;
 
 import static java.util.Objects.requireNonNull;
+import static tech.pegasys.artemis.datastructures.Constants.FORK_CHOICE_BALANCE_INCREMENT;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_effective_balance;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.slot_to_epoch;
+import static tech.pegasys.artemis.util.hashtree.HashTreeUtil.hash_tree_root;
 
 import com.google.common.primitives.UnsignedLong;
+import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import net.consensys.cava.bytes.Bytes;
+import org.apache.commons.lang3.tuple.MutablePair;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
+import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.datastructures.util.ValidatorsUtil;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 
@@ -38,20 +44,20 @@ public class LmdGhost {
    * @param start_state
    * @param start_block
    * @return
-   * @throws StateTransitionException
    */
   public static BeaconBlock lmd_ghost(
-      ChainStorageClient store, BeaconState start_state, BeaconBlock start_block)
-      throws StateTransitionException {
+      ChainStorageClient store, BeaconState start_state, BeaconBlock start_block) {
+    List<Validator> validators = start_state.getValidator_registry();
     List<Integer> active_validator_indices =
         ValidatorsUtil.get_active_validator_indices(
-            start_state.getValidator_registry(),
-            BeaconStateUtil.slot_to_epoch(UnsignedLong.valueOf(start_block.getSlot())));
+            validators, slot_to_epoch(UnsignedLong.valueOf(start_block.getSlot())));
 
-    List<BeaconBlock> attestation_targets = new ArrayList<>();
-    for (int validator_index : active_validator_indices) {
+    List<MutablePair<Integer, BeaconBlock>> attestation_targets = new ArrayList<>();
+    for (Integer validator_index : active_validator_indices) {
       if (get_latest_attestation_target(store, validator_index).isPresent()) {
-        attestation_targets.add(get_latest_attestation_target(store, validator_index).get());
+        attestation_targets.add(
+            new MutablePair<>(
+                validator_index, get_latest_attestation_target(store, validator_index).get()));
       }
     }
 
@@ -64,41 +70,58 @@ public class LmdGhost {
         return head;
       }
 
-      // TODO: this is missing hash_tree_root(child_block).
+      UnsignedLong max_value = UnsignedLong.ZERO;
+      for (BeaconBlock child : children) {
+        UnsignedLong curr_value = get_vote_count(start_state, store, child, attestation_targets);
+        if (curr_value.compareTo(max_value) > 0) {
+          max_value = curr_value;
+        }
+      }
+
       head =
           children.stream()
+              .filter(
+                  child ->
+                      get_vote_count(start_state, store, child, attestation_targets)
+                              .compareTo(max_value)
+                          == 0)
               .max(
                   Comparator.comparing(
-                      child_block ->
-                          Math.toIntExact(
-                              get_vote_count(store, child_block, attestation_targets).longValue())))
-              .get();
+                      child -> hash_tree_root(child.toBytes()).toLong(ByteOrder.LITTLE_ENDIAN)));
     }
   }
 
   /**
-   * Helper function for lmd_ghost.
+   * This function is defined inside lmd_ghost in spec. It is defined here separately for
+   * legibility.
    *
+   * @param state
    * @param store
    * @param block
    * @param attestation_targets
    * @return
    */
   public static UnsignedLong get_vote_count(
-      ChainStorageClient store, BeaconBlock block, List<BeaconBlock> attestation_targets) {
-    /*
-     * This function is defined inside lmd_ghost in spec. It is defined here separately for legibility.
-     */
-    UnsignedLong vote_count = UnsignedLong.ZERO;
-    for (BeaconBlock target : attestation_targets) {
+      BeaconState state,
+      ChainStorageClient store,
+      BeaconBlock block,
+      List<MutablePair<Integer, BeaconBlock>> attestation_targets) {
+    UnsignedLong sum = UnsignedLong.ZERO;
+    for (MutablePair<Integer, BeaconBlock> index_target : attestation_targets) {
+      int validator_index = index_target.getLeft();
+      BeaconBlock target = index_target.getRight();
+
       Optional<BeaconBlock> ancestor =
           get_ancestor(store, target, UnsignedLong.valueOf(block.getSlot()));
       if (!ancestor.isPresent()) continue;
-      if (ancestor.get().equals(block)) {
-        vote_count = vote_count.plus(UnsignedLong.ONE);
+      if (ancestor.equals(block)) {
+        sum =
+            sum.plus(
+                get_effective_balance(state, validator_index)
+                    .dividedBy(UnsignedLong.valueOf(FORK_CHOICE_BALANCE_INCREMENT)));
       }
     }
-    return vote_count;
+    return sum;
   }
 
   /**
@@ -127,10 +150,9 @@ public class LmdGhost {
    * @param store
    * @param validatorIndex
    * @return
-   * @throws StateTransitionException
    */
   public static Optional<BeaconBlock> get_latest_attestation_target(
-      ChainStorageClient store, int validatorIndex) throws StateTransitionException {
+      ChainStorageClient store, int validatorIndex) {
     Optional<Attestation> latest_attestation = get_latest_attestation(store, validatorIndex);
     if (latest_attestation.isPresent()) {
       Optional<BeaconBlock> latest_attestation_target =
@@ -148,10 +170,9 @@ public class LmdGhost {
    * @param store
    * @param validatorIndex
    * @return
-   * @throws StateTransitionException
    */
   public static Optional<Attestation> get_latest_attestation(
-      ChainStorageClient store, int validatorIndex) throws StateTransitionException {
+      ChainStorageClient store, int validatorIndex) {
     Optional<Attestation> latestAttestation = store.getLatestAttestation(validatorIndex);
     return latestAttestation;
   }

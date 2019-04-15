@@ -190,9 +190,7 @@ public final class BlockProcessorUtil {
 
         // Verify that the epoch is the same
         checkArgument(
-            slot_to_epoch(proposer_slashing
-                .getHeader_1()
-                .getSlot())
+            slot_to_epoch(proposer_slashing.getHeader_1().getSlot())
                 .equals(slot_to_epoch(proposer_slashing.getHeader_2().getSlot())),
             "Epoch is not the same in process_proposer_slashings");
 
@@ -204,7 +202,8 @@ public final class BlockProcessorUtil {
             "Headers are the same in process_proposer_slashings");
 
         // Proposer is not yet slashed
-        checkArgument(!proposer.isSlashed(), "Proposer is already slashed in process_proposer_slashings");
+        checkArgument(
+            !proposer.isSlashed(), "Proposer is already slashed in process_proposer_slashings");
 
         // Signatures are valid
         checkArgument(

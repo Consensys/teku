@@ -76,13 +76,11 @@ class BeaconStateTest {
     int validator_index = 0;
     UnsignedLong activation_epoch;
 
-    BeaconStateUtil.activate_validator(
-        state, validator_index, true);
+    BeaconStateUtil.activate_validator(state, validator_index, true);
     activation_epoch = state.getValidator_registry().get(validator_index).getActivation_epoch();
     assertThat(activation_epoch).isEqualTo(UnsignedLong.valueOf(GENESIS_EPOCH));
 
-    BeaconStateUtil.activate_validator(
-        state, validator_index, false);
+    BeaconStateUtil.activate_validator(state, validator_index, false);
     activation_epoch = state.getValidator_registry().get(validator_index).getActivation_epoch();
     assertThat(activation_epoch)
         .isEqualTo(UnsignedLong.valueOf(GENESIS_EPOCH + 1 + ACTIVATION_EXIT_DELAY));

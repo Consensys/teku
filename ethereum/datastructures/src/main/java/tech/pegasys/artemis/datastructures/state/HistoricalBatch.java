@@ -25,8 +25,8 @@ import tech.pegasys.artemis.datastructures.Copyable;
 
 public class HistoricalBatch implements Copyable<HistoricalBatch> {
 
-  private List<Bytes32> block_roots; //Bounded by SLOTS_PER_HISTORICAL_ROOT
-  private List<Bytes32> state_roots; //Bounded by SLOTS_PER_HISTORICAL_ROOT
+  private List<Bytes32> block_roots; // Bounded by SLOTS_PER_HISTORICAL_ROOT
+  private List<Bytes32> state_roots; // Bounded by SLOTS_PER_HISTORICAL_ROOT
 
   public HistoricalBatch(List<Bytes32> block_roots, List<Bytes32> state_roots) {
     this.block_roots = block_roots;
@@ -43,8 +43,12 @@ public class HistoricalBatch implements Copyable<HistoricalBatch> {
         bytes,
         reader ->
             new HistoricalBatch(
-                reader.readFixedBytesList(Constants.SLOTS_PER_HISTORICAL_ROOT, 32).stream().map(Bytes32::wrap).collect(Collectors.toList()),
-                reader.readFixedBytesList(Constants.SLOTS_PER_HISTORICAL_ROOT, 32).stream().map(Bytes32::wrap).collect(Collectors.toList())));
+                reader.readFixedBytesList(Constants.SLOTS_PER_HISTORICAL_ROOT, 32).stream()
+                    .map(Bytes32::wrap)
+                    .collect(Collectors.toList()),
+                reader.readFixedBytesList(Constants.SLOTS_PER_HISTORICAL_ROOT, 32).stream()
+                    .map(Bytes32::wrap)
+                    .collect(Collectors.toList())));
   }
 
   @Override
