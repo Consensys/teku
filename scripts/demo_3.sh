@@ -18,9 +18,9 @@ cd demo/node_0 && ln -s ./bin/artemis . && cd ../../
 cd demo/node_1 && ln -s ./bin/artemis . && cd ../../
 cd demo/node_2 && ln -s ./bin/artemis . && cd ../
 
-tmux new-session -d -s foo 'cd node_0 && ./artemis --config=./config/testConfig.0.toml --logging=INFO'
-tmux split-window -v -t 0 'cd node_1 && ./artemis --config=./config/testConfig.1.toml --logging=INFO'
-tmux split-window -h 'cd node_2 && ./artemis --config=./config/testConfig.2.toml --logging=INFO'
+tmux new-session -d -s foo 'cd node_0 && ./artemis --config=./config/testConfig.0.toml --logging=DEBUG'
+tmux split-window -v -t 0 'cd node_1 && ./artemis --config=./config/testConfig.1.toml --logging=DEBUG'
+tmux split-window -h 'cd node_2 && ./artemis --config=./config/testConfig.2.toml --logging=DEBUG'
 tmux select-layout tile
 tmux rename-window 'the dude abides'
 tmux attach-session -d

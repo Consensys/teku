@@ -564,7 +564,6 @@ public final class BlockProcessorUtil {
     LOG.log(Level.DEBUG, "message1: " + messages.get(1).toHexString());
     LOG.log(Level.DEBUG, "signature: " + signature);
     LOG.log(Level.DEBUG, "domain: " + domain);
-
     checkArgument(
         bls_verify_multiple(pubkeys, messages, signature, domain),
         "checkArgument threw and exception in verify_bitfields_and_aggregate_signature() 4");
