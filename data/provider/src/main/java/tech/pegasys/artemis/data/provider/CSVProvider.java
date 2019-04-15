@@ -13,62 +13,31 @@
 
 package tech.pegasys.artemis.data.provider;
 
-import java.util.Objects;
-import tech.pegasys.artemis.data.TimeSeriesRecord;
+import java.io.BufferedWriter;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import org.apache.logging.log4j.Level;
+import tech.pegasys.artemis.data.IRecordAdapter;
 import tech.pegasys.artemis.util.alogger.ALogger;
 
-public class CSVProvider extends FileProvider<CSVProvider> {
+public class CSVProvider implements FileProvider {
   private static final ALogger LOG = new ALogger(CSVProvider.class.getName());
 
   public CSVProvider() {}
 
-  public CSVProvider(TimeSeriesRecord record) {
-    this.record = record;
-  }
-
   @Override
-  public boolean equals(Object o) {
-    if (o == this) return true;
-    if (!(o instanceof CSVProvider)) {
-      return false;
+  public void output(String filename, IRecordAdapter record) {
+    try {
+      BufferedWriter bw =
+          new BufferedWriter(new OutputStreamWriter(new FileOutputStream(filename, true), "UTF-8"));
+      StringBuilder line = new StringBuilder(record.toCSV());
+      bw.write(line.toString());
+      bw.newLine();
+      bw.flush();
+      bw.close();
+    } catch (IOException e) {
+      LOG.log(Level.WARN, e.toString());
     }
-    CSVProvider cSVProvider = (CSVProvider) o;
-    return Objects.equals(record, cSVProvider.record);
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(record);
-  }
-
-  @Override
-  public String toString() {
-    return " '"
-        + record.getIndex()
-        + "'"
-        + ", '"
-        + record.getSlot()
-        + "'"
-        + ", '"
-        + record.getEpoch()
-        + "'"
-        + ", '"
-        + record.getHeadBlockRoot()
-        + "'"
-        + ", '"
-        + record.getHeadStateRoot()
-        + "'"
-        + ", '"
-        + record.getParentHeadBlockRoot()
-        + "'"
-        + ", '"
-        + record.getNumValidators()
-        + "'"
-        + ", '"
-        + record.getJustifiedBlockRoot()
-        + "'"
-        + ", '"
-        + record.getJustifiedStateRoot()
-        + "'";
   }
 }

@@ -17,9 +17,11 @@ import java.util.List;
 import java.util.stream.Collectors;
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
+import org.apache.logging.log4j.Level;
+import tech.pegasys.artemis.util.alogger.ALogger;
 
 public class BLSVerify {
-
+  private static final ALogger LOG = new ALogger(BLSVerify.class.getName());
   /**
    * The bls_verify() function as defined in the Eth2 specification
    *
@@ -34,6 +36,7 @@ public class BLSVerify {
     try {
       return signature.checkSignature(pubkey, Bytes.wrap(messageHash), domain);
     } catch (BLSException e) {
+      LOG.log(Level.WARN, e.toString());
       return false;
     }
   }
@@ -59,6 +62,7 @@ public class BLSVerify {
           messageHashes.stream().map(x -> Bytes.wrap(x)).collect(Collectors.toList());
       return aggregateSignature.checkSignature(pubkeys, messageHashesAsBytes, domain);
     } catch (BLSException e) {
+      LOG.log(Level.WARN, e.toString());
       return false;
     }
   }

@@ -168,7 +168,6 @@ public class BeaconStateUtil {
         shuffling_start_shard = state.getCurrent_shuffling_start_shard();
       }
     }
-
     List<List<Integer>> shuffling =
         get_shuffling(seed, state.getValidator_registry(), shuffling_epoch);
     long offset = slot % SLOTS_PER_EPOCH;

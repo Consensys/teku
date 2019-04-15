@@ -5,11 +5,11 @@
 # "mock": use MockP2PNetwork
 # "rlpx": use RLPxP2PNetwork
 # "hobbits": use HobbitsP2PNetwork
-networkMode = "hobbits"
+networkMode = "rlpx"
+identity = "1E9EEE241B1C8FB538F8372061DF1B08708EAABE5070A56D0958A7152259C7F1"
 networkInterface = "127.0.0.1"
-port = 19000
-identity = "0x00"
-peers = ["hobs://abcf@localhost:19001", "hobs://abcf@localhost:19002"]
+port = 19001
+peers = []
 
 [sim]
 numValidators = 16

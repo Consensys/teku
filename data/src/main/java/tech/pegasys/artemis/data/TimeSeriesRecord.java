@@ -13,239 +13,212 @@
 
 package tech.pegasys.artemis.data;
 
-import java.util.Objects;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonSerializationContext;
+import com.google.gson.JsonSerializer;
+import com.google.gson.reflect.TypeToken;
+import java.lang.reflect.Type;
+import java.util.List;
 import net.consensys.cava.bytes.Bytes32;
+import tech.pegasys.artemis.util.bls.BLSPublicKey;
+import tech.pegasys.artemis.util.bls.BLSSignature;
 
-public class TimeSeriesRecord {
+public class TimeSeriesRecord implements IRecordAdapter {
 
   private long index;
   private long slot;
   private long epoch;
-  private String headBlockRoot;
-  private String headStateRoot;
-  private String parentHeadBlockRoot;
-  private long numValidators;
-  private String justifiedBlockRoot;
-  private String justifiedStateRoot;
-  private String finalizedBlockRoot;
-  private String finalizedStateRoot;
+
+  private String block_root;
+  private String block_parent_root;
+  private String block_body;
+
+  private String lastJustifiedBlockRoot;
+  private String lastJustifiedStateRoot;
+  private String lastFinalizedBlockRoot;
+  private String lastFinalizedStateRoot;
+
+  private List<ValidatorJoin> validators;
 
   public TimeSeriesRecord() {
     // new Hello(1, 1, Bytes32.random(), UInt64.valueOf(0), Bytes32.random(), UInt64.valueOf(0))
-    this.index = -1;
-    this.slot = -1;
-    this.epoch = -1;
-    this.headBlockRoot = Bytes32.ZERO.toHexString();
-    this.headStateRoot = Bytes32.ZERO.toHexString();
-    this.parentHeadBlockRoot = Bytes32.ZERO.toHexString();
-    this.numValidators = -1;
-    this.justifiedBlockRoot = Bytes32.ZERO.toHexString();
-    this.justifiedStateRoot = Bytes32.ZERO.toHexString();
-    this.finalizedBlockRoot = Bytes32.ZERO.toHexString();
-    this.finalizedStateRoot = Bytes32.ZERO.toHexString();
+    this.index = Long.MAX_VALUE;
+    this.slot = Long.MAX_VALUE;
+    this.epoch = Long.MAX_VALUE;
+
+    this.block_root = Bytes32.random().toHexString();
+    this.block_parent_root = Bytes32.random().toHexString();
+
+    this.lastJustifiedBlockRoot = Bytes32.random().toHexString();
+    this.lastJustifiedStateRoot = Bytes32.random().toHexString();
+    this.lastFinalizedBlockRoot = Bytes32.random().toHexString();
+    this.lastFinalizedStateRoot = Bytes32.random().toHexString();
   }
 
   public TimeSeriesRecord(
       long index,
       long slot,
       long epoch,
-      String headBlockRoot,
-      String headStateRoot,
-      String parentHeadBlockRoot,
-      long numValidators,
-      String justifiedBlockRoot,
-      String justifiedStateRoot,
-      String finalizedBlockRoot,
-      String finalizedStateRoot) {
+      String block_root,
+      String block_parent_root,
+      String block_body,
+      String lastJustifiedBlockRoot,
+      String lastJustifiedStateRoot,
+      String lastFinalizedBlockRoot,
+      String lastFinalizedStateRoot,
+      List<ValidatorJoin> validators) {
     this.index = index;
     this.slot = slot;
     this.epoch = epoch;
-    this.headBlockRoot = headBlockRoot;
-    this.headStateRoot = headStateRoot;
-    this.parentHeadBlockRoot = parentHeadBlockRoot;
-    this.numValidators = numValidators;
-    this.justifiedBlockRoot = justifiedBlockRoot;
-    this.justifiedStateRoot = justifiedStateRoot;
-    this.finalizedBlockRoot = finalizedBlockRoot;
-    this.finalizedStateRoot = finalizedStateRoot;
+    this.block_root = block_root;
+    this.block_parent_root = block_parent_root;
+    this.block_body = block_body;
+    this.lastJustifiedBlockRoot = lastJustifiedBlockRoot;
+    this.lastJustifiedStateRoot = lastJustifiedStateRoot;
+    this.lastFinalizedBlockRoot = lastFinalizedBlockRoot;
+    this.lastFinalizedStateRoot = lastFinalizedStateRoot;
+    this.validators = validators;
+  }
+
+  @Override
+  public String toJSON() {
+    Gson gson = new GsonBuilder().create();
+    GsonBuilder gsonBuilder = new GsonBuilder();
+
+    Type bytes32Type = new TypeToken<Bytes32>() {}.getType();
+    JsonSerializer<Bytes32> serializer =
+        (src, typeOfSrc, context) -> {
+          JsonObject obj = new JsonObject();
+          obj.addProperty("Bytes32", src.toHexString());
+          return obj;
+        };
+
+    Type blsSignatureType = new TypeToken<BLSSignature>() {}.getType();
+    JsonSerializer<BLSSignature> blsSerializer =
+        (src, typeOfSrc, context) -> {
+          JsonObject obj = new JsonObject();
+          obj.addProperty("BLSSignature", src.toString());
+          return obj;
+        };
+
+    Type blsPublicKeyType = new TypeToken<BLSPublicKey>() {}.getType();
+    JsonSerializer<BLSPublicKey> blsPubKeySerializer =
+        (src, typeOfSrc, context) -> {
+          JsonObject obj = new JsonObject();
+          obj.addProperty("BLSPublicKey", src.toString());
+          return obj;
+        };
+
+    Type validatorJoinType = new TypeToken<ValidatorJoin>() {}.getType();
+    JsonSerializer<ValidatorJoin> validatorJoinJsonSerializer =
+        new JsonSerializer<ValidatorJoin>() {
+          @Override
+          public JsonElement serialize(
+              ValidatorJoin src, Type typeOfSrc, JsonSerializationContext context) {
+            JsonObject obj = new JsonObject();
+            obj.addProperty("pubkey", src.getValidator().getPubkey().toString());
+            obj.addProperty("balance", src.getBalance().toString());
+            return obj;
+          }
+        };
+    gsonBuilder.registerTypeAdapter(validatorJoinType, validatorJoinJsonSerializer);
+
+    Gson customGson = gsonBuilder.setPrettyPrinting().create();
+    return customGson.toJson(this);
+  }
+
+  @Override
+  public String toCSV() {
+    return null;
   }
 
   public long getIndex() {
-    return this.index;
+    return index;
   }
 
-  public void setIndex(Long index) {
+  public void setIndex(long index) {
     this.index = index;
   }
 
   public long getSlot() {
-    return this.slot;
+    return slot;
   }
 
-  public void setSlot(Long slot) {
+  public void setSlot(long slot) {
     this.slot = slot;
   }
 
   public long getEpoch() {
-    return this.epoch;
+    return epoch;
   }
 
-  public void setEpoch(Long epoch) {
+  public void setEpoch(long epoch) {
     this.epoch = epoch;
   }
 
-  public String getHeadBlockRoot() {
-    return this.headBlockRoot;
+  public String getBlock_root() {
+    return block_root;
   }
 
-  public void setHeadBlockRoot(String headBlockRoot) {
-    this.headBlockRoot = headBlockRoot;
+  public void setBlock_root(String block_root) {
+    this.block_root = block_root;
   }
 
-  public String getHeadStateRoot() {
-    return this.headStateRoot;
+  public String getBlock_parent_root() {
+    return block_parent_root;
+  }
+  public void setBlock_parent_root(String block_parent_root) {
+    this.block_parent_root = block_parent_root;
   }
 
-  public void setHeadStateRoot(String headStateRoot) {
-    this.headStateRoot = headStateRoot;
+  public String getBlock_body() {
+    return block_body;
   }
 
-  public String getParentHeadBlockRoot() {
-    return this.parentHeadBlockRoot;
+  public void setBlock_body(String block_body) {
+    this.block_body = block_body;
   }
 
-  public void setParentHeadBlockRoot(String parentHeadBlockRoot) {
-    this.parentHeadBlockRoot = parentHeadBlockRoot;
+  public String getLastJustifiedBlockRoot() {
+    return lastJustifiedBlockRoot;
   }
 
-  public long getNumValidators() {
-    return this.numValidators;
+  public void setLastJustifiedBlockRoot(String lastJustifiedBlockRoot) {
+    this.lastJustifiedBlockRoot = lastJustifiedBlockRoot;
   }
 
-  public void setNumValidators(long numValidators) {
-    this.numValidators = numValidators;
+  public String getLastJustifiedStateRoot() {
+    return lastJustifiedStateRoot;
   }
 
-  public String getJustifiedBlockRoot() {
-    return this.justifiedBlockRoot;
+  public void setLastJustifiedStateRoot(String lastJustifiedStateRoot) {
+    this.lastJustifiedStateRoot = lastJustifiedStateRoot;
   }
 
-  public void setJustifiedBlockRoot(String justifiedBlockRoot) {
-    this.justifiedBlockRoot = justifiedBlockRoot;
+  public String getLastFinalizedBlockRoot() {
+    return lastFinalizedBlockRoot;
   }
 
-  public String getJustifiedStateRoot() {
-    return this.justifiedStateRoot;
+  public void setLastFinalizedBlockRoot(String lastFinalizedBlockRoot) {
+    this.lastFinalizedBlockRoot = lastFinalizedBlockRoot;
   }
 
-  public void setJustifiedStateRoot(String justifiedStateRoot) {
-    this.justifiedStateRoot = justifiedStateRoot;
+  public String getLastFinalizedStateRoot() {
+    return lastFinalizedStateRoot;
   }
 
-  public String getFinalizedBlockRoot() {
-    return this.finalizedBlockRoot;
+  public void setLastFinalizedStateRoot(String lastFinalizedStateRoot) {
+    this.lastFinalizedStateRoot = lastFinalizedStateRoot;
   }
 
-  public void setFinalizedBlockRoot(String finalizedBlockRoot) {
-    this.finalizedBlockRoot = finalizedBlockRoot;
+  public List<ValidatorJoin> getValidators() {
+    return validators;
   }
 
-  public String getFinalizedStateRoot() {
-    return this.finalizedStateRoot;
-  }
-
-  public void setFinalizedStateRoot(String finalizedStateRoot) {
-    this.finalizedStateRoot = finalizedStateRoot;
-  }
-
-  public TimeSeriesRecord index(long index) {
-    this.index = index;
-    return this;
-  }
-
-  public TimeSeriesRecord slot(long slot) {
-    this.slot = slot;
-    return this;
-  }
-
-  public TimeSeriesRecord epoch(long epoch) {
-    this.epoch = epoch;
-    return this;
-  }
-
-  public TimeSeriesRecord headBlockRoot(String headBlockRoot) {
-    this.headBlockRoot = headBlockRoot;
-    return this;
-  }
-
-  public TimeSeriesRecord headStateRoot(String headStateRoot) {
-    this.headStateRoot = headStateRoot;
-    return this;
-  }
-
-  public TimeSeriesRecord parentHeadBlockRoot(String parentHeadBlockRoot) {
-    this.parentHeadBlockRoot = parentHeadBlockRoot;
-    return this;
-  }
-
-  public TimeSeriesRecord numValidators(long numValidators) {
-    this.numValidators = numValidators;
-    return this;
-  }
-
-  public TimeSeriesRecord justifiedBlockRoot(String justifiedBlockRoot) {
-    this.justifiedBlockRoot = justifiedBlockRoot;
-    return this;
-  }
-
-  public TimeSeriesRecord justifiedStateRoot(String justifiedStateRoot) {
-    this.justifiedStateRoot = justifiedStateRoot;
-    return this;
-  }
-
-  public TimeSeriesRecord finalizedBlockRoot(String finalizedBlockRoot) {
-    this.finalizedBlockRoot = finalizedBlockRoot;
-    return this;
-  }
-
-  public TimeSeriesRecord finalizedStateRoot(String finalizedStateRoot) {
-    this.finalizedStateRoot = finalizedStateRoot;
-    return this;
-  }
-
-  @Override
-  public boolean equals(Object o) {
-    if (o == this) return true;
-    if (!(o instanceof TimeSeriesRecord)) {
-      return false;
-    }
-    TimeSeriesRecord timeSeriesRecord = (TimeSeriesRecord) o;
-    return Objects.equals(index, timeSeriesRecord.index)
-        && Objects.equals(slot, timeSeriesRecord.slot)
-        && Objects.equals(epoch, timeSeriesRecord.epoch)
-        && Objects.equals(headBlockRoot, timeSeriesRecord.headBlockRoot)
-        && Objects.equals(headStateRoot, timeSeriesRecord.headStateRoot)
-        && Objects.equals(parentHeadBlockRoot, timeSeriesRecord.parentHeadBlockRoot)
-        && Objects.equals(numValidators, timeSeriesRecord.numValidators)
-        && Objects.equals(justifiedBlockRoot, timeSeriesRecord.justifiedBlockRoot)
-        && Objects.equals(justifiedStateRoot, timeSeriesRecord.justifiedStateRoot)
-        && Objects.equals(finalizedBlockRoot, timeSeriesRecord.finalizedBlockRoot)
-        && Objects.equals(finalizedStateRoot, timeSeriesRecord.finalizedStateRoot);
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(
-        index,
-        slot,
-        epoch,
-        headBlockRoot,
-        headStateRoot,
-        parentHeadBlockRoot,
-        numValidators,
-        justifiedBlockRoot,
-        justifiedStateRoot,
-        finalizedBlockRoot,
-        finalizedStateRoot);
+  public void setValidators(List<ValidatorJoin> validators) {
+    this.validators = validators;
   }
 }

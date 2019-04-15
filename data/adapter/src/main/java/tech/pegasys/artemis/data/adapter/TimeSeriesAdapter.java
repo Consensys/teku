@@ -13,9 +13,14 @@
 
 package tech.pegasys.artemis.data.adapter;
 
+import com.google.common.primitives.UnsignedLong;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.IntStream;
 import net.consensys.cava.bytes.Bytes32;
 import tech.pegasys.artemis.data.RawRecord;
 import tech.pegasys.artemis.data.TimeSeriesRecord;
+import tech.pegasys.artemis.data.ValidatorJoin;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
@@ -43,24 +48,35 @@ public class TimeSeriesAdapter implements DataAdapter<TimeSeriesRecord> {
     BeaconState justifiedState = this.input.getJustifiedState();
     BeaconBlock finalizedBlock = this.input.getFinalizedBlock();
     BeaconState finalizedState = this.input.getFinalizedState();
-    long numValidators = headState.getValidator_registry().size();
+    // long numValidators = headState.getValidator_registry().size();
 
-    Bytes32 headBlockRoot = HashTreeUtil.hash_tree_root(headBlock.toBytes());
-    Bytes32 justifiedBlockRoot = HashTreeUtil.hash_tree_root(justifiedBlock.toBytes());
-    Bytes32 justifiedStateRoot = HashTreeUtil.hash_tree_root(justifiedState.toBytes());
-    Bytes32 finalizedBlockRoot = HashTreeUtil.hash_tree_root(finalizedBlock.toBytes());
-    Bytes32 finalizedStateRoot = HashTreeUtil.hash_tree_root(finalizedState.toBytes());
+    Bytes32 lastJustifiedBlockRoot = HashTreeUtil.hash_tree_root(justifiedBlock.toBytes());
+    Bytes32 lastJustifiedStateRoot = HashTreeUtil.hash_tree_root(justifiedState.toBytes());
+    Bytes32 lastFinalizedBlockRoot = HashTreeUtil.hash_tree_root(finalizedBlock.toBytes());
+    Bytes32 lastFinalizedStateRoot = HashTreeUtil.hash_tree_root(finalizedState.toBytes());
+
+    List<ValidatorJoin> validators = new ArrayList<ValidatorJoin>();
+
+    IntStream.range(0, headState.getValidator_registry().size())
+        .parallel()
+        .forEach(
+            i -> {
+              validators.add(
+                  new ValidatorJoin(
+                      headState.getValidator_registry().get(i),
+                      headState.getValidator_balances().get(i)));
+            });
     return new TimeSeriesRecord(
         this.input.getIndex(),
         slot,
         epoch,
-        headBlockRoot.toHexString(),
-        headBlock.getState_root().toHexString(),
-        headBlock.getParent_root().toHexString(),
-        numValidators,
-        justifiedBlockRoot.toHexString(),
-        justifiedStateRoot.toHexString(),
-        finalizedBlockRoot.toHexString(),
-        finalizedStateRoot.toHexString());
+        this.input.getHeadBlock().getState_root().toHexString(),
+        this.input.getHeadBlock().getParent_root().toHexString(),
+        HashTreeUtil.hash_tree_root(this.input.getHeadBlock().toBytes()).toHexString(),
+        lastJustifiedBlockRoot.toHexString(),
+        lastJustifiedStateRoot.toHexString(),
+        lastFinalizedBlockRoot.toHexString(),
+        lastFinalizedStateRoot.toHexString(),
+        validators);
   }
 }

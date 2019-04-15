@@ -82,6 +82,7 @@ import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.bls.BLSException;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
+import tech.pegasys.artemis.util.bls.BLSSignature;
 
 public final class BlockProcessorUtil {
 
@@ -368,10 +369,10 @@ public final class BlockProcessorUtil {
         //     <= state.slot - MIN_ATTESTATION_INCLUSION_DELAY
         //     < attestation.data.slot + SLOTS_PER_EPOCH.
         long attestationDataSlot = attestation.getData().getSlot();
-        checkArgument(attestationDataSlot >= Constants.GENESIS_EPOCH);
+        checkArgument(attestationDataSlot >= Constants.GENESIS_EPOCH, "in process attestations(): 2.1");
         checkArgument(
-            attestationDataSlot + Constants.MIN_ATTESTATION_INCLUSION_DELAY <= state.getSlot());
-        checkArgument(state.getSlot() < attestationDataSlot + SLOTS_PER_EPOCH);
+            attestationDataSlot + Constants.MIN_ATTESTATION_INCLUSION_DELAY <= state.getSlot(), "in process attestations(): 2.2");
+        checkArgument(state.getSlot() < attestationDataSlot + SLOTS_PER_EPOCH, "in process attestations(): 2.3");
 
         // Verify that attestation.data.justified_epoch is equal to state.justified_epoch
         // if slot_to_epoch(attestation.data.slot + 1) >= get_current_epoch(state) else
@@ -413,7 +414,8 @@ public final class BlockProcessorUtil {
                     .equals(
                         new Crosslink(
                             slot_to_epoch(attestationDataSlot),
-                            attestation.getData().getCrosslink_data_root())));
+                            attestation.getData().getCrosslink_data_root())),
+            "in process attestations(): 6");
 
         // - Verify bitfields and aggregate signature
         checkArgument(
@@ -471,14 +473,14 @@ public final class BlockProcessorUtil {
         Objects.equals(
             attestation.getCustody_bitfield(),
             Bytes.wrap(new byte[attestation.getCustody_bitfield().size()])),
-        "checkArgument threw and exception in verify_bitfields_and_aggregate_signature()"); // [TO
+        "checkArgument threw and exception in verify_bitfields_and_aggregate_signature() 1"); // [TO
     // BE
     // REMOVED IN PHASE 1]
     checkArgument(
         !Objects.equals(
             attestation.getAggregation_bitfield(),
             Bytes.wrap(new byte[attestation.getAggregation_bitfield().size()])),
-        "checkArgument threw and exception in verify_bitfields_and_aggregate_signature()");
+        "checkArgument threw and exception in verify_bitfields_and_aggregate_signature() 2");
 
     List<List<Integer>> crosslink_committees = new ArrayList<>();
     for (CrosslinkCommittee crosslink_committee :
@@ -493,7 +495,7 @@ public final class BlockProcessorUtil {
       checkArgument(
           get_bitfield_bit(attestation.getAggregation_bitfield(), i) != 0b0
               || get_bitfield_bit(attestation.getCustody_bitfield(), i) == 0b0,
-          "checkArgument threw and exception in verify_bitfields_and_aggregate_signature()");
+          "checkArgument threw and exception in verify_bitfields_and_aggregate_signature() 3");
     }
 
     List<Integer> participants =
@@ -519,20 +521,29 @@ public final class BlockProcessorUtil {
       pubkey1.add(state.getValidator_registry().get(custody_bit_1_participants.get(i)).getPubkey());
     }
 
+    List<BLSPublicKey> pubkeys =
+        Arrays.asList(bls_aggregate_pubkeys(pubkey0), bls_aggregate_pubkeys(pubkey1));
+    List<Bytes32> messages =
+        Arrays.asList(
+            hash_tree_root(
+                new AttestationDataAndCustodyBit(attestation.getData(), false).toBytes()),
+            hash_tree_root(
+                new AttestationDataAndCustodyBit(attestation.getData(), true).toBytes()));
+    BLSSignature signature = attestation.getAggregate_signature();
+    UnsignedLong domain =
+        get_domain(
+            state.getFork(), slot_to_epoch(attestation.getData().getSlot()), DOMAIN_ATTESTATION);
+
+    LOG.log(Level.DEBUG, "pubkey0: " + pubkeys.get(0));
+    LOG.log(Level.DEBUG, "pubkey1: " + pubkeys.get(1));
+    LOG.log(Level.DEBUG, "message0: " + messages.get(0).toHexString());
+    LOG.log(Level.DEBUG, "message1: " + messages.get(1).toHexString());
+    LOG.log(Level.DEBUG, "signature: " + signature);
+    LOG.log(Level.DEBUG, "domain: " + domain);
+
     checkArgument(
-        bls_verify_multiple(
-            Arrays.asList(bls_aggregate_pubkeys(pubkey0), bls_aggregate_pubkeys(pubkey1)),
-            Arrays.asList(
-                hash_tree_root(
-                    new AttestationDataAndCustodyBit(attestation.getData(), false).toBytes()),
-                hash_tree_root(
-                    new AttestationDataAndCustodyBit(attestation.getData(), true).toBytes())),
-            attestation.getAggregate_signature(),
-            get_domain(
-                state.getFork(),
-                slot_to_epoch(attestation.getData().getSlot()),
-                DOMAIN_ATTESTATION)),
-        "checkArgument threw and exception in verify_bitfields_and_aggregate_signature()");
+        bls_verify_multiple(pubkeys, messages, signature, domain),
+        "checkArgument threw and exception in verify_bitfields_and_aggregate_signature() 4");
 
     return true;
   }

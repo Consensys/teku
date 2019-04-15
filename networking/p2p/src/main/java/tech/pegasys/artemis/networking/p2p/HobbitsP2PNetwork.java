@@ -32,13 +32,18 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
+import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.concurrent.AsyncCompletion;
 import net.consensys.cava.concurrent.CompletableAsyncCompletion;
+import net.consensys.cava.crypto.Hash;
+import net.consensys.cava.plumtree.EphemeralPeerRepository;
+import net.consensys.cava.plumtree.MessageSender;
+import net.consensys.cava.plumtree.State;
+import org.apache.logging.log4j.Level;
 import tech.pegasys.artemis.data.TimeSeriesRecord;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.networking.p2p.api.P2PNetwork;
-import tech.pegasys.artemis.networking.p2p.hobbits.GossipMethod;
 import tech.pegasys.artemis.networking.p2p.hobbits.HobbitsSocketHandler;
 import tech.pegasys.artemis.networking.p2p.hobbits.Peer;
 import tech.pegasys.artemis.util.alogger.ALogger;
@@ -57,11 +62,13 @@ public final class HobbitsP2PNetwork implements P2PNetwork {
   private final int advertisedPort;
   private final String networkInterface;
   private final String userAgent = "Artemis SNAPSHOT";
+  private final State state;
   private NetServer server;
   private NetClient client;
   private List<URI> staticPeers;
   private TimeSeriesRecord chainData;
   private Map<URI, HobbitsSocketHandler> handlersMap = new ConcurrentHashMap<>();
+  private final ConcurrentHashMap<String, Boolean> receivedMessages = new ConcurrentHashMap<>();
 
   /**
    * Default constructor
@@ -88,7 +95,27 @@ public final class HobbitsP2PNetwork implements P2PNetwork {
     this.staticPeers = staticPeers;
     this.chainData = new TimeSeriesRecord();
     eventBus.register(this);
+    this.state =
+        new State(
+            new EphemeralPeerRepository(),
+            Hash::sha2_256,
+            this::sendMessage,
+            this::processGossip,
+            (bytes, peer) -> true);
   }
+
+  private void sendMessage(
+      MessageSender.Verb verb, net.consensys.cava.plumtree.Peer peer, Bytes hash, Bytes bytes) {
+    if (!started.get()) {
+      return;
+    }
+    HobbitsSocketHandler handler = handlersMap.get(((Peer) peer).uri());
+    if (handler != null) {
+      handler.gossipMessage(verb, hash, Bytes32.random(), bytes);
+    }
+  }
+
+  private void processGossip(Bytes message) {}
 
   @Override
   public void run() {
@@ -130,7 +157,9 @@ public final class HobbitsP2PNetwork implements P2PNetwork {
         peerURI,
         uri -> {
           Peer peer = new Peer(peerURI);
-          return new HobbitsSocketHandler(eventBus, netSocket, userAgent, peer, chainData);
+          state.addPeer(peer);
+          return new HobbitsSocketHandler(
+              eventBus, netSocket, userAgent, peer, chainData, state, receivedMessages);
         });
   }
 
@@ -163,10 +192,10 @@ public final class HobbitsP2PNetwork implements P2PNetwork {
               NetSocket socket = res.result();
               Peer peer = new Peer(peerURI);
               HobbitsSocketHandler handler =
-                  new HobbitsSocketHandler(eventBus, socket, userAgent, peer, chainData);
+                  new HobbitsSocketHandler(
+                      eventBus, socket, userAgent, peer, chainData, state, receivedMessages);
               handlersMap.put(peerURI, handler);
-              // handler.sendHello();
-              // handler.sendStatus();
+              state.addPeer(peer);
               connected.complete(peer);
             }
           });
@@ -221,10 +250,12 @@ public final class HobbitsP2PNetwork implements P2PNetwork {
 
   @Subscribe
   public void onNewUnprocessedBlock(BeaconBlock block) {
-    for (HobbitsSocketHandler handler : handlersMap.values()) {
-      // TODO: implement messageHash and signature
-      handler.gossipMessage(
-          GossipMethod.GOSSIP, Bytes32.random(), Bytes32.random(), block.toBytes());
-    }
+    LOG.log(
+        Level.INFO, "Gossiping new block with state root: " + block.getState_root().toHexString());
+    Bytes bytes = block.toBytes();
+    state.sendGossipMessage(bytes);
+    // TODO: this will be modified once Tuweni merges
+    // https://github.com/apache/incubator-tuweni/pull/3
+    this.receivedMessages.put(Hash.sha2_256(bytes).toHexString(), true);
   }
 }

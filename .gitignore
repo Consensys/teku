@@ -34,4 +34,4 @@ pow/src/main/resources/keys.json
 pow/truffle/.vscode/
 pow/truffle/node_modules/
 pow/truffle/npm-debug.*
-
+scripts/demo

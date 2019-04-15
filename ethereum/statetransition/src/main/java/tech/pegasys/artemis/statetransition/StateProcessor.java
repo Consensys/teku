@@ -183,10 +183,11 @@ public class StateProcessor {
     }
     this.store.addState(HashTreeUtil.hash_tree_root(newHeadState.toBytes()), newHeadState);
     this.headState = newHeadState;
-    recordData();
-
     // Send event that headState has been updated
-    this.eventBus.post(new HeadStateEvent((BeaconStateWithCache) headState, headBlock));
+    this.eventBus.post(
+        new HeadStateEvent(
+            BeaconStateWithCache.deepCopy((BeaconStateWithCache) headState), headBlock));
+    recordData();
   }
 
   protected Boolean inspectBlock(Optional<BeaconBlock> block) {
@@ -260,6 +261,11 @@ public class StateProcessor {
           LOG.log(
               Level.INFO,
               ANSI_RED + "Block state root does NOT match the calculated state root!" + ANSI_RESET);
+          LOG.log(
+              Level.INFO,
+              ANSI_RED + "Block state root: " + blockStateRoot.toHexString() + ANSI_RESET);
+          LOG.log(
+              Level.INFO, ANSI_RED + "New state root: " + newStateRoot.toHexString() + ANSI_RESET);
         }
       } else {
         LOG.log(Level.INFO, "Skipped processing block");

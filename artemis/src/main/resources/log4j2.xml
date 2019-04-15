@@ -3,7 +3,7 @@
     <Appenders>
         <Console name="console" target="SYSTEM_OUT">
             <PatternLayout
-                pattern="[%-5level] - %msg%n" />
+                pattern="[%-5level ${hostName}] - %msg%n" />
         </Console>
     </Appenders>
     <Loggers>

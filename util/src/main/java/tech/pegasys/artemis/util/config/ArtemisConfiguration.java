@@ -43,7 +43,7 @@ public final class ArtemisConfiguration {
                 "mock",
                 "represents what network to use",
                 PropertyValidator.anyOf("mock", "rlpx", "hobbits"));
-    builder.addString("node.identity", null, "Identity of the peer", PropertyValidator.isPresent());
+    builder.addString("node.identity", null, "Identity of the peer", null);
     builder.addString("node.networkInterface", "0.0.0.0", "Peer to peer network interface", null);
     builder.addInteger("node.port", 9000, "Peer to peer port", PropertyValidator.inRange(0, 65535));
     builder.addInteger(
@@ -158,6 +158,15 @@ public final class ArtemisConfiguration {
     // Artemis specific
     builder.addString("constants.SIM_DEPOSIT_VALUE", "", null, null);
     builder.addInteger("constants.DEPOSIT_DATA_SIZE", Integer.MIN_VALUE, null, null);
+
+    builder.validateConfiguration(
+        config -> {
+          if (config.get("identity") == null && "rlpx".equals(config.get("networkMode"))) {
+            return Collections.singletonList(
+                new ConfigurationError("Identity is required if networkMode is set to rlpx"));
+          }
+          return null;
+        });
 
     return builder.toSchema();
   }

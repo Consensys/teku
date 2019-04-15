@@ -149,9 +149,18 @@ public final class EpochProcessorUtil {
       for (long curr_slot = BeaconStateUtil.get_epoch_start_slot(previous_epoch);
           curr_slot < BeaconStateUtil.get_epoch_start_slot(next_epoch);
           curr_slot = curr_slot + 1) {
+        LOG.log(Level.DEBUG, "current slot: " + curr_slot);
         List<CrosslinkCommittee> crosslink_committees_at_slot =
             BeaconStateUtil.get_crosslink_committees_at_slot(state, curr_slot);
         for (CrosslinkCommittee committee : crosslink_committees_at_slot) {
+          LOG.log(Level.DEBUG, "Committee Shard: " + committee.getShard());
+          LOG.log(
+              Level.DEBUG,
+              "Total Attesting Balance: "
+                  + AttestationUtil.total_attesting_balance(state, committee));
+          LOG.log(Level.DEBUG, "committee: " + committee.getCommittee());
+          LOG.log(
+              Level.DEBUG, "Total Balance: " + BeaconStateUtil.get_total_balance(state, committee));
           if (AttestationUtil.total_attesting_balance(state, committee) * 3L
               >= BeaconStateUtil.get_total_balance(state, committee) * 2L) {
             long shard = committee.getShard();

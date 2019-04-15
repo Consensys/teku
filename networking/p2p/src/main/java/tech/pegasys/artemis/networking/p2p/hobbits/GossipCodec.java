@@ -31,6 +31,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Iterator;
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
+import net.consensys.cava.plumtree.MessageSender;
 import org.xerial.snappy.Snappy;
 
 public final class GossipCodec implements Codec {
@@ -90,25 +91,29 @@ public final class GossipCodec implements Codec {
   /**
    * Encodes a payload into a Gossip request
    *
-   * @param methodId the Gossip method
-   * @param request the payload of the request
+   * @param verb the Gossip method
+   * @param payload the payload of the request
    * @return the encoded Gossip message
    */
   public static Bytes encode(
-      GossipMethod methodId, Bytes32 messageHash, Bytes32 hashSignature, Object request) {
+      MessageSender.Verb verb, Bytes messageHash, Bytes32 hashSignature, Bytes payload) {
 
-    String requestLine = "EWP 0.2 Gossip 0 ";
+    String requestLine = "EWP 0.2 GOSSIP ";
     ObjectNode node = mapper.createObjectNode();
 
-    node.put("method_id", methodId.code());
+    node.put("method_id", verb.name());
     node.put("message_hash", messageHash.toHexString());
     node.put("hash_signature", hashSignature.toHexString());
-    node.putPOJO("body", request);
     try {
-      Bytes body = Bytes.wrap(Snappy.compress(mapper.writer().writeValueAsBytes(node)));
-      requestLine += body.size();
+      Bytes headers = Bytes.wrap(Snappy.compress(mapper.writer().writeValueAsBytes(node)));
+      Bytes compressedPayload = Bytes.wrap(Snappy.compress(payload.toArrayUnsafe()));
+
+      requestLine += headers.size();
+      requestLine += " ";
+      requestLine += compressedPayload.size();
       requestLine += "\n";
-      return Bytes.concatenate(Bytes.wrap(requestLine.getBytes(StandardCharsets.UTF_8)), body);
+      return Bytes.concatenate(
+          Bytes.wrap(requestLine.getBytes(StandardCharsets.UTF_8)), headers, compressedPayload);
     } catch (IOException e) {
       throw new IllegalArgumentException(e);
     }
@@ -121,7 +126,6 @@ public final class GossipCodec implements Codec {
    * @return the payload, decoded
    */
   public static GossipMessage decode(Bytes message) {
-    // TODO: refactor RPC/Gossip decode logic
     Bytes requestLineBytes = null;
     for (int i = 0; i < message.size(); i++) {
       if (message.get(i) == (byte) '\n') {
@@ -145,10 +149,12 @@ public final class GossipCodec implements Codec {
     }
 
     try {
+      byte[] headers = message.slice(requestLineBytes.size() + 1, headerLength).toArrayUnsafe();
+      headers = Snappy.uncompress(headers);
       byte[] payload =
           message.slice(requestLineBytes.size() + 1 + headerLength, bodyLength).toArrayUnsafe();
       payload = Snappy.uncompress(payload);
-      ObjectNode gossipmessage = (ObjectNode) mapper.readTree(payload);
+      ObjectNode gossipmessage = (ObjectNode) mapper.readTree(headers);
       int methodId = gossipmessage.get("method_id").intValue();
       Bytes32 messageHash = Bytes32.fromHexString(gossipmessage.get("message_hash").asText());
       Bytes32 hashSignature = Bytes32.fromHexString(gossipmessage.get("hash_signature").asText());
@@ -156,7 +162,7 @@ public final class GossipCodec implements Codec {
           GossipMethod.valueOf(methodId),
           messageHash,
           hashSignature,
-          gossipmessage.get("body"),
+          Bytes.wrap(payload),
           (bodyLength + requestLineBytes.size() + headerLength));
     } catch (IOException e) {
       throw new UncheckedIOException(e);

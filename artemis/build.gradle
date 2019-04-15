@@ -23,15 +23,16 @@ dependencies {
   
   api 'com.google.guava:guava:27.0.1-jre'
   implementation 'net.consensys.cava:cava-crypto'
-  implementation 'net.consensys.cava:cava-units'
+  implementation 'net.consensys.cava:cava-plumtree'
   implementation 'net.consensys.cava:cava-ssz'
+  implementation 'net.consensys.cava:cava-toml'
+  implementation 'net.consensys.cava:cava-units'
   implementation 'info.picocli:picocli'
   implementation 'com.google.guava:guava'
-  implementation 'net.consensys.cava:cava-toml'
   implementation 'io.vertx:vertx-core'
   implementation 'io.vertx:vertx-web'
   implementation 'org.apache.logging.log4j:log4j-api'
-  implementation 'org.slf4j:slf4j-nop:1.7.25' 
+  implementation 'org.slf4j:slf4j-nop:1.7.25'
 
   runtimeOnly 'org.apache.logging.log4j:log4j-core'
 

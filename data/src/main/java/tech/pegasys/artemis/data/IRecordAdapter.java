@@ -11,22 +11,11 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.networking.p2p;
+package tech.pegasys.artemis.data;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
+public interface IRecordAdapter {
 
-final class PingMessage {
+  String toJSON();
 
-  private final long timestamp;
-
-  @JsonCreator
-  public PingMessage(@JsonProperty("timestamp") long timestamp) {
-    this.timestamp = timestamp;
-  }
-
-  @JsonProperty
-  public long timestamp() {
-    return timestamp;
-  }
+  String toCSV();
 }
