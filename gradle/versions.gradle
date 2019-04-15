@@ -45,6 +45,7 @@ dependencyManagement {
       entry 'cava-junit'
       entry 'cava-kv'
       entry 'cava-rlpx'
+      //disabled to allow a custom build of cava-ssz for v0.5.1 updates
       // entry 'cava-ssz'
       entry 'cava-toml'
       entry 'cava-units'
