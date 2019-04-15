@@ -13,19 +13,16 @@
 
 package tech.pegasys.artemis.validator.client;
 
-import static tech.pegasys.artemis.datastructures.Constants.SLOTS_PER_EPOCH;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_beacon_proposer_index;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_crosslink_committees_at_slot;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_current_epoch;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_epoch_start_slot;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_previous_epoch;
-
 import com.google.common.primitives.UnsignedLong;
+import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.datastructures.state.CrosslinkCommittee;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.datastructures.state.CrosslinkCommittee;
+
+import static tech.pegasys.artemis.datastructures.Constants.SLOTS_PER_EPOCH;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.*;
 
 public class ValidatorClient {
 
@@ -69,7 +66,8 @@ public class ValidatorClient {
         List<Integer> validators = selected_committees.get(0).getCommittee();
         int shard = selected_committees.get(0).getShard().intValue();
         boolean is_proposer =
-            validator_index == get_beacon_proposer_index(state, UnsignedLong.valueOf(slot), registry_change);
+            validator_index
+                == get_beacon_proposer_index(state, UnsignedLong.valueOf(slot), registry_change);
 
         return Optional.of(new CommitteeAssignmentTuple(validators, shard, slot, is_proposer));
       }
