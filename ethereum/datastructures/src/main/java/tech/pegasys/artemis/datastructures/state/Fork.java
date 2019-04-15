@@ -14,15 +14,16 @@
 package tech.pegasys.artemis.datastructures.state;
 
 import com.google.common.primitives.UnsignedLong;
-import java.util.Objects;
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.ssz.SSZ;
+
+import java.util.Objects;
 
 public class Fork {
 
   // TODO previous_version should be a bytes4 (this has serialization impacts)
   private Bytes previous_version;
-  // TODO previous_version should be a bytes4 (this has serialization impacts)
+  // TODO current_version should be a bytes4 (this has serialization impacts)
   private Bytes current_version;
   private UnsignedLong epoch;
 
