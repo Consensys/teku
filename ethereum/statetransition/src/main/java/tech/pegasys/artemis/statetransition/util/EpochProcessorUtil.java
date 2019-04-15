@@ -541,7 +541,7 @@ public final class EpochProcessorUtil {
           IntStream.range(0, toIntExact(committee_count)).boxed().collect(Collectors.toList());
       long SHARD_COUNT = Constants.SHARD_COUNT;
       for (Integer committee_offset : comnmittee_range) {
-        long shard = state.getCurrent_shuffling_start_shard() + committee_offset % SHARD_COUNT;
+        long shard = (state.getCurrent_shuffling_start_shard() + committee_offset) % SHARD_COUNT;
         long crosslink_epoch = state.getLatest_crosslinks().get(toIntExact(shard)).getEpoch();
         if (crosslink_epoch > validator_registry_update_epoch) {
           check2 = true;

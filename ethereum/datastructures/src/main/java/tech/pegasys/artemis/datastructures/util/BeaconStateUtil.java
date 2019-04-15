@@ -157,8 +157,8 @@ public class BeaconStateUtil {
       if (registry_change) {
         seed = generate_seed(state, next_epoch);
         shuffling_start_shard =
-            state.getCurrent_shuffling_start_shard()
-                + current_committees_per_epoch % Constants.SHARD_COUNT;
+            (state.getCurrent_shuffling_start_shard() + current_committees_per_epoch)
+                % Constants.SHARD_COUNT;
       } else if (epochs_since_last_registry_update > 1
           && is_power_of_two(epochs_since_last_registry_update)) {
         seed = generate_seed(state, next_epoch);
@@ -173,15 +173,14 @@ public class BeaconStateUtil {
         get_shuffling(seed, state.getValidator_registry(), shuffling_epoch);
     long offset = slot % SLOTS_PER_EPOCH;
     long committees_per_slot = committees_per_epoch / SLOTS_PER_EPOCH;
-    // TODO: Double check the order of operations here. The spec may be ambiguous.
     long slot_start_shard =
-        shuffling_start_shard + committees_per_slot * offset % Constants.SHARD_COUNT;
+        (shuffling_start_shard + committees_per_slot * offset) % Constants.SHARD_COUNT;
 
     ArrayList<CrosslinkCommittee> crosslink_committees_at_slot = new ArrayList<>();
     for (long i = 0; i < committees_per_slot; i++) {
       CrosslinkCommittee committee =
           new CrosslinkCommittee(
-              committees_per_slot * offset + i % Constants.SHARD_COUNT,
+              committees_per_slot * offset + i,
               shuffling.get(toIntExact(slot_start_shard + i) % Constants.SHARD_COUNT));
       crosslink_committees_at_slot.add(committee);
     }
