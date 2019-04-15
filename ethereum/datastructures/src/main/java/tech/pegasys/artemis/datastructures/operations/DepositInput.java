@@ -44,7 +44,7 @@ public final class DepositInput {
         reader ->
             new DepositInput(
                 BLSPublicKey.fromBytes(reader.readBytes()),
-                Bytes32.wrap(reader.readBytes()),
+                Bytes32.wrap(reader.readFixedBytes(32)),
                 BLSSignature.fromBytes(reader.readBytes())));
   }
 
@@ -52,7 +52,7 @@ public final class DepositInput {
     return SSZ.encode(
         writer -> {
           writer.writeBytes(pubkey.toBytes());
-          writer.writeBytes(withdrawal_credentials);
+          writer.writeFixedBytes(32, withdrawal_credentials);
           writer.writeBytes(proof_of_possession.toBytes());
         });
   }

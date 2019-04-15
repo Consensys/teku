@@ -72,26 +72,26 @@ public class AttestationData {
         reader ->
             new AttestationData(
                 UnsignedLong.fromLongBits(reader.readUInt64()),
-                Bytes32.wrap(reader.readBytes()),
+                Bytes32.wrap(reader.readFixedBytes(32)),
                 UnsignedLong.fromLongBits(reader.readUInt64()),
-                Bytes32.wrap(reader.readBytes()),
-                Bytes32.wrap(reader.readBytes()),
+                Bytes32.wrap(reader.readFixedBytes(32)),
+                Bytes32.wrap(reader.readFixedBytes(32)),
                 UnsignedLong.fromLongBits(reader.readUInt64()),
                 Crosslink.fromBytes(reader.readBytes()),
-                Bytes32.wrap(reader.readBytes())));
+                Bytes32.wrap(reader.readFixedBytes(32))));
   }
 
   public Bytes toBytes() {
     return SSZ.encode(
         writer -> {
           writer.writeUInt64(slot.longValue());
-          writer.writeBytes(beacon_block_root);
+          writer.writeFixedBytes(32, beacon_block_root);
           writer.writeUInt64(source_epoch.longValue());
-          writer.writeBytes(source_root);
-          writer.writeBytes(target_root);
+          writer.writeFixedBytes(32, source_root);
+          writer.writeFixedBytes(32, target_root);
           writer.writeUInt64(shard.longValue());
           writer.writeBytes(previous_crosslink.toBytes());
-          writer.writeBytes(crosslink_data_root);
+          writer.writeFixedBytes(32, crosslink_data_root);
         });
   }
 
