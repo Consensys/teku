@@ -262,7 +262,7 @@ public class BeaconState {
                 UnsignedLong.fromLongBits(reader.readUInt64()),
                 Bytes32.wrap(reader.readFixedBytes(32)),
                 // Recent state
-                reader.readBytesList().stream()
+                reader.readBytesList(Constants.SHARD_COUNT).stream()
                     .map(Crosslink::fromBytes)
                     .collect(Collectors.toList()),
                 reader.readFixedBytesList(Constants.SLOTS_PER_HISTORICAL_ROOT, 32).stream().map(Bytes32::wrap).collect(Collectors.toList()),
@@ -330,7 +330,7 @@ public class BeaconState {
           writer.writeUInt64(finalized_epoch.longValue());
           writer.writeFixedBytes(32, finalized_root);
           // Recent state
-          writer.writeBytesList(latest_crosslinksBytes);
+          writer.writeBytesList(Constants.SHARD_COUNT, latest_crosslinksBytes);
           writer.writeFixedBytesList(Constants.SLOTS_PER_HISTORICAL_ROOT, 32, latest_block_roots);
           writer.writeFixedBytesList(Constants.SLOTS_PER_HISTORICAL_ROOT, 32, latest_state_roots);
           writer.writeFixedBytesList(Constants.LATEST_ACTIVE_INDEX_ROOTS_LENGTH, 32, latest_active_index_roots);
