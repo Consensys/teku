@@ -53,8 +53,8 @@ public final class BeaconBlock {
         reader ->
             new BeaconBlock(
                 reader.readUInt64(),
-                Bytes32.wrap(reader.readBytes()),
-                Bytes32.wrap(reader.readBytes()),
+                Bytes32.wrap(reader.readFixedBytes(32)),
+                Bytes32.wrap(reader.readFixedBytes(32)),
                 BeaconBlockBody.fromBytes(reader.readBytes()),
                 BLSSignature.fromBytes(reader.readBytes())));
   }
@@ -63,8 +63,8 @@ public final class BeaconBlock {
     return SSZ.encode(
         writer -> {
           writer.writeUInt64(slot);
-          writer.writeBytes(previous_block_root);
-          writer.writeBytes(state_root);
+          writer.writeFixedBytes(32, previous_block_root);
+          writer.writeFixedBytes(32, state_root);
           writer.writeBytes(body.toBytes());
           writer.writeBytes(signature.toBytes());
         });

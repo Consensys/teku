@@ -14,7 +14,7 @@ dependencies {
   implementation 'net.consensys.cava:cava-bytes'
   implementation 'net.consensys.cava:cava-config'
   implementation 'net.consensys.cava:cava-crypto'
-  implementation 'net.consensys.cava:cava-ssz'
+  compile files("../lib/cava-ssz-1.0.0-dev.jar")
   implementation 'org.apache.logging.log4j:log4j-api'
   implementation 'org.miracl.milagro.amcl:milagro-crypto-java:0.4.0'
 }

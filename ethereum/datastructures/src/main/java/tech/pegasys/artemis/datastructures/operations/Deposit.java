@@ -20,10 +20,11 @@ import java.util.stream.Collectors;
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.ssz.SSZ;
+import tech.pegasys.artemis.datastructures.Constants;
 
 public class Deposit {
 
-  private List<Bytes32> proof;
+  private List<Bytes32> proof; //Bounded by DEPOSIT_CONTRACT_TREE_DEPTH
   private UnsignedLong index;
   private DepositData deposit_data;
 
@@ -38,7 +39,7 @@ public class Deposit {
         bytes,
         reader ->
             new Deposit(
-                reader.readBytesList().stream().map(Bytes32::wrap).collect(Collectors.toList()),
+                reader.readFixedBytesList(Constants.DEPOSIT_CONTRACT_TREE_DEPTH, 32).stream().map(Bytes32::wrap).collect(Collectors.toList()),
                 UnsignedLong.fromLongBits(reader.readUInt64()),
                 DepositData.fromBytes(reader.readBytes())));
   }
@@ -46,7 +47,7 @@ public class Deposit {
   public Bytes toBytes() {
     return SSZ.encode(
         writer -> {
-          writer.writeBytesList(proof);
+          writer.writeFixedBytesList(Constants.DEPOSIT_CONTRACT_TREE_DEPTH, 32, proof);
           writer.writeUInt64(index.longValue());
           writer.writeBytes(deposit_data.toBytes());
         });
