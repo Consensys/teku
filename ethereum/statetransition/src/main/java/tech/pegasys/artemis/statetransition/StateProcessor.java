@@ -130,7 +130,18 @@ public class StateProcessor {
             + nodeSlot.longValue()
             + " |  "
             + nodeSlot.longValue() % Constants.GENESIS_SLOT);
-    Thread.sleep(3000);
+
+    synchronized (this.store.getSyncObject()) {
+      try {
+        long begin = new Date().getTime();
+        while (this.store.getUnprocessedBlocks().size() == 0
+            && new Date().getTime() - begin < 3000) {
+          this.store.getSyncObject().wait(3000);
+        }
+      } catch (InterruptedException e) {
+        LOG.log(Level.WARN, e.toString());
+      }
+    }
     // Get all the unprocessed blocks that are for slots <= nodeSlot
     List<Optional<BeaconBlock>> unprocessedBlocks =
         this.store.getUnprocessedBlocksUntilSlot(nodeSlot);
