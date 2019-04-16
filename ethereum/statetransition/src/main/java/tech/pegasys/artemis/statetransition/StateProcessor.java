@@ -288,7 +288,7 @@ public class StateProcessor {
 
       // Run lmd_ghost to get the head block
       this.headBlock = LmdGhost.lmd_ghost(store, justifiedState, justifiedBlock);
-    } catch (NoSuchElementException | StateTransitionException e) {
+    } catch (NoSuchElementException e) {
       LOG.log(Level.FATAL, "Can't update head block using LMDGhost");
     }
   }
