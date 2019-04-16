@@ -377,6 +377,7 @@ public final class BlockProcessorUtil {
         //     <= state.slot - MIN_ATTESTATION_INCLUSION_DELAY
         //     < attestation.data.slot + SLOTS_PER_EPOCH.
         UnsignedLong attestationDataSlot = attestation.getData().getSlot();
+
         checkArgument(
             attestationDataSlot.compareTo(UnsignedLong.valueOf(Constants.GENESIS_EPOCH)) >= 0,
             "in process attestations(): 2.1");
@@ -390,7 +391,7 @@ public final class BlockProcessorUtil {
             state
                     .getSlot()
                     .compareTo(attestationDataSlot.plus(UnsignedLong.valueOf(SLOTS_PER_EPOCH)))
-                < 0,
+                <= 0,
             "in process attestations(): 2.3");
 
         // Verify that attestation.data.justified_epoch is equal to state.justified_epoch
