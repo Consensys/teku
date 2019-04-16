@@ -627,7 +627,7 @@ public final class BlockProcessorUtil {
                           state
                               .getValidator_registry()
                               .get(transfer.getSender().intValue())
-                              .getWithdrawal_epoch())
+                              .getWithdrawable_epoch())
                   >= 0
               || state
                   .getValidator_registry()

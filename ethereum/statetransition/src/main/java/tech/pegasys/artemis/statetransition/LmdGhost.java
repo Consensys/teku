@@ -32,6 +32,7 @@ import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Validator;
+import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.datastructures.util.ValidatorsUtil;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 
@@ -78,16 +79,18 @@ public class LmdGhost {
         }
       }
 
+      final UnsignedLong max = max_value;
+
       head =
           children.stream()
               .filter(
                   child ->
                       get_vote_count(start_state, store, child, attestation_targets)
-                              .compareTo(max_value)
+                              .compareTo(max)
                           == 0)
               .max(
                   Comparator.comparing(
-                      child -> hash_tree_root(child.toBytes()).toLong(ByteOrder.LITTLE_ENDIAN)));
+                      child -> hash_tree_root(child.toBytes()).toLong(ByteOrder.LITTLE_ENDIAN))).get();
     }
   }
 
@@ -114,7 +117,7 @@ public class LmdGhost {
       Optional<BeaconBlock> ancestor =
           get_ancestor(store, target, UnsignedLong.valueOf(block.getSlot()));
       if (!ancestor.isPresent()) continue;
-      if (ancestor.equals(block)) {
+      if (ancestor.get().equals(block)) {
         sum =
             sum.plus(
                 get_effective_balance(start_state, validator_index)

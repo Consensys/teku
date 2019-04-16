@@ -273,7 +273,7 @@ public class BeaconStateUtil {
         shuffling_epoch = next_epoch;
         current_committees_per_epoch = get_current_epoch_committee_count(state);
         shuffling_start_shard =
-            (state.getCurrent_shuffling_start_shard().plus(current_committees_per_epoch))
+            state.getCurrent_shuffling_start_shard().plus(current_committees_per_epoch)
                 .mod(UnsignedLong.valueOf(SHARD_COUNT));
       } else if (epochs_since_last_registry_update.compareTo(UnsignedLong.ONE) > 0
           && is_power_of_two(epochs_since_last_registry_update)) {
@@ -588,7 +588,7 @@ public class BeaconStateUtil {
   public static void slash_validator(BeaconState state, int index) {
     Validator validator = state.getValidator_registry().get(index);
     checkArgument(
-        state.getSlot().compareTo(get_epoch_start_slot(validator.getWithdrawal_epoch()))
+        state.getSlot().compareTo(get_epoch_start_slot(validator.getWithdrawable_epoch()))
             < 0); // [TO BE
     // REMOVED IN PHASE 2]
     exit_validator(state, index);

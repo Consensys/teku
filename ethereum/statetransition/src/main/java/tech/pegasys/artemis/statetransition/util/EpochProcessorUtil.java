@@ -654,7 +654,7 @@ public final class EpochProcessorUtil {
           active_validator_indices.contains(index)
               && state.getValidator_registry().get(index).isSlashed()
               && (get_current_epoch(state)
-                      .compareTo(state.getValidator_registry().get(index).getWithdrawal_epoch())
+                      .compareTo(state.getValidator_registry().get(index).getWithdrawable_epoch())
                   < 0);
       if (eligible) {
         deltas
@@ -933,7 +933,7 @@ public final class EpochProcessorUtil {
       if (validator.isSlashed()
           && current_epoch.equals(
               validator
-                  .getWithdrawal_epoch()
+                  .getWithdrawable_epoch()
                   .minus(UnsignedLong.valueOf(LATEST_SLASHED_EXIT_LENGTH)))) {
         UnsignedLong penalty =
             max(
@@ -977,7 +977,7 @@ public final class EpochProcessorUtil {
   private static boolean eligible(BeaconState state, int index) {
     Validator validator = state.getValidator_registry().get(index);
     // Filter out dequeued validators
-    if (!validator.getWithdrawal_epoch().equals(FAR_FUTURE_EPOCH)) {
+    if (!validator.getWithdrawable_epoch().equals(FAR_FUTURE_EPOCH)) {
       return false;
     } else {
       // Dequeue if the minimum amount of time has passed
