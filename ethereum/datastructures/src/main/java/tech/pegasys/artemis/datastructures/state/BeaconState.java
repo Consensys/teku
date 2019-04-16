@@ -14,6 +14,7 @@
 package tech.pegasys.artemis.datastructures.state;
 
 import static tech.pegasys.artemis.datastructures.Constants.ZERO_HASH;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.int_to_bytes;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
@@ -85,8 +86,8 @@ public class BeaconState {
     this.genesis_time = UnsignedLong.ZERO;
     this.fork =
         new Fork(
-            UnsignedLong.valueOf(Constants.GENESIS_FORK_VERSION),
-            UnsignedLong.valueOf(Constants.GENESIS_FORK_VERSION),
+            int_to_bytes(Constants.GENESIS_FORK_VERSION, 4),
+            int_to_bytes(Constants.GENESIS_FORK_VERSION, 4),
             UnsignedLong.valueOf(Constants.GENESIS_EPOCH));
 
     this.validator_registry = new ArrayList<>();
