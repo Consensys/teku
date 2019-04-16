@@ -24,7 +24,7 @@ import tech.pegasys.artemis.datastructures.Constants;
 
 public class Deposit {
 
-  private List<Bytes32> proof; //Bounded by DEPOSIT_CONTRACT_TREE_DEPTH
+  private List<Bytes32> proof; // Bounded by DEPOSIT_CONTRACT_TREE_DEPTH
   private UnsignedLong index;
   private DepositData deposit_data;
 
@@ -39,7 +39,9 @@ public class Deposit {
         bytes,
         reader ->
             new Deposit(
-                reader.readFixedBytesList(Constants.DEPOSIT_CONTRACT_TREE_DEPTH, 32).stream().map(Bytes32::wrap).collect(Collectors.toList()),
+                reader.readFixedBytesList(Constants.DEPOSIT_CONTRACT_TREE_DEPTH, 32).stream()
+                    .map(Bytes32::wrap)
+                    .collect(Collectors.toList()),
                 UnsignedLong.fromLongBits(reader.readUInt64()),
                 DepositData.fromBytes(reader.readBytes())));
   }

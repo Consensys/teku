@@ -1049,8 +1049,8 @@ public class BeaconStateUtil {
    */
   public static UnsignedLong get_domain(Fork fork, UnsignedLong epoch, int domain_type) {
     // Below error is to be fixed in changes being made in Steven's open PR.
-    return UnsignedLong.valueOf(bytes_to_int(
-        Bytes.wrap(get_fork_version(fork, epoch), int_to_bytes(domain_type, 4))));
+    return UnsignedLong.valueOf(
+        bytes_to_int(Bytes.wrap(get_fork_version(fork, epoch), int_to_bytes(domain_type, 4))));
   }
 
   /**

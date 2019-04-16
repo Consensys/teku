@@ -14,10 +14,9 @@
 package tech.pegasys.artemis.datastructures.state;
 
 import com.google.common.primitives.UnsignedLong;
+import java.util.Objects;
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.ssz.SSZ;
-
-import java.util.Objects;
 
 public class Fork {
 
