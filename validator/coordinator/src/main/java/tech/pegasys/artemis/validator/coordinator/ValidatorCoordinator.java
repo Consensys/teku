@@ -104,6 +104,15 @@ public class ValidatorCoordinator {
       this.eventBus.post(attestation);
     }
 
+    List<Attestation> blockAttestations = headBlock.getBody().getAttestations();
+    synchronized (this.attestationsQueue) {
+      for (Attestation blockAttestation : blockAttestations) {
+        attestationsQueue.removeIf(
+            attestation -> {
+              return attestation.equals(blockAttestation);
+            });
+      }
+    }
     // Copy state so that state transition during block creation does not manipulate headState in
     // storage
     BeaconStateWithCache newHeadState = BeaconStateWithCache.deepCopy(headState);
@@ -112,10 +121,11 @@ public class ValidatorCoordinator {
 
   @Subscribe
   public void onNewAttestation(Attestation attestation) {
-    LOG.log(Level.DEBUG, "onNewAttestation");
-    // Store attestations in a priority queue
-    if (!attestationsQueue.contains(attestation)) {
-      attestationsQueue.add(attestation);
+    synchronized (this.attestationsQueue) {
+      // Store attestations in a priority queue
+      if (!attestationsQueue.contains(attestation)) {
+        attestationsQueue.add(attestation);
+      }
     }
   }
 
@@ -171,8 +181,6 @@ public class ValidatorCoordinator {
             headState
                 .getSlot()
                 .minus(UnsignedLong.valueOf(Constants.MIN_ATTESTATION_INCLUSION_DELAY));
-        LOG.log(
-            Level.DEBUG, "AttestationsQueue.size() = " + attestationsQueue.size(), printEnabled);
         current_attestations =
             AttestationUtil.getAttestationsUntilSlot(attestationsQueue, attestation_slot);
         block =
