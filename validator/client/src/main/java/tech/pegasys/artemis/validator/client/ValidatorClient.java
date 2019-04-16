@@ -69,7 +69,8 @@ public class ValidatorClient {
         List<Integer> validators = selected_committees.get(0).getCommittee();
         int shard = selected_committees.get(0).getShard().intValue();
         boolean is_proposer =
-            validator_index == get_beacon_proposer_index(state, UnsignedLong.valueOf(slot), registry_change);
+            validator_index
+                == get_beacon_proposer_index(state, UnsignedLong.valueOf(slot), registry_change);
 
         return Optional.of(new CommitteeAssignmentTuple(validators, shard, slot, is_proposer));
       }
