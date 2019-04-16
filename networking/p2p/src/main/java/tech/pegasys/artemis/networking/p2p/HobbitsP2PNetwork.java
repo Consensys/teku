@@ -263,7 +263,7 @@ public final class HobbitsP2PNetwork implements P2PNetwork {
   @Subscribe
   public void onNewAttestation(Attestation attestation) {
     LOG.log(
-        Level.INFO,
+        Level.DEBUG,
         "Gossiping new attestation for block_root: "
             + attestation.getData().getBeacon_block_root().toHexString());
     Bytes bytes = attestation.toBytes();

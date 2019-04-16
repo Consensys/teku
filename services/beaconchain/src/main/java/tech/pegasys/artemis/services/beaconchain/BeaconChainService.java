@@ -36,7 +36,7 @@ public class BeaconChainService implements ServiceInterface {
   public void init(ServiceConfig config) {
     this.eventBus = config.getEventBus();
     this.eventBus.register(this);
-    this.scheduler = Executors.newScheduledThreadPool(1);
+    this.scheduler = Executors.newSingleThreadScheduledExecutor();
     this.stateProcessor =
         new StateProcessor(this.eventBus, config.getConfig(), config.getKeyPair().publicKey());
   }
