@@ -29,11 +29,16 @@ import net.consensys.cava.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockBody;
+import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
+import tech.pegasys.artemis.datastructures.operations.AttestationData;
+import tech.pegasys.artemis.datastructures.operations.AttesterSlashing;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.DepositData;
 import tech.pegasys.artemis.datastructures.operations.DepositInput;
+import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
+import tech.pegasys.artemis.datastructures.operations.SlashableAttestation;
 import tech.pegasys.artemis.datastructures.operations.Transfer;
 import tech.pegasys.artemis.datastructures.operations.VoluntaryExit;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
@@ -104,6 +109,97 @@ public final class DataStructureUtil {
 
   public static Crosslink randomCrosslink(int seed) {
     return new Crosslink(randomUnsignedLong(seed), randomBytes32(seed + 1));
+  }
+
+  public static AttestationData randomAttestationData(long slotNum) {
+    return new AttestationData(
+        UnsignedLong.valueOf(slotNum),
+        randomBytes32(),
+        randomUnsignedLong(),
+        randomBytes32(),
+        randomBytes32(),
+        randomUnsignedLong(),
+        randomCrosslink(),
+        randomBytes32());
+  }
+
+  public static AttestationData randomAttestationData(long slotNum, int seed) {
+    return new AttestationData(
+        UnsignedLong.valueOf(slotNum),
+        randomBytes32(seed++),
+        randomUnsignedLong(seed),
+        randomBytes32(seed++),
+        randomBytes32(seed++),
+        randomUnsignedLong(seed++),
+        randomCrosslink(seed++),
+        randomBytes32(seed++));
+  }
+
+  public static AttestationData randomAttestationData() {
+    return randomAttestationData(randomLong());
+  }
+
+  public static Attestation randomAttestation(UnsignedLong slotNum) {
+    return new Attestation(
+        randomBytes32(), randomAttestationData(), randomBytes32(), BLSSignature.random());
+  }
+
+  public static Attestation randomAttestation() {
+    return randomAttestation(UnsignedLong.valueOf(randomLong()));
+  }
+
+  public static AttesterSlashing randomAttesterSlashing() {
+    return new AttesterSlashing(randomSlashableAttestation(), randomSlashableAttestation());
+  }
+
+  public static AttesterSlashing randomAttesterSlashing(int seed) {
+    return new AttesterSlashing(
+        randomSlashableAttestation(seed), randomSlashableAttestation(seed++));
+  }
+
+  public static BeaconBlockHeader randomBeaconBlockHeader() {
+    return new BeaconBlockHeader(
+        randomUnsignedLong(),
+        randomBytes32(),
+        randomBytes32(),
+        randomBytes32(),
+        BLSSignature.random());
+  }
+
+  public static BeaconBlockHeader randomBeaconBlockHeader(int seed) {
+    return new BeaconBlockHeader(
+        randomUnsignedLong(seed++),
+        randomBytes32(seed++),
+        randomBytes32(seed++),
+        randomBytes32(seed++),
+        BLSSignature.random(seed));
+  }
+
+  public static ProposerSlashing randomProposerSlashing() {
+    return new ProposerSlashing(
+        randomUnsignedLong(), randomBeaconBlockHeader(), randomBeaconBlockHeader());
+  }
+
+  public static ProposerSlashing randomProposerSlashing(int seed) {
+    return new ProposerSlashing(
+        randomUnsignedLong(seed++), randomBeaconBlockHeader(seed++), randomBeaconBlockHeader(seed));
+  }
+
+  public static SlashableAttestation randomSlashableAttestation() {
+    return new SlashableAttestation(
+        Arrays.asList(randomUnsignedLong(), randomUnsignedLong(), randomUnsignedLong()),
+        randomAttestationData(),
+        randomBytes32(),
+        BLSSignature.random());
+  }
+
+  public static SlashableAttestation randomSlashableAttestation(int seed) {
+    return new SlashableAttestation(
+        Arrays.asList(
+            randomUnsignedLong(seed), randomUnsignedLong(seed++), randomUnsignedLong(seed++)),
+        randomAttestationData(seed++),
+        randomBytes32(seed++),
+        BLSSignature.random(seed));
   }
 
   public static DepositInput randomDepositInput() {
