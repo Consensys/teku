@@ -154,6 +154,7 @@ public class BeaconStateUtil {
             .collect(Collectors.toList());
 
     BLSPublicKey pubkey = deposit_input.getPubkey();
+
     UnsignedLong amount = deposit.getDeposit_data().getAmount();
     Bytes32 withdrawal_credentials = deposit_input.getWithdrawal_credentials();
 
@@ -761,6 +762,7 @@ public class BeaconStateUtil {
         ValidatorsUtil.get_active_validator_indices(validators, epoch);
 
     int length = active_validator_indices.size();
+
     List<Integer> shuffled_indices =
         Arrays.stream(shuffle(length, seed)).boxed().collect(Collectors.toList());
     List<Integer> shuffled_active_validator_indices =
@@ -817,10 +819,10 @@ public class BeaconStateUtil {
 
       // This needs to be unsigned modulo.
       int pivot =
-          (int)
+          toIntExact(
               Long.remainderUnsigned(
                   bytes_to_int(Hash.keccak256(Bytes.wrap(seed, roundAsByte)).slice(0, 8)),
-                  list_size);
+                  list_size));
       int flip = (pivot - indexRet) % list_size;
       if (flip < 0) {
         // Account for flip being negative
@@ -861,6 +863,10 @@ public class BeaconStateUtil {
    */
   public static int[] shuffle(int list_size, Bytes32 seed) {
 
+    if (list_size == 0) {
+      return new int[0];
+    }
+
     //  In the following, great care is needed around signed and unsigned values.
     //  Note that the % (modulo) operator in Java behaves differently from the
     //  modulo operator in python:
@@ -892,10 +898,10 @@ public class BeaconStateUtil {
 
       // This needs to be unsigned modulo.
       int pivot =
-          (int)
+          toIntExact(
               Long.remainderUnsigned(
                   bytes_to_int(Hash.keccak256(Bytes.wrap(seed, roundAsByte)).slice(0, 8)),
-                  list_size);
+                  list_size));
 
       for (int i = 0; i < list_size; i++) {
 
@@ -1264,7 +1270,7 @@ public class BeaconStateUtil {
    */
   private static int ceil_div8(int div) {
     checkArgument(div > 0, "Expected positive div but got %s", div);
-    return (int) Math.ceil(8.0 / div);
+    return toIntExact(Math.round(Math.ceil(8.0 / div)));
   }
 
   /**
