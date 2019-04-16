@@ -95,14 +95,14 @@ public class LmdGhost {
    * This function is defined inside lmd_ghost in spec. It is defined here separately for
    * legibility.
    *
-   * @param state
+   * @param start_state
    * @param store
    * @param block
    * @param attestation_targets
    * @return
    */
   public static UnsignedLong get_vote_count(
-      BeaconState state,
+      BeaconState start_state,
       ChainStorageClient store,
       BeaconBlock block,
       List<MutablePair<Integer, BeaconBlock>> attestation_targets) {
@@ -117,7 +117,7 @@ public class LmdGhost {
       if (ancestor.equals(block)) {
         sum =
             sum.plus(
-                get_effective_balance(state, validator_index)
+                get_effective_balance(start_state, validator_index)
                     .dividedBy(UnsignedLong.valueOf(FORK_CHOICE_BALANCE_INCREMENT)));
       }
     }
