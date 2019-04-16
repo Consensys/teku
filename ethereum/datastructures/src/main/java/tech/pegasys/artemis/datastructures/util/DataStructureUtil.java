@@ -220,7 +220,40 @@ public final class DataStructureUtil {
       DepositData deposit_data =
           new DepositData(UnsignedLong.valueOf(MAX_DEPOSIT_AMOUNT), timestamp, deposit_input);
       UnsignedLong index = UnsignedLong.valueOf(i);
-      List<Bytes32> branch = Arrays.asList(Bytes32.ZERO, Bytes32.ZERO, Bytes32.ZERO);
+      List<Bytes32> branch =
+          Arrays.asList(
+              Bytes32.ZERO,
+              Bytes32.ZERO,
+              Bytes32.ZERO,
+              Bytes32.ZERO,
+              Bytes32.ZERO,
+              Bytes32.ZERO,
+              Bytes32.ZERO,
+              Bytes32.ZERO,
+              Bytes32.ZERO,
+              Bytes32.ZERO,
+              Bytes32.ZERO,
+              Bytes32.ZERO,
+              Bytes32.ZERO,
+              Bytes32.ZERO,
+              Bytes32.ZERO,
+              Bytes32.ZERO,
+              Bytes32.ZERO,
+              Bytes32.ZERO,
+              Bytes32.ZERO,
+              Bytes32.ZERO,
+              Bytes32.ZERO,
+              Bytes32.ZERO,
+              Bytes32.ZERO,
+              Bytes32.ZERO,
+              Bytes32.ZERO,
+              Bytes32.ZERO,
+              Bytes32.ZERO,
+              Bytes32.ZERO,
+              Bytes32.ZERO,
+              Bytes32.ZERO,
+              Bytes32.ZERO,
+              Bytes32.ZERO);
       Deposit deposit = new Deposit(branch, index, deposit_data);
       deposits.add(deposit);
     }
