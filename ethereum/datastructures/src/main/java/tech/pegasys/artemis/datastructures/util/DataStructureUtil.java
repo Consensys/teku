@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.datastructures.util;
 
+import static tech.pegasys.artemis.datastructures.Constants.DEPOSIT_CONTRACT_TREE_DEPTH;
 import static tech.pegasys.artemis.datastructures.Constants.MAX_DEPOSIT_AMOUNT;
 import static tech.pegasys.artemis.datastructures.Constants.ZERO_HASH;
 
@@ -21,6 +22,7 @@ import java.nio.ByteBuffer;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 import net.consensys.cava.bytes.Bytes32;
@@ -220,7 +222,8 @@ public final class DataStructureUtil {
       DepositData deposit_data =
           new DepositData(UnsignedLong.valueOf(MAX_DEPOSIT_AMOUNT), timestamp, deposit_input);
       UnsignedLong index = UnsignedLong.valueOf(i);
-      List<Bytes32> branch = Arrays.asList(Bytes32.ZERO, Bytes32.ZERO, Bytes32.ZERO);
+      List<Bytes32> branch =
+          new ArrayList<>(Collections.nCopies(DEPOSIT_CONTRACT_TREE_DEPTH, Bytes32.ZERO));
       Deposit deposit = new Deposit(branch, index, deposit_data);
       deposits.add(deposit);
     }
