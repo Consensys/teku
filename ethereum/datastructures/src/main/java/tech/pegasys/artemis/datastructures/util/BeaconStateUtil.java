@@ -131,6 +131,7 @@ public class BeaconStateUtil {
     // Deposits must be processed in order
     checkArgument(
         Objects.equals(state.getDeposit_index(), deposit.getIndex()), "Deposits not in order");
+
     // Verify the Merkle branch
     checkArgument(
         verify_merkle_branch(
@@ -145,7 +146,6 @@ public class BeaconStateUtil {
     //  needs to be done here because while the deposit contract will never
     //  create an invalid Merkle branch, it may admit an invalid deposit
     //  object, and we need to be able to skip over it
-
     state.setDeposit_index(state.getDeposit_index().plus(UnsignedLong.ONE));
 
     List<BLSPublicKey> validator_pubkeys =
@@ -158,7 +158,6 @@ public class BeaconStateUtil {
     Bytes32 withdrawal_credentials = deposit_input.getWithdrawal_credentials();
 
     if (!validator_pubkeys.contains(pubkey)) {
-
       // Verify the proof of possession
       boolean proof_is_valid =
           bls_verify(
@@ -188,7 +187,6 @@ public class BeaconStateUtil {
     } else {
       // Increase balance by deposit amount
       int index = validator_pubkeys.indexOf(pubkey);
-
       state
           .getValidator_balances()
           .set(index, state.getValidator_balances().get(index).plus(amount));
@@ -211,12 +209,11 @@ public class BeaconStateUtil {
     Bytes32 value = leaf;
     for (int i = 0; i < depth; i++) {
       if (index / Math.pow(2, i) % 2 == 0) {
-        value = Hash.keccak256(Bytes.concatenate(proof.get(index), value));
+        value = Hash.keccak256(Bytes.concatenate(proof.get(i), value));
       } else {
-        value = Hash.keccak256(Bytes.concatenate(value, proof.get(index)));
+        value = Hash.keccak256(Bytes.concatenate(value, proof.get(i)));
       }
     }
-
     return value.equals(root);
   }
 
@@ -276,9 +273,7 @@ public class BeaconStateUtil {
         shuffling_epoch = next_epoch;
         current_committees_per_epoch = get_current_epoch_committee_count(state);
         shuffling_start_shard =
-            state
-                .getCurrent_shuffling_start_shard()
-                .plus(current_committees_per_epoch)
+            state.getCurrent_shuffling_start_shard().plus(current_committees_per_epoch)
                 .mod(UnsignedLong.valueOf(SHARD_COUNT));
       } else if (epochs_since_last_registry_update.compareTo(UnsignedLong.ONE) > 0
           && is_power_of_two(epochs_since_last_registry_update)) {
