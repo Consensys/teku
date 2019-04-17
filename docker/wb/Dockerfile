@@ -6,21 +6,25 @@ RUN apt-get update && \
     software-properties-common openssh-server
 
 # install java
-RUN echo oracle-java8-installer shared/accepted-oracle-license-v1-1 select true | debconf-set-selections && \
-    add-apt-repository -y ppa:webupd8team/java && \
+RUN echo oracle-java11-installer shared/accepted-oracle-license-v1-2 select true | debconf-set-selections && \
+    add-apt-repository -y ppa:linuxuprising/java && \
     apt-get update && \
-    apt-get install -y oracle-java8-installer && \
+    apt-get install -y oracle-java11-installer && \
     rm -rf /var/lib/apt/lists/* && \
-    rm -rf /var/cache/oracle-jdk8-installer
-ENV JAVA_HOME="/usr/lib/jvm/java-8-oracle"
+    rm -rf /var/cache/oracle-jdk11-installer
+ENV JAVA_HOME="/usr/lib/jvm/java-11-oracle"
 
 # get artemis
 RUN git clone --recursive https://github.com/PegaSysEng/artemis.git
 WORKDIR artemis/
 RUN ./gradlew build -x test
 WORKDIR /artemis/build/distributions
-RUN tar -xzf artemis-1.0.0-SNAPSHOT.tar.gz
-ENV PATH="/artemis/build/distributions/artemis-1.0.0-SNAPSHOT/bin:${PATH}"
+RUN tar -xzf artemis-*-SNAPSHOT.tar.gz
+RUN ln -s /artemis/build/distributions/artemis-*-SNAPSHOT/bin/artemis /usr/bin/artemis
+WORKDIR /usr/local/bin
+RUN wget https://github.com/Whiteblock/artemis_log_EATER/releases/download/v1.5.10/artemis-log-parser && chmod +x /usr/local/bin/artemis-log-parser
+
 WORKDIR /
+#ENV PATH="/artemis/build/distributions/artemis-1.0.0-SNAPSHOT/bin:${PATH}"
 
 ENTRYPOINT ["/bin/bash"]
