@@ -94,7 +94,7 @@ public final class BlockProcessorUtil {
     checkArgument(verify_slot(state, block), "Slots don't match");
     checkArgument(
         block.getPrevious_block_root() == state.getLatest_block_header().signed_root("signature"),
-        "Parent doesn't matches");
+        "Parent doesn't match");
 
     // Save the current block as the new latest block
     state.setLatest_block_header(BeaconBlockUtil.get_temporary_block_header(block));

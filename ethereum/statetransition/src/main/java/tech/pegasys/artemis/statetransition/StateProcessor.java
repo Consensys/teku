@@ -117,7 +117,6 @@ public class StateProcessor {
     this.nodeSlot = this.nodeSlot.plus(UnsignedLong.ONE);
     this.nodeTime = this.nodeTime.plus(UnsignedLong.valueOf(Constants.SECONDS_PER_SLOT));
 
-    System.out.println("");
     LOG.log(Level.INFO, ANSI_WHITE_BOLD + "******* Slot Event *******" + ANSI_RESET);
     LOG.log(
         Level.INFO,

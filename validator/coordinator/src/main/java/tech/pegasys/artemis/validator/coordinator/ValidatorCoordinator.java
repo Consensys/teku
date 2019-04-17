@@ -73,6 +73,7 @@ public class ValidatorCoordinator {
     stateTransition = new StateTransition(printEnabled);
     BeaconStateWithCache initialBeaconState =
         DataStructureUtil.createInitialBeaconState(numValidators);
+
     Bytes32 initialStateRoot = HashTreeUtil.hash_tree_root(initialBeaconState.toBytes());
     BeaconBlock genesisBlock = BeaconBlockUtil.get_empty_block();
 

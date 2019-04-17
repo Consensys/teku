@@ -175,6 +175,18 @@ public final class DataStructureUtil {
         BLSSignature.random(seed));
   }
 
+  public static BeaconBlockBody randomBeaconBlockBody() {
+    return new BeaconBlockBody(
+        BLSSignature.random(),
+        randomEth1Data(),
+        Arrays.asList(randomProposerSlashing(), randomProposerSlashing(), randomProposerSlashing()),
+        Arrays.asList(randomAttesterSlashing(), randomAttesterSlashing(), randomAttesterSlashing()),
+        Arrays.asList(randomAttestation(), randomAttestation(), randomAttestation()),
+        randomDeposits(100),
+        Arrays.asList(randomVoluntaryExit(), randomVoluntaryExit(), randomVoluntaryExit()),
+        Arrays.asList(randomTransfer()));
+  }
+
   public static ProposerSlashing randomProposerSlashing() {
     return new ProposerSlashing(
         randomUnsignedLong(), randomBeaconBlockHeader(), randomBeaconBlockHeader());
