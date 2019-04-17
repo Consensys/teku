@@ -1264,16 +1264,6 @@ public class BeaconStateUtil {
   }
 
   /**
-   * Return the smallest integer r such that r * div >= 8.
-   *
-   * @param div
-   */
-  private static int ceil_div8(int div) {
-    checkArgument(div > 0, "Expected positive div but got %s", div);
-    return toIntExact(Math.round(Math.ceil(8.0 / div)));
-  }
-
-  /**
    * Check if ``attestation_data_1`` and ``attestation_data_2`` have the same target.
    *
    * @param attestation_data_1 - The first AttestationData to check.
