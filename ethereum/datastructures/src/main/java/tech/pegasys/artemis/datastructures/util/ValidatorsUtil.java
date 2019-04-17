@@ -74,7 +74,7 @@ public class ValidatorsUtil {
    */
   public static List<Integer> get_active_validator_indices(
       List<Validator> validators, UnsignedLong epoch) {
-    List<Integer> active_validator_indices = Collections.synchronizedList(new ArrayList<Integer>());
+    List<Integer> active_validator_indices = Collections.synchronizedList(new ArrayList<>());
     IntStream.range(0, validators.size())
         .parallel()
         .forEachOrdered(
