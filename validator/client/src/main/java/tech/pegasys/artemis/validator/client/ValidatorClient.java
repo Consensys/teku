@@ -13,18 +13,24 @@
 
 package tech.pegasys.artemis.validator.client;
 
+import com.google.common.primitives.UnsignedLong;
+import net.consensys.cava.bytes.Bytes;
+import tech.pegasys.artemis.datastructures.Constants;
+import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.datastructures.state.CrosslinkCommittee;
+import tech.pegasys.artemis.pow.contract.DepositContract;
+import tech.pegasys.artemis.util.mikuli.BLS12381;
+
+import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+
 import static tech.pegasys.artemis.datastructures.Constants.SLOTS_PER_EPOCH;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_crosslink_committees_at_slot;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_current_epoch;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_epoch_start_slot;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_previous_epoch;
-
-import com.google.common.primitives.UnsignedLong;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.datastructures.state.CrosslinkCommittee;
 
 public class ValidatorClient {
 
@@ -76,5 +82,27 @@ public class ValidatorClient {
       }
     }
     return Optional.empty();
+  }
+
+  public static void registerValidatorEth1(
+      Validator validator, UnsignedLong amount, DepositContract contract) throws Exception {
+    // contract.deposit()
+    // BLS12381.sign(validator.getBlsKeys(), "", new Random().nextLong())
+    Bytes stuff = validator.getPubkey().getPublicKey().toBytesCompressed();
+    Bytes deposit_data =
+        Bytes.wrap(
+            validator.getPubkey().getPublicKey().toBytesCompressed(),
+            validator.getWithdrawal_credentials(),
+            Bytes.ofUnsignedLong(amount.longValue()));
+    deposit_data =
+        Bytes.wrap(
+            deposit_data,
+            BLS12381
+                .sign(validator.getBlsKeys(), deposit_data, Constants.DOMAIN_DEPOSIT)
+                .signature()
+                .toBytesCompressed());
+    deposit_data = Bytes.wrap(Bytes.random(328), deposit_data);
+    contract.deposit(deposit_data.toArray(), new BigInteger("32000000000000000000")).send();
+    //int bitLength = deposit_data.bitLength();
   }
 }

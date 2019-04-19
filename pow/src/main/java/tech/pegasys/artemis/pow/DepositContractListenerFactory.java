@@ -14,6 +14,7 @@
 package tech.pegasys.artemis.pow;
 
 import com.google.common.eventbus.EventBus;
+import net.consensys.cava.crypto.SECP256K1;
 import org.apache.logging.log4j.Level;
 import org.web3j.crypto.Credentials;
 import org.web3j.protocol.Web3j;
@@ -25,22 +26,34 @@ import tech.pegasys.artemis.util.alogger.ALogger;
 
 public class DepositContractListenerFactory {
 
-  public static DepositContractListener simulationDepositContract(
+  public static DepositContractListener simulationDeployDepositContract(
       EventBus eventBus, GanacheController controller) {
     ALogger LOG = new ALogger();
     Web3j web3j = Web3j.build(new HttpService(controller.getProvider()));
-    Credentials credentials = Credentials.create(controller.getAccounts().get(0).getPrivateKey());
+    Credentials credentials =
+        Credentials.create(controller.getAccounts().get(0).secretKey().bytes().toHexString());
     DepositContract contract = null;
     try {
       contract = DepositContract.deploy(web3j, credentials, new DefaultGasProvider()).send();
     } catch (Exception e) {
       LOG.log(
           Level.FATAL,
-          "DepositContractListenerFactory.simulationDepositContract: DepositContract failed to deploy in the simulation environment\n"
+          "DepositContractListenerFactory.simulationDeployDepositContract: DepositContract failed to deploy in the simulation environment\n"
               + e);
     }
     return new DepositContractListener(eventBus, contract);
   }
+
+  public static DepositContractListener simulationLoadDepositContract(
+          EventBus eventBus, String address, SECP256K1.KeyPair keyPair, DefaultGasProvider gasProvider, Web3j web3j) {
+    ALogger LOG = new ALogger();
+    Credentials credentials =
+            Credentials.create(keyPair.secretKey().bytes().toHexString());
+    DepositContract contract = null;
+    contract = DepositContract.load(address, web3j, credentials, gasProvider);
+    return new DepositContractListener(eventBus, contract);
+  }
+
 
   public static DepositContractListener eth1DepositContract(
       EventBus eventBus, String provider, String address) {

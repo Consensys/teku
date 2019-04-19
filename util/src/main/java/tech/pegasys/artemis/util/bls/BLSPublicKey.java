@@ -13,15 +13,16 @@
 
 package tech.pegasys.artemis.util.bls;
 
-import static com.google.common.base.Preconditions.checkArgument;
-import static java.util.Objects.isNull;
+import net.consensys.cava.bytes.Bytes;
+import net.consensys.cava.ssz.SSZ;
+import tech.pegasys.artemis.util.mikuli.PublicKey;
 
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
-import net.consensys.cava.bytes.Bytes;
-import net.consensys.cava.ssz.SSZ;
-import tech.pegasys.artemis.util.mikuli.PublicKey;
+
+import static com.google.common.base.Preconditions.checkArgument;
+import static java.util.Objects.isNull;
 
 public class BLSPublicKey {
 
@@ -63,6 +64,15 @@ public class BLSPublicKey {
     } else {
       return SSZ.decode(
           bytes, reader -> new BLSPublicKey(PublicKey.fromBytesCompressed(reader.readBytes())));
+    }
+  }
+
+  public static BLSPublicKey fromBytesCompressed(Bytes bytes) {
+    //checkArgument(bytes.size() == 52, "Expected 52 bytes but received %s.", bytes.size());
+    if (bytes.isZero()) {
+      return BLSPublicKey.empty();
+    } else {
+      return new BLSPublicKey(PublicKey.fromBytesCompressed(bytes));
     }
   }
 
