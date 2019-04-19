@@ -58,11 +58,21 @@ public class BLSPublicKey {
 
   public static BLSPublicKey fromBytes(Bytes bytes) {
     checkArgument(bytes.size() == 52, "Expected 52 bytes but received %s.", bytes.size());
-    if (SSZ.decodeBytes(bytes).isZero()) {
+    Bytes decode = SSZ.decodeBytes(bytes);
+    if (decode.isZero()) {
       return BLSPublicKey.empty();
     } else {
       return SSZ.decode(
           bytes, reader -> new BLSPublicKey(PublicKey.fromBytesCompressed(reader.readBytes())));
+    }
+  }
+
+  public static BLSPublicKey fromBytesCompressed(Bytes bytes) {
+    // checkArgument(bytes.size() == 52, "Expected 52 bytes but received %s.", bytes.size());
+    if (bytes.isZero()) {
+      return BLSPublicKey.empty();
+    } else {
+      return new BLSPublicKey(PublicKey.fromBytesCompressed(bytes));
     }
   }
 
