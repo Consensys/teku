@@ -14,13 +14,11 @@
 package tech.pegasys.artemis.services.powchain;
 
 import com.google.common.eventbus.EventBus;
-import com.google.common.eventbus.Subscribe;
 import com.google.common.primitives.UnsignedLong;
-import java.nio.charset.Charset;
-import java.util.Collections;
 import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.SECP256K1;
+import org.web3j.crypto.Credentials;
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.core.methods.response.Log;
 import org.web3j.protocol.http.HttpService;
@@ -28,8 +26,8 @@ import org.web3j.tx.gas.DefaultGasProvider;
 import tech.pegasys.artemis.ganache.GanacheController;
 import tech.pegasys.artemis.pow.DepositContractListener;
 import tech.pegasys.artemis.pow.DepositContractListenerFactory;
-import tech.pegasys.artemis.pow.api.DepositEvent;
 import tech.pegasys.artemis.pow.api.Eth2GenesisEvent;
+import tech.pegasys.artemis.pow.contract.DepositContract;
 import tech.pegasys.artemis.pow.contract.DepositContract.Eth2GenesisEventResponse;
 import tech.pegasys.artemis.pow.event.Eth2Genesis;
 import tech.pegasys.artemis.services.ServiceConfig;
@@ -39,15 +37,21 @@ import tech.pegasys.artemis.util.mikuli.KeyPair;
 import tech.pegasys.artemis.validator.client.Validator;
 import tech.pegasys.artemis.validator.client.ValidatorClient;
 
+import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
+
 public class PowchainService implements ServiceInterface {
 
   public static final String SIM_DEPOSIT_VALUE_GWEI = "32000000000";
+  public static final String SIM_DEPOSIT_VALUE_WEI = "32000000000000000000";
   private EventBus eventBus;
   private static final ALogger LOG = new ALogger();
 
   private GanacheController controller;
-  DepositContractListener listener;
-
+  private List<DepositContractListener> listeners;
   private boolean depositSimulation;
 
   public PowchainService() {
@@ -66,28 +70,33 @@ public class PowchainService implements ServiceInterface {
 
     if (depositSimulation) {
       controller = new GanacheController(16384, 6000);
-      listener =
-          DepositContractListenerFactory.simulationDeployDepositContract(eventBus, controller);
+      // List<Validator> validators = new ArrayList<Validator>();
+      listeners = new ArrayList<DepositContractListener>();
+      listeners.add(DepositContractListenerFactory.simulationDeployDepositContract(eventBus, controller));
       Web3j web3j = Web3j.build(new HttpService(controller.getProvider()));
       DefaultGasProvider gasProvider = new DefaultGasProvider();
       for (SECP256K1.KeyPair keyPair : controller.getAccounts()) {
         Validator validator = new Validator(Bytes32.random(), KeyPair.random(), keyPair);
+
+        Credentials credentials = Credentials.create(keyPair.secretKey().bytes().toHexString());
+        DepositContractListener listener = DepositContractListenerFactory.simulationLoadDepositContract(eventBus, listeners.get(0).getContract().getContractAddress(), keyPair, gasProvider, web3j);
+        //listeners.add(listener);
+
         try {
           ValidatorClient.registerValidatorEth1(
-              validator,
-              UnsignedLong.valueOf(SIM_DEPOSIT_VALUE_GWEI),
-              listener.getContract().getContractAddress(),
-              web3j,
-              gasProvider);
+              validator, UnsignedLong.valueOf(SIM_DEPOSIT_VALUE_GWEI), listener.getContract());
         } catch (Exception e) {
           LOG.log(
-              Level.WARN,
-              "Failed to register Validator with SECP256k1 public key: "
-                  + keyPair.publicKey()
-                  + " : "
-                  + e);
+                  Level.WARN,
+                  "Failed to register Validator with SECP256k1 public key: " + keyPair.publicKey() + " : " + e);
         }
       }
+      while (true) {
+//        LOG.log(
+//                Level.INFO,
+//                "inspect");
+      }
+
     } else {
       Eth2GenesisEventResponse response = new Eth2GenesisEventResponse();
       response.log =
@@ -104,8 +113,33 @@ public class PowchainService implements ServiceInterface {
     this.eventBus.unregister(this);
   }
 
-  @Subscribe
-  public void onDepositEvent(DepositEvent event) {
-    // stubbed for implementation on next PR
+
+  // method only used for debugging
+  // calls a deposit transaction on the DepositContract every 10 seconds
+  // simulate depositors
+  private static void simulateDepositActivity(DepositContract contract, EventBus eventBus) {
+//    Bytes bytes = Bytes.random(DEPOSIT_DATA_SIZE);
+    while (true) {
+        LOG.log(
+            Level.INFO,
+            "inspect");
+//      try {
+//        contract.deposit(bytes.toArray(), new BigInteger(SIM_DEPOSIT_VALUE_GWEI)).send();
+//      } catch (Exception e) {
+//        LOG.log(
+//            Level.WARN,
+//            "PowchainService.simulateDepositActivity: Exception thrown when attempting to send a deposit transaction during a deposit simulation\n"
+//                + e);
+//      }
+//      try {
+//        Thread.sleep(10000);
+//      } catch (InterruptedException e) {
+//        LOG.log(
+//            Level.WARN,
+//            "PowchainService.simulateDepositActivity: Exception thrown when attempting a thread sleep during a deposit simulation\n"
+//                + e);
+//      }
+    }
+
   }
 }
