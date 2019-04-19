@@ -38,7 +38,6 @@ public final class Validator extends tech.pegasys.artemis.datastructures.state.V
 
   @Override
   public BLSPublicKey getPubkey() {
-    return BLSPublicKey.fromBytesCompressed(
-        this.blsKeys.publicKey().toBytesCompressed());
+    return BLSPublicKey.fromBytesCompressed(this.blsKeys.publicKey().toBytesCompressed());
   }
 }

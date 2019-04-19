@@ -15,6 +15,9 @@ package tech.pegasys.artemis.validator.client;
 
 import com.google.common.primitives.UnsignedLong;
 import net.consensys.cava.bytes.Bytes;
+import org.web3j.crypto.Credentials;
+import org.web3j.protocol.Web3j;
+import org.web3j.tx.gas.DefaultGasProvider;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.CrosslinkCommittee;
@@ -85,10 +88,10 @@ public class ValidatorClient {
   }
 
   public static void registerValidatorEth1(
-      Validator validator, UnsignedLong amount, DepositContract contract) throws Exception {
-    // contract.deposit()
-    // BLS12381.sign(validator.getBlsKeys(), "", new Random().nextLong())
-    Bytes stuff = validator.getPubkey().getPublicKey().toBytesCompressed();
+          Validator validator, UnsignedLong amount, String address, Web3j web3j, DefaultGasProvider gasProvider) throws Exception {
+    Credentials credentials = Credentials.create(validator.getSecpKeys().secretKey().bytes().toHexString());
+    DepositContract contract = null;
+    contract = DepositContract.load(address, web3j, credentials, gasProvider);
     Bytes deposit_data =
         Bytes.wrap(
             validator.getPubkey().getPublicKey().toBytesCompressed(),
@@ -101,8 +104,6 @@ public class ValidatorClient {
                 .sign(validator.getBlsKeys(), deposit_data, Constants.DOMAIN_DEPOSIT)
                 .signature()
                 .toBytesCompressed());
-    deposit_data = Bytes.wrap(Bytes.random(328), deposit_data);
-    contract.deposit(deposit_data.toArray(), new BigInteger("32000000000000000000")).send();
-    //int bitLength = deposit_data.bitLength();
+    contract.deposit(deposit_data.toArray(), new BigInteger(amount.toString()+"000000000")).send();
   }
 }

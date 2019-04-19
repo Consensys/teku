@@ -14,7 +14,6 @@
 package tech.pegasys.artemis.pow;
 
 import com.google.common.eventbus.EventBus;
-import net.consensys.cava.crypto.SECP256K1;
 import org.apache.logging.log4j.Level;
 import org.web3j.crypto.Credentials;
 import org.web3j.protocol.Web3j;
@@ -43,17 +42,6 @@ public class DepositContractListenerFactory {
     }
     return new DepositContractListener(eventBus, contract);
   }
-
-  public static DepositContractListener simulationLoadDepositContract(
-          EventBus eventBus, String address, SECP256K1.KeyPair keyPair, DefaultGasProvider gasProvider, Web3j web3j) {
-    ALogger LOG = new ALogger();
-    Credentials credentials =
-            Credentials.create(keyPair.secretKey().bytes().toHexString());
-    DepositContract contract = null;
-    contract = DepositContract.load(address, web3j, credentials, gasProvider);
-    return new DepositContractListener(eventBus, contract);
-  }
-
 
   public static DepositContractListener eth1DepositContract(
       EventBus eventBus, String provider, String address) {
