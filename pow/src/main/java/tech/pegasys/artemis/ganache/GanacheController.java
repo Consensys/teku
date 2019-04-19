@@ -13,19 +13,18 @@
 
 package tech.pegasys.artemis.ganache;
 
-import net.consensys.cava.bytes.Bytes32;
-import net.consensys.cava.crypto.SECP256K1;
-import org.apache.logging.log4j.Level;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-import tech.pegasys.artemis.util.alogger.ALogger;
-
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import net.consensys.cava.bytes.Bytes32;
+import net.consensys.cava.crypto.SECP256K1;
+import org.apache.logging.log4j.Level;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import tech.pegasys.artemis.util.alogger.ALogger;
 
 public class GanacheController {
 

@@ -13,16 +13,15 @@
 
 package tech.pegasys.artemis.util.bls;
 
-import net.consensys.cava.bytes.Bytes;
-import net.consensys.cava.ssz.SSZ;
-import tech.pegasys.artemis.util.mikuli.PublicKey;
+import static com.google.common.base.Preconditions.checkArgument;
+import static java.util.Objects.isNull;
 
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
-
-import static com.google.common.base.Preconditions.checkArgument;
-import static java.util.Objects.isNull;
+import net.consensys.cava.bytes.Bytes;
+import net.consensys.cava.ssz.SSZ;
+import tech.pegasys.artemis.util.mikuli.PublicKey;
 
 public class BLSPublicKey {
 

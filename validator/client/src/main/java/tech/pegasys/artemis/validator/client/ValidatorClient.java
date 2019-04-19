@@ -13,7 +13,17 @@
 
 package tech.pegasys.artemis.validator.client;
 
+import static tech.pegasys.artemis.datastructures.Constants.SLOTS_PER_EPOCH;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_crosslink_committees_at_slot;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_current_epoch;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_epoch_start_slot;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_previous_epoch;
+
 import com.google.common.primitives.UnsignedLong;
+import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 import net.consensys.cava.bytes.Bytes;
 import org.web3j.crypto.Credentials;
 import org.web3j.protocol.Web3j;
@@ -23,17 +33,6 @@ import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.CrosslinkCommittee;
 import tech.pegasys.artemis.pow.contract.DepositContract;
 import tech.pegasys.artemis.util.mikuli.BLS12381;
-
-import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-
-import static tech.pegasys.artemis.datastructures.Constants.SLOTS_PER_EPOCH;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_crosslink_committees_at_slot;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_current_epoch;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_epoch_start_slot;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_previous_epoch;
 
 public class ValidatorClient {
 
@@ -88,8 +87,14 @@ public class ValidatorClient {
   }
 
   public static void registerValidatorEth1(
-          Validator validator, UnsignedLong amount, String address, Web3j web3j, DefaultGasProvider gasProvider) throws Exception {
-    Credentials credentials = Credentials.create(validator.getSecpKeys().secretKey().bytes().toHexString());
+      Validator validator,
+      UnsignedLong amount,
+      String address,
+      Web3j web3j,
+      DefaultGasProvider gasProvider)
+      throws Exception {
+    Credentials credentials =
+        Credentials.create(validator.getSecpKeys().secretKey().bytes().toHexString());
     DepositContract contract = null;
     contract = DepositContract.load(address, web3j, credentials, gasProvider);
     Bytes deposit_data =
@@ -104,6 +109,8 @@ public class ValidatorClient {
                 .sign(validator.getBlsKeys(), deposit_data, Constants.DOMAIN_DEPOSIT)
                 .signature()
                 .toBytesCompressed());
-    contract.deposit(deposit_data.toArray(), new BigInteger(amount.toString()+"000000000")).send();
+    contract
+        .deposit(deposit_data.toArray(), new BigInteger(amount.toString() + "000000000"))
+        .send();
   }
 }
