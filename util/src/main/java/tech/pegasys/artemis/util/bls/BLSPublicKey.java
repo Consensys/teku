@@ -13,8 +13,9 @@
 
 package tech.pegasys.artemis.util.bls;
 
-
 import tech.pegasys.artemis.util.mikuli.PublicKey;
+import static com.google.common.base.Preconditions.checkArgument;
+import static java.util.Objects.isNull;
 
 import java.util.List;
 import java.util.Objects;
@@ -22,8 +23,6 @@ import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.ssz.SSZ;
 
-import static com.google.common.base.Preconditions.checkArgument;
-import static java.util.Objects.isNull;
 
 public class BLSPublicKey {
 

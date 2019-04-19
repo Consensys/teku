@@ -36,7 +36,6 @@ import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.mikuli.KeyPair;
 import tech.pegasys.artemis.validator.client.Validator;
 import tech.pegasys.artemis.validator.client.ValidatorClient;
-
 import java.nio.charset.Charset;
 import java.util.Collections;
 
@@ -51,6 +50,7 @@ public class PowchainService implements ServiceInterface {
   DepositContractListener listener;
 
   private boolean depositSimulation;
+
   public PowchainService() {
     depositSimulation = false;
   }
@@ -65,26 +65,31 @@ public class PowchainService implements ServiceInterface {
   @Override
   public void run() {
 
-    if(depositSimulation) {
+    if (depositSimulation) {
       controller = new GanacheController(16384, 6000);
-      listener = DepositContractListenerFactory.simulationDeployDepositContract(eventBus, controller);
+      listener =
+          DepositContractListenerFactory.simulationDeployDepositContract(eventBus, controller);
       Web3j web3j = Web3j.build(new HttpService(controller.getProvider()));
       DefaultGasProvider gasProvider = new DefaultGasProvider();
       for (SECP256K1.KeyPair keyPair : controller.getAccounts()) {
         Validator validator = new Validator(Bytes32.random(), KeyPair.random(), keyPair);
         try {
-          ValidatorClient.registerValidatorEth1(validator, UnsignedLong.valueOf(SIM_DEPOSIT_VALUE_GWEI), listener.getContract().getContractAddress(), web3j, gasProvider);
+          ValidatorClient.registerValidatorEth1(
+              validator,
+              UnsignedLong.valueOf(SIM_DEPOSIT_VALUE_GWEI),
+              listener.getContract().getContractAddress(),
+              web3j,
+              gasProvider);
         } catch (Exception e) {
-              LOG.log(
-                      Level.WARN,
-                      "Failed to register Validator with SECP256k1 public key: "
-                              + keyPair.publicKey()
-                              + " : "
-                              + e);
+          LOG.log(
+              Level.WARN,
+              "Failed to register Validator with SECP256k1 public key: "
+                  + keyPair.publicKey()
+                  + " : "
+                  + e);
         }
       }
-    }
-    else {
+    } else {
       Eth2GenesisEventResponse response = new Eth2GenesisEventResponse();
       response.log =
           new Log(true, "1", "2", "3", "4", "5", "6", "7", "8", Collections.singletonList("9"));
@@ -102,7 +107,6 @@ public class PowchainService implements ServiceInterface {
 
   @Subscribe
   public void onDepositEvent(DepositEvent event) {
-    //stubbed for implementation on next PR
+    // stubbed for implementation on next PR
   }
-
 }
