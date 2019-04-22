@@ -58,6 +58,7 @@ allprojects {
   repositories {
     if ("$System.env.JENKINS_URL" == 'https://jenkins.pegasys.tech/') {
       maven { url "https://nexus.int.pegasys.tech/repository/jcenter/" }
+      maven { url "https://repository.apache.org/content/repositories/snapshots"}
     } else {
       jcenter()
       mavenCentral()
