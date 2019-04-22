@@ -19,7 +19,7 @@ import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomE
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomLong;
 
 import java.util.Objects;
-import net.consensys.cava.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 
 class Eth1DataVoteTest {

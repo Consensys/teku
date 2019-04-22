@@ -13,8 +13,9 @@
 
 package tech.pegasys.artemis.datastructures;
 
-import net.consensys.cava.bytes.Bytes;
-import net.consensys.cava.bytes.Bytes32;
+import com.google.common.primitives.UnsignedLong;
+import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 

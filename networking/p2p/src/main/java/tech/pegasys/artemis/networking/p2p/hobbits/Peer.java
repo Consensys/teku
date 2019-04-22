@@ -15,10 +15,10 @@ package tech.pegasys.artemis.networking.p2p.hobbits;
 
 import java.net.URI;
 import java.util.Objects;
-import net.consensys.cava.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes;
 
 /** A hobbits peer */
-public final class Peer implements net.consensys.cava.plumtree.Peer {
+public final class Peer implements org.apache.tuweni.plumtree.Peer {
 
   private final URI uri;
   private Hello peerHello;

@@ -19,8 +19,8 @@ import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomC
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomInt;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomLong;
 
-import net.consensys.cava.bytes.Bytes;
-import net.consensys.cava.bytes.Bytes32;
+import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.state.Crosslink;
 

@@ -20,17 +20,17 @@ import java.net.URI;
 import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import net.consensys.cava.bytes.Bytes;
-import net.consensys.cava.bytes.Bytes32;
-import net.consensys.cava.concurrent.AsyncCompletion;
-import net.consensys.cava.crypto.Hash;
-import net.consensys.cava.plumtree.EphemeralPeerRepository;
-import net.consensys.cava.plumtree.MessageSender;
-import net.consensys.cava.plumtree.State;
-import net.consensys.cava.rlpx.RLPxService;
-import net.consensys.cava.rlpx.wire.DisconnectReason;
-import net.consensys.cava.rlpx.wire.SubProtocolHandler;
 import org.apache.logging.log4j.Level;
+import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.concurrent.AsyncCompletion;
+import org.apache.tuweni.crypto.Hash;
+import org.apache.tuweni.plumtree.EphemeralPeerRepository;
+import org.apache.tuweni.plumtree.MessageSender;
+import org.apache.tuweni.plumtree.State;
+import org.apache.tuweni.rlpx.RLPxService;
+import org.apache.tuweni.rlpx.wire.DisconnectReason;
+import org.apache.tuweni.rlpx.wire.SubProtocolHandler;
 import tech.pegasys.artemis.data.TimeSeriesRecord;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.networking.p2p.hobbits.HobbitsSocketHandler;
@@ -73,7 +73,7 @@ final class HobbitsSubProtocolHandler implements SubProtocolHandler {
   }
 
   private void sendMessage(
-      MessageSender.Verb verb, net.consensys.cava.plumtree.Peer peer, Bytes hash, Bytes bytes) {
+      MessageSender.Verb verb, org.apache.tuweni.plumtree.Peer peer, Bytes hash, Bytes bytes) {
     HobbitsSocketHandler handler = handlerMap.get(((Peer) peer).uri().toString());
     handler.gossipMessage(verb, hash, Bytes32.random(), bytes);
   }

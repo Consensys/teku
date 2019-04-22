@@ -15,8 +15,8 @@ package tech.pegasys.artemis.statetransition;
 
 import static tech.pegasys.artemis.datastructures.Constants.SLOTS_PER_EPOCH;
 
-import net.consensys.cava.bytes.Bytes32;
 import org.apache.logging.log4j.Level;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;

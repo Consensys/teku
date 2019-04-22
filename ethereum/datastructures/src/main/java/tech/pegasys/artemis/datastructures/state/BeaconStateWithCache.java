@@ -16,8 +16,8 @@ package tech.pegasys.artemis.datastructures.state;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
-import net.consensys.cava.bytes.Bytes;
-import net.consensys.cava.bytes.Bytes32;
+import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.Copyable;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 

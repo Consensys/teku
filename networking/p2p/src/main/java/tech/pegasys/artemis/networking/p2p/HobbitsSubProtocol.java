@@ -15,10 +15,10 @@ package tech.pegasys.artemis.networking.p2p;
 
 import com.google.common.eventbus.EventBus;
 import java.util.concurrent.ConcurrentHashMap;
-import net.consensys.cava.rlpx.RLPxService;
-import net.consensys.cava.rlpx.wire.SubProtocol;
-import net.consensys.cava.rlpx.wire.SubProtocolHandler;
-import net.consensys.cava.rlpx.wire.SubProtocolIdentifier;
+import org.apache.tuweni.rlpx.RLPxService;
+import org.apache.tuweni.rlpx.wire.SubProtocol;
+import org.apache.tuweni.rlpx.wire.SubProtocolHandler;
+import org.apache.tuweni.rlpx.wire.SubProtocolIdentifier;
 import tech.pegasys.artemis.data.TimeSeriesRecord;
 
 final class HobbitsSubProtocol implements SubProtocol {

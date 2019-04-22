@@ -17,7 +17,7 @@ import static java.lang.Math.toIntExact;
 import static tech.pegasys.artemis.datastructures.Constants.LATEST_BLOCK_ROOTS_LENGTH;
 
 import java.util.List;
-import net.consensys.cava.bytes.Bytes32;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;

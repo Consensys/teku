@@ -18,7 +18,7 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomSlashableAttestation;
 
 import java.util.Objects;
-import net.consensys.cava.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 
 class AttesterSlashingTest {

@@ -19,7 +19,7 @@ import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomL
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomProposal;
 
 import java.util.Objects;
-import net.consensys.cava.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.blocks.Proposal;
 
