@@ -20,12 +20,12 @@ import com.google.common.annotations.VisibleForTesting;
 import java.security.SecureRandom;
 import java.security.Security;
 import java.util.Objects;
-import net.consensys.cava.bytes.Bytes;
-import net.consensys.cava.crypto.Hash;
 import org.apache.milagro.amcl.BLS381.BIG;
 import org.apache.milagro.amcl.BLS381.ECP2;
 import org.apache.milagro.amcl.BLS381.FP2;
 import org.apache.milagro.amcl.BLS381.ROM;
+import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.crypto.Hash;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 /**

@@ -20,7 +20,7 @@ import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomE
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.List;
-import net.consensys.cava.junit.BouncyCastleExtension;
+import org.apache.tuweni.junit.BouncyCastleExtension;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

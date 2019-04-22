@@ -10,9 +10,9 @@ dependencies {
   implementation project(':pow')
   implementation project(':util')
 
-  implementation 'net.consensys.cava:cava-crypto'
-  implementation 'net.consensys.cava:cava-units'
-  implementation 'net.consensys.cava:cava-ssz'
+  implementation 'org.apache.tuweni:tuweni-crypto'
+  implementation 'org.apache.tuweni:tuweni-units'
+  implementation 'org.apache.tuweni:tuweni-ssz'
   implementation 'com.google.guava:guava'
   implementation 'com.google.code.gson:gson'
   implementation 'org.apache.logging.log4j:log4j-api'

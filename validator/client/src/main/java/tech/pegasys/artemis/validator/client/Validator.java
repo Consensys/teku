@@ -13,8 +13,8 @@
 
 package tech.pegasys.artemis.validator.client;
 
-import net.consensys.cava.bytes.Bytes32;
-import net.consensys.cava.crypto.SECP256K1;
+import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.crypto.SECP256K1;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.mikuli.KeyPair;
 

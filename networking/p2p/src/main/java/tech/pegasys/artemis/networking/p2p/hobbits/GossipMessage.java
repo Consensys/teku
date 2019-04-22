@@ -13,8 +13,8 @@
 
 package tech.pegasys.artemis.networking.p2p.hobbits;
 
-import net.consensys.cava.bytes.Bytes;
-import net.consensys.cava.bytes.Bytes32;
+import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
 
 /** Representation of a Gossip message that was received from a remote peer. */
 public final class GossipMessage {

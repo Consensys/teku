@@ -20,7 +20,7 @@ import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomU
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.Objects;
-import net.consensys.cava.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 
 class Eth1DataVoteTest {

@@ -16,8 +16,8 @@ package tech.pegasys.artemis.util.mikuli;
 import static tech.pegasys.artemis.util.mikuli.G2Point.hashToG2;
 
 import java.util.List;
-import net.consensys.cava.bytes.Bytes;
 import org.apache.milagro.amcl.BLS381.FP12;
+import org.apache.tuweni.bytes.Bytes;
 
 /*
  * Adapted from the ConsenSys/mikuli (Apache 2 License) implementation:

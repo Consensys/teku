@@ -18,11 +18,11 @@ import static tech.pegasys.artemis.util.mikuli.Util.calculateYFlag;
 
 import java.security.SecureRandom;
 import java.util.Objects;
-import net.consensys.cava.bytes.Bytes;
 import org.apache.milagro.amcl.BLS381.BIG;
 import org.apache.milagro.amcl.BLS381.ECP;
 import org.apache.milagro.amcl.BLS381.FP;
 import org.apache.milagro.amcl.BLS381.ROM;
+import org.apache.tuweni.bytes.Bytes;
 
 /**
  * G1 is a subgroup of an elliptic curve whose points are elements of the finite field Fp - simple
