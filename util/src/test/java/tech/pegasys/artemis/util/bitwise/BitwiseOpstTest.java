@@ -17,7 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.Random;
-import net.consensys.cava.junit.BouncyCastleExtension;
+import org.apache.tuweni.junit.BouncyCastleExtension;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 

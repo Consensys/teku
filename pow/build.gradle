@@ -26,8 +26,8 @@ dependencies {
   implementation 'com.google.guava:guava'
   compile group: 'com.googlecode.json-simple', name: 'json-simple', version: '1.1'
 
-  implementation 'net.consensys.cava:cava-crypto'
-  implementation 'net.consensys.cava:cava-units'
+  implementation 'org.apache.tuweni:tuweni-crypto'
+  implementation 'org.apache.tuweni:tuweni-units'
 
   implementation 'org.apache.logging.log4j:log4j-api'
   runtime 'org.apache.logging.log4j:log4j-core'

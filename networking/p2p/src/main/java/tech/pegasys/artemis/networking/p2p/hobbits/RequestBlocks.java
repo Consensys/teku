@@ -15,7 +15,7 @@ package tech.pegasys.artemis.networking.p2p.hobbits;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import net.consensys.cava.bytes.Bytes32;
+import org.apache.tuweni.bytes.Bytes32;
 
 final class RequestBlocks {
 

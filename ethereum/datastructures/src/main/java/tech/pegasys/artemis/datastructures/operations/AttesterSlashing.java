@@ -14,8 +14,8 @@
 package tech.pegasys.artemis.datastructures.operations;
 
 import java.util.Objects;
-import net.consensys.cava.bytes.Bytes;
-import net.consensys.cava.ssz.SSZ;
+import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.ssz.SSZ;
 
 public class AttesterSlashing {
 

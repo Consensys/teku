@@ -15,7 +15,7 @@ package tech.pegasys.artemis.services;
 
 import com.google.common.eventbus.EventBus;
 import java.util.Objects;
-import net.consensys.cava.crypto.SECP256K1;
+import org.apache.tuweni.crypto.SECP256K1;
 import tech.pegasys.artemis.util.cli.CommandLineArguments;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 

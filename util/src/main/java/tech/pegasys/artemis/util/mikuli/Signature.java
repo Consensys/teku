@@ -18,7 +18,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 import java.util.List;
 import java.util.Objects;
-import net.consensys.cava.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes;
 
 /** This class represents a Signature on G2 */
 public final class Signature {

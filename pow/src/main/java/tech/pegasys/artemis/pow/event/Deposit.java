@@ -13,7 +13,7 @@
 
 package tech.pegasys.artemis.pow.event;
 
-import net.consensys.cava.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.artemis.pow.api.DepositEvent;
 import tech.pegasys.artemis.pow.contract.DepositContract.DepositEventResponse;
 

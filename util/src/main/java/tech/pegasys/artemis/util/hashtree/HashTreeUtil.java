@@ -18,10 +18,10 @@ import static java.nio.ByteOrder.LITTLE_ENDIAN;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import net.consensys.cava.bytes.Bytes;
-import net.consensys.cava.bytes.Bytes32;
-import net.consensys.cava.crypto.Hash;
-import net.consensys.cava.ssz.SSZ;
+import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.crypto.Hash;
+import org.apache.tuweni.ssz.SSZ;
 
 /** This class is a collection of tree hash root convenience methods */
 public final class HashTreeUtil {
@@ -59,7 +59,7 @@ public final class HashTreeUtil {
   public static Bytes32 integerListHashTreeRoot(List<Integer> integers) {
     return hash_tree_root(
         SSZ.encode(
-            // TODO This can be replaced with writeUInt64List(List) once implemented in Cava.
+            // TODO This can be replaced with writeUInt64List(List) once implemented in tuweni.
             writer -> {
               writer.writeUIntList(64, integers);
             }));

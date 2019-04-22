@@ -17,8 +17,8 @@ import com.google.common.eventbus.EventBus;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
-import net.consensys.cava.bytes.Bytes;
 import org.apache.logging.log4j.Level;
+import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.artemis.util.alogger.ALogger;
 
 /** ChainStorage Interface class */

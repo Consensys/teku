@@ -16,8 +16,8 @@ package tech.pegasys.artemis.networking.p2p.hobbits;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.Arrays;
-import net.consensys.cava.bytes.Bytes32;
-import net.consensys.cava.units.bigints.UInt64;
+import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.units.bigints.UInt64;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;

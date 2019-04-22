@@ -15,8 +15,8 @@ package tech.pegasys.artemis.networking.p2p.hobbits;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import net.consensys.cava.bytes.Bytes32;
-import net.consensys.cava.units.bigints.UInt64;
+import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.units.bigints.UInt64;
 
 final class Hello {
 
