@@ -170,6 +170,7 @@ public class TimeSeriesRecord implements IRecordAdapter {
   public String getBlock_parent_root() {
     return block_parent_root;
   }
+
   public void setBlock_parent_root(String block_parent_root) {
     this.block_parent_root = block_parent_root;
   }

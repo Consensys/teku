@@ -369,10 +369,14 @@ public final class BlockProcessorUtil {
         //     <= state.slot - MIN_ATTESTATION_INCLUSION_DELAY
         //     < attestation.data.slot + SLOTS_PER_EPOCH.
         long attestationDataSlot = attestation.getData().getSlot();
-        checkArgument(attestationDataSlot >= Constants.GENESIS_EPOCH, "in process attestations(): 2.1");
         checkArgument(
-            attestationDataSlot + Constants.MIN_ATTESTATION_INCLUSION_DELAY <= state.getSlot(), "in process attestations(): 2.2");
-        checkArgument(state.getSlot() < attestationDataSlot + SLOTS_PER_EPOCH, "in process attestations(): 2.3");
+            attestationDataSlot >= Constants.GENESIS_EPOCH, "in process attestations(): 2.1");
+        checkArgument(
+            attestationDataSlot + Constants.MIN_ATTESTATION_INCLUSION_DELAY <= state.getSlot(),
+            "in process attestations(): 2.2");
+        checkArgument(
+            state.getSlot() < attestationDataSlot + SLOTS_PER_EPOCH,
+            "in process attestations(): 2.3");
 
         // Verify that attestation.data.justified_epoch is equal to state.justified_epoch
         // if slot_to_epoch(attestation.data.slot + 1) >= get_current_epoch(state) else

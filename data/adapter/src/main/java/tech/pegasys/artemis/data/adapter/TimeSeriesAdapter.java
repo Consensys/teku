@@ -13,7 +13,6 @@
 
 package tech.pegasys.artemis.data.adapter;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.IntStream;
