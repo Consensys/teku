@@ -61,6 +61,7 @@ allprojects {
     } else {
       jcenter()
       mavenCentral()
+      maven { url "https://repository.apache.org/content/repositories/snapshots"}
       maven { url  "https://consensys.bintray.com/pegasys-repo" }
     }
   }
@@ -237,7 +238,7 @@ subprojects {
     integrationTestImplementation sourceSets.testSupport.output
 
     testImplementation 'org.assertj:assertj-core'
-    testImplementation 'net.consensys.cava:cava-junit'
+    testImplementation 'org.apache.tuweni:tuweni-junit'
     testImplementation 'org.junit.jupiter:junit-jupiter-api'
     testImplementation 'org.junit.jupiter:junit-jupiter-params'
 

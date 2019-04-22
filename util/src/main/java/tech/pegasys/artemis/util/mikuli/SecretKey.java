@@ -17,8 +17,8 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static org.apache.milagro.amcl.BLS381.BIG.MODBYTES;
 
 import java.util.Objects;
-import net.consensys.cava.bytes.Bytes;
 import org.apache.milagro.amcl.BLS381.BIG;
+import org.apache.tuweni.bytes.Bytes;
 
 /** This class represents a BLS12-381 private key. */
 public final class SecretKey {

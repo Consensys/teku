@@ -22,8 +22,8 @@ import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomD
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.Collections;
-import net.consensys.cava.bytes.Bytes32;
-import net.consensys.cava.junit.BouncyCastleExtension;
+import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.junit.BouncyCastleExtension;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;

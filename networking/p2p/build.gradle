@@ -18,10 +18,10 @@ dependencies {
   implementation 'com.google.guava:guava'
 
   implementation 'io.vertx:vertx-core'
-  implementation 'net.consensys.cava:cava-bytes'
-  implementation 'net.consensys.cava:cava-plumtree'
-  implementation 'net.consensys.cava:cava-rlpx'
-  implementation 'net.consensys.cava:cava-units'
+  implementation 'org.apache.tuweni:tuweni-bytes'
+  implementation 'org.apache.tuweni:tuweni-plumtree'
+  implementation 'org.apache.tuweni:tuweni-rlpx'
+  implementation 'org.apache.tuweni:tuweni-units'
 
   implementation 'org.apache.logging.log4j:log4j-api'
   runtime 'org.apache.logging.log4j:log4j-core'

@@ -11,10 +11,10 @@ dependencies {
 
   implementation 'info.picocli:picocli'
   implementation 'com.google.guava:guava'
-  implementation 'net.consensys.cava:cava-bytes'
-  implementation 'net.consensys.cava:cava-config'
-  implementation 'net.consensys.cava:cava-crypto'
-  implementation 'net.consensys.cava:cava-ssz'
+  implementation 'org.apache.tuweni:tuweni-bytes'
+  implementation 'org.apache.tuweni:tuweni-config'
+  implementation 'org.apache.tuweni:tuweni-crypto'
+  implementation 'org.apache.tuweni:tuweni-ssz'
   implementation 'org.apache.logging.log4j:log4j-api'
   implementation 'org.miracl.milagro.amcl:milagro-crypto-java:0.4.0'
 }
