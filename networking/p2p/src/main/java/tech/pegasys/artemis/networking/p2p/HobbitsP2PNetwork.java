@@ -43,6 +43,7 @@ import net.consensys.cava.plumtree.State;
 import org.apache.logging.log4j.Level;
 import tech.pegasys.artemis.data.TimeSeriesRecord;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.networking.p2p.api.P2PNetwork;
 import tech.pegasys.artemis.networking.p2p.hobbits.HobbitsSocketHandler;
 import tech.pegasys.artemis.networking.p2p.hobbits.Peer;
@@ -253,6 +254,19 @@ public final class HobbitsP2PNetwork implements P2PNetwork {
     LOG.log(
         Level.INFO, "Gossiping new block with state root: " + block.getState_root().toHexString());
     Bytes bytes = block.toBytes();
+    state.sendGossipMessage(bytes);
+    // TODO: this will be modified once Tuweni merges
+    // https://github.com/apache/incubator-tuweni/pull/3
+    this.receivedMessages.put(Hash.sha2_256(bytes).toHexString(), true);
+  }
+
+  @Subscribe
+  public void onNewAttestation(Attestation attestation) {
+    LOG.log(
+        Level.DEBUG,
+        "Gossiping new attestation for block_root: "
+            + attestation.getData().getBeacon_block_root().toHexString());
+    Bytes bytes = attestation.toBytes();
     state.sendGossipMessage(bytes);
     // TODO: this will be modified once Tuweni merges
     // https://github.com/apache/incubator-tuweni/pull/3

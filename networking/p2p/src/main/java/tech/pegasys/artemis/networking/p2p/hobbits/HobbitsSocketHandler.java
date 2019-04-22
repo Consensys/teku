@@ -150,12 +150,7 @@ public final class HobbitsSocketHandler {
   private void handleGossipMessage(GossipMessage gossipMessage) {
     if (!receivedMessages.containsKey(gossipMessage.messageHash().toHexString())) {
       receivedMessages.put(gossipMessage.messageHash().toHexString(), true);
-      LOG.log(
-          Level.INFO,
-          "Received new gossip message: "
-              + gossipMessage.messageHash().toShortHexString()
-              + " from peer: "
-              + peer.uri());
+      LOG.log(Level.INFO, "Received new gossip message from peer: " + peer.uri());
       if (GossipMethod.GOSSIP.equals(gossipMessage.method())) {
         Bytes bytes = gossipMessage.body();
         peer.setPeerGossip(bytes);

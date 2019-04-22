@@ -7,9 +7,12 @@ jar {
 }
 
 dependencies {
+  api 'org.bouncycastle:bcprov-jdk15on'
+  implementation project(':pow')
   implementation project(':ethereum:datastructures')
   implementation project(':util')
 
+  implementation 'net.consensys.cava:cava-crypto'
   implementation 'net.consensys.cava:cava-kv'
   implementation 'net.consensys.cava:cava-bytes'
   implementation 'com.google.guava:guava'

@@ -14,6 +14,7 @@
 package tech.pegasys.artemis.networking.p2p.hobbits;
 
 import java.net.URI;
+import java.util.Objects;
 import net.consensys.cava.bytes.Bytes;
 
 /** A hobbits peer */
@@ -38,7 +39,9 @@ public final class Peer implements net.consensys.cava.plumtree.Peer {
   }
 
   public void setPeerGossip(Bytes data) {
-    this.peerGossip = data;
+    if (Objects.nonNull(data)) {
+      this.peerGossip = data;
+    }
   }
 
   public void setInactive() {

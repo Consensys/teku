@@ -20,7 +20,7 @@ import net.consensys.cava.ssz.SSZ;
 import tech.pegasys.artemis.datastructures.Copyable;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 
-public final class Validator implements Copyable<Validator> {
+public class Validator implements Copyable<Validator> {
 
   // BLS public key
   private BLSPublicKey pubkey;

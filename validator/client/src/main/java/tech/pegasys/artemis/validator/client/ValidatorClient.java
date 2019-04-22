@@ -20,11 +20,20 @@ import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_curre
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_epoch_start_slot;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_previous_epoch;
 
+import com.google.common.primitives.UnsignedLong;
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import net.consensys.cava.bytes.Bytes;
+import org.web3j.crypto.Credentials;
+import org.web3j.protocol.Web3j;
+import org.web3j.tx.gas.DefaultGasProvider;
+import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.CrosslinkCommittee;
+import tech.pegasys.artemis.pow.contract.DepositContract;
+import tech.pegasys.artemis.util.mikuli.BLS12381;
 
 public class ValidatorClient {
 
@@ -76,5 +85,33 @@ public class ValidatorClient {
       }
     }
     return Optional.empty();
+  }
+
+  public static void registerValidatorEth1(
+      Validator validator,
+      UnsignedLong amount,
+      String address,
+      Web3j web3j,
+      DefaultGasProvider gasProvider)
+      throws Exception {
+    Credentials credentials =
+        Credentials.create(validator.getSecpKeys().secretKey().bytes().toHexString());
+    DepositContract contract = null;
+    contract = DepositContract.load(address, web3j, credentials, gasProvider);
+    Bytes deposit_data =
+        Bytes.wrap(
+            validator.getPubkey().getPublicKey().toBytesCompressed(),
+            validator.getWithdrawal_credentials(),
+            Bytes.ofUnsignedLong(amount.longValue()));
+    deposit_data =
+        Bytes.wrap(
+            deposit_data,
+            BLS12381
+                .sign(validator.getBlsKeys(), deposit_data, Constants.DOMAIN_DEPOSIT)
+                .signature()
+                .toBytesCompressed());
+    contract
+        .deposit(deposit_data.toArray(), new BigInteger(amount.toString() + "000000000"))
+        .send();
   }
 }
