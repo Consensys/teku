@@ -155,7 +155,7 @@ public final class HobbitsSocketHandler {
       LOG.log(Level.INFO, "Received new gossip message from peer: " + peer.uri());
       if (GossipMethod.GOSSIP.equals(gossipMessage.method())) {
         Bytes bytes = gossipMessage.body();
-        if (gossipMessage.getAttributes().equalsIgnoreCase("ATTESTATATION")) {
+        if (gossipMessage.getAttributes().equalsIgnoreCase("ATTESTATION")) {
           this.eventBus.post(Attestation.fromBytes(bytes));
           peer.setPeerGossip(bytes);
         } else if (gossipMessage.getAttributes().equalsIgnoreCase("BLOCK")) {
