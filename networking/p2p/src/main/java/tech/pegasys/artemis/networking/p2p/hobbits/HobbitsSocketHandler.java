@@ -31,6 +31,8 @@ import org.apache.tuweni.plumtree.MessageSender;
 import org.apache.tuweni.plumtree.State;
 import org.apache.tuweni.units.bigints.UInt64;
 import tech.pegasys.artemis.data.TimeSeriesRecord;
+import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.networking.p2p.hobbits.Codec.ProtocolType;
 import tech.pegasys.artemis.util.alogger.ALogger;
 
@@ -153,9 +155,14 @@ public final class HobbitsSocketHandler {
       LOG.log(Level.INFO, "Received new gossip message from peer: " + peer.uri());
       if (GossipMethod.GOSSIP.equals(gossipMessage.method())) {
         Bytes bytes = gossipMessage.body();
-        peer.setPeerGossip(bytes);
-        this.eventBus.post(bytes);
-        p2pState.receiveGossipMessage(peer, gossipMessage.body());
+        if (gossipMessage.getAttributes().equalsIgnoreCase("ATTESTATATION")) {
+          this.eventBus.post(Attestation.fromBytes(bytes));
+          peer.setPeerGossip(bytes);
+        } else if (gossipMessage.getAttributes().equalsIgnoreCase("BLOCK")) {
+          this.eventBus.post(BeaconBlock.fromBytes(bytes));
+          peer.setPeerGossip(bytes);
+        }
+        p2pState.receiveGossipMessage(peer, gossipMessage.getAttributes(), gossipMessage.body());
       } else if (GossipMethod.PRUNE.equals(gossipMessage.method())) {
         p2pState.receivePruneMessage(peer);
       } else if (GossipMethod.GRAFT.equals(gossipMessage.method())) {
@@ -186,8 +193,12 @@ public final class HobbitsSocketHandler {
   }
 
   public void gossipMessage(
-      MessageSender.Verb method, Bytes messageHash, Bytes32 hashSignature, Bytes payload) {
-    Bytes bytes = GossipCodec.encode(method, messageHash, hashSignature, payload);
+      MessageSender.Verb method,
+      String attributes,
+      Bytes messageHash,
+      Bytes32 hashSignature,
+      Bytes payload) {
+    Bytes bytes = GossipCodec.encode(method, attributes, messageHash, hashSignature, payload);
     sendBytes(bytes);
   }
 
