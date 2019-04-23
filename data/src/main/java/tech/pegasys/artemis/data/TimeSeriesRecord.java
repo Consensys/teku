@@ -120,7 +120,7 @@ public class TimeSeriesRecord implements IRecordAdapter {
               ValidatorJoin src, Type typeOfSrc, JsonSerializationContext context) {
             JsonObject obj = new JsonObject();
             obj.addProperty("pubkey", src.getValidator().getPubkey().toString());
-            obj.addProperty("balance", src.getBalance().toString());
+            obj.addProperty("balance", src.getBalance());
             return obj;
           }
         };

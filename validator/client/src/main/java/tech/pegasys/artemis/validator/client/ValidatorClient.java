@@ -20,7 +20,6 @@ import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_curre
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_epoch_start_slot;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_previous_epoch;
 
-import com.google.common.primitives.UnsignedLong;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
@@ -88,11 +87,7 @@ public class ValidatorClient {
   }
 
   public static void registerValidatorEth1(
-      Validator validator,
-      UnsignedLong amount,
-      String address,
-      Web3j web3j,
-      DefaultGasProvider gasProvider)
+      Validator validator, long amount, String address, Web3j web3j, DefaultGasProvider gasProvider)
       throws Exception {
     Credentials credentials =
         Credentials.create(validator.getSecpKeys().secretKey().bytes().toHexString());
@@ -102,7 +97,7 @@ public class ValidatorClient {
         Bytes.wrap(
             validator.getPubkey().getPublicKey().toBytesCompressed(),
             validator.getWithdrawal_credentials(),
-            Bytes.ofUnsignedLong(amount.longValue()));
+            Bytes.ofUnsignedLong(amount));
     deposit_data =
         Bytes.wrap(
             deposit_data,
@@ -110,8 +105,6 @@ public class ValidatorClient {
                 .sign(validator.getBlsKeys(), deposit_data, Constants.DOMAIN_DEPOSIT)
                 .signature()
                 .toBytesCompressed());
-    contract
-        .deposit(deposit_data.toArray(), new BigInteger(amount.toString() + "000000000"))
-        .send();
+    contract.deposit(deposit_data.toArray(), new BigInteger(amount + "000000000")).send();
   }
 }

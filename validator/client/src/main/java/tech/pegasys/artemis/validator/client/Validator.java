@@ -23,7 +23,7 @@ public final class Validator extends tech.pegasys.artemis.datastructures.state.V
   SECP256K1.KeyPair secpKeys;
 
   public Validator(Bytes32 withdrawal_credentials, KeyPair blsKeys, SECP256K1.KeyPair secpKeys) {
-    super(null, withdrawal_credentials, null, null, null, false, false);
+    super(null, withdrawal_credentials, 0, 0, 0, false, false);
     this.blsKeys = blsKeys;
     this.secpKeys = secpKeys;
   }

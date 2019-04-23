@@ -667,7 +667,6 @@ public class BeaconStateUtil {
      *   Python -1 % 13 = 12
      *   Java   -1 % 13 = -1
      *
-     * Using UnsignedLong doesn't help us as some quantities can legitimately be negative.
      */
 
     int indexRet = index;
@@ -728,8 +727,6 @@ public class BeaconStateUtil {
     //  modulo operator in python:
     //    Python -1 % 13 = 12
     //    Java   -1 % 13 = -1
-
-    //  Using UnsignedLong doesn't help us as some quantities can legitimately be negative.
 
     // Note: this should be faster than manually creating the list in a for loop
     // https://stackoverflow.com/questions/10242380/how-can-i-generate-a-list-or-array-of-sequential-integers-in-java

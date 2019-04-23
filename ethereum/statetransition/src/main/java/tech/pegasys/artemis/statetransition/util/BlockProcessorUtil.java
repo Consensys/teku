@@ -534,7 +534,7 @@ public final class BlockProcessorUtil {
             hash_tree_root(
                 new AttestationDataAndCustodyBit(attestation.getData(), true).toBytes()));
     BLSSignature signature = attestation.getAggregate_signature();
-    UnsignedLong domain =
+    long domain =
         get_domain(
             state.getFork(), slot_to_epoch(attestation.getData().getSlot()), DOMAIN_ATTESTATION);
 
