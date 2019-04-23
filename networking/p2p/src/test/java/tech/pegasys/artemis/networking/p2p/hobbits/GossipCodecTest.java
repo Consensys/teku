@@ -30,7 +30,11 @@ final class GossipCodecTest {
     BeaconBlock block = DataStructureUtil.randomBeaconBlock(Constants.GENESIS_SLOT);
     Bytes encoded =
         GossipCodec.encode(
-            MessageSender.Verb.GOSSIP, Bytes32.random(), Bytes32.random(), block.toBytes());
+            MessageSender.Verb.GOSSIP,
+            "BLOCK",
+            Bytes32.random(),
+            Bytes32.random(),
+            block.toBytes());
     GossipMessage message = GossipCodec.decode(encoded);
     assertEquals(GossipMethod.GOSSIP, message.method());
     BeaconBlock read = BeaconBlock.fromBytes(message.body());
