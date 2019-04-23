@@ -257,11 +257,8 @@ public final class HobbitsP2PNetwork implements P2PNetwork {
   public void onNewUnprocessedBlock(BeaconBlock block) {
     LOG.log(
         Level.INFO, "Gossiping new block with state root: " + block.getState_root().toHexString());
-    Bytes bytes = block.toBytes();
-    state.sendGossipMessage("BLOCK", bytes);
-    // TODO: this will be modified once Tuweni merges
-    // https://github.com/apache/incubator-tuweni/pull/3
-    this.receivedMessages.put(Hash.sha2_256(bytes).toHexString(), true);
+    Bytes messageHash = state.sendGossipMessage("BLOCK", block.toBytes());
+    this.receivedMessages.put(messageHash.toHexString(), true);
   }
 
   @Subscribe
@@ -270,10 +267,7 @@ public final class HobbitsP2PNetwork implements P2PNetwork {
         Level.DEBUG,
         "Gossiping new attestation for block_root: "
             + attestation.getData().getBeacon_block_root().toHexString());
-    Bytes bytes = attestation.toBytes();
-    state.sendGossipMessage("ATTESTATION", bytes);
-    // TODO: this will be modified once Tuweni merges
-    // https://github.com/apache/incubator-tuweni/pull/3
-    this.receivedMessages.put(Hash.sha2_256(bytes).toHexString(), true);
+    Bytes messageHash = state.sendGossipMessage("ATTESTATION", attestation.toBytes());
+    this.receivedMessages.put(messageHash.toHexString(), true);
   }
 }
