@@ -30,13 +30,17 @@ import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
-import tech.pegasys.artemis.pow.api.DepositEvent;
 import tech.pegasys.artemis.pow.api.Eth2GenesisEvent;
 import tech.pegasys.artemis.storage.ChainStorage;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
+
+import java.util.Date;
+import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.Optional;
 
 /** Class to manage the state tree and initiate state transitions */
 public class StateProcessor {
@@ -104,12 +108,12 @@ public class StateProcessor {
     }
   }
 
-  @Subscribe
-  public void onDepositEvent(DepositEvent event) {
-    LOG.log(
-        Level.INFO,
-        "Deposit Event detected: " + ((tech.pegasys.artemis.pow.event.Deposit) event).toString());
-  }
+//  @Subscribe
+//  public void onDepositEvent(DepositEvent event) {
+//    LOG.log(
+//        Level.INFO,
+//        "Deposit Event detected: " + ((tech.pegasys.artemis.pow.event.Deposit) event).toString());
+//  }
 
   @Subscribe
   public void onNewSlot(Date date) throws StateTransitionException, InterruptedException {

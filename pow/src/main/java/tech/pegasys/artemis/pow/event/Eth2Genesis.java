@@ -15,26 +15,58 @@ package tech.pegasys.artemis.pow.event;
 
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonObject;
+import tech.pegasys.artemis.data.IRecordAdapter;
 import tech.pegasys.artemis.pow.api.Eth2GenesisEvent;
 import tech.pegasys.artemis.pow.contract.DepositContract.Eth2GenesisEventResponse;
 
+import java.nio.ByteOrder;
+
 public class Eth2Genesis extends AbstractEvent<Eth2GenesisEventResponse>
-    implements Eth2GenesisEvent {
+    implements Eth2GenesisEvent, IRecordAdapter {
 
   private Bytes32 deposit_root;
-  private Bytes time;
+  private long deposit_count;
+  private long time;
 
   public Eth2Genesis(Eth2GenesisEventResponse response) {
     super(response);
-    deposit_root = Bytes32.leftPad(Bytes.wrap(response.deposit_root));
-    time = Bytes32.leftPad(Bytes.wrap(response.time));
+    this.deposit_root = Bytes32.leftPad(Bytes.wrap(response.deposit_root));
+    this.deposit_count = Bytes.wrap(response.deposit_count).toLong(ByteOrder.LITTLE_ENDIAN);
+    this.time = Bytes.wrap(response.time).toLong(ByteOrder.LITTLE_ENDIAN);
   }
 
   public Bytes32 getDeposit_root() {
     return deposit_root;
   }
 
-  public Bytes getTime() {
+  public long getDeposit_count() {
+    return deposit_count;
+  }
+
+  public long getTime() {
     return time;
+  }
+
+  @Override
+  public String toJSON() {
+    Gson gson = new GsonBuilder().create();
+    GsonBuilder gsonBuilder = new GsonBuilder();
+
+    JsonObject eth2Genesis = new JsonObject();
+    eth2Genesis.addProperty("eventType", "Eth2Genesis");
+    eth2Genesis.addProperty("deposit_root", deposit_root.toHexString());
+    eth2Genesis.addProperty("deposit_count", deposit_count);
+    eth2Genesis.addProperty("time", time);
+
+    Gson customGson = gsonBuilder.setPrettyPrinting().create();
+    return customGson.toJson(eth2Genesis);
+  }
+
+  @Override
+  public String toCSV() {
+    return null;
   }
 }
