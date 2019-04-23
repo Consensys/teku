@@ -73,9 +73,13 @@ final class HobbitsSubProtocolHandler implements SubProtocolHandler {
   }
 
   private void sendMessage(
-      MessageSender.Verb verb, org.apache.tuweni.plumtree.Peer peer, Bytes hash, Bytes bytes) {
+      MessageSender.Verb verb,
+      String attributes,
+      org.apache.tuweni.plumtree.Peer peer,
+      Bytes hash,
+      Bytes bytes) {
     HobbitsSocketHandler handler = handlerMap.get(((Peer) peer).uri().toString());
-    handler.gossipMessage(verb, hash, Bytes32.random(), bytes);
+    handler.gossipMessage(verb, attributes, hash, Bytes32.random(), bytes);
   }
 
   @Override
@@ -115,7 +119,7 @@ final class HobbitsSubProtocolHandler implements SubProtocolHandler {
     LOG.log(
         Level.INFO, "Gossiping new block with state root: " + block.getState_root().toHexString());
     Bytes bytes = block.toBytes();
-    state.sendGossipMessage(bytes);
+    state.sendGossipMessage("BLOCK", bytes);
     // TODO: this will be modified once Tuweni merges
     // https://github.com/apache/incubator-tuweni/pull/3
     this.receivedMessages.put(Hash.sha2_256(bytes).toHexString(), true);

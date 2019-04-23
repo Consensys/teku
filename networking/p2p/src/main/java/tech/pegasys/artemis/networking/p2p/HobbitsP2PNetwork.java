@@ -106,13 +106,17 @@ public final class HobbitsP2PNetwork implements P2PNetwork {
   }
 
   private void sendMessage(
-      MessageSender.Verb verb, org.apache.tuweni.plumtree.Peer peer, Bytes hash, Bytes bytes) {
+      MessageSender.Verb verb,
+      String attributes,
+      org.apache.tuweni.plumtree.Peer peer,
+      Bytes hash,
+      Bytes bytes) {
     if (!started.get()) {
       return;
     }
     HobbitsSocketHandler handler = handlersMap.get(((Peer) peer).uri());
     if (handler != null) {
-      handler.gossipMessage(verb, hash, Bytes32.random(), bytes);
+      handler.gossipMessage(verb, attributes, hash, Bytes32.random(), bytes);
     }
   }
 
@@ -254,7 +258,7 @@ public final class HobbitsP2PNetwork implements P2PNetwork {
     LOG.log(
         Level.INFO, "Gossiping new block with state root: " + block.getState_root().toHexString());
     Bytes bytes = block.toBytes();
-    state.sendGossipMessage(bytes);
+    state.sendGossipMessage("BLOCK", bytes);
     // TODO: this will be modified once Tuweni merges
     // https://github.com/apache/incubator-tuweni/pull/3
     this.receivedMessages.put(Hash.sha2_256(bytes).toHexString(), true);
@@ -267,7 +271,7 @@ public final class HobbitsP2PNetwork implements P2PNetwork {
         "Gossiping new attestation for block_root: "
             + attestation.getData().getBeacon_block_root().toHexString());
     Bytes bytes = attestation.toBytes();
-    state.sendGossipMessage(bytes);
+    state.sendGossipMessage("ATTESTATION", bytes);
     // TODO: this will be modified once Tuweni merges
     // https://github.com/apache/incubator-tuweni/pull/3
     this.receivedMessages.put(Hash.sha2_256(bytes).toHexString(), true);

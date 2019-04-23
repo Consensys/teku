@@ -651,10 +651,7 @@ public class AttestationUtil {
         int indexIntoCommittee = crosslinkCommittee.getCommittee().indexOf(validatorIndex);
         int array_length = Math.toIntExact((crosslinkCommittee.getCommittee().size() + 7) / 8);
         byte[] aggregation_bitfield = new byte[array_length];
-        aggregation_bitfield[indexIntoCommittee / 8] =
-            (byte)
-                (aggregation_bitfield[indexIntoCommittee / 8]
-                    | (byte) Math.pow(2, (indexIntoCommittee % 8)));
+        aggregation_bitfield[indexIntoCommittee / 8] |= (byte) (1 << (indexIntoCommittee % 8L));
 
         // Create custody_bitfield
         Bytes custody_bitfield = Bytes.wrap(new byte[array_length]);
