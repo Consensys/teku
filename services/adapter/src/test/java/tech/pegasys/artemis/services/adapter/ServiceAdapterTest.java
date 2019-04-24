@@ -13,14 +13,9 @@
 
 package tech.pegasys.artemis.services.adapter;
 
-import com.google.common.eventbus.Subscribe;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
-import org.web3j.protocol.core.methods.response.Log;
-import tech.pegasys.artemis.pow.contract.DepositContract;
-import tech.pegasys.artemis.pow.event.Deposit;
-import tech.pegasys.artemis.pow.event.Eth2Genesis;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import com.google.common.eventbus.Subscribe;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.nio.charset.Charset;
@@ -29,8 +24,12 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+import org.web3j.protocol.core.methods.response.Log;
+import tech.pegasys.artemis.pow.contract.DepositContract;
+import tech.pegasys.artemis.pow.event.Deposit;
+import tech.pegasys.artemis.pow.event.Eth2Genesis;
 
 public class ServiceAdapterTest {
 
