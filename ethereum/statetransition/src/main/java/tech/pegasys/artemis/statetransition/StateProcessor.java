@@ -201,7 +201,7 @@ public class StateProcessor {
     this.eventBus.post(
         new HeadStateEvent(
             BeaconStateWithCache.deepCopy((BeaconStateWithCache) headState), headBlock));
-    recordData();
+    recordData(date);
   }
 
   protected Boolean inspectBlock(Optional<BeaconBlock> block) {
@@ -331,7 +331,7 @@ public class StateProcessor {
     }
   }
 
-  protected void recordData() {
+  protected void recordData(Date date) {
     BeaconState justifiedState = store.getState(justifiedStateRoot).get();
     BeaconBlock justifiedBlock = store.getProcessedBlock(justifiedBlockRoot).get();
     BeaconState finalizedState = store.getState(finalizedStateRoot).get();
@@ -344,7 +344,8 @@ public class StateProcessor {
             justifiedState,
             justifiedBlock,
             finalizedState,
-            finalizedBlock);
+            finalizedBlock,
+            date);
     this.eventBus.post(record);
   }
 }
