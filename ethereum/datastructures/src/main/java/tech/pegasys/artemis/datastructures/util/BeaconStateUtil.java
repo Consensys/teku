@@ -555,9 +555,7 @@ public class BeaconStateUtil {
     checkArgument(state.getSlot() <= slot + Constants.LATEST_BLOCK_ROOTS_LENGTH);
     checkArgument(slot < state.getSlot(), "checkArgument threw and exception in get_block_root()");
     // Todo: Remove .intValue() as soon as our list wrapper supports unsigned longs
-    return state
-        .getLatest_block_roots()
-        .get((int) slot % Constants.LATEST_BLOCK_ROOTS_LENGTH);
+    return state.getLatest_block_roots().get((int) slot % Constants.LATEST_BLOCK_ROOTS_LENGTH);
   }
 
   /**
