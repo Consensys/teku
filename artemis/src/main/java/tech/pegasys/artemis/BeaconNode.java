@@ -17,12 +17,6 @@ import com.google.common.eventbus.AsyncEventBus;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import io.vertx.core.Vertx;
-
-import java.io.IOException;
-import java.nio.file.Path;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.core.config.Configurator;
 import org.jetbrains.annotations.NotNull;
@@ -49,6 +43,12 @@ import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.cli.CommandLineArguments;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 import tech.pegasys.artemis.validator.coordinator.ValidatorCoordinator;
+
+import java.io.IOException;
+import java.nio.file.Path;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 
 public class BeaconNode {
   private static final ALogger LOG = new ALogger(BeaconNode.class.getName());
@@ -167,14 +167,14 @@ public class BeaconNode {
     if (!cliArgs.isSimulation()) {
       TimeSeriesAdapter adapter = new TimeSeriesAdapter(record);
       TimeSeriesRecord tsRecord = adapter.transform();
-      fileProvider.output(outputFilename, tsRecord);
+      fileProvider.output(tsRecord);
     }
   }
 
   @Subscribe
   public void onDepositSim(IRecordAdapter record) {
     if (cliArgs.isSimulation()) {
-      fileProvider.output(outputFilename, record);
+      fileProvider.output(record);
     }
   }
 

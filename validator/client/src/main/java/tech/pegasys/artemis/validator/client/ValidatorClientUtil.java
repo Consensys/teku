@@ -14,9 +14,8 @@
 package tech.pegasys.artemis.validator.client;
 
 import com.google.common.primitives.UnsignedLong;
-import java.math.BigInteger;
-import net.consensys.cava.bytes.Bytes;
-import net.consensys.cava.bytes.Bytes32;
+import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
 import org.web3j.crypto.Credentials;
 import org.web3j.protocol.Web3j;
 import org.web3j.tx.gas.DefaultGasProvider;
@@ -27,10 +26,12 @@ import tech.pegasys.artemis.util.mikuli.BLS12381;
 import tech.pegasys.artemis.util.mikuli.KeyPair;
 import tech.pegasys.artemis.util.mikuli.PublicKey;
 
+import java.math.BigInteger;
+
 public class ValidatorClientUtil {
 
   public static Bytes generateDepositData(
-      KeyPair blsKeys, Bytes32 withdrawal_credentials, UnsignedLong amount) {
+          KeyPair blsKeys, Bytes32 withdrawal_credentials, UnsignedLong amount) {
     Bytes deposit_data =
         Bytes.wrap(
             Bytes.ofUnsignedLong(amount.longValue()),
