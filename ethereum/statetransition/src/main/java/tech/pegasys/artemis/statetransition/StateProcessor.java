@@ -127,6 +127,7 @@ public class StateProcessor {
             + nodeSlot
             + " |  "
             + nodeSlot % Constants.GENESIS_SLOT);
+
     synchronized (this.store.getSyncObject()) {
       try {
         long begin = new Date().getTime();

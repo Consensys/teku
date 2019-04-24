@@ -16,7 +16,6 @@ package tech.pegasys.artemis.datastructures.util;
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.lang.Math.toIntExact;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_attestation_participants;
-import static java.lang.Math.toIntExact;
 
 import java.nio.ByteOrder;
 import java.util.ArrayList;
