@@ -7,7 +7,6 @@ jar {
 }
 
 dependencies {
-  implementation project(':pow')
   implementation project(':util')
 
   implementation 'org.apache.tuweni:tuweni-crypto'

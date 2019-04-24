@@ -34,8 +34,8 @@ class CSVProviderTest {
   void testCSVPrint(@TempDirectory Path tempDirectory) throws IOException {
     Path logFile = tempDirectory.resolve("log.csv");
     CSVProvider provider = new CSVProvider(logFile);
-    provider.output(new TimeSeriesRecord());
-    provider.output(new TimeSeriesRecord());
+    provider.serialOutput(new TimeSeriesRecord());
+    provider.serialOutput(new TimeSeriesRecord());
     List<String> lines = Files.readAllLines(logFile);
     assertEquals(2, lines.size());
     String firstLine = lines.get(0);

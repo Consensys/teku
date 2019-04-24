@@ -16,11 +16,8 @@ package tech.pegasys.artemis.services.powchain;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.google.common.primitives.UnsignedLong;
-import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 import org.apache.logging.log4j.Level;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.SECP256K1;
 import org.web3j.protocol.Web3j;
@@ -31,7 +28,6 @@ import tech.pegasys.artemis.ganache.GanacheController;
 import tech.pegasys.artemis.pow.DepositContractListener;
 import tech.pegasys.artemis.pow.DepositContractListenerFactory;
 import tech.pegasys.artemis.pow.api.DepositEvent;
-import tech.pegasys.artemis.pow.api.Eth2GenesisEvent;
 import tech.pegasys.artemis.pow.contract.DepositContract.Eth2GenesisEventResponse;
 import tech.pegasys.artemis.pow.event.Deposit;
 import tech.pegasys.artemis.pow.event.Eth2Genesis;
@@ -42,6 +38,11 @@ import tech.pegasys.artemis.util.mikuli.KeyPair;
 import tech.pegasys.artemis.validator.client.DepositSimulation;
 import tech.pegasys.artemis.validator.client.Validator;
 import tech.pegasys.artemis.validator.client.ValidatorClientUtil;
+
+import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 public class PowchainService implements ServiceInterface {
 
@@ -106,7 +107,8 @@ public class PowchainService implements ServiceInterface {
       Eth2GenesisEventResponse response = new Eth2GenesisEventResponse();
       response.log =
           new Log(true, "1", "2", "3", "4", "5", "6", "7", "8", Collections.singletonList("9"));
-      response.time = "time".getBytes(Charset.defaultCharset());
+      response.time = Bytes.ofUnsignedLong(UnsignedLong.ONE.longValue()).toArray();
+      response.deposit_count = Bytes.ofUnsignedLong(UnsignedLong.ONE.longValue()).toArray();
       response.deposit_root = "root".getBytes(Charset.defaultCharset());
       Eth2Genesis eth2Genesis = new tech.pegasys.artemis.pow.event.Eth2Genesis(response);
       this.eventBus.post(eth2Genesis);
@@ -123,25 +125,7 @@ public class PowchainService implements ServiceInterface {
     if (depositSimulation) {
       Deposit deposit = ((tech.pegasys.artemis.pow.event.Deposit) event);
       eventBus.post(attributeDepositToSimulation(deposit));
-      LOG.log(
-          Level.INFO,
-          "\nBLSPublicKey: "
-              + deposit.getPubkey().toBytes().toHexString()
-              + "\nAmount: "
-              + deposit.getAmount()
-              + "\nwithdrawal_credentials: "
-              + deposit.getWithdrawal_credentials().toHexString()
-              + "\nproof_of_possession: "
-              + deposit.getProof_of_possession().toHexString()
-              + "\n\n");
     }
-  }
-
-  @Subscribe
-  public void onEth2GenesisEvent(Eth2GenesisEvent event) {
-    Eth2Genesis eth2Genesis = ((tech.pegasys.artemis.pow.event.Eth2Genesis) event);
-    eventBus.post(eth2Genesis);
-    LOG.log(Level.INFO, "\nDeposit Root: " + eth2Genesis.getDeposit_root().toHexString() + "\n\n");
   }
 
   private DepositSimulation attributeDepositToSimulation(Deposit deposit) {
