@@ -67,39 +67,36 @@ public class BeaconStateUtil {
 
   private static final ALogger LOG = new ALogger(BeaconStateUtil.class.getName());
 
-  public static BeaconStateWithCache get_initial_beacon_state(
+  public static BeaconStateWithCache get_genesis_beacon_state(
       BeaconStateWithCache state,
-      ArrayList<Deposit> initial_validator_deposits,
+      ArrayList<Deposit> genesis_validator_deposits,
       long genesis_time,
       Eth1Data latest_eth1_data)
       throws IllegalStateException {
 
-    // Process initial deposits
-    for (Deposit validator_deposit : initial_validator_deposits) {
-      process_deposit(state, validator_deposit);
+    // Process genesis deposits
+    for (Deposit deposit : genesis_validator_deposits) {
+      process_deposit(state, deposit);
     }
 
-    // Process initial activations
-    int index = 0;
-    for (Validator validator : state.getValidator_registry()) {
-      List<Long> balances = state.getValidator_balances();
-      if (balances.get(index).compareTo(MAX_DEPOSIT_AMOUNT) >= 0) {
-        activate_validator(state, validator, true);
+    // Process genesis activations
+    for (int validator_index = 0;
+        validator_index < state.getValidator_registry().size();
+        validator_index++) {
+      if (get_effective_balance(state, validator_index) >= MAX_DEPOSIT_AMOUNT) {
+        activate_validator(state, validator_index, true);
       }
-      index++;
     }
 
-    List<Validator> activeValidators =
-        ValidatorsUtil.get_active_validators(state.getValidator_registry(), GENESIS_EPOCH);
     Bytes32 genesis_active_index_root =
         integerListHashTreeRoot(
             ValidatorsUtil.get_active_validator_indices(
                 state.getValidator_registry(), GENESIS_EPOCH));
-    for (Bytes32 root : state.getLatest_active_index_roots()) {
-      root = genesis_active_index_root;
+    for (int index = 0; index < LATEST_ACTIVE_INDEX_ROOTS_LENGTH; index++) {
+      state.getLatest_active_index_roots().set(index, genesis_active_index_root);
     }
     state.setCurrent_shuffling_seed(generate_seed(state, GENESIS_EPOCH));
-    state.setDeposit_index(initial_validator_deposits.size());
+
     return state;
   }
 
@@ -1133,16 +1130,19 @@ public class BeaconStateUtil {
   /**
    * Activate the validator with the given 'index'. Note that this function mutates 'state'.
    *
-   * @param validator the validator.
+   * @param validator_index the validator index.
    */
   @VisibleForTesting
   public static void activate_validator(
-      BeaconState state, Validator validator, boolean is_genesis) {
-    validator.setActivation_epoch(
-        is_genesis
-            ? GENESIS_EPOCH
-            : BeaconStateUtil.get_entry_exit_effect_epoch(
-                BeaconStateUtil.get_current_epoch(state)));
+      BeaconState state, int validator_index, boolean is_genesis) {
+    state
+        .getValidator_registry()
+        .get(validator_index)
+        .setActivation_epoch(
+            is_genesis
+                ? GENESIS_EPOCH
+                : BeaconStateUtil.get_entry_exit_effect_epoch(
+                    BeaconStateUtil.get_current_epoch(state)));
   }
 
   /**

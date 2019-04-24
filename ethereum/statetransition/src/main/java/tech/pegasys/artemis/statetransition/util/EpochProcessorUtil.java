@@ -586,28 +586,31 @@ public final class EpochProcessorUtil {
 
       // Activate validators within the allowable balance churn
       long balance_churn = 0;
-      int index = 0;
-      for (Validator validator : state.getValidator_registry()) {
-        if (validator.getActivation_epoch() == Constants.FAR_FUTURE_EPOCH
-            && state.getValidator_balances().get(index) >= Constants.MAX_DEPOSIT_AMOUNT) {
-          balance_churn = balance_churn + BeaconStateUtil.get_effective_balance(state, index);
+      for (int validator_index = 0;
+          validator_index < state.getValidator_registry().size();
+          validator_index++) {
+        if (state.getValidator_registry().get(validator_index).getActivation_epoch()
+                == Constants.FAR_FUTURE_EPOCH
+            && state.getValidator_balances().get(validator_index) >= Constants.MAX_DEPOSIT_AMOUNT) {
+          balance_churn += BeaconStateUtil.get_effective_balance(state, validator_index);
           if (balance_churn > max_balance_churn) break;
-          BeaconStateUtil.activate_validator(state, validator, false);
+          BeaconStateUtil.activate_validator(state, validator_index, false);
         }
-        index++;
       }
 
       // Exit validators within the allowable balance churn
       balance_churn = 0;
-      index = 0;
-      for (Validator validator : state.getValidator_registry()) {
+      for (int validator_index = 0;
+          validator_index < state.getValidator_registry().size();
+          validator_index++) {
+        Validator validator = state.getValidator_registry().get(validator_index);
         if (validator.getActivation_epoch() == Constants.FAR_FUTURE_EPOCH
             && validator.hasInitiatedExit()) {
-          balance_churn = balance_churn + BeaconStateUtil.get_effective_balance(state, validator);
+          balance_churn =
+              balance_churn + BeaconStateUtil.get_effective_balance(state, validator_index);
           if (balance_churn > max_balance_churn) break;
-          BeaconStateUtil.exit_validator(state, index);
+          BeaconStateUtil.exit_validator(state, validator_index);
         }
-        index++;
       }
       state.setValidator_registry_update_epoch(currentEpoch);
     } catch (IllegalArgumentException e) {

@@ -358,7 +358,7 @@ public final class DataStructureUtil {
 
   public static BeaconStateWithCache createInitialBeaconState(int numValidators) {
     BeaconStateWithCache state = new BeaconStateWithCache();
-    return BeaconStateUtil.get_initial_beacon_state(
+    return BeaconStateUtil.get_genesis_beacon_state(
         state,
         newDeposits(numValidators),
         Constants.GENESIS_SLOT,

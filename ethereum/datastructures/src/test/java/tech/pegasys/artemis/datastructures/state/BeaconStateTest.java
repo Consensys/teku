@@ -25,7 +25,7 @@ import static tech.pegasys.artemis.datastructures.Constants.SLOTS_PER_EPOCH;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.generate_seed;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_active_index_root;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_current_epoch;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_initial_beacon_state;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_genesis_beacon_state;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_randao_mix;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.int_to_bytes32;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.split;
@@ -56,12 +56,12 @@ class BeaconStateTest {
 
       // Initialize state
       BeaconStateWithCache state = new BeaconStateWithCache();
-      get_initial_beacon_state(
+      get_genesis_beacon_state(
           state, randomDeposits(numDeposits), 0, new Eth1Data(Bytes32.ZERO, Bytes32.ZERO));
 
       return state;
     } catch (Exception e) {
-      fail("get_initial_beacon_state() failed");
+      fail("get_genesis_beacon_state() failed");
       return null;
     }
   }
@@ -72,13 +72,11 @@ class BeaconStateTest {
     int validator_index = 0;
     long activation_epoch;
 
-    BeaconStateUtil.activate_validator(
-        state, state.getValidator_registry().get(validator_index), true);
+    BeaconStateUtil.activate_validator(state, validator_index, true);
     activation_epoch = state.getValidator_registry().get(validator_index).getActivation_epoch();
     assertThat(activation_epoch).isEqualTo(GENESIS_EPOCH);
 
-    BeaconStateUtil.activate_validator(
-        state, state.getValidator_registry().get(validator_index), false);
+    BeaconStateUtil.activate_validator(state, validator_index, false);
     activation_epoch = state.getValidator_registry().get(validator_index).getActivation_epoch();
     assertThat(activation_epoch).isEqualTo(GENESIS_EPOCH + 1 + ACTIVATION_EXIT_DELAY);
   }
