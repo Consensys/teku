@@ -106,8 +106,8 @@ public class PowchainService implements ServiceInterface {
           new Log(true, "1", "2", "3", "4", "5", "6", "7", "8", Collections.singletonList("9"));
       response.time = "time".getBytes(Charset.defaultCharset());
       response.deposit_root = "root".getBytes(Charset.defaultCharset());
-      Eth2GenesisEvent event = new tech.pegasys.artemis.pow.event.Eth2Genesis(response);
-      this.eventBus.post(event);
+      Eth2Genesis eth2Genesis = new tech.pegasys.artemis.pow.event.Eth2Genesis(response);
+      this.eventBus.post(eth2Genesis);
     }
   }
 
