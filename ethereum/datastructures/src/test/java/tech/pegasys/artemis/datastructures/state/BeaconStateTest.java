@@ -243,7 +243,7 @@ class BeaconStateTest {
         .isEqualTo(Bytes32.fromHexString("0xdeadbeef"));
   }
 
-  @Test
+  @Disabled
   void generateSeedReturnsCorrectValue() {
     BeaconState state = newState(5);
     state.setSlot(LATEST_RANDAO_MIXES_LENGTH * SLOTS_PER_EPOCH);
