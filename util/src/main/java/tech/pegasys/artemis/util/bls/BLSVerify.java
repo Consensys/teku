@@ -13,7 +13,6 @@
 
 package tech.pegasys.artemis.util.bls;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.apache.logging.log4j.Level;
@@ -33,9 +32,9 @@ public class BLSVerify {
    * @return true if the signature is valid over these parameters, false if not
    */
   public static boolean bls_verify(
-      BLSPublicKey pubkey, Bytes32 messageHash, BLSSignature signature, UnsignedLong domain) {
+      BLSPublicKey pubkey, Bytes32 messageHash, BLSSignature signature, long domain) {
     try {
-      return signature.checkSignature(pubkey, Bytes.wrap(messageHash), domain.longValue());
+      return signature.checkSignature(pubkey, Bytes.wrap(messageHash), domain);
     } catch (BLSException e) {
       LOG.log(Level.WARN, e.toString());
       return false;
@@ -57,11 +56,11 @@ public class BLSVerify {
       List<BLSPublicKey> pubkeys,
       List<Bytes32> messageHashes,
       BLSSignature aggregateSignature,
-      UnsignedLong domain) {
+      long domain) {
     try {
       List<Bytes> messageHashesAsBytes =
           messageHashes.stream().map(x -> Bytes.wrap(x)).collect(Collectors.toList());
-      return aggregateSignature.checkSignature(pubkeys, messageHashesAsBytes, domain.longValue());
+      return aggregateSignature.checkSignature(pubkeys, messageHashesAsBytes, domain);
     } catch (BLSException e) {
       LOG.log(Level.WARN, e.toString());
       return false;

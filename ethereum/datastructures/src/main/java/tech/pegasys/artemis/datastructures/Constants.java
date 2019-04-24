@@ -13,7 +13,6 @@
 
 package tech.pegasys.artemis.datastructures;
 
-import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.util.bls.BLSSignature;
@@ -26,7 +25,7 @@ public class Constants {
   public static int SHARD_COUNT = 1024; // 2^10 shards
   public static int TARGET_COMMITTEE_SIZE = 128; // 2^7 validators
   public static int MAX_BALANCE_CHURN_QUOTIENT = 32; // 2^5
-  public static UnsignedLong BEACON_CHAIN_SHARD_NUMBER = UnsignedLong.MAX_VALUE; // 2^64 - 1
+  public static long BEACON_CHAIN_SHARD_NUMBER = -1L; // 2^64 - 1
   public static int MAX_INDICES_PER_SLASHABLE_VOTE = 4096; // 2^12 votes
   public static int MAX_EXIT_DEQUEUES_PER_EPOCH = 4; // 2^2 withdrawals
   public static int SHUFFLE_ROUND_COUNT = 90;
@@ -52,10 +51,10 @@ public class Constants {
 
   // Initial values
   public static int GENESIS_FORK_VERSION = 0;
-  public static long GENESIS_SLOT = 4294967296L; // 2^32
+  public static long GENESIS_SLOT = 0; // 2^32
   public static long GENESIS_EPOCH = slot_to_epoch(GENESIS_SLOT);
   public static long GENESIS_START_SHARD = 0;
-  public static UnsignedLong FAR_FUTURE_EPOCH = UnsignedLong.MAX_VALUE;
+  public static long FAR_FUTURE_EPOCH = -1L;
   public static Bytes32 ZERO_HASH = Bytes32.ZERO;
   public static BLSSignature EMPTY_SIGNATURE = BLSSignature.empty();
   public static Bytes BLS_WITHDRAWAL_PREFIX_BYTE = Bytes.EMPTY;
@@ -108,8 +107,8 @@ public class Constants {
             ? config.getMaxBalanceChurnQuotient()
             : MAX_BALANCE_CHURN_QUOTIENT; // 2^5
     BEACON_CHAIN_SHARD_NUMBER =
-        !config.getBeaconChainShardNumber().equals(UnsignedLong.MAX_VALUE)
-            ? (UnsignedLong) config.getBeaconChainShardNumber()
+        config.getBeaconChainShardNumber() != -1L
+            ? config.getBeaconChainShardNumber()
             : BEACON_CHAIN_SHARD_NUMBER; // 2^64 - 1
     MAX_INDICES_PER_SLASHABLE_VOTE =
         config.getMaxIndicesPerSlashableVote() != Integer.MIN_VALUE
@@ -196,9 +195,7 @@ public class Constants {
             ? config.getGenesisStartShard()
             : GENESIS_START_SHARD;
     FAR_FUTURE_EPOCH =
-        !config.getFarFutureEpoch().equals(UnsignedLong.MAX_VALUE)
-            ? (UnsignedLong) config.getFarFutureEpoch()
-            : FAR_FUTURE_EPOCH;
+        config.getFarFutureEpoch() != -1L ? config.getFarFutureEpoch() : FAR_FUTURE_EPOCH;
     ZERO_HASH =
         !config.getZeroHash().equals(Bytes32.ZERO)
             ? (Bytes32) config.getZeroHash()

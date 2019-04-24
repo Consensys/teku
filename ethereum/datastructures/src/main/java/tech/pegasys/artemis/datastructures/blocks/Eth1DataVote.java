@@ -13,7 +13,6 @@
 
 package tech.pegasys.artemis.datastructures.blocks;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.ssz.SSZ;
@@ -22,9 +21,9 @@ import tech.pegasys.artemis.datastructures.Copyable;
 public final class Eth1DataVote implements Copyable<Eth1DataVote> {
 
   private Eth1Data eth1_data;
-  private UnsignedLong vote_count;
+  private long vote_count;
 
-  public Eth1DataVote(Eth1Data eth1_data, UnsignedLong vote_count) {
+  public Eth1DataVote(Eth1Data eth1_data, long vote_count) {
     this.eth1_data = eth1_data;
     this.vote_count = vote_count;
   }
@@ -42,17 +41,14 @@ public final class Eth1DataVote implements Copyable<Eth1DataVote> {
   public static Eth1DataVote fromBytes(Bytes bytes) {
     return SSZ.decode(
         bytes,
-        reader ->
-            new Eth1DataVote(
-                Eth1Data.fromBytes(reader.readBytes()),
-                UnsignedLong.fromLongBits(reader.readUInt64())));
+        reader -> new Eth1DataVote(Eth1Data.fromBytes(reader.readBytes()), reader.readUInt64()));
   }
 
   public Bytes toBytes() {
     return SSZ.encode(
         writer -> {
           writer.writeBytes(eth1_data.toBytes());
-          writer.writeUInt64(vote_count.longValue());
+          writer.writeUInt64(vote_count);
         });
   }
 
@@ -91,12 +87,12 @@ public final class Eth1DataVote implements Copyable<Eth1DataVote> {
   }
 
   /** @return the vote_count */
-  public UnsignedLong getVote_count() {
+  public long getVote_count() {
     return vote_count;
   }
 
   /** @param vote_count the vote_count to set */
-  public void setVote_count(UnsignedLong vote_count) {
+  public void setVote_count(long vote_count) {
     this.vote_count = vote_count;
   }
 }

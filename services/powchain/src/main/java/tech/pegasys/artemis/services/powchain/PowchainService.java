@@ -15,7 +15,6 @@ package tech.pegasys.artemis.services.powchain;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
-import com.google.common.primitives.UnsignedLong;
 import java.nio.charset.Charset;
 import java.util.Collections;
 import org.apache.logging.log4j.Level;
@@ -75,7 +74,7 @@ public class PowchainService implements ServiceInterface {
         try {
           ValidatorClient.registerValidatorEth1(
               validator,
-              UnsignedLong.valueOf(SIM_DEPOSIT_VALUE_GWEI),
+              Long.parseLong(SIM_DEPOSIT_VALUE_GWEI),
               listener.getContract().getContractAddress(),
               web3j,
               gasProvider);

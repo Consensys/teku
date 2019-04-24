@@ -52,7 +52,6 @@ import static tech.pegasys.artemis.util.bls.BLSVerify.bls_verify;
 import static tech.pegasys.artemis.util.bls.BLSVerify.bls_verify_multiple;
 import static tech.pegasys.artemis.util.hashtree.HashTreeUtil.hash_tree_root;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -97,7 +96,7 @@ public final class BlockProcessorUtil {
    */
   public static boolean verify_slot(BeaconState state, BeaconBlock block) {
     // Verify that block.slot == state.slot
-    return state.getSlot().compareTo(UnsignedLong.valueOf(block.getSlot())) == 0;
+    return state.getSlot() == block.getSlot();
   }
 
   /**
@@ -115,7 +114,7 @@ public final class BlockProcessorUtil {
       //   signed_root(block, "signature"), block.signature).
       Proposal proposal =
           new Proposal(
-              UnsignedLong.fromLongBits(block.getSlot()),
+              block.getSlot(),
               Constants.BEACON_CHAIN_SHARD_NUMBER,
               block.signedRoot("signature"),
               block.getSignature());
@@ -126,7 +125,7 @@ public final class BlockProcessorUtil {
       //   domain=get_domain(state.fork, state.slot, DOMAIN_PROPOSAL)) is valid.
       int proposerIndex = BeaconStateUtil.get_beacon_proposer_index(state, state.getSlot());
       BLSPublicKey pubkey = state.getValidator_registry().get(proposerIndex).getPubkey();
-      UnsignedLong domain = get_domain(state.getFork(), get_current_epoch(state), DOMAIN_PROPOSAL);
+      long domain = get_domain(state.getFork(), get_current_epoch(state), DOMAIN_PROPOSAL);
       Bytes32 messageHash = proposal.signedRoot("signature");
 
       checkArgument(
@@ -146,8 +145,8 @@ public final class BlockProcessorUtil {
   public static void verify_and_update_randao(BeaconState state, BeaconBlock block)
       throws BlockProcessingException {
     try {
-      UnsignedLong currentEpoch = BeaconStateUtil.get_current_epoch(state);
-      Bytes32 messageHash = hash_tree_root(int_to_bytes(currentEpoch.longValue(), 8));
+      long currentEpoch = BeaconStateUtil.get_current_epoch(state);
+      Bytes32 messageHash = hash_tree_root(int_to_bytes(currentEpoch, 8));
       // - Let proposer = state.validator_registry[get_beacon_proposer_index(state, state.slot)].
       // - Verify that bls_verify(pubkey=proposer.pubkey,
       //    message=int_to_bytes32(get_current_epoch(state)), signature=block.randao_reveal,
@@ -157,8 +156,7 @@ public final class BlockProcessorUtil {
 
       // - Set state.latest_randao_mixes[get_current_epoch(state) % LATEST_RANDAO_MIXES_LENGTH]
       //    = xor(get_randao_mix(state, get_current_epoch(state)), hash(block.randao_reveal)).
-      int randaoMixesIndex =
-          toIntExact(currentEpoch.longValue()) % Constants.LATEST_RANDAO_MIXES_LENGTH;
+      int randaoMixesIndex = toIntExact(currentEpoch) % Constants.LATEST_RANDAO_MIXES_LENGTH;
       Bytes32 newLatestRandaoMixes =
           get_randao_mix(state, currentEpoch)
               .xor(Hash.keccak256(block.getRandao_reveal().toBytes()));
@@ -184,8 +182,8 @@ public final class BlockProcessorUtil {
     for (Eth1DataVote vote : votes) {
       if (vote.getEth1_data().equals(block.getEth1_data())) {
         exists = true;
-        UnsignedLong voteCount = vote.getVote_count();
-        vote.setVote_count(voteCount.plus(UnsignedLong.ONE));
+        long voteCount = vote.getVote_count();
+        vote.setVote_count(voteCount + 1);
         break;
       }
     }
@@ -193,7 +191,7 @@ public final class BlockProcessorUtil {
     // Otherwise, append to state.eth1_data_votes
     //   a new Eth1DataVote(eth1_data=block.eth1_data, vote_count=1).
     if (!exists) {
-      votes.add(new Eth1DataVote(block.getEth1_data(), UnsignedLong.ONE));
+      votes.add(new Eth1DataVote(block.getEth1_data(), 1));
     }
   }
 
@@ -216,26 +214,20 @@ public final class BlockProcessorUtil {
       for (ProposerSlashing proposer_slashing : block.getBody().getProposer_slashings()) {
         // - Let proposer = state.validator_registry[proposer_slashing.proposer_index]
         Validator proposer =
-            state
-                .getValidator_registry()
-                .get(toIntExact(proposer_slashing.getProposer_index().longValue()));
+            state.getValidator_registry().get(toIntExact(proposer_slashing.getProposer_index()));
 
         // - Verify that proposer_slashing.proposal_data_1.slot ==
         //     proposer_slashing.proposal_data_2.slot
         checkArgument(
-            proposer_slashing
-                .getProposal_1()
-                .getSlot()
-                .equals(proposer_slashing.getProposal_2().getSlot()),
+            proposer_slashing.getProposal_1().getSlot()
+                == proposer_slashing.getProposal_2().getSlot(),
             "checkArgument threw and exception in proposer_slashing()");
 
         // - Verify that proposer_slashing.proposal_data_1.shard ==
         //     proposer_slashing.proposal_data_2.shard
         checkArgument(
-            proposer_slashing
-                .getProposal_1()
-                .getShard()
-                .equals(proposer_slashing.getProposal_2().getShard()),
+            proposer_slashing.getProposal_1().getShard()
+                == proposer_slashing.getProposal_2().getShard(),
             "checkArgument threw and exception in proposer_slashing()");
 
         // - Verify that proposer_slashing.proposal_data_1.block_root !=
@@ -280,7 +272,7 @@ public final class BlockProcessorUtil {
             "checkArgument threw and exception in proposer_slashing()");
 
         // - Run penalize_validator(state, proposer_slashing.proposer_index)
-        penalize_validator(state, proposer_slashing.getProposer_index().intValue());
+        penalize_validator(state, (int) proposer_slashing.getProposer_index());
       }
     } catch (IllegalArgumentException e) {
       LOG.log(Level.WARN, "BlockProcessingException thrown in proposer_slashing()");
@@ -337,10 +329,10 @@ public final class BlockProcessorUtil {
         //     if index in slashable_attestation_2.validator_indices and
         //     state.validator_registry[index].slashed == false.
         ArrayList<Integer> slashable_indices = new ArrayList<>();
-        for (UnsignedLong index : slashable_attestation_1.getValidator_indices()) {
+        for (long index : slashable_attestation_1.getValidator_indices()) {
           if (slashable_attestation_2.getValidator_indices().contains(index)
-              && !state.getValidator_registry().get(toIntExact(index.longValue())).isSlashed()) {
-            slashable_indices.add(index.intValue());
+              && !state.getValidator_registry().get(toIntExact(index)).isSlashed()) {
+            slashable_indices.add((int) index);
           }
         }
 
@@ -376,39 +368,26 @@ public final class BlockProcessorUtil {
         // - Verify that attestation.data.slot
         //     <= state.slot - MIN_ATTESTATION_INCLUSION_DELAY
         //     < attestation.data.slot + SLOTS_PER_EPOCH.
-        UnsignedLong attestationDataSlot = attestation.getData().getSlot();
-
+        long attestationDataSlot = attestation.getData().getSlot();
         checkArgument(
-            attestationDataSlot.compareTo(UnsignedLong.valueOf(Constants.GENESIS_EPOCH)) >= 0,
-            "in process attestations(): 2.1");
+            attestationDataSlot >= Constants.GENESIS_EPOCH, "in process attestations(): 2.1");
         checkArgument(
-            attestationDataSlot
-                    .plus(UnsignedLong.valueOf(Constants.MIN_ATTESTATION_INCLUSION_DELAY))
-                    .compareTo(state.getSlot())
-                <= 0,
+            attestationDataSlot + Constants.MIN_ATTESTATION_INCLUSION_DELAY <= state.getSlot(),
             "in process attestations(): 2.2");
         checkArgument(
-            state
-                    .getSlot()
-                    .compareTo(attestationDataSlot.plus(UnsignedLong.valueOf(SLOTS_PER_EPOCH)))
-                <= 0,
+            state.getSlot() < attestationDataSlot + SLOTS_PER_EPOCH,
             "in process attestations(): 2.3");
 
         // Verify that attestation.data.justified_epoch is equal to state.justified_epoch
         // if slot_to_epoch(attestation.data.slot + 1) >= get_current_epoch(state) else
         // state.previous_justified_epoch.
-        if (slot_to_epoch(attestation.getData().getSlot().plus(UnsignedLong.ONE))
-                .compareTo(get_current_epoch(state))
-            >= 0) {
+        if (slot_to_epoch(attestation.getData().getSlot() + 1) >= get_current_epoch(state)) {
           checkArgument(
-              attestation.getData().getJustified_epoch().equals(state.getJustified_epoch()),
+              attestation.getData().getJustified_epoch() == state.getJustified_epoch(),
               "in process attestations(): 3");
         } else {
           checkArgument(
-              attestation
-                  .getData()
-                  .getJustified_epoch()
-                  .equals(state.getPrevious_justified_epoch()),
+              attestation.getData().getJustified_epoch() == state.getPrevious_justified_epoch(),
               "in process attestations(): 4 attestation justified epoch:"
                   + attestation.getData().getJustified_epoch()
                   + " state prev justified epoch:"
@@ -431,11 +410,11 @@ public final class BlockProcessorUtil {
         checkArgument(
             state
                     .getLatest_crosslinks()
-                    .get(toIntExact(attestation.getData().getShard().longValue()))
+                    .get(toIntExact(attestation.getData().getShard()))
                     .equals(attestation.getData().getLatest_crosslink())
                 || state
                     .getLatest_crosslinks()
-                    .get(toIntExact(attestation.getData().getShard().longValue()))
+                    .get(toIntExact(attestation.getData().getShard()))
                     .equals(
                         new Crosslink(
                             slot_to_epoch(attestationDataSlot),
@@ -472,7 +451,7 @@ public final class BlockProcessorUtil {
   }
 
   static boolean verify_randao(
-      BeaconState state, BeaconBlock block, UnsignedLong currentEpoch, Bytes32 currentEpochBytes)
+      BeaconState state, BeaconBlock block, long currentEpoch, Bytes32 currentEpochBytes)
       throws IllegalStateException {
     // Let proposer = state.validator_registry[get_beacon_proposer_index(state, state.slot)].
     int proposerIndex = BeaconStateUtil.get_beacon_proposer_index(state, state.getSlot());
@@ -481,7 +460,7 @@ public final class BlockProcessorUtil {
     // Verify that bls_verify(pubkey=proposer.pubkey,
     //   message=int_to_bytes32(get_current_epoch(state)), signature=block.randao_reveal,
     //   domain=get_domain(state.fork, get_current_epoch(state), DOMAIN_RANDAO)).
-    UnsignedLong domain = get_domain(state.getFork(), currentEpoch, DOMAIN_RANDAO);
+    long domain = get_domain(state.getFork(), currentEpoch, DOMAIN_RANDAO);
     return bls_verify(proposer.getPubkey(), currentEpochBytes, block.getRandao_reveal(), domain);
   }
 
@@ -555,7 +534,7 @@ public final class BlockProcessorUtil {
             hash_tree_root(
                 new AttestationDataAndCustodyBit(attestation.getData(), true).toBytes()));
     BLSSignature signature = attestation.getAggregate_signature();
-    UnsignedLong domain =
+    long domain =
         get_domain(
             state.getFork(), slot_to_epoch(attestation.getData().getSlot()), DOMAIN_ATTESTATION);
 
@@ -606,13 +585,13 @@ public final class BlockProcessorUtil {
                 Hash.keccak256(serialized_deposit_data),
                 deposit.getBranch(),
                 DEPOSIT_CONTRACT_TREE_DEPTH,
-                toIntExact(deposit.getIndex().longValue()),
+                toIntExact(deposit.getIndex()),
                 state.getLatest_eth1_data().getDeposit_root()));
 
         // - Run process_deposit
         process_deposit(state, deposit);
 
-        state.setDeposit_index(state.getDeposit_index().plus(UnsignedLong.ONE));
+        state.setDeposit_index(state.getDeposit_index() + 1);
       }
     } catch (IllegalArgumentException e) {
       LOG.log(Level.WARN, "BlockProcessingException thrown in processExits()");
@@ -638,22 +617,17 @@ public final class BlockProcessorUtil {
       for (VoluntaryExit voluntaryExit : block.getBody().getVoluntaryExits()) {
         // - Let validator = state.validator_registry[exit.validator_index]
         Validator validator =
-            state
-                .getValidator_registry()
-                .get(toIntExact(voluntaryExit.getValidator_index().longValue()));
+            state.getValidator_registry().get(toIntExact(voluntaryExit.getValidator_index()));
 
         // - Verify that validator.exit_epoch >
         // get_entry_exit_effect_epoch(get_current_epoch(state))
         checkArgument(
-            validator
-                    .getExit_epoch()
-                    .compareTo(get_entry_exit_effect_epoch(get_current_epoch(state)))
-                > 0,
+            validator.getExit_epoch() > get_entry_exit_effect_epoch(get_current_epoch(state)),
             "checkArgument threw and exception in processExits()");
 
         // - Verify that get_current_epoch(state) >= exit.epoch
         checkArgument(
-            get_current_epoch(state).compareTo(voluntaryExit.getEpoch()) >= 0,
+            get_current_epoch(state) >= voluntaryExit.getEpoch(),
             "checkArgument threw and exception in processExits()");
 
         // - Verify that bls_verify(
@@ -669,7 +643,7 @@ public final class BlockProcessorUtil {
             "checkArgument threw and exception in processExits()");
 
         // - Run initiate_validator_exit(state, exit.validator_index)
-        initiate_validator_exit(state, toIntExact(voluntaryExit.getValidator_index().longValue()));
+        initiate_validator_exit(state, toIntExact(voluntaryExit.getValidator_index()));
       }
     } catch (IllegalArgumentException e) {
       LOG.log(Level.WARN, "BlockProcessingException thrown in processExits()");
@@ -694,48 +668,40 @@ public final class BlockProcessorUtil {
     for (Transfer transfer : block.getBody().getTransfers()) {
       // - Verify that state.validator_balances[transfer.from] >= transfer.amount
       checkArgument(
-          state.getValidator_balances().get(toIntExact(transfer.getFrom().longValue())).longValue()
-              >= transfer.getAmount().longValue());
+          state.getValidator_balances().get(toIntExact(transfer.getFrom()))
+              >= transfer.getAmount());
       // - Verify that state.validator_balances[transfer.from] >= transfer.fee
       checkArgument(
-          state.getValidator_balances().get(toIntExact(transfer.getFrom().longValue())).longValue()
-              >= transfer.getFee().longValue());
+          state.getValidator_balances().get(toIntExact(transfer.getFrom())) >= transfer.getFee());
       // - Verify that state.validator_balances[transfer.from] == transfer.amount + transfer.fee or
       //     state.validator_balances[transfer.from]
       //     >= transfer.amount + transfer.fee + MIN_DEPOSIT_AMOUNT
       checkArgument(
-          state.getValidator_balances().get(toIntExact(transfer.getFrom().longValue())).longValue()
-                  == transfer.getAmount().longValue() + transfer.getFee().longValue()
-              || state
-                      .getValidator_balances()
-                      .get(toIntExact(transfer.getFrom().longValue()))
-                      .longValue()
-                  >= transfer.getAmount().longValue()
-                      + transfer.getFee().longValue()
-                      + Constants.MIN_DEPOSIT_AMOUNT);
+          state.getValidator_balances().get(toIntExact(transfer.getFrom()))
+                  == transfer.getAmount() + transfer.getFee()
+              || state.getValidator_balances().get(toIntExact(transfer.getFrom()))
+                  >= transfer.getAmount() + transfer.getFee() + Constants.MIN_DEPOSIT_AMOUNT);
       // - Verify that transfer.slot == state.slot
-      checkArgument(state.getSlot().equals(transfer.getSlot()));
+      checkArgument(state.getSlot() == transfer.getSlot());
       // - Verify that get_current_epoch(state) >=
       //     state.validator_registry[transfer.from].exit_epoch + MIN_EXIT_EPOCHS_BEFORE_TRANSFER
       checkArgument(
           BeaconStateUtil.get_current_epoch(state)
-                      .compareTo(
-                          state
-                              .getValidator_registry()
-                              .get(toIntExact(transfer.getFrom().longValue()))
-                              .getWithdrawal_epoch())
-                  >= 0
+                  >= state
+                      .getValidator_registry()
+                      .get(toIntExact(transfer.getFrom()))
+                      .getWithdrawal_epoch()
               || state
-                  .getValidator_registry()
-                  .get(toIntExact(transfer.getFrom().longValue()))
-                  .getActivation_epoch()
-                  .equals(FAR_FUTURE_EPOCH));
+                      .getValidator_registry()
+                      .get(toIntExact(transfer.getFrom()))
+                      .getActivation_epoch()
+                  == FAR_FUTURE_EPOCH);
       // - Verify that state.validator_registry[transfer.from].withdrawal_credentials ==
       //     BLS_WITHDRAWAL_PREFIX_BYTE + hash(transfer.pubkey)[1:]
       checkArgument(
           state
               .getValidator_registry()
-              .get(toIntExact(transfer.getFrom().longValue()))
+              .get(toIntExact(transfer.getFrom()))
               .getWithdrawal_credentials()
               .equals(
                   Bytes.concatenate(
@@ -766,22 +732,20 @@ public final class BlockProcessorUtil {
                   state.getFork(), slot_to_epoch(transfer.getSlot()), Constants.DOMAIN_TRANSFER)));
 
       // - Set state.validator_balances[transfer.from] -= transfer.amount + transfer.fee
-      UnsignedLong fromBalance =
-          state.getValidator_balances().get(toIntExact(transfer.getFrom().longValue()));
-      fromBalance = fromBalance.minus(transfer.getAmount()).minus(transfer.getFee());
-      state.getValidator_balances().set(toIntExact(transfer.getFrom().longValue()), fromBalance);
+      long fromBalance = state.getValidator_balances().get(toIntExact(transfer.getFrom()));
+      fromBalance = fromBalance - transfer.getAmount() - transfer.getFee();
+      state.getValidator_balances().set(toIntExact(transfer.getFrom()), fromBalance);
 
       // - Set state.validator_balances[transfer.to] += transfer.amount
-      UnsignedLong toBalance =
-          state.getValidator_balances().get(toIntExact(transfer.getFrom().longValue()));
-      toBalance = toBalance.plus(transfer.getAmount());
-      state.getValidator_balances().set(toIntExact(transfer.getTo().longValue()), toBalance);
+      long toBalance = state.getValidator_balances().get(toIntExact(transfer.getFrom()));
+      toBalance = toBalance + transfer.getAmount();
+      state.getValidator_balances().set(toIntExact(transfer.getTo()), toBalance);
 
       // - Set state.validator_balances[get_beacon_proposer_index(state, state.slot)]
       //     += transfer.fee
-      UnsignedLong proposerBalance =
+      long proposerBalance =
           state.getValidator_balances().get(get_beacon_proposer_index(state, state.getSlot()));
-      proposerBalance = proposerBalance.plus(transfer.getFee());
+      proposerBalance = proposerBalance + transfer.getFee();
       state
           .getValidator_balances()
           .set(get_beacon_proposer_index(state, state.getSlot()), proposerBalance);

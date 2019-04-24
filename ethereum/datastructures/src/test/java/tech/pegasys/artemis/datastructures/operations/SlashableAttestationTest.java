@@ -16,9 +16,8 @@ package tech.pegasys.artemis.datastructures.operations;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomAttestationData;
-import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomUnsignedLong;
+import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomLong;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -31,8 +30,7 @@ import tech.pegasys.artemis.util.bls.BLSSignature;
 
 class SlashableAttestationTest {
 
-  private List<UnsignedLong> validatorIndices =
-      Arrays.asList(randomUnsignedLong(), randomUnsignedLong(), randomUnsignedLong());
+  private List<Long> validatorIndices = Arrays.asList(randomLong(), randomLong(), randomLong());
   private AttestationData data = randomAttestationData();
   private Bytes custodyBitfield = Bytes32.random();
   private BLSSignature aggregateSignature = BLSSignature.random();
@@ -58,7 +56,7 @@ class SlashableAttestationTest {
   @Test
   void equalsReturnsFalseWhenValidatorIndicesAreDifferent() {
     // Create copy of validatorIndices and reverse to ensure it is different.
-    List<UnsignedLong> reverseValidatorIndices = new ArrayList<>(validatorIndices);
+    List<Long> reverseValidatorIndices = new ArrayList<>(validatorIndices);
     Collections.reverse(reverseValidatorIndices);
 
     SlashableAttestation testSlashableAttestation =

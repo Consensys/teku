@@ -13,7 +13,6 @@
 
 package tech.pegasys.artemis.datastructures.operations;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -24,10 +23,10 @@ import org.apache.tuweni.ssz.SSZ;
 public class Deposit {
 
   private List<Bytes32> branch;
-  private UnsignedLong index;
+  private long index;
   private DepositData deposit_data;
 
-  public Deposit(List<Bytes32> branch, UnsignedLong index, DepositData deposit_data) {
+  public Deposit(List<Bytes32> branch, long index, DepositData deposit_data) {
     this.branch = branch;
     this.index = index;
     this.deposit_data = deposit_data;
@@ -39,7 +38,7 @@ public class Deposit {
         reader ->
             new Deposit(
                 reader.readBytesList().stream().map(Bytes32::wrap).collect(Collectors.toList()),
-                UnsignedLong.fromLongBits(reader.readUInt64()),
+                reader.readUInt64(),
                 DepositData.fromBytes(reader.readBytes())));
   }
 
@@ -47,7 +46,7 @@ public class Deposit {
     return SSZ.encode(
         writer -> {
           writer.writeBytesList(branch);
-          writer.writeUInt64(index.longValue());
+          writer.writeUInt64(index);
           writer.writeBytes(deposit_data.toBytes());
         });
   }
@@ -86,11 +85,11 @@ public class Deposit {
     this.branch = branch;
   }
 
-  public UnsignedLong getIndex() {
+  public long getIndex() {
     return index;
   }
 
-  public void setIndex(UnsignedLong index) {
+  public void setIndex(long index) {
     this.index = index;
   }
 

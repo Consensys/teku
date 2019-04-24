@@ -16,9 +16,8 @@ package tech.pegasys.artemis.datastructures.operations;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomDepositInput;
-import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomUnsignedLong;
+import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomLong;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.junit.BouncyCastleExtension;
@@ -28,8 +27,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 @ExtendWith(BouncyCastleExtension.class)
 class DepositDataTest {
 
-  private UnsignedLong amount = randomUnsignedLong();
-  private UnsignedLong timestamp = randomUnsignedLong();
+  private long amount = randomLong();
+  private long timestamp = randomLong();
   private DepositInput depositInput = randomDepositInput();
 
   private DepositData depositData = new DepositData(amount, timestamp, depositInput);
@@ -50,16 +49,14 @@ class DepositDataTest {
 
   @Test
   void equalsReturnsFalseWhenAmountsAreDifferent() {
-    DepositData testDepositData =
-        new DepositData(amount.plus(randomUnsignedLong()), timestamp, depositInput);
+    DepositData testDepositData = new DepositData(amount + randomLong(), timestamp, depositInput);
 
     assertNotEquals(depositData, testDepositData);
   }
 
   @Test
   void equalsReturnsFalseWhenTimestampsAreDifferent() {
-    DepositData testDepositData =
-        new DepositData(amount, timestamp.plus(randomUnsignedLong()), depositInput);
+    DepositData testDepositData = new DepositData(amount, timestamp + randomLong(), depositInput);
 
     assertNotEquals(depositData, testDepositData);
   }
