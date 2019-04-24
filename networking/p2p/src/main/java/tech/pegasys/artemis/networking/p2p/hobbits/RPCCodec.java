@@ -13,15 +13,7 @@
 
 package tech.pegasys.artemis.networking.p2p.hobbits;
 
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.JsonDeserializer;
-import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializerProvider;
-import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.base.Splitter;
 import de.undercouch.bson4jackson.BsonFactory;
@@ -34,78 +26,10 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 import javax.annotation.Nullable;
 import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.units.bigints.UInt64;
 import org.xerial.snappy.Snappy;
+import tech.pegasys.artemis.util.json.BytesModule;
 
 public final class RPCCodec implements Codec {
-
-  private static class UInt64Serializer extends JsonSerializer<UInt64> {
-
-    @Override
-    public void serialize(UInt64 bytes, JsonGenerator jGen, SerializerProvider serializerProvider)
-        throws IOException {
-      jGen.writeString(bytes.toHexString());
-    }
-  }
-
-  private static class UInt64Deserializer extends JsonDeserializer<UInt64> {
-
-    @Override
-    public UInt64 deserialize(JsonParser p, DeserializationContext ctxt)
-        throws IOException, JsonProcessingException {
-      return UInt64.fromHexString(p.getValueAsString());
-    }
-  }
-
-  private static class Bytes32Serializer extends JsonSerializer<Bytes32> {
-
-    @Override
-    public void serialize(Bytes32 bytes, JsonGenerator jGen, SerializerProvider serializerProvider)
-        throws IOException {
-      jGen.writeString(bytes.toHexString());
-    }
-  }
-
-  private static class Bytes32Deserializer extends JsonDeserializer<Bytes32> {
-
-    @Override
-    public Bytes32 deserialize(JsonParser p, DeserializationContext ctxt)
-        throws IOException, JsonProcessingException {
-      return Bytes32.fromHexString(p.getValueAsString());
-    }
-  }
-
-  private static class BytesSerializer extends JsonSerializer<Bytes> {
-
-    @Override
-    public void serialize(Bytes bytes, JsonGenerator jGen, SerializerProvider serializerProvider)
-        throws IOException {
-      jGen.writeString(bytes.toHexString());
-    }
-  }
-
-  private static class BytesDeserializer extends JsonDeserializer<Bytes> {
-
-    @Override
-    public Bytes deserialize(JsonParser p, DeserializationContext ctxt)
-        throws IOException, JsonProcessingException {
-      return Bytes.fromHexString(p.getValueAsString());
-    }
-  }
-
-  static final class BytesModule extends SimpleModule {
-
-    BytesModule() {
-      super("bytes");
-      addSerializer(Bytes.class, new BytesSerializer());
-      addDeserializer(Bytes.class, new BytesDeserializer());
-      addSerializer(Bytes32.class, new Bytes32Serializer());
-      addDeserializer(Bytes32.class, new Bytes32Deserializer());
-      addSerializer(UInt64.class, new UInt64Serializer());
-      addDeserializer(UInt64.class, new UInt64Deserializer());
-    }
-  }
 
   static final ObjectMapper mapper =
       new ObjectMapper(new BsonFactory()).registerModule(new BytesModule());
