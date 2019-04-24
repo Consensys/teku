@@ -18,11 +18,10 @@ import org.apache.tuweni.bytes.Bytes32;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
+import java.nio.ByteOrder;
 import tech.pegasys.artemis.data.IRecordAdapter;
 import tech.pegasys.artemis.pow.api.Eth2GenesisEvent;
 import tech.pegasys.artemis.pow.contract.DepositContract.Eth2GenesisEventResponse;
-
-import java.nio.ByteOrder;
 
 public class Eth2Genesis extends AbstractEvent<Eth2GenesisEventResponse>
     implements Eth2GenesisEvent, IRecordAdapter {

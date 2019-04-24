@@ -15,30 +15,29 @@ package tech.pegasys.artemis.pow.event;
 
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import java.nio.ByteOrder;
 import tech.pegasys.artemis.pow.api.DepositEvent;
 import tech.pegasys.artemis.pow.contract.DepositContract.DepositEventResponse;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 
-import java.nio.ByteOrder;
-
 public class Deposit extends AbstractEvent<DepositEventResponse> implements DepositEvent {
-  //processed fields
+  // processed fields
   private BLSPublicKey pubkey;
   private Bytes32 withdrawal_credentials;
   private Bytes proof_of_possession;
   private long amount;
 
-  //raw fields
+  // raw fields
   private Bytes data;
   private Bytes merkel_tree_index;
 
   public Deposit(DepositEventResponse response) {
     super(response);
-    //raw fields
+    // raw fields
     this.data = Bytes.wrap(response.data);
     this.merkel_tree_index = Bytes.wrap(response.merkle_tree_index);
 
-    //process fields
+    // process fields
     this.pubkey = BLSPublicKey.fromBytesCompressed(data.slice(0, 48).reverse());
     this.withdrawal_credentials = Bytes32.wrap(data.slice(48, 32).reverse());
     this.proof_of_possession = data.slice(88, 96).reverse();

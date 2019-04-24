@@ -16,6 +16,10 @@ package tech.pegasys.artemis.services.powchain;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.google.common.primitives.UnsignedLong;
+import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.SECP256K1;
@@ -37,14 +41,7 @@ import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.mikuli.KeyPair;
 import tech.pegasys.artemis.validator.client.DepositSimulation;
 import tech.pegasys.artemis.validator.client.Validator;
-import java.nio.charset.Charset;
-import java.util.Collections;
 import tech.pegasys.artemis.validator.client.ValidatorClientUtil;
-
-import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 
 public class PowchainService implements ServiceInterface {
 
@@ -72,7 +69,7 @@ public class PowchainService implements ServiceInterface {
 
   @Override
   public void run() {
-    //JSONProvider provider = new JSONProvider();
+    // JSONProvider provider = new JSONProvider();
     if (depositSimulation) {
       controller = new GanacheController(10, 6000);
       listener =
@@ -82,7 +79,13 @@ public class PowchainService implements ServiceInterface {
       simulations = new ArrayList<DepositSimulation>();
       for (SECP256K1.KeyPair keyPair : controller.getAccounts()) {
         Validator validator = new Validator(Bytes32.random(), KeyPair.random(), keyPair);
-        simulations.add( new DepositSimulation(validator, ValidatorClientUtil.generateDepositData(validator.getBlsKeys(), validator.getWithdrawal_credentials(), UnsignedLong.valueOf(SIM_DEPOSIT_VALUE_GWEI))));
+        simulations.add(
+            new DepositSimulation(
+                validator,
+                ValidatorClientUtil.generateDepositData(
+                    validator.getBlsKeys(),
+                    validator.getWithdrawal_credentials(),
+                    UnsignedLong.valueOf(SIM_DEPOSIT_VALUE_GWEI))));
         try {
           ValidatorClientUtil.registerValidatorEth1(
               validator,
@@ -99,8 +102,7 @@ public class PowchainService implements ServiceInterface {
                   + e);
         }
       }
-    }
-    else {
+    } else {
       Eth2GenesisEventResponse response = new Eth2GenesisEventResponse();
       response.log =
           new Log(true, "1", "2", "3", "4", "5", "6", "7", "8", Collections.singletonList("9"));
@@ -118,31 +120,41 @@ public class PowchainService implements ServiceInterface {
 
   @Subscribe
   public void onDepositEvent(DepositEvent event) {
-      if (depositSimulation) {
-        Deposit deposit = ((tech.pegasys.artemis.pow.event.Deposit) event);
-        eventBus.post(attributeDepositToSimulation(deposit));
-        LOG.log(
-                Level.INFO,
-                "\nBLSPublicKey: " + deposit.getPubkey().toBytes().toHexString() + "\nAmount: " + deposit.getAmount() + "\nwithdrawal_credentials: " + deposit.getWithdrawal_credentials().toHexString() + "\nproof_of_possession: " + deposit.getProof_of_possession().toHexString() + "\n\n");
-      }
+    if (depositSimulation) {
+      Deposit deposit = ((tech.pegasys.artemis.pow.event.Deposit) event);
+      eventBus.post(attributeDepositToSimulation(deposit));
+      LOG.log(
+          Level.INFO,
+          "\nBLSPublicKey: "
+              + deposit.getPubkey().toBytes().toHexString()
+              + "\nAmount: "
+              + deposit.getAmount()
+              + "\nwithdrawal_credentials: "
+              + deposit.getWithdrawal_credentials().toHexString()
+              + "\nproof_of_possession: "
+              + deposit.getProof_of_possession().toHexString()
+              + "\n\n");
     }
+  }
 
   @Subscribe
   public void onEth2GenesisEvent(Eth2GenesisEvent event) {
     Eth2Genesis eth2Genesis = ((tech.pegasys.artemis.pow.event.Eth2Genesis) event);
     eventBus.post(eth2Genesis);
-    LOG.log(
-            Level.INFO,
-            "\nDeposit Root: " + eth2Genesis.getDeposit_root().toHexString() + "\n\n");
+    LOG.log(Level.INFO, "\nDeposit Root: " + eth2Genesis.getDeposit_root().toHexString() + "\n\n");
   }
 
-  private DepositSimulation attributeDepositToSimulation(Deposit deposit){
-    for(int i=0; i<simulations.size(); i++){
+  private DepositSimulation attributeDepositToSimulation(Deposit deposit) {
+    for (int i = 0; i < simulations.size(); i++) {
       DepositSimulation simulation = simulations.get(i);
-      if (simulation.getValidator().getWithdrawal_credentials().equals(deposit.getWithdrawal_credentials())){
+      if (simulation
+          .getValidator()
+          .getWithdrawal_credentials()
+          .equals(deposit.getWithdrawal_credentials())) {
         simulation.getDeposits().add(deposit);
         return simulation;
-      };
+      }
+      ;
     }
     return null;
   }

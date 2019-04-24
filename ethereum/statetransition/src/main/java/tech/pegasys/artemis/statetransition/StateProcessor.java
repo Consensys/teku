@@ -20,6 +20,11 @@ import java.util.Date;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
+<<<<<<< HEAD
+=======
+import net.consensys.cava.bytes.Bytes32;
+import net.consensys.cava.crypto.SECP256K1.PublicKey;
+>>>>>>> spotlessApply
 import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.SECP256K1.PublicKey;
@@ -36,11 +41,6 @@ import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
-
-import java.util.Date;
-import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.Optional;
 
 /** Class to manage the state tree and initiate state transitions */
 public class StateProcessor {
@@ -108,12 +108,13 @@ public class StateProcessor {
     }
   }
 
-//  @Subscribe
-//  public void onDepositEvent(DepositEvent event) {
-//    LOG.log(
-//        Level.INFO,
-//        "Deposit Event detected: " + ((tech.pegasys.artemis.pow.event.Deposit) event).toString());
-//  }
+  //  @Subscribe
+  //  public void onDepositEvent(DepositEvent event) {
+  //    LOG.log(
+  //        Level.INFO,
+  //        "Deposit Event detected: " + ((tech.pegasys.artemis.pow.event.Deposit)
+  // event).toString());
+  //  }
 
   @Subscribe
   public void onNewSlot(Date date) throws StateTransitionException, InterruptedException {
