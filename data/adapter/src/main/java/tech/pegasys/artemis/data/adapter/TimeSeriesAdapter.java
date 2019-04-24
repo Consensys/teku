@@ -69,6 +69,7 @@ public class TimeSeriesAdapter implements DataAdapter<TimeSeriesRecord> {
                       headState.getValidator_balances().get(i)));
             });
     return new TimeSeriesRecord(
+        this.input.getDate(),
         this.input.getIndex(),
         slot,
         epoch,

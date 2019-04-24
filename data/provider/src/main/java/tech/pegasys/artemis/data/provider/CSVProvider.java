@@ -13,10 +13,12 @@
 
 package tech.pegasys.artemis.data.provider;
 
-import java.io.BufferedWriter;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStreamWriter;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
+import java.util.Arrays;
 import org.apache.logging.log4j.Level;
 import tech.pegasys.artemis.data.IRecordAdapter;
 import tech.pegasys.artemis.util.alogger.ALogger;
@@ -24,18 +26,20 @@ import tech.pegasys.artemis.util.alogger.ALogger;
 public class CSVProvider implements FileProvider {
   private static final ALogger LOG = new ALogger(CSVProvider.class.getName());
 
-  public CSVProvider() {}
+  private final Path logFilePath;
+
+  public CSVProvider(Path logFilePath) {
+    this.logFilePath = logFilePath;
+  }
 
   @Override
-  public void output(String filename, IRecordAdapter record) {
+  public void output(IRecordAdapter record) {
     try {
-      BufferedWriter bw =
-          new BufferedWriter(new OutputStreamWriter(new FileOutputStream(filename, true), "UTF-8"));
-      StringBuilder line = new StringBuilder(record.toCSV());
-      bw.write(line.toString());
-      bw.newLine();
-      bw.flush();
-      bw.close();
+      Files.write(
+          logFilePath,
+          Arrays.asList(record.toCSV()),
+          StandardCharsets.UTF_8,
+          Files.exists(logFilePath) ? StandardOpenOption.APPEND : StandardOpenOption.CREATE);
     } catch (IOException e) {
       LOG.log(Level.WARN, e.toString());
     }
