@@ -557,7 +557,7 @@ public class BeaconStateUtil {
     // Todo: Remove .intValue() as soon as our list wrapper supports unsigned longs
     return state
         .getLatest_block_roots()
-        .get(toIntExact(slot) % Constants.LATEST_BLOCK_ROOTS_LENGTH);
+        .get((int) slot % Constants.LATEST_BLOCK_ROOTS_LENGTH);
   }
 
   /**
