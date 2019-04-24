@@ -176,12 +176,12 @@ class ValidatorsUtilTest {
   //      Bytes48 pubkey,
   //      Bytes32 withdrawalCredentials,
   //      Bytes32 randaoCommitment,
-  //      UnsignedLong randaoLayers,
-  //      UnsignedLong status,
-  //      UnsignedLong slot,
-  //      UnsignedLong exitCount,
-  //      UnsignedLong lastPocChangeSlot,
-  //      UnsignedLong secondLastPocChangeSlot,
+  //      long randaoLayers,
+  //      long status,
+  //      long slot,
+  //      long exitCount,
+  //      long lastPocChangeSlot,
+  //      long secondLastPocChangeSlot,
   //      double balance) {
   //    Validator validator =
   //        new Validator(
@@ -203,12 +203,12 @@ class ValidatorsUtilTest {
   // {
   //    Bytes32 withdrawal_credentials = Bytes32.ZERO;
   //    Bytes32 randaoCommitment = Bytes32.ZERO;
-  //    UnsignedLong randaoLayers = UnsignedLong.ZERO;
-  //    UnsignedLong status = UnsignedLong.valueOf(statusAsInt);
-  //    UnsignedLong slot = UnsignedLong.ZERO;
-  //    UnsignedLong exitCount = UnsignedLong.ZERO;
-  //    UnsignedLong lastPocChangeSlot = UnsignedLong.ZERO;
-  //    UnsignedLong secondLastPocChangeSlot = UnsignedLong.ZERO;
+  //    long randaoLayers = 0;
+  //    long status = statusAsInt;
+  //    long slot = 0;
+  //    long exitCount = 0;
+  //    long lastPocChangeSlot = 0;
+  //    long secondLastPocChangeSlot = 0;
   //
   //    return getAValidatorRecordTestDataFromParameters(
   //        Bytes48.leftPad(Bytes.ofUnsignedInt(pubKeyInt)),

@@ -13,7 +13,6 @@
 
 package tech.pegasys.artemis.datastructures.operations;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.ssz.SSZ;
@@ -21,11 +20,11 @@ import tech.pegasys.artemis.datastructures.blocks.Proposal;
 
 public class ProposerSlashing {
 
-  private UnsignedLong proposer_index;
+  private long proposer_index;
   private Proposal proposal_1;
   private Proposal proposal_2;
 
-  public ProposerSlashing(UnsignedLong proposer_index, Proposal proposal_1, Proposal proposal_2) {
+  public ProposerSlashing(long proposer_index, Proposal proposal_1, Proposal proposal_2) {
     this.proposer_index = proposer_index;
     this.proposal_1 = proposal_1;
     this.proposal_2 = proposal_2;
@@ -36,7 +35,7 @@ public class ProposerSlashing {
         bytes,
         reader ->
             new ProposerSlashing(
-                UnsignedLong.fromLongBits(reader.readUInt64()),
+                reader.readUInt64(),
                 Proposal.fromBytes(reader.readBytes()),
                 Proposal.fromBytes(reader.readBytes())));
   }
@@ -44,7 +43,7 @@ public class ProposerSlashing {
   public Bytes toBytes() {
     return SSZ.encode(
         writer -> {
-          writer.writeUInt64(proposer_index.longValue());
+          writer.writeUInt64(proposer_index);
           writer.writeBytes(proposal_1.toBytes());
           writer.writeBytes(proposal_2.toBytes());
         });
@@ -76,11 +75,11 @@ public class ProposerSlashing {
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */
-  public UnsignedLong getProposer_index() {
+  public long getProposer_index() {
     return proposer_index;
   }
 
-  public void setProposer_index(UnsignedLong proposer_index) {
+  public void setProposer_index(long proposer_index) {
     this.proposer_index = proposer_index;
   }
 

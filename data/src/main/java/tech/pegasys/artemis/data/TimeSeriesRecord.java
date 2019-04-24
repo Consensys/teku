@@ -36,7 +36,7 @@ public class TimeSeriesRecord implements IRecordAdapter {
         throws IOException {
       jGen.writeStartObject();
       jGen.writeStringField("pubkey", validatorJoin.getValidator().getPubkey().toString());
-      jGen.writeStringField("balance", validatorJoin.getBalance().toString());
+      jGen.writeStringField("balance", "" + validatorJoin.getBalance());
       jGen.writeEndObject();
     }
   }
