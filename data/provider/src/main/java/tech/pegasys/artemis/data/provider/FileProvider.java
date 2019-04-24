@@ -15,10 +15,12 @@ package tech.pegasys.artemis.data.provider;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import tech.pegasys.artemis.data.IRecordAdapter;
 
 public interface FileProvider {
-  static String uniqueFilename(String filename) throws IOException {
+  static Path uniqueFilename(String filename) throws IOException {
     String newFilename = filename;
     File f = new File(filename);
     int version = 1;
@@ -27,9 +29,8 @@ public interface FileProvider {
       f = new File(newFilename);
       version++;
     }
-    f.createNewFile();
-    return newFilename;
+    return Paths.get(newFilename);
   }
 
-  void output(String filename, IRecordAdapter record);
+  void output(IRecordAdapter record);
 }

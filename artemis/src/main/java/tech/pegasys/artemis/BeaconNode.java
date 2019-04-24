@@ -18,6 +18,7 @@ import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import io.vertx.core.Vertx;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
@@ -67,7 +68,6 @@ public class BeaconNode {
   private P2PNetwork p2pNetwork;
   private ValidatorCoordinator validatorCoordinator;
   private EventBus eventBus;
-  private String outputFilename;
   private FileProvider fileProvider;
 
   private CommandLineArguments cliArgs;
@@ -111,14 +111,14 @@ public class BeaconNode {
     if (cliArgs.isOutputEnabled()) {
       this.eventBus.register(this);
       try {
-        this.outputFilename = FileProvider.uniqueFilename(cliArgs.getOutputFile());
+        Path outputFilename = FileProvider.uniqueFilename(cliArgs.getOutputFile());
+        if (ProviderTypes.compare(CSVProvider.class, cliArgs.getProviderType())) {
+          this.fileProvider = new CSVProvider(outputFilename);
+        } else {
+          this.fileProvider = new JSONProvider(outputFilename);
+        }
       } catch (IOException e) {
         LOG.log(Level.ERROR, e.getMessage());
-      }
-      if (ProviderTypes.compare(CSVProvider.class, cliArgs.getProviderType())) {
-        this.fileProvider = new CSVProvider();
-      } else {
-        this.fileProvider = new JSONProvider();
       }
     }
     if (commandLine.isUsageHelpRequested()) {
@@ -164,7 +164,9 @@ public class BeaconNode {
   public void onDataEvent(RawRecord record) {
     TimeSeriesAdapter adapter = new TimeSeriesAdapter(record);
     TimeSeriesRecord tsRecord = adapter.transform();
-    fileProvider.output(outputFilename, tsRecord);
+    if (fileProvider != null) {
+      fileProvider.output(tsRecord);
+    }
   }
 
   P2PNetwork p2pNetwork() {

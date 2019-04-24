@@ -13,21 +13,48 @@
 
 package tech.pegasys.artemis.data;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonSerializationContext;
-import com.google.gson.JsonSerializer;
-import com.google.gson.reflect.TypeToken;
-import java.lang.reflect.Type;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonSerializer;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.module.SimpleModule;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.artemis.util.bls.BLSPublicKey;
-import tech.pegasys.artemis.util.bls.BLSSignature;
+import tech.pegasys.artemis.util.json.BytesModule;
 
 public class TimeSeriesRecord implements IRecordAdapter {
 
+  private static class ValidatorJoinSerializer extends JsonSerializer<ValidatorJoin> {
+
+    @Override
+    public void serialize(
+        ValidatorJoin validatorJoin, JsonGenerator jGen, SerializerProvider serializerProvider)
+        throws IOException {
+      jGen.writeStartObject();
+      jGen.writeStringField("pubkey", validatorJoin.getValidator().getPubkey().toString());
+      jGen.writeStringField("balance", validatorJoin.getBalance().toString());
+      jGen.writeEndObject();
+    }
+  }
+
+  private static class ValidatorJoinModule extends SimpleModule {
+
+    public ValidatorJoinModule() {
+      super("validatorJoin");
+      addSerializer(ValidatorJoin.class, new ValidatorJoinSerializer());
+    }
+  }
+
+  private static final ObjectMapper mapper =
+      new ObjectMapper()
+          .registerModule(new BytesModule())
+          .registerModule(new ValidatorJoinModule());
+
+  private Date date;
   private long index;
   private long slot;
   private long epoch;
@@ -45,12 +72,14 @@ public class TimeSeriesRecord implements IRecordAdapter {
 
   public TimeSeriesRecord() {
     // new Hello(1, 1, Bytes32.random(), UInt64.valueOf(0), Bytes32.random(), UInt64.valueOf(0))
+    this.date = new Date();
     this.index = Long.MAX_VALUE;
     this.slot = Long.MAX_VALUE;
     this.epoch = Long.MAX_VALUE;
 
     this.block_root = Bytes32.random().toHexString();
     this.block_parent_root = Bytes32.random().toHexString();
+    this.validators = new ArrayList<>();
 
     this.lastJustifiedBlockRoot = Bytes32.random().toHexString();
     this.lastJustifiedStateRoot = Bytes32.random().toHexString();
@@ -59,6 +88,7 @@ public class TimeSeriesRecord implements IRecordAdapter {
   }
 
   public TimeSeriesRecord(
+      Date date,
       long index,
       long slot,
       long epoch,
@@ -85,54 +115,53 @@ public class TimeSeriesRecord implements IRecordAdapter {
 
   @Override
   public String toJSON() {
-    Gson gson = new GsonBuilder().create();
-    GsonBuilder gsonBuilder = new GsonBuilder();
-
-    Type bytes32Type = new TypeToken<Bytes32>() {}.getType();
-    JsonSerializer<Bytes32> serializer =
-        (src, typeOfSrc, context) -> {
-          JsonObject obj = new JsonObject();
-          obj.addProperty("Bytes32", src.toHexString());
-          return obj;
-        };
-
-    Type blsSignatureType = new TypeToken<BLSSignature>() {}.getType();
-    JsonSerializer<BLSSignature> blsSerializer =
-        (src, typeOfSrc, context) -> {
-          JsonObject obj = new JsonObject();
-          obj.addProperty("BLSSignature", src.toString());
-          return obj;
-        };
-
-    Type blsPublicKeyType = new TypeToken<BLSPublicKey>() {}.getType();
-    JsonSerializer<BLSPublicKey> blsPubKeySerializer =
-        (src, typeOfSrc, context) -> {
-          JsonObject obj = new JsonObject();
-          obj.addProperty("BLSPublicKey", src.toString());
-          return obj;
-        };
-
-    Type validatorJoinType = new TypeToken<ValidatorJoin>() {}.getType();
-    JsonSerializer<ValidatorJoin> validatorJoinJsonSerializer =
-        new JsonSerializer<ValidatorJoin>() {
-          @Override
-          public JsonElement serialize(
-              ValidatorJoin src, Type typeOfSrc, JsonSerializationContext context) {
-            JsonObject obj = new JsonObject();
-            obj.addProperty("pubkey", src.getValidator().getPubkey().toString());
-            obj.addProperty("balance", src.getBalance());
-            return obj;
-          }
-        };
-    gsonBuilder.registerTypeAdapter(validatorJoinType, validatorJoinJsonSerializer);
-
-    Gson customGson = gsonBuilder.setPrettyPrinting().create();
-    return customGson.toJson(this);
+    try {
+      return mapper.writerFor(TimeSeriesRecord.class).writeValueAsString(this);
+    } catch (JsonProcessingException e) {
+      throw new IllegalArgumentException(e);
+    }
   }
 
   @Override
   public String toCSV() {
-    return null;
+    return "'"
+        + this.date.toInstant().toEpochMilli()
+        + "'"
+        + ", '"
+        + this.getIndex()
+        + "'"
+        + ", '"
+        + this.getSlot()
+        + "'"
+        + ", '"
+        + this.getEpoch()
+        + "'"
+        + ", '"
+        + this.getLastFinalizedBlockRoot()
+        + "'"
+        + ", '"
+        + this.getLastFinalizedStateRoot()
+        + "'"
+        + ", '"
+        + this.getBlock_parent_root()
+        + "'"
+        + ", '"
+        + this.getValidators().size()
+        + "'"
+        + ", '"
+        + this.getLastJustifiedBlockRoot()
+        + "'"
+        + ", '"
+        + this.getLastJustifiedStateRoot()
+        + "'";
+  }
+
+  public long getDate() {
+    return date.toInstant().toEpochMilli();
+  }
+
+  public void setDate(long date) {
+    this.date = new Date(date);
   }
 
   public long getIndex() {
