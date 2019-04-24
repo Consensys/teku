@@ -198,6 +198,9 @@ public class Validator implements Copyable<Validator> {
    *     - Spec v0.4</a>
    */
   public boolean is_active_validator(long epoch) {
+    if (exit_epoch == -1) {
+      return activation_epoch <= epoch;
+    }
     return activation_epoch <= epoch && epoch < exit_epoch;
   }
 }

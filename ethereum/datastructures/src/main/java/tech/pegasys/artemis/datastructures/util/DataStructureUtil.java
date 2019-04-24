@@ -13,7 +13,6 @@
 
 package tech.pegasys.artemis.datastructures.util;
 
-import static java.lang.Math.toIntExact;
 import static tech.pegasys.artemis.datastructures.Constants.MAX_DEPOSIT_AMOUNT;
 
 import java.nio.ByteBuffer;
@@ -344,7 +343,7 @@ public final class DataStructureUtil {
         slotNum,
         parent_root,
         state_root,
-        BLSSignature.random(toIntExact(slotNum)),
+        BLSSignature.random((int) slotNum),
         new Eth1Data(Bytes32.ZERO, Bytes32.ZERO),
         new BeaconBlockBody(
             new ArrayList<>(),

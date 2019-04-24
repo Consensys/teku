@@ -619,6 +619,7 @@ public class BeaconStateUtil {
         ValidatorsUtil.get_active_validator_indices(validators, epoch);
 
     int length = active_validator_indices.size();
+
     List<Integer> shuffled_indices =
         Arrays.stream(shuffle(length, seed)).boxed().collect(Collectors.toList());
     List<Integer> shuffled_active_validator_indices =
@@ -847,7 +848,7 @@ public class BeaconStateUtil {
     } else {
       List<Integer> first_committee =
           get_crosslink_committees_at_slot(state, slot).get(0).getCommittee();
-      return first_committee.get(toIntExact(slot) % first_committee.size());
+      return first_committee.get((int) slot % first_committee.size());
     }
   }
 

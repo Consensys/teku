@@ -13,6 +13,8 @@
 
 package tech.pegasys.artemis.validator.coordinator;
 
+import static java.lang.Math.toIntExact;
+
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import java.util.ArrayList;
@@ -57,7 +59,7 @@ public class ValidatorCoordinator {
   private int numNodes;
   private BeaconBlock validatorBlock;
   private ArrayList<Deposit> newDeposits = new ArrayList<>();
-  private final HashMap<BLSPublicKey, BLSKeyPair> validatorSet = new HashMap<>();
+  private HashMap<BLSPublicKey, BLSKeyPair> validatorSet = new HashMap<>();
   static final Integer UNPROCESSED_BLOCKS_LENGTH = 100;
   private final PriorityBlockingQueue<Attestation> attestationsQueue =
       new PriorityBlockingQueue<Attestation>(
@@ -138,7 +140,7 @@ public class ValidatorCoordinator {
     int endIndex =
         startIndex
             + (numValidators / numNodes - 1)
-            + (int) Math.floor(nodeCounter / Math.max(1, numNodes - 1));
+            + toIntExact(Math.round((double) nodeCounter / Math.max(1, numNodes - 1)));
     endIndex = Math.min(endIndex, numValidators - 1);
     // int startIndex = 0;
     // int endIndex = numValidators-1;
@@ -154,7 +156,7 @@ public class ValidatorCoordinator {
   private void createBlockIfNecessary(BeaconStateWithCache headState, BeaconBlock headBlock) {
     // Calculate the block proposer index, and if we have the
     // block proposer in our set of validators, produce the block
-    Integer proposerIndex =
+    int proposerIndex =
         BeaconStateUtil.get_beacon_proposer_index(headState, headState.getSlot() + 1);
     BLSPublicKey proposerPubkey = headState.getValidator_registry().get(proposerIndex).getPubkey();
     if (validatorSet.containsKey(proposerPubkey)) {
