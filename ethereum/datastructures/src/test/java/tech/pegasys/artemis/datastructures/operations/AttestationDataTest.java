@@ -17,9 +17,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomCrosslink;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomInt;
-import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomUnsignedLong;
+import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomLong;
 
-import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
@@ -27,13 +26,13 @@ import tech.pegasys.artemis.datastructures.state.Crosslink;
 
 class AttestationDataTest {
 
-  private UnsignedLong slot = randomUnsignedLong();
-  private UnsignedLong shard = randomUnsignedLong();
+  private long slot = randomLong();
+  private long shard = randomLong();
   private Bytes32 beaconBlockRoot = Bytes32.random();
   private Bytes32 epochBoundaryRoot = Bytes32.random();
   private Bytes32 crosslinkDataRoot = Bytes32.random();
   private Crosslink latestCrosslink = randomCrosslink();
-  private UnsignedLong justifiedEpoch = randomUnsignedLong();
+  private long justifiedEpoch = randomLong();
   private Bytes32 justifiedBlockRoot = Bytes32.random();
 
   private AttestationData attestationData =
@@ -74,7 +73,7 @@ class AttestationDataTest {
   void equalsReturnsFalseWhenSlotsAreDifferent() {
     AttestationData testAttestationData =
         new AttestationData(
-            slot.plus(randomUnsignedLong()),
+            slot + randomLong(),
             shard,
             beaconBlockRoot,
             epochBoundaryRoot,
@@ -91,7 +90,7 @@ class AttestationDataTest {
     AttestationData testAttestationData =
         new AttestationData(
             slot,
-            shard.plus(randomUnsignedLong()),
+            shard + randomLong(),
             beaconBlockRoot,
             epochBoundaryRoot,
             crosslinkDataRoot,
@@ -154,7 +153,7 @@ class AttestationDataTest {
   void equalsReturnsFalseWhenLatestCrosslinkRootsAreDifferent() {
     Crosslink diffCrosslink =
         new Crosslink(
-            latestCrosslink.getEpoch().plus(randomUnsignedLong()),
+            latestCrosslink.getEpoch() + randomLong(),
             Bytes32.wrap(latestCrosslink.getCrosslink_data_root(), randomInt(0)));
 
     AttestationData testAttestationData =
@@ -181,7 +180,7 @@ class AttestationDataTest {
             epochBoundaryRoot,
             crosslinkDataRoot,
             latestCrosslink,
-            justifiedEpoch.plus(randomUnsignedLong()),
+            justifiedEpoch + randomLong(),
             justifiedBlockRoot);
 
     assertNotEquals(attestationData, testAttestationData);

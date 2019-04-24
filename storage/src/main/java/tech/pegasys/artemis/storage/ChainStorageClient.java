@@ -15,7 +15,6 @@ package tech.pegasys.artemis.storage;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
-import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -65,7 +64,7 @@ public class ChainStorageClient implements ChainStorage {
   /**
    * Add processed block to storage
    *
-   * @param blockHash
+   * @param state_root
    * @param block
    */
   public void addProcessedBlock(Bytes state_root, BeaconBlock block) {
@@ -115,7 +114,7 @@ public class ChainStorageClient implements ChainStorage {
   /**
    * Retrieves processed block's parent block
    *
-   * @param state_root
+   * @param block
    * @return
    */
   public Optional<BeaconBlock> getParent(BeaconBlock block) {
@@ -147,7 +146,7 @@ public class ChainStorageClient implements ChainStorage {
    *
    * @return
    */
-  public List<Optional<BeaconBlock>> getUnprocessedBlocksUntilSlot(UnsignedLong slot) {
+  public List<Optional<BeaconBlock>> getUnprocessedBlocksUntilSlot(long slot) {
     List<Optional<BeaconBlock>> unprocessedBlocks = new ArrayList<>();
     boolean unproccesedBlocksLeft = true;
     Optional<BeaconBlock> currentBlock;
@@ -155,8 +154,7 @@ public class ChainStorageClient implements ChainStorage {
       currentBlock =
           ChainStorage.<BeaconBlock, PriorityBlockingQueue<BeaconBlock>>peek(
               this.unprocessedBlocks);
-      if (currentBlock.isPresent()
-          && UnsignedLong.valueOf(currentBlock.get().getSlot()).compareTo(slot) <= 0) {
+      if (currentBlock.isPresent() && currentBlock.get().getSlot() <= slot) {
         unprocessedBlocks.add(
             ChainStorage.<BeaconBlock, PriorityBlockingQueue<BeaconBlock>>remove(
                 this.unprocessedBlocks));

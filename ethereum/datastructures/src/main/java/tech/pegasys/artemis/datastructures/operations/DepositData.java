@@ -13,18 +13,17 @@
 
 package tech.pegasys.artemis.datastructures.operations;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.ssz.SSZ;
 
 public class DepositData {
 
-  private UnsignedLong amount;
-  private UnsignedLong timestamp;
+  private long amount;
+  private long timestamp;
   private DepositInput deposit_input;
 
-  public DepositData(UnsignedLong amount, UnsignedLong timestamp, DepositInput deposit_input) {
+  public DepositData(long amount, long timestamp, DepositInput deposit_input) {
     this.amount = amount;
     this.timestamp = timestamp;
     this.deposit_input = deposit_input;
@@ -35,16 +34,16 @@ public class DepositData {
         bytes,
         reader ->
             new DepositData(
-                UnsignedLong.fromLongBits(reader.readUInt64()),
-                UnsignedLong.fromLongBits(reader.readUInt64()),
+                reader.readUInt64(),
+                reader.readUInt64(),
                 DepositInput.fromBytes(reader.readBytes())));
   }
 
   public Bytes toBytes() {
     return SSZ.encode(
         writer -> {
-          writer.writeUInt64(amount.longValue());
-          writer.writeUInt64(timestamp.longValue());
+          writer.writeUInt64(amount);
+          writer.writeUInt64(timestamp);
           writer.writeBytes(deposit_input.toBytes());
         });
   }
@@ -83,19 +82,19 @@ public class DepositData {
     this.deposit_input = deposit_input;
   }
 
-  public UnsignedLong getAmount() {
+  public long getAmount() {
     return amount;
   }
 
-  public void setAmount(UnsignedLong amount) {
+  public void setAmount(long amount) {
     this.amount = amount;
   }
 
-  public UnsignedLong getTimestamp() {
+  public long getTimestamp() {
     return timestamp;
   }
 
-  public void setTimestamp(UnsignedLong timestamp) {
+  public void setTimestamp(long timestamp) {
     this.timestamp = timestamp;
   }
 }
