@@ -17,14 +17,13 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.artemis.data.IRecordAdapter;
 import tech.pegasys.artemis.pow.event.Deposit;
 import tech.pegasys.artemis.pow.event.Eth2Genesis;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.IntStream;
 
 public class DepositSimulation implements IRecordAdapter {
 

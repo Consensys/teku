@@ -13,9 +13,9 @@
 
 package tech.pegasys.artemis.pow.event;
 
+import java.nio.ByteOrder;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import java.nio.ByteOrder;
 import tech.pegasys.artemis.pow.api.DepositEvent;
 import tech.pegasys.artemis.pow.contract.DepositContract.DepositEventResponse;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
