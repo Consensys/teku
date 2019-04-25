@@ -32,5 +32,7 @@ public interface FileProvider {
     return Paths.get(newFilename);
   }
 
-  void output(IRecordAdapter record);
+  void serialOutput(IRecordAdapter record);
+
+  void formattedOutput(IRecordAdapter record);
 }
