@@ -38,7 +38,7 @@ public final class GossipCodec implements Codec {
    * Encodes a payload into a Gossip request
    *
    * @param verb the Gossip method
-   * @param type
+   * @param attributes
    * @param payload the payload of the request
    * @return the encoded Gossip message
    */
@@ -108,7 +108,6 @@ public final class GossipCodec implements Codec {
       payload = Snappy.uncompress(payload);
       ObjectNode gossipmessage = (ObjectNode) mapper.readTree(headers);
       int methodId = gossipmessage.get("method_id").intValue();
-      // TODO: Eventually message_type will be a property in an attributes object in the header
       String attributes = gossipmessage.get("attributes").asText();
       Bytes32 messageHash = Bytes32.fromHexString(gossipmessage.get("message_hash").asText());
       Bytes32 hashSignature = Bytes32.fromHexString(gossipmessage.get("hash_signature").asText());

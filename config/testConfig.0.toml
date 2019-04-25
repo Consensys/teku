@@ -9,7 +9,7 @@ networkMode = "hobbits"
 networkInterface = "127.0.0.1"
 port = 19000
 identity = "0x00"
-peers = ["hobs://abcf@localhost:19001", "hobs://abcf@localhost:19002"]
+peers = ["hob+tcp://abcf@localhost:19001", "hob+tcp://abcf@localhost:19002"]
 
 [sim]
 numValidators = 16
