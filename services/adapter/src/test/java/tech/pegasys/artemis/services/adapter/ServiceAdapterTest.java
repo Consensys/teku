@@ -38,9 +38,9 @@ public class ServiceAdapterTest {
 
   private final List<Object> receivedEvents = new ArrayList<>();
 
+  @Disabled
   @Test
   public void testForwardValidationEvent() throws IOException, InterruptedException {
-
     final ServiceAdapter adapter1 =
         new ServiceAdapter(30000, Collections.singleton(Deposit.class), Collections.emptySet());
 

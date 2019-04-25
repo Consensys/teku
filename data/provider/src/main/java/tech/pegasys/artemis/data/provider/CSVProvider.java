@@ -33,7 +33,7 @@ public class CSVProvider implements FileProvider {
   }
 
   @Override
-  public void output(IRecordAdapter record) {
+  public void serialOutput(IRecordAdapter record) {
     try {
       Files.write(
           logFilePath,
@@ -44,4 +44,7 @@ public class CSVProvider implements FileProvider {
       LOG.log(Level.WARN, e.toString());
     }
   }
+
+  @Override
+  public void formattedOutput(IRecordAdapter record) {}
 }

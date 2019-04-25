@@ -68,7 +68,6 @@ public class BLSPublicKey {
   }
 
   public static BLSPublicKey fromBytesCompressed(Bytes bytes) {
-    // checkArgument(bytes.size() == 52, "Expected 52 bytes but received %s.", bytes.size());
     if (bytes.isZero()) {
       return BLSPublicKey.empty();
     } else {

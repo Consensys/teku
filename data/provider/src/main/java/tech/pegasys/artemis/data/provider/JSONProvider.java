@@ -13,8 +13,12 @@
 
 package tech.pegasys.artemis.data.provider;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
+import java.io.File;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
+import java.io.RandomAccessFile;
+import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
@@ -33,7 +37,7 @@ public class JSONProvider implements FileProvider {
   }
 
   @Override
-  public void output(IRecordAdapter record) {
+  public void serialOutput(IRecordAdapter record) {
     try {
       Files.write(
           path,
@@ -42,6 +46,36 @@ public class JSONProvider implements FileProvider {
           Files.exists(path) ? StandardOpenOption.APPEND : StandardOpenOption.CREATE);
     } catch (IOException e) {
       LOG.log(Level.WARN, e.toString());
+    }
+  }
+
+  @Override
+  public void formattedOutput(IRecordAdapter record) {
+    try {
+      RandomAccessFile r = new RandomAccessFile(new File(path.getFileName().toString()), "rw");
+      RandomAccessFile rtemp =
+          new RandomAccessFile(new File(path.getFileName().toString() + "~"), "rw");
+      long fileSize = r.length();
+
+      long offset = fileSize == 0 ? 0 : r.length() - 2;
+      byte[] content =
+          fileSize == 0
+              ? ("[\n\t" + record.toJSON() + "\n]").getBytes(UTF_8)
+              : (",\n\t" + record.toJSON()).getBytes(UTF_8);
+
+      FileChannel sourceChannel = r.getChannel();
+      FileChannel targetChannel = rtemp.getChannel();
+      sourceChannel.transferTo(offset, (fileSize - offset), targetChannel);
+      sourceChannel.truncate(offset);
+      r.seek(offset);
+      r.write(content);
+      long newOffset = r.getFilePointer();
+      targetChannel.position(0L);
+      sourceChannel.transferFrom(targetChannel, newOffset, (fileSize - offset));
+      sourceChannel.close();
+      targetChannel.close();
+    } catch (Exception e) {
+      LOG.log(Level.ERROR, e.getMessage());
     }
   }
 }
