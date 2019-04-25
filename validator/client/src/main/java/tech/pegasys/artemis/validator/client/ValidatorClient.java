@@ -24,8 +24,15 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import org.apache.tuweni.bytes.Bytes;
+import org.web3j.crypto.Credentials;
+import org.web3j.protocol.Web3j;
+import org.web3j.tx.gas.DefaultGasProvider;
+import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.CrosslinkCommittee;
+import tech.pegasys.artemis.pow.contract.DepositContract;
+import tech.pegasys.artemis.util.mikuli.BLS12381;
 
 public class ValidatorClient {
 

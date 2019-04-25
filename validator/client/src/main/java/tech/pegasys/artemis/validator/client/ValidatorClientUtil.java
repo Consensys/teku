@@ -13,7 +13,6 @@
 
 package tech.pegasys.artemis.validator.client;
 
-import com.google.common.primitives.UnsignedLong;
 import java.math.BigInteger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -30,10 +29,10 @@ import tech.pegasys.artemis.util.mikuli.PublicKey;
 public class ValidatorClientUtil {
 
   public static Bytes generateDepositData(
-      KeyPair blsKeys, Bytes32 withdrawal_credentials, UnsignedLong amount) {
+      KeyPair blsKeys, Bytes32 withdrawal_credentials, long amount) {
     Bytes deposit_data =
         Bytes.wrap(
-            Bytes.ofUnsignedLong(amount.longValue()),
+            Bytes.ofUnsignedLong(amount),
             withdrawal_credentials,
             getPublicKeyFromKeyPair(blsKeys).toBytesCompressed());
     return Bytes.wrap(generateProofOfPossession(blsKeys, deposit_data), deposit_data).reverse();
@@ -51,11 +50,7 @@ public class ValidatorClientUtil {
   }
 
   public static void registerValidatorEth1(
-      Validator validator,
-      UnsignedLong amount,
-      String address,
-      Web3j web3j,
-      DefaultGasProvider gasProvider)
+      Validator validator, long amount, String address, Web3j web3j, DefaultGasProvider gasProvider)
       throws Exception {
     Credentials credentials =
         Credentials.create(validator.getSecpKeys().secretKey().bytes().toHexString());
@@ -63,8 +58,6 @@ public class ValidatorClientUtil {
     Bytes deposit_data =
         generateDepositData(validator.getBlsKeys(), validator.getWithdrawal_credentials(), amount);
     contract = DepositContract.load(address, web3j, credentials, gasProvider);
-    contract
-        .deposit(deposit_data.toArray(), new BigInteger(amount.toString() + "000000000"))
-        .send();
+    contract.deposit(deposit_data.toArray(), new BigInteger(amount + "000000000")).send();
   }
 }

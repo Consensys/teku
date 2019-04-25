@@ -15,6 +15,7 @@ package tech.pegasys.artemis.services.powchain;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
+import com.google.common.primitives.UnsignedLong;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -84,7 +85,7 @@ public class PowchainService implements ServiceInterface {
                 ValidatorClientUtil.generateDepositData(
                     validator.getBlsKeys(),
                     validator.getWithdrawal_credentials(),
-                    UnsignedLong.valueOf(SIM_DEPOSIT_VALUE_GWEI))));
+                    Long.parseLong(SIM_DEPOSIT_VALUE_GWEI))));
         try {
           ValidatorClientUtil.registerValidatorEth1(
               validator,

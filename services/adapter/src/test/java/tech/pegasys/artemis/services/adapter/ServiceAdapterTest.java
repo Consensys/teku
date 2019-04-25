@@ -15,6 +15,7 @@ package tech.pegasys.artemis.services.adapter;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import java.io.IOException;
 import java.math.BigInteger;
@@ -30,6 +31,8 @@ import org.web3j.protocol.core.methods.response.Log;
 import tech.pegasys.artemis.pow.contract.DepositContract;
 import tech.pegasys.artemis.pow.event.Deposit;
 import tech.pegasys.artemis.pow.event.Eth2Genesis;
+import tech.pegasys.artemis.services.ServiceConfig;
+import tech.pegasys.artemis.services.adapter.event.OutboundEvent;
 
 public class ServiceAdapterTest {
 

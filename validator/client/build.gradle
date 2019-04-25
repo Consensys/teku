@@ -13,6 +13,10 @@ dependencies {
   implementation project(':util')
   implementation project(':data')
 
+  api 'org.web3j:core'
+  api 'org.web3j:abi'
+  api 'org.web3j:crypto'
+
   implementation 'org.apache.tuweni:tuweni-crypto'
   implementation 'org.apache.tuweni:tuweni-kv'
   implementation 'org.apache.tuweni:tuweni-bytes'
