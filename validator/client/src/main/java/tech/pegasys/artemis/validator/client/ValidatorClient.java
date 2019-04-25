@@ -20,10 +20,7 @@ import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_curre
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_epoch_start_slot;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_previous_epoch;
 
-
-import com.google.common.primitives.UnsignedLong;
 import java.math.BigInteger;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -82,8 +79,6 @@ public class ValidatorClient {
     return Optional.empty();
   }
 
-
-
   public static void registerValidatorEth1(
       Validator validator, long amount, String address, Web3j web3j, DefaultGasProvider gasProvider)
       throws Exception {
@@ -105,5 +100,4 @@ public class ValidatorClient {
                 .toBytesCompressed());
     contract.deposit(deposit_data.toArray(), new BigInteger(amount + "000000000")).send();
   }
-
 }
