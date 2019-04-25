@@ -45,10 +45,12 @@ public final class GossipMessage {
   public GossipMethod method() {
     return method;
   }
+
   /** @return the message type used in the Gossi[ call. */
   public String getAttributes() {
     return attributes;
   }
+
   /** @return the messageHash used by the Gossip call. */
   public Bytes32 messageHash() {
     return messageHash;
