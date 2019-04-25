@@ -15,7 +15,6 @@ package tech.pegasys.artemis.datastructures.util;
 
 import static tech.pegasys.artemis.datastructures.Constants.MAX_DEPOSIT_AMOUNT;
 
-import com.google.common.primitives.UnsignedLong;
 import java.nio.ByteBuffer;
 import java.security.SecureRandom;
 import java.util.ArrayList;
@@ -66,14 +65,6 @@ public final class DataStructureUtil {
     return new Random(seed).nextLong();
   }
 
-  public static UnsignedLong randomUnsignedLong(long seed) {
-    return UnsignedLong.fromLongBits(randomLong(seed));
-  }
-
-  public static UnsignedLong randomUnsignedLong() {
-    return UnsignedLong.fromLongBits(randomLong());
-  }
-
   public static Bytes32 randomBytes32(long seed) {
     ByteBuffer buffer = ByteBuffer.allocate(Long.BYTES);
     buffer.putLong(seed);
@@ -101,34 +92,34 @@ public final class DataStructureUtil {
   }
 
   public static Crosslink randomCrosslink() {
-    return new Crosslink(randomUnsignedLong(), randomBytes32());
+    return new Crosslink(randomLong(), randomBytes32());
   }
 
   public static Crosslink randomCrosslink(int seed) {
-    return new Crosslink(randomUnsignedLong(seed), randomBytes32(seed + 1));
+    return new Crosslink(randomLong(seed), randomBytes32(seed + 1));
   }
 
   public static AttestationData randomAttestationData(long slotNum) {
     return new AttestationData(
-        UnsignedLong.valueOf(slotNum),
-        randomUnsignedLong(),
+        slotNum,
+        randomLong(),
         randomBytes32(),
         randomBytes32(),
         randomBytes32(),
         randomCrosslink(),
-        randomUnsignedLong(),
+        randomLong(),
         randomBytes32());
   }
 
   public static AttestationData randomAttestationData(long slotNum, int seed) {
     return new AttestationData(
-        UnsignedLong.valueOf(slotNum),
-        randomUnsignedLong(seed),
+        slotNum,
+        randomLong(seed),
         randomBytes32(seed++),
         randomBytes32(seed++),
         randomBytes32(seed++),
         randomCrosslink(seed++),
-        randomUnsignedLong(seed++),
+        randomLong(seed++),
         randomBytes32(seed++));
   }
 
@@ -136,13 +127,13 @@ public final class DataStructureUtil {
     return randomAttestationData(randomLong());
   }
 
-  public static Attestation randomAttestation(UnsignedLong slotNum) {
+  public static Attestation randomAttestation(long slotNum) {
     return new Attestation(
         randomBytes32(), randomAttestationData(), randomBytes32(), BLSSignature.random());
   }
 
   public static Attestation randomAttestation() {
-    return randomAttestation(UnsignedLong.valueOf(randomLong()));
+    return randomAttestation(randomLong());
   }
 
   public static AttesterSlashing randomAttesterSlashing() {
@@ -155,30 +146,25 @@ public final class DataStructureUtil {
   }
 
   public static Proposal randomProposal() {
-    return new Proposal(
-        randomUnsignedLong(), randomUnsignedLong(), randomBytes32(), BLSSignature.random());
+    return new Proposal(randomLong(), randomLong(), randomBytes32(), BLSSignature.random());
   }
 
   public static Proposal randomProposal(int seed) {
     return new Proposal(
-        randomUnsignedLong(seed++),
-        randomUnsignedLong(seed++),
-        randomBytes32(seed++),
-        BLSSignature.random(seed));
+        randomLong(seed++), randomLong(seed++), randomBytes32(seed++), BLSSignature.random(seed));
   }
 
   public static ProposerSlashing randomProposerSlashing() {
-    return new ProposerSlashing(randomUnsignedLong(), randomProposal(), randomProposal());
+    return new ProposerSlashing(randomLong(), randomProposal(), randomProposal());
   }
 
   public static ProposerSlashing randomProposerSlashing(int seed) {
-    return new ProposerSlashing(
-        randomUnsignedLong(seed++), randomProposal(seed++), randomProposal(seed));
+    return new ProposerSlashing(randomLong(seed++), randomProposal(seed++), randomProposal(seed));
   }
 
   public static SlashableAttestation randomSlashableAttestation() {
     return new SlashableAttestation(
-        Arrays.asList(randomUnsignedLong(), randomUnsignedLong(), randomUnsignedLong()),
+        Arrays.asList(randomLong(), randomLong(), randomLong()),
         randomAttestationData(),
         randomBytes32(),
         BLSSignature.random());
@@ -186,8 +172,7 @@ public final class DataStructureUtil {
 
   public static SlashableAttestation randomSlashableAttestation(int seed) {
     return new SlashableAttestation(
-        Arrays.asList(
-            randomUnsignedLong(seed), randomUnsignedLong(seed++), randomUnsignedLong(seed++)),
+        Arrays.asList(randomLong(seed), randomLong(seed++), randomLong(seed++)),
         randomAttestationData(seed++),
         randomBytes32(seed++),
         BLSSignature.random(seed));
@@ -216,28 +201,24 @@ public final class DataStructureUtil {
   }
 
   public static DepositData randomDepositData() {
-    return new DepositData(
-        UnsignedLong.valueOf(MAX_DEPOSIT_AMOUNT), randomUnsignedLong(), randomDepositInput());
+    return new DepositData(MAX_DEPOSIT_AMOUNT, randomLong(), randomDepositInput());
   }
 
   public static DepositData randomDepositData(int seed) {
-    return new DepositData(
-        UnsignedLong.valueOf(MAX_DEPOSIT_AMOUNT),
-        randomUnsignedLong(seed++),
-        randomDepositInput(seed++));
+    return new DepositData(MAX_DEPOSIT_AMOUNT, randomLong(seed++), randomDepositInput(seed++));
   }
 
   public static Deposit randomDeposit() {
     return new Deposit(
         Arrays.asList(randomBytes32(), randomBytes32(), randomBytes32()),
-        randomUnsignedLong(),
+        randomLong(),
         randomDepositData());
   }
 
   public static Deposit randomDeposit(int seed) {
     return new Deposit(
         Arrays.asList(randomBytes32(seed), randomBytes32(seed++), randomBytes32(seed++)),
-        randomUnsignedLong(seed++),
+        randomLong(seed++),
         randomDepositData(seed++));
   }
 
@@ -262,32 +243,31 @@ public final class DataStructureUtil {
   }
 
   public static VoluntaryExit randomVoluntaryExit() {
-    return new VoluntaryExit(randomUnsignedLong(), randomUnsignedLong(), BLSSignature.random());
+    return new VoluntaryExit(randomLong(), randomLong(), BLSSignature.random());
   }
 
   public static VoluntaryExit randomVoluntaryExit(int seed) {
-    return new VoluntaryExit(
-        randomUnsignedLong(seed), randomUnsignedLong(seed++), BLSSignature.random());
+    return new VoluntaryExit(randomLong(seed), randomLong(seed++), BLSSignature.random());
   }
 
   public static Transfer randomTransfer() {
     return new Transfer(
-        randomUnsignedLong(),
-        randomUnsignedLong(),
-        randomUnsignedLong(),
-        randomUnsignedLong(),
-        randomUnsignedLong(),
+        randomLong(),
+        randomLong(),
+        randomLong(),
+        randomLong(),
+        randomLong(),
         BLSPublicKey.random(),
         BLSSignature.random());
   }
 
   public static Transfer randomTransfer(int seed) {
     return new Transfer(
-        randomUnsignedLong(seed),
-        randomUnsignedLong(seed + 1),
-        randomUnsignedLong(seed + 2),
-        randomUnsignedLong(seed + 3),
-        randomUnsignedLong(seed + 4),
+        randomLong(seed),
+        randomLong(seed + 1),
+        randomLong(seed + 2),
+        randomLong(seed + 3),
+        randomLong(seed + 4),
         BLSPublicKey.random(seed + 5),
         BLSSignature.random(seed + 6));
   }
@@ -343,10 +323,9 @@ public final class DataStructureUtil {
               keypair, deposit_input.signedRoot("proof_of_possession"), Constants.DOMAIN_DEPOSIT);
       deposit_input.setProof_of_possession(proof_of_possession);
 
-      UnsignedLong timestamp = UnsignedLong.valueOf(i);
-      DepositData deposit_data =
-          new DepositData(UnsignedLong.valueOf(MAX_DEPOSIT_AMOUNT), timestamp, deposit_input);
-      UnsignedLong index = UnsignedLong.valueOf(i);
+      long timestamp = i;
+      DepositData deposit_data = new DepositData(MAX_DEPOSIT_AMOUNT, timestamp, deposit_input);
+      long index = i;
       List<Bytes32> branch = Arrays.asList(Bytes32.ZERO, Bytes32.ZERO, Bytes32.ZERO);
       Deposit deposit = new Deposit(branch, index, deposit_data);
       deposits.add(deposit);
@@ -355,33 +334,33 @@ public final class DataStructureUtil {
   }
 
   public static BeaconBlock newBeaconBlock(
-      UnsignedLong slotNum,
+      long slotNum,
       Bytes32 parent_root,
       Bytes32 state_root,
       ArrayList<Deposit> deposits,
       List<Attestation> attestations) {
     return new BeaconBlock(
-        slotNum.longValue(),
+        slotNum,
         parent_root,
         state_root,
-        BLSSignature.random(slotNum.intValue()),
+        BLSSignature.random((int) slotNum),
         new Eth1Data(Bytes32.ZERO, Bytes32.ZERO),
         new BeaconBlockBody(
-            new ArrayList<ProposerSlashing>(),
-            new ArrayList<AttesterSlashing>(),
+            new ArrayList<>(),
+            new ArrayList<>(),
             attestations,
             deposits,
-            new ArrayList<VoluntaryExit>(),
-            new ArrayList<Transfer>()),
+            new ArrayList<>(),
+            new ArrayList<>()),
         BLSSignature.empty());
   }
 
   public static BeaconStateWithCache createInitialBeaconState(int numValidators) {
     BeaconStateWithCache state = new BeaconStateWithCache();
-    return BeaconStateUtil.get_initial_beacon_state(
+    return BeaconStateUtil.get_genesis_beacon_state(
         state,
         newDeposits(numValidators),
-        UnsignedLong.valueOf(Constants.GENESIS_SLOT),
+        Constants.GENESIS_SLOT,
         new Eth1Data(Bytes32.ZERO, Bytes32.ZERO));
   }
 

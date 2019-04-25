@@ -13,16 +13,15 @@
 
 package tech.pegasys.artemis.data;
 
-import com.google.common.primitives.UnsignedLong;
 import tech.pegasys.artemis.datastructures.state.Validator;
 
 public class ValidatorJoin {
   Validator validator;
-  UnsignedLong balance;
+  long balance;
 
   public ValidatorJoin() {}
 
-  public ValidatorJoin(Validator validator, UnsignedLong balance) {
+  public ValidatorJoin(Validator validator, long balance) {
     this.validator = validator;
     this.balance = balance;
   }
@@ -35,11 +34,11 @@ public class ValidatorJoin {
     this.validator = validator;
   }
 
-  public UnsignedLong getBalance() {
+  public long getBalance() {
     return balance;
   }
 
-  public void setBalance(UnsignedLong balance) {
+  public void setBalance(long balance) {
     this.balance = balance;
   }
 }

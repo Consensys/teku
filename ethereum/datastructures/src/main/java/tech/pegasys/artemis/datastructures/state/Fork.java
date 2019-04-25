@@ -13,18 +13,17 @@
 
 package tech.pegasys.artemis.datastructures.state;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.ssz.SSZ;
 
 public class Fork {
 
-  private UnsignedLong previous_version;
-  private UnsignedLong current_version;
-  private UnsignedLong epoch;
+  private long previous_version;
+  private long current_version;
+  private long epoch;
 
-  public Fork(UnsignedLong previous_version, UnsignedLong current_version, UnsignedLong epoch) {
+  public Fork(long previous_version, long current_version, long epoch) {
     this.previous_version = previous_version;
     this.current_version = current_version;
     this.epoch = epoch;
@@ -38,20 +37,15 @@ public class Fork {
 
   public static Fork fromBytes(Bytes bytes) {
     return SSZ.decode(
-        bytes,
-        reader ->
-            new Fork(
-                UnsignedLong.fromLongBits(reader.readUInt64()),
-                UnsignedLong.fromLongBits(reader.readUInt64()),
-                UnsignedLong.fromLongBits(reader.readUInt64())));
+        bytes, reader -> new Fork(reader.readUInt64(), reader.readUInt64(), reader.readUInt64()));
   }
 
   public Bytes toBytes() {
     return SSZ.encode(
         writer -> {
-          writer.writeUInt64(previous_version.longValue());
-          writer.writeUInt64(current_version.longValue());
-          writer.writeUInt64(epoch.longValue());
+          writer.writeUInt64(previous_version);
+          writer.writeUInt64(current_version);
+          writer.writeUInt64(epoch);
         });
   }
 
@@ -81,27 +75,27 @@ public class Fork {
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */
-  public UnsignedLong getPrevious_version() {
+  public long getPrevious_version() {
     return previous_version;
   }
 
-  public void setPrevious_version(UnsignedLong previous_version) {
+  public void setPrevious_version(long previous_version) {
     this.previous_version = previous_version;
   }
 
-  public UnsignedLong getCurrent_version() {
+  public long getCurrent_version() {
     return current_version;
   }
 
-  public void setCurrent_version(UnsignedLong current_version) {
+  public void setCurrent_version(long current_version) {
     this.current_version = current_version;
   }
 
-  public UnsignedLong getEpoch() {
+  public long getEpoch() {
     return epoch;
   }
 
-  public void setEpoch(UnsignedLong epoch) {
+  public void setEpoch(long epoch) {
     this.epoch = epoch;
   }
 }

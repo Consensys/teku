@@ -15,9 +15,8 @@ package tech.pegasys.artemis.datastructures.blocks;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomUnsignedLong;
+import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomLong;
 
-import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
@@ -25,8 +24,8 @@ import tech.pegasys.artemis.util.bls.BLSSignature;
 
 class ProposalTest {
 
-  private UnsignedLong slot = randomUnsignedLong();
-  private UnsignedLong shard = randomUnsignedLong();
+  private long slot = randomLong();
+  private long shard = randomLong();
   private Bytes32 blockRoot = Bytes32.random();
   private BLSSignature signature = BLSSignature.random();
 
@@ -48,16 +47,14 @@ class ProposalTest {
 
   @Test
   void equalsReturnsFalseWhenSlotsAreDifferent() {
-    Proposal testProposal =
-        new Proposal(slot.plus(randomUnsignedLong()), shard, blockRoot, signature);
+    Proposal testProposal = new Proposal(slot + randomLong(), shard, blockRoot, signature);
 
     assertNotEquals(proposal, testProposal);
   }
 
   @Test
   void equalsReturnsFalseWhenShardsAreDifferent() {
-    Proposal testProposal =
-        new Proposal(slot, shard.plus(randomUnsignedLong()), blockRoot, signature);
+    Proposal testProposal = new Proposal(slot, shard + randomLong(), blockRoot, signature);
 
     assertNotEquals(proposal, testProposal);
   }

@@ -13,7 +13,6 @@
 
 package tech.pegasys.artemis.datastructures.state;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -22,10 +21,10 @@ import tech.pegasys.artemis.datastructures.Copyable;
 
 public class Crosslink implements Copyable<Crosslink> {
 
-  private UnsignedLong epoch;
+  private long epoch;
   private Bytes32 crosslink_data_root;
 
-  public Crosslink(UnsignedLong epoch, Bytes32 crosslink_data_root) {
+  public Crosslink(long epoch, Bytes32 crosslink_data_root) {
     this.epoch = epoch;
     this.crosslink_data_root = crosslink_data_root;
   }
@@ -37,10 +36,7 @@ public class Crosslink implements Copyable<Crosslink> {
 
   public static Crosslink fromBytes(Bytes bytes) {
     return SSZ.decode(
-        bytes,
-        reader ->
-            new Crosslink(
-                UnsignedLong.fromLongBits(reader.readUInt64()), Bytes32.wrap(reader.readBytes())));
+        bytes, reader -> new Crosslink(reader.readUInt64(), Bytes32.wrap(reader.readBytes())));
   }
 
   @Override
@@ -51,7 +47,7 @@ public class Crosslink implements Copyable<Crosslink> {
   public Bytes toBytes() {
     return SSZ.encode(
         writer -> {
-          writer.writeUInt64(epoch.longValue());
+          writer.writeUInt64(epoch);
           writer.writeBytes(crosslink_data_root);
         });
   }
@@ -89,11 +85,11 @@ public class Crosslink implements Copyable<Crosslink> {
     this.crosslink_data_root = shard_block_root;
   }
 
-  public UnsignedLong getEpoch() {
+  public long getEpoch() {
     return epoch;
   }
 
-  public void setEpoch(UnsignedLong epoch) {
+  public void setEpoch(long epoch) {
     this.epoch = epoch;
   }
 }

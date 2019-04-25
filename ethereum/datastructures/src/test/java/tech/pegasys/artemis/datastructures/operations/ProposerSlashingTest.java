@@ -15,10 +15,9 @@ package tech.pegasys.artemis.datastructures.operations;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomLong;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomProposal;
-import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomUnsignedLong;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
@@ -26,7 +25,7 @@ import tech.pegasys.artemis.datastructures.blocks.Proposal;
 
 class ProposerSlashingTest {
 
-  private UnsignedLong proposerIndex = randomUnsignedLong();
+  private long proposerIndex = randomLong();
   private Proposal proposal1 = randomProposal();
   private Proposal proposal2 = randomProposal();
 
@@ -51,7 +50,7 @@ class ProposerSlashingTest {
   @Test
   void equalsReturnsFalseWhenProposerIndicesAreDifferent() {
     ProposerSlashing testProposerSlashing =
-        new ProposerSlashing(proposerIndex.plus(randomUnsignedLong()), proposal1, proposal2);
+        new ProposerSlashing(proposerIndex + randomLong(), proposal1, proposal2);
 
     assertNotEquals(proposerSlashing, testProposerSlashing);
   }
