@@ -50,6 +50,12 @@ public class CommandLineArguments {
       description = "PoW simulation flag")
   private boolean simulation = false;
 
+  @Option(
+      names = {"-f", "--format"},
+      paramLabel = "<IS FORMAT>",
+      description = "Output of JSON file is serial or formatted")
+  private boolean isFormat = false;
+
   public String getProviderType() {
     return this.providerType;
   }
@@ -72,5 +78,9 @@ public class CommandLineArguments {
 
   public boolean isSimulation() {
     return simulation;
+  }
+
+  public boolean isFormat() {
+    return isFormat;
   }
 }

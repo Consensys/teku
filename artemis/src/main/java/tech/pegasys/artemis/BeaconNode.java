@@ -26,6 +26,7 @@ import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.core.config.Configurator;
 import org.jetbrains.annotations.NotNull;
 import picocli.CommandLine;
+import tech.pegasys.artemis.data.IRecordAdapter;
 import tech.pegasys.artemis.data.RawRecord;
 import tech.pegasys.artemis.data.TimeSeriesRecord;
 import tech.pegasys.artemis.data.adapter.TimeSeriesAdapter;
@@ -162,10 +163,25 @@ public class BeaconNode {
 
   @Subscribe
   public void onDataEvent(RawRecord record) {
-    TimeSeriesAdapter adapter = new TimeSeriesAdapter(record);
-    TimeSeriesRecord tsRecord = adapter.transform();
-    if (fileProvider != null) {
-      fileProvider.output(tsRecord);
+    if (!cliArgs.isSimulation()) {
+      TimeSeriesAdapter adapter = new TimeSeriesAdapter(record);
+      TimeSeriesRecord tsRecord = adapter.transform();
+      if (cliArgs.isFormat()) {
+        fileProvider.formattedOutput(tsRecord);
+      } else {
+        fileProvider.serialOutput(tsRecord);
+      }
+    }
+  }
+
+  @Subscribe
+  public void onDepositSim(IRecordAdapter record) {
+    if (cliArgs.isSimulation()) {
+      if (cliArgs.isFormat()) {
+        fileProvider.formattedOutput(record);
+      } else {
+        fileProvider.serialOutput(record);
+      }
     }
   }
 
