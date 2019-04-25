@@ -149,16 +149,18 @@ public final class HobbitsSocketHandler {
     }
   }
 
+  @SuppressWarnings("StringSplitter")
   private void handleGossipMessage(GossipMessage gossipMessage) {
     if (!receivedMessages.containsKey(gossipMessage.messageHash().toHexString())) {
       receivedMessages.put(gossipMessage.messageHash().toHexString(), true);
       LOG.log(Level.INFO, "Received new gossip message from peer: " + peer.uri());
       if (GossipMethod.GOSSIP.equals(gossipMessage.method())) {
         Bytes bytes = gossipMessage.body();
-        if (gossipMessage.getAttributes().equalsIgnoreCase("ATTESTATION")) {
+        String[] attributes = gossipMessage.getAttributes().split(",");
+        if (attributes[0].equalsIgnoreCase("ATTESTATION")) {
           this.eventBus.post(Attestation.fromBytes(bytes));
           peer.setPeerGossip(bytes);
-        } else if (gossipMessage.getAttributes().equalsIgnoreCase("BLOCK")) {
+        } else if (attributes[0].equalsIgnoreCase("BLOCK")) {
           this.eventBus.post(BeaconBlock.fromBytes(bytes));
           peer.setPeerGossip(bytes);
         }

@@ -24,6 +24,7 @@ import io.vertx.core.net.NetSocket;
 import java.io.IOException;
 import java.net.URI;
 import java.util.Collection;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -258,7 +259,9 @@ public final class HobbitsP2PNetwork implements P2PNetwork {
   public void onNewUnprocessedBlock(BeaconBlock block) {
     LOG.log(
         Level.INFO, "Gossiping new block with state root: " + block.getState_root().toHexString());
-    Bytes messageHash = state.sendGossipMessage("BLOCK", block.toBytes());
+    Date timestamp = new Date();
+    String attributes = "BLOCK" + "," + String.valueOf(timestamp.getTime());
+    Bytes messageHash = state.sendGossipMessage(attributes, block.toBytes());
     this.receivedMessages.put(messageHash.toHexString(), true);
   }
 
@@ -268,7 +271,9 @@ public final class HobbitsP2PNetwork implements P2PNetwork {
         Level.DEBUG,
         "Gossiping new attestation for block_root: "
             + attestation.getData().getBeacon_block_root().toHexString());
-    Bytes messageHash = state.sendGossipMessage("ATTESTATION", attestation.toBytes());
+    Date timestamp = new Date();
+    String attributes = "ATTESTATION" + "," + String.valueOf(timestamp.getTime());
+    Bytes messageHash = state.sendGossipMessage(attributes, attestation.toBytes());
     this.receivedMessages.put(messageHash.toHexString(), true);
   }
 }

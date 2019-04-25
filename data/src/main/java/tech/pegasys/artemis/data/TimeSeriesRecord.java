@@ -100,6 +100,7 @@ public class TimeSeriesRecord implements IRecordAdapter {
       String lastFinalizedBlockRoot,
       String lastFinalizedStateRoot,
       List<ValidatorJoin> validators) {
+    this.date = date;
     this.index = index;
     this.slot = slot;
     this.epoch = epoch;

@@ -152,7 +152,7 @@ public class BeaconNode {
       serviceController.stopAll(cliArgs);
       this.p2pNetwork.close();
     } catch (IOException e) {
-      LOG.log(Level.WARN, e.toString());
+      LOG.log(Level.FATAL, e.toString());
     }
   }
 
