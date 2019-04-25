@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.datastructures.util;
+package pegasys.artemis.reference;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -31,12 +31,13 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 
 @ExtendWith(BouncyCastleExtension.class)
 public class PermutedIndexTestSuite {
 
   // TODO: point this to the official test file repo when it is available and correct
-  private static String testFile = "**/test_vector_permutated_index_tmp.yml";
+  private static final String testFile = "**/test_vector_permutated_index_tmp.yml";
 
   @ParameterizedTest(name = "{index}. Test permuted index {0}")
   @MethodSource("readPermutedIndexTestVectors")

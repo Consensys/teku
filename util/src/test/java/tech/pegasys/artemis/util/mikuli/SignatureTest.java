@@ -17,7 +17,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
-import java.util.Arrays;
+import java.util.Collections;
 import org.junit.jupiter.api.Test;
 
 class SignatureTest {
@@ -54,7 +54,7 @@ class SignatureTest {
 
   @Test
   void succeedsWhenPassingEmptyListToAggregateSignaturesDoesNotThrowException() {
-    assertDoesNotThrow(() -> Signature.aggregate(Arrays.asList()));
+    assertDoesNotThrow(() -> Signature.aggregate(Collections.emptyList()));
   }
 
   @Test

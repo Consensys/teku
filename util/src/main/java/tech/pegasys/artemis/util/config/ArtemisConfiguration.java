@@ -66,22 +66,24 @@ public final class ArtemisConfiguration {
         Collections.emptyList(),
         "Static peers",
         (key, position, peers) ->
-            peers.stream()
-                .map(
-                    peer -> {
-                      try {
-                        URI uri = new URI(peer);
-                        String userInfo = uri.getUserInfo();
-                        if (userInfo == null || userInfo.isEmpty()) {
-                          return new ConfigurationError("Missing public key");
-                        }
-                      } catch (URISyntaxException e) {
-                        return new ConfigurationError("Invalid uri " + peer);
-                      }
-                      return null;
-                    })
-                .filter(Objects::nonNull)
-                .collect(Collectors.toList()));
+            peers != null
+                ? peers.stream()
+                    .map(
+                        peer -> {
+                          try {
+                            URI uri = new URI(peer);
+                            String userInfo = uri.getUserInfo();
+                            if (userInfo == null || userInfo.isEmpty()) {
+                              return new ConfigurationError("Missing public key");
+                            }
+                          } catch (URISyntaxException e) {
+                            return new ConfigurationError("Invalid uri " + peer);
+                          }
+                          return null;
+                        })
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toList())
+                : null);
     builder.addLong(
         "node.networkID", 1L, "The identifier of the network (mainnet, testnet, sidechain)", null);
 

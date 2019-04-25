@@ -150,7 +150,7 @@ public final class BLSSignature {
       throw new BLSException("The checkSignature method was called on an empty signature.");
     }
     List<PublicKey> publicKeyObjects =
-        publicKeys.stream().map(x -> x.getPublicKey()).collect(Collectors.toList());
+        publicKeys.stream().map(BLSPublicKey::getPublicKey).collect(Collectors.toList());
     return BLS12381.verifyMultiple(publicKeyObjects, signature, messages, domain);
   }
 
@@ -161,15 +161,9 @@ public final class BLSSignature {
    */
   public Bytes toBytes() {
     if (isNull(signature)) {
-      return SSZ.encode(
-          writer -> {
-            writer.writeBytes(Bytes.wrap(new byte[96]));
-          });
+      return SSZ.encode(writer -> writer.writeBytes(Bytes.wrap(new byte[96])));
     } else {
-      return SSZ.encode(
-          writer -> {
-            writer.writeBytes(signature.toBytesCompressed());
-          });
+      return SSZ.encode(writer -> writer.writeBytes(signature.toBytesCompressed()));
     }
   }
 

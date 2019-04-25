@@ -197,11 +197,7 @@ public final class BeaconBlock {
     return Bytes32.rightPad(
         HashTreeUtil.merkleHash(
             Arrays.asList(
-                HashTreeUtil.hash_tree_root(
-                    SSZ.encode(
-                        writer -> {
-                          writer.writeUInt64(slot);
-                        })),
+                HashTreeUtil.hash_tree_root(SSZ.encode(writer -> writer.writeUInt64(slot))),
                 HashTreeUtil.hash_tree_root(parent_root),
                 HashTreeUtil.hash_tree_root(state_root),
                 HashTreeUtil.hash_tree_root(randao_reveal.toBytes()),

@@ -15,7 +15,6 @@ package tech.pegasys.artemis.datastructures.operations;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomAttestationData;
 
 import java.util.Objects;
@@ -26,12 +25,12 @@ import tech.pegasys.artemis.util.bls.BLSSignature;
 
 class AttestationTest {
 
-  private Bytes aggregationBitfield = Bytes32.random();
-  private AttestationData data = randomAttestationData();
-  private Bytes custodyBitfield = Bytes32.random();
-  private BLSSignature aggregateSignature = BLSSignature.random();
+  private final Bytes aggregationBitfield = Bytes32.random();
+  private final AttestationData data = randomAttestationData();
+  private final Bytes custodyBitfield = Bytes32.random();
+  private final BLSSignature aggregateSignature = BLSSignature.random();
 
-  private Attestation attestation =
+  private final Attestation attestation =
       new Attestation(aggregationBitfield, data, custodyBitfield, aggregateSignature);
 
   @Test
@@ -46,7 +45,7 @@ class AttestationTest {
     Attestation testAttestation =
         new Attestation(aggregationBitfield, data, custodyBitfield, aggregateSignature);
 
-    assertTrue(attestation.equals(testAttestation));
+    assertEquals(attestation, testAttestation);
   }
 
   @Test

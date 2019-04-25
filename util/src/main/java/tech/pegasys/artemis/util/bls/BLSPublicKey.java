@@ -89,15 +89,9 @@ public class BLSPublicKey {
    */
   public Bytes toBytes() {
     if (isNull(publicKey)) {
-      return SSZ.encode(
-          writer -> {
-            writer.writeBytes(Bytes.wrap(new byte[48]));
-          });
+      return SSZ.encode(writer -> writer.writeBytes(Bytes.wrap(new byte[48])));
     } else {
-      return SSZ.encode(
-          writer -> {
-            writer.writeBytes(publicKey.toBytesCompressed());
-          });
+      return SSZ.encode(writer -> writer.writeBytes(publicKey.toBytesCompressed()));
     }
   }
 

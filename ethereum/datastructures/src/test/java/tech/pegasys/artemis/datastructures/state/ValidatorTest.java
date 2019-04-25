@@ -24,15 +24,15 @@ import tech.pegasys.artemis.util.bls.BLSPublicKey;
 
 class ValidatorTest {
 
-  private BLSPublicKey pubkey = BLSPublicKey.random();
-  private Bytes32 withdrawalCredentials = Bytes32.random();
-  private long activationEpoch = randomLong();
-  private long exitEpoch = randomLong();
-  private long withdrawalEpoch = randomLong();
-  private boolean initiatedExit = false;
-  private boolean slashed = false;
+  private final BLSPublicKey pubkey = BLSPublicKey.random();
+  private final Bytes32 withdrawalCredentials = Bytes32.random();
+  private final long activationEpoch = randomLong();
+  private final long exitEpoch = randomLong();
+  private final long withdrawalEpoch = randomLong();
+  private final boolean initiatedExit = false;
+  private final boolean slashed = false;
 
-  private Validator validator =
+  private final Validator validator =
       new Validator(
           pubkey,
           withdrawalCredentials,

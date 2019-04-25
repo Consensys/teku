@@ -32,12 +32,10 @@ public final class Artemis {
     // Detect SIGTERM
     Runtime.getRuntime()
         .addShutdownHook(
-            new Thread() {
-              @Override
-              public void run() {
-                System.out.println("Artemis is shutting down");
-                node.stop();
-              }
-            });
+            new Thread(
+                () -> {
+                  System.out.println("Artemis is shutting down");
+                  node.stop();
+                }));
   }
 }

@@ -49,7 +49,7 @@ public final class PublicKey {
     if (keys.isEmpty()) {
       return new PublicKey(new G1Point());
     }
-    return keys.stream().reduce((a, b) -> a.combine(b)).get();
+    return keys.stream().reduce(PublicKey::combine).get();
   }
 
   /**

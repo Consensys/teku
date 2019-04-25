@@ -25,11 +25,11 @@ import tech.pegasys.artemis.datastructures.blocks.Proposal;
 
 class ProposerSlashingTest {
 
-  private long proposerIndex = randomLong();
-  private Proposal proposal1 = randomProposal();
-  private Proposal proposal2 = randomProposal();
+  private final long proposerIndex = randomLong();
+  private final Proposal proposal1 = randomProposal();
+  private final Proposal proposal2 = randomProposal();
 
-  private ProposerSlashing proposerSlashing =
+  private final ProposerSlashing proposerSlashing =
       new ProposerSlashing(proposerIndex, proposal1, proposal2);
 
   @Test

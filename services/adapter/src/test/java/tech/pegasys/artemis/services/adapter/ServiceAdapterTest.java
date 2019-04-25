@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.services.adapter;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.google.common.eventbus.EventBus;
@@ -21,7 +22,6 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
@@ -36,7 +36,7 @@ import tech.pegasys.artemis.services.adapter.event.OutboundEvent;
 
 public class ServiceAdapterTest {
 
-  private List<Object> receivedEvents = new ArrayList<>();
+  private final List<Object> receivedEvents = new ArrayList<>();
 
   @Test
   public void testForwardValidationEvent() throws IOException, InterruptedException {
@@ -113,6 +113,7 @@ public class ServiceAdapterTest {
     assertEquals(Integer.valueOf(1), rcvdIndex2to1);
 
     // Test adapter1 -> adapter2
+    // TODO: Value never used
     adapter2 =
         new ServiceAdapter(30003, Collections.singleton(Deposit.class), Collections.emptySet());
 
@@ -185,7 +186,7 @@ public class ServiceAdapterTest {
 
   private void assertValidatorRegistration(Deposit expected, Deposit actual) {
 
-    assertEquals(true, Arrays.equals(expected.getResponse().data, actual.getResponse().data));
+    assertArrayEquals(expected.getResponse().data, actual.getResponse().data);
     //          assertEquals(
     //              true,
     //              Arrays.equals(

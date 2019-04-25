@@ -18,7 +18,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.util.Arrays;
+import java.util.Collections;
 import org.apache.logging.log4j.Level;
 import tech.pegasys.artemis.data.IRecordAdapter;
 import tech.pegasys.artemis.util.alogger.ALogger;
@@ -37,7 +37,7 @@ public class CSVProvider implements FileProvider {
     try {
       Files.write(
           logFilePath,
-          Arrays.asList(record.toCSV()),
+          Collections.singletonList(record.toCSV()),
           StandardCharsets.UTF_8,
           Files.exists(logFilePath) ? StandardOpenOption.APPEND : StandardOpenOption.CREATE);
     } catch (IOException e) {

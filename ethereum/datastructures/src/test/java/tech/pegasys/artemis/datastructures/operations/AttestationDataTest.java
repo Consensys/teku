@@ -26,16 +26,16 @@ import tech.pegasys.artemis.datastructures.state.Crosslink;
 
 class AttestationDataTest {
 
-  private long slot = randomLong();
-  private long shard = randomLong();
-  private Bytes32 beaconBlockRoot = Bytes32.random();
-  private Bytes32 epochBoundaryRoot = Bytes32.random();
-  private Bytes32 crosslinkDataRoot = Bytes32.random();
-  private Crosslink latestCrosslink = randomCrosslink();
-  private long justifiedEpoch = randomLong();
-  private Bytes32 justifiedBlockRoot = Bytes32.random();
+  private final long slot = randomLong();
+  private final long shard = randomLong();
+  private final Bytes32 beaconBlockRoot = Bytes32.random();
+  private final Bytes32 epochBoundaryRoot = Bytes32.random();
+  private final Bytes32 crosslinkDataRoot = Bytes32.random();
+  private final Crosslink latestCrosslink = randomCrosslink();
+  private final long justifiedEpoch = randomLong();
+  private final Bytes32 justifiedBlockRoot = Bytes32.random();
 
-  private AttestationData attestationData =
+  private final AttestationData attestationData =
       new AttestationData(
           slot,
           shard,

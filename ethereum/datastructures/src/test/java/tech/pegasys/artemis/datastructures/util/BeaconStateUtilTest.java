@@ -63,11 +63,7 @@ class BeaconStateUtilTest {
 
   @Test
   void sqrtOfANegativeNumber() {
-    assertThrows(
-        IllegalArgumentException.class,
-        () -> {
-          BeaconStateUtil.integer_squareroot(-1L);
-        });
+    assertThrows(IllegalArgumentException.class, () -> BeaconStateUtil.integer_squareroot(-1L));
   }
 
   // TODO It may make sense to move these tests to a Fork specific test class in the future.
@@ -230,11 +226,13 @@ class BeaconStateUtilTest {
     // Attempt to process deposit with above data.
     BeaconStateUtil.process_deposit(beaconState, deposit);
 
-    assertTrue(
-        beaconState.getValidator_registry().size() == (originalValidatorRegistrySize + 1),
+    assertEquals(
+        beaconState.getValidator_registry().size(),
+        (originalValidatorRegistrySize + 1),
         "No validator was added to the validator registry.");
-    assertTrue(
-        beaconState.getValidator_balances().size() == (originalValidatorBalancesSize + 1),
+    assertEquals(
+        beaconState.getValidator_balances().size(),
+        (originalValidatorBalancesSize + 1),
         "No balance was added to the validator balances.");
     assertEquals(
         new Validator(
@@ -277,11 +275,13 @@ class BeaconStateUtilTest {
     // Attempt to process deposit with above data.
     BeaconStateUtil.process_deposit(beaconState, deposit);
 
-    assertTrue(
-        beaconState.getValidator_registry().size() == originalValidatorRegistrySize,
+    assertEquals(
+        beaconState.getValidator_registry().size(),
+        originalValidatorRegistrySize,
         "A new validator was added to the validator registry, but should not have been.");
-    assertTrue(
-        beaconState.getValidator_balances().size() == originalValidatorBalancesSize,
+    assertEquals(
+        beaconState.getValidator_balances().size(),
+        originalValidatorBalancesSize,
         "A new balance was added to the validator balances, but should not have been.");
     assertEquals(
         knownValidator, beaconState.getValidator_registry().get(originalValidatorRegistrySize - 1));

@@ -16,7 +16,6 @@ package tech.pegasys.artemis.networking.p2p.hobbits;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonValue;
 import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
@@ -38,8 +37,7 @@ final class BlockHeaders {
     }
 
     @Override
-    public BlockHeaders deserialize(JsonParser jp, DeserializationContext ctxt)
-        throws IOException, JsonProcessingException {
+    public BlockHeaders deserialize(JsonParser jp, DeserializationContext ctxt) throws IOException {
       JsonNode node = jp.getCodec().readTree(jp);
       Iterator<JsonNode> iterator = node.iterator();
       List<BlockHeader> elts = new ArrayList<>();

@@ -21,10 +21,8 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.core.config.Configurator;
-import org.jetbrains.annotations.NotNull;
 import picocli.CommandLine;
 import tech.pegasys.artemis.data.RawRecord;
 import tech.pegasys.artemis.data.TimeSeriesRecord;
@@ -53,13 +51,10 @@ public class BeaconNode {
   private final Vertx vertx = Vertx.vertx();
   private final ExecutorService threadPool =
       Executors.newCachedThreadPool(
-          new ThreadFactory() {
-            @Override
-            public Thread newThread(@NotNull Runnable r) {
-              Thread t = new Thread(r);
-              t.setDaemon(true);
-              return t;
-            }
+          r -> {
+            Thread t = new Thread(r);
+            t.setDaemon(true);
+            return t;
           });
 
   private final ServiceController serviceController = new ServiceController();

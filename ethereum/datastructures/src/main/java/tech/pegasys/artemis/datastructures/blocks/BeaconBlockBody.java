@@ -76,17 +76,17 @@ public class BeaconBlockBody {
 
   public Bytes toBytes() {
     List<Bytes> proposerSlashingsBytes =
-        proposer_slashings.stream().map(item -> item.toBytes()).collect(Collectors.toList());
+        proposer_slashings.stream().map(ProposerSlashing::toBytes).collect(Collectors.toList());
     List<Bytes> attesterSlashingsBytes =
-        attester_slashings.stream().map(item -> item.toBytes()).collect(Collectors.toList());
+        attester_slashings.stream().map(AttesterSlashing::toBytes).collect(Collectors.toList());
     List<Bytes> attestationsBytes =
-        attestations.stream().map(item -> item.toBytes()).collect(Collectors.toList());
+        attestations.stream().map(Attestation::toBytes).collect(Collectors.toList());
     List<Bytes> depositsBytes =
-        deposits.stream().map(item -> item.toBytes()).collect(Collectors.toList());
+        deposits.stream().map(Deposit::toBytes).collect(Collectors.toList());
     List<Bytes> voluntaryExitsBytes =
-        voluntaryExits.stream().map(item -> item.toBytes()).collect(Collectors.toList());
+        voluntaryExits.stream().map(VoluntaryExit::toBytes).collect(Collectors.toList());
     List<Bytes> transfersBytes =
-        transfers.stream().map(item -> item.toBytes()).collect(Collectors.toList());
+        transfers.stream().map(Transfer::toBytes).collect(Collectors.toList());
 
     return SSZ.encode(
         writer -> {

@@ -49,7 +49,7 @@ public class StateProcessor {
   private long nodeTime;
   private long nodeSlot;
   private final EventBus eventBus;
-  private StateTransition stateTransition;
+  private final StateTransition stateTransition;
   private ChainStorageClient store;
   private ArtemisConfiguration config;
   private PublicKey publicKey;
@@ -103,9 +103,7 @@ public class StateProcessor {
 
   @Subscribe
   public void onDepositEvent(DepositEvent event) {
-    LOG.log(
-        Level.INFO,
-        "Deposit Event detected: " + ((tech.pegasys.artemis.pow.event.Deposit) event).toString());
+    LOG.log(Level.INFO, "Deposit Event detected: " + event.toString());
   }
 
   @Subscribe
@@ -113,7 +111,7 @@ public class StateProcessor {
     this.nodeSlot = this.nodeSlot + 1;
     this.nodeTime = this.nodeTime + Constants.SECONDS_PER_SLOT;
 
-    System.out.println("");
+    System.out.println("\n");
     LOG.log(Level.INFO, ANSI_WHITE_BOLD + "******* Slot Event *******" + ANSI_RESET);
     LOG.log(
         Level.INFO,
@@ -158,9 +156,9 @@ public class StateProcessor {
 
     // Get head block's state, and initialize a newHeadState variable to run state transition on
     BeaconState headBlockState = store.getState(headBlock.getState_root()).get();
-    Long justifiedBlockSlot =
+    long justifiedBlockSlot =
         BeaconStateUtil.get_epoch_start_slot(headBlockState.getJustified_epoch());
-    Long finalizedBlockSlot =
+    long finalizedBlockSlot =
         BeaconStateUtil.get_epoch_start_slot(headBlockState.getFinalized_epoch());
     LOG.log(
         Level.INFO,
@@ -175,7 +173,8 @@ public class StateProcessor {
             + "  |  "
             + finalizedBlockSlot % Constants.GENESIS_SLOT);
 
-    BeaconState newHeadState = BeaconStateWithCache.deepCopy((BeaconStateWithCache) headBlockState);
+    BeaconStateWithCache newHeadState =
+        BeaconStateWithCache.deepCopy((BeaconStateWithCache) headBlockState);
 
     // Hash headBlock to obtain previousBlockRoot that will be used
     // as previous_block_root in all state transitions
@@ -190,7 +189,7 @@ public class StateProcessor {
             "Transitioning state from slot: " + newHeadState.getSlot() + " to slot: " + nodeSlot);
         firstLoop = false;
       }
-      stateTransition.initiate((BeaconStateWithCache) newHeadState, null, previousBlockRoot);
+      stateTransition.initiate(newHeadState, null, previousBlockRoot);
     }
     this.store.addState(HashTreeUtil.hash_tree_root(newHeadState.toBytes()), newHeadState);
     this.headState = newHeadState;
@@ -239,7 +238,7 @@ public class StateProcessor {
 
         // Run state transition with no blocks from the parentBlockState.slot to block.slot - 1
         boolean firstLoop = true;
-        BeaconState currentState =
+        BeaconStateWithCache currentState =
             BeaconStateWithCache.deepCopy((BeaconStateWithCache) parentBlockState);
         while (currentState.getSlot() < block.getSlot() - 1) {
           if (firstLoop) {
@@ -251,12 +250,12 @@ public class StateProcessor {
                     + (block.getSlot() - 1));
             firstLoop = false;
           }
-          stateTransition.initiate((BeaconStateWithCache) currentState, null, parentBlockRoot);
+          stateTransition.initiate(currentState, null, parentBlockRoot);
         }
 
         // Run state transition with the block
         LOG.log(Level.INFO, ANSI_PURPLE + "Running state transition with block." + ANSI_RESET);
-        stateTransition.initiate((BeaconStateWithCache) currentState, block, parentBlockRoot);
+        stateTransition.initiate(currentState, block, parentBlockRoot);
 
         Bytes32 newStateRoot = HashTreeUtil.hash_tree_root(currentState.toBytes());
 

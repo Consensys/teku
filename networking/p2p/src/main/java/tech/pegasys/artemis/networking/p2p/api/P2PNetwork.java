@@ -33,13 +33,13 @@ public interface P2PNetwork extends Closeable, Runnable {
    *
    * @return Socket handlers
    */
-  public Collection<?> getHandlers();
+  Collection<?> getHandlers();
 
   /**
-   * Connects to a {@link Peer}.
+   * Connects to a Peer.
    *
    * @param peer Peer to connect to.
-   * @return Future of the established {@link PeerConnection}
+   * @return Future of the established PeerConnection
    */
   CompletableFuture<?> connect(String peer);
 

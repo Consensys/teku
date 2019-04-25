@@ -30,7 +30,7 @@ public final class SignatureAndPublicKey {
     if (sigAndPubKeys.isEmpty()) {
       throw new IllegalArgumentException("Parameter list is empty");
     }
-    return sigAndPubKeys.stream().reduce((a, b) -> a.combine(b)).get();
+    return sigAndPubKeys.stream().reduce(SignatureAndPublicKey::combine).get();
   }
 
   private final Signature signature;

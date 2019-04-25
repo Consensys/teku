@@ -107,9 +107,7 @@ public class LmdGhost {
       ChainStorageClient store, int validatorIndex) throws StateTransitionException {
     Optional<Attestation> latest_attestation = get_latest_attestation(store, validatorIndex);
     if (latest_attestation.isPresent()) {
-      Optional<BeaconBlock> latest_attestation_target =
-          store.getProcessedBlock(latest_attestation.get().getData().getBeacon_block_root());
-      return latest_attestation_target;
+      return store.getProcessedBlock(latest_attestation.get().getData().getBeacon_block_root());
     } else {
       return Optional.empty();
     }
@@ -123,8 +121,7 @@ public class LmdGhost {
    */
   public static Optional<Attestation> get_latest_attestation(
       ChainStorageClient store, int validatorIndex) throws StateTransitionException {
-    Optional<Attestation> latestAttestation = store.getLatestAttestation(validatorIndex);
-    return latestAttestation;
+    return store.getLatestAttestation(validatorIndex);
   }
 
   /*
@@ -140,9 +137,10 @@ public class LmdGhost {
     if (blockSlot == slotNumber) {
       return Optional.of(block);
     } else if (blockSlot < slotNumber) {
-      return Optional.ofNullable(null);
+      return Optional.empty();
     } else {
-      return get_ancestor(store, store.getParent(block).get(), slotNumber);
+      if (store.getParent(block).isPresent())
+        return get_ancestor(store, store.getParent(block).get(), slotNumber);
     }
   }
 }

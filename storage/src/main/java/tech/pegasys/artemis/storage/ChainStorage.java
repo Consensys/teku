@@ -24,7 +24,7 @@ import tech.pegasys.artemis.util.alogger.ALogger;
 /** ChainStorage Interface class */
 public interface ChainStorage {
 
-  static final ALogger LOG = new ALogger(ChainStorage.class.getName());
+  ALogger LOG = new ALogger(ChainStorage.class.getName());
 
   /**
    * Instantiate the ChainStorage
@@ -51,7 +51,7 @@ public interface ChainStorage {
     try {
       items.add(item);
     } catch (IllegalStateException e) {
-      LOG.log(Level.DEBUG, items.getClass().toString() + ": " + e.getMessage().toString());
+      LOG.log(Level.DEBUG, items.getClass().toString() + ": " + e.getMessage());
     }
   }
 
@@ -66,7 +66,7 @@ public interface ChainStorage {
     try {
       items.put(key, value);
     } catch (IllegalStateException e) {
-      LOG.log(Level.DEBUG, items.getClass().toString() + ": " + e.getMessage().toString(), true);
+      LOG.log(Level.DEBUG, items.getClass().toString() + ": " + e.getMessage(), true);
     }
   }
 
@@ -78,7 +78,7 @@ public interface ChainStorage {
    * @return
    */
   static <S extends Bytes, T, U extends ConcurrentHashMap<S, T>> Optional<T> get(S key, U items) {
-    Optional<T> result = Optional.ofNullable(null);
+    Optional<T> result = Optional.empty();
     try {
       result = Optional.of(items.get(key));
     } catch (NullPointerException e) {
@@ -98,7 +98,7 @@ public interface ChainStorage {
    * @return
    */
   static <S, T extends Queue<S>> Optional<S> remove(T items) {
-    Optional<S> result = Optional.ofNullable(null);
+    Optional<S> result = Optional.empty();
     if (items.size() > 0) {
       result = Optional.of(items.poll());
     }
@@ -112,7 +112,7 @@ public interface ChainStorage {
    * @return
    */
   static <S, T extends Queue<S>> Optional<S> peek(T items) {
-    Optional<S> result = Optional.ofNullable(null);
+    Optional<S> result = Optional.empty();
     if (items.size() > 0) {
       result = Optional.of(items.peek());
     }

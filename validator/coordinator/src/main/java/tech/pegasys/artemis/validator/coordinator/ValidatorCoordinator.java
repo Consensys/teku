@@ -59,10 +59,10 @@ public class ValidatorCoordinator {
   private int numNodes;
   private BeaconBlock validatorBlock;
   private ArrayList<Deposit> newDeposits = new ArrayList<>();
-  private HashMap<BLSPublicKey, BLSKeyPair> validatorSet = new HashMap<>();
+  private final HashMap<BLSPublicKey, BLSKeyPair> validatorSet = new HashMap<>();
   static final Integer UNPROCESSED_BLOCKS_LENGTH = 100;
   private final PriorityBlockingQueue<Attestation> attestationsQueue =
-      new PriorityBlockingQueue<Attestation>(
+      new PriorityBlockingQueue<>(
           UNPROCESSED_BLOCKS_LENGTH, Comparator.comparing(Attestation::getSlot));
 
   public ValidatorCoordinator(ServiceConfig config) {
@@ -108,10 +108,7 @@ public class ValidatorCoordinator {
     List<Attestation> blockAttestations = headBlock.getBody().getAttestations();
     synchronized (this.attestationsQueue) {
       for (Attestation blockAttestation : blockAttestations) {
-        attestationsQueue.removeIf(
-            attestation -> {
-              return attestation.equals(blockAttestation);
-            });
+        attestationsQueue.removeIf(attestation -> attestation.equals(blockAttestation));
       }
     }
     // Copy state so that state transition during block creation does not manipulate headState in
@@ -216,12 +213,10 @@ public class ValidatorCoordinator {
   }
 
   private BLSSignature setEpochSignature(BeaconState state, BLSKeyPair keypair) {
-    /**
-     * epoch_signature = bls_sign( privkey=validator.privkey, # privkey store locally, not in state
-     * message_hash=int_to_bytes32(slot_to_epoch(block.slot)), domain=get_domain( fork=fork, #
-     * `fork` is the fork object at the slot `block.slot` epoch=slot_to_epoch(block.slot),
-     * domain_type=DOMAIN_RANDAO, ))
-     */
+    // epoch_signature = bls_sign( privkey=validator.privkey, # privkey store locally, not in state
+    // message_hash=int_to_bytes32(slot_to_epoch(block.slot)), domain=get_domain( fork=fork, #
+    // `fork` is the fork object at the slot `block.slot` epoch=slot_to_epoch(block.slot),
+    // domain_type=DOMAIN_RANDAO, ))
     long slot = state.getSlot() + 1;
     long epoch = BeaconStateUtil.slot_to_epoch(slot);
 

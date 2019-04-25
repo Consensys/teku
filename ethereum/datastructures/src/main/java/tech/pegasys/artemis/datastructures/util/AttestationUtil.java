@@ -353,7 +353,7 @@ public class AttestationUtil {
   static List<Integer> get_attester_indices(
       BeaconState state, List<PendingAttestation> attestations) throws IllegalArgumentException {
 
-    List<ArrayList<Integer>> validator_index_sets = new ArrayList<ArrayList<Integer>>();
+    List<ArrayList<Integer>> validator_index_sets = new ArrayList<>();
 
     for (PendingAttestation attestation : attestations) {
       validator_index_sets.add(
@@ -361,7 +361,7 @@ public class AttestationUtil {
               state, attestation.getData(), attestation.getAggregation_bitfield().toArray()));
     }
 
-    List<Integer> attester_indices = new ArrayList<Integer>();
+    List<Integer> attester_indices = new ArrayList<>();
     for (List<Integer> validator_index_set : validator_index_sets) {
       for (Integer validator_index : validator_index_set) {
         if (!attester_indices.contains(validator_index)) {
@@ -422,7 +422,7 @@ public class AttestationUtil {
     }
 
     // TODO: .contains() method call is an O(n) operation. OPTIMIZE
-    List<Integer> attesting_validator_indices = new ArrayList<Integer>();
+    List<Integer> attesting_validator_indices = new ArrayList<>();
     for (List<Integer> validator_index_set : validator_index_sets) {
       for (Integer validator_index : validator_index_set) {
         if (!attesting_validator_indices.contains(validator_index)) {
@@ -538,10 +538,8 @@ public class AttestationUtil {
       }
     }
 
-    PendingAttestation lowest_inclusion_slot_attestation =
-        Collections.min(possible_attestations, Comparator.comparing(a -> a.getInclusionSlot()));
-
-    return lowest_inclusion_slot_attestation;
+    return Collections.min(
+        possible_attestations, Comparator.comparing(PendingAttestation::getInclusionSlot));
   }
 
   /**
@@ -579,6 +577,7 @@ public class AttestationUtil {
    * @return boolean
    */
   public static boolean verifyAttestation(BeaconState state, Attestation attestation) {
+    // TODO
     return true;
   }
 

@@ -23,10 +23,10 @@ import org.junit.jupiter.api.Test;
 
 class CrosslinkTest {
 
-  long epoch = randomLong();
-  Bytes32 crosslinkDataRoot = Bytes32.random();
+  final long epoch = randomLong();
+  final Bytes32 crosslinkDataRoot = Bytes32.random();
 
-  private Crosslink crosslink = new Crosslink(epoch, crosslinkDataRoot);
+  private final Crosslink crosslink = new Crosslink(epoch, crosslinkDataRoot);
 
   @Test
   void equalsReturnsTrueWhenObjectAreSame() {

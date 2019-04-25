@@ -59,7 +59,7 @@ public class BLSVerify {
       long domain) {
     try {
       List<Bytes> messageHashesAsBytes =
-          messageHashes.stream().map(x -> Bytes.wrap(x)).collect(Collectors.toList());
+          messageHashes.stream().map(Bytes::wrap).collect(Collectors.toList());
       return aggregateSignature.checkSignature(pubkeys, messageHashesAsBytes, domain);
     } catch (BLSException e) {
       LOG.log(Level.WARN, e.toString());

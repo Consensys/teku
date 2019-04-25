@@ -23,11 +23,11 @@ import tech.pegasys.artemis.util.bls.BLSSignature;
 
 class VoluntaryExitTest {
 
-  private long epoch = randomLong();
-  private long validatorIndex = randomLong();
-  private BLSSignature signature = BLSSignature.random();
+  private final long epoch = randomLong();
+  private final long validatorIndex = randomLong();
+  private final BLSSignature signature = BLSSignature.random();
 
-  private VoluntaryExit voluntaryExit = new VoluntaryExit(epoch, validatorIndex, signature);
+  private final VoluntaryExit voluntaryExit = new VoluntaryExit(epoch, validatorIndex, signature);
 
   @Test
   void equalsReturnsTrueWhenObjectsAreSame() {

@@ -27,15 +27,15 @@ import tech.pegasys.artemis.util.bls.BLSSignature;
 
 class BeaconBlockTest {
 
-  private long slot = randomLong();
-  private Bytes32 parentRoot = Bytes32.random();
-  private Bytes32 stateRoot = Bytes32.random();
-  private BLSSignature randaoReveal = BLSSignature.random();
-  private Eth1Data eth1Data = randomEth1Data();
-  private BeaconBlockBody body = randomBeaconBlockBody();
-  private BLSSignature signature = BLSSignature.random();
+  private final long slot = randomLong();
+  private final Bytes32 parentRoot = Bytes32.random();
+  private final Bytes32 stateRoot = Bytes32.random();
+  private final BLSSignature randaoReveal = BLSSignature.random();
+  private final Eth1Data eth1Data = randomEth1Data();
+  private final BeaconBlockBody body = randomBeaconBlockBody();
+  private final BLSSignature signature = BLSSignature.random();
 
-  private BeaconBlock beaconBlock =
+  private final BeaconBlock beaconBlock =
       new BeaconBlock(slot, parentRoot, stateRoot, randaoReveal, eth1Data, body, signature);
 
   @Test
