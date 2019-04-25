@@ -35,8 +35,8 @@ class JSONProviderTest {
   void testJSONPrint(@TempDirectory Path tempDirectory) throws IOException {
     Path logFile = tempDirectory.resolve("log.csv");
     JSONProvider provider = new JSONProvider(logFile);
-    provider.output(new TimeSeriesRecord());
-    provider.output(new TimeSeriesRecord());
+    provider.serialOutput(new TimeSeriesRecord());
+    provider.serialOutput(new TimeSeriesRecord());
     List<String> lines = Files.readAllLines(logFile);
     assertEquals(2, lines.size());
     String firstLine = lines.get(0);
