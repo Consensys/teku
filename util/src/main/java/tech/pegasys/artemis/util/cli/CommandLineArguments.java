@@ -51,6 +51,12 @@ public class CommandLineArguments {
   private boolean simulation = false;
 
   @Option(
+      names = {"-sf", "--simFile"},
+      paramLabel = "<FILENAME>",
+      description = "PoW simulation file to input")
+  private String inputFile = null;
+
+  @Option(
       names = {"-f", "--format"},
       paramLabel = "<IS FORMAT>",
       description = "Output of JSON file is serial or formatted")
@@ -77,7 +83,11 @@ public class CommandLineArguments {
   }
 
   public boolean isSimulation() {
-    return simulation;
+    return (simulation || inputFile != null);
+  }
+
+  public String getInputFile() {
+    return inputFile;
   }
 
   public boolean isFormat() {
