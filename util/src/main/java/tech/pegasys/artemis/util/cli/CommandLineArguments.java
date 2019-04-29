@@ -14,8 +14,11 @@
 package tech.pegasys.artemis.util.cli;
 
 import org.apache.logging.log4j.Level;
+import picocli.CommandLine;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
+
+import java.util.List;
 
 @Command(name = "Artemis", mixinStandardHelpOptions = true)
 public class CommandLineArguments {
@@ -62,6 +65,12 @@ public class CommandLineArguments {
       description = "Output of JSON file is serial or formatted")
   private boolean isFormat = false;
 
+  //Specify events that will be output for logging
+  @CommandLine.Parameters(
+          paramLabel = "<EVENT>",
+          description = "Output selector for specific events")
+  private List<String> events;
+
   public String getProviderType() {
     return this.providerType;
   }
@@ -92,5 +101,9 @@ public class CommandLineArguments {
 
   public boolean isFormat() {
     return isFormat;
+  }
+
+  public List<String> getEvents() {
+    return events;
   }
 }

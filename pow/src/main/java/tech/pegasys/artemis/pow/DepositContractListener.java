@@ -13,18 +13,17 @@
 
 package tech.pegasys.artemis.pow;
 
-import static tech.pegasys.artemis.pow.contract.DepositContract.DEPOSIT_EVENT;
-import static tech.pegasys.artemis.pow.contract.DepositContract.ETH2GENESIS_EVENT;
-
 import com.google.common.eventbus.EventBus;
 import io.reactivex.disposables.Disposable;
 import org.web3j.abi.EventEncoder;
 import org.web3j.protocol.core.DefaultBlockParameterName;
 import org.web3j.protocol.core.methods.request.EthFilter;
-import tech.pegasys.artemis.pow.api.DepositEvent;
 import tech.pegasys.artemis.pow.contract.DepositContract;
 import tech.pegasys.artemis.pow.event.Deposit;
 import tech.pegasys.artemis.pow.event.Eth2Genesis;
+
+import static tech.pegasys.artemis.pow.contract.DepositContract.DEPOSIT_EVENT;
+import static tech.pegasys.artemis.pow.contract.DepositContract.ETH2GENESIS_EVENT;
 
 public class DepositContractListener {
 
@@ -60,7 +59,7 @@ public class DepositContractListener {
             .depositEventFlowable(depositEventFilter)
             .subscribe(
                 response -> {
-                  DepositEvent event = new Deposit(response);
+                  Deposit event = new Deposit(response);
                   eventBus.post(event);
                 });
 
