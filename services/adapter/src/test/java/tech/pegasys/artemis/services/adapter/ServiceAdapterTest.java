@@ -34,6 +34,7 @@ import tech.pegasys.artemis.pow.event.Eth2Genesis;
 import tech.pegasys.artemis.services.ServiceConfig;
 import tech.pegasys.artemis.services.adapter.event.OutboundEvent;
 
+@Disabled
 public class ServiceAdapterTest {
 
   private final List<Object> receivedEvents = new ArrayList<>();
