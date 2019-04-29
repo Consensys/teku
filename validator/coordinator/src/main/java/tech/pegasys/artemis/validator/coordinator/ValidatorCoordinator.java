@@ -212,7 +212,7 @@ public class ValidatorCoordinator {
     UnsignedLong domain =
         BeaconStateUtil.get_domain(state.getFork(), epoch, Constants.DOMAIN_RANDAO);
     Bytes32 messageHash =
-        HashTreeUtil.hash_tree_root(BeaconStateUtil.int_to_bytes(epoch.longValue(), 8));
+        HashTreeUtil.hash_tree_root_basic_type(BeaconStateUtil.int_to_bytes32(epoch.longValue()));
     LOG.log(Level.INFO, "Sign Epoch", printEnabled);
     LOG.log(Level.INFO, "Proposer pubkey: " + keypair.getPublicKey(), printEnabled);
     LOG.log(Level.INFO, "state: " + state.hash_tree_root(), printEnabled);

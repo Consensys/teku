@@ -54,6 +54,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import net.consensys.cava.bytes.Bytes32;
+import net.consensys.cava.ssz.SSZ;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.logging.log4j.Level;
 import tech.pegasys.artemis.datastructures.Constants;
@@ -998,14 +999,19 @@ public final class EpochProcessorUtil {
     // Set active index root
     int index_root_position =
         (next_epoch.intValue() + ACTIVATION_EXIT_DELAY) % LATEST_ACTIVE_INDEX_ROOTS_LENGTH;
+    List<Integer> active_validator_indices =
+        get_active_validator_indices(
+            state.getValidator_registry(),
+            next_epoch.plus(UnsignedLong.valueOf(ACTIVATION_EXIT_DELAY)));
     state
         .getLatest_active_index_roots()
         .set(
             index_root_position,
-            HashTreeUtil.hash_tree_root_list_integers(
-                get_active_validator_indices(
-                    state.getValidator_registry(),
-                    next_epoch.plus(UnsignedLong.valueOf(ACTIVATION_EXIT_DELAY)))));
+            HashTreeUtil.hash_tree_root_list_of_basic_type(
+                active_validator_indices.stream()
+                    .map(item -> SSZ.encodeUInt64(item))
+                    .collect(Collectors.toList()),
+                active_validator_indices.size()));
 
     // Set total slashed balances
     state

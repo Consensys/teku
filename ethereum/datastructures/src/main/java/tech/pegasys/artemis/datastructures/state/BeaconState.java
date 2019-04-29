@@ -65,8 +65,7 @@ public class BeaconState {
   protected Bytes32 finalized_root;
 
   // Recent state
-  // TODO This is bounded by SHARD_COUNT
-  protected List<Crosslink> latest_crosslinks;
+  protected List<Crosslink> latest_crosslinks; // Bounded by SHARD_COUNT
   protected List<Bytes32> latest_block_roots; // Bounded by SLOTS_PER_HISTORICAL_ROOT
   protected List<Bytes32> latest_state_roots; // Bounded by SLOTS_PER_HISTORICAL_ROOT
   protected List<Bytes32> latest_active_index_roots; // Bounded by LATEST_ACTIVE_INDEX_ROOTS_LENGTH
@@ -771,7 +770,22 @@ public class BeaconState {
             HashTreeUtil.hash_tree_root_basic_type(SSZ.encodeUInt64(finalized_epoch.longValue())),
             HashTreeUtil.hash_tree_root_basic_type(finalized_root),
             // Recent state
-            // TODO Recent State Hash Tree Root
+            HashTreeUtil.merkleHash(
+                latest_crosslinks.stream()
+                    .map(item -> item.hash_tree_root())
+                    .collect(Collectors.toList())),
+            HashTreeUtil.hash_tree_root_basic_type(latest_block_roots.toArray(new Bytes32[0])),
+            HashTreeUtil.hash_tree_root_basic_type(latest_state_roots.toArray(new Bytes32[0])),
+            HashTreeUtil.hash_tree_root_basic_type(
+                latest_active_index_roots.toArray(new Bytes32[0])),
+            HashTreeUtil.hash_tree_root_basic_type(
+                latest_slashed_balances.stream()
+                    .map(item -> SSZ.encodeUInt64(item.longValue()))
+                    .collect(Collectors.toList())
+                    .toArray(new Bytes[0])),
+            latest_block_header.hash_tree_root(),
+            HashTreeUtil.hash_tree_root_list_of_basic_type(
+                historical_roots, historical_roots.size()),
             // Ethereum 1.0 chain data
             latest_eth1_data.hash_tree_root(),
             HashTreeUtil.mix_in_length(
