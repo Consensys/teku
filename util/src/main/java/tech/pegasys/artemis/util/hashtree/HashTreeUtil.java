@@ -15,8 +15,8 @@ package tech.pegasys.artemis.util.hashtree;
 
 import static java.nio.ByteOrder.LITTLE_ENDIAN;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import net.consensys.cava.bytes.Bytes;
@@ -28,70 +28,50 @@ import net.consensys.cava.ssz.SSZ;
 public final class HashTreeUtil {
 
   /**
-   * Calculate the hash tree root of the provided value
-   *
-   * @param value
+   * Create the hash tree root of a set of values of basic SSZ types or tuples of basic types.
+   * Basic SSZ types are uintN, bool, and byte. bytesN (i.e. Bytes32) is a tuple of basic types.
+   * NOTE: Bytes (and not Bytes32, Bytes48 etc.) IS NOT a basic type or a tuple of basic types.
+   * 
+   * @param bytes One Bytes value or a list of homogeneous Bytes values.
+   * @return The SSZ tree root hash of the values.
+   * @see <a href="https://github.com/ethereum/eth2.0-specs/blob/v0.5.1/specs/simple-serialize.md">SSZ Spec v0.5.1</a>
    */
-  public static Bytes32 hash_tree_root(Bytes value) {
-    return SSZ.hashTreeRoot(value);
+  public static Bytes32 hash_tree_root_basic_type(Bytes... bytes) {
+    if (bytes.length == 1) {
+      if (bytes[0].size() > 32) {
+        return Hash.keccak256(bytes[0]);
+      } else {
+        return Bytes32.rightPad(bytes[0]);
+      }
+    } else {
+      Bytes hash = merkleHash(new ArrayList<>(Arrays.asList(bytes)));
+      return Bytes32.rightPad(hash);
+    }
   }
 
   /**
-   * Calculate the hash tree root of the provided value
-   *
-   * @param value
+   * Create the hash tree root of a list of values of basic SSZ types.
+   * This is only to be used for SSZ lists and not SSZ tuples. See the "see also" for more info.
+   * 
+   * @param bytes A list of homogeneous Bytes values representing basic SSZ types.
+   * @return The SSZ tree root hash of the list of values.
+   * @see <a href="https://github.com/ethereum/eth2.0-specs/blob/v0.5.1/specs/simple-serialize.md">SSZ Spec v0.5.1</a>
    */
-  public static Bytes32 hash_tree_root(UnsignedLong val) {
-    return SSZ.hashTreeRoot(
-        SSZ.encode(
-            writer -> {
-              writer.writeUInt64(val.longValue());
-            }));
+  public static Bytes32 hash_tree_root_list_of_basic_type(List<? extends Bytes> bytes, int length) {
+    return mix_in_length(hash_tree_root_basic_type(bytes.toArray(new Bytes[0])), length);
   }
 
-  /**
-   * Calculate the hash tree root of the list of validators provided
-   *
-   * @param list
-   */
-  public static Bytes32 hash_tree_root(List<Bytes> list) {
-    return hash_tree_root(
-        SSZ.encode(
-            writer -> {
-              writer.writeBytesList(list);
-            }));
+  private static Bytes32 mix_in_length(Bytes32 merkle_root, int length) {
+    return Hash.keccak256(Bytes.concatenate(merkle_root, SSZ.encodeInt32(length)));
   }
 
-  /**
-   * Calculate the hash tree root of the list of integers provided.
-   *
-   * <p><b>WARNING: This assume 64-bit encoding is intended for the integers provided.</b>
-   *
-   * @param integers
-   * @return
-   */
-  public static Bytes32 hash_tree_root_list_integers(List<Integer> integers) {
-    return hash_tree_root(
-        SSZ.encode(
-            // TODO This can be replaced with writeUInt64List(List) once implemented in Cava.
-            writer -> {
-              writer.writeUIntList(64, integers);
-            }));
-  }
-
-  /**
-   * Calculate the merkle root of the list of Bytes.
-   *
-   * @param list - The list of Bytes32 objects to calculate the merkle root for.
-   * @return The merkle root.
-   */
   /**
    * Hashes a list of homogeneous values.
    *
    * @param values a list of homogeneous values
    * @return the merkle hash of the list of values
    */
-  public static Bytes merkleHash(List<Bytes> values) {
+  public static Bytes32 merkleHash(List<Bytes> values) {
     Bytes littleEndianLength = Bytes.ofUnsignedInt(values.size(), LITTLE_ENDIAN);
     Bytes32 valuesLength = Bytes32.rightPad(littleEndianLength);
 
