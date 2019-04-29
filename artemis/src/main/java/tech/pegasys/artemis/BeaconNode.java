@@ -43,12 +43,6 @@ import tech.pegasys.artemis.util.cli.CommandLineArguments;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 import tech.pegasys.artemis.validator.coordinator.ValidatorCoordinator;
 
-import java.io.IOException;
-import java.nio.file.Path;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
-
 public class BeaconNode {
   private static final ALogger LOG = new ALogger(BeaconNode.class.getName());
   private final Vertx vertx = Vertx.vertx();

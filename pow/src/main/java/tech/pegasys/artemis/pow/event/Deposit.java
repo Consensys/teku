@@ -16,6 +16,7 @@ package tech.pegasys.artemis.pow.event;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
+import java.nio.ByteOrder;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.data.IRecordAdapter;
@@ -23,9 +24,8 @@ import tech.pegasys.artemis.pow.api.DepositEvent;
 import tech.pegasys.artemis.pow.contract.DepositContract.DepositEventResponse;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 
-import java.nio.ByteOrder;
-
-public class Deposit extends AbstractEvent<DepositEventResponse> implements DepositEvent, IRecordAdapter {
+public class Deposit extends AbstractEvent<DepositEventResponse>
+    implements DepositEvent, IRecordAdapter {
   // processed fields
   private BLSPublicKey pubkey;
   private Bytes32 withdrawal_credentials;
@@ -88,7 +88,8 @@ public class Deposit extends AbstractEvent<DepositEventResponse> implements Depo
     deposit.addProperty("pubkey", pubkey.getPublicKey().toBytesCompressed().toHexString());
     deposit.addProperty("withdrawal_crednetials", withdrawal_credentials.toHexString());
     deposit.addProperty("proof_of_possession", proof_of_possession.toHexString());
-    deposit.addProperty("amount", Bytes.ofUnsignedLong(amount).toHexString());
+    deposit.addProperty("amount", amount);
+    deposit.addProperty("merkel_tree_index", merkel_tree_index.toHexString());
 
     Gson customGson = gsonBuilder.setPrettyPrinting().create();
     return customGson.toJson(deposit);
@@ -98,5 +99,4 @@ public class Deposit extends AbstractEvent<DepositEventResponse> implements Depo
   public String toCSV() {
     return null;
   }
-
 }
