@@ -31,9 +31,9 @@ def expandedTaskList = []
 gradle.startParameter.taskNames.each {
   expandedTaskList << (buildAliases[it] ? buildAliases[it] : it)
 }
-gradle.startParameter.taskNames = expandedTaskList.flatten()
+gradle.startParameter.taskNames = expandedTaskList.flatten() as Iterable<String>
 
-def baseVersion = '1.0.0';
+def baseVersion = '1.0.0'
 project.version = baseVersion + '-SNAPSHOT'
 def userHome = System.getProperty("user.home")
 allprojects {
@@ -75,7 +75,7 @@ allprojects {
   }
 
   buildScan { 
-    termsOfServiceUrl = "https://gradle.com/terms-of-service"; 
+    termsOfServiceUrl = "https://gradle.com/terms-of-service"
     termsOfServiceAgree = "yes" 
   }
 
@@ -161,7 +161,7 @@ allprojects {
       'root.log.level',
       'evm.log.level'
     ]
-    testLogging.showStandardStreams = true;
+    testLogging.showStandardStreams = true
     for (String name : toImport) {
       if (System.getProperty(name) != null) {
         systemProperty name, System.getProperty(name)
@@ -318,7 +318,7 @@ distZip {
   }
 }
 
-task jacocoRootReport(type: org.gradle.testing.jacoco.tasks.JacocoReport) {
+task jacocoRootReport(type: JacocoReport) {
   additionalSourceDirs.from = files(subprojects.sourceSets.main.allSource.srcDirs)
   sourceDirectories.from = files(subprojects.sourceSets.main.allSource.srcDirs)
   classDirectories.from = files(subprojects.sourceSets.main.output)

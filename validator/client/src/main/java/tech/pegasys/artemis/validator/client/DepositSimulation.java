@@ -73,7 +73,7 @@ public class DepositSimulation implements IRecordAdapter {
               deposit.addProperty("eventType", "Deposit");
               deposit.addProperty("data", deposits.get(i).getData().toHexString());
               deposit.addProperty(
-                  "merkle_tree_index", deposits.get(i).getMerkel_tree_index().toHexString());
+                  "merkle_tree_index", deposits.get(i).getMerkle_tree_index().toHexString());
               arr.add(deposit);
             });
 

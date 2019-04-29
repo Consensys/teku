@@ -30,6 +30,6 @@ public class ServiceFactory<T> {
   }
 
   public static <S> ServiceFactory<S> getInstance(Class<S> type) {
-    return new ServiceFactory<S>(type);
+    return new ServiceFactory<>(type);
   }
 }

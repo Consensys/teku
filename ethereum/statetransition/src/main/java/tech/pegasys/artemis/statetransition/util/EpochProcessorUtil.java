@@ -15,21 +15,21 @@ package tech.pegasys.artemis.statetransition.util;
 
 import static java.lang.Math.toIntExact;
 
-import com.google.common.base.Function;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Collections2;
 import com.google.common.collect.Lists;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes32;
+import org.checkerframework.checker.nullness.qual.Nullable;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.Eth1DataVote;
@@ -180,25 +180,25 @@ public final class EpochProcessorUtil {
     }
   }
 
-  static Function<Integer, Long> apply_inactivity_penalty(
+  static Function<Integer, @Nullable Long> apply_inactivity_penalty(
       BeaconState state, long epochs_since_finality, long previous_total_balance) {
     return index ->
         get_inactivity_penality(state, index, epochs_since_finality, previous_total_balance);
   }
 
-  static Function<Integer, Long> apply_base_penalty(
+  static Function<Integer, @Nullable Long> apply_base_penalty(
       BeaconState state, long epochs_since_finality, long previous_total_balance) {
     return index -> base_reward(state, index, previous_total_balance);
   }
 
-  static Function<Integer, Long> apply_inactivity_base_penalty(
+  static Function<Integer, @Nullable Long> apply_inactivity_base_penalty(
       BeaconState state, long epochs_since_finality, long previous_total_balance) {
     return index ->
         2L * get_inactivity_penality(state, index, epochs_since_finality, previous_total_balance)
             + base_reward(state, index, previous_total_balance);
   }
 
-  static Function<Integer, Long> apply_inclusion_base_penalty(
+  static Function<Integer, @Nullable Long> apply_inclusion_base_penalty(
       BeaconState state, long epochs_since_finality, long previous_total_balance) {
     return index -> {
       long inclusion_distance = 0;
@@ -220,7 +220,7 @@ public final class EpochProcessorUtil {
       long previous_total_balance,
       long previous_balance,
       List<Integer> previous_indices) {
-    long reward_delta = 0;
+    long reward_delta;
 
     // make a list of integers from 0 to numberOfValidators
     List<Integer> missing_indices =
@@ -235,7 +235,7 @@ public final class EpochProcessorUtil {
               * previous_balance
               / previous_total_balance;
       apply_penalty_or_reward(balances, index, reward_delta, true);
-      missing_indices.remove(missing_indices.indexOf(index));
+      missing_indices.remove(index);
     }
 
     // apply penalties to active validator indices not in the list
@@ -256,9 +256,9 @@ public final class EpochProcessorUtil {
       BeaconState state,
       List<Long> balances,
       List<Integer> validator_indices,
-      Function<Integer, Long> penalty) {
+      Function<Integer, @Nullable Long> penalty) {
 
-    long penalty_delta = 0;
+    long penalty_delta;
     for (int index : validator_indices) {
       penalty_delta = penalty.apply(index);
       apply_penalty_or_reward(balances, index, penalty_delta, false);
@@ -313,7 +313,7 @@ public final class EpochProcessorUtil {
             state, balances, previous_total_balance, previous_balance, previous_indices);
 
         // Inclusion distance
-        long reward_delta = 0;
+        long reward_delta;
         previous_indices = AttestationUtil.get_previous_epoch_attester_indices(state);
         for (int index : previous_indices) {
           long inclusion_distance = AttestationUtil.inclusion_distance(state, index);
@@ -328,15 +328,14 @@ public final class EpochProcessorUtil {
       } else if (epochs_since_finality > 4L) {
 
         Predicate<Integer> active_validators_filter =
-            index -> {
-              return ValidatorsUtil.is_active_validator_index(
-                  state, index, BeaconStateUtil.get_current_epoch(state));
-            };
+            index ->
+                ValidatorsUtil.is_active_validator_index(
+                    state, index, BeaconStateUtil.get_current_epoch(state));
 
         Predicate<Integer> slashed_filter =
             index -> {
               Validator validator = state.getValidator_registry().get(index);
-              return validator.isSlashed() == true;
+              return validator.isSlashed();
             };
 
         // prev epoch justified attester
@@ -469,6 +468,7 @@ public final class EpochProcessorUtil {
                   .collect(Collectors.toMap(i -> i, i -> i));
           for (Integer index : crosslink_committee.getCommittee()) {
             List<Long> balances = state.getValidator_balances();
+            // TODO: This balance is never used
             long balance = balances.get(index);
             if (attester_indices.containsKey(index)) {
               long reward =
@@ -539,7 +539,7 @@ public final class EpochProcessorUtil {
   public static Boolean shouldUpdateValidatorRegistry(BeaconState state)
       throws EpochProcessingException {
     try {
-      Boolean check1 = false;
+      Boolean check1;
       long finalized_epoch = state.getFinalized_epoch();
       long validator_registry_update_epoch = state.getValidator_registry_update_epoch();
       check1 = finalized_epoch > validator_registry_update_epoch;
@@ -709,7 +709,7 @@ public final class EpochProcessorUtil {
       for (Validator validator : state.getValidator_registry()) {
         if (eligible(state, validator)) eligible_validators.add(validator);
       }
-      Collections.sort(eligible_validators, Comparator.comparing(Validator::getExit_epoch));
+      eligible_validators.sort(Comparator.comparing(Validator::getExit_epoch));
 
       int withdrawn_so_far = 0;
       for (Validator validator : eligible_validators) {

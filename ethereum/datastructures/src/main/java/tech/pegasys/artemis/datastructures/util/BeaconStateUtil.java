@@ -886,9 +886,7 @@ public class BeaconStateUtil {
 
     // Retrieve the list of validator's public keys from the current state.
     List<BLSPublicKey> validator_pubkeys =
-        validatorRegistry.stream()
-            .map(validator -> validator.getPubkey())
-            .collect(Collectors.toList());
+        validatorRegistry.stream().map(Validator::getPubkey).collect(Collectors.toList());
 
     // If the pubkey isn't in the state, add a new validator to the registry.
     // Otherwise, top up the balance for the validator whose pubkey was provided.

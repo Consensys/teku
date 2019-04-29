@@ -27,11 +27,11 @@ import org.junit.jupiter.api.extension.ExtendWith;
 @ExtendWith(BouncyCastleExtension.class)
 class DepositDataTest {
 
-  private long amount = randomLong();
-  private long timestamp = randomLong();
-  private DepositInput depositInput = randomDepositInput();
+  private final long amount = randomLong();
+  private final long timestamp = randomLong();
+  private final DepositInput depositInput = randomDepositInput();
 
-  private DepositData depositData = new DepositData(amount, timestamp, depositInput);
+  private final DepositData depositData = new DepositData(amount, timestamp, depositInput);
 
   @Test
   void equalsReturnsTrueWhenObjectAreSame() {

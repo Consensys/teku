@@ -39,7 +39,7 @@ class StateTransitionTest {
           state, randomDeposits(5), 0, new Eth1Data(Bytes32.ZERO, Bytes32.ZERO));
 
       state.setLatest_block_roots(
-          new ArrayList<Bytes32>(
+          new ArrayList<>(
               Collections.nCopies(Constants.LATEST_BLOCK_ROOTS_LENGTH, Constants.ZERO_HASH)));
 
       return state;

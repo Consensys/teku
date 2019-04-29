@@ -19,6 +19,7 @@ import java.nio.ByteBuffer;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 import org.apache.tuweni.bytes.Bytes32;
@@ -223,7 +224,7 @@ public final class DataStructureUtil {
   }
 
   public static ArrayList<Deposit> randomDeposits(int num) {
-    ArrayList<Deposit> deposits = new ArrayList<Deposit>();
+    ArrayList<Deposit> deposits = new ArrayList<>();
 
     for (int i = 0; i < num; i++) {
       deposits.add(randomDeposit());
@@ -233,7 +234,7 @@ public final class DataStructureUtil {
   }
 
   public static ArrayList<Deposit> randomDeposits(int num, int seed) {
-    ArrayList<Deposit> deposits = new ArrayList<Deposit>();
+    ArrayList<Deposit> deposits = new ArrayList<>();
 
     for (int i = 0; i < num; i++) {
       deposits.add(randomDeposit(i + seed));
@@ -279,7 +280,7 @@ public final class DataStructureUtil {
         Arrays.asList(randomAttestation(), randomAttestation(), randomAttestation()),
         randomDeposits(100),
         Arrays.asList(randomVoluntaryExit(), randomVoluntaryExit(), randomVoluntaryExit()),
-        Arrays.asList(randomTransfer()));
+        Collections.singletonList(randomTransfer()));
   }
 
   public static BeaconBlockBody randomBeaconBlockBody(int seed) {
@@ -296,7 +297,7 @@ public final class DataStructureUtil {
         randomDeposits(100, seed++),
         Arrays.asList(
             randomVoluntaryExit(seed++), randomVoluntaryExit(seed++), randomVoluntaryExit(seed++)),
-        Arrays.asList(randomTransfer(seed++)));
+        Collections.singletonList(randomTransfer(seed++)));
   }
 
   public static BeaconBlock randomBeaconBlock(long slotNum) {
@@ -311,7 +312,7 @@ public final class DataStructureUtil {
   }
 
   public static ArrayList<Deposit> newDeposits(int numDeposits) {
-    ArrayList<Deposit> deposits = new ArrayList<Deposit>();
+    ArrayList<Deposit> deposits = new ArrayList<>();
 
     for (int i = 0; i < numDeposits; i++) {
       // https://github.com/ethereum/eth2.0-specs/blob/0.4.0/specs/validator/0_beacon-chain-validator.md#submit-deposit
@@ -323,8 +324,10 @@ public final class DataStructureUtil {
               keypair, deposit_input.signedRoot("proof_of_possession"), Constants.DOMAIN_DEPOSIT);
       deposit_input.setProof_of_possession(proof_of_possession);
 
+      // TODO should this equal something else?
       long timestamp = i;
       DepositData deposit_data = new DepositData(MAX_DEPOSIT_AMOUNT, timestamp, deposit_input);
+      // TODO should this value equal something else?
       long index = i;
       List<Bytes32> branch = Arrays.asList(Bytes32.ZERO, Bytes32.ZERO, Bytes32.ZERO);
       Deposit deposit = new Deposit(branch, index, deposit_data);

@@ -516,13 +516,13 @@ public final class BlockProcessorUtil {
     }
 
     List<BLSPublicKey> pubkey0 = new ArrayList<>();
-    for (int i = 0; i < custody_bit_0_participants.size(); i++) {
-      pubkey0.add(state.getValidator_registry().get(custody_bit_0_participants.get(i)).getPubkey());
+    for (Integer i : custody_bit_0_participants) {
+      pubkey0.add(state.getValidator_registry().get(i).getPubkey());
     }
 
     List<BLSPublicKey> pubkey1 = new ArrayList<>();
-    for (int i = 0; i < custody_bit_1_participants.size(); i++) {
-      pubkey1.add(state.getValidator_registry().get(custody_bit_1_participants.get(i)).getPubkey());
+    for (Integer i : custody_bit_1_participants) {
+      pubkey1.add(state.getValidator_registry().get(i).getPubkey());
     }
 
     List<BLSPublicKey> pubkeys =
@@ -547,7 +547,7 @@ public final class BlockProcessorUtil {
     checkArgument(
         bls_verify_multiple(pubkeys, messages, signature, domain),
         "checkArgument threw and exception in verify_bitfields_and_aggregate_signature() 4");
-
+    // TODO
     return true;
   }
 

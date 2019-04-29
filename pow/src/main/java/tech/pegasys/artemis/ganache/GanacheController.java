@@ -117,7 +117,7 @@ public class GanacheController {
   // Wait for keys.json file to be copied to the keysPath directory
   @SuppressWarnings({"unchecked", "DefaultCharset"})
   public void initKeys() {
-    accounts = new ArrayList<SECP256K1.KeyPair>();
+    accounts = new ArrayList<>();
     JSONObject accountsJSON = null;
     File keyFile = new File(keysPath);
     try {

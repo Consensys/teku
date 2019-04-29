@@ -18,6 +18,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Iterator;
 import org.apache.tuweni.bytes.Bytes;
 
+@SuppressWarnings("ALL")
 interface Codec {
   enum ProtocolType {
     GOSSIP,
@@ -30,6 +31,7 @@ interface Codec {
    * @param message
    * @return the protocol type
    */
+  @SuppressWarnings("JavaDoc")
   static ProtocolType protocolType(Bytes message) {
     Bytes requestLineBytes = null;
     for (int i = 0; i < message.size(); i++) {

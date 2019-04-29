@@ -216,6 +216,7 @@ public final class HobbitsP2PNetwork implements P2PNetwork {
 
   @Override
   public void subscribe(String event) {
+    // TODO
     if (!started.get()) {}
   }
 

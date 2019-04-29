@@ -62,7 +62,7 @@ try {
             }
         }
     }
-} catch (e) {
+} catch (ignored) {
     currentBuild.result = 'FAILURE'
 } finally {
     // If we're on master and it failed, notify slack

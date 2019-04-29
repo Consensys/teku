@@ -15,7 +15,6 @@ package tech.pegasys.artemis.datastructures.state;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.Copyable;
@@ -35,7 +34,7 @@ public final class BeaconStateWithCache extends BeaconState {
     this.genesis_time = state.getGenesis_time();
     this.fork = new Fork(state.getFork());
     this.validator_registry = this.copyList(state.getValidator_registry(), new ArrayList<>());
-    this.validator_balances = state.getValidator_balances().stream().collect(Collectors.toList());
+    this.validator_balances = new ArrayList<>(state.getValidator_balances());
     this.validator_registry_update_epoch = state.getValidator_registry_update_epoch();
     this.latest_randao_mixes =
         this.copyBytesList(state.getLatest_randao_mixes(), new ArrayList<>());
@@ -53,8 +52,7 @@ public final class BeaconStateWithCache extends BeaconState {
     this.latest_block_roots = this.copyBytesList(state.getLatest_block_roots(), new ArrayList<>());
     this.latest_active_index_roots =
         this.copyBytesList(state.getLatest_active_index_roots(), new ArrayList<>());
-    this.latest_slashed_balances =
-        state.getLatest_slashed_balances().stream().collect(Collectors.toList());
+    this.latest_slashed_balances = new ArrayList<>(state.getLatest_slashed_balances());
     this.latest_attestations = this.copyList(state.getLatest_attestations(), new ArrayList<>());
     this.batched_block_roots =
         this.copyBytesList(state.getBatched_block_roots(), new ArrayList<>());

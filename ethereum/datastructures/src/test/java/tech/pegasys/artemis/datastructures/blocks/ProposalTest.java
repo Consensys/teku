@@ -24,12 +24,12 @@ import tech.pegasys.artemis.util.bls.BLSSignature;
 
 class ProposalTest {
 
-  private long slot = randomLong();
-  private long shard = randomLong();
-  private Bytes32 blockRoot = Bytes32.random();
-  private BLSSignature signature = BLSSignature.random();
+  private final long slot = randomLong();
+  private final long shard = randomLong();
+  private final Bytes32 blockRoot = Bytes32.random();
+  private final BLSSignature signature = BLSSignature.random();
 
-  private Proposal proposal = new Proposal(slot, shard, blockRoot, signature);
+  private final Proposal proposal = new Proposal(slot, shard, blockRoot, signature);
 
   @Test
   void equalsReturnsTrueWhenObjectAreSame() {

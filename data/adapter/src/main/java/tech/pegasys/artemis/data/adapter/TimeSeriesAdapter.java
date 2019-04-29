@@ -54,17 +54,16 @@ public class TimeSeriesAdapter implements DataAdapter<TimeSeriesRecord> {
     Bytes32 lastFinalizedBlockRoot = HashTreeUtil.hash_tree_root(finalizedBlock.toBytes());
     Bytes32 lastFinalizedStateRoot = HashTreeUtil.hash_tree_root(finalizedState.toBytes());
 
-    List<ValidatorJoin> validators = new ArrayList<ValidatorJoin>();
+    List<ValidatorJoin> validators = new ArrayList<>();
 
     IntStream.range(0, headState.getValidator_registry().size())
         .parallel()
         .forEach(
-            i -> {
-              validators.add(
-                  new ValidatorJoin(
-                      headState.getValidator_registry().get(i),
-                      headState.getValidator_balances().get(i)));
-            });
+            i ->
+                validators.add(
+                    new ValidatorJoin(
+                        headState.getValidator_registry().get(i),
+                        headState.getValidator_balances().get(i))));
     return new TimeSeriesRecord(
         this.input.getDate(),
         this.input.getIndex(),

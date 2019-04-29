@@ -24,10 +24,10 @@ import org.junit.jupiter.api.Test;
 
 class Eth1DataVoteTest {
 
-  private Eth1Data eth1Data = randomEth1Data();
-  private long voteCount = randomLong();
+  private final Eth1Data eth1Data = randomEth1Data();
+  private final long voteCount = randomLong();
 
-  private Eth1DataVote eth1DataVote = new Eth1DataVote(eth1Data, voteCount);
+  private final Eth1DataVote eth1DataVote = new Eth1DataVote(eth1Data, voteCount);
 
   @Test
   void equalsReturnsTrueWhenObjectAreSame() {

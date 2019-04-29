@@ -241,13 +241,13 @@ public class BeaconState {
 
   public Bytes toBytes() {
     List<Bytes> validator_registryBytes =
-        validator_registry.stream().map(item -> item.toBytes()).collect(Collectors.toList());
+        validator_registry.stream().map(Validator::toBytes).collect(Collectors.toList());
     List<Bytes> latest_crosslinksBytes =
-        latest_crosslinks.stream().map(item -> item.toBytes()).collect(Collectors.toList());
+        latest_crosslinks.stream().map(Crosslink::toBytes).collect(Collectors.toList());
     List<Bytes> latest_attestationBytes =
-        latest_attestations.stream().map(item -> item.toBytes()).collect(Collectors.toList());
+        latest_attestations.stream().map(PendingAttestation::toBytes).collect(Collectors.toList());
     List<Bytes> eth1_data_votesBytes =
-        eth1_data_votes.stream().map(item -> item.toBytes()).collect(Collectors.toList());
+        eth1_data_votes.stream().map(Eth1DataVote::toBytes).collect(Collectors.toList());
 
     return SSZ.encode(
         writer -> {

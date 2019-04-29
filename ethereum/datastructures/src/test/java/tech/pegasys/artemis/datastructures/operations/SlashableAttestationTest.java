@@ -30,12 +30,13 @@ import tech.pegasys.artemis.util.bls.BLSSignature;
 
 class SlashableAttestationTest {
 
-  private List<Long> validatorIndices = Arrays.asList(randomLong(), randomLong(), randomLong());
-  private AttestationData data = randomAttestationData();
-  private Bytes custodyBitfield = Bytes32.random();
-  private BLSSignature aggregateSignature = BLSSignature.random();
+  private final List<Long> validatorIndices =
+      Arrays.asList(randomLong(), randomLong(), randomLong());
+  private final AttestationData data = randomAttestationData();
+  private final Bytes custodyBitfield = Bytes32.random();
+  private final BLSSignature aggregateSignature = BLSSignature.random();
 
-  private SlashableAttestation slashableAttestation =
+  private final SlashableAttestation slashableAttestation =
       new SlashableAttestation(validatorIndices, data, custodyBitfield, aggregateSignature);
 
   @Test

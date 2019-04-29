@@ -23,10 +23,10 @@ import org.junit.jupiter.api.Test;
 
 class AttesterSlashingTest {
 
-  private SlashableAttestation slashableAttestation1 = randomSlashableAttestation();
-  private SlashableAttestation slashableAttestation2 = randomSlashableAttestation();
+  private final SlashableAttestation slashableAttestation1 = randomSlashableAttestation();
+  private final SlashableAttestation slashableAttestation2 = randomSlashableAttestation();
 
-  private AttesterSlashing attesterSlashing =
+  private final AttesterSlashing attesterSlashing =
       new AttesterSlashing(slashableAttestation1, slashableAttestation2);
 
   @Test

@@ -124,16 +124,8 @@ public class Proposal {
     return Bytes32.rightPad(
         HashTreeUtil.merkleHash(
             Arrays.asList(
-                HashTreeUtil.hash_tree_root(
-                    SSZ.encode(
-                        writer -> {
-                          writer.writeUInt64(slot);
-                        })),
-                HashTreeUtil.hash_tree_root(
-                    SSZ.encode(
-                        writer -> {
-                          writer.writeUInt64(shard);
-                        })),
+                HashTreeUtil.hash_tree_root(SSZ.encode(writer -> writer.writeUInt64(slot))),
+                HashTreeUtil.hash_tree_root(SSZ.encode(writer -> writer.writeUInt64(shard))),
                 HashTreeUtil.hash_tree_root(block_root))));
   }
 }
