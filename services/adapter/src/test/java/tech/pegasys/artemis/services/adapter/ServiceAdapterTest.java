@@ -137,6 +137,7 @@ public class ServiceAdapterTest {
     assertEquals(Integer.valueOf(rcvdIndex2to1 + 1), rcvdIndex1to2);
   }
 
+  @Disabled
   @Subscribe
   public void onEvent(Object event) {
     receivedEvents.add(event);
