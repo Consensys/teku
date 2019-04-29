@@ -21,7 +21,6 @@ import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.util.alogger.ALogger;
-import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 
 /** Transforms a data record into a time series record */
 public class TimeSeriesAdapter implements DataAdapter<TimeSeriesRecord> {
@@ -50,9 +49,9 @@ public class TimeSeriesAdapter implements DataAdapter<TimeSeriesRecord> {
 
     Bytes32 headBlockRoot = headBlock.hash_tree_root();
     Bytes32 justifiedBlockRoot = justifiedBlock.hash_tree_root();
-    Bytes32 justifiedStateRoot = HashTreeUtil.hash_tree_root(justifiedState.toBytes());
+    Bytes32 justifiedStateRoot = justifiedState.hash_tree_root();
     Bytes32 finalizedBlockRoot = finalizedBlock.hash_tree_root();
-    Bytes32 finalizedStateRoot = HashTreeUtil.hash_tree_root(finalizedState.toBytes());
+    Bytes32 finalizedStateRoot = finalizedState.hash_tree_root();
     return new TimeSeriesRecord(
         this.input.getIndex(),
         slot,

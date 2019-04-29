@@ -1166,8 +1166,10 @@ public class BeaconStateUtil {
             bls_aggregate_pubkeys(custody_bit_1_pubkeys));
     List<Bytes32> message_hashes =
         Arrays.asList(
-            new AttestationDataAndCustodyBit(slashable_attestation.getData(), false).hash_tree_root(),
-            new AttestationDataAndCustodyBit(slashable_attestation.getData(), true).hash_tree_root());
+            new AttestationDataAndCustodyBit(slashable_attestation.getData(), false)
+                .hash_tree_root(),
+            new AttestationDataAndCustodyBit(slashable_attestation.getData(), true)
+                .hash_tree_root());
     BLSSignature signature = slashable_attestation.getAggregate_signature();
     UnsignedLong domain =
         get_domain(

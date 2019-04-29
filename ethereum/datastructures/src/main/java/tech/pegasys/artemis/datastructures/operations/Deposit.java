@@ -14,7 +14,6 @@
 package tech.pegasys.artemis.datastructures.operations;
 
 import com.google.common.primitives.UnsignedLong;
-
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -110,11 +109,9 @@ public class Deposit {
 
   public Bytes32 hash_tree_root() {
     return HashTreeUtil.merkleHash(
-      Arrays.asList(
-        HashTreeUtil.hash_tree_root_list_of_basic_type(proof, proof.size()),
-        HashTreeUtil.hash_tree_root_basic_type(SSZ.encodeUInt64(index.longValue())),
-        deposit_data.hash_tree_root()
-      )
-    );
+        Arrays.asList(
+            HashTreeUtil.hash_tree_root_list_of_basic_type(proof, proof.size()),
+            HashTreeUtil.hash_tree_root_basic_type(SSZ.encodeUInt64(index.longValue())),
+            deposit_data.hash_tree_root()));
   }
 }

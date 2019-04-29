@@ -28,13 +28,15 @@ import net.consensys.cava.ssz.SSZ;
 public final class HashTreeUtil {
 
   /**
-   * Create the hash tree root of a set of values of basic SSZ types or tuples of basic types.
-   * Basic SSZ types are uintN, bool, and byte. bytesN (i.e. Bytes32) is a tuple of basic types.
-   * NOTE: Bytes (and not Bytes32, Bytes48 etc.) IS NOT a basic type or a tuple of basic types.
-   * 
+   * Create the hash tree root of a set of values of basic SSZ types or tuples of basic types. Basic
+   * SSZ types are uintN, bool, and byte. bytesN (i.e. Bytes32) is a tuple of basic types. NOTE:
+   * Bytes (and not Bytes32, Bytes48 etc.) IS NOT a basic type or a tuple of basic types.
+   *
    * @param bytes One Bytes value or a list of homogeneous Bytes values.
    * @return The SSZ tree root hash of the values.
-   * @see <a href="https://github.com/ethereum/eth2.0-specs/blob/v0.5.1/specs/simple-serialize.md">SSZ Spec v0.5.1</a>
+   * @see <a
+   *     href="https://github.com/ethereum/eth2.0-specs/blob/v0.5.1/specs/simple-serialize.md">SSZ
+   *     Spec v0.5.1</a>
    */
   public static Bytes32 hash_tree_root_basic_type(Bytes... bytes) {
     if (bytes.length == 1) {
@@ -50,12 +52,14 @@ public final class HashTreeUtil {
   }
 
   /**
-   * Create the hash tree root of a list of values of basic SSZ types.
-   * This is only to be used for SSZ lists and not SSZ tuples. See the "see also" for more info.
-   * 
+   * Create the hash tree root of a list of values of basic SSZ types. This is only to be used for
+   * SSZ lists and not SSZ tuples. See the "see also" for more info.
+   *
    * @param bytes A list of homogeneous Bytes values representing basic SSZ types.
    * @return The SSZ tree root hash of the list of values.
-   * @see <a href="https://github.com/ethereum/eth2.0-specs/blob/v0.5.1/specs/simple-serialize.md">SSZ Spec v0.5.1</a>
+   * @see <a
+   *     href="https://github.com/ethereum/eth2.0-specs/blob/v0.5.1/specs/simple-serialize.md">SSZ
+   *     Spec v0.5.1</a>
    */
   public static Bytes32 hash_tree_root_list_of_basic_type(List<? extends Bytes> bytes, int length) {
     return mix_in_length(hash_tree_root_basic_type(bytes.toArray(new Bytes[0])), length);

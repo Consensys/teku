@@ -60,7 +60,6 @@ import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.crypto.Hash;
 import net.consensys.cava.ssz.SSZ;
-
 import org.apache.logging.log4j.Level;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
@@ -132,7 +131,8 @@ public final class BlockProcessorUtil {
     checkArgument(
         bls_verify(
             proposer.getPubkey(),
-            HashTreeUtil.hash_tree_root_basic_type(SSZ.encodeUInt64(get_current_epoch(state).longValue())),
+            HashTreeUtil.hash_tree_root_basic_type(
+                SSZ.encodeUInt64(get_current_epoch(state).longValue())),
             block.getBody().getRandao_reveal(),
             get_domain(state.getFork(), get_current_epoch(state), DOMAIN_RANDAO)),
         "Provided randao value is invalid");
@@ -686,7 +686,7 @@ public final class BlockProcessorUtil {
    */
   public static void verify_block_state_root(BeaconState state, BeaconBlock block) {
     checkArgument(
-        block.getState_root().equals(hash_tree_root(state.toBytes())),
+        block.getState_root().equals(state.hash_tree_root()),
         "State roots don't match in verify_block_state_root");
   }
 

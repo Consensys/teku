@@ -18,6 +18,7 @@ import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.int_to_by
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -30,6 +31,7 @@ import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.datastructures.blocks.Eth1DataVote;
 import tech.pegasys.artemis.datastructures.util.BeaconBlockUtil;
+import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 
 public class BeaconState {
   // Misc
@@ -710,5 +712,74 @@ public class BeaconState {
 
   public void incrementSlot() {
     this.slot = slot.plus(UnsignedLong.ONE);
+  }
+
+  public Bytes32 hash_tree_root() {
+    return HashTreeUtil.merkleHash(
+        Arrays.asList(
+            // Misc
+            HashTreeUtil.hash_tree_root_basic_type(SSZ.encodeUInt64(slot.longValue())),
+            HashTreeUtil.hash_tree_root_basic_type(SSZ.encodeUInt64(genesis_time.longValue())),
+            fork.hash_tree_root(),
+            // Validator registry
+            HashTreeUtil.mix_in_length(
+                HashTreeUtil.merkleHash(
+                    validator_registry.stream()
+                        .map(item -> item.hash_tree_root())
+                        .collect(Collectors.toList())),
+                validator_registry.size()),
+            HashTreeUtil.hash_tree_root_list_of_basic_type(
+                validator_balances.stream()
+                    .map(item -> SSZ.encodeUInt64(item.longValue()))
+                    .collect(Collectors.toList()),
+                validator_balances.size()),
+            HashTreeUtil.hash_tree_root_basic_type(
+                SSZ.encodeUInt64(validator_registry_update_epoch.longValue())),
+            // Randomness and committees
+            HashTreeUtil.hash_tree_root_basic_type(latest_randao_mixes.toArray(new Bytes32[0])),
+            HashTreeUtil.hash_tree_root_basic_type(
+                SSZ.encodeUInt64(previous_shuffling_start_shard.longValue())),
+            HashTreeUtil.hash_tree_root_basic_type(
+                SSZ.encodeUInt64(current_shuffling_start_shard.longValue())),
+            HashTreeUtil.hash_tree_root_basic_type(
+                SSZ.encodeUInt64(previous_shuffling_epoch.longValue())),
+            HashTreeUtil.hash_tree_root_basic_type(
+                SSZ.encodeUInt64(current_shuffling_epoch.longValue())),
+            HashTreeUtil.hash_tree_root_basic_type(previous_shuffling_seed),
+            HashTreeUtil.hash_tree_root_basic_type(current_shuffling_seed),
+            // Finality
+            HashTreeUtil.mix_in_length(
+                HashTreeUtil.merkleHash(
+                    previous_epoch_attestations.stream()
+                        .map(item -> item.hash_tree_root())
+                        .collect(Collectors.toList())),
+                previous_epoch_attestations.size()),
+            HashTreeUtil.mix_in_length(
+                HashTreeUtil.merkleHash(
+                    current_epoch_attestations.stream()
+                        .map(item -> item.hash_tree_root())
+                        .collect(Collectors.toList())),
+                current_epoch_attestations.size()),
+            HashTreeUtil.hash_tree_root_basic_type(
+                SSZ.encodeUInt64(previous_justified_epoch.longValue())),
+            HashTreeUtil.hash_tree_root_basic_type(
+                SSZ.encodeUInt64(current_justified_epoch.longValue())),
+            HashTreeUtil.hash_tree_root_basic_type(previous_justified_root),
+            HashTreeUtil.hash_tree_root_basic_type(current_justified_root),
+            HashTreeUtil.hash_tree_root_basic_type(
+                SSZ.encodeUInt64(justification_bitfield.longValue())),
+            HashTreeUtil.hash_tree_root_basic_type(SSZ.encodeUInt64(finalized_epoch.longValue())),
+            HashTreeUtil.hash_tree_root_basic_type(finalized_root),
+            // Recent state
+            // TODO Recent State Hash Tree Root
+            // Ethereum 1.0 chain data
+            latest_eth1_data.hash_tree_root(),
+            HashTreeUtil.mix_in_length(
+                HashTreeUtil.merkleHash(
+                    eth1_data_votes.stream()
+                        .map(item -> item.hash_tree_root())
+                        .collect(Collectors.toList())),
+                eth1_data_votes.size()),
+            HashTreeUtil.hash_tree_root_basic_type(SSZ.encodeUInt64(deposit_index.longValue()))));
   }
 }

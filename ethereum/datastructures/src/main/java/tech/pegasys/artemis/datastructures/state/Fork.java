@@ -14,9 +14,12 @@
 package tech.pegasys.artemis.datastructures.state;
 
 import com.google.common.primitives.UnsignedLong;
+import java.util.Arrays;
 import java.util.Objects;
 import net.consensys.cava.bytes.Bytes;
+import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.ssz.SSZ;
+import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 
 public class Fork {
 
@@ -105,5 +108,13 @@ public class Fork {
 
   public void setEpoch(UnsignedLong epoch) {
     this.epoch = epoch;
+  }
+
+  public Bytes32 hash_tree_root() {
+    return HashTreeUtil.merkleHash(
+        Arrays.asList(
+            HashTreeUtil.hash_tree_root_basic_type(previous_version),
+            HashTreeUtil.hash_tree_root_basic_type(current_version),
+            HashTreeUtil.hash_tree_root_basic_type(SSZ.encodeUInt64(epoch.longValue()))));
   }
 }

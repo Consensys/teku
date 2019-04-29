@@ -97,10 +97,8 @@ public final class Eth1Data {
 
   public Bytes32 hash_tree_root() {
     return HashTreeUtil.merkleHash(
-      Arrays.asList(
-        HashTreeUtil.hash_tree_root_basic_type(deposit_root),
-        HashTreeUtil.hash_tree_root_basic_type(block_hash)
-      )
-    );
+        Arrays.asList(
+            HashTreeUtil.hash_tree_root_basic_type(deposit_root),
+            HashTreeUtil.hash_tree_root_basic_type(block_hash)));
   }
 }
