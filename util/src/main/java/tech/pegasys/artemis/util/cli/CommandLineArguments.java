@@ -91,7 +91,7 @@ public class CommandLineArguments {
   }
 
   public String getInputFile() {
-    if (inputFile.equals("")) return null;
+    if (inputFile == null || inputFile.equals("")) return null;
     return inputFile;
   }
 
