@@ -13,9 +13,12 @@
 
 package tech.pegasys.artemis.datastructures.operations;
 
+import java.util.Arrays;
 import java.util.Objects;
 import net.consensys.cava.bytes.Bytes;
+import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.ssz.SSZ;
+import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 
 public class AttestationDataAndCustodyBit {
 
@@ -82,5 +85,14 @@ public class AttestationDataAndCustodyBit {
 
   public void setData(AttestationData data) {
     this.data = data;
+  }
+
+  public Bytes32 hash_tree_root() {
+    return HashTreeUtil.merkleHash(
+      Arrays.asList(
+        data.hash_tree_root(),
+        HashTreeUtil.hash_tree_root_basic_type(SSZ.encodeBoolean(custody_bit))
+      )
+    );
   }
 }

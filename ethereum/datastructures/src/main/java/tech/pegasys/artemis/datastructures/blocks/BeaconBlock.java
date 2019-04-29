@@ -154,6 +154,18 @@ public final class BeaconBlock {
                         })),
                 HashTreeUtil.hash_tree_root_basic_type(previous_block_root),
                 HashTreeUtil.hash_tree_root_basic_type(state_root),
-                HashTreeUtil.hash_tree_root(body.toBytes()))));
+                body.hash_tree_root())));
+  }
+
+  public Bytes32 hash_tree_root() {
+    return HashTreeUtil.merkleHash(
+      Arrays.asList(
+        HashTreeUtil.hash_tree_root_basic_type(SSZ.encodeUInt64(slot)),
+        HashTreeUtil.hash_tree_root_basic_type(previous_block_root),
+        HashTreeUtil.hash_tree_root_basic_type(state_root),
+        body.hash_tree_root(),
+        HashTreeUtil.hash_tree_root_basic_type(signature.toBytes()) 
+      )
+    );
   }
 }

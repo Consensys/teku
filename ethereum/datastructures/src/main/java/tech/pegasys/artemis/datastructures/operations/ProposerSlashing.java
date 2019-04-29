@@ -108,7 +108,7 @@ public class ProposerSlashing {
   public Bytes32 hash_tree_root() {
     return HashTreeUtil.merkleHash(
       Arrays.asList(
-        HashTreeUtil.hash_tree_root(proposer_index),
+        HashTreeUtil.hash_tree_root_basic_type(SSZ.encodeUInt64(proposer_index.longValue())),
         header_1.hash_tree_root(),
         header_2.hash_tree_root()
       )

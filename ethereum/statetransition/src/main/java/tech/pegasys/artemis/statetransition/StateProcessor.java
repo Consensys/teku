@@ -90,7 +90,7 @@ public class StateProcessor {
           DataStructureUtil.createInitialBeaconState(config.getNumValidators());
       Bytes32 initial_state_root = HashTreeUtil.hash_tree_root(initial_state.toBytes());
       BeaconBlock genesis_block = BeaconBlockUtil.get_empty_block();
-      Bytes32 genesis_block_root = HashTreeUtil.hash_tree_root(genesis_block.toBytes());
+      Bytes32 genesis_block_root = genesis_block.hash_tree_root();
       LOG.log(Level.INFO, "Initial state root is " + initial_state_root.toHexString());
       this.store.addState(initial_state_root, initial_state);
       this.store.addProcessedBlock(genesis_block_root, genesis_block);
@@ -172,7 +172,7 @@ public class StateProcessor {
 
     // Hash headBlock to obtain previousBlockRoot that will be used
     // as previous_block_root in all state transitions
-    Bytes32 previousBlockRoot = HashTreeUtil.hash_tree_root(headBlock.toBytes());
+    Bytes32 previousBlockRoot = headBlock.hash_tree_root();
 
     // Run state transition with no blocks from the newHeadState.slot to node.slot
     boolean firstLoop = true;
@@ -222,7 +222,7 @@ public class StateProcessor {
 
         // Get block, block root and block state root
         BeaconBlock block = unprocessedBlock.get();
-        Bytes32 blockRoot = HashTreeUtil.hash_tree_root(block.toBytes());
+        Bytes32 blockRoot = block.hash_tree_root();
         Bytes32 blockStateRoot = block.getState_root();
 
         // Get parent block, parent block root, parent block state root, and parent block state

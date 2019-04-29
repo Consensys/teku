@@ -49,7 +49,6 @@ import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.verify_sl
 import static tech.pegasys.artemis.util.bls.BLSAggregate.bls_aggregate_pubkeys;
 import static tech.pegasys.artemis.util.bls.BLSVerify.bls_verify;
 import static tech.pegasys.artemis.util.bls.BLSVerify.bls_verify_multiple;
-import static tech.pegasys.artemis.util.hashtree.HashTreeUtil.hash_tree_root;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
@@ -60,6 +59,8 @@ import java.util.Objects;
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.crypto.Hash;
+import net.consensys.cava.ssz.SSZ;
+
 import org.apache.logging.log4j.Level;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
@@ -81,6 +82,7 @@ import tech.pegasys.artemis.datastructures.util.BeaconBlockUtil;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
+import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 
 public final class BlockProcessorUtil {
 
@@ -130,7 +132,7 @@ public final class BlockProcessorUtil {
     checkArgument(
         bls_verify(
             proposer.getPubkey(),
-            hash_tree_root(get_current_epoch(state)),
+            HashTreeUtil.hash_tree_root_basic_type(SSZ.encodeUInt64(get_current_epoch(state).longValue())),
             block.getBody().getRandao_reveal(),
             get_domain(state.getFork(), get_current_epoch(state), DOMAIN_RANDAO)),
         "Provided randao value is invalid");
@@ -197,8 +199,8 @@ public final class BlockProcessorUtil {
         // But the headers are different
         checkArgument(
             !Objects.equals(
-                hash_tree_root(proposer_slashing.getHeader_1().toBytes()),
-                hash_tree_root(proposer_slashing.getHeader_2().toBytes())),
+                proposer_slashing.getHeader_1().hash_tree_root(),
+                proposer_slashing.getHeader_2().hash_tree_root()),
             "Headers are the same in process_proposer_slashings");
 
         // Proposer is not yet slashed
@@ -209,7 +211,7 @@ public final class BlockProcessorUtil {
         checkArgument(
             bls_verify(
                 proposer.getPubkey(),
-                hash_tree_root(proposer_slashing.getHeader_1().toBytes()),
+                proposer_slashing.getHeader_1().hash_tree_root(),
                 proposer_slashing.getHeader_1().getSignature(),
                 get_domain(
                     state.getFork(),
@@ -220,7 +222,7 @@ public final class BlockProcessorUtil {
         checkArgument(
             bls_verify(
                 proposer.getPubkey(),
-                hash_tree_root(proposer_slashing.getHeader_2().toBytes()),
+                proposer_slashing.getHeader_2().hash_tree_root(),
                 proposer_slashing.getHeader_2().getSignature(),
                 get_domain(
                     state.getFork(),
@@ -474,10 +476,8 @@ public final class BlockProcessorUtil {
         bls_verify_multiple(
             Arrays.asList(bls_aggregate_pubkeys(pubkey0), bls_aggregate_pubkeys(pubkey1)),
             Arrays.asList(
-                hash_tree_root(
-                    new AttestationDataAndCustodyBit(attestation.getData(), false).toBytes()),
-                hash_tree_root(
-                    new AttestationDataAndCustodyBit(attestation.getData(), true).toBytes())),
+                new AttestationDataAndCustodyBit(attestation.getData(), false).hash_tree_root(),
+                new AttestationDataAndCustodyBit(attestation.getData(), true).hash_tree_root()),
             attestation.getAggregate_signature(),
             get_domain(
                 state.getFork(),

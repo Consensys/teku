@@ -204,12 +204,12 @@ public class AttestationData {
   public Bytes32 hash_tree_root() {
     return HashTreeUtil.merkleHash(
       Arrays.asList(
-        HashTreeUtil.hash_tree_root(slot),
+        HashTreeUtil.hash_tree_root_basic_type(SSZ.encodeUInt64(slot.longValue())),
         HashTreeUtil.hash_tree_root_basic_type(beacon_block_root),
-        HashTreeUtil.hash_tree_root(source_epoch),
+        HashTreeUtil.hash_tree_root_basic_type(SSZ.encodeUInt64(source_epoch.longValue())),
         HashTreeUtil.hash_tree_root_basic_type(source_root),
         HashTreeUtil.hash_tree_root_basic_type(target_root),
-        HashTreeUtil.hash_tree_root(shard),
+        HashTreeUtil.hash_tree_root_basic_type(SSZ.encodeUInt64(shard.longValue())),
         previous_crosslink.hash_tree_root(),
         HashTreeUtil.hash_tree_root_basic_type(crosslink_data_root)
       )

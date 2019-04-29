@@ -34,7 +34,7 @@ public class BeaconBlockUtil {
         UnsignedLong.valueOf(block.getSlot()),
         block.getPrevious_block_root(),
         Constants.ZERO_HASH,
-        HashTreeUtil.hash_tree_root(block.getBody().toBytes()),
+        block.getBody().hash_tree_root(),
         block.getSignature());
   }
 

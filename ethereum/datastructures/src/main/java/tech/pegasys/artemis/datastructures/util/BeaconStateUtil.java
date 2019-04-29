@@ -33,8 +33,6 @@ import static tech.pegasys.artemis.datastructures.Constants.WHISTLEBLOWER_REWARD
 import static tech.pegasys.artemis.util.bls.BLSAggregate.bls_aggregate_pubkeys;
 import static tech.pegasys.artemis.util.bls.BLSVerify.bls_verify;
 import static tech.pegasys.artemis.util.bls.BLSVerify.bls_verify_multiple;
-import static tech.pegasys.artemis.util.hashtree.HashTreeUtil.hash_tree_root;
-import static tech.pegasys.artemis.util.hashtree.HashTreeUtil.hash_tree_root_list_integers;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.primitives.UnsignedLong;
@@ -1168,10 +1166,8 @@ public class BeaconStateUtil {
             bls_aggregate_pubkeys(custody_bit_1_pubkeys));
     List<Bytes32> message_hashes =
         Arrays.asList(
-            hash_tree_root(
-                new AttestationDataAndCustodyBit(slashable_attestation.getData(), false).toBytes()),
-            hash_tree_root(
-                new AttestationDataAndCustodyBit(slashable_attestation.getData(), true).toBytes()));
+            new AttestationDataAndCustodyBit(slashable_attestation.getData(), false).hash_tree_root(),
+            new AttestationDataAndCustodyBit(slashable_attestation.getData(), true).hash_tree_root());
     BLSSignature signature = slashable_attestation.getAggregate_signature();
     UnsignedLong domain =
         get_domain(

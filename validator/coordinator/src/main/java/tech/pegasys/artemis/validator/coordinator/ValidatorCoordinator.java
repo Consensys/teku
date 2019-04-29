@@ -132,7 +132,7 @@ public class ValidatorCoordinator {
             headState, headState.getSlot().plus(UnsignedLong.ONE));
     BLSPublicKey proposerPubkey = headState.getValidator_registry().get(proposerIndex).getPubkey();
     if (validatorSet.containsKey(proposerPubkey)) {
-      Bytes32 blockRoot = HashTreeUtil.hash_tree_root(headBlock.toBytes());
+      Bytes32 blockRoot = headBlock.hash_tree_root();
       createNewBlock(headState, blockRoot, validatorSet.get(proposerPubkey));
     }
   }

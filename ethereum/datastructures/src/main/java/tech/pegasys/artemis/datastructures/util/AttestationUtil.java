@@ -64,13 +64,13 @@ public class AttestationUtil {
     UnsignedLong slot = headState.getSlot();
     ArrayList<CrosslinkCommittee> crosslinkCommittees =
         BeaconStateUtil.get_crosslink_committees_at_slot(headState, slot);
-    Bytes32 headBlockRoot = HashTreeUtil.hash_tree_root(headBlock.toBytes());
+    Bytes32 headBlockRoot = headBlock.hash_tree_root();
     Bytes32 crosslinkDataRoot = Bytes32.ZERO;
     UnsignedLong epochStartSlot =
         BeaconStateUtil.get_epoch_start_slot(BeaconStateUtil.slot_to_epoch(slot));
     Bytes32 epochBoundaryRoot;
     if (epochStartSlot.compareTo(slot) == 0) {
-      epochBoundaryRoot = HashTreeUtil.hash_tree_root(headBlock.toBytes());
+      epochBoundaryRoot = headBlock.hash_tree_root();
     } else {
       epochBoundaryRoot = BeaconStateUtil.get_block_root(headState, epochStartSlot);
     }
@@ -123,8 +123,7 @@ public class AttestationUtil {
             new AttestationDataAndCustodyBit(attestationData, false);
 
         // Sign attestation data
-        Bytes32 attestation_message_to_sign =
-            HashTreeUtil.hash_tree_root(attestation_data_and_custody_bit.toBytes());
+        Bytes32 attestation_message_to_sign = attestation_data_and_custody_bit.hash_tree_root();
         BLSSignature signed_attestation_data =
             BLSSignature.sign(
                 validatorSet.get(attesterPubkey),

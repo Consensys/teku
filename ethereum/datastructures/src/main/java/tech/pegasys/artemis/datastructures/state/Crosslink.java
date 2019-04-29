@@ -104,7 +104,7 @@ public class Crosslink implements Copyable<Crosslink> {
   public Bytes32 hash_tree_root() {
     return HashTreeUtil.merkleHash(
       Arrays.asList(
-        HashTreeUtil.hash_tree_root(epoch),
+        HashTreeUtil.hash_tree_root_basic_type(SSZ.encodeUInt64(epoch.longValue())),
         HashTreeUtil.hash_tree_root_basic_type(crosslink_data_root)
       )
     );
