@@ -75,11 +75,11 @@ public final class PublicKey {
 
   private final G1Point point;
 
-  PublicKey(G1Point point) {
+  public PublicKey(G1Point point) {
     this.point = point;
   }
 
-  PublicKey(SecretKey secretKey) {
+  public PublicKey(SecretKey secretKey) {
     this.point = KeyPair.g1Generator.mul(secretKey.getScalarValue());
   }
 
@@ -105,7 +105,7 @@ public final class PublicKey {
     return point.toBytesCompressed();
   }
 
-  G1Point g1Point() {
+  public G1Point g1Point() {
     return point;
   }
 

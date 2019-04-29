@@ -29,6 +29,7 @@ import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
+import tech.pegasys.artemis.pow.api.DepositEvent;
 import tech.pegasys.artemis.pow.api.Eth2GenesisEvent;
 import tech.pegasys.artemis.storage.ChainStorage;
 import tech.pegasys.artemis.storage.ChainStorageClient;

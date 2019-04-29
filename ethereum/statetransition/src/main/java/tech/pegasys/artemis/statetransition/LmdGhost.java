@@ -142,5 +142,6 @@ public class LmdGhost {
       if (store.getParent(block).isPresent())
         return get_ancestor(store, store.getParent(block).get(), slotNumber);
     }
+    return Optional.empty();
   }
 }

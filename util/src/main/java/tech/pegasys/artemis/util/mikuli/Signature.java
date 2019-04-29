@@ -113,7 +113,7 @@ public final class Signature {
    * @param signature the signature to combine with
    * @return a new signature as combination of both signatures
    */
-  public Signature combine(Signature signature) {
+  Signature combine(Signature signature) {
     return new Signature(point.add(signature.point));
   }
 
@@ -146,7 +146,7 @@ public final class Signature {
     return point.hashCode();
   }
 
-  G2Point g2Point() {
+  public G2Point g2Point() {
     return point;
   }
 
