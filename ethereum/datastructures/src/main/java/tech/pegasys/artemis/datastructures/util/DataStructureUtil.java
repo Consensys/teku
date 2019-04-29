@@ -346,7 +346,7 @@ public final class DataStructureUtil {
         slotNum,
         parent_root,
         state_root,
-        BLSSignature.random((int) slotNum),
+        BLSSignature.random(Math.toIntExact(slotNum - Constants.GENESIS_SLOT)),
         new Eth1Data(Bytes32.ZERO, Bytes32.ZERO),
         new BeaconBlockBody(
             new ArrayList<>(),

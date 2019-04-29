@@ -13,10 +13,21 @@
 
 package tech.pegasys.artemis.services.powchain;
 
+import static com.google.common.base.Charsets.UTF_8;
+
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.google.common.primitives.UnsignedLong;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.Reader;
+import java.nio.ByteOrder;
 import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -31,7 +42,7 @@ import org.web3j.tx.gas.DefaultGasProvider;
 import tech.pegasys.artemis.ganache.GanacheController;
 import tech.pegasys.artemis.pow.DepositContractListener;
 import tech.pegasys.artemis.pow.DepositContractListenerFactory;
-import tech.pegasys.artemis.pow.api.DepositEvent;
+import tech.pegasys.artemis.pow.contract.DepositContract;
 import tech.pegasys.artemis.pow.contract.DepositContract.Eth2GenesisEventResponse;
 import tech.pegasys.artemis.pow.event.Deposit;
 import tech.pegasys.artemis.pow.event.Eth2Genesis;
@@ -55,6 +66,7 @@ public class PowchainService implements ServiceInterface {
   private boolean depositSimulation;
 
   List<DepositSimulation> simulations;
+  private String simFile;
 
   public PowchainService() {
     depositSimulation = false;
@@ -65,12 +77,13 @@ public class PowchainService implements ServiceInterface {
     this.eventBus = config.getEventBus();
     this.eventBus.register(this);
     this.depositSimulation = config.getCliArgs().isSimulation();
+    if (config.getCliArgs().getInputFile() != null)
+      this.simFile = System.getProperty("user.dir") + "/" + config.getCliArgs().getInputFile();
   }
 
   @Override
   public void run() {
-    // JSONProvider provider = new JSONProvider();
-    if (depositSimulation) {
+    if (depositSimulation && simFile == null) {
       controller = new GanacheController(10, 6000);
       listener =
           DepositContractListenerFactory.simulationDeployDepositContract(eventBus, controller);
@@ -102,6 +115,54 @@ public class PowchainService implements ServiceInterface {
                   + e);
         }
       }
+    } else if (depositSimulation && simFile != null) {
+      JsonParser parser = new JsonParser();
+      try {
+        Reader reader = Files.newBufferedReader(Paths.get(simFile), UTF_8);
+        JsonArray validatorsJSON = ((JsonArray) parser.parse(reader));
+        validatorsJSON.forEach(
+            object -> {
+              if (object.getAsJsonObject().get("events") != null) {
+                JsonArray events = object.getAsJsonObject().get("events").getAsJsonArray();
+                events.forEach(
+                    event -> {
+                      DepositContract.DepositEventResponse response =
+                          new DepositContract.DepositEventResponse();
+                      response.data =
+                          Bytes.fromHexString(event.getAsJsonObject().get("data").getAsString())
+                              .toArray();
+                      response.merkle_tree_index =
+                          Bytes.fromHexString(
+                                  event.getAsJsonObject().get("merkle_tree_index").getAsString())
+                              .toArray();
+                      Deposit deposit = new Deposit(response);
+                      eventBus.post(deposit);
+                    });
+              } else {
+                JsonObject event = object.getAsJsonObject();
+                DepositContract.Eth2GenesisEventResponse response =
+                    new DepositContract.Eth2GenesisEventResponse();
+                response.deposit_root =
+                    Bytes.fromHexString(event.getAsJsonObject().get("deposit_root").getAsString())
+                        .toArray();
+                response.deposit_count =
+                    Bytes.ofUnsignedInt(
+                            event.getAsJsonObject().get("deposit_count").getAsInt(),
+                            ByteOrder.BIG_ENDIAN)
+                        .toArray();
+                response.time =
+                    Bytes.ofUnsignedLong(
+                            event.getAsJsonObject().get("time").getAsLong(), ByteOrder.BIG_ENDIAN)
+                        .toArray();
+                Eth2Genesis eth2Genesis = new Eth2Genesis(response);
+                eventBus.post(eth2Genesis);
+              }
+            });
+      } catch (FileNotFoundException e) {
+        LOG.log(Level.ERROR, e.getMessage());
+      } catch (IOException e) {
+        LOG.log(Level.ERROR, e.getMessage());
+      }
     } else {
       Eth2GenesisEventResponse response = new Eth2GenesisEventResponse();
       response.log =
@@ -120,11 +181,8 @@ public class PowchainService implements ServiceInterface {
   }
 
   @Subscribe
-  public void onDepositEvent(DepositEvent event) {
-    if (depositSimulation) {
-      Deposit deposit = ((tech.pegasys.artemis.pow.event.Deposit) event);
-      eventBus.post(attributeDepositToSimulation(deposit));
-    }
+  public void onDepositEvent(Eth2Genesis event) {
+    LOG.log(Level.INFO, event.toString());
   }
 
   private DepositSimulation attributeDepositToSimulation(Deposit deposit) {

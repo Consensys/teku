@@ -846,7 +846,7 @@ public class BeaconStateUtil {
     } else {
       List<Integer> first_committee =
           get_crosslink_committees_at_slot(state, slot).get(0).getCommittee();
-      return first_committee.get((int) slot % first_committee.size());
+      return first_committee.get(Math.toIntExact(slot % first_committee.size()));
     }
   }
 
