@@ -144,8 +144,20 @@ public class BeaconBlockHeader {
         HashTreeUtil.merkleHash(
             Arrays.asList(
                 HashTreeUtil.hash_tree_root(slot),
-                HashTreeUtil.hash_tree_root(previous_block_root),
-                HashTreeUtil.hash_tree_root(state_root),
-                HashTreeUtil.hash_tree_root(block_body_root))));
+                HashTreeUtil.hash_tree_root_basic_type(previous_block_root),
+                HashTreeUtil.hash_tree_root_basic_type(state_root),
+                HashTreeUtil.hash_tree_root_basic_type(block_body_root))));
+  }
+
+  public Bytes32 hash_tree_root() {
+    return HashTreeUtil.merkleHash(
+      Arrays.asList(
+        HashTreeUtil.hash_tree_root(slot),
+        HashTreeUtil.hash_tree_root_basic_type(previous_block_root),
+        HashTreeUtil.hash_tree_root_basic_type(state_root),
+        HashTreeUtil.hash_tree_root_basic_type(block_body_root),
+        HashTreeUtil.hash_tree_root_basic_type(signature.toBytes())
+      )
+    );
   }
 }

@@ -147,13 +147,13 @@ public final class BeaconBlock {
     return Bytes32.rightPad(
         HashTreeUtil.merkleHash(
             Arrays.asList(
-                HashTreeUtil.hash_tree_root(
+                HashTreeUtil.hash_tree_root_basic_type(
                     SSZ.encode(
                         writer -> {
                           writer.writeUInt64(slot);
                         })),
-                HashTreeUtil.hash_tree_root(previous_block_root),
-                HashTreeUtil.hash_tree_root(state_root),
+                HashTreeUtil.hash_tree_root_basic_type(previous_block_root),
+                HashTreeUtil.hash_tree_root_basic_type(state_root),
                 HashTreeUtil.hash_tree_root(body.toBytes()))));
   }
 }

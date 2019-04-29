@@ -61,7 +61,7 @@ public final class HashTreeUtil {
     return mix_in_length(hash_tree_root_basic_type(bytes.toArray(new Bytes[0])), length);
   }
 
-  private static Bytes32 mix_in_length(Bytes32 merkle_root, int length) {
+  public static Bytes32 mix_in_length(Bytes32 merkle_root, int length) {
     return Hash.keccak256(Bytes.concatenate(merkle_root, SSZ.encodeInt32(length)));
   }
 

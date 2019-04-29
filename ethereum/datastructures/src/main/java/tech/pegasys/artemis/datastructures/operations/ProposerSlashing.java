@@ -14,10 +14,14 @@
 package tech.pegasys.artemis.datastructures.operations;
 
 import com.google.common.primitives.UnsignedLong;
+
+import java.util.Arrays;
 import java.util.Objects;
 import net.consensys.cava.bytes.Bytes;
+import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.ssz.SSZ;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
+import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 
 public class ProposerSlashing {
 
@@ -99,5 +103,15 @@ public class ProposerSlashing {
 
   public void setHeader_2(BeaconBlockHeader header_2) {
     this.header_2 = header_2;
+  }
+
+  public Bytes32 hash_tree_root() {
+    return HashTreeUtil.merkleHash(
+      Arrays.asList(
+        HashTreeUtil.hash_tree_root(proposer_index),
+        header_1.hash_tree_root(),
+        header_2.hash_tree_root()
+      )
+    );
   }
 }

@@ -123,4 +123,14 @@ public class VoluntaryExit {
                           writer.writeUInt64(validator_index.longValue());
                         })))));
   }
+
+  public Bytes32 hash_tree_root() {
+    return HashTreeUtil.merkleHash(
+      Arrays.asList(
+        HashTreeUtil.hash_tree_root_basic_type(SSZ.encodeUInt64(epoch.longValue())),
+        HashTreeUtil.hash_tree_root_basic_type(SSZ.encodeUInt64(validator_index.longValue())),
+        HashTreeUtil.hash_tree_root_basic_type(signature.toBytes())
+      )
+    );
+  }
 }

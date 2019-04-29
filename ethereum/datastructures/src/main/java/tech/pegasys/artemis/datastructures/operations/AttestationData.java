@@ -14,11 +14,14 @@
 package tech.pegasys.artemis.datastructures.operations;
 
 import com.google.common.primitives.UnsignedLong;
+
+import java.util.Arrays;
 import java.util.Objects;
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.ssz.SSZ;
 import tech.pegasys.artemis.datastructures.state.Crosslink;
+import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 
 public class AttestationData {
 
@@ -196,5 +199,20 @@ public class AttestationData {
 
   public void setCrosslink_data_root(Bytes32 crosslink_data_root) {
     this.crosslink_data_root = crosslink_data_root;
+  }
+
+  public Bytes32 hash_tree_root() {
+    return HashTreeUtil.merkleHash(
+      Arrays.asList(
+        HashTreeUtil.hash_tree_root(slot),
+        HashTreeUtil.hash_tree_root_basic_type(beacon_block_root),
+        HashTreeUtil.hash_tree_root(source_epoch),
+        HashTreeUtil.hash_tree_root_basic_type(source_root),
+        HashTreeUtil.hash_tree_root_basic_type(target_root),
+        HashTreeUtil.hash_tree_root(shard),
+        previous_crosslink.hash_tree_root(),
+        HashTreeUtil.hash_tree_root_basic_type(crosslink_data_root)
+      )
+    );
   }
 }

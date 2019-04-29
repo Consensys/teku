@@ -43,16 +43,16 @@ public class Fork {
         bytes,
         reader ->
             new Fork(
-                Bytes.wrap(reader.readBytes()),
-                Bytes.wrap(reader.readBytes()),
+                Bytes.wrap(reader.readFixedBytes(4)),
+                Bytes.wrap(reader.readFixedBytes(4)),
                 UnsignedLong.fromLongBits(reader.readUInt64())));
   }
 
   public Bytes toBytes() {
     return SSZ.encode(
         writer -> {
-          writer.writeBytes(previous_version);
-          writer.writeBytes(current_version);
+          writer.writeFixedBytes(4, previous_version);
+          writer.writeFixedBytes(4, current_version);
           writer.writeUInt64(epoch.longValue());
         });
   }

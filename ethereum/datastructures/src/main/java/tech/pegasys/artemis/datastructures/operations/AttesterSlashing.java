@@ -13,9 +13,12 @@
 
 package tech.pegasys.artemis.datastructures.operations;
 
+import java.util.Arrays;
 import java.util.Objects;
 import net.consensys.cava.bytes.Bytes;
+import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.ssz.SSZ;
+import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 
 public class AttesterSlashing {
 
@@ -84,5 +87,14 @@ public class AttesterSlashing {
 
   public void setSlashable_attestation_2(SlashableAttestation slashable_attestation_2) {
     this.slashable_attestation_2 = slashable_attestation_2;
+  }
+
+  public Bytes32 hash_tree_root() {
+    return HashTreeUtil.merkleHash(
+      Arrays.asList(
+        slashable_attestation_1.hash_tree_root(),
+        slashable_attestation_2.hash_tree_root()
+      )
+    );
   }
 }

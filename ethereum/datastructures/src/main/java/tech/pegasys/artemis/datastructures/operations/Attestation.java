@@ -14,10 +14,14 @@
 package tech.pegasys.artemis.datastructures.operations;
 
 import com.google.common.primitives.UnsignedLong;
+
+import java.util.Arrays;
 import java.util.Objects;
 import net.consensys.cava.bytes.Bytes;
+import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.ssz.SSZ;
 import tech.pegasys.artemis.util.bls.BLSSignature;
+import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 
 public class Attestation {
 
@@ -119,5 +123,16 @@ public class Attestation {
 
   public UnsignedLong getSlot() {
     return data.getSlot();
+  }
+
+  public Bytes32 hash_tree_root() {
+    return HashTreeUtil.merkleHash(
+      Arrays.asList(
+        HashTreeUtil.hash_tree_root_list_of_basic_type(Arrays.asList(aggregation_bitfield), aggregation_bitfield.size()),
+        data.hash_tree_root(),
+        HashTreeUtil.hash_tree_root_list_of_basic_type(Arrays.asList(custody_bitfield), custody_bitfield.size()),
+        HashTreeUtil.hash_tree_root_basic_type(aggregate_signature.toBytes())
+      )
+    );
   }
 }

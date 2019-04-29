@@ -14,6 +14,8 @@
 package tech.pegasys.artemis.datastructures.operations;
 
 import com.google.common.primitives.UnsignedLong;
+
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -21,6 +23,7 @@ import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.ssz.SSZ;
 import tech.pegasys.artemis.datastructures.Constants;
+import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 
 public class Deposit {
 
@@ -103,5 +106,15 @@ public class Deposit {
 
   public void setDeposit_data(DepositData deposit_data) {
     this.deposit_data = deposit_data;
+  }
+
+  public Bytes32 hash_tree_root() {
+    return HashTreeUtil.merkleHash(
+      Arrays.asList(
+        HashTreeUtil.hash_tree_root_list_of_basic_type(proof, proof.size()),
+        HashTreeUtil.hash_tree_root_basic_type(SSZ.encodeUInt64(index.longValue())),
+        deposit_data.hash_tree_root()
+      )
+    );
   }
 }

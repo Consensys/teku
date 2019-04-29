@@ -14,9 +14,13 @@
 package tech.pegasys.artemis.datastructures.operations;
 
 import com.google.common.primitives.UnsignedLong;
+
+import java.util.Arrays;
 import java.util.Objects;
 import net.consensys.cava.bytes.Bytes;
+import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.ssz.SSZ;
+import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 
 public class DepositData {
 
@@ -97,5 +101,15 @@ public class DepositData {
 
   public void setTimestamp(UnsignedLong timestamp) {
     this.timestamp = timestamp;
+  }
+
+  public Bytes32 hash_tree_root() {
+    return HashTreeUtil.merkleHash(
+      Arrays.asList(
+        HashTreeUtil.hash_tree_root_basic_type(SSZ.encodeUInt64(amount.longValue())),
+        HashTreeUtil.hash_tree_root_basic_type(SSZ.encodeUInt64(timestamp.longValue())),
+        deposit_input.hash_tree_root()
+      )
+    );
   }
 }

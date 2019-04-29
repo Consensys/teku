@@ -178,4 +178,18 @@ public class Transfer {
                 HashTreeUtil.hash_tree_root(slot),
                 HashTreeUtil.hash_tree_root(pubkey.toBytes()))));
   }
+
+  public Bytes32 hash_tree_root() {
+    return HashTreeUtil.merkleHash(
+      Arrays.asList(
+        HashTreeUtil.hash_tree_root_basic_type(SSZ.encodeUInt64(sender.longValue())),
+        HashTreeUtil.hash_tree_root_basic_type(SSZ.encodeUInt64(recipient.longValue())),
+        HashTreeUtil.hash_tree_root_basic_type(SSZ.encodeUInt64(amount.longValue())),
+        HashTreeUtil.hash_tree_root_basic_type(SSZ.encodeUInt64(fee.longValue())),
+        HashTreeUtil.hash_tree_root_basic_type(SSZ.encodeUInt64(slot.longValue())),
+        HashTreeUtil.hash_tree_root_basic_type(pubkey.toBytes()),
+        HashTreeUtil.hash_tree_root_basic_type(signature.toBytes())
+      )
+    );
+  }
 }
