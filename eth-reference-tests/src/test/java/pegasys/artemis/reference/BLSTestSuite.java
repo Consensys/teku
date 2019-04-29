@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.util.mikuli;
+package pegasys.artemis.reference;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -36,6 +36,12 @@ import org.apache.tuweni.io.Resources;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import tech.pegasys.artemis.util.mikuli.BLS12381;
+import tech.pegasys.artemis.util.mikuli.G2Point;
+import tech.pegasys.artemis.util.mikuli.KeyPair;
+import tech.pegasys.artemis.util.mikuli.PublicKey;
+import tech.pegasys.artemis.util.mikuli.SecretKey;
+import tech.pegasys.artemis.util.mikuli.Signature;
 
 /*
  * The "official" BLS reference test data is from https://github.com/ethereum/eth2.0-tests/
@@ -45,7 +51,7 @@ class BLSTestSuite {
 
   // TODO: reinstate the official tests once they have been updated
   // private static String testFile = "**/bls/test_bls.yml";
-  private static String testFile = "**/test_bls_tmp.yml";
+  private static final String testFile = "**/test_bls_tmp.yml";
 
   @ParameterizedTest(name = "{index}. message hash to G2 uncompressed {0} -> {1}")
   @MethodSource("readMessageHashG2Uncompressed")

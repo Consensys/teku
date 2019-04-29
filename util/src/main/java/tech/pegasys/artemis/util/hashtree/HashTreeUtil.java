@@ -38,14 +38,10 @@ public final class HashTreeUtil {
   /**
    * Calculate the hash tree root of the list of validators provided
    *
-   * @param validators
+   * @param list
    */
   public static Bytes32 hash_tree_root(List<Bytes> list) {
-    return hash_tree_root(
-        SSZ.encode(
-            writer -> {
-              writer.writeBytesList(list);
-            }));
+    return hash_tree_root(SSZ.encode(writer -> writer.writeBytesList(list)));
   }
 
   /**
@@ -60,17 +56,9 @@ public final class HashTreeUtil {
     return hash_tree_root(
         SSZ.encode(
             // TODO This can be replaced with writeUInt64List(List) once implemented in tuweni.
-            writer -> {
-              writer.writeUIntList(64, integers);
-            }));
+            writer -> writer.writeUIntList(64, integers)));
   }
 
-  /**
-   * Calculate the merkle root of the list of Bytes.
-   *
-   * @param list - The list of Bytes32 objects to calculate the merkle root for.
-   * @return The merkle root.
-   */
   /**
    * Hashes a list of homogeneous values.
    *

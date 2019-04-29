@@ -23,10 +23,10 @@ import org.junit.jupiter.api.Test;
 
 class AttestationDataAndCustodyBitTest {
 
-  private AttestationData data = randomAttestationData();
-  private boolean custodyBit = false;
+  private final AttestationData data = randomAttestationData();
+  private final boolean custodyBit = false;
 
-  private AttestationDataAndCustodyBit attestationDataAndCustodyBit =
+  private final AttestationDataAndCustodyBit attestationDataAndCustodyBit =
       new AttestationDataAndCustodyBit(data, custodyBit);
 
   @Test

@@ -22,10 +22,10 @@ import org.junit.jupiter.api.Test;
 
 class Eth1DataTest {
 
-  private Bytes32 depositRoot = Bytes32.random();
-  private Bytes32 blockHash = Bytes32.random();
+  private final Bytes32 depositRoot = Bytes32.random();
+  private final Bytes32 blockHash = Bytes32.random();
 
-  private Eth1Data eth1Data = new Eth1Data(depositRoot, blockHash);
+  private final Eth1Data eth1Data = new Eth1Data(depositRoot, blockHash);
 
   @Test
   void equalsReturnsTrueWhenObjectAreSame() {

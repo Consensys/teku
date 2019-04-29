@@ -39,6 +39,8 @@ public final class GossipCodec implements Codec {
    *
    * @param verb the Gossip method
    * @param attributes
+   * @param messageHash
+   * @param hashSignature
    * @param payload the payload of the request
    * @return the encoded Gossip message
    */

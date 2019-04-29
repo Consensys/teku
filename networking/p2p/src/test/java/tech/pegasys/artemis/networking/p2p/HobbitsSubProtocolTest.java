@@ -28,7 +28,7 @@ final class HobbitsSubProtocolTest {
   void testId() {
     HobbitsSubProtocol subprotocol =
         new HobbitsSubProtocol(
-            new EventBus(), "", new TimeSeriesRecord(), new ConcurrentHashMap<String, Boolean>());
+            new EventBus(), "", new TimeSeriesRecord(), new ConcurrentHashMap<>());
     assertEquals("hob", subprotocol.id().name());
     assertEquals(1, subprotocol.id().version());
   }
@@ -37,7 +37,7 @@ final class HobbitsSubProtocolTest {
   void supportsCheck() {
     HobbitsSubProtocol subprotocol =
         new HobbitsSubProtocol(
-            new EventBus(), "", new TimeSeriesRecord(), new ConcurrentHashMap<String, Boolean>());
+            new EventBus(), "", new TimeSeriesRecord(), new ConcurrentHashMap<>());
     assertTrue(subprotocol.supports(SubProtocolIdentifier.of("hob", 1)));
   }
 }

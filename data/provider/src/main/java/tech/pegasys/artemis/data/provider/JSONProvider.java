@@ -19,10 +19,11 @@ import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.channels.FileChannel;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.util.Arrays;
+import java.util.Collections;
 import org.apache.logging.log4j.Level;
 import tech.pegasys.artemis.data.IRecordAdapter;
 import tech.pegasys.artemis.util.alogger.ALogger;
@@ -41,8 +42,8 @@ public class JSONProvider implements FileProvider {
     try {
       Files.write(
           path,
-          Arrays.asList(record.toJSON()),
-          UTF_8,
+          Collections.singletonList(record.toJSON()),
+          StandardCharsets.UTF_8,
           Files.exists(path) ? StandardOpenOption.APPEND : StandardOpenOption.CREATE);
     } catch (IOException e) {
       LOG.log(Level.WARN, e.toString());

@@ -48,15 +48,13 @@ public class Deposit extends AbstractEvent<DepositEventResponse> implements Depo
     return data;
   }
 
-  public Bytes getMerkel_tree_index() {
+  public Bytes getMerkle_tree_index() {
     return merkel_tree_index;
   }
 
   @Override
   public String toString() {
-    StringBuilder sb = new StringBuilder();
-    sb.append(data.toString()).append("\n").append(merkel_tree_index.toString());
-    return sb.toString();
+    return data.toString() + "\n" + merkel_tree_index.toString();
   }
 
   public BLSPublicKey getPubkey() {

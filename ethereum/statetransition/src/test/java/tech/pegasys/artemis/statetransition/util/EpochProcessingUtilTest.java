@@ -111,9 +111,10 @@ class EpochProcessingUtilTest {
     // validator stays active
     state.getValidator_balances().set(1, lowBalances.get(4));
 
+    // TODO this value is never used
     long lowBalance = 0;
-    for (int i = 0; i < lowBalances.size(); i++) {
-      lowBalance = lowBalance + lowBalances.get(i);
+    for (long i : lowBalances) {
+      lowBalance += i;
     }
 
     // flag the validators with a balance below the threshold

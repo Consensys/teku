@@ -111,15 +111,8 @@ public class VoluntaryExit {
     return Bytes32.rightPad(
         HashTreeUtil.merkleHash(
             Arrays.asList(
+                HashTreeUtil.hash_tree_root(SSZ.encode(writer -> writer.writeUInt64(epoch))),
                 HashTreeUtil.hash_tree_root(
-                    SSZ.encode(
-                        writer -> {
-                          writer.writeUInt64(epoch);
-                        })),
-                HashTreeUtil.hash_tree_root(
-                    SSZ.encode(
-                        writer -> {
-                          writer.writeUInt64(validator_index);
-                        })))));
+                    SSZ.encode(writer -> writer.writeUInt64(validator_index))))));
   }
 }

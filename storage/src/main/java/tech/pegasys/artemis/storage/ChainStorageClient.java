@@ -22,7 +22,6 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.PriorityBlockingQueue;
-import java.util.stream.Collectors;
 import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
@@ -37,7 +36,7 @@ public class ChainStorageClient implements ChainStorage {
   protected final ConcurrentHashMap<Integer, Attestation> latestAttestations =
       new ConcurrentHashMap<>();
   protected final PriorityBlockingQueue<BeaconBlock> unprocessedBlocks =
-      new PriorityBlockingQueue<BeaconBlock>(
+      new PriorityBlockingQueue<>(
           UNPROCESSED_BLOCKS_LENGTH, Comparator.comparing(BeaconBlock::getSlot));
   protected final LinkedBlockingQueue<Attestation> unprocessedAttestations =
       new LinkedBlockingQueue<>();
@@ -138,7 +137,7 @@ public class ChainStorageClient implements ChainStorage {
    * @return
    */
   public List<BeaconBlock> getUnprocessedBlocks() {
-    return this.unprocessedBlocks.stream().collect(Collectors.toList());
+    return new ArrayList<>(this.unprocessedBlocks);
   }
 
   /**
@@ -151,13 +150,9 @@ public class ChainStorageClient implements ChainStorage {
     boolean unproccesedBlocksLeft = true;
     Optional<BeaconBlock> currentBlock;
     while (unproccesedBlocksLeft) {
-      currentBlock =
-          ChainStorage.<BeaconBlock, PriorityBlockingQueue<BeaconBlock>>peek(
-              this.unprocessedBlocks);
+      currentBlock = ChainStorage.peek(this.unprocessedBlocks);
       if (currentBlock.isPresent() && currentBlock.get().getSlot() <= slot) {
-        unprocessedBlocks.add(
-            ChainStorage.<BeaconBlock, PriorityBlockingQueue<BeaconBlock>>remove(
-                this.unprocessedBlocks));
+        unprocessedBlocks.add(ChainStorage.remove(this.unprocessedBlocks));
       } else {
         unproccesedBlocksLeft = false;
       }
@@ -183,7 +178,7 @@ public class ChainStorageClient implements ChainStorage {
   public Optional<Attestation> getLatestAttestation(int validatorIndex) {
     Attestation attestation = latestAttestations.get(validatorIndex);
     if (attestation == null) {
-      return Optional.ofNullable(null);
+      return Optional.empty();
     } else {
       return Optional.of(attestation);
     }

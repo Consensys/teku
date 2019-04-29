@@ -19,7 +19,7 @@ import org.apache.logging.log4j.Logger;
 
 public class ALogger {
 
-  private Logger logger;
+  private final Logger logger;
 
   public ALogger() {
     this.logger = LogManager.getLogger();

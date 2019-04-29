@@ -83,7 +83,7 @@ public class ServiceAdapter implements ServiceInterface {
   public void stop() {
     server.stop();
 
-    eventForwarders.forEach(forwarder -> forwarder.stop());
+    eventForwarders.forEach(EventForwarder::stop);
   }
 
   protected MethodDescriptor<?, RemoteCallResponse> createMethodDescriptor(Class<?> eventClass) {
@@ -100,7 +100,7 @@ public class ServiceAdapter implements ServiceInterface {
 
   private void registerEventForwarder(OutboundEvent<?> outboundEvent) {
     final Channel channel =
-        ManagedChannelBuilder.forTarget(outboundEvent.getUrl()).usePlaintext(true).build();
+        ManagedChannelBuilder.forTarget(outboundEvent.getUrl()).usePlaintext().build();
 
     final MethodDescriptor<?, RemoteCallResponse> descriptor =
         MethodDescriptorFactory.build(SERVICE_NAME, outboundEvent.getEventClass());

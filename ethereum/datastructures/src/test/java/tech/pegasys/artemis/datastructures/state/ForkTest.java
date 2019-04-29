@@ -22,11 +22,11 @@ import org.junit.jupiter.api.Test;
 
 class ForkTest {
 
-  private long previousVersion = randomLong();
-  private long currentVersion = randomLong();
-  private long epoch = randomLong();
+  private final long previousVersion = randomLong();
+  private final long currentVersion = randomLong();
+  private final long epoch = randomLong();
 
-  private Fork fork = new Fork(previousVersion, currentVersion, epoch);
+  private final Fork fork = new Fork(previousVersion, currentVersion, epoch);
 
   @Test
   void equalsReturnsTrueWhenObjectAreSame() {

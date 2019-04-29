@@ -32,12 +32,12 @@ import org.junit.jupiter.api.extension.ExtendWith;
 @ExtendWith(BouncyCastleExtension.class)
 class DepositTest {
 
-  private List<Bytes32> branch =
+  private final List<Bytes32> branch =
       Arrays.asList(Bytes32.random(), Bytes32.random(), Bytes32.random());
-  private long index = randomLong();
-  private DepositData depositData = randomDepositData();
+  private final long index = randomLong();
+  private final DepositData depositData = randomDepositData();
 
-  private Deposit deposit = new Deposit(branch, index, depositData);
+  private final Deposit deposit = new Deposit(branch, index, depositData);
 
   @Test
   void equalsReturnsTrueWhenObjectsAreSame() {
