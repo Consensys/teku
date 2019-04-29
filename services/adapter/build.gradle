@@ -11,7 +11,7 @@ dependencies {
     implementation project(':services')
     implementation project(':services:powchain')
     implementation project(':pow')
-    implementation project(':data:adapter')
+    implementation project(':data')
 
     implementation 'com.google.guava:guava'
     implementation 'org.apache.logging.log4j:log4j-api'

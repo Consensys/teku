@@ -34,7 +34,6 @@ import tech.pegasys.artemis.pow.event.Eth2Genesis;
 import tech.pegasys.artemis.services.ServiceConfig;
 import tech.pegasys.artemis.services.adapter.event.OutboundEvent;
 
-@Disabled
 public class ServiceAdapterTest {
 
   private final List<Object> receivedEvents = new ArrayList<>();
@@ -138,7 +137,6 @@ public class ServiceAdapterTest {
     assertEquals(Integer.valueOf(rcvdIndex2to1 + 1), rcvdIndex1to2);
   }
 
-  @Disabled
   @Subscribe
   public void onEvent(Object event) {
     receivedEvents.add(event);
