@@ -14,6 +14,7 @@
 package tech.pegasys.artemis.pow.contract;
 
 import io.reactivex.Flowable;
+import io.reactivex.functions.Function;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -24,6 +25,7 @@ import org.web3j.abi.TypeReference;
 import org.web3j.abi.datatypes.Bool;
 import org.web3j.abi.datatypes.DynamicBytes;
 import org.web3j.abi.datatypes.Event;
+import org.web3j.abi.datatypes.Type;
 import org.web3j.abi.datatypes.generated.Bytes32;
 import org.web3j.abi.datatypes.generated.Uint256;
 import org.web3j.crypto.Credentials;
@@ -67,16 +69,16 @@ public class DepositContract extends Contract {
   public static final Event DEPOSIT_EVENT =
       new Event(
           "Deposit",
-          Arrays.asList(
-              new TypeReference<DynamicBytes>() {}, new TypeReference<DynamicBytes>() {}));
+          Arrays.<TypeReference<?>>asList(
+              new TypeReference<DynamicBytes>() {}, new TypeReference<DynamicBytes>() {}));;
 
   public static final Event ETH2GENESIS_EVENT =
       new Event(
           "Eth2Genesis",
-          Arrays.asList(
+          Arrays.<TypeReference<?>>asList(
               new TypeReference<Bytes32>() {},
               new TypeReference<DynamicBytes>() {},
-              new TypeReference<DynamicBytes>() {}));
+              new TypeReference<DynamicBytes>() {}));;
 
   @Deprecated
   protected DepositContract(
@@ -117,7 +119,8 @@ public class DepositContract extends Contract {
   public List<DepositEventResponse> getDepositEvents(TransactionReceipt transactionReceipt) {
     List<Contract.EventValuesWithLog> valueList =
         extractEventParametersWithLog(DEPOSIT_EVENT, transactionReceipt);
-    ArrayList<DepositEventResponse> responses = new ArrayList<>(valueList.size());
+    ArrayList<DepositEventResponse> responses =
+        new ArrayList<DepositEventResponse>(valueList.size());
     for (Contract.EventValuesWithLog eventValues : valueList) {
       DepositEventResponse typedResponse = new DepositEventResponse();
       typedResponse.log = eventValues.getLog();
@@ -133,14 +136,18 @@ public class DepositContract extends Contract {
     return web3j
         .ethLogFlowable(filter)
         .map(
-            log -> {
-              EventValuesWithLog eventValues = extractEventParametersWithLog(DEPOSIT_EVENT, log);
-              DepositEventResponse typedResponse = new DepositEventResponse();
-              typedResponse.log = log;
-              typedResponse.data = (byte[]) eventValues.getNonIndexedValues().get(0).getValue();
-              typedResponse.merkle_tree_index =
-                  (byte[]) eventValues.getNonIndexedValues().get(1).getValue();
-              return typedResponse;
+            new Function<Log, DepositEventResponse>() {
+              @Override
+              public DepositEventResponse apply(Log log) {
+                Contract.EventValuesWithLog eventValues =
+                    extractEventParametersWithLog(DEPOSIT_EVENT, log);
+                DepositEventResponse typedResponse = new DepositEventResponse();
+                typedResponse.log = log;
+                typedResponse.data = (byte[]) eventValues.getNonIndexedValues().get(0).getValue();
+                typedResponse.merkle_tree_index =
+                    (byte[]) eventValues.getNonIndexedValues().get(1).getValue();
+                return typedResponse;
+              }
             });
   }
 
@@ -155,7 +162,8 @@ public class DepositContract extends Contract {
       TransactionReceipt transactionReceipt) {
     List<Contract.EventValuesWithLog> valueList =
         extractEventParametersWithLog(ETH2GENESIS_EVENT, transactionReceipt);
-    ArrayList<Eth2GenesisEventResponse> responses = new ArrayList<>(valueList.size());
+    ArrayList<Eth2GenesisEventResponse> responses =
+        new ArrayList<Eth2GenesisEventResponse>(valueList.size());
     for (Contract.EventValuesWithLog eventValues : valueList) {
       Eth2GenesisEventResponse typedResponse = new Eth2GenesisEventResponse();
       typedResponse.log = eventValues.getLog();
@@ -171,17 +179,20 @@ public class DepositContract extends Contract {
     return web3j
         .ethLogFlowable(filter)
         .map(
-            log -> {
-              EventValuesWithLog eventValues =
-                  extractEventParametersWithLog(ETH2GENESIS_EVENT, log);
-              Eth2GenesisEventResponse typedResponse = new Eth2GenesisEventResponse();
-              typedResponse.log = log;
-              typedResponse.deposit_root =
-                  (byte[]) eventValues.getNonIndexedValues().get(0).getValue();
-              typedResponse.deposit_count =
-                  (byte[]) eventValues.getNonIndexedValues().get(1).getValue();
-              typedResponse.time = (byte[]) eventValues.getNonIndexedValues().get(2).getValue();
-              return typedResponse;
+            new Function<Log, Eth2GenesisEventResponse>() {
+              @Override
+              public Eth2GenesisEventResponse apply(Log log) {
+                Contract.EventValuesWithLog eventValues =
+                    extractEventParametersWithLog(ETH2GENESIS_EVENT, log);
+                Eth2GenesisEventResponse typedResponse = new Eth2GenesisEventResponse();
+                typedResponse.log = log;
+                typedResponse.deposit_root =
+                    (byte[]) eventValues.getNonIndexedValues().get(0).getValue();
+                typedResponse.deposit_count =
+                    (byte[]) eventValues.getNonIndexedValues().get(1).getValue();
+                typedResponse.time = (byte[]) eventValues.getNonIndexedValues().get(2).getValue();
+                return typedResponse;
+              }
             });
   }
 
@@ -197,8 +208,8 @@ public class DepositContract extends Contract {
     final org.web3j.abi.datatypes.Function function =
         new org.web3j.abi.datatypes.Function(
             FUNC_TO_LITTLE_ENDIAN_64,
-            Collections.singletonList(new Uint256(value)),
-            Collections.singletonList(new TypeReference<DynamicBytes>() {}));
+            Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Uint256(value)),
+            Arrays.<TypeReference<?>>asList(new TypeReference<DynamicBytes>() {}));
     return executeRemoteCallSingleValueReturn(function, byte[].class);
   }
 
@@ -207,19 +218,18 @@ public class DepositContract extends Contract {
     final org.web3j.abi.datatypes.Function function =
         new org.web3j.abi.datatypes.Function(
             FUNC_FROM_LITTLE_ENDIAN_64,
-            Arrays.asList(new DynamicBytes(value)),
-            Arrays.asList(new TypeReference<Uint256>() {}));
+            Arrays.<Type>asList(new org.web3j.abi.datatypes.DynamicBytes(value)),
+            Arrays.<TypeReference<?>>asList(new TypeReference<Uint256>() {}));
     return executeRemoteCallSingleValueReturn(function, BigInteger.class);
   }
 
   @SuppressWarnings({"rawtypes"})
-
   public RemoteCall<byte[]> get_deposit_root() {
     final org.web3j.abi.datatypes.Function function =
         new org.web3j.abi.datatypes.Function(
             FUNC_GET_DEPOSIT_ROOT,
-            Collections.emptyList(),
-            Collections.singletonList(new TypeReference<Bytes32>() {}));
+            Arrays.<Type>asList(),
+            Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {}));
     return executeRemoteCallSingleValueReturn(function, byte[].class);
   }
 
@@ -228,18 +238,18 @@ public class DepositContract extends Contract {
     final org.web3j.abi.datatypes.Function function =
         new org.web3j.abi.datatypes.Function(
             FUNC_GET_DEPOSIT_COUNT,
-            Collections.emptyList(),
-            Collections.singletonList(new TypeReference<DynamicBytes>() {}));
+            Arrays.<Type>asList(),
+            Arrays.<TypeReference<?>>asList(new TypeReference<DynamicBytes>() {}));
     return executeRemoteCallSingleValueReturn(function, byte[].class);
   }
 
   @SuppressWarnings({"rawtypes"})
-  public RemoteCall<TransactionReceipt> deposit(byte[] deposit_input, BigInteger weiValue) {
+  public RemoteCall<TransactionReceipt> deposit(byte[] deposit_data, BigInteger weiValue) {
     final org.web3j.abi.datatypes.Function function =
         new org.web3j.abi.datatypes.Function(
             FUNC_DEPOSIT,
-            Collections.singletonList(new DynamicBytes(deposit_input)),
-            Collections.emptyList());
+            Arrays.<Type>asList(new org.web3j.abi.datatypes.DynamicBytes(deposit_data)),
+            Collections.<TypeReference<?>>emptyList());
     return executeRemoteCallTransaction(function, weiValue);
   }
 
@@ -248,8 +258,8 @@ public class DepositContract extends Contract {
     final org.web3j.abi.datatypes.Function function =
         new org.web3j.abi.datatypes.Function(
             FUNC_CHAINSTARTED,
-            Collections.emptyList(),
-            Collections.singletonList(new TypeReference<Bool>() {}));
+            Arrays.<Type>asList(),
+            Arrays.<TypeReference<?>>asList(new TypeReference<Bool>() {}));
     return executeRemoteCallSingleValueReturn(function, Boolean.class);
   }
 
