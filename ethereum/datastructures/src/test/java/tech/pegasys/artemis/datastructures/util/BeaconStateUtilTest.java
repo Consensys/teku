@@ -26,11 +26,11 @@ import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomV
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.junit.BouncyCastleExtension;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import tech.pegasys.artemis.datastructures.Constants;
@@ -294,7 +294,9 @@ class BeaconStateUtilTest {
   void getTotalBalanceAddsAndReturnsEffectiveTotalBalancesCorrectly() {
     // Data Setup
     BeaconState state = createBeaconState();
-    CrosslinkCommittee crosslinkCommittee = new CrosslinkCommittee(1, Arrays.asList(0, 1, 2));
+    CrosslinkCommittee crosslinkCommittee =
+        new CrosslinkCommittee(
+            1, Arrays.asList(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15));
 
     // Calculate Expected Results
     long expectedBalance = 0;
@@ -310,7 +312,6 @@ class BeaconStateUtilTest {
   }
 
   @Test
-  @Disabled // Pending resolution of Issue #347.
   void penalizeValidatorDecrementsBadActorAndIncrementsWhistleblower() {
     // Actual Data Setup
     BeaconState beaconState = createBeaconState();
@@ -318,8 +319,10 @@ class BeaconStateUtilTest {
 
     beaconState.setCurrent_shuffling_epoch(Constants.FAR_FUTURE_EPOCH);
     beaconState.setPrevious_shuffling_epoch(Constants.FAR_FUTURE_EPOCH);
-    List<Long> latestPenalizedBalances =
-        new ArrayList<>(Arrays.asList(randomLong(), randomLong(), randomLong()));
+    List<Long> latestPenalizedBalances = new ArrayList<>();
+    latestPenalizedBalances.addAll(Collections.nCopies(64, randomLong()));
+    latestPenalizedBalances.addAll(
+        Collections.nCopies(Constants.LATEST_SLASHED_EXIT_LENGTH - 64, 0L));
     beaconState.setLatest_slashed_balances(latestPenalizedBalances);
 
     // Expected Data Setup
@@ -339,10 +342,11 @@ class BeaconStateUtilTest {
     BeaconStateUtil.penalize_validator(beaconState, validatorIndex);
 
     assertEquals(
-        expectedBadActorBalance, (long) beaconState.getValidator_balances().get(validatorIndex));
+        expectedBadActorBalance,
+        beaconState.getValidator_balances().get(validatorIndex).longValue());
     assertEquals(
         expectedWhistleblowerBalance,
-        (long) beaconState.getValidator_balances().get(whistleblowerIndex));
+        beaconState.getValidator_balances().get(whistleblowerIndex).longValue());
   }
 
   @Test
@@ -445,10 +449,9 @@ class BeaconStateUtilTest {
             Constants.GENESIS_FORK_VERSION,
             Constants.GENESIS_EPOCH));
 
-    List<Validator> validatorList =
-        new ArrayList<>(Arrays.asList(randomValidator(), randomValidator(), randomValidator()));
-    List<Long> balanceList =
-        new ArrayList<>(Arrays.asList(randomLong(), randomLong(), randomLong()));
+    List<Validator> validatorList = new ArrayList<>(Collections.nCopies(16, randomValidator()));
+
+    List<Long> balanceList = new ArrayList<>(Collections.nCopies(16, randomLong()));
 
     if (addToList) {
       validatorList.add(knownValidator);
