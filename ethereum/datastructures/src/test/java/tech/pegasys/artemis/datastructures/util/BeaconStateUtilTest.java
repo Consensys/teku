@@ -24,6 +24,7 @@ import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.newDepo
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomLong;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomValidator;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -318,7 +319,8 @@ class BeaconStateUtilTest {
 
     beaconState.setCurrent_shuffling_epoch(Constants.FAR_FUTURE_EPOCH);
     beaconState.setPrevious_shuffling_epoch(Constants.FAR_FUTURE_EPOCH);
-    List<Long> latestPenalizedBalances = Collections.nCopies(64, randomLong());
+    List<Long> latestPenalizedBalances = new ArrayList<>();
+    latestPenalizedBalances.addAll(Collections.nCopies(64, randomLong()));
     latestPenalizedBalances.addAll(
         Collections.nCopies(Constants.LATEST_SLASHED_EXIT_LENGTH - 64, 0L));
     beaconState.setLatest_slashed_balances(latestPenalizedBalances);
@@ -447,10 +449,10 @@ class BeaconStateUtilTest {
             Constants.GENESIS_FORK_VERSION,
             Constants.GENESIS_EPOCH));
 
-    List<Validator> validatorList = Collections.nCopies(64, randomValidator());
-    ;
-    List<Long> balanceList = Collections.nCopies(64, randomLong());
-    ;
+    List<Validator> validatorList = new ArrayList<>(Collections.nCopies(16, randomValidator()));
+
+    List<Long> balanceList = new ArrayList<>(Collections.nCopies(16, randomLong()));
+
     if (addToList) {
       validatorList.add(knownValidator);
       balanceList.add(amount);
