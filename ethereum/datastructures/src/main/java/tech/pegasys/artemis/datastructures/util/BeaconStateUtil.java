@@ -123,7 +123,7 @@ public class BeaconStateUtil {
 
     checkArgument(
         previous_epoch <= epoch && epoch <= next_epoch,
-        "checkArgument threw and exception in get_crosslink_committees_at_slot()");
+        "checkArgument threw an exception in get_crosslink_committees_at_slot()");
 
     long committees_per_epoch = 0;
     Bytes32 seed = Bytes32.ZERO;
@@ -164,6 +164,7 @@ public class BeaconStateUtil {
         shuffling_start_shard = state.getCurrent_shuffling_start_shard();
       }
     }
+
     List<List<Integer>> shuffling =
         get_shuffling(seed, state.getValidator_registry(), shuffling_epoch);
     long offset = slot % SLOTS_PER_EPOCH;
@@ -175,8 +176,8 @@ public class BeaconStateUtil {
     for (long i = 0; i < committees_per_slot; i++) {
       CrosslinkCommittee committee =
           new CrosslinkCommittee(
-              committees_per_slot * offset + i,
-              shuffling.get(toIntExact(slot_start_shard + i) % Constants.SHARD_COUNT));
+              (slot_start_shard + i) % Constants.SHARD_COUNT,
+              shuffling.get(toIntExact(committees_per_slot * offset + i) % shuffling.size()));
       crosslink_committees_at_slot.add(committee);
     }
     return crosslink_committees_at_slot;
@@ -481,8 +482,13 @@ public class BeaconStateUtil {
    *     spec</a>
    */
   public static void penalize_validator(BeaconState state, int index) {
-    exit_validator(state, index);
     Validator validator = state.getValidator_registry().get(index);
+    if (validator.getWithdrawal_epoch() != -1) {
+      checkArgument(
+          state.getSlot() < get_epoch_start_slot(validator.getWithdrawal_epoch()),
+          "checkArgument threw and exception in get_randao_mix()");
+    }
+    exit_validator(state, index);
     state
         .getLatest_slashed_balances()
         .set(
@@ -615,7 +621,6 @@ public class BeaconStateUtil {
 
     List<Integer> active_validator_indices =
         ValidatorsUtil.get_active_validator_indices(validators, epoch);
-
     int length = active_validator_indices.size();
 
     List<Integer> shuffled_indices =
@@ -844,9 +849,19 @@ public class BeaconStateUtil {
         && ((BeaconStateWithCache) state).getCurrentBeaconProposerIndex() > -1) {
       return ((BeaconStateWithCache) state).getCurrentBeaconProposerIndex();
     } else {
+      long epoch = slot_to_epoch(slot);
+      long current_epoch = get_current_epoch(state);
+      long previous_epoch = get_previous_epoch(state);
+      long next_epoch = current_epoch + 1;
+
+      checkArgument(
+          previous_epoch <= epoch && epoch <= next_epoch,
+          "checkArgument threw an exception in get_beacon_proposer_index()");
+
       List<Integer> first_committee =
           get_crosslink_committees_at_slot(state, slot).get(0).getCommittee();
-      return first_committee.get(Math.toIntExact(slot % first_committee.size()));
+
+      return first_committee.get(Math.toIntExact(epoch % first_committee.size()));
     }
   }
 
