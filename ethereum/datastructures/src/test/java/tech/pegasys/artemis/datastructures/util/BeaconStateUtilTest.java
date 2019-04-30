@@ -315,6 +315,9 @@ class BeaconStateUtilTest {
   void penalizeValidatorDecrementsBadActorAndIncrementsWhistleblower() {
     // Actual Data Setup
     BeaconState beaconState = createBeaconState();
+    beaconState.getValidator_registry().addAll(Collections.nCopies(48, randomValidator()));
+    beaconState.getValidator_balances().addAll(Collections.nCopies(48, randomLong()));
+
     int validatorIndex = 1;
 
     beaconState.setCurrent_shuffling_epoch(Constants.FAR_FUTURE_EPOCH);
