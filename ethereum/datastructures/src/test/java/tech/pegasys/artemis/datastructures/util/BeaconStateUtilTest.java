@@ -24,7 +24,6 @@ import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.newDepo
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomLong;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomValidator;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -448,8 +447,10 @@ class BeaconStateUtilTest {
             Constants.GENESIS_FORK_VERSION,
             Constants.GENESIS_EPOCH));
 
-    List<Validator> validatorList = Collections.nCopies(64, randomValidator());;
-    List<Long> balanceList = Collections.nCopies(64, randomLong());;
+    List<Validator> validatorList = Collections.nCopies(64, randomValidator());
+    ;
+    List<Long> balanceList = Collections.nCopies(64, randomLong());
+    ;
     if (addToList) {
       validatorList.add(knownValidator);
       balanceList.add(amount);

@@ -21,7 +21,6 @@ import java.util.Arrays;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.junit.BouncyCastleExtension;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.extension.ExtendWith;
 import picocli.CommandLine;
 import tech.pegasys.artemis.networking.p2p.api.P2PNetwork;
