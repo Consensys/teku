@@ -321,7 +321,7 @@ class BeaconStateUtilTest {
     beaconState.setPrevious_shuffling_epoch(Constants.FAR_FUTURE_EPOCH);
     List<Long> latestPenalizedBalances = Collections.nCopies(64, randomLong());
     latestPenalizedBalances.addAll(
-        Collections.nCopies(Constants.LATEST_SLASHED_EXIT_LENGTH - 16, 0L));
+        Collections.nCopies(Constants.LATEST_SLASHED_EXIT_LENGTH - 64, 0L));
     beaconState.setLatest_slashed_balances(latestPenalizedBalances);
 
     // Expected Data Setup
