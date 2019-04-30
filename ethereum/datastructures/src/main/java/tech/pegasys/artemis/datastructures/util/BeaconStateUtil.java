@@ -145,10 +145,11 @@ public class BeaconStateUtil {
 
     } else if (epoch == next_epoch) {
 
-      long current_committees_per_epoch = get_current_epoch_committee_count(state);	
-      committees_per_epoch = get_next_epoch_committee_count(state);	
-      shuffling_epoch = next_epoch;	
-      long epochs_since_last_registry_update = current_epoch - state.getValidator_registry_update_epoch();
+      long current_committees_per_epoch = get_current_epoch_committee_count(state);
+      committees_per_epoch = get_next_epoch_committee_count(state);
+      shuffling_epoch = next_epoch;
+      long epochs_since_last_registry_update =
+          current_epoch - state.getValidator_registry_update_epoch();
       if (registry_change) {
         seed = generate_seed(state, next_epoch);
         shuffling_start_shard =
