@@ -15,7 +15,6 @@ package tech.pegasys.artemis;
 
 import com.google.common.eventbus.AsyncEventBus;
 import com.google.common.eventbus.EventBus;
-import com.google.common.eventbus.Subscribe;
 import io.vertx.core.Vertx;
 import java.io.IOException;
 import java.nio.file.Path;
@@ -24,11 +23,8 @@ import java.util.concurrent.Executors;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.core.config.Configurator;
 import picocli.CommandLine;
-import tech.pegasys.artemis.data.IRecordAdapter;
-import tech.pegasys.artemis.data.RawRecord;
-import tech.pegasys.artemis.data.TimeSeriesRecord;
-import tech.pegasys.artemis.data.adapter.TimeSeriesAdapter;
 import tech.pegasys.artemis.data.provider.CSVProvider;
+import tech.pegasys.artemis.data.provider.EventHandler;
 import tech.pegasys.artemis.data.provider.FileProvider;
 import tech.pegasys.artemis.data.provider.JSONProvider;
 import tech.pegasys.artemis.data.provider.ProviderTypes;
@@ -65,6 +61,7 @@ public class BeaconNode {
   private ValidatorCoordinator validatorCoordinator;
   private EventBus eventBus;
   private FileProvider fileProvider;
+  private EventHandler eventHandler;
 
   private CommandLineArguments cliArgs;
   private CommandLine commandLine;
@@ -125,9 +122,12 @@ public class BeaconNode {
     System.out.println("Setting logging level to " + cliArgs.getLoggingLevel().name());
     Configurator.setAllLevels("", cliArgs.getLoggingLevel());
     this.validatorCoordinator = new ValidatorCoordinator(serviceConfig);
+    this.eventHandler = new EventHandler(cliArgs, fileProvider);
+    this.eventBus.register(eventHandler);
   }
 
   public void start() {
+
     try {
       // Check output file
 
@@ -153,30 +153,6 @@ public class BeaconNode {
       this.p2pNetwork.close();
     } catch (IOException e) {
       LOG.log(Level.FATAL, e.toString());
-    }
-  }
-
-  @Subscribe
-  public void onDataEvent(RawRecord record) {
-    if (!cliArgs.isSimulation()) {
-      TimeSeriesAdapter adapter = new TimeSeriesAdapter(record);
-      TimeSeriesRecord tsRecord = adapter.transform();
-      if (cliArgs.isFormat()) {
-        fileProvider.formattedOutput(tsRecord);
-      } else {
-        fileProvider.serialOutput(tsRecord);
-      }
-    }
-  }
-
-  @Subscribe
-  public void onDepositSim(IRecordAdapter record) {
-    if (cliArgs.isSimulation()) {
-      if (cliArgs.isFormat()) {
-        fileProvider.formattedOutput(record);
-      } else {
-        fileProvider.serialOutput(record);
-      }
     }
   }
 
