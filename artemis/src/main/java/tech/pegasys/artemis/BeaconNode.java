@@ -104,10 +104,7 @@ public class BeaconNode {
         LOG.log(Level.ERROR, e.getMessage());
       }
     }
-    if (commandLine.isUsageHelpRequested()) {
-      commandLine.usage(System.out);
-      return;
-    }
+
     // set log level per CLI flags
     System.out.println("Setting logging level to " + cliArgs.getLoggingLevel().name());
     Configurator.setAllLevels("", cliArgs.getLoggingLevel());
