@@ -319,73 +319,7 @@ class BeaconStateUtilTest {
 
     beaconState.setCurrent_shuffling_epoch(Constants.FAR_FUTURE_EPOCH);
     beaconState.setPrevious_shuffling_epoch(Constants.FAR_FUTURE_EPOCH);
-    List<Long> latestPenalizedBalances =
-        new ArrayList<>(
-            Arrays.asList(
-                randomLong(),
-                randomLong(),
-                randomLong(),
-                randomLong(),
-                randomLong(),
-                randomLong(),
-                randomLong(),
-                randomLong(),
-                randomLong(),
-                randomLong(),
-                randomLong(),
-                randomLong(),
-                randomLong(),
-                randomLong(),
-                randomLong(),
-                randomLong(),
-                randomLong(),
-                randomLong(),
-                randomLong(),
-                randomLong(),
-                randomLong(),
-                randomLong(),
-                randomLong(),
-                randomLong(),
-                randomLong(),
-                randomLong(),
-                randomLong(),
-                randomLong(),
-                randomLong(),
-                randomLong(),
-                randomLong(),
-                randomLong(),
-                randomLong(),
-                randomLong(),
-                randomLong(),
-                randomLong(),
-                randomLong(),
-                randomLong(),
-                randomLong(),
-                randomLong(),
-                randomLong(),
-                randomLong(),
-                randomLong(),
-                randomLong(),
-                randomLong(),
-                randomLong(),
-                randomLong(),
-                randomLong(),
-                randomLong(),
-                randomLong(),
-                randomLong(),
-                randomLong(),
-                randomLong(),
-                randomLong(),
-                randomLong(),
-                randomLong(),
-                randomLong(),
-                randomLong(),
-                randomLong(),
-                randomLong(),
-                randomLong(),
-                randomLong(),
-                randomLong(),
-                randomLong()));
+    List<Long> latestPenalizedBalances = Collections.nCopies(64, randomLong());
     latestPenalizedBalances.addAll(
         Collections.nCopies(Constants.LATEST_SLASHED_EXIT_LENGTH - 16, 0L));
     beaconState.setLatest_slashed_balances(latestPenalizedBalances);
@@ -514,44 +448,8 @@ class BeaconStateUtilTest {
             Constants.GENESIS_FORK_VERSION,
             Constants.GENESIS_EPOCH));
 
-    List<Validator> validatorList =
-        new ArrayList<>(
-            Arrays.asList(
-                randomValidator(),
-                randomValidator(),
-                randomValidator(),
-                randomValidator(),
-                randomValidator(),
-                randomValidator(),
-                randomValidator(),
-                randomValidator(),
-                randomValidator(),
-                randomValidator(),
-                randomValidator(),
-                randomValidator(),
-                randomValidator(),
-                randomValidator(),
-                randomValidator(),
-                randomValidator()));
-    List<Long> balanceList =
-        new ArrayList<>(
-            Arrays.asList(
-                randomLong(),
-                randomLong(),
-                randomLong(),
-                randomLong(),
-                randomLong(),
-                randomLong(),
-                randomLong(),
-                randomLong(),
-                randomLong(),
-                randomLong(),
-                randomLong(),
-                randomLong(),
-                randomLong(),
-                randomLong(),
-                randomLong(),
-                randomLong()));
+    List<Validator> validatorList = Collections.nCopies(64, randomValidator());;
+    List<Long> balanceList = Collections.nCopies(64, randomLong());;
     if (addToList) {
       validatorList.add(knownValidator);
       balanceList.add(amount);
