@@ -39,7 +39,6 @@ public class TimeSeriesAdapter implements DataAdapter<TimeSeriesRecord> {
   public TimeSeriesRecord transform() {
 
     long slot = this.input.getHeadBlock().getSlot();
-    // TODO: fix this war crime
     long epoch = BeaconStateUtil.slot_to_epoch(this.input.getHeadBlock().getSlot());
     BeaconBlock headBlock = this.input.getHeadBlock();
     BeaconState headState = this.input.getHeadState();

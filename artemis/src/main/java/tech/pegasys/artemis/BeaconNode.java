@@ -31,7 +31,6 @@ import tech.pegasys.artemis.data.provider.ProviderTypes;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.networking.p2p.HobbitsP2PNetwork;
 import tech.pegasys.artemis.networking.p2p.MockP2PNetwork;
-import tech.pegasys.artemis.networking.p2p.RLPxP2PNetwork;
 import tech.pegasys.artemis.networking.p2p.api.P2PNetwork;
 import tech.pegasys.artemis.services.ServiceConfig;
 import tech.pegasys.artemis.services.ServiceController;
@@ -74,17 +73,6 @@ public class BeaconNode {
     this.eventBus = new AsyncEventBus(threadPool);
     if ("mock".equals(config.getNetworkMode())) {
       this.p2pNetwork = new MockP2PNetwork(eventBus);
-    } else if ("rlpx".equals(config.getNetworkMode())) {
-      this.p2pNetwork =
-          new RLPxP2PNetwork(
-              eventBus,
-              vertx,
-              config.getKeyPair(),
-              config.getPort(),
-              config.getAdvertisedPort(),
-              config.getNetworkInterface(),
-              "Artemis 0.1",
-              config.getStaticPeers());
     } else if ("hobbits".equals(config.getNetworkMode())) {
       this.p2pNetwork =
           new HobbitsP2PNetwork(
@@ -110,6 +98,8 @@ public class BeaconNode {
         } else {
           this.fileProvider = new JSONProvider(outputFilename);
         }
+        this.eventHandler = new EventHandler(cliArgs, fileProvider);
+        this.eventBus.register(eventHandler);
       } catch (IOException e) {
         LOG.log(Level.ERROR, e.getMessage());
       }
@@ -122,8 +112,6 @@ public class BeaconNode {
     System.out.println("Setting logging level to " + cliArgs.getLoggingLevel().name());
     Configurator.setAllLevels("", cliArgs.getLoggingLevel());
     this.validatorCoordinator = new ValidatorCoordinator(serviceConfig);
-    this.eventHandler = new EventHandler(cliArgs, fileProvider);
-    this.eventBus.register(eventHandler);
   }
 
   public void start() {
