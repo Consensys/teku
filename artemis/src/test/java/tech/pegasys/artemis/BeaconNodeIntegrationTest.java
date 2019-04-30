@@ -34,7 +34,7 @@ class BeaconNodeIntegrationTest {
 
   private static ObjectMapper mapper = new ObjectMapper();
 
-  @Disabled
+  @Test
   void testThreeNodes() throws InterruptedException, JsonProcessingException {
     CommandLineArguments cliArgs = new CommandLineArguments();
     CommandLine commandLine = new CommandLine(cliArgs);
