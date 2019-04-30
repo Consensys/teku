@@ -13,7 +13,9 @@
 
 package tech.pegasys.artemis.util.cli;
 
+import java.util.List;
 import org.apache.logging.log4j.Level;
+import picocli.CommandLine;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 
@@ -47,13 +49,9 @@ public class CommandLineArguments {
 
   @Option(
       names = {"-s", "--sim"},
-      description = "PoW simulation flag")
-  private boolean simulation = false;
-
-  @Option(
-      names = {"-sf", "--simFile"},
+      arity = "0",
       paramLabel = "<FILENAME>",
-      description = "PoW simulation file to input")
+      description = "PoW simulation flag, w/ optional input file")
   private String inputFile = null;
 
   @Option(
@@ -61,6 +59,12 @@ public class CommandLineArguments {
       paramLabel = "<IS FORMAT>",
       description = "Output of JSON file is serial or formatted")
   private boolean isFormat = false;
+
+  // Specify events that will be output for logging
+  @CommandLine.Parameters(
+      paramLabel = "<EVENT>",
+      description = "Output selector for specific events")
+  private List<String> events;
 
   public String getProviderType() {
     return this.providerType;
@@ -83,14 +87,19 @@ public class CommandLineArguments {
   }
 
   public boolean isSimulation() {
-    return (simulation || inputFile != null);
+    return !(inputFile == null);
   }
 
   public String getInputFile() {
+    if (inputFile == null || inputFile.equals("")) return null;
     return inputFile;
   }
 
   public boolean isFormat() {
     return isFormat;
+  }
+
+  public List<String> getEvents() {
+    return events;
   }
 }
