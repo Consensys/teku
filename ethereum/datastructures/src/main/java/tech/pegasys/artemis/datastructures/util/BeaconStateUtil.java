@@ -181,7 +181,7 @@ public class BeaconStateUtil {
       CrosslinkCommittee committee =
           new CrosslinkCommittee(
               (slot_start_shard + i) % Constants.SHARD_COUNT,
-              shuffling.get(toIntExact(committees_per_slot * offset + i)));
+              shuffling.get(toIntExact(committees_per_slot * offset + i) % shuffling.size()));
       crosslink_committees_at_slot.add(committee);
     }
     return crosslink_committees_at_slot;
