@@ -3,7 +3,6 @@
 [node]
 # networkMode options:
 # "mock": use MockP2PNetwork
-# "rlpx": use RLPxP2PNetwork
 # "hobbits": use HobbitsP2PNetwork
 networkMode = "mock"
 identity = "0x00"

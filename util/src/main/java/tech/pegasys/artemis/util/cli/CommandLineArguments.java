@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.util.cli;
 
+import java.util.ArrayList;
 import java.util.List;
 import org.apache.logging.log4j.Level;
 import picocli.CommandLine;
@@ -64,7 +65,14 @@ public class CommandLineArguments {
   @CommandLine.Parameters(
       paramLabel = "<EVENT>",
       description = "Output selector for specific events")
-  private List<String> events;
+  @SuppressWarnings({"DoubleBraceInitialization"})
+  private List<String> events =
+      new ArrayList<String>() {
+        {
+          add("Eth2Genesis");
+          add("TimeSeriesRecord");
+        }
+      };
 
   public String getProviderType() {
     return this.providerType;
