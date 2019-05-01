@@ -103,7 +103,7 @@ public class DepositData {
   }
 
   public Bytes32 hash_tree_root() {
-    return HashTreeUtil.merkleHash(
+    return HashTreeUtil.merkleize(
         Arrays.asList(
             HashTreeUtil.hash_tree_root_basic_type(SSZ.encodeUInt64(amount.longValue())),
             HashTreeUtil.hash_tree_root_basic_type(SSZ.encodeUInt64(timestamp.longValue())),

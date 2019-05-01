@@ -88,7 +88,7 @@ public class AttestationDataAndCustodyBit {
   }
 
   public Bytes32 hash_tree_root() {
-    return HashTreeUtil.merkleHash(
+    return HashTreeUtil.merkleize(
         Arrays.asList(
             data.hash_tree_root(),
             HashTreeUtil.hash_tree_root_basic_type(SSZ.encodeBoolean(custody_bit))));

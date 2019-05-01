@@ -169,7 +169,7 @@ public class Transfer {
     }
 
     return Bytes32.rightPad(
-        HashTreeUtil.merkleHash(
+        HashTreeUtil.merkleize(
             Arrays.asList(
                 HashTreeUtil.hash_tree_root_basic_type(SSZ.encodeUInt64(sender.longValue())),
                 HashTreeUtil.hash_tree_root_basic_type(SSZ.encodeUInt64(recipient.longValue())),
@@ -180,7 +180,7 @@ public class Transfer {
   }
 
   public Bytes32 hash_tree_root() {
-    return HashTreeUtil.merkleHash(
+    return HashTreeUtil.merkleize(
         Arrays.asList(
             HashTreeUtil.hash_tree_root_basic_type(SSZ.encodeUInt64(sender.longValue())),
             HashTreeUtil.hash_tree_root_basic_type(SSZ.encodeUInt64(recipient.longValue())),

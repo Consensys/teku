@@ -134,7 +134,7 @@ public class PendingAttestation implements Copyable<PendingAttestation> {
   }
 
   public Bytes32 hash_tree_root() {
-    return HashTreeUtil.merkleHash(
+    return HashTreeUtil.merkleize(
         Arrays.asList(
             HashTreeUtil.hash_tree_root_list_of_basic_type(
                 Arrays.asList(aggregation_bitfield), aggregation_bitfield.size()),

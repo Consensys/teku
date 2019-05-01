@@ -109,48 +109,4 @@ public final class HashTreeUtil {
   public static boolean is_power_of_two(int value) {
     return value > 0 && (value & (value - 1)) == 0;
   }
-
-  /**
-   * Hashes a list of homogeneous values.
-   *
-   * @param values a list of homogeneous values
-   * @return the merkle hash of the list of values
-   */
-  @Deprecated
-  public static Bytes32 merkleHash(List<Bytes> values) {
-    Bytes littleEndianLength = Bytes.ofUnsignedInt(values.size(), LITTLE_ENDIAN);
-    Bytes32 valuesLength = Bytes32.rightPad(littleEndianLength);
-
-    List<Bytes> chunks;
-    if (values.isEmpty()) {
-      chunks = new ArrayList<>();
-      chunks.add(Bytes.wrap(new byte[128]));
-    } else if (values.get(0).size() < 128) {
-      int itemsPerChunk = (int) Math.floor(128 / (double) values.get(0).size());
-      chunks = new ArrayList<>();
-
-      for (int i = 0; i * itemsPerChunk < values.size(); i++) {
-        Bytes[] chunkItems =
-            values
-                .subList(i * itemsPerChunk, Math.min((i + 1) * itemsPerChunk, values.size()))
-                .toArray(new Bytes[0]);
-        chunks.add(Bytes.concatenate(chunkItems));
-      }
-    } else {
-      chunks = values;
-    }
-    while (chunks.size() > 1) {
-      if (chunks.size() % 2 == 1) {
-        chunks.add(Bytes.wrap(new byte[128]));
-      }
-      Iterator<Bytes> iterator = chunks.iterator();
-      List<Bytes> hashRound = new ArrayList<>();
-      while (iterator.hasNext()) {
-        hashRound.add(Hash.keccak256(Bytes.concatenate(iterator.next(), iterator.next())));
-      }
-      chunks = hashRound;
-    }
-
-    return Hash.keccak256(Bytes.concatenate(chunks.get(0), valuesLength));
-  }
 }

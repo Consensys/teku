@@ -127,7 +127,7 @@ public class SlashableAttestation {
   }
 
   public Bytes32 hash_tree_root() {
-    return HashTreeUtil.merkleHash(
+    return HashTreeUtil.merkleize(
         Arrays.asList(
             HashTreeUtil.hash_tree_root_list_of_basic_type(
                 validator_indices.stream()

@@ -145,7 +145,7 @@ public final class BeaconBlock {
     }
 
     return Bytes32.rightPad(
-        HashTreeUtil.merkleHash(
+        HashTreeUtil.merkleize(
             Arrays.asList(
                 HashTreeUtil.hash_tree_root_basic_type(
                     SSZ.encode(
@@ -158,7 +158,7 @@ public final class BeaconBlock {
   }
 
   public Bytes32 hash_tree_root() {
-    return HashTreeUtil.merkleHash(
+    return HashTreeUtil.merkleize(
         Arrays.asList(
             HashTreeUtil.hash_tree_root_basic_type(SSZ.encodeUInt64(slot)),
             HashTreeUtil.hash_tree_root_basic_type(previous_block_root),

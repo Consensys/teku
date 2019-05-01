@@ -201,7 +201,7 @@ public class AttestationData {
   }
 
   public Bytes32 hash_tree_root() {
-    return HashTreeUtil.merkleHash(
+    return HashTreeUtil.merkleize(
         Arrays.asList(
             HashTreeUtil.hash_tree_root_basic_type(SSZ.encodeUInt64(slot.longValue())),
             HashTreeUtil.hash_tree_root_basic_type(beacon_block_root),

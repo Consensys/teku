@@ -192,7 +192,7 @@ public final class Validator implements Copyable<Validator> {
   }
 
   public Bytes32 hash_tree_root() {
-    return HashTreeUtil.merkleHash(
+    return HashTreeUtil.merkleize(
         Arrays.asList(
             HashTreeUtil.hash_tree_root_basic_type(pubkey.toBytes()),
             HashTreeUtil.hash_tree_root_basic_type(withdrawal_credentials),

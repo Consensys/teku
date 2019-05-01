@@ -90,7 +90,7 @@ public class AttesterSlashing {
   }
 
   public Bytes32 hash_tree_root() {
-    return HashTreeUtil.merkleHash(
+    return HashTreeUtil.merkleize(
         Arrays.asList(
             slashable_attestation_1.hash_tree_root(), slashable_attestation_2.hash_tree_root()));
   }

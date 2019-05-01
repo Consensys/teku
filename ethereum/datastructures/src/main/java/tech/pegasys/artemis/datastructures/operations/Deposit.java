@@ -108,7 +108,7 @@ public class Deposit {
   }
 
   public Bytes32 hash_tree_root() {
-    return HashTreeUtil.merkleHash(
+    return HashTreeUtil.merkleize(
         Arrays.asList(
             HashTreeUtil.hash_tree_root_basic_type(proof.toArray(new Bytes32[0])),
             HashTreeUtil.hash_tree_root_basic_type(SSZ.encodeUInt64(index.longValue())),

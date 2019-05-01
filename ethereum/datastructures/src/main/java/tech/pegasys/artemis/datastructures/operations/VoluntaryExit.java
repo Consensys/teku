@@ -110,7 +110,7 @@ public class VoluntaryExit {
     }
 
     return Bytes32.rightPad(
-        HashTreeUtil.merkleHash(
+        HashTreeUtil.merkleize(
             Arrays.asList(
                 HashTreeUtil.hash_tree_root_basic_type(SSZ.encodeUInt64(epoch.longValue())),
                 HashTreeUtil.hash_tree_root_basic_type(
@@ -118,7 +118,7 @@ public class VoluntaryExit {
   }
 
   public Bytes32 hash_tree_root() {
-    return HashTreeUtil.merkleHash(
+    return HashTreeUtil.merkleize(
         Arrays.asList(
             HashTreeUtil.hash_tree_root_basic_type(SSZ.encodeUInt64(epoch.longValue())),
             HashTreeUtil.hash_tree_root_basic_type(SSZ.encodeUInt64(validator_index.longValue())),

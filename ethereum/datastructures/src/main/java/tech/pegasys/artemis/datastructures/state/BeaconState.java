@@ -714,7 +714,7 @@ public class BeaconState {
   }
 
   public Bytes32 hash_tree_root() {
-    return HashTreeUtil.merkleHash(
+    return HashTreeUtil.merkleize(
         Arrays.asList(
             // Misc
             HashTreeUtil.hash_tree_root_basic_type(SSZ.encodeUInt64(slot.longValue())),
@@ -722,7 +722,7 @@ public class BeaconState {
             fork.hash_tree_root(),
             // Validator registry
             HashTreeUtil.mix_in_length(
-                HashTreeUtil.merkleHash(
+                HashTreeUtil.merkleize(
                     validator_registry.stream()
                         .map(item -> item.hash_tree_root())
                         .collect(Collectors.toList())),
@@ -748,13 +748,13 @@ public class BeaconState {
             HashTreeUtil.hash_tree_root_basic_type(current_shuffling_seed),
             // Finality
             HashTreeUtil.mix_in_length(
-                HashTreeUtil.merkleHash(
+                HashTreeUtil.merkleize(
                     previous_epoch_attestations.stream()
                         .map(item -> item.hash_tree_root())
                         .collect(Collectors.toList())),
                 previous_epoch_attestations.size()),
             HashTreeUtil.mix_in_length(
-                HashTreeUtil.merkleHash(
+                HashTreeUtil.merkleize(
                     current_epoch_attestations.stream()
                         .map(item -> item.hash_tree_root())
                         .collect(Collectors.toList())),
@@ -770,7 +770,7 @@ public class BeaconState {
             HashTreeUtil.hash_tree_root_basic_type(SSZ.encodeUInt64(finalized_epoch.longValue())),
             HashTreeUtil.hash_tree_root_basic_type(finalized_root),
             // Recent state
-            HashTreeUtil.merkleHash(
+            HashTreeUtil.merkleize(
                 latest_crosslinks.stream()
                     .map(item -> item.hash_tree_root())
                     .collect(Collectors.toList())),
@@ -789,7 +789,7 @@ public class BeaconState {
             // Ethereum 1.0 chain data
             latest_eth1_data.hash_tree_root(),
             HashTreeUtil.mix_in_length(
-                HashTreeUtil.merkleHash(
+                HashTreeUtil.merkleize(
                     eth1_data_votes.stream()
                         .map(item -> item.hash_tree_root())
                         .collect(Collectors.toList())),

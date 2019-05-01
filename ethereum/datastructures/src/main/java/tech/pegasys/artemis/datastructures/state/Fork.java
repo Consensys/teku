@@ -111,7 +111,7 @@ public class Fork {
   }
 
   public Bytes32 hash_tree_root() {
-    return HashTreeUtil.merkleHash(
+    return HashTreeUtil.merkleize(
         Arrays.asList(
             HashTreeUtil.hash_tree_root_basic_type(previous_version),
             HashTreeUtil.hash_tree_root_basic_type(current_version),

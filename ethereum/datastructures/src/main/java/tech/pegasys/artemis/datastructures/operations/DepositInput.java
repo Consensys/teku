@@ -114,14 +114,14 @@ public final class DepositInput {
     }
 
     return Bytes32.rightPad(
-        HashTreeUtil.merkleHash(
+        HashTreeUtil.merkleize(
             Arrays.asList(
                 HashTreeUtil.hash_tree_root_basic_type(pubkey.toBytes()),
                 HashTreeUtil.hash_tree_root_basic_type(withdrawal_credentials))));
   }
 
   public Bytes32 hash_tree_root() {
-    return HashTreeUtil.merkleHash(
+    return HashTreeUtil.merkleize(
         Arrays.asList(
             HashTreeUtil.hash_tree_root_basic_type(pubkey.toBytes()),
             HashTreeUtil.hash_tree_root_basic_type(withdrawal_credentials),

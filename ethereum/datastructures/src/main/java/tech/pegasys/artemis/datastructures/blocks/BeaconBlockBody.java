@@ -217,42 +217,42 @@ public class BeaconBlockBody {
   }
 
   public Bytes32 hash_tree_root() {
-    return HashTreeUtil.merkleHash(
+    return HashTreeUtil.merkleize(
         Arrays.asList(
             HashTreeUtil.hash_tree_root_basic_type(randao_reveal.toBytes()),
             eth1_data.hash_tree_root(),
             HashTreeUtil.mix_in_length(
-                HashTreeUtil.merkleHash(
+                HashTreeUtil.merkleize(
                     proposer_slashings.stream()
                         .map(item -> item.hash_tree_root())
                         .collect(Collectors.toList())),
                 proposer_slashings.size()),
             HashTreeUtil.mix_in_length(
-                HashTreeUtil.merkleHash(
+                HashTreeUtil.merkleize(
                     attester_slashings.stream()
                         .map(item -> item.hash_tree_root())
                         .collect(Collectors.toList())),
                 attester_slashings.size()),
             HashTreeUtil.mix_in_length(
-                HashTreeUtil.merkleHash(
+                HashTreeUtil.merkleize(
                     attestations.stream()
                         .map(item -> item.hash_tree_root())
                         .collect(Collectors.toList())),
                 attestations.size()),
             HashTreeUtil.mix_in_length(
-                HashTreeUtil.merkleHash(
+                HashTreeUtil.merkleize(
                     deposits.stream()
                         .map(item -> item.hash_tree_root())
                         .collect(Collectors.toList())),
                 deposits.size()),
             HashTreeUtil.mix_in_length(
-                HashTreeUtil.merkleHash(
+                HashTreeUtil.merkleize(
                     voluntary_exits.stream()
                         .map(item -> item.hash_tree_root())
                         .collect(Collectors.toList())),
                 voluntary_exits.size()),
             HashTreeUtil.mix_in_length(
-                HashTreeUtil.merkleHash(
+                HashTreeUtil.merkleize(
                     transfers.stream()
                         .map(item -> item.hash_tree_root())
                         .collect(Collectors.toList())),

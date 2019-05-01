@@ -104,7 +104,7 @@ public final class Eth1DataVote implements Copyable<Eth1DataVote> {
   }
 
   public Bytes32 hash_tree_root() {
-    return HashTreeUtil.merkleHash(
+    return HashTreeUtil.merkleize(
         Arrays.asList(
             eth1_data.hash_tree_root(),
             HashTreeUtil.hash_tree_root_basic_type(SSZ.encodeUInt64(vote_count.longValue()))));
