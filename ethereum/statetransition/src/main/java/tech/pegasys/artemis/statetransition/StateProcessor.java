@@ -113,18 +113,8 @@ public class StateProcessor {
 
     System.out.println("\n");
     LOG.log(Level.INFO, ANSI_WHITE_BOLD + "******* Slot Event *******" + ANSI_RESET);
-    LOG.log(
-        Level.INFO,
-        "Node time:                            "
-            + nodeTime
-            + " |  "
-            + nodeTime % (Constants.GENESIS_SLOT * Constants.SECONDS_PER_SLOT));
-    LOG.log(
-        Level.INFO,
-        "Node slot:                             "
-            + nodeSlot
-            + " |  "
-            + nodeSlot % Constants.GENESIS_SLOT);
+    LOG.log(Level.INFO, "Node time:                            " + nodeTime);
+    LOG.log(Level.INFO, "Node slot:                             " + nodeSlot);
 
     synchronized (this.store.getSyncObject()) {
       try {
@@ -147,12 +137,7 @@ public class StateProcessor {
     // Update the block that is subjectively the head of the chain  using lmd_ghost
     LOG.log(Level.INFO, ANSI_PURPLE + "Updating head block using LMDGhost." + ANSI_RESET);
     updateHeadBlockUsingLMDGhost();
-    LOG.log(
-        Level.INFO,
-        "Head block slot:                      "
-            + headBlock.getSlot()
-            + "  |  "
-            + headBlock.getSlot() % Constants.GENESIS_SLOT);
+    LOG.log(Level.INFO, "Head block slot:                      " + headBlock.getSlot());
 
     // Get head block's state, and initialize a newHeadState variable to run state transition on
     BeaconState headBlockState = store.getState(headBlock.getState_root()).get();
@@ -160,18 +145,8 @@ public class StateProcessor {
         BeaconStateUtil.get_epoch_start_slot(headBlockState.getJustified_epoch());
     long finalizedBlockSlot =
         BeaconStateUtil.get_epoch_start_slot(headBlockState.getFinalized_epoch());
-    LOG.log(
-        Level.INFO,
-        "Justified block slot:                 "
-            + justifiedBlockSlot
-            + "  |  "
-            + justifiedBlockSlot % Constants.GENESIS_SLOT);
-    LOG.log(
-        Level.INFO,
-        "Finalized block slot:                 "
-            + finalizedBlockSlot
-            + "  |  "
-            + finalizedBlockSlot % Constants.GENESIS_SLOT);
+    LOG.log(Level.INFO, "Justified block slot:                 " + justifiedBlockSlot);
+    LOG.log(Level.INFO, "Finalized block slot:                 " + finalizedBlockSlot);
 
     BeaconStateWithCache newHeadState =
         BeaconStateWithCache.deepCopy((BeaconStateWithCache) headBlockState);
