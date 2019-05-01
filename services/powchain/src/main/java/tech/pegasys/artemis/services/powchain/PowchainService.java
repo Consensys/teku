@@ -13,19 +13,30 @@
 
 package tech.pegasys.artemis.services.powchain;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import com.google.common.eventbus.EventBus;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.Reader;
 import java.math.BigInteger;
+import java.nio.ByteOrder;
 import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Collections;
 import net.consensys.cava.bytes.Bytes;
 import org.apache.logging.log4j.Level;
 import org.web3j.protocol.core.methods.response.Log;
 import tech.pegasys.artemis.ganache.GanacheController;
 import tech.pegasys.artemis.pow.DepositContractListener;
-import tech.pegasys.artemis.pow.DepositContractListenerFactory;
 import tech.pegasys.artemis.pow.api.Eth2GenesisEvent;
 import tech.pegasys.artemis.pow.contract.DepositContract;
 import tech.pegasys.artemis.pow.contract.DepositContract.Eth2GenesisEventResponse;
+import tech.pegasys.artemis.pow.event.Deposit;
 import tech.pegasys.artemis.pow.event.Eth2Genesis;
 import tech.pegasys.artemis.services.ServiceConfig;
 import tech.pegasys.artemis.services.ServiceInterface;
@@ -60,9 +71,54 @@ public class PowchainService implements ServiceInterface {
   @Override
   public void run() {
     if (depositSimulation) {
-      controller = new GanacheController(25, 6000);
-      listener = DepositContractListenerFactory.simulationDepositContract(eventBus, controller);
-      simulateDepositActivity(listener.getContract(), this.eventBus);
+      JsonParser parser = new JsonParser();
+      try {
+        String simFile = System.getProperty("user.dir") + "/" + "validator_test_data.json";
+        Reader reader = Files.newBufferedReader(Paths.get(simFile), UTF_8);
+        JsonArray validatorsJSON = ((JsonArray) parser.parse(reader));
+        validatorsJSON.forEach(
+            object -> {
+              if (object.getAsJsonObject().get("events") != null) {
+                JsonArray events = object.getAsJsonObject().get("events").getAsJsonArray();
+                events.forEach(
+                    event -> {
+                      DepositContract.DepositEventResponse response =
+                          new DepositContract.DepositEventResponse();
+                      response.data =
+                          Bytes.fromHexString(event.getAsJsonObject().get("data").getAsString())
+                              .toArray();
+                      response.merkle_tree_index =
+                          Bytes.fromHexString(
+                                  event.getAsJsonObject().get("merkle_tree_index").getAsString())
+                              .toArray();
+                      Deposit deposit = new Deposit(response);
+                      eventBus.post(deposit);
+                    });
+              } else {
+                JsonObject event = object.getAsJsonObject();
+                DepositContract.Eth2GenesisEventResponse response =
+                    new DepositContract.Eth2GenesisEventResponse();
+                response.deposit_root =
+                    Bytes.fromHexString(event.getAsJsonObject().get("deposit_root").getAsString())
+                        .toArray();
+                response.deposit_count =
+                    Bytes.ofUnsignedInt(
+                            event.getAsJsonObject().get("deposit_count").getAsInt(),
+                            ByteOrder.BIG_ENDIAN)
+                        .toArray();
+                response.time =
+                    Bytes.ofUnsignedLong(
+                            event.getAsJsonObject().get("time").getAsLong(), ByteOrder.BIG_ENDIAN)
+                        .toArray();
+                Eth2Genesis eth2Genesis = new Eth2Genesis(response);
+                eventBus.post(eth2Genesis);
+              }
+            });
+      } catch (FileNotFoundException e) {
+        LOG.log(Level.ERROR, e.getMessage());
+      } catch (IOException e) {
+        LOG.log(Level.ERROR, e.getMessage());
+      }
     } else {
       Eth2GenesisEventResponse response = new Eth2GenesisEventResponse();
       response.log =

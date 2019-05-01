@@ -30,6 +30,7 @@ ganache-cli/
 pow/src/main/resources/keys.json
 *.csv*
 *.json*
+!validator_test_data.json
 *.vscode/
 pow/truffle/.vscode/
 pow/truffle/node_modules/
