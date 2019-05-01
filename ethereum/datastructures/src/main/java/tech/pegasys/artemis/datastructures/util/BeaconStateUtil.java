@@ -484,7 +484,7 @@ public class BeaconStateUtil {
     if (validator.getWithdrawal_epoch() != -1) {
       checkArgument(
           state.getSlot() < get_epoch_start_slot(validator.getWithdrawal_epoch()),
-          "checkArgument threw and exception in get_randao_mix()");
+          "checkArgument threw an exception in get_randao_mix()");
     }
     exit_validator(state, index);
     state
@@ -495,7 +495,6 @@ public class BeaconStateUtil {
                     .getLatest_slashed_balances()
                     .get(toIntExact(get_current_epoch(state)) % LATEST_SLASHED_EXIT_LENGTH)
                 + get_effective_balance(state, index));
-
     int whistleblower_index = get_beacon_proposer_index(state, state.getSlot());
     long whistleblower_reward = get_effective_balance(state, index) / WHISTLEBLOWER_REWARD_QUOTIENT;
     state
@@ -520,8 +519,13 @@ public class BeaconStateUtil {
    */
   public static void prepare_validator_for_withdrawal(BeaconState state, int index) {
     Validator validator = state.getValidator_registry().get(index);
+    System.out.println(
+        "withdrawal epochhhh: "
+            + get_current_epoch(state)
+            + Constants.MIN_VALIDATOR_WITHDRAWABILITY_DELAY);
     validator.setWithdrawal_epoch(
         get_current_epoch(state) + Constants.MIN_VALIDATOR_WITHDRAWABILITY_DELAY);
+    System.out.println("withdrawal epoch: " + validator.getWithdrawal_epoch());
   }
 
   /**

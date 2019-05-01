@@ -680,11 +680,12 @@ public final class EpochProcessorUtil {
       long total_balance = BeaconStateUtil.get_total_balance(state, active_validators);
 
       ListIterator<Validator> itr = state.getValidator_registry().listIterator();
+
       while (itr.hasNext()) {
         int index = itr.nextIndex();
         Validator validator = itr.next();
-
         if (validator.isSlashed()
+            && validator.getWithdrawal_epoch() != -1
             && currentEpoch
                 == validator.getWithdrawal_epoch() - Constants.LATEST_SLASHED_EXIT_LENGTH / 2) {
           int epoch_index = toIntExact(currentEpoch) % Constants.LATEST_SLASHED_EXIT_LENGTH;
@@ -692,8 +693,8 @@ public final class EpochProcessorUtil {
           long total_at_start =
               state
                   .getLatest_slashed_balances()
-                  .get((epoch_index + 1) % Constants.LATEST_SLASHED_EXIT_LENGTH);
-          long total_at_end = state.getLatest_slashed_balances().get(epoch_index);
+                  .get((epoch_index + 1) % Constants.LATEST_SLASHED_EXIT_LENGTH); // 1
+          long total_at_end = state.getLatest_slashed_balances().get(epoch_index); // 0
           long total_penalties = total_at_end - total_at_start;
           long penalty =
               BeaconStateUtil.get_effective_balance(state, validator)
