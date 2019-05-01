@@ -235,7 +235,7 @@ public final class EpochProcessorUtil {
               * previous_balance
               / previous_total_balance;
       apply_penalty_or_reward(balances, index, reward_delta, true);
-      missing_indices.remove(index);
+      missing_indices.remove(missing_indices.indexOf(index));
     }
 
     // apply penalties to active validator indices not in the list

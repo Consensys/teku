@@ -17,7 +17,6 @@ import static tech.pegasys.artemis.datastructures.Constants.SLOTS_PER_EPOCH;
 
 import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
@@ -135,10 +134,7 @@ public class StateTransition {
 
       LOG.log(
           Level.INFO,
-          "Epoch:                                  "
-              + BeaconStateUtil.get_current_epoch(state)
-              + " |  "
-              + BeaconStateUtil.get_current_epoch(state) % Constants.GENESIS_EPOCH,
+          "Epoch:                                  " + BeaconStateUtil.get_current_epoch(state),
           printEnabled);
       EpochProcessorUtil.updateEth1Data(state);
       LOG.log(

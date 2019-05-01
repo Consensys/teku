@@ -849,6 +849,15 @@ public class BeaconStateUtil {
         && ((BeaconStateWithCache) state).getCurrentBeaconProposerIndex() > -1) {
       return ((BeaconStateWithCache) state).getCurrentBeaconProposerIndex();
     } else {
+      long epoch = slot_to_epoch(slot);
+      long current_epoch = get_current_epoch(state);
+      long previous_epoch = get_previous_epoch(state);
+      long next_epoch = current_epoch + 1;
+
+      checkArgument(
+          previous_epoch <= epoch && epoch <= next_epoch,
+          "checkArgument threw an exception in get_beacon_proposer_index()");
+
       List<Integer> first_committee =
           get_crosslink_committees_at_slot(state, slot).get(0).getCommittee();
 
