@@ -35,3 +35,8 @@ configure_node() {
   echo "DOMAIN_VOLUNTARY_EXIT = 4" >> ../../../config/runConfig.$NODE.toml
   echo "DOMAIN_TRANSFER = 5" >> ../../../config/runConfig.$NODE.toml
 }
+
+usage() {
+  echo "Usage: sh run.sh NODES"
+  echo "Runs a simulation of artemis with NODES nodes, where NODES must be greater than zero"
+}

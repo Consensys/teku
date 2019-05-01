@@ -5,6 +5,12 @@ NODES=$1
 
 source $DIR/utils.sh
 
+if [[ "$#" -ne 0 || "$NODES" -lt 1 ]]
+then 
+  usage 
+  exit
+fi
+
 #configure_node 0 5
 COMBINATIONS=$(seq 19000 $((19000 + $NODES - 1)))
 PEERS=$(echo "$COMBINATIONS" | sed -E "s/^([0-9]+)/\"hob+tcp:\/\/abcf@localhost:\1\"/g")
@@ -12,8 +18,8 @@ PEERS=$(echo "$COMBINATIONS" | sed -E "s/^([0-9]+)/\"hob+tcp:\/\/abcf@localhost:
 # Clean the demo directory
 clean demo
 
-i=0
 # Loop over all of the nodes to be created and configure them
+i=0
 while [ $i -lt $NODES ] 
 do
   configure_node $i $NODES
