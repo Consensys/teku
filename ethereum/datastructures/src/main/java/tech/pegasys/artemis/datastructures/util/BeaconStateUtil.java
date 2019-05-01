@@ -633,7 +633,8 @@ public class BeaconStateUtil {
 
     int committeesPerEpoch = toIntExact(get_epoch_committee_count(length));
 
-    return split(shuffled_active_validator_indices, committeesPerEpoch);
+    List<List<Integer>> split = split(shuffled_active_validator_indices, committeesPerEpoch);
+    return split;
   }
 
   /**
