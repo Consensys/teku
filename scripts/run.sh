@@ -11,12 +11,16 @@ then
   exit
 fi
 
+# Clean the demo directory
+clean demo
+
 #configure_node 0 5
 COMBINATIONS=$(seq 19000 $((19000 + $NODES - 1)))
 PEERS=$(echo "$COMBINATIONS" | sed -E "s/^([0-9]+)/\"hob+tcp:\/\/abcf@localhost:\1\"/g")
 
-# Clean the demo directory
-clean demo
+# Create a list of all the peers for the configure node procedure to use
+COMBINATIONS=$(seq 19000 $((19000 + $NODES - 1)))
+PEERS=$(echo "$COMBINATIONS" | sed -E "s/^([0-9]+)/\"hob+tcp:\/\/abcf@localhost:\1\"/g")
 
 # Loop over all of the nodes to be created and configure them
 i=0
