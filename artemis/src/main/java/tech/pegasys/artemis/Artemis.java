@@ -27,18 +27,24 @@ public final class Artemis {
       CommandLineArguments cliArgs = new CommandLineArguments();
       CommandLine commandLine = new CommandLine(cliArgs);
       commandLine.parse(args);
-      BeaconNode node = new BeaconNode(commandLine, cliArgs);
-      node.start();
-      // Detect SIGTERM
-      Runtime.getRuntime()
-          .addShutdownHook(
-              new Thread() {
-                @Override
-                public void run() {
-                  System.out.println("Artemis is shutting down");
-                  node.stop();
-                }
-              });
+      if (commandLine.isUsageHelpRequested()) {
+        commandLine.usage(System.out);
+        return;
+      } else {
+
+        BeaconNode node = new BeaconNode(commandLine, cliArgs);
+        node.start();
+        // Detect SIGTERM
+        Runtime.getRuntime()
+            .addShutdownHook(
+                new Thread() {
+                  @Override
+                  public void run() {
+                    System.out.println("Artemis is shutting down");
+                    node.stop();
+                  }
+                });
+      }
     } catch (RuntimeException e) {
       System.out.println("Artemis failed to start. \n" + e.toString());
       System.exit(1);
