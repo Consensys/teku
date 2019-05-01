@@ -36,3 +36,4 @@ pow/truffle/.vscode/
 pow/truffle/node_modules/
 pow/truffle/npm-debug.*
 scripts/demo
+config/runConfig.*
