@@ -1,26 +1,19 @@
 #!/bin/sh
 
-rm -rf demo
-mkdir -p demo
+source $(dirname $0)/run_functions.sh
 
-tar -zxf ../build/distributions/artemis-*.tar.gz -C ./demo/
-mv ./demo/artemis-* ./demo/node_0
-tar -zxf ../build/distributions/artemis-*.tar.gz -C ./demo/
-mv ./demo/artemis-* ./demo/node_1
-tar -zxf ../build/distributions/artemis-*.tar.gz -C ./demo/
-mv ./demo/artemis-* ./demo/node_2
-tar -zxf ../build/distributions/artemis-*.tar.gz -C ./demo/
-mv ./demo/artemis-* ./demo/node_3
+clean demo
 
-ln -s ../../../config ./demo/node_0/
-ln -s ../../../config ./demo/node_1/
-ln -s ../../../config ./demo/node_2/
-ln -s ../../../config ./demo/node_3/
+NODES=$1
+i=0
 
-cd demo/node_0 && ln -s ./bin/artemis . && cd ../../
-cd demo/node_1 && ln -s ./bin/artemis . && cd ../../
-cd demo/node_2 && ln -s ./bin/artemis . && cd ../../
-cd demo/node_3 && ln -s ./bin/artemis . && cd ../
+while [ $i -lt $NODES ] 
+do
+  configure_node $i
+  i=$(($i + 1))
+done
+
+cd demo/
 
 tmux new-session -d -s foo 'cd node_0 && ./artemis --config=./config/demoConfig.0.toml --logging=INFO'
 tmux split-window -v -t 0 'cd node_1 && ./artemis --config=./config/demoConfig.1.toml --logging=INFO'
