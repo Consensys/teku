@@ -1,15 +1,22 @@
 #!/bin/sh
 
-source $(dirname $0)/run_functions.sh
+DIR=$(dirname $0)
+NODES=$1
 
+source $DIR/utils.sh
+
+#configure_node 0 5
+COMBINATIONS=$(seq 19000 $((19000 + $NODES - 1)))
+PEERS=$(echo "$COMBINATIONS" | sed -E "s/^([0-9]+)/\"hob+tcp:\/\/abcf@localhost:\1\"/g")
+
+# Clean the demo directory
 clean demo
 
-NODES=$1
 i=0
-
+# Loop over all of the nodes to be created and configure them
 while [ $i -lt $NODES ] 
 do
-  configure_node $i
+  configure_node $i $NODES
   i=$(($i + 1))
 done
 
