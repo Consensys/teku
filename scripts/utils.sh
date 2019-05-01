@@ -51,9 +51,12 @@ configure_node() {
 }
 
 create_tmux_panes() {
+  idx=$1
+  local start=$idx
+
   # Create at most 4 vertical splits
-  local idx=1
-  while [[ $idx -lt $NODES && $idx -lt 4 ]]
+  local end1=$(($start + 3))
+  while [[ $idx -lt $NODES && $idx -lt $end1 ]]
   do
     tmux split-window -v "cd node_$idx && ./artemis --config=./config/runConfig.$idx.toml --logging=INFO"
     idx=$(($idx + 1))
@@ -61,7 +64,8 @@ create_tmux_panes() {
 
   # If necessary, create up to 5 horizontal splits
   local j=2
-  while [[ $idx -lt $NODES && $idx -lt 9 ]]
+  local end2=$(($start + 8))
+  while [[ $idx -lt $NODES && $idx -lt $end2 ]]
   do
     tmux split-window -h -t $j "cd node_$idx && ./artemis --config=./config/runConfig.$idx.toml --logging=INFO"
     idx=$(($idx + 1))
@@ -74,7 +78,29 @@ create_tmux_panes() {
   done
 }
 
+create_tmux_windows() {
+  local NODES=$1
+
+  cd demo/
+  tmux new-session -d -s foo 'cd node_0 && ./artemis --config=./config/runConfig.0.toml --logging=INFO'
+  
+  idx=1
+  create_tmux_panes $idx
+  tmux select-layout tiled
+  tmux rename-window 'the dude abides'
+
+  while [[ $idx -lt $NODES ]]
+  do
+    tmux new-window -n 'the dude abides again...' "cd node_$idx && ./artemis --config=./config/runConfig.$idx.toml --logging=INFO"
+    idx=$(($idx + 1))
+    create_tmux_panes $idx
+    tmux select-layout tiled
+  done
+
+  tmux attach-session -d
+}
+
 usage() {
   echo "Usage: sh run.sh NODES"
-  echo "Runs a simulation of artemis with NODES nodes, where NODES must be greater than zero"
+  echo "Runs a simulation of artemis with NODES nodes, where NODES > 0 and NODES < 256"
 }

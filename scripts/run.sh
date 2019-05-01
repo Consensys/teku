@@ -5,7 +5,7 @@ NODES=$1
 
 source $DIR/utils.sh
 
-if [[ "$#" -ne 1 || "$NODES" -lt 1 ]]
+if [[ "$#" -ne 1 || "$NODES" -lt 1 || "$NODES" -gt 255 ]]
 then 
   usage 
   exit
@@ -26,13 +26,4 @@ do
   i=$(($i + 1))
 done
 
-cd demo/
-
-tmux new-session -d -s foo 'cd node_0 && ./artemis --config=./config/runConfig.0.toml --logging=INFO'
-
-# TODO
-create_tmux_panes 
-
-tmux select-layout tiled
-tmux rename-window 'the dude abides'
-tmux attach-session -d
+create_tmux_windows $NODES
