@@ -23,7 +23,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.junit.BouncyCastleExtension;
-import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
@@ -47,7 +47,7 @@ class BeaconStateWithCacheTest {
     }
   }
 
-  @Disabled
+  @Test
   void deepCopyModifyForkDoesNotEqualTest() {
     BeaconStateWithCache state = (BeaconStateWithCache) newState(1);
     BeaconState deepCopy = BeaconStateWithCache.deepCopy(state);
@@ -62,7 +62,7 @@ class BeaconStateWithCacheTest {
         .isNotEqualTo(state.getFork().getPrevious_version());
   }
 
-  @Disabled
+  @Test
   void deepCopyModifyIncrementSlotDoesNotEqualTest() {
     BeaconStateWithCache state = (BeaconStateWithCache) newState(1);
     BeaconState deepCopy = BeaconStateWithCache.deepCopy(state);
@@ -72,7 +72,7 @@ class BeaconStateWithCacheTest {
     assertThat(deepCopy.getSlot()).isNotEqualTo(state.getSlot());
   }
 
-  @Disabled
+  @Test
   void deepCopyModifyModifyValidatorsDoesNotEqualTest() {
     BeaconStateWithCache state = (BeaconStateWithCache) newState(1);
 
