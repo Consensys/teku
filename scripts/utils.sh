@@ -50,6 +50,30 @@ configure_node() {
   create_config "$NODE" "$2" "$3"
 }
 
+create_tmux_panes() {
+  # Create at most 4 vertical splits
+  local idx=1
+  while [[ $idx -lt $NODES && $idx -lt 4 ]]
+  do
+    tmux split-window -v "cd node_$idx && ./artemis --config=./config/runConfig.$idx.toml --logging=INFO"
+    idx=$(($idx + 1))
+  done
+
+  # If necessary, create up to 5 horizontal splits
+  local j=2
+  while [[ $idx -lt $NODES && $idx -lt 9 ]]
+  do
+    tmux split-window -h -t $j "cd node_$idx && ./artemis --config=./config/runConfig.$idx.toml --logging=INFO"
+    idx=$(($idx + 1))
+    if [[ $j -eq 2 ]]
+    then
+      j=4 
+    else
+      j=$(($j + 1))
+    fi
+  done
+}
+
 usage() {
   echo "Usage: sh run.sh NODES"
   echo "Runs a simulation of artemis with NODES nodes, where NODES must be greater than zero"
