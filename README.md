@@ -47,10 +47,6 @@ All the unit tests are run as part of the build, but can be explicitly triggered
 ```
 $ ./gradlew test
 ```
-The integration tests can be triggered with:
-```
-$ ./gradlew integrationTest
-```
 
 ## Run Options
 
