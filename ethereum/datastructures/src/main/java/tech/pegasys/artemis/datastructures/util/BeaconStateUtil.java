@@ -114,7 +114,6 @@ public class BeaconStateUtil {
    */
   public static ArrayList<CrosslinkCommittee> get_crosslink_committees_at_slot(
       BeaconState state, long slot, boolean registry_change) throws IllegalArgumentException {
-    //     epoch: 3005 current_epoch: 3005 previous_epoch: 67108864 next_epoch: 3006
     long epoch = slot_to_epoch(slot);
     long current_epoch = get_current_epoch(state);
     long previous_epoch = get_previous_epoch(state);
@@ -846,15 +845,15 @@ public class BeaconStateUtil {
    */
   public static int get_beacon_proposer_index(BeaconState state, long slot)
       throws IllegalArgumentException {
-    //    if (state instanceof BeaconStateWithCache
-    //        && ((BeaconStateWithCache) state).getCurrentBeaconProposerIndex() > -1) {
-    //      return ((BeaconStateWithCache) state).getCurrentBeaconProposerIndex();
-    //    } else {
-    List<Integer> first_committee =
-        get_crosslink_committees_at_slot(state, slot).get(0).getCommittee();
+    if (state instanceof BeaconStateWithCache
+        && ((BeaconStateWithCache) state).getCurrentBeaconProposerIndex() > -1) {
+      return ((BeaconStateWithCache) state).getCurrentBeaconProposerIndex();
+    } else {
+      List<Integer> first_committee =
+          get_crosslink_committees_at_slot(state, slot).get(0).getCommittee();
 
-    return first_committee.get(Math.toIntExact(slot % first_committee.size()));
-    //    }
+      return first_committee.get(Math.toIntExact(slot % first_committee.size()));
+    }
   }
 
   /**
