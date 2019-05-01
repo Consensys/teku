@@ -29,7 +29,7 @@ import tech.pegasys.artemis.datastructures.blocks.Eth1DataVote;
 
 public class BeaconState {
   // Misc
-  public long slot;
+  protected long slot;
   protected long genesis_time;
   protected Fork fork; // For versioning hard forks
 
