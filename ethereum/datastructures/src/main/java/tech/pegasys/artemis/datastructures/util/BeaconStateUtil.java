@@ -78,7 +78,6 @@ public class BeaconStateUtil {
     for (Deposit deposit : genesis_validator_deposits) {
       process_deposit(state, deposit);
     }
-
     // Process genesis activations
     for (int validator_index = 0;
         validator_index < state.getValidator_registry().size();
@@ -87,7 +86,6 @@ public class BeaconStateUtil {
         activate_validator(state, validator_index, true);
       }
     }
-
     Bytes32 genesis_active_index_root =
         integerListHashTreeRoot(
             ValidatorsUtil.get_active_validator_indices(
@@ -116,6 +114,7 @@ public class BeaconStateUtil {
    */
   public static ArrayList<CrosslinkCommittee> get_crosslink_committees_at_slot(
       BeaconState state, long slot, boolean registry_change) throws IllegalArgumentException {
+    //     epoch: 3005 current_epoch: 3005 previous_epoch: 67108864 next_epoch: 3006
     long epoch = slot_to_epoch(slot);
     long current_epoch = get_current_epoch(state);
     long previous_epoch = get_previous_epoch(state);
@@ -389,7 +388,7 @@ public class BeaconStateUtil {
    */
   public static long get_previous_epoch(BeaconState state) {
     long current_epoch_minus_one = get_current_epoch(state) - 1;
-    return current_epoch_minus_one >= GENESIS_EPOCH ? current_epoch_minus_one : GENESIS_EPOCH;
+    return Math.max(current_epoch_minus_one, GENESIS_EPOCH);
   }
 
   /**
@@ -544,6 +543,7 @@ public class BeaconStateUtil {
         epoch <= get_current_epoch(state), "checkArgument threw and exception in get_randao_mix()");
     long index = epoch % LATEST_RANDAO_MIXES_LENGTH;
     List<Bytes32> randao_mixes = state.getLatest_randao_mixes();
+    if (index == -1) index = 0;
     return randao_mixes.get(toIntExact(index));
   }
 
@@ -846,24 +846,15 @@ public class BeaconStateUtil {
    */
   public static int get_beacon_proposer_index(BeaconState state, long slot)
       throws IllegalArgumentException {
-    if (state instanceof BeaconStateWithCache
-        && ((BeaconStateWithCache) state).getCurrentBeaconProposerIndex() > -1) {
-      return ((BeaconStateWithCache) state).getCurrentBeaconProposerIndex();
-    } else {
-      long epoch = slot_to_epoch(slot);
-      long current_epoch = get_current_epoch(state);
-      long previous_epoch = get_previous_epoch(state);
-      long next_epoch = current_epoch + 1;
+    //    if (state instanceof BeaconStateWithCache
+    //        && ((BeaconStateWithCache) state).getCurrentBeaconProposerIndex() > -1) {
+    //      return ((BeaconStateWithCache) state).getCurrentBeaconProposerIndex();
+    //    } else {
+    List<Integer> first_committee =
+        get_crosslink_committees_at_slot(state, slot).get(0).getCommittee();
 
-      checkArgument(
-          previous_epoch <= epoch && epoch <= next_epoch,
-          "checkArgument threw an exception in get_beacon_proposer_index()");
-
-      List<Integer> first_committee =
-          get_crosslink_committees_at_slot(state, slot).get(0).getCommittee();
-
-      return first_committee.get(Math.toIntExact(epoch % first_committee.size()));
-    }
+    return first_committee.get(Math.toIntExact(slot % first_committee.size()));
+    //    }
   }
 
   /**
