@@ -1,10 +1,15 @@
 #!/bin/sh
 
+# Get the working directory of this script file
 DIR=$(dirname $0)
+
+# Get the shell parameter that was provided
 NODES=$1
 
+# Source the functions from the utilities script
 source $DIR/utils.sh
 
+# If the shell parameters are invalid, print the usage statement and exit
 if [[ "$#" -ne 1 || "$NODES" -lt 1 || "$NODES" -gt 255 ]]
 then 
   usage 
@@ -26,4 +31,5 @@ do
   i=$(($i + 1))
 done
 
+# Create a properly formatted tmux session for the simulation
 create_tmux_windows $NODES
