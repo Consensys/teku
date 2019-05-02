@@ -39,7 +39,7 @@ class BeaconNodeIntegrationTest {
   private static ObjectMapper mapper = new ObjectMapper();
 
   @Test
-  void testThreeNodes() throws InterruptedException, JsonProcessingException, IOException {
+  void testTwoNodes() throws InterruptedException, JsonProcessingException, IOException {
     CommandLineArguments cliArgs = new CommandLineArguments();
     CommandLine commandLine = new CommandLine(cliArgs);
     commandLine.parse("");
