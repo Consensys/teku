@@ -21,6 +21,7 @@ import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.ssz.SSZ;
 import tech.pegasys.artemis.datastructures.Copyable;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
+import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
 
 public class Crosslink implements Copyable<Crosslink> {
 
@@ -103,7 +104,7 @@ public class Crosslink implements Copyable<Crosslink> {
   public Bytes32 hash_tree_root() {
     return HashTreeUtil.merkleize(
         Arrays.asList(
-            HashTreeUtil.hash_tree_root_basic_type(SSZ.encodeUInt64(epoch.longValue())),
-            HashTreeUtil.hash_tree_root_basic_type(crosslink_data_root)));
+            HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(epoch.longValue())),
+            HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, crosslink_data_root)));
   }
 }

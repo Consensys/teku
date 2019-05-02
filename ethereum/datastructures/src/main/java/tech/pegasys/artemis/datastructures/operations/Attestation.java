@@ -21,8 +21,10 @@ import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.ssz.SSZ;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
+import tech.pegasys.artemis.util.hashtree.Merkleizable;
+import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
 
-public class Attestation {
+public class Attestation implements Merkleizable {
 
   private Bytes aggregation_bitfield;
   private AttestationData data;
@@ -124,14 +126,13 @@ public class Attestation {
     return data.getSlot();
   }
 
+  @Override
   public Bytes32 hash_tree_root() {
     return HashTreeUtil.merkleize(
         Arrays.asList(
-            HashTreeUtil.hash_tree_root_list_of_basic_type(
-                Arrays.asList(aggregation_bitfield), aggregation_bitfield.size()),
+            HashTreeUtil.hash_tree_root(SSZTypes.LIST_OF_BASIC, aggregation_bitfield),
             data.hash_tree_root(),
-            HashTreeUtil.hash_tree_root_list_of_basic_type(
-                Arrays.asList(custody_bitfield), custody_bitfield.size()),
-            HashTreeUtil.hash_tree_root_basic_type(aggregate_signature.toBytes())));
+            HashTreeUtil.hash_tree_root(SSZTypes.LIST_OF_BASIC, custody_bitfield),
+            HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, aggregate_signature.toBytes())));
   }
 }

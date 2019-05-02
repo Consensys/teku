@@ -19,6 +19,7 @@ import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.ssz.SSZ;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
+import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
 
 public final class Eth1Data {
 
@@ -98,7 +99,7 @@ public final class Eth1Data {
   public Bytes32 hash_tree_root() {
     return HashTreeUtil.merkleize(
         Arrays.asList(
-            HashTreeUtil.hash_tree_root_basic_type(deposit_root),
-            HashTreeUtil.hash_tree_root_basic_type(block_hash)));
+            HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, deposit_root),
+            HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, block_hash)));
   }
 }

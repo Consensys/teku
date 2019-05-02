@@ -19,6 +19,7 @@ import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.ssz.SSZ;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
+import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
 
 public class AttestationDataAndCustodyBit {
 
@@ -91,6 +92,6 @@ public class AttestationDataAndCustodyBit {
     return HashTreeUtil.merkleize(
         Arrays.asList(
             data.hash_tree_root(),
-            HashTreeUtil.hash_tree_root_basic_type(SSZ.encodeBoolean(custody_bit))));
+            HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeBoolean(custody_bit))));
   }
 }

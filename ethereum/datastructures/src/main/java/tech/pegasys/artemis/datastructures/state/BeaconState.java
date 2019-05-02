@@ -32,6 +32,7 @@ import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.datastructures.blocks.Eth1DataVote;
 import tech.pegasys.artemis.datastructures.util.BeaconBlockUtil;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
+import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
 
 public class BeaconState {
   // Misc
@@ -717,8 +718,8 @@ public class BeaconState {
     return HashTreeUtil.merkleize(
         Arrays.asList(
             // Misc
-            HashTreeUtil.hash_tree_root_basic_type(SSZ.encodeUInt64(slot.longValue())),
-            HashTreeUtil.hash_tree_root_basic_type(SSZ.encodeUInt64(genesis_time.longValue())),
+            HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(slot.longValue())),
+            HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(genesis_time.longValue())),
             fork.hash_tree_root(),
             // Validator registry
             HashTreeUtil.mix_in_length(
@@ -732,20 +733,20 @@ public class BeaconState {
                     .map(item -> SSZ.encodeUInt64(item.longValue()))
                     .collect(Collectors.toList()),
                 validator_balances.size()),
-            HashTreeUtil.hash_tree_root_basic_type(
+            HashTreeUtil.hash_tree_root(SSZTypes.BASIC, 
                 SSZ.encodeUInt64(validator_registry_update_epoch.longValue())),
             // Randomness and committees
             HashTreeUtil.hash_tree_root_basic_type(latest_randao_mixes.toArray(new Bytes32[0])),
-            HashTreeUtil.hash_tree_root_basic_type(
+            HashTreeUtil.hash_tree_root(SSZTypes.BASIC, 
                 SSZ.encodeUInt64(previous_shuffling_start_shard.longValue())),
-            HashTreeUtil.hash_tree_root_basic_type(
+            HashTreeUtil.hash_tree_root(SSZTypes.BASIC, 
                 SSZ.encodeUInt64(current_shuffling_start_shard.longValue())),
-            HashTreeUtil.hash_tree_root_basic_type(
+            HashTreeUtil.hash_tree_root(SSZTypes.BASIC, 
                 SSZ.encodeUInt64(previous_shuffling_epoch.longValue())),
-            HashTreeUtil.hash_tree_root_basic_type(
+            HashTreeUtil.hash_tree_root(SSZTypes.BASIC, 
                 SSZ.encodeUInt64(current_shuffling_epoch.longValue())),
-            HashTreeUtil.hash_tree_root_basic_type(previous_shuffling_seed),
-            HashTreeUtil.hash_tree_root_basic_type(current_shuffling_seed),
+            HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, previous_shuffling_seed),
+            HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, current_shuffling_seed),
             // Finality
             HashTreeUtil.mix_in_length(
                 HashTreeUtil.merkleize(
@@ -759,16 +760,16 @@ public class BeaconState {
                         .map(item -> item.hash_tree_root())
                         .collect(Collectors.toList())),
                 current_epoch_attestations.size()),
-            HashTreeUtil.hash_tree_root_basic_type(
+            HashTreeUtil.hash_tree_root(SSZTypes.BASIC, 
                 SSZ.encodeUInt64(previous_justified_epoch.longValue())),
-            HashTreeUtil.hash_tree_root_basic_type(
+            HashTreeUtil.hash_tree_root(SSZTypes.BASIC, 
                 SSZ.encodeUInt64(current_justified_epoch.longValue())),
-            HashTreeUtil.hash_tree_root_basic_type(previous_justified_root),
-            HashTreeUtil.hash_tree_root_basic_type(current_justified_root),
-            HashTreeUtil.hash_tree_root_basic_type(
+            HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, previous_justified_root),
+            HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, current_justified_root),
+            HashTreeUtil.hash_tree_root(SSZTypes.BASIC, 
                 SSZ.encodeUInt64(justification_bitfield.longValue())),
-            HashTreeUtil.hash_tree_root_basic_type(SSZ.encodeUInt64(finalized_epoch.longValue())),
-            HashTreeUtil.hash_tree_root_basic_type(finalized_root),
+            HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(finalized_epoch.longValue())),
+            HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, finalized_root),
             // Recent state
             HashTreeUtil.merkleize(
                 latest_crosslinks.stream()
@@ -794,6 +795,6 @@ public class BeaconState {
                         .map(item -> item.hash_tree_root())
                         .collect(Collectors.toList())),
                 eth1_data_votes.size()),
-            HashTreeUtil.hash_tree_root_basic_type(SSZ.encodeUInt64(deposit_index.longValue()))));
+            HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(deposit_index.longValue()))));
   }
 }

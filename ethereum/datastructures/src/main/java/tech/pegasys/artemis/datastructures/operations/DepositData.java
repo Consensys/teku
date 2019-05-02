@@ -20,6 +20,7 @@ import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.ssz.SSZ;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
+import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
 
 public class DepositData {
 
@@ -105,8 +106,8 @@ public class DepositData {
   public Bytes32 hash_tree_root() {
     return HashTreeUtil.merkleize(
         Arrays.asList(
-            HashTreeUtil.hash_tree_root_basic_type(SSZ.encodeUInt64(amount.longValue())),
-            HashTreeUtil.hash_tree_root_basic_type(SSZ.encodeUInt64(timestamp.longValue())),
+            HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(amount.longValue())),
+            HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(timestamp.longValue())),
             deposit_input.hash_tree_root()));
   }
 }

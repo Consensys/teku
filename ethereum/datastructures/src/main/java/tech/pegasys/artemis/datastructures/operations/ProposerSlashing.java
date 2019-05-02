@@ -21,8 +21,10 @@ import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.ssz.SSZ;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
+import tech.pegasys.artemis.util.hashtree.Merkleizable;
+import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
 
-public class ProposerSlashing {
+public class ProposerSlashing implements Merkleizable {
 
   private UnsignedLong proposer_index;
   private BeaconBlockHeader header_1;
@@ -104,10 +106,11 @@ public class ProposerSlashing {
     this.header_2 = header_2;
   }
 
+  @Override
   public Bytes32 hash_tree_root() {
     return HashTreeUtil.merkleize(
         Arrays.asList(
-            HashTreeUtil.hash_tree_root_basic_type(SSZ.encodeUInt64(proposer_index.longValue())),
+            HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(proposer_index.longValue())),
             header_1.hash_tree_root(),
             header_2.hash_tree_root()));
   }

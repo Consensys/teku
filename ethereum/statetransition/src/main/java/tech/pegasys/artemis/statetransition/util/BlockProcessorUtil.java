@@ -82,6 +82,7 @@ import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
+import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
 
 public final class BlockProcessorUtil {
 
@@ -131,7 +132,7 @@ public final class BlockProcessorUtil {
     checkArgument(
         bls_verify(
             proposer.getPubkey(),
-            HashTreeUtil.hash_tree_root_basic_type(
+            HashTreeUtil.hash_tree_root(SSZTypes.BASIC,
                 SSZ.encodeUInt64(get_current_epoch(state).longValue())),
             block.getBody().getRandao_reveal(),
             get_domain(state.getFork(), get_current_epoch(state), DOMAIN_RANDAO)),

@@ -21,6 +21,7 @@ import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.ssz.SSZ;
 import tech.pegasys.artemis.datastructures.state.Crosslink;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
+import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
 
 public class AttestationData {
 
@@ -203,13 +204,13 @@ public class AttestationData {
   public Bytes32 hash_tree_root() {
     return HashTreeUtil.merkleize(
         Arrays.asList(
-            HashTreeUtil.hash_tree_root_basic_type(SSZ.encodeUInt64(slot.longValue())),
-            HashTreeUtil.hash_tree_root_basic_type(beacon_block_root),
-            HashTreeUtil.hash_tree_root_basic_type(SSZ.encodeUInt64(source_epoch.longValue())),
-            HashTreeUtil.hash_tree_root_basic_type(source_root),
-            HashTreeUtil.hash_tree_root_basic_type(target_root),
-            HashTreeUtil.hash_tree_root_basic_type(SSZ.encodeUInt64(shard.longValue())),
+            HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(slot.longValue())),
+            HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, beacon_block_root),
+            HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(source_epoch.longValue())),
+            HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, source_root),
+            HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, target_root),
+            HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(shard.longValue())),
             previous_crosslink.hash_tree_root(),
-            HashTreeUtil.hash_tree_root_basic_type(crosslink_data_root)));
+            HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, crosslink_data_root)));
   }
 }

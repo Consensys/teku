@@ -64,6 +64,7 @@ import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
+import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
 
 public class BeaconStateUtil {
 
@@ -105,11 +106,10 @@ public class BeaconStateUtil {
         ValidatorsUtil.get_active_validator_indices(
             state.getValidator_registry(), UnsignedLong.valueOf(GENESIS_EPOCH));
     Bytes32 genesis_active_index_root =
-        HashTreeUtil.hash_tree_root_list_of_basic_type(
+        HashTreeUtil.hash_tree_root(SSZTypes.LIST_OF_BASIC, 
             active_validator_indices.stream()
                 .map(item -> SSZ.encodeUInt64(item))
-                .collect(Collectors.toList()),
-            active_validator_indices.size());
+                .collect(Collectors.toList()));
     for (int index = 0; index < state.getLatest_active_index_roots().size(); index++) {
       state.getLatest_active_index_roots().set(index, genesis_active_index_root);
     }

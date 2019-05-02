@@ -28,6 +28,7 @@ import tech.pegasys.artemis.datastructures.operations.Transfer;
 import tech.pegasys.artemis.datastructures.operations.VoluntaryExit;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
+import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
 
 /** A Beacon block body */
 public class BeaconBlockBody {
@@ -219,43 +220,13 @@ public class BeaconBlockBody {
   public Bytes32 hash_tree_root() {
     return HashTreeUtil.merkleize(
         Arrays.asList(
-            HashTreeUtil.hash_tree_root_basic_type(randao_reveal.toBytes()),
+            HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, randao_reveal.toBytes()),
             eth1_data.hash_tree_root(),
-            HashTreeUtil.mix_in_length(
-                HashTreeUtil.merkleize(
-                    proposer_slashings.stream()
-                        .map(item -> item.hash_tree_root())
-                        .collect(Collectors.toList())),
-                proposer_slashings.size()),
-            HashTreeUtil.mix_in_length(
-                HashTreeUtil.merkleize(
-                    attester_slashings.stream()
-                        .map(item -> item.hash_tree_root())
-                        .collect(Collectors.toList())),
-                attester_slashings.size()),
-            HashTreeUtil.mix_in_length(
-                HashTreeUtil.merkleize(
-                    attestations.stream()
-                        .map(item -> item.hash_tree_root())
-                        .collect(Collectors.toList())),
-                attestations.size()),
-            HashTreeUtil.mix_in_length(
-                HashTreeUtil.merkleize(
-                    deposits.stream()
-                        .map(item -> item.hash_tree_root())
-                        .collect(Collectors.toList())),
-                deposits.size()),
-            HashTreeUtil.mix_in_length(
-                HashTreeUtil.merkleize(
-                    voluntary_exits.stream()
-                        .map(item -> item.hash_tree_root())
-                        .collect(Collectors.toList())),
-                voluntary_exits.size()),
-            HashTreeUtil.mix_in_length(
-                HashTreeUtil.merkleize(
-                    transfers.stream()
-                        .map(item -> item.hash_tree_root())
-                        .collect(Collectors.toList())),
-                transfers.size())));
+            HashTreeUtil.hash_tree_root(SSZTypes.LIST_OF_COMPOSITE, proposer_slashings),
+            HashTreeUtil.hash_tree_root(SSZTypes.LIST_OF_COMPOSITE, attester_slashings),
+            HashTreeUtil.hash_tree_root(SSZTypes.LIST_OF_COMPOSITE, attestations),
+            HashTreeUtil.hash_tree_root(SSZTypes.LIST_OF_COMPOSITE, deposits),
+            HashTreeUtil.hash_tree_root(SSZTypes.LIST_OF_COMPOSITE, voluntary_exits),
+            HashTreeUtil.hash_tree_root(SSZTypes.LIST_OF_COMPOSITE, transfers)));
   }
 }

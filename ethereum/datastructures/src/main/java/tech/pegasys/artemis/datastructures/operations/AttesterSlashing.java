@@ -19,8 +19,9 @@ import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.ssz.SSZ;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
+import tech.pegasys.artemis.util.hashtree.Merkleizable;
 
-public class AttesterSlashing {
+public class AttesterSlashing implements Merkleizable {
 
   private SlashableAttestation slashable_attestation_1;
   private SlashableAttestation slashable_attestation_2;
@@ -89,6 +90,7 @@ public class AttesterSlashing {
     this.slashable_attestation_2 = slashable_attestation_2;
   }
 
+  @Override
   public Bytes32 hash_tree_root() {
     return HashTreeUtil.merkleize(
         Arrays.asList(

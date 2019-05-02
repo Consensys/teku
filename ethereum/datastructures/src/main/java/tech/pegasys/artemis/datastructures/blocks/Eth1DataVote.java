@@ -21,6 +21,7 @@ import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.ssz.SSZ;
 import tech.pegasys.artemis.datastructures.Copyable;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
+import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
 
 public final class Eth1DataVote implements Copyable<Eth1DataVote> {
 
@@ -107,6 +108,6 @@ public final class Eth1DataVote implements Copyable<Eth1DataVote> {
     return HashTreeUtil.merkleize(
         Arrays.asList(
             eth1_data.hash_tree_root(),
-            HashTreeUtil.hash_tree_root_basic_type(SSZ.encodeUInt64(vote_count.longValue()))));
+            HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(vote_count.longValue()))));
   }
 }

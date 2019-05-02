@@ -21,6 +21,7 @@ import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.ssz.SSZ;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
+import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
 
 public class BeaconBlockHeader {
 
@@ -143,19 +144,19 @@ public class BeaconBlockHeader {
     return Bytes32.rightPad(
         HashTreeUtil.merkleize(
             Arrays.asList(
-                HashTreeUtil.hash_tree_root_basic_type(SSZ.encodeUInt64(slot.longValue())),
-                HashTreeUtil.hash_tree_root_basic_type(previous_block_root),
-                HashTreeUtil.hash_tree_root_basic_type(state_root),
-                HashTreeUtil.hash_tree_root_basic_type(block_body_root))));
+                HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(slot.longValue())),
+                HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, previous_block_root),
+                HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, state_root),
+                HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, block_body_root))));
   }
 
   public Bytes32 hash_tree_root() {
     return HashTreeUtil.merkleize(
         Arrays.asList(
-            HashTreeUtil.hash_tree_root_basic_type(SSZ.encodeUInt64(slot.longValue())),
-            HashTreeUtil.hash_tree_root_basic_type(previous_block_root),
-            HashTreeUtil.hash_tree_root_basic_type(state_root),
-            HashTreeUtil.hash_tree_root_basic_type(block_body_root),
-            HashTreeUtil.hash_tree_root_basic_type(signature.toBytes())));
+            HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(slot.longValue())),
+            HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, previous_block_root),
+            HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, state_root),
+            HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, block_body_root),
+            HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, signature.toBytes())));
   }
 }

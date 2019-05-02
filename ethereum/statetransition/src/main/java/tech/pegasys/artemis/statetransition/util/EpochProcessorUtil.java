@@ -69,6 +69,7 @@ import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.bitwise.BitwiseOps;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
+import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
 
 public final class EpochProcessorUtil {
 
@@ -1007,11 +1008,10 @@ public final class EpochProcessorUtil {
         .getLatest_active_index_roots()
         .set(
             index_root_position,
-            HashTreeUtil.hash_tree_root_list_of_basic_type(
+            HashTreeUtil.hash_tree_root(SSZTypes.LIST_OF_BASIC, 
                 active_validator_indices.stream()
                     .map(item -> SSZ.encodeUInt64(item))
-                    .collect(Collectors.toList()),
-                active_validator_indices.size()));
+                    .collect(Collectors.toList())));
 
     // Set total slashed balances
     state

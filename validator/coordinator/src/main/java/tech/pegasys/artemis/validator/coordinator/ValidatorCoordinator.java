@@ -44,6 +44,7 @@ import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
+import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
 
 /** This class coordinates the activity between the validator clients and the the beacon chain */
 public class ValidatorCoordinator {
@@ -212,7 +213,7 @@ public class ValidatorCoordinator {
     UnsignedLong domain =
         BeaconStateUtil.get_domain(state.getFork(), epoch, Constants.DOMAIN_RANDAO);
     Bytes32 messageHash =
-        HashTreeUtil.hash_tree_root_basic_type(BeaconStateUtil.int_to_bytes32(epoch.longValue()));
+        HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, BeaconStateUtil.int_to_bytes32(epoch.longValue()));
     LOG.log(Level.INFO, "Sign Epoch", printEnabled);
     LOG.log(Level.INFO, "Proposer pubkey: " + keypair.getPublicKey(), printEnabled);
     LOG.log(Level.INFO, "state: " + state.hash_tree_root(), printEnabled);
