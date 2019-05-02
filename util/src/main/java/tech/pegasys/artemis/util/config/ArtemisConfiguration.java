@@ -42,7 +42,7 @@ public final class ArtemisConfiguration {
                 "node.networkMode",
                 "mock",
                 "represents what network to use",
-                PropertyValidator.anyOf("mock", "rlpx", "hobbits"));
+                PropertyValidator.anyOf("mock", "hobbits"));
     builder.addString("node.identity", null, "Identity of the peer", null);
     builder.addString("node.networkInterface", "0.0.0.0", "Peer to peer network interface", null);
     builder.addInteger("node.port", 9000, "Peer to peer port", PropertyValidator.inRange(0, 65535));
@@ -55,12 +55,12 @@ public final class ArtemisConfiguration {
         "sim.numValidators",
         128,
         "represents the total number of validators in the network",
-        PropertyValidator.inRange(1, 16384));
+        PropertyValidator.inRange(1, 65535));
     builder.addInteger(
         "sim.numNodes",
         1,
         "represents the total number of nodes on the network",
-        PropertyValidator.inRange(1, 16384));
+        PropertyValidator.inRange(1, 65535));
     builder.addListOfString(
         "node.peers",
         Collections.emptyList(),
@@ -163,10 +163,6 @@ public final class ArtemisConfiguration {
 
     builder.validateConfiguration(
         config -> {
-          if (config.get("identity") == null && "rlpx".equals(config.get("networkMode"))) {
-            return Collections.singletonList(
-                new ConfigurationError("Identity is required if networkMode is set to rlpx"));
-          }
           return null;
         });
 
@@ -482,7 +478,7 @@ public final class ArtemisConfiguration {
     return config.getLong("node.networkID");
   }
 
-  /** @return the mode of the network to use - mock, rlpx or hobbits */
+  /** @return the mode of the network to use - mock or hobbits */
   public String getNetworkMode() {
     return config.getString("node.networkMode");
   }
