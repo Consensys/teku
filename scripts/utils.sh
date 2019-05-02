@@ -7,6 +7,10 @@ clean() {
   mkdir -p "$DIR"
 }
 
+clean_config() {
+  rm ../config/runConfig.*
+}
+
 # Create the configuration file for a specific
 create_config() {
   local NODE="$1"
@@ -71,38 +75,21 @@ configure_node() {
 }
 
 # Create tmux panes in the current window for the next "node group".
-# A node group is a group of up to 9 nodes that are all started on the same window. 
+# A node group is a group of up to 4 nodes that are all started on the same window. 
 # These groups are used to ensure that tmux will be able to create all of 
 # windows without running out of screen space
 create_tmux_panes() {
   # Get the index from the parent shell
   idx="$1"
   local start="$idx"
-
   local end1=$(($start + 3))
+
   # Create at most 4 vertical splits for the next nodes in the group
   while [[ $idx -lt $NODES && $idx -lt $end1 ]]
   do
     # Split the window vertically and start the next node in the new vertical split
     tmux split-window -v "cd node_$idx && ./artemis --config=./config/runConfig.$idx.toml --logging=INFO"
     idx=$(($idx + 1))
-  done
-
-  local j=2
-  local end2=$(($start + 8))
-  # If necessary, create up to 5 horizontal splits for the remaining nodes in the group
-  while [[ $idx -lt $NODES && $idx -lt $end2 ]]
-  do
-    # Split the window horizontally and start the next node in the new horizontal split
-    tmux split-window -h -t $j "cd node_$idx && ./artemis --config=./config/runConfig.$idx.toml --logging=INFO"
-    idx=$(($idx + 1))
-    # If j equals 2, set it to 4. This is done to make the tmux layout nice and consistent
-    if [[ $j -eq 2 ]]
-    then
-      j=4 
-    else
-      j=$(($j + 1))
-    fi
   done
 }
 
@@ -118,7 +105,7 @@ create_tmux_windows() {
   
   # Start the index at 1 because the first node has already been created
   idx=1
-  # Create new tmux panes for the first 9 nodes
+  # Create new tmux panes for the first 4 nodes
   create_tmux_panes $idx
   # Use the tiled layout for the window to make the panes as close to equally sized as possible
   tmux select-layout tiled
@@ -131,7 +118,7 @@ create_tmux_windows() {
     # Start a new tmux window with the next node. Give it a name to add some more spice
     tmux new-window -n 'the dude abides again...' "cd node_$idx && ./artemis --config=./config/runConfig.$idx.toml --logging=INFO"
     idx=$(($idx + 1))
-    # Create new tmux panes for the new 9 nodes, or as many as possible if there are less than 9 
+    # Create new tmux panes for the new 4 nodes, or as many as possible if there are less than 4
     create_tmux_panes $idx
     # Use the tiled layout for the window to make the panes as close to equally sized as possible
     tmux select-layout tiled
