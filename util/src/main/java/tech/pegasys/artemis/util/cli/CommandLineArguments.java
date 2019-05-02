@@ -69,7 +69,6 @@ public class CommandLineArguments {
   private List<String> events =
       new ArrayList<String>() {
         {
-          add("Eth2Genesis");
           add("TimeSeriesRecord");
         }
       };

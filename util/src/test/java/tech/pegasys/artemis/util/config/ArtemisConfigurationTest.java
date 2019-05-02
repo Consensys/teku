@@ -20,13 +20,6 @@ import org.junit.jupiter.api.Test;
 final class ArtemisConfigurationTest {
 
   @Test
-  void missingIdentityWithRLPx() {
-    assertThrows(
-        IllegalArgumentException.class,
-        () -> ArtemisConfiguration.fromString("networkMode=\"rlpx\""));
-  }
-
-  @Test
   void validMinimum() {
     ArtemisConfiguration.fromString("");
   }

@@ -43,17 +43,10 @@ create_config() {
     awk -v peers="$PEERS" '/port/{print;print "peers = "peers;next}1' |# Update the peer list 
     sed "s/numNodes\ =.*/numNodes\ =\ $TOTAL/"                        |# Update the number of nodes to the total number of nodes
     sed "s/networkInterface\ =.*/networkInterface\ =\ \"127.0.0.1\"/" |# Update the network interface to localhost
-    sed "s/networkMode\ =.*/networkMode\ =\ \"hobbits\"/"             |# Update the network mode to hobbits
-    sed "s/DOMAIN_RANDAO\ =.*/DOMAIN_RANDAO\ =\ 1/"                   |# Update the randao field to 1
-    sed "s/DOMAIN_ATTESTATION\ =.*/DOMAIN_ATTESTATION\ =\ 2/"         |# Update the attestation and deposit fields to 2 and 3, respectively
-    sed "s/DOMAIN_DEPOSIT\ =.*/DOMAIN_DEPOSIT\ =\ 3/" \
-    > ../config/runConfig.$NODE.toml                                    
+    sed "s/networkMode\ =.*/networkMode\ =\ \"hobbits\"/" \
+    > ../config/runConfig.$NODE.toml
 
-  # Append the DOMAIN_BEACON_BLOCK, DOMAIN_VOLUNTARY_EXIT, DOMAIN_TRANSFER
-  # to the end of the configuration file.
-  echo "DOMAIN_BEACON_BLOCK = 0" >> ../config/runConfig.$NODE.toml
-  echo "DOMAIN_VOLUNTARY_EXIT = 4" >> ../config/runConfig.$NODE.toml
-  echo "DOMAIN_TRANSFER = 5" >> ../config/runConfig.$NODE.toml
+
 }
 
 # Unpacks the build tar files, puts them in a special directory for the node,

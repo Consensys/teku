@@ -20,7 +20,7 @@ fi
 clean demo
 
 # Clean out the old configuration files
-clean_config
+#clean_config
 
 # Create a list of all the peers for the configure node procedure to use
 COMBINATIONS=$(seq 19000 $((19000 + $NODES - 1)))
