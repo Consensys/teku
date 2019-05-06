@@ -130,7 +130,8 @@ public class SlashableAttestation {
   public Bytes32 hash_tree_root() {
     return HashTreeUtil.merkleize(
         Arrays.asList(
-            HashTreeUtil.hash_tree_root(SSZTypes.LIST_OF_BASIC,
+            HashTreeUtil.hash_tree_root(
+                SSZTypes.LIST_OF_BASIC,
                 validator_indices.stream()
                     .map(item -> SSZ.encodeUInt64(item.longValue()))
                     .collect(Collectors.toList())),
