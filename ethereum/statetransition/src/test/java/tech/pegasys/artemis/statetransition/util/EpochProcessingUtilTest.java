@@ -212,7 +212,6 @@ class EpochProcessingUtilTest {
     assertEquals(expected_num_validators, after_active_validators.size());
   }
 
-  //  @Disabled
   @Test
   void processPenaltiesAndExitsTest() throws EpochProcessingException {
     BeaconState state = createArbitraryBeaconState(25);

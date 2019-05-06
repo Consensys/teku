@@ -519,13 +519,8 @@ public class BeaconStateUtil {
    */
   public static void prepare_validator_for_withdrawal(BeaconState state, int index) {
     Validator validator = state.getValidator_registry().get(index);
-    System.out.println(
-        "withdrawal epochhhh: "
-            + get_current_epoch(state)
-            + Constants.MIN_VALIDATOR_WITHDRAWABILITY_DELAY);
     validator.setWithdrawal_epoch(
         get_current_epoch(state) + Constants.MIN_VALIDATOR_WITHDRAWABILITY_DELAY);
-    System.out.println("withdrawal epoch: " + validator.getWithdrawal_epoch());
   }
 
   /**
