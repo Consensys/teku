@@ -113,7 +113,7 @@ public class StateProcessor {
 
     System.out.println("\n");
     LOG.log(Level.INFO, ANSI_WHITE_BOLD + "******* Slot Event *******" + ANSI_RESET);
-    LOG.log(Level.INFO, "Node time:                            " + nodeTime);
+    LOG.log(Level.INFO, "Node time:                             " + nodeTime);
     LOG.log(Level.INFO, "Node slot:                             " + nodeSlot);
 
     synchronized (this.store.getSyncObject()) {

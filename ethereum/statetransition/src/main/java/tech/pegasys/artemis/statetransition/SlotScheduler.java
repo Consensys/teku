@@ -15,16 +15,52 @@ package tech.pegasys.artemis.statetransition;
 
 import com.google.common.eventbus.EventBus;
 import java.util.Date;
+import org.quartz.Job;
+import org.quartz.JobDataMap;
+import org.quartz.JobExecutionContext;
+import org.quartz.JobExecutionException;
 
-public class SlotScheduler implements Runnable {
+public class SlotScheduler implements Runnable, Job {
+
   private EventBus eventBus;
+
+  public SlotScheduler() {}
 
   public SlotScheduler(EventBus eventBus) {
     this.eventBus = eventBus;
   }
 
+  /**
+   * When an object implementing interface <code>Runnable</code> is used to create a thread,
+   * starting the thread causes the object's <code>run</code> method to be called in that separately
+   * executing thread.
+   *
+   * <p>The general contract of the method <code>run</code> is that it may take any action
+   * whatsoever.
+   *
+   * @see Thread#run()
+   */
   @Override
   public void run() {
+    this.eventBus.post(new Date());
+  }
+
+  /**
+   * Called by the <code>{@link Scheduler}</code> when a <code>{@link Trigger}</code> fires that is
+   * associated with the <code>Job</code>.
+   *
+   * <p>The implementation may wish to set a {@link JobExecutionContext#setResult(Object) result}
+   * object on the {@link JobExecutionContext} before this method exits. The result itself is
+   * meaningless to Quartz, but may be informative to <code>{@link JobListener}s</code> or <code>
+   * {@link TriggerListener}s</code> that are watching the job's execution.
+   *
+   * @param context
+   * @throws JobExecutionException if there is an exception while executing the job.
+   */
+  @Override
+  public void execute(JobExecutionContext context) throws JobExecutionException {
+    JobDataMap data = context.getJobDetail().getJobDataMap();
+    this.eventBus = (EventBus) data.get(EventBus.class.getSimpleName());
     this.eventBus.post(new Date());
   }
 }
