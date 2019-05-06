@@ -14,10 +14,14 @@
 package tech.pegasys.artemis.datastructures.blocks;
 
 import com.google.common.primitives.UnsignedLong;
+import java.util.Arrays;
 import java.util.Objects;
 import net.consensys.cava.bytes.Bytes;
+import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.ssz.SSZ;
 import tech.pegasys.artemis.datastructures.Copyable;
+import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
+import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
 
 public final class Eth1DataVote implements Copyable<Eth1DataVote> {
 
@@ -98,5 +102,12 @@ public final class Eth1DataVote implements Copyable<Eth1DataVote> {
   /** @param vote_count the vote_count to set */
   public void setVote_count(UnsignedLong vote_count) {
     this.vote_count = vote_count;
+  }
+
+  public Bytes32 hash_tree_root() {
+    return HashTreeUtil.merkleize(
+        Arrays.asList(
+            eth1_data.hash_tree_root(),
+            HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(vote_count.longValue()))));
   }
 }

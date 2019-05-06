@@ -17,7 +17,6 @@ import static java.util.Objects.requireNonNull;
 import static tech.pegasys.artemis.datastructures.Constants.FORK_CHOICE_BALANCE_INCREMENT;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_effective_balance;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.slot_to_epoch;
-import static tech.pegasys.artemis.util.hashtree.HashTreeUtil.hash_tree_root;
 
 import com.google.common.primitives.UnsignedLong;
 import java.nio.ByteOrder;
@@ -88,7 +87,7 @@ public class LmdGhost {
                           == 0)
               .max(
                   Comparator.comparing(
-                      child -> hash_tree_root(child.toBytes()).toLong(ByteOrder.LITTLE_ENDIAN)))
+                      child -> child.hash_tree_root().toLong(ByteOrder.LITTLE_ENDIAN)))
               .get();
     }
   }

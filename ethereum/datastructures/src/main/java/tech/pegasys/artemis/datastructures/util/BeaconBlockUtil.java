@@ -20,7 +20,6 @@ import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockBody;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
-import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 
 public class BeaconBlockUtil {
   /**
@@ -34,7 +33,7 @@ public class BeaconBlockUtil {
         UnsignedLong.valueOf(block.getSlot()),
         block.getPrevious_block_root(),
         Constants.ZERO_HASH,
-        HashTreeUtil.hash_tree_root(block.getBody().toBytes()),
+        block.getBody().hash_tree_root(),
         block.getSignature());
   }
 
