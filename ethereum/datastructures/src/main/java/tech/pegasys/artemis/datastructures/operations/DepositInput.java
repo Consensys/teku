@@ -114,11 +114,10 @@ public final class DepositInput {
           "Only signed_root(proposal, \"proof_of_possession\") is currently supported for type Proposal.");
     }
 
-    return Bytes32.rightPad(
-        HashTreeUtil.merkleize(
-            Arrays.asList(
-                HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, pubkey.toBytes()),
-                HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, withdrawal_credentials))));
+    return HashTreeUtil.merkleize(
+        Arrays.asList(
+            HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, pubkey.toBytes()),
+            HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, withdrawal_credentials)));
   }
 
   public Bytes32 hash_tree_root() {
