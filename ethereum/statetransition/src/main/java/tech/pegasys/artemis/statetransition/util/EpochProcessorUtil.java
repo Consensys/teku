@@ -693,8 +693,8 @@ public final class EpochProcessorUtil {
           long total_at_start =
               state
                   .getLatest_slashed_balances()
-                  .get((epoch_index + 1) % Constants.LATEST_SLASHED_EXIT_LENGTH); // 1
-          long total_at_end = state.getLatest_slashed_balances().get(epoch_index); // 0
+                  .get((epoch_index + 1) % Constants.LATEST_SLASHED_EXIT_LENGTH);
+          long total_at_end = state.getLatest_slashed_balances().get(epoch_index);
           long total_penalties = total_at_end - total_at_start;
           long penalty =
               BeaconStateUtil.get_effective_balance(state, validator)
