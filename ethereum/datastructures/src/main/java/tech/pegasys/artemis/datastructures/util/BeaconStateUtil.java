@@ -33,8 +33,6 @@ import static tech.pegasys.artemis.datastructures.Constants.WHISTLEBLOWER_REWARD
 import static tech.pegasys.artemis.util.bls.BLSAggregate.bls_aggregate_pubkeys;
 import static tech.pegasys.artemis.util.bls.BLSVerify.bls_verify;
 import static tech.pegasys.artemis.util.bls.BLSVerify.bls_verify_multiple;
-import static tech.pegasys.artemis.util.hashtree.HashTreeUtil.hash_tree_root;
-import static tech.pegasys.artemis.util.hashtree.HashTreeUtil.hash_tree_root_list_integers;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.primitives.UnsignedLong;
@@ -49,6 +47,7 @@ import java.util.stream.IntStream;
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.crypto.Hash;
+import net.consensys.cava.ssz.SSZ;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
@@ -64,6 +63,8 @@ import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
+import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
+import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
 
 public class BeaconStateUtil {
 
@@ -101,10 +102,14 @@ public class BeaconStateUtil {
       }
     }
 
+    List<Integer> active_validator_indices =
+        ValidatorsUtil.get_active_validator_indices(
+            state.getValidator_registry(), UnsignedLong.valueOf(GENESIS_EPOCH));
     Bytes32 genesis_active_index_root =
-        hash_tree_root_list_integers(
-            ValidatorsUtil.get_active_validator_indices(
-                state.getValidator_registry(), UnsignedLong.valueOf(GENESIS_EPOCH)));
+        HashTreeUtil.hash_tree_root(SSZTypes.LIST_OF_BASIC, 
+            active_validator_indices.stream()
+                .map(item -> SSZ.encodeUInt64(item))
+                .collect(Collectors.toList()));
     for (int index = 0; index < state.getLatest_active_index_roots().size(); index++) {
       state.getLatest_active_index_roots().set(index, genesis_active_index_root);
     }
@@ -1168,10 +1173,10 @@ public class BeaconStateUtil {
             bls_aggregate_pubkeys(custody_bit_1_pubkeys));
     List<Bytes32> message_hashes =
         Arrays.asList(
-            hash_tree_root(
-                new AttestationDataAndCustodyBit(slashable_attestation.getData(), false).toBytes()),
-            hash_tree_root(
-                new AttestationDataAndCustodyBit(slashable_attestation.getData(), true).toBytes()));
+            new AttestationDataAndCustodyBit(slashable_attestation.getData(), false)
+                .hash_tree_root(),
+            new AttestationDataAndCustodyBit(slashable_attestation.getData(), true)
+                .hash_tree_root());
     BLSSignature signature = slashable_attestation.getAggregate_signature();
     UnsignedLong domain =
         get_domain(

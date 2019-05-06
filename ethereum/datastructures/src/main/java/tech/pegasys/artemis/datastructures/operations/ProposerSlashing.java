@@ -14,12 +14,17 @@
 package tech.pegasys.artemis.datastructures.operations;
 
 import com.google.common.primitives.UnsignedLong;
+import java.util.Arrays;
 import java.util.Objects;
 import net.consensys.cava.bytes.Bytes;
+import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.ssz.SSZ;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
+import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
+import tech.pegasys.artemis.util.hashtree.Merkleizable;
+import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
 
-public class ProposerSlashing {
+public class ProposerSlashing implements Merkleizable {
 
   private UnsignedLong proposer_index;
   private BeaconBlockHeader header_1;
@@ -99,5 +104,14 @@ public class ProposerSlashing {
 
   public void setHeader_2(BeaconBlockHeader header_2) {
     this.header_2 = header_2;
+  }
+
+  @Override
+  public Bytes32 hash_tree_root() {
+    return HashTreeUtil.merkleize(
+        Arrays.asList(
+            HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(proposer_index.longValue())),
+            header_1.hash_tree_root(),
+            header_2.hash_tree_root()));
   }
 }

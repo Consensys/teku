@@ -21,6 +21,7 @@ import net.consensys.cava.ssz.SSZ;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
+import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
 
 public final class DepositInput {
 
@@ -114,9 +115,17 @@ public final class DepositInput {
     }
 
     return Bytes32.rightPad(
-        HashTreeUtil.merkleHash(
+        HashTreeUtil.merkleize(
             Arrays.asList(
-                HashTreeUtil.hash_tree_root(pubkey.toBytes()),
-                HashTreeUtil.hash_tree_root(withdrawal_credentials))));
+                HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, pubkey.toBytes()),
+                HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, withdrawal_credentials))));
+  }
+
+  public Bytes32 hash_tree_root() {
+    return HashTreeUtil.merkleize(
+        Arrays.asList(
+            HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, pubkey.toBytes()),
+            HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, withdrawal_credentials),
+            HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, proof_of_possession.toBytes())));
   }
 }

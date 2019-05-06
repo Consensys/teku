@@ -31,7 +31,6 @@ import tech.pegasys.artemis.statetransition.util.EpochProcessingException;
 import tech.pegasys.artemis.statetransition.util.EpochProcessorUtil;
 import tech.pegasys.artemis.statetransition.util.PreProcessingUtil;
 import tech.pegasys.artemis.util.alogger.ALogger;
-import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 
 public class StateTransition {
 
@@ -81,7 +80,7 @@ public class StateTransition {
    * @param state
    */
   protected void cache_state(BeaconState state) {
-    Bytes32 previous_slot_state_root = HashTreeUtil.hash_tree_root(state.toBytes());
+    Bytes32 previous_slot_state_root = state.hash_tree_root();
 
     // Store the previous slot's post state transition root
     int prev_slot_index =

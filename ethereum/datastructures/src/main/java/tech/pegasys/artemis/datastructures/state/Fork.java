@@ -14,9 +14,13 @@
 package tech.pegasys.artemis.datastructures.state;
 
 import com.google.common.primitives.UnsignedLong;
+import java.util.Arrays;
 import java.util.Objects;
 import net.consensys.cava.bytes.Bytes;
+import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.ssz.SSZ;
+import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
+import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
 
 public class Fork {
 
@@ -43,16 +47,16 @@ public class Fork {
         bytes,
         reader ->
             new Fork(
-                Bytes.wrap(reader.readBytes()),
-                Bytes.wrap(reader.readBytes()),
+                Bytes.wrap(reader.readFixedBytes(4)),
+                Bytes.wrap(reader.readFixedBytes(4)),
                 UnsignedLong.fromLongBits(reader.readUInt64())));
   }
 
   public Bytes toBytes() {
     return SSZ.encode(
         writer -> {
-          writer.writeBytes(previous_version);
-          writer.writeBytes(current_version);
+          writer.writeFixedBytes(4, previous_version);
+          writer.writeFixedBytes(4, current_version);
           writer.writeUInt64(epoch.longValue());
         });
   }
@@ -105,5 +109,13 @@ public class Fork {
 
   public void setEpoch(UnsignedLong epoch) {
     this.epoch = epoch;
+  }
+
+  public Bytes32 hash_tree_root() {
+    return HashTreeUtil.merkleize(
+        Arrays.asList(
+            HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, previous_version),
+            HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, current_version),
+            HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(epoch.longValue()))));
   }
 }

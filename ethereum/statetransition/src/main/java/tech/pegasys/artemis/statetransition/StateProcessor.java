@@ -37,7 +37,6 @@ import tech.pegasys.artemis.storage.ChainStorage;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
-import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 
 /** Class to manage the state tree and initiate state transitions */
 public class StateProcessor {
@@ -88,9 +87,9 @@ public class StateProcessor {
     try {
       BeaconState initial_state =
           DataStructureUtil.createInitialBeaconState(config.getNumValidators());
-      Bytes32 initial_state_root = HashTreeUtil.hash_tree_root(initial_state.toBytes());
+      Bytes32 initial_state_root = initial_state.hash_tree_root();
       BeaconBlock genesis_block = BeaconBlockUtil.get_empty_block();
-      Bytes32 genesis_block_root = HashTreeUtil.hash_tree_root(genesis_block.toBytes());
+      Bytes32 genesis_block_root = genesis_block.hash_tree_root();
       LOG.log(Level.INFO, "Initial state root is " + initial_state_root.toHexString());
       this.store.addState(initial_state_root, initial_state);
       this.store.addProcessedBlock(genesis_block_root, genesis_block);
@@ -172,7 +171,7 @@ public class StateProcessor {
 
     // Hash headBlock to obtain previousBlockRoot that will be used
     // as previous_block_root in all state transitions
-    Bytes32 previousBlockRoot = HashTreeUtil.hash_tree_root(headBlock.toBytes());
+    Bytes32 previousBlockRoot = headBlock.hash_tree_root();
 
     // Run state transition with no blocks from the newHeadState.slot to node.slot
     boolean firstLoop = true;
@@ -185,7 +184,7 @@ public class StateProcessor {
       }
       stateTransition.initiate((BeaconStateWithCache) newHeadState, null, previousBlockRoot);
     }
-    this.store.addState(HashTreeUtil.hash_tree_root(newHeadState.toBytes()), newHeadState);
+    this.store.addState(newHeadState.hash_tree_root(), newHeadState);
     this.headState = newHeadState;
     recordData();
 
@@ -222,7 +221,7 @@ public class StateProcessor {
 
         // Get block, block root and block state root
         BeaconBlock block = unprocessedBlock.get();
-        Bytes32 blockRoot = HashTreeUtil.hash_tree_root(block.toBytes());
+        Bytes32 blockRoot = block.hash_tree_root();
         Bytes32 blockStateRoot = block.getState_root();
 
         // Get parent block, parent block root, parent block state root, and parent block state
@@ -253,7 +252,7 @@ public class StateProcessor {
         LOG.log(Level.INFO, ANSI_PURPLE + "Running state transition with block." + ANSI_RESET);
         stateTransition.initiate((BeaconStateWithCache) currentState, block, parentBlockRoot);
 
-        Bytes32 newStateRoot = HashTreeUtil.hash_tree_root(currentState.toBytes());
+        Bytes32 newStateRoot = currentState.hash_tree_root();
 
         // Verify that the state root we have computed is the state root that block is
         // claiming us we should reach, save the block and the state if its correct.

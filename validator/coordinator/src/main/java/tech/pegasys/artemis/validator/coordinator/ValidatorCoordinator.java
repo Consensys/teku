@@ -44,6 +44,7 @@ import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
+import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
 
 /** This class coordinates the activity between the validator clients and the the beacon chain */
 public class ValidatorCoordinator {
@@ -74,7 +75,7 @@ public class ValidatorCoordinator {
     BeaconStateWithCache initialBeaconState =
         DataStructureUtil.createInitialBeaconState(numValidators);
 
-    Bytes32 initialStateRoot = HashTreeUtil.hash_tree_root(initialBeaconState.toBytes());
+    Bytes32 initialStateRoot = initialBeaconState.hash_tree_root();
     BeaconBlock genesisBlock = BeaconBlockUtil.get_empty_block();
 
     createBlockIfNecessary(initialBeaconState, genesisBlock);
@@ -132,7 +133,7 @@ public class ValidatorCoordinator {
             headState, headState.getSlot().plus(UnsignedLong.ONE));
     BLSPublicKey proposerPubkey = headState.getValidator_registry().get(proposerIndex).getPubkey();
     if (validatorSet.containsKey(proposerPubkey)) {
-      Bytes32 blockRoot = HashTreeUtil.hash_tree_root(headBlock.toBytes());
+      Bytes32 blockRoot = headBlock.hash_tree_root();
       createNewBlock(headState, blockRoot, validatorSet.get(proposerPubkey));
     }
   }
@@ -176,7 +177,7 @@ public class ValidatorCoordinator {
       BLSSignature epoch_signature = setEpochSignature(headState, keypair);
       block.getBody().setRandao_reveal(epoch_signature);
       stateTransition.initiate(headState, block, blockRoot);
-      Bytes32 stateRoot = HashTreeUtil.hash_tree_root(headState.toBytes());
+      Bytes32 stateRoot = headState.hash_tree_root();
       block.setState_root(stateRoot);
       BLSSignature signed_proposal = signProposalData(headState, block, keypair);
       block.setSignature(signed_proposal);
@@ -212,10 +213,10 @@ public class ValidatorCoordinator {
     UnsignedLong domain =
         BeaconStateUtil.get_domain(state.getFork(), epoch, Constants.DOMAIN_RANDAO);
     Bytes32 messageHash =
-        HashTreeUtil.hash_tree_root(BeaconStateUtil.int_to_bytes(epoch.longValue(), 8));
+        HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, BeaconStateUtil.int_to_bytes32(epoch.longValue()));
     LOG.log(Level.INFO, "Sign Epoch", printEnabled);
     LOG.log(Level.INFO, "Proposer pubkey: " + keypair.getPublicKey(), printEnabled);
-    LOG.log(Level.INFO, "state: " + HashTreeUtil.hash_tree_root(state.toBytes()), printEnabled);
+    LOG.log(Level.INFO, "state: " + state.hash_tree_root(), printEnabled);
     LOG.log(Level.INFO, "slot: " + slot, printEnabled);
     LOG.log(Level.INFO, "domain: " + domain, printEnabled);
     return BLSSignature.sign(keypair, messageHash, domain.longValue());
@@ -234,7 +235,7 @@ public class ValidatorCoordinator {
         BLSSignature.sign(keypair, block.signed_root("signature"), domain.longValue());
     LOG.log(Level.INFO, "Sign Proposal", printEnabled);
     LOG.log(Level.INFO, "Proposer pubkey: " + keypair.getPublicKey(), printEnabled);
-    LOG.log(Level.INFO, "state: " + HashTreeUtil.hash_tree_root(state.toBytes()), printEnabled);
+    LOG.log(Level.INFO, "state: " + state.hash_tree_root(), printEnabled);
     LOG.log(Level.INFO, "block signature: " + signature.toString(), printEnabled);
     LOG.log(Level.INFO, "slot: " + state.getSlot().longValue(), printEnabled);
     LOG.log(Level.INFO, "domain: " + domain, printEnabled);

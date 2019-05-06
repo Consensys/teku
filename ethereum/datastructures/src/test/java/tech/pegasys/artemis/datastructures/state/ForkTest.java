@@ -23,8 +23,8 @@ import org.junit.jupiter.api.Test;
 
 class ForkTest {
 
-  private Bytes previousVersion = Bytes.random(1);
-  private Bytes currentVersion = Bytes.random(1);
+  private Bytes previousVersion = Bytes.random(4);
+  private Bytes currentVersion = Bytes.random(4);
   private UnsignedLong epoch = randomUnsignedLong();
 
   private Fork fork = new Fork(previousVersion, currentVersion, epoch);

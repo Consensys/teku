@@ -20,6 +20,7 @@ import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.ssz.SSZ;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
+import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
 
 public final class BeaconBlock {
 
@@ -145,15 +146,21 @@ public final class BeaconBlock {
     }
 
     return Bytes32.rightPad(
-        HashTreeUtil.merkleHash(
+        HashTreeUtil.merkleize(
             Arrays.asList(
-                HashTreeUtil.hash_tree_root(
-                    SSZ.encode(
-                        writer -> {
-                          writer.writeUInt64(slot);
-                        })),
-                HashTreeUtil.hash_tree_root(previous_block_root),
-                HashTreeUtil.hash_tree_root(state_root),
-                HashTreeUtil.hash_tree_root(body.toBytes()))));
+                HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(slot)),
+                HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, previous_block_root),
+                HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, state_root),
+                body.hash_tree_root())));
+  }
+
+  public Bytes32 hash_tree_root() {
+    return HashTreeUtil.merkleize(
+        Arrays.asList(
+            HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(slot)),
+            HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, previous_block_root),
+            HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, state_root),
+            body.hash_tree_root(),
+            HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, signature.toBytes())));
   }
 }

@@ -14,12 +14,15 @@
 package tech.pegasys.artemis.datastructures.state;
 
 import com.google.common.primitives.UnsignedLong;
+import java.util.Arrays;
 import java.util.Objects;
 import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.ssz.SSZ;
 import tech.pegasys.artemis.datastructures.Copyable;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
+import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
+import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
 
 public final class Validator implements Copyable<Validator> {
 
@@ -187,5 +190,17 @@ public final class Validator implements Copyable<Validator> {
 
   public void setSlashed(boolean slashed) {
     this.slashed = slashed;
+  }
+
+  public Bytes32 hash_tree_root() {
+    return HashTreeUtil.merkleize(
+        Arrays.asList(
+            HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, pubkey.toBytes()),
+            HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, withdrawal_credentials),
+            HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(activation_epoch.longValue())),
+            HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(exit_epoch.longValue())),
+            HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(withdrawable_epoch.longValue())),
+            HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeBoolean(initiated_exit)),
+            HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeBoolean(slashed))));
   }
 }

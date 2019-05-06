@@ -13,10 +13,12 @@
 
 package tech.pegasys.artemis.datastructures.blocks;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import net.consensys.cava.bytes.Bytes;
+import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.ssz.SSZ;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.AttesterSlashing;
@@ -25,6 +27,8 @@ import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
 import tech.pegasys.artemis.datastructures.operations.Transfer;
 import tech.pegasys.artemis.datastructures.operations.VoluntaryExit;
 import tech.pegasys.artemis.util.bls.BLSSignature;
+import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
+import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
 
 /** A Beacon block body */
 public class BeaconBlockBody {
@@ -211,5 +215,18 @@ public class BeaconBlockBody {
 
   public void setTransfers(List<Transfer> transfers) {
     this.transfers = transfers;
+  }
+
+  public Bytes32 hash_tree_root() {
+    return HashTreeUtil.merkleize(
+        Arrays.asList(
+            HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, randao_reveal.toBytes()),
+            eth1_data.hash_tree_root(),
+            HashTreeUtil.hash_tree_root(SSZTypes.LIST_OF_COMPOSITE, proposer_slashings),
+            HashTreeUtil.hash_tree_root(SSZTypes.LIST_OF_COMPOSITE, attester_slashings),
+            HashTreeUtil.hash_tree_root(SSZTypes.LIST_OF_COMPOSITE, attestations),
+            HashTreeUtil.hash_tree_root(SSZTypes.LIST_OF_COMPOSITE, deposits),
+            HashTreeUtil.hash_tree_root(SSZTypes.LIST_OF_COMPOSITE, voluntary_exits),
+            HashTreeUtil.hash_tree_root(SSZTypes.LIST_OF_COMPOSITE, transfers)));
   }
 }

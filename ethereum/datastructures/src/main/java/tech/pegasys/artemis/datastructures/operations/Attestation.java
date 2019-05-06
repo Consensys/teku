@@ -14,12 +14,17 @@
 package tech.pegasys.artemis.datastructures.operations;
 
 import com.google.common.primitives.UnsignedLong;
+import java.util.Arrays;
 import java.util.Objects;
 import net.consensys.cava.bytes.Bytes;
+import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.ssz.SSZ;
 import tech.pegasys.artemis.util.bls.BLSSignature;
+import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
+import tech.pegasys.artemis.util.hashtree.Merkleizable;
+import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
 
-public class Attestation {
+public class Attestation implements Merkleizable {
 
   private Bytes aggregation_bitfield;
   private AttestationData data;
@@ -119,5 +124,15 @@ public class Attestation {
 
   public UnsignedLong getSlot() {
     return data.getSlot();
+  }
+
+  @Override
+  public Bytes32 hash_tree_root() {
+    return HashTreeUtil.merkleize(
+        Arrays.asList(
+            HashTreeUtil.hash_tree_root(SSZTypes.LIST_OF_BASIC, aggregation_bitfield),
+            data.hash_tree_root(),
+            HashTreeUtil.hash_tree_root(SSZTypes.LIST_OF_BASIC, custody_bitfield),
+            HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, aggregate_signature.toBytes())));
   }
 }
