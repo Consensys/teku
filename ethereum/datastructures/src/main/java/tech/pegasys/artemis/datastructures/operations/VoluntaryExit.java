@@ -21,8 +21,8 @@ import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.ssz.SSZ;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
-import tech.pegasys.artemis.util.hashtree.Merkleizable;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
+import tech.pegasys.artemis.util.hashtree.Merkleizable;
 
 public class VoluntaryExit implements Merkleizable {
 
@@ -115,8 +115,8 @@ public class VoluntaryExit implements Merkleizable {
         HashTreeUtil.merkleize(
             Arrays.asList(
                 HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(epoch.longValue())),
-                HashTreeUtil.hash_tree_root(SSZTypes.BASIC, 
-                    SSZ.encodeUInt64(validator_index.longValue())))));
+                HashTreeUtil.hash_tree_root(
+                    SSZTypes.BASIC, SSZ.encodeUInt64(validator_index.longValue())))));
   }
 
   @Override
@@ -124,7 +124,8 @@ public class VoluntaryExit implements Merkleizable {
     return HashTreeUtil.merkleize(
         Arrays.asList(
             HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(epoch.longValue())),
-            HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(validator_index.longValue())),
+            HashTreeUtil.hash_tree_root(
+                SSZTypes.BASIC, SSZ.encodeUInt64(validator_index.longValue())),
             HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, signature.toBytes())));
   }
 }

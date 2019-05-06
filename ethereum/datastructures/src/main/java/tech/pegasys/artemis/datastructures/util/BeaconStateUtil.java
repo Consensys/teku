@@ -106,7 +106,8 @@ public class BeaconStateUtil {
         ValidatorsUtil.get_active_validator_indices(
             state.getValidator_registry(), UnsignedLong.valueOf(GENESIS_EPOCH));
     Bytes32 genesis_active_index_root =
-        HashTreeUtil.hash_tree_root(SSZTypes.LIST_OF_BASIC, 
+        HashTreeUtil.hash_tree_root(
+            SSZTypes.LIST_OF_BASIC,
             active_validator_indices.stream()
                 .map(item -> SSZ.encodeUInt64(item))
                 .collect(Collectors.toList()));

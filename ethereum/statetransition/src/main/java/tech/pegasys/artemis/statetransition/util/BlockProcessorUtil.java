@@ -132,8 +132,8 @@ public final class BlockProcessorUtil {
     checkArgument(
         bls_verify(
             proposer.getPubkey(),
-            HashTreeUtil.hash_tree_root(SSZTypes.BASIC,
-                SSZ.encodeUInt64(get_current_epoch(state).longValue())),
+            HashTreeUtil.hash_tree_root(
+                SSZTypes.BASIC, SSZ.encodeUInt64(get_current_epoch(state).longValue())),
             block.getBody().getRandao_reveal(),
             get_domain(state.getFork(), get_current_epoch(state), DOMAIN_RANDAO)),
         "Provided randao value is invalid");

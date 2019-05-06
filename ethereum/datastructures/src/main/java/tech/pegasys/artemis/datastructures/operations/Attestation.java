@@ -21,8 +21,8 @@ import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.ssz.SSZ;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
-import tech.pegasys.artemis.util.hashtree.Merkleizable;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
+import tech.pegasys.artemis.util.hashtree.Merkleizable;
 
 public class Attestation implements Merkleizable {
 

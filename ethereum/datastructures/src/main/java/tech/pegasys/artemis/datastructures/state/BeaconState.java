@@ -722,79 +722,64 @@ public class BeaconState {
             HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(genesis_time.longValue())),
             fork.hash_tree_root(),
             // Validator registry
-            HashTreeUtil.mix_in_length(
-                HashTreeUtil.merkleize(
-                    validator_registry.stream()
-                        .map(item -> item.hash_tree_root())
-                        .collect(Collectors.toList())),
-                validator_registry.size()),
-            HashTreeUtil.hash_tree_root_list_of_basic_type(
+            HashTreeUtil.hash_tree_root(SSZTypes.LIST_OF_COMPOSITE, validator_registry),
+            HashTreeUtil.hash_tree_root(
+                SSZTypes.LIST_OF_BASIC,
                 validator_balances.stream()
                     .map(item -> SSZ.encodeUInt64(item.longValue()))
-                    .collect(Collectors.toList()),
-                validator_balances.size()),
-            HashTreeUtil.hash_tree_root(SSZTypes.BASIC, 
-                SSZ.encodeUInt64(validator_registry_update_epoch.longValue())),
+                    .collect(Collectors.toList())),
+            HashTreeUtil.hash_tree_root(
+                SSZTypes.BASIC, SSZ.encodeUInt64(validator_registry_update_epoch.longValue())),
             // Randomness and committees
-            HashTreeUtil.hash_tree_root_basic_type(latest_randao_mixes.toArray(new Bytes32[0])),
-            HashTreeUtil.hash_tree_root(SSZTypes.BASIC, 
-                SSZ.encodeUInt64(previous_shuffling_start_shard.longValue())),
-            HashTreeUtil.hash_tree_root(SSZTypes.BASIC, 
-                SSZ.encodeUInt64(current_shuffling_start_shard.longValue())),
-            HashTreeUtil.hash_tree_root(SSZTypes.BASIC, 
-                SSZ.encodeUInt64(previous_shuffling_epoch.longValue())),
-            HashTreeUtil.hash_tree_root(SSZTypes.BASIC, 
-                SSZ.encodeUInt64(current_shuffling_epoch.longValue())),
+            HashTreeUtil.hash_tree_root(
+                SSZTypes.TUPLE_OF_COMPOSITE, latest_randao_mixes.toArray(new Bytes32[0])),
+            HashTreeUtil.hash_tree_root(
+                SSZTypes.BASIC, SSZ.encodeUInt64(previous_shuffling_start_shard.longValue())),
+            HashTreeUtil.hash_tree_root(
+                SSZTypes.BASIC, SSZ.encodeUInt64(current_shuffling_start_shard.longValue())),
+            HashTreeUtil.hash_tree_root(
+                SSZTypes.BASIC, SSZ.encodeUInt64(previous_shuffling_epoch.longValue())),
+            HashTreeUtil.hash_tree_root(
+                SSZTypes.BASIC, SSZ.encodeUInt64(current_shuffling_epoch.longValue())),
             HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, previous_shuffling_seed),
             HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, current_shuffling_seed),
             // Finality
-            HashTreeUtil.mix_in_length(
-                HashTreeUtil.merkleize(
-                    previous_epoch_attestations.stream()
-                        .map(item -> item.hash_tree_root())
-                        .collect(Collectors.toList())),
-                previous_epoch_attestations.size()),
-            HashTreeUtil.mix_in_length(
-                HashTreeUtil.merkleize(
-                    current_epoch_attestations.stream()
-                        .map(item -> item.hash_tree_root())
-                        .collect(Collectors.toList())),
-                current_epoch_attestations.size()),
-            HashTreeUtil.hash_tree_root(SSZTypes.BASIC, 
-                SSZ.encodeUInt64(previous_justified_epoch.longValue())),
-            HashTreeUtil.hash_tree_root(SSZTypes.BASIC, 
-                SSZ.encodeUInt64(current_justified_epoch.longValue())),
+            HashTreeUtil.hash_tree_root(SSZTypes.LIST_OF_COMPOSITE, previous_epoch_attestations),
+            HashTreeUtil.hash_tree_root(SSZTypes.LIST_OF_COMPOSITE, current_epoch_attestations),
+            HashTreeUtil.hash_tree_root(
+                SSZTypes.BASIC, SSZ.encodeUInt64(previous_justified_epoch.longValue())),
+            HashTreeUtil.hash_tree_root(
+                SSZTypes.BASIC, SSZ.encodeUInt64(current_justified_epoch.longValue())),
             HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, previous_justified_root),
             HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, current_justified_root),
-            HashTreeUtil.hash_tree_root(SSZTypes.BASIC, 
-                SSZ.encodeUInt64(justification_bitfield.longValue())),
-            HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(finalized_epoch.longValue())),
+            HashTreeUtil.hash_tree_root(
+                SSZTypes.BASIC, SSZ.encodeUInt64(justification_bitfield.longValue())),
+            HashTreeUtil.hash_tree_root(
+                SSZTypes.BASIC, SSZ.encodeUInt64(finalized_epoch.longValue())),
             HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, finalized_root),
             // Recent state
             HashTreeUtil.merkleize(
                 latest_crosslinks.stream()
                     .map(item -> item.hash_tree_root())
                     .collect(Collectors.toList())),
-            HashTreeUtil.hash_tree_root_basic_type(latest_block_roots.toArray(new Bytes32[0])),
-            HashTreeUtil.hash_tree_root_basic_type(latest_state_roots.toArray(new Bytes32[0])),
-            HashTreeUtil.hash_tree_root_basic_type(
-                latest_active_index_roots.toArray(new Bytes32[0])),
-            HashTreeUtil.hash_tree_root_basic_type(
+            HashTreeUtil.hash_tree_root(
+                SSZTypes.TUPLE_OF_COMPOSITE, latest_block_roots.toArray(new Bytes32[0])),
+            HashTreeUtil.hash_tree_root(
+                SSZTypes.TUPLE_OF_COMPOSITE, latest_state_roots.toArray(new Bytes32[0])),
+            HashTreeUtil.hash_tree_root(
+                SSZTypes.TUPLE_OF_COMPOSITE, latest_active_index_roots.toArray(new Bytes32[0])),
+            HashTreeUtil.hash_tree_root(
+                SSZTypes.TUPLE_OF_BASIC,
                 latest_slashed_balances.stream()
                     .map(item -> SSZ.encodeUInt64(item.longValue()))
                     .collect(Collectors.toList())
                     .toArray(new Bytes[0])),
             latest_block_header.hash_tree_root(),
-            HashTreeUtil.hash_tree_root_list_of_basic_type(
-                historical_roots, historical_roots.size()),
+            HashTreeUtil.hash_tree_root(SSZTypes.LIST_OF_COMPOSITE, historical_roots),
             // Ethereum 1.0 chain data
             latest_eth1_data.hash_tree_root(),
-            HashTreeUtil.mix_in_length(
-                HashTreeUtil.merkleize(
-                    eth1_data_votes.stream()
-                        .map(item -> item.hash_tree_root())
-                        .collect(Collectors.toList())),
-                eth1_data_votes.size()),
-            HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(deposit_index.longValue()))));
+            HashTreeUtil.hash_tree_root(SSZTypes.LIST_OF_COMPOSITE, eth1_data_votes),
+            HashTreeUtil.hash_tree_root(
+                SSZTypes.BASIC, SSZ.encodeUInt64(deposit_index.longValue()))));
   }
 }

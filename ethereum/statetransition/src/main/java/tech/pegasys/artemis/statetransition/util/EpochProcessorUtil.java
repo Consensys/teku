@@ -1008,7 +1008,8 @@ public final class EpochProcessorUtil {
         .getLatest_active_index_roots()
         .set(
             index_root_position,
-            HashTreeUtil.hash_tree_root(SSZTypes.LIST_OF_BASIC, 
+            HashTreeUtil.hash_tree_root(
+                SSZTypes.LIST_OF_BASIC,
                 active_validator_indices.stream()
                     .map(item -> SSZ.encodeUInt64(item))
                     .collect(Collectors.toList())));
