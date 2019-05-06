@@ -1061,8 +1061,12 @@ public class BeaconStateUtil {
    *     - Spec v0.4</a>
    */
   public static UnsignedLong get_domain(Fork fork, UnsignedLong epoch, int domain_type) {
+    // TODO Investigate this further:
+    // We deviate from the spec, adding domain_type first then concatting fork version on to it.
+    // The spec does this in the opposite order. It smells a lot like an endianness problem.
+    // The question is, it is Java/us, or is it a spec bug.
     return UnsignedLong.valueOf(
-        bytes_to_int(Bytes.wrap(get_fork_version(fork, epoch), int_to_bytes(domain_type, 4))));
+        bytes_to_int(Bytes.wrap(int_to_bytes(domain_type, 4), get_fork_version(fork, epoch))));
   }
 
   /**
