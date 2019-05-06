@@ -211,7 +211,8 @@ public final class HashTreeUtil {
     int packingRemainder = concatenatedBytes.size() % BYTES_PER_CHUNK;
     if (packingRemainder != 0) {
       concatenatedBytes =
-          Bytes.concatenate(concatenatedBytes, Bytes.wrap(new byte[packingRemainder]));
+          Bytes.concatenate(
+              concatenatedBytes, Bytes.wrap(new byte[BYTES_PER_CHUNK - packingRemainder]));
     }
 
     // Wrap each BYTES_PER_CHUNK-byte value into a Bytes32
