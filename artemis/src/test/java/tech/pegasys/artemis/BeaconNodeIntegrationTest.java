@@ -17,6 +17,10 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
@@ -35,13 +39,39 @@ class BeaconNodeIntegrationTest {
   private static ObjectMapper mapper = new ObjectMapper();
 
   @Test
-  void testThreeNodes() throws InterruptedException, JsonProcessingException {
+  void testThreeNodes() throws InterruptedException, JsonProcessingException, IOException {
     CommandLineArguments cliArgs = new CommandLineArguments();
     CommandLine commandLine = new CommandLine(cliArgs);
     commandLine.parse("");
 
-    ArtemisConfiguration config1 = ArtemisConfiguration.fromFile("../config/testConfig.0.toml");
-    ArtemisConfiguration config2 = ArtemisConfiguration.fromFile("../config/testConfig.1.toml");
+    // Read all lines from a file
+    String content = "";
+    content =
+        new String(Files.readAllBytes(Paths.get("../config/config.toml")), StandardCharsets.UTF_8);
+
+    // Construct the configuration file for the first node
+    String updatedConfig1 =
+        content
+            .replaceFirst("networkMode = \"mock\"", "networkMode = \"hobbits\"")
+            .replaceFirst("networkInterface = \"0.0.0.0\"", "networkInterface = \"127.0.0.1\"")
+            .replaceFirst(
+                "port = 9000", "port = 19000\npeers = [\"hob+tcp://abcf@localhost:19001\"]")
+            .replaceFirst("advertisedPort = 9000", "advertisedPort = 19000")
+            .replaceFirst("numNodes = 1", "numNodes = 2");
+
+    // Construct the configuration file for the second node
+    String updatedConfig2 =
+        content
+            .replaceFirst("networkMode = \"mock\"", "networkMode = \"hobbits\"")
+            .replaceFirst("identity = \"0x00\"", "identity = \"0x01\"")
+            .replaceFirst("networkInterface = \"0.0.0.0\"", "networkInterface = \"127.0.0.1\"")
+            .replaceFirst(
+                "port = 9000", "port = 19001\npeers = [\"hob+tcp://abcf@localhost:19000\"]")
+            .replaceFirst("advertisedPort = 9000", "advertisedPort = 19001")
+            .replaceFirst("numNodes = 1", "numNodes = 2");
+
+    ArtemisConfiguration config1 = ArtemisConfiguration.fromString(updatedConfig1);
+    ArtemisConfiguration config2 = ArtemisConfiguration.fromString(updatedConfig2);
 
     BeaconNode node1 = new BeaconNode(commandLine, cliArgs, config1);
     BeaconNode node2 = new BeaconNode(commandLine, cliArgs, config2);
