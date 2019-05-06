@@ -140,6 +140,7 @@ public class PendingAttestation implements Copyable<PendingAttestation> {
             HashTreeUtil.hash_tree_root(SSZTypes.LIST_OF_BASIC, aggregation_bitfield),
             data.hash_tree_root(),
             HashTreeUtil.hash_tree_root(SSZTypes.LIST_OF_BASIC, custody_bitfield),
-            HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(inclusion_slot.longValue()))));
+            HashTreeUtil.hash_tree_root(
+                SSZTypes.BASIC, SSZ.encodeUInt64(inclusion_slot.longValue()))));
   }
 }

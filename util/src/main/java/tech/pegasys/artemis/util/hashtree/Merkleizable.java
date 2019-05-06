@@ -18,5 +18,4 @@ import net.consensys.cava.bytes.Bytes32;
 public interface Merkleizable {
 
   public Bytes32 hash_tree_root();
-  
 }
