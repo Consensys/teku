@@ -81,12 +81,12 @@ public class BLSPublicKey {
     if (isNull(publicKey)) {
       return SSZ.encode(
           writer -> {
-            writer.writeBytes(Bytes.wrap(new byte[48]));
+            writer.writeFixedBytes(48, Bytes.wrap(new byte[48]));
           });
     } else {
       return SSZ.encode(
           writer -> {
-            writer.writeBytes(publicKey.toBytesCompressed());
+            writer.writeFixedBytes(48, publicKey.toBytesCompressed());
           });
     }
   }
