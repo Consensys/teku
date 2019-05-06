@@ -104,26 +104,31 @@ public final class HashTreeUtil {
   }
 
   public static Bytes32 merkleize(List<Bytes32> sszChunks) {
+    List<Bytes32> mutableSSZChunks = new ArrayList<>(sszChunks);
+
     // A balanced binary tree must have a power of two number of leaves.
     // NOTE: is_power_of_two also serves as a zero size check here.
-    while (!is_power_of_two(sszChunks.size())) {
-      sszChunks.add(Bytes32.ZERO);
+    while (!is_power_of_two(mutableSSZChunks.size())) {
+      mutableSSZChunks.add(Bytes32.ZERO);
     }
 
-    // Expand the size of the sszChunks list large enough to hold the entire tree.
-    sszChunks.addAll(0, Collections.nCopies(sszChunks.size(), Bytes32.ZERO));
+    // Expand the size of the mutableSSZChunks list large enough to hold the entire tree.
+    mutableSSZChunks.addAll(0, Collections.nCopies(mutableSSZChunks.size(), Bytes32.ZERO));
 
     // Iteratively calculate the root for each parent in the binary tree, starting at the leaves.
-    for (int inlineTreeIndex = sszChunks.size() / 2 - 1; inlineTreeIndex > 0; inlineTreeIndex--) {
-      sszChunks.set(
+    for (int inlineTreeIndex = mutableSSZChunks.size() / 2 - 1;
+        inlineTreeIndex > 0;
+        inlineTreeIndex--) {
+      mutableSSZChunks.set(
           inlineTreeIndex,
           Hash.keccak256(
               Bytes.concatenate(
-                  sszChunks.get(inlineTreeIndex * 2), sszChunks.get(inlineTreeIndex * 2 + 1))));
+                  mutableSSZChunks.get(inlineTreeIndex * 2),
+                  mutableSSZChunks.get(inlineTreeIndex * 2 + 1))));
     }
 
     // Return the root element, which is at index 1. The math is easier this way.
-    return sszChunks.get(1);
+    return mutableSSZChunks.get(1);
   }
 
   /**
