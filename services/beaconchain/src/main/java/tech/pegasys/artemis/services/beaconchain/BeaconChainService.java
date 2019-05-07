@@ -15,28 +15,34 @@ package tech.pegasys.artemis.services.beaconchain;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.services.ServiceConfig;
 import tech.pegasys.artemis.services.ServiceInterface;
 import tech.pegasys.artemis.statetransition.SlotScheduler;
 import tech.pegasys.artemis.statetransition.StateProcessor;
+import tech.pegasys.artemis.util.time.JavaTimer;
+import tech.pegasys.artemis.util.time.QuartzTimer;
+import tech.pegasys.artemis.util.time.Timer;
 
 public class BeaconChainService implements ServiceInterface {
 
   private EventBus eventBus;
-  private ScheduledExecutorService scheduler;
+  private Timer timer;
   private StateProcessor stateProcessor;
 
   public BeaconChainService() {}
 
   @Override
+  @SuppressWarnings({"unchecked", "rawtypes"})
   public void init(ServiceConfig config) {
     this.eventBus = config.getEventBus();
     this.eventBus.register(this);
-    this.scheduler = Executors.newSingleThreadScheduledExecutor();
+    if (true) {
+      this.timer =
+          new QuartzTimer(SlotScheduler.class, this.eventBus, 5, Constants.SECONDS_PER_SLOT);
+    } else {
+      this.timer = new JavaTimer(SlotScheduler.class, this.eventBus, 0, Constants.SECONDS_PER_SLOT);
+    }
     this.stateProcessor =
         new StateProcessor(this.eventBus, config.getConfig(), config.getKeyPair().publicKey());
   }
@@ -46,7 +52,7 @@ public class BeaconChainService implements ServiceInterface {
 
   @Override
   public void stop() {
-    this.scheduler.shutdown();
+    this.timer.stop();
     this.eventBus.unregister(this);
   }
 
@@ -54,12 +60,7 @@ public class BeaconChainService implements ServiceInterface {
   public void afterChainStart(Boolean chainStarted) {
     if (chainStarted) {
       // slot scheduler fires an event that tells us when it is time for a new slot
-      int initialDelay = 0;
-      scheduler.scheduleAtFixedRate(
-          new SlotScheduler(this.eventBus),
-          initialDelay,
-          Constants.SECONDS_PER_SLOT,
-          TimeUnit.SECONDS);
+      this.timer.start();
     }
   }
 }
