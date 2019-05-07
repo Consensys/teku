@@ -39,7 +39,7 @@ public class BeaconChainService implements ServiceInterface {
     this.eventBus.register(this);
     if (true) {
       this.timer =
-          new QuartzTimer(SlotScheduler.class, this.eventBus, 0, Constants.SECONDS_PER_SLOT);
+          new QuartzTimer(SlotScheduler.class, this.eventBus, 5, Constants.SECONDS_PER_SLOT);
     } else {
       this.timer = new JavaTimer(SlotScheduler.class, this.eventBus, 0, Constants.SECONDS_PER_SLOT);
     }
@@ -52,6 +52,7 @@ public class BeaconChainService implements ServiceInterface {
 
   @Override
   public void stop() {
+    this.timer.stop();
     this.eventBus.unregister(this);
   }
 
@@ -59,7 +60,7 @@ public class BeaconChainService implements ServiceInterface {
   public void afterChainStart(Boolean chainStarted) {
     if (chainStarted) {
       // slot scheduler fires an event that tells us when it is time for a new slot
-      this.timer.schedule();
+      this.timer.start();
     }
   }
 }

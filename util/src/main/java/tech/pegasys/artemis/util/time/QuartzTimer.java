@@ -42,11 +42,14 @@ public class QuartzTimer<T extends Job> implements Timer {
       this.type = type;
       sched = sf.getScheduler();
       UUID uuid = UUID.randomUUID();
-      job = newJob(type).withIdentity(type.getSimpleName() + uuid.toString(), "group").build();
+      job =
+          newJob(type)
+              .withIdentity(EventBus.class.getSimpleName() + uuid.toString(), "group")
+              .build();
       job.getJobDataMap().put(EventBus.class.getSimpleName(), eventBus);
       trigger =
           newTrigger()
-              .withIdentity("trigger-" + type.getSimpleName() + uuid.toString(), "group")
+              .withIdentity("trigger-" + EventBus.class.getSimpleName() + uuid.toString(), "group")
               .startAt(startTime)
               .withSchedule(simpleSchedule().withIntervalInSeconds(interval).repeatForever())
               .build();
@@ -62,9 +65,19 @@ public class QuartzTimer<T extends Job> implements Timer {
   }
 
   @Override
-  public void schedule() throws IllegalArgumentException {
+  public void start() throws IllegalArgumentException {
     try {
       sched.start();
+    } catch (SchedulerException e) {
+      throw new IllegalArgumentException(
+          "In QuartzTimer a SchedulerException was thrown: " + e.toString());
+    }
+  }
+
+  @Override
+  public void stop() {
+    try {
+      sched.shutdown();
     } catch (SchedulerException e) {
       throw new IllegalArgumentException(
           "In QuartzTimer a SchedulerException was thrown: " + e.toString());

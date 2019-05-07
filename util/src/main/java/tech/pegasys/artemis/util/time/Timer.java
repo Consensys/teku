@@ -15,5 +15,7 @@ package tech.pegasys.artemis.util.time;
 
 public interface Timer {
 
-  void schedule() throws IllegalArgumentException;
+  void start();
+
+  void stop();
 }

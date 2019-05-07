@@ -79,7 +79,7 @@ class BeaconNodeIntegrationTest {
     node1.start();
     node2.start();
 
-    Thread.sleep(10000);
+    Thread.sleep(20000);
 
     P2PNetwork net1 = node1.p2pNetwork();
     P2PNetwork net2 = node2.p2pNetwork();

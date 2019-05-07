@@ -51,7 +51,12 @@ public class JavaTimer<T extends Runnable> implements Timer {
   }
 
   @Override
-  public void schedule() {
+  public void start() {
     scheduler.scheduleAtFixedRate(task, startDelay, interval, TimeUnit.SECONDS);
+  }
+
+  @Override
+  public void stop() {
+    scheduler.shutdown();
   }
 }
