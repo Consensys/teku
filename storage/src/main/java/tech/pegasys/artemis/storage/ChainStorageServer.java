@@ -15,7 +15,12 @@ package tech.pegasys.artemis.storage;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.artemis.data.RawRecord;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.util.alogger.ALogger;
 
@@ -32,5 +37,11 @@ public class ChainStorageServer extends ChainStorageClient implements ChainStora
   @Subscribe
   public void onNewProcessedBlock(Bytes blockHash, BeaconBlock block) {
     addProcessedBlock(blockHash, block);
+  }
+
+  @Subscribe
+  public void onUpdatedHeadState(RawRecord record) throws IOException {
+    Path tmp = Paths.get("/tmp/" + Long.toString(record.getIndex()));
+    Files.write(tmp, record.toBytes().toArray());
   }
 }
