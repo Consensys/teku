@@ -15,6 +15,8 @@ package tech.pegasys.artemis.data;
 
 import java.util.Date;
 import java.util.Objects;
+import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
@@ -49,6 +51,35 @@ public class RawRecord {
     this.finalizedState = finalizedState;
     this.finalizedBlock = finalizedBlock;
     this.date = date;
+  }
+
+  public static RawRecord fromBytes(Bytes bytes) {
+    return SSZ.decode(
+        bytes,
+        reader ->
+            new RawRecord(
+                reader.readLong(64),
+                BeaconState.fromBytes(reader.readBytes()),
+                BeaconBlock.fromBytes(reader.readBytes()),
+                BeaconState.fromBytes(reader.readBytes()),
+                BeaconBlock.fromBytes(reader.readBytes()),
+                BeaconState.fromBytes(reader.readBytes()),
+                BeaconBlock.fromBytes(reader.readBytes()),
+                new Date(reader.readLong(64))));
+  }
+
+  public Bytes toBytes() {
+    return SSZ.encode(
+        writer -> {
+          writer.writeLong(index, 64);
+          writer.writeBytes(headState.toBytes());
+          writer.writeBytes(headBlock.toBytes());
+          writer.writeBytes(justifiedState.toBytes());
+          writer.writeBytes(justifiedBlock.toBytes());
+          writer.writeBytes(finalizedState.toBytes());
+          writer.writeBytes(finalizedBlock.toBytes());
+          writer.writeLong(date.getTime(), 64);
+        });
   }
 
   public Date getDate() {
