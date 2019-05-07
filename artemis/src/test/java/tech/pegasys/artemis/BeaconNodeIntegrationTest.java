@@ -39,7 +39,7 @@ class BeaconNodeIntegrationTest {
   private static ObjectMapper mapper = new ObjectMapper();
 
   @Test
-  void testThreeNodes() throws InterruptedException, JsonProcessingException, IOException {
+  void testTwoNodes() throws InterruptedException, JsonProcessingException, IOException {
     CommandLineArguments cliArgs = new CommandLineArguments();
     CommandLine commandLine = new CommandLine(cliArgs);
     commandLine.parse("");
@@ -79,7 +79,7 @@ class BeaconNodeIntegrationTest {
     node1.start();
     node2.start();
 
-    Thread.sleep(10000);
+    Thread.sleep(20000);
 
     P2PNetwork net1 = node1.p2pNetwork();
     P2PNetwork net2 = node2.p2pNetwork();
