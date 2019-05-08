@@ -95,7 +95,9 @@ public final class BlockProcessorUtil {
   public static void process_block_header(BeaconState state, BeaconBlock block) {
     checkArgument(verify_slot(state, block), "Slots don't match");
     checkArgument(
-        block.getPrevious_block_root().equals(state.getLatest_block_header().signed_root("signature")),
+        block
+            .getPrevious_block_root()
+            .equals(state.getLatest_block_header().signed_root("signature")),
         "Parent doesn't match");
 
     // Save the current block as the new latest block
@@ -686,9 +688,11 @@ public final class BlockProcessorUtil {
    * @param block
    */
   public static void verify_block_state_root(BeaconState state, BeaconBlock block) {
-    checkArgument(
-        block.getState_root().equals(state.hash_tree_root()),
-        "State roots don't match in verify_block_state_root");
+    if (!block.getState_root().equals(Bytes32.ZERO)) {
+      checkArgument(
+          block.getState_root().equals(state.hash_tree_root()),
+          "State roots don't match in verify_block_state_root");
+    }
   }
 
   private static <T> boolean allDistinct(List<T> list) {
