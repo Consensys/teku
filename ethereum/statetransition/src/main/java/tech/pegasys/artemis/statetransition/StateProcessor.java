@@ -89,6 +89,7 @@ public class StateProcessor {
           DataStructureUtil.createInitialBeaconState(config.getNumValidators());
       Bytes32 initial_state_root = initial_state.hash_tree_root();
       BeaconBlock genesis_block = BeaconBlockUtil.get_empty_block();
+      genesis_block.setState_root(initial_state_root);
       Bytes32 genesis_block_root = genesis_block.hash_tree_root();
       LOG.log(Level.INFO, "Initial state root is " + initial_state_root.toHexString());
       this.store.addState(initial_state_root, initial_state);
@@ -182,7 +183,7 @@ public class StateProcessor {
             "Transitioning state from slot: " + newHeadState.getSlot() + " to slot: " + nodeSlot);
         firstLoop = false;
       }
-      stateTransition.initiate((BeaconStateWithCache) newHeadState, null, previousBlockRoot);
+      stateTransition.initiate((BeaconStateWithCache) newHeadState, null);
     }
     this.store.addState(newHeadState.hash_tree_root(), newHeadState);
     this.headState = newHeadState;
@@ -245,12 +246,12 @@ public class StateProcessor {
 
             firstLoop = false;
           }
-          stateTransition.initiate((BeaconStateWithCache) currentState, null, parentBlockRoot);
+          stateTransition.initiate((BeaconStateWithCache) currentState, null);
         }
 
         // Run state transition with the block
         LOG.log(Level.INFO, ANSI_PURPLE + "Running state transition with block." + ANSI_RESET);
-        stateTransition.initiate((BeaconStateWithCache) currentState, block, parentBlockRoot);
+        stateTransition.initiate((BeaconStateWithCache) currentState, block);
 
         Bytes32 newStateRoot = currentState.hash_tree_root();
 
