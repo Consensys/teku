@@ -95,12 +95,12 @@ public final class BLSSignature {
   }
 
   public static BLSSignature fromBytes(Bytes bytes) {
-    checkArgument(bytes.size() == 100, "Expected 100 bytes but received %s.", bytes.size());
-    if (SSZ.decodeBytes(bytes).isZero()) {
+    checkArgument(bytes.size() == 96, "Expected 96 bytes but received %s.", bytes.size());
+    if (SSZ.decodeBytes(bytes, 96).isZero()) {
       return BLSSignature.empty();
     } else {
       return SSZ.decode(
-          bytes, reader -> new BLSSignature(Signature.fromBytesCompressed(reader.readBytes())));
+          bytes, reader -> new BLSSignature(Signature.fromBytesCompressed(reader.readFixedBytes(96))));
     }
   }
 
