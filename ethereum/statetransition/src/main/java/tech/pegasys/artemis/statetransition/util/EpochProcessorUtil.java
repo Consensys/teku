@@ -827,7 +827,7 @@ public final class EpochProcessorUtil {
       UnsignedLong balance_churn = UnsignedLong.ZERO;
       int index = 0;
       for (Validator validator : state.getValidator_registry()) {
-        if (validator.getActivation_epoch().compareTo(FAR_FUTURE_EPOCH) == 0
+        if (validator.getExit_epoch().compareTo(FAR_FUTURE_EPOCH) == 0
             && state
                     .getValidator_balances()
                     .get(index)
