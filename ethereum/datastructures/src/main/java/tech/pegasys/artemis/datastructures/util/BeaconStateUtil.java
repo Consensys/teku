@@ -138,14 +138,14 @@ public class BeaconStateUtil {
         Objects.equals(state.getDeposit_index(), deposit.getIndex()), "Deposits not in order");
 
     // Verify the Merkle branch
-    /*checkArgument(
-    verify_merkle_branch(
-        Hash.keccak256(serialized_deposit_data),
-        deposit.getProof(),
-        DEPOSIT_CONTRACT_TREE_DEPTH,
-        toIntExact(deposit.getIndex().longValue()),
-        state.getLatest_eth1_data().getDeposit_root()),
-    "Merkle branch is not valid");*/
+    checkArgument(
+        verify_merkle_branch(
+            Hash.keccak256(serialized_deposit_data),
+            deposit.getProof(),
+            Constants.DEPOSIT_CONTRACT_TREE_DEPTH,
+            toIntExact(deposit.getIndex().longValue()),
+            state.getLatest_eth1_data().getDeposit_root()),
+        "Merkle branch is not valid");
 
     //  Increment the next deposit index we are expecting. Note that this
     //  needs to be done here because while the deposit contract will never
@@ -157,9 +157,7 @@ public class BeaconStateUtil {
         state.getValidator_registry().stream()
             .map(Validator::getPubkey)
             .collect(Collectors.toList());
-
     BLSPublicKey pubkey = deposit_input.getPubkey();
-
     UnsignedLong amount = deposit.getDeposit_data().getAmount();
     Bytes32 withdrawal_credentials = deposit_input.getWithdrawal_credentials();
 
