@@ -77,6 +77,7 @@ public class ValidatorCoordinator {
 
     Bytes32 initialStateRoot = initialBeaconState.hash_tree_root();
     BeaconBlock genesisBlock = BeaconBlockUtil.get_empty_block();
+    genesisBlock.setState_root(initialStateRoot);
 
     createBlockIfNecessary(initialBeaconState, genesisBlock);
   }
@@ -133,7 +134,7 @@ public class ValidatorCoordinator {
             headState, headState.getSlot().plus(UnsignedLong.ONE));
     BLSPublicKey proposerPubkey = headState.getValidator_registry().get(proposerIndex).getPubkey();
     if (validatorSet.containsKey(proposerPubkey)) {
-      Bytes32 blockRoot = headBlock.hash_tree_root();
+      Bytes32 blockRoot = headBlock.signed_root("signature");
       createNewBlock(headState, blockRoot, validatorSet.get(proposerPubkey));
     }
   }
