@@ -90,7 +90,7 @@ public class StateProcessor {
       Bytes32 initial_state_root = initial_state.hash_tree_root();
       BeaconBlock genesis_block = BeaconBlockUtil.get_empty_block();
       genesis_block.setState_root(initial_state_root);
-      Bytes32 genesis_block_root = genesis_block.hash_tree_root();
+      Bytes32 genesis_block_root = genesis_block.signed_root("signature");
       LOG.log(Level.INFO, "Initial state root is " + initial_state_root.toHexString());
       this.store.addState(initial_state_root, initial_state);
       this.store.addProcessedBlock(genesis_block_root, genesis_block);
@@ -170,10 +170,6 @@ public class StateProcessor {
 
     BeaconState newHeadState = BeaconStateWithCache.deepCopy((BeaconStateWithCache) headBlockState);
 
-    // Hash headBlock to obtain previousBlockRoot that will be used
-    // as previous_block_root in all state transitions
-    Bytes32 previousBlockRoot = headBlock.hash_tree_root();
-
     // Run state transition with no blocks from the newHeadState.slot to node.slot
     boolean firstLoop = true;
     while (newHeadState.getSlot().compareTo(nodeSlot) < 0) {
@@ -222,12 +218,11 @@ public class StateProcessor {
 
         // Get block, block root and block state root
         BeaconBlock block = unprocessedBlock.get();
-        Bytes32 blockRoot = block.hash_tree_root();
+        Bytes32 blockRoot = block.signed_root("signature");
         Bytes32 blockStateRoot = block.getState_root();
 
         // Get parent block, parent block root, parent block state root, and parent block state
         BeaconBlock parentBlock = this.store.getParent(block).get();
-        Bytes32 parentBlockRoot = block.getPrevious_block_root();
         Bytes32 parentBlockStateRoot = parentBlock.getState_root();
         BeaconState parentBlockState = this.store.getState(parentBlockStateRoot).get();
 
