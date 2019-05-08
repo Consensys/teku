@@ -63,7 +63,7 @@ public class AttestationUtil {
     UnsignedLong slot = headState.getSlot();
     ArrayList<CrosslinkCommittee> crosslinkCommittees =
         BeaconStateUtil.get_crosslink_committees_at_slot(headState, slot);
-    Bytes32 headBlockRoot = headBlock.hash_tree_root();
+    Bytes32 headBlockRoot = headBlock.signed_root("signature");
     Bytes32 crosslinkDataRoot = Bytes32.ZERO;
     UnsignedLong epochStartSlot =
         BeaconStateUtil.get_epoch_start_slot(BeaconStateUtil.slot_to_epoch(slot));
