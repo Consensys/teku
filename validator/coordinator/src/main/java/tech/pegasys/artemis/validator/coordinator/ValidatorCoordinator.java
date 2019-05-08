@@ -177,7 +177,7 @@ public class ValidatorCoordinator {
 
       BLSSignature epoch_signature = setEpochSignature(headState, keypair);
       block.getBody().setRandao_reveal(epoch_signature);
-      stateTransition.initiate(headState, block, blockRoot);
+      stateTransition.initiate(headState, block);
       Bytes32 stateRoot = headState.hash_tree_root();
       block.setState_root(stateRoot);
       BLSSignature signed_proposal = signProposalData(headState, block, keypair);
