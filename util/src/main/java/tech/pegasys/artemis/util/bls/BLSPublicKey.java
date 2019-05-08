@@ -57,12 +57,12 @@ public class BLSPublicKey {
   }
 
   public static BLSPublicKey fromBytes(Bytes bytes) {
-    checkArgument(bytes.size() == 52, "Expected 52 bytes but received %s.", bytes.size());
-    if (SSZ.decodeBytes(bytes).isZero()) {
+    checkArgument(bytes.size() == 48, "Expected 48 bytes but received %s.", bytes.size());
+    if (SSZ.decodeBytes(bytes, 48).isZero()) {
       return BLSPublicKey.empty();
     } else {
       return SSZ.decode(
-          bytes, reader -> new BLSPublicKey(PublicKey.fromBytesCompressed(reader.readBytes())));
+          bytes, reader -> new BLSPublicKey(PublicKey.fromBytesCompressed(reader.readFixedBytes(48))));
     }
   }
 
