@@ -706,28 +706,6 @@ public class BeaconStateUtil {
   }
 
   /**
-   * Merkelize given values (where list.size() is a power of 2), and return the merkle root.
-   *
-   * <p><b>NOTE:</b> The leaves are not hashed.
-   *
-   * @param list - The List of values to get the merkle root for.
-   * @return The merkle root for the provided list of values.
-   * @see <a
-   *     href="https://github.com/ethereum/eth2.0-specs/blob/v0.4.0/specs/core/0_beacon-chain.md#merkle_root">merkle_root
-   *     - Spec v0.4</a>
-   */
-  public static Bytes32 merkle_root(List<Bytes32> list) throws IllegalStateException {
-    Bytes32[] o = new Bytes32[list.size() * 2];
-    for (int i = 0; i < list.size(); i++) {
-      o[i + list.size()] = list.get(i);
-    }
-    for (int i = list.size() - 1; i > 0; i--) {
-      o[i] = Hash.keccak256(Bytes.wrap(o[i * 2], o[i * 2 + 1]));
-    }
-    return o[1];
-  }
-
-  /**
    * Returns the number of committees in one epoch.
    *
    * @param active_validator_count - The number of active validators.

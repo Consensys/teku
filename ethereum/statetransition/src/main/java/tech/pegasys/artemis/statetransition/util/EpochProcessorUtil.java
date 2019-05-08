@@ -1034,6 +1034,8 @@ public final class EpochProcessorUtil {
     if (next_epoch.intValue() % (SLOTS_PER_HISTORICAL_ROOT / SLOTS_PER_EPOCH) == 0) {
       HistoricalBatch historical_batch =
           new HistoricalBatch(state.getLatest_block_roots(), state.getLatest_state_roots());
+      state.setHistorical_roots(
+          state.getHistorical_roots().add(HashTreeUtil.hash_tree_root(historical_batch)));
     }
 
     // Rotate current/previous epoch attestations
