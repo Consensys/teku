@@ -88,7 +88,7 @@ public class StateTransition {
     state.getLatest_state_roots().set(prev_slot_index, previous_slot_state_root);
 
     // Cache state root in stored latest_block_header if empty
-    if (state.getLatest_block_header().getState_root() == ZERO_HASH) {
+    if (state.getLatest_block_header().getState_root().equals(ZERO_HASH)) {
       state.getLatest_block_header().setState_root(previous_slot_state_root);
     }
 
