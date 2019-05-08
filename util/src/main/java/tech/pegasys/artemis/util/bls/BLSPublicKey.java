@@ -62,7 +62,8 @@ public class BLSPublicKey {
       return BLSPublicKey.empty();
     } else {
       return SSZ.decode(
-          bytes, reader -> new BLSPublicKey(PublicKey.fromBytesCompressed(reader.readFixedBytes(48))));
+          bytes,
+          reader -> new BLSPublicKey(PublicKey.fromBytesCompressed(reader.readFixedBytes(48))));
     }
   }
 

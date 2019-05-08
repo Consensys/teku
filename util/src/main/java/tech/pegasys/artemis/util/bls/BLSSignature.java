@@ -100,7 +100,8 @@ public final class BLSSignature {
       return BLSSignature.empty();
     } else {
       return SSZ.decode(
-          bytes, reader -> new BLSSignature(Signature.fromBytesCompressed(reader.readFixedBytes(96))));
+          bytes,
+          reader -> new BLSSignature(Signature.fromBytesCompressed(reader.readFixedBytes(96))));
     }
   }
 
