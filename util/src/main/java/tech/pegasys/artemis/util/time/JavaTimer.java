@@ -16,23 +16,28 @@ package tech.pegasys.artemis.util.time;
 import com.google.common.eventbus.EventBus;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.ParameterizedType;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-public class JavaTimer<T extends Runnable> implements Timer {
+public class JavaTimer implements Timer {
 
   private ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
-  private T task;
+  private ScheduledEvent task;
   private int startDelay;
   private int interval;
 
   @SuppressWarnings({"unchecked", "rawtypes"})
-  public JavaTimer(Class<T> type, EventBus eventBus, int startDelay, int interval)
+  public JavaTimer(EventBus eventBus, int startDelay, int interval)
       throws IllegalArgumentException {
     try {
+      Class type =
+          ((Class)
+              ((ParameterizedType) this.getClass().getGenericSuperclass())
+                  .getActualTypeArguments()[0]);
       Constructor constructor = type.getConstructor(new Class[] {EventBus.class});
-      this.task = (T) constructor.newInstance(new Object[] {eventBus});
+      this.task = (ScheduledEvent) constructor.newInstance(new Object[] {eventBus});
     } catch (InstantiationException e) {
       throw new IllegalArgumentException(
           "In JavaTimer a InstantiationException was thrown: " + e.toString());

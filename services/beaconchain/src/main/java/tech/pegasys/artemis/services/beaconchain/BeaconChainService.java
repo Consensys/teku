@@ -18,11 +18,9 @@ import com.google.common.eventbus.Subscribe;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.services.ServiceConfig;
 import tech.pegasys.artemis.services.ServiceInterface;
-import tech.pegasys.artemis.statetransition.SlotScheduler;
 import tech.pegasys.artemis.statetransition.StateProcessor;
-import tech.pegasys.artemis.util.time.JavaTimer;
-import tech.pegasys.artemis.util.time.QuartzTimer;
 import tech.pegasys.artemis.util.time.Timer;
+import tech.pegasys.artemis.util.time.TimerFactory;
 
 public class BeaconChainService implements ServiceInterface {
 
@@ -37,12 +35,12 @@ public class BeaconChainService implements ServiceInterface {
   public void init(ServiceConfig config) {
     this.eventBus = config.getEventBus();
     this.eventBus.register(this);
-    if (true) {
-      this.timer =
-          new QuartzTimer(SlotScheduler.class, this.eventBus, 5, Constants.SECONDS_PER_SLOT);
-    } else {
-      this.timer = new JavaTimer(SlotScheduler.class, this.eventBus, 0, Constants.SECONDS_PER_SLOT);
-    }
+    this.timer =
+        new TimerFactory()
+            .create(
+                config.getConfig().getTimer(),
+                new Object[] {this.eventBus, 5, Constants.SECONDS_PER_SLOT},
+                new Class[] {EventBus.class, Integer.class, Integer.class});
     this.stateProcessor =
         new StateProcessor(this.eventBus, config.getConfig(), config.getKeyPair().publicKey());
   }

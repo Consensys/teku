@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.statetransition;
+package tech.pegasys.artemis.util.time;
 
 import com.google.common.eventbus.EventBus;
 import java.util.Date;
@@ -20,13 +20,13 @@ import org.quartz.JobDataMap;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 
-public class SlotScheduler implements Runnable, Job {
+public class ScheduledEvent implements Runnable, Job {
 
   private EventBus eventBus;
 
-  public SlotScheduler() {}
+  public ScheduledEvent() {}
 
-  public SlotScheduler(EventBus eventBus) {
+  public ScheduledEvent(EventBus eventBus) {
     this.eventBus = eventBus;
   }
 
