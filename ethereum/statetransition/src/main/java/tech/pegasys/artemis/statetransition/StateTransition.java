@@ -44,7 +44,7 @@ public class StateTransition {
     this.printEnabled = printEnabled;
   }
 
-  public void initiate(BeaconStateWithCache state, BeaconBlock block, Bytes32 previous_block_root)
+  public void initiate(BeaconStateWithCache state, BeaconBlock block)
       throws StateTransitionException {
     // Client specific optimization
     preProcessor(state);
