@@ -270,14 +270,14 @@ public class BeaconStateUtil {
       shuffling_start_shard = state.getPrevious_shuffling_start_shard();
 
     } else if (epoch.compareTo(next_epoch) == 0) {
+      current_committees_per_epoch = get_current_epoch_committee_count(state);
+      committees_per_epoch = get_next_epoch_committee_count(state);
+      shuffling_epoch = next_epoch;
 
       UnsignedLong epochs_since_last_registry_update =
           current_epoch.minus(state.getValidator_registry_update_epoch());
       if (registry_change) {
-        committees_per_epoch = get_next_epoch_committee_count(state);
         seed = generate_seed(state, next_epoch);
-        shuffling_epoch = next_epoch;
-        current_committees_per_epoch = get_current_epoch_committee_count(state);
         shuffling_start_shard =
             state
                 .getCurrent_shuffling_start_shard()
@@ -285,14 +285,10 @@ public class BeaconStateUtil {
                 .mod(UnsignedLong.valueOf(SHARD_COUNT));
       } else if (epochs_since_last_registry_update.compareTo(UnsignedLong.ONE) > 0
           && is_power_of_two(epochs_since_last_registry_update)) {
-        committees_per_epoch = get_next_epoch_committee_count(state);
         seed = generate_seed(state, next_epoch);
-        shuffling_epoch = next_epoch;
         shuffling_start_shard = state.getCurrent_shuffling_start_shard();
       } else {
-        committees_per_epoch = get_current_epoch_committee_count(state);
         seed = state.getCurrent_shuffling_seed();
-        shuffling_epoch = state.getCurrent_shuffling_epoch();
         shuffling_start_shard = state.getCurrent_shuffling_start_shard();
       }
     }
@@ -504,8 +500,8 @@ public class BeaconStateUtil {
    *     - Spec v0.4</a>
    */
   public static UnsignedLong get_previous_epoch(BeaconState state) {
-    UnsignedLong current_epoch_minus_one = get_current_epoch(state).minus(UnsignedLong.ONE);
-    return current_epoch_minus_one;
+    return max(
+        get_current_epoch(state).minus(UnsignedLong.ONE), UnsignedLong.valueOf(GENESIS_EPOCH));
   }
 
   /**
