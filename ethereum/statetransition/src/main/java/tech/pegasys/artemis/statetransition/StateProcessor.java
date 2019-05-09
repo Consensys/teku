@@ -313,10 +313,22 @@ public class StateProcessor {
   }
 
   protected void recordData() {
-    BeaconState justifiedState = store.getState(justifiedStateRoot).get();
-    BeaconBlock justifiedBlock = store.getProcessedBlock(currentJustifiedBlockRoot).get();
-    BeaconState finalizedState = store.getState(finalizedStateRoot).get();
-    BeaconBlock finalizedBlock = store.getProcessedBlock(finalizedBlockRoot).get();
+    BeaconState justifiedState =
+        store.getState(justifiedStateRoot).isPresent()
+            ? store.getState(justifiedStateRoot).get()
+            : null;
+    BeaconBlock justifiedBlock =
+        store.getProcessedBlock(currentJustifiedBlockRoot).isPresent()
+            ? store.getProcessedBlock(currentJustifiedBlockRoot).get()
+            : null;
+    BeaconState finalizedState =
+        store.getState(finalizedStateRoot).isPresent()
+            ? store.getState(finalizedStateRoot).get()
+            : null;
+    BeaconBlock finalizedBlock =
+        store.getProcessedBlock(finalizedBlockRoot).isPresent()
+            ? store.getProcessedBlock(finalizedBlockRoot).get()
+            : null;
     RawRecord record =
         new RawRecord(
             this.nodeSlot.minus(UnsignedLong.valueOf(Constants.GENESIS_SLOT)).longValue(),
