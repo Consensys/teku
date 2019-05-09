@@ -69,14 +69,12 @@ public class AttestationUtil {
         BeaconStateUtil.get_epoch_start_slot(BeaconStateUtil.slot_to_epoch(slot));
     Bytes32 epochBoundaryRoot;
     if (epochStartSlot.compareTo(slot) == 0) {
-      epochBoundaryRoot = headBlock.hash_tree_root();
+      epochBoundaryRoot = headBlock.signed_root("signature");
     } else {
       epochBoundaryRoot = BeaconStateUtil.get_block_root(headState, epochStartSlot);
     }
     UnsignedLong sourceEpoch = headState.getCurrent_justified_epoch();
-    Bytes32 sourceRoot =
-        BeaconStateUtil.get_block_root(
-            headState, BeaconStateUtil.get_epoch_start_slot(sourceEpoch));
+    Bytes32 sourceRoot = headState.getCurrent_justified_root();
 
     // Create attestations specific to each Validator
     List<Attestation> attestations = new ArrayList<>();
