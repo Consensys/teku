@@ -46,7 +46,7 @@ public class TimeSeriesAdapter implements DataAdapter<TimeSeriesRecord> {
     BeaconState justifiedState = this.input.getJustifiedState();
     BeaconBlock finalizedBlock = this.input.getFinalizedBlock();
     BeaconState finalizedState = this.input.getFinalizedState();
-    // long numValidators = headState.getValidator_registry().size();
+    int numValidators = headState.getValidator_registry().size();
 
     Bytes32 lastJustifiedBlockRoot = HashTreeUtil.hash_tree_root(justifiedBlock.toBytes());
     Bytes32 lastJustifiedStateRoot = HashTreeUtil.hash_tree_root(justifiedState.toBytes());
@@ -55,7 +55,7 @@ public class TimeSeriesAdapter implements DataAdapter<TimeSeriesRecord> {
 
     List<ValidatorJoin> validators = new ArrayList<>();
 
-    IntStream.range(0, headState.getValidator_registry().size())
+    IntStream.range(0, numValidators - 1)
         .parallel()
         .forEach(
             i ->
@@ -63,6 +63,7 @@ public class TimeSeriesAdapter implements DataAdapter<TimeSeriesRecord> {
                     new ValidatorJoin(
                         headState.getValidator_registry().get(i),
                         headState.getValidator_balances().get(i))));
+
     return new TimeSeriesRecord(
         this.input.getDate(),
         this.input.getIndex(),
