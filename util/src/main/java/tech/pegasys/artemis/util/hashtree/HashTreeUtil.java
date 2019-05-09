@@ -57,8 +57,8 @@ public final class HashTreeUtil {
       case TUPLE_OF_BASIC:
         return hash_tree_root_tuple_of_basic_type(bytes);
       case TUPLE_OF_COMPOSITE:
-        // TODO
-        break;
+        throw new UnsupportedOperationException(
+            "Use HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_COMPOSITE, List) for a fixed length list of composite SSZ types.");
       case LIST_OF_BASIC:
         return hash_tree_root_list_of_basic_type(bytes.length, bytes);
       case LIST_OF_COMPOSITE:
@@ -86,15 +86,17 @@ public final class HashTreeUtil {
           return hash_tree_root_list_composite_type((List<Merkleizable>) bytes, bytes.size());
         }
         break;
+      case TUPLE_OF_COMPOSITE:
+        if (!bytes.isEmpty() && bytes.get(0) instanceof Bytes32) {
+          return hash_tree_root_tuple_composite_type((List<Bytes32>) bytes);
+        }
+        break;
       case BASIC:
         throw new UnsupportedOperationException(
             "Use HashTreeUtil.hash_tree_root(SSZType.BASIC, Bytes...) for a basic SSZ type.");
       case TUPLE_OF_BASIC:
         throw new UnsupportedOperationException(
             "Use HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_BASIC, Bytes...) for a fixed length tuple of basic SSZ types.");
-      case TUPLE_OF_COMPOSITE:
-        throw new UnsupportedOperationException(
-            "Use HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_COMPOSITE, Bytes...) for a fixed length tuple of composite SSZ types.");
       case CONTAINER:
         throw new UnsupportedOperationException(
             "hash_tree_root of SSZ Containers (often implemented by POJOs) must be done by the container POJO itself, as its individual fields cannot be enumerated without reflection.");
@@ -205,6 +207,24 @@ public final class HashTreeUtil {
     return mix_in_length(
         merkleize(bytes.stream().map(item -> item.hash_tree_root()).collect(Collectors.toList())),
         length);
+  }
+
+  /**
+   * Create the hash tree root of a tuple of composite SSZ types. This is only to be used for SSZ
+   * tuples and not SSZ lists. See the "see also" for more info. NOTE: This function assumes the
+   * composite type is a tuple of basic types.
+   *
+   * @param bytes A list of homogeneous Bytes32 values.
+   * @return The SSZ tree root hash of the list of values.
+   * @see <a
+   *     href="https://github.com/ethereum/eth2.0-specs/blob/v0.5.1/specs/simple-serialize.md">SSZ
+   *     Spec v0.5.1</a>
+   */
+  private static Bytes32 hash_tree_root_tuple_composite_type(List<Bytes32> bytes) {
+    return merkleize(
+        bytes.stream()
+            .map(item -> hash_tree_root_tuple_of_basic_type(item))
+            .collect(Collectors.toList()));
   }
 
   // TODO Make Private
