@@ -17,6 +17,7 @@ import java.util.Date;
 import java.util.Objects;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 
 public class RawRecord {
 
@@ -41,7 +42,7 @@ public class RawRecord {
       BeaconBlock finalizedBlock,
       Date date) {
     this.index = index;
-    this.headState = headState;
+    this.headState = BeaconStateWithCache.deepCopy((BeaconStateWithCache) headState);
     this.headBlock = headBlock;
     this.justifiedState = justifiedState;
     this.justifiedBlock = justifiedBlock;
