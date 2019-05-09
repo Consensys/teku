@@ -35,12 +35,16 @@ public class BeaconChainService implements ServiceInterface {
   public void init(ServiceConfig config) {
     this.eventBus = config.getEventBus();
     this.eventBus.register(this);
-    this.timer =
-        new TimerFactory()
-            .create(
-                config.getConfig().getTimer(),
-                new Object[] {this.eventBus, 5, Constants.SECONDS_PER_SLOT},
-                new Class[] {EventBus.class, Integer.class, Integer.class});
+    try {
+      this.timer =
+          new TimerFactory()
+              .create(
+                  config.getConfig().getTimer(),
+                  new Object[] {this.eventBus, 5, Constants.SECONDS_PER_SLOT},
+                  new Class[] {EventBus.class, Integer.class, Integer.class});
+    } catch (IllegalArgumentException e) {
+      System.exit(1);
+    }
     this.stateProcessor =
         new StateProcessor(this.eventBus, config.getConfig(), config.getKeyPair().publicKey());
   }

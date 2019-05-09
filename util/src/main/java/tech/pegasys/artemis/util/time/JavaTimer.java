@@ -29,7 +29,7 @@ public class JavaTimer implements Timer {
   private int interval;
 
   @SuppressWarnings({"unchecked", "rawtypes"})
-  public JavaTimer(EventBus eventBus, int startDelay, int interval)
+  public JavaTimer(EventBus eventBus, Integer startDelay, Integer interval)
       throws IllegalArgumentException {
     try {
       Class type =
