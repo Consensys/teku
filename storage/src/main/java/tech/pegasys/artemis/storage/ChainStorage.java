@@ -80,7 +80,9 @@ public interface ChainStorage {
   static <S extends Bytes, T, U extends ConcurrentHashMap<S, T>> Optional<T> get(S key, U items) {
     Optional<T> result = Optional.empty();
     try {
-      result = Optional.of(items.get(key));
+      if (items.size() > 0) {
+        result = Optional.of(items.get(key));
+      }
     } catch (NullPointerException e) {
       if (!key.toHexString()
           .equalsIgnoreCase("0x0000000000000000000000000000000000000000000000000000000000000000")) {
