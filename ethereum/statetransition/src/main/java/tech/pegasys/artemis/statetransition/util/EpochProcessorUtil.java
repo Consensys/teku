@@ -472,10 +472,13 @@ public final class EpochProcessorUtil {
    */
   private static MutablePair<List<UnsignedLong>, List<UnsignedLong>>
       compute_normal_justification_and_finalization_deltas(BeaconState state) {
-    List<UnsignedLong> rewards =
-        Arrays.asList(new UnsignedLong[state.getValidator_registry().size()]);
-    List<UnsignedLong> penalties =
-        Arrays.asList(new UnsignedLong[state.getValidator_registry().size()]);
+    int list_size = state.getValidator_registry().size();
+    List<UnsignedLong> rewards = Arrays.asList(new UnsignedLong[list_size]);
+    List<UnsignedLong> penalties = Arrays.asList(new UnsignedLong[list_size]);
+    for (int i = 0; i < list_size; i++) {
+      rewards.set(i, UnsignedLong.ZERO);
+      penalties.set(i, UnsignedLong.ZERO);
+    }
     MutablePair<List<UnsignedLong>, List<UnsignedLong>> deltas =
         new MutablePair<>(rewards, penalties);
 
@@ -586,10 +589,14 @@ public final class EpochProcessorUtil {
    */
   private static MutablePair<List<UnsignedLong>, List<UnsignedLong>> compute_inactivity_leak_deltas(
       BeaconState state) {
-    List<UnsignedLong> rewards =
-        Arrays.asList(new UnsignedLong[state.getValidator_registry().size()]);
-    List<UnsignedLong> penalties =
-        Arrays.asList(new UnsignedLong[state.getValidator_registry().size()]);
+
+    int list_size = state.getValidator_registry().size();
+    List<UnsignedLong> rewards = Arrays.asList(new UnsignedLong[list_size]);
+    List<UnsignedLong> penalties = Arrays.asList(new UnsignedLong[list_size]);
+    for (int i = 0; i < list_size; i++) {
+      rewards.set(i, UnsignedLong.ZERO);
+      penalties.set(i, UnsignedLong.ZERO);
+    }
     MutablePair<List<UnsignedLong>, List<UnsignedLong>> deltas =
         new MutablePair<>(rewards, penalties);
 
@@ -681,10 +688,13 @@ public final class EpochProcessorUtil {
    */
   private static MutablePair<List<UnsignedLong>, List<UnsignedLong>> get_crosslink_deltas(
       BeaconState state) {
-    List<UnsignedLong> rewards =
-        Arrays.asList(new UnsignedLong[state.getValidator_registry().size()]);
-    List<UnsignedLong> penalties =
-        Arrays.asList(new UnsignedLong[state.getValidator_registry().size()]);
+    int list_size = state.getValidator_registry().size();
+    List<UnsignedLong> rewards = Arrays.asList(new UnsignedLong[list_size]);
+    List<UnsignedLong> penalties = Arrays.asList(new UnsignedLong[list_size]);
+    for (int i = 0; i < list_size; i++) {
+      rewards.set(i, UnsignedLong.ZERO);
+      penalties.set(i, UnsignedLong.ZERO);
+    }
     MutablePair<List<UnsignedLong>, List<UnsignedLong>> deltas =
         new MutablePair<>(rewards, penalties);
 
