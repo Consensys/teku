@@ -731,8 +731,7 @@ public class BeaconState {
             HashTreeUtil.hash_tree_root(
                 SSZTypes.BASIC, SSZ.encodeUInt64(validator_registry_update_epoch.longValue())),
             // Randomness and committees
-            HashTreeUtil.hash_tree_root(
-                SSZTypes.TUPLE_OF_COMPOSITE, latest_randao_mixes.toArray(new Bytes32[0])),
+            HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_COMPOSITE, latest_randao_mixes),
             HashTreeUtil.hash_tree_root(
                 SSZTypes.BASIC, SSZ.encodeUInt64(previous_shuffling_start_shard.longValue())),
             HashTreeUtil.hash_tree_root(
@@ -762,12 +761,9 @@ public class BeaconState {
                 latest_crosslinks.stream()
                     .map(item -> item.hash_tree_root())
                     .collect(Collectors.toList())),
-            HashTreeUtil.hash_tree_root(
-                SSZTypes.TUPLE_OF_COMPOSITE, latest_block_roots.toArray(new Bytes32[0])),
-            HashTreeUtil.hash_tree_root(
-                SSZTypes.TUPLE_OF_COMPOSITE, latest_state_roots.toArray(new Bytes32[0])),
-            HashTreeUtil.hash_tree_root(
-                SSZTypes.TUPLE_OF_COMPOSITE, latest_active_index_roots.toArray(new Bytes32[0])),
+            HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_COMPOSITE, latest_block_roots),
+            HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_COMPOSITE, latest_state_roots),
+            HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_COMPOSITE, latest_active_index_roots),
             HashTreeUtil.hash_tree_root(
                 SSZTypes.TUPLE_OF_BASIC,
                 latest_slashed_balances.stream()

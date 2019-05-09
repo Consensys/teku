@@ -63,20 +63,18 @@ public class AttestationUtil {
     UnsignedLong slot = headState.getSlot();
     ArrayList<CrosslinkCommittee> crosslinkCommittees =
         BeaconStateUtil.get_crosslink_committees_at_slot(headState, slot);
-    Bytes32 headBlockRoot = headBlock.hash_tree_root();
+    Bytes32 headBlockRoot = headBlock.signed_root("signature");
     Bytes32 crosslinkDataRoot = Bytes32.ZERO;
     UnsignedLong epochStartSlot =
         BeaconStateUtil.get_epoch_start_slot(BeaconStateUtil.slot_to_epoch(slot));
     Bytes32 epochBoundaryRoot;
     if (epochStartSlot.compareTo(slot) == 0) {
-      epochBoundaryRoot = headBlock.hash_tree_root();
+      epochBoundaryRoot = headBlock.signed_root("signature");
     } else {
       epochBoundaryRoot = BeaconStateUtil.get_block_root(headState, epochStartSlot);
     }
     UnsignedLong sourceEpoch = headState.getCurrent_justified_epoch();
-    Bytes32 sourceRoot =
-        BeaconStateUtil.get_block_root(
-            headState, BeaconStateUtil.get_epoch_start_slot(sourceEpoch));
+    Bytes32 sourceRoot = headState.getCurrent_justified_root();
 
     // Create attestations specific to each Validator
     List<Attestation> attestations = new ArrayList<>();

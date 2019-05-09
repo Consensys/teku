@@ -14,6 +14,7 @@
 package tech.pegasys.artemis.datastructures.state;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -22,6 +23,8 @@ import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.ssz.SSZ;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.Copyable;
+import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
+import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
 
 public class HistoricalBatch implements Copyable<HistoricalBatch> {
 
@@ -110,5 +113,12 @@ public class HistoricalBatch implements Copyable<HistoricalBatch> {
 
   public void setStateRoots(List<Bytes32> state_roots) {
     this.state_roots = state_roots;
+  }
+
+  public Bytes32 hash_tree_root() {
+    return HashTreeUtil.merkleize(
+        Arrays.asList(
+            HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_COMPOSITE, block_roots),
+            HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_COMPOSITE, state_roots)));
   }
 }
