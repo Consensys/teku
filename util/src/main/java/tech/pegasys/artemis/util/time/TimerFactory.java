@@ -13,25 +13,12 @@
 
 package tech.pegasys.artemis.util.time;
 
+import tech.pegasys.artemis.util.AbstractFactory;
+
 @SuppressWarnings({"rawtypes"})
-public interface Timer {
-
-  String QUARTZ_TIMER_NAME = "QuartzTimer";
-
-  String JAVA_TIMER_NAME = "JavaTimer";
-
-  void start();
-
-  void stop();
-
-  static Class getTimerType(String className) {
-    switch (className) {
-      case Timer.QUARTZ_TIMER_NAME:
-        return QuartzTimer.class;
-      case Timer.JAVA_TIMER_NAME:
-        return JavaTimer.class;
-      default:
-        return QuartzTimer.class;
-    }
+public class TimerFactory extends AbstractFactory<Timer> {
+  @Override
+  public Class getClassType(String something) {
+    return Timer.getTimerType(something);
   }
 }

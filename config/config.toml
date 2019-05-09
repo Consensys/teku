@@ -6,6 +6,7 @@
 # "hobbits": use HobbitsP2PNetwork
 networkMode = "mock"
 identity = "0x00"
+timer="QuartzTimer"
 networkInterface = "0.0.0.0"
 port = 9000
 advertisedPort = 9000
