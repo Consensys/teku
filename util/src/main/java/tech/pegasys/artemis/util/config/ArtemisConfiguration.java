@@ -44,6 +44,7 @@ public final class ArtemisConfiguration {
                 "represents what network to use",
                 PropertyValidator.anyOf("mock", "hobbits"));
     builder.addString("node.identity", null, "Identity of the peer", null);
+    builder.addString("node.timer", "QuartzTimer", "Timer used for slots", null);
     builder.addString("node.networkInterface", "0.0.0.0", "Peer to peer network interface", null);
     builder.addInteger("node.port", 9000, "Peer to peer port", PropertyValidator.inRange(0, 65535));
     builder.addInteger(
@@ -212,6 +213,11 @@ public final class ArtemisConfiguration {
   /** @return the identity of the node, the hexadecimal representation of its secret key */
   public String getIdentity() {
     return config.getString("node.identity");
+  }
+
+  /** @return the identity of the node, the hexadecimal representation of its secret key */
+  public String getTimer() {
+    return config.getString("node.timer");
   }
 
   /** @return the port this node will listen to */

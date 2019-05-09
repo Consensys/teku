@@ -21,7 +21,6 @@ import com.google.common.eventbus.EventBus;
 import java.util.Date;
 import java.util.UUID;
 import org.quartz.DateBuilder;
-import org.quartz.Job;
 import org.quartz.JobDetail;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
@@ -29,21 +28,20 @@ import org.quartz.SchedulerFactory;
 import org.quartz.SimpleTrigger;
 import org.quartz.impl.StdSchedulerFactory;
 
-public class QuartzTimer<T extends Job> implements Timer {
-  final Class<T> type;
+public class QuartzTimer implements Timer {
   final Scheduler sched;
   final SimpleTrigger trigger;
   final JobDetail job;
 
-  public QuartzTimer(Class<T> type, EventBus eventBus, Date startTime, int interval)
+  @SuppressWarnings({"unchecked"})
+  public QuartzTimer(EventBus eventBus, Date startTime, Integer interval)
       throws IllegalArgumentException {
     SchedulerFactory sf = new StdSchedulerFactory();
     try {
-      this.type = type;
       sched = sf.getScheduler();
       UUID uuid = UUID.randomUUID();
       job =
-          newJob(type)
+          newJob(ScheduledEvent.class)
               .withIdentity(EventBus.class.getSimpleName() + uuid.toString(), "group")
               .build();
       job.getJobDataMap().put(EventBus.class.getSimpleName(), eventBus);
@@ -60,8 +58,8 @@ public class QuartzTimer<T extends Job> implements Timer {
     }
   }
 
-  public QuartzTimer(Class<T> task, EventBus eventBus, int startDelay, int interval) {
-    this(task, eventBus, DateBuilder.nextGivenSecondDate(null, startDelay), interval);
+  public QuartzTimer(EventBus eventBus, Integer startDelay, Integer interval) {
+    this(eventBus, DateBuilder.nextGivenSecondDate(null, startDelay), interval);
   }
 
   @Override

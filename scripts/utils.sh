@@ -81,7 +81,7 @@ create_tmux_panes() {
   while [[ $idx -lt $NODES && $idx -lt $end1 ]]
   do
     # Split the window vertically and start the next node in the new vertical split
-    tmux split-window -v "cd node_$idx && ./artemis --config=./config/runConfig.$idx.toml --logging=INFO"
+    tmux split-window -v "cd node_$idx && ./artemis --config=./config/runConfig.$idx.toml -p=CSV -o=artemis.$idx.csv --logging=INFO"
     idx=$(($idx + 1))
   done
 }
@@ -94,7 +94,7 @@ create_tmux_windows() {
   cd demo/
   
   # Create a new tmux session and start it with the first artemis node
-  tmux new-session -d -s foo 'cd node_0 && ./artemis --config=./config/runConfig.0.toml --logging=INFO'
+  tmux new-session -d -s foo 'cd node_0 && ./artemis --config=./config/runConfig.0.toml -p=CSV -o=artemis.0.csv --logging=INFO'
   
   # Start the index at 1 because the first node has already been created
   idx=1
@@ -109,7 +109,7 @@ create_tmux_windows() {
   while [[ $idx -lt $NODES ]]
   do
     # Start a new tmux window with the next node. Give it a name to add some more spice
-    tmux new-window -n 'the dude abides again...' "cd node_$idx && ./artemis --config=./config/runConfig.$idx.toml --logging=INFO"
+    tmux new-window -n 'the dude abides again...' "cd node_$idx && ./artemis --config=./config/runConfig.$idx.toml -p=CSV -o=artemis.$idx.csv --logging=INFO"
     idx=$(($idx + 1))
     # Create new tmux panes for the new 4 nodes, or as many as possible if there are less than 4
     create_tmux_panes $idx
