@@ -1045,7 +1045,7 @@ public final class EpochProcessorUtil {
       HistoricalBatch historical_batch =
           new HistoricalBatch(state.getLatest_block_roots(), state.getLatest_state_roots());
       state.setHistorical_roots(
-          state.getHistorical_roots().add(HashTreeUtil.hash_tree_root(historical_batch)));
+          state.getHistorical_roots().add(historical_batch.hash_tree_root()));
     }
 
     // Rotate current/previous epoch attestations
