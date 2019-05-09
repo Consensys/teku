@@ -34,7 +34,7 @@ public class BeaconBlockUtil {
         block.getPrevious_block_root(),
         Constants.ZERO_HASH,
         block.getBody().hash_tree_root(),
-        block.getSignature());
+        Constants.EMPTY_SIGNATURE);
   }
 
   /**

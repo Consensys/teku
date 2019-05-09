@@ -51,11 +51,12 @@ public class StateTransition {
 
     cache_state(state);
 
-    if (state
-        .getSlot()
-        .plus(UnsignedLong.ONE)
-        .mod(UnsignedLong.valueOf(SLOTS_PER_EPOCH))
-        .equals(UnsignedLong.ZERO)) {
+    if (state.getSlot().compareTo(UnsignedLong.valueOf(Constants.GENESIS_SLOT)) > 0
+        && state
+            .getSlot()
+            .plus(UnsignedLong.ONE)
+            .mod(UnsignedLong.valueOf(SLOTS_PER_EPOCH))
+            .equals(UnsignedLong.ZERO)) {
       epochProcessor(state, block);
     }
 
@@ -105,15 +106,35 @@ public class StateTransition {
   private void blockProcessor(BeaconStateWithCache state, BeaconBlock block) {
     try {
 
+      // System.out.println("1) state: " + state.hash_tree_root());
+      // System.out.println("1) block: " + block.getState_root());
       BlockProcessorUtil.process_block_header(state, block);
+      // System.out.println("2) state: " + state.hash_tree_root());
+      // System.out.println("2) block: " + block.getState_root());
       BlockProcessorUtil.process_randao(state, block);
+      // System.out.println("3) state: " + state.hash_tree_root());
+      // System.out.println("3) block: " + block.getState_root());
       BlockProcessorUtil.process_eth1_data(state, block);
+      // System.out.println("4) state: " + state.hash_tree_root());
+      // System.out.println("4) block: " + block.getState_root());
       BlockProcessorUtil.process_proposer_slashings(state, block);
+      // System.out.println("5) state: " + state.hash_tree_root());
+      // System.out.println("5) block: " + block.getState_root());
       BlockProcessorUtil.process_attester_slashings(state, block);
+      // System.out.println("6) state: " + state.hash_tree_root());
+      // System.out.println("6) block: " + block.getState_root());
       BlockProcessorUtil.process_attestations(state, block);
+      // System.out.println("7) state: " + state.hash_tree_root());
+      // System.out.println("7) block: " + block.getState_root());
       BlockProcessorUtil.process_deposits(state, block);
+      // System.out.println("8) state: " + state.hash_tree_root());
+      // System.out.println("8) block: " + block.getState_root());
       BlockProcessorUtil.process_voluntary_exits(state, block);
+      // System.out.println("9) state: " + state.hash_tree_root());
+      // System.out.println("9) block: " + block.getState_root());
       BlockProcessorUtil.process_transfers(state, block);
+      // System.out.println("10) state: " + state.hash_tree_root());
+      // System.out.println("10) block: " + block.getState_root());
       BlockProcessorUtil.verify_block_state_root(state, block);
 
     } catch (BlockProcessingException e) {
