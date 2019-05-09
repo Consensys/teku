@@ -1,8 +1,17 @@
 #!/bin/bash
 
 ./gradlew run > artemisTestOutput.txt &
-artemisPid=$!
 
+# Search for instances of Java stack traces in the artemisTestOutput
+grep -m1 -E "at\ (([a-zA-Z0-9]|\\$)+\.?)+\([a-zA-Z0-9]+\.java:[0-9]+\)" ./artemisTestOutput.txt
+
+if [[ "$?" -ne 0 ]]
+then
+  echo $'\nFAILED: A java stack trace was found in the logs'
+  exit 1
+fi
+
+artemisPid=$!
 slotCounter=0
 
 tail -fn0 ./artemisTestOutput.txt | \
