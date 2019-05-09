@@ -51,11 +51,12 @@ public class StateTransition {
 
     cache_state(state);
 
-    if (state
-        .getSlot()
-        .plus(UnsignedLong.ONE)
-        .mod(UnsignedLong.valueOf(SLOTS_PER_EPOCH))
-        .equals(UnsignedLong.ZERO)) {
+    if (state.getSlot().compareTo(UnsignedLong.valueOf(Constants.GENESIS_SLOT)) > 0
+        && state
+            .getSlot()
+            .plus(UnsignedLong.ONE)
+            .mod(UnsignedLong.valueOf(SLOTS_PER_EPOCH))
+            .equals(UnsignedLong.ZERO)) {
       epochProcessor(state, block);
     }
 
