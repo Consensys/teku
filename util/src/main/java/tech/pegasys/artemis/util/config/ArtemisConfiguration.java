@@ -62,6 +62,9 @@ public final class ArtemisConfiguration {
         1,
         "represents the total number of nodes on the network",
         PropertyValidator.inRange(1, 65535));
+
+    builder.addBoolean("sim.enabled", false, "PoW simulation flag", null);
+    builder.addString("sim.inputFile", "", "PoW simulation optional input file", null);
     builder.addListOfString(
         "node.peers",
         Collections.emptyList(),
@@ -87,6 +90,14 @@ public final class ArtemisConfiguration {
                 : null);
     builder.addLong(
         "node.networkID", 1L, "The identifier of the network (mainnet, testnet, sidechain)", null);
+
+    // Outputs
+    builder.addString(
+        "output.providerType",
+        "JSON",
+        "Output provider types: CSV, JSON",
+        PropertyValidator.anyOf("CSV", "JSON"));
+    builder.addString("output.outputFile", "", "Path/filename of the output file", null);
 
     // Constants
     // Misc
@@ -243,6 +254,33 @@ public final class ArtemisConfiguration {
   /** @return the total number of nodes on the network */
   public int getNumNodes() {
     return config.getInteger("sim.numNodes");
+  }
+
+  /** @return the PoW simulation flag, w/ optional input file */
+  public String getInputFile() {
+    String inputFile = config.getString("sim.inputFile");
+    if (inputFile == null || inputFile.equals("")) return null;
+    return inputFile;
+  }
+
+  /** @return if simulation is enabled or not */
+  public boolean isSimulation() {
+    return config.getBoolean("sim.enabled");
+  }
+
+  /** @return the Output provider types: CSV, JSON */
+  public String getProviderType() {
+    return config.getString("output.providerType");
+  }
+
+  /** @return the Path/filename of the output file. */
+  public String getOutputFile() {
+    return config.getString("output.outputFile");
+  }
+
+  /** @return if output is enabled or not */
+  public Boolean isOutputEnabled() {
+    return this.getOutputFile().length() > 0;
   }
 
   /** @return misc constants */

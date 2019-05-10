@@ -22,17 +22,6 @@ import picocli.CommandLine.Option;
 
 @Command(name = "Artemis", mixinStandardHelpOptions = true)
 public class CommandLineArguments {
-  @Option(
-      names = {"-p", "--provider"},
-      paramLabel = "<PROVIDER TYPE>",
-      description = "Output provider types: CSV, JSON (default: JSON).")
-  private String providerType = "JSON";
-
-  @Option(
-      names = {"-o", "--output"},
-      paramLabel = "<FILENAME>",
-      description = "Path/filename of the output file")
-  private String outputFile = "";
 
   @Option(
       names = {"-l", "--logging"},
@@ -47,13 +36,6 @@ public class CommandLineArguments {
       paramLabel = "<FILENAME>",
       description = "Path/filename of the config file")
   private String configFile = "./config/config.toml";
-
-  @Option(
-      names = {"-s", "--sim"},
-      arity = "0",
-      paramLabel = "<FILENAME>",
-      description = "PoW simulation flag, w/ optional input file")
-  private String inputFile = null;
 
   @Option(
       names = {"-f", "--format"},
@@ -73,33 +55,12 @@ public class CommandLineArguments {
         }
       };
 
-  public String getProviderType() {
-    return this.providerType;
-  }
-
-  public String getOutputFile() {
-    return this.outputFile;
-  }
-
-  public Boolean isOutputEnabled() {
-    return this.outputFile.length() > 0;
-  }
-
   public Level getLoggingLevel() {
     return this.logLevel;
   }
 
   public String getConfigFile() {
     return configFile;
-  }
-
-  public boolean isSimulation() {
-    return !(inputFile == null);
-  }
-
-  public String getInputFile() {
-    if (inputFile == null || inputFile.equals("")) return null;
-    return inputFile;
   }
 
   public boolean isFormat() {

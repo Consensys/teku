@@ -89,11 +89,11 @@ public class BeaconNode {
     Constants.init(config);
     this.cliArgs = cliArgs;
     this.commandLine = commandLine;
-    if (cliArgs.isOutputEnabled()) {
+    if (config.isOutputEnabled()) {
       this.eventBus.register(this);
       try {
-        Path outputFilename = FileProvider.uniqueFilename(cliArgs.getOutputFile());
-        if (ProviderTypes.compare(CSVProvider.class, cliArgs.getProviderType())) {
+        Path outputFilename = FileProvider.uniqueFilename(config.getOutputFile());
+        if (ProviderTypes.compare(CSVProvider.class, config.getProviderType())) {
           this.fileProvider = new CSVProvider(outputFilename);
         } else {
           this.fileProvider = new JSONProvider(outputFilename);

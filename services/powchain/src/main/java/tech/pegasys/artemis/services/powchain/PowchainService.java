@@ -76,9 +76,9 @@ public class PowchainService implements ServiceInterface {
   public void init(ServiceConfig config) {
     this.eventBus = config.getEventBus();
     this.eventBus.register(this);
-    this.depositSimulation = config.getCliArgs().isSimulation();
-    if (config.getCliArgs().getInputFile() != null)
-      this.simFile = System.getProperty("user.dir") + "/" + config.getCliArgs().getInputFile();
+    this.depositSimulation = config.getConfig().isSimulation();
+    if (config.getConfig().getInputFile() != null)
+      this.simFile = System.getProperty("user.dir") + "/" + config.getConfig().getInputFile();
   }
 
   @Override
