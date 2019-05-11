@@ -40,8 +40,10 @@ public class BeaconChainService implements ServiceInterface {
           new TimerFactory()
               .create(
                   config.getConfig().getTimer(),
-                  new Object[] {this.eventBus, 5, Constants.SECONDS_PER_SLOT},
-                  new Class[] {EventBus.class, Integer.class, Integer.class});
+                  new Object[] {
+                    this.eventBus, 5000L, Long.valueOf(Constants.SECONDS_PER_SLOT) * 1000L
+                  },
+                  new Class[] {EventBus.class, Long.class, Long.class});
     } catch (IllegalArgumentException e) {
       System.exit(1);
     }

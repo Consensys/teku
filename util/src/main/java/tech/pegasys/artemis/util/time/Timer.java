@@ -16,8 +16,8 @@ package tech.pegasys.artemis.util.time;
 @SuppressWarnings({"rawtypes"})
 public interface Timer {
 
+  String BLOCK_TIMER_NAME = "BlockTimer";
   String QUARTZ_TIMER_NAME = "QuartzTimer";
-
   String JAVA_TIMER_NAME = "JavaTimer";
 
   void start();
@@ -26,6 +26,8 @@ public interface Timer {
 
   static Class getTimerType(String className) {
     switch (className) {
+      case Timer.BLOCK_TIMER_NAME:
+        return BlockTimer.class;
       case Timer.QUARTZ_TIMER_NAME:
         return QuartzTimer.class;
       case Timer.JAVA_TIMER_NAME:

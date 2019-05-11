@@ -262,6 +262,7 @@ public final class HobbitsP2PNetwork implements P2PNetwork {
     Date timestamp = new Date();
     String attributes = "BLOCK" + "," + String.valueOf(timestamp.getTime());
     Bytes messageHash = state.sendGossipMessage(attributes, block.toBytes());
+    this.eventBus.post(timestamp.getTime());
     this.receivedMessages.put(messageHash.toHexString(), true);
   }
 

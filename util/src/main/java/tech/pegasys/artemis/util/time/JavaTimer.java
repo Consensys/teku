@@ -24,11 +24,11 @@ public class JavaTimer implements Timer {
 
   private ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
   private ScheduledEvent task;
-  private int startDelay;
-  private int interval;
+  private Long startDelay;
+  private Long interval;
 
   @SuppressWarnings({"unchecked", "rawtypes"})
-  public JavaTimer(EventBus eventBus, Integer startDelay, Integer interval)
+  public JavaTimer(EventBus eventBus, Long startDelay, Long interval)
       throws IllegalArgumentException {
     try {
       Class type = ScheduledEvent.class;
@@ -53,7 +53,7 @@ public class JavaTimer implements Timer {
 
   @Override
   public void start() {
-    scheduler.scheduleAtFixedRate(task, startDelay, interval, TimeUnit.SECONDS);
+    scheduler.scheduleAtFixedRate(task, startDelay, interval, TimeUnit.MILLISECONDS);
   }
 
   @Override
