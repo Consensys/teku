@@ -41,6 +41,7 @@ public class ChainStorageServer extends ChainStorageClient implements ChainStora
 
   @Subscribe
   public void onUpdatedHeadState(RawRecord record) throws IOException {
+    System.out.println("DEBUG: Recorded an event");
     Path tmp = Paths.get("/tmp/" + Long.toString(record.getIndex()));
     Files.write(tmp, record.toBytes().toArray());
   }
