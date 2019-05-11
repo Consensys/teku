@@ -73,14 +73,14 @@ $ ./gradlew run
 To run and send formatted output to a json file
 
 ```
-  update config/config.toml file with outputFile = "artemis.json" , providerType = "JSON"
+  modfiy config/config.toml file with outputFile = "artemis.json" , providerType = "JSON"
 $ ./gradlew run 
 ```
 
 To run and send formatted output to a csv file
 
 ```
-update config/config.toml file with outputFile = "artemis.csv" , providerType = "CSV"
+modfiy config/config.toml file with outputFile = "artemis.csv" , providerType = "CSV"
 $ ./gradlew run 
 ```
 
