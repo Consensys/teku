@@ -20,7 +20,6 @@ import static org.quartz.TriggerBuilder.newTrigger;
 import com.google.common.eventbus.EventBus;
 import java.util.Date;
 import java.util.UUID;
-import org.quartz.DateBuilder;
 import org.quartz.JobDetail;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
@@ -34,10 +33,11 @@ public class QuartzTimer implements Timer {
   final JobDetail job;
 
   @SuppressWarnings({"unchecked"})
-  public QuartzTimer(EventBus eventBus, Date startTime, Integer interval)
+  public QuartzTimer(EventBus eventBus, Date startTime, Long interval)
       throws IllegalArgumentException {
     SchedulerFactory sf = new StdSchedulerFactory();
     try {
+      System.out.println("Starting internal timer: " + startTime);
       sched = sf.getScheduler();
       UUID uuid = UUID.randomUUID();
       job =
@@ -49,7 +49,7 @@ public class QuartzTimer implements Timer {
           newTrigger()
               .withIdentity("trigger-" + EventBus.class.getSimpleName() + uuid.toString(), "group")
               .startAt(startTime)
-              .withSchedule(simpleSchedule().withIntervalInSeconds(interval).repeatForever())
+              .withSchedule(simpleSchedule().withIntervalInMilliseconds(interval).repeatForever())
               .build();
       sched.scheduleJob(job, trigger);
     } catch (SchedulerException e) {
@@ -58,8 +58,8 @@ public class QuartzTimer implements Timer {
     }
   }
 
-  public QuartzTimer(EventBus eventBus, Integer startDelay, Integer interval) {
-    this(eventBus, DateBuilder.nextGivenSecondDate(null, startDelay), interval);
+  public QuartzTimer(EventBus eventBus, Long startDelay, Long interval) {
+    this(eventBus, new Date(new Date().getTime() + startDelay), interval);
   }
 
   @Override
@@ -75,7 +75,7 @@ public class QuartzTimer implements Timer {
   @Override
   public void stop() {
     try {
-      sched.shutdown();
+      sched.shutdown(false);
     } catch (SchedulerException e) {
       throw new IllegalArgumentException(
           "In QuartzTimer a SchedulerException was thrown: " + e.toString());
