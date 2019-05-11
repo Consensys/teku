@@ -13,10 +13,7 @@
 
 package tech.pegasys.artemis.util.cli;
 
-import java.util.ArrayList;
-import java.util.List;
 import org.apache.logging.log4j.Level;
-import picocli.CommandLine;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 
@@ -37,37 +34,11 @@ public class CommandLineArguments {
       description = "Path/filename of the config file")
   private String configFile = "./config/config.toml";
 
-  @Option(
-      names = {"-f", "--format"},
-      paramLabel = "<IS FORMAT>",
-      description = "Output of JSON file is serial or formatted")
-  private boolean isFormat = false;
-
-  // Specify events that will be output for logging
-  @CommandLine.Parameters(
-      paramLabel = "<EVENT>",
-      description = "Output selector for specific events")
-  @SuppressWarnings({"DoubleBraceInitialization"})
-  private List<String> events =
-      new ArrayList<String>() {
-        {
-          add("TimeSeriesRecord");
-        }
-      };
-
   public Level getLoggingLevel() {
     return this.logLevel;
   }
 
   public String getConfigFile() {
     return configFile;
-  }
-
-  public boolean isFormat() {
-    return isFormat;
-  }
-
-  public List<String> getEvents() {
-    return events;
   }
 }

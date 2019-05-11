@@ -19,6 +19,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -35,6 +36,7 @@ import tech.pegasys.artemis.util.bls.BLSSignature;
 /** Configuration of an instance of Artemis. */
 public final class ArtemisConfiguration {
 
+  @SuppressWarnings({"DoubleBraceInitialization"})
   static final Schema createSchema() {
     SchemaBuilder builder =
         SchemaBuilder.create()
@@ -98,6 +100,17 @@ public final class ArtemisConfiguration {
         "Output provider types: CSV, JSON",
         PropertyValidator.anyOf("CSV", "JSON"));
     builder.addString("output.outputFile", "", "Path/filename of the output file", null);
+    builder.addBoolean(
+        "output.formatted", false, "Output of JSON file is serial or formatted", null);
+    builder.addListOfString(
+        "output.events",
+        new ArrayList<String>() {
+          {
+            add("TimeSeriesRecord");
+          }
+        },
+        "Output selector for specific events",
+        null);
 
     // Constants
     // Misc
@@ -281,6 +294,16 @@ public final class ArtemisConfiguration {
   /** @return if output is enabled or not */
   public Boolean isOutputEnabled() {
     return this.getOutputFile().length() > 0;
+  }
+
+  /** @return If Output of JSON file is serial or formatted */
+  public Boolean isFormat() {
+    return config.getBoolean("output.formatted");
+  }
+
+  /** @return specific events of Output selector */
+  public List<String> getEvents() {
+    return config.getListOfString("output.events");
   }
 
   /** @return misc constants */

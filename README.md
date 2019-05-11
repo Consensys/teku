@@ -55,22 +55,14 @@ To view the run menu:
 ```
 $ ./gradlew run --args='-h'
 
-Usage: Artemis [-fhV] [-s] [-c=<FILENAME>] [-l=<LOG VERBOSITY LEVEL>]
-               [-o=<FILENAME>] [-p=<PROVIDER TYPE>] [<EVENT>...]
-      [<EVENT>...]          Output selector for specific events
-  -c, --config=<FILENAME>   Path/filename of the config file
-  -f, --format              Output of JSON file is serial or formatted
-  -h, --help                Show this help message and exit.
-  -l, --logging=<LOG VERBOSITY LEVEL>
-                            Logging verbosity levels: OFF, FATAL, WARN, INFO, DEBUG,
-                              TRACE, ALL (default: INFO).
-  -o, --output=<FILENAME>   Path/filename of the output file. Path can be followed
-                            by events the user wishes to output example:
-                            -o=artemis.json Eth2Genesis TimeSeriesRecord
-  -p, --provider=<PROVIDER TYPE>
-                            Output provider types: CSV, JSON (default: JSON).
-  -s, --sim                 PoW simulation flag, w/ optional input file
-  -V, --version             Print version information and exit.
+Usage: Artemis [-hV] [-c=<FILENAME>] [-l=<LOG VERBOSITY LEVEL>]
+-c, --config=<FILENAME>   Path/filename of the config file
+-h, --help                Show this help message and exit.
+-l, --logging=<LOG VERBOSITY LEVEL>
+                          Logging verbosity levels: OFF, FATAL, WARN, INFO, DEBUG,
+                            TRACE, ALL (default: INFO).
+-V, --version             Print version information and exit.
+
 ```
 
 You can run the executable from the CLI with this command:
@@ -81,15 +73,15 @@ $ ./gradlew run
 To run and send formatted output to a json file
 
 ```
-$ ./gradlew run --args='-p=JSON -o=artemis.json'
+  update config/config.toml file with outputFile = "artemis.json" , providerType = "JSON"
+$ ./gradlew run 
 ```
-
->NOTE: If no -p isn't provided then it defaults to JSON
 
 To run and send formatted output to a csv file
 
 ```
-$ ./gradlew run --args='-p=CSV -o=artemis.csv'
+update config/config.toml file with outputFile = "artemis.csv" , providerType = "CSV"
+$ ./gradlew run 
 ```
 
 To run with loggin level set to DEBUG

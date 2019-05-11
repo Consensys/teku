@@ -98,7 +98,7 @@ public class BeaconNode {
         } else {
           this.fileProvider = new JSONProvider(outputFilename);
         }
-        this.eventHandler = new EventHandler(cliArgs, fileProvider);
+        this.eventHandler = new EventHandler(config, fileProvider);
         this.eventBus.register(eventHandler);
       } catch (IOException e) {
         LOG.log(Level.ERROR, e.getMessage());
