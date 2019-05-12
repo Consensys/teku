@@ -19,6 +19,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -35,6 +36,7 @@ import tech.pegasys.artemis.util.bls.BLSSignature;
 /** Configuration of an instance of Artemis. */
 public final class ArtemisConfiguration {
 
+  @SuppressWarnings({"DoubleBraceInitialization"})
   static final Schema createSchema() {
     SchemaBuilder builder =
         SchemaBuilder.create()
@@ -62,6 +64,9 @@ public final class ArtemisConfiguration {
         1,
         "represents the total number of nodes on the network",
         PropertyValidator.inRange(1, 65535));
+
+    builder.addBoolean("sim.enabled", false, "PoW simulation flag", null);
+    builder.addString("sim.inputFile", "", "PoW simulation optional input file", null);
     builder.addListOfString(
         "node.peers",
         Collections.emptyList(),
@@ -87,6 +92,25 @@ public final class ArtemisConfiguration {
                 : null);
     builder.addLong(
         "node.networkID", 1L, "The identifier of the network (mainnet, testnet, sidechain)", null);
+
+    // Outputs
+    builder.addString(
+        "output.providerType",
+        "JSON",
+        "Output provider types: CSV, JSON",
+        PropertyValidator.anyOf("CSV", "JSON"));
+    builder.addString("output.outputFile", "", "Path/filename of the output file", null);
+    builder.addBoolean(
+        "output.formatted", false, "Output of JSON file is serial or formatted", null);
+    builder.addListOfString(
+        "output.events",
+        new ArrayList<String>() {
+          {
+            add("TimeSeriesRecord");
+          }
+        },
+        "Output selector for specific events",
+        null);
 
     // Constants
     // Misc
@@ -243,6 +267,43 @@ public final class ArtemisConfiguration {
   /** @return the total number of nodes on the network */
   public int getNumNodes() {
     return config.getInteger("sim.numNodes");
+  }
+
+  /** @return the PoW simulation flag, w/ optional input file */
+  public String getInputFile() {
+    String inputFile = config.getString("sim.inputFile");
+    if (inputFile == null || inputFile.equals("")) return null;
+    return inputFile;
+  }
+
+  /** @return if simulation is enabled or not */
+  public boolean isSimulation() {
+    return config.getBoolean("sim.enabled");
+  }
+
+  /** @return the Output provider types: CSV, JSON */
+  public String getProviderType() {
+    return config.getString("output.providerType");
+  }
+
+  /** @return the Path/filename of the output file. */
+  public String getOutputFile() {
+    return config.getString("output.outputFile");
+  }
+
+  /** @return if output is enabled or not */
+  public Boolean isOutputEnabled() {
+    return this.getOutputFile().length() > 0;
+  }
+
+  /** @return If Output of JSON file is serial or formatted */
+  public Boolean isFormat() {
+    return config.getBoolean("output.formatted");
+  }
+
+  /** @return specific events of Output selector */
+  public List<String> getEvents() {
+    return config.getListOfString("output.events");
   }
 
   /** @return misc constants */

@@ -19,16 +19,16 @@ import tech.pegasys.artemis.data.IRecordAdapter;
 import tech.pegasys.artemis.data.RawRecord;
 import tech.pegasys.artemis.data.TimeSeriesRecord;
 import tech.pegasys.artemis.data.adapter.TimeSeriesAdapter;
-import tech.pegasys.artemis.util.cli.CommandLineArguments;
+import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 
 public class EventHandler {
   List<String> events;
   FileProvider fileProvider;
   boolean isFormat;
 
-  public EventHandler(CommandLineArguments cliArgs, FileProvider fileProvider) {
-    this.events = cliArgs.getEvents();
-    this.isFormat = cliArgs.isFormat();
+  public EventHandler(ArtemisConfiguration config, FileProvider fileProvider) {
+    this.events = config.getEvents();
+    this.isFormat = config.isFormat();
     this.fileProvider = fileProvider;
   }
 

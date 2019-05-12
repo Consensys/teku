@@ -42,7 +42,7 @@ class BeaconNodeIntegrationTest {
   void testTwoNodes() throws InterruptedException, JsonProcessingException, IOException {
     CommandLineArguments cliArgs = new CommandLineArguments();
     CommandLine commandLine = new CommandLine(cliArgs);
-    commandLine.parse("");
+    //    commandLine.parse("");
 
     // Read all lines from a file
     String content = "";
