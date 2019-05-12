@@ -266,11 +266,17 @@ public class StateProcessor {
 
     try {
       // Obtain latest justified block and state that will be passed into lmd_ghost
-      BeaconState justifiedState = store.getState(justifiedStateRoot).get();
-      BeaconBlock justifiedBlock = store.getProcessedBlock(justifiedBlockRoot).get();
+      if (store.getState(justifiedStateRoot).isPresent()
+          && store.getProcessedBlock(justifiedBlockRoot).isPresent()) {
+        BeaconState justifiedState = store.getState(justifiedStateRoot).get();
+        BeaconBlock justifiedBlock = store.getProcessedBlock(justifiedBlockRoot).get();
+        // Run lmd_ghost to get the head block
+        this.headBlock = LmdGhost.lmd_ghost(store, justifiedState, justifiedBlock);
+      } else {
+        throw new StateTransitionException(
+            "JustifiedStateRoot and/or JustifiedBlockRoot is unavailable.");
+      }
 
-      // Run lmd_ghost to get the head block
-      this.headBlock = LmdGhost.lmd_ghost(store, justifiedState, justifiedBlock);
     } catch (NoSuchElementException | StateTransitionException e) {
       LOG.log(Level.FATAL, "Can't update head block using LMDGhost");
     }
