@@ -114,7 +114,6 @@ public class BeaconNode {
   public void start() {
 
     try {
-      // Check output file
 
       // Initialize services
       serviceController.initAll(
