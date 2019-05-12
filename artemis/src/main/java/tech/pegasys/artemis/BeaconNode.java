@@ -89,16 +89,16 @@ public class BeaconNode {
     Constants.init(config);
     this.cliArgs = cliArgs;
     this.commandLine = commandLine;
-    if (cliArgs.isOutputEnabled()) {
+    if (config.isOutputEnabled()) {
       this.eventBus.register(this);
       try {
-        Path outputFilename = FileProvider.uniqueFilename(cliArgs.getOutputFile());
-        if (ProviderTypes.compare(CSVProvider.class, cliArgs.getProviderType())) {
+        Path outputFilename = FileProvider.uniqueFilename(config.getOutputFile());
+        if (ProviderTypes.compare(CSVProvider.class, config.getProviderType())) {
           this.fileProvider = new CSVProvider(outputFilename);
         } else {
           this.fileProvider = new JSONProvider(outputFilename);
         }
-        this.eventHandler = new EventHandler(cliArgs, fileProvider);
+        this.eventHandler = new EventHandler(config, fileProvider);
         this.eventBus.register(eventHandler);
       } catch (IOException e) {
         LOG.log(Level.ERROR, e.getMessage());
@@ -114,7 +114,6 @@ public class BeaconNode {
   public void start() {
 
     try {
-      // Check output file
 
       // Initialize services
       serviceController.initAll(
