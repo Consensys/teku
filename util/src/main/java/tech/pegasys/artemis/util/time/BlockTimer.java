@@ -26,7 +26,7 @@ import java.util.concurrent.Executors;
  */
 public class BlockTimer implements Timer {
 
-  private final Long EPSILON = 100L;
+  private final Long EPSILON = 1000L;
   private final Long STEPS = 32L;
   private final Long timeInterval;
   private Long previousTime = new Date(Long.MIN_VALUE).getTime();
@@ -65,36 +65,25 @@ public class BlockTimer implements Timer {
     // This condition evaluates true when relativeTick is within this range:
     // [timerInterval - EPSILON, timerInterval + EPSILON]
     if (elapsedTime <= timeInterval + EPSILON && elapsedTime > timeInterval - EPSILON) {
-      internalTimer.stop();
-      System.out.println("timeInterval + EPSILON: " + (timeInterval + EPSILON));
-      System.out.println("elapsed time: " + elapsedTime);
-      System.out.println("timeInterval - EPSILON: " + (timeInterval - EPSILON));
       previousTime = currentTime;
-      Long drift = timeInterval - elapsedTime;
-      totalDrift += drift;
-      internalTimer =
-          new QuartzTimer(internalEventBus, timeInterval + totalDrift / STEPS, timeInterval);
-      internalTimer.start();
       // notify subscribers on the event bus
       eventBus.post(new Date(previousTime));
-      System.out.println("##################################TotalDrift = " + totalDrift);
     }
   }
 
   @Subscribe
   public void onLocalTick(Date date) {
-    System.out.println("onLocalTick");
+
     Long localTime = date.getTime();
     Long elapsedLocalTime = localTime - previousTime;
     if (previousTime.equals(new Date(Long.MIN_VALUE).getTime())) {
       elapsedLocalTime = timeInterval;
     }
-    scheduleTimer(localTime, elapsedLocalTime);
+    // scheduleTimer(localTime, elapsedLocalTime);
   }
 
   @Subscribe
-  public void onRelativeTick(Long time) {
-    System.out.println("onRelativeTick");
+  public void onBlockReceived(Long time) {
     Long relativeTime = new Date().getTime();
     Long elapsedRelativeTime = relativeTime - previousTime;
     if (previousTime.equals(new Date(Long.MIN_VALUE).getTime())) {
