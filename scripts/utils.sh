@@ -35,9 +35,6 @@ create_config() {
   # Create the configuration file for the node
   cat ../config/config.toml | \
     sed "s/advertisedPort\ =.*//"                                     |# Remove the advertised port field
-    sed "s/LATEST_BLOCK_ROOTS_LENGTH\ =.*//"                          |# Remove the LATEST_BLOCK_ROOTS_LENGTH field
-    sed "s/DOMAIN_PROPOSAL\ =.*//"                                    |# Remove the DOMAIN_PROPOSAL field
-    sed "s/DOMAIN_EXIT\ =.*//"                                        |# Remove the DOMAIN_EXIT field
     sed "s/identity\ =.*/identity\ =\ \"$IDENTITY\"/"                 |# Update the identity field to the value set above
     sed "s/port\ =.*/port\ =\ $PORT/"                                 |# Update the port field to the value set above
     awk -v peers="$PEERS" '/port/{print;print "peers = "peers;next}1' |# Update the peer list 
@@ -81,7 +78,7 @@ create_tmux_panes() {
   while [[ $idx -lt $NODES && $idx -lt $end1 ]]
   do
     # Split the window vertically and start the next node in the new vertical split
-    tmux split-window -v "cd node_$idx && ./artemis --config=./config/runConfig.$idx.toml -p=CSV -o=artemis.$idx.csv --logging=INFO"
+    tmux split-window -v "cd node_$idx && ./artemis --config=./config/runConfig.$idx.toml --logging=INFO"
     idx=$(($idx + 1))
   done
 }
@@ -94,7 +91,7 @@ create_tmux_windows() {
   cd demo/
   
   # Create a new tmux session and start it with the first artemis node
-  tmux new-session -d -s foo 'cd node_0 && ./artemis --config=./config/runConfig.0.toml -p=CSV -o=artemis.0.csv --logging=INFO'
+  tmux new-session -d -s foo 'cd node_0 && ./artemis --config=./config/runConfig.0.toml --logging=INFO'
   
   # Start the index at 1 because the first node has already been created
   idx=1

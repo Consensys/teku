@@ -94,4 +94,4 @@ To run and generate flow diagrams for Artemis
 ```
 $ ./gradlew run -PgenerateFlow
 ```
-Note: You must be running [flow](http://findtheflow.io/)
+> Note: You must be running [flow](http://findtheflow.io/)
