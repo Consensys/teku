@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.artemis.data.RawRecord;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
@@ -34,15 +35,18 @@ public class ChainStorageServer extends ChainStorageClient implements ChainStora
     this.eventBus = eventBus;
   }
 
-  @Subscribe
-  public void onNewProcessedBlock(Bytes blockHash, BeaconBlock block) {
-    addProcessedBlock(blockHash, block);
+  public void storeRawRecord(RawRecord record) throws IOException {
+    Path tmp = Paths.get("/tmp/" + Long.toString(record.getIndex()));
+    System.out.println(tmp.toString());
+    if (Files.exists(tmp)) {
+      LOG.log(Level.INFO, tmp.toString() + " chaindata file already exists");
+    } else {
+      Files.write(tmp, record.toBytes().toArray());
+    }
   }
 
   @Subscribe
-  public void onUpdatedHeadState(RawRecord record) throws IOException {
-    System.out.println("DEBUG: Recorded an event");
-    Path tmp = Paths.get("/tmp/" + Long.toString(record.getIndex()));
-    Files.write(tmp, record.toBytes().toArray());
+  public void onNewProcessedBlock(Bytes blockHash, BeaconBlock block) {
+    addProcessedBlock(blockHash, block);
   }
 }

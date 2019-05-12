@@ -32,13 +32,11 @@ import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.services.ServiceConfig;
-import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.cli.CommandLineArguments;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 
 @ExtendWith(BouncyCastleExtension.class)
 class ChainStorageServerTest {
-  private static final ALogger LOG = new ALogger(ChainStorageServerTest.class.getName());
   private final ExecutorService threadPool =
       Executors.newCachedThreadPool(
           r -> {
@@ -77,10 +75,6 @@ class ChainStorageServerTest {
 
     ChainStorageService service = new ChainStorageService();
     service.init(new ServiceConfig(eventBus, config, cliArgs));
-
-    System.out.println("Posting event");
     eventBus.post(createRawRecord());
-
-    Thread.sleep(20000);
   }
 }

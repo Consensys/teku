@@ -14,6 +14,9 @@
 package tech.pegasys.artemis.services.chainstorage;
 
 import com.google.common.eventbus.EventBus;
+import com.google.common.eventbus.Subscribe;
+import java.io.IOException;
+import tech.pegasys.artemis.data.RawRecord;
 import tech.pegasys.artemis.services.ServiceConfig;
 import tech.pegasys.artemis.services.ServiceInterface;
 import tech.pegasys.artemis.storage.ChainStorage;
@@ -32,6 +35,11 @@ public class ChainStorageService implements ServiceInterface {
     this.eventBus = config.getEventBus();
     this.chainStore = ChainStorage.Create(ChainStorageServer.class, eventBus);
     this.eventBus.register(this);
+  }
+
+  @Subscribe
+  public void forward(RawRecord raw) throws IOException {
+    chainStore.storeRawRecord(raw);
   }
 
   @Override
