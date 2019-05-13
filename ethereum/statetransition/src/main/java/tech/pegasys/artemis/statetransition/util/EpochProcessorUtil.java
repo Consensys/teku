@@ -926,18 +926,16 @@ public final class EpochProcessorUtil {
     UnsignedLong total_balance = get_total_balance(state, active_validator_indices);
 
     // Compute `total_penalties`
+    UnsignedLong epoch_index = current_epoch.mod(UnsignedLong.valueOf(LATEST_SLASHED_EXIT_LENGTH));
     UnsignedLong total_at_start =
         state
             .getLatest_slashed_balances()
             .get(
-                current_epoch
+                epoch_index
                     .plus(UnsignedLong.ONE)
                     .mod(UnsignedLong.valueOf(LATEST_SLASHED_EXIT_LENGTH))
                     .intValue());
-    UnsignedLong total_at_end =
-        state
-            .getLatest_slashed_balances()
-            .get(current_epoch.mod(UnsignedLong.valueOf(LATEST_SLASHED_EXIT_LENGTH)).intValue());
+    UnsignedLong total_at_end = state.getLatest_slashed_balances().get(epoch_index.intValue());
     UnsignedLong total_penalties = total_at_end.minus(total_at_start);
 
     int index = 0;
@@ -1044,6 +1042,7 @@ public final class EpochProcessorUtil {
     if (next_epoch.intValue() % (SLOTS_PER_HISTORICAL_ROOT / SLOTS_PER_EPOCH) == 0) {
       HistoricalBatch historical_batch =
           new HistoricalBatch(state.getLatest_block_roots(), state.getLatest_state_roots());
+      state.getHistorical_roots().add(historical_batch.hash_tree_root());
     }
 
     // Rotate current/previous epoch attestations

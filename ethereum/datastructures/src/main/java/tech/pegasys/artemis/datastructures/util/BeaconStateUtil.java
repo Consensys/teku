@@ -138,14 +138,14 @@ public class BeaconStateUtil {
         Objects.equals(state.getDeposit_index(), deposit.getIndex()), "Deposits not in order");
 
     // Verify the Merkle branch
-    /*checkArgument(
-    verify_merkle_branch(
-        Hash.keccak256(serialized_deposit_data),
-        deposit.getProof(),
-        DEPOSIT_CONTRACT_TREE_DEPTH,
-        toIntExact(deposit.getIndex().longValue()),
-        state.getLatest_eth1_data().getDeposit_root()),
-    "Merkle branch is not valid");*/
+    //    checkArgument(
+    //        verify_merkle_branch(
+    //            Hash.keccak256(serialized_deposit_data),
+    //            deposit.getProof(),
+    //            Constants.DEPOSIT_CONTRACT_TREE_DEPTH,
+    //            toIntExact(deposit.getIndex().longValue()),
+    //            state.getLatest_eth1_data().getDeposit_root()),
+    //        "Merkle branch is not valid");
 
     //  Increment the next deposit index we are expecting. Note that this
     //  needs to be done here because while the deposit contract will never
@@ -157,9 +157,7 @@ public class BeaconStateUtil {
         state.getValidator_registry().stream()
             .map(Validator::getPubkey)
             .collect(Collectors.toList());
-
     BLSPublicKey pubkey = deposit_input.getPubkey();
-
     UnsignedLong amount = deposit.getDeposit_data().getAmount();
     Bytes32 withdrawal_credentials = deposit_input.getWithdrawal_credentials();
 
@@ -704,28 +702,6 @@ public class BeaconStateUtil {
     return state
         .getLatest_state_roots()
         .get(slot.mod(UnsignedLong.valueOf(Constants.SLOTS_PER_HISTORICAL_ROOT)).intValue());
-  }
-
-  /**
-   * Merkelize given values (where list.size() is a power of 2), and return the merkle root.
-   *
-   * <p><b>NOTE:</b> The leaves are not hashed.
-   *
-   * @param list - The List of values to get the merkle root for.
-   * @return The merkle root for the provided list of values.
-   * @see <a
-   *     href="https://github.com/ethereum/eth2.0-specs/blob/v0.4.0/specs/core/0_beacon-chain.md#merkle_root">merkle_root
-   *     - Spec v0.4</a>
-   */
-  public static Bytes32 merkle_root(List<Bytes32> list) throws IllegalStateException {
-    Bytes32[] o = new Bytes32[list.size() * 2];
-    for (int i = 0; i < list.size(); i++) {
-      o[i + list.size()] = list.get(i);
-    }
-    for (int i = list.size() - 1; i > 0; i--) {
-      o[i] = Hash.keccak256(Bytes.wrap(o[i * 2], o[i * 2 + 1]));
-    }
-    return o[1];
   }
 
   /**
