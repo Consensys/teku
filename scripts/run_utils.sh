@@ -1,16 +1,5 @@
 #!/bin/sh
 
-# Delete a directory and then recreate it to clean its contents out
-clean() {
-  local DIR="$1"
-  rm -rf "$DIR"
-  mkdir -p "$DIR"
-}
-
-clean_config() {
-  rm ../config/runConfig.*
-}
-
 # Create the configuration file for a specific
 create_config() {
   local NODE="$1"
@@ -118,8 +107,17 @@ create_tmux_windows() {
   tmux attach-session -d
 }
 
-# Prints the usage statement
-usage() {
-  echo "Usage: sh run.sh NODES"
-  echo "Runs a simulation of artemis with NODES nodes, where NODES > 0 and NODES < 256"
+generate_peers_list() {
+  seq $1 $(($1 + $2 - 1)) | sed -E "s/([0-9]+)/\"$3:\/\/$4:\1\"/g"
+}
+
+# Takes a number, $1, and the name of an environment variable, $2, and sets the environment variable in the parent shell 
+# with the specified name to the hexadecimal representation of the provided number.
+setAsHex() {
+  if [[ $1 -lt 16 ]]
+  then
+    printf -v "$2" "0x0%X" $1
+  else
+    printf -v "$2" "0x%X" $1
+  fi
 }
