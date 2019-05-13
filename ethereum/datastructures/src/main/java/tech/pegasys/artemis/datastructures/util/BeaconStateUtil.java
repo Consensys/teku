@@ -314,7 +314,7 @@ public class BeaconStateUtil {
       CrosslinkCommittee committee =
           new CrosslinkCommittee(
               slot_start_shard.plus(UnsignedLong.ONE).mod(UnsignedLong.valueOf(SHARD_COUNT)),
-              shuffling.get(committees_per_slot.mod(UnsignedLong.valueOf(SHARD_COUNT)).intValue()));
+              shuffling.get(committees_per_slot.times(offset).plus(UnsignedLong.valueOf(i)).intValue()));
       crosslink_committees_at_slot.add(committee);
     }
     return crosslink_committees_at_slot;
@@ -989,10 +989,12 @@ public class BeaconStateUtil {
   public static int get_beacon_proposer_index(
       BeaconState state, UnsignedLong slot, boolean registry_change)
       throws IllegalArgumentException {
+    /*
     if (state instanceof BeaconStateWithCache
         && ((BeaconStateWithCache) state).getCurrentBeaconProposerIndex() > -1) {
       return ((BeaconStateWithCache) state).getCurrentBeaconProposerIndex();
     } else {
+     */
       UnsignedLong epoch = slot_to_epoch(slot);
       UnsignedLong current_epoch = get_current_epoch(state);
       UnsignedLong previous_epoch = get_previous_epoch(state);
@@ -1006,7 +1008,7 @@ public class BeaconStateUtil {
           get_crosslink_committees_at_slot(state, slot, registry_change).get(0).getCommittee();
       // TODO: replace slot.intValue() with an UnsignedLong value
       return first_committee.get(epoch.intValue() % first_committee.size());
-    }
+    //}
   }
 
   public static int get_beacon_proposer_index(BeaconState state, UnsignedLong slot) {
