@@ -926,18 +926,16 @@ public final class EpochProcessorUtil {
     UnsignedLong total_balance = get_total_balance(state, active_validator_indices);
 
     // Compute `total_penalties`
+    UnsignedLong epoch_index = current_epoch.mod(UnsignedLong.valueOf(LATEST_SLASHED_EXIT_LENGTH));
     UnsignedLong total_at_start =
         state
             .getLatest_slashed_balances()
             .get(
-                current_epoch
+                epoch_index
                     .plus(UnsignedLong.ONE)
                     .mod(UnsignedLong.valueOf(LATEST_SLASHED_EXIT_LENGTH))
                     .intValue());
-    UnsignedLong total_at_end =
-        state
-            .getLatest_slashed_balances()
-            .get(current_epoch.mod(UnsignedLong.valueOf(LATEST_SLASHED_EXIT_LENGTH)).intValue());
+    UnsignedLong total_at_end = state.getLatest_slashed_balances().get(epoch_index.intValue());
     UnsignedLong total_penalties = total_at_end.minus(total_at_start);
 
     int index = 0;
