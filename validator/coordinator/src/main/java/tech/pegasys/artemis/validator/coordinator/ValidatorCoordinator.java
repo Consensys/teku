@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.PriorityQueue;
 import net.consensys.cava.bytes.Bytes32;
 import net.consensys.cava.crypto.SECP256K1.PublicKey;
+import net.consensys.cava.ssz.SSZ;
 import org.apache.logging.log4j.Level;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
@@ -158,6 +159,7 @@ public class ValidatorCoordinator {
 
         current_attestations =
             AttestationUtil.getAttestationsUntilSlot(attestationsQueue, attestation_slot);
+
         block =
             DataStructureUtil.newBeaconBlock(
                 headState.getSlot().plus(UnsignedLong.ONE),
@@ -202,20 +204,13 @@ public class ValidatorCoordinator {
   }
 
   private BLSSignature setEpochSignature(BeaconState state, BLSKeyPair keypair) {
-    /**
-     * epoch_signature = bls_sign( privkey=validator.privkey, # privkey store locally, not in state
-     * message_hash=int_to_bytes32(slot_to_epoch(block.slot)), domain=get_domain( fork=fork, #
-     * `fork` is the fork object at the slot `block.slot` epoch=slot_to_epoch(block.slot),
-     * domain_type=DOMAIN_RANDAO, ))
-     */
     UnsignedLong slot = state.getSlot().plus(UnsignedLong.ONE);
     UnsignedLong epoch = BeaconStateUtil.slot_to_epoch(slot);
 
+    Bytes32 messageHash =
+        HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(epoch.longValue()));
     UnsignedLong domain =
         BeaconStateUtil.get_domain(state.getFork(), epoch, Constants.DOMAIN_RANDAO);
-    Bytes32 messageHash =
-        HashTreeUtil.hash_tree_root(
-            SSZTypes.TUPLE_OF_BASIC, BeaconStateUtil.int_to_bytes32(epoch.longValue()));
     LOG.log(Level.INFO, "Sign Epoch", printEnabled);
     LOG.log(Level.INFO, "Proposer pubkey: " + keypair.getPublicKey(), printEnabled);
     LOG.log(Level.INFO, "state: " + state.hash_tree_root(), printEnabled);
