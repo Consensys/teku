@@ -207,7 +207,8 @@ public class ValidatorCoordinator {
     UnsignedLong slot = state.getSlot().plus(UnsignedLong.ONE);
     UnsignedLong epoch = BeaconStateUtil.slot_to_epoch(slot);
 
-    Bytes32 messageHash = HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(epoch.longValue()));
+    Bytes32 messageHash =
+        HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(epoch.longValue()));
     UnsignedLong domain =
         BeaconStateUtil.get_domain(state.getFork(), epoch, Constants.DOMAIN_RANDAO);
     LOG.log(Level.INFO, "Sign Epoch", printEnabled);

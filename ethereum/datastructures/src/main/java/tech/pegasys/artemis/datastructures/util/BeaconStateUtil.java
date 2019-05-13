@@ -314,7 +314,8 @@ public class BeaconStateUtil {
       CrosslinkCommittee committee =
           new CrosslinkCommittee(
               slot_start_shard.plus(UnsignedLong.ONE).mod(UnsignedLong.valueOf(SHARD_COUNT)),
-              shuffling.get(committees_per_slot.times(offset).plus(UnsignedLong.valueOf(i)).intValue()));
+              shuffling.get(
+                  committees_per_slot.times(offset).plus(UnsignedLong.valueOf(i)).intValue()));
       crosslink_committees_at_slot.add(committee);
     }
     return crosslink_committees_at_slot;
@@ -995,20 +996,20 @@ public class BeaconStateUtil {
       return ((BeaconStateWithCache) state).getCurrentBeaconProposerIndex();
     } else {
      */
-      UnsignedLong epoch = slot_to_epoch(slot);
-      UnsignedLong current_epoch = get_current_epoch(state);
-      UnsignedLong previous_epoch = get_previous_epoch(state);
-      UnsignedLong next_epoch = current_epoch.plus(UnsignedLong.ONE);
+    UnsignedLong epoch = slot_to_epoch(slot);
+    UnsignedLong current_epoch = get_current_epoch(state);
+    UnsignedLong previous_epoch = get_previous_epoch(state);
+    UnsignedLong next_epoch = current_epoch.plus(UnsignedLong.ONE);
 
-      checkArgument(
-          previous_epoch.compareTo(epoch) <= 0 && epoch.compareTo(next_epoch) <= 0,
-          "get_beacon_proposer_index: slot not in range");
+    checkArgument(
+        previous_epoch.compareTo(epoch) <= 0 && epoch.compareTo(next_epoch) <= 0,
+        "get_beacon_proposer_index: slot not in range");
 
-      List<Integer> first_committee =
-          get_crosslink_committees_at_slot(state, slot, registry_change).get(0).getCommittee();
-      // TODO: replace slot.intValue() with an UnsignedLong value
-      return first_committee.get(epoch.intValue() % first_committee.size());
-    //}
+    List<Integer> first_committee =
+        get_crosslink_committees_at_slot(state, slot, registry_change).get(0).getCommittee();
+    // TODO: replace slot.intValue() with an UnsignedLong value
+    return first_committee.get(epoch.intValue() % first_committee.size());
+    // }
   }
 
   public static int get_beacon_proposer_index(BeaconState state, UnsignedLong slot) {
