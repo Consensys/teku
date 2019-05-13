@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# Create the configuration file for a specific
+# Create the configuration file for a specific node
 create_config() {
   local NODE="$1"; local TOTAL="$2"; local TEMPLATE="$3"
 
@@ -12,13 +12,7 @@ create_config() {
   local PORT=$((19000 + $NODE))
 
   # Set IDENTITY to the one byte hexadecimal representation of the node number
-  local IDENTITY
-  if [[ $NODE -lt 16 ]]
-  then
-    printf -v IDENTITY "0x0%X" $NODE
-  else
-    printf -v IDENTITY "0x%X" $NODE
-  fi
+  local IDENTITY; setAsHex $NODE "IDENTITY"
 
   # Create the configuration file for the node
   cat $TEMPLATE | \
@@ -30,14 +24,12 @@ create_config() {
     sed "s/networkInterface\ =.*/networkInterface\ =\ \"127.0.0.1\"/" |# Update the network interface to localhost
     sed "s/networkMode\ =.*/networkMode\ =\ \"hobbits\"/" \
     > ../config/runConfig.$NODE.toml
-
-
 }
 
 # Unpacks the build tar files, puts them in a special directory for the node,
 # and creates the configuration file for the node.
 configure_node() {
-  local NODE="$1"
+  local NODE=$1
 
   # Unpack the build tar files and move them to the appropriate directory
   # for the node.
@@ -49,11 +41,11 @@ configure_node() {
   cd demo/node_$NODE && ln -s ./bin/artemis . && cd ../../
 
   # Create the configuration file for the node
-  if [[ "$3" -eq "" ]] 
+  if [ "$3" == "" ] 
   then 
-    create_config "$NODE" "$2" "../config/config.toml"
+    create_config $NODE $2 "../config/config.toml"
   else
-    create_config "$NODE" "$2" "$3"
+    create_config $NODE $2 $3
   fi
 }
 
@@ -62,7 +54,7 @@ configure_node() {
 # These groups are used to ensure that tmux will be able to create all of 
 # windows without running out of screen space
 create_tmux_panes() {
-  idx="$1"
+  idx=$1
 
   # Set variables to stop the loop
   local end=$(($idx + 3))
@@ -89,20 +81,20 @@ create_tmux_windows() {
   # Start the index at 1 because the first node has already been created
   idx=1
   # Create new tmux panes for the first 4 nodes
-  create_tmux_panes "$idx"
+  create_tmux_panes $idx
   # Use the tiled layout for the window to make the panes as close to equally sized as possible
   tmux select-layout tiled
   # Rename the window to add some spice
   tmux rename-window 'the dude abides'
 
   # Loop over the remaining nodes
-  while [[ "$idx" -lt "$NODES" ]]
+  while [[ $idx -lt $NODES ]]
   do
     # Start a new tmux window with the next node. Give it a name to add some more spice
     tmux new-window -n 'the dude abides again...' "cd node_$idx && ./artemis --config=./config/runConfig.$idx.toml --logging=INFO"
-    idx=$(("$idx" + 1))
+    idx=$(($idx + 1))
     # Create new tmux panes for the new 4 nodes, or as many as possible if there are less than 4
-    create_tmux_panes "$idx"
+    create_tmux_panes $idx
     # Use the tiled layout for the window to make the panes as close to equally sized as possible
     tmux select-layout tiled
   done

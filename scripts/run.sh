@@ -28,6 +28,7 @@ for arg in "$@"
 do 
   shift
   case "$arg" in
+
     # Match the -n or --numNodes option and set NODES to the provided argument
     -n=*|--numNodes=*)
       if [ "$NODES" != "" ]
@@ -35,6 +36,7 @@ do
         usage >&2; exit 1
       fi
       NODES="${arg#*=}" ;;
+
     # Match the -i or --inputFile option and update the INPUTS array with the output file path
     "--inputFile"*) 
       FILE="${arg#*=}"
@@ -45,9 +47,12 @@ do
       then 
         usage >&2; exit 2
       fi 
+
       INPUTS[$IDX]="$FILE" ;;
+
     # Print the usage and exit if the help flag is provided 
     -h|--help) usage; exit 0 ;;
+
     # Pipe the usage to stderr and exit on exitcode 1 if an incorrect flag is provided
     --*) usage >&2; exit 1 ;;
   esac
@@ -61,8 +66,8 @@ then
 fi
 
 # Clean the demo directory
-rm -rf ./demo 
-mkdir -p ./demo 
+rm -rf ./demo
+mkdir -p ./demo
 
 # Clean out the old configuration files
 rm ../config/runConfig.*
@@ -70,9 +75,9 @@ rm ../config/runConfig.*
 # Create a list of all the peers for the configure node procedure to use
 PEERS=$(generate_peers_list 19000 $NODES "hob+tcp" "abcf@localhost")
 
-# Loop over all of the nodes to be created and configure them
+# Create the binaries, configuration files, and symlinks for each node
 i=0
-while [ "$i" -lt "$NODES" ] 
+while [ $i -lt $NODES ] 
 do
   configure_node $i $NODES ${INPUTS[$i]}
   i=$(($i + 1))
