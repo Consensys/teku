@@ -2,8 +2,7 @@
 
 # Create the configuration file for a specific
 create_config() {
-  local NODE="$1"
-  local TOTAL="$2"
+  local NODE="$1"; local TOTAL="$2"; local TEMPLATE="$3"
 
   # Create the peer list by removing this node's peer url from the peer list 
   local PEERS=$(echo "$PEERS" | sed "s/\"hob+tcp:\/\/abcf@localhost:$((19000 + $NODE))\"//g")
@@ -22,7 +21,7 @@ create_config() {
   fi
 
   # Create the configuration file for the node
-  cat ../config/config.toml | \
+  cat $TEMPLATE | \
     sed "s/advertisedPort\ =.*//"                                     |# Remove the advertised port field
     sed "s/identity\ =.*/identity\ =\ \"$IDENTITY\"/"                 |# Update the identity field to the value set above
     sed "s/port\ =.*/port\ =\ $PORT/"                                 |# Update the port field to the value set above
@@ -50,7 +49,12 @@ configure_node() {
   cd demo/node_$NODE && ln -s ./bin/artemis . && cd ../../
 
   # Create the configuration file for the node
-  create_config "$NODE" "$2" "$3"
+  if [[ "$3" -eq "" ]] 
+  then 
+    create_config "$NODE" "$2" "../config/config.toml"
+  else
+    create_config "$NODE" "$2" "$3"
+  fi
 }
 
 # Create tmux panes in the current window for the next "node group".
@@ -58,13 +62,13 @@ configure_node() {
 # These groups are used to ensure that tmux will be able to create all of 
 # windows without running out of screen space
 create_tmux_panes() {
-  # Get the index from the parent shell
   idx="$1"
-  local start="$idx"
-  local end1=$(($start + 3))
+
+  # Set variables to stop the loop
+  local end=$(($idx + 3))
 
   # Create at most 4 vertical splits for the next nodes in the group
-  while [[ $idx -lt $NODES && $idx -lt $end1 ]]
+  while [[ $idx -lt $NODES && $idx -lt $end ]]
   do
     # Split the window vertically and start the next node in the new vertical split
     tmux split-window -v "cd node_$idx && ./artemis --config=./config/runConfig.$idx.toml --logging=INFO"
@@ -78,27 +82,27 @@ create_tmux_windows() {
   local NODES=$1
 
   cd demo/
-  
+
   # Create a new tmux session and start it with the first artemis node
-  tmux new-session -d -s foo 'cd node_0 && ./artemis --config=./config/runConfig.0.toml --logging=INFO'
+  tmux new-session -d -s foo "cd node_0 && ./artemis --config=./config/runConfig.0.toml --logging=INFO"
   
   # Start the index at 1 because the first node has already been created
   idx=1
   # Create new tmux panes for the first 4 nodes
-  create_tmux_panes $idx
+  create_tmux_panes "$idx"
   # Use the tiled layout for the window to make the panes as close to equally sized as possible
   tmux select-layout tiled
   # Rename the window to add some spice
   tmux rename-window 'the dude abides'
 
   # Loop over the remaining nodes
-  while [[ $idx -lt $NODES ]]
+  while [[ "$idx" -lt "$NODES" ]]
   do
     # Start a new tmux window with the next node. Give it a name to add some more spice
-    tmux new-window -n 'the dude abides again...' "cd node_$idx && ./artemis --config=./config/runConfig.$idx.toml -p=CSV -o=artemis.$idx.csv --logging=INFO"
-    idx=$(($idx + 1))
+    tmux new-window -n 'the dude abides again...' "cd node_$idx && ./artemis --config=./config/runConfig.$idx.toml --logging=INFO"
+    idx=$(("$idx" + 1))
     # Create new tmux panes for the new 4 nodes, or as many as possible if there are less than 4
-    create_tmux_panes $idx
+    create_tmux_panes "$idx"
     # Use the tiled layout for the window to make the panes as close to equally sized as possible
     tmux select-layout tiled
   done

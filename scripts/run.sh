@@ -72,7 +72,7 @@ PEERS=$(generate_peers_list 19000 $NODES "hob+tcp" "abcf@localhost")
 
 # Loop over all of the nodes to be created and configure them
 i=0
-while [ $i -lt $NODES ] 
+while [ "$i" -lt "$NODES" ] 
 do
   configure_node $i $NODES ${INPUTS[$i]}
   i=$(($i + 1))
