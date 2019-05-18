@@ -55,14 +55,15 @@ public class TimeSeriesAdapter implements DataAdapter<TimeSeriesRecord> {
 
     List<ValidatorJoin> validators = new ArrayList<>();
 
-    IntStream.range(0, numValidators - 1)
-        .parallel()
-        .forEach(
-            i ->
-                validators.add(
-                    new ValidatorJoin(
-                        headState.getValidator_registry().get(i),
-                        headState.getValidator_balances().get(i))));
+    if (numValidators > 0) {
+      IntStream.range(0, numValidators - 1)
+          .forEach(
+              i ->
+                  validators.add(
+                      new ValidatorJoin(
+                          headState.getValidator_registry().get(i),
+                          headState.getValidator_balances().get(i))));
+    }
 
     return new TimeSeriesRecord(
         this.input.getDate(),
