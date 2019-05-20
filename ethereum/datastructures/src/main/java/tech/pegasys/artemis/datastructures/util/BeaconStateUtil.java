@@ -493,9 +493,7 @@ public class BeaconStateUtil {
     return slot.dividedBy(UnsignedLong.valueOf(SLOTS_PER_EPOCH));
   }
 
-  /**
-   * Taken from 6.1
-   */
+  /** Taken from 6.1 */
   public static UnsignedLong get_previous_epoch(BeaconState state) {
     UnsignedLong current_epoch_minus_one = get_current_epoch(state).minus(UnsignedLong.ONE);
     if (current_epoch_minus_one.compareTo(UnsignedLong.valueOf(GENESIS_EPOCH)) < 0) {

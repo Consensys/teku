@@ -37,7 +37,6 @@ import tech.pegasys.artemis.storage.ChainStorage;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
-import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 
 /** Class to manage the state tree and initiate state transitions */
 public class StateProcessor {
@@ -300,7 +299,7 @@ public class StateProcessor {
             BeaconStateUtil.get_block_root(
                 headState,
                 BeaconStateUtil.get_epoch_start_slot(headState.getCurrent_justified_epoch()));
-       // System.out.print("justified epoch: " + headState.getCurrent_justified_epoch() + "\n");
+        // System.out.print("justified epoch: " + headState.getCurrent_justified_epoch() + "\n");
         // System.out.print("finalized epoch: " + headState.getFinalized_epoch() + "\n");
 
         this.justifiedStateRoot =
