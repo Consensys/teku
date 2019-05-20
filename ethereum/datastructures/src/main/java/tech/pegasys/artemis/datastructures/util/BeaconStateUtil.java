@@ -494,16 +494,13 @@ public class BeaconStateUtil {
   }
 
   /**
-   * Return the previous epoch of the given state.
-   *
-   * @param state The beacon state under consideration.
-   * @return The previous epoch number for the given state.
-   * @see <a
-   *     href="https://github.com/ethereum/eth2.0-specs/blob/v0.4.0/specs/core/0_beacon-chain.md#get_previous_epoch">get_previous_epoch
-   *     - Spec v0.4</a>
+   * Taken from 6.1
    */
   public static UnsignedLong get_previous_epoch(BeaconState state) {
     UnsignedLong current_epoch_minus_one = get_current_epoch(state).minus(UnsignedLong.ONE);
+    if (current_epoch_minus_one.compareTo(UnsignedLong.valueOf(GENESIS_EPOCH)) < 0) {
+      return UnsignedLong.valueOf(GENESIS_EPOCH);
+    }
     return current_epoch_minus_one;
   }
 

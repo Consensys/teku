@@ -278,6 +278,7 @@ public final class EpochProcessorUtil {
     try {
       UnsignedLong new_justified_epoch = state.getCurrent_justified_epoch();
       UnsignedLong new_finalized_epoch = state.getFinalized_epoch();
+      System.out.print("justified epoch: " + new_justified_epoch + "\n");
 
       // Rotate the justification bitfield up one epoch to make room for the current epoch
       UnsignedLong justification_bitfield = state.getJustification_bitfield();
@@ -290,7 +291,7 @@ public final class EpochProcessorUtil {
               .times(UnsignedLong.valueOf(3))
               .compareTo(get_previous_total_balance(state).times(UnsignedLong.valueOf(2)))
           >= 0) {
-        new_justified_epoch = get_current_epoch(state).minus(UnsignedLong.ONE);
+        new_justified_epoch = get_previous_epoch(state);
         justification_bitfield = BitwiseOps.or(justification_bitfield, UnsignedLong.valueOf(2));
       }
       // If the current epoch gets justified, fill the last bit
@@ -348,6 +349,7 @@ public final class EpochProcessorUtil {
         state.setFinalized_epoch(new_finalized_epoch);
         state.setFinalized_root(get_block_root(state, get_epoch_start_slot(new_finalized_epoch)));
       }
+      System.out.print("justified epoch: " + new_justified_epoch + "\n");
     } catch (IllegalArgumentException e) {
       LOG.log(Level.WARN, "EpochProcessingException thrown in updateJustification()");
       throw new EpochProcessingException(e);
@@ -361,7 +363,7 @@ public final class EpochProcessorUtil {
   public static void process_crosslinks(BeaconState state) throws EpochProcessingException {
     try {
       UnsignedLong current_epoch = get_current_epoch(state);
-      UnsignedLong previous_epoch = current_epoch.minus(UnsignedLong.ONE);
+      UnsignedLong previous_epoch = get_previous_epoch(state);
       UnsignedLong next_epoch = current_epoch.plus(UnsignedLong.ONE);
 
       for (UnsignedLong curr_slot = get_epoch_start_slot(previous_epoch);
@@ -391,7 +393,7 @@ public final class EpochProcessorUtil {
         }
       }
     } catch (IllegalArgumentException e) {
-      LOG.log(Level.WARN, "EpochProcessingException thrown in updateCrosslinks()");
+      LOG.log(Level.WARN, "EpochProcessingException thrown in process_crosslinks()");
       throw new EpochProcessingException(e);
     }
   }
