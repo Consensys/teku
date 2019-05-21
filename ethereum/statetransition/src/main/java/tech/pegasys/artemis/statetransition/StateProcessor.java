@@ -150,23 +150,20 @@ public class StateProcessor {
 
     // Get head block's state, and initialize a newHeadState variable to run state transition on
     BeaconState headBlockState = store.getState(headBlock.getState_root()).get();
-    Long currentJustifiedBlockSlot =
-        BeaconStateUtil.get_epoch_start_slot(headBlockState.getCurrent_justified_epoch())
-            .longValue();
-    Long finalizedBlockSlot =
-        BeaconStateUtil.get_epoch_start_slot(headBlockState.getFinalized_epoch()).longValue();
+    Long justifiedEpoch = headBlockState.getCurrent_justified_epoch().longValue();
+    Long finalizedEpoch = headBlockState.getFinalized_epoch().longValue();
     LOG.log(
         Level.INFO,
-        "Justified block slot:                 "
-            + currentJustifiedBlockSlot
+        "Justified block epoch:                 "
+            + justifiedEpoch
             + "  |  "
-            + currentJustifiedBlockSlot % Constants.GENESIS_SLOT);
+            + justifiedEpoch % Constants.GENESIS_EPOCH);
     LOG.log(
         Level.INFO,
-        "Finalized block slot:                 "
-            + finalizedBlockSlot
+        "Finalized block epoch:                 "
+            + finalizedEpoch
             + "  |  "
-            + finalizedBlockSlot % Constants.GENESIS_SLOT);
+            + finalizedEpoch % Constants.GENESIS_EPOCH);
 
     BeaconState newHeadState = BeaconStateWithCache.deepCopy((BeaconStateWithCache) headBlockState);
 
@@ -302,6 +299,8 @@ public class StateProcessor {
             BeaconStateUtil.get_block_root(
                 headState,
                 BeaconStateUtil.get_epoch_start_slot(headState.getCurrent_justified_epoch()));
+        // System.out.print("justified epoch: " + headState.getCurrent_justified_epoch() + "\n");
+        // System.out.print("finalized epoch: " + headState.getFinalized_epoch() + "\n");
 
         this.justifiedStateRoot =
             store.getProcessedBlock(currentJustifiedBlockRoot).get().getState_root();
@@ -309,6 +308,8 @@ public class StateProcessor {
       } catch (Exception e) {
         LOG.log(Level.FATAL, "Can't update justified and finalized block roots");
       }
+      // System.out.print("justified root: " + currentJustifiedBlockRoot + '\n');
+      // System.out.print("finalized root: " + finalizedBlockRoot + '\n');
     }
   }
 
