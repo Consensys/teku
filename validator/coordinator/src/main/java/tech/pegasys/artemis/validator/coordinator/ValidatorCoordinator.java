@@ -151,7 +151,7 @@ public class ValidatorCoordinator {
               .compareTo(
                   UnsignedLong.valueOf(
                       Constants.GENESIS_SLOT + Constants.MIN_ATTESTATION_INCLUSION_DELAY))
-          > 0) {
+          >= 0) {
         UnsignedLong attestation_slot =
             headState
                 .getSlot()

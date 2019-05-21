@@ -66,7 +66,7 @@ public class AttestationUtil {
     Bytes32 headBlockRoot = headBlock.signed_root("signature");
     Bytes32 crosslinkDataRoot = Bytes32.ZERO;
     UnsignedLong epochStartSlot =
-        BeaconStateUtil.get_epoch_start_slot(BeaconStateUtil.slot_to_epoch(slot));
+        BeaconStateUtil.get_epoch_start_slot(BeaconStateUtil.get_current_epoch(headState));
     Bytes32 epochBoundaryRoot;
     if (epochStartSlot.compareTo(slot) == 0) {
       epochBoundaryRoot = headBlock.signed_root("signature");

@@ -331,7 +331,7 @@ public final class BlockProcessorUtil {
       for (Attestation attestation : block.getBody().getAttestations()) {
         UnsignedLong attestationDataSlot = attestation.getData().getSlot();
         checkArgument(
-            attestationDataSlot.compareTo(UnsignedLong.valueOf(Constants.GENESIS_EPOCH)) >= 0,
+            attestationDataSlot.compareTo(UnsignedLong.valueOf(Constants.GENESIS_SLOT)) >= 0,
             "Attestation in pre-history");
         checkArgument(
             state
@@ -404,7 +404,7 @@ public final class BlockProcessorUtil {
         } else if (slot_to_epoch(attestation.getData().getSlot())
                 .compareTo(get_previous_epoch(state))
             == 0) {
-          state.getCurrent_epoch_attestations().add(pendingAttestation);
+          state.getPrevious_epoch_attestations().add(pendingAttestation);
         }
       }
     } catch (IllegalArgumentException e) {
