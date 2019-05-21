@@ -6,3 +6,4 @@ then
 fi
 
 sed -i.bak "s/$2\ =.*/$2\ =\ $3/g" $1
+rm $1.bak 
