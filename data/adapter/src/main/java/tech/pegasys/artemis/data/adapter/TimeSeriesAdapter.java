@@ -47,10 +47,10 @@ public class TimeSeriesAdapter implements DataAdapter<TimeSeriesRecord> {
     BeaconState finalizedState = this.input.getFinalizedState();
     long numValidators = headState.getValidator_registry().size();
 
-    Bytes32 headBlockRoot = headBlock.hash_tree_root();
-    Bytes32 justifiedBlockRoot = justifiedBlock.hash_tree_root();
+    Bytes32 headBlockRoot = headBlock.signed_root("signature");
+    Bytes32 justifiedBlockRoot = justifiedBlock.signed_root("signature");
     Bytes32 justifiedStateRoot = justifiedState.hash_tree_root();
-    Bytes32 finalizedBlockRoot = finalizedBlock.hash_tree_root();
+    Bytes32 finalizedBlockRoot = finalizedBlock.signed_root("signature");
     Bytes32 finalizedStateRoot = finalizedState.hash_tree_root();
     return new TimeSeriesRecord(
         this.input.getIndex(),
