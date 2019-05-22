@@ -13,12 +13,9 @@
 
 package tech.pegasys.artemis.util.time;
 
-import com.google.common.eventbus.AsyncEventBus;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import java.util.Date;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 /**
  * This timer ticks on one of two events: external event raised, or elapsed internal timer. If the
@@ -27,37 +24,29 @@ import java.util.concurrent.Executors;
 public class BlockTimer implements Timer {
 
   private final Long EPSILON = 1000L;
-  private final Long STEPS = 32L;
   private final Long timeInterval;
   private Long previousTime = new Date(Long.MIN_VALUE).getTime();
-  private Long totalDrift = 0L;
 
   private EventBus eventBus;
-  private EventBus internalEventBus;
-  private QuartzTimer internalTimer;
 
   public BlockTimer(EventBus eventBus, Long startDelay, Long interval) {
-    ExecutorService executor = Executors.newSingleThreadExecutor();
-    this.internalEventBus = new AsyncEventBus(executor);
     this.eventBus = eventBus;
-    this.internalEventBus.register(this);
     this.timeInterval = interval;
     try {
-      this.internalTimer = new QuartzTimer(internalEventBus, startDelay, interval);
-    } catch (IllegalArgumentException e) {
-      System.exit(1);
+      Thread.sleep(startDelay);
+    } catch (InterruptedException e) {
+      System.out.println("Timer failed");
     }
   }
 
   @Override
   public void start() {
-    internalTimer.start();
     this.eventBus.register(this);
+    eventBus.post(Long.valueOf(new Date().getTime()));
   }
 
   @Override
   public void stop() {
-    internalTimer.stop();
     this.eventBus.unregister(this);
   }
 
@@ -65,30 +54,15 @@ public class BlockTimer implements Timer {
     // This condition evaluates true when relativeTick is within this range:
     // [timerInterval - EPSILON, timerInterval + EPSILON]
     if (elapsedTime <= timeInterval + EPSILON && elapsedTime > timeInterval - EPSILON) {
-      previousTime = currentTime;
       // notify subscribers on the event bus
-      eventBus.post(new Date(previousTime));
+      eventBus.post(new Date(currentTime));
+      previousTime = currentTime;
     }
-  }
-
-  @Subscribe
-  public void onLocalTick(Date date) {
-
-    Long localTime = date.getTime();
-    Long elapsedLocalTime = localTime - previousTime;
-    if (previousTime.equals(new Date(Long.MIN_VALUE).getTime())) {
-      elapsedLocalTime = timeInterval;
-    }
-    // scheduleTimer(localTime, elapsedLocalTime);
   }
 
   @Subscribe
   public void onBlockReceived(Long time) {
-    Long relativeTime = new Date().getTime();
-    Long elapsedRelativeTime = relativeTime - previousTime;
-    if (previousTime.equals(new Date(Long.MIN_VALUE).getTime())) {
-      elapsedRelativeTime = timeInterval;
-    }
-    scheduleTimer(relativeTime, elapsedRelativeTime);
+    System.out.println("###########################time: " + time);
+    this.eventBus.post(new Date(time));
   }
 }

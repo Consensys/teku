@@ -18,6 +18,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.net.NetSocket;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -161,6 +162,7 @@ public final class HobbitsSocketHandler {
           this.eventBus.post(Attestation.fromBytes(bytes));
           peer.setPeerGossip(bytes);
         } else if (attributes[0].equalsIgnoreCase("BLOCK")) {
+          this.eventBus.post(Long.valueOf(new Date().getTime()));
           this.eventBus.post(BeaconBlock.fromBytes(bytes));
           peer.setPeerGossip(bytes);
         }
