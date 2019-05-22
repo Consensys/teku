@@ -21,6 +21,7 @@ import java.util.Date;
  * This timer ticks on one of two events: external event raised, or elapsed internal timer. If the
  * external event cause the tick, the internal timer is reset.
  */
+
 public class BlockTimer implements Timer {
 
   private final Long EPSILON = 1000L;
