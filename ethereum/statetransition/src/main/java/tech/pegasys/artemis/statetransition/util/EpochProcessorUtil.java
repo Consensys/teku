@@ -278,7 +278,6 @@ public final class EpochProcessorUtil {
     try {
       UnsignedLong new_justified_epoch = state.getCurrent_justified_epoch();
       UnsignedLong new_finalized_epoch = state.getFinalized_epoch();
-      System.out.print("justified epoch: " + new_justified_epoch + "\n");
 
       // Rotate the justification bitfield up one epoch to make room for the current epoch
       UnsignedLong justification_bitfield = state.getJustification_bitfield();
@@ -297,6 +296,7 @@ public final class EpochProcessorUtil {
       // If the current epoch gets justified, fill the last bit
       UnsignedLong current_boundary_attesting_balance =
           get_attesting_balance(state, get_current_epoch_boundary_attestations(state));
+
       if (current_boundary_attesting_balance
               .times(UnsignedLong.valueOf(3))
               .compareTo(get_current_total_balance(state).times(UnsignedLong.valueOf(2)))
@@ -349,7 +349,7 @@ public final class EpochProcessorUtil {
         state.setFinalized_epoch(new_finalized_epoch);
         state.setFinalized_root(get_block_root(state, get_epoch_start_slot(new_finalized_epoch)));
       }
-      System.out.print("justified epoch: " + new_justified_epoch + "\n");
+      // System.out.print("justified epoch: " + new_justified_epoch + "\n");
     } catch (IllegalArgumentException e) {
       LOG.log(Level.WARN, "EpochProcessingException thrown in updateJustification()");
       throw new EpochProcessingException(e);
