@@ -49,8 +49,10 @@ public final class BeaconStateWithCache extends BeaconState {
     this.previous_shuffling_seed = state.getPrevious_shuffling_seed();
     this.current_shuffling_seed = state.getCurrent_shuffling_seed();
 
-    this.previous_epoch_attestations = state.getPrevious_epoch_attestations();
-    this.current_epoch_attestations = state.getCurrent_epoch_attestations();
+    this.previous_epoch_attestations =
+        this.copyList(state.getPrevious_epoch_attestations(), new ArrayList<>());
+    this.current_epoch_attestations =
+        this.copyList(state.getCurrent_epoch_attestations(), new ArrayList<>());
     this.previous_justified_epoch = state.getPrevious_justified_epoch();
     this.current_justified_epoch = state.getCurrent_justified_epoch();
     this.previous_justified_root = state.getPrevious_justified_root();
