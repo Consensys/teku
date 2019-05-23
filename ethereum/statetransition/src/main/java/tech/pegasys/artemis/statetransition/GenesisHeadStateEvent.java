@@ -13,21 +13,12 @@
 
 package tech.pegasys.artemis.statetransition;
 
-import com.google.common.eventbus.EventBus;
-
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 
 public class GenesisHeadStateEvent extends HeadStateEvent {
 
-  private final EventBus eventBus;
-
-  public GenesisHeadStateEvent(EventBus eventBus, BeaconStateWithCache state, BeaconBlock block) {
+  public GenesisHeadStateEvent(BeaconStateWithCache state, BeaconBlock block) {
     super(state, block);
-    this.eventBus = eventBus;
-  }
-
-  public EventBus getEventBus() {
-    return eventBus;
   }
 }

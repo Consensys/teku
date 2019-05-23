@@ -157,7 +157,8 @@ public class StateTransition {
           "Epoch:                                  "
               + BeaconStateUtil.slot_to_epoch(state.getSlot().plus(UnsignedLong.ONE))
               + " |  "
-              + BeaconStateUtil.slot_to_epoch(state.getSlot().plus(UnsignedLong.ONE)).longValue() % Constants.GENESIS_EPOCH,
+              + BeaconStateUtil.slot_to_epoch(state.getSlot().plus(UnsignedLong.ONE)).longValue()
+                  % Constants.GENESIS_EPOCH,
           printEnabled);
 
       EpochProcessorUtil.update_justification_and_finalization(state);

@@ -99,7 +99,8 @@ public class StateProcessor {
       this.currentJustifiedBlockRoot = genesis_block_root;
       this.finalizedStateRoot = initial_state_root;
       this.finalizedBlockRoot = genesis_block_root;
-      this.eventBus.post(new GenesisHeadStateEvent(this.eventBus, (BeaconStateWithCache) initial_state, genesis_block));
+      this.eventBus.post(
+          new GenesisHeadStateEvent((BeaconStateWithCache) initial_state, genesis_block));
     } catch (IllegalStateException e) {
       LOG.log(Level.FATAL, e.toString());
     }
