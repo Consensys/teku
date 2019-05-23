@@ -33,7 +33,6 @@ import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.util.AttestationUtil;
-import tech.pegasys.artemis.datastructures.util.BeaconBlockUtil;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.services.ServiceConfig;
@@ -87,7 +86,7 @@ public class ValidatorCoordinator {
   @Subscribe
   public void onGenesisHeadStateEvent(GenesisHeadStateEvent genesisHeadStateEvent) {
     onNewHeadStateEvent(genesisHeadStateEvent);
-    genesisHeadStateEvent.getEventBus().post(true);
+    this.eventBus.post(true);
   }
 
   @Subscribe
