@@ -130,7 +130,9 @@ public final class EpochProcessorUtil {
       BeaconState state) {
     List<PendingAttestation> attestations = new ArrayList<>();
     for (PendingAttestation a : state.getCurrent_epoch_attestations()) {
-      if (a.getData().getTarget_root() .equals(get_block_root(state, get_epoch_start_slot(get_current_epoch(state))))) {
+      if (a.getData()
+          .getTarget_root()
+          .equals(get_block_root(state, get_epoch_start_slot(get_current_epoch(state))))) {
         attestations.add(a);
       }
     }
@@ -145,7 +147,9 @@ public final class EpochProcessorUtil {
       BeaconState state) {
     List<PendingAttestation> attestations = new ArrayList<>();
     for (PendingAttestation a : state.getPrevious_epoch_attestations()) {
-      if (a.getData().getTarget_root().equals(get_block_root(state, get_epoch_start_slot(get_previous_epoch(state))))) {
+      if (a.getData()
+          .getTarget_root()
+          .equals(get_block_root(state, get_epoch_start_slot(get_previous_epoch(state))))) {
         attestations.add(a);
       }
     }
