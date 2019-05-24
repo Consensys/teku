@@ -35,4 +35,6 @@ public interface FileProvider {
   void serialOutput(IRecordAdapter record);
 
   void formattedOutput(IRecordAdapter record);
+
+  default void close() {}
 }
