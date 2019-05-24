@@ -16,9 +16,22 @@ package tech.pegasys.artemis.statetransition;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 
-public class GenesisHeadStateEvent extends HeadStateEvent {
+public class GenesisHeadStateEvent {
+
+  private BeaconStateWithCache headState;
+  private BeaconBlock headBlock;
 
   public GenesisHeadStateEvent(BeaconStateWithCache state, BeaconBlock block) {
-    super(state, block);
+    headState = state;
+    headBlock = block;
+  }
+
+  /** ******************* * GETTERS & SETTERS * * ******************* */
+  public BeaconStateWithCache getHeadState() {
+    return headState;
+  }
+
+  public BeaconBlock getHeadBlock() {
+    return headBlock;
   }
 }
