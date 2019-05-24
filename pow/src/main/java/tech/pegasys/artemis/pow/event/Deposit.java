@@ -99,4 +99,16 @@ public class Deposit extends AbstractEvent<DepositEventResponse>
   public String toCSV() {
     return null;
   }
+
+  @Override
+  public String[] toLabels() {
+    return new String[] {
+      "Deposit",
+      pubkey.getPublicKey().toBytesCompressed().toHexString(),
+      withdrawal_credentials.toHexString(),
+      proof_of_possession.toHexString(),
+      String.valueOf(amount),
+      merkel_tree_index.toHexString()
+    };
+  }
 }

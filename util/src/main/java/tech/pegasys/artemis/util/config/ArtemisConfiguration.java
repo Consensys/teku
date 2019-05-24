@@ -97,8 +97,18 @@ public final class ArtemisConfiguration {
     builder.addString(
         "output.providerType",
         "JSON",
-        "Output provider types: CSV, JSON",
-        PropertyValidator.anyOf("CSV", "JSON"));
+        "Output provider types: CSV, JSON, PROMETHEUS",
+        PropertyValidator.anyOf("CSV", "JSON", "PROMETHEUS"));
+    builder.addString(
+        "output.metricsNetworkInterface",
+        "0.0.0.0",
+        "Metrics network interface to expose metrics for Prometheus",
+        null);
+    builder.addInteger(
+        "output.metricsPort",
+        8008,
+        "Metrics port to expose metrics for Prometheus",
+        PropertyValidator.inRange(0, 65535));
     builder.addString("output.outputFile", "", "Path/filename of the output file", null);
     builder.addBoolean(
         "output.formatted", false, "Output of JSON file is serial or formatted", null);
@@ -284,6 +294,14 @@ public final class ArtemisConfiguration {
   /** @return the Output provider types: CSV, JSON */
   public String getProviderType() {
     return config.getString("output.providerType");
+  }
+
+  public String getMetricsNetworkInterface() {
+    return config.getString("output.metricsNetworkInterface");
+  }
+
+  public int getMetricsPort() {
+    return config.getInteger("output.metricsPort");
   }
 
   /** @return the Path/filename of the output file. */
