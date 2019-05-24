@@ -85,7 +85,9 @@ public class ValidatorCoordinator {
 
   @Subscribe
   public void onGenesisHeadStateEvent(GenesisHeadStateEvent genesisHeadStateEvent) {
-    onNewHeadStateEvent(genesisHeadStateEvent);
+    onNewHeadStateEvent(
+        new HeadStateEvent(
+            genesisHeadStateEvent.getHeadState(), genesisHeadStateEvent.getHeadBlock()));
     this.eventBus.post(true);
   }
 
