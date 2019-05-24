@@ -86,4 +86,9 @@ public class DepositSimulation implements IRecordAdapter {
   public String toCSV() {
     return null;
   }
+
+  @Override
+  public String[] toLabels() {
+    return new String[0];
+  }
 }

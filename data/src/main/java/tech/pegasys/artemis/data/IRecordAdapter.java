@@ -18,4 +18,6 @@ public interface IRecordAdapter {
   String toJSON();
 
   String toCSV();
+
+  String[] toLabels();
 }

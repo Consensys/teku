@@ -27,6 +27,7 @@ import tech.pegasys.artemis.data.provider.CSVProvider;
 import tech.pegasys.artemis.data.provider.EventHandler;
 import tech.pegasys.artemis.data.provider.FileProvider;
 import tech.pegasys.artemis.data.provider.JSONProvider;
+import tech.pegasys.artemis.data.provider.PrometheusProvider;
 import tech.pegasys.artemis.data.provider.ProviderTypes;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.networking.p2p.HobbitsP2PNetwork;
@@ -95,8 +96,12 @@ public class BeaconNode {
         Path outputFilename = FileProvider.uniqueFilename(config.getOutputFile());
         if (ProviderTypes.compare(CSVProvider.class, config.getProviderType())) {
           this.fileProvider = new CSVProvider(outputFilename);
-        } else {
+        } else if (ProviderTypes.compare(JSONProvider.class, config.getProviderType())) {
           this.fileProvider = new JSONProvider(outputFilename);
+        } else {
+          this.fileProvider =
+              new PrometheusProvider(
+                  vertx, config.getMetricsNetworkInterface(), config.getMetricsPort());
         }
         this.eventHandler = new EventHandler(config, fileProvider);
         this.eventBus.register(eventHandler);
@@ -135,6 +140,7 @@ public class BeaconNode {
     try {
       serviceController.stopAll(cliArgs);
       this.p2pNetwork.close();
+      this.fileProvider.close();
     } catch (IOException e) {
       LOG.log(Level.FATAL, e.toString());
     }
