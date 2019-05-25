@@ -351,7 +351,6 @@ public final class EpochProcessorUtil {
         state.setFinalized_epoch(new_finalized_epoch);
         state.setFinalized_root(get_block_root(state, get_epoch_start_slot(new_finalized_epoch)));
       }
-      // System.out.print("justified epoch: " + new_justified_epoch + "\n");
     } catch (IllegalArgumentException e) {
       LOG.log(Level.WARN, "EpochProcessingException thrown in updateJustification()");
       throw new EpochProcessingException(e);
@@ -894,7 +893,7 @@ public final class EpochProcessorUtil {
       if (should_update_validator_registry(state)) {
         update_validator_registry(state);
         // If we update the registry, update the shuffling data and shards as well
-        state.setCurrent_justified_epoch(next_epoch);
+        state.setCurrent_shuffling_epoch(next_epoch);
         state.setCurrent_shuffling_start_shard(
             state
                 .getCurrent_shuffling_start_shard()
