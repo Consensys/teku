@@ -160,7 +160,6 @@ public class TimeSeriesRecord implements IRecordAdapter {
   @Override
   public String[] toLabels() {
     return new String[] {
-      String.valueOf(this.date.toInstant().toEpochMilli()),
       String.valueOf(this.getIndex()),
       String.valueOf(this.getSlot()),
       String.valueOf(this.getEpoch()),
