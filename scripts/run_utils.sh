@@ -76,8 +76,8 @@ create_tmux_windows() {
   cd demo/
 
   # Create a new tmux session and start it with the first artemis node
-  tmux new-session -d -s foo "cd node_0 && ./artemis --config=./config/runConfig.0.toml --logging=INFO"
-  
+  tmux new-session -d -s foo 'cd node_0 && ./artemis --config=./config/runConfig.0.toml --logging=INFO'
+
   # Start the index at 1 because the first node has already been created
   idx=1
   # Create new tmux panes for the first 4 nodes

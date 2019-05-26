@@ -39,7 +39,7 @@ dependencyManagement {
       entry 'logl-logl'
     }
 
-    dependencySet(group: 'org.apache.tuweni', version: '1.0.0-SNAPSHOT') {
+    dependencySet(group: 'org.apache.tuweni', version: '0.8.0-SNAPSHOT') {
       entry 'tuweni-bytes'
       entry 'tuweni-config'
       entry 'tuweni-crypto'
