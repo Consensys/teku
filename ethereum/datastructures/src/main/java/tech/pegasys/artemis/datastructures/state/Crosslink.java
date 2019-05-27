@@ -25,10 +25,10 @@ import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
 
 public class Crosslink implements Copyable<Crosslink> {
 
-  private long epoch;
+  private UnsignedLong epoch;
   private Bytes32 crosslink_data_root;
 
-  public Crosslink(long epoch, Bytes32 crosslink_data_root) {
+  public Crosslink(UnsignedLong epoch, Bytes32 crosslink_data_root) {
     this.epoch = epoch;
     this.crosslink_data_root = crosslink_data_root;
   }
@@ -93,11 +93,11 @@ public class Crosslink implements Copyable<Crosslink> {
     this.crosslink_data_root = shard_block_root;
   }
 
-  public long getEpoch() {
+  public UnsignedLong getEpoch() {
     return epoch;
   }
 
-  public void setEpoch(long epoch) {
+  public void setEpoch(UnsignedLong epoch) {
     this.epoch = epoch;
   }
 

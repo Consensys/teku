@@ -16,9 +16,8 @@ package tech.pegasys.artemis.datastructures.operations;
 import com.google.common.primitives.UnsignedLong;
 import java.util.Arrays;
 import java.util.Objects;
-import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.Bytes;
-import net.consensys.cava.ssz.SSZ;
+import org.apache.tuweni.bytes.Bytes32;
 import net.consensys.cava.ssz.SSZ;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
@@ -57,11 +56,11 @@ public class Transfer implements Merkleizable {
         bytes,
         reader ->
             new Transfer(
-                reader.readUInt64(),
-                reader.readUInt64(),
-                reader.readUInt64(),
-                reader.readUInt64(),
-                reader.readUInt64(),
+                UnsignedLong.fromLongBits(reader.readUInt64()),
+                UnsignedLong.fromLongBits(reader.readUInt64()),
+                UnsignedLong.fromLongBits(reader.readUInt64()),
+                UnsignedLong.fromLongBits(reader.readUInt64()),
+                UnsignedLong.fromLongBits(reader.readUInt64()),
                 BLSPublicKey.fromBytes(reader.readBytes()),
                 BLSSignature.fromBytes(reader.readBytes())));
   }
@@ -125,27 +124,27 @@ public class Transfer implements Merkleizable {
     this.recipient = recipient;
   }
 
-  public long getAmount() {
+  public UnsignedLong getAmount() {
     return amount;
   }
 
-  public void setAmount(long amount) {
+  public void setAmount(UnsignedLong amount) {
     this.amount = amount;
   }
 
-  public long getFee() {
+  public UnsignedLong getFee() {
     return fee;
   }
 
-  public void setFee(long fee) {
+  public void setFee(UnsignedLong fee) {
     this.fee = fee;
   }
 
-  public long getSlot() {
+  public UnsignedLong getSlot() {
     return slot;
   }
 
-  public void setSlot(long slot) {
+  public void setSlot(UnsignedLong slot) {
     this.slot = slot;
   }
 

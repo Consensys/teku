@@ -17,8 +17,10 @@ import static tech.pegasys.artemis.datastructures.Constants.SLOTS_PER_EPOCH;
 import static tech.pegasys.artemis.datastructures.Constants.SLOTS_PER_HISTORICAL_ROOT;
 import static tech.pegasys.artemis.datastructures.Constants.ZERO_HASH;
 
+import com.google.common.primitives.UnsignedLong;
 import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;

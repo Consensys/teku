@@ -120,7 +120,7 @@ public final class BLSSignature {
    * @return true if the signature is valid, false if it is not
    * @throws BLSException
    */
-  boolean checkSignature(BLSPublicKey publicKey, Bytes message, long domain) throws BLSException {
+  boolean checkSignature(BLSPublicKey publicKey, Bytes message, int domain) throws BLSException {
     if (isNull(signature)) {
       throw new BLSException("The checkSignature method was called on an empty signature.");
     }

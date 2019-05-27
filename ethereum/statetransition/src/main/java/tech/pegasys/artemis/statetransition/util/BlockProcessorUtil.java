@@ -50,16 +50,17 @@ import static tech.pegasys.artemis.util.bls.BLSAggregate.bls_aggregate_pubkeys;
 import static tech.pegasys.artemis.util.bls.BLSVerify.bls_verify;
 import static tech.pegasys.artemis.util.bls.BLSVerify.bls_verify_multiple;
 
+import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
-import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.Hash;
 import net.consensys.cava.ssz.SSZ;
+import org.apache.logging.log4j.Level;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.Eth1DataVote;
@@ -80,7 +81,6 @@ import tech.pegasys.artemis.datastructures.util.BeaconBlockUtil;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
-import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
 
@@ -120,7 +120,7 @@ public final class BlockProcessorUtil {
 
   private static boolean verify_slot(BeaconState state, BeaconBlock block) {
     // Verify that block.slot == state.slot
-    return state.getSlot() == block.getSlot();
+    return state.getSlot().compareTo(UnsignedLong.valueOf(block.getSlot())) == 0;
   }
 
   /**
@@ -189,7 +189,9 @@ public final class BlockProcessorUtil {
       for (ProposerSlashing proposer_slashing : block.getBody().getProposer_slashings()) {
         // - Let proposer = state.validator_registry[proposer_slashing.proposer_index]
         Validator proposer =
-            state.getValidator_registry().get(toIntExact(proposer_slashing.getProposer_index()));
+            state
+                .getValidator_registry()
+                .get(toIntExact(proposer_slashing.getProposer_index().longValue()));
 
         // Verify that the epoch is the same
         checkArgument(
@@ -292,10 +294,10 @@ public final class BlockProcessorUtil {
         //     if index in slashable_attestation_2.validator_indices and
         //     state.validator_registry[index].slashed == false.
         ArrayList<Integer> slashable_indices = new ArrayList<>();
-        for (long index : slashable_attestation_1.getValidator_indices()) {
+        for (UnsignedLong index : slashable_attestation_1.getValidator_indices()) {
           if (slashable_attestation_2.getValidator_indices().contains(index)
-              && !state.getValidator_registry().get(toIntExact(index)).isSlashed()) {
-            slashable_indices.add((int) index);
+              && !state.getValidator_registry().get(toIntExact(index.longValue())).isSlashed()) {
+            slashable_indices.add(index.intValue());
           }
         }
 
@@ -424,14 +426,14 @@ public final class BlockProcessorUtil {
         Objects.equals(
             attestation.getCustody_bitfield(),
             Bytes.wrap(new byte[attestation.getCustody_bitfield().size()])),
-        "checkArgument threw and exception in verify_bitfields_and_aggregate_signature() 1"); // [TO
+        "checkArgument threw and exception in verify_bitfields_and_aggregate_signature()"); // [TO
     // BE
     // REMOVED IN PHASE 1]
     checkArgument(
         !Objects.equals(
             attestation.getAggregation_bitfield(),
             Bytes.wrap(new byte[attestation.getAggregation_bitfield().size()])),
-        "checkArgument threw and exception in verify_bitfields_and_aggregate_signature() 2");
+        "checkArgument threw and exception in verify_bitfields_and_aggregate_signature()");
 
     // Get the committee for the specific shard that this attestation is for
     List<List<Integer>> crosslink_committees = new ArrayList<>();
@@ -447,7 +449,7 @@ public final class BlockProcessorUtil {
       checkArgument(
           get_bitfield_bit(attestation.getAggregation_bitfield(), i) != 0b0
               || get_bitfield_bit(attestation.getCustody_bitfield(), i) == 0b0,
-          "checkArgument threw and exception in verify_bitfields_and_aggregate_signature() 3");
+          "checkArgument threw and exception in verify_bitfields_and_aggregate_signature()");
     }
 
     List<Integer> participants =
@@ -464,34 +466,15 @@ public final class BlockProcessorUtil {
     }
 
     List<BLSPublicKey> pubkey0 = new ArrayList<>();
-    for (Integer i : custody_bit_0_participants) {
-      pubkey0.add(state.getValidator_registry().get(i).getPubkey());
+    for (int i = 0; i < custody_bit_0_participants.size(); i++) {
+      pubkey0.add(state.getValidator_registry().get(custody_bit_0_participants.get(i)).getPubkey());
     }
 
     List<BLSPublicKey> pubkey1 = new ArrayList<>();
-    for (Integer i : custody_bit_1_participants) {
-      pubkey1.add(state.getValidator_registry().get(i).getPubkey());
+    for (int i = 0; i < custody_bit_1_participants.size(); i++) {
+      pubkey1.add(state.getValidator_registry().get(custody_bit_1_participants.get(i)).getPubkey());
     }
 
-    List<BLSPublicKey> pubkeys =
-        Arrays.asList(bls_aggregate_pubkeys(pubkey0), bls_aggregate_pubkeys(pubkey1));
-    List<Bytes32> messages =
-        Arrays.asList(
-            hash_tree_root(
-                new AttestationDataAndCustodyBit(attestation.getData(), false).toBytes()),
-            hash_tree_root(
-                new AttestationDataAndCustodyBit(attestation.getData(), true).toBytes()));
-    BLSSignature signature = attestation.getAggregate_signature();
-    long domain =
-        get_domain(
-            state.getFork(), slot_to_epoch(attestation.getData().getSlot()), DOMAIN_ATTESTATION);
-
-    LOG.log(Level.DEBUG, "pubkey0: " + pubkeys.get(0));
-    LOG.log(Level.DEBUG, "pubkey1: " + pubkeys.get(1));
-    LOG.log(Level.DEBUG, "message0: " + messages.get(0).toHexString());
-    LOG.log(Level.DEBUG, "message1: " + messages.get(1).toHexString());
-    LOG.log(Level.DEBUG, "signature: " + signature);
-    LOG.log(Level.DEBUG, "domain: " + domain);
     checkArgument(
         bls_verify_multiple(
             Arrays.asList(bls_aggregate_pubkeys(pubkey0), bls_aggregate_pubkeys(pubkey1)),
@@ -548,7 +531,9 @@ public final class BlockProcessorUtil {
       for (VoluntaryExit voluntaryExit : block.getBody().getVoluntary_exits()) {
 
         Validator validator =
-            state.getValidator_registry().get(toIntExact(voluntaryExit.getValidator_index()));
+            state
+                .getValidator_registry()
+                .get(toIntExact(voluntaryExit.getValidator_index().longValue()));
 
         // Verify the validator has not yet exited
         checkArgument(
@@ -580,7 +565,7 @@ public final class BlockProcessorUtil {
             "checkArgument threw and exception in processExits()");
 
         // - Run initiate_validator_exit(state, exit.validator_index)
-        initiate_validator_exit(state, toIntExact(voluntaryExit.getValidator_index()));
+        initiate_validator_exit(state, toIntExact(voluntaryExit.getValidator_index().longValue()));
       }
     } catch (IllegalArgumentException e) {
       LOG.log(Level.WARN, "BlockProcessingException thrown in processExits()");
@@ -691,7 +676,7 @@ public final class BlockProcessorUtil {
 
       UnsignedLong proposerBalance =
           state.getValidator_balances().get(get_beacon_proposer_index(state, state.getSlot()));
-      proposerBalance = proposerBalance + transfer.getFee();
+      proposerBalance = proposerBalance.plus(transfer.getFee());
       state
           .getValidator_balances()
           .set(get_beacon_proposer_index(state, state.getSlot()), proposerBalance);

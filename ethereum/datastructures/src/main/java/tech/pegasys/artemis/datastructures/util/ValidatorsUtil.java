@@ -14,6 +14,7 @@
 package tech.pegasys.artemis.datastructures.util;
 
 import com.google.common.collect.Sets;
+import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -48,7 +49,8 @@ public class ValidatorsUtil {
    * @param epoch - The epoch under consideration.
    * @return A list of active validators for the given epoch.
    */
-  public static List<Validator> get_active_validators(List<Validator> validators, long epoch) {
+  public static List<Validator> get_active_validators(
+      List<Validator> validators, UnsignedLong epoch) {
     List<Validator> active_validators = new ArrayList<>();
     if (validators != null) {
       for (Validator record : validators) {
@@ -93,7 +95,8 @@ public class ValidatorsUtil {
    * @param epoch
    * @return
    */
-  public static Boolean is_active_validator_index(BeaconState state, int index, long epoch) {
+  public static Boolean is_active_validator_index(
+      BeaconState state, int index, UnsignedLong epoch) {
     List<Validator> all_validators = state.getValidator_registry();
     return is_active_validator(all_validators.get(index), epoch);
   }

@@ -53,10 +53,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import org.apache.tuweni.bytes.Bytes32;
 import net.consensys.cava.ssz.SSZ;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.logging.log4j.Level;
-import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.Eth1DataVote;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
@@ -67,6 +67,7 @@ import tech.pegasys.artemis.datastructures.state.PendingAttestation;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.util.alogger.ALogger;
+import tech.pegasys.artemis.util.bitwise.BitwiseOps;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
 
@@ -849,6 +850,7 @@ public final class EpochProcessorUtil {
           if (balance_churn.compareTo(max_balance_churn) > 0) break;
           BeaconStateUtil.activate_validator(state, index, false);
         }
+        index++;
       }
 
       // Exit validators within the allowable balance churn
@@ -864,6 +866,7 @@ public final class EpochProcessorUtil {
           // Exit validator
           exit_validator(state, index);
         }
+        index++;
       }
       state.setValidator_registry_update_epoch(currentEpoch);
     } catch (IllegalArgumentException e) {

@@ -32,7 +32,7 @@ public class BLSVerify {
    * @return true if the signature is valid over these parameters, false if not
    */
   public static boolean bls_verify(
-      BLSPublicKey pubkey, Bytes32 messageHash, BLSSignature signature, long domain) {
+      BLSPublicKey pubkey, Bytes32 messageHash, BLSSignature signature, int domain) {
     try {
       return signature.checkSignature(pubkey, Bytes.wrap(messageHash), domain);
     } catch (BLSException e) {

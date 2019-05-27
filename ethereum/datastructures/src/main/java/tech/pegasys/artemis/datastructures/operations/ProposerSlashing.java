@@ -82,11 +82,11 @@ public class ProposerSlashing implements Merkleizable {
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */
-  public long getProposer_index() {
+  public UnsignedLong getProposer_index() {
     return proposer_index;
   }
 
-  public void setProposer_index(long proposer_index) {
+  public void setProposer_index(UnsignedLong proposer_index) {
     this.proposer_index = proposer_index;
   }
 

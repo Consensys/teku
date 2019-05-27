@@ -156,7 +156,9 @@ public class LmdGhost {
       ChainStorageClient store, int validatorIndex) {
     Optional<Attestation> latest_attestation = get_latest_attestation(store, validatorIndex);
     if (latest_attestation.isPresent()) {
-      return store.getProcessedBlock(latest_attestation.get().getData().getBeacon_block_root());
+      Optional<BeaconBlock> latest_attestation_target =
+          store.getProcessedBlock(latest_attestation.get().getData().getBeacon_block_root());
+      return latest_attestation_target;
     } else {
       return Optional.empty();
     }
@@ -195,6 +197,5 @@ public class LmdGhost {
     } else {
       return get_ancestor(store, store.getParent(block).get(), slot);
     }
-    return Optional.empty();
   }
 }

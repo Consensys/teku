@@ -28,14 +28,12 @@ import tech.pegasys.artemis.datastructures.operations.AttestationDataAndCustodyB
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Crosslink;
 import tech.pegasys.artemis.datastructures.state.CrosslinkCommittee;
-import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 
 public class AttestationUtil {
 
-  private static final ALogger LOG = new ALogger(AttestationUtil.class.getName());
   /**
    * Returns true if the attestation is verified
    *
@@ -44,7 +42,6 @@ public class AttestationUtil {
    * @return boolean
    */
   public static boolean verifyAttestation(BeaconState state, Attestation attestation) {
-    // TODO
     return true;
   }
 
@@ -63,7 +60,7 @@ public class AttestationUtil {
       HashMap<BLSPublicKey, BLSKeyPair> validatorSet) {
 
     // Get variables necessary that can be shared among Attestations of all validators
-    long slot = headState.getSlot();
+    UnsignedLong slot = headState.getSlot();
     ArrayList<CrosslinkCommittee> crosslinkCommittees =
         BeaconStateUtil.get_crosslink_committees_at_slot(headState, slot);
     Bytes32 headBlockRoot = headBlock.signed_root("signature");
@@ -82,6 +79,7 @@ public class AttestationUtil {
     // Create attestations specific to each Validator
     List<Attestation> attestations = new ArrayList<>();
     for (CrosslinkCommittee crosslinkCommittee : crosslinkCommittees) {
+      int indexIntoCommittee = 0;
       for (Integer validatorIndex : crosslinkCommittee.getCommittee()) {
 
         // Skip if attester is in not in our validatorSet
@@ -109,10 +107,12 @@ public class AttestationUtil {
                 crosslinkDataRoot);
 
         // Create aggregation bitfield
-        int indexIntoCommittee = crosslinkCommittee.getCommittee().indexOf(validatorIndex);
         int array_length = Math.toIntExact((crosslinkCommittee.getCommittee().size() + 7) / 8);
         byte[] aggregation_bitfield = new byte[array_length];
-        aggregation_bitfield[indexIntoCommittee / 8] |= (byte) (1 << (indexIntoCommittee % 8L));
+        aggregation_bitfield[indexIntoCommittee / 8] =
+            (byte)
+                (aggregation_bitfield[indexIntoCommittee / 8]
+                    | (byte) Math.pow(2, (indexIntoCommittee % 8)));
 
         // Create custody_bitfield
         Bytes custody_bitfield = Bytes.wrap(new byte[array_length]);
@@ -126,9 +126,10 @@ public class AttestationUtil {
                 validatorSet.get(attesterPubkey),
                 attestation_message_to_sign,
                 BeaconStateUtil.get_domain(
-                    headState.getFork(),
-                    BeaconStateUtil.slot_to_epoch(attestationData.getSlot()),
-                    Constants.DOMAIN_ATTESTATION));
+                        headState.getFork(),
+                        BeaconStateUtil.slot_to_epoch(attestationData.getSlot()),
+                        Constants.DOMAIN_ATTESTATION)
+                    .longValue());
 
         // Form attestation
         Attestation attestation =
@@ -139,19 +140,18 @@ public class AttestationUtil {
                 signed_attestation_data);
 
         attestations.add(attestation);
+
+        indexIntoCommittee++;
       }
     }
     return attestations;
   }
 
   public static List<Attestation> getAttestationsUntilSlot(
-      PriorityBlockingQueue<Attestation> attestationsQueue, long slot) {
+          PriorityBlockingQueue<Attestation> attestationsQueue, UnsignedLong slot) {
     List<Attestation> attestations = new ArrayList<>();
-    if (Objects.nonNull(attestationsQueue) && attestationsQueue.size() > 0) {
-      while (Objects.nonNull(attestationsQueue.peek())
-          && attestationsQueue.peek().getSlot() <= slot) {
-        attestations.add(attestationsQueue.remove());
-      }
+    while (attestationsQueue.peek().getSlot().compareTo(slot) <= 0) {
+      attestations.add(attestationsQueue.remove());
     }
     return attestations;
   }
