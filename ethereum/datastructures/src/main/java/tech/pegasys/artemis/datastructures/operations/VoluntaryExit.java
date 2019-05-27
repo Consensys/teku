@@ -20,8 +20,10 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
+import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
+import tech.pegasys.artemis.util.hashtree.Merkleizable;
 
-public class VoluntaryExit {
+public class VoluntaryExit implements Merkleizable {
 
   private long epoch;
   private long validator_index;
@@ -102,17 +104,27 @@ public class VoluntaryExit {
     this.signature = signature;
   }
 
-  public Bytes32 signedRoot(String truncationParam) {
-    if (!truncationParam.equals("signature")) {
+  public Bytes32 signed_root(String truncation_param) {
+    if (!truncation_param.equals("signature")) {
       throw new UnsupportedOperationException(
           "Only signed_root(proposal, \"signature\") is currently supported for type Proposal.");
     }
 
     return Bytes32.rightPad(
-        HashTreeUtil.merkleHash(
+        HashTreeUtil.merkleize(
             Arrays.asList(
-                HashTreeUtil.hash_tree_root(SSZ.encode(writer -> writer.writeUInt64(epoch))),
+                HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(epoch.longValue())),
                 HashTreeUtil.hash_tree_root(
-                    SSZ.encode(writer -> writer.writeUInt64(validator_index))))));
+                    SSZTypes.BASIC, SSZ.encodeUInt64(validator_index.longValue())))));
+  }
+
+  @Override
+  public Bytes32 hash_tree_root() {
+    return HashTreeUtil.merkleize(
+        Arrays.asList(
+            HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(epoch.longValue())),
+            HashTreeUtil.hash_tree_root(
+                SSZTypes.BASIC, SSZ.encodeUInt64(validator_index.longValue())),
+            HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, signature.toBytes())));
   }
 }

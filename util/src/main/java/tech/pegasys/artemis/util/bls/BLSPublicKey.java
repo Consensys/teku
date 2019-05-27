@@ -57,13 +57,13 @@ public class BLSPublicKey {
   }
 
   public static BLSPublicKey fromBytes(Bytes bytes) {
-    checkArgument(bytes.size() == 52, "Expected 52 bytes but received %s.", bytes.size());
-    Bytes decode = SSZ.decodeBytes(bytes);
-    if (decode.isZero()) {
+    checkArgument(bytes.size() == 48, "Expected 48 bytes but received %s.", bytes.size());
+    if (SSZ.decodeBytes(bytes, 48).isZero()) {
       return BLSPublicKey.empty();
     } else {
       return SSZ.decode(
-          bytes, reader -> new BLSPublicKey(PublicKey.fromBytesCompressed(reader.readBytes())));
+          bytes,
+          reader -> new BLSPublicKey(PublicKey.fromBytesCompressed(reader.readFixedBytes(48))));
     }
   }
 
@@ -88,9 +88,15 @@ public class BLSPublicKey {
    */
   public Bytes toBytes() {
     if (isNull(publicKey)) {
-      return SSZ.encode(writer -> writer.writeBytes(Bytes.wrap(new byte[48])));
+      return SSZ.encode(
+          writer -> {
+            writer.writeFixedBytes(48, Bytes.wrap(new byte[48]));
+          });
     } else {
-      return SSZ.encode(writer -> writer.writeBytes(publicKey.toBytesCompressed()));
+      return SSZ.encode(
+          writer -> {
+            writer.writeFixedBytes(48, publicKey.toBytesCompressed());
+          });
     }
   }
 

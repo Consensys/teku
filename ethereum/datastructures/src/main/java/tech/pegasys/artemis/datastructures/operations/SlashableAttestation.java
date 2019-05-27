@@ -13,11 +13,17 @@
 
 package tech.pegasys.artemis.datastructures.operations;
 
+import com.google.common.primitives.UnsignedLong;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
+import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.artemis.util.bls.BLSSignature;
+import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
+import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
 
 public class SlashableAttestation {
 
@@ -115,5 +121,18 @@ public class SlashableAttestation {
 
   public void setCustody_bitfield(Bytes custody_bitfield) {
     this.custody_bitfield = custody_bitfield;
+  }
+
+  public Bytes32 hash_tree_root() {
+    return HashTreeUtil.merkleize(
+        Arrays.asList(
+            HashTreeUtil.hash_tree_root(
+                SSZTypes.LIST_OF_BASIC,
+                validator_indices.stream()
+                    .map(item -> SSZ.encodeUInt64(item.longValue()))
+                    .collect(Collectors.toList())),
+            data.hash_tree_root(),
+            HashTreeUtil.hash_tree_root(SSZTypes.LIST_OF_BASIC, custody_bitfield),
+            HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, aggregate_signature.toBytes())));
   }
 }

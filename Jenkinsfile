@@ -52,7 +52,8 @@ try {
                 }
                 stage('Test') {
                     sh './gradlew --no-daemon --parallel test'
-                    sh './artemis/src/main/resources/artemisTestScript.sh'
+                    // Disable Artemis Runtime Tests During Upgrade
+                    // sh './artemis/src/main/resources/artemisTestScript.sh'
                 }
             } finally {
                 archiveArtifacts '**/build/reports/**'

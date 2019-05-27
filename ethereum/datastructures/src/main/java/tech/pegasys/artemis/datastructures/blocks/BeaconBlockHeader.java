@@ -13,67 +13,63 @@
 
 package tech.pegasys.artemis.datastructures.blocks;
 
+import com.google.common.primitives.UnsignedLong;
 import java.util.Arrays;
 import java.util.Objects;
-import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.ssz.SSZ;
+import net.consensys.cava.bytes.Bytes;
+import net.consensys.cava.bytes.Bytes32;
+import net.consensys.cava.ssz.SSZ;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
 
-public final class BeaconBlock {
+public class BeaconBlockHeader {
 
-  // Header
-  private long slot;
+  private UnsignedLong slot;
   private Bytes32 previous_block_root;
   private Bytes32 state_root;
-
-  // Body
-  private BeaconBlockBody body;
-
-  // Signature
+  private Bytes32 block_body_root;
   private BLSSignature signature;
 
-  public BeaconBlock(
-      long slot,
+  public BeaconBlockHeader(
+      UnsignedLong slot,
       Bytes32 previous_block_root,
       Bytes32 state_root,
-      BeaconBlockBody body,
+      Bytes32 block_body_root,
       BLSSignature signature) {
     this.slot = slot;
     this.previous_block_root = previous_block_root;
     this.state_root = state_root;
-    this.body = body;
+    this.block_body_root = block_body_root;
     this.signature = signature;
   }
 
-  public static BeaconBlock fromBytes(Bytes bytes) {
+  public static BeaconBlockHeader fromBytes(Bytes bytes) {
     return SSZ.decode(
         bytes,
         reader ->
-            new BeaconBlock(
-                reader.readUInt64(),
+            new BeaconBlockHeader(
+                UnsignedLong.fromLongBits(reader.readUInt64()),
                 Bytes32.wrap(reader.readFixedBytes(32)),
                 Bytes32.wrap(reader.readFixedBytes(32)),
-                BeaconBlockBody.fromBytes(reader.readBytes()),
+                Bytes32.wrap(reader.readFixedBytes(32)),
                 BLSSignature.fromBytes(reader.readBytes())));
   }
 
   public Bytes toBytes() {
     return SSZ.encode(
         writer -> {
-          writer.writeUInt64(slot);
+          writer.writeUInt64(slot.longValue());
           writer.writeFixedBytes(32, previous_block_root);
           writer.writeFixedBytes(32, state_root);
-          writer.writeBytes(body.toBytes());
+          writer.writeFixedBytes(32, block_body_root);
           writer.writeBytes(signature.toBytes());
         });
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(slot, previous_block_root, state_root, body, signature);
+    return Objects.hash(slot, previous_block_root, state_root, block_body_root, signature);
   }
 
   @Override
@@ -86,41 +82,25 @@ public final class BeaconBlock {
       return true;
     }
 
-    if (!(obj instanceof BeaconBlock)) {
+    if (!(obj instanceof BeaconBlockHeader)) {
       return false;
     }
 
-    BeaconBlock other = (BeaconBlock) obj;
-    return slot == other.getSlot()
+    BeaconBlockHeader other = (BeaconBlockHeader) obj;
+    return Objects.equals(this.getSlot(), other.getSlot())
         && Objects.equals(this.getPrevious_block_root(), other.getPrevious_block_root())
         && Objects.equals(this.getState_root(), other.getState_root())
-        && Objects.equals(this.getBody(), other.getBody())
+        && Objects.equals(this.getBlock_body_root(), other.getBlock_body_root())
         && Objects.equals(this.getSignature(), other.getSignature());
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */
-  public BeaconBlockBody getBody() {
-    return body;
+  public UnsignedLong getSlot() {
+    return slot;
   }
 
-  public void setBody(BeaconBlockBody body) {
-    this.body = body;
-  }
-
-  public BLSSignature getSignature() {
-    return signature;
-  }
-
-  public void setSignature(BLSSignature signature) {
-    this.signature = signature;
-  }
-
-  public Bytes32 getState_root() {
-    return state_root;
-  }
-
-  public void setState_root(Bytes32 state_root) {
-    this.state_root = state_root;
+  public void setSlot(UnsignedLong slot) {
+    this.slot = slot;
   }
 
   public Bytes32 getPrevious_block_root() {
@@ -131,36 +111,52 @@ public final class BeaconBlock {
     this.previous_block_root = previous_block_root;
   }
 
-  public long getSlot() {
-    return slot;
+  public Bytes32 getState_root() {
+    return state_root;
   }
 
-  public void setSlot(long slot) {
-    this.slot = slot;
+  public void setState_root(Bytes32 state_root) {
+    this.state_root = state_root;
+  }
+
+  public Bytes32 getBlock_body_root() {
+    return block_body_root;
+  }
+
+  public void setBlock_block_root(Bytes32 block_body_root) {
+    this.block_body_root = block_body_root;
+  }
+
+  public BLSSignature getSignature() {
+    return signature;
+  }
+
+  public void setSignature(BLSSignature signature) {
+    this.signature = signature;
   }
 
   public Bytes32 signed_root(String truncation_param) {
     if (!truncation_param.equals("signature")) {
       throw new UnsupportedOperationException(
-          "Only signed_root(beaconBlock, \"signature\") is currently supported for type BeaconBlock.");
+          "Only signed_root(BeaconBlockHeader, \"signature\") is currently supported for type BeaconBlockHeader.");
     }
 
     return Bytes32.rightPad(
         HashTreeUtil.merkleize(
             Arrays.asList(
-                HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(slot)),
+                HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(slot.longValue())),
                 HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, previous_block_root),
                 HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, state_root),
-                body.hash_tree_root())));
+                HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, block_body_root))));
   }
 
   public Bytes32 hash_tree_root() {
     return HashTreeUtil.merkleize(
         Arrays.asList(
-            HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(slot)),
+            HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(slot.longValue())),
             HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, previous_block_root),
             HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, state_root),
-            body.hash_tree_root(),
+            HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, block_body_root),
             HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, signature.toBytes())));
   }
 }

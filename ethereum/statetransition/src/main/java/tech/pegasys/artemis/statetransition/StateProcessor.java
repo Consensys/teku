@@ -27,6 +27,7 @@ import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
+import tech.pegasys.artemis.datastructures.util.BeaconBlockUtil;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.pow.api.DepositEvent;
@@ -35,7 +36,6 @@ import tech.pegasys.artemis.storage.ChainStorage;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
-import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 
 /** Class to manage the state tree and initiate state transitions */
 public class StateProcessor {
@@ -45,9 +45,9 @@ public class StateProcessor {
   private Bytes32 finalizedStateRoot; // most recent finalized state root
   private Bytes32 finalizedBlockRoot; // most recent finalized block root
   private Bytes32 justifiedStateRoot; // most recent justified state root
-  private Bytes32 justifiedBlockRoot; // most recent justified block root
-  private long nodeTime;
-  private long nodeSlot;
+  private Bytes32 currentJustifiedBlockRoot; // most recent justified block root
+  private UnsignedLong nodeTime;
+  private UnsignedLong nodeSlot;
   private final EventBus eventBus;
   private final StateTransition stateTransition;
   private ChainStorageClient store;
@@ -84,18 +84,20 @@ public class StateProcessor {
     try {
       BeaconState initial_state =
           DataStructureUtil.createInitialBeaconState(config.getNumValidators());
-      Bytes32 initial_state_root = HashTreeUtil.hash_tree_root(initial_state.toBytes());
-      BeaconBlock genesis_block = BeaconBlock.createGenesis(initial_state_root);
-      Bytes32 genesis_block_root = HashTreeUtil.hash_tree_root(genesis_block.toBytes());
+      Bytes32 initial_state_root = initial_state.hash_tree_root();
+      BeaconBlock genesis_block = BeaconBlockUtil.get_empty_block();
+      genesis_block.setState_root(initial_state_root);
+      Bytes32 genesis_block_root = genesis_block.signed_root("signature");
       LOG.log(Level.INFO, "Initial state root is " + initial_state_root.toHexString());
       this.store.addState(initial_state_root, initial_state);
       this.store.addProcessedBlock(genesis_block_root, genesis_block);
       this.headBlock = genesis_block;
       this.justifiedStateRoot = initial_state_root;
-      this.justifiedBlockRoot = genesis_block_root;
+      this.currentJustifiedBlockRoot = genesis_block_root;
       this.finalizedStateRoot = initial_state_root;
       this.finalizedBlockRoot = genesis_block_root;
-      this.eventBus.post(true);
+      this.eventBus.post(
+          new GenesisHeadStateEvent((BeaconStateWithCache) initial_state, genesis_block));
     } catch (IllegalStateException e) {
       LOG.log(Level.FATAL, e.toString());
     }
@@ -111,7 +113,6 @@ public class StateProcessor {
     this.nodeSlot = this.nodeSlot + 1;
     this.nodeTime = this.nodeTime + Constants.SECONDS_PER_SLOT;
 
-    System.out.println("\n");
     LOG.log(Level.INFO, ANSI_WHITE_BOLD + "******* Slot Event *******" + ANSI_RESET);
     LOG.log(Level.INFO, "Node time:                             " + nodeTime);
     LOG.log(Level.INFO, "Node slot:                             " + nodeSlot);
@@ -141,19 +142,23 @@ public class StateProcessor {
 
     // Get head block's state, and initialize a newHeadState variable to run state transition on
     BeaconState headBlockState = store.getState(headBlock.getState_root()).get();
-    long justifiedBlockSlot =
-        BeaconStateUtil.get_epoch_start_slot(headBlockState.getJustified_epoch());
-    long finalizedBlockSlot =
-        BeaconStateUtil.get_epoch_start_slot(headBlockState.getFinalized_epoch());
-    LOG.log(Level.INFO, "Justified block slot:                 " + justifiedBlockSlot);
-    LOG.log(Level.INFO, "Finalized block slot:                 " + finalizedBlockSlot);
+    Long justifiedEpoch = headBlockState.getCurrent_justified_epoch().longValue();
+    Long finalizedEpoch = headBlockState.getFinalized_epoch().longValue();
+    LOG.log(
+        Level.INFO,
+        "Justified block epoch:                 "
+            + justifiedEpoch
+            + "  |  "
+            + justifiedEpoch % Constants.GENESIS_EPOCH);
+    LOG.log(
+        Level.INFO,
+        "Finalized block epoch:                 "
+            + finalizedEpoch
+            + "  |  "
+            + finalizedEpoch % Constants.GENESIS_EPOCH);
 
     BeaconStateWithCache newHeadState =
         BeaconStateWithCache.deepCopy((BeaconStateWithCache) headBlockState);
-
-    // Hash headBlock to obtain previousBlockRoot that will be used
-    // as previous_block_root in all state transitions
-    Bytes32 previousBlockRoot = HashTreeUtil.hash_tree_root(headBlock.toBytes());
 
     // Run state transition with no blocks from the newHeadState.slot to node.slot
     boolean firstLoop = true;
@@ -164,9 +169,9 @@ public class StateProcessor {
             "Transitioning state from slot: " + newHeadState.getSlot() + " to slot: " + nodeSlot);
         firstLoop = false;
       }
-      stateTransition.initiate(newHeadState, null, previousBlockRoot);
+      stateTransition.initiate((BeaconStateWithCache) newHeadState, null);
     }
-    this.store.addState(HashTreeUtil.hash_tree_root(newHeadState.toBytes()), newHeadState);
+    this.store.addState(newHeadState.hash_tree_root(), newHeadState);
     this.headState = newHeadState;
     // Send event that headState has been updated
     this.eventBus.post(
@@ -202,12 +207,11 @@ public class StateProcessor {
 
         // Get block, block root and block state root
         BeaconBlock block = unprocessedBlock.get();
-        Bytes32 blockRoot = HashTreeUtil.hash_tree_root(block.toBytes());
+        Bytes32 blockRoot = block.signed_root("signature");
         Bytes32 blockStateRoot = block.getState_root();
 
         // Get parent block, parent block root, parent block state root, and parent block state
         BeaconBlock parentBlock = this.store.getParent(block).get();
-        Bytes32 parentBlockRoot = block.getParent_root();
         Bytes32 parentBlockStateRoot = parentBlock.getState_root();
         BeaconState parentBlockState = this.store.getState(parentBlockStateRoot).get();
 
@@ -225,14 +229,14 @@ public class StateProcessor {
                     + (block.getSlot() - 1));
             firstLoop = false;
           }
-          stateTransition.initiate(currentState, null, parentBlockRoot);
+          stateTransition.initiate((BeaconStateWithCache) currentState, null);
         }
 
         // Run state transition with the block
         LOG.log(Level.INFO, ANSI_PURPLE + "Running state transition with block." + ANSI_RESET);
-        stateTransition.initiate(currentState, block, parentBlockRoot);
+        stateTransition.initiate((BeaconStateWithCache) currentState, block);
 
-        Bytes32 newStateRoot = HashTreeUtil.hash_tree_root(currentState.toBytes());
+        Bytes32 newStateRoot = currentState.hash_tree_root();
 
         // Verify that the state root we have computed is the state root that block is
         // claiming us we should reach, save the block and the state if its correct.
@@ -291,11 +295,13 @@ public class StateProcessor {
         this.finalizedBlockRoot =
             BeaconStateUtil.get_block_root(
                 headState, BeaconStateUtil.get_epoch_start_slot(headState.getFinalized_epoch()));
-        this.justifiedBlockRoot =
+        this.currentJustifiedBlockRoot =
             BeaconStateUtil.get_block_root(
-                headState, BeaconStateUtil.get_epoch_start_slot(headState.getJustified_epoch()));
+                headState,
+                BeaconStateUtil.get_epoch_start_slot(headState.getCurrent_justified_epoch()));
 
-        this.justifiedStateRoot = store.getProcessedBlock(justifiedBlockRoot).get().getState_root();
+        this.justifiedStateRoot =
+            store.getProcessedBlock(currentJustifiedBlockRoot).get().getState_root();
         this.finalizedStateRoot = store.getProcessedBlock(finalizedBlockRoot).get().getState_root();
       } catch (Exception e) {
         LOG.log(Level.FATAL, "Can't update justified and finalized block roots");
@@ -305,7 +311,7 @@ public class StateProcessor {
 
   protected void recordData(Date date) {
     BeaconState justifiedState = store.getState(justifiedStateRoot).get();
-    BeaconBlock justifiedBlock = store.getProcessedBlock(justifiedBlockRoot).get();
+    BeaconBlock justifiedBlock = store.getProcessedBlock(currentJustifiedBlockRoot).get();
     BeaconState finalizedState = store.getState(finalizedStateRoot).get();
     BeaconBlock finalizedBlock = store.getProcessedBlock(finalizedBlockRoot).get();
     RawRecord record =

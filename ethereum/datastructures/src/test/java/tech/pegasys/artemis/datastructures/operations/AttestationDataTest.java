@@ -26,24 +26,24 @@ import tech.pegasys.artemis.datastructures.state.Crosslink;
 
 class AttestationDataTest {
 
-  private final long slot = randomLong();
-  private final long shard = randomLong();
-  private final Bytes32 beaconBlockRoot = Bytes32.random();
-  private final Bytes32 epochBoundaryRoot = Bytes32.random();
-  private final Bytes32 crosslinkDataRoot = Bytes32.random();
-  private final Crosslink latestCrosslink = randomCrosslink();
-  private final long justifiedEpoch = randomLong();
-  private final Bytes32 justifiedBlockRoot = Bytes32.random();
+  private UnsignedLong slot = randomUnsignedLong();
+  private Bytes32 beaconBlockRoot = Bytes32.random();
+  private UnsignedLong shard = randomUnsignedLong();
+  private Bytes32 epochBoundaryRoot = Bytes32.random();
+  private Bytes32 crosslinkDataRoot = Bytes32.random();
+  private UnsignedLong justifiedEpoch = randomUnsignedLong();
+  private Crosslink latestCrosslink = randomCrosslink();
+  private Bytes32 justifiedBlockRoot = Bytes32.random();
 
   private final AttestationData attestationData =
       new AttestationData(
           slot,
-          shard,
           beaconBlockRoot,
+          shard,
           epochBoundaryRoot,
           crosslinkDataRoot,
-          latestCrosslink,
           justifiedEpoch,
+          latestCrosslink,
           justifiedBlockRoot);
 
   @Test
@@ -58,12 +58,12 @@ class AttestationDataTest {
     AttestationData testAttestationData =
         new AttestationData(
             slot,
-            shard,
             beaconBlockRoot,
+            shard,
             epochBoundaryRoot,
             crosslinkDataRoot,
-            latestCrosslink,
             justifiedEpoch,
+            latestCrosslink,
             justifiedBlockRoot);
 
     assertEquals(attestationData, testAttestationData);
@@ -73,13 +73,13 @@ class AttestationDataTest {
   void equalsReturnsFalseWhenSlotsAreDifferent() {
     AttestationData testAttestationData =
         new AttestationData(
-            slot + randomLong(),
-            shard,
+            slot.plus(randomUnsignedLong()),
             beaconBlockRoot,
+            shard,
             epochBoundaryRoot,
             crosslinkDataRoot,
-            latestCrosslink,
             justifiedEpoch,
+            latestCrosslink,
             justifiedBlockRoot);
 
     assertNotEquals(attestationData, testAttestationData);
@@ -90,12 +90,12 @@ class AttestationDataTest {
     AttestationData testAttestationData =
         new AttestationData(
             slot,
-            shard + randomLong(),
             beaconBlockRoot,
+            shard.plus(randomUnsignedLong()),
             epochBoundaryRoot,
             crosslinkDataRoot,
-            latestCrosslink,
             justifiedEpoch,
+            latestCrosslink,
             justifiedBlockRoot);
 
     assertNotEquals(attestationData, testAttestationData);
@@ -106,12 +106,12 @@ class AttestationDataTest {
     AttestationData testAttestationData =
         new AttestationData(
             slot,
-            shard,
             beaconBlockRoot.not(),
+            shard,
             epochBoundaryRoot,
             crosslinkDataRoot,
-            latestCrosslink,
             justifiedEpoch,
+            latestCrosslink,
             justifiedBlockRoot);
 
     assertNotEquals(attestationData, testAttestationData);
@@ -122,12 +122,12 @@ class AttestationDataTest {
     AttestationData testAttestationData =
         new AttestationData(
             slot,
-            shard,
             beaconBlockRoot,
+            shard,
             epochBoundaryRoot.not(),
             crosslinkDataRoot,
-            latestCrosslink,
             justifiedEpoch,
+            latestCrosslink,
             justifiedBlockRoot);
 
     assertNotEquals(attestationData, testAttestationData);
@@ -138,12 +138,12 @@ class AttestationDataTest {
     AttestationData testAttestationData =
         new AttestationData(
             slot,
-            shard,
             beaconBlockRoot,
+            shard,
             epochBoundaryRoot,
             crosslinkDataRoot.not(),
-            latestCrosslink,
             justifiedEpoch,
+            latestCrosslink,
             justifiedBlockRoot);
 
     assertNotEquals(attestationData, testAttestationData);
@@ -159,12 +159,12 @@ class AttestationDataTest {
     AttestationData testAttestationData =
         new AttestationData(
             slot,
-            shard,
             beaconBlockRoot,
+            shard,
             epochBoundaryRoot,
             crosslinkDataRoot,
-            diffCrosslink,
             justifiedEpoch,
+            diffCrosslink,
             justifiedBlockRoot);
 
     assertNotEquals(attestationData, testAttestationData);
@@ -175,12 +175,12 @@ class AttestationDataTest {
     AttestationData testAttestationData =
         new AttestationData(
             slot,
-            shard,
             beaconBlockRoot,
+            shard,
             epochBoundaryRoot,
             crosslinkDataRoot,
+            justifiedEpoch.plus(randomUnsignedLong()),
             latestCrosslink,
-            justifiedEpoch + randomLong(),
             justifiedBlockRoot);
 
     assertNotEquals(attestationData, testAttestationData);
@@ -191,12 +191,12 @@ class AttestationDataTest {
     AttestationData testAttestationData =
         new AttestationData(
             slot,
-            shard,
             beaconBlockRoot,
+            shard,
             epochBoundaryRoot,
             crosslinkDataRoot,
-            latestCrosslink,
             justifiedEpoch,
+            latestCrosslink,
             justifiedBlockRoot.not());
 
     assertNotEquals(attestationData, testAttestationData);
