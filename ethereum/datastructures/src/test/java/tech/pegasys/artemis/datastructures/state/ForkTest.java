@@ -22,9 +22,9 @@ import org.junit.jupiter.api.Test;
 
 class ForkTest {
 
-  private final long previousVersion = randomLong();
-  private final long currentVersion = randomLong();
-  private final long epoch = randomLong();
+  private Bytes previousVersion = Bytes.random(4);
+  private Bytes currentVersion = Bytes.random(4);
+  private UnsignedLong epoch = randomUnsignedLong();
 
   private final Fork fork = new Fork(previousVersion, currentVersion, epoch);
 
@@ -44,14 +44,14 @@ class ForkTest {
 
   @Test
   void equalsReturnsFalseWhenPreviousVersionsAreDifferent() {
-    Fork testFork = new Fork(previousVersion + randomLong(), currentVersion, epoch);
+    Fork testFork = new Fork(previousVersion.not(), currentVersion, epoch);
 
     assertNotEquals(fork, testFork);
   }
 
   @Test
   void equalsReturnsFalseWhenCurrentVersionsAreDifferent() {
-    Fork testFork = new Fork(previousVersion, currentVersion + randomLong(), epoch);
+    Fork testFork = new Fork(previousVersion, currentVersion.not(), epoch);
 
     assertNotEquals(fork, testFork);
   }

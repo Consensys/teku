@@ -13,17 +13,25 @@
 
 package tech.pegasys.artemis.datastructures.state;
 
+import com.google.common.primitives.UnsignedLong;
+import java.util.Arrays;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
+import net.consensys.cava.ssz.SSZ;
+import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
+import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
 
 public class Fork {
 
-  private long previous_version;
-  private long current_version;
-  private long epoch;
+  // TODO previous_version should be a bytes4 (this has serialization impacts)
+  private Bytes previous_version;
+  // TODO current_version should be a bytes4 (this has serialization impacts)
+  private Bytes current_version;
+  private UnsignedLong epoch;
 
-  public Fork(long previous_version, long current_version, long epoch) {
+  public Fork(Bytes previous_version, Bytes current_version, UnsignedLong epoch) {
     this.previous_version = previous_version;
     this.current_version = current_version;
     this.epoch = epoch;
@@ -37,15 +45,20 @@ public class Fork {
 
   public static Fork fromBytes(Bytes bytes) {
     return SSZ.decode(
-        bytes, reader -> new Fork(reader.readUInt64(), reader.readUInt64(), reader.readUInt64()));
+        bytes,
+        reader ->
+            new Fork(
+                Bytes.wrap(reader.readFixedBytes(4)),
+                Bytes.wrap(reader.readFixedBytes(4)),
+                UnsignedLong.fromLongBits(reader.readUInt64())));
   }
 
   public Bytes toBytes() {
     return SSZ.encode(
         writer -> {
-          writer.writeUInt64(previous_version);
-          writer.writeUInt64(current_version);
-          writer.writeUInt64(epoch);
+          writer.writeFixedBytes(4, previous_version);
+          writer.writeFixedBytes(4, current_version);
+          writer.writeUInt64(epoch.longValue());
         });
   }
 
@@ -75,19 +88,19 @@ public class Fork {
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */
-  public long getPrevious_version() {
+  public Bytes getPrevious_version() {
     return previous_version;
   }
 
-  public void setPrevious_version(long previous_version) {
+  public void setPrevious_version(Bytes previous_version) {
     this.previous_version = previous_version;
   }
 
-  public long getCurrent_version() {
+  public Bytes getCurrent_version() {
     return current_version;
   }
 
-  public void setCurrent_version(long current_version) {
+  public void setCurrent_version(Bytes current_version) {
     this.current_version = current_version;
   }
 
@@ -97,5 +110,13 @@ public class Fork {
 
   public void setEpoch(long epoch) {
     this.epoch = epoch;
+  }
+
+  public Bytes32 hash_tree_root() {
+    return HashTreeUtil.merkleize(
+        Arrays.asList(
+            HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, previous_version),
+            HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, current_version),
+            HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(epoch.longValue()))));
   }
 }

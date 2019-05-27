@@ -63,7 +63,9 @@ class BeaconStateUtilTest {
 
   @Test
   void sqrtOfANegativeNumber() {
-    assertThrows(IllegalArgumentException.class, () -> BeaconStateUtil.integer_squareroot(-1L));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> BeaconStateUtil.integer_squareroot(UnsignedLong.valueOf(-1L)));
   }
 
   // TODO It may make sense to move these tests to a Fork specific test class in the future.
@@ -73,8 +75,8 @@ class BeaconStateUtilTest {
     // Setup Fork Versions
     // The values of these don't really matter, it just makes sense that
     // previous version is less than current version.
-    long previousVersion = 0;
-    long currentVersion = previousVersion + 1L;
+    Bytes previousVersion = Bytes.ofUnsignedInt(0);
+    Bytes currentVersion = previousVersion.and(Bytes.ofUnsignedInt(1));
 
     // Setup Epochs
     // It is necessary for this test that givenEpoch is less than forkEpoch.
@@ -92,8 +94,8 @@ class BeaconStateUtilTest {
     // Setup Fork Versions
     // The values of these don't really matter, it just makes sense that
     // previous version is less than current version.
-    long previousVersion = 0;
-    long currentVersion = previousVersion + 1L;
+    Bytes previousVersion = Bytes.ofUnsignedInt(0);
+    Bytes currentVersion = previousVersion.and(Bytes.ofUnsignedInt(1));
 
     // Setup Epochs
     // It is necessary for this test that givenEpoch is greater than forkEpoch.
@@ -111,8 +113,8 @@ class BeaconStateUtilTest {
     // Setup Fork Versions
     // The values of these don't really matter, it just makes sense that
     // previous version is less than current version.
-    long previousVersion = 0;
-    long currentVersion = previousVersion + 1L;
+    Bytes previousVersion = Bytes.ofUnsignedInt(0);
+    Bytes currentVersion = previousVersion.and(Bytes.ofUnsignedInt(1));
 
     // Setup Epochs
     long givenEpoch = 100L;
@@ -130,7 +132,8 @@ class BeaconStateUtilTest {
     for (int domain = 0; domain <= 4; ++domain) {
       assertEquals(
           BeaconStateUtil.get_domain(fork, givenEpoch, domain),
-          (BeaconStateUtil.get_fork_version(fork, givenEpoch) << 32) + domain);
+          UnsignedLong.valueOf(
+              (BeaconStateUtil.get_fork_version(fork, givenEpoch).toLong() << 32) + domain));
     }
   }
 
@@ -139,8 +142,8 @@ class BeaconStateUtilTest {
     // Setup Fork Versions
     // The values of these don't really matter, it just makes sense that
     // previous version is less than current version.
-    long previousVersion = 0;
-    long currentVersion = previousVersion + 1L;
+    Bytes previousVersion = Bytes.ofUnsignedInt(0);
+    Bytes currentVersion = previousVersion.and(Bytes.ofUnsignedInt(1));
 
     // Setup Epochs
     long forkEpoch = 100L;
@@ -158,7 +161,8 @@ class BeaconStateUtilTest {
     for (int domain = 0; domain <= 4; ++domain) {
       assertEquals(
           BeaconStateUtil.get_domain(fork, givenEpoch, domain),
-          (BeaconStateUtil.get_fork_version(fork, givenEpoch) << 32) + domain);
+          UnsignedLong.valueOf(
+              (BeaconStateUtil.get_fork_version(fork, givenEpoch).toLong() << 32) + domain));
     }
   }
   // *************** END Fork Tests ***************
@@ -172,16 +176,16 @@ class BeaconStateUtilTest {
     long domain =
         BeaconStateUtil.get_domain(
             new Fork(
-                Constants.GENESIS_FORK_VERSION,
-                Constants.GENESIS_FORK_VERSION,
-                Constants.GENESIS_EPOCH),
-            Constants.GENESIS_EPOCH,
+                Bytes.ofUnsignedInt(Constants.GENESIS_FORK_VERSION),
+                Bytes.ofUnsignedInt(Constants.GENESIS_FORK_VERSION),
+                UnsignedLong.valueOf(Constants.GENESIS_EPOCH)),
+            UnsignedLong.fromLongBits(Constants.GENESIS_EPOCH),
             Constants.DOMAIN_DEPOSIT);
 
     assertTrue(
         BLSVerify.bls_verify(
             pubkey,
-            deposit.getDeposit_data().getDeposit_input().signedRoot("proof_of_possession"),
+            deposit.getDeposit_data().getDeposit_input().signed_root("proof_of_possession"),
             proofOfPossession,
             domain));
   }
@@ -195,16 +199,16 @@ class BeaconStateUtilTest {
     long domain =
         BeaconStateUtil.get_domain(
             new Fork(
-                Constants.GENESIS_FORK_VERSION,
-                Constants.GENESIS_FORK_VERSION,
-                Constants.GENESIS_EPOCH),
-            Constants.GENESIS_EPOCH,
+                Bytes.ofUnsignedInt(Constants.GENESIS_FORK_VERSION),
+                Bytes.ofUnsignedInt(Constants.GENESIS_FORK_VERSION),
+                UnsignedLong.valueOf(Constants.GENESIS_EPOCH)),
+            UnsignedLong.fromLongBits(Constants.GENESIS_EPOCH),
             Constants.DOMAIN_DEPOSIT);
 
     assertFalse(
         BLSVerify.bls_verify(
             pubkey,
-            deposit.getDeposit_data().getDeposit_input().signedRoot("proof_of_possession"),
+            deposit.getDeposit_data().getDeposit_input().signed_root("proof_of_possession"),
             proofOfPossession,
             domain));
   }
@@ -308,7 +312,9 @@ class BeaconStateUtilTest {
       }
     }
 
-    assertEquals(expectedBalance, BeaconStateUtil.get_total_balance(state, crosslinkCommittee));
+    assertEquals(
+        expectedBalance,
+        BeaconStateUtil.get_total_balance(state, crosslinkCommittee.getCommittee()));
   }
 
   @Test
@@ -342,7 +348,7 @@ class BeaconStateUtilTest {
     long expectedBadActorBalance = validatorBalance - whistleblowerReward;
 
     // Penalize validator in above beacon state at validatorIndex.
-    BeaconStateUtil.penalize_validator(beaconState, validatorIndex);
+    //    BeaconStateUtil.penalize_validator(beaconState, validatorIndex);
 
     assertEquals(
         expectedBadActorBalance,
@@ -448,11 +454,9 @@ class BeaconStateUtilTest {
     beaconState.setSlot(randomLong());
     beaconState.setFork(
         new Fork(
-            Constants.GENESIS_FORK_VERSION,
-            Constants.GENESIS_FORK_VERSION,
-            Constants.GENESIS_EPOCH));
-
-    List<Validator> validatorList = new ArrayList<>(Collections.nCopies(16, randomValidator()));
+            Bytes.ofUnsignedInt(Constants.GENESIS_FORK_VERSION),
+            Bytes.ofUnsignedInt(Constants.GENESIS_FORK_VERSION),
+            UnsignedLong.valueOf(Constants.GENESIS_EPOCH)));
 
     List<Long> balanceList = new ArrayList<>(Collections.nCopies(16, randomLong()));
 

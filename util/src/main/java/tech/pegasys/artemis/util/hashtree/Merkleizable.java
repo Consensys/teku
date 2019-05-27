@@ -11,6 +11,11 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.statetransition.util;
+package tech.pegasys.artemis.util.hashtree;
 
-public final class SlotProcessorUtil {}
+import net.consensys.cava.bytes.Bytes32;
+
+public interface Merkleizable {
+
+  public Bytes32 hash_tree_root();
+}

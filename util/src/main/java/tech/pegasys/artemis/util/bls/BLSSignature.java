@@ -95,12 +95,13 @@ public final class BLSSignature {
   }
 
   public static BLSSignature fromBytes(Bytes bytes) {
-    checkArgument(bytes.size() == 100, "Expected 100 bytes but received %s.", bytes.size());
-    if (SSZ.decodeBytes(bytes).isZero()) {
+    checkArgument(bytes.size() == 96, "Expected 96 bytes but received %s.", bytes.size());
+    if (SSZ.decodeBytes(bytes, 96).isZero()) {
       return BLSSignature.empty();
     } else {
       return SSZ.decode(
-          bytes, reader -> new BLSSignature(Signature.fromBytesCompressed(reader.readBytes())));
+          bytes,
+          reader -> new BLSSignature(Signature.fromBytesCompressed(reader.readFixedBytes(96))));
     }
   }
 
@@ -161,9 +162,15 @@ public final class BLSSignature {
    */
   public Bytes toBytes() {
     if (isNull(signature)) {
-      return SSZ.encode(writer -> writer.writeBytes(Bytes.wrap(new byte[96])));
+      return SSZ.encode(
+          writer -> {
+            writer.writeFixedBytes(96, Bytes.wrap(new byte[96]));
+          });
     } else {
-      return SSZ.encode(writer -> writer.writeBytes(signature.toBytesCompressed()));
+      return SSZ.encode(
+          writer -> {
+            writer.writeFixedBytes(96, signature.toBytesCompressed());
+          });
     }
   }
 

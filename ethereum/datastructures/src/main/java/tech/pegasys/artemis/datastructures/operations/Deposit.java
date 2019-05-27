@@ -13,21 +13,27 @@
 
 package tech.pegasys.artemis.datastructures.operations;
 
+import com.google.common.primitives.UnsignedLong;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
+import tech.pegasys.artemis.datastructures.Constants;
+import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
+import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
+import tech.pegasys.artemis.util.hashtree.Merkleizable;
 
-public class Deposit {
+public class Deposit implements Merkleizable {
 
-  private List<Bytes32> branch;
-  private long index;
+  private List<Bytes32> proof; // Bounded by DEPOSIT_CONTRACT_TREE_DEPTH
+  private UnsignedLong index;
   private DepositData deposit_data;
 
-  public Deposit(List<Bytes32> branch, long index, DepositData deposit_data) {
-    this.branch = branch;
+  public Deposit(List<Bytes32> proof, UnsignedLong index, DepositData deposit_data) {
+    this.proof = proof;
     this.index = index;
     this.deposit_data = deposit_data;
   }
@@ -37,23 +43,25 @@ public class Deposit {
         bytes,
         reader ->
             new Deposit(
-                reader.readBytesList().stream().map(Bytes32::wrap).collect(Collectors.toList()),
-                reader.readUInt64(),
+                reader.readFixedBytesList(Constants.DEPOSIT_CONTRACT_TREE_DEPTH, 32).stream()
+                    .map(Bytes32::wrap)
+                    .collect(Collectors.toList()),
+                UnsignedLong.fromLongBits(reader.readUInt64()),
                 DepositData.fromBytes(reader.readBytes())));
   }
 
   public Bytes toBytes() {
     return SSZ.encode(
         writer -> {
-          writer.writeBytesList(branch);
-          writer.writeUInt64(index);
+          writer.writeFixedBytesList(Constants.DEPOSIT_CONTRACT_TREE_DEPTH, 32, proof);
+          writer.writeUInt64(index.longValue());
           writer.writeBytes(deposit_data.toBytes());
         });
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(branch, index, deposit_data);
+    return Objects.hash(proof, index, deposit_data);
   }
 
   @Override
@@ -71,18 +79,18 @@ public class Deposit {
     }
 
     Deposit other = (Deposit) obj;
-    return Objects.equals(this.getBranch(), other.getBranch())
+    return Objects.equals(this.getProof(), other.getProof())
         && Objects.equals(this.getIndex(), other.getIndex())
         && Objects.equals(this.getDeposit_data(), other.getDeposit_data());
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */
-  public List<Bytes32> getBranch() {
-    return branch;
+  public List<Bytes32> getProof() {
+    return proof;
   }
 
-  public void setBranch(List<Bytes32> branch) {
-    this.branch = branch;
+  public void setProof(List<Bytes32> branch) {
+    this.proof = branch;
   }
 
   public long getIndex() {
@@ -99,5 +107,15 @@ public class Deposit {
 
   public void setDeposit_data(DepositData deposit_data) {
     this.deposit_data = deposit_data;
+  }
+
+  @Override
+  public Bytes32 hash_tree_root() {
+    return HashTreeUtil.merkleize(
+        Arrays.asList(
+            // TODO Look at this - is this a TUPLE_OF_COMPOSITE
+            HashTreeUtil.hash_tree_root(SSZTypes.BASIC, proof.toArray(new Bytes32[0])),
+            HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(index.longValue())),
+            deposit_data.hash_tree_root()));
   }
 }

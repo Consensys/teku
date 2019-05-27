@@ -13,13 +13,19 @@
 
 package tech.pegasys.artemis.datastructures.state;
 
+import com.google.common.primitives.UnsignedLong;
+import java.util.Arrays;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.artemis.datastructures.Copyable;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
+import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
+import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
+import tech.pegasys.artemis.util.hashtree.Merkleizable;
 
-public class PendingAttestation implements Copyable<PendingAttestation> {
+public class PendingAttestation implements Copyable<PendingAttestation>, Merkleizable {
 
   private Bytes aggregation_bitfield;
   private AttestationData data;
@@ -41,7 +47,7 @@ public class PendingAttestation implements Copyable<PendingAttestation> {
     this.aggregation_bitfield = pendingAttestation.getAggregation_bitfield().copy();
     this.data = new AttestationData(pendingAttestation.getData());
     this.custody_bitfield = pendingAttestation.getCustody_bitfield().copy();
-    this.inclusion_slot = pendingAttestation.getInclusionSlot();
+    this.inclusion_slot = pendingAttestation.getInclusion_slot();
   }
 
   @Override
@@ -93,7 +99,7 @@ public class PendingAttestation implements Copyable<PendingAttestation> {
     return Objects.equals(this.getAggregation_bitfield(), other.getAggregation_bitfield())
         && Objects.equals(this.getData(), other.getData())
         && Objects.equals(this.getCustody_bitfield(), other.getCustody_bitfield())
-        && Objects.equals(this.getInclusionSlot(), other.getInclusionSlot());
+        && Objects.equals(this.getInclusion_slot(), other.getInclusion_slot());
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */
@@ -121,11 +127,26 @@ public class PendingAttestation implements Copyable<PendingAttestation> {
     this.custody_bitfield = custody_bitfield;
   }
 
+<<<<<<< HEAD
   public long getInclusionSlot() {
+=======
+  public UnsignedLong getInclusion_slot() {
+>>>>>>> v0.5.1-integration
     return inclusion_slot;
   }
 
   public void setInclusionSlot(long inclusion_slot) {
     this.inclusion_slot = inclusion_slot;
+  }
+
+  @Override
+  public Bytes32 hash_tree_root() {
+    return HashTreeUtil.merkleize(
+        Arrays.asList(
+            HashTreeUtil.hash_tree_root(SSZTypes.LIST_OF_BASIC, aggregation_bitfield),
+            data.hash_tree_root(),
+            HashTreeUtil.hash_tree_root(SSZTypes.LIST_OF_BASIC, custody_bitfield),
+            HashTreeUtil.hash_tree_root(
+                SSZTypes.BASIC, SSZ.encodeUInt64(inclusion_slot.longValue()))));
   }
 }

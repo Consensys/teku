@@ -13,31 +13,38 @@
 
 package tech.pegasys.artemis.datastructures.operations;
 
+import com.google.common.primitives.UnsignedLong;
+import java.util.Arrays;
 import java.util.Objects;
+import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.ssz.SSZ;
+import net.consensys.cava.ssz.SSZ;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
+import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
+import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
+import tech.pegasys.artemis.util.hashtree.Merkleizable;
 
-public class Transfer {
-  private long from;
-  private long to;
-  private long amount;
-  private long fee;
-  private long slot;
+public class Transfer implements Merkleizable {
+  private UnsignedLong sender;
+  private UnsignedLong recipient;
+  private UnsignedLong amount;
+  private UnsignedLong fee;
+  private UnsignedLong slot;
   private BLSPublicKey pubkey;
   private BLSSignature signature;
 
   public Transfer(
-      long from,
-      long to,
-      long amount,
-      long fee,
-      long slot,
+      UnsignedLong sender,
+      UnsignedLong recipient,
+      UnsignedLong amount,
+      UnsignedLong fee,
+      UnsignedLong slot,
       BLSPublicKey pubkey,
       BLSSignature signature) {
-    this.setFrom(from);
-    this.setTo(to);
+    this.setSender(sender);
+    this.setRecipient(recipient);
     this.setAmount(amount);
     this.setFee(fee);
     this.setSlot(slot);
@@ -62,11 +69,11 @@ public class Transfer {
   public Bytes toBytes() {
     return SSZ.encode(
         writer -> {
-          writer.writeUInt64(from);
-          writer.writeUInt64(to);
-          writer.writeUInt64(amount);
-          writer.writeUInt64(fee);
-          writer.writeUInt64(slot);
+          writer.writeUInt64(sender.longValue());
+          writer.writeUInt64(recipient.longValue());
+          writer.writeUInt64(amount.longValue());
+          writer.writeUInt64(fee.longValue());
+          writer.writeUInt64(slot.longValue());
           writer.writeBytes(pubkey.toBytes());
           writer.writeBytes(signature.toBytes());
         });
@@ -74,7 +81,7 @@ public class Transfer {
 
   @Override
   public int hashCode() {
-    return Objects.hash(from, to, amount, fee, slot, pubkey, signature);
+    return Objects.hash(sender, recipient, amount, fee, slot, pubkey, signature);
   }
 
   @Override
@@ -92,8 +99,8 @@ public class Transfer {
     }
 
     Transfer other = (Transfer) obj;
-    return Objects.equals(this.getFrom(), other.getFrom())
-        && Objects.equals(this.getTo(), other.getTo())
+    return Objects.equals(this.getSender(), other.getSender())
+        && Objects.equals(this.getRecipient(), other.getRecipient())
         && Objects.equals(this.getAmount(), other.getAmount())
         && Objects.equals(this.getFee(), other.getFee())
         && Objects.equals(this.getSlot(), other.getSlot())
@@ -102,20 +109,20 @@ public class Transfer {
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */
-  public long getFrom() {
-    return from;
+  public UnsignedLong getSender() {
+    return sender;
   }
 
-  public void setFrom(long from) {
-    this.from = from;
+  public void setSender(UnsignedLong sender) {
+    this.sender = sender;
   }
 
-  public long getTo() {
-    return to;
+  public UnsignedLong getRecipient() {
+    return recipient;
   }
 
-  public void setTo(long to) {
-    this.to = to;
+  public void setRecipient(UnsignedLong recipient) {
+    this.recipient = recipient;
   }
 
   public long getAmount() {
@@ -156,5 +163,36 @@ public class Transfer {
 
   public void setSignature(BLSSignature signature) {
     this.signature = signature;
+  }
+
+  public Bytes32 signed_root(String truncation_param) {
+    if (!truncation_param.equals("signature")) {
+      throw new UnsupportedOperationException(
+          "Only signed_root(BeaconBlockHeader, \"signature\") is currently supported for type BeaconBlockHeader.");
+    }
+
+    return Bytes32.rightPad(
+        HashTreeUtil.merkleize(
+            Arrays.asList(
+                HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(sender.longValue())),
+                HashTreeUtil.hash_tree_root(
+                    SSZTypes.BASIC, SSZ.encodeUInt64(recipient.longValue())),
+                HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(amount.longValue())),
+                HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(fee.longValue())),
+                HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(slot.longValue())),
+                HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, pubkey.toBytes()))));
+  }
+
+  @Override
+  public Bytes32 hash_tree_root() {
+    return HashTreeUtil.merkleize(
+        Arrays.asList(
+            HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(sender.longValue())),
+            HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(recipient.longValue())),
+            HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(amount.longValue())),
+            HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(fee.longValue())),
+            HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(slot.longValue())),
+            HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, pubkey.toBytes()),
+            HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, signature.toBytes())));
   }
 }

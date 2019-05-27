@@ -13,11 +13,15 @@
 
 package tech.pegasys.artemis.datastructures.state;
 
+import com.google.common.primitives.UnsignedLong;
+import java.util.Arrays;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.artemis.datastructures.Copyable;
+import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
+import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
 
 public class Crosslink implements Copyable<Crosslink> {
 
@@ -36,7 +40,11 @@ public class Crosslink implements Copyable<Crosslink> {
 
   public static Crosslink fromBytes(Bytes bytes) {
     return SSZ.decode(
-        bytes, reader -> new Crosslink(reader.readUInt64(), Bytes32.wrap(reader.readBytes())));
+        bytes,
+        reader ->
+            new Crosslink(
+                UnsignedLong.fromLongBits(reader.readUInt64()),
+                Bytes32.wrap(reader.readFixedBytes(32))));
   }
 
   @Override
@@ -47,8 +55,8 @@ public class Crosslink implements Copyable<Crosslink> {
   public Bytes toBytes() {
     return SSZ.encode(
         writer -> {
-          writer.writeUInt64(epoch);
-          writer.writeBytes(crosslink_data_root);
+          writer.writeUInt64(epoch.longValue());
+          writer.writeFixedBytes(32, crosslink_data_root);
         });
   }
 
@@ -91,5 +99,12 @@ public class Crosslink implements Copyable<Crosslink> {
 
   public void setEpoch(long epoch) {
     this.epoch = epoch;
+  }
+
+  public Bytes32 hash_tree_root() {
+    return HashTreeUtil.merkleize(
+        Arrays.asList(
+            HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(epoch.longValue())),
+            HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, crosslink_data_root)));
   }
 }
