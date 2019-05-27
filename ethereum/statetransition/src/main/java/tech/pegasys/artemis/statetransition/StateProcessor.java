@@ -118,7 +118,12 @@ public class StateProcessor {
 
     LOG.log(Level.INFO, ANSI_WHITE_BOLD + "******* Slot Event *******" + ANSI_RESET);
     LOG.log(Level.INFO, "Node time:                             " + nodeTime);
-    LOG.log(Level.INFO, "Node slot:                             " + nodeSlot);
+    LOG.log(
+        Level.INFO,
+        "Node slot:                             "
+            + nodeSlot
+            + "  |  "
+            + nodeSlot.longValue() % Constants.GENESIS_SLOT);
 
     synchronized (this.store.getSyncObject()) {
       try {
@@ -141,7 +146,12 @@ public class StateProcessor {
     // Update the block that is subjectively the head of the chain  using lmd_ghost
     LOG.log(Level.INFO, ANSI_PURPLE + "Updating head block using LMDGhost." + ANSI_RESET);
     updateHeadBlockUsingLMDGhost();
-    LOG.log(Level.INFO, "Head block slot:                      " + headBlock.getSlot());
+    LOG.log(
+        Level.INFO,
+        "Head block slot:                      "
+            + headBlock.getSlot()
+            + "  |  "
+            + headBlock.getSlot() % Constants.GENESIS_SLOT);
 
     // Get head block's state, and initialize a newHeadState variable to run state transition on
     BeaconState headBlockState = store.getState(headBlock.getState_root()).get();
