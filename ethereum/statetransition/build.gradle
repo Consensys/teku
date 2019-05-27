@@ -15,7 +15,7 @@ dependencies {
 
   implementation 'org.apache.tuweni:tuweni-crypto'
   implementation 'org.apache.tuweni:tuweni-units'
-  implementation 'org.apache.tuweni:tuweni-ssz'
+  compile files("../../lib/cava-ssz-1.0.0-dev.jar")
   implementation 'org.apache.tuweni:tuweni-config'
   implementation 'com.google.guava:guava'
   implementation 'com.google.code.gson:gson'

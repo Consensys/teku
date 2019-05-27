@@ -18,7 +18,7 @@ import java.util.Arrays;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.ssz.SSZ;
+import net.consensys.cava.ssz.SSZ;
 import tech.pegasys.artemis.datastructures.Copyable;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
@@ -30,7 +30,7 @@ public class PendingAttestation implements Copyable<PendingAttestation>, Merklei
   private Bytes aggregation_bitfield;
   private AttestationData data;
   private Bytes custody_bitfield;
-  private long inclusion_slot;
+  private UnsignedLong inclusion_slot;
 
   public PendingAttestation(
       Bytes aggregation_bitfield,
@@ -72,7 +72,7 @@ public class PendingAttestation implements Copyable<PendingAttestation>, Merklei
           writer.writeBytes(aggregation_bitfield);
           writer.writeBytes(data.toBytes());
           writer.writeBytes(custody_bitfield);
-          writer.writeUInt64(inclusion_slot);
+          writer.writeUInt64(SSZinclusion_slot);
         });
   }
 
@@ -127,15 +127,11 @@ public class PendingAttestation implements Copyable<PendingAttestation>, Merklei
     this.custody_bitfield = custody_bitfield;
   }
 
-<<<<<<< HEAD
-  public long getInclusionSlot() {
-=======
   public UnsignedLong getInclusion_slot() {
->>>>>>> v0.5.1-integration
     return inclusion_slot;
   }
 
-  public void setInclusionSlot(long inclusion_slot) {
+  public void setInclusionSlot(UnsignedLong inclusion_slot) {
     this.inclusion_slot = inclusion_slot;
   }
 
