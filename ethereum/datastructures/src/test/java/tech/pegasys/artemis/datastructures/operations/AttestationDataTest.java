@@ -17,8 +17,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomCrosslink;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomInt;
-import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomLong;
+import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomUnsignedLong;
 
+import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
@@ -35,7 +36,7 @@ class AttestationDataTest {
   private Crosslink latestCrosslink = randomCrosslink();
   private Bytes32 justifiedBlockRoot = Bytes32.random();
 
-  private final AttestationData attestationData =
+  private AttestationData attestationData =
       new AttestationData(
           slot,
           beaconBlockRoot,
@@ -153,7 +154,7 @@ class AttestationDataTest {
   void equalsReturnsFalseWhenLatestCrosslinkRootsAreDifferent() {
     Crosslink diffCrosslink =
         new Crosslink(
-            latestCrosslink.getEpoch() + randomLong(),
+            latestCrosslink.getEpoch().plus(randomUnsignedLong()),
             Bytes32.wrap(latestCrosslink.getCrosslink_data_root(), randomInt(0)));
 
     AttestationData testAttestationData =

@@ -16,6 +16,7 @@ package tech.pegasys.artemis.statetransition;
 import static org.junit.jupiter.api.Assertions.fail;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomDeposits;
 
+import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.Collections;
 import org.apache.tuweni.bytes.Bytes32;
@@ -61,14 +62,14 @@ class StateTransitionTest {
     for (int i = 0; i < 1000; i++) {
       ArrayList<ShardCommittee> shard_commitees = new ArrayList<ShardCommittee>();
       for (int j = 0; j < 64; j++) {
-        int total_validator_count = toIntExact(Math.round(Math.random() * 64));
+        int total_validator_count = (int) Math.round(Math.random() * 64);
 
         ArrayList<Integer> committee = new ArrayList<Integer>();
         for (int k = 0; k < total_validator_count; k++) {
-          committee.add(Integer.valueOf(toIntExact(Math.round(Math.random() * 64))));
+          committee.add(Integer.valueOf((int) Math.round(Math.random() * 64)));
         }
         shard_commitees.add(
-            new ShardCommittee(Math.round(Math.random() * 5000), committee));
+            new ShardCommittee(UnsignedLong.valueOf(Math.round(Math.random() * 5000)), committee));
       }
       shard_committees_at_slots.add(shard_commitees);
     }

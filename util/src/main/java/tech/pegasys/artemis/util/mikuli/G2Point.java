@@ -63,6 +63,7 @@ public final class G2Point implements Group<G2Point> {
    * @param domain the signature domain as defined in the Eth2 spec
    * @return a point from the G2 group representing the message hash
    */
+  @VisibleForTesting
   public static G2Point hashToG2(Bytes message, long domain) {
     Security.addProvider(new BouncyCastleProvider());
     Bytes domainBytes = Bytes.ofUnsignedLong(domain);
@@ -107,7 +108,7 @@ public final class G2Point implements Group<G2Point> {
    * @return a new point with the correct Y coordinate, which may the original.
    */
   @VisibleForTesting
-  public static ECP2 normaliseY(ECP2 point) {
+  static ECP2 normaliseY(ECP2 point) {
     FP2 y = point.getY();
     FP2 yNeg = new FP2(y);
     yNeg.neg();
@@ -128,7 +129,7 @@ public final class G2Point implements Group<G2Point> {
    * @return a scaled point
    */
   @VisibleForTesting
-  public static ECP2 scaleWithCofactor(ECP2 point) {
+  static ECP2 scaleWithCofactor(ECP2 point) {
 
     // These are a representation of the G2 cofactor (a 512 bit number)
     String upperHex =
@@ -159,7 +160,7 @@ public final class G2Point implements Group<G2Point> {
   private static final int fpPointSize = BIG.MODBYTES;
 
   /** Default constructor creates the point at infinity (the zero point) */
-  public G2Point() {
+  G2Point() {
     this(new ECP2());
   }
 
@@ -187,7 +188,7 @@ public final class G2Point implements Group<G2Point> {
     return new G2Point(newPoint);
   }
 
-  public Bytes toBytes() {
+  Bytes toBytes() {
     byte[] bytes = new byte[4 * fpPointSize];
     point.toBytes(bytes);
     return Bytes.wrap(bytes);
@@ -202,6 +203,7 @@ public final class G2Point implements Group<G2Point> {
    *
    * @return the serialised compressed form of the point
    */
+  @VisibleForTesting
   public Bytes toBytesCompressed() {
     byte[] xReBytes = new byte[fpPointSize];
     byte[] xImBytes = new byte[fpPointSize];
@@ -222,7 +224,7 @@ public final class G2Point implements Group<G2Point> {
     return Bytes.concatenate(Bytes.wrap(xImBytes), Bytes.wrap(xReBytes));
   }
 
-  public static G2Point fromBytes(Bytes bytes) {
+  static G2Point fromBytes(Bytes bytes) {
     checkArgument(bytes.size() == 192, "Expected 192 bytes, received %s.", bytes.size());
     return new G2Point(ECP2.fromBytes(bytes.toArrayUnsafe()));
   }
@@ -233,7 +235,7 @@ public final class G2Point implements Group<G2Point> {
    * @param bytes the compressed serialised form of the point
    * @return the point
    */
-  public static G2Point fromBytesCompressed(Bytes bytes) {
+  static G2Point fromBytesCompressed(Bytes bytes) {
     checkArgument(
         bytes.size() == 2 * fpPointSize,
         "Expected %s bytes but received %s",
@@ -295,7 +297,7 @@ public final class G2Point implements Group<G2Point> {
     return new G2Point(point);
   }
 
-  public ECP2 ecp2Point() {
+  ECP2 ecp2Point() {
     return point;
   }
 

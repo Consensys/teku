@@ -13,15 +13,14 @@
 
 package tech.pegasys.artemis.util.bls;
 
+import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.stream.Collectors;
-import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.artemis.util.alogger.ALogger;
 
 public class BLSVerify {
-  private static final ALogger LOG = new ALogger(BLSVerify.class.getName());
+
   /**
    * The bls_verify() function as defined in the Eth2 specification
    *
@@ -32,11 +31,10 @@ public class BLSVerify {
    * @return true if the signature is valid over these parameters, false if not
    */
   public static boolean bls_verify(
-      BLSPublicKey pubkey, Bytes32 messageHash, BLSSignature signature, int domain) {
+      BLSPublicKey pubkey, Bytes32 messageHash, BLSSignature signature, UnsignedLong domain) {
     try {
-      return signature.checkSignature(pubkey, Bytes.wrap(messageHash), domain);
+      return signature.checkSignature(pubkey, Bytes.wrap(messageHash), domain.longValue());
     } catch (BLSException e) {
-      LOG.log(Level.WARN, e.toString());
       return false;
     }
   }
@@ -56,13 +54,12 @@ public class BLSVerify {
       List<BLSPublicKey> pubkeys,
       List<Bytes32> messageHashes,
       BLSSignature aggregateSignature,
-      long domain) {
+      UnsignedLong domain) {
     try {
       List<Bytes> messageHashesAsBytes =
-          messageHashes.stream().map(Bytes::wrap).collect(Collectors.toList());
-      return aggregateSignature.checkSignature(pubkeys, messageHashesAsBytes, domain);
+          messageHashes.stream().map(x -> Bytes.wrap(x)).collect(Collectors.toList());
+      return aggregateSignature.checkSignature(pubkeys, messageHashesAsBytes, domain.longValue());
     } catch (BLSException e) {
-      LOG.log(Level.WARN, e.toString());
       return false;
     }
   }

@@ -172,7 +172,7 @@ public class StateProcessor {
             "Transitioning state from slot: " + newHeadState.getSlot() + " to slot: " + nodeSlot);
         firstLoop = false;
       }
-      stateTransition.initiate((BeaconStateWithCache) newHeadState, null);
+      stateTransition.initiate(newHeadState, null);
     }
     this.store.addState(newHeadState.hash_tree_root(), newHeadState);
     this.headState = newHeadState;
@@ -233,12 +233,12 @@ public class StateProcessor {
                     + (block.getSlot() - 1));
             firstLoop = false;
           }
-          stateTransition.initiate((BeaconStateWithCache) currentState, null);
+          stateTransition.initiate(currentState, null);
         }
 
         // Run state transition with the block
         LOG.log(Level.INFO, ANSI_PURPLE + "Running state transition with block." + ANSI_RESET);
-        stateTransition.initiate((BeaconStateWithCache) currentState, block);
+        stateTransition.initiate(currentState, block);
 
         Bytes32 newStateRoot = currentState.hash_tree_root();
 

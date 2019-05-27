@@ -120,7 +120,7 @@ public final class BLSSignature {
    * @return true if the signature is valid, false if it is not
    * @throws BLSException
    */
-  boolean checkSignature(BLSPublicKey publicKey, Bytes message, int domain) throws BLSException {
+  boolean checkSignature(BLSPublicKey publicKey, Bytes message, long domain) throws BLSException {
     if (isNull(signature)) {
       throw new BLSException("The checkSignature method was called on an empty signature.");
     }
@@ -151,7 +151,7 @@ public final class BLSSignature {
       throw new BLSException("The checkSignature method was called on an empty signature.");
     }
     List<PublicKey> publicKeyObjects =
-        publicKeys.stream().map(BLSPublicKey::getPublicKey).collect(Collectors.toList());
+        publicKeys.stream().map(x -> x.getPublicKey()).collect(Collectors.toList());
     return BLS12381.verifyMultiple(publicKeyObjects, signature, messages, domain);
   }
 

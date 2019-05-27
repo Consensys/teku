@@ -398,7 +398,7 @@ public final class ArtemisConfiguration {
   }
 
   public long getFarFutureEpoch() {
-    return config.getLong("constants.FAR_FUTURE_EPOCH");
+    return Long.MAX_VALUE;
   }
 
   public Object getZeroHash() {

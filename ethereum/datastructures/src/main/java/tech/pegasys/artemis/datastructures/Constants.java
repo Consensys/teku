@@ -198,7 +198,7 @@ public class Constants {
             ? config.getGenesisStartShard()
             : GENESIS_START_SHARD;
     FAR_FUTURE_EPOCH =
-        !UnsignedLong.valueOf(config.getFarFutureEpoch()).equals(UnsignedLong.MAX_VALUE)
+        config.getFarFutureEpoch() != Long.MAX_VALUE
             ? UnsignedLong.valueOf(config.getFarFutureEpoch())
             : FAR_FUTURE_EPOCH;
     ZERO_HASH =

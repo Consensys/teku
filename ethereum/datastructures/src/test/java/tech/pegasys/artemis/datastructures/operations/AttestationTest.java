@@ -25,12 +25,12 @@ import tech.pegasys.artemis.util.bls.BLSSignature;
 
 class AttestationTest {
 
-  private final Bytes aggregationBitfield = Bytes32.random();
-  private final AttestationData data = randomAttestationData();
-  private final Bytes custodyBitfield = Bytes32.random();
-  private final BLSSignature aggregateSignature = BLSSignature.random();
+  private Bytes aggregationBitfield = Bytes32.random();
+  private AttestationData data = randomAttestationData();
+  private Bytes custodyBitfield = Bytes32.random();
+  private BLSSignature aggregateSignature = BLSSignature.random();
 
-  private final Attestation attestation =
+  private Attestation attestation =
       new Attestation(aggregationBitfield, data, custodyBitfield, aggregateSignature);
 
   @Test

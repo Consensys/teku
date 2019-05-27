@@ -16,6 +16,7 @@ package tech.pegasys.artemis.util.mikuli;
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.util.List;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
@@ -113,7 +114,7 @@ public final class Signature {
    * @param signature the signature to combine with
    * @return a new signature as combination of both signatures
    */
-  Signature combine(Signature signature) {
+  public Signature combine(Signature signature) {
     return new Signature(point.add(signature.point));
   }
 
@@ -137,8 +138,7 @@ public final class Signature {
 
   @Override
   public String toString() {
-    // return "Signature [ecp2Point=" + point.toString() + "]";
-    return point.toString();
+    return "Signature [ecp2Point=" + point.toString() + "]";
   }
 
   @Override
@@ -146,6 +146,7 @@ public final class Signature {
     return point.hashCode();
   }
 
+  @VisibleForTesting
   public G2Point g2Point() {
     return point;
   }
