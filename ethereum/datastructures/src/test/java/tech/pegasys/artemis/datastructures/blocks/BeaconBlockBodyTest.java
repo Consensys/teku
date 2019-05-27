@@ -43,17 +43,16 @@ class BeaconBlockBodyTest {
   private Eth1Data eth1Data = randomEth1Data();
   private List<ProposerSlashing> proposerSlashings =
       Arrays.asList(randomProposerSlashing(), randomProposerSlashing(), randomProposerSlashing());
-  private final List<AttesterSlashing> attesterSlashings =
+  private List<AttesterSlashing> attesterSlashings =
       Arrays.asList(randomAttesterSlashing(), randomAttesterSlashing(), randomAttesterSlashing());
-  private final List<Attestation> attestations =
+  private List<Attestation> attestations =
       Arrays.asList(randomAttestation(), randomAttestation(), randomAttestation());
-  private final List<Deposit> deposits =
-      Arrays.asList(randomDeposit(), randomDeposit(), randomDeposit());
-  private final List<VoluntaryExit> voluntaryExits =
+  private List<Deposit> deposits = Arrays.asList(randomDeposit(), randomDeposit(), randomDeposit());
+  private List<VoluntaryExit> voluntaryExits =
       Arrays.asList(randomVoluntaryExit(), randomVoluntaryExit(), randomVoluntaryExit());
-  private final List<Transfer> transfers = Arrays.asList(randomTransfer(), randomTransfer());
+  private List<Transfer> transfers = Arrays.asList(randomTransfer(), randomTransfer());
 
-  private final BeaconBlockBody beaconBlockBody =
+  private BeaconBlockBody beaconBlockBody =
       new BeaconBlockBody(
           blsSignature,
           eth1Data,
@@ -170,7 +169,7 @@ class BeaconBlockBodyTest {
   @Test
   void equalsReturnsFalseWhenExitsAreDifferent() {
     // Create copy of exits and reverse to ensure it is different.
-    List<VoluntaryExit> reverseVoluntaryExits = new ArrayList<>(voluntaryExits);
+    List<VoluntaryExit> reverseVoluntaryExits = new ArrayList<VoluntaryExit>(voluntaryExits);
     Collections.reverse(reverseVoluntaryExits);
 
     BeaconBlockBody testBeaconBlockBody =
@@ -190,7 +189,7 @@ class BeaconBlockBodyTest {
   @Test
   void equalsReturnsFalseWhenTransfersAreDifferent() {
     // Create copy of exits and reverse to ensure it is different.
-    List<Transfer> reverseTransfers = new ArrayList<>(transfers);
+    List<Transfer> reverseTransfers = new ArrayList<Transfer>(transfers);
     Collections.reverse(reverseTransfers);
 
     BeaconBlockBody testBeaconBlockBody =

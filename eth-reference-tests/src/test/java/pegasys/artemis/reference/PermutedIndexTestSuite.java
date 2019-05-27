@@ -37,7 +37,7 @@ import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 public class PermutedIndexTestSuite {
 
   // TODO: point this to the official test file repo when it is available and correct
-  private static final String testFile = "**/test_vector_permutated_index_tmp.yml";
+  private static String testFile = "**/test_vector_permutated_index_tmp.yml";
 
   @ParameterizedTest(name = "{index}. Test permuted index {0}")
   @MethodSource("readPermutedIndexTestVectors")

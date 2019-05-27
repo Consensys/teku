@@ -18,6 +18,7 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomBeaconBlockHeader;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomUnsignedLong;
 
+import com.google.common.primitives.UnsignedLong;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
@@ -29,7 +30,7 @@ class ProposerSlashingTest {
   private BeaconBlockHeader proposal1 = randomBeaconBlockHeader();
   private BeaconBlockHeader proposal2 = randomBeaconBlockHeader();
 
-  private final ProposerSlashing proposerSlashing =
+  private ProposerSlashing proposerSlashing =
       new ProposerSlashing(proposerIndex, proposal1, proposal2);
 
   @Test
@@ -50,7 +51,7 @@ class ProposerSlashingTest {
   @Test
   void equalsReturnsFalseWhenProposerIndicesAreDifferent() {
     ProposerSlashing testProposerSlashing =
-        new ProposerSlashing(proposerIndex + randomLong(), proposal1, proposal2);
+        new ProposerSlashing(proposerIndex.plus(randomUnsignedLong()), proposal1, proposal2);
 
     assertNotEquals(proposerSlashing, testProposerSlashing);
   }

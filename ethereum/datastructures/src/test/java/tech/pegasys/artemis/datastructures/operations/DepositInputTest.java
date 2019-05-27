@@ -24,11 +24,11 @@ import tech.pegasys.artemis.util.bls.BLSSignature;
 
 class DepositInputTest {
 
-  private final BLSPublicKey pubkey = BLSPublicKey.random();
-  private final Bytes32 withdrawalCredentials = Bytes32.random();
-  private final BLSSignature proofOfPossession = BLSSignature.random();
+  private BLSPublicKey pubkey = BLSPublicKey.random();
+  private Bytes32 withdrawalCredentials = Bytes32.random();
+  private BLSSignature proofOfPossession = BLSSignature.random();
 
-  private final DepositInput depositInput =
+  private DepositInput depositInput =
       new DepositInput(pubkey, withdrawalCredentials, proofOfPossession);
 
   @Test

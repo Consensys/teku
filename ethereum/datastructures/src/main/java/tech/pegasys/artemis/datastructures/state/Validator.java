@@ -25,7 +25,7 @@ import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
 import tech.pegasys.artemis.util.hashtree.Merkleizable;
 
-public final class Validator implements Copyable<Validator>, Merkleizable {
+public class Validator implements Copyable<Validator>, Merkleizable {
 
   // BLS public key
   private BLSPublicKey pubkey;

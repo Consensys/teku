@@ -15,8 +15,9 @@ package tech.pegasys.artemis.datastructures.state;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomLong;
+import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomUnsignedLong;
 
+import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 
@@ -26,7 +27,7 @@ class ForkTest {
   private Bytes currentVersion = Bytes.random(4);
   private UnsignedLong epoch = randomUnsignedLong();
 
-  private final Fork fork = new Fork(previousVersion, currentVersion, epoch);
+  private Fork fork = new Fork(previousVersion, currentVersion, epoch);
 
   @Test
   void equalsReturnsTrueWhenObjectAreSame() {
@@ -58,7 +59,7 @@ class ForkTest {
 
   @Test
   void equalsReturnsFalseWhenEpochsAreDifferent() {
-    Fork testFork = new Fork(previousVersion, currentVersion, epoch + randomLong());
+    Fork testFork = new Fork(previousVersion, currentVersion, epoch.plus(randomUnsignedLong()));
 
     assertNotEquals(fork, testFork);
   }
