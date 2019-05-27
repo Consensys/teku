@@ -25,7 +25,7 @@ dependencies {
   api 'com.google.guava:guava:27.0.1-jre'
   implementation 'org.apache.tuweni:tuweni-crypto'
   implementation 'org.apache.tuweni:tuweni-plumtree'
-  implementation 'org.apache.tuweni:tuweni-ssz'
+  compile files("../../lib/cava-ssz-1.0.0-dev.jar")
   implementation 'org.apache.tuweni:tuweni-toml'
   implementation 'org.apache.tuweni:tuweni-units'
   implementation 'info.picocli:picocli'

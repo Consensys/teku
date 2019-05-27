@@ -164,21 +164,22 @@ public class ValidatorCoordinator {
     // state to the current slot."
     // However, this is only required on epoch changes, because otherwise
     // validator registry doesn't change anyway.
-    if (headState.getSlot()
-            .plus(UnsignedLong.ONE)
-            .mod(UnsignedLong.valueOf(Constants.SLOTS_PER_EPOCH))
-            .equals(UnsignedLong.ZERO)) {
+    if (headState
+        .getSlot()
+        .plus(UnsignedLong.ONE)
+        .mod(UnsignedLong.valueOf(Constants.SLOTS_PER_EPOCH))
+        .equals(UnsignedLong.ZERO)) {
       BeaconStateWithCache newState = BeaconStateWithCache.deepCopy(headState);
       try {
         stateTransition.initiate(newState, null);
       } catch (StateTransitionException e) {
         LOG.log(Level.WARN, e.toString(), printEnabled);
       }
-      proposerIndex = BeaconStateUtil.get_beacon_proposer_index(
-              newState, newState.getSlot());
+      proposerIndex = BeaconStateUtil.get_beacon_proposer_index(newState, newState.getSlot());
       proposerPubkey = newState.getValidator_registry().get(proposerIndex).getPubkey();
     } else {
-      proposerIndex = BeaconStateUtil.get_beacon_proposer_index(
+      proposerIndex =
+          BeaconStateUtil.get_beacon_proposer_index(
               headState, headState.getSlot().plus(UnsignedLong.ONE));
       proposerPubkey = headState.getValidator_registry().get(proposerIndex).getPubkey();
     }

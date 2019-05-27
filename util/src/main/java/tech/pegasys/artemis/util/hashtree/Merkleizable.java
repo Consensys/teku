@@ -13,7 +13,7 @@
 
 package tech.pegasys.artemis.util.hashtree;
 
-import net.consensys.cava.bytes.Bytes32;
+import org.apache.tuweni.bytes.Bytes32;
 
 public interface Merkleizable {
 

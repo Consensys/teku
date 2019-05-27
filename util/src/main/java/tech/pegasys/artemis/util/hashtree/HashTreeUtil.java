@@ -21,7 +21,6 @@ import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.Hash;
-import org.apache.tuweni.ssz.SSZ;
 
 /** This class is a collection of tree hash root convenience methods */
 public final class HashTreeUtil {
