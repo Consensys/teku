@@ -15,9 +15,9 @@ package tech.pegasys.artemis.datastructures.blocks;
 
 import java.util.Arrays;
 import java.util.Objects;
-import net.consensys.cava.ssz.SSZ;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import net.consensys.cava.ssz.SSZ;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;

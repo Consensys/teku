@@ -93,11 +93,11 @@ public class Deposit implements Merkleizable {
     this.proof = branch;
   }
 
-  public long getIndex() {
+  public UnsignedLong getIndex() {
     return index;
   }
 
-  public void setIndex(long index) {
+  public void setIndex(UnsignedLong index) {
     this.index = index;
   }
 

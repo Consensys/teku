@@ -19,6 +19,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
+
+import com.google.common.primitives.UnsignedLong;
 import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.SECP256K1.PublicKey;
@@ -77,8 +79,8 @@ public class StateProcessor {
         "******* Eth2Genesis Event detected ******* : "
             + ((tech.pegasys.artemis.pow.event.Eth2Genesis) event).getDeposit_root().toString()
             + ANSI_RESET);
-    this.nodeSlot = Constants.GENESIS_SLOT;
-    this.nodeTime = Constants.GENESIS_SLOT * Constants.SECONDS_PER_SLOT;
+    this.nodeSlot = UnsignedLong.valueOf(Constants.GENESIS_SLOT);
+    this.nodeTime = UnsignedLong.valueOf(Constants.GENESIS_SLOT).times(UnsignedLong.valueOf(Constants.SECONDS_PER_SLOT));
     LOG.log(Level.INFO, "Node slot: " + nodeSlot);
     LOG.log(Level.INFO, "Node time: " + nodeTime);
     try {
@@ -110,8 +112,8 @@ public class StateProcessor {
 
   @Subscribe
   public void onNewSlot(Date date) throws StateTransitionException, InterruptedException {
-    this.nodeSlot = this.nodeSlot + 1;
-    this.nodeTime = this.nodeTime + Constants.SECONDS_PER_SLOT;
+    this.nodeSlot = this.nodeSlot.plus(UnsignedLong.ONE);
+    this.nodeTime = this.nodeTime.plus(UnsignedLong.valueOf(Constants.SECONDS_PER_SLOT));
 
     LOG.log(Level.INFO, ANSI_WHITE_BOLD + "******* Slot Event *******" + ANSI_RESET);
     LOG.log(Level.INFO, "Node time:                             " + nodeTime);
@@ -130,7 +132,7 @@ public class StateProcessor {
     }
     // Get all the unprocessed blocks that are for slots <= nodeSlot
     List<Optional<BeaconBlock>> unprocessedBlocks =
-        this.store.getUnprocessedBlocksUntilSlot(nodeSlot);
+        this.store.getUnprocessedBlocksUntilSlot(nodeSlot.longValue());
 
     // Use each block to build on all possible forks
     unprocessedBlocks.forEach((block) -> processBlock(block));
@@ -162,7 +164,7 @@ public class StateProcessor {
 
     // Run state transition with no blocks from the newHeadState.slot to node.slot
     boolean firstLoop = true;
-    while (newHeadState.getSlot() < nodeSlot) {
+    while (newHeadState.getSlot().compareTo(nodeSlot) < 0) {
       if (firstLoop) {
         LOG.log(
             Level.INFO,
@@ -189,11 +191,11 @@ public class StateProcessor {
     if (!this.store.getParent(block.get()).isPresent()) {
       return false;
     }
-    long blockTime = block.get().getSlot() * Constants.SECONDS_PER_SLOT;
+    UnsignedLong blockTime = UnsignedLong.valueOf(block.get().getSlot() * Constants.SECONDS_PER_SLOT);
     // TODO: Here we reject block because time is not there,
     // however, the block is already removed from queue, so
     // we're losing a valid block here.
-    if (this.nodeTime < blockTime) {
+    if (this.nodeTime.compareTo(blockTime) < 0) {
       LOG.log(Level.FATAL, "We lost a valid block!");
       return false;
     }
@@ -219,7 +221,7 @@ public class StateProcessor {
         boolean firstLoop = true;
         BeaconStateWithCache currentState =
             BeaconStateWithCache.deepCopy((BeaconStateWithCache) parentBlockState);
-        while (currentState.getSlot() < block.getSlot() - 1) {
+        while (currentState.getSlot().compareTo(UnsignedLong.valueOf(block.getSlot() - 1)) < 0) {
           if (firstLoop) {
             LOG.log(
                 Level.INFO,
@@ -270,18 +272,12 @@ public class StateProcessor {
 
     try {
       // Obtain latest justified block and state that will be passed into lmd_ghost
-      if (store.getState(justifiedStateRoot).isPresent()
-          && store.getProcessedBlock(justifiedBlockRoot).isPresent()) {
-        BeaconState justifiedState = store.getState(justifiedStateRoot).get();
-        BeaconBlock justifiedBlock = store.getProcessedBlock(justifiedBlockRoot).get();
-        // Run lmd_ghost to get the head block
-        this.headBlock = LmdGhost.lmd_ghost(store, justifiedState, justifiedBlock);
-      } else {
-        throw new StateTransitionException(
-            "JustifiedStateRoot and/or JustifiedBlockRoot is unavailable.");
-      }
+      BeaconState justifiedState = store.getState(justifiedStateRoot).get();
+      BeaconBlock justifiedBlock = store.getProcessedBlock(currentJustifiedBlockRoot).get();
 
-    } catch (NoSuchElementException | StateTransitionException e) {
+      // Run lmd_ghost to get the head block
+      this.headBlock = LmdGhost.lmd_ghost(store, justifiedState, justifiedBlock);
+    } catch (NoSuchElementException e) {
       LOG.log(Level.FATAL, "Can't update head block using LMDGhost");
     }
   }
@@ -289,7 +285,7 @@ public class StateProcessor {
   protected void updateJustifiedAndFinalized() {
     // If it is the genesis epoch, keep the justified state root as genesis state root
     // because get_block_root gives an error if the slot is not less than state.slot
-    if (BeaconStateUtil.slot_to_epoch(nodeSlot) != Constants.GENESIS_EPOCH) {
+    if (BeaconStateUtil.slot_to_epoch(nodeSlot).compareTo(UnsignedLong.valueOf(Constants.GENESIS_EPOCH)) != 0) {
       try {
         BeaconState headState = store.getState(headBlock.getState_root()).get();
         this.finalizedBlockRoot =
@@ -316,7 +312,7 @@ public class StateProcessor {
     BeaconBlock finalizedBlock = store.getProcessedBlock(finalizedBlockRoot).get();
     RawRecord record =
         new RawRecord(
-            this.nodeSlot - Constants.GENESIS_SLOT,
+            this.nodeSlot.longValue() - Constants.GENESIS_SLOT,
             headState,
             headBlock,
             justifiedState,

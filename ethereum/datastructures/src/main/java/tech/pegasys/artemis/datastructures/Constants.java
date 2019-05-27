@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.datastructures;
 
+import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.util.bls.BLSSignature;
@@ -54,10 +55,10 @@ public class Constants {
 
   // Initial values
   public static int GENESIS_FORK_VERSION = 0;
-  public static long GENESIS_SLOT = 0; // 2^32
+  public static long GENESIS_SLOT = 4294967296L; // 2^32
   public static long GENESIS_EPOCH = slot_to_epoch(GENESIS_SLOT);
   public static long GENESIS_START_SHARD = 0;
-  public static long FAR_FUTURE_EPOCH = -1L;
+  public static UnsignedLong FAR_FUTURE_EPOCH = UnsignedLong.MAX_VALUE;
   public static Bytes32 ZERO_HASH = Bytes32.ZERO;
   public static BLSSignature EMPTY_SIGNATURE = BLSSignature.empty();
   public static Bytes BLS_WITHDRAWAL_PREFIX_BYTE = Bytes.EMPTY;
@@ -197,7 +198,9 @@ public class Constants {
             ? config.getGenesisStartShard()
             : GENESIS_START_SHARD;
     FAR_FUTURE_EPOCH =
-        config.getFarFutureEpoch() != -1L ? config.getFarFutureEpoch() : FAR_FUTURE_EPOCH;
+        !UnsignedLong.valueOf(config.getFarFutureEpoch()).equals(UnsignedLong.MAX_VALUE)
+            ? UnsignedLong.valueOf(config.getFarFutureEpoch())
+            : FAR_FUTURE_EPOCH;
     ZERO_HASH =
         !config.getZeroHash().equals(Bytes32.ZERO)
             ? (Bytes32) config.getZeroHash()

@@ -36,7 +36,7 @@ public class PendingAttestation implements Copyable<PendingAttestation>, Merklei
       Bytes aggregation_bitfield,
       AttestationData data,
       Bytes custody_bitfield,
-      long inclusion_slot) {
+      UnsignedLong inclusion_slot) {
     this.aggregation_bitfield = aggregation_bitfield;
     this.data = data;
     this.custody_bitfield = custody_bitfield;
@@ -63,7 +63,7 @@ public class PendingAttestation implements Copyable<PendingAttestation>, Merklei
                 Bytes.wrap(reader.readBytes()),
                 AttestationData.fromBytes(reader.readBytes()),
                 Bytes.wrap(reader.readBytes()),
-                reader.readUInt64()));
+                UnsignedLong.fromLongBits(reader.readUInt64())));
   }
 
   public Bytes toBytes() {
@@ -72,7 +72,7 @@ public class PendingAttestation implements Copyable<PendingAttestation>, Merklei
           writer.writeBytes(aggregation_bitfield);
           writer.writeBytes(data.toBytes());
           writer.writeBytes(custody_bitfield);
-          writer.writeUInt64(SSZinclusion_slot);
+          writer.writeUInt64(inclusion_slot.longValue());
         });
   }
 

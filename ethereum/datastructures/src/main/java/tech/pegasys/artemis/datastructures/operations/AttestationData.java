@@ -137,11 +137,11 @@ public class AttestationData {
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */
-  public long getSlot() {
+  public UnsignedLong getSlot() {
     return slot;
   }
 
-  public void setSlot(long slot) {
+  public void setSlot(UnsignedLong slot) {
     this.slot = slot;
   }
 
@@ -177,11 +177,11 @@ public class AttestationData {
     this.target_root = target_root;
   }
 
-  public long getShard() {
+  public UnsignedLong getShard() {
     return shard;
   }
 
-  public void setShard(long shard) {
+  public void setShard(UnsignedLong shard) {
     this.shard = shard;
   }
 

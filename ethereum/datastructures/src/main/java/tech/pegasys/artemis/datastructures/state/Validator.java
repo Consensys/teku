@@ -32,9 +32,9 @@ public final class Validator implements Copyable<Validator>, Merkleizable {
   // Withdrawal credentials
   private Bytes32 withdrawal_credentials;
   // Epoch when validator activated
-  private long activation_epoch;
+  private UnsignedLong activation_epoch;
   // Epoch when validator exited
-  private long exit_epoch;
+  private UnsignedLong exit_epoch;
   // Epoch when validator withdrew
   private UnsignedLong withdrawable_epoch;
   // Did the validator initiate an exit
@@ -45,9 +45,9 @@ public final class Validator implements Copyable<Validator>, Merkleizable {
   public Validator(
       BLSPublicKey pubkey,
       Bytes32 withdrawal_credentials,
-      long activation_epoch,
-      long exit_epoch,
-      long withdrawal_epoch,
+      UnsignedLong activation_epoch,
+      UnsignedLong exit_epoch,
+      UnsignedLong withdrawal_epoch,
       boolean initiated_exit,
       boolean slashed) {
     this.pubkey = pubkey;
@@ -153,19 +153,19 @@ public final class Validator implements Copyable<Validator>, Merkleizable {
     this.withdrawal_credentials = withdrawal_credentials;
   }
 
-  public long getActivation_epoch() {
+  public UnsignedLong getActivation_epoch() {
     return activation_epoch;
   }
 
-  public void setActivation_epoch(long activation_epoch) {
+  public void setActivation_epoch(UnsignedLong activation_epoch) {
     this.activation_epoch = activation_epoch;
   }
 
-  public long getExit_epoch() {
+  public UnsignedLong getExit_epoch() {
     return exit_epoch;
   }
 
-  public void setExit_epoch(long exit_epoch) {
+  public void setExit_epoch(UnsignedLong exit_epoch) {
     this.exit_epoch = exit_epoch;
   }
 

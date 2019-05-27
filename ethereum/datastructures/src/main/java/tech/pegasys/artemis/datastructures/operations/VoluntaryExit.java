@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.datastructures.operations;
 
+import com.google.common.primitives.UnsignedLong;
 import java.util.Arrays;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
@@ -25,11 +26,11 @@ import tech.pegasys.artemis.util.hashtree.Merkleizable;
 
 public class VoluntaryExit implements Merkleizable {
 
-  private long epoch;
-  private long validator_index;
+  private UnsignedLong epoch;
+  private UnsignedLong validator_index;
   private BLSSignature signature;
 
-  public VoluntaryExit(long epoch, long validator_index, BLSSignature signature) {
+  public VoluntaryExit(UnsignedLong epoch, UnsignedLong validator_index, BLSSignature signature) {
     this.epoch = epoch;
     this.validator_index = validator_index;
     this.signature = signature;
@@ -40,16 +41,16 @@ public class VoluntaryExit implements Merkleizable {
         bytes,
         reader ->
             new VoluntaryExit(
-                reader.readUInt64(),
-                reader.readUInt64(),
+                UnsignedLong.fromLongBits(reader.readUInt64()),
+                UnsignedLong.fromLongBits(reader.readUInt64()),
                 BLSSignature.fromBytes(reader.readBytes())));
   }
 
   public Bytes toBytes() {
     return SSZ.encode(
         writer -> {
-          writer.writeUInt64(epoch);
-          writer.writeUInt64(validator_index);
+          writer.writeUInt64(epoch.longValue());
+          writer.writeUInt64(validator_index.longValue());
           writer.writeBytes(signature.toBytes());
         });
   }
@@ -80,19 +81,19 @@ public class VoluntaryExit implements Merkleizable {
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */
-  public long getEpoch() {
+  public UnsignedLong getEpoch() {
     return epoch;
   }
 
-  public void setEpoch(long epoch) {
+  public void setEpoch(UnsignedLong epoch) {
     this.epoch = epoch;
   }
 
-  public long getValidator_index() {
+  public UnsignedLong getValidator_index() {
     return validator_index;
   }
 
-  public void setValidator_index(long validator_index) {
+  public void setValidator_index(UnsignedLong validator_index) {
     this.validator_index = validator_index;
   }
 
