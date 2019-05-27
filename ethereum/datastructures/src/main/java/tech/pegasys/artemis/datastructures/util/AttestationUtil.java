@@ -148,7 +148,7 @@ public class AttestationUtil {
   }
 
   public static List<Attestation> getAttestationsUntilSlot(
-          PriorityBlockingQueue<Attestation> attestationsQueue, UnsignedLong slot) {
+      PriorityBlockingQueue<Attestation> attestationsQueue, UnsignedLong slot) {
     List<Attestation> attestations = new ArrayList<>();
     while (attestationsQueue.peek().getSlot().compareTo(slot) <= 0) {
       attestations.add(attestationsQueue.remove());

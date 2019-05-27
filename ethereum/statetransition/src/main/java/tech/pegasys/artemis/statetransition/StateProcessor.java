@@ -15,12 +15,11 @@ package tech.pegasys.artemis.statetransition;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
+import com.google.common.primitives.UnsignedLong;
 import java.util.Date;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
-
-import com.google.common.primitives.UnsignedLong;
 import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.SECP256K1.PublicKey;
@@ -80,7 +79,9 @@ public class StateProcessor {
             + ((tech.pegasys.artemis.pow.event.Eth2Genesis) event).getDeposit_root().toString()
             + ANSI_RESET);
     this.nodeSlot = UnsignedLong.valueOf(Constants.GENESIS_SLOT);
-    this.nodeTime = UnsignedLong.valueOf(Constants.GENESIS_SLOT).times(UnsignedLong.valueOf(Constants.SECONDS_PER_SLOT));
+    this.nodeTime =
+        UnsignedLong.valueOf(Constants.GENESIS_SLOT)
+            .times(UnsignedLong.valueOf(Constants.SECONDS_PER_SLOT));
     LOG.log(Level.INFO, "Node slot: " + nodeSlot);
     LOG.log(Level.INFO, "Node time: " + nodeTime);
     try {
@@ -191,7 +192,8 @@ public class StateProcessor {
     if (!this.store.getParent(block.get()).isPresent()) {
       return false;
     }
-    UnsignedLong blockTime = UnsignedLong.valueOf(block.get().getSlot() * Constants.SECONDS_PER_SLOT);
+    UnsignedLong blockTime =
+        UnsignedLong.valueOf(block.get().getSlot() * Constants.SECONDS_PER_SLOT);
     // TODO: Here we reject block because time is not there,
     // however, the block is already removed from queue, so
     // we're losing a valid block here.
@@ -285,7 +287,9 @@ public class StateProcessor {
   protected void updateJustifiedAndFinalized() {
     // If it is the genesis epoch, keep the justified state root as genesis state root
     // because get_block_root gives an error if the slot is not less than state.slot
-    if (BeaconStateUtil.slot_to_epoch(nodeSlot).compareTo(UnsignedLong.valueOf(Constants.GENESIS_EPOCH)) != 0) {
+    if (BeaconStateUtil.slot_to_epoch(nodeSlot)
+            .compareTo(UnsignedLong.valueOf(Constants.GENESIS_EPOCH))
+        != 0) {
       try {
         BeaconState headState = store.getState(headBlock.getState_root()).get();
         this.finalizedBlockRoot =

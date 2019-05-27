@@ -4,3 +4,4 @@
 *.pcap binary
 *.blocks binary
 *.json filter=lfs diff=lfs merge=lfs -text
+lib/*.jar filter=lfs diff=lfs merge=lfs -text
