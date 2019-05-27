@@ -16,7 +16,7 @@ dependencies {
   implementation 'io.vertx:vertx-web'
   implementation 'org.apache.tuweni:tuweni-crypto'
   implementation 'org.apache.tuweni:tuweni-units'
-  compile files("../../lib/cava-ssz-1.0.0-dev.jar")
+  compile files("../../lib/tuweni-ssz-0.8.1-SNAPSHOT.jar")
   implementation 'com.fasterxml.jackson.core:jackson-databind'
   implementation 'com.google.guava:guava'
   implementation 'io.prometheus:simpleclient'
