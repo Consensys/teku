@@ -70,18 +70,30 @@ You can run the executable from the CLI with this command:
 $ ./gradlew run
 ```
 
-To run and send formatted output to a json file
+Refer to `config/config.toml` for a set of default configuration settings.
 
+To run and send formatted output to a json file:
 ```
-  modfiy config/config.toml file with outputFile = "artemis.json" , providerType = "JSON"
-$ ./gradlew run 
+[output]
+outputFile = "artemis.json"
+providerType = "JSON"
 ```
 
-To run and send formatted output to a csv file
-
+Then run:
 ```
-modfiy config/config.toml file with outputFile = "artemis.csv" , providerType = "CSV"
-$ ./gradlew run 
+$ ./gradlew run
+```
+
+To run and send formatted output to a csv file:
+```
+[output]
+outputFile = "artemis.csv"
+providerType = "CSV"
+```
+
+Then run:
+```
+$ ./gradlew run
 ```
 
 To run with loggin level set to DEBUG

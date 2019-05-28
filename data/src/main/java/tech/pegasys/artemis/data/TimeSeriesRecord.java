@@ -157,6 +157,21 @@ public class TimeSeriesRecord implements IRecordAdapter {
         + "'";
   }
 
+  @Override
+  public String[] toLabels() {
+    return new String[] {
+      String.valueOf(this.getIndex()),
+      String.valueOf(this.getSlot()),
+      String.valueOf(this.getEpoch()),
+      this.getLastFinalizedBlockRoot(),
+      this.getLastFinalizedStateRoot(),
+      this.getBlock_parent_root(),
+      String.valueOf(this.getValidators().size()),
+      this.getLastJustifiedBlockRoot(),
+      this.getLastJustifiedStateRoot()
+    };
+  }
+
   public long getDate() {
     return date.toInstant().toEpochMilli();
   }

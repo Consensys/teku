@@ -25,8 +25,9 @@ dependencyManagement {
     
     dependency 'io.pkts:pkts-core:3.0.3'
 
-    dependency "io.prometheus:simpleclient:0.5.0"
-    dependency "io.prometheus:simpleclient_hotspot:0.5.0"
+    dependency "io.prometheus:simpleclient:0.6.0"
+    dependency "io.prometheus:simpleclient_hotspot:0.6.0"
+    dependency "io.prometheus:simpleclient_vertx:0.6.0"
 
     dependency 'io.vertx:vertx-codegen:3.6.3'
     dependency 'io.vertx:vertx-core:3.6.3'
@@ -38,7 +39,7 @@ dependencyManagement {
       entry 'logl-logl'
     }
 
-    dependencySet(group: 'org.apache.tuweni', version: '1.0.0-SNAPSHOT') {
+    dependencySet(group: 'org.apache.tuweni', version: '0.8.0-SNAPSHOT') {
       entry 'tuweni-bytes'
       entry 'tuweni-config'
       entry 'tuweni-crypto'
