@@ -13,6 +13,8 @@
 
 package tech.pegasys.artemis.validator.coordinator;
 
+import static java.lang.StrictMath.toIntExact;
+
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.google.common.primitives.UnsignedLong;
@@ -24,8 +26,9 @@ import java.util.List;
 import java.util.concurrent.PriorityBlockingQueue;
 import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.crypto.SECP256K1.PublicKey;
+import org.apache.tuweni.crypto.SECP256K1;
 import org.apache.tuweni.ssz.SSZ;
+import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
@@ -54,7 +57,7 @@ public class ValidatorCoordinator {
 
   private StateTransition stateTransition;
   private final Boolean printEnabled = false;
-  private PublicKey nodeIdentity;
+  private SECP256K1.SecretKey nodeIdentity;
   private int numValidators;
   private int numNodes;
   private BeaconBlock validatorBlock;
@@ -68,7 +71,8 @@ public class ValidatorCoordinator {
   public ValidatorCoordinator(ServiceConfig config) {
     this.eventBus = config.getEventBus();
     this.eventBus.register(this);
-    this.nodeIdentity = config.getKeyPair().publicKey();
+    this.nodeIdentity =
+        SECP256K1.SecretKey.fromBytes(Bytes32.fromHexString(config.getConfig().getIdentity()));
     this.numValidators = config.getConfig().getNumValidators();
     this.numNodes = config.getConfig().getNumNodes();
 
@@ -121,12 +125,26 @@ public class ValidatorCoordinator {
   }
 
   private void initializeValidators() {
-    // TODO: make a way to tailor which validators are ours
     // Add all validators to validatorSet hashMap
-    for (int i = 0; i < numValidators; i++) {
+    int nodeCounter = UInt256.fromBytes(nodeIdentity.bytes()).mod(numNodes).intValue();
+    // LOG.log(Level.DEBUG, "nodeCounter: " + nodeCounter);
+    // if (nodeCounter == 0) {
+
+    int startIndex = nodeCounter * (numValidators / numNodes);
+    int endIndex =
+        startIndex
+            + (numValidators / numNodes - 1)
+            + toIntExact(Math.round((double) nodeCounter / Math.max(1, numNodes - 1)));
+    endIndex = Math.min(endIndex, numValidators - 1);
+    // int startIndex = 0;
+    // int endIndex = numValidators-1;
+    LOG.log(Level.DEBUG, "startIndex: " + startIndex + " endIndex: " + endIndex);
+    for (int i = startIndex; i <= endIndex; i++) {
       BLSKeyPair keypair = BLSKeyPair.random(i);
+      LOG.log(Level.DEBUG, "i = " + i + ": " + keypair.getPublicKey().toString());
       validatorSet.put(keypair.getPublicKey(), keypair);
     }
+    // }
   }
 
   private void createBlockIfNecessary(BeaconStateWithCache headState, BeaconBlock headBlock) {
