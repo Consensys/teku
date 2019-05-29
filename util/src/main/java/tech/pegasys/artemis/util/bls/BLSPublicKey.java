@@ -58,7 +58,7 @@ public class BLSPublicKey {
 
   public static BLSPublicKey fromBytes(Bytes bytes) {
     checkArgument(bytes.size() == 48, "Expected 48 bytes but received %s.", bytes.size());
-    if (SSZ.decodeBytes(bytes, 48).isZero()) {
+    if (SSZ.decode(bytes, reader -> reader.readFixedBytes(48)).isZero()) {
       return BLSPublicKey.empty();
     } else {
       return SSZ.decode(

@@ -41,10 +41,8 @@ class BLSPublicKeyTest {
   void succeedsIfSerialisationOfEmptyPublicKeyIsCorrect() {
     BLSPublicKey emptyPublicKey = BLSPublicKey.empty();
     assertTrue(emptyPublicKey.isEmpty());
-    // SSZ prepends the length as four little-endian bytes
     assertEquals(
-        "0x30000000"
-            + "000000000000000000000000000000000000000000000000"
+        "0x000000000000000000000000000000000000000000000000"
             + "000000000000000000000000000000000000000000000000",
         emptyPublicKey.toBytes().toHexString());
   }
