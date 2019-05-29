@@ -96,7 +96,7 @@ public final class BLSSignature {
 
   public static BLSSignature fromBytes(Bytes bytes) {
     checkArgument(bytes.size() == 96, "Expected 96 bytes but received %s.", bytes.size());
-    if (SSZ.decodeBytes(bytes, 96).isZero()) {
+    if (SSZ.decode(bytes, reader -> reader.readFixedBytes(96)).isZero()) {
       return BLSSignature.empty();
     } else {
       return SSZ.decode(
