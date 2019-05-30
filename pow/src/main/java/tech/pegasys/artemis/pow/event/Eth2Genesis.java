@@ -20,7 +20,6 @@ import java.nio.ByteOrder;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.data.IRecordAdapter;
@@ -55,50 +54,46 @@ public class Eth2Genesis extends AbstractEvent<Eth2GenesisEventResponse>
   }
 
   @Override
-  public void filterOutputFields(List<String> outputFields) {  	
-	  this.outputFieldMap.put("eventType", "Eth2Genesis");
-	  for(String field : outputFields) {		  
-		  switch(field) {		  
-		  	case "deposit_root":
-		  		this.outputFieldMap.put("deposit_root", deposit_root.toHexString());
-		  		break;
-		  		
-		  	case "deposit_count":
-		  		this.outputFieldMap.put("deposit_count", deposit_count);
-		  		break;
-		  		
-		  	case "time":
-		  		this.outputFieldMap.put("time", time);
-		  		break;
- 		  }
-	  }
+  public void filterOutputFields(List<String> outputFields) {
+    this.outputFieldMap.put("eventType", "Eth2Genesis");
+    for (String field : outputFields) {
+      switch (field) {
+        case "deposit_root":
+          this.outputFieldMap.put("deposit_root", deposit_root.toHexString());
+          break;
+
+        case "deposit_count":
+          this.outputFieldMap.put("deposit_count", deposit_count);
+          break;
+
+        case "time":
+          this.outputFieldMap.put("time", time);
+          break;
+      }
+    }
   }
-  
+
   @Override
-  public String toJSON() {        
+  public String toJSON() {
     Gson gson = new GsonBuilder().create();
     GsonBuilder gsonBuilder = new GsonBuilder();
     String jsonString = gson.toJson(this.outputFieldMap);
-    JsonObject eth2Genesis = gson.fromJson(jsonString, JsonObject.class);    
+    JsonObject eth2Genesis = gson.fromJson(jsonString, JsonObject.class);
     Gson customGson = gsonBuilder.setPrettyPrinting().create();
-    return customGson.toJson(eth2Genesis);    
+    return customGson.toJson(eth2Genesis);
   }
 
   @Override
   public String toCSV() {
-	    String csvOutputString = "";    
-	    for(Object obj : this.outputFieldMap.values()) {
-	        csvOutputString += "'"
-	                + obj.toString()
-	                + "',";
-	    }        
-	    return csvOutputString.substring(0, csvOutputString.length() - 1);
+    String csvOutputString = "";
+    for (Object obj : this.outputFieldMap.values()) {
+      csvOutputString += "'" + obj.toString() + "',";
+    }
+    return csvOutputString.substring(0, csvOutputString.length() - 1);
   }
 
   @Override
-  public String[] toLabels() {  
+  public String[] toLabels() {
     return (String[]) this.outputFieldMap.values().toArray();
   }
-
-
 }

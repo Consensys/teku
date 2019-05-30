@@ -326,9 +326,9 @@ public final class ArtemisConfiguration {
   }
 
   /** @return specific dynamic event fields of Output selector */
-  public Map<String, Object> getEventFields() {	  	  	  
-	  
-	  return config.getMap("output.fields");
+  public Map<String, Object> getEventFields() {
+
+    return config.getMap("output.fields");
   }
 
   /** @return misc constants */

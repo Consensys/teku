@@ -13,19 +13,16 @@
 
 package tech.pegasys.artemis.validator.client;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.IntStream;
-
 import org.apache.tuweni.bytes.Bytes;
-
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
-
 import tech.pegasys.artemis.data.IRecordAdapter;
 import tech.pegasys.artemis.pow.event.Deposit;
 import tech.pegasys.artemis.pow.event.Eth2Genesis;
@@ -62,71 +59,67 @@ public class DepositSimulation implements IRecordAdapter {
   }
 
   public JsonArray depositEvents() {
-	  JsonArray arr = new JsonArray();
-	  IntStream.range(0, deposits.size())
-      .forEach(
-          i -> {
-            JsonObject deposit = new JsonObject();
-            deposit.addProperty("eventType", "Deposit");
-            deposit.addProperty("data", deposits.get(i).getData().toHexString());
-            deposit.addProperty(
-                "merkle_tree_index", deposits.get(i).getMerkle_tree_index().toHexString());
-            arr.add(deposit);
-          });
-	  return arr;	  
-  } 
-  
+    JsonArray arr = new JsonArray();
+    IntStream.range(0, deposits.size())
+        .forEach(
+            i -> {
+              JsonObject deposit = new JsonObject();
+              deposit.addProperty("eventType", "Deposit");
+              deposit.addProperty("data", deposits.get(i).getData().toHexString());
+              deposit.addProperty(
+                  "merkle_tree_index", deposits.get(i).getMerkle_tree_index().toHexString());
+              arr.add(deposit);
+            });
+    return arr;
+  }
+
   @Override
   public void filterOutputFields(List<String> outputFields) {
-  
-	  for(String field : outputFields) {		  
-		  switch(field) {		  
-		  	case "secp":
-		  		this.outputFieldMap.put("secp", validator.getSecpKeys().secretKey().bytes().toHexString());
-		  		break;
-		  		
-		  	case "bls" :
-		  		this.outputFieldMap.put("bls", validator.getBlsKeys().secretKey().toBytes().toHexString());
-		  		break;
-		  		
-		  	case "deposit_data" :
-		  		this.outputFieldMap.put("deposit_data", deposit_data.toHexString());
-		  		break;
-		  		
-		  	case "events" :
-		  		this.outputFieldMap.put("events", depositEvents());
-		  		break;
-		  		
- 		  }
-	  }
-	  	  
+
+    for (String field : outputFields) {
+      switch (field) {
+        case "secp":
+          this.outputFieldMap.put(
+              "secp", validator.getSecpKeys().secretKey().bytes().toHexString());
+          break;
+
+        case "bls":
+          this.outputFieldMap.put(
+              "bls", validator.getBlsKeys().secretKey().toBytes().toHexString());
+          break;
+
+        case "deposit_data":
+          this.outputFieldMap.put("deposit_data", deposit_data.toHexString());
+          break;
+
+        case "events":
+          this.outputFieldMap.put("events", depositEvents());
+          break;
+      }
+    }
   }
-  
+
   @Override
   public String toJSON() {
-	  Gson gson = new GsonBuilder().create();
-	  GsonBuilder gsonBuilder = new GsonBuilder();
-	  String jsonString = gson.toJson(this.outputFieldMap);
-	  JsonObject deposit = gson.fromJson(jsonString, JsonObject.class);    
-	  Gson customGson = gsonBuilder.setPrettyPrinting().create();
-	  return customGson.toJson(deposit);
-	}
+    Gson gson = new GsonBuilder().create();
+    GsonBuilder gsonBuilder = new GsonBuilder();
+    String jsonString = gson.toJson(this.outputFieldMap);
+    JsonObject deposit = gson.fromJson(jsonString, JsonObject.class);
+    Gson customGson = gsonBuilder.setPrettyPrinting().create();
+    return customGson.toJson(deposit);
+  }
 
   @Override
   public String toCSV() {
-	    String csvOutputString = "";    
-	    for(Object obj : this.outputFieldMap.values()) {
-	        csvOutputString += "'"
-	                + obj.toString()
-	                + "',";
-	    }        
-	    return csvOutputString.substring(0, csvOutputString.length() - 1);
+    String csvOutputString = "";
+    for (Object obj : this.outputFieldMap.values()) {
+      csvOutputString += "'" + obj.toString() + "',";
+    }
+    return csvOutputString.substring(0, csvOutputString.length() - 1);
   }
 
   @Override
   public String[] toLabels() {
-	  return (String[]) this.outputFieldMap.values().toArray();
+    return (String[]) this.outputFieldMap.values().toArray();
   }
-
-
 }

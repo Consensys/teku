@@ -16,14 +16,12 @@ package tech.pegasys.artemis.data;
 import java.util.List;
 
 public interface IRecordAdapter {
-  
+
   String toJSON();
 
   String toCSV();
 
   String[] toLabels();
-  
+
   void filterOutputFields(List<String> outputFields);
-  
-  
 }

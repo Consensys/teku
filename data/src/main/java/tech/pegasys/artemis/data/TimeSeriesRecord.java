@@ -22,14 +22,12 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.util.json.BytesModule;
 
@@ -123,99 +121,99 @@ public class TimeSeriesRecord implements IRecordAdapter {
   }
 
   public ArrayList<JsonObject> validatorOutputFields() {
-	  ArrayList<JsonObject> validatorOutputFields = new ArrayList<>();
-	  Gson gson = new GsonBuilder().create();
+    ArrayList<JsonObject> validatorOutputFields = new ArrayList<>();
+    Gson gson = new GsonBuilder().create();
 
-	  for(ValidatorJoin validator : validators) {
-		  try {
-			  validatorOutputFields.add(gson.fromJson(mapper.writerFor(ValidatorJoin.class).writeValueAsString(validator), JsonObject.class) );
-		} catch (JsonProcessingException e) {
-			System.out.println("Exception - Validator output fields ");
-		}
-	  }
-	  return validatorOutputFields;
-  }    
-  
-  @Override
-  public void filterOutputFields(List<String> outputFields) {	  	  	  
-	  for(String field : outputFields) {		  
-		  switch(field) {		  
-		  	case "index":
-		  		this.outputFieldMap.put("index", getIndex());
-		  		break;
-		  		
-		  	case "slot" :
-		  		this.outputFieldMap.put("slot", getSlot());
-		  		break;
-		  		
-		  	case "epoch" :
-		  		this.outputFieldMap.put("epoch", getEpoch());
-		  		break;
-
-		  	case "block_root" :
-		  		this.outputFieldMap.put("block_root", getBlock_root());
-		  		break;
-		  	
-		  	case "block_body" :
-		  		this.outputFieldMap.put("block_body", getBlock_body());
-		  		break;
-		  	
-		  	case "lastFinalizedBlockRoot" :
-		  		this.outputFieldMap.put("lastFinalizedBlockRoot", getLastFinalizedBlockRoot());
-		  		break;
-		  		
-		  	case "lastFinalizedStateRoot" :
-		  		this.outputFieldMap.put("lastFinalizedStateRoot", getLastFinalizedStateRoot());
-		  		break;
-		  		
-		  	case "block_parent_root" :
-		  		this.outputFieldMap.put("block_parent_root", getBlock_parent_root());
-		  		break;
-		  		
-		  	case "validators" :
-				this.outputFieldMap.put("validators", validatorOutputFields());			
-		  		break;
-
-		  	case "validators_size" :
-				this.outputFieldMap.put("validators_size", getValidators().size());			
-		  		break;
-		  		
-		  	case "lastJustifiedBlockRoot" :
-		  		this.outputFieldMap.put("lastJustifiedBlockRoot", getLastJustifiedBlockRoot());
-		  		break;
-		  		
-		  	case "lastJustifiedStateRoot" :
-		  		this.outputFieldMap.put("lastJustifiedStateRoot", getLastJustifiedStateRoot());
-		  		break;
- 		  }
-	  }
-      
+    for (ValidatorJoin validator : validators) {
+      try {
+        validatorOutputFields.add(
+            gson.fromJson(
+                mapper.writerFor(ValidatorJoin.class).writeValueAsString(validator),
+                JsonObject.class));
+      } catch (JsonProcessingException e) {
+        System.out.println("Exception - Validator output fields ");
+      }
+    }
+    return validatorOutputFields;
   }
-  
+
+  @Override
+  public void filterOutputFields(List<String> outputFields) {
+    for (String field : outputFields) {
+      switch (field) {
+        case "index":
+          this.outputFieldMap.put("index", getIndex());
+          break;
+
+        case "slot":
+          this.outputFieldMap.put("slot", getSlot());
+          break;
+
+        case "epoch":
+          this.outputFieldMap.put("epoch", getEpoch());
+          break;
+
+        case "block_root":
+          this.outputFieldMap.put("block_root", getBlock_root());
+          break;
+
+        case "block_body":
+          this.outputFieldMap.put("block_body", getBlock_body());
+          break;
+
+        case "lastFinalizedBlockRoot":
+          this.outputFieldMap.put("lastFinalizedBlockRoot", getLastFinalizedBlockRoot());
+          break;
+
+        case "lastFinalizedStateRoot":
+          this.outputFieldMap.put("lastFinalizedStateRoot", getLastFinalizedStateRoot());
+          break;
+
+        case "block_parent_root":
+          this.outputFieldMap.put("block_parent_root", getBlock_parent_root());
+          break;
+
+        case "validators":
+          this.outputFieldMap.put("validators", validatorOutputFields());
+          break;
+
+        case "validators_size":
+          this.outputFieldMap.put("validators_size", getValidators().size());
+          break;
+
+        case "lastJustifiedBlockRoot":
+          this.outputFieldMap.put("lastJustifiedBlockRoot", getLastJustifiedBlockRoot());
+          break;
+
+        case "lastJustifiedStateRoot":
+          this.outputFieldMap.put("lastJustifiedStateRoot", getLastJustifiedStateRoot());
+          break;
+      }
+    }
+  }
+
   @Override
   public String toJSON() {
-	  Gson gson = new GsonBuilder().create();
-	    GsonBuilder gsonBuilder = new GsonBuilder();
-	    String jsonString = gson.toJson(this.outputFieldMap);
-	    JsonObject timeSeriesRecord = gson.fromJson(jsonString, JsonObject.class);    
-	    Gson customGson = gsonBuilder.setPrettyPrinting().create();
-	    return customGson.toJson(timeSeriesRecord);
+    Gson gson = new GsonBuilder().create();
+    GsonBuilder gsonBuilder = new GsonBuilder();
+    String jsonString = gson.toJson(this.outputFieldMap);
+    JsonObject timeSeriesRecord = gson.fromJson(jsonString, JsonObject.class);
+    Gson customGson = gsonBuilder.setPrettyPrinting().create();
+    return customGson.toJson(timeSeriesRecord);
   }
 
   @Override
   public String toCSV() {
-    String csvOutputString = "";    
-    for(Object obj : this.outputFieldMap.values()) {
-        csvOutputString += "'"
-                + obj.toString()
-                + "',";
-    }        
-    return csvOutputString.substring(0, csvOutputString.length() - 1);        
+    String csvOutputString = "";
+    for (Object obj : this.outputFieldMap.values()) {
+      csvOutputString += "'" + obj.toString() + "',";
+    }
+    return csvOutputString.substring(0, csvOutputString.length() - 1);
   }
 
   @Override
   public String[] toLabels() {
-	  return (String[]) this.outputFieldMap.values().toArray();
+    return (String[]) this.outputFieldMap.values().toArray();
   }
 
   public long getDate() {
@@ -313,6 +311,4 @@ public class TimeSeriesRecord implements IRecordAdapter {
   public void setValidators(List<ValidatorJoin> validators) {
     this.validators = validators;
   }
-
-
 }

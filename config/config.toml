@@ -16,8 +16,8 @@ numValidators = 16
 numNodes = 1
 
 [output]
-outputFile = "artemis.csv"
-providerType = "CSV"
+outputFile = "artemis.json"
+providerType = "JSON"
 events = [ "TimeSeriesRecord", "Eth2Genesis" ]
 formatted = false
 
