@@ -17,6 +17,10 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import java.nio.ByteOrder;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.data.IRecordAdapter;
@@ -35,7 +39,8 @@ public class Deposit extends AbstractEvent<DepositEventResponse>
   // raw fields
   private Bytes data;
   private Bytes merkel_tree_index;
-
+  private Map<String, Object> outputFieldMap = new HashMap<>();
+  
   public Deposit(DepositEventResponse response) {
     super(response);
     // raw fields
@@ -78,37 +83,60 @@ public class Deposit extends AbstractEvent<DepositEventResponse>
     return amount;
   }
 
+  
+  @Override
+  public void filterOutputFields(List<String> outputFields) {
+	  this.outputFieldMap.put("eventType", "Deposit");
+	  for(String field : outputFields) {		  
+		  switch(field) {		  
+		  	case "pubkey":
+		  		this.outputFieldMap.put("pubkey", pubkey.getPublicKey().toBytesCompressed().toHexString());
+		  		break;
+		  		
+		  	case "withdrawal_credentials" :
+		  		this.outputFieldMap.put("withdrawal_credentials", withdrawal_credentials.toHexString());
+		  		break;
+		  		
+		  	case "proof_of_possession" :
+		  		this.outputFieldMap.put("proof_of_possession", proof_of_possession.toHexString());
+		  		break;
+		  		
+		  	case "amount" :
+		  		this.outputFieldMap.put("amount", amount);
+		  		break;
+		  		
+		  	case "merkel_tree_index" :
+		  		this.outputFieldMap.put("merkel_tree_index", merkel_tree_index.toHexString());
+		  		break;
+ 		  }
+	  }
+  }
+  
   @Override
   public String toJSON() {
     Gson gson = new GsonBuilder().create();
     GsonBuilder gsonBuilder = new GsonBuilder();
-
-    JsonObject deposit = new JsonObject();
-    deposit.addProperty("eventType", "Deposit");
-    deposit.addProperty("pubkey", pubkey.getPublicKey().toBytesCompressed().toHexString());
-    deposit.addProperty("withdrawal_crednetials", withdrawal_credentials.toHexString());
-    deposit.addProperty("proof_of_possession", proof_of_possession.toHexString());
-    deposit.addProperty("amount", amount);
-    deposit.addProperty("merkel_tree_index", merkel_tree_index.toHexString());
-
+    String jsonString = gson.toJson(this.outputFieldMap);
+    JsonObject deposit = gson.fromJson(jsonString, JsonObject.class);    
     Gson customGson = gsonBuilder.setPrettyPrinting().create();
     return customGson.toJson(deposit);
   }
 
   @Override
   public String toCSV() {
-    return null;
+	    String csvOutputString = "";    
+	    for(Object obj : this.outputFieldMap.values()) {
+	        csvOutputString += "'"
+	                + obj.toString()
+	                + "',";
+	    }        
+	    return csvOutputString.substring(0, csvOutputString.length() - 1);
   }
 
   @Override
   public String[] toLabels() {
-    return new String[] {
-      "Deposit",
-      pubkey.getPublicKey().toBytesCompressed().toHexString(),
-      withdrawal_credentials.toHexString(),
-      proof_of_possession.toHexString(),
-      String.valueOf(amount),
-      merkel_tree_index.toHexString()
-    };
+	  return (String[]) this.outputFieldMap.values().toArray();
   }
+
+
 }

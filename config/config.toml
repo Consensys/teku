@@ -16,10 +16,18 @@ numValidators = 16
 numNodes = 1
 
 [output]
-outputFile = "artemis.json"
-providerType = "JSON"
-events = [ "TimeSeriesRecord" ]
+outputFile = "artemis.csv"
+providerType = "CSV"
+events = [ "TimeSeriesRecord", "Eth2Genesis" ]
 formatted = false
+
+[output.fields]
+TimeSeriesRecord = ["date", "index", "slot", "epoch", "block_root", "block_body", "lastFinalizedBlockRoot", "lastFinalizedStateRoot", "block_parent_root", "validators_size", "validators", "lastJustifiedBlockRoot", "lastJustifiedStateRoot"]
+Eth2Genesis = ["deposit_root", "deposit_count"]
+Deposit = ["pubkey", "withdrawal_credentials", "proof_of_possession", "amount", "merkel_tree_index"]
+DepositSimulation = ["secp", "bls", "deposit_data", "events"]
+
+
 
 # Modify constants in Constants.java
 [constants]

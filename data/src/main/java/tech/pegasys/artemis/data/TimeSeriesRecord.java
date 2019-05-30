@@ -19,10 +19,17 @@ import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.module.SimpleModule;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonObject;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.util.json.BytesModule;
 
@@ -69,6 +76,7 @@ public class TimeSeriesRecord implements IRecordAdapter {
   private String lastFinalizedStateRoot;
 
   private List<ValidatorJoin> validators;
+  private Map<String, Object> outputFieldMap = new HashMap<>();
 
   public TimeSeriesRecord() {
     // new Hello(1, 1, Bytes32.random(), UInt64.valueOf(0), Bytes32.random(), UInt64.valueOf(0))
@@ -114,62 +122,100 @@ public class TimeSeriesRecord implements IRecordAdapter {
     this.validators = validators;
   }
 
+  public ArrayList<JsonObject> validatorOutputFields() {
+	  ArrayList<JsonObject> validatorOutputFields = new ArrayList<>();
+	  Gson gson = new GsonBuilder().create();
+
+	  for(ValidatorJoin validator : validators) {
+		  try {
+			  validatorOutputFields.add(gson.fromJson(mapper.writerFor(ValidatorJoin.class).writeValueAsString(validator), JsonObject.class) );
+		} catch (JsonProcessingException e) {
+			System.out.println("Exception - Validator output fields ");
+		}
+	  }
+	  return validatorOutputFields;
+  }    
+  
+  @Override
+  public void filterOutputFields(List<String> outputFields) {	  	  	  
+	  for(String field : outputFields) {		  
+		  switch(field) {		  
+		  	case "index":
+		  		this.outputFieldMap.put("index", getIndex());
+		  		break;
+		  		
+		  	case "slot" :
+		  		this.outputFieldMap.put("slot", getSlot());
+		  		break;
+		  		
+		  	case "epoch" :
+		  		this.outputFieldMap.put("epoch", getEpoch());
+		  		break;
+
+		  	case "block_root" :
+		  		this.outputFieldMap.put("block_root", getBlock_root());
+		  		break;
+		  	
+		  	case "block_body" :
+		  		this.outputFieldMap.put("block_body", getBlock_body());
+		  		break;
+		  	
+		  	case "lastFinalizedBlockRoot" :
+		  		this.outputFieldMap.put("lastFinalizedBlockRoot", getLastFinalizedBlockRoot());
+		  		break;
+		  		
+		  	case "lastFinalizedStateRoot" :
+		  		this.outputFieldMap.put("lastFinalizedStateRoot", getLastFinalizedStateRoot());
+		  		break;
+		  		
+		  	case "block_parent_root" :
+		  		this.outputFieldMap.put("block_parent_root", getBlock_parent_root());
+		  		break;
+		  		
+		  	case "validators" :
+				this.outputFieldMap.put("validators", validatorOutputFields());			
+		  		break;
+
+		  	case "validators_size" :
+				this.outputFieldMap.put("validators_size", getValidators().size());			
+		  		break;
+		  		
+		  	case "lastJustifiedBlockRoot" :
+		  		this.outputFieldMap.put("lastJustifiedBlockRoot", getLastJustifiedBlockRoot());
+		  		break;
+		  		
+		  	case "lastJustifiedStateRoot" :
+		  		this.outputFieldMap.put("lastJustifiedStateRoot", getLastJustifiedStateRoot());
+		  		break;
+ 		  }
+	  }
+      
+  }
+  
   @Override
   public String toJSON() {
-    try {
-      return mapper.writerFor(TimeSeriesRecord.class).writeValueAsString(this);
-    } catch (JsonProcessingException e) {
-      throw new IllegalArgumentException(e);
-    }
+	  Gson gson = new GsonBuilder().create();
+	    GsonBuilder gsonBuilder = new GsonBuilder();
+	    String jsonString = gson.toJson(this.outputFieldMap);
+	    JsonObject timeSeriesRecord = gson.fromJson(jsonString, JsonObject.class);    
+	    Gson customGson = gsonBuilder.setPrettyPrinting().create();
+	    return customGson.toJson(timeSeriesRecord);
   }
 
   @Override
   public String toCSV() {
-    return "'"
-        + this.date.toInstant().toEpochMilli()
-        + "'"
-        + ", '"
-        + this.getIndex()
-        + "'"
-        + ", '"
-        + this.getSlot()
-        + "'"
-        + ", '"
-        + this.getEpoch()
-        + "'"
-        + ", '"
-        + this.getLastFinalizedBlockRoot()
-        + "'"
-        + ", '"
-        + this.getLastFinalizedStateRoot()
-        + "'"
-        + ", '"
-        + this.getBlock_parent_root()
-        + "'"
-        + ", '"
-        + this.getValidators().size()
-        + "'"
-        + ", '"
-        + this.getLastJustifiedBlockRoot()
-        + "'"
-        + ", '"
-        + this.getLastJustifiedStateRoot()
-        + "'";
+    String csvOutputString = "";    
+    for(Object obj : this.outputFieldMap.values()) {
+        csvOutputString += "'"
+                + obj.toString()
+                + "',";
+    }        
+    return csvOutputString.substring(0, csvOutputString.length() - 1);        
   }
 
   @Override
   public String[] toLabels() {
-    return new String[] {
-      String.valueOf(this.getIndex()),
-      String.valueOf(this.getSlot()),
-      String.valueOf(this.getEpoch()),
-      this.getLastFinalizedBlockRoot(),
-      this.getLastFinalizedStateRoot(),
-      this.getBlock_parent_root(),
-      String.valueOf(this.getValidators().size()),
-      this.getLastJustifiedBlockRoot(),
-      this.getLastJustifiedStateRoot()
-    };
+	  return (String[]) this.outputFieldMap.values().toArray();
   }
 
   public long getDate() {
@@ -267,4 +313,6 @@ public class TimeSeriesRecord implements IRecordAdapter {
   public void setValidators(List<ValidatorJoin> validators) {
     this.validators = validators;
   }
+
+
 }

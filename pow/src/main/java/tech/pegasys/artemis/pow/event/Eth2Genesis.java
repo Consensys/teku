@@ -17,6 +17,10 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import java.nio.ByteOrder;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.data.IRecordAdapter;
@@ -29,6 +33,7 @@ public class Eth2Genesis extends AbstractEvent<Eth2GenesisEventResponse>
   private Bytes32 deposit_root;
   private long deposit_count;
   private long time;
+  private Map<String, Object> outputFieldMap = new HashMap<>();
 
   public Eth2Genesis(Eth2GenesisEventResponse response) {
     super(response);
@@ -50,27 +55,50 @@ public class Eth2Genesis extends AbstractEvent<Eth2GenesisEventResponse>
   }
 
   @Override
-  public String toJSON() {
+  public void filterOutputFields(List<String> outputFields) {  	
+	  this.outputFieldMap.put("eventType", "Eth2Genesis");
+	  for(String field : outputFields) {		  
+		  switch(field) {		  
+		  	case "deposit_root":
+		  		this.outputFieldMap.put("deposit_root", deposit_root.toHexString());
+		  		break;
+		  		
+		  	case "deposit_count":
+		  		this.outputFieldMap.put("deposit_count", deposit_count);
+		  		break;
+		  		
+		  	case "time":
+		  		this.outputFieldMap.put("time", time);
+		  		break;
+ 		  }
+	  }
+  }
+  
+  @Override
+  public String toJSON() {        
     Gson gson = new GsonBuilder().create();
     GsonBuilder gsonBuilder = new GsonBuilder();
-
-    JsonObject eth2Genesis = new JsonObject();
-    eth2Genesis.addProperty("eventType", "Eth2Genesis");
-    eth2Genesis.addProperty("deposit_root", deposit_root.toHexString());
-    eth2Genesis.addProperty("deposit_count", deposit_count);
-    eth2Genesis.addProperty("time", time);
-
+    String jsonString = gson.toJson(this.outputFieldMap);
+    JsonObject eth2Genesis = gson.fromJson(jsonString, JsonObject.class);    
     Gson customGson = gsonBuilder.setPrettyPrinting().create();
-    return customGson.toJson(eth2Genesis);
+    return customGson.toJson(eth2Genesis);    
   }
 
   @Override
   public String toCSV() {
-    return null;
+	    String csvOutputString = "";    
+	    for(Object obj : this.outputFieldMap.values()) {
+	        csvOutputString += "'"
+	                + obj.toString()
+	                + "',";
+	    }        
+	    return csvOutputString.substring(0, csvOutputString.length() - 1);
   }
 
   @Override
-  public String[] toLabels() {
-    return new String[0];
+  public String[] toLabels() {  
+    return (String[]) this.outputFieldMap.values().toArray();
   }
+
+
 }
