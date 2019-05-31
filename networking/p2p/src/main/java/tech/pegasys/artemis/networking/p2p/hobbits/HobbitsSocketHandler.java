@@ -164,7 +164,8 @@ public final class HobbitsSocketHandler {
           this.eventBus.post(BeaconBlock.fromBytes(bytes));
           peer.setPeerGossip(bytes);
         }
-        p2pState.receiveGossipMessage(peer, gossipMessage.getAttributes(), gossipMessage.body());
+        p2pState.receiveGossipMessage(
+            peer, gossipMessage.getAttributes(), gossipMessage.body(), gossipMessage.messageHash());
       } else if (GossipMethod.PRUNE.equals(gossipMessage.method())) {
         p2pState.receivePruneMessage(peer);
       } else if (GossipMethod.GRAFT.equals(gossipMessage.method())) {
