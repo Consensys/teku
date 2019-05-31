@@ -13,15 +13,17 @@
 
 package tech.pegasys.artemis.validator.client;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonSerializer;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.module.SimpleModule;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.artemis.data.IRecordAdapter;
 import tech.pegasys.artemis.pow.event.Deposit;
@@ -29,11 +31,35 @@ import tech.pegasys.artemis.pow.event.Eth2Genesis;
 
 public class DepositSimulation implements IRecordAdapter {
 
+  private static class DepositSerializer extends JsonSerializer<Deposit> {
+
+    @Override
+    public void serialize(
+        Deposit deposit, JsonGenerator jGen, SerializerProvider serializerProvider)
+        throws IOException {
+      jGen.writeStartObject();
+      jGen.writeStringField("eventType", "Deposit");
+      jGen.writeStringField("data", deposit.getData().toHexString());
+      jGen.writeStringField("merkle_tree_index", deposit.getMerkle_tree_index().toHexString());
+      jGen.writeEndObject();
+    }
+  }
+
+  private static class DepositModule extends SimpleModule {
+
+    public DepositModule() {
+      super("deposit");
+      addSerializer(Deposit.class, new DepositSerializer());
+    }
+  }
+
   private Validator validator;
   private Bytes deposit_data;
   private List<Deposit> deposits;
   private List<Eth2Genesis> eth2Geneses;
   private Map<String, Object> outputFieldMap = new HashMap<>();
+  private static final ObjectMapper mapper =
+      new ObjectMapper().registerModule(new DepositModule());;
 
   public DepositSimulation(Validator validator, Bytes deposit_data) {
     this.validator = validator;
@@ -58,21 +84,6 @@ public class DepositSimulation implements IRecordAdapter {
     return validator;
   }
 
-  public JsonArray depositEvents() {
-    JsonArray arr = new JsonArray();
-    IntStream.range(0, deposits.size())
-        .forEach(
-            i -> {
-              JsonObject deposit = new JsonObject();
-              deposit.addProperty("eventType", "Deposit");
-              deposit.addProperty("data", deposits.get(i).getData().toHexString());
-              deposit.addProperty(
-                  "merkle_tree_index", deposits.get(i).getMerkle_tree_index().toHexString());
-              arr.add(deposit);
-            });
-    return arr;
-  }
-
   @Override
   public void filterOutputFields(List<String> outputFields) {
 
@@ -93,20 +104,17 @@ public class DepositSimulation implements IRecordAdapter {
           break;
 
         case "events":
-          this.outputFieldMap.put("events", depositEvents());
+          this.outputFieldMap.put("events", deposits);
           break;
       }
     }
   }
 
   @Override
-  public String toJSON() {
-    Gson gson = new GsonBuilder().create();
-    GsonBuilder gsonBuilder = new GsonBuilder();
-    String jsonString = gson.toJson(this.outputFieldMap);
-    JsonObject deposit = gson.fromJson(jsonString, JsonObject.class);
-    Gson customGson = gsonBuilder.setPrettyPrinting().create();
-    return customGson.toJson(deposit);
+  public String toJSON() throws JsonProcessingException {
+    String jsonOutputString = null;
+    jsonOutputString = mapper.writerFor(Map.class).writeValueAsString(this.outputFieldMap);
+    return jsonOutputString;
   }
 
   @Override
@@ -115,7 +123,10 @@ public class DepositSimulation implements IRecordAdapter {
     for (Object obj : this.outputFieldMap.values()) {
       csvOutputString += "'" + obj.toString() + "',";
     }
-    return csvOutputString.substring(0, csvOutputString.length() - 1);
+    if (csvOutputString.length() > 0) {
+      csvOutputString = csvOutputString.substring(0, csvOutputString.length() - 1);
+    }
+    return csvOutputString;
   }
 
   @Override

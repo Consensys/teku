@@ -13,9 +13,8 @@
 
 package tech.pegasys.artemis.pow.event;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonObject;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.nio.ByteOrder;
 import java.util.HashMap;
 import java.util.List;
@@ -33,6 +32,7 @@ public class Eth2Genesis extends AbstractEvent<Eth2GenesisEventResponse>
   private long deposit_count;
   private long time;
   private Map<String, Object> outputFieldMap = new HashMap<>();
+  private static final ObjectMapper mapper = new ObjectMapper();
 
   public Eth2Genesis(Eth2GenesisEventResponse response) {
     super(response);
@@ -74,13 +74,10 @@ public class Eth2Genesis extends AbstractEvent<Eth2GenesisEventResponse>
   }
 
   @Override
-  public String toJSON() {
-    Gson gson = new GsonBuilder().create();
-    GsonBuilder gsonBuilder = new GsonBuilder();
-    String jsonString = gson.toJson(this.outputFieldMap);
-    JsonObject eth2Genesis = gson.fromJson(jsonString, JsonObject.class);
-    Gson customGson = gsonBuilder.setPrettyPrinting().create();
-    return customGson.toJson(eth2Genesis);
+  public String toJSON() throws JsonProcessingException {
+    String jsonOutputString = null;
+    jsonOutputString = mapper.writerFor(Map.class).writeValueAsString(this.outputFieldMap);
+    return jsonOutputString;
   }
 
   @Override
@@ -89,7 +86,10 @@ public class Eth2Genesis extends AbstractEvent<Eth2GenesisEventResponse>
     for (Object obj : this.outputFieldMap.values()) {
       csvOutputString += "'" + obj.toString() + "',";
     }
-    return csvOutputString.substring(0, csvOutputString.length() - 1);
+    if (csvOutputString.length() > 0) {
+      csvOutputString = csvOutputString.substring(0, csvOutputString.length() - 1);
+    }
+    return csvOutputString;
   }
 
   @Override

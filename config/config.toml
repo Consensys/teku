@@ -18,7 +18,7 @@ numNodes = 1
 [output]
 outputFile = "artemis.json"
 providerType = "JSON"
-events = [ "TimeSeriesRecord", "Eth2Genesis" ]
+events = [ "TimeSeriesRecord", "Eth2Genesis", "Deposit" ]
 formatted = false
 
 [output.fields]

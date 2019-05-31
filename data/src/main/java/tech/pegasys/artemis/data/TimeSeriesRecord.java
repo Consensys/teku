@@ -19,9 +19,6 @@ import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.module.SimpleModule;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonObject;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
@@ -120,27 +117,14 @@ public class TimeSeriesRecord implements IRecordAdapter {
     this.validators = validators;
   }
 
-  public ArrayList<JsonObject> validatorOutputFields() {
-    ArrayList<JsonObject> validatorOutputFields = new ArrayList<>();
-    Gson gson = new GsonBuilder().create();
-
-    for (ValidatorJoin validator : validators) {
-      try {
-        validatorOutputFields.add(
-            gson.fromJson(
-                mapper.writerFor(ValidatorJoin.class).writeValueAsString(validator),
-                JsonObject.class));
-      } catch (JsonProcessingException e) {
-        System.out.println("Exception - Validator output fields ");
-      }
-    }
-    return validatorOutputFields;
-  }
-
   @Override
   public void filterOutputFields(List<String> outputFields) {
     for (String field : outputFields) {
       switch (field) {
+        case "date":
+          this.outputFieldMap.put("date", this.date.toInstant().toEpochMilli());
+          break;
+
         case "index":
           this.outputFieldMap.put("index", getIndex());
           break;
@@ -174,7 +158,7 @@ public class TimeSeriesRecord implements IRecordAdapter {
           break;
 
         case "validators":
-          this.outputFieldMap.put("validators", validatorOutputFields());
+          this.outputFieldMap.put("validators", getValidators());
           break;
 
         case "validators_size":
@@ -193,13 +177,10 @@ public class TimeSeriesRecord implements IRecordAdapter {
   }
 
   @Override
-  public String toJSON() {
-    Gson gson = new GsonBuilder().create();
-    GsonBuilder gsonBuilder = new GsonBuilder();
-    String jsonString = gson.toJson(this.outputFieldMap);
-    JsonObject timeSeriesRecord = gson.fromJson(jsonString, JsonObject.class);
-    Gson customGson = gsonBuilder.setPrettyPrinting().create();
-    return customGson.toJson(timeSeriesRecord);
+  public String toJSON() throws JsonProcessingException {
+    String jsonOutputString = null;
+    jsonOutputString = mapper.writerFor(Map.class).writeValueAsString(this.outputFieldMap);
+    return jsonOutputString;
   }
 
   @Override
@@ -208,7 +189,10 @@ public class TimeSeriesRecord implements IRecordAdapter {
     for (Object obj : this.outputFieldMap.values()) {
       csvOutputString += "'" + obj.toString() + "',";
     }
-    return csvOutputString.substring(0, csvOutputString.length() - 1);
+    if (csvOutputString.length() > 0) {
+      csvOutputString = csvOutputString.substring(0, csvOutputString.length() - 1);
+    }
+    return csvOutputString;
   }
 
   @Override

@@ -13,9 +13,8 @@
 
 package tech.pegasys.artemis.pow.event;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonObject;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.nio.ByteOrder;
 import java.util.HashMap;
 import java.util.List;
@@ -34,6 +33,8 @@ public class Deposit extends AbstractEvent<DepositEventResponse>
   private Bytes32 withdrawal_credentials;
   private Bytes proof_of_possession;
   private long amount;
+
+  private static final ObjectMapper mapper = new ObjectMapper();
 
   // raw fields
   private Bytes data;
@@ -112,13 +113,10 @@ public class Deposit extends AbstractEvent<DepositEventResponse>
   }
 
   @Override
-  public String toJSON() {
-    Gson gson = new GsonBuilder().create();
-    GsonBuilder gsonBuilder = new GsonBuilder();
-    String jsonString = gson.toJson(this.outputFieldMap);
-    JsonObject deposit = gson.fromJson(jsonString, JsonObject.class);
-    Gson customGson = gsonBuilder.setPrettyPrinting().create();
-    return customGson.toJson(deposit);
+  public String toJSON() throws JsonProcessingException {
+    String jsonOutputString = null;
+    jsonOutputString = mapper.writerFor(Map.class).writeValueAsString(this.outputFieldMap);
+    return jsonOutputString;
   }
 
   @Override
@@ -127,7 +125,10 @@ public class Deposit extends AbstractEvent<DepositEventResponse>
     for (Object obj : this.outputFieldMap.values()) {
       csvOutputString += "'" + obj.toString() + "',";
     }
-    return csvOutputString.substring(0, csvOutputString.length() - 1);
+    if (csvOutputString.length() > 0) {
+      csvOutputString = csvOutputString.substring(0, csvOutputString.length() - 1);
+    }
+    return csvOutputString;
   }
 
   @Override

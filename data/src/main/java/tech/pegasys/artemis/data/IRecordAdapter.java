@@ -13,11 +13,12 @@
 
 package tech.pegasys.artemis.data;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.List;
 
 public interface IRecordAdapter {
 
-  String toJSON();
+  String toJSON() throws JsonProcessingException;
 
   String toCSV();
 
