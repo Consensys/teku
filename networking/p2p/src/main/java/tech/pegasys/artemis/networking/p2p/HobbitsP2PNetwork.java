@@ -103,7 +103,10 @@ public final class HobbitsP2PNetwork implements P2PNetwork {
             Hash::sha2_256,
             this::sendMessage,
             this::processGossip,
-            (bytes, peer) -> true);
+            (bytes, peer) -> true,
+            (peer) -> true,
+            200,
+            200);
   }
 
   private void sendMessage(
@@ -117,7 +120,10 @@ public final class HobbitsP2PNetwork implements P2PNetwork {
     }
     HobbitsSocketHandler handler = handlersMap.get(((Peer) peer).uri());
     if (handler != null) {
-      handler.gossipMessage(verb, attributes, hash, Bytes32.random(), bytes);
+      vertx.runOnContext(
+          h -> {
+            handler.gossipMessage(verb, attributes, hash, Bytes32.random(), bytes);
+          });
     }
   }
 
