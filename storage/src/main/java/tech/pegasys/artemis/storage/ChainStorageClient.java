@@ -18,6 +18,7 @@ import com.google.common.eventbus.Subscribe;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -225,24 +226,26 @@ public class ChainStorageClient implements ChainStorage {
     // using get_attestation_participants is the state associated with the beacon
     // block being attested in the attestation.
     BeaconBlock block = processedBlockLookup.get(attestation.getData().getBeacon_block_root());
-    BeaconState state = stateLookup.get(block.getState_root());
+    if (Objects.nonNull(block)) {
+      BeaconState state = stateLookup.get(block.getState_root());
 
-    // TODO: verify attestation is stubbed out, needs to be implemented
-    if (AttestationUtil.verifyAttestation(state, attestation)) {
-      List<Integer> attestation_participants =
-          BeaconStateUtil.get_attestation_participants(
-              state, attestation.getData(), attestation.getAggregation_bitfield());
+      // TODO: verify attestation is stubbed out, needs to be implemented
+      if (AttestationUtil.verifyAttestation(state, attestation)) {
+        List<Integer> attestation_participants =
+            BeaconStateUtil.get_attestation_participants(
+                state, attestation.getData(), attestation.getAggregation_bitfield());
 
-      for (Integer participantIndex : attestation_participants) {
-        Optional<Attestation> latest_attestation = getLatestAttestation(participantIndex);
-        if (!latest_attestation.isPresent()
-            || latest_attestation
-                    .get()
-                    .getData()
-                    .getSlot()
-                    .compareTo(attestation.getData().getSlot())
-                < 0) {
-          latestAttestations.put(participantIndex, attestation);
+        for (Integer participantIndex : attestation_participants) {
+          Optional<Attestation> latest_attestation = getLatestAttestation(participantIndex);
+          if (!latest_attestation.isPresent()
+              || latest_attestation
+                      .get()
+                      .getData()
+                      .getSlot()
+                      .compareTo(attestation.getData().getSlot())
+                  < 0) {
+            latestAttestations.put(participantIndex, attestation);
+          }
         }
       }
     }
