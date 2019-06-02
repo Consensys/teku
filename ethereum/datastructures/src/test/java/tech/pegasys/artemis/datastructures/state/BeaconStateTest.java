@@ -288,6 +288,9 @@ class BeaconStateTest {
 
   @Test
   void roundtripSSZ() {
+    // NOTE: If the numDeposits below ever increases above one,
+    // we'll need a better way of syncing deposit indexes with our test data.
+    // The fix in place right now is a hack.
     BeaconState state = newState(1);
     Bytes sszBeaconBlockBytes = state.toBytes();
     assertEquals(state, BeaconState.fromBytes(sszBeaconBlockBytes));

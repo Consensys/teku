@@ -88,6 +88,7 @@ class DepositTest {
 
   @Test
   void roundtripSSZ() {
+    deposit.setProof(Collections.nCopies(32, Bytes32.random()));
     Bytes sszDepositBytes = deposit.toBytes();
     assertEquals(deposit, Deposit.fromBytes(sszDepositBytes));
   }
