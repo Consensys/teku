@@ -72,7 +72,7 @@ class BeaconStateTest {
 
   @Test
   void activateValidator() {
-    BeaconState state = newState(5);
+    BeaconState state = newState(1);
     int validator_index = 0;
     UnsignedLong activation_epoch;
 
@@ -88,7 +88,7 @@ class BeaconStateTest {
 
   @Test
   void initiateValidatorExitNotActive() {
-    BeaconState state = newState(5);
+    BeaconState state = newState(1);
     int validator_index = 0;
 
     BeaconStateUtil.initiate_validator_exit(state, validator_index);
@@ -98,8 +98,8 @@ class BeaconStateTest {
 
   @Test
   void initiateValidatorExit() {
-    BeaconState state = newState(5);
-    int validator_index = 2;
+    BeaconState state = newState(1);
+    int validator_index = 0;
 
     BeaconStateUtil.initiate_validator_exit(state, validator_index);
     assertThat(state.getValidator_registry().get(validator_index).hasInitiatedExit())
@@ -226,7 +226,7 @@ class BeaconStateTest {
 
   @Test
   void getRandaoMixThrowsExceptions() {
-    BeaconState state = newState(5);
+    BeaconState state = newState(1);
     state.setSlot(UnsignedLong.valueOf(LATEST_RANDAO_MIXES_LENGTH * SLOTS_PER_EPOCH));
     assertThat(get_current_epoch(state).compareTo(UnsignedLong.valueOf(LATEST_RANDAO_MIXES_LENGTH)))
         .isEqualTo(0);
@@ -242,7 +242,7 @@ class BeaconStateTest {
 
   @Test
   void getRandaoMixReturnsCorrectValue() {
-    BeaconState state = newState(5);
+    BeaconState state = newState(1);
     state.setSlot(UnsignedLong.valueOf(LATEST_RANDAO_MIXES_LENGTH * SLOTS_PER_EPOCH));
     assertThat(get_current_epoch(state).compareTo(UnsignedLong.valueOf(LATEST_RANDAO_MIXES_LENGTH)))
         .isEqualTo(0);
@@ -261,7 +261,7 @@ class BeaconStateTest {
 
   @Test
   void generateSeedReturnsCorrectValue() {
-    BeaconState state = newState(5);
+    BeaconState state = newState(1);
     state.setSlot(UnsignedLong.valueOf(LATEST_RANDAO_MIXES_LENGTH * SLOTS_PER_EPOCH));
     assertThat(get_current_epoch(state).compareTo(UnsignedLong.valueOf(LATEST_RANDAO_MIXES_LENGTH)))
         .isEqualTo(0);
