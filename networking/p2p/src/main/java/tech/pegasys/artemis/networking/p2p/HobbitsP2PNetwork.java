@@ -120,10 +120,11 @@ public final class HobbitsP2PNetwork implements P2PNetwork {
     }
     HobbitsSocketHandler handler = handlersMap.get(((Peer) peer).uri());
     if (handler != null) {
-      vertx.runOnContext(
+      vertx.executeBlocking(
           h -> {
             handler.gossipMessage(verb, attributes, hash, Bytes32.random(), bytes);
-          });
+          },
+          res -> {});
     }
   }
 
