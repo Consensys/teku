@@ -14,7 +14,9 @@
 package tech.pegasys.artemis.datastructures.operations;
 
 import com.google.common.primitives.UnsignedLong;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -43,7 +45,7 @@ public class Deposit implements Merkleizable {
         bytes,
         reader ->
             new Deposit(
-                reader.readFixedBytesList(Constants.DEPOSIT_CONTRACT_TREE_DEPTH, 32).stream()
+                reader.readFixedBytesList((long) Constants.DEPOSIT_CONTRACT_TREE_DEPTH, 32).stream()
                     .map(Bytes32::wrap)
                     .collect(Collectors.toList()),
                 UnsignedLong.fromLongBits(reader.readUInt64()),
@@ -51,9 +53,21 @@ public class Deposit implements Merkleizable {
   }
 
   public Bytes toBytes() {
+    List<Bytes32> filledProofList = new ArrayList<>();
+    filledProofList.addAll(proof);
+
+    if (proof.size() < Constants.DEPOSIT_CONTRACT_TREE_DEPTH) {
+
+      int elementsToFill = Constants.DEPOSIT_CONTRACT_TREE_DEPTH - proof.size();
+      List<Bytes32> fillElements = Collections.nCopies(elementsToFill, Bytes32.ZERO);
+
+      filledProofList.addAll(fillElements);
+    }
+
     return SSZ.encode(
         writer -> {
-          writer.writeFixedBytesList(Constants.DEPOSIT_CONTRACT_TREE_DEPTH, 32, proof);
+          writer.writeFixedBytesList(
+              (long) Constants.DEPOSIT_CONTRACT_TREE_DEPTH, 32, filledProofList);
           writer.writeUInt64(index.longValue());
           writer.writeBytes(deposit_data.toBytes());
         });

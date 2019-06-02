@@ -243,7 +243,7 @@ public class BeaconState {
                     .collect(Collectors.toList()),
                 UnsignedLong.fromLongBits(reader.readUInt64()),
                 // Randomness and committees
-                reader.readFixedBytesList(Constants.LATEST_RANDAO_MIXES_LENGTH, 32).stream()
+                reader.readFixedBytesList((long) Constants.LATEST_RANDAO_MIXES_LENGTH, 32).stream()
                     .map(Bytes32::wrap)
                     .collect(Collectors.toList()),
                 UnsignedLong.fromLongBits(reader.readUInt64()),
@@ -267,16 +267,17 @@ public class BeaconState {
                 UnsignedLong.fromLongBits(reader.readUInt64()),
                 Bytes32.wrap(reader.readFixedBytes(32)),
                 // Recent state
-                reader.readBytesList(Constants.SHARD_COUNT).stream()
+                reader.readBytesList((long) Constants.SHARD_COUNT).stream()
                     .map(Crosslink::fromBytes)
                     .collect(Collectors.toList()),
-                reader.readFixedBytesList(Constants.SLOTS_PER_HISTORICAL_ROOT, 32).stream()
+                reader.readFixedBytesList((long) Constants.SLOTS_PER_HISTORICAL_ROOT, 32).stream()
                     .map(Bytes32::wrap)
                     .collect(Collectors.toList()),
-                reader.readFixedBytesList(Constants.SLOTS_PER_HISTORICAL_ROOT, 32).stream()
+                reader.readFixedBytesList((long) Constants.SLOTS_PER_HISTORICAL_ROOT, 32).stream()
                     .map(Bytes32::wrap)
                     .collect(Collectors.toList()),
-                reader.readFixedBytesList(Constants.LATEST_ACTIVE_INDEX_ROOTS_LENGTH, 32).stream()
+                reader.readFixedBytesList((long) Constants.LATEST_ACTIVE_INDEX_ROOTS_LENGTH, 32)
+                    .stream()
                     .map(Bytes32::wrap)
                     .collect(Collectors.toList()),
                 reader.readUInt64List().stream()
@@ -325,7 +326,8 @@ public class BeaconState {
                   .collect(Collectors.toList()));
           writer.writeUInt64(validator_registry_update_epoch.longValue());
           // Randomness and committees
-          writer.writeFixedBytesList(Constants.LATEST_RANDAO_MIXES_LENGTH, 32, latest_randao_mixes);
+          writer.writeFixedBytesList(
+              (long) Constants.LATEST_RANDAO_MIXES_LENGTH, 32, latest_randao_mixes);
           writer.writeUInt64(previous_shuffling_start_shard.longValue());
           writer.writeUInt64(current_shuffling_start_shard.longValue());
           writer.writeUInt64(previous_shuffling_epoch.longValue());
@@ -343,11 +345,13 @@ public class BeaconState {
           writer.writeUInt64(finalized_epoch.longValue());
           writer.writeFixedBytes(32, finalized_root);
           // Recent state
-          writer.writeBytesList(Constants.SHARD_COUNT, latest_crosslinksBytes);
-          writer.writeFixedBytesList(Constants.SLOTS_PER_HISTORICAL_ROOT, 32, latest_block_roots);
-          writer.writeFixedBytesList(Constants.SLOTS_PER_HISTORICAL_ROOT, 32, latest_state_roots);
+          writer.writeBytesList((long) Constants.SHARD_COUNT, latest_crosslinksBytes);
           writer.writeFixedBytesList(
-              Constants.LATEST_ACTIVE_INDEX_ROOTS_LENGTH, 32, latest_active_index_roots);
+              (long) Constants.SLOTS_PER_HISTORICAL_ROOT, 32, latest_block_roots);
+          writer.writeFixedBytesList(
+              (long) Constants.SLOTS_PER_HISTORICAL_ROOT, 32, latest_state_roots);
+          writer.writeFixedBytesList(
+              (long) Constants.LATEST_ACTIVE_INDEX_ROOTS_LENGTH, 32, latest_active_index_roots);
           writer.writeULongIntList(
               64,
               latest_slashed_balances.stream()

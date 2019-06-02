@@ -250,9 +250,7 @@ public final class DataStructureUtil {
 
   public static Deposit randomDeposit() {
     return new Deposit(
-        Arrays.asList(randomBytes32(), randomBytes32(), randomBytes32()),
-        randomUnsignedLong(),
-        randomDepositData());
+        Collections.nCopies(32, Bytes32.random()), UnsignedLong.ZERO, randomDepositData());
   }
 
   public static Deposit randomDeposit(int seed) {
