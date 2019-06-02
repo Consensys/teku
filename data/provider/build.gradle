@@ -12,15 +12,11 @@ dependencies {
   implementation project(':data:adapter')
   implementation project(':ethereum:datastructures')
 
-  implementation 'io.vertx:vertx-core'
-  implementation 'io.vertx:vertx-web'
   implementation 'org.apache.tuweni:tuweni-crypto'
   implementation 'org.apache.tuweni:tuweni-units'
   implementation files("../../lib/tuweni-ssz-0.8.1-SNAPSHOT.jar")
   implementation 'com.fasterxml.jackson.core:jackson-databind'
   implementation 'com.google.guava:guava'
-  implementation 'io.prometheus:simpleclient'
-  implementation 'io.prometheus:simpleclient_vertx'
   implementation 'org.apache.logging.log4j:log4j-api'
   implementation 'org.apache.commons:commons-lang3'
   runtime 'org.apache.logging.log4j:log4j-core'

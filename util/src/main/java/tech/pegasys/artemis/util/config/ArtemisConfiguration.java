@@ -93,22 +93,24 @@ public final class ArtemisConfiguration {
     builder.addLong(
         "node.networkID", 1L, "The identifier of the network (mainnet, testnet, sidechain)", null);
 
-    // Outputs
+    // Metrics
+    builder.addBoolean("metrics.enabled", false, "Enables metrics collection via Prometheus", null);
     builder.addString(
-        "output.providerType",
-        "JSON",
-        "Output provider types: CSV, JSON, PROMETHEUS",
-        PropertyValidator.anyOf("CSV", "JSON", "PROMETHEUS"));
-    builder.addString(
-        "output.metricsNetworkInterface",
+        "metrics.metricsNetworkInterface",
         "0.0.0.0",
         "Metrics network interface to expose metrics for Prometheus",
         null);
     builder.addInteger(
-        "output.metricsPort",
+        "metrics.metricsPort",
         8008,
         "Metrics port to expose metrics for Prometheus",
         PropertyValidator.inRange(0, 65535));
+    // Outputs
+    builder.addString(
+        "output.providerType",
+        "JSON",
+        "Output provider types: CSV, JSON",
+        PropertyValidator.anyOf("CSV", "JSON"));
     builder.addString("output.outputFile", "", "Path/filename of the output file", null);
     builder.addBoolean(
         "output.formatted", false, "Output of JSON file is serial or formatted", null);
@@ -297,12 +299,17 @@ public final class ArtemisConfiguration {
     return config.getString("output.providerType");
   }
 
+  /** @return if metrics is enabled or not */
+  public Boolean isMetricsEnabled() {
+    return config.getBoolean("metrics.enabled");
+  }
+
   public String getMetricsNetworkInterface() {
-    return config.getString("output.metricsNetworkInterface");
+    return config.getString("metrics.metricsNetworkInterface");
   }
 
   public int getMetricsPort() {
-    return config.getInteger("output.metricsPort");
+    return config.getInteger("metrics.metricsPort");
   }
 
   /** @return the Path/filename of the output file. */
