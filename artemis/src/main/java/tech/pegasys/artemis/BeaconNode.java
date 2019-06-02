@@ -27,9 +27,9 @@ import tech.pegasys.artemis.data.provider.CSVProvider;
 import tech.pegasys.artemis.data.provider.EventHandler;
 import tech.pegasys.artemis.data.provider.FileProvider;
 import tech.pegasys.artemis.data.provider.JSONProvider;
-import tech.pegasys.artemis.data.provider.PrometheusProvider;
 import tech.pegasys.artemis.data.provider.ProviderTypes;
 import tech.pegasys.artemis.datastructures.Constants;
+import tech.pegasys.artemis.metrics.PrometheusEndpoint;
 import tech.pegasys.artemis.networking.p2p.HobbitsP2PNetwork;
 import tech.pegasys.artemis.networking.p2p.MockP2PNetwork;
 import tech.pegasys.artemis.networking.p2p.api.P2PNetwork;
@@ -90,6 +90,10 @@ public class BeaconNode {
     Constants.init(config);
     this.cliArgs = cliArgs;
     this.commandLine = commandLine;
+    if (config.isMetricsEnabled()) {
+      PrometheusEndpoint.registerEndpoint(
+          vertx, config.getMetricsNetworkInterface(), config.getMetricsPort());
+    }
     if (config.isOutputEnabled()) {
       this.eventBus.register(this);
       try {
@@ -99,9 +103,8 @@ public class BeaconNode {
         } else if (ProviderTypes.compare(JSONProvider.class, config.getProviderType())) {
           this.fileProvider = new JSONProvider(outputFilename);
         } else {
-          this.fileProvider =
-              new PrometheusProvider(
-                  vertx, config.getMetricsNetworkInterface(), config.getMetricsPort());
+          throw new UnsupportedOperationException(
+              "Provider not supported " + config.getProviderType());
         }
         this.eventHandler = new EventHandler(config, fileProvider);
         this.eventBus.register(eventHandler);
