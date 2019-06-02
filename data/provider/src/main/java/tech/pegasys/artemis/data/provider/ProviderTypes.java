@@ -15,8 +15,7 @@ package tech.pegasys.artemis.data.provider;
 
 public enum ProviderTypes {
   CSV(CSVProvider.class),
-  JSON(JSONProvider.class),
-  PROMETHEUS(PrometheusProvider.class);
+  JSON(JSONProvider.class);
 
   private final Class<?> value;
 
