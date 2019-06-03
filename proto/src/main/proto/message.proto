@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+option java_package = "tech.pegasys.artemis.proto.message";
+
+service Signing {
+    rpc GetFeature(Block) returns (Block) {}
+}
+
+message Block {
+    string block = 1;
+}
+
+
