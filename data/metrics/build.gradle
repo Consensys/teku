@@ -1,0 +1,31 @@
+jar {
+    baseName 'artemis-data-metrics'
+    manifest {
+        attributes('Implementation-Title': baseName,
+                'Implementation-Version': project.version)
+    }
+}
+
+dependencies {
+    implementation project(':util')
+    implementation project(':data')
+    implementation project(':data:adapter')
+    implementation project(':ethereum:datastructures')
+
+    implementation 'io.vertx:vertx-core'
+    implementation 'io.vertx:vertx-web'
+    implementation 'org.apache.tuweni:tuweni-crypto'
+    implementation 'org.apache.tuweni:tuweni-units'
+    implementation 'org.apache.tuweni:tuweni-ssz'
+    implementation 'com.fasterxml.jackson.core:jackson-databind'
+    implementation 'com.google.guava:guava'
+    implementation 'io.prometheus:simpleclient'
+    implementation 'io.prometheus:simpleclient_vertx'
+    implementation 'org.apache.logging.log4j:log4j-api'
+    implementation 'org.apache.commons:commons-lang3'
+    runtime 'org.apache.logging.log4j:log4j-core'
+
+    test {
+        testLogging.showStandardStreams = true
+    }
+}

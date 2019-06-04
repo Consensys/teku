@@ -16,6 +16,7 @@ dependencies {
   implementation project(':util')
   implementation project(':data')
   implementation project(':data:adapter')
+  implementation project(':data:metrics')
   implementation project(':data:provider')
   implementation project(':ethereum:datastructures')
   implementation project(':validator:coordinator')
