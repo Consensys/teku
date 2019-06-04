@@ -16,9 +16,6 @@ package tech.pegasys.artemis.data.provider;
 import com.google.common.eventbus.Subscribe;
 import java.util.List;
 import tech.pegasys.artemis.data.IRecordAdapter;
-import tech.pegasys.artemis.data.RawRecord;
-import tech.pegasys.artemis.data.TimeSeriesRecord;
-import tech.pegasys.artemis.data.adapter.TimeSeriesAdapter;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 
 public class EventHandler {
@@ -33,16 +30,11 @@ public class EventHandler {
   }
 
   @Subscribe
-  public void onDataEvent(RawRecord record) {
-    TimeSeriesAdapter adapter = new TimeSeriesAdapter(record);
-    TimeSeriesRecord tsRecord = adapter.transform();
-    if (events == null || events.contains(tsRecord.getClass().getSimpleName())) output(tsRecord);
-  }
-
-  @Subscribe
   public void onEvent(IRecordAdapter record) {
     String name = record.getClass().getSimpleName();
-    if (events != null && events.contains(name)) output(record);
+    if (events != null && events.contains(name)) {
+      output(record);
+    }
   }
 
   private void output(IRecordAdapter record) {
