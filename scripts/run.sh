@@ -53,6 +53,9 @@ do
     # Print the usage and exit if the help flag is provided 
     -h|--help) usage; exit 0 ;;
 
+	-v|--vertical)
+		VERTICAL=true ;;
+
     # Pipe the usage to stderr and exit on exitcode 1 if an incorrect flag is provided
     --*) usage >&2; exit 1 ;;
   esac
@@ -84,4 +87,4 @@ do
 done
 
 # Create a properly formatted tmux session for the simulation
-create_tmux_windows $NODES
+create_tmux_windows $NODES $VERTICAL

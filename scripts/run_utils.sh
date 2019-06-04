@@ -72,6 +72,7 @@ create_tmux_panes() {
 # Due to the constraints of tmux, only 9 panes could be created in a single window.
 create_tmux_windows() {
   local NODES=$1
+  local VERTICAL=$2
 
   cd demo/
 
@@ -82,8 +83,16 @@ create_tmux_windows() {
   idx=1
   # Create new tmux panes for the first 4 nodes
   create_tmux_panes $idx
-  # Use the tiled layout for the window to make the panes as close to equally sized as possible
-  tmux select-layout tiled
+
+  ## Use the vertical layout if the flag is set
+  if [ $VERTICAL == true ]
+  then
+    tmux select-layout even-vertical
+  else
+    # Use the tiled layout for the window to make the panes as close to equally sized as possible
+    tmux select-layout tiled
+  fi
+
   # Rename the window to add some spice
   tmux rename-window 'the dude abides'
 
