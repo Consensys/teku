@@ -26,9 +26,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.apache.tuweni.bytes.Bytes32;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import tech.pegasys.artemis.util.json.BytesModule;
 
 public class TimeSeriesRecord implements IRecordAdapter {
+
+  private static final Logger logger = LoggerFactory.getLogger(TimeSeriesRecord.class);
 
   private static class ValidatorJoinSerializer extends JsonSerializer<ValidatorJoin> {
 
@@ -87,6 +91,8 @@ public class TimeSeriesRecord implements IRecordAdapter {
     this.lastJustifiedStateRoot = Bytes32.random().toHexString();
     this.lastFinalizedBlockRoot = Bytes32.random().toHexString();
     this.lastFinalizedStateRoot = Bytes32.random().toHexString();
+
+    logger.info("TEST_EPOCH {}", this.toJSON());
   }
 
   public TimeSeriesRecord(
