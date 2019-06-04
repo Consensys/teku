@@ -20,6 +20,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import org.apache.tuweni.junit.TempDirectory;
@@ -35,8 +36,14 @@ class JSONProviderTest {
   void testJSONPrint(@TempDirectory Path tempDirectory) throws IOException {
     Path logFile = tempDirectory.resolve("log.csv");
     JSONProvider provider = new JSONProvider(logFile);
-    provider.serialOutput(new TimeSeriesRecord());
-    provider.serialOutput(new TimeSeriesRecord());
+    ArrayList<String> outFieldList = new ArrayList<String>();
+    outFieldList.add("date");
+    TimeSeriesRecord timeSeriesRecord1 = new TimeSeriesRecord();
+    timeSeriesRecord1.filterOutputFields(outFieldList);
+    TimeSeriesRecord timeSeriesRecord2 = new TimeSeriesRecord();
+    timeSeriesRecord2.filterOutputFields(outFieldList);
+    provider.serialOutput(timeSeriesRecord1);
+    provider.serialOutput(timeSeriesRecord2);
     List<String> lines = Files.readAllLines(logFile);
     assertEquals(2, lines.size());
     String firstLine = lines.get(0);
