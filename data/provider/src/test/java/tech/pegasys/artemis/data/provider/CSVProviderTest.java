@@ -46,7 +46,6 @@ class CSVProviderTest {
     List<String> lines = Files.readAllLines(logFile);
     assertEquals(2, lines.size());
     String firstLine = lines.get(0);
-    System.out.println("firstline - " + firstLine);
     String date = firstLine.substring(1, firstLine.indexOf("'", 2));
     assertTrue(!date.isEmpty());
     Date parsedDate = new Date(Long.parseLong(date));
