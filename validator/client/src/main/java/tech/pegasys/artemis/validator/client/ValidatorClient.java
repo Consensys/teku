@@ -65,7 +65,7 @@ public class ValidatorClient {
 
     for (int slot = epoch_start_slot; slot < epoch_start_slot + SLOTS_PER_EPOCH; slot++) {
 
-      ArrayList<CrosslinkCommittee> crosslink_committees =
+      List<CrosslinkCommittee> crosslink_committees =
           get_crosslink_committees_at_slot(state, UnsignedLong.valueOf(slot), registry_change);
       ArrayList<CrosslinkCommittee> selected_committees = new ArrayList<>();
 

@@ -19,7 +19,6 @@ import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_effec
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.slot_to_epoch;
 
 import com.google.common.primitives.UnsignedLong;
-import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -85,9 +84,7 @@ public class LmdGhost {
                   child ->
                       get_vote_count(start_state, store, child, attestation_targets).compareTo(max)
                           == 0)
-              .max(
-                  Comparator.comparing(
-                      child -> child.hash_tree_root().toHexString()))
+              .max(Comparator.comparing(child -> child.hash_tree_root().toHexString()))
               .get();
     }
   }

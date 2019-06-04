@@ -129,8 +129,8 @@ public class StateProcessor {
       try {
         long begin = new Date().getTime();
         while (this.store.getUnprocessedBlocks().size() == 0
-            && new Date().getTime() - begin < 3000) {
-          this.store.getSyncObject().wait(3000);
+            && new Date().getTime() - begin < Constants.SECONDS_PER_SLOT * 1000 / 2) {
+          this.store.getSyncObject().wait(Constants.SECONDS_PER_SLOT * 1000 / 2);
         }
       } catch (InterruptedException e) {
         LOG.log(Level.WARN, e.toString());
