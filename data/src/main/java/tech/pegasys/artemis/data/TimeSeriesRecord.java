@@ -23,14 +23,14 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import tech.pegasys.artemis.util.json.BytesModule;
 
 public class TimeSeriesRecord implements IRecordAdapter {
 
-  private static final Logger logger = LoggerFactory.getLogger(TimeSeriesRecord.class);
+  private static final Logger logger = LogManager.getLogger(TimeSeriesRecord.class);
 
   private static class ValidatorJoinSerializer extends JsonSerializer<ValidatorJoin> {
 
