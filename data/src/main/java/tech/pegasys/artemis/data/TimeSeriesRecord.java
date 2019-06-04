@@ -74,7 +74,6 @@ public class TimeSeriesRecord implements IRecordAdapter {
   private Map<String, Object> outputFieldMap = new HashMap<>();
 
   public TimeSeriesRecord() {
-    // new Hello(1, 1, Bytes32.random(), UInt64.valueOf(0), Bytes32.random(), UInt64.valueOf(0))
     this.date = new Date();
     this.index = Long.MAX_VALUE;
     this.slot = Long.MAX_VALUE;
