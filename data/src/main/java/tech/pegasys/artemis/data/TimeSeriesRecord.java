@@ -91,7 +91,6 @@ public class TimeSeriesRecord implements IRecordAdapter {
     this.lastJustifiedStateRoot = Bytes32.random().toHexString();
     this.lastFinalizedBlockRoot = Bytes32.random().toHexString();
     this.lastFinalizedStateRoot = Bytes32.random().toHexString();
-
   }
 
   public TimeSeriesRecord(
