@@ -89,8 +89,6 @@ public class TimeSeriesRecord implements IRecordAdapter {
     this.lastJustifiedStateRoot = Bytes32.random().toHexString();
     this.lastFinalizedBlockRoot = Bytes32.random().toHexString();
     this.lastFinalizedStateRoot = Bytes32.random().toHexString();
-
-    logger.info("TEST_EPOCH {}", this.toJSON());
   }
 
   public TimeSeriesRecord(
@@ -118,6 +116,8 @@ public class TimeSeriesRecord implements IRecordAdapter {
     this.lastFinalizedBlockRoot = lastFinalizedBlockRoot;
     this.lastFinalizedStateRoot = lastFinalizedStateRoot;
     this.validators = validators;
+
+    logger.info("TEST_EPOCH {}", this.toJSON());
   }
 
   @Override
