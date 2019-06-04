@@ -86,6 +86,7 @@ public class AttestationUtil {
         BLSPublicKey attesterPubkey =
             headState.getValidator_registry().get(validatorIndex).getPubkey();
         if (!validatorSet.containsKey(attesterPubkey)) {
+          indexIntoCommittee++;
           continue;
         }
 
