@@ -26,6 +26,7 @@ import java.util.List;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.util.json.BytesModule;
 
 public class TimeSeriesRecord implements IRecordAdapter {
@@ -117,7 +118,9 @@ public class TimeSeriesRecord implements IRecordAdapter {
     this.lastFinalizedStateRoot = lastFinalizedStateRoot;
     this.validators = validators;
 
-    logger.info("TEST_EPOCH {}", this.toJSON());
+    if (slot % Constants.SLOTS_PER_EPOCH == 0) {
+      logger.info("TEST_EPOCH {}", this.toJSON());
+    }
   }
 
   @Override
