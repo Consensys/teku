@@ -22,7 +22,9 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import org.apache.tuweni.bytes.Bytes32;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -73,9 +75,9 @@ public class TimeSeriesRecord implements IRecordAdapter {
   private String lastFinalizedStateRoot;
 
   private List<ValidatorJoin> validators;
+  private Map<String, Object> outputFieldMap = new HashMap<>();
 
   public TimeSeriesRecord() {
-    // new Hello(1, 1, Bytes32.random(), UInt64.valueOf(0), Bytes32.random(), UInt64.valueOf(0))
     this.date = new Date();
     this.index = Long.MAX_VALUE;
     this.slot = Long.MAX_VALUE;
@@ -89,8 +91,6 @@ public class TimeSeriesRecord implements IRecordAdapter {
     this.lastJustifiedStateRoot = Bytes32.random().toHexString();
     this.lastFinalizedBlockRoot = Bytes32.random().toHexString();
     this.lastFinalizedStateRoot = Bytes32.random().toHexString();
-
-    logger.info("TEST_EPOCH {}", this.toJSON());
   }
 
   public TimeSeriesRecord(
@@ -121,61 +121,86 @@ public class TimeSeriesRecord implements IRecordAdapter {
   }
 
   @Override
-  public String toJSON() {
-    try {
-      return mapper.writerFor(TimeSeriesRecord.class).writeValueAsString(this);
-    } catch (JsonProcessingException e) {
-      throw new IllegalArgumentException(e);
+  public void filterOutputFields(List<String> outputFields) {
+    for (String field : outputFields) {
+      switch (field) {
+        case "date":
+          this.outputFieldMap.put("date", this.date.toInstant().toEpochMilli());
+          break;
+
+        case "index":
+          this.outputFieldMap.put("index", getIndex());
+          break;
+
+        case "slot":
+          this.outputFieldMap.put("slot", getSlot());
+          break;
+
+        case "epoch":
+          this.outputFieldMap.put("epoch", getEpoch());
+          break;
+
+        case "block_root":
+          this.outputFieldMap.put("block_root", getBlock_root());
+          break;
+
+        case "block_body":
+          this.outputFieldMap.put("block_body", getBlock_body());
+          break;
+
+        case "lastFinalizedBlockRoot":
+          this.outputFieldMap.put("lastFinalizedBlockRoot", getLastFinalizedBlockRoot());
+          break;
+
+        case "lastFinalizedStateRoot":
+          this.outputFieldMap.put("lastFinalizedStateRoot", getLastFinalizedStateRoot());
+          break;
+
+        case "block_parent_root":
+          this.outputFieldMap.put("block_parent_root", getBlock_parent_root());
+          break;
+
+        case "validators":
+          this.outputFieldMap.put("validators", getValidators());
+          break;
+
+        case "validators_size":
+          this.outputFieldMap.put("validators_size", getValidators().size());
+          break;
+
+        case "lastJustifiedBlockRoot":
+          this.outputFieldMap.put("lastJustifiedBlockRoot", getLastJustifiedBlockRoot());
+          break;
+
+        case "lastJustifiedStateRoot":
+          this.outputFieldMap.put("lastJustifiedStateRoot", getLastJustifiedStateRoot());
+          break;
+      }
     }
   }
 
   @Override
+  public String toJSON() throws JsonProcessingException {
+    String jsonOutputString = null;
+    jsonOutputString = mapper.writerFor(Map.class).writeValueAsString(this.outputFieldMap);
+    return jsonOutputString;
+  }
+
+  @Override
   public String toCSV() {
-    return "'"
-        + this.date.toInstant().toEpochMilli()
-        + "'"
-        + ", '"
-        + this.getIndex()
-        + "'"
-        + ", '"
-        + this.getSlot()
-        + "'"
-        + ", '"
-        + this.getEpoch()
-        + "'"
-        + ", '"
-        + this.getLastFinalizedBlockRoot()
-        + "'"
-        + ", '"
-        + this.getLastFinalizedStateRoot()
-        + "'"
-        + ", '"
-        + this.getBlock_parent_root()
-        + "'"
-        + ", '"
-        + this.getValidators().size()
-        + "'"
-        + ", '"
-        + this.getLastJustifiedBlockRoot()
-        + "'"
-        + ", '"
-        + this.getLastJustifiedStateRoot()
-        + "'";
+    String csvOutputString = "";
+    for (Object obj : this.outputFieldMap.values()) {
+      csvOutputString += "'" + obj.toString() + "',";
+    }
+    if (csvOutputString.length() > 0) {
+      csvOutputString = csvOutputString.substring(0, csvOutputString.length() - 1);
+    }
+    return csvOutputString;
   }
 
   @Override
   public String[] toLabels() {
-    return new String[] {
-      String.valueOf(this.getIndex()),
-      String.valueOf(this.getSlot()),
-      String.valueOf(this.getEpoch()),
-      this.getLastFinalizedBlockRoot(),
-      this.getLastFinalizedStateRoot(),
-      this.getBlock_parent_root(),
-      String.valueOf(this.getValidators().size()),
-      this.getLastJustifiedBlockRoot(),
-      this.getLastJustifiedStateRoot()
-    };
+    return (String[]) this.outputFieldMap.values().toArray();
   }
 
   public long getDate() {

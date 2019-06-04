@@ -13,10 +13,12 @@
 
 package tech.pegasys.artemis.pow.event;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonObject;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.nio.ByteOrder;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.data.IRecordAdapter;
@@ -29,6 +31,8 @@ public class Eth2Genesis extends AbstractEvent<Eth2GenesisEventResponse>
   private Bytes32 deposit_root;
   private long deposit_count;
   private long time;
+  private Map<String, Object> outputFieldMap = new HashMap<>();
+  private static final ObjectMapper mapper = new ObjectMapper();
 
   public Eth2Genesis(Eth2GenesisEventResponse response) {
     super(response);
@@ -50,27 +54,46 @@ public class Eth2Genesis extends AbstractEvent<Eth2GenesisEventResponse>
   }
 
   @Override
-  public String toJSON() {
-    Gson gson = new GsonBuilder().create();
-    GsonBuilder gsonBuilder = new GsonBuilder();
+  public void filterOutputFields(List<String> outputFields) {
+    this.outputFieldMap.put("eventType", "Eth2Genesis");
+    for (String field : outputFields) {
+      switch (field) {
+        case "deposit_root":
+          this.outputFieldMap.put("deposit_root", deposit_root.toHexString());
+          break;
 
-    JsonObject eth2Genesis = new JsonObject();
-    eth2Genesis.addProperty("eventType", "Eth2Genesis");
-    eth2Genesis.addProperty("deposit_root", deposit_root.toHexString());
-    eth2Genesis.addProperty("deposit_count", deposit_count);
-    eth2Genesis.addProperty("time", time);
+        case "deposit_count":
+          this.outputFieldMap.put("deposit_count", deposit_count);
+          break;
 
-    Gson customGson = gsonBuilder.setPrettyPrinting().create();
-    return customGson.toJson(eth2Genesis);
+        case "time":
+          this.outputFieldMap.put("time", time);
+          break;
+      }
+    }
+  }
+
+  @Override
+  public String toJSON() throws JsonProcessingException {
+    String jsonOutputString = null;
+    jsonOutputString = mapper.writerFor(Map.class).writeValueAsString(this.outputFieldMap);
+    return jsonOutputString;
   }
 
   @Override
   public String toCSV() {
-    return null;
+    String csvOutputString = "";
+    for (Object obj : this.outputFieldMap.values()) {
+      csvOutputString += "'" + obj.toString() + "',";
+    }
+    if (csvOutputString.length() > 0) {
+      csvOutputString = csvOutputString.substring(0, csvOutputString.length() - 1);
+    }
+    return csvOutputString;
   }
 
   @Override
   public String[] toLabels() {
-    return new String[0];
+    return (String[]) this.outputFieldMap.values().toArray();
   }
 }

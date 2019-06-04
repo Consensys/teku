@@ -22,6 +22,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
@@ -330,6 +331,12 @@ public final class ArtemisConfiguration {
   /** @return specific events of Output selector */
   public List<String> getEvents() {
     return config.getListOfString("output.events");
+  }
+
+  /** @return specific dynamic event fields of Output selector */
+  public Map<String, Object> getEventFields() {
+
+    return config.getMap("output.fields");
   }
 
   /** @return misc constants */
