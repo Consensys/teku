@@ -61,7 +61,7 @@ public class AttestationUtil {
 
     // Get variables necessary that can be shared among Attestations of all validators
     UnsignedLong slot = headState.getSlot();
-    ArrayList<CrosslinkCommittee> crosslinkCommittees =
+    List<CrosslinkCommittee> crosslinkCommittees =
         BeaconStateUtil.get_crosslink_committees_at_slot(headState, slot);
     Bytes32 headBlockRoot = headBlock.signed_root("signature");
     Bytes32 crosslinkDataRoot = Bytes32.ZERO;

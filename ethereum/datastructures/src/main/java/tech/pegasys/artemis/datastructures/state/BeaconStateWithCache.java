@@ -25,10 +25,12 @@ import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 public final class BeaconStateWithCache extends BeaconState {
 
   protected int currentBeaconProposerIndex = -1;
+  protected List<CrosslinkCommittee> crosslinkCommitteesAtSlot = null;
 
   public BeaconStateWithCache() {
     super();
     this.currentBeaconProposerIndex = -1;
+    this.crosslinkCommitteesAtSlot = null;
   }
 
   public BeaconStateWithCache(BeaconStateWithCache state) {
@@ -102,6 +104,14 @@ public final class BeaconStateWithCache extends BeaconState {
     this.currentBeaconProposerIndex = currentBeaconProposerIndex;
   }
 
+  public List<CrosslinkCommittee> getCrossLinkCommitteesAtSlot() {
+    return this.crosslinkCommitteesAtSlot;
+  }
+
+  public void setCrossLinkCommitteesAtSlot(List<CrosslinkCommittee> crossLinkCommittees) {
+    this.crosslinkCommitteesAtSlot = crossLinkCommittees;
+  }
+
   public BeaconStateWithCache currentBeaconProposerIndex(int currentBeaconProposerIndex) {
     this.currentBeaconProposerIndex = currentBeaconProposerIndex;
     return this;
@@ -109,5 +119,6 @@ public final class BeaconStateWithCache extends BeaconState {
 
   public void invalidateCache() {
     this.currentBeaconProposerIndex = -1;
+    this.crosslinkCommitteesAtSlot = null;
   }
 }

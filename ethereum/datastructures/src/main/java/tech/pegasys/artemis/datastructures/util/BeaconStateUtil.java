@@ -235,92 +235,97 @@ public class BeaconStateUtil {
    *     href="https://github.com/ethereum/eth2.0-specs/blob/v0.4.0/specs/core/0_beacon-chain.md#get_crosslink_committees_at_slot">get_crosslink_committees_at_slot
    *     - Spec v0.4</a>
    */
-  public static ArrayList<CrosslinkCommittee> get_crosslink_committees_at_slot(
+  public static List<CrosslinkCommittee> get_crosslink_committees_at_slot(
       BeaconState state, UnsignedLong slot, boolean registry_change)
       throws IllegalArgumentException {
-    UnsignedLong epoch = slot_to_epoch(slot);
-    UnsignedLong current_epoch = get_current_epoch(state);
-    UnsignedLong previous_epoch = get_previous_epoch(state);
-    UnsignedLong next_epoch = get_next_epoch(state);
+    if (state instanceof BeaconStateWithCache
+        && ((BeaconStateWithCache) state).getCrossLinkCommitteesAtSlot() != null) {
+      return ((BeaconStateWithCache) state).getCrossLinkCommitteesAtSlot();
+    } else {
+      UnsignedLong epoch = slot_to_epoch(slot);
+      UnsignedLong current_epoch = get_current_epoch(state);
+      UnsignedLong previous_epoch = get_previous_epoch(state);
+      UnsignedLong next_epoch = get_next_epoch(state);
 
-    checkArgument(
-        previous_epoch.compareTo(epoch) <= 0 && epoch.compareTo(next_epoch) <= 0,
-        "get_crosslink_committees_at_slot: epoch out of range");
+      checkArgument(
+          previous_epoch.compareTo(epoch) <= 0 && epoch.compareTo(next_epoch) <= 0,
+          "get_crosslink_committees_at_slot: epoch out of range");
 
-    UnsignedLong committees_per_epoch = UnsignedLong.ZERO;
-    UnsignedLong current_committees_per_epoch = UnsignedLong.ZERO;
-    Bytes32 seed = Bytes32.ZERO;
-    UnsignedLong shuffling_epoch = UnsignedLong.ZERO;
-    UnsignedLong shuffling_start_shard = UnsignedLong.ZERO;
+      UnsignedLong committees_per_epoch = UnsignedLong.ZERO;
+      UnsignedLong current_committees_per_epoch = UnsignedLong.ZERO;
+      Bytes32 seed = Bytes32.ZERO;
+      UnsignedLong shuffling_epoch = UnsignedLong.ZERO;
+      UnsignedLong shuffling_start_shard = UnsignedLong.ZERO;
 
-    if (epoch.compareTo(current_epoch) == 0) {
+      if (epoch.compareTo(current_epoch) == 0) {
 
-      committees_per_epoch = get_current_epoch_committee_count(state);
-      seed = state.getCurrent_shuffling_seed();
-      shuffling_epoch = state.getCurrent_shuffling_epoch();
-      shuffling_start_shard = state.getCurrent_shuffling_start_shard();
-
-    } else if (epoch.compareTo(previous_epoch) == 0) {
-
-      committees_per_epoch = get_previous_epoch_committee_count(state);
-      seed = state.getPrevious_shuffling_seed();
-      shuffling_epoch = state.getPrevious_shuffling_epoch();
-      shuffling_start_shard = state.getPrevious_shuffling_start_shard();
-
-    } else if (epoch.compareTo(next_epoch) == 0) {
-
-      UnsignedLong epochs_since_last_registry_update =
-          current_epoch.minus(state.getValidator_registry_update_epoch());
-      if (registry_change) {
-        committees_per_epoch = get_next_epoch_committee_count(state);
-        seed = generate_seed(state, next_epoch);
-        shuffling_epoch = next_epoch;
-        current_committees_per_epoch = get_current_epoch_committee_count(state);
-        shuffling_start_shard =
-            state
-                .getCurrent_shuffling_start_shard()
-                .plus(current_committees_per_epoch)
-                .mod(UnsignedLong.valueOf(SHARD_COUNT));
-      } else if (epochs_since_last_registry_update.compareTo(UnsignedLong.ONE) > 0
-          && is_power_of_two(epochs_since_last_registry_update)) {
-        committees_per_epoch = get_next_epoch_committee_count(state);
-        seed = generate_seed(state, next_epoch);
-        shuffling_epoch = next_epoch;
-        shuffling_start_shard = state.getCurrent_shuffling_start_shard();
-      } else {
         committees_per_epoch = get_current_epoch_committee_count(state);
         seed = state.getCurrent_shuffling_seed();
         shuffling_epoch = state.getCurrent_shuffling_epoch();
         shuffling_start_shard = state.getCurrent_shuffling_start_shard();
+
+      } else if (epoch.compareTo(previous_epoch) == 0) {
+
+        committees_per_epoch = get_previous_epoch_committee_count(state);
+        seed = state.getPrevious_shuffling_seed();
+        shuffling_epoch = state.getPrevious_shuffling_epoch();
+        shuffling_start_shard = state.getPrevious_shuffling_start_shard();
+
+      } else if (epoch.compareTo(next_epoch) == 0) {
+
+        UnsignedLong epochs_since_last_registry_update =
+            current_epoch.minus(state.getValidator_registry_update_epoch());
+        if (registry_change) {
+          committees_per_epoch = get_next_epoch_committee_count(state);
+          seed = generate_seed(state, next_epoch);
+          shuffling_epoch = next_epoch;
+          current_committees_per_epoch = get_current_epoch_committee_count(state);
+          shuffling_start_shard =
+              state
+                  .getCurrent_shuffling_start_shard()
+                  .plus(current_committees_per_epoch)
+                  .mod(UnsignedLong.valueOf(SHARD_COUNT));
+        } else if (epochs_since_last_registry_update.compareTo(UnsignedLong.ONE) > 0
+            && is_power_of_two(epochs_since_last_registry_update)) {
+          committees_per_epoch = get_next_epoch_committee_count(state);
+          seed = generate_seed(state, next_epoch);
+          shuffling_epoch = next_epoch;
+          shuffling_start_shard = state.getCurrent_shuffling_start_shard();
+        } else {
+          committees_per_epoch = get_current_epoch_committee_count(state);
+          seed = state.getCurrent_shuffling_seed();
+          shuffling_epoch = state.getCurrent_shuffling_epoch();
+          shuffling_start_shard = state.getCurrent_shuffling_start_shard();
+        }
       }
+
+      List<List<Integer>> shuffling =
+          get_shuffling(seed, state.getValidator_registry(), shuffling_epoch);
+
+      UnsignedLong offset = slot.mod(UnsignedLong.valueOf(SLOTS_PER_EPOCH));
+      UnsignedLong committees_per_slot =
+          committees_per_epoch.dividedBy(UnsignedLong.valueOf(SLOTS_PER_EPOCH));
+
+      UnsignedLong slot_start_shard =
+          shuffling_start_shard
+              .plus(committees_per_slot.times(offset))
+              .mod(UnsignedLong.valueOf(Constants.SHARD_COUNT));
+
+      ArrayList<CrosslinkCommittee> crosslink_committees_at_slot = new ArrayList<>();
+      for (long i = 0; i < committees_per_slot.longValue(); i++) {
+        CrosslinkCommittee committee =
+            new CrosslinkCommittee(
+                slot_start_shard.plus(UnsignedLong.ONE).mod(UnsignedLong.valueOf(SHARD_COUNT)),
+                shuffling.get(
+                    committees_per_slot.times(offset).plus(UnsignedLong.valueOf(i)).intValue()));
+        crosslink_committees_at_slot.add(committee);
+      }
+      return crosslink_committees_at_slot;
     }
-
-    List<List<Integer>> shuffling =
-        get_shuffling(seed, state.getValidator_registry(), shuffling_epoch);
-
-    UnsignedLong offset = slot.mod(UnsignedLong.valueOf(SLOTS_PER_EPOCH));
-    UnsignedLong committees_per_slot =
-        committees_per_epoch.dividedBy(UnsignedLong.valueOf(SLOTS_PER_EPOCH));
-
-    UnsignedLong slot_start_shard =
-        shuffling_start_shard
-            .plus(committees_per_slot.times(offset))
-            .mod(UnsignedLong.valueOf(Constants.SHARD_COUNT));
-
-    ArrayList<CrosslinkCommittee> crosslink_committees_at_slot = new ArrayList<>();
-    for (long i = 0; i < committees_per_slot.longValue(); i++) {
-      CrosslinkCommittee committee =
-          new CrosslinkCommittee(
-              slot_start_shard.plus(UnsignedLong.ONE).mod(UnsignedLong.valueOf(SHARD_COUNT)),
-              shuffling.get(
-                  committees_per_slot.times(offset).plus(UnsignedLong.valueOf(i)).intValue()));
-      crosslink_committees_at_slot.add(committee);
-    }
-    return crosslink_committees_at_slot;
   }
 
   /** This is a wrapper that defaults `registry_change` to false when it is not provided */
-  public static ArrayList<CrosslinkCommittee> get_crosslink_committees_at_slot(
+  public static List<CrosslinkCommittee> get_crosslink_committees_at_slot(
       BeaconState state, UnsignedLong slot) throws IllegalArgumentException {
     return get_crosslink_committees_at_slot(state, slot, false);
   }
@@ -1199,7 +1204,7 @@ public class BeaconStateUtil {
       throws IllegalArgumentException {
 
     // Find the committee in the list with the desired shard
-    ArrayList<CrosslinkCommittee> crosslink_committees =
+    List<CrosslinkCommittee> crosslink_committees =
         BeaconStateUtil.get_crosslink_committees_at_slot(state, attestation_data.getSlot());
 
     checkArgument(
