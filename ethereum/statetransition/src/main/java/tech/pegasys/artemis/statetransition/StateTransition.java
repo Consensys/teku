@@ -46,8 +46,6 @@ public class StateTransition {
 
   public void initiate(BeaconStateWithCache state, BeaconBlock block)
       throws StateTransitionException {
-    // Client specific optimization
-    preProcessor(state);
 
     cache_state(state);
 
@@ -59,6 +57,9 @@ public class StateTransition {
             .equals(UnsignedLong.ZERO)) {
       epochProcessor(state, block);
     }
+
+    // Client specific optimization
+    preProcessor(state);
 
     slotProcessor(state);
 

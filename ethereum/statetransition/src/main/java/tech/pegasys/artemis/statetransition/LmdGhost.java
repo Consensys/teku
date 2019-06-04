@@ -87,7 +87,7 @@ public class LmdGhost {
                           == 0)
               .max(
                   Comparator.comparing(
-                      child -> child.hash_tree_root().toLong(ByteOrder.LITTLE_ENDIAN)))
+                      child -> child.hash_tree_root().toHexString()))
               .get();
     }
   }

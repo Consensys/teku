@@ -961,26 +961,24 @@ public class BeaconStateUtil {
   public static int get_beacon_proposer_index(
       BeaconState state, UnsignedLong slot, boolean registry_change)
       throws IllegalArgumentException {
-    /*
     if (state instanceof BeaconStateWithCache
         && ((BeaconStateWithCache) state).getCurrentBeaconProposerIndex() > -1) {
       return ((BeaconStateWithCache) state).getCurrentBeaconProposerIndex();
     } else {
-     */
-    UnsignedLong epoch = slot_to_epoch(slot);
-    UnsignedLong current_epoch = get_current_epoch(state);
-    UnsignedLong previous_epoch = get_previous_epoch(state);
-    UnsignedLong next_epoch = current_epoch.plus(UnsignedLong.ONE);
+      UnsignedLong epoch = slot_to_epoch(slot);
+      UnsignedLong current_epoch = get_current_epoch(state);
+      UnsignedLong previous_epoch = get_previous_epoch(state);
+      UnsignedLong next_epoch = current_epoch.plus(UnsignedLong.ONE);
 
-    checkArgument(
-        previous_epoch.compareTo(epoch) <= 0 && epoch.compareTo(next_epoch) <= 0,
-        "get_beacon_proposer_index: slot not in range");
+      checkArgument(
+          previous_epoch.compareTo(epoch) <= 0 && epoch.compareTo(next_epoch) <= 0,
+          "get_beacon_proposer_index: slot not in range");
 
-    List<Integer> first_committee =
-        get_crosslink_committees_at_slot(state, slot, registry_change).get(0).getCommittee();
-    // TODO: replace slot.intValue() with an UnsignedLong value
-    return first_committee.get(epoch.intValue() % first_committee.size());
-    // }
+      List<Integer> first_committee =
+          get_crosslink_committees_at_slot(state, slot, registry_change).get(0).getCommittee();
+      // TODO: replace slot.intValue() with an UnsignedLong value
+      return first_committee.get(epoch.intValue() % first_committee.size());
+    }
   }
 
   public static int get_beacon_proposer_index(BeaconState state, UnsignedLong slot) {
