@@ -14,7 +14,9 @@
 package tech.pegasys.artemis.statetransition.util;
 
 import com.google.common.primitives.UnsignedLong;
+import java.util.List;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
+import tech.pegasys.artemis.datastructures.state.CrosslinkCommittee;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 
 public final class PreProcessingUtil {
@@ -23,5 +25,12 @@ public final class PreProcessingUtil {
     int beaconProposerIndex =
         BeaconStateUtil.get_beacon_proposer_index(state, state.getSlot().plus(UnsignedLong.ONE));
     state.setCurrentBeaconProposerIndex(beaconProposerIndex);
+  }
+
+  public static void cacheCrosslinkCommitteesAtSlot(BeaconStateWithCache state) {
+    List<CrosslinkCommittee> crosslinkCommittees =
+        BeaconStateUtil.get_crosslink_committees_at_slot(
+            state, state.getSlot().plus(UnsignedLong.ONE));
+    state.setCrossLinkCommitteesAtSlot(crosslinkCommittees);
   }
 }

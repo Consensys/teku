@@ -112,11 +112,6 @@ public final class BeaconStateWithCache extends BeaconState {
     this.crosslinkCommitteesAtSlot = crossLinkCommittees;
   }
 
-  public BeaconStateWithCache currentBeaconProposerIndex(int currentBeaconProposerIndex) {
-    this.currentBeaconProposerIndex = currentBeaconProposerIndex;
-    return this;
-  }
-
   public void invalidateCache() {
     this.currentBeaconProposerIndex = -1;
     this.crosslinkCommitteesAtSlot = null;
