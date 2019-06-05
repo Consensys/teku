@@ -239,8 +239,9 @@ public class BeaconStateUtil {
       BeaconState state, UnsignedLong slot, boolean registry_change)
       throws IllegalArgumentException {
     if (state instanceof BeaconStateWithCache
-        && ((BeaconStateWithCache) state).getCrossLinkCommitteesAtSlot() != null) {
-      return ((BeaconStateWithCache) state).getCrossLinkCommitteesAtSlot();
+        && ((BeaconStateWithCache) state).getCrossLinkCommitteesAtSlot(slot) != null) {
+      BeaconStateWithCache stateWithCash = (BeaconStateWithCache) state;
+      return stateWithCash.getCrossLinkCommitteesAtSlot(slot);
     } else {
       UnsignedLong epoch = slot_to_epoch(slot);
       UnsignedLong current_epoch = get_current_epoch(state);
@@ -320,6 +321,11 @@ public class BeaconStateUtil {
                     committees_per_slot.times(offset).plus(UnsignedLong.valueOf(i)).intValue()));
         crosslink_committees_at_slot.add(committee);
       }
+
+      // Client specific optimization
+      ((BeaconStateWithCache) state)
+          .setCrossLinkCommitteesAtSlot(crosslink_committees_at_slot, slot);
+
       return crosslink_committees_at_slot;
     }
   }

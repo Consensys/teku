@@ -49,7 +49,8 @@ public class StateTransition {
 
     cache_state(state);
     // Client specific optimization
-    preProcessor(state);
+    // preProcessor(state);
+    // PreProcessingUtil.cacheCurrentBeaconProposerIndex(state);
 
     if (state.getSlot().compareTo(UnsignedLong.valueOf(Constants.GENESIS_SLOT)) > 0
         && state
@@ -60,6 +61,7 @@ public class StateTransition {
       epochProcessor(state, block);
     }
 
+    // PreProcessingUtil.cacheCrosslinkCommitteesAtSlot(state);
     slotProcessor(state);
 
     if (block != null) {

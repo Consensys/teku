@@ -13,8 +13,11 @@
 
 package tech.pegasys.artemis.datastructures.state;
 
+import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -25,12 +28,12 @@ import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 public final class BeaconStateWithCache extends BeaconState {
 
   protected int currentBeaconProposerIndex = -1;
-  protected List<CrosslinkCommittee> crosslinkCommitteesAtSlot = null;
+  protected Map<UnsignedLong, List<CrosslinkCommittee>> crosslinkCommittees =
+      new HashMap<UnsignedLong, List<CrosslinkCommittee>>();
 
   public BeaconStateWithCache() {
     super();
     this.currentBeaconProposerIndex = -1;
-    this.crosslinkCommitteesAtSlot = null;
   }
 
   public BeaconStateWithCache(BeaconStateWithCache state) {
@@ -104,16 +107,20 @@ public final class BeaconStateWithCache extends BeaconState {
     this.currentBeaconProposerIndex = currentBeaconProposerIndex;
   }
 
-  public List<CrosslinkCommittee> getCrossLinkCommitteesAtSlot() {
-    return this.crosslinkCommitteesAtSlot;
+  public List<CrosslinkCommittee> getCrossLinkCommitteesAtSlot(UnsignedLong slot) {
+    if (crosslinkCommittees.containsKey(slot)) {
+      return crosslinkCommittees.get(slot);
+    }
+    return null;
   }
 
-  public void setCrossLinkCommitteesAtSlot(List<CrosslinkCommittee> crossLinkCommittees) {
-    this.crosslinkCommitteesAtSlot = crossLinkCommittees;
+  public void setCrossLinkCommitteesAtSlot(
+      List<CrosslinkCommittee> crosslinkCommittees, UnsignedLong slot) {
+    this.crosslinkCommittees.put(slot, crosslinkCommittees);
   }
 
   public void invalidateCache() {
     this.currentBeaconProposerIndex = -1;
-    this.crosslinkCommitteesAtSlot = null;
+    this.crosslinkCommittees = new HashMap<>();
   }
 }

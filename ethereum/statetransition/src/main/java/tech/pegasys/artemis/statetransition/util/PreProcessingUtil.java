@@ -29,8 +29,6 @@ public final class PreProcessingUtil {
 
   public static void cacheCrosslinkCommitteesAtSlot(BeaconStateWithCache state) {
     List<CrosslinkCommittee> crosslinkCommittees =
-        BeaconStateUtil.get_crosslink_committees_at_slot(
-            state, state.getSlot().plus(UnsignedLong.ONE));
-    state.setCrossLinkCommitteesAtSlot(crosslinkCommittees);
+        BeaconStateUtil.get_crosslink_committees_at_slot(state, state.getSlot());
   }
 }
