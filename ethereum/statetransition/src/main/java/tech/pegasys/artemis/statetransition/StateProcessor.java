@@ -16,27 +16,30 @@ package tech.pegasys.artemis.statetransition;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.google.common.primitives.UnsignedLong;
-import java.util.Date;
-import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.Optional;
 import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.SECP256K1.PublicKey;
 import tech.pegasys.artemis.data.RawRecord;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.util.BeaconBlockUtil;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
-import tech.pegasys.artemis.pow.api.DepositEvent;
+import tech.pegasys.artemis.datastructures.util.DepositUtil;
 import tech.pegasys.artemis.pow.api.Eth2GenesisEvent;
 import tech.pegasys.artemis.storage.ChainStorage;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
+
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.Optional;
 
 /** Class to manage the state tree and initiate state transitions */
 public class StateProcessor {
@@ -55,6 +58,7 @@ public class StateProcessor {
   private ArtemisConfiguration config;
   private PublicKey publicKey;
   private static final ALogger LOG = new ALogger(StateProcessor.class.getName());
+  private List<Deposit> deposits;
 
   // Colors
   public static final String ANSI_RESET = "\u001B[0m";
@@ -73,6 +77,7 @@ public class StateProcessor {
 
   @Subscribe
   public void onEth2GenesisEvent(Eth2GenesisEvent event) {
+    if(deposits != null)deposits = DepositUtil.generateBranchProofs(deposits);
     LOG.log(
         Level.INFO,
         "******* Eth2Genesis Event detected ******* : "
@@ -85,8 +90,9 @@ public class StateProcessor {
     LOG.log(Level.INFO, "Node slot: " + nodeSlot);
     LOG.log(Level.INFO, "Node time: " + nodeTime);
     try {
-      BeaconState initial_state =
-          DataStructureUtil.createInitialBeaconState(config.getNumValidators());
+      BeaconState initial_state;
+      if(config.isSimulation())initial_state = DataStructureUtil.createInitialBeaconState(deposits, ((tech.pegasys.artemis.pow.event.Eth2Genesis) event).getDeposit_root());
+      else initial_state = DataStructureUtil.createInitialBeaconState(config.getNumValidators());
       Bytes32 initial_state_root = initial_state.hash_tree_root();
       BeaconBlock genesis_block = BeaconBlockUtil.get_empty_block();
       genesis_block.setState_root(initial_state_root);
@@ -107,9 +113,15 @@ public class StateProcessor {
   }
 
   @Subscribe
-  public void onDepositEvent(DepositEvent event) {
-    LOG.log(Level.INFO, "Deposit Event detected: " + event.toString());
+  public void onDeposit(Deposit deposit){
+    if(deposits == null) deposits = new ArrayList<Deposit>();
+    deposits.add(deposit);
   }
+//
+//  @Subscribe
+//  public void onDepositEvent(DepositEvent event) {
+//    LOG.log(Level.INFO, "Deposit Event detected: " + event.toString());
+//  }
 
   @Subscribe
   public void onNewSlot(Date date) throws StateTransitionException, InterruptedException {

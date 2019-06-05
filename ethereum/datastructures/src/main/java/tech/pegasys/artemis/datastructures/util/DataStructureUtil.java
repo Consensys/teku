@@ -13,18 +13,7 @@
 
 package tech.pegasys.artemis.datastructures.util;
 
-import static tech.pegasys.artemis.datastructures.Constants.DEPOSIT_CONTRACT_TREE_DEPTH;
-import static tech.pegasys.artemis.datastructures.Constants.MAX_DEPOSIT_AMOUNT;
-import static tech.pegasys.artemis.datastructures.Constants.ZERO_HASH;
-
 import com.google.common.primitives.UnsignedLong;
-import java.nio.ByteBuffer;
-import java.security.SecureRandom;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Random;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
@@ -48,6 +37,18 @@ import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
+
+import java.nio.ByteBuffer;
+import java.security.SecureRandom;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Random;
+
+import static tech.pegasys.artemis.datastructures.Constants.DEPOSIT_CONTRACT_TREE_DEPTH;
+import static tech.pegasys.artemis.datastructures.Constants.MAX_DEPOSIT_AMOUNT;
+import static tech.pegasys.artemis.datastructures.Constants.ZERO_HASH;
 
 public final class DataStructureUtil {
 
@@ -368,13 +369,22 @@ public final class DataStructureUtil {
         BLSSignature.empty());
   }
 
+  public static BeaconStateWithCache createInitialBeaconState(List<Deposit> deposits, Bytes32 deposit_root) {
+    BeaconStateWithCache state = new BeaconStateWithCache();
+    return BeaconStateUtil.get_genesis_beacon_state(
+            state,
+            deposits,
+            UnsignedLong.valueOf(Constants.GENESIS_SLOT),
+            new Eth1Data(deposit_root, Bytes32.ZERO));
+  }
+
   public static BeaconStateWithCache createInitialBeaconState(int numValidators) {
     BeaconStateWithCache state = new BeaconStateWithCache();
     return BeaconStateUtil.get_genesis_beacon_state(
-        state,
-        newDeposits(numValidators),
-        UnsignedLong.valueOf(Constants.GENESIS_SLOT),
-        new Eth1Data(Bytes32.ZERO, Bytes32.ZERO));
+            state,
+            newDeposits(numValidators),
+            UnsignedLong.valueOf(Constants.GENESIS_SLOT),
+            new Eth1Data(Bytes32.ZERO, Bytes32.ZERO));
   }
 
   public static Validator randomValidator() {
