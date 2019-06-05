@@ -13,21 +13,27 @@
 
 package tech.pegasys.artemis.datastructures.operations;
 
+import com.google.common.primitives.UnsignedLong;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.artemis.util.bls.BLSSignature;
+import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
+import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
 
 public class SlashableAttestation {
 
-  private List<Long> validator_indices;
+  private List<UnsignedLong> validator_indices;
   private AttestationData data;
   private Bytes custody_bitfield;
   private BLSSignature aggregate_signature;
 
   public SlashableAttestation(
-      List<Long> validator_indices,
+      List<UnsignedLong> validator_indices,
       AttestationData data,
       Bytes custody_bitfield,
       BLSSignature aggregate_signature) {
@@ -42,7 +48,9 @@ public class SlashableAttestation {
         bytes,
         reader ->
             new SlashableAttestation(
-                reader.readInt64List(),
+                reader.readUInt64List().stream()
+                    .map(UnsignedLong::fromLongBits)
+                    .collect(Collectors.toList()),
                 AttestationData.fromBytes(reader.readBytes()),
                 Bytes.wrap(reader.readBytes()),
                 BLSSignature.fromBytes(reader.readBytes())));
@@ -51,7 +59,9 @@ public class SlashableAttestation {
   public Bytes toBytes() {
     return SSZ.encode(
         writer -> {
-          writer.writeInt64List(validator_indices);
+          writer.writeULongIntList(
+              64,
+              validator_indices.stream().map(UnsignedLong::longValue).collect(Collectors.toList()));
           writer.writeBytes(data.toBytes());
           writer.writeBytes(custody_bitfield);
           writer.writeBytes(aggregate_signature.toBytes());
@@ -101,11 +111,11 @@ public class SlashableAttestation {
     this.aggregate_signature = aggregate_signature;
   }
 
-  public List<Long> getValidator_indices() {
+  public List<UnsignedLong> getValidator_indices() {
     return validator_indices;
   }
 
-  public void setValidator_indices(List<Long> validator_indices) {
+  public void setValidator_indices(List<UnsignedLong> validator_indices) {
     this.validator_indices = validator_indices;
   }
 
@@ -115,5 +125,18 @@ public class SlashableAttestation {
 
   public void setCustody_bitfield(Bytes custody_bitfield) {
     this.custody_bitfield = custody_bitfield;
+  }
+
+  public Bytes32 hash_tree_root() {
+    return HashTreeUtil.merkleize(
+        Arrays.asList(
+            HashTreeUtil.hash_tree_root(
+                SSZTypes.LIST_OF_BASIC,
+                validator_indices.stream()
+                    .map(item -> SSZ.encodeUInt64(item.longValue()))
+                    .collect(Collectors.toList())),
+            data.hash_tree_root(),
+            HashTreeUtil.hash_tree_root(SSZTypes.LIST_OF_BASIC, custody_bitfield),
+            HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, aggregate_signature.toBytes())));
   }
 }

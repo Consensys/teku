@@ -13,21 +13,22 @@
 
 package tech.pegasys.artemis.datastructures.state;
 
+import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.List;
 
 public class CrosslinkCommittee {
 
-  private long shard;
+  private UnsignedLong shard;
   private List<Integer> committee;
 
-  public CrosslinkCommittee(long shard, List<Integer> committee) {
+  public CrosslinkCommittee(UnsignedLong shard, List<Integer> committee) {
     this.shard = shard;
     this.committee = committee;
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */
-  public long getShard() {
+  public UnsignedLong getShard() {
     return shard;
   }
 

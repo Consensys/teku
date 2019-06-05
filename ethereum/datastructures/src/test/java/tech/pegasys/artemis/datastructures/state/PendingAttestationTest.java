@@ -16,8 +16,9 @@ package tech.pegasys.artemis.datastructures.state;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomAttestationData;
-import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomLong;
+import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomUnsignedLong;
 
+import com.google.common.primitives.UnsignedLong;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -26,12 +27,12 @@ import tech.pegasys.artemis.datastructures.operations.AttestationData;
 
 class PendingAttestationTest {
 
-  private final Bytes participationBitfield = Bytes32.random();
-  private final AttestationData data = randomAttestationData();
-  private final Bytes custodyBitfield = Bytes32.random();
-  private final long inclusionSlot = randomLong();
+  private Bytes participationBitfield = Bytes32.random();
+  private AttestationData data = randomAttestationData();
+  private Bytes custodyBitfield = Bytes32.random();
+  private UnsignedLong inclusionSlot = randomUnsignedLong();
 
-  private final PendingAttestation pendingAttestation =
+  private PendingAttestation pendingAttestation =
       new PendingAttestation(participationBitfield, data, custodyBitfield, inclusionSlot);
 
   @Test
@@ -84,7 +85,7 @@ class PendingAttestationTest {
   void equalsReturnsFalseWhenInclusionSlotsAreDifferent() {
     PendingAttestation testPendingAttestation =
         new PendingAttestation(
-            participationBitfield, data, custodyBitfield, inclusionSlot + randomLong());
+            participationBitfield, data, custodyBitfield, inclusionSlot.plus(randomUnsignedLong()));
 
     assertNotEquals(pendingAttestation, testPendingAttestation);
   }

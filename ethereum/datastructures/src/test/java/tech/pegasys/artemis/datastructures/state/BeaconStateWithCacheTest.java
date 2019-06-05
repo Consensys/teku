@@ -19,8 +19,10 @@ import static tech.pegasys.artemis.datastructures.Constants.GENESIS_EPOCH;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_genesis_beacon_state;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomDeposits;
 
+import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.Collections;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.junit.BouncyCastleExtension;
 import org.junit.jupiter.api.Test;
@@ -38,7 +40,10 @@ class BeaconStateWithCacheTest {
       // Initialize state
       BeaconStateWithCache state = new BeaconStateWithCache();
       get_genesis_beacon_state(
-          state, randomDeposits(numDeposits), 0, new Eth1Data(Bytes32.ZERO, Bytes32.ZERO));
+          state,
+          randomDeposits(numDeposits),
+          UnsignedLong.ZERO,
+          new Eth1Data(Bytes32.ZERO, Bytes32.ZERO));
 
       return state;
     } catch (Exception e) {
@@ -57,7 +62,7 @@ class BeaconStateWithCacheTest {
     assertThat(deepCopy.getSlot()).isNotEqualTo(state.getSlot());
 
     // Test fork
-    state.setFork(new Fork(1, 1, 1));
+    state.setFork(new Fork(Bytes.random(1), Bytes.random(1), UnsignedLong.ONE));
     assertThat(deepCopy.getFork().getPrevious_version())
         .isNotEqualTo(state.getFork().getPrevious_version());
   }
@@ -82,7 +87,13 @@ class BeaconStateWithCacheTest {
             Collections.nCopies(
                 12,
                 new Validator(
-                    BLSPublicKey.empty(), Bytes32.ZERO, 0, GENESIS_EPOCH, 0, false, false)));
+                    BLSPublicKey.empty(),
+                    Bytes32.ZERO,
+                    UnsignedLong.ZERO,
+                    UnsignedLong.valueOf(GENESIS_EPOCH),
+                    UnsignedLong.ZERO,
+                    false,
+                    false)));
     state.setValidator_registry(new_records);
     BeaconState deepCopy = BeaconStateWithCache.deepCopy(state);
     Validator validator = deepCopy.getValidator_registry().get(0);

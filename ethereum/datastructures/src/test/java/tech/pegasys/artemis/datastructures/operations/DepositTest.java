@@ -16,8 +16,9 @@ package tech.pegasys.artemis.datastructures.operations;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomDepositData;
-import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomLong;
+import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomUnsignedLong;
 
+import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -32,12 +33,12 @@ import org.junit.jupiter.api.extension.ExtendWith;
 @ExtendWith(BouncyCastleExtension.class)
 class DepositTest {
 
-  private final List<Bytes32> branch =
+  private List<Bytes32> branch =
       Arrays.asList(Bytes32.random(), Bytes32.random(), Bytes32.random());
-  private final long index = randomLong();
-  private final DepositData depositData = randomDepositData();
+  private UnsignedLong index = randomUnsignedLong();
+  private DepositData depositData = randomDepositData();
 
-  private final Deposit deposit = new Deposit(branch, index, depositData);
+  private Deposit deposit = new Deposit(branch, index, depositData);
 
   @Test
   void equalsReturnsTrueWhenObjectsAreSame() {
@@ -66,7 +67,7 @@ class DepositTest {
 
   @Test
   void equalsReturnsFalseWhenIndicesAreDifferent() {
-    Deposit testDeposit = new Deposit(branch, index + randomLong(), depositData);
+    Deposit testDeposit = new Deposit(branch, index.plus(randomUnsignedLong()), depositData);
 
     assertNotEquals(deposit, testDeposit);
   }
@@ -87,6 +88,7 @@ class DepositTest {
 
   @Test
   void roundtripSSZ() {
+    deposit.setProof(Collections.nCopies(32, Bytes32.random()));
     Bytes sszDepositBytes = deposit.toBytes();
     assertEquals(deposit, Deposit.fromBytes(sszDepositBytes));
   }

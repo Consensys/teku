@@ -16,6 +16,7 @@
  */
 ext.acceptedLicenses = [
     'BSD License',
+    'BSD 2-Clause',
     'BSD 3-Clause',
     'Eclipse Public License - v 1.0',
     'Eclipse Public License 1.0',
@@ -49,6 +50,7 @@ downloadLicenses {
   ext.mit = license('MIT License', 'http://www.opensource.org/licenses/mit-license.php')
   ext.bsd = license('BSD License', 'http://www.opensource.org/licenses/bsd-license.php')
   ext.bsd3Clause = license('BSD 3-Clause', 'http://opensource.org/licenses/BSD-3-Clause')
+  ext.bsd2Clause = license('BSD 2-Clause', 'http://opensource.org/licenses/BSD-2-Clause')
   ext.mpl = license('Mozilla Public License', 'http://www.mozilla.org/MPL')
   ext.mpl1_1 = license('Mozilla Public License Version 1.1', 'http://www.mozilla.org/MPL/1.1/')
   ext.mpl2_0 = license('Mozilla Public License, Version 2.0', 'http://www.mozilla.org/MPL/2.0/')
@@ -80,10 +82,18 @@ downloadLicenses {
           license('New BSD License', 'http://www.opensource.org/licenses/bsd-license.php')
       ],
       (bsd3Clause): [
+          '3-Clause BSD License',
           'BSD 3-Clause',
           'BSD 3-Clause "New" or "Revised" License (BSD-3-Clause)',
           license('BSD 3-clause', 'http://opensource.org/licenses/BSD-3-Clause'),
           license('BSD 3-Clause', 'http://www.scala-lang.org/license.html')
+      ],
+      (bsd2Clause): [
+              'BSD 2-Clause',
+              'BSD 2-Clause "New" or "Revised" License (BSD-2-Clause)',
+              license('BSD 2-clause', 'http://opensource.org/licenses/BSD-2-Clause'),
+              license('BSD 2-Clause', 'http://www.scala-lang.org/license.html'),
+              'New BSD license'
       ],
       (mpl): [
           'MPL',

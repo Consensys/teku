@@ -68,11 +68,13 @@ public final class KeyPair {
   public KeyPair(SecretKey secretKey) {
     this.secretKey = secretKey;
     this.publicKey = new PublicKey(this.secretKey);
+    ;
   }
 
   public KeyPair(Scalar secretKey) {
     this.secretKey = new SecretKey(secretKey);
     this.publicKey = new PublicKey(this.secretKey);
+    ;
   }
 
   public PublicKey publicKey() {

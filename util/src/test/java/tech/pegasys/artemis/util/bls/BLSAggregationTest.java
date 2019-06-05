@@ -20,7 +20,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
@@ -30,15 +29,13 @@ public class BLSAggregationTest {
   @Test
   void succeedsWhenAggregatingASingleSignatureReturnsTheSameSignature() throws BLSException {
     BLSSignature signature = BLSSignature.random();
-    assertEquals(signature, BLSSignature.aggregate(Collections.singletonList(signature)));
+    assertEquals(signature, BLSSignature.aggregate(Arrays.asList(signature)));
   }
 
   @Test
   void succeedsWhenAggregatingASinglePublicKeyReturnsTheSamePublicKey() {
     BLSPublicKey publicKeyCompressed = BLSPublicKey.random();
-    assertEquals(
-        publicKeyCompressed,
-        BLSPublicKey.aggregate(Collections.singletonList(publicKeyCompressed)));
+    assertEquals(publicKeyCompressed, BLSPublicKey.aggregate(Arrays.asList(publicKeyCompressed)));
   }
 
   @Test

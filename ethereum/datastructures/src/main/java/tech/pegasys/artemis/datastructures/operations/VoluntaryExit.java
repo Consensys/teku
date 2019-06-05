@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.datastructures.operations;
 
+import com.google.common.primitives.UnsignedLong;
 import java.util.Arrays;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
@@ -20,14 +21,16 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
+import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
+import tech.pegasys.artemis.util.hashtree.Merkleizable;
 
-public class VoluntaryExit {
+public class VoluntaryExit implements Merkleizable {
 
-  private long epoch;
-  private long validator_index;
+  private UnsignedLong epoch;
+  private UnsignedLong validator_index;
   private BLSSignature signature;
 
-  public VoluntaryExit(long epoch, long validator_index, BLSSignature signature) {
+  public VoluntaryExit(UnsignedLong epoch, UnsignedLong validator_index, BLSSignature signature) {
     this.epoch = epoch;
     this.validator_index = validator_index;
     this.signature = signature;
@@ -38,16 +41,16 @@ public class VoluntaryExit {
         bytes,
         reader ->
             new VoluntaryExit(
-                reader.readUInt64(),
-                reader.readUInt64(),
+                UnsignedLong.fromLongBits(reader.readUInt64()),
+                UnsignedLong.fromLongBits(reader.readUInt64()),
                 BLSSignature.fromBytes(reader.readBytes())));
   }
 
   public Bytes toBytes() {
     return SSZ.encode(
         writer -> {
-          writer.writeUInt64(epoch);
-          writer.writeUInt64(validator_index);
+          writer.writeUInt64(epoch.longValue());
+          writer.writeUInt64(validator_index.longValue());
           writer.writeBytes(signature.toBytes());
         });
   }
@@ -78,19 +81,19 @@ public class VoluntaryExit {
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */
-  public long getEpoch() {
+  public UnsignedLong getEpoch() {
     return epoch;
   }
 
-  public void setEpoch(long epoch) {
+  public void setEpoch(UnsignedLong epoch) {
     this.epoch = epoch;
   }
 
-  public long getValidator_index() {
+  public UnsignedLong getValidator_index() {
     return validator_index;
   }
 
-  public void setValidator_index(long validator_index) {
+  public void setValidator_index(UnsignedLong validator_index) {
     this.validator_index = validator_index;
   }
 
@@ -102,17 +105,27 @@ public class VoluntaryExit {
     this.signature = signature;
   }
 
-  public Bytes32 signedRoot(String truncationParam) {
-    if (!truncationParam.equals("signature")) {
+  public Bytes32 signed_root(String truncation_param) {
+    if (!truncation_param.equals("signature")) {
       throw new UnsupportedOperationException(
           "Only signed_root(proposal, \"signature\") is currently supported for type Proposal.");
     }
 
     return Bytes32.rightPad(
-        HashTreeUtil.merkleHash(
+        HashTreeUtil.merkleize(
             Arrays.asList(
-                HashTreeUtil.hash_tree_root(SSZ.encode(writer -> writer.writeUInt64(epoch))),
+                HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(epoch.longValue())),
                 HashTreeUtil.hash_tree_root(
-                    SSZ.encode(writer -> writer.writeUInt64(validator_index))))));
+                    SSZTypes.BASIC, SSZ.encodeUInt64(validator_index.longValue())))));
+  }
+
+  @Override
+  public Bytes32 hash_tree_root() {
+    return HashTreeUtil.merkleize(
+        Arrays.asList(
+            HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(epoch.longValue())),
+            HashTreeUtil.hash_tree_root(
+                SSZTypes.BASIC, SSZ.encodeUInt64(validator_index.longValue())),
+            HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, signature.toBytes())));
   }
 }

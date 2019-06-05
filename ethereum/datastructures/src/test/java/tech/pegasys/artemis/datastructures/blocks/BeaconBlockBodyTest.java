@@ -18,6 +18,7 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomAttestation;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomAttesterSlashing;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomDeposit;
+import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomEth1Data;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomProposerSlashing;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomTransfer;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomVoluntaryExit;
@@ -34,24 +35,33 @@ import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
 import tech.pegasys.artemis.datastructures.operations.Transfer;
 import tech.pegasys.artemis.datastructures.operations.VoluntaryExit;
+import tech.pegasys.artemis.util.bls.BLSSignature;
 
 class BeaconBlockBodyTest {
 
-  private final List<ProposerSlashing> proposerSlashings =
+  private BLSSignature blsSignature = BLSSignature.random();
+  private Eth1Data eth1Data = randomEth1Data();
+  private List<ProposerSlashing> proposerSlashings =
       Arrays.asList(randomProposerSlashing(), randomProposerSlashing(), randomProposerSlashing());
-  private final List<AttesterSlashing> attesterSlashings =
+  private List<AttesterSlashing> attesterSlashings =
       Arrays.asList(randomAttesterSlashing(), randomAttesterSlashing(), randomAttesterSlashing());
-  private final List<Attestation> attestations =
+  private List<Attestation> attestations =
       Arrays.asList(randomAttestation(), randomAttestation(), randomAttestation());
-  private final List<Deposit> deposits =
-      Arrays.asList(randomDeposit(), randomDeposit(), randomDeposit());
-  private final List<VoluntaryExit> voluntaryExits =
+  private List<Deposit> deposits = Arrays.asList(randomDeposit(), randomDeposit(), randomDeposit());
+  private List<VoluntaryExit> voluntaryExits =
       Arrays.asList(randomVoluntaryExit(), randomVoluntaryExit(), randomVoluntaryExit());
-  private final List<Transfer> transfers = Arrays.asList(randomTransfer(), randomTransfer());
+  private List<Transfer> transfers = Arrays.asList(randomTransfer(), randomTransfer());
 
-  private final BeaconBlockBody beaconBlockBody =
+  private BeaconBlockBody beaconBlockBody =
       new BeaconBlockBody(
-          proposerSlashings, attesterSlashings, attestations, deposits, voluntaryExits, transfers);
+          blsSignature,
+          eth1Data,
+          proposerSlashings,
+          attesterSlashings,
+          attestations,
+          deposits,
+          voluntaryExits,
+          transfers);
 
   @Test
   void equalsReturnsTrueWhenObjectAreSame() {
@@ -64,6 +74,8 @@ class BeaconBlockBodyTest {
   void equalsReturnsTrueWhenObjectFieldsAreEqual() {
     BeaconBlockBody testBeaconBlockBody =
         new BeaconBlockBody(
+            blsSignature,
+            eth1Data,
             proposerSlashings,
             attesterSlashings,
             attestations,
@@ -82,6 +94,8 @@ class BeaconBlockBodyTest {
 
     BeaconBlockBody testBeaconBlockBody =
         new BeaconBlockBody(
+            blsSignature,
+            eth1Data,
             reverseProposerSlashings,
             attesterSlashings,
             attestations,
@@ -100,6 +114,8 @@ class BeaconBlockBodyTest {
 
     BeaconBlockBody testBeaconBlockBody =
         new BeaconBlockBody(
+            blsSignature,
+            eth1Data,
             proposerSlashings,
             reverseAttesterSlashings,
             attestations,
@@ -118,6 +134,8 @@ class BeaconBlockBodyTest {
 
     BeaconBlockBody testBeaconBlockBody =
         new BeaconBlockBody(
+            blsSignature,
+            eth1Data,
             proposerSlashings,
             attesterSlashings,
             reverseAttestations,
@@ -136,6 +154,8 @@ class BeaconBlockBodyTest {
 
     BeaconBlockBody testBeaconBlockBody =
         new BeaconBlockBody(
+            blsSignature,
+            eth1Data,
             proposerSlashings,
             attesterSlashings,
             attestations,
@@ -149,11 +169,13 @@ class BeaconBlockBodyTest {
   @Test
   void equalsReturnsFalseWhenExitsAreDifferent() {
     // Create copy of exits and reverse to ensure it is different.
-    List<VoluntaryExit> reverseVoluntaryExits = new ArrayList<>(voluntaryExits);
+    List<VoluntaryExit> reverseVoluntaryExits = new ArrayList<VoluntaryExit>(voluntaryExits);
     Collections.reverse(reverseVoluntaryExits);
 
     BeaconBlockBody testBeaconBlockBody =
         new BeaconBlockBody(
+            blsSignature,
+            eth1Data,
             proposerSlashings,
             attesterSlashings,
             attestations,
@@ -167,11 +189,13 @@ class BeaconBlockBodyTest {
   @Test
   void equalsReturnsFalseWhenTransfersAreDifferent() {
     // Create copy of exits and reverse to ensure it is different.
-    List<Transfer> reverseTransfers = new ArrayList<>(transfers);
+    List<Transfer> reverseTransfers = new ArrayList<Transfer>(transfers);
     Collections.reverse(reverseTransfers);
 
     BeaconBlockBody testBeaconBlockBody =
         new BeaconBlockBody(
+            blsSignature,
+            eth1Data,
             proposerSlashings,
             attesterSlashings,
             attestations,

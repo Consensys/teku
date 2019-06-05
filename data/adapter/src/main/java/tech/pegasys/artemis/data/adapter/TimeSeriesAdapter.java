@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.data.adapter;
 
+import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.IntStream;
@@ -24,7 +25,6 @@ import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.util.alogger.ALogger;
-import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 
 /** Transforms a data record into a time series record */
 public class TimeSeriesAdapter implements DataAdapter<TimeSeriesRecord> {
@@ -38,8 +38,8 @@ public class TimeSeriesAdapter implements DataAdapter<TimeSeriesRecord> {
   @Override
   public TimeSeriesRecord transform() {
 
-    long slot = this.input.getHeadBlock().getSlot();
-    long epoch = BeaconStateUtil.slot_to_epoch(this.input.getHeadBlock().getSlot());
+    UnsignedLong slot = UnsignedLong.valueOf(this.input.getHeadBlock().getSlot());
+    UnsignedLong epoch = BeaconStateUtil.slot_to_epoch(slot);
     BeaconBlock headBlock = this.input.getHeadBlock();
     BeaconState headState = this.input.getHeadState();
     BeaconBlock justifiedBlock = this.input.getJustifiedBlock();
@@ -48,10 +48,11 @@ public class TimeSeriesAdapter implements DataAdapter<TimeSeriesRecord> {
     BeaconState finalizedState = this.input.getFinalizedState();
     int numValidators = headState.getValidator_registry().size();
 
-    Bytes32 lastJustifiedBlockRoot = HashTreeUtil.hash_tree_root(justifiedBlock.toBytes());
-    Bytes32 lastJustifiedStateRoot = HashTreeUtil.hash_tree_root(justifiedState.toBytes());
-    Bytes32 lastFinalizedBlockRoot = HashTreeUtil.hash_tree_root(finalizedBlock.toBytes());
-    Bytes32 lastFinalizedStateRoot = HashTreeUtil.hash_tree_root(finalizedState.toBytes());
+    Bytes32 headBlockRoot = headBlock.signed_root("signature");
+    Bytes32 lastJustifiedBlockRoot = justifiedBlock.signed_root("signature");
+    Bytes32 lastJustifiedStateRoot = justifiedState.hash_tree_root();
+    Bytes32 lastFinalizedBlockRoot = finalizedBlock.signed_root("signature");
+    Bytes32 lastFinalizedStateRoot = finalizedState.hash_tree_root();
 
     List<ValidatorJoin> validators = new ArrayList<>();
 
@@ -62,17 +63,17 @@ public class TimeSeriesAdapter implements DataAdapter<TimeSeriesRecord> {
                   validators.add(
                       new ValidatorJoin(
                           headState.getValidator_registry().get(i),
-                          headState.getValidator_balances().get(i))));
+                          headState.getValidator_balances().get(i).longValue())));
     }
 
     return new TimeSeriesRecord(
         this.input.getDate(),
         this.input.getIndex(),
-        slot,
-        epoch,
+        slot.longValue(),
+        epoch.longValue(),
         this.input.getHeadBlock().getState_root().toHexString(),
-        this.input.getHeadBlock().getParent_root().toHexString(),
-        HashTreeUtil.hash_tree_root(this.input.getHeadBlock().toBytes()).toHexString(),
+        this.input.getHeadBlock().getPrevious_block_root().toHexString(),
+        this.input.getHeadBlock().signed_root("signature").toHexString(),
         lastJustifiedBlockRoot.toHexString(),
         lastJustifiedStateRoot.toHexString(),
         lastFinalizedBlockRoot.toHexString(),

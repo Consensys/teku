@@ -10,7 +10,7 @@ dependencies {
 
   compile group: 'com.fasterxml.jackson.dataformat', name: 'jackson-dataformat-yaml', version: '2.9.8'
   testCompile 'org.miracl.milagro.amcl:milagro-crypto-java:0.4.0'
-  testCompile 'org.apache.tuweni:tuweni-bytes'
+  implementation 'org.apache.tuweni:tuweni-bytes'
   testCompile 'com.fasterxml.jackson.core:jackson-databind'
   testCompile 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
   testCompile 'org.junit.jupiter:junit-jupiter-api'
