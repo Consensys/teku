@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.datastructures.util;
 
+import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Validator;
@@ -36,7 +37,8 @@ public class CrosslinkCommitteeUtil {
   public static int get_next_epoch_committee_count(BeaconState state) {
     List<Validator> previous_active_validators =
         ValidatorsUtil.get_active_validators(
-            state.getValidator_registry(), state.getCurrent_shuffling_epoch() + 1);
+            state.getValidator_registry(),
+            state.getCurrent_shuffling_epoch().plus(UnsignedLong.ONE));
     return previous_active_validators.size();
   }
 }

@@ -13,51 +13,60 @@
 
 package tech.pegasys.artemis.datastructures.operations;
 
+import com.google.common.primitives.UnsignedLong;
+import java.util.Arrays;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.artemis.datastructures.state.Crosslink;
+import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
+import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
 
 public class AttestationData {
 
-  private long slot;
-  private long shard;
+  // LMD GHOST vote
+  private UnsignedLong slot;
   private Bytes32 beacon_block_root;
-  private Bytes32 epoch_boundary_root;
+
+  // FFG vote
+  private UnsignedLong source_epoch;
+  private Bytes32 source_root;
+  private Bytes32 target_root;
+
+  // Crosslink vote
+  private UnsignedLong shard;
+  private Crosslink previous_crosslink;
   private Bytes32 crosslink_data_root;
-  private Crosslink latest_crosslink;
-  private long justified_epoch;
-  private Bytes32 justified_block_root;
 
   public AttestationData(
-      long slot,
-      long shard,
+      UnsignedLong slot,
       Bytes32 beacon_block_root,
-      Bytes32 epoch_boundary_root,
-      Bytes32 crosslink_data_root,
-      Crosslink latest_crosslink,
-      long justified_epoch,
-      Bytes32 justified_block_root) {
+      UnsignedLong source_epoch,
+      Bytes32 source_root,
+      Bytes32 target_root,
+      UnsignedLong shard,
+      Crosslink previous_crosslink,
+      Bytes32 crosslink_data_root) {
     this.slot = slot;
-    this.shard = shard;
     this.beacon_block_root = beacon_block_root;
-    this.epoch_boundary_root = epoch_boundary_root;
+    this.source_epoch = source_epoch;
+    this.source_root = source_root;
+    this.target_root = target_root;
+    this.shard = shard;
+    this.previous_crosslink = previous_crosslink;
     this.crosslink_data_root = crosslink_data_root;
-    this.latest_crosslink = latest_crosslink;
-    this.justified_epoch = justified_epoch;
-    this.justified_block_root = justified_block_root;
   }
 
   public AttestationData(AttestationData attestationData) {
     this.slot = attestationData.getSlot();
-    this.shard = attestationData.getShard();
     this.beacon_block_root = attestationData.getBeacon_block_root();
-    this.epoch_boundary_root = attestationData.getEpoch_boundary_root();
+    this.source_epoch = attestationData.getSource_epoch();
+    this.source_root = attestationData.getSource_root();
+    this.target_root = attestationData.getTarget_root();
+    this.shard = attestationData.getShard();
+    this.previous_crosslink = new Crosslink(attestationData.getPrevious_crosslink());
     this.crosslink_data_root = attestationData.getCrosslink_data_root();
-    this.latest_crosslink = new Crosslink(attestationData.getLatest_crosslink());
-    this.justified_epoch = attestationData.getJustified_epoch();
-    this.justified_block_root = attestationData.getJustified_block_root();
   }
 
   public static AttestationData fromBytes(Bytes bytes) {
@@ -65,27 +74,27 @@ public class AttestationData {
         bytes,
         reader ->
             new AttestationData(
-                reader.readUInt64(),
-                reader.readUInt64(),
-                Bytes32.wrap(reader.readBytes()),
-                Bytes32.wrap(reader.readBytes()),
-                Bytes32.wrap(reader.readBytes()),
+                UnsignedLong.fromLongBits(reader.readUInt64()),
+                Bytes32.wrap(reader.readFixedBytes(32)),
+                UnsignedLong.fromLongBits(reader.readUInt64()),
+                Bytes32.wrap(reader.readFixedBytes(32)),
+                Bytes32.wrap(reader.readFixedBytes(32)),
+                UnsignedLong.fromLongBits(reader.readUInt64()),
                 Crosslink.fromBytes(reader.readBytes()),
-                reader.readUInt64(),
-                Bytes32.wrap(reader.readBytes())));
+                Bytes32.wrap(reader.readFixedBytes(32))));
   }
 
   public Bytes toBytes() {
     return SSZ.encode(
         writer -> {
-          writer.writeUInt64(slot);
-          writer.writeUInt64(shard);
-          writer.writeBytes(beacon_block_root);
-          writer.writeBytes(epoch_boundary_root);
-          writer.writeBytes(crosslink_data_root);
-          writer.writeBytes(latest_crosslink.toBytes());
-          writer.writeUInt64(justified_epoch);
-          writer.writeBytes(justified_block_root);
+          writer.writeUInt64(slot.longValue());
+          writer.writeFixedBytes(32, beacon_block_root);
+          writer.writeUInt64(source_epoch.longValue());
+          writer.writeFixedBytes(32, source_root);
+          writer.writeFixedBytes(32, target_root);
+          writer.writeUInt64(shard.longValue());
+          writer.writeBytes(previous_crosslink.toBytes());
+          writer.writeFixedBytes(32, crosslink_data_root);
         });
   }
 
@@ -93,13 +102,13 @@ public class AttestationData {
   public int hashCode() {
     return Objects.hash(
         slot,
-        shard,
         beacon_block_root,
-        epoch_boundary_root,
-        crosslink_data_root,
-        latest_crosslink,
-        justified_epoch,
-        justified_block_root);
+        source_epoch,
+        source_root,
+        target_root,
+        shard,
+        previous_crosslink,
+        crosslink_data_root);
   }
 
   @Override
@@ -118,21 +127,21 @@ public class AttestationData {
 
     AttestationData other = (AttestationData) obj;
     return Objects.equals(this.getSlot(), other.getSlot())
-        && Objects.equals(this.getShard(), other.getShard())
         && Objects.equals(this.getBeacon_block_root(), other.getBeacon_block_root())
-        && Objects.equals(this.getEpoch_boundary_root(), other.getEpoch_boundary_root())
-        && Objects.equals(this.getCrosslink_data_root(), other.getCrosslink_data_root())
-        && Objects.equals(this.getLatest_crosslink(), other.getLatest_crosslink())
-        && Objects.equals(this.getJustified_epoch(), other.getJustified_epoch())
-        && Objects.equals(this.getJustified_block_root(), other.getJustified_block_root());
+        && Objects.equals(this.getSource_epoch(), other.getSource_epoch())
+        && Objects.equals(this.getSource_root(), other.getSource_root())
+        && Objects.equals(this.getTarget_root(), other.getTarget_root())
+        && Objects.equals(this.getShard(), other.getShard())
+        && Objects.equals(this.getPrevious_crosslink(), other.getPrevious_crosslink())
+        && Objects.equals(this.getCrosslink_data_root(), other.getCrosslink_data_root());
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */
-  public long getSlot() {
+  public UnsignedLong getSlot() {
     return slot;
   }
 
-  public void setSlot(long slot) {
+  public void setSlot(UnsignedLong slot) {
     this.slot = slot;
   }
 
@@ -144,12 +153,44 @@ public class AttestationData {
     this.beacon_block_root = beacon_block_root;
   }
 
-  public Bytes32 getEpoch_boundary_root() {
-    return epoch_boundary_root;
+  public UnsignedLong getSource_epoch() {
+    return source_epoch;
   }
 
-  public void setEpoch_boundary_root(Bytes32 epoch_boundary_root) {
-    this.epoch_boundary_root = epoch_boundary_root;
+  public void setSource_epoch(UnsignedLong source_epoch) {
+    this.source_epoch = source_epoch;
+  }
+
+  public Bytes32 getSource_root() {
+    return source_root;
+  }
+
+  public void setSource_root(Bytes32 source_root) {
+    this.source_root = source_root;
+  }
+
+  public Bytes32 getTarget_root() {
+    return target_root;
+  }
+
+  public void setTarget_root(Bytes32 target_root) {
+    this.target_root = target_root;
+  }
+
+  public UnsignedLong getShard() {
+    return shard;
+  }
+
+  public void setShard(UnsignedLong shard) {
+    this.shard = shard;
+  }
+
+  public Crosslink getPrevious_crosslink() {
+    return previous_crosslink;
+  }
+
+  public void setPrevious_crosslink(Crosslink previous_crosslink) {
+    this.previous_crosslink = previous_crosslink;
   }
 
   public Bytes32 getCrosslink_data_root() {
@@ -160,35 +201,16 @@ public class AttestationData {
     this.crosslink_data_root = crosslink_data_root;
   }
 
-  public long getShard() {
-    return shard;
-  }
-
-  public void setShard(long shard) {
-    this.shard = shard;
-  }
-
-  public Crosslink getLatest_crosslink() {
-    return latest_crosslink;
-  }
-
-  public void setLatest_crosslink(Crosslink latest_crosslink) {
-    this.latest_crosslink = latest_crosslink;
-  }
-
-  public long getJustified_epoch() {
-    return justified_epoch;
-  }
-
-  public void setJustified_epoch(long justified_epoch) {
-    this.justified_epoch = justified_epoch;
-  }
-
-  public Bytes32 getJustified_block_root() {
-    return justified_block_root;
-  }
-
-  public void setJustified_block_root(Bytes32 justified_block_root) {
-    this.justified_block_root = justified_block_root;
+  public Bytes32 hash_tree_root() {
+    return HashTreeUtil.merkleize(
+        Arrays.asList(
+            HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(slot.longValue())),
+            HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, beacon_block_root),
+            HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(source_epoch.longValue())),
+            HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, source_root),
+            HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, target_root),
+            HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(shard.longValue())),
+            previous_crosslink.hash_tree_root(),
+            HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, crosslink_data_root)));
   }
 }

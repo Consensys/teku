@@ -15,19 +15,20 @@ package tech.pegasys.artemis.datastructures.operations;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomLong;
+import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomUnsignedLong;
 
+import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 
 class VoluntaryExitTest {
 
-  private final long epoch = randomLong();
-  private final long validatorIndex = randomLong();
-  private final BLSSignature signature = BLSSignature.random();
+  private UnsignedLong epoch = randomUnsignedLong();
+  private UnsignedLong validatorIndex = randomUnsignedLong();
+  private BLSSignature signature = BLSSignature.random();
 
-  private final VoluntaryExit voluntaryExit = new VoluntaryExit(epoch, validatorIndex, signature);
+  private VoluntaryExit voluntaryExit = new VoluntaryExit(epoch, validatorIndex, signature);
 
   @Test
   void equalsReturnsTrueWhenObjectsAreSame() {
@@ -46,7 +47,7 @@ class VoluntaryExitTest {
   @Test
   void equalsReturnsFalseWhenEpochsAreDifferent() {
     VoluntaryExit testVoluntaryExit =
-        new VoluntaryExit(epoch + randomLong(), validatorIndex, signature);
+        new VoluntaryExit(epoch.plus(randomUnsignedLong()), validatorIndex, signature);
 
     assertNotEquals(voluntaryExit, testVoluntaryExit);
   }
@@ -54,7 +55,7 @@ class VoluntaryExitTest {
   @Test
   void equalsReturnsFalseWhenValidatorIndicesAreDifferent() {
     VoluntaryExit testVoluntaryExit =
-        new VoluntaryExit(epoch, validatorIndex + randomLong(), signature);
+        new VoluntaryExit(epoch, validatorIndex.plus(randomUnsignedLong()), signature);
 
     assertNotEquals(voluntaryExit, testVoluntaryExit);
   }

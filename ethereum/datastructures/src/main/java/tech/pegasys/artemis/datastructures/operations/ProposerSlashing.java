@@ -13,21 +13,28 @@
 
 package tech.pegasys.artemis.datastructures.operations;
 
+import com.google.common.primitives.UnsignedLong;
+import java.util.Arrays;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
-import tech.pegasys.artemis.datastructures.blocks.Proposal;
+import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
+import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
+import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
+import tech.pegasys.artemis.util.hashtree.Merkleizable;
 
-public class ProposerSlashing {
+public class ProposerSlashing implements Merkleizable {
 
-  private long proposer_index;
-  private Proposal proposal_1;
-  private Proposal proposal_2;
+  private UnsignedLong proposer_index;
+  private BeaconBlockHeader header_1;
+  private BeaconBlockHeader header_2;
 
-  public ProposerSlashing(long proposer_index, Proposal proposal_1, Proposal proposal_2) {
+  public ProposerSlashing(
+      UnsignedLong proposer_index, BeaconBlockHeader header_1, BeaconBlockHeader header_2) {
     this.proposer_index = proposer_index;
-    this.proposal_1 = proposal_1;
-    this.proposal_2 = proposal_2;
+    this.header_1 = header_1;
+    this.header_2 = header_2;
   }
 
   public static ProposerSlashing fromBytes(Bytes bytes) {
@@ -35,23 +42,23 @@ public class ProposerSlashing {
         bytes,
         reader ->
             new ProposerSlashing(
-                reader.readUInt64(),
-                Proposal.fromBytes(reader.readBytes()),
-                Proposal.fromBytes(reader.readBytes())));
+                UnsignedLong.fromLongBits(reader.readUInt64()),
+                BeaconBlockHeader.fromBytes(reader.readBytes()),
+                BeaconBlockHeader.fromBytes(reader.readBytes())));
   }
 
   public Bytes toBytes() {
     return SSZ.encode(
         writer -> {
-          writer.writeUInt64(proposer_index);
-          writer.writeBytes(proposal_1.toBytes());
-          writer.writeBytes(proposal_2.toBytes());
+          writer.writeUInt64(proposer_index.longValue());
+          writer.writeBytes(header_1.toBytes());
+          writer.writeBytes(header_2.toBytes());
         });
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(proposer_index, proposal_1, proposal_2);
+    return Objects.hash(proposer_index, header_1, header_2);
   }
 
   @Override
@@ -70,32 +77,42 @@ public class ProposerSlashing {
 
     ProposerSlashing other = (ProposerSlashing) obj;
     return Objects.equals(this.getProposer_index(), other.getProposer_index())
-        && Objects.equals(this.getProposal_1(), other.getProposal_1())
-        && Objects.equals(this.getProposal_2(), other.getProposal_2());
+        && Objects.equals(this.getHeader_1(), other.getHeader_1())
+        && Objects.equals(this.getHeader_2(), other.getHeader_2());
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */
-  public long getProposer_index() {
+  public UnsignedLong getProposer_index() {
     return proposer_index;
   }
 
-  public void setProposer_index(long proposer_index) {
+  public void setProposer_index(UnsignedLong proposer_index) {
     this.proposer_index = proposer_index;
   }
 
-  public Proposal getProposal_1() {
-    return proposal_1;
+  public BeaconBlockHeader getHeader_1() {
+    return header_1;
   }
 
-  public void setProposal_1(Proposal proposal_1) {
-    this.proposal_1 = proposal_1;
+  public void setHeader_1(BeaconBlockHeader header_1) {
+    this.header_1 = header_1;
   }
 
-  public Proposal getProposal_2() {
-    return proposal_2;
+  public BeaconBlockHeader getHeader_2() {
+    return header_2;
   }
 
-  public void setProposal_2(Proposal proposal_2) {
-    this.proposal_2 = proposal_2;
+  public void setHeader_2(BeaconBlockHeader header_2) {
+    this.header_2 = header_2;
+  }
+
+  @Override
+  public Bytes32 hash_tree_root() {
+    return HashTreeUtil.merkleize(
+        Arrays.asList(
+            HashTreeUtil.hash_tree_root(
+                SSZTypes.BASIC, SSZ.encodeUInt64(proposer_index.longValue())),
+            header_1.hash_tree_root(),
+            header_2.hash_tree_root()));
   }
 }

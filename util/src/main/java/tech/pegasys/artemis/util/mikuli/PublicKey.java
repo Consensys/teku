@@ -49,7 +49,7 @@ public final class PublicKey {
     if (keys.isEmpty()) {
       return new PublicKey(new G1Point());
     }
-    return keys.stream().reduce(PublicKey::combine).get();
+    return keys.stream().reduce((a, b) -> a.combine(b)).get();
   }
 
   /**
@@ -75,7 +75,7 @@ public final class PublicKey {
 
   private final G1Point point;
 
-  public PublicKey(G1Point point) {
+  PublicKey(G1Point point) {
     this.point = point;
   }
 
@@ -111,7 +111,7 @@ public final class PublicKey {
 
   @Override
   public String toString() {
-    return point.toString();
+    return "Signature [ecpPoint=" + point.toString() + "]";
   }
 
   @Override

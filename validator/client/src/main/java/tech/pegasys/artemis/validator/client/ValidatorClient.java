@@ -15,11 +15,13 @@ package tech.pegasys.artemis.validator.client;
 
 import static java.lang.Math.toIntExact;
 import static tech.pegasys.artemis.datastructures.Constants.SLOTS_PER_EPOCH;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_beacon_proposer_index;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_crosslink_committees_at_slot;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_current_epoch;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_epoch_start_slot;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_previous_epoch;
 
+import com.google.common.primitives.UnsignedLong;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
@@ -54,16 +56,17 @@ public class ValidatorClient {
    */
   public Optional<CommitteeAssignmentTuple> get_committee_assignment(
       BeaconState state, long epoch, int validator_index, boolean registry_change) {
-    long previous_epoch = get_previous_epoch(state);
-    long next_epoch = get_current_epoch(state);
+    long previous_epoch = get_previous_epoch(state).longValue();
+    long next_epoch = get_current_epoch(state).longValue();
     assert previous_epoch <= epoch && epoch <= next_epoch;
 
-    int epoch_start_slot = toIntExact(get_epoch_start_slot(epoch));
+    int epoch_start_slot =
+        toIntExact(get_epoch_start_slot(UnsignedLong.valueOf(epoch)).longValue());
 
     for (int slot = epoch_start_slot; slot < epoch_start_slot + SLOTS_PER_EPOCH; slot++) {
 
-      ArrayList<CrosslinkCommittee> crosslink_committees =
-          get_crosslink_committees_at_slot(state, slot, registry_change);
+      List<CrosslinkCommittee> crosslink_committees =
+          get_crosslink_committees_at_slot(state, UnsignedLong.valueOf(slot), registry_change);
       ArrayList<CrosslinkCommittee> selected_committees = new ArrayList<>();
 
       for (CrosslinkCommittee committee : crosslink_committees) {
@@ -74,11 +77,12 @@ public class ValidatorClient {
 
       if (selected_committees.size() > 0) {
         List<Integer> validators = selected_committees.get(0).getCommittee();
-        int shard = toIntExact(selected_committees.get(0).getShard());
+        int shard = toIntExact(selected_committees.get(0).getShard().longValue());
         List<Integer> first_committee_at_slot =
             crosslink_committees.get(0).getCommittee(); // List[ValidatorIndex]
         boolean is_proposer =
-            first_committee_at_slot.get(slot % first_committee_at_slot.size()) == validator_index;
+            validator_index
+                == get_beacon_proposer_index(state, UnsignedLong.valueOf(slot), registry_change);
 
         return Optional.of(new CommitteeAssignmentTuple(validators, shard, slot, is_proposer));
       }
