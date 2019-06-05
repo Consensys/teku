@@ -8,7 +8,7 @@ jar {
 
 dependencies {
 
-    implementation project(':services')
+    implementation project(':services:serviceutils')
     implementation project(':services:powchain')
     implementation project(':pow')
     implementation project(':data')
