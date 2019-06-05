@@ -13,12 +13,24 @@
 
 package tech.pegasys.artemis.services.powchain;
 
+import static com.google.common.base.Charsets.UTF_8;
+
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.google.common.primitives.UnsignedLong;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.Reader;
+import java.nio.ByteOrder;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -44,19 +56,6 @@ import tech.pegasys.artemis.util.mikuli.KeyPair;
 import tech.pegasys.artemis.validator.client.DepositSimulation;
 import tech.pegasys.artemis.validator.client.Validator;
 import tech.pegasys.artemis.validator.client.ValidatorClientUtil;
-
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.Reader;
-import java.nio.ByteOrder;
-import java.nio.charset.Charset;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-
-import static com.google.common.base.Charsets.UTF_8;
 
 public class PowchainService implements ServiceInterface {
 
@@ -141,11 +140,24 @@ public class PowchainService implements ServiceInterface {
                               .toArray();
                       Deposit deposit = new Deposit(response);
 
-                      DepositInput depositInput = new DepositInput(deposit.getPubkey(), deposit.getWithdrawal_credentials(), BLSSignature.fromBytes(deposit.getProof_of_possession()));
-                      DepositData deposit_data = new DepositData(UnsignedLong.valueOf(deposit.getAmount()), UnsignedLong.ZERO, depositInput);
+                      DepositInput depositInput =
+                          new DepositInput(
+                              deposit.getPubkey(),
+                              deposit.getWithdrawal_credentials(),
+                              BLSSignature.fromBytes(deposit.getProof_of_possession()));
+                      DepositData deposit_data =
+                          new DepositData(
+                              UnsignedLong.valueOf(deposit.getAmount()),
+                              UnsignedLong.ZERO,
+                              depositInput);
 
-                      eventBus.post(new tech.pegasys.artemis.datastructures.operations.Deposit(null, UnsignedLong.valueOf(deposit.getMerkle_tree_index().toLong(ByteOrder.LITTLE_ENDIAN)), deposit_data));
-                      //eventBus.post(deposit);
+                      eventBus.post(
+                          new tech.pegasys.artemis.datastructures.operations.Deposit(
+                              null,
+                              UnsignedLong.valueOf(
+                                  deposit.getMerkle_tree_index().toLong(ByteOrder.LITTLE_ENDIAN)),
+                              deposit_data));
+                      // eventBus.post(deposit);
                     });
               } else {
                 JsonObject event = object.getAsJsonObject();

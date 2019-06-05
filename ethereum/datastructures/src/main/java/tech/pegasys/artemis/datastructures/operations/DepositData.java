@@ -14,14 +14,13 @@
 package tech.pegasys.artemis.datastructures.operations;
 
 import com.google.common.primitives.UnsignedLong;
+import java.util.Arrays;
+import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
-
-import java.util.Arrays;
-import java.util.Objects;
 
 public class DepositData {
 
@@ -54,12 +53,15 @@ public class DepositData {
         });
   }
 
-  public Bytes serialize(){
-    Bytes deposit_data = Bytes.wrap(
+  public Bytes serialize() {
+    Bytes deposit_data =
+        Bytes.wrap(
             Bytes.ofUnsignedLong(amount.longValue()),
             deposit_input.getWithdrawal_credentials(),
             deposit_input.getPubkey().getPublicKey().toBytesCompressed());
-    return Bytes.wrap(deposit_input.getProof_of_possession().getSignature().toBytesCompressed(), deposit_data).reverse();
+    return Bytes.wrap(
+            deposit_input.getProof_of_possession().getSignature().toBytesCompressed(), deposit_data)
+        .reverse();
   }
 
   @Override
