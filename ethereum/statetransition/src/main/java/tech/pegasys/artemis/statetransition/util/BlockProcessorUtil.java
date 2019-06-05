@@ -330,6 +330,8 @@ public final class BlockProcessorUtil {
 
       for (Attestation attestation : block.getBody().getAttestations()) {
         UnsignedLong attestationDataSlot = attestation.getData().getSlot();
+        // System.out.println("attestationDataSlot: " + attestationDataSlot);
+        // System.out.println("attestationDataSlot: " + attestation.hash_tree_root());
         checkArgument(
             attestationDataSlot.compareTo(UnsignedLong.valueOf(Constants.GENESIS_SLOT)) >= 0,
             "Attestation in pre-history");

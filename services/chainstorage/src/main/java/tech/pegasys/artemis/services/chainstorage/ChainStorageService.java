@@ -14,8 +14,8 @@
 package tech.pegasys.artemis.services.chainstorage;
 
 import com.google.common.eventbus.EventBus;
-import tech.pegasys.artemis.services.ServiceConfig;
-import tech.pegasys.artemis.services.ServiceInterface;
+import tech.pegasys.artemis.service.serviceutils.ServiceConfig;
+import tech.pegasys.artemis.service.serviceutils.ServiceInterface;
 import tech.pegasys.artemis.storage.ChainStorage;
 import tech.pegasys.artemis.storage.ChainStorageServer;
 import tech.pegasys.artemis.util.alogger.ALogger;
