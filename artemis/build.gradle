@@ -8,11 +8,11 @@ jar {
 
 dependencies {
   implementation project(':networking:p2p')
-  implementation project(':services')
   implementation project(':services:powchain')
   implementation project(':services:beaconnode')
   implementation project(':services:beaconchain')
   implementation project(':services:chainstorage')
+  implementation project(':services:serviceutils')
   implementation project(':util')
   implementation project(':data')
   implementation project(':data:adapter')
