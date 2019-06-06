@@ -157,7 +157,6 @@ public class PowchainService implements ServiceInterface {
                               UnsignedLong.valueOf(
                                   deposit.getMerkle_tree_index().toLong(ByteOrder.LITTLE_ENDIAN)),
                               deposit_data));
-                      // eventBus.post(deposit);
                     });
               } else {
                 JsonObject event = object.getAsJsonObject();
