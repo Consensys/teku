@@ -39,6 +39,8 @@ import org.web3j.protocol.Web3j;
 import org.web3j.protocol.core.methods.response.Log;
 import org.web3j.protocol.http.HttpService;
 import org.web3j.tx.gas.DefaultGasProvider;
+import tech.pegasys.artemis.datastructures.operations.DepositData;
+import tech.pegasys.artemis.datastructures.operations.DepositInput;
 import tech.pegasys.artemis.ganache.GanacheController;
 import tech.pegasys.artemis.pow.DepositContractListener;
 import tech.pegasys.artemis.pow.DepositContractListenerFactory;
@@ -49,6 +51,7 @@ import tech.pegasys.artemis.pow.event.Eth2Genesis;
 import tech.pegasys.artemis.service.serviceutils.ServiceConfig;
 import tech.pegasys.artemis.service.serviceutils.ServiceInterface;
 import tech.pegasys.artemis.util.alogger.ALogger;
+import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.mikuli.KeyPair;
 import tech.pegasys.artemis.validator.client.DepositSimulation;
 import tech.pegasys.artemis.validator.client.Validator;
@@ -136,7 +139,24 @@ public class PowchainService implements ServiceInterface {
                                   event.getAsJsonObject().get("merkle_tree_index").getAsString())
                               .toArray();
                       Deposit deposit = new Deposit(response);
-                      eventBus.post(deposit);
+
+                      DepositInput depositInput =
+                          new DepositInput(
+                              deposit.getPubkey(),
+                              deposit.getWithdrawal_credentials(),
+                              BLSSignature.fromBytes(deposit.getProof_of_possession()));
+                      DepositData deposit_data =
+                          new DepositData(
+                              UnsignedLong.valueOf(deposit.getAmount()),
+                              UnsignedLong.ZERO,
+                              depositInput);
+
+                      eventBus.post(
+                          new tech.pegasys.artemis.datastructures.operations.Deposit(
+                              null,
+                              UnsignedLong.valueOf(
+                                  deposit.getMerkle_tree_index().toLong(ByteOrder.LITTLE_ENDIAN)),
+                              deposit_data));
                     });
               } else {
                 JsonObject event = object.getAsJsonObject();

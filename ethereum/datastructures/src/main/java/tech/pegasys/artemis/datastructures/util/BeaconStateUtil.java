@@ -81,7 +81,7 @@ public class BeaconStateUtil {
    */
   public static BeaconStateWithCache get_genesis_beacon_state(
       BeaconStateWithCache state,
-      ArrayList<Deposit> genesis_validator_deposits,
+      List<Deposit> genesis_validator_deposits,
       UnsignedLong genesis_time,
       Eth1Data genesis_eth1_data)
       throws IllegalStateException {
@@ -208,14 +208,14 @@ public class BeaconStateUtil {
    * @param root
    * @return
    */
-  private static boolean verify_merkle_branch(
+  public static boolean verify_merkle_branch(
       Bytes32 leaf, List<Bytes32> proof, int depth, int index, Bytes32 root) {
     Bytes32 value = leaf;
     for (int i = 0; i < depth; i++) {
-      if (index / Math.pow(2, i) % 2 == 0) {
-        value = Hash.keccak256(Bytes.concatenate(proof.get(i), value));
+      if (Math.floor(index / Math.pow(2, i)) % 2 != 0) {
+        value = Hash.sha2_256(Bytes.concatenate(proof.get(i), value));
       } else {
-        value = Hash.keccak256(Bytes.concatenate(value, proof.get(i)));
+        value = Hash.sha2_256(Bytes.concatenate(value, proof.get(i)));
       }
     }
     return value.equals(root);

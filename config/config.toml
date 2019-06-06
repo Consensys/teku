@@ -11,7 +11,7 @@ advertisedPort = 9000
 
 [sim]
 enabled = false
-inputFile = ""
+inputFile = "validator_test_data.json"
 numValidators = 16
 numNodes = 1
 

@@ -53,6 +53,17 @@ public class DepositData {
         });
   }
 
+  public Bytes serialize() {
+    Bytes deposit_data =
+        Bytes.wrap(
+            Bytes.ofUnsignedLong(amount.longValue()),
+            deposit_input.getWithdrawal_credentials(),
+            deposit_input.getPubkey().getPublicKey().toBytesCompressed());
+    return Bytes.wrap(
+            deposit_input.getProof_of_possession().getSignature().toBytesCompressed(), deposit_data)
+        .reverse();
+  }
+
   @Override
   public int hashCode() {
     return Objects.hash(amount, timestamp, deposit_input);
