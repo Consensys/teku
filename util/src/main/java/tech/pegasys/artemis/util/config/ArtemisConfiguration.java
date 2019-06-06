@@ -56,18 +56,20 @@ public final class ArtemisConfiguration {
         "Peer to peer advertised port",
         PropertyValidator.inRange(0, 65535));
     builder.addInteger(
-        "sim.numValidators",
+        "deposit.numValidators",
         128,
         "represents the total number of validators in the network",
         PropertyValidator.inRange(1, 65535));
     builder.addInteger(
-        "sim.numNodes",
+        "deposit.numNodes",
         1,
         "represents the total number of nodes on the network",
         PropertyValidator.inRange(1, 65535));
-
-    builder.addBoolean("sim.enabled", false, "PoW simulation flag", null);
-    builder.addString("sim.inputFile", "", "PoW simulation optional input file", null);
+    builder.addString("deposit.mode", "normal", "PoW Deposit Mode", null);
+    builder.addString("deposit.inputFile", "", "PoW simulation optional input file", null);
+    builder.addString("deposit.nodeUrl", null, "URL for Eth 1.0 node", null);
+    builder.addString(
+        "deposit.contractAddr", null, "Contract address for the deposit contract", null);
     builder.addListOfString(
         "node.peers",
         Collections.emptyList(),
@@ -275,24 +277,32 @@ public final class ArtemisConfiguration {
 
   /** @return the total number of validators in the network */
   public int getNumValidators() {
-    return config.getInteger("sim.numValidators");
+    return config.getInteger("deposit.numValidators");
   }
 
   /** @return the total number of nodes on the network */
   public int getNumNodes() {
-    return config.getInteger("sim.numNodes");
+    return config.getInteger("deposit.numNodes");
   }
 
-  /** @return the PoW simulation flag, w/ optional input file */
+  /** @return the Deposit simulation flag, w/ optional input file */
   public String getInputFile() {
-    String inputFile = config.getString("sim.inputFile");
+    String inputFile = config.getString("deposit.inputFile");
     if (inputFile == null || inputFile.equals("")) return null;
     return inputFile;
   }
 
+  public String getContractAddr() {
+    return config.getString("deposit.contractAddr");
+  }
+
+  public String getNodeUrl() {
+    return config.getString("deposit.nodeUrl");
+  }
+
   /** @return if simulation is enabled or not */
-  public boolean isSimulation() {
-    return config.getBoolean("sim.enabled");
+  public String getDepositMode() {
+    return config.getString("deposit.mode");
   }
 
   /** @return the Output provider types: CSV, JSON */

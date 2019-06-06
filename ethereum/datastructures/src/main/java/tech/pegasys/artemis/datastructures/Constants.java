@@ -95,6 +95,11 @@ public class Constants {
   public static String SIM_DEPOSIT_VALUE = "1000000000000000000";
   public static int DEPOSIT_DATA_SIZE = 512; //
 
+  // Deposit
+  public static String DEPOSIT_NORMAL = "normal";
+  public static String DEPOSIT_TEST = "test";
+  public static String DEPOSIT_SIM = "simulation";
+
   public static void init(ArtemisConfiguration config) {
     // Misc
     SHARD_COUNT =
