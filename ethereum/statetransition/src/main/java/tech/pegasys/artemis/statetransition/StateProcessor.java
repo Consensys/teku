@@ -119,11 +119,6 @@ public class StateProcessor {
     if (deposits == null) deposits = new ArrayList<Deposit>();
     deposits.add(deposit);
   }
-  //
-  //  @Subscribe
-  //  public void onDepositEvent(DepositEvent event) {
-  //    LOG.log(Level.INFO, "Deposit Event detected: " + event.toString());
-  //  }
 
   @Subscribe
   public void onNewSlot(Date date) throws StateTransitionException, InterruptedException {
