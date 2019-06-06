@@ -11,13 +11,25 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.services;
+package tech.pegasys.artemis.service.serviceutils;
 
-public interface ServiceInterface extends Runnable {
-  void init(ServiceConfig config);
+public class ServiceFactory<T> {
 
-  @Override
-  void run();
+  private final Class<T> type;
 
-  void stop();
+  public ServiceFactory(Class<T> type) {
+    this.type = type;
+  }
+
+  public T getInstance() {
+    try {
+      return type.getDeclaredConstructor().newInstance();
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  public static <S> ServiceFactory<S> getInstance(Class<S> type) {
+    return new ServiceFactory<>(type);
+  }
 }

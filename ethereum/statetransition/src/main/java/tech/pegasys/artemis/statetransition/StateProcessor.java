@@ -35,7 +35,7 @@ import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.datastructures.util.DepositUtil;
 import tech.pegasys.artemis.pow.api.Eth2GenesisEvent;
-import tech.pegasys.artemis.storage.ChainStorage;
+import tech.pegasys.artemis.service.serviceutils.ServiceConfig;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
@@ -65,13 +65,13 @@ public class StateProcessor {
   public static final String ANSI_PURPLE = "\u001B[35m";
   public static final String ANSI_WHITE_BOLD = "\033[1;30m";
 
-  public StateProcessor(EventBus eventBus, ArtemisConfiguration config, PublicKey publicKey) {
-    this.eventBus = eventBus;
-    this.config = config;
-    this.publicKey = publicKey;
+  public StateProcessor(ServiceConfig config, ChainStorageClient store) {
+    this.eventBus = config.getEventBus();
+    this.config = config.getConfig();
+    this.publicKey = config.getKeyPair().publicKey();
     this.stateTransition = new StateTransition(true);
+    this.store = store;
     this.eventBus.register(this);
-    this.store = ChainStorage.Create(ChainStorageClient.class, eventBus);
   }
 
   @Subscribe

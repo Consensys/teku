@@ -94,7 +94,7 @@ create_tmux_windows() {
   fi
 
   # Rename the window to add some spice
-  tmux rename-window 'the dude abides'
+  tmux rename-window 'jonny IS king'
 
   # Loop over the remaining nodes
   while [[ $idx -lt $NODES ]]

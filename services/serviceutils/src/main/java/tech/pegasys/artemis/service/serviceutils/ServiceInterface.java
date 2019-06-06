@@ -11,17 +11,13 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.statetransition.util;
+package tech.pegasys.artemis.service.serviceutils;
 
-import com.google.common.primitives.UnsignedLong;
-import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
-import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
+public interface ServiceInterface extends Runnable {
+  void init(ServiceConfig config);
 
-public final class PreProcessingUtil {
+  @Override
+  void run();
 
-  public static void cacheCurrentBeaconProposerIndex(BeaconStateWithCache state) {
-    int beaconProposerIndex =
-        BeaconStateUtil.get_beacon_proposer_index(state, state.getSlot().plus(UnsignedLong.ONE));
-    state.setCurrentBeaconProposerIndex(beaconProposerIndex);
-  }
+  void stop();
 }

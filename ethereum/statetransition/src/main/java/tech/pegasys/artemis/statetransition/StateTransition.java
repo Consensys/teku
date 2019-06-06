@@ -29,7 +29,6 @@ import tech.pegasys.artemis.statetransition.util.BlockProcessingException;
 import tech.pegasys.artemis.statetransition.util.BlockProcessorUtil;
 import tech.pegasys.artemis.statetransition.util.EpochProcessingException;
 import tech.pegasys.artemis.statetransition.util.EpochProcessorUtil;
-import tech.pegasys.artemis.statetransition.util.PreProcessingUtil;
 import tech.pegasys.artemis.util.alogger.ALogger;
 
 public class StateTransition {
@@ -48,6 +47,7 @@ public class StateTransition {
       throws StateTransitionException {
 
     cache_state(state);
+    // Client specific optimization
 
     if (state.getSlot().compareTo(UnsignedLong.valueOf(Constants.GENESIS_SLOT)) > 0
         && state
@@ -58,9 +58,6 @@ public class StateTransition {
       epochProcessor(state, block);
     }
 
-    // Client specific optimization
-    preProcessor(state);
-
     slotProcessor(state);
 
     if (block != null) {
@@ -69,11 +66,6 @@ public class StateTransition {
 
     // Client specific optimization
     state.invalidateCache();
-  }
-
-  protected void preProcessor(BeaconStateWithCache state) {
-    // calculate currentBeaconProposerIndex
-    PreProcessingUtil.cacheCurrentBeaconProposerIndex(state);
   }
 
   /**
