@@ -18,6 +18,7 @@ import org.apache.logging.log4j.Level;
 import org.web3j.crypto.Credentials;
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.http.HttpService;
+import org.web3j.tx.ClientTransactionManager;
 import org.web3j.tx.gas.DefaultGasProvider;
 import tech.pegasys.artemis.ganache.GanacheController;
 import tech.pegasys.artemis.pow.contract.DepositContract;
@@ -47,7 +48,7 @@ public class DepositContractListenerFactory {
       EventBus eventBus, String provider, String address) {
     Web3j web3j = Web3j.build(new HttpService(provider));
     DepositContract contract =
-        DepositContract.load(address, web3j, (Credentials) null, new DefaultGasProvider());
+        DepositContract.load(address, web3j, new ClientTransactionManager(web3j, address), new DefaultGasProvider());
     return new DepositContractListener(eventBus, contract);
   }
 }

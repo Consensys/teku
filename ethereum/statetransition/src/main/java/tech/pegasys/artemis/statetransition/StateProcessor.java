@@ -16,11 +16,6 @@ package tech.pegasys.artemis.statetransition;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.google.common.primitives.UnsignedLong;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.Optional;
 import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.SECP256K1.PublicKey;
@@ -39,6 +34,12 @@ import tech.pegasys.artemis.service.serviceutils.ServiceConfig;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
+
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.Optional;
 
 /** Class to manage the state tree and initiate state transitions */
 public class StateProcessor {
@@ -76,7 +77,6 @@ public class StateProcessor {
 
   @Subscribe
   public void onEth2GenesisEvent(Eth2GenesisEvent event) {
-    if (deposits != null) deposits = DepositUtil.generateBranchProofs(deposits);
     LOG.log(
         Level.INFO,
         "******* Eth2Genesis Event detected ******* : "
@@ -90,11 +90,13 @@ public class StateProcessor {
     LOG.log(Level.INFO, "Node time: " + nodeTime);
     try {
       BeaconState initial_state;
-      if (config.isSimulation())
+      if (config.getDepositMode().equals(Constants.DEPOSIT_TEST))initial_state = DataStructureUtil.createInitialBeaconState(config.getNumValidators());
+      else {
+        deposits = DepositUtil.generateBranchProofs(deposits);
         initial_state =
-            DataStructureUtil.createInitialBeaconState(
-                deposits, ((tech.pegasys.artemis.pow.event.Eth2Genesis) event).getDeposit_root());
-      else initial_state = DataStructureUtil.createInitialBeaconState(config.getNumValidators());
+                DataStructureUtil.createInitialBeaconState(
+                        deposits, ((tech.pegasys.artemis.pow.event.Eth2Genesis) event).getDeposit_root());
+      }
       Bytes32 initial_state_root = initial_state.hash_tree_root();
       BeaconBlock genesis_block = BeaconBlockUtil.get_empty_block();
       genesis_block.setState_root(initial_state_root);
