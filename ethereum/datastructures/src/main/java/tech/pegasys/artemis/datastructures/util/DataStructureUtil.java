@@ -368,6 +368,16 @@ public final class DataStructureUtil {
         BLSSignature.empty());
   }
 
+  public static BeaconStateWithCache createInitialBeaconState(
+      List<Deposit> deposits, Bytes32 deposit_root) {
+    BeaconStateWithCache state = new BeaconStateWithCache();
+    return BeaconStateUtil.get_genesis_beacon_state(
+        state,
+        deposits,
+        UnsignedLong.valueOf(Constants.GENESIS_SLOT),
+        new Eth1Data(deposit_root, Bytes32.ZERO));
+  }
+
   public static BeaconStateWithCache createInitialBeaconState(int numValidators) {
     BeaconStateWithCache state = new BeaconStateWithCache();
     return BeaconStateUtil.get_genesis_beacon_state(
