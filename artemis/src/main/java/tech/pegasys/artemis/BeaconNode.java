@@ -33,15 +33,14 @@ import tech.pegasys.artemis.metrics.PrometheusEndpoint;
 import tech.pegasys.artemis.networking.p2p.HobbitsP2PNetwork;
 import tech.pegasys.artemis.networking.p2p.MockP2PNetwork;
 import tech.pegasys.artemis.networking.p2p.api.P2PNetwork;
-import tech.pegasys.artemis.services.ServiceConfig;
-import tech.pegasys.artemis.services.ServiceController;
+import tech.pegasys.artemis.service.serviceutils.ServiceConfig;
+import tech.pegasys.artemis.service.serviceutils.ServiceController;
 import tech.pegasys.artemis.services.beaconchain.BeaconChainService;
 import tech.pegasys.artemis.services.chainstorage.ChainStorageService;
 import tech.pegasys.artemis.services.powchain.PowchainService;
 import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.cli.CommandLineArguments;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
-import tech.pegasys.artemis.validator.coordinator.ValidatorCoordinator;
 
 public class BeaconNode {
   private static final ALogger LOG = new ALogger(BeaconNode.class.getName());
@@ -58,7 +57,6 @@ public class BeaconNode {
   private final ServiceConfig serviceConfig;
   private Constants constants;
   private P2PNetwork p2pNetwork;
-  private ValidatorCoordinator validatorCoordinator;
   private EventBus eventBus;
   private FileProvider fileProvider;
   private EventHandler eventHandler;
@@ -116,7 +114,6 @@ public class BeaconNode {
     // set log level per CLI flags
     System.out.println("Setting logging level to " + cliArgs.getLoggingLevel().name());
     Configurator.setAllLevels("", cliArgs.getLoggingLevel());
-    this.validatorCoordinator = new ValidatorCoordinator(serviceConfig);
   }
 
   public void start() {

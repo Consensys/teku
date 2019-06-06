@@ -38,7 +38,7 @@ import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.util.AttestationUtil;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
-import tech.pegasys.artemis.services.ServiceConfig;
+import tech.pegasys.artemis.service.serviceutils.ServiceConfig;
 import tech.pegasys.artemis.statetransition.GenesisHeadStateEvent;
 import tech.pegasys.artemis.statetransition.HeadStateEvent;
 import tech.pegasys.artemis.statetransition.StateTransition;
@@ -150,33 +150,10 @@ public class ValidatorCoordinator {
   private void createBlockIfNecessary(BeaconStateWithCache headState, BeaconBlock headBlock) {
     // Calculate the block proposer index, and if we have the
     // block proposer in our set of validators, produce the block
-    Integer proposerIndex;
-    BLSPublicKey proposerPubkey;
-    // Implements change from 6.1 for validator client, quoting from spec:
-    // "To see if a validator is assigned to proposer during the slot,
-    // the validator must run an empty slot transition from the previous
-    // state to the current slot."
-    // However, this is only required on epoch changes, because otherwise
-    // validator registry doesn't change anyway.
-    if (headState
-        .getSlot()
-        .plus(UnsignedLong.ONE)
-        .mod(UnsignedLong.valueOf(Constants.SLOTS_PER_EPOCH))
-        .equals(UnsignedLong.ZERO)) {
-      BeaconStateWithCache newState = BeaconStateWithCache.deepCopy(headState);
-      try {
-        stateTransition.initiate(newState, null);
-      } catch (StateTransitionException e) {
-        LOG.log(Level.WARN, e.toString(), printEnabled);
-      }
-      proposerIndex = BeaconStateUtil.get_beacon_proposer_index(newState, newState.getSlot());
-      proposerPubkey = newState.getValidator_registry().get(proposerIndex).getPubkey();
-    } else {
-      proposerIndex =
-          BeaconStateUtil.get_beacon_proposer_index(
-              headState, headState.getSlot().plus(UnsignedLong.ONE));
-      proposerPubkey = headState.getValidator_registry().get(proposerIndex).getPubkey();
-    }
+    Integer proposerIndex =
+        BeaconStateUtil.get_beacon_proposer_index(
+            headState, headState.getSlot().plus(UnsignedLong.ONE));
+    BLSPublicKey proposerPubkey = headState.getValidator_registry().get(proposerIndex).getPubkey();
     if (validatorSet.containsKey(proposerPubkey)) {
       Bytes32 blockRoot = headBlock.signed_root("signature");
       createNewBlock(headState, blockRoot, validatorSet.get(proposerPubkey));
