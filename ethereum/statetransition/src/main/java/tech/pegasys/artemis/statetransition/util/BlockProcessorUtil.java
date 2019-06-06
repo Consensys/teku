@@ -330,8 +330,6 @@ public final class BlockProcessorUtil {
 
       for (Attestation attestation : block.getBody().getAttestations()) {
         UnsignedLong attestationDataSlot = attestation.getData().getSlot();
-        // System.out.println("attestationDataSlot: " + attestationDataSlot);
-        // System.out.println("attestationDataSlot: " + attestation.hash_tree_root());
         checkArgument(
             attestationDataSlot.compareTo(UnsignedLong.valueOf(Constants.GENESIS_SLOT)) >= 0,
             "Attestation in pre-history");
@@ -439,8 +437,9 @@ public final class BlockProcessorUtil {
 
     // Get the committee for the specific shard that this attestation is for
     List<List<Integer>> crosslink_committees = new ArrayList<>();
-    for (CrosslinkCommittee crosslink_committee :
-        get_crosslink_committees_at_slot(state, attestation.getData().getSlot())) {
+    List<CrosslinkCommittee> crosslink_committees_at_slot =
+        get_crosslink_committees_at_slot(state, attestation.getData().getSlot());
+    for (CrosslinkCommittee crosslink_committee : crosslink_committees_at_slot) {
       if (Objects.equals(crosslink_committee.getShard(), attestation.getData().getShard())) {
         crosslink_committees.add(crosslink_committee.getCommittee());
       }
