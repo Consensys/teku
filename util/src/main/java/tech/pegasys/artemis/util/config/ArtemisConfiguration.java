@@ -13,15 +13,6 @@
 
 package tech.pegasys.artemis.util.config;
 
-import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.config.Configuration;
-import org.apache.tuweni.config.ConfigurationError;
-import org.apache.tuweni.config.PropertyValidator;
-import org.apache.tuweni.config.Schema;
-import org.apache.tuweni.config.SchemaBuilder;
-import org.apache.tuweni.crypto.SECP256K1;
-import tech.pegasys.artemis.util.bls.BLSSignature;
-
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URI;
@@ -34,6 +25,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
+import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.config.Configuration;
+import org.apache.tuweni.config.ConfigurationError;
+import org.apache.tuweni.config.PropertyValidator;
+import org.apache.tuweni.config.Schema;
+import org.apache.tuweni.config.SchemaBuilder;
+import org.apache.tuweni.crypto.SECP256K1;
+import tech.pegasys.artemis.util.bls.BLSSignature;
 
 /** Configuration of an instance of Artemis. */
 public final class ArtemisConfiguration {
@@ -69,7 +68,8 @@ public final class ArtemisConfiguration {
     builder.addString("deposit.mode", "normal", "PoW Deposit Mode", null);
     builder.addString("deposit.inputFile", "", "PoW simulation optional input file", null);
     builder.addString("deposit.nodeUrl", null, "URL for Eth 1.0 node", null);
-    builder.addString("deposit.contractAddr", null, "Contract address for the deposit contract", null);
+    builder.addString(
+        "deposit.contractAddr", null, "Contract address for the deposit contract", null);
     builder.addListOfString(
         "node.peers",
         Collections.emptyList(),

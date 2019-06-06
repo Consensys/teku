@@ -13,12 +13,24 @@
 
 package tech.pegasys.artemis.services.powchain;
 
+import static com.google.common.base.Charsets.UTF_8;
+
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.google.common.primitives.UnsignedLong;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.Reader;
+import java.nio.ByteOrder;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -46,19 +58,6 @@ import tech.pegasys.artemis.validator.client.DepositSimulation;
 import tech.pegasys.artemis.validator.client.Validator;
 import tech.pegasys.artemis.validator.client.ValidatorClientUtil;
 
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.Reader;
-import java.nio.ByteOrder;
-import java.nio.charset.Charset;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-
-import static com.google.common.base.Charsets.UTF_8;
-
 public class PowchainService implements ServiceInterface {
 
   public static final String SIM_DEPOSIT_VALUE_GWEI = "32000000000";
@@ -78,8 +77,7 @@ public class PowchainService implements ServiceInterface {
 
   List<DepositSimulation> simulations;
 
-  public PowchainService() {
-  }
+  public PowchainService() {}
 
   @Override
   public void init(ServiceConfig config) {
@@ -87,7 +85,8 @@ public class PowchainService implements ServiceInterface {
     this.eventBus.register(this);
     this.depositMode = config.getConfig().getDepositMode();
     if (config.getConfig().getInputFile() != null)
-      this.depositSimFile = System.getProperty("user.dir") + "/" + config.getConfig().getInputFile();
+      this.depositSimFile =
+          System.getProperty("user.dir") + "/" + config.getConfig().getInputFile();
     validatorCount = config.getConfig().getNumValidators();
     nodeCount = config.getConfig().getNumNodes();
     contractAddr = config.getConfig().getContractAddr();
@@ -202,10 +201,9 @@ public class PowchainService implements ServiceInterface {
       response.deposit_root = "root".getBytes(Charset.defaultCharset());
       Eth2Genesis eth2Genesis = new tech.pegasys.artemis.pow.event.Eth2Genesis(response);
       this.eventBus.post(eth2Genesis);
-    }
-    else if (depositMode.equals(Constants.DEPOSIT_NORMAL)) {
+    } else if (depositMode.equals(Constants.DEPOSIT_NORMAL)) {
       listener =
-              DepositContractListenerFactory.eth1DepositContract(eventBus, provider, contractAddr);
+          DepositContractListenerFactory.eth1DepositContract(eventBus, provider, contractAddr);
     }
   }
 
