@@ -39,6 +39,7 @@ import org.web3j.protocol.Web3j;
 import org.web3j.protocol.core.methods.response.Log;
 import org.web3j.protocol.http.HttpService;
 import org.web3j.tx.gas.DefaultGasProvider;
+import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.operations.DepositData;
 import tech.pegasys.artemis.datastructures.operations.DepositInput;
 import tech.pegasys.artemis.ganache.GanacheController;
@@ -66,27 +67,35 @@ public class PowchainService implements ServiceInterface {
   private GanacheController controller;
   private DepositContractListener listener;
 
-  private boolean depositSimulation;
+  private String depositMode;
+  private String contractAddr;
+  private String provider;
+
+  private String depositSimFile;
+  private int validatorCount;
+  private int nodeCount;
 
   List<DepositSimulation> simulations;
-  private String simFile;
 
-  public PowchainService() {
-    depositSimulation = false;
-  }
+  public PowchainService() {}
 
   @Override
   public void init(ServiceConfig config) {
     this.eventBus = config.getEventBus();
     this.eventBus.register(this);
-    this.depositSimulation = config.getConfig().isSimulation();
+    this.depositMode = config.getConfig().getDepositMode();
     if (config.getConfig().getInputFile() != null)
-      this.simFile = System.getProperty("user.dir") + "/" + config.getConfig().getInputFile();
+      this.depositSimFile =
+          System.getProperty("user.dir") + "/" + config.getConfig().getInputFile();
+    validatorCount = config.getConfig().getNumValidators();
+    nodeCount = config.getConfig().getNumNodes();
+    contractAddr = config.getConfig().getContractAddr();
+    provider = config.getConfig().getNodeUrl();
   }
 
   @Override
   public void run() {
-    if (depositSimulation && simFile == null) {
+    if (depositMode.equals(Constants.DEPOSIT_SIM) && depositSimFile == null) {
       controller = new GanacheController(10, 6000);
       listener =
           DepositContractListenerFactory.simulationDeployDepositContract(eventBus, controller);
@@ -118,10 +127,10 @@ public class PowchainService implements ServiceInterface {
                   + e);
         }
       }
-    } else if (depositSimulation && simFile != null) {
+    } else if (depositMode.equals(Constants.DEPOSIT_SIM) && depositSimFile != null) {
       JsonParser parser = new JsonParser();
       try {
-        Reader reader = Files.newBufferedReader(Paths.get(simFile), UTF_8);
+        Reader reader = Files.newBufferedReader(Paths.get(depositSimFile), UTF_8);
         JsonArray validatorsJSON = ((JsonArray) parser.parse(reader));
         validatorsJSON.forEach(
             object -> {
@@ -183,7 +192,7 @@ public class PowchainService implements ServiceInterface {
       } catch (IOException e) {
         LOG.log(Level.ERROR, e.getMessage());
       }
-    } else {
+    } else if (depositMode.equals(Constants.DEPOSIT_TEST)) {
       Eth2GenesisEventResponse response = new Eth2GenesisEventResponse();
       response.log =
           new Log(true, "1", "2", "3", "4", "5", "6", "7", "8", Collections.singletonList("9"));
@@ -192,6 +201,9 @@ public class PowchainService implements ServiceInterface {
       response.deposit_root = "root".getBytes(Charset.defaultCharset());
       Eth2Genesis eth2Genesis = new tech.pegasys.artemis.pow.event.Eth2Genesis(response);
       this.eventBus.post(eth2Genesis);
+    } else if (depositMode.equals(Constants.DEPOSIT_NORMAL)) {
+      listener =
+          DepositContractListenerFactory.eth1DepositContract(eventBus, provider, contractAddr);
     }
   }
 
