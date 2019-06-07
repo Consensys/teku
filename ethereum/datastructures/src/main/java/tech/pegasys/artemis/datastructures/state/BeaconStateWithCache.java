@@ -27,13 +27,12 @@ import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 
 public final class BeaconStateWithCache extends BeaconState {
 
-  protected int currentBeaconProposerIndex = -1;
+  protected UnsignedLong previousTotalBalance = UnsignedLong.MAX_VALUE;
   protected Map<UnsignedLong, List<CrosslinkCommittee>> crosslinkCommittees =
       new HashMap<UnsignedLong, List<CrosslinkCommittee>>();
 
   public BeaconStateWithCache() {
     super();
-    this.currentBeaconProposerIndex = -1;
   }
 
   public BeaconStateWithCache(BeaconStateWithCache state) {
@@ -99,14 +98,6 @@ public final class BeaconStateWithCache extends BeaconState {
     return new BeaconStateWithCache(state);
   }
 
-  public int getCurrentBeaconProposerIndex() {
-    return this.currentBeaconProposerIndex;
-  }
-
-  public void setCurrentBeaconProposerIndex(int currentBeaconProposerIndex) {
-    this.currentBeaconProposerIndex = currentBeaconProposerIndex;
-  }
-
   public List<CrosslinkCommittee> getCrossLinkCommitteesAtSlot(UnsignedLong slot) {
     if (crosslinkCommittees.containsKey(slot)) {
       return crosslinkCommittees.get(slot);
@@ -119,8 +110,16 @@ public final class BeaconStateWithCache extends BeaconState {
     this.crosslinkCommittees.put(slot, crosslinkCommittees);
   }
 
+  public UnsignedLong getPreviousTotalBalance() {
+    return this.previousTotalBalance;
+  }
+
+  public void setPreviousTotalBalance(UnsignedLong balance) {
+    this.previousTotalBalance = balance;
+  }
+
   public void invalidateCache() {
-    this.currentBeaconProposerIndex = -1;
+    this.previousTotalBalance = UnsignedLong.MAX_VALUE;
     this.crosslinkCommittees = new HashMap<>();
   }
 }
