@@ -15,6 +15,7 @@ package tech.pegasys.artemis.storage;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
+import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -25,6 +26,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.PriorityBlockingQueue;
 import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
@@ -46,6 +48,11 @@ public class ChainStorageClient implements ChainStorage {
   protected final ConcurrentHashMap<Bytes, BeaconBlock> processedBlockLookup =
       new ConcurrentHashMap<>();
   protected final ConcurrentHashMap<Bytes, BeaconState> stateLookup = new ConcurrentHashMap<>();
+  protected final ConcurrentHashMap<Bytes, Attestation> processedAttestations =
+      new ConcurrentHashMap<>();
+  private final PriorityBlockingQueue<Attestation> attestationsQueue =
+      new PriorityBlockingQueue<>(
+          UNPROCESSED_BLOCKS_LENGTH, Comparator.comparing(Attestation::getSlot));
   protected EventBus eventBus;
   protected final Object syncObject;
 
@@ -75,6 +82,15 @@ public class ChainStorageClient implements ChainStorage {
   }
 
   /**
+   * Add processed block to storage
+   *
+   * @param attestation
+   */
+  public void addProcessedAttestation(Attestation attestation) {
+    ChainStorage.add(attestation.toBytes(), attestation, this.processedAttestations);
+  }
+
+  /**
    * Add calculated state to storage
    *
    * @param state_root
@@ -82,7 +98,6 @@ public class ChainStorageClient implements ChainStorage {
    */
   public void addState(Bytes state_root, BeaconState state) {
     ChainStorage.add(state_root, state, this.stateLookup);
-    // todo: post event to eventbus to notify the server that a new processed block has been added
   }
 
   /**
@@ -100,7 +115,7 @@ public class ChainStorageClient implements ChainStorage {
    * @param attestation
    */
   public void addUnprocessedAttestation(Attestation attestation) {
-    ChainStorage.add(attestation, unprocessedAttestations);
+    ChainStorage.add(attestation, attestationsQueue);
   }
 
   /**
@@ -191,6 +206,21 @@ public class ChainStorageClient implements ChainStorage {
     return processedBlockLookup;
   }
 
+  public List<Attestation> getUnprocessedAttestationsUntilSlot(UnsignedLong slot) {
+    List<Attestation> attestations = new ArrayList<>();
+    int numAttestations = 0;
+    while (attestationsQueue.peek() != null
+        && attestationsQueue.peek().getSlot().compareTo(slot) <= 0
+        && numAttestations < Constants.MAX_ATTESTATIONS) {
+      if (!ChainStorage.get(attestationsQueue.peek().toBytes(), this.processedAttestations)
+          .isPresent()) {
+        attestations.add(attestationsQueue.remove());
+        numAttestations++;
+      }
+    }
+    return attestations;
+  }
+
   @Subscribe
   public void onNewUnprocessedBlock(BeaconBlock block) {
     String ANSI_GREEN = "\u001B[32m";
@@ -219,6 +249,7 @@ public class ChainStorageClient implements ChainStorage {
             + attestation.getData().getBeacon_block_root()
             + " detected."
             + ANSI_RESET);
+
     addUnprocessedAttestation(attestation);
 
     // TODO: verify the assumption below:

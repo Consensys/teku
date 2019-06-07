@@ -271,6 +271,10 @@ public class StateProcessor {
               ANSI_PURPLE + "Block state root matches the calculated state root." + ANSI_RESET);
           this.store.addProcessedBlock(blockRoot, block);
           this.store.addState(newStateRoot, currentState);
+          block
+              .getBody()
+              .getAttestations()
+              .forEach(attestation -> this.store.addProcessedAttestation(attestation));
         } else {
           LOG.log(
               Level.INFO,

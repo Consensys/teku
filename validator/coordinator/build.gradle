@@ -7,6 +7,7 @@ jar {
 }
 
 dependencies {
+  implementation project(':storage')
   implementation project(':services:serviceutils')
   implementation project(':ethereum:statetransition')
   implementation project(':ethereum:datastructures')
