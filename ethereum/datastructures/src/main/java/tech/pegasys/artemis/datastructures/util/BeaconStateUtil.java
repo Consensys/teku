@@ -461,19 +461,6 @@ public class BeaconStateUtil {
   }
 
   /**
-   * calculate the total balance from the previous epoch
-   *
-   * @param state
-   * @return
-   */
-  public static UnsignedLong previous_total_balance(BeaconState state) {
-    UnsignedLong previous_epoch = BeaconStateUtil.get_previous_epoch(state);
-    List<Integer> previous_active_validators =
-        ValidatorsUtil.get_active_validator_indices(state.getValidator_registry(), previous_epoch);
-    return get_total_balance(state, previous_active_validators);
-  }
-
-  /**
    * Adds and returns the effective balances for the validators referenced by the given indices.
    *
    * @param state - The current BeaconState.

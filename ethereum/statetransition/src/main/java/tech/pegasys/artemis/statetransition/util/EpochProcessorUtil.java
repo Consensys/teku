@@ -60,6 +60,7 @@ import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.Eth1DataVote;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.state.Crosslink;
 import tech.pegasys.artemis.datastructures.state.CrosslinkCommittee;
 import tech.pegasys.artemis.datastructures.state.HistoricalBatch;
@@ -90,9 +91,22 @@ public final class EpochProcessorUtil {
    * @return
    */
   public static UnsignedLong get_previous_total_balance(BeaconState state) {
-    return get_total_balance(
-        state,
-        get_active_validator_indices(state.getValidator_registry(), get_previous_epoch(state)));
+    if (state instanceof BeaconStateWithCache
+        && ((BeaconStateWithCache) state)
+                .getPreviousTotalBalance()
+                .compareTo(UnsignedLong.MAX_VALUE)
+            < 0) {
+      BeaconStateWithCache stateWithCash = (BeaconStateWithCache) state;
+      return stateWithCash.getPreviousTotalBalance();
+    } else {
+      UnsignedLong previousTotalBalance =
+          get_total_balance(
+              state,
+              get_active_validator_indices(
+                  state.getValidator_registry(), get_previous_epoch(state)));
+      ((BeaconStateWithCache) state).setPreviousTotalBalance(previousTotalBalance);
+      return previousTotalBalance;
+    }
   }
 
   /**
