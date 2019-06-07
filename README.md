@@ -102,8 +102,25 @@ To run with loggin level set to DEBUG
 $ ./gradlew run --args='-l=DEBUG'
 ```
 
-To run and generate flow diagrams for Artemis
+To profile and/or generate flow diagrams for Artemis: 
+
+Setup:
+
+```bash
+$ source artemis.env 
 ```
+
+Run:
+
+
+Terminal 1:
+
+```bash
+$ flow
+```
+
+Terminal 2:
+``` bash
 $ ./gradlew run -PgenerateFlow
 ```
-> Note: You must be running [flow](http://findtheflow.io/)
+
