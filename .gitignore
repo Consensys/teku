@@ -37,3 +37,4 @@ pow/truffle/node_modules/
 pow/truffle/npm-debug.*
 scripts/demo
 config/runConfig.*
+gradle/flow/
