@@ -69,6 +69,9 @@ public class BeaconNode {
   }
 
   BeaconNode(CommandLine commandLine, CommandLineArguments cliArgs, ArtemisConfiguration config) {
+    System.setProperty("logPath", config.getLogPath());
+    System.setProperty("rollingFile", config.getLogFile());
+
     this.eventBus = new AsyncEventBus(threadPool);
     if ("mock".equals(config.getNetworkMode())) {
       this.p2pNetwork = new MockP2PNetwork(eventBus);

@@ -34,6 +34,7 @@ import tech.pegasys.artemis.util.alogger.ALogger;
 
 /** This class is the ChainStorage client-side logic */
 public class ChainStorageClient implements ChainStorage {
+  private static final ALogger STDOUT = new ALogger("stdout");
   static final ALogger LOG = new ALogger(ChainStorageClient.class.getName());
   static final Integer UNPROCESSED_BLOCKS_LENGTH = 100;
   protected final ConcurrentHashMap<Integer, Attestation> latestAttestations =
@@ -195,7 +196,7 @@ public class ChainStorageClient implements ChainStorage {
   public void onNewUnprocessedBlock(BeaconBlock block) {
     String ANSI_GREEN = "\u001B[32m";
     String ANSI_RESET = "\033[0m";
-    LOG.log(
+    STDOUT.log(
         Level.INFO,
         ANSI_GREEN
             + "New BeaconBlock with state root:  "
@@ -212,7 +213,7 @@ public class ChainStorageClient implements ChainStorage {
   public void onNewUnprocessedAttestation(Attestation attestation) {
     String ANSI_GREEN = "\u001B[32m";
     String ANSI_RESET = "\033[0m";
-    LOG.log(
+    STDOUT.log(
         Level.INFO,
         ANSI_GREEN
             + "New Attestation with block root:  "
