@@ -110,6 +110,10 @@ public final class ArtemisConfiguration {
         PropertyValidator.inRange(0, 65535));
     // Outputs
     builder.addString(
+        "output.logPath", ".", "Path to output the log file", PropertyValidator.isPresent());
+    builder.addString(
+        "output.logFile", "artemis.log", "Log file name", PropertyValidator.isPresent());
+    builder.addString(
         "output.providerType",
         "JSON",
         "Output provider types: CSV, JSON",
@@ -591,5 +595,15 @@ public final class ArtemisConfiguration {
   /** @return the mode of the network to use - mock or hobbits */
   public String getNetworkMode() {
     return config.getString("node.networkMode");
+  }
+
+  /** @return the path to the log file */
+  public String getLogPath() {
+    return config.getString("output.logPath");
+  }
+
+  /** @return the name of the log file */
+  public String getLogFile() {
+    return config.getString("output.logFile");
   }
 }
