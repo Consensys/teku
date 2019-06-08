@@ -19,11 +19,9 @@ import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
-import java.util.concurrent.PriorityBlockingQueue;
 import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.SECP256K1;
@@ -43,6 +41,7 @@ import tech.pegasys.artemis.statetransition.GenesisHeadStateEvent;
 import tech.pegasys.artemis.statetransition.HeadStateEvent;
 import tech.pegasys.artemis.statetransition.StateTransition;
 import tech.pegasys.artemis.statetransition.StateTransitionException;
+import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
@@ -63,18 +62,17 @@ public class ValidatorCoordinator {
   private BeaconBlock validatorBlock;
   private ArrayList<Deposit> newDeposits = new ArrayList<>();
   private final HashMap<BLSPublicKey, BLSKeyPair> validatorSet = new HashMap<>();
+  private ChainStorageClient store;
   static final Integer UNPROCESSED_BLOCKS_LENGTH = 100;
-  private final PriorityBlockingQueue<Attestation> attestationsQueue =
-      new PriorityBlockingQueue<>(
-          UNPROCESSED_BLOCKS_LENGTH, Comparator.comparing(Attestation::getSlot));
 
-  public ValidatorCoordinator(ServiceConfig config) {
+  public ValidatorCoordinator(ServiceConfig config, ChainStorageClient store) {
     this.eventBus = config.getEventBus();
     this.eventBus.register(this);
     this.nodeIdentity =
         SECP256K1.SecretKey.fromBytes(Bytes32.fromHexString(config.getConfig().getIdentity()));
     this.numValidators = config.getConfig().getNumValidators();
     this.numNodes = config.getConfig().getNumNodes();
+    this.store = store;
 
     initializeValidators();
 
@@ -114,14 +112,6 @@ public class ValidatorCoordinator {
     // storage
     BeaconStateWithCache newHeadState = BeaconStateWithCache.deepCopy(headState);
     createBlockIfNecessary(newHeadState, headBlock);
-  }
-
-  @Subscribe
-  public void onNewAttestation(Attestation attestation) {
-    // Store attestations in a priority queue
-    if (!attestationsQueue.contains(attestation)) {
-      attestationsQueue.add(attestation);
-    }
   }
 
   private void initializeValidators() {
@@ -177,8 +167,7 @@ public class ValidatorCoordinator {
                 .getSlot()
                 .minus(UnsignedLong.valueOf(Constants.MIN_ATTESTATION_INCLUSION_DELAY));
 
-        current_attestations =
-            AttestationUtil.getAttestationsUntilSlot(attestationsQueue, attestation_slot);
+        current_attestations = this.store.getUnprocessedAttestationsUntilSlot(attestation_slot);
 
         block =
             DataStructureUtil.newBeaconBlock(
