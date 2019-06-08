@@ -273,7 +273,7 @@ public final class HobbitsP2PNetwork implements P2PNetwork {
   }
 
   @Subscribe
-  public void onNewAttestation(Attestation attestation) {
+  public void onNewUnprocessedAttestation(Attestation attestation) {
     LOG.log(
         Level.DEBUG,
         "Gossiping new attestation for block_root: "

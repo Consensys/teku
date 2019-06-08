@@ -56,6 +56,7 @@ public class StateProcessor {
   private ChainStorageClient store;
   private ArtemisConfiguration config;
   private PublicKey publicKey;
+  private static final ALogger STDOUT = new ALogger("stdout");
   private static final ALogger LOG = new ALogger(StateProcessor.class.getName());
   private List<Deposit> deposits;
 
@@ -76,7 +77,7 @@ public class StateProcessor {
 
   @Subscribe
   public void onEth2GenesisEvent(Eth2GenesisEvent event) {
-    LOG.log(
+    STDOUT.log(
         Level.INFO,
         "******* Eth2Genesis Event detected ******* : "
             + ((tech.pegasys.artemis.pow.event.Eth2Genesis) event).getDeposit_root().toString()
@@ -85,8 +86,8 @@ public class StateProcessor {
     this.nodeTime =
         UnsignedLong.valueOf(Constants.GENESIS_SLOT)
             .times(UnsignedLong.valueOf(Constants.SECONDS_PER_SLOT));
-    LOG.log(Level.INFO, "Node slot: " + nodeSlot);
-    LOG.log(Level.INFO, "Node time: " + nodeTime);
+    STDOUT.log(Level.INFO, "Node slot: " + nodeSlot);
+    STDOUT.log(Level.INFO, "Node time: " + nodeTime);
     try {
       BeaconState initial_state;
       if (config.getDepositMode().equals(Constants.DEPOSIT_TEST))
@@ -101,7 +102,7 @@ public class StateProcessor {
       BeaconBlock genesis_block = BeaconBlockUtil.get_empty_block();
       genesis_block.setState_root(initial_state_root);
       Bytes32 genesis_block_root = genesis_block.signed_root("signature");
-      LOG.log(Level.INFO, "Initial state root is " + initial_state_root.toHexString());
+      STDOUT.log(Level.INFO, "Initial state root is " + initial_state_root.toHexString());
       this.store.addState(initial_state_root, initial_state);
       this.store.addProcessedBlock(genesis_block_root, genesis_block);
       this.headBlock = genesis_block;
@@ -127,9 +128,9 @@ public class StateProcessor {
     this.nodeSlot = this.nodeSlot.plus(UnsignedLong.ONE);
     this.nodeTime = this.nodeTime.plus(UnsignedLong.valueOf(Constants.SECONDS_PER_SLOT));
 
-    LOG.log(Level.INFO, ANSI_WHITE_BOLD + "******* Slot Event *******" + ANSI_RESET);
-    LOG.log(Level.INFO, "Node time:                             " + nodeTime);
-    LOG.log(
+    STDOUT.log(Level.INFO, ANSI_WHITE_BOLD + "******* Slot Event *******" + ANSI_RESET);
+    STDOUT.log(Level.INFO, "Node time:                             " + nodeTime);
+    STDOUT.log(
         Level.INFO,
         "Node slot:                             "
             + nodeSlot
@@ -155,9 +156,9 @@ public class StateProcessor {
     unprocessedBlocks.forEach((block) -> processBlock(block));
 
     // Update the block that is subjectively the head of the chain  using lmd_ghost
-    LOG.log(Level.INFO, ANSI_PURPLE + "Updating head block using LMDGhost." + ANSI_RESET);
+    STDOUT.log(Level.INFO, ANSI_PURPLE + "Updating head block using LMDGhost." + ANSI_RESET);
     updateHeadBlockUsingLMDGhost();
-    LOG.log(
+    STDOUT.log(
         Level.INFO,
         "Head block slot:                      "
             + headBlock.getSlot()
@@ -168,13 +169,13 @@ public class StateProcessor {
     BeaconState headBlockState = store.getState(headBlock.getState_root()).get();
     Long justifiedEpoch = headBlockState.getCurrent_justified_epoch().longValue();
     Long finalizedEpoch = headBlockState.getFinalized_epoch().longValue();
-    LOG.log(
+    STDOUT.log(
         Level.INFO,
         "Justified block epoch:                 "
             + justifiedEpoch
             + "  |  "
             + justifiedEpoch % Constants.GENESIS_EPOCH);
-    LOG.log(
+    STDOUT.log(
         Level.INFO,
         "Finalized block epoch:                 "
             + finalizedEpoch
@@ -188,7 +189,7 @@ public class StateProcessor {
     boolean firstLoop = true;
     while (newHeadState.getSlot().compareTo(nodeSlot) < 0) {
       if (firstLoop) {
-        LOG.log(
+        STDOUT.log(
             Level.INFO,
             "Transitioning state from slot: " + newHeadState.getSlot() + " to slot: " + nodeSlot);
         firstLoop = false;
@@ -246,7 +247,7 @@ public class StateProcessor {
             BeaconStateWithCache.deepCopy((BeaconStateWithCache) parentBlockState);
         while (currentState.getSlot().compareTo(UnsignedLong.valueOf(block.getSlot() - 1)) < 0) {
           if (firstLoop) {
-            LOG.log(
+            STDOUT.log(
                 Level.INFO,
                 "Running state transition with no blocks from parent block slot: "
                     + currentState.getSlot()
@@ -258,7 +259,7 @@ public class StateProcessor {
         }
 
         // Run state transition with the block
-        LOG.log(Level.INFO, ANSI_PURPLE + "Running state transition with block." + ANSI_RESET);
+        STDOUT.log(Level.INFO, ANSI_PURPLE + "Running state transition with block." + ANSI_RESET);
         stateTransition.initiate(currentState, block);
 
         Bytes32 newStateRoot = currentState.hash_tree_root();
@@ -266,23 +267,27 @@ public class StateProcessor {
         // Verify that the state root we have computed is the state root that block is
         // claiming us we should reach, save the block and the state if its correct.
         if (blockStateRoot.equals(newStateRoot)) {
-          LOG.log(
+          STDOUT.log(
               Level.INFO,
               ANSI_PURPLE + "Block state root matches the calculated state root." + ANSI_RESET);
           this.store.addProcessedBlock(blockRoot, block);
           this.store.addState(newStateRoot, currentState);
+          block
+              .getBody()
+              .getAttestations()
+              .forEach(attestation -> this.store.addProcessedAttestation(attestation));
         } else {
-          LOG.log(
+          STDOUT.log(
               Level.INFO,
               ANSI_RED + "Block state root does NOT match the calculated state root!" + ANSI_RESET);
-          LOG.log(
+          STDOUT.log(
               Level.INFO,
               ANSI_RED + "Block state root: " + blockStateRoot.toHexString() + ANSI_RESET);
-          LOG.log(
+          STDOUT.log(
               Level.INFO, ANSI_RED + "New state root: " + newStateRoot.toHexString() + ANSI_RESET);
         }
       } else {
-        LOG.log(Level.INFO, "Skipped processing block");
+        STDOUT.log(Level.INFO, "Skipped processing block");
       }
     } catch (NoSuchElementException | IllegalArgumentException | StateTransitionException e) {
       LOG.log(Level.WARN, e.toString());

@@ -17,7 +17,6 @@ import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.concurrent.PriorityBlockingQueue;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.Constants;
@@ -144,16 +143,6 @@ public class AttestationUtil {
 
         indexIntoCommittee++;
       }
-    }
-    return attestations;
-  }
-
-  public static List<Attestation> getAttestationsUntilSlot(
-      PriorityBlockingQueue<Attestation> attestationsQueue, UnsignedLong slot) {
-    List<Attestation> attestations = new ArrayList<>();
-    while (attestationsQueue.peek() != null
-        && attestationsQueue.peek().getSlot().compareTo(slot) <= 0) {
-      attestations.add(attestationsQueue.remove());
     }
     return attestations;
   }
