@@ -213,10 +213,10 @@ public class ChainStorageClient implements ChainStorage {
     while (attestationsQueue.peek() != null
         && attestationsQueue.peek().getSlot().compareTo(slot) <= 0
         && numAttestations < Constants.MAX_ATTESTATIONS) {
-      if (!ChainStorage.get(
-              attestationsQueue.peek().getAggregate_signature(), this.processedAttestations)
+      Attestation attestation = attestationsQueue.remove();
+      if (!ChainStorage.get(attestation.getAggregate_signature(), this.processedAttestations)
           .isPresent()) {
-        attestations.add(attestationsQueue.remove());
+        attestations.add(attestation);
         numAttestations++;
       }
     }
