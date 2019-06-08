@@ -18,7 +18,6 @@ import java.util.Optional;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 import org.apache.logging.log4j.Level;
-import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.artemis.util.alogger.ALogger;
 
 /** ChainStorage Interface class */
@@ -62,7 +61,7 @@ public interface ChainStorage {
    * @param value
    * @param items
    */
-  static <S extends Bytes, T, U extends ConcurrentHashMap<S, T>> void add(S key, T value, U items) {
+  static <S, T, U extends ConcurrentHashMap<S, T>> void add(S key, T value, U items) {
     try {
       items.put(key, value);
     } catch (IllegalStateException e) {
@@ -77,17 +76,16 @@ public interface ChainStorage {
    * @param items
    * @return
    */
-  static <S extends Bytes, T, U extends ConcurrentHashMap<S, T>> Optional<T> get(S key, U items) {
+  static <S, T, U extends ConcurrentHashMap<S, T>> Optional<T> get(S key, U items) {
     Optional<T> result = Optional.empty();
     try {
       if (items.size() > 0) {
         result = Optional.of(items.get(key));
       }
     } catch (NullPointerException e) {
-      if (!key.toHexString()
+      if (!key.toString()
           .equalsIgnoreCase("0x0000000000000000000000000000000000000000000000000000000000000000")) {
-        LOG.log(
-            Level.DEBUG, items.getClass().toString() + ": " + key.toHexString() + " not found.");
+        LOG.log(Level.DEBUG, items.getClass().toString() + ": " + key.toString() + " not found.");
       }
     }
     return result;

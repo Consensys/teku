@@ -33,6 +33,7 @@ import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.util.AttestationUtil;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.util.alogger.ALogger;
+import tech.pegasys.artemis.util.bls.BLSSignature;
 
 /** This class is the ChainStorage client-side logic */
 public class ChainStorageClient implements ChainStorage {
@@ -48,7 +49,7 @@ public class ChainStorageClient implements ChainStorage {
   protected final ConcurrentHashMap<Bytes, BeaconBlock> processedBlockLookup =
       new ConcurrentHashMap<>();
   protected final ConcurrentHashMap<Bytes, BeaconState> stateLookup = new ConcurrentHashMap<>();
-  protected final ConcurrentHashMap<Bytes, Attestation> processedAttestations =
+  protected final ConcurrentHashMap<BLSSignature, Attestation> processedAttestations =
       new ConcurrentHashMap<>();
   private final PriorityBlockingQueue<Attestation> attestationsQueue =
       new PriorityBlockingQueue<>(
@@ -87,7 +88,7 @@ public class ChainStorageClient implements ChainStorage {
    * @param attestation
    */
   public void addProcessedAttestation(Attestation attestation) {
-    ChainStorage.add(attestation.toBytes(), attestation, this.processedAttestations);
+    ChainStorage.add(attestation.getAggregate_signature(), attestation, this.processedAttestations);
   }
 
   /**
@@ -212,7 +213,8 @@ public class ChainStorageClient implements ChainStorage {
     while (attestationsQueue.peek() != null
         && attestationsQueue.peek().getSlot().compareTo(slot) <= 0
         && numAttestations < Constants.MAX_ATTESTATIONS) {
-      if (!ChainStorage.get(attestationsQueue.peek().toBytes(), this.processedAttestations)
+      if (!ChainStorage.get(
+              attestationsQueue.peek().getAggregate_signature(), this.processedAttestations)
           .isPresent()) {
         attestations.add(attestationsQueue.remove());
         numAttestations++;
