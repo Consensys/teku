@@ -33,6 +33,7 @@ import tech.pegasys.artemis.util.alogger.ALogger;
 
 public class StateTransition {
 
+  private static final ALogger STDOUT = new ALogger("stdout");
   private static final ALogger LOG = new ALogger(StateTransition.class.getName());
 
   private boolean printEnabled = false;
@@ -111,28 +112,30 @@ public class StateTransition {
       BlockProcessorUtil.verify_block_state_root(state, block);
 
     } catch (BlockProcessingException e) {
-      LOG.log(Level.WARN, "  Block processing error: " + e, printEnabled);
+      STDOUT.log(Level.WARN, "  Block processing error: " + e, printEnabled);
     }
   }
 
   private void epochProcessor(BeaconStateWithCache state, BeaconBlock block) {
     try {
-      String ANSI_YELLOW_BOLD = "\033[1;33m";
-      String ANSI_RESET = "\033[0m";
-      if (printEnabled) System.out.println();
-      LOG.log(
-          Level.INFO,
-          ANSI_YELLOW_BOLD + "********  Processing new epoch: " + " ********* " + ANSI_RESET,
-          printEnabled);
+      if (printEnabled) {
+        String ANSI_YELLOW_BOLD = "\033[1;33m";
+        String ANSI_RESET = "\033[0m";
+        System.out.println();
+        STDOUT.log(
+            Level.INFO,
+            ANSI_YELLOW_BOLD + "********  Processing new epoch: " + " ********* " + ANSI_RESET,
+            printEnabled);
 
-      LOG.log(
-          Level.INFO,
-          "Epoch:                                  "
-              + BeaconStateUtil.slot_to_epoch(state.getSlot().plus(UnsignedLong.ONE))
-              + " |  "
-              + BeaconStateUtil.slot_to_epoch(state.getSlot().plus(UnsignedLong.ONE)).longValue()
-                  % Constants.GENESIS_EPOCH,
-          printEnabled);
+        STDOUT.log(
+            Level.INFO,
+            "Epoch:                                  "
+                + BeaconStateUtil.slot_to_epoch(state.getSlot().plus(UnsignedLong.ONE))
+                + " |  "
+                + BeaconStateUtil.slot_to_epoch(state.getSlot().plus(UnsignedLong.ONE)).longValue()
+                    % Constants.GENESIS_EPOCH,
+            printEnabled);
+      }
 
       EpochProcessorUtil.update_justification_and_finalization(state);
       EpochProcessorUtil.process_crosslinks(state);
