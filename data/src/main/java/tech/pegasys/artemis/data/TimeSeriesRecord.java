@@ -25,10 +25,15 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.artemis.datastructures.Constants;
+import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.json.BytesModule;
 
 public class TimeSeriesRecord implements IRecordAdapter {
+
+  private static final ALogger LOG = new ALogger(TimeSeriesRecord.class.getName());
 
   private static class ValidatorJoinSerializer extends JsonSerializer<ValidatorJoin> {
 
@@ -114,6 +119,14 @@ public class TimeSeriesRecord implements IRecordAdapter {
     this.lastFinalizedBlockRoot = lastFinalizedBlockRoot;
     this.lastFinalizedStateRoot = lastFinalizedStateRoot;
     this.validators = validators;
+
+    if (slot % Constants.SLOTS_PER_EPOCH == 0) {
+      try {
+        LOG.log(Level.INFO, "TEST_EPOCH " + this.toJSON());
+      } catch (JsonProcessingException e) {
+        // ignore
+      }
+    }
   }
 
   @Override
@@ -177,8 +190,7 @@ public class TimeSeriesRecord implements IRecordAdapter {
 
   @Override
   public String toJSON() throws JsonProcessingException {
-    String jsonOutputString = null;
-    jsonOutputString = mapper.writerFor(Map.class).writeValueAsString(this.outputFieldMap);
+    String jsonOutputString = mapper.writerFor(Map.class).writeValueAsString(this.outputFieldMap);
     return jsonOutputString;
   }
 
