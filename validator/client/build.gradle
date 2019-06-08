@@ -1,5 +1,5 @@
 jar {
-  baseName 'validator-client'
+  baseName 'artemis-validator-client'
   manifest {
     attributes('Implementation-Title': baseName,
     'Implementation-Version': project.version)
@@ -9,6 +9,7 @@ jar {
 dependencies {
   api 'org.bouncycastle:bcprov-jdk15on'
   implementation project(':pow')
+  implementation project(':proto')
   implementation project(':ethereum:datastructures')
   implementation project(':util')
   implementation project(':data')
