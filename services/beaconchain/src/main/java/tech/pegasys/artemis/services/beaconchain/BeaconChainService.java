@@ -52,7 +52,7 @@ public class BeaconChainService implements ServiceInterface {
     }
     this.store = ChainStorage.Create(ChainStorageClient.class, eventBus);
     this.stateProcessor = new StateProcessor(config, store);
-    this.validatorCoordinator = new ValidatorCoordinator(config);
+    this.validatorCoordinator = new ValidatorCoordinator(config, store);
   }
 
   @Override
