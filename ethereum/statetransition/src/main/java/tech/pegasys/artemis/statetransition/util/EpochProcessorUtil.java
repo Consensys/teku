@@ -47,10 +47,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.apache.commons.lang3.tuple.MutablePair;
@@ -117,12 +115,11 @@ public final class EpochProcessorUtil {
   public static List<Integer> get_attesting_indices(
       BeaconState state, List<PendingAttestation> attestations) throws IllegalArgumentException {
 
-    HashSet<Integer> output = new HashSet<>();
+    TreeSet<Integer> output = new TreeSet<>();
     for (PendingAttestation a : attestations) {
       output.addAll(get_attestation_participants(state, a.getData(), a.getAggregation_bitfield()));
     }
     List<Integer> output_list = new ArrayList<>(output);
-    Collections.sort(output_list);
     return output_list;
   }
 
@@ -192,40 +189,50 @@ public final class EpochProcessorUtil {
    */
   public static MutablePair<Bytes32, List<Integer>> get_winning_root_and_participants(
       BeaconState state, UnsignedLong shard) {
-    List<PendingAttestation> all_attestations = new ArrayList<>();
-    all_attestations.addAll(state.getCurrent_epoch_attestations());
-    all_attestations.addAll(state.getPrevious_epoch_attestations());
+
+    Crosslink shardLatestCrosslink = state.getLatest_crosslinks().get(shard.intValue());
 
     List<PendingAttestation> valid_attestations = new ArrayList<>();
-    for (PendingAttestation a : all_attestations) {
-      if (a.getData()
-          .getPrevious_crosslink()
-          .equals(state.getLatest_crosslinks().get(shard.intValue()))) {
+    List<Bytes32> all_roots = new ArrayList<>();
+    for (PendingAttestation a : state.getCurrent_epoch_attestations()) {
+      if (a.getData().getPrevious_crosslink().equals(shardLatestCrosslink)) {
         valid_attestations.add(a);
+        all_roots.add(a.getData().getCrosslink_data_root());
+      }
+    }
+    for (PendingAttestation a : state.getPrevious_epoch_attestations()) {
+      if (a.getData().getPrevious_crosslink().equals(shardLatestCrosslink)) {
+        valid_attestations.add(a);
+        all_roots.add(a.getData().getCrosslink_data_root());
       }
     }
 
-    List<Bytes32> all_roots = new ArrayList<>();
-    for (PendingAttestation a : valid_attestations) {
-      all_roots.add(a.getData().getCrosslink_data_root());
-    }
-
-    if (all_roots.size() == 0) {
+    if (all_roots.isEmpty()) {
       return new MutablePair<>(ZERO_HASH, new ArrayList<>());
     }
 
-    HashMap<Bytes32, UnsignedLong> root_balances = new HashMap<>();
+    // TODO: make sure ties broken in favor of lexicographically higher hash
+    UnsignedLong max = null;
+    Bytes32 winning_root = null;
+    List<PendingAttestation> attestations = null;
     for (Bytes32 root : all_roots) {
-      root_balances.put(
-          root, get_attesting_balance(state, get_attestations_for(root, valid_attestations)));
+      List<PendingAttestation> candidateAttestations =
+          get_attestations_for(root, valid_attestations);
+      UnsignedLong value = get_attesting_balance(state, candidateAttestations);
+      if (max == null) {
+        max = value;
+        winning_root = root;
+        attestations = candidateAttestations;
+      } else {
+        if (value.compareTo(max) < 0) {
+          max = value;
+          winning_root = root;
+          attestations = candidateAttestations;
+        }
+      }
     }
 
-    // TODO: make sure ties broken in favor of lexicographically higher hash
-    Bytes32 winning_root =
-        Collections.max(root_balances.entrySet(), Map.Entry.comparingByValue()).getKey();
-    return new MutablePair<>(
-        winning_root,
-        get_attesting_indices(state, get_attestations_for(winning_root, valid_attestations)));
+    return new MutablePair<>(winning_root, get_attesting_indices(state, attestations));
   }
 
   /**
