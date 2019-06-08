@@ -214,6 +214,7 @@ public class ChainStorageClient implements ChainStorage {
         && attestationsQueue.peek().getSlot().compareTo(slot) <= 0
         && numAttestations < Constants.MAX_ATTESTATIONS) {
       Attestation attestation = attestationsQueue.remove();
+      // Check if attestation has already been processed in successful block
       if (!ChainStorage.get(attestation.getAggregate_signature(), this.processedAttestations)
           .isPresent()) {
         attestations.add(attestation);
