@@ -48,7 +48,7 @@ public final class HobbitsSocketHandler {
   private final Consumer<Bytes> messageSender;
   private final Runnable handlerTermination;
   private final State p2pState;
-  private final ConcurrentHashMap<String, Boolean> receivedMessages;
+  private ConcurrentHashMap<String, Boolean> receivedMessages;
 
   public HobbitsSocketHandler(
       EventBus eventBus,
@@ -151,12 +151,12 @@ public final class HobbitsSocketHandler {
 
   @SuppressWarnings("StringSplitter")
   private void handleGossipMessage(GossipMessage gossipMessage) {
-    if (!receivedMessages.containsKey(gossipMessage.messageHash().toHexString())) {
-      receivedMessages.put(gossipMessage.messageHash().toHexString(), true);
-      LOG.log(Level.INFO, "Received new gossip message from peer: " + peer.uri());
-      if (GossipMethod.GOSSIP.equals(gossipMessage.method())) {
-        Bytes bytes = gossipMessage.body();
-        String[] attributes = gossipMessage.getAttributes().split(",");
+    LOG.log(Level.INFO, "Received new gossip message from peer: " + peer.uri());
+    if (GossipMethod.GOSSIP.equals(gossipMessage.method())) {
+      Bytes bytes = gossipMessage.body();
+      String[] attributes = gossipMessage.getAttributes().split(",");
+      if (!receivedMessages.containsKey(bytes.toHexString())) {
+        receivedMessages.put(bytes.toHexString(), true);
         if (attributes[0].equalsIgnoreCase("ATTESTATION")) {
           peer.setPeerGossip(bytes);
           this.eventBus.post(Attestation.fromBytes(bytes));
@@ -166,13 +166,13 @@ public final class HobbitsSocketHandler {
         }
         p2pState.receiveGossipMessage(
             peer, gossipMessage.getAttributes(), gossipMessage.body(), gossipMessage.messageHash());
-      } else if (GossipMethod.PRUNE.equals(gossipMessage.method())) {
-        p2pState.receivePruneMessage(peer);
-      } else if (GossipMethod.GRAFT.equals(gossipMessage.method())) {
-        p2pState.receiveGraftMessage(peer, gossipMessage.messageHash());
-      } else if (GossipMethod.IHAVE.equals(gossipMessage.method())) {
-        p2pState.receiveIHaveMessage(peer, gossipMessage.messageHash());
       }
+    } else if (GossipMethod.PRUNE.equals(gossipMessage.method())) {
+      p2pState.receivePruneMessage(peer);
+    } else if (GossipMethod.GRAFT.equals(gossipMessage.method())) {
+      p2pState.receiveGraftMessage(peer, gossipMessage.messageHash());
+    } else if (GossipMethod.IHAVE.equals(gossipMessage.method())) {
+      p2pState.receiveIHaveMessage(peer, gossipMessage.messageHash());
     }
   }
 

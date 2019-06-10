@@ -56,7 +56,7 @@ import tech.pegasys.artemis.util.alogger.ALogger;
  * <p>This P2P implementation uses clear messages relying on the hobbits wire format.
  */
 public final class HobbitsP2PNetwork implements P2PNetwork {
-  private static final ALogger LOG = new ALogger(HobbitsSocketHandler.class.getName());
+  private static final ALogger STDOUT = new ALogger("stdout");
   private final AtomicBoolean started = new AtomicBoolean(false);
   private final EventBus eventBus;
   private final Vertx vertx;
@@ -70,7 +70,7 @@ public final class HobbitsP2PNetwork implements P2PNetwork {
   private List<URI> staticPeers;
   private TimeSeriesRecord chainData;
   private Map<URI, HobbitsSocketHandler> handlersMap = new ConcurrentHashMap<>();
-  private final ConcurrentHashMap<String, Boolean> receivedMessages = new ConcurrentHashMap<>();
+  private ConcurrentHashMap<String, Boolean> receivedMessages = new ConcurrentHashMap<>();
 
   /**
    * Default constructor
@@ -264,23 +264,28 @@ public final class HobbitsP2PNetwork implements P2PNetwork {
 
   @Subscribe
   public void onNewUnprocessedBlock(BeaconBlock block) {
-    LOG.log(
-        Level.INFO, "Gossiping new block with state root: " + block.getState_root().toHexString());
-    Date timestamp = new Date();
-    String attributes = "BLOCK" + "," + String.valueOf(timestamp.getTime());
-    Bytes messageHash = state.sendGossipMessage(attributes, block.toBytes());
-    this.receivedMessages.put(messageHash.toHexString(), true);
+    Bytes bytes = block.toBytes();
+    if (!this.receivedMessages.containsKey(bytes.toHexString())) {
+      STDOUT.log(
+          Level.INFO,
+          "Gossiping new block with state root: " + block.getState_root().toHexString());
+      String attributes = "BLOCK" + "," + String.valueOf(new Date().getTime());
+      state.sendGossipMessage(attributes, bytes);
+      this.receivedMessages.put(bytes.toHexString(), true);
+    }
   }
 
   @Subscribe
   public void onNewUnprocessedAttestation(Attestation attestation) {
-    LOG.log(
-        Level.DEBUG,
-        "Gossiping new attestation for block_root: "
-            + attestation.getData().getBeacon_block_root().toHexString());
-    Date timestamp = new Date();
-    String attributes = "ATTESTATION" + "," + String.valueOf(timestamp.getTime());
-    Bytes messageHash = state.sendGossipMessage(attributes, attestation.toBytes());
-    this.receivedMessages.put(messageHash.toHexString(), true);
+    Bytes bytes = attestation.toBytes();
+    if (!this.receivedMessages.containsKey(bytes.toHexString())) {
+      STDOUT.log(
+          Level.INFO,
+          "Gossiping new attestation for block root: "
+              + attestation.getData().getBeacon_block_root().toHexString());
+      String attributes = "ATTESTATION" + "," + String.valueOf(new Date().getTime());
+      state.sendGossipMessage(attributes, bytes);
+      this.receivedMessages.put(bytes.toHexString(), true);
+    }
   }
 }
