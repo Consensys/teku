@@ -18,6 +18,7 @@ import static tech.pegasys.artemis.datastructures.Constants.SLOTS_PER_HISTORICAL
 import static tech.pegasys.artemis.datastructures.Constants.ZERO_HASH;
 
 import com.google.common.primitives.UnsignedLong;
+import java.util.Objects;
 import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.Constants;
@@ -48,7 +49,6 @@ public class StateTransition {
       throws StateTransitionException {
 
     cache_state(state);
-    // Client specific optimization
 
     if (state.getSlot().compareTo(UnsignedLong.valueOf(Constants.GENESIS_SLOT)) > 0
         && state
@@ -57,16 +57,15 @@ public class StateTransition {
             .mod(UnsignedLong.valueOf(SLOTS_PER_EPOCH))
             .equals(UnsignedLong.ZERO)) {
       epochProcessor(state, block);
+      // Client specific optimization
+      state.invalidateCache();
     }
 
     slotProcessor(state);
 
-    if (block != null) {
+    if (Objects.nonNull(block)) {
       blockProcessor(state, block);
     }
-
-    // Client specific optimization
-    state.invalidateCache();
   }
 
   /**
