@@ -56,20 +56,13 @@ public class ChainStorageClient implements ChainStorage {
       new PriorityBlockingQueue<>(
           UNPROCESSED_BLOCKS_LENGTH, Comparator.comparing(Attestation::getSlot));
   protected EventBus eventBus;
-  protected final Object syncObject;
 
-  public ChainStorageClient() {
-    this.syncObject = new Object();
-  }
+  public ChainStorageClient() {}
 
   public ChainStorageClient(EventBus eventBus) {
     this();
     this.eventBus = eventBus;
     this.eventBus.register(this);
-  }
-
-  public Object getSyncObject() {
-    return this.syncObject;
   }
 
   /**
@@ -237,9 +230,6 @@ public class ChainStorageClient implements ChainStorage {
             + " detected."
             + ANSI_RESET);
     addUnprocessedBlock(block);
-    synchronized (syncObject) {
-      syncObject.notify();
-    }
   }
 
   @Subscribe

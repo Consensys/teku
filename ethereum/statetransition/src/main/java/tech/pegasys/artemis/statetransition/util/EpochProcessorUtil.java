@@ -89,12 +89,9 @@ public final class EpochProcessorUtil {
    * @return
    */
   public static UnsignedLong get_previous_total_balance(BeaconState state) {
-    if (state instanceof BeaconStateWithCache
-        && ((BeaconStateWithCache) state)
-                .getPreviousTotalBalance()
-                .compareTo(UnsignedLong.MAX_VALUE)
-            < 0) {
-      BeaconStateWithCache stateWithCash = (BeaconStateWithCache) state;
+    BeaconStateWithCache stateWithCash = (BeaconStateWithCache) state;
+    if (stateWithCash.getPreviousTotalBalance().compareTo(UnsignedLong.MAX_VALUE) < 0) {
+
       return stateWithCash.getPreviousTotalBalance();
     } else {
       UnsignedLong previousTotalBalance =
@@ -102,7 +99,7 @@ public final class EpochProcessorUtil {
               state,
               get_active_validator_indices(
                   state.getValidator_registry(), get_previous_epoch(state)));
-      ((BeaconStateWithCache) state).setPreviousTotalBalance(previousTotalBalance);
+      stateWithCash.setPreviousTotalBalance(previousTotalBalance);
       return previousTotalBalance;
     }
   }

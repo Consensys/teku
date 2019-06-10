@@ -352,10 +352,19 @@ public class BeaconStateUtil {
    *     - Spec v0.4</a>
    */
   private static UnsignedLong get_previous_epoch_committee_count(BeaconState state) {
-    List<Integer> previous_active_validators =
-        ValidatorsUtil.get_active_validator_indices(
-            state.getValidator_registry(), state.getPrevious_shuffling_epoch());
-    return get_epoch_committee_count(UnsignedLong.valueOf(previous_active_validators.size()));
+    BeaconStateWithCache stateWithCash = (BeaconStateWithCache) state;
+    if (stateWithCash.getPreviousEpochCommitteeCount().compareTo(UnsignedLong.MAX_VALUE) < 0) {
+      return stateWithCash.getPreviousEpochCommitteeCount();
+    } else {
+      List<Integer> previous_active_validators =
+          ValidatorsUtil.get_active_validator_indices(
+              state.getValidator_registry(), state.getPrevious_shuffling_epoch());
+      UnsignedLong count =
+          get_epoch_committee_count(UnsignedLong.valueOf(previous_active_validators.size()));
+      // Client specific optimization
+      stateWithCash.setPreviousEpochCommitteeCount(count);
+      return count;
+    }
   }
 
   /**
