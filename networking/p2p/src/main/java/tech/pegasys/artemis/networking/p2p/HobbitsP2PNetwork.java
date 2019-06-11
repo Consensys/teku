@@ -128,7 +128,15 @@ public final class HobbitsP2PNetwork implements P2PNetwork {
     }
   }
 
-  private void processGossip(Bytes message) {}
+  @SuppressWarnings("StringSplitter")
+  private void processGossip(Bytes gossipMessage, String attr) {
+    String[] attributes = attr.split(",");
+    if (attributes[0].equalsIgnoreCase("ATTESTATION")) {
+      this.eventBus.post(Attestation.fromBytes(gossipMessage));
+    } else if (attributes[0].equalsIgnoreCase("BLOCK")) {
+      this.eventBus.post(BeaconBlock.fromBytes(gossipMessage));
+    }
+  }
 
   @Override
   public void run() {

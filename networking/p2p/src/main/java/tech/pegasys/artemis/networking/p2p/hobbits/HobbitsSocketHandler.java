@@ -31,8 +31,6 @@ import org.apache.tuweni.plumtree.MessageSender;
 import org.apache.tuweni.plumtree.State;
 import org.apache.tuweni.units.bigints.UInt64;
 import tech.pegasys.artemis.data.TimeSeriesRecord;
-import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
-import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.networking.p2p.hobbits.Codec.ProtocolType;
 import tech.pegasys.artemis.util.alogger.ALogger;
 
@@ -48,7 +46,6 @@ public final class HobbitsSocketHandler {
   private final Consumer<Bytes> messageSender;
   private final Runnable handlerTermination;
   private final State p2pState;
-  private ConcurrentHashMap<String, Boolean> receivedMessages;
 
   public HobbitsSocketHandler(
       EventBus eventBus,
@@ -88,7 +85,6 @@ public final class HobbitsSocketHandler {
     this.messageSender = messageSender;
     this.handlerTermination = handlerTermination;
     this.p2pState = state;
-    this.receivedMessages = receivedMessages;
   }
 
   private void closed(@Nullable Void nothing) {
@@ -124,7 +120,6 @@ public final class HobbitsSocketHandler {
   }
 
   private void handleRPCMessage(RPCMessage rpcMessage) {
-
     if (RPCMethod.GOODBYE.equals(rpcMessage.method())) {
       closed(null);
     } else if (RPCMethod.HELLO.equals(rpcMessage.method())) {
@@ -149,24 +144,12 @@ public final class HobbitsSocketHandler {
     }
   }
 
-  @SuppressWarnings("StringSplitter")
   private void handleGossipMessage(GossipMessage gossipMessage) {
     LOG.log(Level.INFO, "Received new gossip message from peer: " + peer.uri());
     if (GossipMethod.GOSSIP.equals(gossipMessage.method())) {
-      Bytes bytes = gossipMessage.body();
-      String[] attributes = gossipMessage.getAttributes().split(",");
-      if (!receivedMessages.containsKey(bytes.toHexString())) {
-        receivedMessages.put(bytes.toHexString(), true);
-        if (attributes[0].equalsIgnoreCase("ATTESTATION")) {
-          peer.setPeerGossip(bytes);
-          this.eventBus.post(Attestation.fromBytes(bytes));
-        } else if (attributes[0].equalsIgnoreCase("BLOCK")) {
-          peer.setPeerGossip(bytes);
-          this.eventBus.post(BeaconBlock.fromBytes(bytes));
-        }
-        p2pState.receiveGossipMessage(
-            peer, gossipMessage.getAttributes(), gossipMessage.body(), gossipMessage.messageHash());
-      }
+      peer.setPeerGossip(gossipMessage.body());
+      p2pState.receiveGossipMessage(
+          peer, gossipMessage.getAttributes(), gossipMessage.body(), gossipMessage.messageHash());
     } else if (GossipMethod.PRUNE.equals(gossipMessage.method())) {
       p2pState.receivePruneMessage(peer);
     } else if (GossipMethod.GRAFT.equals(gossipMessage.method())) {
