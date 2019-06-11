@@ -9,7 +9,7 @@ jar {
 dependencies {
   api 'org.bouncycastle:bcprov-jdk15on'
   implementation project(':pow')
-  implementation project(':proto')
+  compile project(':proto')
   implementation project(':ethereum:datastructures')
   implementation project(':util')
   implementation project(':data')

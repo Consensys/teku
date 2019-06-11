@@ -1081,10 +1081,14 @@ public class BeaconStateUtil {
    *     - Spec v0.4</a>
    */
   public static boolean verify_bitfield(Bytes bitfield, int committee_size) {
-    if (bitfield.size() != (committee_size + 7) / 8) return false;
+    if (bitfield.size() != (committee_size + 7) / 8) {
+      return false;
+    }
 
     for (int i = committee_size; i < bitfield.size() * 8; i++) {
-      if (get_bitfield_bit(bitfield, i) == 0b1) return false;
+      if (get_bitfield_bit(bitfield, i) == 0b1) {
+        return false;
+      }
     }
     return true;
   }
@@ -1220,7 +1224,7 @@ public class BeaconStateUtil {
     }
 
     checkArgument(
-        verify_bitfield(Bytes.wrap(bitfield), crosslink_committee.getCommitteeSize()),
+        verify_bitfield(bitfield, crosslink_committee.getCommittee().size()),
         "checkArgument threw and exception in get_attestation_participants()");
 
     // Find the participating attesters in the committee

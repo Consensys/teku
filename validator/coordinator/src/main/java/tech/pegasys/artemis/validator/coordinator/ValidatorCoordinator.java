@@ -18,11 +18,20 @@ import static java.lang.StrictMath.toIntExact;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.google.common.primitives.UnsignedLong;
+import com.google.protobuf.ByteString;
+import io.grpc.ManagedChannel;
+import io.grpc.ManagedChannelBuilder;
+import io.grpc.StatusRuntimeException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
+import org.apache.commons.lang3.tuple.Triple;
 import org.apache.logging.log4j.Level;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.SECP256K1;
 import org.apache.tuweni.ssz.SSZ;
@@ -30,12 +39,17 @@ import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
+import tech.pegasys.artemis.datastructures.operations.AttestationData;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
+import tech.pegasys.artemis.datastructures.state.CrosslinkCommittee;
 import tech.pegasys.artemis.datastructures.util.AttestationUtil;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
+import tech.pegasys.artemis.proto.messagesigner.MessageSignRequest;
+import tech.pegasys.artemis.proto.messagesigner.MessageSignResponse;
+import tech.pegasys.artemis.proto.messagesigner.MessageSignerGrpc;
 import tech.pegasys.artemis.service.serviceutils.ServiceConfig;
 import tech.pegasys.artemis.statetransition.GenesisHeadStateEvent;
 import tech.pegasys.artemis.statetransition.HeadStateEvent;
@@ -48,12 +62,12 @@ import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
+import tech.pegasys.artemis.validator.client.ValidatorClient;
 
 /** This class coordinates the activity between the validator clients and the the beacon chain */
 public class ValidatorCoordinator {
   private static final ALogger LOG = new ALogger(ValidatorCoordinator.class.getName());
   private final EventBus eventBus;
-
   private StateTransition stateTransition;
   private final Boolean printEnabled = false;
   private SECP256K1.SecretKey nodeIdentity;
@@ -63,6 +77,8 @@ public class ValidatorCoordinator {
   private ArrayList<Deposit> newDeposits = new ArrayList<>();
   private final HashMap<BLSPublicKey, BLSKeyPair> validatorSet = new HashMap<>();
   private ChainStorageClient store;
+  private HashMap<BLSPublicKey, Pair<ManagedChannel, MessageSignerGrpc.MessageSignerBlockingStub>>
+      validatorClients = new HashMap<>();
   static final Integer UNPROCESSED_BLOCKS_LENGTH = 100;
 
   public ValidatorCoordinator(ServiceConfig config, ChainStorageClient store) {
@@ -74,9 +90,9 @@ public class ValidatorCoordinator {
     this.numNodes = config.getConfig().getNumNodes();
     this.store = store;
 
-    initializeValidators();
-
     stateTransition = new StateTransition(printEnabled);
+
+    initializeValidators();
   }
 
   @Subscribe
@@ -101,12 +117,23 @@ public class ValidatorCoordinator {
     BeaconStateWithCache headState = headStateEvent.getHeadState();
     BeaconBlock headBlock = headStateEvent.getHeadBlock();
 
-    List<Attestation> attestations =
-        AttestationUtil.createAttestations(headState, headBlock, validatorSet);
+    List<Triple<BLSPublicKey, Integer, CrosslinkCommittee>> attesters =
+        AttestationUtil.getAttesterInformation(headState, validatorSet);
+    AttestationData genericAttestationData =
+        AttestationUtil.getGenericAttestationData(headState, headBlock);
 
-    for (Attestation attestation : attestations) {
-      this.eventBus.post(attestation);
-    }
+    CompletableFuture.runAsync(
+        () ->
+            attesters
+                .parallelStream()
+                .forEach(
+                    attesterInfo ->
+                        signAttestationMessage(
+                            headState,
+                            attesterInfo.getLeft(),
+                            attesterInfo.getMiddle(),
+                            attesterInfo.getRight(),
+                            genericAttestationData)));
 
     // Copy state so that state transition during block creation does not manipulate headState in
     // storage
@@ -114,11 +141,51 @@ public class ValidatorCoordinator {
     createBlockIfNecessary(newHeadState, headBlock);
   }
 
+  private void signAttestationMessage(
+      BeaconState state,
+      BLSPublicKey attesterPubkey,
+      int indexIntoCommittee,
+      CrosslinkCommittee committee,
+      AttestationData genericAttestationData) {
+    int arrayLength = Math.toIntExact((committee.getCommittee().size() + 7) / 8);
+    Bytes aggregationBitfield =
+        AttestationUtil.getAggregationBitfield(indexIntoCommittee, arrayLength);
+    if (!BeaconStateUtil.verify_bitfield(aggregationBitfield, committee.getCommittee().size())) {
+      System.out.println("yo we got some issues homies");
+    }
+    Bytes custodyBitfield = AttestationUtil.getCustodyBitfield(arrayLength);
+    AttestationData attestationData =
+        AttestationUtil.completeAttestationData(
+            state, new AttestationData(genericAttestationData), committee);
+    Bytes32 attestationMessageToSign = AttestationUtil.getAttestationMessageToSign(attestationData);
+    int domain = AttestationUtil.getDomain(state, attestationData);
+
+    MessageSignRequest request =
+        MessageSignRequest.newBuilder()
+            .setAttestationMessage(ByteString.copyFrom(attestationMessageToSign.toArray()))
+            .setDomain(domain)
+            .build();
+
+    MessageSignResponse response;
+    try {
+      response = validatorClients.get(attesterPubkey).getRight().signMessage(request);
+      Bytes signedAttestationMessage =
+          Bytes.wrap(response.getSignedAttestationMessage().toByteArray());
+      this.eventBus.post(
+          new Attestation(
+              aggregationBitfield,
+              attestationData,
+              custodyBitfield,
+              BLSSignature.fromBytes(signedAttestationMessage)));
+    } catch (StatusRuntimeException e) {
+      LOG.log(
+          Level.WARN, "gRPC to Validator Client failed. Public key of client: " + attesterPubkey);
+    }
+  }
+
   private void initializeValidators() {
     // Add all validators to validatorSet hashMap
     int nodeCounter = UInt256.fromBytes(nodeIdentity.bytes()).mod(numNodes).intValue();
-    // LOG.log(Level.DEBUG, "nodeCounter: " + nodeCounter);
-    // if (nodeCounter == 0) {
 
     int startIndex = nodeCounter * (numValidators / numNodes);
     int endIndex =
@@ -126,15 +193,19 @@ public class ValidatorCoordinator {
             + (numValidators / numNodes - 1)
             + toIntExact(Math.round((double) nodeCounter / Math.max(1, numNodes - 1)));
     endIndex = Math.min(endIndex, numValidators - 1);
-    // int startIndex = 0;
-    // int endIndex = numValidators-1;
     LOG.log(Level.DEBUG, "startIndex: " + startIndex + " endIndex: " + endIndex);
     for (int i = startIndex; i <= endIndex; i++) {
       BLSKeyPair keypair = BLSKeyPair.random(i);
+      int port = 50000 + i;
+      new ValidatorClient(keypair, port);
+      ManagedChannel channel =
+          ManagedChannelBuilder.forAddress("localhost", port).usePlaintext().build();
+      validatorClients.put(
+          keypair.getPublicKey(),
+          new ImmutablePair<>(channel, MessageSignerGrpc.newBlockingStub(channel)));
       LOG.log(Level.DEBUG, "i = " + i + ": " + keypair.getPublicKey().toString());
       validatorSet.put(keypair.getPublicKey(), keypair);
     }
-    // }
   }
 
   private void createBlockIfNecessary(BeaconStateWithCache headState, BeaconBlock headBlock) {

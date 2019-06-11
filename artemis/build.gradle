@@ -21,7 +21,6 @@ dependencies {
   implementation project(':ethereum:datastructures')
   implementation project(':validator:coordinator')
   implementation project(':validator:client')
-  implementation project(':proto')
 
   
   api 'com.google.guava:guava:27.0.1-jre'

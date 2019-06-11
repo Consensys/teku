@@ -17,6 +17,8 @@ import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import org.apache.commons.lang3.tuple.ImmutableTriple;
+import org.apache.commons.lang3.tuple.Triple;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.Constants;
@@ -29,7 +31,6 @@ import tech.pegasys.artemis.datastructures.state.Crosslink;
 import tech.pegasys.artemis.datastructures.state.CrosslinkCommittee;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
-import tech.pegasys.artemis.util.bls.BLSSignature;
 
 public class AttestationUtil {
 
@@ -44,106 +45,102 @@ public class AttestationUtil {
     return true;
   }
 
-  /**
-   * Creates attestations for all the Validators in our validator set, given that they are in
-   * CrosslinkCommittees that are appointed to attest
-   *
-   * @param headState
-   * @param headBlock
-   * @param validatorSet
-   * @return attestations
-   */
-  public static List<Attestation> createAttestations(
-      BeaconState headState,
-      BeaconBlock headBlock,
-      HashMap<BLSPublicKey, BLSKeyPair> validatorSet) {
+  public static List<Triple<BLSPublicKey, Integer, CrosslinkCommittee>> getAttesterInformation(
+      BeaconState headState, HashMap<BLSPublicKey, BLSKeyPair> validatorSet) {
 
     // Get variables necessary that can be shared among Attestations of all validators
     UnsignedLong slot = headState.getSlot();
     List<CrosslinkCommittee> crosslinkCommittees =
         BeaconStateUtil.get_crosslink_committees_at_slot(headState, slot);
-    Bytes32 headBlockRoot = headBlock.signed_root("signature");
-    Bytes32 crosslinkDataRoot = Bytes32.ZERO;
-    UnsignedLong epochStartSlot =
-        BeaconStateUtil.get_epoch_start_slot(BeaconStateUtil.get_current_epoch(headState));
-    Bytes32 epochBoundaryRoot;
-    if (epochStartSlot.compareTo(slot) == 0) {
-      epochBoundaryRoot = headBlock.signed_root("signature");
-    } else {
-      epochBoundaryRoot = BeaconStateUtil.get_block_root(headState, epochStartSlot);
-    }
-    UnsignedLong sourceEpoch = headState.getCurrent_justified_epoch();
-    Bytes32 sourceRoot = headState.getCurrent_justified_root();
 
-    // Create attestations specific to each Validator
-    List<Attestation> attestations = new ArrayList<>();
+    List<Triple<BLSPublicKey, Integer, CrosslinkCommittee>> attesters = new ArrayList<>();
+
     for (CrosslinkCommittee crosslinkCommittee : crosslinkCommittees) {
       int indexIntoCommittee = 0;
       for (Integer validatorIndex : crosslinkCommittee.getCommittee()) {
 
-        // Skip if attester is in not in our validatorSet
         BLSPublicKey attesterPubkey =
             headState.getValidator_registry().get(validatorIndex).getPubkey();
-        if (!validatorSet.containsKey(attesterPubkey)) {
-          indexIntoCommittee++;
-          continue;
+        if (validatorSet.containsKey(attesterPubkey)) {
+          attesters.add(
+              new ImmutableTriple<>(attesterPubkey, indexIntoCommittee, crosslinkCommittee));
         }
-
-        // Get variables specific to each Attestation
-        UnsignedLong shard = crosslinkCommittee.getShard();
-        Crosslink previousCrosslink =
-            headState.getLatest_crosslinks().get(shard.intValue() % Constants.SHARD_COUNT);
-
-        // Set attestation data
-        AttestationData attestationData =
-            new AttestationData(
-                slot,
-                headBlockRoot,
-                sourceEpoch,
-                sourceRoot,
-                epochBoundaryRoot,
-                shard,
-                previousCrosslink,
-                crosslinkDataRoot);
-
-        // Create aggregation bitfield
-        int array_length = Math.toIntExact((crosslinkCommittee.getCommittee().size() + 7) / 8);
-        byte[] aggregation_bitfield = new byte[array_length];
-        aggregation_bitfield[indexIntoCommittee / 8] =
-            (byte)
-                (aggregation_bitfield[indexIntoCommittee / 8]
-                    | (byte) Math.pow(2, (indexIntoCommittee % 8)));
-
-        // Create custody_bitfield
-        Bytes custody_bitfield = Bytes.wrap(new byte[array_length]);
-        AttestationDataAndCustodyBit attestation_data_and_custody_bit =
-            new AttestationDataAndCustodyBit(attestationData, false);
-
-        // Sign attestation data
-        Bytes32 attestation_message_to_sign = attestation_data_and_custody_bit.hash_tree_root();
-        BLSSignature signed_attestation_data =
-            BLSSignature.sign(
-                validatorSet.get(attesterPubkey),
-                attestation_message_to_sign,
-                BeaconStateUtil.get_domain(
-                        headState.getFork(),
-                        BeaconStateUtil.slot_to_epoch(attestationData.getSlot()),
-                        Constants.DOMAIN_ATTESTATION)
-                    .longValue());
-
-        // Form attestation
-        Attestation attestation =
-            new Attestation(
-                Bytes.wrap(aggregation_bitfield),
-                attestationData,
-                custody_bitfield,
-                signed_attestation_data);
-
-        attestations.add(attestation);
-
         indexIntoCommittee++;
       }
     }
-    return attestations;
+    return attesters;
+  }
+
+  // Get attestation data that does not include attester specific shard or crosslink information
+  public static AttestationData getGenericAttestationData(BeaconState state, BeaconBlock block) {
+    // Get variables necessary that can be shared among Attestations of all validators
+    UnsignedLong slot = state.getSlot();
+    List<CrosslinkCommittee> crosslinkCommittees =
+        BeaconStateUtil.get_crosslink_committees_at_slot(state, slot);
+    Bytes32 headBlockRoot = block.signed_root("signature");
+    Bytes32 crosslinkDataRoot = Bytes32.ZERO;
+    UnsignedLong epochStartSlot =
+        BeaconStateUtil.get_epoch_start_slot(BeaconStateUtil.get_current_epoch(state));
+    Bytes32 epochBoundaryRoot;
+    if (epochStartSlot.compareTo(slot) == 0) {
+      epochBoundaryRoot = block.signed_root("signature");
+    } else {
+      epochBoundaryRoot = BeaconStateUtil.get_block_root(state, epochStartSlot);
+    }
+    UnsignedLong sourceEpoch = state.getCurrent_justified_epoch();
+    Bytes32 sourceRoot = state.getCurrent_justified_root();
+
+    // Set attestation data
+    // TODO: change the generic shard number and crosslink usage to something safer
+    AttestationData attestationData =
+        new AttestationData(
+            slot,
+            headBlockRoot,
+            sourceEpoch,
+            sourceRoot,
+            epochBoundaryRoot,
+            UnsignedLong.MAX_VALUE,
+            new Crosslink(UnsignedLong.MAX_VALUE, Bytes32.ZERO),
+            crosslinkDataRoot);
+
+    return attestationData;
+  }
+
+  public static Bytes getAggregationBitfield(int indexIntoCommittee, int arrayLength) {
+    // Create aggregation bitfield
+    byte[] aggregationBitfield = new byte[arrayLength];
+    aggregationBitfield[indexIntoCommittee / 8] =
+        (byte)
+            (aggregationBitfield[indexIntoCommittee / 8]
+                | (byte) Math.pow(2, (indexIntoCommittee % 8)));
+    return Bytes.wrap(aggregationBitfield);
+  }
+
+  public static Bytes getCustodyBitfield(int arrayLength) {
+    return Bytes.wrap(new byte[arrayLength]);
+  }
+
+  public static AttestationData completeAttestationData(
+      BeaconState state, AttestationData attestationData, CrosslinkCommittee committee) {
+    UnsignedLong shard = committee.getShard();
+    attestationData.setShard(shard);
+    Crosslink previousCrosslink =
+        state.getLatest_crosslinks().get(shard.intValue() % Constants.SHARD_COUNT);
+    attestationData.setPrevious_crosslink(previousCrosslink);
+    return attestationData;
+  }
+
+  public static Bytes32 getAttestationMessageToSign(AttestationData attestationData) {
+    AttestationDataAndCustodyBit attestation_data_and_custody_bit =
+        new AttestationDataAndCustodyBit(attestationData, false);
+    return attestation_data_and_custody_bit.hash_tree_root();
+  }
+
+  public static int getDomain(BeaconState state, AttestationData attestationData) {
+    return BeaconStateUtil.get_domain(
+            state.getFork(),
+            BeaconStateUtil.slot_to_epoch(attestationData.getSlot()),
+            Constants.DOMAIN_ATTESTATION)
+        .intValue();
   }
 }
