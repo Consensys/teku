@@ -56,6 +56,7 @@ import tech.pegasys.artemis.util.alogger.ALogger;
  * <p>This P2P implementation uses clear messages relying on the hobbits wire format.
  */
 public final class HobbitsP2PNetwork implements P2PNetwork {
+  private static final ALogger LOG = new ALogger(HobbitsP2PNetwork.class.getName());
   private static final ALogger STDOUT = new ALogger("stdout");
   private final AtomicBoolean started = new AtomicBoolean(false);
   private final EventBus eventBus;
@@ -134,7 +135,9 @@ public final class HobbitsP2PNetwork implements P2PNetwork {
     if (attributes[0].equalsIgnoreCase("ATTESTATION")) {
       this.eventBus.post(Attestation.fromBytes(gossipMessage));
     } else if (attributes[0].equalsIgnoreCase("BLOCK")) {
-      this.eventBus.post(BeaconBlock.fromBytes(gossipMessage));
+      BeaconBlock block = BeaconBlock.fromBytes(gossipMessage);
+      receivedMessages.put(block.toBytes().toHexString(), true);
+      this.eventBus.post(block);
     }
   }
 
@@ -179,8 +182,7 @@ public final class HobbitsP2PNetwork implements P2PNetwork {
         uri -> {
           Peer peer = new Peer(peerURI);
           state.addPeer(peer);
-          return new HobbitsSocketHandler(
-              eventBus, netSocket, userAgent, peer, chainData, state, receivedMessages);
+          return new HobbitsSocketHandler(eventBus, netSocket, userAgent, peer, chainData, state);
         });
   }
 
@@ -213,8 +215,7 @@ public final class HobbitsP2PNetwork implements P2PNetwork {
               NetSocket socket = res.result();
               Peer peer = new Peer(peerURI);
               HobbitsSocketHandler handler =
-                  new HobbitsSocketHandler(
-                      eventBus, socket, userAgent, peer, chainData, state, receivedMessages);
+                  new HobbitsSocketHandler(eventBus, socket, userAgent, peer, chainData, state);
               handlersMap.put(peerURI, handler);
               state.addPeer(peer);
               connected.complete(peer);
@@ -280,6 +281,8 @@ public final class HobbitsP2PNetwork implements P2PNetwork {
       String attributes = "BLOCK" + "," + String.valueOf(new Date().getTime());
       state.sendGossipMessage(attributes, bytes);
       this.receivedMessages.put(bytes.toHexString(), true);
+    } else {
+      LOG.log(Level.INFO, "Ignoring block " + block.getState_root().toHexString());
     }
   }
 
@@ -294,6 +297,10 @@ public final class HobbitsP2PNetwork implements P2PNetwork {
       String attributes = "ATTESTATION" + "," + String.valueOf(new Date().getTime());
       state.sendGossipMessage(attributes, bytes);
       this.receivedMessages.put(bytes.toHexString(), true);
+    } else {
+      LOG.log(
+          Level.INFO,
+          "Ignoring attestation " + attestation.getData().getBeacon_block_root().toHexString());
     }
   }
 }

@@ -21,13 +21,17 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Iterator;
+import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.plumtree.MessageSender;
 import org.xerial.snappy.Snappy;
+import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.json.BytesModule;
 
 public final class GossipCodec implements Codec {
+
+  private static final ALogger LOG = new ALogger(GossipCodec.class.getName());
 
   static final ObjectMapper mapper =
       new ObjectMapper(new BsonFactory()).registerModule(new BytesModule());
@@ -83,11 +87,12 @@ public final class GossipCodec implements Codec {
     Bytes requestLineBytes = null;
     for (int i = 0; i < message.size(); i++) {
       if (message.get(i) == (byte) '\n') {
-        requestLineBytes = message.slice(0, i);
+        requestLineBytes = message.slice(0, i + 1);
         break;
       }
     }
     if (requestLineBytes == null) {
+      LOG.log(Level.DEBUG, "Gossip message without request line");
       return null;
     }
     String requestLine = new String(requestLineBytes.toArrayUnsafe(), StandardCharsets.UTF_8);
@@ -96,17 +101,21 @@ public final class GossipCodec implements Codec {
     String version = segments.next();
     String command = segments.next();
     int headerLength = Integer.parseInt(segments.next());
-    int bodyLength = Integer.parseInt(segments.next());
+    int bodyLength = Integer.parseInt(segments.next().trim());
 
+    LOG.log(Level.DEBUG, "Gossip message " + requestLine + " " + message.size());
     if (message.size() < bodyLength + headerLength + requestLineBytes.size()) {
+      LOG.log(Level.DEBUG, "Message too short");
       return null;
+    } else {
+      LOG.log(Level.DEBUG, "Message ok");
     }
 
     try {
-      byte[] headers = message.slice(requestLineBytes.size() + 1, headerLength).toArrayUnsafe();
+      byte[] headers = message.slice(requestLineBytes.size(), headerLength).toArrayUnsafe();
       headers = Snappy.uncompress(headers);
       byte[] payload =
-          message.slice(requestLineBytes.size() + 1 + headerLength, bodyLength).toArrayUnsafe();
+          message.slice(requestLineBytes.size() + headerLength, bodyLength).toArrayUnsafe();
       payload = Snappy.uncompress(payload);
       ObjectNode gossipmessage = (ObjectNode) mapper.readTree(headers);
       int methodId = gossipmessage.get("method_id").intValue();

@@ -20,7 +20,6 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import javax.annotation.Nullable;
@@ -53,57 +52,43 @@ public final class HobbitsSocketHandler {
       String userAgent,
       Peer peer,
       TimeSeriesRecord chainData,
-      State p2pState,
-      ConcurrentHashMap<String, Boolean> receivedMessages) {
-    this(
-        eventBus,
-        userAgent,
-        peer,
-        chainData,
-        (bytes) -> netSocket.write(Buffer.buffer(bytes.toArrayUnsafe())),
-        netSocket::close,
-        p2pState,
-        receivedMessages);
-    netSocket.handler(this::handleMessage);
-    netSocket.closeHandler(this::closed);
-  }
-
-  public HobbitsSocketHandler(
-      EventBus eventBus,
-      String userAgent,
-      Peer peer,
-      TimeSeriesRecord chainData,
-      Consumer<Bytes> messageSender,
-      Runnable handlerTermination,
-      State state,
-      ConcurrentHashMap<String, Boolean> receivedMessages) {
+      State p2pState) {
     this.userAgent = userAgent;
     this.peer = peer;
     this.chainData = chainData;
     this.eventBus = eventBus;
     this.eventBus.register(this);
-    this.messageSender = messageSender;
-    this.handlerTermination = handlerTermination;
-    this.p2pState = state;
+    this.messageSender = (bytes) -> netSocket.write(Buffer.buffer(bytes.toArrayUnsafe()));
+    this.handlerTermination = netSocket::close;
+    this.p2pState = p2pState;
+
+    netSocket.handler(this::handleMessage);
+    netSocket.exceptionHandler(this::handleError);
+    netSocket.closeHandler(this::closed);
   }
 
   private void closed(@Nullable Void nothing) {
     if (status.compareAndSet(true, false)) {
       peer.setInactive();
+      LOG.log(Level.INFO, "Peer marked inactive " + peer.uri());
     }
   }
 
   private Bytes buffer = Bytes.EMPTY;
 
-  public void handleMessage(Buffer message) {
+  public synchronized void handleMessage(Buffer message) {
     Bytes messageBytes = Bytes.wrapBuffer(message);
 
+    LOG.log(Level.DEBUG, "Received " + messageBytes.size() + " bytes");
     buffer = Bytes.concatenate(buffer, messageBytes);
+    LOG.log(Level.DEBUG, "Buffer at " + buffer.size() + " bytes");
+
     while (!buffer.isEmpty()) {
       ProtocolType protocolType = Codec.protocolType(buffer);
       if (protocolType == ProtocolType.GOSSIP) {
         GossipMessage gossipMessage = GossipCodec.decode(buffer);
         if (gossipMessage == null) {
+          LOG.log(Level.DEBUG, "Message too short");
           return;
         }
         buffer = buffer.slice(gossipMessage.length());
@@ -145,7 +130,12 @@ public final class HobbitsSocketHandler {
   }
 
   private void handleGossipMessage(GossipMessage gossipMessage) {
-    LOG.log(Level.INFO, "Received new gossip message from peer: " + peer.uri());
+    LOG.log(
+        Level.INFO,
+        "Received new gossip message of type "
+            + gossipMessage.method()
+            + " from peer: "
+            + peer.uri());
     if (GossipMethod.GOSSIP.equals(gossipMessage.method())) {
       peer.setPeerGossip(gossipMessage.body());
       p2pState.receiveGossipMessage(
@@ -156,6 +146,8 @@ public final class HobbitsSocketHandler {
       p2pState.receiveGraftMessage(peer, gossipMessage.messageHash());
     } else if (GossipMethod.IHAVE.equals(gossipMessage.method())) {
       p2pState.receiveIHaveMessage(peer, gossipMessage.messageHash());
+    } else {
+      throw new UnsupportedOperationException(gossipMessage.method() + " is not supported");
     }
   }
 
@@ -224,5 +216,9 @@ public final class HobbitsSocketHandler {
 
   public Peer peer() {
     return peer;
+  }
+
+  private void handleError(Throwable t) {
+    LOG.log(Level.ERROR, "P2P error: " + t.getMessage());
   }
 }

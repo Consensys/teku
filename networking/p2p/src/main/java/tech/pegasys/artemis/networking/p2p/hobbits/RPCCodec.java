@@ -110,7 +110,7 @@ public final class RPCCodec implements Codec {
     Bytes requestLineBytes = null;
     for (int i = 0; i < message.size(); i++) {
       if (message.get(i) == (byte) '\n') {
-        requestLineBytes = message.slice(0, i);
+        requestLineBytes = message.slice(0, i + 1);
         break;
       }
     }
@@ -123,7 +123,7 @@ public final class RPCCodec implements Codec {
     String version = segments.next();
     String command = segments.next();
     int headerLength = Integer.parseInt(segments.next());
-    int bodyLength = Integer.parseInt(segments.next());
+    int bodyLength = Integer.parseInt(segments.next().trim());
 
     if (message.size() < bodyLength + headerLength + requestLineBytes.size()) {
       return null;
@@ -131,7 +131,7 @@ public final class RPCCodec implements Codec {
 
     try {
       byte[] payload =
-          message.slice(requestLineBytes.size() + 1 + headerLength, bodyLength).toArrayUnsafe();
+          message.slice(requestLineBytes.size() + headerLength, bodyLength).toArrayUnsafe();
       payload = Snappy.uncompress(payload);
       ObjectNode rpcmessage = (ObjectNode) mapper.readTree(payload);
       long id = rpcmessage.get("id").longValue();
