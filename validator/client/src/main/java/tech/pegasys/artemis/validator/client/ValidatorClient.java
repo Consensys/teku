@@ -18,14 +18,17 @@ import io.grpc.Server;
 import io.grpc.ServerBuilder;
 import io.grpc.stub.StreamObserver;
 import java.io.IOException;
+import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.artemis.proto.messagesigner.MessageSignRequest;
-import tech.pegasys.artemis.proto.messagesigner.MessageSignResponse;
 import tech.pegasys.artemis.proto.messagesigner.MessageSignerGrpc;
+import tech.pegasys.artemis.proto.messagesigner.SignatureRequest;
+import tech.pegasys.artemis.proto.messagesigner.SignatureResponse;
+import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 
 public class ValidatorClient {
+  private static final ALogger LOG = new ALogger(ValidatorClient.class.getName());
   private BLSKeyPair keypair;
   private Server server;
 
@@ -34,7 +37,7 @@ public class ValidatorClient {
     try {
       start(port);
     } catch (IOException e) {
-      System.out.println("Error starting VC on port " + port);
+      LOG.log(Level.WARN, "Error starting VC on port " + port);
     }
   }
 
@@ -43,7 +46,8 @@ public class ValidatorClient {
     server =
         ServerBuilder.forPort(port).addService(new MessageSignerService(keypair)).build().start();
 
-    System.out.println(
+    LOG.log(
+        Level.DEBUG,
         "ValidatorClient started. Listening on "
             + port
             + " representing public key: "
@@ -55,9 +59,10 @@ public class ValidatorClient {
               @Override
               public void run() {
                 // Use stderr here since the logger may have been reset by its JVM shutdown hook.
-                System.err.println("*** shutting down gRPC server since JVM is shutting down");
+                System.err.println(
+                    "*** Shutting down Validator Client gRPC server since JVM is shutting down");
                 stopServer();
-                System.err.println("*** server shut down");
+                System.err.println("*** Server shut down");
               }
             });
   }
@@ -77,20 +82,17 @@ public class ValidatorClient {
 
     @Override
     public void signMessage(
-        MessageSignRequest request, StreamObserver<MessageSignResponse> responseObserver) {
-      MessageSignResponse reply =
-          MessageSignResponse.newBuilder()
-              .setSignedAttestationMessage(performSigning(request))
-              .build();
+        SignatureRequest request, StreamObserver<SignatureResponse> responseObserver) {
+      SignatureResponse reply =
+          SignatureResponse.newBuilder().setMessage(performSigning(request)).build();
       responseObserver.onNext(reply);
       responseObserver.onCompleted();
     }
 
-    private ByteString performSigning(MessageSignRequest request) {
-      Bytes attestationMessage = Bytes.wrap(request.getAttestationMessage().toByteArray());
+    private ByteString performSigning(SignatureRequest request) {
+      Bytes message = Bytes.wrap(request.getMessage().toByteArray());
       int domain = request.getDomain();
-      return ByteString.copyFrom(
-          BLSSignature.sign(keypair, attestationMessage, domain).toBytes().toArray());
+      return ByteString.copyFrom(BLSSignature.sign(keypair, message, domain).toBytes().toArray());
     }
   }
 }

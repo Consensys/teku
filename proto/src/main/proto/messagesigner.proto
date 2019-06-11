@@ -20,19 +20,15 @@ option objc_class_prefix = "HLW";
 
 package messagesigner;
 
-// The greeting service definition.
 service MessageSigner {
-    // Sends a greeting
-    rpc signMessage(MessageSignRequest) returns (MessageSignResponse) {}
+    rpc signMessage(SignatureRequest) returns (SignatureResponse) {}
 }
 
-// The request message containing the user's name.
-message MessageSignRequest {
-    bytes attestationMessage = 1;
+message SignatureRequest {
+    bytes message = 1;
     int32 domain = 2;
 }
 
-// The response message containing the greetings
-message MessageSignResponse {
-    bytes signedAttestationMessage = 1;
+message SignatureResponse {
+    bytes message = 1;
 }
