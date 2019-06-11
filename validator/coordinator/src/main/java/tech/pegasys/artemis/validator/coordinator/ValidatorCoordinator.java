@@ -72,7 +72,6 @@ public class ValidatorCoordinator {
   private int numValidators;
   private int numNodes;
   private BeaconBlock validatorBlock;
-  private Bytes mostRecentEpochSignature;
   private ArrayList<Deposit> newDeposits = new ArrayList<>();
   private final HashMap<BLSPublicKey, BLSKeyPair> validatorSet = new HashMap<>();
   private ChainStorageClient store;
@@ -188,36 +187,30 @@ public class ValidatorCoordinator {
 
   private BeaconBlock createInitialBlock(BeaconStateWithCache state, BeaconBlock oldBlock) {
     Bytes32 blockRoot = oldBlock.signed_root("signature");
-    List<Attestation> current_attestations;
+    List<Attestation> current_attestations = new ArrayList<>();
     final Bytes32 MockStateRoot = Bytes32.ZERO;
-    BeaconBlock newBlock;
+
     if (state
             .getSlot()
             .compareTo(
                 UnsignedLong.valueOf(
                     Constants.GENESIS_SLOT + Constants.MIN_ATTESTATION_INCLUSION_DELAY))
         >= 0) {
+
       UnsignedLong attestation_slot =
           state.getSlot().minus(UnsignedLong.valueOf(Constants.MIN_ATTESTATION_INCLUSION_DELAY));
 
       current_attestations = this.store.getUnprocessedAttestationsUntilSlot(attestation_slot);
-
-      newBlock =
-          DataStructureUtil.newBeaconBlock(
-              state.getSlot().plus(UnsignedLong.ONE),
-              blockRoot,
-              MockStateRoot,
-              newDeposits,
-              current_attestations);
-    } else {
-      newBlock =
-          DataStructureUtil.newBeaconBlock(
-              state.getSlot().plus(UnsignedLong.ONE),
-              blockRoot,
-              MockStateRoot,
-              newDeposits,
-              new ArrayList<>());
     }
+
+    BeaconBlock newBlock =
+        DataStructureUtil.newBeaconBlock(
+            state.getSlot().plus(UnsignedLong.ONE),
+            blockRoot,
+            MockStateRoot,
+            newDeposits,
+            current_attestations);
+
     return newBlock;
   }
 
@@ -234,7 +227,7 @@ public class ValidatorCoordinator {
     LOG.log(Level.DEBUG, "startIndex: " + startIndex + " endIndex: " + endIndex);
     for (int i = startIndex; i <= endIndex; i++) {
       BLSKeyPair keypair = BLSKeyPair.random(i);
-      int port = 50000 + i;
+      int port = Constants.VALIDATOR_CLIENT_PORT_BASE + i;
       new ValidatorClient(keypair, port);
       ManagedChannel channel =
           ManagedChannelBuilder.forAddress("localhost", port).usePlaintext().build();

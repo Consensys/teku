@@ -48,7 +48,6 @@ public class AttestationUtil {
   public static List<Triple<BLSPublicKey, Integer, CrosslinkCommittee>> getAttesterInformation(
       BeaconState headState, HashMap<BLSPublicKey, BLSKeyPair> validatorSet) {
 
-    // Get variables necessary that can be shared among Attestations of all validators
     UnsignedLong slot = headState.getSlot();
     List<CrosslinkCommittee> crosslinkCommittees =
         BeaconStateUtil.get_crosslink_committees_at_slot(headState, slot);
