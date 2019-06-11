@@ -39,5 +39,6 @@ final class GossipCodecTest {
     assertEquals(GossipMethod.GOSSIP, message.method());
     BeaconBlock read = BeaconBlock.fromBytes(message.body());
     assertEquals(read.getSignature(), block.getSignature());
+    assertEquals(encoded.size(), message.length());
   }
 }

@@ -16,6 +16,7 @@ create_config() {
 
   # Create the configuration file for the node
   cat $TEMPLATE | \
+    sed "s/logFile\ =.*/logFile = \"artemis-$NODE.log\"/"             |# Use a unique log file
     sed "s/advertisedPort\ =.*//"                                     |# Remove the advertised port field
     sed "s/identity\ =.*/identity\ =\ \"$IDENTITY\"/"                 |# Update the identity field to the value set above
     sed "s/port\ =.*/port\ =\ $PORT/"                                 |# Update the port field to the value set above
