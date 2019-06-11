@@ -94,6 +94,7 @@ public class Constants {
   // Artemis specific
   public static String SIM_DEPOSIT_VALUE = "1000000000000000000";
   public static int DEPOSIT_DATA_SIZE = 512; //
+  public static int VALIDATOR_CLIENT_PORT_BASE = 50000;
 
   // Deposit
   public static String DEPOSIT_NORMAL = "normal";

@@ -426,14 +426,14 @@ public final class BlockProcessorUtil {
         Objects.equals(
             attestation.getCustody_bitfield(),
             Bytes.wrap(new byte[attestation.getCustody_bitfield().size()])),
-        "checkArgument threw and exception in verify_bitfields_and_aggregate_signature()"); // [TO
+        "checkArgument threw and exception in verify_bitfields_and_aggregate_signature() 1"); // [TO
     // BE
     // REMOVED IN PHASE 1]
     checkArgument(
         !Objects.equals(
             attestation.getAggregation_bitfield(),
             Bytes.wrap(new byte[attestation.getAggregation_bitfield().size()])),
-        "checkArgument threw and exception in verify_bitfields_and_aggregate_signature()");
+        "checkArgument threw and exception in verify_bitfields_and_aggregate_signature() 2");
 
     // Get the committee for the specific shard that this attestation is for
     List<List<Integer>> crosslink_committees = new ArrayList<>();
@@ -450,7 +450,7 @@ public final class BlockProcessorUtil {
       checkArgument(
           get_bitfield_bit(attestation.getAggregation_bitfield(), i) != 0b0
               || get_bitfield_bit(attestation.getCustody_bitfield(), i) == 0b0,
-          "checkArgument threw and exception in verify_bitfields_and_aggregate_signature()");
+          "checkArgument threw and exception in verify_bitfields_and_aggregate_signature() 3");
     }
 
     List<Integer> participants =
@@ -487,7 +487,7 @@ public final class BlockProcessorUtil {
                 state.getFork(),
                 slot_to_epoch(attestation.getData().getSlot()),
                 DOMAIN_ATTESTATION)),
-        "checkArgument threw and exception in verify_bitfields_and_aggregate_signature()");
+        "checkArgument threw and exception in verify_bitfields_and_aggregate_signature() 4");
 
     return true;
   }

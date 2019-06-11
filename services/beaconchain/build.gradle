@@ -9,6 +9,7 @@ jar {
 dependencies {
 
   implementation project(':validator:coordinator')
+  implementation project(':validator:client')
   implementation project(':storage')
   implementation project(':ethereum:statetransition')
   implementation project(':ethereum:datastructures')

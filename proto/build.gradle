@@ -1,4 +1,13 @@
+jar {
+    baseName 'artemis-proto'
+    manifest {
+        attributes('Implementation-Title': baseName,
+                'Implementation-Version': project.version)
+    }
+}
+
 apply plugin: 'com.google.protobuf'
+apply plugin: 'idea'
 
 buildscript {
     repositories {
@@ -30,4 +39,25 @@ protobuf {
             grpc {}
         }
     }
+    generatedFilesBaseDir = "$projectDir/gen"
+
+}
+
+clean {
+    delete protobuf.generatedFilesBaseDir
+}
+
+tasks.withType(JavaCompile) {
+    options.warnings = false
+}
+
+configurations { testArtifacts }
+task testJar (type: Jar) {
+    baseName = "${project.name}-test"
+    from sourceSets.test.output
+}
+
+artifacts {
+    testArtifacts testJar
+    testSupportArtifacts testSupportJar
 }

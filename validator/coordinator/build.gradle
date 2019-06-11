@@ -1,12 +1,15 @@
 jar {
-  baseName 'validator-coordinator'
+  baseName 'artemis-validator-coordinator'
   manifest {
     attributes('Implementation-Title': baseName,
     'Implementation-Version': project.version)
   }
 }
 
+
 dependencies {
+  implementation project(':validator:client')
+  compile project(':proto')
   implementation project(':storage')
   implementation project(':services:serviceutils')
   implementation project(':ethereum:statetransition')
@@ -14,6 +17,7 @@ dependencies {
   implementation project(':util')
   implementation project(':pow')
 
+  implementation 'org.apache.commons:commons-lang3:3.6'
   implementation 'org.apache.tuweni:tuweni-kv'
   implementation 'org.apache.tuweni:tuweni-bytes'
   implementation 'org.apache.tuweni:tuweni-crypto'
@@ -23,3 +27,4 @@ dependencies {
   implementation 'org.apache.logging.log4j:log4j-api'
   runtime 'org.apache.logging.log4j:log4j-core'
 }
+
