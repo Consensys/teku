@@ -18,11 +18,18 @@ import static java.lang.StrictMath.toIntExact;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.google.common.primitives.UnsignedLong;
+import com.google.protobuf.ByteString;
+import io.grpc.ManagedChannel;
+import io.grpc.ManagedChannelBuilder;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import org.apache.commons.lang3.tuple.Triple;
 import org.apache.logging.log4j.Level;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.SECP256K1;
 import org.apache.tuweni.ssz.SSZ;
@@ -30,12 +37,17 @@ import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
+import tech.pegasys.artemis.datastructures.operations.AttestationData;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
+import tech.pegasys.artemis.datastructures.state.CrosslinkCommittee;
 import tech.pegasys.artemis.datastructures.util.AttestationUtil;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
+import tech.pegasys.artemis.proto.messagesigner.MessageSignerGrpc;
+import tech.pegasys.artemis.proto.messagesigner.SignatureRequest;
+import tech.pegasys.artemis.proto.messagesigner.SignatureResponse;
 import tech.pegasys.artemis.service.serviceutils.ServiceConfig;
 import tech.pegasys.artemis.statetransition.GenesisHeadStateEvent;
 import tech.pegasys.artemis.statetransition.HeadStateEvent;
@@ -48,12 +60,12 @@ import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
+import tech.pegasys.artemis.validator.client.ValidatorClient;
 
 /** This class coordinates the activity between the validator clients and the the beacon chain */
 public class ValidatorCoordinator {
   private static final ALogger LOG = new ALogger(ValidatorCoordinator.class.getName());
   private final EventBus eventBus;
-
   private StateTransition stateTransition;
   private final Boolean printEnabled = false;
   private SECP256K1.SecretKey nodeIdentity;
@@ -63,6 +75,7 @@ public class ValidatorCoordinator {
   private ArrayList<Deposit> newDeposits = new ArrayList<>();
   private final HashMap<BLSPublicKey, BLSKeyPair> validatorSet = new HashMap<>();
   private ChainStorageClient store;
+  private HashMap<BLSPublicKey, ManagedChannel> validatorClientChannels = new HashMap<>();
   static final Integer UNPROCESSED_BLOCKS_LENGTH = 100;
 
   public ValidatorCoordinator(ServiceConfig config, ChainStorageClient store) {
@@ -74,12 +87,13 @@ public class ValidatorCoordinator {
     this.numNodes = config.getConfig().getNumNodes();
     this.store = store;
 
-    initializeValidators();
-
     stateTransition = new StateTransition(printEnabled);
+
+    initializeValidators();
   }
 
   @Subscribe
+  // TODO: make sure blocks that are produced right even after new slot to be pushed.
   public void onNewSlot(Date date) {
     if (validatorBlock != null) {
       this.eventBus.post(validatorBlock);
@@ -101,12 +115,23 @@ public class ValidatorCoordinator {
     BeaconStateWithCache headState = headStateEvent.getHeadState();
     BeaconBlock headBlock = headStateEvent.getHeadBlock();
 
-    List<Attestation> attestations =
-        AttestationUtil.createAttestations(headState, headBlock, validatorSet);
+    List<Triple<BLSPublicKey, Integer, CrosslinkCommittee>> attesters =
+        AttestationUtil.getAttesterInformation(headState, validatorSet);
+    AttestationData genericAttestationData =
+        AttestationUtil.getGenericAttestationData(headState, headBlock);
 
-    for (Attestation attestation : attestations) {
-      this.eventBus.post(attestation);
-    }
+    CompletableFuture.runAsync(
+        () ->
+            attesters
+                .parallelStream()
+                .forEach(
+                    attesterInfo ->
+                        produceAttestations(
+                            headState,
+                            attesterInfo.getLeft(),
+                            attesterInfo.getMiddle(),
+                            attesterInfo.getRight(),
+                            genericAttestationData)));
 
     // Copy state so that state transition during block creation does not manipulate headState in
     // storage
@@ -114,11 +139,84 @@ public class ValidatorCoordinator {
     createBlockIfNecessary(newHeadState, headBlock);
   }
 
+  private void produceAttestations(
+      BeaconState state,
+      BLSPublicKey attester,
+      int indexIntoCommittee,
+      CrosslinkCommittee committee,
+      AttestationData genericAttestationData) {
+    int arrayLength = Math.toIntExact((committee.getCommittee().size() + 7) / 8);
+    Bytes aggregationBitfield =
+        AttestationUtil.getAggregationBitfield(indexIntoCommittee, arrayLength);
+    Bytes custodyBitfield = AttestationUtil.getCustodyBitfield(arrayLength);
+    AttestationData attestationData =
+        AttestationUtil.completeAttestationData(
+            state, new AttestationData(genericAttestationData), committee);
+    Bytes32 attestationMessage = AttestationUtil.getAttestationMessageToSign(attestationData);
+    int domain = AttestationUtil.getDomain(state, attestationData);
+
+    BLSSignature signature = getSignature(attestationMessage, domain, attester);
+    this.eventBus.post(
+        new Attestation(aggregationBitfield, attestationData, custodyBitfield, signature));
+  }
+
+  private BLSSignature getEpochSignature(BeaconState state, BLSPublicKey proposer) {
+    UnsignedLong slot = state.getSlot().plus(UnsignedLong.ONE);
+    UnsignedLong epoch = BeaconStateUtil.slot_to_epoch(slot);
+
+    Bytes32 messageHash =
+        HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(epoch.longValue()));
+    int domain =
+        BeaconStateUtil.get_domain(state.getFork(), epoch, Constants.DOMAIN_RANDAO).intValue();
+    return getSignature(messageHash, domain, proposer);
+  }
+
+  private BLSSignature getBlockSignature(
+      BeaconState state, BeaconBlock block, BLSPublicKey proposer) {
+    int domain =
+        BeaconStateUtil.get_domain(
+                state.getFork(),
+                BeaconStateUtil.slot_to_epoch(UnsignedLong.valueOf(block.getSlot())),
+                Constants.DOMAIN_BEACON_BLOCK)
+            .intValue();
+
+    Bytes32 blockRoot = block.signed_root("signature");
+
+    return getSignature(blockRoot, domain, proposer);
+  }
+
+  private BeaconBlock createInitialBlock(BeaconStateWithCache state, BeaconBlock oldBlock) {
+    Bytes32 blockRoot = oldBlock.signed_root("signature");
+    List<Attestation> current_attestations = new ArrayList<>();
+    final Bytes32 MockStateRoot = Bytes32.ZERO;
+
+    if (state
+            .getSlot()
+            .compareTo(
+                UnsignedLong.valueOf(
+                    Constants.GENESIS_SLOT + Constants.MIN_ATTESTATION_INCLUSION_DELAY))
+        >= 0) {
+
+      UnsignedLong attestation_slot =
+          state.getSlot().minus(UnsignedLong.valueOf(Constants.MIN_ATTESTATION_INCLUSION_DELAY));
+
+      current_attestations = this.store.getUnprocessedAttestationsUntilSlot(attestation_slot);
+    }
+
+    BeaconBlock newBlock =
+        DataStructureUtil.newBeaconBlock(
+            state.getSlot().plus(UnsignedLong.ONE),
+            blockRoot,
+            MockStateRoot,
+            newDeposits,
+            current_attestations);
+
+    return newBlock;
+  }
+
   private void initializeValidators() {
     // Add all validators to validatorSet hashMap
     int nodeCounter = UInt256.fromBytes(nodeIdentity.bytes()).mod(numNodes).intValue();
-    // LOG.log(Level.DEBUG, "nodeCounter: " + nodeCounter);
-    // if (nodeCounter == 0) {
 
     int startIndex = nodeCounter * (numValidators / numNodes);
     int endIndex =
@@ -126,125 +224,58 @@ public class ValidatorCoordinator {
             + (numValidators / numNodes - 1)
             + toIntExact(Math.round((double) nodeCounter / Math.max(1, numNodes - 1)));
     endIndex = Math.min(endIndex, numValidators - 1);
-    // int startIndex = 0;
-    // int endIndex = numValidators-1;
     LOG.log(Level.DEBUG, "startIndex: " + startIndex + " endIndex: " + endIndex);
     for (int i = startIndex; i <= endIndex; i++) {
       BLSKeyPair keypair = BLSKeyPair.random(i);
+      int port = Constants.VALIDATOR_CLIENT_PORT_BASE + i;
+      new ValidatorClient(keypair, port);
+      ManagedChannel channel =
+          ManagedChannelBuilder.forAddress("localhost", port).usePlaintext().build();
+      validatorClientChannels.put(keypair.getPublicKey(), channel);
       LOG.log(Level.DEBUG, "i = " + i + ": " + keypair.getPublicKey().toString());
       validatorSet.put(keypair.getPublicKey(), keypair);
     }
-    // }
   }
 
-  private void createBlockIfNecessary(BeaconStateWithCache headState, BeaconBlock headBlock) {
+  private void createBlockIfNecessary(BeaconStateWithCache state, BeaconBlock oldBlock) {
     // Calculate the block proposer index, and if we have the
     // block proposer in our set of validators, produce the block
     Integer proposerIndex =
-        BeaconStateUtil.get_beacon_proposer_index(
-            headState, headState.getSlot().plus(UnsignedLong.ONE));
-    BLSPublicKey proposerPubkey = headState.getValidator_registry().get(proposerIndex).getPubkey();
-    if (validatorSet.containsKey(proposerPubkey)) {
-      Bytes32 blockRoot = headBlock.signed_root("signature");
-      createNewBlock(headState, blockRoot, validatorSet.get(proposerPubkey));
-    }
-  }
+        BeaconStateUtil.get_beacon_proposer_index(state, state.getSlot().plus(UnsignedLong.ONE));
+    BLSPublicKey proposer = state.getValidator_registry().get(proposerIndex).getPubkey();
+    if (validatorSet.containsKey(proposer)) {
+      CompletableFuture<BLSSignature> epochSignatureTask =
+          CompletableFuture.supplyAsync(() -> getEpochSignature(state, proposer));
+      CompletableFuture<BeaconBlock> blockCreationTask =
+          CompletableFuture.supplyAsync(() -> createInitialBlock(state, oldBlock));
 
-  private void createNewBlock(
-      BeaconStateWithCache headState, Bytes32 blockRoot, BLSKeyPair keypair) {
-    try {
-      List<Attestation> current_attestations;
-      final Bytes32 MockStateRoot = Bytes32.ZERO;
-      BeaconBlock block;
-      if (headState
-              .getSlot()
-              .compareTo(
-                  UnsignedLong.valueOf(
-                      Constants.GENESIS_SLOT + Constants.MIN_ATTESTATION_INCLUSION_DELAY))
-          >= 0) {
-        UnsignedLong attestation_slot =
-            headState
-                .getSlot()
-                .minus(UnsignedLong.valueOf(Constants.MIN_ATTESTATION_INCLUSION_DELAY));
-
-        current_attestations = this.store.getUnprocessedAttestationsUntilSlot(attestation_slot);
-
-        block =
-            DataStructureUtil.newBeaconBlock(
-                headState.getSlot().plus(UnsignedLong.ONE),
-                blockRoot,
-                MockStateRoot,
-                newDeposits,
-                current_attestations);
-      } else {
-        block =
-            DataStructureUtil.newBeaconBlock(
-                headState.getSlot().plus(UnsignedLong.ONE),
-                blockRoot,
-                MockStateRoot,
-                newDeposits,
-                new ArrayList<>());
+      BeaconBlock newBlock;
+      try {
+        newBlock = blockCreationTask.get();
+        BLSSignature epochSignature = epochSignatureTask.get();
+        newBlock.getBody().setRandao_reveal(epochSignature);
+        stateTransition.initiate(state, newBlock);
+        Bytes32 stateRoot = state.hash_tree_root();
+        newBlock.setState_root(stateRoot);
+        BLSSignature blockSignature = getBlockSignature(state, newBlock, proposer);
+        newBlock.setSignature(blockSignature);
+        validatorBlock = newBlock;
+      } catch (InterruptedException | ExecutionException | StateTransitionException e) {
+        LOG.log(Level.WARN, "Error during block creation");
       }
-
-      BLSSignature epoch_signature = setEpochSignature(headState, keypair);
-      block.getBody().setRandao_reveal(epoch_signature);
-      stateTransition.initiate(headState, block);
-      Bytes32 stateRoot = headState.hash_tree_root();
-      block.setState_root(stateRoot);
-      BLSSignature signed_proposal = signProposalData(headState, block, keypair);
-      block.setSignature(signed_proposal);
-      validatorBlock = block;
-
-      LOG.log(Level.INFO, "ValidatorCoordinator - NEWLY PRODUCED BLOCK", printEnabled);
-      LOG.log(Level.INFO, "ValidatorCoordinator - block.slot: " + block.getSlot(), printEnabled);
-      LOG.log(
-          Level.INFO,
-          "ValidatorCoordinator - block.parent_root: " + block.getPrevious_block_root(),
-          printEnabled);
-      LOG.log(
-          Level.INFO,
-          "ValidatorCoordinator - block.state_root: " + block.getState_root(),
-          printEnabled);
-
-      LOG.log(Level.INFO, "End ValidatorCoordinator", printEnabled);
-    } catch (StateTransitionException e) {
-      LOG.log(Level.WARN, e.toString(), printEnabled);
     }
   }
 
-  private BLSSignature setEpochSignature(BeaconState state, BLSKeyPair keypair) {
-    UnsignedLong slot = state.getSlot().plus(UnsignedLong.ONE);
-    UnsignedLong epoch = BeaconStateUtil.slot_to_epoch(slot);
+  private BLSSignature getSignature(Bytes message, int domain, BLSPublicKey signer) {
+    SignatureRequest request =
+        SignatureRequest.newBuilder()
+            .setMessage(ByteString.copyFrom(message.toArray()))
+            .setDomain(domain)
+            .build();
 
-    Bytes32 messageHash =
-        HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(epoch.longValue()));
-    UnsignedLong domain =
-        BeaconStateUtil.get_domain(state.getFork(), epoch, Constants.DOMAIN_RANDAO);
-    LOG.log(Level.INFO, "Sign Epoch", printEnabled);
-    LOG.log(Level.INFO, "Proposer pubkey: " + keypair.getPublicKey(), printEnabled);
-    LOG.log(Level.INFO, "state: " + state.hash_tree_root(), printEnabled);
-    LOG.log(Level.INFO, "slot: " + slot, printEnabled);
-    LOG.log(Level.INFO, "domain: " + domain, printEnabled);
-    return BLSSignature.sign(keypair, messageHash, domain.longValue());
-  }
-
-  private BLSSignature signProposalData(BeaconState state, BeaconBlock block, BLSKeyPair keypair) {
-    // Let proposal = Proposal(block.slot, BEACON_CHAIN_SHARD_NUMBER,
-    //   signed_root(block, "signature"), block.signature).
-
-    UnsignedLong domain =
-        BeaconStateUtil.get_domain(
-            state.getFork(),
-            BeaconStateUtil.slot_to_epoch(UnsignedLong.valueOf(block.getSlot())),
-            Constants.DOMAIN_BEACON_BLOCK);
-    BLSSignature signature =
-        BLSSignature.sign(keypair, block.signed_root("signature"), domain.longValue());
-    LOG.log(Level.INFO, "Sign Proposal", printEnabled);
-    LOG.log(Level.INFO, "Proposer pubkey: " + keypair.getPublicKey(), printEnabled);
-    LOG.log(Level.INFO, "state: " + state.hash_tree_root(), printEnabled);
-    LOG.log(Level.INFO, "block signature: " + signature.toString(), printEnabled);
-    LOG.log(Level.INFO, "slot: " + state.getSlot().longValue(), printEnabled);
-    LOG.log(Level.INFO, "domain: " + domain, printEnabled);
-    return signature;
+    SignatureResponse response;
+    response =
+        MessageSignerGrpc.newBlockingStub(validatorClientChannels.get(signer)).signMessage(request);
+    return BLSSignature.fromBytes(Bytes.wrap(response.getMessage().toByteArray()));
   }
 }

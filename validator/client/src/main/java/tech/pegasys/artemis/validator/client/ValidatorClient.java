@@ -13,101 +13,86 @@
 
 package tech.pegasys.artemis.validator.client;
 
-import static java.lang.Math.toIntExact;
-import static tech.pegasys.artemis.datastructures.Constants.SLOTS_PER_EPOCH;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_beacon_proposer_index;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_crosslink_committees_at_slot;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_current_epoch;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_epoch_start_slot;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_previous_epoch;
-
-import com.google.common.primitives.UnsignedLong;
-import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import com.google.protobuf.ByteString;
+import io.grpc.Server;
+import io.grpc.ServerBuilder;
+import io.grpc.stub.StreamObserver;
+import java.io.IOException;
+import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes;
-import org.web3j.crypto.Credentials;
-import org.web3j.protocol.Web3j;
-import org.web3j.tx.gas.DefaultGasProvider;
-import tech.pegasys.artemis.datastructures.Constants;
-import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.datastructures.state.CrosslinkCommittee;
-import tech.pegasys.artemis.pow.contract.DepositContract;
-import tech.pegasys.artemis.util.mikuli.BLS12381;
+import tech.pegasys.artemis.proto.messagesigner.MessageSignerGrpc;
+import tech.pegasys.artemis.proto.messagesigner.SignatureRequest;
+import tech.pegasys.artemis.proto.messagesigner.SignatureResponse;
+import tech.pegasys.artemis.util.alogger.ALogger;
+import tech.pegasys.artemis.util.bls.BLSKeyPair;
+import tech.pegasys.artemis.util.bls.BLSSignature;
 
 public class ValidatorClient {
+  private static final ALogger LOG = new ALogger(ValidatorClient.class.getName());
+  private BLSKeyPair keypair;
+  private Server server;
 
-  public ValidatorClient() {}
-
-  /**
-   * Return the committee assignment in the ``epoch`` for ``validator_index`` and
-   * ``registry_change``. ``assignment`` returned is a tuple of the following form: *
-   * ``assignment[0]`` is the list of validators in the committee * ``assignment[1]`` is the shard
-   * to which the committee is assigned * ``assignment[2]`` is the slot at which the committee is
-   * assigned * ``assignment[3]`` is a bool signalling if the validator is expected to propose a
-   * beacon block at the assigned slot.
-   *
-   * @param state the BeaconState.
-   * @param epoch either on or between previous or current epoch.
-   * @param validator_index the validator that is calling this function.
-   * @param registry_change whether there has been a validator registry change.
-   * @return Optional.of(CommitteeAssignmentTuple) or Optional.empty.
-   */
-  public Optional<CommitteeAssignmentTuple> get_committee_assignment(
-      BeaconState state, long epoch, int validator_index, boolean registry_change) {
-    long previous_epoch = get_previous_epoch(state).longValue();
-    long next_epoch = get_current_epoch(state).longValue();
-    assert previous_epoch <= epoch && epoch <= next_epoch;
-
-    int epoch_start_slot =
-        toIntExact(get_epoch_start_slot(UnsignedLong.valueOf(epoch)).longValue());
-
-    for (int slot = epoch_start_slot; slot < epoch_start_slot + SLOTS_PER_EPOCH; slot++) {
-
-      List<CrosslinkCommittee> crosslink_committees =
-          get_crosslink_committees_at_slot(state, UnsignedLong.valueOf(slot), registry_change);
-      ArrayList<CrosslinkCommittee> selected_committees = new ArrayList<>();
-
-      for (CrosslinkCommittee committee : crosslink_committees) {
-        if (committee.getCommittee().contains(validator_index)) {
-          selected_committees.add(committee);
-        }
-      }
-
-      if (selected_committees.size() > 0) {
-        List<Integer> validators = selected_committees.get(0).getCommittee();
-        int shard = toIntExact(selected_committees.get(0).getShard().longValue());
-        List<Integer> first_committee_at_slot =
-            crosslink_committees.get(0).getCommittee(); // List[ValidatorIndex]
-        boolean is_proposer =
-            validator_index
-                == get_beacon_proposer_index(state, UnsignedLong.valueOf(slot), registry_change);
-
-        return Optional.of(new CommitteeAssignmentTuple(validators, shard, slot, is_proposer));
-      }
+  public ValidatorClient(BLSKeyPair keypair, int port) {
+    this.keypair = keypair;
+    try {
+      start(port);
+    } catch (IOException e) {
+      LOG.log(Level.WARN, "Error starting VC on port " + port);
     }
-    return Optional.empty();
   }
 
-  public static void registerValidatorEth1(
-      Validator validator, long amount, String address, Web3j web3j, DefaultGasProvider gasProvider)
-      throws Exception {
-    Credentials credentials =
-        Credentials.create(validator.getSecpKeys().secretKey().bytes().toHexString());
-    DepositContract contract = DepositContract.load(address, web3j, credentials, gasProvider);
-    Bytes deposit_data =
-        Bytes.wrap(
-            validator.getPubkey().getPublicKey().toBytesCompressed(),
-            validator.getWithdrawal_credentials(),
-            Bytes.ofUnsignedLong(amount));
-    deposit_data =
-        Bytes.wrap(
-            deposit_data,
-            BLS12381
-                .sign(validator.getBlsKeys(), deposit_data, Constants.DOMAIN_DEPOSIT)
-                .signature()
-                .toBytesCompressed());
-    contract.deposit(deposit_data.toArray(), new BigInteger(amount + "000000000")).send();
+  private void start(int port) throws IOException {
+    /* The port on which the server should run */
+    server =
+        ServerBuilder.forPort(port).addService(new MessageSignerService(keypair)).build().start();
+
+    LOG.log(
+        Level.DEBUG,
+        "ValidatorClient started. Listening on "
+            + port
+            + " representing public key: "
+            + keypair.getPublicKey());
+
+    Runtime.getRuntime()
+        .addShutdownHook(
+            new Thread() {
+              @Override
+              public void run() {
+                // Use stderr here since the logger may have been reset by its JVM shutdown hook.
+                System.err.println(
+                    "*** Shutting down Validator Client gRPC server since JVM is shutting down");
+                stopServer();
+                System.err.println("*** Server shut down");
+              }
+            });
+  }
+
+  private void stopServer() {
+    if (server != null) {
+      server.shutdown();
+    }
+  }
+
+  private static class MessageSignerService extends MessageSignerGrpc.MessageSignerImplBase {
+    private final BLSKeyPair keypair;
+
+    MessageSignerService(BLSKeyPair keypair) {
+      this.keypair = keypair;
+    }
+
+    @Override
+    public void signMessage(
+        SignatureRequest request, StreamObserver<SignatureResponse> responseObserver) {
+      SignatureResponse reply =
+          SignatureResponse.newBuilder().setMessage(performSigning(request)).build();
+      responseObserver.onNext(reply);
+      responseObserver.onCompleted();
+    }
+
+    private ByteString performSigning(SignatureRequest request) {
+      Bytes message = Bytes.wrap(request.getMessage().toByteArray());
+      int domain = request.getDomain();
+      return ByteString.copyFrom(BLSSignature.sign(keypair, message, domain).toBytes().toArray());
+    }
   }
 }
