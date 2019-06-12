@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.pow.event;
+package tech.pegasys.artemis.datastructures.event;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -21,9 +21,10 @@ import java.util.List;
 import java.util.Map;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.artemis.data.IRecordAdapter;
+import tech.pegasys.artemis.datastructures.interfaces.IRecordAdapter;
 import tech.pegasys.artemis.pow.api.DepositEvent;
 import tech.pegasys.artemis.pow.contract.DepositContract.DepositEventResponse;
+import tech.pegasys.artemis.pow.event.AbstractEvent;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 
 public class Deposit extends AbstractEvent<DepositEventResponse>

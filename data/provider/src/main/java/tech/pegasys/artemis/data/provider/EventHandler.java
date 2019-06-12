@@ -17,7 +17,7 @@ import com.google.common.eventbus.Subscribe;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import tech.pegasys.artemis.data.IRecordAdapter;
+import tech.pegasys.artemis.datastructures.interfaces.IRecordAdapter;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 
 public class EventHandler {

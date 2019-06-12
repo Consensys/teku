@@ -40,6 +40,8 @@ import org.web3j.protocol.core.methods.response.Log;
 import org.web3j.protocol.http.HttpService;
 import org.web3j.tx.gas.DefaultGasProvider;
 import tech.pegasys.artemis.datastructures.Constants;
+import tech.pegasys.artemis.datastructures.event.Deposit;
+import tech.pegasys.artemis.datastructures.event.Eth2Genesis;
 import tech.pegasys.artemis.datastructures.operations.DepositData;
 import tech.pegasys.artemis.datastructures.operations.DepositInput;
 import tech.pegasys.artemis.ganache.GanacheController;
@@ -47,8 +49,6 @@ import tech.pegasys.artemis.pow.DepositContractListener;
 import tech.pegasys.artemis.pow.DepositContractListenerFactory;
 import tech.pegasys.artemis.pow.contract.DepositContract;
 import tech.pegasys.artemis.pow.contract.DepositContract.Eth2GenesisEventResponse;
-import tech.pegasys.artemis.pow.event.Deposit;
-import tech.pegasys.artemis.pow.event.Eth2Genesis;
 import tech.pegasys.artemis.service.serviceutils.ServiceConfig;
 import tech.pegasys.artemis.service.serviceutils.ServiceInterface;
 import tech.pegasys.artemis.util.alogger.ALogger;
@@ -199,7 +199,7 @@ public class PowchainService implements ServiceInterface {
       response.time = Bytes.ofUnsignedLong(UnsignedLong.ONE.longValue()).toArray();
       response.deposit_count = Bytes.ofUnsignedLong(UnsignedLong.ONE.longValue()).toArray();
       response.deposit_root = "root".getBytes(Charset.defaultCharset());
-      Eth2Genesis eth2Genesis = new tech.pegasys.artemis.pow.event.Eth2Genesis(response);
+      Eth2Genesis eth2Genesis = new Eth2Genesis(response);
       this.eventBus.post(eth2Genesis);
     } else if (depositMode.equals(Constants.DEPOSIT_NORMAL)) {
       listener =
