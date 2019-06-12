@@ -8,7 +8,7 @@ jar {
 
 dependencies {
   implementation project(':util')
-
+  implementation project(':pow')
   implementation 'org.apache.tuweni:tuweni-crypto'
   implementation 'org.apache.tuweni:tuweni-units'
   implementation files("../../lib/tuweni-ssz-0.8.1-SNAPSHOT.jar")
@@ -17,6 +17,7 @@ dependencies {
   implementation 'org.apache.logging.log4j:log4j-api'
   implementation 'org.apache.commons:commons-lang3:3.6'
   runtime 'org.apache.logging.log4j:log4j-core'
+  implementation 'com.fasterxml.jackson.core:jackson-databind'
 
   test {
     testLogging.showStandardStreams = true

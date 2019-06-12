@@ -27,6 +27,7 @@ import org.apache.tuweni.crypto.SECP256K1.PublicKey;
 import tech.pegasys.artemis.data.RawRecord;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.event.Eth2Genesis;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
@@ -80,7 +81,7 @@ public class StateProcessor {
     STDOUT.log(
         Level.INFO,
         "******* Eth2Genesis Event detected ******* : "
-            + ((tech.pegasys.artemis.pow.event.Eth2Genesis) event).getDeposit_root().toString()
+            + ((Eth2Genesis) event).getDeposit_root().toString()
             + ANSI_RESET);
     this.nodeSlot = UnsignedLong.valueOf(Constants.GENESIS_SLOT);
     this.nodeTime =
@@ -96,7 +97,7 @@ public class StateProcessor {
         deposits = DepositUtil.generateBranchProofs(deposits);
         initial_state =
             DataStructureUtil.createInitialBeaconState(
-                deposits, ((tech.pegasys.artemis.pow.event.Eth2Genesis) event).getDeposit_root());
+                deposits, ((Eth2Genesis) event).getDeposit_root());
       }
       Bytes32 initial_state_root = initial_state.hash_tree_root();
       BeaconBlock genesis_block = BeaconBlockUtil.get_empty_block();
