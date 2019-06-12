@@ -10,6 +10,7 @@ dependencies {
 
     implementation project(':services:serviceutils')
     implementation project(':services:powchain')
+    implementation project(':ethereum:datastructures')
     implementation project(':pow')
     implementation project(':data')
 
