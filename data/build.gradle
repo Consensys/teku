@@ -9,11 +9,11 @@ jar {
 dependencies {
   implementation project(':util')
   implementation project(':ethereum:datastructures')
-  implementation 'com.fasterxml.jackson.core:jackson-databind'
 
   implementation 'org.apache.tuweni:tuweni-crypto'
   implementation 'org.apache.tuweni:tuweni-units'
   implementation files("../lib/tuweni-ssz-0.8.1-SNAPSHOT.jar")
+  implementation 'com.fasterxml.jackson.core:jackson-databind'
   implementation 'com.google.guava:guava'
   implementation 'org.apache.logging.log4j:log4j-api'
   runtime 'org.apache.logging.log4j:log4j-core'
