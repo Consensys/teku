@@ -56,7 +56,7 @@ public class ChainStorageClient implements ChainStorage {
   private final PriorityBlockingQueue<Attestation> attestationsQueue =
       new PriorityBlockingQueue<>(
           UNPROCESSED_BLOCKS_LENGTH, Comparator.comparing(Attestation::getSlot));
-  private final ConcurrentHashMap<Integer, List<BeaconBlockHeader>> latestValidatorBlock =
+  private final ConcurrentHashMap<Integer, List<BeaconBlockHeader>> validatorBlockHeaders =
       new ConcurrentHashMap<>();
   protected EventBus eventBus;
 
@@ -119,7 +119,7 @@ public class ChainStorageClient implements ChainStorage {
     } else {
       List<BeaconBlockHeader> blockHeaderList = new ArrayList<>();
       blockHeaderList.add(blockHeader);
-      ChainStorage.add(validatorIndex, blockHeaderList, this.latestValidatorBlock);
+      ChainStorage.add(validatorIndex, blockHeaderList, this.validatorBlockHeaders);
     }
   }
 
@@ -178,7 +178,7 @@ public class ChainStorageClient implements ChainStorage {
    * @return
    */
   public Optional<List<BeaconBlockHeader>> getBeaconBlockHeaders(int validatorIndex) {
-    return ChainStorage.get(validatorIndex, this.latestValidatorBlock);
+    return ChainStorage.get(validatorIndex, this.validatorBlockHeaders);
   }
 
   /**

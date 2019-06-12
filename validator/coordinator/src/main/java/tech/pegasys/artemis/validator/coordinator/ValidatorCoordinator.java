@@ -188,7 +188,7 @@ public class ValidatorCoordinator {
     BeaconStateWithCache newHeadState = BeaconStateWithCache.deepCopy(headState);
     createBlockIfNecessary(newHeadState, headBlock);
 
-    // Save headState to check for slashing checks
+    // Save headState to check for slashings
     this.headState = headState;
   }
 
