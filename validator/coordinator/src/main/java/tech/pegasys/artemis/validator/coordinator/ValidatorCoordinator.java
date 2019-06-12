@@ -13,7 +13,11 @@
 
 package tech.pegasys.artemis.validator.coordinator;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static java.lang.StrictMath.toIntExact;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_current_epoch;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_domain;
+import static tech.pegasys.artemis.util.bls.BLSVerify.bls_verify;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
@@ -27,6 +31,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.LinkedBlockingQueue;
 import org.apache.commons.lang3.tuple.Triple;
 import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes;
@@ -36,12 +41,15 @@ import org.apache.tuweni.ssz.SSZ;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
+import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.state.CrosslinkCommittee;
+import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.datastructures.util.AttestationUtil;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
@@ -69,6 +77,7 @@ public class ValidatorCoordinator {
   private StateTransition stateTransition;
   private final Boolean printEnabled = false;
   private SECP256K1.SecretKey nodeIdentity;
+  private BeaconState headState;
   private int numValidators;
   private int numNodes;
   private BeaconBlock validatorBlock;
@@ -76,6 +85,8 @@ public class ValidatorCoordinator {
   private final HashMap<BLSPublicKey, BLSKeyPair> validatorSet = new HashMap<>();
   private ChainStorageClient store;
   private HashMap<BLSPublicKey, ManagedChannel> validatorClientChannels = new HashMap<>();
+  private LinkedBlockingQueue<ProposerSlashing> slashings = new LinkedBlockingQueue<>();
+
   static final Integer UNPROCESSED_BLOCKS_LENGTH = 100;
 
   public ValidatorCoordinator(ServiceConfig config, ChainStorageClient store) {
@@ -90,6 +101,45 @@ public class ValidatorCoordinator {
     stateTransition = new StateTransition(printEnabled);
 
     initializeValidators();
+  }
+
+  @Subscribe
+  public void checkIfIncomingBlockObeysSlashingConditions(BeaconBlock block) {
+    int proposerIndex =
+        BeaconStateUtil.get_beacon_proposer_index(headState, UnsignedLong.valueOf(block.getSlot()));
+    Validator proposer = headState.getValidator_registry().get(proposerIndex);
+
+    checkArgument(
+        bls_verify(
+            proposer.getPubkey(),
+            block.signed_root("signature"),
+            block.getSignature(),
+            get_domain(
+                headState.getFork(), get_current_epoch(headState), Constants.DOMAIN_BEACON_BLOCK)),
+        "Proposer signature is invalid");
+
+    BeaconBlockHeader blockHeader =
+        new BeaconBlockHeader(
+            UnsignedLong.valueOf(block.getSlot()),
+            block.getPrevious_block_root(),
+            block.getState_root(),
+            block.getBody().hash_tree_root(),
+            block.getSignature());
+    UnsignedLong headerSlot = blockHeader.getSlot();
+    if (store.getBeaconBlockHeaders(proposerIndex).isPresent()) {
+      List<BeaconBlockHeader> headers = store.getBeaconBlockHeaders(proposerIndex).get();
+      headers.forEach(
+          (header) -> {
+            if (header.getSlot().equals(headerSlot)
+                && !header.hash_tree_root().equals(blockHeader.hash_tree_root())
+                && !proposer.isSlashed()) {
+              ProposerSlashing slashing =
+                  new ProposerSlashing(UnsignedLong.valueOf(proposerIndex), blockHeader, header);
+              slashings.add(slashing);
+            }
+          });
+    }
+    this.store.addUnprocessedBlockHeader(proposerIndex, blockHeader);
   }
 
   @Subscribe
@@ -137,6 +187,9 @@ public class ValidatorCoordinator {
     // storage
     BeaconStateWithCache newHeadState = BeaconStateWithCache.deepCopy(headState);
     createBlockIfNecessary(newHeadState, headBlock);
+
+    // Save headState to check for slashing checks
+    this.headState = headState;
   }
 
   private void produceAttestations(
@@ -166,15 +219,14 @@ public class ValidatorCoordinator {
 
     Bytes32 messageHash =
         HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(epoch.longValue()));
-    int domain =
-        BeaconStateUtil.get_domain(state.getFork(), epoch, Constants.DOMAIN_RANDAO).intValue();
+    int domain = get_domain(state.getFork(), epoch, Constants.DOMAIN_RANDAO).intValue();
     return getSignature(messageHash, domain, proposer);
   }
 
   private BLSSignature getBlockSignature(
       BeaconState state, BeaconBlock block, BLSPublicKey proposer) {
     int domain =
-        BeaconStateUtil.get_domain(
+        get_domain(
                 state.getFork(),
                 BeaconStateUtil.slot_to_epoch(UnsignedLong.valueOf(block.getSlot())),
                 Constants.DOMAIN_BEACON_BLOCK)
@@ -251,15 +303,35 @@ public class ValidatorCoordinator {
 
       BeaconBlock newBlock;
       try {
+        // TODO: Uncomment this comment block to test proposer slashing
+        /*
+        BeaconStateWithCache otherState = BeaconStateWithCache.deepCopy(state);
+        */
         newBlock = blockCreationTask.get();
         BLSSignature epochSignature = epochSignatureTask.get();
         newBlock.getBody().setRandao_reveal(epochSignature);
+        List<ProposerSlashing> slashingsInBlock = newBlock.getBody().getProposer_slashings();
+        slashings.stream().forEach(slashing -> slashingsInBlock.add(slashing));
+        slashings = new LinkedBlockingQueue<>();
         stateTransition.initiate(state, newBlock);
         Bytes32 stateRoot = state.hash_tree_root();
         newBlock.setState_root(stateRoot);
         BLSSignature blockSignature = getBlockSignature(state, newBlock, proposer);
         newBlock.setSignature(blockSignature);
         validatorBlock = newBlock;
+        // TODO: Uncomment this comment block to test proposer slashing
+        // Creates duplicate blocks for our proposer to get it slashed.
+        /*
+        BeaconBlock newestBlock = createInitialBlock(otherState, oldBlock);
+        BLSSignature esignature = epochSignatureTask.get();
+        newestBlock.getBody().setRandao_reveal(esignature);
+        stateTransition.initiate(otherState, newestBlock);
+        Bytes32 sroot = state.hash_tree_root();
+        newestBlock.setState_root(sroot);
+        BLSSignature bsignature = getBlockSignature(otherState, newestBlock, proposer);
+        newestBlock.setSignature(bsignature);
+        this.eventBus.post(newestBlock);
+        */
       } catch (InterruptedException | ExecutionException | StateTransitionException e) {
         LOG.log(Level.WARN, "Error during block creation");
       }

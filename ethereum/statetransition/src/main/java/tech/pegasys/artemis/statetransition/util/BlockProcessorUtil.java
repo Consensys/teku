@@ -189,9 +189,7 @@ public final class BlockProcessorUtil {
       for (ProposerSlashing proposer_slashing : block.getBody().getProposer_slashings()) {
         // - Let proposer = state.validator_registry[proposer_slashing.proposer_index]
         Validator proposer =
-            state
-                .getValidator_registry()
-                .get(toIntExact(proposer_slashing.getProposer_index().longValue()));
+            state.getValidator_registry().get(proposer_slashing.getProposer_index().intValue());
 
         // Verify that the epoch is the same
         checkArgument(
@@ -214,7 +212,7 @@ public final class BlockProcessorUtil {
         checkArgument(
             bls_verify(
                 proposer.getPubkey(),
-                proposer_slashing.getHeader_1().hash_tree_root(),
+                proposer_slashing.getHeader_1().signed_root("signature"),
                 proposer_slashing.getHeader_1().getSignature(),
                 get_domain(
                     state.getFork(),
@@ -225,7 +223,7 @@ public final class BlockProcessorUtil {
         checkArgument(
             bls_verify(
                 proposer.getPubkey(),
-                proposer_slashing.getHeader_2().hash_tree_root(),
+                proposer_slashing.getHeader_2().signed_root("signature"),
                 proposer_slashing.getHeader_2().getSignature(),
                 get_domain(
                     state.getFork(),

@@ -21,6 +21,7 @@ import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 
 class BeaconBlockHeaderTest {
@@ -107,5 +108,19 @@ class BeaconBlockHeaderTest {
   void roundtripSSZ() {
     Bytes sszBeaconBlockHeaderBytes = beaconBlockHeader.toBytes();
     assertEquals(beaconBlockHeader, BeaconBlockHeader.fromBytes(sszBeaconBlockHeaderBytes));
+  }
+
+  @Test
+  void test() {
+    BeaconBlock block = DataStructureUtil.randomBeaconBlock(90000000);
+    BeaconBlockHeader blockHeader =
+        new BeaconBlockHeader(
+            UnsignedLong.valueOf(block.getSlot()),
+            block.getPrevious_block_root(),
+            block.getState_root(),
+            block.getBody().hash_tree_root(),
+            block.getSignature());
+    assertEquals(block.signed_root("signature"), blockHeader.signed_root("signature"));
+    assertEquals(block.hash_tree_root(), blockHeader.hash_tree_root());
   }
 }
