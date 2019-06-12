@@ -16,14 +16,13 @@ jar {
 //}
 
 dependencies {
+  implementation project(':util')
   //TODO org.web3j.abi and org.web3j.cyprto are used by org.web3j.core. Given that, is it necessary to export all 3 as API dependencies, or will just org.web3j.core suffice?
   api 'org.web3j:core'
   api 'org.web3j:abi'
   api 'org.web3j:crypto'
   api 'org.bouncycastle:bcprov-jdk15on'
-
-  implementation project(':util')
-  implementation project(':data')
+  
   implementation 'com.google.code.gson:gson'
   implementation 'com.google.guava:guava'
   compile group: 'com.googlecode.json-simple', name: 'json-simple', version: '1.1'

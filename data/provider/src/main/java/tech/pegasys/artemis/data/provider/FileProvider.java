@@ -17,7 +17,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import tech.pegasys.artemis.data.IRecordAdapter;
+import tech.pegasys.artemis.datastructures.interfaces.IRecordAdapter;
 
 public interface FileProvider {
   static Path uniqueFilename(String filename) throws IOException {
