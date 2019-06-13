@@ -14,7 +14,7 @@ advertisedPort = 9000
 # "test" pre-production
 # "simulation" to run a simulation of deposits with ganache-cli, if a inputFile is included the file will replay the deposits
 # "normal" production, must include contractAddr and nodeUrl
-mode = "test"
+mode = "simulation"
 inputFile = "validator_test_data.json"
 numValidators = 16
 numNodes = 1
