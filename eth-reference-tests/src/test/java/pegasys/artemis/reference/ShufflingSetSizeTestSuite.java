@@ -33,6 +33,7 @@ import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.io.Resources;
 import org.apache.tuweni.junit.BouncyCastleExtension;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -48,14 +49,28 @@ import tech.pegasys.artemis.util.bls.BLSPublicKey;
 @ExtendWith(BouncyCastleExtension.class)
 class ShufflingSetSizeTestSuite {
 
-  private static String testFile = "**/shuffling/shuffling_set_size.yml";
+  private static String shufflingTestVectorsFile = "**/shuffling/test_vector_shuffling.yml";
+  private static String shufflingDifferentSetSizeTestFile = "**/shuffling/shuffling_set_size.yml";
 
-  @ParameterizedTest(name = "{index}. shuffling with different validator set size {0} -> {1}")
-  @MethodSource("readShufflingWithDifferentValidatorSetSizeTests")
-  @SuppressWarnings({"unchecked"})
-  void testShufflingWithDifferentValidatorSetSize(
+  @ParameterizedTest(name = "{index}. Shuffling validator set. Expecting: {2}")
+  @MethodSource("readStandardShufflingTests")
+  void testStandardShufflingVectors(
       LinkedHashMap<String, Object> input, String inputSeed, List<List<BigInteger>> output) {
 
+    performShufflingTests(input, inputSeed, output);
+  }
+
+  @ParameterizedTest(name = "{index}. Shuffling validator sets with varied sizes. Expecting: {2}")
+  @MethodSource("readShufflingWithDifferentSetSizeTests")
+  void testShufflingWithDifferentSetSizes(
+      LinkedHashMap<String, Object> input, String inputSeed, List<List<BigInteger>> output) {
+
+    performShufflingTests(input, inputSeed, output);
+  }
+
+  @SuppressWarnings({"unchecked"})
+  private void performShufflingTests(
+      LinkedHashMap<String, Object> input, String inputSeed, List<List<BigInteger>> output) {
     UnsignedLong epoch = UnsignedLong.valueOf((BigInteger) input.get("epoch"));
     Bytes32 seed = Bytes32.fromHexString(inputSeed);
 
@@ -88,7 +103,8 @@ class ShufflingSetSizeTestSuite {
       // for Jackson to read in the epochs from the YAML without blowing up about
       // them being larger than ints/longs, we have to read them in as BigIntegers.
       // Unfortunately, this goes for index values read in from the output as well.
-      // This Stream converts our BigIntegers indices to ints for the equality assertion.
+      // This Stream converts our BigIntegers indices to ints for the equality
+      // assertion.
       List<List<Integer>> expected =
           output.stream()
               .map(
@@ -105,9 +121,13 @@ class ShufflingSetSizeTestSuite {
   }
 
   @MustBeClosed
-  private static Stream<Arguments> readShufflingWithDifferentValidatorSetSizeTests()
-      throws IOException {
-    return findTests(testFile, "test_cases");
+  private static Stream<Arguments> readStandardShufflingTests() throws IOException {
+    return findTests(shufflingTestVectorsFile, "test_cases");
+  }
+
+  @MustBeClosed
+  private static Stream<Arguments> readShufflingWithDifferentSetSizeTests() throws IOException {
+    return findTests(shufflingDifferentSetSizeTestFile, "test_cases");
   }
 
   @MustBeClosed
