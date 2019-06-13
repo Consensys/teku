@@ -13,12 +13,23 @@
 
 package tech.pegasys.artemis.services.powchain;
 
+import static com.google.common.base.Charsets.UTF_8;
+
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.google.common.primitives.UnsignedLong;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.Reader;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -43,19 +54,6 @@ import tech.pegasys.artemis.util.mikuli.KeyPair;
 import tech.pegasys.artemis.validator.client.DepositSimulation;
 import tech.pegasys.artemis.validator.client.Validator;
 import tech.pegasys.artemis.validator.client.ValidatorClientUtil;
-
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.Reader;
-import java.nio.ByteOrder;
-import java.nio.charset.Charset;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-
-import static com.google.common.base.Charsets.UTF_8;
 
 public class PowchainService implements ServiceInterface {
 
@@ -137,25 +135,14 @@ public class PowchainService implements ServiceInterface {
                 JsonArray events = object.getAsJsonObject().get("events").getAsJsonArray();
                 events.forEach(
                     event -> {
-                      DepositContract.DepositEventResponse response = DepositUtil.convertJsonElementToDepositEventResponse(event);
+                      DepositContract.DepositEventResponse response =
+                          DepositUtil.convertJsonElementToDepositEventResponse(event);
                       eventBus.post(DepositUtil.deserializeResponse(response));
                     });
               } else {
                 JsonObject event = object.getAsJsonObject();
-                DepositContract.Eth2GenesisEventResponse response =
-                    new DepositContract.Eth2GenesisEventResponse();
-                response.deposit_root =
-                    Bytes.fromHexString(event.getAsJsonObject().get("deposit_root").getAsString())
-                        .toArray();
-                response.deposit_count =
-                    Bytes.ofUnsignedInt(
-                            event.getAsJsonObject().get("deposit_count").getAsInt(),
-                            ByteOrder.BIG_ENDIAN)
-                        .toArray();
-                response.time =
-                    Bytes.ofUnsignedLong(
-                            event.getAsJsonObject().get("time").getAsLong(), ByteOrder.BIG_ENDIAN)
-                        .toArray();
+                Eth2GenesisEventResponse response =
+                    DepositUtil.convertJsonObjectToEth2GenesisEventResponse(event);
                 Eth2Genesis eth2Genesis = new Eth2Genesis(response);
                 eventBus.post(eth2Genesis);
               }

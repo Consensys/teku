@@ -13,8 +13,15 @@
 
 package tech.pegasys.artemis.datastructures.util;
 
+import static tech.pegasys.artemis.datastructures.Constants.DEPOSIT_CONTRACT_TREE_DEPTH;
+
 import com.google.common.primitives.UnsignedLong;
 import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import java.nio.ByteOrder;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.Hash;
@@ -24,13 +31,6 @@ import tech.pegasys.artemis.datastructures.operations.DepositInput;
 import tech.pegasys.artemis.pow.contract.DepositContract;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
-
-import java.nio.ByteOrder;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.List;
-
-import static tech.pegasys.artemis.datastructures.Constants.DEPOSIT_CONTRACT_TREE_DEPTH;
 
 public class DepositUtil {
 
@@ -47,20 +47,34 @@ public class DepositUtil {
     return deposits;
   }
 
-  public static DepositContract.DepositEventResponse convertJsonElementToDepositEventResponse(JsonElement event){
-    DepositContract.DepositEventResponse response =
-            new DepositContract.DepositEventResponse();
+  public static DepositContract.DepositEventResponse convertJsonElementToDepositEventResponse(
+      JsonElement event) {
+    DepositContract.DepositEventResponse response = new DepositContract.DepositEventResponse();
     response.data =
-            Bytes.fromHexString(event.getAsJsonObject().get("data").getAsString())
-                    .toArray();
+        Bytes.fromHexString(event.getAsJsonObject().get("data").getAsString()).toArray();
     response.merkle_tree_index =
-            Bytes.fromHexString(
-                    event.getAsJsonObject().get("merkle_tree_index").getAsString())
-                    .toArray();
+        Bytes.fromHexString(event.getAsJsonObject().get("merkle_tree_index").getAsString())
+            .toArray();
     return response;
   }
 
-  public static Deposit deserializeResponse(DepositContract.DepositEventResponse response){
+  public static DepositContract.Eth2GenesisEventResponse
+      convertJsonObjectToEth2GenesisEventResponse(JsonObject event) {
+    DepositContract.Eth2GenesisEventResponse response =
+        new DepositContract.Eth2GenesisEventResponse();
+    response.deposit_root =
+        Bytes.fromHexString(event.getAsJsonObject().get("deposit_root").getAsString()).toArray();
+    response.deposit_count =
+        Bytes.ofUnsignedInt(
+                event.getAsJsonObject().get("deposit_count").getAsInt(), ByteOrder.BIG_ENDIAN)
+            .toArray();
+    response.time =
+        Bytes.ofUnsignedLong(event.getAsJsonObject().get("time").getAsLong(), ByteOrder.BIG_ENDIAN)
+            .toArray();
+    return response;
+  }
+
+  public static Deposit deserializeResponse(DepositContract.DepositEventResponse response) {
     Bytes data = Bytes.wrap(response.data);
 
     // process fields
@@ -69,9 +83,14 @@ public class DepositUtil {
     BLSSignature proof_of_possession = BLSSignature.fromBytes(data.slice(88, 96).reverse());
     long amount = data.slice(80, 8).toLong(ByteOrder.LITTLE_ENDIAN);
     long merkle_tree_index = Bytes.wrap(response.merkle_tree_index).toLong(ByteOrder.LITTLE_ENDIAN);
-    return new Deposit(null, UnsignedLong.valueOf(merkle_tree_index), new DepositData(UnsignedLong.valueOf(amount), UnsignedLong.ZERO, new DepositInput(pubkey, withdrawal_credentials, proof_of_possession)));
+    return new Deposit(
+        null,
+        UnsignedLong.valueOf(merkle_tree_index),
+        new DepositData(
+            UnsignedLong.valueOf(amount),
+            UnsignedLong.ZERO,
+            new DepositInput(pubkey, withdrawal_credentials, proof_of_possession)));
   }
-
 
   public static boolean validateDeposits(List<Deposit> deposits, Bytes32 root, int height) {
     for (int i = 0; i < deposits.size(); i++) {
