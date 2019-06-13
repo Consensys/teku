@@ -8,6 +8,7 @@ timer="QuartzTimer"
 networkInterface = "0.0.0.0"
 port = 9000
 advertisedPort = 9000
+naughtinessPercentage = 25
 
 [deposit]
 # normal, test, simulation

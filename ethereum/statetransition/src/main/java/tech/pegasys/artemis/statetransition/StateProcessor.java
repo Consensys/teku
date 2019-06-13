@@ -21,6 +21,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.SECP256K1.PublicKey;
@@ -194,6 +195,10 @@ public class StateProcessor {
         new HeadStateEvent(
             BeaconStateWithCache.deepCopy((BeaconStateWithCache) headState), headBlock));
     recordData(date);
+    System.out.println(
+        headState.getValidator_registry().stream()
+            .map(validator -> validator.isSlashed())
+            .collect(Collectors.toList()));
   }
 
   protected Boolean inspectBlock(Optional<BeaconBlock> block) {

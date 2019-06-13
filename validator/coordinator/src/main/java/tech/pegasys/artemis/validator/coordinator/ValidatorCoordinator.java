@@ -29,9 +29,12 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Random;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.LinkedBlockingQueue;
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes;
@@ -82,10 +85,11 @@ public class ValidatorCoordinator {
   private int numNodes;
   private BeaconBlock validatorBlock;
   private ArrayList<Deposit> newDeposits = new ArrayList<>();
-  private final HashMap<BLSPublicKey, BLSKeyPair> validatorSet = new HashMap<>();
+  private final HashMap<BLSPublicKey, Pair<BLSKeyPair, Boolean>> validatorSet = new HashMap<>();
   private ChainStorageClient store;
   private HashMap<BLSPublicKey, ManagedChannel> validatorClientChannels = new HashMap<>();
   private LinkedBlockingQueue<ProposerSlashing> slashings = new LinkedBlockingQueue<>();
+  private int naughtinessPercentage;
 
   static final Integer UNPROCESSED_BLOCKS_LENGTH = 100;
 
@@ -96,6 +100,7 @@ public class ValidatorCoordinator {
         SECP256K1.SecretKey.fromBytes(Bytes32.fromHexString(config.getConfig().getIdentity()));
     this.numValidators = config.getConfig().getNumValidators();
     this.numNodes = config.getConfig().getNumNodes();
+    this.naughtinessPercentage = config.getConfig().getNaughtinessPercentage();
     this.store = store;
 
     stateTransition = new StateTransition(printEnabled);
@@ -185,8 +190,7 @@ public class ValidatorCoordinator {
 
     // Copy state so that state transition during block creation does not manipulate headState in
     // storage
-    BeaconStateWithCache newHeadState = BeaconStateWithCache.deepCopy(headState);
-    createBlockIfNecessary(newHeadState, headBlock);
+    createBlockIfNecessary(headState, headBlock);
 
     // Save headState to check for slashings
     this.headState = headState;
@@ -276,6 +280,10 @@ public class ValidatorCoordinator {
             + (numValidators / numNodes - 1)
             + toIntExact(Math.round((double) nodeCounter / Math.max(1, numNodes - 1)));
     endIndex = Math.min(endIndex, numValidators - 1);
+
+    int numValidators = endIndex - startIndex + 1;
+
+    long numNaughtyValidators = Math.round((naughtinessPercentage * numValidators) / 100.0);
     LOG.log(Level.DEBUG, "startIndex: " + startIndex + " endIndex: " + endIndex);
     for (int i = startIndex; i <= endIndex; i++) {
       BLSKeyPair keypair = BLSKeyPair.random(i);
@@ -285,53 +293,66 @@ public class ValidatorCoordinator {
           ManagedChannelBuilder.forAddress("localhost", port).usePlaintext().build();
       validatorClientChannels.put(keypair.getPublicKey(), channel);
       LOG.log(Level.DEBUG, "i = " + i + ": " + keypair.getPublicKey().toString());
-      validatorSet.put(keypair.getPublicKey(), keypair);
+      if (numNaughtyValidators > 0) {
+        validatorSet.put(keypair.getPublicKey(), new ImmutablePair<>(keypair, true));
+      } else {
+        validatorSet.put(keypair.getPublicKey(), new ImmutablePair<>(keypair, false));
+      }
+      numNaughtyValidators--;
     }
   }
 
   private void createBlockIfNecessary(BeaconStateWithCache state, BeaconBlock oldBlock) {
+    BeaconStateWithCache newState = BeaconStateWithCache.deepCopy(state);
+
     // Calculate the block proposer index, and if we have the
     // block proposer in our set of validators, produce the block
     Integer proposerIndex =
-        BeaconStateUtil.get_beacon_proposer_index(state, state.getSlot().plus(UnsignedLong.ONE));
-    BLSPublicKey proposer = state.getValidator_registry().get(proposerIndex).getPubkey();
+        BeaconStateUtil.get_beacon_proposer_index(
+            newState, newState.getSlot().plus(UnsignedLong.ONE));
+    BLSPublicKey proposer = newState.getValidator_registry().get(proposerIndex).getPubkey();
     if (validatorSet.containsKey(proposer)) {
       CompletableFuture<BLSSignature> epochSignatureTask =
-          CompletableFuture.supplyAsync(() -> getEpochSignature(state, proposer));
+          CompletableFuture.supplyAsync(() -> getEpochSignature(newState, proposer));
       CompletableFuture<BeaconBlock> blockCreationTask =
-          CompletableFuture.supplyAsync(() -> createInitialBlock(state, oldBlock));
+          CompletableFuture.supplyAsync(() -> createInitialBlock(newState, oldBlock));
 
       BeaconBlock newBlock;
       try {
-        // TODO: Uncomment this comment block to test proposer slashing
-        /*
-        BeaconStateWithCache otherState = BeaconStateWithCache.deepCopy(state);
-        */
         newBlock = blockCreationTask.get();
         BLSSignature epochSignature = epochSignatureTask.get();
         newBlock.getBody().setRandao_reveal(epochSignature);
         List<ProposerSlashing> slashingsInBlock = newBlock.getBody().getProposer_slashings();
-        slashings.stream().forEach(slashing -> slashingsInBlock.add(slashing));
+        slashings.forEach(
+            slashing -> {
+              if (!state
+                  .getValidator_registry()
+                  .get(slashing.getProposer_index().intValue())
+                  .isSlashed()) {
+                slashingsInBlock.add(slashing);
+              }
+            });
         slashings = new LinkedBlockingQueue<>();
-        stateTransition.initiate(state, newBlock);
-        Bytes32 stateRoot = state.hash_tree_root();
+        stateTransition.initiate(newState, newBlock);
+        Bytes32 stateRoot = newState.hash_tree_root();
         newBlock.setState_root(stateRoot);
-        BLSSignature blockSignature = getBlockSignature(state, newBlock, proposer);
+        BLSSignature blockSignature = getBlockSignature(newState, newBlock, proposer);
         newBlock.setSignature(blockSignature);
         validatorBlock = newBlock;
-        // TODO: Uncomment this comment block to test proposer slashing
-        // Creates duplicate blocks for our proposer to get it slashed.
-        /*
-        BeaconBlock newestBlock = createInitialBlock(otherState, oldBlock);
-        BLSSignature esignature = epochSignatureTask.get();
-        newestBlock.getBody().setRandao_reveal(esignature);
-        stateTransition.initiate(otherState, newestBlock);
-        Bytes32 sroot = state.hash_tree_root();
-        newestBlock.setState_root(sroot);
-        BLSSignature bsignature = getBlockSignature(otherState, newestBlock, proposer);
-        newestBlock.setSignature(bsignature);
-        this.eventBus.post(newestBlock);
-        */
+
+        // If validator set object's right variable is set to true, then the validator is naughty
+        if (validatorSet.get(proposer).getRight()) {
+          BeaconStateWithCache naughtyState = BeaconStateWithCache.deepCopy(state);
+          BeaconBlock newestBlock = createInitialBlock(naughtyState, oldBlock);
+          BLSSignature eSignature = epochSignatureTask.get();
+          newestBlock.getBody().setRandao_reveal(eSignature);
+          stateTransition.initiate(naughtyState, newestBlock);
+          Bytes32 sRoot = newState.hash_tree_root();
+          newestBlock.setState_root(sRoot);
+          BLSSignature bSignature = getBlockSignature(naughtyState, newestBlock, proposer);
+          newestBlock.setSignature(bSignature);
+          this.eventBus.post(newestBlock);
+        }
       } catch (InterruptedException | ExecutionException | StateTransitionException e) {
         LOG.log(Level.WARN, "Error during block creation");
       }

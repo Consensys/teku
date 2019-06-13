@@ -56,6 +56,11 @@ public final class ArtemisConfiguration {
         "Peer to peer advertised port",
         PropertyValidator.inRange(0, 65535));
     builder.addInteger(
+        "node.naughtinessPercentage",
+        0,
+        "Percentage of Validator Clients that are naughty",
+        PropertyValidator.inRange(0, 101));
+    builder.addInteger(
         "deposit.numValidators",
         128,
         "represents the total number of validators in the network",
@@ -252,6 +257,11 @@ public final class ArtemisConfiguration {
               .map(error -> error.position() + " " + error.toString())
               .collect(Collectors.joining("\n")));
     }
+  }
+
+  /** @return the identity of the node, the hexadecimal representation of its secret key */
+  public int getNaughtinessPercentage() {
+    return config.getInteger("node.naughtinessPercentage");
   }
 
   /** @return the identity of the node, the hexadecimal representation of its secret key */

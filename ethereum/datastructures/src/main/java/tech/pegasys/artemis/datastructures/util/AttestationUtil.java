@@ -18,6 +18,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import org.apache.commons.lang3.tuple.ImmutableTriple;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -46,7 +47,7 @@ public class AttestationUtil {
   }
 
   public static List<Triple<BLSPublicKey, Integer, CrosslinkCommittee>> getAttesterInformation(
-      BeaconState headState, HashMap<BLSPublicKey, BLSKeyPair> validatorSet) {
+      BeaconState headState, HashMap<BLSPublicKey, Pair<BLSKeyPair, Boolean>> validatorSet) {
 
     UnsignedLong slot = headState.getSlot();
     List<CrosslinkCommittee> crosslinkCommittees =
