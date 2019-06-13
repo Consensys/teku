@@ -189,7 +189,7 @@ public final class BlockProcessorUtil {
       for (ProposerSlashing proposer_slashing : block.getBody().getProposer_slashings()) {
         // - Let proposer = state.validator_registry[proposer_slashing.proposer_index]
         Validator proposer =
-            state.getValidator_registry().get(proposer_slashing.getProposer_index().intValue());
+            state.getValidator_registry().get(toIntExact(proposer_slashing.getProposer_index().longValue()));
 
         // Verify that the epoch is the same
         checkArgument(
