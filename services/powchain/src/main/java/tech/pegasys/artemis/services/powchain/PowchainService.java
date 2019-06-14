@@ -16,7 +16,6 @@ package tech.pegasys.artemis.services.powchain;
 import static com.google.common.base.Charsets.UTF_8;
 
 import com.google.common.eventbus.EventBus;
-import com.google.common.eventbus.Subscribe;
 import com.google.common.primitives.UnsignedLong;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
@@ -39,7 +38,6 @@ import org.web3j.protocol.core.methods.response.Log;
 import org.web3j.protocol.http.HttpService;
 import org.web3j.tx.gas.DefaultGasProvider;
 import tech.pegasys.artemis.datastructures.Constants;
-import tech.pegasys.artemis.datastructures.event.Deposit;
 import tech.pegasys.artemis.datastructures.event.Eth2Genesis;
 import tech.pegasys.artemis.datastructures.util.DepositUtil;
 import tech.pegasys.artemis.ganache.GanacheController;
@@ -170,25 +168,5 @@ public class PowchainService implements ServiceInterface {
   @Override
   public void stop() {
     this.eventBus.unregister(this);
-  }
-
-  @Subscribe
-  public void onDepositEvent(Eth2Genesis event) {
-    LOG.log(Level.INFO, event.toString());
-  }
-
-  private DepositSimulation attributeDepositToSimulation(Deposit deposit) {
-    for (int i = 0; i < simulations.size(); i++) {
-      DepositSimulation simulation = simulations.get(i);
-      if (simulation
-          .getValidator()
-          .getWithdrawal_credentials()
-          .equals(deposit.getWithdrawal_credentials())) {
-        simulation.getDeposits().add(deposit);
-        return simulation;
-      }
-      ;
-    }
-    return null;
   }
 }

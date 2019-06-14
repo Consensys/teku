@@ -29,6 +29,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.junit.BouncyCastleExtension;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import tech.pegasys.artemis.datastructures.event.Deposit;
 
 @ExtendWith(BouncyCastleExtension.class)
 class DepositTest {

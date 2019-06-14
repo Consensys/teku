@@ -28,19 +28,21 @@ import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.artemis.datastructures.event.Deposit;
 import tech.pegasys.artemis.datastructures.event.Eth2Genesis;
 import tech.pegasys.artemis.datastructures.interfaces.IRecordAdapter;
+import tech.pegasys.artemis.pow.api.DepositEvent;
 
 public class DepositSimulation implements IRecordAdapter {
 
-  private static class DepositSerializer extends JsonSerializer<Deposit> {
+  private static class DepositSerializer extends JsonSerializer<DepositEvent> {
 
     @Override
-    public void serialize(
-        Deposit deposit, JsonGenerator jGen, SerializerProvider serializerProvider)
+    public void serialize(DepositEvent deposit, JsonGenerator jGen, SerializerProvider serializers)
         throws IOException {
       jGen.writeStartObject();
       jGen.writeStringField("eventType", "Deposit");
-      jGen.writeStringField("data", deposit.getData().toHexString());
-      jGen.writeStringField("merkle_tree_index", deposit.getMerkle_tree_index().toHexString());
+      jGen.writeStringField("data", Bytes.wrap(deposit.getResponse().data).reverse().toHexString());
+      jGen.writeStringField(
+          "merkle_tree_index",
+          Bytes.wrap(deposit.getResponse().merkle_tree_index).reverse().toHexString());
       jGen.writeEndObject();
     }
   }
@@ -49,7 +51,7 @@ public class DepositSimulation implements IRecordAdapter {
 
     public DepositModule() {
       super("deposit");
-      addSerializer(Deposit.class, new DepositSerializer());
+      addSerializer(DepositEvent.class, new DepositSerializer());
     }
   }
 

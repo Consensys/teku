@@ -13,127 +13,124 @@
 
 package tech.pegasys.artemis.datastructures.event;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import java.nio.ByteOrder;
-import java.util.HashMap;
+import com.google.common.primitives.UnsignedLong;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
-import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.artemis.datastructures.interfaces.IRecordAdapter;
-import tech.pegasys.artemis.pow.api.DepositEvent;
-import tech.pegasys.artemis.pow.contract.DepositContract.DepositEventResponse;
-import tech.pegasys.artemis.pow.event.AbstractEvent;
-import tech.pegasys.artemis.util.bls.BLSPublicKey;
+import org.apache.tuweni.ssz.SSZ;
+import tech.pegasys.artemis.datastructures.Constants;
+import tech.pegasys.artemis.datastructures.operations.DepositData;
+import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
+import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
+import tech.pegasys.artemis.util.hashtree.Merkleizable;
 
-public class Deposit extends AbstractEvent<DepositEventResponse>
-    implements DepositEvent, IRecordAdapter {
-  // processed fields
-  private BLSPublicKey pubkey;
-  private Bytes32 withdrawal_credentials;
-  private Bytes proof_of_possession;
-  private long amount;
+public class Deposit implements Merkleizable {
 
-  private static final ObjectMapper mapper = new ObjectMapper();
+  private List<Bytes32> proof; // Bounded by DEPOSIT_CONTRACT_TREE_DEPTH
+  private UnsignedLong index;
+  private DepositData deposit_data;
 
-  // raw fields
-  private Bytes data;
-  private Bytes merkel_tree_index;
-  private Map<String, Object> outputFieldMap = new HashMap<>();
-
-  public Deposit(DepositEventResponse response) {
-    super(response);
-    // raw fields
-    this.data = Bytes.wrap(response.data);
-    this.merkel_tree_index = Bytes.wrap(response.merkle_tree_index);
-
-    // process fields
-    this.pubkey = BLSPublicKey.fromBytesCompressed(data.slice(0, 48).reverse());
-    this.withdrawal_credentials = Bytes32.wrap(data.slice(48, 32).reverse());
-    this.proof_of_possession = data.slice(88, 96).reverse();
-    this.amount = data.slice(80, 8).toLong(ByteOrder.LITTLE_ENDIAN);
+  public Deposit(List<Bytes32> proof, UnsignedLong index, DepositData deposit_data) {
+    this.proof = proof;
+    this.index = index;
+    this.deposit_data = deposit_data;
   }
 
-  public Bytes getData() {
-    return data;
+  public static Deposit fromBytes(Bytes bytes) {
+    return SSZ.decode(
+        bytes,
+        reader ->
+            new Deposit(
+                reader.readFixedBytesList((long) Constants.DEPOSIT_CONTRACT_TREE_DEPTH, 32).stream()
+                    .map(Bytes32::wrap)
+                    .collect(Collectors.toList()),
+                UnsignedLong.fromLongBits(reader.readUInt64()),
+                DepositData.fromBytes(reader.readBytes())));
   }
 
-  public Bytes getMerkle_tree_index() {
-    return merkel_tree_index;
-  }
+  public Bytes toBytes() {
+    List<Bytes32> filledProofList = new ArrayList<>();
+    filledProofList.addAll(proof);
 
-  @Override
-  public String toString() {
-    return data.toString() + "\n" + merkel_tree_index.toString();
-  }
+    if (proof.size() < Constants.DEPOSIT_CONTRACT_TREE_DEPTH) {
 
-  public BLSPublicKey getPubkey() {
-    return pubkey;
-  }
+      int elementsToFill = Constants.DEPOSIT_CONTRACT_TREE_DEPTH - proof.size();
+      List<Bytes32> fillElements = Collections.nCopies(elementsToFill, Bytes32.ZERO);
 
-  public Bytes32 getWithdrawal_credentials() {
-    return withdrawal_credentials;
-  }
-
-  public Bytes getProof_of_possession() {
-    return proof_of_possession;
-  }
-
-  public long getAmount() {
-    return amount;
-  }
-
-  @Override
-  public void filterOutputFields(List<String> outputFields) {
-    this.outputFieldMap.put("eventType", "Deposit");
-    for (String field : outputFields) {
-      switch (field) {
-        case "pubkey":
-          this.outputFieldMap.put(
-              "pubkey", pubkey.getPublicKey().toBytesCompressed().toHexString());
-          break;
-
-        case "withdrawal_credentials":
-          this.outputFieldMap.put("withdrawal_credentials", withdrawal_credentials.toHexString());
-          break;
-
-        case "proof_of_possession":
-          this.outputFieldMap.put("proof_of_possession", proof_of_possession.toHexString());
-          break;
-
-        case "amount":
-          this.outputFieldMap.put("amount", amount);
-          break;
-
-        case "merkel_tree_index":
-          this.outputFieldMap.put("merkel_tree_index", merkel_tree_index.toHexString());
-          break;
-      }
+      filledProofList.addAll(fillElements);
     }
+
+    return SSZ.encode(
+        writer -> {
+          writer.writeFixedBytesList(
+              (long) Constants.DEPOSIT_CONTRACT_TREE_DEPTH, 32, filledProofList);
+          writer.writeUInt64(index.longValue());
+          writer.writeBytes(deposit_data.toBytes());
+        });
   }
 
   @Override
-  public String toJSON() throws JsonProcessingException {
-    String jsonOutputString = null;
-    jsonOutputString = mapper.writerFor(Map.class).writeValueAsString(this.outputFieldMap);
-    return jsonOutputString;
+  public int hashCode() {
+    return Objects.hash(proof, index, deposit_data);
   }
 
   @Override
-  public String toCSV() {
-    String csvOutputString = "";
-    for (Object obj : this.outputFieldMap.values()) {
-      csvOutputString += "'" + obj.toString() + "',";
+  public boolean equals(Object obj) {
+    if (Objects.isNull(obj)) {
+      return false;
     }
-    if (csvOutputString.length() > 0) {
-      csvOutputString = csvOutputString.substring(0, csvOutputString.length() - 1);
+
+    if (this == obj) {
+      return true;
     }
-    return csvOutputString;
+
+    if (!(obj instanceof Deposit)) {
+      return false;
+    }
+
+    Deposit other = (Deposit) obj;
+    return Objects.equals(this.getProof(), other.getProof())
+        && Objects.equals(this.getIndex(), other.getIndex())
+        && Objects.equals(this.getDeposit_data(), other.getDeposit_data());
+  }
+
+  /** ******************* * GETTERS & SETTERS * * ******************* */
+  public List<Bytes32> getProof() {
+    return proof;
+  }
+
+  public void setProof(List<Bytes32> branch) {
+    this.proof = branch;
+  }
+
+  public UnsignedLong getIndex() {
+    return index;
+  }
+
+  public void setIndex(UnsignedLong index) {
+    this.index = index;
+  }
+
+  public DepositData getDeposit_data() {
+    return deposit_data;
+  }
+
+  public void setDeposit_data(DepositData deposit_data) {
+    this.deposit_data = deposit_data;
   }
 
   @Override
-  public String[] toLabels() {
-    return (String[]) this.outputFieldMap.values().toArray();
+  public Bytes32 hash_tree_root() {
+    return HashTreeUtil.merkleize(
+        Arrays.asList(
+            // TODO Look at this - is this a TUPLE_OF_COMPOSITE
+            HashTreeUtil.hash_tree_root(SSZTypes.BASIC, proof.toArray(new Bytes32[0])),
+            HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(index.longValue())),
+            deposit_data.hash_tree_root()));
   }
 }
