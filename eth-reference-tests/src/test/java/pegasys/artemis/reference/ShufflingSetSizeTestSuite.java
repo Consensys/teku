@@ -33,7 +33,6 @@ import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.io.Resources;
 import org.apache.tuweni.junit.BouncyCastleExtension;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
