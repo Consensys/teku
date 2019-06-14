@@ -28,6 +28,7 @@ import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.util.AttestationUtil;
@@ -55,6 +56,8 @@ public class ChainStorageClient implements ChainStorage {
   private final PriorityBlockingQueue<Attestation> attestationsQueue =
       new PriorityBlockingQueue<>(
           UNPROCESSED_BLOCKS_LENGTH, Comparator.comparing(Attestation::getSlot));
+  private final ConcurrentHashMap<Integer, List<BeaconBlockHeader>> validatorBlockHeaders =
+      new ConcurrentHashMap<>();
   protected EventBus eventBus;
 
   public ChainStorageClient() {}
@@ -105,6 +108,22 @@ public class ChainStorageClient implements ChainStorage {
   }
 
   /**
+   * Add unprocessed blockHeader to storage
+   *
+   * @param blockHeader
+   */
+  // TODO: implement background process to clean the block headers that were put before finalization
+  public void addUnprocessedBlockHeader(int validatorIndex, BeaconBlockHeader blockHeader) {
+    if (getBeaconBlockHeaders(validatorIndex).isPresent()) {
+      getBeaconBlockHeaders(validatorIndex).get().add(blockHeader);
+    } else {
+      List<BeaconBlockHeader> blockHeaderList = new ArrayList<>();
+      blockHeaderList.add(blockHeader);
+      ChainStorage.add(validatorIndex, blockHeaderList, this.validatorBlockHeaders);
+    }
+  }
+
+  /**
    * Add unprocessed attestation to storage
    *
    * @param attestation
@@ -151,6 +170,15 @@ public class ChainStorageClient implements ChainStorage {
    */
   public List<BeaconBlock> getUnprocessedBlocks() {
     return new ArrayList<>(this.unprocessedBlocks);
+  }
+
+  /**
+   * Gets beacon block headers for the validator index since last finalization
+   *
+   * @return
+   */
+  public Optional<List<BeaconBlockHeader>> getBeaconBlockHeaders(int validatorIndex) {
+    return ChainStorage.get(validatorIndex, this.validatorBlockHeaders);
   }
 
   /**
