@@ -49,9 +49,7 @@ import tech.pegasys.artemis.util.mikuli.Signature;
 
 class BLSTestSuite {
 
-  // TODO: reinstate the official tests once they have been updated
-  // private static String testFile = "**/bls/test_bls.yml";
-  private static String testFile = "**/test_bls_tmp.yml";
+  private static String testFile = "**/bls/test_bls.yml";
 
   @ParameterizedTest(name = "{index}. message hash to G2 uncompressed {0} -> {1}")
   @MethodSource("readMessageHashG2Uncompressed")
