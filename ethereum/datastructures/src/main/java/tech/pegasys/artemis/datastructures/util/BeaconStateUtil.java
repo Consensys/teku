@@ -38,6 +38,7 @@ import com.google.common.primitives.UnsignedLong;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Objects;
@@ -747,17 +748,15 @@ public class BeaconStateUtil {
 
     int length = active_validator_indices.size();
 
-    List<Integer> shuffled_indices =
-        Arrays.stream(shuffle(length, seed)).boxed().collect(Collectors.toList());
-    List<Integer> shuffled_active_validator_indices =
-        active_validator_indices
-            .parallelStream()
-            .map(i -> active_validator_indices.get(shuffled_indices.get(i)))
-            .collect(Collectors.toList());
+    List<Integer> shuffled_indices = new ArrayList<>(Collections.nCopies(length, 0));
+    int[] shuffling = shuffle(length, seed);
+    IntStream.range(0, length)
+        .parallel()
+        .forEach(i -> shuffled_indices.set(i, active_validator_indices.get(shuffling[i])));
 
     int committeesPerEpoch = get_epoch_committee_count(UnsignedLong.valueOf(length)).intValue();
 
-    return split(shuffled_active_validator_indices, committeesPerEpoch);
+    return split(shuffled_indices, committeesPerEpoch);
   }
 
   /**
