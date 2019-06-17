@@ -9,7 +9,6 @@ jar {
 dependencies {
   implementation project(':networking:p2p')
   implementation project(':services:powchain')
-  implementation project(':services:beaconnode')
   implementation project(':services:beaconchain')
   implementation project(':services:chainstorage')
   implementation project(':services:serviceutils')

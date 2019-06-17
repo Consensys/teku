@@ -14,12 +14,14 @@
 package tech.pegasys.artemis.service.serviceutils;
 
 import com.google.common.eventbus.EventBus;
+import io.vertx.core.Vertx;
 import java.util.Objects;
 import org.apache.tuweni.crypto.SECP256K1;
 import tech.pegasys.artemis.util.cli.CommandLineArguments;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 
 public class ServiceConfig {
+  Vertx vertx;
   EventBus eventBus;
   ArtemisConfiguration config;
   SECP256K1.KeyPair keyPair;
@@ -28,15 +30,12 @@ public class ServiceConfig {
   public ServiceConfig() {}
 
   public ServiceConfig(
-      EventBus eventBus, ArtemisConfiguration config, CommandLineArguments cliArgs) {
+      EventBus eventBus, Vertx vertx, ArtemisConfiguration config, CommandLineArguments cliArgs) {
     this.eventBus = eventBus;
+    this.vertx = vertx;
     this.config = config;
     this.keyPair = config.getKeyPair();
     this.cliArgs = cliArgs;
-  }
-
-  public CommandLineArguments getCliArgs() {
-    return cliArgs;
   }
 
   public EventBus getEventBus() {
@@ -45,6 +44,10 @@ public class ServiceConfig {
 
   public void setEventBus(EventBus eventBus) {
     this.eventBus = eventBus;
+  }
+
+  public Vertx getVertx() {
+    return this.vertx;
   }
 
   public ArtemisConfiguration getConfig() {
@@ -57,25 +60,6 @@ public class ServiceConfig {
 
   public SECP256K1.KeyPair getKeyPair() {
     return this.keyPair;
-  }
-
-  public void setKeyPair(SECP256K1.KeyPair keyPair) {
-    this.keyPair = keyPair;
-  }
-
-  public ServiceConfig eventBus(EventBus eventBus) {
-    this.eventBus = eventBus;
-    return this;
-  }
-
-  public ServiceConfig config(ArtemisConfiguration config) {
-    this.config = config;
-    return this;
-  }
-
-  public ServiceConfig keyPair(SECP256K1.KeyPair keyPair) {
-    this.keyPair = keyPair;
-    return this;
   }
 
   @Override

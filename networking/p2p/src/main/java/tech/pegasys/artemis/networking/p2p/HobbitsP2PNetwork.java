@@ -42,12 +42,12 @@ import org.apache.tuweni.crypto.Hash;
 import org.apache.tuweni.plumtree.EphemeralPeerRepository;
 import org.apache.tuweni.plumtree.MessageSender;
 import org.apache.tuweni.plumtree.State;
-import tech.pegasys.artemis.data.TimeSeriesRecord;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.networking.p2p.api.P2PNetwork;
 import tech.pegasys.artemis.networking.p2p.hobbits.HobbitsSocketHandler;
 import tech.pegasys.artemis.networking.p2p.hobbits.Peer;
+import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.util.alogger.ALogger;
 
 /**
@@ -61,6 +61,7 @@ public final class HobbitsP2PNetwork implements P2PNetwork {
   private final AtomicBoolean started = new AtomicBoolean(false);
   private final EventBus eventBus;
   private final Vertx vertx;
+  private final ChainStorageClient store;
   private final int port;
   private final int advertisedPort;
   private final String networkInterface;
@@ -69,7 +70,6 @@ public final class HobbitsP2PNetwork implements P2PNetwork {
   private NetServer server;
   private NetClient client;
   private List<URI> staticPeers;
-  private TimeSeriesRecord chainData;
   private Map<URI, HobbitsSocketHandler> handlersMap = new ConcurrentHashMap<>();
   private ConcurrentHashMap<String, Boolean> receivedMessages = new ConcurrentHashMap<>();
 
@@ -86,17 +86,18 @@ public final class HobbitsP2PNetwork implements P2PNetwork {
   public HobbitsP2PNetwork(
       EventBus eventBus,
       Vertx vertx,
+      ChainStorageClient store,
       int port,
       int advertisedPort,
       String networkInterface,
       List<URI> staticPeers) {
     this.eventBus = eventBus;
     this.vertx = vertx;
+    this.store = store;
     this.port = port;
     this.advertisedPort = advertisedPort;
     this.networkInterface = networkInterface;
     this.staticPeers = staticPeers;
-    this.chainData = new TimeSeriesRecord();
     eventBus.register(this);
     this.state =
         new State(
@@ -182,7 +183,7 @@ public final class HobbitsP2PNetwork implements P2PNetwork {
         uri -> {
           Peer peer = new Peer(peerURI);
           state.addPeer(peer);
-          return new HobbitsSocketHandler(eventBus, netSocket, userAgent, peer, chainData, state);
+          return new HobbitsSocketHandler(eventBus, netSocket, userAgent, peer, store, state);
         });
   }
 
@@ -215,7 +216,7 @@ public final class HobbitsP2PNetwork implements P2PNetwork {
               NetSocket socket = res.result();
               Peer peer = new Peer(peerURI);
               HobbitsSocketHandler handler =
-                  new HobbitsSocketHandler(eventBus, socket, userAgent, peer, chainData, state);
+                  new HobbitsSocketHandler(eventBus, socket, userAgent, peer, store, state);
               handlersMap.put(peerURI, handler);
               state.addPeer(peer);
               connected.complete(peer);
