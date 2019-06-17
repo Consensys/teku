@@ -27,41 +27,41 @@ public class Constants {
   // Misc
   public static int SHARD_COUNT = 1024; // 2^10 shards
   public static int TARGET_COMMITTEE_SIZE = 128; // 2^7 validators
-  public static int MAX_BALANCE_CHURN_QUOTIENT = 32; // 2^5
-  public static int MAX_INDICES_PER_SLASHABLE_VOTE = 4096; // 2^12 votes
-  public static int MAX_EXIT_DEQUEUES_PER_EPOCH = 4; // 2^2 withdrawals
+  public static int MAX_INDICES_PER_ATTESTATION = 4096; // 2^5
+  public static int MIN_PER_EPOCH_CHURN_LIMIT = 4; // 2^2 withdrawals
+  public static int CHURN_LIMIT_QUOTIENT = 65536; // 2^2 withdrawals
+  public static int BASE_REWARD_PER_EPOCH = 5; // 2^2 withdrawals
   public static int SHUFFLE_ROUND_COUNT = 90;
 
   // Deposit contract
-  public static String DEPOSIT_CONTRACT_ADDRESS = "0x0"; // This is TBD in the spec.
   public static int DEPOSIT_CONTRACT_TREE_DEPTH = 32; // 2^5
 
   // Gwei values
   public static long MIN_DEPOSIT_AMOUNT = 1000000000L; // 2^0 * 1E9 Gwei
-  public static long MAX_DEPOSIT_AMOUNT = 32000000000L; // 2^5 * 1E9 Gwei
-  public static long FORK_CHOICE_BALANCE_INCREMENT = 1000000000L; // 2^0 * 1E9 Gwei
+  public static long MAX_EFFECTIVE_BALANCE = 32000000000L; // 2^5 * 1E9 Gwei
   public static long EJECTION_BALANCE = 16000000000L; // 2^4 * 1E9 Gwei
+  public static long EFFECTIVE_BALANCE_INCREMENT = 1000000000L; // 2^0 * 1E9 Gwei
+
+  // Initial values
+  public static long GENESIS_SLOT = 0; // 2^32
+  public static long GENESIS_EPOCH = 0;
+  public static UnsignedLong FAR_FUTURE_EPOCH = UnsignedLong.MAX_VALUE;
+  public static Bytes32 ZERO_HASH = Bytes32.ZERO; // TODO confirm if equals to b'\x00' * 32
+  public static int BLS_WITHDRAWAL_PREFIX_BYTE = 0;
 
   // Time parameters
-  public static int SECONDS_PER_SLOT = 6; // 6 seconds
   public static int MIN_ATTESTATION_INCLUSION_DELAY = 4; // 2^2 slots
   public static int SLOTS_PER_EPOCH = 64; // 2^6 slots
   public static int MIN_SEED_LOOKAHEAD = 1; // 2^0 epochs (6.4 minutes)
   public static int ACTIVATION_EXIT_DELAY = 4; // 2^2 epochs (25.6 minutes)
-  public static int EPOCHS_PER_ETH1_VOTING_PERIOD = 16; // 2^4 epochs (~1.7 hours)
+  public static int SLOTS_PER_ETH1_VOTING_PERIOD = 1024; // 2^4 epochs (~1.7 hours)
   public static int SLOTS_PER_HISTORICAL_ROOT = 8192; // 2^13 slots (~13 hours)
   public static int MIN_VALIDATOR_WITHDRAWABILITY_DELAY = 256; // 2^8 epochs (~27 hours)
   public static int PERSISTENT_COMMITTEE_PERIOD = 2048; // 2^11 epochs (~9 days)
+  public static int MAX_EPOCHS_PER_CROSSLINK = 64; // 2^11 epochs (~9 days)
+  public static int MIN_EPOCHS_TO_INACTIVITY_PENALTY = 4; // 2^11 epochs (~9 days)
 
-  // Initial values
-  public static int GENESIS_FORK_VERSION = 0;
-  public static long GENESIS_SLOT = 4294967296L; // 2^32
-  public static long GENESIS_EPOCH = slot_to_epoch(GENESIS_SLOT);
-  public static long GENESIS_START_SHARD = 0;
-  public static UnsignedLong FAR_FUTURE_EPOCH = UnsignedLong.MAX_VALUE;
-  public static Bytes32 ZERO_HASH = Bytes32.ZERO;
-  public static BLSSignature EMPTY_SIGNATURE = BLSSignature.empty();
-  public static Bytes BLS_WITHDRAWAL_PREFIX_BYTE = Bytes.EMPTY;
+  public static int SECONDS_PER_SLOT = 6; // removed in 7.1 main spec for some reason but keep for now
 
   // State list lengths
   public static int LATEST_RANDAO_MIXES_LENGTH = 8192; // 2^13 epochs (~36 days)
@@ -69,11 +69,11 @@ public class Constants {
   public static int LATEST_SLASHED_EXIT_LENGTH = 8192; // 2^13 epochs (~36 days)
 
   // Reward and penalty quotients
-  public static int BASE_REWARD_QUOTIENT = 32; // 2^5
-  public static int WHISTLEBLOWER_REWARD_QUOTIENT = 512; // 2^9
-  public static int ATTESTATION_INCLUSION_REWARD_QUOTIENT = 8; // 2^3
-  public static int INACTIVITY_PENALTY_QUOTIENT = 16777216; // 2^24
-  public static int MIN_PENALTY_QUOTIENT = 32; // 2^5
+  public static int BASE_REWARD_FACTOR = 32; // 2^5
+  public static int WHISTLEBLOWING_REWARD_QUOTIENT = 512; // 2^9
+  public static int PROPOSER_REWARD_QUOTIENT = 8; // 2^3
+  public static int INACTIVITY_PENALTY_QUOTIENT = 33554432; // 2^25
+  public static int MIN_SLASHING_PENALTY_QUOTIENT = 32; // 2^5
 
   // Max transactions per block
   public static int MAX_PROPOSER_SLASHINGS = 16; // 2^4
@@ -84,7 +84,7 @@ public class Constants {
   public static int MAX_TRANSFERS = 16; // 2^4
 
   // Signature domains
-  public static int DOMAIN_BEACON_BLOCK = 0;
+  public static int DOMAIN_BEACON_PROPOSER = 0;
   public static int DOMAIN_RANDAO = 1;
   public static int DOMAIN_ATTESTATION = 2;
   public static int DOMAIN_DEPOSIT = 3;
