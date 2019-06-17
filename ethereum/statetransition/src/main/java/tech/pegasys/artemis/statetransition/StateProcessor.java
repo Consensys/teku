@@ -52,6 +52,7 @@ public class StateProcessor {
   private BeaconBlock headBlock; // block chosen by lmd ghost to build and attest on
   private Bytes32 finalizedStateRoot; // most recent finalized state root
   private Bytes32 finalizedBlockRoot; // most recent finalized block root
+  private UnsignedLong finalizedEpoch; // most recent finalized epoch
   private Bytes32 justifiedStateRoot; // most recent justified state root
   private Bytes32 currentJustifiedBlockRoot; // most recent justified block root
   private UnsignedLong nodeTime;
@@ -115,6 +116,7 @@ public class StateProcessor {
       this.currentJustifiedBlockRoot = genesis_block_root;
       this.finalizedStateRoot = initial_state_root;
       this.finalizedBlockRoot = genesis_block_root;
+      this.finalizedEpoch = initial_state.getFinalized_epoch();
       this.eventBus.post(
           new GenesisHeadStateEvent((BeaconStateWithCache) initial_state, genesis_block));
     } catch (IllegalStateException e) {
@@ -281,6 +283,7 @@ public class StateProcessor {
         this.finalizedBlockRoot =
             BeaconStateUtil.get_block_root(
                 headState, BeaconStateUtil.get_epoch_start_slot(headState.getFinalized_epoch()));
+        this.finalizedEpoch = headState.getFinalized_epoch();
         this.currentJustifiedBlockRoot =
             BeaconStateUtil.get_block_root(
                 headState,
