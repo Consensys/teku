@@ -26,6 +26,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.PriorityBlockingQueue;
 import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
@@ -41,6 +42,7 @@ public class ChainStorageClient implements ChainStorage {
   private static final ALogger STDOUT = new ALogger("stdout");
   static final ALogger LOG = new ALogger(ChainStorageClient.class.getName());
   static final Integer UNPROCESSED_BLOCKS_LENGTH = 100;
+  protected EventBus eventBus;
   protected final ConcurrentHashMap<Integer, Attestation> latestAttestations =
       new ConcurrentHashMap<>();
   protected final PriorityBlockingQueue<BeaconBlock> unprocessedBlocks =
@@ -58,7 +60,10 @@ public class ChainStorageClient implements ChainStorage {
           UNPROCESSED_BLOCKS_LENGTH, Comparator.comparing(Attestation::getSlot));
   private final ConcurrentHashMap<Integer, List<BeaconBlockHeader>> validatorBlockHeaders =
       new ConcurrentHashMap<>();
-  protected EventBus eventBus;
+  private Bytes32 bestBlockRoot; // block chosen by lmd ghost to build and attest on
+  private UnsignedLong bestSlot; // slot of the block chosen by lmd ghost to build and attest on
+  private Bytes32 finalizedBlockRoot; // most recent finalized block root
+  private UnsignedLong finalizedEpoch; // most recent finalized epoch
 
   public ChainStorageClient() {}
 
@@ -130,6 +135,64 @@ public class ChainStorageClient implements ChainStorage {
    */
   public void addUnprocessedAttestation(Attestation attestation) {
     ChainStorage.add(attestation, attestationsQueue);
+  }
+
+  /**
+   * Update Finalized Block
+   *
+   * @param root
+   * @param epoch
+   */
+  public void updateLatestFinalizedBlock(Bytes32 root, UnsignedLong epoch) {
+    this.finalizedBlockRoot = root;
+    this.finalizedEpoch = epoch;
+  }
+
+  /**
+   * Update Best Block
+   *
+   * @param root
+   * @param slot
+   */
+  public void updateBestBlock(Bytes32 root, UnsignedLong slot) {
+    this.bestBlockRoot = root;
+    this.bestSlot = slot;
+  }
+
+  /**
+   * Retrives the block chosen by lmd ghost to build and attest on
+   *
+   * @return
+   */
+  public Bytes32 getBestBlockRoot() {
+    return this.bestBlockRoot;
+  }
+
+  /**
+   * Retrives the slot of the block chosen by lmd ghost to build and attest on
+   *
+   * @return
+   */
+  public UnsignedLong getBestSlot() {
+    return this.bestSlot;
+  }
+
+  /**
+   * Retrives the most recent finalized block root
+   *
+   * @return
+   */
+  public Bytes32 getFinalizedBlockRoot() {
+    return this.finalizedBlockRoot;
+  }
+
+  /**
+   * Retrives the epoch of the most recent finalized block root
+   *
+   * @return
+   */
+  public UnsignedLong getFinalizedEpoch() {
+    return this.finalizedEpoch;
   }
 
   /**
