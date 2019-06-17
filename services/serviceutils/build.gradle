@@ -15,6 +15,8 @@ dependencies {
   runtime 'org.apache.logging.log4j:log4j-core'
   implementation 'org.apache.tuweni:tuweni-crypto'
   implementation 'org.apache.tuweni:tuweni-config'
+  implementation 'io.vertx:vertx-core'
+  implementation 'io.vertx:vertx-web'
 }
 
 configurations { testArtifacts }

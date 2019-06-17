@@ -29,8 +29,8 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.plumtree.MessageSender;
 import org.apache.tuweni.plumtree.State;
 import org.apache.tuweni.units.bigints.UInt64;
-import tech.pegasys.artemis.data.TimeSeriesRecord;
 import tech.pegasys.artemis.networking.p2p.hobbits.Codec.ProtocolType;
+import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.util.alogger.ALogger;
 
 /** TCP persistent connection handler for hobbits messages. */
@@ -39,7 +39,7 @@ public final class HobbitsSocketHandler {
   private final EventBus eventBus;
   private final String userAgent;
   private final Peer peer;
-  private TimeSeriesRecord chainData;
+  private final ChainStorageClient store;
   private final Set<Long> pendingResponses = new HashSet<>();
   private final AtomicBoolean status = new AtomicBoolean(true);
   private final Consumer<Bytes> messageSender;
@@ -51,11 +51,11 @@ public final class HobbitsSocketHandler {
       NetSocket netSocket,
       String userAgent,
       Peer peer,
-      TimeSeriesRecord chainData,
+      ChainStorageClient store,
       State p2pState) {
     this.userAgent = userAgent;
     this.peer = peer;
-    this.chainData = chainData;
+    this.store = store;
     this.eventBus = eventBus;
     this.eventBus.register(this);
     this.messageSender = (bytes) -> netSocket.write(Buffer.buffer(bytes.toArrayUnsafe()));
@@ -186,10 +186,10 @@ public final class HobbitsSocketHandler {
         new Hello(
             1,
             1,
-            Bytes32.fromHexString(chainData.getLastFinalizedBlockRoot()),
-            UInt64.valueOf(chainData.getEpoch()),
-            Bytes32.fromHexString(chainData.getBlock_root()),
-            UInt64.valueOf(chainData.getSlot())),
+            store.getFinalizedBlockRoot(),
+            UInt64.valueOf(store.getFinalizedEpoch().longValue()),
+            store.getBestBlockRoot(),
+            UInt64.valueOf(store.getBestSlot().longValue())),
         requestId);
   }
 
@@ -199,10 +199,10 @@ public final class HobbitsSocketHandler {
         new Hello(
             1,
             1,
-            Bytes32.fromHexString(chainData.getLastFinalizedBlockRoot()),
-            UInt64.valueOf(chainData.getEpoch()),
-            Bytes32.fromHexString(chainData.getBlock_root()),
-            UInt64.valueOf(chainData.getSlot())));
+            store.getFinalizedBlockRoot(),
+            UInt64.valueOf(store.getFinalizedEpoch().longValue()),
+            store.getBestBlockRoot(),
+            UInt64.valueOf(store.getBestSlot().longValue())));
   }
 
   public void replyStatus(long requestId) {
