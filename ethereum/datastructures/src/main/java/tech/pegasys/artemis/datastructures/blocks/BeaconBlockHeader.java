@@ -26,21 +26,21 @@ import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
 public class BeaconBlockHeader {
 
   private UnsignedLong slot;
-  private Bytes32 previous_block_root;
+  private Bytes32 parent_root;
   private Bytes32 state_root;
-  private Bytes32 block_body_root;
+  private Bytes32 body_root;
   private BLSSignature signature;
 
   public BeaconBlockHeader(
       UnsignedLong slot,
-      Bytes32 previous_block_root,
+      Bytes32 parent_root,
       Bytes32 state_root,
-      Bytes32 block_body_root,
+      Bytes32 body_root,
       BLSSignature signature) {
     this.slot = slot;
-    this.previous_block_root = previous_block_root;
+    this.parent_root = parent_root;
     this.state_root = state_root;
-    this.block_body_root = block_body_root;
+    this.body_root = body_root;
     this.signature = signature;
   }
 
@@ -60,16 +60,16 @@ public class BeaconBlockHeader {
     return SSZ.encode(
         writer -> {
           writer.writeUInt64(slot.longValue());
-          writer.writeFixedBytes(32, previous_block_root);
+          writer.writeFixedBytes(32, parent_root);
           writer.writeFixedBytes(32, state_root);
-          writer.writeFixedBytes(32, block_body_root);
+          writer.writeFixedBytes(32, body_root);
           writer.writeBytes(signature.toBytes());
         });
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(slot, previous_block_root, state_root, block_body_root, signature);
+    return Objects.hash(slot, parent_root, state_root, body_root, signature);
   }
 
   @Override
@@ -88,9 +88,9 @@ public class BeaconBlockHeader {
 
     BeaconBlockHeader other = (BeaconBlockHeader) obj;
     return Objects.equals(this.getSlot(), other.getSlot())
-        && Objects.equals(this.getPrevious_block_root(), other.getPrevious_block_root())
+        && Objects.equals(this.getParent_root(), other.getParent_root())
         && Objects.equals(this.getState_root(), other.getState_root())
-        && Objects.equals(this.getBlock_body_root(), other.getBlock_body_root())
+        && Objects.equals(this.getBody_root(), other.getBody_root())
         && Objects.equals(this.getSignature(), other.getSignature());
   }
 
@@ -103,12 +103,12 @@ public class BeaconBlockHeader {
     this.slot = slot;
   }
 
-  public Bytes32 getPrevious_block_root() {
-    return previous_block_root;
+  public Bytes32 getParent_root() {
+    return parent_root;
   }
 
-  public void setPrevious_block_root(Bytes32 previous_block_root) {
-    this.previous_block_root = previous_block_root;
+  public void setParent_root(Bytes32 parent_root) {
+    this.parent_root = parent_root;
   }
 
   public Bytes32 getState_root() {
@@ -119,12 +119,12 @@ public class BeaconBlockHeader {
     this.state_root = state_root;
   }
 
-  public Bytes32 getBlock_body_root() {
-    return block_body_root;
+  public Bytes32 getBody_root() {
+    return body_root;
   }
 
-  public void setBlock_block_root(Bytes32 block_body_root) {
-    this.block_body_root = block_body_root;
+  public void setBody_root(Bytes32 body_root) {
+    this.body_root = body_root;
   }
 
   public BLSSignature getSignature() {
@@ -145,18 +145,18 @@ public class BeaconBlockHeader {
         HashTreeUtil.merkleize(
             Arrays.asList(
                 HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(slot.longValue())),
-                HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, previous_block_root),
+                HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, parent_root),
                 HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, state_root),
-                HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, block_body_root))));
+                HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, body_root))));
   }
 
   public Bytes32 hash_tree_root() {
     return HashTreeUtil.merkleize(
         Arrays.asList(
             HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(slot.longValue())),
-            HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, previous_block_root),
+            HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, parent_root),
             HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, state_root),
-            HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, block_body_root),
+            HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, body_root),
             HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, signature.toBytes())));
   }
 }

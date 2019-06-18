@@ -34,6 +34,7 @@ import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
 public class BeaconBlockBody {
   private BLSSignature randao_reveal;
   private Eth1Data eth1_data;
+  private Bytes32 graffiti;
   private List<ProposerSlashing> proposer_slashings;
   private List<AttesterSlashing> attester_slashings;
   private List<Attestation> attestations;
@@ -44,6 +45,7 @@ public class BeaconBlockBody {
   public BeaconBlockBody(
       BLSSignature randao_reveal,
       Eth1Data eth1_data,
+      Bytes32 graffiti,
       List<ProposerSlashing> proposer_slashings,
       List<AttesterSlashing> attester_slashings,
       List<Attestation> attestations,
@@ -52,6 +54,7 @@ public class BeaconBlockBody {
       List<Transfer> transfers) {
     this.randao_reveal = randao_reveal;
     this.eth1_data = eth1_data;
+    this.graffiti = graffiti;
     this.proposer_slashings = proposer_slashings;
     this.attester_slashings = attester_slashings;
     this.attestations = attestations;
@@ -67,6 +70,7 @@ public class BeaconBlockBody {
             new BeaconBlockBody(
                 BLSSignature.fromBytes(reader.readBytes()),
                 Eth1Data.fromBytes(reader.readBytes()),
+                    Bytes32.wrap(reader.readFixedBytes(32)),
                 reader.readBytesList().stream()
                     .map(ProposerSlashing::fromBytes)
                     .collect(Collectors.toList()),
@@ -105,6 +109,7 @@ public class BeaconBlockBody {
         writer -> {
           writer.writeBytes(randao_reveal.toBytes());
           writer.writeBytes(eth1_data.toBytes());
+          writer.writeFixedBytes(32, graffiti);
           writer.writeBytesList(proposerSlashingsBytes);
           writer.writeBytesList(attesterSlashingsBytes);
           writer.writeBytesList(attestationsBytes);
@@ -119,6 +124,7 @@ public class BeaconBlockBody {
     return Objects.hash(
         randao_reveal,
         eth1_data,
+        graffiti,
         proposer_slashings,
         attester_slashings,
         attestations,
@@ -144,6 +150,7 @@ public class BeaconBlockBody {
     BeaconBlockBody other = (BeaconBlockBody) obj;
     return Objects.equals(this.getRandao_reveal(), other.getRandao_reveal())
         && Objects.equals(this.getEth1_data(), other.getEth1_data())
+        && Objects.equals(this.getGraffiti(), other.getGraffiti())
         && Objects.equals(this.getProposer_slashings(), other.getProposer_slashings())
         && Objects.equals(this.getAttester_slashings(), other.getAttester_slashings())
         && Objects.equals(this.getAttestations(), other.getAttestations())
@@ -167,6 +174,14 @@ public class BeaconBlockBody {
 
   public void setEth1_data(Eth1Data eth1_data) {
     this.eth1_data = eth1_data;
+  }
+
+  public Bytes32 getGraffiti() {
+    return graffiti;
+  }
+
+  public void setGraffiti(Bytes32 graffiti) {
+    this.graffiti = graffiti;
   }
 
   public List<Attestation> getAttestations() {
@@ -222,6 +237,7 @@ public class BeaconBlockBody {
         Arrays.asList(
             HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, randao_reveal.toBytes()),
             eth1_data.hash_tree_root(),
+            HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, graffiti),
             HashTreeUtil.hash_tree_root(SSZTypes.LIST_OF_COMPOSITE, proposer_slashings),
             HashTreeUtil.hash_tree_root(SSZTypes.LIST_OF_COMPOSITE, attester_slashings),
             HashTreeUtil.hash_tree_root(SSZTypes.LIST_OF_COMPOSITE, attestations),

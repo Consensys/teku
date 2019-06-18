@@ -126,7 +126,7 @@ public class BeaconStateUtil {
    * @param deposit
    */
   public static void process_deposit(BeaconState state, Deposit deposit) {
-    DepositInput deposit_input = deposit.getDeposit_data().getDeposit_input();
+    DepositInput deposit_input = deposit.getDeposit_data().getSignature();
 
     //   Should equal 8 bytes for deposit_data.amount +
     //                8 bytes for deposit_data.timestamp +
