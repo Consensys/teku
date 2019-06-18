@@ -94,7 +94,7 @@ public class DepositUtil {
         Bytes.concatenate(
             deposit
                 .getDeposit_data()
-                .getDeposit_input()
+                .getSignature()
                 .getPubkey()
                 .getPublicKey()
                 .toBytesCompressed(),
@@ -108,7 +108,7 @@ public class DepositUtil {
                 Arrays.copyOfRange(
                     deposit
                         .getDeposit_data()
-                        .getDeposit_input()
+                        .getSignature()
                         .getProof_of_possession()
                         .getSignature()
                         .toBytesCompressed()
@@ -122,7 +122,7 @@ public class DepositUtil {
                     Arrays.copyOfRange(
                         deposit
                             .getDeposit_data()
-                            .getDeposit_input()
+                            .getSignature()
                             .getProof_of_possession()
                             .getSignature()
                             .toBytesCompressed()
@@ -139,7 +139,7 @@ public class DepositUtil {
         Hash.sha2_256(
             Bytes.concatenate(
                 pubkey_root,
-                deposit.getDeposit_data().getDeposit_input().getWithdrawal_credentials()));
+                deposit.getDeposit_data().getSignature().getWithdrawal_credentials()));
     Bytes32 value_end =
         Hash.sha2_256(
             Bytes.concatenate(

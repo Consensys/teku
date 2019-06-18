@@ -372,7 +372,7 @@ public final class BlockProcessorUtil {
                 .getLatest_crosslinks()
                 .get(toIntExact(attestation.getData().getShard().longValue()));
         checkArgument(
-            latest_crosslink.equals(attestation.getData().getPrevious_crosslink())
+            latest_crosslink.equals(attestation.getData().getCrosslink())
                 || latest_crosslink.equals(
                     new Crosslink(
                         slot_to_epoch(attestationDataSlot),
