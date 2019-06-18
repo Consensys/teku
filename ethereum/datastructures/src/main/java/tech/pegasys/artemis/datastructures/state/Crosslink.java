@@ -25,17 +25,26 @@ import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
 
 public class Crosslink implements Copyable<Crosslink> {
 
-  private UnsignedLong epoch;
-  private Bytes32 crosslink_data_root;
+  private UnsignedLong shard;
+  private UnsignedLong start_epoch;
+  private UnsignedLong end_epoch;
+  private Bytes32 parent_root;
+  private Bytes32 data_root;
 
-  public Crosslink(UnsignedLong epoch, Bytes32 crosslink_data_root) {
-    this.epoch = epoch;
-    this.crosslink_data_root = crosslink_data_root;
+  public Crosslink(UnsignedLong shard, UnsignedLong start_epoch, UnsignedLong end_epoch, Bytes32 parent_root, Bytes32 data_root) {
+    this.shard = shard;
+    this.start_epoch = start_epoch;
+    this.end_epoch = end_epoch;
+    this.parent_root = parent_root;
+    this.data_root = data_root;
   }
 
   public Crosslink(Crosslink crosslink) {
-    this.epoch = crosslink.getEpoch();
-    this.crosslink_data_root = crosslink.getCrosslink_data_root().copy();
+    this.shard = crosslink.getShard();
+    this.start_epoch = crosslink.getStart_epoch();
+    this.end_epoch = crosslink.getEnd_epoch();
+    this.parent_root = crosslink.getParent_root();
+    this.data_root = crosslink.getData_root();
   }
 
   public static Crosslink fromBytes(Bytes bytes) {
@@ -44,6 +53,9 @@ public class Crosslink implements Copyable<Crosslink> {
         reader ->
             new Crosslink(
                 UnsignedLong.fromLongBits(reader.readUInt64()),
+                UnsignedLong.fromLongBits(reader.readUInt64()),
+                UnsignedLong.fromLongBits(reader.readUInt64()),
+                Bytes32.wrap(reader.readFixedBytes(32)),
                 Bytes32.wrap(reader.readFixedBytes(32))));
   }
 
@@ -55,14 +67,17 @@ public class Crosslink implements Copyable<Crosslink> {
   public Bytes toBytes() {
     return SSZ.encode(
         writer -> {
-          writer.writeUInt64(epoch.longValue());
-          writer.writeFixedBytes(32, crosslink_data_root);
+          writer.writeUInt64(shard.longValue());
+          writer.writeUInt64(start_epoch.longValue());
+          writer.writeUInt64(end_epoch.longValue());
+          writer.writeFixedBytes(32, parent_root);
+          writer.writeFixedBytes(32, data_root);
         });
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(epoch, crosslink_data_root);
+    return Objects.hash(shard, start_epoch, end_epoch, parent_root, data_root);
   }
 
   @Override
@@ -80,31 +95,61 @@ public class Crosslink implements Copyable<Crosslink> {
     }
 
     Crosslink other = (Crosslink) obj;
-    return Objects.equals(this.getEpoch(), other.getEpoch())
-        && Objects.equals(this.getCrosslink_data_root(), other.getCrosslink_data_root());
+    return Objects.equals(this.getShard(), other.getShard())
+        && Objects.equals(this.getStart_epoch(), other.getStart_epoch())
+            && Objects.equals(this.getEnd_epoch(), other.getEnd_epoch())
+            && Objects.equals(this.getParent_root(), other.getParent_root())
+            && Objects.equals(this.getData_root(), other.getData_root());
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */
-  public Bytes32 getCrosslink_data_root() {
-    return crosslink_data_root;
+
+  public UnsignedLong getShard() {
+    return shard;
   }
 
-  public void setCrosslink_data_root(Bytes32 shard_block_root) {
-    this.crosslink_data_root = shard_block_root;
+  public void setShard(UnsignedLong shard) {
+    this.shard = shard;
   }
 
-  public UnsignedLong getEpoch() {
-    return epoch;
+  public UnsignedLong getStart_epoch() {
+    return start_epoch;
   }
 
-  public void setEpoch(UnsignedLong epoch) {
-    this.epoch = epoch;
+  public void setStart_epoch(UnsignedLong start_epoch) {
+    this.start_epoch = start_epoch;
+  }
+    public UnsignedLong getEnd_epoch() {
+    return end_epoch;
+  }
+
+  public void setEnd_epoch(UnsignedLong end_epoch) {
+    this.end_epoch = end_epoch;
+  }
+
+  public Bytes32 getParent_root() {
+    return parent_root;
+  }
+
+  public void setParent_root(Bytes32 parent_root) {
+    this.parent_root = parent_root;
+  }
+
+  public Bytes32 getData_root() {
+    return data_root;
+  }
+
+  public void setData_root(Bytes32 data_root) {
+    this.data_root = data_root;
   }
 
   public Bytes32 hash_tree_root() {
     return HashTreeUtil.merkleize(
         Arrays.asList(
-            HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(epoch.longValue())),
-            HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, crosslink_data_root)));
+                HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(shard.longValue())),
+            HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(start_epoch.longValue())),
+                HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(end_epoch.longValue())),
+            HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, parent_root),
+                            HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, data_root)));
   }
 }

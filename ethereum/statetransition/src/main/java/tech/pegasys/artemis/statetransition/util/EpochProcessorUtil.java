@@ -192,13 +192,13 @@ public final class EpochProcessorUtil {
     List<PendingAttestation> valid_attestations = new ArrayList<>();
     List<Bytes32> all_roots = new ArrayList<>();
     for (PendingAttestation a : state.getCurrent_epoch_attestations()) {
-      if (a.getData().getPrevious_crosslink().equals(shardLatestCrosslink)) {
+      if (a.getData().getCrosslink().equals(shardLatestCrosslink)) {
         valid_attestations.add(a);
         all_roots.add(a.getData().getCrosslink_data_root());
       }
     }
     for (PendingAttestation a : state.getPrevious_epoch_attestations()) {
-      if (a.getData().getPrevious_crosslink().equals(shardLatestCrosslink)) {
+      if (a.getData().getCrosslink().equals(shardLatestCrosslink)) {
         valid_attestations.add(a);
         all_roots.add(a.getData().getCrosslink_data_root());
       }
