@@ -45,6 +45,7 @@ public class Constants {
   // Initial values
   public static long GENESIS_SLOT = 0; // 2^32
   public static long GENESIS_EPOCH = 0;
+  public static long GENESIS_FORK_VERSION = 0;
   public static UnsignedLong FAR_FUTURE_EPOCH = UnsignedLong.MAX_VALUE;
   public static Bytes32 ZERO_HASH = Bytes32.ZERO; // TODO confirm if equals to b'\x00' * 32
   public static int BLS_WITHDRAWAL_PREFIX_BYTE = 0;

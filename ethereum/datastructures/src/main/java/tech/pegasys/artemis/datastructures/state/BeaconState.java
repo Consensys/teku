@@ -42,17 +42,11 @@ public class BeaconState {
 
   // Validator registry
   protected List<Validator> validator_registry;
-  protected List<UnsignedLong> validator_balances;
-  protected UnsignedLong validator_registry_update_epoch;
+  protected List<UnsignedLong> balances;
 
   // Randomness and committees
   protected List<Bytes32> latest_randao_mixes; // Bounded by LATEST_RANDAO_MIXES_LENGTH
-  protected UnsignedLong previous_shuffling_start_shard;
-  protected UnsignedLong current_shuffling_start_shard;
-  protected UnsignedLong previous_shuffling_epoch;
-  protected UnsignedLong current_shuffling_epoch;
-  protected Bytes32 previous_shuffling_seed;
-  protected Bytes32 current_shuffling_seed;
+  protected UnsignedLong latest_start_shard;
 
   // Finality
   protected List<PendingAttestation> previous_epoch_attestations;
@@ -66,7 +60,10 @@ public class BeaconState {
   protected Bytes32 finalized_root;
 
   // Recent state
-  protected List<Crosslink> latest_crosslinks; // Bounded by SHARD_COUNT
+  protected List<Crosslink> current_crosslinks; // Bounded by SHARD_COUNT
+
+
+  protected List<Crosslink> previous_crosslinks; // Bounded by SHARD_COUNT
   protected List<Bytes32> latest_block_roots; // Bounded by SLOTS_PER_HISTORICAL_ROOT
   protected List<Bytes32> latest_state_roots; // Bounded by SLOTS_PER_HISTORICAL_ROOT
   protected List<Bytes32> latest_active_index_roots; // Bounded by LATEST_ACTIVE_INDEX_ROOTS_LENGTH
@@ -93,18 +90,12 @@ public class BeaconState {
             UnsignedLong.valueOf(Constants.GENESIS_EPOCH));
 
     this.validator_registry = new ArrayList<>();
-    this.validator_balances = new ArrayList<>();
-    this.validator_registry_update_epoch = UnsignedLong.valueOf(Constants.GENESIS_EPOCH);
+    this.balances = new ArrayList<>();
 
     this.latest_randao_mixes =
         new ArrayList<>(
             Collections.nCopies(Constants.LATEST_RANDAO_MIXES_LENGTH, Constants.ZERO_HASH));
-    this.previous_shuffling_start_shard = UnsignedLong.valueOf(Constants.GENESIS_START_SHARD);
-    this.current_shuffling_start_shard = UnsignedLong.valueOf(Constants.GENESIS_START_SHARD);
-    this.previous_shuffling_epoch = UnsignedLong.valueOf(Constants.GENESIS_EPOCH);
-    this.current_shuffling_epoch = UnsignedLong.valueOf(Constants.GENESIS_EPOCH);
-    this.previous_shuffling_seed = ZERO_HASH;
-    this.current_shuffling_seed = ZERO_HASH;
+    this.latest_start_shard = UnsignedLong.ZERO; // TODO: not sure about this
 
     this.previous_epoch_attestations = new ArrayList<>();
     this.current_epoch_attestations = new ArrayList<>();
@@ -116,7 +107,8 @@ public class BeaconState {
     this.finalized_epoch = UnsignedLong.valueOf(Constants.GENESIS_EPOCH);
     this.finalized_root = Constants.ZERO_HASH;
 
-    this.latest_crosslinks = new ArrayList<>(Constants.SHARD_COUNT);
+    this.current_crosslinks = new ArrayList<>(Constants.SHARD_COUNT);
+    this.previous_crosslinks = new ArrayList<>(Constants.SHARD_COUNT);
     this.latest_block_roots =
         new ArrayList<>(
             Collections.nCopies(Constants.SLOTS_PER_HISTORICAL_ROOT, Constants.ZERO_HASH));
@@ -133,13 +125,9 @@ public class BeaconState {
         BeaconBlockUtil.get_temporary_block_header(BeaconBlockUtil.get_empty_block());
     this.historical_roots = new ArrayList<>();
 
-    this.latest_eth1_data = new Eth1Data(ZERO_HASH, ZERO_HASH);
+    this.latest_eth1_data = new Eth1Data(ZERO_HASH, UnsignedLong.ZERO, ZERO_HASH);
     this.eth1_data_votes = new ArrayList<>();
     this.deposit_index = UnsignedLong.ZERO;
-    for (int i = 0; i < Constants.SHARD_COUNT; i++) {
-      this.latest_crosslinks.add(
-          new Crosslink(UnsignedLong.valueOf(Constants.GENESIS_SLOT), Bytes32.ZERO));
-    }
   }
 
   public BeaconState(
@@ -150,17 +138,11 @@ public class BeaconState {
 
       // Validator registry
       List<Validator> validator_registry,
-      List<UnsignedLong> validator_balances,
-      UnsignedLong validator_registry_update_epoch,
+      List<UnsignedLong> balances,
 
       // Randomness and committees
       List<Bytes32> latest_randao_mixes,
-      UnsignedLong previous_shuffling_start_shard,
-      UnsignedLong current_shuffling_start_shard,
-      UnsignedLong previous_shuffling_epoch,
-      UnsignedLong current_shuffling_epoch,
-      Bytes32 previous_shuffling_seed,
-      Bytes32 current_shuffling_seed,
+      UnsignedLong latest_start_shard,
 
       // Finality
       List<PendingAttestation> previous_epoch_attestations,
@@ -174,7 +156,8 @@ public class BeaconState {
       Bytes32 finalized_root,
 
       // Recent state
-      List<Crosslink> latest_crosslinks,
+      List<Crosslink> current_crosslinks,
+      List<Crosslink> previous_crosslinks,
       List<Bytes32> latest_block_roots,
       List<Bytes32> latest_state_roots,
       List<Bytes32> latest_active_index_roots,
@@ -187,20 +170,13 @@ public class BeaconState {
       List<Eth1DataVote> eth1_data_votes,
       UnsignedLong deposit_index) {
     this.slot = slot;
-    this.genesis_time = genesis_time;
     this.fork = fork;
+    this.genesis_time = genesis_time;
 
     this.validator_registry = validator_registry;
-    this.validator_balances = validator_balances;
-    this.validator_registry_update_epoch = validator_registry_update_epoch;
+    this.balances = balances;
 
     this.latest_randao_mixes = latest_randao_mixes;
-    this.previous_shuffling_start_shard = previous_shuffling_start_shard;
-    this.current_shuffling_start_shard = current_shuffling_start_shard;
-    this.previous_shuffling_epoch = previous_shuffling_epoch;
-    this.current_shuffling_epoch = current_shuffling_epoch;
-    this.previous_shuffling_seed = previous_shuffling_seed;
-    this.current_shuffling_seed = current_shuffling_seed;
 
     this.previous_epoch_attestations = previous_epoch_attestations;
     this.current_epoch_attestations = current_epoch_attestations;
@@ -212,7 +188,8 @@ public class BeaconState {
     this.finalized_epoch = finalized_epoch;
     this.finalized_root = finalized_root;
 
-    this.latest_crosslinks = latest_crosslinks;
+    this.current_crosslinks = current_crosslinks;
+    this.previous_crosslinks = previous_crosslinks;
     this.latest_block_roots = latest_block_roots;
     this.latest_state_roots = latest_state_roots;
     this.latest_active_index_roots = latest_active_index_roots;
@@ -233,7 +210,7 @@ public class BeaconState {
                 // Misc
                 UnsignedLong.fromLongBits(reader.readUInt64()),
                 UnsignedLong.fromLongBits(reader.readUInt64()),
-                Fork.fromBytes(reader.readBytes()),
+                    Fork.fromBytes(reader.readBytes()),
                 // Validator registry
                 reader.readBytesList().stream()
                     .map(Validator::fromBytes)
@@ -241,17 +218,11 @@ public class BeaconState {
                 reader.readUInt64List().stream()
                     .map(UnsignedLong::fromLongBits)
                     .collect(Collectors.toList()),
-                UnsignedLong.fromLongBits(reader.readUInt64()),
                 // Randomness and committees
                 reader.readFixedBytesList((long) Constants.LATEST_RANDAO_MIXES_LENGTH, 32).stream()
                     .map(Bytes32::wrap)
                     .collect(Collectors.toList()),
                 UnsignedLong.fromLongBits(reader.readUInt64()),
-                UnsignedLong.fromLongBits(reader.readUInt64()),
-                UnsignedLong.fromLongBits(reader.readUInt64()),
-                UnsignedLong.fromLongBits(reader.readUInt64()),
-                Bytes32.wrap(reader.readFixedBytes(32)),
-                Bytes32.wrap(reader.readFixedBytes(32)),
                 // Finality
                 reader.readBytesList().stream()
                     .map(PendingAttestation::fromBytes)
@@ -270,6 +241,9 @@ public class BeaconState {
                 reader.readBytesList((long) Constants.SHARD_COUNT).stream()
                     .map(Crosslink::fromBytes)
                     .collect(Collectors.toList()),
+                reader.readBytesList((long) Constants.SHARD_COUNT).stream()
+                            .map(Crosslink::fromBytes)
+                            .collect(Collectors.toList()),
                 reader.readFixedBytesList((long) Constants.SLOTS_PER_HISTORICAL_ROOT, 32).stream()
                     .map(Bytes32::wrap)
                     .collect(Collectors.toList()),
@@ -282,7 +256,7 @@ public class BeaconState {
                     .collect(Collectors.toList()),
                 reader.readUInt64List().stream()
                     .map(UnsignedLong::fromLongBits)
-                    .collect(Collectors.toList()),
+                    .collect(Collectors.toList()), // TODO This must be a fixed sized list
                 BeaconBlockHeader.fromBytes(reader.readBytes()),
                 reader.readFixedBytesList(32).stream()
                     .map(Bytes32::wrap)
@@ -298,8 +272,10 @@ public class BeaconState {
   public Bytes toBytes() {
     List<Bytes> validator_registryBytes =
         validator_registry.stream().map(item -> item.toBytes()).collect(Collectors.toList());
-    List<Bytes> latest_crosslinksBytes =
-        latest_crosslinks.stream().map(item -> item.toBytes()).collect(Collectors.toList());
+    List<Bytes> current_crosslinksBytes =
+        current_crosslinks.stream().map(item -> item.toBytes()).collect(Collectors.toList());
+    List<Bytes> previous_crosslinksBytes =
+            previous_crosslinks.stream().map(item -> item.toBytes()).collect(Collectors.toList());
     List<Bytes> eth1_data_votesBytes =
         eth1_data_votes.stream().map(item -> item.toBytes()).collect(Collectors.toList());
     List<Bytes> previous_epoch_attestationsBytes =
@@ -321,19 +297,13 @@ public class BeaconState {
           writer.writeBytesList(validator_registryBytes);
           writer.writeULongIntList(
               64,
-              validator_balances.stream()
+              balances.stream()
                   .map(UnsignedLong::longValue)
                   .collect(Collectors.toList()));
-          writer.writeUInt64(validator_registry_update_epoch.longValue());
           // Randomness and committees
           writer.writeFixedBytesList(
               (long) Constants.LATEST_RANDAO_MIXES_LENGTH, 32, latest_randao_mixes);
-          writer.writeUInt64(previous_shuffling_start_shard.longValue());
-          writer.writeUInt64(current_shuffling_start_shard.longValue());
-          writer.writeUInt64(previous_shuffling_epoch.longValue());
-          writer.writeUInt64(current_shuffling_epoch.longValue());
-          writer.writeFixedBytes(32, previous_shuffling_seed);
-          writer.writeFixedBytes(32, current_shuffling_seed);
+          writer.writeUInt64(latest_start_shard.longValue());
           // Finality
           writer.writeBytesList(previous_epoch_attestationsBytes);
           writer.writeBytesList(current_epoch_attestationsBytes);
@@ -345,7 +315,8 @@ public class BeaconState {
           writer.writeUInt64(finalized_epoch.longValue());
           writer.writeFixedBytes(32, finalized_root);
           // Recent state
-          writer.writeBytesList((long) Constants.SHARD_COUNT, latest_crosslinksBytes);
+          writer.writeBytesList((long) Constants.SHARD_COUNT, current_crosslinksBytes);
+          writer.writeBytesList((long) Constants.SHARD_COUNT, previous_crosslinksBytes);
           writer.writeFixedBytesList(
               (long) Constants.SLOTS_PER_HISTORICAL_ROOT, 32, latest_block_roots);
           writer.writeFixedBytesList(
@@ -373,15 +344,9 @@ public class BeaconState {
         genesis_time,
         fork,
         validator_registry,
-        validator_balances,
-        validator_registry_update_epoch,
+        balances,
         latest_randao_mixes,
-        previous_shuffling_start_shard,
-        current_shuffling_start_shard,
-        previous_shuffling_epoch,
-        current_shuffling_epoch,
-        previous_shuffling_seed,
-        current_shuffling_seed,
+        latest_start_shard,
         previous_epoch_attestations,
         current_epoch_attestations,
         previous_justified_epoch,
@@ -391,7 +356,8 @@ public class BeaconState {
         justification_bitfield,
         finalized_epoch,
         finalized_root,
-        latest_crosslinks,
+        current_crosslinks,
+        previous_crosslinks,
         latest_block_roots,
         latest_state_roots,
         latest_active_index_roots,
@@ -422,18 +388,9 @@ public class BeaconState {
         && Objects.equals(this.getGenesis_time(), other.getGenesis_time())
         && Objects.equals(this.getFork(), other.getFork())
         && Objects.equals(this.getValidator_registry(), other.getValidator_registry())
-        && Objects.equals(this.getValidator_balances(), other.getValidator_balances())
-        && Objects.equals(
-            this.getValidator_registry_update_epoch(), other.getValidator_registry_update_epoch())
+        && Objects.equals(this.getBalances(), other.getBalances())
         && Objects.equals(this.getLatest_randao_mixes(), other.getLatest_randao_mixes())
-        && Objects.equals(
-            this.getPrevious_shuffling_start_shard(), other.getPrevious_shuffling_start_shard())
-        && Objects.equals(
-            this.getCurrent_shuffling_start_shard(), other.getCurrent_shuffling_start_shard())
-        && Objects.equals(this.getPrevious_shuffling_epoch(), other.getPrevious_shuffling_epoch())
-        && Objects.equals(this.getCurrent_shuffling_epoch(), other.getCurrent_shuffling_epoch())
-        && Objects.equals(this.getPrevious_shuffling_seed(), other.getPrevious_shuffling_seed())
-        && Objects.equals(this.getCurrent_shuffling_seed(), other.getCurrent_shuffling_seed())
+        && Objects.equals(this.getLatest_start_shard(), other.getLatest_start_shard())
         && Objects.equals(
             this.getPrevious_epoch_attestations(), other.getPrevious_epoch_attestations())
         && Objects.equals(
@@ -445,7 +402,8 @@ public class BeaconState {
         && Objects.equals(this.getJustification_bitfield(), other.getJustification_bitfield())
         && Objects.equals(this.getFinalized_epoch(), other.getFinalized_epoch())
         && Objects.equals(this.getFinalized_root(), other.getFinalized_root())
-        && Objects.equals(this.getLatest_crosslinks(), other.getLatest_crosslinks())
+        && Objects.equals(this.getCurrent_crosslinks(), other.getCurrent_crosslinks())
+        && Objects.equals(this.getPrevious_crosslinks(), other.getPrevious_crosslinks())
         && Objects.equals(this.getLatest_block_roots(), other.getLatest_block_roots())
         && Objects.equals(this.getLatest_state_roots(), other.getLatest_state_roots())
         && Objects.equals(this.getLatest_active_index_roots(), other.getLatest_active_index_roots())
@@ -490,20 +448,12 @@ public class BeaconState {
     this.validator_registry = validator_registry;
   }
 
-  public List<UnsignedLong> getValidator_balances() {
-    return validator_balances;
+  public List<UnsignedLong> getBalances() {
+    return balances;
   }
 
-  public void setValidator_balances(List<UnsignedLong> validator_balances) {
-    this.validator_balances = validator_balances;
-  }
-
-  public UnsignedLong getValidator_registry_update_epoch() {
-    return validator_registry_update_epoch;
-  }
-
-  public void setValidator_registry_update_epoch(UnsignedLong validator_registry_update_epoch) {
-    this.validator_registry_update_epoch = validator_registry_update_epoch;
+  public void setBalances(List<UnsignedLong> balances) {
+    this.balances = balances;
   }
 
   public List<Bytes32> getLatest_randao_mixes() {
@@ -514,52 +464,12 @@ public class BeaconState {
     this.latest_randao_mixes = latest_randao_mixes;
   }
 
-  public UnsignedLong getPrevious_shuffling_start_shard() {
-    return previous_shuffling_start_shard;
+  public UnsignedLong getLatest_start_shard() {
+    return latest_start_shard;
   }
 
-  public void setPrevious_shuffling_start_shard(UnsignedLong previous_shuffling_start_shard) {
-    this.previous_shuffling_start_shard = previous_shuffling_start_shard;
-  }
-
-  public UnsignedLong getCurrent_shuffling_start_shard() {
-    return current_shuffling_start_shard;
-  }
-
-  public void setCurrent_shuffling_start_shard(UnsignedLong current_shuffling_start_shard) {
-    this.current_shuffling_start_shard = current_shuffling_start_shard;
-  }
-
-  public UnsignedLong getPrevious_shuffling_epoch() {
-    return previous_shuffling_epoch;
-  }
-
-  public void setPrevious_shuffling_epoch(UnsignedLong previous_shuffling_epoch) {
-    this.previous_shuffling_epoch = previous_shuffling_epoch;
-  }
-
-  public UnsignedLong getCurrent_shuffling_epoch() {
-    return current_shuffling_epoch;
-  }
-
-  public void setCurrent_shuffling_epoch(UnsignedLong current_shuffling_epoch) {
-    this.current_shuffling_epoch = current_shuffling_epoch;
-  }
-
-  public Bytes32 getPrevious_shuffling_seed() {
-    return previous_shuffling_seed;
-  }
-
-  public void setPrevious_shuffling_seed(Bytes32 previous_shuffling_seed) {
-    this.previous_shuffling_seed = previous_shuffling_seed;
-  }
-
-  public Bytes32 getCurrent_shuffling_seed() {
-    return current_shuffling_seed;
-  }
-
-  public void setCurrent_shuffling_seed(Bytes32 current_shuffling_seed) {
-    this.current_shuffling_seed = current_shuffling_seed;
+  public void setLatest_start_shard(UnsignedLong latest_start_shard) {
+    this.latest_start_shard = latest_start_shard;
   }
 
   public List<PendingAttestation> getPrevious_epoch_attestations() {
@@ -634,12 +544,20 @@ public class BeaconState {
     this.finalized_root = finalized_root;
   }
 
-  public List<Crosslink> getLatest_crosslinks() {
-    return latest_crosslinks;
+  public List<Crosslink> getCurrent_crosslinks() {
+    return current_crosslinks;
   }
 
-  public void setLatest_crosslinks(ArrayList<Crosslink> latest_crosslinks) {
-    this.latest_crosslinks = latest_crosslinks;
+  public void setCurrent_crosslinks(ArrayList<Crosslink> current_crosslinks) {
+    this.current_crosslinks = current_crosslinks;
+  }
+
+  public List<Crosslink> getPrevious_crosslinks() {
+    return previous_crosslinks;
+  }
+
+  public void setPrevious_crosslinks(List<Crosslink> previous_crosslinks) {
+    this.previous_crosslinks = previous_crosslinks;
   }
 
   public List<Bytes32> getLatest_block_roots() {
@@ -714,6 +632,7 @@ public class BeaconState {
     this.deposit_index = deposit_index;
   }
 
+
   public void incrementSlot() {
     this.slot = slot.plus(UnsignedLong.ONE);
   }
@@ -729,23 +648,12 @@ public class BeaconState {
             HashTreeUtil.hash_tree_root(SSZTypes.LIST_OF_COMPOSITE, validator_registry),
             HashTreeUtil.hash_tree_root(
                 SSZTypes.LIST_OF_BASIC,
-                validator_balances.stream()
+                balances.stream()
                     .map(item -> SSZ.encodeUInt64(item.longValue()))
                     .collect(Collectors.toList())),
-            HashTreeUtil.hash_tree_root(
-                SSZTypes.BASIC, SSZ.encodeUInt64(validator_registry_update_epoch.longValue())),
             // Randomness and committees
             HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_COMPOSITE, latest_randao_mixes),
-            HashTreeUtil.hash_tree_root(
-                SSZTypes.BASIC, SSZ.encodeUInt64(previous_shuffling_start_shard.longValue())),
-            HashTreeUtil.hash_tree_root(
-                SSZTypes.BASIC, SSZ.encodeUInt64(current_shuffling_start_shard.longValue())),
-            HashTreeUtil.hash_tree_root(
-                SSZTypes.BASIC, SSZ.encodeUInt64(previous_shuffling_epoch.longValue())),
-            HashTreeUtil.hash_tree_root(
-                SSZTypes.BASIC, SSZ.encodeUInt64(current_shuffling_epoch.longValue())),
-            HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, previous_shuffling_seed),
-            HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, current_shuffling_seed),
+            HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(latest_start_shard.longValue())),
             // Finality
             HashTreeUtil.hash_tree_root(SSZTypes.LIST_OF_COMPOSITE, previous_epoch_attestations),
             HashTreeUtil.hash_tree_root(SSZTypes.LIST_OF_COMPOSITE, current_epoch_attestations),
@@ -762,9 +670,13 @@ public class BeaconState {
             HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, finalized_root),
             // Recent state
             HashTreeUtil.merkleize(
-                latest_crosslinks.stream()
+                current_crosslinks.stream()
                     .map(item -> item.hash_tree_root())
                     .collect(Collectors.toList())),
+            HashTreeUtil.merkleize(
+                        previous_crosslinks.stream()
+                                .map(item -> item.hash_tree_root())
+                                .collect(Collectors.toList())),
             HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_COMPOSITE, latest_block_roots),
             HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_COMPOSITE, latest_state_roots),
             HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_COMPOSITE, latest_active_index_roots),

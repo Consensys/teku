@@ -198,9 +198,9 @@ class BeaconStateUtilTest {
   @Test
   void validateProofOfPosessionReturnsTrueIfTheBLSSignatureIsValidForGivenDepositInputData() {
     Deposit deposit = newDeposits(1).get(0);
-    BLSPublicKey pubkey = deposit.getDeposit_data().getDeposit_input().getPubkey();
+    BLSPublicKey pubkey = deposit.getDeposit_data().getSignature().getPubkey();
     BLSSignature proofOfPossession =
-        deposit.getDeposit_data().getDeposit_input().getProof_of_possession();
+        deposit.getDeposit_data().getSignature().getProof_of_possession();
     UnsignedLong domain =
         BeaconStateUtil.get_domain(
             new Fork(
@@ -213,7 +213,7 @@ class BeaconStateUtilTest {
     assertTrue(
         BLSVerify.bls_verify(
             pubkey,
-            deposit.getDeposit_data().getDeposit_input().signed_root("proof_of_possession"),
+            deposit.getDeposit_data().getSignature().signed_root("proof_of_possession"),
             proofOfPossession,
             domain));
   }
@@ -223,7 +223,7 @@ class BeaconStateUtilTest {
     Deposit deposit = newDeposits(1).get(0);
     BLSPublicKey pubkey = BLSPublicKey.random();
     BLSSignature proofOfPossession =
-        deposit.getDeposit_data().getDeposit_input().getProof_of_possession();
+        deposit.getDeposit_data().getSignature().getProof_of_possession();
     UnsignedLong domain =
         BeaconStateUtil.get_domain(
             new Fork(
@@ -236,7 +236,7 @@ class BeaconStateUtilTest {
     assertFalse(
         BLSVerify.bls_verify(
             pubkey,
-            deposit.getDeposit_data().getDeposit_input().signed_root("proof_of_possession"),
+            deposit.getDeposit_data().getSignature().signed_root("proof_of_possession"),
             proofOfPossession,
             domain));
   }
@@ -245,7 +245,7 @@ class BeaconStateUtilTest {
   void processDepositAddsNewValidatorWhenPubkeyIsNotFoundInRegistry() {
     // Data Setup
     Deposit deposit = newDeposits(1).get(0);
-    DepositInput depositInput = deposit.getDeposit_data().getDeposit_input();
+    DepositInput depositInput = deposit.getDeposit_data().getSignature();
     BLSPublicKey pubkey = depositInput.getPubkey();
     Bytes32 withdrawalCredentials = depositInput.getWithdrawal_credentials();
     UnsignedLong amount = deposit.getDeposit_data().getAmount();
@@ -281,7 +281,7 @@ class BeaconStateUtilTest {
   void processDepositTopsUpValidatorBalanceWhenPubkeyIsFoundInRegistry() {
     // Data Setup
     Deposit deposit = newDeposits(1).get(0);
-    DepositInput depositInput = deposit.getDeposit_data().getDeposit_input();
+    DepositInput depositInput = deposit.getDeposit_data().getSignature();
     BLSPublicKey pubkey = depositInput.getPubkey();
     Bytes32 withdrawalCredentials = depositInput.getWithdrawal_credentials();
     UnsignedLong amount = deposit.getDeposit_data().getAmount();

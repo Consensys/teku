@@ -19,19 +19,23 @@ import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
+import tech.pegasys.artemis.util.bls.BLSPublicKey;
+import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
 
 public class DepositData {
 
+  private BLSPublicKey pubkey;
+  private Bytes32 withdrawal_credentials;
   private UnsignedLong amount;
-  private UnsignedLong timestamp;
-  private DepositInput deposit_input;
+  private BLSSignature signature;
 
-  public DepositData(UnsignedLong amount, UnsignedLong timestamp, DepositInput deposit_input) {
+  public DepositData(BLSPublicKey pubkey, Bytes32 withdrawal_credentials, UnsignedLong amount, BLSSignature signature) {
+    this.pubkey = pubkey;
+    this.withdrawal_credentials = withdrawal_credentials;
     this.amount = amount;
-    this.timestamp = timestamp;
-    this.deposit_input = deposit_input;
+    this.signature = signature;
   }
 
   public static DepositData fromBytes(Bytes bytes) {
@@ -39,34 +43,35 @@ public class DepositData {
         bytes,
         reader ->
             new DepositData(
+                    BLSPublicKey.fromBytes(reader.readBytes()),
+                    Bytes32.wrap(reader.readFixedBytes(32)),
                 UnsignedLong.fromLongBits(reader.readUInt64()),
-                UnsignedLong.fromLongBits(reader.readUInt64()),
-                DepositInput.fromBytes(reader.readBytes())));
+                    BLSSignature.fromBytes(reader.readBytes())));
+
   }
 
   public Bytes toBytes() {
     return SSZ.encode(
         writer -> {
+          writer.writeBytes(pubkey.toBytes());
+          writer.writeFixedBytes(32, withdrawal_credentials);
           writer.writeUInt64(amount.longValue());
-          writer.writeUInt64(timestamp.longValue());
-          writer.writeBytes(deposit_input.toBytes());
+          writer.writeBytes(signature.toBytes());
         });
   }
 
+  // TODO: check if this is correct
   public Bytes serialize() {
-    Bytes deposit_data =
-        Bytes.wrap(
+        return Bytes.wrap(
+            pubkey.getPublicKey().toBytesCompressed(),
+            withdrawal_credentials,
             Bytes.ofUnsignedLong(amount.longValue()),
-            deposit_input.getWithdrawal_credentials(),
-            deposit_input.getPubkey().getPublicKey().toBytesCompressed());
-    return Bytes.wrap(
-            deposit_input.getProof_of_possession().getSignature().toBytesCompressed(), deposit_data)
-        .reverse();
+            signature.toBytes());
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(amount, timestamp, deposit_input);
+    return Objects.hash(pubkey, withdrawal_credentials, amount, signature);
   }
 
   @Override
@@ -84,18 +89,28 @@ public class DepositData {
     }
 
     DepositData other = (DepositData) obj;
-    return Objects.equals(this.getAmount(), other.getAmount())
-        && Objects.equals(this.getTimestamp(), other.getTimestamp())
-        && Objects.equals(this.getDeposit_input(), other.getDeposit_input());
+    return Objects.equals(this.getPubkey(), other.getPubkey())
+            && Objects.equals(this.getWithdrawal_credentials(), other.getWithdrawal_credentials())
+            && Objects.equals(this.getAmount(), other.getAmount())
+            && Objects.equals(this.getSignature(), other.getSignature());
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */
-  public DepositInput getDeposit_input() {
-    return deposit_input;
+
+  public BLSPublicKey getPubkey() {
+    return pubkey;
   }
 
-  public void setDeposit_input(DepositInput deposit_input) {
-    this.deposit_input = deposit_input;
+  public void setPubkey(BLSPublicKey pubkey) {
+    this.pubkey = pubkey;
+  }
+
+  public Bytes32 getWithdrawal_credentials() {
+    return withdrawal_credentials;
+  }
+
+  public void setWithdrawal_credentials(Bytes32 withdrawal_credentials) {
+    this.withdrawal_credentials = withdrawal_credentials;
   }
 
   public UnsignedLong getAmount() {
@@ -106,19 +121,19 @@ public class DepositData {
     this.amount = amount;
   }
 
-  public UnsignedLong getTimestamp() {
-    return timestamp;
+  public BLSSignature getSignature() {
+    return signature;
   }
 
-  public void setTimestamp(UnsignedLong timestamp) {
-    this.timestamp = timestamp;
+  public void setSignature(BLSSignature signature) {
+    this.signature = signature;
   }
 
   public Bytes32 hash_tree_root() {
     return HashTreeUtil.merkleize(
         Arrays.asList(
-            HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(amount.longValue())),
-            HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(timestamp.longValue())),
-            deposit_input.hash_tree_root()));
-  }
+                HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, pubkey.toBytes()),
+                HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, withdrawal_credentials),
+                HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(amount.longValue())),
+                HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, signature.toBytes())));  }
 }

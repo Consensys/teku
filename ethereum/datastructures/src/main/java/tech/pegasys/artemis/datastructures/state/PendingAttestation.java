@@ -29,25 +29,25 @@ public class PendingAttestation implements Copyable<PendingAttestation>, Merklei
 
   private Bytes aggregation_bitfield;
   private AttestationData data;
-  private Bytes custody_bitfield;
-  private UnsignedLong inclusion_slot;
+  private UnsignedLong inclusion_delay;
+  private UnsignedLong proposer_index;
 
   public PendingAttestation(
       Bytes aggregation_bitfield,
       AttestationData data,
-      Bytes custody_bitfield,
-      UnsignedLong inclusion_slot) {
+      UnsignedLong inclusion_delay,
+      UnsignedLong proposer_index) {
     this.aggregation_bitfield = aggregation_bitfield;
     this.data = data;
-    this.custody_bitfield = custody_bitfield;
-    this.inclusion_slot = inclusion_slot;
+    this.inclusion_delay = inclusion_delay;
+    this.proposer_index = proposer_index;
   }
 
   public PendingAttestation(PendingAttestation pendingAttestation) {
     this.aggregation_bitfield = pendingAttestation.getAggregation_bitfield().copy();
     this.data = new AttestationData(pendingAttestation.getData());
-    this.custody_bitfield = pendingAttestation.getCustody_bitfield().copy();
-    this.inclusion_slot = pendingAttestation.getInclusion_slot();
+    this.inclusion_delay = pendingAttestation.getInclusion_delay();
+    this.proposer_index = pendingAttestation.getProposer_index();
   }
 
   @Override
@@ -62,7 +62,7 @@ public class PendingAttestation implements Copyable<PendingAttestation>, Merklei
             new PendingAttestation(
                 Bytes.wrap(reader.readBytes()),
                 AttestationData.fromBytes(reader.readBytes()),
-                Bytes.wrap(reader.readBytes()),
+                UnsignedLong.fromLongBits(reader.readUInt64()),
                 UnsignedLong.fromLongBits(reader.readUInt64())));
   }
 
@@ -71,14 +71,14 @@ public class PendingAttestation implements Copyable<PendingAttestation>, Merklei
         writer -> {
           writer.writeBytes(aggregation_bitfield);
           writer.writeBytes(data.toBytes());
-          writer.writeBytes(custody_bitfield);
-          writer.writeUInt64(inclusion_slot.longValue());
+          writer.writeUInt64(inclusion_delay.longValue());
+          writer.writeUInt64(proposer_index.longValue());
         });
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(aggregation_bitfield, data, custody_bitfield, inclusion_slot);
+    return Objects.hash(aggregation_bitfield, data, inclusion_delay, proposer_index);
   }
 
   @Override
@@ -97,9 +97,9 @@ public class PendingAttestation implements Copyable<PendingAttestation>, Merklei
 
     PendingAttestation other = (PendingAttestation) obj;
     return Objects.equals(this.getAggregation_bitfield(), other.getAggregation_bitfield())
-        && Objects.equals(this.getData(), other.getData())
-        && Objects.equals(this.getCustody_bitfield(), other.getCustody_bitfield())
-        && Objects.equals(this.getInclusion_slot(), other.getInclusion_slot());
+            && Objects.equals(this.getData(), other.getData())
+            && Objects.equals(this.getInclusion_delay(), other.getInclusion_delay())
+            && Objects.equals(this.getProposer_index(), other.getProposer_index());
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */
@@ -119,20 +119,20 @@ public class PendingAttestation implements Copyable<PendingAttestation>, Merklei
     this.data = data;
   }
 
-  public Bytes getCustody_bitfield() {
-    return custody_bitfield;
+  public UnsignedLong getInclusion_delay() {
+    return inclusion_delay;
   }
 
-  public void setCustody_bitfield(Bytes custody_bitfield) {
-    this.custody_bitfield = custody_bitfield;
+  public void setInclusion_delay(UnsignedLong inclusion_delay) {
+    this.inclusion_delay = inclusion_delay;
   }
 
-  public UnsignedLong getInclusion_slot() {
-    return inclusion_slot;
+  public UnsignedLong getProposer_index() {
+    return proposer_index;
   }
 
-  public void setInclusionSlot(UnsignedLong inclusion_slot) {
-    this.inclusion_slot = inclusion_slot;
+  public void setProposer_index(UnsignedLong proposer_index) {
+    this.proposer_index = proposer_index;
   }
 
   @Override
@@ -141,8 +141,9 @@ public class PendingAttestation implements Copyable<PendingAttestation>, Merklei
         Arrays.asList(
             HashTreeUtil.hash_tree_root(SSZTypes.LIST_OF_BASIC, aggregation_bitfield),
             data.hash_tree_root(),
-            HashTreeUtil.hash_tree_root(SSZTypes.LIST_OF_BASIC, custody_bitfield),
             HashTreeUtil.hash_tree_root(
-                SSZTypes.BASIC, SSZ.encodeUInt64(inclusion_slot.longValue()))));
+                SSZTypes.BASIC, SSZ.encodeUInt64(inclusion_delay.longValue())),
+            HashTreeUtil.hash_tree_root(
+            SSZTypes.BASIC, SSZ.encodeUInt64(proposer_index.longValue()))));
   }
 }
