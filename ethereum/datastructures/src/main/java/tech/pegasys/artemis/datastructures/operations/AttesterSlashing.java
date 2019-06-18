@@ -15,6 +15,8 @@ package tech.pegasys.artemis.datastructures.operations;
 
 import java.util.Arrays;
 import java.util.Objects;
+
+import jnr.ffi.annotations.In;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
@@ -23,13 +25,13 @@ import tech.pegasys.artemis.util.hashtree.Merkleizable;
 
 public class AttesterSlashing implements Merkleizable {
 
-  private SlashableAttestation slashable_attestation_1;
-  private SlashableAttestation slashable_attestation_2;
+  private IndexedAttestation attestation_1;
+  private IndexedAttestation attestation_2;
 
   public AttesterSlashing(
-      SlashableAttestation slashable_attestation_1, SlashableAttestation slashable_attestation_2) {
-    this.slashable_attestation_1 = slashable_attestation_1;
-    this.slashable_attestation_2 = slashable_attestation_2;
+      IndexedAttestation attestation_1, IndexedAttestation attestation_2) {
+    this.attestation_1 = attestation_1;
+    this.attestation_2 = attestation_2;
   }
 
   public static AttesterSlashing fromBytes(Bytes bytes) {
@@ -37,21 +39,21 @@ public class AttesterSlashing implements Merkleizable {
         bytes,
         reader ->
             new AttesterSlashing(
-                SlashableAttestation.fromBytes(reader.readBytes()),
-                SlashableAttestation.fromBytes(reader.readBytes())));
+                IndexedAttestation.fromBytes(reader.readBytes()),
+                IndexedAttestation.fromBytes(reader.readBytes())));
   }
 
   public Bytes toBytes() {
     return SSZ.encode(
         writer -> {
-          writer.writeBytes(slashable_attestation_1.toBytes());
-          writer.writeBytes(slashable_attestation_2.toBytes());
+          writer.writeBytes(attestation_1.toBytes());
+          writer.writeBytes(attestation_2.toBytes());
         });
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(slashable_attestation_1, slashable_attestation_2);
+    return Objects.hash(attestation_1, attestation_2);
   }
 
   @Override
@@ -69,31 +71,31 @@ public class AttesterSlashing implements Merkleizable {
     }
 
     AttesterSlashing other = (AttesterSlashing) obj;
-    return Objects.equals(this.getSlashable_attestation_1(), other.getSlashable_attestation_1())
-        && Objects.equals(this.getSlashable_attestation_2(), other.getSlashable_attestation_2());
+    return Objects.equals(this.getAttestation_1(), other.getAttestation_1())
+        && Objects.equals(this.getAttestation_2(), other.getAttestation_2());
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */
-  public SlashableAttestation getSlashable_attestation_1() {
-    return slashable_attestation_1;
+  public IndexedAttestation getAttestation_1() {
+    return attestation_1;
   }
 
-  public void setSlashable_attestation_1(SlashableAttestation slashable_attestation_1) {
-    this.slashable_attestation_1 = slashable_attestation_1;
+  public void setAttestation_1(IndexedAttestation attestation_1) {
+    this.attestation_1 = attestation_1;
   }
 
-  public SlashableAttestation getSlashable_attestation_2() {
-    return slashable_attestation_2;
+  public IndexedAttestation getAttestation_2() {
+    return attestation_2;
   }
 
-  public void setSlashable_attestation_2(SlashableAttestation slashable_attestation_2) {
-    this.slashable_attestation_2 = slashable_attestation_2;
+  public void setAttestation_2(IndexedAttestation attestation_2) {
+    this.attestation_2 = attestation_2;
   }
 
   @Override
   public Bytes32 hash_tree_root() {
     return HashTreeUtil.merkleize(
         Arrays.asList(
-            slashable_attestation_1.hash_tree_root(), slashable_attestation_2.hash_tree_root()));
+            attestation_1.hash_tree_root(), attestation_2.hash_tree_root()));
   }
 }
