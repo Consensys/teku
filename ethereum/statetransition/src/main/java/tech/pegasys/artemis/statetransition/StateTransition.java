@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.statetransition;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.artemis.datastructures.Constants.SLOTS_PER_EPOCH;
 import static tech.pegasys.artemis.datastructures.Constants.SLOTS_PER_HISTORICAL_ROOT;
 import static tech.pegasys.artemis.datastructures.Constants.ZERO_HASH;
@@ -20,6 +21,12 @@ import static tech.pegasys.artemis.statetransition.util.BlockProcessorUtil.proce
 import static tech.pegasys.artemis.statetransition.util.BlockProcessorUtil.process_eth1_data;
 import static tech.pegasys.artemis.statetransition.util.BlockProcessorUtil.process_operations;
 import static tech.pegasys.artemis.statetransition.util.BlockProcessorUtil.process_randao;
+import static tech.pegasys.artemis.statetransition.util.EpochProcessorUtil.process_crosslinks;
+import static tech.pegasys.artemis.statetransition.util.EpochProcessorUtil.process_final_updates;
+import static tech.pegasys.artemis.statetransition.util.EpochProcessorUtil.process_justification_and_finalization;
+import static tech.pegasys.artemis.statetransition.util.EpochProcessorUtil.process_registry_updates;
+import static tech.pegasys.artemis.statetransition.util.EpochProcessorUtil.process_rewards_and_penalties;
+import static tech.pegasys.artemis.statetransition.util.EpochProcessorUtil.process_slashings;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.Objects;
@@ -49,55 +56,23 @@ public class StateTransition {
     this.printEnabled = printEnabled;
   }
 
-  public void initiate(BeaconStateWithCache state, BeaconBlock block)
+  // @v0.7.1
+  public BeaconState initiate(BeaconStateWithCache state, BeaconBlock block, boolean validate_state_root)
       throws StateTransitionException {
 
-    cache_state(state);
+    // Process slots (including those with no blocks) since block
+    process_slots(state, block.getSlot());
 
-    if (state.getSlot().compareTo(UnsignedLong.valueOf(Constants.GENESIS_SLOT)) > 0
-        && state
-            .getSlot()
-            .plus(UnsignedLong.ONE)
-            .mod(UnsignedLong.valueOf(SLOTS_PER_EPOCH))
-            .equals(UnsignedLong.ZERO)) {
-      epochProcessor(state, block);
-      // Client specific optimization
-      state.invalidateCache();
+    // Process_blok
+    process_block(state, block);
+
+    // Validate state root (`validate_state_root == True` in production)
+    if (validate_state_root) {
+      checkArgument(block.getState_root().equals(state.hash_tree_root()));
     }
 
-    slotProcessor(state);
-
-    if (Objects.nonNull(block)) {
-      blockProcessor(state, block);
-    }
-  }
-
-  /**
-   * Caches the given state.
-   *
-   * @param state
-   */
-  protected void cache_state(BeaconState state) {
-    Bytes32 previous_slot_state_root = state.hash_tree_root();
-
-    // Store the previous slot's post state transition root
-    int prev_slot_index =
-        state.getSlot().mod(UnsignedLong.valueOf(SLOTS_PER_HISTORICAL_ROOT)).intValue();
-    state.getLatest_state_roots().set(prev_slot_index, previous_slot_state_root);
-
-    // Cache state root in stored latest_block_header if empty
-    if (state.getLatest_block_header().getState_root().equals(ZERO_HASH)) {
-      state.getLatest_block_header().setState_root(previous_slot_state_root);
-    }
-
-    // Store latest known block for previous slot
-    state
-        .getLatest_block_roots()
-        .set(prev_slot_index, state.getLatest_block_header().signed_root("signature"));
-  }
-
-  protected void slotProcessor(BeaconStateWithCache state) {
-    advance_slot(state);
+    // Return post-state
+    return state;
   }
 
   // @v0.7.1
@@ -114,48 +89,53 @@ public class StateTransition {
     }
   }
 
-  private void epochProcessor(BeaconStateWithCache state, BeaconBlock block) {
+  // @v0.7.1
+  private void process_epoch(BeaconStateWithCache state) {
     try {
-      if (printEnabled) {
-        String ANSI_YELLOW_BOLD = "\033[1;33m";
-        String ANSI_RESET = "\033[0m";
-        System.out.println();
-        STDOUT.log(
-            Level.INFO,
-            ANSI_YELLOW_BOLD + "********  Processing new epoch: " + " ********* " + ANSI_RESET,
-            printEnabled);
 
-        STDOUT.log(
-            Level.INFO,
-            "Epoch:                                  "
-                + BeaconStateUtil.slot_to_epoch(state.getSlot().plus(UnsignedLong.ONE))
-                + " |  "
-                + BeaconStateUtil.slot_to_epoch(state.getSlot().plus(UnsignedLong.ONE)).longValue()
-                    % Constants.GENESIS_EPOCH,
-            printEnabled);
-      }
-
-      EpochProcessorUtil.update_justification_and_finalization(state);
-      EpochProcessorUtil.process_crosslinks(state);
-      EpochProcessorUtil.maybe_reset_eth1_period(state);
-      EpochProcessorUtil.apply_rewards(state);
-      EpochProcessorUtil.process_ejections(state);
-      EpochProcessorUtil.update_registry_and_shuffling_data(state);
-      EpochProcessorUtil.process_slashings(state);
-      EpochProcessorUtil.process_exit_queue(state);
-      EpochProcessorUtil.finish_epoch_update(state);
+    // Note: the lines with @ label here will be inserted here in a future phase
+    process_justification_and_finalization(state);
+    process_crosslinks(state);
+    process_rewards_and_penalties(state);
+    process_registry_updates(state);
+    // @process_reveal_deadlines
+    // @process_challenge_deadlines
+    process_slashings(state);
+    process_final_updates(state);
+    // @after_process_final_updates
 
     } catch (EpochProcessingException e) {
-      LOG.log(Level.WARN, "  Epoch processing error: " + e, printEnabled);
+      STDOUT.log(Level.WARN, "  Epoch processing error: " + e, printEnabled);
     }
   }
 
-  /**
-   * Runs at every slot > GENESIS_SLOT.
-   *
-   * @param state
-   */
-  private void advance_slot(BeaconStateWithCache state) {
-    state.incrementSlot();
+  // @v0.7.1
+  public static void process_slot(BeaconState state) {
+    // Cache state root
+    Bytes32 previous_state_root = state.hash_tree_root();
+    int index = state.getSlot().mod(UnsignedLong.valueOf(SLOTS_PER_HISTORICAL_ROOT)).intValue();
+    state.getLatest_state_roots().set(index, previous_state_root);
+
+    // Cache latest block header state root
+    if (state.getLatest_block_header().getState_root().equals(ZERO_HASH)) {
+      state.getLatest_block_header().setState_root(previous_state_root);
+    }
+
+    // Cache block root
+    Bytes32 previous_block_root = state.getLatest_block_header().signing_root("signature");
+    state.getLatest_block_roots().set(index, previous_block_root);
+  }
+
+  // @v0.7.1
+  public void process_slots(BeaconStateWithCache state, UnsignedLong slot) {
+    checkArgument(state.getSlot().compareTo(slot) <= 0, "process_slots error");
+    while (state.getSlot().compareTo(slot) < 0) {
+      process_slot(state);
+      // Process epoch on the first slot of the next epoch
+      if (state.getSlot().plus(UnsignedLong.ONE).mod(UnsignedLong.valueOf(SLOTS_PER_EPOCH)).equals(UnsignedLong.ZERO)) {
+        process_epoch(state);
+      }
+      state.setSlot(state.getSlot().plus(UnsignedLong.ONE));
+    }
   }
 }
