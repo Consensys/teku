@@ -241,20 +241,18 @@ public final class EpochProcessorUtil {
    * @param shard
    * @return
    */
-  public static MutablePair<Crosslink, List<Integer>> get_winning_crosslink_and_attesting_indices(
+  public static ImmutablePair<Crosslink, List<Integer>> get_winning_crosslink_and_attesting_indices(
           BeaconState state, UnsignedLong epoch, UnsignedLong shard) {
 
     Supplier<Stream<PendingAttestation>> attestations = () -> get_matching_source_attestations(state, epoch).stream()
             .filter(attestation -> attestation.getData().getCrosslink().getShard().equals(shard));
 
-    Stream<Crosslink> crosslinks = attestations.get()
+    Stream<Pair<Crosslink, UnsignedLong>> crosslink_attesting_balances = attestations.get()
             .map(attestation -> attestation.getData().getCrosslink())
             .filter(crosslink -> {
               Bytes32 hash = state.getCurrent_crosslinks().get(shard.intValue()).hash_tree_root();
               return hash.equals(crosslink.getParent_root()) || hash.equals(crosslink.hash_tree_root());
-            });
-
-    Stream<Pair<Crosslink, UnsignedLong>> crosslink_attesting_balances = crosslinks
+            })
             .map(c -> new ImmutablePair<>(c, get_attesting_balance(state, attestations.get().filter(a -> a.getData().getCrosslink().equals(c)).collect(Collectors.toList()))));
 
     Optional<Pair<Crosslink, UnsignedLong>> winning_crosslink_balance = crosslink_attesting_balances
