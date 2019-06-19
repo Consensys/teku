@@ -383,85 +383,6 @@ public final class BlockProcessorUtil {
     }
   }
 
-  /**
-   * Helper function for attestations.
-   *
-   * @param attestation
-   * @param state
-   * @return true if bitfields and aggregate signature verified. Otherwise, false.
-   */
-  private static boolean verify_bitfields_and_aggregate_signature(
-      Attestation attestation, BeaconState state) throws BlockProcessingException {
-    checkArgument(
-        Objects.equals(
-            attestation.getCustody_bitfield(),
-            Bytes.wrap(new byte[attestation.getCustody_bitfield().size()])),
-        "checkArgument threw and exception in verify_bitfields_and_aggregate_signature() 1"); // [TO
-    // BE
-    // REMOVED IN PHASE 1]
-    checkArgument(
-        !Objects.equals(
-            attestation.getAggregation_bitfield(),
-            Bytes.wrap(new byte[attestation.getAggregation_bitfield().size()])),
-        "checkArgument threw and exception in verify_bitfields_and_aggregate_signature() 2");
-
-    // Get the committee for the specific shard that this attestation is for
-    List<List<Integer>> crosslink_committees = new ArrayList<>();
-    List<CrosslinkCommittee> crosslink_committees_at_slot =
-        get_crosslink_committees_at_slot(state, attestation.getData().getSlot());
-    for (CrosslinkCommittee crosslink_committee : crosslink_committees_at_slot) {
-      if (Objects.equals(crosslink_committee.getShard(), attestation.getData().getShard())) {
-        crosslink_committees.add(crosslink_committee.getCommittee());
-      }
-    }
-    List<Integer> crosslink_committee = crosslink_committees.get(0);
-
-    for (int i = 0; i < crosslink_committee.size(); i++) {
-      checkArgument(
-          get_bitfield_bit(attestation.getAggregation_bitfield(), i) != 0b0
-              || get_bitfield_bit(attestation.getCustody_bitfield(), i) == 0b0,
-          "checkArgument threw and exception in verify_bitfields_and_aggregate_signature() 3");
-    }
-
-    List<Integer> participants =
-        get_attestation_participants(
-            state, attestation.getData(), attestation.getAggregation_bitfield());
-    List<Integer> custody_bit_1_participants =
-        get_attestation_participants(
-            state, attestation.getData(), attestation.getCustody_bitfield());
-    List<Integer> custody_bit_0_participants = new ArrayList<>();
-    for (Integer participant : participants) {
-      if (custody_bit_1_participants.indexOf(participant) == -1) {
-        custody_bit_0_participants.add(participant);
-      }
-    }
-
-    List<BLSPublicKey> pubkey0 = new ArrayList<>();
-    for (int i = 0; i < custody_bit_0_participants.size(); i++) {
-      pubkey0.add(state.getValidator_registry().get(custody_bit_0_participants.get(i)).getPubkey());
-    }
-
-    List<BLSPublicKey> pubkey1 = new ArrayList<>();
-    for (int i = 0; i < custody_bit_1_participants.size(); i++) {
-      pubkey1.add(state.getValidator_registry().get(custody_bit_1_participants.get(i)).getPubkey());
-    }
-
-    checkArgument(
-        bls_verify_multiple(
-            Arrays.asList(bls_aggregate_pubkeys(pubkey0), bls_aggregate_pubkeys(pubkey1)),
-            Arrays.asList(
-                new AttestationDataAndCustodyBit(attestation.getData(), false).hash_tree_root(),
-                new AttestationDataAndCustodyBit(attestation.getData(), true).hash_tree_root()),
-            attestation.getAggregate_signature(),
-            get_domain(
-                state.getFork(),
-                slot_to_epoch(attestation.getData().getSlot()),
-                DOMAIN_ATTESTATION)),
-        "checkArgument threw and exception in verify_bitfields_and_aggregate_signature() 4");
-
-    return true;
-  }
-
   // @v0.7.1
   public static void process_deposits(BeaconState state, List<Deposit> deposits)
          throws BlockProcessingException {
@@ -649,31 +570,5 @@ public final class BlockProcessorUtil {
                       && state.getBalances().get(transfer.getSender().intValue()).compareTo(UnsignedLong.valueOf(MIN_DEPOSIT_AMOUNT)) < 0),
               "Verify balances are not dust 2");
     }
-  }
-
-  /**
-   * @param state
-   * @param block
-   */
-  public static void verify_block_state_root(BeaconState state, BeaconBlock block) {
-    if (!block.getState_root().equals(Bytes32.ZERO)) {
-      checkArgument(
-          block.getState_root().equals(state.hash_tree_root()),
-          "State roots don't match in verify_block_state_root");
-    }
-  }
-
-  private static <T> boolean allDistinct(List<T> list) {
-    HashSet<T> set = new HashSet<>();
-
-    for (T t : list) {
-      if (set.contains(t)) {
-        return false;
-      }
-
-      set.add(t);
-    }
-
-    return true;
   }
 }
