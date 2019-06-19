@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.statetransition.util;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static java.lang.Math.toIntExact;
 import static tech.pegasys.artemis.datastructures.Constants.ACTIVATION_EXIT_DELAY;
 import static tech.pegasys.artemis.datastructures.Constants.BASE_REWARDS_PER_EPOCH;
@@ -65,9 +66,11 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.MutablePair;
@@ -143,16 +146,6 @@ public final class EpochProcessorUtil {
 
   /**
    * @param state
-   * @param attestations
-   * @return
-   */
-  public static UnsignedLong get_attesting_balance(
-          BeaconState state, List<PendingAttestation> attestations) {
-    return get_total_balance(state, get_attesting_indices(state, attestations));
-  }
-
-  /**
-   * @param state
    * @return
    */
   public static List<PendingAttestation> get_current_epoch_boundary_attestations(
@@ -200,57 +193,84 @@ public final class EpochProcessorUtil {
     return attestations;
   }
 
+  // Helper Functions
+
+  // @v0.7.1
+  private static UnsignedLong get_total_active_balance(BeaconState state) {
+    return get_total_balance(state, get_active_validator_indices(state, get_current_epoch(state)));
+  }
+
+  // @v0.7.1
+  private static List<PendingAttestation> get_matching_source_attestations(BeaconState state, UnsignedLong epoch) {
+    checkArgument(get_current_epoch(state).equals(epoch) || get_previous_epoch(state).equals(epoch),
+            "get_matching_source_attestations");
+    if (epoch.equals(get_current_epoch(state))) {
+      return state.getCurrent_epoch_attestations();
+    }
+    return state.getPrevious_epoch_attestations();
+  }
+
+  // @v0.7.1
+  private static List<PendingAttestation> get_matching_target_attestations(BeaconState state, UnsignedLong epoch) {
+    return get_matching_source_attestations(state, epoch).stream().filter(a -> a.getData().getTarget_root().equals(get_block_root(state, epoch))).collect(Collectors.toList());
+  }
+
+  // @v0.7.1
+  private static List<PendingAttestation> get_matching_head_attestations(BeaconState state, UnsignedLong epoch) {
+    return get_matching_source_attestations(state, epoch).stream().filter(a -> a.getData().getBeacon_block_root().equals(get_block_root_at_slot(state, get_attestation_data_slot(state, a.getData())))).collect(Collectors.toList());
+  }
+
+  // @v0.7.1
+  private static List<Integer> get_unslashed_attesting_indices(BeaconState state, List<PendingAttestation> attestations) {
+    TreeSet<Integer> output = new TreeSet<>();
+    for (PendingAttestation a : attestations) {
+      output.addAll(get_attesting_indices(state, a.getData(), a.getAggregation_bitfield()));
+    }
+    List<Integer> output_list = new ArrayList<>(output);
+    return output_list.stream().filter(index -> !state.getValidator_registry().get(index).isSlashed()).collect(Collectors.toList());
+  }
+
+  // @v0.7.1
+  private static UnsignedLong get_attesting_balance(BeaconState state, List<PendingAttestation> attestations) {
+    return get_total_balance(state, get_unslashed_attesting_indices(state, attestations));
+  }
+
   /**
    * @param state
    * @param shard
    * @return
    */
-  public static MutablePair<Bytes32, List<Integer>> get_winning_root_and_participants(
-          BeaconState state, UnsignedLong shard) {
+  public static MutablePair<Crosslink, List<Integer>> get_winning_crosslink_and_attesting_indices(
+          BeaconState state, UnsignedLong epoch, UnsignedLong shard) {
 
-    Crosslink shardLatestCrosslink = state.getLatest_crosslinks().get(shard.intValue());
+    Stream<PendingAttestation> attestations = get_matching_source_attestations(state, epoch).stream()
+            .filter(attestation -> attestation.getData().getCrosslink().getShard().equals(shard));
 
-    List<PendingAttestation> valid_attestations = new ArrayList<>();
-    List<Bytes32> all_roots = new ArrayList<>();
-    for (PendingAttestation a : state.getCurrent_epoch_attestations()) {
-      if (a.getData().getCrosslink().equals(shardLatestCrosslink)) {
-        valid_attestations.add(a);
-        all_roots.add(a.getData().getCrosslink_data_root());
-      }
-    }
-    for (PendingAttestation a : state.getPrevious_epoch_attestations()) {
-      if (a.getData().getCrosslink().equals(shardLatestCrosslink)) {
-        valid_attestations.add(a);
-        all_roots.add(a.getData().getCrosslink_data_root());
-      }
-    }
+    Stream<Crosslink> crosslinks = attestations
+            .map(attestation -> attestation.getData().getCrosslink())
+            .filter(crosslink -> {
+              Bytes32 hash = state.getCurrent_crosslinks().get(shard.intValue()).hash_tree_root();
+              return hash.equals(crosslink.getParent_root()) || hash.equals(crosslink.hash_tree_root());
+            });
 
-    if (all_roots.isEmpty()) {
-      return new MutablePair<>(ZERO_HASH, new ArrayList<>());
-    }
+    Stream<Pair<Crosslink, UnsignedLong>> crosslink_attesting_balances = crosslinks
+            .map(c -> new ImmutablePair<>(c, get_attesting_balance(state, attestations.filter(a -> a.getData().getCrosslink().equals(c)).collect(Collectors.toList()))));
 
-    // TODO: make sure ties broken in favor of lexicographically higher hash
-    UnsignedLong max = null;
-    Bytes32 winning_root = null;
-    List<PendingAttestation> attestations = null;
-    for (Bytes32 root : all_roots) {
-      List<PendingAttestation> candidateAttestations =
-              get_attestations_for(root, valid_attestations);
-      UnsignedLong value = get_attesting_balance(state, candidateAttestations);
-      if (max == null) {
-        max = value;
-        winning_root = root;
-        attestations = candidateAttestations;
-      } else {
-        if (value.compareTo(max) < 0) {
-          max = value;
-          winning_root = root;
-          attestations = candidateAttestations;
-        }
-      }
+    Optional<Pair<Crosslink, UnsignedLong>> winning_crosslink_balance = crosslink_attesting_balances
+            .max(Comparator.comparing(Pair::getRight));
+
+    Crosslink winning_crosslink;
+    if (winning_crosslink_balance.isPresent()) {
+      winning_crosslink = crosslink_attesting_balances
+              .filter(cab -> winning_crosslink_balance.get().getRight().equals(cab.getRight()))
+              .max(Comparator.comparing(cab -> cab.getLeft().getData_root().toHexString()))
+              .get().getLeft();
+    } else {
+      winning_crosslink = new Crosslink();
     }
 
-    return new MutablePair<>(winning_root, get_attesting_indices(state, attestations));
+    List<PendingAttestation> winning_attestations = attestations.filter(a -> a.getData().getCrosslink().equals(winning_crosslink)).collect(Collectors.toList());
+    return new ImmutablePair<>(winning_crosslink, get_unslashed_attesting_indices(state, winning_attestations));
   }
 
   /**
@@ -344,55 +364,44 @@ public final class EpochProcessorUtil {
 
       if (current_epoch_matching_target_balance
               .times(UnsignedLong.valueOf(3))
-              .compareTo(get_current_total_balance(state).times(UnsignedLong.valueOf(2)))
+              .compareTo(get_total_active_balance(state).times(UnsignedLong.valueOf(2)))
               >= 0) {
-        new_justified_epoch = get_current_epoch(state);
-        justification_bitfield = BitwiseOps.or(justification_bitfield, UnsignedLong.valueOf(1));
+        state.setCurrent_justified_epoch(current_epoch);
+        state.setCurrent_justified_root(get_block_root(state, state.getCurrent_justified_epoch()));
+        state.setJustification_bitfield(BitwiseOps.or(state.getJustification_bitfield(), UnsignedLong.ONE));
       }
 
-      state.setJustification_bitfield(justification_bitfield);
-
       // Process finalizations
+    UnsignedLong bitfield = state.getJustification_bitfield();
+
       UnsignedLong decimal4 = UnsignedLong.valueOf(4);
       UnsignedLong decimal8 = UnsignedLong.valueOf(8);
       UnsignedLong binary11 = UnsignedLong.valueOf(3);
       UnsignedLong binary111 = UnsignedLong.valueOf(7);
-      UnsignedLong previous_justified_epoch = state.getPrevious_justified_epoch();
-      UnsignedLong current_justified_epoch = state.getCurrent_justified_epoch();
-      UnsignedLong current_epoch = get_current_epoch(state);
 
-      // The 2nd/3rd/4th most recent epochs are all justified, the 2nd using the 4th as source
-      if (BitwiseOps.rightShift(justification_bitfield, 1).mod(decimal8).equals(binary111)
-              && previous_justified_epoch.equals(current_epoch.minus(UnsignedLong.valueOf(3)))) {
-        new_finalized_epoch = previous_justified_epoch;
+      // The 2nd/3rd/4th most recent epochs are justified, the 2nd using the 4th as source
+      if (BitwiseOps.rightShift(bitfield, 1).mod(decimal8).equals(binary111)
+              && old_previous_justified_epoch.plus(UnsignedLong.valueOf(3)).equals(current_epoch)) {
+        state.setFinalized_epoch(old_previous_justified_epoch);
+        state.setFinalized_root(get_block_root(state, state.getFinalized_epoch()));
       }
       // The 2nd/3rd most recent epochs are both justified, the 2nd using the 3rd as source
-      if (BitwiseOps.rightShift(justification_bitfield, 1).mod(decimal4).equals(binary11)
-              && previous_justified_epoch.equals(current_epoch.minus(UnsignedLong.valueOf(2)))) {
-        new_finalized_epoch = previous_justified_epoch;
+      if (BitwiseOps.rightShift(bitfield, 1).mod(decimal4).equals(binary11)
+              && old_previous_justified_epoch.plus(UnsignedLong.valueOf(2)).equals(current_epoch)) {
+        state.setFinalized_epoch(old_previous_justified_epoch);
+        state.setFinalized_root(get_block_root(state, state.getFinalized_epoch()));
       }
       // The 1st/2nd/3rd most recent epochs are all justified, the 1st using the 3rd as source
-      if (justification_bitfield.mod(decimal8).equals(binary111)
-              && current_justified_epoch.equals(current_epoch.minus(UnsignedLong.valueOf(2)))) {
-        new_finalized_epoch = current_justified_epoch;
+      if (bitfield.mod(decimal8).equals(binary111)
+              && old_current_justified_epoch.plus(UnsignedLong.valueOf(2)).equals(current_epoch)) {
+        state.setFinalized_epoch(old_current_justified_epoch);
+        state.setFinalized_root(get_block_root(state, state.getFinalized_epoch()));
       }
       // The 1st/2nd most recent epochs are both justified, the 1st using the 2nd as source
-      if (justification_bitfield.mod(decimal4).equals(binary11)
-              && current_justified_epoch.equals(current_epoch.minus(UnsignedLong.ONE))) {
-        new_finalized_epoch = current_justified_epoch;
-      }
-
-      // Update state justification variables
-      state.setPrevious_justified_epoch(state.getCurrent_justified_epoch());
-      state.setPrevious_justified_root(state.getCurrent_justified_root());
-      if (!new_justified_epoch.equals(state.getCurrent_justified_epoch())) {
-        state.setCurrent_justified_epoch(new_justified_epoch);
-        state.setCurrent_justified_root(
-                get_block_root(state, get_epoch_start_slot(new_justified_epoch)));
-      }
-      if (!new_finalized_epoch.equals(state.getFinalized_epoch())) {
-        state.setFinalized_epoch(new_finalized_epoch);
-        state.setFinalized_root(get_block_root(state, get_epoch_start_slot(new_finalized_epoch)));
+      if (bitfield.mod(decimal4).equals(binary11)
+              && old_current_justified_epoch.plus(UnsignedLong.ONE).equals(current_epoch)) {
+        state.setFinalized_epoch(old_current_justified_epoch);
+        state.setFinalized_root(get_block_root(state, state.getFinalized_epoch()));
       }
   }
 
