@@ -30,7 +30,7 @@ public class Constants {
   public static int MAX_INDICES_PER_ATTESTATION = 4096; // 2^5
   public static int MIN_PER_EPOCH_CHURN_LIMIT = 4; // 2^2 withdrawals
   public static int CHURN_LIMIT_QUOTIENT = 65536; // 2^2 withdrawals
-  public static int BASE_REWARD_PER_EPOCH = 5; // 2^2 withdrawals
+  public static int BASE_REWARDS_PER_EPOCH = 5; // 2^2 withdrawals
   public static int SHUFFLE_ROUND_COUNT = 90;
 
   // Deposit contract

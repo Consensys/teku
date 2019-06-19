@@ -16,6 +16,10 @@ package tech.pegasys.artemis.statetransition;
 import static tech.pegasys.artemis.datastructures.Constants.SLOTS_PER_EPOCH;
 import static tech.pegasys.artemis.datastructures.Constants.SLOTS_PER_HISTORICAL_ROOT;
 import static tech.pegasys.artemis.datastructures.Constants.ZERO_HASH;
+import static tech.pegasys.artemis.statetransition.util.BlockProcessorUtil.process_block_header;
+import static tech.pegasys.artemis.statetransition.util.BlockProcessorUtil.process_eth1_data;
+import static tech.pegasys.artemis.statetransition.util.BlockProcessorUtil.process_operations;
+import static tech.pegasys.artemis.statetransition.util.BlockProcessorUtil.process_randao;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.Objects;
@@ -96,19 +100,14 @@ public class StateTransition {
     advance_slot(state);
   }
 
-  private void blockProcessor(BeaconStateWithCache state, BeaconBlock block) {
+  // @v0.7.1
+  private void process_block(BeaconStateWithCache state, BeaconBlock block) {
     try {
 
-      BlockProcessorUtil.process_block_header(state, block);
-      BlockProcessorUtil.process_randao(state, block);
-      BlockProcessorUtil.process_eth1_data(state, block);
-      BlockProcessorUtil.process_proposer_slashings(state, block);
-      BlockProcessorUtil.process_attester_slashings(state, block);
-      BlockProcessorUtil.process_attestations(state, block);
-      BlockProcessorUtil.process_deposits(state, block);
-      BlockProcessorUtil.process_voluntary_exits(state, block);
-      BlockProcessorUtil.process_transfers(state, block);
-      BlockProcessorUtil.verify_block_state_root(state, block);
+      process_block_header(state, block);
+      process_randao(state, block.getBody());
+      process_eth1_data(state, block.getBody());
+      process_operations(state, block.getBody());
 
     } catch (BlockProcessingException e) {
       STDOUT.log(Level.WARN, "  Block processing error: " + e, printEnabled);
