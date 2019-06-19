@@ -15,23 +15,11 @@ package tech.pegasys.artemis.networking.p2p.hobbits;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import java.util.Arrays;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt64;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.artemis.datastructures.Constants;
-import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 
 class JsonRoundtripTest {
-
-  @Test
-  void roundtripGossip() throws Exception {
-    SSZBlock sszBlock =
-        new SSZBlock(DataStructureUtil.randomBeaconBlock(Constants.GENESIS_SLOT).toBytes());
-    byte[] value = GossipCodec.mapper.writerFor(SSZBlock.class).writeValueAsBytes(sszBlock);
-    SSZBlock read = RPCCodec.mapper.readerFor(SSZBlock.class).readValue(value);
-    assertEquals(sszBlock.block().toHexString(), read.block().toHexString());
-  }
 
   @Test
   void roundtripGetStatus() throws Exception {
@@ -59,18 +47,5 @@ class JsonRoundtripTest {
     RequestBlocks read = RPCCodec.mapper.readerFor(RequestBlocks.class).readValue(value);
     assertEquals(requestBlocks.startRoot(), read.startRoot());
     assertEquals(requestBlocks.direction(), read.direction());
-  }
-
-  @Test
-  void roundtripBlockRoots() throws Exception {
-    BlockRoots roots =
-        new BlockRoots(
-            Arrays.asList(
-                new BlockRoots.BlockRootAndSlot(Bytes32.random(), 1223),
-                new BlockRoots.BlockRootAndSlot(Bytes32.random(), 2234)));
-    byte[] value = RPCCodec.mapper.writerFor(BlockRoots.class).writeValueAsBytes(roots);
-    BlockRoots read = RPCCodec.mapper.readerFor(BlockRoots.class).readValue(value);
-    assertEquals(2, read.rootsAndSlots().size());
-    assertEquals(roots.rootsAndSlots().get(1).blockRoot(), read.rootsAndSlots().get(1).blockRoot());
   }
 }

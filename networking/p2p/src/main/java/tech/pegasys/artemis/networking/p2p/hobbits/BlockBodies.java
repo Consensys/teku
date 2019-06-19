@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.networking.p2p.hobbits;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonValue;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -24,6 +25,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 
 @JsonDeserialize(using = BlockBodies.BlockBodiesDeserializer.class)
 final class BlockBodies {
@@ -39,42 +42,37 @@ final class BlockBodies {
         throws IOException, JsonProcessingException {
       JsonNode node = jp.getCodec().readTree(jp);
       Iterator<JsonNode> iterator = node.iterator();
-      List<BlockBody> elts = new ArrayList<>();
+      List<BeaconBlock> elts = new ArrayList<>();
       while (iterator.hasNext()) {
         JsonNode child = iterator.next();
-        elts.add(new BlockBody());
+        elts.add(BeaconBlock.fromBytes(Bytes.wrap(child.get("bytes").binaryValue())));
       }
-
       return new BlockBodies(elts);
     }
   }
 
   static class BlockBody {
 
-    /*
-    'randao_reveal': 'bytes96',
-    'eth1_data': Eth1Data,
-    'proposer_slashings': [ProposerSlashing],
-    'attester_slashings': [AttesterSlashing],
-    'attestations': [Attestation],
-    'deposits': [Deposit],
-    'voluntary_exits': [VoluntaryExit],
-    'transfers': [Transfer],
-     */
+    private final Bytes bytes;
 
-    BlockBody() {
-      // TODO fill body with the right info
+    BlockBody(Bytes bytes) {
+      this.bytes = bytes;
+    }
+
+    @JsonProperty("bytes")
+    public Bytes bytes() {
+      return bytes;
     }
   }
 
-  private final List<BlockBody> bodies;
+  private final List<BeaconBlock> bodies;
 
-  BlockBodies(List<BlockBody> rootsAndSlots) {
-    this.bodies = rootsAndSlots;
+  BlockBodies(List<BeaconBlock> bodies) {
+    this.bodies = bodies;
   }
 
   @JsonValue
-  public List<BlockBody> bodies() {
+  public List<BeaconBlock> bodies() {
     return bodies;
   }
 }
