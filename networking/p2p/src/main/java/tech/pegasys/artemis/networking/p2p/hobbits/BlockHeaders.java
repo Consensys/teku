@@ -26,7 +26,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
 
 @JsonDeserialize(using = BlockHeaders.BlockHeadersDeserializer.class)
 final class BlockHeaders {
@@ -42,77 +42,37 @@ final class BlockHeaders {
         throws IOException, JsonProcessingException {
       JsonNode node = jp.getCodec().readTree(jp);
       Iterator<JsonNode> iterator = node.iterator();
-      List<BlockHeader> elts = new ArrayList<>();
+      List<BeaconBlockHeader> elts = new ArrayList<>();
       while (iterator.hasNext()) {
         JsonNode child = iterator.next();
-        elts.add(
-            new BlockHeader(
-                child.get("slot").asLong(),
-                Bytes32.fromHexString(child.get("previous_block_root").asText()),
-                Bytes32.fromHexString(child.get("state_root").asText()),
-                Bytes32.fromHexString(child.get("block_body_root").asText()),
-                Bytes.fromHexString(child.get("signature").asText())));
+        elts.add(BeaconBlockHeader.fromBytes(Bytes.wrap(child.get("bytes").binaryValue())));
       }
-
       return new BlockHeaders(elts);
     }
   }
 
   static class BlockHeader {
 
-    private final long slot;
-    private final Bytes32 previousBlockRoot;
-    private final Bytes32 stateRoot;
-    private final Bytes32 blockBodyRoot;
-    private final Bytes signature;
+    private final Bytes bytes;
 
-    BlockHeader(
-        long slot,
-        Bytes32 previousBlockRoot,
-        Bytes32 stateRoot,
-        Bytes32 blockBodyRoot,
-        Bytes signature) {
-      this.slot = slot;
-      this.previousBlockRoot = previousBlockRoot;
-      this.stateRoot = stateRoot;
-      this.blockBodyRoot = blockBodyRoot;
-      this.signature = signature;
+    BlockHeader(Bytes bytes) {
+      this.bytes = bytes;
     }
 
-    @JsonProperty("slot")
-    public long slot() {
-      return slot;
-    }
-
-    @JsonProperty("previous_block_root")
-    public Bytes32 previousBlockRoot() {
-      return previousBlockRoot;
-    }
-
-    @JsonProperty("state_root")
-    public Bytes32 stateRoot() {
-      return stateRoot;
-    }
-
-    @JsonProperty("block_body_root")
-    public Bytes32 blockBodyRoot() {
-      return blockBodyRoot;
-    }
-
-    @JsonProperty("signature")
-    public Bytes signature() {
-      return signature;
+    @JsonProperty("bytes")
+    public Bytes bytes() {
+      return bytes;
     }
   }
 
-  private final List<BlockHeader> headers;
+  private final List<BeaconBlockHeader> headers;
 
-  BlockHeaders(List<BlockHeader> headers) {
+  BlockHeaders(List<BeaconBlockHeader> headers) {
     this.headers = headers;
   }
 
   @JsonValue
-  public List<BlockHeader> headers() {
+  public List<BeaconBlockHeader> headers() {
     return headers;
   }
 }

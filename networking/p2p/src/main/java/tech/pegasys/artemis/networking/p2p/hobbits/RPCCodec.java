@@ -106,7 +106,7 @@ public final class RPCCodec implements Codec {
    * @return the payload, decoded
    */
   public static RPCMessage decode(Bytes message) {
-    // TODO: refactor RPC/Gossip decode logic
+
     Bytes requestLineBytes = null;
     for (int i = 0; i < message.size(); i++) {
       if (message.get(i) == (byte) '\n') {

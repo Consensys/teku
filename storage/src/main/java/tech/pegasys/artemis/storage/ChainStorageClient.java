@@ -206,6 +206,28 @@ public class ChainStorageClient implements ChainStorage {
   }
 
   /**
+   * Retrieves a list of processed blocks
+   *
+   * @param startRoot
+   * @param max
+   * @param skip
+   * @return
+   */
+  public List<Optional<BeaconBlock>> getProcessedBlocks(Bytes startRoot, long max, long skip) {
+    List<Optional<BeaconBlock>> result = new ArrayList<>();
+    Bytes stateRoot = startRoot;
+    for (long i = 0; i < max; i += skip + 1) {
+      Optional<BeaconBlock> block = ChainStorage.get(stateRoot, this.processedBlockLookup);
+      if (block.isPresent()) {
+        result.add(block);
+      } else {
+        break;
+      }
+    }
+    return result;
+  }
+
+  /**
    * Retrieves processed block's parent block
    *
    * @param block

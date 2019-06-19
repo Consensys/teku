@@ -14,11 +14,14 @@
 package tech.pegasys.artemis.networking.p2p.hobbits;
 
 import com.google.common.eventbus.EventBus;
+import com.google.common.primitives.UnsignedLong;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.net.NetSocket;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
@@ -29,6 +32,8 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.plumtree.MessageSender;
 import org.apache.tuweni.plumtree.State;
 import org.apache.tuweni.units.bigints.UInt64;
+import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.artemis.networking.p2p.hobbits.Codec.ProtocolType;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.util.alogger.ALogger;
@@ -117,15 +122,41 @@ public final class HobbitsSocketHandler {
         replyStatus(rpcMessage.requestId());
       }
       peer.setPeerStatus(rpcMessage.bodyAs(GetStatus.class));
-    } else if (RPCMethod.REQUEST_BLOCK_ROOTS.equals(rpcMessage.method())) {
-      // TODO provide data
-      sendReply(RPCMethod.BLOCK_ROOTS, new BlockRoots(new ArrayList<>()), rpcMessage.requestId());
     } else if (RPCMethod.REQUEST_BLOCK_HEADERS.equals(rpcMessage.method())) {
-      // TODO provide data
-      sendReply(RPCMethod.BLOCK_HEADERS, null, rpcMessage.requestId());
+      RequestBlocks rb = rpcMessage.bodyAs(RequestBlocks.class);
+      List<Optional<BeaconBlock>> blocks =
+          store.getProcessedBlocks(rb.startRoot(), rb.max(), rb.skip());
+      List<Bytes> blockHeaders = new ArrayList<>();
+      blocks.forEach(
+          block -> {
+            if (block.isPresent()) {
+              blockHeaders.add(
+                  new BeaconBlockHeader(
+                          UnsignedLong.valueOf(block.get().getSlot()),
+                          block.get().getPrevious_block_root(),
+                          block.get().getState_root(),
+                          block.get().getBody().hash_tree_root(),
+                          block.get().getSignature())
+                      .toBytes());
+            }
+          });
+      if (blockHeaders.size() > 0) {
+        sendReply(RPCMethod.BLOCK_HEADERS, blockHeaders, rpcMessage.requestId());
+      }
     } else if (RPCMethod.REQUEST_BLOCK_BODIES.equals(rpcMessage.method())) {
-      // TODO provide data
-      sendReply(RPCMethod.BLOCK_BODIES, null, rpcMessage.requestId());
+      RequestBlocks rb = rpcMessage.bodyAs(RequestBlocks.class);
+      List<Optional<BeaconBlock>> blocks =
+          store.getProcessedBlocks(rb.startRoot(), rb.max(), rb.skip());
+      List<Bytes> blockBodies = new ArrayList<>();
+      blocks.forEach(
+          block -> {
+            if (block.isPresent()) {
+              blockBodies.add(block.get().toBytes());
+            }
+          });
+      if (blockBodies.size() > 0) {
+        sendReply(RPCMethod.BLOCK_BODIES, blockBodies, rpcMessage.requestId());
+      }
     }
   }
 
