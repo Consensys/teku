@@ -26,7 +26,7 @@ After building, follow these instructions:
 
 ```bash
 $ cd scripts
-$ sh run.sh [NUMBER OF NODES]
+$ sh run.sh -n=[NUMBER OF NODES]
 ```
 
 > Note:  You will need tmux installed for this demo to work
