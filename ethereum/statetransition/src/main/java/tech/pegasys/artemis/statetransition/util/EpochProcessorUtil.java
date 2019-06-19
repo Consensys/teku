@@ -68,6 +68,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.TreeSet;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -243,10 +244,10 @@ public final class EpochProcessorUtil {
   public static MutablePair<Crosslink, List<Integer>> get_winning_crosslink_and_attesting_indices(
           BeaconState state, UnsignedLong epoch, UnsignedLong shard) {
 
-    Stream<PendingAttestation> attestations = get_matching_source_attestations(state, epoch).stream()
+    Supplier<Stream<PendingAttestation>> attestations = () -> get_matching_source_attestations(state, epoch).stream()
             .filter(attestation -> attestation.getData().getCrosslink().getShard().equals(shard));
 
-    Stream<Crosslink> crosslinks = attestations
+    Stream<Crosslink> crosslinks = attestations.get()
             .map(attestation -> attestation.getData().getCrosslink())
             .filter(crosslink -> {
               Bytes32 hash = state.getCurrent_crosslinks().get(shard.intValue()).hash_tree_root();
@@ -254,7 +255,7 @@ public final class EpochProcessorUtil {
             });
 
     Stream<Pair<Crosslink, UnsignedLong>> crosslink_attesting_balances = crosslinks
-            .map(c -> new ImmutablePair<>(c, get_attesting_balance(state, attestations.filter(a -> a.getData().getCrosslink().equals(c)).collect(Collectors.toList()))));
+            .map(c -> new ImmutablePair<>(c, get_attesting_balance(state, attestations.get().filter(a -> a.getData().getCrosslink().equals(c)).collect(Collectors.toList()))));
 
     Optional<Pair<Crosslink, UnsignedLong>> winning_crosslink_balance = crosslink_attesting_balances
             .max(Comparator.comparing(Pair::getRight));
@@ -269,7 +270,7 @@ public final class EpochProcessorUtil {
       winning_crosslink = new Crosslink();
     }
 
-    List<PendingAttestation> winning_attestations = attestations.filter(a -> a.getData().getCrosslink().equals(winning_crosslink)).collect(Collectors.toList());
+    List<PendingAttestation> winning_attestations = attestations.get().filter(a -> a.getData().getCrosslink().equals(winning_crosslink)).collect(Collectors.toList());
     return new ImmutablePair<>(winning_crosslink, get_unslashed_attesting_indices(state, winning_attestations));
   }
 
