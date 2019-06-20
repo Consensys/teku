@@ -114,6 +114,7 @@ public final class BlockProcessorUtil {
    * Processes block header
    * @param state
    * @param block
+   * @throws BlockProcessingException
    */
   public static void process_block_header(BeaconState state, BeaconBlock block)
           throws BlockProcessingException {
@@ -159,6 +160,7 @@ public final class BlockProcessorUtil {
    * Processes randao
    * @param state
    * @param body
+   * @throws BlockProcessingException
    */
   public static void process_randao(BeaconState state, BeaconBlockBody body)
           throws BlockProcessingException {

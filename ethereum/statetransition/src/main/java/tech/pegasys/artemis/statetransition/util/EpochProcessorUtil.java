@@ -121,6 +121,7 @@ public final class EpochProcessorUtil {
    * @param state
    * @param epoch
    * @return
+   * @throws IllegalArgumentException
    */
   private static List<PendingAttestation> get_matching_source_attestations(BeaconState state, UnsignedLong epoch)
           throws IllegalArgumentException {
@@ -140,6 +141,7 @@ public final class EpochProcessorUtil {
    * @param state
    * @param epoch
    * @return
+   * @throws IllegalArgumentException
    */
   private static List<PendingAttestation> get_matching_target_attestations(BeaconState state, UnsignedLong epoch)
           throws IllegalArgumentException {
@@ -202,6 +204,7 @@ public final class EpochProcessorUtil {
    * @param epoch
    * @param shard
    * @return
+   * @throws IllegalArgumentException
    */
   private static ImmutablePair<Crosslink, List<Integer>> get_winning_crosslink_and_attesting_indices(
           BeaconState state, UnsignedLong epoch, UnsignedLong shard) throws IllegalArgumentException {
@@ -237,8 +240,8 @@ public final class EpochProcessorUtil {
    * v0.7.1
    * https://github.com/ethereum/eth2.0-specs/blob/v0.7.1/specs/core/0_beacon-chain.md#justification-and-finalization
    * Processes justification and finalization
-   *
    * @param state
+   * @throws EpochProcessingException
    */
   public static void process_justification_and_finalization(BeaconState state)
           throws EpochProcessingException {
@@ -327,6 +330,7 @@ public final class EpochProcessorUtil {
    * https://github.com/ethereum/eth2.0-specs/blob/v0.7.1/specs/core/0_beacon-chain.md#crosslinks
    * Processes crosslink information
    * @param state
+   * @throws EpochProcessingException
    */
   public static void process_crosslinks(BeaconState state)
           throws EpochProcessingException {
@@ -376,6 +380,7 @@ public final class EpochProcessorUtil {
    * Returns rewards and penalties specific to each validator resulting from ttestations
    * @param state
    * @return
+   * @throws IllegalArgumentException
    */
   private static ImmutablePair<List<UnsignedLong>, List<UnsignedLong>> get_attestation_deltas(
           BeaconState state) throws IllegalArgumentException {
@@ -448,6 +453,7 @@ public final class EpochProcessorUtil {
    * Returns rewards and penalties specific to each validator resulting from voting/not-voting on the correct crosslink
    * @param state
    * @return
+   * @throws IllegalArgumentException
    */
   private static ImmutablePair<List<UnsignedLong>, List<UnsignedLong>> get_crosslink_deltas(
           BeaconState state) throws IllegalArgumentException {
@@ -485,6 +491,7 @@ public final class EpochProcessorUtil {
    * https://github.com/ethereum/eth2.0-specs/blob/v0.7.1/specs/core/0_beacon-chain.md#rewards-and-penalties-1
    * Processes rewards and penalties
    * @param state
+   * @throws EpochProcessingException
    */
   public static void process_rewards_and_penalties(BeaconStateWithCache state)
           throws EpochProcessingException {

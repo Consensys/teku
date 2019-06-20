@@ -157,6 +157,8 @@ public class StateTransition {
    * Processes slots through state slot through given slot
    * @param state
    * @param slot
+   * @throws EpochProcessingException
+   * @throws SlotProcessingException
    */
   public void process_slots(BeaconStateWithCache state, UnsignedLong slot) throws SlotProcessingException, EpochProcessingException {
     try {
