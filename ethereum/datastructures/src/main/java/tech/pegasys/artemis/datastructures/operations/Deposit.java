@@ -43,7 +43,7 @@ public class Deposit implements Merkleizable {
         bytes,
         reader ->
             new Deposit(
-                reader.readFixedBytesList((long) Constants.DEPOSIT_CONTRACT_TREE_DEPTH, 32).stream()
+                reader.readFixedBytesVector(Constants.DEPOSIT_CONTRACT_TREE_DEPTH, 32).stream()
                     .map(Bytes32::wrap)
                     .collect(Collectors.toList()),
                 DepositData.fromBytes(reader.readBytes())));
@@ -63,8 +63,7 @@ public class Deposit implements Merkleizable {
 
     return SSZ.encode(
         writer -> {
-          writer.writeFixedBytesList(
-              (long) Constants.DEPOSIT_CONTRACT_TREE_DEPTH, 32, filledProofList);
+          writer.writeFixedBytesVector(filledProofList);
           writer.writeBytes(deposit_data.toBytes());
         });
   }

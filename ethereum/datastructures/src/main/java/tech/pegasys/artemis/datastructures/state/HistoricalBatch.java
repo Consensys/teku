@@ -46,10 +46,10 @@ public class HistoricalBatch implements Copyable<HistoricalBatch> {
         bytes,
         reader ->
             new HistoricalBatch(
-                reader.readFixedBytesList(Constants.SLOTS_PER_HISTORICAL_ROOT, 32).stream()
+                reader.readFixedBytesVector(Constants.SLOTS_PER_HISTORICAL_ROOT, 32).stream()
                     .map(Bytes32::wrap)
                     .collect(Collectors.toList()),
-                reader.readFixedBytesList(Constants.SLOTS_PER_HISTORICAL_ROOT, 32).stream()
+                reader.readFixedBytesVector(Constants.SLOTS_PER_HISTORICAL_ROOT, 32).stream()
                     .map(Bytes32::wrap)
                     .collect(Collectors.toList())));
   }
@@ -62,8 +62,8 @@ public class HistoricalBatch implements Copyable<HistoricalBatch> {
   public Bytes toBytes() {
     return SSZ.encode(
         writer -> {
-          writer.writeFixedBytesList(Constants.SLOTS_PER_HISTORICAL_ROOT, 32, block_roots);
-          writer.writeFixedBytesList(Constants.SLOTS_PER_HISTORICAL_ROOT, 32, state_roots);
+          writer.writeFixedBytesVector(block_roots);
+          writer.writeFixedBytesVector(state_roots);
         });
   }
 
