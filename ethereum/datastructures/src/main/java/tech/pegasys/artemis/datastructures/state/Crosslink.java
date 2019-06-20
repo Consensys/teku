@@ -47,6 +47,14 @@ public class Crosslink implements Copyable<Crosslink> {
     this.data_root = crosslink.getData_root();
   }
 
+  public Crosslink() {
+    this.shard = UnsignedLong.ZERO;
+    this.start_epoch = UnsignedLong.ZERO;
+    this.end_epoch = UnsignedLong.ZERO;
+    this.parent_root = Bytes32.ZERO;
+    this.data_root = Bytes32.ZERO;
+  }
+
   public static Crosslink fromBytes(Bytes bytes) {
     return SSZ.decode(
         bytes,
