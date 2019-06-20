@@ -108,7 +108,13 @@ public final class BlockProcessorUtil {
 
   private static final ALogger LOG = new ALogger(BlockProcessorUtil.class.getName());
 
-  // @v0.7.1
+  /**
+   * v0.7.1
+   * https://github.com/ethereum/eth2.0-specs/blob/v0.7.1/specs/core/0_beacon-chain.md#block-header
+   * Processes block header
+   * @param state
+   * @param block
+   */
   public static void process_block_header(BeaconState state, BeaconBlock block) {
     checkArgument(block.getSlot().equals(state.getSlot()), "Verify that the slots match");
     checkArgument(
@@ -141,7 +147,13 @@ public final class BlockProcessorUtil {
     }
   }
 
-  // @v0.7.1
+  /**
+   * v0.7.1
+   * https://github.com/ethereum/eth2.0-specs/blob/v0.7.1/specs/core/0_beacon-chain.md#randao
+   * Processes randao
+   * @param state
+   * @param body
+   */
   public static void process_randao(BeaconState state, BeaconBlockBody body) {
     Validator proposer =
         state.getValidator_registry().get(get_beacon_proposer_index(state));
@@ -166,7 +178,13 @@ public final class BlockProcessorUtil {
     state.getLatest_randao_mixes().set(index, newRandaoMix);
   }
 
-  // @v0.7.1
+  /**
+   * v0.7.1
+   * https://github.com/ethereum/eth2.0-specs/blob/v0.7.1/specs/core/0_beacon-chain.md#eth1-data
+   * Processes Eth1 data
+   * @param state
+   * @param body
+   */
   public static void process_eth1_data(BeaconState state, BeaconBlockBody body) {
     state.getEth1_data_votes().add(body.getEth1_data());
     long vote_count = state.getEth1_data_votes().stream().filter(item -> item.equals(body.getEth1_data())).count();
@@ -175,7 +193,14 @@ public final class BlockProcessorUtil {
     }
   }
 
-  // @v0.7.1
+  /**
+   * v0.7.1
+   * https://github.com/ethereum/eth2.0-specs/blob/v0.7.1/specs/core/0_beacon-chain.md#operations
+   * Processes all block body operations
+   * @param state
+   * @param body
+   * @throws BlockProcessingException
+   */
   public static void process_operations(BeaconState state, BeaconBlockBody body)
           throws BlockProcessingException {
     try {
@@ -198,7 +223,14 @@ public final class BlockProcessorUtil {
     }
   }
 
-  // @v0.7.1
+  /**
+   * v0.7.1
+   * https://github.com/ethereum/eth2.0-specs/blob/v0.7.1/specs/core/0_beacon-chain.md#proposer-slashings
+   * Processes proposer slashings
+   * @param state
+   * @param proposerSlashings
+   * @throws BlockProcessingException
+   */
   public static void process_proposer_slashings(BeaconState state, List<ProposerSlashing> proposerSlashings)
       throws BlockProcessingException {
     try {
@@ -260,7 +292,14 @@ public final class BlockProcessorUtil {
     }
   }
 
-  // @v0.7.1
+  /**
+   * v0.7.1
+   * https://github.com/ethereum/eth2.0-specs/blob/v0.7.1/specs/core/0_beacon-chain.md#attester-slashings
+   * Processes attester slashings
+   * @param state
+   * @param attesterSlashings
+   * @throws BlockProcessingException
+   */
   public static void process_attester_slashings(BeaconState state, List<AttesterSlashing> attesterSlashings)
       throws BlockProcessingException {
     try {
@@ -307,7 +346,14 @@ public final class BlockProcessorUtil {
     }
   }
 
-  // @v0.7.1
+  /**
+   * v0.7.1
+   * https://github.com/ethereum/eth2.0-specs/blob/v0.7.1/specs/core/0_beacon-chain.md#attestations
+   * Processes attestations
+   * @param state
+   * @param attestations
+   * @throws BlockProcessingException
+   */
   public static void process_attestations(BeaconState state, List<Attestation> attestations)
       throws BlockProcessingException {
     try {
@@ -383,7 +429,14 @@ public final class BlockProcessorUtil {
     }
   }
 
-  // @v0.7.1
+  /**
+   * v0.7.1
+   * https://github.com/ethereum/eth2.0-specs/blob/v0.7.1/specs/core/0_beacon-chain.md#deposits
+   * Processes deposits
+   * @param state
+   * @param deposits
+   * @throws BlockProcessingException
+   */
   public static void process_deposits(BeaconState state, List<Deposit> deposits)
          throws BlockProcessingException {
       try {
@@ -448,7 +501,14 @@ public final class BlockProcessorUtil {
       }
     }
 
-  // @v0.7.1
+  /**
+   * v0.7.1
+   * https://github.com/ethereum/eth2.0-specs/blob/v0.7.1/specs/core/0_beacon-chain.md#voluntary-exits
+   * Processes voluntary exits
+   * @param state
+   * @param exits
+   * @throws BlockProcessingException
+   */
   public static void process_voluntary_exits(BeaconState state, List<VoluntaryExit> exits)
       throws BlockProcessingException {
     try {
@@ -499,8 +559,15 @@ public final class BlockProcessorUtil {
     }
   }
 
-
-  // @v0.7.1
+  /**
+   *
+   * v0.7.1
+   * https://github.com/ethereum/eth2.0-specs/blob/v0.7.1/specs/core/0_beacon-chain.md#transfers
+   * Processes transfers
+   * @param state
+   * @param transfers
+   * @throws BlockProcessingException
+   */
   public static void process_transfers(BeaconState state, List<Transfer> transfers)
       throws BlockProcessingException {
     // Verify that len(block.body.transfers) <= MAX_TRANSFERS and that all transfers are distinct.
