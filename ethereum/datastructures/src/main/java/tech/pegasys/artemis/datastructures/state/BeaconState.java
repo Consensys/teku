@@ -61,8 +61,6 @@ public class BeaconState {
 
   // Recent state
   protected List<Crosslink> current_crosslinks; // Bounded by SHARD_COUNT
-
-
   protected List<Crosslink> previous_crosslinks; // Bounded by SHARD_COUNT
   protected List<Bytes32> latest_block_roots; // Bounded by SLOTS_PER_HISTORICAL_ROOT
   protected List<Bytes32> latest_state_roots; // Bounded by SLOTS_PER_HISTORICAL_ROOT
