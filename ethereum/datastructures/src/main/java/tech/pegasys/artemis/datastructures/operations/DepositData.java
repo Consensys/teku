@@ -129,6 +129,20 @@ public class DepositData {
     this.signature = signature;
   }
 
+  public Bytes32 signing_root(String truncation_param) {
+    if (!truncation_param.equals("signature")) {
+      throw new UnsupportedOperationException(
+              "Only signed_root(proposal, \"signature\") is currently supported for type Proposal.");
+    }
+
+    return Bytes32.rightPad(
+            HashTreeUtil.merkleize(
+                    Arrays.asList(
+                            HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, pubkey.toBytes()),
+                            HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, withdrawal_credentials),
+                            HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(amount.longValue())))));
+  }
+
   public Bytes32 hash_tree_root() {
     return HashTreeUtil.merkleize(
         Arrays.asList(

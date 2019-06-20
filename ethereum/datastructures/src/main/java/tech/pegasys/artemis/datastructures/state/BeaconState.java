@@ -61,8 +61,6 @@ public class BeaconState {
 
   // Recent state
   protected List<Crosslink> current_crosslinks; // Bounded by SHARD_COUNT
-
-
   protected List<Crosslink> previous_crosslinks; // Bounded by SHARD_COUNT
   protected List<Bytes32> latest_block_roots; // Bounded by SLOTS_PER_HISTORICAL_ROOT
   protected List<Bytes32> latest_state_roots; // Bounded by SLOTS_PER_HISTORICAL_ROOT
@@ -76,7 +74,7 @@ public class BeaconState {
 
   // Ethereum 1.0 chain data
   protected Eth1Data latest_eth1_data;
-  protected List<Eth1DataVote> eth1_data_votes;
+  protected List<Eth1Data> eth1_data_votes;
   protected UnsignedLong deposit_index;
 
   public BeaconState() {
@@ -167,7 +165,7 @@ public class BeaconState {
 
       // Ethereum 1.0 chain data
       Eth1Data latest_eth1_data,
-      List<Eth1DataVote> eth1_data_votes,
+      List<Eth1Data> eth1_data_votes,
       UnsignedLong deposit_index) {
     this.slot = slot;
     this.fork = fork;
@@ -266,7 +264,7 @@ public class BeaconState {
                 // Ethereum 1.0 chain data
                 Eth1Data.fromBytes(reader.readBytes()),
                 reader.readBytesList().stream()
-                    .map(Eth1DataVote::fromBytes)
+                    .map(Eth1Data::fromBytes)
                     .collect(Collectors.toList()),
                 UnsignedLong.fromLongBits(reader.readUInt64())));
   }
@@ -616,11 +614,11 @@ public class BeaconState {
     this.latest_eth1_data = latest_eth1_data;
   }
 
-  public List<Eth1DataVote> getEth1_data_votes() {
+  public List<Eth1Data> getEth1_data_votes() {
     return eth1_data_votes;
   }
 
-  public void setEth1_data_votes(List<Eth1DataVote> eth1_data_votes) {
+  public void setEth1_data_votes(List<Eth1Data> eth1_data_votes) {
     this.eth1_data_votes = eth1_data_votes;
   }
 

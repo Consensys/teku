@@ -164,7 +164,7 @@ public class Transfer implements Merkleizable {
     this.signature = signature;
   }
 
-  public Bytes32 signed_root(String truncation_param) {
+  public Bytes32 signing_root(String truncation_param) {
     if (!truncation_param.equals("signature")) {
       throw new UnsupportedOperationException(
           "Only signed_root(BeaconBlockHeader, \"signature\") is currently supported for type BeaconBlockHeader.");

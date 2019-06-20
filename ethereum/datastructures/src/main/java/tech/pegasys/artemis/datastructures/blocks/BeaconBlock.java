@@ -15,6 +15,8 @@ package tech.pegasys.artemis.datastructures.blocks;
 
 import java.util.Arrays;
 import java.util.Objects;
+
+import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
@@ -25,7 +27,7 @@ import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
 public final class BeaconBlock {
 
   // Header
-  private long slot;
+  private UnsignedLong slot;
   private Bytes32 parent_root;
   private Bytes32 state_root;
 
@@ -36,7 +38,7 @@ public final class BeaconBlock {
   private BLSSignature signature;
 
   public BeaconBlock(
-      long slot,
+      UnsignedLong slot,
       Bytes32 parent_root,
       Bytes32 state_root,
       BeaconBlockBody body,
@@ -53,7 +55,7 @@ public final class BeaconBlock {
         bytes,
         reader ->
             new BeaconBlock(
-                reader.readUInt64(),
+                UnsignedLong.fromLongBits(reader.readUInt64()),
                 Bytes32.wrap(reader.readFixedBytes(32)),
                 Bytes32.wrap(reader.readFixedBytes(32)),
                 BeaconBlockBody.fromBytes(reader.readBytes()),
@@ -63,7 +65,7 @@ public final class BeaconBlock {
   public Bytes toBytes() {
     return SSZ.encode(
         writer -> {
-          writer.writeUInt64(slot);
+          writer.writeUInt64(slot.longValue());
           writer.writeFixedBytes(32, parent_root);
           writer.writeFixedBytes(32, state_root);
           writer.writeBytes(body.toBytes());
@@ -91,7 +93,7 @@ public final class BeaconBlock {
     }
 
     BeaconBlock other = (BeaconBlock) obj;
-    return slot == other.getSlot()
+    return Objects.equals(this.getSlot(), other.getSlot())
         && Objects.equals(this.getParent_root(), other.getParent_root())
         && Objects.equals(this.getState_root(), other.getState_root())
         && Objects.equals(this.getBody(), other.getBody())
@@ -131,15 +133,15 @@ public final class BeaconBlock {
     this.parent_root = parent_root;
   }
 
-  public long getSlot() {
+  public UnsignedLong getSlot() {
     return slot;
   }
 
-  public void setSlot(long slot) {
+  public void setSlot(UnsignedLong slot) {
     this.slot = slot;
   }
 
-  public Bytes32 signed_root(String truncation_param) {
+  public Bytes32 signing_root(String truncation_param) {
     if (!truncation_param.equals("signature")) {
       throw new UnsupportedOperationException(
           "Only signed_root(beaconBlock, \"signature\") is currently supported for type BeaconBlock.");
@@ -148,7 +150,7 @@ public final class BeaconBlock {
     return Bytes32.rightPad(
         HashTreeUtil.merkleize(
             Arrays.asList(
-                HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(slot)),
+                HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(slot.longValue())),
                 HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, parent_root),
                 HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, state_root),
                 body.hash_tree_root())));
@@ -157,7 +159,7 @@ public final class BeaconBlock {
   public Bytes32 hash_tree_root() {
     return HashTreeUtil.merkleize(
         Arrays.asList(
-            HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(slot)),
+            HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(slot.longValue())),
             HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, parent_root),
             HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, state_root),
             body.hash_tree_root(),

@@ -31,11 +31,11 @@ import tech.pegasys.artemis.util.hashtree.Merkleizable;
 public class Deposit implements Merkleizable {
 
   private List<Bytes32> proof; // Bounded by DEPOSIT_CONTRACT_TREE_DEPTH
-  private DepositData deposit_data;
+  private DepositData data;
 
-  public Deposit(List<Bytes32> proof, DepositData deposit_data) {
+  public Deposit(List<Bytes32> proof, DepositData data) {
     this.proof = proof;
-    this.deposit_data = deposit_data;
+    this.data = data;
   }
 
   public static Deposit fromBytes(Bytes bytes) {
@@ -70,7 +70,7 @@ public class Deposit implements Merkleizable {
 
   @Override
   public int hashCode() {
-    return Objects.hash(proof, deposit_data);
+    return Objects.hash(proof, data);
   }
 
   @Override
@@ -89,7 +89,7 @@ public class Deposit implements Merkleizable {
 
     Deposit other = (Deposit) obj;
     return Objects.equals(this.getProof(), other.getProof())
-        && Objects.equals(this.getDeposit_data(), other.getDeposit_data());
+        && Objects.equals(this.getData(), other.getData());
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */
@@ -101,12 +101,12 @@ public class Deposit implements Merkleizable {
     this.proof = branch;
   }
 
-  public DepositData getDeposit_data() {
-    return deposit_data;
+  public DepositData getData() {
+    return data;
   }
 
-  public void setDeposit_data(DepositData deposit_data) {
-    this.deposit_data = deposit_data;
+  public void setData(DepositData data) {
+    this.data = data;
   }
 
   @Override
@@ -115,6 +115,6 @@ public class Deposit implements Merkleizable {
         Arrays.asList(
             // TODO Look at this - is this a TUPLE_OF_COMPOSITE
             HashTreeUtil.hash_tree_root(SSZTypes.BASIC, proof.toArray(new Bytes32[0])),
-            deposit_data.hash_tree_root()));
+            data.hash_tree_root()));
   }
 }
