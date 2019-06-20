@@ -17,4 +17,8 @@ public final class SlotProcessingException extends Exception {
   public SlotProcessingException(String err) {
     super(err);
   }
+
+  public SlotProcessingException(RuntimeException e) {
+    super(e.toString());
+  }
 }

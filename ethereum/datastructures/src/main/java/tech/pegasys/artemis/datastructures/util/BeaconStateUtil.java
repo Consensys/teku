@@ -23,7 +23,9 @@ import static tech.pegasys.artemis.datastructures.Constants.GENESIS_EPOCH;
 import static tech.pegasys.artemis.datastructures.Constants.LATEST_ACTIVE_INDEX_ROOTS_LENGTH;
 import static tech.pegasys.artemis.datastructures.Constants.LATEST_RANDAO_MIXES_LENGTH;
 import static tech.pegasys.artemis.datastructures.Constants.LATEST_SLASHED_EXIT_LENGTH;
+import static tech.pegasys.artemis.datastructures.Constants.MAX_DEPOSITS;
 import static tech.pegasys.artemis.datastructures.Constants.MAX_DEPOSIT_AMOUNT;
+import static tech.pegasys.artemis.datastructures.Constants.MAX_EFFECTIVE_BALANCE;
 import static tech.pegasys.artemis.datastructures.Constants.MAX_INDICES_PER_SLASHABLE_VOTE;
 import static tech.pegasys.artemis.datastructures.Constants.SHARD_COUNT;
 import static tech.pegasys.artemis.datastructures.Constants.SHUFFLE_ROUND_COUNT;
@@ -44,6 +46,8 @@ import java.util.ListIterator;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+
+import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.Hash;
@@ -119,84 +123,6 @@ public class BeaconStateUtil {
     return state;
   }
 
-  /**
-   * Process a deposit from Ethereum 1.0. Note that this function mutates ``state``.
-   *
-   * @param state
-   * @param deposit
-   */
-  public static void process_deposit(BeaconState state, Deposit deposit) {
-    DepositInput deposit_input = deposit.getDeposit_data().getSignature();
-
-    //   Should equal 8 bytes for deposit_data.amount +
-    //                8 bytes for deposit_data.timestamp +
-    //                176 bytes for deposit_data.deposit_input
-    //   It should match the deposit_data in the eth1.0 deposit contract
-    Bytes serialized_deposit_data = deposit.getDeposit_data().toBytes();
-
-    // Deposits must be processed in order
-    checkArgument(
-        Objects.equals(state.getDeposit_index(), deposit.getIndex()), "Deposits not in order");
-
-    // Verify the Merkle branch
-    //    checkArgument(
-    //        verify_merkle_branch(
-    //            Hash.keccak256(serialized_deposit_data),
-    //            deposit.getProof(),
-    //            Constants.DEPOSIT_CONTRACT_TREE_DEPTH,
-    //            toIntExact(deposit.getIndex().longValue()),
-    //            state.getLatest_eth1_data().getDeposit_root()),
-    //        "Merkle branch is not valid");
-
-    //  Increment the next deposit index we are expecting. Note that this
-    //  needs to be done here because while the deposit contract will never
-    //  create an invalid Merkle branch, it may admit an invalid deposit
-    //  object, and we need to be able to skip over it
-    state.setDeposit_index(state.getDeposit_index().plus(UnsignedLong.ONE));
-
-    List<BLSPublicKey> validator_pubkeys =
-        state.getValidator_registry().stream()
-            .map(Validator::getPubkey)
-            .collect(Collectors.toList());
-    BLSPublicKey pubkey = deposit_input.getPubkey();
-    UnsignedLong amount = deposit.getDeposit_data().getAmount();
-    Bytes32 withdrawal_credentials = deposit_input.getWithdrawal_credentials();
-
-    if (!validator_pubkeys.contains(pubkey)) {
-      // Verify the proof of possession
-      boolean proof_is_valid =
-          bls_verify(
-              pubkey,
-              deposit_input.signed_root("proof_of_possession"),
-              deposit_input.getProof_of_possession(),
-              get_domain(state.getFork(), get_current_epoch(state), DOMAIN_DEPOSIT));
-      if (!proof_is_valid) {
-        return;
-      }
-
-      // Add new validator
-      Validator validator =
-          new Validator(
-              pubkey,
-              withdrawal_credentials,
-              FAR_FUTURE_EPOCH,
-              FAR_FUTURE_EPOCH,
-              FAR_FUTURE_EPOCH,
-              false,
-              false);
-
-      // Note: In phase 2 registry indices that have been withdrawn for a long time will be
-      // recycled.
-      state.getValidator_registry().add(validator);
-      state.getValidator_balances().add(amount);
-    } else {
-      // Increase balance by deposit amount
-      int index = validator_pubkeys.indexOf(pubkey);
-      state
-          .getValidator_balances()
-          .set(index, state.getValidator_balances().get(index).plus(amount));
-    }
-  }
 
   /**
    * Verify that the given ``leaf`` is on the merkle branch ``proof`` starting with the given
