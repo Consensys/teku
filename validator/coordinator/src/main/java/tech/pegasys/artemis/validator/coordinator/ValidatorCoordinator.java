@@ -116,16 +116,16 @@ public class ValidatorCoordinator {
     checkArgument(
         bls_verify(
             proposer.getPubkey(),
-            block.signed_root("signature"),
+            block.signing_root("signature"),
             block.getSignature(),
             get_domain(
-                headState.getFork(), get_current_epoch(headState), Constants.DOMAIN_BEACON_BLOCK)),
+                headState.getFork(), get_current_epoch(headState), Constants.DOMAIN_BEACON_PROPOSER)),
         "Proposer signature is invalid");
 
     BeaconBlockHeader blockHeader =
         new BeaconBlockHeader(
             UnsignedLong.valueOf(block.getSlot()),
-            block.getPrevious_block_root(),
+            block.getParent_root(),
             block.getState_root(),
             block.getBody().hash_tree_root(),
             block.getSignature());
@@ -232,16 +232,16 @@ public class ValidatorCoordinator {
         get_domain(
                 state.getFork(),
                 BeaconStateUtil.slot_to_epoch(UnsignedLong.valueOf(block.getSlot())),
-                Constants.DOMAIN_BEACON_BLOCK)
+                Constants.DOMAIN_BEACON_PROPOSER)
             .intValue();
 
-    Bytes32 blockRoot = block.signed_root("signature");
+    Bytes32 blockRoot = block.signing_root("signature");
 
     return getSignature(blockRoot, domain, proposer);
   }
 
   private BeaconBlock createInitialBlock(BeaconStateWithCache state, BeaconBlock oldBlock) {
-    Bytes32 blockRoot = oldBlock.signed_root("signature");
+    Bytes32 blockRoot = oldBlock.signing_root("signature");
     List<Attestation> current_attestations = new ArrayList<>();
     final Bytes32 MockStateRoot = Bytes32.ZERO;
 
@@ -332,8 +332,8 @@ public class ValidatorCoordinator {
               }
             });
         slashings = new LinkedBlockingQueue<>();
-        stateTransition.initiate(newState, newBlock);
-        Bytes32 stateRoot = newState.hash_tree_root();
+        boolean validate_state_root = false;
+        Bytes32 stateRoot = stateTransition.initiate(newState, newBlock, validate_state_root);
         newBlock.setState_root(stateRoot);
         BLSSignature blockSignature = getBlockSignature(newState, newBlock, proposer);
         newBlock.setSignature(blockSignature);
@@ -345,8 +345,7 @@ public class ValidatorCoordinator {
           BeaconBlock newestBlock = createInitialBlock(naughtyState, oldBlock);
           BLSSignature eSignature = epochSignatureTask.get();
           newestBlock.getBody().setRandao_reveal(eSignature);
-          stateTransition.initiate(naughtyState, newestBlock);
-          Bytes32 sRoot = newState.hash_tree_root();
+          Bytes32 sRoot = stateTransition.initiate(naughtyState, newestBlock, validate_state_root);
           newestBlock.setState_root(sRoot);
           BLSSignature bSignature = getBlockSignature(naughtyState, newestBlock, proposer);
           newestBlock.setSignature(bSignature);
