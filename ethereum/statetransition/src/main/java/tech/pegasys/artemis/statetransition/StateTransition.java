@@ -41,6 +41,7 @@ import tech.pegasys.artemis.statetransition.util.BlockProcessingException;
 import tech.pegasys.artemis.statetransition.util.BlockProcessorUtil;
 import tech.pegasys.artemis.statetransition.util.EpochProcessingException;
 import tech.pegasys.artemis.statetransition.util.EpochProcessorUtil;
+import tech.pegasys.artemis.statetransition.util.SlotProcessingException;
 import tech.pegasys.artemis.util.alogger.ALogger;
 
 public class StateTransition {
@@ -67,20 +68,27 @@ public class StateTransition {
    */
   public BeaconState initiate(BeaconStateWithCache state, BeaconBlock block, boolean validate_state_root)
       throws StateTransitionException {
+    try {
+      // Process slots (including those with no blocks) since block
+      process_slots(state, block.getSlot());
 
-    // Process slots (including those with no blocks) since block
-    process_slots(state, block.getSlot());
+      // Process_block
+      process_block(state, block);
 
-    // Process_blok
-    process_block(state, block);
+      // Validate state root (`validate_state_root == True` in production)
+      if (validate_state_root) {
+        checkArgument(block.getState_root().equals(state.hash_tree_root()));
+      }
 
-    // Validate state root (`validate_state_root == True` in production)
-    if (validate_state_root) {
-      checkArgument(block.getState_root().equals(state.hash_tree_root()));
+      // Return post-state
+      return state;
+    } catch (SlotProcessingException
+            | BlockProcessingException
+            | EpochProcessingException
+            | IllegalArgumentException e) {
+      STDOUT.log(Level.WARN, "  State Transition error: " + e, printEnabled);
+      throw new StateTransitionException(e.toString());
     }
-
-    // Return post-state
-    return state;
   }
 
   /**
@@ -89,18 +97,14 @@ public class StateTransition {
    * Processes block
    * @param state
    * @param block
+   * @throws BlockProcessingException
    */
-  private void process_block(BeaconStateWithCache state, BeaconBlock block) {
-    try {
-
-      process_block_header(state, block);
-      process_randao(state, block.getBody());
-      process_eth1_data(state, block.getBody());
-      process_operations(state, block.getBody());
-
-    } catch (BlockProcessingException e) {
-      STDOUT.log(Level.WARN, "  Block processing error: " + e, printEnabled);
-    }
+  private void process_block(BeaconStateWithCache state, BeaconBlock block)
+          throws BlockProcessingException{
+    process_block_header(state, block);
+    process_randao(state, block.getBody());
+    process_eth1_data(state, block.getBody());
+    process_operations(state, block.getBody());
   }
 
   /**
@@ -109,10 +113,9 @@ public class StateTransition {
    * https://github.com/ethereum/eth2.0-specs/blob/v0.7.1/specs/core/0_beacon-chain.md#beacon-chain-state-transition-function
    * Processes epoch
    * @param state
+   * @throws EpochProcessingException
    */
-  private void process_epoch(BeaconStateWithCache state) {
-    try {
-
+  private void process_epoch(BeaconStateWithCache state) throws EpochProcessingException {
     // Note: the lines with @ label here will be inserted here in a future phase
     process_justification_and_finalization(state);
     process_crosslinks(state);
@@ -123,10 +126,6 @@ public class StateTransition {
     process_slashings(state);
     process_final_updates(state);
     // @after_process_final_updates
-
-    } catch (EpochProcessingException e) {
-      STDOUT.log(Level.WARN, "  Epoch processing error: " + e, printEnabled);
-    }
   }
 
   /**
@@ -159,15 +158,20 @@ public class StateTransition {
    * @param state
    * @param slot
    */
-  public void process_slots(BeaconStateWithCache state, UnsignedLong slot) {
-    checkArgument(state.getSlot().compareTo(slot) <= 0, "process_slots error");
-    while (state.getSlot().compareTo(slot) < 0) {
-      process_slot(state);
-      // Process epoch on the first slot of the next epoch
-      if (state.getSlot().plus(UnsignedLong.ONE).mod(UnsignedLong.valueOf(SLOTS_PER_EPOCH)).equals(UnsignedLong.ZERO)) {
-        process_epoch(state);
+  public void process_slots(BeaconStateWithCache state, UnsignedLong slot) throws SlotProcessingException, EpochProcessingException {
+    try {
+      checkArgument(state.getSlot().compareTo(slot) <= 0, "process_slots: State slot higher than given slot");
+      while (state.getSlot().compareTo(slot) < 0) {
+        process_slot(state);
+        // Process epoch on the first slot of the next epoch
+        if (state.getSlot().plus(UnsignedLong.ONE).mod(UnsignedLong.valueOf(SLOTS_PER_EPOCH)).equals(UnsignedLong.ZERO)) {
+          process_epoch(state);
+        }
+        state.setSlot(state.getSlot().plus(UnsignedLong.ONE));
       }
-      state.setSlot(state.getSlot().plus(UnsignedLong.ONE));
+    } catch (IllegalArgumentException e) {
+      STDOUT.log(Level.WARN, e.getMessage());
+      throw new SlotProcessingException(e);
     }
   }
 }
