@@ -17,4 +17,8 @@ public class StateTransitionException extends Exception {
   public StateTransitionException(String message) {
     super(message);
   }
+
+  public StateTransitionException(RuntimeException e) {
+    super(e.toString());
+  }
 }
