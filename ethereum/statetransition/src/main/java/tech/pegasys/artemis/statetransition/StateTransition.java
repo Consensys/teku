@@ -46,7 +46,6 @@ import tech.pegasys.artemis.util.alogger.ALogger;
 public class StateTransition {
 
   private static final ALogger STDOUT = new ALogger("stdout");
-  private static final ALogger LOG = new ALogger(StateTransition.class.getName());
 
   private boolean printEnabled = false;
 
@@ -56,7 +55,16 @@ public class StateTransition {
     this.printEnabled = printEnabled;
   }
 
-  // @v0.7.1
+  /**
+   * v0.7.1
+   * https://github.com/ethereum/eth2.0-specs/blob/v0.7.1/specs/core/0_beacon-chain.md#beacon-chain-state-transition-function
+   * Runs state transition up to and with the given block
+   * @param state
+   * @param block
+   * @param validate_state_root
+   * @return
+   * @throws StateTransitionException
+   */
   public BeaconState initiate(BeaconStateWithCache state, BeaconBlock block, boolean validate_state_root)
       throws StateTransitionException {
 
@@ -75,7 +83,13 @@ public class StateTransition {
     return state;
   }
 
-  // @v0.7.1
+  /**
+   * v0.7.1
+   * https://github.com/ethereum/eth2.0-specs/blob/v0.7.1/specs/core/0_beacon-chain.md#beacon-chain-state-transition-function
+   * Processes block
+   * @param state
+   * @param block
+   */
   private void process_block(BeaconStateWithCache state, BeaconBlock block) {
     try {
 
@@ -89,7 +103,13 @@ public class StateTransition {
     }
   }
 
-  // @v0.7.1
+  /**
+   *
+   * v0.7.1
+   * https://github.com/ethereum/eth2.0-specs/blob/v0.7.1/specs/core/0_beacon-chain.md#beacon-chain-state-transition-function
+   * Processes epoch
+   * @param state
+   */
   private void process_epoch(BeaconStateWithCache state) {
     try {
 
@@ -109,7 +129,13 @@ public class StateTransition {
     }
   }
 
-  // @v0.7.1
+  /**
+   *
+   * v0.7.1
+   * https://github.com/ethereum/eth2.0-specs/blob/v0.7.1/specs/core/0_beacon-chain.md#beacon-chain-state-transition-function
+   * Processes slot
+   * @param state
+   */
   public static void process_slot(BeaconState state) {
     // Cache state root
     Bytes32 previous_state_root = state.hash_tree_root();
@@ -126,7 +152,13 @@ public class StateTransition {
     state.getLatest_block_roots().set(index, previous_block_root);
   }
 
-  // @v0.7.1
+  /**
+   * v0.7.1
+   * https://github.com/ethereum/eth2.0-specs/blob/v0.7.1/specs/core/0_beacon-chain.md#beacon-chain-state-transition-function
+   * Processes slots through state slot through given slot
+   * @param state
+   * @param slot
+   */
   public void process_slots(BeaconStateWithCache state, UnsignedLong slot) {
     checkArgument(state.getSlot().compareTo(slot) <= 0, "process_slots error");
     while (state.getSlot().compareTo(slot) < 0) {

@@ -165,7 +165,7 @@ public final class BlockProcessorUtil {
                 SSZTypes.BASIC, SSZ.encodeUInt64(get_current_epoch(state).longValue())),
             body.getRandao_reveal(),
             get_domain(state, DOMAIN_RANDAO)),
-        "Verify that the provided randao value is valid");
+        "process_randao: Verify that the provided randao value is valid");
 
     // Mix it in
     int index =
