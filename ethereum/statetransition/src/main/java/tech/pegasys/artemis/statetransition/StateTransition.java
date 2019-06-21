@@ -48,6 +48,9 @@ public class StateTransition {
 
   private static final ALogger STDOUT = new ALogger("stdout");
 
+  public static final String ANSI_RESET = "\u001B[0m";
+  public static final String ANSI_RED = "\u001B[31m";
+
   private boolean printEnabled = false;
 
   public StateTransition() {}
@@ -66,7 +69,7 @@ public class StateTransition {
    * @return
    * @throws StateTransitionException
    */
-  public BeaconState initiate(BeaconStateWithCache state, BeaconBlock block, boolean validate_state_root)
+  public Bytes32 initiate(BeaconStateWithCache state, BeaconBlock block, boolean validate_state_root)
       throws StateTransitionException {
     try {
       // Process slots (including those with no blocks) since block
@@ -75,13 +78,16 @@ public class StateTransition {
       // Process_block
       process_block(state, block);
 
+      Bytes32 stateRoot = state.hash_tree_root();
       // Validate state root (`validate_state_root == True` in production)
       if (validate_state_root) {
-        checkArgument(block.getState_root().equals(state.hash_tree_root()));
+        checkArgument(block.getState_root().equals(stateRoot),
+                ANSI_RED + "Block state root does NOT match the calculated state root!\n"
+                        + "Block state root: " + block.getState_root().toHexString()
+                        + "New state root: " + stateRoot.toHexString() + ANSI_RESET);
       }
 
-      // Return post-state
-      return state;
+      return stateRoot;
     } catch (SlotProcessingException
             | BlockProcessingException
             | EpochProcessingException
@@ -135,7 +141,7 @@ public class StateTransition {
    * Processes slot
    * @param state
    */
-  public static void process_slot(BeaconState state) {
+  private static void process_slot(BeaconState state) {
     // Cache state root
     Bytes32 previous_state_root = state.hash_tree_root();
     int index = state.getSlot().mod(UnsignedLong.valueOf(SLOTS_PER_HISTORICAL_ROOT)).intValue();
@@ -160,7 +166,7 @@ public class StateTransition {
    * @throws EpochProcessingException
    * @throws SlotProcessingException
    */
-  public void process_slots(BeaconStateWithCache state, UnsignedLong slot) throws SlotProcessingException, EpochProcessingException {
+  public static void process_slots(BeaconStateWithCache state, UnsignedLong slot) throws SlotProcessingException, EpochProcessingException {
     try {
       checkArgument(state.getSlot().compareTo(slot) <= 0, "process_slots: State slot higher than given slot");
       while (state.getSlot().compareTo(slot) < 0) {
