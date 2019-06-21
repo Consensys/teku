@@ -18,34 +18,44 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt64;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.artemis.networking.p2p.hobbits.rpc.GetStatusMessage;
+import tech.pegasys.artemis.networking.p2p.hobbits.rpc.HelloMessage;
+import tech.pegasys.artemis.networking.p2p.hobbits.rpc.RPCCodec;
+import tech.pegasys.artemis.networking.p2p.hobbits.rpc.RequestBlocksMessage;
 
 class JsonRoundtripTest {
 
   @Test
   void roundtripGetStatus() throws Exception {
-    GetStatus status = new GetStatus("foo", 123);
-    byte[] value = RPCCodec.mapper.writerFor(GetStatus.class).writeValueAsBytes(status);
-    GetStatus read = RPCCodec.mapper.readerFor(GetStatus.class).readValue(value);
+    GetStatusMessage status = new GetStatusMessage("foo", 123);
+    byte[] value = RPCCodec.getMapper().writerFor(GetStatusMessage.class).writeValueAsBytes(status);
+    GetStatusMessage read = RPCCodec.getMapper().readerFor(GetStatusMessage.class).readValue(value);
     assertEquals("foo", read.userAgent());
     assertEquals(123, read.timestamp());
   }
 
   @Test
   void roundtripHello() throws Exception {
-    Hello hello =
-        new Hello(1, 1, Bytes32.random(), UInt64.valueOf(0), Bytes32.random(), UInt64.valueOf(0));
-    byte[] value = RPCCodec.mapper.writerFor(Hello.class).writeValueAsBytes(hello);
-    Hello read = RPCCodec.mapper.readerFor(Hello.class).readValue(value);
+    HelloMessage hello =
+        new HelloMessage(
+            1, 1, Bytes32.random(), UInt64.valueOf(0), Bytes32.random(), UInt64.valueOf(0));
+    byte[] value = RPCCodec.getMapper().writerFor(HelloMessage.class).writeValueAsBytes(hello);
+    HelloMessage read = RPCCodec.getMapper().readerFor(HelloMessage.class).readValue(value);
     assertEquals(hello.bestRoot(), read.bestRoot());
     assertEquals(hello.networkId(), read.networkId());
   }
 
   @Test
   void roundtripRequestBlocks() throws Exception {
-    RequestBlocks requestBlocks = new RequestBlocks(Bytes32.random(), 123, 3, 2, 1);
-    byte[] value = RPCCodec.mapper.writerFor(RequestBlocks.class).writeValueAsBytes(requestBlocks);
-    RequestBlocks read = RPCCodec.mapper.readerFor(RequestBlocks.class).readValue(value);
-    assertEquals(requestBlocks.startRoot(), read.startRoot());
-    assertEquals(requestBlocks.direction(), read.direction());
+    RequestBlocksMessage requestBlocksMessage =
+        new RequestBlocksMessage(Bytes32.random(), 123, 3, 2, 1);
+    byte[] value =
+        RPCCodec.getMapper()
+            .writerFor(RequestBlocksMessage.class)
+            .writeValueAsBytes(requestBlocksMessage);
+    RequestBlocksMessage read =
+        RPCCodec.getMapper().readerFor(RequestBlocksMessage.class).readValue(value);
+    assertEquals(requestBlocksMessage.startRoot(), read.startRoot());
+    assertEquals(requestBlocksMessage.direction(), read.direction());
   }
 }

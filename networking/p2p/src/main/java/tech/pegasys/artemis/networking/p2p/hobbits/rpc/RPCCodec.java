@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.networking.p2p.hobbits;
+package tech.pegasys.artemis.networking.p2p.hobbits.rpc;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -27,6 +27,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import javax.annotation.Nullable;
 import org.apache.tuweni.bytes.Bytes;
 import org.xerial.snappy.Snappy;
+import tech.pegasys.artemis.networking.p2p.hobbits.Codec;
 import tech.pegasys.artemis.util.json.BytesModule;
 
 public final class RPCCodec implements Codec {
@@ -46,6 +47,15 @@ public final class RPCCodec implements Codec {
   }
 
   private RPCCodec() {}
+
+  /**
+   * Gets the json object mapper
+   *
+   * @return
+   */
+  public static ObjectMapper getMapper() {
+    return mapper;
+  }
 
   /**
    * Creates an empty goodbye message.

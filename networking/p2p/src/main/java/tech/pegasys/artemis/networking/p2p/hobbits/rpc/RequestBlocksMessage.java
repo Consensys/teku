@@ -11,13 +11,13 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.networking.p2p.hobbits;
+package tech.pegasys.artemis.networking.p2p.hobbits.rpc;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.tuweni.bytes.Bytes32;
 
-final class RequestBlocks {
+public final class RequestBlocksMessage {
 
   private final Bytes32 startRoot;
   private final long startSlot;
@@ -26,7 +26,7 @@ final class RequestBlocks {
   private final boolean direction;
 
   @JsonCreator
-  RequestBlocks(
+  public RequestBlocksMessage(
       @JsonProperty("start_root") Bytes32 startRoot,
       @JsonProperty("start_slot") long startSlot,
       @JsonProperty("max") long max,

@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.networking.p2p.hobbits;
+package tech.pegasys.artemis.networking.p2p.hobbits.rpc;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonValue;
@@ -28,17 +28,17 @@ import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 
-@JsonDeserialize(using = BlockBodies.BlockBodiesDeserializer.class)
-final class BlockBodies {
+@JsonDeserialize(using = BlockBodiesMessage.BlockBodiesDeserializer.class)
+public final class BlockBodiesMessage {
 
-  static class BlockBodiesDeserializer extends StdDeserializer<BlockBodies> {
+  static class BlockBodiesDeserializer extends StdDeserializer<BlockBodiesMessage> {
 
     protected BlockBodiesDeserializer() {
-      super(BlockBodies.class);
+      super(BlockBodiesMessage.class);
     }
 
     @Override
-    public BlockBodies deserialize(JsonParser jp, DeserializationContext ctxt)
+    public BlockBodiesMessage deserialize(JsonParser jp, DeserializationContext ctxt)
         throws IOException, JsonProcessingException {
       JsonNode node = jp.getCodec().readTree(jp);
       Iterator<JsonNode> iterator = node.iterator();
@@ -47,7 +47,7 @@ final class BlockBodies {
         JsonNode child = iterator.next();
         elts.add(BeaconBlock.fromBytes(Bytes.wrap(child.get("bytes").binaryValue())));
       }
-      return new BlockBodies(elts);
+      return new BlockBodiesMessage(elts);
     }
   }
 
@@ -67,7 +67,7 @@ final class BlockBodies {
 
   private final List<BeaconBlock> bodies;
 
-  BlockBodies(List<BeaconBlock> bodies) {
+  BlockBodiesMessage(List<BeaconBlock> bodies) {
     this.bodies = bodies;
   }
 
