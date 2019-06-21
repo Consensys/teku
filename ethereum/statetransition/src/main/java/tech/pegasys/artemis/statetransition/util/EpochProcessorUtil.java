@@ -13,9 +13,7 @@
 
 package tech.pegasys.artemis.statetransition.util;
 
-<<<<<<< HEAD
 import static com.google.common.base.Preconditions.checkArgument;
-=======
 import com.google.common.primitives.UnsignedLong;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.logging.log4j.Level;
@@ -47,7 +45,6 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
->>>>>>> V0.7.1 integration (#1)
 import static java.lang.Math.toIntExact;
 import static tech.pegasys.artemis.datastructures.Constants.ACTIVATION_EXIT_DELAY;
 import static tech.pegasys.artemis.datastructures.Constants.BASE_REWARDS_PER_EPOCH;
