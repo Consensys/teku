@@ -7,3 +7,6 @@
 [submodule "ganache-cli"]
 	path = ganache-cli
 	url = https://github.com/trufflesuite/ganache-cli.git
+[submodule "eth-reference-tests/src/test/resources/eth2.0-spec-tests"]
+	path = eth-reference-tests/src/test/resources/eth2.0-spec-tests
+	url = git@github.com:ethereum/eth2.0-spec-tests.git
