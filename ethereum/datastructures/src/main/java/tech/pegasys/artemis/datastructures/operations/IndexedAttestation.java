@@ -52,6 +52,37 @@ public class IndexedAttestation implements Merkleizable {
     this.signature = new BLSSignature(indexedAttestation.getSignature().getSignature());
   }
 
+  //TODO Indexed Attestation should be converted to unsigned longs before serialization
+  public static IndexedAttestation fromBytes(Bytes bytes) {
+    return SSZ.decode(
+        bytes,
+        reader ->
+            new IndexedAttestation(
+                reader.readUInt64List().stream()
+                            .map(UnsignedLong::fromLongBits)
+                            .collect(Collectors.toList()),
+                reader.readUInt64List().stream()
+                            .map(UnsignedLong::fromLongBits)
+                            .collect(Collectors.toList()),
+                AttestationData.fromBytes(reader.readBytes()),
+                BLSSignature.fromBytes(reader.readBytes())));
+  }
+
+  //TODO Indexed Attestation should be converted to unsigned longs before serialization
+  public Bytes toBytes() {
+    return SSZ.encode(
+        writer -> {
+          writer.writeULongIntList(
+              64,
+              custody_bit_0_indices.stream().map(UnsignedLong::longValue).collect(Collectors.toList()));
+           writer.writeULongIntList(
+              64,
+              custody_bit_1_indices.stream().map(UnsignedLong::longValue).collect(Collectors.toList()));
+          writer.writeBytes(data.toBytes());
+          writer.writeBytes(signature.toBytes());
+        });
+  }
+
   @Override
   public int hashCode() {
     return Objects.hash(custody_bit_0_indices, custody_bit_1_indices, data, signature);
@@ -110,5 +141,23 @@ public class IndexedAttestation implements Merkleizable {
 
   public void setSignature(BLSSignature signature) {
     this.signature = signature;
+  }
+
+  @Override
+  public Bytes32 hash_tree_root() {
+    return HashTreeUtil.merkleize(
+        Arrays.asList(
+                HashTreeUtil.hash_tree_root(
+                        SSZTypes.LIST_OF_BASIC,
+                        custody_bit_0_indices.stream()
+                                .map(item -> SSZ.encodeUInt64(item.longValue()))
+                                .collect(Collectors.toList())),
+                HashTreeUtil.hash_tree_root(
+                        SSZTypes.LIST_OF_BASIC,
+                        custody_bit_1_indices.stream()
+                                .map(item -> SSZ.encodeUInt64(item.longValue()))
+                                .collect(Collectors.toList())),
+            data.hash_tree_root(),
+            HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, signature.toBytes())));
   }
 }
