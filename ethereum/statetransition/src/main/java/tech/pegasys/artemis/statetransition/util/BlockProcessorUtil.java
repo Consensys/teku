@@ -36,6 +36,11 @@ import static tech.pegasys.artemis.datastructures.Constants.PERSISTENT_COMMITTEE
 import static tech.pegasys.artemis.datastructures.Constants.SLOTS_PER_EPOCH;
 import static tech.pegasys.artemis.datastructures.Constants.SLOTS_PER_ETH1_VOTING_PERIOD;
 import static tech.pegasys.artemis.datastructures.Constants.ZERO_HASH;
+import static tech.pegasys.artemis.datastructures.util.AttestationUtil.convert_to_indexed;
+import static tech.pegasys.artemis.datastructures.util.AttestationUtil.get_attestation_data_slot;
+import static tech.pegasys.artemis.datastructures.util.AttestationUtil.is_slashable_attestation_data;
+import static tech.pegasys.artemis.datastructures.util.AttestationUtil.validate_indexed_attestation;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.bls_domain;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_attestation_participants;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_beacon_proposer_index;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_bitfield_bit;
@@ -54,7 +59,9 @@ import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.slash_val
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.slot_to_epoch;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.verify_merkle_branch;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.verify_slashable_attestation;
+import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.increase_balance;
 import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.is_active_validator;
+import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.is_slashable_validator;
 import static tech.pegasys.artemis.util.bls.BLSAggregate.bls_aggregate_pubkeys;
 import static tech.pegasys.artemis.util.bls.BLSVerify.bls_verify;
 import static tech.pegasys.artemis.util.bls.BLSVerify.bls_verify_multiple;
