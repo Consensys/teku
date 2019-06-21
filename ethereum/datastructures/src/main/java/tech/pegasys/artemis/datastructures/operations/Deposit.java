@@ -64,7 +64,7 @@ public class Deposit implements Merkleizable {
     return SSZ.encode(
         writer -> {
           writer.writeFixedBytesVector(filledProofList);
-          writer.writeBytes(deposit_data.toBytes());
+          writer.writeBytes(data.toBytes());
         });
   }
 

@@ -15,14 +15,15 @@ package tech.pegasys.artemis.datastructures.util;
 
 import com.google.common.collect.Sets;
 import com.google.common.primitives.UnsignedLong;
+import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.datastructures.state.Validator;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.datastructures.state.Validator;
 
 public class ValidatorsUtil {
 
@@ -63,18 +64,18 @@ public class ValidatorsUtil {
   }
 
   /**
-   * Get indices of active validators from ``validators``.
+   * Get active validator indices at ``epoch``.
    *
-   * @param validators - The list of validators under consideration.
+   * @param state - Current BeaconState
    * @param epoch - The epoch under consideration.
    * @return A list of indices representing the active validators for the given epoch.
-   * @see <a
-   *     href="https://github.com/ethereum/eth2.0-specs/blob/v0.4.0/specs/core/0_beacon-chain.md#get_active_validator_indices">get_active_validator_indices
-   *     - Spec v0.4</a>
+   *
+   * @see <a>https://github.com/ethereum/eth2.0-specs/blob/v0.7.1/specs/core/0_beacon-chain.md#get_active_validator_indices</a>
    */
   public static List<Integer> get_active_validator_indices(
-      List<Validator> validators, UnsignedLong epoch) {
+      BeaconState state, UnsignedLong epoch) {
     List<Integer> active_validator_indices = Collections.synchronizedList(new ArrayList<>());
+    List<Validator> validators = state.getValidator_registry();
     IntStream.range(0, validators.size())
         .parallel()
         .forEachOrdered(
@@ -116,5 +117,45 @@ public class ValidatorsUtil {
     // the list provided
     set_of_indices.removeAll(set_of_validator_indices);
     return new ArrayList<>(set_of_indices);
+  }
+
+  /**
+   * Decrease validator balance by ``delta`` with underflow protection.
+   *
+   * @param state
+   * @param index
+   * @param delta
+   *
+   * @see <a>https://github.com/ethereum/eth2.0-specs/blob/v0.7.1/specs/core/0_beacon-chain.md#decrease_balance</a>
+   */
+  public static void decrease_balance(BeaconState state, int index, UnsignedLong delta){
+    UnsignedLong deltaBalance = delta.compareTo(state.getBalances().get(index)) > 0 ? UnsignedLong.ZERO : state.getBalances().get(index).minus(delta);
+    state.getBalances().set(index, deltaBalance);
+  }
+
+  /**
+   * Increase validator balance by ``delta``.
+   *
+   * @param state
+   * @param index
+   * @param delta
+   *
+   * @see <a>https://github.com/ethereum/eth2.0-specs/blob/v0.7.1/specs/core/0_beacon-chain.md#increase_balance</a>
+   */
+  public static void increase_balance(BeaconState state, int index, UnsignedLong delta){
+    state.getBalances().set(index, state.getBalances().get(index).plus(delta));
+  }
+
+  /**
+   * Determines if a validator has a balance that can be slashed
+   *
+   * @param validator
+   * @param epoch
+   * @return
+   *
+   * @see <a>https://github.com/ethereum/eth2.0-specs/blob/v0.7.1/specs/core/0_beacon-chain.md#is_slashable_validator<a/>
+   */
+  public static boolean is_slashable_validator(Validator validator, UnsignedLong epoch){
+    return !validator.isSlashed() && (validator.getActivation_epoch().compareTo(epoch) <= 0  && epoch.compareTo(validator.getWithdrawable_epoch()) < 0);
   }
 }
