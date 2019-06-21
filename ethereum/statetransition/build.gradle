@@ -16,7 +16,7 @@ dependencies {
 
   implementation 'org.apache.tuweni:tuweni-crypto'
   implementation 'org.apache.tuweni:tuweni-units'
-  implementation files("../../lib/tuweni-ssz-0.8.1-SNAPSHOT.jar")
+  implementation 'org.apache.tuweni:tuweni-ssz'
   implementation 'org.apache.tuweni:tuweni-config'
   implementation 'com.google.guava:guava'
   implementation 'com.google.code.gson:gson'
