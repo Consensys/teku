@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.networking.p2p.hobbits;
+package tech.pegasys.artemis.networking.p2p.hobbits.rpc;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonValue;
@@ -28,17 +28,17 @@ import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
 
-@JsonDeserialize(using = BlockHeaders.BlockHeadersDeserializer.class)
-final class BlockHeaders {
+@JsonDeserialize(using = BlockHeadersMessage.BlockHeadersDeserializer.class)
+public final class BlockHeadersMessage {
 
-  static class BlockHeadersDeserializer extends StdDeserializer<BlockHeaders> {
+  static class BlockHeadersDeserializer extends StdDeserializer<BlockHeadersMessage> {
 
     protected BlockHeadersDeserializer() {
-      super(BlockHeaders.class);
+      super(BlockHeadersMessage.class);
     }
 
     @Override
-    public BlockHeaders deserialize(JsonParser jp, DeserializationContext ctxt)
+    public BlockHeadersMessage deserialize(JsonParser jp, DeserializationContext ctxt)
         throws IOException, JsonProcessingException {
       JsonNode node = jp.getCodec().readTree(jp);
       Iterator<JsonNode> iterator = node.iterator();
@@ -47,7 +47,7 @@ final class BlockHeaders {
         JsonNode child = iterator.next();
         elts.add(BeaconBlockHeader.fromBytes(Bytes.wrap(child.get("bytes").binaryValue())));
       }
-      return new BlockHeaders(elts);
+      return new BlockHeadersMessage(elts);
     }
   }
 
@@ -67,7 +67,7 @@ final class BlockHeaders {
 
   private final List<BeaconBlockHeader> headers;
 
-  BlockHeaders(List<BeaconBlockHeader> headers) {
+  BlockHeadersMessage(List<BeaconBlockHeader> headers) {
     this.headers = headers;
   }
 

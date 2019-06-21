@@ -124,7 +124,7 @@ public final class HobbitsP2PNetwork implements P2PNetwork {
     if (handler != null) {
       vertx.executeBlocking(
           h -> {
-            handler.gossipMessage(verb, attributes, hash, Bytes32.random(), bytes);
+            handler.gossipMessage(verb.ordinal(), attributes, hash, Bytes32.random(), bytes);
           },
           res -> {});
     }
@@ -166,9 +166,16 @@ public final class HobbitsP2PNetwork implements P2PNetwork {
   }
 
   private void connectStaticPeers() {
-    for (URI peer : staticPeers) {
-      connect(peer);
-    }
+    staticPeers
+        .parallelStream()
+        .forEach(
+            uri -> {
+              connect(uri)
+                  .thenAccept(
+                      peer ->
+                          STDOUT.log(
+                              Level.INFO, "Connected to peer: " + ((Peer) peer).uri().getPort()));
+            });
   }
 
   private void receiveMessage(NetSocket netSocket) {

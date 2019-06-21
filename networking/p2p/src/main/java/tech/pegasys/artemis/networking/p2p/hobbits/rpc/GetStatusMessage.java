@@ -11,19 +11,19 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.networking.p2p.hobbits;
+package tech.pegasys.artemis.networking.p2p.hobbits.rpc;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /** Payload of status message */
-final class GetStatus {
+public final class GetStatusMessage {
 
   private final String userAgent;
   private final long timestamp;
 
   @JsonCreator
-  public GetStatus(
+  public GetStatusMessage(
       @JsonProperty("user_agent") String userAgent, @JsonProperty("timestamp") long timestamp) {
     this.userAgent = userAgent;
     this.timestamp = timestamp;

@@ -11,14 +11,14 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.networking.p2p.hobbits;
+package tech.pegasys.artemis.networking.p2p.hobbits.rpc;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt64;
 
-final class Hello {
+public final class HelloMessage {
 
   private final long networkId;
   private final long chainId;
@@ -28,7 +28,7 @@ final class Hello {
   private final UInt64 bestSlot;
 
   @JsonCreator
-  Hello(
+  public HelloMessage(
       @JsonProperty("network_id") long networkId,
       @JsonProperty("chain_id") long chainId,
       @JsonProperty("latest_finalized_root") Bytes32 latestFinalizedRoot,

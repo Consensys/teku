@@ -35,6 +35,14 @@ import org.apache.tuweni.units.bigints.UInt64;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.artemis.networking.p2p.hobbits.Codec.ProtocolType;
+import tech.pegasys.artemis.networking.p2p.hobbits.gossip.GossipCodec;
+import tech.pegasys.artemis.networking.p2p.hobbits.gossip.GossipMessage;
+import tech.pegasys.artemis.networking.p2p.hobbits.rpc.GetStatusMessage;
+import tech.pegasys.artemis.networking.p2p.hobbits.rpc.HelloMessage;
+import tech.pegasys.artemis.networking.p2p.hobbits.rpc.RPCCodec;
+import tech.pegasys.artemis.networking.p2p.hobbits.rpc.RPCMessage;
+import tech.pegasys.artemis.networking.p2p.hobbits.rpc.RPCMethod;
+import tech.pegasys.artemis.networking.p2p.hobbits.rpc.RequestBlocksMessage;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.util.alogger.ALogger;
 
@@ -116,14 +124,14 @@ public final class HobbitsSocketHandler {
       if (!pendingResponses.remove(rpcMessage.requestId())) {
         replyHello(rpcMessage.requestId());
       }
-      peer.setPeerHello(rpcMessage.bodyAs(Hello.class));
+      peer.setPeerHello(rpcMessage.bodyAs(HelloMessage.class));
     } else if (RPCMethod.GET_STATUS.equals(rpcMessage.method())) {
       if (!pendingResponses.remove(rpcMessage.requestId())) {
         replyStatus(rpcMessage.requestId());
       }
-      peer.setPeerStatus(rpcMessage.bodyAs(GetStatus.class));
+      peer.setPeerStatus(rpcMessage.bodyAs(GetStatusMessage.class));
     } else if (RPCMethod.REQUEST_BLOCK_HEADERS.equals(rpcMessage.method())) {
-      RequestBlocks rb = rpcMessage.bodyAs(RequestBlocks.class);
+      RequestBlocksMessage rb = rpcMessage.bodyAs(RequestBlocksMessage.class);
       List<Optional<BeaconBlock>> blocks =
           store.getProcessedBlocks(rb.startRoot(), rb.max(), rb.skip());
       List<Bytes> blockHeaders = new ArrayList<>();
@@ -144,7 +152,7 @@ public final class HobbitsSocketHandler {
         sendReply(RPCMethod.BLOCK_HEADERS, blockHeaders, rpcMessage.requestId());
       }
     } else if (RPCMethod.REQUEST_BLOCK_BODIES.equals(rpcMessage.method())) {
-      RequestBlocks rb = rpcMessage.bodyAs(RequestBlocks.class);
+      RequestBlocksMessage rb = rpcMessage.bodyAs(RequestBlocksMessage.class);
       List<Optional<BeaconBlock>> blocks =
           store.getProcessedBlocks(rb.startRoot(), rb.max(), rb.skip());
       List<Bytes> blockBodies = new ArrayList<>();
@@ -167,15 +175,15 @@ public final class HobbitsSocketHandler {
             + gossipMessage.method()
             + " from peer: "
             + peer.uri());
-    if (GossipMethod.GOSSIP.equals(gossipMessage.method())) {
+    if (MessageSender.Verb.GOSSIP.ordinal() == gossipMessage.method()) {
       peer.setPeerGossip(gossipMessage.body());
       p2pState.receiveGossipMessage(
           peer, gossipMessage.getAttributes(), gossipMessage.body(), gossipMessage.messageHash());
-    } else if (GossipMethod.PRUNE.equals(gossipMessage.method())) {
+    } else if (MessageSender.Verb.PRUNE.ordinal() == gossipMessage.method()) {
       p2pState.receivePruneMessage(peer);
-    } else if (GossipMethod.GRAFT.equals(gossipMessage.method())) {
+    } else if (MessageSender.Verb.GRAFT.ordinal() == gossipMessage.method()) {
       p2pState.receiveGraftMessage(peer, gossipMessage.messageHash());
-    } else if (GossipMethod.IHAVE.equals(gossipMessage.method())) {
+    } else if (MessageSender.Verb.IHAVE.ordinal() == gossipMessage.method()) {
       p2pState.receiveIHaveMessage(peer, gossipMessage.messageHash());
     } else {
       throw new UnsupportedOperationException(gossipMessage.method() + " is not supported");
@@ -202,11 +210,7 @@ public final class HobbitsSocketHandler {
   }
 
   public void gossipMessage(
-      MessageSender.Verb method,
-      String attributes,
-      Bytes messageHash,
-      Bytes32 hashSignature,
-      Bytes payload) {
+      int method, String attributes, Bytes messageHash, Bytes32 hashSignature, Bytes payload) {
     Bytes bytes = GossipCodec.encode(method, attributes, messageHash, hashSignature, payload);
     sendBytes(bytes);
   }
@@ -214,7 +218,7 @@ public final class HobbitsSocketHandler {
   public void replyHello(long requestId) {
     RPCCodec.encode(
         RPCMethod.HELLO,
-        new Hello(
+        new HelloMessage(
             1,
             1,
             store.getFinalizedBlockRoot(),
@@ -227,7 +231,7 @@ public final class HobbitsSocketHandler {
   public void sendHello() {
     sendMessage(
         RPCMethod.HELLO,
-        new Hello(
+        new HelloMessage(
             1,
             1,
             store.getFinalizedBlockRoot(),
@@ -238,11 +242,14 @@ public final class HobbitsSocketHandler {
 
   public void replyStatus(long requestId) {
     sendReply(
-        RPCMethod.GET_STATUS, new GetStatus(userAgent, Instant.now().toEpochMilli()), requestId);
+        RPCMethod.GET_STATUS,
+        new GetStatusMessage(userAgent, Instant.now().toEpochMilli()),
+        requestId);
   }
 
   public void sendStatus() {
-    sendMessage(RPCMethod.GET_STATUS, new GetStatus(userAgent, Instant.now().toEpochMilli()));
+    sendMessage(
+        RPCMethod.GET_STATUS, new GetStatusMessage(userAgent, Instant.now().toEpochMilli()));
   }
 
   public Peer peer() {
