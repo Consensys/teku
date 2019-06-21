@@ -24,20 +24,6 @@ import tech.pegasys.artemis.util.alogger.ALogger;
 
 public class BeaconBlockUtil {
   private static final ALogger LOG = new ALogger(BeaconBlockUtil.class.getName());
-  /**
-   * Return the block header corresponding to a block with ``state_root`` set to ``ZERO_HASH``.
-   *
-   * @param block
-   * @return
-   */
-  public static BeaconBlockHeader get_temporary_block_header(BeaconBlock block) {
-    return new BeaconBlockHeader(
-        UnsignedLong.valueOf(block.getSlot()),
-        block.getPrevious_block_root(),
-        Constants.ZERO_HASH,
-        block.getBody().hash_tree_root(),
-        Constants.EMPTY_SIGNATURE);
-  }
 
   /**
    * Get an empty ``BeaconBlock``.

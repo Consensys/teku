@@ -119,8 +119,7 @@ public class BeaconState {
     this.latest_slashed_balances =
         new ArrayList<>(
             Collections.nCopies(Constants.LATEST_SLASHED_EXIT_LENGTH, UnsignedLong.ZERO));
-    this.latest_block_header =
-        BeaconBlockUtil.get_temporary_block_header(BeaconBlockUtil.get_empty_block());
+    this.latest_block_header = new BeaconBlockHeader(null, null, null, null, null);
     this.historical_roots = new ArrayList<>();
 
     this.latest_eth1_data = new Eth1Data(ZERO_HASH, UnsignedLong.ZERO, ZERO_HASH);

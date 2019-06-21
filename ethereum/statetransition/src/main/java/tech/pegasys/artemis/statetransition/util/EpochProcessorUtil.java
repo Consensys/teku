@@ -13,7 +13,41 @@
 
 package tech.pegasys.artemis.statetransition.util;
 
+<<<<<<< HEAD
 import static com.google.common.base.Preconditions.checkArgument;
+=======
+import com.google.common.primitives.UnsignedLong;
+import org.apache.commons.lang3.tuple.MutablePair;
+import org.apache.logging.log4j.Level;
+import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.ssz.SSZ;
+import tech.pegasys.artemis.datastructures.Constants;
+import tech.pegasys.artemis.datastructures.blocks.Eth1DataVote;
+import tech.pegasys.artemis.datastructures.operations.AttestationData;
+import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
+import tech.pegasys.artemis.datastructures.state.Crosslink;
+import tech.pegasys.artemis.datastructures.state.CrosslinkCommittee;
+import tech.pegasys.artemis.datastructures.state.HistoricalBatch;
+import tech.pegasys.artemis.datastructures.state.PendingAttestation;
+import tech.pegasys.artemis.datastructures.state.Validator;
+import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
+import tech.pegasys.artemis.util.alogger.ALogger;
+import tech.pegasys.artemis.util.bitwise.BitwiseOps;
+import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
+import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Iterator;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+
+>>>>>>> V0.7.1 integration (#1)
 import static java.lang.Math.toIntExact;
 import static tech.pegasys.artemis.datastructures.Constants.ACTIVATION_EXIT_DELAY;
 import static tech.pegasys.artemis.datastructures.Constants.BASE_REWARDS_PER_EPOCH;
@@ -35,11 +69,14 @@ import static tech.pegasys.artemis.datastructures.Constants.SHARD_COUNT;
 import static tech.pegasys.artemis.datastructures.Constants.SLOTS_PER_EPOCH;
 import static tech.pegasys.artemis.datastructures.Constants.SLOTS_PER_HISTORICAL_ROOT;
 import static tech.pegasys.artemis.datastructures.Constants.ZERO_HASH;
+import static tech.pegasys.artemis.datastructures.util.AttestationUtil.get_attesting_indices;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.exit_validator;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.generate_seed;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_attestation_participants;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_beacon_proposer_index;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_bitfield_bit;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_block_root;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_churn_limit;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_crosslink_committees_at_slot;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_current_epoch;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_current_epoch_committee_count;
@@ -57,7 +94,13 @@ import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.max;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.min;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.prepare_validator_for_withdrawal;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.slot_to_epoch;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.verify_bitfield;
+import static tech.pegasys.artemis.datastructures.util.CrosslinkCommitteeUtil.get_crosslink_committee;
+import static tech.pegasys.artemis.datastructures.util.CrosslinkCommitteeUtil.get_epoch_start_shard;
+import static tech.pegasys.artemis.datastructures.util.CrosslinkCommitteeUtil.get_shard_delta;
+import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.decrease_balance;
 import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.get_active_validator_indices;
+import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.increase_balance;
 import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.is_active_validator;
 
 import com.google.common.primitives.UnsignedLong;
@@ -554,7 +597,7 @@ public final class EpochProcessorUtil {
                       .compareTo(state.getValidator_registry().get(i2).getActivation_epoch()))
               .collect(Collectors.toList());
 
-      for (Integer index : activation_queue.subList(0, get_churn_limit(state))) {
+      for (Integer index : activation_queue.subList(0, get_churn_limit(state).intValue())) {
         Validator validator = state.getValidator_registry().get(index);
         if (validator.getActivation_epoch().equals(FAR_FUTURE_EPOCH)) {
           validator.setActivation_epoch(get_delayed_activation_exit_epoch(get_current_epoch(state)));
