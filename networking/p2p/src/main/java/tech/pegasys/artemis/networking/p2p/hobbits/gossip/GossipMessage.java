@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.networking.p2p.hobbits;
+package tech.pegasys.artemis.networking.p2p.hobbits.gossip;
 
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -19,7 +19,7 @@ import org.apache.tuweni.bytes.Bytes32;
 /** Representation of a Gossip message that was received from a remote peer. */
 public final class GossipMessage {
 
-  private final GossipMethod method;
+  private final int method;
   private final String attributes;
   private final Bytes32 messageHash;
   private final Bytes32 hashSignature;
@@ -27,7 +27,7 @@ public final class GossipMessage {
   private final int length;
 
   public GossipMessage(
-      GossipMethod method,
+      int method,
       String attributes,
       Bytes32 messageHash,
       Bytes32 hashSignature,
@@ -42,7 +42,7 @@ public final class GossipMessage {
   }
 
   /** @return the method used by the Gossip call. */
-  public GossipMethod method() {
+  public int method() {
     return method;
   }
 

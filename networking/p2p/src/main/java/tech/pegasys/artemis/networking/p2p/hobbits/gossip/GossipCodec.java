@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.networking.p2p.hobbits;
+package tech.pegasys.artemis.networking.p2p.hobbits.gossip;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -24,8 +24,8 @@ import java.util.Iterator;
 import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.plumtree.MessageSender;
 import org.xerial.snappy.Snappy;
+import tech.pegasys.artemis.networking.p2p.hobbits.Codec;
 import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.json.BytesModule;
 
@@ -49,16 +49,12 @@ public final class GossipCodec implements Codec {
    * @return the encoded Gossip message
    */
   public static Bytes encode(
-      MessageSender.Verb verb,
-      String attributes,
-      Bytes messageHash,
-      Bytes32 hashSignature,
-      Bytes payload) {
+      int verb, String attributes, Bytes messageHash, Bytes32 hashSignature, Bytes payload) {
 
     String requestLine = "EWP 0.2 GOSSIP ";
     ObjectNode node = mapper.createObjectNode();
 
-    node.put("method_id", verb.name());
+    node.put("method_id", verb);
     node.put("attributes", attributes);
     node.put("message_hash", messageHash.toHexString());
     node.put("hash_signature", hashSignature.toHexString());
@@ -123,7 +119,7 @@ public final class GossipCodec implements Codec {
       Bytes32 messageHash = Bytes32.fromHexString(gossipmessage.get("message_hash").asText());
       Bytes32 hashSignature = Bytes32.fromHexString(gossipmessage.get("hash_signature").asText());
       return new GossipMessage(
-          GossipMethod.valueOf(methodId),
+          methodId,
           attributes,
           messageHash,
           hashSignature,
