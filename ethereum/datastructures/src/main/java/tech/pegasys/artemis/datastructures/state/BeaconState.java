@@ -217,7 +217,7 @@ public class BeaconState {
                     .map(UnsignedLong::fromLongBits)
                     .collect(Collectors.toList()),
                 // Randomness and committees
-                reader.readFixedBytesList((long) Constants.LATEST_RANDAO_MIXES_LENGTH, 32).stream()
+                reader.readFixedBytesVector(Constants.LATEST_RANDAO_MIXES_LENGTH, 32).stream()
                     .map(Bytes32::wrap)
                     .collect(Collectors.toList()),
                 UnsignedLong.fromLongBits(reader.readUInt64()),
@@ -236,19 +236,21 @@ public class BeaconState {
                 UnsignedLong.fromLongBits(reader.readUInt64()),
                 Bytes32.wrap(reader.readFixedBytes(32)),
                 // Recent state
-                reader.readBytesList((long) Constants.SHARD_COUNT).stream()
+                //TODO This should be a vector bounded by SHARD_COUNT, pending an issue fix in Tuweni.
+                reader.readBytesList().stream()
                     .map(Crosslink::fromBytes)
                     .collect(Collectors.toList()),
-                reader.readBytesList((long) Constants.SHARD_COUNT).stream()
-                            .map(Crosslink::fromBytes)
-                            .collect(Collectors.toList()),
-                reader.readFixedBytesList((long) Constants.SLOTS_PER_HISTORICAL_ROOT, 32).stream()
+                //TODO This should be a vector bounded by SHARD_COUNT, pending an issue fix in Tuweni.
+                reader.readBytesList().stream()
+                      .map(Crosslink::fromBytes)
+                      .collect(Collectors.toList()),
+                reader.readFixedBytesVector(Constants.SLOTS_PER_HISTORICAL_ROOT, 32).stream()
                     .map(Bytes32::wrap)
                     .collect(Collectors.toList()),
-                reader.readFixedBytesList((long) Constants.SLOTS_PER_HISTORICAL_ROOT, 32).stream()
+                reader.readFixedBytesVector(Constants.SLOTS_PER_HISTORICAL_ROOT, 32).stream()
                     .map(Bytes32::wrap)
                     .collect(Collectors.toList()),
-                reader.readFixedBytesList((long) Constants.LATEST_ACTIVE_INDEX_ROOTS_LENGTH, 32)
+                reader.readFixedBytesVector(Constants.LATEST_ACTIVE_INDEX_ROOTS_LENGTH, 32)
                     .stream()
                     .map(Bytes32::wrap)
                     .collect(Collectors.toList()),
@@ -299,8 +301,7 @@ public class BeaconState {
                   .map(UnsignedLong::longValue)
                   .collect(Collectors.toList()));
           // Randomness and committees
-          writer.writeFixedBytesList(
-              (long) Constants.LATEST_RANDAO_MIXES_LENGTH, 32, latest_randao_mixes);
+          writer.writeFixedBytesVector(latest_randao_mixes);
           writer.writeUInt64(latest_start_shard.longValue());
           // Finality
           writer.writeBytesList(previous_epoch_attestationsBytes);
@@ -313,14 +314,13 @@ public class BeaconState {
           writer.writeUInt64(finalized_epoch.longValue());
           writer.writeFixedBytes(32, finalized_root);
           // Recent state
-          writer.writeBytesList((long) Constants.SHARD_COUNT, current_crosslinksBytes);
-          writer.writeBytesList((long) Constants.SHARD_COUNT, previous_crosslinksBytes);
-          writer.writeFixedBytesList(
-              (long) Constants.SLOTS_PER_HISTORICAL_ROOT, 32, latest_block_roots);
-          writer.writeFixedBytesList(
-              (long) Constants.SLOTS_PER_HISTORICAL_ROOT, 32, latest_state_roots);
-          writer.writeFixedBytesList(
-              (long) Constants.LATEST_ACTIVE_INDEX_ROOTS_LENGTH, 32, latest_active_index_roots);
+          //TODO This should be a vector bounded by SHARD_COUNT, pending an issue fix in Tuweni.
+          writer.writeBytesList(current_crosslinksBytes);
+          //TODO This should be a vector bounded by SHARD_COUNT, pending an issue fix in Tuweni.
+          writer.writeBytesList(previous_crosslinksBytes);
+          writer.writeFixedBytesVector(latest_block_roots);
+          writer.writeFixedBytesVector(latest_state_roots);
+          writer.writeFixedBytesVector(latest_active_index_roots);
           writer.writeULongIntList(
               64,
               latest_slashed_balances.stream()
