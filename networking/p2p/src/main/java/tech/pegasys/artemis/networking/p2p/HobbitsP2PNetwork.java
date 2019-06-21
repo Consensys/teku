@@ -66,12 +66,13 @@ public final class HobbitsP2PNetwork implements P2PNetwork {
   private final int advertisedPort;
   private final String networkInterface;
   private final String userAgent = "Artemis SNAPSHOT";
-  private final State state;
+  private State state;
   private NetServer server;
   private NetClient client;
   private List<URI> staticPeers;
   private Map<URI, HobbitsSocketHandler> handlersMap = new ConcurrentHashMap<>();
   private ConcurrentHashMap<String, Boolean> receivedMessages = new ConcurrentHashMap<>();
+  private GossipProtocol gossipProtocol;
 
   /**
    * Default constructor
@@ -90,7 +91,8 @@ public final class HobbitsP2PNetwork implements P2PNetwork {
       int port,
       int advertisedPort,
       String networkInterface,
-      List<URI> staticPeers) {
+      List<URI> staticPeers,
+      GossipProtocol gossipProtocol) {
     this.eventBus = eventBus;
     this.vertx = vertx;
     this.store = store;
@@ -98,17 +100,20 @@ public final class HobbitsP2PNetwork implements P2PNetwork {
     this.advertisedPort = advertisedPort;
     this.networkInterface = networkInterface;
     this.staticPeers = staticPeers;
+    this.gossipProtocol = gossipProtocol;
     eventBus.register(this);
-    this.state =
-        new State(
-            new EphemeralPeerRepository(),
-            Hash::sha2_256,
-            this::sendMessage,
-            this::processGossip,
-            (bytes, peer) -> true,
-            (peer) -> true,
-            200,
-            200);
+    if (gossipProtocol.equals(GossipProtocol.PLUMTREE)) {
+      this.state =
+          new State(
+              new EphemeralPeerRepository(),
+              Hash::sha2_256,
+              this::sendMessage,
+              this::processGossip,
+              (bytes, peer) -> true,
+              (peer) -> true,
+              200,
+              200);
+    }
   }
 
   private void sendMessage(
@@ -190,7 +195,8 @@ public final class HobbitsP2PNetwork implements P2PNetwork {
         uri -> {
           Peer peer = new Peer(peerURI);
           state.addPeer(peer);
-          return new HobbitsSocketHandler(eventBus, netSocket, userAgent, peer, store, state);
+          return new HobbitsSocketHandler(
+              eventBus, netSocket, userAgent, peer, store, state, gossipProtocol);
         });
   }
 
@@ -223,7 +229,8 @@ public final class HobbitsP2PNetwork implements P2PNetwork {
               NetSocket socket = res.result();
               Peer peer = new Peer(peerURI);
               HobbitsSocketHandler handler =
-                  new HobbitsSocketHandler(eventBus, socket, userAgent, peer, store, state);
+                  new HobbitsSocketHandler(
+                      eventBus, socket, userAgent, peer, store, state, gossipProtocol);
               handlersMap.put(peerURI, handler);
               state.addPeer(peer);
               connected.complete(peer);

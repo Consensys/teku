@@ -34,6 +34,7 @@ import org.apache.tuweni.plumtree.State;
 import org.apache.tuweni.units.bigints.UInt64;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
+import tech.pegasys.artemis.networking.p2p.api.P2PNetwork;
 import tech.pegasys.artemis.networking.p2p.hobbits.Codec.ProtocolType;
 import tech.pegasys.artemis.networking.p2p.hobbits.gossip.GossipCodec;
 import tech.pegasys.artemis.networking.p2p.hobbits.gossip.GossipMessage;
@@ -58,6 +59,7 @@ public final class HobbitsSocketHandler {
   private final Consumer<Bytes> messageSender;
   private final Runnable handlerTermination;
   private final State p2pState;
+  private final P2PNetwork.GossipProtocol gossipProtocol;
 
   public HobbitsSocketHandler(
       EventBus eventBus,
@@ -65,7 +67,8 @@ public final class HobbitsSocketHandler {
       String userAgent,
       Peer peer,
       ChainStorageClient store,
-      State p2pState) {
+      State p2pState,
+      P2PNetwork.GossipProtocol gossipProtocol) {
     this.userAgent = userAgent;
     this.peer = peer;
     this.store = store;
@@ -74,6 +77,7 @@ public final class HobbitsSocketHandler {
     this.messageSender = (bytes) -> netSocket.write(Buffer.buffer(bytes.toArrayUnsafe()));
     this.handlerTermination = netSocket::close;
     this.p2pState = p2pState;
+    this.gossipProtocol = gossipProtocol;
 
     netSocket.handler(this::handleMessage);
     netSocket.exceptionHandler(this::handleError);
@@ -175,6 +179,22 @@ public final class HobbitsSocketHandler {
             + gossipMessage.method()
             + " from peer: "
             + peer.uri());
+    switch (this.gossipProtocol) {
+      case FLOODSUB:
+        handleFloodsubMessage(gossipMessage);
+        break;
+      case PLUMTREE:
+        handlePlumtreeMessage(gossipMessage);
+        break;
+      default:
+        throw new UnsupportedOperationException(gossipProtocol.name() + " is not supported");
+    }
+  }
+
+  private void handleFloodsubMessage(GossipMessage gossipMessage) {}
+
+  private void handlePlumtreeMessage(GossipMessage gossipMessage) {
+
     if (MessageSender.Verb.GOSSIP.ordinal() == gossipMessage.method()) {
       peer.setPeerGossip(gossipMessage.body());
       p2pState.receiveGossipMessage(
