@@ -97,9 +97,9 @@ public class PendingAttestation implements Copyable<PendingAttestation>, Merklei
 
     PendingAttestation other = (PendingAttestation) obj;
     return Objects.equals(this.getAggregation_bitfield(), other.getAggregation_bitfield())
-            && Objects.equals(this.getData(), other.getData())
-            && Objects.equals(this.getInclusion_delay(), other.getInclusion_delay())
-            && Objects.equals(this.getProposer_index(), other.getProposer_index());
+        && Objects.equals(this.getData(), other.getData())
+        && Objects.equals(this.getInclusion_delay(), other.getInclusion_delay())
+        && Objects.equals(this.getProposer_index(), other.getProposer_index());
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */
@@ -144,6 +144,6 @@ public class PendingAttestation implements Copyable<PendingAttestation>, Merklei
             HashTreeUtil.hash_tree_root(
                 SSZTypes.BASIC, SSZ.encodeUInt64(inclusion_delay.longValue())),
             HashTreeUtil.hash_tree_root(
-            SSZTypes.BASIC, SSZ.encodeUInt64(proposer_index.longValue()))));
+                SSZTypes.BASIC, SSZ.encodeUInt64(proposer_index.longValue()))));
   }
 }

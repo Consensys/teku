@@ -13,10 +13,9 @@
 
 package tech.pegasys.artemis.datastructures.blocks;
 
+import com.google.common.primitives.UnsignedLong;
 import java.util.Arrays;
 import java.util.Objects;
-
-import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
