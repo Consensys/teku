@@ -30,8 +30,9 @@ public final class Validator extends tech.pegasys.artemis.datastructures.state.V
         UnsignedLong.ZERO,
         UnsignedLong.ZERO,
         UnsignedLong.ZERO,
+        UnsignedLong.ZERO,
         false,
-        false);
+        UnsignedLong.ZERO);
     this.blsKeys = blsKeys;
     this.secpKeys = secpKeys;
   }

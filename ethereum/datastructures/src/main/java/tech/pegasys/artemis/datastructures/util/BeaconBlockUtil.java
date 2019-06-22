@@ -18,7 +18,6 @@ import java.util.ArrayList;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockBody;
-import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.util.alogger.ALogger;
 
@@ -32,12 +31,13 @@ public class BeaconBlockUtil {
    */
   public static BeaconBlock get_empty_block() {
     return new BeaconBlock(
-        Constants.GENESIS_SLOT,
+        UnsignedLong.valueOf(Constants.GENESIS_SLOT),
         Constants.ZERO_HASH,
         Constants.ZERO_HASH,
         new BeaconBlockBody(
             Constants.EMPTY_SIGNATURE,
-            new Eth1Data(Constants.ZERO_HASH, Constants.ZERO_HASH),
+            new Eth1Data(Constants.ZERO_HASH, UnsignedLong.ZERO, Constants.ZERO_HASH),
+            Constants.ZERO_HASH,
             new ArrayList<>(),
             new ArrayList<>(),
             new ArrayList<>(),

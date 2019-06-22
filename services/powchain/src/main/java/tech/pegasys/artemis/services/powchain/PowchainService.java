@@ -128,7 +128,7 @@ public class PowchainService implements ServiceInterface {
         }
       }
     } else if (depositMode.equals(Constants.DEPOSIT_SIM) && depositSimFile != null) {
-      JsonParser parser = new JsonParser();
+      JsonParser parser = new JsonParser();/*
       try {
         Reader reader = Files.newBufferedReader(Paths.get(depositSimFile), UTF_8);
         JsonArray validatorsJSON = ((JsonArray) parser.parse(reader));
@@ -191,7 +191,7 @@ public class PowchainService implements ServiceInterface {
         LOG.log(Level.ERROR, e.getMessage());
       } catch (IOException e) {
         LOG.log(Level.ERROR, e.getMessage());
-      }
+      }*/
     } else if (depositMode.equals(Constants.DEPOSIT_TEST)) {
       Eth2GenesisEventResponse response = new Eth2GenesisEventResponse();
       response.log =
