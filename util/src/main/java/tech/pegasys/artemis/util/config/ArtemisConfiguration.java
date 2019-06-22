@@ -140,10 +140,10 @@ public final class ArtemisConfiguration {
     // Misc
     builder.addInteger("constants.SHARD_COUNT", Integer.MIN_VALUE, null, null);
     builder.addInteger("constants.TARGET_COMMITTEE_SIZE", Integer.MIN_VALUE, null, null);
-    builder.addInteger("constants.MAX_BALANCE_CHURN_QUOTIENT", Integer.MIN_VALUE, null, null);
-    builder.addLong("constants.BEACON_CHAIN_SHARD_NUMBER", -1L, null, null);
-    builder.addInteger("constants.MAX_INDICES_PER_SLASHABLE_VOTE", Integer.MIN_VALUE, null, null);
-    builder.addInteger("constants.MAX_EXIT_DEQUEUES_PER_EPOCH", Integer.MIN_VALUE, null, null);
+    builder.addInteger("constants.MAX_INDICES_PER_ATTESTATION", Integer.MIN_VALUE, null, null);
+    builder.addInteger("constants.MIN_PER_EPOCH_CHURN_LIMIT", Integer.MIN_VALUE, null, null);
+    builder.addInteger("constants.CHURN_LIMIT_QUOTIENT", Integer.MIN_VALUE, null, null);
+    builder.addInteger("constants.BASE_REWARDS_PER_EPOCH", Integer.MIN_VALUE, null, null);
     builder.addInteger("constants.SHUFFLE_ROUND_COUNT", Integer.MIN_VALUE, null, null);
 
     // Deposit Contract
@@ -152,19 +152,17 @@ public final class ArtemisConfiguration {
 
     // Gwei values
     builder.addLong("constants.MIN_DEPOSIT_AMOUNT", Long.MIN_VALUE, null, null);
-    builder.addLong("constants.MAX_DEPOSIT_AMOUNT", Long.MIN_VALUE, null, null);
-    builder.addLong("constants.FORK_CHOICE_BALANCE_INCREMENT", Long.MIN_VALUE, null, null);
+    builder.addLong("constants.MAX_EFFECTIVE_BALANCE", Long.MIN_VALUE, null, null);
     builder.addLong("constants.EJECTION_BALANCE", Long.MIN_VALUE, null, null);
+    builder.addLong("constants.EFFECTIVE_BALANCE_INCREMENT", Long.MIN_VALUE, null, null);
 
     // Initial Values
     builder.addInteger("constants.GENESIS_FORK_VERSION", Integer.MIN_VALUE, null, null);
     builder.addLong("constants.GENESIS_SLOT", Long.MIN_VALUE, null, null);
-    builder.addLong("constants.GENESIS_EPOCH", Long.MIN_VALUE, null, null);
-    builder.addInteger("constants.GENESIS_START_SHARD", Integer.MIN_VALUE, null, null);
     builder.addLong("constants.FAR_FUTURE_EPOCH", -1L, null, null);
     builder.addDefault("constants.ZERO_HASH", Bytes32.ZERO);
     builder.addDefault("constants.EMPTY_SIGNATURE", BLSSignature.empty());
-    builder.addDefault("constants.BLS_WITHDRAWAL_PREFIX_BYTE", Bytes32.EMPTY);
+    builder.addDefault("constants.BLS_WITHDRAWAL_PREFIX_BYTE", Integer.MIN_VALUE);
 
     // Time parameters
     builder.addInteger("constants.SECONDS_PER_SLOT", Integer.MIN_VALUE, null, null);
@@ -172,24 +170,27 @@ public final class ArtemisConfiguration {
     builder.addInteger("constants.SLOTS_PER_EPOCH", Integer.MIN_VALUE, null, null);
     builder.addInteger("constants.MIN_SEED_LOOKAHEAD", Integer.MIN_VALUE, null, null);
     builder.addInteger("constants.ACTIVATION_EXIT_DELAY", Integer.MIN_VALUE, null, null);
-    builder.addInteger("constants.EPOCHS_PER_ETH1_VOTING_PERIOD", Integer.MIN_VALUE, null, null);
+    builder.addInteger("constants.SLOTS_PER_ETH1_VOTING_PERIOD", Integer.MIN_VALUE, null, null);
     builder.addInteger("constants.SLOTS_PER_HISTORICAL_ROOT", Integer.MIN_VALUE, null, null);
     builder.addInteger(
         "constants.MIN_VALIDATOR_WITHDRAWABILITY_DELAY", Integer.MIN_VALUE, null, null);
+    builder.addInteger("constants.PERSISTENT_COMMITTEE_PERIOD", Integer.MIN_VALUE, null, null);
+    builder.addInteger("constants.MAX_EPOCHS_PER_CROSSLINK", Integer.MIN_VALUE, null, null);
+    builder.addInteger("constants.MIN_EPOCHS_TO_INACTIVITY_PENALTY", Integer.MIN_VALUE, null, null);
+    builder.addInteger(
+        "constants.EARLY_DERIVED_SECRET_PENALTY_MAX_FUTURE_EPOCHS", Integer.MIN_VALUE, null, null);
 
     // State list lengths
-    builder.addInteger("constants.LATEST_BLOCK_ROOTS_LENGTH", Integer.MIN_VALUE, null, null);
     builder.addInteger("constants.LATEST_RANDAO_MIXES_LENGTH", Integer.MIN_VALUE, null, null);
     builder.addInteger("constants.LATEST_ACTIVE_INDEX_ROOTS_LENGTH", Integer.MIN_VALUE, null, null);
     builder.addInteger("constants.LATEST_SLASHED_EXIT_LENGTH", Integer.MIN_VALUE, null, null);
 
     // Reward and penalty quotients
-    builder.addInteger("constants.BASE_REWARD_QUOTIENT", Integer.MIN_VALUE, null, null);
-    builder.addInteger("constants.WHISTLEBLOWER_REWARD_QUOTIENT", Integer.MIN_VALUE, null, null);
-    builder.addInteger(
-        "constants.ATTESTATION_INCLUSION_REWARD_QUOTIENT", Integer.MIN_VALUE, null, null);
+    builder.addInteger("constants.BASE_REWARD_FACTOR", Integer.MIN_VALUE, null, null);
+    builder.addInteger("constants.WHISTLEBLOWING_REWARD_QUOTIENT", Integer.MIN_VALUE, null, null);
+    builder.addInteger("constants.PROPOSER_REWARD_QUOTIENT", Integer.MIN_VALUE, null, null);
     builder.addInteger("constants.INACTIVITY_PENALTY_QUOTIENT", Integer.MIN_VALUE, null, null);
-    builder.addInteger("constants.MIN_PENALTY_QUOTIENT", Integer.MIN_VALUE, null, null);
+    builder.addInteger("constants.MIN_SLASHING_PENALTY_QUOTIENT", Integer.MIN_VALUE, null, null);
 
     // Max transactions per block
     builder.addInteger("constants.MAX_PROPOSER_SLASHINGS", Integer.MIN_VALUE, null, null);
@@ -200,7 +201,7 @@ public final class ArtemisConfiguration {
     builder.addInteger("constants.MAX_TRANSFERS", Integer.MIN_VALUE, null, null);
 
     // Signature domains
-    builder.addInteger("constants.DOMAIN_BEACON_BLOCK", Integer.MIN_VALUE, null, null);
+    builder.addInteger("constants.DOMAIN_BEACON_PROPOSER", Integer.MIN_VALUE, null, null);
     builder.addInteger("constants.DOMAIN_RANDAO", Integer.MIN_VALUE, null, null);
     builder.addInteger("constants.DOMAIN_ATTESTATION", Integer.MIN_VALUE, null, null);
     builder.addInteger("constants.DOMAIN_DEPOSIT", Integer.MIN_VALUE, null, null);
@@ -372,20 +373,20 @@ public final class ArtemisConfiguration {
     return config.getInteger("constants.TARGET_COMMITTEE_SIZE");
   }
 
-  public int getMaxBalanceChurnQuotient() {
-    return config.getInteger("constants.MAX_BALANCE_CHURN_QUOTIENT");
+  public int getMaxIndicesPerAttestation() {
+    return config.getInteger("constants.MAX_INDICES_PER_ATTESTATION");
   }
 
-  public long getBeaconChainShardNumber() {
-    return config.getLong("constants.BEACON_CHAIN_SHARD_NUMBER");
+  public long getMinPerEpochChurnLimit() {
+    return config.getLong("constants.MIN_PER_EPOCH_CHURN_LIMIT");
   }
 
-  public int getMaxIndicesPerSlashableVote() {
-    return config.getInteger("constants.MAX_INDICES_PER_SLASHABLE_VOTE");
+  public int getChurnLimitQuotient() {
+    return config.getInteger("constants.CHURN_LIMIT_QUOTIENT");
   }
 
-  public int getMaxExitDequeuesPerEpoch() {
-    return config.getInteger("constants.MAX_EXIT_DEQUEUES_PER_EPOCH");
+  public int getBaseRewardsPerEpoch() {
+    return config.getInteger("constants.BASE_REWARDS_PER_EPOCH");
   }
 
   public int getShuffleRoundCount() {
@@ -406,12 +407,12 @@ public final class ArtemisConfiguration {
     return config.getLong("constants.MIN_DEPOSIT_AMOUNT");
   }
 
-  public long getMaxDepositAmount() {
-    return config.getLong("constants.MAX_DEPOSIT_AMOUNT");
+  public long getMaxEffectiveBalance() {
+    return config.getLong("constants.MAX_EFFECTIVE_BALANCE");
   }
 
-  public long getForkChoiceBalanceIncrement() {
-    return config.getLong("constants.FORK_CHOICE_BALANCE_INCREMENT");
+  public long getEffectiveBalanceIncrement() {
+    return config.getLong("constants.EFFECTIVE_BALANCE_INCREMENT");
   }
 
   public long getEjectionBalance() {
@@ -427,28 +428,12 @@ public final class ArtemisConfiguration {
     return config.getLong("constants.GENESIS_SLOT");
   }
 
-  public long getGenesisEpoch() {
-    return config.getLong("constants.GENESIS_EPOCH");
-  }
-
-  public int getGenesisStartShard() {
-    return config.getInteger("constants.GENESIS_START_SHARD");
-  }
-
   public long getFarFutureEpoch() {
     return Long.MAX_VALUE;
   }
 
-  public Object getZeroHash() {
-    return config.get("constants.ZERO_HASH");
-  }
-
-  public Object getEmptySignature() {
-    return config.get("constants.EMPTY_SIGNATURE");
-  }
-
-  public Object getBlsWithdrawalPrefixByte() {
-    return config.get("constants.BLS_WITHDRAWAL_PREFIX_BYTE");
+  public int getBlsWithdrawalPrefix() {
+    return config.getInteger("constants.BLS_WITHDRAWAL_PREFIX");
   }
 
   /** @return time parameter constants */
@@ -472,8 +457,8 @@ public final class ArtemisConfiguration {
     return config.getInteger("constants.ACTIVATION_EXIT_DELAY");
   }
 
-  public int getEpochsPerEth1VotingPeriod() {
-    return config.getInteger("constants.EPOCHS_PER_ETH1_VOTING_PERIOD");
+  public int getSlotsPerEth1VotingPeriod() {
+    return config.getInteger("constants.SLOTS_PER_ETH1_VOTING_PERIOD");
   }
 
   public int getSlotsPerHistoricalRoot() {
@@ -482,6 +467,22 @@ public final class ArtemisConfiguration {
 
   public int getMinValidatorWithdrawabilityDelay() {
     return config.getInteger("constants.MIN_VALIDATOR_WITHDRAWABILITY_DELAY");
+  }
+
+  public int getPersistentCommitteePeriod() {
+    return config.getInteger("constants.PERSISTENT_COMMITTEE_PERIOD");
+  }
+
+  public int getMaxEpochsPerCrosslink() {
+    return config.getInteger("constants.MAX_EPOCHS_PER_CROSSLINK");
+  }
+
+  public int getMinEpochsToInactivityPenalty() {
+    return config.getInteger("constants.MIN_EPOCHS_TO_INACTIVITY_PENALTY");
+  }
+
+  public int getEarlyDerivedSecretPenaltyMaxFutureEpochs() {
+    return config.getInteger("constants.EARLY_DERIVED_SECRET_PENALTY_MAX_FUTURE_EPOCHS");
   }
 
   /** @return state list length constants */
@@ -498,24 +499,24 @@ public final class ArtemisConfiguration {
   }
 
   /** @return reward and penalty quotient constants */
-  public int getBaseRewardQuotient() {
-    return config.getInteger("constants.BASE_REWARD_QUOTIENT");
+  public int getBaseRewardFactor() {
+    return config.getInteger("constants.BASE_REWARD_FACTOR");
   }
 
-  public int getWhistleblowerRewardQuotient() {
-    return config.getInteger("constants.WHISTLEBLOWER_REWARD_QUOTIENT");
+  public int getWhistleblowingRewardQuotient() {
+    return config.getInteger("constants.WHISTLEBLOWING_REWARD_QUOTIENT");
   }
 
-  public int getAttestationInclusionRewardQuotient() {
-    return config.getInteger("constants.ATTESTATION_INCLUSION_REWARD_QUOTIENT");
+  public int getProposerRewardQuotient() {
+    return config.getInteger("constants.PROPOSER_REWARD_QUOTIENT");
   }
 
   public int getInactivityPenaltyQuotient() {
     return config.getInteger("constants.INACTIVITY_PENALTY_QUOTIENT");
   }
 
-  public int getMinPenaltyQuotient() {
-    return config.getInteger("constants.MIN_PENALTY_QUOTIENT");
+  public int getMinSlashingPenaltyQuotient() {
+    return config.getInteger("constants.MIN_SLASHING_PENALTY_QUOTIENT");
   }
 
   /** @return max transactions per block constants */
@@ -544,8 +545,8 @@ public final class ArtemisConfiguration {
   }
 
   /** @return signature domain constants */
-  public int getDomainBeaconBlock() {
-    return config.getInteger("constants.DOMAIN_BEACON_BLOCK");
+  public int getDomainBeaconProposer() {
+    return config.getInteger("constants.DOMAIN_BEACON_PROPOSER");
   }
 
   public int getDomainRandao() {

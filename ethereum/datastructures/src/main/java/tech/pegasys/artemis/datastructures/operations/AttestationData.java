@@ -89,12 +89,7 @@ public class AttestationData {
   @Override
   public int hashCode() {
     return Objects.hash(
-            beacon_block_root,
-        source_epoch,
-        source_root,
-        target_epoch,
-        target_root,
-            crosslink);
+        beacon_block_root, source_epoch, source_root, target_epoch, target_root, crosslink);
   }
 
   @Override
@@ -121,7 +116,6 @@ public class AttestationData {
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */
-
   public Bytes32 getBeacon_block_root() {
     return beacon_block_root;
   }

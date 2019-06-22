@@ -14,15 +14,14 @@
 package tech.pegasys.artemis.datastructures.state;
 
 import com.google.common.primitives.UnsignedLong;
+import java.util.Arrays;
+import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.artemis.datastructures.Copyable;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
-
-import java.util.Arrays;
-import java.util.Objects;
 
 public class Crosslink implements Copyable<Crosslink> {
 
@@ -32,7 +31,12 @@ public class Crosslink implements Copyable<Crosslink> {
   private Bytes32 parent_root;
   private Bytes32 data_root;
 
-  public Crosslink(UnsignedLong shard, UnsignedLong start_epoch, UnsignedLong end_epoch, Bytes32 parent_root, Bytes32 data_root) {
+  public Crosslink(
+      UnsignedLong shard,
+      UnsignedLong start_epoch,
+      UnsignedLong end_epoch,
+      Bytes32 parent_root,
+      Bytes32 data_root) {
     this.shard = shard;
     this.start_epoch = start_epoch;
     this.end_epoch = end_epoch;
@@ -106,13 +110,12 @@ public class Crosslink implements Copyable<Crosslink> {
     Crosslink other = (Crosslink) obj;
     return Objects.equals(this.getShard(), other.getShard())
         && Objects.equals(this.getStart_epoch(), other.getStart_epoch())
-            && Objects.equals(this.getEnd_epoch(), other.getEnd_epoch())
-            && Objects.equals(this.getParent_root(), other.getParent_root())
-            && Objects.equals(this.getData_root(), other.getData_root());
+        && Objects.equals(this.getEnd_epoch(), other.getEnd_epoch())
+        && Objects.equals(this.getParent_root(), other.getParent_root())
+        && Objects.equals(this.getData_root(), other.getData_root());
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */
-
   public UnsignedLong getShard() {
     return shard;
   }
@@ -128,7 +131,8 @@ public class Crosslink implements Copyable<Crosslink> {
   public void setStart_epoch(UnsignedLong start_epoch) {
     this.start_epoch = start_epoch;
   }
-    public UnsignedLong getEnd_epoch() {
+
+  public UnsignedLong getEnd_epoch() {
     return end_epoch;
   }
 
@@ -155,10 +159,10 @@ public class Crosslink implements Copyable<Crosslink> {
   public Bytes32 hash_tree_root() {
     return HashTreeUtil.merkleize(
         Arrays.asList(
-                HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(shard.longValue())),
+            HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(shard.longValue())),
             HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(start_epoch.longValue())),
-                HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(end_epoch.longValue())),
+            HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(end_epoch.longValue())),
             HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, parent_root),
-                            HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, data_root)));
+            HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, data_root)));
   }
 }

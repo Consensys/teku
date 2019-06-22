@@ -14,6 +14,10 @@
 package tech.pegasys.artemis.datastructures.operations;
 
 import com.google.common.primitives.UnsignedLong;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
@@ -21,11 +25,6 @@ import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
 import tech.pegasys.artemis.util.hashtree.Merkleizable;
-
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
-import java.util.stream.Collectors;
 
 public class IndexedAttestation implements Merkleizable {
 
@@ -46,38 +45,48 @@ public class IndexedAttestation implements Merkleizable {
   }
 
   public IndexedAttestation(IndexedAttestation indexedAttestation) {
-    this.custody_bit_0_indices = indexedAttestation.getCustody_bit_0_indices().stream().collect(Collectors.toList());
-    this.custody_bit_1_indices = indexedAttestation.getCustody_bit_1_indices().stream().collect(Collectors.toList());
+    this.custody_bit_0_indices =
+        indexedAttestation.getCustody_bit_0_indices().stream().collect(Collectors.toList());
+    this.custody_bit_1_indices =
+        indexedAttestation.getCustody_bit_1_indices().stream().collect(Collectors.toList());
     this.data = new AttestationData(data);
     this.signature = new BLSSignature(indexedAttestation.getSignature().getSignature());
   }
 
-  //TODO Indexed Attestation should be converted to unsigned longs before serialization
+  // TODO Indexed Attestation should be converted to unsigned longs before serialization
   public static IndexedAttestation fromBytes(Bytes bytes) {
     return SSZ.decode(
         bytes,
         reader ->
             new IndexedAttestation(
                 reader.readUInt64List().stream()
-                            .map(UnsignedLong::fromLongBits)
-                            .collect(Collectors.toList()),
+                    .map(UnsignedLong::fromLongBits)
+                    .map(UnsignedLong::intValue)
+                    .collect(Collectors.toList()),
                 reader.readUInt64List().stream()
-                            .map(UnsignedLong::fromLongBits)
-                            .collect(Collectors.toList()),
+                    .map(UnsignedLong::fromLongBits)
+                    .map(UnsignedLong::intValue)
+                    .collect(Collectors.toList()),
                 AttestationData.fromBytes(reader.readBytes()),
                 BLSSignature.fromBytes(reader.readBytes())));
   }
 
-  //TODO Indexed Attestation should be converted to unsigned longs before serialization
+  // TODO Indexed Attestation should be converted to unsigned longs before serialization
   public Bytes toBytes() {
     return SSZ.encode(
         writer -> {
           writer.writeULongIntList(
               64,
-              custody_bit_0_indices.stream().map(UnsignedLong::longValue).collect(Collectors.toList()));
-           writer.writeULongIntList(
+              custody_bit_0_indices.stream()
+                  .map(UnsignedLong::valueOf)
+                  .map(UnsignedLong::longValue)
+                  .collect(Collectors.toList()));
+          writer.writeULongIntList(
               64,
-              custody_bit_1_indices.stream().map(UnsignedLong::longValue).collect(Collectors.toList()));
+              custody_bit_1_indices.stream()
+                  .map(UnsignedLong::valueOf)
+                  .map(UnsignedLong::longValue)
+                  .collect(Collectors.toList()));
           writer.writeBytes(data.toBytes());
           writer.writeBytes(signature.toBytes());
         });
@@ -110,7 +119,6 @@ public class IndexedAttestation implements Merkleizable {
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */
-
   public List<Integer> getCustody_bit_0_indices() {
     return custody_bit_0_indices;
   }
@@ -147,16 +155,16 @@ public class IndexedAttestation implements Merkleizable {
   public Bytes32 hash_tree_root() {
     return HashTreeUtil.merkleize(
         Arrays.asList(
-                HashTreeUtil.hash_tree_root(
-                        SSZTypes.LIST_OF_BASIC,
-                        custody_bit_0_indices.stream()
-                                .map(item -> SSZ.encodeUInt64(item.longValue()))
-                                .collect(Collectors.toList())),
-                HashTreeUtil.hash_tree_root(
-                        SSZTypes.LIST_OF_BASIC,
-                        custody_bit_1_indices.stream()
-                                .map(item -> SSZ.encodeUInt64(item.longValue()))
-                                .collect(Collectors.toList())),
+            HashTreeUtil.hash_tree_root(
+                SSZTypes.LIST_OF_BASIC,
+                custody_bit_0_indices.stream()
+                    .map(item -> SSZ.encodeUInt64(item.longValue()))
+                    .collect(Collectors.toList())),
+            HashTreeUtil.hash_tree_root(
+                SSZTypes.LIST_OF_BASIC,
+                custody_bit_1_indices.stream()
+                    .map(item -> SSZ.encodeUInt64(item.longValue()))
+                    .collect(Collectors.toList())),
             data.hash_tree_root(),
             HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, signature.toBytes())));
   }

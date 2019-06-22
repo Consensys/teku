@@ -138,7 +138,8 @@ public class Validator implements Copyable<Validator>, Merkleizable {
     Validator other = (Validator) obj;
     return Objects.equals(this.getPubkey(), other.getPubkey())
         && Objects.equals(this.getWithdrawal_credentials(), other.getWithdrawal_credentials())
-        && Objects.equals(this.getActivation_eligibility_epoch(), other.getActivation_eligibility_epoch())
+        && Objects.equals(
+            this.getActivation_eligibility_epoch(), other.getActivation_eligibility_epoch())
         && Objects.equals(this.getActivation_epoch(), other.getActivation_epoch())
         && Objects.equals(this.getExit_epoch(), other.getExit_epoch())
         && Objects.equals(this.getWithdrawable_epoch(), other.getWithdrawable_epoch())
@@ -169,6 +170,7 @@ public class Validator implements Copyable<Validator>, Merkleizable {
   public void setActivation_eligibility_epoch(UnsignedLong activation_eligibility_epoch) {
     this.activation_eligibility_epoch = activation_eligibility_epoch;
   }
+
   public UnsignedLong getActivation_epoch() {
     return activation_epoch;
   }
@@ -216,13 +218,14 @@ public class Validator implements Copyable<Validator>, Merkleizable {
             HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, pubkey.toBytes()),
             HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, withdrawal_credentials),
             HashTreeUtil.hash_tree_root(
-                        SSZTypes.BASIC, SSZ.encodeUInt64(activation_eligibility_epoch.longValue())),
+                SSZTypes.BASIC, SSZ.encodeUInt64(activation_eligibility_epoch.longValue())),
             HashTreeUtil.hash_tree_root(
                 SSZTypes.BASIC, SSZ.encodeUInt64(activation_epoch.longValue())),
             HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(exit_epoch.longValue())),
             HashTreeUtil.hash_tree_root(
                 SSZTypes.BASIC, SSZ.encodeUInt64(withdrawable_epoch.longValue())),
             HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeBoolean(slashed)),
-            HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(effective_balance.longValue()))));
+            HashTreeUtil.hash_tree_root(
+                SSZTypes.BASIC, SSZ.encodeUInt64(effective_balance.longValue()))));
   }
 }

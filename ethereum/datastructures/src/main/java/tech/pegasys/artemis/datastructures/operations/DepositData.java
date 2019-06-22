@@ -31,7 +31,11 @@ public class DepositData {
   private UnsignedLong amount;
   private BLSSignature signature;
 
-  public DepositData(BLSPublicKey pubkey, Bytes32 withdrawal_credentials, UnsignedLong amount, BLSSignature signature) {
+  public DepositData(
+      BLSPublicKey pubkey,
+      Bytes32 withdrawal_credentials,
+      UnsignedLong amount,
+      BLSSignature signature) {
     this.pubkey = pubkey;
     this.withdrawal_credentials = withdrawal_credentials;
     this.amount = amount;
@@ -43,11 +47,10 @@ public class DepositData {
         bytes,
         reader ->
             new DepositData(
-                    BLSPublicKey.fromBytes(reader.readBytes()),
-                    Bytes32.wrap(reader.readFixedBytes(32)),
+                BLSPublicKey.fromBytes(reader.readBytes()),
+                Bytes32.wrap(reader.readFixedBytes(32)),
                 UnsignedLong.fromLongBits(reader.readUInt64()),
-                    BLSSignature.fromBytes(reader.readBytes())));
-
+                BLSSignature.fromBytes(reader.readBytes())));
   }
 
   public Bytes toBytes() {
@@ -62,11 +65,11 @@ public class DepositData {
 
   // TODO: check if this is correct
   public Bytes serialize() {
-        return Bytes.wrap(
-            pubkey.getPublicKey().toBytesCompressed(),
-            withdrawal_credentials,
-            Bytes.ofUnsignedLong(amount.longValue()),
-            signature.toBytes());
+    return Bytes.wrap(
+        pubkey.getPublicKey().toBytesCompressed(),
+        withdrawal_credentials,
+        Bytes.ofUnsignedLong(amount.longValue()),
+        signature.toBytes());
   }
 
   @Override
@@ -90,13 +93,12 @@ public class DepositData {
 
     DepositData other = (DepositData) obj;
     return Objects.equals(this.getPubkey(), other.getPubkey())
-            && Objects.equals(this.getWithdrawal_credentials(), other.getWithdrawal_credentials())
-            && Objects.equals(this.getAmount(), other.getAmount())
-            && Objects.equals(this.getSignature(), other.getSignature());
+        && Objects.equals(this.getWithdrawal_credentials(), other.getWithdrawal_credentials())
+        && Objects.equals(this.getAmount(), other.getAmount())
+        && Objects.equals(this.getSignature(), other.getSignature());
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */
-
   public BLSPublicKey getPubkey() {
     return pubkey;
   }
@@ -132,22 +134,24 @@ public class DepositData {
   public Bytes32 signing_root(String truncation_param) {
     if (!truncation_param.equals("signature")) {
       throw new UnsupportedOperationException(
-              "Only signed_root(proposal, \"signature\") is currently supported for type Proposal.");
+          "Only signed_root(proposal, \"signature\") is currently supported for type Proposal.");
     }
 
     return Bytes32.rightPad(
-            HashTreeUtil.merkleize(
-                    Arrays.asList(
-                            HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, pubkey.toBytes()),
-                            HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, withdrawal_credentials),
-                            HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(amount.longValue())))));
+        HashTreeUtil.merkleize(
+            Arrays.asList(
+                HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, pubkey.toBytes()),
+                HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, withdrawal_credentials),
+                HashTreeUtil.hash_tree_root(
+                    SSZTypes.BASIC, SSZ.encodeUInt64(amount.longValue())))));
   }
 
   public Bytes32 hash_tree_root() {
     return HashTreeUtil.merkleize(
         Arrays.asList(
-                HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, pubkey.toBytes()),
-                HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, withdrawal_credentials),
-                HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(amount.longValue())),
-                HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, signature.toBytes())));  }
+            HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, pubkey.toBytes()),
+            HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, withdrawal_credentials),
+            HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(amount.longValue())),
+            HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, signature.toBytes())));
+  }
 }

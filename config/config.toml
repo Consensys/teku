@@ -84,11 +84,11 @@ EFFECTIVE_BALANCE_INCREMENT = 1000000000
 
 # Initial values
 # ---------------------------------------------------------------
-GENESIS_FORK_VERSION = '0x00000000'
+GENESIS_FORK_VERSION = 0
 # 0, GENESIS_EPOCH is derived from this constant
 GENESIS_SLOT = 0
 # 2**64 - 1
-FAR_FUTURE_EPOCH = 18446744073709551615
+#FAR_FUTURE_EPOCH = 18446744073709551615
 BLS_WITHDRAWAL_PREFIX = 0
 
 
@@ -97,7 +97,7 @@ BLS_WITHDRAWAL_PREFIX = 0
 # 6 seconds 6 seconds
 SECONDS_PER_SLOT = 6
 # [customized] 2 slots
-MIN_ATTESTATION_INCLUSION_DELAY = 2
+MIN_ATTESTATION_INCLUSION_DELAY = 1
 # [customized] fast epochs
 SLOTS_PER_EPOCH = 8
 # 2**0 (= 1) epochs

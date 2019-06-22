@@ -38,7 +38,7 @@ public class TimeSeriesAdapter implements DataAdapter<TimeSeriesRecord> {
   @Override
   public TimeSeriesRecord transform() {
 
-    UnsignedLong slot = UnsignedLong.valueOf(this.input.getHeadBlock().getSlot());
+    UnsignedLong slot = this.input.getHeadBlock().getSlot();
     UnsignedLong epoch = BeaconStateUtil.slot_to_epoch(slot);
     BeaconBlock headBlock = this.input.getHeadBlock();
     BeaconState headState = this.input.getHeadState();
@@ -48,10 +48,10 @@ public class TimeSeriesAdapter implements DataAdapter<TimeSeriesRecord> {
     BeaconState finalizedState = this.input.getFinalizedState();
     int numValidators = headState.getValidator_registry().size();
 
-    Bytes32 headBlockRoot = headBlock.signed_root("signature");
-    Bytes32 lastJustifiedBlockRoot = justifiedBlock.signed_root("signature");
+    Bytes32 headBlockRoot = headBlock.signing_root("signature");
+    Bytes32 lastJustifiedBlockRoot = justifiedBlock.signing_root("signature");
     Bytes32 lastJustifiedStateRoot = justifiedState.hash_tree_root();
-    Bytes32 lastFinalizedBlockRoot = finalizedBlock.signed_root("signature");
+    Bytes32 lastFinalizedBlockRoot = finalizedBlock.signing_root("signature");
     Bytes32 lastFinalizedStateRoot = finalizedState.hash_tree_root();
 
     List<ValidatorJoin> validators = new ArrayList<>();
@@ -63,7 +63,7 @@ public class TimeSeriesAdapter implements DataAdapter<TimeSeriesRecord> {
                   validators.add(
                       new ValidatorJoin(
                           headState.getValidator_registry().get(i),
-                          headState.getValidator_balances().get(i).longValue())));
+                          headState.getBalances().get(i).longValue())));
     }
 
     return new TimeSeriesRecord(
@@ -72,8 +72,8 @@ public class TimeSeriesAdapter implements DataAdapter<TimeSeriesRecord> {
         slot.longValue(),
         epoch.longValue(),
         this.input.getHeadBlock().getState_root().toHexString(),
-        this.input.getHeadBlock().getPrevious_block_root().toHexString(),
-        this.input.getHeadBlock().signed_root("signature").toHexString(),
+        this.input.getHeadBlock().getParent_root().toHexString(),
+        this.input.getHeadBlock().signing_root("signature").toHexString(),
         lastJustifiedBlockRoot.toHexString(),
         lastJustifiedStateRoot.toHexString(),
         lastFinalizedBlockRoot.toHexString(),

@@ -13,6 +13,9 @@
 
 package tech.pegasys.artemis.statetransition;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static tech.pegasys.artemis.statetransition.StateTransition.process_slots;
+
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.google.common.primitives.UnsignedLong;
@@ -27,6 +30,7 @@ import org.apache.tuweni.crypto.SECP256K1.PublicKey;
 import tech.pegasys.artemis.data.RawRecord;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.artemis.datastructures.event.Eth2Genesis;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
@@ -34,7 +38,6 @@ import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.util.BeaconBlockUtil;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
-import tech.pegasys.artemis.datastructures.util.DepositUtil;
 import tech.pegasys.artemis.pow.api.Eth2GenesisEvent;
 import tech.pegasys.artemis.service.serviceutils.ServiceConfig;
 import tech.pegasys.artemis.statetransition.util.EpochProcessingException;
@@ -42,8 +45,6 @@ import tech.pegasys.artemis.statetransition.util.SlotProcessingException;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
-
-import static tech.pegasys.artemis.statetransition.StateTransition.process_slots;
 
 /** Class to manage the state tree and initiate state transitions */
 public class StateProcessor {
@@ -79,6 +80,15 @@ public class StateProcessor {
     this.stateTransition = new StateTransition(true);
     this.store = store;
     this.eventBus.register(this);
+
+    BeaconBlock block = DataStructureUtil.randomBeaconBlock(90000000);
+    BeaconBlockHeader blockHeader =
+            new BeaconBlockHeader(
+                    block.getSlot(),
+                    block.getParent_root(),
+                    block.getState_root(),
+                    block.getBody().hash_tree_root(),
+                    block.getSignature());
   }
 
   @Subscribe
@@ -99,16 +109,21 @@ public class StateProcessor {
       if (config.getDepositMode().equals(Constants.DEPOSIT_TEST))
         initial_state = DataStructureUtil.createInitialBeaconState(config.getNumValidators());
       else {
+        // TODO: delete This line below
+        initial_state = DataStructureUtil.createInitialBeaconState(config.getNumValidators());
+        /*
         deposits = DepositUtil.generateBranchProofs(deposits);
         initial_state =
             DataStructureUtil.createInitialBeaconState(
                 deposits, ((Eth2Genesis) event).getDeposit_root());
+                */
       }
       Bytes32 initial_state_root = initial_state.hash_tree_root();
       BeaconBlock genesis_block = BeaconBlockUtil.get_empty_block();
       genesis_block.setState_root(initial_state_root);
       Bytes32 genesis_block_root = genesis_block.signing_root("signature");
       STDOUT.log(Level.INFO, "Initial state root is " + initial_state_root.toHexString());
+      STDOUT.log(Level.INFO, "Genesis block root is " + genesis_block_root.toHexString());
       this.store.addState(initial_state_root, initial_state);
       this.store.addProcessedBlock(genesis_block_root, genesis_block);
       this.headBlock = genesis_block;
@@ -142,12 +157,12 @@ public class StateProcessor {
         "Node slot:                             "
             + nodeSlot
             + "  |  "
-            + nodeSlot.longValue() % Constants.GENESIS_SLOT);
+            + nodeSlot.longValue());
 
     Thread.sleep(3000);
     // Get all the unprocessed blocks that are for slots <= nodeSlot
     List<Optional<BeaconBlock>> unprocessedBlocks =
-        this.store.getUnprocessedBlocksUntilSlot(nodeSlot.longValue());
+        this.store.getUnprocessedBlocksUntilSlot(nodeSlot);
 
     // Use each block to build on all possible forks
     unprocessedBlocks.forEach(this::processBlock);
@@ -160,7 +175,7 @@ public class StateProcessor {
         "Head block slot:                      "
             + headBlock.getSlot().longValue()
             + "  |  "
-            + headBlock.getSlot().longValue() % Constants.GENESIS_SLOT);
+            + headBlock.getSlot().longValue());
 
     // Get head block's state, and initialize a newHeadState variable to run state transition on
     BeaconState headBlockState = store.getState(headBlock.getState_root()).get();
@@ -169,15 +184,11 @@ public class StateProcessor {
     STDOUT.log(
         Level.INFO,
         "Justified block epoch:                 "
-            + justifiedEpoch
-            + "  |  "
-            + justifiedEpoch % Constants.GENESIS_EPOCH);
+            + justifiedEpoch);
     STDOUT.log(
         Level.INFO,
         "Finalized block epoch:                 "
-            + finalizedEpoch
-            + "  |  "
-            + finalizedEpoch % Constants.GENESIS_EPOCH);
+            + finalizedEpoch);
 
     BeaconStateWithCache newHeadState =
         BeaconStateWithCache.deepCopy((BeaconStateWithCache) headBlockState);
@@ -189,10 +200,11 @@ public class StateProcessor {
 
       // Send event that headState has been updated
       this.eventBus.post(
-              new HeadStateEvent(
-                      BeaconStateWithCache.deepCopy((BeaconStateWithCache) headState), headBlock));
+          new HeadStateEvent(
+              BeaconStateWithCache.deepCopy((BeaconStateWithCache) headState), headBlock));
       recordData(date);
     } catch (SlotProcessingException | EpochProcessingException e) {
+      System.out.println("Error in onNewSlot" + e.toString());
       LOG.log(Level.WARN, e.toString());
       STDOUT.log(Level.INFO, ANSI_RED + "Unable to update head state" + ANSI_RESET);
     }
@@ -245,13 +257,15 @@ public class StateProcessor {
 
         // Add attestations that were processed in the block to processed attestations storage
         block
-                .getBody()
-                .getAttestations()
-                .forEach(attestation -> this.store.addProcessedAttestation(attestation));
+            .getBody()
+            .getAttestations()
+            .forEach(attestation -> this.store.addProcessedAttestation(attestation));
       } else {
+        System.out.println("Skipped processing block");
         STDOUT.log(Level.INFO, "Skipped processing block");
       }
     } catch (NoSuchElementException | IllegalArgumentException | StateTransitionException e) {
+      System.out.println("Error in processBlock" + e.toString());
       LOG.log(Level.WARN, e.toString());
     }
   }
