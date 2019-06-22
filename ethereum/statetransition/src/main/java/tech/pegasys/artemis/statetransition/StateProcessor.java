@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.statetransition;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.artemis.statetransition.StateTransition.process_slots;
 
 import com.google.common.eventbus.EventBus;
@@ -29,6 +30,7 @@ import org.apache.tuweni.crypto.SECP256K1.PublicKey;
 import tech.pegasys.artemis.data.RawRecord;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.artemis.datastructures.event.Eth2Genesis;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
@@ -78,6 +80,15 @@ public class StateProcessor {
     this.stateTransition = new StateTransition(true);
     this.store = store;
     this.eventBus.register(this);
+
+    BeaconBlock block = DataStructureUtil.randomBeaconBlock(90000000);
+    BeaconBlockHeader blockHeader =
+            new BeaconBlockHeader(
+                    block.getSlot(),
+                    block.getParent_root(),
+                    block.getState_root(),
+                    block.getBody().hash_tree_root(),
+                    block.getSignature());
   }
 
   @Subscribe
@@ -112,6 +123,7 @@ public class StateProcessor {
       genesis_block.setState_root(initial_state_root);
       Bytes32 genesis_block_root = genesis_block.signing_root("signature");
       STDOUT.log(Level.INFO, "Initial state root is " + initial_state_root.toHexString());
+      STDOUT.log(Level.INFO, "Genesis block root is " + genesis_block_root.toHexString());
       this.store.addState(initial_state_root, initial_state);
       this.store.addProcessedBlock(genesis_block_root, genesis_block);
       this.headBlock = genesis_block;
@@ -172,14 +184,10 @@ public class StateProcessor {
     STDOUT.log(
         Level.INFO,
         "Justified block epoch:                 "
-            + justifiedEpoch
-            + "  |  "
             + justifiedEpoch);
     STDOUT.log(
         Level.INFO,
         "Finalized block epoch:                 "
-            + finalizedEpoch
-            + "  |  "
             + finalizedEpoch);
 
     BeaconStateWithCache newHeadState =
@@ -196,6 +204,7 @@ public class StateProcessor {
               BeaconStateWithCache.deepCopy((BeaconStateWithCache) headState), headBlock));
       recordData(date);
     } catch (SlotProcessingException | EpochProcessingException e) {
+      System.out.println("Error in onNewSlot" + e.toString());
       LOG.log(Level.WARN, e.toString());
       STDOUT.log(Level.INFO, ANSI_RED + "Unable to update head state" + ANSI_RESET);
     }
@@ -252,9 +261,11 @@ public class StateProcessor {
             .getAttestations()
             .forEach(attestation -> this.store.addProcessedAttestation(attestation));
       } else {
+        System.out.println("Skipped processing block");
         STDOUT.log(Level.INFO, "Skipped processing block");
       }
     } catch (NoSuchElementException | IllegalArgumentException | StateTransitionException e) {
+      System.out.println("Error in processBlock" + e.toString());
       LOG.log(Level.WARN, e.toString());
     }
   }

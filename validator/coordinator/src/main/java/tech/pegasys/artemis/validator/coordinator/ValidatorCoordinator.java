@@ -19,6 +19,7 @@ import static tech.pegasys.artemis.datastructures.Constants.SLOTS_PER_EPOCH;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_current_epoch;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_domain;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.slot_to_epoch;
+import static tech.pegasys.artemis.statetransition.StateTransition.process_slots;
 import static tech.pegasys.artemis.util.bls.BLSVerify.bls_verify;
 
 import com.google.common.eventbus.EventBus;
@@ -66,6 +67,8 @@ import tech.pegasys.artemis.statetransition.GenesisHeadStateEvent;
 import tech.pegasys.artemis.statetransition.HeadStateEvent;
 import tech.pegasys.artemis.statetransition.StateTransition;
 import tech.pegasys.artemis.statetransition.StateTransitionException;
+import tech.pegasys.artemis.statetransition.util.EpochProcessingException;
+import tech.pegasys.artemis.statetransition.util.SlotProcessingException;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
@@ -114,8 +117,10 @@ public class ValidatorCoordinator {
     initializeValidators();
   }
 
+  /*
   @Subscribe
   public void checkIfIncomingBlockObeysSlashingConditions(BeaconBlock block) {
+
     int proposerIndex =
         BeaconStateUtil.get_beacon_proposer_index(headState);
     Validator proposer = headState.getValidator_registry().get(proposerIndex);
@@ -155,12 +160,11 @@ public class ValidatorCoordinator {
     this.store.addUnprocessedBlockHeader(proposerIndex, blockHeader);
   }
 
+  */
   @Subscribe
   // TODO: make sure blocks that are produced right even after new slot to be pushed.
   public void onNewSlot(Date date) {
-    System.out.println("on new Slot");
     if (validatorBlock != null) {
-      System.out.println("posting block");
       this.eventBus.post(validatorBlock);
       validatorBlock = null;
     }
@@ -190,7 +194,18 @@ public class ValidatorCoordinator {
     BeaconStateWithCache headState = headStateEvent.getHeadState();
     BeaconBlock headBlock = headStateEvent.getHeadBlock();
 
+    // Update validator indices of our own validators
+    List<Validator> validatorRegistry = headState.getValidator_registry();
+    IntStream.range(0, validatorRegistry.size())
+            .forEach(
+                    i -> {
+                      if (validatorSet.keySet().contains(validatorRegistry.get(i).getPubkey())) {
+                        validatorSet.get(validatorRegistry.get(i).getPubkey()).setRight(i);
+                      }
+                    });
+
     if (headState.getSlot().mod(UnsignedLong.valueOf(SLOTS_PER_EPOCH)).equals(UnsignedLong.ZERO)) {
+      System.out.println("getting_committee_assignments");
       validatorSet.forEach(
           (pubKey, validatorInformation) -> {
             Optional<Triple<List<Integer>, UnsignedLong, UnsignedLong>> committeeAssignment =
@@ -201,6 +216,10 @@ public class ValidatorCoordinator {
                   UnsignedLong slot = assignment.getRight();
                   List<Triple<List<Integer>, UnsignedLong, Integer>> assignmentsInSlot =
                       committeeAssignments.get(slot);
+                  if (assignmentsInSlot == null) {
+                    assignmentsInSlot = new ArrayList<>();
+                    committeeAssignments.put(slot, assignmentsInSlot);
+                  }
                   assignmentsInSlot.add(
                       new MutableTriple<>(
                           assignment.getLeft(),
@@ -343,15 +362,20 @@ public class ValidatorCoordinator {
   }
 
   private void createBlockIfNecessary(BeaconStateWithCache state, BeaconBlock oldBlock) {
-    BeaconStateWithCache newState = BeaconStateWithCache.deepCopy(state);
+    BeaconStateWithCache checkState = BeaconStateWithCache.deepCopy(state);
+    try {
+      process_slots(checkState, checkState.getSlot().plus(UnsignedLong.ONE));
+    } catch (SlotProcessingException | EpochProcessingException e) {
+      System.out.println("Coordinator checking proposer index exception");
+    }
 
     // Calculate the block proposer index, and if we have the
     // block proposer in our set of validators, produce the block
-    int proposerIndex = BeaconStateUtil.get_beacon_proposer_index(newState);
-    System.out.println("proposerIndex: " + proposerIndex);
-    BLSPublicKey proposer = newState.getValidator_registry().get(proposerIndex).getPubkey();
+    int proposerIndex = BeaconStateUtil.get_beacon_proposer_index(checkState);
+    BLSPublicKey proposer = checkState.getValidator_registry().get(proposerIndex).getPubkey();
+
+    BeaconStateWithCache newState = BeaconStateWithCache.deepCopy(state);
     if (validatorSet.containsKey(proposer)) {
-      System.out.println("validatorSet contains proposer");
       CompletableFuture<BLSSignature> epochSignatureTask =
           CompletableFuture.supplyAsync(() -> getEpochSignature(newState, proposer));
       CompletableFuture<BeaconBlock> blockCreationTask =

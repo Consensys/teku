@@ -28,6 +28,7 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.artemis.datastructures.Constants;
+import tech.pegasys.artemis.datastructures.blocks.BeaconBlockBody;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
@@ -104,8 +105,10 @@ public class BeaconState {
     this.finalized_epoch = UnsignedLong.valueOf(Constants.GENESIS_EPOCH);
     this.finalized_root = Constants.ZERO_HASH;
 
-    this.current_crosslinks = new ArrayList<>(Constants.SHARD_COUNT);
-    this.previous_crosslinks = new ArrayList<>(Constants.SHARD_COUNT);
+    this.current_crosslinks = new ArrayList<>(
+            Collections.nCopies(Constants.SHARD_COUNT, new Crosslink()));
+    this.previous_crosslinks = new ArrayList<>(
+            Collections.nCopies(Constants.SHARD_COUNT, new Crosslink()));
     this.latest_block_roots =
         new ArrayList<>(
             Collections.nCopies(Constants.SLOTS_PER_HISTORICAL_ROOT, Constants.ZERO_HASH));
@@ -118,10 +121,13 @@ public class BeaconState {
     this.latest_slashed_balances =
         new ArrayList<>(
             Collections.nCopies(Constants.LATEST_SLASHED_EXIT_LENGTH, UnsignedLong.ZERO));
-    this.latest_block_header = new BeaconBlockHeader(UnsignedLong.ZERO, ZERO_HASH, ZERO_HASH, ZERO_HASH,EMPTY_SIGNATURE);
+    Bytes32 body_root = new BeaconBlockBody().hash_tree_root();
+    this.latest_block_header = new BeaconBlockHeader(body_root);
     this.historical_roots = new ArrayList<>();
 
-    this.latest_eth1_data = new Eth1Data(ZERO_HASH, UnsignedLong.ZERO, ZERO_HASH);
+    // TODO gotta change this with genesis eth1DATA because deposit count is dependent on the
+    // number of validators
+    this.latest_eth1_data = new Eth1Data(ZERO_HASH, UnsignedLong.valueOf(16), ZERO_HASH);
     this.eth1_data_votes = new ArrayList<>();
     this.deposit_index = UnsignedLong.ZERO;
   }

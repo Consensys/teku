@@ -34,6 +34,12 @@ public final class Eth1Data {
     this.block_hash = block_hash;
   }
 
+  public Eth1Data() {
+    this.deposit_root = Bytes32.ZERO;
+    this.deposit_count = UnsignedLong.ZERO;
+    this.block_hash = Bytes32.ZERO;
+  }
+
   public Eth1Data(Eth1Data eth1Data) {
     this.deposit_root = eth1Data.getDeposit_root();
     this.deposit_count = eth1Data.getDeposit_count();

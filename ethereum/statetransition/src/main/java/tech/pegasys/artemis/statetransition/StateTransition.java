@@ -78,6 +78,7 @@ public class StateTransition {
       Bytes32 stateRoot = state.hash_tree_root();
       // Validate state root (`validate_state_root == True` in production)
       if (validate_state_root) {
+        System.out.println("validating state root");
         checkArgument(
             block.getState_root().equals(stateRoot),
             ANSI_RED
@@ -94,6 +95,7 @@ public class StateTransition {
         | BlockProcessingException
         | EpochProcessingException
         | IllegalArgumentException e) {
+      System.out.println("Error in state transition: " + e.toString());
       STDOUT.log(Level.WARN, "  State Transition error: " + e, printEnabled);
       throw new StateTransitionException(e.toString());
     }

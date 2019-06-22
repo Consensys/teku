@@ -221,7 +221,8 @@ public final class EpochProcessorUtil {
                 .filter(
                     attestation -> attestation.getData().getCrosslink().getShard().equals(shard));
 
-    Stream<Pair<Crosslink, UnsignedLong>> crosslink_attesting_balances =
+    Supplier<Stream<Pair<Crosslink, UnsignedLong>>> crosslink_attesting_balances =
+            () ->
         attestations
             .get()
             .map(attestation -> attestation.getData().getCrosslink())
@@ -244,12 +245,12 @@ public final class EpochProcessorUtil {
                                 .collect(Collectors.toList()))));
 
     Optional<Pair<Crosslink, UnsignedLong>> winning_crosslink_balance =
-        crosslink_attesting_balances.max(Comparator.comparing(Pair::getRight));
+        crosslink_attesting_balances.get().max(Comparator.comparing(Pair::getRight));
 
     Crosslink winning_crosslink;
     if (winning_crosslink_balance.isPresent()) {
       winning_crosslink =
-          crosslink_attesting_balances
+          crosslink_attesting_balances.get()
               .filter(cab -> winning_crosslink_balance.get().getRight().equals(cab.getRight()))
               .max(Comparator.comparing(cab -> cab.getLeft().getData_root().toHexString()))
               .get()
@@ -687,7 +688,9 @@ public final class EpochProcessorUtil {
                           .compareTo(state.getValidator_registry().get(i2).getActivation_epoch()))
               .collect(Collectors.toList());
 
-      for (Integer index : activation_queue.subList(0, get_churn_limit(state).intValue())) {
+      int churn_limit = get_churn_limit(state).intValue();
+      int sublist_size = Math.min(churn_limit, activation_queue.size());
+      for (Integer index : activation_queue.subList(0, sublist_size)) {
         Validator validator = state.getValidator_registry().get(index);
         if (validator.getActivation_epoch().equals(FAR_FUTURE_EPOCH)) {
           validator.setActivation_epoch(

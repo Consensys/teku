@@ -112,8 +112,6 @@ public final class BlockProcessorUtil {
       checkArgument(
           block.getSlot().equals(state.getSlot()),
           "process_block_header: Verify that the slots match");
-      System.out.println("block.getParent_root: " + block.getParent_root());
-      System.out.println("block.getParent_root: " + state.getLatest_block_header().signing_root("signature"));
       checkArgument(
           block.getParent_root().equals(state.getLatest_block_header().signing_root("signature")),
           "process_block_header: Verify that the parent matches");
@@ -215,6 +213,14 @@ public final class BlockProcessorUtil {
       throws BlockProcessingException {
     try {
 
+      System.out.println("numDeposits in block: " + body.getDeposits().size());
+      System.out.println("depositCount minus index: " +state
+              .getLatest_eth1_data()
+              .getDeposit_count()
+              .minus(state.getDeposit_index())
+              .longValue());
+      System.out.println("depositCount: " + state.getLatest_eth1_data().getDeposit_count().longValue());
+      System.out.println("depositIndex: " + state.getDeposit_index().longValue());
       checkArgument(
           body.getDeposits().size()
               == Math.min(

@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.datastructures.blocks;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -61,6 +62,18 @@ public class BeaconBlockBody {
     this.deposits = deposits;
     this.voluntary_exits = voluntary_exits;
     this.transfers = transfers;
+  }
+
+  public BeaconBlockBody() {
+    this.randao_reveal = BLSSignature.empty();
+    this.eth1_data = new Eth1Data();
+    this.graffiti = Bytes32.ZERO;
+    this.proposer_slashings = new ArrayList<>();
+    this.attester_slashings = new ArrayList<>();
+    this.attestations = new ArrayList<>();
+    this.deposits = new ArrayList<>();
+    this.voluntary_exits = new ArrayList<>();
+    this.transfers = new ArrayList<>();
   }
 
   public static BeaconBlockBody fromBytes(Bytes bytes) {

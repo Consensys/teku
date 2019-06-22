@@ -49,6 +49,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+
+import com.sun.org.apache.bcel.internal.Const;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.Hash;
@@ -269,7 +271,7 @@ public class BeaconStateUtil {
    *     - Spec v0.4</a>
    */
   public static UnsignedLong slot_to_epoch(UnsignedLong slot) {
-    return slot.dividedBy(UnsignedLong.valueOf(SLOTS_PER_EPOCH));
+    return slot.dividedBy(UnsignedLong.valueOf(Constants.SLOTS_PER_EPOCH));
   }
 
   /**
@@ -595,10 +597,9 @@ public class BeaconStateUtil {
       UnsignedLong effective_balance =
           state.getValidator_registry().get(candidate_index).getEffective_balance();
 
-      UnsignedLong minRandomBalance =
-          effective_balance.times(UnsignedLong.valueOf(MAX_RANDOM_BYTE));
-      UnsignedLong maxRandomBalance = UnsignedLong.valueOf(MAX_EFFECTIVE_BALANCE * random_byte);
-      if (minRandomBalance.compareTo(maxRandomBalance) >= 0) return candidate_index;
+      int minRandomBalance = effective_balance.intValue() * MAX_RANDOM_BYTE;
+      int maxRandomBalance = ((int) MAX_EFFECTIVE_BALANCE) * random_byte;
+      if (minRandomBalance >= maxRandomBalance) return candidate_index;
       i++;
     }
   }
