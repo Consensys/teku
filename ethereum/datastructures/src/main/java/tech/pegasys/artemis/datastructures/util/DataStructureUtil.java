@@ -14,43 +14,27 @@
 package tech.pegasys.artemis.datastructures.util;
 
 import static tech.pegasys.artemis.datastructures.Constants.DEPOSIT_CONTRACT_TREE_DEPTH;
-import static tech.pegasys.artemis.datastructures.Constants.MAX_DEPOSIT_AMOUNT;
 import static tech.pegasys.artemis.datastructures.Constants.ZERO_HASH;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.bls_domain;
 
 import com.google.common.primitives.UnsignedLong;
-import java.nio.ByteBuffer;
-import java.security.SecureRandom;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Random;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockBody;
-import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
-import tech.pegasys.artemis.datastructures.operations.AttestationData;
-import tech.pegasys.artemis.datastructures.operations.AttesterSlashing;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.DepositData;
-import tech.pegasys.artemis.datastructures.operations.DepositInput;
-import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
-import tech.pegasys.artemis.datastructures.operations.SlashableAttestation;
-import tech.pegasys.artemis.datastructures.operations.Transfer;
-import tech.pegasys.artemis.datastructures.operations.VoluntaryExit;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
-import tech.pegasys.artemis.datastructures.state.Crosslink;
-import tech.pegasys.artemis.datastructures.state.Validator;
-import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
-import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 
 public final class DataStructureUtil {
-
+  /*
   private static final ALogger LOG = new ALogger(DataStructureUtil.class.getName());
 
   public static long randomInt() {
@@ -321,26 +305,28 @@ public final class DataStructureUtil {
         BLSSignature.random(seed + 6));
   }
 
+  */
+
   public static ArrayList<Deposit> newDeposits(int numDeposits) {
     ArrayList<Deposit> deposits = new ArrayList<Deposit>();
 
     for (int i = 0; i < numDeposits; i++) {
       // https://github.com/ethereum/eth2.0-specs/blob/0.4.0/specs/validator/0_beacon-chain-validator.md#submit-deposit
       BLSKeyPair keypair = BLSKeyPair.random(i);
-      DepositInput deposit_input =
-          new DepositInput(keypair.getPublicKey(), Bytes32.ZERO, BLSSignature.empty());
+      DepositData depositData =
+          new DepositData(
+              keypair.getPublicKey(),
+              Bytes32.ZERO,
+              UnsignedLong.valueOf(Constants.MAX_EFFECTIVE_BALANCE),
+              BLSSignature.empty());
       BLSSignature proof_of_possession =
           BLSSignature.sign(
-              keypair, deposit_input.signed_root("proof_of_possession"), Constants.DOMAIN_DEPOSIT);
-      deposit_input.setProof_of_possession(proof_of_possession);
+              keypair, depositData.signing_root("signature"), bls_domain(Constants.DOMAIN_DEPOSIT));
+      depositData.setSignature(proof_of_possession);
 
-      UnsignedLong timestamp = UnsignedLong.valueOf(i);
-      DepositData deposit_data =
-          new DepositData(UnsignedLong.valueOf(MAX_DEPOSIT_AMOUNT), timestamp, deposit_input);
-      UnsignedLong index = UnsignedLong.valueOf(i);
-      List<Bytes32> branch =
+      List<Bytes32> proof =
           new ArrayList<>(Collections.nCopies(DEPOSIT_CONTRACT_TREE_DEPTH, Bytes32.ZERO));
-      Deposit deposit = new Deposit(branch, index, deposit_data);
+      Deposit deposit = new Deposit(proof, depositData);
       deposits.add(deposit);
     }
     return deposits;
@@ -353,12 +339,13 @@ public final class DataStructureUtil {
       ArrayList<Deposit> deposits,
       List<Attestation> attestations) {
     return new BeaconBlock(
-        slotNum.longValue(),
+        slotNum,
         previous_block_root,
         state_root,
         new BeaconBlockBody(
             Constants.EMPTY_SIGNATURE,
-            new Eth1Data(ZERO_HASH, ZERO_HASH),
+            new Eth1Data(ZERO_HASH, UnsignedLong.ZERO, ZERO_HASH),
+            Bytes32.ZERO,
             new ArrayList<>(),
             new ArrayList<>(),
             attestations,
@@ -375,7 +362,7 @@ public final class DataStructureUtil {
         state,
         deposits,
         UnsignedLong.valueOf(Constants.GENESIS_SLOT),
-        new Eth1Data(deposit_root, Bytes32.ZERO));
+        new Eth1Data(deposit_root, UnsignedLong.ZERO, Bytes32.ZERO));
   }
 
   public static BeaconStateWithCache createInitialBeaconState(int numValidators) {
@@ -384,9 +371,9 @@ public final class DataStructureUtil {
         state,
         newDeposits(numValidators),
         UnsignedLong.valueOf(Constants.GENESIS_SLOT),
-        new Eth1Data(Bytes32.ZERO, Bytes32.ZERO));
+        new Eth1Data(Bytes32.ZERO, UnsignedLong.ZERO, Bytes32.ZERO));
   }
-
+  /*
   public static Validator randomValidator() {
     return new Validator(
         randomPublicKey(),
@@ -408,4 +395,5 @@ public final class DataStructureUtil {
         false,
         false);
   }
+  */
 }

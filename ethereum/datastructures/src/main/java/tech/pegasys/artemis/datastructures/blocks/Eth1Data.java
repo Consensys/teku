@@ -13,10 +13,9 @@
 
 package tech.pegasys.artemis.datastructures.blocks;
 
+import com.google.common.primitives.UnsignedLong;
 import java.util.Arrays;
 import java.util.Objects;
-
-import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
@@ -47,7 +46,7 @@ public final class Eth1Data {
         reader ->
             new Eth1Data(
                 Bytes32.wrap(reader.readFixedBytes(32)),
-                    UnsignedLong.fromLongBits(reader.readUInt64()),
+                UnsignedLong.fromLongBits(reader.readUInt64()),
                 Bytes32.wrap(reader.readFixedBytes(32))));
   }
 
@@ -81,7 +80,7 @@ public final class Eth1Data {
 
     Eth1Data other = (Eth1Data) obj;
     return Objects.equals(this.getDeposit_root(), other.getDeposit_root())
-            && Objects.equals(this.getDeposit_count(), other.getDeposit_count())
+        && Objects.equals(this.getDeposit_count(), other.getDeposit_count())
         && Objects.equals(this.getBlock_hash(), other.getBlock_hash());
   }
 
@@ -117,8 +116,8 @@ public final class Eth1Data {
     return HashTreeUtil.merkleize(
         Arrays.asList(
             HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, deposit_root),
-                HashTreeUtil.hash_tree_root(
-                        SSZTypes.BASIC, SSZ.encodeUInt64(deposit_count.longValue())),
+            HashTreeUtil.hash_tree_root(
+                SSZTypes.BASIC, SSZ.encodeUInt64(deposit_count.longValue())),
             HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, block_hash)));
   }
 }

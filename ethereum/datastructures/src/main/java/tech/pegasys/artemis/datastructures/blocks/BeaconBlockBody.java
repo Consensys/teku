@@ -70,7 +70,7 @@ public class BeaconBlockBody {
             new BeaconBlockBody(
                 BLSSignature.fromBytes(reader.readBytes()),
                 Eth1Data.fromBytes(reader.readBytes()),
-                    Bytes32.wrap(reader.readFixedBytes(32)),
+                Bytes32.wrap(reader.readFixedBytes(32)),
                 reader.readBytesList().stream()
                     .map(ProposerSlashing::fromBytes)
                     .collect(Collectors.toList()),

@@ -13,6 +13,8 @@
 
 package tech.pegasys.artemis.statetransition;
 
+import static tech.pegasys.artemis.statetransition.StateTransition.process_slots;
+
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.google.common.primitives.UnsignedLong;
@@ -34,7 +36,6 @@ import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.util.BeaconBlockUtil;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
-import tech.pegasys.artemis.datastructures.util.DepositUtil;
 import tech.pegasys.artemis.pow.api.Eth2GenesisEvent;
 import tech.pegasys.artemis.service.serviceutils.ServiceConfig;
 import tech.pegasys.artemis.statetransition.util.EpochProcessingException;
@@ -42,8 +43,6 @@ import tech.pegasys.artemis.statetransition.util.SlotProcessingException;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
-
-import static tech.pegasys.artemis.statetransition.StateTransition.process_slots;
 
 /** Class to manage the state tree and initiate state transitions */
 public class StateProcessor {
@@ -99,10 +98,14 @@ public class StateProcessor {
       if (config.getDepositMode().equals(Constants.DEPOSIT_TEST))
         initial_state = DataStructureUtil.createInitialBeaconState(config.getNumValidators());
       else {
+        // TODO: delete This line below
+        initial_state = DataStructureUtil.createInitialBeaconState(config.getNumValidators());
+        /*
         deposits = DepositUtil.generateBranchProofs(deposits);
         initial_state =
             DataStructureUtil.createInitialBeaconState(
                 deposits, ((Eth2Genesis) event).getDeposit_root());
+                */
       }
       Bytes32 initial_state_root = initial_state.hash_tree_root();
       BeaconBlock genesis_block = BeaconBlockUtil.get_empty_block();
@@ -147,7 +150,7 @@ public class StateProcessor {
     Thread.sleep(3000);
     // Get all the unprocessed blocks that are for slots <= nodeSlot
     List<Optional<BeaconBlock>> unprocessedBlocks =
-        this.store.getUnprocessedBlocksUntilSlot(nodeSlot.longValue());
+        this.store.getUnprocessedBlocksUntilSlot(nodeSlot);
 
     // Use each block to build on all possible forks
     unprocessedBlocks.forEach(this::processBlock);
@@ -189,8 +192,8 @@ public class StateProcessor {
 
       // Send event that headState has been updated
       this.eventBus.post(
-              new HeadStateEvent(
-                      BeaconStateWithCache.deepCopy((BeaconStateWithCache) headState), headBlock));
+          new HeadStateEvent(
+              BeaconStateWithCache.deepCopy((BeaconStateWithCache) headState), headBlock));
       recordData(date);
     } catch (SlotProcessingException | EpochProcessingException e) {
       LOG.log(Level.WARN, e.toString());
@@ -245,9 +248,9 @@ public class StateProcessor {
 
         // Add attestations that were processed in the block to processed attestations storage
         block
-                .getBody()
-                .getAttestations()
-                .forEach(attestation -> this.store.addProcessedAttestation(attestation));
+            .getBody()
+            .getAttestations()
+            .forEach(attestation -> this.store.addProcessedAttestation(attestation));
       } else {
         STDOUT.log(Level.INFO, "Skipped processing block");
       }

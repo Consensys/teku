@@ -15,8 +15,6 @@ package tech.pegasys.artemis.datastructures.operations;
 
 import java.util.Arrays;
 import java.util.Objects;
-
-import jnr.ffi.annotations.In;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
@@ -28,8 +26,7 @@ public class AttesterSlashing implements Merkleizable {
   private IndexedAttestation attestation_1;
   private IndexedAttestation attestation_2;
 
-  public AttesterSlashing(
-      IndexedAttestation attestation_1, IndexedAttestation attestation_2) {
+  public AttesterSlashing(IndexedAttestation attestation_1, IndexedAttestation attestation_2) {
     this.attestation_1 = attestation_1;
     this.attestation_2 = attestation_2;
   }
@@ -95,7 +92,6 @@ public class AttesterSlashing implements Merkleizable {
   @Override
   public Bytes32 hash_tree_root() {
     return HashTreeUtil.merkleize(
-        Arrays.asList(
-            attestation_1.hash_tree_root(), attestation_2.hash_tree_root()));
+        Arrays.asList(attestation_1.hash_tree_root(), attestation_2.hash_tree_root()));
   }
 }
