@@ -77,18 +77,20 @@ public class AttestationUtil {
     List<Triple<List<Integer>, UnsignedLong, Integer>> committeeAssignmentsForSlot =
         committeeAssignments.get(slot);
     List<Triple<BLSPublicKey, Integer, CrosslinkCommittee>> attesters = new ArrayList<>();
-    for (int i = 0; i < committeeAssignmentsForSlot.size(); i++) {
-      int validatorIndex = committeeAssignmentsForSlot.get(i).getRight();
-      List<Integer> committee = committeeAssignmentsForSlot.get(i).getLeft();
-      UnsignedLong shard = committeeAssignmentsForSlot.get(i).getMiddle();
-      int indexIntoCommittee = committee.indexOf(validatorIndex);
+    if (committeeAssignmentsForSlot != null) {
+      for (int i = 0; i < committeeAssignmentsForSlot.size(); i++) {
+        int validatorIndex = committeeAssignmentsForSlot.get(i).getRight();
+        List<Integer> committee = committeeAssignmentsForSlot.get(i).getLeft();
+        UnsignedLong shard = committeeAssignmentsForSlot.get(i).getMiddle();
+        int indexIntoCommittee = committee.indexOf(validatorIndex);
 
-      CrosslinkCommittee crosslinkCommittee = new CrosslinkCommittee(shard, committee);
-      attesters.add(
-          new MutableTriple<>(
-              headState.getValidator_registry().get(validatorIndex).getPubkey(),
-              indexIntoCommittee,
-              crosslinkCommittee));
+        CrosslinkCommittee crosslinkCommittee = new CrosslinkCommittee(shard, committee);
+        attesters.add(
+                new MutableTriple<>(
+                        headState.getValidator_registry().get(validatorIndex).getPubkey(),
+                        indexIntoCommittee,
+                        crosslinkCommittee));
+      }
     }
     return attesters;
   }

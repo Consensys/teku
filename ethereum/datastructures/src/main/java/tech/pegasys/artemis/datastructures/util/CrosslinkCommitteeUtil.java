@@ -53,6 +53,7 @@ public class CrosslinkCommitteeUtil {
   public static Integer get_shuffled_index(int index, int index_count, Bytes32 seed) {
     checkArgument(index < index_count, "CrosslinkCommitteeUtil.get_shuffled_index1");
     checkArgument(index_count <= Math.pow(2, 40), "CrosslinkCommitteeUtil.get_shuffled_index2");
+    /*
 
     // Swap or not (https://link.springer.com/content/pdf/10.1007%2F978-3-642-32009-5_1.pdf)
     // See the 'generalized domain' algorithm on page 3
@@ -64,7 +65,7 @@ public class CrosslinkCommitteeUtil {
       int pivot = safeMod(((int) bytes_to_int(pivotHashSubArray)), index_count);
 
       int flip = safeMod((pivot + index_count - index), index_count);
-      long position = max(UnsignedLong.valueOf(index), UnsignedLong.valueOf(flip)).longValue();
+      int position = Math.max(index, flip);
 
       Bytes sourceBytes =
           Bytes.concatenate(seed, roundBytes, int_to_bytes(Math.floorDiv(position, 256l), 4));
@@ -76,6 +77,41 @@ public class CrosslinkCommitteeUtil {
       index = (bit == 1) ? flip : index;
     }
     return index;
+    */
+    int indexRet = index;
+    byte[] powerOfTwoNumbers = {1, 2, 4, 8, 16, 32, 64, (byte) 128};
+
+    for (int round = 0; round < SHUFFLE_ROUND_COUNT; round++) {
+
+      Bytes roundAsByte = Bytes.of((byte) round);
+
+      // This needs to be unsigned modulo.
+      int pivot =
+              toIntExact(
+                      Long.remainderUnsigned(
+                              bytes_to_int(Hash.keccak256(Bytes.wrap(seed, roundAsByte)).slice(0, 8)),
+                              index_count));
+      int flip = (pivot - indexRet) % index_count;
+      if (flip < 0) {
+        // Account for flip being negative
+        flip += index_count;
+      }
+
+      int position = (indexRet < flip) ? flip : indexRet;
+
+      Bytes positionDiv256 = int_to_bytes(position / 256, 4);
+      Bytes source = Hash.keccak256(Bytes.wrap(seed, roundAsByte, positionDiv256));
+
+      // The byte type is signed in Java, but the right shift should be fine as we just use bit 0.
+      // But we can't use % in the normal way because of signedness, so we `& 1` instead.
+      byte theByte = source.get(position % 256 / 8);
+      byte theMask = powerOfTwoNumbers[position % 8];
+      if ((theByte & theMask) != 0) {
+        indexRet = flip;
+      }
+    }
+
+    return indexRet;
   }
 
   /**

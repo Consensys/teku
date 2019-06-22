@@ -158,7 +158,9 @@ public class ValidatorCoordinator {
   @Subscribe
   // TODO: make sure blocks that are produced right even after new slot to be pushed.
   public void onNewSlot(Date date) {
+    System.out.println("on new Slot");
     if (validatorBlock != null) {
+      System.out.println("posting block");
       this.eventBus.post(validatorBlock);
       validatorBlock = null;
     }
@@ -346,8 +348,10 @@ public class ValidatorCoordinator {
     // Calculate the block proposer index, and if we have the
     // block proposer in our set of validators, produce the block
     int proposerIndex = BeaconStateUtil.get_beacon_proposer_index(newState);
+    System.out.println("proposerIndex: " + proposerIndex);
     BLSPublicKey proposer = newState.getValidator_registry().get(proposerIndex).getPubkey();
     if (validatorSet.containsKey(proposer)) {
+      System.out.println("validatorSet contains proposer");
       CompletableFuture<BLSSignature> epochSignatureTask =
           CompletableFuture.supplyAsync(() -> getEpochSignature(newState, proposer));
       CompletableFuture<BeaconBlock> blockCreationTask =
@@ -389,7 +393,8 @@ public class ValidatorCoordinator {
           this.eventBus.post(newestBlock);
         }
       } catch (InterruptedException | ExecutionException | StateTransitionException e) {
-        LOG.log(Level.WARN, "Error during block creation");
+        System.out.println("error during block creation");
+        System.out.println(e.toString());
       }
     }
   }

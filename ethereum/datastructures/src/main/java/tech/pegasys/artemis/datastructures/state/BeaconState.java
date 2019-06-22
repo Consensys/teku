@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.datastructures.state;
 
+import static tech.pegasys.artemis.datastructures.Constants.EMPTY_SIGNATURE;
 import static tech.pegasys.artemis.datastructures.Constants.ZERO_HASH;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.int_to_bytes;
 
@@ -117,7 +118,7 @@ public class BeaconState {
     this.latest_slashed_balances =
         new ArrayList<>(
             Collections.nCopies(Constants.LATEST_SLASHED_EXIT_LENGTH, UnsignedLong.ZERO));
-    this.latest_block_header = new BeaconBlockHeader(null, null, null, null, null);
+    this.latest_block_header = new BeaconBlockHeader(UnsignedLong.ZERO, ZERO_HASH, ZERO_HASH, ZERO_HASH,EMPTY_SIGNATURE);
     this.historical_roots = new ArrayList<>();
 
     this.latest_eth1_data = new Eth1Data(ZERO_HASH, UnsignedLong.ZERO, ZERO_HASH);

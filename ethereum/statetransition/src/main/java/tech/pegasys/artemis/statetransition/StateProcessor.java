@@ -145,7 +145,7 @@ public class StateProcessor {
         "Node slot:                             "
             + nodeSlot
             + "  |  "
-            + nodeSlot.longValue() % Constants.GENESIS_SLOT);
+            + nodeSlot.longValue());
 
     Thread.sleep(3000);
     // Get all the unprocessed blocks that are for slots <= nodeSlot
@@ -163,7 +163,7 @@ public class StateProcessor {
         "Head block slot:                      "
             + headBlock.getSlot().longValue()
             + "  |  "
-            + headBlock.getSlot().longValue() % Constants.GENESIS_SLOT);
+            + headBlock.getSlot().longValue());
 
     // Get head block's state, and initialize a newHeadState variable to run state transition on
     BeaconState headBlockState = store.getState(headBlock.getState_root()).get();
@@ -174,13 +174,13 @@ public class StateProcessor {
         "Justified block epoch:                 "
             + justifiedEpoch
             + "  |  "
-            + justifiedEpoch % Constants.GENESIS_EPOCH);
+            + justifiedEpoch);
     STDOUT.log(
         Level.INFO,
         "Finalized block epoch:                 "
             + finalizedEpoch
             + "  |  "
-            + finalizedEpoch % Constants.GENESIS_EPOCH);
+            + finalizedEpoch);
 
     BeaconStateWithCache newHeadState =
         BeaconStateWithCache.deepCopy((BeaconStateWithCache) headBlockState);
