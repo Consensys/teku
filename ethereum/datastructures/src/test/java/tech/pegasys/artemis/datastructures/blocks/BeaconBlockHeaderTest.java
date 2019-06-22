@@ -115,12 +115,12 @@ class BeaconBlockHeaderTest {
     BeaconBlock block = DataStructureUtil.randomBeaconBlock(90000000);
     BeaconBlockHeader blockHeader =
         new BeaconBlockHeader(
-            UnsignedLong.valueOf(block.getSlot()),
-            block.getPrevious_block_root(),
+            block.getSlot(),
+            block.getParent_root(),
             block.getState_root(),
             block.getBody().hash_tree_root(),
             block.getSignature());
-    assertEquals(block.signed_root("signature"), blockHeader.signed_root("signature"));
+    assertEquals(block.signing_root("signature"), blockHeader.signing_root("signature"));
     assertEquals(block.hash_tree_root(), blockHeader.hash_tree_root());
   }
 }

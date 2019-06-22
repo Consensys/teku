@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.datastructures.state;
 
+import static tech.pegasys.artemis.datastructures.Constants.EMPTY_SIGNATURE;
 import static tech.pegasys.artemis.datastructures.Constants.ZERO_HASH;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.int_to_bytes;
 
@@ -27,10 +28,9 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.artemis.datastructures.Constants;
+import tech.pegasys.artemis.datastructures.blocks.BeaconBlockBody;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
-import tech.pegasys.artemis.datastructures.blocks.Eth1DataVote;
-import tech.pegasys.artemis.datastructures.util.BeaconBlockUtil;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
 
@@ -105,8 +105,10 @@ public class BeaconState {
     this.finalized_epoch = UnsignedLong.valueOf(Constants.GENESIS_EPOCH);
     this.finalized_root = Constants.ZERO_HASH;
 
-    this.current_crosslinks = new ArrayList<>(Constants.SHARD_COUNT);
-    this.previous_crosslinks = new ArrayList<>(Constants.SHARD_COUNT);
+    this.current_crosslinks = new ArrayList<>(
+            Collections.nCopies(Constants.SHARD_COUNT, new Crosslink()));
+    this.previous_crosslinks = new ArrayList<>(
+            Collections.nCopies(Constants.SHARD_COUNT, new Crosslink()));
     this.latest_block_roots =
         new ArrayList<>(
             Collections.nCopies(Constants.SLOTS_PER_HISTORICAL_ROOT, Constants.ZERO_HASH));
@@ -119,10 +121,13 @@ public class BeaconState {
     this.latest_slashed_balances =
         new ArrayList<>(
             Collections.nCopies(Constants.LATEST_SLASHED_EXIT_LENGTH, UnsignedLong.ZERO));
-    this.latest_block_header = new BeaconBlockHeader(null, null, null, null, null);
+    Bytes32 body_root = new BeaconBlockBody().hash_tree_root();
+    this.latest_block_header = new BeaconBlockHeader(body_root);
     this.historical_roots = new ArrayList<>();
 
-    this.latest_eth1_data = new Eth1Data(ZERO_HASH, UnsignedLong.ZERO, ZERO_HASH);
+    // TODO gotta change this with genesis eth1DATA because deposit count is dependent on the
+    // number of validators
+    this.latest_eth1_data = new Eth1Data(ZERO_HASH, UnsignedLong.valueOf(16), ZERO_HASH);
     this.eth1_data_votes = new ArrayList<>();
     this.deposit_index = UnsignedLong.ZERO;
   }
@@ -207,7 +212,7 @@ public class BeaconState {
                 // Misc
                 UnsignedLong.fromLongBits(reader.readUInt64()),
                 UnsignedLong.fromLongBits(reader.readUInt64()),
-                    Fork.fromBytes(reader.readBytes()),
+                Fork.fromBytes(reader.readBytes()),
                 // Validator registry
                 reader.readBytesList().stream()
                     .map(Validator::fromBytes)
@@ -235,22 +240,23 @@ public class BeaconState {
                 UnsignedLong.fromLongBits(reader.readUInt64()),
                 Bytes32.wrap(reader.readFixedBytes(32)),
                 // Recent state
-                //TODO This should be a vector bounded by SHARD_COUNT, pending an issue fix in Tuweni.
+                // TODO This should be a vector bounded by SHARD_COUNT, pending an issue fix in
+                // Tuweni.
                 reader.readBytesList().stream()
                     .map(Crosslink::fromBytes)
                     .collect(Collectors.toList()),
-                //TODO This should be a vector bounded by SHARD_COUNT, pending an issue fix in Tuweni.
+                // TODO This should be a vector bounded by SHARD_COUNT, pending an issue fix in
+                // Tuweni.
                 reader.readBytesList().stream()
-                      .map(Crosslink::fromBytes)
-                      .collect(Collectors.toList()),
-                reader.readFixedBytesVector(Constants.SLOTS_PER_HISTORICAL_ROOT, 32).stream()
-                    .map(Bytes32::wrap)
+                    .map(Crosslink::fromBytes)
                     .collect(Collectors.toList()),
                 reader.readFixedBytesVector(Constants.SLOTS_PER_HISTORICAL_ROOT, 32).stream()
                     .map(Bytes32::wrap)
                     .collect(Collectors.toList()),
-                reader.readFixedBytesVector(Constants.LATEST_ACTIVE_INDEX_ROOTS_LENGTH, 32)
-                    .stream()
+                reader.readFixedBytesVector(Constants.SLOTS_PER_HISTORICAL_ROOT, 32).stream()
+                    .map(Bytes32::wrap)
+                    .collect(Collectors.toList()),
+                reader.readFixedBytesVector(Constants.LATEST_ACTIVE_INDEX_ROOTS_LENGTH, 32).stream()
                     .map(Bytes32::wrap)
                     .collect(Collectors.toList()),
                 reader.readUInt64List().stream()
@@ -274,7 +280,7 @@ public class BeaconState {
     List<Bytes> current_crosslinksBytes =
         current_crosslinks.stream().map(item -> item.toBytes()).collect(Collectors.toList());
     List<Bytes> previous_crosslinksBytes =
-            previous_crosslinks.stream().map(item -> item.toBytes()).collect(Collectors.toList());
+        previous_crosslinks.stream().map(item -> item.toBytes()).collect(Collectors.toList());
     List<Bytes> eth1_data_votesBytes =
         eth1_data_votes.stream().map(item -> item.toBytes()).collect(Collectors.toList());
     List<Bytes> previous_epoch_attestationsBytes =
@@ -295,10 +301,7 @@ public class BeaconState {
           // Validator registry
           writer.writeBytesList(validator_registryBytes);
           writer.writeULongIntList(
-              64,
-              balances.stream()
-                  .map(UnsignedLong::longValue)
-                  .collect(Collectors.toList()));
+              64, balances.stream().map(UnsignedLong::longValue).collect(Collectors.toList()));
           // Randomness and committees
           writer.writeFixedBytesVector(latest_randao_mixes);
           writer.writeUInt64(latest_start_shard.longValue());
@@ -313,9 +316,9 @@ public class BeaconState {
           writer.writeUInt64(finalized_epoch.longValue());
           writer.writeFixedBytes(32, finalized_root);
           // Recent state
-          //TODO This should be a vector bounded by SHARD_COUNT, pending an issue fix in Tuweni.
+          // TODO This should be a vector bounded by SHARD_COUNT, pending an issue fix in Tuweni.
           writer.writeBytesList(current_crosslinksBytes);
-          //TODO This should be a vector bounded by SHARD_COUNT, pending an issue fix in Tuweni.
+          // TODO This should be a vector bounded by SHARD_COUNT, pending an issue fix in Tuweni.
           writer.writeBytesList(previous_crosslinksBytes);
           writer.writeFixedBytesVector(latest_block_roots);
           writer.writeFixedBytesVector(latest_state_roots);
@@ -629,7 +632,6 @@ public class BeaconState {
     this.deposit_index = deposit_index;
   }
 
-
   public void incrementSlot() {
     this.slot = slot.plus(UnsignedLong.ONE);
   }
@@ -650,7 +652,8 @@ public class BeaconState {
                     .collect(Collectors.toList())),
             // Randomness and committees
             HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_COMPOSITE, latest_randao_mixes),
-            HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(latest_start_shard.longValue())),
+            HashTreeUtil.hash_tree_root(
+                SSZTypes.BASIC, SSZ.encodeUInt64(latest_start_shard.longValue())),
             // Finality
             HashTreeUtil.hash_tree_root(SSZTypes.LIST_OF_COMPOSITE, previous_epoch_attestations),
             HashTreeUtil.hash_tree_root(SSZTypes.LIST_OF_COMPOSITE, current_epoch_attestations),
@@ -671,9 +674,9 @@ public class BeaconState {
                     .map(item -> item.hash_tree_root())
                     .collect(Collectors.toList())),
             HashTreeUtil.merkleize(
-                        previous_crosslinks.stream()
-                                .map(item -> item.hash_tree_root())
-                                .collect(Collectors.toList())),
+                previous_crosslinks.stream()
+                    .map(item -> item.hash_tree_root())
+                    .collect(Collectors.toList())),
             HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_COMPOSITE, latest_block_roots),
             HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_COMPOSITE, latest_state_roots),
             HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_COMPOSITE, latest_active_index_roots),

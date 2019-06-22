@@ -254,4 +254,8 @@ public final class HashTreeUtil {
     return Hash.keccak256(
         Bytes.concatenate(merkle_root, Bytes.ofUnsignedInt(length, LITTLE_ENDIAN)));
   }
+
+  private static boolean is_power_of_two(int value) {
+    return value > 0 && (value & (value - 1)) == 0;
+  }
 }

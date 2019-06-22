@@ -43,6 +43,13 @@ public class BeaconBlockHeader {
     this.body_root = body_root;
     this.signature = signature;
   }
+  public BeaconBlockHeader(Bytes32 body_root){
+    this.slot = UnsignedLong.ZERO;
+    this.parent_root = Bytes32.ZERO;
+    this.state_root = Bytes32.ZERO;
+    this.body_root = body_root;
+    this.signature = BLSSignature.empty();
+}
 
   public static BeaconBlockHeader fromBytes(Bytes bytes) {
     return SSZ.decode(
