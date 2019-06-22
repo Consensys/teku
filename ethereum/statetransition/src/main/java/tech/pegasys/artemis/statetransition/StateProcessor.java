@@ -13,17 +13,9 @@
 
 package tech.pegasys.artemis.statetransition;
 
-import static com.google.common.base.Preconditions.checkArgument;
-import static tech.pegasys.artemis.statetransition.StateTransition.process_slots;
-
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.google.common.primitives.UnsignedLong;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.Optional;
 import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.SECP256K1.PublicKey;
@@ -38,6 +30,7 @@ import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.util.BeaconBlockUtil;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
+import tech.pegasys.artemis.datastructures.util.DepositUtil;
 import tech.pegasys.artemis.pow.api.Eth2GenesisEvent;
 import tech.pegasys.artemis.service.serviceutils.ServiceConfig;
 import tech.pegasys.artemis.statetransition.util.EpochProcessingException;
@@ -45,6 +38,14 @@ import tech.pegasys.artemis.statetransition.util.SlotProcessingException;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
+
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.Optional;
+
+import static tech.pegasys.artemis.statetransition.StateTransition.process_slots;
 
 /** Class to manage the state tree and initiate state transitions */
 public class StateProcessor {
@@ -109,14 +110,10 @@ public class StateProcessor {
       if (config.getDepositMode().equals(Constants.DEPOSIT_TEST))
         initial_state = DataStructureUtil.createInitialBeaconState(config.getNumValidators());
       else {
-        // TODO: delete This line below
-        initial_state = DataStructureUtil.createInitialBeaconState(config.getNumValidators());
-        /*
         deposits = DepositUtil.generateBranchProofs(deposits);
         initial_state =
             DataStructureUtil.createInitialBeaconState(
                 deposits, ((Eth2Genesis) event).getDeposit_root());
-                */
       }
       Bytes32 initial_state_root = initial_state.hash_tree_root();
       BeaconBlock genesis_block = BeaconBlockUtil.get_empty_block();
