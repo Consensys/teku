@@ -13,20 +13,8 @@
 
 package tech.pegasys.artemis.validator.client;
 
-import static com.google.common.base.Preconditions.checkArgument;
-import static tech.pegasys.artemis.datastructures.Constants.SHARD_COUNT;
-import static tech.pegasys.artemis.datastructures.Constants.SLOTS_PER_EPOCH;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_beacon_proposer_index;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_current_epoch;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_epoch_committee_count;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_epoch_start_slot;
-import static tech.pegasys.artemis.datastructures.util.CrosslinkCommitteeUtil.get_crosslink_committee;
-import static tech.pegasys.artemis.datastructures.util.CrosslinkCommitteeUtil.get_epoch_start_shard;
-
 import com.google.common.primitives.UnsignedLong;
-import java.math.BigInteger;
-import java.util.List;
-import java.util.Optional;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.tuple.ImmutableTriple;
 import org.apache.commons.lang3.tuple.Triple;
 import org.apache.tuweni.bytes.Bytes;
@@ -41,6 +29,20 @@ import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.mikuli.BLS12381;
 import tech.pegasys.artemis.util.mikuli.KeyPair;
 import tech.pegasys.artemis.util.mikuli.PublicKey;
+
+import java.math.BigInteger;
+import java.util.List;
+import java.util.Optional;
+
+import static com.google.common.base.Preconditions.checkArgument;
+import static tech.pegasys.artemis.datastructures.Constants.SHARD_COUNT;
+import static tech.pegasys.artemis.datastructures.Constants.SLOTS_PER_EPOCH;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_beacon_proposer_index;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_current_epoch;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_epoch_committee_count;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_epoch_start_slot;
+import static tech.pegasys.artemis.datastructures.util.CrosslinkCommitteeUtil.get_crosslink_committee;
+import static tech.pegasys.artemis.datastructures.util.CrosslinkCommitteeUtil.get_epoch_start_shard;
 
 public class ValidatorClientUtil {
 
@@ -92,14 +94,14 @@ public class ValidatorClientUtil {
     return get_beacon_proposer_index(state) == validator_index;
   }
 
-  public static Bytes generateDepositData(
+  public static Bytes blsSignatureHelper(
       KeyPair blsKeys, Bytes32 withdrawal_credentials, long amount) {
     Bytes deposit_data =
         Bytes.wrap(
             Bytes.ofUnsignedLong(amount),
             withdrawal_credentials,
             getPublicKeyFromKeyPair(blsKeys).toBytesCompressed());
-    return Bytes.wrap(generateProofOfPossession(blsKeys, deposit_data), deposit_data).reverse();
+    return generateProofOfPossession(blsKeys, deposit_data);
   }
 
   public static Bytes generateProofOfPossession(KeyPair blsKeys, Bytes deposit_data) {
@@ -119,9 +121,13 @@ public class ValidatorClientUtil {
     Credentials credentials =
         Credentials.create(validator.getSecpKeys().secretKey().bytes().toHexString());
     DepositContract contract = null;
-    Bytes deposit_data =
-        generateDepositData(validator.getBlsKeys(), validator.getWithdrawal_credentials(), amount);
+    Bytes blsSignature =
+        blsSignatureHelper(validator.getBlsKeys(), validator.getWithdrawal_credentials(), amount);
     contract = DepositContract.load(address, web3j, credentials, gasProvider);
-    contract.deposit(deposit_data.toArray(), new BigInteger(amount + "000000000")).send();
+
+    byte[] pubkey = validator.getBlsKeys().publicKey().toByteArray();
+    ArrayUtils.reverse(pubkey);
+
+    contract.deposit(pubkey, validator.getWithdrawal_credentials().reverse().toArray(), blsSignature.reverse().toArray(), new BigInteger(amount + "000000000")).send();
   }
 }
