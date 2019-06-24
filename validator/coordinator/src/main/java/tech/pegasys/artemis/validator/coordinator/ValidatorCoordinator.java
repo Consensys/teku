@@ -192,16 +192,6 @@ public class ValidatorCoordinator {
       BeaconStateWithCache headState = headStateEvent.getHeadState();
       BeaconBlock headBlock = headStateEvent.getHeadBlock();
 
-      // Update validator indices of our own validators
-      List<Validator> validatorRegistry = headState.getValidator_registry();
-      IntStream.range(0, validatorRegistry.size())
-          .forEach(
-              i -> {
-                if (validatorSet.keySet().contains(validatorRegistry.get(i).getPubkey())) {
-                  validatorSet.get(validatorRegistry.get(i).getPubkey()).setRight(i);
-                }
-              });
-
       if (headState
           .getSlot()
           .mod(UnsignedLong.valueOf(SLOTS_PER_EPOCH))
@@ -422,8 +412,7 @@ public class ValidatorCoordinator {
           this.eventBus.post(newestBlock);
         }
       } catch (InterruptedException | ExecutionException | StateTransitionException e) {
-        System.out.println("error during block creation");
-        System.out.println(e.toString());
+        STDOUT.log(Level.WARN, "Error during block creation" + e.toString());
       }
     }
   }

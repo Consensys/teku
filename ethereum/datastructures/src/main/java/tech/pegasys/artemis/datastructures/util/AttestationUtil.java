@@ -133,26 +133,22 @@ public class AttestationUtil {
 
   public static AttestationData completeAttestationData(
       BeaconState state, AttestationData attestationData, CrosslinkCommittee committee) {
-    try {
-      UnsignedLong shard = committee.getShard();
-      Crosslink parent_crosslink = state.getCurrent_crosslinks().get(shard.intValue());
-      UnsignedLong end_epoch =
-          min(
-              attestationData.getTarget_epoch(),
-              parent_crosslink
-                  .getEnd_epoch()
-                  .plus(UnsignedLong.valueOf(Constants.MAX_EPOCHS_PER_CROSSLINK)));
-      Crosslink crosslink =
-          new Crosslink(
-              shard,
-              parent_crosslink.getEnd_epoch(),
-              end_epoch,
-              state.getCurrent_crosslinks().get(shard.intValue()).hash_tree_root(),
-              ZERO_HASH);
-      attestationData.setCrosslink(crosslink);
-    } catch (Exception e) {
-      System.out.println(e.toString());
-    }
+    UnsignedLong shard = committee.getShard();
+    Crosslink parent_crosslink = state.getCurrent_crosslinks().get(shard.intValue());
+    UnsignedLong end_epoch =
+        min(
+            attestationData.getTarget_epoch(),
+            parent_crosslink
+                .getEnd_epoch()
+                .plus(UnsignedLong.valueOf(Constants.MAX_EPOCHS_PER_CROSSLINK)));
+    Crosslink crosslink =
+        new Crosslink(
+            shard,
+            parent_crosslink.getEnd_epoch(),
+            end_epoch,
+            state.getCurrent_crosslinks().get(shard.intValue()).hash_tree_root(),
+            ZERO_HASH);
+    attestationData.setCrosslink(crosslink);
     return attestationData;
   }
 
