@@ -13,9 +13,16 @@
 
 package tech.pegasys.artemis.statetransition;
 
+import static tech.pegasys.artemis.statetransition.StateTransition.process_slots;
+
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.google.common.primitives.UnsignedLong;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.Optional;
 import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.SECP256K1.PublicKey;
@@ -38,14 +45,6 @@ import tech.pegasys.artemis.statetransition.util.SlotProcessingException;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
-
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.Optional;
-
-import static tech.pegasys.artemis.statetransition.StateTransition.process_slots;
 
 /** Class to manage the state tree and initiate state transitions */
 public class StateProcessor {
@@ -84,12 +83,12 @@ public class StateProcessor {
 
     BeaconBlock block = DataStructureUtil.randomBeaconBlock(90000000);
     BeaconBlockHeader blockHeader =
-            new BeaconBlockHeader(
-                    block.getSlot(),
-                    block.getParent_root(),
-                    block.getState_root(),
-                    block.getBody().hash_tree_root(),
-                    block.getSignature());
+        new BeaconBlockHeader(
+            block.getSlot(),
+            block.getParent_root(),
+            block.getState_root(),
+            block.getBody().hash_tree_root(),
+            block.getSignature());
   }
 
   @Subscribe
@@ -132,7 +131,7 @@ public class StateProcessor {
       this.eventBus.post(
           new GenesisHeadStateEvent((BeaconStateWithCache) initial_state, genesis_block));
     } catch (IllegalStateException e) {
-      LOG.log(Level.FATAL, e.toString());
+      STDOUT.log(Level.FATAL, e.toString());
     }
   }
 
@@ -149,12 +148,7 @@ public class StateProcessor {
 
     STDOUT.log(Level.INFO, ANSI_WHITE_BOLD + "******* Slot Event *******" + ANSI_RESET);
     STDOUT.log(Level.INFO, "Node time:                             " + nodeTime);
-    STDOUT.log(
-        Level.INFO,
-        "Node slot:                             "
-            + nodeSlot
-            + "  |  "
-            + nodeSlot.longValue());
+    STDOUT.log(Level.INFO, "Node slot:                             " + nodeSlot);
 
     Thread.sleep(3000);
     // Get all the unprocessed blocks that are for slots <= nodeSlot
@@ -168,24 +162,14 @@ public class StateProcessor {
     STDOUT.log(Level.INFO, ANSI_PURPLE + "Updating head block using LMDGhost." + ANSI_RESET);
     updateHeadBlockUsingLMDGhost();
     STDOUT.log(
-        Level.INFO,
-        "Head block slot:                      "
-            + headBlock.getSlot().longValue()
-            + "  |  "
-            + headBlock.getSlot().longValue());
+        Level.INFO, "Head block slot:                       " + headBlock.getSlot().longValue());
 
     // Get head block's state, and initialize a newHeadState variable to run state transition on
     BeaconState headBlockState = store.getState(headBlock.getState_root()).get();
     Long justifiedEpoch = headBlockState.getCurrent_justified_epoch().longValue();
     Long finalizedEpoch = headBlockState.getFinalized_epoch().longValue();
-    STDOUT.log(
-        Level.INFO,
-        "Justified block epoch:                 "
-            + justifiedEpoch);
-    STDOUT.log(
-        Level.INFO,
-        "Finalized block epoch:                 "
-            + finalizedEpoch);
+    STDOUT.log(Level.INFO, "Justified block epoch:                 " + justifiedEpoch);
+    STDOUT.log(Level.INFO, "Finalized block epoch:                 " + finalizedEpoch);
 
     BeaconStateWithCache newHeadState =
         BeaconStateWithCache.deepCopy((BeaconStateWithCache) headBlockState);
@@ -207,9 +191,8 @@ public class StateProcessor {
               BeaconStateWithCache.deepCopy((BeaconStateWithCache) headState), headBlock));
       recordData(date);
     } catch (SlotProcessingException | EpochProcessingException e) {
-      System.out.println("Error in onNewSlot" + e.toString());
-      LOG.log(Level.WARN, e.toString());
-      STDOUT.log(Level.INFO, ANSI_RED + "Unable to update head state" + ANSI_RESET);
+      STDOUT.log(
+          Level.INFO, ANSI_RED + "Unable to update head state: " + e.toString() + ANSI_RESET);
     }
   }
 
@@ -228,7 +211,7 @@ public class StateProcessor {
     // however, the block is already removed from queue, so
     // we're losing a valid block here.
     if (this.nodeTime.compareTo(blockTime) < 0) {
-      LOG.log(Level.FATAL, "We lost a valid block!");
+      STDOUT.log(Level.FATAL, ANSI_RED + "We lost a valid block!" + ANSI_RESET);
       return false;
     }
     return true;
@@ -268,8 +251,7 @@ public class StateProcessor {
         STDOUT.log(Level.INFO, "Skipped processing block");
       }
     } catch (NoSuchElementException | IllegalArgumentException | StateTransitionException e) {
-      System.out.println("Error in processBlock" + e.toString());
-      LOG.log(Level.WARN, e.toString());
+      STDOUT.log(Level.FATAL, ANSI_RED + "Error in process block: " + e.toString() + ANSI_RESET);
     }
   }
 
@@ -298,19 +280,21 @@ public class StateProcessor {
       try {
         BeaconState headState = store.getState(headBlock.getState_root()).get();
         this.finalizedBlockRoot =
-            BeaconStateUtil.get_block_root(
-                headState, BeaconStateUtil.get_epoch_start_slot(headState.getFinalized_epoch()));
+            BeaconStateUtil.get_block_root(headState, headState.getFinalized_epoch());
         this.finalizedEpoch = headState.getFinalized_epoch();
         this.currentJustifiedBlockRoot =
-            BeaconStateUtil.get_block_root(
-                headState,
-                BeaconStateUtil.get_epoch_start_slot(headState.getCurrent_justified_epoch()));
+            BeaconStateUtil.get_block_root(headState, headState.getCurrent_justified_epoch());
 
         this.justifiedStateRoot =
             store.getProcessedBlock(currentJustifiedBlockRoot).get().getState_root();
         this.finalizedStateRoot = store.getProcessedBlock(finalizedBlockRoot).get().getState_root();
-      } catch (Exception e) {
-        LOG.log(Level.FATAL, "Can't update justified and finalized block roots");
+      } catch (IllegalArgumentException e) {
+        STDOUT.log(
+            Level.FATAL,
+            ANSI_RED
+                + "Can't update justified and finalized block roots"
+                + e.toString()
+                + ANSI_RESET);
       }
     }
   }
