@@ -23,16 +23,13 @@ import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.generate_
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_current_epoch;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_epoch_committee_count;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.int_to_bytes;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.max;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.min;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.safeMod;
 import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.get_active_validator_indices;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import org.apache.commons.lang3.ArrayUtils;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.Hash;
@@ -87,10 +84,10 @@ public class CrosslinkCommitteeUtil {
 
       // This needs to be unsigned modulo.
       int pivot =
-              toIntExact(
-                      Long.remainderUnsigned(
-                              bytes_to_int(Hash.keccak256(Bytes.wrap(seed, roundAsByte)).slice(0, 8)),
-                              index_count));
+          toIntExact(
+              Long.remainderUnsigned(
+                  bytes_to_int(Hash.keccak256(Bytes.wrap(seed, roundAsByte)).slice(0, 8)),
+                  index_count));
       int flip = (pivot - indexRet) % index_count;
       if (flip < 0) {
         // Account for flip being negative

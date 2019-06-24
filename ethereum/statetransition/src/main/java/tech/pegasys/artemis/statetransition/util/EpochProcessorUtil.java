@@ -222,27 +222,27 @@ public final class EpochProcessorUtil {
                     attestation -> attestation.getData().getCrosslink().getShard().equals(shard));
 
     Supplier<Stream<Pair<Crosslink, UnsignedLong>>> crosslink_attesting_balances =
-            () ->
-        attestations
-            .get()
-            .map(attestation -> attestation.getData().getCrosslink())
-            .filter(
-                crosslink -> {
-                  Bytes32 hash =
-                      state.getCurrent_crosslinks().get(shard.intValue()).hash_tree_root();
-                  return hash.equals(crosslink.getParent_root())
-                      || hash.equals(crosslink.hash_tree_root());
-                })
-            .map(
-                c ->
-                    new ImmutablePair<>(
-                        c,
-                        get_attesting_balance(
-                            state,
-                            attestations
-                                .get()
-                                .filter(a -> a.getData().getCrosslink().equals(c))
-                                .collect(Collectors.toList()))));
+        () ->
+            attestations
+                .get()
+                .map(attestation -> attestation.getData().getCrosslink())
+                .filter(
+                    crosslink -> {
+                      Bytes32 hash =
+                          state.getCurrent_crosslinks().get(shard.intValue()).hash_tree_root();
+                      return hash.equals(crosslink.getParent_root())
+                          || hash.equals(crosslink.hash_tree_root());
+                    })
+                .map(
+                    c ->
+                        new ImmutablePair<>(
+                            c,
+                            get_attesting_balance(
+                                state,
+                                attestations
+                                    .get()
+                                    .filter(a -> a.getData().getCrosslink().equals(c))
+                                    .collect(Collectors.toList()))));
 
     Optional<Pair<Crosslink, UnsignedLong>> winning_crosslink_balance =
         crosslink_attesting_balances.get().max(Comparator.comparing(Pair::getRight));
@@ -250,7 +250,8 @@ public final class EpochProcessorUtil {
     Crosslink winning_crosslink;
     if (winning_crosslink_balance.isPresent()) {
       winning_crosslink =
-          crosslink_attesting_balances.get()
+          crosslink_attesting_balances
+              .get()
               .filter(cab -> winning_crosslink_balance.get().getRight().equals(cab.getRight()))
               .max(Comparator.comparing(cab -> cab.getLeft().getData_root().toHexString()))
               .get()
