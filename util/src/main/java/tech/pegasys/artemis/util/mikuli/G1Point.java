@@ -47,7 +47,8 @@ public final class G1Point implements Group<G1Point> {
       point = new ECP(BIG.fromBytes(xBytes));
     } while (point.is_infinity());
 
-    return new G1Point(point);
+    // Multiply by the cofactor to ensure that we end up on G1
+    return new G1Point(scaleWithCofactor(point));
   }
 
   /**
@@ -104,8 +105,12 @@ public final class G1Point implements Group<G1Point> {
       throw new IllegalArgumentException("X coordinate is not on the curve.");
     }
 
+    if (!isInGroup(point)) {
+      throw new IllegalArgumentException("The deserialised point is not in the G1 subgroup.");
+    }
+
     // Did we get the right branch of the sqrt?
-    if (!point.is_infinity() && aIn != calculateYFlag(point.getY())) {
+    if (aIn != calculateYFlag(point.getY())) {
       // We didn't: so choose the other branch of the sqrt.
       FP x = new FP(point.getX());
       FP yneg = new FP(point.getY());
@@ -114,6 +119,23 @@ public final class G1Point implements Group<G1Point> {
     }
 
     return new G1Point(point);
+  }
+
+  /**
+   * Multiply the point by the group cofactor.
+   *
+   * @param point the point to be scaled
+   * @return a scaled point
+   */
+  static ECP scaleWithCofactor(ECP point) {
+
+    // The G1 cofactor
+    String cofactorHex =
+        "0x0000000000000000000000000000000000000000000000000000000000000000396c8c005555e1568c00aaab0000aaab";
+
+    BIG cofactor = BIG.fromBytes(Bytes.fromHexString(cofactorHex).toArray());
+
+    return (point.mul(cofactor));
   }
 
   private final ECP point;
@@ -182,6 +204,12 @@ public final class G1Point implements Group<G1Point> {
     xBytes[0] |= flags;
 
     return Bytes.wrap(xBytes);
+  }
+
+  // Verify that the given point is in the correct subgroup for G2 by multiplying by the group order
+  static boolean isInGroup(ECP point) {
+    ECP orderCheck = point.mul(new BIG(ROM.CURVE_Order));
+    return orderCheck.is_infinity();
   }
 
   ECP ecpPoint() {
