@@ -15,6 +15,9 @@ package tech.pegasys.artemis.datastructures.event;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -24,10 +27,6 @@ import tech.pegasys.artemis.pow.contract.DepositContract.DepositEventResponse;
 import tech.pegasys.artemis.pow.event.AbstractEvent;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
-
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 public class Deposit extends AbstractEvent<DepositEventResponse>
     implements DepositEvent, IRecordAdapter {
@@ -39,7 +38,6 @@ public class Deposit extends AbstractEvent<DepositEventResponse>
   private Bytes merkle_tree_index;
 
   private static final ObjectMapper mapper = new ObjectMapper();
-
 
   private Map<String, Object> outputFieldMap = new HashMap<>();
 
@@ -117,7 +115,8 @@ public class Deposit extends AbstractEvent<DepositEventResponse>
           break;
 
         case "signature":
-          this.outputFieldMap.put("signature", signature.getSignature().toBytesCompressed().toHexString());
+          this.outputFieldMap.put(
+              "signature", signature.getSignature().toBytesCompressed().toHexString());
           break;
 
         case "amount":
