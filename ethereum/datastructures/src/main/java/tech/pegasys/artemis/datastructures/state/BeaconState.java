@@ -13,7 +13,6 @@
 
 package tech.pegasys.artemis.datastructures.state;
 
-import static tech.pegasys.artemis.datastructures.Constants.EMPTY_SIGNATURE;
 import static tech.pegasys.artemis.datastructures.Constants.ZERO_HASH;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.int_to_bytes;
 
@@ -105,10 +104,10 @@ public class BeaconState {
     this.finalized_epoch = UnsignedLong.valueOf(Constants.GENESIS_EPOCH);
     this.finalized_root = Constants.ZERO_HASH;
 
-    this.current_crosslinks = new ArrayList<>(
-            Collections.nCopies(Constants.SHARD_COUNT, new Crosslink()));
-    this.previous_crosslinks = new ArrayList<>(
-            Collections.nCopies(Constants.SHARD_COUNT, new Crosslink()));
+    this.current_crosslinks =
+        new ArrayList<>(Collections.nCopies(Constants.SHARD_COUNT, new Crosslink()));
+    this.previous_crosslinks =
+        new ArrayList<>(Collections.nCopies(Constants.SHARD_COUNT, new Crosslink()));
     this.latest_block_roots =
         new ArrayList<>(
             Collections.nCopies(Constants.SLOTS_PER_HISTORICAL_ROOT, Constants.ZERO_HASH));

@@ -50,7 +50,6 @@ import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.max;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.min;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.slash_validator;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.slot_to_epoch;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.verify_merkle_branch;
 import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.decrease_balance;
 import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.increase_balance;
 import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.is_active_validator;
@@ -213,14 +212,6 @@ public final class BlockProcessorUtil {
       throws BlockProcessingException {
     try {
 
-      System.out.println("numDeposits in block: " + body.getDeposits().size());
-      System.out.println("depositCount minus index: " +state
-              .getLatest_eth1_data()
-              .getDeposit_count()
-              .minus(state.getDeposit_index())
-              .longValue());
-      System.out.println("depositCount: " + state.getLatest_eth1_data().getDeposit_count().longValue());
-      System.out.println("depositIndex: " + state.getDeposit_index().longValue());
       checkArgument(
           body.getDeposits().size()
               == Math.min(

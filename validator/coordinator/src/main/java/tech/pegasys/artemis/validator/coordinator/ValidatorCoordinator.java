@@ -13,14 +13,11 @@
 
 package tech.pegasys.artemis.validator.coordinator;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static java.lang.StrictMath.toIntExact;
 import static tech.pegasys.artemis.datastructures.Constants.SLOTS_PER_EPOCH;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_current_epoch;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_domain;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.slot_to_epoch;
 import static tech.pegasys.artemis.statetransition.StateTransition.process_slots;
-import static tech.pegasys.artemis.util.bls.BLSVerify.bls_verify;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
@@ -47,7 +44,6 @@ import org.apache.tuweni.ssz.SSZ;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
-import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
@@ -82,6 +78,7 @@ import tech.pegasys.artemis.validator.client.ValidatorClientUtil;
 /** This class coordinates the activity between the validator clients and the the beacon chain */
 public class ValidatorCoordinator {
   private static final ALogger LOG = new ALogger(ValidatorCoordinator.class.getName());
+  private static final ALogger STDOUT = new ALogger("stdout");
   private final EventBus eventBus;
   private StateTransition stateTransition;
   private final Boolean printEnabled = false;
@@ -189,70 +186,78 @@ public class ValidatorCoordinator {
   }
 
   @Subscribe
-  public void onNewHeadStateEvent(HeadStateEvent headStateEvent) {
-    // Retrieve headState and headBlock from event
-    BeaconStateWithCache headState = headStateEvent.getHeadState();
-    BeaconBlock headBlock = headStateEvent.getHeadBlock();
+  public void onNewHeadStateEvent(HeadStateEvent headStateEvent) throws IllegalArgumentException {
+    try {
+      // Retrieve headState and headBlock from event
+      BeaconStateWithCache headState = headStateEvent.getHeadState();
+      BeaconBlock headBlock = headStateEvent.getHeadBlock();
 
-    // Update validator indices of our own validators
-    List<Validator> validatorRegistry = headState.getValidator_registry();
-    IntStream.range(0, validatorRegistry.size())
-            .forEach(
-                    i -> {
-                      if (validatorSet.keySet().contains(validatorRegistry.get(i).getPubkey())) {
-                        validatorSet.get(validatorRegistry.get(i).getPubkey()).setRight(i);
-                      }
-                    });
+      // Update validator indices of our own validators
+      List<Validator> validatorRegistry = headState.getValidator_registry();
+      IntStream.range(0, validatorRegistry.size())
+          .forEach(
+              i -> {
+                if (validatorSet.keySet().contains(validatorRegistry.get(i).getPubkey())) {
+                  validatorSet.get(validatorRegistry.get(i).getPubkey()).setRight(i);
+                }
+              });
 
-    if (headState.getSlot().mod(UnsignedLong.valueOf(SLOTS_PER_EPOCH)).equals(UnsignedLong.ZERO)) {
-      System.out.println("getting_committee_assignments");
-      validatorSet.forEach(
-          (pubKey, validatorInformation) -> {
-            Optional<Triple<List<Integer>, UnsignedLong, UnsignedLong>> committeeAssignment =
-                ValidatorClientUtil.get_committee_assignment(
-                    headState, slot_to_epoch(headState.getSlot()), validatorInformation.getRight());
-            committeeAssignment.ifPresent(
-                assignment -> {
-                  UnsignedLong slot = assignment.getRight();
-                  List<Triple<List<Integer>, UnsignedLong, Integer>> assignmentsInSlot =
-                      committeeAssignments.get(slot);
-                  if (assignmentsInSlot == null) {
-                    assignmentsInSlot = new ArrayList<>();
-                    committeeAssignments.put(slot, assignmentsInSlot);
-                  }
-                  assignmentsInSlot.add(
-                      new MutableTriple<>(
-                          assignment.getLeft(),
-                          assignment.getMiddle(),
-                          validatorInformation.getRight()));
-                });
-          });
+      if (headState
+          .getSlot()
+          .mod(UnsignedLong.valueOf(SLOTS_PER_EPOCH))
+          .equals(UnsignedLong.ZERO)) {
+        validatorSet.forEach(
+            (pubKey, validatorInformation) -> {
+              Optional<Triple<List<Integer>, UnsignedLong, UnsignedLong>> committeeAssignment =
+                  ValidatorClientUtil.get_committee_assignment(
+                      headState,
+                      slot_to_epoch(headState.getSlot()),
+                      validatorInformation.getRight());
+              committeeAssignment.ifPresent(
+                  assignment -> {
+                    UnsignedLong slot = assignment.getRight();
+                    List<Triple<List<Integer>, UnsignedLong, Integer>> assignmentsInSlot =
+                        committeeAssignments.get(slot);
+                    if (assignmentsInSlot == null) {
+                      assignmentsInSlot = new ArrayList<>();
+                      committeeAssignments.put(slot, assignmentsInSlot);
+                    }
+                    assignmentsInSlot.add(
+                        new MutableTriple<>(
+                            assignment.getLeft(),
+                            assignment.getMiddle(),
+                            validatorInformation.getRight()));
+                  });
+            });
+      }
+
+      List<Triple<BLSPublicKey, Integer, CrosslinkCommittee>> attesters =
+          AttestationUtil.getAttesterInformation(headState, committeeAssignments);
+      AttestationData genericAttestationData =
+          AttestationUtil.getGenericAttestationData(headState, headBlock);
+
+      CompletableFuture.runAsync(
+          () ->
+              attesters
+                  .parallelStream()
+                  .forEach(
+                      attesterInfo ->
+                          produceAttestations(
+                              headState,
+                              attesterInfo.getLeft(),
+                              attesterInfo.getMiddle(),
+                              attesterInfo.getRight(),
+                              genericAttestationData)));
+
+      // Copy state so that state transition during block creation does not manipulate headState in
+      // storage
+      createBlockIfNecessary(headState, headBlock);
+
+      // Save headState to check for slashings
+      this.headState = headState;
+    } catch (IllegalArgumentException e) {
+      STDOUT.log(Level.WARN, "Can not produce attestations or create a block" + e.toString());
     }
-
-    List<Triple<BLSPublicKey, Integer, CrosslinkCommittee>> attesters =
-        AttestationUtil.getAttesterInformation(headState, committeeAssignments);
-    AttestationData genericAttestationData =
-        AttestationUtil.getGenericAttestationData(headState, headBlock);
-
-    CompletableFuture.runAsync(
-        () ->
-            attesters
-                .parallelStream()
-                .forEach(
-                    attesterInfo ->
-                        produceAttestations(
-                            headState,
-                            attesterInfo.getLeft(),
-                            attesterInfo.getMiddle(),
-                            attesterInfo.getRight(),
-                            genericAttestationData)));
-
-    // Copy state so that state transition during block creation does not manipulate headState in
-    // storage
-    createBlockIfNecessary(headState, headBlock);
-
-    // Save headState to check for slashings
-    this.headState = headState;
   }
 
   private void produceAttestations(
@@ -290,9 +295,9 @@ public class ValidatorCoordinator {
       BeaconState state, BeaconBlock block, BLSPublicKey proposer) {
     int domain =
         get_domain(
-                state,
-                Constants.DOMAIN_BEACON_PROPOSER,
-                BeaconStateUtil.slot_to_epoch(block.getSlot()));
+            state,
+            Constants.DOMAIN_BEACON_PROPOSER,
+            BeaconStateUtil.slot_to_epoch(block.getSlot()));
 
     Bytes32 blockRoot = block.signing_root("signature");
 

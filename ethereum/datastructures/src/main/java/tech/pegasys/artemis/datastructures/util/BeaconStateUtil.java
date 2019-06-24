@@ -49,8 +49,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-
-import com.sun.org.apache.bcel.internal.Const;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.Hash;
@@ -431,7 +429,8 @@ public class BeaconStateUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.7.1/specs/core/0_beacon-chain.md#get_block_root</a>
    */
-  public static Bytes32 get_block_root(BeaconState state, UnsignedLong epoch) {
+  public static Bytes32 get_block_root(BeaconState state, UnsignedLong epoch)
+      throws IllegalArgumentException {
     return get_block_root_at_slot(state, get_epoch_start_slot(epoch));
   }
 
@@ -849,7 +848,8 @@ public class BeaconStateUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.7.1/specs/core/0_beacon-chain.md#get_block_root_at_slot</a>
    */
-  public static Bytes32 get_block_root_at_slot(BeaconState state, UnsignedLong slot) {
+  public static Bytes32 get_block_root_at_slot(BeaconState state, UnsignedLong slot)
+      throws IllegalArgumentException {
     UnsignedLong slotPlusHistoricalRoot =
         slot.plus(UnsignedLong.valueOf(SLOTS_PER_HISTORICAL_ROOT));
     checkArgument(
