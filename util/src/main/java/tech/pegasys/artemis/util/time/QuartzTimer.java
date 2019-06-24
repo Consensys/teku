@@ -18,7 +18,6 @@ import static org.quartz.SimpleScheduleBuilder.simpleSchedule;
 import static org.quartz.TriggerBuilder.newTrigger;
 
 import com.google.common.eventbus.EventBus;
-import java.util.Date;
 import java.util.UUID;
 import org.quartz.DateBuilder;
 import org.quartz.JobDetail;
@@ -29,42 +28,43 @@ import org.quartz.SimpleTrigger;
 import org.quartz.impl.StdSchedulerFactory;
 
 public class QuartzTimer implements Timer {
-  final Scheduler sched;
-  final SimpleTrigger trigger;
-  final JobDetail job;
+  private final Scheduler sched;
+  private final JobDetail job;
+  private final UUID uuid;
+  private int startDelay;
+  private int interval;
 
   @SuppressWarnings({"unchecked"})
-  public QuartzTimer(EventBus eventBus, Date startTime, Integer interval)
+  public QuartzTimer(EventBus eventBus, Integer startDelay, Integer interval)
       throws IllegalArgumentException {
     SchedulerFactory sf = new StdSchedulerFactory();
+    this.startDelay = startDelay;
+    this.interval = interval;
     try {
       sched = sf.getScheduler();
-      UUID uuid = UUID.randomUUID();
+      uuid = UUID.randomUUID();
       job =
           newJob(ScheduledEvent.class)
               .withIdentity(EventBus.class.getSimpleName() + uuid.toString(), "group")
               .build();
       job.getJobDataMap().put(EventBus.class.getSimpleName(), eventBus);
-      trigger =
-          newTrigger()
-              .withIdentity("trigger-" + EventBus.class.getSimpleName() + uuid.toString(), "group")
-              .startAt(startTime)
-              .withSchedule(simpleSchedule().withIntervalInSeconds(interval).repeatForever())
-              .build();
-      sched.scheduleJob(job, trigger);
+
     } catch (SchedulerException e) {
       throw new IllegalArgumentException(
           "In QuartzTimer a SchedulerException was thrown: " + e.toString());
     }
   }
 
-  public QuartzTimer(EventBus eventBus, Integer startDelay, Integer interval) {
-    this(eventBus, DateBuilder.nextGivenSecondDate(null, startDelay), interval);
-  }
-
   @Override
   public void start() throws IllegalArgumentException {
     try {
+      SimpleTrigger trigger =
+          newTrigger()
+              .withIdentity("trigger-" + EventBus.class.getSimpleName() + uuid.toString(), "group")
+              .startAt(DateBuilder.futureDate(startDelay, DateBuilder.IntervalUnit.SECOND))
+              .withSchedule(simpleSchedule().withIntervalInSeconds(interval).repeatForever())
+              .build();
+      sched.scheduleJob(job, trigger);
       sched.start();
     } catch (SchedulerException e) {
       throw new IllegalArgumentException(
