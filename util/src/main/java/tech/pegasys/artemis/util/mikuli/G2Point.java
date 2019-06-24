@@ -53,7 +53,8 @@ public final class G2Point implements Group<G2Point> {
       point = new ECP2(new FP2(BIG.fromBytes(xReBytes), BIG.fromBytes(xImBytes)));
     } while (point.is_infinity());
 
-    return new G2Point(point);
+    // Multiply by the cofactor to ensure that we end up on G2 (see hashToG2)
+    return new G2Point(scaleWithCofactor(point));
   }
 
   /**
@@ -107,7 +108,6 @@ public final class G2Point implements Group<G2Point> {
    * @param point the point whose Y coordinate is to be normalised.
    * @return a new point with the correct Y coordinate, which may the original.
    */
-  @VisibleForTesting
   static ECP2 normaliseY(ECP2 point) {
     FP2 y = point.getY();
     FP2 yNeg = new FP2(y);
@@ -128,7 +128,6 @@ public final class G2Point implements Group<G2Point> {
    * @param point the point to be scaled
    * @return a scaled point
    */
-  @VisibleForTesting
   static ECP2 scaleWithCofactor(ECP2 point) {
 
     // These are a representation of the G2 cofactor (a 512 bit number)
@@ -285,8 +284,12 @@ public final class G2Point implements Group<G2Point> {
       throw new IllegalArgumentException("X coordinate is not on the curve.");
     }
 
+    if (!isInGroup(point)) {
+      throw new IllegalArgumentException("The deserialised point is not in the G2 subgroup.");
+    }
+
     // Did we get the right branch of the sqrt?
-    if (!point.is_infinity() && aIn != calculateYFlag(point.getY().getB())) {
+    if (aIn != calculateYFlag(point.getY().getB())) {
       // We didn't: so choose the other branch of the sqrt.
       FP2 x = point.getX();
       FP2 yneg = point.getY();
@@ -295,6 +298,12 @@ public final class G2Point implements Group<G2Point> {
     }
 
     return new G2Point(point);
+  }
+
+  // Verify that the given point is in the correct subgroup for G2 by multiplying by the group order
+  static boolean isInGroup(ECP2 point) {
+    ECP2 orderCheck = point.mul(new BIG(ROM.CURVE_Order));
+    return orderCheck.is_infinity();
   }
 
   ECP2 ecp2Point() {

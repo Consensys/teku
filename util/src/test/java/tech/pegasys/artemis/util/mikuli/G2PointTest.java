@@ -18,6 +18,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static tech.pegasys.artemis.util.mikuli.G2Point.isInGroup;
 import static tech.pegasys.artemis.util.mikuli.G2Point.normaliseY;
 import static tech.pegasys.artemis.util.mikuli.G2Point.scaleWithCofactor;
 
@@ -28,6 +29,14 @@ import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 
 class G2PointTest {
+
+  @Test
+  void succeedsWhenRandomPointsAreInTheG2Subgroup() {
+    for (int i = 0; i < 20; i++) {
+      G2Point point = G2Point.random();
+      assertTrue(isInGroup(point.ecp2Point()));
+    }
+  }
 
   @Test
   void succeedsWhenEqualsReturnsTrueForTheSamePoint() {
@@ -202,9 +211,20 @@ class G2PointTest {
   void succeedsWhenDeserialisingACorrectPointDoesNotThrow() {
     String xInput =
         "0x"
+            + "b2cc74bc9f089ed9764bbceac5edba416bef5e73701288977b9cac1ccb6964269d4ebf78b4e8aa7792ba09d3e49c8e6a"
+            + "1351bdf582971f796bbaf6320e81251c9d28f674d720cca07ed14596b96697cf18238e0e03ebd7fc1353d885a39407e0";
+    assertAll(() -> G2Point.fromBytesCompressed(Bytes.fromHexString(xInput)));
+  }
+
+  @Test
+  void succeedsWhenDeserialisingAPointOnCurveButNotInG2ThrowsIllegalArgumentException() {
+    String xInput =
+        "0x"
             + "8123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
             + "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
-    assertAll(() -> G2Point.fromBytesCompressed(Bytes.fromHexString(xInput)));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> G2Point.fromBytesCompressed(Bytes.fromHexString(xInput)));
   }
 
   @Test
@@ -244,8 +264,8 @@ class G2PointTest {
   void succeedsWhenRoundTripDeserialiseSerialiseCompressedReturnsTheOriginalInput() {
     String xInput =
         "0x"
-            + "8123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
-            + "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
+            + "b2cc74bc9f089ed9764bbceac5edba416bef5e73701288977b9cac1ccb6964269d4ebf78b4e8aa7792ba09d3e49c8e6a"
+            + "1351bdf582971f796bbaf6320e81251c9d28f674d720cca07ed14596b96697cf18238e0e03ebd7fc1353d885a39407e0";
     String xOutput =
         G2Point.fromBytesCompressed(Bytes.fromHexString(xInput))
             .toBytesCompressed()
