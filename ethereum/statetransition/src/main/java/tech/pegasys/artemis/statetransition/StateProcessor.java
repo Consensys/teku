@@ -150,7 +150,7 @@ public class StateProcessor {
     STDOUT.log(Level.INFO, "Node time:                             " + nodeTime);
     STDOUT.log(Level.INFO, "Node slot:                             " + nodeSlot);
 
-    Thread.sleep(3000);
+    Thread.sleep(Constants.SECONDS_PER_SLOT / 2 * 1000);
     // Get all the unprocessed blocks that are for slots <= nodeSlot
     List<Optional<BeaconBlock>> unprocessedBlocks =
         this.store.getUnprocessedBlocksUntilSlot(nodeSlot);
@@ -247,7 +247,6 @@ public class StateProcessor {
             .getAttestations()
             .forEach(attestation -> this.store.addProcessedAttestation(attestation));
       } else {
-        System.out.println("Skipped processing block");
         STDOUT.log(Level.INFO, "Skipped processing block");
       }
     } catch (NoSuchElementException | IllegalArgumentException | StateTransitionException e) {
