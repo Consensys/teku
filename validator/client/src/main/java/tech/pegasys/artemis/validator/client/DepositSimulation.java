@@ -19,15 +19,16 @@ import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.module.SimpleModule;
+import tech.pegasys.artemis.datastructures.event.Deposit;
+import tech.pegasys.artemis.datastructures.event.Eth2Genesis;
+import tech.pegasys.artemis.datastructures.interfaces.IRecordAdapter;
+import tech.pegasys.artemis.datastructures.operations.DepositData;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.artemis.datastructures.event.Deposit;
-import tech.pegasys.artemis.datastructures.event.Eth2Genesis;
-import tech.pegasys.artemis.datastructures.interfaces.IRecordAdapter;
 
 public class DepositSimulation implements IRecordAdapter {
 
@@ -39,7 +40,6 @@ public class DepositSimulation implements IRecordAdapter {
         throws IOException {
       jGen.writeStartObject();
       jGen.writeStringField("eventType", "Deposit");
-      jGen.writeStringField("data", deposit.getData().toHexString());
       jGen.writeStringField("merkle_tree_index", deposit.getMerkle_tree_index().toHexString());
       jGen.writeEndObject();
     }
@@ -54,22 +54,18 @@ public class DepositSimulation implements IRecordAdapter {
   }
 
   private Validator validator;
-  private Bytes deposit_data;
+  private DepositData data;
   private List<Deposit> deposits;
   private List<Eth2Genesis> eth2Geneses;
   private Map<String, Object> outputFieldMap = new HashMap<>();
   private static final ObjectMapper mapper =
       new ObjectMapper().registerModule(new DepositModule());;
 
-  public DepositSimulation(Validator validator, Bytes deposit_data) {
+  public DepositSimulation(Validator validator, DepositData data) {
     this.validator = validator;
-    this.deposit_data = deposit_data;
+    this.data = data;
     deposits = new ArrayList<Deposit>();
     eth2Geneses = new ArrayList<Eth2Genesis>();
-  }
-
-  public Bytes getDeposit_data() {
-    return deposit_data;
   }
 
   public List<Deposit> getDeposits() {
@@ -97,10 +93,6 @@ public class DepositSimulation implements IRecordAdapter {
         case "bls":
           this.outputFieldMap.put(
               "bls", validator.getBlsKeys().secretKey().toBytes().toHexString());
-          break;
-
-        case "deposit_data":
-          this.outputFieldMap.put("deposit_data", deposit_data.toHexString());
           break;
 
         case "events":

@@ -13,12 +13,7 @@
 
 package tech.pegasys.artemis.datastructures.operations;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
-import java.util.stream.Collectors;
+import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
@@ -27,14 +22,27 @@ import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
 import tech.pegasys.artemis.util.hashtree.Merkleizable;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
+
 public class Deposit implements Merkleizable {
 
   private List<Bytes32> proof; // Bounded by DEPOSIT_CONTRACT_TREE_DEPTH
   private DepositData data;
+  private UnsignedLong index;
 
   public Deposit(List<Bytes32> proof, DepositData data) {
     this.proof = proof;
     this.data = data;
+  }
+
+  public Deposit(DepositData data, UnsignedLong index) {
+    this.data = data;
+    this.index = index;
   }
 
   public static Deposit fromBytes(Bytes bytes) {
@@ -115,5 +123,9 @@ public class Deposit implements Merkleizable {
             // TODO Look at this - is this a TUPLE_OF_COMPOSITE
             HashTreeUtil.hash_tree_root(SSZTypes.BASIC, proof.toArray(new Bytes32[0])),
             data.hash_tree_root()));
+  }
+
+  public UnsignedLong getIndex() {
+    return index;
   }
 }
