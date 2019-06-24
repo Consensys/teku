@@ -36,7 +36,7 @@ public class Deposit extends AbstractEvent<DepositEventResponse>
   private Bytes32 withdrawal_credentials;
   private BLSSignature signature;
   private long amount;
-  private Bytes merkel_tree_index;
+  private Bytes merkle_tree_index;
 
   private static final ObjectMapper mapper = new ObjectMapper();
 
@@ -47,7 +47,7 @@ public class Deposit extends AbstractEvent<DepositEventResponse>
     super(response);
 
     ArrayUtils.reverse(response.merkle_tree_index);
-    this.merkel_tree_index = Bytes.wrap(response.merkle_tree_index);
+    this.merkle_tree_index = Bytes.wrap(response.merkle_tree_index);
 
     ArrayUtils.reverse(response.pubkey);
     this.pubkey = BLSPublicKey.fromBytesCompressed(Bytes.wrap(response.pubkey));
@@ -63,7 +63,7 @@ public class Deposit extends AbstractEvent<DepositEventResponse>
   }
 
   public Bytes getMerkle_tree_index() {
-    return merkel_tree_index;
+    return merkle_tree_index;
   }
 
   public BLSPublicKey getPubkey() {
@@ -98,12 +98,8 @@ public class Deposit extends AbstractEvent<DepositEventResponse>
     this.amount = amount;
   }
 
-  public Bytes getMerkel_tree_index() {
-    return merkel_tree_index;
-  }
-
-  public void setMerkel_tree_index(Bytes merkel_tree_index) {
-    this.merkel_tree_index = merkel_tree_index;
+  public void setMerkle_tree_index(Bytes merkle_tree_index) {
+    this.merkle_tree_index = merkle_tree_index;
   }
 
   @Override
@@ -128,8 +124,8 @@ public class Deposit extends AbstractEvent<DepositEventResponse>
           this.outputFieldMap.put("amount", amount);
           break;
 
-        case "merkel_tree_index":
-          this.outputFieldMap.put("merkel_tree_index", merkel_tree_index.toHexString());
+        case "merkle_tree_index":
+          this.outputFieldMap.put("merkle_tree_index", merkle_tree_index.toHexString());
           break;
       }
     }
