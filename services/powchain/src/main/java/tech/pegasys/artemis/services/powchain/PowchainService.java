@@ -17,6 +17,10 @@ import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.google.common.primitives.UnsignedLong;
 import com.google.gson.JsonParser;
+import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -41,11 +45,6 @@ import tech.pegasys.artemis.util.mikuli.KeyPair;
 import tech.pegasys.artemis.validator.client.DepositSimulation;
 import tech.pegasys.artemis.validator.client.Validator;
 import tech.pegasys.artemis.validator.client.ValidatorClientUtil;
-
-import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 
 public class PowchainService implements ServiceInterface {
 
@@ -97,11 +96,15 @@ public class PowchainService implements ServiceInterface {
         simulations.add(
             new DepositSimulation(
                 validator,
-                new DepositData(validator.getPubkey(), validator.getWithdrawal_credentials(), UnsignedLong.valueOf(SIM_DEPOSIT_VALUE_GWEI), BLSSignature.fromBytes(ValidatorClientUtil.blsSignatureHelper(
-                        validator.getBlsKeys(),
-                        validator.getWithdrawal_credentials(),
-                        Long.parseLong(SIM_DEPOSIT_VALUE_GWEI))))
-            ));
+                new DepositData(
+                    validator.getPubkey(),
+                    validator.getWithdrawal_credentials(),
+                    UnsignedLong.valueOf(SIM_DEPOSIT_VALUE_GWEI),
+                    BLSSignature.fromBytes(
+                        ValidatorClientUtil.blsSignatureHelper(
+                            validator.getBlsKeys(),
+                            validator.getWithdrawal_credentials(),
+                            Long.parseLong(SIM_DEPOSIT_VALUE_GWEI))))));
         try {
           ValidatorClientUtil.registerValidatorEth1(
               validator,
@@ -119,7 +122,7 @@ public class PowchainService implements ServiceInterface {
         }
       }
     } else if (depositMode.equals(Constants.DEPOSIT_SIM) && depositSimFile != null) {
-      JsonParser parser = new JsonParser();/*
+      JsonParser parser = new JsonParser(); /*
       try {
         Reader reader = Files.newBufferedReader(Paths.get(depositSimFile), UTF_8);
         JsonArray validatorsJSON = ((JsonArray) parser.parse(reader));
