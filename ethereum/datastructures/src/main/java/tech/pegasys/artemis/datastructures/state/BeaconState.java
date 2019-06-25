@@ -126,7 +126,7 @@ public class BeaconState {
 
     // TODO gotta change this with genesis eth1DATA because deposit count is dependent on the
     // number of validators
-    this.latest_eth1_data = new Eth1Data(ZERO_HASH, UnsignedLong.valueOf(16), ZERO_HASH);
+    this.latest_eth1_data = new Eth1Data(ZERO_HASH, UnsignedLong.ZERO, ZERO_HASH);
     this.eth1_data_votes = new ArrayList<>();
     this.deposit_index = UnsignedLong.ZERO;
   }

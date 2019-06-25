@@ -84,6 +84,7 @@ public class BeaconStateUtil {
       UnsignedLong genesis_time,
       Eth1Data genesis_eth1_data)
       throws IllegalStateException {
+    state.setLatest_eth1_data(genesis_eth1_data);
 
     // Process genesis deposits
     process_genesis_deposits(state, genesis_validator_deposits);

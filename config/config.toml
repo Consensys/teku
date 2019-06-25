@@ -47,7 +47,7 @@ DepositSimulation = ["secp", "bls", "deposit_data", "events"]
 
 # Misc
 # ---------------------------------------------------------------
-
+#
 # [customized] Just 8 shards for testing purposes
 SHARD_COUNT = 8
 # [customized] unsecure, but fast
