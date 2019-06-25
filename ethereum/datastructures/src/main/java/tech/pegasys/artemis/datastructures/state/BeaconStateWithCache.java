@@ -27,10 +27,8 @@ import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 
 public final class BeaconStateWithCache extends BeaconState {
 
-  protected UnsignedLong previousEpochCommitteeCount = UnsignedLong.MAX_VALUE;
-  protected UnsignedLong previousTotalBalance = UnsignedLong.MAX_VALUE;
-  protected Map<UnsignedLong, List<CrosslinkCommittee>> crosslinkCommittees =
-      new HashMap<UnsignedLong, List<CrosslinkCommittee>>();
+  protected Map<UnsignedLong, UnsignedLong> epochStartShards = new HashMap<>();
+  protected Map<String, List<Integer>> crosslinkCommittees = new HashMap<>();
 
   public BeaconStateWithCache() {
     super();
@@ -45,13 +43,13 @@ public final class BeaconStateWithCache extends BeaconState {
     this.balances = state.getBalances().stream().collect(Collectors.toList());
 
     this.latest_randao_mixes =
-        this.copyBytesList(state.getLatest_randao_mixes(), new ArrayList<>());
+            this.copyBytesList(state.getLatest_randao_mixes(), new ArrayList<>());
     this.latest_start_shard = state.getLatest_start_shard();
 
     this.previous_epoch_attestations =
-        this.copyList(state.getPrevious_epoch_attestations(), new ArrayList<>());
+            this.copyList(state.getPrevious_epoch_attestations(), new ArrayList<>());
     this.current_epoch_attestations =
-        this.copyList(state.getCurrent_epoch_attestations(), new ArrayList<>());
+            this.copyList(state.getCurrent_epoch_attestations(), new ArrayList<>());
     this.previous_justified_epoch = state.getPrevious_justified_epoch();
     this.current_justified_epoch = state.getCurrent_justified_epoch();
     this.previous_justified_root = state.getPrevious_justified_root();
@@ -65,17 +63,18 @@ public final class BeaconStateWithCache extends BeaconState {
     this.latest_block_roots = this.copyBytesList(state.getLatest_block_roots(), new ArrayList<>());
     this.latest_state_roots = this.copyBytesList(state.getLatest_state_roots(), new ArrayList<>());
     this.latest_active_index_roots =
-        this.copyBytesList(state.getLatest_active_index_roots(), new ArrayList<>());
+            this.copyBytesList(state.getLatest_active_index_roots(), new ArrayList<>());
     this.latest_slashed_balances =
-        state.getLatest_slashed_balances().stream().collect(Collectors.toList());
+            state.getLatest_slashed_balances().stream().collect(Collectors.toList());
     this.latest_block_header =
-        BeaconBlockHeader.fromBytes(state.getLatest_block_header().toBytes());
+            BeaconBlockHeader.fromBytes(state.getLatest_block_header().toBytes());
     this.historical_roots = this.copyBytesList(state.getHistorical_roots(), new ArrayList<>());
     this.latest_eth1_data = new Eth1Data(state.getLatest_eth1_data());
     this.eth1_data_votes = state.getEth1_data_votes().stream().collect(Collectors.toList());
     this.deposit_index = state.getDeposit_index();
 
-    this.crosslinkCommittees = state.getCrossLinkCommitteesAtAllSlots();
+    this.crosslinkCommittees = state.getCrossLinkCommittees();
+    this.epochStartShards = state.getEpochStartShards();
   }
 
   private <S extends Copyable<S>, T extends List<S>> T copyList(T sourceList, T destinationList) {
@@ -96,41 +95,41 @@ public final class BeaconStateWithCache extends BeaconState {
     return new BeaconStateWithCache(state);
   }
 
-  public Map<UnsignedLong, List<CrosslinkCommittee>> getCrossLinkCommitteesAtAllSlots() {
+  public Map<String, List<Integer>> getCrossLinkCommittees() {
     return this.crosslinkCommittees;
   }
 
-  public List<CrosslinkCommittee> getCrossLinkCommitteesAtSlot(UnsignedLong slot) {
-    if (crosslinkCommittees.containsKey(slot)) {
-      return crosslinkCommittees.get(slot);
+  public List<Integer> getCrossLinkCommittee(UnsignedLong epoch, UnsignedLong shard) {
+    String key = epoch.toString() + "_" + shard.toString();
+    if (crosslinkCommittees.containsKey(key)) {
+      return crosslinkCommittees.get(key);
     }
     return null;
   }
 
-  public void setCrossLinkCommitteesAtSlot(
-      List<CrosslinkCommittee> crosslinkCommittees, UnsignedLong slot) {
-    this.crosslinkCommittees.put(slot, crosslinkCommittees);
+  public void setCrossLinkCommittee(
+          List<Integer> crosslinkCommittees, UnsignedLong epoch, UnsignedLong shard) {
+    this.crosslinkCommittees.put(epoch.toString() + "_" + shard.toString(), crosslinkCommittees);
   }
 
-  public UnsignedLong getPreviousTotalBalance() {
-    return this.previousTotalBalance;
+  public Map<UnsignedLong, UnsignedLong> getEpochStartShards() {
+    return this.epochStartShards;
   }
 
-  public void setPreviousTotalBalance(UnsignedLong balance) {
-    this.previousTotalBalance = balance;
+  public UnsignedLong getEpochStartShard(UnsignedLong epoch) {
+    if (epochStartShards.containsKey(epoch)) {
+      return epochStartShards.get(epoch);
+    }
+    return null;
   }
 
-  public UnsignedLong getPreviousEpochCommitteeCount() {
-    return this.previousEpochCommitteeCount;
-  }
-
-  public void setPreviousEpochCommitteeCount(UnsignedLong count) {
-    this.previousEpochCommitteeCount = count;
+  public void setEpochStartShard(UnsignedLong epoch, UnsignedLong shard){
+    this.epochStartShards.put(epoch, shard);
   }
 
   public void invalidateCache() {
-    this.previousEpochCommitteeCount = UnsignedLong.MAX_VALUE;
-    this.previousTotalBalance = UnsignedLong.MAX_VALUE;
+    // TODO: clean this cache after finalization
+    this.epochStartShards = new HashMap<>();
     this.crosslinkCommittees = new HashMap<>();
   }
 }

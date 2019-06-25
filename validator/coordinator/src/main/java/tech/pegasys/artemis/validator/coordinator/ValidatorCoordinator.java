@@ -14,6 +14,7 @@
 package tech.pegasys.artemis.validator.coordinator;
 
 import static java.lang.StrictMath.toIntExact;
+import static tech.pegasys.artemis.datastructures.Constants.GENESIS_SLOT;
 import static tech.pegasys.artemis.datastructures.Constants.SLOTS_PER_EPOCH;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_domain;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.slot_to_epoch;
@@ -196,7 +197,7 @@ public class ValidatorCoordinator {
       if (headState
           .getSlot()
           .mod(UnsignedLong.valueOf(SLOTS_PER_EPOCH))
-          .equals(UnsignedLong.ZERO)) {
+          .equals(UnsignedLong.ZERO) || headState.getSlot().equals(UnsignedLong.valueOf(GENESIS_SLOT + 1))) {
         validatorSet.forEach(
             (pubKey, validatorInformation) -> {
               Optional<Triple<List<Integer>, UnsignedLong, UnsignedLong>> committeeAssignment =
