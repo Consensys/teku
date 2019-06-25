@@ -182,6 +182,7 @@ public class ValidatorCoordinator {
                 validatorSet.get(validatorRegistry.get(i).getPubkey()).setRight(i);
               }
             });
+
     this.eventBus.post(true);
   }
 
@@ -319,7 +320,8 @@ public class ValidatorCoordinator {
             blockRoot,
             MockStateRoot,
             newDeposits,
-            current_attestations);
+            current_attestations,
+            numValidators);
 
     return newBlock;
   }
@@ -359,7 +361,7 @@ public class ValidatorCoordinator {
   private void createBlockIfNecessary(BeaconStateWithCache state, BeaconBlock oldBlock) {
     BeaconStateWithCache checkState = BeaconStateWithCache.deepCopy(state);
     try {
-      process_slots(checkState, checkState.getSlot().plus(UnsignedLong.ONE));
+      process_slots(checkState, checkState.getSlot().plus(UnsignedLong.ONE), false);
     } catch (SlotProcessingException | EpochProcessingException e) {
       System.out.println("Coordinator checking proposer index exception");
     }
