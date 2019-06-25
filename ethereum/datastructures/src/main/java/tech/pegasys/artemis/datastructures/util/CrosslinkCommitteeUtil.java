@@ -34,6 +34,7 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.Hash;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 
 public class CrosslinkCommitteeUtil {
 
@@ -144,16 +145,28 @@ public class CrosslinkCommitteeUtil {
    */
   public static List<Integer> get_crosslink_committee(
       BeaconState state, UnsignedLong epoch, UnsignedLong shard) {
-    int index =
-        shard
-            .plus(UnsignedLong.valueOf(SHARD_COUNT).minus(get_epoch_start_shard(state, epoch)))
-            .mod(UnsignedLong.valueOf(SHARD_COUNT))
-            .intValue();
-    return compute_committee(
-        get_active_validator_indices(state, epoch),
-        generate_seed(state, epoch),
-        index,
-        get_epoch_committee_count(state, epoch).intValue());
+    if (state instanceof BeaconStateWithCache
+        && ((BeaconStateWithCache) state).getCrossLinkCommittee(epoch, shard) != null) {
+      BeaconStateWithCache stateWithCash = (BeaconStateWithCache) state;
+      return stateWithCash.getCrossLinkCommittee(epoch, shard);
+    } else {
+      int index =
+          shard
+              .plus(UnsignedLong.valueOf(SHARD_COUNT).minus(get_epoch_start_shard(state, epoch)))
+              .mod(UnsignedLong.valueOf(SHARD_COUNT))
+              .intValue();
+      List<Integer> committee =
+          compute_committee(
+              get_active_validator_indices(state, epoch),
+              generate_seed(state, epoch),
+              index,
+              get_epoch_committee_count(state, epoch).intValue());
+
+      // Client specific optimization
+      ((BeaconStateWithCache) state).setCrossLinkCommittee(committee, epoch, shard);
+
+      return committee;
+    }
   }
 
   /**
@@ -166,25 +179,35 @@ public class CrosslinkCommitteeUtil {
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.7.1/specs/core/0_beacon-chain.md#get_epoch_start_shard</a>
    */
   public static UnsignedLong get_epoch_start_shard(BeaconState state, UnsignedLong epoch) {
-    checkArgument(
-        epoch.compareTo(get_current_epoch(state).plus(UnsignedLong.ONE)) <= 0,
-        "CrosslinkCommitteeUtil.get_epoch_start_shard");
-    UnsignedLong check_epoch = get_current_epoch(state).plus(UnsignedLong.ONE);
-    UnsignedLong shard =
-        state
-            .getLatest_start_shard()
-            .plus(get_shard_delta(state, get_current_epoch(state)))
-            .mod(UnsignedLong.valueOf(SHARD_COUNT));
+    if (state instanceof BeaconStateWithCache
+        && ((BeaconStateWithCache) state).getEpochStartShard(epoch) != null) {
+      BeaconStateWithCache stateWithCash = (BeaconStateWithCache) state;
+      return stateWithCash.getEpochStartShard(epoch);
+    } else {
+      checkArgument(
+              epoch.compareTo(get_current_epoch(state).plus(UnsignedLong.ONE)) <= 0,
+              "CrosslinkCommitteeUtil.get_epoch_start_shard");
+      UnsignedLong check_epoch = get_current_epoch(state).plus(UnsignedLong.ONE);
+      UnsignedLong shard =
+              state
+                      .getLatest_start_shard()
+                      .plus(get_shard_delta(state, get_current_epoch(state)))
+                      .mod(UnsignedLong.valueOf(SHARD_COUNT));
 
-    while (check_epoch.compareTo(epoch) > 0) {
-      check_epoch = check_epoch.minus(UnsignedLong.ONE);
-      shard =
-          shard
-              .plus(UnsignedLong.valueOf(SHARD_COUNT))
-              .minus(get_shard_delta(state, check_epoch))
-              .mod(UnsignedLong.valueOf(SHARD_COUNT));
+      while (check_epoch.compareTo(epoch) > 0) {
+        check_epoch = check_epoch.minus(UnsignedLong.ONE);
+        shard =
+                shard
+                        .plus(UnsignedLong.valueOf(SHARD_COUNT))
+                        .minus(get_shard_delta(state, check_epoch))
+                        .mod(UnsignedLong.valueOf(SHARD_COUNT));
+      }
+
+      // Client specific optimization
+      ((BeaconStateWithCache) state).setEpochStartShard(epoch, shard);
+
+      return shard;
     }
-    return shard;
   }
 
   /**
