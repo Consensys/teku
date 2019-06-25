@@ -26,6 +26,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.PriorityBlockingQueue;
 import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes;
@@ -55,15 +56,9 @@ public class ChainStorageClient implements ChainStorage {
   protected final ConcurrentHashMap<Bytes, BeaconState> stateLookup = new ConcurrentHashMap<>();
   protected final ConcurrentHashMap<BLSSignature, Attestation> processedAttestationsMap =
       new ConcurrentHashMap<>();
-<<<<<<< HEAD
-  private final PriorityBlockingQueue<Attestation> unprocessedAttestationsQueue =
-      new PriorityBlockingQueue<>(
-          UNPROCESSED_BLOCKS_LENGTH, Comparator.comparing(Attestation::getSlot));
   private final ConcurrentHashMap<BLSSignature, Attestation> unprocessedAttestationsMap =
       new ConcurrentHashMap<>();
-=======
-  private final Queue<Attestation> attestationsQueue = new LinkedBlockingQueue<>();
->>>>>>> Make this thing work (#739)
+  private final Queue<Attestation> unprocessedAttestationsQueue = new LinkedBlockingQueue<>();
   private final ConcurrentHashMap<Integer, List<BeaconBlockHeader>> validatorBlockHeaders =
       new ConcurrentHashMap<>();
   private Bytes32 bestBlockRoot; // block chosen by lmd ghost to build and attest on
@@ -329,8 +324,10 @@ public class ChainStorageClient implements ChainStorage {
       BeaconState state, UnsignedLong slot) {
     List<Attestation> attestations = new ArrayList<>();
     int numAttestations = 0;
-    while (attestationsQueue.peek() != null
-        && get_attestation_data_slot(state, attestationsQueue.peek().getData()).compareTo(slot) <= 0
+    while (unprocessedAttestationsQueue.peek() != null
+        && get_attestation_data_slot(state, unprocessedAttestationsQueue.peek().getData())
+                .compareTo(slot)
+            <= 0
         && numAttestations < Constants.MAX_ATTESTATIONS) {
       Attestation attestation = unprocessedAttestationsQueue.remove();
       // Check if attestation has already been processed in successful block

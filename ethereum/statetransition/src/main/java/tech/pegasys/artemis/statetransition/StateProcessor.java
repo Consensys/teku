@@ -184,8 +184,7 @@ public class StateProcessor {
       // TODO: there is a synchronization issue here that needs to be handled
       // before RPC calls are implemented
       this.store.updateLatestFinalizedBlock(this.finalizedBlockRoot, this.finalizedEpoch);
-      this.store.updateBestBlock(
-              this.headBlock.hash_tree_root(), UnsignedLong.valueOf(this.headBlock.getSlot()));
+      this.store.updateBestBlock(this.headBlock.hash_tree_root(), this.headBlock.getSlot());
 
       // Send event that headState has been updated
       this.eventBus.post(
@@ -193,8 +192,8 @@ public class StateProcessor {
               BeaconStateWithCache.deepCopy((BeaconStateWithCache) headState), headBlock));
       recordData(date);
       long stopTime = System.currentTimeMillis();
-      System.out.println(
-          "On new slot elapsed time was " + (stopTime - startTime) + " miliseconds.");
+      LOG.log(
+          Level.INFO, "On new slot elapsed time was " + (stopTime - startTime) + " miliseconds.");
     } catch (SlotProcessingException | EpochProcessingException e) {
       STDOUT.log(
           Level.INFO, ANSI_RED + "Unable to update head state: " + e.toString() + ANSI_RESET);
@@ -245,7 +244,8 @@ public class StateProcessor {
         long startTime = System.currentTimeMillis();
         Bytes32 newStateRoot = stateTransition.initiate(currentState, block, validate_state_root);
         long stopTime = System.currentTimeMillis();
-        System.out.println(
+        LOG.log(
+            Level.INFO,
             "State transition with block elapsed time was "
                 + (stopTime - startTime)
                 + " miliseconds.");

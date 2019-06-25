@@ -25,6 +25,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
+import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.bytes.Bytes48;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.web3j.protocol.core.methods.response.Log;
@@ -145,7 +147,9 @@ public class ServiceAdapterTest {
   private Deposit createValidatorRegistration(Integer index) {
     DepositContract.DepositEventResponse response = new DepositContract.DepositEventResponse();
 
-    response.data = "data".getBytes(Charset.defaultCharset());
+    response.pubkey = Bytes48.random().toArray();
+    response.withdrawal_credentials = Bytes32.random().toArray();
+    response.amount = Bytes32.random().toArray();
     response.merkle_tree_index = BigInteger.TEN.toByteArray();
 
     response.log =
@@ -186,7 +190,10 @@ public class ServiceAdapterTest {
 
   private void assertValidatorRegistration(Deposit expected, Deposit actual) {
 
-    assertArrayEquals(expected.getResponse().data, actual.getResponse().data);
+    assertArrayEquals(expected.getResponse().pubkey, actual.getResponse().pubkey);
+    assertArrayEquals(
+        expected.getResponse().withdrawal_credentials, actual.getResponse().withdrawal_credentials);
+    assertArrayEquals(expected.getResponse().amount, actual.getResponse().amount);
     //          assertEquals(
     //              true,
     //              Arrays.equals(

@@ -151,7 +151,7 @@ public class BeaconStateUtil {
                 pubkey,
                 deposit.getData().signing_root("signature"),
                 deposit.getData().getSignature(),
-                UnsignedLong.valueOf(bls_domain(DOMAIN_DEPOSIT)));
+                bls_domain(DOMAIN_DEPOSIT));
         if (!proof_is_valid) {
           return;
         }

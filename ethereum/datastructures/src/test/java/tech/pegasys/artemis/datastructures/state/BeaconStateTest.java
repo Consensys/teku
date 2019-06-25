@@ -15,9 +15,9 @@ package tech.pegasys.artemis.datastructures.state;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 import static tech.pegasys.artemis.datastructures.Constants.ACTIVATION_EXIT_DELAY;
+import static tech.pegasys.artemis.datastructures.Constants.FAR_FUTURE_EPOCH;
 import static tech.pegasys.artemis.datastructures.Constants.GENESIS_EPOCH;
 import static tech.pegasys.artemis.datastructures.Constants.LATEST_RANDAO_MIXES_LENGTH;
 import static tech.pegasys.artemis.datastructures.Constants.MIN_SEED_LOOKAHEAD;
@@ -28,13 +28,11 @@ import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_curre
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_genesis_beacon_state;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_randao_mix;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.int_to_bytes32;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.split;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomDeposits;
 
 import com.google.common.primitives.UnsignedLong;
 import java.security.Security;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
@@ -46,7 +44,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
-import tech.pegasys.artemis.util.bls.BLSPublicKey;
 
 @ExtendWith(BouncyCastleExtension.class)
 class BeaconStateTest {
@@ -61,7 +58,7 @@ class BeaconStateTest {
           state,
           randomDeposits(numDeposits),
           UnsignedLong.ZERO,
-          new Eth1Data(Bytes32.ZERO, Bytes32.ZERO));
+          new Eth1Data(Bytes32.ZERO, UnsignedLong.ZERO, Bytes32.ZERO));
 
       return state;
     } catch (Exception e) {
@@ -91,9 +88,13 @@ class BeaconStateTest {
     BeaconState state = newState(1);
     int validator_index = 0;
 
-    BeaconStateUtil.initiate_validator_exit(state, validator_index);
-    assertThat(state.getValidator_registry().get(validator_index).hasInitiatedExit())
-        .isEqualTo(true);
+    assertThat(
+            !state
+                .getValidator_registry()
+                .get(validator_index)
+                .getExit_epoch()
+                .equals(FAR_FUTURE_EPOCH))
+        .isEqualTo(false);
   }
 
   @Test
@@ -102,7 +103,12 @@ class BeaconStateTest {
     int validator_index = 0;
 
     BeaconStateUtil.initiate_validator_exit(state, validator_index);
-    assertThat(state.getValidator_registry().get(validator_index).hasInitiatedExit())
+    assertThat(
+            !state
+                .getValidator_registry()
+                .get(validator_index)
+                .getExit_epoch()
+                .equals(FAR_FUTURE_EPOCH))
         .isEqualTo(true);
   }
 
@@ -121,18 +127,7 @@ class BeaconStateTest {
         .isNotEqualTo(state.getFork().getPrevious_version());
 
     // Test validator registry
-    ArrayList<Validator> new_records =
-        new ArrayList<>(
-            Collections.nCopies(
-                12,
-                new Validator(
-                    BLSPublicKey.empty(),
-                    Bytes32.ZERO,
-                    UnsignedLong.ZERO,
-                    UnsignedLong.valueOf(GENESIS_EPOCH),
-                    UnsignedLong.ZERO,
-                    false,
-                    false)));
+    ArrayList<Validator> new_records = new ArrayList<>(Collections.nCopies(12, new Validator()));
     deepCopy.setValidator_registry(new_records);
     assertThat(deepCopy.getValidator_registry().get(0).getPubkey())
         .isNotEqualTo(state.getValidator_registry().get(0).getPubkey());
@@ -142,102 +137,6 @@ class BeaconStateTest {
     Bytes bytes = Bytes.wrap(new byte[] {(byte) 1, (byte) 256, (byte) 65656});
     Security.addProvider(new BouncyCastleProvider());
     return Hash.keccak256(bytes);
-  }
-
-  /* TODO: reinstate test
-    @Test
-    @Disabled
-    void testShuffle() {
-      List<Integer> input = Arrays.asList(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
-      ArrayList<Integer> sample = new ArrayList<>(input);
-
-      try {
-        List<Integer> actual = shuffle(sample, hashSrc());
-        List<Integer> expected_input = Arrays.asList(4, 7, 2, 1, 5, 10, 3, 6, 8, 9);
-        ArrayList<Integer> expected = new ArrayList<>(expected_input);
-        assertThat(actual).isEqualTo(expected);
-      } catch (IllegalStateException e) {
-        fail(e.toString());
-      }
-    }
-  */
-
-  @Test
-  void failsWhenInvalidArgumentTestSplit() {
-    List<Integer> input = Arrays.asList(0, 1, 2, 3, 4, 5, 6, 7);
-    ArrayList<Integer> sample = new ArrayList<>(input);
-
-    assertThrows(IllegalArgumentException.class, () -> split(sample, -1));
-  }
-
-  @Test
-  void splitReturnsOneSmallerSizedSplit() {
-    List<Integer> input = Arrays.asList(0, 1, 2, 3, 4, 5, 6, 7);
-    ArrayList<Integer> sample = new ArrayList<>(input);
-
-    List<List<Integer>> actual = split(sample, 3);
-
-    ArrayList<ArrayList<Integer>> expected = new ArrayList<>();
-    List<Integer> one = Arrays.asList(0, 1);
-    expected.add(new ArrayList<>(one));
-    List<Integer> two = Arrays.asList(2, 3, 4);
-    expected.add(new ArrayList<>(two));
-    List<Integer> three = Arrays.asList(5, 6, 7);
-    expected.add(new ArrayList<>(three));
-
-    assertThat(actual).isEqualTo(expected);
-  }
-
-  @Test
-  void splitReturnsTwoSmallerSizedSplits() {
-    List<Integer> input = Arrays.asList(0, 1, 2, 3, 4, 5, 6);
-    ArrayList<Integer> sample = new ArrayList<>(input);
-
-    List<List<Integer>> actual = split(sample, 3);
-
-    ArrayList<ArrayList<Integer>> expected = new ArrayList<>();
-    List<Integer> one = Arrays.asList(0, 1);
-    expected.add(new ArrayList<>(one));
-    List<Integer> two = Arrays.asList(2, 3);
-    expected.add(new ArrayList<>(two));
-    List<Integer> three = Arrays.asList(4, 5, 6);
-    expected.add(new ArrayList<>(three));
-
-    assertThat(actual).isEqualTo(expected);
-  }
-
-  @Test
-  void splitReturnsEquallySizedSplits() {
-    List<Integer> input = Arrays.asList(0, 1, 2, 3, 4, 5, 6, 7, 8);
-    ArrayList<Integer> sample = new ArrayList<>(input);
-
-    List<List<Integer>> actual = split(sample, 3);
-
-    ArrayList<ArrayList<Integer>> expected = new ArrayList<>();
-    List<Integer> one = Arrays.asList(0, 1, 2);
-    expected.add(new ArrayList<>(one));
-    List<Integer> two = Arrays.asList(3, 4, 5);
-    expected.add(new ArrayList<>(two));
-    List<Integer> three = Arrays.asList(6, 7, 8);
-    expected.add(new ArrayList<>(three));
-
-    assertThat(actual).isEqualTo(expected);
-  }
-
-  @Test
-  void getRandaoMixThrowsExceptions() {
-    BeaconState state = newState(1);
-    state.setSlot(UnsignedLong.valueOf(LATEST_RANDAO_MIXES_LENGTH * SLOTS_PER_EPOCH));
-    assertThat(get_current_epoch(state).compareTo(UnsignedLong.valueOf(LATEST_RANDAO_MIXES_LENGTH)))
-        .isEqualTo(0);
-    // Test `assert get_current_epoch(state) - LATEST_RANDAO_MIXES_LENGTH < epoch`
-    assertThrows(RuntimeException.class, () -> get_randao_mix(state, UnsignedLong.ZERO));
-    // Test `assert epoch <= get_current_epoch(state)`
-    assertThrows(
-        RuntimeException.class,
-        () ->
-            get_randao_mix(
-                state, UnsignedLong.valueOf(LATEST_RANDAO_MIXES_LENGTH).plus(UnsignedLong.ONE)));
   }
 
   @Test
@@ -276,7 +175,7 @@ class BeaconStateTest {
       Security.addProvider(new BouncyCastleProvider());
       assertThat(generate_seed(state, epoch))
           .isEqualTo(
-              Hash.keccak256(
+              Hash.sha2_256(
                   Bytes.wrap(
                       Bytes32.fromHexString("0x029a"),
                       get_active_index_root(state, epoch),
@@ -292,7 +191,7 @@ class BeaconStateTest {
     // we'll need a better way of syncing deposit indexes with our test data.
     // The fix in place right now is a hack.
     BeaconState state = newState(1);
-    Bytes sszBeaconBlockBytes = state.toBytes();
-    assertEquals(state, BeaconState.fromBytes(sszBeaconBlockBytes));
+    BeaconState sszBeaconState = BeaconState.fromBytes(state.toBytes());
+    assertEquals(state, sszBeaconState);
   }
 }

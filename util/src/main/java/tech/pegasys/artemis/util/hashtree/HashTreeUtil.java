@@ -13,8 +13,10 @@
 
 package tech.pegasys.artemis.util.hashtree;
 
+import static java.lang.Math.toIntExact;
 import static java.nio.ByteOrder.LITTLE_ENDIAN;
 
+import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -255,7 +257,11 @@ public final class HashTreeUtil {
         Bytes.concatenate(merkle_root, Bytes.ofUnsignedInt(length, LITTLE_ENDIAN)));
   }
 
-  private static boolean is_power_of_two(int value) {
+  public static boolean is_power_of_two(int value) {
     return value > 0 && (value & (value - 1)) == 0;
+  }
+
+  public static boolean is_power_of_two(UnsignedLong value) {
+    return is_power_of_two(toIntExact(value.longValue()));
   }
 }

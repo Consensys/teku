@@ -18,31 +18,30 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.is_power_of_two;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.newDeposits;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomUnsignedLong;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomValidator;
+import static tech.pegasys.artemis.util.hashtree.HashTreeUtil.is_power_of_two;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.junit.BouncyCastleExtension;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
-import tech.pegasys.artemis.datastructures.operations.DepositInput;
+import tech.pegasys.artemis.datastructures.operations.DepositData;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.state.CrosslinkCommittee;
 import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
-import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.bls.BLSVerify;
 
 @ExtendWith(BouncyCastleExtension.class)
@@ -96,225 +95,36 @@ class BeaconStateUtilTest {
         () -> BeaconStateUtil.integer_squareroot(UnsignedLong.valueOf(-1L)));
   }
 
-  // TODO It may make sense to move these tests to a Fork specific test class in the future.
-  // *************** START Fork Tests ***************
-  @Test
-  void getForkVersionReturnsPreviousVersionWhenGivenEpochIsLessThanForkEpoch() {
-    // Setup Fork Versions
-    // The values of these don't really matter, it just makes sense that
-    // previous version is less than current version.
-    Bytes previousVersion = Bytes.ofUnsignedInt(0);
-    Bytes currentVersion = previousVersion.and(Bytes.ofUnsignedInt(1));
-
-    // Setup Epochs
-    // It is necessary for this test that givenEpoch is less than forkEpoch.
-    UnsignedLong givenEpoch = UnsignedLong.valueOf(100L);
-    UnsignedLong forkEpoch = givenEpoch.plus(UnsignedLong.valueOf(1L));
-
-    // Setup Fork
-    Fork fork = new Fork(previousVersion, currentVersion, forkEpoch);
-
-    assertEquals(BeaconStateUtil.get_fork_version(fork, givenEpoch), previousVersion);
-  }
-
-  @Test
-  void getForkVersionReturnsCurrentVersionWhenGivenEpochIsGreaterThanForkEpoch() {
-    // Setup Fork Versions
-    // The values of these don't really matter, it just makes sense that
-    // previous version is less than current version.
-    Bytes previousVersion = Bytes.ofUnsignedInt(0);
-    Bytes currentVersion = previousVersion.and(Bytes.ofUnsignedInt(1));
-
-    // Setup Epochs
-    // It is necessary for this test that givenEpoch is greater than forkEpoch.
-    UnsignedLong forkEpoch = UnsignedLong.valueOf(100L);
-    UnsignedLong givenEpoch = forkEpoch.plus(UnsignedLong.valueOf(1L));
-
-    // Setup Fork
-    Fork fork = new Fork(previousVersion, currentVersion, forkEpoch);
-
-    assertEquals(BeaconStateUtil.get_fork_version(fork, givenEpoch), currentVersion);
-  }
-
-  @Test
-  void getDomainReturnsAsExpectedForAllSignatureDomainTypesWithPreviousVersionFork() {
-    // Setup Fork Versions
-    // The values of these don't really matter, it just makes sense that
-    // previous version is less than current version.
-    Bytes previousVersion = Bytes.ofUnsignedInt(0);
-    Bytes currentVersion = previousVersion.and(Bytes.ofUnsignedInt(1));
-
-    // Setup Epochs
-    UnsignedLong givenEpoch = UnsignedLong.valueOf(100L);
-    UnsignedLong forkEpoch = givenEpoch.plus(UnsignedLong.valueOf(1L));
-
-    // Setup Fork
-    Fork fork = new Fork(previousVersion, currentVersion, forkEpoch);
-
-    // Iterate Over the Possible Signature Domains
-    // 0 - DOMAIN_DEPOSIT
-    // 1 - DOMAIN_ATTESTATION
-    // 2 - DOMAIN_PROPOSAL
-    // 3 - DOMAIN_EXIT
-    // 4 - DOMAIN_RANDAO
-    for (int domain = 0; domain <= 4; ++domain) {
-      assertEquals(
-          BeaconStateUtil.get_domain(fork, givenEpoch, domain),
-          UnsignedLong.valueOf(
-              (BeaconStateUtil.get_fork_version(fork, givenEpoch).toLong() << 32) + domain));
-    }
-  }
-
-  @Test
-  void getDomainReturnsAsExpectedForAllSignatureDomainTypesWithCurrentVersionFork() {
-    // Setup Fork Versions
-    // The values of these don't really matter, it just makes sense that
-    // previous version is less than current version.
-    Bytes previousVersion = Bytes.ofUnsignedInt(0);
-    Bytes currentVersion = previousVersion.and(Bytes.ofUnsignedInt(1));
-
-    // Setup Epochs
-    UnsignedLong forkEpoch = UnsignedLong.valueOf(100L);
-    UnsignedLong givenEpoch = forkEpoch.plus(UnsignedLong.valueOf(1L));
-
-    // Setup Fork
-    Fork fork = new Fork(previousVersion, currentVersion, forkEpoch);
-
-    // Iterate Over the Possible Signature Domains
-    // 0 - DOMAIN_DEPOSIT
-    // 1 - DOMAIN_ATTESTATION
-    // 2 - DOMAIN_PROPOSAL
-    // 3 - DOMAIN_EXIT
-    // 4 - DOMAIN_RANDAO
-    for (int domain = 0; domain <= 4; ++domain) {
-      assertEquals(
-          BeaconStateUtil.get_domain(fork, givenEpoch, domain),
-          UnsignedLong.valueOf(
-              (BeaconStateUtil.get_fork_version(fork, givenEpoch).toLong() << 32) + domain));
-    }
-  }
-  // *************** END Fork Tests ***************
-
   @Test
   void validateProofOfPosessionReturnsTrueIfTheBLSSignatureIsValidForGivenDepositInputData() {
     Deposit deposit = newDeposits(1).get(0);
-    BLSPublicKey pubkey = deposit.getDeposit_data().getSignature().getPubkey();
-    BLSSignature proofOfPossession =
-        deposit.getDeposit_data().getSignature().getProof_of_possession();
-    UnsignedLong domain =
+    BLSPublicKey pubkey = deposit.getData().getPubkey();
+    DepositData depositData = deposit.getData();
+    int domain =
         BeaconStateUtil.get_domain(
-            new Fork(
-                Bytes.ofUnsignedInt(Constants.GENESIS_FORK_VERSION),
-                Bytes.ofUnsignedInt(Constants.GENESIS_FORK_VERSION),
-                UnsignedLong.valueOf(Constants.GENESIS_EPOCH)),
-            UnsignedLong.fromLongBits(Constants.GENESIS_EPOCH),
-            Constants.DOMAIN_DEPOSIT);
+            createBeaconState(),
+            Constants.DOMAIN_DEPOSIT,
+            UnsignedLong.fromLongBits(Constants.GENESIS_EPOCH));
 
     assertTrue(
         BLSVerify.bls_verify(
-            pubkey,
-            deposit.getDeposit_data().getSignature().signed_root("proof_of_possession"),
-            proofOfPossession,
-            domain));
+            pubkey, depositData.signing_root("signature"), depositData.getSignature(), domain));
   }
 
   @Test
   void validateProofOfPosessionReturnsFalseIfTheBLSSignatureIsNotValidForGivenDepositInputData() {
     Deposit deposit = newDeposits(1).get(0);
     BLSPublicKey pubkey = BLSPublicKey.random();
-    BLSSignature proofOfPossession =
-        deposit.getDeposit_data().getSignature().getProof_of_possession();
-    UnsignedLong domain =
+    DepositData depositData = deposit.getData();
+    int domain =
         BeaconStateUtil.get_domain(
-            new Fork(
-                Bytes.ofUnsignedInt(Constants.GENESIS_FORK_VERSION),
-                Bytes.ofUnsignedInt(Constants.GENESIS_FORK_VERSION),
-                UnsignedLong.valueOf(Constants.GENESIS_EPOCH)),
-            UnsignedLong.fromLongBits(Constants.GENESIS_EPOCH),
-            Constants.DOMAIN_DEPOSIT);
+            createBeaconState(),
+            Constants.DOMAIN_DEPOSIT,
+            UnsignedLong.fromLongBits(Constants.GENESIS_EPOCH));
 
     assertFalse(
         BLSVerify.bls_verify(
-            pubkey,
-            deposit.getDeposit_data().getSignature().signed_root("proof_of_possession"),
-            proofOfPossession,
-            domain));
-  }
-
-  @Test
-  void processDepositAddsNewValidatorWhenPubkeyIsNotFoundInRegistry() {
-    // Data Setup
-    Deposit deposit = newDeposits(1).get(0);
-    DepositInput depositInput = deposit.getDeposit_data().getSignature();
-    BLSPublicKey pubkey = depositInput.getPubkey();
-    Bytes32 withdrawalCredentials = depositInput.getWithdrawal_credentials();
-    UnsignedLong amount = deposit.getDeposit_data().getAmount();
-
-    BeaconState beaconState = createBeaconState();
-
-    int originalValidatorRegistrySize = beaconState.getValidator_registry().size();
-    int originalValidatorBalancesSize = beaconState.getValidator_balances().size();
-
-    // Attempt to process deposit with above data.
-    BeaconStateUtil.process_deposit(beaconState, deposit);
-
-    assertTrue(
-        beaconState.getValidator_registry().size() == (originalValidatorRegistrySize + 1),
-        "No validator was added to the validator registry.");
-    assertTrue(
-        beaconState.getValidator_balances().size() == (originalValidatorBalancesSize + 1),
-        "No balance was added to the validator balances.");
-    assertEquals(
-        new Validator(
-            pubkey,
-            withdrawalCredentials,
-            Constants.FAR_FUTURE_EPOCH,
-            Constants.FAR_FUTURE_EPOCH,
-            Constants.FAR_FUTURE_EPOCH,
-            false,
-            false),
-        beaconState.getValidator_registry().get(originalValidatorRegistrySize));
-    assertEquals(amount, beaconState.getValidator_balances().get(originalValidatorBalancesSize));
-  }
-
-  @Test
-  void processDepositTopsUpValidatorBalanceWhenPubkeyIsFoundInRegistry() {
-    // Data Setup
-    Deposit deposit = newDeposits(1).get(0);
-    DepositInput depositInput = deposit.getDeposit_data().getSignature();
-    BLSPublicKey pubkey = depositInput.getPubkey();
-    Bytes32 withdrawalCredentials = depositInput.getWithdrawal_credentials();
-    UnsignedLong amount = deposit.getDeposit_data().getAmount();
-
-    Validator knownValidator =
-        new Validator(
-            pubkey,
-            withdrawalCredentials,
-            Constants.FAR_FUTURE_EPOCH,
-            Constants.FAR_FUTURE_EPOCH,
-            Constants.FAR_FUTURE_EPOCH,
-            false,
-            false);
-
-    BeaconState beaconState = createBeaconState(amount, knownValidator);
-
-    int originalValidatorRegistrySize = beaconState.getValidator_registry().size();
-    int originalValidatorBalancesSize = beaconState.getValidator_balances().size();
-
-    // Attempt to process deposit with above data.
-    BeaconStateUtil.process_deposit(beaconState, deposit);
-
-    assertTrue(
-        beaconState.getValidator_registry().size() == originalValidatorRegistrySize,
-        "A new validator was added to the validator registry, but should not have been.");
-    assertTrue(
-        beaconState.getValidator_balances().size() == originalValidatorBalancesSize,
-        "A new balance was added to the validator balances, but should not have been.");
-    assertEquals(
-        knownValidator, beaconState.getValidator_registry().get(originalValidatorRegistrySize - 1));
-    assertEquals(
-        amount.times(UnsignedLong.valueOf(2L)),
-        beaconState.getValidator_balances().get(originalValidatorBalancesSize - 1));
+            pubkey, depositData.signing_root("signature"), depositData.getSignature(), domain));
   }
 
   @Test
@@ -326,52 +136,18 @@ class BeaconStateUtilTest {
 
     // Calculate Expected Results
     UnsignedLong expectedBalance = UnsignedLong.ZERO;
-    for (UnsignedLong balance : state.getValidator_balances()) {
-      if (balance.compareTo(UnsignedLong.valueOf(Constants.MAX_DEPOSIT_AMOUNT)) < 0) {
+    for (UnsignedLong balance : state.getBalances()) {
+      if (balance.compareTo(UnsignedLong.valueOf(Constants.MAX_EFFECTIVE_BALANCE)) < 0) {
         expectedBalance = expectedBalance.plus(balance);
       } else {
-        expectedBalance = expectedBalance.plus(UnsignedLong.valueOf(Constants.MAX_DEPOSIT_AMOUNT));
+        expectedBalance =
+            expectedBalance.plus(UnsignedLong.valueOf(Constants.MAX_EFFECTIVE_BALANCE));
       }
     }
 
-    assertEquals(
-        expectedBalance,
-        BeaconStateUtil.get_total_balance(state, crosslinkCommittee.getCommittee()));
-  }
-
-  @Test
-  @Disabled // Pending resolution of Issue #347.
-  void penalizeValidatorDecrementsBadActorAndIncrementsWhistleblower() {
-    // Actual Data Setup
-    BeaconState beaconState = createBeaconState();
-    int validatorIndex = 1;
-
-    beaconState.setCurrent_shuffling_epoch(Constants.FAR_FUTURE_EPOCH);
-    beaconState.setPrevious_shuffling_epoch(Constants.FAR_FUTURE_EPOCH);
-    List<UnsignedLong> latestPenalizedBalances =
-        new ArrayList<>(
-            Arrays.asList(randomUnsignedLong(), randomUnsignedLong(), randomUnsignedLong()));
-    beaconState.setLatest_slashed_balances(latestPenalizedBalances);
-
-    // Expected Data Setup
-    int whistleblowerIndex =
-        BeaconStateUtil.get_beacon_proposer_index(beaconState, beaconState.getSlot());
-    UnsignedLong whistleblowerReward =
-        BeaconStateUtil.get_effective_balance(beaconState, validatorIndex)
-            .dividedBy(UnsignedLong.valueOf(Constants.WHISTLEBLOWER_REWARD_QUOTIENT));
-    UnsignedLong whistleblowerBalance = beaconState.getValidator_balances().get(whistleblowerIndex);
-
-    UnsignedLong validatorBalance = beaconState.getValidator_balances().get(validatorIndex);
-
-    UnsignedLong expectedWhistleblowerBalance = whistleblowerBalance.plus(whistleblowerReward);
-    UnsignedLong expectedBadActorBalance = validatorBalance.minus(whistleblowerReward);
-
-    // Penalize validator in above beacon state at validatorIndex.
-    //    BeaconStateUtil.penalize_validator(beaconState, validatorIndex);
-
-    assertEquals(expectedBadActorBalance, beaconState.getValidator_balances().get(validatorIndex));
-    assertEquals(
-        expectedWhistleblowerBalance, beaconState.getValidator_balances().get(whistleblowerIndex));
+    UnsignedLong totalBalance =
+        BeaconStateUtil.get_total_balance(state, crosslinkCommittee.getCommittee());
+    assertEquals(expectedBalance, totalBalance);
   }
 
   @Test
@@ -504,7 +280,7 @@ class BeaconStateUtilTest {
         new ArrayList<>(Arrays.asList(randomValidator(), randomValidator(), randomValidator()));
     List<UnsignedLong> balanceList =
         new ArrayList<>(
-            Arrays.asList(randomUnsignedLong(), randomUnsignedLong(), randomUnsignedLong()));
+            Collections.nCopies(3, UnsignedLong.valueOf(Constants.MAX_EFFECTIVE_BALANCE)));
 
     if (addToList) {
       validatorList.add(knownValidator);
@@ -512,7 +288,7 @@ class BeaconStateUtilTest {
     }
 
     beaconState.setValidator_registry(validatorList);
-    beaconState.setValidator_balances(balanceList);
+    beaconState.setBalances(balanceList);
     return beaconState;
   }
 
@@ -529,7 +305,7 @@ class BeaconStateUtilTest {
     int listSize = 1000;
     boolean[] done = new boolean[listSize]; // Initialised to false
     for (int i = 0; i < listSize; i++) {
-      int idx = BeaconStateUtil.get_permuted_index(i, listSize, seed);
+      int idx = CrosslinkCommitteeUtil.get_shuffled_index(i, listSize, seed);
       assertFalse(done[idx]);
       done[idx] = true;
     }
@@ -541,9 +317,28 @@ class BeaconStateUtilTest {
     int listSize = 1 + (int) randomUnsignedLong().longValue() % 1000;
     int[] shuffling = BeaconStateUtil.shuffle(listSize, seed);
     for (int i = 0; i < listSize; i++) {
-      int idx = BeaconStateUtil.get_permuted_index(i, listSize, seed);
+      int idx = CrosslinkCommitteeUtil.get_shuffled_index(i, listSize, seed);
       assertEquals(shuffling[i], idx);
     }
+  }
+
+  private Validator createValidator() {
+    List<Deposit> deposits = newDeposits(1);
+    Deposit deposit = deposits.get(0);
+    DepositData depositInput = deposit.getData();
+    BLSPublicKey pubkey = depositInput.getPubkey();
+    Bytes32 withdrawalCredentials = depositInput.getWithdrawal_credentials();
+    UnsignedLong amount = deposit.getData().getAmount();
+
+    return new Validator(
+        pubkey,
+        withdrawalCredentials,
+        Constants.FAR_FUTURE_EPOCH,
+        Constants.FAR_FUTURE_EPOCH,
+        Constants.FAR_FUTURE_EPOCH,
+        Constants.FAR_FUTURE_EPOCH,
+        false,
+        UnsignedLong.valueOf(Constants.MAX_EFFECTIVE_BALANCE));
   }
 
   // *************** END Shuffling Tests *****************
