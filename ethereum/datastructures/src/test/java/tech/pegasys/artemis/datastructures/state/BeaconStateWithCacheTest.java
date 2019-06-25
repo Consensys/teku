@@ -43,7 +43,7 @@ class BeaconStateWithCacheTest {
           state,
           randomDeposits(numDeposits),
           UnsignedLong.ZERO,
-          new Eth1Data(Bytes32.ZERO, Bytes32.ZERO));
+          new Eth1Data(Bytes32.ZERO, UnsignedLong.ZERO, Bytes32.ZERO));
 
       return state;
     } catch (Exception e) {
@@ -92,8 +92,9 @@ class BeaconStateWithCacheTest {
                     UnsignedLong.ZERO,
                     UnsignedLong.valueOf(GENESIS_EPOCH),
                     UnsignedLong.ZERO,
+                    UnsignedLong.ZERO,
                     false,
-                    false)));
+                    UnsignedLong.ZERO)));
     state.setValidator_registry(new_records);
     BeaconState deepCopy = BeaconStateWithCache.deepCopy(state);
     Validator validator = deepCopy.getValidator_registry().get(0);

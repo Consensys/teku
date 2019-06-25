@@ -134,7 +134,7 @@ public final class BlockProcessorUtil {
                 proposer.getPubkey(),
                 block.signing_root("signature"),
                 block.getSignature(),
-                UnsignedLong.valueOf(get_domain(state, DOMAIN_BEACON_PROPOSER))),
+                get_domain(state, DOMAIN_BEACON_PROPOSER)),
             "process_block_header: Verify proposer signature");
       }
     } catch (IllegalArgumentException e) {
@@ -162,7 +162,7 @@ public final class BlockProcessorUtil {
               HashTreeUtil.hash_tree_root(
                   SSZTypes.BASIC, SSZ.encodeUInt64(get_current_epoch(state).longValue())),
               body.getRandao_reveal(),
-              UnsignedLong.valueOf(get_domain(state, DOMAIN_RANDAO))),
+              get_domain(state, DOMAIN_RANDAO)),
           "process_randao: Verify that the provided randao value is valid");
 
       // Mix it in
@@ -285,11 +285,10 @@ public final class BlockProcessorUtil {
                 proposer.getPubkey(),
                 proposer_slashing.getHeader_1().signing_root("signature"),
                 proposer_slashing.getHeader_1().getSignature(),
-                UnsignedLong.valueOf(
-                    get_domain(
-                        state,
-                        DOMAIN_BEACON_PROPOSER,
-                        slot_to_epoch(proposer_slashing.getHeader_1().getSlot())))),
+                get_domain(
+                    state,
+                    DOMAIN_BEACON_PROPOSER,
+                    slot_to_epoch(proposer_slashing.getHeader_1().getSlot()))),
             "process_proposer_slashings: Verify signatures are valid 1");
 
         checkArgument(
@@ -297,11 +296,10 @@ public final class BlockProcessorUtil {
                 proposer.getPubkey(),
                 proposer_slashing.getHeader_2().signing_root("signature"),
                 proposer_slashing.getHeader_2().getSignature(),
-                UnsignedLong.valueOf(
-                    get_domain(
-                        state,
-                        DOMAIN_BEACON_PROPOSER,
-                        slot_to_epoch(proposer_slashing.getHeader_2().getSlot())))),
+                get_domain(
+                    state,
+                    DOMAIN_BEACON_PROPOSER,
+                    slot_to_epoch(proposer_slashing.getHeader_2().getSlot()))),
             "process_proposer_slashings: Verify signatures are valid 2");
 
         slash_validator(state, toIntExact(proposer_slashing.getProposer_index().longValue()));
@@ -518,7 +516,7 @@ public final class BlockProcessorUtil {
                   pubkey,
                   deposit.getData().signing_root("signature"),
                   deposit.getData().getSignature(),
-                  UnsignedLong.valueOf(bls_domain(DOMAIN_DEPOSIT)));
+                  bls_domain(DOMAIN_DEPOSIT));
           if (!proof_is_valid) {
             return;
           }
@@ -598,10 +596,7 @@ public final class BlockProcessorUtil {
         int domain = get_domain(state, DOMAIN_VOLUNTARY_EXIT, exit.getEpoch());
         checkArgument(
             bls_verify(
-                validator.getPubkey(),
-                exit.signing_root("signature"),
-                exit.getSignature(),
-                UnsignedLong.valueOf(domain)),
+                validator.getPubkey(), exit.signing_root("signature"), exit.getSignature(), domain),
             "process_voluntary_exits: Verify signature");
 
         // - Run initiate_validator_exit(state, exit.validator_index)
@@ -680,7 +675,7 @@ public final class BlockProcessorUtil {
                 transfer.getPubkey(),
                 transfer.signing_root("signature"),
                 transfer.getSignature(),
-                UnsignedLong.valueOf(get_domain(state, DOMAIN_TRANSFER))),
+                get_domain(state, DOMAIN_TRANSFER)),
             "process_tranfers: Verify that the signature is valid");
 
         // Process transfers

@@ -16,7 +16,6 @@ package tech.pegasys.artemis.datastructures.operations;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomCrosslink;
-import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomInt;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomUnsignedLong;
 
 import com.google.common.primitives.UnsignedLong;
@@ -27,25 +26,16 @@ import tech.pegasys.artemis.datastructures.state.Crosslink;
 
 class AttestationDataTest {
 
-  private UnsignedLong slot = randomUnsignedLong();
   private Bytes32 beaconBlockRoot = Bytes32.random();
-  private UnsignedLong shard = randomUnsignedLong();
-  private Bytes32 epochBoundaryRoot = Bytes32.random();
-  private Bytes32 crosslinkDataRoot = Bytes32.random();
-  private UnsignedLong justifiedEpoch = randomUnsignedLong();
-  private Crosslink latestCrosslink = randomCrosslink();
-  private Bytes32 justifiedBlockRoot = Bytes32.random();
+  private UnsignedLong source_epoch = randomUnsignedLong();
+  private Bytes32 source_root = Bytes32.random();
+  private UnsignedLong target_epoch = randomUnsignedLong();
+  private Bytes32 target_root = Bytes32.random();
+  private Crosslink crosslink = randomCrosslink();
 
   private AttestationData attestationData =
       new AttestationData(
-          slot,
-          beaconBlockRoot,
-          shard,
-          epochBoundaryRoot,
-          crosslinkDataRoot,
-          justifiedEpoch,
-          latestCrosslink,
-          justifiedBlockRoot);
+          beaconBlockRoot, source_epoch, source_root, target_epoch, target_root, crosslink);
 
   @Test
   void equalsReturnsTrueWhenObjectAreSame() {
@@ -58,147 +48,77 @@ class AttestationDataTest {
   void equalsReturnsTrueWhenObjectFieldsAreEqual() {
     AttestationData testAttestationData =
         new AttestationData(
-            slot,
-            beaconBlockRoot,
-            shard,
-            epochBoundaryRoot,
-            crosslinkDataRoot,
-            justifiedEpoch,
-            latestCrosslink,
-            justifiedBlockRoot);
+            beaconBlockRoot, source_epoch, source_root, target_epoch, target_root, crosslink);
 
     assertEquals(attestationData, testAttestationData);
   }
 
   @Test
-  void equalsReturnsFalseWhenSlotsAreDifferent() {
+  void equalsReturnsFalseWhenBlockRootsAreDifferent() {
     AttestationData testAttestationData =
         new AttestationData(
-            slot.plus(randomUnsignedLong()),
-            beaconBlockRoot,
-            shard,
-            epochBoundaryRoot,
-            crosslinkDataRoot,
-            justifiedEpoch,
-            latestCrosslink,
-            justifiedBlockRoot);
+            Bytes32.random(), source_epoch, source_root, target_epoch, target_root, crosslink);
 
     assertNotEquals(attestationData, testAttestationData);
   }
 
   @Test
-  void equalsReturnsFalseWhenShardsAreDifferent() {
+  void equalsReturnsFalseWhenSourceEpochsAreDifferent() {
     AttestationData testAttestationData =
         new AttestationData(
-            slot,
             beaconBlockRoot,
-            shard.plus(randomUnsignedLong()),
-            epochBoundaryRoot,
-            crosslinkDataRoot,
-            justifiedEpoch,
-            latestCrosslink,
-            justifiedBlockRoot);
+            randomUnsignedLong(),
+            source_root,
+            target_epoch,
+            target_root,
+            crosslink);
 
     assertNotEquals(attestationData, testAttestationData);
   }
 
   @Test
-  void equalsReturnsFalseWhenBeaconBlockRootsAreDifferent() {
+  void equalsReturnsFalseWhenSourceRootsAreDifferent() {
     AttestationData testAttestationData =
         new AttestationData(
-            slot,
-            beaconBlockRoot.not(),
-            shard,
-            epochBoundaryRoot,
-            crosslinkDataRoot,
-            justifiedEpoch,
-            latestCrosslink,
-            justifiedBlockRoot);
+            beaconBlockRoot, source_epoch, Bytes32.random(), target_epoch, target_root, crosslink);
 
     assertNotEquals(attestationData, testAttestationData);
   }
 
   @Test
-  void equalsReturnsFalseWhenEpochBoundaryRootAreDifferent() {
+  void equalsReturnsFalseWhenTargetEpochsAreDifferent() {
     AttestationData testAttestationData =
         new AttestationData(
-            slot,
             beaconBlockRoot,
-            shard,
-            epochBoundaryRoot.not(),
-            crosslinkDataRoot,
-            justifiedEpoch,
-            latestCrosslink,
-            justifiedBlockRoot);
+            source_epoch,
+            source_root,
+            randomUnsignedLong(),
+            target_root,
+            crosslink);
 
     assertNotEquals(attestationData, testAttestationData);
   }
 
   @Test
-  void equalsReturnsFalseWhenCrosslinkDataRootsAreDifferent() {
+  void equalsReturnsFalseWhenTargetRootsAreDifferent() {
     AttestationData testAttestationData =
         new AttestationData(
-            slot,
-            beaconBlockRoot,
-            shard,
-            epochBoundaryRoot,
-            crosslinkDataRoot.not(),
-            justifiedEpoch,
-            latestCrosslink,
-            justifiedBlockRoot);
+            beaconBlockRoot, source_epoch, source_root, target_epoch, Bytes32.random(), crosslink);
 
     assertNotEquals(attestationData, testAttestationData);
   }
 
   @Test
   void equalsReturnsFalseWhenLatestCrosslinkRootsAreDifferent() {
-    Crosslink diffCrosslink =
-        new Crosslink(
-            latestCrosslink.getEpoch().plus(randomUnsignedLong()),
-            Bytes32.wrap(latestCrosslink.getCrosslink_data_root(), randomInt(0)));
 
     AttestationData testAttestationData =
         new AttestationData(
-            slot,
             beaconBlockRoot,
-            shard,
-            epochBoundaryRoot,
-            crosslinkDataRoot,
-            justifiedEpoch,
-            diffCrosslink,
-            justifiedBlockRoot);
-
-    assertNotEquals(attestationData, testAttestationData);
-  }
-
-  @Test
-  void equalsReturnsFalseWhenJustifiedEpochsAreDifferent() {
-    AttestationData testAttestationData =
-        new AttestationData(
-            slot,
-            beaconBlockRoot,
-            shard,
-            epochBoundaryRoot,
-            crosslinkDataRoot,
-            justifiedEpoch.plus(randomUnsignedLong()),
-            latestCrosslink,
-            justifiedBlockRoot);
-
-    assertNotEquals(attestationData, testAttestationData);
-  }
-
-  @Test
-  void equalsReturnsFalseWhenJustifiedBlockRootsAreDifferent() {
-    AttestationData testAttestationData =
-        new AttestationData(
-            slot,
-            beaconBlockRoot,
-            shard,
-            epochBoundaryRoot,
-            crosslinkDataRoot,
-            justifiedEpoch,
-            latestCrosslink,
-            justifiedBlockRoot.not());
+            source_epoch,
+            source_root,
+            target_epoch,
+            target_root,
+            randomCrosslink());
 
     assertNotEquals(attestationData, testAttestationData);
   }

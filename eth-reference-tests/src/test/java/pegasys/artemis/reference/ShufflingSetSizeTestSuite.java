@@ -13,44 +13,17 @@
 
 package pegasys.artemis.reference;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.fail;
-
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import com.google.common.primitives.UnsignedLong;
-import com.google.errorprone.annotations.MustBeClosed;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.UncheckedIOException;
-import java.math.BigInteger;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.io.Resources;
-import org.apache.tuweni.junit.BouncyCastleExtension;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
-import tech.pegasys.artemis.datastructures.state.Validator;
-import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
-import tech.pegasys.artemis.util.bls.BLSPublicKey;
-
 /*
  * The "official" Shuffling reference test data is from https://github.com/ethereum/eth2.0-tests/
  */
+//
+// @ExtendWith(BouncyCastleExtension.class)
+// class ShufflingSetSizeTestSuite {
+//
+//  private static String shufflingTestVectorsFile = "**/shuffling/test_vector_shuffling.yml";
+//  private static String shufflingDifferentSetSizeTestFile = "**/shuffling/shuffling_set_size.yml";
 
-@ExtendWith(BouncyCastleExtension.class)
-class ShufflingSetSizeTestSuite {
-
-  private static String shufflingTestVectorsFile = "**/shuffling/test_vector_shuffling.yml";
-  private static String shufflingDifferentSetSizeTestFile = "**/shuffling/shuffling_set_size.yml";
-
+/*
   @ParameterizedTest(name = "{index}. Shuffling validator set. Expecting: {2}")
   @MethodSource("readStandardShufflingTests")
   void testStandardShufflingVectors(
@@ -93,7 +66,7 @@ class ShufflingSetSizeTestSuite {
                         false))
             .collect(Collectors.toList());
 
-    List<List<Integer>> actual = BeaconStateUtil.get_shuffling(seed, validators, epoch);
+    List<List<Integer>> actual = CrosslinkCommitteeUtil.get_shuffled_index(seed, validators, epoch);
 
     // Just in case something goes haywire, use BigInteger#intValueExact to be able
     // to gracefully handle an integer overrun when reading in expected indices.
@@ -159,3 +132,4 @@ class ShufflingSetSizeTestSuite {
                         testCase.get("input"), testCase.get("seed"), testCase.get("output")));
   }
 }
+*/

@@ -29,11 +29,11 @@ class PendingAttestationTest {
 
   private Bytes participationBitfield = Bytes32.random();
   private AttestationData data = randomAttestationData();
-  private Bytes custodyBitfield = Bytes32.random();
-  private UnsignedLong inclusionSlot = randomUnsignedLong();
+  private UnsignedLong inclusionDelay = randomUnsignedLong();
+  private UnsignedLong proposerIndex = randomUnsignedLong();
 
   private PendingAttestation pendingAttestation =
-      new PendingAttestation(participationBitfield, data, custodyBitfield, inclusionSlot);
+      new PendingAttestation(participationBitfield, data, inclusionDelay, proposerIndex);
 
   @Test
   void equalsReturnsTrueWhenObjectAreSame() {
@@ -45,7 +45,7 @@ class PendingAttestationTest {
   @Test
   void equalsReturnsTrueWhenObjectFieldsAreEqual() {
     PendingAttestation testPendingAttestation =
-        new PendingAttestation(participationBitfield, data, custodyBitfield, inclusionSlot);
+        new PendingAttestation(participationBitfield, data, inclusionDelay, proposerIndex);
 
     assertEquals(pendingAttestation, testPendingAttestation);
   }
@@ -60,7 +60,7 @@ class PendingAttestationTest {
     }
     PendingAttestation testPendingAttestation =
         new PendingAttestation(
-            participationBitfield, otherAttestationData, custodyBitfield, inclusionSlot);
+            participationBitfield, otherAttestationData, inclusionDelay, proposerIndex);
 
     assertNotEquals(pendingAttestation, testPendingAttestation);
   }
@@ -68,7 +68,7 @@ class PendingAttestationTest {
   @Test
   void equalsReturnsFalseWhenParticipationBitfieldsAreDifferent() {
     PendingAttestation testPendingAttestation =
-        new PendingAttestation(participationBitfield.not(), data, custodyBitfield, inclusionSlot);
+        new PendingAttestation(participationBitfield.not(), data, inclusionDelay, proposerIndex);
 
     assertNotEquals(pendingAttestation, testPendingAttestation);
   }
@@ -76,16 +76,17 @@ class PendingAttestationTest {
   @Test
   void equalsReturnsFalseWhenCustodyBitfieldsAreDifferent() {
     PendingAttestation testPendingAttestation =
-        new PendingAttestation(participationBitfield, data, custodyBitfield.not(), inclusionSlot);
+        new PendingAttestation(
+            participationBitfield, data, inclusionDelay.plus(randomUnsignedLong()), proposerIndex);
 
     assertNotEquals(pendingAttestation, testPendingAttestation);
   }
 
   @Test
-  void equalsReturnsFalseWhenInclusionSlotsAreDifferent() {
+  void equalsReturnsFalseWhenProposerIndicesAreDifferent() {
     PendingAttestation testPendingAttestation =
         new PendingAttestation(
-            participationBitfield, data, custodyBitfield, inclusionSlot.plus(randomUnsignedLong()));
+            participationBitfield, data, inclusionDelay, proposerIndex.plus(randomUnsignedLong()));
 
     assertNotEquals(pendingAttestation, testPendingAttestation);
   }
@@ -99,26 +100,19 @@ class PendingAttestationTest {
   @Test
   void roundtripSSZVariableLengthBitfield() {
     PendingAttestation byte1BitfieldPendingAttestation =
-        new PendingAttestation(
-            Bytes.fromHexString("0x00"), data, Bytes.fromHexString("0x00"), inclusionSlot);
+        new PendingAttestation(Bytes.fromHexString("0x00"), data, inclusionDelay, proposerIndex);
     PendingAttestation byte4BitfieldPendingAttestation =
         new PendingAttestation(
-            Bytes.fromHexString("0x00000000"),
-            data,
-            Bytes.fromHexString("0x00000000"),
-            inclusionSlot);
+            Bytes.fromHexString("0x00000000"), data, inclusionDelay, proposerIndex);
     PendingAttestation byte8BitfieldPendingAttestation =
         new PendingAttestation(
-            Bytes.fromHexString("0x0000000000000000"),
-            data,
-            Bytes.fromHexString("0x0000000000000000"),
-            inclusionSlot);
+            Bytes.fromHexString("0x0000000000000000"), data, inclusionDelay, proposerIndex);
     PendingAttestation byte16BitfieldPendingAttestation =
         new PendingAttestation(
             Bytes.fromHexString("0x00000000000000000000000000000000"),
             data,
-            Bytes.fromHexString("0x00000000000000000000000000000000"),
-            inclusionSlot);
+            inclusionDelay,
+            proposerIndex);
     Bytes byte1BitfieldPendingAttestationBytes = byte1BitfieldPendingAttestation.toBytes();
     Bytes byte4BitfieldPendingAttestationBytes = byte4BitfieldPendingAttestation.toBytes();
     Bytes byte8BitfieldPendingAttestationBytes = byte8BitfieldPendingAttestation.toBytes();

@@ -24,10 +24,13 @@ import org.junit.jupiter.api.Test;
 
 class CrosslinkTest {
 
-  UnsignedLong epoch = randomUnsignedLong();
-  Bytes32 crosslinkDataRoot = Bytes32.random();
+  UnsignedLong shard = randomUnsignedLong();
+  UnsignedLong start_epoch = randomUnsignedLong();
+  UnsignedLong end_epoch = randomUnsignedLong();
+  Bytes32 parentRoot = Bytes32.random();
+  Bytes32 dataRoot = Bytes32.random();
 
-  private Crosslink crosslink = new Crosslink(epoch, crosslinkDataRoot);
+  private Crosslink crosslink = new Crosslink(shard, start_epoch, end_epoch, parentRoot, dataRoot);
 
   @Test
   void equalsReturnsTrueWhenObjectAreSame() {
@@ -38,21 +41,24 @@ class CrosslinkTest {
 
   @Test
   void equalsReturnsTrueWhenObjectFieldsAreEqual() {
-    Crosslink testCrosslink = new Crosslink(epoch, crosslinkDataRoot);
+    Crosslink testCrosslink = new Crosslink(shard, start_epoch, end_epoch, parentRoot, dataRoot);
 
     assertEquals(crosslink, testCrosslink);
   }
 
   @Test
   void equalsReturnsFalseWhenEpochsAreDifferent() {
-    Crosslink testCrosslink = new Crosslink(epoch.plus(randomUnsignedLong()), crosslinkDataRoot);
+    Crosslink testCrosslink =
+        new Crosslink(
+            shard, start_epoch.plus(randomUnsignedLong()), end_epoch, parentRoot, dataRoot);
 
     assertNotEquals(crosslink, testCrosslink);
   }
 
   @Test
   void equalsReturnsFalseWhenCrosslinkDataRootsAreDifferent() {
-    Crosslink testCrosslink = new Crosslink(epoch, crosslinkDataRoot.not());
+    Crosslink testCrosslink =
+        new Crosslink(shard, start_epoch, end_epoch, parentRoot, dataRoot.not());
 
     assertNotEquals(crosslink, testCrosslink);
   }
