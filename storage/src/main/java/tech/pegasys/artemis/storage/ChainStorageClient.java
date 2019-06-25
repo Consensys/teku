@@ -135,6 +135,7 @@ public class ChainStorageClient implements ChainStorage {
    */
   public void addUnprocessedAttestation(Attestation attestation) {
     ChainStorage.add(attestation, attestationsQueue);
+
   }
 
   /**

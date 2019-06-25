@@ -18,8 +18,8 @@ public enum RPCMethod {
   HELLO(0),
   GOODBYE(1),
   GET_STATUS(2),
-  GET_BLOCK_ROOTS(10),
-  BLOCK_ROOTS(11),
+  GET_ATTESTATIONS(10),
+  ATTESTATIONS(11),
   GET_BLOCK_HEADERS(12),
   BLOCK_HEADERS(13),
   GET_BLOCK_BODIES(14),
@@ -52,9 +52,9 @@ public enum RPCMethod {
       case 2:
         return GET_STATUS;
       case 10:
-        return GET_BLOCK_ROOTS;
+        return GET_ATTESTATIONS;
       case 11:
-        return BLOCK_ROOTS;
+        return ATTESTATIONS;
       case 12:
         return GET_BLOCK_HEADERS;
       case 13:

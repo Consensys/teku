@@ -144,6 +144,10 @@ public abstract class SocketHandler {
         replyStatus(rpcMessage.requestId());
       }
       peer.setPeerStatus(rpcMessage.bodyAs(GetStatusMessage.class));
+    } else if (RPCMethod.GET_ATTESTATIONS.equals(rpcMessage.method())) {
+      if (!pendingResponses.remove(rpcMessage.requestId())) {
+        replyAttestations(rpcMessage);
+      }
     } else if (RPCMethod.GET_BLOCK_HEADERS.equals(rpcMessage.method())) {
       if (!pendingResponses.remove(rpcMessage.requestId())) {
         replyBlockHeaders(rpcMessage);
@@ -217,6 +221,11 @@ public abstract class SocketHandler {
   public void sendStatus() {
     sendMessage(
         RPCMethod.GET_STATUS, new GetStatusMessage(userAgent, Instant.now().toEpochMilli()));
+  }
+
+  public void replyAttestations(RPCMessage rpcMessage) {
+
+
   }
 
   public void replyBlockHeaders(RPCMessage rpcMessage) {
