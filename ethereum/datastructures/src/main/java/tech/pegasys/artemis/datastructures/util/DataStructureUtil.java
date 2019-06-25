@@ -368,14 +368,15 @@ public final class DataStructureUtil {
       Bytes32 previous_block_root,
       Bytes32 state_root,
       ArrayList<Deposit> deposits,
-      List<Attestation> attestations) {
+      List<Attestation> attestations,
+      int numValidators) {
     return new BeaconBlock(
         slotNum,
         previous_block_root,
         state_root,
         new BeaconBlockBody(
             Constants.EMPTY_SIGNATURE,
-            new Eth1Data(ZERO_HASH, UnsignedLong.valueOf(16), ZERO_HASH),
+            new Eth1Data(ZERO_HASH, UnsignedLong.valueOf(numValidators), ZERO_HASH),
             Bytes32.ZERO,
             new ArrayList<>(),
             new ArrayList<>(),
@@ -402,7 +403,7 @@ public final class DataStructureUtil {
         state,
         newDeposits(numValidators),
         UnsignedLong.valueOf(Constants.GENESIS_SLOT),
-        new Eth1Data(Bytes32.ZERO, UnsignedLong.ZERO, Bytes32.ZERO));
+        new Eth1Data(Bytes32.ZERO, UnsignedLong.valueOf(numValidators), Bytes32.ZERO));
   }
 
   public static Validator randomValidator() {
