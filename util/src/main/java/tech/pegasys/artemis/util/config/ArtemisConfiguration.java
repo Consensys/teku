@@ -162,7 +162,7 @@ public final class ArtemisConfiguration {
     builder.addLong("constants.FAR_FUTURE_EPOCH", -1L, null, null);
     builder.addDefault("constants.ZERO_HASH", Bytes32.ZERO);
     builder.addDefault("constants.EMPTY_SIGNATURE", BLSSignature.empty());
-    builder.addDefault("constants.BLS_WITHDRAWAL_PREFIX_BYTE", Integer.MIN_VALUE);
+    builder.addDefault("constants.BLS_WITHDRAWAL_PREFIX", Integer.MIN_VALUE);
 
     // Time parameters
     builder.addInteger("constants.SECONDS_PER_SLOT", Integer.MIN_VALUE, null, null);

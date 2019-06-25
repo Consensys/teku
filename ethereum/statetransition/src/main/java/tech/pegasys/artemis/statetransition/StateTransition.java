@@ -45,6 +45,7 @@ public class StateTransition {
 
   public static final String ANSI_RESET = "\u001B[0m";
   public static final String ANSI_RED = "\u001B[31m";
+  public static final String ANSI_BLUE = "\u001b[34;1m";
 
   private boolean printEnabled = false;
 
@@ -70,7 +71,7 @@ public class StateTransition {
       throws StateTransitionException {
     try {
       // Process slots (including those with no blocks) since block
-      process_slots(state, block.getSlot());
+      process_slots(state, block.getSlot(), printEnabled);
 
       // Process_block
       process_block(state, block);
@@ -170,7 +171,8 @@ public class StateTransition {
    * @throws EpochProcessingException
    * @throws SlotProcessingException
    */
-  public static void process_slots(BeaconStateWithCache state, UnsignedLong slot)
+  public static void process_slots(
+      BeaconStateWithCache state, UnsignedLong slot, boolean printEnabled)
       throws SlotProcessingException, EpochProcessingException {
     try {
       checkArgument(
@@ -183,6 +185,8 @@ public class StateTransition {
             .plus(UnsignedLong.ONE)
             .mod(UnsignedLong.valueOf(SLOTS_PER_EPOCH))
             .equals(UnsignedLong.ZERO)) {
+          STDOUT.log(
+              Level.INFO, ANSI_BLUE + "******* Epoch Event *******" + ANSI_RESET, printEnabled);
           process_epoch(state);
         }
         state.setSlot(state.getSlot().plus(UnsignedLong.ONE));

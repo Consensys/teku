@@ -65,6 +65,7 @@ public class StateProcessor {
   private PublicKey publicKey;
   private static final ALogger STDOUT = new ALogger("stdout");
   private static final ALogger LOG = new ALogger(StateProcessor.class.getName());
+  private final boolean printEnabled = true;
   private List<Deposit> deposits;
 
   // Colors
@@ -77,7 +78,7 @@ public class StateProcessor {
     this.eventBus = config.getEventBus();
     this.config = config.getConfig();
     this.publicKey = config.getKeyPair().publicKey();
-    this.stateTransition = new StateTransition(true);
+    this.stateTransition = new StateTransition(printEnabled);
     this.store = store;
     this.eventBus.register(this);
 
@@ -143,6 +144,7 @@ public class StateProcessor {
 
   @Subscribe
   public void onNewSlot(Date date) throws StateTransitionException, InterruptedException {
+    long startTime = System.currentTimeMillis();
     this.nodeSlot = this.nodeSlot.plus(UnsignedLong.ONE);
     this.nodeTime = this.nodeTime.plus(UnsignedLong.valueOf(Constants.SECONDS_PER_SLOT));
 
@@ -175,7 +177,7 @@ public class StateProcessor {
         BeaconStateWithCache.deepCopy((BeaconStateWithCache) headBlockState);
 
     try {
-      process_slots(newHeadState, nodeSlot);
+      process_slots(newHeadState, nodeSlot, printEnabled);
       this.store.addState(newHeadState.hash_tree_root(), newHeadState);
       this.headState = newHeadState;
 
@@ -184,6 +186,9 @@ public class StateProcessor {
           new HeadStateEvent(
               BeaconStateWithCache.deepCopy((BeaconStateWithCache) headState), headBlock));
       recordData(date);
+      long stopTime = System.currentTimeMillis();
+      System.out.println(
+          "On new slot elapsed time was " + (stopTime - startTime) + " miliseconds.");
     } catch (SlotProcessingException | EpochProcessingException e) {
       STDOUT.log(
           Level.INFO, ANSI_RED + "Unable to update head state: " + e.toString() + ANSI_RESET);
@@ -231,7 +236,13 @@ public class StateProcessor {
         // Run state transition with the block
         STDOUT.log(Level.INFO, ANSI_PURPLE + "Running state transition with block." + ANSI_RESET);
         boolean validate_state_root = true;
+        long startTime = System.currentTimeMillis();
         Bytes32 newStateRoot = stateTransition.initiate(currentState, block, validate_state_root);
+        long stopTime = System.currentTimeMillis();
+        System.out.println(
+            "State transition with block elapsed time was "
+                + (stopTime - startTime)
+                + " miliseconds.");
         this.store.addProcessedBlock(blockRoot, block);
         this.store.addState(newStateRoot, currentState);
 
