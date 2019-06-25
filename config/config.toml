@@ -4,7 +4,7 @@
 # "hobbits": use HobbitsP2PNetwork
 networkMode = "mock"
 #  Gossip options: floodsub,gossipsub,plumtree,none
-goosipProtocol = "plumtree"
+gossipProtocol = "floodsub"
 identity = "0x00"
 timer="QuartzTimer"
 networkInterface = "0.0.0.0"
