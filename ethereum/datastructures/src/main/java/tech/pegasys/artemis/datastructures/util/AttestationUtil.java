@@ -288,9 +288,8 @@ public class AttestationUtil {
         new AttestationDataAndCustodyBit(indexed_attestation.getData(), true).hash_tree_root());
 
     BLSSignature signature = indexed_attestation.getSignature();
-    UnsignedLong domain =
-        UnsignedLong.valueOf(
-            get_domain(state, DOMAIN_ATTESTATION, indexed_attestation.getData().getTarget_epoch()));
+    int domain =
+        get_domain(state, DOMAIN_ATTESTATION, indexed_attestation.getData().getTarget_epoch());
     // Verify aggregate signature
     checkArgument(BLSVerify.bls_verify_multiple(pubkeys, message_hashes, signature, domain));
   }

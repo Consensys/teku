@@ -18,6 +18,7 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomBeaconBlockBody;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomLong;
 
+import com.google.common.primitives.UnsignedLong;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -26,7 +27,7 @@ import tech.pegasys.artemis.util.bls.BLSSignature;
 
 class BeaconBlockTest {
 
-  private long slot = randomLong();
+  private UnsignedLong slot = UnsignedLong.valueOf(randomLong());
   private Bytes32 previous_root = Bytes32.random();
   private Bytes32 state_root = Bytes32.random();
   private BeaconBlockBody body = randomBeaconBlockBody();
@@ -52,7 +53,12 @@ class BeaconBlockTest {
   @Test
   void equalsReturnsFalseWhenSlotsAreDifferent() {
     BeaconBlock testBeaconBlock =
-        new BeaconBlock(slot + randomLong(), previous_root, state_root, body, signature);
+        new BeaconBlock(
+            slot.plus(UnsignedLong.valueOf(randomLong())),
+            previous_root,
+            state_root,
+            body,
+            signature);
 
     assertNotEquals(beaconBlock, testBeaconBlock);
   }

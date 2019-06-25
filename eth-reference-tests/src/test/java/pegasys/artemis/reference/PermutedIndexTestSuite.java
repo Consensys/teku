@@ -31,7 +31,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
+import tech.pegasys.artemis.datastructures.util.CrosslinkCommitteeUtil;
 
 @ExtendWith(BouncyCastleExtension.class)
 public class PermutedIndexTestSuite {
@@ -43,7 +43,7 @@ public class PermutedIndexTestSuite {
   @MethodSource("readPermutedIndexTestVectors")
   void testPermutedIndex(int index, int listSize, int indexExpected, Bytes32 seed) {
 
-    int indexActual = BeaconStateUtil.get_permuted_index(index, listSize, seed);
+    int indexActual = CrosslinkCommitteeUtil.get_shuffled_index(index, listSize, seed);
 
     assertEquals(indexExpected, indexActual);
   }

@@ -34,6 +34,12 @@ public class Deposit implements Merkleizable {
   private DepositData data;
   private UnsignedLong index;
 
+  public Deposit(List<Bytes32> proof, DepositData data, UnsignedLong index) {
+    this.proof = proof;
+    this.data = data;
+    this.index = index;
+  }
+
   public Deposit(List<Bytes32> proof, DepositData data) {
     this.proof = proof;
     this.data = data;

@@ -178,6 +178,7 @@ public class BeaconState {
     this.balances = balances;
 
     this.latest_randao_mixes = latest_randao_mixes;
+    this.latest_start_shard = latest_start_shard;
 
     this.previous_epoch_attestations = previous_epoch_attestations;
     this.current_epoch_attestations = current_epoch_attestations;

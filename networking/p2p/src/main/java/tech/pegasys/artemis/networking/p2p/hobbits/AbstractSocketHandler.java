@@ -14,7 +14,6 @@
 package tech.pegasys.artemis.networking.p2p.hobbits;
 
 import com.google.common.eventbus.EventBus;
-import com.google.common.primitives.UnsignedLong;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.net.NetSocket;
 import java.time.Instant;
@@ -246,8 +245,8 @@ public abstract class AbstractSocketHandler {
           if (block.isPresent()) {
             blockHeaders.add(
                 new BeaconBlockHeader(
-                        UnsignedLong.valueOf(block.get().getSlot()),
-                        block.get().getPrevious_block_root(),
+                        block.get().getSlot(),
+                        block.get().getParent_root(),
                         block.get().getState_root(),
                         block.get().getBody().hash_tree_root(),
                         block.get().getSignature())

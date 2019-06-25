@@ -185,22 +185,22 @@ public class CrosslinkCommitteeUtil {
       return stateWithCash.getEpochStartShard(epoch);
     } else {
       checkArgument(
-              epoch.compareTo(get_current_epoch(state).plus(UnsignedLong.ONE)) <= 0,
-              "CrosslinkCommitteeUtil.get_epoch_start_shard");
+          epoch.compareTo(get_current_epoch(state).plus(UnsignedLong.ONE)) <= 0,
+          "CrosslinkCommitteeUtil.get_epoch_start_shard");
       UnsignedLong check_epoch = get_current_epoch(state).plus(UnsignedLong.ONE);
       UnsignedLong shard =
-              state
-                      .getLatest_start_shard()
-                      .plus(get_shard_delta(state, get_current_epoch(state)))
-                      .mod(UnsignedLong.valueOf(SHARD_COUNT));
+          state
+              .getLatest_start_shard()
+              .plus(get_shard_delta(state, get_current_epoch(state)))
+              .mod(UnsignedLong.valueOf(SHARD_COUNT));
 
       while (check_epoch.compareTo(epoch) > 0) {
         check_epoch = check_epoch.minus(UnsignedLong.ONE);
         shard =
-                shard
-                        .plus(UnsignedLong.valueOf(SHARD_COUNT))
-                        .minus(get_shard_delta(state, check_epoch))
-                        .mod(UnsignedLong.valueOf(SHARD_COUNT));
+            shard
+                .plus(UnsignedLong.valueOf(SHARD_COUNT))
+                .minus(get_shard_delta(state, check_epoch))
+                .mod(UnsignedLong.valueOf(SHARD_COUNT));
       }
 
       // Client specific optimization

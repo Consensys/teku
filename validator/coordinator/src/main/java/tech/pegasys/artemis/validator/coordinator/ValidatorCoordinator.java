@@ -128,10 +128,10 @@ public class ValidatorCoordinator {
             proposer.getPubkey(),
             block.signing_root("signature"),
             block.getSignature(),
-            UnsignedLong.valueOf(get_domain(
+            get_domain(
                 headState,
                 Constants.DOMAIN_BEACON_PROPOSER,
-                get_current_epoch(headState)))),
+                get_current_epoch(headState))),
         "Proposer signature is invalid");
 
     BeaconBlockHeader blockHeader =
@@ -194,10 +194,8 @@ public class ValidatorCoordinator {
       BeaconStateWithCache headState = headStateEvent.getHeadState();
       BeaconBlock headBlock = headStateEvent.getHeadBlock();
 
-      if (headState
-          .getSlot()
-          .mod(UnsignedLong.valueOf(SLOTS_PER_EPOCH))
-          .equals(UnsignedLong.ZERO) || headState.getSlot().equals(UnsignedLong.valueOf(GENESIS_SLOT + 1))) {
+      if (headState.getSlot().mod(UnsignedLong.valueOf(SLOTS_PER_EPOCH)).equals(UnsignedLong.ZERO)
+          || headState.getSlot().equals(UnsignedLong.valueOf(GENESIS_SLOT + 1))) {
         validatorSet.forEach(
             (pubKey, validatorInformation) -> {
               Optional<Triple<List<Integer>, UnsignedLong, UnsignedLong>> committeeAssignment =

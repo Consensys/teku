@@ -74,6 +74,17 @@ public class Validator implements Copyable<Validator>, Merkleizable {
     this.effective_balance = validator.getEffective_balance();
   }
 
+  public Validator() {
+    this.pubkey = BLSPublicKey.empty();
+    this.withdrawal_credentials = Bytes32.ZERO;
+    this.activation_eligibility_epoch = UnsignedLong.ZERO;
+    this.activation_epoch = UnsignedLong.ZERO;
+    this.exit_epoch = UnsignedLong.ZERO;
+    this.withdrawable_epoch = UnsignedLong.ZERO;
+    this.slashed = false;
+    this.effective_balance = UnsignedLong.ZERO;
+  }
+
   @Override
   public Validator copy() {
     return new Validator(this);
