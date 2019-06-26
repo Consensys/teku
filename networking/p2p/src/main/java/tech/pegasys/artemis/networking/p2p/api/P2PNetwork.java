@@ -20,7 +20,12 @@ import java.util.concurrent.CompletableFuture;
 // TODO: Finish defining proper return types and params
 
 public interface P2PNetwork extends Closeable, Runnable {
-
+  enum GossipProtocol {
+    FLOODSUB,
+    GOSSIPSUB,
+    PLUMTREE,
+    NONE
+  }
   /**
    * Returns a snapshot of the currently connected peer connections.
    *
