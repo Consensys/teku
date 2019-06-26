@@ -21,13 +21,12 @@ import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
-import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 
 @JsonDeserialize(using = AttestationMessage.AttestationDeserializer.class)
 public final class AttestationMessage {

@@ -43,6 +43,7 @@ import tech.pegasys.artemis.networking.p2p.hobbits.rpc.HelloMessage;
 import tech.pegasys.artemis.networking.p2p.hobbits.rpc.RPCCodec;
 import tech.pegasys.artemis.networking.p2p.hobbits.rpc.RPCMessage;
 import tech.pegasys.artemis.networking.p2p.hobbits.rpc.RPCMethod;
+import tech.pegasys.artemis.networking.p2p.hobbits.rpc.RequestAttestationMessage;
 import tech.pegasys.artemis.networking.p2p.hobbits.rpc.RequestBlocksMessage;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.util.alogger.ALogger;
@@ -225,7 +226,12 @@ public abstract class SocketHandler {
 
   public void replyAttestations(RPCMessage rpcMessage) {
 
+    // TODO: use the ChainStorageClient to get the attestation being requestedi
+    // Hint: look at replyBlockBodies
+  }
 
+  public void sendGetAttestations(Bytes32 signature) {
+    sendMessage(RPCMethod.GET_ATTESTATIONS, new RequestAttestationMessage(signature));
   }
 
   public void replyBlockHeaders(RPCMessage rpcMessage) {

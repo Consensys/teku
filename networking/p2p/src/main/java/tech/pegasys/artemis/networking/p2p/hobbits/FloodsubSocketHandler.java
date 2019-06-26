@@ -47,7 +47,8 @@ public final class FloodsubSocketHandler extends SocketHandler {
         peer.setPeerGossip(gossipMessage.body());
         String[] attributes = gossipMessage.getAttributes().split(",");
         if (attributes[0].equalsIgnoreCase("ATTESTATION")) {
-
+          Bytes32 root = Bytes32.wrap(gossipMessage.body());
+          this.sendGetAttestations(root);
         } else if (attributes[0].equalsIgnoreCase("BLOCK")) {
           Bytes32 root = Bytes32.wrap(gossipMessage.body());
           this.sendGetBlockBodies(root);

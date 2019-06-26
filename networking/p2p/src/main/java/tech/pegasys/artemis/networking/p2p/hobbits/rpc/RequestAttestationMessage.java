@@ -31,5 +31,4 @@ public final class RequestAttestationMessage {
   public Bytes32 aggregateSignature() {
     return aggregateSignature;
   }
-
 }
