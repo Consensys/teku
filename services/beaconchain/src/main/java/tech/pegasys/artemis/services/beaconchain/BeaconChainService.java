@@ -66,6 +66,24 @@ public class BeaconChainService implements ServiceInterface {
     if ("mock".equals(config.getConfig().getNetworkMode())) {
       this.p2pNetwork = new MockP2PNetwork(eventBus);
     } else if ("hobbits".equals(config.getConfig().getNetworkMode())) {
+      P2PNetwork.GossipProtocol gossipProtocol;
+      switch (config.getConfig().getGossipProtocol()) {
+        case "floodsub":
+          gossipProtocol = P2PNetwork.GossipProtocol.FLOODSUB;
+          break;
+        case "gossipsub":
+          gossipProtocol = P2PNetwork.GossipProtocol.GOSSIPSUB;
+          break;
+        case "plumtree":
+          gossipProtocol = P2PNetwork.GossipProtocol.PLUMTREE;
+          break;
+        case "none":
+          gossipProtocol = P2PNetwork.GossipProtocol.NONE;
+          break;
+        default:
+          gossipProtocol = P2PNetwork.GossipProtocol.PLUMTREE;
+      }
+
       this.p2pNetwork =
           new HobbitsP2PNetwork(
               eventBus,
@@ -74,7 +92,8 @@ public class BeaconChainService implements ServiceInterface {
               config.getConfig().getPort(),
               config.getConfig().getAdvertisedPort(),
               config.getConfig().getNetworkInterface(),
-              config.getConfig().getStaticPeers());
+              config.getConfig().getStaticPeers(),
+              gossipProtocol);
     } else {
       throw new IllegalArgumentException(
           "Unsupported network mode " + config.getConfig().getNetworkMode());
