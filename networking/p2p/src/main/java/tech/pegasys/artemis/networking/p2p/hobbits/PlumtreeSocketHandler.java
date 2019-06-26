@@ -23,7 +23,7 @@ import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.util.alogger.ALogger;
 
 /** TCP persistent connection handler for hobbits messages. */
-public class PlumtreeSocketHandler extends SocketHandler {
+public class PlumtreeSocketHandler extends AbstractSocketHandler {
   private static final ALogger STDOUT = new ALogger("stdout");
 
   public PlumtreeSocketHandler(

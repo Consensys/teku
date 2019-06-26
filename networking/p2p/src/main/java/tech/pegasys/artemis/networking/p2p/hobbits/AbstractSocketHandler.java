@@ -49,8 +49,8 @@ import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.util.alogger.ALogger;
 
 /** TCP persistent connection handler for hobbits messages. */
-public abstract class SocketHandler {
-  private static final ALogger LOG = new ALogger(SocketHandler.class.getName());
+public abstract class AbstractSocketHandler {
+  private static final ALogger LOG = new ALogger(AbstractSocketHandler.class.getName());
   protected final EventBus eventBus;
   protected final String userAgent;
   protected final Peer peer;
@@ -63,7 +63,7 @@ public abstract class SocketHandler {
   protected Bytes buffer = Bytes.EMPTY;
   protected ConcurrentHashMap<String, Boolean> receivedMessages;
 
-  public SocketHandler(
+  public AbstractSocketHandler(
       EventBus eventBus,
       NetSocket netSocket,
       String userAgent,
@@ -92,9 +92,8 @@ public abstract class SocketHandler {
       return FloodsubSocketHandler.class;
     } else if (gossipProtocol.equalsIgnoreCase(P2PNetwork.GossipProtocol.PLUMTREE.name())) {
       return PlumtreeSocketHandler.class;
-    } else {
-      return PlumtreeSocketHandler.class;
     }
+    return PlumtreeSocketHandler.class;
   }
 
   protected void closed(@Nullable Void nothing) {

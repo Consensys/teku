@@ -16,9 +16,9 @@ package tech.pegasys.artemis.networking.p2p.hobbits;
 import tech.pegasys.artemis.util.AbstractFactory;
 
 @SuppressWarnings({"rawtypes"})
-public class SocketHandlerFactory extends AbstractFactory<SocketHandler> {
+public class SocketHandlerFactory extends AbstractFactory<AbstractSocketHandler> {
   @Override
   public Class getClassType(String something) {
-    return SocketHandler.getSocketHandlerType(something);
+    return AbstractSocketHandler.getSocketHandlerType(something);
   }
 }

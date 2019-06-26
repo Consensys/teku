@@ -45,8 +45,8 @@ import org.apache.tuweni.plumtree.State;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.networking.p2p.api.P2PNetwork;
+import tech.pegasys.artemis.networking.p2p.hobbits.AbstractSocketHandler;
 import tech.pegasys.artemis.networking.p2p.hobbits.Peer;
-import tech.pegasys.artemis.networking.p2p.hobbits.SocketHandler;
 import tech.pegasys.artemis.networking.p2p.hobbits.SocketHandlerFactory;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.util.alogger.ALogger;
@@ -71,7 +71,7 @@ public final class HobbitsP2PNetwork implements P2PNetwork {
   private NetServer server;
   private NetClient client;
   private List<URI> staticPeers;
-  private Map<URI, SocketHandler> handlersMap = new ConcurrentHashMap<>();
+  private Map<URI, AbstractSocketHandler> handlersMap = new ConcurrentHashMap<>();
   private ConcurrentHashMap<String, Boolean> receivedMessages = new ConcurrentHashMap<>();
   private GossipProtocol gossipProtocol;
 
@@ -116,7 +116,7 @@ public final class HobbitsP2PNetwork implements P2PNetwork {
   }
 
   @SuppressWarnings({"rawtypes"})
-  private SocketHandler createSocketHandler(NetSocket netSocket, Peer peer) {
+  private AbstractSocketHandler createSocketHandler(NetSocket netSocket, Peer peer) {
     return new SocketHandlerFactory()
         .create(
             this.gossipProtocol.name(),
@@ -143,7 +143,7 @@ public final class HobbitsP2PNetwork implements P2PNetwork {
     if (!started.get()) {
       return;
     }
-    SocketHandler handler = handlersMap.get(((Peer) peer).uri());
+    AbstractSocketHandler handler = handlersMap.get(((Peer) peer).uri());
     if (handler != null) {
       vertx.executeBlocking(
           h -> {
@@ -219,7 +219,9 @@ public final class HobbitsP2PNetwork implements P2PNetwork {
 
   @Override
   public Collection<?> getPeers() {
-    return handlersMap.values().stream().map(SocketHandler::peer).collect(Collectors.toList());
+    return handlersMap.values().stream()
+        .map(AbstractSocketHandler::peer)
+        .collect(Collectors.toList());
   }
 
   @Override
@@ -229,7 +231,7 @@ public final class HobbitsP2PNetwork implements P2PNetwork {
 
   CompletableFuture<?> connect(URI peerURI) {
     CompletableFuture<Peer> connected = new CompletableFuture<>();
-    SocketHandler existingHandler = handlersMap.get(peerURI);
+    AbstractSocketHandler existingHandler = handlersMap.get(peerURI);
     if (existingHandler != null) {
       connected.complete(existingHandler.peer());
     } else {
@@ -243,7 +245,7 @@ public final class HobbitsP2PNetwork implements P2PNetwork {
             } else {
               NetSocket netSocket = res.result();
               Peer peer = new Peer(peerURI);
-              SocketHandler handler = createSocketHandler(netSocket, peer);
+              AbstractSocketHandler handler = createSocketHandler(netSocket, peer);
               handlersMap.put(peerURI, handler);
               state.addPeer(peer);
               connected.complete(peer);
@@ -268,7 +270,7 @@ public final class HobbitsP2PNetwork implements P2PNetwork {
   public void stop() {
     if (started.compareAndSet(true, false)) {
       try {
-        for (SocketHandler handler : handlersMap.values()) {
+        for (AbstractSocketHandler handler : handlersMap.values()) {
           handler.disconnect();
         }
         CompletableAsyncCompletion completed = AsyncCompletion.incomplete();

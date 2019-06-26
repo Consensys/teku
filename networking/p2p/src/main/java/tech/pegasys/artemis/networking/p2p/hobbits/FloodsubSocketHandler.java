@@ -24,7 +24,7 @@ import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.util.alogger.ALogger;
 
 /** TCP persistent connection handler for hobbits messages. */
-public final class FloodsubSocketHandler extends SocketHandler {
+public final class FloodsubSocketHandler extends AbstractSocketHandler {
   private static final ALogger STDOUT = new ALogger("stdout");
 
   public FloodsubSocketHandler(
