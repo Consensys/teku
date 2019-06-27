@@ -22,6 +22,7 @@ import org.apache.tuweni.plumtree.State;
 import tech.pegasys.artemis.networking.p2p.hobbits.gossip.GossipMessage;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.util.alogger.ALogger;
+import tech.pegasys.artemis.util.bls.BLSSignature;
 
 /** TCP persistent connection handler for hobbits messages. */
 public final class FloodsubSocketHandler extends AbstractSocketHandler {
@@ -47,11 +48,11 @@ public final class FloodsubSocketHandler extends AbstractSocketHandler {
         peer.setPeerGossip(gossipMessage.body());
         String[] attributes = gossipMessage.getAttributes().split(",");
         if (attributes[0].equalsIgnoreCase("ATTESTATION")) {
-          Bytes32 root = Bytes32.wrap(gossipMessage.body());
-          this.sendGetAttestations(root);
+          BLSSignature signature = BLSSignature.fromBytes(gossipMessage.body());
+          this.sendGetAttestations(signature);
         } else if (attributes[0].equalsIgnoreCase("BLOCK")) {
-          Bytes32 root = Bytes32.wrap(gossipMessage.body());
-          this.sendGetBlockBodies(root);
+          Bytes32 blockRoot = Bytes32.wrap(gossipMessage.body());
+          this.sendGetBlockBodies(blockRoot);
         }
         receivedMessages.put(key, true);
       }

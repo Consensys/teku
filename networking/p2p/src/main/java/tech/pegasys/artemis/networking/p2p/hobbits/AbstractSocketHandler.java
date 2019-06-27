@@ -47,6 +47,7 @@ import tech.pegasys.artemis.networking.p2p.hobbits.rpc.RequestAttestationMessage
 import tech.pegasys.artemis.networking.p2p.hobbits.rpc.RequestBlocksMessage;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.util.alogger.ALogger;
+import tech.pegasys.artemis.util.bls.BLSSignature;
 
 /** TCP persistent connection handler for hobbits messages. */
 public abstract class AbstractSocketHandler {
@@ -144,9 +145,9 @@ public abstract class AbstractSocketHandler {
         replyStatus(rpcMessage.requestId());
       }
       peer.setPeerStatus(rpcMessage.bodyAs(GetStatusMessage.class));
-    } else if (RPCMethod.GET_ATTESTATIONS.equals(rpcMessage.method())) {
+    } else if (RPCMethod.GET_ATTESTATION.equals(rpcMessage.method())) {
       if (!pendingResponses.remove(rpcMessage.requestId())) {
-        replyAttestations(rpcMessage);
+        replyAttestation(rpcMessage);
       }
     } else if (RPCMethod.GET_BLOCK_HEADERS.equals(rpcMessage.method())) {
       if (!pendingResponses.remove(rpcMessage.requestId())) {
@@ -223,14 +224,16 @@ public abstract class AbstractSocketHandler {
         RPCMethod.GET_STATUS, new GetStatusMessage(userAgent, Instant.now().toEpochMilli()));
   }
 
-  public void replyAttestations(RPCMessage rpcMessage) {
-
-    // TODO: use the ChainStorageClient to get the attestation being requestedi
-    // Hint: look at replyBlockBodies
+  public void replyAttestation(RPCMessage rpcMessage) {
+    RequestAttestationMessage rb = rpcMessage.bodyAs(RequestAttestationMessage.class);
+    BLSSignature signature = rb.aggregateSignature();
+    store
+        .getUnprocessedAttestation(signature)
+        .ifPresent(a -> sendReply(RPCMethod.ATTESTATION, a.toBytes(), rpcMessage.requestId()));
   }
 
-  public void sendGetAttestations(Bytes32 signature) {
-    sendMessage(RPCMethod.GET_ATTESTATIONS, new RequestAttestationMessage(signature));
+  public void sendGetAttestations(BLSSignature signature) {
+    sendMessage(RPCMethod.GET_ATTESTATION, new RequestAttestationMessage(signature));
   }
 
   public void replyBlockHeaders(RPCMessage rpcMessage) {
