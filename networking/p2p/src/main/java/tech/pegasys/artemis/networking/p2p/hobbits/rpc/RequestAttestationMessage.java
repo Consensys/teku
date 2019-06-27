@@ -15,20 +15,20 @@ package tech.pegasys.artemis.networking.p2p.hobbits.rpc;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.artemis.util.bls.BLSSignature;
 
 public final class RequestAttestationMessage {
 
-  private final Bytes32 aggregateSignature;
+  private final BLSSignature aggregateSignature;
 
   @JsonCreator
   public RequestAttestationMessage(
-      @JsonProperty("aggregate_signature") Bytes32 aggregateSignature) {
+      @JsonProperty("aggregate_signature") BLSSignature aggregateSignature) {
     this.aggregateSignature = aggregateSignature;
   }
 
   @JsonProperty("aggregate_signature")
-  public Bytes32 aggregateSignature() {
+  public BLSSignature aggregateSignature() {
     return aggregateSignature;
   }
 }
