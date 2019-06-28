@@ -46,7 +46,6 @@ import tech.pegasys.artemis.networking.p2p.hobbits.rpc.RequestAttestationMessage
 import tech.pegasys.artemis.networking.p2p.hobbits.rpc.RequestBlocksMessage;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.util.alogger.ALogger;
-import tech.pegasys.artemis.util.bls.BLSSignature;
 
 /** TCP persistent connection handler for hobbits messages. */
 public abstract class AbstractSocketHandler {
@@ -225,14 +224,14 @@ public abstract class AbstractSocketHandler {
 
   public void replyAttestation(RPCMessage rpcMessage) {
     RequestAttestationMessage rb = rpcMessage.bodyAs(RequestAttestationMessage.class);
-    BLSSignature signature = rb.aggregateSignature();
+    Bytes32 attestationHash = rb.attestationHash();
     store
-        .getUnprocessedAttestation(signature)
+        .getUnprocessedAttestation(attestationHash)
         .ifPresent(a -> sendReply(RPCMethod.ATTESTATION, a.toBytes(), rpcMessage.requestId()));
   }
 
-  public void sendGetAttestations(BLSSignature signature) {
-    sendMessage(RPCMethod.GET_ATTESTATION, new RequestAttestationMessage(signature));
+  public void sendGetAttestations(Bytes32 attestationHash) {
+    sendMessage(RPCMethod.GET_ATTESTATION, new RequestAttestationMessage(attestationHash));
   }
 
   public void replyBlockHeaders(RPCMessage rpcMessage) {
