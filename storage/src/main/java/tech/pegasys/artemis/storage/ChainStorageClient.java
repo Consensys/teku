@@ -38,7 +38,6 @@ import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.util.AttestationUtil;
 import tech.pegasys.artemis.util.alogger.ALogger;
-import tech.pegasys.artemis.util.bls.BLSSignature;
 
 /** This class is the ChainStorage client-side logic */
 public class ChainStorageClient implements ChainStorage {
@@ -54,9 +53,9 @@ public class ChainStorageClient implements ChainStorage {
   protected final ConcurrentHashMap<Bytes, BeaconBlock> processedBlockLookup =
       new ConcurrentHashMap<>();
   protected final ConcurrentHashMap<Bytes, BeaconState> stateLookup = new ConcurrentHashMap<>();
-  protected final ConcurrentHashMap<BLSSignature, Attestation> processedAttestationsMap =
+  protected final ConcurrentHashMap<Bytes32, Attestation> processedAttestationsMap =
       new ConcurrentHashMap<>();
-  private final ConcurrentHashMap<BLSSignature, Attestation> unprocessedAttestationsMap =
+  private final ConcurrentHashMap<Bytes32, Attestation> unprocessedAttestationsMap =
       new ConcurrentHashMap<>();
   private final Queue<Attestation> unprocessedAttestationsQueue = new LinkedBlockingQueue<>();
   private final ConcurrentHashMap<Integer, List<BeaconBlockHeader>> validatorBlockHeaders =
@@ -91,8 +90,7 @@ public class ChainStorageClient implements ChainStorage {
    * @param attestation
    */
   public void addProcessedAttestation(Attestation attestation) {
-    ChainStorage.add(
-        attestation.getAggregate_signature(), attestation, this.processedAttestationsMap);
+    ChainStorage.add(attestation.hash_tree_root(), attestation, this.processedAttestationsMap);
   }
 
   /**
@@ -137,8 +135,7 @@ public class ChainStorageClient implements ChainStorage {
    */
   public void addUnprocessedAttestation(Attestation attestation) {
     ChainStorage.add(attestation, this.unprocessedAttestationsQueue);
-    ChainStorage.add(
-        attestation.getAggregate_signature(), attestation, this.unprocessedAttestationsMap);
+    ChainStorage.add(attestation.hash_tree_root(), attestation, this.unprocessedAttestationsMap);
   }
 
   /**
@@ -230,14 +227,14 @@ public class ChainStorageClient implements ChainStorage {
   /**
    * Retrieves a list of unprocessed attestations that have not been included in blocks
    *
-   * @param signature
+   * @param attestationHash
    * @return
    */
-  public Optional<Attestation> getUnprocessedAttestation(BLSSignature signature) {
+  public Optional<Attestation> getUnprocessedAttestation(Bytes32 attestationHash) {
     Optional<Attestation> result = Optional.empty();
-    if (!this.processedAttestationsMap.containsKey(signature)
-        && this.unprocessedAttestationsMap.containsKey(signature)) {
-      result = ChainStorage.get(signature, this.unprocessedAttestationsMap);
+    if (!this.processedAttestationsMap.containsKey(attestationHash)
+        && this.unprocessedAttestationsMap.containsKey(attestationHash)) {
+      result = ChainStorage.get(attestationHash, this.unprocessedAttestationsMap);
     }
     return result;
   }
@@ -331,7 +328,7 @@ public class ChainStorageClient implements ChainStorage {
         && numAttestations < Constants.MAX_ATTESTATIONS) {
       Attestation attestation = unprocessedAttestationsQueue.remove();
       // Check if attestation has already been processed in successful block
-      if (!ChainStorage.get(attestation.getAggregate_signature(), this.processedAttestationsMap)
+      if (!ChainStorage.get(attestation.hash_tree_root(), this.processedAttestationsMap)
           .isPresent()) {
         attestations.add(attestation);
         numAttestations++;
