@@ -19,6 +19,8 @@ import org.apache.logging.log4j.Logger;
 
 public class ALogger {
 
+  private static final String resetCode = "\u001B[0m";
+
   private final Logger logger;
 
   public ALogger() {
@@ -33,9 +35,44 @@ public class ALogger {
     this.logger.log(level, message);
   }
 
-  public void log(Level info, String message, boolean printEnabled) {
+  public void log(Level level, String message, boolean printEnabled) {
     if (printEnabled) {
-      this.logger.log(info, message);
+      this.logger.log(level, message);
     }
+  }
+
+  public void log(Level level, String message, boolean printEnabled, String color) {
+    log(level, addColor(message, color), printEnabled);
+  }
+
+  public void log(Level level, String message, String color) {
+    this.logger.log(level, addColor(message, color));
+  }
+
+  private String findColor(String color) {
+    String colorCode = "";
+    switch (color) {
+      case "red":
+        colorCode = "\u001B[31m";
+        break;
+      case "blue":
+        colorCode = "\u001b[34;1m";
+        break;
+      case "purple":
+        colorCode = "\u001B[35m";
+        break;
+      case "white":
+        colorCode = "\033[1;30m";
+        break;
+      case "green":
+        colorCode = "\u001B[32m";
+        break;
+    }
+    return colorCode;
+  }
+
+  private String addColor(String message, String color) {
+    String colorCode = findColor(color);
+    return colorCode + message + resetCode;
   }
 }

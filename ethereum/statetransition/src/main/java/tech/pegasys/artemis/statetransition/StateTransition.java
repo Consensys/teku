@@ -43,10 +43,6 @@ public class StateTransition {
 
   private static final ALogger STDOUT = new ALogger("stdout");
 
-  public static final String ANSI_RESET = "\u001B[0m";
-  public static final String ANSI_RED = "\u001B[31m";
-  public static final String ANSI_BLUE = "\u001b[34;1m";
-
   private boolean printEnabled = false;
 
   public StateTransition() {}
@@ -81,13 +77,11 @@ public class StateTransition {
       if (validate_state_root) {
         checkArgument(
             block.getState_root().equals(stateRoot),
-            ANSI_RED
-                + "Block state root does NOT match the calculated state root!\n"
+            "Block state root does NOT match the calculated state root!\n"
                 + "Block state root: "
                 + block.getState_root().toHexString()
                 + "New state root: "
-                + stateRoot.toHexString()
-                + ANSI_RESET);
+                + stateRoot.toHexString());
       }
 
       return stateRoot;
@@ -95,7 +89,7 @@ public class StateTransition {
         | BlockProcessingException
         | EpochProcessingException
         | IllegalArgumentException e) {
-      STDOUT.log(Level.WARN, "  State Transition error: " + e, printEnabled);
+      STDOUT.log(Level.WARN, "  State Transition error: " + e, printEnabled, "red");
       throw new StateTransitionException(e.toString());
     }
   }
@@ -185,8 +179,7 @@ public class StateTransition {
             .plus(UnsignedLong.ONE)
             .mod(UnsignedLong.valueOf(SLOTS_PER_EPOCH))
             .equals(UnsignedLong.ZERO)) {
-          STDOUT.log(
-              Level.INFO, ANSI_BLUE + "******* Epoch Event *******" + ANSI_RESET, printEnabled);
+          STDOUT.log(Level.INFO, "******* Epoch Event *******", printEnabled, "blue");
           process_epoch(state);
         }
         state.setSlot(state.getSlot().plus(UnsignedLong.ONE));

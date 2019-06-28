@@ -342,29 +342,21 @@ public class ChainStorageClient implements ChainStorage {
 
   @Subscribe
   public void onNewUnprocessedBlock(BeaconBlock block) {
-    String ANSI_GREEN = "\u001B[32m";
-    String ANSI_RESET = "\033[0m";
     STDOUT.log(
         Level.INFO,
-        ANSI_GREEN
-            + "New BeaconBlock with state root:  "
-            + block.getState_root().toHexString()
-            + " detected."
-            + ANSI_RESET);
+        "New BeaconBlock with state root:  " + block.getState_root().toHexString() + " detected.",
+        "green");
     addUnprocessedBlock(block);
   }
 
   @Subscribe
   public void onNewUnprocessedAttestation(Attestation attestation) {
-    String ANSI_GREEN = "\u001B[32m";
-    String ANSI_RESET = "\033[0m";
     STDOUT.log(
         Level.INFO,
-        ANSI_GREEN
-            + "New Attestation with block root:  "
+        "New Attestation with block root:  "
             + attestation.getData().getBeacon_block_root()
-            + " detected."
-            + ANSI_RESET);
+            + " detected.",
+        "green");
 
     addUnprocessedAttestation(attestation);
 
