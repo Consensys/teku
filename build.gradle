@@ -52,8 +52,8 @@ allprojects {
   sourceCompatibility = '1.8'
   targetCompatibility = '1.8'
 
-  if (!file("${rootDir}/eth-reference-tests/src/test/resources/eth2.0-tests/README.md").exists()) {
-    throw new GradleException("eth-reference-tests/src/test/resources/eth2.0-tests/README.md missing: please clone submodules (git submodule update --init --recursive)")
+  if (!file("${rootDir}/eth-reference-tests/src/test/resources/eth2.0-spec-tests/README.md").exists()) {
+    throw new GradleException("eth-reference-tests/src/test/resources/eth2.0-spec-tests/README.md missing: please clone submodules (git submodule update --init --recursive)")
   }
 
   repositories {
