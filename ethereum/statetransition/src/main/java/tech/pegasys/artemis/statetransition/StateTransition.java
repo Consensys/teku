@@ -89,7 +89,7 @@ public class StateTransition {
         | BlockProcessingException
         | EpochProcessingException
         | IllegalArgumentException e) {
-      STDOUT.log(Level.WARN, "  State Transition error: " + e, printEnabled, "red");
+      STDOUT.log(Level.WARN, "  State Transition error: " + e, printEnabled, ALogger.Color.RED);
       throw new StateTransitionException(e.toString());
     }
   }
@@ -179,7 +179,7 @@ public class StateTransition {
             .plus(UnsignedLong.ONE)
             .mod(UnsignedLong.valueOf(SLOTS_PER_EPOCH))
             .equals(UnsignedLong.ZERO)) {
-          STDOUT.log(Level.INFO, "******* Epoch Event *******", printEnabled, "blue");
+          STDOUT.log(Level.INFO, "******* Epoch Event *******", printEnabled, ALogger.Color.BLUE);
           process_epoch(state);
         }
         state.setSlot(state.getSlot().plus(UnsignedLong.ONE));

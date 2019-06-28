@@ -141,7 +141,7 @@ public class StateProcessor {
     this.nodeSlot = this.nodeSlot.plus(UnsignedLong.ONE);
     this.nodeTime = this.nodeTime.plus(UnsignedLong.valueOf(Constants.SECONDS_PER_SLOT));
 
-    STDOUT.log(Level.INFO, "******* Slot Event *******", "white");
+    STDOUT.log(Level.INFO, "******* Slot Event *******", ALogger.Color.WHITE);
     STDOUT.log(Level.INFO, "Node time:                             " + nodeTime);
     STDOUT.log(Level.INFO, "Node slot:                             " + nodeSlot);
 
@@ -154,7 +154,7 @@ public class StateProcessor {
     unprocessedBlocks.forEach(this::processBlock);
 
     // Update the block that is subjectively the head of the chain  using lmd_ghost
-    STDOUT.log(Level.INFO, "Updating head block using LMDGhost.", "purple");
+    STDOUT.log(Level.INFO, "Updating head block using LMDGhost.", ALogger.Color.PURPLE);
     updateHeadBlockUsingLMDGhost();
     STDOUT.log(
         Level.INFO, "Head block slot:                       " + headBlock.getSlot().longValue());
@@ -188,7 +188,7 @@ public class StateProcessor {
       LOG.log(
           Level.INFO, "On new slot elapsed time was " + (stopTime - startTime) + " miliseconds.");
     } catch (SlotProcessingException | EpochProcessingException e) {
-      STDOUT.log(Level.INFO, "Unable to update head state: " + e.toString(), "red");
+      STDOUT.log(Level.INFO, "Unable to update head state: " + e.toString(), ALogger.Color.RED);
     }
   }
 
@@ -207,7 +207,7 @@ public class StateProcessor {
     // however, the block is already removed from queue, so
     // we're losing a valid block here.
     if (this.nodeTime.compareTo(blockTime) < 0) {
-      STDOUT.log(Level.FATAL, "We lost a valid block!", "red");
+      STDOUT.log(Level.FATAL, "We lost a valid block!", ALogger.Color.RED);
       return false;
     }
     return true;
@@ -231,7 +231,7 @@ public class StateProcessor {
             BeaconStateWithCache.deepCopy((BeaconStateWithCache) parentBlockState);
 
         // Run state transition with the block
-        STDOUT.log(Level.INFO, "Running state transition with block.", "purple");
+        STDOUT.log(Level.INFO, "Running state transition with block.", ALogger.Color.PURPLE);
         boolean validate_state_root = true;
         long startTime = System.currentTimeMillis();
         Bytes32 newStateRoot = stateTransition.initiate(currentState, block, validate_state_root);
@@ -253,7 +253,7 @@ public class StateProcessor {
         STDOUT.log(Level.INFO, "Skipped processing block");
       }
     } catch (NoSuchElementException | IllegalArgumentException | StateTransitionException e) {
-      STDOUT.log(Level.FATAL, "Error in process block: " + e.toString(), "red");
+      STDOUT.log(Level.FATAL, "Error in process block: " + e.toString(), ALogger.Color.RED);
     }
   }
 
@@ -292,7 +292,9 @@ public class StateProcessor {
         this.finalizedStateRoot = store.getProcessedBlock(finalizedBlockRoot).get().getState_root();
       } catch (IllegalArgumentException e) {
         STDOUT.log(
-            Level.FATAL, "Can't update justified and finalized block roots" + e.toString(), "red");
+            Level.FATAL,
+            "Can't update justified and finalized block roots" + e.toString(),
+            ALogger.Color.RED);
       }
     }
   }

@@ -345,7 +345,7 @@ public class ChainStorageClient implements ChainStorage {
     STDOUT.log(
         Level.INFO,
         "New BeaconBlock with state root:  " + block.getState_root().toHexString() + " detected.",
-        "green");
+        ALogger.Color.GREEN);
     addUnprocessedBlock(block);
   }
 
@@ -356,7 +356,7 @@ public class ChainStorageClient implements ChainStorage {
         "New Attestation with block root:  "
             + attestation.getData().getBeacon_block_root()
             + " detected.",
-        "green");
+        ALogger.Color.GREEN);
 
     addUnprocessedAttestation(attestation);
 
