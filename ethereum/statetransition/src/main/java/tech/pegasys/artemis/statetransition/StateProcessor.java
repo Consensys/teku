@@ -68,12 +68,6 @@ public class StateProcessor {
   private final boolean printEnabled = true;
   private List<Deposit> deposits;
 
-  // Colors
-  public static final String ANSI_RESET = "\u001B[0m";
-  public static final String ANSI_RED = "\u001B[31m";
-  public static final String ANSI_PURPLE = "\u001B[35m";
-  public static final String ANSI_WHITE_BOLD = "\033[1;30m";
-
   public StateProcessor(ServiceConfig config, ChainStorageClient store) {
     this.eventBus = config.getEventBus();
     this.config = config.getConfig();
@@ -97,8 +91,7 @@ public class StateProcessor {
     STDOUT.log(
         Level.INFO,
         "******* Eth2Genesis Event detected ******* : "
-            + ((Eth2Genesis) event).getDeposit_root().toString()
-            + ANSI_RESET);
+            + ((Eth2Genesis) event).getDeposit_root().toString());
     this.nodeSlot = UnsignedLong.valueOf(Constants.GENESIS_SLOT);
     this.nodeTime =
         UnsignedLong.valueOf(Constants.GENESIS_SLOT)
@@ -148,7 +141,7 @@ public class StateProcessor {
     this.nodeSlot = this.nodeSlot.plus(UnsignedLong.ONE);
     this.nodeTime = this.nodeTime.plus(UnsignedLong.valueOf(Constants.SECONDS_PER_SLOT));
 
-    STDOUT.log(Level.INFO, ANSI_WHITE_BOLD + "******* Slot Event *******" + ANSI_RESET);
+    STDOUT.log(Level.INFO, "******* Slot Event *******", ALogger.Color.WHITE);
     STDOUT.log(Level.INFO, "Node time:                             " + nodeTime);
     STDOUT.log(Level.INFO, "Node slot:                             " + nodeSlot);
 
@@ -161,7 +154,7 @@ public class StateProcessor {
     unprocessedBlocks.forEach(this::processBlock);
 
     // Update the block that is subjectively the head of the chain  using lmd_ghost
-    STDOUT.log(Level.INFO, ANSI_PURPLE + "Updating head block using LMDGhost." + ANSI_RESET);
+    STDOUT.log(Level.INFO, "Updating head block using LMDGhost.", ALogger.Color.PURPLE);
     updateHeadBlockUsingLMDGhost();
     STDOUT.log(
         Level.INFO, "Head block slot:                       " + headBlock.getSlot().longValue());
@@ -195,8 +188,7 @@ public class StateProcessor {
       LOG.log(
           Level.INFO, "On new slot elapsed time was " + (stopTime - startTime) + " miliseconds.");
     } catch (SlotProcessingException | EpochProcessingException e) {
-      STDOUT.log(
-          Level.INFO, ANSI_RED + "Unable to update head state: " + e.toString() + ANSI_RESET);
+      STDOUT.log(Level.INFO, "Unable to update head state: " + e.toString(), ALogger.Color.RED);
     }
   }
 
@@ -215,7 +207,7 @@ public class StateProcessor {
     // however, the block is already removed from queue, so
     // we're losing a valid block here.
     if (this.nodeTime.compareTo(blockTime) < 0) {
-      STDOUT.log(Level.FATAL, ANSI_RED + "We lost a valid block!" + ANSI_RESET);
+      STDOUT.log(Level.FATAL, "We lost a valid block!", ALogger.Color.RED);
       return false;
     }
     return true;
@@ -239,7 +231,7 @@ public class StateProcessor {
             BeaconStateWithCache.deepCopy((BeaconStateWithCache) parentBlockState);
 
         // Run state transition with the block
-        STDOUT.log(Level.INFO, ANSI_PURPLE + "Running state transition with block." + ANSI_RESET);
+        STDOUT.log(Level.INFO, "Running state transition with block.", ALogger.Color.PURPLE);
         boolean validate_state_root = true;
         long startTime = System.currentTimeMillis();
         Bytes32 newStateRoot = stateTransition.initiate(currentState, block, validate_state_root);
@@ -261,7 +253,7 @@ public class StateProcessor {
         STDOUT.log(Level.INFO, "Skipped processing block");
       }
     } catch (NoSuchElementException | IllegalArgumentException | StateTransitionException e) {
-      STDOUT.log(Level.FATAL, ANSI_RED + "Error in process block: " + e.toString() + ANSI_RESET);
+      STDOUT.log(Level.FATAL, "Error in process block: " + e.toString(), ALogger.Color.RED);
     }
   }
 
@@ -301,10 +293,8 @@ public class StateProcessor {
       } catch (IllegalArgumentException e) {
         STDOUT.log(
             Level.FATAL,
-            ANSI_RED
-                + "Can't update justified and finalized block roots"
-                + e.toString()
-                + ANSI_RESET);
+            "Can't update justified and finalized block roots" + e.toString(),
+            ALogger.Color.RED);
       }
     }
   }
