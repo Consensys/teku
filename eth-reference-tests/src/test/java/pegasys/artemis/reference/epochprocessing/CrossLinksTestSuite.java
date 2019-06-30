@@ -17,7 +17,7 @@ public class CrossLinksTestSuite extends BeaconStateTestHelper {
     @ParameterizedTest(name = "{index}. message hash to G2 uncompressed {0} -> {1}")
     @MethodSource("testCases")
     void testMessageHashToG2Uncompressed(
-            LinkedHashMap<String, String> pre, LinkedHashMap<String, String> post) {
+            LinkedHashMap<String, Object> pre, LinkedHashMap<String, Object> post) {
         BeaconState preState = convertMapToBeaconState(pre);
         BeaconState postState = convertMapToBeaconState(post);
     }
