@@ -14,12 +14,16 @@ import java.util.stream.Stream;
 public class CrossLinksTestSuite extends BeaconStateTestHelper {
     private static String testFile = "**/tests/epoch_processing/crosslinks/crosslinks_mainnet.yaml";
 
-    @ParameterizedTest(name = "{index}. message hash to G2 uncompressed {0} -> {1}")
+    @ParameterizedTest(name = "crosslinks")
     @MethodSource("testCases")
-    void testMessageHashToG2Uncompressed(
+    void epoch_processing(
             LinkedHashMap<String, Object> pre, LinkedHashMap<String, Object> post) {
+        //State before processing
         BeaconState preState = convertMapToBeaconState(pre);
+        //Expected state after processing
         BeaconState postState = convertMapToBeaconState(post);
+        //process crosslinks
+        //assertTrue(preState.equals(postState));
     }
 
     @MustBeClosed

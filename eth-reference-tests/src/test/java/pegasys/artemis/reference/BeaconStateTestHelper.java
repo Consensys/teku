@@ -10,12 +10,14 @@ import org.apache.tuweni.io.Resources;
 import org.junit.jupiter.params.provider.Arguments;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
+import tech.pegasys.artemis.datastructures.operations.AttestationData;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Crosslink;
 import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.datastructures.state.PendingAttestation;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
+import tech.pegasys.artemis.util.bls.BLSSignature;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -37,8 +39,8 @@ public class BeaconStateTestHelper {
         List<UnsignedLong> balances = toListUnsignedLong((ArrayList<Object>)map.get("balances"));
         List<Bytes32> latest_randao_mixes = toListBytes32((ArrayList<Object>)map.get("latest_randao_mixes"));
         UnsignedLong latest_start_shard = UnsignedLong.valueOf(map.get("latest_start_shard").toString());
-        List<PendingAttestation> previous_epoch_attestations = null;
-        List<PendingAttestation> current_epoch_attestations = null;
+        List<PendingAttestation> previous_epoch_attestations = mapToPendingAttestations((ArrayList<Object>)map.get("previous_epoch_attestations"));
+        List<PendingAttestation> current_epoch_attestations = mapToPendingAttestations((ArrayList<Object>)map.get("current_epoch_attestations"));
         UnsignedLong previous_justified_epoch = UnsignedLong.valueOf(map.get("previous_justified_epoch").toString());
         UnsignedLong current_justified_epoch = UnsignedLong.valueOf(map.get("current_justified_epoch").toString());
         Bytes32 previous_justified_root = Bytes32.fromHexString(map.get("previous_justified_root").toString());
@@ -46,19 +48,17 @@ public class BeaconStateTestHelper {
         UnsignedLong justification_bitfield = UnsignedLong.valueOf(map.get("justification_bitfield").toString());
         UnsignedLong finalized_epoch = UnsignedLong.valueOf(map.get("finalized_epoch").toString());
         Bytes32 finalized_root = Bytes32.fromHexString(map.get("finalized_root").toString());
-        List<Crosslink> current_crosslinks = null;
-        List<Crosslink> previous_crosslinks = null;
+        List<Crosslink> current_crosslinks = mapToCrosslinks((ArrayList<Object>)map.get("current_crosslinks"));
+        List<Crosslink> previous_crosslinks = mapToCrosslinks((ArrayList<Object>)map.get("previous_crosslinks"));
         List<Bytes32> latest_block_roots = toListBytes32((ArrayList<Object>)map.get("latest_block_roots"));
         List<Bytes32> latest_state_roots = toListBytes32((ArrayList<Object>)map.get("latest_state_roots"));
         List<Bytes32> latest_active_index_roots = toListBytes32((ArrayList<Object>)map.get("latest_active_index_roots"));
         List<UnsignedLong> latest_slashed_balances = toListUnsignedLong((ArrayList<Object>)map.get("latest_slashed_balances"));
-        BeaconBlockHeader latest_block_header = null;
+        BeaconBlockHeader latest_block_header = mapToBeaconBlockHeader((Map<String, Object>)map.get("latest_block_header"));
         List<Bytes32> historical_roots = toListBytes32((ArrayList<Object>)map.get("historical_roots"));
-        Eth1Data latest_eth1_data = null;
-        List<Eth1Data> eth1_data_votes = null;
+        Eth1Data latest_eth1_data = mapToEth1Data((Map<String, Object>)map.get("latest_eth1_data"));
+        List<Eth1Data> eth1_data_votes = mapToEth1DataVotes((ArrayList<Object>)map.get("eth1_data_votes"));
         UnsignedLong deposit_index = UnsignedLong.valueOf(map.get("deposit_index").toString());
-        BeaconState state = new BeaconState();
-        state.setSlot(slot);
         return new BeaconState(
                 slot,
                 genesis_time,
@@ -88,6 +88,109 @@ public class BeaconStateTestHelper {
                 eth1_data_votes,
                 deposit_index
         );
+    }
+
+    private static BeaconBlockHeader mapToBeaconBlockHeader(Map<String, Object> map) {
+        UnsignedLong slot = UnsignedLong.valueOf(map.get("slot").toString());
+        Bytes32 parent_root = Bytes32.fromHexString(map.get("parent_root").toString());
+        Bytes32 state_root = Bytes32.fromHexString(map.get("state_root").toString());
+        Bytes32 body_root = Bytes32.fromHexString(map.get("body_root").toString());
+        BLSSignature signature = BLSSignature.fromBytes(Bytes.fromHexString(map.get("signature").toString()));
+
+        return new BeaconBlockHeader(
+                slot,
+                parent_root,
+                state_root,
+                body_root,
+                signature
+        );
+    }
+
+    private static List<Eth1Data> mapToEth1DataVotes(ArrayList<Object> map) {
+        List<Eth1Data> eth1_data_votes = new ArrayList<Eth1Data>();
+        Iterator<Object> itr = map.iterator();
+        while(itr.hasNext()){
+            Map<String, Object> obj = (Map<String, Object>)itr.next();
+            eth1_data_votes.add(mapToEth1Data(obj));
+        }
+        return eth1_data_votes;
+    }
+
+    private static Eth1Data mapToEth1Data(Map<String, Object> obj) {
+        Bytes32 deposit_root = Bytes32.fromHexString(obj.get("deposit_root").toString());
+        UnsignedLong deposit_count =  UnsignedLong.valueOf(obj.get("deposit_count").toString());
+        Bytes32 block_hash = Bytes32.fromHexString(obj.get("block_hash").toString());
+
+        return new Eth1Data(
+                deposit_root,
+                deposit_count,
+                block_hash);
+    }
+
+    private static List<Crosslink> mapToCrosslinks(ArrayList<Object> crosslinks_map) {
+        List<Crosslink> crosslinks = new ArrayList<Crosslink>();
+        Iterator<Object> itr = crosslinks_map.iterator();
+        while(itr.hasNext()){
+            Map<String, Object> obj = (Map<String, Object>)itr.next();
+            crosslinks.add(mapToCrosslink(obj));
+        }
+
+        return crosslinks;
+    }
+
+    private static List<PendingAttestation> mapToPendingAttestations(ArrayList<Object> pending_attestations_map) {
+        List<PendingAttestation> pending_attestations = new ArrayList<PendingAttestation>();
+        Iterator<Object> itr = pending_attestations_map.iterator();
+        while(itr.hasNext()){
+            Map<String, Object> obj = (Map<String, Object>)itr.next();
+            pending_attestations.add(mapToPendingAttestation(obj));
+        }
+        return pending_attestations;
+    }
+
+    private static PendingAttestation mapToPendingAttestation(Map<String, Object> obj) {
+        Bytes aggregation_bitfield =  Bytes.fromHexString(obj.get("aggregation_bitfield").toString());
+        AttestationData data = maptoAttestationData((Map<String, Object>)obj.get("data"));
+        UnsignedLong inclusion_delay = UnsignedLong.valueOf(obj.get("inclusion_delay").toString());
+        UnsignedLong proposer = UnsignedLong.valueOf(obj.get("proposer_index").toString());
+        return new PendingAttestation(
+                aggregation_bitfield,
+                data,
+                inclusion_delay,
+                proposer
+        );
+    }
+
+    private static AttestationData maptoAttestationData(Map<String, Object> obj) {
+        Bytes32 beacon_block_root =  Bytes32.fromHexString(obj.get("beacon_block_root").toString());
+        UnsignedLong source_epoch = UnsignedLong.valueOf(obj.get("source_epoch").toString());
+        Bytes32 source_root =  Bytes32.fromHexString(obj.get("source_root").toString());
+        UnsignedLong target_epoch = UnsignedLong.valueOf(obj.get("target_epoch").toString());
+        Bytes32 target_root =  Bytes32.fromHexString(obj.get("target_root").toString());
+        Crosslink crosslink = mapToCrosslink((Map<String, Object>)obj.get("crosslink"));
+
+        return new AttestationData(
+                beacon_block_root,
+                source_epoch,
+                source_root,
+                target_epoch,
+                target_root,
+                crosslink
+        );
+    }
+
+    private static Crosslink mapToCrosslink(Map<String, Object> obj) {
+        UnsignedLong shard = UnsignedLong.valueOf(obj.get("shard").toString());
+        UnsignedLong start_epoch = UnsignedLong.valueOf(obj.get("start_epoch").toString());
+        UnsignedLong end_epoch = UnsignedLong.valueOf(obj.get("end_epoch").toString());
+        Bytes32 parent_root =  Bytes32.fromHexString(obj.get("parent_root").toString());
+        Bytes32 data_root =  Bytes32.fromHexString(obj.get("data_root").toString());
+        return new Crosslink(
+                shard,
+                start_epoch,
+                end_epoch,
+                parent_root,
+                data_root);
     }
 
     private static Fork mapToFork(Map<String, Object> fork){
