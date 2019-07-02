@@ -43,6 +43,7 @@ import tech.pegasys.artemis.util.bls.BLSSignature;
 
 public class BeaconStateTestHelper {
 
+  @SuppressWarnings("unchecked")
   public static BeaconState convertMapToBeaconState(LinkedHashMap<String, Object> map) {
     UnsignedLong slot = UnsignedLong.valueOf(map.get("slot").toString());
     UnsignedLong genesis_time = UnsignedLong.valueOf(map.get("genesis_time").toString());
@@ -130,6 +131,7 @@ public class BeaconStateTestHelper {
     return new BeaconBlockHeader(slot, parent_root, state_root, body_root, signature);
   }
 
+  @SuppressWarnings("unchecked")
   private static List<Eth1Data> mapToEth1DataVotes(ArrayList<Object> map) {
     List<Eth1Data> eth1_data_votes = new ArrayList<Eth1Data>();
     Iterator<Object> itr = map.iterator();
@@ -148,6 +150,7 @@ public class BeaconStateTestHelper {
     return new Eth1Data(deposit_root, deposit_count, block_hash);
   }
 
+  @SuppressWarnings("unchecked")
   private static List<Crosslink> mapToCrosslinks(ArrayList<Object> crosslinks_map) {
     List<Crosslink> crosslinks = new ArrayList<Crosslink>();
     Iterator<Object> itr = crosslinks_map.iterator();
@@ -159,6 +162,7 @@ public class BeaconStateTestHelper {
     return crosslinks;
   }
 
+  @SuppressWarnings("unchecked")
   private static List<PendingAttestation> mapToPendingAttestations(
       ArrayList<Object> pending_attestations_map) {
     List<PendingAttestation> pending_attestations = new ArrayList<PendingAttestation>();
@@ -170,6 +174,7 @@ public class BeaconStateTestHelper {
     return pending_attestations;
   }
 
+  @SuppressWarnings("unchecked")
   private static PendingAttestation mapToPendingAttestation(Map<String, Object> obj) {
     Bytes aggregation_bitfield = Bytes.fromHexString(obj.get("aggregation_bitfield").toString());
     AttestationData data = maptoAttestationData((Map<String, Object>) obj.get("data"));
@@ -178,6 +183,7 @@ public class BeaconStateTestHelper {
     return new PendingAttestation(aggregation_bitfield, data, inclusion_delay, proposer);
   }
 
+  @SuppressWarnings("unchecked")
   private static AttestationData maptoAttestationData(Map<String, Object> obj) {
     Bytes32 beacon_block_root = Bytes32.fromHexString(obj.get("beacon_block_root").toString());
     UnsignedLong source_epoch = UnsignedLong.valueOf(obj.get("source_epoch").toString());
@@ -206,6 +212,7 @@ public class BeaconStateTestHelper {
     return new Fork(previous_version, current_version, epoch);
   }
 
+  @SuppressWarnings("unchecked")
   private static List<Validator> mapToValidatorRegistry(List<Object> validators) {
     List<Validator> validator_registry = new ArrayList<Validator>();
     Iterator<Object> itr = validators.iterator();

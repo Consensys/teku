@@ -24,7 +24,7 @@ import pegasys.artemis.reference.BeaconStateTestHelper;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 
 public class CrossLinksTestSuite extends BeaconStateTestHelper {
-  private static String testFile = "**/tests/epoch_processing/crosslinks/crosslinks_mainnet.yaml";
+  private static String testFile = "**/tests/epoch_processing/crosslinks/crosslinks_minimal.yaml";
 
   @ParameterizedTest(name = "crosslinks")
   @MethodSource("testCases")
