@@ -96,7 +96,7 @@ allprojects {
       }
       
 
-      importOrder 'tech.pegasys', 'net.consensys', 'java', ''
+      importOrder 'tech.pegasys', 'java', ''
       trimTrailingWhitespace()
       endWithNewline()
       licenseHeaderFile "${rootDir}/gradle/spotless.java.license"
