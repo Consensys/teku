@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package pegasys.artemis.reference;
+package tech.pegasys.artemis.reference;
 
 /*
  * The "official" Shuffling reference test data is from https://github.com/ethereum/eth2.0-tests/

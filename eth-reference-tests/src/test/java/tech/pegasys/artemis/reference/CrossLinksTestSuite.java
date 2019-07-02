@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package pegasys.artemis.reference.epochprocessing;
+package tech.pegasys.artemis.reference;
 
 import com.google.errorprone.annotations.MustBeClosed;
 import java.io.IOException;
@@ -20,7 +20,6 @@ import java.util.stream.Stream;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import pegasys.artemis.reference.BeaconStateTestHelper;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 
 public class CrossLinksTestSuite extends BeaconStateTestHelper {

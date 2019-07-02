@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package pegasys.artemis.reference;
+package tech.pegasys.artemis.reference;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -33,6 +33,7 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.Bytes48;
 import org.apache.tuweni.io.Resources;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -46,7 +47,7 @@ import tech.pegasys.artemis.util.mikuli.Signature;
 /*
  * The "official" BLS reference test data is from https://github.com/ethereum/eth2.0-tests/
  */
-
+@Disabled
 class BLSTestSuite {
 
   private static String testFile = "**/bls/test_bls.yml";
