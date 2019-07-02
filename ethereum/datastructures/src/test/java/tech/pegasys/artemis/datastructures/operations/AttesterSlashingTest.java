@@ -23,11 +23,11 @@ import org.junit.jupiter.api.Test;
 
 class AttesterSlashingTest {
 
-  private IndexedAttestation slashableAttestation1 = randomIndexedAttestation();
-  private IndexedAttestation slashableAttestation2 = randomIndexedAttestation();
+  private IndexedAttestation indexedAttestation1 = randomIndexedAttestation();
+  private IndexedAttestation indexedAttestation2 = randomIndexedAttestation();
 
   private AttesterSlashing attesterSlashing =
-      new AttesterSlashing(slashableAttestation1, slashableAttestation2);
+      new AttesterSlashing(indexedAttestation1, indexedAttestation2);
 
   @Test
   void equalsReturnsTrueWhenObjectsAreSame() {
@@ -39,7 +39,7 @@ class AttesterSlashingTest {
   @Test
   void equalsReturnsTrueWhenObjectFieldsAreEqual() {
     AttesterSlashing testAttesterSlashing =
-        new AttesterSlashing(slashableAttestation1, slashableAttestation2);
+        new AttesterSlashing(indexedAttestation1, indexedAttestation2);
 
     assertEquals(attesterSlashing, testAttesterSlashing);
   }
@@ -49,12 +49,12 @@ class AttesterSlashingTest {
     // IndexedAttestation is rather involved to create. Just create a random one until it is not
     // the same as the original.
     IndexedAttestation otherIndexedAttestation1 = randomIndexedAttestation();
-    while (Objects.equals(otherIndexedAttestation1, slashableAttestation1)) {
+    while (Objects.equals(otherIndexedAttestation1, indexedAttestation1)) {
       otherIndexedAttestation1 = randomIndexedAttestation();
     }
 
     AttesterSlashing testAttesterSlashing =
-        new AttesterSlashing(otherIndexedAttestation1, slashableAttestation2);
+        new AttesterSlashing(otherIndexedAttestation1, indexedAttestation2);
 
     assertNotEquals(attesterSlashing, testAttesterSlashing);
   }
@@ -64,12 +64,12 @@ class AttesterSlashingTest {
     // IndexedAttestation is rather involved to create. Just create a random one until it is not
     // the ame as the original.
     IndexedAttestation otherIndexedAttestation2 = randomIndexedAttestation();
-    while (Objects.equals(otherIndexedAttestation2, slashableAttestation2)) {
+    while (Objects.equals(otherIndexedAttestation2, indexedAttestation2)) {
       otherIndexedAttestation2 = randomIndexedAttestation();
     }
 
     AttesterSlashing testAttesterSlashing =
-        new AttesterSlashing(slashableAttestation1, otherIndexedAttestation2);
+        new AttesterSlashing(indexedAttestation1, otherIndexedAttestation2);
 
     assertNotEquals(attesterSlashing, testAttesterSlashing);
   }
