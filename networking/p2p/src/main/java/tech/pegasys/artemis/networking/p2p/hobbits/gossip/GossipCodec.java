@@ -51,7 +51,7 @@ public final class GossipCodec implements Codec {
   public static Bytes encode(
       int verb, String attributes, Bytes messageHash, Bytes32 hashSignature, Bytes payload) {
 
-    String requestLine = "EWP 0.2 GOSSIP ";
+    String requestLine = "EWP " + VERSION + " GOSSIP ";
     ObjectNode node = mapper.createObjectNode();
 
     node.put("method_id", verb);
@@ -93,9 +93,9 @@ public final class GossipCodec implements Codec {
     }
     String requestLine = new String(requestLineBytes.toArrayUnsafe(), StandardCharsets.UTF_8);
     Iterator<String> segments = Splitter.on(" ").split(requestLine).iterator();
-    String protocol = segments.next();
+    String preamble = segments.next();
     String version = segments.next();
-    String command = segments.next();
+    String protocol = segments.next();
     int headerLength = Integer.parseInt(segments.next());
     int bodyLength = Integer.parseInt(segments.next().trim());
 
@@ -109,18 +109,20 @@ public final class GossipCodec implements Codec {
 
     try {
       byte[] headers = message.slice(requestLineBytes.size(), headerLength).toArrayUnsafe();
-      headers = Snappy.uncompress(headers);
+      //headers = Snappy.uncompress(headers);
       byte[] payload =
           message.slice(requestLineBytes.size() + headerLength, bodyLength).toArrayUnsafe();
       payload = Snappy.uncompress(payload);
       ObjectNode gossipmessage = (ObjectNode) mapper.readTree(headers);
       int methodId = gossipmessage.get("method_id").intValue();
-      String attributes = gossipmessage.get("attributes").asText();
+      String topic = gossipmessage.get("topic").asText();
+      long timestamp = gossipmessage.get("timestamp").asLong();
       Bytes32 messageHash = Bytes32.fromHexString(gossipmessage.get("message_hash").asText());
       Bytes32 hashSignature = Bytes32.fromHexString(gossipmessage.get("hash_signature").asText());
       return new GossipMessage(
           methodId,
-          attributes,
+          topic,
+          timestamp,
           messageHash,
           hashSignature,
           Bytes.wrap(payload),

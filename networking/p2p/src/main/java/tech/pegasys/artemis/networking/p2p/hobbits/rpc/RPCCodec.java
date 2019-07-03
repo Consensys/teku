@@ -93,14 +93,14 @@ public final class RPCCodec implements Codec {
    */
   public static Bytes encode(RPCMethod methodId, Object request, long requestNumber) {
 
-    String requestLine = "EWP 0.2 RPC 0 ";
+    String requestLine = "EWP " + VERSION + " RPC 0 ";
     ObjectNode node = mapper.createObjectNode();
 
-    node.put("id", requestNumber);
     node.put("method_id", methodId.code());
+    node.put("id", requestNumber);
     node.putPOJO("body", request);
     try {
-      Bytes body = Bytes.wrap(Snappy.compress(mapper.writer().writeValueAsBytes(node)));
+      Bytes body = Bytes.wrap(mapper.writer().writeValueAsBytes(node));
       requestLine += body.size();
       requestLine += "\n";
       return Bytes.concatenate(Bytes.wrap(requestLine.getBytes(StandardCharsets.UTF_8)), body);
@@ -129,9 +129,9 @@ public final class RPCCodec implements Codec {
     }
     String requestLine = new String(requestLineBytes.toArrayUnsafe(), StandardCharsets.UTF_8);
     Iterator<String> segments = Splitter.on(" ").split(requestLine).iterator();
-    String protocol = segments.next();
+    String preamble = segments.next();
     String version = segments.next();
-    String command = segments.next();
+    String protocol = segments.next();
     int headerLength = Integer.parseInt(segments.next());
     int bodyLength = Integer.parseInt(segments.next().trim());
 
