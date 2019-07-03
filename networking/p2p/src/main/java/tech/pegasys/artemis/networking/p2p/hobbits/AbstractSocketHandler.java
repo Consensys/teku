@@ -33,6 +33,7 @@ import org.apache.tuweni.plumtree.State;
 import org.apache.tuweni.units.bigints.UInt64;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
+import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.networking.p2p.api.P2PNetwork;
 import tech.pegasys.artemis.networking.p2p.hobbits.Codec.ProtocolType;
 import tech.pegasys.artemis.networking.p2p.hobbits.gossip.GossipCodec;
@@ -144,17 +145,15 @@ public abstract class AbstractSocketHandler {
       }
       peer.setPeerStatus(rpcMessage.bodyAs(GetStatusMessage.class));
     } else if (RPCMethod.GET_ATTESTATION.equals(rpcMessage.method())) {
-      if (!pendingResponses.remove(rpcMessage.id())) {
-        replyAttestation(rpcMessage);
-      }
-    } else if (RPCMethod.GET_BLOCK_HEADERS.equals(rpcMessage.method())) {
-      if (!pendingResponses.remove(rpcMessage.id())) {
-        replyBlockHeaders(rpcMessage);
-      }
+      replyAttestation(rpcMessage);
     } else if (RPCMethod.GET_BLOCK_BODIES.equals(rpcMessage.method())) {
-      if (!pendingResponses.remove(rpcMessage.id())) {
-        replyBlockBodies(rpcMessage);
-      }
+      replyBlockBodies(rpcMessage);
+    } else if (RPCMethod.ATTESTATION.equals(rpcMessage.method())) {
+      Attestation attestation = Attestation.fromBytes(rpcMessage.bodyAs(Bytes.class));
+      this.eventBus.post(attestation);
+    } else if (RPCMethod.BLOCK_BODIES.equals(rpcMessage.method())) {
+      BeaconBlock beaconBlock = BeaconBlock.fromBytes(rpcMessage.bodyAsList().get(0));
+      this.eventBus.post(beaconBlock);
     }
   }
 
@@ -165,7 +164,8 @@ public abstract class AbstractSocketHandler {
   }
 
   protected void sendMessage(RPCMethod method, Object payload) {
-    sendBytes(RPCCodec.encode(method, payload, pendingResponses));
+    Bytes encodedStuff = RPCCodec.encode(method, payload, pendingResponses);
+    sendBytes(encodedStuff);
   }
 
   protected void sendBytes(Bytes bytes) {
@@ -230,14 +230,14 @@ public abstract class AbstractSocketHandler {
         .ifPresent(a -> sendReply(RPCMethod.ATTESTATION, a.toBytes(), rpcMessage.id()));
   }
 
-  public void sendGetAttestations(Bytes32 attestationHash) {
+  public void sendGetAttestation(Bytes32 attestationHash) {
     sendMessage(RPCMethod.GET_ATTESTATION, new RequestAttestationMessage(attestationHash));
   }
 
   public void replyBlockHeaders(RPCMessage rpcMessage) {
     RequestBlocksMessage rb = rpcMessage.bodyAs(RequestBlocksMessage.class);
     List<Optional<BeaconBlock>> blocks =
-        store.getProcessedBlocks(rb.startRoot(), rb.max(), rb.skip());
+        store.getUnprocessedBlock(rb.startRoot(), rb.max(), rb.skip());
     List<Bytes> blockHeaders = new ArrayList<>();
     blocks.forEach(
         block -> {
@@ -264,7 +264,7 @@ public abstract class AbstractSocketHandler {
   public void replyBlockBodies(RPCMessage rpcMessage) {
     RequestBlocksMessage rb = rpcMessage.bodyAs(RequestBlocksMessage.class);
     List<Optional<BeaconBlock>> blocks =
-        store.getProcessedBlocks(rb.startRoot(), rb.max(), rb.skip());
+        store.getUnprocessedBlock(rb.startRoot(), rb.max(), rb.skip());
     List<Bytes> blockBodies = new ArrayList<>();
     blocks.forEach(
         block -> {

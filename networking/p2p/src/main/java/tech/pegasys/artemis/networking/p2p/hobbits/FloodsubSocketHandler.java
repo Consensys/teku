@@ -14,11 +14,16 @@
 package tech.pegasys.artemis.networking.p2p.hobbits;
 
 import com.google.common.eventbus.EventBus;
+import com.google.common.eventbus.Subscribe;
 import io.vertx.core.net.NetSocket;
+import java.util.Date;
 import java.util.concurrent.ConcurrentHashMap;
+import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.plumtree.MessageSender;
 import org.apache.tuweni.plumtree.State;
+import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.networking.p2p.hobbits.gossip.GossipMessage;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.util.alogger.ALogger;
@@ -47,14 +52,38 @@ public final class FloodsubSocketHandler extends AbstractSocketHandler {
         peer.setPeerGossip(gossipMessage.body());
         String[] attributes = gossipMessage.getAttributes().split(",");
         if (attributes[0].equalsIgnoreCase("ATTESTATION")) {
-          Bytes32 attestationHash = (Bytes32) gossipMessage.body();
-          this.sendGetAttestations(attestationHash);
+          Bytes32 attestationHash = Bytes32.wrap(gossipMessage.body());
+          this.sendGetAttestation(attestationHash);
         } else if (attributes[0].equalsIgnoreCase("BLOCK")) {
           Bytes32 blockRoot = Bytes32.wrap(gossipMessage.body());
           this.sendGetBlockBodies(blockRoot);
         }
         receivedMessages.put(key, true);
       }
+    }
+  }
+
+  @Subscribe
+  public void onNewUnprocessedBlock(BeaconBlock block) {
+    Bytes32 beaconBlockHash = block.hash_tree_root();
+    if (!this.receivedMessages.containsKey(beaconBlockHash.toHexString())) {
+      this.receivedMessages.put(beaconBlockHash.toHexString(), true);
+      STDOUT.log(
+          Level.DEBUG,
+          "Gossiping new block with state root: " + block.getState_root().toHexString());
+      String attributes = "BLOCK" + "," + String.valueOf(new Date().getTime());
+      p2pState.sendGossipMessage(attributes, beaconBlockHash);
+    }
+  }
+
+  @Subscribe
+  public void onNewUnprocessedAttestation(Attestation attestation) {
+    Bytes32 bytes = attestation.hash_tree_root();
+    if (!this.receivedMessages.containsKey(bytes.toHexString())) {
+      this.receivedMessages.put(bytes.toHexString(), true);
+      STDOUT.log(Level.DEBUG, "Gossiping new attestation for block root: " + bytes.toHexString());
+      String attributes = "ATTESTATION" + "," + String.valueOf(new Date().getTime());
+      p2pState.sendGossipMessage(attributes, bytes);
     }
   }
 }

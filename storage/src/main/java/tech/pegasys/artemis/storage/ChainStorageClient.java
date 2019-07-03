@@ -47,10 +47,12 @@ public class ChainStorageClient implements ChainStorage {
   protected EventBus eventBus;
   protected final ConcurrentHashMap<Integer, Attestation> latestAttestations =
       new ConcurrentHashMap<>();
-  protected final PriorityBlockingQueue<BeaconBlock> unprocessedBlocks =
+  protected final PriorityBlockingQueue<BeaconBlock> unprocessedBlocksQueue =
       new PriorityBlockingQueue<>(
           UNPROCESSED_BLOCKS_LENGTH, Comparator.comparing(BeaconBlock::getSlot));
   protected final ConcurrentHashMap<Bytes, BeaconBlock> processedBlockLookup =
+      new ConcurrentHashMap<>();
+  private final ConcurrentHashMap<Bytes32, BeaconBlock> unprocessedBlockMap =
       new ConcurrentHashMap<>();
   protected final ConcurrentHashMap<Bytes, BeaconState> stateLookup = new ConcurrentHashMap<>();
   protected final ConcurrentHashMap<Bytes32, Attestation> processedAttestationsMap =
@@ -109,7 +111,8 @@ public class ChainStorageClient implements ChainStorage {
    * @param block
    */
   public void addUnprocessedBlock(BeaconBlock block) {
-    ChainStorage.add(block, this.unprocessedBlocks);
+    ChainStorage.add(block, this.unprocessedBlocksQueue);
+    ChainStorage.add(block.hash_tree_root(), block, this.unprocessedBlockMap);
   }
 
   /**
@@ -214,10 +217,11 @@ public class ChainStorageClient implements ChainStorage {
    * @param skip
    * @return
    */
-  public List<Optional<BeaconBlock>> getProcessedBlocks(Bytes startRoot, long max, long skip) {
+  public List<Optional<BeaconBlock>> getUnprocessedBlock(Bytes32 startRoot, long max, long skip) {
     List<Optional<BeaconBlock>> result = new ArrayList<>();
-    Bytes blockRoot = startRoot;
-    Optional<BeaconBlock> block = ChainStorage.get(blockRoot, this.processedBlockLookup);
+    Bytes32 blockRoot = startRoot;
+    // Optional<BeaconBlock> block = ChainStorage.get(blockRoot, this.processedBlockMap);
+    Optional<BeaconBlock> block = ChainStorage.get(blockRoot, this.unprocessedBlockMap);
     if (block.isPresent()) {
       result.add(block);
     }
@@ -266,7 +270,7 @@ public class ChainStorageClient implements ChainStorage {
    * @return
    */
   public List<BeaconBlock> getUnprocessedBlocks() {
-    return new ArrayList<>(this.unprocessedBlocks);
+    return new ArrayList<>(this.unprocessedBlocksQueue);
   }
 
   /**
@@ -288,9 +292,9 @@ public class ChainStorageClient implements ChainStorage {
     boolean unproccesedBlocksLeft = true;
     Optional<BeaconBlock> currentBlock;
     while (unproccesedBlocksLeft) {
-      currentBlock = ChainStorage.peek(this.unprocessedBlocks);
+      currentBlock = ChainStorage.peek(this.unprocessedBlocksQueue);
       if (currentBlock.isPresent() && currentBlock.get().getSlot().compareTo(slot) <= 0) {
-        unprocessedBlocks.add(ChainStorage.remove(this.unprocessedBlocks));
+        unprocessedBlocks.add(ChainStorage.remove(this.unprocessedBlocksQueue));
       } else {
         unproccesedBlocksLeft = false;
       }
