@@ -14,7 +14,9 @@
 package tech.pegasys.artemis.datastructures.blocks;
 
 import com.google.common.primitives.UnsignedLong;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -22,8 +24,11 @@ import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
+import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
-public class BeaconBlockHeader {
+public class BeaconBlockHeader implements SimpleOffsetSerializable {
+
+  public static final int SSZ_FIELD_COUNT = 4;
 
   private UnsignedLong slot;
   private Bytes32 parent_root;
@@ -50,6 +55,24 @@ public class BeaconBlockHeader {
     this.state_root = Bytes32.ZERO;
     this.body_root = body_root;
     this.signature = BLSSignature.empty();
+  }
+
+  @Override
+  public int getSSZFieldCount() {
+    return SSZ_FIELD_COUNT + signature.getSSZFieldCount();
+  }
+
+  @Override
+  public List<Bytes> get_fixed_parts() {
+    List<Bytes> fixedPartsList =
+        new ArrayList<>(
+            List.of(
+                SSZ.encodeUInt64(slot.longValue()),
+                SSZ.encode(writer -> writer.writeFixedBytes(32, parent_root)),
+                SSZ.encode(writer -> writer.writeFixedBytes(32, state_root)),
+                SSZ.encode(writer -> writer.writeFixedBytes(32, body_root))));
+    fixedPartsList.addAll(signature.get_fixed_parts());
+    return fixedPartsList;
   }
 
   public static BeaconBlockHeader fromBytes(Bytes bytes) {

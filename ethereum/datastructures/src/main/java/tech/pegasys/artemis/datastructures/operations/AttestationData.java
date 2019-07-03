@@ -14,7 +14,9 @@
 package tech.pegasys.artemis.datastructures.operations;
 
 import com.google.common.primitives.UnsignedLong;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -22,8 +24,11 @@ import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.artemis.datastructures.state.Crosslink;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
+import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
-public class AttestationData {
+public class AttestationData implements SimpleOffsetSerializable {
+
+  public static final int SSZ_FIELD_COUNT = 5;
 
   // LMD GHOST vote
   private Bytes32 beacon_block_root;
@@ -59,6 +64,25 @@ public class AttestationData {
     this.target_epoch = attestationData.getTarget_epoch();
     this.target_root = attestationData.getTarget_root();
     this.crosslink = new Crosslink(attestationData.getCrosslink());
+  }
+
+  @Override
+  public int getSSZFieldCount() {
+    return SSZ_FIELD_COUNT + crosslink.getSSZFieldCount();
+  }
+
+  @Override
+  public List<Bytes> get_fixed_parts() {
+    List<Bytes> fixedPartsList =
+        new ArrayList<>(
+            List.of(
+                SSZ.encode(writer -> writer.writeFixedBytes(32, beacon_block_root)),
+                SSZ.encodeUInt64(source_epoch.longValue()),
+                SSZ.encode(writer -> writer.writeFixedBytes(32, source_root)),
+                SSZ.encodeUInt64(target_epoch.longValue()),
+                SSZ.encode(writer -> writer.writeFixedBytes(32, target_root))));
+    fixedPartsList.addAll(crosslink.get_fixed_parts());
+    return fixedPartsList;
   }
 
   public static AttestationData fromBytes(Bytes bytes) {

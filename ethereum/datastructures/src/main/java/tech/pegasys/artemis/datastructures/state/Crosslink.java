@@ -15,6 +15,7 @@ package tech.pegasys.artemis.datastructures.state;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -22,8 +23,11 @@ import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.artemis.datastructures.Copyable;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
+import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
-public class Crosslink implements Copyable<Crosslink> {
+public class Crosslink implements Copyable<Crosslink>, SimpleOffsetSerializable {
+
+  public static final int SSZ_FIELD_COUNT = 5;
 
   private UnsignedLong shard;
   private UnsignedLong start_epoch;
@@ -58,6 +62,21 @@ public class Crosslink implements Copyable<Crosslink> {
     this.end_epoch = UnsignedLong.ZERO;
     this.parent_root = Bytes32.ZERO;
     this.data_root = Bytes32.ZERO;
+  }
+
+  @Override
+  public int getSSZFieldCount() {
+    return SSZ_FIELD_COUNT;
+  }
+
+  @Override
+  public List<Bytes> get_fixed_parts() {
+    return List.of(
+        SSZ.encodeUInt64(shard.longValue()),
+        SSZ.encodeUInt64(start_epoch.longValue()),
+        SSZ.encodeUInt64(end_epoch.longValue()),
+        SSZ.encode(writer -> writer.writeFixedBytes(32, parent_root)),
+        SSZ.encode(writer -> writer.writeFixedBytes(32, data_root)));
   }
 
   public static Crosslink fromBytes(Bytes bytes) {
