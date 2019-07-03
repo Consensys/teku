@@ -16,6 +16,9 @@ package tech.pegasys.artemis.networking.p2p.hobbits.rpc;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.util.ArrayList;
+import java.util.List;
+import org.apache.tuweni.bytes.Bytes;
 
 /** Representation of a RPC message that was received from a remote peer. */
 public final class RPCMessage {
@@ -58,8 +61,22 @@ public final class RPCMessage {
     }
   }
 
+  public List<Bytes> bodyAsList() {
+    List<Bytes> newList = new ArrayList<>();
+    if (body.isArray()) {
+      for (final JsonNode objNode : body) {
+        newList.add(Bytes.fromHexString(objNode.textValue()));
+      }
+    }
+    return newList;
+  }
+
   /** @return the length of the message in bytes */
   public int length() {
     return length;
+  }
+
+  public JsonNode getBody() {
+    return body;
   }
 }
