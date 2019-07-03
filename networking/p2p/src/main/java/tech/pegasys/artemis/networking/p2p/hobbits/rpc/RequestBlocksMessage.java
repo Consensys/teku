@@ -27,8 +27,8 @@ public final class RequestBlocksMessage {
 
   @JsonCreator
   public RequestBlocksMessage(
-      @JsonProperty("start_root") Bytes32 startRoot,
-      @JsonProperty("start_slot") long startSlot,
+      @JsonProperty("startRoot") Bytes32 startRoot,
+      @JsonProperty("startSlot") long startSlot,
       @JsonProperty("max") long max,
       @JsonProperty("skip") long skip,
       @JsonProperty("direction") int direction) {
@@ -39,12 +39,12 @@ public final class RequestBlocksMessage {
     this.direction = direction == 1;
   }
 
-  @JsonProperty("start_root")
+  @JsonProperty("startRoot")
   public Bytes32 startRoot() {
     return startRoot;
   }
 
-  @JsonProperty("start_slot")
+  @JsonProperty("startSlot")
   public long startSlot() {
     return startSlot;
   }

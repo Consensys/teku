@@ -14,7 +14,6 @@
 package tech.pegasys.artemis.networking.p2p;
 
 import com.google.common.eventbus.EventBus;
-import com.google.common.eventbus.Subscribe;
 import io.vertx.core.Vertx;
 import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetClientOptions;
@@ -24,7 +23,6 @@ import io.vertx.core.net.NetSocket;
 import java.io.IOException;
 import java.net.URI;
 import java.util.Collection;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -145,11 +143,8 @@ public final class HobbitsP2PNetwork implements P2PNetwork {
     }
     AbstractSocketHandler handler = handlersMap.get(((Peer) peer).uri());
     if (handler != null) {
-      vertx.executeBlocking(
-          h -> {
-            handler.gossipMessage(verb.ordinal(), attributes, hash, Bytes32.random(), bytes);
-          },
-          res -> {});
+      CompletableFuture.runAsync(
+          () -> handler.gossipMessage(verb.ordinal(), attributes, hash, Bytes32.random(), bytes));
     }
   }
 
@@ -299,38 +294,5 @@ public final class HobbitsP2PNetwork implements P2PNetwork {
   @Override
   public void close() throws IOException {
     stop();
-  }
-
-  @Subscribe
-  public void onNewUnprocessedBlock(BeaconBlock block) {
-    Bytes bytes = block.toBytes();
-    if (!this.receivedMessages.containsKey(bytes.toHexString())) {
-      STDOUT.log(
-          Level.INFO,
-          "Gossiping new block with state root: " + block.getState_root().toHexString());
-      String attributes = "BLOCK" + "," + String.valueOf(new Date().getTime());
-      state.sendGossipMessage(attributes, bytes);
-      this.receivedMessages.put(bytes.toHexString(), true);
-    } else {
-      LOG.log(Level.INFO, "Ignoring block " + block.getState_root().toHexString());
-    }
-  }
-
-  @Subscribe
-  public void onNewUnprocessedAttestation(Attestation attestation) {
-    Bytes bytes = attestation.toBytes();
-    if (!this.receivedMessages.containsKey(bytes.toHexString())) {
-      STDOUT.log(
-          Level.INFO,
-          "Gossiping new attestation for block root: "
-              + attestation.getData().getBeacon_block_root().toHexString());
-      String attributes = "ATTESTATION" + "," + String.valueOf(new Date().getTime());
-      state.sendGossipMessage(attributes, bytes);
-      this.receivedMessages.put(bytes.toHexString(), true);
-    } else {
-      LOG.log(
-          Level.INFO,
-          "Ignoring attestation " + attestation.getData().getBeacon_block_root().toHexString());
-    }
   }
 }
