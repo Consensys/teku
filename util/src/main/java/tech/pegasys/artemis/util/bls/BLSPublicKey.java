@@ -26,7 +26,9 @@ import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
 public class BLSPublicKey implements SimpleOffsetSerializable {
 
+  // The number of SimpleSerialize basic types in this SSZ Container/POJO.
   public static final int SSZ_FIELD_COUNT = 1;
+
   /**
    * Generates a compressed, serialised, random, valid public key
    *

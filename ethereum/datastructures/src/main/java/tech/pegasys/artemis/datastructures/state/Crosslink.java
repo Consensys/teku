@@ -27,6 +27,7 @@ import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
 public class Crosslink implements Copyable<Crosslink>, SimpleOffsetSerializable {
 
+  // The number of SimpleSerialize basic types in this SSZ Container/POJO.
   public static final int SSZ_FIELD_COUNT = 5;
 
   private UnsignedLong shard;

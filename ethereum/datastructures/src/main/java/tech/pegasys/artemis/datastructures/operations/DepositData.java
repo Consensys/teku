@@ -14,7 +14,9 @@
 package tech.pegasys.artemis.datastructures.operations;
 
 import com.google.common.primitives.UnsignedLong;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -23,8 +25,12 @@ import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
+import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
-public class DepositData {
+public class DepositData implements SimpleOffsetSerializable {
+
+  // The number of SimpleSerialize basic types in this SSZ Container/POJO.
+  private static final int SSZ_FIELD_COUNT = 2;
 
   private BLSPublicKey pubkey;
   private Bytes32 withdrawal_credentials;
@@ -40,6 +46,23 @@ public class DepositData {
     this.withdrawal_credentials = withdrawal_credentials;
     this.amount = amount;
     this.signature = signature;
+  }
+
+  @Override
+  public int getSSZFieldCount() {
+    return pubkey.getSSZFieldCount() + SSZ_FIELD_COUNT + signature.getSSZFieldCount();
+  }
+
+  @Override
+  public List<Bytes> get_fixed_parts() {
+    List<Bytes> fixedPartsList = new ArrayList<>();
+    fixedPartsList.addAll(pubkey.get_fixed_parts());
+    fixedPartsList.addAll(
+        List.of(
+            SSZ.encode(writer -> writer.writeFixedBytes(32, withdrawal_credentials)),
+            SSZ.encodeUInt64(amount.longValue())));
+    fixedPartsList.addAll(signature.get_fixed_parts());
+    return fixedPartsList;
   }
 
   public static DepositData fromBytes(Bytes bytes) {

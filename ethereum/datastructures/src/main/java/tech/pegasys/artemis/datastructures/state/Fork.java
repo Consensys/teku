@@ -28,6 +28,7 @@ import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
 public class Fork implements SimpleOffsetSerializable {
 
+  // The number of SimpleSerialize basic types in this SSZ Container/POJO.
   public static final int SSZ_FIELD_COUNT = 3;
 
   private Bytes previous_version; // This is bounded as a Bytes4

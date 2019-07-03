@@ -28,6 +28,7 @@ import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
 public class BeaconBlockHeader implements SimpleOffsetSerializable {
 
+  // The number of SimpleSerialize basic types in this SSZ Container/POJO.
   public static final int SSZ_FIELD_COUNT = 4;
 
   private UnsignedLong slot;

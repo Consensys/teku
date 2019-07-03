@@ -29,6 +29,7 @@ import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
 public class ProposerSlashing implements Merkleizable, SimpleOffsetSerializable {
 
+  // The number of SimpleSerialize basic types in this SSZ Container/POJO.
   public static final int SSZ_FIELD_COUNT = 1;
 
   private UnsignedLong proposer_index;

@@ -26,7 +26,7 @@ import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
 public final class Eth1Data implements SimpleOffsetSerializable {
 
-  // The number of SimpleSerialize objects in this SSZ Container/POJO.
+  // The number of SimpleSerialize basic types in this SSZ Container/POJO.
   private static final int SSZ_FIELD_COUNT = 3;
 
   private Bytes32 deposit_root;
