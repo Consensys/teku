@@ -13,37 +13,61 @@
 
 package tech.pegasys.artemis.datastructures.state;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 import static tech.pegasys.artemis.datastructures.Constants.ACTIVATION_EXIT_DELAY;
+import static tech.pegasys.artemis.datastructures.Constants.DEPOSIT_CONTRACT_TREE_DEPTH;
 import static tech.pegasys.artemis.datastructures.Constants.FAR_FUTURE_EPOCH;
 import static tech.pegasys.artemis.datastructures.Constants.GENESIS_EPOCH;
 import static tech.pegasys.artemis.datastructures.Constants.LATEST_RANDAO_MIXES_LENGTH;
 import static tech.pegasys.artemis.datastructures.Constants.MIN_SEED_LOOKAHEAD;
 import static tech.pegasys.artemis.datastructures.Constants.SLOTS_PER_EPOCH;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.bls_domain;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.generate_seed;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_active_index_root;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_current_epoch;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_genesis_beacon_state;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_randao_mix;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.int_to_bytes32;
+import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.newDeposits;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomDeposits;
 
 import com.google.common.primitives.UnsignedLong;
+import java.io.IOException;
+import java.io.Writer;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.Security;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.Hash;
 import org.apache.tuweni.junit.BouncyCastleExtension;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
+import tech.pegasys.artemis.datastructures.operations.Deposit;
+import tech.pegasys.artemis.datastructures.operations.DepositData;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
+import tech.pegasys.artemis.util.bls.BLSKeyPair;
+import tech.pegasys.artemis.util.bls.BLSPublicKey;
+import tech.pegasys.artemis.util.bls.BLSSecretKey;
+import tech.pegasys.artemis.util.bls.BLSSignature;
+import tech.pegasys.artemis.util.mikuli.KeyPair;
+import tech.pegasys.artemis.util.mikuli.SecretKey;
 
 @ExtendWith(BouncyCastleExtension.class)
 class BeaconStateTest {
@@ -193,5 +217,140 @@ class BeaconStateTest {
     BeaconState state = newState(1);
     BeaconState sszBeaconState = BeaconState.fromBytes(state.toBytes());
     assertEquals(state, sszBeaconState);
+  }
+
+  @Test
+  @Disabled
+  @SuppressWarnings("unchecked")
+  void newDepositGeneration() {
+
+    int numDeposits = 128;
+    List<String> deposits = new ArrayList<>();
+    List<String> publicKeys = new ArrayList<>();
+    List<String> privateKeys = new ArrayList<>();
+
+    JSONObject jsonObject = new JSONObject();
+
+    for (int i = 0; i < numDeposits; i++) {
+      // https://github.com/ethereum/eth2.0-specs/blob/0.4.0/specs/validator/0_beacon-chain-validator.md#submit-deposit
+      BLSKeyPair keypair = BLSKeyPair.random(i);
+      DepositData depositData =
+          new DepositData(
+              keypair.getPublicKey(),
+              Bytes32.ZERO,
+              UnsignedLong.valueOf(Constants.MAX_EFFECTIVE_BALANCE),
+              BLSSignature.empty());
+      BLSSignature proof_of_possession =
+          BLSSignature.sign(
+              keypair, depositData.signing_root("signature"), bls_domain(Constants.DOMAIN_DEPOSIT));
+      depositData.setSignature(proof_of_possession);
+
+      List<Bytes32> proof =
+          new ArrayList<>(Collections.nCopies(DEPOSIT_CONTRACT_TREE_DEPTH, Bytes32.ZERO));
+      Deposit deposit = new Deposit(proof, depositData);
+      deposits.add(deposit.toBytes().toHexString());
+      publicKeys.add(keypair.getPublicKey().toBytes().toHexString());
+      privateKeys.add(keypair.getSecretKey().getSecretKey().toBytes().toHexString());
+    }
+
+    jsonObject.put("deposits", deposits);
+    jsonObject.put("publicKeys", publicKeys);
+    jsonObject.put("privateKeys", privateKeys);
+
+    // Write JSON file
+    try (Writer file =
+        Files.newBufferedWriter(Paths.get("../../interopDepositsAndKeys.json"), UTF_8)) {
+
+      file.write(jsonObject.toJSONString());
+      file.flush();
+
+    } catch (IOException e) {
+      System.out.println(e.toString());
+    }
+  }
+
+  @Test
+  @Disabled
+  @SuppressWarnings("unchecked")
+  void newDepositPubkeysReading() {
+    try {
+      Path path = Paths.get("../../interopDepositsAndKeys.json");
+      String read = Files.readAllLines(path).get(0);
+      JSONParser parser = new JSONParser();
+      Object obj = parser.parse(read);
+      JSONObject array = (JSONObject) obj;
+      JSONArray publicKeyStrings = (JSONArray) array.get("publicKeys");
+      List<BLSPublicKey> readPubkeys = new ArrayList<>();
+      publicKeyStrings.forEach(
+          string ->
+              readPubkeys.add(BLSPublicKey.fromBytes(Bytes.fromHexString(string.toString()))));
+      System.out.println(readPubkeys);
+      List<BLSPublicKey> originalPubkeys = new ArrayList<>();
+      IntStream.range(0, 16)
+          .forEach(
+              i -> {
+                BLSKeyPair keypair = BLSKeyPair.random(i);
+                originalPubkeys.add(keypair.getPublicKey());
+              });
+      assertEquals(readPubkeys, originalPubkeys);
+    } catch (IOException | ParseException e) {
+      System.out.println(e.toString());
+    }
+  }
+
+  @Test
+  @Disabled
+  @SuppressWarnings("unchecked")
+  void newDepositPrivateKeysReading() {
+    try {
+      Path path = Paths.get("../../interopDepositsAndKeys.json");
+      String read = Files.readAllLines(path).get(0);
+      JSONParser parser = new JSONParser();
+      Object obj = parser.parse(read);
+      JSONObject array = (JSONObject) obj;
+      JSONArray privateKeyStrings = (JSONArray) array.get("privateKeys");
+      List<BLSSecretKey> readKeyPairs = new ArrayList<>();
+      privateKeyStrings.forEach(
+          string ->
+              readKeyPairs.add(
+                  new BLSKeyPair(
+                          new KeyPair(SecretKey.fromBytes(Bytes.fromHexString(string.toString()))))
+                      .getSecretKey()));
+      System.out.println(readKeyPairs);
+      IntStream.range(0, 16)
+          .forEach(
+              i -> {
+                BLSKeyPair keypair = BLSKeyPair.random(i);
+                assertEquals(
+                    readKeyPairs.get(i).getSecretKey(), keypair.getSecretKey().getSecretKey());
+              });
+    } catch (IOException | ParseException e) {
+      System.out.println(e.toString());
+    }
+  }
+
+  @Test
+  @Disabled
+  @SuppressWarnings("unchecked")
+  void newDepositReading() {
+    List<Deposit> originalDeposits = newDeposits(16);
+    try {
+      Path path = Paths.get("../../interopDepositsAndKeys.json");
+      String read = Files.readAllLines(path).get(0);
+      JSONParser parser = new JSONParser();
+      Object obj = parser.parse(read);
+      JSONObject array = (JSONObject) obj;
+      JSONArray privateKeyStrings = (JSONArray) array.get("deposits");
+      List<Deposit> readDeposits = new ArrayList<>();
+      privateKeyStrings.forEach(
+          string -> readDeposits.add(Deposit.fromBytes(Bytes.fromHexString(string.toString()))));
+      IntStream.range(0, 16)
+          .forEach(
+              i -> {
+                assertEquals(originalDeposits.get(i), readDeposits.get(i));
+              });
+    } catch (IOException | ParseException e) {
+      System.out.println(e.toString());
+    }
   }
 }

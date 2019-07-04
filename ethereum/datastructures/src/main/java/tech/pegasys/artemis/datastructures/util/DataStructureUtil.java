@@ -18,14 +18,24 @@ import static tech.pegasys.artemis.datastructures.Constants.ZERO_HASH;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.bls_domain;
 
 import com.google.common.primitives.UnsignedLong;
+import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
+import java.util.stream.IntStream;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockBody;
@@ -47,6 +57,7 @@ import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
+import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 
 public final class DataStructureUtil {
   private static final ALogger LOG = new ALogger(DataStructureUtil.class.getName());
@@ -397,13 +408,31 @@ public final class DataStructureUtil {
         new Eth1Data(deposit_root, UnsignedLong.ZERO, Bytes32.ZERO));
   }
 
-  public static BeaconStateWithCache createInitialBeaconState(int numValidators) {
+  @SuppressWarnings("unchecked")
+  public static BeaconStateWithCache createInitialBeaconState(ArtemisConfiguration config)
+      throws IOException, ParseException {
     BeaconStateWithCache state = new BeaconStateWithCache();
+    final List<Deposit> deposits = new ArrayList<>();
+    if (config.getInteropActive()) {
+      Path path = Paths.get("interopDepositsAndKeys.json");
+      String read = Files.readAllLines(path).get(0);
+      JSONParser parser = new JSONParser();
+      Object obj = parser.parse(read);
+      JSONObject array = (JSONObject) obj;
+      JSONArray privateKeyStrings = (JSONArray) array.get("deposits");
+      IntStream.range(0, config.getNumValidators())
+          .forEach(
+              i ->
+                  deposits.add(
+                      Deposit.fromBytes(Bytes.fromHexString(privateKeyStrings.get(i).toString()))));
+    } else {
+      deposits.addAll(newDeposits(config.getNumValidators()));
+    }
     return BeaconStateUtil.get_genesis_beacon_state(
         state,
-        newDeposits(numValidators),
+        deposits,
         UnsignedLong.valueOf(Constants.GENESIS_SLOT),
-        new Eth1Data(Bytes32.ZERO, UnsignedLong.valueOf(numValidators), Bytes32.ZERO));
+        new Eth1Data(Bytes32.ZERO, UnsignedLong.valueOf(config.getNumValidators()), Bytes32.ZERO));
   }
 
   public static Validator randomValidator() {

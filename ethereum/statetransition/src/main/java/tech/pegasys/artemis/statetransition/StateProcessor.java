@@ -18,6 +18,7 @@ import static tech.pegasys.artemis.statetransition.StateTransition.process_slots
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.google.common.primitives.UnsignedLong;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -26,10 +27,10 @@ import java.util.Optional;
 import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.SECP256K1.PublicKey;
+import org.json.simple.parser.ParseException;
 import tech.pegasys.artemis.data.RawRecord;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
-import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.artemis.datastructures.event.Eth2Genesis;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
@@ -75,15 +76,6 @@ public class StateProcessor {
     this.stateTransition = new StateTransition(printEnabled);
     this.store = store;
     this.eventBus.register(this);
-
-    BeaconBlock block = DataStructureUtil.randomBeaconBlock(90000000);
-    BeaconBlockHeader blockHeader =
-        new BeaconBlockHeader(
-            block.getSlot(),
-            block.getParent_root(),
-            block.getState_root(),
-            block.getBody().hash_tree_root(),
-            block.getSignature());
   }
 
   @Subscribe
@@ -101,7 +93,7 @@ public class StateProcessor {
     try {
       BeaconState initial_state;
       if (config.getDepositMode().equals(Constants.DEPOSIT_TEST))
-        initial_state = DataStructureUtil.createInitialBeaconState(config.getNumValidators());
+        initial_state = DataStructureUtil.createInitialBeaconState(config);
       else {
         deposits = DepositUtil.generateBranchProofs(deposits);
         initial_state =
@@ -124,7 +116,7 @@ public class StateProcessor {
       this.finalizedEpoch = initial_state.getFinalized_epoch();
       this.eventBus.post(
           new GenesisHeadStateEvent((BeaconStateWithCache) initial_state, genesis_block));
-    } catch (IllegalStateException e) {
+    } catch (IllegalStateException | IOException | ParseException e) {
       STDOUT.log(Level.FATAL, e.toString());
     }
   }
@@ -188,7 +180,7 @@ public class StateProcessor {
       LOG.log(
           Level.INFO, "On new slot elapsed time was " + (stopTime - startTime) + " miliseconds.");
     } catch (SlotProcessingException | EpochProcessingException e) {
-      STDOUT.log(Level.INFO, "Unable to update head state: " + e.toString(), ALogger.Color.RED);
+      STDOUT.log(Level.FATAL, "Unable to update head state: " + e.toString(), ALogger.Color.RED);
     }
   }
 

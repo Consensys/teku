@@ -124,3 +124,16 @@ Terminal 2:
 $ ./gradlew run -PgenerateFlow
 ```
 
+## Activating Interop Mode
+
+To initialize BeaconState and Validators staticly for interop testing, change the
+interop settings in `config/config.toml`.
+
+1) Set the active boolean to true.
+2) Set the inputFile string to the JSON file that has Validator private key and Deposit objec information.
+
+```
+[interop]
+active = true
+inputFile = "interopDepositsAndKeys.json"
+```

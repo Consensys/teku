@@ -106,6 +106,11 @@ public final class ArtemisConfiguration {
     builder.addLong(
         "node.networkID", 1L, "The identifier of the network (mainnet, testnet, sidechain)", null);
 
+    // Interop
+    builder.addBoolean("interop.active", false, "Enable interop mode", null);
+    builder.addString(
+        "interop.inputFile", "interopDepositsAndKeys.json", "Interop deposits and keys file", null);
+
     // Metrics
     builder.addBoolean("metrics.enabled", false, "Enables metrics collection via Prometheus", null);
     builder.addString(
@@ -298,6 +303,16 @@ public final class ArtemisConfiguration {
   /** @return the total number of validators in the network */
   public int getNumValidators() {
     return config.getInteger("deposit.numValidators");
+  }
+
+  public boolean getInteropActive() {
+    return config.getBoolean("interop.active");
+  }
+
+  public String getInteropInputFile() {
+    String inputFile = config.getString("interop.inputFile");
+    if (inputFile == null || inputFile.equals("")) return null;
+    return inputFile;
   }
 
   /** @return the total number of nodes on the network */
