@@ -31,6 +31,10 @@ public class Validator implements Copyable<Validator>, Merkleizable {
   private BLSPublicKey pubkey;
   // Withdrawal credentials
   private Bytes32 withdrawal_credentials;
+  // Effective balance
+  private UnsignedLong effective_balance;
+  // Was the validator slashed
+  private boolean slashed;
   // Epoch when became eligible for activation
   private UnsignedLong activation_eligibility_epoch;
   // Epoch when validator activated
@@ -39,10 +43,6 @@ public class Validator implements Copyable<Validator>, Merkleizable {
   private UnsignedLong exit_epoch;
   // Epoch when validator withdrew
   private UnsignedLong withdrawable_epoch;
-  // Was the validator slashed
-  private boolean slashed;
-  // Effective balance
-  private UnsignedLong effective_balance;
 
   public Validator(
       BLSPublicKey pubkey,
@@ -98,10 +98,10 @@ public class Validator implements Copyable<Validator>, Merkleizable {
                 BLSPublicKey.fromBytes(reader.readBytes()),
                 Bytes32.wrap(reader.readFixedBytes(32)),
                 UnsignedLong.fromLongBits(reader.readUInt64()),
-                UnsignedLong.fromLongBits(reader.readUInt64()),
-                UnsignedLong.fromLongBits(reader.readUInt64()),
-                UnsignedLong.fromLongBits(reader.readUInt64()),
                 reader.readBoolean(),
+                UnsignedLong.fromLongBits(reader.readUInt64()),
+                UnsignedLong.fromLongBits(reader.readUInt64()),
+                UnsignedLong.fromLongBits(reader.readUInt64()),
                 UnsignedLong.fromLongBits(reader.readUInt64())));
   }
 
@@ -110,12 +110,12 @@ public class Validator implements Copyable<Validator>, Merkleizable {
         writer -> {
           writer.writeBytes(pubkey.toBytes());
           writer.writeFixedBytes(32, withdrawal_credentials);
+          writer.writeUInt64(effective_balance.longValue());
+          writer.writeBoolean(slashed);
           writer.writeUInt64(activation_eligibility_epoch.longValue());
           writer.writeUInt64(activation_epoch.longValue());
           writer.writeUInt64(exit_epoch.longValue());
           writer.writeUInt64(withdrawable_epoch.longValue());
-          writer.writeBoolean(slashed);
-          writer.writeUInt64(effective_balance.longValue());
         });
   }
 
@@ -124,12 +124,12 @@ public class Validator implements Copyable<Validator>, Merkleizable {
     return Objects.hash(
         pubkey,
         withdrawal_credentials,
+        effective_balance,
+        slashed,
         activation_eligibility_epoch,
         activation_epoch,
         exit_epoch,
-        withdrawable_epoch,
-        slashed,
-        effective_balance);
+        withdrawable_epoch);
   }
 
   @Override
@@ -228,15 +228,11 @@ public class Validator implements Copyable<Validator>, Merkleizable {
         Arrays.asList(
             HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, pubkey.toBytes()),
             HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, withdrawal_credentials),
-            HashTreeUtil.hash_tree_root(
-                SSZTypes.BASIC, SSZ.encodeUInt64(activation_eligibility_epoch.longValue())),
-            HashTreeUtil.hash_tree_root(
-                SSZTypes.BASIC, SSZ.encodeUInt64(activation_epoch.longValue())),
-            HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(exit_epoch.longValue())),
-            HashTreeUtil.hash_tree_root(
-                SSZTypes.BASIC, SSZ.encodeUInt64(withdrawable_epoch.longValue())),
+            HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(effective_balance.longValue())),
             HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeBoolean(slashed)),
-            HashTreeUtil.hash_tree_root(
-                SSZTypes.BASIC, SSZ.encodeUInt64(effective_balance.longValue()))));
+            HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(activation_eligibility_epoch.longValue())),
+            HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(activation_epoch.longValue())),
+            HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(exit_epoch.longValue())),
+            HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(withdrawable_epoch.longValue()))));
   }
 }
