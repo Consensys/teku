@@ -66,9 +66,9 @@ public class Crosslink implements Copyable<Crosslink> {
         reader ->
             new Crosslink(
                 UnsignedLong.fromLongBits(reader.readUInt64()),
-                UnsignedLong.fromLongBits(reader.readUInt64()),
-                UnsignedLong.fromLongBits(reader.readUInt64()),
                 Bytes32.wrap(reader.readFixedBytes(32)),
+                UnsignedLong.fromLongBits(reader.readUInt64()),
+                UnsignedLong.fromLongBits(reader.readUInt64()),
                 Bytes32.wrap(reader.readFixedBytes(32))));
   }
 
@@ -81,9 +81,9 @@ public class Crosslink implements Copyable<Crosslink> {
     return SSZ.encode(
         writer -> {
           writer.writeUInt64(shard.longValue());
+          writer.writeFixedBytes(32, parent_root);
           writer.writeUInt64(start_epoch.longValue());
           writer.writeUInt64(end_epoch.longValue());
-          writer.writeFixedBytes(32, parent_root);
           writer.writeFixedBytes(32, data_root);
         });
   }
@@ -160,9 +160,9 @@ public class Crosslink implements Copyable<Crosslink> {
     return HashTreeUtil.merkleize(
         Arrays.asList(
             HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(shard.longValue())),
+            HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, parent_root),
             HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(start_epoch.longValue())),
             HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(end_epoch.longValue())),
-            HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, parent_root),
             HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, data_root)));
   }
 }
