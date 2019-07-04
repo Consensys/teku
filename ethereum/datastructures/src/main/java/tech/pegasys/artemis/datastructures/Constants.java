@@ -46,11 +46,10 @@ public class Constants {
   public static long GENESIS_EPOCH = 0;
   public static long GENESIS_FORK_VERSION = 0;
   public static UnsignedLong FAR_FUTURE_EPOCH = UnsignedLong.MAX_VALUE;
-  public static Bytes32 ZERO_HASH = Bytes32.ZERO; // TODO confirm if equals to b'\x00' * 32
   public static int BLS_WITHDRAWAL_PREFIX = 0;
 
   // Time parameters
-  public static int MIN_ATTESTATION_INCLUSION_DELAY = 4; // 2^2 slots
+  public static int MIN_ATTESTATION_INCLUSION_DELAY = 1; // 2^0 slots
   public static int SLOTS_PER_EPOCH = 64; // 2^6 slots
   public static int MIN_SEED_LOOKAHEAD = 1; // 2^0 epochs (6.4 minutes)
   public static int ACTIVATION_EXIT_DELAY = 4; // 2^2 epochs (25.6 minutes)
@@ -64,13 +63,8 @@ public class Constants {
   public static int SECONDS_PER_SLOT =
       6; // removed in 7.1 main spec for some reason but keep for now
 
-  // State list lengths
-  public static int LATEST_RANDAO_MIXES_LENGTH = 8192; // 2^13 epochs (~36 days)
-  public static int LATEST_ACTIVE_INDEX_ROOTS_LENGTH = 8192; // 2^13 epochs (~36 days)
-  public static int LATEST_SLASHED_EXIT_LENGTH = 8192; // 2^13 epochs (~36 days)
-
   // Reward and penalty quotients
-  public static int BASE_REWARD_FACTOR = 32; // 2^5
+  public static int BASE_REWARD_FACTOR = 64; // 2^6
   public static int WHISTLEBLOWING_REWARD_QUOTIENT = 512; // 2^9
   public static int PROPOSER_REWARD_QUOTIENT = 8; // 2^3
   public static int INACTIVITY_PENALTY_QUOTIENT = 33554432; // 2^25
@@ -211,20 +205,6 @@ public class Constants {
         config.getBlsWithdrawalPrefix() != 0
             ? config.getBlsWithdrawalPrefix()
             : BLS_WITHDRAWAL_PREFIX;
-
-    // State list lengths
-    LATEST_RANDAO_MIXES_LENGTH =
-        config.getLatestRandaoMixesLength() != Integer.MIN_VALUE
-            ? config.getLatestRandaoMixesLength()
-            : LATEST_RANDAO_MIXES_LENGTH; // 2^13 epochs (~36 days)
-    LATEST_ACTIVE_INDEX_ROOTS_LENGTH =
-        config.getLatestActiveIndexRootsLength() != Integer.MIN_VALUE
-            ? config.getLatestActiveIndexRootsLength()
-            : LATEST_ACTIVE_INDEX_ROOTS_LENGTH; // 2^13 epochs (~36 days)
-    LATEST_SLASHED_EXIT_LENGTH =
-        config.getLatestSlashedExitLength() != Integer.MIN_VALUE
-            ? config.getLatestSlashedExitLength()
-            : LATEST_SLASHED_EXIT_LENGTH; // 2^13 epochs (~36 days)
 
     // Reward and penalty quotients
     BASE_REWARD_FACTOR =
