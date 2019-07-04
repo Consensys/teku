@@ -379,7 +379,7 @@ public class ValidatorCoordinator {
       ManagedChannel channel =
           ManagedChannelBuilder.forAddress("localhost", port).usePlaintext().build();
       validatorClientChannels.put(keypair.getPublicKey(), channel);
-      LOG.log(Level.INFO, "i = " + i + ": " + keypair.getPublicKey().toString());
+      STDOUT.log(Level.DEBUG, "i = " + i + ": " + keypair.getPublicKey().toString());
       if (numNaughtyValidators > 0) {
         validatorSet.put(keypair.getPublicKey(), new MutableTriple<>(keypair, true, -1));
       } else {
