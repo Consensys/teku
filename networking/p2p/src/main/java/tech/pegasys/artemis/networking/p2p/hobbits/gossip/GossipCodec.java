@@ -66,7 +66,6 @@ public final class GossipCodec implements Codec {
     node.put("hash_signature", hashSignature.toHexString());
     try {
       Bytes header = Bytes.wrap(mapper.writer().writeValueAsBytes(node));
-
       requestLine += header.size();
       requestLine += " ";
       requestLine += payload.size();
