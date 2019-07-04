@@ -12,6 +12,10 @@ port = 9000
 advertisedPort = 9000
 naughtinessPercentage = 0
 
+[interop]
+active = false
+inputFile = "interopDepositsAndKeys.json"
+
 [deposit]
 # normal, test, simulation
 # "test" pre-production

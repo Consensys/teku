@@ -23,7 +23,7 @@ public class BLSSecretKey {
     this.secretKey = secretKey;
   }
 
-  SecretKey getSecretKey() {
+  public SecretKey getSecretKey() {
     return secretKey;
   }
 }
