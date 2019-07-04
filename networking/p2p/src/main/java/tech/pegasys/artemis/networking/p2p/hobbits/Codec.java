@@ -21,6 +21,7 @@ import org.apache.tuweni.bytes.Bytes;
 @SuppressWarnings("ALL")
 public interface Codec {
   static final int VERSION = 3;
+
   enum ProtocolType {
     GOSSIP,
     RPC,

@@ -50,11 +50,10 @@ public final class FloodsubSocketHandler extends AbstractSocketHandler {
       String key = gossipMessage.body().toHexString();
       if (!receivedMessages.containsKey(key)) {
         peer.setPeerGossip(gossipMessage.body());
-        String[] attributes = gossipMessage.getAttributes().split(",");
-        if (attributes[0].equalsIgnoreCase("ATTESTATION")) {
+        if (gossipMessage.getTopic().equalsIgnoreCase("ATTESTATION")) {
           Bytes32 attestationHash = Bytes32.wrap(gossipMessage.body());
           this.sendGetAttestation(attestationHash);
-        } else if (attributes[0].equalsIgnoreCase("BLOCK")) {
+        } else if (gossipMessage.getTopic().equalsIgnoreCase("BLOCK")) {
           Bytes32 blockRoot = Bytes32.wrap(gossipMessage.body());
           this.sendGetBlockBodies(blockRoot);
         }

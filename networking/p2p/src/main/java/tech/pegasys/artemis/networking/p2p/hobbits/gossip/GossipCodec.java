@@ -24,7 +24,6 @@ import java.util.Iterator;
 import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.xerial.snappy.Snappy;
 import tech.pegasys.artemis.networking.p2p.hobbits.Codec;
 import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.json.BytesModule;
@@ -49,18 +48,25 @@ public final class GossipCodec implements Codec {
    * @return the encoded Gossip message
    */
   public static Bytes encode(
-      int verb, String attributes, Bytes messageHash, Bytes32 hashSignature, Bytes payload) {
+      int verb,
+      String topic,
+      long timestamp,
+      Bytes messageHash,
+      Bytes32 hashSignature,
+      Bytes payload) {
 
     String requestLine = "EWP " + VERSION + " GOSSIP ";
     ObjectNode node = mapper.createObjectNode();
 
     node.put("method_id", verb);
-    node.put("attributes", attributes);
+    node.put("topic", topic);
+    node.put("timestamp", timestamp);
+    ;
     node.put("message_hash", messageHash.toHexString());
     node.put("hash_signature", hashSignature.toHexString());
     try {
-      Bytes headers = Bytes.wrap(Snappy.compress(mapper.writer().writeValueAsBytes(node)));
-      Bytes compressedPayload = Bytes.wrap(Snappy.compress(payload.toArrayUnsafe()));
+      Bytes headers = Bytes.wrap(mapper.writer().writeValueAsBytes(node));
+      Bytes compressedPayload = Bytes.wrap(payload.toArrayUnsafe());
 
       requestLine += headers.size();
       requestLine += " ";
@@ -109,10 +115,10 @@ public final class GossipCodec implements Codec {
 
     try {
       byte[] headers = message.slice(requestLineBytes.size(), headerLength).toArrayUnsafe();
-      //headers = Snappy.uncompress(headers);
+      // headers = Snappy.uncompress(headers);
       byte[] payload =
           message.slice(requestLineBytes.size() + headerLength, bodyLength).toArrayUnsafe();
-      payload = Snappy.uncompress(payload);
+      // payload = Snappy.uncompress(payload);
       ObjectNode gossipmessage = (ObjectNode) mapper.readTree(headers);
       int methodId = gossipmessage.get("method_id").intValue();
       String topic = gossipmessage.get("topic").asText();

@@ -26,7 +26,6 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 import javax.annotation.Nullable;
 import org.apache.tuweni.bytes.Bytes;
-import org.xerial.snappy.Snappy;
 import tech.pegasys.artemis.networking.p2p.hobbits.Codec;
 import tech.pegasys.artemis.util.json.BytesModule;
 
@@ -142,7 +141,7 @@ public final class RPCCodec implements Codec {
     try {
       byte[] payload =
           message.slice(requestLineBytes.size() + headerLength, bodyLength).toArrayUnsafe();
-      payload = Snappy.uncompress(payload);
+      // payload = Snappy.uncompress(payload);
       ObjectNode rpcmessage = (ObjectNode) mapper.readTree(payload);
       long id = rpcmessage.get("id").longValue();
       int methodId = rpcmessage.get("method_id").intValue();

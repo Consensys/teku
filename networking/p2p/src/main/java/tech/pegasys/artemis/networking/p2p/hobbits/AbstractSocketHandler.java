@@ -180,8 +180,13 @@ public abstract class AbstractSocketHandler {
   }
 
   public void gossipMessage(
-      int method, String attributes, Bytes messageHash, Bytes32 hashSignature, Bytes payload) {
-    Bytes bytes = GossipCodec.encode(method, attributes, messageHash, hashSignature, payload);
+      int method,
+      String topic,
+      long timestamp,
+      Bytes messageHash,
+      Bytes32 hashSignature,
+      Bytes payload) {
+    Bytes bytes = GossipCodec.encode(method, topic, timestamp, messageHash, hashSignature, payload);
     sendBytes(bytes);
   }
 
