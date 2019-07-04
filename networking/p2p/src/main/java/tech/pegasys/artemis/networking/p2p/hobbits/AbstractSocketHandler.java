@@ -20,6 +20,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -50,7 +51,7 @@ import tech.pegasys.artemis.util.alogger.ALogger;
 
 /** TCP persistent connection handler for hobbits messages. */
 public abstract class AbstractSocketHandler {
-  private static final ALogger LOG = new ALogger(AbstractSocketHandler.class.getName());
+  private static final ALogger STDOUT = new ALogger("stdout");
   protected final EventBus eventBus;
   protected final String userAgent;
   protected final Peer peer;
@@ -99,23 +100,23 @@ public abstract class AbstractSocketHandler {
   protected void closed(@Nullable Void nothing) {
     if (status.compareAndSet(true, false)) {
       peer.setInactive();
-      LOG.log(Level.INFO, "Peer marked inactive " + peer.uri());
+      STDOUT.log(Level.INFO, "Peer marked inactive " + peer.uri());
     }
   }
 
   public synchronized void handleMessage(Buffer message) {
     Bytes messageBytes = Bytes.wrapBuffer(message);
 
-    LOG.log(Level.DEBUG, "Received " + messageBytes.size() + " bytes");
+    STDOUT.log(Level.DEBUG, "Received " + messageBytes.size() + " bytes");
     buffer = Bytes.concatenate(buffer, messageBytes);
-    LOG.log(Level.DEBUG, "Buffer at " + buffer.size() + " bytes");
+    STDOUT.log(Level.DEBUG, "Buffer at " + buffer.size() + " bytes");
 
     while (!buffer.isEmpty()) {
       ProtocolType protocolType = Codec.protocolType(buffer);
       if (protocolType == ProtocolType.GOSSIP) {
         GossipMessage gossipMessage = GossipCodec.decode(buffer);
         if (gossipMessage == null) {
-          LOG.log(Level.DEBUG, "Message too short");
+          STDOUT.log(Level.DEBUG, "Message too short");
           return;
         }
         buffer = buffer.slice(gossipMessage.length());
@@ -135,15 +136,12 @@ public abstract class AbstractSocketHandler {
     if (RPCMethod.GOODBYE.equals(rpcMessage.method())) {
       closed(null);
     } else if (RPCMethod.HELLO.equals(rpcMessage.method())) {
-      if (!pendingResponses.remove(rpcMessage.id())) {
+      if (Objects.isNull(peer.peerHello())) {
+        peer.setPeerHello(rpcMessage.bodyAs(HelloMessage.class));
         replyHello(rpcMessage.id());
       }
-      peer.setPeerHello(rpcMessage.bodyAs(HelloMessage.class));
     } else if (RPCMethod.GET_STATUS.equals(rpcMessage.method())) {
-      if (!pendingResponses.remove(rpcMessage.id())) {
-        replyStatus(rpcMessage.id());
-      }
-      peer.setPeerStatus(rpcMessage.bodyAs(GetStatusMessage.class));
+      replyStatus(rpcMessage.id());
     } else if (RPCMethod.GET_ATTESTATION.equals(rpcMessage.method())) {
       replyAttestation(rpcMessage);
     } else if (RPCMethod.GET_BLOCK_BODIES.equals(rpcMessage.method())) {
@@ -191,28 +189,27 @@ public abstract class AbstractSocketHandler {
   }
 
   public void replyHello(long requestId) {
-    sendReply(
-        RPCMethod.HELLO,
+    HelloMessage msg =
         new HelloMessage(
             1,
             1,
             store.getFinalizedBlockRoot(),
             UInt64.valueOf(store.getFinalizedEpoch().longValue()),
             store.getBestBlockRoot(),
-            UInt64.valueOf(store.getBestSlot().longValue())),
-        requestId);
+            UInt64.valueOf(store.getBestSlot().longValue()));
+    sendReply(RPCMethod.HELLO, msg, requestId);
   }
 
   public void sendHello() {
-    sendMessage(
-        RPCMethod.HELLO,
+    HelloMessage msg =
         new HelloMessage(
             1,
             1,
             store.getFinalizedBlockRoot(),
             UInt64.valueOf(store.getFinalizedEpoch().longValue()),
             store.getBestBlockRoot(),
-            UInt64.valueOf(store.getBestSlot().longValue())));
+            UInt64.valueOf(store.getBestSlot().longValue()));
+    sendMessage(RPCMethod.HELLO, msg);
   }
 
   public void replyStatus(long requestId) {
@@ -291,6 +288,6 @@ public abstract class AbstractSocketHandler {
   }
 
   private void handleError(Throwable t) {
-    LOG.log(Level.ERROR, "P2P error: " + t.getMessage());
+    STDOUT.log(Level.ERROR, "P2P error: " + t.getMessage());
   }
 }
