@@ -41,7 +41,8 @@ public final class GossipCodec implements Codec {
    * Encodes a payload into a Gossip request
    *
    * @param verb the Gossip method
-   * @param attributes
+   * @param topic
+   * @param timestamp
    * @param messageHash
    * @param hashSignature
    * @param payload the payload of the request
@@ -61,19 +62,17 @@ public final class GossipCodec implements Codec {
     node.put("method_id", verb);
     node.put("topic", topic);
     node.put("timestamp", timestamp);
-    ;
     node.put("message_hash", messageHash.toHexString());
     node.put("hash_signature", hashSignature.toHexString());
     try {
-      Bytes headers = Bytes.wrap(mapper.writer().writeValueAsBytes(node));
-      Bytes compressedPayload = Bytes.wrap(payload.toArrayUnsafe());
+      Bytes header = Bytes.wrap(mapper.writer().writeValueAsBytes(node));
 
-      requestLine += headers.size();
+      requestLine += header.size();
       requestLine += " ";
-      requestLine += compressedPayload.size();
+      requestLine += payload.size();
       requestLine += "\n";
       return Bytes.concatenate(
-          Bytes.wrap(requestLine.getBytes(StandardCharsets.UTF_8)), headers, compressedPayload);
+          Bytes.wrap(requestLine.getBytes(StandardCharsets.UTF_8)), header, payload);
     } catch (IOException e) {
       throw new IllegalArgumentException(e);
     }
@@ -115,10 +114,8 @@ public final class GossipCodec implements Codec {
 
     try {
       byte[] headers = message.slice(requestLineBytes.size(), headerLength).toArrayUnsafe();
-      // headers = Snappy.uncompress(headers);
       byte[] payload =
           message.slice(requestLineBytes.size() + headerLength, bodyLength).toArrayUnsafe();
-      // payload = Snappy.uncompress(payload);
       ObjectNode gossipmessage = (ObjectNode) mapper.readTree(headers);
       int methodId = gossipmessage.get("method_id").intValue();
       String topic = gossipmessage.get("topic").asText();
