@@ -132,9 +132,10 @@ public final class HobbitsP2PNetwork implements P2PNetwork {
             });
   }
 
+  @SuppressWarnings("StringSplitter")
   private void sendMessage(
       MessageSender.Verb verb,
-      String attributes,
+      String attr,
       org.apache.tuweni.plumtree.Peer peer,
       Bytes hash,
       Bytes bytes) {
@@ -142,9 +143,17 @@ public final class HobbitsP2PNetwork implements P2PNetwork {
       return;
     }
     AbstractSocketHandler handler = handlersMap.get(((Peer) peer).uri());
+    String[] attributes = attr.split(",");
     if (handler != null) {
       CompletableFuture.runAsync(
-          () -> handler.gossipMessage(verb.ordinal(), attributes, hash, Bytes32.random(), bytes));
+          () ->
+              handler.gossipMessage(
+                  verb.ordinal(),
+                  attributes[0],
+                  Long.valueOf(attributes[1]),
+                  hash,
+                  Bytes32.random(),
+                  bytes));
     }
   }
 

@@ -15,6 +15,7 @@ package tech.pegasys.artemis.networking.p2p.hobbits;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import java.util.Date;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.plumtree.MessageSender;
@@ -34,6 +35,7 @@ final class GossipCodecTest {
         GossipCodec.encode(
             MessageSender.Verb.GOSSIP.ordinal(),
             "BLOCK",
+            new Date().getTime(),
             Bytes32.random(),
             Bytes32.random(),
             block.toBytes());

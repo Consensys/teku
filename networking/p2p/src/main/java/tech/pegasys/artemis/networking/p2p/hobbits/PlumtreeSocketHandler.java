@@ -50,8 +50,9 @@ public class PlumtreeSocketHandler extends AbstractSocketHandler {
       if (!receivedMessages.containsKey(key)) {
         receivedMessages.put(key, true);
         peer.setPeerGossip(gossipMessage.body());
+        String attributes = gossipMessage.getTopic() + "," + gossipMessage.getTimestamp();
         p2pState.receiveGossipMessage(
-            peer, gossipMessage.getAttributes(), gossipMessage.body(), gossipMessage.messageHash());
+            peer, attributes, gossipMessage.body(), gossipMessage.messageHash());
       }
     } else if (MessageSender.Verb.PRUNE.ordinal() == gossipMessage.method()) {
       p2pState.receivePruneMessage(peer);

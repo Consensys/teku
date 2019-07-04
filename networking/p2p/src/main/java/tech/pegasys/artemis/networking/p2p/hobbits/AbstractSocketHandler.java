@@ -135,13 +135,13 @@ public abstract class AbstractSocketHandler {
     if (RPCMethod.GOODBYE.equals(rpcMessage.method())) {
       closed(null);
     } else if (RPCMethod.HELLO.equals(rpcMessage.method())) {
-      if (!pendingResponses.remove(rpcMessage.requestId())) {
-        replyHello(rpcMessage.requestId());
+      if (!pendingResponses.remove(rpcMessage.id())) {
+        replyHello(rpcMessage.id());
       }
       peer.setPeerHello(rpcMessage.bodyAs(HelloMessage.class));
     } else if (RPCMethod.GET_STATUS.equals(rpcMessage.method())) {
-      if (!pendingResponses.remove(rpcMessage.requestId())) {
-        replyStatus(rpcMessage.requestId());
+      if (!pendingResponses.remove(rpcMessage.id())) {
+        replyStatus(rpcMessage.id());
       }
       peer.setPeerStatus(rpcMessage.bodyAs(GetStatusMessage.class));
     } else if (RPCMethod.GET_ATTESTATION.equals(rpcMessage.method())) {
@@ -159,8 +159,8 @@ public abstract class AbstractSocketHandler {
 
   protected abstract void handleGossipMessage(GossipMessage gossipMessage);
 
-  protected void sendReply(RPCMethod method, Object payload, long requestId) {
-    sendBytes(RPCCodec.encode(method, payload, requestId));
+  protected void sendReply(RPCMethod method, Object payload, long id) {
+    sendBytes(RPCCodec.encode(method, payload, id));
   }
 
   protected void sendMessage(RPCMethod method, Object payload) {
@@ -180,8 +180,13 @@ public abstract class AbstractSocketHandler {
   }
 
   public void gossipMessage(
-      int method, String attributes, Bytes messageHash, Bytes32 hashSignature, Bytes payload) {
-    Bytes bytes = GossipCodec.encode(method, attributes, messageHash, hashSignature, payload);
+      int method,
+      String topic,
+      long timestamp,
+      Bytes messageHash,
+      Bytes32 hashSignature,
+      Bytes payload) {
+    Bytes bytes = GossipCodec.encode(method, topic, timestamp, messageHash, hashSignature, payload);
     sendBytes(bytes);
   }
 
@@ -227,7 +232,7 @@ public abstract class AbstractSocketHandler {
     Bytes32 attestationHash = rb.attestationHash();
     store
         .getUnprocessedAttestation(attestationHash)
-        .ifPresent(a -> sendReply(RPCMethod.ATTESTATION, a.toBytes(), rpcMessage.requestId()));
+        .ifPresent(a -> sendReply(RPCMethod.ATTESTATION, a.toBytes(), rpcMessage.id()));
   }
 
   public void sendGetAttestation(Bytes32 attestationHash) {
@@ -253,7 +258,7 @@ public abstract class AbstractSocketHandler {
           }
         });
     if (blockHeaders.size() > 0) {
-      sendReply(RPCMethod.BLOCK_HEADERS, blockHeaders, rpcMessage.requestId());
+      sendReply(RPCMethod.BLOCK_HEADERS, blockHeaders, rpcMessage.id());
     }
   }
 
@@ -273,7 +278,7 @@ public abstract class AbstractSocketHandler {
           }
         });
     if (blockBodies.size() > 0) {
-      sendReply(RPCMethod.BLOCK_BODIES, blockBodies, rpcMessage.requestId());
+      sendReply(RPCMethod.BLOCK_BODIES, blockBodies, rpcMessage.id());
     }
   }
 

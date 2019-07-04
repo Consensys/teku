@@ -20,7 +20,8 @@ import org.apache.tuweni.bytes.Bytes32;
 public final class GossipMessage {
 
   private final int method;
-  private final String attributes;
+  private final String topic;
+  private final long timestamp;
   private final Bytes32 messageHash;
   private final Bytes32 hashSignature;
   private final Bytes body;
@@ -28,13 +29,15 @@ public final class GossipMessage {
 
   public GossipMessage(
       int method,
-      String attributes,
+      String topic,
+      long timestamp,
       Bytes32 messageHash,
       Bytes32 hashSignature,
       Bytes body,
       int length) {
     this.method = method;
-    this.attributes = attributes;
+    this.topic = topic;
+    this.timestamp = timestamp;
     this.messageHash = messageHash;
     this.hashSignature = hashSignature;
     this.body = body;
@@ -46,9 +49,14 @@ public final class GossipMessage {
     return method;
   }
 
-  /** @return the message type used in the Gossi[ call. */
-  public String getAttributes() {
-    return attributes;
+  /** @return the Gossip topic. */
+  public String getTopic() {
+    return topic;
+  }
+
+  /** @return the Gossip topic. */
+  public long getTimestamp() {
+    return timestamp;
   }
 
   /** @return the messageHash used by the Gossip call. */
