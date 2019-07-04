@@ -197,11 +197,7 @@ public final class HobbitsP2PNetwork implements P2PNetwork {
         .parallelStream()
         .forEach(
             uri -> {
-              connect(uri)
-                  .thenAccept(
-                      peer ->
-                          STDOUT.log(
-                              Level.INFO, "Connected to peer: " + ((Peer) peer).uri().getPort()));
+              connect(uri);
             });
   }
 
@@ -235,6 +231,15 @@ public final class HobbitsP2PNetwork implements P2PNetwork {
 
   CompletableFuture<?> connect(URI peerURI) {
     CompletableFuture<Peer> connected = new CompletableFuture<>();
+    connected.whenCompleteAsync(
+        (peer, th) -> {
+          STDOUT.log(Level.INFO, "Connected to " + peer.uri());
+          AbstractSocketHandler handler = handlersMap.get(peer.uri());
+          if (handler != null) {
+            STDOUT.log(Level.INFO, "Send hello to: " + peer.uri());
+            handler.sendHello();
+          }
+        });
     AbstractSocketHandler existingHandler = handlersMap.get(peerURI);
     if (existingHandler != null) {
       connected.complete(existingHandler.peer());
