@@ -92,17 +92,22 @@ public final class RPCCodec implements Codec {
    */
   public static Bytes encode(RPCMethod methodId, Object request, long requestNumber) {
 
-    String requestLine = "EWP " + VERSION + " RPC 0 ";
-    ObjectNode node = mapper.createObjectNode();
-
-    node.put("method_id", methodId.code());
-    node.put("id", requestNumber);
-    node.putPOJO("body", request);
+    String requestLine = "EWP " + VERSION + " RPC ";
+    ObjectNode headerNode = mapper.createObjectNode();
+    headerNode.put("method_id", methodId.code());
+    headerNode.put("id", requestNumber);
+    ObjectNode bodyNode = mapper.createObjectNode();
+    bodyNode.putPOJO("body", request);
     try {
-      Bytes body = Bytes.wrap(mapper.writer().writeValueAsBytes(node));
+
+      Bytes header = Bytes.wrap(mapper.writer().writeValueAsBytes(headerNode));
+      Bytes body = Bytes.wrap(mapper.writer().writeValueAsBytes(bodyNode));
+      requestLine += header.size();
+      requestLine += " ";
       requestLine += body.size();
       requestLine += "\n";
-      return Bytes.concatenate(Bytes.wrap(requestLine.getBytes(StandardCharsets.UTF_8)), body);
+      return Bytes.concatenate(
+          Bytes.wrap(requestLine.getBytes(StandardCharsets.UTF_8)), header, body);
     } catch (IOException e) {
       throw new IllegalArgumentException(e);
     }
@@ -139,16 +144,17 @@ public final class RPCCodec implements Codec {
     }
 
     try {
+      byte[] header = message.slice(requestLineBytes.size(), headerLength).toArrayUnsafe();
       byte[] payload =
           message.slice(requestLineBytes.size() + headerLength, bodyLength).toArrayUnsafe();
-      // payload = Snappy.uncompress(payload);
-      ObjectNode rpcmessage = (ObjectNode) mapper.readTree(payload);
-      long id = rpcmessage.get("id").longValue();
-      int methodId = rpcmessage.get("method_id").intValue();
+      ObjectNode headerNode = (ObjectNode) mapper.readTree(header);
+      long id = headerNode.get("id").longValue();
+      int methodId = headerNode.get("method_id").intValue();
+      ObjectNode bodyNode = (ObjectNode) mapper.readTree(payload);
       return new RPCMessage(
           id,
           RPCMethod.valueOf(methodId),
-          rpcmessage.get("body"),
+          bodyNode.get("body"),
           (bodyLength + requestLineBytes.size() + headerLength));
     } catch (IOException e) {
       throw new UncheckedIOException(e);
