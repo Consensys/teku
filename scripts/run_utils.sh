@@ -48,6 +48,10 @@ configure_node() {
   else
     create_config $NODE $2 $3
   fi
+
+  # in
+  rm -rf demo/node_$NODE/*.json
+  cp ../*.json demo/node_$NODE/
 }
 
 # Create tmux panes in the current window for the next "node group".

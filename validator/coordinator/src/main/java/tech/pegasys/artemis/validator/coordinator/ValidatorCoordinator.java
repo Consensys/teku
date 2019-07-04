@@ -26,6 +26,10 @@ import com.google.common.primitives.UnsignedLong;
 import com.google.protobuf.ByteString;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -35,7 +39,9 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.stream.IntStream;
+import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.MutableTriple;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes;
@@ -43,6 +49,10 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.SECP256K1;
 import org.apache.tuweni.ssz.SSZ;
 import org.apache.tuweni.units.bigints.UInt256;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
@@ -71,8 +81,11 @@ import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
+import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
+import tech.pegasys.artemis.util.mikuli.KeyPair;
+import tech.pegasys.artemis.util.mikuli.SecretKey;
 import tech.pegasys.artemis.validator.client.ValidatorClient;
 import tech.pegasys.artemis.validator.client.ValidatorClientUtil;
 
@@ -100,19 +113,20 @@ public class ValidatorCoordinator {
 
   static final Integer UNPROCESSED_BLOCKS_LENGTH = 100;
 
+  @SuppressWarnings("unchecked")
   public ValidatorCoordinator(ServiceConfig config, ChainStorageClient store) {
     this.eventBus = config.getEventBus();
     this.eventBus.register(this);
     this.nodeIdentity =
         SECP256K1.SecretKey.fromBytes(Bytes32.fromHexString(config.getConfig().getIdentity()));
-    this.numValidators = config.getConfig().getNumValidators();
-    this.numNodes = config.getConfig().getNumNodes();
     this.naughtinessPercentage = config.getConfig().getNaughtinessPercentage();
+    this.numNodes = config.getConfig().getNumNodes();
+    this.numValidators = config.getConfig().getNumValidators();
     this.store = store;
 
     stateTransition = new StateTransition(printEnabled);
 
-    initializeValidators();
+    initializeValidators(config.getConfig());
   }
 
   /*
@@ -325,35 +339,54 @@ public class ValidatorCoordinator {
     return newBlock;
   }
 
-  private void initializeValidators() {
-    // Add all validators to validatorSet hashMap
-    int nodeCounter = UInt256.fromBytes(nodeIdentity.bytes()).mod(numNodes).intValue();
-
-    int startIndex = nodeCounter * (numValidators / numNodes);
-    int endIndex =
-        startIndex
-            + (numValidators / numNodes - 1)
-            + toIntExact(Math.round((double) nodeCounter / Math.max(1, numNodes - 1)));
-    endIndex = Math.min(endIndex, numValidators - 1);
-
-    int numValidators = endIndex - startIndex + 1;
-
+  @SuppressWarnings("unchecked")
+  private void initializeValidators(ArtemisConfiguration config) {
+    Pair<Integer, Integer> startAndEnd = getStartAndEnd();
+    int startIndex = startAndEnd.getLeft();
+    int endIndex = startAndEnd.getRight();
     long numNaughtyValidators = Math.round((naughtinessPercentage * numValidators) / 100.0);
-    LOG.log(Level.DEBUG, "startIndex: " + startIndex + " endIndex: " + endIndex);
+    List<BLSKeyPair> keypairs = new ArrayList<>();
+    if (config.getInteropActive()) {
+      try {
+        Path path = Paths.get(config.getInteropInputFile());
+        String read = Files.readAllLines(path).get(0);
+        JSONParser parser = new JSONParser();
+        Object obj = parser.parse(read);
+        JSONObject array = (JSONObject) obj;
+        JSONArray privateKeyStrings = (JSONArray) array.get("privateKeys");
+        for (int i = startIndex; i <= endIndex; i++) {
+          BLSKeyPair keypair =
+              new BLSKeyPair(
+                  new KeyPair(
+                      SecretKey.fromBytes(
+                          Bytes.fromHexString(privateKeyStrings.get(i).toString()))));
+          keypairs.add(keypair);
+        }
+      } catch (IOException | ParseException e) {
+        STDOUT.log(Level.FATAL, e.toString());
+      }
+    } else {
+      for (int i = startIndex; i <= endIndex; i++) {
+        BLSKeyPair keypair = BLSKeyPair.random(i);
+        keypairs.add(keypair);
+      }
+    }
+    int our_index = 0;
     for (int i = startIndex; i <= endIndex; i++) {
-      BLSKeyPair keypair = BLSKeyPair.random(i);
+      BLSKeyPair keypair = keypairs.get(our_index);
       int port = Constants.VALIDATOR_CLIENT_PORT_BASE + i;
       new ValidatorClient(keypair, port);
       ManagedChannel channel =
           ManagedChannelBuilder.forAddress("localhost", port).usePlaintext().build();
       validatorClientChannels.put(keypair.getPublicKey(), channel);
-      LOG.log(Level.DEBUG, "i = " + i + ": " + keypair.getPublicKey().toString());
+      LOG.log(Level.INFO, "i = " + i + ": " + keypair.getPublicKey().toString());
       if (numNaughtyValidators > 0) {
         validatorSet.put(keypair.getPublicKey(), new MutableTriple<>(keypair, true, -1));
       } else {
         validatorSet.put(keypair.getPublicKey(), new MutableTriple<>(keypair, false, -1));
       }
       numNaughtyValidators--;
+      our_index++;
     }
   }
 
@@ -362,7 +395,7 @@ public class ValidatorCoordinator {
     try {
       process_slots(checkState, checkState.getSlot().plus(UnsignedLong.ONE), false);
     } catch (SlotProcessingException | EpochProcessingException e) {
-      System.out.println("Coordinator checking proposer index exception");
+      STDOUT.log(Level.FATAL, "Coordinator checking proposer index exception");
     }
 
     // Calculate the block proposer index, and if we have the
@@ -429,5 +462,22 @@ public class ValidatorCoordinator {
     response =
         MessageSignerGrpc.newBlockingStub(validatorClientChannels.get(signer)).signMessage(request);
     return BLSSignature.fromBytes(Bytes.wrap(response.getMessage().toByteArray()));
+  }
+
+  private Pair<Integer, Integer> getStartAndEnd() {
+    // Add all validators to validatorSet hashMap
+    int nodeCounter = UInt256.fromBytes(nodeIdentity.bytes()).mod(numNodes).intValue();
+
+    int startIndex = nodeCounter * (numValidators / numNodes);
+    int endIndex =
+        startIndex
+            + (numValidators / numNodes - 1)
+            + toIntExact(Math.round((double) nodeCounter / Math.max(1, numNodes - 1)));
+    endIndex = Math.min(endIndex, numValidators - 1);
+
+    int numValidators = endIndex - startIndex + 1;
+
+    LOG.log(Level.INFO, "startIndex: " + startIndex + " endIndex: " + endIndex);
+    return new ImmutablePair<>(startIndex, endIndex);
   }
 }

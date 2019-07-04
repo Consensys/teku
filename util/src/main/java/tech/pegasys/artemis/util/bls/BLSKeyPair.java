@@ -28,7 +28,7 @@ public class BLSKeyPair {
     return new BLSKeyPair(KeyPair.random(entropy));
   }
 
-  BLSKeyPair(KeyPair keyPair) {
+  public BLSKeyPair(KeyPair keyPair) {
     this.publicKey = new BLSPublicKey(keyPair.publicKey());
     this.secretKey = new BLSSecretKey(keyPair.secretKey());
   }
