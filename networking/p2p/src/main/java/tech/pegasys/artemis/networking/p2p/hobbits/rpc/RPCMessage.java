@@ -23,21 +23,21 @@ import org.apache.tuweni.bytes.Bytes;
 /** Representation of a RPC message that was received from a remote peer. */
 public final class RPCMessage {
 
-  private final long requestId;
+  private final long id;
   private final RPCMethod method;
   private final JsonNode body;
   private final int length;
 
-  public RPCMessage(long requestId, RPCMethod method, JsonNode body, int length) {
-    this.requestId = requestId;
+  public RPCMessage(long id, RPCMethod method, JsonNode body, int length) {
+    this.id = id;
     this.method = method;
     this.body = body;
     this.length = length;
   }
 
   /** @return the request identifier */
-  public long requestId() {
-    return requestId;
+  public long id() {
+    return id;
   }
 
   /** @return the method used by the RPC call. */
