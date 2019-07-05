@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import org.apache.commons.lang3.tuple.MutablePair;
-import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
@@ -126,7 +126,7 @@ public class LmdGhost {
   // TODO: OPTIMIZE: currently goes through all the values in processedBlockLookup
   public static List<BeaconBlock> get_children(ChainStorageClient store, BeaconBlock block) {
     List<BeaconBlock> children = new ArrayList<>();
-    for (Map.Entry<Bytes, BeaconBlock> entry : store.getProcessedBlockLookup().entrySet()) {
+    for (Map.Entry<Bytes32, BeaconBlock> entry : store.getProcessedBlockLookup().entrySet()) {
       BeaconBlock potential_child = entry.getValue();
       if (store.getParent(potential_child).isPresent()
           && store.getParent(potential_child).get().equals(block)) {

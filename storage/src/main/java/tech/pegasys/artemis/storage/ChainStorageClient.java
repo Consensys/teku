@@ -25,11 +25,11 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Queue;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.PriorityBlockingQueue;
 import org.apache.logging.log4j.Level;
-import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
@@ -50,11 +50,11 @@ public class ChainStorageClient implements ChainStorage {
   protected final PriorityBlockingQueue<BeaconBlock> unprocessedBlocksQueue =
       new PriorityBlockingQueue<>(
           UNPROCESSED_BLOCKS_LENGTH, Comparator.comparing(BeaconBlock::getSlot));
-  protected final ConcurrentHashMap<Bytes, BeaconBlock> processedBlockLookup =
+  protected final ConcurrentHashMap<Bytes32, BeaconBlock> processedBlockMap =
       new ConcurrentHashMap<>();
   private final ConcurrentHashMap<Bytes32, BeaconBlock> unprocessedBlockMap =
       new ConcurrentHashMap<>();
-  protected final ConcurrentHashMap<Bytes, BeaconState> stateLookup = new ConcurrentHashMap<>();
+  protected final ConcurrentHashMap<Bytes32, BeaconState> stateMap = new ConcurrentHashMap<>();
   protected final ConcurrentHashMap<Bytes32, Attestation> processedAttestationsMap =
       new ConcurrentHashMap<>();
   private final ConcurrentHashMap<Bytes32, Attestation> unprocessedAttestationsMap =
@@ -67,6 +67,12 @@ public class ChainStorageClient implements ChainStorage {
   private Bytes32 finalizedBlockRoot; // most recent finalized block root
   private UnsignedLong finalizedEpoch; // most recent finalized epoch
 
+  // Memory cleaning references
+  private ConcurrentHashMap<UnsignedLong, List<Bytes32>> blockReferences =
+      new ConcurrentHashMap<>();
+  private ConcurrentHashMap<UnsignedLong, List<Bytes32>> stateReferences =
+      new ConcurrentHashMap<>();
+
   public ChainStorageClient() {}
 
   public ChainStorageClient(EventBus eventBus) {
@@ -75,14 +81,53 @@ public class ChainStorageClient implements ChainStorage {
     this.eventBus.register(this);
   }
 
+  private void cleanMemory(UnsignedLong latestFinalizedEpoch) {
+    CompletableFuture.runAsync(
+        () -> {
+          cleanOldBlocks(latestFinalizedEpoch);
+          cleanOldState(latestFinalizedEpoch);
+        });
+  }
+
+  private void cleanOldBlocks(UnsignedLong latestFinalizedEpoch) {
+    blockReferences.keySet().stream()
+        .filter(key -> key.compareTo(latestFinalizedEpoch) < 0)
+        .forEach(
+            key -> {
+              blockReferences
+                  .get(key)
+                  .forEach(
+                      blockRoot -> {
+                        ChainStorage.remove(blockRoot, processedBlockMap);
+                        ChainStorage.remove(blockRoot, unprocessedBlockMap);
+                      });
+              ChainStorage.remove(key, blockReferences);
+            });
+  }
+
+  private void cleanOldState(UnsignedLong latestFinalizedEpoch) {
+    stateReferences.keySet().stream()
+        .filter(key -> key.compareTo(latestFinalizedEpoch) < 0)
+        .forEach(
+            key -> {
+              stateReferences
+                  .get(key)
+                  .forEach(
+                      blockRoot -> {
+                        ChainStorage.remove(blockRoot, stateMap);
+                      });
+              ChainStorage.remove(key, stateReferences);
+            });
+  }
+
   /**
    * Add processed block to storage
    *
-   * @param state_root
+   * @param blockRoot
    * @param block
    */
-  public void addProcessedBlock(Bytes state_root, BeaconBlock block) {
-    ChainStorage.add(state_root, block, this.processedBlockLookup);
+  public void addProcessedBlock(Bytes32 blockRoot, BeaconBlock block) {
+    ChainStorage.add(blockRoot, block, this.processedBlockMap);
     // todo: post event to eventbus to notify the server that a new processed block has been added
   }
 
@@ -101,8 +146,8 @@ public class ChainStorageClient implements ChainStorage {
    * @param state_root
    * @param state
    */
-  public void addState(Bytes state_root, BeaconState state) {
-    ChainStorage.add(state_root, state, this.stateLookup);
+  public void addState(Bytes32 state_root, BeaconState state) {
+    ChainStorage.add(state_root, state, this.stateMap);
   }
 
   /**
@@ -150,6 +195,7 @@ public class ChainStorageClient implements ChainStorage {
   public void updateLatestFinalizedBlock(Bytes32 root, UnsignedLong epoch) {
     this.finalizedBlockRoot = root;
     this.finalizedEpoch = epoch;
+    cleanMemory(epoch);
   }
 
   /**
@@ -202,11 +248,11 @@ public class ChainStorageClient implements ChainStorage {
   /**
    * Retrieves processed block
    *
-   * @param state_root
+   * @param blockRoot
    * @return
    */
-  public Optional<BeaconBlock> getProcessedBlock(Bytes state_root) {
-    return ChainStorage.get(state_root, this.processedBlockLookup);
+  public Optional<BeaconBlock> getProcessedBlock(Bytes32 blockRoot) {
+    return ChainStorage.get(blockRoot, this.processedBlockMap);
   }
 
   /**
@@ -250,18 +296,18 @@ public class ChainStorageClient implements ChainStorage {
    * @return
    */
   public Optional<BeaconBlock> getParent(BeaconBlock block) {
-    Bytes parent_root = block.getParent_root();
-    return this.getProcessedBlock(parent_root);
+    Bytes32 parentRoot = block.getParent_root();
+    return this.getProcessedBlock(parentRoot);
   }
 
   /**
    * Retrieves state
    *
-   * @param state_root
+   * @param stateRoot
    * @return
    */
-  public Optional<BeaconState> getState(Bytes state_root) {
-    return ChainStorage.get(state_root, this.stateLookup);
+  public Optional<BeaconState> getState(Bytes32 stateRoot) {
+    return ChainStorage.get(stateRoot, this.stateMap);
   }
 
   /**
@@ -317,8 +363,8 @@ public class ChainStorageClient implements ChainStorage {
     }
   }
 
-  public ConcurrentHashMap<Bytes, BeaconBlock> getProcessedBlockLookup() {
-    return processedBlockLookup;
+  public ConcurrentHashMap<Bytes32, BeaconBlock> getProcessedBlockLookup() {
+    return processedBlockMap;
   }
 
   public List<Attestation> getUnprocessedAttestationsUntilSlot(
@@ -365,9 +411,9 @@ public class ChainStorageClient implements ChainStorage {
     // ASSUMPTION: the state with which we can find the attestation participants
     // using get_attestation_participants is the state associated with the beacon
     // block being attested in the attestation.
-    BeaconBlock block = processedBlockLookup.get(attestation.getData().getBeacon_block_root());
+    BeaconBlock block = processedBlockMap.get(attestation.getData().getBeacon_block_root());
     if (Objects.nonNull(block)) {
-      BeaconState state = stateLookup.get(block.getState_root());
+      BeaconState state = stateMap.get(block.getState_root());
 
       // TODO: verify attestation is stubbed out, needs to be implemented
       if (AttestationUtil.verifyAttestation(state, attestation)) {

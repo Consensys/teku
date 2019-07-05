@@ -92,6 +92,26 @@ public interface ChainStorage {
   }
 
   /**
+   * Delete a value from a HashMap
+   *
+   * @param key
+   * @param items
+   * @return
+   */
+  static <S, T, U extends ConcurrentHashMap<S, T>> boolean remove(S key, U items) {
+    try {
+      items.remove(key);
+    } catch (NullPointerException e) {
+      if (!key.toString()
+          .equalsIgnoreCase("0x0000000000000000000000000000000000000000000000000000000000000000")) {
+        LOG.log(Level.DEBUG, items.getClass().toString() + ": " + key.toString() + " not found.");
+        return false;
+      }
+    }
+    return true;
+  }
+
+  /**
    * Remove an item from a Queue
    *
    * @param items
