@@ -15,6 +15,7 @@ package tech.pegasys.artemis.storage;
 
 import static tech.pegasys.artemis.datastructures.util.AttestationUtil.get_attestation_data_slot;
 import static tech.pegasys.artemis.datastructures.util.AttestationUtil.get_attesting_indices;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.slot_to_epoch;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
@@ -94,13 +95,14 @@ public class ChainStorageClient implements ChainStorage {
         .filter(key -> key.compareTo(latestFinalizedEpoch) < 0)
         .forEach(
             key -> {
-              blockReferences
-                  .get(key)
-                  .forEach(
-                      blockRoot -> {
-                        ChainStorage.remove(blockRoot, processedBlockMap);
-                        ChainStorage.remove(blockRoot, unprocessedBlockMap);
-                      });
+              ChainStorage.get(key, blockReferences)
+                  .ifPresent(
+                      list ->
+                          list.forEach(
+                              blockRoot -> {
+                                ChainStorage.remove(blockRoot, processedBlockMap);
+                                ChainStorage.remove(blockRoot, unprocessedBlockMap);
+                              }));
               ChainStorage.remove(key, blockReferences);
             });
   }
@@ -110,14 +112,35 @@ public class ChainStorageClient implements ChainStorage {
         .filter(key -> key.compareTo(latestFinalizedEpoch) < 0)
         .forEach(
             key -> {
-              stateReferences
-                  .get(key)
-                  .forEach(
-                      blockRoot -> {
-                        ChainStorage.remove(blockRoot, stateMap);
-                      });
+              ChainStorage.get(key, stateReferences)
+                  .ifPresent(
+                      list ->
+                          list.forEach(
+                              stateRoot -> {
+                                ChainStorage.remove(stateRoot, stateMap);
+                              }));
               ChainStorage.remove(key, stateReferences);
             });
+  }
+
+  private void addBlockReference(UnsignedLong epoch, Bytes32 blockRoot) {
+    if (ChainStorage.get(epoch, blockReferences).isPresent()) {
+      ChainStorage.get(epoch, blockReferences).get().add(blockRoot);
+    } else {
+      List<Bytes32> epochBlockReferences = new ArrayList<>();
+      epochBlockReferences.add(blockRoot);
+      ChainStorage.add(epoch, epochBlockReferences, blockReferences);
+    }
+  }
+
+  private void addStateReference(UnsignedLong epoch, Bytes32 stateRoot) {
+    if (ChainStorage.get(epoch, stateReferences).isPresent()) {
+      ChainStorage.get(epoch, stateReferences).get().add(stateRoot);
+    } else {
+      List<Bytes32> epochStateReferences = new ArrayList<>();
+      epochStateReferences.add(stateRoot);
+      ChainStorage.add(epoch, epochStateReferences, stateReferences);
+    }
   }
 
   /**
@@ -128,6 +151,7 @@ public class ChainStorageClient implements ChainStorage {
    */
   public void addProcessedBlock(Bytes32 blockRoot, BeaconBlock block) {
     ChainStorage.add(blockRoot, block, this.processedBlockMap);
+    addBlockReference(slot_to_epoch(block.getSlot()), blockRoot);
     // todo: post event to eventbus to notify the server that a new processed block has been added
   }
 
@@ -143,11 +167,12 @@ public class ChainStorageClient implements ChainStorage {
   /**
    * Add calculated state to storage
    *
-   * @param state_root
+   * @param stateRoot
    * @param state
    */
-  public void addState(Bytes32 state_root, BeaconState state) {
-    ChainStorage.add(state_root, state, this.stateMap);
+  public void addState(Bytes32 stateRoot, BeaconState state) {
+    ChainStorage.add(stateRoot, state, this.stateMap);
+    addStateReference(slot_to_epoch(state.getSlot()), stateRoot);
   }
 
   /**
@@ -157,7 +182,9 @@ public class ChainStorageClient implements ChainStorage {
    */
   public void addUnprocessedBlock(BeaconBlock block) {
     ChainStorage.add(block, this.unprocessedBlocksQueue);
-    ChainStorage.add(block.hash_tree_root(), block, this.unprocessedBlockMap);
+    Bytes32 blockHash = block.hash_tree_root();
+    ChainStorage.add(blockHash, block, this.unprocessedBlockMap);
+    addBlockReference(slot_to_epoch(block.getSlot()), blockHash);
   }
 
   /**
