@@ -15,7 +15,7 @@ package tech.pegasys.artemis.storage;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
-import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.util.alogger.ALogger;
 
@@ -30,7 +30,7 @@ public class ChainStorageServer extends ChainStorageClient implements ChainStora
   }
 
   @Subscribe
-  public void onNewProcessedBlock(Bytes blockHash, BeaconBlock block) {
-    addProcessedBlock(blockHash, block);
+  public void onNewProcessedBlock(Bytes32 blockRoot, BeaconBlock block) {
+    addProcessedBlock(blockRoot, block);
   }
 }
