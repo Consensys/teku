@@ -63,10 +63,11 @@ public class ChainStorageClient implements ChainStorage {
   private final Queue<Attestation> unprocessedAttestationsQueue = new LinkedBlockingQueue<>();
   private final ConcurrentHashMap<Integer, List<BeaconBlockHeader>> validatorBlockHeaders =
       new ConcurrentHashMap<>();
-  private Bytes32 bestBlockRoot; // block chosen by lmd ghost to build and attest on
-  private UnsignedLong bestSlot; // slot of the block chosen by lmd ghost to build and attest on
-  private Bytes32 finalizedBlockRoot; // most recent finalized block root
-  private UnsignedLong finalizedEpoch; // most recent finalized epoch
+  private Bytes32 bestBlockRoot = Bytes32.ZERO; // block chosen by lmd ghost to build and attest on
+  private UnsignedLong bestSlot =
+      UnsignedLong.ZERO; // slot of the block chosen by lmd ghost to build and attest on
+  private Bytes32 finalizedBlockRoot = Bytes32.ZERO; // most recent finalized block root
+  private UnsignedLong finalizedEpoch = UnsignedLong.ZERO; // most recent finalized epoch
 
   // Memory cleaning references
   private ConcurrentHashMap<UnsignedLong, List<Bytes32>> blockReferences =

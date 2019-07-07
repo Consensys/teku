@@ -20,7 +20,7 @@ import org.apache.tuweni.bytes.Bytes;
 
 @SuppressWarnings("ALL")
 public interface Codec {
-  static final int VERSION = 3;
+  static final String VERSION = "3.0";
 
   enum ProtocolType {
     GOSSIP,
