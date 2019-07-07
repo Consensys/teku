@@ -236,7 +236,6 @@ public final class HobbitsP2PNetwork implements P2PNetwork {
           STDOUT.log(Level.INFO, "Connected to " + peer.uri());
           AbstractSocketHandler handler = handlersMap.get(peer.uri());
           if (handler != null) {
-            STDOUT.log(Level.INFO, "Send hello to: " + peer.uri());
             handler.sendHello();
           }
         });

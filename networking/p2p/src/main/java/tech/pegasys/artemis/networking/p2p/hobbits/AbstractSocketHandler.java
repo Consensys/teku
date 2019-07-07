@@ -197,6 +197,7 @@ public abstract class AbstractSocketHandler {
             UInt64.valueOf(store.getFinalizedEpoch().longValue()),
             store.getBestBlockRoot(),
             UInt64.valueOf(store.getBestSlot().longValue()));
+    STDOUT.log(Level.INFO, "Send reply hello to: " + peer.uri());
     sendReply(RPCMethod.HELLO, msg, requestId);
   }
 
@@ -209,6 +210,7 @@ public abstract class AbstractSocketHandler {
             UInt64.valueOf(store.getFinalizedEpoch().longValue()),
             store.getBestBlockRoot(),
             UInt64.valueOf(store.getBestSlot().longValue()));
+    STDOUT.log(Level.INFO, "Send hello to: " + peer.uri());
     sendMessage(RPCMethod.HELLO, msg);
   }
 
