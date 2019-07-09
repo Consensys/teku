@@ -26,13 +26,11 @@ public final class RPCMessage {
   private final long id;
   private final RPCMethod method;
   private final JsonNode body;
-  private final int length;
 
-  public RPCMessage(long id, RPCMethod method, JsonNode body, int length) {
+  public RPCMessage(long id, RPCMethod method, JsonNode body) {
     this.id = id;
     this.method = method;
     this.body = body;
-    this.length = length;
   }
 
   /** @return the request identifier */
@@ -69,11 +67,6 @@ public final class RPCMessage {
       }
     }
     return newList;
-  }
-
-  /** @return the length of the message in bytes */
-  public int length() {
-    return length;
   }
 
   public JsonNode getBody() {
