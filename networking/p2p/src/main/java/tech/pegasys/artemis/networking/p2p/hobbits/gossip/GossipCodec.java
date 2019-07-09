@@ -86,7 +86,7 @@ public final class GossipCodec {
       Bytes32 messageHash = Bytes32.fromHexString(gossipmessage.get("message_hash").asText());
       Bytes32 hashSignature = Bytes32.fromHexString(gossipmessage.get("hash_signature").asText());
       return new GossipMessage(
-          methodId, topic, timestamp, messageHash, hashSignature, Bytes.wrap(body));
+          methodId, topic, timestamp, messageHash, hashSignature, Bytes.wrap(body), message.size());
     } catch (IOException e) {
       throw new UncheckedIOException(e);
     }

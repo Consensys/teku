@@ -115,6 +115,7 @@ public abstract class AbstractSocketHandler {
 
     Message hobbitsMessage = Message.readMessage(buffer);
     if (hobbitsMessage != null) {
+      buffer = buffer.slice(hobbitsMessage.size());
       Protocol protocol = hobbitsMessage.getProtocol();
       if (protocol == Protocol.RPC) {
         RPCMessage rpcMessage = RPCCodec.decode(hobbitsMessage);

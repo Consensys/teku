@@ -25,6 +25,7 @@ public final class GossipMessage {
   private final Bytes32 messageHash;
   private final Bytes32 hashSignature;
   private final Bytes body;
+  private final int length;
 
   public GossipMessage(
       int method,
@@ -32,13 +33,15 @@ public final class GossipMessage {
       long timestamp,
       Bytes32 messageHash,
       Bytes32 hashSignature,
-      Bytes body) {
+      Bytes body,
+      int length) {
     this.method = method;
     this.topic = topic;
     this.timestamp = timestamp;
     this.messageHash = messageHash;
     this.hashSignature = hashSignature;
     this.body = body;
+    this.length = length;
   }
 
   /** @return the method used by the Gossip call. */
@@ -69,5 +72,10 @@ public final class GossipMessage {
   /** @return the body of the message if present */
   public Bytes body() {
     return body;
+  }
+
+  /** @return the length of the message in bytes */
+  public int length() {
+    return length;
   }
 }

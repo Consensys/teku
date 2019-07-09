@@ -120,7 +120,7 @@ public final class RPCCodec {
       long id = headerNode.get("id").longValue();
       int methodId = headerNode.get("method_id").intValue();
       ObjectNode bodyNode = (ObjectNode) mapper.readTree(body);
-      return new RPCMessage(id, RPCMethod.valueOf(methodId), bodyNode.get("body"));
+      return new RPCMessage(id, RPCMethod.valueOf(methodId), bodyNode.get("body"), message.size());
     } catch (IOException e) {
       throw new UncheckedIOException(e);
     }
