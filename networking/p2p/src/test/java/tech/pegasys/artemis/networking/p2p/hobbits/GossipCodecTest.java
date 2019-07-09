@@ -16,8 +16,8 @@ package tech.pegasys.artemis.networking.p2p.hobbits;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.Date;
-import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.hobbits.Message;
 import org.apache.tuweni.plumtree.MessageSender;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.Constants;
@@ -31,7 +31,7 @@ final class GossipCodecTest {
   @Test
   void testGossip() {
     BeaconBlock block = DataStructureUtil.randomBeaconBlock(Constants.GENESIS_SLOT);
-    Bytes encoded =
+    Message encoded =
         GossipCodec.encode(
             MessageSender.Verb.GOSSIP.ordinal(),
             "BLOCK",
@@ -43,6 +43,5 @@ final class GossipCodecTest {
     assertEquals(MessageSender.Verb.GOSSIP.ordinal(), message.method());
     BeaconBlock read = BeaconBlock.fromBytes(message.body());
     assertEquals(read.getSignature(), block.getSignature());
-    assertEquals(encoded.size(), message.length());
   }
 }
