@@ -15,20 +15,17 @@ package tech.pegasys.artemis.networking.p2p.hobbits.gossip;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.google.common.base.Splitter;
 import de.undercouch.bson4jackson.BsonFactory;
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.nio.charset.StandardCharsets;
-import java.util.Iterator;
-import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.artemis.networking.p2p.hobbits.Codec;
+import org.apache.tuweni.hobbits.Message;
+import org.apache.tuweni.hobbits.Protocol;
 import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.json.BytesModule;
 
-public final class GossipCodec implements Codec {
+public final class GossipCodec {
 
   private static final ALogger LOG = new ALogger(GossipCodec.class.getName());
 
@@ -45,18 +42,17 @@ public final class GossipCodec implements Codec {
    * @param timestamp
    * @param messageHash
    * @param hashSignature
-   * @param payload the payload of the request
+   * @param body the payload of the request
    * @return the encoded Gossip message
    */
-  public static Bytes encode(
+  public static Message encode(
       int verb,
       String topic,
       long timestamp,
       Bytes messageHash,
       Bytes32 hashSignature,
-      Bytes payload) {
+      Bytes body) {
 
-    String requestLine = "EWP " + VERSION + " GOSSIP ";
     ObjectNode node = mapper.createObjectNode();
 
     node.put("method_id", verb);
@@ -66,12 +62,8 @@ public final class GossipCodec implements Codec {
     node.put("hash_signature", hashSignature.toHexString());
     try {
       Bytes header = Bytes.wrap(mapper.writer().writeValueAsBytes(node));
-      requestLine += header.size();
-      requestLine += " ";
-      requestLine += payload.size();
-      requestLine += "\n";
-      return Bytes.concatenate(
-          Bytes.wrap(requestLine.getBytes(StandardCharsets.UTF_8)), header, payload);
+      Message message = new Message(3, Protocol.GOSSIP, header, body);
+      return message;
     } catch (IOException e) {
       throw new IllegalArgumentException(e);
     }
@@ -83,38 +75,10 @@ public final class GossipCodec implements Codec {
    * @param message the bytes of the message to read
    * @return the payload, decoded
    */
-  public static GossipMessage decode(Bytes message) {
-    Bytes requestLineBytes = null;
-    for (int i = 0; i < message.size(); i++) {
-      if (message.get(i) == (byte) '\n') {
-        requestLineBytes = message.slice(0, i + 1);
-        break;
-      }
-    }
-    if (requestLineBytes == null) {
-      LOG.log(Level.DEBUG, "Gossip message without request line");
-      return null;
-    }
-    String requestLine = new String(requestLineBytes.toArrayUnsafe(), StandardCharsets.UTF_8);
-    Iterator<String> segments = Splitter.on(" ").split(requestLine).iterator();
-    String preamble = segments.next();
-    String version = segments.next();
-    String protocol = segments.next();
-    int headerLength = Integer.parseInt(segments.next());
-    int bodyLength = Integer.parseInt(segments.next().trim());
-
-    LOG.log(Level.DEBUG, "Gossip message " + requestLine + " " + message.size());
-    if (message.size() < bodyLength + headerLength + requestLineBytes.size()) {
-      LOG.log(Level.DEBUG, "Message too short");
-      return null;
-    } else {
-      LOG.log(Level.DEBUG, "Message ok");
-    }
-
+  public static GossipMessage decode(Message message) {
     try {
-      byte[] headers = message.slice(requestLineBytes.size(), headerLength).toArrayUnsafe();
-      byte[] payload =
-          message.slice(requestLineBytes.size() + headerLength, bodyLength).toArrayUnsafe();
+      byte[] headers = message.getHeaders().toArrayUnsafe();
+      byte[] body = message.getBody().toArrayUnsafe();
       ObjectNode gossipmessage = (ObjectNode) mapper.readTree(headers);
       int methodId = gossipmessage.get("method_id").intValue();
       String topic = gossipmessage.get("topic").asText();
@@ -122,13 +86,7 @@ public final class GossipCodec implements Codec {
       Bytes32 messageHash = Bytes32.fromHexString(gossipmessage.get("message_hash").asText());
       Bytes32 hashSignature = Bytes32.fromHexString(gossipmessage.get("hash_signature").asText());
       return new GossipMessage(
-          methodId,
-          topic,
-          timestamp,
-          messageHash,
-          hashSignature,
-          Bytes.wrap(payload),
-          (bodyLength + requestLineBytes.size() + headerLength));
+          methodId, topic, timestamp, messageHash, hashSignature, Bytes.wrap(body), message.size());
     } catch (IOException e) {
       throw new UncheckedIOException(e);
     }

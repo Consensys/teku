@@ -17,8 +17,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Map;
-import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.hobbits.Message;
 import org.apache.tuweni.units.bigints.UInt64;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.networking.p2p.hobbits.rpc.HelloMessage;
@@ -31,7 +31,7 @@ final class RPCCodecTest {
   @Test
   @SuppressWarnings("rawtypes")
   void testGoodbye() {
-    Bytes goodbye = RPCCodec.createGoodbye();
+    Message goodbye = RPCCodec.createGoodbye();
     RPCMessage message = RPCCodec.decode(goodbye);
     assertEquals(RPCMethod.GOODBYE, message.method());
     Map map = message.bodyAs(Map.class);
@@ -43,7 +43,7 @@ final class RPCCodecTest {
     HelloMessage hello =
         new HelloMessage(
             1, 1, Bytes32.random(), UInt64.valueOf(0), Bytes32.random(), UInt64.valueOf(0));
-    Bytes encoded = RPCCodec.encode(RPCMethod.HELLO, hello, 23);
+    Message encoded = RPCCodec.encode(RPCMethod.HELLO, hello, 23);
     RPCMessage message = RPCCodec.decode(encoded);
     assertEquals(RPCMethod.HELLO, message.method());
     HelloMessage read = message.bodyAs(HelloMessage.class);
