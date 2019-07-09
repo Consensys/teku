@@ -113,18 +113,22 @@ public abstract class AbstractSocketHandler {
     buffer = Bytes.concatenate(buffer, messageBytes);
     STDOUT.log(Level.DEBUG, "Buffer at " + buffer.size() + " bytes");
 
-    Message hobbitsMessage = Message.readMessage(buffer);
-    if (hobbitsMessage != null) {
-      buffer = buffer.slice(hobbitsMessage.size());
-      Protocol protocol = hobbitsMessage.getProtocol();
-      if (protocol == Protocol.RPC) {
-        RPCMessage rpcMessage = RPCCodec.decode(hobbitsMessage);
-        checkArgument(rpcMessage != null, "Unable to decode RPC message");
-        handleRPCMessage(rpcMessage);
-      } else if (protocol == Protocol.GOSSIP) {
-        GossipMessage gossipMessage = GossipCodec.decode(hobbitsMessage);
-        checkArgument(gossipMessage != null, "Unable to decode GOSSIP message");
-        handleGossipMessage(gossipMessage);
+    while (!buffer.isEmpty()) {
+      Message hobbitsMessage = Message.readMessage(buffer);
+      if (hobbitsMessage != null) {
+        Protocol protocol = hobbitsMessage.getProtocol();
+        if (protocol == Protocol.RPC) {
+          RPCMessage rpcMessage = RPCCodec.decode(hobbitsMessage);
+          checkArgument(rpcMessage != null, "Unable to decode RPC message");
+          handleRPCMessage(rpcMessage);
+        } else if (protocol == Protocol.GOSSIP) {
+          GossipMessage gossipMessage = GossipCodec.decode(hobbitsMessage);
+          checkArgument(gossipMessage != null, "Unable to decode GOSSIP message");
+          handleGossipMessage(gossipMessage);
+        }
+        buffer = buffer.slice(hobbitsMessage.size());
+      } else {
+        return;
       }
     }
   }
