@@ -54,7 +54,7 @@ class BLSPublicKeyTest {
     Bytes emptyBytesSsz =
         SSZ.encode(
             writer -> {
-              writer.writeFixedBytes(48, Bytes.wrap(new byte[48]));
+              writer.writeFixedBytes(Bytes.wrap(new byte[48]));
             });
     BLSPublicKey deserialisedPublicKey = BLSPublicKey.fromBytes(emptyBytesSsz);
     assertEquals(emptyPublicKey, deserialisedPublicKey);

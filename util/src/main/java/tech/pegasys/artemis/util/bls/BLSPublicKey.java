@@ -90,12 +90,12 @@ public class BLSPublicKey {
     if (isNull(publicKey)) {
       return SSZ.encode(
           writer -> {
-            writer.writeFixedBytes(48, Bytes.wrap(new byte[48]));
+            writer.writeFixedBytes(Bytes.wrap(new byte[48]));
           });
     } else {
       return SSZ.encode(
           writer -> {
-            writer.writeFixedBytes(48, publicKey.toBytesCompressed());
+            writer.writeFixedBytes(publicKey.toBytesCompressed());
           });
     }
   }

@@ -68,9 +68,9 @@ public class BeaconBlockHeader {
     return SSZ.encode(
         writer -> {
           writer.writeUInt64(slot.longValue());
-          writer.writeFixedBytes(32, parent_root);
-          writer.writeFixedBytes(32, state_root);
-          writer.writeFixedBytes(32, body_root);
+          writer.writeFixedBytes(parent_root);
+          writer.writeFixedBytes(state_root);
+          writer.writeFixedBytes(body_root);
           writer.writeBytes(signature.toBytes());
         });
   }
