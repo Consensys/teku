@@ -31,14 +31,14 @@ class DepositDataTest {
   private UnsignedLong amount = randomUnsignedLong();
   private BLSSignature signature = BLSSignature.random();
 
-  private DepositData depositInput =
+  private DepositData depositData =
       new DepositData(pubkey, withdrawalCredentials, amount, signature);
 
   @Test
   void equalsReturnsTrueWhenObjectsAreSame() {
-    DepositData testDepositInput = depositInput;
+    DepositData testDepositInput = depositData;
 
-    assertEquals(depositInput, testDepositInput);
+    assertEquals(depositData, testDepositInput);
   }
 
   @Test
@@ -46,7 +46,7 @@ class DepositDataTest {
     DepositData testDepositInput =
         new DepositData(pubkey, withdrawalCredentials, amount, signature);
 
-    assertEquals(depositInput, testDepositInput);
+    assertEquals(depositData, testDepositInput);
   }
 
   @Test
@@ -58,7 +58,7 @@ class DepositDataTest {
     DepositData testDepositInput =
         new DepositData(differentPublicKey, withdrawalCredentials, amount, signature);
 
-    assertNotEquals(depositInput, testDepositInput);
+    assertNotEquals(depositData, testDepositInput);
   }
 
   @Test
@@ -66,7 +66,7 @@ class DepositDataTest {
     DepositData testDepositInput =
         new DepositData(pubkey, withdrawalCredentials.not(), amount, signature);
 
-    assertNotEquals(depositInput, testDepositInput);
+    assertNotEquals(depositData, testDepositInput);
   }
 
   @Test
@@ -79,12 +79,12 @@ class DepositDataTest {
     DepositData testDepositInput =
         new DepositData(pubkey, withdrawalCredentials, amount, differentSignature);
 
-    assertNotEquals(depositInput, testDepositInput);
+    assertNotEquals(depositData, testDepositInput);
   }
 
   @Test
   void roundtripSSZ() {
-    Bytes sszDepositInputBytes = depositInput.toBytes();
-    assertEquals(depositInput, DepositData.fromBytes(sszDepositInputBytes));
+    Bytes sszDepositInputBytes = depositData.toBytes();
+    assertEquals(depositData, DepositData.fromBytes(sszDepositInputBytes));
   }
 }

@@ -14,14 +14,20 @@
 package tech.pegasys.artemis.datastructures.operations;
 
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 import tech.pegasys.artemis.util.hashtree.Merkleizable;
+import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
-public class AttesterSlashing implements Merkleizable {
+public class AttesterSlashing implements Merkleizable, SimpleOffsetSerializable {
+
+  // The number of SimpleSerialize basic types in this SSZ Container/POJO.
+  public static final int SSZ_FIELD_COUNT = 0;
 
   private IndexedAttestation attestation_1;
   private IndexedAttestation attestation_2;
@@ -29,6 +35,24 @@ public class AttesterSlashing implements Merkleizable {
   public AttesterSlashing(IndexedAttestation attestation_1, IndexedAttestation attestation_2) {
     this.attestation_1 = attestation_1;
     this.attestation_2 = attestation_2;
+  }
+
+  @Override
+  public int getSSZFieldCount() {
+    // TODO Finish this stub.
+    return SSZ_FIELD_COUNT;
+  }
+
+  @Override
+  public List<Bytes> get_fixed_parts() {
+    // TODO Implement this stub.
+    return Collections.nCopies(getSSZFieldCount(), Bytes.EMPTY);
+  }
+
+  @Override
+  public List<Bytes> get_variable_parts() {
+    // TODO Implement this stub.
+    return Collections.nCopies(getSSZFieldCount(), Bytes.EMPTY);
   }
 
   public static AttesterSlashing fromBytes(Bytes bytes) {

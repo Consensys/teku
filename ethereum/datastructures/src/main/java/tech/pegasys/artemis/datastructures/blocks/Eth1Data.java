@@ -15,14 +15,19 @@ package tech.pegasys.artemis.datastructures.blocks;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
+import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
-public final class Eth1Data {
+public final class Eth1Data implements SimpleOffsetSerializable {
+
+  // The number of SimpleSerialize basic types in this SSZ Container/POJO.
+  private static final int SSZ_FIELD_COUNT = 3;
 
   private Bytes32 deposit_root;
   private UnsignedLong deposit_count;
@@ -44,6 +49,19 @@ public final class Eth1Data {
     this.deposit_root = eth1Data.getDeposit_root();
     this.deposit_count = eth1Data.getDeposit_count();
     this.block_hash = eth1Data.getBlock_hash();
+  }
+
+  @Override
+  public int getSSZFieldCount() {
+    return SSZ_FIELD_COUNT;
+  }
+
+  @Override
+  public List<Bytes> get_fixed_parts() {
+    return List.of(
+        SSZ.encode(writer -> writer.writeFixedBytes(deposit_root)),
+        SSZ.encodeUInt64(deposit_count.longValue()),
+        SSZ.encode(writer -> writer.writeFixedBytes(block_hash)));
   }
 
   public static Eth1Data fromBytes(Bytes bytes) {

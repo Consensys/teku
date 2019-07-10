@@ -15,6 +15,8 @@ package tech.pegasys.artemis.datastructures.blocks;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -22,8 +24,12 @@ import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
+import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
-public final class BeaconBlock {
+public final class BeaconBlock implements SimpleOffsetSerializable {
+
+  // The number of SimpleSerialize basic types in this SSZ Container/POJO.
+  public static final int SSZ_FIELD_COUNT = 3;
 
   // Header
   private UnsignedLong slot;
@@ -47,6 +53,24 @@ public final class BeaconBlock {
     this.state_root = state_root;
     this.body = body;
     this.signature = signature;
+  }
+
+  @Override
+  public int getSSZFieldCount() {
+    // TODO Finish this stub.
+    return SSZ_FIELD_COUNT;
+  }
+
+  @Override
+  public List<Bytes> get_fixed_parts() {
+    // TODO Implement this stub.
+    return Collections.nCopies(getSSZFieldCount(), Bytes.EMPTY);
+  }
+
+  @Override
+  public List<Bytes> get_variable_parts() {
+    // TODO Implement this stub.
+    return Collections.nCopies(getSSZFieldCount(), Bytes.EMPTY);
   }
 
   public static BeaconBlock fromBytes(Bytes bytes) {

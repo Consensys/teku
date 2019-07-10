@@ -22,8 +22,12 @@ import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.artemis.util.mikuli.PublicKey;
+import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
-public class BLSPublicKey {
+public class BLSPublicKey implements SimpleOffsetSerializable {
+
+  // The number of SimpleSerialize basic types in this SSZ Container/POJO.
+  public static final int SSZ_FIELD_COUNT = 1;
 
   /**
    * Generates a compressed, serialised, random, valid public key
@@ -54,6 +58,20 @@ public class BLSPublicKey {
     List<PublicKey> publicKeyObjects =
         publicKeys.stream().map(x -> x.publicKey).collect(Collectors.toList());
     return new BLSPublicKey(PublicKey.aggregate(publicKeyObjects));
+  }
+
+  @Override
+  public int getSSZFieldCount() {
+    return SSZ_FIELD_COUNT;
+  }
+
+  @Override
+  public List<Bytes> get_fixed_parts() {
+    if (isNull(publicKey)) {
+      return List.of(SSZ.encode(writer -> writer.writeFixedBytes(Bytes.wrap(new byte[48]))));
+    } else {
+      return List.of(SSZ.encode(writer -> writer.writeFixedBytes(publicKey.toBytesCompressed())));
+    }
   }
 
   public static BLSPublicKey fromBytes(Bytes bytes) {
