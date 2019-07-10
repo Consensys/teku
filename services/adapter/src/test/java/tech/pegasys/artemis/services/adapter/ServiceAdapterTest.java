@@ -30,9 +30,9 @@ import org.apache.tuweni.bytes.Bytes48;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.web3j.protocol.core.methods.response.Log;
-import tech.pegasys.artemis.datastructures.event.Deposit;
-import tech.pegasys.artemis.datastructures.event.Eth2Genesis;
 import tech.pegasys.artemis.pow.contract.DepositContract;
+import tech.pegasys.artemis.pow.event.Deposit;
+import tech.pegasys.artemis.pow.event.Eth2Genesis;
 import tech.pegasys.artemis.service.serviceutils.ServiceConfig;
 import tech.pegasys.artemis.services.adapter.event.OutboundEvent;
 

@@ -11,6 +11,7 @@ dependencies {
   implementation project(':data')
   implementation project(':data:adapter')
   implementation project(':ethereum:datastructures')
+  implementation project(':pow')
 
   implementation 'org.apache.tuweni:tuweni-crypto'
   implementation 'org.apache.tuweni:tuweni-units'

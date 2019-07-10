@@ -31,7 +31,6 @@ import org.json.simple.parser.ParseException;
 import tech.pegasys.artemis.data.RawRecord;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
-import tech.pegasys.artemis.datastructures.event.Eth2Genesis;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
@@ -40,6 +39,7 @@ import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.datastructures.util.DepositUtil;
 import tech.pegasys.artemis.pow.api.Eth2GenesisEvent;
+import tech.pegasys.artemis.pow.event.Eth2Genesis;
 import tech.pegasys.artemis.service.serviceutils.ServiceConfig;
 import tech.pegasys.artemis.statetransition.util.EpochProcessingException;
 import tech.pegasys.artemis.statetransition.util.SlotProcessingException;
@@ -122,9 +122,9 @@ public class StateProcessor {
   }
 
   @Subscribe
-  public void onDeposit(Deposit deposit) {
+  public void onDeposit(tech.pegasys.artemis.pow.event.Deposit event) {
     if (deposits == null) deposits = new ArrayList<Deposit>();
-    deposits.add(deposit);
+    deposits.add(DepositUtil.convertEventDepositToOperationDeposit(event));
   }
 
   @Subscribe

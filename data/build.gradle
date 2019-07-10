@@ -9,6 +9,7 @@ jar {
 dependencies {
   implementation project(':util')
   implementation project(':ethereum:datastructures')
+  implementation project(':pow')
 
   implementation 'org.apache.tuweni:tuweni-crypto'
   implementation 'org.apache.tuweni:tuweni-units'
