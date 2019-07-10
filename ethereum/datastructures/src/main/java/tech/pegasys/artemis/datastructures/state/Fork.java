@@ -63,8 +63,8 @@ public class Fork implements SimpleOffsetSerializable {
   @Override
   public List<Bytes> get_fixed_parts() {
     return List.of(
-        SSZ.encode(writer -> writer.writeFixedBytes(4, previous_version)),
-        SSZ.encode(writer -> writer.writeFixedBytes(4, current_version)),
+        SSZ.encode(writer -> writer.writeFixedBytes(previous_version)),
+        SSZ.encode(writer -> writer.writeFixedBytes(current_version)),
         SSZ.encodeUInt64(epoch.longValue()));
   }
 

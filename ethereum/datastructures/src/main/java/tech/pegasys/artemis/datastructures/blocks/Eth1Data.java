@@ -59,9 +59,9 @@ public final class Eth1Data implements SimpleOffsetSerializable {
   @Override
   public List<Bytes> get_fixed_parts() {
     return List.of(
-        SSZ.encode(writer -> writer.writeFixedBytes(32, deposit_root)),
+        SSZ.encode(writer -> writer.writeFixedBytes(deposit_root)),
         SSZ.encodeUInt64(deposit_count.longValue()),
-        SSZ.encode(writer -> writer.writeFixedBytes(32, block_hash)));
+        SSZ.encode(writer -> writer.writeFixedBytes(block_hash)));
   }
 
   public static Eth1Data fromBytes(Bytes bytes) {

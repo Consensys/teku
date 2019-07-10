@@ -76,8 +76,8 @@ public class Crosslink implements Copyable<Crosslink>, SimpleOffsetSerializable 
         SSZ.encodeUInt64(shard.longValue()),
         SSZ.encodeUInt64(start_epoch.longValue()),
         SSZ.encodeUInt64(end_epoch.longValue()),
-        SSZ.encode(writer -> writer.writeFixedBytes(32, parent_root)),
-        SSZ.encode(writer -> writer.writeFixedBytes(32, data_root)));
+        SSZ.encode(writer -> writer.writeFixedBytes(parent_root)),
+        SSZ.encode(writer -> writer.writeFixedBytes(data_root)));
   }
 
   public static Crosslink fromBytes(Bytes bytes) {

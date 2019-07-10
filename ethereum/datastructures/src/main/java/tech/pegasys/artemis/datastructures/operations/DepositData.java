@@ -59,7 +59,7 @@ public class DepositData implements SimpleOffsetSerializable {
     fixedPartsList.addAll(pubkey.get_fixed_parts());
     fixedPartsList.addAll(
         List.of(
-            SSZ.encode(writer -> writer.writeFixedBytes(32, withdrawal_credentials)),
+            SSZ.encode(writer -> writer.writeFixedBytes(withdrawal_credentials)),
             SSZ.encodeUInt64(amount.longValue())));
     fixedPartsList.addAll(signature.get_fixed_parts());
     return fixedPartsList;

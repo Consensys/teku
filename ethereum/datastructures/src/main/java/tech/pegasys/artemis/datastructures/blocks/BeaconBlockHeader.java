@@ -69,9 +69,9 @@ public class BeaconBlockHeader implements SimpleOffsetSerializable {
         new ArrayList<>(
             List.of(
                 SSZ.encodeUInt64(slot.longValue()),
-                SSZ.encode(writer -> writer.writeFixedBytes(32, parent_root)),
-                SSZ.encode(writer -> writer.writeFixedBytes(32, state_root)),
-                SSZ.encode(writer -> writer.writeFixedBytes(32, body_root))));
+                SSZ.encode(writer -> writer.writeFixedBytes(parent_root)),
+                SSZ.encode(writer -> writer.writeFixedBytes(state_root)),
+                SSZ.encode(writer -> writer.writeFixedBytes(body_root))));
     fixedPartsList.addAll(signature.get_fixed_parts());
     return fixedPartsList;
   }

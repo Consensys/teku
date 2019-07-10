@@ -68,10 +68,9 @@ public class BLSPublicKey implements SimpleOffsetSerializable {
   @Override
   public List<Bytes> get_fixed_parts() {
     if (isNull(publicKey)) {
-      return List.of(SSZ.encode(writer -> writer.writeFixedBytes(48, Bytes.wrap(new byte[48]))));
+      return List.of(SSZ.encode(writer -> writer.writeFixedBytes(Bytes.wrap(new byte[48]))));
     } else {
-      return List.of(
-          SSZ.encode(writer -> writer.writeFixedBytes(48, publicKey.toBytesCompressed())));
+      return List.of(SSZ.encode(writer -> writer.writeFixedBytes(publicKey.toBytesCompressed())));
     }
   }
 

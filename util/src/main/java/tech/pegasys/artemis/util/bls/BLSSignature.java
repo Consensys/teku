@@ -106,10 +106,9 @@ public final class BLSSignature implements SimpleOffsetSerializable {
   @Override
   public List<Bytes> get_fixed_parts() {
     if (isNull(signature)) {
-      return List.of(SSZ.encode(writer -> writer.writeFixedBytes(96, Bytes.wrap(new byte[96]))));
+      return List.of(SSZ.encode(writer -> writer.writeFixedBytes(Bytes.wrap(new byte[96]))));
     } else {
-      return List.of(
-          SSZ.encode(writer -> writer.writeFixedBytes(96, signature.toBytesCompressed())));
+      return List.of(SSZ.encode(writer -> writer.writeFixedBytes(signature.toBytesCompressed())));
     }
   }
 

@@ -77,11 +77,11 @@ public class AttestationData implements SimpleOffsetSerializable {
     List<Bytes> fixedPartsList =
         new ArrayList<>(
             List.of(
-                SSZ.encode(writer -> writer.writeFixedBytes(32, beacon_block_root)),
+                SSZ.encode(writer -> writer.writeFixedBytes(beacon_block_root)),
                 SSZ.encodeUInt64(source_epoch.longValue()),
-                SSZ.encode(writer -> writer.writeFixedBytes(32, source_root)),
+                SSZ.encode(writer -> writer.writeFixedBytes(source_root)),
                 SSZ.encodeUInt64(target_epoch.longValue()),
-                SSZ.encode(writer -> writer.writeFixedBytes(32, target_root))));
+                SSZ.encode(writer -> writer.writeFixedBytes(target_root))));
     fixedPartsList.addAll(crosslink.get_fixed_parts());
     return fixedPartsList;
   }
