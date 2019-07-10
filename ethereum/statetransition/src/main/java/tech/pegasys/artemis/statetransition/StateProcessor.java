@@ -124,8 +124,7 @@ public class StateProcessor {
   @Subscribe
   public void onDeposit(tech.pegasys.artemis.pow.event.Deposit event) {
     if (deposits == null) deposits = new ArrayList<Deposit>();
-    LOG.log(Level.INFO, "Yuh");
-    deposits.add(DepositUtil.covertEventDepositToOperationDeposit(event));
+    deposits.add(DepositUtil.convertEventDepositToOperationDeposit(event));
   }
 
   @Subscribe
