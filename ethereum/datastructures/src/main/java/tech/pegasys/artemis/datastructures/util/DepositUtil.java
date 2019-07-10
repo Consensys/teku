@@ -13,8 +13,14 @@
 
 package tech.pegasys.artemis.datastructures.util;
 
+import static tech.pegasys.artemis.datastructures.Constants.DEPOSIT_CONTRACT_TREE_DEPTH;
+
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import java.nio.ByteOrder;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.Hash;
@@ -22,13 +28,6 @@ import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.DepositData;
 import tech.pegasys.artemis.pow.contract.DepositContract;
 import tech.pegasys.artemis.pow.event.Eth2Genesis;
-
-import java.nio.ByteOrder;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.List;
-
-import static tech.pegasys.artemis.datastructures.Constants.DEPOSIT_CONTRACT_TREE_DEPTH;
 
 public class DepositUtil {
 
