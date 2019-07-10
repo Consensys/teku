@@ -32,8 +32,13 @@ import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
+import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
-public class BeaconState {
+public class BeaconState implements SimpleOffsetSerializable {
+
+  // The number of SimpleSerialize basic types in this SSZ Container/POJO.
+  public static final int SSZ_FIELD_COUNT = 11;
+
   // Misc
   protected UnsignedLong slot;
   protected UnsignedLong genesis_time;
@@ -202,6 +207,24 @@ public class BeaconState {
     this.latest_eth1_data = latest_eth1_data;
     this.eth1_data_votes = eth1_data_votes;
     this.deposit_index = deposit_index;
+  }
+
+  @Override
+  public int getSSZFieldCount() {
+    // TODO Finish this stub.
+    return SSZ_FIELD_COUNT;
+  }
+
+  @Override
+  public List<Bytes> get_fixed_parts() {
+    // TODO Implement this stub.
+    return Collections.nCopies(getSSZFieldCount(), Bytes.EMPTY);
+  }
+
+  @Override
+  public List<Bytes> get_variable_parts() {
+    // TODO Implement this stub.
+    return Collections.nCopies(getSSZFieldCount(), Bytes.EMPTY);
   }
 
   public static BeaconState fromBytes(Bytes bytes) {
