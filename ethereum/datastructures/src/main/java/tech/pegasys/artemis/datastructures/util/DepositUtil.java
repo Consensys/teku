@@ -15,6 +15,9 @@ package tech.pegasys.artemis.datastructures.util;
 
 import static tech.pegasys.artemis.datastructures.Constants.DEPOSIT_CONTRACT_TREE_DEPTH;
 
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import java.nio.ByteOrder;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
@@ -22,6 +25,9 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.Hash;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
+import tech.pegasys.artemis.datastructures.operations.DepositData;
+import tech.pegasys.artemis.pow.contract.DepositContract;
+import tech.pegasys.artemis.pow.event.Eth2Genesis;
 
 public class DepositUtil {
 
@@ -145,5 +151,48 @@ public class DepositUtil {
           }
         });
     return deposits;
+  }
+
+  public static Deposit convertEventDepositToOperationDeposit(
+      tech.pegasys.artemis.pow.event.Deposit event) {
+    DepositData data =
+        new DepositData(
+            event.getPubkey(),
+            event.getWithdrawal_credentials(),
+            event.getAmount(),
+            event.getSignature());
+    return new Deposit(data, event.getMerkle_tree_index());
+  }
+
+  // deprecated, being used until a new validators_test_data.json can be generated
+  public static Eth2Genesis convertJsonDataToEth2Genesis(JsonObject event) {
+    DepositContract.Eth2GenesisEventResponse response =
+        new DepositContract.Eth2GenesisEventResponse();
+    response.deposit_root =
+        Bytes.fromHexString(event.getAsJsonObject().get("deposit_root").getAsString()).toArray();
+    response.deposit_count =
+        Bytes.ofUnsignedInt(
+                event.getAsJsonObject().get("deposit_count").getAsInt(), ByteOrder.BIG_ENDIAN)
+            .toArray();
+    response.time =
+        Bytes.ofUnsignedLong(event.getAsJsonObject().get("time").getAsLong(), ByteOrder.BIG_ENDIAN)
+            .toArray();
+    return new Eth2Genesis(response);
+  }
+
+  // deprecated, being used until a new validators_test_data.json can be generated
+  public static tech.pegasys.artemis.pow.event.Deposit convertJsonDataToEventDeposit(
+      JsonElement event) {
+    byte[] data = Bytes.fromHexString(event.getAsJsonObject().get("data").getAsString()).toArray();
+    byte[] merkle_tree_index =
+        Bytes.fromHexString(event.getAsJsonObject().get("merkle_tree_index").getAsString())
+            .toArray();
+    DepositContract.DepositEventResponse response = new DepositContract.DepositEventResponse();
+    response.pubkey = Arrays.copyOfRange(data, 0, 48);
+    response.withdrawal_credentials = Arrays.copyOfRange(data, 48, 80);
+    response.amount = Arrays.copyOfRange(data, 80, 88);
+    response.signature = Arrays.copyOfRange(data, 88, 184);
+    response.merkle_tree_index = merkle_tree_index;
+    return new tech.pegasys.artemis.pow.event.Deposit(response);
   }
 }

@@ -27,7 +27,6 @@ import com.google.common.primitives.UnsignedLong;
 import java.math.BigInteger;
 import java.util.List;
 import java.util.Optional;
-import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.tuple.ImmutableTriple;
 import org.apache.commons.lang3.tuple.Triple;
 import org.apache.tuweni.bytes.Bytes;
@@ -124,12 +123,9 @@ public class ValidatorClientUtil {
         blsSignatureHelper(validator.getBlsKeys(), validator.getWithdrawal_credentials(), amount);
     contract = DepositContract.load(address, web3j, credentials, gasProvider);
 
-    byte[] pubkey = validator.getBlsKeys().publicKey().toByteArray();
-    ArrayUtils.reverse(pubkey);
-
     contract
         .deposit(
-            pubkey,
+            validator.getBlsKeys().publicKey().toBytesCompressed().reverse().toArray(),
             validator.getWithdrawal_credentials().reverse().toArray(),
             blsSignature.reverse().toArray(),
             new BigInteger(amount + "000000000"))
