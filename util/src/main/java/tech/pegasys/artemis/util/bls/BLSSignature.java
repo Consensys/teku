@@ -164,12 +164,12 @@ public final class BLSSignature {
     if (isNull(signature)) {
       return SSZ.encode(
           writer -> {
-            writer.writeFixedBytes(96, Bytes.wrap(new byte[96]));
+            writer.writeFixedBytes(Bytes.wrap(new byte[96]));
           });
     } else {
       return SSZ.encode(
           writer -> {
-            writer.writeFixedBytes(96, signature.toBytesCompressed());
+            writer.writeFixedBytes(signature.toBytesCompressed());
           });
     }
   }

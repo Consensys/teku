@@ -109,7 +109,7 @@ public class Validator implements Copyable<Validator>, Merkleizable {
     return SSZ.encode(
         writer -> {
           writer.writeBytes(pubkey.toBytes());
-          writer.writeFixedBytes(32, withdrawal_credentials);
+          writer.writeFixedBytes(withdrawal_credentials);
           writer.writeUInt64(activation_eligibility_epoch.longValue());
           writer.writeUInt64(activation_epoch.longValue());
           writer.writeUInt64(exit_epoch.longValue());

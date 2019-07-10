@@ -77,11 +77,11 @@ public class AttestationData {
   public Bytes toBytes() {
     return SSZ.encode(
         writer -> {
-          writer.writeFixedBytes(32, beacon_block_root);
+          writer.writeFixedBytes(beacon_block_root);
           writer.writeUInt64(source_epoch.longValue());
-          writer.writeFixedBytes(32, source_root);
+          writer.writeFixedBytes(source_root);
           writer.writeUInt64(target_epoch.longValue());
-          writer.writeFixedBytes(32, target_root);
+          writer.writeFixedBytes(target_root);
           writer.writeBytes(crosslink.toBytes());
         });
   }

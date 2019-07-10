@@ -57,7 +57,7 @@ public class DepositData {
     return SSZ.encode(
         writer -> {
           writer.writeBytes(pubkey.toBytes());
-          writer.writeFixedBytes(32, withdrawal_credentials);
+          writer.writeFixedBytes(withdrawal_credentials);
           writer.writeUInt64(amount.longValue());
           writer.writeBytes(signature.toBytes());
         });

@@ -83,8 +83,8 @@ public class Crosslink implements Copyable<Crosslink> {
           writer.writeUInt64(shard.longValue());
           writer.writeUInt64(start_epoch.longValue());
           writer.writeUInt64(end_epoch.longValue());
-          writer.writeFixedBytes(32, parent_root);
-          writer.writeFixedBytes(32, data_root);
+          writer.writeFixedBytes(parent_root);
+          writer.writeFixedBytes(data_root);
         });
   }
 
