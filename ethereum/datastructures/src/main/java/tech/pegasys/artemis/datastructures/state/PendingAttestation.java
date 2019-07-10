@@ -32,7 +32,7 @@ public class PendingAttestation
     implements Copyable<PendingAttestation>, Merkleizable, SimpleOffsetSerializable {
 
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
-  public static final int SSZ_FIELD_COUNT = 3;
+  public static final int SSZ_FIELD_COUNT = 2;
 
   private Bytes aggregation_bitfield;
   private AttestationData data;
