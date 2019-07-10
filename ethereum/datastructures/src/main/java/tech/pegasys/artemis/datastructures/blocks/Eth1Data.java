@@ -59,9 +59,9 @@ public final class Eth1Data {
   public Bytes toBytes() {
     return SSZ.encode(
         writer -> {
-          writer.writeFixedBytes(32, deposit_root);
+          writer.writeFixedBytes(deposit_root);
           writer.writeUInt64(deposit_count.longValue());
-          writer.writeFixedBytes(32, block_hash);
+          writer.writeFixedBytes(block_hash);
         });
   }
 

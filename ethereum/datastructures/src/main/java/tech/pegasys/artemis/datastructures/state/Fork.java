@@ -55,8 +55,8 @@ public class Fork {
   public Bytes toBytes() {
     return SSZ.encode(
         writer -> {
-          writer.writeFixedBytes(4, previous_version);
-          writer.writeFixedBytes(4, current_version);
+          writer.writeFixedBytes(previous_version);
+          writer.writeFixedBytes(current_version);
           writer.writeUInt64(epoch.longValue());
         });
   }

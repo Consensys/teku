@@ -240,14 +240,10 @@ public class BeaconState {
                 UnsignedLong.fromLongBits(reader.readUInt64()),
                 Bytes32.wrap(reader.readFixedBytes(32)),
                 // Recent state
-                // TODO This should be a vector bounded by SHARD_COUNT, pending an issue fix in
-                // Tuweni.
-                reader.readBytesList().stream()
+                reader.readVector(Constants.SHARD_COUNT).stream()
                     .map(Crosslink::fromBytes)
                     .collect(Collectors.toList()),
-                // TODO This should be a vector bounded by SHARD_COUNT, pending an issue fix in
-                // Tuweni.
-                reader.readBytesList().stream()
+                reader.readVector(Constants.SHARD_COUNT).stream()
                     .map(Crosslink::fromBytes)
                     .collect(Collectors.toList()),
                 reader.readFixedBytesVector(Constants.SLOTS_PER_HISTORICAL_ROOT, 32).stream()
@@ -310,16 +306,14 @@ public class BeaconState {
           writer.writeBytesList(current_epoch_attestationsBytes);
           writer.writeUInt64(previous_justified_epoch.longValue());
           writer.writeUInt64(current_justified_epoch.longValue());
-          writer.writeFixedBytes(32, previous_justified_root);
-          writer.writeFixedBytes(32, current_justified_root);
+          writer.writeFixedBytes(previous_justified_root);
+          writer.writeFixedBytes(current_justified_root);
           writer.writeUInt64(justification_bitfield.longValue());
           writer.writeUInt64(finalized_epoch.longValue());
-          writer.writeFixedBytes(32, finalized_root);
+          writer.writeFixedBytes(finalized_root);
           // Recent state
-          // TODO This should be a vector bounded by SHARD_COUNT, pending an issue fix in Tuweni.
-          writer.writeBytesList(current_crosslinksBytes);
-          // TODO This should be a vector bounded by SHARD_COUNT, pending an issue fix in Tuweni.
-          writer.writeBytesList(previous_crosslinksBytes);
+          writer.writeVector(current_crosslinksBytes);
+          writer.writeVector(previous_crosslinksBytes);
           writer.writeFixedBytesVector(latest_block_roots);
           writer.writeFixedBytesVector(latest_state_roots);
           writer.writeFixedBytesVector(latest_active_index_roots);
@@ -329,7 +323,7 @@ public class BeaconState {
                   .map(UnsignedLong::longValue)
                   .collect(Collectors.toList()));
           writer.writeBytes(latest_block_header.toBytes());
-          writer.writeFixedBytesList(32, historical_roots);
+          writer.writeFixedBytesList(historical_roots);
           // Ethereum 1.0 chain data
           writer.writeBytes(latest_eth1_data.toBytes());
           writer.writeBytesList(eth1_data_votesBytes);

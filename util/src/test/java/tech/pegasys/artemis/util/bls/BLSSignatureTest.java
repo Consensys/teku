@@ -64,7 +64,7 @@ class BLSSignatureTest {
     BLSSignature emptySignature = BLSSignature.empty();
     assertTrue(emptySignature.isEmpty());
     Bytes zeroBytes = Bytes.wrap(new byte[96]);
-    Bytes emptyBytesSsz = SSZ.encode(writer -> writer.writeFixedBytes(96, zeroBytes));
+    Bytes emptyBytesSsz = SSZ.encode(writer -> writer.writeFixedBytes(zeroBytes));
     BLSSignature deserialisedSignature = BLSSignature.fromBytes(emptyBytesSsz);
     assertEquals(emptySignature, deserialisedSignature);
   }

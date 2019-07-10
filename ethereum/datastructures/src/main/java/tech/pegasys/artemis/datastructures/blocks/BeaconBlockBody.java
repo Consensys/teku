@@ -122,7 +122,7 @@ public class BeaconBlockBody {
         writer -> {
           writer.writeBytes(randao_reveal.toBytes());
           writer.writeBytes(eth1_data.toBytes());
-          writer.writeFixedBytes(32, graffiti);
+          writer.writeFixedBytes(graffiti);
           writer.writeBytesList(proposerSlashingsBytes);
           writer.writeBytesList(attesterSlashingsBytes);
           writer.writeBytesList(attestationsBytes);
