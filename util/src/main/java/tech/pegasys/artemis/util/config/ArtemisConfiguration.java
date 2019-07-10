@@ -150,15 +150,12 @@ public final class ArtemisConfiguration {
     // Misc
     builder.addInteger("constants.SHARD_COUNT", Integer.MIN_VALUE, null, null);
     builder.addInteger("constants.TARGET_COMMITTEE_SIZE", Integer.MIN_VALUE, null, null);
-    builder.addInteger("constants.MAX_INDICES_PER_ATTESTATION", Integer.MIN_VALUE, null, null);
+    builder.addInteger("constants.MAX_VALIDATORS_PER_COMMITTEE", Integer.MIN_VALUE, null, null);
     builder.addInteger("constants.MIN_PER_EPOCH_CHURN_LIMIT", Integer.MIN_VALUE, null, null);
     builder.addInteger("constants.CHURN_LIMIT_QUOTIENT", Integer.MIN_VALUE, null, null);
-    builder.addInteger("constants.BASE_REWARDS_PER_EPOCH", Integer.MIN_VALUE, null, null);
     builder.addInteger("constants.SHUFFLE_ROUND_COUNT", Integer.MIN_VALUE, null, null);
-
-    // Deposit Contract
-    builder.addString("constants.DEPOSIT_CONTRACT_ADDRESS", "", null, null);
-    builder.addInteger("constants.DEPOSIT_CONTRACT_TREE_DEPTH", Integer.MIN_VALUE, null, null);
+    builder.addInteger("constants.MIN_GENESIS_ACTIVE_VALIDATOR_COUNT", Integer.MIN_VALUE, null, null);
+    builder.addInteger("constants.MIN_GENESIS_TIME", Integer.MIN_VALUE, null, null);
 
     // Gwei values
     builder.addLong("constants.MIN_DEPOSIT_AMOUNT", Long.MIN_VALUE, null, null);
@@ -166,13 +163,13 @@ public final class ArtemisConfiguration {
     builder.addLong("constants.EJECTION_BALANCE", Long.MIN_VALUE, null, null);
     builder.addLong("constants.EFFECTIVE_BALANCE_INCREMENT", Long.MIN_VALUE, null, null);
 
+    // Deposit Contract
+    builder.addString("constants.DEPOSIT_CONTRACT_ADDRESS", "", null, null);
+
     // Initial Values
-    builder.addInteger("constants.GENESIS_FORK_VERSION", Integer.MIN_VALUE, null, null);
     builder.addLong("constants.GENESIS_SLOT", Long.MIN_VALUE, null, null);
-    builder.addLong("constants.FAR_FUTURE_EPOCH", -1L, null, null);
-    builder.addDefault("constants.ZERO_HASH", Bytes32.ZERO);
-    builder.addDefault("constants.EMPTY_SIGNATURE", BLSSignature.empty());
-    builder.addDefault("constants.BLS_WITHDRAWAL_PREFIX", Integer.MIN_VALUE);
+    builder.addLong("constants.GENESIS_EPOCH", Long.MIN_VALUE, null, null);
+    builder.addString("constants.BLS_WITHDRAWAL_PREFIX", "", null, null);
 
     // Time parameters
     builder.addInteger("constants.SECONDS_PER_SLOT", Integer.MIN_VALUE, null, null);
@@ -187,17 +184,16 @@ public final class ArtemisConfiguration {
     builder.addInteger("constants.PERSISTENT_COMMITTEE_PERIOD", Integer.MIN_VALUE, null, null);
     builder.addInteger("constants.MAX_EPOCHS_PER_CROSSLINK", Integer.MIN_VALUE, null, null);
     builder.addInteger("constants.MIN_EPOCHS_TO_INACTIVITY_PENALTY", Integer.MIN_VALUE, null, null);
-    builder.addInteger(
-        "constants.EARLY_DERIVED_SECRET_PENALTY_MAX_FUTURE_EPOCHS", Integer.MIN_VALUE, null, null);
 
     // State list lengths
-    builder.addInteger("constants.LATEST_RANDAO_MIXES_LENGTH", Integer.MIN_VALUE, null, null);
-    builder.addInteger("constants.LATEST_ACTIVE_INDEX_ROOTS_LENGTH", Integer.MIN_VALUE, null, null);
-    builder.addInteger("constants.LATEST_SLASHED_EXIT_LENGTH", Integer.MIN_VALUE, null, null);
+    builder.addInteger("constants.EPOCHS_PER_HISTORICAL_VECTOR", Integer.MIN_VALUE, null, null);
+    builder.addInteger("constants.EPOCHS_PER_SLASHINGS_VECTOR", Integer.MIN_VALUE, null, null);
+    builder.addInteger("constants.HISTORICAL_ROOTS_LIMIT", Integer.MIN_VALUE, null, null);
+    builder.addLong("constants.VALIDATOR_REGISTRY_LIMIT", Long.MIN_VALUE, null, null);
 
     // Reward and penalty quotients
     builder.addInteger("constants.BASE_REWARD_FACTOR", Integer.MIN_VALUE, null, null);
-    builder.addInteger("constants.WHISTLEBLOWING_REWARD_QUOTIENT", Integer.MIN_VALUE, null, null);
+    builder.addInteger("constants.WHISTLEBLOWER_REWARD_QUOTIENT", Integer.MIN_VALUE, null, null);
     builder.addInteger("constants.PROPOSER_REWARD_QUOTIENT", Integer.MIN_VALUE, null, null);
     builder.addInteger("constants.INACTIVITY_PENALTY_QUOTIENT", Integer.MIN_VALUE, null, null);
     builder.addInteger("constants.MIN_SLASHING_PENALTY_QUOTIENT", Integer.MIN_VALUE, null, null);
@@ -393,33 +389,33 @@ public final class ArtemisConfiguration {
     return config.getInteger("constants.TARGET_COMMITTEE_SIZE");
   }
 
-  public int getMaxIndicesPerAttestation() {
-    return config.getInteger("constants.MAX_INDICES_PER_ATTESTATION");
+  public int getMaxValidatorsPerCommittee() {
+    return config.getInteger("constants.MAX_VALIDATORS_PER_COMMITTEE");
   }
 
-  public long getMinPerEpochChurnLimit() {
-    return config.getLong("constants.MIN_PER_EPOCH_CHURN_LIMIT");
+  public int getMinPerEpochChurnLimit() {
+    return config.getInteger("constants.MIN_PER_EPOCH_CHURN_LIMIT");
   }
 
   public int getChurnLimitQuotient() {
     return config.getInteger("constants.CHURN_LIMIT_QUOTIENT");
   }
 
-  public int getBaseRewardsPerEpoch() {
-    return config.getInteger("constants.BASE_REWARDS_PER_EPOCH");
-  }
-
   public int getShuffleRoundCount() {
     return config.getInteger("constants.SHUFFLE_ROUND_COUNT");
+  }
+
+  public int getMinGenesisActiveValidatorCount() {
+    return config.getInteger("constants.MIN_GENESIS_ACTIVE_VALIDATOR_COUNT");
+  }
+
+  public long getMinGenesisTime() {
+    return config.getLong("constants.MIN_GENESIS_TIME");
   }
 
   /** @return deposit contract constants */
   public String getDepositContractAddress() {
     return config.getString("constants.DEPOSIT_CONTRACT_ADDRESS");
-  }
-
-  public int getDepositContractTreeDepth() {
-    return config.getInteger("constants.DEPOSIT_CONTRACT_TREE_DEPTH");
   }
 
   /** @return gwei value constants */
@@ -439,21 +435,16 @@ public final class ArtemisConfiguration {
     return config.getLong("constants.EJECTION_BALANCE");
   }
 
-  /** @return initial value constants */
-  public int getGenesisForkVersion() {
-    return config.getInteger("constants.GENESIS_FORK_VERSION");
-  }
-
   public long getGenesisSlot() {
     return config.getLong("constants.GENESIS_SLOT");
   }
 
-  public long getFarFutureEpoch() {
-    return Long.MAX_VALUE;
+  public long getGenesisEpoch() {
+    return config.getLong("constants.GENESIS_EPOCH");
   }
 
-  public int getBlsWithdrawalPrefix() {
-    return config.getInteger("constants.BLS_WITHDRAWAL_PREFIX");
+  public String getBlsWithdrawalPrefix() {
+    return config.getString("constants.BLS_WITHDRAWAL_PREFIX");
   }
 
   /** @return time parameter constants */
@@ -501,21 +492,21 @@ public final class ArtemisConfiguration {
     return config.getInteger("constants.MIN_EPOCHS_TO_INACTIVITY_PENALTY");
   }
 
-  public int getEarlyDerivedSecretPenaltyMaxFutureEpochs() {
-    return config.getInteger("constants.EARLY_DERIVED_SECRET_PENALTY_MAX_FUTURE_EPOCHS");
-  }
-
   /** @return state list length constants */
-  public int getLatestRandaoMixesLength() {
-    return config.getInteger("constants.LATEST_RANDAO_MIXES_LENGTH");
+  public int getEpochsPerHistoricalVector() {
+    return config.getInteger("constants.EPOCHS_PER_HISTORICAL_VECTOR");
   }
 
-  public int getLatestActiveIndexRootsLength() {
-    return config.getInteger("constants.LATEST_ACTIVE_INDEX_ROOTS_LENGTH");
+  public int getEpochsPerSlashingsVector() {
+    return config.getInteger("constants.EPOCHS_PER_SLASHINGS_VECTOR");
   }
 
-  public int getLatestSlashedExitLength() {
-    return config.getInteger("constants.LATEST_SLASHED_EXIT_LENGTH");
+  public int getHistoricalRootsLimit() {
+    return config.getInteger("constants.HISTORICAL_ROOTS_LIMIT");
+  }
+
+  public long getValidatorRegistryLimit() {
+    return config.getLong("constants.VALIDATOR_REGISTRY_LIMIT");
   }
 
   /** @return reward and penalty quotient constants */
@@ -523,8 +514,8 @@ public final class ArtemisConfiguration {
     return config.getInteger("constants.BASE_REWARD_FACTOR");
   }
 
-  public int getWhistleblowingRewardQuotient() {
-    return config.getInteger("constants.WHISTLEBLOWING_REWARD_QUOTIENT");
+  public int getWhistleblowerRewardQuotient() {
+    return config.getInteger("constants.WHISTLEBLOWER_REWARD_QUOTIENT");
   }
 
   public int getProposerRewardQuotient() {
