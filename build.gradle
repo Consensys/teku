@@ -49,8 +49,8 @@ allprojects {
 
   jacoco { toolVersion = '0.8.2' }
 
-  sourceCompatibility = '1.8'
-  targetCompatibility = '1.8'
+  sourceCompatibility = '11'
+  targetCompatibility = '11'
 
   repositories {
     if ("$System.env.JENKINS_URL" == 'https://jenkins.pegasys.tech/') {

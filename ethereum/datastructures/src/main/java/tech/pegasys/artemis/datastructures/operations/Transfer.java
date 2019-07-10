@@ -14,7 +14,9 @@
 package tech.pegasys.artemis.datastructures.operations;
 
 import com.google.common.primitives.UnsignedLong;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -24,8 +26,13 @@ import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
 import tech.pegasys.artemis.util.hashtree.Merkleizable;
+import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
-public class Transfer implements Merkleizable {
+public class Transfer implements Merkleizable, SimpleOffsetSerializable {
+
+  // The number of SimpleSerialize basic types in this SSZ Container/POJO.
+  public static final int SSZ_FIELD_COUNT = 5;
+
   private UnsignedLong sender;
   private UnsignedLong recipient;
   private UnsignedLong amount;
@@ -49,6 +56,26 @@ public class Transfer implements Merkleizable {
     this.setSlot(slot);
     this.setPubkey(pubkey);
     this.setSignature(signature);
+  }
+
+  @Override
+  public int getSSZFieldCount() {
+    return SSZ_FIELD_COUNT + pubkey.getSSZFieldCount() + signature.getSSZFieldCount();
+  }
+
+  @Override
+  public List<Bytes> get_fixed_parts() {
+    List<Bytes> fixedPartsList =
+        new ArrayList<>(
+            List.of(
+                SSZ.encodeUInt64(sender.longValue()),
+                SSZ.encodeUInt64(recipient.longValue()),
+                SSZ.encodeUInt64(amount.longValue()),
+                SSZ.encodeUInt64(fee.longValue()),
+                SSZ.encodeUInt64(slot.longValue())));
+    fixedPartsList.addAll(pubkey.get_fixed_parts());
+    fixedPartsList.addAll(signature.get_fixed_parts());
+    return fixedPartsList;
   }
 
   public static Transfer fromBytes(Bytes bytes) {

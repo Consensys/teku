@@ -15,6 +15,8 @@ package tech.pegasys.artemis.datastructures.operations;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -23,8 +25,12 @@ import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
 import tech.pegasys.artemis.util.hashtree.Merkleizable;
+import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
-public class Attestation implements Merkleizable {
+public class Attestation implements Merkleizable, SimpleOffsetSerializable {
+
+  // The number of SimpleSerialize basic types in this SSZ Container/POJO.
+  public static final int SSZ_FIELD_COUNT = 2;
 
   private Bytes aggregation_bitfield;
   private AttestationData data;
@@ -40,6 +46,24 @@ public class Attestation implements Merkleizable {
     this.data = data;
     this.custody_bitfield = custody_bitfield;
     this.aggregate_signature = aggregate_signature;
+  }
+
+  @Override
+  public int getSSZFieldCount() {
+    // TODO Finish this stub.
+    return SSZ_FIELD_COUNT;
+  }
+
+  @Override
+  public List<Bytes> get_fixed_parts() {
+    // TODO Implement this stub.
+    return Collections.nCopies(getSSZFieldCount(), Bytes.EMPTY);
+  }
+
+  @Override
+  public List<Bytes> get_variable_parts() {
+    // TODO Implement this stub.
+    return Collections.nCopies(getSSZFieldCount(), Bytes.EMPTY);
   }
 
   public static Attestation fromBytes(Bytes bytes) {

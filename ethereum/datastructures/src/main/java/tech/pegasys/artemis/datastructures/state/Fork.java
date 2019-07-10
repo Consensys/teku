@@ -13,24 +13,37 @@
 
 package tech.pegasys.artemis.datastructures.state;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import com.google.common.primitives.UnsignedLong;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
+import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
-public class Fork {
+public class Fork implements SimpleOffsetSerializable {
 
-  // TODO previous_version should be a bytes4 (this has serialization impacts)
-  private Bytes previous_version;
-  // TODO current_version should be a bytes4 (this has serialization impacts)
-  private Bytes current_version;
+  // The number of SimpleSerialize basic types in this SSZ Container/POJO.
+  public static final int SSZ_FIELD_COUNT = 3;
+
+  private Bytes previous_version; // This is bounded as a Bytes4
+  private Bytes current_version; // This is bounded as a Bytes4
   private UnsignedLong epoch;
 
   public Fork(Bytes previous_version, Bytes current_version, UnsignedLong epoch) {
+    checkArgument(
+        previous_version.size() == 4,
+        "previous_version should be 4 bytes, but was %s bytes.",
+        previous_version.size());
+    checkArgument(
+        current_version.size() == 4,
+        "current_version should be 4 bytes, but was %s bytes.",
+        current_version.size());
     this.previous_version = previous_version;
     this.current_version = current_version;
     this.epoch = epoch;
@@ -40,6 +53,19 @@ public class Fork {
     this.previous_version = fork.getPrevious_version();
     this.current_version = fork.getCurrent_version();
     this.epoch = fork.getEpoch();
+  }
+
+  @Override
+  public int getSSZFieldCount() {
+    return SSZ_FIELD_COUNT;
+  }
+
+  @Override
+  public List<Bytes> get_fixed_parts() {
+    return List.of(
+        SSZ.encode(writer -> writer.writeFixedBytes(previous_version)),
+        SSZ.encode(writer -> writer.writeFixedBytes(current_version)),
+        SSZ.encodeUInt64(epoch.longValue()));
   }
 
   public static Fork fromBytes(Bytes bytes) {
@@ -92,6 +118,10 @@ public class Fork {
   }
 
   public void setPrevious_version(Bytes previous_version) {
+    checkArgument(
+        previous_version.size() == 4,
+        "previous_version should be 4 bytes, but was %s bytes.",
+        previous_version.size());
     this.previous_version = previous_version;
   }
 
@@ -100,6 +130,10 @@ public class Fork {
   }
 
   public void setCurrent_version(Bytes current_version) {
+    checkArgument(
+        current_version.size() == 4,
+        "current_version should be 4 bytes, but was %s bytes.",
+        current_version.size());
     this.current_version = current_version;
   }
 

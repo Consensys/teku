@@ -32,8 +32,13 @@ import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
+import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
-public class BeaconState {
+public class BeaconState implements SimpleOffsetSerializable {
+
+  // The number of SimpleSerialize basic types in this SSZ Container/POJO.
+  public static final int SSZ_FIELD_COUNT = 11;
+
   // Misc
   protected UnsignedLong slot;
   protected UnsignedLong genesis_time;
@@ -204,6 +209,24 @@ public class BeaconState {
     this.deposit_index = deposit_index;
   }
 
+  @Override
+  public int getSSZFieldCount() {
+    // TODO Finish this stub.
+    return SSZ_FIELD_COUNT;
+  }
+
+  @Override
+  public List<Bytes> get_fixed_parts() {
+    // TODO Implement this stub.
+    return Collections.nCopies(getSSZFieldCount(), Bytes.EMPTY);
+  }
+
+  @Override
+  public List<Bytes> get_variable_parts() {
+    // TODO Implement this stub.
+    return Collections.nCopies(getSSZFieldCount(), Bytes.EMPTY);
+  }
+
   public static BeaconState fromBytes(Bytes bytes) {
     return SSZ.decode(
         bytes,
@@ -240,14 +263,10 @@ public class BeaconState {
                 UnsignedLong.fromLongBits(reader.readUInt64()),
                 Bytes32.wrap(reader.readFixedBytes(32)),
                 // Recent state
-                // TODO This should be a vector bounded by SHARD_COUNT, pending an issue fix in
-                // Tuweni.
-                reader.readBytesList().stream()
+                reader.readVector(Constants.SHARD_COUNT).stream()
                     .map(Crosslink::fromBytes)
                     .collect(Collectors.toList()),
-                // TODO This should be a vector bounded by SHARD_COUNT, pending an issue fix in
-                // Tuweni.
-                reader.readBytesList().stream()
+                reader.readVector(Constants.SHARD_COUNT).stream()
                     .map(Crosslink::fromBytes)
                     .collect(Collectors.toList()),
                 reader.readFixedBytesVector(Constants.SLOTS_PER_HISTORICAL_ROOT, 32).stream()
@@ -316,10 +335,8 @@ public class BeaconState {
           writer.writeUInt64(finalized_epoch.longValue());
           writer.writeFixedBytes(finalized_root);
           // Recent state
-          // TODO This should be a vector bounded by SHARD_COUNT, pending an issue fix in Tuweni.
-          writer.writeBytesList(current_crosslinksBytes);
-          // TODO This should be a vector bounded by SHARD_COUNT, pending an issue fix in Tuweni.
-          writer.writeBytesList(previous_crosslinksBytes);
+          writer.writeVector(current_crosslinksBytes);
+          writer.writeVector(previous_crosslinksBytes);
           writer.writeFixedBytesVector(latest_block_roots);
           writer.writeFixedBytesVector(latest_state_roots);
           writer.writeFixedBytesVector(latest_active_index_roots);

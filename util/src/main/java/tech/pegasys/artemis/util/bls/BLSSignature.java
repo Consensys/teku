@@ -25,8 +25,12 @@ import tech.pegasys.artemis.util.mikuli.BLS12381;
 import tech.pegasys.artemis.util.mikuli.KeyPair;
 import tech.pegasys.artemis.util.mikuli.PublicKey;
 import tech.pegasys.artemis.util.mikuli.Signature;
+import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
-public final class BLSSignature {
+public final class BLSSignature implements SimpleOffsetSerializable {
+
+  // The number of SimpleSerialize basic types in this SSZ Container/POJO.
+  public static final int SSZ_FIELD_COUNT = 1;
 
   /**
    * Create a signature by signing the given message and domain with the given private key
@@ -92,6 +96,20 @@ public final class BLSSignature {
     List<Signature> signatureObjects =
         signatures.stream().map(x -> x.signature).collect(Collectors.toList());
     return new BLSSignature(Signature.aggregate(signatureObjects));
+  }
+
+  @Override
+  public int getSSZFieldCount() {
+    return SSZ_FIELD_COUNT;
+  }
+
+  @Override
+  public List<Bytes> get_fixed_parts() {
+    if (isNull(signature)) {
+      return List.of(SSZ.encode(writer -> writer.writeFixedBytes(Bytes.wrap(new byte[96]))));
+    } else {
+      return List.of(SSZ.encode(writer -> writer.writeFixedBytes(signature.toBytesCompressed())));
+    }
   }
 
   public static BLSSignature fromBytes(Bytes bytes) {
