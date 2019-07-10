@@ -11,22 +11,23 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.datastructures.event;
+package tech.pegasys.artemis.pow.event;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import com.google.common.primitives.UnsignedLong;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.interfaces.IRecordAdapter;
 import tech.pegasys.artemis.pow.api.DepositEvent;
 import tech.pegasys.artemis.pow.contract.DepositContract.DepositEventResponse;
-import tech.pegasys.artemis.pow.event.AbstractEvent;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class Deposit extends AbstractEvent<DepositEventResponse>
     implements DepositEvent, IRecordAdapter {
@@ -34,8 +35,8 @@ public class Deposit extends AbstractEvent<DepositEventResponse>
   private BLSPublicKey pubkey;
   private Bytes32 withdrawal_credentials;
   private BLSSignature signature;
-  private long amount;
-  private Bytes merkle_tree_index;
+  private UnsignedLong amount;
+  private UnsignedLong merkle_tree_index;
 
   private static final ObjectMapper mapper = new ObjectMapper();
 
@@ -45,7 +46,7 @@ public class Deposit extends AbstractEvent<DepositEventResponse>
     super(response);
 
     ArrayUtils.reverse(response.merkle_tree_index);
-    this.merkle_tree_index = Bytes.wrap(response.merkle_tree_index);
+    this.merkle_tree_index = UnsignedLong.valueOf(Bytes.wrap(response.merkle_tree_index).toLong());
 
     ArrayUtils.reverse(response.pubkey);
     this.pubkey = BLSPublicKey.fromBytesCompressed(Bytes.wrap(response.pubkey));
@@ -56,11 +57,11 @@ public class Deposit extends AbstractEvent<DepositEventResponse>
     ArrayUtils.reverse(response.signature);
     this.signature = BLSSignature.fromBytes(Bytes.wrap(response.signature));
 
-    ArrayUtils.reverse(response.signature);
-    this.amount = Bytes.wrap(response.amount).toLong();
+    ArrayUtils.reverse(response.amount);
+    this.amount = UnsignedLong.valueOf(Bytes.wrap(response.amount).toLong());
   }
 
-  public Bytes getMerkle_tree_index() {
+  public UnsignedLong getMerkle_tree_index() {
     return merkle_tree_index;
   }
 
@@ -72,7 +73,7 @@ public class Deposit extends AbstractEvent<DepositEventResponse>
     return withdrawal_credentials;
   }
 
-  public long getAmount() {
+  public UnsignedLong getAmount() {
     return amount;
   }
 
@@ -92,11 +93,11 @@ public class Deposit extends AbstractEvent<DepositEventResponse>
     this.signature = signature;
   }
 
-  public void setAmount(long amount) {
+  public void setAmount(UnsignedLong amount) {
     this.amount = amount;
   }
 
-  public void setMerkle_tree_index(Bytes merkle_tree_index) {
+  public void setMerkle_tree_index(UnsignedLong merkle_tree_index) {
     this.merkle_tree_index = merkle_tree_index;
   }
 
@@ -124,7 +125,7 @@ public class Deposit extends AbstractEvent<DepositEventResponse>
           break;
 
         case "merkle_tree_index":
-          this.outputFieldMap.put("merkle_tree_index", merkle_tree_index.toHexString());
+          this.outputFieldMap.put("merkle_tree_index", merkle_tree_index.toString());
           break;
       }
     }

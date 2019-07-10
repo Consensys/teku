@@ -13,8 +13,6 @@
 
 package tech.pegasys.artemis.statetransition;
 
-import static tech.pegasys.artemis.statetransition.StateTransition.process_slots;
-
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.google.common.primitives.UnsignedLong;
@@ -31,7 +29,6 @@ import org.json.simple.parser.ParseException;
 import tech.pegasys.artemis.data.RawRecord;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
-import tech.pegasys.artemis.datastructures.event.Eth2Genesis;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
@@ -40,12 +37,21 @@ import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.datastructures.util.DepositUtil;
 import tech.pegasys.artemis.pow.api.Eth2GenesisEvent;
+import tech.pegasys.artemis.pow.event.Eth2Genesis;
 import tech.pegasys.artemis.service.serviceutils.ServiceConfig;
 import tech.pegasys.artemis.statetransition.util.EpochProcessingException;
 import tech.pegasys.artemis.statetransition.util.SlotProcessingException;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
+
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.Optional;
+
+import static tech.pegasys.artemis.statetransition.StateTransition.process_slots;
 
 /** Class to manage the state tree and initiate state transitions */
 public class StateProcessor {
@@ -122,9 +128,10 @@ public class StateProcessor {
   }
 
   @Subscribe
-  public void onDeposit(Deposit deposit) {
+  public void onDeposit(tech.pegasys.artemis.pow.event.Deposit event) {
     if (deposits == null) deposits = new ArrayList<Deposit>();
-    deposits.add(deposit);
+    LOG.log(Level.INFO, "Yuh");
+    deposits.add(DepositUtil.covertEventDepositToOperationDeposit(event));
   }
 
   @Subscribe

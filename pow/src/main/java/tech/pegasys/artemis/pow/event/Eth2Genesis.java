@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.datastructures.event;
+package tech.pegasys.artemis.pow.event;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -24,7 +24,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.interfaces.IRecordAdapter;
 import tech.pegasys.artemis.pow.api.Eth2GenesisEvent;
 import tech.pegasys.artemis.pow.contract.DepositContract.Eth2GenesisEventResponse;
-import tech.pegasys.artemis.pow.event.AbstractEvent;
 
 public class Eth2Genesis extends AbstractEvent<Eth2GenesisEventResponse>
     implements Eth2GenesisEvent, IRecordAdapter {

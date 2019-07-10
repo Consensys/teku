@@ -24,10 +24,10 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import tech.pegasys.artemis.datastructures.event.Deposit;
-import tech.pegasys.artemis.datastructures.event.Eth2Genesis;
 import tech.pegasys.artemis.datastructures.interfaces.IRecordAdapter;
 import tech.pegasys.artemis.datastructures.operations.DepositData;
+import tech.pegasys.artemis.pow.event.Deposit;
+import tech.pegasys.artemis.pow.event.Eth2Genesis;
 
 public class DepositSimulation implements IRecordAdapter {
 
@@ -39,7 +39,7 @@ public class DepositSimulation implements IRecordAdapter {
         throws IOException {
       jGen.writeStartObject();
       jGen.writeStringField("eventType", "Deposit");
-      jGen.writeStringField("merkle_tree_index", deposit.getMerkle_tree_index().toHexString());
+      jGen.writeStringField("merkle_tree_index", deposit.getMerkle_tree_index().toString());
       jGen.writeEndObject();
     }
   }
