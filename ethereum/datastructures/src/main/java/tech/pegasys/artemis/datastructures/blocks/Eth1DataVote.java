@@ -14,7 +14,9 @@
 package tech.pegasys.artemis.datastructures.blocks;
 
 import com.google.common.primitives.UnsignedLong;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -23,8 +25,13 @@ import tech.pegasys.artemis.datastructures.Copyable;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
 import tech.pegasys.artemis.util.hashtree.Merkleizable;
+import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
-public final class Eth1DataVote implements Copyable<Eth1DataVote>, Merkleizable {
+public final class Eth1DataVote
+    implements Copyable<Eth1DataVote>, Merkleizable, SimpleOffsetSerializable {
+
+  // The number of SimpleSerialize basic types in this SSZ Container/POJO.
+  public static final int SSZ_FIELD_COUNT = 1;
 
   private Eth1Data eth1_data;
   private UnsignedLong vote_count;
@@ -42,6 +49,19 @@ public final class Eth1DataVote implements Copyable<Eth1DataVote>, Merkleizable 
   @Override
   public Eth1DataVote copy() {
     return new Eth1DataVote(this);
+  }
+
+  @Override
+  public int getSSZFieldCount() {
+    return eth1_data.getSSZFieldCount() + SSZ_FIELD_COUNT;
+  }
+
+  @Override
+  public List<Bytes> get_fixed_parts() {
+    List<Bytes> fixedPartsList = new ArrayList<>();
+    fixedPartsList.addAll(eth1_data.get_fixed_parts());
+    fixedPartsList.addAll(List.of(SSZ.encodeUInt64(vote_count.longValue())));
+    return fixedPartsList;
   }
 
   public static Eth1DataVote fromBytes(Bytes bytes) {

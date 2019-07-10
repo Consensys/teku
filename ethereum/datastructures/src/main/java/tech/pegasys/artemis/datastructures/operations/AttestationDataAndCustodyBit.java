@@ -13,15 +13,21 @@
 
 package tech.pegasys.artemis.datastructures.operations;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
+import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
-public class AttestationDataAndCustodyBit {
+public class AttestationDataAndCustodyBit implements SimpleOffsetSerializable {
+
+  // The number of SimpleSerialize basic types in this SSZ Container/POJO.
+  public static final int SSZ_FIELD_COUNT = 1;
 
   private AttestationData data;
   private boolean custody_bit;
@@ -29,6 +35,19 @@ public class AttestationDataAndCustodyBit {
   public AttestationDataAndCustodyBit(AttestationData data, boolean custody_bit) {
     this.data = data;
     this.custody_bit = custody_bit;
+  }
+
+  @Override
+  public int getSSZFieldCount() {
+    return data.getSSZFieldCount() + SSZ_FIELD_COUNT;
+  }
+
+  @Override
+  public List<Bytes> get_fixed_parts() {
+    List<Bytes> fixedPartsList = new ArrayList<>();
+    fixedPartsList.addAll(data.get_fixed_parts());
+    fixedPartsList.addAll(List.of(SSZ.encodeBoolean(custody_bit)));
+    return fixedPartsList;
   }
 
   public static AttestationDataAndCustodyBit fromBytes(Bytes bytes) {

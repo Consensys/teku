@@ -15,6 +15,7 @@ package tech.pegasys.artemis.datastructures.operations;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -25,8 +26,12 @@ import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
 import tech.pegasys.artemis.util.hashtree.Merkleizable;
+import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
-public class IndexedAttestation implements Merkleizable {
+public class IndexedAttestation implements Merkleizable, SimpleOffsetSerializable {
+
+  // The number of SimpleSerialize basic types in this SSZ Container/POJO.
+  public static final int SSZ_FIELD_COUNT = 0;
 
   private List<Integer> custody_bit_0_indices;
   private List<Integer> custody_bit_1_indices;
@@ -51,6 +56,24 @@ public class IndexedAttestation implements Merkleizable {
         indexedAttestation.getCustody_bit_1_indices().stream().collect(Collectors.toList());
     this.data = new AttestationData(data);
     this.signature = new BLSSignature(indexedAttestation.getSignature().getSignature());
+  }
+
+  @Override
+  public int getSSZFieldCount() {
+    // TODO Finish this stub.
+    return SSZ_FIELD_COUNT;
+  }
+
+  @Override
+  public List<Bytes> get_fixed_parts() {
+    // TODO Implement this stub.
+    return Collections.nCopies(getSSZFieldCount(), Bytes.EMPTY);
+  }
+
+  @Override
+  public List<Bytes> get_variable_parts() {
+    // TODO Implement this stub.
+    return Collections.nCopies(getSSZFieldCount(), Bytes.EMPTY);
   }
 
   // TODO Indexed Attestation should be converted to unsigned longs before serialization

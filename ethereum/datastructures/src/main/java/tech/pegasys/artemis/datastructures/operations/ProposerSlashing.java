@@ -14,7 +14,9 @@
 package tech.pegasys.artemis.datastructures.operations;
 
 import com.google.common.primitives.UnsignedLong;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -23,8 +25,12 @@ import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
 import tech.pegasys.artemis.util.hashtree.Merkleizable;
+import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
-public class ProposerSlashing implements Merkleizable {
+public class ProposerSlashing implements Merkleizable, SimpleOffsetSerializable {
+
+  // The number of SimpleSerialize basic types in this SSZ Container/POJO.
+  public static final int SSZ_FIELD_COUNT = 1;
 
   private UnsignedLong proposer_index;
   private BeaconBlockHeader header_1;
@@ -35,6 +41,20 @@ public class ProposerSlashing implements Merkleizable {
     this.proposer_index = proposer_index;
     this.header_1 = header_1;
     this.header_2 = header_2;
+  }
+
+  @Override
+  public int getSSZFieldCount() {
+    return SSZ_FIELD_COUNT + header_1.getSSZFieldCount() + header_2.getSSZFieldCount();
+  }
+
+  @Override
+  public List<Bytes> get_fixed_parts() {
+    List<Bytes> fixedPartsList =
+        new ArrayList<>(List.of(SSZ.encodeUInt64(proposer_index.longValue())));
+    fixedPartsList.addAll(header_1.get_fixed_parts());
+    fixedPartsList.addAll(header_2.get_fixed_parts());
+    return fixedPartsList;
   }
 
   public static ProposerSlashing fromBytes(Bytes bytes) {

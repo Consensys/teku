@@ -27,8 +27,12 @@ import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
 import tech.pegasys.artemis.util.hashtree.Merkleizable;
+import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
-public class Deposit implements Merkleizable {
+public class Deposit implements Merkleizable, SimpleOffsetSerializable {
+
+  // The number of SimpleSerialize basic types in this SSZ Container/POJO.
+  public static final int SSZ_FIELD_COUNT = 1;
 
   private List<Bytes32> proof; // Bounded by DEPOSIT_CONTRACT_TREE_DEPTH
   private DepositData data;
@@ -48,6 +52,12 @@ public class Deposit implements Merkleizable {
   public Deposit(DepositData data, UnsignedLong index) {
     this.data = data;
     this.index = index;
+  }
+
+  @Override
+  public int getSSZFieldCount() {
+    // TODO Proof List needs to implement getSSZFieldCount and get_fixed_parts.
+    return /*proof.getSSZFieldCount() + */ data.getSSZFieldCount() + SSZ_FIELD_COUNT;
   }
 
   public static Deposit fromBytes(Bytes bytes) {
