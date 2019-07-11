@@ -14,9 +14,11 @@
 package tech.pegasys.artemis.networking.p2p.hobbits;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.math.BigInteger;
+import java.util.Arrays;
 import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.units.bigints.UInt64;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.networking.p2p.hobbits.rpc.GetStatusMessage;
 import tech.pegasys.artemis.networking.p2p.hobbits.rpc.HelloMessage;
@@ -38,10 +40,15 @@ class JsonRoundtripTest {
   void roundtripHello() throws Exception {
     HelloMessage hello =
         new HelloMessage(
-            1, 1, Bytes32.random(), UInt64.valueOf(0), Bytes32.random(), UInt64.valueOf(0));
+            1,
+            1,
+            Bytes32.random().toArrayUnsafe(),
+            BigInteger.ZERO,
+            Bytes32.random().toArrayUnsafe(),
+            BigInteger.ZERO);
     byte[] value = RPCCodec.getMapper().writerFor(HelloMessage.class).writeValueAsBytes(hello);
     HelloMessage read = RPCCodec.getMapper().readerFor(HelloMessage.class).readValue(value);
-    assertEquals(hello.bestRoot(), read.bestRoot());
+    assertTrue(Arrays.equals(hello.bestRoot(), read.bestRoot()));
     assertEquals(hello.networkId(), read.networkId());
   }
 
