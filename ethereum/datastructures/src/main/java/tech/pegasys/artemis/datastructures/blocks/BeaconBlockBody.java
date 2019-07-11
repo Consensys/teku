@@ -42,12 +42,12 @@ public class BeaconBlockBody implements SimpleOffsetSerializable {
   private BLSSignature randao_reveal;
   private Eth1Data eth1_data;
   private Bytes32 graffiti;
-  private List<ProposerSlashing> proposer_slashings;
-  private List<AttesterSlashing> attester_slashings;
-  private List<Attestation> attestations;
-  private List<Deposit> deposits;
-  private List<VoluntaryExit> voluntary_exits;
-  private List<Transfer> transfers;
+  private List<ProposerSlashing> proposer_slashings; // List bounded by MAX_PROPOSER_SLASHINGS
+  private List<AttesterSlashing> attester_slashings; // List bounded by MAX_ATTESTER_SLASHINGS
+  private List<Attestation> attestations;// List bounded by MAX_ATTESTATIONS
+  private List<Deposit> deposits;// List bounded by MAX_DEPOSITS
+  private List<VoluntaryExit> voluntary_exits;// List bounded by MAX_VOLUNTARY_EXITS
+  private List<Transfer> transfers;// List bounded by MAX_TRANSFERS
 
   public BeaconBlockBody(
       BLSSignature randao_reveal,

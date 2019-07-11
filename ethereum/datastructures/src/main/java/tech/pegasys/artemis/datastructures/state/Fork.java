@@ -26,10 +26,7 @@ import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
-public class Fork implements SimpleOffsetSerializable {
-
-  // The number of SimpleSerialize basic types in this SSZ Container/POJO.
-  public static final int SSZ_FIELD_COUNT = 3;
+public class Fork {
 
   private Bytes previous_version; // This is bounded as a Bytes4
   private Bytes current_version; // This is bounded as a Bytes4
@@ -53,19 +50,6 @@ public class Fork implements SimpleOffsetSerializable {
     this.previous_version = fork.getPrevious_version();
     this.current_version = fork.getCurrent_version();
     this.epoch = fork.getEpoch();
-  }
-
-  @Override
-  public int getSSZFieldCount() {
-    return SSZ_FIELD_COUNT;
-  }
-
-  @Override
-  public List<Bytes> get_fixed_parts() {
-    return List.of(
-        SSZ.encode(writer -> writer.writeFixedBytes(previous_version)),
-        SSZ.encode(writer -> writer.writeFixedBytes(current_version)),
-        SSZ.encodeUInt64(epoch.longValue()));
   }
 
   public static Fork fromBytes(Bytes bytes) {

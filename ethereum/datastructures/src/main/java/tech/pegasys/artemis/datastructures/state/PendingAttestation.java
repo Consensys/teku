@@ -34,7 +34,7 @@ public class PendingAttestation
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
   public static final int SSZ_FIELD_COUNT = 2;
 
-  private Bytes aggregation_bitfield;
+  private Bytes aggregation_bits; // bitlist bounded by MAX_VALIDATORS_PER_COMMITTEE
   private AttestationData data;
   private UnsignedLong inclusion_delay;
   private UnsignedLong proposer_index;
@@ -44,14 +44,14 @@ public class PendingAttestation
       AttestationData data,
       UnsignedLong inclusion_delay,
       UnsignedLong proposer_index) {
-    this.aggregation_bitfield = aggregation_bitfield;
+    this.aggregation_bits = aggregation_bitfield;
     this.data = data;
     this.inclusion_delay = inclusion_delay;
     this.proposer_index = proposer_index;
   }
 
   public PendingAttestation(PendingAttestation pendingAttestation) {
-    this.aggregation_bitfield = pendingAttestation.getAggregation_bitfield().copy();
+    this.aggregation_bits = pendingAttestation.getAggregation_bitfield().copy();
     this.data = new AttestationData(pendingAttestation.getData());
     this.inclusion_delay = pendingAttestation.getInclusion_delay();
     this.proposer_index = pendingAttestation.getProposer_index();
@@ -85,7 +85,7 @@ public class PendingAttestation
         bytes,
         reader ->
             new PendingAttestation(
-                Bytes.wrap(reader.readBytes()),
+                Bytes.wrap(reader.readBytes()), // TODO readBitlist logic required
                 AttestationData.fromBytes(reader.readBytes()),
                 UnsignedLong.fromLongBits(reader.readUInt64()),
                 UnsignedLong.fromLongBits(reader.readUInt64())));
@@ -94,7 +94,7 @@ public class PendingAttestation
   public Bytes toBytes() {
     return SSZ.encode(
         writer -> {
-          writer.writeBytes(aggregation_bitfield);
+          writer.writeBytes(aggregation_bits); // TODO writeBitlist logic required
           writer.writeBytes(data.toBytes());
           writer.writeUInt64(inclusion_delay.longValue());
           writer.writeUInt64(proposer_index.longValue());
@@ -103,7 +103,7 @@ public class PendingAttestation
 
   @Override
   public int hashCode() {
-    return Objects.hash(aggregation_bitfield, data, inclusion_delay, proposer_index);
+    return Objects.hash(aggregation_bits, data, inclusion_delay, proposer_index);
   }
 
   @Override
@@ -129,11 +129,11 @@ public class PendingAttestation
 
   /** ******************* * GETTERS & SETTERS * * ******************* */
   public Bytes getAggregation_bitfield() {
-    return aggregation_bitfield;
+    return aggregation_bits;
   }
 
   public void setAggregation_bitfield(Bytes aggregation_bitfield) {
-    this.aggregation_bitfield = aggregation_bitfield;
+    this.aggregation_bits = aggregation_bitfield;
   }
 
   public AttestationData getData() {
@@ -164,7 +164,7 @@ public class PendingAttestation
   public Bytes32 hash_tree_root() {
     return HashTreeUtil.merkleize(
         Arrays.asList(
-            HashTreeUtil.hash_tree_root(SSZTypes.LIST_OF_BASIC, aggregation_bitfield),
+            HashTreeUtil.hash_tree_root(SSZTypes.LIST_OF_BASIC, aggregation_bits),// TODO writeBitlist logic required
             data.hash_tree_root(),
             HashTreeUtil.hash_tree_root(
                 SSZTypes.BASIC, SSZ.encodeUInt64(inclusion_delay.longValue())),

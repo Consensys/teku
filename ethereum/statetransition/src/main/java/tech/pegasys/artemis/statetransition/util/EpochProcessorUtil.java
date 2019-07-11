@@ -288,11 +288,11 @@ public final class EpochProcessorUtil {
 
       UnsignedLong previous_epoch = get_previous_epoch(state);
       UnsignedLong current_epoch = get_current_epoch(state);
-      UnsignedLong old_previous_justified_epoch = state.getPrevious_justified_epoch();
-      UnsignedLong old_current_justified_epoch = state.getCurrent_justified_epoch();
+      UnsignedLong old_previous_justified_epoch = state.getPrevious_justified_checkpoint();
+      UnsignedLong old_current_justified_epoch = state.getCurrent_justified_chekpoint();
 
       // Process justifications
-      state.setPrevious_justified_epoch(state.getCurrent_justified_epoch());
+      state.setPrevious_justified_checkpoint(state.getCurrent_justified_chekpoint());
       state.setPrevious_justified_root(state.getCurrent_justified_root());
       UnsignedLong justification_bitfield = state.getJustification_bitfield();
       justification_bitfield =
@@ -306,8 +306,8 @@ public final class EpochProcessorUtil {
               .times(UnsignedLong.valueOf(3))
               .compareTo(get_total_active_balance(state).times(UnsignedLong.valueOf(2)))
           >= 0) {
-        state.setCurrent_justified_epoch(previous_epoch);
-        state.setCurrent_justified_root(get_block_root(state, state.getCurrent_justified_epoch()));
+        state.setCurrent_justified_chekpoint(previous_epoch);
+        state.setCurrent_justified_root(get_block_root(state, state.getCurrent_justified_chekpoint()));
         UnsignedLong one = BitwiseOps.leftShift(UnsignedLong.ONE, 1);
         state.setJustification_bitfield(BitwiseOps.or(state.getJustification_bitfield(), one));
       }
@@ -319,8 +319,8 @@ public final class EpochProcessorUtil {
               .times(UnsignedLong.valueOf(3))
               .compareTo(get_total_active_balance(state).times(UnsignedLong.valueOf(2)))
           >= 0) {
-        state.setCurrent_justified_epoch(current_epoch);
-        state.setCurrent_justified_root(get_block_root(state, state.getCurrent_justified_epoch()));
+        state.setCurrent_justified_chekpoint(current_epoch);
+        state.setCurrent_justified_root(get_block_root(state, state.getCurrent_justified_chekpoint()));
         state.setJustification_bitfield(
             BitwiseOps.or(state.getJustification_bitfield(), UnsignedLong.ONE));
       }
@@ -337,25 +337,25 @@ public final class EpochProcessorUtil {
       if (BitwiseOps.rightShift(bitfield, 1).mod(decimal8).equals(binary111)
           && old_previous_justified_epoch.plus(UnsignedLong.valueOf(3)).equals(current_epoch)) {
         state.setFinalized_epoch(old_previous_justified_epoch);
-        state.setFinalized_root(get_block_root(state, state.getFinalized_epoch()));
+        state.setFinalized_checkpoint(get_block_root(state, state.getFinalized_epoch()));
       }
       // The 2nd/3rd most recent epochs are both justified, the 2nd using the 3rd as source
       if (BitwiseOps.rightShift(bitfield, 1).mod(decimal4).equals(binary11)
           && old_previous_justified_epoch.plus(UnsignedLong.valueOf(2)).equals(current_epoch)) {
         state.setFinalized_epoch(old_previous_justified_epoch);
-        state.setFinalized_root(get_block_root(state, state.getFinalized_epoch()));
+        state.setFinalized_checkpoint(get_block_root(state, state.getFinalized_epoch()));
       }
       // The 1st/2nd/3rd most recent epochs are all justified, the 1st using the 3rd as source
       if (bitfield.mod(decimal8).equals(binary111)
           && old_current_justified_epoch.plus(UnsignedLong.valueOf(2)).equals(current_epoch)) {
         state.setFinalized_epoch(old_current_justified_epoch);
-        state.setFinalized_root(get_block_root(state, state.getFinalized_epoch()));
+        state.setFinalized_checkpoint(get_block_root(state, state.getFinalized_epoch()));
       }
       // The 1st/2nd most recent epochs are both justified, the 1st using the 2nd as source
       if (bitfield.mod(decimal4).equals(binary11)
           && old_current_justified_epoch.plus(UnsignedLong.ONE).equals(current_epoch)) {
         state.setFinalized_epoch(old_current_justified_epoch);
-        state.setFinalized_root(get_block_root(state, state.getFinalized_epoch()));
+        state.setFinalized_checkpoint(get_block_root(state, state.getFinalized_epoch()));
       }
     } catch (IllegalArgumentException e) {
       LOG.log(Level.WARN, e.getMessage());

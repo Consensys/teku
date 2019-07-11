@@ -33,8 +33,8 @@ public class IndexedAttestation implements Merkleizable, SimpleOffsetSerializabl
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
   public static final int SSZ_FIELD_COUNT = 0;
 
-  private List<Integer> custody_bit_0_indices;
-  private List<Integer> custody_bit_1_indices;
+  private List<Integer> custody_bit_0_indices; // List bounded by MAX_VALIDATORS_PER_COMMITTEE
+  private List<Integer> custody_bit_1_indices; // List bounded by MAX_VALIDATORS_PER_COMMITTEE
   private AttestationData data;
   private BLSSignature signature;
 
@@ -76,7 +76,6 @@ public class IndexedAttestation implements Merkleizable, SimpleOffsetSerializabl
     return Collections.nCopies(getSSZFieldCount(), Bytes.EMPTY);
   }
 
-  // TODO Indexed Attestation should be converted to unsigned longs before serialization
   public static IndexedAttestation fromBytes(Bytes bytes) {
     return SSZ.decode(
         bytes,
@@ -94,7 +93,6 @@ public class IndexedAttestation implements Merkleizable, SimpleOffsetSerializabl
                 BLSSignature.fromBytes(reader.readBytes())));
   }
 
-  // TODO Indexed Attestation should be converted to unsigned longs before serialization
   public Bytes toBytes() {
     return SSZ.encode(
         writer -> {

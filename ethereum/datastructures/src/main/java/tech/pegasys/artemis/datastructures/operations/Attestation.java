@@ -32,20 +32,20 @@ public class Attestation implements Merkleizable, SimpleOffsetSerializable {
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
   public static final int SSZ_FIELD_COUNT = 2;
 
-  private Bytes aggregation_bitfield;
+  private Bytes aggregation_bitfield; // Bitlist bounded by MAX_VALIDATORS_PER_COMMITTEE
   private AttestationData data;
-  private Bytes custody_bitfield;
-  private BLSSignature aggregate_signature;
+  private Bytes custody_bitfield; // Bitlist bounded by MAX_VALIDATORS_PER_COMMITTEE
+  private BLSSignature signature;
 
   public Attestation(
       Bytes aggregation_bitfield,
       AttestationData data,
       Bytes custody_bitfield,
-      BLSSignature aggregate_signature) {
+      BLSSignature signature) {
     this.aggregation_bitfield = aggregation_bitfield;
     this.data = data;
     this.custody_bitfield = custody_bitfield;
-    this.aggregate_signature = aggregate_signature;
+    this.signature = signature;
   }
 
   @Override
@@ -71,25 +71,25 @@ public class Attestation implements Merkleizable, SimpleOffsetSerializable {
         bytes,
         reader ->
             new Attestation(
-                Bytes.wrap(reader.readBytes()),
+                Bytes.wrap(reader.readBytes()),// TODO readBitlist logic required
                 AttestationData.fromBytes(reader.readBytes()),
-                Bytes.wrap(reader.readBytes()),
+                Bytes.wrap(reader.readBytes()),// TODO readBitlist logic required
                 BLSSignature.fromBytes(reader.readBytes())));
   }
 
   public Bytes toBytes() {
     return SSZ.encode(
         writer -> {
-          writer.writeBytes(aggregation_bitfield);
+          writer.writeBytes(aggregation_bitfield);// TODO writeBitlist logic required
           writer.writeBytes(data.toBytes());
-          writer.writeBytes(custody_bitfield);
-          writer.writeBytes(aggregate_signature.toBytes());
+          writer.writeBytes(custody_bitfield);// TODO writeBitlist logic required
+          writer.writeBytes(signature.toBytes());
         });
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(aggregation_bitfield, data, custody_bitfield, aggregate_signature);
+    return Objects.hash(aggregation_bitfield, data, custody_bitfield, signature);
   }
 
   @Override
@@ -139,24 +139,20 @@ public class Attestation implements Merkleizable, SimpleOffsetSerializable {
   }
 
   public BLSSignature getAggregate_signature() {
-    return aggregate_signature;
+    return signature;
   }
 
   public void setAggregate_signature(BLSSignature aggregate_signature) {
-    this.aggregate_signature = aggregate_signature;
-  }
-
-  public UnsignedLong getTarget_epoch() {
-    return this.data.getTarget_epoch();
+    this.signature = aggregate_signature;
   }
 
   @Override
   public Bytes32 hash_tree_root() {
     return HashTreeUtil.merkleize(
         Arrays.asList(
-            HashTreeUtil.hash_tree_root(SSZTypes.LIST_OF_BASIC, aggregation_bitfield),
+            HashTreeUtil.hash_tree_root(SSZTypes.LIST_OF_BASIC, aggregation_bitfield),// TODO writeBitlist logic required
             data.hash_tree_root(),
-            HashTreeUtil.hash_tree_root(SSZTypes.LIST_OF_BASIC, custody_bitfield),
-            HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, aggregate_signature.toBytes())));
+            HashTreeUtil.hash_tree_root(SSZTypes.LIST_OF_BASIC, custody_bitfield),// TODO writeBitlist logic required
+            HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, signature.toBytes())));
   }
 }

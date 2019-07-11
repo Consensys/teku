@@ -16,11 +16,13 @@ package tech.pegasys.artemis.datastructures.operations;
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
+import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.datastructures.state.Crosslink;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
@@ -29,61 +31,52 @@ import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 public class AttestationData implements SimpleOffsetSerializable {
 
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
-  public static final int SSZ_FIELD_COUNT = 5;
+  public static final int SSZ_FIELD_COUNT = 1;
 
   // LMD GHOST vote
   private Bytes32 beacon_block_root;
 
   // FFG vote
-  private UnsignedLong source_epoch;
-  private Bytes32 source_root;
-  private UnsignedLong target_epoch;
-  private Bytes32 target_root;
+  private Checkpoint source;
+  private Checkpoint target;
 
   // Crosslink vote
   private Crosslink crosslink;
 
   public AttestationData(
       Bytes32 beacon_block_root,
-      UnsignedLong source_epoch,
-      Bytes32 source_root,
-      UnsignedLong target_epoch,
-      Bytes32 target_root,
+      Checkpoint source,
+      Checkpoint target,
       Crosslink crosslink) {
     this.beacon_block_root = beacon_block_root;
-    this.source_epoch = source_epoch;
-    this.source_root = source_root;
-    this.target_epoch = target_epoch;
-    this.target_root = target_root;
+    this.source = source;
+    this.target = target;
     this.crosslink = crosslink;
   }
 
   public AttestationData(AttestationData attestationData) {
     this.beacon_block_root = attestationData.getBeacon_block_root();
-    this.source_epoch = attestationData.getSource_epoch();
-    this.source_root = attestationData.getSource_root();
-    this.target_epoch = attestationData.getTarget_epoch();
-    this.target_root = attestationData.getTarget_root();
+    this.source = new Checkpoint(attestationData.getSource());
+    this.target = new Checkpoint(attestationData.getTarget());
     this.crosslink = new Crosslink(attestationData.getCrosslink());
   }
 
   @Override
   public int getSSZFieldCount() {
-    return SSZ_FIELD_COUNT + crosslink.getSSZFieldCount();
+    // TODO Finish this stub.
+    return SSZ_FIELD_COUNT;
   }
 
   @Override
   public List<Bytes> get_fixed_parts() {
-    List<Bytes> fixedPartsList =
-        new ArrayList<>(
-            List.of(
-                SSZ.encode(writer -> writer.writeFixedBytes(beacon_block_root)),
-                SSZ.encodeUInt64(source_epoch.longValue()),
-                SSZ.encode(writer -> writer.writeFixedBytes(source_root)),
-                SSZ.encodeUInt64(target_epoch.longValue()),
-                SSZ.encode(writer -> writer.writeFixedBytes(target_root))));
-    fixedPartsList.addAll(crosslink.get_fixed_parts());
-    return fixedPartsList;
+    // TODO Implement this stub.
+    return Collections.nCopies(getSSZFieldCount(), Bytes.EMPTY);
+  }
+
+  @Override
+  public List<Bytes> get_variable_parts() {
+    // TODO Implement this stub.
+    return Collections.nCopies(getSSZFieldCount(), Bytes.EMPTY);
   }
 
   public static AttestationData fromBytes(Bytes bytes) {
@@ -92,10 +85,8 @@ public class AttestationData implements SimpleOffsetSerializable {
         reader ->
             new AttestationData(
                 Bytes32.wrap(reader.readFixedBytes(32)),
-                UnsignedLong.fromLongBits(reader.readUInt64()),
-                Bytes32.wrap(reader.readFixedBytes(32)),
-                UnsignedLong.fromLongBits(reader.readUInt64()),
-                Bytes32.wrap(reader.readFixedBytes(32)),
+                Checkpoint.fromBytes(reader.readBytes()),
+                Checkpoint.fromBytes(reader.readBytes()),
                 Crosslink.fromBytes(reader.readBytes())));
   }
 
@@ -103,10 +94,8 @@ public class AttestationData implements SimpleOffsetSerializable {
     return SSZ.encode(
         writer -> {
           writer.writeFixedBytes(beacon_block_root);
-          writer.writeUInt64(source_epoch.longValue());
-          writer.writeFixedBytes(source_root);
-          writer.writeUInt64(target_epoch.longValue());
-          writer.writeFixedBytes(target_root);
+          writer.writeBytes(source.toBytes());
+          writer.writeBytes(target.toBytes());
           writer.writeBytes(crosslink.toBytes());
         });
   }
@@ -114,7 +103,7 @@ public class AttestationData implements SimpleOffsetSerializable {
   @Override
   public int hashCode() {
     return Objects.hash(
-        beacon_block_root, source_epoch, source_root, target_epoch, target_root, crosslink);
+        beacon_block_root, source, target, crosslink);
   }
 
   @Override
@@ -133,10 +122,8 @@ public class AttestationData implements SimpleOffsetSerializable {
 
     AttestationData other = (AttestationData) obj;
     return Objects.equals(this.getBeacon_block_root(), other.getBeacon_block_root())
-        && Objects.equals(this.getSource_epoch(), other.getSource_epoch())
-        && Objects.equals(this.getSource_root(), other.getSource_root())
-        && Objects.equals(this.getTarget_epoch(), other.getTarget_epoch())
-        && Objects.equals(this.getTarget_root(), other.getTarget_root())
+        && Objects.equals(this.getSource(), other.getSource())
+        && Objects.equals(this.getTarget(), other.getTarget())
         && Objects.equals(this.getCrosslink(), other.getCrosslink());
   }
 
@@ -149,36 +136,20 @@ public class AttestationData implements SimpleOffsetSerializable {
     this.beacon_block_root = beacon_block_root;
   }
 
-  public UnsignedLong getSource_epoch() {
-    return source_epoch;
+  public Checkpoint getSource() {
+    return source;
   }
 
-  public void setSource_epoch(UnsignedLong source_epoch) {
-    this.source_epoch = source_epoch;
+  public void setSource(Checkpoint source) {
+    this.source = source;
   }
 
-  public Bytes32 getSource_root() {
-    return source_root;
+  public Checkpoint getTarget() {
+    return target;
   }
 
-  public void setSource_root(Bytes32 source_root) {
-    this.source_root = source_root;
-  }
-
-  public UnsignedLong getTarget_epoch() {
-    return target_epoch;
-  }
-
-  public void setTarget_epoch(UnsignedLong target_epoch) {
-    this.target_epoch = target_epoch;
-  }
-
-  public Bytes32 getTarget_root() {
-    return target_root;
-  }
-
-  public void setTarget_root(Bytes32 target_root) {
-    this.target_root = target_root;
+  public void setTarget(Checkpoint target_epoch) {
+    this.target = target;
   }
 
   public Crosslink getCrosslink() {
@@ -193,10 +164,8 @@ public class AttestationData implements SimpleOffsetSerializable {
     return HashTreeUtil.merkleize(
         Arrays.asList(
             HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, beacon_block_root),
-            HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(source_epoch.longValue())),
-            HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, source_root),
-            HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(target_epoch.longValue())),
-            HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, target_root),
+            source.hash_tree_root(),
+            target.hash_tree_root(),
             crosslink.hash_tree_root()));
   }
 }
