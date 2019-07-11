@@ -46,7 +46,7 @@ public class Constants {
   public static long EFFECTIVE_BALANCE_INCREMENT = 1000000000L;
 
   // Initial values
-  public static long GENESIS_SLOT = 0; // 2^32
+  public static long GENESIS_SLOT = 0;
   public static long GENESIS_EPOCH = 0;
   public static Bytes BLS_WITHDRAWAL_PREFIX = Bytes.wrap(new byte[1]);
 
