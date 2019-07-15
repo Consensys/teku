@@ -34,7 +34,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.hobbits.Message;
 import org.apache.tuweni.hobbits.Protocol;
 import org.apache.tuweni.plumtree.State;
-import org.apache.tuweni.units.bigints.UInt64;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
@@ -192,10 +191,10 @@ public abstract class AbstractSocketHandler {
           new HelloMessage(
               1,
               1,
-              store.getFinalizedBlockRoot(),
-              UInt64.valueOf(store.getFinalizedEpoch().longValue()),
-              store.getBestBlockRoot(),
-              UInt64.valueOf(store.getBestSlot().longValue()));
+              store.getFinalizedBlockRoot().toArrayUnsafe(),
+              store.getFinalizedEpoch().bigIntegerValue(),
+              store.getBestBlockRoot().toArrayUnsafe(),
+              store.getBestSlot().bigIntegerValue());
       STDOUT.log(Level.INFO, "Send reply hello to: " + peer.uri());
       sendReply(RPCMethod.HELLO, msg, requestId);
       peer.setPeerHello(true);
@@ -207,10 +206,10 @@ public abstract class AbstractSocketHandler {
         new HelloMessage(
             1,
             1,
-            store.getFinalizedBlockRoot(),
-            UInt64.valueOf(store.getFinalizedEpoch().longValue()),
-            store.getBestBlockRoot(),
-            UInt64.valueOf(store.getBestSlot().longValue()));
+            store.getFinalizedBlockRoot().toArrayUnsafe(),
+            store.getFinalizedEpoch().bigIntegerValue(),
+            store.getBestBlockRoot().toArrayUnsafe(),
+            store.getBestSlot().bigIntegerValue());
     STDOUT.log(Level.INFO, "Send hello to: " + peer.uri());
     sendMessage(RPCMethod.HELLO, msg);
     peer.setPeerHello(true);
