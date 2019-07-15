@@ -16,6 +16,7 @@ package tech.pegasys.artemis.datastructures.state;
 import com.google.common.primitives.UnsignedLong;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 
 import org.apache.tuweni.bytes.Bytes;
@@ -23,8 +24,12 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
+import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
-public class Checkpoint {
+public class Checkpoint implements SimpleOffsetSerializable {
+
+  // The number of SimpleSerialize basic types in this SSZ Container/POJO.
+  public static final int SSZ_FIELD_COUNT = 2;
 
   private UnsignedLong epoch;
   private Bytes32 hash;
@@ -42,6 +47,19 @@ public class Checkpoint {
   public Checkpoint() {
     this.epoch = UnsignedLong.ZERO;
     this.hash = Bytes32.ZERO;
+  }
+
+  @Override
+  public int getSSZFieldCount() {
+    return SSZ_FIELD_COUNT;
+  }
+
+  @Override
+  public List<Bytes> get_fixed_parts() {
+    return List.of(
+      SSZ.encodeUInt64(epoch.longValue()),
+      SSZ.encode(writer -> writer.writeFixedBytes(hash))
+    );
   }
 
   public static Checkpoint fromBytes(Bytes bytes) {

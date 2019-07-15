@@ -14,7 +14,10 @@
 package tech.pegasys.artemis.datastructures.state;
 
 import com.google.common.primitives.UnsignedLong;
+
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -23,9 +26,13 @@ import tech.pegasys.artemis.datastructures.Copyable;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
+import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 import tech.pegasys.artemis.util.hashtree.Merkleizable;
 
-public class Validator implements Copyable<Validator>, Merkleizable {
+public class Validator implements Copyable<Validator>, Merkleizable, SimpleOffsetSerializable {
+
+  // The number of SimpleSerialize basic types in this SSZ Container/POJO.
+  public static final int SSZ_FIELD_COUNT = 7;
 
   // BLS public key
   private BLSPublicKey pubkey;
@@ -52,7 +59,7 @@ public class Validator implements Copyable<Validator>, Merkleizable {
       UnsignedLong activation_eligibility_epoch,
       UnsignedLong activation_epoch,
       UnsignedLong exit_epoch,
-      UnsignedLong withdrawal_epoch){
+      UnsignedLong withdrawable_epoch){
     this.pubkey = pubkey;
     this.withdrawal_credentials = withdrawal_credentials;
     this.slashed = slashed;
@@ -60,7 +67,7 @@ public class Validator implements Copyable<Validator>, Merkleizable {
     this.activation_eligibility_epoch = activation_eligibility_epoch;
     this.activation_epoch = activation_epoch;
     this.exit_epoch = exit_epoch;
-    this.withdrawable_epoch = withdrawal_epoch;
+    this.withdrawable_epoch = withdrawable_epoch;
   }
 
   public Validator(Validator validator) {
@@ -88,6 +95,27 @@ public class Validator implements Copyable<Validator>, Merkleizable {
   @Override
   public Validator copy() {
     return new Validator(this);
+  }
+
+  @Override
+  public int getSSZFieldCount() {
+    return pubkey.getSSZFieldCount() + SSZ_FIELD_COUNT;
+  }
+
+  @Override
+  public List<Bytes> get_fixed_parts() {
+    List<Bytes> fixedPartsList = new ArrayList<>();
+    fixedPartsList.addAll(pubkey.get_fixed_parts());
+    fixedPartsList.addAll(
+      List.of(
+        SSZ.encode(writer -> writer.writeFixedBytes(withdrawal_credentials)),
+        SSZ.encodeUInt64(effective_balance.longValue()),
+        SSZ.encodeBoolean(slashed),
+        SSZ.encodeUInt64(activation_eligibility_epoch.longValue()),
+        SSZ.encodeUInt64(activation_epoch.longValue()),
+        SSZ.encodeUInt64(exit_epoch.longValue()),
+        SSZ.encodeUInt64(withdrawable_epoch.longValue())));
+    return fixedPartsList;
   }
 
   public static Validator fromBytes(Bytes bytes) {

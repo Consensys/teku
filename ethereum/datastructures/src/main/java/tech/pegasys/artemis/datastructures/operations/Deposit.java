@@ -60,6 +60,17 @@ public class Deposit implements Merkleizable, SimpleOffsetSerializable {
     return /*proof.getSSZFieldCount() + */ data.getSSZFieldCount() + SSZ_FIELD_COUNT;
   }
 
+  @Override
+  public List<Bytes> get_fixed_parts() {
+    List<Bytes> fixedPartsList = new ArrayList<>();
+    fixedPartsList.addAll(
+        List.of(SSZ.encode(writer -> writer.writeFixedBytesVector(proof))));
+    fixedPartsList.addAll(data.get_fixed_parts());
+    fixedPartsList.addAll(
+      List.of(SSZ.encodeUInt64(index.longValue())));
+    return fixedPartsList;
+  }
+
   public static Deposit fromBytes(Bytes bytes) {
     return SSZ.decode(
         bytes,

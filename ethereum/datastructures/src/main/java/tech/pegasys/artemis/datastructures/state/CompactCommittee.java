@@ -15,9 +15,7 @@ package tech.pegasys.artemis.datastructures.state;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
 import com.google.common.primitives.UnsignedLong;
@@ -25,7 +23,6 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.Bytes48;
 import org.apache.tuweni.ssz.SSZ;
-import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.Copyable;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
@@ -35,12 +32,12 @@ import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 public class CompactCommittee implements Copyable<CompactCommittee>, Merkleizable, SimpleOffsetSerializable {
 
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
-  public static final int SSZ_FIELD_COUNT = 0;
+  public static final int SSZ_FIELD_COUNT = 2;
 
-  private List<Bytes48> pubkeys; // Bounded by MAX_VALIDATORS_PER_COMMITTEE
-  private List<Integer> compact_validators; // Bounded by MAX_VALIDATORS_PER_COMMITTEE
+  private List<Bytes48> pubkeys; // List bounded by MAX_VALIDATORS_PER_COMMITTEE
+  private List<UnsignedLong> compact_validators; // List bounded by MAX_VALIDATORS_PER_COMMITTEE
 
-  public CompactCommittee(List<Bytes48> pubkeys, List<Integer> compact_validators) {
+  public CompactCommittee(List<Bytes48> pubkeys, List<UnsignedLong> compact_validators) {
     this.pubkeys = pubkeys;
     this.compact_validators = compact_validators;
   }
@@ -57,20 +54,21 @@ public class CompactCommittee implements Copyable<CompactCommittee>, Merkleizabl
 
   @Override
   public int getSSZFieldCount() {
-    // TODO Finish this stub.
     return SSZ_FIELD_COUNT;
   }
 
   @Override
-  public List<Bytes> get_fixed_parts() {
-    // TODO Implement this stub.
-    return Collections.nCopies(getSSZFieldCount(), Bytes.EMPTY);
-  }
-
-  @Override
   public List<Bytes> get_variable_parts() {
-    // TODO Implement this stub.
-    return Collections.nCopies(getSSZFieldCount(), Bytes.EMPTY);
+    List<Bytes> variablePartsList = new ArrayList<>();
+    variablePartsList.addAll(
+      List.of(SSZ.encode(writer -> writer.writeFixedBytesVector(pubkeys)))
+    );
+    variablePartsList.addAll(
+      compact_validators.stream().map(value -> SSZ.encodeUInt64(value.longValue())).collect(Collectors.toList())
+    );
+    variablePartsList.addAll(
+        List.of(Bytes.EMPTY, Bytes.EMPTY));
+    return variablePartsList;
   }
 
   public static CompactCommittee fromBytes(Bytes bytes) {
@@ -83,7 +81,6 @@ public class CompactCommittee implements Copyable<CompactCommittee>, Merkleizabl
                         .collect(Collectors.toList()),
                 reader.readUInt64List().stream()
                     .map(UnsignedLong::fromLongBits)
-                    .map(UnsignedLong::intValue)
                     .collect(Collectors.toList())));
   }
 
@@ -94,7 +91,6 @@ public class CompactCommittee implements Copyable<CompactCommittee>, Merkleizabl
           writer.writeULongIntList(
               64,
               compact_validators.stream()
-                  .map(UnsignedLong::valueOf)
                   .map(UnsignedLong::longValue)
                   .collect(Collectors.toList()));
         });
@@ -110,11 +106,11 @@ public class CompactCommittee implements Copyable<CompactCommittee>, Merkleizabl
     this.pubkeys = pubkeys;
   }
 
-  public List<Integer> getCompact_validators() {
+  public List<UnsignedLong> getCompact_validators() {
     return compact_validators;
   }
 
-  public void setCompact_validators(List<Integer> compact_validators) {
+  public void setCompact_validators(List<UnsignedLong> compact_validators) {
     this.compact_validators = compact_validators;
   }
 
@@ -130,7 +126,7 @@ public class CompactCommittee implements Copyable<CompactCommittee>, Merkleizabl
                     HashTreeUtil.hash_tree_root(
                             SSZTypes.LIST_OF_BASIC,
                             compact_validators.stream()
-                                    .map(item -> SSZ.encodeUInt64(UnsignedLong.valueOf(item).longValue()))
+                                    .map(item -> SSZ.encodeUInt64(item.longValue()))
                                     .collect(Collectors.toList()))));
   }
 }

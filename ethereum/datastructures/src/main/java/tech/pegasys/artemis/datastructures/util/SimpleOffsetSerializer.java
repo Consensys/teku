@@ -57,4 +57,12 @@ public class SimpleOffsetSerializer {
         Bytes.concatenate(interleaved_values.toArray(new Bytes[0])),
         Bytes.concatenate(value.get_variable_parts().toArray(new Bytes[0])));
   }
+
+  public static Bytes getVectorFixedParts(List<? extends Bytes> vector) {
+    Bytes fixedPartBytes = Bytes.EMPTY;
+    for (Bytes element : vector) {
+      fixedPartBytes = Bytes.concatenate(fixedPartBytes, element);
+    }
+    return fixedPartBytes;
+  }
 }

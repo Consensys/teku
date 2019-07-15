@@ -14,6 +14,8 @@
 package tech.pegasys.artemis.datastructures.state;
 
 import com.google.common.primitives.UnsignedLong;
+
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -32,7 +34,7 @@ public class PendingAttestation
     implements Copyable<PendingAttestation>, Merkleizable, SimpleOffsetSerializable {
 
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
-  public static final int SSZ_FIELD_COUNT = 2;
+  public static final int SSZ_FIELD_COUNT = 3;
 
   private Bytes aggregation_bits; // bitlist bounded by MAX_VALIDATORS_PER_COMMITTEE
   private AttestationData data;
@@ -64,20 +66,28 @@ public class PendingAttestation
 
   @Override
   public int getSSZFieldCount() {
-    // TODO Finish this stub.
-    return SSZ_FIELD_COUNT;
+    return data.getSSZFieldCount() + SSZ_FIELD_COUNT;
   }
 
   @Override
   public List<Bytes> get_fixed_parts() {
-    // TODO Implement this stub.
-    return Collections.nCopies(getSSZFieldCount(), Bytes.EMPTY);
+    List<Bytes> fixedPartsList = new ArrayList<>();
+    fixedPartsList.addAll(
+        List.of(Bytes.EMPTY));
+    fixedPartsList.addAll(data.get_fixed_parts());
+    fixedPartsList.addAll(
+        List.of(SSZ.encodeUInt64(inclusion_delay.longValue()),
+        SSZ.encodeUInt64(proposer_index.longValue())));
+    return fixedPartsList;
   }
 
   @Override
   public List<Bytes> get_variable_parts() {
-    // TODO Implement this stub.
-    return Collections.nCopies(getSSZFieldCount(), Bytes.EMPTY);
+    List<Bytes> fixedPartsList = new ArrayList<>();
+    // fixedPartsList.addAll( /* TODO Serialize Bitlist */ );
+    fixedPartsList.addAll(
+        List.of(Bytes.EMPTY, Bytes.EMPTY, Bytes.EMPTY));
+    return fixedPartsList;
   }
 
   public static PendingAttestation fromBytes(Bytes bytes) {

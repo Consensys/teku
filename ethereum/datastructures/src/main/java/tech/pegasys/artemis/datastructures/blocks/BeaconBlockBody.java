@@ -44,10 +44,10 @@ public class BeaconBlockBody implements SimpleOffsetSerializable {
   private Bytes32 graffiti;
   private List<ProposerSlashing> proposer_slashings; // List bounded by MAX_PROPOSER_SLASHINGS
   private List<AttesterSlashing> attester_slashings; // List bounded by MAX_ATTESTER_SLASHINGS
-  private List<Attestation> attestations;// List bounded by MAX_ATTESTATIONS
-  private List<Deposit> deposits;// List bounded by MAX_DEPOSITS
-  private List<VoluntaryExit> voluntary_exits;// List bounded by MAX_VOLUNTARY_EXITS
-  private List<Transfer> transfers;// List bounded by MAX_TRANSFERS
+  private List<Attestation> attestations; // List bounded by MAX_ATTESTATIONS
+  private List<Deposit> deposits; // List bounded by MAX_DEPOSITS
+  private List<VoluntaryExit> voluntary_exits; // List bounded by MAX_VOLUNTARY_EXITS
+  private List<Transfer> transfers; // List bounded by MAX_TRANSFERS
 
   public BeaconBlockBody(
       BLSSignature randao_reveal,
@@ -85,7 +85,8 @@ public class BeaconBlockBody implements SimpleOffsetSerializable {
   @Override
   public int getSSZFieldCount() {
     // TODO Finish this stub.
-    return SSZ_FIELD_COUNT;
+    return randao_reveal.getSSZFieldCount() + eth1_data.getSSZFieldCount() + SSZ_FIELD_COUNT;
+    // + add list counts
   }
 
   @Override
