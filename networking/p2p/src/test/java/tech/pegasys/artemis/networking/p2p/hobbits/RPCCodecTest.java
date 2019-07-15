@@ -16,10 +16,11 @@ package tech.pegasys.artemis.networking.p2p.hobbits;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.math.BigInteger;
+import java.util.Arrays;
 import java.util.Map;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.hobbits.Message;
-import org.apache.tuweni.units.bigints.UInt64;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.networking.p2p.hobbits.rpc.HelloMessage;
 import tech.pegasys.artemis.networking.p2p.hobbits.rpc.RPCCodec;
@@ -42,11 +43,16 @@ final class RPCCodecTest {
   void testHello() {
     HelloMessage hello =
         new HelloMessage(
-            1, 1, Bytes32.random(), UInt64.valueOf(0), Bytes32.random(), UInt64.valueOf(0));
+            1,
+            1,
+            Bytes32.random().toArrayUnsafe(),
+            BigInteger.ZERO,
+            Bytes32.random().toArrayUnsafe(),
+            BigInteger.ZERO);
     Message encoded = RPCCodec.encode(RPCMethod.HELLO, hello, 23);
     RPCMessage message = RPCCodec.decode(encoded);
     assertEquals(RPCMethod.HELLO, message.method());
     HelloMessage read = message.bodyAs(HelloMessage.class);
-    assertEquals(read.bestRoot(), hello.bestRoot());
+    assertTrue(Arrays.equals(hello.bestRoot(), read.bestRoot()));
   }
 }
