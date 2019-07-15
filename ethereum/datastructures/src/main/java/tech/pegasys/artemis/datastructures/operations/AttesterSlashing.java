@@ -14,12 +14,13 @@
 package tech.pegasys.artemis.datastructures.operations;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
+
+import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 import tech.pegasys.artemis.util.hashtree.Merkleizable;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
@@ -39,20 +40,12 @@ public class AttesterSlashing implements Merkleizable, SimpleOffsetSerializable 
 
   @Override
   public int getSSZFieldCount() {
-    // TODO Finish this stub.
-    return SSZ_FIELD_COUNT;
-  }
-
-  @Override
-  public List<Bytes> get_fixed_parts() {
-    // TODO Implement this stub.
-    return Collections.nCopies(getSSZFieldCount(), Bytes.EMPTY);
+    return SSZ_FIELD_COUNT + attestation_1.getSSZFieldCount() + attestation_2.getSSZFieldCount();
   }
 
   @Override
   public List<Bytes> get_variable_parts() {
-    // TODO Implement this stub.
-    return Collections.nCopies(getSSZFieldCount(), Bytes.EMPTY);
+    return List.of(SimpleOffsetSerializer.serialize(attestation_1), SimpleOffsetSerializer.serialize(attestation_2));
   }
 
   public static AttesterSlashing fromBytes(Bytes bytes) {

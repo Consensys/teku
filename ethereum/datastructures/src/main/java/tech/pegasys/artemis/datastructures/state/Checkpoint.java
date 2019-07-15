@@ -32,21 +32,21 @@ public class Checkpoint implements SimpleOffsetSerializable {
   public static final int SSZ_FIELD_COUNT = 2;
 
   private UnsignedLong epoch;
-  private Bytes32 hash;
+  private Bytes32 root;
 
-  public Checkpoint(UnsignedLong epoch, Bytes32 hash) {
+  public Checkpoint(UnsignedLong epoch, Bytes32 root) {
     this.epoch = epoch;
-    this.hash = hash;
+    this.root = root;
   }
 
   public Checkpoint(Checkpoint checkpoint) {
     this.epoch = checkpoint.getEpoch();
-    this.hash = checkpoint.getHash();
+    this.root = checkpoint.getRoot();
   }
 
   public Checkpoint() {
     this.epoch = UnsignedLong.ZERO;
-    this.hash = Bytes32.ZERO;
+    this.root = Bytes32.ZERO;
   }
 
   @Override
@@ -58,7 +58,7 @@ public class Checkpoint implements SimpleOffsetSerializable {
   public List<Bytes> get_fixed_parts() {
     return List.of(
       SSZ.encodeUInt64(epoch.longValue()),
-      SSZ.encode(writer -> writer.writeFixedBytes(hash))
+      SSZ.encode(writer -> writer.writeFixedBytes(root))
     );
   }
 
@@ -75,13 +75,13 @@ public class Checkpoint implements SimpleOffsetSerializable {
     return SSZ.encode(
             writer -> {
               writer.writeUInt64(epoch.longValue());
-              writer.writeFixedBytes(hash);
+              writer.writeFixedBytes(root);
             });
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(epoch, hash);
+    return Objects.hash(epoch, root);
   }
 
   @Override
@@ -100,7 +100,7 @@ public class Checkpoint implements SimpleOffsetSerializable {
 
     Checkpoint other = (Checkpoint) obj;
     return Objects.equals(this.getEpoch(), other.getEpoch())
-            && Objects.equals(this.getHash(), other.getHash());
+            && Objects.equals(this.getRoot(), other.getRoot());
   }
 
   /**
@@ -115,18 +115,18 @@ public class Checkpoint implements SimpleOffsetSerializable {
     this.epoch = epoch;
   }
 
-  public Bytes32 getHash() {
-    return hash;
+  public Bytes32 getRoot() {
+    return root;
   }
 
-  public void setHash(Bytes32 hash) {
-    this.hash = hash;
+  public void setRoot(Bytes32 root) {
+    this.root = root;
   }
 
   public Bytes32 hash_tree_root() {
     return HashTreeUtil.merkleize(
             Arrays.asList(
                     HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(epoch.longValue())),
-                    HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, hash)));
+                    HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, root)));
   }
 }

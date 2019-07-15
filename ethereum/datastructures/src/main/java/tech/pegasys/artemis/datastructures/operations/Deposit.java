@@ -32,9 +32,9 @@ import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 public class Deposit implements Merkleizable, SimpleOffsetSerializable {
 
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
-  public static final int SSZ_FIELD_COUNT = 1;
+  public static final int SSZ_FIELD_COUNT = 2;
 
-  private List<Bytes32> proof; // Bounded by DEPOSIT_CONTRACT_TREE_DEPTH + 1
+  private List<Bytes32> proof; // Vector bounded by DEPOSIT_CONTRACT_TREE_DEPTH + 1
   private DepositData data;
   private UnsignedLong index;
 
@@ -56,8 +56,7 @@ public class Deposit implements Merkleizable, SimpleOffsetSerializable {
 
   @Override
   public int getSSZFieldCount() {
-    // TODO Proof List needs to implement getSSZFieldCount and get_fixed_parts.
-    return /*proof.getSSZFieldCount() + */ data.getSSZFieldCount() + SSZ_FIELD_COUNT;
+    return data.getSSZFieldCount() + SSZ_FIELD_COUNT;
   }
 
   @Override

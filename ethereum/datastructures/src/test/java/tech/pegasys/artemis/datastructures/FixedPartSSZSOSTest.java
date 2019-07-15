@@ -280,9 +280,9 @@ class FixedPartSSZSOSTest {
   @Test
   void testCheckpointSOS() {
     UnsignedLong epoch = randomUnsignedLong();
-    Bytes32 hash = Bytes32.random();
+    Bytes32 root = Bytes32.random();
 
-    Checkpoint checkpoint = new Checkpoint(epoch, hash);
+    Checkpoint checkpoint = new Checkpoint(epoch, root);
 
     Bytes sszCheckpointBytes = checkpoint.toBytes();
     Bytes sosCheckpointBytes = SimpleOffsetSerializer.serialize(checkpoint);

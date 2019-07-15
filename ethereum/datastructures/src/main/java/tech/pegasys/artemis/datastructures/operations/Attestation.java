@@ -13,9 +13,8 @@
 
 package tech.pegasys.artemis.datastructures.operations;
 
-import com.google.common.primitives.UnsignedLong;
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
@@ -50,20 +49,31 @@ public class Attestation implements Merkleizable, SimpleOffsetSerializable {
 
   @Override
   public int getSSZFieldCount() {
-    // TODO Finish this stub.
-    return SSZ_FIELD_COUNT;
+    return SSZ_FIELD_COUNT + data.getSSZFieldCount() + signature.getSSZFieldCount();
   }
 
   @Override
   public List<Bytes> get_fixed_parts() {
-    // TODO Implement this stub.
-    return Collections.nCopies(getSSZFieldCount(), Bytes.EMPTY);
+    List<Bytes> fixedPartsList = new ArrayList<>();
+    fixedPartsList.addAll(
+        List.of(Bytes.EMPTY));
+    fixedPartsList.addAll(data.get_fixed_parts());
+    fixedPartsList.addAll(
+      List.of(Bytes.EMPTY));
+    fixedPartsList.addAll(signature.get_fixed_parts());
+    return fixedPartsList;
   }
 
   @Override
   public List<Bytes> get_variable_parts() {
-    // TODO Implement this stub.
-    return Collections.nCopies(getSSZFieldCount(), Bytes.EMPTY);
+    List<Bytes> variablePartsList = new ArrayList<>();
+    // variablePartsList.addAll( /* TODO Serialize Bitlist */ );
+    variablePartsList.addAll(
+        List.of(Bytes.EMPTY));
+    // variablePartsList.addAll( /* TODO Serialize Bitlist */ );
+    variablePartsList.addAll(
+        List.of(Bytes.EMPTY));
+    return variablePartsList;
   }
 
   public static Attestation fromBytes(Bytes bytes) {

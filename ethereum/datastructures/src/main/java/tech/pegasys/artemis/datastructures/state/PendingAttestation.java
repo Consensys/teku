@@ -17,7 +17,6 @@ import com.google.common.primitives.UnsignedLong;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
@@ -83,11 +82,11 @@ public class PendingAttestation
 
   @Override
   public List<Bytes> get_variable_parts() {
-    List<Bytes> fixedPartsList = new ArrayList<>();
-    // fixedPartsList.addAll( /* TODO Serialize Bitlist */ );
-    fixedPartsList.addAll(
+    List<Bytes> variablePartsList = new ArrayList<>();
+    // variablePartsList.addAll( /* TODO Serialize Bitlist */ );
+    variablePartsList.addAll(
         List.of(Bytes.EMPTY, Bytes.EMPTY, Bytes.EMPTY));
-    return fixedPartsList;
+    return variablePartsList;
   }
 
   public static PendingAttestation fromBytes(Bytes bytes) {
