@@ -20,14 +20,18 @@ import static tech.pegasys.artemis.datastructures.Constants.CHURN_LIMIT_QUOTIENT
 import static tech.pegasys.artemis.datastructures.Constants.DOMAIN_DEPOSIT;
 import static tech.pegasys.artemis.datastructures.Constants.EPOCHS_PER_HISTORICAL_VECTOR;
 import static tech.pegasys.artemis.datastructures.Constants.EPOCHS_PER_SLASHINGS_VECTOR;
+import static tech.pegasys.artemis.datastructures.Constants.EFFECTIVE_BALANCE_INCREMENT;
 import static tech.pegasys.artemis.datastructures.Constants.FAR_FUTURE_EPOCH;
 import static tech.pegasys.artemis.datastructures.Constants.GENESIS_EPOCH;
 import static tech.pegasys.artemis.datastructures.Constants.MAX_EFFECTIVE_BALANCE;
+import static tech.pegasys.artemis.datastructures.Constants.MIN_GENESIS_ACTIVE_VALIDATOR_COUNT;
+import static tech.pegasys.artemis.datastructures.Constants.MIN_GENESIS_TIME;
 import static tech.pegasys.artemis.datastructures.Constants.MIN_PER_EPOCH_CHURN_LIMIT;
 import static tech.pegasys.artemis.datastructures.Constants.MIN_SEED_LOOKAHEAD;
 import static tech.pegasys.artemis.datastructures.Constants.MIN_SLASHING_PENALTY_QUOTIENT;
 import static tech.pegasys.artemis.datastructures.Constants.MIN_VALIDATOR_WITHDRAWABILITY_DELAY;
 import static tech.pegasys.artemis.datastructures.Constants.PROPOSER_REWARD_QUOTIENT;
+import static tech.pegasys.artemis.datastructures.Constants.SECONDS_PER_DAY;
 import static tech.pegasys.artemis.datastructures.Constants.SHARD_COUNT;
 import static tech.pegasys.artemis.datastructures.Constants.SHUFFLE_ROUND_COUNT;
 import static tech.pegasys.artemis.datastructures.Constants.SLOTS_PER_EPOCH;
@@ -40,6 +44,7 @@ import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.decrease_b
 import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.get_active_validator_indices;
 import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.increase_balance;
 import static tech.pegasys.artemis.util.bls.BLSVerify.bls_verify;
+import static tech.pegasys.artemis.util.hashtree.HashTreeUtil.hash_tree_root;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.primitives.UnsignedLong;
@@ -49,11 +54,14 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+
+import jdk.jfr.Unsigned;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.Hash;
 import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.artemis.datastructures.Constants;
+import tech.pegasys.artemis.datastructures.blocks.BeaconBlockBody;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
@@ -102,7 +110,7 @@ public class BeaconStateUtil {
     List<Integer> active_validator_indices =
         get_active_validator_indices(state, UnsignedLong.valueOf(GENESIS_EPOCH));
     Bytes32 genesis_active_index_root =
-        HashTreeUtil.hash_tree_root(
+        hash_tree_root(
             SSZTypes.LIST_OF_BASIC,
             active_validator_indices.stream()
                 .map(item -> SSZ.encodeUInt64(item.longValue()))
@@ -112,6 +120,51 @@ public class BeaconStateUtil {
     }
 
     return state;
+  }
+
+  public static BeaconState initialize_beacon_state_from_eth1(Bytes32 eth1_block_hash, UnsignedLong eth1_timestamp, List<Deposit> deposits){
+    UnsignedLong genesis_time = eth1_timestamp.minus(eth1_timestamp.mod(UnsignedLong.valueOf(SECONDS_PER_DAY)).plus(UnsignedLong.valueOf(2).times(UnsignedLong.valueOf(SECONDS_PER_DAY))));
+    Eth1Data eth1_data = new Eth1Data(eth1_block_hash, deposits.size());
+    Bytes32 latest_block_header = new BeaconBlockBody().hash_tree_root();
+
+    MerkleTree<Deposit> merkleTree = DepositUtil.generateMerkleTree(deposits);
+    eth1_data.setDeposit_root(merkleTree.getRoot());
+    BeaconState state = BeaconState(genesis_time, UnsignedLong.valueOf(deposits.size()), latest_block_header);
+
+    //Process deposits
+    DepositUtil.applyBranchProofs(merkleTree, deposits);
+    deposits.forEach(deposit -> {
+      BlockProcessor.process_deposit(state, deposit);
+    });
+
+    //Process activations
+    IntStream.range(0, state.getValidator_registry().size()).forEach( index -> {
+      Validator validator = state.getValidator_registry().get(index);
+      UnsignedLong balance = state.getBalances().get(index);
+      UnsignedLong effective_balance = min(balance.minus(balance.mod(UnsignedLong.valueOf(EFFECTIVE_BALANCE_INCREMENT))), UnsignedLong.valueOf(MAX_EFFECTIVE_BALANCE));
+      validator.setEffective_balance(effective_balance);
+
+      if(validator.getEffective_balance().equals(UnsignedLong.valueOf(MAX_EFFECTIVE_BALANCE))){
+        validator.setActivation_eligibility_epoch(UnsignedLong.valueOf(GENESIS_EPOCH));
+        validator.setActivation_epoch(UnsignedLong.valueOf(GENESIS_EPOCH));
+      }
+    });
+
+    //Populate active_index_roots and compact_committees_roots
+    List<Integer> indices_list = get_active_validator_indices(state, UnsignedLong.valueOf(GENESIS_EPOCH));
+    Bytes32 active_index_root = hash_tree_root(indices_list);
+    Bytes32 committee_root = CrosslinkCommitteeUtil.get_compact_committees_root(state, GENESIS_EPOCH);
+    IntStream.range(0, EPOCHS_PER_HISTORICAL_VECTOR).forEach(index -> {
+      state.getActive_index_roots().set(index, active_index_root);
+      state.getCompact_committees_roots().set(index, committee_root);
+    });
+
+    return state;
+  }
+
+  public static boolean is_valid_genesis_state(BeaconState state){
+    return !(state.getGenesis_time().compareTo(MIN_GENESIS_TIME) >= 0) ||
+            !(get_active_validator_indices(state, UnsignedLong.valueOf(GENESIS_EPOCH)).size() < MIN_GENESIS_ACTIVE_VALIDATOR_COUNT);
   }
 
   /**
@@ -170,7 +223,7 @@ public class BeaconStateUtil {
                     min(
                         amount.minus(
                             amount.mod(
-                                UnsignedLong.valueOf(Constants.EFFECTIVE_BALANCE_INCREMENT))),
+                                UnsignedLong.valueOf(EFFECTIVE_BALANCE_INCREMENT))),
                         UnsignedLong.valueOf(MAX_EFFECTIVE_BALANCE))));
         state.getBalances().add(amount);
       } else {

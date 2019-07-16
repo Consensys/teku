@@ -13,17 +13,9 @@
 
 package tech.pegasys.artemis.statetransition;
 
-import static tech.pegasys.artemis.statetransition.StateTransition.process_slots;
-
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.google.common.primitives.UnsignedLong;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.Optional;
 import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.SECP256K1.PublicKey;
@@ -38,7 +30,6 @@ import tech.pegasys.artemis.datastructures.util.BeaconBlockUtil;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.datastructures.util.DepositUtil;
-import tech.pegasys.artemis.pow.api.Eth2GenesisEvent;
 import tech.pegasys.artemis.pow.event.Eth2Genesis;
 import tech.pegasys.artemis.service.serviceutils.ServiceConfig;
 import tech.pegasys.artemis.statetransition.util.EpochProcessingException;
@@ -46,6 +37,19 @@ import tech.pegasys.artemis.statetransition.util.SlotProcessingException;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.Optional;
+
+import static tech.pegasys.artemis.datastructures.Constants.MIN_GENESIS_ACTIVE_VALIDATOR_COUNT;
+import static tech.pegasys.artemis.datastructures.Constants.MIN_GENESIS_TIME;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.initialize_beacon_state_from_eth1;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.is_valid_genesis_state;
+import static tech.pegasys.artemis.statetransition.StateTransition.process_slots;
 
 /** Class to manage the state tree and initiate state transitions */
 public class StateProcessor {
@@ -79,11 +83,11 @@ public class StateProcessor {
   }
 
   @Subscribe
-  public void onEth2GenesisEvent(Eth2GenesisEvent event) {
+  public void onEth2Genes(Eth2Genesis eth2Genesis) {
     STDOUT.log(
         Level.INFO,
         "******* Eth2Genesis Event detected ******* : "
-            + ((Eth2Genesis) event).getDeposit_root().toString());
+            + eth2Genesis.getDeposit_root().toString());
     this.nodeSlot = UnsignedLong.valueOf(Constants.GENESIS_SLOT);
     this.nodeTime =
         UnsignedLong.valueOf(Constants.GENESIS_SLOT)
@@ -98,7 +102,7 @@ public class StateProcessor {
         deposits = DepositUtil.generateBranchProofs(deposits);
         initial_state =
             DataStructureUtil.createInitialBeaconState(
-                deposits, ((Eth2Genesis) event).getDeposit_root());
+                deposits, eth2Genesis.getDeposit_root());
       }
       Bytes32 initial_state_root = initial_state.hash_tree_root();
       BeaconBlock genesis_block = BeaconBlockUtil.get_empty_block();
@@ -122,9 +126,15 @@ public class StateProcessor {
   }
 
   @Subscribe
-  public void onDeposit(tech.pegasys.artemis.pow.event.Deposit event) {
+  public void onDeposit(tech.pegasys.artemis.pow.event.Deposit event) throws IOException {
     if (deposits == null) deposits = new ArrayList<Deposit>();
     deposits.add(DepositUtil.convertEventDepositToOperationDeposit(event));
+
+    UnsignedLong eth1_timestamp = DepositUtil.getEpochBlockTimeByDepositBlockNumber(event.getResponse().log.getBlockNumber(), config.getNodeUrl());
+    if(eth1_timestamp.compareTo(MIN_GENESIS_TIME) >= 0 && deposits.size() >= MIN_GENESIS_ACTIVE_VALIDATOR_COUNT){
+      BeaconState candidate_state = initialize_beacon_state_from_eth1(Bytes32.fromHexString(event.getResponse().log.getBlockHash()), eth1_timestamp, deposits);
+      if(is_valid_genesis_state(candidate_state));
+    }
   }
 
   @Subscribe
