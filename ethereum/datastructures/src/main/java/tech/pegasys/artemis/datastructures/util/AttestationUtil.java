@@ -211,8 +211,8 @@ public class AttestationUtil {
       if (!custody_bit_1_indices.contains(attesting_index)) custody_bit_0_indices.add(attesting_index);
     }
     return new IndexedAttestation(
-        custody_bit_0_indices,
-        custody_bit_1_indices,
+        custody_bit_0_indices.stream().sorted().map(UnsignedLong::valueOf).collect(Collectors.toList()),
+        custody_bit_1_indices.stream().sorted().map(UnsignedLong::valueOf).collect(Collectors.toList()),
         attestation.getData(),
         attestation.getAggregate_signature());
   }
