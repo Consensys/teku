@@ -108,7 +108,7 @@ public class AttestationUtil {
     } else {
       epochBoundaryRoot = BeaconStateUtil.get_block_root(state, get_current_epoch(state));
     }
-    UnsignedLong sourceEpoch = state.getCurrent_justified_epoch();
+    UnsignedLong sourceEpoch = state.getCurrent_justified_chekpoint();
     Bytes32 sourceRoot = state.getCurrent_justified_root();
     UnsignedLong targetEpoch = get_current_epoch(state);
 
