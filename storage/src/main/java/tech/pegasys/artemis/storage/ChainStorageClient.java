@@ -15,7 +15,7 @@ package tech.pegasys.artemis.storage;
 
 import static tech.pegasys.artemis.datastructures.util.AttestationUtil.get_attestation_data_slot;
 import static tech.pegasys.artemis.datastructures.util.AttestationUtil.get_attesting_indices;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.slot_to_epoch;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_of_slot;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
@@ -152,7 +152,7 @@ public class ChainStorageClient implements ChainStorage {
    */
   public void addProcessedBlock(Bytes32 blockRoot, BeaconBlock block) {
     ChainStorage.add(blockRoot, block, this.processedBlockMap);
-    addBlockReference(slot_to_epoch(block.getSlot()), blockRoot);
+    addBlockReference(compute_epoch_of_slot(block.getSlot()), blockRoot);
     // todo: post event to eventbus to notify the server that a new processed block has been added
   }
 
@@ -173,7 +173,7 @@ public class ChainStorageClient implements ChainStorage {
    */
   public void addState(Bytes32 stateRoot, BeaconState state) {
     ChainStorage.add(stateRoot, state, this.stateMap);
-    addStateReference(slot_to_epoch(state.getSlot()), stateRoot);
+    addStateReference(compute_epoch_of_slot(state.getSlot()), stateRoot);
   }
 
   /**
@@ -185,7 +185,7 @@ public class ChainStorageClient implements ChainStorage {
     ChainStorage.add(block, this.unprocessedBlocksQueue);
     Bytes32 blockHash = block.hash_tree_root();
     ChainStorage.add(blockHash, block, this.unprocessedBlockMap);
-    addBlockReference(slot_to_epoch(block.getSlot()), blockHash);
+    addBlockReference(compute_epoch_of_slot(block.getSlot()), blockHash);
   }
 
   /**

@@ -46,7 +46,7 @@ public class DepositUtil {
 
   public static boolean validateDeposits(List<Deposit> deposits, Bytes32 root, int height) {
     for (int i = 0; i < deposits.size(); i++) {
-      if (BeaconStateUtil.verify_merkle_branch(
+      if (BeaconStateUtil.is_valid_merkle_branch(
           Hash.sha2_256(deposits.get(i).getData().serialize()),
           deposits.get(i).getProof(),
           height,
