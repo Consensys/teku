@@ -98,13 +98,12 @@ public final class BlockProcessorUtil {
   private static final ALogger LOG = new ALogger(BlockProcessorUtil.class.getName());
 
   /**
-   * v0.7.1
-   * https://github.com/ethereum/eth2.0-specs/blob/v0.7.1/specs/core/0_beacon-chain.md#block-header
    * Processes block header
    *
    * @param state
    * @param block
    * @throws BlockProcessingException
+   * @see <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#block-header</a>
    */
   public static void process_block_header(BeaconState state, BeaconBlock block)
       throws BlockProcessingException {
@@ -145,12 +144,12 @@ public final class BlockProcessorUtil {
   }
 
   /**
-   * v0.7.1 https://github.com/ethereum/eth2.0-specs/blob/v0.7.1/specs/core/0_beacon-chain.md#randao
    * Processes randao
    *
    * @param state
    * @param body
    * @throws BlockProcessingException
+   * @see <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#randao</a>
    */
   public static void process_randao(BeaconState state, BeaconBlockBody body)
       throws BlockProcessingException {
@@ -183,12 +182,11 @@ public final class BlockProcessorUtil {
   }
 
   /**
-   * v0.7.1
-   * https://github.com/ethereum/eth2.0-specs/blob/v0.7.1/specs/core/0_beacon-chain.md#eth1-data
    * Processes Eth1 data
    *
    * @param state
    * @param body
+   * @see <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#eth1-data</a>
    */
   public static void process_eth1_data(BeaconState state, BeaconBlockBody body) {
     state.getEth1_data_votes().add(body.getEth1_data());
@@ -202,13 +200,12 @@ public final class BlockProcessorUtil {
   }
 
   /**
-   * v0.7.1
-   * https://github.com/ethereum/eth2.0-specs/blob/v0.7.1/specs/core/0_beacon-chain.md#operations
    * Processes all block body operations
    *
    * @param state
    * @param body
    * @throws BlockProcessingException
+   * @see <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#operations</a>
    */
   public static void process_operations(BeaconState state, BeaconBlockBody body)
       throws BlockProcessingException {
@@ -244,13 +241,12 @@ public final class BlockProcessorUtil {
   }
 
   /**
-   * v0.7.1
-   * https://github.com/ethereum/eth2.0-specs/blob/v0.7.1/specs/core/0_beacon-chain.md#proposer-slashings
    * Processes proposer slashings
    *
    * @param state
    * @param proposerSlashings
    * @throws BlockProcessingException
+   * @see <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#proposer-slashings</a>
    */
   public static void process_proposer_slashings(
       BeaconState state, List<ProposerSlashing> proposerSlashings) throws BlockProcessingException {
@@ -308,13 +304,12 @@ public final class BlockProcessorUtil {
   }
 
   /**
-   * v0.7.1
-   * https://github.com/ethereum/eth2.0-specs/blob/v0.7.1/specs/core/0_beacon-chain.md#attester-slashings
    * Processes attester slashings
    *
    * @param state
    * @param attesterSlashings
    * @throws BlockProcessingException
+   * @see <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#attester-slashings</a>
    */
   public static void process_attester_slashings(
       BeaconState state, List<AttesterSlashing> attesterSlashings) throws BlockProcessingException {
@@ -360,13 +355,12 @@ public final class BlockProcessorUtil {
   }
 
   /**
-   * v0.7.1
-   * https://github.com/ethereum/eth2.0-specs/blob/v0.7.1/specs/core/0_beacon-chain.md#attestations
    * Processes attestations
    *
    * @param state
    * @param attestations
    * @throws BlockProcessingException
+   * @see <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#attestations</a>
    */
   public static void process_attestations(BeaconState state, List<Attestation> attestations)
       throws BlockProcessingException {
@@ -448,13 +442,12 @@ public final class BlockProcessorUtil {
   }
 
   /**
-   * v0.7.1
-   * https://github.com/ethereum/eth2.0-specs/blob/v0.7.1/specs/core/0_beacon-chain.md#deposits
    * Processes deposits
    *
    * @param state
    * @param deposits
    * @throws BlockProcessingException
+   * @see <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#deposits</a>
    */
   public static void process_deposits(BeaconState state, List<Deposit> deposits)
       throws BlockProcessingException {
@@ -524,13 +517,12 @@ public final class BlockProcessorUtil {
   }
 
   /**
-   * v0.7.1
-   * https://github.com/ethereum/eth2.0-specs/blob/v0.7.1/specs/core/0_beacon-chain.md#voluntary-exits
    * Processes voluntary exits
    *
    * @param state
    * @param exits
    * @throws BlockProcessingException
+   * @see <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#voluntary-exits</a>
    */
   public static void process_voluntary_exits(BeaconState state, List<VoluntaryExit> exits)
       throws BlockProcessingException {
@@ -579,13 +571,12 @@ public final class BlockProcessorUtil {
   }
 
   /**
-   * v0.7.1
-   * https://github.com/ethereum/eth2.0-specs/blob/v0.7.1/specs/core/0_beacon-chain.md#transfers
    * Processes transfers
    *
    * @param state
    * @param transfers
    * @throws BlockProcessingException
+   * @see <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#transfers</a>
    */
   public static void process_transfers(BeaconState state, List<Transfer> transfers)
       throws BlockProcessingException {

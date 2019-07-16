@@ -14,7 +14,6 @@
 package tech.pegasys.artemis.statetransition.util;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static java.lang.Math.toIntExact;
 import static tech.pegasys.artemis.datastructures.Constants.ACTIVATION_EXIT_DELAY;
 import static tech.pegasys.artemis.datastructures.Constants.BASE_REWARDS_PER_EPOCH;
 import static tech.pegasys.artemis.datastructures.Constants.BASE_REWARD_FACTOR;
@@ -25,9 +24,6 @@ import static tech.pegasys.artemis.datastructures.Constants.EPOCHS_PER_SLASHINGS
 import static tech.pegasys.artemis.datastructures.Constants.FAR_FUTURE_EPOCH;
 import static tech.pegasys.artemis.datastructures.Constants.GENESIS_EPOCH;
 import static tech.pegasys.artemis.datastructures.Constants.INACTIVITY_PENALTY_QUOTIENT;
-import static tech.pegasys.artemis.datastructures.Constants.LATEST_ACTIVE_INDEX_ROOTS_LENGTH;
-import static tech.pegasys.artemis.datastructures.Constants.LATEST_RANDAO_MIXES_LENGTH;
-import static tech.pegasys.artemis.datastructures.Constants.LATEST_SLASHED_EXIT_LENGTH;
 import static tech.pegasys.artemis.datastructures.Constants.MAX_EFFECTIVE_BALANCE;
 import static tech.pegasys.artemis.datastructures.Constants.MIN_ATTESTATION_INCLUSION_DELAY;
 import static tech.pegasys.artemis.datastructures.Constants.MIN_EPOCHS_TO_INACTIVITY_PENALTY;
@@ -41,7 +37,6 @@ import static tech.pegasys.artemis.datastructures.util.AttestationUtil.get_compa
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.all;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_block_root;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_block_root_at_slot;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_churn_limit;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_current_epoch;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_activation_exit_epoch;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_committee_count;
@@ -52,7 +47,6 @@ import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_total
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_validator_churn_limit;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.initiate_validator_exit;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.integer_squareroot;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.max;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.min;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.setBit;
 import static tech.pegasys.artemis.datastructures.util.CrosslinkCommitteeUtil.get_crosslink_committee;
@@ -79,7 +73,6 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
@@ -98,17 +91,14 @@ public final class EpochProcessorUtil {
 
   // State Transition Helper Functions
 
-
-
   /**
-   * v0.7.1
-   * https://github.com/ethereum/eth2.0-specs/blob/v0.7.1/specs/core/0_beacon-chain.md#helper-functions-1
    * Returns current or previous epoch attestations depending to the epoch passed in
    *
    * @param state
    * @param epoch
    * @return
    * @throws IllegalArgumentException
+   * @see <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#helper-functions-1</a>
    */
   private static List<PendingAttestation> get_matching_source_attestations(
       BeaconState state, UnsignedLong epoch) throws IllegalArgumentException {
@@ -122,14 +112,13 @@ public final class EpochProcessorUtil {
   }
 
   /**
-   * v0.7.1
-   * https://github.com/ethereum/eth2.0-specs/blob/v0.7.1/specs/core/0_beacon-chain.md#helper-functions-1
    * Returns source attestations that target the block root of the first block in the given epoch
    *
    * @param state
    * @param epoch
    * @return
    * @throws IllegalArgumentException
+   * @see <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#helper-functions-1</a>
    */
   private static List<PendingAttestation> get_matching_target_attestations(
       BeaconState state, UnsignedLong epoch) throws IllegalArgumentException {
@@ -139,13 +128,12 @@ public final class EpochProcessorUtil {
   }
 
   /**
-   * v0.7.1
-   * https://github.com/ethereum/eth2.0-specs/blob/v0.7.1/specs/core/0_beacon-chain.md#helper-functions-1
    * Returns source attestations that have the same beacon head block as the one seen in state
    *
    * @param state
    * @param epoch
    * @return
+   * @see <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#helper-functions-1</a>
    */
   private static List<PendingAttestation> get_matching_head_attestations(
       BeaconState state, UnsignedLong epoch) throws IllegalArgumentException {
@@ -161,14 +149,13 @@ public final class EpochProcessorUtil {
   }
 
   /**
-   * v0.7.1
-   * https://github.com/ethereum/eth2.0-specs/blob/v0.7.1/specs/core/0_beacon-chain.md#helper-functions-1
    * Return a sorted list of all the distinct Validators that have attested in the given list of
    * attestations
    *
    * @param state
    * @param attestations
    * @return
+   * @see <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#helper-functions-1</a>
    */
   private static List<Integer> get_unslashed_attesting_indices(
       BeaconState state, List<PendingAttestation> attestations) {
@@ -183,14 +170,13 @@ public final class EpochProcessorUtil {
   }
 
   /**
-   * v0.7.1
-   * https://github.com/ethereum/eth2.0-specs/blob/v0.7.1/specs/core/0_beacon-chain.md#helper-functions-1
    * Returns the total balance of all the distinct validators that have attested in the given
    * attestations
    *
    * @param state
    * @param attestations
    * @return
+   * @see <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#helper-functions-1</a>
    */
   private static UnsignedLong get_attesting_balance(
       BeaconState state, List<PendingAttestation> attestations) {
@@ -198,8 +184,6 @@ public final class EpochProcessorUtil {
   }
 
   /**
-   * v0.7.1
-   * https://github.com/ethereum/eth2.0-specs/blob/v0.7.1/specs/core/0_beacon-chain.md#helper-functions-1
    * Returns the crosslink that has the data root with most balance voting for it, and the list of
    * Validators that voted for that crosslink
    *
@@ -208,6 +192,7 @@ public final class EpochProcessorUtil {
    * @param shard
    * @return
    * @throws IllegalArgumentException
+   * @see <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#helper-functions-1</a>
    */
   private static ImmutablePair<Crosslink, List<Integer>>
       get_winning_crosslink_and_attesting_indices(
@@ -268,12 +253,11 @@ public final class EpochProcessorUtil {
   }
 
   /**
-   * v0.7.1
-   * https://github.com/ethereum/eth2.0-specs/blob/v0.7.1/specs/core/0_beacon-chain.md#justification-and-finalization
    * Processes justification and finalization
    *
    * @param state
    * @throws EpochProcessingException
+   * @see <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#justification-and-finalization</a>
    */
   public static void process_justification_and_finalization(BeaconState state)
       throws EpochProcessingException {
@@ -340,12 +324,11 @@ public final class EpochProcessorUtil {
   }
 
   /**
-   * v0.7.1
-   * https://github.com/ethereum/eth2.0-specs/blob/v0.7.1/specs/core/0_beacon-chain.md#crosslinks
    * Processes crosslink information
    *
    * @param state
    * @throws EpochProcessingException
+   * @see <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#crosslinks</a>
    */
   public static void process_crosslinks(BeaconState state) throws EpochProcessingException {
     try {
@@ -384,13 +367,12 @@ public final class EpochProcessorUtil {
   }
 
   /**
-   * v0.7.1
-   * https://github.com/ethereum/eth2.0-specs/blob/v0.7.1/specs/core/0_beacon-chain.md#rewards-and-penalties-1
    * Returns the base reward specific to the validator with the given index
    *
    * @param state
    * @param index
    * @return
+   * @see <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#rewards-and-penalties-1</a>
    */
   private static UnsignedLong get_base_reward(BeaconState state, int index) {
     UnsignedLong total_balance = get_total_active_balance(state);
@@ -403,13 +385,12 @@ public final class EpochProcessorUtil {
   }
 
   /**
-   * v0.7.1
-   * https://github.com/ethereum/eth2.0-specs/blob/v0.7.1/specs/core/0_beacon-chain.md#rewards-and-penalties-1
    * Returns rewards and penalties specific to each validator resulting from ttestations
    *
    * @param state
    * @return
    * @throws IllegalArgumentException
+   * @see <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#rewards-and-penalties-1</a>
    */
   private static ImmutablePair<List<UnsignedLong>, List<UnsignedLong>> get_attestation_deltas(
       BeaconState state) throws IllegalArgumentException {
@@ -528,14 +509,13 @@ public final class EpochProcessorUtil {
   }
 
   /**
-   * v0.7.1
-   * https://github.com/ethereum/eth2.0-specs/blob/v0.7.1/specs/core/0_beacon-chain.md#rewards-and-penalties-1
    * Returns rewards and penalties specific to each validator resulting from voting/not-voting on
    * the correct crosslink
    *
    * @param state
    * @return
    * @throws IllegalArgumentException
+   * @see <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#rewards-and-penalties-1</a>
    */
   private static ImmutablePair<List<UnsignedLong>, List<UnsignedLong>> get_crosslink_deltas(
       BeaconState state) throws IllegalArgumentException {
@@ -577,12 +557,11 @@ public final class EpochProcessorUtil {
   }
 
   /**
-   * v0.7.1
-   * https://github.com/ethereum/eth2.0-specs/blob/v0.7.1/specs/core/0_beacon-chain.md#rewards-and-penalties-1
    * Processes rewards and penalties
    *
    * @param state
    * @throws EpochProcessingException
+   * @see <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#rewards-and-penalties-1</a>
    */
   public static void process_rewards_and_penalties(BeaconStateWithCache state)
       throws EpochProcessingException {
@@ -610,12 +589,11 @@ public final class EpochProcessorUtil {
   }
 
   /**
-   * v0.7.1
-   * https://github.com/ethereum/eth2.0-specs/blob/v0.7.1/specs/core/0_beacon-chain.md#registry-updates
    * Processes validator registry updates
    *
    * @param state
    * @throws EpochProcessingException
+   * @see <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#registry-updates</a>
    */
   public static void process_registry_updates(BeaconState state) throws EpochProcessingException {
     try {
@@ -679,11 +657,10 @@ public final class EpochProcessorUtil {
   }
 
   /**
-   * v0.7.1
-   * https://github.com/ethereum/eth2.0-specs/blob/v0.7.1/specs/core/0_beacon-chain.md#slashings
    * Processes slashings
    *
    * @param state
+   * @see <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#slashings</a>
    */
   public static void process_slashings(BeaconState state) {
     UnsignedLong epoch = get_current_epoch(state);
@@ -704,11 +681,10 @@ public final class EpochProcessorUtil {
   }
 
   /**
-   * v0.7.1
-   * https://github.com/ethereum/eth2.0-specs/blob/v0.7.1/specs/core/0_beacon-chain.md#final-updates
    * Processes final updates
    *
    * @param state
+   * @see <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#final-updates</a>
    */
   public static void process_final_updates(BeaconState state) {
     UnsignedLong current_epoch = get_current_epoch(state);
