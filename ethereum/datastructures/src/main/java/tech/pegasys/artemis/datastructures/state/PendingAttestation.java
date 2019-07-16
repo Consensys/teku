@@ -52,7 +52,7 @@ public class PendingAttestation
   }
 
   public PendingAttestation(PendingAttestation pendingAttestation) {
-    this.aggregation_bits = pendingAttestation.getAggregation_bitfield().copy();
+    this.aggregation_bits = pendingAttestation.getAggregation_bits().copy();
     this.data = new AttestationData(pendingAttestation.getData());
     this.inclusion_delay = pendingAttestation.getInclusion_delay();
     this.proposer_index = pendingAttestation.getProposer_index();
@@ -130,18 +130,18 @@ public class PendingAttestation
     }
 
     PendingAttestation other = (PendingAttestation) obj;
-    return Objects.equals(this.getAggregation_bitfield(), other.getAggregation_bitfield())
+    return Objects.equals(this.getAggregation_bits(), other.getAggregation_bits())
         && Objects.equals(this.getData(), other.getData())
         && Objects.equals(this.getInclusion_delay(), other.getInclusion_delay())
         && Objects.equals(this.getProposer_index(), other.getProposer_index());
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */
-  public Bytes getAggregation_bitfield() {
+  public Bytes getAggregation_bits() {
     return aggregation_bits;
   }
 
-  public void setAggregation_bitfield(Bytes aggregation_bitfield) {
+  public void setAggregation_bits(Bytes aggregation_bitfield) {
     this.aggregation_bits = aggregation_bitfield;
   }
 

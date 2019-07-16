@@ -39,7 +39,7 @@ public class TimeSeriesAdapter implements DataAdapter<TimeSeriesRecord> {
   public TimeSeriesRecord transform() {
 
     UnsignedLong slot = this.input.getHeadBlock().getSlot();
-    UnsignedLong epoch = BeaconStateUtil.slot_to_epoch(slot);
+    UnsignedLong epoch = BeaconStateUtil.compute_epoch_of_slot(slot);
     BeaconBlock headBlock = this.input.getHeadBlock();
     BeaconState headState = this.input.getHeadState();
     BeaconBlock justifiedBlock = this.input.getJustifiedBlock();

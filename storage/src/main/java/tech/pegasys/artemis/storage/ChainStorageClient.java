@@ -447,7 +447,7 @@ public class ChainStorageClient implements ChainStorage {
       if (AttestationUtil.verifyAttestation(state, attestation)) {
         List<Integer> attestation_participants =
             get_attesting_indices(
-                state, attestation.getData(), attestation.getAggregation_bitfield());
+                state, attestation.getData(), attestation.getAggregation_bits());
 
         for (Integer participantIndex : attestation_participants) {
           Optional<Attestation> latest_attestation = getLatestAttestation(participantIndex);

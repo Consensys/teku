@@ -28,7 +28,6 @@ import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_domai
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_committee_count;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_start_slot_of_epoch;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.min;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.verify_bitfield;
 import static tech.pegasys.artemis.datastructures.util.CrosslinkCommitteeUtil.get_crosslink_committee;
 import static tech.pegasys.artemis.datastructures.util.CrosslinkCommitteeUtil.get_start_shard;
 import static tech.pegasys.artemis.util.bls.BLSAggregate.bls_aggregate_pubkeys;
@@ -40,8 +39,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
 import org.apache.commons.lang3.tuple.MutableTriple;
 import org.apache.commons.lang3.tuple.Triple;
@@ -201,7 +198,7 @@ public class AttestationUtil {
    */
   public static IndexedAttestation get_indexed_attestation(BeaconState state, Attestation attestation) {
     List<Integer> attesting_indices =
-        get_attesting_indices(state, attestation.getData(), attestation.getAggregation_bitfield());
+        get_attesting_indices(state, attestation.getData(), attestation.getAggregation_bits());
     List<Integer> custody_bit_1_indices =
         get_attesting_indices(state, attestation.getData(), attestation.getCustody_bitfield());
 
