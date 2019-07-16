@@ -22,9 +22,6 @@ import static tech.pegasys.artemis.datastructures.Constants.EPOCHS_PER_HISTORICA
 import static tech.pegasys.artemis.datastructures.Constants.EPOCHS_PER_SLASHINGS_VECTOR;
 import static tech.pegasys.artemis.datastructures.Constants.FAR_FUTURE_EPOCH;
 import static tech.pegasys.artemis.datastructures.Constants.GENESIS_EPOCH;
-import static tech.pegasys.artemis.datastructures.Constants.LATEST_ACTIVE_INDEX_ROOTS_LENGTH;
-import static tech.pegasys.artemis.datastructures.Constants.LATEST_RANDAO_MIXES_LENGTH;
-import static tech.pegasys.artemis.datastructures.Constants.LATEST_SLASHED_EXIT_LENGTH;
 import static tech.pegasys.artemis.datastructures.Constants.MAX_EFFECTIVE_BALANCE;
 import static tech.pegasys.artemis.datastructures.Constants.MIN_PER_EPOCH_CHURN_LIMIT;
 import static tech.pegasys.artemis.datastructures.Constants.MIN_SEED_LOOKAHEAD;
@@ -37,7 +34,6 @@ import static tech.pegasys.artemis.datastructures.Constants.SLOTS_PER_EPOCH;
 import static tech.pegasys.artemis.datastructures.Constants.SLOTS_PER_HISTORICAL_ROOT;
 import static tech.pegasys.artemis.datastructures.Constants.TARGET_COMMITTEE_SIZE;
 import static tech.pegasys.artemis.datastructures.Constants.WHISTLEBLOWER_REWARD_QUOTIENT;
-import static tech.pegasys.artemis.datastructures.Constants.WHISTLEBLOWING_REWARD_QUOTIENT;
 import static tech.pegasys.artemis.datastructures.util.CrosslinkCommitteeUtil.get_crosslink_committee;
 import static tech.pegasys.artemis.datastructures.util.CrosslinkCommitteeUtil.get_start_shard;
 import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.decrease_balance;
@@ -267,6 +263,19 @@ public class BeaconStateUtil {
   }
 
   /**
+   * Return the combined effective balance of the active validators.
+   *
+   * @param state - Current BeaconState
+   * @return
+   * @see
+   *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#get_total_active_balance</a>
+   */
+  public static UnsignedLong get_total_active_balance(BeaconState state) {
+    return get_total_balance(state, get_active_validator_indices(state, get_current_epoch(state)));
+  }
+
+
+  /**
    *  Return the domain for the ``domain_type`` and ``fork_version``.
    *
    * @param domain_type
@@ -281,6 +290,17 @@ public class BeaconStateUtil {
     checkArgument(domain_type.size() == 8, "domain must be of type Bytes8");
     return domain;
   }
+
+  /**
+   *  Return the domain for the ``domain_type``.
+   *
+   * @param domain_type
+   * @return domain
+   * @see <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#compute_domain</a>
+   */
+  public static Bytes compute_domain(Bytes domain_type) {
+    return compute_domain(domain_type, Bytes.wrap(new byte[4]));
+  }i
 
 
   /**
@@ -763,6 +783,24 @@ public class BeaconStateUtil {
 
     for (int i = committee_size; i < bitfield.size() * 8; i++) {
       if (get_bitfield_bit(bitfield, i) == 0b1) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  // TODO test this function
+  public static Bytes setBit(Bytes bits, int pos) {
+    byte[] bitsByteArray = bits.toArray();
+    byte myByte = bitsByteArray[pos / 8];
+    myByte = (byte) (myByte | (1 << (7 - (pos % 8))));
+    bitsByteArray[pos / 8] = myByte;
+    return Bytes.wrap(bitsByteArray);
+  }
+
+  public static boolean all(Bytes bits, int start, int end) {
+    for (int i = start; i < end; i++) {
+      if (get_bitfield_bit(bits, i) == 0) {
         return false;
       }
     }
