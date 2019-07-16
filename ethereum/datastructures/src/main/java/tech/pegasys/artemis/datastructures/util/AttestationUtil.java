@@ -42,6 +42,7 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.tuple.MutableTriple;
 import org.apache.commons.lang3.tuple.Triple;
+import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.Constants;
@@ -55,6 +56,7 @@ import tech.pegasys.artemis.datastructures.state.CompactCommittee;
 import tech.pegasys.artemis.datastructures.state.Crosslink;
 import tech.pegasys.artemis.datastructures.state.CrosslinkCommittee;
 import tech.pegasys.artemis.datastructures.state.Validator;
+import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.bitwise.BitwiseOps;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
@@ -62,6 +64,8 @@ import tech.pegasys.artemis.util.bls.BLSVerify;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 
 public class AttestationUtil {
+
+  private static final ALogger STDOUT = new ALogger("stdout");
 
   /**
    * Returns true if the attestation is verified
@@ -253,27 +257,27 @@ public class AttestationUtil {
    */
   public static Boolean is_valid_indexed_attestation(
       BeaconState state, IndexedAttestation indexed_attestation) {
-    List<Integer> bit_0_indices = indexed_attestation.getCustody_bit_0_indices();
-    List<Integer> bit_1_indices = indexed_attestation.getCustody_bit_1_indices();
+    List<UnsignedLong> bit_0_indices = indexed_attestation.getCustody_bit_0_indices();
+    List<UnsignedLong> bit_1_indices = indexed_attestation.getCustody_bit_1_indices();
 
     if (!(bit_1_indices.size() == 0)) {
-      System.out.println("AttestationUtil.is_valid_indexed_attestation: Verify no index has custody bit equal to 1 [to be removed in phase 1]");
+      STDOUT.log(Level.DEBUG,"AttestationUtil.is_valid_indexed_attestation: Verify no index has custody bit equal to 1 [to be removed in phase 1]");
       return false;
     }
     if (!((bit_0_indices.size() + bit_1_indices.size()) <= MAX_VALIDATORS_PER_COMMITTEE)){
-      System.out.println("AttestationUtil.is_valid_indexed_attestation: Verify max number of indices");
+      STDOUT.log(Level.DEBUG, "AttestationUtil.is_valid_indexed_attestation: Verify max number of indices");
       return false;
     }
     if (!(intersection(bit_0_indices, bit_1_indices).size() == 0)) {
-      System.out.println("AttestationUtil.is_valid_indexed_attestation: Verify index sets are disjoint");
+      STDOUT.log(Level.DEBUG, "AttestationUtil.is_valid_indexed_attestation: Verify index sets are disjoint");
       return false;
     }
-    List<Integer> bit_0_indices_sorted = new ArrayList<Integer>(bit_0_indices);
+    List<UnsignedLong> bit_0_indices_sorted = new ArrayList<>(bit_0_indices);
     Collections.sort(bit_0_indices_sorted);
-    List<Integer> bit_1_indices_sorted = new ArrayList<Integer>(bit_1_indices);
+    List<UnsignedLong> bit_1_indices_sorted = new ArrayList<>(bit_1_indices);
     Collections.sort(bit_1_indices_sorted);
     if (!(bit_0_indices.equals(bit_0_indices_sorted) && bit_1_indices.equals(bit_1_indices_sorted))) {
-      System.out.println("AttestationUtil.is_valid_indexed_attestation: Verify indices are sorted");
+      STDOUT.log(Level.DEBUG, "AttestationUtil.is_valid_indexed_attestation: Verify indices are sorted");
       return false;
     }
 
@@ -282,11 +286,13 @@ public class AttestationUtil {
     pubkeys.add(
         bls_aggregate_pubkeys(
             bit_0_indices.stream()
+                .map(i -> toIntExact(i.longValue()))
                 .map(i -> validators.get(i).getPubkey())
                 .collect(Collectors.toList())));
     pubkeys.add(
         bls_aggregate_pubkeys(
             bit_1_indices.stream()
+                .map(i -> toIntExact(i.longValue()))
                 .map(i -> validators.get(i).getPubkey())
                 .collect(Collectors.toList())));
 
@@ -300,7 +306,7 @@ public class AttestationUtil {
     int domain =
         get_domain(state, DOMAIN_ATTESTATION, indexed_attestation.getData().getTarget().getEpoch());
     if (!BLSVerify.bls_verify_multiple(pubkeys, message_hashes, signature, domain)) {
-      System.out.println("AttestationUtil.is_valid_indexed_attestation: Verify aggregate signature");
+      STDOUT.log(Level.DEBUG, "AttestationUtil.is_valid_indexed_attestation: Verify aggregate signature");
       return false;
     }
     return true;
