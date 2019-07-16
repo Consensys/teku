@@ -31,17 +31,17 @@ public class Attestation implements Merkleizable, SimpleOffsetSerializable {
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
   public static final int SSZ_FIELD_COUNT = 2;
 
-  private Bytes aggregation_bitfield; // Bitlist bounded by MAX_VALIDATORS_PER_COMMITTEE
+  private Bytes aggregation_bits; // Bitlist bounded by MAX_VALIDATORS_PER_COMMITTEE
   private AttestationData data;
   private Bytes custody_bitfield; // Bitlist bounded by MAX_VALIDATORS_PER_COMMITTEE
   private BLSSignature signature;
 
   public Attestation(
-      Bytes aggregation_bitfield,
+      Bytes aggregation_bits,
       AttestationData data,
       Bytes custody_bitfield,
       BLSSignature signature) {
-    this.aggregation_bitfield = aggregation_bitfield;
+    this.aggregation_bits = aggregation_bits;
     this.data = data;
     this.custody_bitfield = custody_bitfield;
     this.signature = signature;
@@ -90,7 +90,7 @@ public class Attestation implements Merkleizable, SimpleOffsetSerializable {
   public Bytes toBytes() {
     return SSZ.encode(
         writer -> {
-          writer.writeBytes(aggregation_bitfield);// TODO writeBitlist logic required
+          writer.writeBytes(aggregation_bits);// TODO writeBitlist logic required
           writer.writeBytes(data.toBytes());
           writer.writeBytes(custody_bitfield);// TODO writeBitlist logic required
           writer.writeBytes(signature.toBytes());
@@ -99,7 +99,7 @@ public class Attestation implements Merkleizable, SimpleOffsetSerializable {
 
   @Override
   public int hashCode() {
-    return Objects.hash(aggregation_bitfield, data, custody_bitfield, signature);
+    return Objects.hash(aggregation_bits, data, custody_bitfield, signature);
   }
 
   @Override
@@ -117,19 +117,19 @@ public class Attestation implements Merkleizable, SimpleOffsetSerializable {
     }
 
     Attestation other = (Attestation) obj;
-    return Objects.equals(this.getAggregation_bitfield(), other.getAggregation_bitfield())
+    return Objects.equals(this.getAggregation_bits(), other.getAggregation_bits())
         && Objects.equals(this.getData(), other.getData())
         && Objects.equals(this.getCustody_bitfield(), other.getCustody_bitfield())
         && Objects.equals(this.getAggregate_signature(), other.getAggregate_signature());
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */
-  public Bytes getAggregation_bitfield() {
-    return aggregation_bitfield;
+  public Bytes getAggregation_bits() {
+    return aggregation_bits;
   }
 
-  public void setAggregation_bitfield(Bytes aggregation_bitfield) {
-    this.aggregation_bitfield = aggregation_bitfield;
+  public void setAggregation_bits(Bytes aggregation_bits) {
+    this.aggregation_bits = aggregation_bits;
   }
 
   public AttestationData getData() {
@@ -160,7 +160,7 @@ public class Attestation implements Merkleizable, SimpleOffsetSerializable {
   public Bytes32 hash_tree_root() {
     return HashTreeUtil.merkleize(
         Arrays.asList(
-            HashTreeUtil.hash_tree_root(SSZTypes.LIST_OF_BASIC, aggregation_bitfield),// TODO writeBitlist logic required
+            HashTreeUtil.hash_tree_root(SSZTypes.LIST_OF_BASIC, aggregation_bits),// TODO writeBitlist logic required
             data.hash_tree_root(),
             HashTreeUtil.hash_tree_root(SSZTypes.LIST_OF_BASIC, custody_bitfield),// TODO writeBitlist logic required
             HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, signature.toBytes())));

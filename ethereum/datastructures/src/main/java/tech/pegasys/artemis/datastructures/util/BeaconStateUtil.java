@@ -291,6 +291,17 @@ public class BeaconStateUtil {
     return domain;
   }
 
+  /**
+   *  Return the domain for the ``domain_type``.
+   *
+   * @param domain_type
+   * @return domain
+   * @see <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#compute_domain</a>
+   */
+  public static Bytes compute_domain(Bytes domain_type) {
+    return compute_domain(domain_type, Bytes.wrap(new byte[4]));
+  }i
+
 
   /**
    * Returns the epoch number of the given slot.
