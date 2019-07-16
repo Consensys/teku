@@ -227,7 +227,7 @@ public class Constants {
                     : HISTORICAL_ROOTS_LIMIT;
     VALIDATOR_REGISTRY_LIMIT =
             config.getValidatorRegistryLimit() != Long.MIN_VALUE
-                    ? config.getHistoricalRootsLimit()
+                    ? UnsignedLong.valueOf(config.getValidatorRegistryLimit())
                     : VALIDATOR_REGISTRY_LIMIT;
 
     // Rewards and penalties

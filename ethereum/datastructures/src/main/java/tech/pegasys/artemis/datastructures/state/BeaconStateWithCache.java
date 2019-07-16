@@ -39,7 +39,7 @@ public final class BeaconStateWithCache extends BeaconState {
     this.genesis_time = state.getGenesis_time();
     this.fork = new Fork(state.getFork());
 
-    this.validator_registry = this.copyList(state.getValidator_registry(), new ArrayList<>());
+    this.validators = this.copyList(state.getValidator_registry(), new ArrayList<>());
     this.balances = state.getBalances().stream().collect(Collectors.toList());
 
     this.latest_randao_mixes =
@@ -50,13 +50,13 @@ public final class BeaconStateWithCache extends BeaconState {
         this.copyList(state.getPrevious_epoch_attestations(), new ArrayList<>());
     this.current_epoch_attestations =
         this.copyList(state.getCurrent_epoch_attestations(), new ArrayList<>());
-    this.previous_justified_epoch = state.getPrevious_justified_epoch();
-    this.current_justified_epoch = state.getCurrent_justified_epoch();
+    this.previous_justified_checkpoint = state.getPrevious_justified_checkpoint();
+    this.current_justified_chekpoint = state.getCurrent_justified_chekpoint();
     this.previous_justified_root = state.getPrevious_justified_root();
     this.current_justified_root = state.getCurrent_justified_root();
     this.justification_bitfield = state.getJustification_bitfield();
     this.finalized_epoch = state.getFinalized_epoch();
-    this.finalized_root = state.getFinalized_root();
+    this.finalized_checkpoint = state.getFinalized_checkpoint();
 
     this.current_crosslinks = this.copyList(state.getCurrent_crosslinks(), new ArrayList<>());
     this.previous_crosslinks = this.copyList(state.getPrevious_crosslinks(), new ArrayList<>());
