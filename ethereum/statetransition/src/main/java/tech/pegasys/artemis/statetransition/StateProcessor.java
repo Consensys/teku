@@ -169,8 +169,8 @@ public class StateProcessor {
 
     // Get head block's state, and initialize a newHeadState variable to run state transition on
     BeaconState headBlockState = store.getState(headBlock.getState_root()).get();
-    long justifiedEpoch = headBlockState.getCurrent_justified_epoch().longValue();
-    long finalizedEpoch = headBlockState.getFinalized_epoch().longValue();
+    Long justifiedEpoch = headBlockState.getCurrent_justified_chekpoint().longValue();
+    Long finalizedEpoch = headBlockState.getFinalized_epoch().longValue();
     STDOUT.log(Level.INFO, "Justified block epoch:                 " + justifiedEpoch);
     STDOUT.log(Level.INFO, "Finalized block epoch:                 " + finalizedEpoch);
 
@@ -297,7 +297,7 @@ public class StateProcessor {
             BeaconStateUtil.get_block_root(headState, headState.getFinalized_epoch());
         this.finalizedEpoch = headState.getFinalized_epoch();
         this.currentJustifiedBlockRoot =
-            BeaconStateUtil.get_block_root(headState, headState.getCurrent_justified_epoch());
+            BeaconStateUtil.get_block_root(headState, headState.getCurrent_justified_chekpoint());
 
         this.justifiedStateRoot =
             store.getProcessedBlock(currentJustifiedBlockRoot).get().getState_root();

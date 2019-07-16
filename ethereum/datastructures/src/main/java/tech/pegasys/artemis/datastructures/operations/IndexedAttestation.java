@@ -14,8 +14,9 @@
 package tech.pegasys.artemis.datastructures.operations;
 
 import com.google.common.primitives.UnsignedLong;
+
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -31,16 +32,16 @@ import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 public class IndexedAttestation implements Merkleizable, SimpleOffsetSerializable {
 
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
-  public static final int SSZ_FIELD_COUNT = 0;
+  public static final int SSZ_FIELD_COUNT = 2;
 
-  private List<Integer> custody_bit_0_indices;
-  private List<Integer> custody_bit_1_indices;
+  private List<UnsignedLong> custody_bit_0_indices; // List bounded by MAX_VALIDATORS_PER_COMMITTEE
+  private List<UnsignedLong> custody_bit_1_indices; // List bounded by MAX_VALIDATORS_PER_COMMITTEE
   private AttestationData data;
   private BLSSignature signature;
 
   public IndexedAttestation(
-      List<Integer> custody_bit_0_indices,
-      List<Integer> custody_bit_1_indices,
+      List<UnsignedLong> custody_bit_0_indices,
+      List<UnsignedLong> custody_bit_1_indices,
       AttestationData data,
       BLSSignature signature) {
     this.custody_bit_0_indices = custody_bit_0_indices;
@@ -60,23 +61,33 @@ public class IndexedAttestation implements Merkleizable, SimpleOffsetSerializabl
 
   @Override
   public int getSSZFieldCount() {
-    // TODO Finish this stub.
-    return SSZ_FIELD_COUNT;
+    return SSZ_FIELD_COUNT + data.getSSZFieldCount() + signature.getSSZFieldCount();
   }
 
   @Override
   public List<Bytes> get_fixed_parts() {
-    // TODO Implement this stub.
-    return Collections.nCopies(getSSZFieldCount(), Bytes.EMPTY);
+    List<Bytes> fixedPartsList = new ArrayList<>();
+    fixedPartsList.addAll(
+        List.of(Bytes.EMPTY, Bytes.EMPTY));
+    fixedPartsList.addAll(data.get_fixed_parts());
+    fixedPartsList.addAll(signature.get_fixed_parts());
+    return fixedPartsList;
   }
 
   @Override
   public List<Bytes> get_variable_parts() {
-    // TODO Implement this stub.
-    return Collections.nCopies(getSSZFieldCount(), Bytes.EMPTY);
+    List<Bytes> variablePartsList = new ArrayList<>();
+    variablePartsList.addAll(
+        custody_bit_0_indices.stream().map(value -> SSZ.encodeUInt64(value.longValue())).collect(Collectors.toList())
+    );
+    variablePartsList.addAll(
+      custody_bit_1_indices.stream().map(value -> SSZ.encodeUInt64(value.longValue())).collect(Collectors.toList())
+  );
+    variablePartsList.addAll(
+        List.of(Bytes.EMPTY, Bytes.EMPTY));
+    return variablePartsList;
   }
 
-  // TODO Indexed Attestation should be converted to unsigned longs before serialization
   public static IndexedAttestation fromBytes(Bytes bytes) {
     return SSZ.decode(
         bytes,
@@ -84,30 +95,25 @@ public class IndexedAttestation implements Merkleizable, SimpleOffsetSerializabl
             new IndexedAttestation(
                 reader.readUInt64List().stream()
                     .map(UnsignedLong::fromLongBits)
-                    .map(UnsignedLong::intValue)
                     .collect(Collectors.toList()),
                 reader.readUInt64List().stream()
                     .map(UnsignedLong::fromLongBits)
-                    .map(UnsignedLong::intValue)
                     .collect(Collectors.toList()),
                 AttestationData.fromBytes(reader.readBytes()),
                 BLSSignature.fromBytes(reader.readBytes())));
   }
 
-  // TODO Indexed Attestation should be converted to unsigned longs before serialization
   public Bytes toBytes() {
     return SSZ.encode(
         writer -> {
           writer.writeULongIntList(
               64,
               custody_bit_0_indices.stream()
-                  .map(UnsignedLong::valueOf)
                   .map(UnsignedLong::longValue)
                   .collect(Collectors.toList()));
           writer.writeULongIntList(
               64,
               custody_bit_1_indices.stream()
-                  .map(UnsignedLong::valueOf)
                   .map(UnsignedLong::longValue)
                   .collect(Collectors.toList()));
           writer.writeBytes(data.toBytes());
@@ -142,19 +148,19 @@ public class IndexedAttestation implements Merkleizable, SimpleOffsetSerializabl
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */
-  public List<Integer> getCustody_bit_0_indices() {
+  public List<UnsignedLong> getCustody_bit_0_indices() {
     return custody_bit_0_indices;
   }
 
-  public void setCustody_bit_0_indices(List<Integer> custody_bit_0_indices) {
+  public void setCustody_bit_0_indices(List<UnsignedLong> custody_bit_0_indices) {
     this.custody_bit_0_indices = custody_bit_0_indices;
   }
 
-  public List<Integer> getCustody_bit_1_indices() {
+  public List<UnsignedLong> getCustody_bit_1_indices() {
     return custody_bit_1_indices;
   }
 
-  public void setCustody_bit_1_indices(List<Integer> custody_bit_1_indices) {
+  public void setCustody_bit_1_indices(List<UnsignedLong> custody_bit_1_indices) {
     this.custody_bit_1_indices = custody_bit_1_indices;
   }
 

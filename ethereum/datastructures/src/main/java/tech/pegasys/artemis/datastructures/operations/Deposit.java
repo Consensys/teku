@@ -32,9 +32,9 @@ import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 public class Deposit implements Merkleizable, SimpleOffsetSerializable {
 
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
-  public static final int SSZ_FIELD_COUNT = 1;
+  public static final int SSZ_FIELD_COUNT = 2;
 
-  private List<Bytes32> proof; // Bounded by DEPOSIT_CONTRACT_TREE_DEPTH
+  private List<Bytes32> proof; // Vector bounded by DEPOSIT_CONTRACT_TREE_DEPTH + 1
   private DepositData data;
   private UnsignedLong index;
 
@@ -56,8 +56,18 @@ public class Deposit implements Merkleizable, SimpleOffsetSerializable {
 
   @Override
   public int getSSZFieldCount() {
-    // TODO Proof List needs to implement getSSZFieldCount and get_fixed_parts.
-    return /*proof.getSSZFieldCount() + */ data.getSSZFieldCount() + SSZ_FIELD_COUNT;
+    return data.getSSZFieldCount() + SSZ_FIELD_COUNT;
+  }
+
+  @Override
+  public List<Bytes> get_fixed_parts() {
+    List<Bytes> fixedPartsList = new ArrayList<>();
+    fixedPartsList.addAll(
+        List.of(SSZ.encode(writer -> writer.writeFixedBytesVector(proof))));
+    fixedPartsList.addAll(data.get_fixed_parts());
+    fixedPartsList.addAll(
+      List.of(SSZ.encodeUInt64(index.longValue())));
+    return fixedPartsList;
   }
 
   public static Deposit fromBytes(Bytes bytes) {
@@ -65,7 +75,7 @@ public class Deposit implements Merkleizable, SimpleOffsetSerializable {
         bytes,
         reader ->
             new Deposit(
-                reader.readFixedBytesVector(Constants.DEPOSIT_CONTRACT_TREE_DEPTH, 32).stream()
+                reader.readFixedBytesVector(Constants.DEPOSIT_CONTRACT_TREE_DEPTH + 1, 32).stream()
                     .map(Bytes32::wrap)
                     .collect(Collectors.toList()),
                 DepositData.fromBytes(reader.readBytes())));
@@ -75,9 +85,9 @@ public class Deposit implements Merkleizable, SimpleOffsetSerializable {
     List<Bytes32> filledProofList = new ArrayList<>();
     filledProofList.addAll(proof);
 
-    if (proof.size() < Constants.DEPOSIT_CONTRACT_TREE_DEPTH) {
+    if (proof.size() < Constants.DEPOSIT_CONTRACT_TREE_DEPTH + 1) {
 
-      int elementsToFill = Constants.DEPOSIT_CONTRACT_TREE_DEPTH - proof.size();
+      int elementsToFill = Constants.DEPOSIT_CONTRACT_TREE_DEPTH + 1 - proof.size();
       List<Bytes32> fillElements = Collections.nCopies(elementsToFill, Bytes32.ZERO);
 
       filledProofList.addAll(fillElements);
@@ -135,8 +145,7 @@ public class Deposit implements Merkleizable, SimpleOffsetSerializable {
   public Bytes32 hash_tree_root() {
     return HashTreeUtil.merkleize(
         Arrays.asList(
-            // TODO Look at this - is this a TUPLE_OF_COMPOSITE
-            HashTreeUtil.hash_tree_root(SSZTypes.BASIC, proof.toArray(new Bytes32[0])),
+            HashTreeUtil.hash_tree_root(SSZTypes.LIST_OF_COMPOSITE, proof.toArray(new Bytes32[0])),
             data.hash_tree_root()));
   }
 
