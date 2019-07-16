@@ -37,7 +37,7 @@ import static tech.pegasys.artemis.datastructures.Constants.ZERO_HASH;
 import static tech.pegasys.artemis.datastructures.util.AttestationUtil.convert_to_indexed;
 import static tech.pegasys.artemis.datastructures.util.AttestationUtil.get_attestation_data_slot;
 import static tech.pegasys.artemis.datastructures.util.AttestationUtil.is_slashable_attestation_data;
-import static tech.pegasys.artemis.datastructures.util.AttestationUtil.validate_indexed_attestation;
+import static tech.pegasys.artemis.datastructures.util.AttestationUtil.is_valid_indexed_attestation;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.bls_domain;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_beacon_proposer_index;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_current_epoch;
@@ -49,7 +49,7 @@ import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.int_to_by
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.max;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.min;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.slash_validator;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.slot_to_epoch;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_of_slot;
 import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.decrease_balance;
 import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.increase_balance;
 import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.is_active_validator;
@@ -266,8 +266,8 @@ public final class BlockProcessorUtil {
                 .get(toIntExact(proposer_slashing.getProposer_index().longValue()));
 
         checkArgument(
-            slot_to_epoch(proposer_slashing.getHeader_1().getSlot())
-                .equals(slot_to_epoch(proposer_slashing.getHeader_2().getSlot())),
+            compute_epoch_of_slot(proposer_slashing.getHeader_1().getSlot())
+                .equals(compute_epoch_of_slot(proposer_slashing.getHeader_2().getSlot())),
             "process_proposer_slashings: Verify that the epoch is the same");
 
         checkArgument(
@@ -288,7 +288,7 @@ public final class BlockProcessorUtil {
                 get_domain(
                     state,
                     DOMAIN_BEACON_PROPOSER,
-                    slot_to_epoch(proposer_slashing.getHeader_1().getSlot()))),
+                    compute_epoch_of_slot(proposer_slashing.getHeader_1().getSlot()))),
             "process_proposer_slashings: Verify signatures are valid 1");
 
         checkArgument(
@@ -299,7 +299,7 @@ public final class BlockProcessorUtil {
                 get_domain(
                     state,
                     DOMAIN_BEACON_PROPOSER,
-                    slot_to_epoch(proposer_slashing.getHeader_2().getSlot()))),
+                    compute_epoch_of_slot(proposer_slashing.getHeader_2().getSlot()))),
             "process_proposer_slashings: Verify signatures are valid 2");
 
         slash_validator(state, toIntExact(proposer_slashing.getProposer_index().longValue()));
@@ -336,8 +336,8 @@ public final class BlockProcessorUtil {
             is_slashable_attestation_data(attestation_1.getData(), attestation_2.getData()),
             "process_attester_slashings: Verify if attestations are slashable");
 
-        validate_indexed_attestation(state, attestation_1);
-        validate_indexed_attestation(state, attestation_2);
+        is_valid_indexed_attestation(state, attestation_1);
+        is_valid_indexed_attestation(state, attestation_2);
         boolean slashed_any = false;
 
         List<Integer> attesting_indices_1 = attestation_1.getCustody_bit_0_indices();
@@ -460,7 +460,7 @@ public final class BlockProcessorUtil {
         checkArgument(
             data.getCrosslink().getData_root().equals(ZERO_HASH),
             "process_attestations: Check crosslink data 4");
-        validate_indexed_attestation(state, convert_to_indexed(state, attestation));
+        is_valid_indexed_attestation(state, convert_to_indexed(state, attestation));
       }
     } catch (IllegalArgumentException e) {
       LOG.log(Level.WARN, e.getMessage());
@@ -487,7 +487,7 @@ public final class BlockProcessorUtil {
       for (Deposit deposit : deposits) {
         /*
         checkArgument(
-            verify_merkle_branch(
+            is_valid_merkle_branch(
                 deposit.getData().hash_tree_root(),
                 deposit.getProof(),
                 Constants.DEPOSIT_CONTRACT_TREE_DEPTH,

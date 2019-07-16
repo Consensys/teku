@@ -25,7 +25,7 @@ import static tech.pegasys.artemis.datastructures.Constants.LATEST_RANDAO_MIXES_
 import static tech.pegasys.artemis.datastructures.Constants.MIN_SEED_LOOKAHEAD;
 import static tech.pegasys.artemis.datastructures.Constants.SLOTS_PER_EPOCH;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.bls_domain;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.generate_seed;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_seed;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_active_index_root;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_current_epoch;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_genesis_beacon_state;
@@ -197,7 +197,7 @@ class BeaconStateTest {
     assertThat(randao_mix).isEqualTo(Bytes32.fromHexString("0x029a"));
     try {
       Security.addProvider(new BouncyCastleProvider());
-      assertThat(generate_seed(state, epoch))
+      assertThat(get_seed(state, epoch))
           .isEqualTo(
               Hash.sha2_256(
                   Bytes.wrap(

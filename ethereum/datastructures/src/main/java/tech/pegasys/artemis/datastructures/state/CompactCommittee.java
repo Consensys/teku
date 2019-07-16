@@ -47,6 +47,11 @@ public class CompactCommittee implements Copyable<CompactCommittee>, Merkleizabl
     this.compact_validators = compactCommittee.getCompact_validators().stream().collect(Collectors.toList());
   }
 
+  public CompactCommittee() {
+    this.pubkeys = new ArrayList<>();
+    this.compact_validators = new ArrayList<>();
+  }
+
   @Override
   public CompactCommittee copy() {
     return new CompactCommittee(this);

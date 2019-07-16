@@ -27,7 +27,7 @@ import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 
 public final class BeaconStateWithCache extends BeaconState {
 
-  protected Map<UnsignedLong, UnsignedLong> epochStartShards = new HashMap<>();
+  protected Map<UnsignedLong, UnsignedLong> startShards = new HashMap<>();
   protected Map<String, List<Integer>> crosslinkCommittees = new HashMap<>();
 
   public BeaconStateWithCache() {
@@ -74,7 +74,7 @@ public final class BeaconStateWithCache extends BeaconState {
     this.deposit_index = state.getDeposit_index();
 
     this.crosslinkCommittees = state.getCrossLinkCommittees();
-    this.epochStartShards = state.getEpochStartShards();
+    this.startShards = state.getStartShards();
   }
 
   private <S extends Copyable<S>, T extends List<S>> T copyList(T sourceList, T destinationList) {
@@ -112,24 +112,24 @@ public final class BeaconStateWithCache extends BeaconState {
     this.crosslinkCommittees.put(epoch.toString() + "_" + shard.toString(), crosslinkCommittees);
   }
 
-  public Map<UnsignedLong, UnsignedLong> getEpochStartShards() {
-    return this.epochStartShards;
+  public Map<UnsignedLong, UnsignedLong> getStartShards() {
+    return this.startShards;
   }
 
-  public UnsignedLong getEpochStartShard(UnsignedLong epoch) {
-    if (epochStartShards.containsKey(epoch)) {
-      return epochStartShards.get(epoch);
+  public UnsignedLong getStartShard(UnsignedLong epoch) {
+    if (startShards.containsKey(epoch)) {
+      return startShards.get(epoch);
     }
     return null;
   }
 
-  public void setEpochStartShard(UnsignedLong epoch, UnsignedLong shard) {
-    this.epochStartShards.put(epoch, shard);
+  public void setStartShard(UnsignedLong epoch, UnsignedLong shard) {
+    this.startShards.put(epoch, shard);
   }
 
   public void invalidateCache() {
     // TODO: clean this cache after finalization
-    this.epochStartShards = new HashMap<>();
+    this.startShards = new HashMap<>();
     this.crosslinkCommittees = new HashMap<>();
   }
 }

@@ -14,7 +14,7 @@
 package tech.pegasys.artemis.statetransition;
 
 import static java.util.Objects.requireNonNull;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.slot_to_epoch;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_of_slot;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
@@ -44,7 +44,7 @@ public class LmdGhost {
       ChainStorageClient store, BeaconState start_state, BeaconBlock start_block) {
     List<Integer> active_validator_indices =
         ValidatorsUtil.get_active_validator_indices(
-            start_state, slot_to_epoch(start_state.getSlot()));
+            start_state, compute_epoch_of_slot(start_state.getSlot()));
 
     List<MutablePair<Integer, BeaconBlock>> attestation_targets = new ArrayList<>();
     for (Integer validator_index : active_validator_indices) {

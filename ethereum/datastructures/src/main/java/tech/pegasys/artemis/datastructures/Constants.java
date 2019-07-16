@@ -109,29 +109,29 @@ public class Constants {
   public static void init(ArtemisConfiguration config) {
     // Misc
     SHARD_COUNT =
-        config.getShardCount() != Integer.MIN_VALUE
-            ? config.getShardCount()
-            : SHARD_COUNT;
+            config.getShardCount() != Integer.MIN_VALUE
+                    ? config.getShardCount()
+                    : SHARD_COUNT;
     TARGET_COMMITTEE_SIZE =
-        config.getTargetCommitteeSize() != Integer.MIN_VALUE
-            ? config.getTargetCommitteeSize()
-            : TARGET_COMMITTEE_SIZE;
+            config.getTargetCommitteeSize() != Integer.MIN_VALUE
+                    ? config.getTargetCommitteeSize()
+                    : TARGET_COMMITTEE_SIZE;
     MAX_VALIDATORS_PER_COMMITTEE =
             config.getMaxValidatorsPerCommittee() != Integer.MIN_VALUE
                     ? config.getMaxValidatorsPerCommittee()
-                    : MAX_VALIDATORS_PER_COMMITTEE ;
+                    : MAX_VALIDATORS_PER_COMMITTEE;
     MIN_PER_EPOCH_CHURN_LIMIT =
             config.getMinPerEpochChurnLimit() != Integer.MIN_VALUE
                     ? config.getMinPerEpochChurnLimit()
-                    : MIN_PER_EPOCH_CHURN_LIMIT ;
+                    : MIN_PER_EPOCH_CHURN_LIMIT;
     CHURN_LIMIT_QUOTIENT =
-        config.getChurnLimitQuotient() != Integer.MIN_VALUE
-            ? config.getChurnLimitQuotient()
-            : CHURN_LIMIT_QUOTIENT; // 2^7 validators
+            config.getChurnLimitQuotient() != Integer.MIN_VALUE
+                    ? config.getChurnLimitQuotient()
+                    : CHURN_LIMIT_QUOTIENT; // 2^7 validators
     SHUFFLE_ROUND_COUNT =
-        config.getShuffleRoundCount() != Integer.MIN_VALUE
-            ? config.getShuffleRoundCount()
-            : SHUFFLE_ROUND_COUNT;
+            config.getShuffleRoundCount() != Integer.MIN_VALUE
+                    ? config.getShuffleRoundCount()
+                    : SHUFFLE_ROUND_COUNT;
     MIN_GENESIS_ACTIVE_VALIDATOR_COUNT =
             config.getMinGenesisActiveValidatorCount() != Integer.MIN_VALUE
                     ? config.getShuffleRoundCount()
@@ -143,74 +143,74 @@ public class Constants {
 
     // Gwei values
     MIN_DEPOSIT_AMOUNT =
-        config.getMinDepositAmount() != Long.MIN_VALUE
-            ? config.getMinDepositAmount()
-            : MIN_DEPOSIT_AMOUNT;
+            config.getMinDepositAmount() != Long.MIN_VALUE
+                    ? config.getMinDepositAmount()
+                    : MIN_DEPOSIT_AMOUNT;
     MAX_EFFECTIVE_BALANCE =
-        config.getMaxEffectiveBalance() != Long.MIN_VALUE
-            ? config.getMaxEffectiveBalance()
-            : MAX_EFFECTIVE_BALANCE;
+            config.getMaxEffectiveBalance() != Long.MIN_VALUE
+                    ? config.getMaxEffectiveBalance()
+                    : MAX_EFFECTIVE_BALANCE;
     EJECTION_BALANCE =
-        config.getEjectionBalance() != Long.MIN_VALUE
-            ? config.getEjectionBalance()
-            : EJECTION_BALANCE;
+            config.getEjectionBalance() != Long.MIN_VALUE
+                    ? config.getEjectionBalance()
+                    : EJECTION_BALANCE;
     EFFECTIVE_BALANCE_INCREMENT =
-        config.getEffectiveBalanceIncrement() != Long.MIN_VALUE
-            ? config.getEffectiveBalanceIncrement()
-            : EFFECTIVE_BALANCE_INCREMENT;
+            config.getEffectiveBalanceIncrement() != Long.MIN_VALUE
+                    ? config.getEffectiveBalanceIncrement()
+                    : EFFECTIVE_BALANCE_INCREMENT;
 
 
     // Initial values
     GENESIS_SLOT =
-        config.getGenesisSlot() != Long.MIN_VALUE ? config.getGenesisSlot() : GENESIS_SLOT;
+            config.getGenesisSlot() != Long.MIN_VALUE ? config.getGenesisSlot() : GENESIS_SLOT;
     GENESIS_EPOCH =
             config.getGenesisEpoch() != Long.MIN_VALUE ? config.getGenesisEpoch() : GENESIS_SLOT;
     BLS_WITHDRAWAL_PREFIX =
-        !config.getBlsWithdrawalPrefix().equals("")
-            ? Bytes.fromHexString(config.getBlsWithdrawalPrefix())
-            : BLS_WITHDRAWAL_PREFIX;
+            !config.getBlsWithdrawalPrefix().equals("")
+                    ? Bytes.fromHexString(config.getBlsWithdrawalPrefix())
+                    : BLS_WITHDRAWAL_PREFIX;
 
     // Time parameters
     MIN_ATTESTATION_INCLUSION_DELAY =
-        config.getMinAttestationInclusionDelay() != Integer.MIN_VALUE
-            ? config.getMinAttestationInclusionDelay()
-            : MIN_ATTESTATION_INCLUSION_DELAY;
+            config.getMinAttestationInclusionDelay() != Integer.MIN_VALUE
+                    ? config.getMinAttestationInclusionDelay()
+                    : MIN_ATTESTATION_INCLUSION_DELAY;
     SLOTS_PER_EPOCH =
-        config.getSlotsPerEpoch() != Integer.MIN_VALUE
-            ? config.getSlotsPerEpoch()
-            : SLOTS_PER_EPOCH;
+            config.getSlotsPerEpoch() != Integer.MIN_VALUE
+                    ? config.getSlotsPerEpoch()
+                    : SLOTS_PER_EPOCH;
     MIN_SEED_LOOKAHEAD =
-        config.getMinSeedLookahead() != Integer.MIN_VALUE
-            ? config.getMinSeedLookahead()
-            : MIN_SEED_LOOKAHEAD;
+            config.getMinSeedLookahead() != Integer.MIN_VALUE
+                    ? config.getMinSeedLookahead()
+                    : MIN_SEED_LOOKAHEAD;
     ACTIVATION_EXIT_DELAY =
-        config.getActivationExitDelay() != Integer.MIN_VALUE
-            ? config.getActivationExitDelay()
-            : ACTIVATION_EXIT_DELAY;
+            config.getActivationExitDelay() != Integer.MIN_VALUE
+                    ? config.getActivationExitDelay()
+                    : ACTIVATION_EXIT_DELAY;
     SLOTS_PER_ETH1_VOTING_PERIOD =
-        config.getSlotsPerEth1VotingPeriod() != Integer.MIN_VALUE
-            ? config.getSlotsPerEth1VotingPeriod()
-            : SLOTS_PER_ETH1_VOTING_PERIOD;
+            config.getSlotsPerEth1VotingPeriod() != Integer.MIN_VALUE
+                    ? config.getSlotsPerEth1VotingPeriod()
+                    : SLOTS_PER_ETH1_VOTING_PERIOD;
     SLOTS_PER_HISTORICAL_ROOT =
-        config.getSlotsPerHistoricalRoot() != Integer.MIN_VALUE
-            ? config.getSlotsPerHistoricalRoot()
-            : SLOTS_PER_HISTORICAL_ROOT;
+            config.getSlotsPerHistoricalRoot() != Integer.MIN_VALUE
+                    ? config.getSlotsPerHistoricalRoot()
+                    : SLOTS_PER_HISTORICAL_ROOT;
     MIN_VALIDATOR_WITHDRAWABILITY_DELAY =
-        config.getMinValidatorWithdrawabilityDelay() != Integer.MIN_VALUE
-            ? config.getMinValidatorWithdrawabilityDelay()
-            : MIN_VALIDATOR_WITHDRAWABILITY_DELAY;
+            config.getMinValidatorWithdrawabilityDelay() != Integer.MIN_VALUE
+                    ? config.getMinValidatorWithdrawabilityDelay()
+                    : MIN_VALIDATOR_WITHDRAWABILITY_DELAY;
     PERSISTENT_COMMITTEE_PERIOD =
-        config.getPersistentCommitteePeriod() != Integer.MIN_VALUE
-            ? config.getPersistentCommitteePeriod()
-            : PERSISTENT_COMMITTEE_PERIOD;
+            config.getPersistentCommitteePeriod() != Integer.MIN_VALUE
+                    ? config.getPersistentCommitteePeriod()
+                    : PERSISTENT_COMMITTEE_PERIOD;
     MAX_EPOCHS_PER_CROSSLINK =
-        config.getMaxEpochsPerCrosslink() != Integer.MIN_VALUE
-            ? config.getMaxEpochsPerCrosslink()
-            : MAX_EPOCHS_PER_CROSSLINK;
+            config.getMaxEpochsPerCrosslink() != Integer.MIN_VALUE
+                    ? config.getMaxEpochsPerCrosslink()
+                    : MAX_EPOCHS_PER_CROSSLINK;
     MIN_EPOCHS_TO_INACTIVITY_PENALTY =
-        config.getMinEpochsToInactivityPenalty() != Integer.MIN_VALUE
-            ? config.getMinEpochsToInactivityPenalty()
-            : MIN_EPOCHS_TO_INACTIVITY_PENALTY;
+            config.getMinEpochsToInactivityPenalty() != Integer.MIN_VALUE
+                    ? config.getMinEpochsToInactivityPenalty()
+                    : MIN_EPOCHS_TO_INACTIVITY_PENALTY;
 
     // State list lengths
     EPOCHS_PER_HISTORICAL_VECTOR =
@@ -232,94 +232,84 @@ public class Constants {
 
     // Rewards and penalties
     BASE_REWARD_FACTOR =
-        config.getBaseRewardFactor() != Integer.MIN_VALUE
-            ? config.getBaseRewardFactor()
-            : BASE_REWARD_FACTOR;
+            config.getBaseRewardFactor() != Integer.MIN_VALUE
+                    ? config.getBaseRewardFactor()
+                    : BASE_REWARD_FACTOR;
     WHISTLEBLOWER_REWARD_QUOTIENT =
-        config.getWhistleblowerRewardQuotient() != Integer.MIN_VALUE
-            ? config.getWhistleblowerRewardQuotient()
-            : WHISTLEBLOWER_REWARD_QUOTIENT;
+            config.getWhistleblowerRewardQuotient() != Integer.MIN_VALUE
+                    ? config.getWhistleblowerRewardQuotient()
+                    : WHISTLEBLOWER_REWARD_QUOTIENT;
     PROPOSER_REWARD_QUOTIENT =
-        config.getProposerRewardQuotient() != Integer.MIN_VALUE
-            ? config.getProposerRewardQuotient()
-            : PROPOSER_REWARD_QUOTIENT;
+            config.getProposerRewardQuotient() != Integer.MIN_VALUE
+                    ? config.getProposerRewardQuotient()
+                    : PROPOSER_REWARD_QUOTIENT;
     INACTIVITY_PENALTY_QUOTIENT =
-        config.getInactivityPenaltyQuotient() != Integer.MIN_VALUE
-            ? config.getInactivityPenaltyQuotient()
-            : INACTIVITY_PENALTY_QUOTIENT;
+            config.getInactivityPenaltyQuotient() != Integer.MIN_VALUE
+                    ? config.getInactivityPenaltyQuotient()
+                    : INACTIVITY_PENALTY_QUOTIENT;
     MIN_SLASHING_PENALTY_QUOTIENT =
-        config.getMinSlashingPenaltyQuotient() != Integer.MIN_VALUE
-            ? config.getMinSlashingPenaltyQuotient()
-            : MIN_SLASHING_PENALTY_QUOTIENT;
+            config.getMinSlashingPenaltyQuotient() != Integer.MIN_VALUE
+                    ? config.getMinSlashingPenaltyQuotient()
+                    : MIN_SLASHING_PENALTY_QUOTIENT;
 
     // Max operations per block
     MAX_PROPOSER_SLASHINGS =
-        config.getMaxProposerSlashings() != Integer.MIN_VALUE
-            ? config.getMaxProposerSlashings()
-            : MAX_PROPOSER_SLASHINGS; // 2^4
+            config.getMaxProposerSlashings() != Integer.MIN_VALUE
+                    ? config.getMaxProposerSlashings()
+                    : MAX_PROPOSER_SLASHINGS; // 2^4
     MAX_ATTESTER_SLASHINGS =
-        config.getMaxAttesterSlashings() != Integer.MIN_VALUE
-            ? config.getMaxAttesterSlashings()
-            : MAX_ATTESTER_SLASHINGS; // 2^0
+            config.getMaxAttesterSlashings() != Integer.MIN_VALUE
+                    ? config.getMaxAttesterSlashings()
+                    : MAX_ATTESTER_SLASHINGS; // 2^0
     MAX_ATTESTATIONS =
-        config.getMaxAttestations() != Integer.MIN_VALUE
-            ? config.getMaxAttestations()
-            : MAX_ATTESTATIONS; // 2^7
+            config.getMaxAttestations() != Integer.MIN_VALUE
+                    ? config.getMaxAttestations()
+                    : MAX_ATTESTATIONS; // 2^7
     MAX_DEPOSITS =
-        config.getMaxDeposits() != Integer.MIN_VALUE
-            ? config.getMaxDeposits()
-            : MAX_DEPOSITS; // 2^4
+            config.getMaxDeposits() != Integer.MIN_VALUE
+                    ? config.getMaxDeposits()
+                    : MAX_DEPOSITS; // 2^4
     MAX_VOLUNTARY_EXITS =
-        config.getMaxVoluntaryExits() != Integer.MIN_VALUE
-            ? config.getMaxVoluntaryExits()
-            : MAX_VOLUNTARY_EXITS; // 2^4
+            config.getMaxVoluntaryExits() != Integer.MIN_VALUE
+                    ? config.getMaxVoluntaryExits()
+                    : MAX_VOLUNTARY_EXITS; // 2^4
     MAX_TRANSFERS =
-        config.getMaxTransfers() != Integer.MIN_VALUE
-            ? config.getMaxTransfers()
-            : MAX_TRANSFERS; // 2^4
+            config.getMaxTransfers() != Integer.MIN_VALUE
+                    ? config.getMaxTransfers()
+                    : MAX_TRANSFERS; // 2^4
 
     // Signature domains
     DOMAIN_BEACON_PROPOSER =
-        config.getDomainBeaconProposer() != Integer.MIN_VALUE
-            ? config.getDomainBeaconProposer()
-            : DOMAIN_BEACON_PROPOSER;
+            config.getDomainBeaconProposer() != Integer.MIN_VALUE
+                    ? config.getDomainBeaconProposer()
+                    : DOMAIN_BEACON_PROPOSER;
     DOMAIN_RANDAO =
-        config.getDomainRandao() != Integer.MIN_VALUE ? config.getDomainRandao() : DOMAIN_RANDAO;
+            config.getDomainRandao() != Integer.MIN_VALUE ? config.getDomainRandao() : DOMAIN_RANDAO;
     DOMAIN_ATTESTATION =
-        config.getDomainAttestation() != Integer.MIN_VALUE
-            ? config.getDomainAttestation()
-            : DOMAIN_ATTESTATION;
+            config.getDomainAttestation() != Integer.MIN_VALUE
+                    ? config.getDomainAttestation()
+                    : DOMAIN_ATTESTATION;
     DOMAIN_DEPOSIT =
-        config.getDomainDeposit() != Integer.MIN_VALUE ? config.getDomainDeposit() : DOMAIN_DEPOSIT;
+            config.getDomainDeposit() != Integer.MIN_VALUE ? config.getDomainDeposit() : DOMAIN_DEPOSIT;
     DOMAIN_VOLUNTARY_EXIT =
-        config.getDomainVoluntaryExit() != Integer.MIN_VALUE
-            ? config.getDomainVoluntaryExit()
-            : DOMAIN_VOLUNTARY_EXIT;
+            config.getDomainVoluntaryExit() != Integer.MIN_VALUE
+                    ? config.getDomainVoluntaryExit()
+                    : DOMAIN_VOLUNTARY_EXIT;
     DOMAIN_TRANSFER =
-        config.getDomainTransfer() != Integer.MIN_VALUE
-            ? config.getDomainTransfer()
-            : DOMAIN_TRANSFER;
+            config.getDomainTransfer() != Integer.MIN_VALUE
+                    ? config.getDomainTransfer()
+                    : DOMAIN_TRANSFER;
 
     // Artemis specific
     SIM_DEPOSIT_VALUE =
-        !config.getSimDepositValue().equals("") ? config.getSimDepositValue() : SIM_DEPOSIT_VALUE;
+            !config.getSimDepositValue().equals("") ? config.getSimDepositValue() : SIM_DEPOSIT_VALUE;
     DEPOSIT_DATA_SIZE =
-        config.getDepositDataSize() != Integer.MIN_VALUE
-            ? config.getDepositDataSize()
-            : DEPOSIT_DATA_SIZE;
+            config.getDepositDataSize() != Integer.MIN_VALUE
+                    ? config.getDepositDataSize()
+                    : DEPOSIT_DATA_SIZE;
     SECONDS_PER_SLOT =
-        config.getSecondsPerSlot() != Integer.MIN_VALUE
-            ? config.getSecondsPerSlot()
-            : SECONDS_PER_SLOT; // 6 seconds
-  }
-
-  /**
-   * Return the epoch number of the given ``slot``.
-   *
-   * @param slot
-   * @return
-   */
-  public static long slot_to_epoch(long slot) {
-    return slot / SLOTS_PER_EPOCH;
+            config.getSecondsPerSlot() != Integer.MIN_VALUE
+                    ? config.getSecondsPerSlot()
+                    : SECONDS_PER_SLOT; // 6 seconds
   }
 }
