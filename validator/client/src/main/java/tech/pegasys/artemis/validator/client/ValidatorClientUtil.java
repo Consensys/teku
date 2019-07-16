@@ -18,10 +18,10 @@ import static tech.pegasys.artemis.datastructures.Constants.SHARD_COUNT;
 import static tech.pegasys.artemis.datastructures.Constants.SLOTS_PER_EPOCH;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_beacon_proposer_index;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_current_epoch;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_epoch_committee_count;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_epoch_start_slot;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_committee_count;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_start_slot_of_epoch;
 import static tech.pegasys.artemis.datastructures.util.CrosslinkCommitteeUtil.get_crosslink_committee;
-import static tech.pegasys.artemis.datastructures.util.CrosslinkCommitteeUtil.get_epoch_start_shard;
+import static tech.pegasys.artemis.datastructures.util.CrosslinkCommitteeUtil.get_start_shard;
 
 import com.google.common.primitives.UnsignedLong;
 import java.math.BigInteger;
@@ -64,10 +64,10 @@ public class ValidatorClientUtil {
         epoch.compareTo(next_epoch) <= 0, "get_committe_assignment: Epoch number too high");
 
     int committees_per_slot =
-        get_epoch_committee_count(state, epoch)
+        get_committee_count(state, epoch)
             .dividedBy(UnsignedLong.valueOf(SLOTS_PER_EPOCH))
             .intValue();
-    UnsignedLong epoch_start_slot = get_epoch_start_slot(epoch);
+    UnsignedLong epoch_start_slot = compute_start_slot_of_epoch(epoch);
 
     for (UnsignedLong slot = epoch_start_slot;
         slot.compareTo(epoch_start_slot.plus(UnsignedLong.valueOf(SLOTS_PER_EPOCH))) < 0;
@@ -75,7 +75,7 @@ public class ValidatorClientUtil {
 
       int offset = committees_per_slot * slot.mod(UnsignedLong.valueOf(SLOTS_PER_EPOCH)).intValue();
       int slot_start_shard =
-          (get_epoch_start_shard(state, epoch).intValue() + offset) % SHARD_COUNT;
+          (get_start_shard(state, epoch).intValue() + offset) % SHARD_COUNT;
 
       for (int i = 0; i < committees_per_slot; i++) {
         UnsignedLong shard = UnsignedLong.valueOf((slot_start_shard + i) % SHARD_COUNT);

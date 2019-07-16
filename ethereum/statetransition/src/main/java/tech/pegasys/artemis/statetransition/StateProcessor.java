@@ -288,7 +288,7 @@ public class StateProcessor {
   protected void updateJustifiedAndFinalized() {
     // If it is the genesis epoch, keep the justified state root as genesis state root
     // because get_block_root gives an error if the slot is not less than state.slot
-    if (BeaconStateUtil.slot_to_epoch(nodeSlot)
+    if (BeaconStateUtil.compute_epoch_of_slot(nodeSlot)
             .compareTo(UnsignedLong.valueOf(Constants.GENESIS_EPOCH))
         != 0) {
       try {

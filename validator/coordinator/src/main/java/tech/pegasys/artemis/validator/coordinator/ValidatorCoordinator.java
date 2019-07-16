@@ -17,7 +17,7 @@ import static java.lang.StrictMath.toIntExact;
 import static tech.pegasys.artemis.datastructures.Constants.GENESIS_SLOT;
 import static tech.pegasys.artemis.datastructures.Constants.SLOTS_PER_EPOCH;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_domain;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.slot_to_epoch;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_of_slot;
 import static tech.pegasys.artemis.statetransition.StateTransition.process_slots;
 
 import com.google.common.eventbus.EventBus;
@@ -215,7 +215,7 @@ public class ValidatorCoordinator {
               Optional<Triple<List<Integer>, UnsignedLong, UnsignedLong>> committeeAssignment =
                   ValidatorClientUtil.get_committee_assignment(
                       headState,
-                      slot_to_epoch(headState.getSlot()),
+                      compute_epoch_of_slot(headState.getSlot()),
                       validatorInformation.getRight());
               committeeAssignment.ifPresent(
                   assignment -> {
@@ -287,7 +287,7 @@ public class ValidatorCoordinator {
 
   private BLSSignature getEpochSignature(BeaconState state, BLSPublicKey proposer) {
     UnsignedLong slot = state.getSlot().plus(UnsignedLong.ONE);
-    UnsignedLong epoch = BeaconStateUtil.slot_to_epoch(slot);
+    UnsignedLong epoch = BeaconStateUtil.compute_epoch_of_slot(slot);
 
     Bytes32 messageHash =
         HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(epoch.longValue()));
@@ -301,7 +301,7 @@ public class ValidatorCoordinator {
         get_domain(
             state,
             Constants.DOMAIN_BEACON_PROPOSER,
-            BeaconStateUtil.slot_to_epoch(block.getSlot()));
+            BeaconStateUtil.compute_epoch_of_slot(block.getSlot()));
 
     Bytes32 blockRoot = block.signing_root("signature");
 
