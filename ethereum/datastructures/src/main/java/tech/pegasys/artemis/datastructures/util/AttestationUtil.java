@@ -238,7 +238,7 @@ public class AttestationUtil {
     for (int i = 0; i < committee.size(); i++) {
       int index = committee.get(i);
       int bitfieldBit = get_bitfield_bit(bits, i);
-      if ((bitfieldBit & 1) == 1) attesting_indices.add(index);
+      if (bitfieldBit == 1) attesting_indices.add(index);
     }
     return new ArrayList<>(attesting_indices);
   }
