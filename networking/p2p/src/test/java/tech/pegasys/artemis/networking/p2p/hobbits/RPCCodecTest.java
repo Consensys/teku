@@ -43,8 +43,8 @@ final class RPCCodecTest {
   void testHello() {
     HelloMessage hello =
         new HelloMessage(
-            1,
-            1,
+            (short) 1,
+            (short) 1,
             Bytes32.random().toArrayUnsafe(),
             BigInteger.ZERO,
             Bytes32.random().toArrayUnsafe(),

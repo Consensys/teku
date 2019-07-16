@@ -25,8 +25,6 @@ public enum RPCMethod {
   GET_ATTESTATION(14),
   ATTESTATION(15);
 
-
-
   private int code;
 
   RPCMethod(int code) {
@@ -65,7 +63,6 @@ public enum RPCMethod {
         return GET_ATTESTATION;
       case 15:
         return ATTESTATION;
-
 
       default:
         throw new IllegalArgumentException("Unsupported code " + code);
