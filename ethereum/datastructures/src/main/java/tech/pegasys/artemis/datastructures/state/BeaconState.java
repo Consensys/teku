@@ -261,6 +261,7 @@ public class BeaconState implements SimpleOffsetSerializable {
   }
 
   public static BeaconState fromBytes(Bytes bytes) {
+
     return SSZ.decode(
         bytes,
         reader ->

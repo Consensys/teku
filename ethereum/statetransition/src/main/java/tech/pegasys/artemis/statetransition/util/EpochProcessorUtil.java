@@ -39,8 +39,8 @@ import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_block
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_block_root_at_slot;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_churn_limit;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_current_epoch;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_delayed_activation_exit_epoch;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_epoch_committee_count;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_activation_exit_epoch;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_committee_count;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_previous_epoch;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_randao_mix;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_total_balance;
@@ -49,7 +49,7 @@ import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.integer_s
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.max;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.min;
 import static tech.pegasys.artemis.datastructures.util.CrosslinkCommitteeUtil.get_crosslink_committee;
-import static tech.pegasys.artemis.datastructures.util.CrosslinkCommitteeUtil.get_epoch_start_shard;
+import static tech.pegasys.artemis.datastructures.util.CrosslinkCommitteeUtil.get_start_shard;
 import static tech.pegasys.artemis.datastructures.util.CrosslinkCommitteeUtil.get_shard_delta;
 import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.decrease_balance;
 import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.get_active_validator_indices;
@@ -91,12 +91,12 @@ public final class EpochProcessorUtil {
   // State Transition Helper Functions
 
   /**
-   * v0.7.1
-   * https://github.com/ethereum/eth2.0-specs/blob/v0.7.1/specs/core/0_beacon-chain.md#helper-functions-1
-   * Returns total balance of all active validators
+   * Return the combined effective balance of the active validators.
    *
-   * @param state
+   * @param state - Current BeaconState
    * @return
+   * @see
+   *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#get_total_active_balance</a>
    */
   private static UnsignedLong get_total_active_balance(BeaconState state) {
     return get_total_balance(state, get_active_validator_indices(state, get_current_epoch(state)));
@@ -381,10 +381,10 @@ public final class EpochProcessorUtil {
           epoch.compareTo(current_epoch) < 0;
           epoch = epoch.plus(UnsignedLong.ONE)) {
         for (int offset = 0;
-            offset < get_epoch_committee_count(state, epoch).intValue();
+            offset < get_committee_count(state, epoch).intValue();
             offset++) {
           UnsignedLong shard =
-              get_epoch_start_shard(state, epoch)
+              get_start_shard(state, epoch)
                   .plus(UnsignedLong.valueOf(offset))
                   .mod(UnsignedLong.valueOf(SHARD_COUNT));
           List<Integer> crosslink_committee = get_crosslink_committee(state, epoch, shard);
@@ -575,9 +575,9 @@ public final class EpochProcessorUtil {
 
     UnsignedLong epoch = get_previous_epoch(state);
 
-    for (int offset = 0; offset < get_epoch_committee_count(state, epoch).intValue(); offset++) {
+    for (int offset = 0; offset < get_committee_count(state, epoch).intValue(); offset++) {
       UnsignedLong shard =
-          get_epoch_start_shard(state, epoch)
+          get_start_shard(state, epoch)
               .plus(UnsignedLong.valueOf(offset))
               .mod(UnsignedLong.valueOf(SHARD_COUNT));
       List<Integer> crosslink_committee = get_crosslink_committee(state, epoch, shard);
@@ -676,7 +676,7 @@ public final class EpochProcessorUtil {
                         && validator
                                 .getActivation_epoch()
                                 .compareTo(
-                                    get_delayed_activation_exit_epoch(state.getFinalized_epoch()))
+                                    compute_activation_exit_epoch(state.getFinalized_epoch()))
                             >= 0;
                   })
               .boxed()
@@ -695,7 +695,7 @@ public final class EpochProcessorUtil {
         Validator validator = state.getValidator_registry().get(index);
         if (validator.getActivation_epoch().equals(FAR_FUTURE_EPOCH)) {
           validator.setActivation_epoch(
-              get_delayed_activation_exit_epoch(get_current_epoch(state)));
+              compute_activation_exit_epoch(get_current_epoch(state)));
         }
       }
     } catch (IllegalArgumentException e) {
