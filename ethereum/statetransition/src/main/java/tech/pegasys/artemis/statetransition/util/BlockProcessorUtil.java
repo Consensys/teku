@@ -415,7 +415,7 @@ public final class BlockProcessorUtil {
         if (data.getTarget_epoch().equals(get_current_epoch(state))) {
           state_ffg_data =
               new ImmutableTriple<>(
-                  state.getCurrent_justified_epoch(),
+                  state.getCurrent_justified_chekpoint(),
                   state.getCurrent_justified_root(),
                   get_current_epoch(state));
           parent_crosslink =
@@ -426,7 +426,7 @@ public final class BlockProcessorUtil {
         } else {
           state_ffg_data =
               new ImmutableTriple<>(
-                  state.getPrevious_justified_epoch(),
+                  state.getPrevious_justified_checkpoint(),
                   state.getPrevious_justified_root(),
                   get_previous_epoch(state));
           parent_crosslink =

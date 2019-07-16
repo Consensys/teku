@@ -50,11 +50,11 @@ public class BeaconBlockHeader implements SimpleOffsetSerializable {
     this.signature = signature;
   }
 
-  public BeaconBlockHeader(Bytes32 body_root) {
+  public BeaconBlockHeader() {
     this.slot = UnsignedLong.ZERO;
     this.parent_root = Bytes32.ZERO;
     this.state_root = Bytes32.ZERO;
-    this.body_root = body_root;
+    this.body_root = Bytes32.ZERO;
     this.signature = BLSSignature.empty();
   }
 

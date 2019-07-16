@@ -13,9 +13,8 @@
 
 package tech.pegasys.artemis.datastructures.operations;
 
-import com.google.common.primitives.UnsignedLong;
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
@@ -32,38 +31,49 @@ public class Attestation implements Merkleizable, SimpleOffsetSerializable {
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
   public static final int SSZ_FIELD_COUNT = 2;
 
-  private Bytes aggregation_bitfield;
+  private Bytes aggregation_bitfield; // Bitlist bounded by MAX_VALIDATORS_PER_COMMITTEE
   private AttestationData data;
-  private Bytes custody_bitfield;
-  private BLSSignature aggregate_signature;
+  private Bytes custody_bitfield; // Bitlist bounded by MAX_VALIDATORS_PER_COMMITTEE
+  private BLSSignature signature;
 
   public Attestation(
       Bytes aggregation_bitfield,
       AttestationData data,
       Bytes custody_bitfield,
-      BLSSignature aggregate_signature) {
+      BLSSignature signature) {
     this.aggregation_bitfield = aggregation_bitfield;
     this.data = data;
     this.custody_bitfield = custody_bitfield;
-    this.aggregate_signature = aggregate_signature;
+    this.signature = signature;
   }
 
   @Override
   public int getSSZFieldCount() {
-    // TODO Finish this stub.
-    return SSZ_FIELD_COUNT;
+    return SSZ_FIELD_COUNT + data.getSSZFieldCount() + signature.getSSZFieldCount();
   }
 
   @Override
   public List<Bytes> get_fixed_parts() {
-    // TODO Implement this stub.
-    return Collections.nCopies(getSSZFieldCount(), Bytes.EMPTY);
+    List<Bytes> fixedPartsList = new ArrayList<>();
+    fixedPartsList.addAll(
+        List.of(Bytes.EMPTY));
+    fixedPartsList.addAll(data.get_fixed_parts());
+    fixedPartsList.addAll(
+      List.of(Bytes.EMPTY));
+    fixedPartsList.addAll(signature.get_fixed_parts());
+    return fixedPartsList;
   }
 
   @Override
   public List<Bytes> get_variable_parts() {
-    // TODO Implement this stub.
-    return Collections.nCopies(getSSZFieldCount(), Bytes.EMPTY);
+    List<Bytes> variablePartsList = new ArrayList<>();
+    // variablePartsList.addAll( /* TODO Serialize Bitlist */ );
+    variablePartsList.addAll(
+        List.of(Bytes.EMPTY));
+    // variablePartsList.addAll( /* TODO Serialize Bitlist */ );
+    variablePartsList.addAll(
+        List.of(Bytes.EMPTY));
+    return variablePartsList;
   }
 
   public static Attestation fromBytes(Bytes bytes) {
@@ -71,25 +81,25 @@ public class Attestation implements Merkleizable, SimpleOffsetSerializable {
         bytes,
         reader ->
             new Attestation(
-                Bytes.wrap(reader.readBytes()),
+                Bytes.wrap(reader.readBytes()),// TODO readBitlist logic required
                 AttestationData.fromBytes(reader.readBytes()),
-                Bytes.wrap(reader.readBytes()),
+                Bytes.wrap(reader.readBytes()),// TODO readBitlist logic required
                 BLSSignature.fromBytes(reader.readBytes())));
   }
 
   public Bytes toBytes() {
     return SSZ.encode(
         writer -> {
-          writer.writeBytes(aggregation_bitfield);
+          writer.writeBytes(aggregation_bitfield);// TODO writeBitlist logic required
           writer.writeBytes(data.toBytes());
-          writer.writeBytes(custody_bitfield);
-          writer.writeBytes(aggregate_signature.toBytes());
+          writer.writeBytes(custody_bitfield);// TODO writeBitlist logic required
+          writer.writeBytes(signature.toBytes());
         });
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(aggregation_bitfield, data, custody_bitfield, aggregate_signature);
+    return Objects.hash(aggregation_bitfield, data, custody_bitfield, signature);
   }
 
   @Override
@@ -139,24 +149,20 @@ public class Attestation implements Merkleizable, SimpleOffsetSerializable {
   }
 
   public BLSSignature getAggregate_signature() {
-    return aggregate_signature;
+    return signature;
   }
 
   public void setAggregate_signature(BLSSignature aggregate_signature) {
-    this.aggregate_signature = aggregate_signature;
-  }
-
-  public UnsignedLong getTarget_epoch() {
-    return this.data.getTarget_epoch();
+    this.signature = aggregate_signature;
   }
 
   @Override
   public Bytes32 hash_tree_root() {
     return HashTreeUtil.merkleize(
         Arrays.asList(
-            HashTreeUtil.hash_tree_root(SSZTypes.LIST_OF_BASIC, aggregation_bitfield),
+            HashTreeUtil.hash_tree_root(SSZTypes.LIST_OF_BASIC, aggregation_bitfield),// TODO writeBitlist logic required
             data.hash_tree_root(),
-            HashTreeUtil.hash_tree_root(SSZTypes.LIST_OF_BASIC, custody_bitfield),
-            HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, aggregate_signature.toBytes())));
+            HashTreeUtil.hash_tree_root(SSZTypes.LIST_OF_BASIC, custody_bitfield),// TODO writeBitlist logic required
+            HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, signature.toBytes())));
   }
 }

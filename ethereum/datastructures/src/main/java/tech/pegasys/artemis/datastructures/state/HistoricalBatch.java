@@ -15,7 +15,6 @@ package tech.pegasys.artemis.datastructures.state;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -31,10 +30,10 @@ import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 public class HistoricalBatch implements Copyable<HistoricalBatch>, SimpleOffsetSerializable {
 
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
-  public static final int SSZ_FIELD_COUNT = 0;
+  public static final int SSZ_FIELD_COUNT = 2;
 
-  private List<Bytes32> block_roots; // Bounded by SLOTS_PER_HISTORICAL_ROOT
-  private List<Bytes32> state_roots; // Bounded by SLOTS_PER_HISTORICAL_ROOT
+  private List<Bytes32> block_roots; // Vector bounded by SLOTS_PER_HISTORICAL_ROOT
+  private List<Bytes32> state_roots; // Vector bounded by SLOTS_PER_HISTORICAL_ROOT
 
   public HistoricalBatch(List<Bytes32> block_roots, List<Bytes32> state_roots) {
     this.block_roots = block_roots;
@@ -48,13 +47,15 @@ public class HistoricalBatch implements Copyable<HistoricalBatch>, SimpleOffsetS
 
   @Override
   public int getSSZFieldCount() {
-    return /* psueod:get_lists_ssz_field_count() + */ SSZ_FIELD_COUNT;
+    return SSZ_FIELD_COUNT;
   }
 
   @Override
   public List<Bytes> get_fixed_parts() {
-    // TODO Implement this stub.
-    return Collections.nCopies(getSSZFieldCount(), Bytes.EMPTY);
+    return List.of(
+        SSZ.encode(writer -> writer.writeFixedBytesVector(block_roots)),
+        SSZ.encode(writer -> writer.writeFixedBytesVector(state_roots))
+    );
   }
 
   public static HistoricalBatch fromBytes(Bytes bytes) {
