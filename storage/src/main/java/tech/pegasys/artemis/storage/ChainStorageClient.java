@@ -45,6 +45,7 @@ public class ChainStorageClient implements ChainStorage {
   private static final ALogger STDOUT = new ALogger("stdout");
   static final ALogger LOG = new ALogger(ChainStorageClient.class.getName());
   static final Integer UNPROCESSED_BLOCKS_LENGTH = 100;
+  private Store store;
   protected EventBus eventBus;
   protected final ConcurrentHashMap<Integer, Attestation> latestAttestations =
       new ConcurrentHashMap<>();
@@ -81,6 +82,10 @@ public class ChainStorageClient implements ChainStorage {
     this();
     this.eventBus = eventBus;
     this.eventBus.register(this);
+  }
+
+  public void setStore(Store store) {
+    this.store = store;
   }
 
   private void cleanMemory(UnsignedLong latestFinalizedEpoch) {

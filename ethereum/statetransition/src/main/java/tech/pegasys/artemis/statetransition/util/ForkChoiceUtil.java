@@ -132,10 +132,22 @@ public class ForkChoiceUtil {
 
   // Fork Choice Event Handlers
 
+  /**
+   *
+   * @param store
+   * @param time
+   * @see <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.1/specs/core/0_fork-choice.md#on_tick</a>
+   */
   public static void on_tick(Store store, UnsignedLong time) {
     store.setTime(time);
   }
 
+  /**
+   *
+   * @param store
+   * @param block
+   * @see <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.1/specs/core/0_fork-choice.md#on_block</a>
+   */
   public static void on_block(Store store, BeaconBlock block) {
     // Make a copy of the state to avoid mutability issues
     checkArgument(store.getBlock_states().containsKey(block.getParent_root()),
@@ -178,6 +190,12 @@ public class ForkChoiceUtil {
     }
   }
 
+  /**
+   *
+   * @param store
+   * @param attestation
+   * @see <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.1/specs/core/0_fork-choice.md#on_attestation</a>
+   */
   public static void on_attestation(Store store, Attestation attestation) {
     Checkpoint target = attestation.getData().getTarget();
 
