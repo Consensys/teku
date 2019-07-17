@@ -17,6 +17,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.math.BigInteger;
+import java.nio.charset.Charset;
 import java.util.Arrays;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
@@ -29,19 +30,20 @@ class JsonRoundtripTest {
 
   @Test
   void roundtripGetStatus() throws Exception {
-    GetStatusMessage status = new GetStatusMessage("foo", 123);
+    GetStatusMessage status =
+        new GetStatusMessage("foo".getBytes(Charset.forName("UTF-8")), BigInteger.valueOf(123));
     byte[] value = RPCCodec.getMapper().writerFor(GetStatusMessage.class).writeValueAsBytes(status);
     GetStatusMessage read = RPCCodec.getMapper().readerFor(GetStatusMessage.class).readValue(value);
-    assertEquals("foo", read.userAgent());
-    assertEquals(123, read.timestamp());
+    assertTrue(Arrays.equals("foo".getBytes(Charset.forName("UTF-8")), read.userAgent()));
+    assertEquals(BigInteger.valueOf(123), read.timestamp());
   }
 
   @Test
   void roundtripHello() throws Exception {
     HelloMessage hello =
         new HelloMessage(
-            1,
-            1,
+            (short) 1,
+            (short) 1,
             Bytes32.random().toArrayUnsafe(),
             BigInteger.ZERO,
             Bytes32.random().toArrayUnsafe(),
@@ -55,14 +57,19 @@ class JsonRoundtripTest {
   @Test
   void roundtripRequestBlocks() throws Exception {
     RequestBlocksMessage requestBlocksMessage =
-        new RequestBlocksMessage(Bytes32.random(), 123, 3, 2, 1);
+        new RequestBlocksMessage(
+            Bytes32.random().toArrayUnsafe(),
+            BigInteger.TEN,
+            BigInteger.TWO,
+            BigInteger.TWO,
+            (short) 1);
     byte[] value =
         RPCCodec.getMapper()
             .writerFor(RequestBlocksMessage.class)
             .writeValueAsBytes(requestBlocksMessage);
     RequestBlocksMessage read =
         RPCCodec.getMapper().readerFor(RequestBlocksMessage.class).readValue(value);
-    assertEquals(requestBlocksMessage.startRoot(), read.startRoot());
+    assertTrue(Arrays.equals(requestBlocksMessage.startRoot(), read.startRoot()));
     assertEquals(requestBlocksMessage.direction(), read.direction());
   }
 }

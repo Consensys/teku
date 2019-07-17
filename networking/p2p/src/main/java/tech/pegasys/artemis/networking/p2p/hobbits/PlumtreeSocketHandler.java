@@ -46,20 +46,21 @@ public class PlumtreeSocketHandler extends AbstractSocketHandler {
   @Override
   protected void handleGossipMessage(GossipMessage gossipMessage) {
     if (MessageSender.Verb.GOSSIP.ordinal() == gossipMessage.method()) {
-      String key = gossipMessage.body().toHexString();
+      Bytes body = Bytes.wrap(gossipMessage.body());
+      String key = body.toHexString();
       if (!receivedMessages.containsKey(key)) {
         receivedMessages.put(key, true);
-        peer.setPeerGossip(gossipMessage.body());
+        peer.setPeerGossip(body);
         String attributes = gossipMessage.getTopic() + "," + gossipMessage.getTimestamp();
         p2pState.receiveGossipMessage(
-            peer, attributes, gossipMessage.body(), gossipMessage.messageHash());
+            peer, attributes, body, Bytes.wrap(gossipMessage.messageHash()));
       }
     } else if (MessageSender.Verb.PRUNE.ordinal() == gossipMessage.method()) {
       p2pState.receivePruneMessage(peer);
     } else if (MessageSender.Verb.GRAFT.ordinal() == gossipMessage.method()) {
-      p2pState.receiveGraftMessage(peer, gossipMessage.messageHash());
+      p2pState.receiveGraftMessage(peer, Bytes.wrap(gossipMessage.messageHash()));
     } else if (MessageSender.Verb.IHAVE.ordinal() == gossipMessage.method()) {
-      p2pState.receiveIHaveMessage(peer, gossipMessage.messageHash());
+      p2pState.receiveIHaveMessage(peer, Bytes.wrap(gossipMessage.messageHash()));
     } else {
       throw new UnsupportedOperationException(gossipMessage.method() + " is not supported");
     }

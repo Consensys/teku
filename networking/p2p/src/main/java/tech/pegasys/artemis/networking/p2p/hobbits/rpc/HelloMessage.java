@@ -19,8 +19,8 @@ import java.math.BigInteger;
 
 public final class HelloMessage {
 
-  private final long networkId;
-  private final long chainId;
+  private final short networkId;
+  private final short chainId;
   private final byte[] latestFinalizedRoot;
   private final BigInteger latestFinalizedEpoch;
   private final byte[] bestRoot;
@@ -28,8 +28,8 @@ public final class HelloMessage {
 
   @JsonCreator
   public HelloMessage(
-      @JsonProperty("network_id") long networkId,
-      @JsonProperty("chain_id") long chainId,
+      @JsonProperty("network_id") short networkId,
+      @JsonProperty("chain_id") short chainId,
       @JsonProperty("latest_finalized_root") byte[] latestFinalizedRoot,
       @JsonProperty("latest_finalized_epoch") BigInteger latestFinalizedEpoch,
       @JsonProperty("best_root") byte[] bestRoot,
@@ -43,12 +43,12 @@ public final class HelloMessage {
   }
 
   @JsonProperty("network_id")
-  public long networkId() {
+  public short networkId() {
     return networkId;
   }
 
   @JsonProperty("chain_id")
-  public long chainId() {
+  public short chainId() {
     return chainId;
   }
 
