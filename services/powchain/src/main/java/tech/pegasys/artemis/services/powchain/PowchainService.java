@@ -13,10 +13,22 @@
 
 package tech.pegasys.artemis.services.powchain;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static tech.pegasys.artemis.datastructures.Constants.DEPOSIT_NORMAL;
+import static tech.pegasys.artemis.datastructures.Constants.DEPOSIT_SIM;
+import static tech.pegasys.artemis.datastructures.Constants.DEPOSIT_TEST;
+
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonParser;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.Reader;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
 import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.SECP256K1;
@@ -28,8 +40,8 @@ import tech.pegasys.artemis.datastructures.util.DepositUtil;
 import tech.pegasys.artemis.ganache.GanacheController;
 import tech.pegasys.artemis.pow.DepositContractListener;
 import tech.pegasys.artemis.pow.DepositContractListenerFactory;
+import tech.pegasys.artemis.pow.api.DepositEvent;
 import tech.pegasys.artemis.pow.event.Deposit;
-import tech.pegasys.artemis.pow.event.Eth2Genesis;
 import tech.pegasys.artemis.service.serviceutils.ServiceConfig;
 import tech.pegasys.artemis.service.serviceutils.ServiceInterface;
 import tech.pegasys.artemis.util.alogger.ALogger;
@@ -38,20 +50,6 @@ import tech.pegasys.artemis.util.mikuli.KeyPair;
 import tech.pegasys.artemis.validator.client.DepositSimulation;
 import tech.pegasys.artemis.validator.client.Validator;
 import tech.pegasys.artemis.validator.client.ValidatorClientUtil;
-
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.Reader;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.List;
-
-import static java.nio.charset.StandardCharsets.UTF_8;
-import static tech.pegasys.artemis.datastructures.Constants.DEPOSIT_NORMAL;
-import static tech.pegasys.artemis.datastructures.Constants.DEPOSIT_SIM;
-import static tech.pegasys.artemis.datastructures.Constants.DEPOSIT_TEST;
-import static tech.pegasys.artemis.datastructures.Constants.MIN_GENESIS_TIME;
 
 public class PowchainService implements ServiceInterface {
 
@@ -152,8 +150,8 @@ public class PowchainService implements ServiceInterface {
         LOG.log(Level.ERROR, e.getMessage());
       }
     } else if (depositMode.equals(DEPOSIT_TEST)) {
-      Eth2Genesis eth2Genesis = new Eth2Genesis(Bytes32.random(), UnsignedLong.ZERO, MIN_GENESIS_TIME);
-      this.eventBus.post(eth2Genesis);
+      DepositEvent event = null;
+      this.eventBus.post(event);
     } else if (depositMode.equals(DEPOSIT_NORMAL)) {
       listener =
           DepositContractListenerFactory.eth1DepositContract(eventBus, provider, contractAddr);

@@ -54,8 +54,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-
-import jdk.jfr.Unsigned;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.Hash;
@@ -69,7 +67,6 @@ import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
-import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
 
 public class BeaconStateUtil {
@@ -122,49 +119,72 @@ public class BeaconStateUtil {
     return state;
   }
 
-  public static BeaconState initialize_beacon_state_from_eth1(Bytes32 eth1_block_hash, UnsignedLong eth1_timestamp, List<Deposit> deposits){
-    UnsignedLong genesis_time = eth1_timestamp.minus(eth1_timestamp.mod(UnsignedLong.valueOf(SECONDS_PER_DAY)).plus(UnsignedLong.valueOf(2).times(UnsignedLong.valueOf(SECONDS_PER_DAY))));
+  public static BeaconState initialize_beacon_state_from_eth1(
+      Bytes32 eth1_block_hash, UnsignedLong eth1_timestamp, List<Deposit> deposits) {
+    UnsignedLong genesis_time =
+        eth1_timestamp.minus(
+            eth1_timestamp
+                .mod(UnsignedLong.valueOf(SECONDS_PER_DAY))
+                .plus(UnsignedLong.valueOf(2).times(UnsignedLong.valueOf(SECONDS_PER_DAY))));
     Eth1Data eth1_data = new Eth1Data(eth1_block_hash, deposits.size());
     Bytes32 latest_block_header = new BeaconBlockBody().hash_tree_root();
 
     MerkleTree<Deposit> merkleTree = DepositUtil.generateMerkleTree(deposits);
     eth1_data.setDeposit_root(merkleTree.getRoot());
-    BeaconState state = BeaconState(genesis_time, UnsignedLong.valueOf(deposits.size()), latest_block_header);
+    BeaconState state =
+        BeaconState(genesis_time, UnsignedLong.valueOf(deposits.size()), latest_block_header);
 
-    //Process deposits
+    // Process deposits
     DepositUtil.applyBranchProofs(merkleTree, deposits);
-    deposits.forEach(deposit -> {
-      BlockProcessor.process_deposit(state, deposit);
-    });
+    deposits.forEach(
+        deposit -> {
+          BlockProcessor.process_deposit(state, deposit);
+        });
 
-    //Process activations
-    IntStream.range(0, state.getValidator_registry().size()).forEach( index -> {
-      Validator validator = state.getValidator_registry().get(index);
-      UnsignedLong balance = state.getBalances().get(index);
-      UnsignedLong effective_balance = min(balance.minus(balance.mod(UnsignedLong.valueOf(EFFECTIVE_BALANCE_INCREMENT))), UnsignedLong.valueOf(MAX_EFFECTIVE_BALANCE));
-      validator.setEffective_balance(effective_balance);
+    // Process activations
+    IntStream.range(0, state.getValidator_registry().size())
+        .forEach(
+            index -> {
+              Validator validator = state.getValidator_registry().get(index);
+              UnsignedLong balance = state.getBalances().get(index);
+              UnsignedLong effective_balance =
+                  min(
+                      balance.minus(balance.mod(UnsignedLong.valueOf(EFFECTIVE_BALANCE_INCREMENT))),
+                      UnsignedLong.valueOf(MAX_EFFECTIVE_BALANCE));
+              validator.setEffective_balance(effective_balance);
 
-      if(validator.getEffective_balance().equals(UnsignedLong.valueOf(MAX_EFFECTIVE_BALANCE))){
-        validator.setActivation_eligibility_epoch(UnsignedLong.valueOf(GENESIS_EPOCH));
-        validator.setActivation_epoch(UnsignedLong.valueOf(GENESIS_EPOCH));
-      }
-    });
+              if (validator
+                  .getEffective_balance()
+                  .equals(UnsignedLong.valueOf(MAX_EFFECTIVE_BALANCE))) {
+                validator.setActivation_eligibility_epoch(UnsignedLong.valueOf(GENESIS_EPOCH));
+                validator.setActivation_epoch(UnsignedLong.valueOf(GENESIS_EPOCH));
+              }
+            });
 
-    //Populate active_index_roots and compact_committees_roots
-    List<Integer> indices_list = get_active_validator_indices(state, UnsignedLong.valueOf(GENESIS_EPOCH));
+    // Populate active_index_roots and compact_committees_roots
+    List<Integer> indices_list =
+        get_active_validator_indices(state, UnsignedLong.valueOf(GENESIS_EPOCH));
     Bytes32 active_index_root = hash_tree_root(indices_list);
-    Bytes32 committee_root = CrosslinkCommitteeUtil.get_compact_committees_root(state, GENESIS_EPOCH);
-    IntStream.range(0, EPOCHS_PER_HISTORICAL_VECTOR).forEach(index -> {
-      state.getActive_index_roots().set(index, active_index_root);
-      state.getCompact_committees_roots().set(index, committee_root);
-    });
-
+    Bytes32 committee_root =
+        CrosslinkCommitteeUtil.get_compact_committees_root(state, GENESIS_EPOCH);
+    IntStream.range(0, EPOCHS_PER_HISTORICAL_VECTOR)
+        .forEach(
+            index -> {
+              state.getActive_index_roots().set(index, active_index_root);
+              state.getCompact_committees_roots().set(index, committee_root);
+            });
     return state;
   }
 
-  public static boolean is_valid_genesis_state(BeaconState state){
-    return !(state.getGenesis_time().compareTo(MIN_GENESIS_TIME) >= 0) ||
-            !(get_active_validator_indices(state, UnsignedLong.valueOf(GENESIS_EPOCH)).size() < MIN_GENESIS_ACTIVE_VALIDATOR_COUNT);
+  public static boolean is_valid_genesis_state(BeaconState state) {
+    return !(state.getGenesis_time().compareTo(MIN_GENESIS_TIME) >= 0)
+        && !(get_active_validator_indices(state, UnsignedLong.valueOf(GENESIS_EPOCH)).size()
+            < MIN_GENESIS_ACTIVE_VALIDATOR_COUNT);
+  }
+
+  public static boolean is_valid_genesis_stateSim(BeaconState state) {
+    return !(get_active_validator_indices(state, UnsignedLong.valueOf(GENESIS_EPOCH)).size()
+        < MIN_GENESIS_ACTIVE_VALIDATOR_COUNT);
   }
 
   /**
@@ -221,9 +241,7 @@ public class BeaconStateUtil {
                     FAR_FUTURE_EPOCH,
                     false,
                     min(
-                        amount.minus(
-                            amount.mod(
-                                UnsignedLong.valueOf(EFFECTIVE_BALANCE_INCREMENT))),
+                        amount.minus(amount.mod(UnsignedLong.valueOf(EFFECTIVE_BALANCE_INCREMENT))),
                         UnsignedLong.valueOf(MAX_EFFECTIVE_BALANCE))));
         state.getBalances().add(amount);
       } else {

@@ -13,8 +13,15 @@
 
 package tech.pegasys.artemis.datastructures.util;
 
+import static tech.pegasys.artemis.datastructures.Constants.DEPOSIT_CONTRACT_TREE_DEPTH;
+
 import com.google.common.primitives.UnsignedLong;
 import com.google.gson.JsonElement;
+import java.io.IOException;
+import java.math.BigInteger;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.Hash;
@@ -24,14 +31,6 @@ import org.web3j.protocol.http.HttpService;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.DepositData;
 import tech.pegasys.artemis.pow.contract.DepositContract;
-
-import java.io.IOException;
-import java.math.BigInteger;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.List;
-
-import static tech.pegasys.artemis.datastructures.Constants.DEPOSIT_CONTRACT_TREE_DEPTH;
 
 public class DepositUtil {
 
@@ -54,12 +53,13 @@ public class DepositUtil {
 
     for (int i = 0; i < deposits.size(); i++)
       merkleTree.add(
-              deposits.get(i).getIndex().intValue(),
-              Hash.sha2_256(deposits.get(i).getData().serialize()));
+          deposits.get(i).getIndex().intValue(),
+          Hash.sha2_256(deposits.get(i).getData().serialize()));
     return merkleTree;
   }
 
-  public static List<Deposit> applyBranchProofs(MerkleTree<Deposit> merkleTree, List<Deposit> deposits) {
+  public static List<Deposit> applyBranchProofs(
+      MerkleTree<Deposit> merkleTree, List<Deposit> deposits) {
     for (int i = 0; i < deposits.size(); i++)
       deposits.get(i).setProof(merkleTree.getProofTreeByIndex(i));
     return deposits;
@@ -192,7 +192,8 @@ public class DepositUtil {
     byte[] index =
         Bytes.fromHexString(event.getAsJsonObject().get("merkle_tree_index").getAsString())
             .toArray();
-    DepositContract.DepositEventEventResponse response = new DepositContract.DepositEventEventResponse();
+    DepositContract.DepositEventEventResponse response =
+        new DepositContract.DepositEventEventResponse();
     response.pubkey = Arrays.copyOfRange(data, 0, 48);
     response.withdrawal_credentials = Arrays.copyOfRange(data, 48, 80);
     response.amount = Arrays.copyOfRange(data, 80, 88);
@@ -201,8 +202,13 @@ public class DepositUtil {
     return new tech.pegasys.artemis.pow.event.Deposit(response);
   }
 
-  public static UnsignedLong getEpochBlockTimeByDepositBlockNumber(BigInteger blockNumber, String provider) throws IOException {
+  public static UnsignedLong getEpochBlockTimeByDepositBlockNumber(
+      BigInteger blockNumber, String provider) throws IOException {
     Web3j web3 = Web3j.build(new HttpService(provider));
-    return UnsignedLong.valueOf(web3.ethGetBlockByNumber(new DefaultBlockParameterNumber(blockNumber), true).send().getBlock().getTimestamp());
+    return UnsignedLong.valueOf(
+        web3.ethGetBlockByNumber(new DefaultBlockParameterNumber(blockNumber), true)
+            .send()
+            .getBlock()
+            .getTimestamp());
   }
 }

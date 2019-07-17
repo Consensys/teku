@@ -16,15 +16,13 @@ package tech.pegasys.artemis.pow.event;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.primitives.UnsignedLong;
-import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.artemis.datastructures.interfaces.IRecordAdapter;
-
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.artemis.datastructures.interfaces.IRecordAdapter;
 
-public class Eth2Genesis
-    implements IRecordAdapter {
+public class Eth2Genesis implements IRecordAdapter {
 
   private UnsignedLong time;
   private Bytes32 deposit_root;

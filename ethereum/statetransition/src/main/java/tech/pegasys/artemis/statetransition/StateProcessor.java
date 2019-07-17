@@ -30,7 +30,6 @@ import tech.pegasys.artemis.datastructures.util.BeaconBlockUtil;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.datastructures.util.DepositUtil;
-import tech.pegasys.artemis.pow.event.Eth2Genesis;
 import tech.pegasys.artemis.service.serviceutils.ServiceConfig;
 import tech.pegasys.artemis.statetransition.util.EpochProcessingException;
 import tech.pegasys.artemis.statetransition.util.SlotProcessingException;
@@ -49,6 +48,7 @@ import static tech.pegasys.artemis.datastructures.Constants.MIN_GENESIS_ACTIVE_V
 import static tech.pegasys.artemis.datastructures.Constants.MIN_GENESIS_TIME;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.initialize_beacon_state_from_eth1;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.is_valid_genesis_state;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.is_valid_genesis_stateSim;
 import static tech.pegasys.artemis.statetransition.StateTransition.process_slots;
 
 /** Class to manage the state tree and initiate state transitions */
@@ -82,12 +82,8 @@ public class StateProcessor {
     this.eventBus.register(this);
   }
 
-  @Subscribe
-  public void onEth2Genes(Eth2Genesis eth2Genesis) {
-    STDOUT.log(
-        Level.INFO,
-        "******* Eth2Genesis Event detected ******* : "
-            + eth2Genesis.getDeposit_root().toString());
+  public void onEth2Genesis(BeaconState initial_state) {
+    STDOUT.log(Level.INFO, "******* Eth2Genesis Event detected ******* : ");
     this.nodeSlot = UnsignedLong.valueOf(Constants.GENESIS_SLOT);
     this.nodeTime =
         UnsignedLong.valueOf(Constants.GENESIS_SLOT)
@@ -95,15 +91,6 @@ public class StateProcessor {
     STDOUT.log(Level.INFO, "Node slot: " + nodeSlot);
     STDOUT.log(Level.INFO, "Node time: " + nodeTime);
     try {
-      BeaconState initial_state;
-      if (config.getDepositMode().equals(Constants.DEPOSIT_TEST))
-        initial_state = DataStructureUtil.createInitialBeaconState(config);
-      else {
-        deposits = DepositUtil.generateBranchProofs(deposits);
-        initial_state =
-            DataStructureUtil.createInitialBeaconState(
-                deposits, eth2Genesis.getDeposit_root());
-      }
       Bytes32 initial_state_root = initial_state.hash_tree_root();
       BeaconBlock genesis_block = BeaconBlockUtil.get_empty_block();
       genesis_block.setState_root(initial_state_root);
@@ -120,21 +107,62 @@ public class StateProcessor {
       this.finalizedEpoch = initial_state.getFinalized_epoch();
       this.eventBus.post(
           new GenesisHeadStateEvent((BeaconStateWithCache) initial_state, genesis_block));
-    } catch (IllegalStateException | IOException | ParseException e) {
+    } catch (IllegalStateException e) {
       STDOUT.log(Level.FATAL, e.toString());
     }
   }
 
   @Subscribe
-  public void onDeposit(tech.pegasys.artemis.pow.event.Deposit event) throws IOException {
+  public void onDeposit(tech.pegasys.artemis.pow.event.Deposit event) {
+    if (config.getDepositMode().equals(Constants.DEPOSIT_TEST)) {
+      try {
+        BeaconState initial_state = DataStructureUtil.createInitialBeaconState(config);
+        onEth2Genesis(initial_state);
+        return;
+      } catch (ParseException | IOException e) {
+        STDOUT.log(Level.FATAL, e.toString());
+      }
+    }
+
     if (deposits == null) deposits = new ArrayList<Deposit>();
     deposits.add(DepositUtil.convertEventDepositToOperationDeposit(event));
 
-    UnsignedLong eth1_timestamp = DepositUtil.getEpochBlockTimeByDepositBlockNumber(event.getResponse().log.getBlockNumber(), config.getNodeUrl());
-    if(eth1_timestamp.compareTo(MIN_GENESIS_TIME) >= 0 && deposits.size() >= MIN_GENESIS_ACTIVE_VALIDATOR_COUNT){
-      BeaconState candidate_state = initialize_beacon_state_from_eth1(Bytes32.fromHexString(event.getResponse().log.getBlockHash()), eth1_timestamp, deposits);
-      if(is_valid_genesis_state(candidate_state));
+    UnsignedLong eth1_timestamp = null;
+    try {
+      eth1_timestamp =
+          DepositUtil.getEpochBlockTimeByDepositBlockNumber(
+              event.getResponse().log.getBlockNumber(), config.getNodeUrl());
+    } catch (IOException e) {
+      STDOUT.log(Level.FATAL, e.toString());
     }
+
+    // Approximation to save CPU cycles of creating new BeaconState on every Deposit captured
+    if (isGenesisReasonable(eth1_timestamp, deposits)) {
+      if (config.getDepositMode().equals(Constants.DEPOSIT_SIM)) {
+        BeaconState candidate_state =
+            initialize_beacon_state_from_eth1(
+                Bytes32.fromHexString(event.getResponse().log.getBlockHash()),
+                eth1_timestamp,
+                deposits);
+        if (is_valid_genesis_stateSim(candidate_state)) onEth2Genesis(candidate_state);
+      } else {
+        BeaconState candidate_state =
+            initialize_beacon_state_from_eth1(
+                Bytes32.fromHexString(event.getResponse().log.getBlockHash()),
+                eth1_timestamp,
+                deposits);
+        if (is_valid_genesis_state(candidate_state)) onEth2Genesis(candidate_state);
+      }
+    }
+  }
+
+  public static boolean isGenesisReasonable(UnsignedLong eth1_timestamp, List<Deposit> deposits) {
+    return (eth1_timestamp.compareTo(MIN_GENESIS_TIME) >= 0
+        && deposits.size() >= MIN_GENESIS_ACTIVE_VALIDATOR_COUNT);
+  }
+
+  public static boolean isGenesisReasonableSim(List<Deposit> deposits) {
+    return (deposits.size() >= MIN_GENESIS_ACTIVE_VALIDATOR_COUNT);
   }
 
   @Subscribe

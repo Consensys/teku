@@ -13,6 +13,8 @@
 
 package tech.pegasys.artemis.pow;
 
+import static tech.pegasys.artemis.pow.contract.DepositContract.DEPOSITEVENT_EVENT;
+
 import com.google.common.eventbus.EventBus;
 import io.reactivex.disposables.Disposable;
 import org.web3j.abi.EventEncoder;
@@ -20,8 +22,6 @@ import org.web3j.protocol.core.DefaultBlockParameterName;
 import org.web3j.protocol.core.methods.request.EthFilter;
 import tech.pegasys.artemis.pow.contract.DepositContract;
 import tech.pegasys.artemis.pow.event.Deposit;
-
-import static tech.pegasys.artemis.pow.contract.DepositContract.DEPOSITEVENT_EVENT;
 
 public class DepositContractListener {
 
