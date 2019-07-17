@@ -111,6 +111,11 @@ public class StateProcessor {
   @Subscribe
   private void onBlock(BeaconBlock block) {
     on_block(store, block);
+    // Add attestations that were processed in the block to processed attestations storage
+    block
+            .getBody()
+            .getAttestations()
+            .forEach(attestation -> this.chainStorageClient.addProcessedAttestation(attestation));
   }
 
   @Subscribe

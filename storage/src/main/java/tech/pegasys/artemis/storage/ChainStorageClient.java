@@ -52,8 +52,6 @@ public class ChainStorageClient implements ChainStorage {
   protected final PriorityBlockingQueue<BeaconBlock> unprocessedBlocksQueue =
       new PriorityBlockingQueue<>(
           UNPROCESSED_BLOCKS_LENGTH, Comparator.comparing(BeaconBlock::getSlot));
-  protected final ConcurrentHashMap<Bytes32, BeaconBlock> processedBlockMap =
-      new ConcurrentHashMap<>();
   private final ConcurrentHashMap<Bytes32, BeaconBlock> unprocessedBlockMap =
       new ConcurrentHashMap<>();
   protected final ConcurrentHashMap<Bytes32, BeaconState> stateMap = new ConcurrentHashMap<>();
@@ -67,8 +65,6 @@ public class ChainStorageClient implements ChainStorage {
   private Bytes32 bestBlockRoot = Bytes32.ZERO; // block chosen by lmd ghost to build and attest on
   private UnsignedLong bestSlot =
       UnsignedLong.ZERO; // slot of the block chosen by lmd ghost to build and attest on
-  private Bytes32 finalizedBlockRoot = Bytes32.ZERO; // most recent finalized block root
-  private UnsignedLong finalizedEpoch = UnsignedLong.ZERO; // most recent finalized epoch
 
   // Memory cleaning references
   private ConcurrentHashMap<UnsignedLong, List<Bytes32>> blockReferences =
@@ -88,45 +84,244 @@ public class ChainStorageClient implements ChainStorage {
     this.store = store;
   }
 
+  // PROCESSED ATTESTATION STORAGE:
+
+  /**
+   * Add processed block to storage
+   *
+   * @param attestation
+   */
+  public void addProcessedAttestation(Attestation attestation) {
+    ChainStorage.add(attestation.hash_tree_root(), attestation, this.processedAttestationsMap);
+  }
+
+
+
+  // NETWORKING RELATED INFORMATION METHODS:
+
+  /**
+   * Update Best Block
+   *
+   * @param root
+   * @param slot
+   */
+  public void updateBestBlock(Bytes32 root, UnsignedLong slot) {
+    // TODO figure out a place to set this best block root and slot
+    this.bestBlockRoot = root;
+    this.bestSlot = slot;
+  }
+
+  /**
+   * Retrives the block chosen by fork choice to build and attest on
+   *
+   * @return
+   */
+  public Bytes32 getBestBlockRoot() {
+    return this.bestBlockRoot;
+  }
+
+  /**
+   * Retrives the slot of the block chosen by fork choice to build and attest on
+   *
+   * @return
+   */
+  public UnsignedLong getBestSlot() {
+    return this.bestSlot;
+  }
+
+  /**
+   * Retrives the most recent finalized block root
+   *
+   * @return
+   */
+  public Bytes32 getFinalizedBlockRoot() {
+    return this.store.getFinalized_checkpoint().getRoot();
+  }
+
+  /**
+   * Retrives the epoch of the most recent finalized block root
+   *
+   * @return
+   */
+  public UnsignedLong getFinalizedEpoch() {
+    return this.store.getFinalized_checkpoint().getEpoch();
+  }
+
+
+
+  // UNPROCESSED ITEM METHODS:
+
+  /**
+   * Add unprocessed block to storage
+   *
+   * @param block
+   */
+  public void addUnprocessedBlock(BeaconBlock block) {
+    ChainStorage.add(block, this.unprocessedBlocksQueue);
+    Bytes32 blockHash = block.hash_tree_root();
+    ChainStorage.add(blockHash, block, this.unprocessedBlockMap);
+  }
+
+  /**
+   * Add unprocessed attestation to storage
+   *
+   * @param attestation
+   */
+  public void addUnprocessedAttestation(Attestation attestation) {
+    ChainStorage.add(attestation, this.unprocessedAttestationsQueue);
+    ChainStorage.add(attestation.hash_tree_root(), attestation, this.unprocessedAttestationsMap);
+  }
+
+  /**
+   * Retrieves a list of blocks that were put into storage right after receiving over the wire
+   *
+   * @param startRoot
+   * @param max
+   * @param skip
+   * @return
+   */
+  public List<Optional<BeaconBlock>> getUnprocessedBlock(Bytes32 startRoot, long max, long skip) {
+    List<Optional<BeaconBlock>> result = new ArrayList<>();
+    Bytes32 blockRoot = startRoot;
+    Optional<BeaconBlock> block = ChainStorage.get(blockRoot, this.unprocessedBlockMap);
+    if (block.isPresent()) {
+      result.add(block);
+    }
+    return result;
+  }
+
+  /**
+   * Retrieves a list of unprocessed attestations that have not been included in blocks
+   *
+   * @param attestationHash
+   * @return
+   */
+  public Optional<Attestation> getUnprocessedAttestation(Bytes32 attestationHash) {
+    Optional<Attestation> result = Optional.empty();
+    if (!this.processedAttestationsMap.containsKey(attestationHash)
+            && this.unprocessedAttestationsMap.containsKey(attestationHash)) {
+      result = ChainStorage.get(attestationHash, this.unprocessedAttestationsMap);
+    }
+    return result;
+  }
+
+  // SUBSCRIPTION METHODS:
+  // Place items on queue's for processing, and HashMap
+  // for network related quick retrieval
+
+  @Subscribe
+  public void onNewUnprocessedBlock(BeaconBlock block) {
+    STDOUT.log(
+        Level.INFO,
+        "New BeaconBlock with state root:  " + block.getState_root().toHexString() + " detected.",
+        ALogger.Color.GREEN);
+    addUnprocessedBlock(block);
+  }
+
+  @Subscribe
+  public void onNewUnprocessedAttestation(Attestation attestation) {
+    STDOUT.log(
+            Level.INFO,
+            "New Attestation with block root:  "
+                    + attestation.getData().getBeacon_block_root()
+                    + " detected.",
+            ALogger.Color.GREEN);
+    addUnprocessedAttestation(attestation);
+  }
+
+  // STATE PROCESSOR METHODS:
+
+  /**
+   *  Returns the list of blocks that both have slot number less than or equal to slot.
+   *  Removes the blocks from the slot sorted queue in the process.
+   *
+   * @param slot
+   * @return
+   */
+  public List<BeaconBlock> getUnprocessedBlocksUntilSlot(UnsignedLong slot) {
+    List<BeaconBlock> unprocessedBlocks = new ArrayList<>();
+    Optional<BeaconBlock> currentBlock;
+    while (!(currentBlock = ChainStorage.peek(this.unprocessedBlocksQueue)).equals(Optional.empty())
+            && currentBlock.get().getSlot().compareTo(slot) <= 0) {
+      unprocessedBlocks.add(ChainStorage.remove(this.unprocessedBlocksQueue).get());
+    }
+    return unprocessedBlocks;
+  }
+
+  // VALIDATOR COORDINATOR METHODS:
+
+  /**
+   *  Returns the list of attestations that both have slot number less than or equal to slot,
+   *  and not included in any processed block. Removes the attestations from the slot sorted
+   *  queue in the process.
+   *
+   * @param state
+   * @param slot
+   * @return
+   */
+  public List<Attestation> getUnprocessedAttestationsUntilSlot(
+      BeaconState state, UnsignedLong slot) {
+    List<Attestation> attestations = new ArrayList<>();
+    int numAttestations = 0;
+    while (unprocessedAttestationsQueue.peek() != null
+        && get_attestation_data_slot(state, unprocessedAttestationsQueue.peek().getData())
+                .compareTo(slot)
+            <= 0
+        && numAttestations < Constants.MAX_ATTESTATIONS) {
+      Attestation attestation = unprocessedAttestationsQueue.remove();
+      // Check if attestation has already been processed in successful block
+      if (!ChainStorage.get(attestation.hash_tree_root(), this.processedAttestationsMap)
+          .isPresent()) {
+        attestations.add(attestation);
+        numAttestations++;
+      }
+    }
+    return attestations;
+  }
+
+
+  // Memory Cleaning
+
+  /*
   private void cleanMemory(UnsignedLong latestFinalizedEpoch) {
     CompletableFuture.runAsync(
-        () -> {
-          cleanOldBlocks(latestFinalizedEpoch);
-          cleanOldState(latestFinalizedEpoch);
-        });
+            () -> {
+              cleanOldBlocks(latestFinalizedEpoch);
+              cleanOldState(latestFinalizedEpoch);
+            });
   }
 
   private void cleanOldBlocks(UnsignedLong latestFinalizedEpoch) {
     blockReferences.keySet().stream()
-        .filter(key -> key.compareTo(latestFinalizedEpoch) < 0)
-        .forEach(
-            key -> {
-              ChainStorage.get(key, blockReferences)
-                  .ifPresent(
-                      list ->
-                          list.forEach(
-                              blockRoot -> {
-                                ChainStorage.remove(blockRoot, processedBlockMap);
-                                ChainStorage.remove(blockRoot, unprocessedBlockMap);
-                              }));
-              ChainStorage.remove(key, blockReferences);
-            });
+            .filter(key -> key.compareTo(latestFinalizedEpoch) < 0)
+            .forEach(
+                    key -> {
+                      ChainStorage.get(key, blockReferences)
+                              .ifPresent(
+                                      list ->
+                                              list.forEach(
+                                                      blockRoot -> {
+                                                        ChainStorage.remove(blockRoot, processedBlockMap);
+                                                        ChainStorage.remove(blockRoot, unprocessedBlockMap);
+                                                      }));
+                      ChainStorage.remove(key, blockReferences);
+                    });
   }
 
   private void cleanOldState(UnsignedLong latestFinalizedEpoch) {
     stateReferences.keySet().stream()
-        .filter(key -> key.compareTo(latestFinalizedEpoch) < 0)
-        .forEach(
-            key -> {
-              ChainStorage.get(key, stateReferences)
-                  .ifPresent(
-                      list ->
-                          list.forEach(
-                              stateRoot -> {
-                                ChainStorage.remove(stateRoot, stateMap);
-                              }));
-              ChainStorage.remove(key, stateReferences);
-            });
+            .filter(key -> key.compareTo(latestFinalizedEpoch) < 0)
+            .forEach(
+                    key -> {
+                      ChainStorage.get(key, stateReferences)
+                              .ifPresent(
+                                      list ->
+                                              list.forEach(
+                                                      stateRoot -> {
+                                                        ChainStorage.remove(stateRoot, stateMap);
+                                                      }));
+                      ChainStorage.remove(key, stateReferences);
+                    });
   }
 
   private void addBlockReference(UnsignedLong epoch, Bytes32 blockRoot) {
@@ -148,322 +343,5 @@ public class ChainStorageClient implements ChainStorage {
       ChainStorage.add(epoch, epochStateReferences, stateReferences);
     }
   }
-
-  /**
-   * Add processed block to storage
-   *
-   * @param blockRoot
-   * @param block
-   */
-  public void addProcessedBlock(Bytes32 blockRoot, BeaconBlock block) {
-    ChainStorage.add(blockRoot, block, this.processedBlockMap);
-    addBlockReference(compute_epoch_of_slot(block.getSlot()), blockRoot);
-    // todo: post event to eventbus to notify the server that a new processed block has been added
-  }
-
-  /**
-   * Add processed block to storage
-   *
-   * @param attestation
-   */
-  public void addProcessedAttestation(Attestation attestation) {
-    ChainStorage.add(attestation.hash_tree_root(), attestation, this.processedAttestationsMap);
-  }
-
-  /**
-   * Add calculated state to storage
-   *
-   * @param stateRoot
-   * @param state
-   */
-  public void addState(Bytes32 stateRoot, BeaconState state) {
-    ChainStorage.add(stateRoot, state, this.stateMap);
-    addStateReference(compute_epoch_of_slot(state.getSlot()), stateRoot);
-  }
-
-  /**
-   * Add unprocessed block to storage
-   *
-   * @param block
-   */
-  public void addUnprocessedBlock(BeaconBlock block) {
-    ChainStorage.add(block, this.unprocessedBlocksQueue);
-    Bytes32 blockHash = block.hash_tree_root();
-    ChainStorage.add(blockHash, block, this.unprocessedBlockMap);
-    addBlockReference(compute_epoch_of_slot(block.getSlot()), blockHash);
-  }
-
-  /**
-   * Add unprocessed blockHeader to storage
-   *
-   * @param blockHeader
-   */
-  // TODO: implement background process to clean the block headers that were put before finalization
-  public void addUnprocessedBlockHeader(int validatorIndex, BeaconBlockHeader blockHeader) {
-    if (getBeaconBlockHeaders(validatorIndex).isPresent()) {
-      getBeaconBlockHeaders(validatorIndex).get().add(blockHeader);
-    } else {
-      List<BeaconBlockHeader> blockHeaderList = new ArrayList<>();
-      blockHeaderList.add(blockHeader);
-      ChainStorage.add(validatorIndex, blockHeaderList, this.validatorBlockHeaders);
-    }
-  }
-
-  /**
-   * Add unprocessed attestation to storage
-   *
-   * @param attestation
-   */
-  public void addUnprocessedAttestation(Attestation attestation) {
-    ChainStorage.add(attestation, this.unprocessedAttestationsQueue);
-    ChainStorage.add(attestation.hash_tree_root(), attestation, this.unprocessedAttestationsMap);
-  }
-
-  /**
-   * Update Finalized Block
-   *
-   * @param root
-   * @param epoch
-   */
-  public void updateLatestFinalizedBlock(Bytes32 root, UnsignedLong epoch) {
-    this.finalizedBlockRoot = root;
-    this.finalizedEpoch = epoch;
-    cleanMemory(epoch);
-  }
-
-  /**
-   * Update Best Block
-   *
-   * @param root
-   * @param slot
-   */
-  public void updateBestBlock(Bytes32 root, UnsignedLong slot) {
-    this.bestBlockRoot = root;
-    this.bestSlot = slot;
-  }
-
-  /**
-   * Retrives the block chosen by lmd ghost to build and attest on
-   *
-   * @return
-   */
-  public Bytes32 getBestBlockRoot() {
-    return this.bestBlockRoot;
-  }
-
-  /**
-   * Retrives the slot of the block chosen by lmd ghost to build and attest on
-   *
-   * @return
-   */
-  public UnsignedLong getBestSlot() {
-    return this.bestSlot;
-  }
-
-  /**
-   * Retrives the most recent finalized block root
-   *
-   * @return
-   */
-  public Bytes32 getFinalizedBlockRoot() {
-    return this.finalizedBlockRoot;
-  }
-
-  /**
-   * Retrives the epoch of the most recent finalized block root
-   *
-   * @return
-   */
-  public UnsignedLong getFinalizedEpoch() {
-    return this.finalizedEpoch;
-  }
-
-  /**
-   * Retrieves processed block
-   *
-   * @param blockRoot
-   * @return
-   */
-  public Optional<BeaconBlock> getProcessedBlock(Bytes32 blockRoot) {
-    return ChainStorage.get(blockRoot, this.processedBlockMap);
-  }
-
-  /**
-   * Retrieves a list of processed blocks
-   *
-   * @param startRoot
-   * @param max
-   * @param skip
-   * @return
-   */
-  public List<Optional<BeaconBlock>> getUnprocessedBlock(Bytes32 startRoot, long max, long skip) {
-    List<Optional<BeaconBlock>> result = new ArrayList<>();
-    Bytes32 blockRoot = startRoot;
-    // Optional<BeaconBlock> block = ChainStorage.get(blockRoot, this.processedBlockMap);
-    Optional<BeaconBlock> block = ChainStorage.get(blockRoot, this.unprocessedBlockMap);
-    if (block.isPresent()) {
-      result.add(block);
-    }
-    return result;
-  }
-
-  /**
-   * Retrieves a list of unprocessed attestations that have not been included in blocks
-   *
-   * @param attestationHash
-   * @return
-   */
-  public Optional<Attestation> getUnprocessedAttestation(Bytes32 attestationHash) {
-    Optional<Attestation> result = Optional.empty();
-    if (!this.processedAttestationsMap.containsKey(attestationHash)
-        && this.unprocessedAttestationsMap.containsKey(attestationHash)) {
-      result = ChainStorage.get(attestationHash, this.unprocessedAttestationsMap);
-    }
-    return result;
-  }
-
-  /**
-   * Retrieves processed block's parent block
-   *
-   * @param block
-   * @return
-   */
-  public Optional<BeaconBlock> getParent(BeaconBlock block) {
-    Bytes32 parentRoot = block.getParent_root();
-    return this.getProcessedBlock(parentRoot);
-  }
-
-  /**
-   * Retrieves state
-   *
-   * @param stateRoot
-   * @return
-   */
-  public Optional<BeaconState> getState(Bytes32 stateRoot) {
-    return ChainStorage.get(stateRoot, this.stateMap);
-  }
-
-  /**
-   * Gets unprocessed blocks (LIFO)
-   *
-   * @return
-   */
-  public List<BeaconBlock> getUnprocessedBlocks() {
-    return new ArrayList<>(this.unprocessedBlocksQueue);
-  }
-
-  /**
-   * Gets beacon block headers for the validator index since last finalization
-   *
-   * @return
-   */
-  public Optional<List<BeaconBlockHeader>> getBeaconBlockHeaders(int validatorIndex) {
-    return ChainStorage.get(validatorIndex, this.validatorBlockHeaders);
-  }
-
-  /**
-   * Removes an unprocessed block (LIFO)
-   *
-   * @return
-   */
-  public List<Optional<BeaconBlock>> getUnprocessedBlocksUntilSlot(UnsignedLong slot) {
-    List<Optional<BeaconBlock>> unprocessedBlocks = new ArrayList<>();
-    boolean unproccesedBlocksLeft = true;
-    Optional<BeaconBlock> currentBlock;
-    while (unproccesedBlocksLeft) {
-      currentBlock = ChainStorage.peek(this.unprocessedBlocksQueue);
-      if (currentBlock.isPresent() && currentBlock.get().getSlot().compareTo(slot) <= 0) {
-        unprocessedBlocks.add(ChainStorage.remove(this.unprocessedBlocksQueue));
-      } else {
-        unproccesedBlocksLeft = false;
-      }
-    }
-    return unprocessedBlocks;
-  }
-
-  /**
-   * Returns a validator's latest attestation
-   *
-   * @param validatorIndex
-   * @return
-   */
-  public Optional<Attestation> getLatestAttestation(int validatorIndex) {
-    Attestation attestation = latestAttestations.get(validatorIndex);
-    if (attestation == null) {
-      return Optional.empty();
-    } else {
-      return Optional.of(attestation);
-    }
-  }
-
-  public ConcurrentHashMap<Bytes32, BeaconBlock> getProcessedBlockLookup() {
-    return processedBlockMap;
-  }
-
-  public List<Attestation> getUnprocessedAttestationsUntilSlot(
-      BeaconState state, UnsignedLong slot) {
-    List<Attestation> attestations = new ArrayList<>();
-    int numAttestations = 0;
-    while (unprocessedAttestationsQueue.peek() != null
-        && get_attestation_data_slot(state, unprocessedAttestationsQueue.peek().getData())
-                .compareTo(slot)
-            <= 0
-        && numAttestations < Constants.MAX_ATTESTATIONS) {
-      Attestation attestation = unprocessedAttestationsQueue.remove();
-      // Check if attestation has already been processed in successful block
-      if (!ChainStorage.get(attestation.hash_tree_root(), this.processedAttestationsMap)
-          .isPresent()) {
-        attestations.add(attestation);
-        numAttestations++;
-      }
-    }
-    return attestations;
-  }
-
-  @Subscribe
-  public void onNewUnprocessedBlock(BeaconBlock block) {
-    STDOUT.log(
-        Level.INFO,
-        "New BeaconBlock with state root:  " + block.getState_root().toHexString() + " detected.",
-        ALogger.Color.GREEN);
-    addUnprocessedBlock(block);
-  }
-
-  @Subscribe
-  public void onNewUnprocessedAttestation(Attestation attestation) {
-    STDOUT.log(
-        Level.INFO,
-        "New Attestation with block root:  "
-            + attestation.getData().getBeacon_block_root()
-            + " detected.",
-        ALogger.Color.GREEN);
-
-    addUnprocessedAttestation(attestation);
-
-    // TODO: verify the assumption below:
-    // ASSUMPTION: the state with which we can find the attestation participants
-    // using get_attestation_participants is the state associated with the beacon
-    // block being attested in the attestation.
-    BeaconBlock block = processedBlockMap.get(attestation.getData().getBeacon_block_root());
-    if (Objects.nonNull(block)) {
-      BeaconState state = stateMap.get(block.getState_root());
-
-      // TODO: verify attestation is stubbed out, needs to be implemented
-      if (AttestationUtil.verifyAttestation(state, attestation)) {
-        List<Integer> attestation_participants =
-            get_attesting_indices(
-                state, attestation.getData(), attestation.getAggregation_bits());
-
-        for (Integer participantIndex : attestation_participants) {
-          Optional<Attestation> latest_attestation = getLatestAttestation(participantIndex);
-          if (!latest_attestation.isPresent()
-              || get_attestation_data_slot(state, latest_attestation.get().getData())
-                      .compareTo(get_attestation_data_slot(state, attestation.getData()))
-                  > 0) {
-            latestAttestations.put(participantIndex, attestation);
-          }
-        }
-      }
-    }
-  }
+  */
 }
