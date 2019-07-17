@@ -51,11 +51,11 @@ public final class AttestationMessage {
     }
   }
 
-  static class BlockBody {
+  static class Attestation {
 
     private final Bytes bytes;
 
-    BlockBody(Bytes bytes) {
+    Attestation(Bytes bytes) {
       this.bytes = bytes;
     }
 

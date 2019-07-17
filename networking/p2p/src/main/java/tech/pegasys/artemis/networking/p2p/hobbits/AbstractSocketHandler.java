@@ -18,6 +18,8 @@ import static com.google.common.base.Preconditions.checkArgument;
 import com.google.common.eventbus.EventBus;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.net.NetSocket;
+import java.math.BigInteger;
+import java.nio.charset.Charset;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -31,6 +33,7 @@ import javax.annotation.Nullable;
 import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.crypto.Hash;
 import org.apache.tuweni.hobbits.Message;
 import org.apache.tuweni.hobbits.Protocol;
 import org.apache.tuweni.plumtree.State;
@@ -174,14 +177,16 @@ public abstract class AbstractSocketHandler {
   }
 
   public void gossipMessage(
-      int method,
-      String topic,
-      long timestamp,
-      Bytes messageHash,
-      Bytes32 hashSignature,
-      Bytes payload) {
+      int method, String topic, long timestamp, Bytes messageHash, Bytes32 hash, Bytes body) {
     Bytes bytes =
-        GossipCodec.encode(method, topic, timestamp, messageHash, hashSignature, payload).toBytes();
+        GossipCodec.encode(
+                method,
+                topic,
+                BigInteger.valueOf(timestamp),
+                messageHash.toArrayUnsafe(),
+                hash.toArrayUnsafe(),
+                body.toArrayUnsafe())
+            .toBytes();
     sendBytes(bytes);
   }
 
@@ -189,8 +194,8 @@ public abstract class AbstractSocketHandler {
     if (!peer.peerHello()) {
       HelloMessage msg =
           new HelloMessage(
-              1,
-              1,
+              (short) 1,
+              (short) 1,
               store.getFinalizedBlockRoot().toArrayUnsafe(),
               store.getFinalizedEpoch().bigIntegerValue(),
               store.getBestBlockRoot().toArrayUnsafe(),
@@ -204,8 +209,8 @@ public abstract class AbstractSocketHandler {
   public void sendHello() {
     HelloMessage msg =
         new HelloMessage(
-            1,
-            1,
+            (short) 1,
+            (short) 1,
             store.getFinalizedBlockRoot().toArrayUnsafe(),
             store.getFinalizedEpoch().bigIntegerValue(),
             store.getBestBlockRoot().toArrayUnsafe(),
@@ -218,31 +223,38 @@ public abstract class AbstractSocketHandler {
   public void replyStatus(long requestId) {
     sendReply(
         RPCMethod.GET_STATUS,
-        new GetStatusMessage(userAgent, Instant.now().toEpochMilli()),
+        new GetStatusMessage(
+            userAgent.getBytes(Charset.forName("UTF-8")),
+            BigInteger.valueOf(Instant.now().toEpochMilli())),
         requestId);
   }
 
   public void sendStatus() {
     sendMessage(
-        RPCMethod.GET_STATUS, new GetStatusMessage(userAgent, Instant.now().toEpochMilli()));
+        RPCMethod.GET_STATUS,
+        new GetStatusMessage(
+            userAgent.getBytes(Charset.forName("UTF-8")),
+            BigInteger.valueOf(Instant.now().toEpochMilli())));
   }
 
   public void replyAttestation(RPCMessage rpcMessage) {
     RequestAttestationMessage rb = rpcMessage.bodyAs(RequestAttestationMessage.class);
-    Bytes32 attestationHash = rb.attestationHash();
+    Bytes32 signature = Hash.sha2_256(Bytes32.wrap(rb.hash()));
     store
-        .getUnprocessedAttestation(attestationHash)
+        .getUnprocessedAttestation(signature)
         .ifPresent(a -> sendReply(RPCMethod.ATTESTATION, a.toBytes(), rpcMessage.id()));
   }
 
   public void sendGetAttestation(Bytes32 attestationHash) {
-    sendMessage(RPCMethod.GET_ATTESTATION, new RequestAttestationMessage(attestationHash));
+    sendMessage(
+        RPCMethod.GET_ATTESTATION, new RequestAttestationMessage(attestationHash.toArrayUnsafe()));
   }
 
   public void replyBlockHeaders(RPCMessage rpcMessage) {
     RequestBlocksMessage rb = rpcMessage.bodyAs(RequestBlocksMessage.class);
     List<Optional<BeaconBlock>> blocks =
-        store.getUnprocessedBlock(rb.startRoot(), rb.max(), rb.skip());
+        store.getUnprocessedBlock(
+            Bytes32.wrap(rb.startRoot()), rb.max().longValue(), rb.skip().longValue());
     List<Bytes> blockHeaders = new ArrayList<>();
     blocks.forEach(
         block -> {
@@ -263,13 +275,17 @@ public abstract class AbstractSocketHandler {
   }
 
   public void sendGetBlockHeaders(Bytes32 root) {
-    sendMessage(RPCMethod.GET_BLOCK_HEADERS, new RequestBlocksMessage(root, 0L, 1L, 0L, 0));
+    sendMessage(
+        RPCMethod.GET_BLOCK_HEADERS,
+        new RequestBlocksMessage(
+            root.toArrayUnsafe(), BigInteger.ONE, BigInteger.ONE, BigInteger.ZERO, (short) 0));
   }
 
   public void replyBlockBodies(RPCMessage rpcMessage) {
     RequestBlocksMessage rb = rpcMessage.bodyAs(RequestBlocksMessage.class);
     List<Optional<BeaconBlock>> blocks =
-        store.getUnprocessedBlock(rb.startRoot(), rb.max(), rb.skip());
+        store.getUnprocessedBlock(
+            Bytes32.wrap(rb.startRoot()), rb.max().longValue(), rb.skip().longValue());
     List<Bytes> blockBodies = new ArrayList<>();
     blocks.forEach(
         block -> {
@@ -283,7 +299,10 @@ public abstract class AbstractSocketHandler {
   }
 
   public void sendGetBlockBodies(Bytes32 root) {
-    sendMessage(RPCMethod.GET_BLOCK_BODIES, new RequestBlocksMessage(root, 0L, 1L, 0L, 0));
+    sendMessage(
+        RPCMethod.GET_BLOCK_BODIES,
+        new RequestBlocksMessage(
+            root.toArrayUnsafe(), BigInteger.ZERO, BigInteger.ONE, BigInteger.ZERO, (short) 0));
   }
 
   public Peer peer() {

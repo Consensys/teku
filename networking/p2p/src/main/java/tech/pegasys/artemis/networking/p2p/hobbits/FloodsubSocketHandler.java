@@ -19,6 +19,7 @@ import io.vertx.core.net.NetSocket;
 import java.util.Date;
 import java.util.concurrent.ConcurrentHashMap;
 import org.apache.logging.log4j.Level;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.plumtree.MessageSender;
 import org.apache.tuweni.plumtree.State;
@@ -47,9 +48,10 @@ public final class FloodsubSocketHandler extends AbstractSocketHandler {
   @SuppressWarnings("StringSplitter")
   protected void handleGossipMessage(GossipMessage gossipMessage) {
     if (MessageSender.Verb.GOSSIP.ordinal() == gossipMessage.method()) {
-      String key = gossipMessage.body().toHexString();
+      Bytes body = Bytes.wrap(gossipMessage.body());
+      String key = body.toHexString();
       if (!receivedMessages.containsKey(key)) {
-        peer.setPeerGossip(gossipMessage.body());
+        peer.setPeerGossip(body);
         if (gossipMessage.getTopic().equalsIgnoreCase("ATTESTATION")) {
           Bytes32 attestationHash = Bytes32.wrap(gossipMessage.body());
           this.sendGetAttestation(attestationHash);
