@@ -17,6 +17,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.artemis.datastructures.Constants.SLOTS_PER_EPOCH;
 import static tech.pegasys.artemis.datastructures.Constants.SLOTS_PER_HISTORICAL_ROOT;
 import static tech.pegasys.artemis.datastructures.Constants.ZERO_HASH;
+import static tech.pegasys.artemis.datastructures.Constants.init;
 import static tech.pegasys.artemis.statetransition.util.BlockProcessorUtil.process_block_header;
 import static tech.pegasys.artemis.statetransition.util.BlockProcessorUtil.process_eth1_data;
 import static tech.pegasys.artemis.statetransition.util.BlockProcessorUtil.process_operations;
@@ -62,7 +63,7 @@ public class StateTransition {
    * @return
    * @throws StateTransitionException
    */
-  public Bytes32 initiate(
+  public BeaconState initiate(
       BeaconStateWithCache state, BeaconBlock block, boolean validate_state_root)
       throws StateTransitionException {
     try {
@@ -84,7 +85,7 @@ public class StateTransition {
                 + stateRoot.toHexString());
       }
 
-      return stateRoot;
+      return state;
     } catch (SlotProcessingException
         | BlockProcessingException
         | EpochProcessingException
@@ -92,6 +93,11 @@ public class StateTransition {
       STDOUT.log(Level.WARN, "  State Transition error: " + e, printEnabled, ALogger.Color.RED);
       throw new StateTransitionException(e.toString());
     }
+  }
+
+  public BeaconState initiate(BeaconStateWithCache state, BeaconBlock block)
+    throws StateTransitionException {
+    return initiate(state, block, false);
   }
 
   /**

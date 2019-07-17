@@ -169,24 +169,5 @@ public class LmdGhost {
     return latestAttestation;
   }
 
-  /**
-   * Get the ancestor of ``block`` with slot number ``slot``; return ``None`` if not found.
-   *
-   * @param store
-   * @param block
-   * @param slot
-   * @return
-   */
-  public static Optional<BeaconBlock> get_ancestor(
-      ChainStorageClient store, BeaconBlock block, UnsignedLong slot) {
-    requireNonNull(block);
-    UnsignedLong blockSlot = block.getSlot();
-    if (blockSlot.compareTo(slot) == 0) {
-      return Optional.of(block);
-    } else if (blockSlot.compareTo(slot) < 0) {
-      return Optional.ofNullable(null);
-    } else {
-      return get_ancestor(store, store.getParent(block).get(), slot);
-    }
-  }
+
 }
