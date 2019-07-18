@@ -79,7 +79,7 @@ public class StateProcessor {
 
   public void onEth2Genesis(BeaconState initial_state) {
     STDOUT.log(Level.INFO, "******* Eth2Genesis Event detected ******* : ");
-    this.store = get_genesis_store(initial_state);
+    this.store = get_genesis_store((BeaconStateWithCache) initial_state);
     chainStorageClient.setStore(store);
     Bytes32 genesisBlockRoot = get_head(store);
     STDOUT.log(Level.INFO, "Initial state root is " + initial_state.hash_tree_root().toHexString());
@@ -90,7 +90,7 @@ public class StateProcessor {
   public void onDeposit(tech.pegasys.artemis.pow.event.Deposit event) {
     if (config.getDepositMode().equals(Constants.DEPOSIT_TEST)) {
       try {
-        BeaconState initial_state = DataStructureUtil.createInitialBeaconState(config);
+        BeaconStateWithCache initial_state = DataStructureUtil.createInitialBeaconState(config);
         onEth2Genesis(initial_state);
         return;
       } catch (ParseException | IOException e) {
@@ -146,16 +146,24 @@ public class StateProcessor {
 
   @Subscribe
   private void onBlock(BeaconBlock block) {
-    on_block(store, block);
-    // Add attestations that were processed in the block to processed attestations storage
-    block
-            .getBody()
-            .getAttestations()
-            .forEach(attestation -> this.chainStorageClient.addProcessedAttestation(attestation));
+    try {
+      on_block(store, block);
+      // Add attestations that were processed in the block to processed attestations storage
+      block
+              .getBody()
+              .getAttestations()
+              .forEach(attestation -> this.chainStorageClient.addProcessedAttestation(attestation));
+    } catch (StateTransitionException e) {
+      STDOUT.log(Level.WARN, "Exception in onBlock: " + e.toString());
+    }
   }
 
   @Subscribe
   private void onAttestation(Attestation attestation) {
-    on_attestation(store, attestation);
+    try {
+      on_attestation(store, attestation);
+    } catch (SlotProcessingException | EpochProcessingException e) {
+      STDOUT.log(Level.WARN, "Exception in onAttestation: " + e.toString());
+    }
   }
 }

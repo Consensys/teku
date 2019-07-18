@@ -7,8 +7,10 @@ import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.IndexedAttestation;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.statetransition.StateTransition;
+import tech.pegasys.artemis.statetransition.StateTransitionException;
 import tech.pegasys.artemis.storage.LatestMessage;
 import tech.pegasys.artemis.storage.Store;
 
@@ -32,7 +34,7 @@ import static tech.pegasys.artemis.statetransition.StateTransition.process_slots
 
 public class ForkChoiceUtil {
 
-  public static Store get_genesis_store(BeaconState genesis_state) {
+  public static Store get_genesis_store(BeaconStateWithCache genesis_state) {
     BeaconBlock genesis_block = new BeaconBlock(genesis_state.hash_tree_root());
     Bytes32 root = genesis_block.signing_root("signature");
     Checkpoint justified_checkpoint = new Checkpoint(UnsignedLong.valueOf(GENESIS_EPOCH), root);
@@ -41,8 +43,8 @@ public class ForkChoiceUtil {
     HashMap<Bytes32, BeaconState> block_states = new HashMap<>();
     HashMap<Checkpoint, BeaconState> checkpoint_states = new HashMap<>();
     blocks.put(root, genesis_block);
-    block_states.put(root, new BeaconState(genesis_state));
-    checkpoint_states.put(justified_checkpoint, new BeaconState(genesis_state));
+    block_states.put(root, new BeaconStateWithCache(genesis_state));
+    checkpoint_states.put(justified_checkpoint, new BeaconStateWithCache(genesis_state));
     return new Store(
             genesis_state.getGenesis_time(),
             justified_checkpoint,
@@ -78,10 +80,10 @@ public class ForkChoiceUtil {
     BeaconState state = store.getCheckpoint_states().get(store.getJustified_checkpoint());
     List<Integer> active_indices = get_active_validator_indices(state, get_current_epoch(state));
     return UnsignedLong.valueOf(active_indices.stream()
-            .filter(i -> store.getLatest_messages().containsKey(i)
+            .filter(i -> store.getLatest_messages().containsKey(UnsignedLong.valueOf(i))
                     && get_ancestor(
                     store,
-                    store.getLatest_messages().get(i).getRoot(),
+                    store.getLatest_messages().get(UnsignedLong.valueOf(i)).getRoot(),
                     store.getBlocks().get(root).getSlot()).equals(root))
             .map(i -> state.getValidators().get(i).getEffective_balance())
             .mapToLong(UnsignedLong::longValue)
@@ -101,8 +103,9 @@ public class ForkChoiceUtil {
     UnsignedLong justified_slot = compute_start_slot_of_epoch(store.getJustified_checkpoint().getEpoch());
 
     while (true) {
+      final Bytes32 head_in_filter = head;
       List<Bytes32> children = store.getBlocks().keySet().stream()
-              .filter(root -> store.getBlocks().get(root).getParent_root().equals(head)
+              .filter(root -> store.getBlocks().get(root).getParent_root().equals(head_in_filter)
                       && store.getBlocks().get(root).getSlot().compareTo(justified_slot) > 0)
               .collect(Collectors.toList());
 
@@ -148,11 +151,11 @@ public class ForkChoiceUtil {
    * @param block
    * @see <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.1/specs/core/0_fork-choice.md#on_block</a>
    */
-  public static void on_block(Store store, BeaconBlock block) {
+  public static void on_block(Store store, BeaconBlock block) throws StateTransitionException {
     // Make a copy of the state to avoid mutability issues
     checkArgument(store.getBlock_states().containsKey(block.getParent_root()),
             "on_block: Parent block state is not contained in block_state");
-    BeaconState pre_state = new BeaconState(store.getBlock_states().get(block.getParent_root()));
+    BeaconStateWithCache pre_state = new BeaconStateWithCache((BeaconStateWithCache) store.getBlock_states().get(block.getParent_root()));
 
     // Blocks cannot be in the future. If they are, their consideration must be delayed until the are in the past.
     checkArgument(store.getTime().compareTo(
@@ -196,14 +199,15 @@ public class ForkChoiceUtil {
    * @param attestation
    * @see <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.1/specs/core/0_fork-choice.md#on_attestation</a>
    */
-  public static void on_attestation(Store store, Attestation attestation) {
+  public static void on_attestation(Store store, Attestation attestation)
+          throws SlotProcessingException, EpochProcessingException {
     Checkpoint target = attestation.getData().getTarget();
 
     checkArgument(store.getBlocks().containsKey(target.getRoot()),
             "on_attestation: Cannot calculate the current shuffling if have not seen the target");
 
     // Attestations cannot be from future epochs. If they are, delay consideration until the epoch arrives
-    BeaconState base_state = new BeaconState(store.getBlock_states().get(target.getRoot()));
+    BeaconStateWithCache base_state = new BeaconStateWithCache((BeaconStateWithCache) store.getBlock_states().get(target.getRoot()));
     checkArgument(store.getTime().compareTo(
             base_state.getGenesis_time().plus(compute_start_slot_of_epoch(target.getEpoch())
                     .times(UnsignedLong.valueOf(SECONDS_PER_SLOT)))) >= 0,

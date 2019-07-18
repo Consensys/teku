@@ -144,7 +144,7 @@ public class AttestationData implements SimpleOffsetSerializable {
     return target;
   }
 
-  public void setTarget(Checkpoint target_epoch) {
+  public void setTarget(Checkpoint target) {
     this.target = target;
   }
 

@@ -143,10 +143,10 @@ public class BeaconState implements SimpleOffsetSerializable {
     // Crosslinks
     this.previous_crosslinks =
             new ArrayList<>(
-                    Collections.nCopies(Constants.SHARD_COUNT, Constants.ZERO_HASH));
+                    Collections.nCopies(Constants.SHARD_COUNT, new Crosslink()));
     this.current_crosslinks =
             new ArrayList<>(
-                    Collections.nCopies(Constants.SHARD_COUNT, Constants.ZERO_HASH));
+                    Collections.nCopies(Constants.SHARD_COUNT, new Crosslink()));
 
     // Finality
     this.justification_bits = Bytes.wrap(new byte[JUSTIFICATION_BITS_LENGTH / 8]);
@@ -260,6 +260,7 @@ public class BeaconState implements SimpleOffsetSerializable {
     return Collections.nCopies(getSSZFieldCount(), Bytes.EMPTY);
   }
 
+  /*
   public static BeaconState fromBytes(Bytes bytes) {
 
     return SSZ.decode(
@@ -326,6 +327,7 @@ public class BeaconState implements SimpleOffsetSerializable {
             // TODO skipped rest of deserialization due to SOS
 
   }
+  */
 
   public Bytes toBytes() {
     List<Bytes> validator_registryBytes =
@@ -703,61 +705,6 @@ public class BeaconState implements SimpleOffsetSerializable {
   }
 
   public Bytes32 hash_tree_root() {
-    return HashTreeUtil.merkleize(
-        Arrays.asList(
-            // Misc
-            HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(slot.longValue())),
-            HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(genesis_time.longValue())),
-            fork.hash_tree_root(),
-            // Validator registry
-            HashTreeUtil.hash_tree_root(SSZTypes.LIST_OF_COMPOSITE, validators),
-            HashTreeUtil.hash_tree_root(
-                SSZTypes.LIST_OF_BASIC,
-                balances.stream()
-                    .map(item -> SSZ.encodeUInt64(item.longValue()))
-                    .collect(Collectors.toList())),
-            // Randomness and committees
-            HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_COMPOSITE, latest_randao_mixes),
-            HashTreeUtil.hash_tree_root(
-                SSZTypes.BASIC, SSZ.encodeUInt64(latest_start_shard.longValue())),
-            // Finality
-            HashTreeUtil.hash_tree_root(SSZTypes.LIST_OF_COMPOSITE, previous_epoch_attestations),
-            HashTreeUtil.hash_tree_root(SSZTypes.LIST_OF_COMPOSITE, current_epoch_attestations),
-            HashTreeUtil.hash_tree_root(
-                SSZTypes.BASIC, SSZ.encodeUInt64(previous_justified_checkpoint.longValue())),
-            HashTreeUtil.hash_tree_root(
-                SSZTypes.BASIC, SSZ.encodeUInt64(current_justified_checkpoint.longValue())),
-            HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, previous_justified_root),
-            HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, current_justified_root),
-            HashTreeUtil.hash_tree_root(
-                SSZTypes.BASIC, SSZ.encodeUInt64(justification_bitfield.longValue())),
-            HashTreeUtil.hash_tree_root(
-                SSZTypes.BASIC, SSZ.encodeUInt64(finalized_epoch.longValue())),
-            HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, finalized_checkpoint),
-            // Recent state
-            HashTreeUtil.merkleize(
-                current_crosslinks.stream()
-                    .map(item -> item.hash_tree_root())
-                    .collect(Collectors.toList())),
-            HashTreeUtil.merkleize(
-                previous_crosslinks.stream()
-                    .map(item -> item.hash_tree_root())
-                    .collect(Collectors.toList())),
-            HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_COMPOSITE, block_roots),
-            HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_COMPOSITE, state_roots),
-            HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_COMPOSITE, latest_active_index_roots),
-            HashTreeUtil.hash_tree_root(
-                SSZTypes.TUPLE_OF_BASIC,
-                latest_slashed_balances.stream()
-                    .map(item -> SSZ.encodeUInt64(item.longValue()))
-                    .collect(Collectors.toList())
-                    .toArray(new Bytes[0])),
-            latest_block_header.hash_tree_root(),
-            HashTreeUtil.hash_tree_root(SSZTypes.LIST_OF_COMPOSITE, historical_roots),
-            // Ethereum 1.0 chain data
-            eth1_data.hash_tree_root(),
-            HashTreeUtil.hash_tree_root(SSZTypes.LIST_OF_COMPOSITE, eth1_data_votes),
-            HashTreeUtil.hash_tree_root(
-                SSZTypes.BASIC, SSZ.encodeUInt64(eth1_deposit_index.longValue()))));
+    return Bytes32.ZERO;
   }
 }

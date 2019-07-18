@@ -191,7 +191,7 @@ public class ValidatorCoordinator {
             genesisHeadStateEvent.getHeadState(), genesisHeadStateEvent.getHeadBlock()));
 
     // Get validator indices of our own validators
-    List<Validator> validatorRegistry = headState.getValidator_registry();
+    List<Validator> validatorRegistry = headState.getValidators();
     IntStream.range(0, validatorRegistry.size())
         .forEach(
             i -> {
@@ -473,7 +473,7 @@ public class ValidatorCoordinator {
     SignatureRequest request =
         SignatureRequest.newBuilder()
             .setMessage(ByteString.copyFrom(message.toArray()))
-            .setDomain(domain)
+            .setDomain(ByteString.copyFrom(domain.toArray()))
             .build();
 
     SignatureResponse response;
