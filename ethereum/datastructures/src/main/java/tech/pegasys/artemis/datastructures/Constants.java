@@ -62,7 +62,6 @@ public class Constants {
   public static int MAX_EPOCHS_PER_CROSSLINK = 64;
   public static int MIN_EPOCHS_TO_INACTIVITY_PENALTY = 4;
 
-
   // State list lengths
   public static int EPOCHS_PER_HISTORICAL_VECTOR = 65536;
   public static int EPOCHS_PER_SLASHINGS_VECTOR = 8192;
@@ -113,6 +112,7 @@ public class Constants {
             config.getShardCount() != Integer.MIN_VALUE
                     ? config.getShardCount()
                     : SHARD_COUNT;
+
     TARGET_COMMITTEE_SIZE =
             config.getTargetCommitteeSize() != Integer.MIN_VALUE
                     ? config.getTargetCommitteeSize()
@@ -134,13 +134,13 @@ public class Constants {
                     ? config.getShuffleRoundCount()
                     : SHUFFLE_ROUND_COUNT;
     MIN_GENESIS_ACTIVE_VALIDATOR_COUNT =
-            config.getMinGenesisActiveValidatorCount() != Integer.MIN_VALUE
-                    ? config.getShuffleRoundCount()
-                    : MIN_GENESIS_ACTIVE_VALIDATOR_COUNT;
+        config.getMinGenesisActiveValidatorCount() != Integer.MIN_VALUE
+            ? config.getShuffleRoundCount()
+            : MIN_GENESIS_ACTIVE_VALIDATOR_COUNT;
     MIN_GENESIS_TIME =
-            config.getMinGenesisTime() != Integer.MIN_VALUE
-                    ? UnsignedLong.valueOf(config.getMinGenesisTime())
-                    : MIN_GENESIS_TIME;
+        config.getMinGenesisTime() != Integer.MIN_VALUE
+            ? UnsignedLong.valueOf(config.getMinGenesisTime())
+            : MIN_GENESIS_TIME;
 
     // Gwei values
     MIN_DEPOSIT_AMOUNT =
@@ -160,12 +160,11 @@ public class Constants {
                     ? config.getEffectiveBalanceIncrement()
                     : EFFECTIVE_BALANCE_INCREMENT;
 
-
     // Initial values
     GENESIS_SLOT =
             config.getGenesisSlot() != Long.MIN_VALUE ? config.getGenesisSlot() : GENESIS_SLOT;
     GENESIS_EPOCH =
-            config.getGenesisEpoch() != Long.MIN_VALUE ? config.getGenesisEpoch() : GENESIS_SLOT;
+        config.getGenesisEpoch() != Long.MIN_VALUE ? config.getGenesisEpoch() : GENESIS_SLOT;
     BLS_WITHDRAWAL_PREFIX =
             !config.getBlsWithdrawalPrefix().equals("")
                     ? Bytes.fromHexString(config.getBlsWithdrawalPrefix())
@@ -215,22 +214,21 @@ public class Constants {
 
     // State list lengths
     EPOCHS_PER_HISTORICAL_VECTOR =
-            config.getEpochsPerHistoricalVector() != Integer.MIN_VALUE
-                    ? config.getEpochsPerHistoricalVector()
-                    : EPOCHS_PER_HISTORICAL_VECTOR;
+        config.getEpochsPerHistoricalVector() != Integer.MIN_VALUE
+            ? config.getEpochsPerHistoricalVector()
+            : EPOCHS_PER_HISTORICAL_VECTOR;
     EPOCHS_PER_SLASHINGS_VECTOR =
-            config.getEpochsPerSlashingsVector() != Integer.MIN_VALUE
-                    ? config.getEpochsPerSlashingsVector()
-                    : EPOCHS_PER_SLASHINGS_VECTOR;
+        config.getEpochsPerSlashingsVector() != Integer.MIN_VALUE
+            ? config.getEpochsPerSlashingsVector()
+            : EPOCHS_PER_SLASHINGS_VECTOR;
     HISTORICAL_ROOTS_LIMIT =
-            config.getHistoricalRootsLimit() != Integer.MIN_VALUE
-                    ? config.getHistoricalRootsLimit()
-                    : HISTORICAL_ROOTS_LIMIT;
+        config.getHistoricalRootsLimit() != Integer.MIN_VALUE
+            ? config.getHistoricalRootsLimit()
+            : HISTORICAL_ROOTS_LIMIT;
     VALIDATOR_REGISTRY_LIMIT =
             config.getValidatorRegistryLimit() != Long.MIN_VALUE
                     ? UnsignedLong.valueOf(config.getValidatorRegistryLimit())
                     : VALIDATOR_REGISTRY_LIMIT;
-
     // Rewards and penalties
     BASE_REWARD_FACTOR =
             config.getBaseRewardFactor() != Integer.MIN_VALUE
