@@ -177,7 +177,7 @@ public class BeaconStateUtil {
   }
 
   public static boolean is_valid_genesis_state(BeaconState state) {
-    return !(state.getGenesis_time().compareTo(MIN_GENESIS_TIME) >= 0)
+    return !(state.getGenesis_time().compareTo(MIN_GENESIS_TIME) < 0)
         && !(get_active_validator_indices(state, UnsignedLong.valueOf(GENESIS_EPOCH)).size()
             < MIN_GENESIS_ACTIVE_VALIDATOR_COUNT);
   }
