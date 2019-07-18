@@ -79,32 +79,11 @@ public class StateProcessor {
 
   public void onEth2Genesis(BeaconState initial_state) {
     STDOUT.log(Level.INFO, "******* Eth2Genesis Event detected ******* : ");
-    this.nodeSlot = UnsignedLong.valueOf(Constants.GENESIS_SLOT);
-    this.nodeTime =
-        UnsignedLong.valueOf(Constants.GENESIS_SLOT)
-            .times(UnsignedLong.valueOf(Constants.SECONDS_PER_SLOT));
-    STDOUT.log(Level.INFO, "Node slot: " + nodeSlot);
-    STDOUT.log(Level.INFO, "Node time: " + nodeTime);
-    try {
-      Bytes32 initial_state_root = initial_state.hash_tree_root();
-      BeaconBlock genesis_block = BeaconBlockUtil.get_empty_block();
-      genesis_block.setState_root(initial_state_root);
-      Bytes32 genesis_block_root = genesis_block.signing_root("signature");
-      STDOUT.log(Level.INFO, "Initial state root is " + initial_state_root.toHexString());
-      STDOUT.log(Level.INFO, "Genesis block root is " + genesis_block_root.toHexString());
-      this.store.addState(initial_state_root, initial_state);
-      this.store.addProcessedBlock(genesis_block_root, genesis_block);
-      this.headBlock = genesis_block;
-      this.justifiedStateRoot = initial_state_root;
-      this.currentJustifiedBlockRoot = genesis_block_root;
-      this.finalizedStateRoot = initial_state_root;
-      this.finalizedBlockRoot = genesis_block_root;
-      this.finalizedEpoch = initial_state.getFinalized_epoch();
-      this.eventBus.post(
-          new GenesisHeadStateEvent((BeaconStateWithCache) initial_state, genesis_block));
-    } catch (IllegalStateException e) {
-      STDOUT.log(Level.FATAL, e.toString());
-    }
+    this.store = get_genesis_store(initial_state);
+    chainStorageClient.setStore(store);
+    Bytes32 genesisBlockRoot = get_head(store);
+    STDOUT.log(Level.INFO, "Initial state root is " + initial_state.hash_tree_root().toHexString());
+    STDOUT.log(Level.INFO, "Genesis block root is " + genesisBlockRoot.toHexString());
   }
 
   @Subscribe
