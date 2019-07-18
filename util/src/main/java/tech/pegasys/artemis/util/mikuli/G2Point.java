@@ -61,13 +61,12 @@ public final class G2Point implements Group<G2Point> {
    * Hashes to the G2 curve as described in the Eth2 spec
    *
    * @param message the message to be hashed. This is usually the 32 byte message digest.
-   * @param domain the signature domain as defined in the Eth2 spec
+   * @param domainBytes the signature domain as defined in the Eth2 spec. Should be 8 bytes.
    * @return a point from the G2 group representing the message hash
    */
   @VisibleForTesting
-  public static G2Point hashToG2(Bytes message, long domain) {
+  public static G2Point hashToG2(Bytes message, Bytes domainBytes) {
     Security.addProvider(new BouncyCastleProvider());
-    Bytes domainBytes = Bytes.ofUnsignedLong(domain);
     Bytes padding = Bytes.wrap(new byte[16]);
 
     byte[] xReBytes =
