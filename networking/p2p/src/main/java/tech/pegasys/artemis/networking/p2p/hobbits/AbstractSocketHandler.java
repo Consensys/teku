@@ -61,7 +61,7 @@ public abstract class AbstractSocketHandler {
   protected final Peer peer;
   protected final ChainStorageClient store;
   protected final State p2pState;
-  protected final Set<Long> pendingResponses = new HashSet<>();
+  protected final Set<BigInteger> pendingResponses = new HashSet<>();
   protected final AtomicBoolean status = new AtomicBoolean(true);
   protected final Consumer<Bytes> messageSender;
   protected final Runnable handlerTermination;
@@ -136,33 +136,36 @@ public abstract class AbstractSocketHandler {
   }
 
   protected void handleRPCMessage(RPCMessage rpcMessage) {
-    if (RPCMethod.GOODBYE.equals(rpcMessage.method())) {
+    if (RPCMethod.GOODBYE.ordinal() == rpcMessage.method()) {
       closed(null);
-    } else if (RPCMethod.HELLO.equals(rpcMessage.method())) {
+    } else if (RPCMethod.HELLO.ordinal() == rpcMessage.method()) {
       replyHello(rpcMessage.id());
-    } else if (RPCMethod.GET_STATUS.equals(rpcMessage.method())) {
+    } else if (RPCMethod.GET_STATUS.ordinal() == rpcMessage.method()) {
       replyStatus(rpcMessage.id());
-    } else if (RPCMethod.GET_ATTESTATION.equals(rpcMessage.method())) {
+    } else if (RPCMethod.GET_ATTESTATION.ordinal() == rpcMessage.method()) {
       replyAttestation(rpcMessage);
-    } else if (RPCMethod.GET_BLOCK_BODIES.equals(rpcMessage.method())) {
+    } else if (RPCMethod.GET_BLOCK_BODIES.ordinal() == rpcMessage.method()) {
       replyBlockBodies(rpcMessage);
-    } else if (RPCMethod.ATTESTATION.equals(rpcMessage.method())) {
+    } else if (RPCMethod.ATTESTATION.ordinal() == rpcMessage.method()) {
       Attestation attestation = Attestation.fromBytes(rpcMessage.bodyAs(Bytes.class));
       this.eventBus.post(attestation);
-    } else if (RPCMethod.BLOCK_BODIES.equals(rpcMessage.method())) {
+    } else if (RPCMethod.BLOCK_BODIES.ordinal() == rpcMessage.method()) {
       BeaconBlock beaconBlock = BeaconBlock.fromBytes(rpcMessage.bodyAsList().get(0));
       this.eventBus.post(beaconBlock);
     }
   }
 
+  public abstract void gossipMessage(
+      int method, String topic, long timestamp, Bytes messageHash, Bytes32 hash, Bytes body);
+
   protected abstract void handleGossipMessage(GossipMessage gossipMessage);
 
-  protected void sendReply(RPCMethod method, Object payload, long id) {
-    sendBytes(RPCCodec.encode(method, payload, id).toBytes());
+  protected void sendReply(RPCMethod method, Object payload, BigInteger id) {
+    sendBytes(RPCCodec.encode(method.ordinal(), payload, id).toBytes());
   }
 
   protected void sendMessage(RPCMethod method, Object payload) {
-    sendBytes(RPCCodec.encode(method, payload, pendingResponses).toBytes());
+    sendBytes(RPCCodec.encode(method.ordinal(), payload, pendingResponses).toBytes());
   }
 
   protected void sendBytes(Bytes bytes) {
@@ -176,21 +179,7 @@ public abstract class AbstractSocketHandler {
     }
   }
 
-  public void gossipMessage(
-      int method, String topic, long timestamp, Bytes messageHash, Bytes32 hash, Bytes body) {
-    Bytes bytes =
-        GossipCodec.encode(
-                method,
-                topic,
-                BigInteger.valueOf(timestamp),
-                messageHash.toArrayUnsafe(),
-                hash.toArrayUnsafe(),
-                body.toArrayUnsafe())
-            .toBytes();
-    sendBytes(bytes);
-  }
-
-  public void replyHello(long requestId) {
+  public void replyHello(BigInteger requestId) {
     if (!peer.peerHello()) {
       HelloMessage msg =
           new HelloMessage(
@@ -220,7 +209,7 @@ public abstract class AbstractSocketHandler {
     peer.setPeerHello(true);
   }
 
-  public void replyStatus(long requestId) {
+  public void replyStatus(BigInteger requestId) {
     sendReply(
         RPCMethod.GET_STATUS,
         new GetStatusMessage(

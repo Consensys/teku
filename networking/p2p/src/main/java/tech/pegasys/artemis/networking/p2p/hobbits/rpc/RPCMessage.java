@@ -16,6 +16,7 @@ package tech.pegasys.artemis.networking.p2p.hobbits.rpc;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
@@ -23,26 +24,26 @@ import org.apache.tuweni.bytes.Bytes;
 /** Representation of a RPC message that was received from a remote peer. */
 public final class RPCMessage {
 
-  private final long id;
-  private final RPCMethod method;
+  private final int method;
+  private final BigInteger id;
   private final JsonNode body;
   private final int length;
 
-  public RPCMessage(long id, RPCMethod method, JsonNode body, int length) {
-    this.id = id;
+  public RPCMessage(int method, BigInteger id, JsonNode body, int length) {
     this.method = method;
+    this.id = id;
     this.body = body;
     this.length = length;
   }
 
-  /** @return the request identifier */
-  public long id() {
-    return id;
+  /** @return the method used by the RPC call. */
+  public int method() {
+    return method;
   }
 
-  /** @return the method used by the RPC call. */
-  public RPCMethod method() {
-    return method;
+  /** @return the request identifier */
+  public BigInteger id() {
+    return id;
   }
 
   /**

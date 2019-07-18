@@ -34,7 +34,7 @@ final class RPCCodecTest {
   void testGoodbye() {
     Message goodbye = RPCCodec.createGoodbye();
     RPCMessage message = RPCCodec.decode(goodbye);
-    assertEquals(RPCMethod.GOODBYE, message.method());
+    assertEquals(RPCMethod.GOODBYE.ordinal(), message.method());
     Map map = message.bodyAs(Map.class);
     assertTrue(map.isEmpty());
   }
@@ -49,9 +49,9 @@ final class RPCCodecTest {
             BigInteger.ZERO,
             Bytes32.random().toArrayUnsafe(),
             BigInteger.ZERO);
-    Message encoded = RPCCodec.encode(RPCMethod.HELLO, hello, 23);
+    Message encoded = RPCCodec.encode(RPCMethod.HELLO.ordinal(), hello, BigInteger.TEN);
     RPCMessage message = RPCCodec.decode(encoded);
-    assertEquals(RPCMethod.HELLO, message.method());
+    assertEquals(RPCMethod.HELLO.ordinal(), message.method());
     HelloMessage read = message.bodyAs(HelloMessage.class);
     assertTrue(Arrays.equals(hello.bestRoot(), read.bestRoot()));
   }
