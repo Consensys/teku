@@ -67,10 +67,10 @@ public class ValidatorClientUtil {
         get_committee_count(state, epoch)
             .dividedBy(UnsignedLong.valueOf(SLOTS_PER_EPOCH))
             .intValue();
-    UnsignedLong epoch_start_slot = compute_start_slot_of_epoch(epoch);
+    UnsignedLong start_slot = compute_start_slot_of_epoch(epoch);
 
-    for (UnsignedLong slot = epoch_start_slot;
-        slot.compareTo(epoch_start_slot.plus(UnsignedLong.valueOf(SLOTS_PER_EPOCH))) < 0;
+    for (UnsignedLong slot = start_slot;
+        slot.compareTo(start_slot.plus(UnsignedLong.valueOf(SLOTS_PER_EPOCH))) < 0;
         slot = slot.plus(UnsignedLong.ONE)) {
 
       int offset = committees_per_slot * slot.mod(UnsignedLong.valueOf(SLOTS_PER_EPOCH)).intValue();

@@ -491,7 +491,8 @@ public class BeaconStateUtil {
    *  Slash the validator with index ``slashed_index``.
    *
    * @param state
-   * @param index
+   * @param slashed_index
+   * @param whistleblower_index
    * @return
    * @see <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#slash_validator/a>
    */
@@ -746,13 +747,14 @@ public class BeaconStateUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#get_domain</a>
    */
-  public static int get_domain(BeaconState state, int domain_type, UnsignedLong message_epoch) {
+  public static Bytes get_domain(BeaconState state, Bytes domain_type, UnsignedLong message_epoch) {
+    checkArgument(domain_type.size() == 4, "domain_type must be of type Bytes4");
     UnsignedLong epoch = (message_epoch == null) ? get_current_epoch(state) : message_epoch;
     Bytes fork_version =
         (epoch.compareTo(state.getFork().getEpoch()) < 0)
             ? state.getFork().getPrevious_version()
             : state.getFork().getCurrent_version();
-    return bls_domain(domain_type, fork_version);
+    return compute_domain(domain_type, fork_version);
   }
 
   /**
