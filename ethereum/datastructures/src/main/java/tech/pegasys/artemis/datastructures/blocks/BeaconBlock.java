@@ -55,6 +55,14 @@ public final class BeaconBlock implements SimpleOffsetSerializable {
     this.signature = signature;
   }
 
+  public BeaconBlock(Bytes32 state_root) {
+    this.slot = UnsignedLong.ZERO;
+    this.parent_root = Bytes32.ZERO;
+    this.state_root = state_root;
+    this.body = new BeaconBlockBody();
+    this.signature = BLSSignature.empty();
+  }
+
   @Override
   public int getSSZFieldCount() {
     // TODO Finish this stub.
