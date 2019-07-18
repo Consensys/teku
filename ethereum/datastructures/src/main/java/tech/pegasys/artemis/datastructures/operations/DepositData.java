@@ -86,7 +86,6 @@ public class DepositData implements SimpleOffsetSerializable {
         });
   }
 
-  // TODO: check if this is correct
   public Bytes serialize() {
     return Bytes.wrap(
         pubkey.getPublicKey().toBytesCompressed(),
