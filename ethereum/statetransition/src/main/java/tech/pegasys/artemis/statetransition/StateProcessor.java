@@ -58,7 +58,6 @@ import static tech.pegasys.artemis.datastructures.Constants.MIN_GENESIS_TIME;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.initialize_beacon_state_from_eth1;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.is_valid_genesis_state;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.is_valid_genesis_stateSim;
-import static tech.pegasys.artemis.statetransition.StateTransition.process_slots;
 
 /** Class to manage the state tree and initiate state transitions */
 public class StateProcessor {

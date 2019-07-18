@@ -50,12 +50,13 @@ public class BeaconChainService implements ServiceInterface {
     this.eventBus = config.getEventBus();
     this.eventBus.register(this);
     this.vertx = config.getVertx();
+    int timerPeriodInMiliseconds = (int) ((1.0 / Constants.TIME_TICKER_REFRESH_RATE) * 1000);
     try {
       this.timer =
           new TimerFactory()
               .create(
                   config.getConfig().getTimer(),
-                  new Object[] {this.eventBus, 0, (1.0 / Constants.TIME_TICKER_REFRESH_RATE) * 1000 },
+                  new Object[] {this.eventBus, 0, timerPeriodInMiliseconds },
                   new Class[] {EventBus.class, Integer.class, Integer.class});
     } catch (IllegalArgumentException e) {
       System.exit(1);

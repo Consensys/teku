@@ -150,7 +150,7 @@ public class PowchainService implements ServiceInterface {
         LOG.log(Level.ERROR, e.getMessage());
       }
     } else if (depositMode.equals(DEPOSIT_TEST)) {
-      DepositEvent event = null;
+      DepositEvent event = new DepositEvent();
       this.eventBus.post(event);
     } else if (depositMode.equals(DEPOSIT_NORMAL)) {
       listener =
