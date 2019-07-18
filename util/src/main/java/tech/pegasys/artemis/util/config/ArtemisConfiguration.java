@@ -34,7 +34,6 @@ import org.apache.tuweni.config.PropertyValidator;
 import org.apache.tuweni.config.Schema;
 import org.apache.tuweni.config.SchemaBuilder;
 import org.apache.tuweni.crypto.SECP256K1;
-import tech.pegasys.artemis.util.bls.BLSSignature;
 
 /** Configuration of an instance of Artemis. */
 public final class ArtemisConfiguration {
@@ -163,7 +162,8 @@ public final class ArtemisConfiguration {
     builder.addInteger("constants.MIN_PER_EPOCH_CHURN_LIMIT", Integer.MIN_VALUE, null, null);
     builder.addInteger("constants.CHURN_LIMIT_QUOTIENT", Integer.MIN_VALUE, null, null);
     builder.addInteger("constants.SHUFFLE_ROUND_COUNT", Integer.MIN_VALUE, null, null);
-    builder.addInteger("constants.MIN_GENESIS_ACTIVE_VALIDATOR_COUNT", Integer.MIN_VALUE, null, null);
+    builder.addInteger(
+        "constants.MIN_GENESIS_ACTIVE_VALIDATOR_COUNT", Integer.MIN_VALUE, null, null);
     builder.addInteger("constants.MIN_GENESIS_TIME", Integer.MIN_VALUE, null, null);
 
     // Gwei values

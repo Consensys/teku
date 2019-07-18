@@ -15,42 +15,49 @@ package tech.pegasys.artemis.pow.event;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.nio.ByteOrder;
+import com.google.common.primitives.UnsignedLong;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.interfaces.IRecordAdapter;
-import tech.pegasys.artemis.pow.api.Eth2GenesisEvent;
-import tech.pegasys.artemis.pow.contract.DepositContract.Eth2GenesisEventResponse;
 
-public class Eth2Genesis extends AbstractEvent<Eth2GenesisEventResponse>
-    implements Eth2GenesisEvent, IRecordAdapter {
+public class Eth2Genesis implements IRecordAdapter {
 
+  private UnsignedLong time;
   private Bytes32 deposit_root;
-  private long deposit_count;
-  private long time;
+  private UnsignedLong deposit_count;
   private Map<String, Object> outputFieldMap = new HashMap<>();
   private static final ObjectMapper mapper = new ObjectMapper();
 
-  public Eth2Genesis(Eth2GenesisEventResponse response) {
-    super(response);
-    this.deposit_root = Bytes32.leftPad(Bytes.wrap(response.deposit_root));
-    this.deposit_count = Bytes.wrap(response.deposit_count).toLong(ByteOrder.LITTLE_ENDIAN);
-    this.time = Bytes.wrap(response.time).toLong(ByteOrder.LITTLE_ENDIAN);
+  public Eth2Genesis(Bytes32 deposit_root, UnsignedLong deposit_count, UnsignedLong time) {
+    this.deposit_root = deposit_root;
+    this.deposit_count = deposit_count;
+    this.time = time;
   }
 
   public Bytes32 getDeposit_root() {
     return deposit_root;
   }
 
-  public long getDeposit_count() {
+  public void setDeposit_root(Bytes32 deposit_root) {
+    this.deposit_root = deposit_root;
+  }
+
+  public UnsignedLong getDeposit_count() {
     return deposit_count;
   }
 
-  public long getTime() {
+  public void setDeposit_count(UnsignedLong deposit_count) {
+    this.deposit_count = deposit_count;
+  }
+
+  public UnsignedLong getTime() {
     return time;
+  }
+
+  public void setTime(UnsignedLong time) {
+    this.time = time;
   }
 
   @Override
@@ -64,10 +71,6 @@ public class Eth2Genesis extends AbstractEvent<Eth2GenesisEventResponse>
 
         case "deposit_count":
           this.outputFieldMap.put("deposit_count", deposit_count);
-          break;
-
-        case "time":
-          this.outputFieldMap.put("time", time);
           break;
       }
     }
