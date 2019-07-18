@@ -19,6 +19,8 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.int_to_bytes;
+
 public class Constants {
 
   // Non-configurable constants
@@ -84,12 +86,12 @@ public class Constants {
   public static int MAX_TRANSFERS = 16;
 
   // Signature domains
-  public static int DOMAIN_BEACON_PROPOSER = 0;
-  public static int DOMAIN_RANDAO = 1;
-  public static int DOMAIN_ATTESTATION = 2;
-  public static int DOMAIN_DEPOSIT = 3;
-  public static int DOMAIN_VOLUNTARY_EXIT = 4;
-  public static int DOMAIN_TRANSFER = 5;
+  public static Bytes DOMAIN_BEACON_PROPOSER = int_to_bytes(0, 4);
+  public static Bytes DOMAIN_RANDAO = int_to_bytes(1, 4);
+  public static Bytes DOMAIN_ATTESTATION = int_to_bytes(2, 4);
+  public static Bytes DOMAIN_DEPOSIT = int_to_bytes(3, 4);
+  public static Bytes DOMAIN_VOLUNTARY_EXIT = int_to_bytes(4, 4);
+  public static Bytes DOMAIN_TRANSFER = int_to_bytes(5, 4);
 
   // Artemis specific
   public static String SIM_DEPOSIT_VALUE = "1000000000000000000";
@@ -277,6 +279,7 @@ public class Constants {
                     ? config.getMaxTransfers()
                     : MAX_TRANSFERS; // 2^4
 
+    /*
     // Signature domains
     DOMAIN_BEACON_PROPOSER =
             config.getDomainBeaconProposer() != Integer.MIN_VALUE
@@ -298,6 +301,7 @@ public class Constants {
             config.getDomainTransfer() != Integer.MIN_VALUE
                     ? config.getDomainTransfer()
                     : DOMAIN_TRANSFER;
+    */
 
     // Artemis specific
     SIM_DEPOSIT_VALUE =
