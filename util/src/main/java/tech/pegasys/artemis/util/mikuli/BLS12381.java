@@ -45,10 +45,10 @@ public final class BLS12381 {
    *
    * @param keyPair The public and private key pair, not null
    * @param message The message to sign, not null
-   * @param domain The domain value added to the message
+   * @param domain The domain value appended to the message. 8 bytes.
    * @return The SignatureAndPublicKey, not null
    */
-  public static SignatureAndPublicKey sign(KeyPair keyPair, Bytes message, long domain) {
+  public static SignatureAndPublicKey sign(KeyPair keyPair, Bytes message, Bytes domain) {
     G2Point hashInGroup2 = hashFunction(message, domain);
     G2Point sig = keyPair.secretKey().sign(hashInGroup2);
     return new SignatureAndPublicKey(new Signature(sig), keyPair.publicKey());
@@ -59,10 +59,10 @@ public final class BLS12381 {
    *
    * @param keyPair The public and private key pair, not null
    * @param message The message to sign, not null
-   * @param domain The domain value added to the message
+   * @param domain The domain value appended to the message. 8 bytes.
    * @return The SignatureAndPublicKey, not null
    */
-  public static SignatureAndPublicKey sign(KeyPair keyPair, byte[] message, long domain) {
+  public static SignatureAndPublicKey sign(KeyPair keyPair, byte[] message, Bytes domain) {
     return sign(keyPair, Bytes.wrap(message), domain);
   }
 
@@ -72,11 +72,11 @@ public final class BLS12381 {
    * @param publicKey The public key, not null
    * @param signature The signature, not null
    * @param message The message data to verify, not null
-   * @param domain The domain value added to the message
+   * @param domain The domain value appended to the message. 8 bytes.
    * @return True if the verification is successful.
    */
   public static boolean verify(
-      PublicKey publicKey, Signature signature, Bytes message, long domain) {
+      PublicKey publicKey, Signature signature, Bytes message, Bytes domain) {
     G1Point g1Generator = KeyPair.g1Generator;
 
     G2Point hashInGroup2 = hashFunction(message, domain);
@@ -92,11 +92,11 @@ public final class BLS12381 {
    * @param publicKeys The list of public keys, not null
    * @param signature The signature, not null
    * @param messages The list of lmessage data to verify, not null
-   * @param domain The domain value added to the message
+   * @param domain The domain value appended to the message. 8 bytes.
    * @return True if the verification is successful.
    */
   public static boolean verifyMultiple(
-      List<PublicKey> publicKeys, Signature signature, List<Bytes> messages, long domain) {
+      List<PublicKey> publicKeys, Signature signature, List<Bytes> messages, Bytes domain) {
     if (publicKeys.size() == 0 || publicKeys.size() != messages.size()) {
       return false;
     }
@@ -120,11 +120,11 @@ public final class BLS12381 {
    * @param publicKey The public key, not null
    * @param signature The signature, not null
    * @param message The message data to verify, not null
-   * @param domain The domain value added to the message
+   * @param domain The domain value added to the message. 8 bytes.
    * @return True if the verification is successful.
    */
   public static boolean verify(
-      PublicKey publicKey, Signature signature, byte[] message, long domain) {
+      PublicKey publicKey, Signature signature, byte[] message, Bytes domain) {
     return verify(publicKey, signature, Bytes.wrap(message), domain);
   }
 
@@ -133,10 +133,10 @@ public final class BLS12381 {
    *
    * @param sigAndPubKey The signature and public key, not null
    * @param message The message data to verify, not null
-   * @param domain The domain value added to the message
+   * @param domain The domain value added to the message. 8 bytes.
    * @return True if the verification is successful, not null
    */
-  public static boolean verify(SignatureAndPublicKey sigAndPubKey, byte[] message, long domain) {
+  public static boolean verify(SignatureAndPublicKey sigAndPubKey, byte[] message, Bytes domain) {
     return verify(sigAndPubKey.publicKey(), sigAndPubKey.signature(), message, domain);
   }
 
@@ -145,14 +145,14 @@ public final class BLS12381 {
    *
    * @param sigAndPubKey The public key, not null
    * @param message The message data to verify, not null
-   * @param domain The domain value added to the message
+   * @param domain The domain value added to the message. 8 bytes.
    * @return True if the verification is successful.
    */
-  public static boolean verify(SignatureAndPublicKey sigAndPubKey, Bytes message, long domain) {
+  public static boolean verify(SignatureAndPublicKey sigAndPubKey, Bytes message, Bytes domain) {
     return verify(sigAndPubKey.publicKey(), sigAndPubKey.signature(), message, domain);
   }
 
-  private static G2Point hashFunction(Bytes message, long domain) {
+  private static G2Point hashFunction(Bytes message, Bytes domain) {
     return hashToG2(message, domain);
   }
 }
