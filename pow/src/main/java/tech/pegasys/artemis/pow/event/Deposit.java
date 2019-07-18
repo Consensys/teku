@@ -24,11 +24,11 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.interfaces.IRecordAdapter;
 import tech.pegasys.artemis.pow.api.DepositEvent;
-import tech.pegasys.artemis.pow.contract.DepositContract.DepositEventResponse;
+import tech.pegasys.artemis.pow.contract.DepositContract;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 
-public class Deposit extends AbstractEvent<DepositEventResponse>
+public class Deposit extends AbstractEvent<DepositContract.DepositEventEventResponse>
     implements DepositEvent, IRecordAdapter {
   // processed fields
   private BLSPublicKey pubkey;
@@ -41,11 +41,11 @@ public class Deposit extends AbstractEvent<DepositEventResponse>
 
   private Map<String, Object> outputFieldMap = new HashMap<>();
 
-  public Deposit(DepositEventResponse response) {
+  public Deposit(DepositContract.DepositEventEventResponse response) {
     super(response);
 
-    ArrayUtils.reverse(response.merkle_tree_index);
-    this.merkle_tree_index = UnsignedLong.valueOf(Bytes.wrap(response.merkle_tree_index).toLong());
+    ArrayUtils.reverse(response.index);
+    this.merkle_tree_index = UnsignedLong.valueOf(Bytes.wrap(response.index).toLong());
 
     ArrayUtils.reverse(response.pubkey);
     this.pubkey = BLSPublicKey.fromBytesCompressed(Bytes.wrap(response.pubkey));
