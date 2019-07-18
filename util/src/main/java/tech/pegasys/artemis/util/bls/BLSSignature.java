@@ -40,7 +40,7 @@ public final class BLSSignature implements SimpleOffsetSerializable {
    * @param domain the signature domain as per the Eth2 spec
    * @return the resulting signature
    */
-  public static BLSSignature sign(BLSKeyPair keyPair, Bytes message, long domain) {
+  public static BLSSignature sign(BLSKeyPair keyPair, Bytes message, Bytes domain) {
     return new BLSSignature(
         BLS12381
             .sign(
@@ -138,7 +138,7 @@ public final class BLSSignature implements SimpleOffsetSerializable {
    * @return true if the signature is valid, false if it is not
    * @throws BLSException
    */
-  boolean checkSignature(BLSPublicKey publicKey, Bytes message, long domain) throws BLSException {
+  boolean checkSignature(BLSPublicKey publicKey, Bytes message, Bytes domain) throws BLSException {
     if (isNull(signature)) {
       throw new BLSException("The checkSignature method was called on an empty signature.");
     }
@@ -158,7 +158,7 @@ public final class BLSSignature implements SimpleOffsetSerializable {
    * @return true if the signature is valid, false if it is not
    * @throws BLSException
    */
-  boolean checkSignature(List<BLSPublicKey> publicKeys, List<Bytes> messages, long domain)
+  boolean checkSignature(List<BLSPublicKey> publicKeys, List<Bytes> messages, Bytes domain)
       throws BLSException {
     checkArgument(
         publicKeys.size() == messages.size(),
