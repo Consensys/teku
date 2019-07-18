@@ -23,11 +23,13 @@ import static tech.pegasys.artemis.datastructures.Constants.SHARD_COUNT;
 import static tech.pegasys.artemis.datastructures.Constants.SLOTS_PER_EPOCH;
 import static tech.pegasys.artemis.datastructures.Constants.ZERO_HASH;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_bitfield_bit;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_block_root;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_current_epoch;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_domain;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_committee_count;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_start_slot_of_epoch;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.min;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.setBit;
 import static tech.pegasys.artemis.datastructures.util.CrosslinkCommitteeUtil.get_crosslink_committee;
 import static tech.pegasys.artemis.datastructures.util.CrosslinkCommitteeUtil.get_start_shard;
 import static tech.pegasys.artemis.util.bls.BLSAggregate.bls_aggregate_pubkeys;
@@ -52,6 +54,7 @@ import tech.pegasys.artemis.datastructures.operations.AttestationData;
 import tech.pegasys.artemis.datastructures.operations.AttestationDataAndCustodyBit;
 import tech.pegasys.artemis.datastructures.operations.IndexedAttestation;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.datastructures.state.CompactCommittee;
 import tech.pegasys.artemis.datastructures.state.Crosslink;
 import tech.pegasys.artemis.datastructures.state.CrosslinkCommittee;
@@ -109,57 +112,39 @@ public class AttestationUtil {
   public static AttestationData getGenericAttestationData(BeaconState state, BeaconBlock block) {
     // Get variables necessary that can be shared among Attestations of all validators
     UnsignedLong slot = state.getSlot();
-    Bytes32 headBlockRoot = block.signing_root("signature");
-    Bytes32 crosslinkDataRoot = Bytes32.ZERO;
-    UnsignedLong epochStartSlot = compute_start_slot_of_epoch(BeaconStateUtil.get_current_epoch(state));
-    Bytes32 epochBoundaryRoot;
-    if (epochStartSlot.compareTo(slot) == 0) {
-      epochBoundaryRoot = block.signing_root("signature");
-    } else {
-      epochBoundaryRoot = BeaconStateUtil.get_block_root(state, get_current_epoch(state));
-    }
-    UnsignedLong sourceEpoch = state.getCurrent_justified_chekpoint();
-    Bytes32 sourceRoot = state.getCurrent_justified_root();
-    UnsignedLong targetEpoch = get_current_epoch(state);
+    Bytes32 beacon_block_root = block.signing_root("signature");
+    UnsignedLong start_slot = compute_start_slot_of_epoch(get_current_epoch(state));
+    Bytes32 epoch_boundary_block_root = start_slot.compareTo(slot) == 0 ? block.signing_root("signature") : get_block_root(state, start_slot);
+    Checkpoint source = state.getCurrent_justified_checkpoint();
+    Checkpoint target = new Checkpoint(get_current_epoch(state), epoch_boundary_block_root);
 
     // Set attestation data
     return new AttestationData(
-        headBlockRoot, sourceEpoch, sourceRoot, targetEpoch, epochBoundaryRoot, new Crosslink());
+        beacon_block_root, source, target, new Crosslink());
   }
 
-  public static Bytes getAggregationBitfield(int indexIntoCommittee, int arrayLength) {
+  public static Bytes getAggregationBits(int indexIntoCommittee) {
     // Create aggregation bitfield
-    byte[] aggregationBitfield = new byte[arrayLength];
-    aggregationBitfield[indexIntoCommittee / 8] =
-        (byte)
-            (aggregationBitfield[indexIntoCommittee / 8]
-                | (byte) Math.pow(2, (indexIntoCommittee % 8)));
-    return Bytes.wrap(aggregationBitfield);
+    Bytes aggregationBits = Bytes.wrap(new byte[MAX_VALIDATORS_PER_COMMITTEE / 8]);
+    return setBit(aggregationBits, indexIntoCommittee);
   }
 
-  public static Bytes getCustodyBitfield(int arrayLength) {
-    return Bytes.wrap(new byte[arrayLength]);
-  }
-
-  public static AttestationData completeAttestationData(
-      BeaconState state, AttestationData attestationData, CrosslinkCommittee committee) {
+  public static AttestationData completeAttestationCrosslinkData(
+      BeaconState state, AttestationData attestation_data, CrosslinkCommittee committee) {
+    Crosslink crosslink = attestation_data.getCrosslink();
     UnsignedLong shard = committee.getShard();
+    crosslink.setShard(shard);
     Crosslink parent_crosslink = state.getCurrent_crosslinks().get(shard.intValue());
+    crosslink.setStart_epoch(parent_crosslink.getEnd_epoch());
     UnsignedLong end_epoch =
         min(
-            attestationData.getTarget_epoch(),
+            attestation_data.getTarget().getEpoch(),
             parent_crosslink
                 .getEnd_epoch()
                 .plus(UnsignedLong.valueOf(Constants.MAX_EPOCHS_PER_CROSSLINK)));
-    Crosslink crosslink =
-        new Crosslink(
-            shard,
-            parent_crosslink.getEnd_epoch(),
-            end_epoch,
-            state.getCurrent_crosslinks().get(shard.intValue()).hash_tree_root(),
-            ZERO_HASH);
-    attestationData.setCrosslink(crosslink);
-    return attestationData;
+    crosslink.setEnd_epoch(end_epoch);
+    crosslink.setParent_root(state.getCurrent_crosslinks().get(shard.intValue()).hash_tree_root());
+    return attestation_data;
   }
 
   public static Bytes32 getAttestationMessageToSign(AttestationData attestationData) {
@@ -168,9 +153,8 @@ public class AttestationUtil {
     return attestation_data_and_custody_bit.hash_tree_root();
   }
 
-  public static int getDomain(BeaconState state, AttestationData attestationData) {
-    return toIntExact(
-        get_domain(state, Constants.DOMAIN_ATTESTATION, attestationData.getTarget_epoch()));
+  public static Bytes getDomain(BeaconState state, AttestationData attestationData) {
+    return get_domain(state, Constants.DOMAIN_ATTESTATION, attestationData.getTarget_epoch()));
   }
 
   /**

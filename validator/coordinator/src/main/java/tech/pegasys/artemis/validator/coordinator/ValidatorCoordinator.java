@@ -14,7 +14,9 @@
 package tech.pegasys.artemis.validator.coordinator;
 
 import static java.lang.StrictMath.toIntExact;
+import static tech.pegasys.artemis.datastructures.Constants.DOMAIN_ATTESTATION;
 import static tech.pegasys.artemis.datastructures.Constants.GENESIS_SLOT;
+import static tech.pegasys.artemis.datastructures.Constants.MAX_VALIDATORS_PER_COMMITTEE;
 import static tech.pegasys.artemis.datastructures.Constants.SLOTS_PER_EPOCH;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_domain;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_of_slot;
@@ -270,34 +272,50 @@ public class ValidatorCoordinator {
       int indexIntoCommittee,
       CrosslinkCommittee committee,
       AttestationData genericAttestationData) {
-    int arrayLength = Math.toIntExact((committee.getCommittee().size() + 7) / 8);
     Bytes aggregationBitfield =
-        AttestationUtil.getAggregationBitfield(indexIntoCommittee, arrayLength);
-    Bytes custodyBitfield = AttestationUtil.getCustodyBitfield(arrayLength);
-    AttestationData attestationData =
-        AttestationUtil.completeAttestationData(
-            state, new AttestationData(genericAttestationData), committee);
+        AttestationUtil.getAggregationBits(indexIntoCommittee);
+    Bytes custodyBits = Bytes.wrap(new byte[MAX_VALIDATORS_PER_COMMITTEE / 8]);
+    AttestationData attestationData = AttestationUtil.completeAttestationCrosslinkData(state, new AttestationData(genericAttestationData), committee);
     Bytes32 attestationMessage = AttestationUtil.getAttestationMessageToSign(attestationData);
-    int domain = AttestationUtil.getDomain(state, attestationData);
+    Bytes domain = get_domain(state, DOMAIN_ATTESTATION, attestationData.getTarget().getEpoch());
 
     BLSSignature signature = getSignature(attestationMessage, domain, attester);
     this.eventBus.post(
-        new Attestation(aggregationBitfield, attestationData, custodyBitfield, signature));
+        new Attestation(aggregationBitfield, attestationData, custodyBits, signature));
   }
 
-  private BLSSignature getEpochSignature(BeaconState state, BLSPublicKey proposer) {
+
+  /**
+   * Gets the epoch signature used for RANDAO from the Validator Client using gRPC
+   *
+   * @param state
+   * @param proposer
+   * @return
+   * @see <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.1/specs/validator/0_beacon-chain-validator.md#randao-reveal</a>
+   */
+  // TODO: since this is very similar to a spec function now, move it to a util file and
+  // abstract away the gRPC details
+  public BLSSignature get_epoch_signature(BeaconState state, BLSPublicKey proposer) {
     UnsignedLong slot = state.getSlot().plus(UnsignedLong.ONE);
     UnsignedLong epoch = BeaconStateUtil.compute_epoch_of_slot(slot);
 
     Bytes32 messageHash =
         HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(epoch.longValue()));
-    int domain = get_domain(state, Constants.DOMAIN_RANDAO, epoch);
+    Bytes domain = get_domain(state, Constants.DOMAIN_RANDAO, epoch);
     return getSignature(messageHash, domain, proposer);
   }
 
+  /**
+   * Gets the block signature from the Validator Client using gRPC
+   * @param state
+   * @param block
+   * @param proposer
+   * @return
+   * @see <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.1/specs/validator/0_beacon-chain-validator.md#signature</a>
+   */
   private BLSSignature getBlockSignature(
       BeaconState state, BeaconBlock block, BLSPublicKey proposer) {
-    int domain =
+    Bytes domain =
         get_domain(
             state,
             Constants.DOMAIN_BEACON_PROPOSER,
@@ -401,12 +419,12 @@ public class ValidatorCoordinator {
     // Calculate the block proposer index, and if we have the
     // block proposer in our set of validators, produce the block
     int proposerIndex = BeaconStateUtil.get_beacon_proposer_index(checkState);
-    BLSPublicKey proposer = checkState.getValidator_registry().get(proposerIndex).getPubkey();
+    BLSPublicKey proposer = checkState.getValidators().get(proposerIndex).getPubkey();
 
     BeaconStateWithCache newState = BeaconStateWithCache.deepCopy(state);
     if (validatorSet.containsKey(proposer)) {
       CompletableFuture<BLSSignature> epochSignatureTask =
-          CompletableFuture.supplyAsync(() -> getEpochSignature(newState, proposer));
+          CompletableFuture.supplyAsync(() -> get_epoch_signature(newState, proposer));
       CompletableFuture<BeaconBlock> blockCreationTask =
           CompletableFuture.supplyAsync(() -> createInitialBlock(newState, oldBlock));
 
@@ -419,7 +437,7 @@ public class ValidatorCoordinator {
         slashings.forEach(
             slashing -> {
               if (!state
-                  .getValidator_registry()
+                  .getValidators()
                   .get(slashing.getProposer_index().intValue())
                   .isSlashed()) {
                 slashingsInBlock.add(slashing);
@@ -427,7 +445,7 @@ public class ValidatorCoordinator {
             });
         slashings = new LinkedBlockingQueue<>();
         boolean validate_state_root = false;
-        Bytes32 stateRoot = stateTransition.initiate(newState, newBlock, validate_state_root);
+        Bytes32 stateRoot = stateTransition.initiate(newState, newBlock, validate_state_root).hash_tree_root();
         newBlock.setState_root(stateRoot);
         BLSSignature blockSignature = getBlockSignature(newState, newBlock, proposer);
         newBlock.setSignature(blockSignature);
@@ -439,7 +457,7 @@ public class ValidatorCoordinator {
           BeaconBlock newestBlock = createInitialBlock(naughtyState, oldBlock);
           BLSSignature eSignature = epochSignatureTask.get();
           newestBlock.getBody().setRandao_reveal(eSignature);
-          Bytes32 sRoot = stateTransition.initiate(naughtyState, newestBlock, validate_state_root);
+          Bytes32 sRoot = stateTransition.initiate(naughtyState, newestBlock, validate_state_root).hash_tree_root();
           newestBlock.setState_root(sRoot);
           BLSSignature bSignature = getBlockSignature(naughtyState, newestBlock, proposer);
           newestBlock.setSignature(bSignature);
@@ -451,7 +469,7 @@ public class ValidatorCoordinator {
     }
   }
 
-  private BLSSignature getSignature(Bytes message, int domain, BLSPublicKey signer) {
+  private BLSSignature getSignature(Bytes message, Bytes domain, BLSPublicKey signer) {
     SignatureRequest request =
         SignatureRequest.newBuilder()
             .setMessage(ByteString.copyFrom(message.toArray()))
