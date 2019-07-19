@@ -33,12 +33,10 @@ import javax.annotation.Nullable;
 import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.crypto.Hash;
 import org.apache.tuweni.hobbits.Message;
 import org.apache.tuweni.hobbits.Protocol;
 import org.apache.tuweni.plumtree.State;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
-import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.networking.p2p.api.P2PNetwork;
 import tech.pegasys.artemis.networking.p2p.hobbits.gossip.GossipCodec;
@@ -116,6 +114,7 @@ public abstract class AbstractSocketHandler {
     STDOUT.log(Level.DEBUG, "Buffer at " + buffer.size() + " bytes");
 
     while (!buffer.isEmpty()) {
+
       Message hobbitsMessage = Message.readMessage(buffer);
       if (hobbitsMessage != null) {
         Protocol protocol = hobbitsMessage.getProtocol();
@@ -136,21 +135,21 @@ public abstract class AbstractSocketHandler {
   }
 
   protected void handleRPCMessage(RPCMessage rpcMessage) {
-    if (RPCMethod.GOODBYE.ordinal() == rpcMessage.method()) {
+    if (RPCMethod.GOODBYE.code() == rpcMessage.method()) {
       closed(null);
-    } else if (RPCMethod.HELLO.ordinal() == rpcMessage.method()) {
+    } else if (RPCMethod.HELLO.code() == rpcMessage.method()) {
       replyHello(rpcMessage.id());
-    } else if (RPCMethod.GET_STATUS.ordinal() == rpcMessage.method()) {
+    } else if (RPCMethod.GET_STATUS.code() == rpcMessage.method()) {
       replyStatus(rpcMessage.id());
-    } else if (RPCMethod.GET_ATTESTATION.ordinal() == rpcMessage.method()) {
+    } else if (RPCMethod.GET_ATTESTATION.code() == rpcMessage.method()) {
       replyAttestation(rpcMessage);
-    } else if (RPCMethod.GET_BLOCK_BODIES.ordinal() == rpcMessage.method()) {
+    } else if (RPCMethod.GET_BLOCK_BODIES.code() == rpcMessage.method()) {
       replyBlockBodies(rpcMessage);
-    } else if (RPCMethod.ATTESTATION.ordinal() == rpcMessage.method()) {
-      Attestation attestation = Attestation.fromBytes(rpcMessage.bodyAs(Bytes.class));
+    } else if (RPCMethod.ATTESTATION.code() == rpcMessage.method()) {
+      Attestation attestation = Attestation.fromBytes(rpcMessage.bodyAsBytes());
       this.eventBus.post(attestation);
-    } else if (RPCMethod.BLOCK_BODIES.ordinal() == rpcMessage.method()) {
-      BeaconBlock beaconBlock = BeaconBlock.fromBytes(rpcMessage.bodyAsList().get(0));
+    } else if (RPCMethod.BLOCK_BODIES.code() == rpcMessage.method()) {
+      BeaconBlock beaconBlock = BeaconBlock.fromBytes(rpcMessage.bodyAsBytesList().get(0));
       this.eventBus.post(beaconBlock);
     }
   }
@@ -161,11 +160,11 @@ public abstract class AbstractSocketHandler {
   protected abstract void handleGossipMessage(GossipMessage gossipMessage);
 
   protected void sendReply(RPCMethod method, Object payload, BigInteger id) {
-    sendBytes(RPCCodec.encode(method.ordinal(), payload, id).toBytes());
+    sendBytes(RPCCodec.encode(method.code(), payload, id).toBytes());
   }
 
   protected void sendMessage(RPCMethod method, Object payload) {
-    sendBytes(RPCCodec.encode(method.ordinal(), payload, pendingResponses).toBytes());
+    sendBytes(RPCCodec.encode(method.code(), payload, pendingResponses).toBytes());
   }
 
   protected void sendBytes(Bytes bytes) {
@@ -228,10 +227,10 @@ public abstract class AbstractSocketHandler {
 
   public void replyAttestation(RPCMessage rpcMessage) {
     RequestAttestationMessage rb = rpcMessage.bodyAs(RequestAttestationMessage.class);
-    Bytes32 signature = Hash.sha2_256(Bytes32.wrap(rb.hash()));
     store
-        .getUnprocessedAttestation(signature)
-        .ifPresent(a -> sendReply(RPCMethod.ATTESTATION, a.toBytes(), rpcMessage.id()));
+        .getUnprocessedAttestation(Bytes32.wrap(rb.hash()))
+        .ifPresent(
+            a -> sendReply(RPCMethod.ATTESTATION, a.toBytes().toArrayUnsafe(), rpcMessage.id()));
   }
 
   public void sendGetAttestation(Bytes32 attestationHash) {
@@ -239,47 +238,16 @@ public abstract class AbstractSocketHandler {
         RPCMethod.GET_ATTESTATION, new RequestAttestationMessage(attestationHash.toArrayUnsafe()));
   }
 
-  public void replyBlockHeaders(RPCMessage rpcMessage) {
-    RequestBlocksMessage rb = rpcMessage.bodyAs(RequestBlocksMessage.class);
-    List<Optional<BeaconBlock>> blocks =
-        store.getUnprocessedBlock(
-            Bytes32.wrap(rb.startRoot()), rb.max().longValue(), rb.skip().longValue());
-    List<Bytes> blockHeaders = new ArrayList<>();
-    blocks.forEach(
-        block -> {
-          if (block.isPresent()) {
-            blockHeaders.add(
-                new BeaconBlockHeader(
-                        block.get().getSlot(),
-                        block.get().getParent_root(),
-                        block.get().getState_root(),
-                        block.get().getBody().hash_tree_root(),
-                        block.get().getSignature())
-                    .toBytes());
-          }
-        });
-    if (blockHeaders.size() > 0) {
-      sendReply(RPCMethod.BLOCK_HEADERS, blockHeaders, rpcMessage.id());
-    }
-  }
-
-  public void sendGetBlockHeaders(Bytes32 root) {
-    sendMessage(
-        RPCMethod.GET_BLOCK_HEADERS,
-        new RequestBlocksMessage(
-            root.toArrayUnsafe(), BigInteger.ONE, BigInteger.ONE, BigInteger.ZERO, (short) 0));
-  }
-
   public void replyBlockBodies(RPCMessage rpcMessage) {
     RequestBlocksMessage rb = rpcMessage.bodyAs(RequestBlocksMessage.class);
     List<Optional<BeaconBlock>> blocks =
         store.getUnprocessedBlock(
             Bytes32.wrap(rb.startRoot()), rb.max().longValue(), rb.skip().longValue());
-    List<Bytes> blockBodies = new ArrayList<>();
+    List<byte[]> blockBodies = new ArrayList<>();
     blocks.forEach(
         block -> {
           if (block.isPresent()) {
-            blockBodies.add(block.get().toBytes());
+            blockBodies.add(block.get().toBytes().toArrayUnsafe());
           }
         });
     if (blockBodies.size() > 0) {

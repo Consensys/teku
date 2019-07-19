@@ -41,10 +41,10 @@ public final class BlockBodiesMessage {
         throws IOException {
       JsonNode node = jp.getCodec().readTree(jp);
       Iterator<JsonNode> iterator = node.iterator();
-      List<BeaconBlock> elts = new ArrayList<>();
+      List<BlockBody> elts = new ArrayList<>();
       while (iterator.hasNext()) {
         JsonNode child = iterator.next();
-        elts.add(BeaconBlock.fromBytes(Bytes.wrap(child.get("bytes").binaryValue())));
+        elts.add(new BlockBody(Bytes.wrap(child.get("bodies").binaryValue())));
       }
       return new BlockBodiesMessage(elts);
     }
@@ -58,20 +58,24 @@ public final class BlockBodiesMessage {
       this.bytes = bytes;
     }
 
-    @JsonProperty("bytes")
+    @JsonProperty("bodies")
     public Bytes bytes() {
       return bytes;
     }
   }
 
-  private final List<BeaconBlock> bodies;
+  private final List<BeaconBlock> bodies = new ArrayList<>();
 
-  BlockBodiesMessage(List<BeaconBlock> bodies) {
-    this.bodies = bodies;
+  BlockBodiesMessage(List<BlockBody> bodies) {
+    bodies.forEach(
+        a -> {
+          this.bodies.add(BeaconBlock.fromBytes(a.bytes()));
+        });
   }
 
   @JsonValue
   public List<BeaconBlock> bodies() {
+
     return bodies;
   }
 }

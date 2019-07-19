@@ -20,10 +20,11 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.artemis.util.alogger.ALogger;
 
 /** Representation of a RPC message that was received from a remote peer. */
 public final class RPCMessage {
-
+  private static final ALogger STDOUT = new ALogger("stdout");
   private final int method;
   private final BigInteger id;
   private final JsonNode body;
@@ -62,12 +63,36 @@ public final class RPCMessage {
     }
   }
 
-  public List<Bytes> bodyAsList() {
+  /**
+   * Reads the body of the message into Bytes
+   *
+   * @return the body, unmarshalled.
+   * @throws UncheckedIOException if the body cannot be successfully unmarshalled
+   */
+  public Bytes bodyAsBytes() {
+    try {
+      return Bytes.wrap(body.binaryValue());
+    } catch (IOException e) {
+      throw new UncheckedIOException(e);
+    }
+  }
+
+  /**
+   * Reads the body of the message into List<Bytes>
+   *
+   * @return the body, unmarshalled.
+   * @throws UncheckedIOException if the body cannot be successfully unmarshalled
+   */
+  public List<Bytes> bodyAsBytesList() {
     List<Bytes> newList = new ArrayList<>();
-    if (body.isArray()) {
-      for (final JsonNode objNode : body) {
-        newList.add(Bytes.fromHexString(objNode.textValue()));
+    try {
+      if (body.isArray()) {
+        for (final JsonNode objNode : body) {
+          newList.add(Bytes.wrap(objNode.binaryValue()));
+        }
       }
+    } catch (IOException e) {
+      throw new UncheckedIOException(e);
     }
     return newList;
   }

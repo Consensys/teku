@@ -22,11 +22,9 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.operations.Attestation;
 
 @JsonDeserialize(using = AttestationMessage.AttestationDeserializer.class)
 public final class AttestationMessage {
@@ -42,37 +40,35 @@ public final class AttestationMessage {
         throws IOException, JsonProcessingException {
       JsonNode node = jp.getCodec().readTree(jp);
       Iterator<JsonNode> iterator = node.iterator();
-      List<BeaconBlock> elts = new ArrayList<>();
-      while (iterator.hasNext()) {
-        JsonNode child = iterator.next();
-        elts.add(BeaconBlock.fromBytes(Bytes.wrap(child.get("bytes").binaryValue())));
-      }
+      JsonNode child = iterator.next();
+      AttestationBody elts =
+          new AttestationBody(Bytes.wrap(child.get("attestation").binaryValue()));
       return new AttestationMessage(elts);
     }
   }
 
-  static class Attestation {
+  static class AttestationBody {
 
     private final Bytes bytes;
 
-    Attestation(Bytes bytes) {
+    AttestationBody(Bytes bytes) {
       this.bytes = bytes;
     }
 
-    @JsonProperty("bytes")
+    @JsonProperty("attestation")
     public Bytes bytes() {
       return bytes;
     }
   }
 
-  private final List<BeaconBlock> bodies;
+  private final Attestation body;
 
-  AttestationMessage(List<BeaconBlock> bodies) {
-    this.bodies = bodies;
+  AttestationMessage(AttestationBody body) {
+    this.body = Attestation.fromBytes(body.bytes());
   }
 
   @JsonValue
-  public List<BeaconBlock> bodies() {
-    return bodies;
+  public Attestation body() {
+    return body;
   }
 }

@@ -50,7 +50,7 @@ public final class FloodsubSocketHandler extends AbstractSocketHandler {
       int method, String topic, long timestamp, Bytes messageHash, Bytes32 hash, Bytes body) {
     // TODO: Hack to make compatible with HOBBITS FloodSub spec
     method = 0;
-    body = Bytes.EMPTY;
+    hash = Bytes32.wrap(body);
     Bytes bytes =
         GossipCodec.encode(
                 method,
@@ -58,7 +58,7 @@ public final class FloodsubSocketHandler extends AbstractSocketHandler {
                 BigInteger.valueOf(timestamp),
                 messageHash.toArrayUnsafe(),
                 hash.toArrayUnsafe(),
-                body.toArrayUnsafe())
+                Bytes.EMPTY.toArrayUnsafe())
             .toBytes();
     sendBytes(bytes);
   }
@@ -67,16 +67,14 @@ public final class FloodsubSocketHandler extends AbstractSocketHandler {
   @SuppressWarnings("StringSplitter")
   protected void handleGossipMessage(GossipMessage gossipMessage) {
     if (gossipMessage.method() == 0) {
-      Bytes hash = Bytes.wrap(gossipMessage.hash());
+      Bytes32 hash = Bytes32.wrap(gossipMessage.hash());
       String key = hash.toHexString();
       if (!receivedMessages.containsKey(key)) {
         peer.setPeerGossip(hash);
         if (gossipMessage.getTopic().equalsIgnoreCase("ATTESTATION")) {
-          Bytes32 attestationHash = Bytes32.wrap(gossipMessage.hash());
-          this.sendGetAttestation(attestationHash);
+          this.sendGetAttestation(hash);
         } else if (gossipMessage.getTopic().equalsIgnoreCase("BLOCK")) {
-          Bytes32 blockRoot = Bytes32.wrap(gossipMessage.hash());
-          this.sendGetBlockBodies(blockRoot);
+          this.sendGetBlockBodies(hash);
         }
         receivedMessages.put(key, true);
       }

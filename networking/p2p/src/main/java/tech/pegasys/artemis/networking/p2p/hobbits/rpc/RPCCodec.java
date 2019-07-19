@@ -101,7 +101,7 @@ public final class RPCCodec {
       Message message = new Message(3, Protocol.RPC, header, body);
       return message;
     } catch (IOException e) {
-      throw new IllegalArgumentException(e);
+      throw new IllegalArgumentException(e.getMessage());
     }
   }
 
