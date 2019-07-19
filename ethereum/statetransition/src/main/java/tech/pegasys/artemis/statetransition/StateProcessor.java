@@ -74,6 +74,15 @@ public class StateProcessor {
     this.config = config.getConfig();
     this.eventBus.register(this);
     this.chainStorageClient = chainStorageClient;
+
+    if (this.config.getDepositMode().equals(Constants.DEPOSIT_TEST)) {
+      try {
+        BeaconState initial_state = DataStructureUtil.createInitialBeaconState(this.config);
+        onEth2Genesis(initial_state);
+      } catch (ParseException | IOException e) {
+        STDOUT.log(Level.FATAL, "StateProcessor initializing: " + e.toString());
+      }
+    }
   }
 
   public void onEth2Genesis(BeaconState initial_state) {
@@ -87,16 +96,6 @@ public class StateProcessor {
 
   @Subscribe
   public void onDeposit(tech.pegasys.artemis.pow.event.Deposit event) {
-    if (config.getDepositMode().equals(Constants.DEPOSIT_TEST)) {
-      try {
-        BeaconStateWithCache initial_state = DataStructureUtil.createInitialBeaconState(config);
-        onEth2Genesis(initial_state);
-        return;
-      } catch (ParseException | IOException e) {
-        STDOUT.log(Level.FATAL, e.toString());
-      }
-    }
-
     if (deposits == null) deposits = new ArrayList<Deposit>();
     deposits.add(DepositUtil.convertEventDepositToOperationDeposit(event));
 

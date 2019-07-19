@@ -52,6 +52,7 @@ import tech.pegasys.artemis.datastructures.operations.IndexedAttestation;
 import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
 import tech.pegasys.artemis.datastructures.operations.Transfer;
 import tech.pegasys.artemis.datastructures.operations.VoluntaryExit;
+import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.datastructures.state.Crosslink;
@@ -379,7 +380,7 @@ public final class DataStructureUtil {
 
       List<Bytes32> proof =
           new ArrayList<>(Collections.nCopies(DEPOSIT_CONTRACT_TREE_DEPTH, Bytes32.ZERO));
-      Deposit deposit = new Deposit(proof, depositData);
+      Deposit deposit = new Deposit(proof, depositData, UnsignedLong.valueOf(i));
       deposits.add(deposit);
     }
     return deposits;
@@ -411,9 +412,8 @@ public final class DataStructureUtil {
 
 
   @SuppressWarnings("unchecked")
-  public static BeaconStateWithCache createInitialBeaconState(ArtemisConfiguration config)
+  public static BeaconState createInitialBeaconState(ArtemisConfiguration config)
       throws IOException, ParseException {
-    BeaconStateWithCache state = new BeaconStateWithCache();
     final List<Deposit> deposits = new ArrayList<>();
     if (config.getInteropActive()) {
       Path path = Paths.get("interopDepositsAndKeys.json");
@@ -430,7 +430,7 @@ public final class DataStructureUtil {
     } else {
       deposits.addAll(newDeposits(config.getNumValidators()));
     }
-    return (BeaconStateWithCache) BeaconStateUtil.initialize_beacon_state_from_eth1(
+    return BeaconStateUtil.initialize_beacon_state_from_eth1(
         Bytes32.ZERO,
         UnsignedLong.valueOf(Constants.GENESIS_SLOT),
         deposits);

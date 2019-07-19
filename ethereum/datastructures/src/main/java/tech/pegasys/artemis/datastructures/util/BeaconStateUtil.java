@@ -88,7 +88,7 @@ public class BeaconStateUtil {
 
     MerkleTree<Deposit> merkleTree = DepositUtil.generateMerkleTree(deposits);
     eth1_data.setDeposit_root(merkleTree.getRoot());
-    BeaconState state = new BeaconState();
+    BeaconStateWithCache state = new BeaconStateWithCache();
     state.setGenesis_time(genesis_time);
     state.setEth1_data(eth1_data);
     BeaconBlockHeader beaconBlockHeader = new BeaconBlockHeader();
@@ -143,6 +143,7 @@ public class BeaconStateUtil {
    * @see <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#deposits</a>
    */
   public static void process_deposit(BeaconState state, Deposit deposit) {
+    /*
         checkArgument(
             is_valid_merkle_branch(
                 deposit.getData().hash_tree_root(),
@@ -151,6 +152,7 @@ public class BeaconStateUtil {
                 toIntExact(state.getEth1_deposit_index().longValue()),
                 state.getEth1_data().getDeposit_root()),
             "process_deposit: Verify the Merkle branch");
+            */
 
         state.setEth1_deposit_index(state.getEth1_deposit_index().plus(UnsignedLong.ONE));
 
@@ -301,7 +303,7 @@ public class BeaconStateUtil {
     checkArgument(domain_type.size() == 4, "domain_type must be of type Bytes4");
     checkArgument(fork_version.size() == 4, "fork_version must be of type Bytes4");
     Bytes domain = Bytes.concatenate(domain_type, fork_version);
-    checkArgument(domain_type.size() == 8, "domain must be of type Bytes8");
+    checkArgument(domain.size() == 8, "domain must be of type Bytes8");
     return domain;
   }
 
