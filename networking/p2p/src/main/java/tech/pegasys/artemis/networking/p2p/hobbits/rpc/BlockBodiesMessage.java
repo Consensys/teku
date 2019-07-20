@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.networking.p2p.hobbits.rpc;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonValue;
 import com.fasterxml.jackson.core.JsonParser;
@@ -66,7 +67,8 @@ public final class BlockBodiesMessage {
 
   private final List<BeaconBlock> bodies = new ArrayList<>();
 
-  BlockBodiesMessage(List<BlockBody> bodies) {
+  @JsonCreator
+  public BlockBodiesMessage(@JsonProperty("bodies") List<BlockBody> bodies) {
     bodies.forEach(
         a -> {
           this.bodies.add(BeaconBlock.fromBytes(a.bytes()));

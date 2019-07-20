@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.networking.p2p.hobbits.rpc;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonValue;
 import com.fasterxml.jackson.core.JsonParser;
@@ -63,7 +64,8 @@ public final class AttestationMessage {
 
   private final Attestation body;
 
-  AttestationMessage(AttestationBody body) {
+  @JsonCreator
+  public AttestationMessage(@JsonProperty("attestation") AttestationBody body) {
     this.body = Attestation.fromBytes(body.bytes());
   }
 
