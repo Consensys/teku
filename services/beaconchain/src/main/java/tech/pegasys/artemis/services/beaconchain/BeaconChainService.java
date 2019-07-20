@@ -25,6 +25,7 @@ import tech.pegasys.artemis.networking.p2p.api.P2PNetwork;
 import tech.pegasys.artemis.service.serviceutils.ServiceConfig;
 import tech.pegasys.artemis.service.serviceutils.ServiceInterface;
 import tech.pegasys.artemis.statetransition.StateProcessor;
+import tech.pegasys.artemis.statetransition.TimingProcessor;
 import tech.pegasys.artemis.storage.ChainStorage;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.util.alogger.ALogger;
@@ -37,8 +38,6 @@ public class BeaconChainService implements ServiceInterface {
   private EventBus eventBus;
   private Timer timer;
   private Vertx vertx;
-  private StateProcessor stateProcessor;
-  private ValidatorCoordinator validatorCoordinator;
   private ChainStorageClient store;
   private P2PNetwork p2pNetwork;
 
@@ -62,8 +61,9 @@ public class BeaconChainService implements ServiceInterface {
       System.exit(1);
     }
     this.store = ChainStorage.Create(ChainStorageClient.class, eventBus);
-    this.stateProcessor = new StateProcessor(config, store);
-    this.validatorCoordinator = new ValidatorCoordinator(config, store);
+    new TimingProcessor(config, store);
+    new ValidatorCoordinator(config, store);
+    new StateProcessor(config, store);
     if ("mock".equals(config.getConfig().getNetworkMode())) {
       this.p2pNetwork = new MockP2PNetwork(eventBus);
     } else if ("hobbits".equals(config.getConfig().getNetworkMode())) {
@@ -99,6 +99,7 @@ public class BeaconChainService implements ServiceInterface {
       throw new IllegalArgumentException(
           "Unsupported network mode " + config.getConfig().getNetworkMode());
     }
+    this.timer.start();
   }
 
   @Override
@@ -116,14 +117,6 @@ public class BeaconChainService implements ServiceInterface {
     }
     this.timer.stop();
     this.eventBus.unregister(this);
-  }
-
-  @Subscribe
-  public void afterChainStart(Boolean chainStarted) {
-    if (chainStarted) {
-      // slot scheduler fires an event that tells us when it is time for a new slot
-      this.timer.start();
-    }
   }
 
   P2PNetwork p2pNetwork() {

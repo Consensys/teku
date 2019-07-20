@@ -65,8 +65,13 @@ public class ForkChoiceUtil {
    */
   public static Bytes32 get_ancestor(Store store, Bytes32 root, UnsignedLong slot) {
     BeaconBlock block = store.getBlocks().get(root);
-    checkArgument(block.getSlot().compareTo(slot) >= 0, "get_ancestor error");
-    return block.getSlot().equals(slot) ? root : get_ancestor(store, block.getParent_root(), slot);
+    if (block.getSlot().compareTo(slot) > 0) {
+      return get_ancestor(store, block.getParent_root(), slot);
+    } else if (block.getSlot().equals(slot)) {
+      return root;
+    } else {
+      return Bytes32.ZERO;
+    }
   }
 
   /**

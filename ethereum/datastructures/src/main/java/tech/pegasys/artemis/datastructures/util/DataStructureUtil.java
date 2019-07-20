@@ -412,7 +412,7 @@ public final class DataStructureUtil {
 
 
   @SuppressWarnings("unchecked")
-  public static BeaconState createInitialBeaconState(ArtemisConfiguration config)
+  public static BeaconStateWithCache createInitialBeaconState(ArtemisConfiguration config)
       throws IOException, ParseException {
     final List<Deposit> deposits = new ArrayList<>();
     if (config.getInteropActive()) {

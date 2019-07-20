@@ -75,7 +75,7 @@ public class BeaconStateUtil {
 
   private static final ALogger LOG = new ALogger(BeaconStateUtil.class.getName());
 
-  public static BeaconState initialize_beacon_state_from_eth1(
+  public static BeaconStateWithCache initialize_beacon_state_from_eth1(
       Bytes32 eth1_block_hash, UnsignedLong eth1_timestamp, List<Deposit> deposits) {
     UnsignedLong genesis_time =
         eth1_timestamp.minus(
@@ -811,7 +811,7 @@ public class BeaconStateUtil {
   public static Bytes setBit(Bytes bits, int pos) {
     byte[] bitsByteArray = bits.toArray();
     byte myByte = bitsByteArray[pos / 8];
-    myByte = (byte) (myByte | (1 << (7 - (pos % 8))));
+    myByte = (byte) (myByte | (1 << (pos % 8)));
     bitsByteArray[pos / 8] = myByte;
     return Bytes.wrap(bitsByteArray);
   }

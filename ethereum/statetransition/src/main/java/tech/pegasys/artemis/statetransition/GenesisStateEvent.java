@@ -16,22 +16,22 @@ package tech.pegasys.artemis.statetransition;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 
-public class HeadStateEvent {
+public class GenesisStateEvent {
 
-  private BeaconStateWithCache headState;
-  private BeaconBlock headBlock;
+  private BeaconStateWithCache genesisState;
+  private BeaconBlock genesisBlock;
 
-  public HeadStateEvent(BeaconStateWithCache state, BeaconBlock block) {
-    headState = state;
-    headBlock = block;
+  public GenesisStateEvent(BeaconStateWithCache state, BeaconBlock block) {
+    genesisState = state;
+    genesisBlock = block;
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */
-  public BeaconStateWithCache getHeadState() {
-    return headState;
+  public BeaconStateWithCache getGenesisState() {
+    return genesisState;
   }
 
-  public BeaconBlock getHeadBlock() {
-    return headBlock;
+  public BeaconBlock getGenesisBlock() {
+    return genesisBlock;
   }
 }

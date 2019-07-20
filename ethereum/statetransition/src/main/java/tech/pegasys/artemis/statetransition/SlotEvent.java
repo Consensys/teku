@@ -13,25 +13,20 @@
 
 package tech.pegasys.artemis.statetransition;
 
+import com.google.common.primitives.UnsignedLong;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 
-public class GenesisHeadStateEvent {
+public class SlotEvent {
 
-  private BeaconStateWithCache headState;
-  private BeaconBlock headBlock;
+  private UnsignedLong slot;
 
-  public GenesisHeadStateEvent(BeaconStateWithCache state, BeaconBlock block) {
-    headState = state;
-    headBlock = block;
+  public SlotEvent(UnsignedLong slot) {
+    this.slot = slot;
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */
-  public BeaconStateWithCache getHeadState() {
-    return headState;
-  }
-
-  public BeaconBlock getHeadBlock() {
-    return headBlock;
+  public UnsignedLong getSlot() {
+    return slot;
   }
 }
