@@ -22,6 +22,7 @@ import static tech.pegasys.artemis.datastructures.Constants.SHARD_COUNT;
 import static tech.pegasys.artemis.datastructures.Constants.SLOTS_PER_EPOCH;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_bitfield_bit;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_block_root;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_block_root_at_slot;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_current_epoch;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_domain;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_committee_count;
@@ -112,7 +113,7 @@ public class AttestationUtil {
     UnsignedLong slot = state.getSlot();
     Bytes32 beacon_block_root = block.signing_root("signature");
     UnsignedLong start_slot = compute_start_slot_of_epoch(get_current_epoch(state));
-    Bytes32 epoch_boundary_block_root = start_slot.compareTo(slot) == 0 ? block.signing_root("signature") : get_block_root(state, start_slot);
+    Bytes32 epoch_boundary_block_root = start_slot.compareTo(slot) == 0 ? block.signing_root("signature") : get_block_root_at_slot(state, start_slot);
     Checkpoint source = state.getCurrent_justified_checkpoint();
     Checkpoint target = new Checkpoint(get_current_epoch(state), epoch_boundary_block_root);
 

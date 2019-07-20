@@ -149,7 +149,7 @@ public class BeaconState implements SimpleOffsetSerializable {
                     Collections.nCopies(Constants.SHARD_COUNT, new Crosslink()));
 
     // Finality
-    this.justification_bits = Bytes.wrap(new byte[JUSTIFICATION_BITS_LENGTH / 8]);
+    this.justification_bits = Bytes.wrap(new byte[1]); // TODO change to bitvector with 4 bits
     this.previous_justified_checkpoint = new Checkpoint();
     this.current_justified_checkpoint = new Checkpoint();
     this.finalized_checkpoint = new Checkpoint();

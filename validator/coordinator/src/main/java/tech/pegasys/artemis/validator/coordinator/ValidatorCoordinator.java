@@ -217,6 +217,14 @@ public class ValidatorCoordinator {
             "Head block slot:" +
                     "                       " +
                     headBlock.getSlot().longValue());
+    STDOUT.log(Level.INFO,
+            "Justified epoch:" +
+                    "                       " +
+                    store.getJustified_checkpoint().getEpoch());
+    STDOUT.log(Level.INFO,
+            "Finalized epoch:" +
+                    "                       " +
+                    store.getFinalized_checkpoint().getEpoch());
 
     try {
 
