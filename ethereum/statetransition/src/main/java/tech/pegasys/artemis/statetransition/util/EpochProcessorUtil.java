@@ -284,7 +284,7 @@ public final class EpochProcessorUtil {
               >= 0) {
         Checkpoint newCheckpoint = new Checkpoint(previous_epoch, get_block_root(state, previous_epoch));
         state.setCurrent_justified_checkpoint(newCheckpoint);
-        setBit(justificationBits, 1);
+        justificationBits = setBit(justificationBits, 1);
       }
       matching_target_attestations = get_matching_target_attestations(state, current_epoch);
       if (get_attesting_balance(state, matching_target_attestations)
@@ -293,7 +293,7 @@ public final class EpochProcessorUtil {
               >= 0) {
         Checkpoint newCheckpoint = new Checkpoint(current_epoch, get_block_root(state, current_epoch));
         state.setCurrent_justified_checkpoint(newCheckpoint);
-        setBit(justificationBits, 0);
+        justificationBits = setBit(justificationBits, 0);
       }
 
       state.setJustification_bits(justificationBits);

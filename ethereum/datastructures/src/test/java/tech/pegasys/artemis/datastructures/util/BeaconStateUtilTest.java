@@ -100,7 +100,7 @@ class BeaconStateUtilTest {
     Deposit deposit = newDeposits(1).get(0);
     BLSPublicKey pubkey = deposit.getData().getPubkey();
     DepositData depositData = deposit.getData();
-    int domain =
+    Bytes domain =
         BeaconStateUtil.get_domain(
             createBeaconState(),
             Constants.DOMAIN_DEPOSIT,
@@ -116,7 +116,7 @@ class BeaconStateUtilTest {
     Deposit deposit = newDeposits(1).get(0);
     BLSPublicKey pubkey = BLSPublicKey.random();
     DepositData depositData = deposit.getData();
-    int domain =
+    Bytes domain =
         BeaconStateUtil.get_domain(
             createBeaconState(),
             Constants.DOMAIN_DEPOSIT,
@@ -272,8 +272,8 @@ class BeaconStateUtilTest {
     beaconState.setSlot(randomUnsignedLong());
     beaconState.setFork(
         new Fork(
-            Bytes.ofUnsignedInt(Constants.GENESIS_FORK_VERSION),
-            Bytes.ofUnsignedInt(Constants.GENESIS_FORK_VERSION),
+            Bytes.ofUnsignedInt(0),
+            Bytes.ofUnsignedInt(0),
             UnsignedLong.valueOf(Constants.GENESIS_EPOCH)));
 
     List<Validator> validatorList =
@@ -287,7 +287,7 @@ class BeaconStateUtilTest {
       balanceList.add(amount);
     }
 
-    beaconState.setValidator_registry(validatorList);
+    beaconState.setValidators(validatorList);
     beaconState.setBalances(balanceList);
     return beaconState;
   }
@@ -331,14 +331,14 @@ class BeaconStateUtilTest {
     UnsignedLong amount = deposit.getData().getAmount();
 
     return new Validator(
-        pubkey,
-        withdrawalCredentials,
-        Constants.FAR_FUTURE_EPOCH,
-        Constants.FAR_FUTURE_EPOCH,
-        Constants.FAR_FUTURE_EPOCH,
-        Constants.FAR_FUTURE_EPOCH,
-        false,
-        UnsignedLong.valueOf(Constants.MAX_EFFECTIVE_BALANCE));
+            pubkey,
+            withdrawalCredentials,
+            UnsignedLong.valueOf(Constants.MAX_EFFECTIVE_BALANCE),
+            false,
+            Constants.FAR_FUTURE_EPOCH,
+            Constants.FAR_FUTURE_EPOCH,
+            Constants.FAR_FUTURE_EPOCH,
+            Constants.FAR_FUTURE_EPOCH);
   }
 
   // *************** END Shuffling Tests *****************

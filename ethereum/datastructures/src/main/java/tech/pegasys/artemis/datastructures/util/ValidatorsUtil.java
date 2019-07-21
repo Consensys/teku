@@ -85,20 +85,6 @@ public class ValidatorsUtil {
   }
 
   /**
-   * if index represents an active validator then return True else return False
-   *
-   * @param state
-   * @param index
-   * @param epoch
-   * @return
-   */
-  public static Boolean is_active_validator_index(
-      BeaconState state, int index, UnsignedLong epoch) {
-    List<Validator> all_validators = state.getValidator_registry();
-    return is_active_validator(all_validators.get(index), epoch);
-  }
-
-  /**
    * find all validators not present in the provided list
    *
    * @param validator_indices

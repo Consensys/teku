@@ -72,6 +72,9 @@ public class ChainStorageClient implements ChainStorage {
   private ConcurrentHashMap<UnsignedLong, List<Bytes32>> stateReferences =
       new ConcurrentHashMap<>();
 
+  // Time
+  private UnsignedLong genesisTime;
+
   public ChainStorageClient() {}
 
   public ChainStorageClient(EventBus eventBus) {
@@ -80,8 +83,20 @@ public class ChainStorageClient implements ChainStorage {
     this.eventBus.register(this);
   }
 
+  public void setGenesisTime(UnsignedLong genesisTime) {
+    this.genesisTime = genesisTime;
+  }
+
+  public UnsignedLong getGenesisTime() {
+    return genesisTime;
+  }
+
   public void setStore(Store store) {
     this.store = store;
+  }
+
+  public Store getStore() {
+    return store;
   }
 
   // PROCESSED ATTESTATION STORAGE:
