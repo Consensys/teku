@@ -113,11 +113,11 @@ public class BeaconNode {
 
       // Initialize services
       serviceController.initAll(
-          eventBus,
           serviceConfig,
           BeaconChainService.class,
           PowchainService.class,
           ChainStorageService.class);
+
       // Start services
       serviceController.startAll(cliArgs);
 

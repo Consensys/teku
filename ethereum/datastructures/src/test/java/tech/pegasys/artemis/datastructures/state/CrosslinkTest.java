@@ -30,7 +30,7 @@ class CrosslinkTest {
   Bytes32 parentRoot = Bytes32.random();
   Bytes32 dataRoot = Bytes32.random();
 
-  private Crosslink crosslink = new Crosslink(shard, start_epoch, end_epoch, parentRoot, dataRoot);
+  private Crosslink crosslink = new Crosslink(shard, parentRoot, start_epoch, end_epoch, dataRoot);
 
   @Test
   void equalsReturnsTrueWhenObjectAreSame() {
@@ -41,7 +41,7 @@ class CrosslinkTest {
 
   @Test
   void equalsReturnsTrueWhenObjectFieldsAreEqual() {
-    Crosslink testCrosslink = new Crosslink(shard, start_epoch, end_epoch, parentRoot, dataRoot);
+    Crosslink testCrosslink = new Crosslink(shard, parentRoot, start_epoch, end_epoch, dataRoot);
 
     assertEquals(crosslink, testCrosslink);
   }
@@ -50,7 +50,7 @@ class CrosslinkTest {
   void equalsReturnsFalseWhenEpochsAreDifferent() {
     Crosslink testCrosslink =
         new Crosslink(
-            shard, start_epoch.plus(randomUnsignedLong()), end_epoch, parentRoot, dataRoot);
+            shard, parentRoot, start_epoch.plus(randomUnsignedLong()), end_epoch, dataRoot);
 
     assertNotEquals(crosslink, testCrosslink);
   }
@@ -58,7 +58,7 @@ class CrosslinkTest {
   @Test
   void equalsReturnsFalseWhenCrosslinkDataRootsAreDifferent() {
     Crosslink testCrosslink =
-        new Crosslink(shard, start_epoch, end_epoch, parentRoot, dataRoot.not());
+        new Crosslink(shard, parentRoot, start_epoch, end_epoch, dataRoot.not());
 
     assertNotEquals(crosslink, testCrosslink);
   }
