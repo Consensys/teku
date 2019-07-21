@@ -182,7 +182,7 @@ public class ForkChoiceUtil {
 
     // Check the block is valid and compute the post-state
     StateTransition st = new StateTransition(true);
-    BeaconState state = st.initiate(pre_state, block);
+    BeaconState state = st.initiate(pre_state, block, true);
 
     // Add new state for this block to the store
     store.getBlock_states().put(block.signing_root("signature"), state);
