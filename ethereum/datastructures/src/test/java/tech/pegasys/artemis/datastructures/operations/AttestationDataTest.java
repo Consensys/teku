@@ -22,6 +22,7 @@ import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.datastructures.state.Crosslink;
 
 class AttestationDataTest {
@@ -31,11 +32,13 @@ class AttestationDataTest {
   private Bytes32 source_root = Bytes32.random();
   private UnsignedLong target_epoch = randomUnsignedLong();
   private Bytes32 target_root = Bytes32.random();
+  private Checkpoint source = new Checkpoint(source_epoch, source_root);
+  private Checkpoint target = new Checkpoint(target_epoch, target_root);
   private Crosslink crosslink = randomCrosslink();
 
   private AttestationData attestationData =
       new AttestationData(
-          beaconBlockRoot, source_epoch, source_root, target_epoch, target_root, crosslink);
+          beaconBlockRoot, source, target, crosslink);
 
   @Test
   void equalsReturnsTrueWhenObjectAreSame() {
@@ -48,7 +51,7 @@ class AttestationDataTest {
   void equalsReturnsTrueWhenObjectFieldsAreEqual() {
     AttestationData testAttestationData =
         new AttestationData(
-            beaconBlockRoot, source_epoch, source_root, target_epoch, target_root, crosslink);
+            beaconBlockRoot, source, target, crosslink);
 
     assertEquals(attestationData, testAttestationData);
   }
@@ -57,20 +60,20 @@ class AttestationDataTest {
   void equalsReturnsFalseWhenBlockRootsAreDifferent() {
     AttestationData testAttestationData =
         new AttestationData(
-            Bytes32.random(), source_epoch, source_root, target_epoch, target_root, crosslink);
+            Bytes32.random(), source, target, crosslink);
 
     assertNotEquals(attestationData, testAttestationData);
   }
 
   @Test
   void equalsReturnsFalseWhenSourceEpochsAreDifferent() {
+    Checkpoint newSource = new Checkpoint(source);
+    newSource.setEpoch(randomUnsignedLong());
     AttestationData testAttestationData =
         new AttestationData(
             beaconBlockRoot,
-            randomUnsignedLong(),
-            source_root,
-            target_epoch,
-            target_root,
+            newSource,
+            target,
             crosslink);
 
     assertNotEquals(attestationData, testAttestationData);
@@ -78,22 +81,24 @@ class AttestationDataTest {
 
   @Test
   void equalsReturnsFalseWhenSourceRootsAreDifferent() {
+    Checkpoint newSource = new Checkpoint(source);
+    newSource.setRoot(Bytes32.random());
     AttestationData testAttestationData =
         new AttestationData(
-            beaconBlockRoot, source_epoch, Bytes32.random(), target_epoch, target_root, crosslink);
+            beaconBlockRoot, source, target, crosslink);
 
     assertNotEquals(attestationData, testAttestationData);
   }
 
   @Test
   void equalsReturnsFalseWhenTargetEpochsAreDifferent() {
+    Checkpoint newTarget = new Checkpoint(target);
+    newTarget.setEpoch(randomUnsignedLong());
     AttestationData testAttestationData =
         new AttestationData(
             beaconBlockRoot,
-            source_epoch,
-            source_root,
-            randomUnsignedLong(),
-            target_root,
+            source,
+            target,
             crosslink);
 
     assertNotEquals(attestationData, testAttestationData);
@@ -101,9 +106,11 @@ class AttestationDataTest {
 
   @Test
   void equalsReturnsFalseWhenTargetRootsAreDifferent() {
+    Checkpoint newTarget = new Checkpoint(target);
+    newTarget.setRoot(Bytes32.random());
     AttestationData testAttestationData =
         new AttestationData(
-            beaconBlockRoot, source_epoch, source_root, target_epoch, Bytes32.random(), crosslink);
+            beaconBlockRoot, source, target, crosslink);
 
     assertNotEquals(attestationData, testAttestationData);
   }
@@ -114,10 +121,8 @@ class AttestationDataTest {
     AttestationData testAttestationData =
         new AttestationData(
             beaconBlockRoot,
-            source_epoch,
-            source_root,
-            target_epoch,
-            target_root,
+            source,
+            target,
             randomCrosslink());
 
     assertNotEquals(attestationData, testAttestationData);

@@ -17,13 +17,12 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static java.lang.Math.toIntExact;
 import static tech.pegasys.artemis.datastructures.Constants.DOMAIN_ATTESTATION;
 import static tech.pegasys.artemis.datastructures.Constants.EFFECTIVE_BALANCE_INCREMENT;
-import static tech.pegasys.artemis.datastructures.Constants.MAX_INDICES_PER_ATTESTATION;
 import static tech.pegasys.artemis.datastructures.Constants.MAX_VALIDATORS_PER_COMMITTEE;
 import static tech.pegasys.artemis.datastructures.Constants.SHARD_COUNT;
 import static tech.pegasys.artemis.datastructures.Constants.SLOTS_PER_EPOCH;
-import static tech.pegasys.artemis.datastructures.Constants.ZERO_HASH;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_bitfield_bit;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_block_root;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_block_root_at_slot;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_current_epoch;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_domain;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_committee_count;
@@ -100,7 +99,7 @@ public class AttestationUtil {
         CrosslinkCommittee crosslinkCommittee = new CrosslinkCommittee(shard, committee);
         attesters.add(
             new MutableTriple<>(
-                headState.getValidator_registry().get(validatorIndex).getPubkey(),
+                headState.getValidators().get(validatorIndex).getPubkey(),
                 indexIntoCommittee,
                 crosslinkCommittee));
       }
@@ -114,7 +113,7 @@ public class AttestationUtil {
     UnsignedLong slot = state.getSlot();
     Bytes32 beacon_block_root = block.signing_root("signature");
     UnsignedLong start_slot = compute_start_slot_of_epoch(get_current_epoch(state));
-    Bytes32 epoch_boundary_block_root = start_slot.compareTo(slot) == 0 ? block.signing_root("signature") : get_block_root(state, start_slot);
+    Bytes32 epoch_boundary_block_root = start_slot.compareTo(slot) == 0 ? block.signing_root("signature") : get_block_root_at_slot(state, start_slot);
     Checkpoint source = state.getCurrent_justified_checkpoint();
     Checkpoint target = new Checkpoint(get_current_epoch(state), epoch_boundary_block_root);
 
@@ -151,10 +150,6 @@ public class AttestationUtil {
     AttestationDataAndCustodyBit attestation_data_and_custody_bit =
         new AttestationDataAndCustodyBit(attestationData, false);
     return attestation_data_and_custody_bit.hash_tree_root();
-  }
-
-  public static Bytes getDomain(BeaconState state, AttestationData attestationData) {
-    return get_domain(state, Constants.DOMAIN_ATTESTATION, attestationData.getTarget_epoch()));
   }
 
   /**
@@ -287,7 +282,7 @@ public class AttestationUtil {
         new AttestationDataAndCustodyBit(indexed_attestation.getData(), true).hash_tree_root());
 
     BLSSignature signature = indexed_attestation.getSignature();
-    int domain =
+    Bytes domain =
         get_domain(state, DOMAIN_ATTESTATION, indexed_attestation.getData().getTarget().getEpoch());
     if (!BLSVerify.bls_verify_multiple(pubkeys, message_hashes, signature, domain)) {
       STDOUT.log(Level.DEBUG, "AttestationUtil.is_valid_indexed_attestation: Verify aggregate signature");
