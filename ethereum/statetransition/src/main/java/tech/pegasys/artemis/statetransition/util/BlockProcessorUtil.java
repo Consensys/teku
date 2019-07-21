@@ -33,7 +33,6 @@ import static tech.pegasys.artemis.datastructures.Constants.SHARD_COUNT;
 import static tech.pegasys.artemis.datastructures.Constants.SLOTS_PER_EPOCH;
 import static tech.pegasys.artemis.datastructures.Constants.SLOTS_PER_ETH1_VOTING_PERIOD;
 import static tech.pegasys.artemis.datastructures.Constants.ZERO_HASH;
-import static tech.pegasys.artemis.datastructures.util.AttestationUtil.convert_to_indexed;
 import static tech.pegasys.artemis.datastructures.util.AttestationUtil.get_attestation_data_slot;
 import static tech.pegasys.artemis.datastructures.util.AttestationUtil.get_indexed_attestation;
 import static tech.pegasys.artemis.datastructures.util.AttestationUtil.is_slashable_attestation_data;
@@ -47,8 +46,10 @@ import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_previ
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_randao_mix;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.initiate_validator_exit;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.int_to_bytes;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.is_valid_merkle_branch;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.max;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.min;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.process_deposit;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.slash_validator;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_of_slot;
 import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.decrease_balance;
@@ -328,20 +329,20 @@ public final class BlockProcessorUtil {
         is_valid_indexed_attestation(state, attestation_2);
         boolean slashed_any = false;
 
-        List<Integer> attesting_indices_1 = attestation_1.getCustody_bit_0_indices();
+        List<UnsignedLong> attesting_indices_1 = attestation_1.getCustody_bit_0_indices();
         attesting_indices_1.addAll(attestation_1.getCustody_bit_1_indices());
-        List<Integer> attesting_indices_2 = attestation_2.getCustody_bit_0_indices();
+        List<UnsignedLong> attesting_indices_2 = attestation_2.getCustody_bit_0_indices();
         attesting_indices_2.addAll(attestation_1.getCustody_bit_1_indices());
 
         // retainAll is being used to get the intersection of these two lists
-        List<Integer> sorted_intersection_of_indices = attesting_indices_1;
+        List<UnsignedLong> sorted_intersection_of_indices = attesting_indices_1;
         sorted_intersection_of_indices.retainAll(attesting_indices_2);
         Collections.sort(sorted_intersection_of_indices);
 
-        for (Integer index : sorted_intersection_of_indices) {
+        for (UnsignedLong index : sorted_intersection_of_indices) {
           if (is_slashable_validator(
-              state.getValidators().get(index), get_current_epoch(state))) {
-            slash_validator(state, index);
+              state.getValidators().get(toIntExact(index.longValue())), get_current_epoch(state))) {
+            slash_validator(state, toIntExact(index.longValue()));
             slashed_any = true;
           }
         }
@@ -452,69 +453,15 @@ public final class BlockProcessorUtil {
   public static void process_deposits(BeaconState state, List<Deposit> deposits)
       throws BlockProcessingException {
     try {
-
       for (Deposit deposit : deposits) {
-        /*
-        checkArgument(
-            is_valid_merkle_branch(
-                deposit.getData().hash_tree_root(),
-                deposit.getProof(),
-                Constants.DEPOSIT_CONTRACT_TREE_DEPTH + 1, // Add 1 for the `List` length mix-in
-                toIntExact(state.getDeposit_index().longValue()),
-                state.getLatest_eth1_data().getDeposit_root()),
-            "process_deposits: Verify the Merkle branch");
-            */
-
-        state.setEth1_deposit_index(state.getEth1_deposit_index().plus(UnsignedLong.ONE));
-
-        BLSPublicKey pubkey = deposit.getData().getPubkey();
-        UnsignedLong amount = deposit.getData().getAmount();
-        List<BLSPublicKey> validator_pubkeys =
-            state.getValidators().stream()
-                .map(Validator::getPubkey)
-                .collect(Collectors.toList());
-        if (!validator_pubkeys.contains(pubkey)) {
-
-          // Verify the deposit signature (proof of possession) for new validators.
-          // Note: Deposits are valid across forks, thus the deposit
-          // domain is retrieved directly from `compute_domain`
-          boolean proof_is_valid =
-              bls_verify(
-                  pubkey,
-                  deposit.getData().signing_root("signature"),
-                  deposit.getData().getSignature(),
-                  compute_domain(int_to_bytes((long) DOMAIN_DEPOSIT, 4)));
-          if (!proof_is_valid) {
-            return;
-          }
-
-          state
-              .getValidators()
-              .add(
-                  new Validator(
-                      pubkey,
-                      deposit.getData().getWithdrawal_credentials(),
-                      min(
-                          amount.minus(
-                              amount.mod(
-                                  UnsignedLong.valueOf(Constants.EFFECTIVE_BALANCE_INCREMENT))),
-                          UnsignedLong.valueOf(MAX_EFFECTIVE_BALANCE)),
-                      false,
-                      FAR_FUTURE_EPOCH,
-                      FAR_FUTURE_EPOCH,
-                      FAR_FUTURE_EPOCH,
-                      FAR_FUTURE_EPOCH));
-          state.getBalances().add(amount);
-        } else {
-          int index = validator_pubkeys.indexOf(pubkey);
-          increase_balance(state, index, amount);
-        }
+        process_deposit(state, deposit);
       }
     } catch (IllegalArgumentException e) {
       LOG.log(Level.WARN, e.getMessage());
       throw new BlockProcessingException(e);
     }
   }
+
 
   /**
    * Processes voluntary exits
@@ -555,7 +502,7 @@ public final class BlockProcessorUtil {
                 >= 0,
             "process_voluntary_exits: Verify the validator has been active long enough");
 
-        int domain = get_domain(state, DOMAIN_VOLUNTARY_EXIT, exit.getEpoch());
+        Bytes domain = get_domain(state, DOMAIN_VOLUNTARY_EXIT, exit.getEpoch());
         checkArgument(
             bls_verify(
                 validator.getPubkey(), exit.signing_root("signature"), exit.getSignature(), domain),

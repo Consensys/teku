@@ -102,7 +102,7 @@ BLS_WITHDRAWAL_PREFIX = '0x00'
 
 # Time parameters
 # ---------------------------------------------------------------
-# 6 seconds 6 seconds
+# 6 seconds
 SECONDS_PER_SLOT = 6
 # 2**0 (= 1) slots 6 seconds
 MIN_ATTESTATION_INCLUSION_DELAY = 1
