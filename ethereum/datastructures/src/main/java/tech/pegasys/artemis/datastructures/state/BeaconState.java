@@ -105,8 +105,7 @@ public class BeaconState implements SimpleOffsetSerializable {
     this.state_roots =
         new ArrayList<>(
             Collections.nCopies(Constants.SLOTS_PER_HISTORICAL_ROOT, Constants.ZERO_HASH));
-    this.historical_roots = new ArrayList<>(
-            Collections.nCopies(Constants.HISTORICAL_ROOTS_LIMIT, Constants.ZERO_HASH));
+    this.historical_roots = new ArrayList<>();
 
     // Eth1
     // TODO gotta change this with genesis eth1DATA because deposit count is dependent on the
