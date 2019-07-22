@@ -13,13 +13,17 @@
 
 package tech.pegasys.artemis.networking.p2p.hobbits.rpc;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonValue;
+import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
+import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -27,8 +31,40 @@ import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 
+@JsonSerialize(using = BlockBodiesMessage.BlockBodiesSerializer.class)
 @JsonDeserialize(using = BlockBodiesMessage.BlockBodiesDeserializer.class)
 public final class BlockBodiesMessage {
+
+  static class BlockBodiesSerializer extends StdSerializer<BlockBodiesMessage> {
+
+    protected BlockBodiesSerializer() {
+      super(BlockBodiesMessage.class);
+    }
+
+    @Override
+    public void serialize(
+        BlockBodiesMessage blockBodiesMessage, JsonGenerator jgen, SerializerProvider provider)
+        throws IllegalArgumentException {
+      try {
+        jgen.writeStartObject();
+        jgen.writeArrayFieldStart("bodies");
+        blockBodiesMessage
+            .bodies()
+            .forEach(
+                item -> {
+                  try {
+                    jgen.writeBinary(item.toBytes().toArrayUnsafe());
+                  } catch (java.io.IOException e) {
+                    throw new IllegalArgumentException(e.getMessage());
+                  }
+                });
+        jgen.writeEndArray();
+        jgen.writeEndObject();
+      } catch (java.io.IOException e) {
+        throw new IllegalArgumentException(e.getMessage());
+      }
+    }
+  }
 
   static class BlockBodiesDeserializer extends StdDeserializer<BlockBodiesMessage> {
 
@@ -38,15 +74,18 @@ public final class BlockBodiesMessage {
 
     @Override
     public BlockBodiesMessage deserialize(JsonParser jp, DeserializationContext ctxt)
-        throws IOException {
-      JsonNode node = jp.getCodec().readTree(jp);
-      Iterator<JsonNode> iterator = node.iterator();
-      List<BeaconBlock> elts = new ArrayList<>();
-      while (iterator.hasNext()) {
-        JsonNode child = iterator.next();
-        elts.add(BeaconBlock.fromBytes(Bytes.wrap(child.get("bytes").binaryValue())));
+        throws IllegalArgumentException {
+      List<BlockBody> elts = new ArrayList<>();
+      try {
+        JsonNode node = jp.getCodec().readTree(jp);
+        Iterator<JsonNode> iterator = node.withArray("bodies").iterator();
+        while (iterator.hasNext()) {
+          elts.add(new BlockBody(Bytes.wrap(iterator.next().binaryValue())));
+        }
+      } catch (IOException e) {
+        throw new IllegalArgumentException(e.getMessage());
       }
-      return new BlockBodiesMessage(elts);
+      return new BlockBodiesMessage(elts, true);
     }
   }
 
@@ -58,19 +97,23 @@ public final class BlockBodiesMessage {
       this.bytes = bytes;
     }
 
-    @JsonProperty("bytes")
     public Bytes bytes() {
       return bytes;
     }
   }
 
-  private final List<BeaconBlock> bodies;
+  private List<BeaconBlock> bodies = new ArrayList<>();
 
-  BlockBodiesMessage(List<BeaconBlock> bodies) {
-    this.bodies = bodies;
+  BlockBodiesMessage(List<BlockBody> blockBodies, boolean flag) {
+    blockBodies.forEach(a -> this.bodies.add(BeaconBlock.fromBytes(a.bytes())));
   }
 
-  @JsonValue
+  @JsonCreator
+  public BlockBodiesMessage(@JsonProperty("bodies") List<BeaconBlock> beaconBlocks) {
+    this.bodies = beaconBlocks;
+  }
+
+  @JsonProperty("bodies")
   public List<BeaconBlock> bodies() {
     return bodies;
   }

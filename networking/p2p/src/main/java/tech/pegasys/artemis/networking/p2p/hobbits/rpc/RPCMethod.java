@@ -32,7 +32,7 @@ public enum RPCMethod {
   }
 
   /** @return the encoded code of the RPC method */
-  int code() {
+  public int code() {
     return code;
   }
 

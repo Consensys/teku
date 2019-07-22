@@ -16,14 +16,17 @@ package tech.pegasys.artemis.networking.p2p.hobbits;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import io.vertx.core.net.NetSocket;
+import java.math.BigInteger;
 import java.util.Date;
 import java.util.concurrent.ConcurrentHashMap;
 import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.plumtree.MessageSender;
 import org.apache.tuweni.plumtree.State;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
+import tech.pegasys.artemis.networking.p2p.hobbits.gossip.GossipCodec;
 import tech.pegasys.artemis.networking.p2p.hobbits.gossip.GossipMessage;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.util.alogger.ALogger;
@@ -41,6 +44,21 @@ public class PlumtreeSocketHandler extends AbstractSocketHandler {
       State p2pState,
       ConcurrentHashMap<String, Boolean> receivedMessages) {
     super(eventBus, netSocket, userAgent, peer, store, p2pState, receivedMessages);
+  }
+
+  @Override
+  public void gossipMessage(
+      int method, String topic, long timestamp, Bytes messageHash, Bytes32 hash, Bytes body) {
+    Bytes bytes =
+        GossipCodec.encode(
+                method,
+                topic,
+                BigInteger.valueOf(timestamp),
+                messageHash.toArrayUnsafe(),
+                hash.toArrayUnsafe(),
+                body.toArrayUnsafe())
+            .toBytes();
+    sendBytes(bytes);
   }
 
   @Override
