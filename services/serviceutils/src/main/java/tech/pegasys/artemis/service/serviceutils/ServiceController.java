@@ -13,7 +13,6 @@
 
 package tech.pegasys.artemis.service.serviceutils;
 
-import com.google.common.eventbus.EventBus;
 import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;

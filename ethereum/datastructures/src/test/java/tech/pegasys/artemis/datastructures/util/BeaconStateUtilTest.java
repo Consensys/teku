@@ -331,14 +331,14 @@ class BeaconStateUtilTest {
     UnsignedLong amount = deposit.getData().getAmount();
 
     return new Validator(
-            pubkey,
-            withdrawalCredentials,
-            UnsignedLong.valueOf(Constants.MAX_EFFECTIVE_BALANCE),
-            false,
-            Constants.FAR_FUTURE_EPOCH,
-            Constants.FAR_FUTURE_EPOCH,
-            Constants.FAR_FUTURE_EPOCH,
-            Constants.FAR_FUTURE_EPOCH);
+        pubkey,
+        withdrawalCredentials,
+        UnsignedLong.valueOf(Constants.MAX_EFFECTIVE_BALANCE),
+        false,
+        Constants.FAR_FUTURE_EPOCH,
+        Constants.FAR_FUTURE_EPOCH,
+        Constants.FAR_FUTURE_EPOCH,
+        Constants.FAR_FUTURE_EPOCH);
   }
 
   // *************** END Shuffling Tests *****************

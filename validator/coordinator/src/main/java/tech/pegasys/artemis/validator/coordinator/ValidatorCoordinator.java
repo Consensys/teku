@@ -18,10 +18,8 @@ import static tech.pegasys.artemis.datastructures.Constants.DOMAIN_ATTESTATION;
 import static tech.pegasys.artemis.datastructures.Constants.GENESIS_SLOT;
 import static tech.pegasys.artemis.datastructures.Constants.MAX_VALIDATORS_PER_COMMITTEE;
 import static tech.pegasys.artemis.datastructures.Constants.SLOTS_PER_EPOCH;
-import static tech.pegasys.artemis.datastructures.util.AttestationUtil.get_attesting_indices;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_bitfield_bit;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_domain;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_of_slot;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_domain;
 import static tech.pegasys.artemis.statetransition.StateTransition.process_slots;
 import static tech.pegasys.artemis.statetransition.util.ForkChoiceUtil.get_head;
 
@@ -31,7 +29,6 @@ import com.google.common.primitives.UnsignedLong;
 import com.google.protobuf.ByteString;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -206,25 +203,27 @@ public class ValidatorCoordinator {
   }
 
   @Subscribe
-  public void onNewAssignment(ValidatorAssignmentEvent validatorAssignmentEvent) throws IllegalArgumentException {
+  public void onNewAssignment(ValidatorAssignmentEvent validatorAssignmentEvent)
+      throws IllegalArgumentException {
     Store store = chainStorageClient.getStore();
     Bytes32 headBlockRoot = get_head(store);
     BeaconBlock headBlock = store.getBlocks().get(headBlockRoot);
     BeaconState headState = store.getBlock_states().get(headBlockRoot);
 
     // Logging
-    STDOUT.log(Level.INFO,
-            "Head block slot:" +
-                    "                       " +
-                    headBlock.getSlot().longValue());
-    STDOUT.log(Level.INFO,
-            "Justified epoch:" +
-                    "                       " +
-                    store.getJustified_checkpoint().getEpoch());
-    STDOUT.log(Level.INFO,
-            "Finalized epoch:" +
-                    "                       " +
-                    store.getFinalized_checkpoint().getEpoch());
+    STDOUT.log(
+        Level.INFO,
+        "Head block slot:" + "                       " + headBlock.getSlot().longValue());
+    STDOUT.log(
+        Level.INFO,
+        "Justified epoch:"
+            + "                       "
+            + store.getJustified_checkpoint().getEpoch());
+    STDOUT.log(
+        Level.INFO,
+        "Finalized epoch:"
+            + "                       "
+            + store.getFinalized_checkpoint().getEpoch());
 
     try {
 
@@ -290,10 +289,11 @@ public class ValidatorCoordinator {
       int indexIntoCommittee,
       CrosslinkCommittee committee,
       AttestationData genericAttestationData) {
-    Bytes aggregationBitfield =
-        AttestationUtil.getAggregationBits(indexIntoCommittee);
+    Bytes aggregationBitfield = AttestationUtil.getAggregationBits(indexIntoCommittee);
     Bytes custodyBits = Bytes.wrap(new byte[MAX_VALIDATORS_PER_COMMITTEE / 8]);
-    AttestationData attestationData = AttestationUtil.completeAttestationCrosslinkData(state, new AttestationData(genericAttestationData), committee);
+    AttestationData attestationData =
+        AttestationUtil.completeAttestationCrosslinkData(
+            state, new AttestationData(genericAttestationData), committee);
     Bytes32 attestationMessage = AttestationUtil.getAttestationMessageToSign(attestationData);
     Bytes domain = get_domain(state, DOMAIN_ATTESTATION, attestationData.getTarget().getEpoch());
 
@@ -302,14 +302,14 @@ public class ValidatorCoordinator {
         new Attestation(aggregationBitfield, attestationData, custodyBits, signature));
   }
 
-
   /**
    * Gets the epoch signature used for RANDAO from the Validator Client using gRPC
    *
    * @param state
    * @param proposer
    * @return
-   * @see <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.1/specs/validator/0_beacon-chain-validator.md#randao-reveal</a>
+   * @see
+   *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.1/specs/validator/0_beacon-chain-validator.md#randao-reveal</a>
    */
   // TODO: since this is very similar to a spec function now, move it to a util file and
   // abstract away the gRPC details
@@ -325,11 +325,13 @@ public class ValidatorCoordinator {
 
   /**
    * Gets the block signature from the Validator Client using gRPC
+   *
    * @param state
    * @param block
    * @param proposer
    * @return
-   * @see <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.1/specs/validator/0_beacon-chain-validator.md#signature</a>
+   * @see
+   *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.1/specs/validator/0_beacon-chain-validator.md#signature</a>
    */
   private BLSSignature getBlockSignature(
       BeaconState state, BeaconBlock block, BLSPublicKey proposer) {
@@ -454,16 +456,14 @@ public class ValidatorCoordinator {
         List<ProposerSlashing> slashingsInBlock = newBlock.getBody().getProposer_slashings();
         slashings.forEach(
             slashing -> {
-              if (!state
-                  .getValidators()
-                  .get(slashing.getProposer_index().intValue())
-                  .isSlashed()) {
+              if (!state.getValidators().get(slashing.getProposer_index().intValue()).isSlashed()) {
                 slashingsInBlock.add(slashing);
               }
             });
         slashings = new LinkedBlockingQueue<>();
         boolean validate_state_root = false;
-        Bytes32 stateRoot = stateTransition.initiate(newState, newBlock, validate_state_root).hash_tree_root();
+        Bytes32 stateRoot =
+            stateTransition.initiate(newState, newBlock, validate_state_root).hash_tree_root();
         newBlock.setState_root(stateRoot);
         BLSSignature blockSignature = getBlockSignature(newState, newBlock, proposer);
         newBlock.setSignature(blockSignature);
@@ -475,7 +475,10 @@ public class ValidatorCoordinator {
           BeaconBlock newestBlock = createInitialBlock(naughtyState, oldBlock);
           BLSSignature eSignature = epochSignatureTask.get();
           newestBlock.getBody().setRandao_reveal(eSignature);
-          Bytes32 sRoot = stateTransition.initiate(naughtyState, newestBlock, validate_state_root).hash_tree_root();
+          Bytes32 sRoot =
+              stateTransition
+                  .initiate(naughtyState, newestBlock, validate_state_root)
+                  .hash_tree_root();
           newestBlock.setState_root(sRoot);
           BLSSignature bSignature = getBlockSignature(naughtyState, newestBlock, proposer);
           newestBlock.setSignature(bSignature);

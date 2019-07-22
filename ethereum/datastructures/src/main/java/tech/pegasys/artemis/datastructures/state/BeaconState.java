@@ -13,34 +13,27 @@
 
 package tech.pegasys.artemis.datastructures.state;
 
-import static tech.pegasys.artemis.datastructures.Constants.JUSTIFICATION_BITS_LENGTH;
 import static tech.pegasys.artemis.datastructures.Constants.ZERO_HASH;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.int_to_bytes;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.bytes.Bytes48;
 import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.artemis.datastructures.Constants;
-import tech.pegasys.artemis.datastructures.blocks.BeaconBlockBody;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
-import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
-import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
 public class BeaconState implements SimpleOffsetSerializable {
 
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
   public static final int SSZ_FIELD_COUNT = 11;
-
 
   // Versioning
   protected UnsignedLong genesis_time;
@@ -66,14 +59,17 @@ public class BeaconState implements SimpleOffsetSerializable {
   protected UnsignedLong start_shard;
   protected List<Bytes32> randao_mixes; // Vector Bounded by EPOCHS_PER_HISTORICAL_VECTOR
   protected List<Bytes32> active_index_roots; // Vector Bounded by EPOCHS_PER_HISTORICAL_VECTOR
-  protected List<Bytes32> compact_committees_roots; // Vector Bounded by EPOCHS_PER_HISTORICAL_VECTOR
+  protected List<Bytes32>
+      compact_committees_roots; // Vector Bounded by EPOCHS_PER_HISTORICAL_VECTOR
 
   // Slashings
   protected List<UnsignedLong> slashings; // Vector Bounded by EPOCHS_PER_SLASHINGS_VECTOR
 
   // Attestations
-  protected List<PendingAttestation> previous_epoch_attestations; // List bounded by MAX_ATTESTATIONS * SLOTS_PER_EPOCH
-  protected List<PendingAttestation> current_epoch_attestations; // List bounded by MAX_ATTESTATIONS * SLOTS_PER_EPOCH
+  protected List<PendingAttestation>
+      previous_epoch_attestations; // List bounded by MAX_ATTESTATIONS * SLOTS_PER_EPOCH
+  protected List<PendingAttestation>
+      current_epoch_attestations; // List bounded by MAX_ATTESTATIONS * SLOTS_PER_EPOCH
 
   // Crosslinks
   protected List<Crosslink> previous_crosslinks; // Vector Bounded by SHARD_COUNT
@@ -85,7 +81,6 @@ public class BeaconState implements SimpleOffsetSerializable {
   protected Checkpoint current_justified_checkpoint;
   protected Checkpoint finalized_checkpoint;
 
-
   public BeaconState() {
 
     // Versioning
@@ -93,9 +88,7 @@ public class BeaconState implements SimpleOffsetSerializable {
     this.slot = UnsignedLong.valueOf(Constants.GENESIS_SLOT);
     this.fork =
         new Fork(
-            int_to_bytes(0, 4),
-            int_to_bytes(0, 4),
-            UnsignedLong.valueOf(Constants.GENESIS_EPOCH));
+            int_to_bytes(0, 4), int_to_bytes(0, 4), UnsignedLong.valueOf(Constants.GENESIS_EPOCH));
 
     // History
     this.latest_block_header = new BeaconBlockHeader();
@@ -124,16 +117,16 @@ public class BeaconState implements SimpleOffsetSerializable {
         new ArrayList<>(
             Collections.nCopies(Constants.EPOCHS_PER_HISTORICAL_VECTOR, Constants.ZERO_HASH));
     this.active_index_roots =
-            new ArrayList<>(
-                    Collections.nCopies(Constants.EPOCHS_PER_HISTORICAL_VECTOR, Constants.ZERO_HASH));
+        new ArrayList<>(
+            Collections.nCopies(Constants.EPOCHS_PER_HISTORICAL_VECTOR, Constants.ZERO_HASH));
     this.compact_committees_roots =
-            new ArrayList<>(
-                    Collections.nCopies(Constants.EPOCHS_PER_HISTORICAL_VECTOR, Constants.ZERO_HASH));
+        new ArrayList<>(
+            Collections.nCopies(Constants.EPOCHS_PER_HISTORICAL_VECTOR, Constants.ZERO_HASH));
 
     // Slashings
     this.slashings =
-            new ArrayList<>(
-                    Collections.nCopies(Constants.EPOCHS_PER_SLASHINGS_VECTOR, UnsignedLong.ZERO));
+        new ArrayList<>(
+            Collections.nCopies(Constants.EPOCHS_PER_SLASHINGS_VECTOR, UnsignedLong.ZERO));
 
     // Attestations
     this.previous_epoch_attestations = new ArrayList<>();
@@ -141,11 +134,9 @@ public class BeaconState implements SimpleOffsetSerializable {
 
     // Crosslinks
     this.previous_crosslinks =
-            new ArrayList<>(
-                    Collections.nCopies(Constants.SHARD_COUNT, new Crosslink()));
+        new ArrayList<>(Collections.nCopies(Constants.SHARD_COUNT, new Crosslink()));
     this.current_crosslinks =
-            new ArrayList<>(
-                    Collections.nCopies(Constants.SHARD_COUNT, new Crosslink()));
+        new ArrayList<>(Collections.nCopies(Constants.SHARD_COUNT, new Crosslink()));
 
     // Finality
     this.justification_bits = Bytes.wrap(new byte[1]); // TODO change to bitvector with 4 bits
@@ -395,34 +386,34 @@ public class BeaconState implements SimpleOffsetSerializable {
   @Override
   public int hashCode() {
     return Objects.hash(
-            // Versioning
-            genesis_time,
+        // Versioning
+        genesis_time,
         slot,
         fork,
 
-            // History
-            latest_block_header,
-            block_roots,
-            state_roots,
-            historical_roots,
+        // History
+        latest_block_header,
+        block_roots,
+        state_roots,
+        historical_roots,
 
-            // Eth1
-            eth1_data,
-            eth1_data_votes,
-            eth1_deposit_index,
+        // Eth1
+        eth1_data,
+        eth1_data_votes,
+        eth1_deposit_index,
 
-            // Registry
-            validators,
+        // Registry
+        validators,
         balances,
 
         // Shuffling
-            start_shard,
+        start_shard,
         randao_mixes,
         active_index_roots,
         compact_committees_roots,
 
         // Slashings
-            slashings,
+        slashings,
 
         // Attestations
         previous_epoch_attestations,
@@ -433,10 +424,10 @@ public class BeaconState implements SimpleOffsetSerializable {
         previous_crosslinks,
 
         // Finality
-            justification_bits,
-            previous_justified_checkpoint,
-            current_justified_checkpoint,
-            finalized_checkpoint);
+        justification_bits,
+        previous_justified_checkpoint,
+        current_justified_checkpoint,
+        finalized_checkpoint);
   }
 
   @Override
@@ -458,34 +449,31 @@ public class BeaconState implements SimpleOffsetSerializable {
         && Objects.equals(slot, other.getSlot())
         && Objects.equals(this.getFork(), other.getFork())
         && Objects.equals(this.getLatest_block_header(), other.getLatest_block_header())
-            && Objects.equals(this.getBlock_roots(), other.getBlock_roots())
-            && Objects.equals(this.getState_roots(), other.getState_roots())
-            && Objects.equals(this.getHistorical_roots(), other.getHistorical_roots())
-            && Objects.equals(this.getEth1_data(), other.getEth1_data())
-            && Objects.equals(this.getEth1_data_votes(), other.getEth1_data_votes())
-            && Objects.equals(this.getEth1_deposit_index(), other.getEth1_deposit_index())
-
+        && Objects.equals(this.getBlock_roots(), other.getBlock_roots())
+        && Objects.equals(this.getState_roots(), other.getState_roots())
+        && Objects.equals(this.getHistorical_roots(), other.getHistorical_roots())
+        && Objects.equals(this.getEth1_data(), other.getEth1_data())
+        && Objects.equals(this.getEth1_data_votes(), other.getEth1_data_votes())
+        && Objects.equals(this.getEth1_deposit_index(), other.getEth1_deposit_index())
         && Objects.equals(this.getValidators(), other.getValidators())
         && Objects.equals(this.getBalances(), other.getBalances())
-            && Objects.equals(this.getStart_shard(), other.getStart_shard())
+        && Objects.equals(this.getStart_shard(), other.getStart_shard())
         && Objects.equals(this.getRandao_mixes(), other.getRandao_mixes())
-            && Objects.equals(this.getActive_index_roots(), other.getActive_index_roots())
-            && Objects.equals(this.getCompact_committees_roots(), other.getCompact_committees_roots())
-
-            && Objects.equals(this.getSlashings(), other.getSlashings())
-
+        && Objects.equals(this.getActive_index_roots(), other.getActive_index_roots())
+        && Objects.equals(this.getCompact_committees_roots(), other.getCompact_committees_roots())
+        && Objects.equals(this.getSlashings(), other.getSlashings())
         && Objects.equals(
             this.getPrevious_epoch_attestations(), other.getPrevious_epoch_attestations())
         && Objects.equals(
             this.getCurrent_epoch_attestations(), other.getCurrent_epoch_attestations())
-
         && Objects.equals(this.getPrevious_crosslinks(), other.getPrevious_crosslinks())
-            && Objects.equals(this.getCurrent_crosslinks(), other.getCurrent_crosslinks())
-
-            && Objects.equals(this.getJustification_bits(), other.getJustification_bits())
-            && Objects.equals(this.getPrevious_justified_checkpoint(), other.getPrevious_justified_checkpoint())
-        && Objects.equals(this.getCurrent_justified_checkpoint(), other.getCurrent_justified_checkpoint())
-            && Objects.equals(this.getFinalized_checkpoint(), other.getFinalized_checkpoint());
+        && Objects.equals(this.getCurrent_crosslinks(), other.getCurrent_crosslinks())
+        && Objects.equals(this.getJustification_bits(), other.getJustification_bits())
+        && Objects.equals(
+            this.getPrevious_justified_checkpoint(), other.getPrevious_justified_checkpoint())
+        && Objects.equals(
+            this.getCurrent_justified_checkpoint(), other.getCurrent_justified_checkpoint())
+        && Objects.equals(this.getFinalized_checkpoint(), other.getFinalized_checkpoint());
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */

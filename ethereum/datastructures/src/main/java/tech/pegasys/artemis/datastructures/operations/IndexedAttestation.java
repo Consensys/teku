@@ -14,7 +14,6 @@
 package tech.pegasys.artemis.datastructures.operations;
 
 import com.google.common.primitives.UnsignedLong;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -67,8 +66,7 @@ public class IndexedAttestation implements Merkleizable, SimpleOffsetSerializabl
   @Override
   public List<Bytes> get_fixed_parts() {
     List<Bytes> fixedPartsList = new ArrayList<>();
-    fixedPartsList.addAll(
-        List.of(Bytes.EMPTY, Bytes.EMPTY));
+    fixedPartsList.addAll(List.of(Bytes.EMPTY, Bytes.EMPTY));
     fixedPartsList.addAll(data.get_fixed_parts());
     fixedPartsList.addAll(signature.get_fixed_parts());
     return fixedPartsList;
@@ -78,13 +76,14 @@ public class IndexedAttestation implements Merkleizable, SimpleOffsetSerializabl
   public List<Bytes> get_variable_parts() {
     List<Bytes> variablePartsList = new ArrayList<>();
     variablePartsList.addAll(
-        custody_bit_0_indices.stream().map(value -> SSZ.encodeUInt64(value.longValue())).collect(Collectors.toList())
-    );
+        custody_bit_0_indices.stream()
+            .map(value -> SSZ.encodeUInt64(value.longValue()))
+            .collect(Collectors.toList()));
     variablePartsList.addAll(
-      custody_bit_1_indices.stream().map(value -> SSZ.encodeUInt64(value.longValue())).collect(Collectors.toList())
-  );
-    variablePartsList.addAll(
-        List.of(Bytes.EMPTY, Bytes.EMPTY));
+        custody_bit_1_indices.stream()
+            .map(value -> SSZ.encodeUInt64(value.longValue()))
+            .collect(Collectors.toList()));
+    variablePartsList.addAll(List.of(Bytes.EMPTY, Bytes.EMPTY));
     return variablePartsList;
   }
 

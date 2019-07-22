@@ -19,7 +19,6 @@ import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
-
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 import tech.pegasys.artemis.util.hashtree.Merkleizable;
@@ -45,7 +44,9 @@ public class AttesterSlashing implements Merkleizable, SimpleOffsetSerializable 
 
   @Override
   public List<Bytes> get_variable_parts() {
-    return List.of(SimpleOffsetSerializer.serialize(attestation_1), SimpleOffsetSerializer.serialize(attestation_2));
+    return List.of(
+        SimpleOffsetSerializer.serialize(attestation_1),
+        SimpleOffsetSerializer.serialize(attestation_2));
   }
 
   public static AttesterSlashing fromBytes(Bytes bytes) {
