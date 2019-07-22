@@ -64,6 +64,23 @@ public final class RPCMessage {
   }
 
   /**
+   * Reads the body of the message into a List
+   *
+   * @param T the type of the body to unmarshall
+   * @param <T> the type of the body to unmarshall
+   * @return the body, unmarshalled.
+   * @throws UncheckedIOException if the body cannot be successfully unmarshalled
+   */
+  @SuppressWarnings("unchecked")
+  public <T> List<T> bodyAsList(Class<T> T) {
+    try {
+      return (List<T>) RPCCodec.mapper.treeToValue(body, T);
+    } catch (IOException e) {
+      throw new UncheckedIOException(e);
+    }
+  }
+
+  /**
    * Reads the body of the message into Bytes
    *
    * @return the body, unmarshalled.

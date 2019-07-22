@@ -41,6 +41,8 @@ import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.networking.p2p.api.P2PNetwork;
 import tech.pegasys.artemis.networking.p2p.hobbits.gossip.GossipCodec;
 import tech.pegasys.artemis.networking.p2p.hobbits.gossip.GossipMessage;
+import tech.pegasys.artemis.networking.p2p.hobbits.rpc.AttestationMessage;
+import tech.pegasys.artemis.networking.p2p.hobbits.rpc.BlockBodiesMessage;
 import tech.pegasys.artemis.networking.p2p.hobbits.rpc.GetStatusMessage;
 import tech.pegasys.artemis.networking.p2p.hobbits.rpc.HelloMessage;
 import tech.pegasys.artemis.networking.p2p.hobbits.rpc.RPCCodec;
@@ -114,7 +116,6 @@ public abstract class AbstractSocketHandler {
     STDOUT.log(Level.DEBUG, "Buffer at " + buffer.size() + " bytes");
 
     while (!buffer.isEmpty()) {
-
       Message hobbitsMessage = Message.readMessage(buffer);
       if (hobbitsMessage != null) {
         Protocol protocol = hobbitsMessage.getProtocol();
@@ -146,11 +147,21 @@ public abstract class AbstractSocketHandler {
     } else if (RPCMethod.GET_BLOCK_BODIES.code() == rpcMessage.method()) {
       replyBlockBodies(rpcMessage);
     } else if (RPCMethod.ATTESTATION.code() == rpcMessage.method()) {
-      Attestation attestation = Attestation.fromBytes(rpcMessage.bodyAsBytes());
-      this.eventBus.post(attestation);
+      AttestationMessage rb = rpcMessage.bodyAs(AttestationMessage.class);
+      Attestation attestation = rb.body();
+      String key = attestation.toBytes().toHexString();
+      if (!receivedMessages.containsKey(key)) {
+        this.eventBus.post(attestation);
+        receivedMessages.put(key, true);
+      }
     } else if (RPCMethod.BLOCK_BODIES.code() == rpcMessage.method()) {
-      BeaconBlock beaconBlock = BeaconBlock.fromBytes(rpcMessage.bodyAsBytesList().get(0));
-      this.eventBus.post(beaconBlock);
+      BlockBodiesMessage rb = rpcMessage.bodyAs(BlockBodiesMessage.class);
+      BeaconBlock beaconBlock = rb.bodies().get(0);
+      String key = beaconBlock.toBytes().toHexString();
+      if (!receivedMessages.containsKey(key)) {
+        this.eventBus.post(beaconBlock);
+        receivedMessages.put(key, true);
+      }
     }
   }
 
@@ -227,10 +238,10 @@ public abstract class AbstractSocketHandler {
 
   public void replyAttestation(RPCMessage rpcMessage) {
     RequestAttestationMessage rb = rpcMessage.bodyAs(RequestAttestationMessage.class);
-    store
-        .getUnprocessedAttestation(Bytes32.wrap(rb.hash()))
-        .ifPresent(
-            a -> sendReply(RPCMethod.ATTESTATION, a.toBytes().toArrayUnsafe(), rpcMessage.id()));
+    Optional<Attestation> attestation = store.getUnprocessedAttestation(Bytes32.wrap(rb.hash()));
+    if (attestation.isPresent()) {
+      sendReply(RPCMethod.ATTESTATION, new AttestationMessage(attestation.get()), rpcMessage.id());
+    }
   }
 
   public void sendGetAttestation(Bytes32 attestationHash) {
@@ -243,15 +254,15 @@ public abstract class AbstractSocketHandler {
     List<Optional<BeaconBlock>> blocks =
         store.getUnprocessedBlock(
             Bytes32.wrap(rb.startRoot()), rb.max().longValue(), rb.skip().longValue());
-    List<byte[]> blockBodies = new ArrayList<>();
+    List<BeaconBlock> blockBodies = new ArrayList<>();
     blocks.forEach(
         block -> {
           if (block.isPresent()) {
-            blockBodies.add(block.get().toBytes().toArrayUnsafe());
+            blockBodies.add(block.get());
           }
         });
     if (blockBodies.size() > 0) {
-      sendReply(RPCMethod.BLOCK_BODIES, blockBodies, rpcMessage.id());
+      sendReply(RPCMethod.BLOCK_BODIES, new BlockBodiesMessage(blockBodies), rpcMessage.id());
     }
   }
 

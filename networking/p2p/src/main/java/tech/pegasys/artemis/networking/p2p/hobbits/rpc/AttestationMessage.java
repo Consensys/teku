@@ -15,20 +15,39 @@ package tech.pegasys.artemis.networking.p2p.hobbits.rpc;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonValue;
+import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
+import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 import java.io.IOException;
-import java.util.Iterator;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 
+@JsonSerialize(using = AttestationMessage.AttestationSerializer.class)
 @JsonDeserialize(using = AttestationMessage.AttestationDeserializer.class)
 public final class AttestationMessage {
+
+  static class AttestationSerializer extends StdSerializer<AttestationMessage> {
+
+    protected AttestationSerializer() {
+      super(AttestationMessage.class);
+    }
+
+    @Override
+    public void serialize(
+        AttestationMessage attestationMessage, JsonGenerator jgen, SerializerProvider provider)
+        throws IOException {
+      jgen.writeStartObject();
+      jgen.writeBinaryField("attestation", attestationMessage.body().toBytes().toArrayUnsafe());
+      jgen.writeEndObject();
+    }
+  }
 
   static class AttestationDeserializer extends StdDeserializer<AttestationMessage> {
 
@@ -40,10 +59,7 @@ public final class AttestationMessage {
     public AttestationMessage deserialize(JsonParser jp, DeserializationContext ctxt)
         throws IOException, JsonProcessingException {
       JsonNode node = jp.getCodec().readTree(jp);
-      Iterator<JsonNode> iterator = node.iterator();
-      JsonNode child = iterator.next();
-      AttestationBody elts =
-          new AttestationBody(Bytes.wrap(child.get("attestation").binaryValue()));
+      AttestationBody elts = new AttestationBody(Bytes.wrap(node.get("attestation").binaryValue()));
       return new AttestationMessage(elts);
     }
   }
@@ -56,7 +72,6 @@ public final class AttestationMessage {
       this.bytes = bytes;
     }
 
-    @JsonProperty("attestation")
     public Bytes bytes() {
       return bytes;
     }
@@ -64,12 +79,16 @@ public final class AttestationMessage {
 
   private final Attestation body;
 
-  @JsonCreator
-  public AttestationMessage(@JsonProperty("attestation") AttestationBody body) {
+  AttestationMessage(AttestationBody body) {
     this.body = Attestation.fromBytes(body.bytes());
   }
 
-  @JsonValue
+  @JsonCreator
+  public AttestationMessage(@JsonProperty("attestation") Attestation attestation) {
+    this.body = attestation;
+  }
+
+  @JsonProperty("attestation")
   public Attestation body() {
     return body;
   }
