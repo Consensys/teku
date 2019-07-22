@@ -21,7 +21,6 @@ import static tech.pegasys.artemis.datastructures.Constants.MAX_VALIDATORS_PER_C
 import static tech.pegasys.artemis.datastructures.Constants.SHARD_COUNT;
 import static tech.pegasys.artemis.datastructures.Constants.SLOTS_PER_EPOCH;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_bitfield_bit;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_block_root;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_block_root_at_slot;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_current_epoch;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_domain;
@@ -183,7 +182,7 @@ public class AttestationUtil {
     List<Integer> attesting_indices =
         get_attesting_indices(state, attestation.getData(), attestation.getAggregation_bits());
     List<Integer> custody_bit_1_indices =
-        get_attesting_indices(state, attestation.getData(), attestation.getCustody_bitfield());
+        get_attesting_indices(state, attestation.getData(), attestation.getCustody_bits());
 
     checkArgument(attesting_indices.containsAll(custody_bit_1_indices),
             "get_indexed_attestation: custody_bit_1_indices is not a subset of attesting_indices");
