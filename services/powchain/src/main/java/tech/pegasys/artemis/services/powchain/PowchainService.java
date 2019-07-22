@@ -13,9 +13,18 @@
 
 package tech.pegasys.artemis.services.powchain;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static tech.pegasys.artemis.datastructures.Constants.DEPOSIT_NORMAL;
+import static tech.pegasys.artemis.datastructures.Constants.DEPOSIT_SIM;
+
 import com.google.common.eventbus.EventBus;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonParser;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.Reader;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.SECP256K1;
@@ -33,16 +42,6 @@ import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.mikuli.KeyPair;
 import tech.pegasys.artemis.validator.client.Validator;
 import tech.pegasys.artemis.validator.client.ValidatorClientUtil;
-
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.Reader;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-
-import static java.nio.charset.StandardCharsets.UTF_8;
-import static tech.pegasys.artemis.datastructures.Constants.DEPOSIT_NORMAL;
-import static tech.pegasys.artemis.datastructures.Constants.DEPOSIT_SIM;
 
 public class PowchainService implements ServiceInterface {
 

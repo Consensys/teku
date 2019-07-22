@@ -16,10 +16,10 @@ package tech.pegasys.artemis.validator.client;
 import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.artemis.datastructures.Constants.SHARD_COUNT;
 import static tech.pegasys.artemis.datastructures.Constants.SLOTS_PER_EPOCH;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_beacon_proposer_index;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_current_epoch;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_committee_count;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_start_slot_of_epoch;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_beacon_proposer_index;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_committee_count;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_current_epoch;
 import static tech.pegasys.artemis.datastructures.util.CrosslinkCommitteeUtil.get_crosslink_committee;
 import static tech.pegasys.artemis.datastructures.util.CrosslinkCommitteeUtil.get_start_shard;
 
@@ -74,8 +74,7 @@ public class ValidatorClientUtil {
         slot = slot.plus(UnsignedLong.ONE)) {
 
       int offset = committees_per_slot * slot.mod(UnsignedLong.valueOf(SLOTS_PER_EPOCH)).intValue();
-      int slot_start_shard =
-          (get_start_shard(state, epoch).intValue() + offset) % SHARD_COUNT;
+      int slot_start_shard = (get_start_shard(state, epoch).intValue() + offset) % SHARD_COUNT;
 
       for (int i = 0; i < committees_per_slot; i++) {
         UnsignedLong shard = UnsignedLong.valueOf((slot_start_shard + i) % SHARD_COUNT);

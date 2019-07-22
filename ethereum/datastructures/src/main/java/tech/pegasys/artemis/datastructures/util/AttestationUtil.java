@@ -20,13 +20,12 @@ import static tech.pegasys.artemis.datastructures.Constants.EFFECTIVE_BALANCE_IN
 import static tech.pegasys.artemis.datastructures.Constants.MAX_VALIDATORS_PER_COMMITTEE;
 import static tech.pegasys.artemis.datastructures.Constants.SHARD_COUNT;
 import static tech.pegasys.artemis.datastructures.Constants.SLOTS_PER_EPOCH;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_start_slot_of_epoch;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_bitfield_bit;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_block_root;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_block_root_at_slot;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_committee_count;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_current_epoch;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_domain;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_committee_count;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_start_slot_of_epoch;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.min;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.setBit;
 import static tech.pegasys.artemis.datastructures.util.CrosslinkCommitteeUtil.get_crosslink_committee;
@@ -40,7 +39,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
-
 import org.apache.commons.lang3.tuple.MutableTriple;
 import org.apache.commons.lang3.tuple.Triple;
 import org.apache.logging.log4j.Level;
@@ -113,13 +111,15 @@ public class AttestationUtil {
     UnsignedLong slot = state.getSlot();
     Bytes32 beacon_block_root = block.signing_root("signature");
     UnsignedLong start_slot = compute_start_slot_of_epoch(get_current_epoch(state));
-    Bytes32 epoch_boundary_block_root = start_slot.compareTo(slot) == 0 ? block.signing_root("signature") : get_block_root_at_slot(state, start_slot);
+    Bytes32 epoch_boundary_block_root =
+        start_slot.compareTo(slot) == 0
+            ? block.signing_root("signature")
+            : get_block_root_at_slot(state, start_slot);
     Checkpoint source = state.getCurrent_justified_checkpoint();
     Checkpoint target = new Checkpoint(get_current_epoch(state), epoch_boundary_block_root);
 
     // Set attestation data
-    return new AttestationData(
-        beacon_block_root, source, target, new Crosslink());
+    return new AttestationData(beacon_block_root, source, target, new Crosslink());
   }
 
   public static Bytes getAggregationBits(int indexIntoCommittee) {
@@ -179,23 +179,32 @@ public class AttestationUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#get_indexed_attestation</a>
    */
-  public static IndexedAttestation get_indexed_attestation(BeaconState state, Attestation attestation) {
+  public static IndexedAttestation get_indexed_attestation(
+      BeaconState state, Attestation attestation) {
     List<Integer> attesting_indices =
         get_attesting_indices(state, attestation.getData(), attestation.getAggregation_bits());
     List<Integer> custody_bit_1_indices =
         get_attesting_indices(state, attestation.getData(), attestation.getCustody_bitfield());
 
-    checkArgument(attesting_indices.containsAll(custody_bit_1_indices),
-            "get_indexed_attestation: custody_bit_1_indices is not a subset of attesting_indices");
+    checkArgument(
+        attesting_indices.containsAll(custody_bit_1_indices),
+        "get_indexed_attestation: custody_bit_1_indices is not a subset of attesting_indices");
 
     List<Integer> custody_bit_0_indices = new ArrayList<>();
     for (int i = 0; i < attesting_indices.size(); i++) {
       Integer attesting_index = attesting_indices.get(i);
-      if (!custody_bit_1_indices.contains(attesting_index)) custody_bit_0_indices.add(attesting_index);
+      if (!custody_bit_1_indices.contains(attesting_index))
+        custody_bit_0_indices.add(attesting_index);
     }
     return new IndexedAttestation(
-        custody_bit_0_indices.stream().sorted().map(UnsignedLong::valueOf).collect(Collectors.toList()),
-        custody_bit_1_indices.stream().sorted().map(UnsignedLong::valueOf).collect(Collectors.toList()),
+        custody_bit_0_indices.stream()
+            .sorted()
+            .map(UnsignedLong::valueOf)
+            .collect(Collectors.toList()),
+        custody_bit_1_indices.stream()
+            .sorted()
+            .map(UnsignedLong::valueOf)
+            .collect(Collectors.toList()),
         attestation.getData(),
         attestation.getAggregate_signature());
   }
@@ -212,10 +221,12 @@ public class AttestationUtil {
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#get_attesting_indices</a>
    */
   public static List<Integer> get_attesting_indices(
-      BeaconState state, AttestationData attestation_data, Bytes bits){
+      BeaconState state, AttestationData attestation_data, Bytes bits) {
     List<Integer> committee =
         get_crosslink_committee(
-            state, attestation_data.getTarget().getEpoch(), attestation_data.getCrosslink().getShard());
+            state,
+            attestation_data.getTarget().getEpoch(),
+            attestation_data.getCrosslink().getShard());
 
     HashSet<Integer> attesting_indices = new HashSet<>();
     for (int i = 0; i < committee.size(); i++) {
@@ -240,23 +251,31 @@ public class AttestationUtil {
     List<UnsignedLong> bit_1_indices = indexed_attestation.getCustody_bit_1_indices();
 
     if (!(bit_1_indices.size() == 0)) {
-      STDOUT.log(Level.DEBUG,"AttestationUtil.is_valid_indexed_attestation: Verify no index has custody bit equal to 1 [to be removed in phase 1]");
+      STDOUT.log(
+          Level.DEBUG,
+          "AttestationUtil.is_valid_indexed_attestation: Verify no index has custody bit equal to 1 [to be removed in phase 1]");
       return false;
     }
-    if (!((bit_0_indices.size() + bit_1_indices.size()) <= MAX_VALIDATORS_PER_COMMITTEE)){
-      STDOUT.log(Level.DEBUG, "AttestationUtil.is_valid_indexed_attestation: Verify max number of indices");
+    if (!((bit_0_indices.size() + bit_1_indices.size()) <= MAX_VALIDATORS_PER_COMMITTEE)) {
+      STDOUT.log(
+          Level.DEBUG,
+          "AttestationUtil.is_valid_indexed_attestation: Verify max number of indices");
       return false;
     }
     if (!(intersection(bit_0_indices, bit_1_indices).size() == 0)) {
-      STDOUT.log(Level.DEBUG, "AttestationUtil.is_valid_indexed_attestation: Verify index sets are disjoint");
+      STDOUT.log(
+          Level.DEBUG,
+          "AttestationUtil.is_valid_indexed_attestation: Verify index sets are disjoint");
       return false;
     }
     List<UnsignedLong> bit_0_indices_sorted = new ArrayList<>(bit_0_indices);
     Collections.sort(bit_0_indices_sorted);
     List<UnsignedLong> bit_1_indices_sorted = new ArrayList<>(bit_1_indices);
     Collections.sort(bit_1_indices_sorted);
-    if (!(bit_0_indices.equals(bit_0_indices_sorted) && bit_1_indices.equals(bit_1_indices_sorted))) {
-      STDOUT.log(Level.DEBUG, "AttestationUtil.is_valid_indexed_attestation: Verify indices are sorted");
+    if (!(bit_0_indices.equals(bit_0_indices_sorted)
+        && bit_1_indices.equals(bit_1_indices_sorted))) {
+      STDOUT.log(
+          Level.DEBUG, "AttestationUtil.is_valid_indexed_attestation: Verify indices are sorted");
       return false;
     }
 
@@ -285,14 +304,15 @@ public class AttestationUtil {
     Bytes domain =
         get_domain(state, DOMAIN_ATTESTATION, indexed_attestation.getData().getTarget().getEpoch());
     if (!BLSVerify.bls_verify_multiple(pubkeys, message_hashes, signature, domain)) {
-      STDOUT.log(Level.DEBUG, "AttestationUtil.is_valid_indexed_attestation: Verify aggregate signature");
+      STDOUT.log(
+          Level.DEBUG, "AttestationUtil.is_valid_indexed_attestation: Verify aggregate signature");
       return false;
     }
     return true;
   }
 
   /**
-   *  Return the slot corresponding to the attestation ``data``.
+   * Return the slot corresponding to the attestation ``data``.
    *
    * @param state
    * @param data
@@ -313,7 +333,7 @@ public class AttestationUtil {
   }
 
   /**
-   *  Return the compact committee root at ``epoch``.
+   * Return the compact committee root at ``epoch``.
    *
    * @param state
    * @param epoch
@@ -331,17 +351,22 @@ public class AttestationUtil {
     int committee_count = get_committee_count(state, epoch).intValue();
     for (int committee_number = 0; committee_number < committee_count; committee_number++) {
       int shard = (start_shard + committee_number) % SHARD_COUNT;
-      List<Integer> crosslink_committee = get_crosslink_committee(state, epoch, UnsignedLong.valueOf(shard));
+      List<Integer> crosslink_committee =
+          get_crosslink_committee(state, epoch, UnsignedLong.valueOf(shard));
       for (Integer index : crosslink_committee) {
         Validator validator = state.getValidators().get(index);
         committees.get(shard).getPubkeys().add(validator.getPubkey());
-        UnsignedLong compact_balance = validator.getEffective_balance().dividedBy(UnsignedLong.valueOf(EFFECTIVE_BALANCE_INCREMENT));
+        UnsignedLong compact_balance =
+            validator
+                .getEffective_balance()
+                .dividedBy(UnsignedLong.valueOf(EFFECTIVE_BALANCE_INCREMENT));
         UnsignedLong index16leftShift = BitwiseOps.leftShift(UnsignedLong.valueOf(index), 16);
         UnsignedLong slashed15leftShift = UnsignedLong.ZERO;
         if (validator.isSlashed()) {
           slashed15leftShift = BitwiseOps.leftShift(UnsignedLong.ONE, 15);
         }
-        UnsignedLong compact_validator = index16leftShift.plus(slashed15leftShift).plus(compact_balance);
+        UnsignedLong compact_validator =
+            index16leftShift.plus(slashed15leftShift).plus(compact_balance);
         committees.get(shard).getCompact_validators().add(compact_validator);
       }
     }
