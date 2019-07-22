@@ -13,15 +13,13 @@
 
 package tech.pegasys.artemis.datastructures.state;
 
+import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
-
-import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.bytes.Bytes48;
 import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.artemis.datastructures.Copyable;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
@@ -30,7 +28,8 @@ import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
 import tech.pegasys.artemis.util.hashtree.Merkleizable;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
-public class CompactCommittee implements Copyable<CompactCommittee>, Merkleizable, SimpleOffsetSerializable {
+public class CompactCommittee
+    implements Copyable<CompactCommittee>, Merkleizable, SimpleOffsetSerializable {
 
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
   public static final int SSZ_FIELD_COUNT = 2;
@@ -45,7 +44,8 @@ public class CompactCommittee implements Copyable<CompactCommittee>, Merkleizabl
 
   public CompactCommittee(CompactCommittee compactCommittee) {
     this.pubkeys = compactCommittee.getPubkeys().stream().collect(Collectors.toList());
-    this.compact_validators = compactCommittee.getCompact_validators().stream().collect(Collectors.toList());
+    this.compact_validators =
+        compactCommittee.getCompact_validators().stream().collect(Collectors.toList());
   }
 
   public CompactCommittee() {
@@ -67,13 +67,18 @@ public class CompactCommittee implements Copyable<CompactCommittee>, Merkleizabl
   public List<Bytes> get_variable_parts() {
     List<Bytes> variablePartsList = new ArrayList<>();
     variablePartsList.addAll(
-      List.of(SSZ.encode(writer -> writer.writeFixedBytesVector(pubkeys.stream().map(BLSPublicKey::toBytes).collect(Collectors.toList()))))
-    );
+        List.of(
+            SSZ.encode(
+                writer ->
+                    writer.writeFixedBytesVector(
+                        pubkeys.stream()
+                            .map(BLSPublicKey::toBytes)
+                            .collect(Collectors.toList())))));
     variablePartsList.addAll(
-      compact_validators.stream().map(value -> SSZ.encodeUInt64(value.longValue())).collect(Collectors.toList())
-    );
-    variablePartsList.addAll(
-        List.of(Bytes.EMPTY, Bytes.EMPTY));
+        compact_validators.stream()
+            .map(value -> SSZ.encodeUInt64(value.longValue()))
+            .collect(Collectors.toList()));
+    variablePartsList.addAll(List.of(Bytes.EMPTY, Bytes.EMPTY));
     return variablePartsList;
   }
 
@@ -83,8 +88,8 @@ public class CompactCommittee implements Copyable<CompactCommittee>, Merkleizabl
         reader ->
             new CompactCommittee(
                 reader.readBytesList().stream()
-                        .map(BLSPublicKey::fromBytes)
-                        .collect(Collectors.toList()),
+                    .map(BLSPublicKey::fromBytes)
+                    .collect(Collectors.toList()),
                 reader.readUInt64List().stream()
                     .map(UnsignedLong::fromLongBits)
                     .collect(Collectors.toList())));
@@ -93,7 +98,8 @@ public class CompactCommittee implements Copyable<CompactCommittee>, Merkleizabl
   public Bytes toBytes() {
     return SSZ.encode(
         writer -> {
-          writer.writeBytesList(pubkeys.stream().map(BLSPublicKey::toBytes).collect(Collectors.toList()));
+          writer.writeBytesList(
+              pubkeys.stream().map(BLSPublicKey::toBytes).collect(Collectors.toList()));
           writer.writeULongIntList(
               64,
               compact_validators.stream()
@@ -103,7 +109,6 @@ public class CompactCommittee implements Copyable<CompactCommittee>, Merkleizabl
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */
-
   public List<BLSPublicKey> getPubkeys() {
     return pubkeys;
   }
@@ -123,17 +128,17 @@ public class CompactCommittee implements Copyable<CompactCommittee>, Merkleizabl
   @Override
   public Bytes32 hash_tree_root() {
     return HashTreeUtil.merkleize(
-            Arrays.asList(
-                    HashTreeUtil.hash_tree_root(
-                            SSZTypes.LIST_OF_COMPOSITE,
-                            pubkeys.stream()
-                                    .map(BLSPublicKey::toBytes)
-                                    .map(item -> SSZ.encodeBytes(item))
-                                    .collect(Collectors.toList())),
-                    HashTreeUtil.hash_tree_root(
-                            SSZTypes.LIST_OF_BASIC,
-                            compact_validators.stream()
-                                    .map(item -> SSZ.encodeUInt64(item.longValue()))
-                                    .collect(Collectors.toList()))));
+        Arrays.asList(
+            HashTreeUtil.hash_tree_root(
+                SSZTypes.LIST_OF_COMPOSITE,
+                pubkeys.stream()
+                    .map(BLSPublicKey::toBytes)
+                    .map(item -> SSZ.encodeBytes(item))
+                    .collect(Collectors.toList())),
+            HashTreeUtil.hash_tree_root(
+                SSZTypes.LIST_OF_BASIC,
+                compact_validators.stream()
+                    .map(item -> SSZ.encodeUInt64(item.longValue()))
+                    .collect(Collectors.toList()))));
   }
 }

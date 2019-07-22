@@ -45,7 +45,10 @@ class BLSSignatureTest {
     assertThrows(
         BLSException.class,
         () ->
-            signature.checkSignature(BLSPublicKey.random(), Bytes.wrap("Test".getBytes(UTF_8)), Bytes.wrap(new byte[8])));
+            signature.checkSignature(
+                BLSPublicKey.random(),
+                Bytes.wrap("Test".getBytes(UTF_8)),
+                Bytes.wrap(new byte[8])));
   }
 
   @Test

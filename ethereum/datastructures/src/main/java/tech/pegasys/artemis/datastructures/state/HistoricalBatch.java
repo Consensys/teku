@@ -54,8 +54,7 @@ public class HistoricalBatch implements Copyable<HistoricalBatch>, SimpleOffsetS
   public List<Bytes> get_fixed_parts() {
     return List.of(
         SSZ.encode(writer -> writer.writeFixedBytesVector(block_roots)),
-        SSZ.encode(writer -> writer.writeFixedBytesVector(state_roots))
-    );
+        SSZ.encode(writer -> writer.writeFixedBytesVector(state_roots)));
   }
 
   public static HistoricalBatch fromBytes(Bytes bytes) {

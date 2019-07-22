@@ -14,8 +14,6 @@
 package tech.pegasys.artemis.storage;
 
 import static tech.pegasys.artemis.datastructures.util.AttestationUtil.get_attestation_data_slot;
-import static tech.pegasys.artemis.datastructures.util.AttestationUtil.get_attesting_indices;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_of_slot;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
@@ -23,10 +21,8 @@ import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Queue;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.PriorityBlockingQueue;
@@ -37,7 +33,6 @@ import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.datastructures.util.AttestationUtil;
 import tech.pegasys.artemis.util.alogger.ALogger;
 
 /** This class is the ChainStorage client-side logic */
@@ -110,8 +105,6 @@ public class ChainStorageClient implements ChainStorage {
     ChainStorage.add(attestation.hash_tree_root(), attestation, this.processedAttestationsMap);
   }
 
-
-
   // NETWORKING RELATED INFORMATION METHODS:
 
   /**
@@ -161,8 +154,6 @@ public class ChainStorageClient implements ChainStorage {
   public UnsignedLong getFinalizedEpoch() {
     return this.store.getFinalized_checkpoint().getEpoch();
   }
-
-
 
   // UNPROCESSED ITEM METHODS:
 
@@ -214,7 +205,7 @@ public class ChainStorageClient implements ChainStorage {
   public Optional<Attestation> getUnprocessedAttestation(Bytes32 attestationHash) {
     Optional<Attestation> result = Optional.empty();
     if (!this.processedAttestationsMap.containsKey(attestationHash)
-            && this.unprocessedAttestationsMap.containsKey(attestationHash)) {
+        && this.unprocessedAttestationsMap.containsKey(attestationHash)) {
       result = ChainStorage.get(attestationHash, this.unprocessedAttestationsMap);
     }
     return result;
@@ -236,19 +227,19 @@ public class ChainStorageClient implements ChainStorage {
   @Subscribe
   public void onNewUnprocessedAttestation(Attestation attestation) {
     STDOUT.log(
-            Level.INFO,
-            "New Attestation with block root:  "
-                    + attestation.getData().getBeacon_block_root()
-                    + " detected.",
-            ALogger.Color.GREEN);
+        Level.INFO,
+        "New Attestation with block root:  "
+            + attestation.getData().getBeacon_block_root()
+            + " detected.",
+        ALogger.Color.GREEN);
     addUnprocessedAttestation(attestation);
   }
 
   // STATE PROCESSOR METHODS:
 
   /**
-   *  Returns the list of blocks that both have slot number less than or equal to slot.
-   *  Removes the blocks from the slot sorted queue in the process.
+   * Returns the list of blocks that both have slot number less than or equal to slot. Removes the
+   * blocks from the slot sorted queue in the process.
    *
    * @param slot
    * @return
@@ -257,7 +248,7 @@ public class ChainStorageClient implements ChainStorage {
     List<BeaconBlock> unprocessedBlocks = new ArrayList<>();
     Optional<BeaconBlock> currentBlock;
     while (!(currentBlock = ChainStorage.peek(this.unprocessedBlocksQueue)).equals(Optional.empty())
-            && currentBlock.get().getSlot().compareTo(slot) <= 0) {
+        && currentBlock.get().getSlot().compareTo(slot) <= 0) {
       unprocessedBlocks.add(ChainStorage.remove(this.unprocessedBlocksQueue).get());
     }
     return unprocessedBlocks;
@@ -266,9 +257,9 @@ public class ChainStorageClient implements ChainStorage {
   // VALIDATOR COORDINATOR METHODS:
 
   /**
-   *  Returns the list of attestations that both have slot number less than or equal to slot,
-   *  and not included in any processed block. Removes the attestations from the slot sorted
-   *  queue in the process.
+   * Returns the list of attestations that both have slot number less than or equal to slot, and not
+   * included in any processed block. Removes the attestations from the slot sorted queue in the
+   * process.
    *
    * @param state
    * @param slot
@@ -293,7 +284,6 @@ public class ChainStorageClient implements ChainStorage {
     }
     return attestations;
   }
-
 
   // Memory Cleaning
 

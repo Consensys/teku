@@ -31,7 +31,9 @@ public class ValidatorsUtil {
    *
    * @param epoch - The epoch under consideration.
    * @return A boolean indicating if the validator is active.
-   * @see <a> https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#is_active_validator </a>
+   * @see <a>
+   *     https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#is_active_validator
+   *     </a>
    */
   public static boolean is_active_validator(Validator validator, UnsignedLong epoch) {
     return validator.getActivation_epoch().compareTo(epoch) <= 0

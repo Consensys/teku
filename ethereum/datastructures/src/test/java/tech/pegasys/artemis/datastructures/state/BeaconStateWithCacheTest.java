@@ -27,7 +27,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.junit.BouncyCastleExtension;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 
 @ExtendWith(BouncyCastleExtension.class)
@@ -38,10 +37,9 @@ class BeaconStateWithCacheTest {
     try {
 
       // Initialize state
-      BeaconState state = initialize_beacon_state_from_eth1(
-              Bytes32.ZERO,
-              UnsignedLong.ZERO,
-              randomDeposits(numDeposits));
+      BeaconState state =
+          initialize_beacon_state_from_eth1(
+              Bytes32.ZERO, UnsignedLong.ZERO, randomDeposits(numDeposits));
 
       return state;
     } catch (Exception e) {
@@ -81,18 +79,18 @@ class BeaconStateWithCacheTest {
 
     // Test validator registry
     ArrayList<Validator> new_records =
-            new ArrayList<>(
-                    Collections.nCopies(
-                            12,
-                            new Validator(
-                                    BLSPublicKey.empty(),
-                                    Bytes32.ZERO,
-                                    UnsignedLong.ZERO,
-                                    false,
-                                    UnsignedLong.ZERO,
-                                    UnsignedLong.valueOf(GENESIS_EPOCH),
-                                    UnsignedLong.ZERO,
-                                    UnsignedLong.ZERO)));
+        new ArrayList<>(
+            Collections.nCopies(
+                12,
+                new Validator(
+                    BLSPublicKey.empty(),
+                    Bytes32.ZERO,
+                    UnsignedLong.ZERO,
+                    false,
+                    UnsignedLong.ZERO,
+                    UnsignedLong.valueOf(GENESIS_EPOCH),
+                    UnsignedLong.ZERO,
+                    UnsignedLong.ZERO)));
     state.setValidators(new_records);
     BeaconState deepCopy = BeaconStateWithCache.deepCopy(state);
     Validator validator = deepCopy.getValidators().get(0);

@@ -35,15 +35,15 @@ class ValidatorTest {
   private UnsignedLong effectiveBalance = randomUnsignedLong();
 
   private Validator validator =
-          new Validator(
-                  pubkey,
-                  withdrawalCredentials,
-                  effectiveBalance,
-                  slashed,
-                  activationEligibilityEpoch,
-                  activationEpoch,
-                  exitEpoch,
-                  withdrawalEpoch);
+      new Validator(
+          pubkey,
+          withdrawalCredentials,
+          effectiveBalance,
+          slashed,
+          activationEligibilityEpoch,
+          activationEpoch,
+          exitEpoch,
+          withdrawalEpoch);
 
   @Test
   void equalsReturnsTrueWhenObjectAreSame() {
@@ -55,15 +55,15 @@ class ValidatorTest {
   @Test
   void equalsReturnsTrueWhenObjectFieldsAreEqual() {
     Validator testValidator =
-            new Validator(
-                    pubkey,
-                    withdrawalCredentials,
-                    effectiveBalance,
-                    slashed,
-                    activationEligibilityEpoch,
-                    activationEpoch,
-                    exitEpoch,
-                    withdrawalEpoch);
+        new Validator(
+            pubkey,
+            withdrawalCredentials,
+            effectiveBalance,
+            slashed,
+            activationEligibilityEpoch,
+            activationEpoch,
+            exitEpoch,
+            withdrawalEpoch);
 
     assertEquals(validator, testValidator);
   }
@@ -75,15 +75,15 @@ class ValidatorTest {
       differentPublicKey = BLSPublicKey.random();
     }
     Validator testValidator =
-            new Validator(
-                    differentPublicKey,
-                    withdrawalCredentials,
-                    effectiveBalance,
-                    slashed,
-                    activationEligibilityEpoch,
-                    activationEpoch,
-                    exitEpoch,
-                    withdrawalEpoch);
+        new Validator(
+            differentPublicKey,
+            withdrawalCredentials,
+            effectiveBalance,
+            slashed,
+            activationEligibilityEpoch,
+            activationEpoch,
+            exitEpoch,
+            withdrawalEpoch);
 
     assertNotEquals(validator, testValidator);
   }
@@ -91,15 +91,15 @@ class ValidatorTest {
   @Test
   void equalsReturnsFalseWhenWithdrawalCredentialsAreDifferent() {
     Validator testValidator =
-            new Validator(
-                    pubkey,
-                    withdrawalCredentials.not(),
-                    effectiveBalance,
-                    slashed,
-                    activationEligibilityEpoch,
-                    activationEpoch,
-                    exitEpoch,
-                    withdrawalEpoch);
+        new Validator(
+            pubkey,
+            withdrawalCredentials.not(),
+            effectiveBalance,
+            slashed,
+            activationEligibilityEpoch,
+            activationEpoch,
+            exitEpoch,
+            withdrawalEpoch);
 
     assertNotEquals(validator, testValidator);
   }
@@ -107,15 +107,15 @@ class ValidatorTest {
   @Test
   void equalsReturnsFalseWhenActivationEpochsAreDifferent() {
     Validator testValidator =
-            new Validator(
-                    pubkey,
-                    withdrawalCredentials,
-                    effectiveBalance,
-                    slashed,
-                    activationEligibilityEpoch,
-                    activationEpoch.plus(randomUnsignedLong()),
-                    exitEpoch,
-                    withdrawalEpoch);
+        new Validator(
+            pubkey,
+            withdrawalCredentials,
+            effectiveBalance,
+            slashed,
+            activationEligibilityEpoch,
+            activationEpoch.plus(randomUnsignedLong()),
+            exitEpoch,
+            withdrawalEpoch);
 
     assertNotEquals(validator, testValidator);
   }
@@ -123,15 +123,15 @@ class ValidatorTest {
   @Test
   void equalsReturnsFalseWhenExitEpochsAreDifferent() {
     Validator testValidator =
-            new Validator(
-                    pubkey,
-                    withdrawalCredentials,
-                    effectiveBalance,
-                    slashed,
-                    activationEligibilityEpoch,
-                    activationEpoch,
-                    exitEpoch.plus(randomUnsignedLong()),
-                    withdrawalEpoch);
+        new Validator(
+            pubkey,
+            withdrawalCredentials,
+            effectiveBalance,
+            slashed,
+            activationEligibilityEpoch,
+            activationEpoch,
+            exitEpoch.plus(randomUnsignedLong()),
+            withdrawalEpoch);
 
     assertNotEquals(validator, testValidator);
   }
@@ -139,15 +139,15 @@ class ValidatorTest {
   @Test
   void equalsReturnsFalseWhenWithdrawalEpochsAreDifferent() {
     Validator testValidator =
-            new Validator(
-                    pubkey,
-                    withdrawalCredentials,
-                    effectiveBalance,
-                    slashed,
-                    activationEligibilityEpoch,
-                    activationEpoch,
-                    exitEpoch,
-                    withdrawalEpoch.plus(randomUnsignedLong()));
+        new Validator(
+            pubkey,
+            withdrawalCredentials,
+            effectiveBalance,
+            slashed,
+            activationEligibilityEpoch,
+            activationEpoch,
+            exitEpoch,
+            withdrawalEpoch.plus(randomUnsignedLong()));
 
     assertNotEquals(validator, testValidator);
   }
@@ -155,15 +155,15 @@ class ValidatorTest {
   @Test
   void equalsReturnsFalseWhenInitiatedExitIsDifferent() {
     Validator testValidator =
-            new Validator(
-                    pubkey,
-                    withdrawalCredentials,
-                    effectiveBalance,
-                    !slashed,
-                    activationEligibilityEpoch,
-                    activationEpoch,
-                    exitEpoch,
-                    withdrawalEpoch);
+        new Validator(
+            pubkey,
+            withdrawalCredentials,
+            effectiveBalance,
+            !slashed,
+            activationEligibilityEpoch,
+            activationEpoch,
+            exitEpoch,
+            withdrawalEpoch);
 
     assertNotEquals(validator, testValidator);
   }
