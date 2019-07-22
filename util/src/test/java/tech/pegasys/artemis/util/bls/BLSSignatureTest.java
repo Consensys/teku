@@ -45,7 +45,7 @@ class BLSSignatureTest {
     assertThrows(
         BLSException.class,
         () ->
-            signature.checkSignature(BLSPublicKey.random(), Bytes.wrap("Test".getBytes(UTF_8)), 0));
+            signature.checkSignature(BLSPublicKey.random(), Bytes.wrap("Test".getBytes(UTF_8)), Bytes.wrap(new byte[8])));
   }
 
   @Test
@@ -109,7 +109,7 @@ class BLSSignatureTest {
   void succeedsWhenAMessageSignsAndVerifies() throws BLSException {
     BLSKeyPair keyPair = BLSKeyPair.random();
     Bytes message = Bytes.wrap("Hello, world!".getBytes(UTF_8));
-    long domain = 42;
+    Bytes domain = Bytes.random(8);
     BLSSignature signature = BLSSignature.sign(keyPair, message, domain);
     assertTrue(signature.checkSignature(keyPair.getPublicKey(), message, domain));
   }
@@ -118,8 +118,8 @@ class BLSSignatureTest {
   void succeedsWhenVerifyingDifferentDomainFails() throws BLSException {
     BLSKeyPair keyPair = BLSKeyPair.random();
     Bytes message = Bytes.wrap("Hello, world!".getBytes(UTF_8));
-    long domain1 = 42;
-    long domain2 = 43;
+    Bytes domain1 = Bytes.ofUnsignedLong(42L);
+    Bytes domain2 = Bytes.ofUnsignedLong(43L);
     BLSSignature signature = BLSSignature.sign(keyPair, message, domain1);
     assertFalse(signature.checkSignature(keyPair.getPublicKey(), message, domain2));
   }
@@ -129,7 +129,7 @@ class BLSSignatureTest {
     BLSKeyPair keyPair = BLSKeyPair.random();
     Bytes message1 = Bytes.wrap("Hello, world!".getBytes(UTF_8));
     Bytes message2 = Bytes.wrap("Hello, world?".getBytes(UTF_8));
-    long domain = 42;
+    Bytes domain = Bytes.ofUnsignedLong(42L);
     BLSSignature signature = BLSSignature.sign(keyPair, message1, domain);
     assertFalse(signature.checkSignature(keyPair.getPublicKey(), message2, domain));
   }
@@ -142,7 +142,7 @@ class BLSSignatureTest {
       keyPair2 = BLSKeyPair.random();
     }
     Bytes message = Bytes.wrap("Hello, world!".getBytes(UTF_8));
-    long domain = 42;
+    Bytes domain = Bytes.ofUnsignedLong(42L);
     BLSSignature signature = BLSSignature.sign(keyPair1, message, domain);
     assertFalse(signature.checkSignature(keyPair2.getPublicKey(), message, domain));
   }
@@ -153,7 +153,7 @@ class BLSSignatureTest {
     BLSKeyPair keyPair2 = BLSKeyPair.random(1);
     assertEquals(keyPair1.getPublicKey(), keyPair2.getPublicKey());
     Bytes message = Bytes.wrap("Hello, world!".getBytes(UTF_8));
-    long domain = 42;
+    Bytes domain = Bytes.ofUnsignedLong(42L);
     BLSSignature signature1 = BLSSignature.sign(keyPair1, message, domain);
     BLSSignature signature2 = BLSSignature.sign(keyPair2, message, domain);
     assertEquals(signature1, signature2);
