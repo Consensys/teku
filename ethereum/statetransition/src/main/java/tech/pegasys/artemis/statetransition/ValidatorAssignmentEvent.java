@@ -13,25 +13,10 @@
 
 package tech.pegasys.artemis.statetransition;
 
-import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
-import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 
-public class HeadStateEvent {
+import tech.pegasys.artemis.datastructures.state.Validator;
 
-  private BeaconStateWithCache headState;
-  private BeaconBlock headBlock;
-
-  public HeadStateEvent(BeaconStateWithCache state, BeaconBlock block) {
-    headState = state;
-    headBlock = block;
-  }
-
-  /** ******************* * GETTERS & SETTERS * * ******************* */
-  public BeaconStateWithCache getHeadState() {
-    return headState;
-  }
-
-  public BeaconBlock getHeadBlock() {
-    return headBlock;
+public class ValidatorAssignmentEvent {
+  public ValidatorAssignmentEvent() {
   }
 }

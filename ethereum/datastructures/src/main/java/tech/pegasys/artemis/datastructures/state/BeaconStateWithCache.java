@@ -35,44 +35,56 @@ public final class BeaconStateWithCache extends BeaconState {
   }
 
   public BeaconStateWithCache(BeaconStateWithCache state) {
-    this.slot = state.getSlot();
+    // Versioning
     this.genesis_time = state.getGenesis_time();
+    this.slot = state.getSlot();
     this.fork = new Fork(state.getFork());
 
-    this.validators = this.copyList(state.getValidator_registry(), new ArrayList<>());
+    // History
+    this.latest_block_header =
+            BeaconBlockHeader.fromBytes(state.getLatest_block_header().toBytes());
+    this.block_roots = this.copyBytesList(state.getBlock_roots(), new ArrayList<>());
+    this.state_roots = this.copyBytesList(state.getState_roots(), new ArrayList<>());
+    this.historical_roots = this.copyBytesList(state.getHistorical_roots(), new ArrayList<>());
+
+    // Eth1
+    this.eth1_data = new Eth1Data(state.getEth1_data());
+    this.eth1_data_votes = state.getEth1_data_votes().stream().collect(Collectors.toList());
+    this.eth1_deposit_index = state.getEth1_deposit_index();
+
+    // Registry
+    this.validators = this.copyList(state.getValidators(), new ArrayList<>());
     this.balances = state.getBalances().stream().collect(Collectors.toList());
 
-    this.latest_randao_mixes =
-        this.copyBytesList(state.getLatest_randao_mixes(), new ArrayList<>());
-    this.latest_start_shard = state.getLatest_start_shard();
+    // Shuffling
+    this.start_shard = state.getStart_shard();
+    this.randao_mixes =
+            this.copyBytesList(state.getRandao_mixes(), new ArrayList<>());
+    this.active_index_roots =
+            this.copyBytesList(state.getActive_index_roots(), new ArrayList<>());
+    this.compact_committees_roots =
+            this.copyBytesList(state.getCompact_committees_roots(), new ArrayList<>());
 
+    // Slashings
+    this.slashings = state.getSlashings().stream().collect(Collectors.toList());
+
+    // Attestations
     this.previous_epoch_attestations =
-        this.copyList(state.getPrevious_epoch_attestations(), new ArrayList<>());
+            this.copyList(state.getPrevious_epoch_attestations(), new ArrayList<>());
     this.current_epoch_attestations =
-        this.copyList(state.getCurrent_epoch_attestations(), new ArrayList<>());
-    this.previous_justified_checkpoint = state.getPrevious_justified_checkpoint();
-    this.current_justified_chekpoint = state.getCurrent_justified_chekpoint();
-    this.previous_justified_root = state.getPrevious_justified_root();
-    this.current_justified_root = state.getCurrent_justified_root();
-    this.justification_bitfield = state.getJustification_bitfield();
-    this.finalized_epoch = state.getFinalized_epoch();
-    this.finalized_checkpoint = state.getFinalized_checkpoint();
+            this.copyList(state.getCurrent_epoch_attestations(), new ArrayList<>());
 
+    // Crosslinks
     this.current_crosslinks = this.copyList(state.getCurrent_crosslinks(), new ArrayList<>());
     this.previous_crosslinks = this.copyList(state.getPrevious_crosslinks(), new ArrayList<>());
-    this.latest_block_roots = this.copyBytesList(state.getLatest_block_roots(), new ArrayList<>());
-    this.latest_state_roots = this.copyBytesList(state.getLatest_state_roots(), new ArrayList<>());
-    this.latest_active_index_roots =
-        this.copyBytesList(state.getLatest_active_index_roots(), new ArrayList<>());
-    this.latest_slashed_balances =
-        state.getLatest_slashed_balances().stream().collect(Collectors.toList());
-    this.latest_block_header =
-        BeaconBlockHeader.fromBytes(state.getLatest_block_header().toBytes());
-    this.historical_roots = this.copyBytesList(state.getHistorical_roots(), new ArrayList<>());
-    this.latest_eth1_data = new Eth1Data(state.getLatest_eth1_data());
-    this.eth1_data_votes = state.getEth1_data_votes().stream().collect(Collectors.toList());
-    this.deposit_index = state.getDeposit_index();
 
+    // Finality
+    this.justification_bits = state.getJustification_bits().copy();
+    this.previous_justified_checkpoint = new Checkpoint(state.getPrevious_justified_checkpoint());
+    this.current_justified_checkpoint = new Checkpoint(state.getCurrent_justified_checkpoint());
+    this.finalized_checkpoint = new Checkpoint(state.getFinalized_checkpoint());
+
+    // Client Specific For Caching Purposes
     this.crosslinkCommittees = state.getCrossLinkCommittees();
     this.startShards = state.getStartShards();
   }

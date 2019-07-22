@@ -18,9 +18,12 @@ import static tech.pegasys.artemis.datastructures.Constants.DOMAIN_ATTESTATION;
 import static tech.pegasys.artemis.datastructures.Constants.GENESIS_SLOT;
 import static tech.pegasys.artemis.datastructures.Constants.MAX_VALIDATORS_PER_COMMITTEE;
 import static tech.pegasys.artemis.datastructures.Constants.SLOTS_PER_EPOCH;
+import static tech.pegasys.artemis.datastructures.util.AttestationUtil.get_attesting_indices;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_bitfield_bit;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_domain;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_of_slot;
 import static tech.pegasys.artemis.statetransition.StateTransition.process_slots;
+import static tech.pegasys.artemis.statetransition.util.ForkChoiceUtil.get_head;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
@@ -28,12 +31,12 @@ import com.google.common.primitives.UnsignedLong;
 import com.google.protobuf.ByteString;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
@@ -72,13 +75,15 @@ import tech.pegasys.artemis.proto.messagesigner.MessageSignerGrpc;
 import tech.pegasys.artemis.proto.messagesigner.SignatureRequest;
 import tech.pegasys.artemis.proto.messagesigner.SignatureResponse;
 import tech.pegasys.artemis.service.serviceutils.ServiceConfig;
-import tech.pegasys.artemis.statetransition.GenesisHeadStateEvent;
-import tech.pegasys.artemis.statetransition.HeadStateEvent;
+import tech.pegasys.artemis.statetransition.GenesisStateEvent;
+import tech.pegasys.artemis.statetransition.SlotEvent;
 import tech.pegasys.artemis.statetransition.StateTransition;
 import tech.pegasys.artemis.statetransition.StateTransitionException;
+import tech.pegasys.artemis.statetransition.ValidatorAssignmentEvent;
 import tech.pegasys.artemis.statetransition.util.EpochProcessingException;
 import tech.pegasys.artemis.statetransition.util.SlotProcessingException;
 import tech.pegasys.artemis.storage.ChainStorageClient;
+import tech.pegasys.artemis.storage.Store;
 import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
@@ -106,7 +111,7 @@ public class ValidatorCoordinator {
   private ArrayList<Deposit> newDeposits = new ArrayList<>();
   private final HashMap<BLSPublicKey, MutableTriple<BLSKeyPair, Boolean, Integer>> validatorSet =
       new HashMap<>();
-  private ChainStorageClient store;
+  private ChainStorageClient chainStorageClient;
   private HashMap<BLSPublicKey, ManagedChannel> validatorClientChannels = new HashMap<>();
   private HashMap<UnsignedLong, List<Triple<List<Integer>, UnsignedLong, Integer>>>
       committeeAssignments = new HashMap<>();
@@ -124,7 +129,7 @@ public class ValidatorCoordinator {
     this.naughtinessPercentage = config.getConfig().getNaughtinessPercentage();
     this.numNodes = config.getConfig().getNumNodes();
     this.numValidators = config.getConfig().getNumValidators();
-    this.store = store;
+    this.chainStorageClient = store;
 
     stateTransition = new StateTransition(printEnabled);
 
@@ -177,7 +182,7 @@ public class ValidatorCoordinator {
   */
   @Subscribe
   // TODO: make sure blocks that are produced right even after new slot to be pushed.
-  public void onNewSlot(Date date) {
+  public void onNewSlot(SlotEvent slotEvent) {
     if (validatorBlock != null) {
       this.eventBus.post(validatorBlock);
       validatorBlock = null;
@@ -185,13 +190,12 @@ public class ValidatorCoordinator {
   }
 
   @Subscribe
-  public void onGenesisHeadStateEvent(GenesisHeadStateEvent genesisHeadStateEvent) {
-    onNewHeadStateEvent(
-        new HeadStateEvent(
-            genesisHeadStateEvent.getHeadState(), genesisHeadStateEvent.getHeadBlock()));
+  public void onGenesisStateEvent(GenesisStateEvent genesisHeadStateEvent) {
+    BeaconBlock genesisBlock = genesisHeadStateEvent.getGenesisBlock();
+    BeaconStateWithCache genesisState = genesisHeadStateEvent.getGenesisState();
 
     // Get validator indices of our own validators
-    List<Validator> validatorRegistry = headState.getValidator_registry();
+    List<Validator> validatorRegistry = genesisState.getValidators();
     IntStream.range(0, validatorRegistry.size())
         .forEach(
             i -> {
@@ -199,19 +203,33 @@ public class ValidatorCoordinator {
                 validatorSet.get(validatorRegistry.get(i).getPubkey()).setRight(i);
               }
             });
-
-    this.eventBus.post(true);
   }
 
   @Subscribe
-  public void onNewHeadStateEvent(HeadStateEvent headStateEvent) throws IllegalArgumentException {
+  public void onNewAssignment(ValidatorAssignmentEvent validatorAssignmentEvent) throws IllegalArgumentException {
+    Store store = chainStorageClient.getStore();
+    Bytes32 headBlockRoot = get_head(store);
+    BeaconBlock headBlock = store.getBlocks().get(headBlockRoot);
+    BeaconState headState = store.getBlock_states().get(headBlockRoot);
+
+    // Logging
+    STDOUT.log(Level.INFO,
+            "Head block slot:" +
+                    "                       " +
+                    headBlock.getSlot().longValue());
+    STDOUT.log(Level.INFO,
+            "Justified epoch:" +
+                    "                       " +
+                    store.getJustified_checkpoint().getEpoch());
+    STDOUT.log(Level.INFO,
+            "Finalized epoch:" +
+                    "                       " +
+                    store.getFinalized_checkpoint().getEpoch());
+
     try {
-      // Retrieve headState and headBlock from event
-      BeaconStateWithCache headState = headStateEvent.getHeadState();
-      BeaconBlock headBlock = headStateEvent.getHeadBlock();
 
       if (headState.getSlot().mod(UnsignedLong.valueOf(SLOTS_PER_EPOCH)).equals(UnsignedLong.ZERO)
-          || headState.getSlot().equals(UnsignedLong.valueOf(GENESIS_SLOT + 1))) {
+          || headState.getSlot().equals(UnsignedLong.valueOf(GENESIS_SLOT))) {
         validatorSet.forEach(
             (pubKey, validatorInformation) -> {
               Optional<Triple<List<Integer>, UnsignedLong, UnsignedLong>> committeeAssignment =
@@ -257,7 +275,7 @@ public class ValidatorCoordinator {
 
       // Copy state so that state transition during block creation does not manipulate headState in
       // storage
-      createBlockIfNecessary(headState, headBlock);
+      createBlockIfNecessary((BeaconStateWithCache) headState, headBlock);
 
       // Save headState to check for slashings
       this.headState = headState;
@@ -342,7 +360,7 @@ public class ValidatorCoordinator {
           state.getSlot().minus(UnsignedLong.valueOf(Constants.MIN_ATTESTATION_INCLUSION_DELAY));
 
       current_attestations =
-          this.store.getUnprocessedAttestationsUntilSlot(state, attestation_slot);
+          this.chainStorageClient.getUnprocessedAttestationsUntilSlot(state, attestation_slot);
     }
 
     BeaconBlock newBlock =
@@ -473,7 +491,7 @@ public class ValidatorCoordinator {
     SignatureRequest request =
         SignatureRequest.newBuilder()
             .setMessage(ByteString.copyFrom(message.toArray()))
-            .setDomain(domain)
+            .setDomain(ByteString.copyFrom(domain.toArray()))
             .build();
 
     SignatureResponse response;

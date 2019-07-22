@@ -84,7 +84,6 @@ public final class Signature {
     KeyPair keyPair = KeyPair.random(entropy);
     byte[] message = "Hello, world!".getBytes(UTF_8);
     SignatureAndPublicKey sigAndPubKey = BLS12381.sign(keyPair, message, Bytes.ofUnsignedLong(48L));
-
     return sigAndPubKey.signature();
   }
 

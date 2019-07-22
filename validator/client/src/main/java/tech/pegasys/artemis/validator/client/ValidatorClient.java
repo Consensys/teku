@@ -91,7 +91,7 @@ public class ValidatorClient {
 
     private ByteString performSigning(SignatureRequest request) {
       Bytes message = Bytes.wrap(request.getMessage().toByteArray());
-      Bytes domain = request.getDomain();
+      Bytes domain = Bytes.wrap(request.getDomain().toByteArray());
       return ByteString.copyFrom(BLSSignature.sign(keypair, message, domain).toBytes().toArray());
     }
   }

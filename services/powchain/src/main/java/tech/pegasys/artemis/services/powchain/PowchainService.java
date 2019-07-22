@@ -41,6 +41,7 @@ import tech.pegasys.artemis.ganache.GanacheController;
 import tech.pegasys.artemis.pow.DepositContractListener;
 import tech.pegasys.artemis.pow.DepositContractListenerFactory;
 import tech.pegasys.artemis.pow.api.DepositEvent;
+import tech.pegasys.artemis.pow.contract.DepositContract;
 import tech.pegasys.artemis.pow.event.Deposit;
 import tech.pegasys.artemis.service.serviceutils.ServiceConfig;
 import tech.pegasys.artemis.service.serviceutils.ServiceInterface;
@@ -149,9 +150,6 @@ public class PowchainService implements ServiceInterface {
       } catch (IOException e) {
         LOG.log(Level.ERROR, e.getMessage());
       }
-    } else if (depositMode.equals(DEPOSIT_TEST)) {
-      DepositEvent event = null;
-      this.eventBus.post(event);
     } else if (depositMode.equals(DEPOSIT_NORMAL)) {
       listener =
           DepositContractListenerFactory.eth1DepositContract(eventBus, provider, contractAddr);
