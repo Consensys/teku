@@ -21,9 +21,8 @@ import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomE
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomLong;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomUnsignedLong;
 
-import java.util.List;
-
 import com.google.common.primitives.UnsignedLong;
+import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
@@ -187,8 +186,7 @@ class FixedPartSSZSOSTest {
     Crosslink crosslink = randomCrosslink();
 
     AttestationData attestationData =
-        new AttestationData(
-            beaconBlockRoot, source, target, crosslink);
+        new AttestationData(beaconBlockRoot, source, target, crosslink);
 
     Bytes sszAttestationDataBytes = attestationData.toBytes();
     Bytes sosAttestationDataBytes = SimpleOffsetSerializer.serialize(attestationData);

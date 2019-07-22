@@ -61,7 +61,8 @@ public class BLSAggregationTest {
     List<Bytes> messages = Arrays.asList(message, message, message);
 
     assertThrows(
-        IllegalArgumentException.class, () -> signature.checkSignature(publicKeys, messages, Bytes.ofUnsignedLong(0L)));
+        IllegalArgumentException.class,
+        () -> signature.checkSignature(publicKeys, messages, Bytes.ofUnsignedLong(0L)));
   }
 
   @Test

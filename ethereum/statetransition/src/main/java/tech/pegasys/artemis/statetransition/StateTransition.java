@@ -17,7 +17,6 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.artemis.datastructures.Constants.SLOTS_PER_EPOCH;
 import static tech.pegasys.artemis.datastructures.Constants.SLOTS_PER_HISTORICAL_ROOT;
 import static tech.pegasys.artemis.datastructures.Constants.ZERO_HASH;
-import static tech.pegasys.artemis.datastructures.Constants.init;
 import static tech.pegasys.artemis.statetransition.util.BlockProcessorUtil.process_block_header;
 import static tech.pegasys.artemis.statetransition.util.BlockProcessorUtil.process_eth1_data;
 import static tech.pegasys.artemis.statetransition.util.BlockProcessorUtil.process_operations;
@@ -96,7 +95,7 @@ public class StateTransition {
   }
 
   public BeaconState initiate(BeaconStateWithCache state, BeaconBlock block)
-    throws StateTransitionException {
+      throws StateTransitionException {
     return initiate(state, block, false);
   }
 

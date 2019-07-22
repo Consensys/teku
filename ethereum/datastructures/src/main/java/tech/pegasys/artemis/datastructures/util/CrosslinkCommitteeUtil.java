@@ -19,9 +19,9 @@ import static tech.pegasys.artemis.datastructures.Constants.SHARD_COUNT;
 import static tech.pegasys.artemis.datastructures.Constants.SHUFFLE_ROUND_COUNT;
 import static tech.pegasys.artemis.datastructures.Constants.SLOTS_PER_EPOCH;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.bytes_to_int;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_seed;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_current_epoch;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_committee_count;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_current_epoch;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_seed;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.int_to_bytes;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.min;
 import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.get_active_validator_indices;
@@ -77,7 +77,7 @@ public class CrosslinkCommitteeUtil {
 
       // The byte type is signed in Java, but the right shift should be fine as we just use bit 0.
       // But we can't use % in the normal way because of signedness, so we `& 1` instead.
-      byte theByte = source.get(Math.floorDiv(Math.floorMod(position , 256), 8));
+      byte theByte = source.get(Math.floorDiv(Math.floorMod(position, 256), 8));
       byte theMask = powerOfTwoNumbers[Math.floorMod(position, 8)];
       if ((theByte & theMask) != 0) {
         indexRet = flip;
@@ -109,7 +109,7 @@ public class CrosslinkCommitteeUtil {
   }
 
   /**
-   *    Return the crosslink committee at ``epoch`` for ``shard``.
+   * Return the crosslink committee at ``epoch`` for ``shard``.
    *
    * @param state
    * @param epoch
