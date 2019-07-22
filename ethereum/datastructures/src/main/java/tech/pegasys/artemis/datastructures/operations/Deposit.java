@@ -62,11 +62,9 @@ public class Deposit implements Merkleizable, SimpleOffsetSerializable {
   @Override
   public List<Bytes> get_fixed_parts() {
     List<Bytes> fixedPartsList = new ArrayList<>();
-    fixedPartsList.addAll(
-        List.of(SSZ.encode(writer -> writer.writeFixedBytesVector(proof))));
+    fixedPartsList.addAll(List.of(SSZ.encode(writer -> writer.writeFixedBytesVector(proof))));
     fixedPartsList.addAll(data.get_fixed_parts());
-    fixedPartsList.addAll(
-      List.of(SSZ.encodeUInt64(index.longValue())));
+    fixedPartsList.addAll(List.of(SSZ.encodeUInt64(index.longValue())));
     return fixedPartsList;
   }
 

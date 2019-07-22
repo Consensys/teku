@@ -42,10 +42,7 @@ public class AttestationData implements SimpleOffsetSerializable {
   private Crosslink crosslink;
 
   public AttestationData(
-      Bytes32 beacon_block_root,
-      Checkpoint source,
-      Checkpoint target,
-      Crosslink crosslink) {
+      Bytes32 beacon_block_root, Checkpoint source, Checkpoint target, Crosslink crosslink) {
     this.beacon_block_root = beacon_block_root;
     this.source = source;
     this.target = target;
@@ -61,14 +58,16 @@ public class AttestationData implements SimpleOffsetSerializable {
 
   @Override
   public int getSSZFieldCount() {
-    return SSZ_FIELD_COUNT + source.getSSZFieldCount() + target.getSSZFieldCount() + crosslink.getSSZFieldCount();
+    return SSZ_FIELD_COUNT
+        + source.getSSZFieldCount()
+        + target.getSSZFieldCount()
+        + crosslink.getSSZFieldCount();
   }
 
   @Override
   public List<Bytes> get_fixed_parts() {
     List<Bytes> fixedPartsList = new ArrayList<>();
-    fixedPartsList.addAll(
-        List.of(SSZ.encode(writer -> writer.writeFixedBytes(beacon_block_root))));
+    fixedPartsList.addAll(List.of(SSZ.encode(writer -> writer.writeFixedBytes(beacon_block_root))));
     fixedPartsList.addAll(source.get_fixed_parts());
     fixedPartsList.addAll(target.get_fixed_parts());
     fixedPartsList.addAll(crosslink.get_fixed_parts());
@@ -98,8 +97,7 @@ public class AttestationData implements SimpleOffsetSerializable {
 
   @Override
   public int hashCode() {
-    return Objects.hash(
-        beacon_block_root, source, target, crosslink);
+    return Objects.hash(beacon_block_root, source, target, crosslink);
   }
 
   @Override

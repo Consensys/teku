@@ -15,6 +15,7 @@ dependencies {
 
   
   api 'com.google.guava:guava:27.0.1-jre'
+  implementation 'com.google.code.gson:gson'
   implementation 'org.apache.tuweni:tuweni-crypto'
   implementation 'org.apache.tuweni:tuweni-plumtree'
   implementation 'org.apache.tuweni:tuweni-ssz'

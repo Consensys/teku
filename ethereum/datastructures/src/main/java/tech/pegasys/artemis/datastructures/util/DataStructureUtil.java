@@ -16,7 +16,6 @@ package tech.pegasys.artemis.datastructures.util;
 import static tech.pegasys.artemis.datastructures.Constants.DEPOSIT_CONTRACT_TREE_DEPTH;
 import static tech.pegasys.artemis.datastructures.Constants.DOMAIN_DEPOSIT;
 import static tech.pegasys.artemis.datastructures.Constants.ZERO_HASH;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.bls_domain;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_domain;
 
 import com.google.common.primitives.UnsignedLong;
@@ -52,7 +51,6 @@ import tech.pegasys.artemis.datastructures.operations.IndexedAttestation;
 import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
 import tech.pegasys.artemis.datastructures.operations.Transfer;
 import tech.pegasys.artemis.datastructures.operations.VoluntaryExit;
-import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.datastructures.state.Crosslink;
@@ -119,7 +117,7 @@ public final class DataStructureUtil {
   public static Crosslink randomCrosslink() {
     return new Crosslink(
         randomUnsignedLong(),
-            randomBytes32(),
+        randomBytes32(),
         randomUnsignedLong(),
         randomUnsignedLong(),
         randomBytes32());
@@ -128,38 +126,28 @@ public final class DataStructureUtil {
   public static Crosslink randomCrosslink(int seed) {
     return new Crosslink(
         randomUnsignedLong(seed),
-            randomBytes32(seed),
+        randomBytes32(seed),
         randomUnsignedLong(seed),
         randomUnsignedLong(seed),
         randomBytes32(seed));
   }
 
   public static Checkpoint randomCheckpoint(int seed) {
-    return new Checkpoint(
-            randomUnsignedLong(seed),
-            randomBytes32(seed));
+    return new Checkpoint(randomUnsignedLong(seed), randomBytes32(seed));
   }
 
   public static Checkpoint randomCheckpoint() {
-    return new Checkpoint(
-            randomUnsignedLong(),
-            randomBytes32());
+    return new Checkpoint(randomUnsignedLong(), randomBytes32());
   }
 
   public static AttestationData randomAttestationData(long slotNum) {
     return new AttestationData(
-        randomBytes32(),
-        randomCheckpoint(),
-        randomCheckpoint(),
-        randomCrosslink());
+        randomBytes32(), randomCheckpoint(), randomCheckpoint(), randomCrosslink());
   }
 
   public static AttestationData randomAttestationData(int seed) {
     return new AttestationData(
-        randomBytes32(seed),
-        randomCheckpoint(seed),
-        randomCheckpoint(seed),
-        randomCrosslink(seed));
+        randomBytes32(seed), randomCheckpoint(seed), randomCheckpoint(seed), randomCrosslink(seed));
   }
 
   public static AttestationData randomAttestationData() {
@@ -236,8 +224,8 @@ public final class DataStructureUtil {
 
   public static IndexedAttestation randomIndexedAttestation() {
     return new IndexedAttestation(
-            Arrays.asList(randomUnsignedLong(), randomUnsignedLong(), randomUnsignedLong()),
-            Arrays.asList(randomUnsignedLong(), randomUnsignedLong(), randomUnsignedLong()),
+        Arrays.asList(randomUnsignedLong(), randomUnsignedLong(), randomUnsignedLong()),
+        Arrays.asList(randomUnsignedLong(), randomUnsignedLong(), randomUnsignedLong()),
         randomAttestationData(),
         BLSSignature.random());
   }
@@ -375,7 +363,9 @@ public final class DataStructureUtil {
               BLSSignature.empty());
       BLSSignature proof_of_possession =
           BLSSignature.sign(
-              keypair, depositData.signing_root("signature"), compute_domain(Constants.DOMAIN_DEPOSIT));
+              keypair,
+              depositData.signing_root("signature"),
+              compute_domain(Constants.DOMAIN_DEPOSIT));
       depositData.setSignature(proof_of_possession);
 
       List<Bytes32> proof =
@@ -410,7 +400,6 @@ public final class DataStructureUtil {
         BLSSignature.empty());
   }
 
-
   @SuppressWarnings("unchecked")
   public static BeaconStateWithCache createInitialBeaconState(ArtemisConfiguration config)
       throws IOException, ParseException {
@@ -431,17 +420,15 @@ public final class DataStructureUtil {
       deposits.addAll(newDeposits(config.getNumValidators()));
     }
     return BeaconStateUtil.initialize_beacon_state_from_eth1(
-        Bytes32.ZERO,
-        UnsignedLong.valueOf(Constants.GENESIS_SLOT),
-        deposits);
+        Bytes32.ZERO, UnsignedLong.valueOf(Constants.GENESIS_SLOT), deposits);
   }
 
   public static Validator randomValidator() {
     return new Validator(
         randomPublicKey(),
         randomBytes32(),
-            UnsignedLong.valueOf(Constants.MAX_EFFECTIVE_BALANCE),
-            false,
+        UnsignedLong.valueOf(Constants.MAX_EFFECTIVE_BALANCE),
+        false,
         Constants.FAR_FUTURE_EPOCH,
         Constants.FAR_FUTURE_EPOCH,
         Constants.FAR_FUTURE_EPOCH,
@@ -452,8 +439,8 @@ public final class DataStructureUtil {
     return new Validator(
         randomPublicKey(seed),
         randomBytes32(seed),
-            UnsignedLong.valueOf(Constants.MAX_EFFECTIVE_BALANCE),
-            false,
+        UnsignedLong.valueOf(Constants.MAX_EFFECTIVE_BALANCE),
+        false,
         Constants.FAR_FUTURE_EPOCH,
         Constants.FAR_FUTURE_EPOCH,
         Constants.FAR_FUTURE_EPOCH,

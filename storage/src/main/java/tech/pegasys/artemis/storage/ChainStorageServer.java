@@ -30,6 +30,5 @@ public class ChainStorageServer extends ChainStorageClient implements ChainStora
   }
 
   @Subscribe
-  public void onNewProcessedBlock(Bytes32 blockRoot, BeaconBlock block) {
-  }
+  public void onNewProcessedBlock(Bytes32 blockRoot, BeaconBlock block) {}
 }

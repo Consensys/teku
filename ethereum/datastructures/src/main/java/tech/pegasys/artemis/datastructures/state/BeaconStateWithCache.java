@@ -42,7 +42,7 @@ public final class BeaconStateWithCache extends BeaconState {
 
     // History
     this.latest_block_header =
-            BeaconBlockHeader.fromBytes(state.getLatest_block_header().toBytes());
+        BeaconBlockHeader.fromBytes(state.getLatest_block_header().toBytes());
     this.block_roots = this.copyBytesList(state.getBlock_roots(), new ArrayList<>());
     this.state_roots = this.copyBytesList(state.getState_roots(), new ArrayList<>());
     this.historical_roots = this.copyBytesList(state.getHistorical_roots(), new ArrayList<>());
@@ -58,21 +58,19 @@ public final class BeaconStateWithCache extends BeaconState {
 
     // Shuffling
     this.start_shard = state.getStart_shard();
-    this.randao_mixes =
-            this.copyBytesList(state.getRandao_mixes(), new ArrayList<>());
-    this.active_index_roots =
-            this.copyBytesList(state.getActive_index_roots(), new ArrayList<>());
+    this.randao_mixes = this.copyBytesList(state.getRandao_mixes(), new ArrayList<>());
+    this.active_index_roots = this.copyBytesList(state.getActive_index_roots(), new ArrayList<>());
     this.compact_committees_roots =
-            this.copyBytesList(state.getCompact_committees_roots(), new ArrayList<>());
+        this.copyBytesList(state.getCompact_committees_roots(), new ArrayList<>());
 
     // Slashings
     this.slashings = state.getSlashings().stream().collect(Collectors.toList());
 
     // Attestations
     this.previous_epoch_attestations =
-            this.copyList(state.getPrevious_epoch_attestations(), new ArrayList<>());
+        this.copyList(state.getPrevious_epoch_attestations(), new ArrayList<>());
     this.current_epoch_attestations =
-            this.copyList(state.getCurrent_epoch_attestations(), new ArrayList<>());
+        this.copyList(state.getCurrent_epoch_attestations(), new ArrayList<>());
 
     // Crosslinks
     this.current_crosslinks = this.copyList(state.getCurrent_crosslinks(), new ArrayList<>());

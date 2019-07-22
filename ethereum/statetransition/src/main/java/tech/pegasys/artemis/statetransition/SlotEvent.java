@@ -14,8 +14,6 @@
 package tech.pegasys.artemis.statetransition;
 
 import com.google.common.primitives.UnsignedLong;
-import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
-import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 
 public class SlotEvent {
 

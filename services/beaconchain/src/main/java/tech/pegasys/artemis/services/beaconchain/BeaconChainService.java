@@ -14,7 +14,6 @@
 package tech.pegasys.artemis.services.beaconchain;
 
 import com.google.common.eventbus.EventBus;
-import com.google.common.eventbus.Subscribe;
 import io.vertx.core.Vertx;
 import java.io.IOException;
 import org.apache.logging.log4j.Level;
@@ -56,7 +55,7 @@ public class BeaconChainService implements ServiceInterface {
           new TimerFactory()
               .create(
                   config.getConfig().getTimer(),
-                  new Object[] {this.eventBus, 0, timerPeriodInMiliseconds },
+                  new Object[] {this.eventBus, 0, timerPeriodInMiliseconds},
                   new Class[] {EventBus.class, Integer.class, Integer.class});
     } catch (IllegalArgumentException e) {
       System.exit(1);

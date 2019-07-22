@@ -13,10 +13,6 @@
 
 package tech.pegasys.artemis.statetransition;
 
-
-import tech.pegasys.artemis.datastructures.state.Validator;
-
 public class ValidatorAssignmentEvent {
-  public ValidatorAssignmentEvent() {
-  }
+  public ValidatorAssignmentEvent() {}
 }

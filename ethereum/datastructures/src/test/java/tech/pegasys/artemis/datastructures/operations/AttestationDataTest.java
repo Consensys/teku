@@ -37,8 +37,7 @@ class AttestationDataTest {
   private Crosslink crosslink = randomCrosslink();
 
   private AttestationData attestationData =
-      new AttestationData(
-          beaconBlockRoot, source, target, crosslink);
+      new AttestationData(beaconBlockRoot, source, target, crosslink);
 
   @Test
   void equalsReturnsTrueWhenObjectAreSame() {
@@ -50,8 +49,7 @@ class AttestationDataTest {
   @Test
   void equalsReturnsTrueWhenObjectFieldsAreEqual() {
     AttestationData testAttestationData =
-        new AttestationData(
-            beaconBlockRoot, source, target, crosslink);
+        new AttestationData(beaconBlockRoot, source, target, crosslink);
 
     assertEquals(attestationData, testAttestationData);
   }
@@ -59,8 +57,7 @@ class AttestationDataTest {
   @Test
   void equalsReturnsFalseWhenBlockRootsAreDifferent() {
     AttestationData testAttestationData =
-        new AttestationData(
-            Bytes32.random(), source, target, crosslink);
+        new AttestationData(Bytes32.random(), source, target, crosslink);
 
     assertNotEquals(attestationData, testAttestationData);
   }
@@ -70,11 +67,7 @@ class AttestationDataTest {
     Checkpoint newSource = new Checkpoint(source);
     newSource.setEpoch(randomUnsignedLong());
     AttestationData testAttestationData =
-        new AttestationData(
-            beaconBlockRoot,
-            newSource,
-            target,
-            crosslink);
+        new AttestationData(beaconBlockRoot, newSource, target, crosslink);
 
     assertNotEquals(attestationData, testAttestationData);
   }
@@ -84,8 +77,7 @@ class AttestationDataTest {
     Checkpoint newSource = new Checkpoint(source);
     newSource.setRoot(Bytes32.random());
     AttestationData testAttestationData =
-        new AttestationData(
-            beaconBlockRoot, source, target, crosslink);
+        new AttestationData(beaconBlockRoot, source, target, crosslink);
 
     assertNotEquals(attestationData, testAttestationData);
   }
@@ -95,11 +87,7 @@ class AttestationDataTest {
     Checkpoint newTarget = new Checkpoint(target);
     newTarget.setEpoch(randomUnsignedLong());
     AttestationData testAttestationData =
-        new AttestationData(
-            beaconBlockRoot,
-            source,
-            target,
-            crosslink);
+        new AttestationData(beaconBlockRoot, source, target, crosslink);
 
     assertNotEquals(attestationData, testAttestationData);
   }
@@ -109,8 +97,7 @@ class AttestationDataTest {
     Checkpoint newTarget = new Checkpoint(target);
     newTarget.setRoot(Bytes32.random());
     AttestationData testAttestationData =
-        new AttestationData(
-            beaconBlockRoot, source, target, crosslink);
+        new AttestationData(beaconBlockRoot, source, target, crosslink);
 
     assertNotEquals(attestationData, testAttestationData);
   }
@@ -119,11 +106,7 @@ class AttestationDataTest {
   void equalsReturnsFalseWhenLatestCrosslinkRootsAreDifferent() {
 
     AttestationData testAttestationData =
-        new AttestationData(
-            beaconBlockRoot,
-            source,
-            target,
-            randomCrosslink());
+        new AttestationData(beaconBlockRoot, source, target, randomCrosslink());
 
     assertNotEquals(attestationData, testAttestationData);
   }
