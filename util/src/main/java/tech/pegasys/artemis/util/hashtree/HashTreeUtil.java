@@ -62,6 +62,9 @@ public final class HashTreeUtil {
       case BITVECTOR:
         checkArgument(bytes.length == 1, "A BitVector is only represented by a single Bytes value");
         return hash_tree_root_bitvector(bytes[0]);
+      case BITLIST:
+        checkArgument(bytes.length == 1, "A BitList is only represented by a single Bytes value");
+        return hash_tree_root_bitlist(bytes[0]);
       case VECTOR_OF_BASIC:
         return hash_tree_root_vector_of_basic_type(bytes);
       case VECTOR_OF_COMPOSITE:
@@ -195,6 +198,19 @@ public final class HashTreeUtil {
    */
   private static Bytes32 hash_tree_root_vector_of_basic_type(Bytes... bytes) {
     return hash_tree_root_basic_type(bytes);
+  }
+
+  /**
+   * Create the hash tree root of a SSZ Bitlist.
+   *
+   * @param bytes One Bytes value or a list of homogeneous Bytes values.
+   * @return The SSZ tree root hash of the values.
+   * @see <a
+   *     href="https://github.com/ethereum/eth2.0-specs/blob/v0.5.1/specs/simple-serialize.md">SSZ
+   *     Spec v0.5.1</a>
+   */
+  private static Bytes32 hash_tree_root_bitlist(Bytes bytes) {
+    return mix_in_length(merkleize(pack(bytes), chunk_count(SSZTypes.BITLIST, bytes)), bytes.size());
   }
 
   /**
