@@ -210,7 +210,7 @@ public final class HashTreeUtil {
    *     Spec v0.5.1</a>
    */
   private static Bytes32 hash_tree_root_bitlist(Bytes bytes) {
-    return mix_in_length(merkleize(pack(bytes), chunk_count(SSZTypes.BITLIST, bytes)), bytes.size());
+    return mix_in_length(merkleize(bitfield_bytes(bytes), chunk_count(SSZTypes.BITLIST, bytes)), bytes.size());
   }
 
   /**
@@ -223,7 +223,7 @@ public final class HashTreeUtil {
    *     Spec v0.5.1</a>
    */
   private static Bytes32 hash_tree_root_bitvector(Bytes bytes) {
-    return merkleize(pack(bytes), chunk_count(SSZTypes.BITVECTOR, bytes));
+    return merkleize(bitfield_bytes(bytes), chunk_count(SSZTypes.BITVECTOR, bytes));
   }
 
   /**
