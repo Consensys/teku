@@ -109,12 +109,12 @@ public final class HashTreeUtil {
     return Bytes32.ZERO;
   }
 
-  public static Bytes32 merkleize(List<Bytes32> sszChunks) {
+  public static Bytes32 merkleize(List<Bytes32> sszChunks, int limit) {
     List<Bytes32> mutableSSZChunks = new ArrayList<>(sszChunks);
 
     // A balanced binary tree must have a power of two number of leaves.
     // NOTE: is_power_of_two also serves as a zero size check here.
-    while (!is_power_of_two(mutableSSZChunks.size())) {
+    while (!is_power_of_two(mutableSSZChunks.size()) || mutableSSZChunks.size() < limit) {
       mutableSSZChunks.add(Bytes32.ZERO);
     }
 
@@ -135,6 +135,10 @@ public final class HashTreeUtil {
 
     // Return the root element, which is at index 1. The math is easier this way.
     return mutableSSZChunks.get(1);
+  }
+
+  public static Bytes32 merkleize(List<Bytes32> sszChunks) {
+    return merkleize(sszChunks, sszChunks.size());
   }
 
   /**
