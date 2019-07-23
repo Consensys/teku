@@ -182,8 +182,8 @@ public final class BeaconBlock implements SimpleOffsetSerializable {
         HashTreeUtil.merkleize(
             Arrays.asList(
                 HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(slot.longValue())),
-                HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, parent_root),
-                HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, state_root),
+                HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_BASIC, parent_root),
+                HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_BASIC, state_root),
                 body.hash_tree_root())));
   }
 
@@ -191,9 +191,9 @@ public final class BeaconBlock implements SimpleOffsetSerializable {
     return HashTreeUtil.merkleize(
         Arrays.asList(
             HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(slot.longValue())),
-            HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, parent_root),
-            HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, state_root),
+            HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_BASIC, parent_root),
+            HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_BASIC, state_root),
             body.hash_tree_root(),
-            HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, signature.toBytes())));
+            HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_BASIC, signature.toBytes())));
   }
 }

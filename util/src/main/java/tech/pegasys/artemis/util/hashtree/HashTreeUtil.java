@@ -33,8 +33,8 @@ public final class HashTreeUtil {
    * https://github.com/ethereum/eth2.0-specs/blob/v0.5.1/specs/simple-serialize.md.
    *
    * <p>Basic Types: - BASIC: A uint# or a byte (uint8) Composite Types: - CONTAINER: A collection
-   * of arbitrary other SSZ types. - TUPLE: A fixed-length collection of homogenous values. -
-   * _OF_BASIC: A tuple containing only basic SSZ types. - _OF_COMPOSITE: A tuple containing
+   * of arbitrary other SSZ types. - VECTOR: A fixed-length collection of homogenous values. -
+   * _OF_BASIC: A vector containing only basic SSZ types. - _OF_COMPOSITE: A vector containing
    * homogenous SSZ composite types. - LIST: A variable-length collection of homogenous values. -
    * _OF_BASIC: A list containing only basic SSZ types. - _OF_COMPOSITE: A list containing
    * homogenous SSZ composite types.
@@ -42,8 +42,8 @@ public final class HashTreeUtil {
   public static enum SSZTypes {
     BASIC,
     CONTAINER,
-    TUPLE_OF_BASIC,
-    TUPLE_OF_COMPOSITE,
+    VECTOR_OF_BASIC,
+    VECTOR_OF_COMPOSITE,
     LIST_OF_BASIC,
     LIST_OF_COMPOSITE
   };
@@ -56,11 +56,11 @@ public final class HashTreeUtil {
     switch (sszType) {
       case BASIC:
         return hash_tree_root_basic_type(bytes);
-      case TUPLE_OF_BASIC:
-        return hash_tree_root_tuple_of_basic_type(bytes);
-      case TUPLE_OF_COMPOSITE:
+      case VECTOR_OF_BASIC:
+        return hash_tree_root_vector_of_basic_type(bytes);
+      case VECTOR_OF_COMPOSITE:
         throw new UnsupportedOperationException(
-            "Use HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_COMPOSITE, List) for a fixed length list of composite SSZ types.");
+            "Use HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_COMPOSITE, List) for a fixed length list of composite SSZ types.");
       case LIST_OF_BASIC:
         return hash_tree_root_list_of_basic_type(bytes.length, bytes);
       case LIST_OF_COMPOSITE:
@@ -88,15 +88,15 @@ public final class HashTreeUtil {
           return hash_tree_root_list_composite_type((List<Merkleizable>) bytes, bytes.size());
         }
         break;
-      case TUPLE_OF_COMPOSITE:
+      case VECTOR_OF_COMPOSITE:
         if (!bytes.isEmpty() && bytes.get(0) instanceof Bytes32) {
-          return hash_tree_root_tuple_composite_type((List<Bytes32>) bytes);
+          return hash_tree_root_vector_composite_type((List<Bytes32>) bytes);
         }
         break;
       case BASIC:
         throw new UnsupportedOperationException(
             "Use HashTreeUtil.hash_tree_root(SSZType.BASIC, Bytes...) for a basic SSZ type.");
-      case TUPLE_OF_BASIC:
+      case VECTOR_OF_BASIC:
         throw new UnsupportedOperationException(
             "Use HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_BASIC, Bytes...) for a fixed length tuple of basic SSZ types.");
       case CONTAINER:
@@ -161,7 +161,7 @@ public final class HashTreeUtil {
    *     href="https://github.com/ethereum/eth2.0-specs/blob/v0.5.1/specs/simple-serialize.md">SSZ
    *     Spec v0.5.1</a>
    */
-  private static Bytes32 hash_tree_root_tuple_of_basic_type(Bytes... bytes) {
+  private static Bytes32 hash_tree_root_vector_of_basic_type(Bytes... bytes) {
     return hash_tree_root_basic_type(bytes);
   }
 
@@ -222,10 +222,10 @@ public final class HashTreeUtil {
    *     href="https://github.com/ethereum/eth2.0-specs/blob/v0.5.1/specs/simple-serialize.md">SSZ
    *     Spec v0.5.1</a>
    */
-  private static Bytes32 hash_tree_root_tuple_composite_type(List<Bytes32> bytes) {
+  private static Bytes32 hash_tree_root_vector_composite_type(List<Bytes32> bytes) {
     return merkleize(
         bytes.stream()
-            .map(item -> hash_tree_root_tuple_of_basic_type(item))
+            .map(item -> hash_tree_root_vector_of_basic_type(item))
             .collect(Collectors.toList()));
   }
 

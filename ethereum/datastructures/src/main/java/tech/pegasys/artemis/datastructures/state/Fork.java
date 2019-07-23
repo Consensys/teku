@@ -148,8 +148,8 @@ public class Fork implements SimpleOffsetSerializable {
   public Bytes32 hash_tree_root() {
     return HashTreeUtil.merkleize(
         Arrays.asList(
-            HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, previous_version),
-            HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, current_version),
+            HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_BASIC, previous_version),
+            HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_BASIC, current_version),
             HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(epoch.longValue()))));
   }
 }

@@ -120,6 +120,6 @@ public class Checkpoint implements SimpleOffsetSerializable {
     return HashTreeUtil.merkleize(
         Arrays.asList(
             HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(epoch.longValue())),
-            HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, root)));
+            HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_BASIC, root)));
   }
 }
