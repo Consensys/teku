@@ -15,6 +15,7 @@ package tech.pegasys.artemis.util.hashtree;
 
 import static java.lang.Math.toIntExact;
 import static java.nio.ByteOrder.LITTLE_ENDIAN;
+import static com.google.common.base.Preconditions.checkArgument;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
@@ -58,6 +59,9 @@ public final class HashTreeUtil {
     switch (sszType) {
       case BASIC:
         return hash_tree_root_basic_type(bytes);
+      case BITVECTOR:
+        checkArgument(bytes.length == 1, "A BitVector is only represented by a single Bytes value");
+        return hash_tree_root_bitvector(bytes[0]);
       case VECTOR_OF_BASIC:
         return hash_tree_root_vector_of_basic_type(bytes);
       case VECTOR_OF_COMPOSITE:
@@ -172,6 +176,19 @@ public final class HashTreeUtil {
   }
 
   /**
+   * Create the hash tree root of a SSZ Bitvector.
+   *
+   * @param bytes One Bytes value or a list of homogeneous Bytes values.
+   * @return The SSZ tree root hash of the values.
+   * @see <a
+   *     href="https://github.com/ethereum/eth2.0-specs/blob/v0.5.1/specs/simple-serialize.md">SSZ
+   *     Spec v0.5.1</a>
+   */
+  private static Bytes32 hash_tree_root_bitvector(Bytes bytes) {
+    return merkleize(pack(bytes), chunk_count(SSZTypes.BITVECTOR, bytes));
+  }
+
+  /**
    * Create the hash tree root of a list of values of basic SSZ types. This is only to be used for
    * SSZ lists and not SSZ tuples. See the "see also" for more info.
    *
@@ -258,6 +275,28 @@ public final class HashTreeUtil {
     }
 
     return chunkifiedBytes;
+  }
+
+  private static int chunk_count(HashTreeUtil.SSZTypes sszType, Bytes value) {
+    switch (sszType) {
+      case BASIC:
+        return 1;
+      case BITLIST:
+      case BITVECTOR:
+        return (value.bitLength() + 255) / 256;
+      case LIST_OF_BASIC:
+        throw new UnsupportedOperationException("Lists are not yet supported in chunk_count. Support is pending a way to send the list max_length.");
+      case VECTOR_OF_BASIC:
+        return (value.size() + 31) / 32;
+      case LIST_OF_COMPOSITE:
+        throw new UnsupportedOperationException("Lists are not yet supported in chunk_count. Support is pending a way to send the list max_length.");
+      case VECTOR_OF_COMPOSITE:
+        return value.size();
+      case CONTAINER:
+        throw new UnsupportedOperationException(
+            "hash_tree_root of SSZ Containers (often implemented by POJOs) must be done by the container POJO itself, as its individual fields cannot be enumerated without reflection.");
+    }
+    return -1;
   }
 
   private static Bytes32 mix_in_length(Bytes32 merkle_root, int length) {
