@@ -45,7 +45,9 @@ public final class HashTreeUtil {
     VECTOR_OF_BASIC,
     VECTOR_OF_COMPOSITE,
     LIST_OF_BASIC,
-    LIST_OF_COMPOSITE
+    LIST_OF_COMPOSITE,
+    BITLIST,
+    BITVECTOR
   };
 
   // BYTES_PER_CHUNK is rather tightly coupled to the value 32 due to the assumption that it fits in
@@ -60,7 +62,7 @@ public final class HashTreeUtil {
         return hash_tree_root_vector_of_basic_type(bytes);
       case VECTOR_OF_COMPOSITE:
         throw new UnsupportedOperationException(
-            "Use HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_COMPOSITE, List) for a fixed length list of composite SSZ types.");
+            "Use HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_COMPOSITE, List) for a fixed length list of composite SSZ types.");
       case LIST_OF_BASIC:
         return hash_tree_root_list_of_basic_type(bytes.length, bytes);
       case LIST_OF_COMPOSITE:
@@ -229,8 +231,11 @@ public final class HashTreeUtil {
             .collect(Collectors.toList()));
   }
 
-  // TODO Make Private
-  public static List<Bytes32> pack(Bytes... sszValues) {
+  private static List<Bytes32> bitfield_bytes(Bytes... sszValues) {
+    return pack(sszValues);
+  }
+
+  private static List<Bytes32> pack(Bytes... sszValues) {
     // Join all varags sszValues into one Bytes type
     Bytes concatenatedBytes = Bytes.concatenate(sszValues);
 
@@ -254,7 +259,7 @@ public final class HashTreeUtil {
   private static Bytes32 mix_in_length(Bytes32 merkle_root, int length) {
     // Append the little-endian length mixin to the given merkle root, and return its hash.
     return Hash.keccak256(
-        Bytes.concatenate(merkle_root, Bytes.ofUnsignedInt(length, LITTLE_ENDIAN)));
+        Bytes.concatenate(merkle_root, Bytes.ofUnsignedLong(length, LITTLE_ENDIAN), Bytes.wrap(new byte[8])));
   }
 
   public static boolean is_power_of_two(int value) {
