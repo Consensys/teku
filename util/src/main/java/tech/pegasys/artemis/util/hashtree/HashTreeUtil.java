@@ -99,12 +99,10 @@ public final class HashTreeUtil {
     switch (sszType) {
       case LIST_OF_BASIC:
         throw new UnsupportedOperationException(
-          "Use HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_BASIC, int, List<Bytes>) for a variable length list of basic SSZ types.");
+          "Use HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_BASIC, int, List) for a variable length list of basic SSZ types.");
       case LIST_OF_COMPOSITE:
-        if (!bytes.isEmpty() && bytes.get(0) instanceof Merkleizable) {
-          return hash_tree_root_list_composite_type((List<Merkleizable>) bytes, bytes.size());
-        }
-        break;
+        throw new UnsupportedOperationException(
+          "Use HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_BASIC, int, List) for a variable length list of composite SSZ types.");
       case VECTOR_OF_COMPOSITE:
         if (!bytes.isEmpty() && bytes.get(0) instanceof Bytes32) {
           return hash_tree_root_vector_composite_type((List<Bytes32>) bytes);
@@ -130,6 +128,11 @@ public final class HashTreeUtil {
       case LIST_OF_BASIC:
         if (!bytes.isEmpty() && bytes.get(0) instanceof Bytes) {
           return hash_tree_root_list_of_basic_type((List<Bytes>) bytes, maxSize, bytes.size());
+        }
+        break;
+      case LIST_OF_COMPOSITE:
+        if (!bytes.isEmpty() && bytes.get(0) instanceof Merkleizable) {
+          return hash_tree_root_list_composite_type((List<Merkleizable>) bytes, maxSize, bytes.size());
         }
         break;
       default:
@@ -265,9 +268,10 @@ public final class HashTreeUtil {
    *     Spec v0.5.1</a>
    */
   private static Bytes32 hash_tree_root_list_composite_type(
-      List<? extends Merkleizable> bytes, int length) {
+      List<? extends Merkleizable> bytes, int maxSize, int length) {
+    List<Bytes32> hashTreeRootList = bytes.stream().map(item -> item.hash_tree_root()).collect(Collectors.toList());
     return mix_in_length(
-        merkleize(bytes.stream().map(item -> item.hash_tree_root()).collect(Collectors.toList())),
+        merkleize(hashTreeRootList, chunk_count(SSZTypes.LIST_OF_COMPOSITE, maxSize, hashTreeRootList.toArray(new Bytes32[0]))),
         length);
   }
 
