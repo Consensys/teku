@@ -39,6 +39,7 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Mockito;
 
+import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.DepositData;
@@ -54,7 +55,7 @@ class SSZStaticTestSuite {
   @ParameterizedTest(name = "{index}. Eth1Data Hash Tree Root Test")
   @MethodSource("readEth1Data")
   void testEth1DataHashTreeRoot(LinkedHashMap<String, Object> value, String serialized, String root) {
-    Eth1Data eth1Data = readEth1Data(value);
+    Eth1Data eth1Data = parseEth1Data(value);
     
     assertEquals(Bytes32.fromHexString(root), eth1Data.hash_tree_root());
   }
@@ -62,7 +63,7 @@ class SSZStaticTestSuite {
   @ParameterizedTest(name = "{index}. Eth1Data Serialization Test")
   @MethodSource("readEth1Data")
   void testEth1DataSerialize(LinkedHashMap<String, Object> value, String serialized, String root) {
-    Eth1Data eth1Data = readEth1Data(value);
+    Eth1Data eth1Data = parseEth1Data(value);
     
     assertEquals(Bytes.fromHexString(serialized), SimpleOffsetSerializer.serialize(eth1Data));
   }
@@ -70,7 +71,7 @@ class SSZStaticTestSuite {
   @ParameterizedTest(name = "{index}. DepositData Hash Tree Root Test")
   @MethodSource("readDepositData")
   void testDepositDataHashTreeRoot(LinkedHashMap<String, Object> value, String serialized, String root) {
-    DepositData depositData = readDepositData(value);
+    DepositData depositData = parseDepositData(value);
 
     assertEquals(Bytes32.fromHexString(root), depositData.hash_tree_root());
   }
@@ -78,7 +79,7 @@ class SSZStaticTestSuite {
   @ParameterizedTest(name = "{index}. DepositData Serialization Test")
   @MethodSource("readDepositData")
   void testDepositDataSerialize(LinkedHashMap<String, Object> value, String serialized, String root) {
-    DepositData depositData = readDepositData(value);
+    DepositData depositData = parseDepositData(value);
     
     assertEquals(Bytes.fromHexString(serialized), SimpleOffsetSerializer.serialize(depositData));
   }
@@ -88,7 +89,7 @@ class SSZStaticTestSuite {
   @SuppressWarnings({"unchecked"})
   void testDepositHashTreeRoot(LinkedHashMap<String, Object> value, String serialized, String root) {
     List<Bytes32> proof = ((List<String>) value.get("proof")).stream().map(proofString -> Bytes32.fromHexString(proofString)).collect(Collectors.toList());
-    DepositData data = readDepositData((LinkedHashMap<String, Object>) value.get("data"));
+    DepositData data = parseDepositData((LinkedHashMap<String, Object>) value.get("data"));
 
     Deposit deposit = new Deposit(proof, data);
 
@@ -100,14 +101,30 @@ class SSZStaticTestSuite {
   @SuppressWarnings({"unchecked"})
   void testDepositSerialize(LinkedHashMap<String, Object> value, String serialized, String root) {
     List<Bytes32> proof = ((List<String>) value.get("proof")).stream().map(proofString -> Bytes32.fromHexString(proofString)).collect(Collectors.toList());
-    DepositData data = readDepositData((LinkedHashMap<String, Object>) value.get("data"));
+    DepositData data = parseDepositData((LinkedHashMap<String, Object>) value.get("data"));
 
     Deposit deposit = new Deposit(proof, data);
     
     assertEquals(Bytes.fromHexString(serialized), SimpleOffsetSerializer.serialize(deposit));
   }
 
-  private Eth1Data readEth1Data(LinkedHashMap<String, Object> value) {
+  @ParameterizedTest(name = "{index}. Deposit Hash Tree Root Test")
+  @MethodSource("readBeaconBlockHeader")
+  void testBeaconBlockHeaderHashTreeRoot(LinkedHashMap<String, Object> value, String serialized, String root) {
+    BeaconBlockHeader beaconBlockHeader = parseBeaconBlockHeader(value);
+
+    assertEquals(Bytes32.fromHexString(root), beaconBlockHeader.hash_tree_root());
+  }
+
+  @ParameterizedTest(name = "{index}. Deposit Serialization Test")
+  @MethodSource("readBeaconBlockHeader")
+  void testBeaconBlockHeaderSerialize(LinkedHashMap<String, Object> value, String serialized, String root) {
+    BeaconBlockHeader beaconBlockHeader = parseBeaconBlockHeader(value);
+    
+    assertEquals(Bytes.fromHexString(serialized), SimpleOffsetSerializer.serialize(beaconBlockHeader));
+  }
+
+  private Eth1Data parseEth1Data(LinkedHashMap<String, Object> value) {
     Bytes32 depositRoot = Bytes32.fromHexString((String) value.get("deposit_root"));
     UnsignedLong depositCount = UnsignedLong.valueOf((BigInteger) value.get("deposit_count"));
     Bytes32 blockHash = Bytes32.fromHexString((String) value.get("block_hash"));
@@ -116,7 +133,7 @@ class SSZStaticTestSuite {
     return eth1Data;
   }
 
-  private DepositData readDepositData(LinkedHashMap<String, Object> value) {
+  private DepositData parseDepositData(LinkedHashMap<String, Object> value) {
     Bytes pubkeyBytes = Bytes.fromHexString((String) value.get("pubkey"));
     BLSPublicKey pubkeyMock = Mockito.mock(BLSPublicKey.class);
     Mockito.when(pubkeyMock.toBytes()).thenReturn(pubkeyBytes);
@@ -132,6 +149,21 @@ class SSZStaticTestSuite {
 
     DepositData depositData = new DepositData(pubkeyMock, withdrawalCredentials, amount, signatureMock);
     return depositData;
+  }
+
+  private BeaconBlockHeader parseBeaconBlockHeader(LinkedHashMap<String, Object> value) {
+    UnsignedLong slot = UnsignedLong.valueOf((BigInteger) value.get("slot"));
+    Bytes32 parentRoot = Bytes32.fromHexString((String) value.get("parent_root"));
+    Bytes32 stateRoot = Bytes32.fromHexString((String) value.get("state_root"));
+    Bytes32 bodyRoot = Bytes32.fromHexString((String) value.get("body_root"));
+
+    Bytes signatureBytes = Bytes.fromHexString((String) value.get("signature"));
+    BLSSignature signatureMock = Mockito.mock(BLSSignature.class);
+    Mockito.when(signatureMock.toBytes()).thenReturn(signatureBytes);
+    Mockito.when(signatureMock.get_fixed_parts()).thenReturn(List.of(signatureBytes));
+
+    BeaconBlockHeader beaconBlockHeader = new BeaconBlockHeader(slot, parentRoot, stateRoot, bodyRoot, signatureMock);
+    return beaconBlockHeader;
   }
 
   @MustBeClosed
@@ -160,6 +192,11 @@ class SSZStaticTestSuite {
   @MustBeClosed
   private static Stream<Arguments> readDeposit() throws IOException {
     return findTests(testFile, "Deposit");
+  }
+
+  @MustBeClosed
+  private static Stream<Arguments> readBeaconBlockHeader() throws IOException {
+    return findTests(testFile, "BeaconBlockHeader");
   }
 
   @SuppressWarnings({"unchecked", "rawtypes"})
