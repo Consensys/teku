@@ -24,7 +24,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.math.BigInteger;
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -41,6 +40,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Mockito;
 
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
+import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.DepositData;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
@@ -54,24 +54,15 @@ class SSZStaticTestSuite {
   @ParameterizedTest(name = "{index}. Eth1Data Hash Tree Root Test")
   @MethodSource("readEth1Data")
   void testEth1DataHashTreeRoot(LinkedHashMap<String, Object> value, String serialized, String root) {
-    Bytes32 depositRoot = Bytes32.fromHexString((String) value.get("deposit_root"));
-    UnsignedLong depositCount = UnsignedLong.valueOf((Long) value.get("deposit_count"));
-    Bytes32 blockHash = Bytes32.fromHexString((String) value.get("block_hash"));
-
-    Eth1Data eth1Data = new Eth1Data(depositRoot, depositCount, blockHash);
+    Eth1Data eth1Data = readEth1Data(value);
     
-    //assertEquals(Bytes.fromHexString(serialized), SimpleOffsetSerializer.serialize(eth1Data));
     assertEquals(Bytes32.fromHexString(root), eth1Data.hash_tree_root());
   }
 
   @ParameterizedTest(name = "{index}. Eth1Data Serialization Test")
   @MethodSource("readEth1Data")
   void testEth1DataSerialize(LinkedHashMap<String, Object> value, String serialized, String root) {
-    Bytes32 depositRoot = Bytes32.fromHexString((String) value.get("deposit_root"));
-    UnsignedLong depositCount = UnsignedLong.valueOf((Long) value.get("deposit_count"));
-    Bytes32 blockHash = Bytes32.fromHexString((String) value.get("block_hash"));
-
-    Eth1Data eth1Data = new Eth1Data(depositRoot, depositCount, blockHash);
+    Eth1Data eth1Data = readEth1Data(value);
     
     assertEquals(Bytes.fromHexString(serialized), SimpleOffsetSerializer.serialize(eth1Data));
   }
@@ -79,20 +70,7 @@ class SSZStaticTestSuite {
   @ParameterizedTest(name = "{index}. DepositData Hash Tree Root Test")
   @MethodSource("readDepositData")
   void testDepositDataHashTreeRoot(LinkedHashMap<String, Object> value, String serialized, String root) {
-    Bytes pubkeyBytes = Bytes.fromHexString((String) value.get("pubkey"));
-    BLSPublicKey pubkeyMock = Mockito.mock(BLSPublicKey.class);
-    Mockito.when(pubkeyMock.toBytes()).thenReturn(pubkeyBytes);
-    Mockito.when(pubkeyMock.get_fixed_parts()).thenReturn(List.of(pubkeyBytes));
-
-    Bytes32 withdrawalCredentials = Bytes32.fromHexString((String) value.get("withdrawal_credentials"));
-    UnsignedLong amount = UnsignedLong.valueOf((Long) value.get("amount"));
-
-    Bytes signatureBytes = Bytes.fromHexString((String) value.get("signature"));
-    BLSSignature signatureMock = Mockito.mock(BLSSignature.class);
-    Mockito.when(signatureMock.toBytes()).thenReturn(signatureBytes);
-    Mockito.when(signatureMock.get_fixed_parts()).thenReturn(List.of(signatureBytes));
-
-    DepositData depositData = new DepositData(pubkeyMock, withdrawalCredentials, amount, signatureMock);
+    DepositData depositData = readDepositData(value);
 
     assertEquals(Bytes32.fromHexString(root), depositData.hash_tree_root());
   }
@@ -100,13 +78,52 @@ class SSZStaticTestSuite {
   @ParameterizedTest(name = "{index}. DepositData Serialization Test")
   @MethodSource("readDepositData")
   void testDepositDataSerialize(LinkedHashMap<String, Object> value, String serialized, String root) {
+    DepositData depositData = readDepositData(value);
+    
+    assertEquals(Bytes.fromHexString(serialized), SimpleOffsetSerializer.serialize(depositData));
+  }
+
+  @ParameterizedTest(name = "{index}. Deposit Hash Tree Root Test")
+  @MethodSource("readDeposit")
+  @SuppressWarnings({"unchecked"})
+  void testDepositHashTreeRoot(LinkedHashMap<String, Object> value, String serialized, String root) {
+    List<Bytes32> proof = ((List<String>) value.get("proof")).stream().map(proofString -> Bytes32.fromHexString(proofString)).collect(Collectors.toList());
+    DepositData data = readDepositData((LinkedHashMap<String, Object>) value.get("data"));
+
+    Deposit deposit = new Deposit(proof, data);
+
+    assertEquals(Bytes32.fromHexString(root), deposit.hash_tree_root());
+  }
+
+  @ParameterizedTest(name = "{index}. Deposit Serialization Test")
+  @MethodSource("readDeposit")
+  @SuppressWarnings({"unchecked"})
+  void testDepositSerialize(LinkedHashMap<String, Object> value, String serialized, String root) {
+    List<Bytes32> proof = ((List<String>) value.get("proof")).stream().map(proofString -> Bytes32.fromHexString(proofString)).collect(Collectors.toList());
+    DepositData data = readDepositData((LinkedHashMap<String, Object>) value.get("data"));
+
+    Deposit deposit = new Deposit(proof, data);
+    
+    assertEquals(Bytes.fromHexString(serialized), SimpleOffsetSerializer.serialize(deposit));
+  }
+
+  private Eth1Data readEth1Data(LinkedHashMap<String, Object> value) {
+    Bytes32 depositRoot = Bytes32.fromHexString((String) value.get("deposit_root"));
+    UnsignedLong depositCount = UnsignedLong.valueOf((BigInteger) value.get("deposit_count"));
+    Bytes32 blockHash = Bytes32.fromHexString((String) value.get("block_hash"));
+
+    Eth1Data eth1Data = new Eth1Data(depositRoot, depositCount, blockHash);
+    return eth1Data;
+  }
+
+  private DepositData readDepositData(LinkedHashMap<String, Object> value) {
     Bytes pubkeyBytes = Bytes.fromHexString((String) value.get("pubkey"));
     BLSPublicKey pubkeyMock = Mockito.mock(BLSPublicKey.class);
     Mockito.when(pubkeyMock.toBytes()).thenReturn(pubkeyBytes);
     Mockito.when(pubkeyMock.get_fixed_parts()).thenReturn(List.of(pubkeyBytes));
 
     Bytes32 withdrawalCredentials = Bytes32.fromHexString((String) value.get("withdrawal_credentials"));
-    UnsignedLong amount = UnsignedLong.valueOf((Long) value.get("amount"));
+    UnsignedLong amount = UnsignedLong.valueOf((BigInteger) value.get("amount"));
 
     Bytes signatureBytes = Bytes.fromHexString((String) value.get("signature"));
     BLSSignature signatureMock = Mockito.mock(BLSSignature.class);
@@ -114,8 +131,7 @@ class SSZStaticTestSuite {
     Mockito.when(signatureMock.get_fixed_parts()).thenReturn(List.of(signatureBytes));
 
     DepositData depositData = new DepositData(pubkeyMock, withdrawalCredentials, amount, signatureMock);
-    
-    assertEquals(Bytes.fromHexString(serialized), SimpleOffsetSerializer.serialize(depositData));
+    return depositData;
   }
 
   @MustBeClosed
@@ -141,10 +157,15 @@ class SSZStaticTestSuite {
     return findTests(testFile, "DepositData");
   }
 
+  @MustBeClosed
+  private static Stream<Arguments> readDeposit() throws IOException {
+    return findTests(testFile, "Deposit");
+  }
+
   @SuppressWarnings({"unchecked", "rawtypes"})
   private static Stream<Arguments> prepareTests(InputStream in, String tcase) throws IOException {
     ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
-    Map allTests = mapper.readerFor(Map.class).readValue(in);
+    Map allTests = mapper.readerFor(Map.class).with(DeserializationFeature.USE_BIG_INTEGER_FOR_INTS).readValue(in);
     List<Map> testCaseList = ((List<Map>) allTests.get("test_cases")).stream().filter(testCase -> testCase.containsKey(tcase)).collect(Collectors.toList());
 
     return testCaseList.stream().map(testCase -> Arguments.of(((Map) testCase.get(tcase)).get("value"), ((Map) testCase.get(tcase)).get("serialized"), ((Map) testCase.get(tcase)).get("root")));
