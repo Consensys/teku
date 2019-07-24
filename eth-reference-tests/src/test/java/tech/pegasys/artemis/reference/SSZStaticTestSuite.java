@@ -46,6 +46,7 @@ import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.DepositData;
 import tech.pegasys.artemis.datastructures.operations.IndexedAttestation;
 import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
+import tech.pegasys.artemis.datastructures.operations.VoluntaryExit;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.datastructures.state.Crosslink;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
@@ -255,6 +256,26 @@ class SSZStaticTestSuite {
         Bytes.fromHexString(serialized), SimpleOffsetSerializer.serialize(attesterSlashing));
   }
 
+  // Attestation Goes Here
+
+  @ParameterizedTest(name = "{index}. VoluntaryExit Hash Tree Root Test")
+  @MethodSource("readVoluntaryExit")
+  void testVoluntaryExitHashTreeRoot(
+      LinkedHashMap<String, Object> value, String serialized, String root) {
+    VoluntaryExit voluntaryExit = parseVoluntaryExit(value);
+
+    assertEquals(Bytes32.fromHexString(root), voluntaryExit.hash_tree_root());
+  }
+
+  @ParameterizedTest(name = "{index}. VoluntaryExit Serialization Test")
+  @MethodSource("readVoluntaryExit")
+  void testVoluntaryExitSerialize(
+      LinkedHashMap<String, Object> value, String serialized, String root) {
+    VoluntaryExit voluntaryExit = parseVoluntaryExit(value);
+
+    assertEquals(Bytes.fromHexString(serialized), SimpleOffsetSerializer.serialize(voluntaryExit));
+  }
+
   private Eth1Data parseEth1Data(LinkedHashMap<String, Object> value) {
     Bytes32 depositRoot = Bytes32.fromHexString((String) value.get("deposit_root"));
     UnsignedLong depositCount = UnsignedLong.valueOf((BigInteger) value.get("deposit_count"));
@@ -274,12 +295,7 @@ class SSZStaticTestSuite {
     Bytes32 withdrawalCredentials =
         Bytes32.fromHexString((String) value.get("withdrawal_credentials"));
     UnsignedLong amount = UnsignedLong.valueOf((BigInteger) value.get("amount"));
-
-    Bytes signatureBytes = Bytes.fromHexString((String) value.get("signature"));
-    BLSSignature signatureMock = Mockito.mock(BLSSignature.class);
-    Mockito.when(signatureMock.toBytes()).thenReturn(signatureBytes);
-    Mockito.when(signatureMock.get_fixed_parts()).thenReturn(List.of(signatureBytes));
-    Mockito.when(signatureMock.getSSZFieldCount()).thenReturn(1);
+    BLSSignature signatureMock = mockBLSSignature(value);
 
     DepositData depositData =
         new DepositData(pubkeyMock, withdrawalCredentials, amount, signatureMock);
@@ -291,12 +307,7 @@ class SSZStaticTestSuite {
     Bytes32 parentRoot = Bytes32.fromHexString((String) value.get("parent_root"));
     Bytes32 stateRoot = Bytes32.fromHexString((String) value.get("state_root"));
     Bytes32 bodyRoot = Bytes32.fromHexString((String) value.get("body_root"));
-
-    Bytes signatureBytes = Bytes.fromHexString((String) value.get("signature"));
-    BLSSignature signatureMock = Mockito.mock(BLSSignature.class);
-    Mockito.when(signatureMock.toBytes()).thenReturn(signatureBytes);
-    Mockito.when(signatureMock.get_fixed_parts()).thenReturn(List.of(signatureBytes));
-    Mockito.when(signatureMock.getSSZFieldCount()).thenReturn(1);
+    BLSSignature signatureMock = mockBLSSignature(value);
 
     BeaconBlockHeader beaconBlockHeader =
         new BeaconBlockHeader(slot, parentRoot, stateRoot, bodyRoot, signatureMock);
@@ -355,12 +366,7 @@ class SSZStaticTestSuite {
         ((List<BigInteger>) value.get("custody_bit_1_indices"))
             .stream().map(index -> UnsignedLong.valueOf(index)).collect(Collectors.toList());
     AttestationData data = parseAttestationData((LinkedHashMap<String, Object>) value.get("data"));
-
-    Bytes signatureBytes = Bytes.fromHexString((String) value.get("signature"));
-    BLSSignature signatureMock = Mockito.mock(BLSSignature.class);
-    Mockito.when(signatureMock.toBytes()).thenReturn(signatureBytes);
-    Mockito.when(signatureMock.get_fixed_parts()).thenReturn(List.of(signatureBytes));
-    Mockito.when(signatureMock.getSSZFieldCount()).thenReturn(1);
+    BLSSignature signatureMock = mockBLSSignature(value);
 
     IndexedAttestation indexedAttestation =
         new IndexedAttestation(custodyBit0Indices, custodyBit1Indices, data, signatureMock);
@@ -376,6 +382,24 @@ class SSZStaticTestSuite {
 
     AttesterSlashing attesterSlashing = new AttesterSlashing(attestation1, attestation2);
     return attesterSlashing;
+  }
+
+  private VoluntaryExit parseVoluntaryExit(LinkedHashMap<String, Object> value) {
+    UnsignedLong epoch = UnsignedLong.valueOf((BigInteger) value.get("epoch"));
+    UnsignedLong validatorIndex = UnsignedLong.valueOf((BigInteger) value.get("validator_index"));
+    BLSSignature signatureMock = mockBLSSignature(value);
+
+    VoluntaryExit voluntaryExit = new VoluntaryExit(epoch, validatorIndex, signatureMock);
+    return voluntaryExit;
+  }
+
+  private BLSSignature mockBLSSignature(LinkedHashMap<String, Object> value) {
+    Bytes signatureBytes = Bytes.fromHexString((String) value.get("signature"));
+    BLSSignature signatureMock = Mockito.mock(BLSSignature.class);
+    Mockito.when(signatureMock.toBytes()).thenReturn(signatureBytes);
+    Mockito.when(signatureMock.get_fixed_parts()).thenReturn(List.of(signatureBytes));
+    Mockito.when(signatureMock.getSSZFieldCount()).thenReturn(1);
+    return signatureMock;
   }
 
   @MustBeClosed
@@ -437,6 +461,12 @@ class SSZStaticTestSuite {
 
   private static Stream<Arguments> readAttesterSlashing() throws IOException {
     return findTests(testFile, "AttesterSlashing");
+  }
+
+  // Attestation Goes Here
+
+  private static Stream<Arguments> readVoluntaryExit() throws IOException {
+    return findTests(testFile, "VoluntaryExit");
   }
 
   @SuppressWarnings({"unchecked", "rawtypes"})

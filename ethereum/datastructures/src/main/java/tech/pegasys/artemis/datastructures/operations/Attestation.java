@@ -15,6 +15,7 @@ package tech.pegasys.artemis.datastructures.operations;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
@@ -66,9 +67,9 @@ public class Attestation implements Merkleizable, SimpleOffsetSerializable {
   public List<Bytes> get_variable_parts() {
     List<Bytes> variablePartsList = new ArrayList<>();
     // variablePartsList.addAll( /* TODO Serialize Bitlist */ );
-    variablePartsList.addAll(List.of(Bytes.EMPTY));
+    variablePartsList.addAll(Collections.nCopies(data.getSSZFieldCount(), Bytes.EMPTY));
     // variablePartsList.addAll( /* TODO Serialize Bitlist */ );
-    variablePartsList.addAll(List.of(Bytes.EMPTY));
+    variablePartsList.addAll(Collections.nCopies(signature.getSSZFieldCount(), Bytes.EMPTY));
     return variablePartsList;
   }
 
