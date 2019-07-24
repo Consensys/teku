@@ -44,6 +44,7 @@ import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.DepositData;
 import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
+import tech.pegasys.artemis.datastructures.state.Crosslink;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
@@ -177,6 +178,24 @@ class SSZStaticTestSuite {
     assertEquals(Bytes.fromHexString(serialized), SimpleOffsetSerializer.serialize(checkpoint));
   }
 
+  @ParameterizedTest(name = "{index}. Crosslink Hash Tree Root Test")
+  @MethodSource("readCrosslink")
+  void testCrosslinkHashTreeRoot(
+      LinkedHashMap<String, Object> value, String serialized, String root) {
+    Crosslink crosslink = parseCrosslink(value);
+
+    assertEquals(Bytes32.fromHexString(root), crosslink.hash_tree_root());
+  }
+
+  @ParameterizedTest(name = "{index}. Crosslink Serialization Test")
+  @MethodSource("readCrosslink")
+  void testCrosslinkSerialize(
+      LinkedHashMap<String, Object> value, String serialized, String root) {
+    Crosslink crosslink = parseCrosslink(value);
+
+    assertEquals(Bytes.fromHexString(serialized), SimpleOffsetSerializer.serialize(crosslink));
+  }
+
   private Eth1Data parseEth1Data(LinkedHashMap<String, Object> value) {
     Bytes32 depositRoot = Bytes32.fromHexString((String) value.get("deposit_root"));
     UnsignedLong depositCount = UnsignedLong.valueOf((BigInteger) value.get("deposit_count"));
@@ -242,6 +261,17 @@ class SSZStaticTestSuite {
     return checkpoint;
   }
 
+  private Crosslink parseCrosslink(LinkedHashMap<String, Object> value) {
+    UnsignedLong shard = UnsignedLong.valueOf((BigInteger) value.get("shard"));
+    Bytes32 parentRoot = Bytes32.fromHexString((String) value.get("parent_root"));
+    UnsignedLong startEpoch = UnsignedLong.valueOf((BigInteger) value.get("start_epoch"));
+    UnsignedLong endEpoch = UnsignedLong.valueOf((BigInteger) value.get("end_epoch"));
+    Bytes32 dataRoot = Bytes32.fromHexString((String) value.get("data_root"));
+
+    Crosslink crosslink = new Crosslink(shard, parentRoot, startEpoch, endEpoch, dataRoot);
+    return crosslink;
+  }
+
   @MustBeClosed
   private static Stream<Arguments> findTests(String glob, String tcase) throws IOException {
     return Resources.find(glob)
@@ -283,6 +313,11 @@ class SSZStaticTestSuite {
   @MustBeClosed
   private static Stream<Arguments> readCheckpoint() throws IOException {
     return findTests(testFile, "Checkpoint");
+  }
+
+  @MustBeClosed
+  private static Stream<Arguments> readCrosslink() throws IOException {
+    return findTests(testFile, "Crosslink");
   }
 
   @SuppressWarnings({"unchecked", "rawtypes"})
