@@ -159,7 +159,7 @@ public final class HashTreeUtil {
         inlineTreeIndex--) {
       mutableSSZChunks.set(
           inlineTreeIndex,
-          Hash.keccak256(
+          Hash.sha2_256(
               Bytes.concatenate(
                   mutableSSZChunks.get(inlineTreeIndex * 2),
                   mutableSSZChunks.get(inlineTreeIndex * 2 + 1))));
