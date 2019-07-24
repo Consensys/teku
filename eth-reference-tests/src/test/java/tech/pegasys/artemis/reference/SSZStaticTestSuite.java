@@ -43,6 +43,7 @@ import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.DepositData;
 import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
+import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
@@ -158,6 +159,24 @@ class SSZStaticTestSuite {
         Bytes.fromHexString(serialized), SimpleOffsetSerializer.serialize(proposerSlashing));
   }
 
+  @ParameterizedTest(name = "{index}. Checkpoint Hash Tree Root Test")
+  @MethodSource("readCheckpoint")
+  void testCheckpointHashTreeRoot(
+      LinkedHashMap<String, Object> value, String serialized, String root) {
+    Checkpoint checkpoint = parseCheckpoint(value);
+
+    assertEquals(Bytes32.fromHexString(root), checkpoint.hash_tree_root());
+  }
+
+  @ParameterizedTest(name = "{index}. Checkpoint Serialization Test")
+  @MethodSource("readCheckpoint")
+  void testCheckpointSerialize(
+      LinkedHashMap<String, Object> value, String serialized, String root) {
+    Checkpoint checkpoint = parseCheckpoint(value);
+
+    assertEquals(Bytes.fromHexString(serialized), SimpleOffsetSerializer.serialize(checkpoint));
+  }
+
   private Eth1Data parseEth1Data(LinkedHashMap<String, Object> value) {
     Bytes32 depositRoot = Bytes32.fromHexString((String) value.get("deposit_root"));
     UnsignedLong depositCount = UnsignedLong.valueOf((BigInteger) value.get("deposit_count"));
@@ -206,11 +225,21 @@ class SSZStaticTestSuite {
   @SuppressWarnings({"unchecked"})
   private ProposerSlashing parseProposerSlashing(LinkedHashMap<String, Object> value) {
     UnsignedLong proposerIndex = UnsignedLong.valueOf((BigInteger) value.get("proposer_index"));
-    BeaconBlockHeader header1 = parseBeaconBlockHeader((LinkedHashMap<String, Object>) value.get("header_1"));
-    BeaconBlockHeader header2 = parseBeaconBlockHeader((LinkedHashMap<String, Object>) value.get("header_2"));
+    BeaconBlockHeader header1 =
+        parseBeaconBlockHeader((LinkedHashMap<String, Object>) value.get("header_1"));
+    BeaconBlockHeader header2 =
+        parseBeaconBlockHeader((LinkedHashMap<String, Object>) value.get("header_2"));
 
     ProposerSlashing proposerSlashing = new ProposerSlashing(proposerIndex, header1, header2);
     return proposerSlashing;
+  }
+
+  private Checkpoint parseCheckpoint(LinkedHashMap<String, Object> value) {
+    UnsignedLong epoch = UnsignedLong.valueOf((BigInteger) value.get("epoch"));
+    Bytes32 checkpointRoot = Bytes32.fromHexString((String) value.get("root"));
+
+    Checkpoint checkpoint = new Checkpoint(epoch, checkpointRoot);
+    return checkpoint;
   }
 
   @MustBeClosed
@@ -249,6 +278,11 @@ class SSZStaticTestSuite {
   @MustBeClosed
   private static Stream<Arguments> readProposerSlashing() throws IOException {
     return findTests(testFile, "ProposerSlashing");
+  }
+
+  @MustBeClosed
+  private static Stream<Arguments> readCheckpoint() throws IOException {
+    return findTests(testFile, "Checkpoint");
   }
 
   @SuppressWarnings({"unchecked", "rawtypes"})
