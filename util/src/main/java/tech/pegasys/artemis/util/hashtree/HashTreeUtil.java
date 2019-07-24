@@ -72,7 +72,7 @@ public final class HashTreeUtil {
             "Use HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_COMPOSITE, List) for a fixed length list of composite SSZ types.");
       case LIST_OF_BASIC:
         throw new UnsupportedOperationException(
-            "Use HashTreeUtil.hash_tree_root(SSZType.BASIC, intm Bytes...) for a variable length list of basic SSZ type.");
+            "Use HashTreeUtil.hash_tree_root(SSZType.LIST_OF_BASIC, int, Bytes...) for a variable length list of basic SSZ type.");
       case LIST_OF_COMPOSITE:
         throw new UnsupportedOperationException(
             "Use HashTreeUtil.hash_tree_root(SSZTypes.LIST_COMPOSITE, List) for a variable length list of composite SSZ types.");
@@ -100,7 +100,7 @@ public final class HashTreeUtil {
     switch (sszType) {
       case LIST_OF_BASIC:
         throw new UnsupportedOperationException(
-            "Use HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_BASIC, int, List) for a variable length list of basic SSZ types.");
+            "Use HashTreeUtil.hash_tree_root(SSZTypes.LIST_OF_BASIC, int, List) for a variable length list of basic SSZ types.");
       case LIST_OF_COMPOSITE:
         throw new UnsupportedOperationException(
             "Use HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_BASIC, int, List) for a variable length list of composite SSZ types.");
@@ -386,9 +386,9 @@ public final class HashTreeUtil {
 
   private static Bytes32 mix_in_length(Bytes32 merkle_root, int length) {
     // Append the little-endian length mixin to the given merkle root, and return its hash.
-    return Hash.keccak256(
+    return Hash.sha2_256(
         Bytes.concatenate(
-            merkle_root, Bytes.ofUnsignedLong(length, LITTLE_ENDIAN), Bytes.wrap(new byte[8])));
+            merkle_root, Bytes.ofUnsignedLong(length, LITTLE_ENDIAN), Bytes.wrap(new byte[24])));
   }
 
   public static boolean is_power_of_two(int value) {

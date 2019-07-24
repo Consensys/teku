@@ -31,11 +31,17 @@ public class SimpleOffsetSerializer {
     UnsignedLong fixedLengthSum = UnsignedLong.ZERO;
     UnsignedLong varLengthSum = UnsignedLong.ZERO;
 
+    // System.out.println("Fixed Part Size: " + value.get_fixed_parts().size());
+    // System.out.println("Var Part Size: " + value.get_variable_parts().size());
     for (Bytes fixedPart : value.get_fixed_parts()) {
       UnsignedLong fixedPartSize = UnsignedLong.valueOf(fixedPart.size());
+      if (fixedPartSize.equals(UnsignedLong.ZERO)) {
+        fixedPartSize = UnsignedLong.valueOf(4L);
+      }
       fixedLengthSum = fixedLengthSum.plus(fixedPartSize);
     }
 
+    variable_offsets.add(fixedLengthSum);
     for (Bytes varPart : value.get_variable_parts()) {
       UnsignedLong varPartSize = UnsignedLong.valueOf(varPart.size());
       varLengthSum = varLengthSum.plus(varPartSize);
@@ -46,9 +52,10 @@ public class SimpleOffsetSerializer {
     for (Bytes element : value.get_fixed_parts()) {
       if (!element.equals(Bytes.EMPTY)) {
         interleaved_values.add(element);
+        ++interleavingIndex;
       } else {
         interleaved_values.add(
-            SSZ.encodeUInt64(variable_offsets.get(interleavingIndex).longValue()));
+            SSZ.encodeUInt32(variable_offsets.get(interleavingIndex).longValue()));
       }
       ++interleavingIndex;
     }

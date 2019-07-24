@@ -43,6 +43,7 @@ import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.DepositData;
+import tech.pegasys.artemis.datastructures.operations.IndexedAttestation;
 import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.datastructures.state.Crosslink;
@@ -190,8 +191,7 @@ class SSZStaticTestSuite {
 
   @ParameterizedTest(name = "{index}. Crosslink Serialization Test")
   @MethodSource("readCrosslink")
-  void testCrosslinkSerialize(
-      LinkedHashMap<String, Object> value, String serialized, String root) {
+  void testCrosslinkSerialize(LinkedHashMap<String, Object> value, String serialized, String root) {
     Crosslink crosslink = parseCrosslink(value);
 
     assertEquals(Bytes.fromHexString(serialized), SimpleOffsetSerializer.serialize(crosslink));
@@ -212,7 +212,27 @@ class SSZStaticTestSuite {
       LinkedHashMap<String, Object> value, String serialized, String root) {
     AttestationData attestationData = parseAttestationData(value);
 
-    assertEquals(Bytes.fromHexString(serialized), SimpleOffsetSerializer.serialize(attestationData));
+    assertEquals(
+        Bytes.fromHexString(serialized), SimpleOffsetSerializer.serialize(attestationData));
+  }
+
+  @ParameterizedTest(name = "{index}. IndexedAttestation Hash Tree Root Test")
+  @MethodSource("readIndexedAttestation")
+  void testIndexedAttestationHashTreeRoot(
+      LinkedHashMap<String, Object> value, String serialized, String root) {
+    IndexedAttestation indexedAttestation = parseIndexedAttestation(value);
+
+    assertEquals(Bytes32.fromHexString(root), indexedAttestation.hash_tree_root());
+  }
+
+  @ParameterizedTest(name = "{index}. IndexedAttestation Serialization Test")
+  @MethodSource("readIndexedAttestation")
+  void testIndexedAttestationSerialize(
+      LinkedHashMap<String, Object> value, String serialized, String root) {
+    IndexedAttestation indexedAttestation = parseIndexedAttestation(value);
+
+    assertEquals(
+        Bytes.fromHexString(serialized), SimpleOffsetSerializer.serialize(indexedAttestation));
   }
 
   private Eth1Data parseEth1Data(LinkedHashMap<String, Object> value) {
@@ -229,6 +249,7 @@ class SSZStaticTestSuite {
     BLSPublicKey pubkeyMock = Mockito.mock(BLSPublicKey.class);
     Mockito.when(pubkeyMock.toBytes()).thenReturn(pubkeyBytes);
     Mockito.when(pubkeyMock.get_fixed_parts()).thenReturn(List.of(pubkeyBytes));
+    Mockito.when(pubkeyMock.getSSZFieldCount()).thenReturn(1);
 
     Bytes32 withdrawalCredentials =
         Bytes32.fromHexString((String) value.get("withdrawal_credentials"));
@@ -238,6 +259,7 @@ class SSZStaticTestSuite {
     BLSSignature signatureMock = Mockito.mock(BLSSignature.class);
     Mockito.when(signatureMock.toBytes()).thenReturn(signatureBytes);
     Mockito.when(signatureMock.get_fixed_parts()).thenReturn(List.of(signatureBytes));
+    Mockito.when(signatureMock.getSSZFieldCount()).thenReturn(1);
 
     DepositData depositData =
         new DepositData(pubkeyMock, withdrawalCredentials, amount, signatureMock);
@@ -254,6 +276,7 @@ class SSZStaticTestSuite {
     BLSSignature signatureMock = Mockito.mock(BLSSignature.class);
     Mockito.when(signatureMock.toBytes()).thenReturn(signatureBytes);
     Mockito.when(signatureMock.get_fixed_parts()).thenReturn(List.of(signatureBytes));
+    Mockito.when(signatureMock.getSSZFieldCount()).thenReturn(1);
 
     BeaconBlockHeader beaconBlockHeader =
         new BeaconBlockHeader(slot, parentRoot, stateRoot, bodyRoot, signatureMock);
@@ -298,8 +321,30 @@ class SSZStaticTestSuite {
     Checkpoint target = parseCheckpoint((LinkedHashMap<String, Object>) value.get("target"));
     Crosslink crosslink = parseCrosslink((LinkedHashMap<String, Object>) value.get("crosslink"));
 
-    AttestationData attestationData = new AttestationData(beaconBlockRoot, source, target, crosslink);
+    AttestationData attestationData =
+        new AttestationData(beaconBlockRoot, source, target, crosslink);
     return attestationData;
+  }
+
+  @SuppressWarnings({"unchecked"})
+  private IndexedAttestation parseIndexedAttestation(LinkedHashMap<String, Object> value) {
+    List<UnsignedLong> custodyBit0Indices =
+        ((List<BigInteger>) value.get("custody_bit_0_indices"))
+            .stream().map(index -> UnsignedLong.valueOf(index)).collect(Collectors.toList());
+    List<UnsignedLong> custodyBit1Indices =
+        ((List<BigInteger>) value.get("custody_bit_1_indices"))
+            .stream().map(index -> UnsignedLong.valueOf(index)).collect(Collectors.toList());
+    AttestationData data = parseAttestationData((LinkedHashMap<String, Object>) value.get("data"));
+
+    Bytes signatureBytes = Bytes.fromHexString((String) value.get("signature"));
+    BLSSignature signatureMock = Mockito.mock(BLSSignature.class);
+    Mockito.when(signatureMock.toBytes()).thenReturn(signatureBytes);
+    Mockito.when(signatureMock.get_fixed_parts()).thenReturn(List.of(signatureBytes));
+    Mockito.when(signatureMock.getSSZFieldCount()).thenReturn(1);
+
+    IndexedAttestation indexedAttestation =
+        new IndexedAttestation(custodyBit0Indices, custodyBit1Indices, data, signatureMock);
+    return indexedAttestation;
   }
 
   @MustBeClosed
@@ -355,6 +400,9 @@ class SSZStaticTestSuite {
     return findTests(testFile, "AttestationData");
   }
 
+  private static Stream<Arguments> readIndexedAttestation() throws IOException {
+    return findTests(testFile, "IndexedAttestation");
+  }
 
   @SuppressWarnings({"unchecked", "rawtypes"})
   private static Stream<Arguments> prepareTests(InputStream in, String tcase) throws IOException {

@@ -16,12 +16,14 @@ package tech.pegasys.artemis.datastructures.operations;
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
+import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
@@ -76,14 +78,17 @@ public class IndexedAttestation implements Merkleizable, SimpleOffsetSerializabl
   public List<Bytes> get_variable_parts() {
     List<Bytes> variablePartsList = new ArrayList<>();
     variablePartsList.addAll(
-        custody_bit_0_indices.stream()
-            .map(value -> SSZ.encodeUInt64(value.longValue()))
-            .collect(Collectors.toList()));
-    variablePartsList.addAll(
-        custody_bit_1_indices.stream()
-            .map(value -> SSZ.encodeUInt64(value.longValue()))
-            .collect(Collectors.toList()));
-    variablePartsList.addAll(List.of(Bytes.EMPTY, Bytes.EMPTY));
+        List.of(
+            SSZ.encodeUInt64List(
+                custody_bit_0_indices.stream()
+                    .map(value -> value.longValue())
+                    .collect(Collectors.toList())),
+            SSZ.encodeUInt64List(
+                custody_bit_1_indices.stream()
+                    .map(value -> value.longValue())
+                    .collect(Collectors.toList()))));
+    variablePartsList.addAll(Collections.nCopies(data.getSSZFieldCount(), Bytes.EMPTY));
+    variablePartsList.addAll(Collections.nCopies(signature.getSSZFieldCount(), Bytes.EMPTY));
     return variablePartsList;
   }
 
@@ -185,11 +190,13 @@ public class IndexedAttestation implements Merkleizable, SimpleOffsetSerializabl
         Arrays.asList(
             HashTreeUtil.hash_tree_root(
                 SSZTypes.LIST_OF_BASIC,
+                Constants.MAX_VALIDATORS_PER_COMMITTEE,
                 custody_bit_0_indices.stream()
                     .map(item -> SSZ.encodeUInt64(item.longValue()))
                     .collect(Collectors.toList())),
             HashTreeUtil.hash_tree_root(
                 SSZTypes.LIST_OF_BASIC,
+                Constants.MAX_VALIDATORS_PER_COMMITTEE,
                 custody_bit_1_indices.stream()
                     .map(item -> SSZ.encodeUInt64(item.longValue()))
                     .collect(Collectors.toList())),
