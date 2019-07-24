@@ -42,6 +42,7 @@ import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.DepositData;
+import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
@@ -119,7 +120,7 @@ class SSZStaticTestSuite {
     assertEquals(Bytes.fromHexString(serialized), SimpleOffsetSerializer.serialize(deposit));
   }
 
-  @ParameterizedTest(name = "{index}. Deposit Hash Tree Root Test")
+  @ParameterizedTest(name = "{index}. BeaconBlockHeader Hash Tree Root Test")
   @MethodSource("readBeaconBlockHeader")
   void testBeaconBlockHeaderHashTreeRoot(
       LinkedHashMap<String, Object> value, String serialized, String root) {
@@ -128,7 +129,7 @@ class SSZStaticTestSuite {
     assertEquals(Bytes32.fromHexString(root), beaconBlockHeader.hash_tree_root());
   }
 
-  @ParameterizedTest(name = "{index}. Deposit Serialization Test")
+  @ParameterizedTest(name = "{index}. BeaconBlockHeader Serialization Test")
   @MethodSource("readBeaconBlockHeader")
   void testBeaconBlockHeaderSerialize(
       LinkedHashMap<String, Object> value, String serialized, String root) {
@@ -136,6 +137,25 @@ class SSZStaticTestSuite {
 
     assertEquals(
         Bytes.fromHexString(serialized), SimpleOffsetSerializer.serialize(beaconBlockHeader));
+  }
+
+  @ParameterizedTest(name = "{index}. ProposerSlashing Hash Tree Root Test")
+  @MethodSource("readProposerSlashing")
+  void testProposerSlashingHashTreeRoot(
+      LinkedHashMap<String, Object> value, String serialized, String root) {
+    ProposerSlashing proposerSlashing = parseProposerSlashing(value);
+
+    assertEquals(Bytes32.fromHexString(root), proposerSlashing.hash_tree_root());
+  }
+
+  @ParameterizedTest(name = "{index}. ProposerSlashing Serialization Test")
+  @MethodSource("readProposerSlashing")
+  void testProposerSlashingSerialize(
+      LinkedHashMap<String, Object> value, String serialized, String root) {
+    ProposerSlashing proposerSlashing = parseProposerSlashing(value);
+
+    assertEquals(
+        Bytes.fromHexString(serialized), SimpleOffsetSerializer.serialize(proposerSlashing));
   }
 
   private Eth1Data parseEth1Data(LinkedHashMap<String, Object> value) {
@@ -183,6 +203,16 @@ class SSZStaticTestSuite {
     return beaconBlockHeader;
   }
 
+  @SuppressWarnings({"unchecked"})
+  private ProposerSlashing parseProposerSlashing(LinkedHashMap<String, Object> value) {
+    UnsignedLong proposerIndex = UnsignedLong.valueOf((BigInteger) value.get("proposer_index"));
+    BeaconBlockHeader header1 = parseBeaconBlockHeader((LinkedHashMap<String, Object>) value.get("header_1"));
+    BeaconBlockHeader header2 = parseBeaconBlockHeader((LinkedHashMap<String, Object>) value.get("header_2"));
+
+    ProposerSlashing proposerSlashing = new ProposerSlashing(proposerIndex, header1, header2);
+    return proposerSlashing;
+  }
+
   @MustBeClosed
   private static Stream<Arguments> findTests(String glob, String tcase) throws IOException {
     return Resources.find(glob)
@@ -214,6 +244,11 @@ class SSZStaticTestSuite {
   @MustBeClosed
   private static Stream<Arguments> readBeaconBlockHeader() throws IOException {
     return findTests(testFile, "BeaconBlockHeader");
+  }
+
+  @MustBeClosed
+  private static Stream<Arguments> readProposerSlashing() throws IOException {
+    return findTests(testFile, "ProposerSlashing");
   }
 
   @SuppressWarnings({"unchecked", "rawtypes"})
