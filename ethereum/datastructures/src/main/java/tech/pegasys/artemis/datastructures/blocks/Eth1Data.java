@@ -139,9 +139,9 @@ public final class Eth1Data implements SimpleOffsetSerializable {
   public Bytes32 hash_tree_root() {
     return HashTreeUtil.merkleize(
         Arrays.asList(
-            HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, deposit_root),
+            HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_BASIC, deposit_root),
             HashTreeUtil.hash_tree_root(
                 SSZTypes.BASIC, SSZ.encodeUInt64(deposit_count.longValue())),
-            HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, block_hash)));
+            HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_BASIC, block_hash)));
   }
 }

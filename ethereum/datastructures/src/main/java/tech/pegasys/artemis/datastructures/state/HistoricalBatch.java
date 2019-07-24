@@ -134,7 +134,7 @@ public class HistoricalBatch implements Copyable<HistoricalBatch>, SimpleOffsetS
   public Bytes32 hash_tree_root() {
     return HashTreeUtil.merkleize(
         Arrays.asList(
-            HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_COMPOSITE, block_roots),
-            HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_COMPOSITE, state_roots)));
+            HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_COMPOSITE, block_roots),
+            HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_COMPOSITE, state_roots)));
   }
 }
