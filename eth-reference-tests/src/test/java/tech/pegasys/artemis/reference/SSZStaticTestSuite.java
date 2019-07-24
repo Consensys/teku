@@ -41,6 +41,7 @@ import org.mockito.Mockito;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
+import tech.pegasys.artemis.datastructures.operations.AttesterSlashing;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.DepositData;
 import tech.pegasys.artemis.datastructures.operations.IndexedAttestation;
@@ -235,6 +236,25 @@ class SSZStaticTestSuite {
         Bytes.fromHexString(serialized), SimpleOffsetSerializer.serialize(indexedAttestation));
   }
 
+  @ParameterizedTest(name = "{index}. AttesterSlashing Hash Tree Root Test")
+  @MethodSource("readAttesterSlashing")
+  void testAttesterSlashingHashTreeRoot(
+      LinkedHashMap<String, Object> value, String serialized, String root) {
+    AttesterSlashing attesterSlashing = parseAttesterSlashing(value);
+
+    assertEquals(Bytes32.fromHexString(root), attesterSlashing.hash_tree_root());
+  }
+
+  @ParameterizedTest(name = "{index}. AttesterSlashing Serialization Test")
+  @MethodSource("readAttesterSlashing")
+  void testAttesterSlashingSerialize(
+      LinkedHashMap<String, Object> value, String serialized, String root) {
+    AttesterSlashing attesterSlashing = parseAttesterSlashing(value);
+
+    assertEquals(
+        Bytes.fromHexString(serialized), SimpleOffsetSerializer.serialize(attesterSlashing));
+  }
+
   private Eth1Data parseEth1Data(LinkedHashMap<String, Object> value) {
     Bytes32 depositRoot = Bytes32.fromHexString((String) value.get("deposit_root"));
     UnsignedLong depositCount = UnsignedLong.valueOf((BigInteger) value.get("deposit_count"));
@@ -347,6 +367,17 @@ class SSZStaticTestSuite {
     return indexedAttestation;
   }
 
+  @SuppressWarnings({"unchecked"})
+  private AttesterSlashing parseAttesterSlashing(LinkedHashMap<String, Object> value) {
+    IndexedAttestation attestation1 =
+        parseIndexedAttestation((LinkedHashMap<String, Object>) value.get("attestation_1"));
+    IndexedAttestation attestation2 =
+        parseIndexedAttestation((LinkedHashMap<String, Object>) value.get("attestation_2"));
+
+    AttesterSlashing attesterSlashing = new AttesterSlashing(attestation1, attestation2);
+    return attesterSlashing;
+  }
+
   @MustBeClosed
   private static Stream<Arguments> findTests(String glob, String tcase) throws IOException {
     return Resources.find(glob)
@@ -402,6 +433,10 @@ class SSZStaticTestSuite {
 
   private static Stream<Arguments> readIndexedAttestation() throws IOException {
     return findTests(testFile, "IndexedAttestation");
+  }
+
+  private static Stream<Arguments> readAttesterSlashing() throws IOException {
+    return findTests(testFile, "AttesterSlashing");
   }
 
   @SuppressWarnings({"unchecked", "rawtypes"})
