@@ -40,6 +40,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Mockito;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
+import tech.pegasys.artemis.datastructures.operations.AttestationData;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.DepositData;
 import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
@@ -196,6 +197,24 @@ class SSZStaticTestSuite {
     assertEquals(Bytes.fromHexString(serialized), SimpleOffsetSerializer.serialize(crosslink));
   }
 
+  @ParameterizedTest(name = "{index}. AttestationData Hash Tree Root Test")
+  @MethodSource("readAttestationData")
+  void testAttestationDataHashTreeRoot(
+      LinkedHashMap<String, Object> value, String serialized, String root) {
+    AttestationData attestationData = parseAttestationData(value);
+
+    assertEquals(Bytes32.fromHexString(root), attestationData.hash_tree_root());
+  }
+
+  @ParameterizedTest(name = "{index}. AttestationData Serialization Test")
+  @MethodSource("readAttestationData")
+  void testAttestationDataSerialize(
+      LinkedHashMap<String, Object> value, String serialized, String root) {
+    AttestationData attestationData = parseAttestationData(value);
+
+    assertEquals(Bytes.fromHexString(serialized), SimpleOffsetSerializer.serialize(attestationData));
+  }
+
   private Eth1Data parseEth1Data(LinkedHashMap<String, Object> value) {
     Bytes32 depositRoot = Bytes32.fromHexString((String) value.get("deposit_root"));
     UnsignedLong depositCount = UnsignedLong.valueOf((BigInteger) value.get("deposit_count"));
@@ -272,6 +291,17 @@ class SSZStaticTestSuite {
     return crosslink;
   }
 
+  @SuppressWarnings({"unchecked"})
+  private AttestationData parseAttestationData(LinkedHashMap<String, Object> value) {
+    Bytes32 beaconBlockRoot = Bytes32.fromHexString((String) value.get("beacon_block_root"));
+    Checkpoint source = parseCheckpoint((LinkedHashMap<String, Object>) value.get("source"));
+    Checkpoint target = parseCheckpoint((LinkedHashMap<String, Object>) value.get("target"));
+    Crosslink crosslink = parseCrosslink((LinkedHashMap<String, Object>) value.get("crosslink"));
+
+    AttestationData attestationData = new AttestationData(beaconBlockRoot, source, target, crosslink);
+    return attestationData;
+  }
+
   @MustBeClosed
   private static Stream<Arguments> findTests(String glob, String tcase) throws IOException {
     return Resources.find(glob)
@@ -319,6 +349,12 @@ class SSZStaticTestSuite {
   private static Stream<Arguments> readCrosslink() throws IOException {
     return findTests(testFile, "Crosslink");
   }
+
+  @MustBeClosed
+  private static Stream<Arguments> readAttestationData() throws IOException {
+    return findTests(testFile, "AttestationData");
+  }
+
 
   @SuppressWarnings({"unchecked", "rawtypes"})
   private static Stream<Arguments> prepareTests(InputStream in, String tcase) throws IOException {
