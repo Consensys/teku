@@ -161,6 +161,6 @@ public class Attestation implements Merkleizable, SimpleOffsetSerializable {
             data.hash_tree_root(),
             HashTreeUtil.hash_tree_root(
                 SSZTypes.LIST_OF_BASIC, custody_bitfield), // TODO writeBitlist logic required
-            HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, signature.toBytes())));
+            HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_BASIC, signature.toBytes())));
   }
 }
