@@ -3,9 +3,12 @@ package pegasys.artemis.reference.SSZCoreTests.ssz_minimal_zero;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.google.common.primitives.UnsignedLong;
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import org.apache.logging.log4j.Level;
+import org.apache.tuweni.bytes.Bytes32;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -13,6 +16,7 @@ import org.json.simple.parser.ParseException;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
+import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.util.alogger.ALogger;
 
 import java.io.File;
@@ -54,15 +58,18 @@ class ssz_minimal_zero {
     JSONParser parser = new JSONParser();
     JSONObject json = (JSONObject) parser.parse(jsonString);
     JSONArray test_cases = (JSONArray) json.get("test_cases");
-    HashMap eth2Object = (HashMap) test_cases.get(18);
+    HashMap eth2Object = (HashMap) test_cases.get(8);
     String key = eth2Object.keySet().toArray()[0].toString();
     HashMap entry = (HashMap) eth2Object.get(key);
-    JSONObject entryJSONobject = (JSONObject) entry.get("value");
-    String entryJsonString = entryJSONobject.toJSONString();
-    Gson gson = new Gson();
-    ProposerSlashing attestation = gson.fromJson(entryJsonString, ProposerSlashing.class);
-    assertEquals(key , "ProposerSlashing");
+    String entryJSONstring = entry.get("value").toString();
+    ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
+    mapper.findAndRegisterModules();
+    Checkpoint checkpoint = mapper.readValue(entryJSONstring, Checkpoint.class);
+    // Gson gson = new GsonBuilder().registerTypeAdapter(UnsignedLong.class, new InterfaceAdapter<UnsignedLong>()).registerTypeAdapter(Bytes32.class, new InterfaceAdapter<Bytes32>()).create();
+    // Checkpoint attestation = gson.fromJson(entryJSONstring, Checkpoint.class);
+    Checkpoint point = new Checkpoint();
+    //String st = gson.toJson(point);
+    assertEquals(key , "Checkpoint");
     System.out.println(test_cases.get(0));
   }
-
 }
