@@ -194,6 +194,6 @@ public class IndexedAttestation implements Merkleizable, SimpleOffsetSerializabl
                     .map(item -> SSZ.encodeUInt64(item.longValue()))
                     .collect(Collectors.toList())),
             data.hash_tree_root(),
-            HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, signature.toBytes())));
+            HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_BASIC, signature.toBytes())));
   }
 }
