@@ -52,6 +52,7 @@ import tech.pegasys.artemis.datastructures.operations.VoluntaryExit;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.datastructures.state.Crosslink;
 import tech.pegasys.artemis.datastructures.state.Fork;
+import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
@@ -329,6 +330,23 @@ class SSZStaticTestSuite {
     assertEquals(Bytes.fromHexString(serialized), SimpleOffsetSerializer.serialize(fork));
   }
 
+  @ParameterizedTest(name = "{index}. Validator Hash Tree Root Test")
+  @MethodSource("readValidator")
+  void testValidatorHashTreeRoot(
+      LinkedHashMap<String, Object> value, String serialized, String root) {
+    Validator validator = parseValidator(value);
+
+    assertEquals(Bytes32.fromHexString(root), validator.hash_tree_root());
+  }
+
+  @ParameterizedTest(name = "{index}. Validator Serialization Test")
+  @MethodSource("readValidator")
+  void testValidatorSerialize(LinkedHashMap<String, Object> value, String serialized, String root) {
+    Validator validator = parseValidator(value);
+
+    assertEquals(Bytes.fromHexString(serialized), SimpleOffsetSerializer.serialize(validator));
+  }
+
   private Eth1Data parseEth1Data(LinkedHashMap<String, Object> value) {
     Bytes32 depositRoot = Bytes32.fromHexString((String) value.get("deposit_root"));
     UnsignedLong depositCount = UnsignedLong.valueOf((BigInteger) value.get("deposit_count"));
@@ -486,6 +504,20 @@ class SSZStaticTestSuite {
     return fork;
   }
 
+  private Validator parseValidator(LinkedHashMap<String, Object> value) {
+    BLSPublicKey pubkeyMock = mockBLSPublicKey(value);
+    Bytes32 withdrawalCredentials = Bytes32.fromHexString((String) value.get("withdrawal_credentials"));
+    UnsignedLong effectiveBalance = UnsignedLong.valueOf((BigInteger) value.get("effective_balance"));
+    boolean slashed = (boolean) value.get("slashed");
+    UnsignedLong activationEligibilityEpoch = UnsignedLong.valueOf((BigInteger) value.get("activation_eligibility_epoch"));
+    UnsignedLong activationEpoch = UnsignedLong.valueOf((BigInteger) value.get("activation_epoch"));
+    UnsignedLong exitEpoch = UnsignedLong.valueOf((BigInteger) value.get("exit_epoch"));
+    UnsignedLong withdrawableEpoch = UnsignedLong.valueOf((BigInteger) value.get("withdrawable_epoch"));
+
+    Validator validator = new Validator(pubkeyMock, withdrawalCredentials, effectiveBalance, slashed, activationEligibilityEpoch, activationEpoch, exitEpoch, withdrawableEpoch);
+    return validator;
+  }
+
   private BLSPublicKey mockBLSPublicKey(LinkedHashMap<String, Object> value) {
     Bytes pubkeyBytes = Bytes.fromHexString((String) value.get("pubkey"));
     BLSPublicKey pubkeyMock = Mockito.mock(BLSPublicKey.class);
@@ -579,6 +611,10 @@ class SSZStaticTestSuite {
 
   private static Stream<Arguments> readFork() throws IOException {
     return findTests(testFile, "Fork");
+  }
+
+  private static Stream<Arguments> readValidator() throws IOException {
+    return findTests(testFile, "Validator");
   }
 
   @SuppressWarnings({"unchecked", "rawtypes"})
