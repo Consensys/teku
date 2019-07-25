@@ -13,9 +13,9 @@
 
 package tech.pegasys.artemis.util.hashtree;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static java.lang.Math.toIntExact;
 import static java.nio.ByteOrder.LITTLE_ENDIAN;
-import static com.google.common.base.Preconditions.checkArgument;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
@@ -63,8 +63,8 @@ public final class HashTreeUtil {
         checkArgument(bytes.length == 1, "A BitVector is only represented by a single Bytes value");
         return hash_tree_root_bitvector(bytes[0]);
       case BITLIST:
-        checkArgument(bytes.length == 1, "A BitList is only represented by a single Bytes value");
-        return hash_tree_root_bitlist(bytes[0]);
+        throw new UnsupportedOperationException(
+            "Use HashTreeUtil.hash_tree_root(SSZType.BITLIST, int, Bytes...) for a bitlist type.");
       case VECTOR_OF_BASIC:
         return hash_tree_root_vector_of_basic_type(bytes);
       case VECTOR_OF_COMPOSITE:
@@ -72,7 +72,7 @@ public final class HashTreeUtil {
             "Use HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_COMPOSITE, List) for a fixed length list of composite SSZ types.");
       case LIST_OF_BASIC:
         throw new UnsupportedOperationException(
-          "Use HashTreeUtil.hash_tree_root(SSZType.BASIC, intm Bytes...) for a variable length list of basic SSZ type.");
+            "Use HashTreeUtil.hash_tree_root(SSZType.LIST_OF_BASIC, int, Bytes...) for a variable length list of basic SSZ type.");
       case LIST_OF_COMPOSITE:
         throw new UnsupportedOperationException(
             "Use HashTreeUtil.hash_tree_root(SSZTypes.LIST_COMPOSITE, List) for a variable length list of composite SSZ types.");
@@ -89,8 +89,12 @@ public final class HashTreeUtil {
     switch (sszType) {
       case LIST_OF_BASIC:
         return hash_tree_root_list_of_basic_type(bytes.length, maxSize, bytes);
+      case BITLIST:
+        checkArgument(bytes.length == 1, "A BitList is only represented by a single Bytes value");
+        return hash_tree_root_bitlist(bytes[0], maxSize);
       default:
-        throw new UnsupportedOperationException("The maxSize parameter is only applicable for SSZ Lists.");
+        throw new UnsupportedOperationException(
+            "The maxSize parameter is only applicable for SSZ Lists.");
     }
   }
 
@@ -99,10 +103,10 @@ public final class HashTreeUtil {
     switch (sszType) {
       case LIST_OF_BASIC:
         throw new UnsupportedOperationException(
-          "Use HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_BASIC, int, List) for a variable length list of basic SSZ types.");
+            "Use HashTreeUtil.hash_tree_root(SSZTypes.LIST_OF_BASIC, int, List) for a variable length list of basic SSZ types.");
       case LIST_OF_COMPOSITE:
         throw new UnsupportedOperationException(
-          "Use HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_BASIC, int, List) for a variable length list of composite SSZ types.");
+            "Use HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_BASIC, int, List) for a variable length list of composite SSZ types.");
       case VECTOR_OF_COMPOSITE:
         if (!bytes.isEmpty() && bytes.get(0) instanceof Bytes32) {
           return hash_tree_root_vector_composite_type((List<Bytes32>) bytes);
@@ -132,11 +136,13 @@ public final class HashTreeUtil {
         break;
       case LIST_OF_COMPOSITE:
         if (!bytes.isEmpty() && bytes.get(0) instanceof Merkleizable) {
-          return hash_tree_root_list_composite_type((List<Merkleizable>) bytes, maxSize, bytes.size());
+          return hash_tree_root_list_composite_type(
+              (List<Merkleizable>) bytes, maxSize, bytes.size());
         }
         break;
       default:
-        throw new UnsupportedOperationException("The maxSize parameter is only applicable for SSZ Lists.");
+        throw new UnsupportedOperationException(
+            "The maxSize parameter is only applicable for SSZ Lists.");
     }
     return Bytes32.ZERO;
   }
@@ -159,7 +165,7 @@ public final class HashTreeUtil {
         inlineTreeIndex--) {
       mutableSSZChunks.set(
           inlineTreeIndex,
-          Hash.keccak256(
+          Hash.sha2_256(
               Bytes.concatenate(
                   mutableSSZChunks.get(inlineTreeIndex * 2),
                   mutableSSZChunks.get(inlineTreeIndex * 2 + 1))));
@@ -212,8 +218,15 @@ public final class HashTreeUtil {
    *     href="https://github.com/ethereum/eth2.0-specs/blob/v0.5.1/specs/simple-serialize.md">SSZ
    *     Spec v0.5.1</a>
    */
-  private static Bytes32 hash_tree_root_bitlist(Bytes bytes) {
-    return mix_in_length(merkleize(bitfield_bytes(bytes), chunk_count(SSZTypes.BITLIST, bytes)), bytes.size());
+  private static Bytes32 hash_tree_root_bitlist(Bytes bytes, int maxSize) {
+    // TODO The following lines are a hack and can be fixed once we shift from Bytes to a real
+    // bitlist type.
+    return mix_in_length(
+        merkleize(bitfield_bytes(bytes), chunk_count(SSZTypes.BITLIST, maxSize, bytes)),
+        bytes.bitLength() - 1);
+    // return mix_in_length(
+    //     merkleize(bitfield_bytes(bytes), chunk_count(SSZTypes.BITLIST, bytes)),
+    // bytes.bitLength());
   }
 
   /**
@@ -226,7 +239,7 @@ public final class HashTreeUtil {
    *     Spec v0.5.1</a>
    */
   private static Bytes32 hash_tree_root_bitvector(Bytes bytes) {
-    return merkleize(bitfield_bytes(bytes), chunk_count(SSZTypes.BITVECTOR, bytes));
+    return merkleize(pack(bytes), chunk_count(SSZTypes.BITVECTOR, bytes));
   }
 
   /**
@@ -239,8 +252,10 @@ public final class HashTreeUtil {
    *     href="https://github.com/ethereum/eth2.0-specs/blob/v0.5.1/specs/simple-serialize.md">SSZ
    *     Spec v0.5.1</a>
    */
-  private static Bytes32 hash_tree_root_list_of_basic_type(int length, int maxSize, Bytes... bytes) {
-    return mix_in_length(merkleize(pack(bytes), chunk_count(SSZTypes.LIST_OF_BASIC, maxSize, bytes)), length);
+  private static Bytes32 hash_tree_root_list_of_basic_type(
+      int length, int maxSize, Bytes... bytes) {
+    return mix_in_length(
+        merkleize(pack(bytes), chunk_count(SSZTypes.LIST_OF_BASIC, maxSize, bytes)), length);
   }
 
   /**
@@ -253,8 +268,13 @@ public final class HashTreeUtil {
    *     href="https://github.com/ethereum/eth2.0-specs/blob/v0.5.1/specs/simple-serialize.md">SSZ
    *     Spec v0.5.1</a>
    */
-  private static Bytes32 hash_tree_root_list_of_basic_type(List<? extends Bytes> bytes, int maxSize, int length) {
-    return mix_in_length(merkleize(pack(bytes.toArray(new Bytes[0])), chunk_count(SSZTypes.LIST_OF_BASIC, maxSize, bytes.toArray(new Bytes[0]))), length);
+  private static Bytes32 hash_tree_root_list_of_basic_type(
+      List<? extends Bytes> bytes, int maxSize, int length) {
+    return mix_in_length(
+        merkleize(
+            pack(bytes.toArray(new Bytes[0])),
+            chunk_count(SSZTypes.LIST_OF_BASIC, maxSize, bytes.toArray(new Bytes[0]))),
+        length);
   }
 
   /**
@@ -269,9 +289,13 @@ public final class HashTreeUtil {
    */
   private static Bytes32 hash_tree_root_list_composite_type(
       List<? extends Merkleizable> bytes, int maxSize, int length) {
-    List<Bytes32> hashTreeRootList = bytes.stream().map(item -> item.hash_tree_root()).collect(Collectors.toList());
+    List<Bytes32> hashTreeRootList =
+        bytes.stream().map(item -> item.hash_tree_root()).collect(Collectors.toList());
     return mix_in_length(
-        merkleize(hashTreeRootList, chunk_count(SSZTypes.LIST_OF_COMPOSITE, maxSize, hashTreeRootList.toArray(new Bytes32[0]))),
+        merkleize(
+            hashTreeRootList,
+            chunk_count(
+                SSZTypes.LIST_OF_COMPOSITE, maxSize, hashTreeRootList.toArray(new Bytes32[0]))),
         length);
   }
 
@@ -293,8 +317,15 @@ public final class HashTreeUtil {
             .collect(Collectors.toList()));
   }
 
-  private static List<Bytes32> bitfield_bytes(Bytes... sszValues) {
-    return pack(sszValues);
+  private static List<Bytes32> bitfield_bytes(Bytes sszValues) {
+    // TODO The following lines are a hack and can be fixed once we shift from Bytes to a real
+    // bitlist type.
+    Bytes bitfieldMask = Bytes.minimalBytes((int) Math.pow(2.0, sszValues.bitLength() - 1) - 1);
+    Bytes maskedBitfield = sszValues.and(bitfieldMask);
+    // int shiftCount = bitfieldMask.numberOfLeadingZeros();
+    // return pack(maskedBitfield.shiftLeft(shiftCount));
+    return pack(maskedBitfield);
+    // return pack(sszValues);
   }
 
   private static List<Bytes32> pack(Bytes... sszValues) {
@@ -321,19 +352,27 @@ public final class HashTreeUtil {
   private static int chunk_count(HashTreeUtil.SSZTypes sszType, int maxSize, Bytes... value) {
     switch (sszType) {
       case BASIC:
-        throw new UnsupportedOperationException("Use chunk_count(HashTreeUtil.SSZTypes, Bytes) for BASIC SSZ types.");
+        throw new UnsupportedOperationException(
+            "Use chunk_count(HashTreeUtil.SSZTypes, Bytes) for BASIC SSZ types.");
       case BITLIST:
+        // TODO The following lines are a hack and can be fixed once we shift from Bytes to a real
+        // bitlist type.
+        int chunkCount = (maxSize + 255) / 256;
+        return chunkCount > 0 ? chunkCount : 1;
       case BITVECTOR:
-        throw new UnsupportedOperationException("Use chunk_count(HashTreeUtil.SSZTypes, Bytes) for BitList and BitVector SSZ types.");
+        throw new UnsupportedOperationException(
+            "Use chunk_count(HashTreeUtil.SSZTypes, Bytes) for BitVector SSZ types.");
       case LIST_OF_BASIC:
         checkArgument(value != null && value.length > 0 && value[0] != null);
         return (maxSize * value[0].size() + 31) / 32;
       case VECTOR_OF_BASIC:
-        throw new UnsupportedOperationException("Use chunk_count(HashTreeUtil.SSZTypes, Bytes) for VECTORS of BASIC SSZ types.");
+        throw new UnsupportedOperationException(
+            "Use chunk_count(HashTreeUtil.SSZTypes, Bytes) for VECTORS of BASIC SSZ types.");
       case LIST_OF_COMPOSITE:
         return maxSize;
       case VECTOR_OF_COMPOSITE:
-        throw new UnsupportedOperationException("Use chunk_count(HashTreeUtil.SSZTypes, Bytes) for VECTORS of BASIC SSZ types.");
+        throw new UnsupportedOperationException(
+            "Use chunk_count(HashTreeUtil.SSZTypes, Bytes) for VECTORS of BASIC SSZ types.");
       case CONTAINER:
         throw new UnsupportedOperationException(
             "hash_tree_root of SSZ Containers (often implemented by POJOs) must be done by the container POJO itself, as its individual fields cannot be enumerated without reflection.");
@@ -346,14 +385,18 @@ public final class HashTreeUtil {
       case BASIC:
         return 1;
       case BITLIST:
+        throw new UnsupportedOperationException(
+            "Use chunk_count(HashTreeUtil.SSZTypes, int, Bytes...) for BitList SSZ types.");
       case BITVECTOR:
         return (value.bitLength() + 255) / 256;
       case LIST_OF_BASIC:
-        throw new UnsupportedOperationException("Lists are not yet supported in chunk_count. Support is pending a way to send the list max_length.");
+        throw new UnsupportedOperationException(
+            "Lists are not yet supported in chunk_count. Support is pending a way to send the list max_length.");
       case VECTOR_OF_BASIC:
         return (value.size() + 31) / 32;
       case LIST_OF_COMPOSITE:
-        throw new UnsupportedOperationException("Lists are not yet supported in chunk_count. Support is pending a way to send the list max_length.");
+        throw new UnsupportedOperationException(
+            "Lists are not yet supported in chunk_count. Support is pending a way to send the list max_length.");
       case VECTOR_OF_COMPOSITE:
         return value.size();
       case CONTAINER:
@@ -365,8 +408,9 @@ public final class HashTreeUtil {
 
   private static Bytes32 mix_in_length(Bytes32 merkle_root, int length) {
     // Append the little-endian length mixin to the given merkle root, and return its hash.
-    return Hash.keccak256(
-        Bytes.concatenate(merkle_root, Bytes.ofUnsignedLong(length, LITTLE_ENDIAN), Bytes.wrap(new byte[8])));
+    return Hash.sha2_256(
+        Bytes.concatenate(
+            merkle_root, Bytes.ofUnsignedLong(length, LITTLE_ENDIAN), Bytes.wrap(new byte[24])));
   }
 
   public static boolean is_power_of_two(int value) {

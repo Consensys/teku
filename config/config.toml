@@ -14,7 +14,7 @@ naughtinessPercentage = 0
 
 [interop]
 active = false
-inputFile = "interopDepositsAndKeys.json"
+inputFile = "depositsAndKeys.yaml"
 
 [deposit]
 # normal, test, simulation

@@ -14,16 +14,13 @@
 package tech.pegasys.artemis.datastructures.blocks;
 
 import com.google.common.primitives.UnsignedLong;
-
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
-
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
@@ -76,10 +73,11 @@ public final class BeaconBlock implements SimpleOffsetSerializable {
   public List<Bytes> get_fixed_parts() {
     List<Bytes> fixedPartsList = new ArrayList<>();
     fixedPartsList.addAll(
-        List.of(SSZ.encodeUInt64(slot.longValue()),
-        SSZ.encode(writer -> writer.writeFixedBytes(parent_root)),
-        SSZ.encode(writer -> writer.writeFixedBytes(state_root)),
-        Bytes.EMPTY));
+        List.of(
+            SSZ.encodeUInt64(slot.longValue()),
+            SSZ.encode(writer -> writer.writeFixedBytes(parent_root)),
+            SSZ.encode(writer -> writer.writeFixedBytes(state_root)),
+            Bytes.EMPTY));
     fixedPartsList.addAll(signature.get_fixed_parts());
     return fixedPartsList;
   }
@@ -87,7 +85,13 @@ public final class BeaconBlock implements SimpleOffsetSerializable {
   @Override
   public List<Bytes> get_variable_parts() {
     List<Bytes> variablePartsList = new ArrayList<>();
-    variablePartsList.addAll(List.of(Bytes.EMPTY, Bytes.EMPTY, Bytes.EMPTY, SimpleOffsetSerializer.serialize(body), Bytes.EMPTY));
+    variablePartsList.addAll(
+        List.of(
+            Bytes.EMPTY,
+            Bytes.EMPTY,
+            Bytes.EMPTY,
+            SimpleOffsetSerializer.serialize(body),
+            Bytes.EMPTY));
     return variablePartsList;
   }
 

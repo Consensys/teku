@@ -16,6 +16,7 @@ dependencies {
   implementation 'org.apache.tuweni:tuweni-config'
   implementation 'org.apache.tuweni:tuweni-crypto'
   implementation 'org.apache.tuweni:tuweni-ssz'
+  // implementation files('../lib/tuweni-ssz-0.9.0-SNAPSHOT.jar')
   implementation 'org.apache.logging.log4j:log4j-api'
   implementation 'org.miracl.milagro.amcl:milagro-crypto-java'
 
