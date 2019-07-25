@@ -63,8 +63,8 @@ public final class HashTreeUtil {
         checkArgument(bytes.length == 1, "A BitVector is only represented by a single Bytes value");
         return hash_tree_root_bitvector(bytes[0]);
       case BITLIST:
-        checkArgument(bytes.length == 1, "A BitList is only represented by a single Bytes value");
-        return hash_tree_root_bitlist(bytes[0]);
+        throw new UnsupportedOperationException(
+            "Use HashTreeUtil.hash_tree_root(SSZType.BITLIST, int, Bytes...) for a bitlist type.");
       case VECTOR_OF_BASIC:
         return hash_tree_root_vector_of_basic_type(bytes);
       case VECTOR_OF_COMPOSITE:
@@ -89,6 +89,9 @@ public final class HashTreeUtil {
     switch (sszType) {
       case LIST_OF_BASIC:
         return hash_tree_root_list_of_basic_type(bytes.length, maxSize, bytes);
+      case BITLIST:
+        checkArgument(bytes.length == 1, "A BitList is only represented by a single Bytes value");
+        return hash_tree_root_bitlist(bytes[0], maxSize);
       default:
         throw new UnsupportedOperationException(
             "The maxSize parameter is only applicable for SSZ Lists.");
@@ -215,9 +218,15 @@ public final class HashTreeUtil {
    *     href="https://github.com/ethereum/eth2.0-specs/blob/v0.5.1/specs/simple-serialize.md">SSZ
    *     Spec v0.5.1</a>
    */
-  private static Bytes32 hash_tree_root_bitlist(Bytes bytes) {
+  private static Bytes32 hash_tree_root_bitlist(Bytes bytes, int maxSize) {
+    // TODO The following lines are a hack and can be fixed once we shift from Bytes to a real
+    // bitlist type.
     return mix_in_length(
-        merkleize(bitfield_bytes(bytes), chunk_count(SSZTypes.BITLIST, bytes)), bytes.size());
+        merkleize(bitfield_bytes(bytes), chunk_count(SSZTypes.BITLIST, maxSize, bytes)),
+        bytes.bitLength() - 1);
+    // return mix_in_length(
+    //     merkleize(bitfield_bytes(bytes), chunk_count(SSZTypes.BITLIST, bytes)),
+    // bytes.bitLength());
   }
 
   /**
@@ -230,7 +239,7 @@ public final class HashTreeUtil {
    *     Spec v0.5.1</a>
    */
   private static Bytes32 hash_tree_root_bitvector(Bytes bytes) {
-    return merkleize(bitfield_bytes(bytes), chunk_count(SSZTypes.BITVECTOR, bytes));
+    return merkleize(pack(bytes), chunk_count(SSZTypes.BITVECTOR, bytes));
   }
 
   /**
@@ -308,8 +317,15 @@ public final class HashTreeUtil {
             .collect(Collectors.toList()));
   }
 
-  private static List<Bytes32> bitfield_bytes(Bytes... sszValues) {
-    return pack(sszValues);
+  private static List<Bytes32> bitfield_bytes(Bytes sszValues) {
+    // TODO The following lines are a hack and can be fixed once we shift from Bytes to a real
+    // bitlist type.
+    Bytes bitfieldMask = Bytes.minimalBytes((int) Math.pow(2.0, sszValues.bitLength() - 1) - 1);
+    Bytes maskedBitfield = sszValues.and(bitfieldMask);
+    // int shiftCount = bitfieldMask.numberOfLeadingZeros();
+    // return pack(maskedBitfield.shiftLeft(shiftCount));
+    return pack(maskedBitfield);
+    // return pack(sszValues);
   }
 
   private static List<Bytes32> pack(Bytes... sszValues) {
@@ -339,9 +355,13 @@ public final class HashTreeUtil {
         throw new UnsupportedOperationException(
             "Use chunk_count(HashTreeUtil.SSZTypes, Bytes) for BASIC SSZ types.");
       case BITLIST:
+        // TODO The following lines are a hack and can be fixed once we shift from Bytes to a real
+        // bitlist type.
+        int chunkCount = (maxSize + 255) / 256;
+        return chunkCount > 0 ? chunkCount : 1;
       case BITVECTOR:
         throw new UnsupportedOperationException(
-            "Use chunk_count(HashTreeUtil.SSZTypes, Bytes) for BitList and BitVector SSZ types.");
+            "Use chunk_count(HashTreeUtil.SSZTypes, Bytes) for BitVector SSZ types.");
       case LIST_OF_BASIC:
         checkArgument(value != null && value.length > 0 && value[0] != null);
         return (maxSize * value[0].size() + 31) / 32;
@@ -365,6 +385,8 @@ public final class HashTreeUtil {
       case BASIC:
         return 1;
       case BITLIST:
+        throw new UnsupportedOperationException(
+            "Use chunk_count(HashTreeUtil.SSZTypes, int, Bytes...) for BitList SSZ types.");
       case BITVECTOR:
         return (value.bitLength() + 255) / 256;
       case LIST_OF_BASIC:
