@@ -27,7 +27,7 @@ import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 public class AttesterSlashing implements Merkleizable, SimpleOffsetSerializable {
 
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
-  public static final int SSZ_FIELD_COUNT = 0;
+  public static final int SSZ_FIELD_COUNT = 2;
 
   private IndexedAttestation attestation_1;
   private IndexedAttestation attestation_2;
@@ -39,7 +39,7 @@ public class AttesterSlashing implements Merkleizable, SimpleOffsetSerializable 
 
   @Override
   public int getSSZFieldCount() {
-    return SSZ_FIELD_COUNT + attestation_1.getSSZFieldCount() + attestation_2.getSSZFieldCount();
+    return SSZ_FIELD_COUNT;
   }
 
   @Override
