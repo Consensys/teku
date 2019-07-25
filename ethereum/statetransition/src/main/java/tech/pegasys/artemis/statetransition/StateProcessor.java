@@ -73,7 +73,7 @@ public class StateProcessor {
     if (this.config.getDepositMode().equals(Constants.DEPOSIT_TEST)) {
       try {
         BeaconStateWithCache initial_state =
-            DataStructureUtil.createInitialBeaconState(this.config);
+            DataStructureUtil.createInitialBeaconState2(this.config);
         setSimulationGenesisTime(initial_state);
         onEth2Genesis(initial_state);
       } catch (ParseException | IOException e) {
