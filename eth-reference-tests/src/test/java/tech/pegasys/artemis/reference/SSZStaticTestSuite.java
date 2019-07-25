@@ -40,6 +40,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Mockito;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
+import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
 import tech.pegasys.artemis.datastructures.operations.AttesterSlashing;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
@@ -257,7 +258,23 @@ class SSZStaticTestSuite {
         Bytes.fromHexString(serialized), SimpleOffsetSerializer.serialize(attesterSlashing));
   }
 
-  // Attestation Goes Here
+  @ParameterizedTest(name = "{index}. Attestation Hash Tree Root Test")
+  @MethodSource("readAttestation")
+  void testAttestationHashTreeRoot(
+      LinkedHashMap<String, Object> value, String serialized, String root) {
+    Attestation attestation = parseAttestation(value);
+
+    assertEquals(Bytes32.fromHexString(root), attestation.hash_tree_root());
+  }
+
+  @ParameterizedTest(name = "{index}. Attestation Serialization Test")
+  @MethodSource("readAttestation")
+  void testAttestationSerialize(
+      LinkedHashMap<String, Object> value, String serialized, String root) {
+    Attestation attestation = parseAttestation(value);
+
+    assertEquals(Bytes.fromHexString(serialized), SimpleOffsetSerializer.serialize(attestation));
+  }
 
   @ParameterizedTest(name = "{index}. VoluntaryExit Hash Tree Root Test")
   @MethodSource("readVoluntaryExit")
@@ -397,6 +414,28 @@ class SSZStaticTestSuite {
     return attesterSlashing;
   }
 
+  @SuppressWarnings({"unchecked"})
+  private Attestation parseAttestation(LinkedHashMap<String, Object> value) {
+    // TODO Commented code below will be enabled once we shift from using Bytes to a real Bitlist
+    // type. As currently implemented, we need to keep the leading 1 bit in memory to determine
+    // length.
+    Bytes serializedAggregationBits = Bytes.fromHexString((String) value.get("aggregation_bits"));
+    // Bytes aggregationBitsMask = Bytes.minimalBytes((int) Math.pow(2.0,
+    // serializedAggregationBits.bitLength() - 1) - 1);
+    // Bytes aggregationBits = serializedAggregationBits.and(aggregationBitsMask);
+    AttestationData data = parseAttestationData((LinkedHashMap<String, Object>) value.get("data"));
+    Bytes serializedCustodyBits = Bytes.fromHexString((String) value.get("custody_bits"));
+    // Bytes custodyBitsMask = Bytes.minimalBytes((int) Math.pow(2.0,
+    // serializedCustodyBits.bitLength() - 1) - 1);
+    // Bytes custodyBits = serializedAggregationBits.and(custodyBitsMask);
+    BLSSignature signatureMock = mockBLSSignature(value);
+
+    // Attestation attestation = new Attestation(aggregationBits, data, custodyBits, signatureMock);
+    Attestation attestation =
+        new Attestation(serializedAggregationBits, data, serializedCustodyBits, signatureMock);
+    return attestation;
+  }
+
   private VoluntaryExit parseVoluntaryExit(LinkedHashMap<String, Object> value) {
     UnsignedLong epoch = UnsignedLong.valueOf((BigInteger) value.get("epoch"));
     UnsignedLong validatorIndex = UnsignedLong.valueOf((BigInteger) value.get("validator_index"));
@@ -499,7 +538,9 @@ class SSZStaticTestSuite {
     return findTests(testFile, "AttesterSlashing");
   }
 
-  // Attestation Goes Here
+  private static Stream<Arguments> readAttestation() throws IOException {
+    return findTests(testFile, "Attestation");
+  }
 
   private static Stream<Arguments> readVoluntaryExit() throws IOException {
     return findTests(testFile, "VoluntaryExit");

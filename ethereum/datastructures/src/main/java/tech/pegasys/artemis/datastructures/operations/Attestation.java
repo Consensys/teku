@@ -21,6 +21,7 @@ import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
+import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
@@ -66,9 +67,19 @@ public class Attestation implements Merkleizable, SimpleOffsetSerializable {
   @Override
   public List<Bytes> get_variable_parts() {
     List<Bytes> variablePartsList = new ArrayList<>();
-    // variablePartsList.addAll( /* TODO Serialize Bitlist */ );
+    // TODO The below lines are a hack while Tuweni SSZ/SOS is being upgraded. To be uncommented
+    // once we shift from Bytes to a real bitlist type.
+    // Bytes serialized_aggregation_bits =
+    // Bytes.fromHexString("0x01").shiftLeft(aggregation_bits.bitLength()).or(aggregation_bits);
+    // variablePartsList.addAll(List.of(serialized_aggregation_bits));
+    variablePartsList.addAll(List.of(aggregation_bits));
     variablePartsList.addAll(Collections.nCopies(data.getSSZFieldCount(), Bytes.EMPTY));
-    // variablePartsList.addAll( /* TODO Serialize Bitlist */ );
+    // TODO The below lines are a hack while Tuweni SSZ/SOS is being upgraded. To be uncommented
+    // once we shift from Bytes to a real bitlist type.
+    // Bytes serialized_custody_bitfield =
+    // Bytes.fromHexString("0x01").shiftLeft(aggregation_bits.bitLength()).or(custody_bitfield);
+    // variablePartsList.addAll(List.of(serialized_custody_bitfield));
+    variablePartsList.addAll(List.of(custody_bitfield));
     variablePartsList.addAll(Collections.nCopies(signature.getSSZFieldCount(), Bytes.EMPTY));
     return variablePartsList;
   }
@@ -158,10 +169,10 @@ public class Attestation implements Merkleizable, SimpleOffsetSerializable {
     return HashTreeUtil.merkleize(
         Arrays.asList(
             HashTreeUtil.hash_tree_root(
-                SSZTypes.LIST_OF_BASIC, aggregation_bits), // TODO writeBitlist logic required
+                SSZTypes.BITLIST, Constants.MAX_VALIDATORS_PER_COMMITTEE, aggregation_bits),
             data.hash_tree_root(),
             HashTreeUtil.hash_tree_root(
-                SSZTypes.LIST_OF_BASIC, custody_bitfield), // TODO writeBitlist logic required
+                SSZTypes.BITLIST, Constants.MAX_VALIDATORS_PER_COMMITTEE, custody_bitfield),
             HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_BASIC, signature.toBytes())));
   }
 }

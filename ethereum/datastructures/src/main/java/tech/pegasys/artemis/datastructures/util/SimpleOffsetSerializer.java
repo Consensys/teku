@@ -52,7 +52,6 @@ public class SimpleOffsetSerializer {
     for (Bytes element : value.get_fixed_parts()) {
       if (!element.equals(Bytes.EMPTY)) {
         interleaved_values.add(element);
-        ++interleavingIndex;
       } else {
         interleaved_values.add(
             SSZ.encodeUInt32(variable_offsets.get(interleavingIndex).longValue()));
