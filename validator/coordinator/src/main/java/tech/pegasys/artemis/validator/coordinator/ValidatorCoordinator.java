@@ -23,6 +23,9 @@ import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_domai
 import static tech.pegasys.artemis.statetransition.StateTransition.process_slots;
 import static tech.pegasys.artemis.statetransition.util.ForkChoiceUtil.get_head;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.google.common.primitives.UnsignedLong;
@@ -30,12 +33,14 @@ import com.google.protobuf.ByteString;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -130,7 +135,7 @@ public class ValidatorCoordinator {
 
     stateTransition = new StateTransition(printEnabled);
 
-    initializeValidators(config.getConfig());
+    initializeValidators2(config.getConfig());
   }
 
   /*
@@ -416,6 +421,62 @@ public class ValidatorCoordinator {
       new ValidatorClient(keypair, port);
       ManagedChannel channel =
           ManagedChannelBuilder.forAddress("localhost", port).usePlaintext().build();
+      validatorClientChannels.put(keypair.getPublicKey(), channel);
+      STDOUT.log(Level.DEBUG, "i = " + i + ": " + keypair.getPublicKey().toString());
+      if (numNaughtyValidators > 0) {
+        validatorSet.put(keypair.getPublicKey(), new MutableTriple<>(keypair, true, -1));
+      } else {
+        validatorSet.put(keypair.getPublicKey(), new MutableTriple<>(keypair, false, -1));
+      }
+      numNaughtyValidators--;
+      our_index++;
+    }
+  }
+
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  private void initializeValidators2(ArtemisConfiguration config) {
+    Pair<Integer, Integer> startAndEnd = getStartAndEnd();
+    int startIndex = startAndEnd.getLeft();
+    int endIndex = startAndEnd.getRight();
+    long numNaughtyValidators = Math.round((naughtinessPercentage * numValidators) / 100.0);
+    List<BLSKeyPair> keypairs = new ArrayList<>();
+    if (config.getInteropActive()) {
+      try {
+        Path path = Paths.get(config.getInteropInputFile());
+        String yaml = Files.readString(path.toAbsolutePath(), StandardCharsets.US_ASCII);
+        ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
+        Map<String, List<Map>> fileMap =
+                mapper.readValue(yaml, new TypeReference<Map<String, List<Map>>>() {});
+        List<Map> depositdatakeys = fileMap.get("depositdatakeys");
+        List<String> privateKeyStrings = new ArrayList<>();
+        depositdatakeys.forEach(
+                item -> {
+                  privateKeyStrings.add((String) item.get("privatekey"));
+                });
+        for (int i = startIndex; i <= endIndex; i++) {
+          BLSKeyPair keypair =
+                  new BLSKeyPair(
+                          new KeyPair(
+                                  SecretKey.fromBytes(
+                                          Bytes.fromHexString(privateKeyStrings.get(i).toString()))));
+          keypairs.add(keypair);
+        }
+      } catch (IOException e) {
+        STDOUT.log(Level.FATAL, e.toString());
+      }
+    } else {
+      for (int i = startIndex; i <= endIndex; i++) {
+        BLSKeyPair keypair = BLSKeyPair.random(i);
+        keypairs.add(keypair);
+      }
+    }
+    int our_index = 0;
+    for (int i = startIndex; i <= endIndex; i++) {
+      BLSKeyPair keypair = keypairs.get(our_index);
+      int port = Constants.VALIDATOR_CLIENT_PORT_BASE + i;
+      new ValidatorClient(keypair, port);
+      ManagedChannel channel =
+              ManagedChannelBuilder.forAddress("localhost", port).usePlaintext().build();
       validatorClientChannels.put(keypair.getPublicKey(), channel);
       STDOUT.log(Level.DEBUG, "i = " + i + ": " + keypair.getPublicKey().toString());
       if (numNaughtyValidators > 0) {
