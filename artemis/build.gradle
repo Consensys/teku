@@ -27,6 +27,7 @@ dependencies {
   implementation 'org.apache.tuweni:tuweni-crypto'
   implementation 'org.apache.tuweni:tuweni-plumtree'
   implementation 'org.apache.tuweni:tuweni-ssz'
+  // implementation files('../lib/tuweni-ssz-0.9.0-SNAPSHOT.jar')
   implementation 'org.apache.tuweni:tuweni-toml'
   implementation 'org.apache.tuweni:tuweni-units'
   implementation 'info.picocli:picocli'

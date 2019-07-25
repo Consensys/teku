@@ -18,9 +18,13 @@ import static tech.pegasys.artemis.datastructures.Constants.DOMAIN_DEPOSIT;
 import static tech.pegasys.artemis.datastructures.Constants.ZERO_HASH;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_domain;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.common.primitives.UnsignedLong;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -29,6 +33,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
@@ -416,6 +421,46 @@ public final class DataStructureUtil {
               i ->
                   deposits.add(
                       Deposit.fromBytes(Bytes.fromHexString(privateKeyStrings.get(i).toString()))));
+    } else {
+      deposits.addAll(newDeposits(config.getNumValidators()));
+    }
+    return BeaconStateUtil.initialize_beacon_state_from_eth1(
+        Bytes32.ZERO, UnsignedLong.valueOf(Constants.GENESIS_SLOT), deposits);
+  }
+
+  @SuppressWarnings("rawtypes")
+  public static BeaconStateWithCache createInitialBeaconState2(ArtemisConfiguration config)
+      throws IOException, ParseException {
+    final List<Deposit> deposits = new ArrayList<>();
+    if (config.getInteropActive()) {
+      Path path = Paths.get("depositsAndKeys.yaml");
+      String yaml = Files.readString(path.toAbsolutePath(), StandardCharsets.US_ASCII);
+      ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
+      Map<String, List<Map>> fileMap =
+          mapper.readValue(yaml, new TypeReference<Map<String, List<Map>>>() {});
+      List<Map> depositdatakeys = fileMap.get("depositdatakeys");
+      List<Map> depositDataRaw = new ArrayList<>();
+      depositdatakeys.forEach(
+          item -> {
+            depositDataRaw.add((Map) item.get("depositdata"));
+          });
+      List<DepositData> depositDatas = new ArrayList<>();
+      depositDataRaw.forEach(
+          item -> {
+            BLSPublicKey pubkey =
+                BLSPublicKey.fromBytes(Bytes.fromHexString(item.get("pubkey").toString()));
+            Bytes32 withdrawalCreds =
+                Bytes32.fromHexString(item.get("withdrawalcredentials").toString());
+            UnsignedLong amount = UnsignedLong.valueOf(item.get("amount").toString());
+            BLSSignature signature =
+                BLSSignature.fromBytes(Bytes.fromHexString(item.get("signature").toString()));
+            DepositData depositData = new DepositData(pubkey, withdrawalCreds, amount, signature);
+            depositDatas.add(depositData);
+          });
+      depositDatas.forEach(
+          item -> {
+            deposits.add(new Deposit(new ArrayList<>(), item));
+          });
     } else {
       deposits.addAll(newDeposits(config.getNumValidators()));
     }

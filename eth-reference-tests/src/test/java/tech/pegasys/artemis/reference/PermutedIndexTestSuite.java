@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package pegasys.artemis.reference;
+package tech.pegasys.artemis.reference;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
