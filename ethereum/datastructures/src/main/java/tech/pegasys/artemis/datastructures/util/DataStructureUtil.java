@@ -439,28 +439,19 @@ public final class DataStructureUtil {
       Map<String, List<Map>> fileMap =
           mapper.readValue(yaml, new TypeReference<Map<String, List<Map>>>() {});
       List<Map> depositdatakeys = fileMap.get("depositdatakeys");
-      List<Map> depositDataRaw = new ArrayList<>();
       depositdatakeys.forEach(
           item -> {
-            depositDataRaw.add((Map) item.get("depositdata"));
-          });
-      List<DepositData> depositDatas = new ArrayList<>();
-      depositDataRaw.forEach(
-          item -> {
+            Map depositDataMap = (Map) item.get("depositdata");
             BLSPublicKey pubkey =
-                BLSPublicKey.fromBytes(Bytes.fromHexString(item.get("pubkey").toString()));
+                BLSPublicKey.fromBytes(Bytes.fromHexString(depositDataMap.get("pubkey").toString()));
             Bytes32 withdrawalCreds =
-                Bytes32.fromHexString(item.get("withdrawalcredentials").toString());
-            UnsignedLong amount = UnsignedLong.valueOf(item.get("amount").toString());
+                Bytes32.fromHexString(depositDataMap.get("withdrawalcredentials").toString());
+            UnsignedLong amount = UnsignedLong.valueOf(depositDataMap.get("amount").toString());
             BLSSignature signature =
-                BLSSignature.fromBytes(Bytes.fromHexString(item.get("signature").toString()));
+                BLSSignature.fromBytes(Bytes.fromHexString(depositDataMap.get("signature").toString()));
             DepositData depositData = new DepositData(pubkey, withdrawalCreds, amount, signature);
-            depositDatas.add(depositData);
-          });
-      depositDatas.forEach(
-          item -> {
-            deposits.add(new Deposit(new ArrayList<>(), item));
-          });
+            deposits.add(new Deposit(new ArrayList<>(), depositData, UnsignedLong.valueOf(item.get("index").toString())));
+              });
     } else {
       deposits.addAll(newDeposits(config.getNumValidators()));
     }
