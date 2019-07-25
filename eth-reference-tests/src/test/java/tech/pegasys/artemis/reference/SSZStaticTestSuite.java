@@ -51,6 +51,7 @@ import tech.pegasys.artemis.datastructures.operations.Transfer;
 import tech.pegasys.artemis.datastructures.operations.VoluntaryExit;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.datastructures.state.Crosslink;
+import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
@@ -311,6 +312,23 @@ class SSZStaticTestSuite {
     assertEquals(Bytes.fromHexString(serialized), SimpleOffsetSerializer.serialize(transfer));
   }
 
+  @ParameterizedTest(name = "{index}. Fork Hash Tree Root Test")
+  @MethodSource("readFork")
+  void testForkHashTreeRoot(
+      LinkedHashMap<String, Object> value, String serialized, String root) {
+    Fork fork = parseFork(value);
+
+    assertEquals(Bytes32.fromHexString(root), fork.hash_tree_root());
+  }
+
+  @ParameterizedTest(name = "{index}. Fork Serialization Test")
+  @MethodSource("readFork")
+  void testForkSerialize(LinkedHashMap<String, Object> value, String serialized, String root) {
+    Fork fork = parseFork(value);
+
+    assertEquals(Bytes.fromHexString(serialized), SimpleOffsetSerializer.serialize(fork));
+  }
+
   private Eth1Data parseEth1Data(LinkedHashMap<String, Object> value) {
     Bytes32 depositRoot = Bytes32.fromHexString((String) value.get("deposit_root"));
     UnsignedLong depositCount = UnsignedLong.valueOf((BigInteger) value.get("deposit_count"));
@@ -459,6 +477,15 @@ class SSZStaticTestSuite {
     return transfer;
   }
 
+  private Fork parseFork(LinkedHashMap<String, Object> value) {
+    Bytes previousVersion = Bytes.fromHexString((String) value.get("previous_version"));
+    Bytes currentVersion = Bytes.fromHexString((String) value.get("current_version"));
+    UnsignedLong epoch = UnsignedLong.valueOf((BigInteger) value.get("epoch"));
+
+    Fork fork = new Fork(previousVersion, currentVersion, epoch);
+    return fork;
+  }
+
   private BLSPublicKey mockBLSPublicKey(LinkedHashMap<String, Object> value) {
     Bytes pubkeyBytes = Bytes.fromHexString((String) value.get("pubkey"));
     BLSPublicKey pubkeyMock = Mockito.mock(BLSPublicKey.class);
@@ -548,6 +575,10 @@ class SSZStaticTestSuite {
 
   private static Stream<Arguments> readTransfer() throws IOException {
     return findTests(testFile, "Transfer");
+  }
+
+  private static Stream<Arguments> readFork() throws IOException {
+    return findTests(testFile, "Fork");
   }
 
   @SuppressWarnings({"unchecked", "rawtypes"})
