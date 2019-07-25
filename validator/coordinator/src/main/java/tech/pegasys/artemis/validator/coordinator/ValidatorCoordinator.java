@@ -451,7 +451,7 @@ public class ValidatorCoordinator {
         List<String> privateKeyStrings = new ArrayList<>();
         depositdatakeys.forEach(
                 item -> {
-                  privateKeyStrings.add((String) item.get("privatekey"));
+                  privateKeyStrings.add(((String) item.get("privkey")) + "00000000000000000000000000000000");
                 });
         for (int i = startIndex; i <= endIndex; i++) {
           BLSKeyPair keypair =
