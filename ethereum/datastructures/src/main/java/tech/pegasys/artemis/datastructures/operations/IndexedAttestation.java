@@ -79,14 +79,23 @@ public class IndexedAttestation implements Merkleizable, SimpleOffsetSerializabl
     List<Bytes> variablePartsList = new ArrayList<>();
     variablePartsList.addAll(
         List.of(
-            SSZ.encodeUInt64List(
+            // TODO The below lines are a hack while Tuweni SSZ/SOS is being upgraded.
+            Bytes.fromHexString(
+                custody_bit_0_indices.stream()
+                    .map(value -> SSZ.encodeUInt64(value.longValue()).toHexString().substring(2))
+                    .collect(Collectors.joining())),
+            Bytes.fromHexString(
+                custody_bit_1_indices.stream()
+                    .map(value -> SSZ.encodeUInt64(value.longValue()).toHexString().substring(2))
+                    .collect(Collectors.joining()))
+            /*SSZ.encodeUInt64List(
                 custody_bit_0_indices.stream()
                     .map(value -> value.longValue())
                     .collect(Collectors.toList())),
             SSZ.encodeUInt64List(
                 custody_bit_1_indices.stream()
                     .map(value -> value.longValue())
-                    .collect(Collectors.toList()))));
+                    .collect(Collectors.toList()))*/ ));
     variablePartsList.addAll(Collections.nCopies(data.getSSZFieldCount(), Bytes.EMPTY));
     variablePartsList.addAll(Collections.nCopies(signature.getSSZFieldCount(), Bytes.EMPTY));
     return variablePartsList;

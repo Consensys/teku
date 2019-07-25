@@ -48,7 +48,7 @@ dependencyManagement {
       entry 'tuweni-kv'
       entry 'tuweni-plumtree'
       entry 'tuweni-rlpx'
-      // entry 'tuweni-ssz'
+      entry 'tuweni-ssz'
       entry 'tuweni-toml'
       entry 'tuweni-units'
     }

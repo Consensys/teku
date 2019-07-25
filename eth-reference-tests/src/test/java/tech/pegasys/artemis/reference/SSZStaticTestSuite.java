@@ -46,6 +46,7 @@ import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.DepositData;
 import tech.pegasys.artemis.datastructures.operations.IndexedAttestation;
 import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
+import tech.pegasys.artemis.datastructures.operations.Transfer;
 import tech.pegasys.artemis.datastructures.operations.VoluntaryExit;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.datastructures.state.Crosslink;
@@ -276,6 +277,23 @@ class SSZStaticTestSuite {
     assertEquals(Bytes.fromHexString(serialized), SimpleOffsetSerializer.serialize(voluntaryExit));
   }
 
+  @ParameterizedTest(name = "{index}. Transfer Hash Tree Root Test")
+  @MethodSource("readTransfer")
+  void testTransferHashTreeRoot(
+      LinkedHashMap<String, Object> value, String serialized, String root) {
+    Transfer transfer = parseTransfer(value);
+
+    assertEquals(Bytes32.fromHexString(root), transfer.hash_tree_root());
+  }
+
+  @ParameterizedTest(name = "{index}. Transfer Serialization Test")
+  @MethodSource("readTransfer")
+  void testTransferSerialize(LinkedHashMap<String, Object> value, String serialized, String root) {
+    Transfer transfer = parseTransfer(value);
+
+    assertEquals(Bytes.fromHexString(serialized), SimpleOffsetSerializer.serialize(transfer));
+  }
+
   private Eth1Data parseEth1Data(LinkedHashMap<String, Object> value) {
     Bytes32 depositRoot = Bytes32.fromHexString((String) value.get("deposit_root"));
     UnsignedLong depositCount = UnsignedLong.valueOf((BigInteger) value.get("deposit_count"));
@@ -286,12 +304,7 @@ class SSZStaticTestSuite {
   }
 
   private DepositData parseDepositData(LinkedHashMap<String, Object> value) {
-    Bytes pubkeyBytes = Bytes.fromHexString((String) value.get("pubkey"));
-    BLSPublicKey pubkeyMock = Mockito.mock(BLSPublicKey.class);
-    Mockito.when(pubkeyMock.toBytes()).thenReturn(pubkeyBytes);
-    Mockito.when(pubkeyMock.get_fixed_parts()).thenReturn(List.of(pubkeyBytes));
-    Mockito.when(pubkeyMock.getSSZFieldCount()).thenReturn(1);
-
+    BLSPublicKey pubkeyMock = mockBLSPublicKey(value);
     Bytes32 withdrawalCredentials =
         Bytes32.fromHexString((String) value.get("withdrawal_credentials"));
     UnsignedLong amount = UnsignedLong.valueOf((BigInteger) value.get("amount"));
@@ -393,6 +406,29 @@ class SSZStaticTestSuite {
     return voluntaryExit;
   }
 
+  private Transfer parseTransfer(LinkedHashMap<String, Object> value) {
+    UnsignedLong sender = UnsignedLong.valueOf((BigInteger) value.get("sender"));
+    UnsignedLong recipient = UnsignedLong.valueOf((BigInteger) value.get("recipient"));
+    UnsignedLong amount = UnsignedLong.valueOf((BigInteger) value.get("amount"));
+    UnsignedLong fee = UnsignedLong.valueOf((BigInteger) value.get("fee"));
+    UnsignedLong slot = UnsignedLong.valueOf((BigInteger) value.get("slot"));
+    BLSPublicKey pubkeyMock = mockBLSPublicKey(value);
+    BLSSignature signatureMock = mockBLSSignature(value);
+
+    Transfer transfer =
+        new Transfer(sender, recipient, amount, fee, slot, pubkeyMock, signatureMock);
+    return transfer;
+  }
+
+  private BLSPublicKey mockBLSPublicKey(LinkedHashMap<String, Object> value) {
+    Bytes pubkeyBytes = Bytes.fromHexString((String) value.get("pubkey"));
+    BLSPublicKey pubkeyMock = Mockito.mock(BLSPublicKey.class);
+    Mockito.when(pubkeyMock.toBytes()).thenReturn(pubkeyBytes);
+    Mockito.when(pubkeyMock.get_fixed_parts()).thenReturn(List.of(pubkeyBytes));
+    Mockito.when(pubkeyMock.getSSZFieldCount()).thenReturn(1);
+    return pubkeyMock;
+  }
+
   private BLSSignature mockBLSSignature(LinkedHashMap<String, Object> value) {
     Bytes signatureBytes = Bytes.fromHexString((String) value.get("signature"));
     BLSSignature signatureMock = Mockito.mock(BLSSignature.class);
@@ -467,6 +503,10 @@ class SSZStaticTestSuite {
 
   private static Stream<Arguments> readVoluntaryExit() throws IOException {
     return findTests(testFile, "VoluntaryExit");
+  }
+
+  private static Stream<Arguments> readTransfer() throws IOException {
+    return findTests(testFile, "Transfer");
   }
 
   @SuppressWarnings({"unchecked", "rawtypes"})
