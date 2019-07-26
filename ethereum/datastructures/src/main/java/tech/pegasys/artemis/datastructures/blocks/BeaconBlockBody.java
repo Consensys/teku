@@ -22,6 +22,7 @@ import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
+import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.AttesterSlashing;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
@@ -276,11 +277,17 @@ public class BeaconBlockBody implements SimpleOffsetSerializable {
             HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_BASIC, randao_reveal.toBytes()),
             eth1_data.hash_tree_root(),
             HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_BASIC, graffiti),
-            HashTreeUtil.hash_tree_root(SSZTypes.LIST_OF_COMPOSITE, proposer_slashings),
-            HashTreeUtil.hash_tree_root(SSZTypes.LIST_OF_COMPOSITE, attester_slashings),
-            HashTreeUtil.hash_tree_root(SSZTypes.LIST_OF_COMPOSITE, attestations),
-            HashTreeUtil.hash_tree_root(SSZTypes.LIST_OF_COMPOSITE, deposits),
-            HashTreeUtil.hash_tree_root(SSZTypes.LIST_OF_COMPOSITE, voluntary_exits),
-            HashTreeUtil.hash_tree_root(SSZTypes.LIST_OF_COMPOSITE, transfers)));
+            HashTreeUtil.hash_tree_root(
+                SSZTypes.LIST_OF_COMPOSITE, Constants.MAX_PROPOSER_SLASHINGS, proposer_slashings),
+            HashTreeUtil.hash_tree_root(
+                SSZTypes.LIST_OF_COMPOSITE, Constants.MAX_ATTESTER_SLASHINGS, attester_slashings),
+            HashTreeUtil.hash_tree_root(
+                SSZTypes.LIST_OF_COMPOSITE, Constants.MAX_ATTESTATIONS, attestations),
+            HashTreeUtil.hash_tree_root(
+                SSZTypes.LIST_OF_COMPOSITE, Constants.MAX_DEPOSITS, deposits),
+            HashTreeUtil.hash_tree_root(
+                SSZTypes.LIST_OF_COMPOSITE, Constants.MAX_VOLUNTARY_EXITS, voluntary_exits),
+            HashTreeUtil.hash_tree_root(
+                SSZTypes.LIST_OF_COMPOSITE, Constants.MAX_TRANSFERS, transfers)));
   }
 }

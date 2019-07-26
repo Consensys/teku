@@ -53,6 +53,7 @@ import org.apache.commons.lang3.tuple.Triple;
 import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.bytes.Bytes48;
 import org.apache.tuweni.crypto.SECP256K1;
 import org.apache.tuweni.ssz.SSZ;
 import org.apache.tuweni.units.bigints.UInt256;
@@ -446,19 +447,19 @@ public class ValidatorCoordinator {
         String yaml = Files.readString(path.toAbsolutePath(), StandardCharsets.US_ASCII);
         ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
         Map<String, List<Map>> fileMap =
-                mapper.readValue(yaml, new TypeReference<Map<String, List<Map>>>() {});
-        List<Map> depositdatakeys = fileMap.get("depositdatakeys");
+            mapper.readValue(yaml, new TypeReference<Map<String, List<Map>>>() {});
+        List<Map> depositdatakeys = fileMap.get("DepositDataKeys");
         List<String> privateKeyStrings = new ArrayList<>();
         depositdatakeys.forEach(
-                item -> {
-                  privateKeyStrings.add(((String) item.get("privkey")) + "00000000000000000000000000000000");
-                });
+            item -> {
+              privateKeyStrings.add(item.get("Privkey").toString());
+            });
         for (int i = startIndex; i <= endIndex; i++) {
           BLSKeyPair keypair =
-                  new BLSKeyPair(
-                          new KeyPair(
-                                  SecretKey.fromBytes(
-                                          Bytes.fromHexString(privateKeyStrings.get(i).toString()))));
+              new BLSKeyPair(
+                  new KeyPair(
+                      SecretKey.fromBytes(
+                          Bytes48.leftPad(Bytes.fromBase64String(privateKeyStrings.get(i))))));
           keypairs.add(keypair);
         }
       } catch (IOException e) {
@@ -476,7 +477,7 @@ public class ValidatorCoordinator {
       int port = Constants.VALIDATOR_CLIENT_PORT_BASE + i;
       new ValidatorClient(keypair, port);
       ManagedChannel channel =
-              ManagedChannelBuilder.forAddress("localhost", port).usePlaintext().build();
+          ManagedChannelBuilder.forAddress("localhost", port).usePlaintext().build();
       validatorClientChannels.put(keypair.getPublicKey(), channel);
       STDOUT.log(Level.DEBUG, "i = " + i + ": " + keypair.getPublicKey().toString());
       if (numNaughtyValidators > 0) {

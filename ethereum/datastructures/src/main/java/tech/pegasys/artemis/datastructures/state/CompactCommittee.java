@@ -21,6 +21,7 @@ import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
+import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.Copyable;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
@@ -131,12 +132,14 @@ public class CompactCommittee
         Arrays.asList(
             HashTreeUtil.hash_tree_root(
                 SSZTypes.LIST_OF_COMPOSITE,
+                Constants.MAX_VALIDATORS_PER_COMMITTEE,
                 pubkeys.stream()
                     .map(BLSPublicKey::toBytes)
                     .map(item -> SSZ.encodeBytes(item))
                     .collect(Collectors.toList())),
             HashTreeUtil.hash_tree_root(
                 SSZTypes.LIST_OF_BASIC,
+                Constants.MAX_VALIDATORS_PER_COMMITTEE,
                 compact_validators.stream()
                     .map(item -> SSZ.encodeUInt64(item.longValue()))
                     .collect(Collectors.toList()))));
