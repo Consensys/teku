@@ -123,8 +123,7 @@ public class BeaconStateUtil {
     List<Integer> indices_list =
         get_active_validator_indices(state, UnsignedLong.valueOf(GENESIS_EPOCH));
     Bytes32 active_index_root =
-        hash_tree_root(
-            SSZTypes.LIST_OF_BASIC, Constants.VALIDATOR_REGISTRY_LIMIT.longValue(), indices_list);
+        hash_tree_root(SSZTypes.LIST_OF_BASIC, Constants.VALIDATOR_REGISTRY_LIMIT, indices_list);
     Bytes32 committee_root =
         get_compact_committees_root(state, UnsignedLong.valueOf(GENESIS_EPOCH));
     IntStream.range(0, EPOCHS_PER_HISTORICAL_VECTOR)

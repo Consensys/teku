@@ -106,7 +106,7 @@ public final class HashTreeUtil {
             "Use HashTreeUtil.hash_tree_root(SSZTypes.LIST_OF_BASIC, int, List) for a variable length list of basic SSZ types.");
       case LIST_OF_COMPOSITE:
         throw new UnsupportedOperationException(
-            "Use HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_BASIC, int, List) for a variable length list of composite SSZ types.");
+            "Use HashTreeUtil.hash_tree_root(SSZTypes.LIST_OF_COMPOSITE, int, List) for a variable length list of composite SSZ types.");
       case VECTOR_OF_COMPOSITE:
         if (!bytes.isEmpty() && bytes.get(0) instanceof Bytes32) {
           return hash_tree_root_vector_composite_type((List<Bytes32>) bytes);
