@@ -53,6 +53,7 @@ import org.apache.commons.lang3.tuple.Triple;
 import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.bytes.Bytes48;
 import org.apache.tuweni.crypto.SECP256K1;
 import org.apache.tuweni.ssz.SSZ;
 import org.apache.tuweni.units.bigints.UInt256;
@@ -457,7 +458,8 @@ public class ValidatorCoordinator {
           BLSKeyPair keypair =
               new BLSKeyPair(
                   new KeyPair(
-                      SecretKey.fromBytes(Bytes.fromBase64String(privateKeyStrings.get(i)))));
+                      SecretKey.fromBytes(
+                          Bytes48.leftPad(Bytes.fromBase64String(privateKeyStrings.get(i))))));
           keypairs.add(keypair);
         }
       } catch (IOException e) {
