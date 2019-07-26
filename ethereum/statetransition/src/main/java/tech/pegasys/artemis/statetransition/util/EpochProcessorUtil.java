@@ -781,7 +781,9 @@ public final class EpochProcessorUtil {
     state
         .getActive_index_roots()
         .set(
-            index_root_position, HashTreeUtil.hash_tree_root(SSZTypes.LIST_OF_BASIC, indices_list));
+            index_root_position,
+            HashTreeUtil.hash_tree_root(
+                SSZTypes.LIST_OF_BASIC, Constants.VALIDATOR_REGISTRY_LIMIT, indices_list));
 
     // Set committees root
     int committee_root_position =
