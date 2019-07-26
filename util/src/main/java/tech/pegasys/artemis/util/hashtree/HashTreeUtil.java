@@ -85,7 +85,7 @@ public final class HashTreeUtil {
     return Bytes32.ZERO;
   }
 
-  public static Bytes32 hash_tree_root(SSZTypes sszType, int maxSize, Bytes... bytes) {
+  public static Bytes32 hash_tree_root(SSZTypes sszType, long maxSize, Bytes... bytes) {
     switch (sszType) {
       case LIST_OF_BASIC:
         return hash_tree_root_list_of_basic_type(bytes.length, maxSize, bytes);
@@ -106,7 +106,7 @@ public final class HashTreeUtil {
             "Use HashTreeUtil.hash_tree_root(SSZTypes.LIST_OF_BASIC, int, List) for a variable length list of basic SSZ types.");
       case LIST_OF_COMPOSITE:
         throw new UnsupportedOperationException(
-            "Use HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_BASIC, int, List) for a variable length list of composite SSZ types.");
+            "Use HashTreeUtil.hash_tree_root(SSZTypes.LIST_OF_COMPOSITE, int, List) for a variable length list of composite SSZ types.");
       case VECTOR_OF_COMPOSITE:
         if (!bytes.isEmpty() && bytes.get(0) instanceof Bytes32) {
           return hash_tree_root_vector_composite_type((List<Bytes32>) bytes);
@@ -127,7 +127,7 @@ public final class HashTreeUtil {
   }
 
   @SuppressWarnings({"rawtypes", "unchecked"})
-  public static Bytes32 hash_tree_root(SSZTypes sszType, int maxSize, List bytes) {
+  public static Bytes32 hash_tree_root(SSZTypes sszType, long maxSize, List bytes) {
     switch (sszType) {
       case LIST_OF_BASIC:
         if (!bytes.isEmpty() && bytes.get(0) instanceof Bytes) {
@@ -147,7 +147,7 @@ public final class HashTreeUtil {
     return Bytes32.ZERO;
   }
 
-  public static Bytes32 merkleize(List<Bytes32> sszChunks, int limit) {
+  public static Bytes32 merkleize(List<Bytes32> sszChunks, long limit) {
     List<Bytes32> mutableSSZChunks = new ArrayList<>(sszChunks);
 
     // A balanced binary tree must have a power of two number of leaves.
@@ -218,7 +218,7 @@ public final class HashTreeUtil {
    *     href="https://github.com/ethereum/eth2.0-specs/blob/v0.5.1/specs/simple-serialize.md">SSZ
    *     Spec v0.5.1</a>
    */
-  private static Bytes32 hash_tree_root_bitlist(Bytes bytes, int maxSize) {
+  private static Bytes32 hash_tree_root_bitlist(Bytes bytes, long maxSize) {
     // TODO The following lines are a hack and can be fixed once we shift from Bytes to a real
     // bitlist type.
     return mix_in_length(
@@ -253,7 +253,7 @@ public final class HashTreeUtil {
    *     Spec v0.5.1</a>
    */
   private static Bytes32 hash_tree_root_list_of_basic_type(
-      int length, int maxSize, Bytes... bytes) {
+      int length, long maxSize, Bytes... bytes) {
     return mix_in_length(
         merkleize(pack(bytes), chunk_count(SSZTypes.LIST_OF_BASIC, maxSize, bytes)), length);
   }
@@ -269,7 +269,7 @@ public final class HashTreeUtil {
    *     Spec v0.5.1</a>
    */
   private static Bytes32 hash_tree_root_list_of_basic_type(
-      List<? extends Bytes> bytes, int maxSize, int length) {
+      List<? extends Bytes> bytes, long maxSize, int length) {
     return mix_in_length(
         merkleize(
             pack(bytes.toArray(new Bytes[0])),
@@ -288,7 +288,7 @@ public final class HashTreeUtil {
    *     Spec v0.5.1</a>
    */
   private static Bytes32 hash_tree_root_list_composite_type(
-      List<? extends Merkleizable> bytes, int maxSize, int length) {
+      List<? extends Merkleizable> bytes, long maxSize, int length) {
     List<Bytes32> hashTreeRootList =
         bytes.stream().map(item -> item.hash_tree_root()).collect(Collectors.toList());
     return mix_in_length(
@@ -349,7 +349,7 @@ public final class HashTreeUtil {
     return chunkifiedBytes;
   }
 
-  private static int chunk_count(HashTreeUtil.SSZTypes sszType, int maxSize, Bytes... value) {
+  private static long chunk_count(HashTreeUtil.SSZTypes sszType, long maxSize, Bytes... value) {
     switch (sszType) {
       case BASIC:
         throw new UnsupportedOperationException(
@@ -357,7 +357,7 @@ public final class HashTreeUtil {
       case BITLIST:
         // TODO The following lines are a hack and can be fixed once we shift from Bytes to a real
         // bitlist type.
-        int chunkCount = (maxSize + 255) / 256;
+        long chunkCount = (maxSize + 255) / 256;
         return chunkCount > 0 ? chunkCount : 1;
       case BITVECTOR:
         throw new UnsupportedOperationException(

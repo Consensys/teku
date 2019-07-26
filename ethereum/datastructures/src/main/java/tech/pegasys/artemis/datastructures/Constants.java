@@ -68,7 +68,7 @@ public class Constants {
   public static int EPOCHS_PER_HISTORICAL_VECTOR = 65536;
   public static int EPOCHS_PER_SLASHINGS_VECTOR = 8192;
   public static int HISTORICAL_ROOTS_LIMIT = 16777216;
-  public static UnsignedLong VALIDATOR_REGISTRY_LIMIT = UnsignedLong.valueOf(1099511627776L);
+  public static long VALIDATOR_REGISTRY_LIMIT = 1099511627776L;
 
   // Reward and penalty quotients
   public static int BASE_REWARD_FACTOR = 64;
@@ -230,7 +230,7 @@ public class Constants {
             : HISTORICAL_ROOTS_LIMIT;
     VALIDATOR_REGISTRY_LIMIT =
         config.getValidatorRegistryLimit() != Long.MIN_VALUE
-            ? UnsignedLong.valueOf(config.getValidatorRegistryLimit())
+            ? config.getValidatorRegistryLimit()
             : VALIDATOR_REGISTRY_LIMIT;
     // Rewards and penalties
     BASE_REWARD_FACTOR =

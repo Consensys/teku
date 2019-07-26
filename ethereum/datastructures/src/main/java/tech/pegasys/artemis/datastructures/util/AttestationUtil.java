@@ -371,7 +371,8 @@ public class AttestationUtil {
       }
     }
     // TODO serialization might be an issue here
-    return HashTreeUtil.hash_tree_root(HashTreeUtil.SSZTypes.LIST_OF_COMPOSITE, committees);
+    return HashTreeUtil.hash_tree_root(
+        HashTreeUtil.SSZTypes.LIST_OF_COMPOSITE, Constants.SHARD_COUNT, committees);
   }
 
   public static <T> List<T> intersection(List<T> list1, List<T> list2) {
