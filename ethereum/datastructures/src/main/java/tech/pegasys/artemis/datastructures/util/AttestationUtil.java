@@ -184,7 +184,7 @@ public class AttestationUtil {
     List<Integer> attesting_indices =
         get_attesting_indices(state, attestation.getData(), attestation.getAggregation_bits());
     List<Integer> custody_bit_1_indices =
-        get_attesting_indices(state, attestation.getData(), attestation.getCustody_bitfield());
+        get_attesting_indices(state, attestation.getData(), attestation.getCustody_bits());
 
     checkArgument(
         attesting_indices.containsAll(custody_bit_1_indices),

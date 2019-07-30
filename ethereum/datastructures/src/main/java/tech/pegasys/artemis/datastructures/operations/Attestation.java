@@ -28,6 +28,11 @@ import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
 import tech.pegasys.artemis.util.hashtree.Merkleizable;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Objects;
+
 public class Attestation implements Merkleizable, SimpleOffsetSerializable {
 
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
@@ -35,17 +40,17 @@ public class Attestation implements Merkleizable, SimpleOffsetSerializable {
 
   private Bytes aggregation_bits; // Bitlist bounded by MAX_VALIDATORS_PER_COMMITTEE
   private AttestationData data;
-  private Bytes custody_bitfield; // Bitlist bounded by MAX_VALIDATORS_PER_COMMITTEE
+  private Bytes custody_bits; // Bitlist bounded by MAX_VALIDATORS_PER_COMMITTEE
   private BLSSignature signature;
 
   public Attestation(
       Bytes aggregation_bits,
       AttestationData data,
-      Bytes custody_bitfield,
+      Bytes custody_bits,
       BLSSignature signature) {
     this.aggregation_bits = aggregation_bits;
     this.data = data;
-    this.custody_bitfield = custody_bitfield;
+    this.custody_bits = custody_bits;
     this.signature = signature;
   }
 
@@ -79,7 +84,7 @@ public class Attestation implements Merkleizable, SimpleOffsetSerializable {
     // Bytes serialized_custody_bitfield =
     // Bytes.fromHexString("0x01").shiftLeft(aggregation_bits.bitLength()).or(custody_bitfield);
     // variablePartsList.addAll(List.of(serialized_custody_bitfield));
-    variablePartsList.addAll(List.of(custody_bitfield));
+    variablePartsList.addAll(List.of(custody_bits));
     variablePartsList.addAll(Collections.nCopies(signature.getSSZFieldCount(), Bytes.EMPTY));
     return variablePartsList;
   }
@@ -100,14 +105,14 @@ public class Attestation implements Merkleizable, SimpleOffsetSerializable {
         writer -> {
           writer.writeBytes(aggregation_bits); // TODO writeBitlist logic required
           writer.writeBytes(data.toBytes());
-          writer.writeBytes(custody_bitfield); // TODO writeBitlist logic required
+          writer.writeBytes(custody_bits);// TODO writeBitlist logic required
           writer.writeBytes(signature.toBytes());
         });
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(aggregation_bits, data, custody_bitfield, signature);
+    return Objects.hash(aggregation_bits, data, custody_bits, signature);
   }
 
   @Override
@@ -127,7 +132,7 @@ public class Attestation implements Merkleizable, SimpleOffsetSerializable {
     Attestation other = (Attestation) obj;
     return Objects.equals(this.getAggregation_bits(), other.getAggregation_bits())
         && Objects.equals(this.getData(), other.getData())
-        && Objects.equals(this.getCustody_bitfield(), other.getCustody_bitfield())
+        && Objects.equals(this.getCustody_bits(), other.getCustody_bits())
         && Objects.equals(this.getAggregate_signature(), other.getAggregate_signature());
   }
 
@@ -148,12 +153,12 @@ public class Attestation implements Merkleizable, SimpleOffsetSerializable {
     this.data = data;
   }
 
-  public Bytes getCustody_bitfield() {
-    return custody_bitfield;
+  public Bytes getCustody_bits() {
+    return custody_bits;
   }
 
-  public void setCustody_bitfield(Bytes custody_bitfield) {
-    this.custody_bitfield = custody_bitfield;
+  public void setCustody_bits(Bytes custody_bits) {
+    this.custody_bits = custody_bits;
   }
 
   public BLSSignature getAggregate_signature() {
@@ -172,7 +177,7 @@ public class Attestation implements Merkleizable, SimpleOffsetSerializable {
                 SSZTypes.BITLIST, Constants.MAX_VALIDATORS_PER_COMMITTEE, aggregation_bits),
             data.hash_tree_root(),
             HashTreeUtil.hash_tree_root(
-                SSZTypes.BITLIST, Constants.MAX_VALIDATORS_PER_COMMITTEE, custody_bitfield),
+                SSZTypes.BITLIST, Constants.MAX_VALIDATORS_PER_COMMITTEE, custody_bits),
             HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_BASIC, signature.toBytes())));
   }
 }

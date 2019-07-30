@@ -14,6 +14,7 @@
 package tech.pegasys.artemis.reference;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static tech.pegasys.artemis.datastructures.util.CrosslinkCommitteeUtil.compute_shuffled_index;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
@@ -43,7 +44,7 @@ public class PermutedIndexTestSuite {
   @MethodSource("readPermutedIndexTestVectors")
   void testPermutedIndex(int index, int listSize, int indexExpected, Bytes32 seed) {
 
-    int indexActual = CrosslinkCommitteeUtil.get_shuffled_index(index, listSize, seed);
+    int indexActual = compute_shuffled_index(index, listSize, seed);
 
     assertEquals(indexExpected, indexActual);
   }
