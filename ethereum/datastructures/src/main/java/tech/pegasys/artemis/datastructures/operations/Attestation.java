@@ -28,11 +28,6 @@ import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
 import tech.pegasys.artemis.util.hashtree.Merkleizable;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
-
 public class Attestation implements Merkleizable, SimpleOffsetSerializable {
 
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
@@ -44,10 +39,7 @@ public class Attestation implements Merkleizable, SimpleOffsetSerializable {
   private BLSSignature signature;
 
   public Attestation(
-      Bytes aggregation_bits,
-      AttestationData data,
-      Bytes custody_bits,
-      BLSSignature signature) {
+      Bytes aggregation_bits, AttestationData data, Bytes custody_bits, BLSSignature signature) {
     this.aggregation_bits = aggregation_bits;
     this.data = data;
     this.custody_bits = custody_bits;
@@ -105,7 +97,7 @@ public class Attestation implements Merkleizable, SimpleOffsetSerializable {
         writer -> {
           writer.writeBytes(aggregation_bits); // TODO writeBitlist logic required
           writer.writeBytes(data.toBytes());
-          writer.writeBytes(custody_bits);// TODO writeBitlist logic required
+          writer.writeBytes(custody_bits); // TODO writeBitlist logic required
           writer.writeBytes(signature.toBytes());
         });
   }

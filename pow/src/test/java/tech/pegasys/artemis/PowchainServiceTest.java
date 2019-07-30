@@ -13,8 +13,14 @@
 
 package tech.pegasys.artemis;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import java.io.IOException;
+import java.io.Writer;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.SECP256K1;
@@ -23,13 +29,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import tech.pegasys.artemis.util.mikuli.KeyPair;
 import tech.pegasys.artemis.validator.client.ValidatorClientUtil;
-
-import java.io.IOException;
-import java.io.Writer;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 @ExtendWith(BouncyCastleExtension.class)
 public class PowchainServiceTest {
