@@ -14,6 +14,10 @@
 package pegasys.artemis.reference;
 
 import com.google.common.primitives.UnsignedLong;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
@@ -41,157 +45,172 @@ import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-
 public class MapObjectUtil {
 
   @SuppressWarnings({"unchecked", "rawtypes"})
   public static Object convertMapToTypedObject(Class classtype, Object object) {
-    if (classtype.equals(Attestation.class))
-      return MapObjectUtil.getAttestation((Map) object);
-
-    else if (classtype.equals(AttestationData.class))
-      return getAttestationData((Map) object);
-
-    else if (classtype.equals(AttesterSlashing.class))
-      return getAttesterSlashing((Map) object);
-
+    if (classtype.equals(Attestation.class)) return MapObjectUtil.getAttestation((Map) object);
+    else if (classtype.equals(AttestationData.class)) return getAttestationData((Map) object);
+    else if (classtype.equals(AttesterSlashing.class)) return getAttesterSlashing((Map) object);
     else if (classtype.equals(AttestationDataAndCustodyBit.class))
       return getAttestationDataAndCustodyBit((Map) object);
-
-    else if (classtype.equals(BeaconBlock.class))
-      return getBeaconBlock((Map) object);
-
-    else if (classtype.equals(BeaconBlockBody.class))
-      return getBeaconBlockBody((Map) object);
-
-    else if (classtype.equals(BeaconBlockHeader.class))
-      return getBeaconBlockHeader((Map) object);
-
-    else if (classtype.equals(BeaconState.class))
-      return getBeaconState((Map) object);
-
-    else if (classtype.equals(Checkpoint.class))
-      return getCheckpoint((Map) object);
-
-    else if (classtype.equals(CompactCommittee.class))
-      return getCompactCommittee((Map) object);
-
-    else if (classtype.equals(Crosslink.class))
-      return getCrossLink((Map) object);
-
-    else if (classtype.equals(Deposit.class))
-      return getDeposit((Map) object);
-
-    else if (classtype.equals(DepositData.class))
-      return getDepositData((Map) object);
-
-    else if (classtype.equals(Eth1Data.class))
-      return getEth1Data((Map) object);
-
-    else if (classtype.equals(Fork.class))
-      return getFork((Map) object);
-
-    else if (classtype.equals(HistoricalBatch.class))
-      return getHistoricalBatch((Map) object);
-
-    else if (classtype.equals(IndexedAttestation.class))
-      return getIndexedAttestation((Map) object);
-
-    else if (classtype.equals(PendingAttestation.class))
-      return getPendingAttestation((Map) object);
-
-    else if (classtype.equals(ProposerSlashing.class))
-      return getProposerSlashing((Map) object);
-
-    else if (classtype.equals(Transfer.class))
-      return getTransfer((Map) object);
-
-    else if (classtype.equals(Validator.class))
-      return getValidator((Map) object);
-
-    else if (classtype.equals(VoluntaryExit.class))
-      return getVoluntaryExit((Map) object);
-
-    else if (classtype.equals(Bytes32.class))
-      return Bytes32.fromHexString(object.toString());
-
-    else if (classtype.equals(Bytes.class))
-      return Bytes.fromHexString(object.toString());
+    else if (classtype.equals(BeaconBlock.class)) return getBeaconBlock((Map) object);
+    else if (classtype.equals(BeaconBlockBody.class)) return getBeaconBlockBody((Map) object);
+    else if (classtype.equals(BeaconBlockHeader.class)) return getBeaconBlockHeader((Map) object);
+    else if (classtype.equals(BeaconState.class)) return getBeaconState((Map) object);
+    else if (classtype.equals(Checkpoint.class)) return getCheckpoint((Map) object);
+    else if (classtype.equals(CompactCommittee.class)) return getCompactCommittee((Map) object);
+    else if (classtype.equals(Crosslink.class)) return getCrossLink((Map) object);
+    else if (classtype.equals(Deposit.class)) return getDeposit((Map) object);
+    else if (classtype.equals(DepositData.class)) return getDepositData((Map) object);
+    else if (classtype.equals(Eth1Data.class)) return getEth1Data((Map) object);
+    else if (classtype.equals(Fork.class)) return getFork((Map) object);
+    else if (classtype.equals(HistoricalBatch.class)) return getHistoricalBatch((Map) object);
+    else if (classtype.equals(IndexedAttestation.class)) return getIndexedAttestation((Map) object);
+    else if (classtype.equals(PendingAttestation.class)) return getPendingAttestation((Map) object);
+    else if (classtype.equals(ProposerSlashing.class)) return getProposerSlashing((Map) object);
+    else if (classtype.equals(Transfer.class)) return getTransfer((Map) object);
+    else if (classtype.equals(Validator.class)) return getValidator((Map) object);
+    else if (classtype.equals(VoluntaryExit.class)) return getVoluntaryExit((Map) object);
+    else if (classtype.equals(Bytes32.class)) return Bytes32.fromHexString(object.toString());
+    else if (classtype.equals(Bytes.class)) return Bytes.fromHexString(object.toString());
 
     return null;
   }
 
   private static HistoricalBatch getHistoricalBatch(Map map) {
-    List<Bytes32> block_roots = new ArrayList<Bytes32>(((ArrayList<String>)map.get("block_roots")).stream().map(e -> Bytes32.fromHexString(e.toString())).collect(Collectors.toList()));
-    List<Bytes32> state_roots = new ArrayList<Bytes32>(((ArrayList<String>)map.get("state_roots")).stream().map(e -> Bytes32.fromHexString(e.toString())).collect(Collectors.toList()));
+    List<Bytes32> block_roots =
+        new ArrayList<Bytes32>(
+            ((ArrayList<String>) map.get("block_roots"))
+                .stream()
+                    .map(e -> Bytes32.fromHexString(e.toString()))
+                    .collect(Collectors.toList()));
+    List<Bytes32> state_roots =
+        new ArrayList<Bytes32>(
+            ((ArrayList<String>) map.get("state_roots"))
+                .stream()
+                    .map(e -> Bytes32.fromHexString(e.toString()))
+                    .collect(Collectors.toList()));
 
     return new HistoricalBatch(block_roots, state_roots);
   }
 
   private static CompactCommittee getCompactCommittee(Map map) {
-    List<BLSPublicKey> pubkeys = new ArrayList<BLSPublicKey>(((ArrayList<String>)map.get("pubkeys")).stream().map(e -> BLSPublicKey.fromBytes(Bytes.fromHexString(e.toString()))).collect(Collectors.toList()));
-    List<UnsignedLong> compact_validators = new ArrayList<Integer>((ArrayList<Integer>)map.get("compact_validators")).stream().map(e -> UnsignedLong.valueOf(e.longValue())).collect(Collectors.toList());
+    List<BLSPublicKey> pubkeys =
+        new ArrayList<BLSPublicKey>(
+            ((ArrayList<String>) map.get("pubkeys"))
+                .stream()
+                    .map(e -> BLSPublicKey.fromBytes(Bytes.fromHexString(e.toString())))
+                    .collect(Collectors.toList()));
+    List<UnsignedLong> compact_validators =
+        new ArrayList<Integer>((ArrayList<Integer>) map.get("compact_validators"))
+            .stream().map(e -> UnsignedLong.valueOf(e.longValue())).collect(Collectors.toList());
     return new CompactCommittee(pubkeys, compact_validators);
   }
 
-  private static BeaconState getBeaconState(Map map){
+  private static BeaconState getBeaconState(Map map) {
     UnsignedLong genesis_time = UnsignedLong.valueOf(map.get("genesis_time").toString());
     UnsignedLong slot = UnsignedLong.valueOf(map.get("slot").toString());
     Fork fork = getFork((Map) map.get("fork"));
-    BeaconBlockHeader latest_block_header = getBeaconBlockHeader((Map) map.get("latest_block_header"));
-    List<Bytes32> block_roots = new ArrayList<Bytes32>(((ArrayList<String>)map.get("block_roots")).stream().map(e -> Bytes32.fromHexString(e.toString())).collect(Collectors.toList()));
-    List<Bytes32> state_roots = new ArrayList<Bytes32>(((ArrayList<String>)map.get("state_roots")).stream().map(e -> Bytes32.fromHexString(e.toString())).collect(Collectors.toList()));
-    List<Bytes32> historical_roots = new ArrayList<Bytes32>(((ArrayList<String>)map.get("historical_roots")).stream().map(e -> Bytes32.fromHexString(e.toString())).collect(Collectors.toList()));
+    BeaconBlockHeader latest_block_header =
+        getBeaconBlockHeader((Map) map.get("latest_block_header"));
+    List<Bytes32> block_roots =
+        new ArrayList<Bytes32>(
+            ((ArrayList<String>) map.get("block_roots"))
+                .stream()
+                    .map(e -> Bytes32.fromHexString(e.toString()))
+                    .collect(Collectors.toList()));
+    List<Bytes32> state_roots =
+        new ArrayList<Bytes32>(
+            ((ArrayList<String>) map.get("state_roots"))
+                .stream()
+                    .map(e -> Bytes32.fromHexString(e.toString()))
+                    .collect(Collectors.toList()));
+    List<Bytes32> historical_roots =
+        new ArrayList<Bytes32>(
+            ((ArrayList<String>) map.get("historical_roots"))
+                .stream()
+                    .map(e -> Bytes32.fromHexString(e.toString()))
+                    .collect(Collectors.toList()));
     Eth1Data eth1_data = getEth1Data((Map) map.get("eth1_data"));
-    List<Eth1Data> eth1_data_votes = ((List<Map>)map.get("eth1_data_votes")).stream().map(e -> getEth1Data(e)).collect(Collectors.toList());
-    UnsignedLong eth1_deposit_index = UnsignedLong.valueOf(map.get("eth1_deposit_index").toString());
-    List<Validator> validators = ((List<Map>)map.get("validators")).stream().map(e -> getValidator(e)).collect(Collectors.toList());
-    List<UnsignedLong> balances = new ArrayList<Integer>((ArrayList<Integer>)map.get("balances")).stream().map(e -> UnsignedLong.valueOf(e.longValue())).collect(Collectors.toList());
+    List<Eth1Data> eth1_data_votes =
+        ((List<Map>) map.get("eth1_data_votes"))
+            .stream().map(e -> getEth1Data(e)).collect(Collectors.toList());
+    UnsignedLong eth1_deposit_index =
+        UnsignedLong.valueOf(map.get("eth1_deposit_index").toString());
+    List<Validator> validators =
+        ((List<Map>) map.get("validators"))
+            .stream().map(e -> getValidator(e)).collect(Collectors.toList());
+    List<UnsignedLong> balances =
+        new ArrayList<Integer>((ArrayList<Integer>) map.get("balances"))
+            .stream().map(e -> UnsignedLong.valueOf(e.longValue())).collect(Collectors.toList());
     UnsignedLong start_shard = UnsignedLong.valueOf(map.get("start_shard").toString());
-    List<Bytes32> randao_mixes = new ArrayList<Bytes32>(((ArrayList<String>)map.get("randao_mixes")).stream().map(e -> Bytes32.fromHexString(e.toString())).collect(Collectors.toList()));
-    List<Bytes32> active_index_roots = new ArrayList<Bytes32>(((ArrayList<String>)map.get("active_index_roots")).stream().map(e -> Bytes32.fromHexString(e.toString())).collect(Collectors.toList()));
-    List<Bytes32> compact_committees_roots = new ArrayList<Bytes32>(((ArrayList<String>)map.get("compact_committees_roots")).stream().map(e -> Bytes32.fromHexString(e.toString())).collect(Collectors.toList()));
-    List<UnsignedLong> slashings = new ArrayList<Integer>((ArrayList<Integer>)map.get("slashings")).stream().map(e -> UnsignedLong.valueOf(e.longValue())).collect(Collectors.toList());
-    List<PendingAttestation> previous_epoch_attestations = ((List<Map>)map.get("previous_epoch_attestations")).stream().map(e -> getPendingAttestation(e)).collect(Collectors.toList());
-    List<PendingAttestation> current_epoch_attestations = ((List<Map>)map.get("current_epoch_attestations")).stream().map(e -> getPendingAttestation(e)).collect(Collectors.toList());
-    List<Crosslink> previous_crosslinks = ((List<Map>)map.get("previous_crosslinks")).stream().map(e -> getCrossLink(e)).collect(Collectors.toList());
-    List<Crosslink> current_crosslinks = ((List<Map>)map.get("current_crosslinks")).stream().map(e -> getCrossLink(e)).collect(Collectors.toList());
+    List<Bytes32> randao_mixes =
+        new ArrayList<Bytes32>(
+            ((ArrayList<String>) map.get("randao_mixes"))
+                .stream()
+                    .map(e -> Bytes32.fromHexString(e.toString()))
+                    .collect(Collectors.toList()));
+    List<Bytes32> active_index_roots =
+        new ArrayList<Bytes32>(
+            ((ArrayList<String>) map.get("active_index_roots"))
+                .stream()
+                    .map(e -> Bytes32.fromHexString(e.toString()))
+                    .collect(Collectors.toList()));
+    List<Bytes32> compact_committees_roots =
+        new ArrayList<Bytes32>(
+            ((ArrayList<String>) map.get("compact_committees_roots"))
+                .stream()
+                    .map(e -> Bytes32.fromHexString(e.toString()))
+                    .collect(Collectors.toList()));
+    List<UnsignedLong> slashings =
+        new ArrayList<Integer>((ArrayList<Integer>) map.get("slashings"))
+            .stream().map(e -> UnsignedLong.valueOf(e.longValue())).collect(Collectors.toList());
+    List<PendingAttestation> previous_epoch_attestations =
+        ((List<Map>) map.get("previous_epoch_attestations"))
+            .stream().map(e -> getPendingAttestation(e)).collect(Collectors.toList());
+    List<PendingAttestation> current_epoch_attestations =
+        ((List<Map>) map.get("current_epoch_attestations"))
+            .stream().map(e -> getPendingAttestation(e)).collect(Collectors.toList());
+    List<Crosslink> previous_crosslinks =
+        ((List<Map>) map.get("previous_crosslinks"))
+            .stream().map(e -> getCrossLink(e)).collect(Collectors.toList());
+    List<Crosslink> current_crosslinks =
+        ((List<Map>) map.get("current_crosslinks"))
+            .stream().map(e -> getCrossLink(e)).collect(Collectors.toList());
     Bytes justification_bits = Bytes.fromHexString(map.get("justification_bits").toString());
-    Checkpoint previous_justified_checkpoint = getCheckpoint((Map) map.get("previous_justified_checkpoint"));
-    Checkpoint current_justified_checkpoint = getCheckpoint((Map) map.get("current_justified_checkpoint"));
+    Checkpoint previous_justified_checkpoint =
+        getCheckpoint((Map) map.get("previous_justified_checkpoint"));
+    Checkpoint current_justified_checkpoint =
+        getCheckpoint((Map) map.get("current_justified_checkpoint"));
     Checkpoint finalized_checkpoint = getCheckpoint((Map) map.get("finalized_checkpoint"));
 
     return new BeaconState(
-            genesis_time,
-            slot,
-            fork,
-            latest_block_header,
-            block_roots,
-            state_roots,
-            historical_roots,
-            eth1_data,
-            eth1_data_votes,
-            eth1_deposit_index,
-            validators,
-            balances,
-            start_shard,
-            randao_mixes,
-            active_index_roots,
-            compact_committees_roots,
-            slashings,
-            previous_epoch_attestations,
-            current_epoch_attestations,
-            previous_crosslinks,
-            current_crosslinks,
-            justification_bits,
-            previous_justified_checkpoint,
-            current_justified_checkpoint,
-            finalized_checkpoint
-    );
+        genesis_time,
+        slot,
+        fork,
+        latest_block_header,
+        block_roots,
+        state_roots,
+        historical_roots,
+        eth1_data,
+        eth1_data_votes,
+        eth1_deposit_index,
+        validators,
+        balances,
+        start_shard,
+        randao_mixes,
+        active_index_roots,
+        compact_committees_roots,
+        slashings,
+        previous_epoch_attestations,
+        current_epoch_attestations,
+        previous_crosslinks,
+        current_crosslinks,
+        justification_bits,
+        previous_justified_checkpoint,
+        current_justified_checkpoint,
+        finalized_checkpoint);
   }
 
   private static PendingAttestation getPendingAttestation(Map map) {
@@ -200,34 +219,32 @@ public class MapObjectUtil {
     UnsignedLong inclusion_delay = UnsignedLong.valueOf(map.get("inclusion_delay").toString());
     UnsignedLong proposer_index = UnsignedLong.valueOf(map.get("proposer_index").toString());
 
-    return new PendingAttestation(
-            aggregation_bits,
-            data,
-            inclusion_delay,
-            proposer_index
-    );
+    return new PendingAttestation(aggregation_bits, data, inclusion_delay, proposer_index);
   }
 
   private static Validator getValidator(Map map) {
     BLSPublicKey pubkey = BLSPublicKey.fromBytes(Bytes.fromHexString(map.get("pubkey").toString()));
-    Bytes32 withdrawal_credentials = Bytes32.fromHexString(map.get("withdrawal_credentials").toString());
-    UnsignedLong effective_balance = UnsignedLong.valueOf(map.get("effective_balance").toString());;
+    Bytes32 withdrawal_credentials =
+        Bytes32.fromHexString(map.get("withdrawal_credentials").toString());
+    UnsignedLong effective_balance = UnsignedLong.valueOf(map.get("effective_balance").toString());
+    ;
     boolean slashed = Boolean.getBoolean((map.get("slashed")).toString());
-    UnsignedLong activation_eligibility_epoch = UnsignedLong.valueOf(map.get("activation_eligibility_epoch").toString());
+    UnsignedLong activation_eligibility_epoch =
+        UnsignedLong.valueOf(map.get("activation_eligibility_epoch").toString());
     UnsignedLong activation_epoch = UnsignedLong.valueOf(map.get("activation_epoch").toString());
     UnsignedLong exit_epoch = UnsignedLong.valueOf(map.get("exit_epoch").toString());
-    UnsignedLong withdrawable_epoch = UnsignedLong.valueOf(map.get("withdrawable_epoch").toString());
+    UnsignedLong withdrawable_epoch =
+        UnsignedLong.valueOf(map.get("withdrawable_epoch").toString());
 
     return new Validator(
-            pubkey,
-            withdrawal_credentials,
-            effective_balance,
-            slashed,
-            activation_eligibility_epoch,
-            activation_epoch,
-            exit_epoch,
-            withdrawable_epoch
-    );
+        pubkey,
+        withdrawal_credentials,
+        effective_balance,
+        slashed,
+        activation_eligibility_epoch,
+        activation_epoch,
+        exit_epoch,
+        withdrawable_epoch);
   }
 
   private static Fork getFork(Map map) {
@@ -243,32 +260,47 @@ public class MapObjectUtil {
     Bytes32 parent_root = Bytes32.fromHexString(map.get("parent_root").toString());
     Bytes32 state_root = Bytes32.fromHexString(map.get("state_root").toString());
     BeaconBlockBody body = getBeaconBlockBody((Map) map.get("body"));
-    BLSSignature signature = BLSSignature.fromBytes(Bytes.fromHexString(map.get("signature").toString()));
+    BLSSignature signature =
+        BLSSignature.fromBytes(Bytes.fromHexString(map.get("signature").toString()));
 
     return new BeaconBlock(slot, parent_root, state_root, body, signature);
   }
 
   private static BeaconBlockBody getBeaconBlockBody(Map map) {
-    BLSSignature randao_reveal = BLSSignature.fromBytes(Bytes.fromHexString(map.get("randao_reveal").toString()));
+    BLSSignature randao_reveal =
+        BLSSignature.fromBytes(Bytes.fromHexString(map.get("randao_reveal").toString()));
     Eth1Data eth1_data = getEth1Data((Map) map.get("eth1_data"));
     Bytes32 graffiti = Bytes32.fromHexString(map.get("graffiti").toString());
-    List<ProposerSlashing> proposer_slashings = ((List<Map>)map.get("proposer_slashings")).stream().map(e -> getProposerSlashing(e)).collect(Collectors.toList());
-    List<AttesterSlashing> attester_slashings = ((List<Map>)map.get("attester_slashings")).stream().map(e -> getAttesterSlashing(e)).collect(Collectors.toList());
-    List<Attestation> attestations = ((List<Map>)map.get("attestations")).stream().map(e -> getAttestation(e)).collect(Collectors.toList());
-    List<Deposit> deposits = ((List<Map>)map.get("deposits")).stream().map(e -> getDeposit(e)).collect(Collectors.toList());
-    List<VoluntaryExit> voluntary_exits = ((List<Map>)map.get("voluntary_exits")).stream().map(e -> getVoluntaryExit(e)).collect(Collectors.toList());
-    List<Transfer> transfers = new ArrayList<Transfer>(((ArrayList<Map>)map.get("transfers")).stream().map(e -> getTransfer(e)).collect(Collectors.toList()));
+    List<ProposerSlashing> proposer_slashings =
+        ((List<Map>) map.get("proposer_slashings"))
+            .stream().map(e -> getProposerSlashing(e)).collect(Collectors.toList());
+    List<AttesterSlashing> attester_slashings =
+        ((List<Map>) map.get("attester_slashings"))
+            .stream().map(e -> getAttesterSlashing(e)).collect(Collectors.toList());
+    List<Attestation> attestations =
+        ((List<Map>) map.get("attestations"))
+            .stream().map(e -> getAttestation(e)).collect(Collectors.toList());
+    List<Deposit> deposits =
+        ((List<Map>) map.get("deposits"))
+            .stream().map(e -> getDeposit(e)).collect(Collectors.toList());
+    List<VoluntaryExit> voluntary_exits =
+        ((List<Map>) map.get("voluntary_exits"))
+            .stream().map(e -> getVoluntaryExit(e)).collect(Collectors.toList());
+    List<Transfer> transfers =
+        new ArrayList<Transfer>(
+            ((ArrayList<Map>) map.get("transfers"))
+                .stream().map(e -> getTransfer(e)).collect(Collectors.toList()));
 
     return new BeaconBlockBody(
-            randao_reveal,
-            eth1_data,
-            graffiti,
-            proposer_slashings,
-            attester_slashings,
-            attestations,
-            deposits,
-            voluntary_exits,
-            transfers);
+        randao_reveal,
+        eth1_data,
+        graffiti,
+        proposer_slashings,
+        attester_slashings,
+        attestations,
+        deposits,
+        voluntary_exits,
+        transfers);
   }
 
   private static Transfer getTransfer(Map map) {
@@ -278,7 +310,8 @@ public class MapObjectUtil {
     UnsignedLong fee = UnsignedLong.valueOf(map.get("fee").toString());
     UnsignedLong slot = UnsignedLong.valueOf(map.get("slot").toString());
     BLSPublicKey pubkey = BLSPublicKey.fromBytes(Bytes.fromHexString(map.get("pubkey").toString()));
-    BLSSignature signature = BLSSignature.fromBytes(Bytes.fromHexString(map.get("signature").toString()));
+    BLSSignature signature =
+        BLSSignature.fromBytes(Bytes.fromHexString(map.get("signature").toString()));
 
     return new Transfer(sender, recipient, amount, fee, slot, pubkey, signature);
   }
@@ -286,13 +319,19 @@ public class MapObjectUtil {
   private static VoluntaryExit getVoluntaryExit(Map map) {
     UnsignedLong epoch = UnsignedLong.valueOf(map.get("epoch").toString());
     UnsignedLong validator_index = UnsignedLong.valueOf(map.get("validator_index").toString());
-    BLSSignature signature = BLSSignature.fromBytes(Bytes.fromHexString(map.get("signature").toString()));
+    BLSSignature signature =
+        BLSSignature.fromBytes(Bytes.fromHexString(map.get("signature").toString()));
 
     return new VoluntaryExit(epoch, validator_index, signature);
   }
 
   private static Deposit getDeposit(Map map) {
-    List<Bytes32> proof = new ArrayList<Bytes32>(((ArrayList<String>)map.get("proof")).stream().map(e -> Bytes32.fromHexString(e.toString())).collect(Collectors.toList()));
+    List<Bytes32> proof =
+        new ArrayList<Bytes32>(
+            ((ArrayList<String>) map.get("proof"))
+                .stream()
+                    .map(e -> Bytes32.fromHexString(e.toString()))
+                    .collect(Collectors.toList()));
     DepositData data = getDepositData((Map) map.get("data"));
 
     return new Deposit(proof, data);
@@ -300,9 +339,11 @@ public class MapObjectUtil {
 
   private static DepositData getDepositData(Map map) {
     BLSPublicKey pubkey = BLSPublicKey.fromBytes(Bytes.fromHexString(map.get("pubkey").toString()));
-    Bytes32 withdrawal_credentials = Bytes32.fromHexString(map.get("withdrawal_credentials").toString());
+    Bytes32 withdrawal_credentials =
+        Bytes32.fromHexString(map.get("withdrawal_credentials").toString());
     UnsignedLong amount = UnsignedLong.valueOf(map.get("amount").toString());
-    BLSSignature signature = BLSSignature.fromBytes(Bytes.fromHexString(map.get("signature").toString()));
+    BLSSignature signature =
+        BLSSignature.fromBytes(Bytes.fromHexString(map.get("signature").toString()));
 
     return new DepositData(pubkey, withdrawal_credentials, amount, signature);
   }
@@ -320,7 +361,8 @@ public class MapObjectUtil {
     Bytes32 parent_root = Bytes32.fromHexString(map.get("parent_root").toString());
     Bytes32 state_root = Bytes32.fromHexString(map.get("state_root").toString());
     Bytes32 body_root = Bytes32.fromHexString(map.get("body_root").toString());
-    BLSSignature signature = BLSSignature.fromBytes(Bytes.fromHexString(map.get("signature").toString()));
+    BLSSignature signature =
+        BLSSignature.fromBytes(Bytes.fromHexString(map.get("signature").toString()));
 
     return new BeaconBlockHeader(slot, parent_root, state_root, body_root, signature);
   }
@@ -335,14 +377,21 @@ public class MapObjectUtil {
 
   private static AttesterSlashing getAttesterSlashing(Map map) {
 
-    return new AttesterSlashing(getIndexedAttestation((Map) map.get("attestation_1")), getIndexedAttestation((Map) map.get("attestation_2")));
+    return new AttesterSlashing(
+        getIndexedAttestation((Map) map.get("attestation_1")),
+        getIndexedAttestation((Map) map.get("attestation_2")));
   }
 
   private static IndexedAttestation getIndexedAttestation(Map map) {
-    List<UnsignedLong> custody_bit_0_indices = new ArrayList<Integer>((ArrayList<Integer>)map.get("custody_bit_0_indices")).stream().map(e -> UnsignedLong.valueOf(e.longValue())).collect(Collectors.toList());
-    List<UnsignedLong> custody_bit_1_indices = new ArrayList<Integer>((ArrayList<Integer>)map.get("custody_bit_1_indices")).stream().map(e -> UnsignedLong.valueOf(e.longValue())).collect(Collectors.toList());
+    List<UnsignedLong> custody_bit_0_indices =
+        new ArrayList<Integer>((ArrayList<Integer>) map.get("custody_bit_0_indices"))
+            .stream().map(e -> UnsignedLong.valueOf(e.longValue())).collect(Collectors.toList());
+    List<UnsignedLong> custody_bit_1_indices =
+        new ArrayList<Integer>((ArrayList<Integer>) map.get("custody_bit_1_indices"))
+            .stream().map(e -> UnsignedLong.valueOf(e.longValue())).collect(Collectors.toList());
     AttestationData data = getAttestationData((Map) map.get("data"));
-    BLSSignature signature = BLSSignature.fromBytes(Bytes.fromHexString(map.get("signature").toString()));
+    BLSSignature signature =
+        BLSSignature.fromBytes(Bytes.fromHexString(map.get("signature").toString()));
 
     return new IndexedAttestation(custody_bit_0_indices, custody_bit_1_indices, data, signature);
   }
@@ -350,7 +399,9 @@ public class MapObjectUtil {
   @SuppressWarnings({"unchecked", "rawtypes"})
   private static AttestationDataAndCustodyBit getAttestationDataAndCustodyBit(Map map) {
 
-    return new AttestationDataAndCustodyBit(getAttestationData((Map) map.get("data")), Boolean.getBoolean((map.get("custody_bit")).toString()));
+    return new AttestationDataAndCustodyBit(
+        getAttestationData((Map) map.get("data")),
+        Boolean.getBoolean((map.get("custody_bit")).toString()));
   }
 
   @SuppressWarnings({"unchecked", "rawtypes"})
