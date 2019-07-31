@@ -16,7 +16,6 @@ package tech.pegasys.artemis.services.chainstorage;
 import com.google.common.eventbus.EventBus;
 import tech.pegasys.artemis.service.serviceutils.ServiceConfig;
 import tech.pegasys.artemis.service.serviceutils.ServiceInterface;
-import tech.pegasys.artemis.storage.ChainStorage;
 import tech.pegasys.artemis.storage.ChainStorageServer;
 import tech.pegasys.artemis.util.alogger.ALogger;
 
@@ -30,7 +29,6 @@ public class ChainStorageService implements ServiceInterface {
   @Override
   public void init(ServiceConfig config) {
     this.eventBus = config.getEventBus();
-    this.chainStore = ChainStorage.Create(ChainStorageServer.class, eventBus);
     this.eventBus.register(this);
   }
 

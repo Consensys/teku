@@ -7,6 +7,7 @@ jar {
 }
 
 dependencies {
+  compile group: 'org.mapdb', name: 'mapdb', version: '3.0.7'
   implementation project(':util')
   implementation project(':pow')
   implementation 'org.apache.tuweni:tuweni-crypto'

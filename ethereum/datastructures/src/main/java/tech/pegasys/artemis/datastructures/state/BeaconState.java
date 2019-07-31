@@ -17,6 +17,8 @@ import static tech.pegasys.artemis.datastructures.Constants.ZERO_HASH;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.int_to_bytes;
 
 import com.google.common.primitives.UnsignedLong;
+import java.io.IOException;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -25,6 +27,9 @@ import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
+import org.mapdb.DataInput2;
+import org.mapdb.DataOutput2;
+import org.mapdb.Serializer;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
@@ -250,74 +255,10 @@ public class BeaconState implements SimpleOffsetSerializable {
     return Collections.nCopies(getSSZFieldCount(), Bytes.EMPTY);
   }
 
-  /*
   public static BeaconState fromBytes(Bytes bytes) {
 
-    return SSZ.decode(
-        bytes,
-        reader ->
-            new BeaconState(
-                // Versioning
-                UnsignedLong.fromLongBits(reader.readUInt64()),
-                UnsignedLong.fromLongBits(reader.readUInt64()),
-                Fork.fromBytes(reader.readBytes()),
-
-                // History
-                BeaconBlockHeader.fromBytes(reader.readBytes()),
-                reader.readFixedBytesVector(Constants.SLOTS_PER_HISTORICAL_ROOT, 32).stream()
-                    .map(Bytes32::wrap)
-                    .collect(Collectors.toList()),
-                reader.readFixedBytesVector(Constants.SLOTS_PER_HISTORICAL_ROOT, 32).stream()
-                    .map(Bytes32::wrap)
-                    .collect(Collectors.toList()),
-                reader.readFixedBytesList(32).stream()
-                    .map(Bytes32::wrap)
-                    .collect(Collectors.toList()),
-
-                // Eth1
-                Eth1Data.fromBytes(reader.readBytes()),
-                reader.readBytesList().stream()
-                    .map(Eth1Data::fromBytes)
-                    .collect(Collectors.toList()),
-                UnsignedLong.fromLongBits(reader.readUInt64()),
-
-                // Registry
-                reader.readBytesList().stream()
-                            .map(Validator::fromBytes)
-                            .collect(Collectors.toList()),
-                reader.readUInt64List().stream()
-                    .map(UnsignedLong::fromLongBits)
-                    .collect(Collectors.toList()),
-
-                // Shuffling
-                UnsignedLong.fromLongBits(reader.readUInt64()),
-                reader.readFixedBytesVector(Constants.EPOCHS_PER_HISTORICAL_VECTOR, 32).stream()
-                            .map(Bytes32::wrap)
-                            .collect(Collectors.toList()),
-
-                    reader.readFixedBytesVector(Constants.EPOCHS_PER_HISTORICAL_VECTOR, 32).stream()
-                            .map(Bytes32::wrap)
-                            .collect(Collectors.toList()),
-
-                    reader.readFixedBytesVector(Constants.EPOCHS_PER_HISTORICAL_VECTOR, 32).stream()
-                            .map(Bytes32::wrap)
-                            .collect(Collectors.toList()),
-
-                // Slashings
-                // TODO this is actually a vector of unsigned long (altough we currently treat
-                // it as a list of unsignedlong cause there is no way to deal with the former, yet.
-                    reader.readUInt64List().stream()
-                            .map(UnsignedLong::fromLongBits)
-                            .collect(Collectors.toList()),
-                    reader.readFixedBytesVector(Constants.SHARD_COUNT, 32).stream()
-                            .map(Bytes32::wrap)
-                            .collect(Collectors.toList()),
-
-                // Attestations
-            // TODO skipped rest of deserialization due to SOS
-
+    return SSZ.decode(bytes, reader -> new BeaconState());
   }
-  */
 
   public Bytes toBytes() {
     List<Bytes> validator_registryBytes =
@@ -693,5 +634,17 @@ public class BeaconState implements SimpleOffsetSerializable {
 
   public Bytes32 hash_tree_root() {
     return Bytes32.ZERO;
+  }
+
+  public static class BeaconStateSerializer implements Serializer<BeaconState>, Serializable {
+    @Override
+    public void serialize(DataOutput2 out, BeaconState state) throws IOException {
+      out.writeChars(state.toBytes().toHexString());
+    }
+
+    @Override
+    public BeaconState deserialize(DataInput2 in, int available) throws IOException {
+      return BeaconState.fromBytes(Bytes.fromHexString(in.readLine()));
+    }
   }
 }

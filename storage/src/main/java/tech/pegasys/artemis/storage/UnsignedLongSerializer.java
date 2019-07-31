@@ -11,20 +11,25 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.statetransition;
+package tech.pegasys.artemis.storage;
 
 import com.google.common.primitives.UnsignedLong;
+import java.io.IOException;
+import java.io.Serializable;
+import org.mapdb.DataInput2;
+import org.mapdb.DataOutput2;
+import org.mapdb.Serializer;
 
-public class SlotEvent {
+public class UnsignedLongSerializer implements Serializer<UnsignedLong>, Serializable {
 
-  private UnsignedLong slot;
-
-  public SlotEvent(UnsignedLong slot) {
-    this.slot = slot;
+  @Override
+  public void serialize(DataOutput2 out, UnsignedLong value) throws IOException {
+    out.writeChars(value.toString(10));
   }
 
-  /** ******************* * GETTERS & SETTERS * * ******************* */
-  public UnsignedLong getSlot() {
-    return slot;
+  @Override
+  public UnsignedLong deserialize(DataInput2 in, int available) throws IOException {
+    UnsignedLong returnVal = UnsignedLong.valueOf(in.readLine(), 10);
+    return returnVal;
   }
 }

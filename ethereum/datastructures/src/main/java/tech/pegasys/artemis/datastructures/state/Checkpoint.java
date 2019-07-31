@@ -14,12 +14,17 @@
 package tech.pegasys.artemis.datastructures.state;
 
 import com.google.common.primitives.UnsignedLong;
+import java.io.IOException;
+import java.io.Serializable;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
+import org.mapdb.DataInput2;
+import org.mapdb.DataOutput2;
+import org.mapdb.Serializer;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
@@ -121,5 +126,17 @@ public class Checkpoint implements SimpleOffsetSerializable {
         Arrays.asList(
             HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(epoch.longValue())),
             HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_BASIC, root)));
+  }
+
+  public static class CheckpointSerializer implements Serializer<Checkpoint>, Serializable {
+    @Override
+    public void serialize(DataOutput2 out, Checkpoint checkpoint) throws IOException {
+      out.writeChars(checkpoint.toBytes().toHexString());
+    }
+
+    @Override
+    public Checkpoint deserialize(DataInput2 in, int available) throws IOException {
+      return Checkpoint.fromBytes(Bytes.fromHexString(in.readLine()));
+    }
   }
 }

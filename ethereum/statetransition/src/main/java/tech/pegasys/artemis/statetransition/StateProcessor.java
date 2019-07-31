@@ -53,7 +53,6 @@ import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 public class StateProcessor {
 
   private final EventBus eventBus;
-  private Store store;
   private ChainStorageClient chainStorageClient;
   private ArtemisConfiguration config;
   private static final ALogger STDOUT = new ALogger("stdout");
@@ -80,7 +79,7 @@ public class StateProcessor {
   public void onEth2Genesis(BeaconStateWithCache initial_state) {
     STDOUT.log(Level.INFO, "******* Eth2Genesis Event detected ******* : ");
     UnsignedLong genesisTime = initial_state.getGenesis_time();
-    this.store = get_genesis_store(initial_state);
+    Store store = get_genesis_store(initial_state);
     chainStorageClient.setGenesisTime(genesisTime);
     chainStorageClient.setStore(store);
     Bytes32 genesisBlockRoot = get_head(store);
@@ -142,7 +141,8 @@ public class StateProcessor {
   @Subscribe
   private void onBlock(BeaconBlock block) {
     try {
-      on_block(store, block);
+      on_block(chainStorageClient.getStore(), block, eventBus);
+
       // Add attestations that were processed in the block to processed attestations storage
       block
           .getBody()
@@ -156,7 +156,7 @@ public class StateProcessor {
   @Subscribe
   private void onAttestation(Attestation attestation) {
     try {
-      on_attestation(store, attestation);
+      on_attestation(chainStorageClient.getStore(), attestation, eventBus);
     } catch (SlotProcessingException | EpochProcessingException e) {
       STDOUT.log(Level.WARN, "Exception in onAttestation: " + e.toString());
     }

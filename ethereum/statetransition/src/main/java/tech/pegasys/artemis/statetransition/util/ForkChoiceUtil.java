@@ -24,12 +24,15 @@ import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_curre
 import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.get_active_validator_indices;
 import static tech.pegasys.artemis.statetransition.StateTransition.process_slots;
 
+import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
@@ -41,6 +44,8 @@ import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.statetransition.StateTransition;
 import tech.pegasys.artemis.statetransition.StateTransitionException;
 import tech.pegasys.artemis.storage.LatestMessage;
+import tech.pegasys.artemis.storage.NewAttestationEvent;
+import tech.pegasys.artemis.storage.ProcessedBlockEvent;
 import tech.pegasys.artemis.storage.Store;
 
 public class ForkChoiceUtil {
@@ -176,13 +181,14 @@ public class ForkChoiceUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.1/specs/core/0_fork-choice.md#on_block</a>
    */
-  public static void on_block(Store store, BeaconBlock block) throws StateTransitionException {
+  public static void on_block(Store store, BeaconBlock block, EventBus eventBus)
+      throws StateTransitionException {
     // Make a copy of the state to avoid mutability issues
     checkArgument(
         store.getBlock_states().containsKey(block.getParent_root()),
         "on_block: Parent block state is not contained in block_state");
     BeaconStateWithCache pre_state =
-        new BeaconStateWithCache(
+        BeaconStateWithCache.deepCopy(
             (BeaconStateWithCache) store.getBlock_states().get(block.getParent_root()));
 
     // Blocks cannot be in the future. If they are, their consideration must be delayed until the
@@ -217,7 +223,7 @@ public class ForkChoiceUtil {
 
     // Check the block is valid and compute the post-state
     StateTransition st = new StateTransition(true);
-    BeaconState state = st.initiate(pre_state, block, true);
+    BeaconStateWithCache state = st.initiate(pre_state, block, true);
 
     // Add new state for this block to the store
     store.getBlock_states().put(block.signing_root("signature"), state);
@@ -239,6 +245,11 @@ public class ForkChoiceUtil {
         > 0) {
       store.setFinalized_checkpoint(state.getFinalized_checkpoint());
     }
+
+    // Client-specific
+    eventBus.post(
+        new ProcessedBlockEvent(
+            state, block, store.getJustified_checkpoint(), store.getFinalized_checkpoint()));
   }
 
   /**
@@ -247,8 +258,13 @@ public class ForkChoiceUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.1/specs/core/0_fork-choice.md#on_attestation</a>
    */
-  public static void on_attestation(Store store, Attestation attestation)
+  public static void on_attestation(Store store, Attestation attestation, EventBus eventBus)
       throws SlotProcessingException, EpochProcessingException {
+    // Client-specific variables
+    List<Pair<UnsignedLong, LatestMessage>> attesterLatestMessages = new ArrayList<>();
+    BeaconStateWithCache state = null;
+    Checkpoint checkpoint = null;
+
     Checkpoint target = attestation.getData().getTarget();
 
     checkArgument(
@@ -276,6 +292,10 @@ public class ForkChoiceUtil {
     if (!store.getCheckpoint_states().containsKey(target)) {
       process_slots(base_state, compute_start_slot_of_epoch(target.getEpoch()), false);
       store.getCheckpoint_states().put(target, base_state);
+
+      // Client-specific
+      checkpoint = target;
+      state = base_state;
     }
     BeaconState target_state = store.getCheckpoint_states().get(target);
 
@@ -302,15 +322,17 @@ public class ForkChoiceUtil {
     List<UnsignedLong> all_indices = new ArrayList<>();
     all_indices.addAll(indexed_attestation.getCustody_bit_0_indices());
     all_indices.addAll(indexed_attestation.getCustody_bit_1_indices());
+
     for (UnsignedLong i : all_indices) {
       if (!store.getLatest_messages().containsKey(i)
           || target.getEpoch().compareTo(store.getLatest_messages().get(i).getEpoch()) > 0) {
-        store
-            .getLatest_messages()
-            .put(
-                i,
-                new LatestMessage(target.getEpoch(), attestation.getData().getBeacon_block_root()));
+        LatestMessage latestMessage =
+            new LatestMessage(target.getEpoch(), attestation.getData().getBeacon_block_root());
+        store.getLatest_messages().put(i, latestMessage);
+        attesterLatestMessages.add(new ImmutablePair<>(i, latestMessage));
       }
     }
+
+    eventBus.post(new NewAttestationEvent(state, checkpoint, attesterLatestMessages));
   }
 }

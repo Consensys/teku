@@ -35,6 +35,7 @@ public final class BeaconStateWithCache extends BeaconState {
   }
 
   public BeaconStateWithCache(BeaconStateWithCache state) {
+
     // Versioning
     this.genesis_time = state.getGenesis_time();
     this.slot = state.getSlot();

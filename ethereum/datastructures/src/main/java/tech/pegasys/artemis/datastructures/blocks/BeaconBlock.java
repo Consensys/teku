@@ -15,6 +15,8 @@ package tech.pegasys.artemis.datastructures.blocks;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
+import java.io.IOException;
+import java.io.Serializable;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -22,12 +24,15 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
+import org.mapdb.DataInput2;
+import org.mapdb.DataOutput2;
+import org.mapdb.Serializer;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
-public final class BeaconBlock implements SimpleOffsetSerializable {
+public final class BeaconBlock implements SimpleOffsetSerializable, Serializable {
 
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
   public static final int SSZ_FIELD_COUNT = 3;
@@ -145,7 +150,7 @@ public final class BeaconBlock implements SimpleOffsetSerializable {
         && Objects.equals(this.getSignature(), other.getSignature());
   }
 
-  /** ******************* * GETTERS & SETTERS * * ******************* */
+  /** ****************** * GETTERS & SETTERS * * ******************* */
   public BeaconBlockBody getBody() {
     return body;
   }
@@ -209,5 +214,17 @@ public final class BeaconBlock implements SimpleOffsetSerializable {
             HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_BASIC, state_root),
             body.hash_tree_root(),
             HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_BASIC, signature.toBytes())));
+  }
+
+  public static class BeaconBlockSerializer implements Serializer<BeaconBlock>, Serializable {
+    @Override
+    public void serialize(DataOutput2 out, BeaconBlock block) throws IOException {
+      out.writeChars(block.toBytes().toHexString());
+    }
+
+    @Override
+    public BeaconBlock deserialize(DataInput2 in, int available) throws IOException {
+      return BeaconBlock.fromBytes(Bytes.fromHexString(in.readLine()));
+    }
   }
 }

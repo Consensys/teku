@@ -1,4 +1,5 @@
 *.bak
+*.db
 *.swp
 *.tmp
 *~.nib

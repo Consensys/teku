@@ -23,6 +23,7 @@ import java.util.Date;
 import org.apache.logging.log4j.Level;
 import tech.pegasys.artemis.service.serviceutils.ServiceConfig;
 import tech.pegasys.artemis.storage.ChainStorageClient;
+import tech.pegasys.artemis.storage.SlotEvent;
 import tech.pegasys.artemis.util.alogger.ALogger;
 
 public class TimingProcessor {
@@ -41,7 +42,8 @@ public class TimingProcessor {
   @Subscribe
   private void onTick(Date date) {
     try {
-      on_tick(chainStorageClient.getStore(), UnsignedLong.valueOf(date.getTime() / 1000));
+      UnsignedLong time = UnsignedLong.valueOf(date.getTime() / 1000);
+      on_tick(chainStorageClient.getStore(), time);
       if (chainStorageClient
               .getStore()
               .getTime()
@@ -50,10 +52,12 @@ public class TimingProcessor {
                       .getGenesisTime()
                       .plus(nodeSlot.times(UnsignedLong.valueOf(SECONDS_PER_SLOT))))
           >= 0) {
-        this.eventBus.post(new SlotEvent(nodeSlot));
-        STDOUT.log(Level.INFO, "******* Slot Event *******", ALogger.Color.WHITE);
-        STDOUT.log(Level.INFO, "Node slot:                             " + nodeSlot);
         nodeSlot = nodeSlot.plus(UnsignedLong.ONE);
+        this.eventBus.post(new SlotEvent(nodeSlot.minus(UnsignedLong.ONE), time));
+        STDOUT.log(Level.INFO, "******* Slot Event *******", ALogger.Color.WHITE);
+        STDOUT.log(
+            Level.INFO,
+            "Node slot:                             " + nodeSlot.minus(UnsignedLong.ONE));
         Thread.sleep(SECONDS_PER_SLOT * 1000 / 2);
         this.eventBus.post(new ValidatorAssignmentEvent());
       }
