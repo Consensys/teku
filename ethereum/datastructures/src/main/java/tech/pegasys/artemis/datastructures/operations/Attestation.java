@@ -164,6 +164,11 @@ public class Attestation implements Merkleizable, SimpleOffsetSerializable {
     this.signature = aggregate_signature;
   }
 
+  public Bytes32 signing_root(String truncation_param) {
+    // TODO
+    return null;
+  }
+
   @Override
   public Bytes32 hash_tree_root() {
     return HashTreeUtil.merkleize(
