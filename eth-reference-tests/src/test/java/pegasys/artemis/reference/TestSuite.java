@@ -16,6 +16,10 @@ package pegasys.artemis.reference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.errorprone.annotations.MustBeClosed;
+import kotlin.Pair;
+import org.apache.tuweni.io.Resources;
+import org.junit.jupiter.params.provider.Arguments;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
@@ -26,12 +30,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import kotlin.Pair;
-import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.io.Resources;
-import org.junit.jupiter.params.provider.Arguments;
-import tech.pegasys.artemis.datastructures.operations.Attestation;
 
 public abstract class TestSuite {
 
@@ -69,14 +67,8 @@ public abstract class TestSuite {
                       testObject = ((Map) testObject).get(param);
                     }
                   }
-                  Class testClass = e.getFirst();
-                  if (testClass.equals(Attestation.class))
-                    return MapObjectUtil.getAttestation((Map) testObject);
-                  else if (testClass.equals(Bytes32.class))
-                    return Bytes32.fromHexString(testObject.toString());
-                  else if (testClass.equals(Bytes.class))
-                    return Bytes.fromHexString(testObject.toString());
-                  return null;
+                  Class classType = e.getFirst();
+                  return MapObjectUtil.convertMapToTypedObject(classType, testObject);
                 })
             .collect(Collectors.toList());
 
