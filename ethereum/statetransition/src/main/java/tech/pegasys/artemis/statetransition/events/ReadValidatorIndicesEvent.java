@@ -11,8 +11,20 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.statetransition;
+package tech.pegasys.artemis.statetransition.events;
 
-public class ValidatorAssignmentEvent {
-  public ValidatorAssignmentEvent() {}
+import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
+
+public class ReadValidatorIndicesEvent {
+
+  private BeaconStateWithCache startState;
+
+  public ReadValidatorIndicesEvent(BeaconStateWithCache state) {
+    startState = state;
+  }
+
+  /** ******************* * GETTERS & SETTERS * * ******************* */
+  public BeaconStateWithCache getStartState() {
+    return startState;
+  }
 }

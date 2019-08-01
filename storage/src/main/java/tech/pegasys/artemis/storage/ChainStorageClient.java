@@ -32,6 +32,7 @@ import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.storage.events.DBStoreValidEvent;
 import tech.pegasys.artemis.util.alogger.ALogger;
 
 /** This class is the ChainStorage client-side logic */
@@ -73,12 +74,12 @@ public class ChainStorageClient implements ChainStorage {
     this.eventBus.register(this);
   }
 
-  public void setGenesisTime(UnsignedLong genesisTime) {
-    this.genesisTime = genesisTime;
-  }
-
   public UnsignedLong getGenesisTime() {
     return genesisTime;
+  }
+
+  public void setGenesisTime(UnsignedLong genesisTime) {
+    this.genesisTime = genesisTime;
   }
 
   public void setStore(Store store) {
@@ -231,18 +232,8 @@ public class ChainStorageClient implements ChainStorage {
   }
 
   @Subscribe
-  public static void onNewProcessedBlock(ProcessedBlockEvent processedBlockEvent) {
-    ChainStorageServer.onNewProcessedBlock(processedBlockEvent);
-  }
-
-  @Subscribe
-  public static void onNewAttestation(NewAttestationEvent newAttestationEvent) {
-    ChainStorageServer.onNewAttestation(newAttestationEvent);
-  }
-
-  @Subscribe
-  public static void onNewSlot(SlotEvent slotEvent) {
-    ChainStorageServer.onNewSlot(slotEvent);
+  public void onDBStoreValidEvent(DBStoreValidEvent dbStoreValidEvent) {
+    this.store = dbStoreValidEvent.getStore();
   }
 
   // STATE PROCESSOR METHODS:

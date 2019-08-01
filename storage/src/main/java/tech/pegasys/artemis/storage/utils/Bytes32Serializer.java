@@ -11,25 +11,25 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.storage;
+package tech.pegasys.artemis.storage.utils;
 
-import com.google.common.primitives.UnsignedLong;
 import java.io.IOException;
 import java.io.Serializable;
+import org.apache.tuweni.bytes.Bytes32;
 import org.mapdb.DataInput2;
 import org.mapdb.DataOutput2;
 import org.mapdb.Serializer;
 
-public class UnsignedLongSerializer implements Serializer<UnsignedLong>, Serializable {
+public class Bytes32Serializer implements Serializer<Bytes32>, Serializable {
 
   @Override
-  public void serialize(DataOutput2 out, UnsignedLong value) throws IOException {
-    out.writeChars(value.toString(10));
+  public void serialize(DataOutput2 out, Bytes32 value) throws IOException {
+    out.writeChars(value.toHexString());
   }
 
   @Override
-  public UnsignedLong deserialize(DataInput2 in, int available) throws IOException {
-    UnsignedLong returnVal = UnsignedLong.valueOf(in.readLine(), 10);
+  public Bytes32 deserialize(DataInput2 in, int available) throws IOException {
+    Bytes32 returnVal = Bytes32.fromHexString(in.readLine());
     return returnVal;
   }
 }

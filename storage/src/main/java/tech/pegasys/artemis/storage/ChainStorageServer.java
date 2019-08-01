@@ -16,8 +16,11 @@ package tech.pegasys.artemis.storage;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_of_slot;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_start_slot_of_epoch;
 
+import com.google.common.eventbus.EventBus;
+import com.google.common.eventbus.Subscribe;
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.tuweni.bytes.Bytes32;
@@ -28,42 +31,95 @@ import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
+import tech.pegasys.artemis.storage.events.DBStoreValidEvent;
+import tech.pegasys.artemis.storage.events.NewAttestationEvent;
+import tech.pegasys.artemis.storage.events.NodeStartEvent;
+import tech.pegasys.artemis.storage.events.ProcessedBlockEvent;
+import tech.pegasys.artemis.storage.events.SlotEvent;
+import tech.pegasys.artemis.storage.utils.Bytes32Serializer;
+import tech.pegasys.artemis.storage.utils.UnsignedLongSerializer;
 import tech.pegasys.artemis.util.alogger.ALogger;
 
 /** This class is the ChainStorage server-side logic */
-public class ChainStorageServer extends ChainStorageClient implements ChainStorage {
-  static final ALogger LOG = new ALogger(ChainStorageServer.class.getName());
+public class ChainStorageServer implements ChainStorage {
+  static final ALogger STDOUT = new ALogger("stdout");
+
+  private EventBus eventBus;
 
   private static DB db = DBMaker.fileDB("artemis.db").transactionEnable().make();
 
   // Store
-  private static Atomic.Var<UnsignedLong> time =
-      db.atomicVar("time", new UnsignedLongSerializer()).createOrOpen();
-  private static Atomic.Var<Checkpoint> justifiedCheckpoint =
-      db.atomicVar("justified_checkpoint", new Checkpoint.CheckpointSerializer()).createOrOpen();
-  private static Atomic.Var<Checkpoint> finalizedCheckpoint =
-      db.atomicVar("finalized_checkpoint", new Checkpoint.CheckpointSerializer()).createOrOpen();
-  private static ConcurrentMap<Bytes32, BeaconBlock> blocks =
-      db.hashMap("blocks_map", new Bytes32Serializer(), new BeaconBlock.BeaconBlockSerializer())
-          .createOrOpen();
-  private static ConcurrentMap<Bytes32, BeaconState> block_states =
-      db.hashMap(
-              "block_states_map", new Bytes32Serializer(), new BeaconState.BeaconStateSerializer())
-          .createOrOpen();
-  private static ConcurrentMap<Checkpoint, BeaconState> checkpoint_states =
-      db.hashMap(
-              "checkpoint_states_map",
-              new Checkpoint.CheckpointSerializer(),
-              new BeaconState.BeaconStateSerializer())
-          .createOrOpen();
-  private static ConcurrentMap<UnsignedLong, LatestMessage> latest_messages =
-      db.hashMap(
-              "latest_messages_map",
-              new UnsignedLongSerializer(),
-              new LatestMessage.LatestMessageSerializer())
-          .createOrOpen();
+  private Atomic.Var<UnsignedLong> time;
+  private Atomic.Var<Checkpoint> justifiedCheckpoint;
+  private Atomic.Var<Checkpoint> finalizedCheckpoint;
+  private ConcurrentMap<Bytes32, BeaconBlock> blocks;
+  private ConcurrentMap<Bytes32, BeaconState> block_states;
+  private ConcurrentMap<Checkpoint, BeaconState> checkpoint_states;
+  private ConcurrentMap<UnsignedLong, LatestMessage> latest_messages;
 
-  public static void onNewProcessedBlock(ProcessedBlockEvent processedBlockEvent) {
+  public ChainStorageServer(EventBus eventBus) {
+    this.eventBus = eventBus;
+    this.eventBus.register(this);
+
+    // Store initialization
+    time = db.atomicVar("time", new UnsignedLongSerializer()).createOrOpen();
+    justifiedCheckpoint =
+        db.atomicVar("justified_checkpoint", new Checkpoint.CheckpointSerializer()).createOrOpen();
+    finalizedCheckpoint =
+        db.atomicVar("finalized_checkpoint", new Checkpoint.CheckpointSerializer()).createOrOpen();
+    blocks =
+        db.hashMap("blocks_map", new Bytes32Serializer(), new BeaconBlock.BeaconBlockSerializer())
+            .createOrOpen();
+    block_states =
+        db.hashMap(
+                "block_states_map",
+                new Bytes32Serializer(),
+                new BeaconState.BeaconStateSerializer())
+            .createOrOpen();
+    checkpoint_states =
+        db.hashMap(
+                "checkpoint_states_map",
+                new Checkpoint.CheckpointSerializer(),
+                new BeaconState.BeaconStateSerializer())
+            .createOrOpen();
+    latest_messages =
+        db.hashMap(
+                "latest_messages_map",
+                new UnsignedLongSerializer(),
+                new LatestMessage.LatestMessageSerializer())
+            .createOrOpen();
+  }
+
+  // Helper Methods
+
+  private boolean checkIfStorageServerInitialized(UnsignedLong genesisTime) {
+    UnsignedLong latestDBtime = time.get();
+    System.out.println(latestDBtime);
+    return latestDBtime == null || genesisTime.compareTo(latestDBtime) >= 0;
+  }
+
+  private Store getStoreFromDB() {
+    return new Store(
+        time.get(),
+        justifiedCheckpoint.get(),
+        finalizedCheckpoint.get(),
+        new ConcurrentHashMap<>(blocks),
+        new ConcurrentHashMap<>(block_states),
+        new ConcurrentHashMap<>(checkpoint_states));
+  }
+
+  // Subscription Methods
+
+  @Subscribe
+  public void onNodeStart(NodeStartEvent nodeStartEvent) {
+    UnsignedLong genesisTime = nodeStartEvent.getState().getGenesis_time();
+    if (checkIfStorageServerInitialized(genesisTime)) {
+      this.eventBus.post(new DBStoreValidEvent(getStoreFromDB()));
+    }
+  }
+
+  @Subscribe
+  public void onNewProcessedBlock(ProcessedBlockEvent processedBlockEvent) {
     BeaconStateWithCache postState = processedBlockEvent.getPostState();
     BeaconBlock processedBlock = processedBlockEvent.getProcessedBlock();
     Checkpoint newJustifiedCheckpoint = processedBlockEvent.getJustifiedCheckpoint();
@@ -77,7 +133,8 @@ public class ChainStorageServer extends ChainStorageClient implements ChainStora
     db.commit();
   }
 
-  public static void onNewAttestation(NewAttestationEvent newAttestationEvent) {
+  @Subscribe
+  public void onNewAttestation(NewAttestationEvent newAttestationEvent) {
     Checkpoint checkpoint = newAttestationEvent.getCheckpoint();
     BeaconStateWithCache state = newAttestationEvent.getState();
     List<Pair<UnsignedLong, LatestMessage>> attesterLatestMessages =
@@ -91,7 +148,8 @@ public class ChainStorageServer extends ChainStorageClient implements ChainStora
     db.commit();
   }
 
-  public static void onNewSlot(SlotEvent slotEvent) {
+  @Subscribe
+  public void onNewSlot(SlotEvent slotEvent) {
     if (compute_start_slot_of_epoch(compute_epoch_of_slot(slotEvent.getSlot()))
         .equals(slotEvent.getSlot())) {
       time.set(slotEvent.getTime());
@@ -100,8 +158,11 @@ public class ChainStorageServer extends ChainStorageClient implements ChainStora
     db.commit();
   }
 
+  // Print contents of DB
+
   @SuppressWarnings("ObjectToString")
-  private static void printDB() {
+  private void printDB() {
+    System.out.println("time: " + time.get());
     System.out.println("justified checkpoint: " + justifiedCheckpoint.get());
     System.out.println("finalized checkpoint: " + finalizedCheckpoint.get());
     blocks.values().forEach(block -> System.out.println("block: " + block.toString()));

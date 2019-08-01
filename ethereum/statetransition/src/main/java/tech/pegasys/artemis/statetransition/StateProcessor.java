@@ -42,10 +42,12 @@ import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.datastructures.util.DepositUtil;
 import tech.pegasys.artemis.service.serviceutils.ServiceConfig;
+import tech.pegasys.artemis.statetransition.events.GenesisEvent;
 import tech.pegasys.artemis.statetransition.util.EpochProcessingException;
 import tech.pegasys.artemis.statetransition.util.SlotProcessingException;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.Store;
+import tech.pegasys.artemis.storage.events.NodeStartEvent;
 import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 
@@ -57,6 +59,7 @@ public class StateProcessor {
   private ArtemisConfiguration config;
   private static final ALogger STDOUT = new ALogger("stdout");
   private List<Deposit> deposits;
+  private BeaconStateWithCache initialState;
 
   public StateProcessor(ServiceConfig config, ChainStorageClient chainStorageClient) {
     this.eventBus = config.getEventBus();
@@ -66,26 +69,26 @@ public class StateProcessor {
 
     if (this.config.getDepositMode().equals(Constants.DEPOSIT_TEST)) {
       try {
-        BeaconStateWithCache initial_state =
-            DataStructureUtil.createInitialBeaconState2(this.config);
-        setSimulationGenesisTime(initial_state);
-        onEth2Genesis(initial_state);
+        this.initialState = DataStructureUtil.createInitialBeaconState2(this.config);
+        setSimulationGenesisTime(initialState);
+        this.eventBus.post(new NodeStartEvent(initialState));
       } catch (ParseException | IOException e) {
         STDOUT.log(Level.FATAL, "StateProcessor initializing: " + e.toString());
       }
     }
   }
 
-  public void onEth2Genesis(BeaconStateWithCache initial_state) {
+  @Subscribe
+  public void onEth2Genesis(GenesisEvent genesisEvent) {
     STDOUT.log(Level.INFO, "******* Eth2Genesis Event detected ******* : ");
-    UnsignedLong genesisTime = initial_state.getGenesis_time();
-    Store store = get_genesis_store(initial_state);
-    chainStorageClient.setGenesisTime(genesisTime);
-    chainStorageClient.setStore(store);
+    Store store = chainStorageClient.getStore();
+    if (store == null) {
+      store = get_genesis_store(initialState);
+      chainStorageClient.setStore(store);
+      chainStorageClient.setGenesisTime(initialState.getGenesis_time());
+    }
     Bytes32 genesisBlockRoot = get_head(store);
-    this.eventBus.post(
-        new GenesisStateEvent(initial_state, store.getBlocks().get(genesisBlockRoot)));
-    STDOUT.log(Level.INFO, "Initial state root is " + initial_state.hash_tree_root().toHexString());
+    STDOUT.log(Level.INFO, "Initial state root is " + initialState.hash_tree_root().toHexString());
     STDOUT.log(Level.INFO, "Genesis block root is " + genesisBlockRoot.toHexString());
   }
 
@@ -113,7 +116,8 @@ public class StateProcessor {
                 deposits);
         if (is_valid_genesis_stateSim(candidate_state)) {
           setSimulationGenesisTime(candidate_state);
-          onEth2Genesis(candidate_state);
+          initialState = candidate_state;
+          this.eventBus.post(new GenesisEvent());
         }
 
       } else {
@@ -123,7 +127,8 @@ public class StateProcessor {
                 eth1_timestamp,
                 deposits);
         if (is_valid_genesis_state(candidate_state)) {
-          onEth2Genesis(candidate_state);
+          initialState = candidate_state;
+          this.eventBus.post(new GenesisEvent());
         }
       }
     }
@@ -170,5 +175,6 @@ public class StateProcessor {
     } else {
       state.setGenesis_time(Constants.GENESIS_TIME);
     }
+    chainStorageClient.setGenesisTime(state.getGenesis_time());
   }
 }

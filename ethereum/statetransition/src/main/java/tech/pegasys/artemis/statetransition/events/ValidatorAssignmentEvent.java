@@ -11,26 +11,8 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.storage;
+package tech.pegasys.artemis.statetransition.events;
 
-import com.google.common.primitives.UnsignedLong;
-
-public class SlotEvent {
-
-  private UnsignedLong slot;
-  private UnsignedLong time;
-
-  public SlotEvent(UnsignedLong slot, UnsignedLong time) {
-    this.slot = slot;
-    this.time = time;
-  }
-
-  /** ******************* * GETTERS & SETTERS * * ******************* */
-  public UnsignedLong getSlot() {
-    return slot;
-  }
-
-  public UnsignedLong getTime() {
-    return time;
-  }
+public class ValidatorAssignmentEvent {
+  public ValidatorAssignmentEvent() {}
 }

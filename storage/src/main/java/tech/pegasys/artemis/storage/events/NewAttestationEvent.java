@@ -11,13 +11,14 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.storage;
+package tech.pegasys.artemis.storage.events;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import org.apache.commons.lang3.tuple.Pair;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
+import tech.pegasys.artemis.storage.LatestMessage;
 
 public class NewAttestationEvent {
 
