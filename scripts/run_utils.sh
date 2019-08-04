@@ -90,7 +90,7 @@ create_tmux_windows() {
   create_tmux_panes $idx
 
   ## Use the vertical layout if the flag is set
-  if [ $VERTICAL == true ]
+  if [ "$VERTICAL" == true ]
   then
     tmux select-layout even-vertical
   else
