@@ -88,14 +88,16 @@ public class ChainStorageServer implements ChainStorage {
                 new UnsignedLongSerializer(),
                 new LatestMessage.LatestMessageSerializer())
             .createOrOpen();
+
+    System.out.println("storage server constructed");
   }
 
   // Helper Methods
 
   private boolean checkIfStorageServerInitialized(UnsignedLong genesisTime) {
     UnsignedLong latestDBtime = time.get();
-    System.out.println(latestDBtime);
-    return latestDBtime == null || genesisTime.compareTo(latestDBtime) >= 0;
+    System.out.println("latestDBtime: " + latestDBtime);
+    return !(latestDBtime == null || genesisTime.compareTo(latestDBtime) >= 0);
   }
 
   private Store getStoreFromDB() {
@@ -112,8 +114,10 @@ public class ChainStorageServer implements ChainStorage {
 
   @Subscribe
   public void onNodeStart(NodeStartEvent nodeStartEvent) {
+    System.out.println("At node start event");
     UnsignedLong genesisTime = nodeStartEvent.getState().getGenesis_time();
     if (checkIfStorageServerInitialized(genesisTime)) {
+      System.out.println("yes db was initialized before");
       this.eventBus.post(new DBStoreValidEvent(getStoreFromDB()));
     }
   }
@@ -126,7 +130,7 @@ public class ChainStorageServer implements ChainStorage {
     Checkpoint newFinalizedCheckpoint = processedBlockEvent.getFinalizedCheckpoint();
 
     Bytes32 blockRoot = processedBlock.signing_root("signature");
-    block_states.put(blockRoot, BeaconStateWithCache.deepCopy(postState));
+    block_states.put(blockRoot, postState);
     blocks.put(blockRoot, processedBlock);
     justifiedCheckpoint.set(newJustifiedCheckpoint);
     finalizedCheckpoint.set(newFinalizedCheckpoint);
