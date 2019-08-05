@@ -16,11 +16,14 @@ package tech.pegasys.artemis.datastructures.state;
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
+
+import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.Copyable;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
@@ -82,8 +85,14 @@ public class PendingAttestation
   @Override
   public List<Bytes> get_variable_parts() {
     List<Bytes> variablePartsList = new ArrayList<>();
-    // variablePartsList.addAll( /* TODO Serialize Bitlist */ );
-    variablePartsList.addAll(List.of(Bytes.EMPTY, Bytes.EMPTY, Bytes.EMPTY));
+    // TODO The below lines are a hack while Tuweni SSZ/SOS is being upgraded. To be uncommented
+    // once we shift from Bytes to a real bitlist type.
+    // Bytes serialized_aggregation_bits =
+    // Bytes.fromHexString("0x01").shiftLeft(aggregation_bits.bitLength()).or(aggregation_bits);
+    // variablePartsList.addAll(List.of(serialized_aggregation_bits));
+    variablePartsList.addAll(List.of(aggregation_bits));
+    variablePartsList.addAll(Collections.nCopies(data.getSSZFieldCount(), Bytes.EMPTY));
+    variablePartsList.addAll(List.of(Bytes.EMPTY, Bytes.EMPTY));
     return variablePartsList;
   }
 
@@ -172,7 +181,7 @@ public class PendingAttestation
     return HashTreeUtil.merkleize(
         Arrays.asList(
             HashTreeUtil.hash_tree_root(
-                SSZTypes.LIST_OF_BASIC, aggregation_bits), // TODO writeBitlist logic required
+                SSZTypes.BITLIST, Constants.MAX_VALIDATORS_PER_COMMITTEE, aggregation_bits),
             data.hash_tree_root(),
             HashTreeUtil.hash_tree_root(
                 SSZTypes.BASIC, SSZ.encodeUInt64(inclusion_delay.longValue())),

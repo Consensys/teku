@@ -38,7 +38,7 @@ import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 public class BeaconBlockBody implements SimpleOffsetSerializable {
 
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
-  public static final int SSZ_FIELD_COUNT = 1;
+  public static final int SSZ_FIELD_COUNT = 7;
 
   private BLSSignature randao_reveal;
   private Eth1Data eth1_data;
@@ -85,21 +85,28 @@ public class BeaconBlockBody implements SimpleOffsetSerializable {
 
   @Override
   public int getSSZFieldCount() {
-    // TODO Finish this stub.
     return randao_reveal.getSSZFieldCount() + eth1_data.getSSZFieldCount() + SSZ_FIELD_COUNT;
-    // + add list counts
   }
 
   @Override
   public List<Bytes> get_fixed_parts() {
-    // TODO Implement this stub.
-    return Collections.nCopies(getSSZFieldCount(), Bytes.EMPTY);
+    List<Bytes> fixedPartsList = new ArrayList<>();
+    fixedPartsList.addAll(randao_reveal.get_fixed_parts());
+    fixedPartsList.addAll(eth1_data.get_fixed_parts());
+    fixedPartsList.addAll(List.of(SSZ.encode(writer -> writer.writeFixedBytes(graffiti))));
+    fixedPartsList.addAll(Collections.nCopies(6, Bytes.EMPTY));
+    return fixedPartsList;
   }
 
   @Override
   public List<Bytes> get_variable_parts() {
-    // TODO Implement this stub.
-    return Collections.nCopies(getSSZFieldCount(), Bytes.EMPTY);
+    List<Bytes> variablePartsList = new ArrayList<>();
+    variablePartsList.addAll(Collections.nCopies(randao_reveal.getSSZFieldCount(), Bytes.EMPTY));
+    variablePartsList.addAll(Collections.nCopies(eth1_data.getSSZFieldCount(), Bytes.EMPTY));
+    variablePartsList.addAll(List.of(Bytes.EMPTY));
+    // TODO Replace the line below with the correct list serialization.
+    variablePartsList.addAll(Collections.nCopies(6, Bytes.EMPTY));
+    return variablePartsList;
   }
 
   public static BeaconBlockBody fromBytes(Bytes bytes) {

@@ -320,12 +320,21 @@ public final class HashTreeUtil {
   private static List<Bytes32> bitfield_bytes(Bytes sszValues) {
     // TODO The following lines are a hack and can be fixed once we shift from Bytes to a real
     // bitlist type.
-    Bytes bitfieldMask = Bytes.minimalBytes((int) Math.pow(2.0, sszValues.bitLength() - 1) - 1);
-    Bytes maskedBitfield = sszValues.and(bitfieldMask);
-    // int shiftCount = bitfieldMask.numberOfLeadingZeros();
-    // return pack(maskedBitfield.shiftLeft(shiftCount));
-    return pack(maskedBitfield);
+    int shiftCount = 8 - ((sszValues.bitLength() - 1) % 8);
+    Bytes shiftedBitfield = sszValues.shiftLeft(shiftCount);
+    Bytes reversedBytes = Bytes.EMPTY;
+    for(int i = 0; i < shiftedBitfield.size(); ++i) {
+      reversedBytes = Bytes.concatenate(reversedBytes, Bytes.of(reverseByte(shiftedBitfield.get(i))));
+    }
+    return pack(reversedBytes);
     // return pack(sszValues);
+  }
+
+  private static byte reverseByte(int revByte) {
+    revByte = ((revByte & 240) >>> 4) | ((revByte & 15) << 4);
+    revByte = ((revByte & 204) >>> 2) | ((revByte & 51) << 2);
+    revByte = ((revByte & 170) >>> 1) | ((revByte & 85) << 1);
+    return (byte) revByte;
   }
 
   private static List<Bytes32> pack(Bytes... sszValues) {

@@ -33,11 +33,14 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.io.Resources;
 import org.apache.tuweni.junit.BouncyCastleExtension;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Mockito;
+
+import tech.pegasys.artemis.datastructures.blocks.BeaconBlockBody;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
@@ -52,6 +55,7 @@ import tech.pegasys.artemis.datastructures.operations.VoluntaryExit;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.datastructures.state.Crosslink;
 import tech.pegasys.artemis.datastructures.state.Fork;
+import tech.pegasys.artemis.datastructures.state.PendingAttestation;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
@@ -99,33 +103,17 @@ class SSZStaticTestSuite {
 
   @ParameterizedTest(name = "{index}. Deposit Hash Tree Root Test")
   @MethodSource("readDeposit")
-  @SuppressWarnings({"unchecked"})
   void testDepositHashTreeRoot(
       LinkedHashMap<String, Object> value, String serialized, String root) {
-    List<Bytes32> proof =
-        ((List<String>) value.get("proof"))
-            .stream()
-                .map(proofString -> Bytes32.fromHexString(proofString))
-                .collect(Collectors.toList());
-    DepositData data = parseDepositData((LinkedHashMap<String, Object>) value.get("data"));
-
-    Deposit deposit = new Deposit(proof, data);
+    Deposit deposit = parseDeposit(value);
 
     assertEquals(Bytes32.fromHexString(root), deposit.hash_tree_root());
   }
 
   @ParameterizedTest(name = "{index}. Deposit Serialization Test")
   @MethodSource("readDeposit")
-  @SuppressWarnings({"unchecked"})
   void testDepositSerialize(LinkedHashMap<String, Object> value, String serialized, String root) {
-    List<Bytes32> proof =
-        ((List<String>) value.get("proof"))
-            .stream()
-                .map(proofString -> Bytes32.fromHexString(proofString))
-                .collect(Collectors.toList());
-    DepositData data = parseDepositData((LinkedHashMap<String, Object>) value.get("data"));
-
-    Deposit deposit = new Deposit(proof, data);
+    Deposit deposit = parseDeposit(value);
 
     assertEquals(Bytes.fromHexString(serialized), SimpleOffsetSerializer.serialize(deposit));
   }
@@ -347,6 +335,41 @@ class SSZStaticTestSuite {
     assertEquals(Bytes.fromHexString(serialized), SimpleOffsetSerializer.serialize(validator));
   }
 
+  @ParameterizedTest(name = "{index}. PendingAttestation Hash Tree Root Test")
+  @MethodSource("readPendingAttestation")
+  void testPendingAttestationHashTreeRoot(
+      LinkedHashMap<String, Object> value, String serialized, String root) {
+    PendingAttestation pendingAttestation = parsePendingAttestation(value);
+
+    assertEquals(Bytes32.fromHexString(root), pendingAttestation.hash_tree_root());
+  }
+
+  @ParameterizedTest(name = "{index}. PendingAttestation Serialization Test")
+  @MethodSource("readPendingAttestation")
+  void testPendingAttestationSerialize(LinkedHashMap<String, Object> value, String serialized, String root) {
+    PendingAttestation pendingAttestation = parsePendingAttestation(value);
+
+    assertEquals(Bytes.fromHexString(serialized), SimpleOffsetSerializer.serialize(pendingAttestation));
+  }
+
+  @ParameterizedTest(name = "{index}. BeaconBlockBody Hash Tree Root Test")
+  @MethodSource("readBeaconBlockBody")
+  void testBeaconBlockBodyHashTreeRoot(
+      LinkedHashMap<String, Object> value, String serialized, String root) {
+    BeaconBlockBody beaconBlockBody = parseBeaconBlockBody(value);
+
+    assertEquals(Bytes32.fromHexString(root), beaconBlockBody.hash_tree_root());
+  }
+
+  @ParameterizedTest(name = "{index}. BeaconBlockBody Serialization Test")
+  @MethodSource("readBeaconBlockBody")
+  @Disabled
+  void testBeaconBlockBodySerialize(LinkedHashMap<String, Object> value, String serialized, String root) {
+    BeaconBlockBody beaconBlockBody = parseBeaconBlockBody(value);
+
+    assertEquals(Bytes.fromHexString(serialized), SimpleOffsetSerializer.serialize(beaconBlockBody));
+  }
+
   private Eth1Data parseEth1Data(LinkedHashMap<String, Object> value) {
     Bytes32 depositRoot = Bytes32.fromHexString((String) value.get("deposit_root"));
     UnsignedLong depositCount = UnsignedLong.valueOf((BigInteger) value.get("deposit_count"));
@@ -366,6 +389,19 @@ class SSZStaticTestSuite {
     DepositData depositData =
         new DepositData(pubkeyMock, withdrawalCredentials, amount, signatureMock);
     return depositData;
+  }
+
+  @SuppressWarnings({"unchecked"})
+  private Deposit parseDeposit(LinkedHashMap<String, Object> value) {
+    List<Bytes32> proof =
+        ((List<String>) value.get("proof"))
+            .stream()
+                .map(proofString -> Bytes32.fromHexString(proofString))
+                .collect(Collectors.toList());
+    DepositData data = parseDepositData((LinkedHashMap<String, Object>) value.get("data"));
+
+    Deposit deposit = new Deposit(proof, data);
+    return deposit;
   }
 
   private BeaconBlockHeader parseBeaconBlockHeader(LinkedHashMap<String, Object> value) {
@@ -518,6 +554,39 @@ class SSZStaticTestSuite {
     return validator;
   }
 
+  @SuppressWarnings({"unchecked"})
+  private PendingAttestation parsePendingAttestation(LinkedHashMap<String, Object> value) {
+    // TODO Commented code below will be enabled once we shift from using Bytes to a real Bitlist
+    // type. As currently implemented, we need to keep the leading 1 bit in memory to determine
+    // length.
+    Bytes serializedAggregationBits = Bytes.fromHexString((String) value.get("aggregation_bits"));
+    // Bytes aggregationBitsMask = Bytes.minimalBytes((int) Math.pow(2.0,
+    // serializedAggregationBits.bitLength() - 1) - 1);
+    // Bytes aggregationBits = serializedAggregationBits.and(aggregationBitsMask);
+    AttestationData data = parseAttestationData((LinkedHashMap<String, Object>) value.get("data"));
+    UnsignedLong inclusionDelay = UnsignedLong.valueOf((BigInteger) value.get("inclusion_delay"));
+    UnsignedLong proposerIndex = UnsignedLong.valueOf((BigInteger) value.get("proposer_index"));
+
+    PendingAttestation pendingAttestation = new PendingAttestation(serializedAggregationBits, data, inclusionDelay, proposerIndex);
+    return pendingAttestation;
+  }
+
+  @SuppressWarnings({"unchecked"})
+  private BeaconBlockBody parseBeaconBlockBody(LinkedHashMap<String, Object> value) {
+    BLSSignature randaoRevealMock = mockBLSSignature(value, "randao_reveal");
+    Eth1Data eth1Data = parseEth1Data((LinkedHashMap<String, Object>) value.get("eth1_data"));
+    Bytes32 graffiti = Bytes32.fromHexString((String) value.get("graffiti"));
+    List<ProposerSlashing> proposerSlashings = ((List<LinkedHashMap<String, Object> >) value.get("proposer_slashings")).stream().map(map -> parseProposerSlashing(map)).collect(Collectors.toList());
+    List<AttesterSlashing> attesterSlashings = ((List<LinkedHashMap<String, Object> >) value.get("attester_slashings")).stream().map(map -> parseAttesterSlashing(map)).collect(Collectors.toList());
+    List<Attestation> attestations = ((List<LinkedHashMap<String, Object> >) value.get("attestations")).stream().map(map -> parseAttestation(map)).collect(Collectors.toList());
+    List<Deposit> deposits = ((List<LinkedHashMap<String, Object> >) value.get("deposits")).stream().map(map -> parseDeposit(map)).collect(Collectors.toList());
+    List<VoluntaryExit> voluntaryExits = ((List<LinkedHashMap<String, Object> >) value.get("voluntary_exits")).stream().map(map -> parseVoluntaryExit(map)).collect(Collectors.toList());
+    List<Transfer> transfers = ((List<LinkedHashMap<String, Object> >) value.get("transfers")).stream().map(map -> parseTransfer(map)).collect(Collectors.toList());
+
+    BeaconBlockBody beaconBlockBody = new BeaconBlockBody(randaoRevealMock, eth1Data, graffiti, proposerSlashings, attesterSlashings, attestations, deposits, voluntaryExits, transfers);
+    return beaconBlockBody;
+  }
+
   private BLSPublicKey mockBLSPublicKey(LinkedHashMap<String, Object> value) {
     Bytes pubkeyBytes = Bytes.fromHexString((String) value.get("pubkey"));
     BLSPublicKey pubkeyMock = Mockito.mock(BLSPublicKey.class);
@@ -529,6 +598,15 @@ class SSZStaticTestSuite {
 
   private BLSSignature mockBLSSignature(LinkedHashMap<String, Object> value) {
     Bytes signatureBytes = Bytes.fromHexString((String) value.get("signature"));
+    return mockBLSHelper(signatureBytes);
+  }
+
+  private BLSSignature mockBLSSignature(LinkedHashMap<String, Object> value, String paramName) {
+    Bytes signatureBytes = Bytes.fromHexString((String) value.get(paramName));
+    return mockBLSHelper(signatureBytes);
+  }
+
+  private BLSSignature mockBLSHelper(Bytes signatureBytes) {
     BLSSignature signatureMock = Mockito.mock(BLSSignature.class);
     Mockito.when(signatureMock.toBytes()).thenReturn(signatureBytes);
     Mockito.when(signatureMock.get_fixed_parts()).thenReturn(List.of(signatureBytes));
@@ -615,6 +693,14 @@ class SSZStaticTestSuite {
 
   private static Stream<Arguments> readValidator() throws IOException {
     return findTests(testFile, "Validator");
+  }
+
+  private static Stream<Arguments> readPendingAttestation() throws IOException {
+    return findTests(testFile, "PendingAttestation");
+  }
+
+  private static Stream<Arguments> readBeaconBlockBody() throws IOException {
+    return findTests(testFile, "BeaconBlockBody");
   }
 
   @SuppressWarnings({"unchecked", "rawtypes"})
