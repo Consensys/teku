@@ -16,10 +16,6 @@ package pegasys.artemis.reference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.errorprone.annotations.MustBeClosed;
-import kotlin.Pair;
-import org.apache.tuweni.io.Resources;
-import org.junit.jupiter.params.provider.Arguments;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
@@ -29,6 +25,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import kotlin.Pair;
+import org.apache.tuweni.io.Resources;
+import org.junit.jupiter.params.provider.Arguments;
 
 public abstract class TestSuite {
 
@@ -82,5 +81,30 @@ public abstract class TestSuite {
   @SuppressWarnings({"unchecked", "rawtypes"})
   public static Pair<Class, List<String>> getParams(Class classType, List<String> args) {
     return new Pair<Class, List<String>>(classType, args);
+  }
+
+  // Temporarily handle BLS tests separately dur to their different structure
+
+  @MustBeClosed
+  public static Stream<Arguments> findBLSTests(String glob, String tcase) throws IOException {
+    return Resources.find(glob)
+        .flatMap(
+            url -> {
+              try (InputStream in = url.openConnection().getInputStream()) {
+                return prepareBLSTests(in, tcase);
+              } catch (IOException e) {
+                throw new UncheckedIOException(e);
+              }
+            });
+  }
+
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  private static Stream<Arguments> prepareBLSTests(InputStream in, String tcase)
+      throws IOException {
+    ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
+    Map allTests = mapper.readerFor(Map.class).readValue(in);
+
+    return ((List<Map>) allTests.get(tcase))
+        .stream().map(testCase -> Arguments.of(testCase.get("input"), testCase.get("output")));
   }
 }
