@@ -667,38 +667,47 @@ class SSZStaticTestSuite {
     return findTests(testFile, "AttestationData");
   }
 
+  @MustBeClosed
   private static Stream<Arguments> readIndexedAttestation() throws IOException {
     return findTests(testFile, "IndexedAttestation");
   }
 
+  @MustBeClosed
   private static Stream<Arguments> readAttesterSlashing() throws IOException {
     return findTests(testFile, "AttesterSlashing");
   }
 
+  @MustBeClosed
   private static Stream<Arguments> readAttestation() throws IOException {
     return findTests(testFile, "Attestation");
   }
 
+  @MustBeClosed
   private static Stream<Arguments> readVoluntaryExit() throws IOException {
     return findTests(testFile, "VoluntaryExit");
   }
 
+  @MustBeClosed
   private static Stream<Arguments> readTransfer() throws IOException {
     return findTests(testFile, "Transfer");
   }
 
+  @MustBeClosed
   private static Stream<Arguments> readFork() throws IOException {
     return findTests(testFile, "Fork");
   }
 
+  @MustBeClosed
   private static Stream<Arguments> readValidator() throws IOException {
     return findTests(testFile, "Validator");
   }
 
+  @MustBeClosed
   private static Stream<Arguments> readPendingAttestation() throws IOException {
     return findTests(testFile, "PendingAttestation");
   }
 
+  @MustBeClosed
   private static Stream<Arguments> readBeaconBlockBody() throws IOException {
     return findTests(testFile, "BeaconBlockBody");
   }

@@ -78,6 +78,7 @@ public class MapObjectUtil {
     return null;
   }
 
+  @SuppressWarnings({"unchecked", "rawtypes"})
   private static HistoricalBatch getHistoricalBatch(Map map) {
     List<Bytes32> block_roots =
         new ArrayList<Bytes32>(
@@ -95,6 +96,7 @@ public class MapObjectUtil {
     return new HistoricalBatch(block_roots, state_roots);
   }
 
+  @SuppressWarnings({"unchecked", "rawtypes"})
   private static CompactCommittee getCompactCommittee(Map map) {
     List<BLSPublicKey> pubkeys =
         new ArrayList<BLSPublicKey>(
@@ -108,6 +110,7 @@ public class MapObjectUtil {
     return new CompactCommittee(pubkeys, compact_validators);
   }
 
+  @SuppressWarnings({"unchecked", "rawtypes"})
   private static BeaconState getBeaconState(Map map) {
     UnsignedLong genesis_time = UnsignedLong.valueOf(map.get("genesis_time").toString());
     UnsignedLong slot = UnsignedLong.valueOf(map.get("slot").toString());
@@ -213,6 +216,7 @@ public class MapObjectUtil {
         finalized_checkpoint);
   }
 
+  @SuppressWarnings({"unchecked", "rawtypes"})
   private static PendingAttestation getPendingAttestation(Map map) {
     Bytes aggregation_bits = Bytes.fromHexString(map.get("aggregation_bits").toString());
     AttestationData data = getAttestationData((Map) map.get("data"));
@@ -222,13 +226,13 @@ public class MapObjectUtil {
     return new PendingAttestation(aggregation_bits, data, inclusion_delay, proposer_index);
   }
 
+  @SuppressWarnings({"unchecked", "rawtypes"})
   private static Validator getValidator(Map map) {
     BLSPublicKey pubkey = BLSPublicKey.fromBytes(Bytes.fromHexString(map.get("pubkey").toString()));
     Bytes32 withdrawal_credentials =
         Bytes32.fromHexString(map.get("withdrawal_credentials").toString());
     UnsignedLong effective_balance = UnsignedLong.valueOf(map.get("effective_balance").toString());
-    ;
-    boolean slashed = Boolean.getBoolean((map.get("slashed")).toString());
+    boolean slashed = Boolean.getBoolean(map.get("slashed").toString());
     UnsignedLong activation_eligibility_epoch =
         UnsignedLong.valueOf(map.get("activation_eligibility_epoch").toString());
     UnsignedLong activation_epoch = UnsignedLong.valueOf(map.get("activation_epoch").toString());
@@ -247,6 +251,7 @@ public class MapObjectUtil {
         withdrawable_epoch);
   }
 
+  @SuppressWarnings({"unchecked", "rawtypes"})
   private static Fork getFork(Map map) {
     Bytes previous_version = Bytes.fromHexString(map.get("previous_version").toString());
     Bytes current_version = Bytes.fromHexString(map.get("current_version").toString());
@@ -255,6 +260,7 @@ public class MapObjectUtil {
     return new Fork(previous_version, current_version, epoch);
   }
 
+  @SuppressWarnings({"unchecked", "rawtypes"})
   private static BeaconBlock getBeaconBlock(Map map) {
     UnsignedLong slot = UnsignedLong.valueOf(map.get("slot").toString());
     Bytes32 parent_root = Bytes32.fromHexString(map.get("parent_root").toString());
@@ -266,6 +272,7 @@ public class MapObjectUtil {
     return new BeaconBlock(slot, parent_root, state_root, body, signature);
   }
 
+  @SuppressWarnings({"unchecked", "rawtypes"})
   private static BeaconBlockBody getBeaconBlockBody(Map map) {
     BLSSignature randao_reveal =
         BLSSignature.fromBytes(Bytes.fromHexString(map.get("randao_reveal").toString()));
@@ -303,6 +310,7 @@ public class MapObjectUtil {
         transfers);
   }
 
+  @SuppressWarnings({"unchecked", "rawtypes"})
   private static Transfer getTransfer(Map map) {
     UnsignedLong sender = UnsignedLong.valueOf(map.get("sender").toString());
     UnsignedLong recipient = UnsignedLong.valueOf(map.get("recipient").toString());
@@ -316,6 +324,7 @@ public class MapObjectUtil {
     return new Transfer(sender, recipient, amount, fee, slot, pubkey, signature);
   }
 
+  @SuppressWarnings({"unchecked", "rawtypes"})
   private static VoluntaryExit getVoluntaryExit(Map map) {
     UnsignedLong epoch = UnsignedLong.valueOf(map.get("epoch").toString());
     UnsignedLong validator_index = UnsignedLong.valueOf(map.get("validator_index").toString());
@@ -325,6 +334,7 @@ public class MapObjectUtil {
     return new VoluntaryExit(epoch, validator_index, signature);
   }
 
+  @SuppressWarnings({"unchecked", "rawtypes"})
   private static Deposit getDeposit(Map map) {
     List<Bytes32> proof =
         new ArrayList<Bytes32>(
@@ -337,6 +347,7 @@ public class MapObjectUtil {
     return new Deposit(proof, data);
   }
 
+  @SuppressWarnings({"unchecked", "rawtypes"})
   private static DepositData getDepositData(Map map) {
     BLSPublicKey pubkey = BLSPublicKey.fromBytes(Bytes.fromHexString(map.get("pubkey").toString()));
     Bytes32 withdrawal_credentials =
@@ -348,6 +359,7 @@ public class MapObjectUtil {
     return new DepositData(pubkey, withdrawal_credentials, amount, signature);
   }
 
+  @SuppressWarnings({"unchecked", "rawtypes"})
   private static ProposerSlashing getProposerSlashing(Map map) {
     UnsignedLong proposer_index = UnsignedLong.valueOf(map.get("proposer_index").toString());
     BeaconBlockHeader header_1 = getBeaconBlockHeader((Map) map.get("header_1"));
@@ -356,6 +368,7 @@ public class MapObjectUtil {
     return new ProposerSlashing(proposer_index, header_1, header_2);
   }
 
+  @SuppressWarnings({"unchecked", "rawtypes"})
   private static BeaconBlockHeader getBeaconBlockHeader(Map map) {
     UnsignedLong slot = UnsignedLong.valueOf(map.get("slot").toString());
     Bytes32 parent_root = Bytes32.fromHexString(map.get("parent_root").toString());
@@ -367,6 +380,7 @@ public class MapObjectUtil {
     return new BeaconBlockHeader(slot, parent_root, state_root, body_root, signature);
   }
 
+  @SuppressWarnings({"unchecked", "rawtypes"})
   private static Eth1Data getEth1Data(Map map) {
     Bytes32 deposit_root = Bytes32.fromHexString(map.get("deposit_root").toString());
     UnsignedLong deposit_count = UnsignedLong.valueOf(map.get("deposit_count").toString());
@@ -375,6 +389,7 @@ public class MapObjectUtil {
     return new Eth1Data(deposit_root, deposit_count, block_hash);
   }
 
+  @SuppressWarnings({"unchecked", "rawtypes"})
   private static AttesterSlashing getAttesterSlashing(Map map) {
 
     return new AttesterSlashing(
@@ -382,6 +397,7 @@ public class MapObjectUtil {
         getIndexedAttestation((Map) map.get("attestation_2")));
   }
 
+  @SuppressWarnings({"unchecked", "rawtypes"})
   private static IndexedAttestation getIndexedAttestation(Map map) {
     List<UnsignedLong> custody_bit_0_indices =
         new ArrayList<Integer>((ArrayList<Integer>) map.get("custody_bit_0_indices"))
@@ -401,7 +417,7 @@ public class MapObjectUtil {
 
     return new AttestationDataAndCustodyBit(
         getAttestationData((Map) map.get("data")),
-        Boolean.getBoolean((map.get("custody_bit")).toString()));
+        Boolean.getBoolean(map.get("custody_bit").toString()));
   }
 
   @SuppressWarnings({"unchecked", "rawtypes"})

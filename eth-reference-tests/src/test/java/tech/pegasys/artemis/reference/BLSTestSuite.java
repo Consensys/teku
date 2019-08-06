@@ -56,7 +56,7 @@ class BLSTestSuite {
   void testMessageHashToG2Uncompressed(
       LinkedHashMap<String, String> input, ArrayList<ArrayList<String>> output) {
 
-    long domain = Bytes32.fromHexString(input.get("domain")).getLong(24);
+    Bytes domain = Bytes.fromHexString(input.get("domain"));
     Bytes message = Bytes.fromHexString(input.get("message"));
 
     G2Point referencePoint = makePoint(output);
@@ -69,7 +69,7 @@ class BLSTestSuite {
   void testMessageHashToG2Compressed(
       LinkedHashMap<String, String> input, ArrayList<String> output) {
 
-    long domain = Bytes32.fromHexString(input.get("domain")).getLong(24);
+    Bytes domain = Bytes.fromHexString(input.get("domain"));
     Bytes message = Bytes.fromHexString(input.get("message"));
 
     G2Point actual = G2Point.hashToG2(message, domain);
@@ -96,7 +96,7 @@ class BLSTestSuite {
   @MethodSource("readSignMessages")
   void testSignMessages(LinkedHashMap<String, String> input, String output) {
 
-    long domain = Bytes32.fromHexString(input.get("domain")).getLong(24);
+    Bytes domain = Bytes.fromHexString(input.get("domain"));
     Bytes message = Bytes.fromHexString(input.get("message"));
     SecretKey privateKey =
         SecretKey.fromBytes(Bytes48.leftPad(Bytes.fromHexString(input.get("privkey"))));

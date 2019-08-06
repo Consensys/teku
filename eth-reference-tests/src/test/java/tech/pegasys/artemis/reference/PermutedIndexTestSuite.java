@@ -43,7 +43,7 @@ public class PermutedIndexTestSuite {
   @MethodSource("readPermutedIndexTestVectors")
   void testPermutedIndex(int index, int listSize, int indexExpected, Bytes32 seed) {
 
-    int indexActual = CrosslinkCommitteeUtil.get_shuffled_index(index, listSize, seed);
+    int indexActual = CrosslinkCommitteeUtil.compute_shuffled_index(index, listSize, seed);
 
     assertEquals(indexExpected, indexActual);
   }
