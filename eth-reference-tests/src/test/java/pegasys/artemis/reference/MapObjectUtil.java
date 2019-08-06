@@ -14,10 +14,6 @@
 package pegasys.artemis.reference;
 
 import com.google.common.primitives.UnsignedLong;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
@@ -44,6 +40,11 @@ import tech.pegasys.artemis.datastructures.state.PendingAttestation;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 public class MapObjectUtil {
 
@@ -406,7 +407,6 @@ public class MapObjectUtil {
 
   @SuppressWarnings({"unchecked", "rawtypes"})
   public static Attestation getAttestation(Map map) {
-
     return new Attestation(
         Bytes.fromHexString(map.get("aggregation_bits").toString()),
         getAttestationData((Map) map.get("data")),
