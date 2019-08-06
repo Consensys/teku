@@ -30,7 +30,8 @@ import tech.pegasys.artemis.data.provider.JSONProvider;
 import tech.pegasys.artemis.data.provider.ProviderTypes;
 import tech.pegasys.artemis.data.provider.RawRecordHandler;
 import tech.pegasys.artemis.datastructures.Constants;
-import tech.pegasys.artemis.metrics.PrometheusEndpoint;
+import tech.pegasys.artemis.metrics.MetricsServer;
+import tech.pegasys.artemis.metrics.MetricsSystemFactory;
 import tech.pegasys.artemis.service.serviceutils.ServiceConfig;
 import tech.pegasys.artemis.service.serviceutils.ServiceController;
 import tech.pegasys.artemis.services.beaconchain.BeaconChainService;
@@ -39,6 +40,7 @@ import tech.pegasys.artemis.services.powchain.PowchainService;
 import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.cli.CommandLineArguments;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
+import tech.pegasys.pantheon.metrics.MetricsSystem;
 
 public class BeaconNode {
   private static final ALogger LOG = new ALogger(BeaconNode.class.getName());
@@ -71,14 +73,11 @@ public class BeaconNode {
 
     this.eventBus = new AsyncEventBus(threadPool);
 
-    this.serviceConfig = new ServiceConfig(eventBus, vertx, config, cliArgs);
+    final MetricsSystem metricsSystem = MetricsSystemFactory.createMetricsSystem(config);
+    this.serviceConfig = new ServiceConfig(eventBus, vertx, metricsSystem, config, cliArgs);
     Constants.init(config);
     this.cliArgs = cliArgs;
     this.commandLine = commandLine;
-    if (config.isMetricsEnabled()) {
-      PrometheusEndpoint.registerEndpoint(
-          vertx, config.getMetricsNetworkInterface(), config.getMetricsPort());
-    }
 
     // register a raw record handler that will transform objects to events
     new RawRecordHandler(this.eventBus);
@@ -117,7 +116,8 @@ public class BeaconNode {
           serviceConfig,
           BeaconChainService.class,
           PowchainService.class,
-          ChainStorageService.class);
+          ChainStorageService.class,
+          MetricsServer.class);
       // Start services
       serviceController.startAll(cliArgs);
 

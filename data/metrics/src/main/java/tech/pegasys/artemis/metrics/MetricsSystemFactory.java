@@ -13,29 +13,31 @@
 
 package tech.pegasys.artemis.metrics;
 
-import io.prometheus.client.vertx.MetricsHandler;
-import io.vertx.core.Vertx;
-import io.vertx.core.http.HttpServer;
-import io.vertx.ext.web.Router;
+import java.util.EnumSet;
+import java.util.HashSet;
+import tech.pegasys.artemis.util.config.ArtemisConfiguration;
+import tech.pegasys.pantheon.metrics.MetricsSystem;
+import tech.pegasys.pantheon.metrics.StandardMetricCategory;
+import tech.pegasys.pantheon.metrics.prometheus.MetricsConfiguration;
+import tech.pegasys.pantheon.metrics.prometheus.PrometheusMetricsSystem;
 
 /**
  * Registers a Prometheus REST endpoint that can be called remotely by Prometheus to gather metrics.
  */
-public final class PrometheusEndpoint {
+public final class MetricsSystemFactory {
 
   /**
    * Creates a new endpoint for the network interface and port provided. The endpoint lifecycle is
    * tied to the lifecycle of the Vertx object.
    *
-   * @param vertx the Vert.x instance
-   * @param networkInterface the network interface to bind the endpoint to
-   * @param port the port to bind the endpoint to
+   * @param config the configuration for this Artemis instance.
    */
-  public static void registerEndpoint(Vertx vertx, String networkInterface, int port) {
-    HttpServer metricsServer = vertx.createHttpServer();
-    MetricsHandler handler = new MetricsHandler();
-    Router router = Router.router(vertx);
-    router.route().handler(handler);
-    metricsServer.requestHandler(router).listen(port, networkInterface);
+  public static MetricsSystem createMetricsSystem(ArtemisConfiguration config) {
+    final MetricsConfiguration metricsConfiguration =
+        MetricsConfiguration.builder()
+            .enabled(config.isMetricsEnabled())
+            .metricCategories(new HashSet<>(EnumSet.allOf(StandardMetricCategory.class)))
+            .build();
+    return PrometheusMetricsSystem.init(metricsConfiguration);
   }
 }
