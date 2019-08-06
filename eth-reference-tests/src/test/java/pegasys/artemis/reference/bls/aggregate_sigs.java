@@ -13,7 +13,14 @@
 
 package pegasys.artemis.reference.bls;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import com.google.errorprone.annotations.MustBeClosed;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Stream;
 import kotlin.Pair;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -22,23 +29,13 @@ import org.junit.jupiter.params.provider.MethodSource;
 import pegasys.artemis.reference.TestSuite;
 import tech.pegasys.artemis.util.mikuli.Signature;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Stream;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
 class aggregate_sigs extends TestSuite {
   private static String testFile = "**/aggregate_sigs.yaml";
 
   @ParameterizedTest(name = "{index}. aggregate sigs {0} -> {1}")
   @MethodSource("readAggregateSigs")
-  void aggregateSig(
-          List<Signature> signatures, Bytes aggregateSignatureExpected) {
-    Bytes aggregateSignatureActual =
-            Signature.aggregate(signatures).g2Point().toBytesCompressed();
+  void aggregateSig(List<Signature> signatures, Bytes aggregateSignatureExpected) {
+    Bytes aggregateSignatureActual = Signature.aggregate(signatures).g2Point().toBytesCompressed();
     assertEquals(aggregateSignatureExpected, aggregateSignatureActual);
   }
 
@@ -46,10 +43,8 @@ class aggregate_sigs extends TestSuite {
   @MustBeClosed
   static Stream<Arguments> readAggregateSigs() throws IOException {
     List<Pair<Class, List<String>>> arguments = new ArrayList<Pair<Class, List<String>>>();
-    arguments.add(
-            getParams(Signature[].class, Arrays.asList("input")));
-    arguments.add(
-            getParams(Bytes.class, Arrays.asList("output")));
+    arguments.add(getParams(Signature[].class, Arrays.asList("input")));
+    arguments.add(getParams(Bytes.class, Arrays.asList("output")));
 
     return findTests(testFile, arguments);
   }

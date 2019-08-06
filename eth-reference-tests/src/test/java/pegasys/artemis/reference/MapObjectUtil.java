@@ -14,6 +14,10 @@
 package pegasys.artemis.reference;
 
 import com.google.common.primitives.UnsignedLong;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import org.apache.milagro.amcl.BLS381.BIG;
 import org.apache.milagro.amcl.BLS381.ECP2;
 import org.apache.milagro.amcl.BLS381.FP2;
@@ -49,11 +53,6 @@ import tech.pegasys.artemis.util.mikuli.PublicKey;
 import tech.pegasys.artemis.util.mikuli.SecretKey;
 import tech.pegasys.artemis.util.mikuli.Signature;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-
 public class MapObjectUtil {
 
   @SuppressWarnings({"unchecked", "rawtypes"})
@@ -61,7 +60,8 @@ public class MapObjectUtil {
     if (classtype.equals(Attestation.class)) return MapObjectUtil.getAttestation((Map) object);
     else if (classtype.equals(AttestationData.class)) return getAttestationData((Map) object);
     else if (classtype.equals(AttesterSlashing.class)) return getAttesterSlashing((Map) object);
-    else if (classtype.equals(AttestationDataAndCustodyBit.class)) return getAttestationDataAndCustodyBit((Map) object);
+    else if (classtype.equals(AttestationDataAndCustodyBit.class))
+      return getAttestationDataAndCustodyBit((Map) object);
     else if (classtype.equals(BeaconBlock.class)) return getBeaconBlock((Map) object);
     else if (classtype.equals(BeaconBlockBody.class)) return getBeaconBlockBody((Map) object);
     else if (classtype.equals(BeaconBlockHeader.class)) return getBeaconBlockHeader((Map) object);
@@ -80,9 +80,11 @@ public class MapObjectUtil {
     else if (classtype.equals(IndexedAttestation.class)) return getIndexedAttestation((Map) object);
     else if (classtype.equals(PendingAttestation.class)) return getPendingAttestation((Map) object);
     else if (classtype.equals(ProposerSlashing.class)) return getProposerSlashing((Map) object);
-    else if (classtype.equals(PublicKey.class)) return PublicKey.fromBytesCompressed(Bytes.fromHexString(object.toString()));
+    else if (classtype.equals(PublicKey.class))
+      return PublicKey.fromBytesCompressed(Bytes.fromHexString(object.toString()));
     else if (classtype.equals(PublicKey[].class)) return getPublicKeyArray((List) object);
-    else if (classtype.equals(SecretKey.class)) return  SecretKey.fromBytes(Bytes48.leftPad(Bytes.fromHexString(object.toString())));
+    else if (classtype.equals(SecretKey.class))
+      return SecretKey.fromBytes(Bytes48.leftPad(Bytes.fromHexString(object.toString())));
     else if (classtype.equals(Signature[].class)) return getSignatureArray((List) object);
     else if (classtype.equals(Transfer.class)) return getTransfer((Map) object);
     else if (classtype.equals(Validator.class)) return getValidator((Map) object);
@@ -94,8 +96,10 @@ public class MapObjectUtil {
   }
 
   private static G2Point getG2Point(Object object) {
-    if(object.getClass().equals(ArrayList.class))return makePoint((List)object);
-    return G2Point.hashToG2(Bytes.fromHexString(((Map) object).get("message").toString()), Bytes.fromHexString(((Map) object).get("domain").toString()));
+    if (object.getClass().equals(ArrayList.class)) return makePoint((List) object);
+    return G2Point.hashToG2(
+        Bytes.fromHexString(((Map) object).get("message").toString()),
+        Bytes.fromHexString(((Map) object).get("domain").toString()));
   }
 
   /**
@@ -108,12 +112,24 @@ public class MapObjectUtil {
    * @return the point corresponding to the input
    */
   private static G2Point makePoint(List list) {
-    BIG xRe = BIG.fromBytes(Bytes48.leftPad(Bytes.fromHexString(((List)list.get(0)).get(0).toString())).toArray());
-    BIG xIm = BIG.fromBytes(Bytes48.leftPad(Bytes.fromHexString(((List)list.get(0)).get(1).toString())).toArray());
-    BIG yRe = BIG.fromBytes(Bytes48.leftPad(Bytes.fromHexString(((List)list.get(1)).get(0).toString())).toArray());
-    BIG yIm = BIG.fromBytes(Bytes48.leftPad(Bytes.fromHexString(((List)list.get(1)).get(1).toString())).toArray());
-    BIG zRe = BIG.fromBytes(Bytes48.leftPad(Bytes.fromHexString(((List)list.get(2)).get(0).toString())).toArray());
-    BIG zIm = BIG.fromBytes(Bytes48.leftPad(Bytes.fromHexString(((List)list.get(2)).get(1).toString())).toArray());
+    BIG xRe =
+        BIG.fromBytes(
+            Bytes48.leftPad(Bytes.fromHexString(((List) list.get(0)).get(0).toString())).toArray());
+    BIG xIm =
+        BIG.fromBytes(
+            Bytes48.leftPad(Bytes.fromHexString(((List) list.get(0)).get(1).toString())).toArray());
+    BIG yRe =
+        BIG.fromBytes(
+            Bytes48.leftPad(Bytes.fromHexString(((List) list.get(1)).get(0).toString())).toArray());
+    BIG yIm =
+        BIG.fromBytes(
+            Bytes48.leftPad(Bytes.fromHexString(((List) list.get(1)).get(1).toString())).toArray());
+    BIG zRe =
+        BIG.fromBytes(
+            Bytes48.leftPad(Bytes.fromHexString(((List) list.get(2)).get(0).toString())).toArray());
+    BIG zIm =
+        BIG.fromBytes(
+            Bytes48.leftPad(Bytes.fromHexString(((List) list.get(2)).get(1).toString())).toArray());
 
     FP2 x = new FP2(xRe, xIm);
     FP2 y = new FP2(yRe, yIm);
@@ -130,19 +146,31 @@ public class MapObjectUtil {
   }
 
   private static List<Bytes> getBytesArray(List list) {
-    return (List<Bytes>)list.stream().map(object -> Bytes.fromHexString(object.toString())).collect(Collectors.toList());
+    return (List<Bytes>)
+        list.stream()
+            .map(object -> Bytes.fromHexString(object.toString()))
+            .collect(Collectors.toList());
   }
 
   private static List<PublicKey> getPublicKeyArray(List list) {
-    return (List<PublicKey>) list.stream().map(object -> PublicKey.fromBytesCompressed(Bytes.fromHexString(object.toString()))).collect(Collectors.toList());
+    return (List<PublicKey>)
+        list.stream()
+            .map(object -> PublicKey.fromBytesCompressed(Bytes.fromHexString(object.toString())))
+            .collect(Collectors.toList());
   }
 
   private static List<Signature> getSignatureArray(List list) {
-    return (List<Signature>) list.stream().map(object -> Signature.fromBytesCompressed(Bytes.fromHexString(object.toString()))).collect(Collectors.toList());
+    return (List<Signature>)
+        list.stream()
+            .map(object -> Signature.fromBytesCompressed(Bytes.fromHexString(object.toString())))
+            .collect(Collectors.toList());
   }
 
   private static List<Bytes32> getBytes32Array(List list) {
-    return (List<Bytes32>)list.stream().map(object -> Bytes32.fromHexString(object.toString())).collect(Collectors.toList());
+    return (List<Bytes32>)
+        list.stream()
+            .map(object -> Bytes32.fromHexString(object.toString()))
+            .collect(Collectors.toList());
   }
 
   private static HistoricalBatch getHistoricalBatch(Map map) {

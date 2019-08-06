@@ -13,7 +13,14 @@
 
 package pegasys.artemis.reference.bls;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import com.google.errorprone.annotations.MustBeClosed;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Stream;
 import kotlin.Pair;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -22,23 +29,12 @@ import pegasys.artemis.reference.TestSuite;
 import tech.pegasys.artemis.util.mikuli.PublicKey;
 import tech.pegasys.artemis.util.mikuli.SecretKey;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Stream;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
-
-
 class priv_to_pub extends TestSuite {
   private static String testFile = "**/priv_to_pub.yaml";
 
   @ParameterizedTest(name = "{index}. private to public key {0} -> {1}")
   @MethodSource("readPrivateToPublicKey")
-  void privateToPublicKey(
-          SecretKey secretKey, PublicKey pubkeyExpected) {
+  void privateToPublicKey(SecretKey secretKey, PublicKey pubkeyExpected) {
     PublicKey pubkeyActual = new PublicKey(secretKey);
     assertEquals(pubkeyExpected, pubkeyActual);
   }
@@ -47,10 +43,8 @@ class priv_to_pub extends TestSuite {
   @MustBeClosed
   static Stream<Arguments> readPrivateToPublicKey() throws IOException {
     List<Pair<Class, List<String>>> arguments = new ArrayList<Pair<Class, List<String>>>();
-    arguments.add(
-            getParams(SecretKey.class, Arrays.asList("input")));
-    arguments.add(
-            getParams(PublicKey.class, Arrays.asList("output")));
+    arguments.add(getParams(SecretKey.class, Arrays.asList("input")));
+    arguments.add(getParams(PublicKey.class, Arrays.asList("output")));
 
     return findTests(testFile, arguments);
   }

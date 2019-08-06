@@ -13,7 +13,14 @@
 
 package pegasys.artemis.reference.bls;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import com.google.errorprone.annotations.MustBeClosed;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Stream;
 import kotlin.Pair;
 import org.apache.tuweni.junit.BouncyCastleExtension;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -23,22 +30,13 @@ import org.junit.jupiter.params.provider.MethodSource;
 import pegasys.artemis.reference.TestSuite;
 import tech.pegasys.artemis.util.mikuli.PublicKey;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Stream;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
 @ExtendWith(BouncyCastleExtension.class)
 class aggregate_pubkeys extends TestSuite {
   private static String testFile = "**/aggregate_pubkeys.yaml";
 
   @ParameterizedTest(name = "{index}. aggregate pub keys {0} -> {1}")
   @MethodSource("readAggregatePubKeys")
-  void aggregatePubkeys(
-          List<PublicKey> pubkeys, PublicKey aggregatePubkeyExpected) {
+  void aggregatePubkeys(List<PublicKey> pubkeys, PublicKey aggregatePubkeyExpected) {
     PublicKey aggregatePubkeyActual = PublicKey.aggregate(pubkeys);
     assertEquals(aggregatePubkeyExpected, aggregatePubkeyActual);
   }
@@ -47,10 +45,8 @@ class aggregate_pubkeys extends TestSuite {
   @MustBeClosed
   static Stream<Arguments> readAggregatePubKeys() throws IOException {
     List<Pair<Class, List<String>>> arguments = new ArrayList<Pair<Class, List<String>>>();
-    arguments.add(
-            getParams(PublicKey[].class, Arrays.asList("input")));
-    arguments.add(
-            getParams(PublicKey.class, Arrays.asList("output")));
+    arguments.add(getParams(PublicKey[].class, Arrays.asList("input")));
+    arguments.add(getParams(PublicKey.class, Arrays.asList("output")));
 
     return findTests(testFile, arguments);
   }

@@ -13,7 +13,14 @@
 
 package pegasys.artemis.reference.bls;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import com.google.errorprone.annotations.MustBeClosed;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Stream;
 import kotlin.Pair;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -24,27 +31,18 @@ import tech.pegasys.artemis.util.mikuli.BLS12381;
 import tech.pegasys.artemis.util.mikuli.KeyPair;
 import tech.pegasys.artemis.util.mikuli.SecretKey;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Stream;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
 class sign_msg extends TestSuite {
   private static String testFile = "**/sign_msg.yaml";
 
   @ParameterizedTest(name = "{index}. sign messages {0} -> {1}")
   @MethodSource("readSignMessages")
-  void signMessages(
-          Bytes message, Bytes domain, SecretKey secretKey, Bytes signatureExpected) {
+  void signMessages(Bytes message, Bytes domain, SecretKey secretKey, Bytes signatureExpected) {
     Bytes signatureActual =
-            BLS12381
-                    .sign(new KeyPair(secretKey), message.toArray(), domain)
-                    .signature()
-                    .g2Point()
-                    .toBytesCompressed();
+        BLS12381
+            .sign(new KeyPair(secretKey), message.toArray(), domain)
+            .signature()
+            .g2Point()
+            .toBytesCompressed();
     assertEquals(signatureExpected, signatureActual);
   }
 
@@ -52,14 +50,10 @@ class sign_msg extends TestSuite {
   @MustBeClosed
   static Stream<Arguments> readSignMessages() throws IOException {
     List<Pair<Class, List<String>>> arguments = new ArrayList<Pair<Class, List<String>>>();
-    arguments.add(
-            getParams(Bytes.class, Arrays.asList("input", "message")));
-    arguments.add(
-            getParams(Bytes.class, Arrays.asList("input", "domain")));
-    arguments.add(
-            getParams(SecretKey.class, Arrays.asList("input", "privkey")));
-    arguments.add(
-            getParams(Bytes.class, Arrays.asList("output")));
+    arguments.add(getParams(Bytes.class, Arrays.asList("input", "message")));
+    arguments.add(getParams(Bytes.class, Arrays.asList("input", "domain")));
+    arguments.add(getParams(SecretKey.class, Arrays.asList("input", "privkey")));
+    arguments.add(getParams(Bytes.class, Arrays.asList("output")));
 
     return findTests(testFile, arguments);
   }
