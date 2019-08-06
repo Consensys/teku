@@ -13,14 +13,7 @@
 
 package pegasys.artemis.reference.ssz_static.core;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
 import com.google.errorprone.annotations.MustBeClosed;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Stream;
 import kotlin.Pair;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -53,6 +46,14 @@ import tech.pegasys.artemis.datastructures.state.HistoricalBatch;
 import tech.pegasys.artemis.datastructures.state.PendingAttestation;
 import tech.pegasys.artemis.datastructures.state.Validator;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Stream;
+
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 @ExtendWith(BouncyCastleExtension.class)
 class ssz_minimal_zero extends TestSuite {
 
@@ -79,13 +80,13 @@ class ssz_minimal_zero extends TestSuite {
   static Stream<Arguments> readMessageSSZAttestation() throws IOException {
     List<Pair<Class, List<String>>> arguments = new ArrayList<Pair<Class, List<String>>>();
     arguments.add(
-        getParams(Attestation.class, Arrays.asList("test_cases", "0", "Attestation", "value")));
+        getParams(Attestation.class, Arrays.asList("Attestation", "value")));
     arguments.add(
-        getParams(Bytes.class, Arrays.asList("test_cases", "0", "Attestation", "serialized")));
+        getParams(Bytes.class, Arrays.asList("Attestation", "serialized")));
     arguments.add(
-        getParams(Bytes32.class, Arrays.asList("test_cases", "0", "Attestation", "root")));
+        getParams(Bytes32.class, Arrays.asList("Attestation", "root")));
     arguments.add(
-        getParams(Bytes.class, Arrays.asList("test_cases", "0", "Attestation", "signing_root")));
+        getParams(Bytes.class, Arrays.asList("Attestation", "signing_root")));
 
     return findTests(testFile, arguments);
   }
@@ -107,11 +108,11 @@ class ssz_minimal_zero extends TestSuite {
     List<Pair<Class, List<String>>> arguments = new ArrayList<Pair<Class, List<String>>>();
     arguments.add(
         getParams(
-            AttestationData.class, Arrays.asList("test_cases", "1", "AttestationData", "value")));
+            AttestationData.class, Arrays.asList("AttestationData", "value")));
     arguments.add(
-        getParams(Bytes.class, Arrays.asList("test_cases", "1", "AttestationData", "serialized")));
+        getParams(Bytes.class, Arrays.asList("AttestationData", "serialized")));
     arguments.add(
-        getParams(Bytes32.class, Arrays.asList("test_cases", "1", "AttestationData", "root")));
+        getParams(Bytes32.class, Arrays.asList("AttestationData", "root")));
 
     return findTests(testFile, arguments);
   }
@@ -135,15 +136,15 @@ class ssz_minimal_zero extends TestSuite {
     arguments.add(
         getParams(
             AttestationDataAndCustodyBit.class,
-            Arrays.asList("test_cases", "2", "AttestationDataAndCustodyBit", "value")));
+            Arrays.asList("AttestationDataAndCustodyBit", "value")));
     arguments.add(
         getParams(
             Bytes.class,
-            Arrays.asList("test_cases", "2", "AttestationDataAndCustodyBit", "serialized")));
+            Arrays.asList("AttestationDataAndCustodyBit", "serialized")));
     arguments.add(
         getParams(
             Bytes32.class,
-            Arrays.asList("test_cases", "2", "AttestationDataAndCustodyBit", "root")));
+            Arrays.asList("AttestationDataAndCustodyBit", "root")));
 
     return findTests(testFile, arguments);
   }
@@ -166,11 +167,11 @@ class ssz_minimal_zero extends TestSuite {
     List<Pair<Class, List<String>>> arguments = new ArrayList<Pair<Class, List<String>>>();
     arguments.add(
         getParams(
-            AttesterSlashing.class, Arrays.asList("test_cases", "3", "AttesterSlashing", "value")));
+            AttesterSlashing.class, Arrays.asList("AttesterSlashing", "value")));
     arguments.add(
-        getParams(Bytes.class, Arrays.asList("test_cases", "3", "AttesterSlashing", "serialized")));
+        getParams(Bytes.class, Arrays.asList("AttesterSlashing", "serialized")));
     arguments.add(
-        getParams(Bytes32.class, Arrays.asList("test_cases", "3", "AttesterSlashing", "root")));
+            getParams(Bytes32.class, Arrays.asList("AttesterSlashing", "root")));
 
     return findTests(testFile, arguments);
   }
@@ -192,11 +193,11 @@ class ssz_minimal_zero extends TestSuite {
   static Stream<Arguments> readMessageSSZBeaconBlock() throws IOException {
     List<Pair<Class, List<String>>> arguments = new ArrayList<Pair<Class, List<String>>>();
     arguments.add(
-        getParams(BeaconBlock.class, Arrays.asList("test_cases", "4", "BeaconBlock", "value")));
+        getParams(BeaconBlock.class, Arrays.asList("BeaconBlock", "value")));
     arguments.add(
-        getParams(Bytes.class, Arrays.asList("test_cases", "4", "BeaconBlock", "serialized")));
+        getParams(Bytes.class, Arrays.asList("BeaconBlock", "serialized")));
     arguments.add(
-        getParams(Bytes32.class, Arrays.asList("test_cases", "4", "BeaconBlock", "root")));
+        getParams(Bytes32.class, Arrays.asList("BeaconBlock", "root")));
 
     return findTests(testFile, arguments);
   }
@@ -219,11 +220,11 @@ class ssz_minimal_zero extends TestSuite {
     List<Pair<Class, List<String>>> arguments = new ArrayList<Pair<Class, List<String>>>();
     arguments.add(
         getParams(
-            BeaconBlockBody.class, Arrays.asList("test_cases", "5", "BeaconBlockBody", "value")));
+            BeaconBlockBody.class, Arrays.asList("BeaconBlockBody", "value")));
     arguments.add(
-        getParams(Bytes.class, Arrays.asList("test_cases", "5", "BeaconBlockBody", "serialized")));
+        getParams(Bytes.class, Arrays.asList("BeaconBlockBody", "serialized")));
     arguments.add(
-        getParams(Bytes32.class, Arrays.asList("test_cases", "5", "BeaconBlockBody", "root")));
+        getParams(Bytes32.class, Arrays.asList("BeaconBlockBody", "root")));
 
     return findTests(testFile, arguments);
   }
@@ -247,12 +248,12 @@ class ssz_minimal_zero extends TestSuite {
     arguments.add(
         getParams(
             BeaconBlockHeader.class,
-            Arrays.asList("test_cases", "6", "BeaconBlockHeader", "value")));
+            Arrays.asList("BeaconBlockHeader", "value")));
     arguments.add(
         getParams(
-            Bytes.class, Arrays.asList("test_cases", "6", "BeaconBlockHeader", "serialized")));
+            Bytes.class, Arrays.asList("BeaconBlockHeader", "serialized")));
     arguments.add(
-        getParams(Bytes32.class, Arrays.asList("test_cases", "6", "BeaconBlockHeader", "root")));
+        getParams(Bytes32.class, Arrays.asList("BeaconBlockHeader", "root")));
 
     return findTests(testFile, arguments);
   }
@@ -274,11 +275,11 @@ class ssz_minimal_zero extends TestSuite {
   static Stream<Arguments> readMessageSSZBeaconState() throws IOException {
     List<Pair<Class, List<String>>> arguments = new ArrayList<Pair<Class, List<String>>>();
     arguments.add(
-        getParams(BeaconState.class, Arrays.asList("test_cases", "7", "BeaconState", "value")));
+        getParams(BeaconState.class, Arrays.asList("BeaconState", "value")));
     arguments.add(
-        getParams(Bytes.class, Arrays.asList("test_cases", "7", "BeaconState", "serialized")));
+        getParams(Bytes.class, Arrays.asList("BeaconState", "serialized")));
     arguments.add(
-        getParams(Bytes32.class, Arrays.asList("test_cases", "7", "BeaconState", "root")));
+        getParams(Bytes32.class, Arrays.asList("BeaconState", "root")));
 
     return findTests(testFile, arguments);
   }
@@ -299,10 +300,10 @@ class ssz_minimal_zero extends TestSuite {
   static Stream<Arguments> readMessageSSZCheckpoint() throws IOException {
     List<Pair<Class, List<String>>> arguments = new ArrayList<Pair<Class, List<String>>>();
     arguments.add(
-        getParams(Checkpoint.class, Arrays.asList("test_cases", "8", "Checkpoint", "value")));
+        getParams(Checkpoint.class, Arrays.asList("Checkpoint", "value")));
     arguments.add(
-        getParams(Bytes.class, Arrays.asList("test_cases", "8", "Checkpoint", "serialized")));
-    arguments.add(getParams(Bytes32.class, Arrays.asList("test_cases", "8", "Checkpoint", "root")));
+        getParams(Bytes.class, Arrays.asList("Checkpoint", "serialized")));
+    arguments.add(getParams(Bytes32.class, Arrays.asList("Checkpoint", "root")));
 
     return findTests(testFile, arguments);
   }
@@ -325,11 +326,11 @@ class ssz_minimal_zero extends TestSuite {
     List<Pair<Class, List<String>>> arguments = new ArrayList<Pair<Class, List<String>>>();
     arguments.add(
         getParams(
-            CompactCommittee.class, Arrays.asList("test_cases", "9", "CompactCommittee", "value")));
+            CompactCommittee.class, Arrays.asList("CompactCommittee", "value")));
     arguments.add(
-        getParams(Bytes.class, Arrays.asList("test_cases", "9", "CompactCommittee", "serialized")));
+        getParams(Bytes.class, Arrays.asList("CompactCommittee", "serialized")));
     arguments.add(
-        getParams(Bytes32.class, Arrays.asList("test_cases", "9", "CompactCommittee", "root")));
+        getParams(Bytes32.class, Arrays.asList("CompactCommittee", "root")));
 
     return findTests(testFile, arguments);
   }
@@ -350,10 +351,13 @@ class ssz_minimal_zero extends TestSuite {
   static Stream<Arguments> readMessageSSZCrosslink() throws IOException {
     List<Pair<Class, List<String>>> arguments = new ArrayList<Pair<Class, List<String>>>();
     arguments.add(
-        getParams(Crosslink.class, Arrays.asList("test_cases", "10", "Crosslink", "value")));
+        getParams(Crosslink.class, Arrays.asList(
+                "Crosslink", "value")));
     arguments.add(
-        getParams(Bytes.class, Arrays.asList("test_cases", "10", "Crosslink", "serialized")));
-    arguments.add(getParams(Bytes32.class, Arrays.asList("test_cases", "10", "Crosslink", "root")));
+        getParams(Bytes.class, Arrays.asList(
+                "Crosslink", "serialized")));
+    arguments.add(getParams(Bytes32.class, Arrays.asList(
+            "Crosslink", "root")));
 
     return findTests(testFile, arguments);
   }
@@ -373,10 +377,13 @@ class ssz_minimal_zero extends TestSuite {
   @MustBeClosed
   static Stream<Arguments> readMessageSSZDeposit() throws IOException {
     List<Pair<Class, List<String>>> arguments = new ArrayList<Pair<Class, List<String>>>();
-    arguments.add(getParams(Deposit.class, Arrays.asList("test_cases", "11", "Deposit", "value")));
+    arguments.add(getParams(Deposit.class, Arrays.asList(
+            "Deposit", "value")));
     arguments.add(
-        getParams(Bytes.class, Arrays.asList("test_cases", "11", "Deposit", "serialized")));
-    arguments.add(getParams(Bytes32.class, Arrays.asList("test_cases", "11", "Deposit", "root")));
+        getParams(Bytes.class, Arrays.asList(
+                "Deposit", "serialized")));
+    arguments.add(getParams(Bytes32.class, Arrays.asList(
+            "Deposit", "root")));
 
     return findTests(testFile, arguments);
   }
@@ -398,11 +405,14 @@ class ssz_minimal_zero extends TestSuite {
   static Stream<Arguments> readMessageSSZDepositData() throws IOException {
     List<Pair<Class, List<String>>> arguments = new ArrayList<Pair<Class, List<String>>>();
     arguments.add(
-        getParams(DepositData.class, Arrays.asList("test_cases", "12", "DepositData", "value")));
+        getParams(DepositData.class, Arrays.asList(
+                "DepositData", "value")));
     arguments.add(
-        getParams(Bytes.class, Arrays.asList("test_cases", "12", "DepositData", "serialized")));
+        getParams(Bytes.class, Arrays.asList(
+                "DepositData", "serialized")));
     arguments.add(
-        getParams(Bytes32.class, Arrays.asList("test_cases", "12", "DepositData", "root")));
+        getParams(Bytes32.class, Arrays.asList(
+                "DepositData", "root")));
 
     return findTests(testFile, arguments);
   }
@@ -423,10 +433,13 @@ class ssz_minimal_zero extends TestSuite {
   static Stream<Arguments> readMessageSSZEth1Data() throws IOException {
     List<Pair<Class, List<String>>> arguments = new ArrayList<Pair<Class, List<String>>>();
     arguments.add(
-        getParams(Eth1Data.class, Arrays.asList("test_cases", "13", "Eth1Data", "value")));
+        getParams(Eth1Data.class, Arrays.asList(
+                "Eth1Data", "value")));
     arguments.add(
-        getParams(Bytes.class, Arrays.asList("test_cases", "13", "Eth1Data", "serialized")));
-    arguments.add(getParams(Bytes32.class, Arrays.asList("test_cases", "13", "Eth1Data", "root")));
+        getParams(Bytes.class, Arrays.asList(
+                "Eth1Data", "serialized")));
+    arguments.add(getParams(Bytes32.class, Arrays.asList(
+            "Eth1Data", "root")));
 
     return findTests(testFile, arguments);
   }
@@ -445,9 +458,12 @@ class ssz_minimal_zero extends TestSuite {
   @MustBeClosed
   static Stream<Arguments> readMessageSSZFork() throws IOException {
     List<Pair<Class, List<String>>> arguments = new ArrayList<Pair<Class, List<String>>>();
-    arguments.add(getParams(Fork.class, Arrays.asList("test_cases", "14", "Fork", "value")));
-    arguments.add(getParams(Bytes.class, Arrays.asList("test_cases", "14", "Fork", "serialized")));
-    arguments.add(getParams(Bytes32.class, Arrays.asList("test_cases", "14", "Fork", "root")));
+    arguments.add(getParams(Fork.class, Arrays.asList(
+            "Fork", "value")));
+    arguments.add(getParams(Bytes.class, Arrays.asList(
+            "Fork", "serialized")));
+    arguments.add(getParams(Bytes32.class, Arrays.asList(
+            "Fork", "root")));
 
     return findTests(testFile, arguments);
   }
@@ -470,11 +486,14 @@ class ssz_minimal_zero extends TestSuite {
     List<Pair<Class, List<String>>> arguments = new ArrayList<Pair<Class, List<String>>>();
     arguments.add(
         getParams(
-            HistoricalBatch.class, Arrays.asList("test_cases", "15", "HistoricalBatch", "value")));
+            HistoricalBatch.class, Arrays.asList(
+                    "HistoricalBatch", "value")));
     arguments.add(
-        getParams(Bytes.class, Arrays.asList("test_cases", "15", "HistoricalBatch", "serialized")));
+        getParams(Bytes.class, Arrays.asList(
+                "HistoricalBatch", "serialized")));
     arguments.add(
-        getParams(Bytes32.class, Arrays.asList("test_cases", "15", "HistoricalBatch", "root")));
+        getParams(Bytes32.class, Arrays.asList(
+                "HistoricalBatch", "root")));
 
     return findTests(testFile, arguments);
   }
@@ -498,12 +517,15 @@ class ssz_minimal_zero extends TestSuite {
     arguments.add(
         getParams(
             IndexedAttestation.class,
-            Arrays.asList("test_cases", "16", "IndexedAttestation", "value")));
+            Arrays.asList(
+                    "IndexedAttestation", "value")));
     arguments.add(
         getParams(
-            Bytes.class, Arrays.asList("test_cases", "16", "IndexedAttestation", "serialized")));
+            Bytes.class, Arrays.asList(
+                    "IndexedAttestation", "serialized")));
     arguments.add(
-        getParams(Bytes32.class, Arrays.asList("test_cases", "16", "IndexedAttestation", "root")));
+        getParams(Bytes32.class, Arrays.asList(
+                "IndexedAttestation", "root")));
 
     return findTests(testFile, arguments);
   }
@@ -527,12 +549,15 @@ class ssz_minimal_zero extends TestSuite {
     arguments.add(
         getParams(
             PendingAttestation.class,
-            Arrays.asList("test_cases", "17", "PendingAttestation", "value")));
+            Arrays.asList(
+                    "PendingAttestation", "value")));
     arguments.add(
         getParams(
-            Bytes.class, Arrays.asList("test_cases", "17", "PendingAttestation", "serialized")));
+            Bytes.class, Arrays.asList(
+                    "PendingAttestation", "serialized")));
     arguments.add(
-        getParams(Bytes32.class, Arrays.asList("test_cases", "17", "PendingAttestation", "root")));
+        getParams(Bytes32.class, Arrays.asList(
+                "PendingAttestation", "root")));
 
     return findTests(testFile, arguments);
   }
@@ -556,12 +581,15 @@ class ssz_minimal_zero extends TestSuite {
     arguments.add(
         getParams(
             ProposerSlashing.class,
-            Arrays.asList("test_cases", "18", "ProposerSlashing", "value")));
+            Arrays.asList(
+                    "ProposerSlashing", "value")));
     arguments.add(
         getParams(
-            Bytes.class, Arrays.asList("test_cases", "18", "ProposerSlashing", "serialized")));
+            Bytes.class, Arrays.asList(
+                    "ProposerSlashing", "serialized")));
     arguments.add(
-        getParams(Bytes32.class, Arrays.asList("test_cases", "18", "ProposerSlashing", "root")));
+        getParams(Bytes32.class, Arrays.asList(
+                "ProposerSlashing", "root")));
 
     return findTests(testFile, arguments);
   }
@@ -582,10 +610,13 @@ class ssz_minimal_zero extends TestSuite {
   static Stream<Arguments> readMessageSSZTransfer() throws IOException {
     List<Pair<Class, List<String>>> arguments = new ArrayList<Pair<Class, List<String>>>();
     arguments.add(
-        getParams(Transfer.class, Arrays.asList("test_cases", "19", "Transfer", "value")));
+        getParams(Transfer.class, Arrays.asList(
+                "Transfer", "value")));
     arguments.add(
-        getParams(Bytes.class, Arrays.asList("test_cases", "19", "Transfer", "serialized")));
-    arguments.add(getParams(Bytes32.class, Arrays.asList("test_cases", "19", "Transfer", "root")));
+        getParams(Bytes.class, Arrays.asList(
+                "Transfer", "serialized")));
+    arguments.add(getParams(Bytes32.class, Arrays.asList(
+            "Transfer", "root")));
 
     return findTests(testFile, arguments);
   }
@@ -606,10 +637,13 @@ class ssz_minimal_zero extends TestSuite {
   static Stream<Arguments> readMessageSSZValidator() throws IOException {
     List<Pair<Class, List<String>>> arguments = new ArrayList<Pair<Class, List<String>>>();
     arguments.add(
-        getParams(Validator.class, Arrays.asList("test_cases", "20", "Validator", "value")));
+        getParams(Validator.class, Arrays.asList(
+                "Validator", "value")));
     arguments.add(
-        getParams(Bytes.class, Arrays.asList("test_cases", "20", "Validator", "serialized")));
-    arguments.add(getParams(Bytes32.class, Arrays.asList("test_cases", "20", "Validator", "root")));
+        getParams(Bytes.class, Arrays.asList(
+                "Validator", "serialized")));
+    arguments.add(getParams(Bytes32.class, Arrays.asList(
+            "Validator", "root")));
 
     return findTests(testFile, arguments);
   }
@@ -632,11 +666,14 @@ class ssz_minimal_zero extends TestSuite {
     List<Pair<Class, List<String>>> arguments = new ArrayList<Pair<Class, List<String>>>();
     arguments.add(
         getParams(
-            VoluntaryExit.class, Arrays.asList("test_cases", "21", "VoluntaryExit", "value")));
+            VoluntaryExit.class, Arrays.asList(
+                    "VoluntaryExit", "value")));
     arguments.add(
-        getParams(Bytes.class, Arrays.asList("test_cases", "21", "VoluntaryExit", "serialized")));
+        getParams(Bytes.class, Arrays.asList(
+                "VoluntaryExit", "serialized")));
     arguments.add(
-        getParams(Bytes32.class, Arrays.asList("test_cases", "21", "VoluntaryExit", "root")));
+        getParams(Bytes32.class, Arrays.asList(
+                "VoluntaryExit", "root")));
 
     return findTests(testFile, arguments);
   }
