@@ -13,13 +13,10 @@
 
 package tech.pegasys.artemis.metrics;
 
-import java.util.EnumSet;
-import java.util.HashSet;
 import java.util.Optional;
 import tech.pegasys.artemis.service.serviceutils.ServiceConfig;
 import tech.pegasys.artemis.service.serviceutils.ServiceInterface;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
-import tech.pegasys.pantheon.metrics.StandardMetricCategory;
 import tech.pegasys.pantheon.metrics.prometheus.MetricsConfiguration;
 import tech.pegasys.pantheon.metrics.prometheus.MetricsService;
 
@@ -34,12 +31,7 @@ public class MetricsServer implements ServiceInterface {
       return;
     }
     final MetricsConfiguration metricsConfig =
-        MetricsConfiguration.builder()
-            .enabled(artemisConfig.isMetricsEnabled())
-            .port(artemisConfig.getMetricsPort())
-            .host(artemisConfig.getMetricsNetworkInterface())
-            .metricCategories(new HashSet<>(EnumSet.allOf(StandardMetricCategory.class)))
-            .build();
+        MetricsSystemFactory.createMetricsConfiguration(artemisConfig);
     metricsService =
         Optional.of(
             MetricsService.create(config.getVertx(), metricsConfig, config.getMetricsSystem()));

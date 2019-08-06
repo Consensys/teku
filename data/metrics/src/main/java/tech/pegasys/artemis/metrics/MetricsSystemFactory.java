@@ -13,9 +13,11 @@
 
 package tech.pegasys.artemis.metrics;
 
-import java.util.EnumSet;
-import java.util.HashSet;
+import static java.util.stream.Collectors.toSet;
+
+import java.util.Set;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
+import tech.pegasys.pantheon.metrics.MetricCategory;
 import tech.pegasys.pantheon.metrics.MetricsSystem;
 import tech.pegasys.pantheon.metrics.StandardMetricCategory;
 import tech.pegasys.pantheon.metrics.prometheus.MetricsConfiguration;
@@ -33,11 +35,20 @@ public final class MetricsSystemFactory {
    * @param config the configuration for this Artemis instance.
    */
   public static MetricsSystem createMetricsSystem(ArtemisConfiguration config) {
-    final MetricsConfiguration metricsConfiguration =
-        MetricsConfiguration.builder()
-            .enabled(config.isMetricsEnabled())
-            .metricCategories(new HashSet<>(EnumSet.allOf(StandardMetricCategory.class)))
-            .build();
+    final MetricsConfiguration metricsConfiguration = createMetricsConfiguration(config);
     return PrometheusMetricsSystem.init(metricsConfiguration);
+  }
+
+  static MetricsConfiguration createMetricsConfiguration(final ArtemisConfiguration artemisConfig) {
+    final Set<MetricCategory> enabledCategories =
+        artemisConfig.getMetricCategories().stream()
+            .map(StandardMetricCategory::valueOf)
+            .collect(toSet());
+    return MetricsConfiguration.builder()
+        .enabled(artemisConfig.isMetricsEnabled())
+        .port(artemisConfig.getMetricsPort())
+        .host(artemisConfig.getMetricsNetworkInterface())
+        .metricCategories(enabledCategories)
+        .build();
   }
 }

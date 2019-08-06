@@ -13,6 +13,8 @@
 
 package tech.pegasys.artemis.util.config;
 
+import static java.util.Arrays.asList;
+
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URI;
@@ -123,6 +125,8 @@ public final class ArtemisConfiguration {
         8008,
         "Metrics port to expose metrics for Prometheus",
         PropertyValidator.inRange(0, 65535));
+    builder.addListOfString(
+        "metrics.metricsCategories", asList("JVM", "PROCESS"), "Metric categories to enable", null);
     // Outputs
     builder.addString(
         "output.logPath", ".", "Path to output the log file", PropertyValidator.isPresent());
@@ -356,6 +360,10 @@ public final class ArtemisConfiguration {
 
   public int getMetricsPort() {
     return config.getInteger("metrics.metricsPort");
+  }
+
+  public List<String> getMetricCategories() {
+    return config.getListOfString("metrics.metricsCategories");
   }
 
   /** @return the Path/filename of the output file. */
