@@ -50,30 +50,41 @@ public abstract class TestSuite {
   private static Stream<Arguments> prepareTests(
       InputStream in, List<Pair<Class, List<String>>> objectPath) throws IOException {
     ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
-    List<Map> allTests = (ArrayList)((Map)mapper.readerFor(Map.class).readValue(in)).get("test_cases");
-    return allTests.stream().filter(map -> {
-        return objectPath.stream().allMatch(pair -> {
-            Iterator<String> itr = pair.getSecond().iterator();
-            Object testObject = Map.copyOf(map);
-            while (itr.hasNext()) {
-                String param = itr.next();
-                testObject =  ((Map)testObject).get(param);
-                if(testObject == null) return false;
-            }
-            return testObject != null;
-        });
-    }).map(map -> {
-        return objectPath.stream().map(pair -> {
-            Iterator<String> itr = pair.getSecond().iterator();
-            Object testObject = Map.copyOf(map);
-            while (itr.hasNext()) {
-                String param = itr.next();
-                testObject =  ((Map)testObject).get(param);
-            }
-            Class classType = pair.getFirst();
-            return MapObjectUtil.convertMapToTypedObject(classType, testObject);
-        }).collect(Collectors.toList());
-    }).map(objects -> Arguments.of(objects.toArray()));
+    List<Map> allTests =
+        (ArrayList) ((Map) mapper.readerFor(Map.class).readValue(in)).get("test_cases");
+    return allTests.stream()
+        .filter(
+            map -> {
+              return objectPath.stream()
+                  .allMatch(
+                      pair -> {
+                        Iterator<String> itr = pair.getSecond().iterator();
+                        Object testObject = Map.copyOf(map);
+                        while (itr.hasNext()) {
+                          String param = itr.next();
+                          testObject = ((Map) testObject).get(param);
+                          if (testObject == null) return false;
+                        }
+                        return testObject != null;
+                      });
+            })
+        .map(
+            map -> {
+              return objectPath.stream()
+                  .map(
+                      pair -> {
+                        Iterator<String> itr = pair.getSecond().iterator();
+                        Object testObject = Map.copyOf(map);
+                        while (itr.hasNext()) {
+                          String param = itr.next();
+                          testObject = ((Map) testObject).get(param);
+                        }
+                        Class classType = pair.getFirst();
+                        return MapObjectUtil.convertMapToTypedObject(classType, testObject);
+                      })
+                  .collect(Collectors.toList());
+            })
+        .map(objects -> Arguments.of(objects.toArray()));
   }
 
 
