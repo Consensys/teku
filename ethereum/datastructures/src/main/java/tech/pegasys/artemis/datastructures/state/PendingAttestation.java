@@ -22,7 +22,6 @@ import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
-
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.Copyable;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;

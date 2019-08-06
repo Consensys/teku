@@ -223,7 +223,7 @@ public final class HashTreeUtil {
     // bitlist type.
     return mix_in_length(
         merkleize(bitfield_bytes(bytes), chunk_count(SSZTypes.BITLIST, maxSize, bytes)),
-        bytes.bitLength() - 1);
+        bytes.reverse().bitLength() - 1);
     // return mix_in_length(
     //     merkleize(bitfield_bytes(bytes), chunk_count(SSZTypes.BITLIST, bytes)),
     // bytes.bitLength());
@@ -320,14 +320,18 @@ public final class HashTreeUtil {
   private static List<Bytes32> bitfield_bytes(Bytes sszValues) {
     // TODO The following lines are a hack and can be fixed once we shift from Bytes to a real
     // bitlist type.
-    int shiftCount = 8 - ((sszValues.bitLength() - 1) % 8);
-    Bytes shiftedBitfield = sszValues.shiftLeft(shiftCount);
-    Bytes reversedBytes = Bytes.EMPTY;
-    for(int i = 0; i < shiftedBitfield.size(); ++i) {
-      reversedBytes = Bytes.concatenate(reversedBytes, Bytes.of(reverseByte(shiftedBitfield.get(i))));
-    }
-    return pack(reversedBytes);
-    // return pack(sszValues);
+
+    // Reverse byte order to big endian.
+    Bytes reversedBytes = sszValues.reverse();
+    int shiftCount = 8 - ((reversedBytes.bitLength() - 1) % 8);
+    // Left shift to remove leading one bit-marker when serializing bitlists.
+    Bytes truncatedBitfield = reversedBytes.shiftLeft(shiftCount);
+    // Right shift to return list back to normal (excluding marker bit).
+    Bytes resultantBitfield = truncatedBitfield.shiftRight(shiftCount);
+    // If removing marker bit allows bitfield to be packed in less bytes, trim as necessary.
+    Bytes trimmedBitfield = resultantBitfield.trimLeadingZeros();
+    // Turn bytes back into little endian, and pack.
+    return pack(trimmedBitfield.reverse());
   }
 
   private static byte reverseByte(int revByte) {
