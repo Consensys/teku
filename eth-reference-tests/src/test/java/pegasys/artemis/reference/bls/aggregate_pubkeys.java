@@ -13,39 +13,45 @@
 
 package pegasys.artemis.reference.bls;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
 import com.google.errorprone.annotations.MustBeClosed;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.stream.Stream;
-import org.apache.tuweni.bytes.Bytes;
+import kotlin.Pair;
+import org.apache.tuweni.junit.BouncyCastleExtension;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import pegasys.artemis.reference.TestSuite;
 import tech.pegasys.artemis.util.mikuli.PublicKey;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Stream;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+@ExtendWith(BouncyCastleExtension.class)
 class aggregate_pubkeys extends TestSuite {
+  private static String testFile = "**/aggregate_pubkeys.yaml";
 
   @ParameterizedTest(name = "{index}. aggregate pub keys {0} -> {1}")
   @MethodSource("readAggregatePubKeys")
-  void testAggregatePubKeys(ArrayList<String> input, String output) {
-
-    ArrayList<PublicKey> publicKeys = new ArrayList<>();
-    for (String pubkey : input) {
-      publicKeys.add(PublicKey.fromBytesCompressed(Bytes.fromHexString(pubkey)));
-    }
-
-    Bytes aggregatePublicKeyActualBytes =
-        PublicKey.aggregate(publicKeys).g1Point().toBytesCompressed();
-
-    Bytes aggregatePublicKeyExpectedBytes = Bytes.fromHexString(output);
-    assertEquals(aggregatePublicKeyExpectedBytes, aggregatePublicKeyActualBytes);
+  void aggregatePubkeys(
+          List<PublicKey> pubkeys, PublicKey aggregatePubkeyExpected) {
+    PublicKey aggregatePubkeyActual = PublicKey.aggregate(pubkeys);
+    assertEquals(aggregatePubkeyExpected, aggregatePubkeyActual);
   }
 
+  @SuppressWarnings({"unchecked", "rawtypes"})
   @MustBeClosed
-  private static Stream<Arguments> readAggregatePubKeys() throws IOException {
-    return findBLSTests("**/aggregate_pubkeys.yaml", "test_cases");
+  static Stream<Arguments> readAggregatePubKeys() throws IOException {
+    List<Pair<Class, List<String>>> arguments = new ArrayList<Pair<Class, List<String>>>();
+    arguments.add(
+            getParams(PublicKey[].class, Arrays.asList("input")));
+    arguments.add(
+            getParams(PublicKey.class, Arrays.asList("output")));
+
+    return findTests(testFile, arguments);
   }
 }

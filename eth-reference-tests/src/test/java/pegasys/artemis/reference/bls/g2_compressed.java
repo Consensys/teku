@@ -13,13 +13,8 @@
 
 package pegasys.artemis.reference.bls;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
 import com.google.errorprone.annotations.MustBeClosed;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.stream.Stream;
+import kotlin.Pair;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes48;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -28,27 +23,37 @@ import org.junit.jupiter.params.provider.MethodSource;
 import pegasys.artemis.reference.TestSuite;
 import tech.pegasys.artemis.util.mikuli.G2Point;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Stream;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 class g2_compressed extends TestSuite {
+  private static String testFile = "**/g2_compressed.yaml";
 
   @ParameterizedTest(name = "{index}. message hash to G2 compressed {0} -> {1}")
   @MethodSource("readMessageHashG2Compressed")
-  void testMessageHashToG2Compressed(
-      LinkedHashMap<String, String> input, ArrayList<String> output) {
-
-    Bytes domain = Bytes.fromHexString(input.get("domain"));
-    Bytes message = Bytes.fromHexString(input.get("message"));
-
-    G2Point actual = G2Point.hashToG2(message, domain);
-    Bytes48 xReExpected = Bytes48.leftPad(Bytes.fromHexString(output.get(0)));
-    Bytes48 xImExpected = Bytes48.leftPad(Bytes.fromHexString(output.get(1)));
+  void messageHashToG2Compressed(
+          G2Point g2Point, List<Bytes> output) {
+    Bytes48 xReExpected = Bytes48.leftPad(output.get(0));
+    Bytes48 xImExpected = Bytes48.leftPad(output.get(1));
     Bytes expectedBytes = Bytes.concatenate(xReExpected, xImExpected);
-    Bytes actualBytes = actual.toBytesCompressed();
-
+    Bytes actualBytes = g2Point.toBytesCompressed();
     assertEquals(expectedBytes, actualBytes);
   }
 
+  @SuppressWarnings({"unchecked", "rawtypes"})
   @MustBeClosed
-  private static Stream<Arguments> readMessageHashG2Compressed() throws IOException {
-    return findBLSTests("**/g2_compressed.yaml", "test_cases");
+  static Stream<Arguments> readMessageHashG2Compressed() throws IOException {
+    List<Pair<Class, List<String>>> arguments = new ArrayList<Pair<Class, List<String>>>();
+    arguments.add(
+            getParams(G2Point.class, Arrays.asList("input")));
+    arguments.add(
+            getParams(Bytes[].class, Arrays.asList("output")));
+
+    return findTests(testFile, arguments);
   }
 }
