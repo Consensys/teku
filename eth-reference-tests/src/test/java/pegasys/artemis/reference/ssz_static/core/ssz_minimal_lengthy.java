@@ -13,7 +13,14 @@
 
 package pegasys.artemis.reference.ssz_static.core;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import com.google.errorprone.annotations.MustBeClosed;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Stream;
 import kotlin.Pair;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -25,47 +32,35 @@ import org.junit.jupiter.params.provider.MethodSource;
 import pegasys.artemis.reference.TestSuite;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Stream;
-
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
 @ExtendWith(BouncyCastleExtension.class)
 class ssz_minimal_lengthy extends TestSuite {
-    private static String testFile = "**/ssz_minimal_lengthy.yaml";
+  private static String testFile = "**/ssz_minimal_lengthy.yaml";
 
-    @ParameterizedTest(name = "{index}. SSZ serialized, root, signing_root of Attestation")
-    @MethodSource("readMessageSSZAttestation")
-    void sszAttestationCheckSerializationRootAndSigningRoot(
-            Attestation attestation, Bytes serialized, Bytes32 root, Bytes signing_root) {
+  @ParameterizedTest(name = "{index}. SSZ serialized, root, signing_root of Attestation")
+  @MethodSource("readMessageSSZAttestation")
+  void sszAttestationCheckSerializationRootAndSigningRoot(
+      Attestation attestation, Bytes serialized, Bytes32 root, Bytes signing_root) {
 
-        assertTrue(
-                serialized.equals(attestation.toBytes()),
-                attestation.getClass().getName() + " failed the serialiaztion test");
-        assertTrue(
-                root.equals(attestation.hash_tree_root()),
-                attestation.getClass().getName() + " failed the root test");
-        assertTrue(
-                root.equals(attestation.signing_root("signature")),
-                attestation.getClass().getName() + " failed the signing_root test");
-    }
+    assertTrue(
+        serialized.equals(attestation.toBytes()),
+        attestation.getClass().getName() + " failed the serialiaztion test");
+    assertTrue(
+        root.equals(attestation.hash_tree_root()),
+        attestation.getClass().getName() + " failed the root test");
+    assertTrue(
+        root.equals(attestation.signing_root("signature")),
+        attestation.getClass().getName() + " failed the signing_root test");
+  }
 
-    @SuppressWarnings({"unchecked", "rawtypes"})
-    @MustBeClosed
-    static Stream<Arguments> readMessageSSZAttestation() throws IOException {
-        List<Pair<Class, List<String>>> arguments = new ArrayList<Pair<Class, List<String>>>();
-        arguments.add(
-                getParams(Attestation.class, Arrays.asList("Attestation", "value")));
-        arguments.add(
-                getParams(Bytes.class, Arrays.asList("Attestation", "serialized")));
-        arguments.add(
-                getParams(Bytes32.class, Arrays.asList("Attestation", "root")));
-        arguments.add(
-                getParams(Bytes.class, Arrays.asList("Attestation", "signing_root")));
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  @MustBeClosed
+  static Stream<Arguments> readMessageSSZAttestation() throws IOException {
+    List<Pair<Class, List<String>>> arguments = new ArrayList<Pair<Class, List<String>>>();
+    arguments.add(getParams(Attestation.class, Arrays.asList("Attestation", "value")));
+    arguments.add(getParams(Bytes.class, Arrays.asList("Attestation", "serialized")));
+    arguments.add(getParams(Bytes32.class, Arrays.asList("Attestation", "root")));
+    arguments.add(getParams(Bytes.class, Arrays.asList("Attestation", "signing_root")));
 
-        return findTests(testFile, arguments);
-    }
+    return findTests(testFile, arguments);
+  }
 }

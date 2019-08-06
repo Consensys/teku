@@ -18,7 +18,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import com.google.errorprone.annotations.MustBeClosed;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.stream.Stream;
+import kotlin.Pair;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -27,25 +30,22 @@ import pegasys.artemis.reference.TestSuite;
 import tech.pegasys.artemis.util.mikuli.Signature;
 
 class aggregate_sigs extends TestSuite {
+  private static String testFile = "**/aggregate_sigs.yaml";
 
-  @ParameterizedTest(name = "{index}. aggregate sig {0} -> {1}")
+  @ParameterizedTest(name = "{index}. aggregate sigs {0} -> {1}")
   @MethodSource("readAggregateSigs")
-  void testAggregateSig(ArrayList<String> input, String output) {
-
-    ArrayList<Signature> signatures = new ArrayList<>();
-    for (String sig : input) {
-      signatures.add(Signature.fromBytesCompressed(Bytes.fromHexString(sig)));
-    }
-
-    Bytes aggregateSignatureActualBytes =
-        Signature.aggregate(signatures).g2Point().toBytesCompressed();
-    Bytes aggregateSignatureExpectedBytes = Bytes.fromHexString(output);
-
-    assertEquals(aggregateSignatureExpectedBytes, aggregateSignatureActualBytes);
+  void aggregateSig(List<Signature> signatures, Bytes aggregateSignatureExpected) {
+    Bytes aggregateSignatureActual = Signature.aggregate(signatures).g2Point().toBytesCompressed();
+    assertEquals(aggregateSignatureExpected, aggregateSignatureActual);
   }
 
+  @SuppressWarnings({"unchecked", "rawtypes"})
   @MustBeClosed
-  private static Stream<Arguments> readAggregateSigs() throws IOException {
-    return findBLSTests("**/aggregate_sigs.yaml", "test_cases");
+  static Stream<Arguments> readAggregateSigs() throws IOException {
+    List<Pair<Class, List<String>>> arguments = new ArrayList<Pair<Class, List<String>>>();
+    arguments.add(getParams(Signature[].class, Arrays.asList("input")));
+    arguments.add(getParams(Bytes.class, Arrays.asList("output")));
+
+    return findTests(testFile, arguments);
   }
 }
