@@ -13,14 +13,7 @@
 
 package pegasys.artemis.reference.ssz_static.core;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
 import com.google.errorprone.annotations.MustBeClosed;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Stream;
 import kotlin.Pair;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -52,6 +45,14 @@ import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.datastructures.state.HistoricalBatch;
 import tech.pegasys.artemis.datastructures.state.PendingAttestation;
 import tech.pegasys.artemis.datastructures.state.Validator;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Stream;
+
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @ExtendWith(BouncyCastleExtension.class)
 class ssz_minimal_zero extends TestSuite {
@@ -472,7 +473,7 @@ class ssz_minimal_zero extends TestSuite {
         getParams(PendingAttestation.class, Arrays.asList("PendingAttestation", "value")));
     arguments.add(getParams(Bytes.class, Arrays.asList("PendingAttestation", "serialized")));
     arguments.add(getParams(Bytes32.class, Arrays.asList("PendingAttestation", "root")));
-
+    
     return findTests(testFile, arguments);
   }
 
