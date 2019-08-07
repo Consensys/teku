@@ -30,11 +30,7 @@ public class ServiceController {
   private final ExecutorService chainStorageExecutorService = Executors.newSingleThreadExecutor();
 
   // initialize/register all services
-  public <
-          U extends ServiceInterface,
-          V extends ServiceInterface,
-          W extends ServiceInterface,
-          M extends ServiceInterface>
+  public <U extends ServiceInterface, V extends ServiceInterface, W extends ServiceInterface>
       void initAll(
           EventBus eventBus,
           ServiceConfig config,
