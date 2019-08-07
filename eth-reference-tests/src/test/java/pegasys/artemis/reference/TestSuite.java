@@ -16,10 +16,6 @@ package pegasys.artemis.reference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.errorprone.annotations.MustBeClosed;
-import kotlin.Pair;
-import org.apache.tuweni.io.Resources;
-import org.junit.jupiter.params.provider.Arguments;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
@@ -30,6 +26,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import kotlin.Pair;
+import org.apache.tuweni.io.Resources;
+import org.junit.jupiter.params.provider.Arguments;
 
 public abstract class TestSuite {
 
