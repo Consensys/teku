@@ -231,7 +231,7 @@ public final class G2Point implements Group<G2Point> {
    * @param bytes the compressed serialised form of the point
    * @return the point
    */
-  static G2Point fromBytesCompressed(Bytes bytes) {
+  public static G2Point fromBytesCompressed(Bytes bytes) {
     checkArgument(
         bytes.size() == 2 * fpPointSize,
         "Expected %s bytes but received %s",

@@ -53,14 +53,8 @@ import tech.pegasys.artemis.util.mikuli.PublicKey;
 import tech.pegasys.artemis.util.mikuli.SecretKey;
 import tech.pegasys.artemis.util.mikuli.Signature;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-
 public class MapObjectUtil {
 
-  @SuppressWarnings({"unchecked", "rawtypes"})
   public static Object convertMapToTypedObject(Class classtype, Object object) {
     if (classtype.equals(Attestation.class)) return MapObjectUtil.getAttestation((Map) object);
     else if (classtype.equals(AttestationData.class)) return getAttestationData((Map) object);
@@ -80,16 +74,15 @@ public class MapObjectUtil {
     else if (classtype.equals(DepositData.class)) return getDepositData((Map) object);
     else if (classtype.equals(Eth1Data.class)) return getEth1Data((Map) object);
     else if (classtype.equals(Fork.class)) return getFork((Map) object);
-    else if (classtype.equals(G2Point.class)) return getG2Point(object);
+    else if (classtype.equals(G2Point.class)) return getG2Point((List) object);
     else if (classtype.equals(HistoricalBatch.class)) return getHistoricalBatch((Map) object);
     else if (classtype.equals(IndexedAttestation.class)) return getIndexedAttestation((Map) object);
     else if (classtype.equals(PendingAttestation.class)) return getPendingAttestation((Map) object);
     else if (classtype.equals(ProposerSlashing.class)) return getProposerSlashing((Map) object);
-    else if (classtype.equals(PublicKey.class))
-      return PublicKey.fromBytesCompressed(Bytes.fromHexString(object.toString()));
+    else if (classtype.equals(PublicKey.class)) return getPublicKey(object.toString());
     else if (classtype.equals(PublicKey[].class)) return getPublicKeyArray((List) object);
-    else if (classtype.equals(SecretKey.class))
-      return SecretKey.fromBytes(Bytes48.leftPad(Bytes.fromHexString(object.toString())));
+    else if (classtype.equals(SecretKey.class)) return getSecretKey(object.toString());
+    else if (classtype.equals(Signature.class)) return getSignature(object.toString());
     else if (classtype.equals(Signature[].class)) return getSignatureArray((List) object);
     else if (classtype.equals(Transfer.class)) return getTransfer((Map) object);
     else if (classtype.equals(Validator.class)) return getValidator((Map) object);
@@ -100,23 +93,17 @@ public class MapObjectUtil {
     return null;
   }
 
-  private static G2Point getG2Point(Object object) {
-    if (object.getClass().equals(ArrayList.class)) return makePoint((List) object);
-    return G2Point.hashToG2(
-        Bytes.fromHexString(((Map) object).get("message").toString()),
-        Bytes.fromHexString(((Map) object).get("domain").toString()));
-  }
+  private static G2Point getG2Point(List list) {
 
-  /**
-   * Utility for converting uncompressed test case data to a point
-   *
-   * <p>The test case data is not in standard form (Z = 1). This routine converts the input to a
-   * point and applies the affine transformation. This routine is for uncompressed input.
-   *
-   * @param coords an array of strings {xRe, xIm, yRe, yIm, zRe, zIm}
-   * @return the point corresponding to the input
-   */
-  private static G2Point makePoint(List list) {
+    // If we have only two elements then these are the compressed X_im and X_re coordinates
+    if (list.size() == 2) {
+      return G2Point.fromBytesCompressed(
+          Bytes.concatenate(
+              Bytes48.leftPad(Bytes.fromHexString(list.get(0).toString())),
+              Bytes48.leftPad(Bytes.fromHexString(list.get(1).toString()))));
+    }
+
+    // If we have three elements then these are the uncompressed complex X, Y and Z coords
     BIG xRe =
         BIG.fromBytes(
             Bytes48.leftPad(Bytes.fromHexString(((List) list.get(0)).get(0).toString())).toArray());
@@ -150,6 +137,7 @@ public class MapObjectUtil {
     return new G2Point(new ECP2(x, y));
   }
 
+  @SuppressWarnings({"unchecked"})
   private static List<Bytes> getBytesArray(List list) {
     return (List<Bytes>)
         list.stream()
@@ -157,20 +145,31 @@ public class MapObjectUtil {
             .collect(Collectors.toList());
   }
 
+  @SuppressWarnings({"unchecked"})
   private static List<PublicKey> getPublicKeyArray(List list) {
     return (List<PublicKey>)
-        list.stream()
-            .map(object -> PublicKey.fromBytesCompressed(Bytes.fromHexString(object.toString())))
-            .collect(Collectors.toList());
+        list.stream().map(object -> getPublicKey(object.toString())).collect(Collectors.toList());
   }
 
+  @SuppressWarnings({"unchecked"})
   private static List<Signature> getSignatureArray(List list) {
     return (List<Signature>)
-        list.stream()
-            .map(object -> Signature.fromBytesCompressed(Bytes.fromHexString(object.toString())))
-            .collect(Collectors.toList());
+        list.stream().map(object -> getSignature(object.toString())).collect(Collectors.toList());
   }
 
+  private static PublicKey getPublicKey(String s) {
+    return PublicKey.fromBytesCompressed(Bytes.fromHexString(s));
+  }
+
+  private static SecretKey getSecretKey(String s) {
+    return SecretKey.fromBytes(Bytes48.leftPad(Bytes.fromHexString(s)));
+  }
+
+  private static Signature getSignature(String s) {
+    return Signature.fromBytesCompressed(Bytes.fromHexString(s));
+  }
+
+  @SuppressWarnings({"unchecked"})
   private static List<Bytes32> getBytes32Array(List list) {
     return (List<Bytes32>)
         list.stream()
@@ -178,29 +177,27 @@ public class MapObjectUtil {
             .collect(Collectors.toList());
   }
 
+  @SuppressWarnings({"unchecked"})
   private static HistoricalBatch getHistoricalBatch(Map map) {
     List<Bytes32> block_roots =
         new ArrayList<Bytes32>(
             ((ArrayList<String>) map.get("block_roots"))
-                .stream()
-                    .map(e -> Bytes32.fromHexString(e.toString()))
-                    .collect(Collectors.toList()));
+                .stream().map(e -> Bytes32.fromHexString(e)).collect(Collectors.toList()));
     List<Bytes32> state_roots =
         new ArrayList<Bytes32>(
             ((ArrayList<String>) map.get("state_roots"))
-                .stream()
-                    .map(e -> Bytes32.fromHexString(e.toString()))
-                    .collect(Collectors.toList()));
+                .stream().map(e -> Bytes32.fromHexString(e)).collect(Collectors.toList()));
 
     return new HistoricalBatch(block_roots, state_roots);
   }
 
+  @SuppressWarnings({"unchecked"})
   private static CompactCommittee getCompactCommittee(Map map) {
     List<BLSPublicKey> pubkeys =
         new ArrayList<BLSPublicKey>(
             ((ArrayList<String>) map.get("pubkeys"))
                 .stream()
-                    .map(e -> BLSPublicKey.fromBytes(Bytes.fromHexString(e.toString())))
+                    .map(e -> BLSPublicKey.fromBytes(Bytes.fromHexString(e)))
                     .collect(Collectors.toList()));
     List<UnsignedLong> compact_validators =
         new ArrayList<Integer>((ArrayList<Integer>) map.get("compact_validators"))
@@ -208,6 +205,7 @@ public class MapObjectUtil {
     return new CompactCommittee(pubkeys, compact_validators);
   }
 
+  @SuppressWarnings({"unchecked"})
   private static BeaconState getBeaconState(Map map) {
     UnsignedLong genesis_time = UnsignedLong.valueOf(map.get("genesis_time").toString());
     UnsignedLong slot = UnsignedLong.valueOf(map.get("slot").toString());
@@ -217,21 +215,15 @@ public class MapObjectUtil {
     List<Bytes32> block_roots =
         new ArrayList<Bytes32>(
             ((ArrayList<String>) map.get("block_roots"))
-                .stream()
-                    .map(e -> Bytes32.fromHexString(e.toString()))
-                    .collect(Collectors.toList()));
+                .stream().map(e -> Bytes32.fromHexString(e)).collect(Collectors.toList()));
     List<Bytes32> state_roots =
         new ArrayList<Bytes32>(
             ((ArrayList<String>) map.get("state_roots"))
-                .stream()
-                    .map(e -> Bytes32.fromHexString(e.toString()))
-                    .collect(Collectors.toList()));
+                .stream().map(e -> Bytes32.fromHexString(e)).collect(Collectors.toList()));
     List<Bytes32> historical_roots =
         new ArrayList<Bytes32>(
             ((ArrayList<String>) map.get("historical_roots"))
-                .stream()
-                    .map(e -> Bytes32.fromHexString(e.toString()))
-                    .collect(Collectors.toList()));
+                .stream().map(e -> Bytes32.fromHexString(e)).collect(Collectors.toList()));
     Eth1Data eth1_data = getEth1Data((Map) map.get("eth1_data"));
     List<Eth1Data> eth1_data_votes =
         ((List<Map>) map.get("eth1_data_votes"))
@@ -248,21 +240,15 @@ public class MapObjectUtil {
     List<Bytes32> randao_mixes =
         new ArrayList<Bytes32>(
             ((ArrayList<String>) map.get("randao_mixes"))
-                .stream()
-                    .map(e -> Bytes32.fromHexString(e.toString()))
-                    .collect(Collectors.toList()));
+                .stream().map(e -> Bytes32.fromHexString(e)).collect(Collectors.toList()));
     List<Bytes32> active_index_roots =
         new ArrayList<Bytes32>(
             ((ArrayList<String>) map.get("active_index_roots"))
-                .stream()
-                    .map(e -> Bytes32.fromHexString(e.toString()))
-                    .collect(Collectors.toList()));
+                .stream().map(e -> Bytes32.fromHexString(e)).collect(Collectors.toList()));
     List<Bytes32> compact_committees_roots =
         new ArrayList<Bytes32>(
             ((ArrayList<String>) map.get("compact_committees_roots"))
-                .stream()
-                    .map(e -> Bytes32.fromHexString(e.toString()))
-                    .collect(Collectors.toList()));
+                .stream().map(e -> Bytes32.fromHexString(e)).collect(Collectors.toList()));
     List<UnsignedLong> slashings =
         new ArrayList<Integer>((ArrayList<Integer>) map.get("slashings"))
             .stream().map(e -> UnsignedLong.valueOf(e.longValue())).collect(Collectors.toList());
@@ -327,7 +313,7 @@ public class MapObjectUtil {
     Bytes32 withdrawal_credentials =
         Bytes32.fromHexString(map.get("withdrawal_credentials").toString());
     UnsignedLong effective_balance = UnsignedLong.valueOf(map.get("effective_balance").toString());
-    ;
+
     boolean slashed = Boolean.getBoolean((map.get("slashed")).toString());
     UnsignedLong activation_eligibility_epoch =
         UnsignedLong.valueOf(map.get("activation_eligibility_epoch").toString());
@@ -366,6 +352,7 @@ public class MapObjectUtil {
     return new BeaconBlock(slot, parent_root, state_root, body, signature);
   }
 
+  @SuppressWarnings({"unchecked"})
   private static BeaconBlockBody getBeaconBlockBody(Map map) {
     BLSSignature randao_reveal =
         BLSSignature.fromBytes(Bytes.fromHexString(map.get("randao_reveal").toString()));
@@ -425,13 +412,12 @@ public class MapObjectUtil {
     return new VoluntaryExit(epoch, validator_index, signature);
   }
 
+  @SuppressWarnings({"unchecked"})
   private static Deposit getDeposit(Map map) {
     List<Bytes32> proof =
         new ArrayList<Bytes32>(
             ((ArrayList<String>) map.get("proof"))
-                .stream()
-                    .map(e -> Bytes32.fromHexString(e.toString()))
-                    .collect(Collectors.toList()));
+                .stream().map(e -> Bytes32.fromHexString(e)).collect(Collectors.toList()));
     DepositData data = getDepositData((Map) map.get("data"));
 
     return new Deposit(proof, data);
@@ -482,6 +468,7 @@ public class MapObjectUtil {
         getIndexedAttestation((Map) map.get("attestation_2")));
   }
 
+  @SuppressWarnings({"unchecked"})
   private static IndexedAttestation getIndexedAttestation(Map map) {
     List<UnsignedLong> custody_bit_0_indices =
         new ArrayList<Integer>((ArrayList<Integer>) map.get("custody_bit_0_indices"))
@@ -496,7 +483,6 @@ public class MapObjectUtil {
     return new IndexedAttestation(custody_bit_0_indices, custody_bit_1_indices, data, signature);
   }
 
-  @SuppressWarnings({"unchecked", "rawtypes"})
   private static AttestationDataAndCustodyBit getAttestationDataAndCustodyBit(Map map) {
 
     return new AttestationDataAndCustodyBit(
@@ -504,8 +490,7 @@ public class MapObjectUtil {
         Boolean.getBoolean((map.get("custody_bit")).toString()));
   }
 
-  @SuppressWarnings({"unchecked", "rawtypes"})
-  public static Attestation getAttestation(Map map) {
+  private static Attestation getAttestation(Map map) {
     return new Attestation(
         Bytes.fromHexString(map.get("aggregation_bits").toString()),
         getAttestationData((Map) map.get("data")),
@@ -513,8 +498,7 @@ public class MapObjectUtil {
         BLSSignature.fromBytes(Bytes.fromHexString(map.get("signature").toString())));
   }
 
-  @SuppressWarnings({"unchecked", "rawtypes"})
-  public static AttestationData getAttestationData(Map map) {
+  private static AttestationData getAttestationData(Map map) {
 
     return new AttestationData(
         Bytes32.fromHexString(map.get("beacon_block_root").toString()),
@@ -523,14 +507,12 @@ public class MapObjectUtil {
         getCrossLink((Map) map.get("crosslink")));
   }
 
-  @SuppressWarnings({"unchecked", "rawtypes"})
-  public static Checkpoint getCheckpoint(Map map) {
+  private static Checkpoint getCheckpoint(Map map) {
     return new Checkpoint(
         UnsignedLong.valueOf(map.get("epoch").toString()),
         Bytes32.fromHexString(map.get("root").toString()));
   }
 
-  @SuppressWarnings({"unchecked", "rawtypes"})
   private static Crosslink getCrossLink(Map map) {
 
     return new Crosslink(
@@ -541,13 +523,11 @@ public class MapObjectUtil {
         Bytes32.fromHexString(map.get("data_root").toString()));
   }
 
-  @SuppressWarnings({"unchecked", "rawtypes"})
   public static Bytes32 getBytes32(Map testObject) {
 
     return Bytes32.fromHexString(testObject.toString());
   }
 
-  @SuppressWarnings({"unchecked", "rawtypes"})
   public static Bytes getBytes(Map testObject) {
 
     return Bytes.fromHexString(testObject.toString());
