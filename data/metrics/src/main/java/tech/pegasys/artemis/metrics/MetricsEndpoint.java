@@ -15,31 +15,46 @@ package tech.pegasys.artemis.metrics;
 
 import static java.util.stream.Collectors.toSet;
 
+import io.vertx.core.Vertx;
+import java.util.Optional;
 import java.util.Set;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 import tech.pegasys.pantheon.metrics.MetricCategory;
 import tech.pegasys.pantheon.metrics.MetricsSystem;
 import tech.pegasys.pantheon.metrics.StandardMetricCategory;
 import tech.pegasys.pantheon.metrics.prometheus.MetricsConfiguration;
+import tech.pegasys.pantheon.metrics.prometheus.MetricsService;
 import tech.pegasys.pantheon.metrics.prometheus.PrometheusMetricsSystem;
 
-/**
- * Registers a Prometheus REST endpoint that can be called remotely by Prometheus to gather metrics.
- */
-public final class MetricsSystemFactory {
+public class MetricsEndpoint {
 
-  /**
-   * Creates a new endpoint for the network interface and port provided. The endpoint lifecycle is
-   * tied to the lifecycle of the Vertx object.
-   *
-   * @param config the configuration for this Artemis instance.
-   */
-  public static MetricsSystem createMetricsSystem(ArtemisConfiguration config) {
-    final MetricsConfiguration metricsConfiguration = createMetricsConfiguration(config);
-    return PrometheusMetricsSystem.init(metricsConfiguration);
+  private final Optional<MetricsService> metricsService;
+  private final MetricsSystem metricsSystem;
+
+  public MetricsEndpoint(final ArtemisConfiguration artemisConfig, final Vertx vertx) {
+    final MetricsConfiguration metricsConfig = createMetricsConfiguration(artemisConfig);
+    metricsSystem = PrometheusMetricsSystem.init(metricsConfig);
+    if (metricsConfig.isEnabled()) {
+      metricsService = Optional.of(MetricsService.create(vertx, metricsConfig, metricsSystem));
+    } else {
+      metricsService = Optional.empty();
+    }
   }
 
-  static MetricsConfiguration createMetricsConfiguration(final ArtemisConfiguration artemisConfig) {
+  public void start() {
+    metricsService.ifPresent(MetricsService::start);
+  }
+
+  public void stop() {
+    metricsService.ifPresent(MetricsService::stop);
+  }
+
+  public MetricsSystem getMetricsSystem() {
+    return metricsSystem;
+  }
+
+  private MetricsConfiguration createMetricsConfiguration(
+      final ArtemisConfiguration artemisConfig) {
     final Set<MetricCategory> enabledCategories =
         artemisConfig.getMetricCategories().stream()
             .map(StandardMetricCategory::valueOf)

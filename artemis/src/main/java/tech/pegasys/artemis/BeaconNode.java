@@ -30,8 +30,7 @@ import tech.pegasys.artemis.data.provider.JSONProvider;
 import tech.pegasys.artemis.data.provider.ProviderTypes;
 import tech.pegasys.artemis.data.provider.RawRecordHandler;
 import tech.pegasys.artemis.datastructures.Constants;
-import tech.pegasys.artemis.metrics.MetricsServer;
-import tech.pegasys.artemis.metrics.MetricsSystemFactory;
+import tech.pegasys.artemis.metrics.MetricsEndpoint;
 import tech.pegasys.artemis.service.serviceutils.ServiceConfig;
 import tech.pegasys.artemis.service.serviceutils.ServiceController;
 import tech.pegasys.artemis.services.beaconchain.BeaconChainService;
@@ -40,7 +39,6 @@ import tech.pegasys.artemis.services.powchain.PowchainService;
 import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.cli.CommandLineArguments;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
-import tech.pegasys.pantheon.metrics.MetricsSystem;
 
 public class BeaconNode {
   private static final ALogger LOG = new ALogger(BeaconNode.class.getName());
@@ -59,6 +57,7 @@ public class BeaconNode {
   private EventBus eventBus;
   private FileProvider fileProvider;
   private EventHandler eventHandler;
+  private MetricsEndpoint metricsEndpoint;
 
   private CommandLineArguments cliArgs;
   private CommandLine commandLine;
@@ -73,8 +72,9 @@ public class BeaconNode {
 
     this.eventBus = new AsyncEventBus(threadPool);
 
-    final MetricsSystem metricsSystem = MetricsSystemFactory.createMetricsSystem(config);
-    this.serviceConfig = new ServiceConfig(eventBus, vertx, metricsSystem, config, cliArgs);
+    metricsEndpoint = new MetricsEndpoint(config, vertx);
+    this.serviceConfig =
+        new ServiceConfig(eventBus, vertx, metricsEndpoint.getMetricsSystem(), config, cliArgs);
     Constants.init(config);
     this.cliArgs = cliArgs;
     this.commandLine = commandLine;
@@ -109,15 +109,14 @@ public class BeaconNode {
   public void start() {
 
     try {
-
+      metricsEndpoint.start();
       // Initialize services
       serviceController.initAll(
           eventBus,
           serviceConfig,
           BeaconChainService.class,
           PowchainService.class,
-          ChainStorageService.class,
-          MetricsServer.class);
+          ChainStorageService.class);
       // Start services
       serviceController.startAll(cliArgs);
 
@@ -128,6 +127,7 @@ public class BeaconNode {
 
   public void stop() {
     serviceController.stopAll(cliArgs);
+    metricsEndpoint.stop();
     this.fileProvider.close();
   }
 }

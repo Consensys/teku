@@ -24,12 +24,10 @@ public class ServiceController {
   private ServiceInterface beaconChainService;
   private ServiceInterface powchainService;
   private ServiceInterface chainStorageService;
-  private ServiceInterface metricsService;
 
   private final ExecutorService beaconChainExecuterService = Executors.newSingleThreadExecutor();
   private final ExecutorService powchainExecuterService = Executors.newSingleThreadExecutor();
   private final ExecutorService chainStorageExecutorService = Executors.newSingleThreadExecutor();
-  private final ExecutorService metricsExecutorService = Executors.newSingleThreadExecutor();
 
   // initialize/register all services
   public <
@@ -42,23 +40,19 @@ public class ServiceController {
           ServiceConfig config,
           Class<U> beaconChainServiceType,
           Class<V> powchainServiceType,
-          Class<W> chainStorageServiceType,
-          Class<M> metricsServiceType) {
+          Class<W> chainStorageServiceType) {
     beaconChainService = ServiceFactory.getInstance(beaconChainServiceType).getInstance();
     powchainService = ServiceFactory.getInstance(powchainServiceType).getInstance();
     chainStorageService = ServiceFactory.getInstance(chainStorageServiceType).getInstance();
-    metricsService = ServiceFactory.getInstance(metricsServiceType).getInstance();
 
     beaconChainService.init(config);
     powchainService.init(config);
     chainStorageService.init(config);
-    metricsService.init(config);
   }
 
   public void startAll(CommandLineArguments cliArgs) {
 
     // start all services
-    metricsExecutorService.execute(metricsService);
     beaconChainExecuterService.execute(beaconChainService);
     powchainExecuterService.execute(powchainService);
     chainStorageExecutorService.execute(chainStorageService);
@@ -77,10 +71,6 @@ public class ServiceController {
     chainStorageExecutorService.shutdown();
     if (!Objects.isNull(chainStorageService)) {
       chainStorageService.stop();
-    }
-    metricsExecutorService.shutdown();
-    if (!Objects.isNull(metricsService)) {
-      metricsService.stop();
     }
   }
 }
