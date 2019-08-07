@@ -41,7 +41,6 @@ class aggregate_pubkeys extends TestSuite {
     assertEquals(aggregatePubkeyExpected, aggregatePubkeyActual);
   }
 
-  @SuppressWarnings({"unchecked", "rawtypes"})
   @MustBeClosed
   static Stream<Arguments> readAggregatePubKeys() throws IOException {
     List<Pair<Class, List<String>>> arguments = new ArrayList<Pair<Class, List<String>>>();

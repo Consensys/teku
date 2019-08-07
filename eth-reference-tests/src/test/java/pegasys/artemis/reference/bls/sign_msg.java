@@ -30,30 +30,26 @@ import pegasys.artemis.reference.TestSuite;
 import tech.pegasys.artemis.util.mikuli.BLS12381;
 import tech.pegasys.artemis.util.mikuli.KeyPair;
 import tech.pegasys.artemis.util.mikuli.SecretKey;
+import tech.pegasys.artemis.util.mikuli.Signature;
 
 class sign_msg extends TestSuite {
   private static String testFile = "**/sign_msg.yaml";
 
   @ParameterizedTest(name = "{index}. sign messages {0} -> {1}")
   @MethodSource("readSignMessages")
-  void signMessages(Bytes message, Bytes domain, SecretKey secretKey, Bytes signatureExpected) {
-    Bytes signatureActual =
-        BLS12381
-            .sign(new KeyPair(secretKey), message.toArray(), domain)
-            .signature()
-            .g2Point()
-            .toBytesCompressed();
+  void signMessages(Bytes message, Bytes domain, SecretKey secretKey, Signature signatureExpected) {
+    Signature signatureActual =
+        BLS12381.sign(new KeyPair(secretKey), message.toArray(), domain).signature();
     assertEquals(signatureExpected, signatureActual);
   }
 
-  @SuppressWarnings({"unchecked", "rawtypes"})
   @MustBeClosed
   static Stream<Arguments> readSignMessages() throws IOException {
     List<Pair<Class, List<String>>> arguments = new ArrayList<Pair<Class, List<String>>>();
     arguments.add(getParams(Bytes.class, Arrays.asList("input", "message")));
     arguments.add(getParams(Bytes.class, Arrays.asList("input", "domain")));
     arguments.add(getParams(SecretKey.class, Arrays.asList("input", "privkey")));
-    arguments.add(getParams(Bytes.class, Arrays.asList("output")));
+    arguments.add(getParams(Signature.class, Arrays.asList("output")));
 
     return findTests(testFile, arguments);
   }
