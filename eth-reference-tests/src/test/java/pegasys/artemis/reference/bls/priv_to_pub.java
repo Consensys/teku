@@ -39,7 +39,6 @@ class priv_to_pub extends TestSuite {
     assertEquals(pubkeyExpected, pubkeyActual);
   }
 
-  @SuppressWarnings({"unchecked", "rawtypes"})
   @MustBeClosed
   static Stream<Arguments> readPrivateToPublicKey() throws IOException {
     List<Pair<Class, List<String>>> arguments = new ArrayList<Pair<Class, List<String>>>();
