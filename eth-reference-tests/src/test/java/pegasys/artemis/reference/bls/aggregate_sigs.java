@@ -22,7 +22,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Stream;
 import kotlin.Pair;
-import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -34,17 +33,16 @@ class aggregate_sigs extends TestSuite {
 
   @ParameterizedTest(name = "{index}. aggregate sigs {0} -> {1}")
   @MethodSource("readAggregateSigs")
-  void aggregateSig(List<Signature> signatures, Bytes aggregateSignatureExpected) {
-    Bytes aggregateSignatureActual = Signature.aggregate(signatures).g2Point().toBytesCompressed();
+  void aggregateSig(List<Signature> signatures, Signature aggregateSignatureExpected) {
+    Signature aggregateSignatureActual = Signature.aggregate(signatures);
     assertEquals(aggregateSignatureExpected, aggregateSignatureActual);
   }
 
-  @SuppressWarnings({"unchecked", "rawtypes"})
   @MustBeClosed
   static Stream<Arguments> readAggregateSigs() throws IOException {
     List<Pair<Class, List<String>>> arguments = new ArrayList<Pair<Class, List<String>>>();
     arguments.add(getParams(Signature[].class, Arrays.asList("input")));
-    arguments.add(getParams(Bytes.class, Arrays.asList("output")));
+    arguments.add(getParams(Signature.class, Arrays.asList("output")));
 
     return findTests(testFile, arguments);
   }

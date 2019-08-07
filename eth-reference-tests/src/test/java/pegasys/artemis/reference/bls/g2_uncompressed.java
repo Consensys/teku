@@ -22,13 +22,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Stream;
 import kotlin.Pair;
-import java.util.LinkedHashMap;
-import java.util.stream.Stream;
-import org.apache.milagro.amcl.BLS381.BIG;
-import org.apache.milagro.amcl.BLS381.ECP2;
-import org.apache.milagro.amcl.BLS381.FP2;
 import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.bytes.Bytes48;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -40,15 +34,16 @@ class g2_uncompressed extends TestSuite {
 
   @ParameterizedTest(name = "{index}. message hash to G2 uncompressed {0} -> {1}")
   @MethodSource("readMessageHashG2Uncompressed")
-  void messageHashToG2Uncompressed(G2Point g2PointExpected, G2Point g2PointActual) {
+  void messageHashToG2Uncompressed(Bytes message, Bytes domain, G2Point g2PointExpected) {
+    G2Point g2PointActual = G2Point.hashToG2(message, domain);
     assertEquals(g2PointExpected, g2PointActual);
   }
 
-  @SuppressWarnings({"unchecked", "rawtypes"})
   @MustBeClosed
   static Stream<Arguments> readMessageHashG2Uncompressed() throws IOException {
     List<Pair<Class, List<String>>> arguments = new ArrayList<Pair<Class, List<String>>>();
-    arguments.add(getParams(G2Point.class, Arrays.asList("input")));
+    arguments.add(getParams(Bytes.class, Arrays.asList("input", "message")));
+    arguments.add(getParams(Bytes.class, Arrays.asList("input", "domain")));
     arguments.add(getParams(G2Point.class, Arrays.asList("output")));
 
     return findTests(testFile, arguments);

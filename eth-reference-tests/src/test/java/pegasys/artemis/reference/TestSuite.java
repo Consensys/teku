@@ -87,8 +87,6 @@ public abstract class TestSuite {
         .map(objects -> Arguments.of(objects.toArray()));
   }
 
-
-
   @SuppressWarnings({"unchecked", "rawtypes"})
   public static Pair<Class, List<String>> getParams(Class classType, List<String> args) {
     return new Pair<Class, List<String>>(classType, args);
