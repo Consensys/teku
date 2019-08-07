@@ -235,12 +235,12 @@ public class BeaconState implements SimpleOffsetSerializable {
   @Override
   public int getSSZFieldCount() {
     return SSZ_FIELD_COUNT
-            + fork.getSSZFieldCount()
-            + latest_block_header.getSSZFieldCount()
-            + eth1_data.getSSZFieldCount()
-            + previous_justified_checkpoint.getSSZFieldCount()
-            + current_justified_checkpoint.getSSZFieldCount()
-            + finalized_checkpoint.getSSZFieldCount();
+        + fork.getSSZFieldCount()
+        + latest_block_header.getSSZFieldCount()
+        + eth1_data.getSSZFieldCount()
+        + previous_justified_checkpoint.getSSZFieldCount()
+        + current_justified_checkpoint.getSSZFieldCount()
+        + finalized_checkpoint.getSSZFieldCount();
   }
 
   @Override

@@ -110,6 +110,7 @@ public class Constants {
   public static String DEPOSIT_SIM = "simulation";
 
   public static BLSSignature EMPTY_SIGNATURE = BLSSignature.empty();
+  public static UnsignedLong BYTES_PER_LENGTH_OFFSET = UnsignedLong.valueOf(4L);
 
   public static void init(ArtemisConfiguration config) {
     // Misc

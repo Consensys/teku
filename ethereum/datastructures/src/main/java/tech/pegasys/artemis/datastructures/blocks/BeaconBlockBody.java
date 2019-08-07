@@ -105,14 +105,14 @@ public class BeaconBlockBody implements SimpleOffsetSerializable {
     variablePartsList.addAll(Collections.nCopies(randao_reveal.getSSZFieldCount(), Bytes.EMPTY));
     variablePartsList.addAll(Collections.nCopies(eth1_data.getSSZFieldCount(), Bytes.EMPTY));
     variablePartsList.addAll(List.of(Bytes.EMPTY));
-    variablePartsList.addAll(List.of(
-            SimpleOffsetSerializer.serializeCompositeList(proposer_slashings),
-            SimpleOffsetSerializer.serializeCompositeList(attester_slashings),
-            SimpleOffsetSerializer.serializeCompositeList(attestations),
-            SimpleOffsetSerializer.serializeCompositeList(deposits),
-            SimpleOffsetSerializer.serializeCompositeList(voluntary_exits),
-            SimpleOffsetSerializer.serializeCompositeList(transfers)
-    ));
+    variablePartsList.addAll(
+        List.of(
+            SimpleOffsetSerializer.serializeFixedCompositeList(proposer_slashings),
+            SimpleOffsetSerializer.serializeVariableCompositeList(attester_slashings),
+            SimpleOffsetSerializer.serializeVariableCompositeList(attestations),
+            SimpleOffsetSerializer.serializeFixedCompositeList(deposits),
+            SimpleOffsetSerializer.serializeFixedCompositeList(voluntary_exits),
+            SimpleOffsetSerializer.serializeFixedCompositeList(transfers)));
     return variablePartsList;
   }
 

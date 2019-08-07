@@ -13,11 +13,13 @@
 
 package tech.pegasys.artemis.datastructures.util;
 
+import static tech.pegasys.artemis.datastructures.Constants.BYTES_PER_LENGTH_OFFSET;
+
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
-
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
@@ -66,11 +68,31 @@ public class SimpleOffsetSerializer {
         Bytes.concatenate(value.get_variable_parts().toArray(new Bytes[0])));
   }
 
-  public static Bytes serializeCompositeList(List<? extends SimpleOffsetSerializable> values) {
+  public static Bytes serializeFixedCompositeList(List<? extends SimpleOffsetSerializable> values) {
     return Bytes.fromHexString(
-            values
-                    .stream()
-                    .map(item -> serialize(item).toHexString().substring(2))
-                    .collect(Collectors.joining()));
+        values.stream()
+            .map(item -> serialize(item).toHexString().substring(2))
+            .collect(Collectors.joining()));
+  }
+
+  public static Bytes serializeVariableCompositeList(
+      List<? extends SimpleOffsetSerializable> values) {
+    List<Bytes> parts =
+        values.stream().map(SimpleOffsetSerializer::serialize).collect(Collectors.toList());
+    List<UnsignedLong> fixed_lengths = Collections.nCopies(values.size(), BYTES_PER_LENGTH_OFFSET);
+    List<Bytes> variable_parts = new ArrayList<>();
+    List<Bytes> fixed_parts = new ArrayList<>();
+    UnsignedLong offset = UnsignedLong.ZERO;
+    for (UnsignedLong length : fixed_lengths) {
+      offset = offset.plus(length);
+    }
+    for (Bytes part : parts) {
+      fixed_parts.add(SSZ.encodeUInt32(offset.longValue()));
+      variable_parts.add(part);
+      offset = offset.plus(UnsignedLong.valueOf(part.size()));
+    }
+    return Bytes.wrap(
+        Bytes.concatenate(fixed_parts.toArray(new Bytes[0])),
+        Bytes.concatenate(variable_parts.toArray(new Bytes[0])));
   }
 }
