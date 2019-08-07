@@ -29,6 +29,7 @@ import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
 import tech.pegasys.artemis.datastructures.operations.Transfer;
 import tech.pegasys.artemis.datastructures.operations.VoluntaryExit;
+import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
@@ -104,8 +105,14 @@ public class BeaconBlockBody implements SimpleOffsetSerializable {
     variablePartsList.addAll(Collections.nCopies(randao_reveal.getSSZFieldCount(), Bytes.EMPTY));
     variablePartsList.addAll(Collections.nCopies(eth1_data.getSSZFieldCount(), Bytes.EMPTY));
     variablePartsList.addAll(List.of(Bytes.EMPTY));
-    // TODO Replace the line below with the correct list serialization.
-    variablePartsList.addAll(Collections.nCopies(6, Bytes.EMPTY));
+    variablePartsList.addAll(List.of(
+            SimpleOffsetSerializer.serializeCompositeList(proposer_slashings),
+            SimpleOffsetSerializer.serializeCompositeList(attester_slashings),
+            SimpleOffsetSerializer.serializeCompositeList(attestations),
+            SimpleOffsetSerializer.serializeCompositeList(deposits),
+            SimpleOffsetSerializer.serializeCompositeList(voluntary_exits),
+            SimpleOffsetSerializer.serializeCompositeList(transfers)
+    ));
     return variablePartsList;
   }
 

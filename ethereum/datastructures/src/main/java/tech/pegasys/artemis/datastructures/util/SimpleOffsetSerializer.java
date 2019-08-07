@@ -16,6 +16,8 @@ package tech.pegasys.artemis.datastructures.util;
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
+
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
@@ -62,5 +64,13 @@ public class SimpleOffsetSerializer {
     return Bytes.wrap(
         Bytes.concatenate(interleaved_values.toArray(new Bytes[0])),
         Bytes.concatenate(value.get_variable_parts().toArray(new Bytes[0])));
+  }
+
+  public static Bytes serializeCompositeList(List<? extends SimpleOffsetSerializable> values) {
+    return Bytes.fromHexString(
+            values
+                    .stream()
+                    .map(item -> serialize(item).toHexString().substring(2))
+                    .collect(Collectors.joining()));
   }
 }

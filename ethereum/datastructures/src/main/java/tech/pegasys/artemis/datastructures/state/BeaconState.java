@@ -33,7 +33,7 @@ import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 public class BeaconState implements SimpleOffsetSerializable {
 
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
-  public static final int SSZ_FIELD_COUNT = 11;
+  public static final int SSZ_FIELD_COUNT = 19;
 
   // Versioning
   protected UnsignedLong genesis_time;
@@ -234,8 +234,13 @@ public class BeaconState implements SimpleOffsetSerializable {
 
   @Override
   public int getSSZFieldCount() {
-    // TODO Finish this stub.
-    return SSZ_FIELD_COUNT;
+    return SSZ_FIELD_COUNT
+            + fork.getSSZFieldCount()
+            + latest_block_header.getSSZFieldCount()
+            + eth1_data.getSSZFieldCount()
+            + previous_justified_checkpoint.getSSZFieldCount()
+            + current_justified_checkpoint.getSSZFieldCount()
+            + finalized_checkpoint.getSSZFieldCount();
   }
 
   @Override
