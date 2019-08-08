@@ -83,7 +83,7 @@ public class Constants {
   public static int MAX_ATTESTATIONS = 128;
   public static int MAX_DEPOSITS = 16;
   public static int MAX_VOLUNTARY_EXITS = 16;
-  public static int MAX_TRANSFERS = 16;
+  public static int MAX_TRANSFERS = 0;
 
   // Signature domains
   public static Bytes DOMAIN_BEACON_PROPOSER = int_to_bytes(0, 4);
