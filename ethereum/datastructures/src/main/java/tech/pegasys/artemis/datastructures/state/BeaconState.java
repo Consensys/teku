@@ -186,7 +186,7 @@ public class BeaconState implements SimpleOffsetSerializable {
       // Finality
       Bytes justification_bits,
       Checkpoint previous_justified_checkpoint,
-      Checkpoint current_justified_chekpoint,
+      Checkpoint current_justified_checkpoint,
       Checkpoint finalized_checkpoint) {
     // Versioning
     this.genesis_time = genesis_time;
@@ -228,7 +228,7 @@ public class BeaconState implements SimpleOffsetSerializable {
     // Finality
     this.justification_bits = justification_bits;
     this.previous_justified_checkpoint = previous_justified_checkpoint;
-    this.current_justified_checkpoint = current_justified_chekpoint;
+    this.current_justified_checkpoint = current_justified_checkpoint;
     this.finalized_checkpoint = finalized_checkpoint;
   }
 

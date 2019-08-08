@@ -51,6 +51,7 @@ import tech.pegasys.artemis.datastructures.operations.IndexedAttestation;
 import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
 import tech.pegasys.artemis.datastructures.operations.Transfer;
 import tech.pegasys.artemis.datastructures.operations.VoluntaryExit;
+import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.datastructures.state.Crosslink;
 import tech.pegasys.artemis.datastructures.state.Fork;
@@ -64,24 +65,6 @@ import tech.pegasys.artemis.util.bls.BLSSignature;
 class SSZStaticTestSuite {
 
   private static String testFile = "**/ssz_minimal_nil_tmp.yaml";
-
-  @ParameterizedTest(name = "{index}. BeaconBlock Hash Tree Root Test")
-  @MethodSource("readBeaconBlock")
-  void testBeaconBlockHashTreeRoot(
-      LinkedHashMap<String, Object> value, String serialized, String root) {
-    BeaconBlock beaconBlock = parseBeaconBlock(value);
-
-    assertEquals(Bytes32.fromHexString(root), beaconBlock.hash_tree_root());
-  }
-
-  @ParameterizedTest(name = "{index}. BeaconBlock Serialization Test")
-  @MethodSource("readBeaconBlock")
-  void testBeaconBlockSerialize(
-      LinkedHashMap<String, Object> value, String serialized, String root) {
-    BeaconBlock beaconBlock = parseBeaconBlock(value);
-
-    assertEquals(Bytes.fromHexString(serialized), SimpleOffsetSerializer.serialize(beaconBlock));
-  }
 
   @ParameterizedTest(name = "{index}. Eth1Data Hash Tree Root Test")
   @MethodSource("readEth1Data")
@@ -389,6 +372,42 @@ class SSZStaticTestSuite {
         Bytes.fromHexString(serialized), SimpleOffsetSerializer.serialize(beaconBlockBody));
   }
 
+  @ParameterizedTest(name = "{index}. BeaconBlock Hash Tree Root Test")
+  @MethodSource("readBeaconBlock")
+  void testBeaconBlockHashTreeRoot(
+      LinkedHashMap<String, Object> value, String serialized, String root) {
+    BeaconBlock beaconBlock = parseBeaconBlock(value);
+
+    assertEquals(Bytes32.fromHexString(root), beaconBlock.hash_tree_root());
+  }
+
+  @ParameterizedTest(name = "{index}. BeaconBlock Serialization Test")
+  @MethodSource("readBeaconBlock")
+  void testBeaconBlockSerialize(
+      LinkedHashMap<String, Object> value, String serialized, String root) {
+    BeaconBlock beaconBlock = parseBeaconBlock(value);
+
+    assertEquals(Bytes.fromHexString(serialized), SimpleOffsetSerializer.serialize(beaconBlock));
+  }
+
+  @ParameterizedTest(name = "{index}. BeaconState Hash Tree Root Test")
+  @MethodSource("readBeaconState")
+  void testBeaconStateHashTreeRoot(
+      LinkedHashMap<String, Object> value, String serialized, String root) {
+    BeaconState beaconState = parseBeaconState(value);
+
+    assertEquals(Bytes32.fromHexString(root), beaconState.hash_tree_root());
+  }
+
+  @ParameterizedTest(name = "{index}. BeaconState Serialization Test")
+  @MethodSource("readBeaconState")
+  void testBeaconStateSerialize(
+      LinkedHashMap<String, Object> value, String serialized, String root) {
+    BeaconState beaconState = parseBeaconState(value);
+
+    assertEquals(Bytes.fromHexString(serialized), SimpleOffsetSerializer.serialize(beaconState));
+  }
+
   private Eth1Data parseEth1Data(LinkedHashMap<String, Object> value) {
     Bytes32 depositRoot = Bytes32.fromHexString((String) value.get("deposit_root"));
     UnsignedLong depositCount = UnsignedLong.valueOf((BigInteger) value.get("deposit_count"));
@@ -421,19 +440,6 @@ class SSZStaticTestSuite {
 
     Deposit deposit = new Deposit(proof, data);
     return deposit;
-  }
-
-  @SuppressWarnings({"unchecked"})
-  private BeaconBlock parseBeaconBlock(LinkedHashMap<String, Object> value) {
-    UnsignedLong slot = UnsignedLong.valueOf((BigInteger) value.get("slot"));
-    Bytes32 parentRoot = Bytes32.fromHexString((String) value.get("parent_root"));
-    Bytes32 stateRoot = Bytes32.fromHexString((String) value.get("state_root"));
-    BeaconBlockBody blockBody =
-        parseBeaconBlockBody((LinkedHashMap<String, Object>) value.get("body"));
-    BLSSignature signatureMock = mockBLSSignature(value);
-
-    BeaconBlock block = new BeaconBlock(slot, parentRoot, stateRoot, blockBody, signatureMock);
-    return block;
   }
 
   private BeaconBlockHeader parseBeaconBlockHeader(LinkedHashMap<String, Object> value) {
@@ -655,6 +661,131 @@ class SSZStaticTestSuite {
     return beaconBlockBody;
   }
 
+  @SuppressWarnings({"unchecked"})
+  private BeaconBlock parseBeaconBlock(LinkedHashMap<String, Object> value) {
+    UnsignedLong slot = UnsignedLong.valueOf((BigInteger) value.get("slot"));
+    Bytes32 parentRoot = Bytes32.fromHexString((String) value.get("parent_root"));
+    Bytes32 stateRoot = Bytes32.fromHexString((String) value.get("state_root"));
+    BeaconBlockBody blockBody =
+        parseBeaconBlockBody((LinkedHashMap<String, Object>) value.get("body"));
+    BLSSignature signatureMock = mockBLSSignature(value);
+
+    BeaconBlock block = new BeaconBlock(slot, parentRoot, stateRoot, blockBody, signatureMock);
+    return block;
+  }
+
+  @SuppressWarnings({"unchecked"})
+  private BeaconState parseBeaconState(LinkedHashMap<String, Object> value) {
+    UnsignedLong genesisTime = UnsignedLong.valueOf((BigInteger) value.get("genesis_time"));
+    UnsignedLong slot = UnsignedLong.valueOf((BigInteger) value.get("slot"));
+    Fork fork = parseFork((LinkedHashMap<String, Object>) value.get("fork"));
+
+    BeaconBlockHeader latestBlockHeader =
+        parseBeaconBlockHeader((LinkedHashMap<String, Object>) value.get("latest_block_header"));
+    List<Bytes32> blockRoots =
+        ((List<String>) value.get("block_roots"))
+            .stream()
+                .map(proofString -> Bytes32.fromHexString(proofString))
+                .collect(Collectors.toList());
+    List<Bytes32> stateRoots =
+        ((List<String>) value.get("state_roots"))
+            .stream()
+                .map(proofString -> Bytes32.fromHexString(proofString))
+                .collect(Collectors.toList());
+    List<Bytes32> historicalRoots =
+        ((List<String>) value.get("historical_roots"))
+            .stream()
+                .map(proofString -> Bytes32.fromHexString(proofString))
+                .collect(Collectors.toList());
+
+    Eth1Data eth1Data = parseEth1Data((LinkedHashMap<String, Object>) value.get("eth1_data"));
+    List<Eth1Data> eth1DataVotes =
+        ((List<LinkedHashMap<String, Object>>) value.get("eth1_data_votes"))
+            .stream().map(map -> parseEth1Data(map)).collect(Collectors.toList());
+    UnsignedLong eth1DepositIndex =
+        UnsignedLong.valueOf((BigInteger) value.get("eth1_deposit_index"));
+
+    List<Validator> validators =
+        ((List<LinkedHashMap<String, Object>>) value.get("validators"))
+            .stream().map(map -> parseValidator(map)).collect(Collectors.toList());
+    List<UnsignedLong> balances =
+        ((List<BigInteger>) value.get("balances"))
+            .stream().map(index -> UnsignedLong.valueOf(index)).collect(Collectors.toList());
+
+    UnsignedLong startShard = UnsignedLong.valueOf((BigInteger) value.get("start_shard"));
+    List<Bytes32> randaoMixes =
+        ((List<String>) value.get("randao_mixes"))
+            .stream()
+                .map(proofString -> Bytes32.fromHexString(proofString))
+                .collect(Collectors.toList());
+    List<Bytes32> activeIndexRoots =
+        ((List<String>) value.get("active_index_roots"))
+            .stream()
+                .map(proofString -> Bytes32.fromHexString(proofString))
+                .collect(Collectors.toList());
+    List<Bytes32> compactCommitteesRoots =
+        ((List<String>) value.get("compact_committees_roots"))
+            .stream()
+                .map(proofString -> Bytes32.fromHexString(proofString))
+                .collect(Collectors.toList());
+
+    List<UnsignedLong> slashings =
+        ((List<BigInteger>) value.get("slashings"))
+            .stream().map(index -> UnsignedLong.valueOf(index)).collect(Collectors.toList());
+
+    List<PendingAttestation> previousEpochAttestations =
+        ((List<LinkedHashMap<String, Object>>) value.get("previous_epoch_attestations"))
+            .stream().map(map -> parsePendingAttestation(map)).collect(Collectors.toList());
+    List<PendingAttestation> currentEpochAttestations =
+        ((List<LinkedHashMap<String, Object>>) value.get("current_epoch_attestations"))
+            .stream().map(map -> parsePendingAttestation(map)).collect(Collectors.toList());
+
+    List<Crosslink> previousCrosslinks =
+        ((List<LinkedHashMap<String, Object>>) value.get("previous_crosslinks"))
+            .stream().map(map -> parseCrosslink(map)).collect(Collectors.toList());
+    List<Crosslink> currentCrosslinks =
+        ((List<LinkedHashMap<String, Object>>) value.get("current_crosslinks"))
+            .stream().map(map -> parseCrosslink(map)).collect(Collectors.toList());
+
+    Bytes serializedJustificationBits =
+        Bytes.fromHexString((String) value.get("justification_bits"));
+    Checkpoint previousJustifiedCheckpoint =
+        parseCheckpoint((LinkedHashMap<String, Object>) value.get("previous_justified_checkpoint"));
+    Checkpoint currentJustifiedCheckpoint =
+        parseCheckpoint((LinkedHashMap<String, Object>) value.get("current_justified_checkpoint"));
+    Checkpoint finalizedCheckpoint =
+        parseCheckpoint((LinkedHashMap<String, Object>) value.get("finalized_checkpoint"));
+
+    BeaconState beaconState =
+        new BeaconState(
+            genesisTime,
+            slot,
+            fork,
+            latestBlockHeader,
+            blockRoots,
+            stateRoots,
+            historicalRoots,
+            eth1Data,
+            eth1DataVotes,
+            eth1DepositIndex,
+            validators,
+            balances,
+            startShard,
+            randaoMixes,
+            activeIndexRoots,
+            compactCommitteesRoots,
+            slashings,
+            previousEpochAttestations,
+            currentEpochAttestations,
+            previousCrosslinks,
+            currentCrosslinks,
+            serializedJustificationBits,
+            previousJustifiedCheckpoint,
+            currentJustifiedCheckpoint,
+            finalizedCheckpoint);
+    return beaconState;
+  }
+
   private BLSPublicKey mockBLSPublicKey(LinkedHashMap<String, Object> value) {
     Bytes pubkeyBytes = Bytes.fromHexString((String) value.get("pubkey"));
     BLSPublicKey pubkeyMock = Mockito.mock(BLSPublicKey.class);
@@ -693,11 +824,6 @@ class SSZStaticTestSuite {
                 throw new UncheckedIOException(e);
               }
             });
-  }
-
-  @MustBeClosed
-  private static Stream<Arguments> readBeaconBlock() throws IOException {
-    return findTests(testFile, "BeaconBlock");
   }
 
   @MustBeClosed
@@ -783,6 +909,16 @@ class SSZStaticTestSuite {
   @MustBeClosed
   private static Stream<Arguments> readBeaconBlockBody() throws IOException {
     return findTests(testFile, "BeaconBlockBody");
+  }
+
+  @MustBeClosed
+  private static Stream<Arguments> readBeaconBlock() throws IOException {
+    return findTests(testFile, "BeaconBlock");
+  }
+
+  @MustBeClosed
+  private static Stream<Arguments> readBeaconState() throws IOException {
+    return findTests(testFile, "BeaconState");
   }
 
   @SuppressWarnings({"unchecked", "rawtypes"})
