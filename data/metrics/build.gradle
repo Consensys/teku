@@ -22,6 +22,7 @@ dependencies {
     implementation 'io.prometheus:simpleclient_vertx'
     implementation 'org.apache.logging.log4j:log4j-api'
     implementation 'org.apache.commons:commons-lang3'
+    implementation 'tech.pegasys.pantheon.internal:core'
     runtime 'org.apache.logging.log4j:log4j-core'
 
     test {
