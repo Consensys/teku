@@ -14,6 +14,7 @@
 package tech.pegasys.artemis.util.hashtree;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static java.lang.Long.max;
 import static java.lang.Math.toIntExact;
 import static java.nio.ByteOrder.LITTLE_ENDIAN;
 
@@ -22,6 +23,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.Hash;
@@ -50,6 +53,15 @@ public final class HashTreeUtil {
     BITLIST,
     BITVECTOR
   };
+
+  public static List<Bytes32> zerohashes = getZerohashes();
+
+  private static List<Bytes32> getZerohashes() {
+    List<Bytes32> zerohashes = new ArrayList<>();
+    zerohashes.add(Bytes32.ZERO);
+    IntStream.range(1, 100).forEach(i -> zerohashes.add(Hash.sha2_256(Bytes.concatenate(zerohashes.get(i - 1), zerohashes.get(i - 1)))));
+    return zerohashes;
+  }
 
   // BYTES_PER_CHUNK is rather tightly coupled to the value 32 due to the assumption that it fits in
   // the Byte32 type. Use care if this ever has to change.
@@ -132,19 +144,15 @@ public final class HashTreeUtil {
   public static Bytes32 hash_tree_root(SSZTypes sszType, long maxSize, List bytes) {
     switch (sszType) {
       case LIST_OF_COMPOSITE:
-        if (!bytes.isEmpty() && bytes.get(0) instanceof Merkleizable) {
           return hash_tree_root_list_composite_type(
               (List<Merkleizable>) bytes, maxSize, bytes.size());
-        }
-        break;
       default:
         throw new UnsupportedOperationException(
             "The maxSize parameter is only applicable for SSZ Lists.");
     }
-    return Bytes32.ZERO;
   }
 
-  public static Bytes32 merkleize(List<Bytes32> sszChunks, long limit) {
+  public static Bytes32 merkleize1(List<Bytes32> sszChunks, long limit) {
     List<Bytes32> mutableSSZChunks = new ArrayList<>(sszChunks);
 
     // A balanced binary tree must have a power of two number of leaves.
@@ -170,6 +178,47 @@ public final class HashTreeUtil {
 
     // Return the root element, which is at index 1. The math is easier this way.
     return mutableSSZChunks.get(1);
+  }
+
+  public static Bytes32 merkleize(List<Bytes32> chunks, long limit) {
+    int count = chunks.size();
+    if (limit == 0) return zerohashes.get(0);
+
+    int depth = Long.SIZE - Long.numberOfLeadingZeros(max(count - 1, 0));
+    int max_depth = Long.SIZE - Long.numberOfLeadingZeros(limit - 1);
+    List<Bytes32> tmp = new ArrayList<>();
+    IntStream.range(0, max_depth + 1).boxed().forEach(i -> tmp.add(null));
+
+    IntStream.range(0, count).forEach(i -> merge(chunks.get(i), i, tmp, count, depth));
+
+    if ((1 << depth) != count) {
+      merge(zerohashes.get(0), count, tmp, count, depth);
+    }
+
+    IntStream.range(depth, max_depth).forEach(j -> tmp.set(j + 1, Hash.sha2_256(Bytes.concatenate(tmp.get(j), zerohashes.get(j)))));
+
+    return tmp.get(max_depth);
+  }
+
+  private static void merge(Bytes32 h,
+                            int i,
+                            List<Bytes32> tmp,
+                            long count,
+                            int depth) {
+    int j = 0;
+    while (true) {
+      if ((i & (1 << j)) == 0) {
+        if (i == count && j < depth) {
+          h = Hash.sha2_256(Bytes.concatenate(h, zerohashes.get(j)));
+        } else {
+          break;
+        }
+      } else {
+        h = Hash.sha2_256(Bytes.concatenate(tmp.get(j), h));
+      }
+      j += 1;
+    }
+    tmp.set(j, h);
   }
 
   public static Bytes32 merkleize(List<Bytes32> sszChunks) {
