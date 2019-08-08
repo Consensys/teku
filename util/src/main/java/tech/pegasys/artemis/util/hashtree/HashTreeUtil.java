@@ -24,7 +24,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.Hash;
@@ -59,7 +58,12 @@ public final class HashTreeUtil {
   private static List<Bytes32> getZerohashes() {
     List<Bytes32> zerohashes = new ArrayList<>();
     zerohashes.add(Bytes32.ZERO);
-    IntStream.range(1, 100).forEach(i -> zerohashes.add(Hash.sha2_256(Bytes.concatenate(zerohashes.get(i - 1), zerohashes.get(i - 1)))));
+    IntStream.range(1, 100)
+        .forEach(
+            i ->
+                zerohashes.add(
+                    Hash.sha2_256(
+                        Bytes.concatenate(zerohashes.get(i - 1), zerohashes.get(i - 1)))));
     return zerohashes;
   }
 
@@ -144,8 +148,8 @@ public final class HashTreeUtil {
   public static Bytes32 hash_tree_root(SSZTypes sszType, long maxSize, List bytes) {
     switch (sszType) {
       case LIST_OF_COMPOSITE:
-          return hash_tree_root_list_composite_type(
-              (List<Merkleizable>) bytes, maxSize, bytes.size());
+        return hash_tree_root_list_composite_type(
+            (List<Merkleizable>) bytes, maxSize, bytes.size());
       default:
         throw new UnsupportedOperationException(
             "The maxSize parameter is only applicable for SSZ Lists.");
@@ -195,16 +199,14 @@ public final class HashTreeUtil {
       merge(zerohashes.get(0), count, tmp, count, depth);
     }
 
-    IntStream.range(depth, max_depth).forEach(j -> tmp.set(j + 1, Hash.sha2_256(Bytes.concatenate(tmp.get(j), zerohashes.get(j)))));
+    IntStream.range(depth, max_depth)
+        .forEach(
+            j -> tmp.set(j + 1, Hash.sha2_256(Bytes.concatenate(tmp.get(j), zerohashes.get(j)))));
 
     return tmp.get(max_depth);
   }
 
-  private static void merge(Bytes32 h,
-                            int i,
-                            List<Bytes32> tmp,
-                            long count,
-                            int depth) {
+  private static void merge(Bytes32 h, int i, List<Bytes32> tmp, long count, int depth) {
     int j = 0;
     while (true) {
       if ((i & (1 << j)) == 0) {
@@ -301,9 +303,7 @@ public final class HashTreeUtil {
   private static Bytes32 hash_tree_root_list_of_unsigned_long(
       List<? extends Bytes> bytes, long maxSize, int length) {
     return mix_in_length(
-        merkleize(
-            pack(bytes.toArray(new Bytes[0])),
-            chunk_count_list_unsigned_long(maxSize)),
+        merkleize(pack(bytes.toArray(new Bytes[0])), chunk_count_list_unsigned_long(maxSize)),
         length);
   }
 
