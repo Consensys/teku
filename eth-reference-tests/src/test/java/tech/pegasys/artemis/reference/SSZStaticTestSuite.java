@@ -38,6 +38,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Mockito;
+import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockBody;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
@@ -63,6 +64,24 @@ import tech.pegasys.artemis.util.bls.BLSSignature;
 class SSZStaticTestSuite {
 
   private static String testFile = "**/ssz_minimal_nil_tmp.yaml";
+
+  @ParameterizedTest(name = "{index}. BeaconBlock Hash Tree Root Test")
+  @MethodSource("readBeaconBlock")
+  void testBeaconBlockHashTreeRoot(
+      LinkedHashMap<String, Object> value, String serialized, String root) {
+    BeaconBlock beaconBlock = parseBeaconBlock(value);
+
+    assertEquals(Bytes32.fromHexString(root), beaconBlock.hash_tree_root());
+  }
+
+  @ParameterizedTest(name = "{index}. BeaconBlock Serialization Test")
+  @MethodSource("readBeaconBlock")
+  void testBeaconBlockSerialize(
+      LinkedHashMap<String, Object> value, String serialized, String root) {
+    BeaconBlock beaconBlock = parseBeaconBlock(value);
+
+    assertEquals(Bytes.fromHexString(serialized), SimpleOffsetSerializer.serialize(beaconBlock));
+  }
 
   @ParameterizedTest(name = "{index}. Eth1Data Hash Tree Root Test")
   @MethodSource("readEth1Data")
@@ -404,6 +423,19 @@ class SSZStaticTestSuite {
     return deposit;
   }
 
+  @SuppressWarnings({"unchecked"})
+  private BeaconBlock parseBeaconBlock(LinkedHashMap<String, Object> value) {
+    UnsignedLong slot = UnsignedLong.valueOf((BigInteger) value.get("slot"));
+    Bytes32 parentRoot = Bytes32.fromHexString((String) value.get("parent_root"));
+    Bytes32 stateRoot = Bytes32.fromHexString((String) value.get("state_root"));
+    BeaconBlockBody blockBody =
+        parseBeaconBlockBody((LinkedHashMap<String, Object>) value.get("body"));
+    BLSSignature signatureMock = mockBLSSignature(value);
+
+    BeaconBlock block = new BeaconBlock(slot, parentRoot, stateRoot, blockBody, signatureMock);
+    return block;
+  }
+
   private BeaconBlockHeader parseBeaconBlockHeader(LinkedHashMap<String, Object> value) {
     UnsignedLong slot = UnsignedLong.valueOf((BigInteger) value.get("slot"));
     Bytes32 parentRoot = Bytes32.fromHexString((String) value.get("parent_root"));
@@ -661,6 +693,11 @@ class SSZStaticTestSuite {
                 throw new UncheckedIOException(e);
               }
             });
+  }
+
+  @MustBeClosed
+  private static Stream<Arguments> readBeaconBlock() throws IOException {
+    return findTests(testFile, "BeaconBlock");
   }
 
   @MustBeClosed
