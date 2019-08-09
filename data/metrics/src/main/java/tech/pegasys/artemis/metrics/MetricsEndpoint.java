@@ -15,7 +15,11 @@ package tech.pegasys.artemis.metrics;
 
 import static java.util.stream.Collectors.toSet;
 
+import com.google.common.collect.ImmutableMap;
 import io.vertx.core.Vertx;
+import java.util.EnumSet;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
@@ -30,6 +34,14 @@ public class MetricsEndpoint {
 
   private final Optional<MetricsService> metricsService;
   private final MetricsSystem metricsSystem;
+  private static final Map<String, MetricCategory> SUPPORTED_CATEGORIES;
+
+  static {
+    final ImmutableMap.Builder<String, MetricCategory> builder = ImmutableMap.builder();
+    addCategories(builder, StandardMetricCategory.class);
+    addCategories(builder, ArtemisMetricCategory.class);
+    SUPPORTED_CATEGORIES = builder.build();
+  }
 
   public MetricsEndpoint(final ArtemisConfiguration artemisConfig, final Vertx vertx) {
     final MetricsConfiguration metricsConfig = createMetricsConfiguration(artemisConfig);
@@ -55,15 +67,23 @@ public class MetricsEndpoint {
 
   private MetricsConfiguration createMetricsConfiguration(
       final ArtemisConfiguration artemisConfig) {
-    final Set<MetricCategory> enabledCategories =
-        artemisConfig.getMetricCategories().stream()
-            .map(StandardMetricCategory::valueOf)
-            .collect(toSet());
     return MetricsConfiguration.builder()
         .enabled(artemisConfig.isMetricsEnabled())
         .port(artemisConfig.getMetricsPort())
         .host(artemisConfig.getMetricsNetworkInterface())
-        .metricCategories(enabledCategories)
+        .metricCategories(getEnabledMetricCategories(artemisConfig))
         .build();
+  }
+
+  private Set<MetricCategory> getEnabledMetricCategories(final ArtemisConfiguration artemisConfig) {
+    return artemisConfig.getMetricCategories().stream()
+        .map(SUPPORTED_CATEGORIES::get)
+        .filter(Objects::nonNull)
+        .collect(toSet());
+  }
+
+  private static <T extends Enum<T> & MetricCategory> void addCategories(
+      ImmutableMap.Builder<String, MetricCategory> builder, Class<T> categoryEnum) {
+    EnumSet.allOf(categoryEnum).forEach(category -> builder.put(category.name(), category));
   }
 }
