@@ -73,6 +73,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
@@ -83,7 +84,6 @@ import tech.pegasys.artemis.datastructures.state.PendingAttestation;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
-import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
 
 public final class EpochProcessorUtil {
 
@@ -782,8 +782,11 @@ public final class EpochProcessorUtil {
         .getActive_index_roots()
         .set(
             index_root_position,
-            HashTreeUtil.hash_tree_root(
-                SSZTypes.LIST_OF_BASIC, Constants.VALIDATOR_REGISTRY_LIMIT, indices_list));
+            HashTreeUtil.hash_tree_root_list_ul(
+                Constants.VALIDATOR_REGISTRY_LIMIT,
+                indices_list.stream()
+                    .map(elem -> SSZ.encodeUInt64(elem))
+                    .collect(Collectors.toList())));
 
     // Set committees root
     int committee_root_position =

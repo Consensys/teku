@@ -45,7 +45,6 @@ import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.decrease_b
 import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.get_active_validator_indices;
 import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.increase_balance;
 import static tech.pegasys.artemis.util.bls.BLSVerify.bls_verify;
-import static tech.pegasys.artemis.util.hashtree.HashTreeUtil.hash_tree_root;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.primitives.UnsignedLong;
@@ -58,6 +57,7 @@ import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.Hash;
+import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockBody;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
@@ -68,7 +68,7 @@ import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
-import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
+import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 
 public class BeaconStateUtil {
 
@@ -123,7 +123,9 @@ public class BeaconStateUtil {
     List<Integer> indices_list =
         get_active_validator_indices(state, UnsignedLong.valueOf(GENESIS_EPOCH));
     Bytes32 active_index_root =
-        hash_tree_root(SSZTypes.LIST_OF_BASIC, Constants.VALIDATOR_REGISTRY_LIMIT, indices_list);
+        HashTreeUtil.hash_tree_root_list_ul(
+            Constants.VALIDATOR_REGISTRY_LIMIT,
+            indices_list.stream().map(elem -> SSZ.encodeUInt64(elem)).collect(Collectors.toList()));
     Bytes32 committee_root =
         get_compact_committees_root(state, UnsignedLong.valueOf(GENESIS_EPOCH));
     IntStream.range(0, EPOCHS_PER_HISTORICAL_VECTOR)
