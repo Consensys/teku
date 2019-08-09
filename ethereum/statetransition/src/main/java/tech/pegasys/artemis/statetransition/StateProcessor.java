@@ -38,6 +38,8 @@ import tech.pegasys.artemis.datastructures.util.BeaconBlockUtil;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.datastructures.util.DepositUtil;
+import tech.pegasys.artemis.metrics.ArtemisMetricCategory;
+import tech.pegasys.artemis.metrics.SettableGauge;
 import tech.pegasys.artemis.pow.api.Eth2GenesisEvent;
 import tech.pegasys.artemis.pow.event.Eth2Genesis;
 import tech.pegasys.artemis.service.serviceutils.ServiceConfig;
@@ -50,6 +52,10 @@ import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 /** Class to manage the state tree and initiate state transitions */
 public class StateProcessor {
 
+  private final SettableGauge currentSlotGauge;
+  private final SettableGauge currentJustifiedEpoch;
+  private final SettableGauge currentFinalizedEpoch;
+  private final SettableGauge previousJustifiedEpoch;
   private BeaconState headState; // state chosen by lmd ghost to build and attest on
   private BeaconBlock headBlock; // block chosen by lmd ghost to build and attest on
   private Bytes32 finalizedStateRoot; // most recent finalized state root
@@ -75,6 +81,31 @@ public class StateProcessor {
     this.publicKey = config.getKeyPair().publicKey();
     this.stateTransition = new StateTransition(printEnabled);
     this.store = store;
+    currentSlotGauge =
+        SettableGauge.create(
+            config.getMetricsSystem(),
+            ArtemisMetricCategory.BEACONCHAIN,
+            "current_slot",
+            "Latest slot recorded by the beacon chain");
+
+    currentJustifiedEpoch =
+        SettableGauge.create(
+            config.getMetricsSystem(),
+            ArtemisMetricCategory.BEACONCHAIN,
+            "current_justified_epoch",
+            "Current justified epoch");
+    currentFinalizedEpoch =
+        SettableGauge.create(
+            config.getMetricsSystem(),
+            ArtemisMetricCategory.BEACONCHAIN,
+            "current_finalized_epoch",
+            "Current finalized epoch");
+    previousJustifiedEpoch =
+        SettableGauge.create(
+            config.getMetricsSystem(),
+            ArtemisMetricCategory.BEACONCHAIN,
+            "current_prev_justified_epoch",
+            "Current previously justified epoch");
     this.eventBus.register(this);
   }
 
@@ -132,6 +163,7 @@ public class StateProcessor {
     long startTime = System.currentTimeMillis();
     this.nodeSlot = this.nodeSlot.plus(UnsignedLong.ONE);
     this.nodeTime = this.nodeTime.plus(UnsignedLong.valueOf(Constants.SECONDS_PER_SLOT));
+    this.currentSlotGauge.set(this.nodeSlot.doubleValue());
 
     STDOUT.log(Level.INFO, "******* Slot Event *******", ALogger.Color.WHITE);
     STDOUT.log(Level.INFO, "Node time:                             " + nodeTime);
@@ -153,10 +185,14 @@ public class StateProcessor {
 
     // Get head block's state, and initialize a newHeadState variable to run state transition on
     BeaconState headBlockState = store.getState(headBlock.getState_root()).get();
-    Long justifiedEpoch = headBlockState.getCurrent_justified_epoch().longValue();
-    Long finalizedEpoch = headBlockState.getFinalized_epoch().longValue();
+    long justifiedEpoch = headBlockState.getCurrent_justified_epoch().longValue();
+    long finalizedEpoch = headBlockState.getFinalized_epoch().longValue();
     STDOUT.log(Level.INFO, "Justified block epoch:                 " + justifiedEpoch);
     STDOUT.log(Level.INFO, "Finalized block epoch:                 " + finalizedEpoch);
+
+    previousJustifiedEpoch.set(headBlockState.getPrevious_justified_epoch().doubleValue());
+    currentJustifiedEpoch.set(justifiedEpoch);
+    currentFinalizedEpoch.set(finalizedEpoch);
 
     BeaconStateWithCache newHeadState =
         BeaconStateWithCache.deepCopy((BeaconStateWithCache) headBlockState);
@@ -283,6 +319,7 @@ public class StateProcessor {
             store.getProcessedBlock(currentJustifiedBlockRoot).get().getState_root();
         this.finalizedStateRoot = store.getProcessedBlock(finalizedBlockRoot).get().getState_root();
       } catch (IllegalArgumentException e) {
+        e.printStackTrace();
         STDOUT.log(
             Level.FATAL,
             "Can't update justified and finalized block roots" + e.toString(),
