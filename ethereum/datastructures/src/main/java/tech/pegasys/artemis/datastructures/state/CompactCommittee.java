@@ -131,14 +131,13 @@ public class CompactCommittee
     return HashTreeUtil.merkleize(
         Arrays.asList(
             HashTreeUtil.hash_tree_root(
-                SSZTypes.LIST_OF_COMPOSITE,
-                Constants.MAX_VALIDATORS_PER_COMMITTEE,
+                SSZTypes.VECTOR_OF_BASIC,
                 pubkeys.stream()
                     .map(BLSPublicKey::toBytes)
                     .map(item -> SSZ.encodeBytes(item))
-                    .collect(Collectors.toList())),
-            HashTreeUtil.hash_tree_root(
-                SSZTypes.LIST_OF_BASIC,
+                    .collect(Collectors.toList())
+                    .toArray(new Bytes[0])),
+            HashTreeUtil.hash_tree_root_list_ul(
                 Constants.MAX_VALIDATORS_PER_COMMITTEE,
                 compact_validators.stream()
                     .map(item -> SSZ.encodeUInt64(item.longValue()))
