@@ -319,7 +319,6 @@ public class StateProcessor {
             store.getProcessedBlock(currentJustifiedBlockRoot).get().getState_root();
         this.finalizedStateRoot = store.getProcessedBlock(finalizedBlockRoot).get().getState_root();
       } catch (IllegalArgumentException e) {
-        e.printStackTrace();
         STDOUT.log(
             Level.FATAL,
             "Can't update justified and finalized block roots" + e.toString(),
