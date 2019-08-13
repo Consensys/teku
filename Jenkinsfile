@@ -55,6 +55,16 @@ try {
                     // Disable Artemis Runtime Tests During Upgrade
                     // sh './artemis/src/main/resources/artemisTestScript.sh'
                 }
+                stage('Build Docker Image') {
+                    sh './gradlew --no-daemon --parallel distDocker'
+                }
+                if (env.BRANCH_NAME == "master") {
+                    stage('Push Docker Image') {
+                        docker.withRegistry(registry, userAccount) {
+                            docker.image("pegasyseng/artemis:develop").push()
+                        }
+                    }
+                }
             } finally {
                 archiveArtifacts '**/build/reports/**'
                 archiveArtifacts '**/build/test-results/**'

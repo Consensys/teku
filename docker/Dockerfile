@@ -1,13 +1,25 @@
-# Base Alpine Linux based image with OpenJDK JRE only
-#FROM openjdk:8-jre-alpine
-FROM openjdk:8-jdk
+FROM openjdk:11.0.2-jre-slim-stretch
 
 # copy application (with libraries inside)
-ADD build/install/artemis /opt/artemis/
-ADD integration-tests/src/test/resources/net/consensys/artemis/tests/cluster/docker/geth/genesis.json /opt/artemis/genesis.json
+COPY artemis /opt/artemis/
 
 # List Exposed Ports
-EXPOSE 8084 8545 30303 30303/udp
+EXPOSE 8008 8084 8545 30303 30303/udp
 
 # specify default command
 ENTRYPOINT ["/opt/artemis/bin/artemis"]
+
+
+# Build-time metadata as defined at http://label-schema.org
+ARG BUILD_DATE
+ARG VCS_REF
+ARG VERSION
+LABEL org.label-schema.build-date=$BUILD_DATE \
+      org.label-schema.name="Artemis" \
+      org.label-schema.description="Ethereum 2.0 Beacon Chain Client" \
+      org.label-schema.url="https://pegasys.tech/" \
+      org.label-schema.vcs-ref=$VCS_REF \
+      org.label-schema.vcs-url="https://github.com/PegaSysEng/artemis.git" \
+      org.label-schema.vendor="Pegasys" \
+      org.label-schema.version=$VERSION \
+      org.label-schema.schema-version="1.0"
