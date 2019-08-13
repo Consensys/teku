@@ -58,13 +58,13 @@ try {
                 stage('Build Docker Image') {
                     sh './gradlew --no-daemon --parallel distDocker'
                 }
-                if (env.BRANCH_NAME == "master") {
+//                if (env.BRANCH_NAME == "master") {
                     stage('Push Docker Image') {
                         docker.withRegistry('https://registry.hub.docker.com', 'dockerhub-pegasysengci') {
                             docker.image("pegasyseng/artemis:develop").push()
                         }
                     }
-                }
+//                }
             } finally {
                 archiveArtifacts '**/build/reports/**'
                 archiveArtifacts '**/build/test-results/**'
