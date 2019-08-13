@@ -45,7 +45,7 @@ abortPreviousBuilds()
 try {
     node {
         checkout scm
-        docker.image('openjdk:11-jdk-stretch').inside {
+        docker.image('pegasyseng/pantheon-build:0.0.7-jdk11').inside {
             try {
                 stage('Build') {
                     sh './gradlew --no-daemon --parallel build'
@@ -54,6 +54,16 @@ try {
                     sh './gradlew --no-daemon --parallel test'
                     // Disable Artemis Runtime Tests During Upgrade
                     // sh './artemis/src/main/resources/artemisTestScript.sh'
+                }
+                stage('Build Docker Image') {
+                    sh './gradlew --no-daemon --parallel distDocker'
+                }
+                if (env.BRANCH_NAME == "master") {
+                    stage('Push Docker Image') {
+                        docker.withRegistry('https://registry.hub.docker.com', 'dockerhub-pegasysengci') {
+                            docker.image("pegasyseng/artemis:develop").push()
+                        }
+                    }
                 }
             } finally {
                 archiveArtifacts '**/build/reports/**'
