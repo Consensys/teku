@@ -13,6 +13,9 @@
 
 package tech.pegasys.artemis.statetransition;
 
+import static tech.pegasys.artemis.datastructures.Constants.FAR_FUTURE_EPOCH;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_current_epoch;
+
 import com.google.common.primitives.UnsignedLong;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.metrics.ArtemisMetricCategory;
@@ -27,6 +30,7 @@ public class BeaconChainStateMetrics {
   private final SettableGauge previousJustifiedEpoch;
   private final SettableGauge currentEpochLiveValidators;
   private final SettableGauge previousEpochLiveValidators;
+  private final SettableGauge pendingExits;
 
   public BeaconChainStateMetrics(final MetricsSystem metricsSystem) {
     currentSlotGauge =
@@ -67,17 +71,33 @@ public class BeaconChainStateMetrics {
             ArtemisMetricCategory.BEACONCHAIN,
             "previous_epoch_live_validators",
             "Number of active validators who reported for the previous epoch");
+
+    pendingExits =
+        SettableGauge.create(
+            metricsSystem,
+            ArtemisMetricCategory.BEACONCHAIN,
+            "pending_exits",
+            "Number of pending exits");
   }
 
   public void onSlotStarted(UnsignedLong slotNumber) {
     this.currentSlotGauge.set(slotNumber.doubleValue());
   }
 
-  public void onNewHeadState(final BeaconState headState, final BeaconState headBlockState) {
+  public void onEpoch(final BeaconState headState, final BeaconState headBlockState) {
     previousJustifiedEpoch.set(headBlockState.getPrevious_justified_epoch().doubleValue());
     currentJustifiedEpoch.set(headBlockState.getCurrent_justified_epoch().longValue());
     currentFinalizedEpoch.set(headBlockState.getFinalized_epoch().longValue());
     currentEpochLiveValidators.set(headState.getCurrent_epoch_attestations().size());
     previousEpochLiveValidators.set(headState.getPrevious_epoch_attestations().size());
+
+    final UnsignedLong currentEpoch = get_current_epoch(headState);
+    pendingExits.set(
+        headBlockState.getValidator_registry().stream()
+            .filter(
+                v ->
+                    !v.getExit_epoch().equals(FAR_FUTURE_EPOCH)
+                        && currentEpoch.compareTo(v.getExit_epoch()) < 0)
+            .count());
   }
 }

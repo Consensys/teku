@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.statetransition;
 
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_current_epoch;
 import static tech.pegasys.artemis.statetransition.StateTransition.process_slots;
 
 import com.google.common.eventbus.EventBus;
@@ -161,13 +162,15 @@ public class StateProcessor {
     STDOUT.log(Level.INFO, "Justified block epoch:                 " + justifiedEpoch);
     STDOUT.log(Level.INFO, "Finalized block epoch:                 " + finalizedEpoch);
 
-    this.beaconChainStateMetrics.onNewHeadState(headState, headBlockState);
-
     BeaconStateWithCache newHeadState =
         BeaconStateWithCache.deepCopy((BeaconStateWithCache) headBlockState);
 
     try {
       process_slots(newHeadState, nodeSlot, printEnabled);
+      if (headState == null
+          || get_current_epoch(headState).equals(get_current_epoch(newHeadState))) {
+        this.beaconChainStateMetrics.onEpoch(newHeadState, headBlockState);
+      }
       this.headState = newHeadState;
       this.store.addState(newHeadState.hash_tree_root(), newHeadState);
 
