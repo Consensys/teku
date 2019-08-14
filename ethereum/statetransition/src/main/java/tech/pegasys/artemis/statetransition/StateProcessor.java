@@ -169,7 +169,7 @@ public class StateProcessor {
       process_slots(newHeadState, nodeSlot, printEnabled);
       if (headState == null
           || get_current_epoch(headState).equals(get_current_epoch(newHeadState))) {
-        this.beaconChainStateMetrics.onEpoch(newHeadState, headBlockState);
+        this.beaconChainStateMetrics.onEpoch(newHeadState);
       }
       this.headState = newHeadState;
       this.store.addState(newHeadState.hash_tree_root(), newHeadState);

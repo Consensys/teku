@@ -84,16 +84,16 @@ public class BeaconChainStateMetrics {
     this.currentSlotGauge.set(slotNumber.doubleValue());
   }
 
-  public void onEpoch(final BeaconState headState, final BeaconState headBlockState) {
-    previousJustifiedEpoch.set(headBlockState.getPrevious_justified_epoch().doubleValue());
-    currentJustifiedEpoch.set(headBlockState.getCurrent_justified_epoch().longValue());
-    currentFinalizedEpoch.set(headBlockState.getFinalized_epoch().longValue());
+  public void onEpoch(final BeaconState headState) {
+    previousJustifiedEpoch.set(headState.getPrevious_justified_epoch().doubleValue());
+    currentJustifiedEpoch.set(headState.getCurrent_justified_epoch().longValue());
+    currentFinalizedEpoch.set(headState.getFinalized_epoch().longValue());
     currentEpochLiveValidators.set(headState.getCurrent_epoch_attestations().size());
     previousEpochLiveValidators.set(headState.getPrevious_epoch_attestations().size());
 
     final UnsignedLong currentEpoch = get_current_epoch(headState);
     pendingExits.set(
-        headBlockState.getValidator_registry().stream()
+        headState.getValidator_registry().stream()
             .filter(
                 v ->
                     !v.getExit_epoch().equals(FAR_FUTURE_EPOCH)
