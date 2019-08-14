@@ -215,15 +215,21 @@ public class MapObjectUtil {
     List<Bytes32> block_roots =
         new ArrayList<Bytes32>(
             ((ArrayList<String>) map.get("block_roots"))
-                .stream().map(e -> Bytes32.fromHexString(e)).collect(Collectors.toList()));
+                .stream()
+                    .map(e -> Bytes32.fromHexString(e.toString()))
+                    .collect(Collectors.toList()));
     List<Bytes32> state_roots =
         new ArrayList<Bytes32>(
             ((ArrayList<String>) map.get("state_roots"))
-                .stream().map(e -> Bytes32.fromHexString(e)).collect(Collectors.toList()));
+                .stream()
+                    .map(e -> Bytes32.fromHexString(e.toString()))
+                    .collect(Collectors.toList()));
     List<Bytes32> historical_roots =
         new ArrayList<Bytes32>(
             ((ArrayList<String>) map.get("historical_roots"))
-                .stream().map(e -> Bytes32.fromHexString(e)).collect(Collectors.toList()));
+                .stream()
+                    .map(e -> Bytes32.fromHexString(e.toString()))
+                    .collect(Collectors.toList()));
     Eth1Data eth1_data = getEth1Data((Map) map.get("eth1_data"));
     List<Eth1Data> eth1_data_votes =
         ((List<Map>) map.get("eth1_data_votes"))
@@ -234,24 +240,46 @@ public class MapObjectUtil {
         ((List<Map>) map.get("validators"))
             .stream().map(e -> getValidator(e)).collect(Collectors.toList());
     List<UnsignedLong> balances =
-        new ArrayList<Integer>((ArrayList<Integer>) map.get("balances"))
-            .stream().map(e -> UnsignedLong.valueOf(e.longValue())).collect(Collectors.toList());
+        (List<UnsignedLong>)
+            ((ArrayList) map.get("balances"))
+                .stream()
+                    .map(
+                        e -> {
+                          if (e.getClass().equals(Long.class))
+                            return UnsignedLong.valueOf((Long) e);
+                          return UnsignedLong.valueOf(((Integer) e).longValue());
+                        })
+                    .collect(Collectors.toList());
     UnsignedLong start_shard = UnsignedLong.valueOf(map.get("start_shard").toString());
     List<Bytes32> randao_mixes =
         new ArrayList<Bytes32>(
             ((ArrayList<String>) map.get("randao_mixes"))
-                .stream().map(e -> Bytes32.fromHexString(e)).collect(Collectors.toList()));
+                .stream()
+                    .map(e -> Bytes32.fromHexString(e.toString()))
+                    .collect(Collectors.toList()));
     List<Bytes32> active_index_roots =
         new ArrayList<Bytes32>(
             ((ArrayList<String>) map.get("active_index_roots"))
-                .stream().map(e -> Bytes32.fromHexString(e)).collect(Collectors.toList()));
+                .stream()
+                    .map(e -> Bytes32.fromHexString(e.toString()))
+                    .collect(Collectors.toList()));
     List<Bytes32> compact_committees_roots =
         new ArrayList<Bytes32>(
             ((ArrayList<String>) map.get("compact_committees_roots"))
-                .stream().map(e -> Bytes32.fromHexString(e)).collect(Collectors.toList()));
+                .stream()
+                    .map(e -> Bytes32.fromHexString(e.toString()))
+                    .collect(Collectors.toList()));
     List<UnsignedLong> slashings =
-        new ArrayList<Integer>((ArrayList<Integer>) map.get("slashings"))
-            .stream().map(e -> UnsignedLong.valueOf(e.longValue())).collect(Collectors.toList());
+        (List<UnsignedLong>)
+            ((ArrayList) map.get("slashings"))
+                .stream()
+                    .map(
+                        e -> {
+                          if (e.getClass().equals(Long.class))
+                            return UnsignedLong.valueOf((Long) e);
+                          return UnsignedLong.valueOf(((Integer) e).longValue());
+                        })
+                    .collect(Collectors.toList());
     List<PendingAttestation> previous_epoch_attestations =
         ((List<Map>) map.get("previous_epoch_attestations"))
             .stream().map(e -> getPendingAttestation(e)).collect(Collectors.toList());
@@ -313,7 +341,6 @@ public class MapObjectUtil {
     Bytes32 withdrawal_credentials =
         Bytes32.fromHexString(map.get("withdrawal_credentials").toString());
     UnsignedLong effective_balance = UnsignedLong.valueOf(map.get("effective_balance").toString());
-
     boolean slashed = Boolean.getBoolean((map.get("slashed")).toString());
     UnsignedLong activation_eligibility_epoch =
         UnsignedLong.valueOf(map.get("activation_eligibility_epoch").toString());
@@ -483,6 +510,7 @@ public class MapObjectUtil {
     return new IndexedAttestation(custody_bit_0_indices, custody_bit_1_indices, data, signature);
   }
 
+  @SuppressWarnings({"unchecked", "rawtypes"})
   private static AttestationDataAndCustodyBit getAttestationDataAndCustodyBit(Map map) {
 
     return new AttestationDataAndCustodyBit(
@@ -490,7 +518,8 @@ public class MapObjectUtil {
         Boolean.getBoolean((map.get("custody_bit")).toString()));
   }
 
-  private static Attestation getAttestation(Map map) {
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  public static Attestation getAttestation(Map map) {
     return new Attestation(
         Bytes.fromHexString(map.get("aggregation_bits").toString()),
         getAttestationData((Map) map.get("data")),
@@ -498,8 +527,8 @@ public class MapObjectUtil {
         BLSSignature.fromBytes(Bytes.fromHexString(map.get("signature").toString())));
   }
 
-  private static AttestationData getAttestationData(Map map) {
-
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  public static AttestationData getAttestationData(Map map) {
     return new AttestationData(
         Bytes32.fromHexString(map.get("beacon_block_root").toString()),
         getCheckpoint((Map) map.get("source")),
@@ -507,12 +536,14 @@ public class MapObjectUtil {
         getCrossLink((Map) map.get("crosslink")));
   }
 
-  private static Checkpoint getCheckpoint(Map map) {
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  public static Checkpoint getCheckpoint(Map map) {
     return new Checkpoint(
         UnsignedLong.valueOf(map.get("epoch").toString()),
         Bytes32.fromHexString(map.get("root").toString()));
   }
 
+  @SuppressWarnings({"unchecked", "rawtypes"})
   private static Crosslink getCrossLink(Map map) {
 
     return new Crosslink(
@@ -523,11 +554,13 @@ public class MapObjectUtil {
         Bytes32.fromHexString(map.get("data_root").toString()));
   }
 
+  @SuppressWarnings({"unchecked", "rawtypes"})
   public static Bytes32 getBytes32(Map testObject) {
 
     return Bytes32.fromHexString(testObject.toString());
   }
 
+  @SuppressWarnings({"unchecked", "rawtypes"})
   public static Bytes getBytes(Map testObject) {
 
     return Bytes.fromHexString(testObject.toString());
