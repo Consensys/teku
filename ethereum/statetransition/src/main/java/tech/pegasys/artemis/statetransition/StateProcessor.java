@@ -38,8 +38,6 @@ import tech.pegasys.artemis.datastructures.util.BeaconBlockUtil;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.datastructures.util.DepositUtil;
-import tech.pegasys.artemis.metrics.ArtemisMetricCategory;
-import tech.pegasys.artemis.metrics.SettableGauge;
 import tech.pegasys.artemis.pow.api.Eth2GenesisEvent;
 import tech.pegasys.artemis.pow.event.Eth2Genesis;
 import tech.pegasys.artemis.service.serviceutils.ServiceConfig;
@@ -52,12 +50,7 @@ import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 /** Class to manage the state tree and initiate state transitions */
 public class StateProcessor {
 
-  private final SettableGauge currentSlotGauge;
-  private final SettableGauge currentJustifiedEpoch;
-  private final SettableGauge currentFinalizedEpoch;
-  private final SettableGauge previousJustifiedEpoch;
-  private final SettableGauge currentEpochLiveValidators;
-  private final SettableGauge previousEpochLiveValidators;
+  private final BeaconChainStateMetrics beaconChainStateMetrics;
   private BeaconState headState; // state chosen by lmd ghost to build and attest on
   private BeaconBlock headBlock; // block chosen by lmd ghost to build and attest on
   private Bytes32 finalizedStateRoot; // most recent finalized state root
@@ -83,41 +76,7 @@ public class StateProcessor {
     this.publicKey = config.getKeyPair().publicKey();
     this.stateTransition = new StateTransition(printEnabled);
     this.store = store;
-    currentSlotGauge =
-        SettableGauge.create(
-            config.getMetricsSystem(),
-            ArtemisMetricCategory.BEACONCHAIN,
-            "current_slot",
-            "Latest slot recorded by the beacon chain");
-
-    currentJustifiedEpoch =
-        SettableGauge.create(
-            config.getMetricsSystem(),
-            ArtemisMetricCategory.BEACONCHAIN,
-            "current_justified_epoch",
-            "Current justified epoch");
-    currentFinalizedEpoch =
-        SettableGauge.create(
-            config.getMetricsSystem(),
-            ArtemisMetricCategory.BEACONCHAIN,
-            "current_finalized_epoch",
-            "Current finalized epoch");
-    previousJustifiedEpoch =
-        SettableGauge.create(
-            config.getMetricsSystem(),
-            ArtemisMetricCategory.BEACONCHAIN,
-            "current_prev_justified_epoch",
-            "Current previously justified epoch");
-    currentEpochLiveValidators = SettableGauge.create(
-        config.getMetricsSystem(),
-        ArtemisMetricCategory.BEACONCHAIN,
-        "current_epoch_live_validators",
-        "Number of active validators who reported for the current epoch");
-    previousEpochLiveValidators = SettableGauge.create(
-        config.getMetricsSystem(),
-        ArtemisMetricCategory.BEACONCHAIN,
-        "previous_epoch_live_validators",
-        "Number of active validators who reported for the previous epoch");
+    this.beaconChainStateMetrics = new BeaconChainStateMetrics(config.getMetricsSystem());
     this.eventBus.register(this);
   }
 
@@ -175,7 +134,7 @@ public class StateProcessor {
     long startTime = System.currentTimeMillis();
     this.nodeSlot = this.nodeSlot.plus(UnsignedLong.ONE);
     this.nodeTime = this.nodeTime.plus(UnsignedLong.valueOf(Constants.SECONDS_PER_SLOT));
-    this.currentSlotGauge.set(this.nodeSlot.doubleValue());
+    this.beaconChainStateMetrics.onSlotStarted(this.nodeSlot);
 
     STDOUT.log(Level.INFO, "******* Slot Event *******", ALogger.Color.WHITE);
     STDOUT.log(Level.INFO, "Node time:                             " + nodeTime);
@@ -202,11 +161,7 @@ public class StateProcessor {
     STDOUT.log(Level.INFO, "Justified block epoch:                 " + justifiedEpoch);
     STDOUT.log(Level.INFO, "Finalized block epoch:                 " + finalizedEpoch);
 
-    previousJustifiedEpoch.set(headBlockState.getPrevious_justified_epoch().doubleValue());
-    currentJustifiedEpoch.set(justifiedEpoch);
-    currentFinalizedEpoch.set(finalizedEpoch);
-    currentEpochLiveValidators.set(headState.getCurrent_epoch_attestations().size());
-    previousEpochLiveValidators.set(headState.getPrevious_epoch_attestations().size());
+    this.beaconChainStateMetrics.onNewHeadState(headState, headBlockState);
 
     BeaconStateWithCache newHeadState =
         BeaconStateWithCache.deepCopy((BeaconStateWithCache) headBlockState);
