@@ -56,6 +56,8 @@ public class StateProcessor {
   private final SettableGauge currentJustifiedEpoch;
   private final SettableGauge currentFinalizedEpoch;
   private final SettableGauge previousJustifiedEpoch;
+  private final SettableGauge currentEpochLiveValidators;
+  private final SettableGauge previousEpochLiveValidators;
   private BeaconState headState; // state chosen by lmd ghost to build and attest on
   private BeaconBlock headBlock; // block chosen by lmd ghost to build and attest on
   private Bytes32 finalizedStateRoot; // most recent finalized state root
@@ -106,6 +108,16 @@ public class StateProcessor {
             ArtemisMetricCategory.BEACONCHAIN,
             "current_prev_justified_epoch",
             "Current previously justified epoch");
+    currentEpochLiveValidators = SettableGauge.create(
+        config.getMetricsSystem(),
+        ArtemisMetricCategory.BEACONCHAIN,
+        "current_epoch_live_validators",
+        "Number of active validators who reported for the current epoch");
+    previousEpochLiveValidators = SettableGauge.create(
+        config.getMetricsSystem(),
+        ArtemisMetricCategory.BEACONCHAIN,
+        "previous_epoch_live_validators",
+        "Number of active validators who reported for the previous epoch");
     this.eventBus.register(this);
   }
 
@@ -193,6 +205,8 @@ public class StateProcessor {
     previousJustifiedEpoch.set(headBlockState.getPrevious_justified_epoch().doubleValue());
     currentJustifiedEpoch.set(justifiedEpoch);
     currentFinalizedEpoch.set(finalizedEpoch);
+    currentEpochLiveValidators.set(headState.getCurrent_epoch_attestations().size());
+    previousEpochLiveValidators.set(headState.getPrevious_epoch_attestations().size());
 
     BeaconStateWithCache newHeadState =
         BeaconStateWithCache.deepCopy((BeaconStateWithCache) headBlockState);
