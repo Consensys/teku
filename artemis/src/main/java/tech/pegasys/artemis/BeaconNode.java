@@ -30,7 +30,6 @@ import tech.pegasys.artemis.data.provider.JSONProvider;
 import tech.pegasys.artemis.data.provider.ProviderTypes;
 import tech.pegasys.artemis.data.provider.RawRecordHandler;
 import tech.pegasys.artemis.datastructures.Constants;
-import tech.pegasys.artemis.metrics.BeaconchainMetrics;
 import tech.pegasys.artemis.metrics.MetricsEndpoint;
 import tech.pegasys.artemis.service.serviceutils.ServiceConfig;
 import tech.pegasys.artemis.service.serviceutils.ServiceController;
@@ -74,7 +73,6 @@ public class BeaconNode {
     this.eventBus = new AsyncEventBus(threadPool);
 
     metricsEndpoint = new MetricsEndpoint(config, vertx);
-    new BeaconchainMetrics(eventBus, metricsEndpoint.getMetricsSystem());
     this.serviceConfig =
         new ServiceConfig(eventBus, vertx, metricsEndpoint.getMetricsSystem(), config, cliArgs);
     Constants.init(config);
