@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.statetransition;
 
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_current_epoch;
 import static tech.pegasys.artemis.statetransition.StateTransition.process_slots;
 
 import com.google.common.eventbus.EventBus;
@@ -50,6 +51,7 @@ import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 /** Class to manage the state tree and initiate state transitions */
 public class StateProcessor {
 
+  private final BeaconChainStateMetrics beaconChainStateMetrics;
   private BeaconState headState; // state chosen by lmd ghost to build and attest on
   private BeaconBlock headBlock; // block chosen by lmd ghost to build and attest on
   private Bytes32 finalizedStateRoot; // most recent finalized state root
@@ -75,6 +77,7 @@ public class StateProcessor {
     this.publicKey = config.getKeyPair().publicKey();
     this.stateTransition = new StateTransition(printEnabled);
     this.store = store;
+    this.beaconChainStateMetrics = new BeaconChainStateMetrics(config.getMetricsSystem());
     this.eventBus.register(this);
   }
 
@@ -132,6 +135,7 @@ public class StateProcessor {
     long startTime = System.currentTimeMillis();
     this.nodeSlot = this.nodeSlot.plus(UnsignedLong.ONE);
     this.nodeTime = this.nodeTime.plus(UnsignedLong.valueOf(Constants.SECONDS_PER_SLOT));
+    this.beaconChainStateMetrics.onSlotStarted(this.nodeSlot);
 
     STDOUT.log(Level.INFO, "******* Slot Event *******", ALogger.Color.WHITE);
     STDOUT.log(Level.INFO, "Node time:                             " + nodeTime);
@@ -153,8 +157,8 @@ public class StateProcessor {
 
     // Get head block's state, and initialize a newHeadState variable to run state transition on
     BeaconState headBlockState = store.getState(headBlock.getState_root()).get();
-    Long justifiedEpoch = headBlockState.getCurrent_justified_epoch().longValue();
-    Long finalizedEpoch = headBlockState.getFinalized_epoch().longValue();
+    long justifiedEpoch = headBlockState.getCurrent_justified_epoch().longValue();
+    long finalizedEpoch = headBlockState.getFinalized_epoch().longValue();
     STDOUT.log(Level.INFO, "Justified block epoch:                 " + justifiedEpoch);
     STDOUT.log(Level.INFO, "Finalized block epoch:                 " + finalizedEpoch);
 
@@ -163,6 +167,10 @@ public class StateProcessor {
 
     try {
       process_slots(newHeadState, nodeSlot, printEnabled);
+      if (headState == null
+          || get_current_epoch(headState).equals(get_current_epoch(newHeadState))) {
+        this.beaconChainStateMetrics.onEpoch(newHeadState);
+      }
       this.headState = newHeadState;
       this.store.addState(newHeadState.hash_tree_root(), newHeadState);
 
