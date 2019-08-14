@@ -20,14 +20,18 @@ import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
+import tech.pegasys.artemis.util.SSZTypes.SSZContainer;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
+import tech.pegasys.artemis.util.reflectionInformation.ReflectionInformation;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
-public class AttestationDataAndCustodyBit implements SimpleOffsetSerializable {
+public class AttestationDataAndCustodyBit implements SimpleOffsetSerializable, SSZContainer {
 
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
   public static final int SSZ_FIELD_COUNT = 1;
+  public static final ReflectionInformation reflectionInfo =
+      new ReflectionInformation(AttestationDataAndCustodyBit.class);
 
   private AttestationData data;
   private boolean custody_bit;

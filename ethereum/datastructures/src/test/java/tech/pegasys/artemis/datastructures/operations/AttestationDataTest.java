@@ -116,4 +116,9 @@ class AttestationDataTest {
     Bytes sszAttestationDataBytes = attestationData.toBytes();
     assertEquals(attestationData, AttestationData.fromBytes(sszAttestationDataBytes));
   }
+
+  @Test
+  void isVariableTest() {
+    assertEquals(false, AttestationData.reflectionInfo.isVariable());
+  }
 }

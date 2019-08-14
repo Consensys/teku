@@ -68,4 +68,9 @@ class CrosslinkTest {
     Bytes sszCrosslinkBytes = crosslink.toBytes();
     assertEquals(crosslink, Crosslink.fromBytes(sszCrosslinkBytes));
   }
+
+  @Test
+  void isVariableTest() {
+    assertEquals(false, Crosslink.reflectionInfo.isVariable());
+  }
 }

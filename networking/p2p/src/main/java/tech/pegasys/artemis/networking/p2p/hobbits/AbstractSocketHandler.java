@@ -148,8 +148,9 @@ public abstract class AbstractSocketHandler {
       Attestation attestation = Attestation.fromBytes(rpcMessage.bodyAs(Bytes.class));
       this.eventBus.post(attestation);
     } else if (RPCMethod.BLOCK_BODIES.equals(rpcMessage.method())) {
-      BeaconBlock beaconBlock = BeaconBlock.fromBytes(rpcMessage.bodyAsList().get(0));
-      this.eventBus.post(beaconBlock);
+      // TODO
+      //      BeaconBlock beaconBlock = BeaconBlock.fromBytes(rpcMessage.bodyAsList().get(0));
+      //      this.eventBus.post(beaconBlock);
     }
   }
 
@@ -275,7 +276,8 @@ public abstract class AbstractSocketHandler {
     blocks.forEach(
         block -> {
           if (block.isPresent()) {
-            blockBodies.add(block.get().toBytes());
+            // TODO
+            //              blockBodies.add(block.get().toBytes());
           }
         });
     if (blockBodies.size() > 0) {

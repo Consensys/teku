@@ -67,6 +67,8 @@ public class PlumtreeSocketHandler extends AbstractSocketHandler {
 
   @Subscribe
   public void onNewUnprocessedBlock(BeaconBlock block) {
+    // TODO to bytes
+    /*
     Bytes bytes = block.toBytes();
     if (!this.receivedMessages.containsKey(bytes.toHexString())) {
       this.receivedMessages.put(bytes.toHexString(), true);
@@ -76,6 +78,7 @@ public class PlumtreeSocketHandler extends AbstractSocketHandler {
       String attributes = "BLOCK" + "," + String.valueOf(new Date().getTime());
       p2pState.sendGossipMessage(attributes, bytes);
     }
+    */
   }
 
   @Subscribe

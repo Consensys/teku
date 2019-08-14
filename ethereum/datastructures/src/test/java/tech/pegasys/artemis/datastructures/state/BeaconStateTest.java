@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.datastructures.state;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_bitfield_bit;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.initialize_beacon_state_from_eth1;
@@ -315,5 +316,10 @@ class BeaconStateTest {
     Bytes justificationBits = Bytes.wrap(new byte[2]);
     justificationBits = setBit(justificationBits, 1);
     assert (get_bitfield_bit(justificationBits, 1) == 1);
+  }
+
+  @Test
+  void isVariableTest() {
+    assertEquals(true, BeaconState.reflectionInfo.isVariable());
   }
 }

@@ -31,16 +31,11 @@ import java.nio.file.Paths;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
@@ -60,6 +55,7 @@ import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.datastructures.state.Crosslink;
 import tech.pegasys.artemis.datastructures.state.Validator;
+import tech.pegasys.artemis.util.SSZTypes.SSZVector;
 import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
@@ -294,12 +290,12 @@ public final class DataStructureUtil {
   }
 
   public static Deposit randomDeposit() {
-    return new Deposit(Collections.nCopies(32, Bytes32.random()), randomDepositData());
+    return new Deposit(new SSZVector<>(32, Bytes32.random()), randomDepositData());
   }
 
   public static Deposit randomDeposit(int seed) {
     return new Deposit(
-        Arrays.asList(randomBytes32(seed), randomBytes32(seed++), randomBytes32(seed++)),
+        new SSZVector<>(Constants.DEPOSIT_CONTRACT_TREE_DEPTH + 1, randomBytes32(seed)),
         randomDepositData(seed));
   }
 
@@ -373,8 +369,7 @@ public final class DataStructureUtil {
               compute_domain(Constants.DOMAIN_DEPOSIT));
       depositData.setSignature(proof_of_possession);
 
-      List<Bytes32> proof =
-          new ArrayList<>(Collections.nCopies(DEPOSIT_CONTRACT_TREE_DEPTH, Bytes32.ZERO));
+      SSZVector<Bytes32> proof = new SSZVector<>(DEPOSIT_CONTRACT_TREE_DEPTH + 1, Bytes32.ZERO);
       Deposit deposit = new Deposit(proof, depositData, UnsignedLong.valueOf(i));
       deposits.add(deposit);
     }
@@ -410,6 +405,7 @@ public final class DataStructureUtil {
       throws IOException, ParseException {
     final List<Deposit> deposits = new ArrayList<>();
     if (config.getInteropActive()) {
+      /*
       Path path = Paths.get("interopDepositsAndKeys.json");
       String read = Files.readAllLines(path).get(0);
       JSONParser parser = new JSONParser();
@@ -421,6 +417,7 @@ public final class DataStructureUtil {
               i ->
                   deposits.add(
                       Deposit.fromBytes(Bytes.fromHexString(privateKeyStrings.get(i).toString()))));
+                */
     } else {
       deposits.addAll(newDeposits(config.getNumValidators()));
     }
@@ -455,7 +452,7 @@ public final class DataStructureUtil {
             DepositData depositData = new DepositData(pubkey, withdrawalCreds, amount, signature);
             deposits.add(
                 new Deposit(
-                    new ArrayList<>(),
+                    new SSZVector<>(DEPOSIT_CONTRACT_TREE_DEPTH + 1, Bytes32.ZERO),
                     depositData,
                     UnsignedLong.valueOf(item.get("Index").toString())));
           });

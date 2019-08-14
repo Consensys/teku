@@ -20,14 +20,18 @@ import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
+import tech.pegasys.artemis.util.SSZTypes.SSZContainer;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
+import tech.pegasys.artemis.util.reflectionInformation.ReflectionInformation;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
-public final class Eth1Data implements SimpleOffsetSerializable {
+public final class Eth1Data implements SimpleOffsetSerializable, SSZContainer {
 
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
   private static final int SSZ_FIELD_COUNT = 3;
+  public static final ReflectionInformation reflectionInfo =
+      new ReflectionInformation(Eth1Data.class);
 
   private Bytes32 deposit_root;
   private UnsignedLong deposit_count;
@@ -106,6 +110,10 @@ public final class Eth1Data implements SimpleOffsetSerializable {
     return Objects.equals(this.getDeposit_root(), other.getDeposit_root())
         && Objects.equals(this.getDeposit_count(), other.getDeposit_count())
         && Objects.equals(this.getBlock_hash(), other.getBlock_hash());
+  }
+
+  public static ReflectionInformation getReflectionInfo() {
+    return reflectionInfo;
   }
 
   /** @return the deposit_root */

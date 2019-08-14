@@ -74,4 +74,9 @@ class AttestationDataAndCustodyBitTest {
         attestationDataAndCustodyBit,
         AttestationDataAndCustodyBit.fromBytes(sszAttestationDataAndCustodyBitBytes));
   }
+
+  @Test
+  void isVariableTest() {
+    assertEquals(false, AttestationDataAndCustodyBit.reflectionInfo.isVariable());
+  }
 }

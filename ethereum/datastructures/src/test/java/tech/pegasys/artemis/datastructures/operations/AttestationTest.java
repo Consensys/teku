@@ -130,4 +130,9 @@ class AttestationTest {
     assertEquals(byte8BitfieldAttestation, Attestation.fromBytes(byte8BitfieldAttestationBytes));
     assertEquals(byte16BitfieldAttestation, Attestation.fromBytes(byte16BitfieldAttestationBytes));
   }
+
+  @Test
+  void isVariableTest() {
+    assertEquals(false, Attestation.reflectionInfo.isVariable());
+  }
 }

@@ -21,7 +21,10 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
+import tech.pegasys.artemis.util.bls.BLSPublicKey;
+import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
 public class SimpleOffsetSerializer {
@@ -94,5 +97,21 @@ public class SimpleOffsetSerializer {
     return Bytes.wrap(
         Bytes.concatenate(fixed_parts.toArray(new Bytes[0])),
         Bytes.concatenate(variable_parts.toArray(new Bytes[0])));
+  }
+
+  @SuppressWarnings("rawtypes")
+  public static Object deserializePrimitive(Bytes bytes, Class classInfo) {
+    switch (classInfo.getSimpleName()) {
+      case "UnsignedLong":
+        return SSZ.decode(bytes, reader -> UnsignedLong.fromLongBits(reader.readUInt64()));
+      case "Bytes32":
+        return SSZ.decode(bytes, reader -> Bytes32.wrap(reader.readFixedBytes(32)));
+      case "BLSSignature":
+        return SSZ.decode(bytes, reader -> BLSSignature.fromBytes(reader.readFixedBytes(96)));
+      case "BLSPublicKey":
+        return SSZ.decode(bytes, reader -> BLSPublicKey.fromBytes(reader.readFixedBytes(48)));
+      default:
+        return new Object();
+    }
   }
 }

@@ -31,6 +31,7 @@ import org.web3j.protocol.http.HttpService;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.DepositData;
 import tech.pegasys.artemis.pow.contract.DepositContract;
+import tech.pegasys.artemis.util.SSZTypes.SSZVector;
 
 public class DepositUtil {
 
@@ -43,7 +44,7 @@ public class DepositUtil {
           deposits.get(i).getIndex().intValue(),
           Hash.sha2_256(deposits.get(i).getData().serialize()));
     for (int i = 0; i < deposits.size(); i++)
-      deposits.get(i).setProof(merkleTree.getProofTreeByIndex(i));
+      deposits.get(i).setProof(new SSZVector<>(merkleTree.getProofTreeByIndex(i)));
     return deposits;
   }
 
@@ -61,7 +62,7 @@ public class DepositUtil {
   public static List<Deposit> applyBranchProofs(
       MerkleTree<Deposit> merkleTree, List<Deposit> deposits) {
     for (int i = 0; i < deposits.size(); i++)
-      deposits.get(i).setProof(merkleTree.getProofTreeByIndex(i));
+      deposits.get(i).setProof(new SSZVector<>(merkleTree.getProofTreeByIndex(i)));
     return deposits;
   }
 

@@ -113,4 +113,9 @@ class BeaconBlockTest {
     Bytes sszBeaconBlockBytes = beaconBlock.toBytes();
     assertEquals(beaconBlock, BeaconBlock.fromBytes(sszBeaconBlockBytes));
   }
+
+  @Test
+  void isVariableTest() {
+    assertEquals(true, BeaconBlock.reflectionInfo.isVariable());
+  }
 }

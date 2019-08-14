@@ -45,7 +45,8 @@ public final class AttestationMessage {
       List<BeaconBlock> elts = new ArrayList<>();
       while (iterator.hasNext()) {
         JsonNode child = iterator.next();
-        elts.add(BeaconBlock.fromBytes(Bytes.wrap(child.get("bytes").binaryValue())));
+        // todo
+        //        elts.add(BeaconBlock.fromBytes(Bytes.wrap(child.get("bytes").binaryValue())));
       }
       return new AttestationMessage(elts);
     }

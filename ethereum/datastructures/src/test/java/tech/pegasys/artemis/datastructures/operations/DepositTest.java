@@ -83,4 +83,9 @@ class DepositTest {
     Deposit sszDeposit = Deposit.fromBytes(sszDepositBytes);
     assertEquals(deposit, sszDeposit);
   }
+
+  @Test
+  void isVariableTest() {
+    assertEquals(true, Deposit.reflectionInfo.isVariable());
+  }
 }

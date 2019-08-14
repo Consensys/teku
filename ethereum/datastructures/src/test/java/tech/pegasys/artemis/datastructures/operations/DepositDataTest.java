@@ -87,4 +87,9 @@ class DepositDataTest {
     Bytes sszDepositInputBytes = depositData.toBytes();
     assertEquals(depositData, DepositData.fromBytes(sszDepositInputBytes));
   }
+
+  @Test
+  void isVariableTest() {
+    assertEquals(false, DepositData.reflectionInfo.isVariable());
+  }
 }

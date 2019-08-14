@@ -18,7 +18,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
@@ -30,16 +29,20 @@ import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
 import tech.pegasys.artemis.datastructures.operations.Transfer;
 import tech.pegasys.artemis.datastructures.operations.VoluntaryExit;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
+import tech.pegasys.artemis.util.SSZTypes.SSZContainer;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
+import tech.pegasys.artemis.util.reflectionInformation.ReflectionInformation;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
 /** A Beacon block body */
-public class BeaconBlockBody implements SimpleOffsetSerializable {
+public class BeaconBlockBody implements SimpleOffsetSerializable, SSZContainer {
 
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
   public static final int SSZ_FIELD_COUNT = 7;
+  public static final ReflectionInformation reflectionInfo =
+      new ReflectionInformation(BeaconBlockBody.class);
 
   private BLSSignature randao_reveal;
   private Eth1Data eth1_data;
@@ -114,62 +117,6 @@ public class BeaconBlockBody implements SimpleOffsetSerializable {
             SimpleOffsetSerializer.serializeFixedCompositeList(voluntary_exits),
             SimpleOffsetSerializer.serializeFixedCompositeList(transfers)));
     return variablePartsList;
-  }
-
-  public static BeaconBlockBody fromBytes(Bytes bytes) {
-    return SSZ.decode(
-        bytes,
-        reader ->
-            new BeaconBlockBody(
-                BLSSignature.fromBytes(reader.readBytes()),
-                Eth1Data.fromBytes(reader.readBytes()),
-                Bytes32.wrap(reader.readFixedBytes(32)),
-                reader.readBytesList().stream()
-                    .map(ProposerSlashing::fromBytes)
-                    .collect(Collectors.toList()),
-                reader.readBytesList().stream()
-                    .map(AttesterSlashing::fromBytes)
-                    .collect(Collectors.toList()),
-                reader.readBytesList().stream()
-                    .map(Attestation::fromBytes)
-                    .collect(Collectors.toList()),
-                reader.readBytesList().stream()
-                    .map(Deposit::fromBytes)
-                    .collect(Collectors.toList()),
-                reader.readBytesList().stream()
-                    .map(VoluntaryExit::fromBytes)
-                    .collect(Collectors.toList()),
-                reader.readBytesList().stream()
-                    .map(Transfer::fromBytes)
-                    .collect(Collectors.toList())));
-  }
-
-  public Bytes toBytes() {
-    List<Bytes> proposerSlashingsBytes =
-        proposer_slashings.stream().map(item -> item.toBytes()).collect(Collectors.toList());
-    List<Bytes> attesterSlashingsBytes =
-        attester_slashings.stream().map(item -> item.toBytes()).collect(Collectors.toList());
-    List<Bytes> attestationsBytes =
-        attestations.stream().map(item -> item.toBytes()).collect(Collectors.toList());
-    List<Bytes> depositsBytes =
-        deposits.stream().map(item -> item.toBytes()).collect(Collectors.toList());
-    List<Bytes> voluntaryExitsBytes =
-        voluntary_exits.stream().map(item -> item.toBytes()).collect(Collectors.toList());
-    List<Bytes> transfersBytes =
-        transfers.stream().map(item -> item.toBytes()).collect(Collectors.toList());
-
-    return SSZ.encode(
-        writer -> {
-          writer.writeBytes(randao_reveal.toBytes());
-          writer.writeBytes(eth1_data.toBytes());
-          writer.writeFixedBytes(graffiti);
-          writer.writeBytesList(proposerSlashingsBytes);
-          writer.writeBytesList(attesterSlashingsBytes);
-          writer.writeBytesList(attestationsBytes);
-          writer.writeBytesList(depositsBytes);
-          writer.writeBytesList(voluntaryExitsBytes);
-          writer.writeBytesList(transfersBytes);
-        });
   }
 
   @Override

@@ -23,17 +23,21 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.Copyable;
+import tech.pegasys.artemis.util.SSZTypes.SSZContainer;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
 import tech.pegasys.artemis.util.hashtree.Merkleizable;
+import tech.pegasys.artemis.util.reflectionInformation.ReflectionInformation;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
 public class CompactCommittee
-    implements Copyable<CompactCommittee>, Merkleizable, SimpleOffsetSerializable {
+    implements Copyable<CompactCommittee>, Merkleizable, SimpleOffsetSerializable, SSZContainer {
 
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
   public static final int SSZ_FIELD_COUNT = 2;
+  public static final ReflectionInformation reflectionInfo =
+      new ReflectionInformation(CompactCommittee.class);
 
   private List<BLSPublicKey> pubkeys; // List bounded by MAX_VALIDATORS_PER_COMMITTEE
   private List<UnsignedLong> compact_validators; // List bounded by MAX_VALIDATORS_PER_COMMITTEE

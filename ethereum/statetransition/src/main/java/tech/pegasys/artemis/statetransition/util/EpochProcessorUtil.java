@@ -82,6 +82,7 @@ import tech.pegasys.artemis.datastructures.state.Crosslink;
 import tech.pegasys.artemis.datastructures.state.HistoricalBatch;
 import tech.pegasys.artemis.datastructures.state.PendingAttestation;
 import tech.pegasys.artemis.datastructures.state.Validator;
+import tech.pegasys.artemis.util.SSZTypes.SSZVector;
 import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 
@@ -359,7 +360,7 @@ public final class EpochProcessorUtil {
    */
   public static void process_crosslinks(BeaconState state) throws EpochProcessingException {
     try {
-      state.setPrevious_crosslinks(new ArrayList<>(state.getCurrent_crosslinks()));
+      state.setPrevious_crosslinks(new SSZVector<>(state.getCurrent_crosslinks()));
       UnsignedLong previous_epoch = get_previous_epoch(state);
       UnsignedLong current_epoch = get_current_epoch(state);
 

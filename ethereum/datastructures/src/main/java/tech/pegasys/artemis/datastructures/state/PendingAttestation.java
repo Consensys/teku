@@ -25,16 +25,20 @@ import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.Copyable;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
+import tech.pegasys.artemis.util.SSZTypes.SSZContainer;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
 import tech.pegasys.artemis.util.hashtree.Merkleizable;
+import tech.pegasys.artemis.util.reflectionInformation.ReflectionInformation;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
 public class PendingAttestation
-    implements Copyable<PendingAttestation>, Merkleizable, SimpleOffsetSerializable {
+    implements Copyable<PendingAttestation>, Merkleizable, SimpleOffsetSerializable, SSZContainer {
 
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
   public static final int SSZ_FIELD_COUNT = 3;
+  public static final ReflectionInformation reflectionInfo =
+      new ReflectionInformation(PendingAttestation.class);
 
   private Bytes aggregation_bits; // bitlist bounded by MAX_VALIDATORS_PER_COMMITTEE
   private AttestationData data;

@@ -91,4 +91,9 @@ class ProposerSlashingTest {
     Bytes sszProposerSlashingBytes = proposerSlashing.toBytes();
     assertEquals(proposerSlashing, ProposerSlashing.fromBytes(sszProposerSlashingBytes));
   }
+
+  @Test
+  void isVariableTest() {
+    assertEquals(false, ProposerSlashing.reflectionInfo.isVariable());
+  }
 }

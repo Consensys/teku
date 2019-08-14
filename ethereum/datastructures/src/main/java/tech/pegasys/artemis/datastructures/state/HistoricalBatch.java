@@ -13,36 +13,46 @@
 
 package tech.pegasys.artemis.datastructures.state;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.Copyable;
+import tech.pegasys.artemis.util.SSZTypes.SSZContainer;
+import tech.pegasys.artemis.util.SSZTypes.SSZVector;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
+import tech.pegasys.artemis.util.reflectionInformation.ReflectionInformation;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
-public class HistoricalBatch implements Copyable<HistoricalBatch>, SimpleOffsetSerializable {
+public class HistoricalBatch
+    implements Copyable<HistoricalBatch>, SimpleOffsetSerializable, SSZContainer {
 
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
   public static final int SSZ_FIELD_COUNT = 2;
+  public static final ReflectionInformation reflectionInfo =
+      new ReflectionInformation(HistoricalBatch.class);
 
-  private List<Bytes32> block_roots; // Vector bounded by SLOTS_PER_HISTORICAL_ROOT
-  private List<Bytes32> state_roots; // Vector bounded by SLOTS_PER_HISTORICAL_ROOT
+  private SSZVector<Bytes32> block_roots; // Vector bounded by SLOTS_PER_HISTORICAL_ROOT
+  private SSZVector<Bytes32> state_roots; // Vector bounded by SLOTS_PER_HISTORICAL_ROOT
 
-  public HistoricalBatch(List<Bytes32> block_roots, List<Bytes32> state_roots) {
+  public HistoricalBatch(SSZVector<Bytes32> block_roots, SSZVector<Bytes32> state_roots) {
     this.block_roots = block_roots;
     this.state_roots = state_roots;
   }
 
   public HistoricalBatch(HistoricalBatch historicalBatch) {
-    this.block_roots = copyBytesList(historicalBatch.getBlockRoots(), new ArrayList<>());
-    this.state_roots = copyBytesList(historicalBatch.getStateRoots(), new ArrayList<>());
+    this.block_roots =
+        copyBytesList(
+            historicalBatch.getBlockRoots(),
+            new SSZVector<>(Constants.SLOTS_PER_HISTORICAL_ROOT, Bytes32.ZERO));
+    this.state_roots =
+        copyBytesList(
+            historicalBatch.getStateRoots(),
+            new SSZVector<>(Constants.SLOTS_PER_HISTORICAL_ROOT, Bytes32.ZERO));
   }
 
   @Override
@@ -55,19 +65,6 @@ public class HistoricalBatch implements Copyable<HistoricalBatch>, SimpleOffsetS
     return List.of(
         SSZ.encode(writer -> writer.writeFixedBytesVector(block_roots)),
         SSZ.encode(writer -> writer.writeFixedBytesVector(state_roots)));
-  }
-
-  public static HistoricalBatch fromBytes(Bytes bytes) {
-    return SSZ.decode(
-        bytes,
-        reader ->
-            new HistoricalBatch(
-                reader.readFixedBytesVector(Constants.SLOTS_PER_HISTORICAL_ROOT, 32).stream()
-                    .map(Bytes32::wrap)
-                    .collect(Collectors.toList()),
-                reader.readFixedBytesVector(Constants.SLOTS_PER_HISTORICAL_ROOT, 32).stream()
-                    .map(Bytes32::wrap)
-                    .collect(Collectors.toList())));
   }
 
   @Override
@@ -107,7 +104,7 @@ public class HistoricalBatch implements Copyable<HistoricalBatch>, SimpleOffsetS
         && Objects.equals(this.getStateRoots(), other.getStateRoots());
   }
 
-  private <T extends List<Bytes32>> T copyBytesList(T sourceList, T destinationList) {
+  private <T extends SSZVector<Bytes32>> T copyBytesList(T sourceList, T destinationList) {
     for (Bytes sourceItem : sourceList) {
       destinationList.add((Bytes32) sourceItem.copy());
     }
@@ -115,19 +112,19 @@ public class HistoricalBatch implements Copyable<HistoricalBatch>, SimpleOffsetS
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */
-  public List<Bytes32> getBlockRoots() {
+  public SSZVector<Bytes32> getBlockRoots() {
     return block_roots;
   }
 
-  public void setBlockRoots(List<Bytes32> block_roots) {
+  public void setBlockRoots(SSZVector<Bytes32> block_roots) {
     this.block_roots = block_roots;
   }
 
-  public List<Bytes32> getStateRoots() {
+  public SSZVector<Bytes32> getStateRoots() {
     return state_roots;
   }
 
-  public void setStateRoots(List<Bytes32> state_roots) {
+  public void setStateRoots(SSZVector<Bytes32> state_roots) {
     this.state_roots = state_roots;
   }
 

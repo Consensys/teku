@@ -24,6 +24,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.Copyable;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
+import tech.pegasys.artemis.util.SSZTypes.SSZVector;
 
 public final class BeaconStateWithCache extends BeaconState {
 
@@ -43,8 +44,8 @@ public final class BeaconStateWithCache extends BeaconState {
     // History
     this.latest_block_header =
         BeaconBlockHeader.fromBytes(state.getLatest_block_header().toBytes());
-    this.block_roots = this.copyBytesList(state.getBlock_roots(), new ArrayList<>());
-    this.state_roots = this.copyBytesList(state.getState_roots(), new ArrayList<>());
+    this.block_roots = new SSZVector<>(state.getBlock_roots());
+    this.state_roots = new SSZVector<>(state.getState_roots());
     this.historical_roots = this.copyBytesList(state.getHistorical_roots(), new ArrayList<>());
 
     // Eth1
@@ -58,13 +59,12 @@ public final class BeaconStateWithCache extends BeaconState {
 
     // Shuffling
     this.start_shard = state.getStart_shard();
-    this.randao_mixes = this.copyBytesList(state.getRandao_mixes(), new ArrayList<>());
-    this.active_index_roots = this.copyBytesList(state.getActive_index_roots(), new ArrayList<>());
-    this.compact_committees_roots =
-        this.copyBytesList(state.getCompact_committees_roots(), new ArrayList<>());
+    this.randao_mixes = new SSZVector<>(state.getRandao_mixes());
+    this.active_index_roots = new SSZVector<>(state.getActive_index_roots());
+    this.compact_committees_roots = new SSZVector<>(state.getCompact_committees_roots());
 
     // Slashings
-    this.slashings = state.getSlashings().stream().collect(Collectors.toList());
+    this.slashings = new SSZVector<>(state.getSlashings());
 
     // Attestations
     this.previous_epoch_attestations =
@@ -73,8 +73,8 @@ public final class BeaconStateWithCache extends BeaconState {
         this.copyList(state.getCurrent_epoch_attestations(), new ArrayList<>());
 
     // Crosslinks
-    this.current_crosslinks = this.copyList(state.getCurrent_crosslinks(), new ArrayList<>());
-    this.previous_crosslinks = this.copyList(state.getPrevious_crosslinks(), new ArrayList<>());
+    this.current_crosslinks = new SSZVector<>(state.getCurrent_crosslinks());
+    this.previous_crosslinks = new SSZVector<>(state.getPrevious_crosslinks());
 
     // Finality
     this.justification_bits = state.getJustification_bits().copy();

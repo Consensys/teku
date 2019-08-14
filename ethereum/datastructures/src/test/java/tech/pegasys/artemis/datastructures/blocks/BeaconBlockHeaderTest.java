@@ -123,4 +123,9 @@ class BeaconBlockHeaderTest {
     assertEquals(block.signing_root("signature"), blockHeader.signing_root("signature"));
     assertEquals(block.hash_tree_root(), blockHeader.hash_tree_root());
   }
+
+  @Test
+  void isVariableTest() {
+    assertEquals(false, BeaconBlockHeader.reflectionInfo.isVariable());
+  }
 }
