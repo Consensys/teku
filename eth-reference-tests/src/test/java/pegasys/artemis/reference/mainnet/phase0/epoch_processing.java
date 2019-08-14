@@ -11,43 +11,37 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package pegasys.artemis.reference.bls;
+package pegasys.artemis.reference.mainnet.phase0;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.google.errorprone.annotations.MustBeClosed;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.stream.Stream;
-import kotlin.Pair;
 import org.apache.tuweni.junit.BouncyCastleExtension;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import pegasys.artemis.reference.TestSuite;
-import tech.pegasys.artemis.util.mikuli.PublicKey;
+import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.statetransition.util.EpochProcessorUtil;
 
 @ExtendWith(BouncyCastleExtension.class)
-class aggregate_pubkeys extends TestSuite {
-  private static String testFile = "**/aggregate_pubkeys.yaml";
+class epoch_processing extends TestSuite {
+  private static final Path configPath = Paths.get("mainnet", "phase0");
 
-  @ParameterizedTest(name = "{index}. aggregate pub keys {0} -> {1}")
-  @MethodSource("readAggregatePubKeys")
-  void aggregatePubkeys(List<PublicKey> pubkeys, PublicKey aggregatePubkeyExpected) {
-    PublicKey aggregatePubkeyActual = PublicKey.aggregate(pubkeys);
-    assertEquals(aggregatePubkeyExpected, aggregatePubkeyActual);
+  @ParameterizedTest(name = "{index}. process crosslinks pre={0} -> post={1}")
+  @MethodSource("crosslinkSetup")
+  void processCrosslinks(BeaconState pre, BeaconState post) throws Exception {
+    EpochProcessorUtil.process_crosslinks(pre);
+    assertEquals(pre, post);
   }
 
-  @SuppressWarnings({"unchecked", "rawtypes"})
   @MustBeClosed
-  static Stream<Arguments> readAggregatePubKeys() throws IOException {
-    List<Pair<Class, List<String>>> arguments = new ArrayList<Pair<Class, List<String>>>();
-    arguments.add(getParams(PublicKey[].class, Arrays.asList("input")));
-    arguments.add(getParams(PublicKey.class, Arrays.asList("output")));
-
-    return findTests(testFile, arguments);
+  static Stream<Arguments> crosslinkSetup() throws Exception {
+    Path path = Paths.get("mainnet", "phase0", "epoch_processing", "crosslinks", "pyspec_tests");
+    return epochProcessingSetup(path, configPath);
   }
 }

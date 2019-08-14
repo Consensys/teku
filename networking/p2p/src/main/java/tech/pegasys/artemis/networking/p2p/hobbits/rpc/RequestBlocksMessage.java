@@ -15,23 +15,23 @@ package tech.pegasys.artemis.networking.p2p.hobbits.rpc;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import org.apache.tuweni.bytes.Bytes32;
+import java.math.BigInteger;
 
 public final class RequestBlocksMessage {
 
-  private final Bytes32 startRoot;
-  private final long startSlot;
-  private final long max;
-  private final long skip;
+  private final byte[] startRoot;
+  private final BigInteger startSlot;
+  private final BigInteger max;
+  private final BigInteger skip;
   private final boolean direction;
 
   @JsonCreator
   public RequestBlocksMessage(
-      @JsonProperty("startRoot") Bytes32 startRoot,
-      @JsonProperty("startSlot") long startSlot,
-      @JsonProperty("max") long max,
-      @JsonProperty("skip") long skip,
-      @JsonProperty("direction") int direction) {
+      @JsonProperty("start_root") byte[] startRoot,
+      @JsonProperty("start_slot") BigInteger startSlot,
+      @JsonProperty("max") BigInteger max,
+      @JsonProperty("skip") BigInteger skip,
+      @JsonProperty("direction") short direction) {
     this.startRoot = startRoot;
     this.startSlot = startSlot;
     this.max = max;
@@ -39,23 +39,23 @@ public final class RequestBlocksMessage {
     this.direction = direction == 1;
   }
 
-  @JsonProperty("startRoot")
-  public Bytes32 startRoot() {
+  @JsonProperty("start_root")
+  public byte[] startRoot() {
     return startRoot;
   }
 
-  @JsonProperty("startSlot")
-  public long startSlot() {
+  @JsonProperty("start_slot")
+  public BigInteger startSlot() {
     return startSlot;
   }
 
   @JsonProperty("max")
-  public long max() {
+  public BigInteger max() {
     return max;
   }
 
   @JsonProperty("skip")
-  public long skip() {
+  public BigInteger skip() {
     return skip;
   }
 
@@ -64,7 +64,7 @@ public final class RequestBlocksMessage {
   }
 
   @JsonProperty("direction")
-  public int directionAsInt() {
-    return direction ? 1 : 0;
+  public short directionAsShort() {
+    return direction ? (short) 1 : 0;
   }
 }

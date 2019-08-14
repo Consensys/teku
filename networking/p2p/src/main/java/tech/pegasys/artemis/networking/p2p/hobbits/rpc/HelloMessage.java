@@ -15,26 +15,25 @@ package tech.pegasys.artemis.networking.p2p.hobbits.rpc;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.units.bigints.UInt64;
+import java.math.BigInteger;
 
 public final class HelloMessage {
 
-  private final long networkId;
-  private final long chainId;
-  private final Bytes32 latestFinalizedRoot;
-  private final UInt64 latestFinalizedEpoch;
-  private final Bytes32 bestRoot;
-  private final UInt64 bestSlot;
+  private final short networkId;
+  private final short chainId;
+  private final byte[] latestFinalizedRoot;
+  private final BigInteger latestFinalizedEpoch;
+  private final byte[] bestRoot;
+  private final BigInteger bestSlot;
 
   @JsonCreator
   public HelloMessage(
-      @JsonProperty("network_id") long networkId,
-      @JsonProperty("chain_id") long chainId,
-      @JsonProperty("latest_finalized_root") Bytes32 latestFinalizedRoot,
-      @JsonProperty("latest_finalized_epoch") UInt64 latestFinalizedEpoch,
-      @JsonProperty("best_root") Bytes32 bestRoot,
-      @JsonProperty("best_slot") UInt64 bestSlot) {
+      @JsonProperty("network_id") short networkId,
+      @JsonProperty("chain_id") short chainId,
+      @JsonProperty("latest_finalized_root") byte[] latestFinalizedRoot,
+      @JsonProperty("latest_finalized_epoch") BigInteger latestFinalizedEpoch,
+      @JsonProperty("best_root") byte[] bestRoot,
+      @JsonProperty("best_slot") BigInteger bestSlot) {
     this.networkId = networkId;
     this.chainId = chainId;
     this.latestFinalizedRoot = latestFinalizedRoot;
@@ -44,32 +43,32 @@ public final class HelloMessage {
   }
 
   @JsonProperty("network_id")
-  public long networkId() {
+  public short networkId() {
     return networkId;
   }
 
   @JsonProperty("chain_id")
-  public long chainId() {
+  public short chainId() {
     return chainId;
   }
 
   @JsonProperty("latest_finalized_root")
-  public Bytes32 latestFinalizedRoot() {
+  public byte[] latestFinalizedRoot() {
     return latestFinalizedRoot;
   }
 
   @JsonProperty("latest_finalized_epoch")
-  public UInt64 latestFinalizedEpoch() {
+  public BigInteger latestFinalizedEpoch() {
     return latestFinalizedEpoch;
   }
 
   @JsonProperty("best_root")
-  public Bytes32 bestRoot() {
+  public byte[] bestRoot() {
     return bestRoot;
   }
 
   @JsonProperty("best_slot")
-  public UInt64 bestSlot() {
+  public BigInteger bestSlot() {
     return bestSlot;
   }
 }

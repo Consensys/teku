@@ -18,12 +18,12 @@ public enum RPCMethod {
   HELLO(0),
   GOODBYE(1),
   GET_STATUS(2),
-  GET_ATTESTATION(10),
-  ATTESTATION(11),
-  GET_BLOCK_HEADERS(12),
-  BLOCK_HEADERS(13),
-  GET_BLOCK_BODIES(14),
-  BLOCK_BODIES(15);
+  GET_BLOCK_HEADERS(10),
+  BLOCK_HEADERS(11),
+  GET_BLOCK_BODIES(12),
+  BLOCK_BODIES(13),
+  GET_ATTESTATION(14),
+  ATTESTATION(15);
 
   private int code;
 
@@ -32,7 +32,7 @@ public enum RPCMethod {
   }
 
   /** @return the encoded code of the RPC method */
-  int code() {
+  public int code() {
     return code;
   }
 
@@ -52,17 +52,18 @@ public enum RPCMethod {
       case 2:
         return GET_STATUS;
       case 10:
-        return GET_ATTESTATION;
-      case 11:
-        return ATTESTATION;
-      case 12:
         return GET_BLOCK_HEADERS;
-      case 13:
+      case 11:
         return BLOCK_HEADERS;
-      case 14:
+      case 12:
         return GET_BLOCK_BODIES;
-      case 15:
+      case 13:
         return BLOCK_BODIES;
+      case 14:
+        return GET_ATTESTATION;
+      case 15:
+        return ATTESTATION;
+
       default:
         throw new IllegalArgumentException("Unsupported code " + code);
     }

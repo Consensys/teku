@@ -18,8 +18,8 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import de.undercouch.bson4jackson.BsonFactory;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.math.BigInteger;
 import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.hobbits.Message;
 import org.apache.tuweni.hobbits.Protocol;
 import tech.pegasys.artemis.util.alogger.ALogger;
@@ -37,32 +37,32 @@ public final class GossipCodec {
   /**
    * Encodes a payload into a Gossip request
    *
-   * @param verb the Gossip method
+   * @param method the Gossip method
    * @param topic
    * @param timestamp
    * @param messageHash
-   * @param hashSignature
+   * @param hash
    * @param body the payload of the request
    * @return the encoded Gossip message
    */
   public static Message encode(
-      int verb,
+      int method,
       String topic,
-      long timestamp,
-      Bytes messageHash,
-      Bytes32 hashSignature,
-      Bytes body) {
+      BigInteger timestamp,
+      byte[] messageHash,
+      byte[] hash,
+      byte[] body) {
 
     ObjectNode node = mapper.createObjectNode();
 
-    node.put("method_id", verb);
+    node.put("method_id", method);
     node.put("topic", topic);
     node.put("timestamp", timestamp);
-    node.put("message_hash", messageHash.toHexString());
-    node.put("hash_signature", hashSignature.toHexString());
+    node.put("message_hash", messageHash);
+    node.put("hash", hash);
     try {
-      Bytes header = Bytes.wrap(mapper.writer().writeValueAsBytes(node));
-      Message message = new Message(3, Protocol.GOSSIP, header, body);
+      byte[] header = mapper.writer().writeValueAsBytes(node);
+      Message message = new Message(3, Protocol.GOSSIP, Bytes.wrap(header), Bytes.wrap(body));
       return message;
     } catch (IOException e) {
       throw new IllegalArgumentException(e);
@@ -82,11 +82,10 @@ public final class GossipCodec {
       ObjectNode gossipmessage = (ObjectNode) mapper.readTree(headers);
       int methodId = gossipmessage.get("method_id").intValue();
       String topic = gossipmessage.get("topic").asText();
-      long timestamp = gossipmessage.get("timestamp").asLong();
-      Bytes32 messageHash = Bytes32.fromHexString(gossipmessage.get("message_hash").asText());
-      Bytes32 hashSignature = Bytes32.fromHexString(gossipmessage.get("hash_signature").asText());
-      return new GossipMessage(
-          methodId, topic, timestamp, messageHash, hashSignature, Bytes.wrap(body), message.size());
+      BigInteger timestamp = gossipmessage.get("timestamp").bigIntegerValue();
+      byte[] messageHash = gossipmessage.get("message_hash").binaryValue();
+      byte[] hash = gossipmessage.get("hash").binaryValue();
+      return new GossipMessage(methodId, topic, timestamp, messageHash, hash, body, message.size());
     } catch (IOException e) {
       throw new UncheckedIOException(e);
     }

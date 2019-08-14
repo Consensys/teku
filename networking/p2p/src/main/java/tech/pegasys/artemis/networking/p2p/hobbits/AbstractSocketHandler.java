@@ -18,6 +18,8 @@ import static com.google.common.base.Preconditions.checkArgument;
 import com.google.common.eventbus.EventBus;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.net.NetSocket;
+import java.math.BigInteger;
+import java.nio.charset.Charset;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -34,13 +36,13 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.hobbits.Message;
 import org.apache.tuweni.hobbits.Protocol;
 import org.apache.tuweni.plumtree.State;
-import org.apache.tuweni.units.bigints.UInt64;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
-import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.networking.p2p.api.P2PNetwork;
 import tech.pegasys.artemis.networking.p2p.hobbits.gossip.GossipCodec;
 import tech.pegasys.artemis.networking.p2p.hobbits.gossip.GossipMessage;
+import tech.pegasys.artemis.networking.p2p.hobbits.rpc.AttestationMessage;
+import tech.pegasys.artemis.networking.p2p.hobbits.rpc.BlockBodiesMessage;
 import tech.pegasys.artemis.networking.p2p.hobbits.rpc.GetStatusMessage;
 import tech.pegasys.artemis.networking.p2p.hobbits.rpc.HelloMessage;
 import tech.pegasys.artemis.networking.p2p.hobbits.rpc.RPCCodec;
@@ -59,7 +61,7 @@ public abstract class AbstractSocketHandler {
   protected final Peer peer;
   protected final ChainStorageClient store;
   protected final State p2pState;
-  protected final Set<Long> pendingResponses = new HashSet<>();
+  protected final Set<BigInteger> pendingResponses = new HashSet<>();
   protected final AtomicBoolean status = new AtomicBoolean(true);
   protected final Consumer<Bytes> messageSender;
   protected final Runnable handlerTermination;
@@ -134,33 +136,46 @@ public abstract class AbstractSocketHandler {
   }
 
   protected void handleRPCMessage(RPCMessage rpcMessage) {
-    if (RPCMethod.GOODBYE.equals(rpcMessage.method())) {
+    if (RPCMethod.GOODBYE.code() == rpcMessage.method()) {
       closed(null);
-    } else if (RPCMethod.HELLO.equals(rpcMessage.method())) {
+    } else if (RPCMethod.HELLO.code() == rpcMessage.method()) {
       replyHello(rpcMessage.id());
-    } else if (RPCMethod.GET_STATUS.equals(rpcMessage.method())) {
+    } else if (RPCMethod.GET_STATUS.code() == rpcMessage.method()) {
       replyStatus(rpcMessage.id());
-    } else if (RPCMethod.GET_ATTESTATION.equals(rpcMessage.method())) {
+    } else if (RPCMethod.GET_ATTESTATION.code() == rpcMessage.method()) {
       replyAttestation(rpcMessage);
-    } else if (RPCMethod.GET_BLOCK_BODIES.equals(rpcMessage.method())) {
+    } else if (RPCMethod.GET_BLOCK_BODIES.code() == rpcMessage.method()) {
       replyBlockBodies(rpcMessage);
-    } else if (RPCMethod.ATTESTATION.equals(rpcMessage.method())) {
-      Attestation attestation = Attestation.fromBytes(rpcMessage.bodyAs(Bytes.class));
-      this.eventBus.post(attestation);
-    } else if (RPCMethod.BLOCK_BODIES.equals(rpcMessage.method())) {
-      BeaconBlock beaconBlock = BeaconBlock.fromBytes(rpcMessage.bodyAsList().get(0));
-      this.eventBus.post(beaconBlock);
+    } else if (RPCMethod.ATTESTATION.code() == rpcMessage.method()) {
+      AttestationMessage rb = rpcMessage.bodyAs(AttestationMessage.class);
+      Attestation attestation = rb.body();
+      String key = attestation.toBytes().toHexString();
+      if (!receivedMessages.containsKey(key)) {
+        this.eventBus.post(attestation);
+        receivedMessages.put(key, true);
+      }
+    } else if (RPCMethod.BLOCK_BODIES.code() == rpcMessage.method()) {
+      BlockBodiesMessage rb = rpcMessage.bodyAs(BlockBodiesMessage.class);
+      BeaconBlock beaconBlock = rb.bodies().get(0);
+      String key = beaconBlock.toBytes().toHexString();
+      if (!receivedMessages.containsKey(key)) {
+        this.eventBus.post(beaconBlock);
+        receivedMessages.put(key, true);
+      }
     }
   }
 
+  public abstract void gossipMessage(
+      int method, String topic, long timestamp, Bytes messageHash, Bytes32 hash, Bytes body);
+
   protected abstract void handleGossipMessage(GossipMessage gossipMessage);
 
-  protected void sendReply(RPCMethod method, Object payload, long id) {
-    sendBytes(RPCCodec.encode(method, payload, id).toBytes());
+  protected void sendReply(RPCMethod method, Object payload, BigInteger id) {
+    sendBytes(RPCCodec.encode(method.code(), payload, id).toBytes());
   }
 
   protected void sendMessage(RPCMethod method, Object payload) {
-    sendBytes(RPCCodec.encode(method, payload, pendingResponses).toBytes());
+    sendBytes(RPCCodec.encode(method.code(), payload, pendingResponses).toBytes());
   }
 
   protected void sendBytes(Bytes bytes) {
@@ -174,28 +189,16 @@ public abstract class AbstractSocketHandler {
     }
   }
 
-  public void gossipMessage(
-      int method,
-      String topic,
-      long timestamp,
-      Bytes messageHash,
-      Bytes32 hashSignature,
-      Bytes payload) {
-    Bytes bytes =
-        GossipCodec.encode(method, topic, timestamp, messageHash, hashSignature, payload).toBytes();
-    sendBytes(bytes);
-  }
-
-  public void replyHello(long requestId) {
+  public void replyHello(BigInteger requestId) {
     if (!peer.peerHello()) {
       HelloMessage msg =
           new HelloMessage(
-              1,
-              1,
-              store.getFinalizedBlockRoot(),
-              UInt64.valueOf(store.getFinalizedEpoch().longValue()),
-              store.getBestBlockRoot(),
-              UInt64.valueOf(store.getBestSlot().longValue()));
+              (short) 1,
+              (short) 1,
+              store.getFinalizedBlockRoot().toArrayUnsafe(),
+              store.getFinalizedEpoch().bigIntegerValue(),
+              store.getBestBlockRoot().toArrayUnsafe(),
+              store.getBestSlot().bigIntegerValue());
       STDOUT.log(Level.INFO, "Send reply hello to: " + peer.uri());
       sendReply(RPCMethod.HELLO, msg, requestId);
       peer.setPeerHello(true);
@@ -205,86 +208,69 @@ public abstract class AbstractSocketHandler {
   public void sendHello() {
     HelloMessage msg =
         new HelloMessage(
-            1,
-            1,
-            store.getFinalizedBlockRoot(),
-            UInt64.valueOf(store.getFinalizedEpoch().longValue()),
-            store.getBestBlockRoot(),
-            UInt64.valueOf(store.getBestSlot().longValue()));
+            (short) 1,
+            (short) 1,
+            store.getFinalizedBlockRoot().toArrayUnsafe(),
+            store.getFinalizedEpoch().bigIntegerValue(),
+            store.getBestBlockRoot().toArrayUnsafe(),
+            store.getBestSlot().bigIntegerValue());
     STDOUT.log(Level.INFO, "Send hello to: " + peer.uri());
     sendMessage(RPCMethod.HELLO, msg);
     peer.setPeerHello(true);
   }
 
-  public void replyStatus(long requestId) {
+  public void replyStatus(BigInteger requestId) {
     sendReply(
         RPCMethod.GET_STATUS,
-        new GetStatusMessage(userAgent, Instant.now().toEpochMilli()),
+        new GetStatusMessage(
+            userAgent.getBytes(Charset.forName("UTF-8")),
+            BigInteger.valueOf(Instant.now().toEpochMilli())),
         requestId);
   }
 
   public void sendStatus() {
     sendMessage(
-        RPCMethod.GET_STATUS, new GetStatusMessage(userAgent, Instant.now().toEpochMilli()));
+        RPCMethod.GET_STATUS,
+        new GetStatusMessage(
+            userAgent.getBytes(Charset.forName("UTF-8")),
+            BigInteger.valueOf(Instant.now().toEpochMilli())));
   }
 
   public void replyAttestation(RPCMessage rpcMessage) {
     RequestAttestationMessage rb = rpcMessage.bodyAs(RequestAttestationMessage.class);
-    Bytes32 attestationHash = rb.attestationHash();
-    store
-        .getUnprocessedAttestation(attestationHash)
-        .ifPresent(a -> sendReply(RPCMethod.ATTESTATION, a.toBytes(), rpcMessage.id()));
-  }
-
-  public void sendGetAttestation(Bytes32 attestationHash) {
-    sendMessage(RPCMethod.GET_ATTESTATION, new RequestAttestationMessage(attestationHash));
-  }
-
-  public void replyBlockHeaders(RPCMessage rpcMessage) {
-    RequestBlocksMessage rb = rpcMessage.bodyAs(RequestBlocksMessage.class);
-    List<Optional<BeaconBlock>> blocks =
-        store.getUnprocessedBlock(rb.startRoot(), rb.max(), rb.skip());
-    List<Bytes> blockHeaders = new ArrayList<>();
-    blocks.forEach(
-        block -> {
-          if (block.isPresent()) {
-            blockHeaders.add(
-                new BeaconBlockHeader(
-                        block.get().getSlot(),
-                        block.get().getParent_root(),
-                        block.get().getState_root(),
-                        block.get().getBody().hash_tree_root(),
-                        block.get().getSignature())
-                    .toBytes());
-          }
-        });
-    if (blockHeaders.size() > 0) {
-      sendReply(RPCMethod.BLOCK_HEADERS, blockHeaders, rpcMessage.id());
+    Optional<Attestation> attestation = store.getUnprocessedAttestation(Bytes32.wrap(rb.hash()));
+    if (attestation.isPresent()) {
+      sendReply(RPCMethod.ATTESTATION, new AttestationMessage(attestation.get()), rpcMessage.id());
     }
   }
 
-  public void sendGetBlockHeaders(Bytes32 root) {
-    sendMessage(RPCMethod.GET_BLOCK_HEADERS, new RequestBlocksMessage(root, 0L, 1L, 0L, 0));
+  public void sendGetAttestation(Bytes32 attestationHash) {
+    sendMessage(
+        RPCMethod.GET_ATTESTATION, new RequestAttestationMessage(attestationHash.toArrayUnsafe()));
   }
 
   public void replyBlockBodies(RPCMessage rpcMessage) {
     RequestBlocksMessage rb = rpcMessage.bodyAs(RequestBlocksMessage.class);
     List<Optional<BeaconBlock>> blocks =
-        store.getUnprocessedBlock(rb.startRoot(), rb.max(), rb.skip());
-    List<Bytes> blockBodies = new ArrayList<>();
+        store.getUnprocessedBlock(
+            Bytes32.wrap(rb.startRoot()), rb.max().longValue(), rb.skip().longValue());
+    List<BeaconBlock> blockBodies = new ArrayList<>();
     blocks.forEach(
         block -> {
           if (block.isPresent()) {
-            blockBodies.add(block.get().toBytes());
+            blockBodies.add(block.get());
           }
         });
     if (blockBodies.size() > 0) {
-      sendReply(RPCMethod.BLOCK_BODIES, blockBodies, rpcMessage.id());
+      sendReply(RPCMethod.BLOCK_BODIES, new BlockBodiesMessage(blockBodies), rpcMessage.id());
     }
   }
 
   public void sendGetBlockBodies(Bytes32 root) {
-    sendMessage(RPCMethod.GET_BLOCK_BODIES, new RequestBlocksMessage(root, 0L, 1L, 0L, 0));
+    sendMessage(
+        RPCMethod.GET_BLOCK_BODIES,
+        new RequestBlocksMessage(
+            root.toArrayUnsafe(), BigInteger.ZERO, BigInteger.ONE, BigInteger.ZERO, (short) 0));
   }
 
   public Peer peer() {
