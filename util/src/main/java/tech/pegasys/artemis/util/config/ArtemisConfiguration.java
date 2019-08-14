@@ -126,7 +126,10 @@ public final class ArtemisConfiguration {
         "Metrics port to expose metrics for Prometheus",
         PropertyValidator.inRange(0, 65535));
     builder.addListOfString(
-        "metrics.metricsCategories", asList("JVM", "PROCESS"), "Metric categories to enable", null);
+        "metrics.metricsCategories",
+        asList("JVM", "PROCESS", "BEACONCHAIN"),
+        "Metric categories to enable",
+        null);
     // Outputs
     builder.addString(
         "output.logPath", ".", "Path to output the log file", PropertyValidator.isPresent());

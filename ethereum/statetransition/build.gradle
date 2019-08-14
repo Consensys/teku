@@ -9,6 +9,7 @@ jar {
 dependencies {
   implementation project(':services:serviceutils')
   implementation project(':data')
+  implementation project(':data:metrics')
   implementation project(':pow')
   implementation project(':util')
   implementation project(':storage')
@@ -22,6 +23,7 @@ dependencies {
   implementation 'com.google.code.gson:gson'
   implementation 'org.apache.logging.log4j:log4j-api'
   implementation 'org.apache.commons:commons-lang3:3.6'
+  implementation 'tech.pegasys.pantheon.internal:core'
   runtime 'org.apache.logging.log4j:log4j-core'
 
   test {
