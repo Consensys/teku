@@ -19,6 +19,11 @@ import com.google.errorprone.annotations.MustBeClosed;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -28,9 +33,21 @@ import java.util.stream.Stream;
 import kotlin.Pair;
 import org.apache.tuweni.io.Resources;
 import org.junit.jupiter.params.provider.Arguments;
+import tech.pegasys.artemis.datastructures.Constants;
+import tech.pegasys.artemis.datastructures.state.BeaconState;
 
 public abstract class TestSuite {
+  private static final Path pathToTests =
+      Paths.get(
+          System.getProperty("user.dir").toString(),
+          "src",
+          "test",
+          "resources",
+          "eth2.0-spec-tests",
+          "tests");
+  private static final String FILE = "file://";
 
+  @Deprecated
   @MustBeClosed
   @SuppressWarnings({"unchecked", "rawtypes"})
   public static Stream<Arguments> findTests(String glob, List<Pair<Class, List<String>>> objectPath)
@@ -46,6 +63,94 @@ public abstract class TestSuite {
             });
   }
 
+  public static void loadConfigFromPath(Path path) throws Exception {
+    path = Path.of(pathToTests.toString(), path.toString());
+    String result = "";
+    while (result.isEmpty() && path.getNameCount() > 0) {
+      try (Stream<Path> walk = Files.walk(path)) {
+        result =
+            walk.map(x -> x.toString())
+                .filter(currentPath -> currentPath.contains("config.yaml"))
+                .collect(Collectors.joining());
+      } catch (IOException e) {
+        e.printStackTrace();
+      }
+      if (result.isEmpty()) path = path.getParent();
+    }
+    if (result.isEmpty())
+      throw new Exception(
+          "TestSuite.loadConfigFromPath(): Configuration files was not found in the hierarchy of the provided path");
+    Constants.init((Map) pathToObject(Paths.get(result)));
+  }
+
+  @MustBeClosed
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  public static Stream<Arguments> findTestsByPath(List<Pair<Class, String>> objectPath)
+      throws IOException {
+    return findTestsByPath(Paths.get(""), objectPath);
+  }
+
+  public static InputStream getInputStreamFromPath(Path path) {
+    URL url = null;
+    InputStream in = null;
+    try {
+      url = new URL(FILE + path);
+      in = url.openConnection().getInputStream();
+    } catch (MalformedURLException e) {
+      e.printStackTrace();
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
+    ;
+    return in;
+  }
+
+  public static Object getObjectFromYAMLInputStream(InputStream in) {
+    ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
+    Object object = null;
+    try {
+      object = ((Map) mapper.readerFor(Map.class).readValue(in));
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
+    return object;
+  }
+
+  public static Object pathToObject(Path path) {
+    return getObjectFromYAMLInputStream(getInputStreamFromPath(path));
+  }
+
+  @MustBeClosed
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  public static Stream<Arguments> findTestsByPath(Path path, List<Pair<Class, String>> objectPath)
+      throws IOException {
+    path = Path.of(pathToTests.toString(), path.toString());
+    try (Stream<Path> walk = Files.walk(path)) {
+      List<String> result = walk.map(x -> x.toString()).collect(Collectors.toList());
+      return result
+          .parallelStream()
+          .filter(
+              walkPath ->
+                  objectPath
+                      .parallelStream()
+                      .allMatch(pair -> Files.exists(Path.of(walkPath, pair.getSecond()))))
+          .map(
+              walkPath -> {
+                return objectPath.stream()
+                    .map(
+                        pair -> {
+                          Object object = pathToObject(Path.of(walkPath, pair.getSecond()));
+                          return MapObjectUtil.convertMapToTypedObject(pair.getFirst(), object);
+                        });
+              })
+          .map(objects -> Arguments.of(objects.toArray()));
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
+    return null;
+  }
+
+  @Deprecated
   @SuppressWarnings({"unchecked", "rawtypes"})
   private static Stream<Arguments> prepareTests(
       InputStream in, List<Pair<Class, List<String>>> objectPath) throws IOException {
@@ -87,33 +192,26 @@ public abstract class TestSuite {
         .map(objects -> Arguments.of(objects.toArray()));
   }
 
+  @Deprecated
   @SuppressWarnings({"unchecked", "rawtypes"})
   public static Pair<Class, List<String>> getParams(Class classType, List<String> args) {
     return new Pair<Class, List<String>>(classType, args);
   }
 
-  // Temporarily handle BLS tests separately dur to their different structure
-
-  @MustBeClosed
-  public static Stream<Arguments> findBLSTests(String glob, String tcase) throws IOException {
-    return Resources.find(glob)
-        .flatMap(
-            url -> {
-              try (InputStream in = url.openConnection().getInputStream()) {
-                return prepareBLSTests(in, tcase);
-              } catch (IOException e) {
-                throw new UncheckedIOException(e);
-              }
-            });
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  public static Pair<Class, String> getParams(Class classType, String args) {
+    return new Pair<Class, String>(classType, args);
   }
 
   @SuppressWarnings({"unchecked", "rawtypes"})
-  private static Stream<Arguments> prepareBLSTests(InputStream in, String tcase)
-      throws IOException {
-    ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
-    Map allTests = mapper.readerFor(Map.class).readValue(in);
+  @MustBeClosed
+  public static Stream<Arguments> epochProcessingSetup(Path path, Path configPath)
+      throws Exception {
+    loadConfigFromPath(configPath);
 
-    return ((List<Map>) allTests.get(tcase))
-        .stream().map(testCase -> Arguments.of(testCase.get("input"), testCase.get("output")));
+    List<Pair<Class, String>> arguments = new ArrayList<Pair<Class, String>>();
+    arguments.add(getParams(BeaconState.class, "pre.yaml"));
+    arguments.add(getParams(BeaconState.class, "post.yaml"));
+    return findTestsByPath(path, arguments);
   }
 }

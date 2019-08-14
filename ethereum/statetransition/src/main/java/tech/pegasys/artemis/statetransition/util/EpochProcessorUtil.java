@@ -258,6 +258,10 @@ public final class EpochProcessorUtil {
         winning_crosslink, get_unslashed_attesting_indices(state, winning_attestations));
   }
 
+  public static void showMeShardCount() {
+    System.out.println("SHARD_COUNT: " + SHARD_COUNT);
+  }
+
   /**
    * Processes justification and finalization
    *

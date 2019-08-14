@@ -237,8 +237,16 @@ public class MapObjectUtil {
         ((List<Map>) map.get("validators"))
             .stream().map(e -> getValidator(e)).collect(Collectors.toList());
     List<UnsignedLong> balances =
-        new ArrayList<Integer>((ArrayList<Integer>) map.get("balances"))
-            .stream().map(e -> UnsignedLong.valueOf(e.longValue())).collect(Collectors.toList());
+        (List<UnsignedLong>)
+            ((ArrayList) map.get("balances"))
+                .stream()
+                    .map(
+                        e -> {
+                          if (e.getClass().equals(Long.class))
+                            return UnsignedLong.valueOf((Long) e);
+                          return UnsignedLong.valueOf(((Integer) e).longValue());
+                        })
+                    .collect(Collectors.toList());
     UnsignedLong start_shard = UnsignedLong.valueOf(map.get("start_shard").toString());
     List<Bytes32> randao_mixes =
         new ArrayList<Bytes32>(
@@ -259,8 +267,16 @@ public class MapObjectUtil {
                     .map(e -> Bytes32.fromHexString(e.toString()))
                     .collect(Collectors.toList()));
     List<UnsignedLong> slashings =
-        new ArrayList<Integer>((ArrayList<Integer>) map.get("slashings"))
-            .stream().map(e -> UnsignedLong.valueOf(e.longValue())).collect(Collectors.toList());
+        (List<UnsignedLong>)
+            ((ArrayList) map.get("slashings"))
+                .stream()
+                    .map(
+                        e -> {
+                          if (e.getClass().equals(Long.class))
+                            return UnsignedLong.valueOf((Long) e);
+                          return UnsignedLong.valueOf(((Integer) e).longValue());
+                        })
+                    .collect(Collectors.toList());
     List<PendingAttestation> previous_epoch_attestations =
         ((List<Map>) map.get("previous_epoch_attestations"))
             .stream().map(e -> getPendingAttestation(e)).collect(Collectors.toList());

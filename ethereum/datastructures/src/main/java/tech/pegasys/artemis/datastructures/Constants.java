@@ -16,6 +16,7 @@ package tech.pegasys.artemis.datastructures;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.int_to_bytes;
 
 import com.google.common.primitives.UnsignedLong;
+import java.util.Map;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.util.bls.BLSSignature;
@@ -108,6 +109,13 @@ public class Constants {
   public static String DEPOSIT_NORMAL = "normal";
   public static String DEPOSIT_TEST = "test";
   public static String DEPOSIT_SIM = "simulation";
+
+  // Added values by proto for v0.8.2 tests TODO organize
+  public static Bytes DEPOSIT_CONTRACT_ADDRESS;
+  public static Bytes DOMAIN_CUSTODY_BIT_CHALLENGE;
+  public static Bytes DOMAIN_SHARD_PROPOSER;
+  public static Bytes DOMAIN_SHARD_ATTESTER;
+  public static int EARLY_DERIVED_SECRET_PENALTY_MAX_FUTURE_EPOCHS;
 
   public static BLSSignature EMPTY_SIGNATURE = BLSSignature.empty();
 
@@ -315,5 +323,62 @@ public class Constants {
         config.getSecondsPerSlot() != Integer.MIN_VALUE
             ? config.getSecondsPerSlot()
             : SECONDS_PER_SLOT; // 6 seconds
+  }
+
+  public static void init(Map config) {
+    SHARD_COUNT = (int) config.get("SHARD_COUNT");
+    TARGET_COMMITTEE_SIZE = (int) config.get("TARGET_COMMITTEE_SIZE");
+    MAX_VALIDATORS_PER_COMMITTEE = (int) config.get("MAX_VALIDATORS_PER_COMMITTEE");
+    MIN_PER_EPOCH_CHURN_LIMIT = (int) config.get("MIN_PER_EPOCH_CHURN_LIMIT");
+    CHURN_LIMIT_QUOTIENT = (int) config.get("CHURN_LIMIT_QUOTIENT");
+    SHUFFLE_ROUND_COUNT = (int) config.get("SHUFFLE_ROUND_COUNT");
+    MIN_GENESIS_ACTIVE_VALIDATOR_COUNT = (int) config.get("MIN_GENESIS_ACTIVE_VALIDATOR_COUNT");
+    MIN_GENESIS_TIME = UnsignedLong.valueOf(config.get("MIN_GENESIS_TIME").toString());
+    DEPOSIT_CONTRACT_ADDRESS =
+        Bytes.fromHexString(config.get("DEPOSIT_CONTRACT_ADDRESS").toString());
+    MIN_DEPOSIT_AMOUNT = ((Integer) config.get("MIN_DEPOSIT_AMOUNT")).longValue();
+    MAX_EFFECTIVE_BALANCE = (long) config.get("MAX_EFFECTIVE_BALANCE");
+    EJECTION_BALANCE = (long) config.get("EJECTION_BALANCE");
+    EFFECTIVE_BALANCE_INCREMENT = ((Integer) config.get("EFFECTIVE_BALANCE_INCREMENT")).longValue();
+    GENESIS_SLOT = ((Integer) config.get("GENESIS_SLOT")).longValue();
+    BLS_WITHDRAWAL_PREFIX = Bytes.fromHexString(config.get("BLS_WITHDRAWAL_PREFIX").toString());
+    SECONDS_PER_SLOT = (int) config.get("SECONDS_PER_SLOT");
+    MIN_ATTESTATION_INCLUSION_DELAY = (int) config.get("MIN_ATTESTATION_INCLUSION_DELAY");
+    SLOTS_PER_EPOCH = (int) config.get("SLOTS_PER_EPOCH");
+    MIN_SEED_LOOKAHEAD = (int) config.get("MIN_SEED_LOOKAHEAD");
+    ACTIVATION_EXIT_DELAY = (int) config.get("ACTIVATION_EXIT_DELAY");
+    SLOTS_PER_ETH1_VOTING_PERIOD = (int) config.get("SLOTS_PER_ETH1_VOTING_PERIOD");
+    SLOTS_PER_HISTORICAL_ROOT = (int) config.get("SLOTS_PER_HISTORICAL_ROOT");
+    MIN_VALIDATOR_WITHDRAWABILITY_DELAY = (int) config.get("MIN_VALIDATOR_WITHDRAWABILITY_DELAY");
+    PERSISTENT_COMMITTEE_PERIOD = (int) config.get("PERSISTENT_COMMITTEE_PERIOD");
+    MAX_EPOCHS_PER_CROSSLINK = (int) config.get("MAX_EPOCHS_PER_CROSSLINK");
+    MIN_EPOCHS_TO_INACTIVITY_PENALTY = (int) config.get("MIN_EPOCHS_TO_INACTIVITY_PENALTY");
+    EARLY_DERIVED_SECRET_PENALTY_MAX_FUTURE_EPOCHS =
+        (int) config.get("MIN_EPOCHS_TO_INACTIVITY_PENALTY");
+    EPOCHS_PER_HISTORICAL_VECTOR = (int) config.get("EPOCHS_PER_HISTORICAL_VECTOR");
+    EPOCHS_PER_SLASHINGS_VECTOR = (int) config.get("MAX_VALIDATORS_PER_COMMITTEE");
+    HISTORICAL_ROOTS_LIMIT = (int) config.get("MAX_VALIDATORS_PER_COMMITTEE");
+    VALIDATOR_REGISTRY_LIMIT = (long) config.get("VALIDATOR_REGISTRY_LIMIT");
+    BASE_REWARD_FACTOR = (int) config.get("BASE_REWARD_FACTOR");
+    WHISTLEBLOWER_REWARD_QUOTIENT = (int) config.get("WHISTLEBLOWER_REWARD_QUOTIENT");
+    PROPOSER_REWARD_QUOTIENT = (int) config.get("PROPOSER_REWARD_QUOTIENT");
+    INACTIVITY_PENALTY_QUOTIENT = (int) config.get("INACTIVITY_PENALTY_QUOTIENT");
+    MIN_SLASHING_PENALTY_QUOTIENT = (int) config.get("MIN_SLASHING_PENALTY_QUOTIENT");
+    MAX_PROPOSER_SLASHINGS = (int) config.get("MAX_PROPOSER_SLASHINGS");
+    MAX_ATTESTER_SLASHINGS = (int) config.get("MAX_ATTESTER_SLASHINGS");
+    MAX_ATTESTATIONS = (int) config.get("MAX_ATTESTATIONS");
+    MAX_DEPOSITS = (int) config.get("MAX_DEPOSITS");
+    MAX_VOLUNTARY_EXITS = (int) config.get("MAX_VOLUNTARY_EXITS");
+    MAX_TRANSFERS = (int) config.get("MAX_TRANSFERS");
+    DOMAIN_BEACON_PROPOSER = Bytes.fromHexString(config.get("DOMAIN_BEACON_PROPOSER").toString());
+    DOMAIN_RANDAO = Bytes.fromHexString(config.get("DOMAIN_RANDAO").toString());
+    DOMAIN_ATTESTATION = Bytes.fromHexString(config.get("DOMAIN_ATTESTATION").toString());
+    DOMAIN_DEPOSIT = Bytes.fromHexString(config.get("DOMAIN_DEPOSIT").toString());
+    DOMAIN_VOLUNTARY_EXIT = Bytes.fromHexString(config.get("DOMAIN_VOLUNTARY_EXIT").toString());
+    DOMAIN_TRANSFER = Bytes.fromHexString(config.get("DOMAIN_TRANSFER").toString());
+    DOMAIN_CUSTODY_BIT_CHALLENGE =
+        Bytes.fromHexString(config.get("DOMAIN_CUSTODY_BIT_CHALLENGE").toString());
+    DOMAIN_SHARD_PROPOSER = Bytes.fromHexString(config.get("DOMAIN_SHARD_PROPOSER").toString());
+    DOMAIN_SHARD_ATTESTER = Bytes.fromHexString(config.get("DOMAIN_SHARD_ATTESTER").toString());
   }
 }
