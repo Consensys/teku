@@ -14,16 +14,21 @@
 package tech.pegasys.artemis.util.reflectionInformation;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
+
 import tech.pegasys.artemis.util.SSZTypes.SSZContainer;
+import tech.pegasys.artemis.util.SSZTypes.SSZVector;
 
 public class ReflectionInformationUtil {
   @SuppressWarnings("rawtypes")
   public static boolean isVariable(ReflectionInformation reflectionInformation)
       throws SecurityException {
-    Field[] fields = reflectionInformation.getFields();
-    for (int i = 0; i < fields.length; i++) {
-      Class type = fields[i].getType();
+    for (Field field : reflectionInformation.getFields()){
+      Class type = field.getType();
       if (type.equals(List.class)) {
         return true;
       }
@@ -34,5 +39,42 @@ public class ReflectionInformationUtil {
       }
     }
     return false;
+  }
+
+  @SuppressWarnings("rawtypes")
+  private static boolean containsVector(Field[] fields) {
+    for (Field field : fields) {
+      Class type = field.getType();
+      if (type.equals(SSZVector.class)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  @SuppressWarnings("unchecked")
+  public static List<Integer> getVectorLengths(ReflectionInformation reflectionInformation) {
+    List<Integer> vectorLengths = new ArrayList<>();
+    try {
+      Field[] fields = reflectionInformation.getFields();
+      if (containsVector(fields)) {
+        Object object = reflectionInformation.getClassInfo().getConstructor().newInstance();
+        List<Field> vectorVariables = Arrays.stream(fields)
+                .filter(f -> f.getType().equals(SSZVector.class))
+                .collect(Collectors.toList());
+
+        vectorVariables.forEach(f -> f.setAccessible(true));
+        for (Field vectorVariable : vectorVariables) {
+          vectorLengths.add(((SSZVector) vectorVariable.get(object)).size());
+        }
+        vectorVariables.forEach(f -> f.setAccessible(false));
+        return vectorLengths;
+      } else {
+        return vectorLengths;
+      }
+    } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
+      System.out.println(e);
+    }
+    return vectorLengths;
   }
 }

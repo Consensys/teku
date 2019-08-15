@@ -52,6 +52,13 @@ public class DepositData implements SimpleOffsetSerializable, SSZContainer {
     this.signature = signature;
   }
 
+  public DepositData() {
+    this.pubkey = BLSPublicKey.empty();
+    this.withdrawal_credentials = Bytes32.ZERO;
+    this.amount = UnsignedLong.ZERO;
+    this.signature = BLSSignature.empty();
+  }
+
   @Override
   public int getSSZFieldCount() {
     return pubkey.getSSZFieldCount() + SSZ_FIELD_COUNT + signature.getSSZFieldCount();

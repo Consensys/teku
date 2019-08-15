@@ -84,59 +84,6 @@ public class BeaconState implements SimpleOffsetSerializable, SSZContainer {
   protected Checkpoint current_justified_checkpoint;
   protected Checkpoint finalized_checkpoint;
 
-  public BeaconState() {
-
-    // Versioning
-    this.genesis_time = UnsignedLong.ZERO;
-    this.slot = UnsignedLong.valueOf(Constants.GENESIS_SLOT);
-    this.fork =
-        new Fork(
-            int_to_bytes(0, 4), int_to_bytes(0, 4), UnsignedLong.valueOf(Constants.GENESIS_EPOCH));
-
-    // History
-    this.latest_block_header = new BeaconBlockHeader();
-    this.block_roots = new SSZVector<>(Constants.SLOTS_PER_HISTORICAL_ROOT, Constants.ZERO_HASH);
-    this.state_roots = new SSZVector<>(Constants.SLOTS_PER_HISTORICAL_ROOT, Constants.ZERO_HASH);
-    this.historical_roots = new ArrayList<>();
-
-    // Eth1
-    // TODO gotta change this with genesis eth1DATA because deposit count is dependent on the
-    // number of validators
-    this.eth1_data = new Eth1Data(ZERO_HASH, UnsignedLong.ZERO, ZERO_HASH);
-    this.eth1_data_votes = new ArrayList<>();
-    this.eth1_deposit_index = UnsignedLong.ZERO;
-
-    // Registry
-    this.validators = new ArrayList<>();
-    this.balances = new ArrayList<>();
-
-    // Shuffling
-    this.start_shard = UnsignedLong.ZERO;
-    this.randao_mixes =
-        new SSZVector<>(Constants.EPOCHS_PER_HISTORICAL_VECTOR, Constants.ZERO_HASH);
-    this.active_index_roots =
-        new SSZVector<>(Constants.EPOCHS_PER_HISTORICAL_VECTOR, Constants.ZERO_HASH);
-    this.compact_committees_roots =
-        new SSZVector<>(Constants.EPOCHS_PER_HISTORICAL_VECTOR, Constants.ZERO_HASH);
-
-    // Slashings
-    this.slashings = new SSZVector<>(Constants.EPOCHS_PER_SLASHINGS_VECTOR, UnsignedLong.ZERO);
-
-    // Attestations
-    this.previous_epoch_attestations = new ArrayList<>();
-    this.current_epoch_attestations = new ArrayList<>();
-
-    // Crosslinks
-    this.previous_crosslinks = new SSZVector<>(Constants.SHARD_COUNT, new Crosslink());
-    this.current_crosslinks = new SSZVector<>(Constants.SHARD_COUNT, new Crosslink());
-
-    // Finality
-    this.justification_bits = Bytes.wrap(new byte[1]); // TODO change to bitvector with 4 bits
-    this.previous_justified_checkpoint = new Checkpoint();
-    this.current_justified_checkpoint = new Checkpoint();
-    this.finalized_checkpoint = new Checkpoint();
-  }
-
   public BeaconState(
       // Versioning
       UnsignedLong genesis_time,
@@ -223,6 +170,61 @@ public class BeaconState implements SimpleOffsetSerializable, SSZContainer {
     this.current_justified_checkpoint = current_justified_checkpoint;
     this.finalized_checkpoint = finalized_checkpoint;
   }
+
+  public BeaconState() {
+
+    // Versioning
+    this.genesis_time = UnsignedLong.ZERO;
+    this.slot = UnsignedLong.valueOf(Constants.GENESIS_SLOT);
+    this.fork =
+        new Fork(
+            int_to_bytes(0, 4), int_to_bytes(0, 4), UnsignedLong.valueOf(Constants.GENESIS_EPOCH));
+
+    // History
+    this.latest_block_header = new BeaconBlockHeader();
+    this.block_roots = new SSZVector<>(Constants.SLOTS_PER_HISTORICAL_ROOT, Constants.ZERO_HASH);
+    this.state_roots = new SSZVector<>(Constants.SLOTS_PER_HISTORICAL_ROOT, Constants.ZERO_HASH);
+    this.historical_roots = new ArrayList<>();
+
+    // Eth1
+    // TODO gotta change this with genesis eth1DATA because deposit count is dependent on the
+    // number of validators
+    this.eth1_data = new Eth1Data(ZERO_HASH, UnsignedLong.ZERO, ZERO_HASH);
+    this.eth1_data_votes = new ArrayList<>();
+    this.eth1_deposit_index = UnsignedLong.ZERO;
+
+    // Registry
+    this.validators = new ArrayList<>();
+    this.balances = new ArrayList<>();
+
+    // Shuffling
+    this.start_shard = UnsignedLong.ZERO;
+    this.randao_mixes =
+        new SSZVector<>(Constants.EPOCHS_PER_HISTORICAL_VECTOR, Constants.ZERO_HASH);
+    this.active_index_roots =
+        new SSZVector<>(Constants.EPOCHS_PER_HISTORICAL_VECTOR, Constants.ZERO_HASH);
+    this.compact_committees_roots =
+        new SSZVector<>(Constants.EPOCHS_PER_HISTORICAL_VECTOR, Constants.ZERO_HASH);
+
+    // Slashings
+    this.slashings = new SSZVector<>(Constants.EPOCHS_PER_SLASHINGS_VECTOR, UnsignedLong.ZERO);
+
+    // Attestations
+    this.previous_epoch_attestations = new ArrayList<>();
+    this.current_epoch_attestations = new ArrayList<>();
+
+    // Crosslinks
+    this.previous_crosslinks = new SSZVector<>(Constants.SHARD_COUNT, new Crosslink());
+    this.current_crosslinks = new SSZVector<>(Constants.SHARD_COUNT, new Crosslink());
+
+    // Finality
+    this.justification_bits = Bytes.wrap(new byte[1]); // TODO change to bitvector with 4 bits
+    this.previous_justified_checkpoint = new Checkpoint();
+    this.current_justified_checkpoint = new Checkpoint();
+    this.finalized_checkpoint = new Checkpoint();
+  }
+
+
 
   @Override
   public int getSSZFieldCount() {

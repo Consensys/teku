@@ -21,6 +21,7 @@ import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
+import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.util.SSZTypes.SSZContainer;
 import tech.pegasys.artemis.util.SSZTypes.SSZVector;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
@@ -44,6 +45,12 @@ public class Deposit implements Merkleizable, SimpleOffsetSerializable, SSZConta
     this.proof = proof;
     this.data = data;
     this.index = index;
+  }
+
+  public Deposit() {
+    this.proof = new SSZVector<>(Constants.DEPOSIT_CONTRACT_TREE_DEPTH + 1, Bytes32.ZERO);
+    this.data = new DepositData();
+    this.index = null;
   }
 
   public Deposit(SSZVector<Bytes32> proof, DepositData data) {

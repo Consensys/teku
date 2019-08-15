@@ -19,6 +19,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
+import java.util.List;
 
 @SuppressWarnings("rawtypes")
 public class ReflectionInformation {
@@ -28,6 +29,7 @@ public class ReflectionInformation {
   private Constructor constructor;
   private int parameterCount;
   private boolean isVariable;
+  private List<Integer> vectorLengths;
 
   public ReflectionInformation(Class classInfo) {
     this.classInfo = classInfo;
@@ -39,6 +41,7 @@ public class ReflectionInformation {
     this.constructor = classInfo.getConstructors()[0];
     this.parameterCount = constructor.getParameterCount();
     this.isVariable = ReflectionInformationUtil.isVariable(this);
+    this.vectorLengths = ReflectionInformationUtil.getVectorLengths(this);
   }
 
   public Class getClassInfo() {
@@ -59,5 +62,9 @@ public class ReflectionInformation {
 
   public boolean isVariable() {
     return isVariable;
+  }
+
+  public List<Integer> getVectorLengths() {
+    return vectorLengths;
   }
 }

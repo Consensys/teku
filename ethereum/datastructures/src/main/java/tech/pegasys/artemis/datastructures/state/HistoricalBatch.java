@@ -44,6 +44,11 @@ public class HistoricalBatch
     this.state_roots = state_roots;
   }
 
+  public HistoricalBatch() {
+    this.block_roots = new SSZVector<>(Constants.SLOTS_PER_HISTORICAL_ROOT, Bytes32.ZERO);
+    this.state_roots = new SSZVector<>(Constants.SLOTS_PER_HISTORICAL_ROOT, Bytes32.ZERO);
+  }
+
   public HistoricalBatch(HistoricalBatch historicalBatch) {
     this.block_roots =
         copyBytesList(

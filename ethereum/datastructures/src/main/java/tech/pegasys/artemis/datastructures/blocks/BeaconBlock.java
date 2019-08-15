@@ -60,6 +60,14 @@ public final class BeaconBlock implements SimpleOffsetSerializable, SSZContainer
     this.signature = signature;
   }
 
+  public BeaconBlock() {
+    this.slot = UnsignedLong.ZERO;
+    this.parent_root = Bytes32.ZERO;
+    this.state_root = Bytes32.ZERO;
+    this.body = new BeaconBlockBody();
+    this.signature = BLSSignature.empty();
+  }
+
   public BeaconBlock(Bytes32 state_root) {
     this.slot = UnsignedLong.ZERO;
     this.parent_root = Bytes32.ZERO;
