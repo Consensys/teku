@@ -26,10 +26,6 @@ import com.google.common.primitives.UnsignedLong;
 import com.google.protobuf.ByteString;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -49,10 +45,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.SECP256K1;
 import org.apache.tuweni.ssz.SSZ;
 import org.apache.tuweni.units.bigints.UInt256;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
@@ -84,8 +76,6 @@ import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
-import tech.pegasys.artemis.util.mikuli.KeyPair;
-import tech.pegasys.artemis.util.mikuli.SecretKey;
 import tech.pegasys.artemis.validator.client.ValidatorClient;
 import tech.pegasys.artemis.validator.client.ValidatorClientUtil;
 
@@ -345,32 +335,7 @@ public class ValidatorCoordinator {
     int startIndex = startAndEnd.getLeft();
     int endIndex = startAndEnd.getRight();
     long numNaughtyValidators = Math.round((naughtinessPercentage * numValidators) / 100.0);
-    List<BLSKeyPair> keypairs = new ArrayList<>();
-    if (config.getInteropActive()) {
-      try {
-        Path path = Paths.get(config.getInteropInputFile());
-        String read = Files.readAllLines(path).get(0);
-        JSONParser parser = new JSONParser();
-        Object obj = parser.parse(read);
-        JSONObject array = (JSONObject) obj;
-        JSONArray privateKeyStrings = (JSONArray) array.get("privateKeys");
-        for (int i = startIndex; i <= endIndex; i++) {
-          BLSKeyPair keypair =
-              new BLSKeyPair(
-                  new KeyPair(
-                      SecretKey.fromBytes(
-                          Bytes.fromHexString(privateKeyStrings.get(i).toString()))));
-          keypairs.add(keypair);
-        }
-      } catch (IOException | ParseException e) {
-        STDOUT.log(Level.FATAL, e.toString());
-      }
-    } else {
-      for (int i = startIndex; i <= endIndex; i++) {
-        BLSKeyPair keypair = BLSKeyPair.random(i);
-        keypairs.add(keypair);
-      }
-    }
+    List<BLSKeyPair> keypairs = ValidatorKeyPairFactory.create(config, startIndex, endIndex);
     int our_index = 0;
     for (int i = startIndex; i <= endIndex; i++) {
       BLSKeyPair keypair = keypairs.get(our_index);
