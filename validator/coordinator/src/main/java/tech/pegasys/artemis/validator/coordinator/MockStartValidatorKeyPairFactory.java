@@ -52,18 +52,4 @@ public class MockStartValidatorKeyPairFactory implements ValidatorKeyPairFactory
       throw new RuntimeException(e);
     }
   }
-  /*
-    validator_index_to_pubkey = {}
-  pubkey_to_privkey = {}
-  privkey_to_pubkey = {}
-  for index in range(N):
-      privkey = int.from_bytes(
-          sha256(int_to_bytes(n=index, length=32))[:-1],  # truncate last byte to ensure privkey does not exceed 255 bit curve order
-          byteorder='little'
-      )
-      pubkey = bls.privtopubkey(privkey)
-      pubkey_to_privkey[pubkey] = privkey
-      privkey_to_pubkey[privkey] = pubkey
-      validator_index_to_pubkey[index] = pubkey
-     */
 }
