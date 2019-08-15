@@ -14,13 +14,16 @@ create_config() {
   # Set IDENTITY to the one byte hexadecimal representation of the node number
   local IDENTITY; setAsHex $NODE "IDENTITY"
 
+  local BOOTNODES=$(cat ~/.mothra/network/enr.dat)
+
   # Create the configuration file for the node
   cat $TEMPLATE | \
     sed "s/logFile\ =.*/logFile = \"artemis-$NODE.log\"/"             |# Use a unique log file
     sed "s/advertisedPort\ =.*//"                                     |# Remove the advertised port field
     sed "s/identity\ =.*/identity\ =\ \"$IDENTITY\"/"                 |# Update the identity field to the value set above
+    sed "s/bootnodes\ =.*/bootnodes\ =\ \"$BOOTNODES\"/"              |# Update the bootnodes
     sed "s/port\ =.*/port\ =\ $PORT/"                                 |# Update the port field to the value set above
-    awk -v peers="$PEERS" '/port/{print;print "peers = "peers;next}1' |# Update the peer list 
+    awk -v peers="$PEERS" '/port/{print;print "peers = "peers;next}1' |# Update the peer list
     sed "s/numNodes\ =.*/numNodes\ =\ $TOTAL/"                        |# Update the number of nodes to the total number of nodes
     sed "s/networkInterface\ =.*/networkInterface\ =\ \"127.0.0.1\"/" |# Update the network interface to localhost
     sed "s/networkMode\ =.*/networkMode\ =\ \"$MODE\"/" \
