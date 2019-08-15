@@ -85,6 +85,6 @@ dependencyManagement {
 
     dependency 'org.xerial.snappy:snappy-java:1.1.7.2'
 
-    dependency 'tech.pegasys.pantheon.internal:core:1.2.0'
+    dependency 'tech.pegasys.pantheon.internal:metrics-core:1.2.1'
   }
 }
