@@ -83,6 +83,11 @@ public class StateProcessor {
 
   @Subscribe
   public void onEth2GenesisEvent(Eth2GenesisEvent event) {
+    try {
+      Thread.sleep(15000);
+    } catch (InterruptedException e) {
+      LOG.log(Level.ERROR, e.getMessage());
+    }
     STDOUT.log(
         Level.INFO,
         "******* Eth2Genesis Event detected ******* : "

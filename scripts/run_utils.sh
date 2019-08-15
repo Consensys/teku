@@ -23,7 +23,7 @@ create_config() {
     awk -v peers="$PEERS" '/port/{print;print "peers = "peers;next}1' |# Update the peer list 
     sed "s/numNodes\ =.*/numNodes\ =\ $TOTAL/"                        |# Update the number of nodes to the total number of nodes
     sed "s/networkInterface\ =.*/networkInterface\ =\ \"127.0.0.1\"/" |# Update the network interface to localhost
-    sed "s/networkMode\ =.*/networkMode\ =\ \"hobbits\"/" \
+    sed "s/networkMode\ =.*/networkMode\ =\ \"mothra\"/" \
     > ../config/runConfig.$NODE.toml
 }
 
@@ -38,8 +38,8 @@ configure_node() {
   mv ./demo/artemis-* ./demo/node_$NODE
 
   # Create symbolic links for the demo
-  ln -s ../../../config ./demo/node_$NODE/
-  cd demo/node_$NODE && ln -s ./bin/artemis . && cd ../../
+  ln -sf ../../../config ./demo/node_$NODE/
+  cd demo/node_$NODE && ln -sf ./bin/artemis . && cd ../../
 
   # Create the configuration file for the node
   if [ "$3" == "" ] 
@@ -52,6 +52,9 @@ configure_node() {
   # in
   rm -rf demo/node_$NODE/*.json
   cp ../*.json demo/node_$NODE/
+  cp -f ../libs/libmothra-egress.dylib demo/node_$NODE/
+  cp -f ../libs/libmothra-ingress.dylib demo/node_$NODE/
+  cp -rf ../libs/release demo/node_$NODE/
 }
 
 # Create tmux panes in the current window for the next "node group".
@@ -99,7 +102,7 @@ create_tmux_windows() {
   fi
 
   # Rename the window to add some spice
-  tmux rename-window 'wwjdd'
+  tmux rename-window 'the dude abides...'
 
   # Loop over the remaining nodes
   while [[ $idx -lt $NODES ]]
