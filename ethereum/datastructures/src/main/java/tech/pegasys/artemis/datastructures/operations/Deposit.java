@@ -34,8 +34,6 @@ public class Deposit implements Merkleizable, SimpleOffsetSerializable, SSZConta
 
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
   public static final int SSZ_FIELD_COUNT = 1;
-  public static final ReflectionInformation reflectionInfo =
-      new ReflectionInformation(Deposit.class);
 
   private SSZVector<Bytes32> proof; // Vector bounded by DEPOSIT_CONTRACT_TREE_DEPTH + 1
   private DepositData data;

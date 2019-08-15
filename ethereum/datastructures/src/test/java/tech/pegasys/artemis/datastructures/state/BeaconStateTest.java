@@ -28,6 +28,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
+import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.util.reflectionInformation.ReflectionInformation;
 
 import java.util.List;
@@ -324,11 +325,6 @@ class BeaconStateTest {
   }
 
   @Test
-  void isVariableTest() {
-    assertEquals(true, BeaconState.reflectionInfo.isVariable());
-  }
-
-  @Test
   void vectorLengthsTest() {
     List<Integer> vectorLengths = List.of(
             Constants.SLOTS_PER_HISTORICAL_ROOT,
@@ -339,6 +335,6 @@ class BeaconStateTest {
             Constants.EPOCHS_PER_SLASHINGS_VECTOR,
             Constants.SHARD_COUNT,
             Constants.SHARD_COUNT);
-    assertEquals(vectorLengths, BeaconState.reflectionInfo.getVectorLengths());
+    assertEquals(vectorLengths, SimpleOffsetSerializer.classReflectionInfo.get(BeaconState.class).getVectorLengths());
   }
 }

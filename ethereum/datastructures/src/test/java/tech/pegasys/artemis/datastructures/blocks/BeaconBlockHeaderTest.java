@@ -124,8 +124,4 @@ class BeaconBlockHeaderTest {
     assertEquals(block.hash_tree_root(), blockHeader.hash_tree_root());
   }
 
-  @Test
-  void isVariableTest() {
-    assertEquals(false, BeaconBlockHeader.reflectionInfo.isVariable());
-  }
 }

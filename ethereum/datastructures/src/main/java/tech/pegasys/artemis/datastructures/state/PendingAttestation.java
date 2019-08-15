@@ -37,8 +37,6 @@ public class PendingAttestation
 
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
   public static final int SSZ_FIELD_COUNT = 3;
-  public static final ReflectionInformation reflectionInfo =
-      new ReflectionInformation(PendingAttestation.class);
 
   private Bytes aggregation_bits; // bitlist bounded by MAX_VALIDATORS_PER_COMMITTEE
   private AttestationData data;

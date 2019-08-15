@@ -80,8 +80,4 @@ class AttesterSlashingTest {
     assertEquals(attesterSlashing, AttesterSlashing.fromBytes(sszAttesterSlashingBytes));
   }
 
-  @Test
-  void isVariableTest() {
-    assertEquals(true, AttesterSlashing.reflectionInfo.isVariable());
-  }
 }

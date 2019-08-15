@@ -131,8 +131,4 @@ class PendingAttestationTest {
         PendingAttestation.fromBytes(byte16BitfieldPendingAttestationBytes));
   }
 
-  @Test
-  void isVariableTest() {
-    assertEquals(false, PendingAttestation.reflectionInfo.isVariable());
-  }
 }

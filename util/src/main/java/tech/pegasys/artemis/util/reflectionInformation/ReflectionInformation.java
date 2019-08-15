@@ -26,22 +26,29 @@ public class ReflectionInformation {
 
   private Class classInfo;
   private Field[] fields;
+  private Class[] paramClasses;
   private Constructor constructor;
   private int parameterCount;
   private boolean isVariable;
   private List<Integer> vectorLengths;
 
+
+  private List<Class> vectorElementTypes;
+
+  @SuppressWarnings("unchecked")
   public ReflectionInformation(Class classInfo) {
-    this.classInfo = classInfo;
-    this.fields =
-        Arrays.stream(classInfo.getDeclaredFields())
-            .filter(f -> !Modifier.isStatic(f.getModifiers()))
-            .collect(toList())
-            .toArray(new Field[0]);
-    this.constructor = classInfo.getConstructors()[0];
-    this.parameterCount = constructor.getParameterCount();
-    this.isVariable = ReflectionInformationUtil.isVariable(this);
-    this.vectorLengths = ReflectionInformationUtil.getVectorLengths(this);
+    try {
+      this.classInfo = classInfo;
+      this.fields = getFields(classInfo);
+      this.paramClasses = getTypes(fields);
+      this.constructor = classInfo.getConstructor(paramClasses);
+      this.parameterCount = constructor.getParameterCount();
+      this.isVariable = ReflectionInformationUtil.isVariable(this);
+      this.vectorLengths = ReflectionInformationUtil.getVectorLengths(this);
+      this.vectorElementTypes = ReflectionInformationUtil.getVectorElementTypes(this);
+    } catch (NoSuchMethodException e) {
+      System.out.println(e);
+    }
   }
 
   public Class getClassInfo() {
@@ -66,5 +73,23 @@ public class ReflectionInformation {
 
   public List<Integer> getVectorLengths() {
     return vectorLengths;
+  }
+
+  public List<Class> getVectorElementTypes() {
+    return vectorElementTypes;
+  }
+
+  private Field[] getFields(Class classInfo) {
+    return Arrays.stream(classInfo.getDeclaredFields())
+            .filter(f -> !Modifier.isStatic(f.getModifiers()))
+            .collect(toList())
+            .toArray(new Field[0]);
+  }
+
+  private Class[] getTypes(Field[] fields) {
+     return Arrays.stream(fields)
+                      .map(f -> f.getType())
+                      .collect(toList())
+                      .toArray(new Class[0]);
   }
 }

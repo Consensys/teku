@@ -17,10 +17,12 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+@SuppressWarnings("rawtypes")
 public class SSZVector<T> extends ArrayList<T> {
 
   private int size = 0;
   private int counter = 0;
+  private Class classInfo;
 
   public SSZVector() throws UnsupportedOperationException {
     throw new UnsupportedOperationException("SSZVector must have specified size");
@@ -29,6 +31,7 @@ public class SSZVector<T> extends ArrayList<T> {
   public SSZVector(int length, T object) {
     super(Collections.nCopies(length, object));
     size = length;
+    classInfo = object.getClass();
   }
 
   public SSZVector(List<T> list) {
@@ -45,5 +48,9 @@ public class SSZVector<T> extends ArrayList<T> {
     } else {
       return false;
     }
+  }
+
+  public Class getElementType() {
+    return classInfo;
   }
 }

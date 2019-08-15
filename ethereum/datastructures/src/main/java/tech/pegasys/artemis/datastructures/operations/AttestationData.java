@@ -32,8 +32,6 @@ public class AttestationData implements SimpleOffsetSerializable, SSZContainer {
 
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
   public static final int SSZ_FIELD_COUNT = 1;
-  public static final ReflectionInformation reflectionInfo =
-      new ReflectionInformation(AttestationData.class);
 
   // LMD GHOST vote
   private Bytes32 beacon_block_root;

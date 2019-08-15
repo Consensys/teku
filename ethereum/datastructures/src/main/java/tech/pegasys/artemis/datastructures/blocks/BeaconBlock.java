@@ -33,8 +33,6 @@ public final class BeaconBlock implements SimpleOffsetSerializable, SSZContainer
 
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
   public static final int SSZ_FIELD_COUNT = 3;
-  public static final ReflectionInformation reflectionInfo =
-      new ReflectionInformation(BeaconBlock.class);
 
   // Header
   private UnsignedLong slot;

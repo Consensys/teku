@@ -174,8 +174,4 @@ class ValidatorTest {
     assertEquals(validator, Validator.fromBytes(sszValidatorBytes));
   }
 
-  @Test
-  void isVariableTest() {
-    assertEquals(false, Validator.reflectionInfo.isVariable());
-  }
 }

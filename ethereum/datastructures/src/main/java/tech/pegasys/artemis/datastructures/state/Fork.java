@@ -32,7 +32,6 @@ public class Fork implements SimpleOffsetSerializable, SSZContainer {
 
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
   public static final int SSZ_FIELD_COUNT = 3;
-  public static final ReflectionInformation reflectionInfo = new ReflectionInformation(Fork.class);
 
   private Bytes previous_version; // This is a Version type, aliased as a Bytes4
   private Bytes current_version; // This is a Version type, aliased as a Bytes4

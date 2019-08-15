@@ -41,8 +41,6 @@ public class BeaconBlockBody implements SimpleOffsetSerializable, SSZContainer {
 
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
   public static final int SSZ_FIELD_COUNT = 7;
-  public static final ReflectionInformation reflectionInfo =
-      new ReflectionInformation(BeaconBlockBody.class);
 
   private BLSSignature randao_reveal;
   private Eth1Data eth1_data;

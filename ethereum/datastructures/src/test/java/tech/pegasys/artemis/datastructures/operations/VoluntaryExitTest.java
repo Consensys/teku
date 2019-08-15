@@ -78,8 +78,4 @@ class VoluntaryExitTest {
     assertEquals(voluntaryExit, VoluntaryExit.fromBytes(sszVoluntaryExitBytes));
   }
 
-  @Test
-  void isVariableTest() {
-    assertEquals(false, VoluntaryExit.reflectionInfo.isVariable());
-  }
 }

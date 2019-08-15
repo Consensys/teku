@@ -30,8 +30,6 @@ public class Checkpoint implements SimpleOffsetSerializable, SSZContainer {
 
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
   public static final int SSZ_FIELD_COUNT = 2;
-  public static final ReflectionInformation reflectionInfo =
-      new ReflectionInformation(Checkpoint.class);
 
   private UnsignedLong epoch;
   private Bytes32 root;

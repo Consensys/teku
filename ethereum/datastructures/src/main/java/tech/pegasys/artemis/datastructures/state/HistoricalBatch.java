@@ -33,8 +33,6 @@ public class HistoricalBatch
 
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
   public static final int SSZ_FIELD_COUNT = 2;
-  public static final ReflectionInformation reflectionInfo =
-      new ReflectionInformation(HistoricalBatch.class);
 
   private SSZVector<Bytes32> block_roots; // Vector bounded by SLOTS_PER_HISTORICAL_ROOT
   private SSZVector<Bytes32> state_roots; // Vector bounded by SLOTS_PER_HISTORICAL_ROOT

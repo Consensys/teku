@@ -31,8 +31,6 @@ public class Crosslink implements Copyable<Crosslink>, SimpleOffsetSerializable,
 
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
   public static final int SSZ_FIELD_COUNT = 5;
-  public static final ReflectionInformation reflectionInfo =
-      new ReflectionInformation(Crosslink.class);
 
   private UnsignedLong shard;
   private Bytes32 parent_root;

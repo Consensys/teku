@@ -70,8 +70,4 @@ class ForkTest {
     assertEquals(fork, Fork.fromBytes(sszForkBytes));
   }
 
-  @Test
-  void isVariableTest() {
-    assertEquals(false, Fork.reflectionInfo.isVariable());
-  }
 }

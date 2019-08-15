@@ -34,8 +34,6 @@ public class Transfer implements Merkleizable, SimpleOffsetSerializable, SSZCont
 
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
   public static final int SSZ_FIELD_COUNT = 5;
-  public static final ReflectionInformation reflectionInfo =
-      new ReflectionInformation(Transfer.class);
 
   private UnsignedLong sender;
   private UnsignedLong recipient;

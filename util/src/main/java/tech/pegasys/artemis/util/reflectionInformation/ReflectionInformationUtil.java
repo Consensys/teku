@@ -77,4 +77,30 @@ public class ReflectionInformationUtil {
     }
     return vectorLengths;
   }
+
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  public static List<Class> getVectorElementTypes(ReflectionInformation reflectionInformation) {
+    List<Class> vectorLengths = new ArrayList<>();
+    try {
+      Field[] fields = reflectionInformation.getFields();
+      if (containsVector(fields)) {
+        Object object = reflectionInformation.getClassInfo().getConstructor().newInstance();
+        List<Field> vectorVariables = Arrays.stream(fields)
+                .filter(f -> f.getType().equals(SSZVector.class))
+                .collect(Collectors.toList());
+
+        vectorVariables.forEach(f -> f.setAccessible(true));
+        for (Field vectorVariable : vectorVariables) {
+          vectorLengths.add(((SSZVector) vectorVariable.get(object)).getElementType());
+        }
+        vectorVariables.forEach(f -> f.setAccessible(false));
+        return vectorLengths;
+      } else {
+        return vectorLengths;
+      }
+    } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
+      System.out.println(e);
+    }
+    return vectorLengths;
+  }
 }

@@ -64,8 +64,4 @@ class Eth1DataTest {
     assertEquals(eth1Data, Eth1Data.fromBytes(sszEth1DataBytes));
   }
 
-  @Test
-  void isVariableTest() {
-    assertEquals(false, Eth1Data.reflectionInfo.isVariable());
-  }
 }

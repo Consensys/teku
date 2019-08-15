@@ -28,6 +28,7 @@ import org.apache.tuweni.junit.BouncyCastleExtension;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import tech.pegasys.artemis.datastructures.Constants;
+import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.util.SSZTypes.SSZVector;
 
 @ExtendWith(BouncyCastleExtension.class)
@@ -88,14 +89,10 @@ class DepositTest {
     //assertEquals(deposit, sszDeposit);
   }
 
-  @Test
-  void isVariableTest() {
-    assertEquals(true, Deposit.reflectionInfo.isVariable());
-  }
 
   @Test
   void vectorLengthsTest() {
     List<Integer> vectorLengths = List.of(Constants.DEPOSIT_CONTRACT_TREE_DEPTH + 1);
-    assertEquals(vectorLengths, Deposit.reflectionInfo.getVectorLengths());
+    assertEquals(vectorLengths, SimpleOffsetSerializer.classReflectionInfo.get(Deposit.class).getVectorLengths());
   }
 }

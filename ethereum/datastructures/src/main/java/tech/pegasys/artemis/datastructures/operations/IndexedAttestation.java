@@ -36,8 +36,6 @@ public class IndexedAttestation implements Merkleizable, SimpleOffsetSerializabl
 
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
   public static final int SSZ_FIELD_COUNT = 2;
-  public static final ReflectionInformation reflectionInfo =
-      new ReflectionInformation(IndexedAttestation.class);
 
   private List<UnsignedLong> custody_bit_0_indices; // List bounded by MAX_VALIDATORS_PER_COMMITTEE
   private List<UnsignedLong> custody_bit_1_indices; // List bounded by MAX_VALIDATORS_PER_COMMITTEE

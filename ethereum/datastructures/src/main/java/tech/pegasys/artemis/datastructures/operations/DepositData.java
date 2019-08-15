@@ -33,8 +33,6 @@ public class DepositData implements SimpleOffsetSerializable, SSZContainer {
 
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
   private static final int SSZ_FIELD_COUNT = 2;
-  public static final ReflectionInformation reflectionInfo =
-      new ReflectionInformation(DepositData.class);
 
   private BLSPublicKey pubkey;
   private Bytes32 withdrawal_credentials;

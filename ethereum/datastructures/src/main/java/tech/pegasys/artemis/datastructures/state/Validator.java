@@ -35,8 +35,6 @@ public class Validator
 
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
   public static final int SSZ_FIELD_COUNT = 7;
-  public static final ReflectionInformation reflectionInfo =
-      new ReflectionInformation(Validator.class);
 
   // BLS public key
   private BLSPublicKey pubkey;

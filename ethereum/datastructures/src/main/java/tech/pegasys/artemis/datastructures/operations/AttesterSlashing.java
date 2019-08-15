@@ -30,8 +30,6 @@ public class AttesterSlashing implements Merkleizable, SimpleOffsetSerializable,
 
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
   public static final int SSZ_FIELD_COUNT = 2;
-  public static final ReflectionInformation reflectionInfo =
-      new ReflectionInformation(AttesterSlashing.class);
 
   private IndexedAttestation attestation_1;
   private IndexedAttestation attestation_2;

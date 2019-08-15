@@ -30,8 +30,6 @@ public class AttestationDataAndCustodyBit implements SimpleOffsetSerializable, S
 
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
   public static final int SSZ_FIELD_COUNT = 1;
-  public static final ReflectionInformation reflectionInfo =
-      new ReflectionInformation(AttestationDataAndCustodyBit.class);
 
   private AttestationData data;
   private boolean custody_bit;
