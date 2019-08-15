@@ -57,10 +57,6 @@ import org.apache.tuweni.bytes.Bytes48;
 import org.apache.tuweni.crypto.SECP256K1;
 import org.apache.tuweni.ssz.SSZ;
 import org.apache.tuweni.units.bigints.UInt256;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
@@ -389,32 +385,7 @@ public class ValidatorCoordinator {
     int startIndex = startAndEnd.getLeft();
     int endIndex = startAndEnd.getRight();
     long numNaughtyValidators = Math.round((naughtinessPercentage * numValidators) / 100.0);
-    List<BLSKeyPair> keypairs = new ArrayList<>();
-    if (config.getInteropActive()) {
-      try {
-        Path path = Paths.get(config.getInteropInputFile());
-        String read = Files.readAllLines(path).get(0);
-        JSONParser parser = new JSONParser();
-        Object obj = parser.parse(read);
-        JSONObject array = (JSONObject) obj;
-        JSONArray privateKeyStrings = (JSONArray) array.get("privateKeys");
-        for (int i = startIndex; i <= endIndex; i++) {
-          BLSKeyPair keypair =
-              new BLSKeyPair(
-                  new KeyPair(
-                      SecretKey.fromBytes(
-                          Bytes.fromHexString(privateKeyStrings.get(i).toString()))));
-          keypairs.add(keypair);
-        }
-      } catch (IOException | ParseException e) {
-        STDOUT.log(Level.FATAL, e.toString());
-      }
-    } else {
-      for (int i = startIndex; i <= endIndex; i++) {
-        BLSKeyPair keypair = BLSKeyPair.random(i);
-        keypairs.add(keypair);
-      }
-    }
+    List<BLSKeyPair> keypairs = ValidatorKeyPairFactory.create(config, startIndex, endIndex);
     int our_index = 0;
     for (int i = startIndex; i <= endIndex; i++) {
       BLSKeyPair keypair = keypairs.get(our_index);
