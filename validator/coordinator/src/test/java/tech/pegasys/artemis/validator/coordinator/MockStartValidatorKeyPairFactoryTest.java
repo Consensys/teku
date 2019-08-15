@@ -14,7 +14,7 @@
 package tech.pegasys.artemis.validator.coordinator;
 
 import static org.assertj.core.util.Arrays.asList;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.List;
 import java.util.stream.Collectors;
