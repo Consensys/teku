@@ -326,6 +326,7 @@ public class Constants {
             : SECONDS_PER_SLOT; // 6 seconds
   }
 
+  @SuppressWarnings("rawtypes")
   public static void init(Map config) {
     SHARD_COUNT = (int) config.get("SHARD_COUNT");
     TARGET_COMMITTEE_SIZE = (int) config.get("TARGET_COMMITTEE_SIZE");
