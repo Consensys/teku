@@ -1,6 +1,20 @@
+/*
+ * Copyright 2019 ConsenSys AG.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ */
+
 package tech.pegasys.artemis.datastructures.sostests;
 
-import org.junit.jupiter.api.Assertions;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockBody;
@@ -26,52 +40,63 @@ import tech.pegasys.artemis.datastructures.state.PendingAttestation;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
 public class IsVariableTest {
   @Test
   void isBeaconBlockBodyVariableTest() {
-    assertEquals(true, SimpleOffsetSerializer.classReflectionInfo.get(BeaconBlockBody.class).isVariable());
+    assertEquals(
+        true, SimpleOffsetSerializer.classReflectionInfo.get(BeaconBlockBody.class).isVariable());
   }
 
   @Test
   void isBeaconBlockHeaderVariableTest() {
-    assertEquals(false, SimpleOffsetSerializer.classReflectionInfo.get(BeaconBlockHeader.class).isVariable());
+    assertEquals(
+        false,
+        SimpleOffsetSerializer.classReflectionInfo.get(BeaconBlockHeader.class).isVariable());
   }
 
   @Test
   void isBeaconBlockVariableTest() {
-    assertEquals(true, SimpleOffsetSerializer.classReflectionInfo.get(BeaconBlock.class).isVariable());
+    assertEquals(
+        true, SimpleOffsetSerializer.classReflectionInfo.get(BeaconBlock.class).isVariable());
   }
 
   @Test
   void isEth1DataVariableTest() {
-    assertEquals(false, SimpleOffsetSerializer.classReflectionInfo.get(Eth1Data.class).isVariable());
+    assertEquals(
+        false, SimpleOffsetSerializer.classReflectionInfo.get(Eth1Data.class).isVariable());
   }
 
   @Test
   void isAttestationDataAndCustodyBitVariableTest() {
-    assertEquals(false, SimpleOffsetSerializer.classReflectionInfo.get(AttestationDataAndCustodyBit.class).isVariable());
+    assertEquals(
+        false,
+        SimpleOffsetSerializer.classReflectionInfo
+            .get(AttestationDataAndCustodyBit.class)
+            .isVariable());
   }
 
   @Test
   void isAttestationDataVariableTest() {
-    assertEquals(false, SimpleOffsetSerializer.classReflectionInfo.get(AttestationData.class).isVariable());
+    assertEquals(
+        false, SimpleOffsetSerializer.classReflectionInfo.get(AttestationData.class).isVariable());
   }
 
   @Test
   void isAttestationVariableTest() {
-    assertEquals(false, SimpleOffsetSerializer.classReflectionInfo.get(Attestation.class).isVariable());
+    assertEquals(
+        true, SimpleOffsetSerializer.classReflectionInfo.get(Attestation.class).isVariable());
   }
 
   @Test
   void isAttesterSlashingVariableTest() {
-    assertEquals(true, SimpleOffsetSerializer.classReflectionInfo.get(AttesterSlashing.class).isVariable());
+    assertEquals(
+        true, SimpleOffsetSerializer.classReflectionInfo.get(AttesterSlashing.class).isVariable());
   }
 
   @Test
   void isDepositDataVariableTest() {
-    assertEquals(false, SimpleOffsetSerializer.classReflectionInfo.get(DepositData.class).isVariable());
+    assertEquals(
+        false, SimpleOffsetSerializer.classReflectionInfo.get(DepositData.class).isVariable());
   }
 
   @Test
@@ -81,42 +106,51 @@ public class IsVariableTest {
 
   @Test
   void isIndexedAttestationVariableTest() {
-    assertEquals(true, SimpleOffsetSerializer.classReflectionInfo.get(IndexedAttestation.class).isVariable());
+    assertEquals(
+        true,
+        SimpleOffsetSerializer.classReflectionInfo.get(IndexedAttestation.class).isVariable());
   }
 
   @Test
   void isProposerSlashingVariableTest() {
-    assertEquals(false, SimpleOffsetSerializer.classReflectionInfo.get(ProposerSlashing.class).isVariable());
+    assertEquals(
+        false, SimpleOffsetSerializer.classReflectionInfo.get(ProposerSlashing.class).isVariable());
   }
 
   @Test
   void isTransferVariableTest() {
-    assertEquals(false, SimpleOffsetSerializer.classReflectionInfo.get(Transfer.class).isVariable());
+    assertEquals(
+        false, SimpleOffsetSerializer.classReflectionInfo.get(Transfer.class).isVariable());
   }
 
   @Test
   void isVoluntaryExitVariableTest() {
-    assertEquals(false, SimpleOffsetSerializer.classReflectionInfo.get(VoluntaryExit.class).isVariable());
+    assertEquals(
+        false, SimpleOffsetSerializer.classReflectionInfo.get(VoluntaryExit.class).isVariable());
   }
 
   @Test
   void isBeaconStateVariableTest() {
-    assertEquals(true, SimpleOffsetSerializer.classReflectionInfo.get(BeaconState.class).isVariable());
+    assertEquals(
+        true, SimpleOffsetSerializer.classReflectionInfo.get(BeaconState.class).isVariable());
   }
 
   @Test
   void isCheckpointVariableTest() {
-    assertEquals(false, SimpleOffsetSerializer.classReflectionInfo.get(Checkpoint.class).isVariable());
+    assertEquals(
+        false, SimpleOffsetSerializer.classReflectionInfo.get(Checkpoint.class).isVariable());
   }
 
   @Test
   void isCompactCommitteVariableTest() {
-    assertEquals(true, SimpleOffsetSerializer.classReflectionInfo.get(CompactCommittee.class).isVariable());
+    assertEquals(
+        true, SimpleOffsetSerializer.classReflectionInfo.get(CompactCommittee.class).isVariable());
   }
 
   @Test
   void isCrosslinkVariableTest() {
-    assertEquals(false, SimpleOffsetSerializer.classReflectionInfo.get(Crosslink.class).isVariable());
+    assertEquals(
+        false, SimpleOffsetSerializer.classReflectionInfo.get(Crosslink.class).isVariable());
   }
 
   @Test
@@ -126,16 +160,20 @@ public class IsVariableTest {
 
   @Test
   void isHistoricalBatchVariableTest() {
-    assertEquals(false, SimpleOffsetSerializer.classReflectionInfo.get(HistoricalBatch.class).isVariable());
+    assertEquals(
+        false, SimpleOffsetSerializer.classReflectionInfo.get(HistoricalBatch.class).isVariable());
   }
 
   @Test
   void isPendingAttestationVariableTest() {
-    assertEquals(false, SimpleOffsetSerializer.classReflectionInfo.get(PendingAttestation.class).isVariable());
+    assertEquals(
+        true,
+        SimpleOffsetSerializer.classReflectionInfo.get(PendingAttestation.class).isVariable());
   }
 
   @Test
   void isValidatorVariableTest() {
-    assertEquals(false, SimpleOffsetSerializer.classReflectionInfo.get(Validator.class).isVariable());
+    assertEquals(
+        false, SimpleOffsetSerializer.classReflectionInfo.get(Validator.class).isVariable());
   }
 }

@@ -18,11 +18,9 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomDepositData;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
-import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.junit.BouncyCastleExtension;
 import org.junit.jupiter.api.Test;
@@ -82,17 +80,18 @@ class DepositTest {
   @Test
   void roundtripSSZ() {
     // todo
-   // deposit.setProof(Collections.nCopies(32, Bytes32.random()));
+    // deposit.setProof(Collections.nCopies(32, Bytes32.random()));
 
-    //Bytes sszDepositBytes = deposit.toBytes();
-    //Deposit sszDeposit = Deposit.fromBytes(sszDepositBytes);
-    //assertEquals(deposit, sszDeposit);
+    // Bytes sszDepositBytes = deposit.toBytes();
+    // Deposit sszDeposit = Deposit.fromBytes(sszDepositBytes);
+    // assertEquals(deposit, sszDeposit);
   }
-
 
   @Test
   void vectorLengthsTest() {
     List<Integer> vectorLengths = List.of(Constants.DEPOSIT_CONTRACT_TREE_DEPTH + 1);
-    assertEquals(vectorLengths, SimpleOffsetSerializer.classReflectionInfo.get(Deposit.class).getVectorLengths());
+    assertEquals(
+        vectorLengths,
+        SimpleOffsetSerializer.classReflectionInfo.get(Deposit.class).getVectorLengths());
   }
 }

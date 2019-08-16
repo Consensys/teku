@@ -26,7 +26,6 @@ import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
-import tech.pegasys.artemis.util.reflectionInformation.ReflectionInformation;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
 public class DepositData implements SimpleOffsetSerializable, SSZContainer {

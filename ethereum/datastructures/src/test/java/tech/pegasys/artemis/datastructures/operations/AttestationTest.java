@@ -130,5 +130,4 @@ class AttestationTest {
     assertEquals(byte8BitfieldAttestation, Attestation.fromBytes(byte8BitfieldAttestationBytes));
     assertEquals(byte16BitfieldAttestation, Attestation.fromBytes(byte16BitfieldAttestationBytes));
   }
-
 }

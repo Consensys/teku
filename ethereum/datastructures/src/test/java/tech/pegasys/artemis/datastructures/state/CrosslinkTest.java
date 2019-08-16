@@ -68,5 +68,4 @@ class CrosslinkTest {
     Bytes sszCrosslinkBytes = crosslink.toBytes();
     assertEquals(crosslink, Crosslink.fromBytes(sszCrosslinkBytes));
   }
-
 }

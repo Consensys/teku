@@ -20,7 +20,6 @@ import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomL
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.Objects;
-import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.util.bls.BLSSignature;
@@ -111,8 +110,7 @@ class BeaconBlockTest {
   @Test
   void roundtripSSZ() {
     // todo
-    //Bytes sszBeaconBlockBytes = beaconBlock.toBytes();
-    //assertEquals(beaconBlock, BeaconBlock.fromBytes(sszBeaconBlockBytes));
+    // Bytes sszBeaconBlockBytes = beaconBlock.toBytes();
+    // assertEquals(beaconBlock, BeaconBlock.fromBytes(sszBeaconBlockBytes));
   }
-
 }

@@ -23,7 +23,6 @@ import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.util.SSZTypes.SSZContainer;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 import tech.pegasys.artemis.util.hashtree.Merkleizable;
-import tech.pegasys.artemis.util.reflectionInformation.ReflectionInformation;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
 public class AttesterSlashing implements Merkleizable, SimpleOffsetSerializable, SSZContainer {

@@ -19,7 +19,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
-
 import tech.pegasys.artemis.util.SSZTypes.SSZContainer;
 import tech.pegasys.artemis.util.SSZTypes.SSZVector;
 
@@ -27,7 +26,7 @@ public class ReflectionInformationUtil {
   @SuppressWarnings("rawtypes")
   public static boolean isVariable(ReflectionInformation reflectionInformation)
       throws SecurityException {
-    for (Field field : reflectionInformation.getFields()){
+    for (Field field : reflectionInformation.getFields()) {
       Class type = field.getType();
       if (type.equals(List.class)) {
         return true;
@@ -59,7 +58,8 @@ public class ReflectionInformationUtil {
       Field[] fields = reflectionInformation.getFields();
       if (containsVector(fields)) {
         Object object = reflectionInformation.getClassInfo().getConstructor().newInstance();
-        List<Field> vectorVariables = Arrays.stream(fields)
+        List<Field> vectorVariables =
+            Arrays.stream(fields)
                 .filter(f -> f.getType().equals(SSZVector.class))
                 .collect(Collectors.toList());
 
@@ -72,7 +72,10 @@ public class ReflectionInformationUtil {
       } else {
         return vectorLengths;
       }
-    } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
+    } catch (InstantiationException
+        | IllegalAccessException
+        | InvocationTargetException
+        | NoSuchMethodException e) {
       System.out.println(e);
     }
     return vectorLengths;
@@ -85,7 +88,8 @@ public class ReflectionInformationUtil {
       Field[] fields = reflectionInformation.getFields();
       if (containsVector(fields)) {
         Object object = reflectionInformation.getClassInfo().getConstructor().newInstance();
-        List<Field> vectorVariables = Arrays.stream(fields)
+        List<Field> vectorVariables =
+            Arrays.stream(fields)
                 .filter(f -> f.getType().equals(SSZVector.class))
                 .collect(Collectors.toList());
 
@@ -98,7 +102,10 @@ public class ReflectionInformationUtil {
       } else {
         return vectorLengths;
       }
-    } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
+    } catch (InstantiationException
+        | IllegalAccessException
+        | InvocationTargetException
+        | NoSuchMethodException e) {
       System.out.println(e);
     }
     return vectorLengths;

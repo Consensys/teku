@@ -74,5 +74,4 @@ class AttestationDataAndCustodyBitTest {
         attestationDataAndCustodyBit,
         AttestationDataAndCustodyBit.fromBytes(sszAttestationDataAndCustodyBitBytes));
   }
-
 }

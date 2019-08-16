@@ -28,7 +28,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
@@ -220,8 +219,7 @@ class BeaconBlockBodyTest {
   @Test
   void roundtripSSZ() {
     // todo
-    //Bytes sszBeaconBlockBodyBytes = beaconBlockBody.toBytes();
-    //assertEquals(beaconBlockBody, BeaconBlockBody.fromBytes(sszBeaconBlockBodyBytes));
+    // Bytes sszBeaconBlockBodyBytes = beaconBlockBody.toBytes();
+    // assertEquals(beaconBlockBody, BeaconBlockBody.fromBytes(sszBeaconBlockBodyBytes));
   }
-
 }

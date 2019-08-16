@@ -33,7 +33,6 @@ import tech.pegasys.artemis.util.SSZTypes.SSZContainer;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
-import tech.pegasys.artemis.util.reflectionInformation.ReflectionInformation;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
 /** A Beacon block body */

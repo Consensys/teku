@@ -79,5 +79,4 @@ class AttesterSlashingTest {
     Bytes sszAttesterSlashingBytes = attesterSlashing.toBytes();
     assertEquals(attesterSlashing, AttesterSlashing.fromBytes(sszAttesterSlashingBytes));
   }
-
 }

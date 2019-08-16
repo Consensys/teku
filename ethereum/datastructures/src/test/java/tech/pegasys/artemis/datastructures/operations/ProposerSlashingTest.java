@@ -91,5 +91,4 @@ class ProposerSlashingTest {
     Bytes sszProposerSlashingBytes = proposerSlashing.toBytes();
     assertEquals(proposerSlashing, ProposerSlashing.fromBytes(sszProposerSlashingBytes));
   }
-
 }

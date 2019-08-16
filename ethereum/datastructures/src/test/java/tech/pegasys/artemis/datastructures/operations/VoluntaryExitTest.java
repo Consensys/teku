@@ -77,5 +77,4 @@ class VoluntaryExitTest {
     Bytes sszVoluntaryExitBytes = voluntaryExit.toBytes();
     assertEquals(voluntaryExit, VoluntaryExit.fromBytes(sszVoluntaryExitBytes));
   }
-
 }

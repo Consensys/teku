@@ -16,7 +16,6 @@ package tech.pegasys.artemis.datastructures.util;
 import static tech.pegasys.artemis.datastructures.Constants.BYTES_PER_LENGTH_OFFSET;
 
 import com.google.common.primitives.UnsignedLong;
-
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -24,7 +23,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Collectors;
-
 import org.apache.commons.codec.DecoderException;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -48,7 +46,6 @@ import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.datastructures.state.CompactCommittee;
 import tech.pegasys.artemis.datastructures.state.Crosslink;
-import tech.pegasys.artemis.datastructures.state.CrosslinkCommittee;
 import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.datastructures.state.HistoricalBatch;
 import tech.pegasys.artemis.datastructures.state.PendingAttestation;
@@ -67,28 +64,38 @@ public class SimpleOffsetSerializer {
 
   static {
     classReflectionInfo.put(BeaconBlock.class, new ReflectionInformation(BeaconBlock.class));
-    classReflectionInfo.put(BeaconBlockBody.class, new ReflectionInformation(BeaconBlockBody.class));
-    classReflectionInfo.put(BeaconBlockHeader.class, new ReflectionInformation(BeaconBlockHeader.class));
+    classReflectionInfo.put(
+        BeaconBlockBody.class, new ReflectionInformation(BeaconBlockBody.class));
+    classReflectionInfo.put(
+        BeaconBlockHeader.class, new ReflectionInformation(BeaconBlockHeader.class));
     classReflectionInfo.put(Eth1Data.class, new ReflectionInformation(Eth1Data.class));
     classReflectionInfo.put(Attestation.class, new ReflectionInformation(Attestation.class));
-    classReflectionInfo.put(AttestationData.class, new ReflectionInformation(AttestationData.class));
-    classReflectionInfo.put(AttestationDataAndCustodyBit.class, new ReflectionInformation(AttestationDataAndCustodyBit.class));
-    classReflectionInfo.put(AttesterSlashing.class, new ReflectionInformation(AttesterSlashing.class));
+    classReflectionInfo.put(
+        AttestationData.class, new ReflectionInformation(AttestationData.class));
+    classReflectionInfo.put(
+        AttestationDataAndCustodyBit.class,
+        new ReflectionInformation(AttestationDataAndCustodyBit.class));
+    classReflectionInfo.put(
+        AttesterSlashing.class, new ReflectionInformation(AttesterSlashing.class));
     classReflectionInfo.put(Deposit.class, new ReflectionInformation(Deposit.class));
     classReflectionInfo.put(DepositData.class, new ReflectionInformation(DepositData.class));
-    classReflectionInfo.put(IndexedAttestation.class, new ReflectionInformation(IndexedAttestation.class));
-    classReflectionInfo.put(ProposerSlashing.class, new ReflectionInformation(ProposerSlashing.class));
+    classReflectionInfo.put(
+        IndexedAttestation.class, new ReflectionInformation(IndexedAttestation.class));
+    classReflectionInfo.put(
+        ProposerSlashing.class, new ReflectionInformation(ProposerSlashing.class));
     classReflectionInfo.put(Transfer.class, new ReflectionInformation(Transfer.class));
     classReflectionInfo.put(VoluntaryExit.class, new ReflectionInformation(VoluntaryExit.class));
     classReflectionInfo.put(BeaconState.class, new ReflectionInformation(BeaconState.class));
     classReflectionInfo.put(Checkpoint.class, new ReflectionInformation(Checkpoint.class));
-    classReflectionInfo.put(CompactCommittee.class, new ReflectionInformation(CompactCommittee.class));
+    classReflectionInfo.put(
+        CompactCommittee.class, new ReflectionInformation(CompactCommittee.class));
     classReflectionInfo.put(Crosslink.class, new ReflectionInformation(Crosslink.class));
     classReflectionInfo.put(Fork.class, new ReflectionInformation(Fork.class));
-    classReflectionInfo.put(HistoricalBatch.class, new ReflectionInformation(HistoricalBatch.class));
-    classReflectionInfo.put(PendingAttestation.class, new ReflectionInformation(PendingAttestation.class));
+    classReflectionInfo.put(
+        HistoricalBatch.class, new ReflectionInformation(HistoricalBatch.class));
+    classReflectionInfo.put(
+        PendingAttestation.class, new ReflectionInformation(PendingAttestation.class));
     classReflectionInfo.put(Validator.class, new ReflectionInformation(Validator.class));
-
   }
 
   public static Bytes serialize(SimpleOffsetSerializable value) {
@@ -182,12 +189,12 @@ public class SimpleOffsetSerializer {
 
   @SuppressWarnings("TypeParameterUnusedInFormals")
   public static <T> T deserialize(Bytes bytes, Class classInfo) {
-    return SSZ.decode(bytes, sszReader -> (T) deserializeFixedComposite(bytes, classInfo, sszReader));
+    return SSZ.decode(
+        bytes, sszReader -> (T) deserializeFixedComposite(bytes, classInfo, sszReader));
   }
 
-
   @SuppressWarnings("TypeParameterUnusedInFormals")
-  public static <T>  T deserializeFixedComposite(Bytes bytes, Class classInfo, SSZReader reader) {
+  public static <T> T deserializeFixedComposite(Bytes bytes, Class classInfo, SSZReader reader) {
     try {
       ReflectionInformation reflectionInformation = classReflectionInfo.get(classInfo);
       int numParams = reflectionInformation.getParameterCount();
@@ -204,7 +211,12 @@ public class SimpleOffsetSerializer {
         } else if (isContainer(fieldClass)) {
           fieldObject = deserializeFixedComposite(bytes, fieldClass, reader);
         } else if (isVector(fieldClass)) {
-          fieldObject = deserializeFixedElementVector(bytes, vectorElementTypes.get(vectorCounter), vectorLengths.get(vectorCounter), reader);
+          fieldObject =
+              deserializeFixedElementVector(
+                  bytes,
+                  vectorElementTypes.get(vectorCounter),
+                  vectorLengths.get(vectorCounter),
+                  reader);
           vectorCounter++;
         }
 
@@ -214,7 +226,6 @@ public class SimpleOffsetSerializer {
         params[i] = fieldObject;
       }
 
-
       Constructor constructor = reflectionInformation.getConstructor();
       return (T) constructor.newInstance(params);
     } catch (Exception e) {
@@ -223,18 +234,18 @@ public class SimpleOffsetSerializer {
     }
   }
 
-  private static SSZVector deserializeFixedElementVector(Bytes bytes, Class classInfo, int numElements, SSZReader reader) {
+  private static SSZVector deserializeFixedElementVector(
+      Bytes bytes, Class classInfo, int numElements, SSZReader reader) {
     List newList = new ArrayList<>();
-      for (int i = 0; i < numElements; i++) {
-        if (isPrimitive(classInfo)) {
-          newList.add(deserializePrimitive(bytes, classInfo, reader));
-        } else if (isContainer(classInfo) && !classReflectionInfo.get(classInfo).isVariable()) {
-          newList.add(deserializeFixedComposite(bytes, classInfo, reader));
-        }
+    for (int i = 0; i < numElements; i++) {
+      if (isPrimitive(classInfo)) {
+        newList.add(deserializePrimitive(bytes, classInfo, reader));
+      } else if (isContainer(classInfo) && !classReflectionInfo.get(classInfo).isVariable()) {
+        newList.add(deserializeFixedComposite(bytes, classInfo, reader));
       }
+    }
     return new SSZVector<>(newList);
   }
-
 
   private static boolean isPrimitive(Class classInfo) {
     return !(SSZContainer.class.isAssignableFrom(classInfo) || classInfo == SSZVector.class);

@@ -69,5 +69,4 @@ class ForkTest {
     Bytes sszForkBytes = fork.toBytes();
     assertEquals(fork, Fork.fromBytes(sszForkBytes));
   }
-
 }

@@ -116,5 +116,4 @@ class AttestationDataTest {
     Bytes sszAttestationDataBytes = attestationData.toBytes();
     assertEquals(attestationData, AttestationData.fromBytes(sszAttestationDataBytes));
   }
-
 }

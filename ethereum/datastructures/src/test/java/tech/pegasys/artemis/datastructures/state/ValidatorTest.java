@@ -173,5 +173,4 @@ class ValidatorTest {
     Bytes sszValidatorBytes = validator.toBytes();
     assertEquals(validator, Validator.fromBytes(sszValidatorBytes));
   }
-
 }

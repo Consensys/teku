@@ -32,7 +32,6 @@ public class ReflectionInformation {
   private boolean isVariable;
   private List<Integer> vectorLengths;
 
-
   private List<Class> vectorElementTypes;
 
   @SuppressWarnings("unchecked")
@@ -81,15 +80,12 @@ public class ReflectionInformation {
 
   private Field[] getFields(Class classInfo) {
     return Arrays.stream(classInfo.getDeclaredFields())
-            .filter(f -> !Modifier.isStatic(f.getModifiers()))
-            .collect(toList())
-            .toArray(new Field[0]);
+        .filter(f -> !Modifier.isStatic(f.getModifiers()))
+        .collect(toList())
+        .toArray(new Field[0]);
   }
 
   private Class[] getTypes(Field[] fields) {
-     return Arrays.stream(fields)
-                      .map(f -> f.getType())
-                      .collect(toList())
-                      .toArray(new Class[0]);
+    return Arrays.stream(fields).map(f -> f.getType()).collect(toList()).toArray(new Class[0]);
   }
 }

@@ -28,7 +28,6 @@ import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.util.SSZTypes.SSZContainer;
 import tech.pegasys.artemis.util.SSZTypes.SSZVector;
-import tech.pegasys.artemis.util.reflectionInformation.ReflectionInformation;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
 public class BeaconState implements SimpleOffsetSerializable, SSZContainer {
@@ -221,8 +220,6 @@ public class BeaconState implements SimpleOffsetSerializable, SSZContainer {
     this.current_justified_checkpoint = new Checkpoint();
     this.finalized_checkpoint = new Checkpoint();
   }
-
-
 
   @Override
   public int getSSZFieldCount() {

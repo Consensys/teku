@@ -87,5 +87,4 @@ class DepositDataTest {
     Bytes sszDepositInputBytes = depositData.toBytes();
     assertEquals(depositData, DepositData.fromBytes(sszDepositInputBytes));
   }
-
 }

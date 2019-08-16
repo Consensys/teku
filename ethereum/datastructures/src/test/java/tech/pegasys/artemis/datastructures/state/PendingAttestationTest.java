@@ -130,5 +130,4 @@ class PendingAttestationTest {
         byte16BitfieldPendingAttestation,
         PendingAttestation.fromBytes(byte16BitfieldPendingAttestationBytes));
   }
-
 }

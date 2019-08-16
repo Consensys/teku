@@ -21,17 +21,14 @@ import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.setBit;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomDeposits;
 
 import com.google.common.primitives.UnsignedLong;
+import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.junit.BouncyCastleExtension;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import tech.pegasys.artemis.datastructures.Constants;
-import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
-import tech.pegasys.artemis.util.reflectionInformation.ReflectionInformation;
-
-import java.util.List;
 
 @ExtendWith(BouncyCastleExtension.class)
 class BeaconStateTest {
@@ -326,7 +323,8 @@ class BeaconStateTest {
 
   @Test
   void vectorLengthsTest() {
-    List<Integer> vectorLengths = List.of(
+    List<Integer> vectorLengths =
+        List.of(
             Constants.SLOTS_PER_HISTORICAL_ROOT,
             Constants.SLOTS_PER_HISTORICAL_ROOT,
             Constants.EPOCHS_PER_HISTORICAL_VECTOR,
@@ -335,6 +333,8 @@ class BeaconStateTest {
             Constants.EPOCHS_PER_SLASHINGS_VECTOR,
             Constants.SHARD_COUNT,
             Constants.SHARD_COUNT);
-    assertEquals(vectorLengths, SimpleOffsetSerializer.classReflectionInfo.get(BeaconState.class).getVectorLengths());
+    assertEquals(
+        vectorLengths,
+        SimpleOffsetSerializer.classReflectionInfo.get(BeaconState.class).getVectorLengths());
   }
 }
