@@ -37,6 +37,7 @@ public final class MothraP2PNetwork implements P2PNetwork {
   private final ChainStorageClient store;
   private final int port;
   private final String networkInterface;
+  private final String identity;
   private final boolean isBootnode;
   private final String userAgent = "Artemis SNAPSHOT";
   private GossipProtocol gossipProtocol;
@@ -55,11 +56,13 @@ public final class MothraP2PNetwork implements P2PNetwork {
       ChainStorageClient store,
       int port,
       String networkInterface,
+      String identity,
       boolean isBootnode) {
     this.eventBus = eventBus;
     this.store = store;
     this.port = port;
     this.networkInterface = networkInterface;
+    this.identity = identity;
     this.isBootnode = isBootnode;
     this.gossipProtocol = GossipProtocol.GOSSIPSUB;
     eventBus.register(this);
@@ -69,6 +72,8 @@ public final class MothraP2PNetwork implements P2PNetwork {
     this.args = processArgs();
   }
 
+  // TODO - issue #828:
+  //       all these params should be moved to the config file
   private String[] processArgs() {
     String sargs = "./artemis ";
     if (!isBootnode) {
@@ -77,7 +82,8 @@ public final class MothraP2PNetwork implements P2PNetwork {
               + this.networkInterface
               + " --port "
               + String.valueOf(this.port)
-              + " --datadir /tmp/.artemis";
+              + " --datadir /tmp/.artemis"
+              + this.identity;
     }
     return sargs.split(" ");
   }

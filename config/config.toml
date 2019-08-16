@@ -3,7 +3,7 @@
 # "mock": use MockP2PNetwork
 # "hobbits": use HobbitsP2PNetwork
 # "mothra": use MothraP2PNetwork
-networkMode = "mothra"
+networkMode = "mock"
 #  Gossip options: floodsub,gossipsub,plumtree,none
 gossipProtocol = "floodsub"
 identity = "0x00"

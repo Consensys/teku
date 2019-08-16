@@ -20,13 +20,22 @@ $ ./gradlew
 
 After a successful build, distribution packages will be available in `build/distributions`.
 
-## Run Demo
+## Run Demo (Hobbits)
 
 After building, follow these instructions:
 
 ```bash
 $ cd scripts
 $ sh run.sh -n=[NUMBER OF NODES]
+```
+
+## Run Demo (Mothra)
+
+After building, follow these instructions:
+
+```bash
+$ cd scripts
+$ sh run.sh -n=[NUMBER OF NODES] -m=mothra
 ```
 
 > Note:  You will need tmux installed for this demo to work
