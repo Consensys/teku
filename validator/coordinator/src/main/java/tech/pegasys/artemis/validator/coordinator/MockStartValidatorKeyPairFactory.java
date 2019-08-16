@@ -13,36 +13,44 @@
 
 package tech.pegasys.artemis.validator.coordinator;
 
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.int_to_bytes32;
+
+import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.message.BouncyCastleMessageDigestFactory;
 import tech.pegasys.artemis.util.mikuli.KeyPair;
 import tech.pegasys.artemis.util.mikuli.SecretKey;
 
 public class MockStartValidatorKeyPairFactory implements ValidatorKeyPairFactory {
+  private static final int KEY_LENGTH = 48;
+  private static final BigInteger CURVE_ORDER =
+      new BigInteger(
+          "52435875175126190479447740508185965837690552500527637822603658699938581184513");
 
   @Override
   public List<BLSKeyPair> generateKeyPairs(final int startIndex, final int endIndex) {
     return IntStream.rangeClosed(startIndex, endIndex)
         .mapToObj(
             index -> {
-              final Bytes32 indexBytes = BeaconStateUtil.int_to_bytes32(index);
-              final MessageDigest sha256Digest = getSha256Digest();
-              indexBytes.update(sha256Digest);
-              final Bytes hash = Bytes.wrap(sha256Digest.digest());
-              final Bytes privKeyBytes =
-                  Bytes.concatenate(Bytes.wrap(new byte[17]), hash.slice(0, hash.size() - 1));
+              final Bytes hash = sha256(int_to_bytes32(index));
+              final BigInteger privKey = hash.reverse().toUnsignedBigInteger().mod(CURVE_ORDER);
+              final Bytes privKeyBytes = padLeft(Bytes.of(privKey.toByteArray()), KEY_LENGTH);
 
               return new BLSKeyPair(new KeyPair(SecretKey.fromBytes(privKeyBytes)));
             })
         .collect(Collectors.toList());
+  }
+
+  private Bytes sha256(final Bytes indexBytes) {
+    final MessageDigest sha256Digest = getSha256Digest();
+    indexBytes.update(sha256Digest);
+    return Bytes.wrap(sha256Digest.digest());
   }
 
   private MessageDigest getSha256Digest() {
@@ -51,5 +59,9 @@ public class MockStartValidatorKeyPairFactory implements ValidatorKeyPairFactory
     } catch (NoSuchAlgorithmException e) {
       throw new RuntimeException(e);
     }
+  }
+
+  private Bytes padLeft(Bytes input, int targetLength) {
+    return Bytes.concatenate(Bytes.wrap(new byte[targetLength - input.size()]), input);
   }
 }
