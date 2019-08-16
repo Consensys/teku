@@ -40,6 +40,7 @@ import tech.pegasys.artemis.datastructures.state.HistoricalBatch;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
+import tech.pegasys.artemis.util.SSZTypes.Bytes4;
 import tech.pegasys.artemis.util.SSZTypes.SSZVector;
 
 public class DeserializationTest {
@@ -196,10 +197,12 @@ public class DeserializationTest {
   void ForkTest() {
     Fork fork =
         new Fork(
-            int_to_bytes(0, 4), int_to_bytes(0, 4), UnsignedLong.valueOf(Constants.GENESIS_EPOCH));
-    assertEquals(
-        fork,
-        SimpleOffsetSerializer.deserialize(SimpleOffsetSerializer.serialize(fork), Fork.class));
+            new Bytes4(int_to_bytes(2, 4)),
+            new Bytes4(int_to_bytes(3, 4)),
+            UnsignedLong.valueOf(Constants.GENESIS_EPOCH));
+    Fork newFork =
+        SimpleOffsetSerializer.deserialize(SimpleOffsetSerializer.serialize(fork), Fork.class);
+    assertEquals(fork, newFork);
   }
 
   @Test

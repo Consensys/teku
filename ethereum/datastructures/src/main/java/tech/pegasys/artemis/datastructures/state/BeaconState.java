@@ -26,6 +26,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
+import tech.pegasys.artemis.util.SSZTypes.Bytes4;
 import tech.pegasys.artemis.util.SSZTypes.SSZContainer;
 import tech.pegasys.artemis.util.SSZTypes.SSZVector;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
@@ -175,7 +176,9 @@ public class BeaconState implements SimpleOffsetSerializable, SSZContainer {
     this.slot = UnsignedLong.valueOf(Constants.GENESIS_SLOT);
     this.fork =
         new Fork(
-            int_to_bytes(0, 4), int_to_bytes(0, 4), UnsignedLong.valueOf(Constants.GENESIS_EPOCH));
+            new Bytes4(int_to_bytes(0, 4)),
+            new Bytes4(int_to_bytes(0, 4)),
+            UnsignedLong.valueOf(Constants.GENESIS_EPOCH));
 
     // History
     this.latest_block_header = new BeaconBlockHeader();

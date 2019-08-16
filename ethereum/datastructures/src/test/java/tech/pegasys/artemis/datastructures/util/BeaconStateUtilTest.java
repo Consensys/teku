@@ -41,6 +41,7 @@ import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.state.CrosslinkCommittee;
 import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.datastructures.state.Validator;
+import tech.pegasys.artemis.util.SSZTypes.Bytes4;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSVerify;
 
@@ -272,8 +273,8 @@ class BeaconStateUtilTest {
     beaconState.setSlot(randomUnsignedLong());
     beaconState.setFork(
         new Fork(
-            Bytes.ofUnsignedInt(0),
-            Bytes.ofUnsignedInt(0),
+            new Bytes4(Bytes.ofUnsignedInt(0)),
+            new Bytes4(Bytes.ofUnsignedInt(0)),
             UnsignedLong.valueOf(Constants.GENESIS_EPOCH)));
 
     List<Validator> validatorList =

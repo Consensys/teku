@@ -27,6 +27,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.junit.BouncyCastleExtension;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import tech.pegasys.artemis.util.SSZTypes.Bytes4;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 
 @ExtendWith(BouncyCastleExtension.class)
@@ -58,7 +59,8 @@ class BeaconStateWithCacheTest {
     assertThat(deepCopy.getSlot()).isNotEqualTo(state.getSlot());
 
     // Test fork
-    state.setFork(new Fork(Bytes.random(4), Bytes.random(4), UnsignedLong.ONE));
+    state.setFork(
+        new Fork(new Bytes4(Bytes.random(4)), new Bytes4(Bytes.random(4)), UnsignedLong.ONE));
     assertThat(deepCopy.getFork().getPrevious_version())
         .isNotEqualTo(state.getFork().getPrevious_version());
   }

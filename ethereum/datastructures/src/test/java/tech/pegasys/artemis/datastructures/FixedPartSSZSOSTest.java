@@ -36,7 +36,6 @@ import tech.pegasys.artemis.datastructures.operations.Transfer;
 import tech.pegasys.artemis.datastructures.operations.VoluntaryExit;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.datastructures.state.Crosslink;
-import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
@@ -125,20 +124,6 @@ class FixedPartSSZSOSTest {
 
     // SJS - The test fails due to SSZ discrepancy, but the SOS value is correct.
     // assertEquals(sszProposerSlashingBytes, sosProposerSlashingBytes);
-  }
-
-  @Test
-  void testForkSOS() {
-    Bytes previousVersion = Bytes.random(4);
-    Bytes currentVersion = Bytes.random(4);
-    UnsignedLong epoch = randomUnsignedLong();
-
-    Fork fork = new Fork(previousVersion, currentVersion, epoch);
-
-    Bytes sszForkBytes = fork.toBytes();
-    Bytes sosForkBytes = SimpleOffsetSerializer.serialize(fork);
-
-    assertEquals(sszForkBytes, sosForkBytes);
   }
 
   @Test

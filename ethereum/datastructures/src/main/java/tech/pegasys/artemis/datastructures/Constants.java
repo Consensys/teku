@@ -18,6 +18,7 @@ import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.int_to_by
 import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.artemis.util.SSZTypes.Bytes4;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 
@@ -86,12 +87,12 @@ public class Constants {
   public static int MAX_TRANSFERS = 0;
 
   // Signature domains
-  public static Bytes DOMAIN_BEACON_PROPOSER = int_to_bytes(0, 4);
-  public static Bytes DOMAIN_RANDAO = int_to_bytes(1, 4);
-  public static Bytes DOMAIN_ATTESTATION = int_to_bytes(2, 4);
-  public static Bytes DOMAIN_DEPOSIT = int_to_bytes(3, 4);
-  public static Bytes DOMAIN_VOLUNTARY_EXIT = int_to_bytes(4, 4);
-  public static Bytes DOMAIN_TRANSFER = int_to_bytes(5, 4);
+  public static Bytes4 DOMAIN_BEACON_PROPOSER = new Bytes4(int_to_bytes(0, 4));
+  public static Bytes4 DOMAIN_RANDAO = new Bytes4(int_to_bytes(1, 4));
+  public static Bytes4 DOMAIN_ATTESTATION = new Bytes4(int_to_bytes(2, 4));
+  public static Bytes4 DOMAIN_DEPOSIT = new Bytes4(int_to_bytes(3, 4));
+  public static Bytes4 DOMAIN_VOLUNTARY_EXIT = new Bytes4(int_to_bytes(4, 4));
+  public static Bytes4 DOMAIN_TRANSFER = new Bytes4(int_to_bytes(5, 4));
 
   // Artemis specific
   public static String SIM_DEPOSIT_VALUE = "1000000000000000000";

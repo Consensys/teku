@@ -50,6 +50,7 @@ import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.datastructures.state.HistoricalBatch;
 import tech.pegasys.artemis.datastructures.state.PendingAttestation;
 import tech.pegasys.artemis.datastructures.state.Validator;
+import tech.pegasys.artemis.util.SSZTypes.Bytes4;
 import tech.pegasys.artemis.util.SSZTypes.SSZContainer;
 import tech.pegasys.artemis.util.SSZTypes.SSZVector;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
@@ -176,6 +177,8 @@ public class SimpleOffsetSerializer {
       case "ArrayWrappingBytes32":
       case "Bytes32":
         return Bytes32.wrap(reader.readFixedBytes(32));
+      case "Bytes4":
+        return new Bytes4(reader.readFixedBytes(4));
       case "BLSSignature":
         return BLSSignature.fromBytes(reader.readFixedBytes(96));
       case "BLSPublicKey":

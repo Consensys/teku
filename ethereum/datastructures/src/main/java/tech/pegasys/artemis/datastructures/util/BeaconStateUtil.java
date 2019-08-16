@@ -66,6 +66,7 @@ import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.state.Validator;
+import tech.pegasys.artemis.util.SSZTypes.Bytes4;
 import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
@@ -301,10 +302,8 @@ public class BeaconStateUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#compute_domain</a>
    */
-  public static Bytes compute_domain(Bytes domain_type, Bytes fork_version) {
-    checkArgument(domain_type.size() == 4, "domain_type must be of type Bytes4");
-    checkArgument(fork_version.size() == 4, "fork_version must be of type Bytes4");
-    Bytes domain = Bytes.concatenate(domain_type, fork_version);
+  public static Bytes compute_domain(Bytes4 domain_type, Bytes4 fork_version) {
+    Bytes domain = Bytes.concatenate(domain_type.getWrappedBytes(), fork_version.getWrappedBytes());
     checkArgument(domain.size() == 8, "domain must be of type Bytes8");
     return domain;
   }
@@ -317,8 +316,8 @@ public class BeaconStateUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#compute_domain</a>
    */
-  public static Bytes compute_domain(Bytes domain_type) {
-    return compute_domain(domain_type, Bytes.wrap(new byte[4]));
+  public static Bytes compute_domain(Bytes4 domain_type) {
+    return compute_domain(domain_type, new Bytes4(Bytes.wrap(new byte[4])));
   }
 
   /**
@@ -713,10 +712,10 @@ public class BeaconStateUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#get_domain</a>
    */
-  public static Bytes get_domain(BeaconState state, Bytes domain_type, UnsignedLong message_epoch) {
-    checkArgument(domain_type.size() == 4, "domain_type must be of type Bytes4");
+  public static Bytes get_domain(
+      BeaconState state, Bytes4 domain_type, UnsignedLong message_epoch) {
     UnsignedLong epoch = (message_epoch == null) ? get_current_epoch(state) : message_epoch;
-    Bytes fork_version =
+    Bytes4 fork_version =
         (epoch.compareTo(state.getFork().getEpoch()) < 0)
             ? state.getFork().getPrevious_version()
             : state.getFork().getCurrent_version();
@@ -733,7 +732,7 @@ public class BeaconStateUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#get_domain</a>
    */
-  public static Bytes get_domain(BeaconState state, Bytes domain_type) {
+  public static Bytes get_domain(BeaconState state, Bytes4 domain_type) {
     return get_domain(state, domain_type, null);
   }
 
