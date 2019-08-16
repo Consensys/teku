@@ -51,6 +51,7 @@ import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.datastructures.state.HistoricalBatch;
 import tech.pegasys.artemis.datastructures.state.PendingAttestation;
 import tech.pegasys.artemis.datastructures.state.Validator;
+import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.reference.TestSuite;
 
 @ExtendWith(BouncyCastleExtension.class)
@@ -169,7 +170,7 @@ class ssz_minimal_zero extends TestSuite {
       BeaconBlock beaconBlock, Bytes serialized, Bytes32 root) {
     assertEquals(
         serialized,
-        beaconBlock.toBytes(),
+        SimpleOffsetSerializer.serialize(beaconBlock),
         beaconBlock.getClass().getName() + " failed the serialiaztion test");
     assertEquals(
         root,
@@ -194,7 +195,7 @@ class ssz_minimal_zero extends TestSuite {
       BeaconBlockBody beaconBlockBody, Bytes serialized, Bytes32 root) {
     assertEquals(
         serialized,
-        beaconBlockBody.toBytes(),
+        SimpleOffsetSerializer.serialize(beaconBlockBody),
         beaconBlockBody.getClass().getName() + " failed the serialiaztion test");
     assertEquals(
         root,
@@ -244,7 +245,7 @@ class ssz_minimal_zero extends TestSuite {
       BeaconState beaconState, Bytes serialized, Bytes32 root) {
     assertEquals(
         serialized,
-        beaconState.toBytes(),
+        SimpleOffsetSerializer.serialize(beaconState),
         beaconState.getClass().getName() + " failed the serialiaztion test");
     assertEquals(
         root,
@@ -339,7 +340,7 @@ class ssz_minimal_zero extends TestSuite {
   void sszDepositCheckSerializationRoot(Deposit deposit, Bytes serialized, Bytes32 root) {
     assertEquals(
         serialized,
-        deposit.toBytes(),
+        SimpleOffsetSerializer.serialize(deposit),
         deposit.getClass().getName() + " failed the serialiaztion test");
     assertEquals(
         root, deposit.hash_tree_root(), deposit.getClass().getName() + " failed the root test");
@@ -407,7 +408,9 @@ class ssz_minimal_zero extends TestSuite {
   @MethodSource("readMessageSSZFork")
   void sszForkCheckSerializationRoot(Fork fork, Bytes serialized, Bytes32 root) {
     assertEquals(
-        serialized, fork.toBytes(), fork.getClass().getName() + " failed the serialiaztion test");
+        serialized,
+        SimpleOffsetSerializer.serialize(fork),
+        fork.getClass().getName() + " failed the serialiaztion test");
     assertEquals(root, fork.hash_tree_root(), fork.getClass().getName() + " failed the root test");
   }
 

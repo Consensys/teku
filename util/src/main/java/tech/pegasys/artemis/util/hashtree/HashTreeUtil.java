@@ -27,6 +27,7 @@ import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.Hash;
+import tech.pegasys.artemis.util.bls.BLSPublicKey;
 
 /** This class is a collection of tree hash root convenience methods */
 public final class HashTreeUtil {
@@ -304,6 +305,24 @@ public final class HashTreeUtil {
       List<? extends Bytes> bytes, long maxSize, int length) {
     return mix_in_length(
         merkleize(pack(bytes.toArray(new Bytes[0])), chunk_count_list_unsigned_long(maxSize)),
+        length);
+  }
+
+  public static Bytes32 hash_tree_root_list_pubkey(List<BLSPublicKey> pubkeys, long maxSize) {
+    return hash_tree_root_list_pubkey(pubkeys, maxSize, pubkeys.size());
+  }
+
+  private static Bytes32 hash_tree_root_list_pubkey(
+      List<BLSPublicKey> bytes, long maxSize, int length) {
+    List<Bytes32> hashTreeRootList =
+        bytes.stream()
+            .map(item -> hash_tree_root(SSZTypes.VECTOR_OF_BASIC, item.toBytes()))
+            .collect(Collectors.toList());
+    return mix_in_length(
+        merkleize(
+            hashTreeRootList,
+            chunk_count(
+                SSZTypes.LIST_OF_COMPOSITE, maxSize, hashTreeRootList.toArray(new Bytes32[0]))),
         length);
   }
 

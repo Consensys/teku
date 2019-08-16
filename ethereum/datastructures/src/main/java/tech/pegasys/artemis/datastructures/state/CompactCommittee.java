@@ -26,7 +26,6 @@ import tech.pegasys.artemis.datastructures.Copyable;
 import tech.pegasys.artemis.util.SSZTypes.SSZContainer;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
-import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
 import tech.pegasys.artemis.util.hashtree.Merkleizable;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
@@ -80,7 +79,6 @@ public class CompactCommittee
         compact_validators.stream()
             .map(value -> SSZ.encodeUInt64(value.longValue()))
             .collect(Collectors.toList()));
-    variablePartsList.addAll(List.of(Bytes.EMPTY, Bytes.EMPTY));
     return variablePartsList;
   }
 
@@ -131,13 +129,8 @@ public class CompactCommittee
   public Bytes32 hash_tree_root() {
     return HashTreeUtil.merkleize(
         Arrays.asList(
-            HashTreeUtil.hash_tree_root(
-                SSZTypes.VECTOR_OF_BASIC,
-                pubkeys.stream()
-                    .map(BLSPublicKey::toBytes)
-                    .map(item -> SSZ.encodeBytes(item))
-                    .collect(Collectors.toList())
-                    .toArray(new Bytes[0])),
+            HashTreeUtil.hash_tree_root_list_pubkey(
+                pubkeys, Constants.MAX_VALIDATORS_PER_COMMITTEE),
             HashTreeUtil.hash_tree_root_list_ul(
                 Constants.MAX_VALIDATORS_PER_COMMITTEE,
                 compact_validators.stream()

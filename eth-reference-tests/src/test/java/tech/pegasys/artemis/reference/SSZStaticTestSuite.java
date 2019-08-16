@@ -53,11 +53,14 @@ import tech.pegasys.artemis.datastructures.operations.Transfer;
 import tech.pegasys.artemis.datastructures.operations.VoluntaryExit;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
+import tech.pegasys.artemis.datastructures.state.CompactCommittee;
 import tech.pegasys.artemis.datastructures.state.Crosslink;
 import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.datastructures.state.PendingAttestation;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
+import tech.pegasys.artemis.util.SSZTypes.Bytes4;
+import tech.pegasys.artemis.util.SSZTypes.SSZVector;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 
@@ -390,6 +393,25 @@ class SSZStaticTestSuite {
     assertEquals(Bytes.fromHexString(serialized), SimpleOffsetSerializer.serialize(beaconBlock));
   }
 
+  @ParameterizedTest(name = "{index}. CompactCommittee Hash Tree Root Test")
+  @MethodSource("readCompactCommittee")
+  void testCompactCommitteeHashTreeRoot(
+      LinkedHashMap<String, Object> value, String serialized, String root) {
+    CompactCommittee compactCommittee = parseCompactCommittee(value);
+
+    assertEquals(Bytes32.fromHexString(root), compactCommittee.hash_tree_root());
+  }
+
+  @ParameterizedTest(name = "{index}. CompactCommittee Serialization Test")
+  @MethodSource("readCompactCommittee")
+  void testCompactCommitteeSerialize(
+      LinkedHashMap<String, Object> value, String serialized, String root) {
+    CompactCommittee compactCommittee = parseCompactCommittee(value);
+
+    assertEquals(
+        Bytes.fromHexString(serialized), SimpleOffsetSerializer.serialize(compactCommittee));
+  }
+
   @ParameterizedTest(name = "{index}. BeaconState Hash Tree Root Test")
   @MethodSource("readBeaconState")
   void testBeaconStateHashTreeRoot(
@@ -438,7 +460,7 @@ class SSZStaticTestSuite {
                 .collect(Collectors.toList());
     DepositData data = parseDepositData((LinkedHashMap<String, Object>) value.get("data"));
 
-    Deposit deposit = new Deposit(proof, data);
+    Deposit deposit = new Deposit(new SSZVector<>(proof), data);
     return deposit;
   }
 
@@ -570,8 +592,9 @@ class SSZStaticTestSuite {
   }
 
   private Fork parseFork(LinkedHashMap<String, Object> value) {
-    Bytes previousVersion = Bytes.fromHexString((String) value.get("previous_version"));
-    Bytes currentVersion = Bytes.fromHexString((String) value.get("current_version"));
+    Bytes4 previousVersion =
+        new Bytes4(Bytes.fromHexString((String) value.get("previous_version")));
+    Bytes4 currentVersion = new Bytes4(Bytes.fromHexString((String) value.get("current_version")));
     UnsignedLong epoch = UnsignedLong.valueOf((BigInteger) value.get("epoch"));
 
     Fork fork = new Fork(previousVersion, currentVersion, epoch);
@@ -675,6 +698,20 @@ class SSZStaticTestSuite {
   }
 
   @SuppressWarnings({"unchecked"})
+  private CompactCommittee parseCompactCommittee(LinkedHashMap<String, Object> value) {
+    List<BLSPublicKey> pubkeys =
+        ((List<String>) value.get("pubkeys"))
+            .stream()
+                .map(pubkey -> mockBLSPublicKey(Bytes.fromHexString(pubkey)))
+                .collect(Collectors.toList());
+    List<UnsignedLong> compactValidators =
+        ((List<BigInteger>) value.get("compact_validators"))
+            .stream().map(index -> UnsignedLong.valueOf(index)).collect(Collectors.toList());
+    CompactCommittee compactCommittee = new CompactCommittee(pubkeys, compactValidators);
+    return compactCommittee;
+  }
+
+  @SuppressWarnings({"unchecked"})
   private BeaconState parseBeaconState(LinkedHashMap<String, Object> value) {
     UnsignedLong genesisTime = UnsignedLong.valueOf((BigInteger) value.get("genesis_time"));
     UnsignedLong slot = UnsignedLong.valueOf((BigInteger) value.get("slot"));
@@ -682,16 +719,18 @@ class SSZStaticTestSuite {
 
     BeaconBlockHeader latestBlockHeader =
         parseBeaconBlockHeader((LinkedHashMap<String, Object>) value.get("latest_block_header"));
-    List<Bytes32> blockRoots =
-        ((List<String>) value.get("block_roots"))
-            .stream()
-                .map(proofString -> Bytes32.fromHexString(proofString))
-                .collect(Collectors.toList());
-    List<Bytes32> stateRoots =
-        ((List<String>) value.get("state_roots"))
-            .stream()
-                .map(proofString -> Bytes32.fromHexString(proofString))
-                .collect(Collectors.toList());
+    SSZVector<Bytes32> blockRoots =
+        new SSZVector<>(
+            ((List<String>) value.get("block_roots"))
+                .stream()
+                    .map(proofString -> Bytes32.fromHexString(proofString))
+                    .collect(Collectors.toList()));
+    SSZVector<Bytes32> stateRoots =
+        new SSZVector<>(
+            ((List<String>) value.get("state_roots"))
+                .stream()
+                    .map(proofString -> Bytes32.fromHexString(proofString))
+                    .collect(Collectors.toList()));
     List<Bytes32> historicalRoots =
         ((List<String>) value.get("historical_roots"))
             .stream()
@@ -713,25 +752,29 @@ class SSZStaticTestSuite {
             .stream().map(index -> UnsignedLong.valueOf(index)).collect(Collectors.toList());
 
     UnsignedLong startShard = UnsignedLong.valueOf((BigInteger) value.get("start_shard"));
-    List<Bytes32> randaoMixes =
-        ((List<String>) value.get("randao_mixes"))
-            .stream()
-                .map(proofString -> Bytes32.fromHexString(proofString))
-                .collect(Collectors.toList());
-    List<Bytes32> activeIndexRoots =
-        ((List<String>) value.get("active_index_roots"))
-            .stream()
-                .map(proofString -> Bytes32.fromHexString(proofString))
-                .collect(Collectors.toList());
-    List<Bytes32> compactCommitteesRoots =
-        ((List<String>) value.get("compact_committees_roots"))
-            .stream()
-                .map(proofString -> Bytes32.fromHexString(proofString))
-                .collect(Collectors.toList());
+    SSZVector<Bytes32> randaoMixes =
+        new SSZVector<>(
+            ((List<String>) value.get("randao_mixes"))
+                .stream()
+                    .map(proofString -> Bytes32.fromHexString(proofString))
+                    .collect(Collectors.toList()));
+    SSZVector<Bytes32> activeIndexRoots =
+        new SSZVector<>(
+            ((List<String>) value.get("active_index_roots"))
+                .stream()
+                    .map(proofString -> Bytes32.fromHexString(proofString))
+                    .collect(Collectors.toList()));
+    SSZVector<Bytes32> compactCommitteesRoots =
+        new SSZVector<>(
+            ((List<String>) value.get("compact_committees_roots"))
+                .stream()
+                    .map(proofString -> Bytes32.fromHexString(proofString))
+                    .collect(Collectors.toList()));
 
-    List<UnsignedLong> slashings =
-        ((List<BigInteger>) value.get("slashings"))
-            .stream().map(index -> UnsignedLong.valueOf(index)).collect(Collectors.toList());
+    SSZVector<UnsignedLong> slashings =
+        new SSZVector<>(
+            ((List<BigInteger>) value.get("slashings"))
+                .stream().map(index -> UnsignedLong.valueOf(index)).collect(Collectors.toList()));
 
     List<PendingAttestation> previousEpochAttestations =
         ((List<LinkedHashMap<String, Object>>) value.get("previous_epoch_attestations"))
@@ -740,12 +783,14 @@ class SSZStaticTestSuite {
         ((List<LinkedHashMap<String, Object>>) value.get("current_epoch_attestations"))
             .stream().map(map -> parsePendingAttestation(map)).collect(Collectors.toList());
 
-    List<Crosslink> previousCrosslinks =
-        ((List<LinkedHashMap<String, Object>>) value.get("previous_crosslinks"))
-            .stream().map(map -> parseCrosslink(map)).collect(Collectors.toList());
-    List<Crosslink> currentCrosslinks =
-        ((List<LinkedHashMap<String, Object>>) value.get("current_crosslinks"))
-            .stream().map(map -> parseCrosslink(map)).collect(Collectors.toList());
+    SSZVector<Crosslink> previousCrosslinks =
+        new SSZVector<>(
+            ((List<LinkedHashMap<String, Object>>) value.get("previous_crosslinks"))
+                .stream().map(map -> parseCrosslink(map)).collect(Collectors.toList()));
+    SSZVector<Crosslink> currentCrosslinks =
+        new SSZVector<>(
+            ((List<LinkedHashMap<String, Object>>) value.get("current_crosslinks"))
+                .stream().map(map -> parseCrosslink(map)).collect(Collectors.toList()));
 
     Bytes serializedJustificationBits =
         Bytes.fromHexString((String) value.get("justification_bits"));
@@ -786,8 +831,16 @@ class SSZStaticTestSuite {
     return beaconState;
   }
 
+  private BLSPublicKey mockBLSPublicKey(Bytes pubkeyBytes) {
+    return mockBLSPublicKeyHelper(pubkeyBytes);
+  }
+
   private BLSPublicKey mockBLSPublicKey(LinkedHashMap<String, Object> value) {
     Bytes pubkeyBytes = Bytes.fromHexString((String) value.get("pubkey"));
+    return mockBLSPublicKeyHelper(pubkeyBytes);
+  }
+
+  private BLSPublicKey mockBLSPublicKeyHelper(Bytes pubkeyBytes) {
     BLSPublicKey pubkeyMock = Mockito.mock(BLSPublicKey.class);
     Mockito.when(pubkeyMock.toBytes()).thenReturn(pubkeyBytes);
     Mockito.when(pubkeyMock.get_fixed_parts()).thenReturn(List.of(pubkeyBytes));
@@ -797,15 +850,15 @@ class SSZStaticTestSuite {
 
   private BLSSignature mockBLSSignature(LinkedHashMap<String, Object> value) {
     Bytes signatureBytes = Bytes.fromHexString((String) value.get("signature"));
-    return mockBLSHelper(signatureBytes);
+    return mockBLSSignatureHelper(signatureBytes);
   }
 
   private BLSSignature mockBLSSignature(LinkedHashMap<String, Object> value, String paramName) {
     Bytes signatureBytes = Bytes.fromHexString((String) value.get(paramName));
-    return mockBLSHelper(signatureBytes);
+    return mockBLSSignatureHelper(signatureBytes);
   }
 
-  private BLSSignature mockBLSHelper(Bytes signatureBytes) {
+  private BLSSignature mockBLSSignatureHelper(Bytes signatureBytes) {
     BLSSignature signatureMock = Mockito.mock(BLSSignature.class);
     Mockito.when(signatureMock.toBytes()).thenReturn(signatureBytes);
     Mockito.when(signatureMock.get_fixed_parts()).thenReturn(List.of(signatureBytes));
@@ -914,6 +967,11 @@ class SSZStaticTestSuite {
   @MustBeClosed
   private static Stream<Arguments> readBeaconBlock() throws IOException {
     return findTests(testFile, "BeaconBlock");
+  }
+
+  @MustBeClosed
+  private static Stream<Arguments> readCompactCommittee() throws IOException {
+    return findTests(testFile, "CompactCommittee");
   }
 
   @MustBeClosed

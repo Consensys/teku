@@ -46,6 +46,8 @@ import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.datastructures.state.HistoricalBatch;
 import tech.pegasys.artemis.datastructures.state.PendingAttestation;
 import tech.pegasys.artemis.datastructures.state.Validator;
+import tech.pegasys.artemis.util.SSZTypes.Bytes4;
+import tech.pegasys.artemis.util.SSZTypes.SSZVector;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.mikuli.G2Point;
@@ -181,14 +183,16 @@ public class MapObjectUtil {
 
   @SuppressWarnings({"unchecked", "rawtypes"})
   private static HistoricalBatch getHistoricalBatch(Map map) {
-    List<Bytes32> block_roots =
-        new ArrayList<Bytes32>(
-            ((ArrayList<String>) map.get("block_roots"))
-                .stream().map(e -> Bytes32.fromHexString(e)).collect(Collectors.toList()));
-    List<Bytes32> state_roots =
-        new ArrayList<Bytes32>(
-            ((ArrayList<String>) map.get("state_roots"))
-                .stream().map(e -> Bytes32.fromHexString(e)).collect(Collectors.toList()));
+    SSZVector<Bytes32> block_roots =
+        new SSZVector<>(
+            new ArrayList<Bytes32>(
+                ((ArrayList<String>) map.get("block_roots"))
+                    .stream().map(e -> Bytes32.fromHexString(e)).collect(Collectors.toList())));
+    SSZVector<Bytes32> state_roots =
+        new SSZVector<>(
+            new ArrayList<Bytes32>(
+                ((ArrayList<String>) map.get("state_roots"))
+                    .stream().map(e -> Bytes32.fromHexString(e)).collect(Collectors.toList())));
 
     return new HistoricalBatch(block_roots, state_roots);
   }
@@ -214,14 +218,16 @@ public class MapObjectUtil {
     Fork fork = getFork((Map) map.get("fork"));
     BeaconBlockHeader latest_block_header =
         getBeaconBlockHeader((Map) map.get("latest_block_header"));
-    List<Bytes32> block_roots =
-        new ArrayList<Bytes32>(
-            ((ArrayList<String>) map.get("block_roots"))
-                .stream().map(e -> Bytes32.fromHexString(e)).collect(Collectors.toList()));
-    List<Bytes32> state_roots =
-        new ArrayList<Bytes32>(
-            ((ArrayList<String>) map.get("state_roots"))
-                .stream().map(e -> Bytes32.fromHexString(e)).collect(Collectors.toList()));
+    SSZVector<Bytes32> block_roots =
+        new SSZVector<>(
+            new ArrayList<Bytes32>(
+                ((ArrayList<String>) map.get("block_roots"))
+                    .stream().map(e -> Bytes32.fromHexString(e)).collect(Collectors.toList())));
+    SSZVector<Bytes32> state_roots =
+        new SSZVector<>(
+            new ArrayList<Bytes32>(
+                ((ArrayList<String>) map.get("state_roots"))
+                    .stream().map(e -> Bytes32.fromHexString(e)).collect(Collectors.toList())));
     List<Bytes32> historical_roots =
         new ArrayList<Bytes32>(
             ((ArrayList<String>) map.get("historical_roots"))
@@ -239,33 +245,41 @@ public class MapObjectUtil {
         new ArrayList<Integer>((ArrayList<Integer>) map.get("balances"))
             .stream().map(e -> UnsignedLong.valueOf(e.longValue())).collect(Collectors.toList());
     UnsignedLong start_shard = UnsignedLong.valueOf(map.get("start_shard").toString());
-    List<Bytes32> randao_mixes =
-        new ArrayList<Bytes32>(
-            ((ArrayList<String>) map.get("randao_mixes"))
-                .stream().map(e -> Bytes32.fromHexString(e)).collect(Collectors.toList()));
-    List<Bytes32> active_index_roots =
-        new ArrayList<Bytes32>(
-            ((ArrayList<String>) map.get("active_index_roots"))
-                .stream().map(e -> Bytes32.fromHexString(e)).collect(Collectors.toList()));
-    List<Bytes32> compact_committees_roots =
-        new ArrayList<Bytes32>(
-            ((ArrayList<String>) map.get("compact_committees_roots"))
-                .stream().map(e -> Bytes32.fromHexString(e)).collect(Collectors.toList()));
-    List<UnsignedLong> slashings =
-        new ArrayList<Integer>((ArrayList<Integer>) map.get("slashings"))
-            .stream().map(e -> UnsignedLong.valueOf(e.longValue())).collect(Collectors.toList());
+    SSZVector<Bytes32> randao_mixes =
+        new SSZVector<>(
+            new ArrayList<Bytes32>(
+                ((ArrayList<String>) map.get("randao_mixes"))
+                    .stream().map(e -> Bytes32.fromHexString(e)).collect(Collectors.toList())));
+    SSZVector<Bytes32> active_index_roots =
+        new SSZVector<>(
+            new ArrayList<Bytes32>(
+                ((ArrayList<String>) map.get("active_index_roots"))
+                    .stream().map(e -> Bytes32.fromHexString(e)).collect(Collectors.toList())));
+    SSZVector<Bytes32> compact_committees_roots =
+        new SSZVector<>(
+            new ArrayList<Bytes32>(
+                ((ArrayList<String>) map.get("compact_committees_roots"))
+                    .stream().map(e -> Bytes32.fromHexString(e)).collect(Collectors.toList())));
+    SSZVector<UnsignedLong> slashings =
+        new SSZVector<>(
+            new ArrayList<Integer>((ArrayList<Integer>) map.get("slashings"))
+                .stream()
+                    .map(e -> UnsignedLong.valueOf(e.longValue()))
+                    .collect(Collectors.toList()));
     List<PendingAttestation> previous_epoch_attestations =
         ((List<Map>) map.get("previous_epoch_attestations"))
             .stream().map(e -> getPendingAttestation(e)).collect(Collectors.toList());
     List<PendingAttestation> current_epoch_attestations =
         ((List<Map>) map.get("current_epoch_attestations"))
             .stream().map(e -> getPendingAttestation(e)).collect(Collectors.toList());
-    List<Crosslink> previous_crosslinks =
-        ((List<Map>) map.get("previous_crosslinks"))
-            .stream().map(e -> getCrossLink(e)).collect(Collectors.toList());
-    List<Crosslink> current_crosslinks =
-        ((List<Map>) map.get("current_crosslinks"))
-            .stream().map(e -> getCrossLink(e)).collect(Collectors.toList());
+    SSZVector<Crosslink> previous_crosslinks =
+        new SSZVector<>(
+            ((List<Map>) map.get("previous_crosslinks"))
+                .stream().map(e -> getCrossLink(e)).collect(Collectors.toList()));
+    SSZVector<Crosslink> current_crosslinks =
+        new SSZVector<>(
+            ((List<Map>) map.get("current_crosslinks"))
+                .stream().map(e -> getCrossLink(e)).collect(Collectors.toList()));
     Bytes justification_bits = Bytes.fromHexString(map.get("justification_bits").toString());
     Checkpoint previous_justified_checkpoint =
         getCheckpoint((Map) map.get("previous_justified_checkpoint"));
@@ -338,8 +352,9 @@ public class MapObjectUtil {
 
   @SuppressWarnings({"rawtypes"})
   private static Fork getFork(Map map) {
-    Bytes previous_version = Bytes.fromHexString(map.get("previous_version").toString());
-    Bytes current_version = Bytes.fromHexString(map.get("current_version").toString());
+    Bytes4 previous_version =
+        new Bytes4(Bytes.fromHexString(map.get("previous_version").toString()));
+    Bytes4 current_version = new Bytes4(Bytes.fromHexString(map.get("current_version").toString()));
     UnsignedLong epoch = UnsignedLong.valueOf(map.get("epoch").toString());
 
     return new Fork(previous_version, current_version, epoch);
@@ -421,10 +436,11 @@ public class MapObjectUtil {
 
   @SuppressWarnings({"unchecked", "rawtypes"})
   private static Deposit getDeposit(Map map) {
-    List<Bytes32> proof =
-        new ArrayList<Bytes32>(
-            ((ArrayList<String>) map.get("proof"))
-                .stream().map(e -> Bytes32.fromHexString(e)).collect(Collectors.toList()));
+    SSZVector<Bytes32> proof =
+        new SSZVector<>(
+            new ArrayList<Bytes32>(
+                ((ArrayList<String>) map.get("proof"))
+                    .stream().map(e -> Bytes32.fromHexString(e)).collect(Collectors.toList())));
     DepositData data = getDepositData((Map) map.get("data"));
 
     return new Deposit(proof, data);
