@@ -21,6 +21,7 @@ import org.apache.logging.log4j.Level;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.networking.p2p.HobbitsP2PNetwork;
 import tech.pegasys.artemis.networking.p2p.MockP2PNetwork;
+import tech.pegasys.artemis.networking.p2p.MothraP2PNetwork;
 import tech.pegasys.artemis.networking.p2p.api.P2PNetwork;
 import tech.pegasys.artemis.service.serviceutils.ServiceConfig;
 import tech.pegasys.artemis.service.serviceutils.ServiceInterface;
@@ -94,6 +95,16 @@ public class BeaconChainService implements ServiceInterface {
               config.getConfig().getNetworkInterface(),
               config.getConfig().getStaticPeers(),
               gossipProtocol);
+    } else if ("mothra".equals(config.getConfig().getNetworkMode())) {
+      this.p2pNetwork =
+          new MothraP2PNetwork(
+              eventBus,
+              store,
+              config.getConfig().getPort(),
+              config.getConfig().getNetworkInterface(),
+              config.getConfig().getIdentity(),
+              config.getConfig().isBootnode()
+                  && config.getConfig().getIdentity().equalsIgnoreCase("0x00"));
     } else {
       throw new IllegalArgumentException(
           "Unsupported network mode " + config.getConfig().getNetworkMode());
