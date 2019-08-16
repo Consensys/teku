@@ -105,6 +105,7 @@ public class BeaconChainService implements ServiceInterface {
               config.getConfig().getIdentity(),
               config.getConfig().getBootnodes(),
               config.getConfig().isBootnode());
+
     } else {
       throw new IllegalArgumentException(
           "Unsupported network mode " + config.getConfig().getNetworkMode());

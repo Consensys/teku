@@ -76,6 +76,8 @@ public final class MothraP2PNetwork implements P2PNetwork {
     this.args = processArgs();
   }
 
+  // TODO - issue #828:
+  //       all these params should be moved to the config file
   private String[] processArgs() {
     String sargs = "./artemis ";
     if (!isBootnode) {
