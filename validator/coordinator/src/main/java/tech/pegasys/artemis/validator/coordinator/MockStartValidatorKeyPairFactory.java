@@ -36,15 +36,16 @@ public class MockStartValidatorKeyPairFactory implements ValidatorKeyPairFactory
   @Override
   public List<BLSKeyPair> generateKeyPairs(final int startIndex, final int endIndex) {
     return IntStream.rangeClosed(startIndex, endIndex)
-        .mapToObj(
-            index -> {
-              final Bytes hash = sha256(int_to_bytes32(index));
-              final BigInteger privKey = hash.reverse().toUnsignedBigInteger().mod(CURVE_ORDER);
-              final Bytes privKeyBytes = padLeft(Bytes.of(privKey.toByteArray()), KEY_LENGTH);
-
-              return new BLSKeyPair(new KeyPair(SecretKey.fromBytes(privKeyBytes)));
-            })
+        .mapToObj(this::createKeyPairForValidator)
         .collect(Collectors.toList());
+  }
+
+  private BLSKeyPair createKeyPairForValidator(final int validatorIndex) {
+    final Bytes hash = sha256(int_to_bytes32(validatorIndex));
+    final BigInteger privKey = hash.reverse().toUnsignedBigInteger().mod(CURVE_ORDER);
+    final Bytes privKeyBytes = padLeft(Bytes.of(privKey.toByteArray()), KEY_LENGTH);
+
+    return new BLSKeyPair(new KeyPair(SecretKey.fromBytes(privKeyBytes)));
   }
 
   private Bytes sha256(final Bytes indexBytes) {
