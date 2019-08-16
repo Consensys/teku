@@ -47,7 +47,7 @@ public final class ArtemisConfiguration {
                 "node.networkMode",
                 "mock",
                 "represents what network to use",
-                PropertyValidator.anyOf("mock", "hobbits"));
+                PropertyValidator.anyOf("mock", "hobbits", "mothra"));
     builder.addString(
         "node.gossipProtocol",
         "plumtree",
@@ -62,6 +62,7 @@ public final class ArtemisConfiguration {
         9000,
         "Peer to peer advertised port",
         PropertyValidator.inRange(0, 65535));
+    builder.addBoolean("node.bootnode", true, "Makes this node a bootnode", null);
     builder.addInteger(
         "node.naughtinessPercentage",
         0,
@@ -295,6 +296,10 @@ public final class ArtemisConfiguration {
   /** @return the port this node will listen to */
   public int getPort() {
     return config.getInteger("node.port");
+  }
+
+  public boolean isBootnode() {
+    return config.getBoolean("node.bootnode");
   }
 
   /** @return the port this node will advertise as its own */

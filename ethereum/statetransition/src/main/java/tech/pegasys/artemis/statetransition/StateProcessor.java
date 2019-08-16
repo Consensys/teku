@@ -83,6 +83,18 @@ public class StateProcessor {
 
   @Subscribe
   public void onEth2GenesisEvent(Eth2GenesisEvent event) {
+
+    // TODO - issue #827:
+    //      Once i have a reliable way to be notified when
+    //      libp2p peers are found then this can be removed
+    if (config.getNetworkMode().equals("mothra")) {
+      try {
+        Thread.sleep(15000);
+      } catch (InterruptedException e) {
+        LOG.log(Level.ERROR, e.getMessage());
+      }
+    }
+
     STDOUT.log(
         Level.INFO,
         "******* Eth2Genesis Event detected ******* : "

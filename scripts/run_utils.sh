@@ -2,9 +2,9 @@
 
 # Create the configuration file for a specific node
 create_config() {
-  local NODE="$1"; local TOTAL="$2"; local TEMPLATE="$3"
+  local MODE="$1"; local NODE="$2"; local TOTAL="$3"; local TEMPLATE="$4"
 
-  # Create the peer list by removing this node's peer url from the peer list 
+  # Create the peer list by removing this node's peer url from the peer list
   local PEERS=$(echo "$PEERS" | sed "s/\"hob+tcp:\/\/abcf@localhost:$((19000 + $NODE))\"//g")
   PEERS="[$(echo $PEERS | tr ' ' ',')]"
 
@@ -23,14 +23,15 @@ create_config() {
     awk -v peers="$PEERS" '/port/{print;print "peers = "peers;next}1' |# Update the peer list 
     sed "s/numNodes\ =.*/numNodes\ =\ $TOTAL/"                        |# Update the number of nodes to the total number of nodes
     sed "s/networkInterface\ =.*/networkInterface\ =\ \"127.0.0.1\"/" |# Update the network interface to localhost
-    sed "s/networkMode\ =.*/networkMode\ =\ \"hobbits\"/" \
+    sed "s/networkMode\ =.*/networkMode\ =\ \"$MODE\"/" \
     > ../config/runConfig.$NODE.toml
 }
 
 # Unpacks the build tar files, puts them in a special directory for the node,
 # and creates the configuration file for the node.
 configure_node() {
-  local NODE=$1
+  local MODE=$1
+  local NODE=$2
 
   # Unpack the build tar files and move them to the appropriate directory
   # for the node.
@@ -38,20 +39,23 @@ configure_node() {
   mv ./demo/artemis-* ./demo/node_$NODE
 
   # Create symbolic links for the demo
-  ln -s ../../../config ./demo/node_$NODE/
-  cd demo/node_$NODE && ln -s ./bin/artemis . && cd ../../
+  ln -sf ../../../config ./demo/node_$NODE/
+  cd demo/node_$NODE && ln -sf ./bin/artemis . && cd ../../
 
   # Create the configuration file for the node
-  if [ "$3" == "" ] 
+  if [ "$4" == "" ]
   then 
-    create_config $NODE $2 "../config/config.toml"
+    create_config $MODE $NODE $3 "../config/config.toml"
   else
-    create_config $NODE $2 $3
+    create_config $MODE $NODE $3 $4
   fi
 
   # in
   rm -rf demo/node_$NODE/*.json
   cp ../*.json demo/node_$NODE/
+  cp -f ../libs/libmothra-egress.dylib demo/node_$NODE/
+  cp -f ../libs/libmothra-ingress.dylib demo/node_$NODE/
+  cp -rf ../libs/release demo/node_$NODE/
 }
 
 # Create tmux panes in the current window for the next "node group".
@@ -99,7 +103,7 @@ create_tmux_windows() {
   fi
 
   # Rename the window to add some spice
-  tmux rename-window 'wwjdd'
+  tmux rename-window 'the dude abides...'
 
   # Loop over the remaining nodes
   while [[ $idx -lt $NODES ]]

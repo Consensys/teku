@@ -3,11 +3,9 @@
 # **** Usage **** #
 
 usage() {
-  echo "Usage: sh run.sh NODES"
   echo "Runs a simulation of artemis with NODES nodes, where NODES > 0 and NODES < 256"
-  echo "Usage: sh run.sh {--numNodes=NODES|-n=NODES} [--inputFile=INPUT|-i=INPUT]"
+  echo "Usage: sh run.sh {--numNodes=NODES|-n=NODES} [--networkMode=hobbits|mothra|-m=hobbits|mothra] [--inputFile=INPUT|-i=INPUT]"
   echo "                 [--help|-h]"
-  echo "Runs a simulation of artemis with NODES nodes, where NODES > 0 and NODES < 256."
   echo "If input files are specifed for specific nodes, those input files will be used to"
   echo "configure their respective nodes."
 }
@@ -36,6 +34,14 @@ do
         usage >&2; exit 1
       fi
       NODES="${arg#*=}" ;;
+
+    # Match the -m or --networkMode option and set MODE to the provided argument
+    -m=*|--NetworkMode=*)
+      if [ "$MODE" != "" ]
+      then
+        usage >&2; exit 1
+      fi
+      MODE="${arg#*=}" ;;
 
     # Match the -i or --inputFile option and update the INPUTS array with the output file path
     "--inputFile"*) 
@@ -68,12 +74,22 @@ then
   usage >&2; exit 3
 fi
 
+# If MODE is undefined default to hobbits
+[[ -z "$MODE" ]] && MODE="hobbits"
+
+# If MODE is not a valid input pipe the usage statement to stderr and exit
+# with exit code 3
+if [ "$MODE" != "hobbits" ] && [ "$MODE" != "mothra" ]
+then
+  usage >&2; exit 3
+fi
+
 # Clean the demo directory
 rm -rf ./demo
 mkdir -p ./demo
 
 # Clean out the old configuration files
-rm ../config/runConfig.*
+rm -f ../config/runConfig.*
 
 # Create a list of all the peers for the configure node procedure to use
 PEERS=$(generate_peers_list 19000 $NODES "hob+tcp" "abcf@localhost")
@@ -82,7 +98,7 @@ PEERS=$(generate_peers_list 19000 $NODES "hob+tcp" "abcf@localhost")
 i=0
 while [ $i -lt $NODES ] 
 do
-  configure_node $i $NODES ${INPUTS[$i]}
+  configure_node $MODE $i $NODES ${INPUTS[$i]}
   i=$(($i + 1))
 done
 

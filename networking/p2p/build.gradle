@@ -16,7 +16,7 @@ dependencies {
   implementation project(':data:adapter')
   implementation project(':data:provider')
   implementation 'com.google.guava:guava'
-
+  compile files("../../libs/mothra.jar")
   implementation 'io.vertx:vertx-core'
 
   implementation 'org.apache.tuweni:tuweni-bytes'
