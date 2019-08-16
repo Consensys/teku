@@ -75,10 +75,12 @@ public class CompactCommittee
                         pubkeys.stream()
                             .map(BLSPublicKey::toBytes)
                             .collect(Collectors.toList())))));
-    variablePartsList.addAll(
-        compact_validators.stream()
-            .map(value -> SSZ.encodeUInt64(value.longValue()))
-            .collect(Collectors.toList()));
+    // TODO The below lines are a hack while Tuweni SSZ/SOS is being upgraded.
+    variablePartsList.add(
+        Bytes.fromHexString(
+            compact_validators.stream()
+                .map(value -> SSZ.encodeUInt64(value.longValue()).toHexString().substring(2))
+                .collect(Collectors.joining())));
     return variablePartsList;
   }
 

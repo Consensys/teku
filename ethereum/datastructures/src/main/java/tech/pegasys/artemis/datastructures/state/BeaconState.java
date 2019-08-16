@@ -21,11 +21,14 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
+import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.util.SSZTypes.Bytes4;
 import tech.pegasys.artemis.util.SSZTypes.SSZContainer;
 import tech.pegasys.artemis.util.SSZTypes.SSZVector;
@@ -45,7 +48,7 @@ public class BeaconState implements SimpleOffsetSerializable, SSZContainer {
   protected BeaconBlockHeader latest_block_header;
   protected SSZVector<Bytes32> block_roots; // Vector Bounded by SLOTS_PER_HISTORICAL_ROOT
   protected SSZVector<Bytes32> state_roots; // Vector Bounded by SLOTS_PER_HISTORICAL_ROOT
-  protected List<Bytes32> historical_roots; // Bounded by HISTORICAL_ROOTS_LIMIT
+  protected List<Bytes32> historical_roots; // List Bounded by HISTORICAL_ROOTS_LIMIT
 
   // Ethereum 1.0 chain data
   protected Eth1Data eth1_data;
@@ -237,14 +240,86 @@ public class BeaconState implements SimpleOffsetSerializable, SSZContainer {
 
   @Override
   public List<Bytes> get_fixed_parts() {
-    // TODO Implement this stub.
-    return Collections.nCopies(getSSZFieldCount(), Bytes.EMPTY);
+    List<Bytes> fixedPartsList = new ArrayList<>();
+    fixedPartsList.addAll(
+        List.of(
+            SSZ.encodeUInt64(genesis_time.longValue()),
+            SSZ.encodeUInt64(slot.longValue()),
+            SimpleOffsetSerializer.serialize(fork),
+            SimpleOffsetSerializer.serialize(latest_block_header),
+            SSZ.encode(writer -> writer.writeFixedBytesVector(block_roots)),
+            SSZ.encode(writer -> writer.writeFixedBytesVector(state_roots)),
+            Bytes.EMPTY,
+            SimpleOffsetSerializer.serialize(eth1_data),
+            Bytes.EMPTY,
+            SSZ.encodeUInt64(eth1_deposit_index.longValue()),
+            Bytes.EMPTY,
+            Bytes.EMPTY,
+            SSZ.encodeUInt64(start_shard.longValue()),
+            SSZ.encode(writer -> writer.writeFixedBytesVector(randao_mixes)),
+            SSZ.encode(writer -> writer.writeFixedBytesVector(active_index_roots)),
+            SSZ.encode(writer -> writer.writeFixedBytesVector(compact_committees_roots)),
+            SSZ.encode(
+                writer ->
+                    writer.writeFixedBytesVector(
+                        slashings.stream()
+                            .map(slashing -> SSZ.encodeUInt64(slashing.longValue()))
+                            .collect(Collectors.toList()))),
+            Bytes.EMPTY,
+            Bytes.EMPTY,
+            SSZ.encode(
+                writer ->
+                    writer.writeFixedBytesVector(
+                        previous_crosslinks.stream()
+                            .map(
+                                previousCrosslink ->
+                                    SimpleOffsetSerializer.serialize(previousCrosslink))
+                            .collect(Collectors.toList()))),
+            SSZ.encode(
+                writer ->
+                    writer.writeFixedBytesVector(
+                        current_crosslinks.stream()
+                            .map(
+                                currentCrosslink ->
+                                    SimpleOffsetSerializer.serialize(currentCrosslink))
+                            .collect(Collectors.toList()))),
+            justification_bits,
+            SimpleOffsetSerializer.serialize(previous_justified_checkpoint),
+            SimpleOffsetSerializer.serialize(current_justified_checkpoint),
+            SimpleOffsetSerializer.serialize(finalized_checkpoint)));
+    return fixedPartsList;
   }
 
   @Override
   public List<Bytes> get_variable_parts() {
-    // TODO Implement this stub.
-    return Collections.nCopies(getSSZFieldCount(), Bytes.EMPTY);
+    List<Bytes> variablePartsList = new ArrayList<>();
+    variablePartsList.addAll(
+        List.of(Bytes.EMPTY, Bytes.EMPTY, Bytes.EMPTY, Bytes.EMPTY, Bytes.EMPTY, Bytes.EMPTY));
+    variablePartsList.add(SSZ.encode(writer -> writer.writeFixedBytesVector(historical_roots)));
+    variablePartsList.add(Bytes.EMPTY);
+    variablePartsList.add(SimpleOffsetSerializer.serializeFixedCompositeList(eth1_data_votes));
+    variablePartsList.add(Bytes.EMPTY);
+    variablePartsList.add(SimpleOffsetSerializer.serializeFixedCompositeList(validators));
+    // TODO The below lines are a hack while Tuweni SSZ/SOS is being upgraded.
+    variablePartsList.add(
+        Bytes.fromHexString(
+            balances.stream()
+                .map(value -> SSZ.encodeUInt64(value.longValue()).toHexString().substring(2))
+                .collect(Collectors.joining())));
+    variablePartsList.addAll(
+        List.of(Bytes.EMPTY, Bytes.EMPTY, Bytes.EMPTY, Bytes.EMPTY, Bytes.EMPTY));
+    variablePartsList.add(
+        SimpleOffsetSerializer.serializeVariableCompositeList(previous_epoch_attestations));
+    variablePartsList.add(
+        SimpleOffsetSerializer.serializeVariableCompositeList(current_epoch_attestations));
+    variablePartsList.addAll(List.of(Bytes.EMPTY, Bytes.EMPTY, Bytes.EMPTY));
+    variablePartsList.addAll(
+        Collections.nCopies(previous_justified_checkpoint.getSSZFieldCount(), Bytes.EMPTY));
+    variablePartsList.addAll(
+        Collections.nCopies(current_justified_checkpoint.getSSZFieldCount(), Bytes.EMPTY));
+    variablePartsList.addAll(
+        Collections.nCopies(finalized_checkpoint.getSSZFieldCount(), Bytes.EMPTY));
+    return variablePartsList;
   }
 
   @Override
