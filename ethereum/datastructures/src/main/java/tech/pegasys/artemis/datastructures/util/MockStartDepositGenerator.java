@@ -11,13 +11,12 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.datastructures.operations;
+package tech.pegasys.artemis.datastructures.util;
 
 import static java.util.stream.Collectors.toList;
 import static tech.pegasys.artemis.datastructures.Constants.BLS_WITHDRAWAL_PREFIX;
 import static tech.pegasys.artemis.datastructures.Constants.DOMAIN_DEPOSIT;
 import static tech.pegasys.artemis.datastructures.Constants.MAX_EFFECTIVE_BALANCE;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.bls_domain;
 
 import com.google.common.primitives.UnsignedLong;
 import java.security.MessageDigest;
@@ -25,11 +24,11 @@ import java.security.NoSuchAlgorithmException;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.artemis.datastructures.operations.DepositData;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.message.BouncyCastleMessageDigestFactory;
 
-// TODO: This is very much in the wrong package and module.
 public class MockStartDepositGenerator {
 
   public List<DepositData> createDeposits(final List<BLSKeyPair> validatorKeys) {
@@ -43,15 +42,14 @@ public class MockStartDepositGenerator {
             createWithdrawalCredentials(keyPair),
             UnsignedLong.valueOf(MAX_EFFECTIVE_BALANCE),
             null);
-    data.setSignature(
-        BLSSignature.sign(keyPair, data.signing_root("signature"), bls_domain(DOMAIN_DEPOSIT)));
+    data.setSignature(BLSSignature.sign(keyPair, data.signing_root("signature"), DOMAIN_DEPOSIT));
     return data;
   }
 
   private Bytes32 createWithdrawalCredentials(final BLSKeyPair keyPair) {
-    final byte[] credentials = keyPair.getPublicKey().toBytes().toArray();
-    credentials[0] = (byte) BLS_WITHDRAWAL_PREFIX;
-    return Bytes32.wrap(sha256(Bytes.wrap(credentials)));
+    final Bytes publicKeyHash = sha256(keyPair.getPublicKey().toBytes());
+    final Bytes credentials = Bytes.wrap(BLS_WITHDRAWAL_PREFIX, publicKeyHash.slice(1));
+    return Bytes32.wrap(credentials);
   }
 
   private Bytes sha256(final Bytes indexBytes) {
