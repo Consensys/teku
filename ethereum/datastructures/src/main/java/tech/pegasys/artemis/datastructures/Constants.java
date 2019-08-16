@@ -101,6 +101,7 @@ public class Constants {
   public static String DEPOSIT_NORMAL = "normal";
   public static String DEPOSIT_TEST = "test";
   public static String DEPOSIT_SIM = "simulation";
+  public static String DEPOSIT_MOCK_START = "mockstart";
 
   public static BLSSignature EMPTY_SIGNATURE = BLSSignature.empty();
 
