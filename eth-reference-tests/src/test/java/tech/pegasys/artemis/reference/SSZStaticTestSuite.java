@@ -44,6 +44,7 @@ import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
+import tech.pegasys.artemis.datastructures.operations.AttestationDataAndCustodyBit;
 import tech.pegasys.artemis.datastructures.operations.AttesterSlashing;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.DepositData;
@@ -56,6 +57,7 @@ import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.datastructures.state.CompactCommittee;
 import tech.pegasys.artemis.datastructures.state.Crosslink;
 import tech.pegasys.artemis.datastructures.state.Fork;
+import tech.pegasys.artemis.datastructures.state.HistoricalBatch;
 import tech.pegasys.artemis.datastructures.state.PendingAttestation;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
@@ -430,6 +432,47 @@ class SSZStaticTestSuite {
     assertEquals(Bytes.fromHexString(serialized), SimpleOffsetSerializer.serialize(beaconState));
   }
 
+  @ParameterizedTest(name = "{index}. AttestationDataAndCustodyBit Hash Tree Root Test")
+  @MethodSource("readAttestationDataAndCustodyBit")
+  void testAttestationDataAndCustodyBitHashTreeRoot(
+      LinkedHashMap<String, Object> value, String serialized, String root) {
+    AttestationDataAndCustodyBit attestationDataAndCustodyBit =
+        parseAttestationDataAndCustodyBit(value);
+
+    assertEquals(Bytes32.fromHexString(root), attestationDataAndCustodyBit.hash_tree_root());
+  }
+
+  @ParameterizedTest(name = "{index}. AttestationDataAndCustodyBit Serialization Test")
+  @MethodSource("readAttestationDataAndCustodyBit")
+  void testAttestationDataAndCustodyBitSerialize(
+      LinkedHashMap<String, Object> value, String serialized, String root) {
+    AttestationDataAndCustodyBit attestationDataAndCustodyBit =
+        parseAttestationDataAndCustodyBit(value);
+
+    assertEquals(
+        Bytes.fromHexString(serialized),
+        SimpleOffsetSerializer.serialize(attestationDataAndCustodyBit));
+  }
+
+  @ParameterizedTest(name = "{index}. HistoricalBatch Hash Tree Root Test")
+  @MethodSource("readHistoricalBatch")
+  void testHistoricalBatchHashTreeRoot(
+      LinkedHashMap<String, Object> value, String serialized, String root) {
+    HistoricalBatch historicalBatch = parseHistoricalBatch(value);
+
+    assertEquals(Bytes32.fromHexString(root), historicalBatch.hash_tree_root());
+  }
+
+  @ParameterizedTest(name = "{index}. HistoricalBatch Serialization Test")
+  @MethodSource("readHistoricalBatch")
+  void testHistoricalBatchSerialize(
+      LinkedHashMap<String, Object> value, String serialized, String root) {
+    HistoricalBatch historicalBatch = parseHistoricalBatch(value);
+
+    assertEquals(
+        Bytes.fromHexString(serialized), SimpleOffsetSerializer.serialize(historicalBatch));
+  }
+
   private Eth1Data parseEth1Data(LinkedHashMap<String, Object> value) {
     Bytes32 depositRoot = Bytes32.fromHexString((String) value.get("deposit_root"));
     UnsignedLong depositCount = UnsignedLong.valueOf((BigInteger) value.get("deposit_count"));
@@ -453,14 +496,15 @@ class SSZStaticTestSuite {
 
   @SuppressWarnings({"unchecked"})
   private Deposit parseDeposit(LinkedHashMap<String, Object> value) {
-    List<Bytes32> proof =
-        ((List<String>) value.get("proof"))
-            .stream()
-                .map(proofString -> Bytes32.fromHexString(proofString))
-                .collect(Collectors.toList());
+    SSZVector<Bytes32> proof =
+        new SSZVector<>(
+            ((List<String>) value.get("proof"))
+                .stream()
+                    .map(proofString -> Bytes32.fromHexString(proofString))
+                    .collect(Collectors.toList()));
     DepositData data = parseDepositData((LinkedHashMap<String, Object>) value.get("data"));
 
-    Deposit deposit = new Deposit(new SSZVector<>(proof), data);
+    Deposit deposit = new Deposit(proof, data);
     return deposit;
   }
 
@@ -831,6 +875,35 @@ class SSZStaticTestSuite {
     return beaconState;
   }
 
+  @SuppressWarnings({"unchecked"})
+  private AttestationDataAndCustodyBit parseAttestationDataAndCustodyBit(
+      LinkedHashMap<String, Object> value) {
+    AttestationData data = parseAttestationData((LinkedHashMap<String, Object>) value.get("data"));
+    boolean custodyBit = (boolean) value.get("custody_bit");
+    AttestationDataAndCustodyBit attestationDataAndCustodyBit =
+        new AttestationDataAndCustodyBit(data, custodyBit);
+    return attestationDataAndCustodyBit;
+  }
+
+  @SuppressWarnings({"unchecked"})
+  private HistoricalBatch parseHistoricalBatch(LinkedHashMap<String, Object> value) {
+    SSZVector<Bytes32> blockRoots =
+        new SSZVector<>(
+            ((List<String>) value.get("block_roots"))
+                .stream()
+                    .map(proofString -> Bytes32.fromHexString(proofString))
+                    .collect(Collectors.toList()));
+    SSZVector<Bytes32> stateRoots =
+        new SSZVector<>(
+            ((List<String>) value.get("state_roots"))
+                .stream()
+                    .map(proofString -> Bytes32.fromHexString(proofString))
+                    .collect(Collectors.toList()));
+
+    HistoricalBatch historicalBatch = new HistoricalBatch(blockRoots, stateRoots);
+    return historicalBatch;
+  }
+
   private BLSPublicKey mockBLSPublicKey(Bytes pubkeyBytes) {
     return mockBLSPublicKeyHelper(pubkeyBytes);
   }
@@ -977,6 +1050,16 @@ class SSZStaticTestSuite {
   @MustBeClosed
   private static Stream<Arguments> readBeaconState() throws IOException {
     return findTests(testFile, "BeaconState");
+  }
+
+  @MustBeClosed
+  private static Stream<Arguments> readAttestationDataAndCustodyBit() throws IOException {
+    return findTests(testFile, "AttestationDataAndCustodyBit");
+  }
+
+  @MustBeClosed
+  private static Stream<Arguments> readHistoricalBatch() throws IOException {
+    return findTests(testFile, "HistoricalBatch");
   }
 
   @SuppressWarnings({"unchecked", "rawtypes"})
