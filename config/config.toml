@@ -10,6 +10,7 @@ identity = "0x00"
 timer="QuartzTimer"
 networkInterface = "0.0.0.0"
 port = 9000
+bootnodes = ""
 bootnode = true
 advertisedPort = 9000
 naughtinessPercentage = 0
