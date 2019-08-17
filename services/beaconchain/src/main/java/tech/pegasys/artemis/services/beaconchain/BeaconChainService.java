@@ -103,8 +103,8 @@ public class BeaconChainService implements ServiceInterface {
               config.getConfig().getPort(),
               config.getConfig().getNetworkInterface(),
               config.getConfig().getIdentity(),
-              config.getConfig().isBootnode()
-                  && config.getConfig().getIdentity().equalsIgnoreCase("0x00"));
+              config.getConfig().getBootnodes(),
+              config.getConfig().isBootnode());
     } else {
       throw new IllegalArgumentException(
           "Unsupported network mode " + config.getConfig().getNetworkMode());
