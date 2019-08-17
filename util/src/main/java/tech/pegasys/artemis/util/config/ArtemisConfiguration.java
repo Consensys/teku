@@ -62,6 +62,7 @@ public final class ArtemisConfiguration {
         9000,
         "Peer to peer advertised port",
         PropertyValidator.inRange(0, 65535));
+    builder.addString("node.bootnodes", "", "ENR of the bootnode", null);
     builder.addBoolean("node.bootnode", true, "Makes this node a bootnode", null);
     builder.addInteger(
         "node.naughtinessPercentage",
@@ -299,7 +300,11 @@ public final class ArtemisConfiguration {
   }
 
   public boolean isBootnode() {
-    return config.getBoolean("node.bootnode");
+    return config.getBoolean("node.bootnode") && config.getString("node.identity").equals("0x00");
+  }
+
+  public String getBootnodes() {
+    return config.getString("node.bootnodes");
   }
 
   /** @return the port this node will advertise as its own */
