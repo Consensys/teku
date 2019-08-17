@@ -15,10 +15,10 @@ package pegasys.artemis.reference;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.google.common.primitives.UnsignedLong;
 import com.google.errorprone.annotations.MustBeClosed;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.UncheckedIOException;
+
+import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Files;
@@ -37,6 +37,7 @@ import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.*;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 
 public abstract class TestSuite {
   private static final Path pathToTests =
@@ -107,6 +108,7 @@ public abstract class TestSuite {
     return in;
   }
 
+
   public static Object getObjectFromYAMLInputStream(InputStream in) {
     ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
     Object object = null;
@@ -150,7 +152,17 @@ public abstract class TestSuite {
                           Object object = pathToObject(Path.of(walkPath, pair.getSecond()));
                             Context c = new Context();
                             c.path = walkPath;
-                          c.obj=MapObjectUtil.convertMapToTypedObject(pair.getFirst(), object);
+                            try {
+                                if (pair.getFirst().equals(ReadLineType.class)) {
+                                    BufferedReader inputStreamFromPath = new BufferedReader(new InputStreamReader(getInputStreamFromPath(Path.of(walkPath, pair.getSecond()))));
+                                    String s = inputStreamFromPath.readLine();
+                                    c.obj = s;
+                                } else {
+                                    c.obj = MapObjectUtil.convertMapToTypedObject(pair.getFirst(), object);
+                                }
+                            } catch (Exception e) {
+                                System.out.println("here");
+                            }
                           return c;
                         });
               })
@@ -225,6 +237,34 @@ public abstract class TestSuite {
     arguments.add(getParams(BeaconState.class, "post.yaml"));
     return findTestsByPath(path, arguments);
   }
+
+  private static class ReadLineType { }
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    @MustBeClosed
+    public static Stream<Arguments> sanitySlotsProcessingSetup(Path path, Path configPath)
+            throws Exception {
+        loadConfigFromPath(configPath);
+
+        List<Pair<Class, String>> arguments = new ArrayList<Pair<Class, String>>();
+        arguments.add(getParams(BeaconStateWithCache.class, "pre.yaml"));
+        arguments.add(getParams(BeaconStateWithCache.class, "post.yaml"));
+        arguments.add(getParams(ReadLineType.class, "slots.yaml"));
+        return findTestsByPath(path, arguments);
+    }
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    @MustBeClosed
+    public static Stream<Arguments> sanityBlocksProcessingSetup(Path path, Path configPath)
+            throws Exception {
+        loadConfigFromPath(configPath);
+
+        List<Pair<Class, String>> arguments = new ArrayList<Pair<Class, String>>();
+        arguments.add(getParams(BeaconState.class, "pre.yaml"));
+        arguments.add(getParams(BeaconState.class, "post.yaml"));
+        arguments.add(getParams(ReadLineType.class, "meta.yaml"));
+        return findTestsByPath(path, arguments);
+    }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
     @MustBeClosed
