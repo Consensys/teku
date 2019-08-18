@@ -74,6 +74,7 @@ import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.datastructures.util.AttestationUtil;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
+import tech.pegasys.artemis.datastructures.util.MockStartValidatorKeyPairFactory;
 import tech.pegasys.artemis.proto.messagesigner.MessageSignerGrpc;
 import tech.pegasys.artemis.proto.messagesigner.SignatureRequest;
 import tech.pegasys.artemis.proto.messagesigner.SignatureResponse;
@@ -442,28 +443,37 @@ public class ValidatorCoordinator {
     long numNaughtyValidators = Math.round((naughtinessPercentage * numValidators) / 100.0);
     List<BLSKeyPair> keypairs = new ArrayList<>();
     if (config.getInteropActive()) {
-      try {
-        Path path = Paths.get(config.getInteropInputFile());
-        String yaml = Files.readString(path.toAbsolutePath(), StandardCharsets.US_ASCII);
-        ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
-        Map<String, List<Map>> fileMap =
-            mapper.readValue(yaml, new TypeReference<Map<String, List<Map>>>() {});
-        List<Map> depositdatakeys = fileMap.get("DepositDataKeys");
-        List<String> privateKeyStrings = new ArrayList<>();
-        depositdatakeys.forEach(
-            item -> {
-              privateKeyStrings.add(item.get("Privkey").toString());
-            });
-        for (int i = startIndex; i <= endIndex; i++) {
-          BLSKeyPair keypair =
-              new BLSKeyPair(
-                  new KeyPair(
-                      SecretKey.fromBytes(
-                          Bytes48.leftPad(Bytes.fromBase64String(privateKeyStrings.get(i))))));
-          keypairs.add(keypair);
-        }
-      } catch (IOException e) {
-        STDOUT.log(Level.FATAL, e.toString());
+      switch (config.getInteropMode()) {
+        case Constants.FILE_INTEROP:
+          try {
+            Path path = Paths.get(config.getInteropInputFile());
+            String yaml = Files.readString(path.toAbsolutePath(), StandardCharsets.US_ASCII);
+            ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
+            Map<String, List<Map>> fileMap =
+                mapper.readValue(yaml, new TypeReference<Map<String, List<Map>>>() {});
+            List<Map> depositdatakeys = fileMap.get("DepositDataKeys");
+            List<String> privateKeyStrings = new ArrayList<>();
+            depositdatakeys.forEach(
+                item -> {
+                  privateKeyStrings.add(item.get("Privkey").toString());
+                });
+            for (int i = startIndex; i <= endIndex; i++) {
+              BLSKeyPair keypair =
+                  new BLSKeyPair(
+                      new KeyPair(
+                          SecretKey.fromBytes(
+                              Bytes48.leftPad(Bytes.fromBase64String(privateKeyStrings.get(i))))));
+              keypairs.add(keypair);
+            }
+          } catch (IOException e) {
+            STDOUT.log(Level.FATAL, e.toString());
+          }
+          break;
+        case Constants.MOCKED_START_INTEROP:
+          startIndex = config.getInteropOwnedValidatorStartIndex();
+          endIndex = startIndex + config.getInteropOwnedValidatorCount();
+          keypairs = new MockStartValidatorKeyPairFactory().generateKeyPairs(startIndex, endIndex);
+          break;
       }
     } else {
       for (int i = startIndex; i <= endIndex; i++) {

@@ -15,6 +15,7 @@ package tech.pegasys.artemis.datastructures.util;
 
 import static tech.pegasys.artemis.datastructures.Constants.DEPOSIT_CONTRACT_TREE_DEPTH;
 import static tech.pegasys.artemis.datastructures.Constants.DOMAIN_DEPOSIT;
+import static tech.pegasys.artemis.datastructures.Constants.MOCKED_START_INTEROP;
 import static tech.pegasys.artemis.datastructures.Constants.ZERO_HASH;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_domain;
 
@@ -428,42 +429,64 @@ public final class DataStructureUtil {
         Bytes32.ZERO, UnsignedLong.valueOf(Constants.GENESIS_SLOT), deposits);
   }
 
-  @SuppressWarnings("rawtypes")
   public static BeaconStateWithCache createInitialBeaconState2(ArtemisConfiguration config)
       throws IOException, ParseException {
-    final List<Deposit> deposits = new ArrayList<>();
     if (config.getInteropActive()) {
-      Path path = Paths.get("depositsAndKeys.yaml");
-      String yaml = Files.readString(path.toAbsolutePath(), StandardCharsets.US_ASCII);
-      ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
-      Map<String, List<Map>> fileMap =
-          mapper.readValue(yaml, new TypeReference<Map<String, List<Map>>>() {});
-      List<Map> depositdatakeys = fileMap.get("DepositDataKeys");
-      depositdatakeys.forEach(
-          item -> {
-            Map depositDataMap = (Map) item.get("DepositData");
-            BLSPublicKey pubkey =
-                BLSPublicKey.fromBytes(
-                    Bytes.fromBase64String(depositDataMap.get("Pubkey").toString()));
-            Bytes32 withdrawalCreds =
-                Bytes32.wrap(
-                    Bytes.fromBase64String(depositDataMap.get("WithdrawalCredentials").toString()));
-            UnsignedLong amount = UnsignedLong.valueOf(depositDataMap.get("amount").toString());
-            BLSSignature signature =
-                BLSSignature.fromBytes(
-                    Bytes.fromBase64String(depositDataMap.get("Signature").toString()));
-            DepositData depositData = new DepositData(pubkey, withdrawalCreds, amount, signature);
-            deposits.add(
-                new Deposit(
-                    new ArrayList<>(),
-                    depositData,
-                    UnsignedLong.valueOf(item.get("Index").toString())));
-          });
-    } else {
-      deposits.addAll(newDeposits(config.getNumValidators()));
+      switch (config.getInteropMode()) {
+        case Constants.FILE_INTEROP:
+          return createFileInteropInitialBeaconState();
+        case MOCKED_START_INTEROP:
+          return createMockedStartInitialBeaconState(config);
+      }
     }
     return BeaconStateUtil.initialize_beacon_state_from_eth1(
+        Bytes32.ZERO,
+        UnsignedLong.valueOf(Constants.GENESIS_SLOT),
+        newDeposits(config.getNumValidators()));
+  }
+
+  @SuppressWarnings("rawtypes")
+  private static BeaconStateWithCache createFileInteropInitialBeaconState() throws IOException {
+    final List<Deposit> deposits = new ArrayList<>();
+    Path path = Paths.get("depositsAndKeys.yaml");
+    String yaml = Files.readString(path.toAbsolutePath(), StandardCharsets.US_ASCII);
+    ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
+    Map<String, List<Map>> fileMap =
+        mapper.readValue(yaml, new TypeReference<Map<String, List<Map>>>() {});
+    List<Map> depositdatakeys = fileMap.get("DepositDataKeys");
+    depositdatakeys.forEach(
+        item -> {
+          Map depositDataMap = (Map) item.get("DepositData");
+          BLSPublicKey pubkey =
+              BLSPublicKey.fromBytes(
+                  Bytes.fromBase64String(depositDataMap.get("Pubkey").toString()));
+          Bytes32 withdrawalCreds =
+              Bytes32.wrap(
+                  Bytes.fromBase64String(depositDataMap.get("WithdrawalCredentials").toString()));
+          UnsignedLong amount = UnsignedLong.valueOf(depositDataMap.get("amount").toString());
+          BLSSignature signature =
+              BLSSignature.fromBytes(
+                  Bytes.fromBase64String(depositDataMap.get("Signature").toString()));
+          DepositData depositData = new DepositData(pubkey, withdrawalCreds, amount, signature);
+          deposits.add(
+              new Deposit(
+                  new ArrayList<>(),
+                  depositData,
+                  UnsignedLong.valueOf(item.get("Index").toString())));
+        });
+    return BeaconStateUtil.initialize_beacon_state_from_eth1(
         Bytes32.ZERO, UnsignedLong.valueOf(Constants.GENESIS_SLOT), deposits);
+  }
+
+  private static BeaconStateWithCache createMockedStartInitialBeaconState(
+      final ArtemisConfiguration config) {
+    final UnsignedLong genesisTime = UnsignedLong.valueOf(config.getInteropGenesisTime());
+    final List<BLSKeyPair> validatorKeys =
+        new MockStartValidatorKeyPairFactory().generateKeyPairs(0, config.getNumValidators());
+    final List<DepositData> initialDepositData =
+        new MockStartDepositGenerator().createDeposits(validatorKeys);
+    return new MockStartBeaconStateGenerator()
+        .createInitialBeaconState(genesisTime, initialDepositData);
   }
 
   public static Validator randomValidator() {

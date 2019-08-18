@@ -32,6 +32,10 @@ public class Constants {
   public static int JUSTIFICATION_BITS_LENGTH = 4;
   public static String ENDIANNESS = "little";
 
+  // Interop modes
+  public static final String FILE_INTEROP = "file";
+  public static final String MOCKED_START_INTEROP = "mocked";
+
   // Misc
   public static int SHARD_COUNT = 1024;
   public static int TARGET_COMMITTEE_SIZE = 128;
@@ -109,7 +113,6 @@ public class Constants {
   public static String DEPOSIT_NORMAL = "normal";
   public static String DEPOSIT_TEST = "test";
   public static String DEPOSIT_SIM = "simulation";
-  public static String DEPOSIT_MOCK_START = "mockstart";
 
   // Added values by proto for v0.8.2 tests TODO organize
   public static Bytes DEPOSIT_CONTRACT_ADDRESS;
