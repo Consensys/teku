@@ -17,10 +17,13 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
+import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.operations.DepositData;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
+import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
+import tech.pegasys.artemis.util.bls.BLSPublicKey;
 
 class MockStartBeaconStateGeneratorTest {
   @Test
@@ -37,7 +40,15 @@ class MockStartBeaconStateGeneratorTest {
     final BeaconStateWithCache initialBeaconState =
         new MockStartBeaconStateGenerator().createInitialBeaconState(genesisTime, deposits);
 
-    // TODO: Worst test ever... Need a reference genesis state.
-    assertNotNull(initialBeaconState);
+    assertEquals(validatorCount, initialBeaconState.getValidators().size());
+    assertEquals(validatorCount, initialBeaconState.getEth1_data().getDeposit_count().longValue());
+
+    final List<BLSPublicKey> actualValidatorPublicKeys = initialBeaconState.getValidators().stream()
+        .map(Validator::getPubkey)
+        .collect(Collectors.toList());
+    final List<BLSPublicKey> expectedValidatorPublicKeys = validatorKeyPairs.stream()
+        .map(BLSKeyPair::getPublicKey)
+        .collect(Collectors.toList());
+    assertEquals(expectedValidatorPublicKeys, actualValidatorPublicKeys);
   }
 }

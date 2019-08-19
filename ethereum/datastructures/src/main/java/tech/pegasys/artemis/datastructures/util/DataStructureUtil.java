@@ -37,6 +37,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.stream.IntStream;
+import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.json.simple.JSONArray;
@@ -62,6 +63,7 @@ import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.datastructures.state.Crosslink;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.util.alogger.ALogger;
+import tech.pegasys.artemis.util.alogger.ALogger.Color;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
@@ -69,6 +71,7 @@ import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 
 public final class DataStructureUtil {
   private static final ALogger LOG = new ALogger(DataStructureUtil.class.getName());
+  private static final ALogger STDOUT = new ALogger("stdout");
 
   public static int randomInt() {
     return (int) Math.round(Math.random() * 1000000);
@@ -481,8 +484,17 @@ public final class DataStructureUtil {
   private static BeaconStateWithCache createMockedStartInitialBeaconState(
       final ArtemisConfiguration config) {
     final UnsignedLong genesisTime = UnsignedLong.valueOf(config.getInteropGenesisTime());
+    final int validatorCount = config.getNumValidators();
     final List<BLSKeyPair> validatorKeys =
-        new MockStartValidatorKeyPairFactory().generateKeyPairs(0, config.getNumValidators());
+        new MockStartValidatorKeyPairFactory().generateKeyPairs(0, validatorCount);
+    STDOUT.log(
+        Level.INFO,
+        "Using mocked start interoperability mode with genesis time "
+            + genesisTime
+            + " and "
+            + validatorCount
+            + " validators",
+        Color.GREEN);
     final List<DepositData> initialDepositData =
         new MockStartDepositGenerator().createDeposits(validatorKeys);
     return new MockStartBeaconStateGenerator()

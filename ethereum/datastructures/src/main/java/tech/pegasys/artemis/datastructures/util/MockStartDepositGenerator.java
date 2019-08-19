@@ -17,6 +17,7 @@ import static java.util.stream.Collectors.toList;
 import static tech.pegasys.artemis.datastructures.Constants.BLS_WITHDRAWAL_PREFIX;
 import static tech.pegasys.artemis.datastructures.Constants.DOMAIN_DEPOSIT;
 import static tech.pegasys.artemis.datastructures.Constants.MAX_EFFECTIVE_BALANCE;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_domain;
 
 import com.google.common.primitives.UnsignedLong;
 import java.security.MessageDigest;
@@ -42,7 +43,8 @@ public class MockStartDepositGenerator {
             createWithdrawalCredentials(keyPair),
             UnsignedLong.valueOf(MAX_EFFECTIVE_BALANCE),
             null);
-    data.setSignature(BLSSignature.sign(keyPair, data.signing_root("signature"), DOMAIN_DEPOSIT));
+    data.setSignature(
+        BLSSignature.sign(keyPair, data.signing_root("signature"), compute_domain(DOMAIN_DEPOSIT)));
     return data;
   }
 

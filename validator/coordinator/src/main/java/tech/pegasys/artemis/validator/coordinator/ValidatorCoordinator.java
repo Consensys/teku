@@ -89,6 +89,7 @@ import tech.pegasys.artemis.statetransition.util.SlotProcessingException;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.Store;
 import tech.pegasys.artemis.util.alogger.ALogger;
+import tech.pegasys.artemis.util.alogger.ALogger.Color;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
@@ -472,6 +473,8 @@ public class ValidatorCoordinator {
         case Constants.MOCKED_START_INTEROP:
           startIndex = config.getInteropOwnedValidatorStartIndex();
           endIndex = startIndex + config.getInteropOwnedValidatorCount();
+          STDOUT.log(
+              Level.INFO, "Owning validator range " + startIndex + " to " + endIndex, Color.GREEN);
           keypairs = new MockStartValidatorKeyPairFactory().generateKeyPairs(startIndex, endIndex);
           break;
       }
