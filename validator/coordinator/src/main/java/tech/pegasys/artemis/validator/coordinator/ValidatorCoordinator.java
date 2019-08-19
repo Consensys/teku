@@ -16,6 +16,8 @@ package tech.pegasys.artemis.validator.coordinator;
 import static java.lang.StrictMath.toIntExact;
 import static tech.pegasys.artemis.datastructures.Constants.DOMAIN_ATTESTATION;
 import static tech.pegasys.artemis.datastructures.Constants.GENESIS_SLOT;
+import static tech.pegasys.artemis.datastructures.Constants.MAX_ATTESTATIONS;
+import static tech.pegasys.artemis.datastructures.Constants.MAX_DEPOSITS;
 import static tech.pegasys.artemis.datastructures.Constants.MAX_VALIDATORS_PER_COMMITTEE;
 import static tech.pegasys.artemis.datastructures.Constants.SLOTS_PER_EPOCH;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_of_slot;
@@ -87,6 +89,7 @@ import tech.pegasys.artemis.statetransition.util.EpochProcessingException;
 import tech.pegasys.artemis.statetransition.util.SlotProcessingException;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.Store;
+import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
@@ -111,7 +114,7 @@ public class ValidatorCoordinator {
   private int numValidators;
   private int numNodes;
   private BeaconBlock validatorBlock;
-  private ArrayList<Deposit> newDeposits = new ArrayList<>();
+  private SSZList<Deposit> newDeposits = new SSZList<>(Deposit.class, MAX_DEPOSITS);
   private final HashMap<BLSPublicKey, MutableTriple<BLSKeyPair, Boolean, Integer>> validatorSet =
       new HashMap<>();
   private ChainStorageClient chainStorageClient;
@@ -354,7 +357,7 @@ public class ValidatorCoordinator {
 
   private BeaconBlock createInitialBlock(BeaconStateWithCache state, BeaconBlock oldBlock) {
     Bytes32 blockRoot = oldBlock.signing_root("signature");
-    List<Attestation> current_attestations = new ArrayList<>();
+    SSZList<Attestation> current_attestations = new SSZList<>(Attestation.class, MAX_ATTESTATIONS);
     final Bytes32 MockStateRoot = Bytes32.ZERO;
 
     if (state

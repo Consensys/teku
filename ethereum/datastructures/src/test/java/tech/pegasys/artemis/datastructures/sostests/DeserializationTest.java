@@ -207,16 +207,15 @@ public class DeserializationTest {
 
   @Test
   void HistoricalBatchTest() {
-    List<Bytes32> block_roots = new ArrayList<>();
-    List<Bytes32> state_roots = new ArrayList<>();
+    SSZVector<Bytes32> block_roots = new SSZVector<>(Constants.SLOTS_PER_HISTORICAL_ROOT, Bytes32.ZERO);
+    SSZVector<Bytes32> state_roots = new SSZVector<>(Constants.SLOTS_PER_HISTORICAL_ROOT, Bytes32.ZERO);
     IntStream.range(0, Constants.SLOTS_PER_HISTORICAL_ROOT)
         .forEach(
             i -> {
               block_roots.add(DataStructureUtil.randomBytes32(i));
               state_roots.add(DataStructureUtil.randomBytes32(i));
             });
-    HistoricalBatch deposit =
-        new HistoricalBatch(new SSZVector<>(block_roots), new SSZVector<>(state_roots));
+    HistoricalBatch deposit = new HistoricalBatch(block_roots, state_roots);
     Bytes serialized = SimpleOffsetSerializer.serialize(deposit);
     HistoricalBatch newDeposit =
         SimpleOffsetSerializer.deserialize(serialized, HistoricalBatch.class);

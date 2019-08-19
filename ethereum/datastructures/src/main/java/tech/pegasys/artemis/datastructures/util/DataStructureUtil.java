@@ -15,6 +15,13 @@ package tech.pegasys.artemis.datastructures.util;
 
 import static tech.pegasys.artemis.datastructures.Constants.DEPOSIT_CONTRACT_TREE_DEPTH;
 import static tech.pegasys.artemis.datastructures.Constants.DOMAIN_DEPOSIT;
+import static tech.pegasys.artemis.datastructures.Constants.MAX_ATTESTATIONS;
+import static tech.pegasys.artemis.datastructures.Constants.MAX_ATTESTER_SLASHINGS;
+import static tech.pegasys.artemis.datastructures.Constants.MAX_DEPOSITS;
+import static tech.pegasys.artemis.datastructures.Constants.MAX_PROPOSER_SLASHINGS;
+import static tech.pegasys.artemis.datastructures.Constants.MAX_TRANSFERS;
+import static tech.pegasys.artemis.datastructures.Constants.MAX_VALIDATORS_PER_COMMITTEE;
+import static tech.pegasys.artemis.datastructures.Constants.MAX_VOLUNTARY_EXITS;
 import static tech.pegasys.artemis.datastructures.Constants.ZERO_HASH;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_domain;
 
@@ -55,6 +62,7 @@ import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.datastructures.state.Crosslink;
 import tech.pegasys.artemis.datastructures.state.Validator;
+import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.SSZTypes.SSZVector;
 import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
@@ -201,16 +209,33 @@ public final class DataStructureUtil {
   }
 
   public static BeaconBlockBody randomBeaconBlockBody() {
+    SSZList<ProposerSlashing> proposerSlashings = new SSZList<>(ProposerSlashing.class, MAX_PROPOSER_SLASHINGS);
+    SSZList<AttesterSlashing> attesterSlashings = new SSZList<>(AttesterSlashing.class, MAX_ATTESTER_SLASHINGS);
+    SSZList<Attestation> attestations = new SSZList<>(Attestation.class, MAX_ATTESTATIONS);
+    SSZList<Deposit> deposits = new SSZList<>(Deposit.class, MAX_DEPOSITS);
+    SSZList<VoluntaryExit> voluntaryExits = new SSZList<>(VoluntaryExit.class, MAX_VOLUNTARY_EXITS);
+    SSZList<Transfer> transfers = new SSZList<>(Transfer.class, MAX_TRANSFERS);
+    proposerSlashings.add(randomProposerSlashing());
+    proposerSlashings.add(randomProposerSlashing());
+    proposerSlashings.add(randomProposerSlashing());
+    attesterSlashings.add(randomAttesterSlashing());
+    attesterSlashings.add(randomAttesterSlashing());
+    attesterSlashings.add(randomAttesterSlashing());
+    deposits.addAll(randomDeposits(100));
+    voluntaryExits.add(randomVoluntaryExit());
+    voluntaryExits.add(randomVoluntaryExit());
+    voluntaryExits.add(randomVoluntaryExit());
+    transfers.add(randomTransfer());
     return new BeaconBlockBody(
         BLSSignature.random(),
         randomEth1Data(),
         Bytes32.ZERO,
-        Arrays.asList(randomProposerSlashing(), randomProposerSlashing(), randomProposerSlashing()),
-        Arrays.asList(randomAttesterSlashing(), randomAttesterSlashing(), randomAttesterSlashing()),
-        Arrays.asList(randomAttestation(), randomAttestation(), randomAttestation()),
-        randomDeposits(100),
-        Arrays.asList(randomVoluntaryExit(), randomVoluntaryExit(), randomVoluntaryExit()),
-        Arrays.asList(randomTransfer()));
+        proposerSlashings,
+        attesterSlashings,
+        attestations,
+        deposits,
+        voluntaryExits,
+        transfers);
   }
 
   public static ProposerSlashing randomProposerSlashing() {
@@ -224,19 +249,35 @@ public final class DataStructureUtil {
   }
 
   public static IndexedAttestation randomIndexedAttestation() {
+    SSZList<UnsignedLong> custody_0_bit_indices = new SSZList<>(UnsignedLong.class, MAX_VALIDATORS_PER_COMMITTEE);
+    SSZList<UnsignedLong> custody_1_bit_indices = new SSZList<>(UnsignedLong.class, MAX_VALIDATORS_PER_COMMITTEE);
+    custody_0_bit_indices.add(randomUnsignedLong());
+    custody_0_bit_indices.add(randomUnsignedLong());
+    custody_0_bit_indices.add(randomUnsignedLong());
+    custody_1_bit_indices.add(randomUnsignedLong());
+    custody_1_bit_indices.add(randomUnsignedLong());
+    custody_1_bit_indices.add(randomUnsignedLong());
     return new IndexedAttestation(
-        Arrays.asList(randomUnsignedLong(), randomUnsignedLong(), randomUnsignedLong()),
-        Arrays.asList(randomUnsignedLong(), randomUnsignedLong(), randomUnsignedLong()),
-        randomAttestationData(),
-        BLSSignature.random());
+            custody_0_bit_indices,
+            custody_1_bit_indices,
+            randomAttestationData(),
+            BLSSignature.random());
   }
 
   public static IndexedAttestation randomIndexedAttestation(int seed) {
+    SSZList<UnsignedLong> custody_0_bit_indices = new SSZList<>(UnsignedLong.class, MAX_VALIDATORS_PER_COMMITTEE);
+    SSZList<UnsignedLong> custody_1_bit_indices = new SSZList<>(UnsignedLong.class, MAX_VALIDATORS_PER_COMMITTEE);
+    custody_0_bit_indices.add(randomUnsignedLong(seed));
+    custody_0_bit_indices.add(randomUnsignedLong(seed));
+    custody_0_bit_indices.add(randomUnsignedLong(seed));
+    custody_1_bit_indices.add(randomUnsignedLong(seed));
+    custody_1_bit_indices.add(randomUnsignedLong(seed));
+    custody_1_bit_indices.add(randomUnsignedLong(seed));
     return new IndexedAttestation(
-        Arrays.asList(randomUnsignedLong(seed), randomUnsignedLong(seed), randomUnsignedLong(seed)),
-        Arrays.asList(randomUnsignedLong(seed), randomUnsignedLong(seed), randomUnsignedLong(seed)),
-        randomAttestationData(seed++),
-        BLSSignature.random(seed));
+            custody_0_bit_indices,
+            custody_1_bit_indices,
+            randomAttestationData(seed++),
+            BLSSignature.random(seed));
   }
 
   public static DepositData randomDepositData() {
@@ -380,23 +421,19 @@ public final class DataStructureUtil {
       UnsignedLong slotNum,
       Bytes32 previous_block_root,
       Bytes32 state_root,
-      ArrayList<Deposit> deposits,
-      List<Attestation> attestations,
+      SSZList<Deposit> deposits,
+      SSZList<Attestation> attestations,
       int numValidators) {
+    BeaconBlockBody beaconBlockBody = new BeaconBlockBody();
+    beaconBlockBody.setEth1_data(
+            new Eth1Data(ZERO_HASH, UnsignedLong.valueOf(numValidators), ZERO_HASH));
+    beaconBlockBody.setDeposits(deposits);
+    beaconBlockBody.setAttestations(attestations);
     return new BeaconBlock(
         slotNum,
         previous_block_root,
         state_root,
-        new BeaconBlockBody(
-            Constants.EMPTY_SIGNATURE,
-            new Eth1Data(ZERO_HASH, UnsignedLong.valueOf(numValidators), ZERO_HASH),
-            Bytes32.ZERO,
-            new ArrayList<>(),
-            new ArrayList<>(),
-            attestations,
-            deposits,
-            new ArrayList<>(),
-            new ArrayList<>()),
+        beaconBlockBody,
         BLSSignature.empty());
   }
 

@@ -247,7 +247,7 @@ public class SimpleOffsetSerializer {
         newList.add(deserializeFixedComposite(bytes, classInfo, reader));
       }
     }
-    return new SSZVector<>(newList);
+    return new SSZVector<>(newList, classInfo);
   }
 
   private static boolean isPrimitive(Class classInfo) {

@@ -33,6 +33,7 @@ import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.alogger.ALogger;
 
 /** This class is the ChainStorage client-side logic */
@@ -265,9 +266,9 @@ public class ChainStorageClient implements ChainStorage {
    * @param slot
    * @return
    */
-  public List<Attestation> getUnprocessedAttestationsUntilSlot(
+  public SSZList<Attestation> getUnprocessedAttestationsUntilSlot(
       BeaconState state, UnsignedLong slot) {
-    List<Attestation> attestations = new ArrayList<>();
+    SSZList<Attestation> attestations = new SSZList<>(Attestation.class, Constants.MAX_ATTESTATIONS);
     int numAttestations = 0;
     while (unprocessedAttestationsQueue.peek() != null
         && get_attestation_data_slot(state, unprocessedAttestationsQueue.peek().getData())

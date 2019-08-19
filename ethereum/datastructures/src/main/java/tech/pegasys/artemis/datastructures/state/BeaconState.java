@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.datastructures.state;
 
+import static tech.pegasys.artemis.datastructures.Constants.SLOTS_PER_EPOCH;
 import static tech.pegasys.artemis.datastructures.Constants.ZERO_HASH;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.int_to_bytes;
 
@@ -31,6 +32,7 @@ import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.util.SSZTypes.Bytes4;
 import tech.pegasys.artemis.util.SSZTypes.SSZContainer;
+import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.SSZTypes.SSZVector;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
@@ -48,16 +50,16 @@ public class BeaconState implements SimpleOffsetSerializable, SSZContainer {
   protected BeaconBlockHeader latest_block_header;
   protected SSZVector<Bytes32> block_roots; // Vector Bounded by SLOTS_PER_HISTORICAL_ROOT
   protected SSZVector<Bytes32> state_roots; // Vector Bounded by SLOTS_PER_HISTORICAL_ROOT
-  protected List<Bytes32> historical_roots; // List Bounded by HISTORICAL_ROOTS_LIMIT
+  protected SSZList<Bytes32> historical_roots; // Bounded by HISTORICAL_ROOTS_LIMIT
 
   // Ethereum 1.0 chain data
   protected Eth1Data eth1_data;
-  protected List<Eth1Data> eth1_data_votes; // List Bounded by SLOTS_PER_ETH1_VOTING_PERIOD
+  protected SSZList<Eth1Data> eth1_data_votes; // List Bounded by SLOTS_PER_ETH1_VOTING_PERIOD
   protected UnsignedLong eth1_deposit_index;
 
   // Validator registry
-  protected List<Validator> validators; // List Bounded by VALIDATOR_REGISTRY_LIMIT
-  protected List<UnsignedLong> balances; // List Bounded by VALIDATOR_REGISTRY_LIMIT
+  protected SSZList<Validator> validators; // List Bounded by VALIDATOR_REGISTRY_LIMIT
+  protected SSZList<UnsignedLong> balances; // List Bounded by VALIDATOR_REGISTRY_LIMIT
 
   // Shuffling
   protected UnsignedLong start_shard;
@@ -70,9 +72,9 @@ public class BeaconState implements SimpleOffsetSerializable, SSZContainer {
   protected SSZVector<UnsignedLong> slashings; // Vector Bounded by EPOCHS_PER_SLASHINGS_VECTOR
 
   // Attestations
-  protected List<PendingAttestation>
+  protected SSZList<PendingAttestation>
       previous_epoch_attestations; // List bounded by MAX_ATTESTATIONS * SLOTS_PER_EPOCH
-  protected List<PendingAttestation>
+  protected SSZList<PendingAttestation>
       current_epoch_attestations; // List bounded by MAX_ATTESTATIONS * SLOTS_PER_EPOCH
 
   // Crosslinks
@@ -95,16 +97,16 @@ public class BeaconState implements SimpleOffsetSerializable, SSZContainer {
       BeaconBlockHeader latest_block_header,
       SSZVector<Bytes32> block_roots,
       SSZVector<Bytes32> state_roots,
-      List<Bytes32> historical_roots,
+      SSZList<Bytes32> historical_roots,
 
       // Eth1
       Eth1Data eth1_data,
-      List<Eth1Data> eth1_data_votes,
+      SSZList<Eth1Data> eth1_data_votes,
       UnsignedLong eth1_deposit_index,
 
       // Registry
-      List<Validator> validators,
-      List<UnsignedLong> balances,
+      SSZList<Validator> validators,
+      SSZList<UnsignedLong> balances,
 
       // Shuffling
       UnsignedLong start_shard,
@@ -116,8 +118,8 @@ public class BeaconState implements SimpleOffsetSerializable, SSZContainer {
       SSZVector<UnsignedLong> slashings,
 
       // Attestations
-      List<PendingAttestation> previous_epoch_attestations,
-      List<PendingAttestation> current_epoch_attestations,
+      SSZList<PendingAttestation> previous_epoch_attestations,
+      SSZList<PendingAttestation> current_epoch_attestations,
 
       // Crosslinks
       SSZVector<Crosslink> previous_crosslinks,
@@ -187,18 +189,18 @@ public class BeaconState implements SimpleOffsetSerializable, SSZContainer {
     this.latest_block_header = new BeaconBlockHeader();
     this.block_roots = new SSZVector<>(Constants.SLOTS_PER_HISTORICAL_ROOT, Constants.ZERO_HASH);
     this.state_roots = new SSZVector<>(Constants.SLOTS_PER_HISTORICAL_ROOT, Constants.ZERO_HASH);
-    this.historical_roots = new ArrayList<>();
+    this.historical_roots = new SSZList<>(Bytes32.class, Constants.HISTORICAL_ROOTS_LIMIT);
 
     // Eth1
     // TODO gotta change this with genesis eth1DATA because deposit count is dependent on the
     // number of validators
     this.eth1_data = new Eth1Data(ZERO_HASH, UnsignedLong.ZERO, ZERO_HASH);
-    this.eth1_data_votes = new ArrayList<>();
+    this.eth1_data_votes = new SSZList<>(Eth1Data.class, Constants.SLOTS_PER_ETH1_VOTING_PERIOD);
     this.eth1_deposit_index = UnsignedLong.ZERO;
 
     // Registry
-    this.validators = new ArrayList<>();
-    this.balances = new ArrayList<>();
+    this.validators = new SSZList<>(Validator.class, Constants.VALIDATOR_REGISTRY_LIMIT);
+    this.balances = new SSZList<>(UnsignedLong.class, Constants.VALIDATOR_REGISTRY_LIMIT);
 
     // Shuffling
     this.start_shard = UnsignedLong.ZERO;
@@ -213,8 +215,8 @@ public class BeaconState implements SimpleOffsetSerializable, SSZContainer {
     this.slashings = new SSZVector<>(Constants.EPOCHS_PER_SLASHINGS_VECTOR, UnsignedLong.ZERO);
 
     // Attestations
-    this.previous_epoch_attestations = new ArrayList<>();
-    this.current_epoch_attestations = new ArrayList<>();
+    this.previous_epoch_attestations = new SSZList<>(PendingAttestation.class, Constants.MAX_ATTESTATIONS * SLOTS_PER_EPOCH);
+    this.current_epoch_attestations = new SSZList<>(PendingAttestation.class, Constants.MAX_ATTESTATIONS * SLOTS_PER_EPOCH);
 
     // Crosslinks
     this.previous_crosslinks = new SSZVector<>(Constants.SHARD_COUNT, new Crosslink());
@@ -467,11 +469,11 @@ public class BeaconState implements SimpleOffsetSerializable, SSZContainer {
     this.state_roots = state_roots;
   }
 
-  public List<Bytes32> getHistorical_roots() {
+  public SSZList<Bytes32> getHistorical_roots() {
     return historical_roots;
   }
 
-  public void setHistorical_roots(List<Bytes32> historical_roots) {
+  public void setHistorical_roots(SSZList<Bytes32> historical_roots) {
     this.historical_roots = historical_roots;
   }
 
@@ -484,11 +486,11 @@ public class BeaconState implements SimpleOffsetSerializable, SSZContainer {
     this.eth1_data = eth1_data;
   }
 
-  public List<Eth1Data> getEth1_data_votes() {
+  public SSZList<Eth1Data> getEth1_data_votes() {
     return eth1_data_votes;
   }
 
-  public void setEth1_data_votes(List<Eth1Data> eth1_data_votes) {
+  public void setEth1_data_votes(SSZList<Eth1Data> eth1_data_votes) {
     this.eth1_data_votes = eth1_data_votes;
   }
 
@@ -501,19 +503,19 @@ public class BeaconState implements SimpleOffsetSerializable, SSZContainer {
   }
 
   // Registry
-  public List<Validator> getValidators() {
+  public SSZList<Validator> getValidators() {
     return validators;
   }
 
-  public void setValidators(List<Validator> validators) {
+  public void setValidators(SSZList<Validator> validators) {
     this.validators = validators;
   }
 
-  public List<UnsignedLong> getBalances() {
+  public SSZList<UnsignedLong> getBalances() {
     return balances;
   }
 
-  public void setBalances(List<UnsignedLong> balances) {
+  public void setBalances(SSZList<UnsignedLong> balances) {
     this.balances = balances;
   }
 
@@ -560,19 +562,19 @@ public class BeaconState implements SimpleOffsetSerializable, SSZContainer {
   }
 
   // Attestations
-  public List<PendingAttestation> getPrevious_epoch_attestations() {
+  public SSZList<PendingAttestation> getPrevious_epoch_attestations() {
     return previous_epoch_attestations;
   }
 
-  public void setPrevious_epoch_attestations(List<PendingAttestation> previous_epoch_attestations) {
+  public void setPrevious_epoch_attestations(SSZList<PendingAttestation> previous_epoch_attestations) {
     this.previous_epoch_attestations = previous_epoch_attestations;
   }
 
-  public List<PendingAttestation> getCurrent_epoch_attestations() {
+  public SSZList<PendingAttestation> getCurrent_epoch_attestations() {
     return current_epoch_attestations;
   }
 
-  public void setCurrent_epoch_attestations(List<PendingAttestation> current_epoch_attestations) {
+  public void setCurrent_epoch_attestations(SSZList<PendingAttestation> current_epoch_attestations) {
     this.current_epoch_attestations = current_epoch_attestations;
   }
 

@@ -20,7 +20,7 @@ import java.util.List;
 @SuppressWarnings("rawtypes")
 public class SSZVector<T> extends ArrayList<T> {
 
-  private int size = 0;
+  private int size;
   private int counter = 0;
   private Class classInfo;
 
@@ -34,9 +34,24 @@ public class SSZVector<T> extends ArrayList<T> {
     classInfo = object.getClass();
   }
 
-  public SSZVector(List<T> list) {
+  public SSZVector(List<T> list, Class classInfo) {
     super(list);
     size = list.size();
+    this.classInfo = classInfo;
+  }
+
+  public SSZVector(SSZVector<T> list) {
+    super(list);
+    size = list.size();
+    this.classInfo = list.getElementType();
+  }
+
+  public int getSize() {
+    return size;
+  }
+
+  public int getCounter() {
+    return size;
   }
 
   @Override

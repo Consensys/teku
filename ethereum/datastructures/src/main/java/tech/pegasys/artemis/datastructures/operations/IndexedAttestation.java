@@ -25,6 +25,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.util.SSZTypes.SSZContainer;
+import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
@@ -36,14 +37,14 @@ public class IndexedAttestation implements Merkleizable, SimpleOffsetSerializabl
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
   public static final int SSZ_FIELD_COUNT = 2;
 
-  private List<UnsignedLong> custody_bit_0_indices; // List bounded by MAX_VALIDATORS_PER_COMMITTEE
-  private List<UnsignedLong> custody_bit_1_indices; // List bounded by MAX_VALIDATORS_PER_COMMITTEE
+  private SSZList<UnsignedLong> custody_bit_0_indices; // List bounded by MAX_VALIDATORS_PER_COMMITTEE
+  private SSZList<UnsignedLong> custody_bit_1_indices; // List bounded by MAX_VALIDATORS_PER_COMMITTEE
   private AttestationData data;
   private BLSSignature signature;
 
   public IndexedAttestation(
-      List<UnsignedLong> custody_bit_0_indices,
-      List<UnsignedLong> custody_bit_1_indices,
+      SSZList<UnsignedLong> custody_bit_0_indices,
+      SSZList<UnsignedLong> custody_bit_1_indices,
       AttestationData data,
       BLSSignature signature) {
     this.custody_bit_0_indices = custody_bit_0_indices;
@@ -54,9 +55,9 @@ public class IndexedAttestation implements Merkleizable, SimpleOffsetSerializabl
 
   public IndexedAttestation(IndexedAttestation indexedAttestation) {
     this.custody_bit_0_indices =
-        indexedAttestation.getCustody_bit_0_indices().stream().collect(Collectors.toList());
+        new SSZList<>(indexedAttestation.getCustody_bit_0_indices());
     this.custody_bit_1_indices =
-        indexedAttestation.getCustody_bit_1_indices().stream().collect(Collectors.toList());
+        new SSZList<>(indexedAttestation.getCustody_bit_1_indices());
     this.data = new AttestationData(data);
     this.signature = new BLSSignature(indexedAttestation.getSignature().getSignature());
   }
@@ -102,39 +103,6 @@ public class IndexedAttestation implements Merkleizable, SimpleOffsetSerializabl
     return variablePartsList;
   }
 
-  public static IndexedAttestation fromBytes(Bytes bytes) {
-    return SSZ.decode(
-        bytes,
-        reader ->
-            new IndexedAttestation(
-                reader.readUInt64List().stream()
-                    .map(UnsignedLong::fromLongBits)
-                    .collect(Collectors.toList()),
-                reader.readUInt64List().stream()
-                    .map(UnsignedLong::fromLongBits)
-                    .collect(Collectors.toList()),
-                AttestationData.fromBytes(reader.readBytes()),
-                BLSSignature.fromBytes(reader.readBytes())));
-  }
-
-  public Bytes toBytes() {
-    return SSZ.encode(
-        writer -> {
-          writer.writeULongIntList(
-              64,
-              custody_bit_0_indices.stream()
-                  .map(UnsignedLong::longValue)
-                  .collect(Collectors.toList()));
-          writer.writeULongIntList(
-              64,
-              custody_bit_1_indices.stream()
-                  .map(UnsignedLong::longValue)
-                  .collect(Collectors.toList()));
-          writer.writeBytes(data.toBytes());
-          writer.writeBytes(signature.toBytes());
-        });
-  }
-
   @Override
   public int hashCode() {
     return Objects.hash(custody_bit_0_indices, custody_bit_1_indices, data, signature);
@@ -162,19 +130,19 @@ public class IndexedAttestation implements Merkleizable, SimpleOffsetSerializabl
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */
-  public List<UnsignedLong> getCustody_bit_0_indices() {
+  public SSZList<UnsignedLong> getCustody_bit_0_indices() {
     return custody_bit_0_indices;
   }
 
-  public void setCustody_bit_0_indices(List<UnsignedLong> custody_bit_0_indices) {
+  public void setCustody_bit_0_indices(SSZList<UnsignedLong> custody_bit_0_indices) {
     this.custody_bit_0_indices = custody_bit_0_indices;
   }
 
-  public List<UnsignedLong> getCustody_bit_1_indices() {
+  public SSZList<UnsignedLong> getCustody_bit_1_indices() {
     return custody_bit_1_indices;
   }
 
-  public void setCustody_bit_1_indices(List<UnsignedLong> custody_bit_1_indices) {
+  public void setCustody_bit_1_indices(SSZList<UnsignedLong> custody_bit_1_indices) {
     this.custody_bit_1_indices = custody_bit_1_indices;
   }
 

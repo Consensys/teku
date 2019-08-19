@@ -34,16 +34,7 @@ public class BeaconBlockUtil {
         UnsignedLong.valueOf(Constants.GENESIS_SLOT),
         Constants.ZERO_HASH,
         Constants.ZERO_HASH,
-        new BeaconBlockBody(
-            Constants.EMPTY_SIGNATURE,
-            new Eth1Data(Constants.ZERO_HASH, UnsignedLong.ZERO, Constants.ZERO_HASH),
-            Constants.ZERO_HASH,
-            new ArrayList<>(),
-            new ArrayList<>(),
-            new ArrayList<>(),
-            new ArrayList<>(),
-            new ArrayList<>(),
-            new ArrayList<>()),
+        new BeaconBlockBody(),
         Constants.EMPTY_SIGNATURE);
   }
 }

@@ -24,6 +24,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.Copyable;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
+import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.SSZTypes.SSZVector;
 
 public final class BeaconStateWithCache extends BeaconState {
@@ -46,16 +47,16 @@ public final class BeaconStateWithCache extends BeaconState {
         BeaconBlockHeader.fromBytes(state.getLatest_block_header().toBytes());
     this.block_roots = new SSZVector<>(state.getBlock_roots());
     this.state_roots = new SSZVector<>(state.getState_roots());
-    this.historical_roots = this.copyBytesList(state.getHistorical_roots(), new ArrayList<>());
+    this.historical_roots = new SSZList<>(state.getHistorical_roots());
 
     // Eth1
     this.eth1_data = new Eth1Data(state.getEth1_data());
-    this.eth1_data_votes = state.getEth1_data_votes().stream().collect(Collectors.toList());
+    this.eth1_data_votes = new SSZList<>(state.getEth1_data_votes());
     this.eth1_deposit_index = state.getEth1_deposit_index();
 
     // Registry
-    this.validators = this.copyList(state.getValidators(), new ArrayList<>());
-    this.balances = state.getBalances().stream().collect(Collectors.toList());
+    this.validators = new SSZList<>(state.getValidators());
+    this.balances = new SSZList<>(state.getBalances());
 
     // Shuffling
     this.start_shard = state.getStart_shard();
@@ -68,9 +69,9 @@ public final class BeaconStateWithCache extends BeaconState {
 
     // Attestations
     this.previous_epoch_attestations =
-        this.copyList(state.getPrevious_epoch_attestations(), new ArrayList<>());
+        new SSZList<>(state.getPrevious_epoch_attestations());
     this.current_epoch_attestations =
-        this.copyList(state.getCurrent_epoch_attestations(), new ArrayList<>());
+        new SSZList<>(state.getCurrent_epoch_attestations());
 
     // Crosslinks
     this.current_crosslinks = new SSZVector<>(state.getCurrent_crosslinks());

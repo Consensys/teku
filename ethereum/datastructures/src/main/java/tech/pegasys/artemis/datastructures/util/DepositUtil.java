@@ -44,7 +44,7 @@ public class DepositUtil {
           deposits.get(i).getIndex().intValue(),
           Hash.sha2_256(deposits.get(i).getData().serialize()));
     for (int i = 0; i < deposits.size(); i++)
-      deposits.get(i).setProof(new SSZVector<>(merkleTree.getProofTreeByIndex(i)));
+      deposits.get(i).setProof(new SSZVector<>(merkleTree.getProofTreeByIndex(i), Bytes32.class));
     return deposits;
   }
 
@@ -62,7 +62,7 @@ public class DepositUtil {
   public static List<Deposit> applyBranchProofs(
       MerkleTree<Deposit> merkleTree, List<Deposit> deposits) {
     for (int i = 0; i < deposits.size(); i++)
-      deposits.get(i).setProof(new SSZVector<>(merkleTree.getProofTreeByIndex(i)));
+      deposits.get(i).setProof(new SSZVector<>(merkleTree.getProofTreeByIndex(i), Bytes32.class));
     return deposits;
   }
 

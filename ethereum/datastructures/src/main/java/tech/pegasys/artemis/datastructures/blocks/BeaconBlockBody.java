@@ -30,6 +30,7 @@ import tech.pegasys.artemis.datastructures.operations.Transfer;
 import tech.pegasys.artemis.datastructures.operations.VoluntaryExit;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.util.SSZTypes.SSZContainer;
+import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
@@ -44,23 +45,23 @@ public class BeaconBlockBody implements SimpleOffsetSerializable, SSZContainer {
   private BLSSignature randao_reveal;
   private Eth1Data eth1_data;
   private Bytes32 graffiti;
-  private List<ProposerSlashing> proposer_slashings; // List bounded by MAX_PROPOSER_SLASHINGS
-  private List<AttesterSlashing> attester_slashings; // List bounded by MAX_ATTESTER_SLASHINGS
-  private List<Attestation> attestations; // List bounded by MAX_ATTESTATIONS
-  private List<Deposit> deposits; // List bounded by MAX_DEPOSITS
-  private List<VoluntaryExit> voluntary_exits; // List bounded by MAX_VOLUNTARY_EXITS
-  private List<Transfer> transfers; // List bounded by MAX_TRANSFERS
+  private SSZList<ProposerSlashing> proposer_slashings; // List bounded by MAX_PROPOSER_SLASHINGS
+  private SSZList<AttesterSlashing> attester_slashings; // List bounded by MAX_ATTESTER_SLASHINGS
+  private SSZList<Attestation> attestations; // List bounded by MAX_ATTESTATIONS
+  private SSZList<Deposit> deposits; // List bounded by MAX_DEPOSITS
+  private SSZList<VoluntaryExit> voluntary_exits; // List bounded by MAX_VOLUNTARY_EXITS
+  private SSZList<Transfer> transfers; // List bounded by MAX_TRANSFERS
 
   public BeaconBlockBody(
       BLSSignature randao_reveal,
       Eth1Data eth1_data,
       Bytes32 graffiti,
-      List<ProposerSlashing> proposer_slashings,
-      List<AttesterSlashing> attester_slashings,
-      List<Attestation> attestations,
-      List<Deposit> deposits,
-      List<VoluntaryExit> voluntary_exits,
-      List<Transfer> transfers) {
+      SSZList<ProposerSlashing> proposer_slashings,
+      SSZList<AttesterSlashing> attester_slashings,
+      SSZList<Attestation> attestations,
+      SSZList<Deposit> deposits,
+      SSZList<VoluntaryExit> voluntary_exits,
+      SSZList<Transfer> transfers) {
     this.randao_reveal = randao_reveal;
     this.eth1_data = eth1_data;
     this.graffiti = graffiti;
@@ -76,12 +77,12 @@ public class BeaconBlockBody implements SimpleOffsetSerializable, SSZContainer {
     this.randao_reveal = BLSSignature.empty();
     this.eth1_data = new Eth1Data();
     this.graffiti = Bytes32.ZERO;
-    this.proposer_slashings = new ArrayList<>();
-    this.attester_slashings = new ArrayList<>();
-    this.attestations = new ArrayList<>();
-    this.deposits = new ArrayList<>();
-    this.voluntary_exits = new ArrayList<>();
-    this.transfers = new ArrayList<>();
+    this.proposer_slashings = new SSZList<>(ProposerSlashing.class, Constants.MAX_PROPOSER_SLASHINGS);
+    this.attester_slashings = new SSZList<>(AttesterSlashing.class, Constants.MAX_ATTESTER_SLASHINGS);
+    this.attestations = new SSZList<>(Attestation.class, Constants.MAX_ATTESTATIONS);
+    this.deposits = new SSZList<>(Deposit.class, Constants.MAX_DEPOSITS);
+    this.voluntary_exits = new SSZList<>(VoluntaryExit.class, Constants.MAX_VOLUNTARY_EXITS);
+    this.transfers = new SSZList<>(Transfer.class, Constants.MAX_TRANSFERS);
   }
 
   @Override
@@ -181,51 +182,51 @@ public class BeaconBlockBody implements SimpleOffsetSerializable, SSZContainer {
     this.graffiti = graffiti;
   }
 
-  public List<Attestation> getAttestations() {
+  public SSZList<Attestation> getAttestations() {
     return attestations;
   }
 
-  public void setAttestations(List<Attestation> attestations) {
+  public void setAttestations(SSZList<Attestation> attestations) {
     this.attestations = attestations;
   }
 
-  public List<ProposerSlashing> getProposer_slashings() {
+  public SSZList<ProposerSlashing> getProposer_slashings() {
     return proposer_slashings;
   }
 
-  public void setProposer_slashings(List<ProposerSlashing> proposer_slashings) {
+  public void setProposer_slashings(SSZList<ProposerSlashing> proposer_slashings) {
     this.proposer_slashings = proposer_slashings;
   }
 
-  public List<AttesterSlashing> getAttester_slashings() {
+  public SSZList<AttesterSlashing> getAttester_slashings() {
     return attester_slashings;
   }
 
-  public void setAttester_slashings(List<AttesterSlashing> attester_slashings) {
+  public void setAttester_slashings(SSZList<AttesterSlashing> attester_slashings) {
     this.attester_slashings = attester_slashings;
   }
 
-  public List<Deposit> getDeposits() {
+  public SSZList<Deposit> getDeposits() {
     return deposits;
   }
 
-  public void setDeposits(List<Deposit> deposits) {
+  public void setDeposits(SSZList<Deposit> deposits) {
     this.deposits = deposits;
   }
 
-  public List<VoluntaryExit> getVoluntary_exits() {
+  public SSZList<VoluntaryExit> getVoluntary_exits() {
     return voluntary_exits;
   }
 
-  public void setVoluntary_exits(List<VoluntaryExit> voluntary_exits) {
+  public void setVoluntary_exits(SSZList<VoluntaryExit> voluntary_exits) {
     this.voluntary_exits = voluntary_exits;
   }
 
-  public List<Transfer> getTransfers() {
+  public SSZList<Transfer> getTransfers() {
     return transfers;
   }
 
-  public void setTransfers(List<Transfer> transfers) {
+  public void setTransfers(SSZList<Transfer> transfers) {
     this.transfers = transfers;
   }
 

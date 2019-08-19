@@ -56,6 +56,7 @@ import tech.pegasys.artemis.datastructures.state.CompactCommittee;
 import tech.pegasys.artemis.datastructures.state.Crosslink;
 import tech.pegasys.artemis.datastructures.state.CrosslinkCommittee;
 import tech.pegasys.artemis.datastructures.state.Validator;
+import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.bitwise.BitwiseOps;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
@@ -197,14 +198,14 @@ public class AttestationUtil {
         custody_bit_0_indices.add(attesting_index);
     }
     return new IndexedAttestation(
-        custody_bit_0_indices.stream()
+        new SSZList<>(custody_bit_0_indices.stream()
             .sorted()
             .map(UnsignedLong::valueOf)
-            .collect(Collectors.toList()),
-        custody_bit_1_indices.stream()
+            .collect(Collectors.toList()), MAX_VALIDATORS_PER_COMMITTEE, UnsignedLong.class),
+        new SSZList<>(custody_bit_1_indices.stream()
             .sorted()
             .map(UnsignedLong::valueOf)
-            .collect(Collectors.toList()),
+            .collect(Collectors.toList()), MAX_VALIDATORS_PER_COMMITTEE, UnsignedLong.class),
         attestation.getData(),
         attestation.getAggregate_signature());
   }

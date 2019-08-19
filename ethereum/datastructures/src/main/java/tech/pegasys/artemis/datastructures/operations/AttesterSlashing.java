@@ -50,23 +50,6 @@ public class AttesterSlashing implements Merkleizable, SimpleOffsetSerializable,
         SimpleOffsetSerializer.serialize(attestation_2));
   }
 
-  public static AttesterSlashing fromBytes(Bytes bytes) {
-    return SSZ.decode(
-        bytes,
-        reader ->
-            new AttesterSlashing(
-                IndexedAttestation.fromBytes(reader.readBytes()),
-                IndexedAttestation.fromBytes(reader.readBytes())));
-  }
-
-  public Bytes toBytes() {
-    return SSZ.encode(
-        writer -> {
-          writer.writeBytes(attestation_1.toBytes());
-          writer.writeBytes(attestation_2.toBytes());
-        });
-  }
-
   @Override
   public int hashCode() {
     return Objects.hash(attestation_1, attestation_2);
