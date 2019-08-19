@@ -2,14 +2,6 @@ plugins {
   id "org.web3j" version "4.1.1"
 }
 
-jar {
-  baseName 'artemis-pow'
-  manifest {
-    attributes('Implementation-Title': baseName,
-    'Implementation-Version': project.version)
-  }
-}
-
 //exec {
 //  workingDir '../ganache-cli'
 //  commandLine 'npm', 'install'
