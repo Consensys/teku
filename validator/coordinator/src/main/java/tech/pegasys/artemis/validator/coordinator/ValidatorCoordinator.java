@@ -472,7 +472,8 @@ public class ValidatorCoordinator {
           break;
         case Constants.MOCKED_START_INTEROP:
           startIndex = config.getInteropOwnedValidatorStartIndex();
-          endIndex = startIndex + config.getInteropOwnedValidatorCount();
+          // - 1 because endIndex is inclusive
+          endIndex = startIndex + config.getInteropOwnedValidatorCount() - 1;
           STDOUT.log(
               Level.INFO, "Owning validator range " + startIndex + " to " + endIndex, Color.GREEN);
           keypairs = new MockStartValidatorKeyPairFactory().generateKeyPairs(startIndex, endIndex);
