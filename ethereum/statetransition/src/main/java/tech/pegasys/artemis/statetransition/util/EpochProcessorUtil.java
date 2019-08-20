@@ -819,6 +819,7 @@ public final class EpochProcessorUtil {
 
     // Rotate current/previous epoch attestations
     state.setPrevious_epoch_attestations(state.getCurrent_epoch_attestations());
-    state.setCurrent_epoch_attestations(new SSZList<>(Attestation.class, MAX_ATTESTATIONS * SLOTS_PER_EPOCH));
+    state.setCurrent_epoch_attestations(
+        new SSZList<>(Attestation.class, MAX_ATTESTATIONS * SLOTS_PER_EPOCH));
   }
 }

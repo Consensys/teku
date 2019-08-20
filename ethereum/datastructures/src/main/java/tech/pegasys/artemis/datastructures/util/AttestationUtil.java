@@ -198,14 +198,20 @@ public class AttestationUtil {
         custody_bit_0_indices.add(attesting_index);
     }
     return new IndexedAttestation(
-        new SSZList<>(custody_bit_0_indices.stream()
-            .sorted()
-            .map(UnsignedLong::valueOf)
-            .collect(Collectors.toList()), MAX_VALIDATORS_PER_COMMITTEE, UnsignedLong.class),
-        new SSZList<>(custody_bit_1_indices.stream()
-            .sorted()
-            .map(UnsignedLong::valueOf)
-            .collect(Collectors.toList()), MAX_VALIDATORS_PER_COMMITTEE, UnsignedLong.class),
+        new SSZList<>(
+            custody_bit_0_indices.stream()
+                .sorted()
+                .map(UnsignedLong::valueOf)
+                .collect(Collectors.toList()),
+            MAX_VALIDATORS_PER_COMMITTEE,
+            UnsignedLong.class),
+        new SSZList<>(
+            custody_bit_1_indices.stream()
+                .sorted()
+                .map(UnsignedLong::valueOf)
+                .collect(Collectors.toList()),
+            MAX_VALIDATORS_PER_COMMITTEE,
+            UnsignedLong.class),
         attestation.getData(),
         attestation.getAggregate_signature());
   }

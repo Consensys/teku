@@ -20,6 +20,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 import tech.pegasys.artemis.util.SSZTypes.SSZContainer;
+import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.SSZTypes.SSZVector;
 
 public class ReflectionInformationUtil {
@@ -28,7 +29,7 @@ public class ReflectionInformationUtil {
       throws SecurityException {
     for (Field field : reflectionInformation.getFields()) {
       Class type = field.getType();
-      if (type.equals(List.class)) {
+      if (type.equals(SSZList.class)) {
         return true;
       }
       if (SSZContainer.class.isAssignableFrom(type)) {
@@ -41,10 +42,10 @@ public class ReflectionInformationUtil {
   }
 
   @SuppressWarnings("rawtypes")
-  private static boolean containsVector(Field[] fields) {
+  private static boolean containsClass(Field[] fields, Class classInfo) {
     for (Field field : fields) {
       Class type = field.getType();
-      if (type.equals(SSZVector.class)) {
+      if (type.equals(classInfo)) {
         return true;
       }
     }
@@ -56,7 +57,7 @@ public class ReflectionInformationUtil {
     List<Integer> vectorLengths = new ArrayList<>();
     try {
       Field[] fields = reflectionInformation.getFields();
-      if (containsVector(fields)) {
+      if (containsClass(fields, SSZVector.class)) {
         Object object = reflectionInformation.getClassInfo().getConstructor().newInstance();
         List<Field> vectorVariables =
             Arrays.stream(fields)
@@ -83,10 +84,10 @@ public class ReflectionInformationUtil {
 
   @SuppressWarnings({"unchecked", "rawtypes"})
   public static List<Class> getVectorElementTypes(ReflectionInformation reflectionInformation) {
-    List<Class> vectorLengths = new ArrayList<>();
+    List<Class> vectorElementTypes = new ArrayList<>();
     try {
       Field[] fields = reflectionInformation.getFields();
-      if (containsVector(fields)) {
+      if (containsClass(fields, SSZVector.class)) {
         Object object = reflectionInformation.getClassInfo().getConstructor().newInstance();
         List<Field> vectorVariables =
             Arrays.stream(fields)
@@ -95,12 +96,12 @@ public class ReflectionInformationUtil {
 
         vectorVariables.forEach(f -> f.setAccessible(true));
         for (Field vectorVariable : vectorVariables) {
-          vectorLengths.add(((SSZVector) vectorVariable.get(object)).getElementType());
+          vectorElementTypes.add(((SSZVector) vectorVariable.get(object)).getElementType());
         }
         vectorVariables.forEach(f -> f.setAccessible(false));
-        return vectorLengths;
+        return vectorElementTypes;
       } else {
-        return vectorLengths;
+        return vectorElementTypes;
       }
     } catch (InstantiationException
         | IllegalAccessException
@@ -108,6 +109,66 @@ public class ReflectionInformationUtil {
         | NoSuchMethodException e) {
       System.out.println(e);
     }
-    return vectorLengths;
+    return vectorElementTypes;
+  }
+
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  public static List<Class> getListElementTypes(ReflectionInformation reflectionInformation) {
+    List<Class> listElementTypes = new ArrayList<>();
+    try {
+      Field[] fields = reflectionInformation.getFields();
+      if (containsClass(fields, SSZList.class)) {
+        Object object = reflectionInformation.getClassInfo().getConstructor().newInstance();
+        List<Field> listVariables =
+            Arrays.stream(fields)
+                .filter(f -> f.getType().equals(SSZList.class))
+                .collect(Collectors.toList());
+
+        listVariables.forEach(f -> f.setAccessible(true));
+        for (Field listVariable : listVariables) {
+          listElementTypes.add(((SSZList) listVariable.get(object)).getElementType());
+        }
+        listVariables.forEach(f -> f.setAccessible(false));
+        return listElementTypes;
+      } else {
+        return listElementTypes;
+      }
+    } catch (InstantiationException
+        | IllegalAccessException
+        | InvocationTargetException
+        | NoSuchMethodException e) {
+      System.out.println(e);
+    }
+    return listElementTypes;
+  }
+
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  public static List<Long> getListElementMaxSizes(ReflectionInformation reflectionInformation) {
+    List<Long> listElementMaxSizes = new ArrayList<>();
+    try {
+      Field[] fields = reflectionInformation.getFields();
+      if (containsClass(fields, SSZList.class)) {
+        Object object = reflectionInformation.getClassInfo().getConstructor().newInstance();
+        List<Field> listVariables =
+            Arrays.stream(fields)
+                .filter(f -> f.getType().equals(SSZList.class))
+                .collect(Collectors.toList());
+
+        listVariables.forEach(f -> f.setAccessible(true));
+        for (Field listVariable : listVariables) {
+          listElementMaxSizes.add(((SSZList) listVariable.get(object)).getMaxSize());
+        }
+        listVariables.forEach(f -> f.setAccessible(false));
+        return listElementMaxSizes;
+      } else {
+        return listElementMaxSizes;
+      }
+    } catch (InstantiationException
+        | IllegalAccessException
+        | InvocationTargetException
+        | NoSuchMethodException e) {
+      System.out.println(e);
+    }
+    return listElementMaxSizes;
   }
 }

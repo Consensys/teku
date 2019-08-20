@@ -24,6 +24,7 @@ import org.apache.milagro.amcl.BLS381.FP2;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.Bytes48;
+import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockBody;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
@@ -47,6 +48,7 @@ import tech.pegasys.artemis.datastructures.state.HistoricalBatch;
 import tech.pegasys.artemis.datastructures.state.PendingAttestation;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.util.SSZTypes.Bytes4;
+import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.SSZTypes.SSZVector;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
@@ -185,29 +187,38 @@ public class MapObjectUtil {
   private static HistoricalBatch getHistoricalBatch(Map map) {
     SSZVector<Bytes32> block_roots =
         new SSZVector<>(
-            new ArrayList<Bytes32>(
+            new ArrayList<>(
                 ((ArrayList<String>) map.get("block_roots"))
-                    .stream().map(e -> Bytes32.fromHexString(e)).collect(Collectors.toList())));
+                    .stream().map(e -> Bytes32.fromHexString(e)).collect(Collectors.toList())),
+            Bytes32.class);
     SSZVector<Bytes32> state_roots =
         new SSZVector<>(
-            new ArrayList<Bytes32>(
+            new ArrayList<>(
                 ((ArrayList<String>) map.get("state_roots"))
-                    .stream().map(e -> Bytes32.fromHexString(e)).collect(Collectors.toList())));
+                    .stream().map(e -> Bytes32.fromHexString(e)).collect(Collectors.toList())),
+            Bytes32.class);
 
     return new HistoricalBatch(block_roots, state_roots);
   }
 
   @SuppressWarnings({"unchecked", "rawtypes"})
   private static CompactCommittee getCompactCommittee(Map map) {
-    List<BLSPublicKey> pubkeys =
-        new ArrayList<BLSPublicKey>(
+    SSZList<BLSPublicKey> pubkeys =
+        new SSZList<>(
             ((ArrayList<String>) map.get("pubkeys"))
                 .stream()
                     .map(e -> BLSPublicKey.fromBytes(Bytes.fromHexString(e)))
-                    .collect(Collectors.toList()));
-    List<UnsignedLong> compact_validators =
-        new ArrayList<Integer>((ArrayList<Integer>) map.get("compact_validators"))
-            .stream().map(e -> UnsignedLong.valueOf(e.longValue())).collect(Collectors.toList());
+                    .collect(Collectors.toList()),
+            Constants.MAX_VALIDATORS_PER_COMMITTEE,
+            BLSPublicKey.class);
+    SSZList<UnsignedLong> compact_validators =
+        new SSZList<>(
+            new ArrayList<>((ArrayList<Integer>) map.get("compact_validators"))
+                .stream()
+                    .map(e -> UnsignedLong.valueOf(e.longValue()))
+                    .collect(Collectors.toList()),
+            Constants.MAX_VALIDATORS_PER_COMMITTEE,
+            UnsignedLong.class);
     return new CompactCommittee(pubkeys, compact_validators);
   }
 
@@ -220,66 +231,94 @@ public class MapObjectUtil {
         getBeaconBlockHeader((Map) map.get("latest_block_header"));
     SSZVector<Bytes32> block_roots =
         new SSZVector<>(
-            new ArrayList<Bytes32>(
+            new ArrayList<>(
                 ((ArrayList<String>) map.get("block_roots"))
-                    .stream().map(e -> Bytes32.fromHexString(e)).collect(Collectors.toList())));
+                    .stream().map(e -> Bytes32.fromHexString(e)).collect(Collectors.toList())),
+            Bytes32.class);
     SSZVector<Bytes32> state_roots =
         new SSZVector<>(
-            new ArrayList<Bytes32>(
+            new ArrayList<>(
                 ((ArrayList<String>) map.get("state_roots"))
-                    .stream().map(e -> Bytes32.fromHexString(e)).collect(Collectors.toList())));
-    List<Bytes32> historical_roots =
-        new ArrayList<Bytes32>(
-            ((ArrayList<String>) map.get("historical_roots"))
-                .stream().map(e -> Bytes32.fromHexString(e)).collect(Collectors.toList()));
+                    .stream().map(e -> Bytes32.fromHexString(e)).collect(Collectors.toList())),
+            Bytes32.class);
+    SSZList<Bytes32> historical_roots =
+        new SSZList<>(
+            new ArrayList<>(
+                ((ArrayList<String>) map.get("historical_roots"))
+                    .stream().map(e -> Bytes32.fromHexString(e)).collect(Collectors.toList())),
+            Constants.HISTORICAL_ROOTS_LIMIT,
+            Bytes32.class);
     Eth1Data eth1_data = getEth1Data((Map) map.get("eth1_data"));
-    List<Eth1Data> eth1_data_votes =
-        ((List<Map>) map.get("eth1_data_votes"))
-            .stream().map(e -> getEth1Data(e)).collect(Collectors.toList());
+    SSZList<Eth1Data> eth1_data_votes =
+        new SSZList<>(
+            ((List<Map>) map.get("eth1_data_votes"))
+                .stream().map(e -> getEth1Data(e)).collect(Collectors.toList()),
+            Constants.SLOTS_PER_ETH1_VOTING_PERIOD,
+            Eth1Data.class);
     UnsignedLong eth1_deposit_index =
         UnsignedLong.valueOf(map.get("eth1_deposit_index").toString());
-    List<Validator> validators =
-        ((List<Map>) map.get("validators"))
-            .stream().map(e -> getValidator(e)).collect(Collectors.toList());
-    List<UnsignedLong> balances =
-        new ArrayList<Integer>((ArrayList<Integer>) map.get("balances"))
-            .stream().map(e -> UnsignedLong.valueOf(e.longValue())).collect(Collectors.toList());
+    SSZList<Validator> validators =
+        new SSZList<>(
+            ((List<Map>) map.get("validators"))
+                .stream().map(e -> getValidator(e)).collect(Collectors.toList()),
+            Constants.VALIDATOR_REGISTRY_LIMIT,
+            Validator.class);
+    SSZList<UnsignedLong> balances =
+        new SSZList<>(
+            new ArrayList<>((ArrayList<Integer>) map.get("balances"))
+                .stream()
+                    .map(e -> UnsignedLong.valueOf(e.longValue()))
+                    .collect(Collectors.toList()),
+            Constants.VALIDATOR_REGISTRY_LIMIT,
+            UnsignedLong.class);
     UnsignedLong start_shard = UnsignedLong.valueOf(map.get("start_shard").toString());
     SSZVector<Bytes32> randao_mixes =
         new SSZVector<>(
-            new ArrayList<Bytes32>(
+            new ArrayList<>(
                 ((ArrayList<String>) map.get("randao_mixes"))
-                    .stream().map(e -> Bytes32.fromHexString(e)).collect(Collectors.toList())));
+                    .stream().map(e -> Bytes32.fromHexString(e)).collect(Collectors.toList())),
+            Bytes32.class);
     SSZVector<Bytes32> active_index_roots =
         new SSZVector<>(
-            new ArrayList<Bytes32>(
+            new ArrayList<>(
                 ((ArrayList<String>) map.get("active_index_roots"))
-                    .stream().map(e -> Bytes32.fromHexString(e)).collect(Collectors.toList())));
+                    .stream().map(e -> Bytes32.fromHexString(e)).collect(Collectors.toList())),
+            Bytes32.class);
     SSZVector<Bytes32> compact_committees_roots =
         new SSZVector<>(
-            new ArrayList<Bytes32>(
+            new ArrayList<>(
                 ((ArrayList<String>) map.get("compact_committees_roots"))
-                    .stream().map(e -> Bytes32.fromHexString(e)).collect(Collectors.toList())));
+                    .stream().map(e -> Bytes32.fromHexString(e)).collect(Collectors.toList())),
+            Bytes32.class);
     SSZVector<UnsignedLong> slashings =
         new SSZVector<>(
-            new ArrayList<Integer>((ArrayList<Integer>) map.get("slashings"))
+            new ArrayList<>((ArrayList<Integer>) map.get("slashings"))
                 .stream()
                     .map(e -> UnsignedLong.valueOf(e.longValue()))
-                    .collect(Collectors.toList()));
-    List<PendingAttestation> previous_epoch_attestations =
-        ((List<Map>) map.get("previous_epoch_attestations"))
-            .stream().map(e -> getPendingAttestation(e)).collect(Collectors.toList());
-    List<PendingAttestation> current_epoch_attestations =
-        ((List<Map>) map.get("current_epoch_attestations"))
-            .stream().map(e -> getPendingAttestation(e)).collect(Collectors.toList());
+                    .collect(Collectors.toList()),
+            UnsignedLong.class);
+    SSZList<PendingAttestation> previous_epoch_attestations =
+        new SSZList<>(
+            ((List<Map>) map.get("previous_epoch_attestations"))
+                .stream().map(e -> getPendingAttestation(e)).collect(Collectors.toList()),
+            Constants.MAX_ATTESTATIONS * Constants.SLOTS_PER_EPOCH,
+            PendingAttestation.class);
+    SSZList<PendingAttestation> current_epoch_attestations =
+        new SSZList<>(
+            ((List<Map>) map.get("current_epoch_attestations"))
+                .stream().map(e -> getPendingAttestation(e)).collect(Collectors.toList()),
+            Constants.MAX_ATTESTATIONS * Constants.SLOTS_PER_EPOCH,
+            PendingAttestation.class);
     SSZVector<Crosslink> previous_crosslinks =
         new SSZVector<>(
             ((List<Map>) map.get("previous_crosslinks"))
-                .stream().map(e -> getCrossLink(e)).collect(Collectors.toList()));
+                .stream().map(e -> getCrossLink(e)).collect(Collectors.toList()),
+            Crosslink.class);
     SSZVector<Crosslink> current_crosslinks =
         new SSZVector<>(
             ((List<Map>) map.get("current_crosslinks"))
-                .stream().map(e -> getCrossLink(e)).collect(Collectors.toList()));
+                .stream().map(e -> getCrossLink(e)).collect(Collectors.toList()),
+            Crosslink.class);
     Bytes justification_bits = Bytes.fromHexString(map.get("justification_bits").toString());
     Checkpoint previous_justified_checkpoint =
         getCheckpoint((Map) map.get("previous_justified_checkpoint"));
@@ -378,25 +417,43 @@ public class MapObjectUtil {
         BLSSignature.fromBytes(Bytes.fromHexString(map.get("randao_reveal").toString()));
     Eth1Data eth1_data = getEth1Data((Map) map.get("eth1_data"));
     Bytes32 graffiti = Bytes32.fromHexString(map.get("graffiti").toString());
-    List<ProposerSlashing> proposer_slashings =
-        ((List<Map>) map.get("proposer_slashings"))
-            .stream().map(e -> getProposerSlashing(e)).collect(Collectors.toList());
-    List<AttesterSlashing> attester_slashings =
-        ((List<Map>) map.get("attester_slashings"))
-            .stream().map(e -> getAttesterSlashing(e)).collect(Collectors.toList());
-    List<Attestation> attestations =
-        ((List<Map>) map.get("attestations"))
-            .stream().map(e -> getAttestation(e)).collect(Collectors.toList());
-    List<Deposit> deposits =
-        ((List<Map>) map.get("deposits"))
-            .stream().map(e -> getDeposit(e)).collect(Collectors.toList());
-    List<VoluntaryExit> voluntary_exits =
-        ((List<Map>) map.get("voluntary_exits"))
-            .stream().map(e -> getVoluntaryExit(e)).collect(Collectors.toList());
-    List<Transfer> transfers =
-        new ArrayList<Transfer>(
-            ((ArrayList<Map>) map.get("transfers"))
-                .stream().map(e -> getTransfer(e)).collect(Collectors.toList()));
+    SSZList<ProposerSlashing> proposer_slashings =
+        new SSZList<>(
+            ((List<Map>) map.get("proposer_slashings"))
+                .stream().map(e -> getProposerSlashing(e)).collect(Collectors.toList()),
+            Constants.MAX_PROPOSER_SLASHINGS,
+            ProposerSlashing.class);
+    SSZList<AttesterSlashing> attester_slashings =
+        new SSZList<>(
+            ((List<Map>) map.get("attester_slashings"))
+                .stream().map(e -> getAttesterSlashing(e)).collect(Collectors.toList()),
+            Constants.MAX_ATTESTER_SLASHINGS,
+            AttesterSlashing.class);
+    SSZList<Attestation> attestations =
+        new SSZList<>(
+            ((List<Map>) map.get("attestations"))
+                .stream().map(e -> getAttestation(e)).collect(Collectors.toList()),
+            Constants.MAX_ATTESTATIONS,
+            Attestation.class);
+    SSZList<Deposit> deposits =
+        new SSZList<>(
+            ((List<Map>) map.get("deposits"))
+                .stream().map(e -> getDeposit(e)).collect(Collectors.toList()),
+            Constants.MAX_DEPOSITS,
+            Deposit.class);
+    SSZList<VoluntaryExit> voluntary_exits =
+        new SSZList<>(
+            ((List<Map>) map.get("voluntary_exits"))
+                .stream().map(e -> getVoluntaryExit(e)).collect(Collectors.toList()),
+            Constants.MAX_VOLUNTARY_EXITS,
+            VoluntaryExit.class);
+    SSZList<Transfer> transfers =
+        new SSZList<>(
+            new ArrayList<Transfer>(
+                ((ArrayList<Map>) map.get("transfers"))
+                    .stream().map(e -> getTransfer(e)).collect(Collectors.toList())),
+            Constants.MAX_TRANSFERS,
+            Transfer.class);
 
     return new BeaconBlockBody(
         randao_reveal,
@@ -438,9 +495,10 @@ public class MapObjectUtil {
   private static Deposit getDeposit(Map map) {
     SSZVector<Bytes32> proof =
         new SSZVector<>(
-            new ArrayList<Bytes32>(
+            new ArrayList<>(
                 ((ArrayList<String>) map.get("proof"))
-                    .stream().map(e -> Bytes32.fromHexString(e)).collect(Collectors.toList())));
+                    .stream().map(e -> Bytes32.fromHexString(e)).collect(Collectors.toList())),
+            Bytes32.class);
     DepositData data = getDepositData((Map) map.get("data"));
 
     return new Deposit(proof, data);
@@ -498,12 +556,22 @@ public class MapObjectUtil {
 
   @SuppressWarnings({"unchecked", "rawtypes"})
   private static IndexedAttestation getIndexedAttestation(Map map) {
-    List<UnsignedLong> custody_bit_0_indices =
-        new ArrayList<Integer>((ArrayList<Integer>) map.get("custody_bit_0_indices"))
-            .stream().map(e -> UnsignedLong.valueOf(e.longValue())).collect(Collectors.toList());
-    List<UnsignedLong> custody_bit_1_indices =
-        new ArrayList<Integer>((ArrayList<Integer>) map.get("custody_bit_1_indices"))
-            .stream().map(e -> UnsignedLong.valueOf(e.longValue())).collect(Collectors.toList());
+    SSZList<UnsignedLong> custody_bit_0_indices =
+        new SSZList<>(
+            new ArrayList<Integer>((ArrayList<Integer>) map.get("custody_bit_0_indices"))
+                .stream()
+                    .map(e -> UnsignedLong.valueOf(e.longValue()))
+                    .collect(Collectors.toList()),
+            Constants.MAX_VALIDATORS_PER_COMMITTEE,
+            UnsignedLong.class);
+    SSZList<UnsignedLong> custody_bit_1_indices =
+        new SSZList<>(
+            new ArrayList<Integer>((ArrayList<Integer>) map.get("custody_bit_1_indices"))
+                .stream()
+                    .map(e -> UnsignedLong.valueOf(e.longValue()))
+                    .collect(Collectors.toList()),
+            Constants.MAX_VALIDATORS_PER_COMMITTEE,
+            UnsignedLong.class);
     AttestationData data = getAttestationData((Map) map.get("data"));
     BLSSignature signature =
         BLSSignature.fromBytes(Bytes.fromHexString(map.get("signature").toString()));

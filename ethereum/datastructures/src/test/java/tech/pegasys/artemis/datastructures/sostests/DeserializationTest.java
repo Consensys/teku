@@ -17,23 +17,25 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.int_to_bytes;
 
 import com.google.common.primitives.UnsignedLong;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.Constants;
+import tech.pegasys.artemis.datastructures.blocks.BeaconBlockBody;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
 import tech.pegasys.artemis.datastructures.operations.AttestationDataAndCustodyBit;
+import tech.pegasys.artemis.datastructures.operations.AttesterSlashing;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.DepositData;
+import tech.pegasys.artemis.datastructures.operations.IndexedAttestation;
 import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
 import tech.pegasys.artemis.datastructures.operations.Transfer;
 import tech.pegasys.artemis.datastructures.operations.VoluntaryExit;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
+import tech.pegasys.artemis.datastructures.state.CompactCommittee;
 import tech.pegasys.artemis.datastructures.state.Crosslink;
 import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.datastructures.state.HistoricalBatch;
@@ -42,6 +44,7 @@ import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.util.SSZTypes.Bytes4;
 import tech.pegasys.artemis.util.SSZTypes.SSZVector;
+import tech.pegasys.artemis.util.bls.BLSPublicKey;
 
 public class DeserializationTest {
   @Test
@@ -61,8 +64,11 @@ public class DeserializationTest {
 
   @Test
   void isBeaconBlockVariableTest() {
-    // assertEquals(true,
-    // SimpleOffsetSerializer.classReflectionInfo.get(BeaconBlock.class).isVariable());
+    BeaconBlockBody beaconBlockBody = DataStructureUtil.randomBeaconBlockBody();
+    BeaconBlockBody newBeaconBlockBody =
+        SimpleOffsetSerializer.deserialize(
+            SimpleOffsetSerializer.serialize(beaconBlockBody), BeaconBlockBody.class);
+    assertEquals(beaconBlockBody, newBeaconBlockBody);
   }
 
   @Test
@@ -106,9 +112,12 @@ public class DeserializationTest {
   }
 
   @Test
-  void isAttesterSlashingVariableTest() {
-    // assertEquals(true,
-    // SimpleOffsetSerializer.classReflectionInfo.get(AttesterSlashing.class).isVariable());
+  void AttesterSlashingTest() {
+    AttesterSlashing attesterSlashing = DataStructureUtil.randomAttesterSlashing();
+    AttesterSlashing newAttesterSlashing =
+        SimpleOffsetSerializer.deserialize(
+            SimpleOffsetSerializer.serialize(attesterSlashing), AttesterSlashing.class);
+    assertEquals(attesterSlashing, newAttesterSlashing);
   }
 
   @Test
@@ -131,9 +140,12 @@ public class DeserializationTest {
   }
 
   @Test
-  void isIndexedAttestationVariableTest() {
-    // assertEquals(true,
-    // SimpleOffsetSerializer.classReflectionInfo.get(IndexedAttestation.class).isVariable());
+  void IndexedAttestationTest() {
+    IndexedAttestation indexedAttestation = DataStructureUtil.randomIndexedAttestation();
+    IndexedAttestation newIndexedAttestation =
+        SimpleOffsetSerializer.deserialize(
+            SimpleOffsetSerializer.serialize(indexedAttestation), IndexedAttestation.class);
+    assertEquals(indexedAttestation, newIndexedAttestation);
   }
 
   @Test
@@ -170,7 +182,7 @@ public class DeserializationTest {
   }
 
   @Test
-  void isCheckpointVariableTest() {
+  void CheckpointTest() {
     Checkpoint checkpoint = DataStructureUtil.randomCheckpoint(100);
     Bytes checkpointSerialized = SimpleOffsetSerializer.serialize(checkpoint);
     Checkpoint newCheckpoint =
@@ -179,9 +191,19 @@ public class DeserializationTest {
   }
 
   @Test
-  void isCompactCommitteVariableTest() {
-    //  assertEquals(true,
-    // SimpleOffsetSerializer.classReflectionInfo.get(CompactCommittee.class).isVariable());
+  void CompactCommitteTest() {
+    CompactCommittee compactCommittee = new CompactCommittee();
+    compactCommittee.getPubkeys().add(BLSPublicKey.random());
+    compactCommittee.getPubkeys().add(BLSPublicKey.random());
+    compactCommittee.getPubkeys().add(BLSPublicKey.random());
+    compactCommittee.getCompact_validators().add(DataStructureUtil.randomUnsignedLong());
+    compactCommittee.getCompact_validators().add(DataStructureUtil.randomUnsignedLong());
+    compactCommittee.getCompact_validators().add(DataStructureUtil.randomUnsignedLong());
+    compactCommittee.getCompact_validators().add(DataStructureUtil.randomUnsignedLong());
+    CompactCommittee newCompactCommittee =
+        SimpleOffsetSerializer.deserialize(
+            SimpleOffsetSerializer.serialize(compactCommittee), CompactCommittee.class);
+    assertEquals(compactCommittee, newCompactCommittee);
   }
 
   @Test
@@ -207,8 +229,10 @@ public class DeserializationTest {
 
   @Test
   void HistoricalBatchTest() {
-    SSZVector<Bytes32> block_roots = new SSZVector<>(Constants.SLOTS_PER_HISTORICAL_ROOT, Bytes32.ZERO);
-    SSZVector<Bytes32> state_roots = new SSZVector<>(Constants.SLOTS_PER_HISTORICAL_ROOT, Bytes32.ZERO);
+    SSZVector<Bytes32> block_roots =
+        new SSZVector<>(Constants.SLOTS_PER_HISTORICAL_ROOT, Bytes32.ZERO);
+    SSZVector<Bytes32> state_roots =
+        new SSZVector<>(Constants.SLOTS_PER_HISTORICAL_ROOT, Bytes32.ZERO);
     IntStream.range(0, Constants.SLOTS_PER_HISTORICAL_ROOT)
         .forEach(
             i -> {

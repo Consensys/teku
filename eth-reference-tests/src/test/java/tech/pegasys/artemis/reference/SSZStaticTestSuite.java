@@ -38,6 +38,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Mockito;
+import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockBody;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
@@ -62,6 +63,7 @@ import tech.pegasys.artemis.datastructures.state.PendingAttestation;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.util.SSZTypes.Bytes4;
+import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.SSZTypes.SSZVector;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
@@ -69,7 +71,7 @@ import tech.pegasys.artemis.util.bls.BLSSignature;
 @ExtendWith(BouncyCastleExtension.class)
 class SSZStaticTestSuite {
 
-  private static String testFile = "**/ssz_minimal_nil_tmp.yaml";
+  private static String testFile = "**/ssz_minimal_random.yaml";
 
   @ParameterizedTest(name = "{index}. Eth1Data Hash Tree Root Test")
   @MethodSource("readEth1Data")
@@ -501,7 +503,8 @@ class SSZStaticTestSuite {
             ((List<String>) value.get("proof"))
                 .stream()
                     .map(proofString -> Bytes32.fromHexString(proofString))
-                    .collect(Collectors.toList()));
+                    .collect(Collectors.toList()),
+            Bytes32.class);
     DepositData data = parseDepositData((LinkedHashMap<String, Object>) value.get("data"));
 
     Deposit deposit = new Deposit(proof, data);
@@ -565,12 +568,18 @@ class SSZStaticTestSuite {
 
   @SuppressWarnings({"unchecked"})
   private IndexedAttestation parseIndexedAttestation(LinkedHashMap<String, Object> value) {
-    List<UnsignedLong> custodyBit0Indices =
-        ((List<BigInteger>) value.get("custody_bit_0_indices"))
-            .stream().map(index -> UnsignedLong.valueOf(index)).collect(Collectors.toList());
-    List<UnsignedLong> custodyBit1Indices =
-        ((List<BigInteger>) value.get("custody_bit_1_indices"))
-            .stream().map(index -> UnsignedLong.valueOf(index)).collect(Collectors.toList());
+    SSZList<UnsignedLong> custodyBit0Indices =
+        new SSZList<>(
+            ((List<BigInteger>) value.get("custody_bit_0_indices"))
+                .stream().map(index -> UnsignedLong.valueOf(index)).collect(Collectors.toList()),
+            Constants.MAX_VALIDATORS_PER_COMMITTEE,
+            UnsignedLong.class);
+    SSZList<UnsignedLong> custodyBit1Indices =
+        new SSZList<>(
+            ((List<BigInteger>) value.get("custody_bit_1_indices"))
+                .stream().map(index -> UnsignedLong.valueOf(index)).collect(Collectors.toList()),
+            Constants.MAX_VALIDATORS_PER_COMMITTEE,
+            UnsignedLong.class);
     AttestationData data = parseAttestationData((LinkedHashMap<String, Object>) value.get("data"));
     BLSSignature signatureMock = mockBLSSignature(value);
 
@@ -695,24 +704,42 @@ class SSZStaticTestSuite {
     BLSSignature randaoRevealMock = mockBLSSignature(value, "randao_reveal");
     Eth1Data eth1Data = parseEth1Data((LinkedHashMap<String, Object>) value.get("eth1_data"));
     Bytes32 graffiti = Bytes32.fromHexString((String) value.get("graffiti"));
-    List<ProposerSlashing> proposerSlashings =
-        ((List<LinkedHashMap<String, Object>>) value.get("proposer_slashings"))
-            .stream().map(map -> parseProposerSlashing(map)).collect(Collectors.toList());
-    List<AttesterSlashing> attesterSlashings =
-        ((List<LinkedHashMap<String, Object>>) value.get("attester_slashings"))
-            .stream().map(map -> parseAttesterSlashing(map)).collect(Collectors.toList());
-    List<Attestation> attestations =
-        ((List<LinkedHashMap<String, Object>>) value.get("attestations"))
-            .stream().map(map -> parseAttestation(map)).collect(Collectors.toList());
-    List<Deposit> deposits =
-        ((List<LinkedHashMap<String, Object>>) value.get("deposits"))
-            .stream().map(map -> parseDeposit(map)).collect(Collectors.toList());
-    List<VoluntaryExit> voluntaryExits =
-        ((List<LinkedHashMap<String, Object>>) value.get("voluntary_exits"))
-            .stream().map(map -> parseVoluntaryExit(map)).collect(Collectors.toList());
-    List<Transfer> transfers =
-        ((List<LinkedHashMap<String, Object>>) value.get("transfers"))
-            .stream().map(map -> parseTransfer(map)).collect(Collectors.toList());
+    SSZList<ProposerSlashing> proposerSlashings =
+        new SSZList<>(
+            ((List<LinkedHashMap<String, Object>>) value.get("proposer_slashings"))
+                .stream().map(map -> parseProposerSlashing(map)).collect(Collectors.toList()),
+            Constants.MAX_PROPOSER_SLASHINGS,
+            ProposerSlashing.class);
+    SSZList<AttesterSlashing> attesterSlashings =
+        new SSZList<>(
+            ((List<LinkedHashMap<String, Object>>) value.get("attester_slashings"))
+                .stream().map(map -> parseAttesterSlashing(map)).collect(Collectors.toList()),
+            Constants.MAX_ATTESTER_SLASHINGS,
+            AttesterSlashing.class);
+    SSZList<Attestation> attestations =
+        new SSZList<>(
+            ((List<LinkedHashMap<String, Object>>) value.get("attestations"))
+                .stream().map(map -> parseAttestation(map)).collect(Collectors.toList()),
+            Constants.MAX_ATTESTATIONS,
+            Attestation.class);
+    SSZList<Deposit> deposits =
+        new SSZList<>(
+            ((List<LinkedHashMap<String, Object>>) value.get("deposits"))
+                .stream().map(map -> parseDeposit(map)).collect(Collectors.toList()),
+            Constants.MAX_DEPOSITS,
+            Deposit.class);
+    SSZList<VoluntaryExit> voluntaryExits =
+        new SSZList<>(
+            ((List<LinkedHashMap<String, Object>>) value.get("voluntary_exits"))
+                .stream().map(map -> parseVoluntaryExit(map)).collect(Collectors.toList()),
+            Constants.MAX_VOLUNTARY_EXITS,
+            VoluntaryExit.class);
+    SSZList<Transfer> transfers =
+        new SSZList<>(
+            ((List<LinkedHashMap<String, Object>>) value.get("transfers"))
+                .stream().map(map -> parseTransfer(map)).collect(Collectors.toList()),
+            Constants.MAX_TRANSFERS,
+            Transfer.class);
 
     BeaconBlockBody beaconBlockBody =
         new BeaconBlockBody(
@@ -743,14 +770,20 @@ class SSZStaticTestSuite {
 
   @SuppressWarnings({"unchecked"})
   private CompactCommittee parseCompactCommittee(LinkedHashMap<String, Object> value) {
-    List<BLSPublicKey> pubkeys =
-        ((List<String>) value.get("pubkeys"))
-            .stream()
-                .map(pubkey -> mockBLSPublicKey(Bytes.fromHexString(pubkey)))
-                .collect(Collectors.toList());
-    List<UnsignedLong> compactValidators =
-        ((List<BigInteger>) value.get("compact_validators"))
-            .stream().map(index -> UnsignedLong.valueOf(index)).collect(Collectors.toList());
+    SSZList<BLSPublicKey> pubkeys =
+        new SSZList<>(
+            ((List<String>) value.get("pubkeys"))
+                .stream()
+                    .map(pubkey -> mockBLSPublicKey(Bytes.fromHexString(pubkey)))
+                    .collect(Collectors.toList()),
+            Constants.MAX_VALIDATORS_PER_COMMITTEE,
+            BLSPublicKey.class);
+    SSZList<UnsignedLong> compactValidators =
+        new SSZList<>(
+            ((List<BigInteger>) value.get("compact_validators"))
+                .stream().map(index -> UnsignedLong.valueOf(index)).collect(Collectors.toList()),
+            Constants.MAX_VALIDATORS_PER_COMMITTEE,
+            UnsignedLong.class);
     CompactCommittee compactCommittee = new CompactCommittee(pubkeys, compactValidators);
     return compactCommittee;
   }
@@ -768,32 +801,46 @@ class SSZStaticTestSuite {
             ((List<String>) value.get("block_roots"))
                 .stream()
                     .map(proofString -> Bytes32.fromHexString(proofString))
-                    .collect(Collectors.toList()));
+                    .collect(Collectors.toList()),
+            Bytes32.class);
     SSZVector<Bytes32> stateRoots =
         new SSZVector<>(
             ((List<String>) value.get("state_roots"))
                 .stream()
                     .map(proofString -> Bytes32.fromHexString(proofString))
-                    .collect(Collectors.toList()));
-    List<Bytes32> historicalRoots =
-        ((List<String>) value.get("historical_roots"))
-            .stream()
-                .map(proofString -> Bytes32.fromHexString(proofString))
-                .collect(Collectors.toList());
+                    .collect(Collectors.toList()),
+            Bytes32.class);
+    SSZList<Bytes32> historicalRoots =
+        new SSZList<>(
+            ((List<String>) value.get("historical_roots"))
+                .stream()
+                    .map(proofString -> Bytes32.fromHexString(proofString))
+                    .collect(Collectors.toList()),
+            Constants.HISTORICAL_ROOTS_LIMIT,
+            Bytes32.class);
 
     Eth1Data eth1Data = parseEth1Data((LinkedHashMap<String, Object>) value.get("eth1_data"));
-    List<Eth1Data> eth1DataVotes =
-        ((List<LinkedHashMap<String, Object>>) value.get("eth1_data_votes"))
-            .stream().map(map -> parseEth1Data(map)).collect(Collectors.toList());
+    SSZList<Eth1Data> eth1DataVotes =
+        new SSZList<>(
+            ((List<LinkedHashMap<String, Object>>) value.get("eth1_data_votes"))
+                .stream().map(map -> parseEth1Data(map)).collect(Collectors.toList()),
+            Constants.SLOTS_PER_ETH1_VOTING_PERIOD,
+            Eth1Data.class);
     UnsignedLong eth1DepositIndex =
         UnsignedLong.valueOf((BigInteger) value.get("eth1_deposit_index"));
 
-    List<Validator> validators =
-        ((List<LinkedHashMap<String, Object>>) value.get("validators"))
-            .stream().map(map -> parseValidator(map)).collect(Collectors.toList());
-    List<UnsignedLong> balances =
-        ((List<BigInteger>) value.get("balances"))
-            .stream().map(index -> UnsignedLong.valueOf(index)).collect(Collectors.toList());
+    SSZList<Validator> validators =
+        new SSZList<>(
+            ((List<LinkedHashMap<String, Object>>) value.get("validators"))
+                .stream().map(map -> parseValidator(map)).collect(Collectors.toList()),
+            Constants.VALIDATOR_REGISTRY_LIMIT,
+            Validator.class);
+    SSZList<UnsignedLong> balances =
+        new SSZList<>(
+            ((List<BigInteger>) value.get("balances"))
+                .stream().map(index -> UnsignedLong.valueOf(index)).collect(Collectors.toList()),
+            Constants.VALIDATOR_REGISTRY_LIMIT,
+            UnsignedLong.class);
 
     UnsignedLong startShard = UnsignedLong.valueOf((BigInteger) value.get("start_shard"));
     SSZVector<Bytes32> randaoMixes =
@@ -801,40 +848,52 @@ class SSZStaticTestSuite {
             ((List<String>) value.get("randao_mixes"))
                 .stream()
                     .map(proofString -> Bytes32.fromHexString(proofString))
-                    .collect(Collectors.toList()));
+                    .collect(Collectors.toList()),
+            Bytes32.class);
     SSZVector<Bytes32> activeIndexRoots =
         new SSZVector<>(
             ((List<String>) value.get("active_index_roots"))
                 .stream()
                     .map(proofString -> Bytes32.fromHexString(proofString))
-                    .collect(Collectors.toList()));
+                    .collect(Collectors.toList()),
+            Bytes32.class);
     SSZVector<Bytes32> compactCommitteesRoots =
         new SSZVector<>(
             ((List<String>) value.get("compact_committees_roots"))
                 .stream()
                     .map(proofString -> Bytes32.fromHexString(proofString))
-                    .collect(Collectors.toList()));
+                    .collect(Collectors.toList()),
+            Bytes32.class);
 
     SSZVector<UnsignedLong> slashings =
         new SSZVector<>(
             ((List<BigInteger>) value.get("slashings"))
-                .stream().map(index -> UnsignedLong.valueOf(index)).collect(Collectors.toList()));
+                .stream().map(index -> UnsignedLong.valueOf(index)).collect(Collectors.toList()),
+            UnsignedLong.class);
 
-    List<PendingAttestation> previousEpochAttestations =
-        ((List<LinkedHashMap<String, Object>>) value.get("previous_epoch_attestations"))
-            .stream().map(map -> parsePendingAttestation(map)).collect(Collectors.toList());
-    List<PendingAttestation> currentEpochAttestations =
-        ((List<LinkedHashMap<String, Object>>) value.get("current_epoch_attestations"))
-            .stream().map(map -> parsePendingAttestation(map)).collect(Collectors.toList());
+    SSZList<PendingAttestation> previousEpochAttestations =
+        new SSZList<>(
+            ((List<LinkedHashMap<String, Object>>) value.get("previous_epoch_attestations"))
+                .stream().map(map -> parsePendingAttestation(map)).collect(Collectors.toList()),
+            Constants.MAX_ATTESTATIONS * Constants.SLOTS_PER_EPOCH,
+            PendingAttestation.class);
+    SSZList<PendingAttestation> currentEpochAttestations =
+        new SSZList<>(
+            ((List<LinkedHashMap<String, Object>>) value.get("current_epoch_attestations"))
+                .stream().map(map -> parsePendingAttestation(map)).collect(Collectors.toList()),
+            Constants.MAX_ATTESTATIONS * Constants.SLOTS_PER_EPOCH,
+            PendingAttestation.class);
 
     SSZVector<Crosslink> previousCrosslinks =
         new SSZVector<>(
             ((List<LinkedHashMap<String, Object>>) value.get("previous_crosslinks"))
-                .stream().map(map -> parseCrosslink(map)).collect(Collectors.toList()));
+                .stream().map(map -> parseCrosslink(map)).collect(Collectors.toList()),
+            Crosslink.class);
     SSZVector<Crosslink> currentCrosslinks =
         new SSZVector<>(
             ((List<LinkedHashMap<String, Object>>) value.get("current_crosslinks"))
-                .stream().map(map -> parseCrosslink(map)).collect(Collectors.toList()));
+                .stream().map(map -> parseCrosslink(map)).collect(Collectors.toList()),
+            Crosslink.class);
 
     Bytes serializedJustificationBits =
         Bytes.fromHexString((String) value.get("justification_bits"));
@@ -892,13 +951,15 @@ class SSZStaticTestSuite {
             ((List<String>) value.get("block_roots"))
                 .stream()
                     .map(proofString -> Bytes32.fromHexString(proofString))
-                    .collect(Collectors.toList()));
+                    .collect(Collectors.toList()),
+            Bytes32.class);
     SSZVector<Bytes32> stateRoots =
         new SSZVector<>(
             ((List<String>) value.get("state_roots"))
                 .stream()
                     .map(proofString -> Bytes32.fromHexString(proofString))
-                    .collect(Collectors.toList()));
+                    .collect(Collectors.toList()),
+            Bytes32.class);
 
     HistoricalBatch historicalBatch = new HistoricalBatch(blockRoots, stateRoots);
     return historicalBatch;

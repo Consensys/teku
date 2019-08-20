@@ -268,7 +268,8 @@ public class ChainStorageClient implements ChainStorage {
    */
   public SSZList<Attestation> getUnprocessedAttestationsUntilSlot(
       BeaconState state, UnsignedLong slot) {
-    SSZList<Attestation> attestations = new SSZList<>(Attestation.class, Constants.MAX_ATTESTATIONS);
+    SSZList<Attestation> attestations =
+        new SSZList<>(Attestation.class, Constants.MAX_ATTESTATIONS);
     int numAttestations = 0;
     while (unprocessedAttestationsQueue.peek() != null
         && get_attestation_data_slot(state, unprocessedAttestationsQueue.peek().getData())

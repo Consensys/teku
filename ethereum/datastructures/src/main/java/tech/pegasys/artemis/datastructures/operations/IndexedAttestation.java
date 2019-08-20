@@ -37,8 +37,10 @@ public class IndexedAttestation implements Merkleizable, SimpleOffsetSerializabl
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
   public static final int SSZ_FIELD_COUNT = 2;
 
-  private SSZList<UnsignedLong> custody_bit_0_indices; // List bounded by MAX_VALIDATORS_PER_COMMITTEE
-  private SSZList<UnsignedLong> custody_bit_1_indices; // List bounded by MAX_VALIDATORS_PER_COMMITTEE
+  private SSZList<UnsignedLong>
+      custody_bit_0_indices; // List bounded by MAX_VALIDATORS_PER_COMMITTEE
+  private SSZList<UnsignedLong>
+      custody_bit_1_indices; // List bounded by MAX_VALIDATORS_PER_COMMITTEE
   private AttestationData data;
   private BLSSignature signature;
 
@@ -53,11 +55,16 @@ public class IndexedAttestation implements Merkleizable, SimpleOffsetSerializabl
     this.signature = signature;
   }
 
-  public IndexedAttestation(IndexedAttestation indexedAttestation) {
+  public IndexedAttestation() {
     this.custody_bit_0_indices =
-        new SSZList<>(indexedAttestation.getCustody_bit_0_indices());
+        new SSZList<>(UnsignedLong.class, Constants.MAX_VALIDATORS_PER_COMMITTEE);
     this.custody_bit_1_indices =
-        new SSZList<>(indexedAttestation.getCustody_bit_1_indices());
+        new SSZList<>(UnsignedLong.class, Constants.MAX_VALIDATORS_PER_COMMITTEE);
+  }
+
+  public IndexedAttestation(IndexedAttestation indexedAttestation) {
+    this.custody_bit_0_indices = new SSZList<>(indexedAttestation.getCustody_bit_0_indices());
+    this.custody_bit_1_indices = new SSZList<>(indexedAttestation.getCustody_bit_1_indices());
     this.data = new AttestationData(data);
     this.signature = new BLSSignature(indexedAttestation.getSignature().getSignature());
   }

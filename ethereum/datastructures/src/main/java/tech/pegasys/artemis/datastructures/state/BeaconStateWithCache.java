@@ -14,11 +14,9 @@
 package tech.pegasys.artemis.datastructures.state;
 
 import com.google.common.primitives.UnsignedLong;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.Copyable;
@@ -68,10 +66,8 @@ public final class BeaconStateWithCache extends BeaconState {
     this.slashings = new SSZVector<>(state.getSlashings());
 
     // Attestations
-    this.previous_epoch_attestations =
-        new SSZList<>(state.getPrevious_epoch_attestations());
-    this.current_epoch_attestations =
-        new SSZList<>(state.getCurrent_epoch_attestations());
+    this.previous_epoch_attestations = new SSZList<>(state.getPrevious_epoch_attestations());
+    this.current_epoch_attestations = new SSZList<>(state.getCurrent_epoch_attestations());
 
     // Crosslinks
     this.current_crosslinks = new SSZVector<>(state.getCurrent_crosslinks());

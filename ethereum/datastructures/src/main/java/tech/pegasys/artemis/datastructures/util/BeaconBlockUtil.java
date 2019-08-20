@@ -14,11 +14,9 @@
 package tech.pegasys.artemis.datastructures.util;
 
 import com.google.common.primitives.UnsignedLong;
-import java.util.ArrayList;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockBody;
-import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.util.alogger.ALogger;
 
 public class BeaconBlockUtil {

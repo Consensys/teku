@@ -20,7 +20,6 @@ import java.util.List;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.util.SSZTypes.SSZContainer;
 import tech.pegasys.artemis.util.bls.BLSSignature;
@@ -83,27 +82,6 @@ public class Attestation implements Merkleizable, SimpleOffsetSerializable, SSZC
     variablePartsList.addAll(List.of(custody_bitfield));
     variablePartsList.addAll(Collections.nCopies(signature.getSSZFieldCount(), Bytes.EMPTY));
     return variablePartsList;
-  }
-
-  public static Attestation fromBytes(Bytes bytes) {
-    return SSZ.decode(
-        bytes,
-        reader ->
-            new Attestation(
-                Bytes.wrap(reader.readBytes()), // TODO readBitlist logic required
-                AttestationData.fromBytes(reader.readBytes()),
-                Bytes.wrap(reader.readBytes()), // TODO readBitlist logic required
-                BLSSignature.fromBytes(reader.readBytes())));
-  }
-
-  public Bytes toBytes() {
-    return SSZ.encode(
-        writer -> {
-          writer.writeBytes(aggregation_bits); // TODO writeBitlist logic required
-          writer.writeBytes(data.toBytes());
-          writer.writeBytes(custody_bitfield); // TODO writeBitlist logic required
-          writer.writeBytes(signature.toBytes());
-        });
   }
 
   @Override

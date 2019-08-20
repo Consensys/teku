@@ -31,8 +31,9 @@ public class ReflectionInformation {
   private int parameterCount;
   private boolean isVariable;
   private List<Integer> vectorLengths;
-
   private List<Class> vectorElementTypes;
+  private List<Class> listElementTypes;
+  private List<Long> listElementMaxSizes;
 
   @SuppressWarnings("unchecked")
   public ReflectionInformation(Class classInfo) {
@@ -45,6 +46,8 @@ public class ReflectionInformation {
       this.isVariable = ReflectionInformationUtil.isVariable(this);
       this.vectorLengths = ReflectionInformationUtil.getVectorLengths(this);
       this.vectorElementTypes = ReflectionInformationUtil.getVectorElementTypes(this);
+      this.listElementTypes = ReflectionInformationUtil.getListElementTypes(this);
+      this.listElementMaxSizes = ReflectionInformationUtil.getListElementMaxSizes(this);
     } catch (NoSuchMethodException e) {
       System.out.println(e);
     }
@@ -76,6 +79,14 @@ public class ReflectionInformation {
 
   public List<Class> getVectorElementTypes() {
     return vectorElementTypes;
+  }
+
+  public List<Class> getListElementTypes() {
+    return listElementTypes;
+  }
+
+  public List<Long> getListElementMaxSizes() {
+    return listElementMaxSizes;
   }
 
   private Field[] getFields(Class classInfo) {

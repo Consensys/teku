@@ -215,8 +215,10 @@ public class BeaconState implements SimpleOffsetSerializable, SSZContainer {
     this.slashings = new SSZVector<>(Constants.EPOCHS_PER_SLASHINGS_VECTOR, UnsignedLong.ZERO);
 
     // Attestations
-    this.previous_epoch_attestations = new SSZList<>(PendingAttestation.class, Constants.MAX_ATTESTATIONS * SLOTS_PER_EPOCH);
-    this.current_epoch_attestations = new SSZList<>(PendingAttestation.class, Constants.MAX_ATTESTATIONS * SLOTS_PER_EPOCH);
+    this.previous_epoch_attestations =
+        new SSZList<>(PendingAttestation.class, Constants.MAX_ATTESTATIONS * SLOTS_PER_EPOCH);
+    this.current_epoch_attestations =
+        new SSZList<>(PendingAttestation.class, Constants.MAX_ATTESTATIONS * SLOTS_PER_EPOCH);
 
     // Crosslinks
     this.previous_crosslinks = new SSZVector<>(Constants.SHARD_COUNT, new Crosslink());
@@ -566,7 +568,8 @@ public class BeaconState implements SimpleOffsetSerializable, SSZContainer {
     return previous_epoch_attestations;
   }
 
-  public void setPrevious_epoch_attestations(SSZList<PendingAttestation> previous_epoch_attestations) {
+  public void setPrevious_epoch_attestations(
+      SSZList<PendingAttestation> previous_epoch_attestations) {
     this.previous_epoch_attestations = previous_epoch_attestations;
   }
 
@@ -574,7 +577,8 @@ public class BeaconState implements SimpleOffsetSerializable, SSZContainer {
     return current_epoch_attestations;
   }
 
-  public void setCurrent_epoch_attestations(SSZList<PendingAttestation> current_epoch_attestations) {
+  public void setCurrent_epoch_attestations(
+      SSZList<PendingAttestation> current_epoch_attestations) {
     this.current_epoch_attestations = current_epoch_attestations;
   }
 

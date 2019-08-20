@@ -16,6 +16,7 @@ package tech.pegasys.artemis.datastructures.state;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.fail;
 import static tech.pegasys.artemis.datastructures.Constants.GENESIS_EPOCH;
+import static tech.pegasys.artemis.datastructures.Constants.VALIDATOR_REGISTRY_LIMIT;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.initialize_beacon_state_from_eth1;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomDeposits;
 
@@ -28,6 +29,7 @@ import org.apache.tuweni.junit.BouncyCastleExtension;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import tech.pegasys.artemis.util.SSZTypes.Bytes4;
+import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 
 @ExtendWith(BouncyCastleExtension.class)
@@ -93,7 +95,7 @@ class BeaconStateWithCacheTest {
                     UnsignedLong.valueOf(GENESIS_EPOCH),
                     UnsignedLong.ZERO,
                     UnsignedLong.ZERO)));
-    state.setValidators(new_records);
+    state.setValidators(new SSZList<>(new_records, VALIDATOR_REGISTRY_LIMIT, Validator.class));
     BeaconState deepCopy = BeaconStateWithCache.deepCopy(state);
     Validator validator = deepCopy.getValidators().get(0);
     validator.setPubkey(BLSPublicKey.random(9999999));

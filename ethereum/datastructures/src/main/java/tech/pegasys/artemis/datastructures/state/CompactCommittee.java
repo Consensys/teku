@@ -17,6 +17,7 @@ import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -46,13 +47,13 @@ public class CompactCommittee
 
   public CompactCommittee(CompactCommittee compactCommittee) {
     this.pubkeys = new SSZList<>(compactCommittee.getPubkeys());
-    this.compact_validators =
-        new SSZList<>(compactCommittee.getCompact_validators());
+    this.compact_validators = new SSZList<>(compactCommittee.getCompact_validators());
   }
 
   public CompactCommittee() {
     this.pubkeys = new SSZList<>(BLSPublicKey.class, Constants.MAX_VALIDATORS_PER_COMMITTEE);
-    this.compact_validators = new SSZList<>(BLSPublicKey.class, Constants.MAX_VALIDATORS_PER_COMMITTEE);
+    this.compact_validators =
+        new SSZList<>(UnsignedLong.class, Constants.MAX_VALIDATORS_PER_COMMITTEE);
   }
 
   @Override
@@ -96,6 +97,30 @@ public class CompactCommittee
                   .map(UnsignedLong::longValue)
                   .collect(Collectors.toList()));
         });
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(pubkeys, compact_validators);
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (Objects.isNull(obj)) {
+      return false;
+    }
+
+    if (this == obj) {
+      return true;
+    }
+
+    if (!(obj instanceof CompactCommittee)) {
+      return false;
+    }
+
+    CompactCommittee other = (CompactCommittee) obj;
+    return Objects.equals(this.getCompact_validators(), other.getCompact_validators())
+        && Objects.equals(this.getPubkeys(), other.getPubkeys());
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */

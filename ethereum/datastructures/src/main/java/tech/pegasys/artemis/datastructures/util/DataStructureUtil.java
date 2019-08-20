@@ -37,7 +37,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.SecureRandom;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -209,8 +208,10 @@ public final class DataStructureUtil {
   }
 
   public static BeaconBlockBody randomBeaconBlockBody() {
-    SSZList<ProposerSlashing> proposerSlashings = new SSZList<>(ProposerSlashing.class, MAX_PROPOSER_SLASHINGS);
-    SSZList<AttesterSlashing> attesterSlashings = new SSZList<>(AttesterSlashing.class, MAX_ATTESTER_SLASHINGS);
+    SSZList<ProposerSlashing> proposerSlashings =
+        new SSZList<>(ProposerSlashing.class, MAX_PROPOSER_SLASHINGS);
+    SSZList<AttesterSlashing> attesterSlashings =
+        new SSZList<>(AttesterSlashing.class, MAX_ATTESTER_SLASHINGS);
     SSZList<Attestation> attestations = new SSZList<>(Attestation.class, MAX_ATTESTATIONS);
     SSZList<Deposit> deposits = new SSZList<>(Deposit.class, MAX_DEPOSITS);
     SSZList<VoluntaryExit> voluntaryExits = new SSZList<>(VoluntaryExit.class, MAX_VOLUNTARY_EXITS);
@@ -249,8 +250,10 @@ public final class DataStructureUtil {
   }
 
   public static IndexedAttestation randomIndexedAttestation() {
-    SSZList<UnsignedLong> custody_0_bit_indices = new SSZList<>(UnsignedLong.class, MAX_VALIDATORS_PER_COMMITTEE);
-    SSZList<UnsignedLong> custody_1_bit_indices = new SSZList<>(UnsignedLong.class, MAX_VALIDATORS_PER_COMMITTEE);
+    SSZList<UnsignedLong> custody_0_bit_indices =
+        new SSZList<>(UnsignedLong.class, MAX_VALIDATORS_PER_COMMITTEE);
+    SSZList<UnsignedLong> custody_1_bit_indices =
+        new SSZList<>(UnsignedLong.class, MAX_VALIDATORS_PER_COMMITTEE);
     custody_0_bit_indices.add(randomUnsignedLong());
     custody_0_bit_indices.add(randomUnsignedLong());
     custody_0_bit_indices.add(randomUnsignedLong());
@@ -258,15 +261,17 @@ public final class DataStructureUtil {
     custody_1_bit_indices.add(randomUnsignedLong());
     custody_1_bit_indices.add(randomUnsignedLong());
     return new IndexedAttestation(
-            custody_0_bit_indices,
-            custody_1_bit_indices,
-            randomAttestationData(),
-            BLSSignature.random());
+        custody_0_bit_indices,
+        custody_1_bit_indices,
+        randomAttestationData(),
+        BLSSignature.random());
   }
 
   public static IndexedAttestation randomIndexedAttestation(int seed) {
-    SSZList<UnsignedLong> custody_0_bit_indices = new SSZList<>(UnsignedLong.class, MAX_VALIDATORS_PER_COMMITTEE);
-    SSZList<UnsignedLong> custody_1_bit_indices = new SSZList<>(UnsignedLong.class, MAX_VALIDATORS_PER_COMMITTEE);
+    SSZList<UnsignedLong> custody_0_bit_indices =
+        new SSZList<>(UnsignedLong.class, MAX_VALIDATORS_PER_COMMITTEE);
+    SSZList<UnsignedLong> custody_1_bit_indices =
+        new SSZList<>(UnsignedLong.class, MAX_VALIDATORS_PER_COMMITTEE);
     custody_0_bit_indices.add(randomUnsignedLong(seed));
     custody_0_bit_indices.add(randomUnsignedLong(seed));
     custody_0_bit_indices.add(randomUnsignedLong(seed));
@@ -274,10 +279,10 @@ public final class DataStructureUtil {
     custody_1_bit_indices.add(randomUnsignedLong(seed));
     custody_1_bit_indices.add(randomUnsignedLong(seed));
     return new IndexedAttestation(
-            custody_0_bit_indices,
-            custody_1_bit_indices,
-            randomAttestationData(seed++),
-            BLSSignature.random(seed));
+        custody_0_bit_indices,
+        custody_1_bit_indices,
+        randomAttestationData(seed++),
+        BLSSignature.random(seed));
   }
 
   public static DepositData randomDepositData() {
@@ -426,15 +431,11 @@ public final class DataStructureUtil {
       int numValidators) {
     BeaconBlockBody beaconBlockBody = new BeaconBlockBody();
     beaconBlockBody.setEth1_data(
-            new Eth1Data(ZERO_HASH, UnsignedLong.valueOf(numValidators), ZERO_HASH));
+        new Eth1Data(ZERO_HASH, UnsignedLong.valueOf(numValidators), ZERO_HASH));
     beaconBlockBody.setDeposits(deposits);
     beaconBlockBody.setAttestations(attestations);
     return new BeaconBlock(
-        slotNum,
-        previous_block_root,
-        state_root,
-        beaconBlockBody,
-        BLSSignature.empty());
+        slotNum, previous_block_root, state_root, beaconBlockBody, BLSSignature.empty());
   }
 
   @SuppressWarnings("unchecked")

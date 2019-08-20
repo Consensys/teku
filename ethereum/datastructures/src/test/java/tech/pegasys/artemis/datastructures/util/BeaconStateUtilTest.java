@@ -42,6 +42,7 @@ import tech.pegasys.artemis.datastructures.state.CrosslinkCommittee;
 import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.util.SSZTypes.Bytes4;
+import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSVerify;
 
@@ -288,8 +289,10 @@ class BeaconStateUtilTest {
       balanceList.add(amount);
     }
 
-    beaconState.setValidators(validatorList);
-    beaconState.setBalances(balanceList);
+    beaconState.setValidators(
+        new SSZList<>(validatorList, Constants.VALIDATOR_REGISTRY_LIMIT, Validator.class));
+    beaconState.setBalances(
+        new SSZList<>(balanceList, Constants.VALIDATOR_REGISTRY_LIMIT, UnsignedLong.class));
     return beaconState;
   }
 
