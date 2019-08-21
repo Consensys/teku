@@ -238,7 +238,7 @@ public abstract class TestSuite {
     return findTestsByPath(path, arguments);
   }
 
-  private static class ReadLineType { }
+  public static class ReadLineType { }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
     @MustBeClosed
@@ -249,7 +249,7 @@ public abstract class TestSuite {
         List<Pair<Class, String>> arguments = new ArrayList<Pair<Class, String>>();
         arguments.add(getParams(BeaconStateWithCache.class, "pre.yaml"));
         arguments.add(getParams(BeaconStateWithCache.class, "post.yaml"));
-        arguments.add(getParams(ReadLineType.class, "slots.yaml"));
+//        arguments.add(getParams(ReadLineType.class, "slots.yaml"));
         return findTestsByPath(path, arguments);
     }
 
