@@ -65,6 +65,18 @@ try {
                         }
                     }
                 }
+                    stage('Publish to Bintray') {
+                      withCredentials([
+                        usernamePassword(
+                          credentialsId: 'pegasys-bintray',
+                          usernameVariable: 'BINTRAY_USER',
+                          passwordVariable: 'BINTRAY_KEY'
+                        )
+                      ]) {
+                        sh './gradlew --no-daemon --parallel bintrayUpload'
+                      }
+                    }
+
             } finally {
                 archiveArtifacts '**/build/reports/**'
                 archiveArtifacts '**/build/test-results/**'
