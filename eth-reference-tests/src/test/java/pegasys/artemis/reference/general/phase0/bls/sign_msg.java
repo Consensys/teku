@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.reference.bls;
+package pegasys.artemis.reference.general.phase0.bls;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -23,17 +23,16 @@ import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import pegasys.artemis.reference.TestObject;
-import pegasys.artemis.reference.TestSet;
-import tech.pegasys.artemis.reference.TestSuite;
+import pegasys.artemis.reference.TestSuite;
 import tech.pegasys.artemis.util.mikuli.BLS12381;
 import tech.pegasys.artemis.util.mikuli.KeyPair;
 import tech.pegasys.artemis.util.mikuli.SecretKey;
 import tech.pegasys.artemis.util.mikuli.Signature;
 
 class sign_msg extends TestSuite {
-  private static String testFile = "**/sign_msg.yaml";
 
+  // The sign_msg handler should sign the given message, with domain, using the given privkey, and
+  // the result should match the expected output.
   @ParameterizedTest(name = "{index}. sign messages {0} -> {1}")
   @MethodSource("readSignMessages")
   void signMessages(Bytes message, Bytes domain, SecretKey secretKey, Signature signatureExpected) {
@@ -42,22 +41,10 @@ class sign_msg extends TestSuite {
     assertEquals(signatureExpected, signatureActual);
   }
 
-  @SuppressWarnings({"rawtypes"})
+  @SuppressWarnings({"unchecked", "rawtypes"})
   @MustBeClosed
   static Stream<Arguments> readSignMessages() {
     Path path = Paths.get("/general/phase0/bls/sign_msg/small");
     return signMessagesSetup(path);
-  }
-
-  @SuppressWarnings({"unchecked", "rawtypes"})
-  @MustBeClosed
-  public static Stream<Arguments> signMessagesSetup(Path path) {
-
-    TestSet testSet = new TestSet(path);
-    testSet.add(new TestObject("data.yaml", Bytes.class, Paths.get("input", "message")));
-    testSet.add(new TestObject("data.yaml", Bytes.class, Paths.get("input", "domain")));
-    testSet.add(new TestObject("data.yaml", SecretKey.class, Paths.get("input", "privkey")));
-    testSet.add(new TestObject("data.yaml", Signature.class, Paths.get("output")));
-    return findTestsByPath(testSet);
   }
 }

@@ -61,14 +61,14 @@ class epoch_processing extends TestSuite {
   }
 
   @ParameterizedTest(name = "{index}. process justification and finalization pre={0} -> post={1}")
-  @MethodSource("justifyFinalizeSetup")
-  void processJustificationAndFinalization(BeaconState pre, BeaconState post) throws Exception {
+  @MethodSource("justificationAndFinalizationSetup")
+  void processJusticationAndFinalization(BeaconState pre, BeaconState post) throws Exception {
     EpochProcessorUtil.process_justification_and_finalization(pre);
     assertEquals(pre, post);
   }
 
   @MustBeClosed
-  static Stream<Arguments> justifyFinalizeSetup() throws Exception {
+  static Stream<Arguments> justificationAndFinalizationSetup() throws Exception {
     Path path =
         Paths.get(
             "mainnet",
@@ -80,28 +80,28 @@ class epoch_processing extends TestSuite {
   }
 
   @ParameterizedTest(name = "{index}. process registry updates pre={0} -> post={1}")
-  @MethodSource("registryUpdatesSetup")
+  @MethodSource("processRegistryUpdates")
   void processRegistryUpdates(BeaconState pre, BeaconState post) throws Exception {
     EpochProcessorUtil.process_registry_updates(pre);
     assertEquals(pre, post);
   }
 
   @MustBeClosed
-  static Stream<Arguments> registryUpdatesSetup() throws Exception {
+  static Stream<Arguments> processRegistryUpdates() throws Exception {
     Path path =
         Paths.get("mainnet", "phase0", "epoch_processing", "registry_updates", "pyspec_tests");
     return epochProcessingSetup(path, configPath);
   }
 
   @ParameterizedTest(name = "{index}. process slashings pre={0} -> post={1}")
-  @MethodSource("slashingsSetup")
+  @MethodSource("processSlashingsSetup")
   void processSlashings(BeaconState pre, BeaconState post) throws Exception {
-    EpochProcessorUtil.process_slashings(pre);
+    EpochProcessorUtil.process_registry_updates(pre);
     assertEquals(pre, post);
   }
 
   @MustBeClosed
-  static Stream<Arguments> slashingsSetup() throws Exception {
+  static Stream<Arguments> processSlashingsSetup() throws Exception {
     Path path = Paths.get("mainnet", "phase0", "epoch_processing", "slashings", "pyspec_tests");
     return epochProcessingSetup(path, configPath);
   }

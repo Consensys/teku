@@ -11,49 +11,43 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.reference.bls;
+package pegasys.artemis.reference.phase0.shuffling;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static tech.pegasys.artemis.datastructures.util.CrosslinkCommitteeUtil.compute_shuffled_index;
 
 import com.google.errorprone.annotations.MustBeClosed;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
+import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.junit.BouncyCastleExtension;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import pegasys.artemis.reference.TestObject;
-import pegasys.artemis.reference.TestSet;
-import tech.pegasys.artemis.reference.TestSuite;
-import tech.pegasys.artemis.util.mikuli.PublicKey;
+import pegasys.artemis.reference.TestSuite;
 
 @ExtendWith(BouncyCastleExtension.class)
-class aggregate_pubkeys extends TestSuite {
+public class shuffle extends TestSuite {
 
-  @ParameterizedTest(name = "{index}. aggregate pub keys {0} -> {1}")
-  @MethodSource("readAggregatePublicKeys")
-  void aggregatePubkeys(List<PublicKey> pubkeys, PublicKey aggregatePubkeyExpected) {
-    PublicKey aggregatePubkeyActual = PublicKey.aggregate(pubkeys);
-    assertEquals(aggregatePubkeyExpected, aggregatePubkeyActual);
-  }
-
-  @SuppressWarnings({"rawtypes"})
-  @MustBeClosed
-  static Stream<Arguments> readAggregatePublicKeys() {
-    Path path = Paths.get("general", "phase0", "bls", "aggregate_pubkeys", "small", "agg_pub_keys");
-    return aggregatePublicKeysSetup(path);
+  @ParameterizedTest(name = "{index} root of Merkleizable")
+  @MethodSource({"shufflingGenericShuffleSetup"})
+  void sanityProcessSlot(Bytes32 seed, Integer count, List<Integer> mapping) {
+    IntStream.range(0, count)
+        .forEach(
+            i -> {
+              assertEquals(compute_shuffled_index(i, count, seed), mapping.get(i));
+            });
   }
 
   @SuppressWarnings({"unchecked", "rawtypes"})
   @MustBeClosed
-  public static Stream<Arguments> aggregatePublicKeysSetup(Path path) {
-
-    TestSet testSet = new TestSet(path);
-    testSet.add(new TestObject("data.yaml", PublicKey[].class, Paths.get("input")));
-    testSet.add(new TestObject("data.yaml", PublicKey.class, Paths.get("output")));
-    return findTestsByPath(testSet);
+  static Stream<Arguments> shufflingGenericShuffleSetup() throws Exception {
+    Path configPath = Paths.get("mainnet", "phase0");
+    Path path = Paths.get("/mainnet/phase0/shuffling/core/shuffle");
+    return shufflingShuffleSetup(path, configPath);
   }
 }
