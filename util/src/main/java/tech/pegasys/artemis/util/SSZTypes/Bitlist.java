@@ -64,15 +64,15 @@ public class Bitlist {
     }
 
     int bitlistSize = (7 - leadingBitIndex) + (8 * (numBytes - 1));
-    byte[] bitlist = new byte[bitlistSize];
+    byte[] byteArray = new byte[bitlistSize];
 
     for (int i = bitlistSize - 1; i >= 0; i--) {
       if (((bytes.get(i / 8) >>> (i % 8)) & 0x01) == 1) {
-        bitlist[i] = 1;
+        byteArray[i] = 1;
       }
     }
 
-    return new Bitlist(bitlist);
+    return new Bitlist(byteArray);
   }
 
   public Bitlist copy() {
