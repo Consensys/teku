@@ -105,7 +105,7 @@ public class DeserializationTest {
     /* THIS CLASS IS VARIABLE
     Attestation checkpoint = DataStructureUtil.randomAttestation(UnsignedLong.ONE);
     assertEquals(checkpoint, SimpleOffsetSerializer
-            .deserialize(
+            .fromBytes(
                     SimpleOffsetSerializer.serialize(checkpoint),
                     Attestation.class));
                     */

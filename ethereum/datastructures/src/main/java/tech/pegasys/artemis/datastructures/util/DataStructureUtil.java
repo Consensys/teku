@@ -61,6 +61,7 @@ import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.datastructures.state.Crosslink;
 import tech.pegasys.artemis.datastructures.state.Validator;
+import tech.pegasys.artemis.util.SSZTypes.Bitlist;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.SSZTypes.SSZVector;
 import tech.pegasys.artemis.util.alogger.ALogger;
@@ -104,6 +105,20 @@ public final class DataStructureUtil {
 
   public static Bytes32 randomBytes32() {
     return Bytes32.random();
+  }
+
+  public static Bitlist randomBitlist() {
+    return randomBitlist(MAX_VALIDATORS_PER_COMMITTEE);
+  }
+
+  public static Bitlist randomBitlist(int n) {
+    byte[] byteArray = new byte[n];
+    Random random = new Random();
+
+    for (int i = 0; i < n; i++) {
+      byteArray[i] = (byte) (random.nextBoolean() ? 1 : 0);
+    }
+    return new Bitlist(byteArray);
   }
 
   public static BLSPublicKey randomPublicKey() {
@@ -164,7 +179,7 @@ public final class DataStructureUtil {
 
   public static Attestation randomAttestation(UnsignedLong slotNum) {
     return new Attestation(
-        randomBytes32(), randomAttestationData(), randomBytes32(), BLSSignature.random());
+        randomBitlist(), randomAttestationData(), randomBitlist(), BLSSignature.random());
   }
 
   public static Attestation randomAttestation() {

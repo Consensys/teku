@@ -47,6 +47,7 @@ import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.datastructures.state.HistoricalBatch;
 import tech.pegasys.artemis.datastructures.state.PendingAttestation;
 import tech.pegasys.artemis.datastructures.state.Validator;
+import tech.pegasys.artemis.util.SSZTypes.Bitlist;
 import tech.pegasys.artemis.util.SSZTypes.Bytes4;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.SSZTypes.SSZVector;
@@ -356,7 +357,7 @@ public class MapObjectUtil {
 
   @SuppressWarnings({"rawtypes"})
   private static PendingAttestation getPendingAttestation(Map map) {
-    Bytes aggregation_bits = Bytes.fromHexString(map.get("aggregation_bits").toString());
+    Bitlist aggregation_bits = Bitlist.fromBytes(Bytes.fromHexString(map.get("aggregation_bits").toString()));
     AttestationData data = getAttestationData((Map) map.get("data"));
     UnsignedLong inclusion_delay = UnsignedLong.valueOf(map.get("inclusion_delay").toString());
     UnsignedLong proposer_index = UnsignedLong.valueOf(map.get("proposer_index").toString());
@@ -590,9 +591,9 @@ public class MapObjectUtil {
   @SuppressWarnings({"rawtypes"})
   private static Attestation getAttestation(Map map) {
     return new Attestation(
-        Bytes.fromHexString(map.get("aggregation_bits").toString()),
+        Bitlist.fromBytes(Bytes.fromHexString(map.get("aggregation_bits").toString())),
         getAttestationData((Map) map.get("data")),
-        Bytes.fromHexString(map.get("custody_bits").toString()),
+        Bitlist.fromBytes(Bytes.fromHexString(map.get("custody_bits").toString())),
         BLSSignature.fromBytes(Bytes.fromHexString(map.get("signature").toString())));
   }
 

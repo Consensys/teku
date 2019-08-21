@@ -16,18 +16,20 @@ package tech.pegasys.artemis.datastructures.operations;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomAttestationData;
+import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomBitlist;
 
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.artemis.util.SSZTypes.Bitlist;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 
 class AttestationTest {
 
-  private Bytes aggregationBitfield = Bytes32.random();
+  private Bitlist aggregationBitfield = randomBitlist();
   private AttestationData data = randomAttestationData();
-  private Bytes custodyBitfield = Bytes32.random();
+  private Bitlist custodyBitfield = randomBitlist();
   private BLSSignature aggregateSignature = BLSSignature.random();
 
   private Attestation attestation =
@@ -51,7 +53,7 @@ class AttestationTest {
   @Test
   void equalsReturnsFalseWhenAggregationBitfieldsAreDifferent() {
     Attestation testAttestation =
-        new Attestation(aggregationBitfield.not(), data, custodyBitfield, aggregateSignature);
+        new Attestation(randomBitlist(), data, custodyBitfield, aggregateSignature);
 
     assertNotEquals(attestation, testAttestation);
   }
@@ -74,7 +76,7 @@ class AttestationTest {
   @Test
   void equalsReturnsFalseWhenCustodyBitfieldsAreDifferent() {
     Attestation testAttestation =
-        new Attestation(aggregationBitfield, data, custodyBitfield.not(), aggregateSignature);
+        new Attestation(aggregationBitfield, data, randomBitlist(), aggregateSignature);
 
     assertNotEquals(attestation, testAttestation);
   }
@@ -90,44 +92,5 @@ class AttestationTest {
         new Attestation(aggregationBitfield, data, custodyBitfield, differentAggregateSignature);
 
     assertNotEquals(attestation, testAttestation);
-  }
-
-  @Test
-  void roundtripSSZ() {
-    Bytes sszAttestationBytes = attestation.toBytes();
-    assertEquals(attestation, Attestation.fromBytes(sszAttestationBytes));
-  }
-
-  @Test
-  void roundtripSSZVariableLengthBitfield() {
-    Attestation byte1BitfieldAttestation =
-        new Attestation(
-            Bytes.fromHexString("0x00"), data, Bytes.fromHexString("0x00"), aggregateSignature);
-    Attestation byte4BitfieldAttestation =
-        new Attestation(
-            Bytes.fromHexString("0x00000000"),
-            data,
-            Bytes.fromHexString("0x00000000"),
-            aggregateSignature);
-    Attestation byte8BitfieldAttestation =
-        new Attestation(
-            Bytes.fromHexString("0x0000000000000000"),
-            data,
-            Bytes.fromHexString("0x0000000000000000"),
-            aggregateSignature);
-    Attestation byte16BitfieldAttestation =
-        new Attestation(
-            Bytes.fromHexString("0x00000000000000000000000000000000"),
-            data,
-            Bytes.fromHexString("0x00000000000000000000000000000000"),
-            aggregateSignature);
-    Bytes byte1BitfieldAttestationBytes = byte1BitfieldAttestation.toBytes();
-    Bytes byte4BitfieldAttestationBytes = byte4BitfieldAttestation.toBytes();
-    Bytes byte8BitfieldAttestationBytes = byte8BitfieldAttestation.toBytes();
-    Bytes byte16BitfieldAttestationBytes = byte16BitfieldAttestation.toBytes();
-    assertEquals(byte1BitfieldAttestation, Attestation.fromBytes(byte1BitfieldAttestationBytes));
-    assertEquals(byte4BitfieldAttestation, Attestation.fromBytes(byte4BitfieldAttestationBytes));
-    assertEquals(byte8BitfieldAttestation, Attestation.fromBytes(byte8BitfieldAttestationBytes));
-    assertEquals(byte16BitfieldAttestation, Attestation.fromBytes(byte16BitfieldAttestationBytes));
   }
 }

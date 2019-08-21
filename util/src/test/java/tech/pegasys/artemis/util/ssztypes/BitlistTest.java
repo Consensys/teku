@@ -66,7 +66,37 @@ class BitlistTest {
     Bitlist bitlist = createBitlist();
 
     Bytes bitlistSerialized = bitlist.serialize();
-    Bitlist newBitlist = Bitlist.deserialize(bitlistSerialized);
+    Bitlist newBitlist = Bitlist.fromBytes(bitlistSerialized);
+    Assertions.assertEquals(bitlist, newBitlist);
+  }
+
+  @Test
+  void serializationTest2() {
+    Bitlist bitlist = new Bitlist(9);
+    bitlist.setBit(0);
+    bitlist.setBit(3);
+    bitlist.setBit(4);
+    bitlist.setBit(5);
+    bitlist.setBit(6);
+    bitlist.setBit(7);
+    bitlist.setBit(8);
+
+    Bytes bitlistSerialized = bitlist.serialize();
+    Assertions.assertEquals(Bytes.fromHexString("0xf903"), bitlistSerialized);
+  }
+
+  @Test
+  void deserializationTest2() {
+    Bitlist bitlist = new Bitlist(9);
+    bitlist.setBit(0);
+    bitlist.setBit(3);
+    bitlist.setBit(4);
+    bitlist.setBit(5);
+    bitlist.setBit(6);
+    bitlist.setBit(7);
+    bitlist.setBit(8);
+
+    Bitlist newBitlist = Bitlist.fromBytes(Bytes.fromHexString("0xf903"));
     Assertions.assertEquals(bitlist, newBitlist);
   }
 }

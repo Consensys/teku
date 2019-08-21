@@ -32,6 +32,10 @@ public class Bitlist {
     this.byteArray = new byte[n];
   }
 
+  public Bitlist(byte[] bitlist) {
+    this.byteArray = bitlist;
+  }
+
   public void setBit(int i) {
     this.byteArray[i] = 1;
   }
@@ -40,9 +44,6 @@ public class Bitlist {
     return byteArray[i];
   }
 
-  public Bitlist(byte[] bitlist) {
-    this.byteArray = bitlist;
-  }
 
   @SuppressWarnings("NarrowingCompoundAssignment")
   public Bytes serialize() {
@@ -55,7 +56,7 @@ public class Bitlist {
     return Bytes.wrap(array);
   }
 
-  public static Bitlist deserialize(Bytes bytes) {
+  public static Bitlist fromBytes(Bytes bytes) {
     int numBytes = bytes.size();
     int leadingBitIndex = 0;
     while ((bytes.get(numBytes - 1) >>> (7 - leadingBitIndex)) % 2 == 0) {
@@ -66,12 +67,16 @@ public class Bitlist {
     byte[] bitlist = new byte[bitlistSize];
 
     for (int i = bitlistSize - 1; i >= 0; i--) {
-      if ((bytes.get(i / 8) >>> (i % 8)) % 2 == 1) {
+      if (((bytes.get(i / 8) >>> (i % 8)) & 0x01) == 1) {
         bitlist[i] = 1;
       }
     }
 
     return new Bitlist(bitlist);
+  }
+
+  public Bitlist copy() {
+    return new Bitlist(this.getByteArray());
   }
 
   @Override

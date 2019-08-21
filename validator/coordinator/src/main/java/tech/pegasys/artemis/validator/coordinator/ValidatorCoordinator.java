@@ -89,6 +89,7 @@ import tech.pegasys.artemis.statetransition.util.EpochProcessingException;
 import tech.pegasys.artemis.statetransition.util.SlotProcessingException;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.Store;
+import tech.pegasys.artemis.util.SSZTypes.Bitlist;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
@@ -298,8 +299,8 @@ public class ValidatorCoordinator {
       int indexIntoCommittee,
       CrosslinkCommittee committee,
       AttestationData genericAttestationData) {
-    Bytes aggregationBitfield = AttestationUtil.getAggregationBits(indexIntoCommittee);
-    Bytes custodyBits = Bytes.wrap(new byte[MAX_VALIDATORS_PER_COMMITTEE / 8]);
+    Bitlist aggregationBitfield = AttestationUtil.getAggregationBits(indexIntoCommittee);
+    Bitlist custodyBits = new Bitlist(MAX_VALIDATORS_PER_COMMITTEE);
     AttestationData attestationData =
         AttestationUtil.completeAttestationCrosslinkData(
             state, new AttestationData(genericAttestationData), committee);

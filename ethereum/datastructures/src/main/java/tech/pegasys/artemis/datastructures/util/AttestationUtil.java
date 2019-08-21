@@ -56,6 +56,7 @@ import tech.pegasys.artemis.datastructures.state.CompactCommittee;
 import tech.pegasys.artemis.datastructures.state.Crosslink;
 import tech.pegasys.artemis.datastructures.state.CrosslinkCommittee;
 import tech.pegasys.artemis.datastructures.state.Validator;
+import tech.pegasys.artemis.util.SSZTypes.Bitlist;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.bitwise.BitwiseOps;
@@ -123,10 +124,11 @@ public class AttestationUtil {
     return new AttestationData(beacon_block_root, source, target, new Crosslink());
   }
 
-  public static Bytes getAggregationBits(int indexIntoCommittee) {
+  public static Bitlist getAggregationBits(int indexIntoCommittee) {
     // Create aggregation bitfield
-    Bytes aggregationBits = Bytes.wrap(new byte[MAX_VALIDATORS_PER_COMMITTEE / 8]);
-    return setBit(aggregationBits, indexIntoCommittee);
+    Bitlist aggregationBits = new Bitlist(MAX_VALIDATORS_PER_COMMITTEE);
+    aggregationBits.setBit(indexIntoCommittee);
+    return aggregationBits;
   }
 
   public static AttestationData completeAttestationCrosslinkData(
@@ -228,7 +230,7 @@ public class AttestationUtil {
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#get_attesting_indices</a>
    */
   public static List<Integer> get_attesting_indices(
-      BeaconState state, AttestationData attestation_data, Bytes bits) {
+      BeaconState state, AttestationData attestation_data, Bitlist bits) {
     List<Integer> committee =
         get_crosslink_committee(
             state,
@@ -238,7 +240,7 @@ public class AttestationUtil {
     HashSet<Integer> attesting_indices = new HashSet<>();
     for (int i = 0; i < committee.size(); i++) {
       int index = committee.get(i);
-      int bitfieldBit = get_bitfield_bit(bits, i);
+      int bitfieldBit = bits.getBit(i);
       if (bitfieldBit == 1) attesting_indices.add(index);
     }
     return new ArrayList<>(attesting_indices);

@@ -19,6 +19,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import tech.pegasys.artemis.util.SSZTypes.Bitlist;
 import tech.pegasys.artemis.util.SSZTypes.SSZContainer;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.SSZTypes.SSZVector;
@@ -29,7 +31,7 @@ public class ReflectionInformationUtil {
       throws SecurityException {
     for (Field field : reflectionInformation.getFields()) {
       Class type = field.getType();
-      if (type.equals(SSZList.class)) {
+      if (type.equals(SSZList.class) || type.equals(Bitlist.class)) {
         return true;
       }
       if (SSZContainer.class.isAssignableFrom(type)) {
