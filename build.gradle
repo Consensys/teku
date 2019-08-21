@@ -36,8 +36,6 @@ gradle.startParameter.taskNames.each {
 }
 gradle.startParameter.taskNames = expandedTaskList.flatten() as Iterable<String>
 
-def baseVersion = '1.0.0'
-project.version = baseVersion + '-SNAPSHOT'
 def userHome = System.getProperty("user.home")
 allprojects {
   apply plugin: 'java-library'
@@ -242,6 +240,26 @@ subprojects {
     baseName = "${project.name}-support-test"
     from sourceSets.testSupport.output
   }
+  def jarName = project.name
+  def parent = project.parent
+  while (parent != null) {
+    if (parent != rootProject || jarName != 'artemis') {
+      jarName = parent.name + '-' + jarName
+    }
+    parent = parent.parent
+  }
+
+  jar {
+    baseName jarName
+    manifest {
+      attributes(
+          'Specification-Title': jarName,
+          'Specification-Version': project.version,
+          'Implementation-Title': jarName,
+          'Implementation-Version': calculateVersion()
+      )
+    }
+  }
 
   dependencies {
     testImplementation sourceSets.testSupport.output
@@ -370,6 +388,16 @@ def buildTime() {
   def df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm'Z'")
   df.setTimeZone(TimeZone.getTimeZone("UTC"))
   return df.format(new Date())
+}
+
+// Takes the version, and if -SNAPSHOT is part of it replaces SNAPSHOT
+// with the git commit version.
+def calculateVersion() {
+  String version = rootProject.version
+  if (version.endsWith("-SNAPSHOT")) {
+    version = version.replace("-SNAPSHOT", "-dev-" + getCheckedOutGitCommitHash())
+  }
+  return version
 }
 
 def getCheckedOutGitCommitHash() {

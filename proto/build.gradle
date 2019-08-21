@@ -1,11 +1,3 @@
-jar {
-    baseName 'artemis-proto'
-    manifest {
-        attributes('Implementation-Title': baseName,
-                'Implementation-Version': project.version)
-    }
-}
-
 apply plugin: 'com.google.protobuf'
 apply plugin: 'idea'
 

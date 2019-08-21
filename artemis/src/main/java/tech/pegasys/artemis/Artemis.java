@@ -19,7 +19,6 @@ import picocli.CommandLine;
 import tech.pegasys.artemis.util.cli.CommandLineArguments;
 
 public final class Artemis {
-
   public static void main(final String... args) {
     Security.addProvider(new BouncyCastleProvider());
     try {
@@ -29,7 +28,8 @@ public final class Artemis {
       commandLine.parse(args);
       if (commandLine.isUsageHelpRequested()) {
         commandLine.usage(System.out);
-        return;
+      } else if (commandLine.isVersionHelpRequested()) {
+        commandLine.printVersionHelp(System.out);
       } else {
 
         BeaconNode node = new BeaconNode(commandLine, cliArgs);

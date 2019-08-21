@@ -1,11 +1,3 @@
-jar {
-  baseName 'artemis'
-  manifest {
-    attributes('Implementation-Title': baseName,
-    'Implementation-Version': project.version)
-  }
-}
-
 dependencies {
   implementation project(':networking:p2p')
   implementation project(':services:powchain')
