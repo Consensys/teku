@@ -15,6 +15,7 @@ package tech.pegasys.artemis.datastructures.util;
 
 import static tech.pegasys.artemis.datastructures.Constants.DEPOSIT_CONTRACT_TREE_DEPTH;
 import static tech.pegasys.artemis.datastructures.Constants.DOMAIN_DEPOSIT;
+import static tech.pegasys.artemis.datastructures.Constants.MOCKED_START_INTEROP;
 import static tech.pegasys.artemis.datastructures.Constants.ZERO_HASH;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_domain;
 
@@ -36,6 +37,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.stream.IntStream;
+import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.json.simple.JSONArray;
@@ -61,6 +63,7 @@ import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.datastructures.state.Crosslink;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.util.alogger.ALogger;
+import tech.pegasys.artemis.util.alogger.ALogger.Color;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
@@ -68,6 +71,7 @@ import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 
 public final class DataStructureUtil {
   private static final ALogger LOG = new ALogger(DataStructureUtil.class.getName());
+  private static final ALogger STDOUT = new ALogger("stdout");
 
   public static int randomInt() {
     return (int) Math.round(Math.random() * 1000000);
@@ -428,42 +432,73 @@ public final class DataStructureUtil {
         Bytes32.ZERO, UnsignedLong.valueOf(Constants.GENESIS_SLOT), deposits);
   }
 
-  @SuppressWarnings("rawtypes")
   public static BeaconStateWithCache createInitialBeaconState2(ArtemisConfiguration config)
       throws IOException, ParseException {
-    final List<Deposit> deposits = new ArrayList<>();
     if (config.getInteropActive()) {
-      Path path = Paths.get("depositsAndKeys.yaml");
-      String yaml = Files.readString(path.toAbsolutePath(), StandardCharsets.US_ASCII);
-      ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
-      Map<String, List<Map>> fileMap =
-          mapper.readValue(yaml, new TypeReference<Map<String, List<Map>>>() {});
-      List<Map> depositdatakeys = fileMap.get("DepositDataKeys");
-      depositdatakeys.forEach(
-          item -> {
-            Map depositDataMap = (Map) item.get("DepositData");
-            BLSPublicKey pubkey =
-                BLSPublicKey.fromBytes(
-                    Bytes.fromBase64String(depositDataMap.get("Pubkey").toString()));
-            Bytes32 withdrawalCreds =
-                Bytes32.wrap(
-                    Bytes.fromBase64String(depositDataMap.get("WithdrawalCredentials").toString()));
-            UnsignedLong amount = UnsignedLong.valueOf(depositDataMap.get("amount").toString());
-            BLSSignature signature =
-                BLSSignature.fromBytes(
-                    Bytes.fromBase64String(depositDataMap.get("Signature").toString()));
-            DepositData depositData = new DepositData(pubkey, withdrawalCreds, amount, signature);
-            deposits.add(
-                new Deposit(
-                    new ArrayList<>(),
-                    depositData,
-                    UnsignedLong.valueOf(item.get("Index").toString())));
-          });
-    } else {
-      deposits.addAll(newDeposits(config.getNumValidators()));
+      switch (config.getInteropMode()) {
+        case Constants.FILE_INTEROP:
+          return createFileInteropInitialBeaconState();
+        case MOCKED_START_INTEROP:
+          return createMockedStartInitialBeaconState(config);
+      }
     }
     return BeaconStateUtil.initialize_beacon_state_from_eth1(
+        Bytes32.ZERO,
+        UnsignedLong.valueOf(Constants.GENESIS_SLOT),
+        newDeposits(config.getNumValidators()));
+  }
+
+  @SuppressWarnings("rawtypes")
+  private static BeaconStateWithCache createFileInteropInitialBeaconState() throws IOException {
+    final List<Deposit> deposits = new ArrayList<>();
+    Path path = Paths.get("depositsAndKeys.yaml");
+    String yaml = Files.readString(path.toAbsolutePath(), StandardCharsets.US_ASCII);
+    ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
+    Map<String, List<Map>> fileMap =
+        mapper.readValue(yaml, new TypeReference<Map<String, List<Map>>>() {});
+    List<Map> depositdatakeys = fileMap.get("DepositDataKeys");
+    depositdatakeys.forEach(
+        item -> {
+          Map depositDataMap = (Map) item.get("DepositData");
+          BLSPublicKey pubkey =
+              BLSPublicKey.fromBytes(
+                  Bytes.fromBase64String(depositDataMap.get("Pubkey").toString()));
+          Bytes32 withdrawalCreds =
+              Bytes32.wrap(
+                  Bytes.fromBase64String(depositDataMap.get("WithdrawalCredentials").toString()));
+          UnsignedLong amount = UnsignedLong.valueOf(depositDataMap.get("amount").toString());
+          BLSSignature signature =
+              BLSSignature.fromBytes(
+                  Bytes.fromBase64String(depositDataMap.get("Signature").toString()));
+          DepositData depositData = new DepositData(pubkey, withdrawalCreds, amount, signature);
+          deposits.add(
+              new Deposit(
+                  new ArrayList<>(),
+                  depositData,
+                  UnsignedLong.valueOf(item.get("Index").toString())));
+        });
+    return BeaconStateUtil.initialize_beacon_state_from_eth1(
         Bytes32.ZERO, UnsignedLong.valueOf(Constants.GENESIS_SLOT), deposits);
+  }
+
+  private static BeaconStateWithCache createMockedStartInitialBeaconState(
+      final ArtemisConfiguration config) {
+    final UnsignedLong genesisTime = UnsignedLong.valueOf(config.getInteropGenesisTime());
+    final int validatorCount = config.getNumValidators();
+    final List<BLSKeyPair> validatorKeys =
+        new MockStartValidatorKeyPairFactory().generateKeyPairs(0, validatorCount);
+    STDOUT.log(
+        Level.INFO,
+        "Using mocked start interoperability mode with genesis time "
+            + genesisTime
+            + " and "
+            + validatorCount
+            + " validators",
+        Color.GREEN);
+    final List<DepositData> initialDepositData =
+        new MockStartDepositGenerator().createDeposits(validatorKeys);
+    return new MockStartBeaconStateGenerator()
+        .createInitialBeaconState(genesisTime, initialDepositData);
   }
 
   public static Validator randomValidator() {

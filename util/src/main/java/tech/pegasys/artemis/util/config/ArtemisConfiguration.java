@@ -112,7 +112,14 @@ public final class ArtemisConfiguration {
     // Interop
     builder.addBoolean("interop.active", false, "Enable interop mode", null);
     builder.addString(
+        "interop.mode", "file", "Interop mode", PropertyValidator.anyOf("file", "mocked"));
+    builder.addString(
         "interop.inputFile", "interopDepositsAndKeys.json", "Interop deposits and keys file", null);
+    builder.addLong("interop.genesisTime", null, "Time of mocked genesis", null);
+    builder.addInteger(
+        "interop.ownedValidatorStartIndex", 0, "Index of first validator owned by this node", null);
+    builder.addInteger(
+        "interop.ownedValidatorCount", 0, "Number of validators owned by this node", null);
 
     // Metrics
     builder.addBoolean("metrics.enabled", false, "Enables metrics collection via Prometheus", null);
@@ -322,10 +329,26 @@ public final class ArtemisConfiguration {
     return config.getBoolean("interop.active");
   }
 
+  public String getInteropMode() {
+    return config.getString("interop.mode");
+  }
+
   public String getInteropInputFile() {
     String inputFile = config.getString("interop.inputFile");
     if (inputFile == null || inputFile.equals("")) return null;
     return inputFile;
+  }
+
+  public long getInteropGenesisTime() {
+    return config.getLong("interop.genesisTime");
+  }
+
+  public int getInteropOwnedValidatorStartIndex() {
+    return config.getInteger("interop.ownedValidatorStartIndex");
+  }
+
+  public int getInteropOwnedValidatorCount() {
+    return config.getInteger("interop.ownedValidatorCount");
   }
 
   /** @return the total number of nodes on the network */
