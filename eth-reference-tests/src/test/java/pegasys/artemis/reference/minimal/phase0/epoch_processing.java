@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package pegasys.artemis.reference.mainnet.phase0;
+package pegasys.artemis.reference.minimal.phase0;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -30,7 +30,7 @@ import tech.pegasys.artemis.statetransition.util.EpochProcessorUtil;
 
 @ExtendWith(BouncyCastleExtension.class)
 class epoch_processing extends TestSuite {
-  private static final Path configPath = Paths.get("mainnet", "phase0");
+  private static final Path configPath = Paths.get("minimal");
 
   @ParameterizedTest(name = "{index}. process crosslinks pre={0} -> post={1}")
   @MethodSource("crosslinkSetup")
@@ -41,7 +41,7 @@ class epoch_processing extends TestSuite {
 
   @MustBeClosed
   static Stream<Arguments> crosslinkSetup() throws Exception {
-    Path path = Paths.get("mainnet", "phase0", "epoch_processing", "crosslinks", "pyspec_tests");
+    Path path = Paths.get("minimal", "phase0", "epoch_processing", "crosslinks", "pyspec_tests");
     return epochProcessingSetup(path, configPath);
   }
 
@@ -54,7 +54,7 @@ class epoch_processing extends TestSuite {
 
   @MustBeClosed
   static Stream<Arguments> finalUpdatesSetup() throws Exception {
-    Path path = Paths.get("mainnet", "phase0", "epoch_processing", "final_updates", "pyspec_tests");
+    Path path = Paths.get("minimal", "phase0", "epoch_processing", "final_updates", "pyspec_tests");
     return epochProcessingSetup(path, configPath);
   }
 
@@ -69,7 +69,7 @@ class epoch_processing extends TestSuite {
   static Stream<Arguments> justificationAndFinalizationSetup() throws Exception {
     Path path =
         Paths.get(
-            "mainnet",
+            "minimal",
             "phase0",
             "epoch_processing",
             "justification_and_finalization",
@@ -87,7 +87,7 @@ class epoch_processing extends TestSuite {
   @MustBeClosed
   static Stream<Arguments> processRegistryUpdates() throws Exception {
     Path path =
-        Paths.get("mainnet", "phase0", "epoch_processing", "registry_updates", "pyspec_tests");
+        Paths.get("minimal", "phase0", "epoch_processing", "registry_updates", "pyspec_tests");
     return epochProcessingSetup(path, configPath);
   }
 
@@ -100,7 +100,7 @@ class epoch_processing extends TestSuite {
 
   @MustBeClosed
   static Stream<Arguments> processSlashingsSetup() throws Exception {
-    Path path = Paths.get("mainnet", "phase0", "epoch_processing", "slashings", "pyspec_tests");
+    Path path = Paths.get("minimal", "phase0", "epoch_processing", "slashings", "pyspec_tests");
     return epochProcessingSetup(path, configPath);
   }
 }

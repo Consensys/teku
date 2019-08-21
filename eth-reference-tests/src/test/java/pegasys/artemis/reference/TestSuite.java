@@ -47,6 +47,7 @@ import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 
 public abstract class TestSuite {
+  protected static Path configPath = null;
   private static final Path pathToTests =
       Paths.get(
           System.getProperty("user.dir").toString(),
@@ -247,8 +248,8 @@ public abstract class TestSuite {
     loadConfigFromPath(configPath);
 
     List<Pair<Class, String>> arguments = new ArrayList<Pair<Class, String>>();
-    arguments.add(getParams(BeaconState.class, "pre.yaml"));
-    arguments.add(getParams(BeaconState.class, "post.yaml"));
+    arguments.add(getParams(BeaconStateWithCache.class, "pre.yaml"));
+    arguments.add(getParams(BeaconStateWithCache.class, "post.yaml"));
     return findTestsByPath(path, arguments);
   }
 
