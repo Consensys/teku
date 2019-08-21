@@ -16,42 +16,39 @@ package tech.pegasys.artemis.reference.bls;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.google.errorprone.annotations.MustBeClosed;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.stream.Stream;
-import org.apache.commons.lang3.tuple.Pair;
-import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.bytes.Bytes48;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import pegasys.artemis.reference.TestObject;
+import pegasys.artemis.reference.TestSet;
 import tech.pegasys.artemis.reference.TestSuite;
 import tech.pegasys.artemis.util.mikuli.G2Point;
 
-@Disabled
 class g2_compressed extends TestSuite {
-  private static String testFile = "**/g2_compressed.yaml";
 
   @ParameterizedTest(name = "{index}. message hash to G2 compressed {0} -> {1}")
   @MethodSource("readMessageHashG2Compressed")
-  void messageHashToG2Compressed(G2Point g2Point, List<Bytes> output) {
-    Bytes48 xReExpected = Bytes48.leftPad(output.get(0));
-    Bytes48 xImExpected = Bytes48.leftPad(output.get(1));
-    Bytes expectedBytes = Bytes.concatenate(xReExpected, xImExpected);
-    Bytes actualBytes = g2Point.toBytesCompressed();
-    assertEquals(expectedBytes, actualBytes);
+  void messageHashToG2Compressed(G2Point g2PointActual, G2Point g2PointExpected) {
+    assertEquals(g2PointExpected, g2PointActual);
+  }
+
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  @MustBeClosed
+  static Stream<Arguments> readMessageHashG2Compressed() {
+    Path path = Paths.get("/general/phase0/bls/msg_hash_compressed/small");
+    return messageHashCompressedSetup(path);
   }
 
   @SuppressWarnings({"rawtypes"})
   @MustBeClosed
-  static Stream<Arguments> readMessageHashG2Compressed() throws IOException {
-    List<Pair<Class, List<String>>> arguments = new ArrayList<Pair<Class, List<String>>>();
-    arguments.add(getParams(G2Point.class, Arrays.asList("input")));
-    arguments.add(getParams(Bytes[].class, Arrays.asList("output")));
+  public static Stream<Arguments> messageHashCompressedSetup(Path path) {
 
-    return findTests(testFile, arguments);
+    TestSet testSet = new TestSet(path);
+    testSet.add(new TestObject("data.yaml", G2Point.class, Paths.get("input")));
+    testSet.add(new TestObject("data.yaml", G2Point.class, Paths.get("output")));
+    return findTestsByPath(testSet);
   }
 }

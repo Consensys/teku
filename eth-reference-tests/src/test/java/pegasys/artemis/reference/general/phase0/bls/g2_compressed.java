@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.reference.bls;
+package pegasys.artemis.reference.general.phase0.bls;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -22,33 +22,23 @@ import java.util.stream.Stream;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import pegasys.artemis.reference.TestObject;
-import pegasys.artemis.reference.TestSet;
-import tech.pegasys.artemis.reference.TestSuite;
+import pegasys.artemis.reference.TestSuite;
 import tech.pegasys.artemis.util.mikuli.G2Point;
 
-class g2_uncompressed extends TestSuite {
+class g2_compressed extends TestSuite {
 
-  @ParameterizedTest(name = "{index}. message hash to G2 uncompressed {0} -> {1}")
-  @MethodSource("readMessageHashG2Uncompressed")
-  void messageHashToG2Uncompressed(G2Point g2PointExpected, G2Point g2PointActual) {
+  // The msg_hash_g2_compressed handler should hash the message, with the given domain, to G2 with
+  // compression, and the result should match the expected output.
+  @ParameterizedTest(name = "{index}. message hash to G2 compressed {0} -> {1}")
+  @MethodSource("readMessageHashG2Compressed")
+  void messageHashToG2Compressed(G2Point g2PointActual, G2Point g2PointExpected) {
     assertEquals(g2PointExpected, g2PointActual);
-  }
-
-  @SuppressWarnings({"rawtypes"})
-  @MustBeClosed
-  static Stream<Arguments> readMessageHashG2Uncompressed() {
-    Path path = Paths.get("/general/phase0/bls/msg_hash_uncompressed/small");
-    return messageHashUncompressedSetup(path);
   }
 
   @SuppressWarnings({"unchecked", "rawtypes"})
   @MustBeClosed
-  public static Stream<Arguments> messageHashUncompressedSetup(Path path) {
-
-    TestSet testSet = new TestSet(path);
-    testSet.add(new TestObject("data.yaml", G2Point.class, Paths.get("input")));
-    testSet.add(new TestObject("data.yaml", G2Point.class, Paths.get("output")));
-    return findTestsByPath(testSet);
+  static Stream<Arguments> readMessageHashG2Compressed() {
+    Path path = Paths.get("/general/phase0/bls/msg_hash_compressed/small");
+    return messageHashCompressedSetup(path);
   }
 }
