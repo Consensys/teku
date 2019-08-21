@@ -160,10 +160,11 @@ public final class HobbitsP2PNetwork implements P2PNetwork {
   private void processGossip(Bytes gossipMessage, String attr) {
     String[] attributes = attr.split(",");
     if (attributes[0].equalsIgnoreCase("ATTESTATION")) {
-      Attestation attestation = Attestation.fromBytes(gossipMessage);
-      this.eventBus.post(attestation);
+      // todo deserialization
+      // Attestation attestation = Attestation.fromBytes(gossipMessage);
+      // this.eventBus.post(attestation);
     } else if (attributes[0].equalsIgnoreCase("BLOCK")) {
-      // todo
+      // todo deserialization
       //      BeaconBlock block = BeaconBlock.fromBytes(gossipMessage);
       //     this.eventBus.post(block);
     }

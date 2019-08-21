@@ -83,6 +83,8 @@ public class PlumtreeSocketHandler extends AbstractSocketHandler {
 
   @Subscribe
   public void onNewUnprocessedAttestation(Attestation attestation) {
+    // TODO fix serialization stuff
+    /*
     Bytes bytes = attestation.toBytes();
     if (!this.receivedMessages.containsKey(bytes.toHexString())) {
       this.receivedMessages.put(bytes.toHexString(), true);
@@ -93,5 +95,6 @@ public class PlumtreeSocketHandler extends AbstractSocketHandler {
       String attributes = "ATTESTATION" + "," + String.valueOf(new Date().getTime());
       p2pState.sendGossipMessage(attributes, bytes);
     }
+  */
   }
 }
