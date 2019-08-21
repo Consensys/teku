@@ -64,7 +64,7 @@ try {
                             docker.image("pegasyseng/artemis:develop").push()
                         }
                     }
-                }
+
                     stage('Publish to Bintray') {
                       withCredentials([
                         usernamePassword(
@@ -76,7 +76,7 @@ try {
                         sh './gradlew --no-daemon --parallel bintrayUpload'
                       }
                     }
-
+                }
             } finally {
                 archiveArtifacts '**/build/reports/**'
                 archiveArtifacts '**/build/test-results/**'
