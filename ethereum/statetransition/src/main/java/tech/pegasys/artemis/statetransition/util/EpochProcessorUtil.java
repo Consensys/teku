@@ -24,6 +24,7 @@ import static tech.pegasys.artemis.datastructures.Constants.EPOCHS_PER_SLASHINGS
 import static tech.pegasys.artemis.datastructures.Constants.FAR_FUTURE_EPOCH;
 import static tech.pegasys.artemis.datastructures.Constants.GENESIS_EPOCH;
 import static tech.pegasys.artemis.datastructures.Constants.INACTIVITY_PENALTY_QUOTIENT;
+import static tech.pegasys.artemis.datastructures.Constants.JUSTIFICATION_BITS_LENGTH;
 import static tech.pegasys.artemis.datastructures.Constants.MAX_ATTESTATIONS;
 import static tech.pegasys.artemis.datastructures.Constants.MAX_EFFECTIVE_BALANCE;
 import static tech.pegasys.artemis.datastructures.Constants.MIN_ATTESTATION_INCLUSION_DELAY;
@@ -50,7 +51,6 @@ import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_valid
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.initiate_validator_exit;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.integer_squareroot;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.min;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.setBit;
 import static tech.pegasys.artemis.datastructures.util.CrosslinkCommitteeUtil.get_crosslink_committee;
 import static tech.pegasys.artemis.datastructures.util.CrosslinkCommitteeUtil.get_shard_delta;
 import static tech.pegasys.artemis.datastructures.util.CrosslinkCommitteeUtil.get_start_shard;
@@ -86,6 +86,7 @@ import tech.pegasys.artemis.datastructures.state.Crosslink;
 import tech.pegasys.artemis.datastructures.state.HistoricalBatch;
 import tech.pegasys.artemis.datastructures.state.PendingAttestation;
 import tech.pegasys.artemis.datastructures.state.Validator;
+import tech.pegasys.artemis.util.SSZTypes.Bitvector;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.SSZTypes.SSZVector;
 import tech.pegasys.artemis.util.alogger.ALogger;
@@ -288,7 +289,9 @@ public final class EpochProcessorUtil {
 
       // Process justifications
       state.setPrevious_justified_checkpoint(state.getCurrent_justified_checkpoint());
-      Bytes justificationBits = state.getJustification_bits().shiftRight(1);
+      Bitvector justificationBits = new Bitvector(
+              Bytes.wrap(state.getJustification_bits().getByteArray()).shiftRight(1).toArray(),
+              JUSTIFICATION_BITS_LENGTH);
 
       List<PendingAttestation> matching_target_attestations =
           get_matching_target_attestations(state, previous_epoch);
@@ -299,7 +302,7 @@ public final class EpochProcessorUtil {
         Checkpoint newCheckpoint =
             new Checkpoint(previous_epoch, get_block_root(state, previous_epoch));
         state.setCurrent_justified_checkpoint(newCheckpoint);
-        justificationBits = setBit(justificationBits, 1);
+        justificationBits.setBit(1);
       }
       matching_target_attestations = get_matching_target_attestations(state, current_epoch);
       if (get_attesting_balance(state, matching_target_attestations)
@@ -309,7 +312,7 @@ public final class EpochProcessorUtil {
         Checkpoint newCheckpoint =
             new Checkpoint(current_epoch, get_block_root(state, current_epoch));
         state.setCurrent_justified_checkpoint(newCheckpoint);
-        justificationBits = setBit(justificationBits, 0);
+        justificationBits.setBit(0);
       }
 
       state.setJustification_bits(justificationBits);

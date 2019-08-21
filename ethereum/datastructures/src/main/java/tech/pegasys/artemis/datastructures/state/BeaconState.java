@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.datastructures.state;
 
+import static tech.pegasys.artemis.datastructures.Constants.JUSTIFICATION_BITS_LENGTH;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.int_to_bytes;
 
 import com.google.common.primitives.UnsignedLong;
@@ -29,6 +30,8 @@ import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
+import tech.pegasys.artemis.util.SSZTypes.Bitlist;
+import tech.pegasys.artemis.util.SSZTypes.Bitvector;
 import tech.pegasys.artemis.util.SSZTypes.Bytes4;
 import tech.pegasys.artemis.util.SSZTypes.SSZContainer;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
@@ -83,7 +86,7 @@ public class BeaconState implements SimpleOffsetSerializable, SSZContainer {
   protected SSZVector<Crosslink> current_crosslinks; // Vector Bounded by SHARD_COUNT
 
   // Finality
-  protected Bytes justification_bits; // Bitvector bounded by JUSTIFICATION_BITS_LENGTH
+  protected Bitvector justification_bits; // Bitvector bounded by JUSTIFICATION_BITS_LENGTH
   protected Checkpoint previous_justified_checkpoint;
   protected Checkpoint current_justified_checkpoint;
   protected Checkpoint finalized_checkpoint;
@@ -127,7 +130,7 @@ public class BeaconState implements SimpleOffsetSerializable, SSZContainer {
       SSZVector<Crosslink> current_crosslinks,
 
       // Finality
-      Bytes justification_bits,
+      Bitvector justification_bits,
       Checkpoint previous_justified_checkpoint,
       Checkpoint current_justified_checkpoint,
       Checkpoint finalized_checkpoint) {
@@ -226,7 +229,7 @@ public class BeaconState implements SimpleOffsetSerializable, SSZContainer {
     this.current_crosslinks = new SSZVector<>(Constants.SHARD_COUNT, new Crosslink());
 
     // Finality
-    this.justification_bits = Bytes.wrap(new byte[1]); // TODO change to bitvector with 4 bits
+    this.justification_bits = new Bitvector(JUSTIFICATION_BITS_LENGTH);
     this.previous_justified_checkpoint = new Checkpoint();
     this.current_justified_checkpoint = new Checkpoint();
     this.finalized_checkpoint = new Checkpoint();
@@ -288,7 +291,7 @@ public class BeaconState implements SimpleOffsetSerializable, SSZContainer {
                                 currentCrosslink ->
                                     SimpleOffsetSerializer.serialize(currentCrosslink))
                             .collect(Collectors.toList()))),
-            justification_bits,
+            justification_bits.serialize(),
             SimpleOffsetSerializer.serialize(previous_justified_checkpoint),
             SimpleOffsetSerializer.serialize(current_justified_checkpoint),
             SimpleOffsetSerializer.serialize(finalized_checkpoint)));
@@ -601,11 +604,11 @@ public class BeaconState implements SimpleOffsetSerializable, SSZContainer {
   }
 
   // Finality
-  public Bytes getJustification_bits() {
+  public Bitvector getJustification_bits() {
     return justification_bits;
   }
 
-  public void setJustification_bits(Bytes justification_bits) {
+  public void setJustification_bits(Bitvector justification_bits) {
     this.justification_bits = justification_bits;
   }
 
@@ -678,7 +681,8 @@ public class BeaconState implements SimpleOffsetSerializable, SSZContainer {
         HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_COMPOSITE, current_crosslinks.stream().map(item -> item.hash_tree_root()).collect(Collectors.toList())),
 
         // Finality
-        HashTreeUtil.hash_tree_root_bitvector(justification_bits, Constants.JUSTIFICATION_BITS_LENGTH),
+        // TODO fix bitvector hash tree root
+              //  HashTreeUtil.hash_tree_root_bitvector(justification_bits, JUSTIFICATION_BITS_LENGTH),
         previous_justified_checkpoint.hash_tree_root(),
         current_justified_checkpoint.hash_tree_root(),
         finalized_checkpoint.hash_tree_root()

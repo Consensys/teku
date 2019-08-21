@@ -66,6 +66,7 @@ import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.state.Validator;
+import tech.pegasys.artemis.util.SSZTypes.Bitvector;
 import tech.pegasys.artemis.util.SSZTypes.Bytes4;
 import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
@@ -792,55 +793,9 @@ public class BeaconStateUtil {
     return epoch.plus(UnsignedLong.ONE).plus(UnsignedLong.valueOf(ACTIVATION_EXIT_DELAY));
   }
 
-  /**
-   * Extract the bit in ``bitfield`` at position ``i``.
-   *
-   * @param bitfield - The Bytes value that describes the bitfield to operate on.
-   * @param i - The index.
-   * @return The bit at bitPosition from the given bitfield.
-   * @see <a
-   *     href="https://github.com/ethereum/eth2.0-specs/blob/v0.4.0/specs/core/0_beacon-chain.md#get_bitfield_bit">get_bitfield_bit
-   *     - Spec v0.4</a>
-   */
-  public static int get_bitfield_bit(Bytes bitfield, int i) {
-    return (bitfield.get(i / 8) >>> (i % 8)) % 2;
-  }
-
-  /**
-   * Verify ``bitfield`` against the ``committee_size``.
-   *
-   * @param bitfield - The bitfield under consideration.
-   * @param committee_size - The size of the committee associated with the bitfield.
-   * @return True if the given bitfield is valid for the given committee_size, false otherwise.
-   * @see <a
-   *     href="https://github.com/ethereum/eth2.0-specs/blob/v0.4.0/specs/core/0_beacon-chain.md#verify_bitfield">verify_bitfield
-   *     - Spec v0.4</a>
-   */
-  public static boolean verify_bitfield(Bytes bitfield, int committee_size) {
-    if (bitfield.size() != (committee_size + 7) / 8) {
-      return false;
-    }
-
-    for (int i = committee_size; i < bitfield.size() * 8; i++) {
-      if (get_bitfield_bit(bitfield, i) == 0b1) {
-        return false;
-      }
-    }
-    return true;
-  }
-
-  // TODO test this function
-  public static Bytes setBit(Bytes bits, int pos) {
-    byte[] bitsByteArray = bits.toArray();
-    byte myByte = bitsByteArray[pos / 8];
-    myByte = (byte) (myByte | (1 << (pos % 8)));
-    bitsByteArray[pos / 8] = myByte;
-    return Bytes.wrap(bitsByteArray);
-  }
-
-  public static boolean all(Bytes bits, int start, int end) {
+  public static boolean all(Bitvector bitvector, int start, int end) {
     for (int i = start; i < end; i++) {
-      if (get_bitfield_bit(bits, i) == 0) {
+      if (bitvector.getBit(i) == 0) {
         return false;
       }
     }

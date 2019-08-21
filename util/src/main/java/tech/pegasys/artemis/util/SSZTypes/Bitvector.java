@@ -30,8 +30,9 @@ public class Bitvector {
     this.size = size;
   }
 
-  public Bitvector(byte[] bitlist) {
-    this.byteArray = bitlist;
+  public Bitvector(byte[] byteArray, int size) {
+    this.byteArray = byteArray;
+    this.size = size;
   }
 
   public void setBit(int i) {
@@ -52,9 +53,8 @@ public class Bitvector {
 
   @SuppressWarnings("NarrowingCompoundAssignment")
   public Bytes serialize() {
-    int len = byteArray.length;
-    byte[] array = new byte[(len / 8) + 1];
-    IntStream.range(0, len).forEach(i ->
+    byte[] array = new byte[(size + 7) / 8];
+    IntStream.range(0, size).forEach(i ->
             array[i / 8] |= (((int) this.byteArray[i]) << (i % 8))
     );
     return Bytes.wrap(array);
@@ -69,11 +69,11 @@ public class Bitvector {
       }
     }
 
-    return new Bitvector(byteArray);
+    return new Bitvector(byteArray, size);
   }
 
   public Bitvector copy() {
-    return new Bitvector(this.getByteArray());
+    return new Bitvector(this.getByteArray(), this.getSize());
   }
 
   @Override

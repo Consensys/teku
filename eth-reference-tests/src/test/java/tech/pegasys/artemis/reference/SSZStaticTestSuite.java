@@ -63,6 +63,7 @@ import tech.pegasys.artemis.datastructures.state.PendingAttestation;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.util.SSZTypes.Bitlist;
+import tech.pegasys.artemis.util.SSZTypes.Bitvector;
 import tech.pegasys.artemis.util.SSZTypes.Bytes4;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.SSZTypes.SSZVector;
@@ -896,8 +897,8 @@ class SSZStaticTestSuite {
                 .stream().map(map -> parseCrosslink(map)).collect(Collectors.toList()),
             Crosslink.class);
 
-    Bytes serializedJustificationBits =
-        Bytes.fromHexString((String) value.get("justification_bits"));
+    Bitvector serializedJustificationBits =
+        Bitvector.fromBytes(Bytes.fromHexString((String) value.get("justification_bits")), Constants.JUSTIFICATION_BITS_LENGTH);
     Checkpoint previousJustifiedCheckpoint =
         parseCheckpoint((LinkedHashMap<String, Object>) value.get("previous_justified_checkpoint"));
     Checkpoint currentJustifiedCheckpoint =

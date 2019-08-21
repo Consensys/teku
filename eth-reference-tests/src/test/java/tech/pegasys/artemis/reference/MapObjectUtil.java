@@ -48,6 +48,7 @@ import tech.pegasys.artemis.datastructures.state.HistoricalBatch;
 import tech.pegasys.artemis.datastructures.state.PendingAttestation;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.util.SSZTypes.Bitlist;
+import tech.pegasys.artemis.util.SSZTypes.Bitvector;
 import tech.pegasys.artemis.util.SSZTypes.Bytes4;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.SSZTypes.SSZVector;
@@ -320,7 +321,7 @@ public class MapObjectUtil {
             ((List<Map>) map.get("current_crosslinks"))
                 .stream().map(e -> getCrossLink(e)).collect(Collectors.toList()),
             Crosslink.class);
-    Bytes justification_bits = Bytes.fromHexString(map.get("justification_bits").toString());
+    Bitvector justification_bits = Bitvector.fromBytes(Bytes.fromHexString(map.get("justification_bits").toString()), Constants.JUSTIFICATION_BITS_LENGTH);
     Checkpoint previous_justified_checkpoint =
         getCheckpoint((Map) map.get("previous_justified_checkpoint"));
     Checkpoint current_justified_checkpoint =
