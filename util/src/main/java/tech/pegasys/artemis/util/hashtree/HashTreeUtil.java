@@ -76,9 +76,6 @@ public final class HashTreeUtil {
     switch (sszType) {
       case BASIC:
         return hash_tree_root_basic_type(bytes);
-      case BITVECTOR:
-        checkArgument(bytes.length == 1, "A BitVector is only represented by a single Bytes value");
-        return hash_tree_root_bitvector(bytes[0]);
       case BITLIST:
         throw new UnsupportedOperationException(
             "Use HashTreeUtil.hash_tree_root(SSZType.BITLIST, int, Bytes...) for a bitlist type.");
@@ -143,6 +140,10 @@ public final class HashTreeUtil {
 
   public static Bytes32 hash_tree_root_list_ul(long maxSize, List<Bytes> bytes) {
     return hash_tree_root_list_of_unsigned_long(bytes, maxSize, bytes.size());
+  }
+
+  public static Bytes32 hash_tree_root_list_bytes(long maxSize, List<Bytes32> bytes) {
+    return hash_tree_root_list_bytes(bytes, maxSize, bytes.size());
   }
 
   @SuppressWarnings({"rawtypes", "unchecked"})
@@ -287,8 +288,8 @@ public final class HashTreeUtil {
    *     href="https://github.com/ethereum/eth2.0-specs/blob/v0.5.1/specs/simple-serialize.md">SSZ
    *     Spec v0.5.1</a>
    */
-  private static Bytes32 hash_tree_root_bitvector(Bytes bytes) {
-    return merkleize(pack(bytes), chunk_count(SSZTypes.BITVECTOR, bytes));
+  public static Bytes32 hash_tree_root_bitvector(Bytes bytes, int size) {
+    return merkleize(pack(bytes), chunk_count(SSZTypes.BITVECTOR, size, bytes));
   }
 
   /**
@@ -305,6 +306,26 @@ public final class HashTreeUtil {
       List<? extends Bytes> bytes, long maxSize, int length) {
     return mix_in_length(
         merkleize(pack(bytes.toArray(new Bytes[0])), chunk_count_list_unsigned_long(maxSize)),
+        length);
+  }
+
+  /**
+   * Create the hash tree root of a list of values of basic SSZ types. This is only to be used for
+   * SSZ lists and not SSZ tuples. See the "see also" for more info.
+   *
+   * @param bytes A list of homogeneous Bytes values representing basic SSZ types.
+   * @return The SSZ tree root hash of the list of values.
+   * @see <a
+   *     href="https://github.com/ethereum/eth2.0-specs/blob/v0.5.1/specs/simple-serialize.md">SSZ
+   *     Spec v0.5.1</a>
+   */
+  private static Bytes32 hash_tree_root_list_bytes(
+      List<Bytes32> bytes, long maxSize, int length) {
+    return mix_in_length(
+        merkleize(
+          bytes,
+            chunk_count(
+                SSZTypes.LIST_OF_COMPOSITE, maxSize, bytes.toArray(new Bytes32[0]))),
         length);
   }
 
@@ -426,8 +447,7 @@ public final class HashTreeUtil {
         long chunkCount = (maxSize + 255) / 256;
         return chunkCount > 0 ? chunkCount : 1;
       case BITVECTOR:
-        throw new UnsupportedOperationException(
-            "Use chunk_count(HashTreeUtil.SSZTypes, Bytes) for BitVector SSZ types.");
+        return (maxSize + 255) / 256;
       case LIST_OF_BASIC:
         throw new UnsupportedOperationException(
             "Use chunk_count_list_unsigned_long(int, Bytes) for List of uint64 SSZ types.");
@@ -451,10 +471,9 @@ public final class HashTreeUtil {
       case BASIC:
         return 1;
       case BITLIST:
-        throw new UnsupportedOperationException(
-            "Use chunk_count(HashTreeUtil.SSZTypes, int, Bytes...) for BitList SSZ types.");
       case BITVECTOR:
-        return (value.bitLength() + 255) / 256;
+        throw new UnsupportedOperationException(
+            "Use chunk_count(HashTreeUtil.SSZTypes, int, Bytes...) for BitList or BitVector SSZ types.");
       case LIST_OF_BASIC:
         throw new UnsupportedOperationException(
             "Lists are not yet supported in chunk_count. Support is pending a way to send the list max_length.");

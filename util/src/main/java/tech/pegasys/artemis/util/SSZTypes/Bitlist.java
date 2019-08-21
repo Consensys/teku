@@ -33,6 +33,7 @@ public class Bitlist {
     return bitlist[i];
   }
 
+  @SuppressWarnings("NarrowingCompoundAssignment")
   public Bytes serialize() {
     int len = bitlist.length;
     byte[] array = new byte[(len / 8) + 1];
@@ -42,6 +43,6 @@ public class Bitlist {
   }
 
   public Bytes deserialize(Bytes bytes) {
-
+    return Bytes.EMPTY;
   }
 }

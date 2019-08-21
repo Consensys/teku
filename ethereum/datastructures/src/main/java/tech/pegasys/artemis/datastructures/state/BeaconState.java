@@ -13,12 +13,11 @@
 
 package tech.pegasys.artemis.datastructures.state;
 
-import static tech.pegasys.artemis.datastructures.Constants.SLOTS_PER_EPOCH;
-import static tech.pegasys.artemis.datastructures.Constants.ZERO_HASH;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.int_to_bytes;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -34,6 +33,8 @@ import tech.pegasys.artemis.util.SSZTypes.Bytes4;
 import tech.pegasys.artemis.util.SSZTypes.SSZContainer;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.SSZTypes.SSZVector;
+import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
+import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
 public class BeaconState implements SimpleOffsetSerializable, SSZContainer {
@@ -194,7 +195,7 @@ public class BeaconState implements SimpleOffsetSerializable, SSZContainer {
     // Eth1
     // TODO gotta change this with genesis eth1DATA because deposit count is dependent on the
     // number of validators
-    this.eth1_data = new Eth1Data(ZERO_HASH, UnsignedLong.ZERO, ZERO_HASH);
+    this.eth1_data = new Eth1Data(Constants.ZERO_HASH, UnsignedLong.ZERO, Constants.ZERO_HASH);
     this.eth1_data_votes = new SSZList<>(Eth1Data.class, Constants.SLOTS_PER_ETH1_VOTING_PERIOD);
     this.eth1_deposit_index = UnsignedLong.ZERO;
 
@@ -216,9 +217,9 @@ public class BeaconState implements SimpleOffsetSerializable, SSZContainer {
 
     // Attestations
     this.previous_epoch_attestations =
-        new SSZList<>(PendingAttestation.class, Constants.MAX_ATTESTATIONS * SLOTS_PER_EPOCH);
+        new SSZList<>(PendingAttestation.class, Constants.MAX_ATTESTATIONS * Constants.SLOTS_PER_EPOCH);
     this.current_epoch_attestations =
-        new SSZList<>(PendingAttestation.class, Constants.MAX_ATTESTATIONS * SLOTS_PER_EPOCH);
+        new SSZList<>(PendingAttestation.class, Constants.MAX_ATTESTATIONS * Constants.SLOTS_PER_EPOCH);
 
     // Crosslinks
     this.previous_crosslinks = new SSZVector<>(Constants.SHARD_COUNT, new Crosslink());
@@ -637,6 +638,50 @@ public class BeaconState implements SimpleOffsetSerializable, SSZContainer {
   }
 
   public Bytes32 hash_tree_root() {
-    return Bytes32.ZERO;
+    return HashTreeUtil.merkleize(
+      Arrays.asList(
+        // Versioning
+        HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(genesis_time.longValue())),
+        HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(slot.longValue())),
+        fork.hash_tree_root(),
+
+        // History
+        latest_block_header.hash_tree_root(),
+        HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_COMPOSITE, block_roots),
+        HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_COMPOSITE, state_roots),
+        HashTreeUtil.hash_tree_root_list_bytes(Constants.HISTORICAL_ROOTS_LIMIT, historical_roots),
+
+        // Ethereum 1.0 chain data
+        eth1_data.hash_tree_root(),
+        HashTreeUtil.hash_tree_root(SSZTypes.LIST_OF_COMPOSITE, Constants.SLOTS_PER_ETH1_VOTING_PERIOD, eth1_data_votes),
+        HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(eth1_deposit_index.longValue())),
+
+        // Validator registry
+        HashTreeUtil.hash_tree_root(SSZTypes.LIST_OF_COMPOSITE, Constants.VALIDATOR_REGISTRY_LIMIT, validators),
+        HashTreeUtil.hash_tree_root_list_ul(Constants.VALIDATOR_REGISTRY_LIMIT, balances.stream().map(item -> SSZ.encodeUInt64(item.longValue())).collect(Collectors.toList())),
+
+        // Shuffling
+        HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(start_shard.longValue())),
+        HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_COMPOSITE, randao_mixes),
+        HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_COMPOSITE, active_index_roots),
+        HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_COMPOSITE, compact_committees_roots),
+
+        // Slashings
+        HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_BASIC, slashings.stream().map(item -> HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(eth1_deposit_index.longValue()))).collect(Collectors.toList()).toArray(new Bytes[0])),
+
+        // Attestations
+        HashTreeUtil.hash_tree_root(SSZTypes.LIST_OF_COMPOSITE, Constants.MAX_ATTESTATIONS * Constants.SLOTS_PER_EPOCH, previous_epoch_attestations),
+        HashTreeUtil.hash_tree_root(SSZTypes.LIST_OF_COMPOSITE, Constants.MAX_ATTESTATIONS * Constants.SLOTS_PER_EPOCH, current_epoch_attestations),
+
+        // Crosslinks
+        HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_COMPOSITE, previous_crosslinks.stream().map(item -> item.hash_tree_root()).collect(Collectors.toList())),
+        HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_COMPOSITE, current_crosslinks.stream().map(item -> item.hash_tree_root()).collect(Collectors.toList())),
+
+        // Finality
+        HashTreeUtil.hash_tree_root_bitvector(justification_bits, Constants.JUSTIFICATION_BITS_LENGTH),
+        previous_justified_checkpoint.hash_tree_root(),
+        current_justified_checkpoint.hash_tree_root(),
+        finalized_checkpoint.hash_tree_root()
+      ));
   }
 }
