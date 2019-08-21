@@ -13,11 +13,24 @@
 
 package tech.pegasys.artemis.util.ssztypes;
 
+import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.util.SSZTypes.Bitlist;
 
 class BitlistTest {
+
+  private static Bitlist createBitlist() {
+    Bitlist bitlist = new Bitlist(18);
+    bitlist.setBit(1);
+    bitlist.setBit(4);
+    bitlist.setBit(5);
+    bitlist.setBit(6);
+    bitlist.setBit(11);
+    bitlist.setBit(12);
+    bitlist.setBit(17);
+    return bitlist;
+  }
 
   @Test
   void initTest() {
@@ -38,5 +51,22 @@ class BitlistTest {
     Assertions.assertEquals(bitlist.getBit(3), 1);
     Assertions.assertEquals(bitlist.getBit(4), 0);
     Assertions.assertEquals(bitlist.getBit(8), 1);
+  }
+
+  @Test
+  void serializationTest() {
+    Bitlist bitlist = createBitlist();
+
+    Bytes bitlistSerialized = bitlist.serialize();
+    Assertions.assertEquals(bitlistSerialized.toHexString(), "0x721806");
+  }
+
+  @Test
+  void deserializationTest() {
+    Bitlist bitlist = createBitlist();
+
+    Bytes bitlistSerialized = bitlist.serialize();
+    Bitlist newBitlist = Bitlist.deserialize(bitlistSerialized);
+    Assertions.assertEquals(bitlist, newBitlist);
   }
 }

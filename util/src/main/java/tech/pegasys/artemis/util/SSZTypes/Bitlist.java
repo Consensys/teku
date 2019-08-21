@@ -15,34 +15,82 @@ package tech.pegasys.artemis.util.SSZTypes;
 
 import org.apache.tuweni.bytes.Bytes;
 
+import java.util.Arrays;
 import java.util.stream.IntStream;
+
+import static java.util.Objects.isNull;
 
 public class Bitlist {
 
-  private byte[] bitlist;
+  public byte[] getByteArray() {
+    return byteArray;
+  }
+
+  private byte[] byteArray;
 
   public Bitlist(int n) {
-    this.bitlist = new byte[n];
+    this.byteArray = new byte[n];
   }
 
   public void setBit(int i) {
-    this.bitlist[i] = 1;
+    this.byteArray[i] = 1;
   }
 
   public int getBit(int i) {
-    return bitlist[i];
+    return byteArray[i];
+  }
+
+  public Bitlist(byte[] bitlist) {
+    this.byteArray = bitlist;
   }
 
   @SuppressWarnings("NarrowingCompoundAssignment")
   public Bytes serialize() {
-    int len = bitlist.length;
+    int len = byteArray.length;
     byte[] array = new byte[(len / 8) + 1];
-    IntStream.range(0, len).forEach(i -> array[i / 8] |= (this.bitlist[i] << (i % 8)));
+    IntStream.range(0, len).forEach(i ->
+            array[i / 8] |= (((int) this.byteArray[i]) << (i % 8))
+    );
     array[len / 8] |= 1 << (len % 8);
     return Bytes.wrap(array);
   }
 
-  public Bytes deserialize(Bytes bytes) {
-    return Bytes.EMPTY;
+  public static Bitlist deserialize(Bytes bytes) {
+    int numBytes = bytes.size();
+    int leadingBitIndex = 0;
+    while ((bytes.get(numBytes - 1) >>> (7 - leadingBitIndex)) % 2 == 0) {
+      leadingBitIndex++;
+    }
+
+    int bitlistSize = (7 - leadingBitIndex) + (8 * (numBytes - 1));
+    byte[] bitlist = new byte[bitlistSize];
+
+    for (int i = bitlistSize - 1; i >= 0; i--) {
+      if ((bytes.get(i / 8) >>> (i % 8)) % 2 == 1) {
+        bitlist[i] = 1;
+      }
+    }
+
+    return new Bitlist(bitlist);
+  }
+
+  @Override
+  public int hashCode() {
+    return Arrays.hashCode(byteArray);
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (isNull(obj)) {
+      return false;
+    }
+    if (this == obj) {
+      return true;
+    }
+    if (!(obj instanceof Bitlist)) {
+      return false;
+    }
+    Bitlist other = (Bitlist) obj;
+    return Arrays.equals(this.getByteArray(), other.getByteArray());
   }
 }
