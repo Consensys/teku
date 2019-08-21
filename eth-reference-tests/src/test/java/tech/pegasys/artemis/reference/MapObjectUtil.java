@@ -321,7 +321,10 @@ public class MapObjectUtil {
             ((List<Map>) map.get("current_crosslinks"))
                 .stream().map(e -> getCrossLink(e)).collect(Collectors.toList()),
             Crosslink.class);
-    Bitvector justification_bits = Bitvector.fromBytes(Bytes.fromHexString(map.get("justification_bits").toString()), Constants.JUSTIFICATION_BITS_LENGTH);
+    Bitvector justification_bits =
+        Bitvector.fromBytes(
+            Bytes.fromHexString(map.get("justification_bits").toString()),
+            Constants.JUSTIFICATION_BITS_LENGTH);
     Checkpoint previous_justified_checkpoint =
         getCheckpoint((Map) map.get("previous_justified_checkpoint"));
     Checkpoint current_justified_checkpoint =
@@ -358,7 +361,8 @@ public class MapObjectUtil {
 
   @SuppressWarnings({"rawtypes"})
   private static PendingAttestation getPendingAttestation(Map map) {
-    Bitlist aggregation_bits = Bitlist.fromBytes(Bytes.fromHexString(map.get("aggregation_bits").toString()));
+    Bitlist aggregation_bits =
+        Bitlist.fromBytes(Bytes.fromHexString(map.get("aggregation_bits").toString()));
     AttestationData data = getAttestationData((Map) map.get("data"));
     UnsignedLong inclusion_delay = UnsignedLong.valueOf(map.get("inclusion_delay").toString());
     UnsignedLong proposer_index = UnsignedLong.valueOf(map.get("proposer_index").toString());

@@ -15,14 +15,11 @@ package tech.pegasys.artemis.datastructures.state;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_bitfield_bit;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.initialize_beacon_state_from_eth1;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.setBit;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomDeposits;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
-import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.junit.BouncyCastleExtension;
 import org.junit.jupiter.api.Test;
@@ -313,13 +310,6 @@ class BeaconStateTest {
     }
   }
   */
-
-  @Test
-  void justificationBitsChecking() {
-    Bytes justificationBits = Bytes.wrap(new byte[2]);
-    justificationBits = setBit(justificationBits, 1);
-    assert (get_bitfield_bit(justificationBits, 1) == 1);
-  }
 
   @Test
   void vectorLengthsTest() {

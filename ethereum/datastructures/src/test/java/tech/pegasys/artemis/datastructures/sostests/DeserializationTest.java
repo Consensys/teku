@@ -25,6 +25,7 @@ import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockBody;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
+import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
 import tech.pegasys.artemis.datastructures.operations.AttestationDataAndCustodyBit;
 import tech.pegasys.artemis.datastructures.operations.AttesterSlashing;
@@ -102,13 +103,11 @@ public class DeserializationTest {
 
   @Test
   void AttestationTest() {
-    /* THIS CLASS IS VARIABLE
     Attestation checkpoint = DataStructureUtil.randomAttestation(UnsignedLong.ONE);
-    assertEquals(checkpoint, SimpleOffsetSerializer
-            .fromBytes(
-                    SimpleOffsetSerializer.serialize(checkpoint),
-                    Attestation.class));
-                    */
+    assertEquals(
+        checkpoint,
+        SimpleOffsetSerializer.deserialize(
+            SimpleOffsetSerializer.serialize(checkpoint), Attestation.class));
   }
 
   @Test

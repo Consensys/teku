@@ -21,8 +21,6 @@ import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomU
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.Objects;
-import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
 import tech.pegasys.artemis.util.SSZTypes.Bitlist;

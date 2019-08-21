@@ -319,13 +319,10 @@ public final class HashTreeUtil {
    *     href="https://github.com/ethereum/eth2.0-specs/blob/v0.5.1/specs/simple-serialize.md">SSZ
    *     Spec v0.5.1</a>
    */
-  private static Bytes32 hash_tree_root_list_bytes(
-      List<Bytes32> bytes, long maxSize, int length) {
+  private static Bytes32 hash_tree_root_list_bytes(List<Bytes32> bytes, long maxSize, int length) {
     return mix_in_length(
         merkleize(
-          bytes,
-            chunk_count(
-                SSZTypes.LIST_OF_COMPOSITE, maxSize, bytes.toArray(new Bytes32[0]))),
+            bytes, chunk_count(SSZTypes.LIST_OF_COMPOSITE, maxSize, bytes.toArray(new Bytes32[0]))),
         length);
   }
 

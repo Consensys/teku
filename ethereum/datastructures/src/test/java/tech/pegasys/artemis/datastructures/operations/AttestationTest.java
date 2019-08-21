@@ -19,8 +19,6 @@ import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomA
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomBitlist;
 
 import java.util.Objects;
-import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.util.SSZTypes.Bitlist;
 import tech.pegasys.artemis.util.bls.BLSSignature;

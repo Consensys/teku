@@ -289,7 +289,8 @@ public final class EpochProcessorUtil {
 
       // Process justifications
       state.setPrevious_justified_checkpoint(state.getCurrent_justified_checkpoint());
-      Bitvector justificationBits = new Bitvector(
+      Bitvector justificationBits =
+          new Bitvector(
               Bytes.wrap(state.getJustification_bits().getByteArray()).shiftRight(1).toArray(),
               JUSTIFICATION_BITS_LENGTH);
 

@@ -13,12 +13,11 @@
 
 package tech.pegasys.artemis.util.SSZTypes;
 
-import org.apache.tuweni.bytes.Bytes;
+import static java.util.Objects.isNull;
 
 import java.util.Arrays;
 import java.util.stream.IntStream;
-
-import static java.util.Objects.isNull;
+import org.apache.tuweni.bytes.Bytes;
 
 public class Bitvector {
 
@@ -54,9 +53,7 @@ public class Bitvector {
   @SuppressWarnings("NarrowingCompoundAssignment")
   public Bytes serialize() {
     byte[] array = new byte[(size + 7) / 8];
-    IntStream.range(0, size).forEach(i ->
-            array[i / 8] |= (((int) this.byteArray[i]) << (i % 8))
-    );
+    IntStream.range(0, size).forEach(i -> array[i / 8] |= (((int) this.byteArray[i]) << (i % 8)));
     return Bytes.wrap(array);
   }
 

@@ -21,6 +21,7 @@ import tech.pegasys.artemis.util.SSZTypes.Bitvector;
 class BitvectorTest {
 
   private static int testBitlistLength = 4;
+
   private static Bitvector createBitlist() {
     Bitvector bitvector = new Bitvector(testBitlistLength);
     bitvector.setBit(0);

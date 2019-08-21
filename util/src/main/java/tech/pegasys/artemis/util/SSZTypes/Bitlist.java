@@ -13,18 +13,13 @@
 
 package tech.pegasys.artemis.util.SSZTypes;
 
-import org.apache.tuweni.bytes.Bytes;
+import static java.util.Objects.isNull;
 
 import java.util.Arrays;
 import java.util.stream.IntStream;
-
-import static java.util.Objects.isNull;
+import org.apache.tuweni.bytes.Bytes;
 
 public class Bitlist {
-
-  public byte[] getByteArray() {
-    return byteArray;
-  }
 
   private byte[] byteArray;
 
@@ -44,14 +39,15 @@ public class Bitlist {
     return byteArray[i];
   }
 
+  public byte[] getByteArray() {
+    return byteArray;
+  }
 
   @SuppressWarnings("NarrowingCompoundAssignment")
   public Bytes serialize() {
     int len = byteArray.length;
     byte[] array = new byte[(len / 8) + 1];
-    IntStream.range(0, len).forEach(i ->
-            array[i / 8] |= (((int) this.byteArray[i]) << (i % 8))
-    );
+    IntStream.range(0, len).forEach(i -> array[i / 8] |= (((int) this.byteArray[i]) << (i % 8)));
     array[len / 8] |= 1 << (len % 8);
     return Bytes.wrap(array);
   }

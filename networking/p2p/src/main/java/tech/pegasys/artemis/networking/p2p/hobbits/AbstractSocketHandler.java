@@ -37,7 +37,6 @@ import org.apache.tuweni.plumtree.State;
 import org.apache.tuweni.units.bigints.UInt64;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
-import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.networking.p2p.api.P2PNetwork;
 import tech.pegasys.artemis.networking.p2p.hobbits.gossip.GossipCodec;
 import tech.pegasys.artemis.networking.p2p.hobbits.gossip.GossipMessage;
@@ -146,7 +145,7 @@ public abstract class AbstractSocketHandler {
       replyBlockBodies(rpcMessage);
     } else if (RPCMethod.ATTESTATION.equals(rpcMessage.method())) {
       // TODO fix the serialization stuff
-      //Attestation attestation = Attestation.fromBytes(rpcMessage.bodyAs(Bytes.class));
+      // Attestation attestation = Attestation.fromBytes(rpcMessage.bodyAs(Bytes.class));
       // this.eventBus.post(attestation);
     } else if (RPCMethod.BLOCK_BODIES.equals(rpcMessage.method())) {
       // TODO
@@ -234,9 +233,9 @@ public abstract class AbstractSocketHandler {
     RequestAttestationMessage rb = rpcMessage.bodyAs(RequestAttestationMessage.class);
     Bytes32 attestationHash = rb.attestationHash();
     // TODO fix serialization stuff
-    //store
-        //.getUnprocessedAttestation(attestationHash)
-        //.ifPresent(a -> sendReply(RPCMethod.ATTESTATION, a.toBytes(), rpcMessage.id()));
+    // store
+    // .getUnprocessedAttestation(attestationHash)
+    // .ifPresent(a -> sendReply(RPCMethod.ATTESTATION, a.toBytes(), rpcMessage.id()));
   }
 
   public void sendGetAttestation(Bytes32 attestationHash) {

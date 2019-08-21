@@ -40,7 +40,6 @@ import org.apache.tuweni.crypto.Hash;
 import org.apache.tuweni.plumtree.EphemeralPeerRepository;
 import org.apache.tuweni.plumtree.MessageSender;
 import org.apache.tuweni.plumtree.State;
-import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.networking.p2p.api.P2PNetwork;
 import tech.pegasys.artemis.networking.p2p.hobbits.AbstractSocketHandler;
 import tech.pegasys.artemis.networking.p2p.hobbits.Peer;
