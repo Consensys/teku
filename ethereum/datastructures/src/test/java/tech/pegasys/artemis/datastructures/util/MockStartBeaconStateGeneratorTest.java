@@ -43,12 +43,12 @@ class MockStartBeaconStateGeneratorTest {
     assertEquals(validatorCount, initialBeaconState.getValidators().size());
     assertEquals(validatorCount, initialBeaconState.getEth1_data().getDeposit_count().longValue());
 
-    final List<BLSPublicKey> actualValidatorPublicKeys = initialBeaconState.getValidators().stream()
-        .map(Validator::getPubkey)
-        .collect(Collectors.toList());
-    final List<BLSPublicKey> expectedValidatorPublicKeys = validatorKeyPairs.stream()
-        .map(BLSKeyPair::getPublicKey)
-        .collect(Collectors.toList());
+    final List<BLSPublicKey> actualValidatorPublicKeys =
+        initialBeaconState.getValidators().stream()
+            .map(Validator::getPubkey)
+            .collect(Collectors.toList());
+    final List<BLSPublicKey> expectedValidatorPublicKeys =
+        validatorKeyPairs.stream().map(BLSKeyPair::getPublicKey).collect(Collectors.toList());
     assertEquals(expectedValidatorPublicKeys, actualValidatorPublicKeys);
   }
 }
