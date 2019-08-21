@@ -1,11 +1,3 @@
-jar {
-  baseName 'storage'
-  manifest {
-    attributes('Implementation-Title': baseName,
-    'Implementation-Version': project.version)
-  }
-}
-
 dependencies {
   implementation project(':ethereum:datastructures')
   implementation project(':util')

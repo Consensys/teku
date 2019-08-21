@@ -17,7 +17,18 @@ import org.apache.logging.log4j.Level;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 
-@Command(name = "Artemis", mixinStandardHelpOptions = true)
+@Command(
+    name = "artemis",
+    abbreviateSynopsis = true,
+    description = "Run the Artemis beacon chain client and validator",
+    mixinStandardHelpOptions = true,
+    versionProvider = VersionProvider.class,
+    header = "Usage:",
+    synopsisHeading = "%n",
+    descriptionHeading = "%nDescription:%n%n",
+    optionListHeading = "%nOptions:%n",
+    footerHeading = "%n",
+    footer = "Artemis is licensed under the Apache License 2.0")
 public class CommandLineArguments {
 
   @Option(
