@@ -449,3 +449,43 @@ configure(subprojects.findAll {it.name != 'errorprone-checks'}) {
     options.annotationProcessorPath = configurations.annotationProcessor
   }
 }
+
+apply plugin: 'com.jfrog.bintray'
+
+def bintrayUser = project.hasProperty('bintrayUser') ? project.property('bintrayUser') : System.getenv('BINTRAY_USER')
+def bintrayKey = project.hasProperty('bintrayApiKey') ? project.property('bintrayApiKey') : System.getenv('BINTRAY_KEY')
+
+def bintrayPackage = bintray.pkg {
+  repo = 'pegasys-repo'
+  name = 'artemis'
+  userOrg = 'consensys'
+  desc = 'Java Implementation of the Ethereum 2.0 Beacon Chain'
+  licenses = ['Apache-2.0']
+  websiteUrl = 'https://github.com/PegaSysEng/artemis'
+  issueTrackerUrl = 'https://github.com/PegaSysEng/artemis/issues'
+  vcsUrl = 'https://github.com/PegaSysEng/artemis.git'
+
+  version {
+    name = project.version
+    released = new Date()
+  }
+}
+
+bintray {
+  user = bintrayUser
+  key = bintrayKey
+
+  filesSpec {
+    from distTar.destinationDir.path
+    from distZip.destinationDir.path
+    into '.'
+  }
+
+  publish = true
+  override = version.endsWith('SNAPSHOT')
+
+  pkg = bintrayPackage
+}
+
+bintrayUpload.mustRunAfter(distTar)
+bintrayUpload.mustRunAfter(distZip)
