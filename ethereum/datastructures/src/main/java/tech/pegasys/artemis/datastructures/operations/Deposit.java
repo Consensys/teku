@@ -36,28 +36,19 @@ public class Deposit implements Merkleizable, SimpleOffsetSerializable, SSZConta
 
   private SSZVector<Bytes32> proof; // Vector bounded by DEPOSIT_CONTRACT_TREE_DEPTH + 1
   private DepositData data;
-  private UnsignedLong index;
-
-  public Deposit(SSZVector<Bytes32> proof, DepositData data, UnsignedLong index) {
-    this.proof = proof;
-    this.data = data;
-    this.index = index;
-  }
-
-  public Deposit() {
-    this.proof = new SSZVector<>(Constants.DEPOSIT_CONTRACT_TREE_DEPTH + 1, Bytes32.ZERO);
-    this.data = new DepositData();
-    this.index = null;
-  }
 
   public Deposit(SSZVector<Bytes32> proof, DepositData data) {
     this.proof = proof;
     this.data = data;
   }
 
-  public Deposit(DepositData data, UnsignedLong index) {
+  public Deposit() {
+    this.proof = new SSZVector<>(Constants.DEPOSIT_CONTRACT_TREE_DEPTH + 1, Bytes32.ZERO);
+    this.data = new DepositData();
+  }
+
+  public Deposit(DepositData data) {
     this.data = data;
-    this.index = index;
   }
 
   @Override
@@ -120,9 +111,5 @@ public class Deposit implements Merkleizable, SimpleOffsetSerializable, SSZConta
         Arrays.asList(
             HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_COMPOSITE, proof),
             data.hash_tree_root()));
-  }
-
-  public UnsignedLong getIndex() {
-    return index;
   }
 }

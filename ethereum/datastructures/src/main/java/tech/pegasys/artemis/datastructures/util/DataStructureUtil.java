@@ -40,6 +40,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.stream.IntStream;
+
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.json.simple.parser.ParseException;
@@ -53,6 +55,7 @@ import tech.pegasys.artemis.datastructures.operations.AttestationData;
 import tech.pegasys.artemis.datastructures.operations.AttesterSlashing;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.DepositData;
+import tech.pegasys.artemis.datastructures.operations.DepositWithIndex;
 import tech.pegasys.artemis.datastructures.operations.IndexedAttestation;
 import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
 import tech.pegasys.artemis.datastructures.operations.Transfer;
@@ -177,13 +180,13 @@ public final class DataStructureUtil {
     return randomAttestationData(randomLong());
   }
 
-  public static Attestation randomAttestation(UnsignedLong slotNum) {
+  public static Attestation randomAttestation(Long slotNum) {
     return new Attestation(
         randomBitlist(), randomAttestationData(), randomBitlist(), BLSSignature.random());
   }
 
   public static Attestation randomAttestation() {
-    return randomAttestation(UnsignedLong.valueOf(randomLong()));
+    return randomAttestation(randomLong());
   }
 
   public static AttesterSlashing randomAttesterSlashing() {
@@ -231,17 +234,14 @@ public final class DataStructureUtil {
     SSZList<Deposit> deposits = new SSZList<>(Deposit.class, MAX_DEPOSITS);
     SSZList<VoluntaryExit> voluntaryExits = new SSZList<>(VoluntaryExit.class, MAX_VOLUNTARY_EXITS);
     SSZList<Transfer> transfers = new SSZList<>(Transfer.class, MAX_TRANSFERS);
-    proposerSlashings.add(randomProposerSlashing());
-    proposerSlashings.add(randomProposerSlashing());
-    proposerSlashings.add(randomProposerSlashing());
-    attesterSlashings.add(randomAttesterSlashing());
-    attesterSlashings.add(randomAttesterSlashing());
-    attesterSlashings.add(randomAttesterSlashing());
-    deposits.addAll(randomDeposits(100));
-    voluntaryExits.add(randomVoluntaryExit());
-    voluntaryExits.add(randomVoluntaryExit());
-    voluntaryExits.add(randomVoluntaryExit());
-    transfers.add(randomTransfer());
+
+    IntStream.range(0, MAX_PROPOSER_SLASHINGS).forEach(i -> proposerSlashings.add(randomProposerSlashing()));
+    IntStream.range(0, MAX_ATTESTER_SLASHINGS).forEach(i -> attesterSlashings.add(randomAttesterSlashing()));
+    IntStream.range(0, MAX_ATTESTATIONS).forEach(i -> attestations.add(randomAttestation()));
+    deposits.addAll(randomDepositsWithoutIndex(MAX_DEPOSITS, 10));
+    IntStream.range(0, MAX_VOLUNTARY_EXITS).forEach(i -> voluntaryExits.add(randomVoluntaryExit()));
+    IntStream.range(0, MAX_TRANSFERS).forEach(i -> transfers.add(randomTransfer()));
+
     return new BeaconBlockBody(
         BLSSignature.random(),
         randomEth1Data(),
@@ -350,8 +350,8 @@ public final class DataStructureUtil {
         proof_of_possession);
   }
 
-  public static Deposit randomDeposit() {
-    return new Deposit(new SSZVector<>(32, Bytes32.random()), randomDepositData());
+  public static DepositWithIndex randomDeposit() {
+    return new DepositWithIndex(new SSZVector<>(32, Bytes32.random()), randomDepositData(), randomUnsignedLong());
   }
 
   public static Deposit randomDeposit(int seed) {
@@ -360,8 +360,8 @@ public final class DataStructureUtil {
         randomDepositData(seed));
   }
 
-  public static ArrayList<Deposit> randomDeposits(int num) {
-    ArrayList<Deposit> deposits = new ArrayList<Deposit>();
+  public static ArrayList<DepositWithIndex> randomDeposits(int num) {
+    ArrayList<DepositWithIndex> deposits = new ArrayList<>();
 
     for (int i = 0; i < num; i++) {
       deposits.add(randomDeposit());
@@ -370,7 +370,7 @@ public final class DataStructureUtil {
     return deposits;
   }
 
-  public static ArrayList<Deposit> randomDeposits(int num, int seed) {
+  public static ArrayList<Deposit> randomDepositsWithoutIndex(int num, int seed) {
     ArrayList<Deposit> deposits = new ArrayList<Deposit>();
 
     for (int i = 0; i < num; i++) {
@@ -411,8 +411,8 @@ public final class DataStructureUtil {
         BLSSignature.random(seed + 6));
   }
 
-  public static ArrayList<Deposit> newDeposits(int numDeposits) {
-    ArrayList<Deposit> deposits = new ArrayList<Deposit>();
+  public static ArrayList<DepositWithIndex> newDeposits(int numDeposits) {
+    ArrayList<DepositWithIndex> deposits = new ArrayList<>();
 
     for (int i = 0; i < numDeposits; i++) {
       // https://github.com/ethereum/eth2.0-specs/blob/0.4.0/specs/validator/0_beacon-chain-validator.md#submit-deposit
@@ -431,7 +431,7 @@ public final class DataStructureUtil {
       depositData.setSignature(proof_of_possession);
 
       SSZVector<Bytes32> proof = new SSZVector<>(DEPOSIT_CONTRACT_TREE_DEPTH + 1, Bytes32.ZERO);
-      Deposit deposit = new Deposit(proof, depositData, UnsignedLong.valueOf(i));
+      DepositWithIndex deposit = new DepositWithIndex(proof, depositData, UnsignedLong.valueOf(i));
       deposits.add(deposit);
     }
     return deposits;
@@ -456,7 +456,7 @@ public final class DataStructureUtil {
   @SuppressWarnings("unchecked")
   public static BeaconStateWithCache createInitialBeaconState(ArtemisConfiguration config)
       throws IOException, ParseException {
-    final List<Deposit> deposits = new ArrayList<>();
+    final List<DepositWithIndex> deposits = new ArrayList<>();
     if (config.getInteropActive()) {
       /*
       Path path = Paths.get("interopDepositsAndKeys.json");
@@ -481,7 +481,7 @@ public final class DataStructureUtil {
   @SuppressWarnings("rawtypes")
   public static BeaconStateWithCache createInitialBeaconState2(ArtemisConfiguration config)
       throws IOException, ParseException {
-    final List<Deposit> deposits = new ArrayList<>();
+    final List<DepositWithIndex> deposits = new ArrayList<>();
     if (config.getInteropActive()) {
       Path path = Paths.get("depositsAndKeys.yaml");
       String yaml = Files.readString(path.toAbsolutePath(), StandardCharsets.US_ASCII);
@@ -504,7 +504,7 @@ public final class DataStructureUtil {
                     Bytes.fromBase64String(depositDataMap.get("Signature").toString()));
             DepositData depositData = new DepositData(pubkey, withdrawalCreds, amount, signature);
             deposits.add(
-                new Deposit(
+                new DepositWithIndex(
                     new SSZVector<>(DEPOSIT_CONTRACT_TREE_DEPTH + 1, Bytes32.ZERO),
                     depositData,
                     UnsignedLong.valueOf(item.get("Index").toString())));

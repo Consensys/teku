@@ -36,6 +36,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.DepositData;
+import tech.pegasys.artemis.datastructures.operations.DepositWithIndex;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.state.CrosslinkCommittee;
@@ -327,7 +328,7 @@ class BeaconStateUtilTest {
   }
 
   private Validator createValidator() {
-    List<Deposit> deposits = newDeposits(1);
+    List<DepositWithIndex> deposits = newDeposits(1);
     Deposit deposit = deposits.get(0);
     DepositData depositInput = deposit.getData();
     BLSPublicKey pubkey = depositInput.getPubkey();

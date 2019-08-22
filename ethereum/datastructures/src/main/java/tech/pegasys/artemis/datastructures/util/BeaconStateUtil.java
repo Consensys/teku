@@ -63,6 +63,7 @@ import tech.pegasys.artemis.datastructures.blocks.BeaconBlockBody;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
+import tech.pegasys.artemis.datastructures.operations.DepositWithIndex;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.state.Validator;
@@ -77,7 +78,7 @@ public class BeaconStateUtil {
   private static final ALogger LOG = new ALogger(BeaconStateUtil.class.getName());
 
   public static BeaconStateWithCache initialize_beacon_state_from_eth1(
-      Bytes32 eth1_block_hash, UnsignedLong eth1_timestamp, List<Deposit> deposits) {
+      Bytes32 eth1_block_hash, UnsignedLong eth1_timestamp, List<DepositWithIndex> deposits) {
     UnsignedLong genesis_time =
         eth1_timestamp.minus(
             eth1_timestamp
@@ -87,7 +88,7 @@ public class BeaconStateUtil {
     eth1_data.setBlock_hash(eth1_block_hash);
     eth1_data.setDeposit_count(UnsignedLong.valueOf(deposits.size()));
 
-    MerkleTree<Deposit> merkleTree = DepositUtil.generateMerkleTree(deposits);
+    MerkleTree<DepositWithIndex> merkleTree = DepositUtil.generateMerkleTree(deposits);
     eth1_data.setDeposit_root(merkleTree.getRoot());
     BeaconStateWithCache state = new BeaconStateWithCache();
     state.setGenesis_time(genesis_time);
