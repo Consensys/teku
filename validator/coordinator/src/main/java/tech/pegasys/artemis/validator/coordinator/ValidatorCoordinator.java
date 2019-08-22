@@ -299,8 +299,9 @@ public class ValidatorCoordinator {
       int indexIntoCommittee,
       CrosslinkCommittee committee,
       AttestationData genericAttestationData) {
-    Bitlist aggregationBitfield = AttestationUtil.getAggregationBits(indexIntoCommittee);
-    Bitlist custodyBits = new Bitlist(MAX_VALIDATORS_PER_COMMITTEE);
+    int commmitteSize = committee.getCommitteeSize();
+    Bitlist aggregationBitfield = AttestationUtil.getAggregationBits(commmitteSize, indexIntoCommittee);
+    Bitlist custodyBits = new Bitlist(commmitteSize, MAX_VALIDATORS_PER_COMMITTEE);
     AttestationData attestationData =
         AttestationUtil.completeAttestationCrosslinkData(
             state, new AttestationData(genericAttestationData), committee);

@@ -22,6 +22,7 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.Constants;
+import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockBody;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
@@ -49,9 +50,12 @@ import tech.pegasys.artemis.util.bls.BLSPublicKey;
 
 public class DeserializationTest {
   @Test
-  void isBeaconBlockBodyVariableTest() {
-    // assertEquals(true,
-    // SimpleOffsetSerializer.classReflectionInfo.get(BeaconBlockBody.class).isVariable());
+  void BeaconBlockBodyTest() {
+    BeaconBlockBody beaconBlockBody = DataStructureUtil.randomBeaconBlockBody();
+    BeaconBlockBody newBeaconBlockBody =
+            SimpleOffsetSerializer.deserialize(
+                    SimpleOffsetSerializer.serialize(beaconBlockBody), BeaconBlockBody.class);
+    assertEquals(beaconBlockBody, newBeaconBlockBody);
   }
 
   @Test
@@ -64,12 +68,12 @@ public class DeserializationTest {
   }
 
   @Test
-  void isBeaconBlockVariableTest() {
-    BeaconBlockBody beaconBlockBody = DataStructureUtil.randomBeaconBlockBody();
-    BeaconBlockBody newBeaconBlockBody =
+  void BeaconBlockTest() {
+    BeaconBlock beaconBlock = DataStructureUtil.randomBeaconBlock(100);
+    BeaconBlock newBeaconBlock =
         SimpleOffsetSerializer.deserialize(
-            SimpleOffsetSerializer.serialize(beaconBlockBody), BeaconBlockBody.class);
-    assertEquals(beaconBlockBody, newBeaconBlockBody);
+            SimpleOffsetSerializer.serialize(beaconBlock), BeaconBlock.class);
+    assertEquals(beaconBlock, newBeaconBlock);
   }
 
   @Test
@@ -103,11 +107,10 @@ public class DeserializationTest {
 
   @Test
   void AttestationTest() {
-    Attestation checkpoint = DataStructureUtil.randomAttestation(UnsignedLong.ONE);
-    assertEquals(
-        checkpoint,
-        SimpleOffsetSerializer.deserialize(
-            SimpleOffsetSerializer.serialize(checkpoint), Attestation.class));
+    Attestation attestation = DataStructureUtil.randomAttestation(UnsignedLong.ONE);
+    Attestation newAttestation = SimpleOffsetSerializer.deserialize(
+            SimpleOffsetSerializer.serialize(attestation), Attestation.class);
+    assertEquals(attestation, newAttestation);
   }
 
   @Test
@@ -175,9 +178,14 @@ public class DeserializationTest {
   }
 
   @Test
-  void isBeaconStateVariableTest() {
-    // assertEquals(true,
-    // SimpleOffsetSerializer.classReflectionInfo.get(BeaconState.class).isVariable());
+  void BeaconStateTest() {
+    /*
+    BeaconBlockBody beaconBlockBody = ();
+    BeaconBlockBody newBeaconBlockBody =
+            SimpleOffsetSerializer.deserialize(
+                    SimpleOffsetSerializer.serialize(beaconBlockBody), BeaconBlockBody.class);
+    assertEquals(beaconBlockBody, newBeaconBlockBody);
+    */
   }
 
   @Test

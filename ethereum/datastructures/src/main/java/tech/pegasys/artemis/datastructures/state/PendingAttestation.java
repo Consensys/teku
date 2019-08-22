@@ -22,6 +22,7 @@ import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
+import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.Copyable;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
 import tech.pegasys.artemis.util.SSZTypes.Bitlist;
@@ -51,6 +52,11 @@ public class PendingAttestation
     this.data = data;
     this.inclusion_delay = inclusion_delay;
     this.proposer_index = proposer_index;
+  }
+
+  public PendingAttestation() {
+    this.aggregation_bits = new Bitlist(
+            Constants.MAX_VALIDATORS_PER_COMMITTEE, Constants.MAX_VALIDATORS_PER_COMMITTEE);
   }
 
   public PendingAttestation(PendingAttestation pendingAttestation) {

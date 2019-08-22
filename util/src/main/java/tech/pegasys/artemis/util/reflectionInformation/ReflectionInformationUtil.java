@@ -20,6 +20,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 import tech.pegasys.artemis.util.SSZTypes.Bitlist;
+import tech.pegasys.artemis.util.SSZTypes.Bitvector;
 import tech.pegasys.artemis.util.SSZTypes.SSZContainer;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.SSZTypes.SSZVector;
@@ -171,5 +172,65 @@ public class ReflectionInformationUtil {
       System.out.println(e);
     }
     return listElementMaxSizes;
+  }
+
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  public static List<Long> getBitlistElementMaxSizes(ReflectionInformation reflectionInformation) {
+    List<Long> bitlistElementsMaxSizes = new ArrayList<>();
+    try {
+      Field[] fields = reflectionInformation.getFields();
+      if (containsClass(fields, Bitlist.class)) {
+        Object object = reflectionInformation.getClassInfo().getConstructor().newInstance();
+        List<Field> listVariables =
+                Arrays.stream(fields)
+                        .filter(f -> f.getType().equals(Bitlist.class))
+                        .collect(Collectors.toList());
+
+        listVariables.forEach(f -> f.setAccessible(true));
+        for (Field listVariable : listVariables) {
+          bitlistElementsMaxSizes.add(((Bitlist) listVariable.get(object)).getMaxSize());
+        }
+        listVariables.forEach(f -> f.setAccessible(false));
+        return bitlistElementsMaxSizes;
+      } else {
+        return bitlistElementsMaxSizes;
+      }
+    } catch (InstantiationException
+            | IllegalAccessException
+            | InvocationTargetException
+            | NoSuchMethodException e) {
+      System.out.println(e);
+    }
+    return bitlistElementsMaxSizes;
+  }
+
+  @SuppressWarnings("unchecked")
+  public static List<Integer> getBitvectorSizes(ReflectionInformation reflectionInformation) {
+    List<Integer> vectorLengths = new ArrayList<>();
+    try {
+      Field[] fields = reflectionInformation.getFields();
+      if (containsClass(fields, Bitvector.class)) {
+        Object object = reflectionInformation.getClassInfo().getConstructor().newInstance();
+        List<Field> vectorVariables =
+            Arrays.stream(fields)
+                .filter(f -> f.getType().equals(Bitvector.class))
+                .collect(Collectors.toList());
+
+        vectorVariables.forEach(f -> f.setAccessible(true));
+        for (Field vectorVariable : vectorVariables) {
+          vectorLengths.add(((Bitvector) vectorVariable.get(object)).getSize());
+        }
+        vectorVariables.forEach(f -> f.setAccessible(false));
+        return vectorLengths;
+      } else {
+        return vectorLengths;
+      }
+    } catch (InstantiationException
+        | IllegalAccessException
+        | InvocationTargetException
+        | NoSuchMethodException e) {
+      System.out.println(e);
+    }
+    return vectorLengths;
   }
 }

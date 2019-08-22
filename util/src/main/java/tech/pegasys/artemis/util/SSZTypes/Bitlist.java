@@ -22,13 +22,21 @@ import org.apache.tuweni.bytes.Bytes;
 public class Bitlist {
 
   private byte[] byteArray;
+  private long maxSize;
 
-  public Bitlist(int n) {
-    this.byteArray = new byte[n];
+  public Bitlist(int arraySize, long maxSize) {
+    this.byteArray = new byte[arraySize];
+    this.maxSize = maxSize;
   }
 
-  public Bitlist(byte[] bitlist) {
+  public Bitlist(Bitlist bitlist) {
+    this.byteArray = bitlist.getByteArray();
+    this.maxSize = bitlist.getMaxSize();
+  }
+
+  public Bitlist(byte[] bitlist, long maxSize) {
     this.byteArray = bitlist;
+    this.maxSize = maxSize;
   }
 
   public void setBit(int i) {
@@ -43,6 +51,10 @@ public class Bitlist {
     return byteArray;
   }
 
+  public long getMaxSize() {
+    return maxSize;
+  }
+
   @SuppressWarnings("NarrowingCompoundAssignment")
   public Bytes serialize() {
     int len = byteArray.length;
@@ -52,7 +64,7 @@ public class Bitlist {
     return Bytes.wrap(array);
   }
 
-  public static Bitlist fromBytes(Bytes bytes) {
+  public static Bitlist fromBytes(Bytes bytes, long maxSize) {
     int numBytes = bytes.size();
     int leadingBitIndex = 0;
     while ((bytes.get(numBytes - 1) >>> (7 - leadingBitIndex)) % 2 == 0) {
@@ -68,11 +80,11 @@ public class Bitlist {
       }
     }
 
-    return new Bitlist(byteArray);
+    return new Bitlist(byteArray, maxSize);
   }
 
   public Bitlist copy() {
-    return new Bitlist(this.getByteArray());
+    return new Bitlist(this);
   }
 
   @Override

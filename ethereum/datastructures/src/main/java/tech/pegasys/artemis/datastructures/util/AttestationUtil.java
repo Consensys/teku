@@ -122,9 +122,9 @@ public class AttestationUtil {
     return new AttestationData(beacon_block_root, source, target, new Crosslink());
   }
 
-  public static Bitlist getAggregationBits(int indexIntoCommittee) {
+  public static Bitlist getAggregationBits(int committeeSize, int indexIntoCommittee) {
     // Create aggregation bitfield
-    Bitlist aggregationBits = new Bitlist(MAX_VALIDATORS_PER_COMMITTEE);
+    Bitlist aggregationBits = new Bitlist(committeeSize, MAX_VALIDATORS_PER_COMMITTEE);
     aggregationBits.setBit(indexIntoCommittee);
     return aggregationBits;
   }

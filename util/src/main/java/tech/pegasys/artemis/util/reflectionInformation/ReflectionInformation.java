@@ -34,6 +34,8 @@ public class ReflectionInformation {
   private List<Class> vectorElementTypes;
   private List<Class> listElementTypes;
   private List<Long> listElementMaxSizes;
+  private List<Long> bitlistElementMaxSizes;
+  private List<Integer> bitvectorSizes;
 
   @SuppressWarnings("unchecked")
   public ReflectionInformation(Class classInfo) {
@@ -48,6 +50,8 @@ public class ReflectionInformation {
       this.vectorElementTypes = ReflectionInformationUtil.getVectorElementTypes(this);
       this.listElementTypes = ReflectionInformationUtil.getListElementTypes(this);
       this.listElementMaxSizes = ReflectionInformationUtil.getListElementMaxSizes(this);
+      this.bitlistElementMaxSizes = ReflectionInformationUtil.getBitlistElementMaxSizes(this);
+      this.bitvectorSizes = ReflectionInformationUtil.getBitvectorSizes(this);
     } catch (NoSuchMethodException e) {
       System.out.println(e);
     }
@@ -87,6 +91,14 @@ public class ReflectionInformation {
 
   public List<Long> getListElementMaxSizes() {
     return listElementMaxSizes;
+  }
+
+  public List<Long> getBitlistElementMaxSizes() {
+    return bitlistElementMaxSizes;
+  }
+
+  public List<Integer> getBitvectorSizes() {
+    return bitvectorSizes;
   }
 
   private Field[] getFields(Class classInfo) {

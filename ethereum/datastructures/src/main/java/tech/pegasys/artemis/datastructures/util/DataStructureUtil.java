@@ -118,7 +118,7 @@ public final class DataStructureUtil {
     for (int i = 0; i < n; i++) {
       byteArray[i] = (byte) (random.nextBoolean() ? 1 : 0);
     }
-    return new Bitlist(byteArray);
+    return new Bitlist(byteArray, MAX_VALIDATORS_PER_COMMITTEE);
   }
 
   public static BLSPublicKey randomPublicKey() {

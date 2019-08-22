@@ -20,6 +20,8 @@ import java.util.List;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import org.yaml.snakeyaml.constructor.SafeConstructor;
+import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.util.SSZTypes.Bitlist;
 import tech.pegasys.artemis.util.SSZTypes.SSZContainer;
 import tech.pegasys.artemis.util.bls.BLSSignature;
@@ -47,6 +49,13 @@ public class Attestation implements Merkleizable, SimpleOffsetSerializable, SSZC
     this.data = data;
     this.custody_bitfield = custody_bitfield;
     this.signature = signature;
+  }
+
+  public Attestation() {
+    this.aggregation_bits = new Bitlist(
+            Constants.MAX_VALIDATORS_PER_COMMITTEE, Constants.MAX_VALIDATORS_PER_COMMITTEE);
+    this.custody_bitfield = new Bitlist(
+            Constants.MAX_VALIDATORS_PER_COMMITTEE, Constants.MAX_VALIDATORS_PER_COMMITTEE);
   }
 
   @Override

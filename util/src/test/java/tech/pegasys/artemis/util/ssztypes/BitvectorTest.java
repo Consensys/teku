@@ -20,10 +20,10 @@ import tech.pegasys.artemis.util.SSZTypes.Bitvector;
 
 class BitvectorTest {
 
-  private static int testBitlistLength = 4;
+  private static int testBitvectorLength = 4;
 
-  private static Bitvector createBitlist() {
-    Bitvector bitvector = new Bitvector(testBitlistLength);
+  private static Bitvector createBitvector() {
+    Bitvector bitvector = new Bitvector(testBitvectorLength);
     bitvector.setBit(0);
     bitvector.setBit(3);
     return bitvector;
@@ -52,18 +52,18 @@ class BitvectorTest {
 
   @Test
   void serializationTest() {
-    Bitvector bitvector = createBitlist();
+    Bitvector bitvector = createBitvector();
 
-    Bytes bitlistSerialized = bitvector.serialize();
-    Assertions.assertEquals(bitlistSerialized.toHexString(), "0x09");
+    Bytes bitvectorSerialized = bitvector.serialize();
+    Assertions.assertEquals(bitvectorSerialized.toHexString(), "0x09");
   }
 
   @Test
   void deserializationTest() {
-    Bitvector bitvector = createBitlist();
+    Bitvector bitvector = createBitvector();
 
-    Bytes bitlistSerialized = bitvector.serialize();
-    Bitvector newBitlist = Bitvector.fromBytes(bitlistSerialized, testBitlistLength);
-    Assertions.assertEquals(bitvector, newBitlist);
+    Bytes bitvectorSerialized = bitvector.serialize();
+    Bitvector newBitvector = Bitvector.fromBytes(bitvectorSerialized, testBitvectorLength);
+    Assertions.assertEquals(bitvector, newBitvector);
   }
 }

@@ -19,9 +19,9 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.util.SSZTypes.Bitlist;
 
 class BitlistTest {
-
+  private static int bitlistMaxSize = 4000;
   private static Bitlist createBitlist() {
-    Bitlist bitlist = new Bitlist(18);
+    Bitlist bitlist = new Bitlist(18, bitlistMaxSize);
     bitlist.setBit(1);
     bitlist.setBit(4);
     bitlist.setBit(5);
@@ -34,14 +34,14 @@ class BitlistTest {
 
   @Test
   void initTest() {
-    Bitlist bitlist = new Bitlist(10);
+    Bitlist bitlist = new Bitlist(10, bitlistMaxSize);
     Assertions.assertEquals(bitlist.getBit(0), 0);
     Assertions.assertEquals(bitlist.getBit(9), 0);
   }
 
   @Test
   void setTest() {
-    Bitlist bitlist = new Bitlist(10);
+    Bitlist bitlist = new Bitlist(10, bitlistMaxSize);
     bitlist.setBit(1);
     bitlist.setBit(3);
     bitlist.setBit(8);
@@ -66,13 +66,13 @@ class BitlistTest {
     Bitlist bitlist = createBitlist();
 
     Bytes bitlistSerialized = bitlist.serialize();
-    Bitlist newBitlist = Bitlist.fromBytes(bitlistSerialized);
+    Bitlist newBitlist = Bitlist.fromBytes(bitlistSerialized, bitlistMaxSize);
     Assertions.assertEquals(bitlist, newBitlist);
   }
 
   @Test
   void serializationTest2() {
-    Bitlist bitlist = new Bitlist(9);
+    Bitlist bitlist = new Bitlist(9, bitlistMaxSize);
     bitlist.setBit(0);
     bitlist.setBit(3);
     bitlist.setBit(4);
@@ -87,7 +87,7 @@ class BitlistTest {
 
   @Test
   void deserializationTest2() {
-    Bitlist bitlist = new Bitlist(9);
+    Bitlist bitlist = new Bitlist(9, bitlistMaxSize);
     bitlist.setBit(0);
     bitlist.setBit(3);
     bitlist.setBit(4);
@@ -96,7 +96,7 @@ class BitlistTest {
     bitlist.setBit(7);
     bitlist.setBit(8);
 
-    Bitlist newBitlist = Bitlist.fromBytes(Bytes.fromHexString("0xf903"));
+    Bitlist newBitlist = Bitlist.fromBytes(Bytes.fromHexString("0xf903"), bitlistMaxSize);
     Assertions.assertEquals(bitlist, newBitlist);
   }
 }
