@@ -15,6 +15,7 @@ package tech.pegasys.artemis.datastructures.sostests;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.int_to_bytes;
+import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomBeaconState;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomLong;
 
 import com.google.common.primitives.UnsignedLong;
@@ -40,6 +41,7 @@ import tech.pegasys.artemis.datastructures.operations.IndexedAttestation;
 import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
 import tech.pegasys.artemis.datastructures.operations.Transfer;
 import tech.pegasys.artemis.datastructures.operations.VoluntaryExit;
+import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.datastructures.state.CompactCommittee;
 import tech.pegasys.artemis.datastructures.state.Crosslink;
@@ -183,13 +185,11 @@ public class DeserializationTest {
 
   @Test
   void BeaconStateTest() {
-    /*
-    BeaconBlockBody beaconBlockBody = ();
-    BeaconBlockBody newBeaconBlockBody =
+    BeaconState beaconState = randomBeaconState();
+    BeaconState state =
             SimpleOffsetSerializer.deserialize(
-                    SimpleOffsetSerializer.serialize(beaconBlockBody), BeaconBlockBody.class);
-    assertEquals(beaconBlockBody, newBeaconBlockBody);
-    */
+                    SimpleOffsetSerializer.serialize(beaconState), BeaconState.class);
+    assertEquals(beaconState, state);
   }
 
   @Test

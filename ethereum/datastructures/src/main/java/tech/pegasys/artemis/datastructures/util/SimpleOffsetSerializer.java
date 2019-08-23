@@ -55,6 +55,7 @@ import tech.pegasys.artemis.datastructures.state.HistoricalBatch;
 import tech.pegasys.artemis.datastructures.state.PendingAttestation;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.util.SSZTypes.Bitlist;
+import tech.pegasys.artemis.util.SSZTypes.Bitvector;
 import tech.pegasys.artemis.util.SSZTypes.Bytes4;
 import tech.pegasys.artemis.util.SSZTypes.SSZContainer;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
@@ -246,12 +247,11 @@ public class SimpleOffsetSerializer {
           List<Integer> variableFieldIndices
   ) throws InstantiationException, InvocationTargetException, IllegalAccessException {
 
-    List<Integer> vectorLengths = reflectionInformation.getVectorLengths();
-    List<Class> vectorElementTypes = reflectionInformation.getVectorElementTypes();
     int numParams = reflectionInformation.getParameterCount();
     Field[] fields = reflectionInformation.getFields();
     Object[] params = new Object[numParams];
     int vectorCounter = 0;
+    int bitvectorCounter = 0;
 
     for (int i = 0; i < numParams; i++) {
       Class fieldClass = fields[i].getType();
@@ -266,11 +266,17 @@ public class SimpleOffsetSerializer {
       } else if (isVector(fieldClass)) {
         fieldObject =
                 deserializeFixedElementVector(
-                        vectorElementTypes.get(vectorCounter),
-                        vectorLengths.get(vectorCounter),
+                        reflectionInformation.getVectorElementTypes().get(vectorCounter),
+                        reflectionInformation.getVectorLengths().get(vectorCounter),
                         reader,
                         bytesPointer);
         vectorCounter++;
+      } else if (isBitvector(fieldClass)) {
+        fieldObject = deserializeBitvector(
+                reflectionInformation.getBitvectorSizes().get(bitvectorCounter),
+                reader,
+                bytesPointer);
+        bitvectorCounter++;
       }
       params[i] = fieldObject;
     }
@@ -335,6 +341,12 @@ public class SimpleOffsetSerializer {
       variableObjectCounter++;
       params[variableFieldIndex] = fieldObject;
     }
+  }
+
+  private static Bitvector deserializeBitvector(int bitvectorSize, SSZReader reader, MutableInt bytesPointer) {
+    int bitvectorByteSize = (bitvectorSize + 7) / 8;
+    bytesPointer.add(bitvectorByteSize);
+    return Bitvector.fromBytes(reader.readFixedBytes(bitvectorByteSize), bitvectorSize);
   }
 
   private static Bitlist deserializeBitlist(
@@ -403,7 +415,7 @@ public class SimpleOffsetSerializer {
   }
 
   private static SSZVector deserializeFixedElementVector(
-      Class classInfo, int numElements, SSZReader reader, MutableInt bytePointer)
+          Class classInfo, int numElements, SSZReader reader, MutableInt bytePointer)
           throws InstantiationException, InvocationTargetException, IllegalAccessException {
     List newList = new ArrayList<>();
     for (int i = 0; i < numElements; i++) {
@@ -460,11 +472,15 @@ public class SimpleOffsetSerializer {
   }
 
   private static boolean isPrimitive(Class classInfo) {
-    return !(SSZContainer.class.isAssignableFrom(classInfo) || classInfo == SSZVector.class);
+    return !(SSZContainer.class.isAssignableFrom(classInfo) || classInfo == SSZVector.class || classInfo == Bitvector.class);
   }
 
   private static boolean isVector(Class classInfo) {
     return classInfo == SSZVector.class;
+  }
+
+  private static boolean isBitvector(Class classInfo) {
+    return classInfo == Bitvector.class;
   }
 
   private static boolean isContainer(Class classInfo) {
