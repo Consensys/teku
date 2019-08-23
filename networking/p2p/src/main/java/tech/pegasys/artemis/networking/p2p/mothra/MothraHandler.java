@@ -13,28 +13,22 @@
 
 package tech.pegasys.artemis.networking.p2p.mothra;
 
-import static com.google.common.base.Preconditions.checkArgument;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import io.vertx.core.impl.ConcurrentHashSet;
-import java.math.BigInteger;
-import java.util.Date;
 import net.p2p.mothra;
 import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.hobbits.Message;
-import org.apache.tuweni.hobbits.Protocol;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
-import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
-import tech.pegasys.artemis.networking.p2p.mothra.gossip.GossipCodec;
-import tech.pegasys.artemis.networking.p2p.mothra.gossip.GossipMessage;
 import tech.pegasys.artemis.util.alogger.ALogger;
 
 public class MothraHandler {
   private static final ALogger STDOUT = new ALogger("stdout");
+  public static String BLOCK_TOPIC = "beacon_block";
+  public static String ATTESTATION_TOPIC = "beacon_attestation";
   protected final EventBus eventBus;
   protected ConcurrentHashSet<String> receivedMessages;
 
@@ -44,32 +38,25 @@ public class MothraHandler {
     receivedMessages = new ConcurrentHashSet<>();
   }
 
-  public void gossipMessage(
-      int method, String topic, long timestamp, Bytes messageHash, Bytes body) {
-    Bytes bytes =
-        GossipCodec.encode(
-                method, topic, BigInteger.valueOf(timestamp), messageHash.toArray(), body.toArray())
-            .toBytes();
-    mothra.SendGossip(bytes.toArray());
+  public void gossipMessage(String topic, Bytes data) {
+    mothra.SendGossip(topic.getBytes(UTF_8), data.toArray());
   }
 
-  public synchronized Boolean handleMessage(byte[] message) {
+  public synchronized Boolean handleGossipMessage(String topic, byte[] message) {
     Bytes messageBytes = Bytes.wrap(message);
     STDOUT.log(Level.DEBUG, "Received " + messageBytes.size() + " bytes");
-    Message hobbitsMessage = Message.readMessage(messageBytes);
-    if (hobbitsMessage != null) {
-      Protocol protocol = hobbitsMessage.getProtocol();
-      if (protocol == Protocol.RPC) {
-        // RPCMessage rpcMessage = RPCCodec.decode(hobbitsMessage);
-        // checkArgument(rpcMessage != null, "Unable to decode RPC message");
-        // handleRPCMessage(rpcMessage);
-      } else if (protocol == Protocol.GOSSIP) {
-        GossipMessage gossipMessage = GossipCodec.decode(hobbitsMessage);
-        checkArgument(gossipMessage != null, "Unable to decode GOSSIP message");
-        handleGossipMessage(gossipMessage);
+    String key = messageBytes.toHexString();
+    if (!receivedMessages.contains(key)) {
+      receivedMessages.add(key);
+      if (topic.equalsIgnoreCase(ATTESTATION_TOPIC)) {
+        STDOUT.log(Level.DEBUG, "Received Attestation");
+        Attestation attestation = Attestation.fromBytes(messageBytes);
+        this.eventBus.post(attestation);
+      } else if (topic.equalsIgnoreCase(BLOCK_TOPIC)) {
+        STDOUT.log(Level.DEBUG, "Received Block");
+        BeaconBlock block = BeaconBlock.fromBytes(messageBytes);
+        this.eventBus.post(block);
       }
-    } else {
-      return false;
     }
     return true;
   }
@@ -77,21 +64,6 @@ public class MothraHandler {
   // protected void handleRPCMessage(RPCMessage rpcMessage) {
   //  throw new UnsupportedOperationException();
   // }
-
-  protected void handleGossipMessage(GossipMessage gossipMessage) {
-    Bytes body = Bytes.wrap(gossipMessage.body());
-    String key = body.toHexString();
-    if (!receivedMessages.contains(key)) {
-      receivedMessages.add(key);
-      if (gossipMessage.getTopic().equalsIgnoreCase("ATTESTATION")) {
-        Attestation attestation = SimpleOffsetSerializer.deserialize(body, Attestation.class);
-        this.eventBus.post(attestation);
-      } else if (gossipMessage.getTopic().equalsIgnoreCase("BLOCK")) {
-        BeaconBlock block = SimpleOffsetSerializer.deserialize(body, BeaconBlock.class);
-        this.eventBus.post(block);
-      }
-    }
-  }
 
   @Subscribe
   public void onNewUnprocessedBlock(BeaconBlock block) {
@@ -101,10 +73,7 @@ public class MothraHandler {
       STDOUT.log(
           Level.DEBUG,
           "Gossiping new block with state root: " + block.getState_root().toHexString());
-      int method = 0;
-      String topic = "BLOCK";
-      long timestamp = new Date().getTime();
-      this.gossipMessage(method, topic, timestamp, Bytes32.random(), bytes);
+      this.gossipMessage(BLOCK_TOPIC, bytes);
     }
   }
 
@@ -117,10 +86,7 @@ public class MothraHandler {
           Level.DEBUG,
           "Gossiping new attestation for block root: "
               + attestation.getData().getBeacon_block_root());
-      int method = 0;
-      String topic = "ATTESTATION";
-      long timestamp = new Date().getTime();
-      this.gossipMessage(method, topic, timestamp, Bytes32.random(), bytes);
+      this.gossipMessage(ATTESTATION_TOPIC, bytes);
     }
   }
 }

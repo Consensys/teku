@@ -72,7 +72,7 @@ public final class MothraP2PNetwork implements P2PNetwork {
     eventBus.register(this);
     this.handler = new MothraHandler(this.eventBus);
     mothra.Init();
-    mothra.ReceivedMessage = this.handler::handleMessage;
+    mothra.ReceivedGossipMessage = this.handler::handleGossipMessage;
     this.args = processArgs();
   }
 
