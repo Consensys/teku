@@ -16,15 +16,14 @@ package tech.pegasys.artemis.datastructures.util;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.google.common.primitives.UnsignedLong;
+import java.util.List;
+import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.operations.DepositData;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
-
-import java.util.List;
-import java.util.stream.Collectors;
 
 class MockStartBeaconStateGeneratorTest {
   @Test
