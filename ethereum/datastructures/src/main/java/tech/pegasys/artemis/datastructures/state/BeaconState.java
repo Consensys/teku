@@ -667,7 +667,7 @@ public class BeaconState implements SimpleOffsetSerializable, SSZContainer {
         HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_COMPOSITE, compact_committees_roots),
 
         // Slashings
-        HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_BASIC, slashings.stream().map(item -> HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(eth1_deposit_index.longValue()))).collect(Collectors.toList()).toArray(new Bytes[0])),
+        HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_BASIC, slashings.stream().map(item -> SSZ.encodeUInt64(item.longValue())).collect(Collectors.toList()).toArray(new Bytes[0])),
 
         // Attestations
         HashTreeUtil.hash_tree_root(SSZTypes.LIST_OF_COMPOSITE, Constants.MAX_ATTESTATIONS * Constants.SLOTS_PER_EPOCH, previous_epoch_attestations),
