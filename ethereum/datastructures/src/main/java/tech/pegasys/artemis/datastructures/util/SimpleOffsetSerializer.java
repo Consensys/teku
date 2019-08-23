@@ -18,17 +18,20 @@ import static tech.pegasys.artemis.datastructures.Constants.BYTES_PER_LENGTH_OFF
 import com.google.common.primitives.UnsignedLong;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.function.Function;
 import java.util.stream.Collectors;
-import org.apache.commons.codec.DecoderException;
+
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
 import org.apache.tuweni.ssz.SSZReader;
+import org.bouncycastle.util.encoders.DecoderException;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockBody;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
@@ -51,6 +54,8 @@ import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.datastructures.state.HistoricalBatch;
 import tech.pegasys.artemis.datastructures.state.PendingAttestation;
 import tech.pegasys.artemis.datastructures.state.Validator;
+import tech.pegasys.artemis.util.SSZTypes.Bitlist;
+import tech.pegasys.artemis.util.SSZTypes.Bitvector;
 import tech.pegasys.artemis.util.SSZTypes.Bytes4;
 import tech.pegasys.artemis.util.SSZTypes.SSZContainer;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
@@ -171,6 +176,258 @@ public class SimpleOffsetSerializer {
         Bytes.concatenate(variable_parts.toArray(new Bytes[0])));
   }
 
+  @SuppressWarnings("TypeParameterUnusedInFormals")
+  public static <T> T deserialize(Bytes bytes, Class classInfo) {
+    MutableInt bytePointer = new MutableInt(0);
+    return SSZ.decode(bytes, reader -> deserializeContainerErrorWrapper(classInfo, reader, bytePointer, bytes.size()));
+  }
+
+  @SuppressWarnings("TypeParameterUnusedInFormals")
+  private static <T> T deserializeContainerErrorWrapper(Class classInfo, SSZReader reader, MutableInt bytePointer, int bytesEndByte) {
+    try {
+      return deserializeContainer(classInfo, reader, bytePointer, bytesEndByte);
+    } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
+      System.out.println("Deserialization error with class: "
+              + classInfo.getSimpleName() + "\n Error: " + e.toString());
+    }
+    return null;
+  }
+
+  @SuppressWarnings("TypeParameterUnusedInFormals")
+  private static <T> T deserializeContainer(
+          Class classInfo, SSZReader reader, MutableInt bytesPointer, int bytesEndByte)
+          throws InstantiationException, IllegalAccessException, InvocationTargetException {
+    int currentObjectStartByte = bytesPointer.intValue();
+    ReflectionInformation reflectionInformation = classReflectionInfo.get(classInfo);
+    List<Integer> offsets = new ArrayList<>();
+    List<Integer> variableFieldIndices = new ArrayList<>();
+
+    Object[] params = deserializeFixedParts(
+            reflectionInformation,
+            reader,
+            bytesPointer,
+            offsets,
+            variableFieldIndices
+    );
+
+    if (isVariable(classInfo)) {
+      deserializeVariableParts(
+              reflectionInformation,
+              reader,
+              bytesPointer,
+              variableFieldIndices,
+              offsets,
+              currentObjectStartByte,
+              params,
+              bytesEndByte);
+    }
+
+    for (int i = 0; i < params.length; i++) {
+      if (params[i] == null) {
+        throw new InstantiationException("Parameter is null: " + i);
+      }
+    }
+    Constructor constructor = reflectionInformation.getConstructor();
+    return (T) constructor.newInstance(params);
+  }
+
+  @SuppressWarnings("TypeParameterUnusedInFormals")
+  private static <T> T deserializeFixedContainer(
+          Class classInfo, SSZReader reader, MutableInt bytePointer)
+          throws InstantiationException, InvocationTargetException, IllegalAccessException {
+    // bytesEndByte is only necessary for variable size containers
+    return deserializeContainer(classInfo, reader, bytePointer, 0);
+  }
+
+  private static Object[] deserializeFixedParts(
+          ReflectionInformation reflectionInformation,
+          SSZReader reader,
+          MutableInt bytesPointer,
+          List<Integer> offsets,
+          List<Integer> variableFieldIndices
+  ) throws InstantiationException, InvocationTargetException, IllegalAccessException {
+
+    int numParams = reflectionInformation.getParameterCount();
+    Field[] fields = reflectionInformation.getFields();
+    Object[] params = new Object[numParams];
+    int vectorCounter = 0;
+    int bitvectorCounter = 0;
+
+    for (int i = 0; i < numParams; i++) {
+      Class fieldClass = fields[i].getType();
+      Object fieldObject = null;
+      if (isVariable(fieldClass)) {
+        variableFieldIndices.add(i);
+        offsets.add(readOffset(reader, bytesPointer));
+      } else if (isPrimitive(fieldClass)) {
+        fieldObject = deserializePrimitive(fieldClass, reader, bytesPointer);
+      } else if (isContainer(fieldClass)) {
+        fieldObject = deserializeFixedContainer(fieldClass, reader, bytesPointer);
+      } else if (isVector(fieldClass)) {
+        fieldObject =
+                deserializeFixedElementVector(
+                        reflectionInformation.getVectorElementTypes().get(vectorCounter),
+                        reflectionInformation.getVectorLengths().get(vectorCounter),
+                        reader,
+                        bytesPointer);
+        vectorCounter++;
+      } else if (isBitvector(fieldClass)) {
+        fieldObject = deserializeBitvector(
+                reflectionInformation.getBitvectorSizes().get(bitvectorCounter),
+                reader,
+                bytesPointer);
+        bitvectorCounter++;
+      }
+      params[i] = fieldObject;
+    }
+    return params;
+  }
+
+  private static void deserializeVariableParts(
+          ReflectionInformation reflectionInformation,
+          SSZReader reader,
+          MutableInt bytesPointer,
+          List<Integer> variableFieldIndices,
+          List<Integer> offsets,
+          int currentObjectStartByte,
+          Object[] params,
+          int bytesEndByte)
+          throws InstantiationException, InvocationTargetException, IllegalAccessException {
+
+    int variableObjectCounter = 0;
+    for (Integer variableFieldIndex : variableFieldIndices) {
+      Class fieldClass = reflectionInformation.getFields()[variableFieldIndex].getType();
+
+      int currentObjectEndByte =
+              (variableObjectCounter + 1) == variableFieldIndices.size()
+                      ? bytesEndByte
+                      : currentObjectStartByte + offsets.get(variableObjectCounter + 1);
+      Object fieldObject = null;
+      if (fieldClass == SSZList.class) {
+        Class listElementType =
+                reflectionInformation.getListElementTypes().get(variableObjectCounter);
+        Long listElementMaxSize =
+                reflectionInformation.getListElementMaxSizes().get(variableObjectCounter);
+        SSZList newSSZList = new SSZList(listElementType, listElementMaxSize);
+        if (!isVariable(listElementType)) {
+          // If SSZList element is fixed size
+          deserializeFixedElementList(
+                  reader,
+                  bytesPointer,
+                  listElementType,
+                  currentObjectEndByte,
+                  newSSZList
+          );
+
+        } else {
+          // If SSZList element is variable size
+          deserializeVariableElementList(
+                  reader,
+                  bytesPointer,
+                  listElementType,
+                  currentObjectEndByte,
+                  newSSZList
+          );
+        }
+        fieldObject = newSSZList;
+      } else if (fieldClass == Bitlist.class) {
+        fieldObject = deserializeBitlist(
+                reflectionInformation, reader, bytesPointer, variableObjectCounter, currentObjectEndByte);
+
+      } else if (isContainer(fieldClass)) {
+        fieldObject =
+                deserializeContainer(fieldClass, reader, bytesPointer, currentObjectEndByte);
+      }
+      variableObjectCounter++;
+      params[variableFieldIndex] = fieldObject;
+    }
+  }
+
+  private static Bitvector deserializeBitvector(int bitvectorSize, SSZReader reader, MutableInt bytesPointer) {
+    int bitvectorByteSize = (bitvectorSize + 7) / 8;
+    bytesPointer.add(bitvectorByteSize);
+    return Bitvector.fromBytes(reader.readFixedBytes(bitvectorByteSize), bitvectorSize);
+  }
+
+  private static Bitlist deserializeBitlist(
+          ReflectionInformation reflectionInformation,
+          SSZReader reader,
+          MutableInt bytesPointer,
+          int variableObjectCounter,
+          int currentObjectEndByte) {
+    Long bitlistElementMaxSize =
+            reflectionInformation.getBitlistElementMaxSizes().get(variableObjectCounter);
+    int numBytesToRead = currentObjectEndByte - bytesPointer.intValue();
+    bytesPointer.add(numBytesToRead);
+    return Bitlist.fromBytes(reader.readFixedBytes(numBytesToRead), bitlistElementMaxSize);
+  }
+
+  private static void deserializeVariableElementList(
+          SSZReader reader,
+          MutableInt bytesPointer,
+          Class listElementType,
+          int bytesEndByte,
+          SSZList newSSZList)
+          throws InstantiationException, InvocationTargetException, IllegalAccessException  {
+
+    int currentObjectStartByte = bytesPointer.intValue();
+
+    if (currentObjectStartByte == bytesEndByte) {
+      return;
+    }
+
+    List<Integer> offsets = new ArrayList<>();
+
+    int variablePartStartByte = currentObjectStartByte + readOffset(reader, bytesPointer);
+    offsets.add(variablePartStartByte);
+
+    while (bytesPointer.intValue() < variablePartStartByte) {
+      offsets.add(readOffset(reader, bytesPointer));
+    }
+
+    for (int i = 0; i < offsets.size(); i++) {
+      // Get the end byte of current variable size container either using offset
+      // or the end of the outer object you're in
+      int currentObjectEndByte =
+              (i + 1) == offsets.size()
+                      ? bytesEndByte
+                      : currentObjectStartByte + offsets.get(i + 1);
+      newSSZList.add(deserializeContainer(
+              listElementType, reader, bytesPointer, currentObjectEndByte));
+    }
+  }
+
+
+  private static void deserializeFixedElementList(
+          SSZReader reader,
+          MutableInt bytesPointer,
+          Class listElementType,
+          int currentObjectEndByte,
+          SSZList newSSZList)
+          throws InstantiationException, InvocationTargetException, IllegalAccessException {
+    while (bytesPointer.intValue() < currentObjectEndByte) {
+      if (isContainer(listElementType)) {
+        newSSZList.add(deserializeFixedContainer(listElementType, reader, bytesPointer));
+      } else if (isPrimitive(listElementType)) {
+        newSSZList.add(deserializePrimitive(listElementType, reader, bytesPointer));
+      }
+    }
+  }
+
+  private static SSZVector deserializeFixedElementVector(
+          Class classInfo, int numElements, SSZReader reader, MutableInt bytePointer)
+          throws InstantiationException, InvocationTargetException, IllegalAccessException {
+    List newList = new ArrayList<>();
+    for (int i = 0; i < numElements; i++) {
+      if (isPrimitive(classInfo)) {
+        newList.add(deserializePrimitive(classInfo, reader, bytePointer));
+      } else if (isContainer(classInfo) && !classReflectionInfo.get(classInfo).isVariable()) {
+        newList.add(deserializeFixedContainer(classInfo, reader, bytePointer));
+      }
+    }
+    return new SSZVector<>(newList, classInfo);
+  }
+
   @SuppressWarnings("rawtypes")
   public static Object deserializePrimitive(
       Class classInfo, SSZReader reader, MutableInt bytePointer) {
@@ -199,164 +456,13 @@ public class SimpleOffsetSerializer {
     }
   }
 
-  @SuppressWarnings("TypeParameterUnusedInFormals")
-  public static <T> T deserialize(Bytes bytes, Class classInfo) {
-    MutableInt bytePointer = new MutableInt(0);
-    int endByte = bytes.size();
-    return SSZ.decode(
-        bytes,
-        sszReader -> (T) deserializeVariableComposite(classInfo, sszReader, bytePointer, endByte));
-  }
-
-  @SuppressWarnings("TypeParameterUnusedInFormals")
-  public static <T> T deserializeFixedComposite(
-      Class classInfo, SSZReader reader, MutableInt bytePointer) {
-    try {
-      ReflectionInformation reflectionInformation = classReflectionInfo.get(classInfo);
-      int numParams = reflectionInformation.getParameterCount();
-      Field[] fields = reflectionInformation.getFields();
-      List<Integer> vectorLengths = reflectionInformation.getVectorLengths();
-      List<Class> vectorElementTypes = reflectionInformation.getVectorElementTypes();
-      int vectorCounter = 0;
-      Object[] params = new Object[numParams];
-      for (int i = 0; i < numParams; i++) {
-        Class fieldClass = fields[i].getType();
-        Object fieldObject = null;
-        if (isPrimitive(fieldClass)) {
-          fieldObject = deserializePrimitive(fieldClass, reader, bytePointer);
-        } else if (isContainer(fieldClass)) {
-          fieldObject = deserializeFixedComposite(fieldClass, reader, bytePointer);
-        } else if (isVector(fieldClass)) {
-          fieldObject =
-              deserializeFixedElementVector(
-                  vectorElementTypes.get(vectorCounter),
-                  vectorLengths.get(vectorCounter),
-                  reader,
-                  bytePointer);
-          vectorCounter++;
-        }
-
-        if (fieldObject == null) {
-          throw new DecoderException("Problem decoding class: " + classInfo.getSimpleName() + " ");
-        }
-        params[i] = fieldObject;
-      }
-
-      Constructor constructor = reflectionInformation.getConstructor();
-      return (T) constructor.newInstance(params);
-    } catch (Exception e) {
-      System.out.println(e);
-      return (T) new Object();
-    }
-  }
-
-  private static SSZVector deserializeFixedElementVector(
-      Class classInfo, int numElements, SSZReader reader, MutableInt bytePointer) {
-    List newList = new ArrayList<>();
-    for (int i = 0; i < numElements; i++) {
-      if (isPrimitive(classInfo)) {
-        newList.add(deserializePrimitive(classInfo, reader, bytePointer));
-      } else if (isContainer(classInfo) && !classReflectionInfo.get(classInfo).isVariable()) {
-        newList.add(deserializeFixedComposite(classInfo, reader, bytePointer));
-      }
-    }
-    return new SSZVector<>(newList, classInfo);
-  }
-
-  @SuppressWarnings("TypeParameterUnusedInFormals")
-  private static <T> T deserializeVariableComposite(
-      Class classInfo, SSZReader reader, MutableInt bytesPointer, int bytesEndByte) {
-    try {
-      int currentObjectStartByte = bytesPointer.intValue();
-      ReflectionInformation reflectionInformation = classReflectionInfo.get(classInfo);
-      int numParams = reflectionInformation.getParameterCount();
-      Field[] fields = reflectionInformation.getFields();
-      List<Integer> vectorLengths = reflectionInformation.getVectorLengths();
-      List<Class> vectorElementTypes = reflectionInformation.getVectorElementTypes();
-      List<Integer> offsets = new ArrayList<>();
-      List<Integer> variableFieldIndices = new ArrayList<>();
-      int vectorCounter = 0;
-      Object[] params = new Object[numParams];
-      for (int i = 0; i < numParams; i++) {
-        Class fieldClass = fields[i].getType();
-        Object fieldObject = null;
-        if (isVariable(fieldClass)) {
-          variableFieldIndices.add(i);
-          offsets.add(readOffset(reader, bytesPointer));
-        } else if (isPrimitive(fieldClass)) {
-          fieldObject = deserializePrimitive(fieldClass, reader, bytesPointer);
-        } else if (isContainer(fieldClass)) {
-          fieldObject = deserializeFixedComposite(fieldClass, reader, bytesPointer);
-        } else if (isVector(fieldClass)) {
-          fieldObject =
-              deserializeFixedElementVector(
-                  vectorElementTypes.get(vectorCounter),
-                  vectorLengths.get(vectorCounter),
-                  reader,
-                  bytesPointer);
-          vectorCounter++;
-        }
-        params[i] = fieldObject;
-      }
-
-      int variableObjectCounter = 0;
-      for (Integer variableFieldIndex : variableFieldIndices) {
-        Class fieldClass = fields[variableFieldIndex].getType();
-
-        int currentObjectEndByte =
-            (variableObjectCounter + 1) == variableFieldIndices.size()
-                ? bytesEndByte
-                : currentObjectStartByte + offsets.get(variableObjectCounter + 1);
-        Object fieldObject = null;
-        if (fieldClass == SSZList.class) {
-          Class listElementType =
-              reflectionInformation.getListElementTypes().get(variableObjectCounter);
-          Long listElementMaxSize =
-              reflectionInformation.getListElementMaxSizes().get(variableObjectCounter);
-          List newSSZList = new SSZList(listElementType, listElementMaxSize);
-          if (!isVariable(listElementType)) {
-            while (bytesPointer.intValue() < currentObjectEndByte) {
-              if (isContainer(listElementType)) {
-                newSSZList.add(deserializeFixedComposite(listElementType, reader, bytesPointer));
-              } else if (isPrimitive(listElementType)) {
-                newSSZList.add(deserializePrimitive(listElementType, reader, bytesPointer));
-              }
-            }
-            fieldObject = newSSZList;
-          } else {
-
-          }
-        } else if (isContainer(fieldClass)) {
-          fieldObject =
-              deserializeVariableComposite(fieldClass, reader, bytesPointer, currentObjectEndByte);
-        }
-        variableObjectCounter++;
-        params[variableFieldIndex] = fieldObject;
-      }
-
-      Constructor constructor = reflectionInformation.getConstructor();
-      return (T) constructor.newInstance(params);
-    } catch (Exception e) {
-      System.out.println(e);
-      return (T) new Object();
-    }
-  }
-
-  /*
-  private static SSZList deserializeFixedElementList(
-          Bytes bytes, Class classInfo, int numElements, SSZReader reader) {
-
-
-  }
-  */
-
   private static int readOffset(SSZReader reader, MutableInt bytesPointer) {
     bytesPointer.add(4);
     return reader.readInt32();
   }
 
   private static boolean isVariable(Class classInfo) {
-    if (classInfo == SSZList.class) {
+    if (classInfo == SSZList.class || classInfo == Bitlist.class) {
       return true;
     } else if (classReflectionInfo.get(classInfo) != null) {
       return classReflectionInfo.get(classInfo).isVariable();
@@ -366,11 +472,15 @@ public class SimpleOffsetSerializer {
   }
 
   private static boolean isPrimitive(Class classInfo) {
-    return !(SSZContainer.class.isAssignableFrom(classInfo) || classInfo == SSZVector.class);
+    return !(SSZContainer.class.isAssignableFrom(classInfo) || classInfo == SSZVector.class || classInfo == Bitvector.class);
   }
 
   private static boolean isVector(Class classInfo) {
     return classInfo == SSZVector.class;
+  }
+
+  private static boolean isBitvector(Class classInfo) {
+    return classInfo == Bitvector.class;
   }
 
   private static boolean isContainer(Class classInfo) {

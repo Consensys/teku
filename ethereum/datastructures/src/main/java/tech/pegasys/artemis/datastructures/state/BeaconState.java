@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.datastructures.state;
 
+import static tech.pegasys.artemis.datastructures.Constants.JUSTIFICATION_BITS_LENGTH;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.int_to_bytes;
 
 import com.google.common.primitives.UnsignedLong;
@@ -29,6 +30,7 @@ import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
+import tech.pegasys.artemis.util.SSZTypes.Bitvector;
 import tech.pegasys.artemis.util.SSZTypes.Bytes4;
 import tech.pegasys.artemis.util.SSZTypes.SSZContainer;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
@@ -83,7 +85,7 @@ public class BeaconState implements SimpleOffsetSerializable, SSZContainer {
   protected SSZVector<Crosslink> current_crosslinks; // Vector Bounded by SHARD_COUNT
 
   // Finality
-  protected Bytes justification_bits; // Bitvector bounded by JUSTIFICATION_BITS_LENGTH
+  protected Bitvector justification_bits; // Bitvector bounded by JUSTIFICATION_BITS_LENGTH
   protected Checkpoint previous_justified_checkpoint;
   protected Checkpoint current_justified_checkpoint;
   protected Checkpoint finalized_checkpoint;
@@ -127,7 +129,7 @@ public class BeaconState implements SimpleOffsetSerializable, SSZContainer {
       SSZVector<Crosslink> current_crosslinks,
 
       // Finality
-      Bytes justification_bits,
+      Bitvector justification_bits,
       Checkpoint previous_justified_checkpoint,
       Checkpoint current_justified_checkpoint,
       Checkpoint finalized_checkpoint) {
@@ -217,16 +219,18 @@ public class BeaconState implements SimpleOffsetSerializable, SSZContainer {
 
     // Attestations
     this.previous_epoch_attestations =
-        new SSZList<>(PendingAttestation.class, Constants.MAX_ATTESTATIONS * Constants.SLOTS_PER_EPOCH);
+        new SSZList<>(
+            PendingAttestation.class, Constants.MAX_ATTESTATIONS * Constants.SLOTS_PER_EPOCH);
     this.current_epoch_attestations =
-        new SSZList<>(PendingAttestation.class, Constants.MAX_ATTESTATIONS * Constants.SLOTS_PER_EPOCH);
+        new SSZList<>(
+            PendingAttestation.class, Constants.MAX_ATTESTATIONS * Constants.SLOTS_PER_EPOCH);
 
     // Crosslinks
     this.previous_crosslinks = new SSZVector<>(Constants.SHARD_COUNT, new Crosslink());
     this.current_crosslinks = new SSZVector<>(Constants.SHARD_COUNT, new Crosslink());
 
     // Finality
-    this.justification_bits = Bytes.wrap(new byte[1]); // TODO change to bitvector with 4 bits
+    this.justification_bits = new Bitvector(JUSTIFICATION_BITS_LENGTH);
     this.previous_justified_checkpoint = new Checkpoint();
     this.current_justified_checkpoint = new Checkpoint();
     this.finalized_checkpoint = new Checkpoint();
@@ -288,7 +292,7 @@ public class BeaconState implements SimpleOffsetSerializable, SSZContainer {
                                 currentCrosslink ->
                                     SimpleOffsetSerializer.serialize(currentCrosslink))
                             .collect(Collectors.toList()))),
-            justification_bits,
+            justification_bits.serialize(),
             SimpleOffsetSerializer.serialize(previous_justified_checkpoint),
             SimpleOffsetSerializer.serialize(current_justified_checkpoint),
             SimpleOffsetSerializer.serialize(finalized_checkpoint)));
@@ -601,11 +605,11 @@ public class BeaconState implements SimpleOffsetSerializable, SSZContainer {
   }
 
   // Finality
-  public Bytes getJustification_bits() {
+  public Bitvector getJustification_bits() {
     return justification_bits;
   }
 
-  public void setJustification_bits(Bytes justification_bits) {
+  public void setJustification_bits(Bitvector justification_bits) {
     this.justification_bits = justification_bits;
   }
 
@@ -639,49 +643,80 @@ public class BeaconState implements SimpleOffsetSerializable, SSZContainer {
 
   public Bytes32 hash_tree_root() {
     return HashTreeUtil.merkleize(
-      Arrays.asList(
-        // Versioning
-        HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(genesis_time.longValue())),
-        HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(slot.longValue())),
-        fork.hash_tree_root(),
+        Arrays.asList(
+            // Versioning
+            HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(genesis_time.longValue())),
+            HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(slot.longValue())),
+            fork.hash_tree_root(),
 
-        // History
-        latest_block_header.hash_tree_root(),
-        HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_COMPOSITE, block_roots),
-        HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_COMPOSITE, state_roots),
-        HashTreeUtil.hash_tree_root_list_bytes(Constants.HISTORICAL_ROOTS_LIMIT, historical_roots),
+            // History
+            latest_block_header.hash_tree_root(),
+            HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_COMPOSITE, block_roots),
+            HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_COMPOSITE, state_roots),
+            HashTreeUtil.hash_tree_root_list_bytes(
+                Constants.HISTORICAL_ROOTS_LIMIT, historical_roots),
 
-        // Ethereum 1.0 chain data
-        eth1_data.hash_tree_root(),
-        HashTreeUtil.hash_tree_root(SSZTypes.LIST_OF_COMPOSITE, Constants.SLOTS_PER_ETH1_VOTING_PERIOD, eth1_data_votes),
-        HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(eth1_deposit_index.longValue())),
+            // Ethereum 1.0 chain data
+            eth1_data.hash_tree_root(),
+            HashTreeUtil.hash_tree_root(
+                SSZTypes.LIST_OF_COMPOSITE,
+                Constants.SLOTS_PER_ETH1_VOTING_PERIOD,
+                eth1_data_votes),
+            HashTreeUtil.hash_tree_root(
+                SSZTypes.BASIC, SSZ.encodeUInt64(eth1_deposit_index.longValue())),
 
-        // Validator registry
-        HashTreeUtil.hash_tree_root(SSZTypes.LIST_OF_COMPOSITE, Constants.VALIDATOR_REGISTRY_LIMIT, validators),
-        HashTreeUtil.hash_tree_root_list_ul(Constants.VALIDATOR_REGISTRY_LIMIT, balances.stream().map(item -> SSZ.encodeUInt64(item.longValue())).collect(Collectors.toList())),
+            // Validator registry
+            HashTreeUtil.hash_tree_root(
+                SSZTypes.LIST_OF_COMPOSITE, Constants.VALIDATOR_REGISTRY_LIMIT, validators),
+            HashTreeUtil.hash_tree_root_list_ul(
+                Constants.VALIDATOR_REGISTRY_LIMIT,
+                balances.stream()
+                    .map(item -> SSZ.encodeUInt64(item.longValue()))
+                    .collect(Collectors.toList())),
 
-        // Shuffling
-        HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(start_shard.longValue())),
-        HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_COMPOSITE, randao_mixes),
-        HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_COMPOSITE, active_index_roots),
-        HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_COMPOSITE, compact_committees_roots),
+            // Shuffling
+            HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(start_shard.longValue())),
+            HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_COMPOSITE, randao_mixes),
+            HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_COMPOSITE, active_index_roots),
+            HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_COMPOSITE, compact_committees_roots),
 
-        // Slashings
-        HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_BASIC, slashings.stream().map(item -> SSZ.encodeUInt64(item.longValue())).collect(Collectors.toList()).toArray(new Bytes[0])),
+            // Slashings
+            HashTreeUtil.hash_tree_root(
+                SSZTypes.VECTOR_OF_BASIC,
+                slashings.stream()
+                    .map(
+                        item ->
+                            HashTreeUtil.hash_tree_root(
+                                SSZTypes.BASIC, SSZ.encodeUInt64(eth1_deposit_index.longValue())))
+                    .collect(Collectors.toList())
+                    .toArray(new Bytes[0])),
 
-        // Attestations
-        HashTreeUtil.hash_tree_root(SSZTypes.LIST_OF_COMPOSITE, Constants.MAX_ATTESTATIONS * Constants.SLOTS_PER_EPOCH, previous_epoch_attestations),
-        HashTreeUtil.hash_tree_root(SSZTypes.LIST_OF_COMPOSITE, Constants.MAX_ATTESTATIONS * Constants.SLOTS_PER_EPOCH, current_epoch_attestations),
+            // Attestations
+            HashTreeUtil.hash_tree_root(
+                SSZTypes.LIST_OF_COMPOSITE,
+                Constants.MAX_ATTESTATIONS * Constants.SLOTS_PER_EPOCH,
+                previous_epoch_attestations),
+            HashTreeUtil.hash_tree_root(
+                SSZTypes.LIST_OF_COMPOSITE,
+                Constants.MAX_ATTESTATIONS * Constants.SLOTS_PER_EPOCH,
+                current_epoch_attestations),
 
-        // Crosslinks
-        HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_COMPOSITE, previous_crosslinks.stream().map(item -> item.hash_tree_root()).collect(Collectors.toList())),
-        HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_COMPOSITE, current_crosslinks.stream().map(item -> item.hash_tree_root()).collect(Collectors.toList())),
+            // Crosslinks
+            HashTreeUtil.hash_tree_root(
+                SSZTypes.VECTOR_OF_COMPOSITE,
+                previous_crosslinks.stream()
+                    .map(item -> item.hash_tree_root())
+                    .collect(Collectors.toList())),
+            HashTreeUtil.hash_tree_root(
+                SSZTypes.VECTOR_OF_COMPOSITE,
+                current_crosslinks.stream()
+                    .map(item -> item.hash_tree_root())
+                    .collect(Collectors.toList())),
 
-        // Finality
-        HashTreeUtil.hash_tree_root_bitvector(justification_bits, Constants.JUSTIFICATION_BITS_LENGTH),
-        previous_justified_checkpoint.hash_tree_root(),
-        current_justified_checkpoint.hash_tree_root(),
-        finalized_checkpoint.hash_tree_root()
-      ));
+            // Finality
+            HashTreeUtil.hash_tree_root_bitvector(justification_bits, JUSTIFICATION_BITS_LENGTH),
+            previous_justified_checkpoint.hash_tree_root(),
+            current_justified_checkpoint.hash_tree_root(),
+            finalized_checkpoint.hash_tree_root()));
   }
 }

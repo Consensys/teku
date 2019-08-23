@@ -16,10 +16,7 @@ package tech.pegasys.artemis.networking.p2p.hobbits;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import io.vertx.core.net.NetSocket;
-import java.util.Date;
 import java.util.concurrent.ConcurrentHashMap;
-import org.apache.logging.log4j.Level;
-import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.plumtree.MessageSender;
 import org.apache.tuweni.plumtree.State;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
@@ -83,15 +80,18 @@ public class PlumtreeSocketHandler extends AbstractSocketHandler {
 
   @Subscribe
   public void onNewUnprocessedAttestation(Attestation attestation) {
-    Bytes bytes = attestation.toBytes();
-    if (!this.receivedMessages.containsKey(bytes.toHexString())) {
-      this.receivedMessages.put(bytes.toHexString(), true);
-      STDOUT.log(
-          Level.DEBUG,
-          "Gossiping new attestation for block root: "
-              + attestation.getData().getBeacon_block_root().toHexString());
-      String attributes = "ATTESTATION" + "," + String.valueOf(new Date().getTime());
-      p2pState.sendGossipMessage(attributes, bytes);
-    }
+    // TODO fix serialization stuff
+    /*
+      Bytes bytes = attestation.toBytes();
+      if (!this.receivedMessages.containsKey(bytes.toHexString())) {
+        this.receivedMessages.put(bytes.toHexString(), true);
+        STDOUT.log(
+            Level.DEBUG,
+            "Gossiping new attestation for block root: "
+                + attestation.getData().getBeacon_block_root().toHexString());
+        String attributes = "ATTESTATION" + "," + String.valueOf(new Date().getTime());
+        p2pState.sendGossipMessage(attributes, bytes);
+      }
+    */
   }
 }

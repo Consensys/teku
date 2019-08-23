@@ -15,16 +15,23 @@ package tech.pegasys.artemis.datastructures.sostests;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.int_to_bytes;
+import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomBeaconState;
+import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomLong;
 
 import com.google.common.primitives.UnsignedLong;
+
+import java.util.ArrayList;
+import java.util.List;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.Constants;
+import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockBody;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
+import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
 import tech.pegasys.artemis.datastructures.operations.AttestationDataAndCustodyBit;
 import tech.pegasys.artemis.datastructures.operations.AttesterSlashing;
@@ -34,6 +41,7 @@ import tech.pegasys.artemis.datastructures.operations.IndexedAttestation;
 import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
 import tech.pegasys.artemis.datastructures.operations.Transfer;
 import tech.pegasys.artemis.datastructures.operations.VoluntaryExit;
+import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.datastructures.state.CompactCommittee;
 import tech.pegasys.artemis.datastructures.state.Crosslink;
@@ -48,9 +56,12 @@ import tech.pegasys.artemis.util.bls.BLSPublicKey;
 
 public class DeserializationTest {
   @Test
-  void isBeaconBlockBodyVariableTest() {
-    // assertEquals(true,
-    // SimpleOffsetSerializer.classReflectionInfo.get(BeaconBlockBody.class).isVariable());
+  void BeaconBlockBodyTest() {
+    BeaconBlockBody beaconBlockBody = DataStructureUtil.randomBeaconBlockBody();
+    BeaconBlockBody newBeaconBlockBody =
+            SimpleOffsetSerializer.deserialize(
+                    SimpleOffsetSerializer.serialize(beaconBlockBody), BeaconBlockBody.class);
+    assertEquals(beaconBlockBody, newBeaconBlockBody);
   }
 
   @Test
@@ -63,12 +74,12 @@ public class DeserializationTest {
   }
 
   @Test
-  void isBeaconBlockVariableTest() {
-    BeaconBlockBody beaconBlockBody = DataStructureUtil.randomBeaconBlockBody();
-    BeaconBlockBody newBeaconBlockBody =
-        SimpleOffsetSerializer.deserialize(
-            SimpleOffsetSerializer.serialize(beaconBlockBody), BeaconBlockBody.class);
-    assertEquals(beaconBlockBody, newBeaconBlockBody);
+  void BeaconBlockTest() {
+      BeaconBlock beaconBlock = DataStructureUtil.randomBeaconBlock(100);
+      Bytes serialized = SimpleOffsetSerializer.serialize(beaconBlock);
+      BeaconBlock newBeaconBlock =
+              SimpleOffsetSerializer.deserialize(serialized, BeaconBlock.class);
+    assertEquals(beaconBlock, newBeaconBlock);
   }
 
   @Test
@@ -102,13 +113,10 @@ public class DeserializationTest {
 
   @Test
   void AttestationTest() {
-    /* THIS CLASS IS VARIABLE
-    Attestation checkpoint = DataStructureUtil.randomAttestation(UnsignedLong.ONE);
-    assertEquals(checkpoint, SimpleOffsetSerializer
-            .deserialize(
-                    SimpleOffsetSerializer.serialize(checkpoint),
-                    Attestation.class));
-                    */
+    Attestation attestation = DataStructureUtil.randomAttestation(randomLong());
+    Attestation newAttestation = SimpleOffsetSerializer.deserialize(
+            SimpleOffsetSerializer.serialize(attestation), Attestation.class);
+    assertEquals(attestation, newAttestation);
   }
 
   @Test
@@ -176,9 +184,12 @@ public class DeserializationTest {
   }
 
   @Test
-  void isBeaconStateVariableTest() {
-    // assertEquals(true,
-    // SimpleOffsetSerializer.classReflectionInfo.get(BeaconState.class).isVariable());
+  void BeaconStateTest() {
+    BeaconState beaconState = randomBeaconState();
+    BeaconState state =
+            SimpleOffsetSerializer.deserialize(
+                    SimpleOffsetSerializer.serialize(beaconState), BeaconState.class);
+    assertEquals(beaconState, state);
   }
 
   @Test

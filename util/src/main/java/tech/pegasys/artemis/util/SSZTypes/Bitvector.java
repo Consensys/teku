@@ -13,8 +13,83 @@
 
 package tech.pegasys.artemis.util.SSZTypes;
 
+import static java.util.Objects.isNull;
+
+import java.util.Arrays;
+import java.util.stream.IntStream;
+import org.apache.tuweni.bytes.Bytes;
+
 public class Bitvector {
 
-  private byte[] bitvector;
-  private int n;
+  private int size;
+  private byte[] byteArray;
+
+  public Bitvector(int size) {
+    this.byteArray = new byte[size];
+    this.size = size;
+  }
+
+  public Bitvector(byte[] byteArray, int size) {
+    this.byteArray = byteArray;
+    this.size = size;
+  }
+
+  public void setBit(int i) {
+    this.byteArray[i] = 1;
+  }
+
+  public int getBit(int i) {
+    return byteArray[i];
+  }
+
+  public int getSize() {
+    return size;
+  }
+
+  public byte[] getByteArray() {
+    return byteArray;
+  }
+
+  @SuppressWarnings("NarrowingCompoundAssignment")
+  public Bytes serialize() {
+    byte[] array = new byte[(size + 7) / 8];
+    IntStream.range(0, size).forEach(i -> array[i / 8] |= (((int) this.byteArray[i]) << (i % 8)));
+    return Bytes.wrap(array);
+  }
+
+  public static Bitvector fromBytes(Bytes bytes, int size) {
+    byte[] byteArray = new byte[size];
+
+    for (int i = size - 1; i >= 0; i--) {
+      if (((bytes.get(i / 8) >>> (i % 8)) & 0x01) == 1) {
+        byteArray[i] = 1;
+      }
+    }
+
+    return new Bitvector(byteArray, size);
+  }
+
+  public Bitvector copy() {
+    return new Bitvector(this.getByteArray(), this.getSize());
+  }
+
+  @Override
+  public int hashCode() {
+    return Arrays.hashCode(byteArray);
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (isNull(obj)) {
+      return false;
+    }
+    if (this == obj) {
+      return true;
+    }
+    if (!(obj instanceof Bitvector)) {
+      return false;
+    }
+    Bitvector other = (Bitvector) obj;
+    return Arrays.equals(this.getByteArray(), other.getByteArray());
+  }
 }

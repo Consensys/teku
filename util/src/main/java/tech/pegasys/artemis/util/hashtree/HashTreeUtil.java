@@ -27,6 +27,8 @@ import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.Hash;
+
+import tech.pegasys.artemis.util.SSZTypes.Bitvector;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 
 /** This class is a collection of tree hash root convenience methods */
@@ -288,8 +290,8 @@ public final class HashTreeUtil {
    *     href="https://github.com/ethereum/eth2.0-specs/blob/v0.5.1/specs/simple-serialize.md">SSZ
    *     Spec v0.5.1</a>
    */
-  public static Bytes32 hash_tree_root_bitvector(Bytes bytes, int size) {
-    return merkleize(pack(bytes), chunk_count(SSZTypes.BITVECTOR, size, bytes));
+  public static Bytes32 hash_tree_root_bitvector(Bitvector bytes, int size) {
+    return merkleize(pack(Bytes.wrap(bytes.getByteArray())), chunk_count(SSZTypes.BITVECTOR, size, Bytes.wrap(bytes.getByteArray())));
   }
 
   /**
@@ -319,13 +321,10 @@ public final class HashTreeUtil {
    *     href="https://github.com/ethereum/eth2.0-specs/blob/v0.5.1/specs/simple-serialize.md">SSZ
    *     Spec v0.5.1</a>
    */
-  private static Bytes32 hash_tree_root_list_bytes(
-      List<Bytes32> bytes, long maxSize, int length) {
+  private static Bytes32 hash_tree_root_list_bytes(List<Bytes32> bytes, long maxSize, int length) {
     return mix_in_length(
         merkleize(
-          bytes,
-            chunk_count(
-                SSZTypes.LIST_OF_COMPOSITE, maxSize, bytes.toArray(new Bytes32[0]))),
+            bytes, chunk_count(SSZTypes.LIST_OF_COMPOSITE, maxSize, bytes.toArray(new Bytes32[0]))),
         length);
   }
 

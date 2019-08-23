@@ -62,6 +62,8 @@ import tech.pegasys.artemis.datastructures.state.HistoricalBatch;
 import tech.pegasys.artemis.datastructures.state.PendingAttestation;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
+import tech.pegasys.artemis.util.SSZTypes.Bitlist;
+import tech.pegasys.artemis.util.SSZTypes.Bitvector;
 import tech.pegasys.artemis.util.SSZTypes.Bytes4;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.SSZTypes.SSZVector;
@@ -604,12 +606,14 @@ class SSZStaticTestSuite {
     // TODO Commented code below will be enabled once we shift from using Bytes to a real Bitlist
     // type. As currently implemented, we need to keep the leading 1 bit in memory to determine
     // length.
-    Bytes serializedAggregationBits = Bytes.fromHexString((String) value.get("aggregation_bits"));
+    Bitlist serializedAggregationBits =
+        Bitlist.fromBytes(Bytes.fromHexString((String) value.get("aggregation_bits")));
     // Bytes aggregationBitsMask = Bytes.minimalBytes((int) Math.pow(2.0,
     // serializedAggregationBits.bitLength() - 1) - 1);
     // Bytes aggregationBits = serializedAggregationBits.and(aggregationBitsMask);
     AttestationData data = parseAttestationData((LinkedHashMap<String, Object>) value.get("data"));
-    Bytes serializedCustodyBits = Bytes.fromHexString((String) value.get("custody_bits"));
+    Bitlist serializedCustodyBits =
+        Bitlist.fromBytes(Bytes.fromHexString((String) value.get("custody_bits")));
     // Bytes custodyBitsMask = Bytes.minimalBytes((int) Math.pow(2.0,
     // serializedCustodyBits.bitLength() - 1) - 1);
     // Bytes custodyBits = serializedAggregationBits.and(custodyBitsMask);
@@ -686,7 +690,8 @@ class SSZStaticTestSuite {
     // TODO Commented code below will be enabled once we shift from using Bytes to a real Bitlist
     // type. As currently implemented, we need to keep the leading 1 bit in memory to determine
     // length.
-    Bytes serializedAggregationBits = Bytes.fromHexString((String) value.get("aggregation_bits"));
+    Bitlist serializedAggregationBits =
+        Bitlist.fromBytes(Bytes.fromHexString((String) value.get("aggregation_bits")));
     // Bytes aggregationBitsMask = Bytes.minimalBytes((int) Math.pow(2.0,
     // serializedAggregationBits.bitLength() - 1) - 1);
     // Bytes aggregationBits = serializedAggregationBits.and(aggregationBitsMask);
@@ -895,8 +900,10 @@ class SSZStaticTestSuite {
                 .stream().map(map -> parseCrosslink(map)).collect(Collectors.toList()),
             Crosslink.class);
 
-    Bytes serializedJustificationBits =
-        Bytes.fromHexString((String) value.get("justification_bits"));
+    Bitvector serializedJustificationBits =
+        Bitvector.fromBytes(
+            Bytes.fromHexString((String) value.get("justification_bits")),
+            Constants.JUSTIFICATION_BITS_LENGTH);
     Checkpoint previousJustifiedCheckpoint =
         parseCheckpoint((LinkedHashMap<String, Object>) value.get("previous_justified_checkpoint"));
     Checkpoint currentJustifiedCheckpoint =

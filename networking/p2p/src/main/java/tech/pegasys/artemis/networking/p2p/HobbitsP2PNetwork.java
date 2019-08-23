@@ -40,7 +40,6 @@ import org.apache.tuweni.crypto.Hash;
 import org.apache.tuweni.plumtree.EphemeralPeerRepository;
 import org.apache.tuweni.plumtree.MessageSender;
 import org.apache.tuweni.plumtree.State;
-import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.networking.p2p.api.P2PNetwork;
 import tech.pegasys.artemis.networking.p2p.hobbits.AbstractSocketHandler;
 import tech.pegasys.artemis.networking.p2p.hobbits.Peer;
@@ -160,10 +159,11 @@ public final class HobbitsP2PNetwork implements P2PNetwork {
   private void processGossip(Bytes gossipMessage, String attr) {
     String[] attributes = attr.split(",");
     if (attributes[0].equalsIgnoreCase("ATTESTATION")) {
-      Attestation attestation = Attestation.fromBytes(gossipMessage);
-      this.eventBus.post(attestation);
+      // todo deserialization
+      // Attestation attestation = Attestation.fromBytes(gossipMessage);
+      // this.eventBus.post(attestation);
     } else if (attributes[0].equalsIgnoreCase("BLOCK")) {
-      // todo
+      // todo deserialization
       //      BeaconBlock block = BeaconBlock.fromBytes(gossipMessage);
       //     this.eventBus.post(block);
     }
