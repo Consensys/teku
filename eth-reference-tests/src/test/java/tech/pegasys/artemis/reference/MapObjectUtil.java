@@ -362,7 +362,7 @@ public class MapObjectUtil {
   @SuppressWarnings({"rawtypes"})
   private static PendingAttestation getPendingAttestation(Map map) {
     Bitlist aggregation_bits =
-        Bitlist.fromBytes(Bytes.fromHexString(map.get("aggregation_bits").toString()));
+        Bitlist.fromBytes(Bytes.fromHexString(map.get("aggregation_bits").toString()), Constants.MAX_VALIDATORS_PER_COMMITTEE);
     AttestationData data = getAttestationData((Map) map.get("data"));
     UnsignedLong inclusion_delay = UnsignedLong.valueOf(map.get("inclusion_delay").toString());
     UnsignedLong proposer_index = UnsignedLong.valueOf(map.get("proposer_index").toString());
@@ -596,9 +596,9 @@ public class MapObjectUtil {
   @SuppressWarnings({"rawtypes"})
   private static Attestation getAttestation(Map map) {
     return new Attestation(
-        Bitlist.fromBytes(Bytes.fromHexString(map.get("aggregation_bits").toString())),
+        Bitlist.fromBytes(Bytes.fromHexString(map.get("aggregation_bits").toString()), Constants.MAX_VALIDATORS_PER_COMMITTEE),
         getAttestationData((Map) map.get("data")),
-        Bitlist.fromBytes(Bytes.fromHexString(map.get("custody_bits").toString())),
+        Bitlist.fromBytes(Bytes.fromHexString(map.get("custody_bits").toString()), Constants.MAX_VALIDATORS_PER_COMMITTEE),
         BLSSignature.fromBytes(Bytes.fromHexString(map.get("signature").toString())));
   }
 

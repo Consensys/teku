@@ -22,6 +22,7 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
 import tech.pegasys.artemis.datastructures.Constants;
+import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.util.SSZTypes.Bitlist;
 import tech.pegasys.artemis.util.SSZTypes.SSZContainer;
 import tech.pegasys.artemis.util.bls.BLSSignature;
@@ -161,11 +162,9 @@ public class Attestation implements Merkleizable, SimpleOffsetSerializable, SSZC
   public Bytes32 hash_tree_root() {
     return HashTreeUtil.merkleize(
         Arrays.asList(
-            // HashTreeUtil.hash_tree_root(
-            //   SSZTypes.BITLIST, Constants.MAX_VALIDATORS_PER_COMMITTEE, aggregation_bits),
+                HashTreeUtil.hash_tree_root_bitlist(aggregation_bits),
             data.hash_tree_root(),
-            // HashTreeUtil.hash_tree_root(
-            // SSZTypes.BITLIST, Constants.MAX_VALIDATORS_PER_COMMITTEE, custody_bitfield),
-            HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_BASIC, signature.toBytes())));
+                HashTreeUtil.hash_tree_root_bitlist(custody_bitfield),
+            HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_BASIC, SimpleOffsetSerializer.serialize(signature))));
   }
 }

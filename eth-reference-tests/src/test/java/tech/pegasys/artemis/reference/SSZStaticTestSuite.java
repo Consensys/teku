@@ -607,13 +607,13 @@ class SSZStaticTestSuite {
     // type. As currently implemented, we need to keep the leading 1 bit in memory to determine
     // length.
     Bitlist serializedAggregationBits =
-        Bitlist.fromBytes(Bytes.fromHexString((String) value.get("aggregation_bits")));
+        Bitlist.fromBytes(Bytes.fromHexString((String) value.get("aggregation_bits")), Constants.MAX_VALIDATORS_PER_COMMITTEE);
     // Bytes aggregationBitsMask = Bytes.minimalBytes((int) Math.pow(2.0,
     // serializedAggregationBits.bitLength() - 1) - 1);
     // Bytes aggregationBits = serializedAggregationBits.and(aggregationBitsMask);
     AttestationData data = parseAttestationData((LinkedHashMap<String, Object>) value.get("data"));
     Bitlist serializedCustodyBits =
-        Bitlist.fromBytes(Bytes.fromHexString((String) value.get("custody_bits")));
+        Bitlist.fromBytes(Bytes.fromHexString((String) value.get("custody_bits")), Constants.MAX_VALIDATORS_PER_COMMITTEE);
     // Bytes custodyBitsMask = Bytes.minimalBytes((int) Math.pow(2.0,
     // serializedCustodyBits.bitLength() - 1) - 1);
     // Bytes custodyBits = serializedAggregationBits.and(custodyBitsMask);
@@ -691,7 +691,7 @@ class SSZStaticTestSuite {
     // type. As currently implemented, we need to keep the leading 1 bit in memory to determine
     // length.
     Bitlist serializedAggregationBits =
-        Bitlist.fromBytes(Bytes.fromHexString((String) value.get("aggregation_bits")));
+        Bitlist.fromBytes(Bytes.fromHexString((String) value.get("aggregation_bits")), Constants.MAX_VALIDATORS_PER_COMMITTEE);
     // Bytes aggregationBitsMask = Bytes.minimalBytes((int) Math.pow(2.0,
     // serializedAggregationBits.bitLength() - 1) - 1);
     // Bytes aggregationBits = serializedAggregationBits.and(aggregationBitsMask);

@@ -28,6 +28,7 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.Hash;
 
+import tech.pegasys.artemis.util.SSZTypes.Bitlist;
 import tech.pegasys.artemis.util.SSZTypes.Bitvector;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 
@@ -101,6 +102,7 @@ public final class HashTreeUtil {
     return Bytes32.ZERO;
   }
 
+  /*
   public static Bytes32 hash_tree_root(SSZTypes sszType, long maxSize, Bytes... bytes) {
     switch (sszType) {
       case BITLIST:
@@ -111,6 +113,7 @@ public final class HashTreeUtil {
             "The maxSize parameter is only applicable for SSZ Lists.");
     }
   }
+  */
 
   @SuppressWarnings({"rawtypes", "unchecked"})
   public static Bytes32 hash_tree_root(SSZTypes sszType, List bytes) {
@@ -270,15 +273,12 @@ public final class HashTreeUtil {
    *     href="https://github.com/ethereum/eth2.0-specs/blob/v0.5.1/specs/simple-serialize.md">SSZ
    *     Spec v0.5.1</a>
    */
-  private static Bytes32 hash_tree_root_bitlist(Bytes bytes, long maxSize) {
+  public static Bytes32 hash_tree_root_bitlist(Bitlist bitlist) {
     // TODO The following lines are a hack and can be fixed once we shift from Bytes to a real
     // bitlist type.
     return mix_in_length(
-        merkleize(bitfield_bytes(bytes), chunk_count(SSZTypes.BITLIST, maxSize, bytes)),
-        bytes.reverse().bitLength() - 1);
-    // return mix_in_length(
-    //     merkleize(bitfield_bytes(bytes), chunk_count(SSZTypes.BITLIST, bytes)),
-    // bytes.bitLength());
+        merkleize(bitfield_bytes(bitlist.serialize()), chunk_count(SSZTypes.BITLIST, bitlist.getMaxSize())),
+        bitlist.getByteArray().length);
   }
 
   /**

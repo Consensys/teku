@@ -167,6 +167,7 @@ public class PendingAttestation
         Arrays.asList(
             // HashTreeUtil.hash_tree_root(
             //   SSZTypes.BITLIST, Constants.MAX_VALIDATORS_PER_COMMITTEE, aggregation_bits),
+            HashTreeUtil.hash_tree_root_bitlist(aggregation_bits),
             data.hash_tree_root(),
             HashTreeUtil.hash_tree_root(
                 SSZTypes.BASIC, SSZ.encodeUInt64(inclusion_delay.longValue())),
