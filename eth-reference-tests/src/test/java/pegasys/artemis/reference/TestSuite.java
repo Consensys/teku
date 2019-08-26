@@ -38,6 +38,7 @@ import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.*;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
+import tech.pegasys.artemis.util.mikuli.PublicKey;
 
 public abstract class TestSuite {
   private static final Path pathToTests =
@@ -49,6 +50,10 @@ public abstract class TestSuite {
           "eth2.0-spec-tests",
           "tests");
   private static final String FILE = "file://";
+
+//  public static Stream<Arguments> findTests(String glob) throws IOException {
+//      return Resources.find(glob).map(url -> { return Arguments.of(url); });
+//  }
 
   @Deprecated
   @MustBeClosed
@@ -64,6 +69,10 @@ public abstract class TestSuite {
                 throw new UncheckedIOException(e);
               }
             });
+  }
+
+  public static Path getTestPath (Path path) {
+      return Path.of(pathToTests.toString(), path.toString());
   }
 
   public static void loadConfigFromPath(Path path) throws Exception {
@@ -239,6 +248,7 @@ public abstract class TestSuite {
   }
 
   public static class ReadLineType { }
+
 
     @SuppressWarnings({"unchecked", "rawtypes"})
     @MustBeClosed
