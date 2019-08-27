@@ -20,6 +20,7 @@ import tech.pegasys.artemis.util.SSZTypes.Bitlist;
 
 class BitlistTest {
   private static int bitlistMaxSize = 4000;
+
   private static Bitlist createBitlist() {
     Bitlist bitlist = new Bitlist(18, bitlistMaxSize);
     bitlist.setBit(1);

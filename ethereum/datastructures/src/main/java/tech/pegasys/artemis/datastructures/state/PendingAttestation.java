@@ -55,8 +55,8 @@ public class PendingAttestation
   }
 
   public PendingAttestation() {
-    this.aggregation_bits = new Bitlist(
-            Constants.MAX_VALIDATORS_PER_COMMITTEE, Constants.MAX_VALIDATORS_PER_COMMITTEE);
+    this.aggregation_bits =
+        new Bitlist(Constants.MAX_VALIDATORS_PER_COMMITTEE, Constants.MAX_VALIDATORS_PER_COMMITTEE);
   }
 
   public PendingAttestation(PendingAttestation pendingAttestation) {

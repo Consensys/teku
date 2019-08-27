@@ -23,15 +23,12 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
-import java.util.function.Function;
 import java.util.stream.Collectors;
-
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
 import org.apache.tuweni.ssz.SSZReader;
-import org.bouncycastle.util.encoders.DecoderException;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockBody;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
@@ -179,47 +176,49 @@ public class SimpleOffsetSerializer {
   @SuppressWarnings("TypeParameterUnusedInFormals")
   public static <T> T deserialize(Bytes bytes, Class classInfo) {
     MutableInt bytePointer = new MutableInt(0);
-    return SSZ.decode(bytes, reader -> deserializeContainerErrorWrapper(classInfo, reader, bytePointer, bytes.size()));
+    return SSZ.decode(
+        bytes,
+        reader -> deserializeContainerErrorWrapper(classInfo, reader, bytePointer, bytes.size()));
   }
 
   @SuppressWarnings("TypeParameterUnusedInFormals")
-  private static <T> T deserializeContainerErrorWrapper(Class classInfo, SSZReader reader, MutableInt bytePointer, int bytesEndByte) {
+  private static <T> T deserializeContainerErrorWrapper(
+      Class classInfo, SSZReader reader, MutableInt bytePointer, int bytesEndByte) {
     try {
       return deserializeContainer(classInfo, reader, bytePointer, bytesEndByte);
     } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
-      System.out.println("Deserialization error with class: "
-              + classInfo.getSimpleName() + "\n Error: " + e.toString());
+      System.out.println(
+          "Deserialization error with class: "
+              + classInfo.getSimpleName()
+              + "\n Error: "
+              + e.toString());
     }
     return null;
   }
 
   @SuppressWarnings("TypeParameterUnusedInFormals")
   private static <T> T deserializeContainer(
-          Class classInfo, SSZReader reader, MutableInt bytesPointer, int bytesEndByte)
-          throws InstantiationException, IllegalAccessException, InvocationTargetException {
+      Class classInfo, SSZReader reader, MutableInt bytesPointer, int bytesEndByte)
+      throws InstantiationException, IllegalAccessException, InvocationTargetException {
     int currentObjectStartByte = bytesPointer.intValue();
     ReflectionInformation reflectionInformation = classReflectionInfo.get(classInfo);
     List<Integer> offsets = new ArrayList<>();
     List<Integer> variableFieldIndices = new ArrayList<>();
 
-    Object[] params = deserializeFixedParts(
-            reflectionInformation,
-            reader,
-            bytesPointer,
-            offsets,
-            variableFieldIndices
-    );
+    Object[] params =
+        deserializeFixedParts(
+            reflectionInformation, reader, bytesPointer, offsets, variableFieldIndices);
 
     if (isVariable(classInfo)) {
       deserializeVariableParts(
-              reflectionInformation,
-              reader,
-              bytesPointer,
-              variableFieldIndices,
-              offsets,
-              currentObjectStartByte,
-              params,
-              bytesEndByte);
+          reflectionInformation,
+          reader,
+          bytesPointer,
+          variableFieldIndices,
+          offsets,
+          currentObjectStartByte,
+          params,
+          bytesEndByte);
     }
 
     for (int i = 0; i < params.length; i++) {
@@ -233,19 +232,19 @@ public class SimpleOffsetSerializer {
 
   @SuppressWarnings("TypeParameterUnusedInFormals")
   private static <T> T deserializeFixedContainer(
-          Class classInfo, SSZReader reader, MutableInt bytePointer)
-          throws InstantiationException, InvocationTargetException, IllegalAccessException {
+      Class classInfo, SSZReader reader, MutableInt bytePointer)
+      throws InstantiationException, InvocationTargetException, IllegalAccessException {
     // bytesEndByte is only necessary for variable size containers
     return deserializeContainer(classInfo, reader, bytePointer, 0);
   }
 
   private static Object[] deserializeFixedParts(
-          ReflectionInformation reflectionInformation,
-          SSZReader reader,
-          MutableInt bytesPointer,
-          List<Integer> offsets,
-          List<Integer> variableFieldIndices
-  ) throws InstantiationException, InvocationTargetException, IllegalAccessException {
+      ReflectionInformation reflectionInformation,
+      SSZReader reader,
+      MutableInt bytesPointer,
+      List<Integer> offsets,
+      List<Integer> variableFieldIndices)
+      throws InstantiationException, InvocationTargetException, IllegalAccessException {
 
     int numParams = reflectionInformation.getParameterCount();
     Field[] fields = reflectionInformation.getFields();
@@ -265,14 +264,15 @@ public class SimpleOffsetSerializer {
         fieldObject = deserializeFixedContainer(fieldClass, reader, bytesPointer);
       } else if (isVector(fieldClass)) {
         fieldObject =
-                deserializeFixedElementVector(
-                        reflectionInformation.getVectorElementTypes().get(vectorCounter),
-                        reflectionInformation.getVectorLengths().get(vectorCounter),
-                        reader,
-                        bytesPointer);
+            deserializeFixedElementVector(
+                reflectionInformation.getVectorElementTypes().get(vectorCounter),
+                reflectionInformation.getVectorLengths().get(vectorCounter),
+                reader,
+                bytesPointer);
         vectorCounter++;
       } else if (isBitvector(fieldClass)) {
-        fieldObject = deserializeBitvector(
+        fieldObject =
+            deserializeBitvector(
                 reflectionInformation.getBitvectorSizes().get(bitvectorCounter),
                 reader,
                 bytesPointer);
@@ -284,91 +284,86 @@ public class SimpleOffsetSerializer {
   }
 
   private static void deserializeVariableParts(
-          ReflectionInformation reflectionInformation,
-          SSZReader reader,
-          MutableInt bytesPointer,
-          List<Integer> variableFieldIndices,
-          List<Integer> offsets,
-          int currentObjectStartByte,
-          Object[] params,
-          int bytesEndByte)
-          throws InstantiationException, InvocationTargetException, IllegalAccessException {
+      ReflectionInformation reflectionInformation,
+      SSZReader reader,
+      MutableInt bytesPointer,
+      List<Integer> variableFieldIndices,
+      List<Integer> offsets,
+      int currentObjectStartByte,
+      Object[] params,
+      int bytesEndByte)
+      throws InstantiationException, InvocationTargetException, IllegalAccessException {
 
     int variableObjectCounter = 0;
     for (Integer variableFieldIndex : variableFieldIndices) {
       Class fieldClass = reflectionInformation.getFields()[variableFieldIndex].getType();
 
       int currentObjectEndByte =
-              (variableObjectCounter + 1) == variableFieldIndices.size()
-                      ? bytesEndByte
-                      : currentObjectStartByte + offsets.get(variableObjectCounter + 1);
+          (variableObjectCounter + 1) == variableFieldIndices.size()
+              ? bytesEndByte
+              : currentObjectStartByte + offsets.get(variableObjectCounter + 1);
       Object fieldObject = null;
       if (fieldClass == SSZList.class) {
         Class listElementType =
-                reflectionInformation.getListElementTypes().get(variableObjectCounter);
+            reflectionInformation.getListElementTypes().get(variableObjectCounter);
         Long listElementMaxSize =
-                reflectionInformation.getListElementMaxSizes().get(variableObjectCounter);
+            reflectionInformation.getListElementMaxSizes().get(variableObjectCounter);
         SSZList newSSZList = new SSZList(listElementType, listElementMaxSize);
         if (!isVariable(listElementType)) {
           // If SSZList element is fixed size
           deserializeFixedElementList(
-                  reader,
-                  bytesPointer,
-                  listElementType,
-                  currentObjectEndByte,
-                  newSSZList
-          );
+              reader, bytesPointer, listElementType, currentObjectEndByte, newSSZList);
 
         } else {
           // If SSZList element is variable size
           deserializeVariableElementList(
-                  reader,
-                  bytesPointer,
-                  listElementType,
-                  currentObjectEndByte,
-                  newSSZList
-          );
+              reader, bytesPointer, listElementType, currentObjectEndByte, newSSZList);
         }
         fieldObject = newSSZList;
       } else if (fieldClass == Bitlist.class) {
-        fieldObject = deserializeBitlist(
-                reflectionInformation, reader, bytesPointer, variableObjectCounter, currentObjectEndByte);
+        fieldObject =
+            deserializeBitlist(
+                reflectionInformation,
+                reader,
+                bytesPointer,
+                variableObjectCounter,
+                currentObjectEndByte);
 
       } else if (isContainer(fieldClass)) {
-        fieldObject =
-                deserializeContainer(fieldClass, reader, bytesPointer, currentObjectEndByte);
+        fieldObject = deserializeContainer(fieldClass, reader, bytesPointer, currentObjectEndByte);
       }
       variableObjectCounter++;
       params[variableFieldIndex] = fieldObject;
     }
   }
 
-  private static Bitvector deserializeBitvector(int bitvectorSize, SSZReader reader, MutableInt bytesPointer) {
+  private static Bitvector deserializeBitvector(
+      int bitvectorSize, SSZReader reader, MutableInt bytesPointer) {
     int bitvectorByteSize = (bitvectorSize + 7) / 8;
     bytesPointer.add(bitvectorByteSize);
     return Bitvector.fromBytes(reader.readFixedBytes(bitvectorByteSize), bitvectorSize);
   }
 
   private static Bitlist deserializeBitlist(
-          ReflectionInformation reflectionInformation,
-          SSZReader reader,
-          MutableInt bytesPointer,
-          int variableObjectCounter,
-          int currentObjectEndByte) {
+      ReflectionInformation reflectionInformation,
+      SSZReader reader,
+      MutableInt bytesPointer,
+      int variableObjectCounter,
+      int currentObjectEndByte) {
     Long bitlistElementMaxSize =
-            reflectionInformation.getBitlistElementMaxSizes().get(variableObjectCounter);
+        reflectionInformation.getBitlistElementMaxSizes().get(variableObjectCounter);
     int numBytesToRead = currentObjectEndByte - bytesPointer.intValue();
     bytesPointer.add(numBytesToRead);
     return Bitlist.fromBytes(reader.readFixedBytes(numBytesToRead), bitlistElementMaxSize);
   }
 
   private static void deserializeVariableElementList(
-          SSZReader reader,
-          MutableInt bytesPointer,
-          Class listElementType,
-          int bytesEndByte,
-          SSZList newSSZList)
-          throws InstantiationException, InvocationTargetException, IllegalAccessException  {
+      SSZReader reader,
+      MutableInt bytesPointer,
+      Class listElementType,
+      int bytesEndByte,
+      SSZList newSSZList)
+      throws InstantiationException, InvocationTargetException, IllegalAccessException {
 
     int currentObjectStartByte = bytesPointer.intValue();
 
@@ -389,22 +384,19 @@ public class SimpleOffsetSerializer {
       // Get the end byte of current variable size container either using offset
       // or the end of the outer object you're in
       int currentObjectEndByte =
-              (i + 1) == offsets.size()
-                      ? bytesEndByte
-                      : currentObjectStartByte + offsets.get(i + 1);
-      newSSZList.add(deserializeContainer(
-              listElementType, reader, bytesPointer, currentObjectEndByte));
+          (i + 1) == offsets.size() ? bytesEndByte : currentObjectStartByte + offsets.get(i + 1);
+      newSSZList.add(
+          deserializeContainer(listElementType, reader, bytesPointer, currentObjectEndByte));
     }
   }
 
-
   private static void deserializeFixedElementList(
-          SSZReader reader,
-          MutableInt bytesPointer,
-          Class listElementType,
-          int currentObjectEndByte,
-          SSZList newSSZList)
-          throws InstantiationException, InvocationTargetException, IllegalAccessException {
+      SSZReader reader,
+      MutableInt bytesPointer,
+      Class listElementType,
+      int currentObjectEndByte,
+      SSZList newSSZList)
+      throws InstantiationException, InvocationTargetException, IllegalAccessException {
     while (bytesPointer.intValue() < currentObjectEndByte) {
       if (isContainer(listElementType)) {
         newSSZList.add(deserializeFixedContainer(listElementType, reader, bytesPointer));
@@ -415,8 +407,8 @@ public class SimpleOffsetSerializer {
   }
 
   private static SSZVector deserializeFixedElementVector(
-          Class classInfo, int numElements, SSZReader reader, MutableInt bytePointer)
-          throws InstantiationException, InvocationTargetException, IllegalAccessException {
+      Class classInfo, int numElements, SSZReader reader, MutableInt bytePointer)
+      throws InstantiationException, InvocationTargetException, IllegalAccessException {
     List newList = new ArrayList<>();
     for (int i = 0; i < numElements; i++) {
       if (isPrimitive(classInfo)) {
@@ -472,7 +464,9 @@ public class SimpleOffsetSerializer {
   }
 
   private static boolean isPrimitive(Class classInfo) {
-    return !(SSZContainer.class.isAssignableFrom(classInfo) || classInfo == SSZVector.class || classInfo == Bitvector.class);
+    return !(SSZContainer.class.isAssignableFrom(classInfo)
+        || classInfo == SSZVector.class
+        || classInfo == Bitvector.class);
   }
 
   private static boolean isVector(Class classInfo) {

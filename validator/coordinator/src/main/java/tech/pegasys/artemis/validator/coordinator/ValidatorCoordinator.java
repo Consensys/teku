@@ -300,7 +300,8 @@ public class ValidatorCoordinator {
       CrosslinkCommittee committee,
       AttestationData genericAttestationData) {
     int commmitteSize = committee.getCommitteeSize();
-    Bitlist aggregationBitfield = AttestationUtil.getAggregationBits(commmitteSize, indexIntoCommittee);
+    Bitlist aggregationBitfield =
+        AttestationUtil.getAggregationBits(commmitteSize, indexIntoCommittee);
     Bitlist custodyBits = new Bitlist(commmitteSize, MAX_VALIDATORS_PER_COMMITTEE);
     AttestationData attestationData =
         AttestationUtil.completeAttestationCrosslinkData(

@@ -31,19 +31,16 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import org.apache.logging.log4j.Level;
-import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.json.simple.parser.ParseException;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
-import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.DepositWithIndex;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.datastructures.util.DepositUtil;
-import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.service.serviceutils.ServiceConfig;
 import tech.pegasys.artemis.statetransition.util.EpochProcessingException;
 import tech.pegasys.artemis.statetransition.util.SlotProcessingException;
@@ -151,7 +148,8 @@ public class StateProcessor {
     }
   }
 
-  public static boolean isGenesisReasonable(UnsignedLong eth1_timestamp, List<DepositWithIndex> deposits) {
+  public static boolean isGenesisReasonable(
+      UnsignedLong eth1_timestamp, List<DepositWithIndex> deposits) {
     return (eth1_timestamp.compareTo(MIN_GENESIS_TIME) >= 0
         && deposits.size() >= MIN_GENESIS_ACTIVE_VALIDATOR_COUNT);
   }

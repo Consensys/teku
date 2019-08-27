@@ -13,7 +13,6 @@
 
 package tech.pegasys.artemis.datastructures.operations;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;

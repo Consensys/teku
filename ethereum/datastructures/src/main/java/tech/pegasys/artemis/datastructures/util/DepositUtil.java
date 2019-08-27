@@ -66,7 +66,8 @@ public class DepositUtil {
     return deposits;
   }
 
-  public static boolean validateDeposits(List<DepositWithIndex> deposits, Bytes32 root, int height) {
+  public static boolean validateDeposits(
+      List<DepositWithIndex> deposits, Bytes32 root, int height) {
     for (int i = 0; i < deposits.size(); i++) {
       if (BeaconStateUtil.is_valid_merkle_branch(
           Hash.sha2_256(deposits.get(i).getData().serialize()),
@@ -164,7 +165,8 @@ public class DepositUtil {
     return Hash.sha2_256(Bytes.concatenate(value_start, value_end));
   }
 
-  public static List<DepositWithIndex> sortDepositsByIndexAscending(List<DepositWithIndex> deposits) {
+  public static List<DepositWithIndex> sortDepositsByIndexAscending(
+      List<DepositWithIndex> deposits) {
     deposits.sort(
         new Comparator<DepositWithIndex>() {
           @Override

@@ -182,9 +182,9 @@ public class ReflectionInformationUtil {
       if (containsClass(fields, Bitlist.class)) {
         Object object = reflectionInformation.getClassInfo().getConstructor().newInstance();
         List<Field> listVariables =
-                Arrays.stream(fields)
-                        .filter(f -> f.getType().equals(Bitlist.class))
-                        .collect(Collectors.toList());
+            Arrays.stream(fields)
+                .filter(f -> f.getType().equals(Bitlist.class))
+                .collect(Collectors.toList());
 
         listVariables.forEach(f -> f.setAccessible(true));
         for (Field listVariable : listVariables) {
@@ -196,9 +196,9 @@ public class ReflectionInformationUtil {
         return bitlistElementsMaxSizes;
       }
     } catch (InstantiationException
-            | IllegalAccessException
-            | InvocationTargetException
-            | NoSuchMethodException e) {
+        | IllegalAccessException
+        | InvocationTargetException
+        | NoSuchMethodException e) {
       System.out.println(e);
     }
     return bitlistElementsMaxSizes;

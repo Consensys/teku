@@ -657,11 +657,11 @@ public class BeaconState implements SimpleOffsetSerializable, SSZContainer {
                 Constants.HISTORICAL_ROOTS_LIMIT, historical_roots),
 
             // Ethereum 1.0 chain data
+            // TODO change hardcoded 16 to Constants.SLOTS_PER_ETH1_VOTING_PERIOD once
+            // mainnet-vs-minimal
+            //  constants are configurable
             eth1_data.hash_tree_root(),
-            HashTreeUtil.hash_tree_root(
-                SSZTypes.LIST_OF_COMPOSITE,
-                Constants.SLOTS_PER_ETH1_VOTING_PERIOD,
-                eth1_data_votes),
+            HashTreeUtil.hash_tree_root(SSZTypes.LIST_OF_COMPOSITE, 16, eth1_data_votes),
             HashTreeUtil.hash_tree_root(
                 SSZTypes.BASIC, SSZ.encodeUInt64(eth1_deposit_index.longValue())),
 
@@ -681,24 +681,20 @@ public class BeaconState implements SimpleOffsetSerializable, SSZContainer {
             HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_COMPOSITE, compact_committees_roots),
 
             // Slashings
-            HashTreeUtil.hash_tree_root(
-                SSZTypes.VECTOR_OF_BASIC,
-                slashings.stream()
-                    .map(
-                        item ->
-                            HashTreeUtil.hash_tree_root(
-                                SSZTypes.BASIC, SSZ.encodeUInt64(eth1_deposit_index.longValue())))
-                    .collect(Collectors.toList())
-                    .toArray(new Bytes[0])),
+            HashTreeUtil.hash_tree_root_vector_unsigned_long(slashings),
 
             // Attestations
+            // TODO change hardcoded 8 to Constants.SLOTS_PER_EPOCH once mainnet-vs-minimal
+            //  constants are configurable
             HashTreeUtil.hash_tree_root(
                 SSZTypes.LIST_OF_COMPOSITE,
-                Constants.MAX_ATTESTATIONS * Constants.SLOTS_PER_EPOCH,
+                Constants.MAX_ATTESTATIONS * 8,
                 previous_epoch_attestations),
+            // TODO channge hardcoded 8 to Constants.SLOTS_PER_EPOCH once mainnet-vs-minimal
+            //  constants are configurable
             HashTreeUtil.hash_tree_root(
                 SSZTypes.LIST_OF_COMPOSITE,
-                Constants.MAX_ATTESTATIONS * Constants.SLOTS_PER_EPOCH,
+                Constants.MAX_ATTESTATIONS * 8,
                 current_epoch_attestations),
 
             // Crosslinks
@@ -714,7 +710,7 @@ public class BeaconState implements SimpleOffsetSerializable, SSZContainer {
                     .collect(Collectors.toList())),
 
             // Finality
-            HashTreeUtil.hash_tree_root_bitvector(justification_bits, JUSTIFICATION_BITS_LENGTH),
+            HashTreeUtil.hash_tree_root_bitvector(justification_bits),
             previous_justified_checkpoint.hash_tree_root(),
             current_justified_checkpoint.hash_tree_root(),
             finalized_checkpoint.hash_tree_root()));

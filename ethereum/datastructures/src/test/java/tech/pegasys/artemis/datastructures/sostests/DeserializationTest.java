@@ -19,9 +19,6 @@ import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomB
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomLong;
 
 import com.google.common.primitives.UnsignedLong;
-
-import java.util.ArrayList;
-import java.util.List;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -59,8 +56,8 @@ public class DeserializationTest {
   void BeaconBlockBodyTest() {
     BeaconBlockBody beaconBlockBody = DataStructureUtil.randomBeaconBlockBody();
     BeaconBlockBody newBeaconBlockBody =
-            SimpleOffsetSerializer.deserialize(
-                    SimpleOffsetSerializer.serialize(beaconBlockBody), BeaconBlockBody.class);
+        SimpleOffsetSerializer.deserialize(
+            SimpleOffsetSerializer.serialize(beaconBlockBody), BeaconBlockBody.class);
     assertEquals(beaconBlockBody, newBeaconBlockBody);
   }
 
@@ -75,10 +72,9 @@ public class DeserializationTest {
 
   @Test
   void BeaconBlockTest() {
-      BeaconBlock beaconBlock = DataStructureUtil.randomBeaconBlock(100);
-      Bytes serialized = SimpleOffsetSerializer.serialize(beaconBlock);
-      BeaconBlock newBeaconBlock =
-              SimpleOffsetSerializer.deserialize(serialized, BeaconBlock.class);
+    BeaconBlock beaconBlock = DataStructureUtil.randomBeaconBlock(100);
+    Bytes serialized = SimpleOffsetSerializer.serialize(beaconBlock);
+    BeaconBlock newBeaconBlock = SimpleOffsetSerializer.deserialize(serialized, BeaconBlock.class);
     assertEquals(beaconBlock, newBeaconBlock);
   }
 
@@ -114,7 +110,8 @@ public class DeserializationTest {
   @Test
   void AttestationTest() {
     Attestation attestation = DataStructureUtil.randomAttestation(randomLong());
-    Attestation newAttestation = SimpleOffsetSerializer.deserialize(
+    Attestation newAttestation =
+        SimpleOffsetSerializer.deserialize(
             SimpleOffsetSerializer.serialize(attestation), Attestation.class);
     assertEquals(attestation, newAttestation);
   }
@@ -187,8 +184,8 @@ public class DeserializationTest {
   void BeaconStateTest() {
     BeaconState beaconState = randomBeaconState();
     BeaconState state =
-            SimpleOffsetSerializer.deserialize(
-                    SimpleOffsetSerializer.serialize(beaconState), BeaconState.class);
+        SimpleOffsetSerializer.deserialize(
+            SimpleOffsetSerializer.serialize(beaconState), BeaconState.class);
     assertEquals(beaconState, state);
   }
 

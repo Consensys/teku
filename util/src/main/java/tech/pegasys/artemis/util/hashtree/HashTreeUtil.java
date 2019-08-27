@@ -13,7 +13,6 @@
 
 package tech.pegasys.artemis.util.hashtree;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static java.lang.Long.max;
 import static java.lang.Math.toIntExact;
 import static java.nio.ByteOrder.LITTLE_ENDIAN;
@@ -27,9 +26,10 @@ import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.Hash;
-
+import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.artemis.util.SSZTypes.Bitlist;
 import tech.pegasys.artemis.util.SSZTypes.Bitvector;
+import tech.pegasys.artemis.util.SSZTypes.SSZVector;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 
 /** This class is a collection of tree hash root convenience methods */
@@ -57,7 +57,7 @@ public final class HashTreeUtil {
     BITVECTOR
   };
 
-  public static List<Bytes32> zerohashes = getZerohashes();
+  private static List<Bytes32> zerohashes = getZerohashes();
 
   private static List<Bytes32> getZerohashes() {
     List<Bytes32> zerohashes = new ArrayList<>();
@@ -149,6 +149,12 @@ public final class HashTreeUtil {
 
   public static Bytes32 hash_tree_root_list_bytes(long maxSize, List<Bytes32> bytes) {
     return hash_tree_root_list_bytes(bytes, maxSize, bytes.size());
+  }
+
+  public static Bytes32 hash_tree_root_vector_unsigned_long(SSZVector<UnsignedLong> vector) {
+    List<Bytes> bytes =
+        vector.stream().map(i -> SSZ.encodeUInt64(i.longValue())).collect(Collectors.toList());
+    return merkleize(pack(bytes.toArray(new Bytes[0])));
   }
 
   @SuppressWarnings({"rawtypes", "unchecked"})
@@ -277,21 +283,24 @@ public final class HashTreeUtil {
     // TODO The following lines are a hack and can be fixed once we shift from Bytes to a real
     // bitlist type.
     return mix_in_length(
-        merkleize(bitfield_bytes(bitlist.serialize()), chunk_count(SSZTypes.BITLIST, bitlist.getMaxSize())),
+        merkleize(
+            bitfield_bytes(bitlist.serialize()),
+            chunk_count(SSZTypes.BITLIST, bitlist.getMaxSize())),
         bitlist.getByteArray().length);
   }
 
   /**
    * Create the hash tree root of a SSZ Bitvector.
    *
-   * @param bytes One Bytes value or a list of homogeneous Bytes values.
+   * @param bitvector One Bytes value or a list of homogeneous Bytes values.
    * @return The SSZ tree root hash of the values.
    * @see <a
    *     href="https://github.com/ethereum/eth2.0-specs/blob/v0.5.1/specs/simple-serialize.md">SSZ
    *     Spec v0.5.1</a>
    */
-  public static Bytes32 hash_tree_root_bitvector(Bitvector bytes, int size) {
-    return merkleize(pack(Bytes.wrap(bytes.getByteArray())), chunk_count(SSZTypes.BITVECTOR, size, Bytes.wrap(bytes.getByteArray())));
+  public static Bytes32 hash_tree_root_bitvector(Bitvector bitvector) {
+    return merkleize(
+        pack(bitvector.serialize()), chunk_count(SSZTypes.BITVECTOR, bitvector.getSize()));
   }
 
   /**
@@ -324,7 +333,7 @@ public final class HashTreeUtil {
   private static Bytes32 hash_tree_root_list_bytes(List<Bytes32> bytes, long maxSize, int length) {
     return mix_in_length(
         merkleize(
-            bytes, chunk_count(SSZTypes.LIST_OF_COMPOSITE, maxSize, bytes.toArray(new Bytes32[0]))),
+            bytes, chunk_count(SSZTypes.LIST_OF_COMPOSITE, maxSize, bytes.toArray(new Bytes[0]))),
         length);
   }
 
@@ -387,9 +396,6 @@ public final class HashTreeUtil {
   }
 
   private static List<Bytes32> bitfield_bytes(Bytes sszValues) {
-    // TODO The following lines are a hack and can be fixed once we shift from Bytes to a real
-    // bitlist type.
-
     // Reverse byte order to big endian.
     Bytes reversedBytes = sszValues.reverse();
     int shiftCount = 8 - ((reversedBytes.bitLength() - 1) % 8);

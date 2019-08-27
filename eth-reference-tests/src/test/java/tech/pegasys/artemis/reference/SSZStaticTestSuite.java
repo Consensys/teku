@@ -424,6 +424,8 @@ class SSZStaticTestSuite {
       LinkedHashMap<String, Object> value, String serialized, String root) {
     BeaconState beaconState = parseBeaconState(value);
 
+    Bytes32 a = Bytes32.fromHexString(root);
+    Bytes32 b = beaconState.hash_tree_root();
     assertEquals(Bytes32.fromHexString(root), beaconState.hash_tree_root());
   }
 
@@ -607,13 +609,17 @@ class SSZStaticTestSuite {
     // type. As currently implemented, we need to keep the leading 1 bit in memory to determine
     // length.
     Bitlist serializedAggregationBits =
-        Bitlist.fromBytes(Bytes.fromHexString((String) value.get("aggregation_bits")), Constants.MAX_VALIDATORS_PER_COMMITTEE);
+        Bitlist.fromBytes(
+            Bytes.fromHexString((String) value.get("aggregation_bits")),
+            Constants.MAX_VALIDATORS_PER_COMMITTEE);
     // Bytes aggregationBitsMask = Bytes.minimalBytes((int) Math.pow(2.0,
     // serializedAggregationBits.bitLength() - 1) - 1);
     // Bytes aggregationBits = serializedAggregationBits.and(aggregationBitsMask);
     AttestationData data = parseAttestationData((LinkedHashMap<String, Object>) value.get("data"));
     Bitlist serializedCustodyBits =
-        Bitlist.fromBytes(Bytes.fromHexString((String) value.get("custody_bits")), Constants.MAX_VALIDATORS_PER_COMMITTEE);
+        Bitlist.fromBytes(
+            Bytes.fromHexString((String) value.get("custody_bits")),
+            Constants.MAX_VALIDATORS_PER_COMMITTEE);
     // Bytes custodyBitsMask = Bytes.minimalBytes((int) Math.pow(2.0,
     // serializedCustodyBits.bitLength() - 1) - 1);
     // Bytes custodyBits = serializedAggregationBits.and(custodyBitsMask);
@@ -691,7 +697,9 @@ class SSZStaticTestSuite {
     // type. As currently implemented, we need to keep the leading 1 bit in memory to determine
     // length.
     Bitlist serializedAggregationBits =
-        Bitlist.fromBytes(Bytes.fromHexString((String) value.get("aggregation_bits")), Constants.MAX_VALIDATORS_PER_COMMITTEE);
+        Bitlist.fromBytes(
+            Bytes.fromHexString((String) value.get("aggregation_bits")),
+            Constants.MAX_VALIDATORS_PER_COMMITTEE);
     // Bytes aggregationBitsMask = Bytes.minimalBytes((int) Math.pow(2.0,
     // serializedAggregationBits.bitLength() - 1) - 1);
     // Bytes aggregationBits = serializedAggregationBits.and(aggregationBitsMask);
