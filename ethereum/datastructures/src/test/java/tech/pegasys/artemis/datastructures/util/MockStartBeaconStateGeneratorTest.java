@@ -13,7 +13,7 @@
 
 package tech.pegasys.artemis.datastructures.util;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
