@@ -14,6 +14,10 @@
 package pegasys.artemis.reference.mainnet.phase0;
 
 import com.google.errorprone.annotations.MustBeClosed;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.List;
+import java.util.stream.Stream;
 import org.apache.tuweni.junit.BouncyCastleExtension;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -24,26 +28,20 @@ import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.*;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.statetransition.util.BlockProcessorUtil;
-import tech.pegasys.artemis.statetransition.util.EpochProcessorUtil;
-
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.List;
-import java.util.stream.Stream;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @ExtendWith(BouncyCastleExtension.class)
 class operations_processing extends TestSuite {
   private static final Path configPath = Paths.get("mainnet", "phase0");
 
-
   @ParameterizedTest(name = "{index}. process attestation pre={0} -> post={1}. {arguments}")
   @MethodSource("attestationSetup")
-  void processAttestation(operations_processing.Context state, operations_processing.Context attestation) throws Exception {
-    System.out.println("c.path:"+state.path);
-    BlockProcessorUtil.process_attestations((BeaconState) state.obj, List.of((Attestation) attestation.obj));
-//    assertEquals(pre, plus);
+  void processAttestation(
+      operations_processing.Context state, operations_processing.Context attestation)
+      throws Exception {
+    System.out.println("c.path:" + state.path);
+    BlockProcessorUtil.process_attestations(
+        (BeaconState) state.obj, List.of((Attestation) attestation.obj));
+    //    assertEquals(pre, plus);
   }
 
   @MustBeClosed
@@ -54,10 +52,13 @@ class operations_processing extends TestSuite {
 
   @ParameterizedTest(name = "{index}. process attestatorSlashing pre={0} -> post={1}. {arguments}")
   @MethodSource("attestaterSlashingSetup")
-  void processAttestatorSlashing(operations_processing.Context state, operations_processing.Context attestation) throws Exception {
-    System.out.println("c.path:"+state.path);
-    BlockProcessorUtil.process_attester_slashings((BeaconState) state.obj, List.of((AttesterSlashing) attestation.obj));
-//    assertEquals(pre, plus);
+  void processAttestatorSlashing(
+      operations_processing.Context state, operations_processing.Context attestation)
+      throws Exception {
+    System.out.println("c.path:" + state.path);
+    BlockProcessorUtil.process_attester_slashings(
+        (BeaconState) state.obj, List.of((AttesterSlashing) attestation.obj));
+    //    assertEquals(pre, plus);
   }
 
   @MustBeClosed
@@ -66,13 +67,14 @@ class operations_processing extends TestSuite {
     return attestorSlashingProcessingSetup(path, configPath);
   }
 
-
   @ParameterizedTest(name = "{index}. process blockHeader pre={0} -> post={1}. {arguments}")
   @MethodSource("blockHeaderSetup")
-  void processBlockHeader(operations_processing.Context state, operations_processing.Context attestation) throws Exception {
-    System.out.println("c.path:"+state.path);
+  void processBlockHeader(
+      operations_processing.Context state, operations_processing.Context attestation)
+      throws Exception {
+    System.out.println("c.path:" + state.path);
     BlockProcessorUtil.process_block_header((BeaconState) state.obj, (BeaconBlock) attestation.obj);
-//    assertEquals(pre, plus);
+    //    assertEquals(pre, plus);
   }
 
   @MustBeClosed
@@ -81,13 +83,13 @@ class operations_processing extends TestSuite {
     return blockHeaderProcessingSetup(path, configPath);
   }
 
-
   @ParameterizedTest(name = "{index}. process deposit pre={0} -> post={1}. {arguments}")
   @MethodSource("depositSetup")
-  void processDeposit(operations_processing.Context state, operations_processing.Context deposit) throws Exception {
-    System.out.println("c.path:"+state.path);
+  void processDeposit(operations_processing.Context state, operations_processing.Context deposit)
+      throws Exception {
+    System.out.println("c.path:" + state.path);
     BlockProcessorUtil.process_deposits((BeaconState) state.obj, List.of((Deposit) deposit.obj));
-//    assertEquals(pre, plus);
+    //    assertEquals(pre, plus);
   }
 
   @MustBeClosed
@@ -98,10 +100,13 @@ class operations_processing extends TestSuite {
 
   @ParameterizedTest(name = "{index}. process proposer slashing pre={0} -> post={1}. {arguments}")
   @MethodSource("proposerSlashingSetup")
-  void processProposerSlashing(operations_processing.Context state, operations_processing.Context proposerSlashing) throws Exception {
-    System.out.println("c.path:"+state.path);
-    BlockProcessorUtil.process_proposer_slashings((BeaconState) state.obj, List.of((ProposerSlashing) proposerSlashing.obj));
-//    assertEquals(pre, plus);
+  void processProposerSlashing(
+      operations_processing.Context state, operations_processing.Context proposerSlashing)
+      throws Exception {
+    System.out.println("c.path:" + state.path);
+    BlockProcessorUtil.process_proposer_slashings(
+        (BeaconState) state.obj, List.of((ProposerSlashing) proposerSlashing.obj));
+    //    assertEquals(pre, plus);
   }
 
   @MustBeClosed
@@ -112,10 +117,13 @@ class operations_processing extends TestSuite {
 
   @ParameterizedTest(name = "{index}. process voluntary exit pre={0} -> post={1}. {arguments}")
   @MethodSource("voluntaryExistSetup")
-  void processVoluntaryExit(operations_processing.Context state, operations_processing.Context voluntaryExit) throws Exception {
-    System.out.println("c.path:"+state.path);
-    BlockProcessorUtil.process_voluntary_exits((BeaconState) state.obj, List.of((VoluntaryExit) voluntaryExit.obj));
-//    assertEquals(pre, plus);
+  void processVoluntaryExit(
+      operations_processing.Context state, operations_processing.Context voluntaryExit)
+      throws Exception {
+    System.out.println("c.path:" + state.path);
+    BlockProcessorUtil.process_voluntary_exits(
+        (BeaconState) state.obj, List.of((VoluntaryExit) voluntaryExit.obj));
+    //    assertEquals(pre, plus);
   }
 
   @MustBeClosed
