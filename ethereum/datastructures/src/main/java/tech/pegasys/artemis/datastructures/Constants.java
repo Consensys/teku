@@ -32,6 +32,10 @@ public class Constants {
   public static int JUSTIFICATION_BITS_LENGTH = 4;
   public static String ENDIANNESS = "little";
 
+  // Interop modes
+  public static final String FILE_INTEROP = "file";
+  public static final String MOCKED_START_INTEROP = "mocked";
+
   // Misc
   public static int SHARD_COUNT = 1024;
   public static int TARGET_COMMITTEE_SIZE = 128;
@@ -325,6 +329,7 @@ public class Constants {
             : SECONDS_PER_SLOT; // 6 seconds
   }
 
+  @SuppressWarnings("rawtypes")
   public static void init(Map config) {
     SHARD_COUNT = (int) config.get("SHARD_COUNT");
     TARGET_COMMITTEE_SIZE = (int) config.get("TARGET_COMMITTEE_SIZE");
