@@ -116,23 +116,6 @@ class sanity_processing extends TestSuite {
       BeaconStateWithCache spre = (BeaconStateWithCache) pre.obj;
       BeaconStateWithCache spost = (BeaconStateWithCache) post.obj;
 
-      // 1
-      //      DataStructureUtil.newBeaconBlock
-
-      // 2
-      //      tech.pegasys.artemis.datastructures.state public final class BeaconStateWithCache
-
-      // 3
-      //      tech.pegasys.artemis.datastructures.util.BeaconStateUtil @NotNull
-      //      public static BeaconStateWithCache initialize_beacon_state_from_eth1(Bytes32
-      // eth1_block_hash,
-      //              @NotNull UnsignedLong eth1_timestamp,
-      //              @NotNull List<Deposit> deposits)
-      //      Inferred annotations:
-      //      Method initialize_beacon_state_from_eth1: @org.jetbrains.annotations.NotNull
-      //      Parameter eth1_timestamp: @org.jetbrains.annotations.NotNull
-      //      Parameter deposits: @org.jetbrains.annotations.NotNull
-      //
       StateTransition st = new StateTransition(true);
 
       BeaconStateWithCache beaconStateWithCache =

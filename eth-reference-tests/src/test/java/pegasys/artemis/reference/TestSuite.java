@@ -48,10 +48,6 @@ public abstract class TestSuite {
           "tests");
   private static final String FILE = "file://";
 
-  //  public static Stream<Arguments> findTests(String glob) throws IOException {
-  //      return Resources.find(glob).map(url -> { return Arguments.of(url); });
-  //  }
-
   @Deprecated
   @MustBeClosed
   @SuppressWarnings({"unchecked", "rawtypes"})
@@ -141,7 +137,6 @@ public abstract class TestSuite {
     path = Path.of(pathToTests.toString(), path.toString());
     try (Stream<Path> walk = Files.walk(path)) {
       List<String> result = walk.map(x -> x.toString()).collect(Collectors.toList());
-      //      List<Context> contexts = new ArrayList<>();
       return result
           .parallelStream()
           .filter(
@@ -259,7 +254,6 @@ public abstract class TestSuite {
     List<Pair<Class, String>> arguments = new ArrayList<Pair<Class, String>>();
     arguments.add(getParams(BeaconStateWithCache.class, "pre.yaml"));
     arguments.add(getParams(BeaconStateWithCache.class, "post.yaml"));
-    //        arguments.add(getParams(ReadLineType.class, "slots.yaml"));
     return findTestsByPath(path, arguments);
   }
 
