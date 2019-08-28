@@ -170,7 +170,7 @@ public class StateTransition {
    * @throws EpochProcessingException
    * @throws SlotProcessingException
    */
-  public static BeaconStateWithCache process_slots(
+  public static void process_slots(
       BeaconStateWithCache state, UnsignedLong slot, boolean printEnabled)
       throws SlotProcessingException, EpochProcessingException {
     try {
@@ -189,7 +189,6 @@ public class StateTransition {
         }
         state.setSlot(state.getSlot().plus(UnsignedLong.ONE));
       }
-      return state;
     } catch (IllegalArgumentException e) {
       STDOUT.log(Level.WARN, e.getMessage());
       throw new SlotProcessingException(e);

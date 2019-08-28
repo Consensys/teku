@@ -134,10 +134,10 @@ class sanity_processing extends TestSuite {
       for (int i = 1; i < blocks.size(); i++) {
         ForkChoiceUtil.on_block(genesis_store, blocks.get(i));
       }
-      Object a = genesis_store.getFinalized_checkpoint().hash_tree_root();
-      Object b = ForkChoiceUtil.get_head(genesis_store);
+//      Object hash_tree_root = genesis_store.getFinalized_checkpoint().hash_tree_root();
+      Object head = ForkChoiceUtil.get_head(genesis_store);
       BeaconState c =
-          genesis_store.getBlock_states().get(genesis_store.getBlocks().get(b).getState_root());
+          genesis_store.getBlock_states().get(genesis_store.getBlocks().get(head).getState_root());
       assertEquals(c, spost);
     }
   }
