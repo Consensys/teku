@@ -34,6 +34,77 @@ public final class BeaconStateWithCache extends BeaconState {
     super();
   }
 
+  public BeaconStateWithCache(
+      // Versioning
+      UnsignedLong genesis_time,
+      UnsignedLong slot,
+      Fork fork,
+
+      // History
+      BeaconBlockHeader latest_block_header,
+      List<Bytes32> block_roots,
+      List<Bytes32> state_roots,
+      List<Bytes32> historical_roots,
+
+      // Eth1
+      Eth1Data eth1_data,
+      List<Eth1Data> eth1_data_votes,
+      UnsignedLong eth1_deposit_index,
+
+      // Registry
+      List<Validator> validators,
+      List<UnsignedLong> balances,
+
+      // Shuffling
+      UnsignedLong start_shard,
+      List<Bytes32> randao_mixes,
+      List<Bytes32> active_index_roots,
+      List<Bytes32> compact_committees_roots,
+
+      // Slashings
+      List<UnsignedLong> slashings,
+
+      // Attestations
+      List<PendingAttestation> previous_epoch_attestations,
+      List<PendingAttestation> current_epoch_attestations,
+
+      // Crosslinks
+      List<Crosslink> previous_crosslinks,
+      List<Crosslink> current_crosslinks,
+
+      // Finality
+      Bytes justification_bits,
+      Checkpoint previous_justified_checkpoint,
+      Checkpoint current_justified_chekpoint,
+      Checkpoint finalized_checkpoint) {
+    super(
+        genesis_time,
+        slot,
+        fork,
+        latest_block_header,
+        block_roots,
+        state_roots,
+        historical_roots,
+        eth1_data,
+        eth1_data_votes,
+        eth1_deposit_index,
+        validators,
+        balances,
+        start_shard,
+        randao_mixes,
+        active_index_roots,
+        compact_committees_roots,
+        slashings,
+        previous_epoch_attestations,
+        current_epoch_attestations,
+        previous_crosslinks,
+        current_crosslinks,
+        justification_bits,
+        previous_justified_checkpoint,
+        current_justified_chekpoint,
+        finalized_checkpoint);
+  }
+
   public BeaconStateWithCache(BeaconStateWithCache state) {
     // Versioning
     this.genesis_time = state.getGenesis_time();
