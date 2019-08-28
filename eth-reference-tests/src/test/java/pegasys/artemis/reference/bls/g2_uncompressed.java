@@ -13,23 +13,22 @@
 
 package pegasys.artemis.reference.bls;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
 import com.google.errorprone.annotations.MustBeClosed;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Stream;
-import kotlin.Pair;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import pegasys.artemis.reference.TestObject;
+import pegasys.artemis.reference.TestSet;
 import pegasys.artemis.reference.TestSuite;
 import tech.pegasys.artemis.util.mikuli.G2Point;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.stream.Stream;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 class g2_uncompressed extends TestSuite {
-  private static String testFile = "**/g2_uncompressed.yaml";
 
   @ParameterizedTest(name = "{index}. message hash to G2 uncompressed {0} -> {1}")
   @MethodSource("readMessageHashG2Uncompressed")
@@ -39,11 +38,18 @@ class g2_uncompressed extends TestSuite {
 
   @SuppressWarnings({"unchecked", "rawtypes"})
   @MustBeClosed
-  static Stream<Arguments> readMessageHashG2Uncompressed() throws IOException {
-    List<Pair<Class, List<String>>> arguments = new ArrayList<Pair<Class, List<String>>>();
-    arguments.add(getParams(G2Point.class, Arrays.asList("input")));
-    arguments.add(getParams(G2Point.class, Arrays.asList("output")));
+  static Stream<Arguments> readMessageHashG2Uncompressed() {
+    Path path = Paths.get("/general/phase0/bls/msg_hash_uncompressed/small");
+    return messageHashUncompressedSetup(path);
+  }
 
-    return findTests(testFile, arguments);
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  @MustBeClosed
+  public static Stream<Arguments> messageHashUncompressedSetup(Path path) {
+
+    TestSet testSet = new TestSet(path);
+    testSet.add(new TestObject("data.yaml", G2Point.class, Paths.get("input")));
+    testSet.add(new TestObject("data.yaml", G2Point.class, Paths.get("output")));
+    return findTestsByPath(testSet);
   }
 }

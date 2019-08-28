@@ -13,29 +13,29 @@
 
 package pegasys.artemis.reference.bls;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
 import com.google.errorprone.annotations.MustBeClosed;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Stream;
-import kotlin.Pair;
 import org.apache.tuweni.junit.BouncyCastleExtension;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import pegasys.artemis.reference.TestObject;
+import pegasys.artemis.reference.TestSet;
 import pegasys.artemis.reference.TestSuite;
 import tech.pegasys.artemis.util.mikuli.PublicKey;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.List;
+import java.util.stream.Stream;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 @ExtendWith(BouncyCastleExtension.class)
 class aggregate_pubkeys extends TestSuite {
-  private static String testFile = "**/aggregate_pubkeys.yaml";
 
   @ParameterizedTest(name = "{index}. aggregate pub keys {0} -> {1}")
-  @MethodSource("readAggregatePubKeys")
+  @MethodSource("readAggregatePublicKeys")
   void aggregatePubkeys(List<PublicKey> pubkeys, PublicKey aggregatePubkeyExpected) {
     PublicKey aggregatePubkeyActual = PublicKey.aggregate(pubkeys);
     assertEquals(aggregatePubkeyExpected, aggregatePubkeyActual);
@@ -43,11 +43,18 @@ class aggregate_pubkeys extends TestSuite {
 
   @SuppressWarnings({"unchecked", "rawtypes"})
   @MustBeClosed
-  static Stream<Arguments> readAggregatePubKeys() throws IOException {
-    List<Pair<Class, List<String>>> arguments = new ArrayList<Pair<Class, List<String>>>();
-    arguments.add(getParams(PublicKey[].class, Arrays.asList("input")));
-    arguments.add(getParams(PublicKey.class, Arrays.asList("output")));
+  static Stream<Arguments> readAggregatePublicKeys() {
+    Path path = Paths.get("general", "phase0", "bls", "aggregate_pubkeys", "small", "agg_pub_keys");
+    return aggregatePublicKeysSetup(path);
+  }
 
-    return findTests(testFile, arguments);
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  @MustBeClosed
+  public static Stream<Arguments> aggregatePublicKeysSetup(Path path) {
+
+    TestSet testSet = new TestSet(path);
+    testSet.add(new TestObject("data.yaml", PublicKey[].class, Paths.get("input")));
+    testSet.add(new TestObject("data.yaml", PublicKey.class, Paths.get("output")));
+    return findTestsByPath(testSet);
   }
 }

@@ -13,27 +13,27 @@
 
 package pegasys.artemis.reference.bls;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
 import com.google.errorprone.annotations.MustBeClosed;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Stream;
-import kotlin.Pair;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import pegasys.artemis.reference.TestObject;
+import pegasys.artemis.reference.TestSet;
 import pegasys.artemis.reference.TestSuite;
 import tech.pegasys.artemis.util.mikuli.Signature;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.List;
+import java.util.stream.Stream;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 class aggregate_sigs extends TestSuite {
-  private static String testFile = "**/aggregate_sigs.yaml";
 
   @ParameterizedTest(name = "{index}. aggregate sigs {0} -> {1}")
-  @MethodSource("readAggregateSigs")
+  @MethodSource("readAggregateSignatures")
   void aggregateSig(List<Signature> signatures, Bytes aggregateSignatureExpected) {
     Bytes aggregateSignatureActual = Signature.aggregate(signatures).g2Point().toBytesCompressed();
     assertEquals(aggregateSignatureExpected, aggregateSignatureActual);
@@ -41,11 +41,18 @@ class aggregate_sigs extends TestSuite {
 
   @SuppressWarnings({"unchecked", "rawtypes"})
   @MustBeClosed
-  static Stream<Arguments> readAggregateSigs() throws IOException {
-    List<Pair<Class, List<String>>> arguments = new ArrayList<Pair<Class, List<String>>>();
-    arguments.add(getParams(Signature[].class, Arrays.asList("input")));
-    arguments.add(getParams(Bytes.class, Arrays.asList("output")));
+  static Stream<Arguments> readAggregateSignatures() {
+    Path path = Paths.get("general", "phase0", "bls", "aggregate_sigs", "small");
+    return aggregateSignaturesSetup(path);
+  }
 
-    return findTests(testFile, arguments);
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  @MustBeClosed
+  public static Stream<Arguments> aggregateSignaturesSetup(Path path) {
+
+    TestSet testSet = new TestSet(path);
+    testSet.add(new TestObject("data.yaml", Signature[].class, Paths.get("input")));
+    testSet.add(new TestObject("data.yaml", Bytes.class, Paths.get("output")));
+    return findTestsByPath(testSet);
   }
 }

@@ -11,16 +11,9 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package pegasys.artemis.reference.ssz_static.core;
-
-import static org.junit.jupiter.api.Assertions.assertTrue;
+package pegasys.artemis.reference.mainnet.phase0;
 
 import com.google.errorprone.annotations.MustBeClosed;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Stream;
 import kotlin.Pair;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -29,6 +22,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import pegasys.artemis.reference.TestObject;
+import pegasys.artemis.reference.TestSet;
 import pegasys.artemis.reference.TestSuite;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockBody;
@@ -53,19 +48,25 @@ import tech.pegasys.artemis.datastructures.state.HistoricalBatch;
 import tech.pegasys.artemis.datastructures.state.PendingAttestation;
 import tech.pegasys.artemis.datastructures.state.Validator;
 
-@ExtendWith(BouncyCastleExtension.class)
-class ssz_minimal_zero extends TestSuite {
+import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Stream;
 
-  private static String testFile = "**/ssz_minimal_zero.yaml";
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+@ExtendWith(BouncyCastleExtension.class)
+class ssz_static extends TestSuite {
+  private static final String testFile = "";
 
   @ParameterizedTest(name = "{index}. SSZ serialized, root, signing_root of Attestation")
   @MethodSource("readMessageSSZAttestation")
   void sszAttestationCheckSerializationRootAndSigningRoot(
-      Attestation attestation, Bytes serialized, Bytes32 root, Bytes signing_root) {
+      Attestation attestation, Bytes32 root, Bytes signing_root) {
 
-    assertTrue(
-        serialized.equals(attestation.toBytes()),
-        attestation.getClass().getName() + " failed the serialiaztion test");
     assertTrue(
         root.equals(attestation.hash_tree_root()),
         attestation.getClass().getName() + " failed the root test");
@@ -76,45 +77,59 @@ class ssz_minimal_zero extends TestSuite {
 
   @SuppressWarnings({"unchecked", "rawtypes"})
   @MustBeClosed
-  static Stream<Arguments> readMessageSSZAttestation() throws IOException {
-    List<Pair<Class, List<String>>> arguments = new ArrayList<Pair<Class, List<String>>>();
-    arguments.add(getParams(Attestation.class, Arrays.asList("Attestation", "value")));
-    arguments.add(getParams(Bytes.class, Arrays.asList("Attestation", "serialized")));
-    arguments.add(getParams(Bytes32.class, Arrays.asList("Attestation", "root")));
-    arguments.add(getParams(Bytes.class, Arrays.asList("Attestation", "signing_root")));
+  static Stream<Arguments> readMessageSSZAttestation() throws Exception {
+    Path configPath = Paths.get("mainnet", "phase0");
+    Path path = Paths.get("/mainnet/phase0/ssz_static/Attestation/ssz_random");
+    return attestationSetup(path, configPath);
+  }
 
-    return findTests(testFile, arguments);
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  @MustBeClosed
+  public static Stream<Arguments> attestationSetup(Path path, Path configPath)
+          throws Exception {
+    loadConfigFromPath(configPath);
+
+    TestSet testSet = new TestSet(path);
+    testSet.add(new TestObject("value.yaml", Attestation.class, null));
+    testSet.add(new TestObject("meta.yaml", Bytes32.class, Paths.get("root")));
+    testSet.add(new TestObject("meta.yaml", Bytes.class, Paths.get("signing_root")));
+
+    return findTestsByPath(testSet);
   }
 
   @ParameterizedTest(name = "{index}. SSZ serialized, root of AttestationData")
   @MethodSource("readMessageSSZAttestationData")
   void sszAttestationDataCheckSerializationRoot(
-      AttestationData data, Bytes serialized, Bytes32 root) {
-    assertTrue(
-        serialized.equals(data.toBytes()),
-        data.getClass().getName() + " failed the serialiaztion test");
+      AttestationData data, Bytes32 root) {
     assertTrue(
         root.equals(data.hash_tree_root()), data.getClass().getName() + " failed the root test");
   }
 
   @SuppressWarnings({"unchecked", "rawtypes"})
   @MustBeClosed
-  static Stream<Arguments> readMessageSSZAttestationData() throws IOException {
-    List<Pair<Class, List<String>>> arguments = new ArrayList<Pair<Class, List<String>>>();
-    arguments.add(getParams(AttestationData.class, Arrays.asList("AttestationData", "value")));
-    arguments.add(getParams(Bytes.class, Arrays.asList("AttestationData", "serialized")));
-    arguments.add(getParams(Bytes32.class, Arrays.asList("AttestationData", "root")));
+  static Stream<Arguments> readMessageSSZAttestationData() throws Exception {
+    Path configPath = Paths.get("mainnet", "phase0");
+    Path path = Paths.get("/mainnet/phase0/ssz_static/AttestationData/ssz_random");
+    return attestationDataSetup(path, configPath);
+  }
 
-    return findTests(testFile, arguments);
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  @MustBeClosed
+  public static Stream<Arguments> attestationDataSetup(Path path, Path configPath)
+          throws Exception {
+    loadConfigFromPath(configPath);
+
+    TestSet testSet = new TestSet(path);
+    testSet.add(new TestObject("value.yaml", AttestationData.class, null));
+    testSet.add(new TestObject("meta.yaml", Bytes32.class, Paths.get("root")));
+
+    return findTestsByPath(testSet);
   }
 
   @ParameterizedTest(name = "{index}. SSZ serialized, root of AttestationDataAndCustodyBit")
   @MethodSource("readMessageSSZAttestationDataAndCustodyBit")
   void sszAttestationDataAndCustodyBitCheckSerializationRoot(
-      AttestationDataAndCustodyBit dataAndCustodyBit, Bytes serialized, Bytes32 root) {
-    assertTrue(
-        serialized.equals(dataAndCustodyBit.toBytes()),
-        dataAndCustodyBit.getClass().getName() + " failed the serialiaztion test");
+      AttestationDataAndCustodyBit dataAndCustodyBit, Bytes32 root) {
     assertTrue(
         root.equals(dataAndCustodyBit.hash_tree_root()),
         dataAndCustodyBit.getClass().getName() + " failed the root test");
@@ -122,26 +137,29 @@ class ssz_minimal_zero extends TestSuite {
 
   @SuppressWarnings({"unchecked", "rawtypes"})
   @MustBeClosed
-  static Stream<Arguments> readMessageSSZAttestationDataAndCustodyBit() throws IOException {
-    List<Pair<Class, List<String>>> arguments = new ArrayList<Pair<Class, List<String>>>();
-    arguments.add(
-        getParams(
-            AttestationDataAndCustodyBit.class,
-            Arrays.asList("AttestationDataAndCustodyBit", "value")));
-    arguments.add(
-        getParams(Bytes.class, Arrays.asList("AttestationDataAndCustodyBit", "serialized")));
-    arguments.add(getParams(Bytes32.class, Arrays.asList("AttestationDataAndCustodyBit", "root")));
+  static Stream<Arguments> readMessageSSZAttestationDataAndCustodyBit() throws Exception {
+    Path configPath = Paths.get("mainnet", "phase0");
+    Path path = Paths.get("/mainnet/phase0/ssz_static/AttestationDataAndCustodyBit/ssz_random");
+    return attestationDataAndCustodyBitSetup(path, configPath);
+  }
 
-    return findTests(testFile, arguments);
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  @MustBeClosed
+  public static Stream<Arguments> attestationDataAndCustodyBitSetup(Path path, Path configPath)
+          throws Exception {
+    loadConfigFromPath(configPath);
+
+    TestSet testSet = new TestSet(path);
+    testSet.add(new TestObject("value.yaml", AttestationDataAndCustodyBit.class, null));
+    testSet.add(new TestObject("meta.yaml", Bytes32.class, Paths.get("root")));
+
+    return findTestsByPath(testSet);
   }
 
   @ParameterizedTest(name = "{index}. SSZ serialized, root of AttesterSlashing")
   @MethodSource("readMessageSSZAttesterSlashing")
   void sszAttesterSlashingCheckSerializationRoot(
-      AttesterSlashing attesterSlashing, Bytes serialized, Bytes32 root) {
-    assertTrue(
-        serialized.equals(attesterSlashing.toBytes()),
-        attesterSlashing.getClass().getName() + " failed the serialiaztion test");
+      AttesterSlashing attesterSlashing, Bytes32 root) {
     assertTrue(
         root.equals(attesterSlashing.hash_tree_root()),
         attesterSlashing.getClass().getName() + " failed the root test");
@@ -149,22 +167,30 @@ class ssz_minimal_zero extends TestSuite {
 
   @SuppressWarnings({"unchecked", "rawtypes"})
   @MustBeClosed
-  static Stream<Arguments> readMessageSSZAttesterSlashing() throws IOException {
-    List<Pair<Class, List<String>>> arguments = new ArrayList<Pair<Class, List<String>>>();
-    arguments.add(getParams(AttesterSlashing.class, Arrays.asList("AttesterSlashing", "value")));
-    arguments.add(getParams(Bytes.class, Arrays.asList("AttesterSlashing", "serialized")));
-    arguments.add(getParams(Bytes32.class, Arrays.asList("AttesterSlashing", "root")));
+  static Stream<Arguments> readMessageSSZAttesterSlashing() throws Exception {
+    Path configPath = Paths.get("mainnet", "phase0");
+    Path path = Paths.get("/mainnet/phase0/ssz_static/AttesterSlashing/ssz_random");
+    return attesterSlashingSetup(path, configPath);
+  }
 
-    return findTests(testFile, arguments);
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  @MustBeClosed
+  public static Stream<Arguments> attesterSlashingSetup(Path path, Path configPath)
+          throws Exception {
+    loadConfigFromPath(configPath);
+
+    TestSet testSet = new TestSet(path);
+    testSet.add(new TestObject("value.yaml", AttesterSlashing.class, null));
+    testSet.add(new TestObject("meta.yaml", Bytes32.class, Paths.get("root")));
+
+    return findTestsByPath(testSet);
   }
 
   @ParameterizedTest(name = "{index}. SSZ serialized, root of BeaconBlock")
   @MethodSource("readMessageSSZBeaconBlock")
   void sszBeaconBlockCheckSerializationRoot(
-      BeaconBlock beaconBlock, Bytes serialized, Bytes32 root) {
-    assertTrue(
-        serialized.equals(beaconBlock.toBytes()),
-        beaconBlock.getClass().getName() + " failed the serialiaztion test");
+      BeaconBlock beaconBlock, Bytes32 root, Bytes32 signing_root) {
+    //TODO signing_root
     assertTrue(
         root.equals(beaconBlock.hash_tree_root()),
         beaconBlock.getClass().getName() + " failed the root test");
@@ -172,13 +198,24 @@ class ssz_minimal_zero extends TestSuite {
 
   @SuppressWarnings({"unchecked", "rawtypes"})
   @MustBeClosed
-  static Stream<Arguments> readMessageSSZBeaconBlock() throws IOException {
-    List<Pair<Class, List<String>>> arguments = new ArrayList<Pair<Class, List<String>>>();
-    arguments.add(getParams(BeaconBlock.class, Arrays.asList("BeaconBlock", "value")));
-    arguments.add(getParams(Bytes.class, Arrays.asList("BeaconBlock", "serialized")));
-    arguments.add(getParams(Bytes32.class, Arrays.asList("BeaconBlock", "root")));
+  static Stream<Arguments> readMessageSSZBeaconBlock() throws Exception {
+    Path configPath = Paths.get("mainnet", "phase0");
+    Path path = Paths.get("/mainnet/phase0/ssz_static/BeaconBlock/ssz_random");
+    return beaconBlockSetup(path, configPath);
+  }
 
-    return findTests(testFile, arguments);
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  @MustBeClosed
+  public static Stream<Arguments> beaconBlockSetup(Path path, Path configPath)
+          throws Exception {
+    loadConfigFromPath(configPath);
+
+    TestSet testSet = new TestSet(path);
+    testSet.add(new TestObject("value.yaml", BeaconBlock.class, null));
+    testSet.add(new TestObject("meta.yaml", Bytes32.class, Paths.get("root")));
+    testSet.add(new TestObject("meta.yaml", Bytes32.class, Paths.get("signing_root")));
+
+    return findTestsByPath(testSet);
   }
 
   @ParameterizedTest(name = "{index}. SSZ serialized, root of BeaconBlockBody")

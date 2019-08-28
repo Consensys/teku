@@ -16,8 +16,17 @@ package pegasys.artemis.reference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.errorprone.annotations.MustBeClosed;
-
 import java.io.BufferedReader;
+import kotlin.Pair;
+import org.apache.tuweni.io.Resources;
+import org.junit.jupiter.params.provider.Arguments;
+import tech.pegasys.artemis.datastructures.Constants;
+import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.operations.Attestation;
+import tech.pegasys.artemis.datastructures.operations.AttesterSlashing;
+import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -33,18 +42,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import kotlin.Pair;
-import org.apache.tuweni.io.Resources;
-import org.junit.jupiter.params.provider.Arguments;
-import tech.pegasys.artemis.datastructures.Constants;
-import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
-import tech.pegasys.artemis.datastructures.operations.Attestation;
-import tech.pegasys.artemis.datastructures.operations.AttesterSlashing;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
 import tech.pegasys.artemis.datastructures.operations.VoluntaryExit;
-import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 
 public abstract class TestSuite {
   protected static Path configPath = null;
@@ -102,7 +102,8 @@ public abstract class TestSuite {
   @SuppressWarnings({"unchecked", "rawtypes"})
   public static Stream<Arguments> findTestsByPath(List<Pair<Class, String>> objectPath)
       throws IOException {
-    return findTestsByPath(Paths.get(""), objectPath);
+//    return findTestsByPath(Paths.get(""), objectPath);
+    return null;
   }
 
   public static InputStream getInputStreamFromPath(Path path) {
@@ -142,50 +143,70 @@ public abstract class TestSuite {
 
   @MustBeClosed
   @SuppressWarnings({"unchecked", "rawtypes"})
-  public static Stream<Arguments> findTestsByPath(Path path, List<Pair<Class, String>> objectPath)
-      throws IOException {
+  public static Stream<Arguments> findTestsByPath(Path path, List<Pair<String, List<Pair<Class, Path>>>> objectPath) {
     path = Path.of(pathToTests.toString(), path.toString());
     try (Stream<Path> walk = Files.walk(path)) {
       List<String> result = walk.map(x -> x.toString()).collect(Collectors.toList());
-      return result
-          .parallelStream()
-          .filter(
-              walkPath ->
-                  objectPath
-                      .parallelStream()
-                      .allMatch(pair -> Files.exists(Path.of(walkPath, pair.getSecond()))))
-          .map(
+      result = result
+              .stream()
+              .filter(
+                      walkPath ->
+                              objectPath
+                                      .stream()
+                                      .allMatch(pair -> Files.exists(Path.of(walkPath, pair.getFirst())))).collect(Collectors.toList());
+
+      return result.stream().map(
               walkPath -> {
-                return objectPath.stream()
-                    .map(
+                return objectPath.stream().flatMap(
                         pair -> {
-                          Object object = pathToObject(Path.of(walkPath, pair.getSecond()));
-                          Context c = new Context();
-                          c.path = walkPath;
-                          try {
-                            if (pair.getFirst().equals(ReadLineType.class)) {
-                              BufferedReader inputStreamFromPath =
-                                  new BufferedReader(
-                                      new InputStreamReader(
-                                          getInputStreamFromPath(
-                                              Path.of(walkPath, pair.getSecond()))));
-                              String s = inputStreamFromPath.readLine();
-                              c.obj = s;
-                            } else {
-                              c.obj =
-                                  MapObjectUtil.convertMapToTypedObject(pair.getFirst(), object);
-                            }
-                          } catch (Exception e) {
-                            System.out.println("here");
-                          }
-                          return c;
-                        });
-              })
-          .map(objects -> Arguments.of(objects.toArray()));
+                          Object object = pathToObject(Path.of(walkPath, pair.getFirst()));
+                          return pair.getSecond().stream().map(subPair ->  parseObjectFromFile(subPair.getFirst(), subPair.getSecond(), object));
+                        }).collect(Collectors.toList());
+              }
+      ).map(objects -> Arguments.of(objects.toArray()));
     } catch (IOException e) {
       e.printStackTrace();
     }
     return null;
+  }
+
+  @MustBeClosed
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  public static Stream<Arguments> findTestsByPath(TestSet testSet) {
+    Path path = Path.of(pathToTests.toString(), testSet.getPath().toString());
+    try (Stream<Path> walk = Files.walk(path)) {
+      List<String> result = walk.map(x -> x.toString()).collect(Collectors.toList());
+      result = result
+              .stream()
+              .filter(
+                      walkPath ->
+                              testSet.getFileNames()
+                                      .stream()
+                                      .allMatch(fileName -> Files.exists(Path.of(walkPath, fileName)))).collect(Collectors.toList());
+
+      return result.stream().map(
+              walkPath -> {
+                return testSet.getFileNames().stream().flatMap(
+                        fileName -> {
+                          Object object = pathToObject(Path.of(walkPath, fileName));
+                          return testSet.getTestObjectByFileName(fileName).stream().map(testObject ->  parseObjectFromFile(testObject.getClassName(), testObject.getPath(), object));
+                        }).collect(Collectors.toList());
+              }
+      ).map(objects -> Arguments.of(objects.toArray()));
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
+    return null;
+  }
+
+  private static  Object parseObjectFromFile(Class className, Path path, Object object) {
+    if(path != null){
+      Iterator<Path> itr = path.iterator();
+      while(itr.hasNext()){
+          object = ((Map) object).get(itr.next().toString());
+      }
+    }
+    return MapObjectUtil.convertMapToTypedObject(className, object);
   }
 
   @Deprecated
@@ -247,10 +268,66 @@ public abstract class TestSuite {
       throws Exception {
     loadConfigFromPath(configPath);
 
-    List<Pair<Class, String>> arguments = new ArrayList<Pair<Class, String>>();
-    arguments.add(getParams(BeaconStateWithCache.class, "pre.yaml"));
-    arguments.add(getParams(BeaconStateWithCache.class, "post.yaml"));
-    return findTestsByPath(path, arguments);
+    TestSet testSet = new TestSet(path);
+    testSet.add(new TestObject("pre.yaml", BeaconStateWithCache.class, null));
+    testSet.add(new TestObject("post.yaml", BeaconStateWithCache.class, null));
+
+    return findTestsByPath(testSet);
+  }
+
+
+
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  @MustBeClosed
+  public static Stream<Arguments> attestationSetup(Path path, Path configPath)
+          throws Exception {
+    loadConfigFromPath(configPath);
+
+    TestSet testSet = new TestSet(path);
+    testSet.add(new TestObject("attestation.yaml", Attestation.class, null));
+    testSet.add(new TestObject("pre.yaml", BeaconState.class, null));
+
+    return findTestsByPath(testSet);
+  }
+
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  @MustBeClosed
+  public static Stream<Arguments> attestationSlashingSetup(Path path, Path configPath)
+          throws Exception {
+    loadConfigFromPath(configPath);
+
+    TestSet testSet = new TestSet(path);
+    testSet.add(new TestObject("attester_slashing.yaml", AttesterSlashing.class, null));
+    testSet.add(new TestObject("pre.yaml", BeaconState.class, null));
+
+    return findTestsByPath(testSet);
+  }
+
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  @MustBeClosed
+  public static Stream<Arguments> blockHeaderInvalidParentRootSetup(Path path, Path configPath)
+          throws Exception {
+    loadConfigFromPath(configPath);
+
+    TestSet testSet = new TestSet(path);
+    testSet.add(new TestObject("block.yaml", BeaconBlock.class, null));
+    testSet.add(new TestObject("pre.yaml", BeaconState.class, null));
+
+    return findTestsByPath(testSet);
+  }
+
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  @MustBeClosed
+  public static Stream<Arguments> invalidSignatureBlockHeaderSetup(Path path, Path configPath)
+          throws Exception {
+    loadConfigFromPath(configPath);
+
+    TestSet testSet = new TestSet(path);
+    testSet.add(new TestObject("block.yaml", BeaconBlock.class, null));
+    testSet.add(new TestObject("meta.yaml", Integer.class, Paths.get("bls_setting")));
+    testSet.add(new TestObject("pre.yaml", BeaconState.class, null));
+
+    return findTestsByPath(testSet);
   }
 
   public static class ReadLineType {}
