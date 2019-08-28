@@ -39,6 +39,7 @@ import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
 import tech.pegasys.artemis.datastructures.operations.Transfer;
 import tech.pegasys.artemis.datastructures.operations.VoluntaryExit;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.datastructures.state.CompactCommittee;
 import tech.pegasys.artemis.datastructures.state.Crosslink;
@@ -67,6 +68,7 @@ public class MapObjectUtil {
     else if (classtype.equals(Bytes[].class)) return getBytesArray((List) object);
     else if (classtype.equals(Bytes32[].class)) return getBytes32Array((List) object);
     else if (classtype.equals(BeaconState.class)) return getBeaconState((Map) object);
+    else if (classtype.equals(BeaconStateWithCache.class)) return getBeaconState((Map) object);
     else if (classtype.equals(Checkpoint.class)) return getCheckpoint((Map) object);
     else if (classtype.equals(CompactCommittee.class)) return getCompactCommittee((Map) object);
     else if (classtype.equals(Crosslink.class)) return getCrossLink((Map) object);
@@ -299,7 +301,7 @@ public class MapObjectUtil {
         getCheckpoint((Map) map.get("current_justified_checkpoint"));
     Checkpoint finalized_checkpoint = getCheckpoint((Map) map.get("finalized_checkpoint"));
 
-    return new BeaconState(
+    return new BeaconStateWithCache(
         genesis_time,
         slot,
         fork,
