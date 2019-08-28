@@ -138,7 +138,7 @@ public class CrosslinkCommitteeUtil {
               get_committee_count(state, epoch).intValue());
 
       // Client specific optimization
-//      ((BeaconStateWithCache) state).setCrossLinkCommittee(committee, epoch, shard);
+      //      ((BeaconStateWithCache) state).setCrossLinkCommittee(committee, epoch, shard);
 
       return committee;
     }
@@ -179,7 +179,7 @@ public class CrosslinkCommitteeUtil {
       }
 
       // Client specific optimization
-//      ((BeaconStateWithCache) state).setStartShard(epoch, shard);
+      //      ((BeaconStateWithCache) state).setStartShard(epoch, shard);
 
       return shard;
     }
