@@ -16,11 +16,15 @@ package tech.pegasys.artemis.networking.p2p.hobbits;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import io.vertx.core.net.NetSocket;
+import java.math.BigInteger;
 import java.util.concurrent.ConcurrentHashMap;
+import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.plumtree.MessageSender;
 import org.apache.tuweni.plumtree.State;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
+import tech.pegasys.artemis.networking.p2p.hobbits.gossip.GossipCodec;
 import tech.pegasys.artemis.networking.p2p.hobbits.gossip.GossipMessage;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.util.alogger.ALogger;
@@ -41,22 +45,38 @@ public class PlumtreeSocketHandler extends AbstractSocketHandler {
   }
 
   @Override
+  public void gossipMessage(
+      int method, String topic, long timestamp, Bytes messageHash, Bytes32 hash, Bytes body) {
+    Bytes bytes =
+        GossipCodec.encode(
+                method,
+                topic,
+                BigInteger.valueOf(timestamp),
+                messageHash.toArrayUnsafe(),
+                hash.toArrayUnsafe(),
+                body.toArrayUnsafe())
+            .toBytes();
+    sendBytes(bytes);
+  }
+
+  @Override
   protected void handleGossipMessage(GossipMessage gossipMessage) {
     if (MessageSender.Verb.GOSSIP.ordinal() == gossipMessage.method()) {
-      String key = gossipMessage.body().toHexString();
+      Bytes body = Bytes.wrap(gossipMessage.body());
+      String key = body.toHexString();
       if (!receivedMessages.containsKey(key)) {
         receivedMessages.put(key, true);
-        peer.setPeerGossip(gossipMessage.body());
+        peer.setPeerGossip(body);
         String attributes = gossipMessage.getTopic() + "," + gossipMessage.getTimestamp();
         p2pState.receiveGossipMessage(
-            peer, attributes, gossipMessage.body(), gossipMessage.messageHash());
+            peer, attributes, body, Bytes.wrap(gossipMessage.messageHash()));
       }
     } else if (MessageSender.Verb.PRUNE.ordinal() == gossipMessage.method()) {
       p2pState.receivePruneMessage(peer);
     } else if (MessageSender.Verb.GRAFT.ordinal() == gossipMessage.method()) {
-      p2pState.receiveGraftMessage(peer, gossipMessage.messageHash());
+      p2pState.receiveGraftMessage(peer, Bytes.wrap(gossipMessage.messageHash()));
     } else if (MessageSender.Verb.IHAVE.ordinal() == gossipMessage.method()) {
-      p2pState.receiveIHaveMessage(peer, gossipMessage.messageHash());
+      p2pState.receiveIHaveMessage(peer, Bytes.wrap(gossipMessage.messageHash()));
     } else {
       throw new UnsupportedOperationException(gossipMessage.method() + " is not supported");
     }

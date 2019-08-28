@@ -13,23 +13,44 @@
 
 package tech.pegasys.artemis.networking.p2p.hobbits.rpc;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonValue;
+import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
+import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.operations.Attestation;
+import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 
+@JsonSerialize(using = AttestationMessage.AttestationSerializer.class)
 @JsonDeserialize(using = AttestationMessage.AttestationDeserializer.class)
 public final class AttestationMessage {
+
+  static class AttestationSerializer extends StdSerializer<AttestationMessage> {
+
+    protected AttestationSerializer() {
+      super(AttestationMessage.class);
+    }
+
+    @Override
+    public void serialize(
+        AttestationMessage attestationMessage, JsonGenerator jgen, SerializerProvider provider)
+        throws IOException {
+      jgen.writeStartObject();
+      jgen.writeBinaryField(
+          "attestation",
+          SimpleOffsetSerializer.serialize(attestationMessage.body()).toArrayUnsafe());
+      jgen.writeEndObject();
+    }
+  }
 
   static class AttestationDeserializer extends StdDeserializer<AttestationMessage> {
 
@@ -41,39 +62,37 @@ public final class AttestationMessage {
     public AttestationMessage deserialize(JsonParser jp, DeserializationContext ctxt)
         throws IOException, JsonProcessingException {
       JsonNode node = jp.getCodec().readTree(jp);
-      Iterator<JsonNode> iterator = node.iterator();
-      List<BeaconBlock> elts = new ArrayList<>();
-      while (iterator.hasNext()) {
-        JsonNode child = iterator.next();
-        // todo
-        //        elts.add(BeaconBlock.fromBytes(Bytes.wrap(child.get("bytes").binaryValue())));
-      }
+      AttestationBody elts = new AttestationBody(Bytes.wrap(node.get("attestation").binaryValue()));
       return new AttestationMessage(elts);
     }
   }
 
-  static class BlockBody {
+  static class AttestationBody {
 
     private final Bytes bytes;
 
-    BlockBody(Bytes bytes) {
+    AttestationBody(Bytes bytes) {
       this.bytes = bytes;
     }
 
-    @JsonProperty("bytes")
     public Bytes bytes() {
       return bytes;
     }
   }
 
-  private final List<BeaconBlock> bodies;
+  private final Attestation body;
 
-  AttestationMessage(List<BeaconBlock> bodies) {
-    this.bodies = bodies;
+  AttestationMessage(AttestationBody body) {
+    this.body = SimpleOffsetSerializer.deserialize(body.bytes(), Attestation.class);
   }
 
-  @JsonValue
-  public List<BeaconBlock> bodies() {
-    return bodies;
+  @JsonCreator
+  public AttestationMessage(@JsonProperty("attestation") Attestation attestation) {
+    this.body = attestation;
+  }
+
+  @JsonProperty("attestation")
+  public Attestation body() {
+    return body;
   }
 }

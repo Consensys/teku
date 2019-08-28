@@ -15,7 +15,9 @@ package tech.pegasys.artemis.networking.p2p.hobbits;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import java.math.BigInteger;
 import java.util.Date;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.hobbits.Message;
 import org.apache.tuweni.plumtree.MessageSender;
@@ -23,6 +25,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
+import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.networking.p2p.hobbits.gossip.GossipCodec;
 import tech.pegasys.artemis.networking.p2p.hobbits.gossip.GossipMessage;
 
@@ -35,13 +38,14 @@ final class GossipCodecTest {
         GossipCodec.encode(
             MessageSender.Verb.GOSSIP.ordinal(),
             "BLOCK",
-            new Date().getTime(),
-            Bytes32.random(),
-            Bytes32.random(),
-            block.toBytes());
+            BigInteger.valueOf(new Date().getTime()),
+            Bytes32.random().toArrayUnsafe(),
+            Bytes32.random().toArrayUnsafe(),
+            SimpleOffsetSerializer.serialize(block).toArrayUnsafe());
     GossipMessage message = GossipCodec.decode(encoded);
     assertEquals(MessageSender.Verb.GOSSIP.ordinal(), message.method());
-    BeaconBlock read = BeaconBlock.fromBytes(message.body());
+    BeaconBlock read =
+        SimpleOffsetSerializer.deserialize(Bytes.wrap(message.body()), BeaconBlock.class);
     assertEquals(read.getSignature(), block.getSignature());
   }
 }

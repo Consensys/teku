@@ -22,6 +22,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.Copyable;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
+import tech.pegasys.artemis.util.SSZTypes.Bitvector;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.SSZTypes.SSZVector;
 
@@ -32,6 +33,77 @@ public final class BeaconStateWithCache extends BeaconState {
 
   public BeaconStateWithCache() {
     super();
+  }
+
+  public BeaconStateWithCache(
+      // Versioning
+      UnsignedLong genesis_time,
+      UnsignedLong slot,
+      Fork fork,
+
+      // History
+      BeaconBlockHeader latest_block_header,
+      SSZVector<Bytes32> block_roots,
+      SSZVector<Bytes32> state_roots,
+      SSZList<Bytes32> historical_roots,
+
+      // Eth1
+      Eth1Data eth1_data,
+      SSZList<Eth1Data> eth1_data_votes,
+      UnsignedLong eth1_deposit_index,
+
+      // Registry
+      SSZList<Validator> validators,
+      SSZList<UnsignedLong> balances,
+
+      // Shuffling
+      UnsignedLong start_shard,
+      SSZVector<Bytes32> randao_mixes,
+      SSZVector<Bytes32> active_index_roots,
+      SSZVector<Bytes32> compact_committees_roots,
+
+      // Slashings
+      SSZVector<UnsignedLong> slashings,
+
+      // Attestations
+      SSZList<PendingAttestation> previous_epoch_attestations,
+      SSZList<PendingAttestation> current_epoch_attestations,
+
+      // Crosslinks
+      SSZVector<Crosslink> previous_crosslinks,
+      SSZVector<Crosslink> current_crosslinks,
+
+      // Finality
+      Bitvector justification_bits,
+      Checkpoint previous_justified_checkpoint,
+      Checkpoint current_justified_chekpoint,
+      Checkpoint finalized_checkpoint) {
+    super(
+        genesis_time,
+        slot,
+        fork,
+        latest_block_header,
+        block_roots,
+        state_roots,
+        historical_roots,
+        eth1_data,
+        eth1_data_votes,
+        eth1_deposit_index,
+        validators,
+        balances,
+        start_shard,
+        randao_mixes,
+        active_index_roots,
+        compact_committees_roots,
+        slashings,
+        previous_epoch_attestations,
+        current_epoch_attestations,
+        previous_crosslinks,
+        current_crosslinks,
+        justification_bits,
+        previous_justified_checkpoint,
+        current_justified_chekpoint,
+        finalized_checkpoint);
   }
 
   public BeaconStateWithCache(BeaconStateWithCache state) {

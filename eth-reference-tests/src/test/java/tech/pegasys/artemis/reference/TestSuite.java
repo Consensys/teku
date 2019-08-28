@@ -16,9 +16,16 @@ package tech.pegasys.artemis.reference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.errorprone.annotations.MustBeClosed;
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.UncheckedIOException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -29,9 +36,28 @@ import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.tuweni.io.Resources;
 import org.junit.jupiter.params.provider.Arguments;
+import tech.pegasys.artemis.datastructures.Constants;
+import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.operations.Attestation;
+import tech.pegasys.artemis.datastructures.operations.AttesterSlashing;
+import tech.pegasys.artemis.datastructures.operations.Deposit;
+import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
+import tech.pegasys.artemis.datastructures.operations.VoluntaryExit;
+import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 
 public abstract class TestSuite {
+  private static final Path pathToTests =
+      Paths.get(
+          System.getProperty("user.dir").toString(),
+          "src",
+          "test",
+          "resources",
+          "eth2.0-spec-tests",
+          "tests");
+  private static final String FILE = "file://";
 
+  @Deprecated
   @MustBeClosed
   @SuppressWarnings({"rawtypes"})
   public static Stream<Arguments> findTests(String glob, List<Pair<Class, List<String>>> objectPath)
@@ -47,6 +73,122 @@ public abstract class TestSuite {
             });
   }
 
+  public static Path getTestPath(Path path) {
+    return Path.of(pathToTests.toString(), path.toString());
+  }
+
+  @SuppressWarnings({"rawtypes"})
+  public static void loadConfigFromPath(Path path) throws Exception {
+    path = Path.of(pathToTests.toString(), path.toString());
+    String result = "";
+    while (result.isEmpty() && path.getNameCount() > 0) {
+      try (Stream<Path> walk = Files.walk(path)) {
+        result =
+            walk.map(x -> x.toString())
+                .filter(currentPath -> currentPath.contains("config.yaml"))
+                .collect(Collectors.joining());
+      } catch (IOException e) {
+        e.printStackTrace();
+      }
+      if (result.isEmpty()) path = path.getParent();
+    }
+    if (result.isEmpty())
+      throw new Exception(
+          "TestSuite.loadConfigFromPath(): Configuration files was not found in the hierarchy of the provided path");
+    Constants.init((Map) pathToObject(Paths.get(result)));
+  }
+
+  @MustBeClosed
+  @SuppressWarnings({"rawtypes"})
+  public static Stream<Arguments> findTestsByPath(List<Pair<Class, String>> objectPath)
+      throws IOException {
+    return findTestsByPath(Paths.get(""), objectPath);
+  }
+
+  public static InputStream getInputStreamFromPath(Path path) {
+    URL url = null;
+    InputStream in = null;
+    try {
+      url = new URL(FILE + path);
+      in = url.openConnection().getInputStream();
+    } catch (MalformedURLException e) {
+      e.printStackTrace();
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
+    ;
+    return in;
+  }
+
+  @SuppressWarnings({"rawtypes"})
+  public static Object getObjectFromYAMLInputStream(InputStream in) {
+    ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
+    Object object = null;
+    try {
+      object = ((Map) mapper.readerFor(Map.class).readValue(in));
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
+    return object;
+  }
+
+  public static Object pathToObject(Path path) {
+    return getObjectFromYAMLInputStream(getInputStreamFromPath(path));
+  }
+
+  public static class Context {
+    public String path;
+    public Object obj;
+  }
+
+  @MustBeClosed
+  @SuppressWarnings({"rawtypes"})
+  public static Stream<Arguments> findTestsByPath(Path path, List<Pair<Class, String>> objectPath)
+      throws IOException {
+    path = Path.of(pathToTests.toString(), path.toString());
+    try (Stream<Path> walk = Files.walk(path)) {
+      List<String> result = walk.map(x -> x.toString()).collect(Collectors.toList());
+      return result
+          .parallelStream()
+          .filter(
+              walkPath ->
+                  objectPath
+                      .parallelStream()
+                      .allMatch(pair -> Files.exists(Path.of(walkPath, pair.getValue()))))
+          .map(
+              walkPath -> {
+                return objectPath.stream()
+                    .map(
+                        pair -> {
+                          Object object = pathToObject(Path.of(walkPath, pair.getValue()));
+                          Context c = new Context();
+                          c.path = walkPath;
+                          try {
+                            if (pair.getKey().equals(ReadLineType.class)) {
+                              BufferedReader inputStreamFromPath =
+                                  new BufferedReader(
+                                      new InputStreamReader(
+                                          getInputStreamFromPath(
+                                              Path.of(walkPath, pair.getValue()))));
+                              String s = inputStreamFromPath.readLine();
+                              c.obj = s;
+                            } else {
+                              c.obj = MapObjectUtil.convertMapToTypedObject(pair.getKey(), object);
+                            }
+                          } catch (Exception e) {
+                            System.out.println("here");
+                          }
+                          return c;
+                        });
+              })
+          .map(objects -> Arguments.of(objects.toArray()));
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
+    return null;
+  }
+
+  @Deprecated
   @SuppressWarnings({"unchecked", "rawtypes"})
   private static Stream<Arguments> prepareTests(
       InputStream in, List<Pair<Class, List<String>>> objectPath) throws IOException {
@@ -93,28 +235,119 @@ public abstract class TestSuite {
     return new ImmutablePair<Class, List<String>>(classType, args);
   }
 
-  // Temporarily handle BLS tests separately dur to their different structure
-
-  @MustBeClosed
-  public static Stream<Arguments> findBLSTests(String glob, String tcase) throws IOException {
-    return Resources.find(glob)
-        .flatMap(
-            url -> {
-              try (InputStream in = url.openConnection().getInputStream()) {
-                return prepareBLSTests(in, tcase);
-              } catch (IOException e) {
-                throw new UncheckedIOException(e);
-              }
-            });
+  @SuppressWarnings({"rawtypes"})
+  public static Pair<Class, String> getParams(Class classType, String args) {
+    return new ImmutablePair<Class, String>(classType, args);
   }
 
-  @SuppressWarnings({"unchecked", "rawtypes"})
-  private static Stream<Arguments> prepareBLSTests(InputStream in, String tcase)
-      throws IOException {
-    ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
-    Map allTests = mapper.readerFor(Map.class).readValue(in);
+  @SuppressWarnings({"rawtypes"})
+  @MustBeClosed
+  public static Stream<Arguments> epochProcessingSetup(Path path, Path configPath)
+      throws Exception {
+    loadConfigFromPath(configPath);
 
-    return ((List<Map>) allTests.get(tcase))
-        .stream().map(testCase -> Arguments.of(testCase.get("input"), testCase.get("output")));
+    List<Pair<Class, String>> arguments = new ArrayList<Pair<Class, String>>();
+    arguments.add(getParams(BeaconState.class, "pre.yaml"));
+    arguments.add(getParams(BeaconState.class, "post.yaml"));
+    return findTestsByPath(path, arguments);
+  }
+
+  public static class ReadLineType {}
+
+  @SuppressWarnings({"rawtypes"})
+  @MustBeClosed
+  public static Stream<Arguments> sanitySlotsProcessingSetup(Path path, Path configPath)
+      throws Exception {
+    loadConfigFromPath(configPath);
+
+    List<Pair<Class, String>> arguments = new ArrayList<Pair<Class, String>>();
+    arguments.add(getParams(BeaconStateWithCache.class, "pre.yaml"));
+    arguments.add(getParams(BeaconStateWithCache.class, "post.yaml"));
+    return findTestsByPath(path, arguments);
+  }
+
+  @SuppressWarnings({"rawtypes"})
+  @MustBeClosed
+  public static Stream<Arguments> sanityBlocksProcessingSetup(Path path, Path configPath)
+      throws Exception {
+    loadConfigFromPath(configPath);
+
+    List<Pair<Class, String>> arguments = new ArrayList<Pair<Class, String>>();
+    arguments.add(getParams(BeaconState.class, "pre.yaml"));
+    arguments.add(getParams(BeaconState.class, "post.yaml"));
+    arguments.add(getParams(ReadLineType.class, "meta.yaml"));
+    return findTestsByPath(path, arguments);
+  }
+
+  @SuppressWarnings({"rawtypes"})
+  @MustBeClosed
+  public static Stream<Arguments> operationsProcessingSetup(Path path, Path configPath)
+      throws Exception {
+    loadConfigFromPath(configPath);
+
+    List<Pair<Class, String>> arguments = new ArrayList<Pair<Class, String>>();
+    arguments.add(getParams(BeaconState.class, "pre.yaml"));
+    arguments.add(getParams(Attestation.class, "attestation.yaml"));
+    return findTestsByPath(path, arguments);
+  }
+
+  @SuppressWarnings({"rawtypes"})
+  @MustBeClosed
+  public static Stream<Arguments> depositProcessingSetup(Path path, Path configPath)
+      throws Exception {
+    loadConfigFromPath(configPath);
+
+    List<Pair<Class, String>> arguments = new ArrayList<Pair<Class, String>>();
+    arguments.add(getParams(BeaconState.class, "pre.yaml"));
+    arguments.add(getParams(Deposit.class, "deposit.yaml"));
+    return findTestsByPath(path, arguments);
+  }
+
+  @SuppressWarnings({"rawtypes"})
+  @MustBeClosed
+  public static Stream<Arguments> proposerSlashingProcessingSetup(Path path, Path configPath)
+      throws Exception {
+    loadConfigFromPath(configPath);
+
+    List<Pair<Class, String>> arguments = new ArrayList<Pair<Class, String>>();
+    arguments.add(getParams(BeaconState.class, "pre.yaml"));
+    arguments.add(getParams(ProposerSlashing.class, "proposer_slashing.yaml"));
+    return findTestsByPath(path, arguments);
+  }
+
+  @SuppressWarnings({"rawtypes"})
+  @MustBeClosed
+  public static Stream<Arguments> voluntaryExitProcessingSetup(Path path, Path configPath)
+      throws Exception {
+    loadConfigFromPath(configPath);
+
+    List<Pair<Class, String>> arguments = new ArrayList<Pair<Class, String>>();
+    arguments.add(getParams(BeaconState.class, "pre.yaml"));
+    arguments.add(getParams(VoluntaryExit.class, "voluntary_exit.yaml"));
+    return findTestsByPath(path, arguments);
+  }
+
+  @SuppressWarnings({"rawtypes"})
+  @MustBeClosed
+  public static Stream<Arguments> attestorSlashingProcessingSetup(Path path, Path configPath)
+      throws Exception {
+    loadConfigFromPath(configPath);
+
+    List<Pair<Class, String>> arguments = new ArrayList<Pair<Class, String>>();
+    arguments.add(getParams(BeaconState.class, "pre.yaml"));
+    arguments.add(getParams(AttesterSlashing.class, "attester_slashing.yaml"));
+    return findTestsByPath(path, arguments);
+  }
+
+  @SuppressWarnings({"rawtypes"})
+  @MustBeClosed
+  public static Stream<Arguments> blockHeaderProcessingSetup(Path path, Path configPath)
+      throws Exception {
+    loadConfigFromPath(configPath);
+
+    List<Pair<Class, String>> arguments = new ArrayList<Pair<Class, String>>();
+    arguments.add(getParams(BeaconState.class, "pre.yaml"));
+    arguments.add(getParams(BeaconBlock.class, "block.yaml"));
+    return findTestsByPath(path, arguments);
   }
 }

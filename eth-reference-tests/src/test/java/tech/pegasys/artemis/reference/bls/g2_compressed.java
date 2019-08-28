@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.stream.Stream;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes48;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -34,18 +35,20 @@ class g2_compressed extends TestSuite {
 
   @ParameterizedTest(name = "{index}. message hash to G2 compressed {0} -> {1}")
   @MethodSource("readMessageHashG2Compressed")
-  void messageHashToG2Compressed(Bytes message, Bytes domain, G2Point g2PointExpected) {
-    G2Point g2PointActual = G2Point.hashToG2(message, domain);
-    assertEquals(g2PointExpected, g2PointActual);
+  void messageHashToG2Compressed(G2Point g2Point, List<Bytes> output) {
+    Bytes48 xReExpected = Bytes48.leftPad(output.get(0));
+    Bytes48 xImExpected = Bytes48.leftPad(output.get(1));
+    Bytes expectedBytes = Bytes.concatenate(xReExpected, xImExpected);
+    Bytes actualBytes = g2Point.toBytesCompressed();
+    assertEquals(expectedBytes, actualBytes);
   }
 
   @SuppressWarnings({"rawtypes"})
   @MustBeClosed
   static Stream<Arguments> readMessageHashG2Compressed() throws IOException {
     List<Pair<Class, List<String>>> arguments = new ArrayList<Pair<Class, List<String>>>();
-    arguments.add(getParams(Bytes.class, Arrays.asList("input", "message")));
-    arguments.add(getParams(Bytes.class, Arrays.asList("input", "domain")));
-    arguments.add(getParams(G2Point.class, Arrays.asList("output")));
+    arguments.add(getParams(G2Point.class, Arrays.asList("input")));
+    arguments.add(getParams(Bytes[].class, Arrays.asList("output")));
 
     return findTests(testFile, arguments);
   }

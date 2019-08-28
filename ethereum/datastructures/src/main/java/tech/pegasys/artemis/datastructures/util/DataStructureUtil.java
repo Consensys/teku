@@ -13,26 +13,6 @@
 
 package tech.pegasys.artemis.datastructures.util;
 
-import static java.lang.Math.random;
-import static java.lang.Math.toIntExact;
-import static tech.pegasys.artemis.datastructures.Constants.DEPOSIT_CONTRACT_TREE_DEPTH;
-import static tech.pegasys.artemis.datastructures.Constants.DOMAIN_DEPOSIT;
-import static tech.pegasys.artemis.datastructures.Constants.EPOCHS_PER_HISTORICAL_VECTOR;
-import static tech.pegasys.artemis.datastructures.Constants.EPOCHS_PER_SLASHINGS_VECTOR;
-import static tech.pegasys.artemis.datastructures.Constants.JUSTIFICATION_BITS_LENGTH;
-import static tech.pegasys.artemis.datastructures.Constants.MAX_ATTESTATIONS;
-import static tech.pegasys.artemis.datastructures.Constants.MAX_ATTESTER_SLASHINGS;
-import static tech.pegasys.artemis.datastructures.Constants.MAX_DEPOSITS;
-import static tech.pegasys.artemis.datastructures.Constants.MAX_PROPOSER_SLASHINGS;
-import static tech.pegasys.artemis.datastructures.Constants.MAX_TRANSFERS;
-import static tech.pegasys.artemis.datastructures.Constants.MAX_VALIDATORS_PER_COMMITTEE;
-import static tech.pegasys.artemis.datastructures.Constants.MAX_VOLUNTARY_EXITS;
-import static tech.pegasys.artemis.datastructures.Constants.SHARD_COUNT;
-import static tech.pegasys.artemis.datastructures.Constants.SLOTS_PER_ETH1_VOTING_PERIOD;
-import static tech.pegasys.artemis.datastructures.Constants.SLOTS_PER_HISTORICAL_ROOT;
-import static tech.pegasys.artemis.datastructures.Constants.ZERO_HASH;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_domain;
-
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
@@ -50,6 +30,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.function.Supplier;
 import java.util.stream.LongStream;
+import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.json.simple.parser.ParseException;
@@ -81,6 +62,7 @@ import tech.pegasys.artemis.util.SSZTypes.Bytes4;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.SSZTypes.SSZVector;
 import tech.pegasys.artemis.util.alogger.ALogger;
+import tech.pegasys.artemis.util.alogger.ALogger.Color;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
@@ -88,6 +70,7 @@ import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 
 public final class DataStructureUtil {
   private static final ALogger LOG = new ALogger(DataStructureUtil.class.getName());
+  private static final ALogger STDOUT = new ALogger("stdout");
 
   public static int randomInt() {
     return (int) Math.round(Math.random() * 1000000);
@@ -135,14 +118,14 @@ public final class DataStructureUtil {
   @SuppressWarnings({"rawtypes", "unchecked"})
   public static <T> SSZVector<T> randomSSZVector(
       T defaultClassObject, long maxSize, Supplier randomFunction) {
-    SSZVector<T> sszvector = new SSZVector<>(toIntExact(maxSize), defaultClassObject);
+    SSZVector<T> sszvector = new SSZVector<>(Math.toIntExact(maxSize), defaultClassObject);
     long numItems = (long) (Math.random() * maxSize);
     LongStream.range(0, numItems).forEach(i -> sszvector.add((T) randomFunction.get()));
     return sszvector;
   }
 
   public static Bitlist randomBitlist() {
-    return randomBitlist(MAX_VALIDATORS_PER_COMMITTEE);
+    return randomBitlist(Constants.MAX_VALIDATORS_PER_COMMITTEE);
   }
 
   public static Bitlist randomBitlist(int n) {
@@ -156,7 +139,7 @@ public final class DataStructureUtil {
   }
 
   public static Bitvector randomBitvector() {
-    return randomBitvector(JUSTIFICATION_BITS_LENGTH);
+    return randomBitvector(Constants.JUSTIFICATION_BITS_LENGTH);
   }
 
   public static Bitvector randomBitvector(int n) {
@@ -282,17 +265,21 @@ public final class DataStructureUtil {
         Bytes32.ZERO,
         randomSSZList(
             ProposerSlashing.class,
-            MAX_PROPOSER_SLASHINGS,
+            Constants.MAX_PROPOSER_SLASHINGS,
             DataStructureUtil::randomProposerSlashing),
         randomSSZList(
             AttesterSlashing.class,
-            MAX_ATTESTER_SLASHINGS,
+            Constants.MAX_ATTESTER_SLASHINGS,
             DataStructureUtil::randomAttesterSlashing),
-        randomSSZList(Attestation.class, MAX_ATTESTATIONS, DataStructureUtil::randomAttestation),
-        randomSSZList(Deposit.class, MAX_DEPOSITS, DataStructureUtil::randomDepositWithoutIndex),
         randomSSZList(
-            VoluntaryExit.class, MAX_VOLUNTARY_EXITS, DataStructureUtil::randomVoluntaryExit),
-        randomSSZList(Transfer.class, MAX_TRANSFERS, DataStructureUtil::randomTransfer));
+            Attestation.class, Constants.MAX_ATTESTATIONS, DataStructureUtil::randomAttestation),
+        randomSSZList(
+            Deposit.class, Constants.MAX_DEPOSITS, DataStructureUtil::randomDepositWithoutIndex),
+        randomSSZList(
+            VoluntaryExit.class,
+            Constants.MAX_VOLUNTARY_EXITS,
+            DataStructureUtil::randomVoluntaryExit),
+        randomSSZList(Transfer.class, Constants.MAX_TRANSFERS, DataStructureUtil::randomTransfer));
   }
 
   public static ProposerSlashing randomProposerSlashing() {
@@ -307,9 +294,9 @@ public final class DataStructureUtil {
 
   public static IndexedAttestation randomIndexedAttestation() {
     SSZList<UnsignedLong> custody_0_bit_indices =
-        new SSZList<>(UnsignedLong.class, MAX_VALIDATORS_PER_COMMITTEE);
+        new SSZList<>(UnsignedLong.class, Constants.MAX_VALIDATORS_PER_COMMITTEE);
     SSZList<UnsignedLong> custody_1_bit_indices =
-        new SSZList<>(UnsignedLong.class, MAX_VALIDATORS_PER_COMMITTEE);
+        new SSZList<>(UnsignedLong.class, Constants.MAX_VALIDATORS_PER_COMMITTEE);
     custody_0_bit_indices.add(randomUnsignedLong());
     custody_0_bit_indices.add(randomUnsignedLong());
     custody_0_bit_indices.add(randomUnsignedLong());
@@ -325,9 +312,9 @@ public final class DataStructureUtil {
 
   public static IndexedAttestation randomIndexedAttestation(int seed) {
     SSZList<UnsignedLong> custody_0_bit_indices =
-        new SSZList<>(UnsignedLong.class, MAX_VALIDATORS_PER_COMMITTEE);
+        new SSZList<>(UnsignedLong.class, Constants.MAX_VALIDATORS_PER_COMMITTEE);
     SSZList<UnsignedLong> custody_1_bit_indices =
-        new SSZList<>(UnsignedLong.class, MAX_VALIDATORS_PER_COMMITTEE);
+        new SSZList<>(UnsignedLong.class, Constants.MAX_VALIDATORS_PER_COMMITTEE);
     custody_0_bit_indices.add(randomUnsignedLong(seed));
     custody_0_bit_indices.add(randomUnsignedLong(seed));
     custody_0_bit_indices.add(randomUnsignedLong(seed));
@@ -357,7 +344,7 @@ public final class DataStructureUtil {
         BLSSignature.sign(
             keyPair,
             proof_of_possession_data.signing_root("signature"),
-            compute_domain(DOMAIN_DEPOSIT));
+            BeaconStateUtil.compute_domain(Constants.DOMAIN_DEPOSIT));
 
     return new DepositData(
         keyPair.getPublicKey(),
@@ -382,7 +369,7 @@ public final class DataStructureUtil {
         BLSSignature.sign(
             keyPair,
             proof_of_possession_data.signing_root("signature"),
-            compute_domain(DOMAIN_DEPOSIT));
+            BeaconStateUtil.compute_domain(Constants.DOMAIN_DEPOSIT));
 
     return new DepositData(
         keyPair.getPublicKey(),
@@ -398,7 +385,8 @@ public final class DataStructureUtil {
 
   public static Deposit randomDepositWithoutIndex() {
     return new Deposit(
-        new SSZVector<>(DEPOSIT_CONTRACT_TREE_DEPTH + 1, randomBytes32()), randomDepositData());
+        new SSZVector<>(Constants.DEPOSIT_CONTRACT_TREE_DEPTH + 1, randomBytes32()),
+        randomDepositData());
   }
 
   public static Deposit randomDeposit(int seed) {
@@ -474,10 +462,11 @@ public final class DataStructureUtil {
           BLSSignature.sign(
               keypair,
               depositData.signing_root("signature"),
-              compute_domain(Constants.DOMAIN_DEPOSIT));
+              BeaconStateUtil.compute_domain(Constants.DOMAIN_DEPOSIT));
       depositData.setSignature(proof_of_possession);
 
-      SSZVector<Bytes32> proof = new SSZVector<>(DEPOSIT_CONTRACT_TREE_DEPTH + 1, Bytes32.ZERO);
+      SSZVector<Bytes32> proof =
+          new SSZVector<>(Constants.DEPOSIT_CONTRACT_TREE_DEPTH + 1, Bytes32.ZERO);
       DepositWithIndex deposit = new DepositWithIndex(proof, depositData, UnsignedLong.valueOf(i));
       deposits.add(deposit);
     }
@@ -493,7 +482,8 @@ public final class DataStructureUtil {
       int numValidators) {
     BeaconBlockBody beaconBlockBody = new BeaconBlockBody();
     beaconBlockBody.setEth1_data(
-        new Eth1Data(ZERO_HASH, UnsignedLong.valueOf(numValidators), ZERO_HASH));
+        new Eth1Data(
+            Constants.ZERO_HASH, UnsignedLong.valueOf(numValidators), Constants.ZERO_HASH));
     beaconBlockBody.setDeposits(deposits);
     beaconBlockBody.setAttestations(attestations);
     return new BeaconBlock(
@@ -525,42 +515,73 @@ public final class DataStructureUtil {
         Bytes32.ZERO, UnsignedLong.valueOf(Constants.GENESIS_SLOT), deposits);
   }
 
-  @SuppressWarnings("rawtypes")
   public static BeaconStateWithCache createInitialBeaconState2(ArtemisConfiguration config)
       throws IOException, ParseException {
-    final List<DepositWithIndex> deposits = new ArrayList<>();
     if (config.getInteropActive()) {
-      Path path = Paths.get("depositsAndKeys.yaml");
-      String yaml = Files.readString(path.toAbsolutePath(), StandardCharsets.US_ASCII);
-      ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
-      Map<String, List<Map>> fileMap =
-          mapper.readValue(yaml, new TypeReference<Map<String, List<Map>>>() {});
-      List<Map> depositdatakeys = fileMap.get("DepositDataKeys");
-      depositdatakeys.forEach(
-          item -> {
-            Map depositDataMap = (Map) item.get("DepositData");
-            BLSPublicKey pubkey =
-                BLSPublicKey.fromBytes(
-                    Bytes.fromBase64String(depositDataMap.get("Pubkey").toString()));
-            Bytes32 withdrawalCreds =
-                Bytes32.wrap(
-                    Bytes.fromBase64String(depositDataMap.get("WithdrawalCredentials").toString()));
-            UnsignedLong amount = UnsignedLong.valueOf(depositDataMap.get("amount").toString());
-            BLSSignature signature =
-                BLSSignature.fromBytes(
-                    Bytes.fromBase64String(depositDataMap.get("Signature").toString()));
-            DepositData depositData = new DepositData(pubkey, withdrawalCreds, amount, signature);
-            deposits.add(
-                new DepositWithIndex(
-                    new SSZVector<>(DEPOSIT_CONTRACT_TREE_DEPTH + 1, Bytes32.ZERO),
-                    depositData,
-                    UnsignedLong.valueOf(item.get("Index").toString())));
-          });
-    } else {
-      deposits.addAll(newDeposits(config.getNumValidators()));
+      switch (config.getInteropMode()) {
+        case Constants.FILE_INTEROP:
+          return createFileInteropInitialBeaconState();
+        case Constants.MOCKED_START_INTEROP:
+          return createMockedStartInitialBeaconState(config);
+      }
     }
     return BeaconStateUtil.initialize_beacon_state_from_eth1(
+        Bytes32.ZERO,
+        UnsignedLong.valueOf(Constants.GENESIS_SLOT),
+        newDeposits(config.getNumValidators()));
+  }
+
+  @SuppressWarnings("rawtypes")
+  private static BeaconStateWithCache createFileInteropInitialBeaconState() throws IOException {
+    final List<DepositWithIndex> deposits = new ArrayList<>();
+    Path path = Paths.get("depositsAndKeys.yaml");
+    String yaml = Files.readString(path.toAbsolutePath(), StandardCharsets.US_ASCII);
+    ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
+    Map<String, List<Map>> fileMap =
+        mapper.readValue(yaml, new TypeReference<Map<String, List<Map>>>() {});
+    List<Map> depositdatakeys = fileMap.get("DepositDataKeys");
+    depositdatakeys.forEach(
+        item -> {
+          Map depositDataMap = (Map) item.get("DepositData");
+          BLSPublicKey pubkey =
+              BLSPublicKey.fromBytes(
+                  Bytes.fromBase64String(depositDataMap.get("Pubkey").toString()));
+          Bytes32 withdrawalCreds =
+              Bytes32.wrap(
+                  Bytes.fromBase64String(depositDataMap.get("WithdrawalCredentials").toString()));
+          UnsignedLong amount = UnsignedLong.valueOf(depositDataMap.get("amount").toString());
+          BLSSignature signature =
+              BLSSignature.fromBytes(
+                  Bytes.fromBase64String(depositDataMap.get("Signature").toString()));
+          DepositData depositData = new DepositData(pubkey, withdrawalCreds, amount, signature);
+          deposits.add(
+              new DepositWithIndex(
+                  new SSZVector<Bytes32>(),
+                  depositData,
+                  UnsignedLong.valueOf(item.get("Index").toString())));
+        });
+    return BeaconStateUtil.initialize_beacon_state_from_eth1(
         Bytes32.ZERO, UnsignedLong.valueOf(Constants.GENESIS_SLOT), deposits);
+  }
+
+  private static BeaconStateWithCache createMockedStartInitialBeaconState(
+      final ArtemisConfiguration config) {
+    final UnsignedLong genesisTime = UnsignedLong.valueOf(config.getInteropGenesisTime());
+    final int validatorCount = config.getNumValidators();
+    final List<BLSKeyPair> validatorKeys =
+        new MockStartValidatorKeyPairFactory().generateKeyPairs(0, validatorCount);
+    STDOUT.log(
+        Level.INFO,
+        "Using mocked start interoperability mode with genesis time "
+            + genesisTime
+            + " and "
+            + validatorCount
+            + " validators",
+        Color.GREEN);
+    final List<DepositData> initialDepositData =
+        new MockStartDepositGenerator().createDeposits(validatorKeys);
+    return new MockStartBeaconStateGenerator()
+        .createInitialBeaconState(genesisTime, initialDepositData);
   }
 
   public static Validator randomValidator() {
@@ -600,12 +621,16 @@ public final class DataStructureUtil {
         randomUnsignedLong(),
         randomFork(),
         randomBeaconBlockHeader(),
-        randomSSZVector(Bytes32.ZERO, SLOTS_PER_HISTORICAL_ROOT, DataStructureUtil::randomBytes32),
-        randomSSZVector(Bytes32.ZERO, SLOTS_PER_HISTORICAL_ROOT, DataStructureUtil::randomBytes32),
+        randomSSZVector(
+            Bytes32.ZERO, Constants.SLOTS_PER_HISTORICAL_ROOT, DataStructureUtil::randomBytes32),
+        randomSSZVector(
+            Bytes32.ZERO, Constants.SLOTS_PER_HISTORICAL_ROOT, DataStructureUtil::randomBytes32),
         randomSSZList(Bytes32.class, 1000, DataStructureUtil::randomBytes32),
         randomEth1Data(),
         randomSSZList(
-            Eth1Data.class, SLOTS_PER_ETH1_VOTING_PERIOD, DataStructureUtil::randomEth1Data),
+            Eth1Data.class,
+            Constants.SLOTS_PER_ETH1_VOTING_PERIOD,
+            DataStructureUtil::randomEth1Data),
         randomUnsignedLong(),
 
         // Can't use the actual maxSize cause it is too big
@@ -613,17 +638,19 @@ public final class DataStructureUtil {
         randomSSZList(UnsignedLong.class, 1000, DataStructureUtil::randomUnsignedLong),
         randomUnsignedLong(),
         randomSSZVector(
-            Bytes32.ZERO, EPOCHS_PER_HISTORICAL_VECTOR, DataStructureUtil::randomBytes32),
+            Bytes32.ZERO, Constants.EPOCHS_PER_HISTORICAL_VECTOR, DataStructureUtil::randomBytes32),
         randomSSZVector(
-            Bytes32.ZERO, EPOCHS_PER_HISTORICAL_VECTOR, DataStructureUtil::randomBytes32),
+            Bytes32.ZERO, Constants.EPOCHS_PER_HISTORICAL_VECTOR, DataStructureUtil::randomBytes32),
         randomSSZVector(
-            Bytes32.ZERO, EPOCHS_PER_HISTORICAL_VECTOR, DataStructureUtil::randomBytes32),
+            Bytes32.ZERO, Constants.EPOCHS_PER_HISTORICAL_VECTOR, DataStructureUtil::randomBytes32),
         randomSSZVector(
-            UnsignedLong.ZERO, EPOCHS_PER_SLASHINGS_VECTOR, DataStructureUtil::randomUnsignedLong),
+            UnsignedLong.ZERO,
+            Constants.EPOCHS_PER_SLASHINGS_VECTOR,
+            DataStructureUtil::randomUnsignedLong),
         randomSSZList(PendingAttestation.class, 1000, DataStructureUtil::randomPendingAttestation),
         randomSSZList(PendingAttestation.class, 1000, DataStructureUtil::randomPendingAttestation),
-        randomSSZVector(new Crosslink(), SHARD_COUNT, DataStructureUtil::randomCrosslink),
-        randomSSZVector(new Crosslink(), SHARD_COUNT, DataStructureUtil::randomCrosslink),
+        randomSSZVector(new Crosslink(), Constants.SHARD_COUNT, DataStructureUtil::randomCrosslink),
+        randomSSZVector(new Crosslink(), Constants.SHARD_COUNT, DataStructureUtil::randomCrosslink),
         randomBitvector(),
         randomCheckpoint(),
         randomCheckpoint(),
