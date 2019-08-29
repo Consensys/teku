@@ -81,7 +81,6 @@ public class MothraHandler {
     Bytes messageBytes = Bytes.wrap(message);
     STDOUT.log(Level.DEBUG, "Received " + messageBytes.size() + " bytes");
     String key = messageBytes.toHexString();
-    STDOUT.log(Level.INFO, "handRPCMessage: " + method + ":" + RPCMethod.HELLO.name());
     if (method.toUpperCase().equals(RPCMethod.HELLO.name())) {
       STDOUT.log(Level.INFO, "Received HELLO from: " + peer);
       HelloMessage msg = buildHelloMessage();
