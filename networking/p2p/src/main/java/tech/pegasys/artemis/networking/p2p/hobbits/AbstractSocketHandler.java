@@ -37,7 +37,9 @@ import org.apache.tuweni.hobbits.Message;
 import org.apache.tuweni.hobbits.Protocol;
 import org.apache.tuweni.plumtree.State;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
+import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.networking.p2p.api.P2PNetwork;
 import tech.pegasys.artemis.networking.p2p.hobbits.gossip.GossipCodec;
 import tech.pegasys.artemis.networking.p2p.hobbits.gossip.GossipMessage;
@@ -149,7 +151,7 @@ public abstract class AbstractSocketHandler {
     } else if (RPCMethod.ATTESTATION.code() == rpcMessage.method()) {
       AttestationMessage rb = rpcMessage.bodyAs(AttestationMessage.class);
       Attestation attestation = rb.body();
-      String key = attestation.toBytes().toHexString();
+      String key = SimpleOffsetSerializer.serialize(attestation).toHexString();
       if (!receivedMessages.containsKey(key)) {
         this.eventBus.post(attestation);
         receivedMessages.put(key, true);
@@ -157,7 +159,7 @@ public abstract class AbstractSocketHandler {
     } else if (RPCMethod.BLOCK_BODIES.code() == rpcMessage.method()) {
       BlockBodiesMessage rb = rpcMessage.bodyAs(BlockBodiesMessage.class);
       BeaconBlock beaconBlock = rb.bodies().get(0);
-      String key = beaconBlock.toBytes().toHexString();
+      String key = SimpleOffsetSerializer.serialize(beaconBlock).toHexString();
       if (!receivedMessages.containsKey(key)) {
         this.eventBus.post(beaconBlock);
         receivedMessages.put(key, true);
@@ -238,9 +240,34 @@ public abstract class AbstractSocketHandler {
 
   public void replyAttestation(RPCMessage rpcMessage) {
     RequestAttestationMessage rb = rpcMessage.bodyAs(RequestAttestationMessage.class);
-    Optional<Attestation> attestation = store.getUnprocessedAttestation(Bytes32.wrap(rb.hash()));
-    if (attestation.isPresent()) {
-      sendReply(RPCMethod.ATTESTATION, new AttestationMessage(attestation.get()), rpcMessage.id());
+    Bytes32 attestationHash = Bytes32.wrap(rb.hash());
+    // TODO fix serialization stuff
+    // store
+    // .getUnprocessedAttestation(attestationHash)
+    // .ifPresent(a -> sendReply(RPCMethod.ATTESTATION, a.toBytes(), rpcMessage.id()));
+  }
+
+  public void replyBlockHeaders(RPCMessage rpcMessage) {
+    RequestBlocksMessage rb = rpcMessage.bodyAs(RequestBlocksMessage.class);
+    List<Optional<BeaconBlock>> blocks =
+        store.getUnprocessedBlock(
+            Bytes32.wrap(rb.startRoot()), rb.max().longValue(), rb.skip().longValue());
+    List<Bytes> blockHeaders = new ArrayList<>();
+    blocks.forEach(
+        block -> {
+          if (block.isPresent()) {
+            blockHeaders.add(
+                new BeaconBlockHeader(
+                        block.get().getSlot(),
+                        block.get().getParent_root(),
+                        block.get().getState_root(),
+                        block.get().getBody().hash_tree_root(),
+                        block.get().getSignature())
+                    .toBytes());
+          }
+        });
+    if (blockHeaders.size() > 0) {
+      sendReply(RPCMethod.BLOCK_HEADERS, blockHeaders, rpcMessage.id());
     }
   }
 

@@ -36,7 +36,7 @@ import org.json.simple.parser.ParseException;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
-import tech.pegasys.artemis.datastructures.operations.Deposit;
+import tech.pegasys.artemis.datastructures.operations.DepositWithIndex;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
@@ -57,9 +57,27 @@ public class StateProcessor {
   private ChainStorageClient chainStorageClient;
   private ArtemisConfiguration config;
   private static final ALogger STDOUT = new ALogger("stdout");
-  private List<Deposit> deposits;
+  private List<DepositWithIndex> deposits;
 
   public StateProcessor(ServiceConfig config, ChainStorageClient chainStorageClient) {
+    /*
+    List<Long> serializationTimeArray = new ArrayList<>();
+    List<Long> deserializationTimeArray = new ArrayList<>();
+    for (int i = 0; i < 100; i++) {
+      BeaconBlock beaconBlock = DataStructureUtil.randomBeaconBlock(100);
+      long startTime = System.currentTimeMillis();
+      Bytes serialized = SimpleOffsetSerializer.serialize(beaconBlock);
+      serializationTimeArray.add(System.currentTimeMillis() - startTime);
+      startTime = System.currentTimeMillis();
+      BeaconBlock newBeaconBlock =
+              SimpleOffsetSerializer.deserialize(serialized, BeaconBlock.class);
+      deserializationTimeArray.add(System.currentTimeMillis() - startTime);
+    }
+
+    System.out.println("serialization: " + serializationTimeArray);
+    System.out.println("deserialization: " + deserializationTimeArray);
+    */
+
     this.eventBus = config.getEventBus();
     this.config = config.getConfig();
     this.eventBus.register(this);
@@ -92,7 +110,7 @@ public class StateProcessor {
 
   @Subscribe
   public void onDeposit(tech.pegasys.artemis.pow.event.Deposit event) {
-    if (deposits == null) deposits = new ArrayList<Deposit>();
+    if (deposits == null) deposits = new ArrayList<>();
     deposits.add(DepositUtil.convertEventDepositToOperationDeposit(event));
 
     UnsignedLong eth1_timestamp = null;
@@ -130,12 +148,13 @@ public class StateProcessor {
     }
   }
 
-  public static boolean isGenesisReasonable(UnsignedLong eth1_timestamp, List<Deposit> deposits) {
+  public static boolean isGenesisReasonable(
+      UnsignedLong eth1_timestamp, List<DepositWithIndex> deposits) {
     return (eth1_timestamp.compareTo(MIN_GENESIS_TIME) >= 0
         && deposits.size() >= MIN_GENESIS_ACTIVE_VALIDATOR_COUNT);
   }
 
-  public static boolean isGenesisReasonableSim(List<Deposit> deposits) {
+  public static boolean isGenesisReasonableSim(List<DepositWithIndex> deposits) {
     return (deposits.size() >= MIN_GENESIS_ACTIVE_VALIDATOR_COUNT);
   }
 

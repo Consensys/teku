@@ -22,12 +22,13 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
+import tech.pegasys.artemis.util.SSZTypes.SSZContainer;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
-public final class BeaconBlock implements SimpleOffsetSerializable {
+public final class BeaconBlock implements SimpleOffsetSerializable, SSZContainer {
 
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
   public static final int SSZ_FIELD_COUNT = 3;
@@ -54,6 +55,14 @@ public final class BeaconBlock implements SimpleOffsetSerializable {
     this.state_root = state_root;
     this.body = body;
     this.signature = signature;
+  }
+
+  public BeaconBlock() {
+    this.slot = UnsignedLong.ZERO;
+    this.parent_root = Bytes32.ZERO;
+    this.state_root = Bytes32.ZERO;
+    this.body = new BeaconBlockBody();
+    this.signature = BLSSignature.empty();
   }
 
   public BeaconBlock(Bytes32 state_root) {
@@ -93,29 +102,6 @@ public final class BeaconBlock implements SimpleOffsetSerializable {
             SimpleOffsetSerializer.serialize(body),
             Bytes.EMPTY));
     return variablePartsList;
-  }
-
-  public static BeaconBlock fromBytes(Bytes bytes) {
-    return SSZ.decode(
-        bytes,
-        reader ->
-            new BeaconBlock(
-                UnsignedLong.fromLongBits(reader.readUInt64()),
-                Bytes32.wrap(reader.readFixedBytes(32)),
-                Bytes32.wrap(reader.readFixedBytes(32)),
-                BeaconBlockBody.fromBytes(reader.readBytes()),
-                BLSSignature.fromBytes(reader.readBytes())));
-  }
-
-  public Bytes toBytes() {
-    return SSZ.encode(
-        writer -> {
-          writer.writeUInt64(slot.longValue());
-          writer.writeFixedBytes(parent_root);
-          writer.writeFixedBytes(state_root);
-          writer.writeBytes(body.toBytes());
-          writer.writeBytes(signature.toBytes());
-        });
   }
 
   @Override

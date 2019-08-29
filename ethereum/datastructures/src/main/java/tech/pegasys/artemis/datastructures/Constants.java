@@ -19,6 +19,7 @@ import com.google.common.primitives.UnsignedLong;
 import java.util.Map;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.artemis.util.SSZTypes.Bytes4;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 
@@ -88,15 +89,15 @@ public class Constants {
   public static int MAX_ATTESTATIONS = 128;
   public static int MAX_DEPOSITS = 16;
   public static int MAX_VOLUNTARY_EXITS = 16;
-  public static int MAX_TRANSFERS = 16;
+  public static int MAX_TRANSFERS = 0;
 
   // Signature domains
-  public static Bytes DOMAIN_BEACON_PROPOSER = int_to_bytes(0, 4);
-  public static Bytes DOMAIN_RANDAO = int_to_bytes(1, 4);
-  public static Bytes DOMAIN_ATTESTATION = int_to_bytes(2, 4);
-  public static Bytes DOMAIN_DEPOSIT = int_to_bytes(3, 4);
-  public static Bytes DOMAIN_VOLUNTARY_EXIT = int_to_bytes(4, 4);
-  public static Bytes DOMAIN_TRANSFER = int_to_bytes(5, 4);
+  public static Bytes4 DOMAIN_BEACON_PROPOSER = new Bytes4(int_to_bytes(0, 4));
+  public static Bytes4 DOMAIN_RANDAO = new Bytes4(int_to_bytes(1, 4));
+  public static Bytes4 DOMAIN_ATTESTATION = new Bytes4(int_to_bytes(2, 4));
+  public static Bytes4 DOMAIN_DEPOSIT = new Bytes4(int_to_bytes(3, 4));
+  public static Bytes4 DOMAIN_VOLUNTARY_EXIT = new Bytes4(int_to_bytes(4, 4));
+  public static Bytes4 DOMAIN_TRANSFER = new Bytes4(int_to_bytes(5, 4));
 
   // Artemis specific
   public static String SIM_DEPOSIT_VALUE = "1000000000000000000";
@@ -122,6 +123,7 @@ public class Constants {
   public static int EARLY_DERIVED_SECRET_PENALTY_MAX_FUTURE_EPOCHS;
 
   public static BLSSignature EMPTY_SIGNATURE = BLSSignature.empty();
+  public static UnsignedLong BYTES_PER_LENGTH_OFFSET = UnsignedLong.valueOf(4L);
 
   public static void init(ArtemisConfiguration config) {
     // Misc
@@ -375,12 +377,15 @@ public class Constants {
     MAX_DEPOSITS = (int) config.get("MAX_DEPOSITS");
     MAX_VOLUNTARY_EXITS = (int) config.get("MAX_VOLUNTARY_EXITS");
     MAX_TRANSFERS = (int) config.get("MAX_TRANSFERS");
-    DOMAIN_BEACON_PROPOSER = Bytes.fromHexString(config.get("DOMAIN_BEACON_PROPOSER").toString());
-    DOMAIN_RANDAO = Bytes.fromHexString(config.get("DOMAIN_RANDAO").toString());
-    DOMAIN_ATTESTATION = Bytes.fromHexString(config.get("DOMAIN_ATTESTATION").toString());
-    DOMAIN_DEPOSIT = Bytes.fromHexString(config.get("DOMAIN_DEPOSIT").toString());
-    DOMAIN_VOLUNTARY_EXIT = Bytes.fromHexString(config.get("DOMAIN_VOLUNTARY_EXIT").toString());
-    DOMAIN_TRANSFER = Bytes.fromHexString(config.get("DOMAIN_TRANSFER").toString());
+    DOMAIN_BEACON_PROPOSER =
+        new Bytes4(Bytes.fromHexString(config.get("DOMAIN_BEACON_PROPOSER").toString()));
+    DOMAIN_RANDAO = new Bytes4(Bytes.fromHexString(config.get("DOMAIN_RANDAO").toString()));
+    DOMAIN_ATTESTATION =
+        new Bytes4(Bytes.fromHexString(config.get("DOMAIN_ATTESTATION").toString()));
+    DOMAIN_DEPOSIT = new Bytes4(Bytes.fromHexString(config.get("DOMAIN_DEPOSIT").toString()));
+    DOMAIN_VOLUNTARY_EXIT =
+        new Bytes4(Bytes.fromHexString(config.get("DOMAIN_VOLUNTARY_EXIT").toString()));
+    DOMAIN_TRANSFER = new Bytes4(Bytes.fromHexString(config.get("DOMAIN_TRANSFER").toString()));
     DOMAIN_CUSTODY_BIT_CHALLENGE =
         Bytes.fromHexString(config.get("DOMAIN_CUSTODY_BIT_CHALLENGE").toString());
     DOMAIN_SHARD_PROPOSER = Bytes.fromHexString(config.get("DOMAIN_SHARD_PROPOSER").toString());
