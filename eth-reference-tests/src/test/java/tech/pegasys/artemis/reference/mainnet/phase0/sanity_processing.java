@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package pegasys.artemis.reference.mainnet.phase0;
+package tech.pegasys.artemis.reference.mainnet.phase0;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -29,13 +29,13 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import pegasys.artemis.reference.MapObjectUtil;
-import pegasys.artemis.reference.TestSuite;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
+import tech.pegasys.artemis.reference.MapObjectUtil;
+import tech.pegasys.artemis.reference.TestSuite;
 import tech.pegasys.artemis.statetransition.StateTransition;
 import tech.pegasys.artemis.statetransition.util.ForkChoiceUtil;
 import tech.pegasys.artemis.storage.Store;
@@ -123,9 +123,9 @@ class sanity_processing extends TestSuite {
               UnsignedLong.ZERO,
               DataStructureUtil.newDeposits(spre.getEth1_deposit_index().intValue()));
 
-      st.process_slots(beaconStateWithCache, blocks.get(0).getSlot(), true);
+      StateTransition.process_slots(beaconStateWithCache, blocks.get(0).getSlot(), true);
 
-      st.process_slots(spre, blocks.get(0).getSlot(), true);
+      StateTransition.process_slots(spre, blocks.get(0).getSlot(), true);
 
       st.initiate(spre, blocks.get(0));
 
@@ -133,7 +133,7 @@ class sanity_processing extends TestSuite {
       for (int i = 1; i < blocks.size(); i++) {
         ForkChoiceUtil.on_block(genesis_store, blocks.get(i));
       }
-//      Object hash_tree_root = genesis_store.getFinalized_checkpoint().hash_tree_root();
+      //      Object hash_tree_root = genesis_store.getFinalized_checkpoint().hash_tree_root();
       Object head = ForkChoiceUtil.get_head(genesis_store);
       BeaconState c =
           genesis_store.getBlock_states().get(genesis_store.getBlocks().get(head).getState_root());

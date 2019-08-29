@@ -21,13 +21,11 @@ import static tech.pegasys.artemis.datastructures.Constants.MAX_VALIDATORS_PER_C
 import static tech.pegasys.artemis.datastructures.Constants.SHARD_COUNT;
 import static tech.pegasys.artemis.datastructures.Constants.SLOTS_PER_EPOCH;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_start_slot_of_epoch;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_bitfield_bit;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_block_root_at_slot;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_committee_count;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_current_epoch;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_domain;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.min;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.setBit;
 import static tech.pegasys.artemis.datastructures.util.CrosslinkCommitteeUtil.get_crosslink_committee;
 import static tech.pegasys.artemis.datastructures.util.CrosslinkCommitteeUtil.get_start_shard;
 import static tech.pegasys.artemis.util.bls.BLSAggregate.bls_aggregate_pubkeys;
@@ -56,6 +54,8 @@ import tech.pegasys.artemis.datastructures.state.CompactCommittee;
 import tech.pegasys.artemis.datastructures.state.Crosslink;
 import tech.pegasys.artemis.datastructures.state.CrosslinkCommittee;
 import tech.pegasys.artemis.datastructures.state.Validator;
+import tech.pegasys.artemis.util.SSZTypes.Bitlist;
+import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.bitwise.BitwiseOps;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
@@ -122,10 +122,11 @@ public class AttestationUtil {
     return new AttestationData(beacon_block_root, source, target, new Crosslink());
   }
 
-  public static Bytes getAggregationBits(int indexIntoCommittee) {
+  public static Bitlist getAggregationBits(int committeeSize, int indexIntoCommittee) {
     // Create aggregation bitfield
-    Bytes aggregationBits = Bytes.wrap(new byte[MAX_VALIDATORS_PER_COMMITTEE / 8]);
-    return setBit(aggregationBits, indexIntoCommittee);
+    Bitlist aggregationBits = new Bitlist(committeeSize, MAX_VALIDATORS_PER_COMMITTEE);
+    aggregationBits.setBit(indexIntoCommittee);
+    return aggregationBits;
   }
 
   public static AttestationData completeAttestationCrosslinkData(
@@ -197,14 +198,20 @@ public class AttestationUtil {
         custody_bit_0_indices.add(attesting_index);
     }
     return new IndexedAttestation(
-        custody_bit_0_indices.stream()
-            .sorted()
-            .map(UnsignedLong::valueOf)
-            .collect(Collectors.toList()),
-        custody_bit_1_indices.stream()
-            .sorted()
-            .map(UnsignedLong::valueOf)
-            .collect(Collectors.toList()),
+        new SSZList<>(
+            custody_bit_0_indices.stream()
+                .sorted()
+                .map(UnsignedLong::valueOf)
+                .collect(Collectors.toList()),
+            MAX_VALIDATORS_PER_COMMITTEE,
+            UnsignedLong.class),
+        new SSZList<>(
+            custody_bit_1_indices.stream()
+                .sorted()
+                .map(UnsignedLong::valueOf)
+                .collect(Collectors.toList()),
+            MAX_VALIDATORS_PER_COMMITTEE,
+            UnsignedLong.class),
         attestation.getData(),
         attestation.getAggregate_signature());
   }
@@ -221,7 +228,7 @@ public class AttestationUtil {
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#get_attesting_indices</a>
    */
   public static List<Integer> get_attesting_indices(
-      BeaconState state, AttestationData attestation_data, Bytes bits) {
+      BeaconState state, AttestationData attestation_data, Bitlist bits) {
     List<Integer> committee =
         get_crosslink_committee(
             state,
@@ -231,7 +238,7 @@ public class AttestationUtil {
     HashSet<Integer> attesting_indices = new HashSet<>();
     for (int i = 0; i < committee.size(); i++) {
       int index = committee.get(i);
-      int bitfieldBit = get_bitfield_bit(bits, i);
+      int bitfieldBit = bits.getBit(i);
       if (bitfieldBit == 1) attesting_indices.add(index);
     }
     return new ArrayList<>(attesting_indices);

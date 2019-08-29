@@ -24,12 +24,15 @@ import static tech.pegasys.artemis.datastructures.Constants.EPOCHS_PER_SLASHINGS
 import static tech.pegasys.artemis.datastructures.Constants.FAR_FUTURE_EPOCH;
 import static tech.pegasys.artemis.datastructures.Constants.GENESIS_EPOCH;
 import static tech.pegasys.artemis.datastructures.Constants.INACTIVITY_PENALTY_QUOTIENT;
+import static tech.pegasys.artemis.datastructures.Constants.JUSTIFICATION_BITS_LENGTH;
+import static tech.pegasys.artemis.datastructures.Constants.MAX_ATTESTATIONS;
 import static tech.pegasys.artemis.datastructures.Constants.MAX_EFFECTIVE_BALANCE;
 import static tech.pegasys.artemis.datastructures.Constants.MIN_ATTESTATION_INCLUSION_DELAY;
 import static tech.pegasys.artemis.datastructures.Constants.MIN_EPOCHS_TO_INACTIVITY_PENALTY;
 import static tech.pegasys.artemis.datastructures.Constants.PROPOSER_REWARD_QUOTIENT;
 import static tech.pegasys.artemis.datastructures.Constants.SHARD_COUNT;
 import static tech.pegasys.artemis.datastructures.Constants.SLOTS_PER_EPOCH;
+import static tech.pegasys.artemis.datastructures.Constants.SLOTS_PER_ETH1_VOTING_PERIOD;
 import static tech.pegasys.artemis.datastructures.Constants.SLOTS_PER_HISTORICAL_ROOT;
 import static tech.pegasys.artemis.datastructures.util.AttestationUtil.get_attestation_data_slot;
 import static tech.pegasys.artemis.datastructures.util.AttestationUtil.get_attesting_indices;
@@ -48,7 +51,6 @@ import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_valid
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.initiate_validator_exit;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.integer_squareroot;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.min;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.setBit;
 import static tech.pegasys.artemis.datastructures.util.CrosslinkCommitteeUtil.get_crosslink_committee;
 import static tech.pegasys.artemis.datastructures.util.CrosslinkCommitteeUtil.get_shard_delta;
 import static tech.pegasys.artemis.datastructures.util.CrosslinkCommitteeUtil.get_start_shard;
@@ -73,7 +75,10 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.artemis.datastructures.Constants;
+import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
+import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
@@ -81,9 +86,11 @@ import tech.pegasys.artemis.datastructures.state.Crosslink;
 import tech.pegasys.artemis.datastructures.state.HistoricalBatch;
 import tech.pegasys.artemis.datastructures.state.PendingAttestation;
 import tech.pegasys.artemis.datastructures.state.Validator;
+import tech.pegasys.artemis.util.SSZTypes.Bitvector;
+import tech.pegasys.artemis.util.SSZTypes.SSZList;
+import tech.pegasys.artemis.util.SSZTypes.SSZVector;
 import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
-import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
 
 public final class EpochProcessorUtil {
 
@@ -258,10 +265,6 @@ public final class EpochProcessorUtil {
         winning_crosslink, get_unslashed_attesting_indices(state, winning_attestations));
   }
 
-  public static void showMeShardCount() {
-    System.out.println("SHARD_COUNT: " + SHARD_COUNT);
-  }
-
   /**
    * Processes justification and finalization
    *
@@ -286,7 +289,10 @@ public final class EpochProcessorUtil {
 
       // Process justifications
       state.setPrevious_justified_checkpoint(state.getCurrent_justified_checkpoint());
-      Bytes justificationBits = state.getJustification_bits().shiftRight(1);
+      Bitvector justificationBits =
+          new Bitvector(
+              Bytes.wrap(state.getJustification_bits().getByteArray()).shiftRight(1).toArray(),
+              JUSTIFICATION_BITS_LENGTH);
 
       List<PendingAttestation> matching_target_attestations =
           get_matching_target_attestations(state, previous_epoch);
@@ -297,7 +303,7 @@ public final class EpochProcessorUtil {
         Checkpoint newCheckpoint =
             new Checkpoint(previous_epoch, get_block_root(state, previous_epoch));
         state.setCurrent_justified_checkpoint(newCheckpoint);
-        justificationBits = setBit(justificationBits, 1);
+        justificationBits.setBit(1);
       }
       matching_target_attestations = get_matching_target_attestations(state, current_epoch);
       if (get_attesting_balance(state, matching_target_attestations)
@@ -307,7 +313,7 @@ public final class EpochProcessorUtil {
         Checkpoint newCheckpoint =
             new Checkpoint(current_epoch, get_block_root(state, current_epoch));
         state.setCurrent_justified_checkpoint(newCheckpoint);
-        justificationBits = setBit(justificationBits, 0);
+        justificationBits.setBit(0);
       }
 
       state.setJustification_bits(justificationBits);
@@ -363,7 +369,7 @@ public final class EpochProcessorUtil {
    */
   public static void process_crosslinks(BeaconState state) throws EpochProcessingException {
     try {
-      state.setPrevious_crosslinks(new ArrayList<>(state.getCurrent_crosslinks()));
+      state.setPrevious_crosslinks(new SSZVector<>(state.getCurrent_crosslinks()));
       UnsignedLong previous_epoch = get_previous_epoch(state);
       UnsignedLong current_epoch = get_current_epoch(state);
 
@@ -746,7 +752,7 @@ public final class EpochProcessorUtil {
         .plus(UnsignedLong.ONE)
         .mod(UnsignedLong.valueOf(Constants.SLOTS_PER_ETH1_VOTING_PERIOD))
         .equals(UnsignedLong.ZERO)) {
-      state.setEth1_data_votes(new ArrayList<>());
+      state.setEth1_data_votes(new SSZList<>(Eth1Data.class, SLOTS_PER_ETH1_VOTING_PERIOD));
     }
 
     // Update effective balances with hysteresis
@@ -786,8 +792,11 @@ public final class EpochProcessorUtil {
         .getActive_index_roots()
         .set(
             index_root_position,
-            HashTreeUtil.hash_tree_root(
-                SSZTypes.LIST_OF_BASIC, Constants.VALIDATOR_REGISTRY_LIMIT, indices_list));
+            HashTreeUtil.hash_tree_root_list_ul(
+                Constants.VALIDATOR_REGISTRY_LIMIT,
+                indices_list.stream()
+                    .map(elem -> SSZ.encodeUInt64(elem))
+                    .collect(Collectors.toList())));
 
     // Set committees root
     int committee_root_position =
@@ -814,6 +823,7 @@ public final class EpochProcessorUtil {
 
     // Rotate current/previous epoch attestations
     state.setPrevious_epoch_attestations(state.getCurrent_epoch_attestations());
-    state.setCurrent_epoch_attestations(new ArrayList<>());
+    state.setCurrent_epoch_attestations(
+        new SSZList<>(Attestation.class, MAX_ATTESTATIONS * SLOTS_PER_EPOCH));
   }
 }

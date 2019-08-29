@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package pegasys.artemis.reference.bls;
+package tech.pegasys.artemis.reference.bls;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -21,35 +21,30 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Stream;
-import kotlin.Pair;
-import org.apache.tuweni.bytes.Bytes;
+import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import pegasys.artemis.reference.TestSuite;
-import tech.pegasys.artemis.util.mikuli.BLS12381;
-import tech.pegasys.artemis.util.mikuli.KeyPair;
+import tech.pegasys.artemis.reference.TestSuite;
+import tech.pegasys.artemis.util.mikuli.PublicKey;
 import tech.pegasys.artemis.util.mikuli.SecretKey;
-import tech.pegasys.artemis.util.mikuli.Signature;
 
-class sign_msg extends TestSuite {
-  private static String testFile = "**/sign_msg.yaml";
+class priv_to_pub extends TestSuite {
+  private static String testFile = "**/priv_to_pub.yaml";
 
-  @ParameterizedTest(name = "{index}. sign messages {0} -> {1}")
-  @MethodSource("readSignMessages")
-  void signMessages(Bytes message, Bytes domain, SecretKey secretKey, Signature signatureExpected) {
-    Signature signatureActual =
-        BLS12381.sign(new KeyPair(secretKey), message.toArray(), domain).signature();
-    assertEquals(signatureExpected, signatureActual);
+  @ParameterizedTest(name = "{index}. private to public key {0} -> {1}")
+  @MethodSource("readPrivateToPublicKey")
+  void privateToPublicKey(SecretKey secretKey, PublicKey pubkeyExpected) {
+    PublicKey pubkeyActual = new PublicKey(secretKey);
+    assertEquals(pubkeyExpected, pubkeyActual);
   }
 
+  @SuppressWarnings({"rawtypes"})
   @MustBeClosed
-  static Stream<Arguments> readSignMessages() throws IOException {
+  static Stream<Arguments> readPrivateToPublicKey() throws IOException {
     List<Pair<Class, List<String>>> arguments = new ArrayList<Pair<Class, List<String>>>();
-    arguments.add(getParams(Bytes.class, Arrays.asList("input", "message")));
-    arguments.add(getParams(Bytes.class, Arrays.asList("input", "domain")));
-    arguments.add(getParams(SecretKey.class, Arrays.asList("input", "privkey")));
-    arguments.add(getParams(Signature.class, Arrays.asList("output")));
+    arguments.add(getParams(SecretKey.class, Arrays.asList("input")));
+    arguments.add(getParams(PublicKey.class, Arrays.asList("output")));
 
     return findTests(testFile, arguments);
   }

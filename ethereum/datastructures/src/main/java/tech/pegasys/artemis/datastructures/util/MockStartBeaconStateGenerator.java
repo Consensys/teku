@@ -19,8 +19,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.DepositData;
+import tech.pegasys.artemis.datastructures.operations.DepositWithIndex;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 
 public class MockStartBeaconStateGenerator {
@@ -37,10 +37,10 @@ public class MockStartBeaconStateGenerator {
 
   public BeaconStateWithCache createInitialBeaconState(
       final UnsignedLong genesisTime, final List<DepositData> initialDepositData) {
-    final List<Deposit> deposits = new ArrayList<>();
+    final List<DepositWithIndex> deposits = new ArrayList<>();
     for (int index = 0; index < initialDepositData.size(); index++) {
       final DepositData data = initialDepositData.get(index);
-      Deposit deposit = new Deposit(data, UnsignedLong.valueOf(index));
+      DepositWithIndex deposit = new DepositWithIndex(data, UnsignedLong.valueOf(index));
       deposits.add(deposit);
     }
     final BeaconStateWithCache initialState =

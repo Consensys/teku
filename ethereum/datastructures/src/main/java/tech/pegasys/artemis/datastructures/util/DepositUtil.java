@@ -28,28 +28,29 @@ import org.apache.tuweni.crypto.Hash;
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.core.DefaultBlockParameterNumber;
 import org.web3j.protocol.http.HttpService;
-import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.DepositData;
+import tech.pegasys.artemis.datastructures.operations.DepositWithIndex;
 import tech.pegasys.artemis.pow.contract.DepositContract;
+import tech.pegasys.artemis.util.SSZTypes.SSZVector;
 
 public class DepositUtil {
 
-  public static List<Deposit> generateBranchProofs(List<Deposit> deposits) {
+  public static List<DepositWithIndex> generateBranchProofs(List<DepositWithIndex> deposits) {
     deposits = sortDepositsByIndexAscending(deposits);
-    MerkleTree<Deposit> merkleTree = new MerkleTree<Deposit>(DEPOSIT_CONTRACT_TREE_DEPTH);
+    MerkleTree<DepositWithIndex> merkleTree = new MerkleTree<>(DEPOSIT_CONTRACT_TREE_DEPTH);
 
     for (int i = 0; i < deposits.size(); i++)
       merkleTree.add(
           deposits.get(i).getIndex().intValue(),
           Hash.sha2_256(deposits.get(i).getData().serialize()));
     for (int i = 0; i < deposits.size(); i++)
-      deposits.get(i).setProof(merkleTree.getProofTreeByIndex(i));
+      deposits.get(i).setProof(new SSZVector<>(merkleTree.getProofTreeByIndex(i), Bytes32.class));
     return deposits;
   }
 
-  public static MerkleTree<Deposit> generateMerkleTree(List<Deposit> deposits) {
+  public static MerkleTree<DepositWithIndex> generateMerkleTree(List<DepositWithIndex> deposits) {
     deposits = sortDepositsByIndexAscending(deposits);
-    MerkleTree<Deposit> merkleTree = new MerkleTree<Deposit>(DEPOSIT_CONTRACT_TREE_DEPTH);
+    MerkleTree<DepositWithIndex> merkleTree = new MerkleTree<>(DEPOSIT_CONTRACT_TREE_DEPTH);
 
     for (int i = 0; i < deposits.size(); i++)
       merkleTree.add(
@@ -58,14 +59,15 @@ public class DepositUtil {
     return merkleTree;
   }
 
-  public static List<Deposit> applyBranchProofs(
-      MerkleTree<Deposit> merkleTree, List<Deposit> deposits) {
+  public static List<DepositWithIndex> applyBranchProofs(
+      MerkleTree<DepositWithIndex> merkleTree, List<DepositWithIndex> deposits) {
     for (int i = 0; i < deposits.size(); i++)
-      deposits.get(i).setProof(merkleTree.getProofTreeByIndex(i));
+      deposits.get(i).setProof(new SSZVector<>(merkleTree.getProofTreeByIndex(i), Bytes32.class));
     return deposits;
   }
 
-  public static boolean validateDeposits(List<Deposit> deposits, Bytes32 root, int height) {
+  public static boolean validateDeposits(
+      List<DepositWithIndex> deposits, Bytes32 root, int height) {
     for (int i = 0; i < deposits.size(); i++) {
       if (BeaconStateUtil.is_valid_merkle_branch(
           Hash.sha2_256(deposits.get(i).getData().serialize()),
@@ -116,14 +118,14 @@ public class DepositUtil {
     return branchIndex;
   }
 
-  public static Bytes32 calculatePubKeyRoot(Deposit deposit) {
+  public static Bytes32 calculatePubKeyRoot(DepositWithIndex deposit) {
     return Hash.sha2_256(
         Bytes.concatenate(
             deposit.getData().getPubkey().getPublicKey().toBytesCompressed(),
             Bytes.wrap(new byte[16])));
   }
 
-  public static Bytes32 calculateSignatureRoot(Deposit deposit) {
+  public static Bytes32 calculateSignatureRoot(DepositWithIndex deposit) {
     Bytes32 signature_root_start =
         Hash.sha2_256(
             Bytes.wrap(
@@ -149,7 +151,7 @@ public class DepositUtil {
   }
 
   public static Bytes32 calculateBranchValue(
-      Bytes32 pubkey_root, Bytes32 signature_root, Deposit deposit) {
+      Bytes32 pubkey_root, Bytes32 signature_root, DepositWithIndex deposit) {
     Bytes32 value_start =
         Hash.sha2_256(
             Bytes.concatenate(pubkey_root, deposit.getData().getWithdrawal_credentials()));
@@ -163,18 +165,19 @@ public class DepositUtil {
     return Hash.sha2_256(Bytes.concatenate(value_start, value_end));
   }
 
-  public static List<Deposit> sortDepositsByIndexAscending(List<Deposit> deposits) {
+  public static List<DepositWithIndex> sortDepositsByIndexAscending(
+      List<DepositWithIndex> deposits) {
     deposits.sort(
-        new Comparator<Deposit>() {
+        new Comparator<DepositWithIndex>() {
           @Override
-          public int compare(Deposit o1, Deposit o2) {
+          public int compare(DepositWithIndex o1, DepositWithIndex o2) {
             return o1.getIndex().compareTo(o2.getIndex());
           }
         });
     return deposits;
   }
 
-  public static Deposit convertEventDepositToOperationDeposit(
+  public static DepositWithIndex convertEventDepositToOperationDeposit(
       tech.pegasys.artemis.pow.event.Deposit event) {
     DepositData data =
         new DepositData(
@@ -182,7 +185,7 @@ public class DepositUtil {
             event.getWithdrawal_credentials(),
             event.getAmount(),
             event.getSignature());
-    return new Deposit(data, event.getMerkle_tree_index());
+    return new DepositWithIndex(data, event.getMerkle_tree_index());
   }
 
   // deprecated, being used until a new validators_test_data.json can be generated

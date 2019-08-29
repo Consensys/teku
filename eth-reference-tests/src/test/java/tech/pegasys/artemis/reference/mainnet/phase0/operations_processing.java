@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package pegasys.artemis.reference.mainnet.phase0;
+package tech.pegasys.artemis.reference.mainnet.phase0;
 
 import com.google.errorprone.annotations.MustBeClosed;
 import java.nio.file.Path;
@@ -23,7 +23,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import pegasys.artemis.reference.TestSuite;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.AttesterSlashing;
@@ -31,6 +30,7 @@ import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
 import tech.pegasys.artemis.datastructures.operations.VoluntaryExit;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.reference.TestSuite;
 import tech.pegasys.artemis.statetransition.util.BlockProcessorUtil;
 
 @ExtendWith(BouncyCastleExtension.class)

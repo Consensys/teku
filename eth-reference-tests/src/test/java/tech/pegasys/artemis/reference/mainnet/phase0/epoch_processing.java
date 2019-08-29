@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package pegasys.artemis.reference.mainnet.phase0;
+package tech.pegasys.artemis.reference.mainnet.phase0;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -24,8 +24,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import pegasys.artemis.reference.TestSuite;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.reference.TestSuite;
 import tech.pegasys.artemis.statetransition.util.EpochProcessorUtil;
 
 @ExtendWith(BouncyCastleExtension.class)

@@ -16,6 +16,8 @@ package tech.pegasys.artemis.validator.coordinator;
 import static java.lang.StrictMath.toIntExact;
 import static tech.pegasys.artemis.datastructures.Constants.DOMAIN_ATTESTATION;
 import static tech.pegasys.artemis.datastructures.Constants.GENESIS_SLOT;
+import static tech.pegasys.artemis.datastructures.Constants.MAX_ATTESTATIONS;
+import static tech.pegasys.artemis.datastructures.Constants.MAX_DEPOSITS;
 import static tech.pegasys.artemis.datastructures.Constants.MAX_VALIDATORS_PER_COMMITTEE;
 import static tech.pegasys.artemis.datastructures.Constants.SLOTS_PER_EPOCH;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_of_slot;
@@ -88,6 +90,8 @@ import tech.pegasys.artemis.statetransition.util.EpochProcessingException;
 import tech.pegasys.artemis.statetransition.util.SlotProcessingException;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.Store;
+import tech.pegasys.artemis.util.SSZTypes.Bitlist;
+import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.alogger.ALogger.Color;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
@@ -113,7 +117,7 @@ public class ValidatorCoordinator {
   private int numValidators;
   private int numNodes;
   private BeaconBlock validatorBlock;
-  private ArrayList<Deposit> newDeposits = new ArrayList<>();
+  private SSZList<Deposit> newDeposits = new SSZList<>(Deposit.class, MAX_DEPOSITS);
   private final HashMap<BLSPublicKey, MutableTriple<BLSKeyPair, Boolean, Integer>> validatorSet =
       new HashMap<>();
   private ChainStorageClient chainStorageClient;
@@ -122,8 +126,7 @@ public class ValidatorCoordinator {
       committeeAssignments = new HashMap<>();
   private LinkedBlockingQueue<ProposerSlashing> slashings = new LinkedBlockingQueue<>();
   private int naughtinessPercentage;
-
-  static final Integer UNPROCESSED_BLOCKS_LENGTH = 100;
+  private boolean interopActive;
 
   @SuppressWarnings("unchecked")
   public ValidatorCoordinator(ServiceConfig config, ChainStorageClient store) {
@@ -135,6 +138,7 @@ public class ValidatorCoordinator {
     this.numNodes = config.getConfig().getNumNodes();
     this.numValidators = config.getConfig().getNumValidators();
     this.chainStorageClient = store;
+    this.interopActive = config.getConfig().getInteropActive();
 
     stateTransition = new StateTransition(printEnabled);
 
@@ -297,8 +301,10 @@ public class ValidatorCoordinator {
       int indexIntoCommittee,
       CrosslinkCommittee committee,
       AttestationData genericAttestationData) {
-    Bytes aggregationBitfield = AttestationUtil.getAggregationBits(indexIntoCommittee);
-    Bytes custodyBits = Bytes.wrap(new byte[MAX_VALIDATORS_PER_COMMITTEE / 8]);
+    int commmitteSize = committee.getCommitteeSize();
+    Bitlist aggregationBitfield =
+        AttestationUtil.getAggregationBits(commmitteSize, indexIntoCommittee);
+    Bitlist custodyBits = new Bitlist(commmitteSize, MAX_VALIDATORS_PER_COMMITTEE);
     AttestationData attestationData =
         AttestationUtil.completeAttestationCrosslinkData(
             state, new AttestationData(genericAttestationData), committee);
@@ -356,7 +362,7 @@ public class ValidatorCoordinator {
 
   private BeaconBlock createInitialBlock(BeaconStateWithCache state, BeaconBlock oldBlock) {
     Bytes32 blockRoot = oldBlock.signing_root("signature");
-    List<Attestation> current_attestations = new ArrayList<>();
+    SSZList<Attestation> current_attestations = new SSZList<>(Attestation.class, MAX_ATTESTATIONS);
     final Bytes32 MockStateRoot = Bytes32.ZERO;
 
     if (state
@@ -375,12 +381,13 @@ public class ValidatorCoordinator {
 
     BeaconBlock newBlock =
         DataStructureUtil.newBeaconBlock(
-            state.getSlot().plus(UnsignedLong.ONE),
+            state,
             blockRoot,
             MockStateRoot,
             newDeposits,
             current_attestations,
-            numValidators);
+            numValidators,
+            interopActive);
 
     return newBlock;
   }
@@ -392,7 +399,7 @@ public class ValidatorCoordinator {
     int endIndex = startAndEnd.getRight();
     long numNaughtyValidators = Math.round((naughtinessPercentage * numValidators) / 100.0);
     List<BLSKeyPair> keypairs = new ArrayList<>();
-    if (config.getInteropActive()) {
+    if (interopActive) {
       try {
         Path path = Paths.get(config.getInteropInputFile());
         String read = Files.readAllLines(path).get(0);
@@ -443,7 +450,7 @@ public class ValidatorCoordinator {
     int endIndex = startAndEnd.getRight();
     long numNaughtyValidators = Math.round((naughtinessPercentage * numValidators) / 100.0);
     List<BLSKeyPair> keypairs = new ArrayList<>();
-    if (config.getInteropActive()) {
+    if (interopActive) {
       switch (config.getInteropMode()) {
         case Constants.FILE_INTEROP:
           try {
@@ -589,8 +596,6 @@ public class ValidatorCoordinator {
             + (numValidators / numNodes - 1)
             + toIntExact(Math.round((double) nodeCounter / Math.max(1, numNodes - 1)));
     endIndex = Math.min(endIndex, numValidators - 1);
-
-    int numValidators = endIndex - startIndex + 1;
 
     LOG.log(Level.INFO, "startIndex: " + startIndex + " endIndex: " + endIndex);
     return new ImmutablePair<>(startIndex, endIndex);

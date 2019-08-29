@@ -14,11 +14,9 @@
 package tech.pegasys.artemis.datastructures.util;
 
 import com.google.common.primitives.UnsignedLong;
-import java.util.ArrayList;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockBody;
-import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.util.alogger.ALogger;
 
 public class BeaconBlockUtil {
@@ -34,16 +32,7 @@ public class BeaconBlockUtil {
         UnsignedLong.valueOf(Constants.GENESIS_SLOT),
         Constants.ZERO_HASH,
         Constants.ZERO_HASH,
-        new BeaconBlockBody(
-            Constants.EMPTY_SIGNATURE,
-            new Eth1Data(Constants.ZERO_HASH, UnsignedLong.ZERO, Constants.ZERO_HASH),
-            Constants.ZERO_HASH,
-            new ArrayList<>(),
-            new ArrayList<>(),
-            new ArrayList<>(),
-            new ArrayList<>(),
-            new ArrayList<>(),
-            new ArrayList<>()),
+        new BeaconBlockBody(),
         Constants.EMPTY_SIGNATURE);
   }
 }
