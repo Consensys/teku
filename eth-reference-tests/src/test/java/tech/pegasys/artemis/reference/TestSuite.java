@@ -176,7 +176,6 @@ public abstract class TestSuite {
                               c.obj = MapObjectUtil.convertMapToTypedObject(pair.getKey(), object);
                             }
                           } catch (Exception e) {
-                            System.out.println("here");
                           }
                           return c;
                         });

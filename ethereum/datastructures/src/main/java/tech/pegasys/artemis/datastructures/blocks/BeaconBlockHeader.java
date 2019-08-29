@@ -51,6 +51,14 @@ public class BeaconBlockHeader implements SimpleOffsetSerializable, SSZContainer
     this.signature = signature;
   }
 
+  public BeaconBlockHeader(BeaconBlockHeader header) {
+    this.slot = header.getSlot();
+    this.parent_root = header.getParent_root();
+    this.state_root = header.getState_root();
+    this.body_root = header.getBody_root();
+    this.signature = header.getSignature();
+  }
+
   public BeaconBlockHeader() {
     this.slot = UnsignedLong.ZERO;
     this.parent_root = Bytes32.ZERO;

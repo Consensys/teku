@@ -181,9 +181,7 @@ public class ForkChoiceUtil {
     checkArgument(
         store.getBlock_states().containsKey(block.getParent_root()),
         "on_block: Parent block state is not contained in block_state");
-    BeaconStateWithCache pre_state =
-        new BeaconStateWithCache(
-            (BeaconStateWithCache) store.getBlock_states().get(block.getParent_root()));
+    BeaconStateWithCache pre_state = new BeaconStateWithCache((BeaconStateWithCache) store.getBlock_states().get(block.getParent_root()));
 
     // Blocks cannot be in the future. If they are, their consideration must be delayed until the
     // are in the past.

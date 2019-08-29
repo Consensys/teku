@@ -126,8 +126,7 @@ public class ValidatorCoordinator {
       committeeAssignments = new HashMap<>();
   private LinkedBlockingQueue<ProposerSlashing> slashings = new LinkedBlockingQueue<>();
   private int naughtinessPercentage;
-
-  static final Integer UNPROCESSED_BLOCKS_LENGTH = 100;
+  private boolean interopActive;
 
   @SuppressWarnings("unchecked")
   public ValidatorCoordinator(ServiceConfig config, ChainStorageClient store) {
@@ -139,6 +138,7 @@ public class ValidatorCoordinator {
     this.numNodes = config.getConfig().getNumNodes();
     this.numValidators = config.getConfig().getNumValidators();
     this.chainStorageClient = store;
+    this.interopActive = config.getConfig().getInteropActive();
 
     stateTransition = new StateTransition(printEnabled);
 
@@ -381,12 +381,13 @@ public class ValidatorCoordinator {
 
     BeaconBlock newBlock =
         DataStructureUtil.newBeaconBlock(
-            state.getSlot().plus(UnsignedLong.ONE),
+            state,
             blockRoot,
             MockStateRoot,
             newDeposits,
             current_attestations,
-            numValidators);
+            numValidators,
+            interopActive);
 
     return newBlock;
   }
@@ -398,7 +399,7 @@ public class ValidatorCoordinator {
     int endIndex = startAndEnd.getRight();
     long numNaughtyValidators = Math.round((naughtinessPercentage * numValidators) / 100.0);
     List<BLSKeyPair> keypairs = new ArrayList<>();
-    if (config.getInteropActive()) {
+    if (interopActive) {
       try {
         Path path = Paths.get(config.getInteropInputFile());
         String read = Files.readAllLines(path).get(0);
@@ -449,7 +450,7 @@ public class ValidatorCoordinator {
     int endIndex = startAndEnd.getRight();
     long numNaughtyValidators = Math.round((naughtinessPercentage * numValidators) / 100.0);
     List<BLSKeyPair> keypairs = new ArrayList<>();
-    if (config.getInteropActive()) {
+    if (interopActive) {
       switch (config.getInteropMode()) {
         case Constants.FILE_INTEROP:
           try {
@@ -595,8 +596,6 @@ public class ValidatorCoordinator {
             + (numValidators / numNodes - 1)
             + toIntExact(Math.round((double) nodeCounter / Math.max(1, numNodes - 1)));
     endIndex = Math.min(endIndex, numValidators - 1);
-
-    int numValidators = endIndex - startIndex + 1;
 
     LOG.log(Level.INFO, "startIndex: " + startIndex + " endIndex: " + endIndex);
     return new ImmutablePair<>(startIndex, endIndex);

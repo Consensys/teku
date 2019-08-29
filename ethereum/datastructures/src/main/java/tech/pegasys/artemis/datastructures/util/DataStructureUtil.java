@@ -13,6 +13,10 @@
 
 package tech.pegasys.artemis.datastructures.util;
 
+import static tech.pegasys.artemis.datastructures.Constants.SLOTS_PER_EPOCH;
+import static tech.pegasys.artemis.datastructures.Constants.SLOTS_PER_ETH1_VOTING_PERIOD;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_of_slot;
+
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
@@ -33,6 +37,8 @@ import java.util.stream.LongStream;
 import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.crypto.Hash;
+import org.apache.tuweni.ssz.SSZ;
 import org.json.simple.parser.ParseException;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
@@ -474,20 +480,37 @@ public final class DataStructureUtil {
   }
 
   public static BeaconBlock newBeaconBlock(
-      UnsignedLong slotNum,
+      BeaconState state,
       Bytes32 previous_block_root,
       Bytes32 state_root,
       SSZList<Deposit> deposits,
       SSZList<Attestation> attestations,
-      int numValidators) {
+      int numValidators,
+      boolean interopActive) {
     BeaconBlockBody beaconBlockBody = new BeaconBlockBody();
-    beaconBlockBody.setEth1_data(
-        new Eth1Data(
-            Constants.ZERO_HASH, UnsignedLong.valueOf(numValidators), Constants.ZERO_HASH));
+    UnsignedLong slot = state.getSlot().plus(UnsignedLong.ONE);
+    if (interopActive) {
+      beaconBlockBody.setEth1_data(get_eth1_data_stub(state, compute_epoch_of_slot(slot)));
+    } else {
+      beaconBlockBody.setEth1_data(
+              new Eth1Data(
+                      Constants.ZERO_HASH, UnsignedLong.valueOf(numValidators), Constants.ZERO_HASH));
+    }
     beaconBlockBody.setDeposits(deposits);
     beaconBlockBody.setAttestations(attestations);
     return new BeaconBlock(
-        slotNum, previous_block_root, state_root, beaconBlockBody, BLSSignature.empty());
+        slot, previous_block_root, state_root, beaconBlockBody, BLSSignature.empty());
+  }
+
+  private static Eth1Data get_eth1_data_stub(BeaconState state, UnsignedLong current_epoch) {
+    UnsignedLong epochs_per_period =
+        UnsignedLong.valueOf(SLOTS_PER_ETH1_VOTING_PERIOD)
+            .dividedBy(UnsignedLong.valueOf(SLOTS_PER_EPOCH));
+    UnsignedLong voting_period = current_epoch.dividedBy(epochs_per_period);
+    return new Eth1Data(
+        Hash.sha2_256(SSZ.encodeUInt64(epochs_per_period.longValue())),
+        state.getEth1_deposit_index(),
+        Hash.sha2_256(Hash.sha2_256(SSZ.encodeUInt64(voting_period.longValue()))));
   }
 
   @SuppressWarnings("unchecked")
@@ -569,7 +592,7 @@ public final class DataStructureUtil {
     final UnsignedLong genesisTime = UnsignedLong.valueOf(config.getInteropGenesisTime());
     final int validatorCount = config.getNumValidators();
     final List<BLSKeyPair> validatorKeys =
-        new MockStartValidatorKeyPairFactory().generateKeyPairs(0, validatorCount);
+        new MockStartValidatorKeyPairFactory().generateKeyPairs(0, validatorCount - 1);
     STDOUT.log(
         Level.INFO,
         "Using mocked start interoperability mode with genesis time "
@@ -628,9 +651,7 @@ public final class DataStructureUtil {
         randomSSZList(Bytes32.class, 1000, DataStructureUtil::randomBytes32),
         randomEth1Data(),
         randomSSZList(
-            Eth1Data.class,
-            Constants.SLOTS_PER_ETH1_VOTING_PERIOD,
-            DataStructureUtil::randomEth1Data),
+            Eth1Data.class, SLOTS_PER_ETH1_VOTING_PERIOD, DataStructureUtil::randomEth1Data),
         randomUnsignedLong(),
 
         // Can't use the actual maxSize cause it is too big
