@@ -23,6 +23,10 @@ import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
+import tech.pegasys.artemis.networking.p2p.mothra.rpc.HelloMessage;
+import tech.pegasys.artemis.networking.p2p.mothra.rpc.RPCCodec;
+import tech.pegasys.artemis.networking.p2p.mothra.rpc.RPCMethod;
+import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.util.alogger.ALogger;
 
 public class MothraHandler {
@@ -40,8 +44,18 @@ public class MothraHandler {
     receivedMessages = new ConcurrentHashSet<>();
   }
 
-  public void gossipMessage(String topic, Bytes data) {
+  public void sendGossipMessage(String topic, Bytes data) {
     mothra.SendGossip(topic.getBytes(UTF_8), data.toArray());
+  }
+
+  public void sendRPCMessage(String method, String peer, Bytes data) {
+    mothra.SendRPC(method.getBytes(UTF_8), peer.getBytes(UTF_8), data.toArray());
+  }
+
+  public synchronized Boolean handleDiscoveryMessage(String peer) {
+    HelloMessage msg = buildHelloMessage();
+    sendHello(peer, msg);
+    return true;
   }
 
   public synchronized Boolean handleGossipMessage(String topic, byte[] message) {
@@ -63,11 +77,39 @@ public class MothraHandler {
     return true;
   }
 
-  public synchronized Boolean handleDiscoveryMessage(String peer) {
-    // Disable HELLO for now
-    // HelloMessage msg = buildHelloMessage();
-    // sendHello(peer, msg);
+  public synchronized Boolean handleRPCMessage(String method, String peer, byte[] message) {
+    Bytes messageBytes = Bytes.wrap(message);
+    STDOUT.log(Level.DEBUG, "Received " + messageBytes.size() + " bytes");
+    String key = messageBytes.toHexString();
+    STDOUT.log(Level.INFO, "handRPCMessage: " + method + ":" + RPCMethod.HELLO.name());
+    if (method.toUpperCase().equals(RPCMethod.HELLO.name())) {
+      STDOUT.log(Level.INFO, "Received HELLO from: " + peer);
+      HelloMessage msg = buildHelloMessage();
+      replyHello(peer, msg);
+    }
     return true;
+  }
+
+  public void sendHello(String peer, HelloMessage msg) {
+    STDOUT.log(Level.INFO, "Send hello to: " + peer);
+    Bytes data = RPCCodec.encode(msg);
+    sendRPCMessage(RPCMethod.HELLO.name(), peer, data);
+  }
+
+  public void replyHello(String peer, HelloMessage msg) {
+    STDOUT.log(Level.INFO, "Send reply hello to: " + peer);
+    Bytes data = RPCCodec.encode(msg);
+    sendRPCMessage(RPCMethod.HELLO.name(), peer, data);
+  }
+
+  protected HelloMessage buildHelloMessage() {
+    int forkVersion = 4;
+    return new HelloMessage(
+        forkVersion,
+        store.getFinalizedBlockRoot().toArrayUnsafe(),
+        store.getFinalizedEpoch().bigIntegerValue(),
+        store.getBestBlockRoot().toArrayUnsafe(),
+        store.getBestSlot().bigIntegerValue());
   }
 
   @Subscribe
@@ -78,7 +120,7 @@ public class MothraHandler {
       STDOUT.log(
           Level.DEBUG,
           "Gossiping new block with state root: " + block.getState_root().toHexString());
-      this.gossipMessage(BLOCK_TOPIC, bytes);
+      this.sendGossipMessage(BLOCK_TOPIC, bytes);
     }
   }
 
@@ -91,7 +133,7 @@ public class MothraHandler {
           Level.DEBUG,
           "Gossiping new attestation for block root: "
               + attestation.getData().getBeacon_block_root());
-      this.gossipMessage(ATTESTATION_TOPIC, bytes);
+      this.sendGossipMessage(ATTESTATION_TOPIC, bytes);
     }
   }
 }
