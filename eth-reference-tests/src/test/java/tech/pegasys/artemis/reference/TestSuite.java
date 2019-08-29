@@ -11,12 +11,11 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package pegasys.artemis.reference;
+package tech.pegasys.artemis.reference;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.errorprone.annotations.MustBeClosed;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -33,7 +32,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import kotlin.Pair;
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.tuweni.io.Resources;
 import org.junit.jupiter.params.provider.Arguments;
 import tech.pegasys.artemis.datastructures.Constants;
@@ -59,7 +59,7 @@ public abstract class TestSuite {
 
   @Deprecated
   @MustBeClosed
-  @SuppressWarnings({"unchecked", "rawtypes"})
+  @SuppressWarnings({"rawtypes"})
   public static Stream<Arguments> findTests(String glob, List<Pair<Class, List<String>>> objectPath)
       throws IOException {
     return Resources.find(glob)
@@ -77,6 +77,7 @@ public abstract class TestSuite {
     return Path.of(pathToTests.toString(), path.toString());
   }
 
+  @SuppressWarnings({"rawtypes"})
   public static void loadConfigFromPath(Path path) throws Exception {
     path = Path.of(pathToTests.toString(), path.toString());
     String result = "";
@@ -98,7 +99,7 @@ public abstract class TestSuite {
   }
 
   @MustBeClosed
-  @SuppressWarnings({"unchecked", "rawtypes"})
+  @SuppressWarnings({"rawtypes"})
   public static Stream<Arguments> findTestsByPath(List<Pair<Class, String>> objectPath)
       throws IOException {
     return findTestsByPath(Paths.get(""), objectPath);
@@ -119,6 +120,7 @@ public abstract class TestSuite {
     return in;
   }
 
+  @SuppressWarnings({"rawtypes"})
   public static Object getObjectFromYAMLInputStream(InputStream in) {
     ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
     Object object = null;
@@ -140,7 +142,7 @@ public abstract class TestSuite {
   }
 
   @MustBeClosed
-  @SuppressWarnings({"unchecked", "rawtypes"})
+  @SuppressWarnings({"rawtypes"})
   public static Stream<Arguments> findTestsByPath(Path path, List<Pair<Class, String>> objectPath)
       throws IOException {
     path = Path.of(pathToTests.toString(), path.toString());
@@ -152,30 +154,28 @@ public abstract class TestSuite {
               walkPath ->
                   objectPath
                       .parallelStream()
-                      .allMatch(pair -> Files.exists(Path.of(walkPath, pair.getSecond()))))
+                      .allMatch(pair -> Files.exists(Path.of(walkPath, pair.getValue()))))
           .map(
               walkPath -> {
                 return objectPath.stream()
                     .map(
                         pair -> {
-                          Object object = pathToObject(Path.of(walkPath, pair.getSecond()));
+                          Object object = pathToObject(Path.of(walkPath, pair.getValue()));
                           Context c = new Context();
                           c.path = walkPath;
                           try {
-                            if (pair.getFirst().equals(ReadLineType.class)) {
+                            if (pair.getKey().equals(ReadLineType.class)) {
                               BufferedReader inputStreamFromPath =
                                   new BufferedReader(
                                       new InputStreamReader(
                                           getInputStreamFromPath(
-                                              Path.of(walkPath, pair.getSecond()))));
+                                              Path.of(walkPath, pair.getValue()))));
                               String s = inputStreamFromPath.readLine();
                               c.obj = s;
                             } else {
-                              c.obj =
-                                  MapObjectUtil.convertMapToTypedObject(pair.getFirst(), object);
+                              c.obj = MapObjectUtil.convertMapToTypedObject(pair.getKey(), object);
                             }
                           } catch (Exception e) {
-                            System.out.println("here");
                           }
                           return c;
                         });
@@ -200,7 +200,7 @@ public abstract class TestSuite {
               return objectPath.stream()
                   .allMatch(
                       pair -> {
-                        Iterator<String> itr = pair.getSecond().iterator();
+                        Iterator<String> itr = pair.getValue().iterator();
                         Object testObject = Map.copyOf(map);
                         while (itr.hasNext()) {
                           String param = itr.next();
@@ -215,13 +215,13 @@ public abstract class TestSuite {
               return objectPath.stream()
                   .map(
                       pair -> {
-                        Iterator<String> itr = pair.getSecond().iterator();
+                        Iterator<String> itr = pair.getValue().iterator();
                         Object testObject = Map.copyOf(map);
                         while (itr.hasNext()) {
                           String param = itr.next();
                           testObject = ((Map) testObject).get(param);
                         }
-                        Class classType = pair.getFirst();
+                        Class classType = pair.getKey();
                         return MapObjectUtil.convertMapToTypedObject(classType, testObject);
                       })
                   .collect(Collectors.toList());
@@ -229,18 +229,17 @@ public abstract class TestSuite {
         .map(objects -> Arguments.of(objects.toArray()));
   }
 
-  @Deprecated
-  @SuppressWarnings({"unchecked", "rawtypes"})
+  @SuppressWarnings({"rawtypes"})
   public static Pair<Class, List<String>> getParams(Class classType, List<String> args) {
-    return new Pair<Class, List<String>>(classType, args);
+    return new ImmutablePair<Class, List<String>>(classType, args);
   }
 
-  @SuppressWarnings({"unchecked", "rawtypes"})
+  @SuppressWarnings({"rawtypes"})
   public static Pair<Class, String> getParams(Class classType, String args) {
-    return new Pair<Class, String>(classType, args);
+    return new ImmutablePair<Class, String>(classType, args);
   }
 
-  @SuppressWarnings({"unchecked", "rawtypes"})
+  @SuppressWarnings({"rawtypes"})
   @MustBeClosed
   public static Stream<Arguments> epochProcessingSetup(Path path, Path configPath)
       throws Exception {
@@ -254,7 +253,7 @@ public abstract class TestSuite {
 
   public static class ReadLineType {}
 
-  @SuppressWarnings({"unchecked", "rawtypes"})
+  @SuppressWarnings({"rawtypes"})
   @MustBeClosed
   public static Stream<Arguments> sanitySlotsProcessingSetup(Path path, Path configPath)
       throws Exception {
@@ -266,7 +265,7 @@ public abstract class TestSuite {
     return findTestsByPath(path, arguments);
   }
 
-  @SuppressWarnings({"unchecked", "rawtypes"})
+  @SuppressWarnings({"rawtypes"})
   @MustBeClosed
   public static Stream<Arguments> sanityBlocksProcessingSetup(Path path, Path configPath)
       throws Exception {
@@ -279,7 +278,7 @@ public abstract class TestSuite {
     return findTestsByPath(path, arguments);
   }
 
-  @SuppressWarnings({"unchecked", "rawtypes"})
+  @SuppressWarnings({"rawtypes"})
   @MustBeClosed
   public static Stream<Arguments> operationsProcessingSetup(Path path, Path configPath)
       throws Exception {
@@ -291,7 +290,7 @@ public abstract class TestSuite {
     return findTestsByPath(path, arguments);
   }
 
-  @SuppressWarnings({"unchecked", "rawtypes"})
+  @SuppressWarnings({"rawtypes"})
   @MustBeClosed
   public static Stream<Arguments> depositProcessingSetup(Path path, Path configPath)
       throws Exception {
@@ -303,7 +302,7 @@ public abstract class TestSuite {
     return findTestsByPath(path, arguments);
   }
 
-  @SuppressWarnings({"unchecked", "rawtypes"})
+  @SuppressWarnings({"rawtypes"})
   @MustBeClosed
   public static Stream<Arguments> proposerSlashingProcessingSetup(Path path, Path configPath)
       throws Exception {
@@ -315,7 +314,7 @@ public abstract class TestSuite {
     return findTestsByPath(path, arguments);
   }
 
-  @SuppressWarnings({"unchecked", "rawtypes"})
+  @SuppressWarnings({"rawtypes"})
   @MustBeClosed
   public static Stream<Arguments> voluntaryExitProcessingSetup(Path path, Path configPath)
       throws Exception {
@@ -327,7 +326,7 @@ public abstract class TestSuite {
     return findTestsByPath(path, arguments);
   }
 
-  @SuppressWarnings({"unchecked", "rawtypes"})
+  @SuppressWarnings({"rawtypes"})
   @MustBeClosed
   public static Stream<Arguments> attestorSlashingProcessingSetup(Path path, Path configPath)
       throws Exception {
@@ -339,7 +338,7 @@ public abstract class TestSuite {
     return findTestsByPath(path, arguments);
   }
 
-  @SuppressWarnings({"unchecked", "rawtypes"})
+  @SuppressWarnings({"rawtypes"})
   @MustBeClosed
   public static Stream<Arguments> blockHeaderProcessingSetup(Path path, Path configPath)
       throws Exception {

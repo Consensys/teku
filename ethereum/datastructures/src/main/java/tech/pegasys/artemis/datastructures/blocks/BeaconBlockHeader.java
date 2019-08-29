@@ -21,12 +21,13 @@ import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
+import tech.pegasys.artemis.util.SSZTypes.SSZContainer;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
-public class BeaconBlockHeader implements SimpleOffsetSerializable {
+public class BeaconBlockHeader implements SimpleOffsetSerializable, SSZContainer {
 
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
   public static final int SSZ_FIELD_COUNT = 4;
@@ -48,6 +49,14 @@ public class BeaconBlockHeader implements SimpleOffsetSerializable {
     this.state_root = state_root;
     this.body_root = body_root;
     this.signature = signature;
+  }
+
+  public BeaconBlockHeader(BeaconBlockHeader header) {
+    this.slot = header.getSlot();
+    this.parent_root = header.getParent_root();
+    this.state_root = header.getState_root();
+    this.body_root = header.getBody_root();
+    this.signature = header.getSignature();
   }
 
   public BeaconBlockHeader() {

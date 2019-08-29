@@ -36,11 +36,14 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.DepositData;
+import tech.pegasys.artemis.datastructures.operations.DepositWithIndex;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.state.CrosslinkCommittee;
 import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.datastructures.state.Validator;
+import tech.pegasys.artemis.util.SSZTypes.Bytes4;
+import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSVerify;
 
@@ -272,8 +275,8 @@ class BeaconStateUtilTest {
     beaconState.setSlot(randomUnsignedLong());
     beaconState.setFork(
         new Fork(
-            Bytes.ofUnsignedInt(0),
-            Bytes.ofUnsignedInt(0),
+            new Bytes4(Bytes.ofUnsignedInt(0)),
+            new Bytes4(Bytes.ofUnsignedInt(0)),
             UnsignedLong.valueOf(Constants.GENESIS_EPOCH)));
 
     List<Validator> validatorList =
@@ -287,8 +290,10 @@ class BeaconStateUtilTest {
       balanceList.add(amount);
     }
 
-    beaconState.setValidators(validatorList);
-    beaconState.setBalances(balanceList);
+    beaconState.setValidators(
+        new SSZList<>(validatorList, Constants.VALIDATOR_REGISTRY_LIMIT, Validator.class));
+    beaconState.setBalances(
+        new SSZList<>(balanceList, Constants.VALIDATOR_REGISTRY_LIMIT, UnsignedLong.class));
     return beaconState;
   }
 
@@ -323,7 +328,7 @@ class BeaconStateUtilTest {
   }
 
   private Validator createValidator() {
-    List<Deposit> deposits = newDeposits(1);
+    List<DepositWithIndex> deposits = newDeposits(1);
     Deposit deposit = deposits.get(0);
     DepositData depositInput = deposit.getData();
     BLSPublicKey pubkey = depositInput.getPubkey();

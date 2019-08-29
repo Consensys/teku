@@ -18,7 +18,6 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomIndexedAttestation;
 
 import java.util.Objects;
-import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 
 class AttesterSlashingTest {
@@ -72,11 +71,5 @@ class AttesterSlashingTest {
         new AttesterSlashing(indexedAttestation1, otherIndexedAttestation2);
 
     assertNotEquals(attesterSlashing, testAttesterSlashing);
-  }
-
-  @Test
-  void roundtripSSZ() {
-    Bytes sszAttesterSlashingBytes = attesterSlashing.toBytes();
-    assertEquals(attesterSlashing, AttesterSlashing.fromBytes(sszAttesterSlashingBytes));
   }
 }

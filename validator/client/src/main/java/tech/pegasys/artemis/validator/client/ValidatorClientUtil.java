@@ -103,7 +103,7 @@ public class ValidatorClientUtil {
 
   public static Bytes generateProofOfPossession(KeyPair blsKeys, Bytes deposit_data) {
     return BLS12381
-        .sign(blsKeys, deposit_data, Constants.DOMAIN_DEPOSIT)
+        .sign(blsKeys, deposit_data, Constants.DOMAIN_DEPOSIT.getWrappedBytes())
         .signature()
         .toBytesCompressed();
   }

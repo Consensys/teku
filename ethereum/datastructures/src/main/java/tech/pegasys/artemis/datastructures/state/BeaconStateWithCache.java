@@ -14,16 +14,17 @@
 package tech.pegasys.artemis.datastructures.state;
 
 import com.google.common.primitives.UnsignedLong;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.Copyable;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
+import tech.pegasys.artemis.util.SSZTypes.Bitvector;
+import tech.pegasys.artemis.util.SSZTypes.SSZList;
+import tech.pegasys.artemis.util.SSZTypes.SSZVector;
 
 public final class BeaconStateWithCache extends BeaconState {
 
@@ -42,38 +43,38 @@ public final class BeaconStateWithCache extends BeaconState {
 
       // History
       BeaconBlockHeader latest_block_header,
-      List<Bytes32> block_roots,
-      List<Bytes32> state_roots,
-      List<Bytes32> historical_roots,
+      SSZVector<Bytes32> block_roots,
+      SSZVector<Bytes32> state_roots,
+      SSZList<Bytes32> historical_roots,
 
       // Eth1
       Eth1Data eth1_data,
-      List<Eth1Data> eth1_data_votes,
+      SSZList<Eth1Data> eth1_data_votes,
       UnsignedLong eth1_deposit_index,
 
       // Registry
-      List<Validator> validators,
-      List<UnsignedLong> balances,
+      SSZList<Validator> validators,
+      SSZList<UnsignedLong> balances,
 
       // Shuffling
       UnsignedLong start_shard,
-      List<Bytes32> randao_mixes,
-      List<Bytes32> active_index_roots,
-      List<Bytes32> compact_committees_roots,
+      SSZVector<Bytes32> randao_mixes,
+      SSZVector<Bytes32> active_index_roots,
+      SSZVector<Bytes32> compact_committees_roots,
 
       // Slashings
-      List<UnsignedLong> slashings,
+      SSZVector<UnsignedLong> slashings,
 
       // Attestations
-      List<PendingAttestation> previous_epoch_attestations,
-      List<PendingAttestation> current_epoch_attestations,
+      SSZList<PendingAttestation> previous_epoch_attestations,
+      SSZList<PendingAttestation> current_epoch_attestations,
 
       // Crosslinks
-      List<Crosslink> previous_crosslinks,
-      List<Crosslink> current_crosslinks,
+      SSZVector<Crosslink> previous_crosslinks,
+      SSZVector<Crosslink> current_crosslinks,
 
       // Finality
-      Bytes justification_bits,
+      Bitvector justification_bits,
       Checkpoint previous_justified_checkpoint,
       Checkpoint current_justified_chekpoint,
       Checkpoint finalized_checkpoint) {
@@ -112,40 +113,36 @@ public final class BeaconStateWithCache extends BeaconState {
     this.fork = new Fork(state.getFork());
 
     // History
-    this.latest_block_header =
-        BeaconBlockHeader.fromBytes(state.getLatest_block_header().toBytes());
-    this.block_roots = this.copyBytesList(state.getBlock_roots(), new ArrayList<>());
-    this.state_roots = this.copyBytesList(state.getState_roots(), new ArrayList<>());
-    this.historical_roots = this.copyBytesList(state.getHistorical_roots(), new ArrayList<>());
+    this.latest_block_header = new BeaconBlockHeader(state.getLatest_block_header());
+    this.block_roots = new SSZVector<>(state.getBlock_roots());
+    this.state_roots = new SSZVector<>(state.getState_roots());
+    this.historical_roots = new SSZList<>(state.getHistorical_roots());
 
     // Eth1
     this.eth1_data = new Eth1Data(state.getEth1_data());
-    this.eth1_data_votes = state.getEth1_data_votes().stream().collect(Collectors.toList());
+    this.eth1_data_votes = new SSZList<>(state.getEth1_data_votes());
     this.eth1_deposit_index = state.getEth1_deposit_index();
 
     // Registry
-    this.validators = this.copyList(state.getValidators(), new ArrayList<>());
-    this.balances = state.getBalances().stream().collect(Collectors.toList());
+    this.validators = new SSZList<>(state.getValidators());
+    this.balances = new SSZList<>(state.getBalances());
 
     // Shuffling
     this.start_shard = state.getStart_shard();
-    this.randao_mixes = this.copyBytesList(state.getRandao_mixes(), new ArrayList<>());
-    this.active_index_roots = this.copyBytesList(state.getActive_index_roots(), new ArrayList<>());
-    this.compact_committees_roots =
-        this.copyBytesList(state.getCompact_committees_roots(), new ArrayList<>());
+    this.randao_mixes = new SSZVector<>(state.getRandao_mixes());
+    this.active_index_roots = new SSZVector<>(state.getActive_index_roots());
+    this.compact_committees_roots = new SSZVector<>(state.getCompact_committees_roots());
 
     // Slashings
-    this.slashings = state.getSlashings().stream().collect(Collectors.toList());
+    this.slashings = new SSZVector<>(state.getSlashings());
 
     // Attestations
-    this.previous_epoch_attestations =
-        this.copyList(state.getPrevious_epoch_attestations(), new ArrayList<>());
-    this.current_epoch_attestations =
-        this.copyList(state.getCurrent_epoch_attestations(), new ArrayList<>());
+    this.previous_epoch_attestations = new SSZList<>(state.getPrevious_epoch_attestations());
+    this.current_epoch_attestations = new SSZList<>(state.getCurrent_epoch_attestations());
 
     // Crosslinks
-    this.current_crosslinks = this.copyList(state.getCurrent_crosslinks(), new ArrayList<>());
-    this.previous_crosslinks = this.copyList(state.getPrevious_crosslinks(), new ArrayList<>());
+    this.current_crosslinks = new SSZVector<>(state.getCurrent_crosslinks());
+    this.previous_crosslinks = new SSZVector<>(state.getPrevious_crosslinks());
 
     // Finality
     this.justification_bits = state.getJustification_bits().copy();

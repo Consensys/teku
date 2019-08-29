@@ -45,7 +45,6 @@ import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.decrease_b
 import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.get_active_validator_indices;
 import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.increase_balance;
 import static tech.pegasys.artemis.util.bls.BLSVerify.bls_verify;
-import static tech.pegasys.artemis.util.hashtree.HashTreeUtil.hash_tree_root;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.primitives.UnsignedLong;
@@ -58,24 +57,28 @@ import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.Hash;
+import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockBody;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
+import tech.pegasys.artemis.datastructures.operations.DepositWithIndex;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.state.Validator;
+import tech.pegasys.artemis.util.SSZTypes.Bitvector;
+import tech.pegasys.artemis.util.SSZTypes.Bytes4;
 import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
-import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
+import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 
 public class BeaconStateUtil {
 
   private static final ALogger LOG = new ALogger(BeaconStateUtil.class.getName());
 
   public static BeaconStateWithCache initialize_beacon_state_from_eth1(
-      Bytes32 eth1_block_hash, UnsignedLong eth1_timestamp, List<Deposit> deposits) {
+      Bytes32 eth1_block_hash, UnsignedLong eth1_timestamp, List<DepositWithIndex> deposits) {
     UnsignedLong genesis_time =
         eth1_timestamp.minus(
             eth1_timestamp
@@ -85,7 +88,7 @@ public class BeaconStateUtil {
     eth1_data.setBlock_hash(eth1_block_hash);
     eth1_data.setDeposit_count(UnsignedLong.valueOf(deposits.size()));
 
-    MerkleTree<Deposit> merkleTree = DepositUtil.generateMerkleTree(deposits);
+    MerkleTree<DepositWithIndex> merkleTree = DepositUtil.generateMerkleTree(deposits);
     eth1_data.setDeposit_root(merkleTree.getRoot());
     BeaconStateWithCache state = new BeaconStateWithCache();
     state.setGenesis_time(genesis_time);
@@ -123,7 +126,9 @@ public class BeaconStateUtil {
     List<Integer> indices_list =
         get_active_validator_indices(state, UnsignedLong.valueOf(GENESIS_EPOCH));
     Bytes32 active_index_root =
-        hash_tree_root(SSZTypes.LIST_OF_BASIC, Constants.VALIDATOR_REGISTRY_LIMIT, indices_list);
+        HashTreeUtil.hash_tree_root_list_ul(
+            Constants.VALIDATOR_REGISTRY_LIMIT,
+            indices_list.stream().map(elem -> SSZ.encodeUInt64(elem)).collect(Collectors.toList()));
     Bytes32 committee_root =
         get_compact_committees_root(state, UnsignedLong.valueOf(GENESIS_EPOCH));
     IntStream.range(0, EPOCHS_PER_HISTORICAL_VECTOR)
@@ -299,10 +304,8 @@ public class BeaconStateUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#compute_domain</a>
    */
-  public static Bytes compute_domain(Bytes domain_type, Bytes fork_version) {
-    checkArgument(domain_type.size() == 4, "domain_type must be of type Bytes4");
-    checkArgument(fork_version.size() == 4, "fork_version must be of type Bytes4");
-    Bytes domain = Bytes.concatenate(domain_type, fork_version);
+  public static Bytes compute_domain(Bytes4 domain_type, Bytes4 fork_version) {
+    Bytes domain = Bytes.concatenate(domain_type.getWrappedBytes(), fork_version.getWrappedBytes());
     checkArgument(domain.size() == 8, "domain must be of type Bytes8");
     return domain;
   }
@@ -315,8 +318,8 @@ public class BeaconStateUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#compute_domain</a>
    */
-  public static Bytes compute_domain(Bytes domain_type) {
-    return compute_domain(domain_type, Bytes.wrap(new byte[4]));
+  public static Bytes compute_domain(Bytes4 domain_type) {
+    return compute_domain(domain_type, new Bytes4(Bytes.wrap(new byte[4])));
   }
 
   /**
@@ -711,10 +714,10 @@ public class BeaconStateUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#get_domain</a>
    */
-  public static Bytes get_domain(BeaconState state, Bytes domain_type, UnsignedLong message_epoch) {
-    checkArgument(domain_type.size() == 4, "domain_type must be of type Bytes4");
+  public static Bytes get_domain(
+      BeaconState state, Bytes4 domain_type, UnsignedLong message_epoch) {
     UnsignedLong epoch = (message_epoch == null) ? get_current_epoch(state) : message_epoch;
-    Bytes fork_version =
+    Bytes4 fork_version =
         (epoch.compareTo(state.getFork().getEpoch()) < 0)
             ? state.getFork().getPrevious_version()
             : state.getFork().getCurrent_version();
@@ -731,7 +734,7 @@ public class BeaconStateUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#get_domain</a>
    */
-  public static Bytes get_domain(BeaconState state, Bytes domain_type) {
+  public static Bytes get_domain(BeaconState state, Bytes4 domain_type) {
     return get_domain(state, domain_type, null);
   }
 
@@ -791,55 +794,9 @@ public class BeaconStateUtil {
     return epoch.plus(UnsignedLong.ONE).plus(UnsignedLong.valueOf(ACTIVATION_EXIT_DELAY));
   }
 
-  /**
-   * Extract the bit in ``bitfield`` at position ``i``.
-   *
-   * @param bitfield - The Bytes value that describes the bitfield to operate on.
-   * @param i - The index.
-   * @return The bit at bitPosition from the given bitfield.
-   * @see <a
-   *     href="https://github.com/ethereum/eth2.0-specs/blob/v0.4.0/specs/core/0_beacon-chain.md#get_bitfield_bit">get_bitfield_bit
-   *     - Spec v0.4</a>
-   */
-  public static int get_bitfield_bit(Bytes bitfield, int i) {
-    return (bitfield.get(i / 8) >>> (i % 8)) % 2;
-  }
-
-  /**
-   * Verify ``bitfield`` against the ``committee_size``.
-   *
-   * @param bitfield - The bitfield under consideration.
-   * @param committee_size - The size of the committee associated with the bitfield.
-   * @return True if the given bitfield is valid for the given committee_size, false otherwise.
-   * @see <a
-   *     href="https://github.com/ethereum/eth2.0-specs/blob/v0.4.0/specs/core/0_beacon-chain.md#verify_bitfield">verify_bitfield
-   *     - Spec v0.4</a>
-   */
-  public static boolean verify_bitfield(Bytes bitfield, int committee_size) {
-    if (bitfield.size() != (committee_size + 7) / 8) {
-      return false;
-    }
-
-    for (int i = committee_size; i < bitfield.size() * 8; i++) {
-      if (get_bitfield_bit(bitfield, i) == 0b1) {
-        return false;
-      }
-    }
-    return true;
-  }
-
-  // TODO test this function
-  public static Bytes setBit(Bytes bits, int pos) {
-    byte[] bitsByteArray = bits.toArray();
-    byte myByte = bitsByteArray[pos / 8];
-    myByte = (byte) (myByte | (1 << (pos % 8)));
-    bitsByteArray[pos / 8] = myByte;
-    return Bytes.wrap(bitsByteArray);
-  }
-
-  public static boolean all(Bytes bits, int start, int end) {
+  public static boolean all(Bitvector bitvector, int start, int end) {
     for (int i = start; i < end; i++) {
-      if (get_bitfield_bit(bits, i) == 0) {
+      if (bitvector.getBit(i) == 0) {
         return false;
       }
     }

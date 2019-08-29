@@ -30,6 +30,7 @@ import java.util.Iterator;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 
 @JsonSerialize(using = BlockBodiesMessage.BlockBodiesSerializer.class)
 @JsonDeserialize(using = BlockBodiesMessage.BlockBodiesDeserializer.class)
@@ -53,7 +54,7 @@ public final class BlockBodiesMessage {
             .forEach(
                 item -> {
                   try {
-                    jgen.writeBinary(item.toBytes().toArrayUnsafe());
+                    jgen.writeBinary(SimpleOffsetSerializer.serialize(item).toArrayUnsafe());
                   } catch (java.io.IOException e) {
                     throw new IllegalArgumentException(e.getMessage());
                   }
@@ -105,7 +106,8 @@ public final class BlockBodiesMessage {
   private List<BeaconBlock> bodies = new ArrayList<>();
 
   BlockBodiesMessage(List<BlockBody> blockBodies, boolean flag) {
-    blockBodies.forEach(a -> this.bodies.add(BeaconBlock.fromBytes(a.bytes())));
+    blockBodies.forEach(
+        a -> this.bodies.add(SimpleOffsetSerializer.deserialize(a.bytes(), BeaconBlock.class)));
   }
 
   @JsonCreator
