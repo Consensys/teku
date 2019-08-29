@@ -447,7 +447,7 @@ public final class BlockProcessorUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#deposits</a>
    */
-  public static void process_deposits(BeaconState state, List<Deposit> deposits)
+  public static void process_deposits(BeaconState state, List<? extends Deposit> deposits)
       throws BlockProcessingException {
     try {
       for (Deposit deposit : deposits) {
