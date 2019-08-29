@@ -493,8 +493,8 @@ public final class DataStructureUtil {
       beaconBlockBody.setEth1_data(get_eth1_data_stub(state, compute_epoch_of_slot(slot)));
     } else {
       beaconBlockBody.setEth1_data(
-              new Eth1Data(
-                      Constants.ZERO_HASH, UnsignedLong.valueOf(numValidators), Constants.ZERO_HASH));
+          new Eth1Data(
+              Constants.ZERO_HASH, UnsignedLong.valueOf(numValidators), Constants.ZERO_HASH));
     }
     beaconBlockBody.setDeposits(deposits);
     beaconBlockBody.setAttestations(attestations);
