@@ -20,11 +20,13 @@ import com.google.errorprone.annotations.MustBeClosed;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.InputStreamReader;
+import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.stream.Stream;
 import org.apache.tuweni.junit.BouncyCastleExtension;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -41,6 +43,7 @@ import tech.pegasys.artemis.statetransition.util.ForkChoiceUtil;
 import tech.pegasys.artemis.storage.Store;
 
 @ExtendWith(BouncyCastleExtension.class)
+@Disabled
 class sanity_processing extends TestSuite {
   private static final Path configPath = Paths.get("mainnet", "phase0");
 
@@ -57,7 +60,8 @@ class sanity_processing extends TestSuite {
 
     BufferedReader inputStreamFromPath =
         new BufferedReader(
-            new InputStreamReader(getInputStreamFromPath(Path.of(pre.path, "slots.yaml"))));
+            new InputStreamReader(
+                getInputStreamFromPath(Path.of(pre.path, "slots.yaml")), Charset.defaultCharset()));
     String s = inputStreamFromPath.readLine();
 
     StateTransition.process_slots(bs, UnsignedLong.valueOf(s).plus(bs.getSlot()), true);

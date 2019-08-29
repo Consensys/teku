@@ -25,13 +25,16 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.junit.BouncyCastleExtension;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
+import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.reference.TestSuite;
 
+@Disabled
 @ExtendWith(BouncyCastleExtension.class)
 class ssz_minimal_lengthy extends TestSuite {
   private static String testFile = "**/ssz_minimal_lengthy.yaml";
@@ -41,13 +44,10 @@ class ssz_minimal_lengthy extends TestSuite {
   void sszAttestationCheckSerializationRootAndSigningRoot(
       Attestation attestation, Bytes serialized, Bytes32 root, Bytes signing_root) {
 
-    /*
-    Check after serialization
     assertEquals(
         serialized,
-        attestation.toBytes(),
+        SimpleOffsetSerializer.serialize(attestation),
         attestation.getClass().getName() + " failed the serialiaztion test");
-        */
     assertEquals(
         root,
         attestation.hash_tree_root(),
