@@ -23,6 +23,7 @@ import java.io.InputStreamReader;
 import java.io.UncheckedIOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -34,6 +35,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.logging.log4j.Level;
 import org.apache.tuweni.io.Resources;
 import org.junit.jupiter.params.provider.Arguments;
 import tech.pegasys.artemis.datastructures.Constants;
@@ -45,8 +47,11 @@ import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
 import tech.pegasys.artemis.datastructures.operations.VoluntaryExit;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
+import tech.pegasys.artemis.util.alogger.ALogger;
 
 public abstract class TestSuite {
+  private static final ALogger LOG = new ALogger(TestSuite.class.getName());
+
   private static final Path pathToTests =
       Paths.get(
           System.getProperty("user.dir").toString(),
@@ -88,7 +93,7 @@ public abstract class TestSuite {
                 .filter(currentPath -> currentPath.contains("config.yaml"))
                 .collect(Collectors.joining());
       } catch (IOException e) {
-        e.printStackTrace();
+        LOG.log(Level.WARN, e.toString());
       }
       if (result.isEmpty()) path = path.getParent();
     }
@@ -112,9 +117,9 @@ public abstract class TestSuite {
       url = new URL(FILE + path);
       in = url.openConnection().getInputStream();
     } catch (MalformedURLException e) {
-      e.printStackTrace();
+      LOG.log(Level.WARN, e.toString());
     } catch (IOException e) {
-      e.printStackTrace();
+      LOG.log(Level.WARN, e.toString());
     }
     ;
     return in;
@@ -127,7 +132,7 @@ public abstract class TestSuite {
     try {
       object = ((Map) mapper.readerFor(Map.class).readValue(in));
     } catch (IOException e) {
-      e.printStackTrace();
+      LOG.log(Level.WARN, e.toString());
     }
     return object;
   }
@@ -169,7 +174,8 @@ public abstract class TestSuite {
                                   new BufferedReader(
                                       new InputStreamReader(
                                           getInputStreamFromPath(
-                                              Path.of(walkPath, pair.getValue()))));
+                                              Path.of(walkPath, pair.getValue())),
+                                          Charset.defaultCharset()));
                               String s = inputStreamFromPath.readLine();
                               c.obj = s;
                             } else {
@@ -182,7 +188,7 @@ public abstract class TestSuite {
               })
           .map(objects -> Arguments.of(objects.toArray()));
     } catch (IOException e) {
-      e.printStackTrace();
+      LOG.log(Level.WARN, e.toString());
     }
     return null;
   }
