@@ -11,15 +11,13 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package pegasys.artemis.reference.bls;
+package pegasys.artemis.reference.general.phase0.bls;
 
 import com.google.errorprone.annotations.MustBeClosed;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import pegasys.artemis.reference.TestObject;
-import pegasys.artemis.reference.TestSet;
 import pegasys.artemis.reference.TestSuite;
 import tech.pegasys.artemis.util.mikuli.Signature;
 
@@ -32,6 +30,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class aggregate_sigs extends TestSuite {
 
+  //The aggregate_sigs handler should aggregate the signatures in the input, and the result should match the expected output.
   @ParameterizedTest(name = "{index}. aggregate sigs {0} -> {1}")
   @MethodSource("readAggregateSignatures")
   void aggregateSig(List<Signature> signatures, Bytes aggregateSignatureExpected) {
@@ -44,15 +43,5 @@ class aggregate_sigs extends TestSuite {
   static Stream<Arguments> readAggregateSignatures() {
     Path path = Paths.get("general", "phase0", "bls", "aggregate_sigs", "small");
     return aggregateSignaturesSetup(path);
-  }
-
-  @SuppressWarnings({"unchecked", "rawtypes"})
-  @MustBeClosed
-  public static Stream<Arguments> aggregateSignaturesSetup(Path path) {
-
-    TestSet testSet = new TestSet(path);
-    testSet.add(new TestObject("data.yaml", Signature[].class, Paths.get("input")));
-    testSet.add(new TestObject("data.yaml", Bytes.class, Paths.get("output")));
-    return findTestsByPath(testSet);
   }
 }

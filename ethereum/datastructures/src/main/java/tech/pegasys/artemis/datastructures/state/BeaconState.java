@@ -13,24 +13,26 @@
 
 package tech.pegasys.artemis.datastructures.state;
 
-import static tech.pegasys.artemis.datastructures.Constants.ZERO_HASH;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.int_to_bytes;
-
 import com.google.common.primitives.UnsignedLong;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
-import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
+import tech.pegasys.artemis.util.hashtree.Merkleizable;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
-public class BeaconState implements SimpleOffsetSerializable {
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
+
+import static tech.pegasys.artemis.datastructures.Constants.ZERO_HASH;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.int_to_bytes;
+
+public class BeaconState implements Merkleizable, SimpleOffsetSerializable {
 
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
   public static final int SSZ_FIELD_COUNT = 11;
@@ -691,7 +693,9 @@ public class BeaconState implements SimpleOffsetSerializable {
     this.slot = slot.plus(UnsignedLong.ONE);
   }
 
+  @Override
   public Bytes32 hash_tree_root() {
     return Bytes32.ZERO;
   }
+
 }

@@ -15,22 +15,28 @@ package pegasys.artemis.reference;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.google.common.primitives.UnsignedLong;
 import com.google.errorprone.annotations.MustBeClosed;
-import java.io.BufferedReader;
-import kotlin.Pair;
-import org.apache.tuweni.io.Resources;
+import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
+import org.assertj.core.util.Arrays;
 import org.junit.jupiter.params.provider.Arguments;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.AttesterSlashing;
+import tech.pegasys.artemis.datastructures.operations.Deposit;
+import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
+import tech.pegasys.artemis.datastructures.operations.VoluntaryExit;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
+import tech.pegasys.artemis.util.mikuli.G2Point;
+import tech.pegasys.artemis.util.mikuli.PublicKey;
+import tech.pegasys.artemis.util.mikuli.SecretKey;
+import tech.pegasys.artemis.util.mikuli.Signature;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.UncheckedIOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Files;
@@ -42,9 +48,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import tech.pegasys.artemis.datastructures.operations.Deposit;
-import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
-import tech.pegasys.artemis.datastructures.operations.VoluntaryExit;
 
 public abstract class TestSuite {
   protected static Path configPath = null;
@@ -57,26 +60,6 @@ public abstract class TestSuite {
           "eth2.0-spec-tests",
           "tests");
   private static final String FILE = "file://";
-
-  @Deprecated
-  @MustBeClosed
-  @SuppressWarnings({"unchecked", "rawtypes"})
-  public static Stream<Arguments> findTests(String glob, List<Pair<Class, List<String>>> objectPath)
-      throws IOException {
-    return Resources.find(glob)
-        .flatMap(
-            url -> {
-              try (InputStream in = url.openConnection().getInputStream()) {
-                return prepareTests(in, objectPath);
-              } catch (IOException e) {
-                throw new UncheckedIOException(e);
-              }
-            });
-  }
-
-  public static Path getTestPath(Path path) {
-    return Path.of(pathToTests.toString(), path.toString());
-  }
 
   public static void loadConfigFromPath(Path path) throws Exception {
     path = Path.of(pathToTests.toString(), path.toString());
@@ -98,12 +81,8 @@ public abstract class TestSuite {
     Constants.init((Map) pathToObject(Paths.get(result)));
   }
 
-  @MustBeClosed
-  @SuppressWarnings({"unchecked", "rawtypes"})
-  public static Stream<Arguments> findTestsByPath(List<Pair<Class, String>> objectPath)
-      throws IOException {
-//    return findTestsByPath(Paths.get(""), objectPath);
-    return null;
+  public static Integer loadMetaData(TestSet testSet) {
+    return (Integer)findTestsByPath(testSet).map(e -> e.get()).collect(Collectors.toList()).get(0)[0];
   }
 
   public static InputStream getInputStreamFromPath(Path path) {
@@ -136,40 +115,6 @@ public abstract class TestSuite {
     return getObjectFromYAMLInputStream(getInputStreamFromPath(path));
   }
 
-  public static class Context {
-    public String path;
-    public Object obj;
-  }
-
-  @MustBeClosed
-  @SuppressWarnings({"unchecked", "rawtypes"})
-  public static Stream<Arguments> findTestsByPath(Path path, List<Pair<String, List<Pair<Class, Path>>>> objectPath) {
-    path = Path.of(pathToTests.toString(), path.toString());
-    try (Stream<Path> walk = Files.walk(path)) {
-      List<String> result = walk.map(x -> x.toString()).collect(Collectors.toList());
-      result = result
-              .stream()
-              .filter(
-                      walkPath ->
-                              objectPath
-                                      .stream()
-                                      .allMatch(pair -> Files.exists(Path.of(walkPath, pair.getFirst())))).collect(Collectors.toList());
-
-      return result.stream().map(
-              walkPath -> {
-                return objectPath.stream().flatMap(
-                        pair -> {
-                          Object object = pathToObject(Path.of(walkPath, pair.getFirst()));
-                          return pair.getSecond().stream().map(subPair ->  parseObjectFromFile(subPair.getFirst(), subPair.getSecond(), object));
-                        }).collect(Collectors.toList());
-              }
-      ).map(objects -> Arguments.of(objects.toArray()));
-    } catch (IOException e) {
-      e.printStackTrace();
-    }
-    return null;
-  }
-
   @MustBeClosed
   @SuppressWarnings({"unchecked", "rawtypes"})
   public static Stream<Arguments> findTestsByPath(TestSet testSet) {
@@ -199,6 +144,29 @@ public abstract class TestSuite {
     return null;
   }
 
+  public static Stream<Arguments> convertArrayArguments(Class className , Stream<Arguments> input){
+    List<Arguments> output = new ArrayList<Arguments>();
+    Iterator<Arguments> itr = input.collect(Collectors.toList()).iterator();
+    while(itr.hasNext()){
+      List<Object> outputObjects = new ArrayList<Object>();
+      List<Object> objects = Arrays.asList(itr.next().get());
+      Iterator<Object> itrObject = objects.iterator();
+      List arrayArguments = new ArrayList();
+      while(itrObject.hasNext()){
+        Object object = itrObject.next();
+        if(object.getClass().equals(className)){
+          arrayArguments.add(object);
+        }
+        else{
+          outputObjects.add(object);
+        }
+      }
+      if(arrayArguments.size()>0)outputObjects.add(arrayArguments);
+      output.add(Arguments.of(outputObjects.toArray()));
+    }
+    return output.stream();
+  }
+
   private static  Object parseObjectFromFile(Class className, Path path, Object object) {
     if(path != null){
       Iterator<Path> itr = path.iterator();
@@ -209,57 +177,66 @@ public abstract class TestSuite {
     return MapObjectUtil.convertMapToTypedObject(className, object);
   }
 
-  @Deprecated
   @SuppressWarnings({"unchecked", "rawtypes"})
-  private static Stream<Arguments> prepareTests(
-      InputStream in, List<Pair<Class, List<String>>> objectPath) throws IOException {
-    ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
-    List<Map> allTests =
-        (ArrayList) ((Map) mapper.readerFor(Map.class).readValue(in)).get("test_cases");
-    return allTests.stream()
-        .filter(
-            map -> {
-              return objectPath.stream()
-                  .allMatch(
-                      pair -> {
-                        Iterator<String> itr = pair.getSecond().iterator();
-                        Object testObject = Map.copyOf(map);
-                        while (itr.hasNext()) {
-                          String param = itr.next();
-                          testObject = ((Map) testObject).get(param);
-                          if (testObject == null) return false;
-                        }
-                        return testObject != null;
-                      });
-            })
-        .map(
-            map -> {
-              return objectPath.stream()
-                  .map(
-                      pair -> {
-                        Iterator<String> itr = pair.getSecond().iterator();
-                        Object testObject = Map.copyOf(map);
-                        while (itr.hasNext()) {
-                          String param = itr.next();
-                          testObject = ((Map) testObject).get(param);
-                        }
-                        Class classType = pair.getFirst();
-                        return MapObjectUtil.convertMapToTypedObject(classType, testObject);
-                      })
-                  .collect(Collectors.toList());
-            })
-        .map(objects -> Arguments.of(objects.toArray()));
-  }
+  @MustBeClosed
+  public static Stream<Arguments> aggregatePublicKeysSetup(Path path) {
 
-  @Deprecated
-  @SuppressWarnings({"unchecked", "rawtypes"})
-  public static Pair<Class, List<String>> getParams(Class classType, List<String> args) {
-    return new Pair<Class, List<String>>(classType, args);
+    TestSet testSet = new TestSet(path);
+    testSet.add(new TestObject("data.yaml", PublicKey[].class, Paths.get("input")));
+    testSet.add(new TestObject("data.yaml", PublicKey.class, Paths.get("output")));
+    return findTestsByPath(testSet);
   }
 
   @SuppressWarnings({"unchecked", "rawtypes"})
-  public static Pair<Class, String> getParams(Class classType, String args) {
-    return new Pair<Class, String>(classType, args);
+  @MustBeClosed
+  public static Stream<Arguments> messageHashCompressedSetup(Path path) {
+
+    TestSet testSet = new TestSet(path);
+    testSet.add(new TestObject("data.yaml", G2Point.class, Paths.get("input")));
+    testSet.add(new TestObject("data.yaml", G2Point.class, Paths.get("output")));
+    return findTestsByPath(testSet);
+  }
+
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  @MustBeClosed
+  public static Stream<Arguments> privateKeyPublicKeySetup(Path path) {
+
+    TestSet testSet = new TestSet(path);
+    testSet.add(new TestObject("data.yaml", SecretKey.class, Paths.get("input")));
+    testSet.add(new TestObject("data.yaml", PublicKey.class, Paths.get("output")));
+    return findTestsByPath(testSet);
+  }
+
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  @MustBeClosed
+  public static Stream<Arguments> messageHashUncompressedSetup(Path path) {
+
+    TestSet testSet = new TestSet(path);
+    testSet.add(new TestObject("data.yaml", G2Point.class, Paths.get("input")));
+    testSet.add(new TestObject("data.yaml", G2Point.class, Paths.get("output")));
+    return findTestsByPath(testSet);
+  }
+
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  @MustBeClosed
+  public static Stream<Arguments> signMessagesSetup(Path path) {
+
+    TestSet testSet = new TestSet(path);
+    testSet.add(new TestObject("data.yaml", Bytes.class, Paths.get("input", "message")));
+    testSet.add(new TestObject("data.yaml", Bytes.class, Paths.get("input", "domain")));
+    testSet.add(new TestObject("data.yaml", SecretKey.class, Paths.get("input", "privkey")));
+    testSet.add(new TestObject("data.yaml", Signature.class, Paths.get("output")));
+    return findTestsByPath(testSet);
+  }
+
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  @MustBeClosed
+  public static Stream<Arguments> aggregateSignaturesSetup(Path path) {
+
+    TestSet testSet = new TestSet(path);
+    testSet.add(new TestObject("data.yaml", Signature[].class, Paths.get("input")));
+    testSet.add(new TestObject("data.yaml", Bytes.class, Paths.get("output")));
+    return findTestsByPath(testSet);
   }
 
   @SuppressWarnings({"unchecked", "rawtypes"})
@@ -275,11 +252,37 @@ public abstract class TestSuite {
     return findTestsByPath(testSet);
   }
 
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  @MustBeClosed
+  public static Stream<Arguments> sszStaticMerkleizableSetup(Path path, Path configPath, Class className)
+          throws Exception {
+    loadConfigFromPath(configPath);
+
+    TestSet testSet = new TestSet(path);
+    testSet.add(new TestObject("value.yaml", className, null));
+    testSet.add(new TestObject("meta.yaml", Bytes32.class, Paths.get("root")));
+
+    return findTestsByPath(testSet);
+  }
 
 
   @SuppressWarnings({"unchecked", "rawtypes"})
   @MustBeClosed
-  public static Stream<Arguments> attestationSetup(Path path, Path configPath)
+  public static Stream<Arguments> sszStaticRootSigningRootSetup(Path path, Path configPath, Class className)
+          throws Exception {
+    loadConfigFromPath(configPath);
+
+    TestSet testSet = new TestSet(path);
+    testSet.add(new TestObject("value.yaml", className, null));
+    testSet.add(new TestObject("meta.yaml", Bytes32.class, Paths.get("root")));
+    testSet.add(new TestObject("meta.yaml", Bytes32.class, Paths.get("signing_root")));
+
+    return findTestsByPath(testSet);
+  }
+
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  @MustBeClosed
+  public static Stream<Arguments> sszStaticAttestationSetup(Path path, Path configPath)
           throws Exception {
     loadConfigFromPath(configPath);
 
@@ -305,13 +308,27 @@ public abstract class TestSuite {
 
   @SuppressWarnings({"unchecked", "rawtypes"})
   @MustBeClosed
-  public static Stream<Arguments> blockHeaderInvalidParentRootSetup(Path path, Path configPath)
+  public static Stream<Arguments> genericBlockHeaderSetup(Path path, Path configPath)
           throws Exception {
     loadConfigFromPath(configPath);
 
     TestSet testSet = new TestSet(path);
     testSet.add(new TestObject("block.yaml", BeaconBlock.class, null));
     testSet.add(new TestObject("pre.yaml", BeaconState.class, null));
+
+    return findTestsByPath(testSet);
+  }
+
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  @MustBeClosed
+  public static Stream<Arguments> blockHeaderSuccessSetup(Path path, Path configPath)
+          throws Exception {
+    loadConfigFromPath(configPath);
+
+    TestSet testSet = new TestSet(path);
+    testSet.add(new TestObject("block.yaml", BeaconBlock.class, null));
+    testSet.add(new TestObject("pre.yaml", BeaconState.class, null));
+    testSet.add(new TestObject("post.yaml", BeaconState.class, null));
 
     return findTestsByPath(testSet);
   }
@@ -330,102 +347,229 @@ public abstract class TestSuite {
     return findTestsByPath(testSet);
   }
 
-  public static class ReadLineType {}
-
   @SuppressWarnings({"unchecked", "rawtypes"})
   @MustBeClosed
-  public static Stream<Arguments> sanitySlotsProcessingSetup(Path path, Path configPath)
-      throws Exception {
+  public static Stream<Arguments> operationDepositType1Setup(Path path, Path configPath)
+          throws Exception {
     loadConfigFromPath(configPath);
 
-    List<Pair<Class, String>> arguments = new ArrayList<Pair<Class, String>>();
-    arguments.add(getParams(BeaconStateWithCache.class, "pre.yaml"));
-    arguments.add(getParams(BeaconStateWithCache.class, "post.yaml"));
-    return findTestsByPath(path, arguments);
+    TestSet testSet = new TestSet(path);
+    testSet.add(new TestObject("deposit.yaml", Deposit.class, null));
+    testSet.add(new TestObject("meta.yaml", Integer.class, Paths.get("bls_setting")));
+    testSet.add(new TestObject("pre.yaml", BeaconState.class, null));
+    testSet.add(new TestObject("post.yaml", BeaconState.class, null));
+
+    return findTestsByPath(testSet);
   }
 
   @SuppressWarnings({"unchecked", "rawtypes"})
   @MustBeClosed
-  public static Stream<Arguments> sanityBlocksProcessingSetup(Path path, Path configPath)
-      throws Exception {
+  public static Stream<Arguments> operationDepositType2Setup(Path path, Path configPath)
+          throws Exception {
     loadConfigFromPath(configPath);
 
-    List<Pair<Class, String>> arguments = new ArrayList<Pair<Class, String>>();
-    arguments.add(getParams(BeaconState.class, "pre.yaml"));
-    arguments.add(getParams(BeaconState.class, "post.yaml"));
-    arguments.add(getParams(ReadLineType.class, "meta.yaml"));
-    return findTestsByPath(path, arguments);
+    TestSet testSet = new TestSet(path);
+    testSet.add(new TestObject("deposit.yaml", Deposit.class, null));
+    testSet.add(new TestObject("pre.yaml", BeaconState.class, null));
+
+    return findTestsByPath(testSet);
   }
 
   @SuppressWarnings({"unchecked", "rawtypes"})
   @MustBeClosed
-  public static Stream<Arguments> operationsProcessingSetup(Path path, Path configPath)
-      throws Exception {
+  public static Stream<Arguments> operationDepositType3Setup(Path path, Path configPath)
+          throws Exception {
     loadConfigFromPath(configPath);
 
-    List<Pair<Class, String>> arguments = new ArrayList<Pair<Class, String>>();
-    arguments.add(getParams(BeaconState.class, "pre.yaml"));
-    arguments.add(getParams(Attestation.class, "attestation.yaml"));
-    return findTestsByPath(path, arguments);
+    TestSet testSet = new TestSet(path);
+    testSet.add(new TestObject("deposit.yaml", Deposit.class, null));
+    testSet.add(new TestObject("pre.yaml", BeaconState.class, null));
+    testSet.add(new TestObject("post.yaml", BeaconState.class, null));
+
+    return findTestsByPath(testSet);
   }
 
   @SuppressWarnings({"unchecked", "rawtypes"})
   @MustBeClosed
-  public static Stream<Arguments> depositProcessingSetup(Path path, Path configPath)
-      throws Exception {
+  public static Stream<Arguments> operationProposerSlashingType1Setup(Path path, Path configPath)
+          throws Exception {
     loadConfigFromPath(configPath);
 
-    List<Pair<Class, String>> arguments = new ArrayList<Pair<Class, String>>();
-    arguments.add(getParams(BeaconState.class, "pre.yaml"));
-    arguments.add(getParams(Deposit.class, "deposit.yaml"));
-    return findTestsByPath(path, arguments);
+    TestSet testSet = new TestSet(path);
+    testSet.add(new TestObject("proposer_slashing.yaml", ProposerSlashing.class, null));
+    testSet.add(new TestObject("pre.yaml", BeaconState.class, null));
+
+    return findTestsByPath(testSet);
   }
 
   @SuppressWarnings({"unchecked", "rawtypes"})
   @MustBeClosed
-  public static Stream<Arguments> proposerSlashingProcessingSetup(Path path, Path configPath)
-      throws Exception {
+  public static Stream<Arguments> operationProposerSlashingType2Setup(Path path, Path configPath)
+          throws Exception {
     loadConfigFromPath(configPath);
 
-    List<Pair<Class, String>> arguments = new ArrayList<Pair<Class, String>>();
-    arguments.add(getParams(BeaconState.class, "pre.yaml"));
-    arguments.add(getParams(ProposerSlashing.class, "proposer_slashing.yaml"));
-    return findTestsByPath(path, arguments);
+    TestSet testSet = new TestSet(path);
+    testSet.add(new TestObject("proposer_slashing.yaml", ProposerSlashing.class, null));
+    testSet.add(new TestObject("meta.yaml", Integer.class, Paths.get("bls_setting")));
+    testSet.add(new TestObject("pre.yaml", BeaconState.class, null));
+
+    return findTestsByPath(testSet);
+  }
+
+
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  @MustBeClosed
+  public static Stream<Arguments> operationProposerSlashingType3Setup(Path path, Path configPath)
+          throws Exception {
+    loadConfigFromPath(configPath);
+
+    TestSet testSet = new TestSet(path);
+    testSet.add(new TestObject("proposer_slashing.yaml", ProposerSlashing.class, null));
+    testSet.add(new TestObject("pre.yaml", BeaconState.class, null));
+    testSet.add(new TestObject("post.yaml", BeaconState.class, null));
+
+    return findTestsByPath(testSet);
   }
 
   @SuppressWarnings({"unchecked", "rawtypes"})
   @MustBeClosed
-  public static Stream<Arguments> voluntaryExitProcessingSetup(Path path, Path configPath)
-      throws Exception {
+  public static Stream<Arguments> operationVoluntaryExitType1Setup(Path path, Path configPath)
+          throws Exception {
     loadConfigFromPath(configPath);
 
-    List<Pair<Class, String>> arguments = new ArrayList<Pair<Class, String>>();
-    arguments.add(getParams(BeaconState.class, "pre.yaml"));
-    arguments.add(getParams(VoluntaryExit.class, "voluntary_exit.yaml"));
-    return findTestsByPath(path, arguments);
+    TestSet testSet = new TestSet(path);
+    testSet.add(new TestObject("voluntary_exit.yaml", VoluntaryExit.class, null));
+    testSet.add(new TestObject("meta.yaml", Integer.class, Paths.get("bls_setting")));
+    testSet.add(new TestObject("pre.yaml", BeaconState.class, null));
+
+    return findTestsByPath(testSet);
   }
 
   @SuppressWarnings({"unchecked", "rawtypes"})
   @MustBeClosed
-  public static Stream<Arguments> attestorSlashingProcessingSetup(Path path, Path configPath)
-      throws Exception {
+  public static Stream<Arguments> operationVoluntaryExitType2Setup(Path path, Path configPath)
+          throws Exception {
     loadConfigFromPath(configPath);
 
-    List<Pair<Class, String>> arguments = new ArrayList<Pair<Class, String>>();
-    arguments.add(getParams(BeaconState.class, "pre.yaml"));
-    arguments.add(getParams(AttesterSlashing.class, "attester_slashing.yaml"));
-    return findTestsByPath(path, arguments);
+    TestSet testSet = new TestSet(path);
+    testSet.add(new TestObject("voluntary_exit.yaml", VoluntaryExit.class, null));
+    testSet.add(new TestObject("pre.yaml", BeaconState.class, null));
+
+    return findTestsByPath(testSet);
   }
 
   @SuppressWarnings({"unchecked", "rawtypes"})
   @MustBeClosed
-  public static Stream<Arguments> blockHeaderProcessingSetup(Path path, Path configPath)
-      throws Exception {
+  public static Stream<Arguments> operationVoluntaryExitType3Setup(Path path, Path configPath)
+          throws Exception {
     loadConfigFromPath(configPath);
 
-    List<Pair<Class, String>> arguments = new ArrayList<Pair<Class, String>>();
-    arguments.add(getParams(BeaconState.class, "pre.yaml"));
-    arguments.add(getParams(BeaconBlock.class, "block.yaml"));
-    return findTestsByPath(path, arguments);
+    TestSet testSet = new TestSet(path);
+    testSet.add(new TestObject("voluntary_exit.yaml", VoluntaryExit.class, null));
+    testSet.add(new TestObject("pre.yaml", BeaconState.class, null));
+    testSet.add(new TestObject("post.yaml", BeaconState.class, null));
+
+    return findTestsByPath(testSet);
+  }
+
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  @MustBeClosed
+  public static Stream<Arguments> sanityMultiBlockSetup(Path path, Path configPath)
+          throws Exception {
+    loadConfigFromPath(configPath);
+
+    TestSet metaDataSet = new TestSet(path);
+    metaDataSet.add(new TestObject("meta.yaml", Integer.class, Paths.get("blocks_count")));
+    Integer block_count = loadMetaData(metaDataSet);
+
+    TestSet testSet = new TestSet(path);
+    testSet.add(new TestObject("pre.yaml", BeaconState.class, null));
+    testSet.add(new TestObject("post.yaml", BeaconState.class, null));
+    for(int i = 0; i < block_count; i++){
+      testSet.add(new TestObject("blocks_"+i+".yaml", BeaconBlock.class, null));
+    }
+
+    return convertArrayArguments(BeaconBlock.class, findTestsByPath(testSet));
+  }
+
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  @MustBeClosed
+  public static Stream<Arguments> sanityMultiBlockSetupInvalid(Path path, Path configPath)
+          throws Exception {
+    loadConfigFromPath(configPath);
+
+    TestSet metaDataSet = new TestSet(path);
+    metaDataSet.add(new TestObject("meta.yaml", Integer.class, Paths.get("blocks_count")));
+    Integer block_count = loadMetaData(metaDataSet);
+
+    TestSet testSet = new TestSet(path);
+    testSet.add(new TestObject("pre.yaml", BeaconState.class, null));
+    for(int i = 0; i < block_count; i++){
+      testSet.add(new TestObject("blocks_"+i+".yaml", BeaconBlock.class, null));
+    }
+
+    return convertArrayArguments(BeaconBlock.class, findTestsByPath(testSet));
+  }
+
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  @MustBeClosed
+  public static Stream<Arguments> sanitySlotSetup(Path path, Path configPath)
+          throws Exception {
+    loadConfigFromPath(configPath);
+
+    TestSet testSet = new TestSet(path);
+    testSet.add(new TestObject("pre.yaml", BeaconState.class, null));
+    testSet.add(new TestObject("post.yaml", BeaconState.class, null));
+    testSet.add(new TestObject("slots.yaml", UnsignedLong.class, null));
+
+    return findTestsByPath(testSet);
+  }
+
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  @MustBeClosed
+  public static Stream<Arguments> shufflingShuffleSetup(Path path, Path configPath)
+          throws Exception {
+    loadConfigFromPath(configPath);
+
+    TestSet testSet = new TestSet(path);
+    testSet.add(new TestObject("mapping.yaml", Bytes32.class, Paths.get("seed")));
+    testSet.add(new TestObject("mapping.yaml", Integer.class, Paths.get("count")));
+    testSet.add(new TestObject("mapping.yaml", Integer[].class, Paths.get("mapping")));
+
+    return findTestsByPath(testSet);
+  }
+
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  @MustBeClosed
+  public static Stream<Arguments> genesisInitializationSetup(Path path, Path configPath)
+          throws Exception {
+    loadConfigFromPath(configPath);
+
+    TestSet metaDataSet = new TestSet(path);
+    metaDataSet.add(new TestObject("meta.yaml", Integer.class, Paths.get("deposits_count")));
+    Integer deposits_count = loadMetaData(metaDataSet);
+
+    TestSet testSet = new TestSet(path);
+    testSet.add(new TestObject("state.yaml", BeaconState.class, null));
+    testSet.add(new TestObject("eth1_block_hash.yaml", Bytes32.class, null));
+    testSet.add(new TestObject("eth1_timestamp.yaml", UnsignedLong.class, null));
+    for(int i = 0; i < deposits_count; i++){
+      testSet.add(new TestObject("deposits_"+i+".yaml", Deposit.class, null));
+    }
+
+    return convertArrayArguments(Deposit.class, findTestsByPath(testSet));
+  }
+
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  @MustBeClosed
+  public static Stream<Arguments> genesisValiditySetup(Path path, Path configPath)
+          throws Exception {
+    loadConfigFromPath(configPath);
+
+    TestSet testSet = new TestSet(path);
+    testSet.add(new TestObject("genesis.yaml", BeaconState.class, null));
+    testSet.add(new TestObject("is_valid.yaml", Boolean.class, null));
+
+    return findTestsByPath(testSet);
   }
 }

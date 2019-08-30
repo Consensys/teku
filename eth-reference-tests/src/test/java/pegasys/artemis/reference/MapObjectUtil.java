@@ -92,9 +92,12 @@ public class MapObjectUtil {
     else if (classtype.equals(Transfer.class)) return getTransfer((Map) object);
     else if (classtype.equals(Validator.class)) return getValidator((Map) object);
     else if (classtype.equals(VoluntaryExit.class)) return getVoluntaryExit((Map) object);
+    else if (classtype.equals(Integer[].class)) return getIntegerArray((List) object);
+    else if (classtype.equals(UnsignedLong.class)) return UnsignedLong.valueOf(object.toString());
     else if (classtype.equals(Integer.class)) return Integer.valueOf(object.toString());
     else if (classtype.equals(Bytes32.class)) return Bytes32.fromHexString(object.toString());
     else if (classtype.equals(Bytes.class)) return Bytes.fromHexString(object.toString());
+    else if (classtype.equals(Boolean.class)) return Boolean.valueOf(object.toString());
 
     return null;
   }
@@ -570,6 +573,15 @@ public class MapObjectUtil {
         BLSSignature.fromBytes(Bytes.fromHexString(map.get("signature").toString()));
 
     return new VoluntaryExit(epoch, validator_index, signature);
+  }
+
+
+  @SuppressWarnings({"unchecked"})
+  private static List<Integer> getIntegerArray(List list) {
+    return (List<Integer>)
+            list.stream()
+                    .map(object -> Integer.valueOf(object.toString()))
+                    .collect(Collectors.toList());
   }
 
   @SuppressWarnings({"unchecked"})
