@@ -35,6 +35,8 @@ import tech.pegasys.artemis.util.mikuli.PublicKey;
 import tech.pegasys.artemis.util.mikuli.SecretKey;
 import tech.pegasys.artemis.util.mikuli.Signature;
 
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
@@ -98,6 +100,20 @@ public abstract class TestSuite {
     }
     ;
     return in;
+  }
+
+  public static Bytes readInBinaryFromPath(Path path){
+    path = Path.of(pathToTests.toString(), path.toString());
+    Bytes readBytes = null;
+    try {
+      InputStream inputStream = new FileInputStream(path.toFile());
+      readBytes = Bytes.wrap(inputStream.readAllBytes());
+    } catch (FileNotFoundException e) {
+      e.printStackTrace();
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
+    return readBytes;
   }
 
   public static Object getObjectFromYAMLInputStream(InputStream in) {
