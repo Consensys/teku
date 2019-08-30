@@ -20,6 +20,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.stream.Stream;
 import org.apache.tuweni.junit.BouncyCastleExtension;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -29,6 +30,7 @@ import tech.pegasys.artemis.reference.TestSuite;
 import tech.pegasys.artemis.statetransition.util.EpochProcessorUtil;
 
 @ExtendWith(BouncyCastleExtension.class)
+@Disabled
 class epoch_processing extends TestSuite {
   private static final Path configPath = Paths.get("mainnet", "phase0");
 

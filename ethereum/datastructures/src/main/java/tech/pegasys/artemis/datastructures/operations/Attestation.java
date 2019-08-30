@@ -153,8 +153,11 @@ public class Attestation implements Merkleizable, SimpleOffsetSerializable, SSZC
   }
 
   public Bytes32 signing_root(String truncation_param) {
-    // TODO
-    return null;
+    return HashTreeUtil.merkleize(
+        Arrays.asList(
+            HashTreeUtil.hash_tree_root_bitlist(aggregation_bits),
+            data.hash_tree_root(),
+            HashTreeUtil.hash_tree_root_bitlist(custody_bitfield)));
   }
 
   @Override

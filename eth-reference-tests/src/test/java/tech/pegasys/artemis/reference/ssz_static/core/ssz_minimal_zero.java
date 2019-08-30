@@ -64,18 +64,16 @@ class ssz_minimal_zero extends TestSuite {
   void sszAttestationCheckSerializationRootAndSigningRoot(
       Attestation attestation, Bytes serialized, Bytes32 root, Bytes signing_root) {
 
-    /* TODO fix toBytes
     assertEquals(
         serialized,
-        attestation.toBytes(),
+        SimpleOffsetSerializer.serialize(attestation),
         attestation.getClass().getName() + " failed the serialiaztion test");
-        */
     assertEquals(
         root,
         attestation.hash_tree_root(),
         attestation.getClass().getName() + " failed the root test");
     assertEquals(
-        root,
+        signing_root,
         attestation.signing_root("signature"),
         attestation.getClass().getName() + " failed the signing_root test");
   }
@@ -97,7 +95,9 @@ class ssz_minimal_zero extends TestSuite {
   void sszAttestationDataCheckSerializationRoot(
       AttestationData data, Bytes serialized, Bytes32 root) {
     assertEquals(
-        serialized, data.toBytes(), data.getClass().getName() + " failed the serialiaztion test");
+        serialized,
+        SimpleOffsetSerializer.serialize(data),
+        data.getClass().getName() + " failed the serialiaztion test");
     assertEquals(root, data.hash_tree_root(), data.getClass().getName() + " failed the root test");
   }
 
@@ -118,7 +118,7 @@ class ssz_minimal_zero extends TestSuite {
       AttestationDataAndCustodyBit dataAndCustodyBit, Bytes serialized, Bytes32 root) {
     assertEquals(
         serialized,
-        dataAndCustodyBit.toBytes(),
+        SimpleOffsetSerializer.serialize(dataAndCustodyBit),
         dataAndCustodyBit.getClass().getName() + " failed the serialiaztion test");
     assertEquals(
         root,
@@ -145,12 +145,10 @@ class ssz_minimal_zero extends TestSuite {
   @MethodSource("readMessageSSZAttesterSlashing")
   void sszAttesterSlashingCheckSerializationRoot(
       AttesterSlashing attesterSlashing, Bytes serialized, Bytes32 root) {
-    /* TODO fix toBytes
     assertEquals(
         serialized,
-        attesterSlashing.toBytes(),
+        SimpleOffsetSerializer.serialize(attesterSlashing),
         attesterSlashing.getClass().getName() + " failed the serialiaztion test");
-        */
     assertEquals(
         root,
         attesterSlashing.hash_tree_root(),
@@ -224,7 +222,7 @@ class ssz_minimal_zero extends TestSuite {
       BeaconBlockHeader beaconBlockHeader, Bytes serialized, Bytes32 root) {
     assertEquals(
         serialized,
-        beaconBlockHeader.toBytes(),
+        SimpleOffsetSerializer.serialize(beaconBlockHeader),
         beaconBlockHeader.getClass().getName() + " failed the serialiaztion test");
     assertEquals(
         root,
@@ -273,7 +271,7 @@ class ssz_minimal_zero extends TestSuite {
   void sszCheckpointCheckSerializationRoot(Checkpoint checkpoint, Bytes serialized, Bytes32 root) {
     assertEquals(
         serialized,
-        checkpoint.toBytes(),
+        SimpleOffsetSerializer.serialize(checkpoint),
         checkpoint.getClass().getName() + " failed the serialiaztion test");
     assertEquals(
         root,
@@ -298,7 +296,7 @@ class ssz_minimal_zero extends TestSuite {
       CompactCommittee compactCommittee, Bytes serialized, Bytes32 root) {
     assertEquals(
         serialized,
-        compactCommittee.toBytes(),
+        SimpleOffsetSerializer.serialize(compactCommittee),
         compactCommittee.getClass().getName() + " failed the serialiaztion test");
     assertEquals(
         root,
@@ -322,7 +320,7 @@ class ssz_minimal_zero extends TestSuite {
   void sszCrosslinkCheckSerializationRoot(Crosslink crosslink, Bytes serialized, Bytes32 root) {
     assertEquals(
         serialized,
-        crosslink.toBytes(),
+        SimpleOffsetSerializer.serialize(crosslink),
         crosslink.getClass().getName() + " failed the serialiaztion test");
     assertEquals(
         root, crosslink.hash_tree_root(), crosslink.getClass().getName() + " failed the root test");
@@ -367,7 +365,7 @@ class ssz_minimal_zero extends TestSuite {
       DepositData depositData, Bytes serialized, Bytes32 root) {
     assertEquals(
         serialized,
-        depositData.toBytes(),
+        SimpleOffsetSerializer.serialize(depositData),
         depositData.getClass().getName() + " failed the serialiaztion test");
     assertEquals(
         root,
@@ -391,7 +389,7 @@ class ssz_minimal_zero extends TestSuite {
   void sszEth1DataCheckSerializationRoot(Eth1Data eth1Data, Bytes serialized, Bytes32 root) {
     assertEquals(
         serialized,
-        eth1Data.toBytes(),
+        SimpleOffsetSerializer.serialize(eth1Data),
         eth1Data.getClass().getName() + " failed the serialiaztion test");
     assertEquals(
         root, eth1Data.hash_tree_root(), eth1Data.getClass().getName() + " failed the root test");
@@ -435,7 +433,7 @@ class ssz_minimal_zero extends TestSuite {
       HistoricalBatch historicalBatch, Bytes serialized, Bytes32 root) {
     assertEquals(
         serialized,
-        historicalBatch.toBytes(),
+        SimpleOffsetSerializer.serialize(historicalBatch),
         historicalBatch.getClass().getName() + " failed the serialiaztion test");
     assertEquals(
         root,
@@ -458,12 +456,10 @@ class ssz_minimal_zero extends TestSuite {
   @MethodSource("readMessageSSZIndexedAttestation")
   void sszIndexedAttestationCheckSerializationRoot(
       IndexedAttestation indexedAttestation, Bytes serialized, Bytes32 root) {
-    /* TODO fix toBytes
     assertEquals(
         serialized,
-        indexedAttestation.toBytes(),
+        SimpleOffsetSerializer.serialize(indexedAttestation),
         indexedAttestation.getClass().getName() + " failed the serialiaztion test");
-        */
     assertEquals(
         root,
         indexedAttestation.hash_tree_root(),
@@ -486,12 +482,10 @@ class ssz_minimal_zero extends TestSuite {
   @MethodSource("readMessageSSZPendingAttestation")
   void sszPendingAttestationCheckSerializationRoot(
       PendingAttestation pendingAttestation, Bytes serialized, Bytes32 root) {
-    /* TODO fix to bytes
     assertEquals(
         serialized,
-        pendingAttestation.toBytes(),
+        SimpleOffsetSerializer.serialize(pendingAttestation),
         pendingAttestation.getClass().getName() + " failed the serialiaztion test");
-        */
     assertEquals(
         root,
         pendingAttestation.hash_tree_root(),
@@ -516,7 +510,7 @@ class ssz_minimal_zero extends TestSuite {
       ProposerSlashing proposerSlashing, Bytes serialized, Bytes32 root) {
     assertEquals(
         serialized,
-        proposerSlashing.toBytes(),
+        SimpleOffsetSerializer.serialize(proposerSlashing),
         proposerSlashing.getClass().getName() + " failed the serialiaztion test");
     assertEquals(
         root,
@@ -540,7 +534,7 @@ class ssz_minimal_zero extends TestSuite {
   void sszTransferCheckSerializationRoot(Transfer transfer, Bytes serialized, Bytes32 root) {
     assertEquals(
         serialized,
-        transfer.toBytes(),
+        SimpleOffsetSerializer.serialize(transfer),
         transfer.getClass().getName() + " failed the serialiaztion test");
     assertEquals(
         root, transfer.hash_tree_root(), transfer.getClass().getName() + " failed the root test");
@@ -562,7 +556,7 @@ class ssz_minimal_zero extends TestSuite {
   void sszValidatorCheckSerializationRoot(Validator validator, Bytes serialized, Bytes32 root) {
     assertEquals(
         serialized,
-        validator.toBytes(),
+        SimpleOffsetSerializer.serialize(validator),
         validator.getClass().getName() + " failed the serialiaztion test");
     assertEquals(
         root, validator.hash_tree_root(), validator.getClass().getName() + " failed the root test");
@@ -585,7 +579,7 @@ class ssz_minimal_zero extends TestSuite {
       VoluntaryExit voluntaryExit, Bytes serialized, Bytes32 root) {
     assertEquals(
         serialized,
-        voluntaryExit.toBytes(),
+        SimpleOffsetSerializer.serialize(voluntaryExit),
         voluntaryExit.getClass().getName() + " failed the serialiaztion test");
     assertEquals(
         root,

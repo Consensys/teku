@@ -124,7 +124,7 @@ public class Validator
         bytes,
         reader ->
             new Validator(
-                BLSPublicKey.fromBytes(reader.readBytes()),
+                BLSPublicKey.fromBytes(reader.readFixedBytes(48)),
                 Bytes32.wrap(reader.readFixedBytes(32)),
                 UnsignedLong.fromLongBits(reader.readUInt64()),
                 reader.readBoolean(),
@@ -137,7 +137,7 @@ public class Validator
   public Bytes toBytes() {
     return SSZ.encode(
         writer -> {
-          writer.writeBytes(pubkey.toBytes());
+          writer.writeFixedBytes(pubkey.toBytes());
           writer.writeFixedBytes(withdrawal_credentials);
           writer.writeUInt64(effective_balance.longValue());
           writer.writeBoolean(slashed);
