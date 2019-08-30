@@ -721,8 +721,11 @@ public final class EpochProcessorUtil {
               .plus(UnsignedLong.valueOf(EPOCHS_PER_SLASHINGS_VECTOR / 2))
               .equals(validator.getWithdrawable_epoch())) {
         UnsignedLong increment = UnsignedLong.valueOf(EFFECTIVE_BALANCE_INCREMENT);
-        UnsignedLong penalty_numerator = validator.getEffective_balance()
-                .dividedBy(increment).times(
+        UnsignedLong penalty_numerator =
+            validator
+                .getEffective_balance()
+                .dividedBy(increment)
+                .times(
                     min(
                         UnsignedLong.valueOf(
                             state.getSlashings().stream().mapToLong(UnsignedLong::longValue).sum()

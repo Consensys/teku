@@ -384,11 +384,14 @@ public final class BlockProcessorUtil {
                 <= 0,
             "process_attestations: Attestation submitted too far in history");
 
-        List<Integer> committee = get_crosslink_committee(state, data.getTarget().getEpoch(), data.getCrosslink().getShard());
-        checkArgument(attestation.getAggregation_bits().getByteArray().length ==
-                attestation.getAggregation_bits().getByteArray().length &&
-                attestation.getAggregation_bits().getByteArray().length == committee.size(),
-                "process_attestations: Attestation aggregation bit, custody bit, and committee doesn't have the same length");
+        List<Integer> committee =
+            get_crosslink_committee(
+                state, data.getTarget().getEpoch(), data.getCrosslink().getShard());
+        checkArgument(
+            attestation.getAggregation_bits().getByteArray().length
+                    == attestation.getCustody_bitfield().getByteArray().length
+                && attestation.getAggregation_bits().getByteArray().length == committee.size(),
+            "process_attestations: Attestation aggregation bit, custody bit, and committee doesn't have the same length");
 
         PendingAttestation pendingAttestation =
             new PendingAttestation(
