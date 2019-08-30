@@ -19,11 +19,13 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.core.config.Configurator;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.ssz.SSZ;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -45,6 +47,52 @@ public class BLSPerformanceRunner {
     }
     long end = System.currentTimeMillis();
     return end - start;
+  }
+
+  @Test
+  void benchmarkVerifyAggregate128() throws BLSException {
+    Bytes message1 = Bytes.wrap("Message One".getBytes(UTF_8));
+    Bytes message2 = Bytes.wrap("Message Two".getBytes(UTF_8));
+
+    // 1 & 2 sign message1; 3 & 4 sign message2
+    ArrayList<BLSKeyPair> membs = new ArrayList<>();
+    for (int j = 0; j < 128; j++) {
+      BLSKeyPair keyPair1 = BLSKeyPair.random();
+      membs.add(keyPair1);
+    }
+
+    Long time =
+        executeRun(
+            () -> {
+              try {
+                List<BLSSignature> sigs =
+                    membs.stream()
+                        .map(
+                            pk -> {
+                              return BLSSignature.sign(pk, message1, 0);
+                            })
+                        .collect(Collectors.toList());
+
+                BLSPublicKey aggKey =
+                    BLSPublicKey.aggregate(
+                        membs.stream()
+                            .map(
+                                i -> {
+                                  return i.getPublicKey();
+                                })
+                            .collect(Collectors.toList()));
+
+                BLSSignature aggSig = BLSSignature.aggregate(sigs);
+
+                List<Bytes> bytes = Collections.nCopies(membs.size(), message1);
+                // Verify the aggregate signatures and keys
+                aggSig.checkSignature(Arrays.asList(aggKey), bytes, 0);
+              } catch (BLSException e) {
+                LOG.log(Level.ERROR, "Exception" + e.toString());
+              }
+            },
+            1);
+    LOG.log(Level.INFO, "Time for 128:" + ", time:" + time);
   }
 
   @ParameterizedTest()
