@@ -253,7 +253,7 @@ public class BeaconStateUtil {
   public static Bytes32 get_seed(BeaconState state, UnsignedLong epoch)
       throws IllegalArgumentException {
     UnsignedLong randaoIndex =
-        epoch.plus(UnsignedLong.valueOf(EPOCHS_PER_HISTORICAL_VECTOR - MIN_SEED_LOOKAHEAD));
+        epoch.plus(UnsignedLong.valueOf(EPOCHS_PER_HISTORICAL_VECTOR - MIN_SEED_LOOKAHEAD - 1));
     Bytes32 randao_mix = get_randao_mix(state, randaoIndex);
     Bytes32 active_index_root =
         state
