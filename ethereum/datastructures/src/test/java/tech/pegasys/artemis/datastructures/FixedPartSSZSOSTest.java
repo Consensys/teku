@@ -41,6 +41,7 @@ import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 
+@SuppressWarnings("unused")
 class FixedPartSSZSOSTest {
 
   @Test
