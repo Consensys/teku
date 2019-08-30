@@ -720,16 +720,18 @@ public final class EpochProcessorUtil {
           && epoch
               .plus(UnsignedLong.valueOf(EPOCHS_PER_SLASHINGS_VECTOR / 2))
               .equals(validator.getWithdrawable_epoch())) {
-        UnsignedLong penalty =
+        UnsignedLong increment = UnsignedLong.valueOf(EFFECTIVE_BALANCE_INCREMENT);
+        UnsignedLong penalty_numerator =
             validator
                 .getEffective_balance()
+                .dividedBy(increment)
                 .times(
                     min(
                         UnsignedLong.valueOf(
                             state.getSlashings().stream().mapToLong(UnsignedLong::longValue).sum()
                                 * 3),
-                        total_balance))
-                .dividedBy(total_balance);
+                        total_balance));
+        UnsignedLong penalty = penalty_numerator.dividedBy(total_balance).times(increment);
         decrease_balance(state, index, penalty);
       }
     }
@@ -775,13 +777,6 @@ public final class EpochProcessorUtil {
       }
     }
 
-    // Update start shard
-    state.setStart_shard(
-        state
-            .getStart_shard()
-            .plus(get_shard_delta(state, current_epoch))
-            .mod(UnsignedLong.valueOf(SHARD_COUNT)));
-
     // Set active index root
     UnsignedLong index_epoch = next_epoch.plus(UnsignedLong.valueOf(ACTIVATION_EXIT_DELAY));
     int index_root_position =
@@ -820,6 +815,13 @@ public final class EpochProcessorUtil {
           new HistoricalBatch(state.getBlock_roots(), state.getState_roots());
       state.getHistorical_roots().add(historical_batch.hash_tree_root());
     }
+
+    // Update start shard
+    state.setStart_shard(
+        state
+            .getStart_shard()
+            .plus(get_shard_delta(state, current_epoch))
+            .mod(UnsignedLong.valueOf(SHARD_COUNT)));
 
     // Rotate current/previous epoch attestations
     state.setPrevious_epoch_attestations(state.getCurrent_epoch_attestations());
