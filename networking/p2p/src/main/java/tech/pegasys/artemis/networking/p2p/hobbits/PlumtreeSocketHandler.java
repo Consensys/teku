@@ -17,13 +17,16 @@ import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import io.vertx.core.net.NetSocket;
 import java.math.BigInteger;
+import java.util.Date;
 import java.util.concurrent.ConcurrentHashMap;
+import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.plumtree.MessageSender;
 import org.apache.tuweni.plumtree.State;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
+import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.networking.p2p.hobbits.gossip.GossipCodec;
 import tech.pegasys.artemis.networking.p2p.hobbits.gossip.GossipMessage;
 import tech.pegasys.artemis.storage.ChainStorageClient;
@@ -84,9 +87,7 @@ public class PlumtreeSocketHandler extends AbstractSocketHandler {
 
   @Subscribe
   public void onNewUnprocessedBlock(BeaconBlock block) {
-    // TODO to bytes
-    /*
-    Bytes bytes = block.toBytes();
+    Bytes bytes = SimpleOffsetSerializer.serialize(block);
     if (!this.receivedMessages.containsKey(bytes.toHexString())) {
       this.receivedMessages.put(bytes.toHexString(), true);
       STDOUT.log(
@@ -95,23 +96,19 @@ public class PlumtreeSocketHandler extends AbstractSocketHandler {
       String attributes = "BLOCK" + "," + String.valueOf(new Date().getTime());
       p2pState.sendGossipMessage(attributes, bytes);
     }
-    */
   }
 
   @Subscribe
   public void onNewUnprocessedAttestation(Attestation attestation) {
-    // TODO fix serialization stuff
-    /*
-      Bytes bytes = attestation.toBytes();
-      if (!this.receivedMessages.containsKey(bytes.toHexString())) {
-        this.receivedMessages.put(bytes.toHexString(), true);
-        STDOUT.log(
-            Level.DEBUG,
-            "Gossiping new attestation for block root: "
-                + attestation.getData().getBeacon_block_root().toHexString());
-        String attributes = "ATTESTATION" + "," + String.valueOf(new Date().getTime());
-        p2pState.sendGossipMessage(attributes, bytes);
-      }
-    */
+    Bytes bytes = SimpleOffsetSerializer.serialize(attestation);
+    if (!this.receivedMessages.containsKey(bytes.toHexString())) {
+      this.receivedMessages.put(bytes.toHexString(), true);
+      STDOUT.log(
+          Level.DEBUG,
+          "Gossiping new attestation for block root: "
+              + attestation.getData().getBeacon_block_root().toHexString());
+      String attributes = "ATTESTATION" + "," + String.valueOf(new Date().getTime());
+      p2pState.sendGossipMessage(attributes, bytes);
+    }
   }
 }

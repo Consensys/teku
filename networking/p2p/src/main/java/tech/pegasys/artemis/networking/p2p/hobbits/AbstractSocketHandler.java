@@ -241,10 +241,12 @@ public abstract class AbstractSocketHandler {
   public void replyAttestation(RPCMessage rpcMessage) {
     RequestAttestationMessage rb = rpcMessage.bodyAs(RequestAttestationMessage.class);
     Bytes32 attestationHash = Bytes32.wrap(rb.hash());
-    // TODO fix serialization stuff
-    // store
-    // .getUnprocessedAttestation(attestationHash)
-    // .ifPresent(a -> sendReply(RPCMethod.ATTESTATION, a.toBytes(), rpcMessage.id()));
+    store
+        .getUnprocessedAttestation(attestationHash)
+        .ifPresent(
+            a ->
+                sendReply(
+                    RPCMethod.ATTESTATION, SimpleOffsetSerializer.serialize(a), rpcMessage.id()));
   }
 
   public void replyBlockHeaders(RPCMessage rpcMessage) {
