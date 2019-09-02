@@ -386,7 +386,9 @@ public final class DataStructureUtil {
 
   public static DepositWithIndex randomDeposit() {
     return new DepositWithIndex(
-        new SSZVector<>(32, Bytes32.random()), randomDepositData(), randomUnsignedLong());
+        new SSZVector<>(32, Bytes32.random()),
+        randomDepositData(),
+        randomUnsignedLong().mod(UnsignedLong.valueOf(Constants.DEPOSIT_CONTRACT_TREE_DEPTH)));
   }
 
   public static Deposit randomDepositWithoutIndex() {

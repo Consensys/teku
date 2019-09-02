@@ -35,6 +35,7 @@ import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.datastructures.state.Validator;
+import tech.pegasys.artemis.util.SSZTypes.Bytes4;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 
@@ -136,8 +137,8 @@ class BlockProcessorUtilTest {
     beaconState.setSlot(randomUnsignedLong());
     beaconState.setFork(
         new Fork(
-            Bytes.ofUnsignedInt(Constants.GENESIS_FORK_VERSION),
-            Bytes.ofUnsignedInt(Constants.GENESIS_FORK_VERSION),
+            new Bytes4(Bytes.ofUnsignedInt(0)),
+            new Bytes4(Bytes.ofUnsignedInt(0)),
             UnsignedLong.valueOf(Constants.GENESIS_EPOCH)));
 
     SSZList<Validator> validatorList =

@@ -77,7 +77,7 @@ class AttestationDataTest {
     Checkpoint newSource = new Checkpoint(source);
     newSource.setRoot(Bytes32.random());
     AttestationData testAttestationData =
-        new AttestationData(beaconBlockRoot, source, target, crosslink);
+        new AttestationData(beaconBlockRoot, newSource, target, crosslink);
 
     assertNotEquals(attestationData, testAttestationData);
   }
@@ -87,7 +87,7 @@ class AttestationDataTest {
     Checkpoint newTarget = new Checkpoint(target);
     newTarget.setEpoch(randomUnsignedLong());
     AttestationData testAttestationData =
-        new AttestationData(beaconBlockRoot, source, target, crosslink);
+        new AttestationData(beaconBlockRoot, source, newTarget, crosslink);
 
     assertNotEquals(attestationData, testAttestationData);
   }
@@ -97,7 +97,7 @@ class AttestationDataTest {
     Checkpoint newTarget = new Checkpoint(target);
     newTarget.setRoot(Bytes32.random());
     AttestationData testAttestationData =
-        new AttestationData(beaconBlockRoot, source, target, crosslink);
+        new AttestationData(beaconBlockRoot, source, newTarget, crosslink);
 
     assertNotEquals(attestationData, testAttestationData);
   }
