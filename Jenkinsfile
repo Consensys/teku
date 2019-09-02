@@ -48,10 +48,10 @@ try {
         docker.image('pegasyseng/pantheon-build:0.0.7-jdk11').inside {
             try {
                 stage('Build') {
-                    sh './gradlew --no-daemon --parallel build'
+                    sh './gradlew --no-daemon --parallel build -x :eth-reference-tests:test'
                 }
                 stage('Test') {
-                    sh './gradlew --no-daemon --parallel test'
+                    sh './gradlew --no-daemon --parallel test -x :eth-reference-tests:test'
                     // Disable Artemis Runtime Tests During Upgrade
                     // sh './artemis/src/main/resources/artemisTestScript.sh'
                 }
