@@ -53,8 +53,9 @@ public class MothraHandler {
   }
 
   public synchronized Boolean handleDiscoveryMessage(String peer) {
-    HelloMessage msg = buildHelloMessage();
-    sendHello(peer, msg);
+    // Disable HELLO for now
+    // HelloMessage msg = buildHelloMessage();
+    // sendHello(peer, msg);
     return true;
   }
 
