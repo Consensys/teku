@@ -34,6 +34,8 @@ public class MothraHandler {
   private static final ALogger STDOUT = new ALogger("stdout");
   public static String BLOCK_TOPIC = "beacon_block";
   public static String ATTESTATION_TOPIC = "beacon_attestation";
+  public static int RPC_REQUEST = 0;
+  public static int RPC_RESPONSE = 1;
   protected final EventBus eventBus;
   protected final ChainStorageClient store;
   protected ConcurrentHashSet<String> receivedMessages;
@@ -49,8 +51,8 @@ public class MothraHandler {
     mothra.SendGossip(topic.getBytes(UTF_8), data.toArray());
   }
 
-  public void sendRPCMessage(String method, String peer, Bytes data) {
-    mothra.SendRPC(method.getBytes(UTF_8), peer.getBytes(UTF_8), data.toArray());
+  public void sendRPCMessage(String method, int reqResponse, String peer, Bytes data) {
+    mothra.SendRPC(method.getBytes(UTF_8), reqResponse, peer.getBytes(UTF_8), data.toArray());
   }
 
   public synchronized Boolean handleDiscoveryMessage(String peer) {
@@ -73,21 +75,24 @@ public class MothraHandler {
         this.eventBus.post(attestation);
       } else if (topic.equalsIgnoreCase(BLOCK_TOPIC)) {
         STDOUT.log(Level.DEBUG, "Received Block");
-        BeaconBlock block = BeaconBlock.fromBytes(messageBytes);
+        BeaconBlock block = SimpleOffsetSerializer.deserialize(messageBytes, BeaconBlock.class);
         this.eventBus.post(block);
       }
     }
     return true;
   }
 
-  public synchronized Boolean handleRPCMessage(String method, String peer, byte[] message) {
+  public synchronized Boolean handleRPCMessage(
+      String method, int reqResponse, String peer, byte[] message) {
     Bytes messageBytes = Bytes.wrap(message);
     STDOUT.log(Level.DEBUG, "Received " + messageBytes.size() + " bytes");
     String key = messageBytes.toHexString();
     if (method.toUpperCase().equals(RPCMethod.HELLO.name())) {
-      STDOUT.log(Level.INFO, "Received HELLO from: " + peer);
-      HelloMessage msg = buildHelloMessage();
-      replyHello(peer, msg);
+      if (reqResponse == RPC_REQUEST) {
+        STDOUT.log(Level.INFO, "Received HELLO from: " + peer);
+        HelloMessage msg = buildHelloMessage();
+        replyHello(peer, msg);
+      }
     }
     return true;
   }
@@ -95,13 +100,13 @@ public class MothraHandler {
   public void sendHello(String peer, HelloMessage msg) {
     STDOUT.log(Level.INFO, "Send hello to: " + peer);
     Bytes data = RPCCodec.encode(msg);
-    sendRPCMessage(RPCMethod.HELLO.name(), peer, data);
+    sendRPCMessage(RPCMethod.HELLO.name(), RPC_REQUEST, peer, data);
   }
 
   public void replyHello(String peer, HelloMessage msg) {
     STDOUT.log(Level.INFO, "Send reply hello to: " + peer);
     Bytes data = RPCCodec.encode(msg);
-    sendRPCMessage(RPCMethod.HELLO.name(), peer, data);
+    sendRPCMessage(RPCMethod.HELLO.name(), RPC_RESPONSE, peer, data);
   }
 
   protected HelloMessage buildHelloMessage() {
