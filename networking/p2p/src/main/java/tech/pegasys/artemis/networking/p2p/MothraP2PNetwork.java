@@ -77,6 +77,10 @@ public final class MothraP2PNetwork implements P2PNetwork {
     mothra.ReceivedGossipMessage = this.handler::handleGossipMessage;
     mothra.ReceivedRPCMessage = this.handler::handleRPCMessage;
     this.args = processArgs();
+
+    if (started.compareAndSet(false, true)) {
+      mothra.Start(args);
+    }
   }
 
   private String[] processArgs() {
@@ -99,11 +103,7 @@ public final class MothraP2PNetwork implements P2PNetwork {
   }
 
   @Override
-  public void run() {
-    if (started.compareAndSet(false, true)) {
-      mothra.Start(args);
-    }
-  }
+  public void run() {}
 
   @Override
   public Collection<?> getPeers() {

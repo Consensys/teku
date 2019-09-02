@@ -23,6 +23,7 @@ import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
+import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.networking.p2p.mothra.rpc.HelloMessage;
 import tech.pegasys.artemis.networking.p2p.mothra.rpc.RPCCodec;
 import tech.pegasys.artemis.networking.p2p.mothra.rpc.RPCMethod;
@@ -67,7 +68,8 @@ public class MothraHandler {
       receivedMessages.add(key);
       if (topic.equalsIgnoreCase(ATTESTATION_TOPIC)) {
         STDOUT.log(Level.DEBUG, "Received Attestation");
-        Attestation attestation = Attestation.fromBytes(messageBytes);
+        Attestation attestation =
+            SimpleOffsetSerializer.deserialize(messageBytes, Attestation.class);
         this.eventBus.post(attestation);
       } else if (topic.equalsIgnoreCase(BLOCK_TOPIC)) {
         STDOUT.log(Level.DEBUG, "Received Block");
