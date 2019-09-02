@@ -32,8 +32,7 @@ import tech.pegasys.artemis.util.SSZTypes.SSZVector;
 @ExtendWith(BouncyCastleExtension.class)
 class DepositTest {
 
-  private SSZVector<Bytes32> branch =
-      new SSZVector<>(Constants.DEPOSIT_CONTRACT_TREE_DEPTH + 1, Bytes32.ZERO);
+  private SSZVector<Bytes32> branch = setupMerkleBranch();
   private DepositData depositData = randomDepositData();
 
   private Deposit deposit = new Deposit(branch, depositData);
@@ -93,5 +92,16 @@ class DepositTest {
     assertEquals(
         vectorLengths,
         SimpleOffsetSerializer.classReflectionInfo.get(Deposit.class).getVectorLengths());
+  }
+
+  private SSZVector<Bytes32> setupMerkleBranch() {
+    SSZVector<Bytes32> branch =
+        new SSZVector<>(Constants.DEPOSIT_CONTRACT_TREE_DEPTH + 1, Bytes32.ZERO);
+
+    for (int i = 0; i < branch.size(); ++i) {
+      branch.add(Bytes32.random());
+    }
+
+    return branch;
   }
 }

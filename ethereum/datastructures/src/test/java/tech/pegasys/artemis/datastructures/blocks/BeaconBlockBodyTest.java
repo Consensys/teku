@@ -21,16 +21,17 @@ import static tech.pegasys.artemis.datastructures.Constants.MAX_DEPOSITS;
 import static tech.pegasys.artemis.datastructures.Constants.MAX_PROPOSER_SLASHINGS;
 import static tech.pegasys.artemis.datastructures.Constants.MAX_TRANSFERS;
 import static tech.pegasys.artemis.datastructures.Constants.MAX_VOLUNTARY_EXITS;
+import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomAttestation;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomAttesterSlashing;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomBytes32;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomDeposits;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomEth1Data;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomProposerSlashing;
-import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomTransfer;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomVoluntaryExit;
 
 import java.util.Collections;
 import org.apache.tuweni.bytes.Bytes32;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.AttesterSlashing;
@@ -61,13 +62,13 @@ class BeaconBlockBodyTest {
     proposerSlashings.add(randomProposerSlashing());
     proposerSlashings.add(randomProposerSlashing());
     attesterSlashings.add(randomAttesterSlashing());
-    attesterSlashings.add(randomAttesterSlashing());
-    attesterSlashings.add(randomAttesterSlashing());
+    attestations.add(randomAttestation());
+    attestations.add(randomAttestation());
+    attestations.add(randomAttestation());
     deposits.addAll(randomDeposits(100));
     voluntaryExits.add(randomVoluntaryExit());
     voluntaryExits.add(randomVoluntaryExit());
     voluntaryExits.add(randomVoluntaryExit());
-    transfers.add(randomTransfer());
   }
 
   private BeaconBlockBody beaconBlockBody =
@@ -130,10 +131,10 @@ class BeaconBlockBodyTest {
 
   @Test
   void equalsReturnsFalseWhenAttesterSlashingsAreDifferent() {
-    // Create copy of attesterSlashings and reverse to ensure it is different.
-    SSZList<AttesterSlashing> reverseAttesterSlashings =
+    // Create copy of attesterSlashings and change the element to ensure it is different.
+    SSZList<AttesterSlashing> otherAttesterSlashings =
         new SSZList<>(attesterSlashings, MAX_ATTESTER_SLASHINGS, AttesterSlashing.class);
-    Collections.reverse(reverseAttesterSlashings);
+    otherAttesterSlashings.add(0, randomAttesterSlashing());
 
     BeaconBlockBody testBeaconBlockBody =
         new BeaconBlockBody(
@@ -141,7 +142,7 @@ class BeaconBlockBodyTest {
             eth1Data,
             graffiti,
             proposerSlashings,
-            reverseAttesterSlashings,
+            otherAttesterSlashings,
             attestations,
             deposits,
             voluntaryExits,
@@ -215,6 +216,9 @@ class BeaconBlockBodyTest {
     assertNotEquals(beaconBlockBody, testBeaconBlockBody);
   }
 
+  @Disabled
+  // TODO This is disabled because MAX_TRANSFERS is 0, meaning the list is always empty.
+  // This is expected for now and should be reevaluated in future Phases.
   @Test
   void equalsReturnsFalseWhenTransfersAreDifferent() {
     // Create copy of exits and reverse to ensure it is different.
