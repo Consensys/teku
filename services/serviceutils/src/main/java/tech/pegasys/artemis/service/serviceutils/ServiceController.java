@@ -13,7 +13,6 @@
 
 package tech.pegasys.artemis.service.serviceutils;
 
-import com.google.common.eventbus.EventBus;
 import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -29,29 +28,36 @@ public class ServiceController {
   private final ExecutorService powchainExecuterService = Executors.newSingleThreadExecutor();
   private final ExecutorService chainStorageExecutorService = Executors.newSingleThreadExecutor();
 
+  private boolean powChainServiceActive;
+
   // initialize/register all services
   public <U extends ServiceInterface, V extends ServiceInterface, W extends ServiceInterface>
       void initAll(
-          EventBus eventBus,
           ServiceConfig config,
           Class<U> beaconChainServiceType,
           Class<V> powchainServiceType,
           Class<W> chainStorageServiceType) {
+    powChainServiceActive = config.getConfig().getDepositMode().equals("test");
     beaconChainService = ServiceFactory.getInstance(beaconChainServiceType).getInstance();
-    powchainService = ServiceFactory.getInstance(powchainServiceType).getInstance();
     chainStorageService = ServiceFactory.getInstance(chainStorageServiceType).getInstance();
 
     beaconChainService.init(config);
-    powchainService.init(config);
     chainStorageService.init(config);
+
+    if (powChainServiceActive) {
+      powchainService = ServiceFactory.getInstance(powchainServiceType).getInstance();
+      powchainService.init(config);
+    }
   }
 
   public void startAll(CommandLineArguments cliArgs) {
 
     // start all services
     beaconChainExecuterService.execute(beaconChainService);
-    powchainExecuterService.execute(powchainService);
     chainStorageExecutorService.execute(chainStorageService);
+    if (powChainServiceActive) {
+      powchainExecuterService.execute(powchainService);
+    }
   }
 
   public void stopAll(CommandLineArguments cliArgs) {
@@ -60,13 +66,15 @@ public class ServiceController {
     if (!Objects.isNull(beaconChainService)) {
       beaconChainService.stop();
     }
-    powchainExecuterService.shutdown();
-    if (!Objects.isNull(powchainService)) {
-      powchainService.stop();
-    }
     chainStorageExecutorService.shutdown();
     if (!Objects.isNull(chainStorageService)) {
       chainStorageService.stop();
+    }
+    if (powChainServiceActive) {
+      powchainExecuterService.shutdown();
+      if (!Objects.isNull(powchainService)) {
+        powchainService.stop();
+      }
     }
   }
 }

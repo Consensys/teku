@@ -28,6 +28,7 @@ import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 import java.io.IOException;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
+import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 
 @JsonSerialize(using = AttestationMessage.AttestationSerializer.class)
 @JsonDeserialize(using = AttestationMessage.AttestationDeserializer.class)
@@ -44,7 +45,9 @@ public final class AttestationMessage {
         AttestationMessage attestationMessage, JsonGenerator jgen, SerializerProvider provider)
         throws IOException {
       jgen.writeStartObject();
-      jgen.writeBinaryField("attestation", attestationMessage.body().toBytes().toArrayUnsafe());
+      jgen.writeBinaryField(
+          "attestation",
+          SimpleOffsetSerializer.serialize(attestationMessage.body()).toArrayUnsafe());
       jgen.writeEndObject();
     }
   }
@@ -80,7 +83,7 @@ public final class AttestationMessage {
   private final Attestation body;
 
   AttestationMessage(AttestationBody body) {
-    this.body = Attestation.fromBytes(body.bytes());
+    this.body = SimpleOffsetSerializer.deserialize(body.bytes(), Attestation.class);
   }
 
   @JsonCreator

@@ -13,81 +13,54 @@
 
 package tech.pegasys.artemis.datastructures.operations;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.artemis.datastructures.Constants;
+import tech.pegasys.artemis.util.SSZTypes.SSZContainer;
+import tech.pegasys.artemis.util.SSZTypes.SSZVector;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
 import tech.pegasys.artemis.util.hashtree.Merkleizable;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
-public class Deposit implements Merkleizable, SimpleOffsetSerializable {
+public class Deposit implements Merkleizable, SimpleOffsetSerializable, SSZContainer {
 
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
   public static final int SSZ_FIELD_COUNT = 1;
 
-  private List<Bytes32> proof; // Bounded by DEPOSIT_CONTRACT_TREE_DEPTH
+  private SSZVector<Bytes32> proof; // Vector bounded by DEPOSIT_CONTRACT_TREE_DEPTH + 1
   private DepositData data;
-  private UnsignedLong index;
 
-  public Deposit(List<Bytes32> proof, DepositData data, UnsignedLong index) {
-    this.proof = proof;
-    this.data = data;
-    this.index = index;
-  }
-
-  public Deposit(List<Bytes32> proof, DepositData data) {
+  public Deposit(SSZVector<Bytes32> proof, DepositData data) {
     this.proof = proof;
     this.data = data;
   }
 
-  public Deposit(DepositData data, UnsignedLong index) {
+  public Deposit() {
+    this.proof = new SSZVector<>(Constants.DEPOSIT_CONTRACT_TREE_DEPTH + 1, Bytes32.ZERO);
+    this.data = new DepositData();
+  }
+
+  public Deposit(DepositData data) {
     this.data = data;
-    this.index = index;
   }
 
   @Override
   public int getSSZFieldCount() {
-    // TODO Proof List needs to implement getSSZFieldCount and get_fixed_parts.
-    return /*proof.getSSZFieldCount() + */ data.getSSZFieldCount() + SSZ_FIELD_COUNT;
+    return data.getSSZFieldCount() + SSZ_FIELD_COUNT;
   }
 
-  public static Deposit fromBytes(Bytes bytes) {
-    return SSZ.decode(
-        bytes,
-        reader ->
-            new Deposit(
-                reader.readFixedBytesVector(Constants.DEPOSIT_CONTRACT_TREE_DEPTH, 32).stream()
-                    .map(Bytes32::wrap)
-                    .collect(Collectors.toList()),
-                DepositData.fromBytes(reader.readBytes())));
-  }
-
-  public Bytes toBytes() {
-    List<Bytes32> filledProofList = new ArrayList<>();
-    filledProofList.addAll(proof);
-
-    if (proof.size() < Constants.DEPOSIT_CONTRACT_TREE_DEPTH) {
-
-      int elementsToFill = Constants.DEPOSIT_CONTRACT_TREE_DEPTH - proof.size();
-      List<Bytes32> fillElements = Collections.nCopies(elementsToFill, Bytes32.ZERO);
-
-      filledProofList.addAll(fillElements);
-    }
-
-    return SSZ.encode(
-        writer -> {
-          writer.writeFixedBytesVector(filledProofList);
-          writer.writeBytes(data.toBytes());
-        });
+  @Override
+  public List<Bytes> get_fixed_parts() {
+    List<Bytes> fixedPartsList = new ArrayList<>();
+    fixedPartsList.addAll(List.of(SSZ.encode(writer -> writer.writeFixedBytesVector(proof))));
+    fixedPartsList.addAll(data.get_fixed_parts());
+    return fixedPartsList;
   }
 
   @Override
@@ -119,7 +92,7 @@ public class Deposit implements Merkleizable, SimpleOffsetSerializable {
     return proof;
   }
 
-  public void setProof(List<Bytes32> branch) {
+  public void setProof(SSZVector<Bytes32> branch) {
     this.proof = branch;
   }
 
@@ -135,12 +108,7 @@ public class Deposit implements Merkleizable, SimpleOffsetSerializable {
   public Bytes32 hash_tree_root() {
     return HashTreeUtil.merkleize(
         Arrays.asList(
-            // TODO Look at this - is this a TUPLE_OF_COMPOSITE
-            HashTreeUtil.hash_tree_root(SSZTypes.BASIC, proof.toArray(new Bytes32[0])),
+            HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_COMPOSITE, proof),
             data.hash_tree_root()));
-  }
-
-  public UnsignedLong getIndex() {
-    return index;
   }
 }

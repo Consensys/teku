@@ -85,15 +85,16 @@ public class BeaconChainStateMetrics {
   }
 
   public void onEpoch(final BeaconState headState) {
-    previousJustifiedEpoch.set(headState.getPrevious_justified_epoch().doubleValue());
-    currentJustifiedEpoch.set(headState.getCurrent_justified_epoch().longValue());
-    currentFinalizedEpoch.set(headState.getFinalized_epoch().longValue());
+    previousJustifiedEpoch.set(
+        headState.getPrevious_justified_checkpoint().getEpoch().doubleValue());
+    currentJustifiedEpoch.set(headState.getCurrent_justified_checkpoint().getEpoch().doubleValue());
+    currentFinalizedEpoch.set(headState.getFinalized_checkpoint().getEpoch().longValue());
     currentEpochLiveValidators.set(headState.getCurrent_epoch_attestations().size());
     previousEpochLiveValidators.set(headState.getPrevious_epoch_attestations().size());
 
     final UnsignedLong currentEpoch = get_current_epoch(headState);
     pendingExits.set(
-        headState.getValidator_registry().stream()
+        headState.getValidators().stream()
             .filter(
                 v ->
                     !v.getExit_epoch().equals(FAR_FUTURE_EPOCH)

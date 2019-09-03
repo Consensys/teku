@@ -20,11 +20,12 @@ import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomU
 import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.artemis.util.SSZTypes.Bytes4;
 
 class ForkTest {
 
-  private Bytes previousVersion = Bytes.random(4);
-  private Bytes currentVersion = Bytes.random(4);
+  private Bytes4 previousVersion = new Bytes4(Bytes.random(4));
+  private Bytes4 currentVersion = new Bytes4(Bytes.random(4));
   private UnsignedLong epoch = randomUnsignedLong();
 
   private Fork fork = new Fork(previousVersion, currentVersion, epoch);
@@ -45,14 +46,16 @@ class ForkTest {
 
   @Test
   void equalsReturnsFalseWhenPreviousVersionsAreDifferent() {
-    Fork testFork = new Fork(previousVersion.not(), currentVersion, epoch);
+    Fork testFork =
+        new Fork(new Bytes4(previousVersion.getWrappedBytes().not()), currentVersion, epoch);
 
     assertNotEquals(fork, testFork);
   }
 
   @Test
   void equalsReturnsFalseWhenCurrentVersionsAreDifferent() {
-    Fork testFork = new Fork(previousVersion, currentVersion.not(), epoch);
+    Fork testFork =
+        new Fork(previousVersion, new Bytes4(currentVersion.getWrappedBytes().not()), epoch);
 
     assertNotEquals(fork, testFork);
   }
@@ -62,11 +65,5 @@ class ForkTest {
     Fork testFork = new Fork(previousVersion, currentVersion, epoch.plus(randomUnsignedLong()));
 
     assertNotEquals(fork, testFork);
-  }
-
-  @Test
-  void roundtripSSZ() {
-    Bytes sszForkBytes = fork.toBytes();
-    assertEquals(fork, Fork.fromBytes(sszForkBytes));
   }
 }

@@ -61,8 +61,8 @@ public class QuartzTimer implements Timer {
       SimpleTrigger trigger =
           newTrigger()
               .withIdentity("trigger-" + EventBus.class.getSimpleName() + uuid.toString(), "group")
-              .startAt(DateBuilder.futureDate(startDelay, DateBuilder.IntervalUnit.SECOND))
-              .withSchedule(simpleSchedule().withIntervalInSeconds(interval).repeatForever())
+              .startAt(DateBuilder.futureDate(startDelay, DateBuilder.IntervalUnit.MILLISECOND))
+              .withSchedule(simpleSchedule().withIntervalInMilliseconds(interval).repeatForever())
               .build();
       sched.scheduleJob(job, trigger);
       sched.start();
