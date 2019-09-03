@@ -50,12 +50,11 @@ public class DepositUtil {
 
   public static MerkleTree<DepositWithIndex> generateMerkleTree(List<DepositWithIndex> deposits) {
     deposits = sortDepositsByIndexAscending(deposits);
-    MerkleTree<DepositWithIndex> merkleTree = new MerkleTree<>(DEPOSIT_CONTRACT_TREE_DEPTH);
+    MerkleTree<DepositWithIndex> merkleTree = new MerkleTree<>(DEPOSIT_CONTRACT_TREE_DEPTH + 1);
 
     for (int i = 0; i < deposits.size(); i++)
       merkleTree.add(
-          deposits.get(i).getIndex().intValue(),
-          Hash.sha2_256(deposits.get(i).getData().serialize()));
+          deposits.get(i).getIndex().intValue(), deposits.get(i).getData().hash_tree_root());
     return merkleTree;
   }
 

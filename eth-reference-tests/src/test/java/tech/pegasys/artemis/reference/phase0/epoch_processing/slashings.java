@@ -30,18 +30,34 @@ import tech.pegasys.artemis.statetransition.util.EpochProcessorUtil;
 
 @ExtendWith(BouncyCastleExtension.class)
 public class slashings extends TestSuite {
-  private static final Path configPath = Paths.get("mainnet");
 
   @ParameterizedTest(name = "{index}. process slashings pre={0} -> post={1}")
-  @MethodSource("processSlashingsSetup")
-  void processSlashings(BeaconState pre, BeaconState post) throws Exception {
-    EpochProcessorUtil.process_registry_updates(pre);
+  @MethodSource("mainnetSlashingsSetup")
+  void mainnetProcessSlashings(BeaconState pre, BeaconState post) throws Exception {
+    EpochProcessorUtil.process_slashings(pre);
+    assertEquals(pre, post);
+  }
+
+  @ParameterizedTest(name = "{index}. process slashings pre={0} -> post={1}")
+  @MethodSource("minimalSlashingsSetup")
+  void minimalProcessSlashings(BeaconState pre, BeaconState post) throws Exception {
+    EpochProcessorUtil.process_slashings(pre);
     assertEquals(pre, post);
   }
 
   @MustBeClosed
-  static Stream<Arguments> processSlashingsSetup() throws Exception {
-    Path path = Paths.get("mainnet", "phase0", "epoch_processing", "slashings", "pyspec_tests");
-    return epochProcessingSetup(path, configPath);
+  static Stream<Arguments> slashingsSetup(String config) throws Exception {
+    Path path = Paths.get(config, "phase0", "epoch_processing", "slashings", "pyspec_tests");
+    return epochProcessingSetup(path, Paths.get(config));
+  }
+
+  @MustBeClosed
+  static Stream<Arguments> minimalSlashingsSetup() throws Exception {
+    return slashingsSetup("minimal");
+  }
+
+  @MustBeClosed
+  static Stream<Arguments> mainnetSlashingsSetup() throws Exception {
+    return slashingsSetup("mainnet");
   }
 }

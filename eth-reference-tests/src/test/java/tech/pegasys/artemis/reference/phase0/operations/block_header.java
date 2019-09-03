@@ -35,107 +35,45 @@ import tech.pegasys.artemis.statetransition.util.BlockProcessingException;
 @ExtendWith(BouncyCastleExtension.class)
 public class block_header extends TestSuite {
 
-  @ParameterizedTest(name = "{index}. process BeaconBlock beaconBlock={0} -> pre={1}")
-  @MethodSource({
-    "processBeaconBlockInvalidParentRootSetup",
-    "processBeaconBlockInvalidSlotBlockHeaderSetup",
-    "processBeaconBlockProposerSlashedSetup"
-  })
-  void processBeaconBlock(BeaconBlock beaconBlock, BeaconState pre) {
-
-    assertThrows(
-        BlockProcessingException.class,
-        () -> {
-          process_block_header(pre, beaconBlock);
-        });
-  }
-
-  @MustBeClosed
-  static Stream<Arguments> processBeaconBlockInvalidParentRootSetup() throws Exception {
-    Path configPath = Paths.get("mainnet", "phase0");
-    Path path =
-        Paths.get(
-            "mainnet",
-            "phase0",
-            "operations",
-            "block_header",
-            "pyspec_tests",
-            "invalid_parent_root");
-    return genericBlockHeaderSetup(path, configPath);
-  }
-
-  @MustBeClosed
-  static Stream<Arguments> processBeaconBlockInvalidSlotBlockHeaderSetup() throws Exception {
-    Path configPath = Paths.get("mainnet", "phase0");
-    Path path =
-        Paths.get(
-            "mainnet",
-            "phase0",
-            "operations",
-            "block_header",
-            "pyspec_tests",
-            "invalid_slot_block_header");
-    return genericBlockHeaderSetup(path, configPath);
-  }
-
-  @MustBeClosed
-  static Stream<Arguments> processBeaconBlockProposerSlashedSetup() throws Exception {
-    Path configPath = Paths.get("mainnet", "phase0");
-    Path path =
-        Paths.get(
-            "mainnet", "phase0", "operations", "block_header", "pyspec_tests", "proposer_slashed");
-    return genericBlockHeaderSetup(path, configPath);
-  }
-
-  @ParameterizedTest(
-      name = "{index}. process BeaconBlock beaconBlock={0} bls_setting={1} -> pre={2}")
-  @MethodSource("processInvalidSignatureBlockHeaderSetup")
-  void processBeaconBlock(BeaconBlock beaconBlock, Integer bls_setting, BeaconState pre)
+  @ParameterizedTest(name = "{index}. minimal process block header: {4}")
+  @MethodSource("mainnetBeaconBlockHeaderSetup")
+  void mainnetProcessBeaconBlockHeader(
+      BeaconBlock block, BeaconState pre, BeaconState post, Boolean succesTest, String testName)
       throws Exception {
+    if (succesTest) {
+      assertDoesNotThrow(() -> process_block_header(pre, block, true));
+      assertEquals(pre, post);
+    } else {
+      assertThrows(BlockProcessingException.class, () -> process_block_header(pre, block, true));
+    }
+  }
 
-    assertThrows(
-        BlockProcessingException.class,
-        () -> {
-          process_block_header(pre, beaconBlock);
-        });
+  @ParameterizedTest(name = "{index}. minimal process block header: {4}")
+  @MethodSource("minimalBeaconBlockHeaderSetup")
+  void minimalProcessBeaconBlockHeader(
+      BeaconBlock block, BeaconState pre, BeaconState post, Boolean succesTest, String testName)
+      throws Exception {
+    if (succesTest) {
+      assertDoesNotThrow(() -> process_block_header(pre, block, true));
+      assertEquals(pre, post);
+    } else {
+      assertThrows(BlockProcessingException.class, () -> process_block_header(pre, block, true));
+    }
   }
 
   @MustBeClosed
-  static Stream<Arguments> processInvalidSignatureBlockHeaderSetup() throws Exception {
-    Path configPath = Paths.get("mainnet", "phase0");
-    Path path =
-        Paths.get(
-            "mainnet",
-            "phase0",
-            "operations",
-            "block_header",
-            "pyspec_tests",
-            "invalid_sig_block_header");
-    return invalidSignatureBlockHeaderSetup(path, configPath);
-  }
-
-  @ParameterizedTest(name = "{index}. process BeaconBlock beaconBlock={0} pre={1} -> post={2}")
-  @MethodSource({"processBeaconBlockSuccessSetup"})
-  void processBeaconBlock(BeaconBlock beaconBlock, BeaconState pre, BeaconState post) {
-
-    assertDoesNotThrow(
-        () -> {
-          process_block_header(pre, beaconBlock);
-        });
-    assertEquals(pre, post);
+  static Stream<Arguments> blockSetup(String config) throws Exception {
+    Path path = Paths.get(config, "phase0", "operations", "block_header", "pyspec_tests");
+    return operationSetup(path, Paths.get(config), "block.ssz", BeaconBlock.class);
   }
 
   @MustBeClosed
-  static Stream<Arguments> processBeaconBlockSuccessSetup() throws Exception {
-    Path configPath = Paths.get("mainnet", "phase0");
-    Path path =
-        Paths.get(
-            "mainnet",
-            "phase0",
-            "operations",
-            "block_header",
-            "pyspec_tests",
-            "success_block_header");
-    return blockHeaderSuccessSetup(path, configPath);
+  static Stream<Arguments> minimalBeaconBlockHeaderSetup() throws Exception {
+    return blockSetup("minimal");
+  }
+
+  @MustBeClosed
+  static Stream<Arguments> mainnetBeaconBlockHeaderSetup() throws Exception {
+    return blockSetup("mainnet");
   }
 }

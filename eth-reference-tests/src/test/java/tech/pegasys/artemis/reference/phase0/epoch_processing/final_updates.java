@@ -30,18 +30,33 @@ import tech.pegasys.artemis.statetransition.util.EpochProcessorUtil;
 
 @ExtendWith(BouncyCastleExtension.class)
 public class final_updates extends TestSuite {
-  private static final Path configPath = Paths.get("mainnet");
+  @ParameterizedTest(name = "{index}. process final updates pre={0} -> post={1}")
+  @MethodSource("mainnetFinalUpdatesSetup")
+  void mainnetProcessFinalUpdates(BeaconState pre, BeaconState post) throws Exception {
+    EpochProcessorUtil.process_final_updates(pre);
+    assertEquals(pre, post);
+  }
 
   @ParameterizedTest(name = "{index}. process final updates pre={0} -> post={1}")
-  @MethodSource("finalUpdatesSetup")
-  void processFinalUpdates(BeaconState pre, BeaconState post) throws Exception {
+  @MethodSource("minimalFinalUpdatesSetup")
+  void minimalFinalUpdatesSetup(BeaconState pre, BeaconState post) throws Exception {
     EpochProcessorUtil.process_final_updates(pre);
     assertEquals(pre, post);
   }
 
   @MustBeClosed
-  static Stream<Arguments> finalUpdatesSetup() throws Exception {
-    Path path = Paths.get("mainnet", "phase0", "epoch_processing", "final_updates", "pyspec_tests");
-    return epochProcessingSetup(path, configPath);
+  static Stream<Arguments> finalUpdatesSetup(String config) throws Exception {
+    Path path = Paths.get(config, "phase0", "epoch_processing", "final_updates", "pyspec_tests");
+    return epochProcessingSetup(path, Paths.get(config));
+  }
+
+  @MustBeClosed
+  static Stream<Arguments> minimalFinalUpdatesSetup() throws Exception {
+    return finalUpdatesSetup("minimal");
+  }
+
+  @MustBeClosed
+  static Stream<Arguments> mainnetFinalUpdatesSetup() throws Exception {
+    return finalUpdatesSetup("mainnet");
   }
 }

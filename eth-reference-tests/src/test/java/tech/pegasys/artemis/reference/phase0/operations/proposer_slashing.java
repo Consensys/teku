@@ -16,7 +16,7 @@ package tech.pegasys.artemis.reference.phase0.operations;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static tech.pegasys.artemis.statetransition.util.BlockProcessorUtil.process_attester_slashings;
+import static tech.pegasys.artemis.statetransition.util.BlockProcessorUtil.process_proposer_slashings;
 
 import com.google.errorprone.annotations.MustBeClosed;
 import java.nio.file.Path;
@@ -29,69 +29,65 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import tech.pegasys.artemis.datastructures.operations.AttesterSlashing;
+import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.reference.TestSuite;
 import tech.pegasys.artemis.statetransition.util.BlockProcessingException;
 
 @ExtendWith(BouncyCastleExtension.class)
-public class attester_slashing extends TestSuite {
+public class proposer_slashing extends TestSuite {
 
-  @ParameterizedTest(name = "{index}. minimal process attester slashing: {4}")
-  @MethodSource("mainnetAttesterSlashingSetup")
-  void mainnetProcessAttesterSlashing(
-      AttesterSlashing attester_slashing,
+  @ParameterizedTest(name = "{index}. mainnet process proposer slashing: {4}")
+  @MethodSource("mainnetProposerSlashingSetup")
+  void mainnetProcessProposerSlashing(
+      ProposerSlashing proposerSlashing,
       BeaconState pre,
       BeaconState post,
       Boolean succesTest,
-      String testName)
-      throws Exception {
-    List<AttesterSlashing> attester_slashings = new ArrayList<>();
-    attester_slashings.add(attester_slashing);
+      String testName) {
+    List<ProposerSlashing> proposerSlashings = new ArrayList<>();
+    proposerSlashings.add(proposerSlashing);
     if (succesTest) {
-      assertDoesNotThrow(() -> process_attester_slashings(pre, attester_slashings));
+      assertDoesNotThrow(() -> process_proposer_slashings(pre, proposerSlashings));
       assertEquals(pre, post);
     } else {
       assertThrows(
-          BlockProcessingException.class,
-          () -> process_attester_slashings(pre, attester_slashings));
+          BlockProcessingException.class, () -> process_proposer_slashings(pre, proposerSlashings));
     }
   }
 
-  @ParameterizedTest(name = "{index}. minimal process attester slashing: {4}")
-  @MethodSource("minimalAttesterSlashingSetup")
-  void minimalProcessAttesterSlashing(
-      AttesterSlashing attester_slashing,
+  @ParameterizedTest(name = "{index}. minimal process proposer slashing: {4}")
+  @MethodSource("minimalProposerSlashingSetup")
+  void minimalProcessProposerSlashing(
+      ProposerSlashing proposerSlashing,
       BeaconState pre,
       BeaconState post,
       Boolean succesTest,
-      String testName)
-      throws Exception {
-    List<AttesterSlashing> attester_slashings = new ArrayList<>();
-    attester_slashings.add(attester_slashing);
+      String testName) {
+    List<ProposerSlashing> proposerSlashings = new ArrayList<>();
+    proposerSlashings.add(proposerSlashing);
     if (succesTest) {
-      assertDoesNotThrow(() -> process_attester_slashings(pre, attester_slashings));
+      assertDoesNotThrow(() -> process_proposer_slashings(pre, proposerSlashings));
       assertEquals(pre, post);
     } else {
       assertThrows(
-          BlockProcessingException.class,
-          () -> process_attester_slashings(pre, attester_slashings));
+          BlockProcessingException.class, () -> process_proposer_slashings(pre, proposerSlashings));
     }
   }
 
   @MustBeClosed
-  static Stream<Arguments> attester_slashingSetup(String config) throws Exception {
-    Path path = Paths.get(config, "phase0", "operations", "attester_slashing", "pyspec_tests");
-    return operationSetup(path, Paths.get(config), "attester_slashing.ssz", AttesterSlashing.class);
+  static Stream<Arguments> proposerSlashingSetup(String config) throws Exception {
+    Path path = Paths.get(config, "phase0", "operations", "proposer_slashing", "pyspec_tests");
+    return operationSetup(path, Paths.get(config), "proposer_slashing.ssz", ProposerSlashing.class);
   }
 
   @MustBeClosed
-  static Stream<Arguments> minimalAttesterSlashingSetup() throws Exception {
-    return attester_slashingSetup("minimal");
+  static Stream<Arguments> minimalProposerSlashingSetup() throws Exception {
+    return proposerSlashingSetup("minimal");
   }
 
   @MustBeClosed
-  static Stream<Arguments> mainnetAttesterSlashingSetup() throws Exception {
-    return attester_slashingSetup("mainnet");
+  static Stream<Arguments> mainnetProposerSlashingSetup() throws Exception {
+    return proposerSlashingSetup("mainnet");
   }
 }

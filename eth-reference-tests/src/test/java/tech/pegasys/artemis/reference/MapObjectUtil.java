@@ -102,8 +102,9 @@ public class MapObjectUtil {
     else if (classtype.equals(UnsignedLong.class)) return UnsignedLong.valueOf(object.toString());
     else if (classtype.equals(Integer.class)) return Integer.valueOf(object.toString());
     else if (classtype.equals(Bytes32.class)) return Bytes32.fromHexString(object.toString());
-    else if (classtype.equals(Bytes.class)) return Bytes.fromHexString(object.toString());
-    else if (classtype.equals(Boolean.class)) return Boolean.valueOf(object.toString());
+    else if (classtype.equals(Bytes.class)) {
+      return Bytes.fromHexString(object.toString());
+    } else if (classtype.equals(Boolean.class)) return Boolean.valueOf(object.toString());
 
     return null;
   }
