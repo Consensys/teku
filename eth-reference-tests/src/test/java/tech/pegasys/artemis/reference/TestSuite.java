@@ -17,6 +17,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.common.primitives.UnsignedLong;
 import com.google.errorprone.annotations.MustBeClosed;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -34,6 +35,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes;
@@ -46,10 +48,9 @@ import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.AttesterSlashing;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
-import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
 import tech.pegasys.artemis.datastructures.operations.VoluntaryExit;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
+import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.mikuli.G2Point;
 import tech.pegasys.artemis.util.mikuli.PublicKey;
@@ -108,6 +109,17 @@ public abstract class TestSuite {
       throw new Exception(
           "TestSuite.loadConfigFromPath(): Configuration files was not found in the hierarchy of the provided path");
     Constants.init((Map) pathToObject(Paths.get(result)));
+
+    // TODO fix this massacre of a technical debt
+    // Checks if constants were changed from minimal to mainnet or vice-versa, and updates
+    // reflection information
+    if (Constants.SLOTS_PER_HISTORICAL_ROOT
+        != SimpleOffsetSerializer.classReflectionInfo
+            .get(BeaconState.class)
+            .getVectorLengths()
+            .get(0)) {
+      SimpleOffsetSerializer.setConstants();
+    }
   }
 
   public static Integer loadMetaData(TestSet testSet) {
@@ -157,6 +169,19 @@ public abstract class TestSuite {
     return object;
   }
 
+  @SuppressWarnings({"rawtypes"})
+  public static Bytes getSSZBytesFromPath(Path path) {
+    InputStream in = getInputStreamFromPath(path);
+    try {
+      byte[] targetArray = new byte[in.available()];
+      in.read(targetArray);
+      return Bytes.wrap(targetArray);
+    } catch (IOException e) {
+      LOG.log(Level.WARN, e.toString());
+    }
+    return null;
+  }
+
   public static Object pathToObject(Path path) {
     return getObjectFromYAMLInputStream(getInputStreamFromPath(path));
   }
@@ -174,23 +199,130 @@ public abstract class TestSuite {
                           .allMatch(fileName -> Files.exists(Path.of(walkPath, fileName))))
               .collect(Collectors.toList());
 
-      return result.stream()
-          .map(
-              walkPath -> {
-                return testSet.getFileNames().stream()
-                    .flatMap(
-                        fileName -> {
-                          Object object = pathToObject(Path.of(walkPath, fileName));
-                          return testSet.getTestObjectByFileName(fileName).stream()
-                              .map(
-                                  testObject ->
-                                      parseObjectFromFile(
-                                          testObject.getClassName(), testObject.getPath(), object));
-                        })
-                    .collect(Collectors.toList());
-              })
-          .map(objects -> Arguments.of(objects.toArray()));
+      Stream<Arguments> arguments =
+          result.stream()
+              .map(
+                  walkPath -> {
+                    return testSet.getFileNames().stream()
+                        .flatMap(
+                            fileName -> {
+                              Object object = pathToObject(Path.of(walkPath, fileName));
+                              return testSet.getTestObjectByFileName(fileName).stream()
+                                  .map(
+                                      testObject ->
+                                          parseObjectFromFile(
+                                              testObject.getClassName(),
+                                              testObject.getPath(),
+                                              object));
+                            })
+                        .collect(Collectors.toList());
+                  })
+              .map(objects -> Arguments.of(objects.toArray()));
+      return arguments;
     } catch (IOException e) {
+      LOG.log(Level.WARN, e.toString());
+    }
+    return null;
+  }
+
+  @MustBeClosed
+  public static Stream<Arguments> findSSZTestsByPath(TestSet testSet) {
+    Path path = Path.of(pathToTests.toString(), testSet.getPath().toString());
+    try (Stream<Path> walk = Files.walk(path)) {
+      List<String> result = walk.map(x -> x.toString()).collect(Collectors.toList());
+      result =
+          result.stream()
+              .filter(
+                  walkPath ->
+                      testSet.getFileNames().stream()
+                          .allMatch(fileName -> Files.exists(Path.of(walkPath, fileName))))
+              .collect(Collectors.toList());
+
+      Stream<Arguments> arguments =
+          result.stream()
+              .map(
+                  walkPath -> {
+                    return testSet.getFileNames().stream()
+                        .flatMap(
+                            fileName -> {
+                              Bytes objectBytes = getSSZBytesFromPath(Path.of(walkPath, fileName));
+                              return testSet.getTestObjectByFileName(fileName).stream()
+                                  .map(
+                                      testObject ->
+                                          SimpleOffsetSerializer.deserialize(
+                                              objectBytes, testObject.getClassName()));
+                            })
+                        .collect(Collectors.toList());
+                  })
+              .map(
+                  objects -> {
+                    return Arguments.of(objects.toArray());
+                  });
+      return arguments;
+    } catch (IOException e) {
+      LOG.log(Level.WARN, e.toString());
+    }
+    return null;
+  }
+
+  @MustBeClosed
+  public static Stream<Arguments> findSSZTestsByPathWithTestType(TestSet testSet) {
+    Path path = Path.of(pathToTests.toString(), testSet.getPath().toString());
+    try (Stream<Path> walk = Files.walk(path)) {
+      TestSet testSetPostRemoved = new TestSet(testSet);
+      testSetPostRemoved.remove(testSet.size() - 1);
+      List<String> result = walk.map(x -> x.toString()).collect(Collectors.toList());
+      List<Pair<String, Boolean>> resultPair =
+          result.stream().map(i -> new MutablePair<>(i, false)).collect(Collectors.toList());
+      resultPair =
+          resultPair.stream()
+              .filter(
+                  pair -> {
+                    String walkPath = pair.getLeft();
+                    Boolean isSuccesTest =
+                        testSet.getFileNames().stream()
+                            .allMatch(fileName -> Files.exists(Path.of(walkPath, fileName)));
+                    pair.setValue(isSuccesTest);
+                    return isSuccesTest
+                        || testSetPostRemoved.getFileNames().stream()
+                            .allMatch(fileName -> Files.exists(Path.of(walkPath, fileName)));
+                  })
+              .collect(Collectors.toList());
+
+      List<Arguments> arguments = new ArrayList<>();
+      for (Pair<String, Boolean> pair : resultPair) {
+        String walkPath = pair.getLeft();
+        Boolean isSuccessTest = pair.getRight();
+        TestSet newTestSet;
+        if (isSuccessTest) {
+          newTestSet = new TestSet(testSet);
+        } else {
+          newTestSet = new TestSet(testSetPostRemoved);
+        }
+        List<Object> objects =
+            newTestSet.getFileNames().stream()
+                .flatMap(
+                    fileName -> {
+                      Bytes objectBytes = getSSZBytesFromPath(Path.of(walkPath, fileName));
+                      return newTestSet.getTestObjectByFileName(fileName).stream()
+                          .map(
+                              testObject ->
+                                  SimpleOffsetSerializer.deserialize(
+                                      objectBytes, testObject.getClassName()));
+                    })
+                .collect(Collectors.toList());
+        if (!isSuccessTest) {
+          objects.add(new BeaconState());
+        }
+        objects.add(isSuccessTest);
+        String filename = new File(walkPath).getName();
+        objects.add(filename);
+        arguments.add(Arguments.of(objects.toArray()));
+      }
+
+      Stream<Arguments> argumentsStream = arguments.stream();
+      return argumentsStream;
+    } catch (Exception e) {
       LOG.log(Level.WARN, e.toString());
     }
     return null;
@@ -342,12 +474,11 @@ public abstract class TestSuite {
   public static Stream<Arguments> epochProcessingSetup(Path path, Path configPath)
       throws Exception {
     loadConfigFromPath(configPath);
-
     TestSet testSet = new TestSet(path);
-    testSet.add(new TestObject("pre.yaml", BeaconStateWithCache.class, null));
-    testSet.add(new TestObject("post.yaml", BeaconStateWithCache.class, null));
+    testSet.add(new TestObject("pre.ssz", BeaconState.class, null));
+    testSet.add(new TestObject("post.ssz", BeaconState.class, null));
 
-    return findTestsByPath(testSet);
+    return findSSZTestsByPath(testSet);
   }
 
   @MustBeClosed
@@ -479,41 +610,17 @@ public abstract class TestSuite {
   }
 
   @MustBeClosed
-  public static Stream<Arguments> operationProposerSlashingType1Setup(Path path, Path configPath)
-      throws Exception {
+  @SuppressWarnings("rawtypes")
+  public static Stream<Arguments> operationSetup(
+      Path path, Path configPath, String operationName, Class operationClass) throws Exception {
     loadConfigFromPath(configPath);
 
     TestSet testSet = new TestSet(path);
-    testSet.add(new TestObject("proposer_slashing.yaml", ProposerSlashing.class, null));
-    testSet.add(new TestObject("pre.yaml", BeaconState.class, null));
+    testSet.add(new TestObject(operationName, operationClass, null));
+    testSet.add(new TestObject("pre.ssz", BeaconState.class, null));
+    testSet.add(new TestObject("post.ssz", BeaconState.class, null));
 
-    return findTestsByPath(testSet);
-  }
-
-  @MustBeClosed
-  public static Stream<Arguments> operationProposerSlashingType2Setup(Path path, Path configPath)
-      throws Exception {
-    loadConfigFromPath(configPath);
-
-    TestSet testSet = new TestSet(path);
-    testSet.add(new TestObject("proposer_slashing.yaml", ProposerSlashing.class, null));
-    testSet.add(new TestObject("meta.yaml", Integer.class, Paths.get("bls_setting")));
-    testSet.add(new TestObject("pre.yaml", BeaconState.class, null));
-
-    return findTestsByPath(testSet);
-  }
-
-  @MustBeClosed
-  public static Stream<Arguments> operationProposerSlashingType3Setup(Path path, Path configPath)
-      throws Exception {
-    loadConfigFromPath(configPath);
-
-    TestSet testSet = new TestSet(path);
-    testSet.add(new TestObject("proposer_slashing.yaml", ProposerSlashing.class, null));
-    testSet.add(new TestObject("pre.yaml", BeaconState.class, null));
-    testSet.add(new TestObject("post.yaml", BeaconState.class, null));
-
-    return findTestsByPath(testSet);
+    return findSSZTestsByPathWithTestType(testSet);
   }
 
   @MustBeClosed

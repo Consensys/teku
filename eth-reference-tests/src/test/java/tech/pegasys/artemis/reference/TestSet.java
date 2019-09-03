@@ -26,6 +26,11 @@ public class TestSet extends ArrayList<TestObject> {
     this.path = path;
   }
 
+  public TestSet(TestSet testset) {
+    super(testset);
+    this.path = testset.getPath();
+  }
+
   // provides a list of fileNames without duplicates
   public List<String> getFileNames() {
     return this.stream().map(TestObject::getFileName).distinct().collect(Collectors.toList());
