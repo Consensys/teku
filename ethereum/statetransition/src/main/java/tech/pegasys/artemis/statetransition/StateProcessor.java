@@ -52,8 +52,8 @@ import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 
 /** Class to manage the state tree and initiate state transitions */
 public class StateProcessor {
-  private final BeaconChainStateMetrics beaconChainStateMetrics;
   private final EventBus eventBus;
+  private final StateTransition stateTransition;
   private Store store;
   private ChainStorageClient chainStorageClient;
   private SECP256K1.PublicKey publicKey;
@@ -83,9 +83,9 @@ public class StateProcessor {
     this.eventBus = config.getEventBus();
     this.config = config.getConfig();
     this.publicKey = config.getKeyPair().publicKey();
-    this.beaconChainStateMetrics = new BeaconChainStateMetrics(config.getMetricsSystem());
-    this.eventBus.register(this);
+    this.stateTransition = new StateTransition(true, new EpochMetrics(config.getMetricsSystem()));
     this.chainStorageClient = chainStorageClient;
+    this.eventBus.register(this);
 
     if (this.config.getDepositMode().equals(Constants.DEPOSIT_TEST)) {
       try {
@@ -165,7 +165,7 @@ public class StateProcessor {
   @Subscribe
   private void onBlock(BeaconBlock block) {
     try {
-      on_block(store, block);
+      on_block(store, block, stateTransition);
       // Add attestations that were processed in the block to processed attestations storage
       block
           .getBody()
@@ -179,7 +179,7 @@ public class StateProcessor {
   @Subscribe
   private void onAttestation(Attestation attestation) {
     try {
-      on_attestation(store, attestation);
+      on_attestation(store, attestation, stateTransition);
     } catch (SlotProcessingException | EpochProcessingException e) {
       STDOUT.log(Level.WARN, "Exception in onAttestation: " + e.toString());
     }

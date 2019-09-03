@@ -22,9 +22,8 @@ import tech.pegasys.artemis.metrics.ArtemisMetricCategory;
 import tech.pegasys.artemis.metrics.SettableGauge;
 import tech.pegasys.pantheon.metrics.MetricsSystem;
 
-public class BeaconChainStateMetrics {
+public class EpochMetrics {
 
-  private final SettableGauge currentSlotGauge;
   private final SettableGauge currentJustifiedEpoch;
   private final SettableGauge currentFinalizedEpoch;
   private final SettableGauge previousJustifiedEpoch;
@@ -32,13 +31,7 @@ public class BeaconChainStateMetrics {
   private final SettableGauge previousEpochLiveValidators;
   private final SettableGauge pendingExits;
 
-  public BeaconChainStateMetrics(final MetricsSystem metricsSystem) {
-    currentSlotGauge =
-        SettableGauge.create(
-            metricsSystem,
-            ArtemisMetricCategory.BEACONCHAIN,
-            "current_slot",
-            "Latest slot recorded by the beacon chain");
+  public EpochMetrics(final MetricsSystem metricsSystem) {
 
     currentJustifiedEpoch =
         SettableGauge.create(
@@ -80,14 +73,10 @@ public class BeaconChainStateMetrics {
             "Number of pending exits");
   }
 
-  public void onSlotStarted(UnsignedLong slotNumber) {
-    this.currentSlotGauge.set(slotNumber.doubleValue());
-  }
-
   public void onEpoch(final BeaconState headState) {
     previousJustifiedEpoch.set(
         headState.getPrevious_justified_checkpoint().getEpoch().doubleValue());
-    currentJustifiedEpoch.set(headState.getCurrent_justified_checkpoint().getEpoch().doubleValue());
+    currentJustifiedEpoch.set(headState.getCurrent_justified_checkpoint().getEpoch().longValue());
     currentFinalizedEpoch.set(headState.getFinalized_checkpoint().getEpoch().longValue());
     currentEpochLiveValidators.set(headState.getCurrent_epoch_attestations().size());
     previousEpochLiveValidators.set(headState.getPrevious_epoch_attestations().size());

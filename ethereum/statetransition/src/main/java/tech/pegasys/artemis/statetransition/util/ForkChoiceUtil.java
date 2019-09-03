@@ -22,7 +22,6 @@ import static tech.pegasys.artemis.datastructures.util.AttestationUtil.is_valid_
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_start_slot_of_epoch;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_current_epoch;
 import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.get_active_validator_indices;
-import static tech.pegasys.artemis.statetransition.StateTransition.process_slots;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
@@ -173,10 +172,12 @@ public class ForkChoiceUtil {
   /**
    * @param store
    * @param block
+   * @param st
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.1/specs/core/0_fork-choice.md#on_block</a>
    */
-  public static void on_block(Store store, BeaconBlock block) throws StateTransitionException {
+  public static void on_block(Store store, BeaconBlock block, StateTransition st)
+      throws StateTransitionException {
     // Make a copy of the state to avoid mutability issues
     checkArgument(
         store.getBlock_states().containsKey(block.getParent_root()),
@@ -216,7 +217,6 @@ public class ForkChoiceUtil {
         "on_block: Check that block is later than the finalized epoch slot");
 
     // Check the block is valid and compute the post-state
-    StateTransition st = new StateTransition(true);
     BeaconState state = st.initiate(pre_state, block, true);
 
     // Add new state for this block to the store
@@ -244,10 +244,12 @@ public class ForkChoiceUtil {
   /**
    * @param store
    * @param attestation
+   * @param stateTransition
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.1/specs/core/0_fork-choice.md#on_attestation</a>
    */
-  public static void on_attestation(Store store, Attestation attestation)
+  public static void on_attestation(
+      Store store, Attestation attestation, StateTransition stateTransition)
       throws SlotProcessingException, EpochProcessingException {
     Checkpoint target = attestation.getData().getTarget();
 
@@ -274,7 +276,8 @@ public class ForkChoiceUtil {
 
     // Store target checkpoint state if not yet seen
     if (!store.getCheckpoint_states().containsKey(target)) {
-      process_slots(base_state, compute_start_slot_of_epoch(target.getEpoch()), false);
+      stateTransition.process_slots(
+          base_state, compute_start_slot_of_epoch(target.getEpoch()), false);
       store.getCheckpoint_states().put(target, base_state);
     }
     BeaconState target_state = store.getCheckpoint_states().get(target);

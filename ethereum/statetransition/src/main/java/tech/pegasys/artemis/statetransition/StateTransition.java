@@ -29,6 +29,7 @@ import static tech.pegasys.artemis.statetransition.util.EpochProcessorUtil.proce
 import static tech.pegasys.artemis.statetransition.util.EpochProcessorUtil.process_slashings;
 
 import com.google.common.primitives.UnsignedLong;
+import java.util.Optional;
 import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
@@ -44,11 +45,16 @@ public class StateTransition {
   private static final ALogger STDOUT = new ALogger("stdout");
 
   private boolean printEnabled = false;
-
-  public StateTransition() {}
+  private final Optional<EpochMetrics> epochMetrics;
 
   public StateTransition(boolean printEnabled) {
     this.printEnabled = printEnabled;
+    this.epochMetrics = Optional.empty();
+  }
+
+  public StateTransition(boolean printEnabled, EpochMetrics epochMetrics) {
+    this.printEnabled = printEnabled;
+    this.epochMetrics = Optional.of(epochMetrics);
   }
 
   /**
@@ -170,8 +176,7 @@ public class StateTransition {
    * @throws EpochProcessingException
    * @throws SlotProcessingException
    */
-  public static void process_slots(
-      BeaconStateWithCache state, UnsignedLong slot, boolean printEnabled)
+  public void process_slots(BeaconStateWithCache state, UnsignedLong slot, boolean printEnabled)
       throws SlotProcessingException, EpochProcessingException {
     try {
       checkArgument(
@@ -186,6 +191,7 @@ public class StateTransition {
             .equals(UnsignedLong.ZERO)) {
           STDOUT.log(Level.INFO, "******* Epoch Event *******", printEnabled, ALogger.Color.BLUE);
           process_epoch(state);
+          epochMetrics.ifPresent(metrics -> metrics.onEpoch(state));
         }
         state.setSlot(state.getSlot().plus(UnsignedLong.ONE));
       }

@@ -21,7 +21,6 @@ import static tech.pegasys.artemis.datastructures.Constants.MAX_VALIDATORS_PER_C
 import static tech.pegasys.artemis.datastructures.Constants.SLOTS_PER_EPOCH;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_of_slot;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_domain;
-import static tech.pegasys.artemis.statetransition.StateTransition.process_slots;
 import static tech.pegasys.artemis.statetransition.util.ForkChoiceUtil.get_head;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -513,7 +512,7 @@ public class ValidatorCoordinator {
   private void createBlockIfNecessary(BeaconStateWithCache state, BeaconBlock oldBlock) {
     BeaconStateWithCache checkState = BeaconStateWithCache.deepCopy(state);
     try {
-      process_slots(checkState, checkState.getSlot().plus(UnsignedLong.ONE), false);
+      stateTransition.process_slots(checkState, checkState.getSlot().plus(UnsignedLong.ONE), false);
     } catch (SlotProcessingException | EpochProcessingException e) {
       STDOUT.log(Level.FATAL, "Coordinator checking proposer index exception");
     }
