@@ -53,7 +53,7 @@ public class JavaTimer implements Timer {
 
   @Override
   public void start() {
-    scheduler.scheduleAtFixedRate(task, startDelay, interval, TimeUnit.SECONDS);
+    scheduler.scheduleAtFixedRate(task, startDelay, interval, TimeUnit.MILLISECONDS);
   }
 
   @Override

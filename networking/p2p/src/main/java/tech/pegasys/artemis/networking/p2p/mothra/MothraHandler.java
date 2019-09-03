@@ -28,6 +28,7 @@ import org.apache.tuweni.hobbits.Message;
 import org.apache.tuweni.hobbits.Protocol;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
+import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.networking.p2p.mothra.gossip.GossipCodec;
 import tech.pegasys.artemis.networking.p2p.mothra.gossip.GossipMessage;
 import tech.pegasys.artemis.util.alogger.ALogger;
@@ -83,10 +84,10 @@ public class MothraHandler {
     if (!receivedMessages.contains(key)) {
       receivedMessages.add(key);
       if (gossipMessage.getTopic().equalsIgnoreCase("ATTESTATION")) {
-        Attestation attestation = Attestation.fromBytes(body);
+        Attestation attestation = SimpleOffsetSerializer.deserialize(body, Attestation.class);
         this.eventBus.post(attestation);
       } else if (gossipMessage.getTopic().equalsIgnoreCase("BLOCK")) {
-        BeaconBlock block = BeaconBlock.fromBytes(body);
+        BeaconBlock block = SimpleOffsetSerializer.deserialize(body, BeaconBlock.class);
         this.eventBus.post(block);
       }
     }
@@ -94,7 +95,7 @@ public class MothraHandler {
 
   @Subscribe
   public void onNewUnprocessedBlock(BeaconBlock block) {
-    Bytes bytes = block.toBytes();
+    Bytes bytes = SimpleOffsetSerializer.serialize(block);
     if (!this.receivedMessages.contains(bytes.toHexString())) {
       this.receivedMessages.add(bytes.toHexString());
       STDOUT.log(
@@ -109,7 +110,7 @@ public class MothraHandler {
 
   @Subscribe
   public void onNewUnprocessedAttestation(Attestation attestation) {
-    Bytes bytes = attestation.toBytes();
+    Bytes bytes = SimpleOffsetSerializer.serialize(attestation);
     if (!this.receivedMessages.contains(bytes.toHexString())) {
       this.receivedMessages.add(bytes.toHexString());
       STDOUT.log(

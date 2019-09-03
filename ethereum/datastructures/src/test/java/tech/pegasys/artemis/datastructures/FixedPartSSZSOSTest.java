@@ -34,12 +34,14 @@ import tech.pegasys.artemis.datastructures.operations.DepositData;
 import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
 import tech.pegasys.artemis.datastructures.operations.Transfer;
 import tech.pegasys.artemis.datastructures.operations.VoluntaryExit;
+import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.datastructures.state.Crosslink;
-import tech.pegasys.artemis.datastructures.state.Fork;
+import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 
+@SuppressWarnings("unused")
 class FixedPartSSZSOSTest {
 
   @Test
@@ -65,12 +67,12 @@ class FixedPartSSZSOSTest {
   @Test
   void testCrosslinkSOS() {
     UnsignedLong shard = randomUnsignedLong();
+    Bytes32 parent_root = Bytes32.random();
     UnsignedLong start_epoch = randomUnsignedLong();
     UnsignedLong end_epoch = randomUnsignedLong();
-    Bytes32 parentRoot = Bytes32.random();
-    Bytes32 dataRoot = Bytes32.random();
+    Bytes32 data_root = Bytes32.random();
 
-    Crosslink crosslink = new Crosslink(shard, start_epoch, end_epoch, parentRoot, dataRoot);
+    Crosslink crosslink = new Crosslink(shard, parent_root, start_epoch, end_epoch, data_root);
 
     Bytes sszCrosslinkBytes = crosslink.toBytes();
     Bytes sosCrosslinkBytes = SimpleOffsetSerializer.serialize(crosslink);
@@ -126,31 +128,49 @@ class FixedPartSSZSOSTest {
   }
 
   @Test
-  void testForkSOS() {
-    Bytes previousVersion = Bytes.random(4);
-    Bytes currentVersion = Bytes.random(4);
-    UnsignedLong epoch = randomUnsignedLong();
+  void testValidatorSOS() {
+    BLSPublicKey pubkey = BLSPublicKey.random();
+    Bytes32 withdrawal_credentials = Bytes32.random();
+    UnsignedLong effective_balance = randomUnsignedLong();
+    boolean slashed = true;
+    UnsignedLong activation_eligibility_epoch = randomUnsignedLong();
+    UnsignedLong activation_epoch = randomUnsignedLong();
+    UnsignedLong exit_epoch = randomUnsignedLong();
+    UnsignedLong withdrawable_epoch = randomUnsignedLong();
 
-    Fork fork = new Fork(previousVersion, currentVersion, epoch);
+    Validator validator =
+        new Validator(
+            pubkey,
+            withdrawal_credentials,
+            effective_balance,
+            slashed,
+            activation_eligibility_epoch,
+            activation_epoch,
+            exit_epoch,
+            withdrawable_epoch);
 
-    Bytes sszForkBytes = fork.toBytes();
-    Bytes sosForkBytes = SimpleOffsetSerializer.serialize(fork);
+    Bytes sszValidatorBytes = validator.toBytes();
+    Bytes sosValidatorBytes = SimpleOffsetSerializer.serialize(validator);
 
-    assertEquals(sszForkBytes, sosForkBytes);
+    assertEquals(sszValidatorBytes, sosValidatorBytes);
   }
 
   @Test
   void testAttestationDataSOS() {
     Bytes32 beaconBlockRoot = Bytes32.random();
+
     UnsignedLong source_epoch = randomUnsignedLong();
     Bytes32 source_root = Bytes32.random();
+    Checkpoint source = new Checkpoint(source_epoch, source_root);
+
     UnsignedLong target_epoch = randomUnsignedLong();
     Bytes32 target_root = Bytes32.random();
+    Checkpoint target = new Checkpoint(target_epoch, target_root);
+
     Crosslink crosslink = randomCrosslink();
 
     AttestationData attestationData =
-        new AttestationData(
-            beaconBlockRoot, source_epoch, source_root, target_epoch, target_root, crosslink);
+        new AttestationData(beaconBlockRoot, source, target, crosslink);
 
     Bytes sszAttestationDataBytes = attestationData.toBytes();
     Bytes sosAttestationDataBytes = SimpleOffsetSerializer.serialize(attestationData);
@@ -237,5 +257,33 @@ class FixedPartSSZSOSTest {
 
     // SJS - The test fails due to SSZ discrepancy, but the SOS value is correct.
     // assertEquals(sszattestationDataAndCustodyBitBytes, sosattestationDataAndCustodyBitBytes);
+  }
+
+  @Test
+  void testCheckpointSOS() {
+    UnsignedLong epoch = randomUnsignedLong();
+    Bytes32 root = Bytes32.random();
+
+    Checkpoint checkpoint = new Checkpoint(epoch, root);
+
+    Bytes sszCheckpointBytes = checkpoint.toBytes();
+    Bytes sosCheckpointBytes = SimpleOffsetSerializer.serialize(checkpoint);
+
+    assertEquals(sszCheckpointBytes, sosCheckpointBytes);
+  }
+
+  @Test
+  void testHistoricalBatchSOS() {
+    /*
+    List<Bytes32> blockRoots = List.of(Bytes32.random(), Bytes32.random(), Bytes32.random());
+    List<Bytes32> stateRoots = List.of(Bytes32.random(), Bytes32.random(), Bytes32.random());
+
+    HistoricalBatch historicalBatch = new HistoricalBatch(blockRoots, stateRoots);
+
+    Bytes sszHistoricalBatchBytes = historicalBatch.toBytes();
+    Bytes sosHistoricalBatchBytes = SimpleOffsetSerializer.serialize(historicalBatch);
+
+    assertEquals(sszHistoricalBatchBytes, sosHistoricalBatchBytes);
+    */
   }
 }

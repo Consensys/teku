@@ -30,7 +30,7 @@ public class BLSVerify {
    * @return true if the signature is valid over these parameters, false if not
    */
   public static boolean bls_verify(
-      BLSPublicKey pubkey, Bytes32 messageHash, BLSSignature signature, long domain) {
+      BLSPublicKey pubkey, Bytes32 messageHash, BLSSignature signature, Bytes domain) {
     try {
       return signature.checkSignature(pubkey, Bytes.wrap(messageHash), domain);
     } catch (BLSException e) {
@@ -53,7 +53,7 @@ public class BLSVerify {
       List<BLSPublicKey> pubkeys,
       List<Bytes32> messageHashes,
       BLSSignature aggregateSignature,
-      long domain) {
+      Bytes domain) {
     try {
       List<Bytes> messageHashesAsBytes =
           messageHashes.stream().map(x -> Bytes.wrap(x)).collect(Collectors.toList());

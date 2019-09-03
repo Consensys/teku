@@ -21,13 +21,14 @@ import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
+import tech.pegasys.artemis.util.SSZTypes.SSZContainer;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
-public class DepositData implements SimpleOffsetSerializable {
+public class DepositData implements SimpleOffsetSerializable, SSZContainer {
 
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
   private static final int SSZ_FIELD_COUNT = 2;
@@ -46,6 +47,13 @@ public class DepositData implements SimpleOffsetSerializable {
     this.withdrawal_credentials = withdrawal_credentials;
     this.amount = amount;
     this.signature = signature;
+  }
+
+  public DepositData() {
+    this.pubkey = BLSPublicKey.empty();
+    this.withdrawal_credentials = Bytes32.ZERO;
+    this.amount = UnsignedLong.ZERO;
+    this.signature = BLSSignature.empty();
   }
 
   @Override
@@ -86,7 +94,6 @@ public class DepositData implements SimpleOffsetSerializable {
         });
   }
 
-  // TODO: check if this is correct
   public Bytes serialize() {
     return Bytes.wrap(
         pubkey.getPublicKey().toBytesCompressed(),
@@ -163,8 +170,8 @@ public class DepositData implements SimpleOffsetSerializable {
     return Bytes32.rightPad(
         HashTreeUtil.merkleize(
             Arrays.asList(
-                HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, pubkey.toBytes()),
-                HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, withdrawal_credentials),
+                HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_BASIC, pubkey.toBytes()),
+                HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_BASIC, withdrawal_credentials),
                 HashTreeUtil.hash_tree_root(
                     SSZTypes.BASIC, SSZ.encodeUInt64(amount.longValue())))));
   }
@@ -172,9 +179,9 @@ public class DepositData implements SimpleOffsetSerializable {
   public Bytes32 hash_tree_root() {
     return HashTreeUtil.merkleize(
         Arrays.asList(
-            HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, pubkey.toBytes()),
-            HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, withdrawal_credentials),
+            HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_BASIC, pubkey.toBytes()),
+            HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_BASIC, withdrawal_credentials),
             HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(amount.longValue())),
-            HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, signature.toBytes())));
+            HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_BASIC, signature.toBytes())));
   }
 }

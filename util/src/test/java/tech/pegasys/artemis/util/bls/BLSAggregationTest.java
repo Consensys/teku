@@ -61,7 +61,8 @@ public class BLSAggregationTest {
     List<Bytes> messages = Arrays.asList(message, message, message);
 
     assertThrows(
-        IllegalArgumentException.class, () -> signature.checkSignature(publicKeys, messages, 0));
+        IllegalArgumentException.class,
+        () -> signature.checkSignature(publicKeys, messages, Bytes.ofUnsignedLong(0L)));
   }
 
   @Test
@@ -75,11 +76,13 @@ public class BLSAggregationTest {
     BLSKeyPair keyPair3 = BLSKeyPair.random();
     BLSKeyPair keyPair4 = BLSKeyPair.random();
 
+    Bytes domain = Bytes.ofUnsignedLong(0L);
+
     // 1 & 2 sign message1; 3 & 4 sign message2
-    BLSSignature signature1 = BLSSignature.sign(keyPair1, message1, 0);
-    BLSSignature signature2 = BLSSignature.sign(keyPair2, message1, 0);
-    BLSSignature signature3 = BLSSignature.sign(keyPair3, message2, 0);
-    BLSSignature signature4 = BLSSignature.sign(keyPair4, message2, 0);
+    BLSSignature signature1 = BLSSignature.sign(keyPair1, message1, domain);
+    BLSSignature signature2 = BLSSignature.sign(keyPair2, message1, domain);
+    BLSSignature signature3 = BLSSignature.sign(keyPair3, message2, domain);
+    BLSSignature signature4 = BLSSignature.sign(keyPair4, message2, domain);
 
     // Aggregate keys 1 & 2, and keys 3 & 4
     BLSPublicKey aggregatePublicKey12 =
@@ -96,7 +99,7 @@ public class BLSAggregationTest {
         aggregateSignature.checkSignature(
             Arrays.asList(aggregatePublicKey12, aggregatePublicKey34),
             Arrays.asList(message1, message2),
-            0));
+            domain));
   }
 
   @Test
@@ -110,11 +113,13 @@ public class BLSAggregationTest {
     BLSKeyPair keyPair3 = BLSKeyPair.random();
     BLSKeyPair keyPair4 = BLSKeyPair.random();
 
+    Bytes domain = Bytes.ofUnsignedLong(0L);
+
     // 1 & 2 sign message1; 3 & 4 sign message2
-    BLSSignature signature1 = BLSSignature.sign(keyPair1, message1, 0);
-    BLSSignature signature2 = BLSSignature.sign(keyPair2, message1, 0);
-    BLSSignature signature3 = BLSSignature.sign(keyPair3, message2, 0);
-    BLSSignature signature4 = BLSSignature.sign(keyPair4, message2, 0);
+    BLSSignature signature1 = BLSSignature.sign(keyPair1, message1, domain);
+    BLSSignature signature2 = BLSSignature.sign(keyPair2, message1, domain);
+    BLSSignature signature3 = BLSSignature.sign(keyPair3, message2, domain);
+    BLSSignature signature4 = BLSSignature.sign(keyPair4, message2, domain);
 
     // Aggregate keys 1 & 2, and keys 3 & 4
     BLSPublicKey aggregatePublicKey12 =
@@ -131,6 +136,6 @@ public class BLSAggregationTest {
         aggregateSignature.checkSignature(
             Arrays.asList(aggregatePublicKey12, aggregatePublicKey34),
             Arrays.asList(message2, message1),
-            0));
+            domain));
   }
 }

@@ -7,10 +7,14 @@ repositories {
 dependencies {
   testCompile project(':util')
   testCompile project(':ethereum:datastructures')
+  testCompile project(':ethereum:statetransition')
+  testCompile project(':storage')
 
   compile group: 'com.fasterxml.jackson.dataformat', name: 'jackson-dataformat-yaml', version: '2.9.8'
   testCompile 'org.miracl.milagro.amcl:milagro-crypto-java:0.4.0'
   implementation 'org.apache.tuweni:tuweni-bytes'
+  implementation 'org.apache.commons:commons-lang3:3.6'
+  testImplementation 'org.mockito:mockito-core:2.28.2'
   testCompile 'com.fasterxml.jackson.core:jackson-databind'
   testCompile 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
   testCompile 'org.junit.jupiter:junit-jupiter-api'
