@@ -173,10 +173,12 @@ public class ForkChoiceUtil {
   /**
    * @param store
    * @param block
+   * @param st
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.1/specs/core/0_fork-choice.md#on_block</a>
    */
-  public static void on_block(Store store, BeaconBlock block) throws StateTransitionException {
+  public static void on_block(Store store, BeaconBlock block, StateTransition st)
+      throws StateTransitionException {
     // Make a copy of the state to avoid mutability issues
     checkArgument(
         store.getBlock_states().containsKey(block.getParent_root()),
@@ -216,7 +218,6 @@ public class ForkChoiceUtil {
         "on_block: Check that block is later than the finalized epoch slot");
 
     // Check the block is valid and compute the post-state
-    StateTransition st = new StateTransition(true);
     BeaconState state = st.initiate(pre_state, block, true);
 
     // Add new state for this block to the store

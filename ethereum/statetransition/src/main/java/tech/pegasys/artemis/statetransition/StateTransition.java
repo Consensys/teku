@@ -17,6 +17,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.artemis.datastructures.Constants.SLOTS_PER_EPOCH;
 import static tech.pegasys.artemis.datastructures.Constants.SLOTS_PER_HISTORICAL_ROOT;
 import static tech.pegasys.artemis.datastructures.Constants.ZERO_HASH;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_of_slot;
 import static tech.pegasys.artemis.statetransition.util.BlockProcessorUtil.process_block_header;
 import static tech.pegasys.artemis.statetransition.util.BlockProcessorUtil.process_eth1_data;
 import static tech.pegasys.artemis.statetransition.util.BlockProcessorUtil.process_operations;
@@ -29,6 +30,7 @@ import static tech.pegasys.artemis.statetransition.util.EpochProcessorUtil.proce
 import static tech.pegasys.artemis.statetransition.util.EpochProcessorUtil.process_slashings;
 
 import com.google.common.primitives.UnsignedLong;
+import java.util.Optional;
 import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
@@ -44,11 +46,16 @@ public class StateTransition {
   private static final ALogger STDOUT = new ALogger("stdout");
 
   private boolean printEnabled = false;
-
-  public StateTransition() {}
+  private final Optional<EpochMetrics> epochMetrics;
 
   public StateTransition(boolean printEnabled) {
     this.printEnabled = printEnabled;
+    this.epochMetrics = Optional.empty();
+  }
+
+  public StateTransition(boolean printEnabled, EpochMetrics epochMetrics) {
+    this.printEnabled = printEnabled;
+    this.epochMetrics = Optional.of(epochMetrics);
   }
 
   /**
@@ -66,8 +73,17 @@ public class StateTransition {
       BeaconStateWithCache state, BeaconBlock block, boolean validate_state_root)
       throws StateTransitionException {
     try {
+      final UnsignedLong previousSlot = state.getSlot();
       // Process slots (including those with no blocks) since block
       process_slots(state, block.getSlot(), printEnabled);
+
+      epochMetrics.ifPresent(
+          metrics -> {
+            final UnsignedLong endEpoch = compute_epoch_of_slot(block.getSlot());
+            if (endEpoch.compareTo(compute_epoch_of_slot(previousSlot)) > 0) {
+              metrics.onEpoch(state);
+            }
+          });
 
       // Process_block
       process_block(state, block);

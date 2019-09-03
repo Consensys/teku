@@ -135,7 +135,7 @@ class sanity_processing extends TestSuite {
 
       Store genesis_store = ForkChoiceUtil.get_genesis_store(spre);
       for (int i = 1; i < blocks.size(); i++) {
-        ForkChoiceUtil.on_block(genesis_store, blocks.get(i));
+        ForkChoiceUtil.on_block(genesis_store, blocks.get(i), new StateTransition(true));
       }
       //      Object hash_tree_root = genesis_store.getFinalized_checkpoint().hash_tree_root();
       Object head = ForkChoiceUtil.get_head(genesis_store);
