@@ -156,6 +156,7 @@ public class AttestationData implements SimpleOffsetSerializable, Merkleizable, 
     this.crosslink = crosslink;
   }
 
+  @Override
   public Bytes32 hash_tree_root() {
     return HashTreeUtil.merkleize(
         Arrays.asList(

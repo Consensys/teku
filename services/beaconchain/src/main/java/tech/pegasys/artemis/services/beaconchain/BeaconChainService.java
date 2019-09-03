@@ -44,7 +44,7 @@ public class BeaconChainService implements ServiceInterface {
   public BeaconChainService() {}
 
   @Override
-  @SuppressWarnings({"unchecked", "rawtypes"})
+  @SuppressWarnings("rawtypes")
   public void init(ServiceConfig config) {
     this.eventBus = config.getEventBus();
     this.eventBus.register(this);

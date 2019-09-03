@@ -41,8 +41,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.io.Resources;
 import org.assertj.core.util.Arrays;
 import org.junit.jupiter.params.provider.Arguments;
-import pegasys.artemis.reference.TestObject;
-import pegasys.artemis.reference.TestSet;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
@@ -113,8 +111,9 @@ public abstract class TestSuite {
   }
 
   public static Integer loadMetaData(TestSet testSet) {
-    return (Integer)
-        findTestsByPath(testSet).map(e -> e.get()).collect(Collectors.toList()).get(0)[0];
+    try (Stream<Arguments> testSetArgs = findTestsByPath(testSet)) {
+      return (Integer) testSetArgs.map(e -> e.get()).collect(Collectors.toList()).get(0)[0];
+    }
   }
 
   public static InputStream getInputStreamFromPath(Path path) {
@@ -139,13 +138,14 @@ public abstract class TestSuite {
       InputStream inputStream = new FileInputStream(path.toFile());
       readBytes = Bytes.wrap(inputStream.readAllBytes());
     } catch (FileNotFoundException e) {
-      e.printStackTrace();
+      LOG.log(Level.WARN, e.toString());
     } catch (IOException e) {
-      e.printStackTrace();
+      LOG.log(Level.WARN, e.toString());
     }
     return readBytes;
   }
 
+  @SuppressWarnings({"rawtypes"})
   public static Object getObjectFromYAMLInputStream(InputStream in) {
     ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
     Object object = null;
@@ -162,7 +162,6 @@ public abstract class TestSuite {
   }
 
   @MustBeClosed
-  @SuppressWarnings({"unchecked", "rawtypes"})
   public static Stream<Arguments> findTestsByPath(TestSet testSet) {
     Path path = Path.of(pathToTests.toString(), testSet.getPath().toString());
     try (Stream<Path> walk = Files.walk(path)) {
@@ -197,14 +196,16 @@ public abstract class TestSuite {
     return null;
   }
 
+  @SuppressWarnings({"rawtypes"})
+  @MustBeClosed
   public static Stream<Arguments> convertArrayArguments(Class className, Stream<Arguments> input) {
     List<Arguments> output = new ArrayList<Arguments>();
     Iterator<Arguments> itr = input.collect(Collectors.toList()).iterator();
     while (itr.hasNext()) {
-      List<Object> outputObjects = new ArrayList<Object>();
+      List<Object> outputObjects = new ArrayList<>();
       List<Object> objects = Arrays.asList(itr.next().get());
       Iterator<Object> itrObject = objects.iterator();
-      List arrayArguments = new ArrayList();
+      List<Object> arrayArguments = new ArrayList<>();
       while (itrObject.hasNext()) {
         Object object = itrObject.next();
         if (object.getClass().equals(className)) {
@@ -219,6 +220,7 @@ public abstract class TestSuite {
     return output.stream();
   }
 
+  @SuppressWarnings({"rawtypes"})
   private static Object parseObjectFromFile(Class className, Path path, Object object) {
     if (path != null) {
       Iterator<Path> itr = path.iterator();
@@ -289,7 +291,6 @@ public abstract class TestSuite {
     return findTestsByPath(testSet);
   }
 
-  @SuppressWarnings({"unchecked", "rawtypes"})
   @MustBeClosed
   public static Stream<Arguments> messageHashCompressedSetup(Path path) {
 
@@ -299,7 +300,6 @@ public abstract class TestSuite {
     return findTestsByPath(testSet);
   }
 
-  @SuppressWarnings({"unchecked", "rawtypes"})
   @MustBeClosed
   public static Stream<Arguments> privateKeyPublicKeySetup(Path path) {
 
@@ -309,7 +309,6 @@ public abstract class TestSuite {
     return findTestsByPath(testSet);
   }
 
-  @SuppressWarnings({"unchecked", "rawtypes"})
   @MustBeClosed
   public static Stream<Arguments> messageHashUncompressedSetup(Path path) {
 
@@ -319,7 +318,6 @@ public abstract class TestSuite {
     return findTestsByPath(testSet);
   }
 
-  @SuppressWarnings({"unchecked", "rawtypes"})
   @MustBeClosed
   public static Stream<Arguments> signMessagesSetup(Path path) {
 
@@ -331,7 +329,6 @@ public abstract class TestSuite {
     return findTestsByPath(testSet);
   }
 
-  @SuppressWarnings({"unchecked", "rawtypes"})
   @MustBeClosed
   public static Stream<Arguments> aggregateSignaturesSetup(Path path) {
 
@@ -341,7 +338,6 @@ public abstract class TestSuite {
     return findTestsByPath(testSet);
   }
 
-  @SuppressWarnings({"rawtypes"})
   @MustBeClosed
   public static Stream<Arguments> epochProcessingSetup(Path path, Path configPath)
       throws Exception {
@@ -354,8 +350,8 @@ public abstract class TestSuite {
     return findTestsByPath(testSet);
   }
 
-  @SuppressWarnings({"unchecked", "rawtypes"})
   @MustBeClosed
+  @SuppressWarnings({"rawtypes"})
   public static Stream<Arguments> sszStaticMerkleizableSetup(
       Path path, Path configPath, Class className) throws Exception {
     loadConfigFromPath(configPath);
@@ -367,8 +363,8 @@ public abstract class TestSuite {
     return findTestsByPath(testSet);
   }
 
-  @SuppressWarnings({"unchecked", "rawtypes"})
   @MustBeClosed
+  @SuppressWarnings({"rawtypes"})
   public static Stream<Arguments> sszStaticRootSigningRootSetup(
       Path path, Path configPath, Class className) throws Exception {
     loadConfigFromPath(configPath);
@@ -381,7 +377,6 @@ public abstract class TestSuite {
     return findTestsByPath(testSet);
   }
 
-  @SuppressWarnings({"unchecked", "rawtypes"})
   @MustBeClosed
   public static Stream<Arguments> sszStaticAttestationSetup(Path path, Path configPath)
       throws Exception {
@@ -394,7 +389,6 @@ public abstract class TestSuite {
     return findTestsByPath(testSet);
   }
 
-  @SuppressWarnings({"unchecked", "rawtypes"})
   @MustBeClosed
   public static Stream<Arguments> attestationSlashingSetup(Path path, Path configPath)
       throws Exception {
@@ -407,7 +401,6 @@ public abstract class TestSuite {
     return findTestsByPath(testSet);
   }
 
-  @SuppressWarnings({"unchecked", "rawtypes"})
   @MustBeClosed
   public static Stream<Arguments> genericBlockHeaderSetup(Path path, Path configPath)
       throws Exception {
@@ -420,7 +413,6 @@ public abstract class TestSuite {
     return findTestsByPath(testSet);
   }
 
-  @SuppressWarnings({"unchecked", "rawtypes"})
   @MustBeClosed
   public static Stream<Arguments> blockHeaderSuccessSetup(Path path, Path configPath)
       throws Exception {
@@ -434,7 +426,6 @@ public abstract class TestSuite {
     return findTestsByPath(testSet);
   }
 
-  @SuppressWarnings({"unchecked", "rawtypes"})
   @MustBeClosed
   public static Stream<Arguments> invalidSignatureBlockHeaderSetup(Path path, Path configPath)
       throws Exception {
@@ -448,7 +439,6 @@ public abstract class TestSuite {
     return findTestsByPath(testSet);
   }
 
-  @SuppressWarnings({"unchecked", "rawtypes"})
   @MustBeClosed
   public static Stream<Arguments> operationDepositType1Setup(Path path, Path configPath)
       throws Exception {
@@ -463,7 +453,6 @@ public abstract class TestSuite {
     return findTestsByPath(testSet);
   }
 
-  @SuppressWarnings({"rawtypes"})
   @MustBeClosed
   public static Stream<Arguments> operationDepositType2Setup(Path path, Path configPath)
       throws Exception {
@@ -476,7 +465,6 @@ public abstract class TestSuite {
     return findTestsByPath(testSet);
   }
 
-  @SuppressWarnings({"rawtypes"})
   @MustBeClosed
   public static Stream<Arguments> operationDepositType3Setup(Path path, Path configPath)
       throws Exception {
@@ -490,7 +478,6 @@ public abstract class TestSuite {
     return findTestsByPath(testSet);
   }
 
-  @SuppressWarnings({"rawtypes"})
   @MustBeClosed
   public static Stream<Arguments> operationProposerSlashingType1Setup(Path path, Path configPath)
       throws Exception {
@@ -503,7 +490,6 @@ public abstract class TestSuite {
     return findTestsByPath(testSet);
   }
 
-  @SuppressWarnings({"rawtypes"})
   @MustBeClosed
   public static Stream<Arguments> operationProposerSlashingType2Setup(Path path, Path configPath)
       throws Exception {
@@ -517,7 +503,6 @@ public abstract class TestSuite {
     return findTestsByPath(testSet);
   }
 
-  @SuppressWarnings({"rawtypes"})
   @MustBeClosed
   public static Stream<Arguments> operationProposerSlashingType3Setup(Path path, Path configPath)
       throws Exception {
@@ -531,7 +516,6 @@ public abstract class TestSuite {
     return findTestsByPath(testSet);
   }
 
-  @SuppressWarnings({"rawtypes"})
   @MustBeClosed
   public static Stream<Arguments> operationVoluntaryExitType1Setup(Path path, Path configPath)
       throws Exception {
@@ -545,7 +529,6 @@ public abstract class TestSuite {
     return findTestsByPath(testSet);
   }
 
-  @SuppressWarnings({"rawtypes"})
   @MustBeClosed
   public static Stream<Arguments> operationVoluntaryExitType2Setup(Path path, Path configPath)
       throws Exception {
@@ -558,7 +541,6 @@ public abstract class TestSuite {
     return findTestsByPath(testSet);
   }
 
-  @SuppressWarnings({"unchecked", "rawtypes"})
   @MustBeClosed
   public static Stream<Arguments> operationVoluntaryExitType3Setup(Path path, Path configPath)
       throws Exception {
@@ -572,7 +554,6 @@ public abstract class TestSuite {
     return findTestsByPath(testSet);
   }
 
-  @SuppressWarnings({"rawtypes"})
   @MustBeClosed
   public static Stream<Arguments> sanityMultiBlockSetup(Path path, Path configPath)
       throws Exception {
@@ -589,10 +570,11 @@ public abstract class TestSuite {
       testSet.add(new TestObject("blocks_" + i + ".yaml", BeaconBlock.class, null));
     }
 
-    return convertArrayArguments(BeaconBlock.class, findTestsByPath(testSet));
+    try (Stream<Arguments> testSetArgs = findTestsByPath(testSet)) {
+      return convertArrayArguments(BeaconBlock.class, testSetArgs);
+    }
   }
 
-  @SuppressWarnings({"unchecked", "rawtypes"})
   @MustBeClosed
   public static Stream<Arguments> sanityMultiBlockSetupInvalid(Path path, Path configPath)
       throws Exception {
@@ -608,10 +590,11 @@ public abstract class TestSuite {
       testSet.add(new TestObject("blocks_" + i + ".yaml", BeaconBlock.class, null));
     }
 
-    return convertArrayArguments(BeaconBlock.class, findTestsByPath(testSet));
+    try (Stream<Arguments> testSetArgs = findTestsByPath(testSet)) {
+      return convertArrayArguments(BeaconBlock.class, testSetArgs);
+    }
   }
 
-  @SuppressWarnings({"unchecked", "rawtypes"})
   @MustBeClosed
   public static Stream<Arguments> sanitySlotSetup(Path path, Path configPath) throws Exception {
     loadConfigFromPath(configPath);
@@ -624,7 +607,6 @@ public abstract class TestSuite {
     return findTestsByPath(testSet);
   }
 
-  @SuppressWarnings({"unchecked", "rawtypes"})
   @MustBeClosed
   public static Stream<Arguments> shufflingShuffleSetup(Path path, Path configPath)
       throws Exception {
@@ -638,7 +620,6 @@ public abstract class TestSuite {
     return findTestsByPath(testSet);
   }
 
-  @SuppressWarnings({"unchecked", "rawtypes"})
   @MustBeClosed
   public static Stream<Arguments> genesisInitializationSetup(Path path, Path configPath)
       throws Exception {
@@ -656,10 +637,11 @@ public abstract class TestSuite {
       testSet.add(new TestObject("deposits_" + i + ".yaml", Deposit.class, null));
     }
 
-    return convertArrayArguments(Deposit.class, findTestsByPath(testSet));
+    try (Stream<Arguments> testSetArgs = findTestsByPath(testSet)) {
+      return convertArrayArguments(Deposit.class, testSetArgs);
+    }
   }
 
-  @SuppressWarnings({"unchecked", "rawtypes"})
   @MustBeClosed
   public static Stream<Arguments> genesisValiditySetup(Path path, Path configPath)
       throws Exception {

@@ -422,7 +422,6 @@ public class SimpleOffsetSerializer {
     return new SSZVector<>(newList, classInfo);
   }
 
-  @SuppressWarnings("rawtypes")
   public static Object deserializePrimitive(
       Class classInfo, SSZReader reader, MutableInt bytePointer) {
     switch (classInfo.getSimpleName()) {

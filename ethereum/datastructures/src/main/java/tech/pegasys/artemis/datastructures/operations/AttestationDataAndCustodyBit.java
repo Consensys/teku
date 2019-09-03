@@ -110,6 +110,7 @@ public class AttestationDataAndCustodyBit
     this.data = data;
   }
 
+  @Override
   public Bytes32 hash_tree_root() {
     return HashTreeUtil.merkleize(
         Arrays.asList(

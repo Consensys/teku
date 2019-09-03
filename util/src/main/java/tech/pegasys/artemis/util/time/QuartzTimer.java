@@ -34,7 +34,6 @@ public class QuartzTimer implements Timer {
   private int startDelay;
   private int interval;
 
-  @SuppressWarnings({"unchecked"})
   public QuartzTimer(EventBus eventBus, Integer startDelay, Integer interval)
       throws IllegalArgumentException {
     SchedulerFactory sf = new StdSchedulerFactory();
