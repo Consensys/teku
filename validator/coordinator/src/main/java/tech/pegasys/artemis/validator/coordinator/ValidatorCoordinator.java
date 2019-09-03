@@ -13,7 +13,6 @@
 
 package tech.pegasys.artemis.validator.coordinator;
 
-import static java.lang.StrictMath.toIntExact;
 import static tech.pegasys.artemis.datastructures.Constants.DOMAIN_ATTESTATION;
 import static tech.pegasys.artemis.datastructures.Constants.GENESIS_SLOT;
 import static tech.pegasys.artemis.datastructures.Constants.MAX_ATTESTATIONS;
@@ -594,10 +593,12 @@ public class ValidatorCoordinator {
     int endIndex =
         startIndex
             + (numValidators / numNodes - 1)
-            + toIntExact(Math.round((double) nodeCounter / Math.max(1, numNodes - 1)));
+            + Math.floorDiv(nodeCounter, Math.max(1, numNodes - 1));
     endIndex = Math.min(endIndex, numValidators - 1);
 
-    LOG.log(Level.INFO, "startIndex: " + startIndex + " endIndex: " + endIndex);
+    STDOUT.log(
+        Level.INFO,
+        "nodeCounter: " + nodeCounter + " startIndex: " + startIndex + " endIndex: " + endIndex);
     return new ImmutablePair<>(startIndex, endIndex);
   }
 }
