@@ -149,7 +149,6 @@ public class BeaconStateUtil {
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#deposits</a>
    */
   public static void process_deposit(BeaconState state, Deposit deposit) {
-    /*
     checkArgument(
         is_valid_merkle_branch(
             deposit.getData().hash_tree_root(),
@@ -158,7 +157,6 @@ public class BeaconStateUtil {
             toIntExact(state.getEth1_deposit_index().longValue()),
             state.getEth1_data().getDeposit_root()),
         "process_deposit: Verify the Merkle branch");
-        */
 
     state.setEth1_deposit_index(state.getEth1_deposit_index().plus(UnsignedLong.ONE));
 
@@ -586,14 +584,14 @@ public class BeaconStateUtil {
       Bytes hashBytes = Bytes.EMPTY;
       for (int i = 0; i < (list_size + 255) / 256; i++) {
         Bytes iAsBytes4 = int_to_bytes(i, 4);
-        hashBytes = Bytes.wrap(hashBytes, Hash.keccak256(Bytes.wrap(seed, roundAsByte, iAsBytes4)));
+        hashBytes = Bytes.wrap(hashBytes, Hash.sha2_256(Bytes.wrap(seed, roundAsByte, iAsBytes4)));
       }
 
       // This needs to be unsigned modulo.
       int pivot =
           toIntExact(
               Long.remainderUnsigned(
-                  bytes_to_int(Hash.keccak256(Bytes.wrap(seed, roundAsByte)).slice(0, 8)),
+                  bytes_to_int(Hash.sha2_256(Bytes.wrap(seed, roundAsByte)).slice(0, 8)),
                   list_size));
 
       for (int i = 0; i < list_size; i++) {

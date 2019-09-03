@@ -21,6 +21,7 @@ import java.nio.file.Paths;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.junit.BouncyCastleExtension;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -52,6 +53,7 @@ import tech.pegasys.artemis.util.hashtree.Merkleizable;
 import tech.pegasys.artemis.util.hashtree.SigningRoot;
 
 @ExtendWith(BouncyCastleExtension.class)
+@Disabled
 public class ssz_static extends TestSuite {
 
   @ParameterizedTest(name = "{index} root of Merkleizable")

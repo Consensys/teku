@@ -13,6 +13,8 @@
 
 package tech.pegasys.artemis.reference.phase0.operations;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static tech.pegasys.artemis.statetransition.util.BlockProcessorUtil.process_attestations;
 
@@ -35,22 +37,57 @@ import tech.pegasys.artemis.statetransition.util.BlockProcessingException;
 @ExtendWith(BouncyCastleExtension.class)
 public class attestation extends TestSuite {
 
-  @ParameterizedTest(name = "{index}. process Attestation attestation={0} -> pre={1}")
-  @MethodSource("processAttestationSetup")
-  void processAttestation(Attestation attestation, BeaconState pre) {
-    List<Attestation> attestations = new ArrayList<Attestation>();
+  @ParameterizedTest(name = "{index}. mainnet process attestation: {4}")
+  @MethodSource("mainnetAttestationSetup")
+  void mainnetProcessAttestation(
+      Attestation attestation,
+      BeaconState pre,
+      BeaconState post,
+      Boolean succesTest,
+      String testName)
+      throws Exception {
+    List<Attestation> attestations = new ArrayList<>();
     attestations.add(attestation);
-    assertThrows(
-        BlockProcessingException.class,
-        () -> {
-          process_attestations(pre, attestations);
-        });
+    if (succesTest) {
+      assertDoesNotThrow(() -> process_attestations(pre, attestations));
+      assertEquals(pre, post);
+    } else {
+      assertThrows(BlockProcessingException.class, () -> process_attestations(pre, attestations));
+    }
+  }
+
+  @ParameterizedTest(name = "{index}. minimal process attestation: {4}")
+  @MethodSource("minimalAttestationSetup")
+  void minimalProcessAttestation(
+      Attestation attestation,
+      BeaconState pre,
+      BeaconState post,
+      Boolean succesTest,
+      String testName)
+      throws Exception {
+    List<Attestation> attestations = new ArrayList<>();
+    attestations.add(attestation);
+    if (succesTest) {
+      assertDoesNotThrow(() -> process_attestations(pre, attestations));
+      assertEquals(pre, post);
+    } else {
+      assertThrows(BlockProcessingException.class, () -> process_attestations(pre, attestations));
+    }
   }
 
   @MustBeClosed
-  static Stream<Arguments> processAttestationSetup() throws Exception {
-    Path configPath = Paths.get("mainnet", "phase0");
-    Path path = Paths.get("mainnet", "phase0", "operations", "attestation", "pyspec_tests");
-    return sszStaticAttestationSetup(path, configPath);
+  static Stream<Arguments> attestationSetup(String config) throws Exception {
+    Path path = Paths.get(config, "phase0", "operations", "attestation", "pyspec_tests");
+    return operationSetup(path, Paths.get(config), "attestation.ssz", Attestation.class);
+  }
+
+  @MustBeClosed
+  static Stream<Arguments> minimalAttestationSetup() throws Exception {
+    return attestationSetup("minimal");
+  }
+
+  @MustBeClosed
+  static Stream<Arguments> mainnetAttestationSetup() throws Exception {
+    return attestationSetup("mainnet");
   }
 }

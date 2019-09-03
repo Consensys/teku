@@ -68,7 +68,7 @@ public class SimpleOffsetSerializer {
 
   public static HashMap<Class, ReflectionInformation> classReflectionInfo = new HashMap<>();
 
-  static {
+  public static void setConstants() {
     classReflectionInfo.put(BeaconBlock.class, new ReflectionInformation(BeaconBlock.class));
     classReflectionInfo.put(
         BeaconBlockBody.class, new ReflectionInformation(BeaconBlockBody.class));
@@ -103,6 +103,10 @@ public class SimpleOffsetSerializer {
         PendingAttestation.class, new ReflectionInformation(PendingAttestation.class));
     classReflectionInfo.put(Validator.class, new ReflectionInformation(Validator.class));
     classReflectionInfo.put(HelloMessage.class, new ReflectionInformation(HelloMessage.class));
+  }
+
+  static {
+    setConstants();
   }
 
   public static Bytes serialize(SimpleOffsetSerializable value) {

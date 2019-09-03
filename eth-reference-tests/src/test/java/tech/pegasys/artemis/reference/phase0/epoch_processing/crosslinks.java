@@ -30,18 +30,36 @@ import tech.pegasys.artemis.statetransition.util.EpochProcessorUtil;
 
 @ExtendWith(BouncyCastleExtension.class)
 public class crosslinks extends TestSuite {
-  private static final Path configPath = Paths.get("mainnet");
+
+  private static int testCounter = 0;
 
   @ParameterizedTest(name = "{index}. process crosslinks pre={0} -> post={1}")
-  @MethodSource("crosslinkSetup")
-  void processCrosslinks(BeaconState pre, BeaconState post) throws Exception {
+  @MethodSource("mainnetCrosslinkSetup")
+  void mainnetProcessCrosslinks(BeaconState pre, BeaconState post) throws Exception {
+    EpochProcessorUtil.process_crosslinks(pre);
+    assertEquals(pre, post);
+  }
+
+  @ParameterizedTest(name = "{index}. process crosslinks pre={0} -> post={1}")
+  @MethodSource("minimalCrosslinkSetup")
+  void minimalProcessCrosslinks(BeaconState pre, BeaconState post) throws Exception {
     EpochProcessorUtil.process_crosslinks(pre);
     assertEquals(pre, post);
   }
 
   @MustBeClosed
-  static Stream<Arguments> crosslinkSetup() throws Exception {
-    Path path = Paths.get("mainnet", "phase0", "epoch_processing", "crosslinks", "pyspec_tests");
-    return epochProcessingSetup(path, configPath);
+  static Stream<Arguments> crosslinkSetup(String config) throws Exception {
+    Path path = Paths.get(config, "phase0", "epoch_processing", "crosslinks", "pyspec_tests");
+    return epochProcessingSetup(path, Paths.get(config));
+  }
+
+  @MustBeClosed
+  static Stream<Arguments> minimalCrosslinkSetup() throws Exception {
+    return crosslinkSetup("minimal");
+  }
+
+  @MustBeClosed
+  static Stream<Arguments> mainnetCrosslinkSetup() throws Exception {
+    return crosslinkSetup("mainnet");
   }
 }

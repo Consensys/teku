@@ -33,21 +33,36 @@ public class justification_and_finalization extends TestSuite {
   private static final Path configPath = Paths.get("mainnet");
 
   @ParameterizedTest(name = "{index}. process justification and finalization pre={0} -> post={1}")
-  @MethodSource("justificationAndFinalizationSetup")
-  void processJusticationAndFinalization(BeaconState pre, BeaconState post) throws Exception {
+  @MethodSource("mainnetProcessJusticationAndFinalizationSetup")
+  void mainnetProcessJusticationAndFinalization(BeaconState pre, BeaconState post)
+      throws Exception {
+    EpochProcessorUtil.process_justification_and_finalization(pre);
+    assertEquals(pre, post);
+  }
+
+  @ParameterizedTest(name = "{index}. process justification and finalization pre={0} -> post={1}")
+  @MethodSource("minimalProcessJusticationAndFinalizationSetup")
+  void minimalProcessJusticationAndFinalization(BeaconState pre, BeaconState post)
+      throws Exception {
     EpochProcessorUtil.process_justification_and_finalization(pre);
     assertEquals(pre, post);
   }
 
   @MustBeClosed
-  static Stream<Arguments> justificationAndFinalizationSetup() throws Exception {
+  static Stream<Arguments> justificationAndFinalizationSetup(String config) throws Exception {
     Path path =
         Paths.get(
-            "mainnet",
-            "phase0",
-            "epoch_processing",
-            "justification_and_finalization",
-            "pyspec_tests");
-    return epochProcessingSetup(path, configPath);
+            config, "phase0", "epoch_processing", "justification_and_finalization", "pyspec_tests");
+    return epochProcessingSetup(path, Paths.get(config));
+  }
+
+  @MustBeClosed
+  static Stream<Arguments> minimalProcessJusticationAndFinalizationSetup() throws Exception {
+    return justificationAndFinalizationSetup("minimal");
+  }
+
+  @MustBeClosed
+  static Stream<Arguments> mainnetProcessJusticationAndFinalizationSetup() throws Exception {
+    return justificationAndFinalizationSetup("mainnet");
   }
 }
