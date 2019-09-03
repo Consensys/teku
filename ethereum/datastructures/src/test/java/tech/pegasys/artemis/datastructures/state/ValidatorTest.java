@@ -31,19 +31,19 @@ class ValidatorTest {
   private UnsignedLong activationEpoch = randomUnsignedLong();
   private UnsignedLong exitEpoch = randomUnsignedLong();
   private UnsignedLong withdrawalEpoch = randomUnsignedLong();
-  private boolean initiatedExit = false;
+  private boolean slashed = false;
   private UnsignedLong effectiveBalance = randomUnsignedLong();
 
   private Validator validator =
       new Validator(
           pubkey,
           withdrawalCredentials,
+          effectiveBalance,
+          slashed,
           activationEligibilityEpoch,
           activationEpoch,
           exitEpoch,
-          withdrawalEpoch,
-          initiatedExit,
-          effectiveBalance);
+          withdrawalEpoch);
 
   @Test
   void equalsReturnsTrueWhenObjectAreSame() {
@@ -58,12 +58,12 @@ class ValidatorTest {
         new Validator(
             pubkey,
             withdrawalCredentials,
+            effectiveBalance,
+            slashed,
             activationEligibilityEpoch,
             activationEpoch,
             exitEpoch,
-            withdrawalEpoch,
-            initiatedExit,
-            effectiveBalance);
+            withdrawalEpoch);
 
     assertEquals(validator, testValidator);
   }
@@ -78,12 +78,12 @@ class ValidatorTest {
         new Validator(
             differentPublicKey,
             withdrawalCredentials,
+            effectiveBalance,
+            slashed,
             activationEligibilityEpoch,
             activationEpoch,
             exitEpoch,
-            withdrawalEpoch,
-            initiatedExit,
-            effectiveBalance);
+            withdrawalEpoch);
 
     assertNotEquals(validator, testValidator);
   }
@@ -94,12 +94,12 @@ class ValidatorTest {
         new Validator(
             pubkey,
             withdrawalCredentials.not(),
+            effectiveBalance,
+            slashed,
             activationEligibilityEpoch,
             activationEpoch,
             exitEpoch,
-            withdrawalEpoch,
-            initiatedExit,
-            effectiveBalance);
+            withdrawalEpoch);
 
     assertNotEquals(validator, testValidator);
   }
@@ -110,12 +110,12 @@ class ValidatorTest {
         new Validator(
             pubkey,
             withdrawalCredentials,
+            effectiveBalance,
+            slashed,
             activationEligibilityEpoch,
             activationEpoch.plus(randomUnsignedLong()),
             exitEpoch,
-            withdrawalEpoch,
-            initiatedExit,
-            effectiveBalance);
+            withdrawalEpoch);
 
     assertNotEquals(validator, testValidator);
   }
@@ -126,12 +126,12 @@ class ValidatorTest {
         new Validator(
             pubkey,
             withdrawalCredentials,
+            effectiveBalance,
+            slashed,
             activationEligibilityEpoch,
             activationEpoch,
             exitEpoch.plus(randomUnsignedLong()),
-            withdrawalEpoch,
-            initiatedExit,
-            effectiveBalance);
+            withdrawalEpoch);
 
     assertNotEquals(validator, testValidator);
   }
@@ -142,12 +142,12 @@ class ValidatorTest {
         new Validator(
             pubkey,
             withdrawalCredentials,
+            effectiveBalance,
+            slashed,
             activationEligibilityEpoch,
             activationEpoch,
             exitEpoch,
-            withdrawalEpoch.plus(randomUnsignedLong()),
-            initiatedExit,
-            effectiveBalance);
+            withdrawalEpoch.plus(randomUnsignedLong()));
 
     assertNotEquals(validator, testValidator);
   }
@@ -158,12 +158,12 @@ class ValidatorTest {
         new Validator(
             pubkey,
             withdrawalCredentials,
+            effectiveBalance,
+            !slashed,
             activationEligibilityEpoch,
             activationEpoch,
             exitEpoch,
-            withdrawalEpoch,
-            !initiatedExit,
-            effectiveBalance);
+            withdrawalEpoch);
 
     assertNotEquals(validator, testValidator);
   }

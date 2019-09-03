@@ -21,47 +21,48 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.artemis.datastructures.Copyable;
+import tech.pegasys.artemis.util.SSZTypes.SSZContainer;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
-public class Crosslink implements Copyable<Crosslink>, SimpleOffsetSerializable {
+public class Crosslink implements Copyable<Crosslink>, SimpleOffsetSerializable, SSZContainer {
 
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
   public static final int SSZ_FIELD_COUNT = 5;
 
   private UnsignedLong shard;
+  private Bytes32 parent_root;
   private UnsignedLong start_epoch;
   private UnsignedLong end_epoch;
-  private Bytes32 parent_root;
   private Bytes32 data_root;
 
   public Crosslink(
       UnsignedLong shard,
+      Bytes32 parent_root,
       UnsignedLong start_epoch,
       UnsignedLong end_epoch,
-      Bytes32 parent_root,
       Bytes32 data_root) {
     this.shard = shard;
+    this.parent_root = parent_root;
     this.start_epoch = start_epoch;
     this.end_epoch = end_epoch;
-    this.parent_root = parent_root;
     this.data_root = data_root;
   }
 
   public Crosslink(Crosslink crosslink) {
     this.shard = crosslink.getShard();
+    this.parent_root = crosslink.getParent_root();
     this.start_epoch = crosslink.getStart_epoch();
     this.end_epoch = crosslink.getEnd_epoch();
-    this.parent_root = crosslink.getParent_root();
     this.data_root = crosslink.getData_root();
   }
 
   public Crosslink() {
     this.shard = UnsignedLong.ZERO;
+    this.parent_root = Bytes32.ZERO;
     this.start_epoch = UnsignedLong.ZERO;
     this.end_epoch = UnsignedLong.ZERO;
-    this.parent_root = Bytes32.ZERO;
     this.data_root = Bytes32.ZERO;
   }
 
@@ -74,9 +75,9 @@ public class Crosslink implements Copyable<Crosslink>, SimpleOffsetSerializable 
   public List<Bytes> get_fixed_parts() {
     return List.of(
         SSZ.encodeUInt64(shard.longValue()),
+        SSZ.encode(writer -> writer.writeFixedBytes(parent_root)),
         SSZ.encodeUInt64(start_epoch.longValue()),
         SSZ.encodeUInt64(end_epoch.longValue()),
-        SSZ.encode(writer -> writer.writeFixedBytes(parent_root)),
         SSZ.encode(writer -> writer.writeFixedBytes(data_root)));
   }
 
@@ -86,9 +87,9 @@ public class Crosslink implements Copyable<Crosslink>, SimpleOffsetSerializable 
         reader ->
             new Crosslink(
                 UnsignedLong.fromLongBits(reader.readUInt64()),
-                UnsignedLong.fromLongBits(reader.readUInt64()),
-                UnsignedLong.fromLongBits(reader.readUInt64()),
                 Bytes32.wrap(reader.readFixedBytes(32)),
+                UnsignedLong.fromLongBits(reader.readUInt64()),
+                UnsignedLong.fromLongBits(reader.readUInt64()),
                 Bytes32.wrap(reader.readFixedBytes(32))));
   }
 
@@ -101,16 +102,16 @@ public class Crosslink implements Copyable<Crosslink>, SimpleOffsetSerializable 
     return SSZ.encode(
         writer -> {
           writer.writeUInt64(shard.longValue());
+          writer.writeFixedBytes(parent_root);
           writer.writeUInt64(start_epoch.longValue());
           writer.writeUInt64(end_epoch.longValue());
-          writer.writeFixedBytes(parent_root);
           writer.writeFixedBytes(data_root);
         });
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(shard, start_epoch, end_epoch, parent_root, data_root);
+    return Objects.hash(shard, parent_root, start_epoch, end_epoch, data_root);
   }
 
   @Override
@@ -129,9 +130,9 @@ public class Crosslink implements Copyable<Crosslink>, SimpleOffsetSerializable 
 
     Crosslink other = (Crosslink) obj;
     return Objects.equals(this.getShard(), other.getShard())
+        && Objects.equals(this.getParent_root(), other.getParent_root())
         && Objects.equals(this.getStart_epoch(), other.getStart_epoch())
         && Objects.equals(this.getEnd_epoch(), other.getEnd_epoch())
-        && Objects.equals(this.getParent_root(), other.getParent_root())
         && Objects.equals(this.getData_root(), other.getData_root());
   }
 
@@ -142,6 +143,14 @@ public class Crosslink implements Copyable<Crosslink>, SimpleOffsetSerializable 
 
   public void setShard(UnsignedLong shard) {
     this.shard = shard;
+  }
+
+  public Bytes32 getParent_root() {
+    return parent_root;
+  }
+
+  public void setParent_root(Bytes32 parent_root) {
+    this.parent_root = parent_root;
   }
 
   public UnsignedLong getStart_epoch() {
@@ -160,14 +169,6 @@ public class Crosslink implements Copyable<Crosslink>, SimpleOffsetSerializable 
     this.end_epoch = end_epoch;
   }
 
-  public Bytes32 getParent_root() {
-    return parent_root;
-  }
-
-  public void setParent_root(Bytes32 parent_root) {
-    this.parent_root = parent_root;
-  }
-
   public Bytes32 getData_root() {
     return data_root;
   }
@@ -180,9 +181,9 @@ public class Crosslink implements Copyable<Crosslink>, SimpleOffsetSerializable 
     return HashTreeUtil.merkleize(
         Arrays.asList(
             HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(shard.longValue())),
+            HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_BASIC, parent_root),
             HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(start_epoch.longValue())),
             HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(end_epoch.longValue())),
-            HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, parent_root),
-            HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, data_root)));
+            HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_BASIC, data_root)));
   }
 }

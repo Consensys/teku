@@ -14,20 +14,20 @@
 package tech.pegasys.artemis.datastructures.operations;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.ssz.SSZ;
+import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
+import tech.pegasys.artemis.util.SSZTypes.SSZContainer;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 import tech.pegasys.artemis.util.hashtree.Merkleizable;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
-public class AttesterSlashing implements Merkleizable, SimpleOffsetSerializable {
+public class AttesterSlashing implements Merkleizable, SimpleOffsetSerializable, SSZContainer {
 
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
-  public static final int SSZ_FIELD_COUNT = 0;
+  public static final int SSZ_FIELD_COUNT = 2;
 
   private IndexedAttestation attestation_1;
   private IndexedAttestation attestation_2;
@@ -39,37 +39,14 @@ public class AttesterSlashing implements Merkleizable, SimpleOffsetSerializable 
 
   @Override
   public int getSSZFieldCount() {
-    // TODO Finish this stub.
     return SSZ_FIELD_COUNT;
   }
 
   @Override
-  public List<Bytes> get_fixed_parts() {
-    // TODO Implement this stub.
-    return Collections.nCopies(getSSZFieldCount(), Bytes.EMPTY);
-  }
-
-  @Override
   public List<Bytes> get_variable_parts() {
-    // TODO Implement this stub.
-    return Collections.nCopies(getSSZFieldCount(), Bytes.EMPTY);
-  }
-
-  public static AttesterSlashing fromBytes(Bytes bytes) {
-    return SSZ.decode(
-        bytes,
-        reader ->
-            new AttesterSlashing(
-                IndexedAttestation.fromBytes(reader.readBytes()),
-                IndexedAttestation.fromBytes(reader.readBytes())));
-  }
-
-  public Bytes toBytes() {
-    return SSZ.encode(
-        writer -> {
-          writer.writeBytes(attestation_1.toBytes());
-          writer.writeBytes(attestation_2.toBytes());
-        });
+    return List.of(
+        SimpleOffsetSerializer.serialize(attestation_1),
+        SimpleOffsetSerializer.serialize(attestation_2));
   }
 
   @Override

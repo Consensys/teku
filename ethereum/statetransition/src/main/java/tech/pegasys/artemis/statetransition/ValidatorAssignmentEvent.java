@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 ConsenSys AG.
+ * Copyright 2019 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,8 +11,8 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.pow.api;
+package tech.pegasys.artemis.statetransition;
 
-import tech.pegasys.artemis.pow.contract.DepositContract.Eth2GenesisEventResponse;
-
-public interface Eth2GenesisEvent extends PowEvent<Eth2GenesisEventResponse> {}
+public class ValidatorAssignmentEvent {
+  public ValidatorAssignmentEvent() {}
+}

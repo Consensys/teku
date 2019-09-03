@@ -21,12 +21,13 @@ import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
+import tech.pegasys.artemis.util.SSZTypes.SSZContainer;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
-public class BeaconBlockHeader implements SimpleOffsetSerializable {
+public class BeaconBlockHeader implements SimpleOffsetSerializable, SSZContainer {
 
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
   public static final int SSZ_FIELD_COUNT = 4;
@@ -50,11 +51,19 @@ public class BeaconBlockHeader implements SimpleOffsetSerializable {
     this.signature = signature;
   }
 
-  public BeaconBlockHeader(Bytes32 body_root) {
+  public BeaconBlockHeader(BeaconBlockHeader header) {
+    this.slot = header.getSlot();
+    this.parent_root = header.getParent_root();
+    this.state_root = header.getState_root();
+    this.body_root = header.getBody_root();
+    this.signature = header.getSignature();
+  }
+
+  public BeaconBlockHeader() {
     this.slot = UnsignedLong.ZERO;
     this.parent_root = Bytes32.ZERO;
     this.state_root = Bytes32.ZERO;
-    this.body_root = body_root;
+    this.body_root = Bytes32.ZERO;
     this.signature = BLSSignature.empty();
   }
 
@@ -177,18 +186,18 @@ public class BeaconBlockHeader implements SimpleOffsetSerializable {
         HashTreeUtil.merkleize(
             Arrays.asList(
                 HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(slot.longValue())),
-                HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, parent_root),
-                HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, state_root),
-                HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, body_root))));
+                HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_BASIC, parent_root),
+                HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_BASIC, state_root),
+                HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_BASIC, body_root))));
   }
 
   public Bytes32 hash_tree_root() {
     return HashTreeUtil.merkleize(
         Arrays.asList(
             HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(slot.longValue())),
-            HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, parent_root),
-            HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, state_root),
-            HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, body_root),
-            HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, signature.toBytes())));
+            HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_BASIC, parent_root),
+            HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_BASIC, state_root),
+            HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_BASIC, body_root),
+            HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_BASIC, signature.toBytes())));
   }
 }

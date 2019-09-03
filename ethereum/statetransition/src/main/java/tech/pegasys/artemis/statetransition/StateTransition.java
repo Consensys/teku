@@ -62,7 +62,7 @@ public class StateTransition {
    * @return
    * @throws StateTransitionException
    */
-  public Bytes32 initiate(
+  public BeaconState initiate(
       BeaconStateWithCache state, BeaconBlock block, boolean validate_state_root)
       throws StateTransitionException {
     try {
@@ -84,7 +84,7 @@ public class StateTransition {
                 + stateRoot.toHexString());
       }
 
-      return stateRoot;
+      return state;
     } catch (SlotProcessingException
         | BlockProcessingException
         | EpochProcessingException
@@ -92,6 +92,11 @@ public class StateTransition {
       STDOUT.log(Level.WARN, "  State Transition error: " + e, printEnabled, ALogger.Color.RED);
       throw new StateTransitionException(e.toString());
     }
+  }
+
+  public BeaconState initiate(BeaconStateWithCache state, BeaconBlock block)
+      throws StateTransitionException {
+    return initiate(state, block, false);
   }
 
   /**
@@ -143,7 +148,7 @@ public class StateTransition {
     // Cache state root
     Bytes32 previous_state_root = state.hash_tree_root();
     int index = state.getSlot().mod(UnsignedLong.valueOf(SLOTS_PER_HISTORICAL_ROOT)).intValue();
-    state.getLatest_state_roots().set(index, previous_state_root);
+    state.getState_roots().set(index, previous_state_root);
 
     // Cache latest block header state root
     if (state.getLatest_block_header().getState_root().equals(ZERO_HASH)) {
@@ -152,7 +157,7 @@ public class StateTransition {
 
     // Cache block root
     Bytes32 previous_block_root = state.getLatest_block_header().signing_root("signature");
-    state.getLatest_block_roots().set(index, previous_block_root);
+    state.getBlock_roots().set(index, previous_block_root);
   }
 
   /**
@@ -173,7 +178,7 @@ public class StateTransition {
           state.getSlot().compareTo(slot) <= 0, "process_slots: State slot higher than given slot");
       while (state.getSlot().compareTo(slot) < 0) {
         process_slot(state);
-        // Process epoch on the first slot of the next epoch
+        // Process epoch on the start slot of the next epoch
         if (state
             .getSlot()
             .plus(UnsignedLong.ONE)

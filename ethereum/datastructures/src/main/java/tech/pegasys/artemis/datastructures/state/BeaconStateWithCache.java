@@ -14,67 +14,145 @@
 package tech.pegasys.artemis.datastructures.state;
 
 import com.google.common.primitives.UnsignedLong;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.Copyable;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
+import tech.pegasys.artemis.util.SSZTypes.Bitvector;
+import tech.pegasys.artemis.util.SSZTypes.SSZList;
+import tech.pegasys.artemis.util.SSZTypes.SSZVector;
 
 public final class BeaconStateWithCache extends BeaconState {
 
-  protected Map<UnsignedLong, UnsignedLong> epochStartShards = new HashMap<>();
+  protected Map<UnsignedLong, UnsignedLong> startShards = new HashMap<>();
   protected Map<String, List<Integer>> crosslinkCommittees = new HashMap<>();
 
   public BeaconStateWithCache() {
     super();
   }
 
+  public BeaconStateWithCache(
+      // Versioning
+      UnsignedLong genesis_time,
+      UnsignedLong slot,
+      Fork fork,
+
+      // History
+      BeaconBlockHeader latest_block_header,
+      SSZVector<Bytes32> block_roots,
+      SSZVector<Bytes32> state_roots,
+      SSZList<Bytes32> historical_roots,
+
+      // Eth1
+      Eth1Data eth1_data,
+      SSZList<Eth1Data> eth1_data_votes,
+      UnsignedLong eth1_deposit_index,
+
+      // Registry
+      SSZList<Validator> validators,
+      SSZList<UnsignedLong> balances,
+
+      // Shuffling
+      UnsignedLong start_shard,
+      SSZVector<Bytes32> randao_mixes,
+      SSZVector<Bytes32> active_index_roots,
+      SSZVector<Bytes32> compact_committees_roots,
+
+      // Slashings
+      SSZVector<UnsignedLong> slashings,
+
+      // Attestations
+      SSZList<PendingAttestation> previous_epoch_attestations,
+      SSZList<PendingAttestation> current_epoch_attestations,
+
+      // Crosslinks
+      SSZVector<Crosslink> previous_crosslinks,
+      SSZVector<Crosslink> current_crosslinks,
+
+      // Finality
+      Bitvector justification_bits,
+      Checkpoint previous_justified_checkpoint,
+      Checkpoint current_justified_chekpoint,
+      Checkpoint finalized_checkpoint) {
+    super(
+        genesis_time,
+        slot,
+        fork,
+        latest_block_header,
+        block_roots,
+        state_roots,
+        historical_roots,
+        eth1_data,
+        eth1_data_votes,
+        eth1_deposit_index,
+        validators,
+        balances,
+        start_shard,
+        randao_mixes,
+        active_index_roots,
+        compact_committees_roots,
+        slashings,
+        previous_epoch_attestations,
+        current_epoch_attestations,
+        previous_crosslinks,
+        current_crosslinks,
+        justification_bits,
+        previous_justified_checkpoint,
+        current_justified_chekpoint,
+        finalized_checkpoint);
+  }
+
   public BeaconStateWithCache(BeaconStateWithCache state) {
-    this.slot = state.getSlot();
+    // Versioning
     this.genesis_time = state.getGenesis_time();
+    this.slot = state.getSlot();
     this.fork = new Fork(state.getFork());
 
-    this.validator_registry = this.copyList(state.getValidator_registry(), new ArrayList<>());
-    this.balances = state.getBalances().stream().collect(Collectors.toList());
+    // History
+    this.latest_block_header = new BeaconBlockHeader(state.getLatest_block_header());
+    this.block_roots = new SSZVector<>(state.getBlock_roots());
+    this.state_roots = new SSZVector<>(state.getState_roots());
+    this.historical_roots = new SSZList<>(state.getHistorical_roots());
 
-    this.latest_randao_mixes =
-        this.copyBytesList(state.getLatest_randao_mixes(), new ArrayList<>());
-    this.latest_start_shard = state.getLatest_start_shard();
+    // Eth1
+    this.eth1_data = new Eth1Data(state.getEth1_data());
+    this.eth1_data_votes = new SSZList<>(state.getEth1_data_votes());
+    this.eth1_deposit_index = state.getEth1_deposit_index();
 
-    this.previous_epoch_attestations =
-        this.copyList(state.getPrevious_epoch_attestations(), new ArrayList<>());
-    this.current_epoch_attestations =
-        this.copyList(state.getCurrent_epoch_attestations(), new ArrayList<>());
-    this.previous_justified_epoch = state.getPrevious_justified_epoch();
-    this.current_justified_epoch = state.getCurrent_justified_epoch();
-    this.previous_justified_root = state.getPrevious_justified_root();
-    this.current_justified_root = state.getCurrent_justified_root();
-    this.justification_bitfield = state.getJustification_bitfield();
-    this.finalized_epoch = state.getFinalized_epoch();
-    this.finalized_root = state.getFinalized_root();
+    // Registry
+    this.validators = new SSZList<>(state.getValidators());
+    this.balances = new SSZList<>(state.getBalances());
 
-    this.current_crosslinks = this.copyList(state.getCurrent_crosslinks(), new ArrayList<>());
-    this.previous_crosslinks = this.copyList(state.getPrevious_crosslinks(), new ArrayList<>());
-    this.latest_block_roots = this.copyBytesList(state.getLatest_block_roots(), new ArrayList<>());
-    this.latest_state_roots = this.copyBytesList(state.getLatest_state_roots(), new ArrayList<>());
-    this.latest_active_index_roots =
-        this.copyBytesList(state.getLatest_active_index_roots(), new ArrayList<>());
-    this.latest_slashed_balances =
-        state.getLatest_slashed_balances().stream().collect(Collectors.toList());
-    this.latest_block_header =
-        BeaconBlockHeader.fromBytes(state.getLatest_block_header().toBytes());
-    this.historical_roots = this.copyBytesList(state.getHistorical_roots(), new ArrayList<>());
-    this.latest_eth1_data = new Eth1Data(state.getLatest_eth1_data());
-    this.eth1_data_votes = state.getEth1_data_votes().stream().collect(Collectors.toList());
-    this.deposit_index = state.getDeposit_index();
+    // Shuffling
+    this.start_shard = state.getStart_shard();
+    this.randao_mixes = new SSZVector<>(state.getRandao_mixes());
+    this.active_index_roots = new SSZVector<>(state.getActive_index_roots());
+    this.compact_committees_roots = new SSZVector<>(state.getCompact_committees_roots());
 
+    // Slashings
+    this.slashings = new SSZVector<>(state.getSlashings());
+
+    // Attestations
+    this.previous_epoch_attestations = new SSZList<>(state.getPrevious_epoch_attestations());
+    this.current_epoch_attestations = new SSZList<>(state.getCurrent_epoch_attestations());
+
+    // Crosslinks
+    this.current_crosslinks = new SSZVector<>(state.getCurrent_crosslinks());
+    this.previous_crosslinks = new SSZVector<>(state.getPrevious_crosslinks());
+
+    // Finality
+    this.justification_bits = state.getJustification_bits().copy();
+    this.previous_justified_checkpoint = new Checkpoint(state.getPrevious_justified_checkpoint());
+    this.current_justified_checkpoint = new Checkpoint(state.getCurrent_justified_checkpoint());
+    this.finalized_checkpoint = new Checkpoint(state.getFinalized_checkpoint());
+
+    // Client Specific For Caching Purposes
     this.crosslinkCommittees = state.getCrossLinkCommittees();
-    this.epochStartShards = state.getEpochStartShards();
+    this.startShards = state.getStartShards();
   }
 
   private <S extends Copyable<S>, T extends List<S>> T copyList(T sourceList, T destinationList) {
@@ -112,24 +190,24 @@ public final class BeaconStateWithCache extends BeaconState {
     this.crosslinkCommittees.put(epoch.toString() + "_" + shard.toString(), crosslinkCommittees);
   }
 
-  public Map<UnsignedLong, UnsignedLong> getEpochStartShards() {
-    return this.epochStartShards;
+  public Map<UnsignedLong, UnsignedLong> getStartShards() {
+    return this.startShards;
   }
 
-  public UnsignedLong getEpochStartShard(UnsignedLong epoch) {
-    if (epochStartShards.containsKey(epoch)) {
-      return epochStartShards.get(epoch);
+  public UnsignedLong getStartShard(UnsignedLong epoch) {
+    if (startShards.containsKey(epoch)) {
+      return startShards.get(epoch);
     }
     return null;
   }
 
-  public void setEpochStartShard(UnsignedLong epoch, UnsignedLong shard) {
-    this.epochStartShards.put(epoch, shard);
+  public void setStartShard(UnsignedLong epoch, UnsignedLong shard) {
+    this.startShards.put(epoch, shard);
   }
 
   public void invalidateCache() {
     // TODO: clean this cache after finalization
-    this.epochStartShards = new HashMap<>();
+    this.startShards = new HashMap<>();
     this.crosslinkCommittees = new HashMap<>();
   }
 }

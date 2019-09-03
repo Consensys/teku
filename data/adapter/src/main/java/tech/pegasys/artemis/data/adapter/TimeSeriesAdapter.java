@@ -39,14 +39,14 @@ public class TimeSeriesAdapter implements DataAdapter<TimeSeriesRecord> {
   public TimeSeriesRecord transform() {
 
     UnsignedLong slot = this.input.getHeadBlock().getSlot();
-    UnsignedLong epoch = BeaconStateUtil.slot_to_epoch(slot);
+    UnsignedLong epoch = BeaconStateUtil.compute_epoch_of_slot(slot);
     BeaconBlock headBlock = this.input.getHeadBlock();
     BeaconState headState = this.input.getHeadState();
     BeaconBlock justifiedBlock = this.input.getJustifiedBlock();
     BeaconState justifiedState = this.input.getJustifiedState();
     BeaconBlock finalizedBlock = this.input.getFinalizedBlock();
     BeaconState finalizedState = this.input.getFinalizedState();
-    int numValidators = headState.getValidator_registry().size();
+    int numValidators = headState.getValidators().size();
 
     Bytes32 lastJustifiedBlockRoot = justifiedBlock.signing_root("signature");
     Bytes32 lastJustifiedStateRoot = justifiedState.hash_tree_root();
@@ -61,7 +61,7 @@ public class TimeSeriesAdapter implements DataAdapter<TimeSeriesRecord> {
               i ->
                   validators.add(
                       new ValidatorJoin(
-                          headState.getValidator_registry().get(i),
+                          headState.getValidators().get(i),
                           headState.getBalances().get(i).longValue())));
     }
 

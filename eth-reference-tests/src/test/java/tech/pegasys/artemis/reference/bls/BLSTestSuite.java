@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package pegasys.artemis.reference;
+package tech.pegasys.artemis.reference.bls;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -30,9 +30,9 @@ import org.apache.milagro.amcl.BLS381.BIG;
 import org.apache.milagro.amcl.BLS381.ECP2;
 import org.apache.milagro.amcl.BLS381.FP2;
 import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.Bytes48;
 import org.apache.tuweni.io.Resources;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -46,7 +46,7 @@ import tech.pegasys.artemis.util.mikuli.Signature;
 /*
  * The "official" BLS reference test data is from https://github.com/ethereum/eth2.0-tests/
  */
-
+@Disabled
 class BLSTestSuite {
 
   private static String testFile = "**/bls/test_bls.yml";
@@ -56,7 +56,7 @@ class BLSTestSuite {
   void testMessageHashToG2Uncompressed(
       LinkedHashMap<String, String> input, ArrayList<ArrayList<String>> output) {
 
-    long domain = Bytes32.fromHexString(input.get("domain")).getLong(24);
+    Bytes domain = Bytes.fromHexString(input.get("domain"));
     Bytes message = Bytes.fromHexString(input.get("message"));
 
     G2Point referencePoint = makePoint(output);
@@ -69,7 +69,7 @@ class BLSTestSuite {
   void testMessageHashToG2Compressed(
       LinkedHashMap<String, String> input, ArrayList<String> output) {
 
-    long domain = Bytes32.fromHexString(input.get("domain")).getLong(24);
+    Bytes domain = Bytes.fromHexString(input.get("domain"));
     Bytes message = Bytes.fromHexString(input.get("message"));
 
     G2Point actual = G2Point.hashToG2(message, domain);
@@ -96,7 +96,7 @@ class BLSTestSuite {
   @MethodSource("readSignMessages")
   void testSignMessages(LinkedHashMap<String, String> input, String output) {
 
-    long domain = Bytes32.fromHexString(input.get("domain")).getLong(24);
+    Bytes domain = Bytes.fromHexString(input.get("domain"));
     Bytes message = Bytes.fromHexString(input.get("message"));
     SecretKey privateKey =
         SecretKey.fromBytes(Bytes48.leftPad(Bytes.fromHexString(input.get("privkey"))));
@@ -145,12 +145,12 @@ class BLSTestSuite {
   }
 
   @MustBeClosed
-  private static Stream<Arguments> findTests(String glob, String tcase) throws IOException {
+  private static Stream<Arguments> findTests(String glob) throws IOException {
     return Resources.find(glob)
         .flatMap(
             url -> {
               try (InputStream in = url.openConnection().getInputStream()) {
-                return prepareTests(in, tcase);
+                return prepareTests(in);
               } catch (IOException e) {
                 throw new UncheckedIOException(e);
               }
@@ -159,41 +159,40 @@ class BLSTestSuite {
 
   @MustBeClosed
   private static Stream<Arguments> readMessageHashG2Uncompressed() throws IOException {
-    return findTests(testFile, "case01_message_hash_G2_uncompressed");
+    return findTests("**/bls/msg_hash_uncompressed/small/**/data.yaml");
   }
 
   @MustBeClosed
   private static Stream<Arguments> readMessageHashG2Compressed() throws IOException {
-    return findTests(testFile, "case02_message_hash_G2_compressed");
+    return findTests("**/bls/msg_hash_compressed/small/**/data.yaml");
   }
 
   @MustBeClosed
   private static Stream<Arguments> readPrivateToPublicKey() throws IOException {
-    return findTests(testFile, "case03_private_to_public_key");
+    return findTests("**/bls/priv_to_pub/small/**/data.yaml");
   }
 
   @MustBeClosed
   private static Stream<Arguments> readSignMessages() throws IOException {
-    return findTests(testFile, "case04_sign_messages");
+    return findTests("**/bls/sign_msg/small/**/data.yaml");
   }
 
   @MustBeClosed
   private static Stream<Arguments> readAggregateSig() throws IOException {
-    return findTests(testFile, "case06_aggregate_sigs");
+    return findTests("**/bls/aggregate_sigs/small/**/data.yaml");
   }
 
   @MustBeClosed
   private static Stream<Arguments> readAggregatePubKeys() throws IOException {
-    return findTests(testFile, "case07_aggregate_pubkeys");
+    return findTests("**/bls/aggregate_pubkeys/small/**/data.yaml");
   }
 
   @SuppressWarnings({"unchecked", "rawtypes"})
-  private static Stream<Arguments> prepareTests(InputStream in, String tcase) throws IOException {
+  private static Stream<Arguments> prepareTests(InputStream in) throws IOException {
     ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
     Map allTests = mapper.readerFor(Map.class).readValue(in);
 
-    return ((List<Map>) allTests.get(tcase))
-        .stream().map(testCase -> Arguments.of(testCase.get("input"), testCase.get("output")));
+    return List.of(Arguments.of(allTests.get("input"), allTests.get("output"))).stream();
   }
 
   /**
