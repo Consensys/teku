@@ -64,7 +64,7 @@ class sanity_processing extends TestSuite {
                 getInputStreamFromPath(Path.of(pre.path, "slots.yaml")), Charset.defaultCharset()));
     String s = inputStreamFromPath.readLine();
 
-    StateTransition.process_slots(bs, UnsignedLong.valueOf(s).plus(bs.getSlot()), true);
+    new StateTransition(false).process_slots(bs, UnsignedLong.valueOf(s).plus(bs.getSlot()), true);
 
     assertEquals((BeaconStateWithCache) pre.obj, (BeaconStateWithCache) post.obj);
   }
@@ -127,9 +127,10 @@ class sanity_processing extends TestSuite {
               UnsignedLong.ZERO,
               DataStructureUtil.newDeposits(spre.getEth1_deposit_index().intValue()));
 
-      StateTransition.process_slots(beaconStateWithCache, blocks.get(0).getSlot(), true);
+      final StateTransition stateTransition = new StateTransition(false);
+      stateTransition.process_slots(beaconStateWithCache, blocks.get(0).getSlot(), true);
 
-      StateTransition.process_slots(spre, blocks.get(0).getSlot(), true);
+      stateTransition.process_slots(spre, blocks.get(0).getSlot(), true);
 
       st.initiate(spre, blocks.get(0));
 

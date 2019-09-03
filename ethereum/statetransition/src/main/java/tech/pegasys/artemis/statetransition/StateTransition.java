@@ -17,7 +17,6 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.artemis.datastructures.Constants.SLOTS_PER_EPOCH;
 import static tech.pegasys.artemis.datastructures.Constants.SLOTS_PER_HISTORICAL_ROOT;
 import static tech.pegasys.artemis.datastructures.Constants.ZERO_HASH;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_of_slot;
 import static tech.pegasys.artemis.statetransition.util.BlockProcessorUtil.process_block_header;
 import static tech.pegasys.artemis.statetransition.util.BlockProcessorUtil.process_eth1_data;
 import static tech.pegasys.artemis.statetransition.util.BlockProcessorUtil.process_operations;
@@ -73,17 +72,8 @@ public class StateTransition {
       BeaconStateWithCache state, BeaconBlock block, boolean validate_state_root)
       throws StateTransitionException {
     try {
-      final UnsignedLong previousSlot = state.getSlot();
       // Process slots (including those with no blocks) since block
       process_slots(state, block.getSlot(), printEnabled);
-
-      epochMetrics.ifPresent(
-          metrics -> {
-            final UnsignedLong endEpoch = compute_epoch_of_slot(block.getSlot());
-            if (endEpoch.compareTo(compute_epoch_of_slot(previousSlot)) > 0) {
-              metrics.onEpoch(state);
-            }
-          });
 
       // Process_block
       process_block(state, block);
@@ -186,8 +176,7 @@ public class StateTransition {
    * @throws EpochProcessingException
    * @throws SlotProcessingException
    */
-  public static void process_slots(
-      BeaconStateWithCache state, UnsignedLong slot, boolean printEnabled)
+  public void process_slots(BeaconStateWithCache state, UnsignedLong slot, boolean printEnabled)
       throws SlotProcessingException, EpochProcessingException {
     try {
       checkArgument(
@@ -202,6 +191,7 @@ public class StateTransition {
             .equals(UnsignedLong.ZERO)) {
           STDOUT.log(Level.INFO, "******* Epoch Event *******", printEnabled, ALogger.Color.BLUE);
           process_epoch(state);
+          epochMetrics.ifPresent(metrics -> metrics.onEpoch(state));
         }
         state.setSlot(state.getSlot().plus(UnsignedLong.ONE));
       }

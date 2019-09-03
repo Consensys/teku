@@ -179,7 +179,7 @@ public class StateProcessor {
   @Subscribe
   private void onAttestation(Attestation attestation) {
     try {
-      on_attestation(store, attestation);
+      on_attestation(store, attestation, stateTransition);
     } catch (SlotProcessingException | EpochProcessingException e) {
       STDOUT.log(Level.WARN, "Exception in onAttestation: " + e.toString());
     }
