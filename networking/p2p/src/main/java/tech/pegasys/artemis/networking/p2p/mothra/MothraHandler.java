@@ -64,17 +64,17 @@ public class MothraHandler {
 
   public synchronized Boolean handleGossipMessage(String topic, byte[] message) {
     Bytes messageBytes = Bytes.wrap(message);
-    STDOUT.log(Level.DEBUG, "Received " + messageBytes.size() + " bytes");
+    STDOUT.log(Level.INFO, "Received " + messageBytes.size() + " bytes");
     String key = messageBytes.toHexString();
     if (!receivedMessages.contains(key)) {
       receivedMessages.add(key);
       if (topic.equalsIgnoreCase(ATTESTATION_TOPIC)) {
-        STDOUT.log(Level.DEBUG, "Received Attestation");
+        STDOUT.log(Level.INFO, "Received Attestation");
         Attestation attestation =
             SimpleOffsetSerializer.deserialize(messageBytes, Attestation.class);
         this.eventBus.post(attestation);
       } else if (topic.equalsIgnoreCase(BLOCK_TOPIC)) {
-        STDOUT.log(Level.DEBUG, "Received Block");
+        STDOUT.log(Level.INFO, "Received Block");
         BeaconBlock block = SimpleOffsetSerializer.deserialize(messageBytes, BeaconBlock.class);
         this.eventBus.post(block);
       }
