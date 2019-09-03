@@ -74,8 +74,8 @@ then
   usage >&2; exit 3
 fi
 
-# If MODE is undefined default to hobbits
-[[ -z "$MODE" ]] && MODE="hobbits"
+# If MODE is undefined default to mothra
+[[ -z "$MODE" ]] && MODE="mothra"
 
 # If MODE is not a valid input pipe the usage statement to stderr and exit
 # with exit code 3

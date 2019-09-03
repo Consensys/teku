@@ -11,6 +11,11 @@ create_config() {
   # Set the port number to the node number plus 19000
   local PORT=$((19000 + $NODE))
 
+
+  local IS_BOOTNODE=false
+  if [ "$NODE" -eq "0" ]; then
+    IS_BOOTNODE=true;
+  fi
   # Set IDENTITY to the one byte hexadecimal representation of the node number
   local IDENTITY; setAsHex $NODE "IDENTITY"
 
@@ -21,6 +26,7 @@ create_config() {
     sed "s/logFile\ =.*/logFile = \"artemis-$NODE.log\"/"             |# Use a unique log file
     sed "s/advertisedPort\ =.*//"                                     |# Remove the advertised port field
     sed "s/identity\ =.*/identity\ =\ \"$IDENTITY\"/"                 |# Update the identity field to the value set above
+    sed "s/isBootnode\ =.*/isBootnode\ =\ $IS_BOOTNODE/"              |# Update the bootnode flag
     sed "s/bootnodes\ =.*/bootnodes\ =\ \"$BOOTNODES\"/"              |# Update the bootnodes
     sed "s/port\ =.*/port\ =\ $PORT/"                                 |# Update the port field to the value set above
     awk -v peers="$PEERS" '/port/{print;print "peers = "peers;next}1' |# Update the peer list
@@ -28,7 +34,10 @@ create_config() {
     sed "s/networkInterface\ =.*/networkInterface\ =\ \"127.0.0.1\"/" |# Update the network interface to localhost
     sed "s/networkMode\ =.*/networkMode\ =\ \"$MODE\"/" \
     > ../config/runConfig.$NODE.toml
+
 }
+
+
 
 # Unpacks the build tar files, puts them in a special directory for the node,
 # and creates the configuration file for the node.
