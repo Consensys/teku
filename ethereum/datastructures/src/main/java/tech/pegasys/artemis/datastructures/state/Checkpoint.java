@@ -118,6 +118,7 @@ public class Checkpoint implements Merkleizable, SimpleOffsetSerializable, SSZCo
     this.root = root;
   }
 
+  @Override
   public Bytes32 hash_tree_root() {
     return HashTreeUtil.merkleize(
         Arrays.asList(

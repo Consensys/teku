@@ -164,6 +164,7 @@ public class DepositData
     this.signature = signature;
   }
 
+  @Override
   public Bytes32 signing_root(String truncation_param) {
     if (!truncation_param.equals("signature")) {
       throw new UnsupportedOperationException(
@@ -179,6 +180,7 @@ public class DepositData
                     SSZTypes.BASIC, SSZ.encodeUInt64(amount.longValue())))));
   }
 
+  @Override
   public Bytes32 hash_tree_root() {
     return HashTreeUtil.merkleize(
         Arrays.asList(

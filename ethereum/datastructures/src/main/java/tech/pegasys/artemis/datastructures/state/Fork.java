@@ -115,6 +115,7 @@ public class Fork implements Merkleizable, SimpleOffsetSerializable, SSZContaine
     this.epoch = epoch;
   }
 
+  @Override
   public Bytes32 hash_tree_root() {
     return HashTreeUtil.merkleize(
         Arrays.asList(

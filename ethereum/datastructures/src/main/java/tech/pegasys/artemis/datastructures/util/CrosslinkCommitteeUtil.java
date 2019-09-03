@@ -62,7 +62,7 @@ public class CrosslinkCommitteeUtil {
       int pivot =
           toIntExact(
               Long.remainderUnsigned(
-                  bytes_to_int(Hash.keccak256(Bytes.wrap(seed, roundAsByte)).slice(0, 8)),
+                  bytes_to_int(Hash.sha2_256(Bytes.wrap(seed, roundAsByte)).slice(0, 8)),
                   index_count));
       int flip = Math.floorMod(pivot - indexRet, index_count);
       if (flip < 0) {
@@ -73,7 +73,7 @@ public class CrosslinkCommitteeUtil {
       int position = (indexRet < flip) ? flip : indexRet;
 
       Bytes positionDiv256 = int_to_bytes(Math.floorDiv(position, 256), 4);
-      Bytes source = Hash.keccak256(Bytes.wrap(seed, roundAsByte, positionDiv256));
+      Bytes source = Hash.sha2_256(Bytes.wrap(seed, roundAsByte, positionDiv256));
 
       // The byte type is signed in Java, but the right shift should be fine as we just use bit 0.
       // But we can't use % in the normal way because of signedness, so we `& 1` instead.

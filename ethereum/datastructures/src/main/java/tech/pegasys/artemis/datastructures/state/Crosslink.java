@@ -179,6 +179,7 @@ public class Crosslink
     this.data_root = data_root;
   }
 
+  @Override
   public Bytes32 hash_tree_root() {
     return HashTreeUtil.merkleize(
         Arrays.asList(
