@@ -100,16 +100,6 @@ public class StateProcessor {
   }
 
   public void onEth2Genesis(BeaconStateWithCache initial_state) {
-    // TODO - issue #827:
-    //      Once i have a reliable way to be notified when
-    //      libp2p peers are found then this can be removed
-    if (config.getNetworkMode().equals("mothra")) {
-      try {
-        Thread.sleep(15000);
-      } catch (InterruptedException e) {
-        STDOUT.log(Level.ERROR, e.getMessage());
-      }
-    }
     STDOUT.log(Level.INFO, "******* Eth2Genesis Event detected ******* : ");
     UnsignedLong genesisTime = initial_state.getGenesis_time();
     this.store = get_genesis_store(initial_state);
@@ -196,7 +186,10 @@ public class StateProcessor {
   }
 
   private void setSimulationGenesisTime(BeaconState state) {
-    if (Constants.GENESIS_TIME.equals(UnsignedLong.MAX_VALUE)) {
+    if (config.getInteropActive()
+        && config.getInteropMode().equals(Constants.MOCKED_START_INTEROP)) {
+      state.setGenesis_time(UnsignedLong.valueOf(config.getInteropGenesisTime()));
+    } else if (Constants.GENESIS_TIME.equals(UnsignedLong.MAX_VALUE)) {
       Date date = new Date();
       state.setGenesis_time(
           UnsignedLong.valueOf((date.getTime() / 1000)).plus(Constants.GENESIS_START_DELAY));
