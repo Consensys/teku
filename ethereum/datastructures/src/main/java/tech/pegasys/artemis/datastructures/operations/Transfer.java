@@ -193,6 +193,7 @@ public class Transfer implements Merkleizable, SigningRoot, SimpleOffsetSerializ
     this.signature = signature;
   }
 
+  @Override
   public Bytes32 signing_root(String truncation_param) {
     if (!truncation_param.equals("signature")) {
       throw new UnsupportedOperationException(

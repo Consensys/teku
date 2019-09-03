@@ -131,6 +131,7 @@ public class HistoricalBatch
     this.state_roots = state_roots;
   }
 
+  @Override
   public Bytes32 hash_tree_root() {
     return HashTreeUtil.merkleize(
         Arrays.asList(

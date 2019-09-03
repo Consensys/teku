@@ -175,6 +175,7 @@ public final class BeaconBlock
     this.slot = slot;
   }
 
+  @Override
   public Bytes32 signing_root(String truncation_param) {
     if (!truncation_param.equals("signature")) {
       throw new UnsupportedOperationException(
@@ -190,6 +191,7 @@ public final class BeaconBlock
                 body.hash_tree_root())));
   }
 
+  @Override
   public Bytes32 hash_tree_root() {
     return HashTreeUtil.merkleize(
         Arrays.asList(
