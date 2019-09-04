@@ -32,8 +32,8 @@ import tech.pegasys.artemis.util.alogger.ALogger;
 
 public class MothraHandler {
   private static final ALogger STDOUT = new ALogger("stdout");
-  public static String BLOCK_TOPIC = "beacon_block";
-  public static String ATTESTATION_TOPIC = "beacon_attestation";
+  public static String BLOCK_TOPIC = "/eth2/beacon_block/ssz";
+  public static String ATTESTATION_TOPIC = "/eth2/beacon_attestation/ssz";
   public static int RPC_REQUEST = 0;
   public static int RPC_RESPONSE = 1;
   protected final EventBus eventBus;
