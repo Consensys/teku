@@ -40,21 +40,6 @@ final class ArtemisConfigurationTest {
   }
 
   @Test
-  void validPeer() {
-    ArtemisConfiguration.fromString(
-        "node.identity=\"2345\"\nnode.peers=[\"enode://a0b0e0f099@localhost:9000\"]");
-  }
-
-  @Test
-  void invalidPeer() {
-    assertThrows(
-        IllegalArgumentException.class,
-        () ->
-            ArtemisConfiguration.fromString(
-                "node.identity=\"2345\"\nnode.peers=[\"enode://localhost:9000\"]"));
-  }
-
-  @Test
   void invalidNetworkMode() {
     assertThrows(
         IllegalArgumentException.class,

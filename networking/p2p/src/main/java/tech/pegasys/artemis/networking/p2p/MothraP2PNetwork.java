@@ -16,8 +16,10 @@ package tech.pegasys.artemis.networking.p2p;
 import com.google.common.eventbus.EventBus;
 import java.io.IOException;
 import java.util.Collection;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 import net.p2p.mothra;
 import org.apache.logging.log4j.Level;
 import tech.pegasys.artemis.networking.p2p.api.P2PNetwork;
@@ -44,6 +46,7 @@ public final class MothraP2PNetwork implements P2PNetwork {
   private final boolean isBootnode;
   private final String userAgent = "Artemis SNAPSHOT";
   private GossipProtocol gossipProtocol;
+  private List<String> peers;
   private String[] args;
   private final MothraHandler handler;
 
@@ -61,7 +64,8 @@ public final class MothraP2PNetwork implements P2PNetwork {
       String networkInterface,
       String identity,
       String bootnodes,
-      boolean isBootnode) {
+      boolean isBootnode,
+      List<String> peers) {
     this.eventBus = eventBus;
     this.store = store;
     this.port = port;
@@ -69,6 +73,7 @@ public final class MothraP2PNetwork implements P2PNetwork {
     this.identity = identity;
     this.bootnodes = bootnodes;
     this.isBootnode = isBootnode;
+    this.peers = peers;
     this.gossipProtocol = GossipProtocol.GOSSIPSUB;
     eventBus.register(this);
     this.handler = new MothraHandler(this.eventBus, this.store);
@@ -76,8 +81,17 @@ public final class MothraP2PNetwork implements P2PNetwork {
     mothra.DiscoveryMessage = this.handler::handleDiscoveryMessage;
     mothra.ReceivedGossipMessage = this.handler::handleGossipMessage;
     mothra.ReceivedRPCMessage = this.handler::handleRPCMessage;
+    if (this.peers.size() == 0) {
+      // TODO - issue #827:
+      //      Once i have a reliable way to be notified when
+      //      libp2p peers are found then this can be removed
+      try {
+        Thread.sleep(15000);
+      } catch (InterruptedException e) {
+        STDOUT.log(Level.ERROR, e.getMessage());
+      }
+    }
     this.args = processArgs();
-
     if (started.compareAndSet(false, true)) {
       mothra.Start(args);
     }
@@ -95,6 +109,8 @@ public final class MothraP2PNetwork implements P2PNetwork {
               + String.valueOf(this.port)
               + " --datadir "
               + this.defaultDataDir
+              + " --libp2p-addresses "
+              + this.peers.stream().collect(Collectors.joining(","))
               + this.identity;
     } else {
       STDOUT.log(Level.INFO, "####### BOOTNODE #######");
