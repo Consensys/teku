@@ -18,47 +18,50 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
+import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.AttesterSlashing;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
 import tech.pegasys.artemis.datastructures.operations.Transfer;
 import tech.pegasys.artemis.datastructures.operations.VoluntaryExit;
+import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
+import tech.pegasys.artemis.util.SSZTypes.SSZContainer;
+import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
 /** A Beacon block body */
-public class BeaconBlockBody implements SimpleOffsetSerializable {
+public class BeaconBlockBody implements SimpleOffsetSerializable, SSZContainer {
 
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
-  public static final int SSZ_FIELD_COUNT = 1;
+  public static final int SSZ_FIELD_COUNT = 7;
 
   private BLSSignature randao_reveal;
   private Eth1Data eth1_data;
   private Bytes32 graffiti;
-  private List<ProposerSlashing> proposer_slashings;
-  private List<AttesterSlashing> attester_slashings;
-  private List<Attestation> attestations;
-  private List<Deposit> deposits;
-  private List<VoluntaryExit> voluntary_exits;
-  private List<Transfer> transfers;
+  private SSZList<ProposerSlashing> proposer_slashings; // List bounded by MAX_PROPOSER_SLASHINGS
+  private SSZList<AttesterSlashing> attester_slashings; // List bounded by MAX_ATTESTER_SLASHINGS
+  private SSZList<Attestation> attestations; // List bounded by MAX_ATTESTATIONS
+  private SSZList<Deposit> deposits; // List bounded by MAX_DEPOSITS
+  private SSZList<VoluntaryExit> voluntary_exits; // List bounded by MAX_VOLUNTARY_EXITS
+  private SSZList<Transfer> transfers; // List bounded by MAX_TRANSFERS
 
   public BeaconBlockBody(
       BLSSignature randao_reveal,
       Eth1Data eth1_data,
       Bytes32 graffiti,
-      List<ProposerSlashing> proposer_slashings,
-      List<AttesterSlashing> attester_slashings,
-      List<Attestation> attestations,
-      List<Deposit> deposits,
-      List<VoluntaryExit> voluntary_exits,
-      List<Transfer> transfers) {
+      SSZList<ProposerSlashing> proposer_slashings,
+      SSZList<AttesterSlashing> attester_slashings,
+      SSZList<Attestation> attestations,
+      SSZList<Deposit> deposits,
+      SSZList<VoluntaryExit> voluntary_exits,
+      SSZList<Transfer> transfers) {
     this.randao_reveal = randao_reveal;
     this.eth1_data = eth1_data;
     this.graffiti = graffiti;
@@ -74,86 +77,46 @@ public class BeaconBlockBody implements SimpleOffsetSerializable {
     this.randao_reveal = BLSSignature.empty();
     this.eth1_data = new Eth1Data();
     this.graffiti = Bytes32.ZERO;
-    this.proposer_slashings = new ArrayList<>();
-    this.attester_slashings = new ArrayList<>();
-    this.attestations = new ArrayList<>();
-    this.deposits = new ArrayList<>();
-    this.voluntary_exits = new ArrayList<>();
-    this.transfers = new ArrayList<>();
+    this.proposer_slashings =
+        new SSZList<>(ProposerSlashing.class, Constants.MAX_PROPOSER_SLASHINGS);
+    this.attester_slashings =
+        new SSZList<>(AttesterSlashing.class, Constants.MAX_ATTESTER_SLASHINGS);
+    this.attestations = new SSZList<>(Attestation.class, Constants.MAX_ATTESTATIONS);
+    this.deposits = new SSZList<>(Deposit.class, Constants.MAX_DEPOSITS);
+    this.voluntary_exits = new SSZList<>(VoluntaryExit.class, Constants.MAX_VOLUNTARY_EXITS);
+    this.transfers = new SSZList<>(Transfer.class, Constants.MAX_TRANSFERS);
   }
 
   @Override
   public int getSSZFieldCount() {
-    // TODO Finish this stub.
-    return SSZ_FIELD_COUNT;
+    return randao_reveal.getSSZFieldCount() + eth1_data.getSSZFieldCount() + SSZ_FIELD_COUNT;
   }
 
   @Override
   public List<Bytes> get_fixed_parts() {
-    // TODO Implement this stub.
-    return Collections.nCopies(getSSZFieldCount(), Bytes.EMPTY);
+    List<Bytes> fixedPartsList = new ArrayList<>();
+    fixedPartsList.addAll(randao_reveal.get_fixed_parts());
+    fixedPartsList.addAll(eth1_data.get_fixed_parts());
+    fixedPartsList.addAll(List.of(SSZ.encode(writer -> writer.writeFixedBytes(graffiti))));
+    fixedPartsList.addAll(Collections.nCopies(6, Bytes.EMPTY));
+    return fixedPartsList;
   }
 
   @Override
   public List<Bytes> get_variable_parts() {
-    // TODO Implement this stub.
-    return Collections.nCopies(getSSZFieldCount(), Bytes.EMPTY);
-  }
-
-  public static BeaconBlockBody fromBytes(Bytes bytes) {
-    return SSZ.decode(
-        bytes,
-        reader ->
-            new BeaconBlockBody(
-                BLSSignature.fromBytes(reader.readBytes()),
-                Eth1Data.fromBytes(reader.readBytes()),
-                Bytes32.wrap(reader.readFixedBytes(32)),
-                reader.readBytesList().stream()
-                    .map(ProposerSlashing::fromBytes)
-                    .collect(Collectors.toList()),
-                reader.readBytesList().stream()
-                    .map(AttesterSlashing::fromBytes)
-                    .collect(Collectors.toList()),
-                reader.readBytesList().stream()
-                    .map(Attestation::fromBytes)
-                    .collect(Collectors.toList()),
-                reader.readBytesList().stream()
-                    .map(Deposit::fromBytes)
-                    .collect(Collectors.toList()),
-                reader.readBytesList().stream()
-                    .map(VoluntaryExit::fromBytes)
-                    .collect(Collectors.toList()),
-                reader.readBytesList().stream()
-                    .map(Transfer::fromBytes)
-                    .collect(Collectors.toList())));
-  }
-
-  public Bytes toBytes() {
-    List<Bytes> proposerSlashingsBytes =
-        proposer_slashings.stream().map(item -> item.toBytes()).collect(Collectors.toList());
-    List<Bytes> attesterSlashingsBytes =
-        attester_slashings.stream().map(item -> item.toBytes()).collect(Collectors.toList());
-    List<Bytes> attestationsBytes =
-        attestations.stream().map(item -> item.toBytes()).collect(Collectors.toList());
-    List<Bytes> depositsBytes =
-        deposits.stream().map(item -> item.toBytes()).collect(Collectors.toList());
-    List<Bytes> voluntaryExitsBytes =
-        voluntary_exits.stream().map(item -> item.toBytes()).collect(Collectors.toList());
-    List<Bytes> transfersBytes =
-        transfers.stream().map(item -> item.toBytes()).collect(Collectors.toList());
-
-    return SSZ.encode(
-        writer -> {
-          writer.writeBytes(randao_reveal.toBytes());
-          writer.writeBytes(eth1_data.toBytes());
-          writer.writeFixedBytes(graffiti);
-          writer.writeBytesList(proposerSlashingsBytes);
-          writer.writeBytesList(attesterSlashingsBytes);
-          writer.writeBytesList(attestationsBytes);
-          writer.writeBytesList(depositsBytes);
-          writer.writeBytesList(voluntaryExitsBytes);
-          writer.writeBytesList(transfersBytes);
-        });
+    List<Bytes> variablePartsList = new ArrayList<>();
+    variablePartsList.addAll(Collections.nCopies(randao_reveal.getSSZFieldCount(), Bytes.EMPTY));
+    variablePartsList.addAll(Collections.nCopies(eth1_data.getSSZFieldCount(), Bytes.EMPTY));
+    variablePartsList.addAll(List.of(Bytes.EMPTY));
+    variablePartsList.addAll(
+        List.of(
+            SimpleOffsetSerializer.serializeFixedCompositeList(proposer_slashings),
+            SimpleOffsetSerializer.serializeVariableCompositeList(attester_slashings),
+            SimpleOffsetSerializer.serializeVariableCompositeList(attestations),
+            SimpleOffsetSerializer.serializeFixedCompositeList(deposits),
+            SimpleOffsetSerializer.serializeFixedCompositeList(voluntary_exits),
+            SimpleOffsetSerializer.serializeFixedCompositeList(transfers)));
+    return variablePartsList;
   }
 
   @Override
@@ -221,65 +184,71 @@ public class BeaconBlockBody implements SimpleOffsetSerializable {
     this.graffiti = graffiti;
   }
 
-  public List<Attestation> getAttestations() {
+  public SSZList<Attestation> getAttestations() {
     return attestations;
   }
 
-  public void setAttestations(List<Attestation> attestations) {
+  public void setAttestations(SSZList<Attestation> attestations) {
     this.attestations = attestations;
   }
 
-  public List<ProposerSlashing> getProposer_slashings() {
+  public SSZList<ProposerSlashing> getProposer_slashings() {
     return proposer_slashings;
   }
 
-  public void setProposer_slashings(List<ProposerSlashing> proposer_slashings) {
+  public void setProposer_slashings(SSZList<ProposerSlashing> proposer_slashings) {
     this.proposer_slashings = proposer_slashings;
   }
 
-  public List<AttesterSlashing> getAttester_slashings() {
+  public SSZList<AttesterSlashing> getAttester_slashings() {
     return attester_slashings;
   }
 
-  public void setAttester_slashings(List<AttesterSlashing> attester_slashings) {
+  public void setAttester_slashings(SSZList<AttesterSlashing> attester_slashings) {
     this.attester_slashings = attester_slashings;
   }
 
-  public List<Deposit> getDeposits() {
+  public SSZList<Deposit> getDeposits() {
     return deposits;
   }
 
-  public void setDeposits(List<Deposit> deposits) {
+  public void setDeposits(SSZList<Deposit> deposits) {
     this.deposits = deposits;
   }
 
-  public List<VoluntaryExit> getVoluntary_exits() {
+  public SSZList<VoluntaryExit> getVoluntary_exits() {
     return voluntary_exits;
   }
 
-  public void setVoluntary_exits(List<VoluntaryExit> voluntary_exits) {
+  public void setVoluntary_exits(SSZList<VoluntaryExit> voluntary_exits) {
     this.voluntary_exits = voluntary_exits;
   }
 
-  public List<Transfer> getTransfers() {
+  public SSZList<Transfer> getTransfers() {
     return transfers;
   }
 
-  public void setTransfers(List<Transfer> transfers) {
+  public void setTransfers(SSZList<Transfer> transfers) {
     this.transfers = transfers;
   }
 
   public Bytes32 hash_tree_root() {
     return HashTreeUtil.merkleize(
         Arrays.asList(
-            HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, randao_reveal.toBytes()),
+            HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_BASIC, randao_reveal.toBytes()),
             eth1_data.hash_tree_root(),
-            HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, graffiti),
-            HashTreeUtil.hash_tree_root(SSZTypes.LIST_OF_COMPOSITE, proposer_slashings),
-            HashTreeUtil.hash_tree_root(SSZTypes.LIST_OF_COMPOSITE, attester_slashings),
-            HashTreeUtil.hash_tree_root(SSZTypes.LIST_OF_COMPOSITE, attestations),
-            HashTreeUtil.hash_tree_root(SSZTypes.LIST_OF_COMPOSITE, deposits),
-            HashTreeUtil.hash_tree_root(SSZTypes.LIST_OF_COMPOSITE, voluntary_exits),
-            HashTreeUtil.hash_tree_root(SSZTypes.LIST_OF_COMPOSITE, transfers)));
+            HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_BASIC, graffiti),
+            HashTreeUtil.hash_tree_root(
+                SSZTypes.LIST_OF_COMPOSITE, Constants.MAX_PROPOSER_SLASHINGS, proposer_slashings),
+            HashTreeUtil.hash_tree_root(
+                SSZTypes.LIST_OF_COMPOSITE, Constants.MAX_ATTESTER_SLASHINGS, attester_slashings),
+            HashTreeUtil.hash_tree_root(
+                SSZTypes.LIST_OF_COMPOSITE, Constants.MAX_ATTESTATIONS, attestations),
+            HashTreeUtil.hash_tree_root(
+                SSZTypes.LIST_OF_COMPOSITE, Constants.MAX_DEPOSITS, deposits),
+            HashTreeUtil.hash_tree_root(
+                SSZTypes.LIST_OF_COMPOSITE, Constants.MAX_VOLUNTARY_EXITS, voluntary_exits),
+            HashTreeUtil.hash_tree_root(
+                SSZTypes.LIST_OF_COMPOSITE, Constants.MAX_TRANSFERS, transfers)));
   }
 }

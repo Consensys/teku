@@ -36,11 +36,14 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.DepositData;
+import tech.pegasys.artemis.datastructures.operations.DepositWithIndex;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.state.CrosslinkCommittee;
 import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.datastructures.state.Validator;
+import tech.pegasys.artemis.util.SSZTypes.Bytes4;
+import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSVerify;
 
@@ -100,7 +103,7 @@ class BeaconStateUtilTest {
     Deposit deposit = newDeposits(1).get(0);
     BLSPublicKey pubkey = deposit.getData().getPubkey();
     DepositData depositData = deposit.getData();
-    int domain =
+    Bytes domain =
         BeaconStateUtil.get_domain(
             createBeaconState(),
             Constants.DOMAIN_DEPOSIT,
@@ -116,7 +119,7 @@ class BeaconStateUtilTest {
     Deposit deposit = newDeposits(1).get(0);
     BLSPublicKey pubkey = BLSPublicKey.random();
     DepositData depositData = deposit.getData();
-    int domain =
+    Bytes domain =
         BeaconStateUtil.get_domain(
             createBeaconState(),
             Constants.DOMAIN_DEPOSIT,
@@ -272,8 +275,8 @@ class BeaconStateUtilTest {
     beaconState.setSlot(randomUnsignedLong());
     beaconState.setFork(
         new Fork(
-            Bytes.ofUnsignedInt(Constants.GENESIS_FORK_VERSION),
-            Bytes.ofUnsignedInt(Constants.GENESIS_FORK_VERSION),
+            new Bytes4(Bytes.ofUnsignedInt(0)),
+            new Bytes4(Bytes.ofUnsignedInt(0)),
             UnsignedLong.valueOf(Constants.GENESIS_EPOCH)));
 
     List<Validator> validatorList =
@@ -287,8 +290,10 @@ class BeaconStateUtilTest {
       balanceList.add(amount);
     }
 
-    beaconState.setValidator_registry(validatorList);
-    beaconState.setBalances(balanceList);
+    beaconState.setValidators(
+        new SSZList<>(validatorList, Constants.VALIDATOR_REGISTRY_LIMIT, Validator.class));
+    beaconState.setBalances(
+        new SSZList<>(balanceList, Constants.VALIDATOR_REGISTRY_LIMIT, UnsignedLong.class));
     return beaconState;
   }
 
@@ -305,7 +310,7 @@ class BeaconStateUtilTest {
     int listSize = 1000;
     boolean[] done = new boolean[listSize]; // Initialised to false
     for (int i = 0; i < listSize; i++) {
-      int idx = CrosslinkCommitteeUtil.get_shuffled_index(i, listSize, seed);
+      int idx = CrosslinkCommitteeUtil.compute_shuffled_index(i, listSize, seed);
       assertFalse(done[idx]);
       done[idx] = true;
     }
@@ -317,13 +322,13 @@ class BeaconStateUtilTest {
     int listSize = 1 + (int) randomUnsignedLong().longValue() % 1000;
     int[] shuffling = BeaconStateUtil.shuffle(listSize, seed);
     for (int i = 0; i < listSize; i++) {
-      int idx = CrosslinkCommitteeUtil.get_shuffled_index(i, listSize, seed);
+      int idx = CrosslinkCommitteeUtil.compute_shuffled_index(i, listSize, seed);
       assertEquals(shuffling[i], idx);
     }
   }
 
   private Validator createValidator() {
-    List<Deposit> deposits = newDeposits(1);
+    List<DepositWithIndex> deposits = newDeposits(1);
     Deposit deposit = deposits.get(0);
     DepositData depositInput = deposit.getData();
     BLSPublicKey pubkey = depositInput.getPubkey();
@@ -333,12 +338,12 @@ class BeaconStateUtilTest {
     return new Validator(
         pubkey,
         withdrawalCredentials,
-        Constants.FAR_FUTURE_EPOCH,
-        Constants.FAR_FUTURE_EPOCH,
-        Constants.FAR_FUTURE_EPOCH,
-        Constants.FAR_FUTURE_EPOCH,
+        UnsignedLong.valueOf(Constants.MAX_EFFECTIVE_BALANCE),
         false,
-        UnsignedLong.valueOf(Constants.MAX_EFFECTIVE_BALANCE));
+        Constants.FAR_FUTURE_EPOCH,
+        Constants.FAR_FUTURE_EPOCH,
+        Constants.FAR_FUTURE_EPOCH,
+        Constants.FAR_FUTURE_EPOCH);
   }
 
   // *************** END Shuffling Tests *****************

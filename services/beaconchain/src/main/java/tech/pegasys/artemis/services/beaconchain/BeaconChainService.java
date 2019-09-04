@@ -14,7 +14,6 @@
 package tech.pegasys.artemis.services.beaconchain;
 
 import com.google.common.eventbus.EventBus;
-import com.google.common.eventbus.Subscribe;
 import io.vertx.core.Vertx;
 import java.io.IOException;
 import org.apache.logging.log4j.Level;
@@ -26,6 +25,7 @@ import tech.pegasys.artemis.networking.p2p.api.P2PNetwork;
 import tech.pegasys.artemis.service.serviceutils.ServiceConfig;
 import tech.pegasys.artemis.service.serviceutils.ServiceInterface;
 import tech.pegasys.artemis.statetransition.StateProcessor;
+import tech.pegasys.artemis.statetransition.TimingProcessor;
 import tech.pegasys.artemis.storage.ChainStorage;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.util.alogger.ALogger;
@@ -34,12 +34,10 @@ import tech.pegasys.artemis.util.time.TimerFactory;
 import tech.pegasys.artemis.validator.coordinator.ValidatorCoordinator;
 
 public class BeaconChainService implements ServiceInterface {
-  private static final ALogger LOG = new ALogger(BeaconChainService.class.getName());
+  private static final ALogger STDOUT = new ALogger(BeaconChainService.class.getName());
   private EventBus eventBus;
   private Timer timer;
   private Vertx vertx;
-  private StateProcessor stateProcessor;
-  private ValidatorCoordinator validatorCoordinator;
   private ChainStorageClient store;
   private P2PNetwork p2pNetwork;
 
@@ -51,19 +49,21 @@ public class BeaconChainService implements ServiceInterface {
     this.eventBus = config.getEventBus();
     this.eventBus.register(this);
     this.vertx = config.getVertx();
+    int timerPeriodInMiliseconds = (int) ((1.0 / Constants.TIME_TICKER_REFRESH_RATE) * 1000);
     try {
       this.timer =
           new TimerFactory()
               .create(
                   config.getConfig().getTimer(),
-                  new Object[] {this.eventBus, 0, Constants.SECONDS_PER_SLOT},
+                  new Object[] {this.eventBus, 0, timerPeriodInMiliseconds},
                   new Class[] {EventBus.class, Integer.class, Integer.class});
     } catch (IllegalArgumentException e) {
       System.exit(1);
     }
     this.store = ChainStorage.Create(ChainStorageClient.class, eventBus);
-    this.stateProcessor = new StateProcessor(config, store);
-    this.validatorCoordinator = new ValidatorCoordinator(config, store);
+    new TimingProcessor(config, store);
+    new ValidatorCoordinator(config, store);
+    new StateProcessor(config, store);
     if ("mock".equals(config.getConfig().getNetworkMode())) {
       this.p2pNetwork = new MockP2PNetwork(eventBus);
     } else if ("hobbits".equals(config.getConfig().getNetworkMode())) {
@@ -105,10 +105,21 @@ public class BeaconChainService implements ServiceInterface {
               config.getConfig().getIdentity(),
               config.getConfig().getBootnodes(),
               config.getConfig().isBootnode());
+
+      // TODO - issue #827:
+      //      Once i have a reliable way to be notified when
+      //      libp2p peers are found then this can be removed
+      try {
+        Thread.sleep(15000);
+      } catch (InterruptedException e) {
+        STDOUT.log(Level.ERROR, e.getMessage());
+      }
+
     } else {
       throw new IllegalArgumentException(
           "Unsupported network mode " + config.getConfig().getNetworkMode());
     }
+    this.timer.start();
   }
 
   @Override
@@ -122,18 +133,10 @@ public class BeaconChainService implements ServiceInterface {
     try {
       this.p2pNetwork.close();
     } catch (IOException e) {
-      LOG.log(Level.FATAL, e.toString());
+      STDOUT.log(Level.FATAL, e.toString());
     }
     this.timer.stop();
     this.eventBus.unregister(this);
-  }
-
-  @Subscribe
-  public void afterChainStart(Boolean chainStarted) {
-    if (chainStarted) {
-      // slot scheduler fires an event that tells us when it is time for a new slot
-      this.timer.start();
-    }
   }
 
   P2PNetwork p2pNetwork() {

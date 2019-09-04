@@ -26,6 +26,7 @@ import org.apache.tuweni.plumtree.MessageSender;
 import org.apache.tuweni.plumtree.State;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
+import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.networking.p2p.hobbits.gossip.GossipCodec;
 import tech.pegasys.artemis.networking.p2p.hobbits.gossip.GossipMessage;
 import tech.pegasys.artemis.storage.ChainStorageClient;
@@ -86,7 +87,7 @@ public class PlumtreeSocketHandler extends AbstractSocketHandler {
 
   @Subscribe
   public void onNewUnprocessedBlock(BeaconBlock block) {
-    Bytes bytes = block.toBytes();
+    Bytes bytes = SimpleOffsetSerializer.serialize(block);
     if (!this.receivedMessages.containsKey(bytes.toHexString())) {
       this.receivedMessages.put(bytes.toHexString(), true);
       STDOUT.log(
@@ -99,7 +100,7 @@ public class PlumtreeSocketHandler extends AbstractSocketHandler {
 
   @Subscribe
   public void onNewUnprocessedAttestation(Attestation attestation) {
-    Bytes bytes = attestation.toBytes();
+    Bytes bytes = SimpleOffsetSerializer.serialize(attestation);
     if (!this.receivedMessages.containsKey(bytes.toHexString())) {
       this.receivedMessages.put(bytes.toHexString(), true);
       STDOUT.log(

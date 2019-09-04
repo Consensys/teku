@@ -25,6 +25,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
+import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.networking.p2p.hobbits.gossip.GossipCodec;
 import tech.pegasys.artemis.networking.p2p.hobbits.gossip.GossipMessage;
 
@@ -40,10 +41,11 @@ final class GossipCodecTest {
             BigInteger.valueOf(new Date().getTime()),
             Bytes32.random().toArrayUnsafe(),
             Bytes32.random().toArrayUnsafe(),
-            block.toBytes().toArrayUnsafe());
+            SimpleOffsetSerializer.serialize(block).toArrayUnsafe());
     GossipMessage message = GossipCodec.decode(encoded);
     assertEquals(MessageSender.Verb.GOSSIP.ordinal(), message.method());
-    BeaconBlock read = BeaconBlock.fromBytes(Bytes.wrap(message.body()));
+    BeaconBlock read =
+        SimpleOffsetSerializer.deserialize(Bytes.wrap(message.body()), BeaconBlock.class);
     assertEquals(read.getSignature(), block.getSignature());
   }
 }

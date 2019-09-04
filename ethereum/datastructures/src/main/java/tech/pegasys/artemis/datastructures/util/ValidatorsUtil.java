@@ -31,9 +31,9 @@ public class ValidatorsUtil {
    *
    * @param epoch - The epoch under consideration.
    * @return A boolean indicating if the validator is active.
-   * @see <a
-   *     href="https://github.com/ethereum/eth2.0-specs/blob/v0.4.0/specs/core/0_beacon-chain.md#is_active_validator">is_active_validator
-   *     - Spec v0.4</a>
+   * @see <a>
+   *     https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#is_active_validator
+   *     </a>
    */
   public static boolean is_active_validator(Validator validator, UnsignedLong epoch) {
     return validator.getActivation_epoch().compareTo(epoch) <= 0
@@ -69,11 +69,11 @@ public class ValidatorsUtil {
    * @param epoch - The epoch under consideration.
    * @return A list of indices representing the active validators for the given epoch.
    * @see
-   *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.7.1/specs/core/0_beacon-chain.md#get_active_validator_indices</a>
+   *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#get_active_validator_indices</a>
    */
   public static List<Integer> get_active_validator_indices(BeaconState state, UnsignedLong epoch) {
     List<Integer> active_validator_indices = Collections.synchronizedList(new ArrayList<>());
-    List<Validator> validators = state.getValidator_registry();
+    List<Validator> validators = state.getValidators();
     IntStream.range(0, validators.size())
         .parallel()
         .forEachOrdered(
@@ -84,20 +84,6 @@ public class ValidatorsUtil {
             });
 
     return active_validator_indices;
-  }
-
-  /**
-   * if index represents an active validator then return True else return False
-   *
-   * @param state
-   * @param index
-   * @param epoch
-   * @return
-   */
-  public static Boolean is_active_validator_index(
-      BeaconState state, int index, UnsignedLong epoch) {
-    List<Validator> all_validators = state.getValidator_registry();
-    return is_active_validator(all_validators.get(index), epoch);
   }
 
   /**
@@ -124,14 +110,14 @@ public class ValidatorsUtil {
    * @param index
    * @param delta
    * @see
-   *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.7.1/specs/core/0_beacon-chain.md#decrease_balance</a>
+   *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#decrease_balance</a>
    */
   public static void decrease_balance(BeaconState state, int index, UnsignedLong delta) {
-    UnsignedLong deltaBalance =
+    UnsignedLong newBalance =
         delta.compareTo(state.getBalances().get(index)) > 0
             ? UnsignedLong.ZERO
             : state.getBalances().get(index).minus(delta);
-    state.getBalances().set(index, deltaBalance);
+    state.getBalances().set(index, newBalance);
   }
 
   /**
@@ -141,7 +127,7 @@ public class ValidatorsUtil {
    * @param index
    * @param delta
    * @see
-   *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.7.1/specs/core/0_beacon-chain.md#increase_balance</a>
+   *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#increase_balance</a>
    */
   public static void increase_balance(BeaconState state, int index, UnsignedLong delta) {
     state.getBalances().set(index, state.getBalances().get(index).plus(delta));
@@ -154,7 +140,7 @@ public class ValidatorsUtil {
    * @param epoch
    * @return
    * @see
-   *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.7.1/specs/core/0_beacon-chain.md#is_slashable_validator<a/>
+   *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#is_slashable_validator<a/>
    */
   public static boolean is_slashable_validator(Validator validator, UnsignedLong epoch) {
     return !validator.isSlashed()

@@ -19,6 +19,7 @@ import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import net.p2p.mothra;
+import org.apache.logging.log4j.Level;
 import tech.pegasys.artemis.networking.p2p.api.P2PNetwork;
 import tech.pegasys.artemis.networking.p2p.mothra.MothraHandler;
 import tech.pegasys.artemis.storage.ChainStorageClient;
@@ -70,10 +71,16 @@ public final class MothraP2PNetwork implements P2PNetwork {
     this.isBootnode = isBootnode;
     this.gossipProtocol = GossipProtocol.GOSSIPSUB;
     eventBus.register(this);
-    this.handler = new MothraHandler(this.eventBus);
+    this.handler = new MothraHandler(this.eventBus, this.store);
     mothra.Init();
-    mothra.ReceivedMessage = this.handler::handleMessage;
+    mothra.DiscoveryMessage = this.handler::handleDiscoveryMessage;
+    mothra.ReceivedGossipMessage = this.handler::handleGossipMessage;
+    mothra.ReceivedRPCMessage = this.handler::handleRPCMessage;
     this.args = processArgs();
+
+    if (started.compareAndSet(false, true)) {
+      mothra.Start(args);
+    }
   }
 
   private String[] processArgs() {
@@ -89,16 +96,14 @@ public final class MothraP2PNetwork implements P2PNetwork {
               + " --datadir "
               + this.defaultDataDir
               + this.identity;
+    } else {
+      STDOUT.log(Level.INFO, "####### BOOTNODE #######");
     }
     return sargs.split(" ");
   }
 
   @Override
-  public void run() {
-    if (started.compareAndSet(false, true)) {
-      mothra.Start(args);
-    }
-  }
+  public void run() {}
 
   @Override
   public Collection<?> getPeers() {

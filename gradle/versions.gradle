@@ -29,10 +29,10 @@ dependencyManagement {
     dependency "io.prometheus:simpleclient_hotspot:0.6.0"
     dependency "io.prometheus:simpleclient_vertx:0.6.0"
 
-    dependency 'io.vertx:vertx-codegen:3.6.3'
-    dependency 'io.vertx:vertx-core:3.6.3'
-    dependency 'io.vertx:vertx-unit:3.6.3'
-    dependency 'io.vertx:vertx-web:3.6.3'
+    dependency 'io.vertx:vertx-codegen:3.8.0'
+    dependency 'io.vertx:vertx-core:3.8.0'
+    dependency 'io.vertx:vertx-unit:3.8.0'
+    dependency 'io.vertx:vertx-web:3.8.0'
 
     dependencySet(group: 'org.logl', version : '0.3.1') {
       entry 'logl-log4j2'

@@ -13,13 +13,19 @@
 
 package tech.pegasys.artemis.validator.coordinator;
 
-import static java.lang.StrictMath.toIntExact;
+import static tech.pegasys.artemis.datastructures.Constants.DOMAIN_ATTESTATION;
 import static tech.pegasys.artemis.datastructures.Constants.GENESIS_SLOT;
+import static tech.pegasys.artemis.datastructures.Constants.MAX_ATTESTATIONS;
+import static tech.pegasys.artemis.datastructures.Constants.MAX_DEPOSITS;
+import static tech.pegasys.artemis.datastructures.Constants.MAX_VALIDATORS_PER_COMMITTEE;
 import static tech.pegasys.artemis.datastructures.Constants.SLOTS_PER_EPOCH;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_of_slot;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_domain;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.slot_to_epoch;
-import static tech.pegasys.artemis.statetransition.StateTransition.process_slots;
+import static tech.pegasys.artemis.statetransition.util.ForkChoiceUtil.get_head;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.google.common.primitives.UnsignedLong;
@@ -27,13 +33,14 @@ import com.google.protobuf.ByteString;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -46,6 +53,7 @@ import org.apache.commons.lang3.tuple.Triple;
 import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.bytes.Bytes48;
 import org.apache.tuweni.crypto.SECP256K1;
 import org.apache.tuweni.ssz.SSZ;
 import org.apache.tuweni.units.bigints.UInt256;
@@ -66,18 +74,24 @@ import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.datastructures.util.AttestationUtil;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
+import tech.pegasys.artemis.datastructures.util.MockStartValidatorKeyPairFactory;
 import tech.pegasys.artemis.proto.messagesigner.MessageSignerGrpc;
 import tech.pegasys.artemis.proto.messagesigner.SignatureRequest;
 import tech.pegasys.artemis.proto.messagesigner.SignatureResponse;
 import tech.pegasys.artemis.service.serviceutils.ServiceConfig;
-import tech.pegasys.artemis.statetransition.GenesisHeadStateEvent;
-import tech.pegasys.artemis.statetransition.HeadStateEvent;
+import tech.pegasys.artemis.statetransition.GenesisStateEvent;
+import tech.pegasys.artemis.statetransition.SlotEvent;
 import tech.pegasys.artemis.statetransition.StateTransition;
 import tech.pegasys.artemis.statetransition.StateTransitionException;
+import tech.pegasys.artemis.statetransition.ValidatorAssignmentEvent;
 import tech.pegasys.artemis.statetransition.util.EpochProcessingException;
 import tech.pegasys.artemis.statetransition.util.SlotProcessingException;
 import tech.pegasys.artemis.storage.ChainStorageClient;
+import tech.pegasys.artemis.storage.Store;
+import tech.pegasys.artemis.util.SSZTypes.Bitlist;
+import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.alogger.ALogger;
+import tech.pegasys.artemis.util.alogger.ALogger.Color;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
@@ -101,17 +115,16 @@ public class ValidatorCoordinator {
   private int numValidators;
   private int numNodes;
   private BeaconBlock validatorBlock;
-  private ArrayList<Deposit> newDeposits = new ArrayList<>();
+  private SSZList<Deposit> newDeposits = new SSZList<>(Deposit.class, MAX_DEPOSITS);
   private final HashMap<BLSPublicKey, MutableTriple<BLSKeyPair, Boolean, Integer>> validatorSet =
       new HashMap<>();
-  private ChainStorageClient store;
+  private ChainStorageClient chainStorageClient;
   private HashMap<BLSPublicKey, ManagedChannel> validatorClientChannels = new HashMap<>();
   private HashMap<UnsignedLong, List<Triple<List<Integer>, UnsignedLong, Integer>>>
       committeeAssignments = new HashMap<>();
   private LinkedBlockingQueue<ProposerSlashing> slashings = new LinkedBlockingQueue<>();
   private int naughtinessPercentage;
-
-  static final Integer UNPROCESSED_BLOCKS_LENGTH = 100;
+  private boolean interopActive;
 
   @SuppressWarnings("unchecked")
   public ValidatorCoordinator(ServiceConfig config, ChainStorageClient store) {
@@ -122,11 +135,12 @@ public class ValidatorCoordinator {
     this.naughtinessPercentage = config.getConfig().getNaughtinessPercentage();
     this.numNodes = config.getConfig().getNumNodes();
     this.numValidators = config.getConfig().getNumValidators();
-    this.store = store;
+    this.chainStorageClient = store;
+    this.interopActive = config.getConfig().getInteropActive();
 
     stateTransition = new StateTransition(printEnabled);
 
-    initializeValidators(config.getConfig());
+    initializeValidators2(config.getConfig());
   }
 
   /*
@@ -175,7 +189,7 @@ public class ValidatorCoordinator {
   */
   @Subscribe
   // TODO: make sure blocks that are produced right even after new slot to be pushed.
-  public void onNewSlot(Date date) {
+  public void onNewSlot(SlotEvent slotEvent) {
     if (validatorBlock != null) {
       this.eventBus.post(validatorBlock);
       validatorBlock = null;
@@ -183,13 +197,12 @@ public class ValidatorCoordinator {
   }
 
   @Subscribe
-  public void onGenesisHeadStateEvent(GenesisHeadStateEvent genesisHeadStateEvent) {
-    onNewHeadStateEvent(
-        new HeadStateEvent(
-            genesisHeadStateEvent.getHeadState(), genesisHeadStateEvent.getHeadBlock()));
+  public void onGenesisStateEvent(GenesisStateEvent genesisHeadStateEvent) {
+    BeaconBlock genesisBlock = genesisHeadStateEvent.getGenesisBlock();
+    BeaconStateWithCache genesisState = genesisHeadStateEvent.getGenesisState();
 
     // Get validator indices of our own validators
-    List<Validator> validatorRegistry = headState.getValidator_registry();
+    List<Validator> validatorRegistry = genesisState.getValidators();
     IntStream.range(0, validatorRegistry.size())
         .forEach(
             i -> {
@@ -197,25 +210,41 @@ public class ValidatorCoordinator {
                 validatorSet.get(validatorRegistry.get(i).getPubkey()).setRight(i);
               }
             });
-
-    this.eventBus.post(true);
   }
 
   @Subscribe
-  public void onNewHeadStateEvent(HeadStateEvent headStateEvent) throws IllegalArgumentException {
+  public void onNewAssignment(ValidatorAssignmentEvent validatorAssignmentEvent)
+      throws IllegalArgumentException {
+    Store store = chainStorageClient.getStore();
+    Bytes32 headBlockRoot = get_head(store);
+    BeaconBlock headBlock = store.getBlocks().get(headBlockRoot);
+    BeaconState headState = store.getBlock_states().get(headBlockRoot);
+
+    // Logging
+    STDOUT.log(
+        Level.INFO,
+        "Head block slot:" + "                       " + headBlock.getSlot().longValue());
+    STDOUT.log(
+        Level.INFO,
+        "Justified epoch:"
+            + "                       "
+            + store.getJustified_checkpoint().getEpoch());
+    STDOUT.log(
+        Level.INFO,
+        "Finalized epoch:"
+            + "                       "
+            + store.getFinalized_checkpoint().getEpoch());
+
     try {
-      // Retrieve headState and headBlock from event
-      BeaconStateWithCache headState = headStateEvent.getHeadState();
-      BeaconBlock headBlock = headStateEvent.getHeadBlock();
 
       if (headState.getSlot().mod(UnsignedLong.valueOf(SLOTS_PER_EPOCH)).equals(UnsignedLong.ZERO)
-          || headState.getSlot().equals(UnsignedLong.valueOf(GENESIS_SLOT + 1))) {
+          || headState.getSlot().equals(UnsignedLong.valueOf(GENESIS_SLOT))) {
         validatorSet.forEach(
             (pubKey, validatorInformation) -> {
               Optional<Triple<List<Integer>, UnsignedLong, UnsignedLong>> committeeAssignment =
                   ValidatorClientUtil.get_committee_assignment(
                       headState,
-                      slot_to_epoch(headState.getSlot()),
+                      compute_epoch_of_slot(headState.getSlot()),
                       validatorInformation.getRight());
               committeeAssignment.ifPresent(
                   assignment -> {
@@ -255,7 +284,7 @@ public class ValidatorCoordinator {
 
       // Copy state so that state transition during block creation does not manipulate headState in
       // storage
-      createBlockIfNecessary(headState, headBlock);
+      createBlockIfNecessary((BeaconStateWithCache) headState, headBlock);
 
       // Save headState to check for slashings
       this.headState = headState;
@@ -270,38 +299,59 @@ public class ValidatorCoordinator {
       int indexIntoCommittee,
       CrosslinkCommittee committee,
       AttestationData genericAttestationData) {
-    int arrayLength = Math.toIntExact((committee.getCommittee().size() + 7) / 8);
-    Bytes aggregationBitfield =
-        AttestationUtil.getAggregationBitfield(indexIntoCommittee, arrayLength);
-    Bytes custodyBitfield = AttestationUtil.getCustodyBitfield(arrayLength);
+    int commmitteSize = committee.getCommitteeSize();
+    Bitlist aggregationBitfield =
+        AttestationUtil.getAggregationBits(commmitteSize, indexIntoCommittee);
+    Bitlist custodyBits = new Bitlist(commmitteSize, MAX_VALIDATORS_PER_COMMITTEE);
     AttestationData attestationData =
-        AttestationUtil.completeAttestationData(
+        AttestationUtil.completeAttestationCrosslinkData(
             state, new AttestationData(genericAttestationData), committee);
     Bytes32 attestationMessage = AttestationUtil.getAttestationMessageToSign(attestationData);
-    int domain = AttestationUtil.getDomain(state, attestationData);
+    Bytes domain = get_domain(state, DOMAIN_ATTESTATION, attestationData.getTarget().getEpoch());
 
     BLSSignature signature = getSignature(attestationMessage, domain, attester);
     this.eventBus.post(
-        new Attestation(aggregationBitfield, attestationData, custodyBitfield, signature));
+        new Attestation(aggregationBitfield, attestationData, custodyBits, signature));
   }
 
-  private BLSSignature getEpochSignature(BeaconState state, BLSPublicKey proposer) {
+  /**
+   * Gets the epoch signature used for RANDAO from the Validator Client using gRPC
+   *
+   * @param state
+   * @param proposer
+   * @return
+   * @see
+   *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.1/specs/validator/0_beacon-chain-validator.md#randao-reveal</a>
+   */
+  // TODO: since this is very similar to a spec function now, move it to a util file and
+  // abstract away the gRPC details
+  public BLSSignature get_epoch_signature(BeaconState state, BLSPublicKey proposer) {
     UnsignedLong slot = state.getSlot().plus(UnsignedLong.ONE);
-    UnsignedLong epoch = BeaconStateUtil.slot_to_epoch(slot);
+    UnsignedLong epoch = BeaconStateUtil.compute_epoch_of_slot(slot);
 
     Bytes32 messageHash =
         HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(epoch.longValue()));
-    int domain = get_domain(state, Constants.DOMAIN_RANDAO, epoch);
+    Bytes domain = get_domain(state, Constants.DOMAIN_RANDAO, epoch);
     return getSignature(messageHash, domain, proposer);
   }
 
+  /**
+   * Gets the block signature from the Validator Client using gRPC
+   *
+   * @param state
+   * @param block
+   * @param proposer
+   * @return
+   * @see
+   *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.1/specs/validator/0_beacon-chain-validator.md#signature</a>
+   */
   private BLSSignature getBlockSignature(
       BeaconState state, BeaconBlock block, BLSPublicKey proposer) {
-    int domain =
+    Bytes domain =
         get_domain(
             state,
             Constants.DOMAIN_BEACON_PROPOSER,
-            BeaconStateUtil.slot_to_epoch(block.getSlot()));
+            BeaconStateUtil.compute_epoch_of_slot(block.getSlot()));
 
     Bytes32 blockRoot = block.signing_root("signature");
 
@@ -310,7 +360,7 @@ public class ValidatorCoordinator {
 
   private BeaconBlock createInitialBlock(BeaconStateWithCache state, BeaconBlock oldBlock) {
     Bytes32 blockRoot = oldBlock.signing_root("signature");
-    List<Attestation> current_attestations = new ArrayList<>();
+    SSZList<Attestation> current_attestations = new SSZList<>(Attestation.class, MAX_ATTESTATIONS);
     final Bytes32 MockStateRoot = Bytes32.ZERO;
 
     if (state
@@ -324,17 +374,18 @@ public class ValidatorCoordinator {
           state.getSlot().minus(UnsignedLong.valueOf(Constants.MIN_ATTESTATION_INCLUSION_DELAY));
 
       current_attestations =
-          this.store.getUnprocessedAttestationsUntilSlot(state, attestation_slot);
+          this.chainStorageClient.getUnprocessedAttestationsUntilSlot(state, attestation_slot);
     }
 
     BeaconBlock newBlock =
         DataStructureUtil.newBeaconBlock(
-            state.getSlot().plus(UnsignedLong.ONE),
+            state,
             blockRoot,
             MockStateRoot,
             newDeposits,
             current_attestations,
-            numValidators);
+            numValidators,
+            interopActive);
 
     return newBlock;
   }
@@ -346,7 +397,7 @@ public class ValidatorCoordinator {
     int endIndex = startAndEnd.getRight();
     long numNaughtyValidators = Math.round((naughtinessPercentage * numValidators) / 100.0);
     List<BLSKeyPair> keypairs = new ArrayList<>();
-    if (config.getInteropActive()) {
+    if (interopActive) {
       try {
         Path path = Paths.get(config.getInteropInputFile());
         String read = Files.readAllLines(path).get(0);
@@ -390,10 +441,78 @@ public class ValidatorCoordinator {
     }
   }
 
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  private void initializeValidators2(ArtemisConfiguration config) {
+    Pair<Integer, Integer> startAndEnd = getStartAndEnd();
+    int startIndex = startAndEnd.getLeft();
+    int endIndex = startAndEnd.getRight();
+    long numNaughtyValidators = Math.round((naughtinessPercentage * numValidators) / 100.0);
+    List<BLSKeyPair> keypairs = new ArrayList<>();
+    if (interopActive) {
+      switch (config.getInteropMode()) {
+        case Constants.FILE_INTEROP:
+          try {
+            Path path = Paths.get(config.getInteropInputFile());
+            String yaml = Files.readString(path.toAbsolutePath(), StandardCharsets.US_ASCII);
+            ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
+            Map<String, List<Map>> fileMap =
+                mapper.readValue(yaml, new TypeReference<Map<String, List<Map>>>() {});
+            List<Map> depositdatakeys = fileMap.get("DepositDataKeys");
+            List<String> privateKeyStrings = new ArrayList<>();
+            depositdatakeys.forEach(
+                item -> {
+                  privateKeyStrings.add(item.get("Privkey").toString());
+                });
+            for (int i = startIndex; i <= endIndex; i++) {
+              BLSKeyPair keypair =
+                  new BLSKeyPair(
+                      new KeyPair(
+                          SecretKey.fromBytes(
+                              Bytes48.leftPad(Bytes.fromBase64String(privateKeyStrings.get(i))))));
+              keypairs.add(keypair);
+            }
+          } catch (IOException e) {
+            STDOUT.log(Level.FATAL, e.toString());
+          }
+          break;
+        case Constants.MOCKED_START_INTEROP:
+          startIndex = config.getInteropOwnedValidatorStartIndex();
+          // - 1 because endIndex is inclusive
+          endIndex = startIndex + config.getInteropOwnedValidatorCount() - 1;
+          STDOUT.log(
+              Level.INFO, "Owning validator range " + startIndex + " to " + endIndex, Color.GREEN);
+          keypairs = new MockStartValidatorKeyPairFactory().generateKeyPairs(startIndex, endIndex);
+          break;
+      }
+    } else {
+      for (int i = startIndex; i <= endIndex; i++) {
+        BLSKeyPair keypair = BLSKeyPair.random(i);
+        keypairs.add(keypair);
+      }
+    }
+    int our_index = 0;
+    for (int i = startIndex; i <= endIndex; i++) {
+      BLSKeyPair keypair = keypairs.get(our_index);
+      int port = Constants.VALIDATOR_CLIENT_PORT_BASE + i;
+      new ValidatorClient(keypair, port);
+      ManagedChannel channel =
+          ManagedChannelBuilder.forAddress("localhost", port).usePlaintext().build();
+      validatorClientChannels.put(keypair.getPublicKey(), channel);
+      STDOUT.log(Level.DEBUG, "i = " + i + ": " + keypair.getPublicKey().toString());
+      if (numNaughtyValidators > 0) {
+        validatorSet.put(keypair.getPublicKey(), new MutableTriple<>(keypair, true, -1));
+      } else {
+        validatorSet.put(keypair.getPublicKey(), new MutableTriple<>(keypair, false, -1));
+      }
+      numNaughtyValidators--;
+      our_index++;
+    }
+  }
+
   private void createBlockIfNecessary(BeaconStateWithCache state, BeaconBlock oldBlock) {
     BeaconStateWithCache checkState = BeaconStateWithCache.deepCopy(state);
     try {
-      process_slots(checkState, checkState.getSlot().plus(UnsignedLong.ONE), false);
+      stateTransition.process_slots(checkState, checkState.getSlot().plus(UnsignedLong.ONE), false);
     } catch (SlotProcessingException | EpochProcessingException e) {
       STDOUT.log(Level.FATAL, "Coordinator checking proposer index exception");
     }
@@ -401,12 +520,12 @@ public class ValidatorCoordinator {
     // Calculate the block proposer index, and if we have the
     // block proposer in our set of validators, produce the block
     int proposerIndex = BeaconStateUtil.get_beacon_proposer_index(checkState);
-    BLSPublicKey proposer = checkState.getValidator_registry().get(proposerIndex).getPubkey();
+    BLSPublicKey proposer = checkState.getValidators().get(proposerIndex).getPubkey();
 
     BeaconStateWithCache newState = BeaconStateWithCache.deepCopy(state);
     if (validatorSet.containsKey(proposer)) {
       CompletableFuture<BLSSignature> epochSignatureTask =
-          CompletableFuture.supplyAsync(() -> getEpochSignature(newState, proposer));
+          CompletableFuture.supplyAsync(() -> get_epoch_signature(newState, proposer));
       CompletableFuture<BeaconBlock> blockCreationTask =
           CompletableFuture.supplyAsync(() -> createInitialBlock(newState, oldBlock));
 
@@ -418,16 +537,14 @@ public class ValidatorCoordinator {
         List<ProposerSlashing> slashingsInBlock = newBlock.getBody().getProposer_slashings();
         slashings.forEach(
             slashing -> {
-              if (!state
-                  .getValidator_registry()
-                  .get(slashing.getProposer_index().intValue())
-                  .isSlashed()) {
+              if (!state.getValidators().get(slashing.getProposer_index().intValue()).isSlashed()) {
                 slashingsInBlock.add(slashing);
               }
             });
         slashings = new LinkedBlockingQueue<>();
         boolean validate_state_root = false;
-        Bytes32 stateRoot = stateTransition.initiate(newState, newBlock, validate_state_root);
+        Bytes32 stateRoot =
+            stateTransition.initiate(newState, newBlock, validate_state_root).hash_tree_root();
         newBlock.setState_root(stateRoot);
         BLSSignature blockSignature = getBlockSignature(newState, newBlock, proposer);
         newBlock.setSignature(blockSignature);
@@ -439,7 +556,10 @@ public class ValidatorCoordinator {
           BeaconBlock newestBlock = createInitialBlock(naughtyState, oldBlock);
           BLSSignature eSignature = epochSignatureTask.get();
           newestBlock.getBody().setRandao_reveal(eSignature);
-          Bytes32 sRoot = stateTransition.initiate(naughtyState, newestBlock, validate_state_root);
+          Bytes32 sRoot =
+              stateTransition
+                  .initiate(naughtyState, newestBlock, validate_state_root)
+                  .hash_tree_root();
           newestBlock.setState_root(sRoot);
           BLSSignature bSignature = getBlockSignature(naughtyState, newestBlock, proposer);
           newestBlock.setSignature(bSignature);
@@ -451,11 +571,11 @@ public class ValidatorCoordinator {
     }
   }
 
-  private BLSSignature getSignature(Bytes message, int domain, BLSPublicKey signer) {
+  private BLSSignature getSignature(Bytes message, Bytes domain, BLSPublicKey signer) {
     SignatureRequest request =
         SignatureRequest.newBuilder()
             .setMessage(ByteString.copyFrom(message.toArray()))
-            .setDomain(domain)
+            .setDomain(ByteString.copyFrom(domain.toArray()))
             .build();
 
     SignatureResponse response;
@@ -472,12 +592,12 @@ public class ValidatorCoordinator {
     int endIndex =
         startIndex
             + (numValidators / numNodes - 1)
-            + toIntExact(Math.round((double) nodeCounter / Math.max(1, numNodes - 1)));
+            + Math.floorDiv(nodeCounter, Math.max(1, numNodes - 1));
     endIndex = Math.min(endIndex, numValidators - 1);
 
-    int numValidators = endIndex - startIndex + 1;
-
-    LOG.log(Level.INFO, "startIndex: " + startIndex + " endIndex: " + endIndex);
+    STDOUT.log(
+        Level.INFO,
+        "nodeCounter: " + nodeCounter + " startIndex: " + startIndex + " endIndex: " + endIndex);
     return new ImmutablePair<>(startIndex, endIndex);
   }
 }

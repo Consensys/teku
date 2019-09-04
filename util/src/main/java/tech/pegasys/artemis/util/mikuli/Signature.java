@@ -70,7 +70,7 @@ public final class Signature {
   public static Signature random() {
     KeyPair keyPair = KeyPair.random();
     byte[] message = "Hello, world!".getBytes(UTF_8);
-    SignatureAndPublicKey sigAndPubKey = BLS12381.sign(keyPair, message, 48);
+    SignatureAndPublicKey sigAndPubKey = BLS12381.sign(keyPair, message, Bytes.ofUnsignedLong(48L));
     return sigAndPubKey.signature();
   }
 
@@ -83,8 +83,7 @@ public final class Signature {
   public static Signature random(int entropy) {
     KeyPair keyPair = KeyPair.random(entropy);
     byte[] message = "Hello, world!".getBytes(UTF_8);
-    SignatureAndPublicKey sigAndPubKey = BLS12381.sign(keyPair, message, 48);
-
+    SignatureAndPublicKey sigAndPubKey = BLS12381.sign(keyPair, message, Bytes.ofUnsignedLong(48L));
     return sigAndPubKey.signature();
   }
 

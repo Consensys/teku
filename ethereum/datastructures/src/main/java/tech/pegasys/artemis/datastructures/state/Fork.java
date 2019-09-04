@@ -13,8 +13,6 @@
 
 package tech.pegasys.artemis.datastructures.state;
 
-import static com.google.common.base.Preconditions.checkArgument;
-
 import com.google.common.primitives.UnsignedLong;
 import java.util.Arrays;
 import java.util.List;
@@ -22,28 +20,22 @@ import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
+import tech.pegasys.artemis.util.SSZTypes.Bytes4;
+import tech.pegasys.artemis.util.SSZTypes.SSZContainer;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
-public class Fork implements SimpleOffsetSerializable {
+public class Fork implements SimpleOffsetSerializable, SSZContainer {
 
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
   public static final int SSZ_FIELD_COUNT = 3;
 
-  private Bytes previous_version; // This is bounded as a Bytes4
-  private Bytes current_version; // This is bounded as a Bytes4
+  private Bytes4 previous_version; // This is a Version type, aliased as a Bytes4
+  private Bytes4 current_version; // This is a Version type, aliased as a Bytes4
   private UnsignedLong epoch;
 
-  public Fork(Bytes previous_version, Bytes current_version, UnsignedLong epoch) {
-    checkArgument(
-        previous_version.size() == 4,
-        "previous_version should be 4 bytes, but was %s bytes.",
-        previous_version.size());
-    checkArgument(
-        current_version.size() == 4,
-        "current_version should be 4 bytes, but was %s bytes.",
-        current_version.size());
+  public Fork(Bytes4 previous_version, Bytes4 current_version, UnsignedLong epoch) {
     this.previous_version = previous_version;
     this.current_version = current_version;
     this.epoch = epoch;
@@ -63,28 +55,9 @@ public class Fork implements SimpleOffsetSerializable {
   @Override
   public List<Bytes> get_fixed_parts() {
     return List.of(
-        SSZ.encode(writer -> writer.writeFixedBytes(previous_version)),
-        SSZ.encode(writer -> writer.writeFixedBytes(current_version)),
+        SSZ.encode(writer -> writer.writeFixedBytes(previous_version.getWrappedBytes())),
+        SSZ.encode(writer -> writer.writeFixedBytes(current_version.getWrappedBytes())),
         SSZ.encodeUInt64(epoch.longValue()));
-  }
-
-  public static Fork fromBytes(Bytes bytes) {
-    return SSZ.decode(
-        bytes,
-        reader ->
-            new Fork(
-                Bytes.wrap(reader.readFixedBytes(4)),
-                Bytes.wrap(reader.readFixedBytes(4)),
-                UnsignedLong.fromLongBits(reader.readUInt64())));
-  }
-
-  public Bytes toBytes() {
-    return SSZ.encode(
-        writer -> {
-          writer.writeFixedBytes(previous_version);
-          writer.writeFixedBytes(current_version);
-          writer.writeUInt64(epoch.longValue());
-        });
   }
 
   @Override
@@ -107,33 +80,29 @@ public class Fork implements SimpleOffsetSerializable {
     }
 
     Fork other = (Fork) obj;
-    return Objects.equals(this.getPrevious_version(), other.getPrevious_version())
-        && Objects.equals(this.getCurrent_version(), other.getCurrent_version())
+    return Objects.equals(
+            this.getPrevious_version().getWrappedBytes(),
+            other.getPrevious_version().getWrappedBytes())
+        && Objects.equals(
+            this.getCurrent_version().getWrappedBytes(),
+            other.getCurrent_version().getWrappedBytes())
         && Objects.equals(this.getEpoch(), other.getEpoch());
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */
-  public Bytes getPrevious_version() {
+  public Bytes4 getPrevious_version() {
     return previous_version;
   }
 
-  public void setPrevious_version(Bytes previous_version) {
-    checkArgument(
-        previous_version.size() == 4,
-        "previous_version should be 4 bytes, but was %s bytes.",
-        previous_version.size());
+  public void setPrevious_version(Bytes4 previous_version) {
     this.previous_version = previous_version;
   }
 
-  public Bytes getCurrent_version() {
+  public Bytes4 getCurrent_version() {
     return current_version;
   }
 
-  public void setCurrent_version(Bytes current_version) {
-    checkArgument(
-        current_version.size() == 4,
-        "current_version should be 4 bytes, but was %s bytes.",
-        current_version.size());
+  public void setCurrent_version(Bytes4 current_version) {
     this.current_version = current_version;
   }
 
@@ -148,8 +117,10 @@ public class Fork implements SimpleOffsetSerializable {
   public Bytes32 hash_tree_root() {
     return HashTreeUtil.merkleize(
         Arrays.asList(
-            HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, previous_version),
-            HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, current_version),
+            HashTreeUtil.hash_tree_root(
+                SSZTypes.VECTOR_OF_BASIC, previous_version.getWrappedBytes()),
+            HashTreeUtil.hash_tree_root(
+                SSZTypes.VECTOR_OF_BASIC, current_version.getWrappedBytes()),
             HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(epoch.longValue()))));
   }
 }

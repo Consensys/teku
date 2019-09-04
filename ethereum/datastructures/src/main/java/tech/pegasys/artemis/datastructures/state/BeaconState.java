@@ -13,7 +13,7 @@
 
 package tech.pegasys.artemis.datastructures.state;
 
-import static tech.pegasys.artemis.datastructures.Constants.ZERO_HASH;
+import static tech.pegasys.artemis.datastructures.Constants.JUSTIFICATION_BITS_LENGTH;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.int_to_bytes;
 
 import com.google.common.primitives.UnsignedLong;
@@ -27,363 +27,355 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.artemis.datastructures.Constants;
-import tech.pegasys.artemis.datastructures.blocks.BeaconBlockBody;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
+import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
+import tech.pegasys.artemis.util.SSZTypes.Bitvector;
+import tech.pegasys.artemis.util.SSZTypes.Bytes4;
+import tech.pegasys.artemis.util.SSZTypes.SSZContainer;
+import tech.pegasys.artemis.util.SSZTypes.SSZList;
+import tech.pegasys.artemis.util.SSZTypes.SSZVector;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
-public class BeaconState implements SimpleOffsetSerializable {
+public class BeaconState implements SimpleOffsetSerializable, SSZContainer {
 
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
-  public static final int SSZ_FIELD_COUNT = 11;
+  public static final int SSZ_FIELD_COUNT = 19;
 
-  // Misc
-  protected UnsignedLong slot;
+  // Versioning
   protected UnsignedLong genesis_time;
+  protected UnsignedLong slot;
   protected Fork fork; // For versioning hard forks
 
-  // Validator registry
-  protected List<Validator> validator_registry;
-  protected List<UnsignedLong> balances;
-
-  // Randomness and committees
-  protected List<Bytes32> latest_randao_mixes; // Bounded by LATEST_RANDAO_MIXES_LENGTH
-  protected UnsignedLong latest_start_shard;
-
-  // Finality
-  protected List<PendingAttestation> previous_epoch_attestations;
-  protected List<PendingAttestation> current_epoch_attestations;
-  protected UnsignedLong previous_justified_epoch;
-  protected UnsignedLong current_justified_epoch;
-  protected Bytes32 previous_justified_root;
-  protected Bytes32 current_justified_root;
-  protected UnsignedLong justification_bitfield;
-  protected UnsignedLong finalized_epoch;
-  protected Bytes32 finalized_root;
-
-  // Recent state
-  protected List<Crosslink> current_crosslinks; // Bounded by SHARD_COUNT
-  protected List<Crosslink> previous_crosslinks; // Bounded by SHARD_COUNT
-  protected List<Bytes32> latest_block_roots; // Bounded by SLOTS_PER_HISTORICAL_ROOT
-  protected List<Bytes32> latest_state_roots; // Bounded by SLOTS_PER_HISTORICAL_ROOT
-  protected List<Bytes32> latest_active_index_roots; // Bounded by LATEST_ACTIVE_INDEX_ROOTS_LENGTH
-  // TODO This is bounded by LATEST_SLASHED_EXIT_LENGTH
-  protected List<UnsignedLong>
-      latest_slashed_balances; // Balances slashed at every withdrawal period
-  protected BeaconBlockHeader
-      latest_block_header; // `latest_block_header.state_root == ZERO_HASH` temporarily
-  protected List<Bytes32> historical_roots;
+  // History
+  protected BeaconBlockHeader latest_block_header;
+  protected SSZVector<Bytes32> block_roots; // Vector Bounded by SLOTS_PER_HISTORICAL_ROOT
+  protected SSZVector<Bytes32> state_roots; // Vector Bounded by SLOTS_PER_HISTORICAL_ROOT
+  protected SSZList<Bytes32> historical_roots; // Bounded by HISTORICAL_ROOTS_LIMIT
 
   // Ethereum 1.0 chain data
-  protected Eth1Data latest_eth1_data;
-  protected List<Eth1Data> eth1_data_votes;
-  protected UnsignedLong deposit_index;
+  protected Eth1Data eth1_data;
+  protected SSZList<Eth1Data> eth1_data_votes; // List Bounded by SLOTS_PER_ETH1_VOTING_PERIOD
+  protected UnsignedLong eth1_deposit_index;
+
+  // Validator registry
+  protected SSZList<Validator> validators; // List Bounded by VALIDATOR_REGISTRY_LIMIT
+  protected SSZList<UnsignedLong> balances; // List Bounded by VALIDATOR_REGISTRY_LIMIT
+
+  // Shuffling
+  protected UnsignedLong start_shard;
+  protected SSZVector<Bytes32> randao_mixes; // Vector Bounded by EPOCHS_PER_HISTORICAL_VECTOR
+  protected SSZVector<Bytes32> active_index_roots; // Vector Bounded by EPOCHS_PER_HISTORICAL_VECTOR
+  protected SSZVector<Bytes32>
+      compact_committees_roots; // Vector Bounded by EPOCHS_PER_HISTORICAL_VECTOR
+
+  // Slashings
+  protected SSZVector<UnsignedLong> slashings; // Vector Bounded by EPOCHS_PER_SLASHINGS_VECTOR
+
+  // Attestations
+  protected SSZList<PendingAttestation>
+      previous_epoch_attestations; // List bounded by MAX_ATTESTATIONS * SLOTS_PER_EPOCH
+  protected SSZList<PendingAttestation>
+      current_epoch_attestations; // List bounded by MAX_ATTESTATIONS * SLOTS_PER_EPOCH
+
+  // Crosslinks
+  protected SSZVector<Crosslink> previous_crosslinks; // Vector Bounded by SHARD_COUNT
+  protected SSZVector<Crosslink> current_crosslinks; // Vector Bounded by SHARD_COUNT
+
+  // Finality
+  protected Bitvector justification_bits; // Bitvector bounded by JUSTIFICATION_BITS_LENGTH
+  protected Checkpoint previous_justified_checkpoint;
+  protected Checkpoint current_justified_checkpoint;
+  protected Checkpoint finalized_checkpoint;
+
+  public BeaconState(
+      // Versioning
+      UnsignedLong genesis_time,
+      UnsignedLong slot,
+      Fork fork,
+
+      // History
+      BeaconBlockHeader latest_block_header,
+      SSZVector<Bytes32> block_roots,
+      SSZVector<Bytes32> state_roots,
+      SSZList<Bytes32> historical_roots,
+
+      // Eth1
+      Eth1Data eth1_data,
+      SSZList<Eth1Data> eth1_data_votes,
+      UnsignedLong eth1_deposit_index,
+
+      // Registry
+      SSZList<Validator> validators,
+      SSZList<UnsignedLong> balances,
+
+      // Shuffling
+      UnsignedLong start_shard,
+      SSZVector<Bytes32> randao_mixes,
+      SSZVector<Bytes32> active_index_roots,
+      SSZVector<Bytes32> compact_committees_roots,
+
+      // Slashings
+      SSZVector<UnsignedLong> slashings,
+
+      // Attestations
+      SSZList<PendingAttestation> previous_epoch_attestations,
+      SSZList<PendingAttestation> current_epoch_attestations,
+
+      // Crosslinks
+      SSZVector<Crosslink> previous_crosslinks,
+      SSZVector<Crosslink> current_crosslinks,
+
+      // Finality
+      Bitvector justification_bits,
+      Checkpoint previous_justified_checkpoint,
+      Checkpoint current_justified_checkpoint,
+      Checkpoint finalized_checkpoint) {
+    // Versioning
+    this.genesis_time = genesis_time;
+    this.slot = slot;
+    this.fork = fork;
+
+    // History
+    this.latest_block_header = latest_block_header;
+    this.block_roots = block_roots;
+    this.state_roots = state_roots;
+    this.historical_roots = historical_roots;
+
+    // Eth1
+    this.eth1_data = eth1_data;
+    this.eth1_data_votes = eth1_data_votes;
+    this.eth1_deposit_index = eth1_deposit_index;
+
+    // Registry
+    this.validators = validators;
+    this.balances = balances;
+
+    // Shuffling
+    this.start_shard = start_shard;
+    this.randao_mixes = randao_mixes;
+    this.active_index_roots = active_index_roots;
+    this.compact_committees_roots = compact_committees_roots;
+
+    // Slashings
+    this.slashings = slashings;
+
+    // Attestations
+    this.previous_epoch_attestations = previous_epoch_attestations;
+    this.current_epoch_attestations = current_epoch_attestations;
+
+    // Crosslinks
+    this.previous_crosslinks = previous_crosslinks;
+    this.current_crosslinks = current_crosslinks;
+
+    // Finality
+    this.justification_bits = justification_bits;
+    this.previous_justified_checkpoint = previous_justified_checkpoint;
+    this.current_justified_checkpoint = current_justified_checkpoint;
+    this.finalized_checkpoint = finalized_checkpoint;
+  }
 
   public BeaconState() {
 
-    this.slot = UnsignedLong.valueOf(Constants.GENESIS_SLOT);
+    // Versioning
     this.genesis_time = UnsignedLong.ZERO;
+    this.slot = UnsignedLong.valueOf(Constants.GENESIS_SLOT);
     this.fork =
         new Fork(
-            int_to_bytes(Constants.GENESIS_FORK_VERSION, 4),
-            int_to_bytes(Constants.GENESIS_FORK_VERSION, 4),
+            new Bytes4(int_to_bytes(0, 4)),
+            new Bytes4(int_to_bytes(0, 4)),
             UnsignedLong.valueOf(Constants.GENESIS_EPOCH));
 
-    this.validator_registry = new ArrayList<>();
-    this.balances = new ArrayList<>();
+    // History
+    this.latest_block_header = new BeaconBlockHeader();
+    this.block_roots = new SSZVector<>(Constants.SLOTS_PER_HISTORICAL_ROOT, Constants.ZERO_HASH);
+    this.state_roots = new SSZVector<>(Constants.SLOTS_PER_HISTORICAL_ROOT, Constants.ZERO_HASH);
+    this.historical_roots = new SSZList<>(Bytes32.class, Constants.HISTORICAL_ROOTS_LIMIT);
 
-    this.latest_randao_mixes =
-        new ArrayList<>(
-            Collections.nCopies(Constants.LATEST_RANDAO_MIXES_LENGTH, Constants.ZERO_HASH));
-    this.latest_start_shard = UnsignedLong.ZERO; // TODO: not sure about this
-
-    this.previous_epoch_attestations = new ArrayList<>();
-    this.current_epoch_attestations = new ArrayList<>();
-    this.previous_justified_epoch = UnsignedLong.valueOf(Constants.GENESIS_EPOCH);
-    this.current_justified_epoch = UnsignedLong.valueOf(Constants.GENESIS_EPOCH);
-    this.previous_justified_root = Constants.ZERO_HASH;
-    this.current_justified_root = Constants.ZERO_HASH;
-    this.justification_bitfield = UnsignedLong.ZERO;
-    this.finalized_epoch = UnsignedLong.valueOf(Constants.GENESIS_EPOCH);
-    this.finalized_root = Constants.ZERO_HASH;
-
-    this.current_crosslinks =
-        new ArrayList<>(Collections.nCopies(Constants.SHARD_COUNT, new Crosslink()));
-    this.previous_crosslinks =
-        new ArrayList<>(Collections.nCopies(Constants.SHARD_COUNT, new Crosslink()));
-    this.latest_block_roots =
-        new ArrayList<>(
-            Collections.nCopies(Constants.SLOTS_PER_HISTORICAL_ROOT, Constants.ZERO_HASH));
-    this.latest_state_roots =
-        new ArrayList<>(
-            Collections.nCopies(Constants.SLOTS_PER_HISTORICAL_ROOT, Constants.ZERO_HASH));
-    this.latest_active_index_roots =
-        new ArrayList<>(
-            Collections.nCopies(Constants.LATEST_ACTIVE_INDEX_ROOTS_LENGTH, Constants.ZERO_HASH));
-    this.latest_slashed_balances =
-        new ArrayList<>(
-            Collections.nCopies(Constants.LATEST_SLASHED_EXIT_LENGTH, UnsignedLong.ZERO));
-    Bytes32 body_root = new BeaconBlockBody().hash_tree_root();
-    this.latest_block_header = new BeaconBlockHeader(body_root);
-    this.historical_roots = new ArrayList<>();
-
+    // Eth1
     // TODO gotta change this with genesis eth1DATA because deposit count is dependent on the
     // number of validators
-    this.latest_eth1_data = new Eth1Data(ZERO_HASH, UnsignedLong.ZERO, ZERO_HASH);
-    this.eth1_data_votes = new ArrayList<>();
-    this.deposit_index = UnsignedLong.ZERO;
-  }
+    this.eth1_data = new Eth1Data(Constants.ZERO_HASH, UnsignedLong.ZERO, Constants.ZERO_HASH);
+    this.eth1_data_votes = new SSZList<>(Eth1Data.class, Constants.SLOTS_PER_ETH1_VOTING_PERIOD);
+    this.eth1_deposit_index = UnsignedLong.ZERO;
 
-  public BeaconState(
-      // Misc
-      UnsignedLong slot,
-      UnsignedLong genesis_time,
-      Fork fork, // For versioning hard forks
+    // Registry
+    this.validators = new SSZList<>(Validator.class, Constants.VALIDATOR_REGISTRY_LIMIT);
+    this.balances = new SSZList<>(UnsignedLong.class, Constants.VALIDATOR_REGISTRY_LIMIT);
 
-      // Validator registry
-      List<Validator> validator_registry,
-      List<UnsignedLong> balances,
+    // Shuffling
+    this.start_shard = UnsignedLong.ZERO;
+    this.randao_mixes =
+        new SSZVector<>(Constants.EPOCHS_PER_HISTORICAL_VECTOR, Constants.ZERO_HASH);
+    this.active_index_roots =
+        new SSZVector<>(Constants.EPOCHS_PER_HISTORICAL_VECTOR, Constants.ZERO_HASH);
+    this.compact_committees_roots =
+        new SSZVector<>(Constants.EPOCHS_PER_HISTORICAL_VECTOR, Constants.ZERO_HASH);
 
-      // Randomness and committees
-      List<Bytes32> latest_randao_mixes,
-      UnsignedLong latest_start_shard,
+    // Slashings
+    this.slashings = new SSZVector<>(Constants.EPOCHS_PER_SLASHINGS_VECTOR, UnsignedLong.ZERO);
 
-      // Finality
-      List<PendingAttestation> previous_epoch_attestations,
-      List<PendingAttestation> current_epoch_attestations,
-      UnsignedLong previous_justified_epoch,
-      UnsignedLong current_justified_epoch,
-      Bytes32 previous_justified_root,
-      Bytes32 current_justified_root,
-      UnsignedLong justification_bitfield,
-      UnsignedLong finalized_epoch,
-      Bytes32 finalized_root,
+    // Attestations
+    this.previous_epoch_attestations =
+        new SSZList<>(
+            PendingAttestation.class, Constants.MAX_ATTESTATIONS * Constants.SLOTS_PER_EPOCH);
+    this.current_epoch_attestations =
+        new SSZList<>(
+            PendingAttestation.class, Constants.MAX_ATTESTATIONS * Constants.SLOTS_PER_EPOCH);
 
-      // Recent state
-      List<Crosslink> current_crosslinks,
-      List<Crosslink> previous_crosslinks,
-      List<Bytes32> latest_block_roots,
-      List<Bytes32> latest_state_roots,
-      List<Bytes32> latest_active_index_roots,
-      List<UnsignedLong> latest_slashed_balances, // Balances slashed at every withdrawal period
-      BeaconBlockHeader latest_block_header,
-      List<Bytes32> historical_roots,
+    // Crosslinks
+    this.previous_crosslinks = new SSZVector<>(Constants.SHARD_COUNT, new Crosslink());
+    this.current_crosslinks = new SSZVector<>(Constants.SHARD_COUNT, new Crosslink());
 
-      // Ethereum 1.0 chain data
-      Eth1Data latest_eth1_data,
-      List<Eth1Data> eth1_data_votes,
-      UnsignedLong deposit_index) {
-    this.slot = slot;
-    this.fork = fork;
-    this.genesis_time = genesis_time;
-
-    this.validator_registry = validator_registry;
-    this.balances = balances;
-
-    this.latest_randao_mixes = latest_randao_mixes;
-    this.latest_start_shard = latest_start_shard;
-
-    this.previous_epoch_attestations = previous_epoch_attestations;
-    this.current_epoch_attestations = current_epoch_attestations;
-    this.previous_justified_epoch = previous_justified_epoch;
-    this.current_justified_epoch = current_justified_epoch;
-    this.previous_justified_root = previous_justified_root;
-    this.current_justified_root = current_justified_root;
-    this.justification_bitfield = justification_bitfield;
-    this.finalized_epoch = finalized_epoch;
-    this.finalized_root = finalized_root;
-
-    this.current_crosslinks = current_crosslinks;
-    this.previous_crosslinks = previous_crosslinks;
-    this.latest_block_roots = latest_block_roots;
-    this.latest_state_roots = latest_state_roots;
-    this.latest_active_index_roots = latest_active_index_roots;
-    this.latest_slashed_balances = latest_slashed_balances;
-    this.latest_block_header = latest_block_header;
-    this.historical_roots = historical_roots;
-
-    this.latest_eth1_data = latest_eth1_data;
-    this.eth1_data_votes = eth1_data_votes;
-    this.deposit_index = deposit_index;
+    // Finality
+    this.justification_bits = new Bitvector(JUSTIFICATION_BITS_LENGTH);
+    this.previous_justified_checkpoint = new Checkpoint();
+    this.current_justified_checkpoint = new Checkpoint();
+    this.finalized_checkpoint = new Checkpoint();
   }
 
   @Override
   public int getSSZFieldCount() {
-    // TODO Finish this stub.
-    return SSZ_FIELD_COUNT;
+    return SSZ_FIELD_COUNT
+        + fork.getSSZFieldCount()
+        + latest_block_header.getSSZFieldCount()
+        + eth1_data.getSSZFieldCount()
+        + previous_justified_checkpoint.getSSZFieldCount()
+        + current_justified_checkpoint.getSSZFieldCount()
+        + finalized_checkpoint.getSSZFieldCount();
   }
 
   @Override
   public List<Bytes> get_fixed_parts() {
-    // TODO Implement this stub.
-    return Collections.nCopies(getSSZFieldCount(), Bytes.EMPTY);
+    List<Bytes> fixedPartsList = new ArrayList<>();
+    fixedPartsList.addAll(
+        List.of(
+            SSZ.encodeUInt64(genesis_time.longValue()),
+            SSZ.encodeUInt64(slot.longValue()),
+            SimpleOffsetSerializer.serialize(fork),
+            SimpleOffsetSerializer.serialize(latest_block_header),
+            SSZ.encode(writer -> writer.writeFixedBytesVector(block_roots)),
+            SSZ.encode(writer -> writer.writeFixedBytesVector(state_roots)),
+            Bytes.EMPTY,
+            SimpleOffsetSerializer.serialize(eth1_data),
+            Bytes.EMPTY,
+            SSZ.encodeUInt64(eth1_deposit_index.longValue()),
+            Bytes.EMPTY,
+            Bytes.EMPTY,
+            SSZ.encodeUInt64(start_shard.longValue()),
+            SSZ.encode(writer -> writer.writeFixedBytesVector(randao_mixes)),
+            SSZ.encode(writer -> writer.writeFixedBytesVector(active_index_roots)),
+            SSZ.encode(writer -> writer.writeFixedBytesVector(compact_committees_roots)),
+            SSZ.encode(
+                writer ->
+                    writer.writeFixedBytesVector(
+                        slashings.stream()
+                            .map(slashing -> SSZ.encodeUInt64(slashing.longValue()))
+                            .collect(Collectors.toList()))),
+            Bytes.EMPTY,
+            Bytes.EMPTY,
+            SSZ.encode(
+                writer ->
+                    writer.writeFixedBytesVector(
+                        previous_crosslinks.stream()
+                            .map(
+                                previousCrosslink ->
+                                    SimpleOffsetSerializer.serialize(previousCrosslink))
+                            .collect(Collectors.toList()))),
+            SSZ.encode(
+                writer ->
+                    writer.writeFixedBytesVector(
+                        current_crosslinks.stream()
+                            .map(
+                                currentCrosslink ->
+                                    SimpleOffsetSerializer.serialize(currentCrosslink))
+                            .collect(Collectors.toList()))),
+            justification_bits.serialize(),
+            SimpleOffsetSerializer.serialize(previous_justified_checkpoint),
+            SimpleOffsetSerializer.serialize(current_justified_checkpoint),
+            SimpleOffsetSerializer.serialize(finalized_checkpoint)));
+    return fixedPartsList;
   }
 
   @Override
   public List<Bytes> get_variable_parts() {
-    // TODO Implement this stub.
-    return Collections.nCopies(getSSZFieldCount(), Bytes.EMPTY);
-  }
-
-  public static BeaconState fromBytes(Bytes bytes) {
-    return SSZ.decode(
-        bytes,
-        reader ->
-            new BeaconState(
-                // Misc
-                UnsignedLong.fromLongBits(reader.readUInt64()),
-                UnsignedLong.fromLongBits(reader.readUInt64()),
-                Fork.fromBytes(reader.readBytes()),
-                // Validator registry
-                reader.readBytesList().stream()
-                    .map(Validator::fromBytes)
-                    .collect(Collectors.toList()),
-                reader.readUInt64List().stream()
-                    .map(UnsignedLong::fromLongBits)
-                    .collect(Collectors.toList()),
-                // Randomness and committees
-                reader.readFixedBytesVector(Constants.LATEST_RANDAO_MIXES_LENGTH, 32).stream()
-                    .map(Bytes32::wrap)
-                    .collect(Collectors.toList()),
-                UnsignedLong.fromLongBits(reader.readUInt64()),
-                // Finality
-                reader.readBytesList().stream()
-                    .map(PendingAttestation::fromBytes)
-                    .collect(Collectors.toList()),
-                reader.readBytesList().stream()
-                    .map(PendingAttestation::fromBytes)
-                    .collect(Collectors.toList()),
-                UnsignedLong.fromLongBits(reader.readUInt64()),
-                UnsignedLong.fromLongBits(reader.readUInt64()),
-                Bytes32.wrap(reader.readFixedBytes(32)),
-                Bytes32.wrap(reader.readFixedBytes(32)),
-                UnsignedLong.fromLongBits(reader.readUInt64()),
-                UnsignedLong.fromLongBits(reader.readUInt64()),
-                Bytes32.wrap(reader.readFixedBytes(32)),
-                // Recent state
-                reader.readVector(Constants.SHARD_COUNT).stream()
-                    .map(Crosslink::fromBytes)
-                    .collect(Collectors.toList()),
-                reader.readVector(Constants.SHARD_COUNT).stream()
-                    .map(Crosslink::fromBytes)
-                    .collect(Collectors.toList()),
-                reader.readFixedBytesVector(Constants.SLOTS_PER_HISTORICAL_ROOT, 32).stream()
-                    .map(Bytes32::wrap)
-                    .collect(Collectors.toList()),
-                reader.readFixedBytesVector(Constants.SLOTS_PER_HISTORICAL_ROOT, 32).stream()
-                    .map(Bytes32::wrap)
-                    .collect(Collectors.toList()),
-                reader.readFixedBytesVector(Constants.LATEST_ACTIVE_INDEX_ROOTS_LENGTH, 32).stream()
-                    .map(Bytes32::wrap)
-                    .collect(Collectors.toList()),
-                reader.readUInt64List().stream()
-                    .map(UnsignedLong::fromLongBits)
-                    .collect(Collectors.toList()), // TODO This must be a fixed sized list
-                BeaconBlockHeader.fromBytes(reader.readBytes()),
-                reader.readFixedBytesList(32).stream()
-                    .map(Bytes32::wrap)
-                    .collect(Collectors.toList()),
-                // Ethereum 1.0 chain data
-                Eth1Data.fromBytes(reader.readBytes()),
-                reader.readBytesList().stream()
-                    .map(Eth1Data::fromBytes)
-                    .collect(Collectors.toList()),
-                UnsignedLong.fromLongBits(reader.readUInt64())));
-  }
-
-  public Bytes toBytes() {
-    List<Bytes> validator_registryBytes =
-        validator_registry.stream().map(item -> item.toBytes()).collect(Collectors.toList());
-    List<Bytes> current_crosslinksBytes =
-        current_crosslinks.stream().map(item -> item.toBytes()).collect(Collectors.toList());
-    List<Bytes> previous_crosslinksBytes =
-        previous_crosslinks.stream().map(item -> item.toBytes()).collect(Collectors.toList());
-    List<Bytes> eth1_data_votesBytes =
-        eth1_data_votes.stream().map(item -> item.toBytes()).collect(Collectors.toList());
-    List<Bytes> previous_epoch_attestationsBytes =
-        previous_epoch_attestations.stream()
-            .map(item -> item.toBytes())
-            .collect(Collectors.toList());
-    List<Bytes> current_epoch_attestationsBytes =
-        current_epoch_attestations.stream()
-            .map(item -> item.toBytes())
-            .collect(Collectors.toList());
-
-    return SSZ.encode(
-        writer -> {
-          // Misc
-          writer.writeUInt64(slot.longValue());
-          writer.writeUInt64(genesis_time.longValue());
-          writer.writeBytes(fork.toBytes());
-          // Validator registry
-          writer.writeBytesList(validator_registryBytes);
-          writer.writeULongIntList(
-              64, balances.stream().map(UnsignedLong::longValue).collect(Collectors.toList()));
-          // Randomness and committees
-          writer.writeFixedBytesVector(latest_randao_mixes);
-          writer.writeUInt64(latest_start_shard.longValue());
-          // Finality
-          writer.writeBytesList(previous_epoch_attestationsBytes);
-          writer.writeBytesList(current_epoch_attestationsBytes);
-          writer.writeUInt64(previous_justified_epoch.longValue());
-          writer.writeUInt64(current_justified_epoch.longValue());
-          writer.writeFixedBytes(previous_justified_root);
-          writer.writeFixedBytes(current_justified_root);
-          writer.writeUInt64(justification_bitfield.longValue());
-          writer.writeUInt64(finalized_epoch.longValue());
-          writer.writeFixedBytes(finalized_root);
-          // Recent state
-          writer.writeVector(current_crosslinksBytes);
-          writer.writeVector(previous_crosslinksBytes);
-          writer.writeFixedBytesVector(latest_block_roots);
-          writer.writeFixedBytesVector(latest_state_roots);
-          writer.writeFixedBytesVector(latest_active_index_roots);
-          writer.writeULongIntList(
-              64,
-              latest_slashed_balances.stream()
-                  .map(UnsignedLong::longValue)
-                  .collect(Collectors.toList()));
-          writer.writeBytes(latest_block_header.toBytes());
-          writer.writeFixedBytesList(historical_roots);
-          // Ethereum 1.0 chain data
-          writer.writeBytes(latest_eth1_data.toBytes());
-          writer.writeBytesList(eth1_data_votesBytes);
-          writer.writeUInt64(deposit_index.longValue());
-        });
+    List<Bytes> variablePartsList = new ArrayList<>();
+    variablePartsList.addAll(
+        List.of(Bytes.EMPTY, Bytes.EMPTY, Bytes.EMPTY, Bytes.EMPTY, Bytes.EMPTY, Bytes.EMPTY));
+    variablePartsList.add(SSZ.encode(writer -> writer.writeFixedBytesVector(historical_roots)));
+    variablePartsList.add(Bytes.EMPTY);
+    variablePartsList.add(SimpleOffsetSerializer.serializeFixedCompositeList(eth1_data_votes));
+    variablePartsList.add(Bytes.EMPTY);
+    variablePartsList.add(SimpleOffsetSerializer.serializeFixedCompositeList(validators));
+    // TODO The below lines are a hack while Tuweni SSZ/SOS is being upgraded.
+    variablePartsList.add(
+        Bytes.fromHexString(
+            balances.stream()
+                .map(value -> SSZ.encodeUInt64(value.longValue()).toHexString().substring(2))
+                .collect(Collectors.joining())));
+    variablePartsList.addAll(
+        List.of(Bytes.EMPTY, Bytes.EMPTY, Bytes.EMPTY, Bytes.EMPTY, Bytes.EMPTY));
+    variablePartsList.add(
+        SimpleOffsetSerializer.serializeVariableCompositeList(previous_epoch_attestations));
+    variablePartsList.add(
+        SimpleOffsetSerializer.serializeVariableCompositeList(current_epoch_attestations));
+    variablePartsList.addAll(List.of(Bytes.EMPTY, Bytes.EMPTY, Bytes.EMPTY));
+    variablePartsList.addAll(
+        Collections.nCopies(previous_justified_checkpoint.getSSZFieldCount(), Bytes.EMPTY));
+    variablePartsList.addAll(
+        Collections.nCopies(current_justified_checkpoint.getSSZFieldCount(), Bytes.EMPTY));
+    variablePartsList.addAll(
+        Collections.nCopies(finalized_checkpoint.getSSZFieldCount(), Bytes.EMPTY));
+    return variablePartsList;
   }
 
   @Override
   public int hashCode() {
     return Objects.hash(
-        slot,
+        // Versioning
         genesis_time,
+        slot,
         fork,
-        validator_registry,
+
+        // History
+        latest_block_header,
+        block_roots,
+        state_roots,
+        historical_roots,
+
+        // Eth1
+        eth1_data,
+        eth1_data_votes,
+        eth1_deposit_index,
+
+        // Registry
+        validators,
         balances,
-        latest_randao_mixes,
-        latest_start_shard,
+
+        // Shuffling
+        start_shard,
+        randao_mixes,
+        active_index_roots,
+        compact_committees_roots,
+
+        // Slashings
+        slashings,
+
+        // Attestations
         previous_epoch_attestations,
         current_epoch_attestations,
-        previous_justified_epoch,
-        current_justified_epoch,
-        previous_justified_root,
-        current_justified_root,
-        justification_bitfield,
-        finalized_epoch,
-        finalized_root,
+
+        // Crosslinks
         current_crosslinks,
         previous_crosslinks,
-        latest_block_roots,
-        latest_state_roots,
-        latest_active_index_roots,
-        latest_slashed_balances,
-        latest_block_header,
-        historical_roots,
-        latest_eth1_data,
-        eth1_data_votes,
-        deposit_index);
+
+        // Finality
+        justification_bits,
+        previous_justified_checkpoint,
+        current_justified_checkpoint,
+        finalized_checkpoint);
   }
 
   @Override
@@ -401,52 +393,54 @@ public class BeaconState implements SimpleOffsetSerializable {
     }
 
     BeaconState other = (BeaconState) obj;
-    return Objects.equals(slot, other.getSlot())
-        && Objects.equals(this.getGenesis_time(), other.getGenesis_time())
+    return Objects.equals(this.getGenesis_time(), other.getGenesis_time())
+        && Objects.equals(slot, other.getSlot())
         && Objects.equals(this.getFork(), other.getFork())
-        && Objects.equals(this.getValidator_registry(), other.getValidator_registry())
+        && Objects.equals(this.getLatest_block_header(), other.getLatest_block_header())
+        && Objects.equals(this.getBlock_roots(), other.getBlock_roots())
+        && Objects.equals(this.getState_roots(), other.getState_roots())
+        && Objects.equals(this.getHistorical_roots(), other.getHistorical_roots())
+        && Objects.equals(this.getEth1_data(), other.getEth1_data())
+        && Objects.equals(this.getEth1_data_votes(), other.getEth1_data_votes())
+        && Objects.equals(this.getEth1_deposit_index(), other.getEth1_deposit_index())
+        && Objects.equals(this.getValidators(), other.getValidators())
         && Objects.equals(this.getBalances(), other.getBalances())
-        && Objects.equals(this.getLatest_randao_mixes(), other.getLatest_randao_mixes())
-        && Objects.equals(this.getLatest_start_shard(), other.getLatest_start_shard())
+        && Objects.equals(this.getStart_shard(), other.getStart_shard())
+        && Objects.equals(this.getRandao_mixes(), other.getRandao_mixes())
+        && Objects.equals(this.getActive_index_roots(), other.getActive_index_roots())
+        && Objects.equals(this.getCompact_committees_roots(), other.getCompact_committees_roots())
+        && Objects.equals(this.getSlashings(), other.getSlashings())
         && Objects.equals(
             this.getPrevious_epoch_attestations(), other.getPrevious_epoch_attestations())
         && Objects.equals(
             this.getCurrent_epoch_attestations(), other.getCurrent_epoch_attestations())
-        && Objects.equals(this.getPrevious_justified_epoch(), other.getPrevious_justified_epoch())
-        && Objects.equals(this.getCurrent_justified_epoch(), other.getCurrent_justified_epoch())
-        && Objects.equals(this.getPrevious_justified_root(), other.getPrevious_justified_root())
-        && Objects.equals(this.getCurrent_justified_root(), other.getCurrent_justified_root())
-        && Objects.equals(this.getJustification_bitfield(), other.getJustification_bitfield())
-        && Objects.equals(this.getFinalized_epoch(), other.getFinalized_epoch())
-        && Objects.equals(this.getFinalized_root(), other.getFinalized_root())
-        && Objects.equals(this.getCurrent_crosslinks(), other.getCurrent_crosslinks())
         && Objects.equals(this.getPrevious_crosslinks(), other.getPrevious_crosslinks())
-        && Objects.equals(this.getLatest_block_roots(), other.getLatest_block_roots())
-        && Objects.equals(this.getLatest_state_roots(), other.getLatest_state_roots())
-        && Objects.equals(this.getLatest_active_index_roots(), other.getLatest_active_index_roots())
-        && Objects.equals(this.getLatest_slashed_balances(), other.getLatest_slashed_balances())
-        && Objects.equals(this.getLatest_block_header(), other.getLatest_block_header())
-        && Objects.equals(this.getHistorical_roots(), other.getHistorical_roots())
-        && Objects.equals(this.getLatest_eth1_data(), other.getLatest_eth1_data())
-        && Objects.equals(this.getEth1_data_votes(), other.getEth1_data_votes())
-        && Objects.equals(this.getDeposit_index(), other.getDeposit_index());
+        && Objects.equals(this.getCurrent_crosslinks(), other.getCurrent_crosslinks())
+        && Objects.equals(this.getJustification_bits(), other.getJustification_bits())
+        && Objects.equals(
+            this.getPrevious_justified_checkpoint(), other.getPrevious_justified_checkpoint())
+        && Objects.equals(
+            this.getCurrent_justified_checkpoint(), other.getCurrent_justified_checkpoint())
+        && Objects.equals(this.getFinalized_checkpoint(), other.getFinalized_checkpoint());
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */
-  public UnsignedLong getSlot() {
-    return slot;
-  }
 
-  public void setSlot(UnsignedLong slot) {
-    this.slot = slot;
-  }
-
+  // Versioning
   public UnsignedLong getGenesis_time() {
     return genesis_time;
   }
 
   public void setGenesis_time(UnsignedLong genesis_time) {
     this.genesis_time = genesis_time;
+  }
+
+  public UnsignedLong getSlot() {
+    return slot;
+  }
+
+  public void setSlot(UnsignedLong slot) {
+    this.slot = slot;
   }
 
   public Fork getFork() {
@@ -457,158 +451,7 @@ public class BeaconState implements SimpleOffsetSerializable {
     this.fork = fork;
   }
 
-  public List<Validator> getValidator_registry() {
-    return validator_registry;
-  }
-
-  public void setValidator_registry(List<Validator> validator_registry) {
-    this.validator_registry = validator_registry;
-  }
-
-  public List<UnsignedLong> getBalances() {
-    return balances;
-  }
-
-  public void setBalances(List<UnsignedLong> balances) {
-    this.balances = balances;
-  }
-
-  public List<Bytes32> getLatest_randao_mixes() {
-    return latest_randao_mixes;
-  }
-
-  public void setLatest_randao_mixes(List<Bytes32> latest_randao_mixes) {
-    this.latest_randao_mixes = latest_randao_mixes;
-  }
-
-  public UnsignedLong getLatest_start_shard() {
-    return latest_start_shard;
-  }
-
-  public void setLatest_start_shard(UnsignedLong latest_start_shard) {
-    this.latest_start_shard = latest_start_shard;
-  }
-
-  public List<PendingAttestation> getPrevious_epoch_attestations() {
-    return previous_epoch_attestations;
-  }
-
-  public void setPrevious_epoch_attestations(List<PendingAttestation> previous_epoch_attestations) {
-    this.previous_epoch_attestations = previous_epoch_attestations;
-  }
-
-  public List<PendingAttestation> getCurrent_epoch_attestations() {
-    return current_epoch_attestations;
-  }
-
-  public void setCurrent_epoch_attestations(List<PendingAttestation> current_epoch_attestations) {
-    this.current_epoch_attestations = current_epoch_attestations;
-  }
-
-  public UnsignedLong getPrevious_justified_epoch() {
-    return previous_justified_epoch;
-  }
-
-  public void setPrevious_justified_epoch(UnsignedLong previous_justified_epoch) {
-    this.previous_justified_epoch = previous_justified_epoch;
-  }
-
-  public UnsignedLong getCurrent_justified_epoch() {
-    return current_justified_epoch;
-  }
-
-  public void setCurrent_justified_epoch(UnsignedLong current_justified_epoch) {
-    this.current_justified_epoch = current_justified_epoch;
-  }
-
-  public Bytes32 getPrevious_justified_root() {
-    return previous_justified_root;
-  }
-
-  public void setPrevious_justified_root(Bytes32 previous_justified_root) {
-    this.previous_justified_root = previous_justified_root;
-  }
-
-  public Bytes32 getCurrent_justified_root() {
-    return current_justified_root;
-  }
-
-  public void setCurrent_justified_root(Bytes32 current_justified_root) {
-    this.current_justified_root = current_justified_root;
-  }
-
-  public UnsignedLong getJustification_bitfield() {
-    return justification_bitfield;
-  }
-
-  public void setJustification_bitfield(UnsignedLong justification_bitfield) {
-    this.justification_bitfield = justification_bitfield;
-  }
-
-  public UnsignedLong getFinalized_epoch() {
-    return finalized_epoch;
-  }
-
-  public void setFinalized_epoch(UnsignedLong finalized_epoch) {
-    this.finalized_epoch = finalized_epoch;
-  }
-
-  public Bytes32 getFinalized_root() {
-    return finalized_root;
-  }
-
-  public void setFinalized_root(Bytes32 finalized_root) {
-    this.finalized_root = finalized_root;
-  }
-
-  public List<Crosslink> getCurrent_crosslinks() {
-    return current_crosslinks;
-  }
-
-  public void setCurrent_crosslinks(ArrayList<Crosslink> current_crosslinks) {
-    this.current_crosslinks = current_crosslinks;
-  }
-
-  public List<Crosslink> getPrevious_crosslinks() {
-    return previous_crosslinks;
-  }
-
-  public void setPrevious_crosslinks(List<Crosslink> previous_crosslinks) {
-    this.previous_crosslinks = previous_crosslinks;
-  }
-
-  public List<Bytes32> getLatest_block_roots() {
-    return latest_block_roots;
-  }
-
-  public void setLatest_block_roots(List<Bytes32> latest_block_roots) {
-    this.latest_block_roots = latest_block_roots;
-  }
-
-  public List<Bytes32> getLatest_state_roots() {
-    return latest_state_roots;
-  }
-
-  public void setLatest_state_roots(List<Bytes32> latest_state_roots) {
-    this.latest_state_roots = latest_state_roots;
-  }
-
-  public List<Bytes32> getLatest_active_index_roots() {
-    return latest_active_index_roots;
-  }
-
-  public void setLatest_active_index_roots(List<Bytes32> latest_active_index_roots) {
-    this.latest_active_index_roots = latest_active_index_roots;
-  }
-
-  public List<UnsignedLong> getLatest_slashed_balances() {
-    return latest_slashed_balances;
-  }
-
-  public void setLatest_slashed_balances(List<UnsignedLong> latest_slashed_balances) {
-    this.latest_slashed_balances = latest_slashed_balances;
-  }
-
+  // History
   public BeaconBlockHeader getLatest_block_header() {
     return latest_block_header;
   }
@@ -617,36 +460,181 @@ public class BeaconState implements SimpleOffsetSerializable {
     this.latest_block_header = latest_block_header;
   }
 
-  public List<Bytes32> getHistorical_roots() {
+  public SSZVector<Bytes32> getBlock_roots() {
+    return block_roots;
+  }
+
+  public void setBlock_roots(SSZVector<Bytes32> block_roots) {
+    this.block_roots = block_roots;
+  }
+
+  public SSZVector<Bytes32> getState_roots() {
+    return state_roots;
+  }
+
+  public void setState_roots(SSZVector<Bytes32> state_roots) {
+    this.state_roots = state_roots;
+  }
+
+  public SSZList<Bytes32> getHistorical_roots() {
     return historical_roots;
   }
 
-  public void setHistorical_roots(List<Bytes32> historical_roots) {
+  public void setHistorical_roots(SSZList<Bytes32> historical_roots) {
     this.historical_roots = historical_roots;
   }
 
-  public Eth1Data getLatest_eth1_data() {
-    return latest_eth1_data;
+  // Eth1
+  public Eth1Data getEth1_data() {
+    return eth1_data;
   }
 
-  public void setLatest_eth1_data(Eth1Data latest_eth1_data) {
-    this.latest_eth1_data = latest_eth1_data;
+  public void setEth1_data(Eth1Data eth1_data) {
+    this.eth1_data = eth1_data;
   }
 
-  public List<Eth1Data> getEth1_data_votes() {
+  public SSZList<Eth1Data> getEth1_data_votes() {
     return eth1_data_votes;
   }
 
-  public void setEth1_data_votes(List<Eth1Data> eth1_data_votes) {
+  public void setEth1_data_votes(SSZList<Eth1Data> eth1_data_votes) {
     this.eth1_data_votes = eth1_data_votes;
   }
 
-  public UnsignedLong getDeposit_index() {
-    return deposit_index;
+  public UnsignedLong getEth1_deposit_index() {
+    return eth1_deposit_index;
   }
 
-  public void setDeposit_index(UnsignedLong deposit_index) {
-    this.deposit_index = deposit_index;
+  public void setEth1_deposit_index(UnsignedLong eth1_deposit_index) {
+    this.eth1_deposit_index = eth1_deposit_index;
+  }
+
+  // Registry
+  public SSZList<Validator> getValidators() {
+    return validators;
+  }
+
+  public void setValidators(SSZList<Validator> validators) {
+    this.validators = validators;
+  }
+
+  public SSZList<UnsignedLong> getBalances() {
+    return balances;
+  }
+
+  public void setBalances(SSZList<UnsignedLong> balances) {
+    this.balances = balances;
+  }
+
+  // Shuffling
+  public UnsignedLong getStart_shard() {
+    return start_shard;
+  }
+
+  public void setStart_shard(UnsignedLong start_shard) {
+    this.start_shard = start_shard;
+  }
+
+  public SSZVector<Bytes32> getRandao_mixes() {
+    return randao_mixes;
+  }
+
+  public void setRandao_mixes(SSZVector<Bytes32> randao_mixes) {
+    this.randao_mixes = randao_mixes;
+  }
+
+  public SSZVector<Bytes32> getActive_index_roots() {
+    return active_index_roots;
+  }
+
+  public void setActive_index_roots(SSZVector<Bytes32> active_index_roots) {
+    this.active_index_roots = active_index_roots;
+  }
+
+  public SSZVector<Bytes32> getCompact_committees_roots() {
+    return compact_committees_roots;
+  }
+
+  public void setCompact_committees_roots(SSZVector<Bytes32> compact_committees_roots) {
+    this.compact_committees_roots = compact_committees_roots;
+  }
+
+  // Slashings
+  public SSZVector<UnsignedLong> getSlashings() {
+    return slashings;
+  }
+
+  public void setSlashings(SSZVector<UnsignedLong> slashings) {
+    this.slashings = slashings;
+  }
+
+  // Attestations
+  public SSZList<PendingAttestation> getPrevious_epoch_attestations() {
+    return previous_epoch_attestations;
+  }
+
+  public void setPrevious_epoch_attestations(
+      SSZList<PendingAttestation> previous_epoch_attestations) {
+    this.previous_epoch_attestations = previous_epoch_attestations;
+  }
+
+  public SSZList<PendingAttestation> getCurrent_epoch_attestations() {
+    return current_epoch_attestations;
+  }
+
+  public void setCurrent_epoch_attestations(
+      SSZList<PendingAttestation> current_epoch_attestations) {
+    this.current_epoch_attestations = current_epoch_attestations;
+  }
+
+  // Crosslinks
+  public SSZVector<Crosslink> getPrevious_crosslinks() {
+    return previous_crosslinks;
+  }
+
+  public void setPrevious_crosslinks(SSZVector<Crosslink> previous_crosslinks) {
+    this.previous_crosslinks = previous_crosslinks;
+  }
+
+  public SSZVector<Crosslink> getCurrent_crosslinks() {
+    return current_crosslinks;
+  }
+
+  public void setCurrent_crosslinks(SSZVector<Crosslink> current_crosslinks) {
+    this.current_crosslinks = current_crosslinks;
+  }
+
+  // Finality
+  public Bitvector getJustification_bits() {
+    return justification_bits;
+  }
+
+  public void setJustification_bits(Bitvector justification_bits) {
+    this.justification_bits = justification_bits;
+  }
+
+  public Checkpoint getPrevious_justified_checkpoint() {
+    return previous_justified_checkpoint;
+  }
+
+  public void setPrevious_justified_checkpoint(Checkpoint previous_justified_checkpoint) {
+    this.previous_justified_checkpoint = previous_justified_checkpoint;
+  }
+
+  public Checkpoint getCurrent_justified_checkpoint() {
+    return current_justified_checkpoint;
+  }
+
+  public void setCurrent_justified_checkpoint(Checkpoint current_justified_checkpoint) {
+    this.current_justified_checkpoint = current_justified_checkpoint;
+  }
+
+  public Checkpoint getFinalized_checkpoint() {
+    return finalized_checkpoint;
+  }
+
+  public void setFinalized_checkpoint(Checkpoint finalized_checkpoint) {
+    this.finalized_checkpoint = finalized_checkpoint;
   }
 
   public void incrementSlot() {
@@ -656,59 +644,75 @@ public class BeaconState implements SimpleOffsetSerializable {
   public Bytes32 hash_tree_root() {
     return HashTreeUtil.merkleize(
         Arrays.asList(
-            // Misc
-            HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(slot.longValue())),
+            // Versioning
             HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(genesis_time.longValue())),
+            HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(slot.longValue())),
             fork.hash_tree_root(),
-            // Validator registry
-            HashTreeUtil.hash_tree_root(SSZTypes.LIST_OF_COMPOSITE, validator_registry),
+
+            // History
+            latest_block_header.hash_tree_root(),
+            HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_COMPOSITE, block_roots),
+            HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_COMPOSITE, state_roots),
+            HashTreeUtil.hash_tree_root_list_bytes(
+                Constants.HISTORICAL_ROOTS_LIMIT, historical_roots),
+
+            // Ethereum 1.0 chain data
+            // TODO change hardcoded 16 to Constants.SLOTS_PER_ETH1_VOTING_PERIOD once
+            // mainnet-vs-minimal
+            //  constants are configurable
+            eth1_data.hash_tree_root(),
+            HashTreeUtil.hash_tree_root(SSZTypes.LIST_OF_COMPOSITE, 16, eth1_data_votes),
             HashTreeUtil.hash_tree_root(
-                SSZTypes.LIST_OF_BASIC,
+                SSZTypes.BASIC, SSZ.encodeUInt64(eth1_deposit_index.longValue())),
+
+            // Validator registry
+            HashTreeUtil.hash_tree_root(
+                SSZTypes.LIST_OF_COMPOSITE, Constants.VALIDATOR_REGISTRY_LIMIT, validators),
+            HashTreeUtil.hash_tree_root_list_ul(
+                Constants.VALIDATOR_REGISTRY_LIMIT,
                 balances.stream()
                     .map(item -> SSZ.encodeUInt64(item.longValue()))
                     .collect(Collectors.toList())),
-            // Randomness and committees
-            HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_COMPOSITE, latest_randao_mixes),
+
+            // Shuffling
+            HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(start_shard.longValue())),
+            HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_COMPOSITE, randao_mixes),
+            HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_COMPOSITE, active_index_roots),
+            HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_COMPOSITE, compact_committees_roots),
+
+            // Slashings
+            HashTreeUtil.hash_tree_root_vector_unsigned_long(slashings),
+
+            // Attestations
+            // TODO change hardcoded 8 to Constants.SLOTS_PER_EPOCH once mainnet-vs-minimal
+            //  constants are configurable
             HashTreeUtil.hash_tree_root(
-                SSZTypes.BASIC, SSZ.encodeUInt64(latest_start_shard.longValue())),
-            // Finality
-            HashTreeUtil.hash_tree_root(SSZTypes.LIST_OF_COMPOSITE, previous_epoch_attestations),
-            HashTreeUtil.hash_tree_root(SSZTypes.LIST_OF_COMPOSITE, current_epoch_attestations),
+                SSZTypes.LIST_OF_COMPOSITE,
+                Constants.MAX_ATTESTATIONS * 8,
+                previous_epoch_attestations),
+            // TODO channge hardcoded 8 to Constants.SLOTS_PER_EPOCH once mainnet-vs-minimal
+            //  constants are configurable
             HashTreeUtil.hash_tree_root(
-                SSZTypes.BASIC, SSZ.encodeUInt64(previous_justified_epoch.longValue())),
+                SSZTypes.LIST_OF_COMPOSITE,
+                Constants.MAX_ATTESTATIONS * 8,
+                current_epoch_attestations),
+
+            // Crosslinks
             HashTreeUtil.hash_tree_root(
-                SSZTypes.BASIC, SSZ.encodeUInt64(current_justified_epoch.longValue())),
-            HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, previous_justified_root),
-            HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, current_justified_root),
-            HashTreeUtil.hash_tree_root(
-                SSZTypes.BASIC, SSZ.encodeUInt64(justification_bitfield.longValue())),
-            HashTreeUtil.hash_tree_root(
-                SSZTypes.BASIC, SSZ.encodeUInt64(finalized_epoch.longValue())),
-            HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_BASIC, finalized_root),
-            // Recent state
-            HashTreeUtil.merkleize(
-                current_crosslinks.stream()
-                    .map(item -> item.hash_tree_root())
-                    .collect(Collectors.toList())),
-            HashTreeUtil.merkleize(
+                SSZTypes.VECTOR_OF_COMPOSITE,
                 previous_crosslinks.stream()
                     .map(item -> item.hash_tree_root())
                     .collect(Collectors.toList())),
-            HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_COMPOSITE, latest_block_roots),
-            HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_COMPOSITE, latest_state_roots),
-            HashTreeUtil.hash_tree_root(SSZTypes.TUPLE_OF_COMPOSITE, latest_active_index_roots),
             HashTreeUtil.hash_tree_root(
-                SSZTypes.TUPLE_OF_BASIC,
-                latest_slashed_balances.stream()
-                    .map(item -> SSZ.encodeUInt64(item.longValue()))
-                    .collect(Collectors.toList())
-                    .toArray(new Bytes[0])),
-            latest_block_header.hash_tree_root(),
-            HashTreeUtil.hash_tree_root(SSZTypes.LIST_OF_COMPOSITE, historical_roots),
-            // Ethereum 1.0 chain data
-            latest_eth1_data.hash_tree_root(),
-            HashTreeUtil.hash_tree_root(SSZTypes.LIST_OF_COMPOSITE, eth1_data_votes),
-            HashTreeUtil.hash_tree_root(
-                SSZTypes.BASIC, SSZ.encodeUInt64(deposit_index.longValue()))));
+                SSZTypes.VECTOR_OF_COMPOSITE,
+                current_crosslinks.stream()
+                    .map(item -> item.hash_tree_root())
+                    .collect(Collectors.toList())),
+
+            // Finality
+            HashTreeUtil.hash_tree_root_bitvector(justification_bits),
+            previous_justified_checkpoint.hash_tree_root(),
+            current_justified_checkpoint.hash_tree_root(),
+            finalized_checkpoint.hash_tree_root()));
   }
 }

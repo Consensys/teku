@@ -20,7 +20,7 @@ $ ./gradlew
 
 After a successful build, distribution packages will be available in `build/distributions`.
 
-## Run Demo (Hobbits)
+## Run Demo (Mothra)
 
 After building, follow these instructions:
 
@@ -29,13 +29,13 @@ $ cd scripts
 $ sh run.sh -n=[NUMBER OF NODES]
 ```
 
-## Run Demo (Mothra)
+## Run Demo (Hobbits)
 
 After building, follow these instructions:
 
 ```bash
 $ cd scripts
-$ sh run.sh -n=[NUMBER OF NODES] -m=mothra
+$ sh run.sh -n=[NUMBER OF NODES] -m=hobbits
 ```
 
 > Note:  You will need tmux installed for this demo to work
@@ -135,14 +135,33 @@ $ ./gradlew run -PgenerateFlow
 
 ## Activating Interop Mode
 
-To initialize BeaconState and Validators staticly for interop testing, change the
+There are two supported interop modes - file and mocked.
+
+### File Interop Mode
+
+To initialize BeaconState and Validators statically for interop testing, change the
 interop settings in `config/config.toml`.
 
 1) Set the active boolean to true.
-2) Set the inputFile string to the JSON file that has Validator private key and Deposit objec information.
+2) Set mode to `file`
+3) Set the inputFile string to the JSON file that has Validator private key and Deposit objec information.
 
 ```
 [interop]
 active = true
+mode = "file"
 inputFile = "interopDepositsAndKeys.json"
 ```
+
+### Mocked Start Interop Mode
+
+To initialize BeaconState and Validators using the 
+[mocked start process](https://github.com/ethereum/eth2.0-pm/tree/master/interop/mocked_start) 
+change the interop settings in `config/config.toml`.
+
+1) Set the active boolean to true
+2) Set mode to `mocked`
+3) Set the genesisTime to the agreed value (`genesis_time` from the spec)
+4) Set ownedValidatorStartIndex to the index of the first validator to be run by this node
+5) Set ownedValidatorCount to the number of validators to be run by this node
+6) Under `deposit` set `numValidators` to the agreed number of initial validators (`validator_count` from the spec)
