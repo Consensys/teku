@@ -93,7 +93,7 @@ public class BeaconChainService implements ServiceInterface {
               config.getConfig().getPort(),
               config.getConfig().getAdvertisedPort(),
               config.getConfig().getNetworkInterface(),
-              config.getConfig().getStaticPeers(),
+              config.getConfig().getStaticHobbitsPeers(),
               gossipProtocol);
     } else if ("mothra".equals(config.getConfig().getNetworkMode())) {
       this.p2pNetwork =
@@ -104,17 +104,8 @@ public class BeaconChainService implements ServiceInterface {
               config.getConfig().getNetworkInterface(),
               config.getConfig().getIdentity(),
               config.getConfig().getBootnodes(),
-              config.getConfig().isBootnode());
-
-      // TODO - issue #827:
-      //      Once i have a reliable way to be notified when
-      //      libp2p peers are found then this can be removed
-      try {
-        Thread.sleep(15000);
-      } catch (InterruptedException e) {
-        STDOUT.log(Level.ERROR, e.getMessage());
-      }
-
+              config.getConfig().isBootnode(),
+              config.getConfig().getStaticMothraPeers());
     } else {
       throw new IllegalArgumentException(
           "Unsupported network mode " + config.getConfig().getNetworkMode());
