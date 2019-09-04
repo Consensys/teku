@@ -3,6 +3,10 @@
 
 CLIENT=$1
 
+BOOTNODE_ENR=$(cat ~/.mothra/network/enr.dat)
+VALIDATOR_COUNT=8
+GENESIS_TIME=1567570251  #$((`date +%s`))
+
 if [ "$CLIENT" == "artemis" ]
 then
     SCRIPT_DIR=$(dirname $0)
@@ -12,25 +16,18 @@ then
     rm -f ../config/runConfig.*
     configure_node "mothra" 0 1 "../config/config.toml"
     sh configurator.sh "../config/runConfig.0.toml" active true
-    sh configurator.sh "../config/runConfig.0.toml" genesisTime 1567570251
+    sh configurator.sh "../config/runConfig.0.toml" genesisTime $GENESIS_TIME
     sh configurator.sh "../config/runConfig.0.toml" ownedValidatorStartIndex 0
     sh configurator.sh "../config/runConfig.0.toml" ownedValidatorCount 4
-    sh configurator.sh "../config/runConfig.0.toml" numValidators 4
+    sh configurator.sh "../config/runConfig.0.toml" numValidators $VALIDATOR_COUNT
     sh configurator.sh "../config/runConfig.0.toml" numNodes 1
     cd $SCRIPT_DIR/demo/node_0/ && ./artemis --config=./config/runConfig.0.toml --logging=INFO
 
 elif [ "$CLIENT" == "lighthouse-node" ]
 then
-
-    export BOOTNODE_ENR=$(cat ~/.mothra/network/enr.dat)
     export LISTEN_ADDRESS=127.0.0.1
     export PORT=19001
-
     export DIR=$HOME/projects/consensys/pegasys/lighthouse/lighthouse/target/release
-    export EXE=beacon_node
-
-    export VALIDATOR_COUNT=8
-    export GENESIS_TIME=1567570251  #$((`date +%s`))
 
     # Start lighthouse
     # export RUST_LOG=libp2p_gossipsub=debug
@@ -48,7 +45,7 @@ then
 elif [ "$CLIENT" == "lighthouse-validator" ]
 then
     export DIR=$HOME/projects/consensys/pegasys/lighthouse/lighthouse/target/release
-    export VALIDATOR_COUNT=8
+
     cd $DIR  && ./validator_client testnet -b insecure 0 $VALIDATOR_COUNT
 fi
 
