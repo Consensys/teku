@@ -81,7 +81,7 @@ public final class MothraP2PNetwork implements P2PNetwork {
     mothra.DiscoveryMessage = this.handler::handleDiscoveryMessage;
     mothra.ReceivedGossipMessage = this.handler::handleGossipMessage;
     mothra.ReceivedRPCMessage = this.handler::handleRPCMessage;
-    if (this.peers.size() == 0) {
+    if (this.peers.isEmpty()) {
       // TODO - issue #827:
       //      Once i have a reliable way to be notified when
       //      libp2p peers are found then this can be removed
