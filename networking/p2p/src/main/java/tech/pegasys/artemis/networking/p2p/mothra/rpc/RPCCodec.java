@@ -19,7 +19,9 @@ import de.undercouch.bson4jackson.BsonFactory;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.util.json.BytesModule;
+import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
 public final class RPCCodec {
 
@@ -43,14 +45,8 @@ public final class RPCCodec {
    * @param request the payload of the request
    * @return the encoded RPC message
    */
-  public static Bytes encode(Object request) {
-    ObjectNode bodyNode = mapper.createObjectNode();
-    bodyNode.putPOJO("body", request);
-    try {
-      return Bytes.wrap(mapper.writer().writeValueAsBytes(bodyNode));
-    } catch (IOException e) {
-      throw new IllegalArgumentException(e.getMessage());
-    }
+  public static Bytes encode(SimpleOffsetSerializable request) {
+    return SimpleOffsetSerializer.serialize(request);
   }
 
   /**

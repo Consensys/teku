@@ -13,55 +13,72 @@
 
 package tech.pegasys.artemis.networking.p2p.mothra.rpc;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import java.math.BigInteger;
-import java.nio.ByteBuffer;
+import com.google.common.primitives.UnsignedLong;
+import java.util.ArrayList;
+import java.util.List;
+import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.ssz.SSZ;
+import tech.pegasys.artemis.util.SSZTypes.Bytes4;
+import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
-public final class HelloMessage {
+public final class HelloMessage implements SimpleOffsetSerializable {
 
-  private final byte[] forkVersion;
-  private final byte[] finalizedRoot;
-  private final BigInteger finalizedEpoch;
-  private final byte[] headRoot;
-  private final BigInteger headSlot;
+  private final Bytes4 forkVersion;
+  private final Bytes32 finalizedRoot;
+  private final UnsignedLong finalizedEpoch;
+  private final Bytes32 headRoot;
+  private final UnsignedLong headSlot;
 
-  @JsonCreator
   public HelloMessage(
-      @JsonProperty("fork_version") int forkVersion,
-      @JsonProperty("finalized_root") byte[] finalizedRoot,
-      @JsonProperty("finalized_epoch") BigInteger finalizedEpoch,
-      @JsonProperty("head_root") byte[] headRoot,
-      @JsonProperty("head_slot") BigInteger headSlot) {
-    this.forkVersion = ByteBuffer.allocate(4).putInt(forkVersion).array();
+      Bytes4 forkVersion,
+      Bytes32 finalizedRoot,
+      UnsignedLong finalizedEpoch,
+      Bytes32 headRoot,
+      UnsignedLong headSlot) {
+    this.forkVersion = forkVersion;
     this.finalizedRoot = finalizedRoot;
     this.finalizedEpoch = finalizedEpoch;
     this.headRoot = headRoot;
     this.headSlot = headSlot;
   }
 
-  @JsonProperty("fork_version")
-  public byte[] forkVersion() {
+  /** * SSZ Interface Overrides ** */
+  @Override
+  public int getSSZFieldCount() {
+    return 5;
+  }
+
+  @Override
+  public List<Bytes> get_fixed_parts() {
+    List<Bytes> fixedPartsList =
+        new ArrayList<>(
+            List.of(
+                SSZ.encode(writer -> writer.writeFixedBytes(forkVersion.getWrappedBytes())),
+                SSZ.encode(writer -> writer.writeFixedBytes(finalizedRoot)),
+                SSZ.encodeUInt64(finalizedEpoch.longValue()),
+                SSZ.encode(writer -> writer.writeFixedBytes(headRoot)),
+                SSZ.encodeUInt64(headSlot.longValue())));
+    return fixedPartsList;
+  }
+  /** * SSZ Interface Overrides ** */
+  public Bytes4 forkVersion() {
     return forkVersion;
   }
 
-  @JsonProperty("finalized_root")
-  public byte[] finalizedRoot() {
+  public Bytes32 finalizedRoot() {
     return finalizedRoot;
   }
 
-  @JsonProperty("finalized_epoch")
-  public BigInteger finalizedEpoch() {
+  public UnsignedLong finalizedEpoch() {
     return finalizedEpoch;
   }
 
-  @JsonProperty("head_root")
-  public byte[] headRoot() {
+  public Bytes32 headRoot() {
     return headRoot;
   }
 
-  @JsonProperty("head_slot")
-  public BigInteger headSlot() {
+  public UnsignedLong headSlot() {
     return headSlot;
   }
 }
