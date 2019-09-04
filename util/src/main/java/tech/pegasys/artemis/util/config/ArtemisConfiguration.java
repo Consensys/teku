@@ -25,11 +25,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.config.Configuration;
-import org.apache.tuweni.config.ConfigurationError;
 import org.apache.tuweni.config.PropertyValidator;
 import org.apache.tuweni.config.Schema;
 import org.apache.tuweni.config.SchemaBuilder;
@@ -83,29 +81,7 @@ public final class ArtemisConfiguration {
     builder.addString("deposit.nodeUrl", null, "URL for Eth 1.0 node", null);
     builder.addString(
         "deposit.contractAddr", null, "Contract address for the deposit contract", null);
-    builder.addListOfString(
-        "node.peers",
-        Collections.emptyList(),
-        "Static peers",
-        (key, position, peers) ->
-            peers != null
-                ? peers.stream()
-                    .map(
-                        peer -> {
-                          try {
-                            URI uri = new URI(peer);
-                            String userInfo = uri.getUserInfo();
-                            if (userInfo == null || userInfo.isEmpty()) {
-                              return new ConfigurationError("Missing public key");
-                            }
-                          } catch (URISyntaxException e) {
-                            return new ConfigurationError("Invalid uri " + peer);
-                          }
-                          return null;
-                        })
-                    .filter(Objects::nonNull)
-                    .collect(Collectors.toList())
-                : null);
+    builder.addListOfString("node.peers", Collections.emptyList(), "Static peers", null);
     builder.addLong(
         "node.networkID", 1L, "The identifier of the network (mainnet, testnet, sidechain)", null);
 
@@ -634,7 +610,7 @@ public final class ArtemisConfiguration {
   }
 
   /** @return the list of static peers associated with this node */
-  public List<URI> getStaticPeers() {
+  public List<URI> getStaticHobbitsPeers() {
     return config.getListOfString("node.peers").stream()
         .map(
             (peer) -> {
@@ -645,6 +621,10 @@ public final class ArtemisConfiguration {
               }
             })
         .collect(Collectors.toList());
+  }
+
+  public List<String> getStaticMothraPeers() {
+    return config.getListOfString("node.peers");
   }
 
   /** @return the identity key pair of the node */
