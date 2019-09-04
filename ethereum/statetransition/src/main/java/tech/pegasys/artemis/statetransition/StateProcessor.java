@@ -52,8 +52,8 @@ import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 
 /** Class to manage the state tree and initiate state transitions */
 public class StateProcessor {
-  private final BeaconChainStateMetrics beaconChainStateMetrics;
   private final EventBus eventBus;
+  private final StateTransition stateTransition;
   private Store store;
   private ChainStorageClient chainStorageClient;
   private SECP256K1.PublicKey publicKey;
@@ -83,9 +83,9 @@ public class StateProcessor {
     this.eventBus = config.getEventBus();
     this.config = config.getConfig();
     this.publicKey = config.getKeyPair().publicKey();
-    this.beaconChainStateMetrics = new BeaconChainStateMetrics(config.getMetricsSystem());
-    this.eventBus.register(this);
+    this.stateTransition = new StateTransition(true, new EpochMetrics(config.getMetricsSystem()));
     this.chainStorageClient = chainStorageClient;
+    this.eventBus.register(this);
 
     if (this.config.getDepositMode().equals(Constants.DEPOSIT_TEST)) {
       try {
@@ -100,16 +100,6 @@ public class StateProcessor {
   }
 
   public void onEth2Genesis(BeaconStateWithCache initial_state) {
-    // TODO - issue #827:
-    //      Once i have a reliable way to be notified when
-    //      libp2p peers are found then this can be removed
-    if (config.getNetworkMode().equals("mothra")) {
-      try {
-        Thread.sleep(15000);
-      } catch (InterruptedException e) {
-        STDOUT.log(Level.ERROR, e.getMessage());
-      }
-    }
     STDOUT.log(Level.INFO, "******* Eth2Genesis Event detected ******* : ");
     UnsignedLong genesisTime = initial_state.getGenesis_time();
     this.store = get_genesis_store(initial_state);
@@ -175,7 +165,7 @@ public class StateProcessor {
   @Subscribe
   private void onBlock(BeaconBlock block) {
     try {
-      on_block(store, block);
+      on_block(store, block, stateTransition);
       // Add attestations that were processed in the block to processed attestations storage
       block
           .getBody()
@@ -189,14 +179,17 @@ public class StateProcessor {
   @Subscribe
   private void onAttestation(Attestation attestation) {
     try {
-      on_attestation(store, attestation);
+      on_attestation(store, attestation, stateTransition);
     } catch (SlotProcessingException | EpochProcessingException e) {
       STDOUT.log(Level.WARN, "Exception in onAttestation: " + e.toString());
     }
   }
 
   private void setSimulationGenesisTime(BeaconState state) {
-    if (Constants.GENESIS_TIME.equals(UnsignedLong.MAX_VALUE)) {
+    if (config.getInteropActive()
+        && config.getInteropMode().equals(Constants.MOCKED_START_INTEROP)) {
+      state.setGenesis_time(UnsignedLong.valueOf(config.getInteropGenesisTime()));
+    } else if (Constants.GENESIS_TIME.equals(UnsignedLong.MAX_VALUE)) {
       Date date = new Date();
       state.setGenesis_time(
           UnsignedLong.valueOf((date.getTime() / 1000)).plus(Constants.GENESIS_START_DELAY));

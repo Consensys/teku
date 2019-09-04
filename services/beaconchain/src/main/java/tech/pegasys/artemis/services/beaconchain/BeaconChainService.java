@@ -34,7 +34,7 @@ import tech.pegasys.artemis.util.time.TimerFactory;
 import tech.pegasys.artemis.validator.coordinator.ValidatorCoordinator;
 
 public class BeaconChainService implements ServiceInterface {
-  private static final ALogger LOG = new ALogger(BeaconChainService.class.getName());
+  private static final ALogger STDOUT = new ALogger(BeaconChainService.class.getName());
   private EventBus eventBus;
   private Timer timer;
   private Vertx vertx;
@@ -105,6 +105,16 @@ public class BeaconChainService implements ServiceInterface {
               config.getConfig().getIdentity(),
               config.getConfig().getBootnodes(),
               config.getConfig().isBootnode());
+
+      // TODO - issue #827:
+      //      Once i have a reliable way to be notified when
+      //      libp2p peers are found then this can be removed
+      try {
+        Thread.sleep(15000);
+      } catch (InterruptedException e) {
+        STDOUT.log(Level.ERROR, e.getMessage());
+      }
+
     } else {
       throw new IllegalArgumentException(
           "Unsupported network mode " + config.getConfig().getNetworkMode());
@@ -123,7 +133,7 @@ public class BeaconChainService implements ServiceInterface {
     try {
       this.p2pNetwork.close();
     } catch (IOException e) {
-      LOG.log(Level.FATAL, e.toString());
+      STDOUT.log(Level.FATAL, e.toString());
     }
     this.timer.stop();
     this.eventBus.unregister(this);

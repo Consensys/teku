@@ -13,7 +13,6 @@
 
 package tech.pegasys.artemis.validator.coordinator;
 
-import static java.lang.StrictMath.toIntExact;
 import static tech.pegasys.artemis.datastructures.Constants.DOMAIN_ATTESTATION;
 import static tech.pegasys.artemis.datastructures.Constants.GENESIS_SLOT;
 import static tech.pegasys.artemis.datastructures.Constants.MAX_ATTESTATIONS;
@@ -22,7 +21,6 @@ import static tech.pegasys.artemis.datastructures.Constants.MAX_VALIDATORS_PER_C
 import static tech.pegasys.artemis.datastructures.Constants.SLOTS_PER_EPOCH;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_of_slot;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_domain;
-import static tech.pegasys.artemis.statetransition.StateTransition.process_slots;
 import static tech.pegasys.artemis.statetransition.util.ForkChoiceUtil.get_head;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -514,7 +512,7 @@ public class ValidatorCoordinator {
   private void createBlockIfNecessary(BeaconStateWithCache state, BeaconBlock oldBlock) {
     BeaconStateWithCache checkState = BeaconStateWithCache.deepCopy(state);
     try {
-      process_slots(checkState, checkState.getSlot().plus(UnsignedLong.ONE), false);
+      stateTransition.process_slots(checkState, checkState.getSlot().plus(UnsignedLong.ONE), false);
     } catch (SlotProcessingException | EpochProcessingException e) {
       STDOUT.log(Level.FATAL, "Coordinator checking proposer index exception");
     }
@@ -594,10 +592,12 @@ public class ValidatorCoordinator {
     int endIndex =
         startIndex
             + (numValidators / numNodes - 1)
-            + toIntExact(Math.round((double) nodeCounter / Math.max(1, numNodes - 1)));
+            + Math.floorDiv(nodeCounter, Math.max(1, numNodes - 1));
     endIndex = Math.min(endIndex, numValidators - 1);
 
-    LOG.log(Level.INFO, "startIndex: " + startIndex + " endIndex: " + endIndex);
+    STDOUT.log(
+        Level.INFO,
+        "nodeCounter: " + nodeCounter + " startIndex: " + startIndex + " endIndex: " + endIndex);
     return new ImmutablePair<>(startIndex, endIndex);
   }
 }
