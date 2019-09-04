@@ -49,12 +49,11 @@ public class BLSPerformanceRunner {
     return end - start;
   }
 
-  @Test
-  void benchmarkVerifyAggregate128() throws BLSException {
+  @ParameterizedTest()
+  @MethodSource("singleAggregationCountOrder4")
+  void benchmarkVerifyAggregate128(Integer i) {
     Bytes message1 = Bytes.wrap("Message One".getBytes(UTF_8));
-    Bytes message2 = Bytes.wrap("Message Two".getBytes(UTF_8));
 
-    // 1 & 2 sign message1; 3 & 4 sign message2
     ArrayList<BLSKeyPair> membs = new ArrayList<>();
     for (int j = 0; j < 128; j++) {
       BLSKeyPair keyPair1 = BLSKeyPair.random();
@@ -77,9 +76,7 @@ public class BLSPerformanceRunner {
                     BLSPublicKey.aggregate(
                         membs.stream()
                             .map(
-                                i -> {
-                                  return i.getPublicKey();
-                                })
+                                    BLSKeyPair::getPublicKey)
                             .collect(Collectors.toList()));
 
                 BLSSignature aggSig = BLSSignature.aggregate(sigs);
@@ -91,8 +88,8 @@ public class BLSPerformanceRunner {
                 LOG.log(Level.ERROR, "Exception" + e.toString());
               }
             },
-            1);
-    LOG.log(Level.INFO, "Time for 128:" + ", time:" + time);
+            i);
+    LOG.log(Level.INFO, "Time for 128:" + i+ ", time:" + time);
   }
 
   @ParameterizedTest()
