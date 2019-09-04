@@ -18,12 +18,10 @@ import tech.pegasys.artemis.service.serviceutils.ServiceConfig;
 import tech.pegasys.artemis.service.serviceutils.ServiceInterface;
 import tech.pegasys.artemis.storage.ChainStorage;
 import tech.pegasys.artemis.storage.ChainStorageServer;
-import tech.pegasys.artemis.util.alogger.ALogger;
 
 public class ChainStorageService implements ServiceInterface {
   private EventBus eventBus;
   private ChainStorageServer chainStore;
-  private static final ALogger LOG = new ALogger(ChainStorageService.class.getName());
 
   public ChainStorageService() {}
 

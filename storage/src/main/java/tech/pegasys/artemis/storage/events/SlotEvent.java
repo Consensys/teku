@@ -11,27 +11,26 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.statetransition;
+package tech.pegasys.artemis.storage.events;
 
-import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
-import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
+import com.google.common.primitives.UnsignedLong;
 
-public class GenesisStateEvent {
+public class SlotEvent {
 
-  private BeaconStateWithCache genesisState;
-  private BeaconBlock genesisBlock;
+  private final UnsignedLong slot;
+  private final UnsignedLong time;
 
-  public GenesisStateEvent(BeaconStateWithCache state, BeaconBlock block) {
-    genesisState = state;
-    genesisBlock = block;
+  public SlotEvent(UnsignedLong slot, UnsignedLong time) {
+    this.slot = slot;
+    this.time = time;
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */
-  public BeaconStateWithCache getGenesisState() {
-    return genesisState;
+  public UnsignedLong getSlot() {
+    return slot;
   }
 
-  public BeaconBlock getGenesisBlock() {
-    return genesisBlock;
+  public UnsignedLong getTime() {
+    return time;
   }
 }

@@ -15,6 +15,7 @@ package tech.pegasys.artemis.reference.mainnet.phase0;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
 import com.google.errorprone.annotations.MustBeClosed;
 import java.io.BufferedReader;
@@ -136,7 +137,8 @@ class sanity_processing extends TestSuite {
 
       Store genesis_store = ForkChoiceUtil.get_genesis_store(spre);
       for (int i = 1; i < blocks.size(); i++) {
-        ForkChoiceUtil.on_block(genesis_store, blocks.get(i), new StateTransition(true));
+        ForkChoiceUtil.on_block(
+            genesis_store, blocks.get(i), new StateTransition(true), new EventBus());
       }
       //      Object hash_tree_root = genesis_store.getFinalized_checkpoint().hash_tree_root();
       Object head = ForkChoiceUtil.get_head(genesis_store);

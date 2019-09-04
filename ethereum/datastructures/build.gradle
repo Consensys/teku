@@ -9,6 +9,7 @@ dependencies {
   implementation 'com.google.code.gson:gson'
   implementation 'org.apache.logging.log4j:log4j-api'
   implementation 'org.apache.commons:commons-lang3:3.6'
+  compile 'org.mapdb:mapdb'
   runtime 'org.apache.logging.log4j:log4j-core'
   compile group: 'com.fasterxml.jackson.dataformat', name: 'jackson-dataformat-yaml', version: '2.9.8'
   implementation 'com.fasterxml.jackson.core:jackson-databind'

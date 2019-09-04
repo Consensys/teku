@@ -2,11 +2,13 @@ dependencies {
   implementation project(':ethereum:datastructures')
   implementation project(':util')
 
+  implementation 'org.apache.commons:commons-lang3'
   implementation 'org.apache.tuweni:tuweni-kv'
   implementation 'org.apache.tuweni:tuweni-bytes'
   implementation 'org.apache.tuweni:tuweni-ssz'
   // implementation files('../lib/tuweni-ssz-0.9.0-SNAPSHOT.jar')
   implementation 'com.google.guava:guava'
   implementation 'org.apache.logging.log4j:log4j-api'
+  compile 'org.mapdb:mapdb'
   runtime 'org.apache.logging.log4j:log4j-core'
 }
