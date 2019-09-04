@@ -25,7 +25,6 @@ import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.core.config.Configurator;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.ssz.SSZ;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -68,28 +67,25 @@ public class BLSPerformanceRunner {
                     membs.stream()
                         .map(
                             pk -> {
-                              return BLSSignature.sign(pk, message1, 0);
+                              return BLSSignature.sign(pk, message1, Bytes.wrap(new byte[4]));
                             })
                         .collect(Collectors.toList());
 
                 BLSPublicKey aggKey =
                     BLSPublicKey.aggregate(
-                        membs.stream()
-                            .map(
-                                    BLSKeyPair::getPublicKey)
-                            .collect(Collectors.toList()));
+                        membs.stream().map(BLSKeyPair::getPublicKey).collect(Collectors.toList()));
 
                 BLSSignature aggSig = BLSSignature.aggregate(sigs);
 
                 List<Bytes> bytes = Collections.nCopies(membs.size(), message1);
                 // Verify the aggregate signatures and keys
-                aggSig.checkSignature(Arrays.asList(aggKey), bytes, 0);
+                aggSig.checkSignature(Arrays.asList(aggKey), bytes, Bytes.wrap(new byte[4]));
               } catch (BLSException e) {
                 LOG.log(Level.ERROR, "Exception" + e.toString());
               }
             },
             i);
-    LOG.log(Level.INFO, "Time for 128:" + i+ ", time:" + time);
+    LOG.log(Level.INFO, "Time for 128:" + i + ", time:" + time);
   }
 
   @ParameterizedTest()
@@ -127,7 +123,7 @@ public class BLSPerformanceRunner {
     // 1 & 2 sign message1; 3 & 4 sign message2
     BLSKeyPair keyPair1 = BLSKeyPair.random();
 
-    Long time = executeRun(() -> BLSSignature.sign(keyPair1, message1, 0), i);
+    Long time = executeRun(() -> BLSSignature.sign(keyPair1, message1, Bytes.wrap(new byte[4])), i);
     LOG.log(Level.INFO, "Time for i:" + i + ", time:" + time);
   }
 
@@ -140,13 +136,13 @@ public class BLSPerformanceRunner {
     // 1 & 2 sign message1; 3 & 4 sign message2
     BLSKeyPair keyPair1 = BLSKeyPair.random();
     BLSKeyPair keyPair2 = BLSKeyPair.random();
-    BLSSignature signature1 = BLSSignature.sign(keyPair1, message1, 0);
-    BLSSignature signature2 = BLSSignature.sign(keyPair2, message1, 0);
+    BLSSignature signature1 = BLSSignature.sign(keyPair1, message1, Bytes.wrap(new byte[4]));
+    BLSSignature signature2 = BLSSignature.sign(keyPair2, message1, Bytes.wrap(new byte[4]));
 
     BLSKeyPair keyPair3 = BLSKeyPair.random();
     BLSKeyPair keyPair4 = BLSKeyPair.random();
-    BLSSignature signature3 = BLSSignature.sign(keyPair3, message2, 0);
-    BLSSignature signature4 = BLSSignature.sign(keyPair4, message2, 0);
+    BLSSignature signature3 = BLSSignature.sign(keyPair3, message2, Bytes.wrap(new byte[4]));
+    BLSSignature signature4 = BLSSignature.sign(keyPair4, message2, Bytes.wrap(new byte[4]));
 
     // Aggregate keys 1 & 2, and keys 3 & 4
     BLSPublicKey aggregatePublicKey12 =
@@ -167,7 +163,7 @@ public class BLSPerformanceRunner {
                 aggregateSignature.checkSignature(
                     Arrays.asList(aggregatePublicKey12, aggregatePublicKey34),
                     Arrays.asList(message1, message2),
-                    0);
+                    Bytes.wrap(new byte[4]));
               } catch (BLSException e) {
                 LOG.log(Level.ERROR, "Exception" + e.toString());
               }
