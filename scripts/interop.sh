@@ -2,11 +2,21 @@
 
 
 CLIENT=$1
-SCRIPT_DIR=$(dirname $0)
 
 if [ "$CLIENT" == "artemis" ]
 then
-
+    SCRIPT_DIR=$(dirname $0)
+    source $SCRIPT_DIR/run_utils.sh
+    rm -rf ./demo
+    mkdir -p ./demo
+    rm -f ../config/runConfig.*
+    configure_node "mothra" 0 1 "../config/config.toml"
+    sh configurator.sh "../config/runConfig.0.toml" active true
+    sh configurator.sh "../config/runConfig.0.toml" genesisTime 1567570251
+    sh configurator.sh "../config/runConfig.0.toml" ownedValidatorStartIndex 0
+    sh configurator.sh "../config/runConfig.0.toml" ownedValidatorCount 4
+    sh configurator.sh "../config/runConfig.0.toml" numValidators 4
+    sh configurator.sh "../config/runConfig.0.toml" numNodes 1
     cd $SCRIPT_DIR/demo/node_0/ && ./artemis --config=./config/runConfig.0.toml --logging=INFO
 
 elif [ "$CLIENT" == "lighthouse-node" ]
