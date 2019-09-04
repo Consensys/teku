@@ -43,7 +43,6 @@ public final class HelloMessage implements SimpleOffsetSerializable {
     this.headSlot = headSlot;
   }
 
-  /** * SSZ Interface Overrides ** */
   @Override
   public int getSSZFieldCount() {
     return 5;
@@ -61,7 +60,7 @@ public final class HelloMessage implements SimpleOffsetSerializable {
                 SSZ.encodeUInt64(headSlot.longValue())));
     return fixedPartsList;
   }
-  /** * SSZ Interface Overrides ** */
+
   public Bytes4 forkVersion() {
     return forkVersion;
   }
