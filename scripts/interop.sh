@@ -20,7 +20,7 @@ then
     export EXE=beacon_node
 
     export VALIDATOR_COUNT=8
-    export GENESIS_TIME=$((`date +%s`))
+    export GENESIS_TIME=1567570251  #$((`date +%s`))
 
     # Start lighthouse
     # export RUST_LOG=libp2p_gossipsub=debug
