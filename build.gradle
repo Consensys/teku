@@ -123,6 +123,11 @@ allprojects {
       check('FieldCanBeFinal', CheckSeverity.OFF)
       check('InsecureCryptoUsage', CheckSeverity.WARN)
       check('WildcardImport', CheckSeverity.WARN)
+
+      // This check is broken in Java 12.  See https://github.com/google/error-prone/issues/1257
+      if (JavaVersion.current().java12Compatible) {
+        check('Finally', CheckSeverity.OFF)
+      }
     }
     options.encoding = 'UTF-8'
   }
