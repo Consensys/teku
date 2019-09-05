@@ -14,12 +14,11 @@
 package tech.pegasys.artemis.networking.p2p.mothra.rpc;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import de.undercouch.bson4jackson.BsonFactory;
-import java.io.IOException;
-import java.io.UncheckedIOException;
 import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.util.json.BytesModule;
+import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
 public final class RPCCodec {
 
@@ -43,14 +42,8 @@ public final class RPCCodec {
    * @param request the payload of the request
    * @return the encoded RPC message
    */
-  public static Bytes encode(Object request) {
-    ObjectNode bodyNode = mapper.createObjectNode();
-    bodyNode.putPOJO("body", request);
-    try {
-      return Bytes.wrap(mapper.writer().writeValueAsBytes(bodyNode));
-    } catch (IOException e) {
-      throw new IllegalArgumentException(e.getMessage());
-    }
+  public static Bytes encode(SimpleOffsetSerializable request) {
+    return SimpleOffsetSerializer.serialize(request);
   }
 
   /**
@@ -59,13 +52,7 @@ public final class RPCCodec {
    * @param message the bytes of the message to read
    * @return the payload, decoded
    */
-  public static RPCMessage decode(Bytes message) {
-    try {
-      byte[] body = message.toArrayUnsafe();
-      ObjectNode bodyNode = (ObjectNode) mapper.readTree(body);
-      return new RPCMessage(bodyNode.get("body"));
-    } catch (IOException e) {
-      throw new UncheckedIOException(e);
-    }
+  public static <T> T decode(Bytes message, Class<T> clazz) {
+    return SimpleOffsetSerializer.deserialize(message, clazz);
   }
 }

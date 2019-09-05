@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.networking.p2p.hobbits.gossip;
+package tech.pegasys.artemis.datastructures.networking.hobbits.gossip;
 
 import java.math.BigInteger;
 
