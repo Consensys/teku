@@ -20,7 +20,6 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.networking.mothra.rpc.HelloMessage;
-import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.networking.p2p.mothra.rpc.RPCCodec;
 import tech.pegasys.artemis.util.SSZTypes.Bytes4;
 
@@ -37,9 +36,8 @@ final class RPCCodecTest {
             UnsignedLong.ZERO);
 
     Bytes encoded = RPCCodec.encode(hello);
-    Bytes message = RPCCodec.decode(encoded);
-    HelloMessage read = SimpleOffsetSerializer.deserialize(message, HelloMessage.class);
+    HelloMessage message = RPCCodec.decode(encoded, HelloMessage.class);
 
-    assertEquals(hello, read);
+    assertEquals(hello, message);
   }
 }

@@ -52,7 +52,7 @@ public final class RPCCodec {
    * @param message the bytes of the message to read
    * @return the payload, decoded
    */
-  public static Bytes decode(Bytes message) {
-    return message;
+  public static <T> T decode(Bytes message, Class<T> clazz) {
+    return SimpleOffsetSerializer.deserialize(message, clazz);
   }
 }
