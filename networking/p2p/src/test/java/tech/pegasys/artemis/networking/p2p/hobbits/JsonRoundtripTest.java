@@ -21,10 +21,10 @@ import java.nio.charset.Charset;
 import java.util.Arrays;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.artemis.networking.p2p.hobbits.rpc.GetStatusMessage;
-import tech.pegasys.artemis.networking.p2p.hobbits.rpc.HelloMessage;
+import tech.pegasys.artemis.datastructures.networking.hobbits.rpc.GetStatusMessage;
+import tech.pegasys.artemis.datastructures.networking.hobbits.rpc.HelloMessage;
+import tech.pegasys.artemis.datastructures.networking.hobbits.rpc.RequestBlocksMessage;
 import tech.pegasys.artemis.networking.p2p.hobbits.rpc.RPCCodec;
-import tech.pegasys.artemis.networking.p2p.hobbits.rpc.RequestBlocksMessage;
 
 class JsonRoundtripTest {
 
