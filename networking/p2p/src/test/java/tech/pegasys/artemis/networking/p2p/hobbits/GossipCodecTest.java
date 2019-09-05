@@ -24,10 +24,10 @@ import org.apache.tuweni.plumtree.MessageSender;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.networking.hobbits.gossip.GossipMessage;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.networking.p2p.hobbits.gossip.GossipCodec;
-import tech.pegasys.artemis.networking.p2p.hobbits.gossip.GossipMessage;
 
 final class GossipCodecTest {
 

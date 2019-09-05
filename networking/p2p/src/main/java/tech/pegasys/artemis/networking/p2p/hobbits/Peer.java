@@ -16,7 +16,7 @@ package tech.pegasys.artemis.networking.p2p.hobbits;
 import java.net.URI;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.artemis.networking.p2p.hobbits.rpc.GetStatusMessage;
+import tech.pegasys.artemis.datastructures.networking.hobbits.rpc.GetStatusMessage;
 
 /** A hobbits peer */
 public final class Peer implements org.apache.tuweni.plumtree.Peer {

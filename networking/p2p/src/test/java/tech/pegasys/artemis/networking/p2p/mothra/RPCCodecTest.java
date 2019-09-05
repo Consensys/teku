@@ -13,18 +13,21 @@
 
 package tech.pegasys.artemis.networking.p2p.mothra;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.artemis.networking.p2p.mothra.rpc.HelloMessage;
+import tech.pegasys.artemis.datastructures.networking.mothra.rpc.HelloMessage;
+import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.networking.p2p.mothra.rpc.RPCCodec;
 import tech.pegasys.artemis.util.SSZTypes.Bytes4;
 
 final class RPCCodecTest {
 
   @Test
-  void testHello() {
+  void testHelloRoundtripSerialization() {
     HelloMessage hello =
         new HelloMessage(
             Bytes4.rightPad(Bytes.of(4)),
@@ -32,7 +35,11 @@ final class RPCCodecTest {
             UnsignedLong.ZERO,
             Bytes32.random(),
             UnsignedLong.ZERO);
+
     Bytes encoded = RPCCodec.encode(hello);
-    System.out.println(encoded);
+    Bytes message = RPCCodec.decode(encoded);
+    HelloMessage read = SimpleOffsetSerializer.deserialize(message, HelloMessage.class);
+
+    assertEquals(hello, read);
   }
 }

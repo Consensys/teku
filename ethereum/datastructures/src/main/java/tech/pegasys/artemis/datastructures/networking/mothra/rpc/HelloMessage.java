@@ -11,18 +11,20 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.networking.p2p.mothra.rpc;
+package tech.pegasys.artemis.datastructures.networking.mothra.rpc;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.artemis.util.SSZTypes.Bytes4;
+import tech.pegasys.artemis.util.SSZTypes.SSZContainer;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
-public final class HelloMessage implements SimpleOffsetSerializable {
+public final class HelloMessage implements SimpleOffsetSerializable, SSZContainer {
 
   private final Bytes4 forkVersion;
   private final Bytes32 finalizedRoot;
@@ -59,6 +61,34 @@ public final class HelloMessage implements SimpleOffsetSerializable {
                 SSZ.encode(writer -> writer.writeFixedBytes(headRoot)),
                 SSZ.encodeUInt64(headSlot.longValue())));
     return fixedPartsList;
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(forkVersion, finalizedRoot, finalizedEpoch, headRoot, headSlot);
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (Objects.isNull(obj)) {
+      return false;
+    }
+
+    if (this == obj) {
+      return true;
+    }
+
+    if (!(obj instanceof HelloMessage)) {
+      return false;
+    }
+
+    HelloMessage other = (HelloMessage) obj;
+    return Objects.equals(
+            this.forkVersion().getWrappedBytes(), other.forkVersion().getWrappedBytes())
+        && Objects.equals(this.finalizedRoot(), other.finalizedRoot())
+        && Objects.equals(this.finalizedEpoch(), other.finalizedEpoch())
+        && Objects.equals(this.headRoot(), other.headRoot())
+        && Objects.equals(this.headSlot(), other.headSlot());
   }
 
   public Bytes4 forkVersion() {

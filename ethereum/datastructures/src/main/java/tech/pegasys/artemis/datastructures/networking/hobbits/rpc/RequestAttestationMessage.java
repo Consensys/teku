@@ -11,23 +11,22 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.networking.p2p.hobbits.rpc;
+package tech.pegasys.artemis.datastructures.networking.hobbits.rpc;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import java.math.BigInteger;
 
-public final class GoodbyeMessage {
+public final class RequestAttestationMessage {
 
-  private final BigInteger reason;
+  private final byte[] hash;
 
   @JsonCreator
-  public GoodbyeMessage(@JsonProperty("reason") BigInteger reason) {
-    this.reason = reason;
+  public RequestAttestationMessage(@JsonProperty("hash") byte[] hash) {
+    this.hash = hash;
   }
 
-  @JsonProperty("reason")
-  public BigInteger reason() {
-    return reason;
+  @JsonProperty("hash")
+  public byte[] hash() {
+    return hash;
   }
 }

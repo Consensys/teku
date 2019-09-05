@@ -14,10 +14,7 @@
 package tech.pegasys.artemis.networking.p2p.mothra.rpc;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import de.undercouch.bson4jackson.BsonFactory;
-import java.io.IOException;
-import java.io.UncheckedIOException;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.util.json.BytesModule;
@@ -55,13 +52,7 @@ public final class RPCCodec {
    * @param message the bytes of the message to read
    * @return the payload, decoded
    */
-  public static RPCMessage decode(Bytes message) {
-    try {
-      byte[] body = message.toArrayUnsafe();
-      ObjectNode bodyNode = (ObjectNode) mapper.readTree(body);
-      return new RPCMessage(bodyNode.get("body"));
-    } catch (IOException e) {
-      throw new UncheckedIOException(e);
-    }
+  public static Bytes decode(Bytes message) {
+    return message;
   }
 }
