@@ -28,6 +28,7 @@ import tech.pegasys.artemis.service.serviceutils.ServiceConfig;
 import tech.pegasys.artemis.statetransition.events.GenesisEvent;
 import tech.pegasys.artemis.statetransition.events.ValidatorAssignmentEvent;
 import tech.pegasys.artemis.storage.ChainStorageClient;
+import tech.pegasys.artemis.storage.events.DBStoreValidEvent;
 import tech.pegasys.artemis.storage.events.SlotEvent;
 import tech.pegasys.artemis.util.alogger.ALogger;
 
@@ -56,6 +57,13 @@ public class TimingProcessor {
             "current_epoch",
             "Latest epoch recorded by the beacon chain");
     this.eventBus.register(this);
+  }
+
+  @Subscribe
+  private void onDBStoreValidEvent(DBStoreValidEvent event) {
+    final UnsignedLong slot = event.getNodeSlot();
+    STDOUT.log(Level.INFO, "Restoring nodeSlot to: " + slot);
+    this.nodeSlot = slot;
   }
 
   @Subscribe

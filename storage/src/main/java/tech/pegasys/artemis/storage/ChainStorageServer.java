@@ -28,6 +28,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.mapdb.Atomic;
 import org.mapdb.DB;
 import org.mapdb.DBMaker;
+import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
@@ -110,7 +111,13 @@ public class ChainStorageServer implements ChainStorage {
     UnsignedLong genesisTime = nodeStartEvent.getState().getGenesis_time();
     if (checkIfStorageServerInitialized(genesisTime)) {
       STDOUT.log(Level.INFO, "Restoring state from database");
-      this.eventBus.post(new DBStoreValidEvent(getStoreFromDB()));
+
+      // TODO: Confirm this is the right way to work out the node slot.
+      final Store store = getStoreFromDB();
+      final UnsignedLong nodeSlot = store.getTime()
+          .minus(genesisTime)
+          .dividedBy(UnsignedLong.valueOf(Constants.SECONDS_PER_SLOT));
+      this.eventBus.post(new DBStoreValidEvent(store, nodeSlot));
     }
   }
 
