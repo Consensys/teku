@@ -217,8 +217,8 @@ public class ValidatorCoordinator {
       throws IllegalArgumentException {
     Store store = chainStorageClient.getStore();
     Bytes32 headBlockRoot = get_head(store);
-    BeaconBlock headBlock = store.getBlocks().get(headBlockRoot);
-    BeaconState headState = store.getBlock_states().get(headBlockRoot);
+    BeaconBlock headBlock = store.getBlock(headBlockRoot);
+    BeaconState headState = store.getBlockState(headBlockRoot);
 
     // Logging
     STDOUT.log(

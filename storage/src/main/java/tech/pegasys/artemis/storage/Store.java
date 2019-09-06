@@ -14,7 +14,9 @@
 package tech.pegasys.artemis.storage;
 
 import com.google.common.primitives.UnsignedLong;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
@@ -70,35 +72,55 @@ public class Store {
     this.finalized_checkpoint = finalized_checkpoint;
   }
 
-  public HashMap<Bytes32, BeaconBlock> getBlocks() {
-    return blocks;
+  public BeaconBlock getBlock(Bytes32 blockRoot) {
+    return blocks.get(blockRoot);
   }
 
-  public void setBlocks(HashMap<Bytes32, BeaconBlock> blocks) {
-    this.blocks = blocks;
+  public boolean containsBlock(Bytes32 blockRoot) {
+    return blocks.containsKey(blockRoot);
   }
 
-  public HashMap<Bytes32, BeaconState> getBlock_states() {
-    return block_states;
+  public Set<Bytes32> getBlockRoots() {
+    return Collections.unmodifiableSet(blocks.keySet());
   }
 
-  public void setBlock_states(HashMap<Bytes32, BeaconState> block_states) {
-    this.block_states = block_states;
+  public void putBlock(Bytes32 blockRoot, BeaconBlock block) {
+    blocks.put(blockRoot, block);
   }
 
-  public HashMap<Checkpoint, BeaconState> getCheckpoint_states() {
-    return checkpoint_states;
+  public BeaconState getBlockState(Bytes32 blockRoot) {
+    return block_states.get(blockRoot);
   }
 
-  public void setCheckpoint_states(HashMap<Checkpoint, BeaconState> checkpoint_states) {
-    this.checkpoint_states = checkpoint_states;
+  public boolean containsBlockState(Bytes32 blockRoot) {
+    return block_states.containsKey(blockRoot);
   }
 
-  public HashMap<UnsignedLong, LatestMessage> getLatest_messages() {
-    return latest_messages;
+  public void putBlockState(Bytes32 blockRoot, BeaconState state) {
+    block_states.put(blockRoot, state);
   }
 
-  public void setLatest_messages(HashMap<UnsignedLong, LatestMessage> latest_messages) {
-    this.latest_messages = latest_messages;
+  public BeaconState getCheckpointState(Checkpoint checkpoint) {
+    return checkpoint_states.get(checkpoint);
+  }
+
+  public boolean containsCheckpointState(Checkpoint checkpoint) {
+    return checkpoint_states.containsKey(checkpoint);
+  }
+
+  public void putCheckpointState(Checkpoint checkpoint, BeaconState state) {
+    checkpoint_states.put(checkpoint, state);
+  }
+
+  public LatestMessage getLatestMessage(UnsignedLong validatorIndex) {
+    return latest_messages.get(validatorIndex);
+  }
+
+  public boolean containsLatestMessage(UnsignedLong validatorIndex) {
+    return latest_messages.containsKey(validatorIndex);
+  }
+
+  public void putLatestMessage(UnsignedLong validatorIndex, LatestMessage latestMessage) {
+    latest_messages.put(validatorIndex, latestMessage);
   }
 }

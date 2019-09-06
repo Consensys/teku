@@ -106,8 +106,7 @@ public class StateProcessor {
     chainStorageClient.setGenesisTime(genesisTime);
     chainStorageClient.setStore(store);
     Bytes32 genesisBlockRoot = get_head(store);
-    this.eventBus.post(
-        new GenesisStateEvent(initial_state, store.getBlocks().get(genesisBlockRoot)));
+    this.eventBus.post(new GenesisStateEvent(initial_state, store.getBlock(genesisBlockRoot)));
     STDOUT.log(Level.INFO, "Initial state root is " + initial_state.hash_tree_root().toHexString());
     STDOUT.log(Level.INFO, "Genesis block root is " + genesisBlockRoot.toHexString());
   }
