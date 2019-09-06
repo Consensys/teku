@@ -80,7 +80,7 @@ public class ForkChoiceUtil {
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.1/specs/core/0_fork-choice.md#get_ancestor</a>
    */
   public static Bytes32 get_ancestor(Store store, Bytes32 root, UnsignedLong slot) {
-    BeaconBlock block = store.getBlocks().get(root);
+    BeaconBlock block = store.getBlock(root);
     if (block.getSlot().compareTo(slot) > 0) {
       return get_ancestor(store, block.getParent_root(), slot);
     } else if (block.getSlot().equals(slot)) {
@@ -109,7 +109,7 @@ public class ForkChoiceUtil {
                         && get_ancestor(
                                 store,
                                 store.getLatest_messages().get(UnsignedLong.valueOf(i)).getRoot(),
-                                store.getBlocks().get(root).getSlot())
+                                store.getBlock(root).getSlot())
                             .equals(root))
             .map(i -> state.getValidators().get(i).getEffective_balance())
             .mapToLong(UnsignedLong::longValue)
@@ -133,11 +133,11 @@ public class ForkChoiceUtil {
     while (true) {
       final Bytes32 head_in_filter = head;
       List<Bytes32> children =
-          store.getBlocks().keySet().stream()
+          store.getBlockRoots().stream()
               .filter(
                   root ->
-                      store.getBlocks().get(root).getParent_root().equals(head_in_filter)
-                          && store.getBlocks().get(root).getSlot().compareTo(justified_slot) > 0)
+                      store.getBlock(root).getParent_root().equals(head_in_filter)
+                          && store.getBlock(root).getSlot().compareTo(justified_slot) > 0)
               .collect(Collectors.toList());
 
       if (children.size() == 0) {
@@ -185,11 +185,11 @@ public class ForkChoiceUtil {
       throws StateTransitionException {
     // Make a copy of the state to avoid mutability issues
     checkArgument(
-        store.getBlock_states().containsKey(block.getParent_root()),
+        store.containsBlockState(block.getParent_root()),
         "on_block: Parent block state is not contained in block_state");
     BeaconStateWithCache pre_state =
         BeaconStateWithCache.deepCopy(
-            (BeaconStateWithCache) store.getBlock_states().get(block.getParent_root()));
+            (BeaconStateWithCache) store.getBlockState(block.getParent_root()));
 
     // Blocks cannot be in the future. If they are, their consideration must be delayed until the
     // are in the past.
@@ -204,13 +204,13 @@ public class ForkChoiceUtil {
         "on_block: Blocks cannot be in the future.");
 
     // Add new block to the store
-    store.getBlocks().put(block.signing_root("signature"), block);
+    store.putBlock(block.signing_root("signature"), block);
 
     checkArgument(
         get_ancestor(
                 store,
                 block.signing_root("signature"),
-                store.getBlocks().get(store.getFinalized_checkpoint().getRoot()).getSlot())
+                store.getBlock(store.getFinalized_checkpoint().getRoot()).getSlot())
             .equals(store.getFinalized_checkpoint().getRoot()),
         "on_block: Check block is a descendant of the finalized block");
 
@@ -225,7 +225,7 @@ public class ForkChoiceUtil {
     BeaconStateWithCache state = st.initiate(pre_state, block, true);
 
     // Add new state for this block to the store
-    store.getBlock_states().put(block.signing_root("signature"), state);
+    store.putBlockState(block.signing_root("signature"), state);
 
     // Update justified checkpoint
     if (state
@@ -269,14 +269,14 @@ public class ForkChoiceUtil {
     Checkpoint target = attestation.getData().getTarget();
 
     checkArgument(
-        store.getBlocks().containsKey(target.getRoot()),
+        store.containsBlock(target.getRoot()),
         "on_attestation: Cannot calculate the current shuffling if have not seen the target");
 
     // Attestations cannot be from future epochs. If they are, delay consideration until the epoch
     // arrives
     BeaconStateWithCache base_state =
         new BeaconStateWithCache(
-            (BeaconStateWithCache) store.getBlock_states().get(target.getRoot()));
+            (BeaconStateWithCache) store.getBlockState(target.getRoot()));
     checkArgument(
         store
                 .getTime()

@@ -26,6 +26,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.stream.Stream;
+import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.junit.BouncyCastleExtension;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -141,9 +142,9 @@ class sanity_processing extends TestSuite {
             genesis_store, blocks.get(i), new StateTransition(true), new EventBus());
       }
       //      Object hash_tree_root = genesis_store.getFinalized_checkpoint().hash_tree_root();
-      Object head = ForkChoiceUtil.get_head(genesis_store);
+      Bytes32 head = ForkChoiceUtil.get_head(genesis_store);
       BeaconState c =
-          genesis_store.getBlock_states().get(genesis_store.getBlocks().get(head).getState_root());
+          genesis_store.getBlockState(genesis_store.getBlock(head).getState_root());
       assertEquals(c, spost);
     }
   }
