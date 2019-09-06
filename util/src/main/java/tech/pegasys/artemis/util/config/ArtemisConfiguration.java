@@ -96,6 +96,7 @@ public final class ArtemisConfiguration {
         "interop.ownedValidatorStartIndex", 0, "Index of first validator owned by this node", null);
     builder.addInteger(
         "interop.ownedValidatorCount", 0, "Number of validators owned by this node", null);
+    builder.addString("interop.startState", "", "Initial BeaconState to load", null);
 
     // Metrics
     builder.addBoolean("metrics.enabled", false, "Enables metrics collection via Prometheus", null);
@@ -307,6 +308,11 @@ public final class ArtemisConfiguration {
 
   public String getInteropMode() {
     return config.getString("interop.mode");
+  }
+
+  public String getInteropStartState() {
+    final String startState = config.getString("interop.startState");
+    return startState == null || startState.isEmpty() ? null : startState;
   }
 
   public String getInteropInputFile() {

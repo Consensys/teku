@@ -24,6 +24,7 @@ inputFile = "depositsAndKeys.yaml"
 genesisTime = 298928929424
 ownedValidatorStartIndex = 0
 ownedValidatorCount = 4
+# startState = "initialState.ssz"
 
 [deposit]
 # normal, test, simulation
