@@ -10,7 +10,7 @@ dependencies {
   testCompile project(':ethereum:statetransition')
   testCompile project(':storage')
 
-  compile group: 'com.fasterxml.jackson.dataformat', name: 'jackson-dataformat-yaml', version: '2.9.8'
+  compile 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
   testCompile 'org.miracl.milagro.amcl:milagro-crypto-java:0.4.0'
   implementation 'org.apache.tuweni:tuweni-bytes'
   implementation 'org.apache.commons:commons-lang3:3.6'

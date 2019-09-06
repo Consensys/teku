@@ -11,7 +11,7 @@ dependencies {
   implementation 'org.apache.commons:commons-lang3:3.6'
   compile 'org.mapdb:mapdb'
   runtime 'org.apache.logging.log4j:log4j-core'
-  compile group: 'com.fasterxml.jackson.dataformat', name: 'jackson-dataformat-yaml', version: '2.9.8'
+  compile 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
   implementation 'com.fasterxml.jackson.core:jackson-databind'
 
   test {
