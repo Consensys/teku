@@ -40,7 +40,7 @@ BOOTNODE_ENR=$(cat ~/.mothra/network/enr.dat)
 ## NOTE:  LIGHTHOUSE can't set a genesis time in the future so this constant
 ##        will start them out on a high block number.  We need a better way to sync
 ##        genesis times so we both start at slot 0.
-GENESIS_TIME=1567570251 #$((`date +%s`))
+GENESIS_TIME=1567719788 #$((`date +%s`))
 
 if [ "$CLIENT" == "artemis" ]
 then

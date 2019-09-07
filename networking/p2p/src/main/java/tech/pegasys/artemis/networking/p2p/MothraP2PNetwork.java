@@ -19,7 +19,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.stream.Collectors;
 import net.p2p.mothra;
 import org.apache.logging.log4j.Level;
 import tech.pegasys.artemis.networking.p2p.api.P2PNetwork;
@@ -109,9 +108,10 @@ public final class MothraP2PNetwork implements P2PNetwork {
               + String.valueOf(this.port)
               + " --datadir "
               + this.defaultDataDir
-              + " --libp2p-addresses "
-              + this.peers.stream().collect(Collectors.joining(","))
               + this.identity;
+      // + " --libp2p-addresses "
+      // + this.peers.stream().collect(Collectors.joining(","));
+
     } else {
       STDOUT.log(Level.INFO, "####### BOOTNODE #######");
     }
