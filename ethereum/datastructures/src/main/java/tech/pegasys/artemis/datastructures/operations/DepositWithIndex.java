@@ -26,6 +26,11 @@ public class DepositWithIndex extends Deposit {
     this.index = index;
   }
 
+  public DepositWithIndex(Deposit deposit) {
+    super(deposit.getProof(), deposit.getData());
+    this.index = UnsignedLong.ZERO;
+  }
+
   public DepositWithIndex() {
     super();
     this.index = null;

@@ -17,7 +17,11 @@ naughtinessPercentage = 0
 
 [interop]
 active = false
-genesisTime = 298928929424
+# "file" reads validator creds from file
+# "mocked" generated validator cred deterministically
+mode = "mocked"
+inputFile = "depositsAndKeys.yaml"
+genesisTime = 1567777777
 ownedValidatorStartIndex = 0
 ownedValidatorCount = 4
 # startState = "initialState.ssz"
