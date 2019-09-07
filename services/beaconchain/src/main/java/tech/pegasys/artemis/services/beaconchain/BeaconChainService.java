@@ -105,6 +105,7 @@ public class BeaconChainService implements ServiceInterface {
               config.getConfig().getIdentity(),
               config.getConfig().getBootnodes(),
               config.getConfig().isBootnode(),
+              config.getConfig().getDiscovery(),
               config.getConfig().getStaticMothraPeers());
     } else {
       throw new IllegalArgumentException(
