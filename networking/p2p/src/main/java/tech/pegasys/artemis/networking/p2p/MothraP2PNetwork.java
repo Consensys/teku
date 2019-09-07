@@ -44,6 +44,7 @@ public final class MothraP2PNetwork implements P2PNetwork {
   private final String identity;
   private final String bootnodes;
   private final boolean isBootnode;
+  private final String discovery;
   private final String userAgent = "Artemis SNAPSHOT";
   private GossipProtocol gossipProtocol;
   private List<String> peers;
@@ -65,6 +66,7 @@ public final class MothraP2PNetwork implements P2PNetwork {
       String identity,
       String bootnodes,
       boolean isBootnode,
+      String discovery,
       List<String> peers) {
     this.eventBus = eventBus;
     this.store = store;
@@ -73,6 +75,7 @@ public final class MothraP2PNetwork implements P2PNetwork {
     this.identity = identity;
     this.bootnodes = bootnodes;
     this.isBootnode = isBootnode;
+    this.discovery = discovery;
     this.peers = peers;
     this.gossipProtocol = GossipProtocol.GOSSIPSUB;
     eventBus.register(this);
@@ -81,7 +84,7 @@ public final class MothraP2PNetwork implements P2PNetwork {
     mothra.DiscoveryMessage = this.handler::handleDiscoveryMessage;
     mothra.ReceivedGossipMessage = this.handler::handleGossipMessage;
     mothra.ReceivedRPCMessage = this.handler::handleRPCMessage;
-    if (this.peers.isEmpty()) {
+    if (this.discovery.equals("discv5")) {
       // TODO - issue #827:
       //      Once i have a reliable way to be notified when
       //      libp2p peers are found then this can be removed
@@ -109,9 +112,11 @@ public final class MothraP2PNetwork implements P2PNetwork {
               + String.valueOf(this.port)
               + " --datadir "
               + this.defaultDataDir
-              + " --libp2p-addresses "
-              + this.peers.stream().collect(Collectors.joining(","))
               + this.identity;
+      if (discovery.equals("static")) {
+        sargs += " --libp2p-addresses " + this.peers.stream().collect(Collectors.joining(","));
+      }
+
     } else {
       STDOUT.log(Level.INFO, "####### BOOTNODE #######");
     }
