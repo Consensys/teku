@@ -21,6 +21,9 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
@@ -29,21 +32,23 @@ import tech.pegasys.artemis.datastructures.state.Checkpoint;
 
 public class Store implements ReadOnlyStore {
 
+  private final ReadWriteLock lock = new ReentrantReadWriteLock();
+  private final Lock readLock = lock.readLock();
   private UnsignedLong time;
   private Checkpoint justified_checkpoint;
   private Checkpoint finalized_checkpoint;
-  private ConcurrentHashMap<Bytes32, BeaconBlock> blocks;
-  private ConcurrentHashMap<Bytes32, BeaconState> block_states;
-  private ConcurrentHashMap<Checkpoint, BeaconState> checkpoint_states;
-  private ConcurrentHashMap<UnsignedLong, LatestMessage> latest_messages;
+  private Map<Bytes32, BeaconBlock> blocks;
+  private Map<Bytes32, BeaconState> block_states;
+  private Map<Checkpoint, BeaconState> checkpoint_states;
+  private Map<UnsignedLong, LatestMessage> latest_messages;
 
   public Store(
       UnsignedLong time,
       Checkpoint justified_checkpoint,
       Checkpoint finalized_checkpoint,
-      ConcurrentHashMap<Bytes32, BeaconBlock> blocks,
-      ConcurrentHashMap<Bytes32, BeaconState> block_states,
-      ConcurrentHashMap<Checkpoint, BeaconState> checkpoint_states) {
+      Map<Bytes32, BeaconBlock> blocks,
+      Map<Bytes32, BeaconState> block_states,
+      Map<Checkpoint, BeaconState> checkpoint_states) {
     this.time = time;
     this.justified_checkpoint = justified_checkpoint;
     this.finalized_checkpoint = finalized_checkpoint;
@@ -59,62 +64,122 @@ public class Store implements ReadOnlyStore {
 
   @Override
   public UnsignedLong getTime() {
-    return time;
+    readLock.lock();
+    try {
+      return time;
+    } finally {
+      readLock.unlock();
+    }
   }
 
   @Override
   public Checkpoint getJustified_checkpoint() {
-    return justified_checkpoint;
+    readLock.lock();
+    try {
+      return justified_checkpoint;
+    } finally {
+      readLock.unlock();
+    }
   }
 
   @Override
   public Checkpoint getFinalized_checkpoint() {
-    return finalized_checkpoint;
+    readLock.lock();
+    try {
+      return finalized_checkpoint;
+    } finally {
+      readLock.unlock();
+    }
   }
 
   @Override
   public BeaconBlock getBlock(Bytes32 blockRoot) {
-    return blocks.get(blockRoot);
+    readLock.lock();
+    try {
+      return blocks.get(blockRoot);
+    } finally {
+      readLock.unlock();
+    }
   }
 
   @Override
   public boolean containsBlock(Bytes32 blockRoot) {
-    return blocks.containsKey(blockRoot);
+    readLock.lock();
+    try {
+      return blocks.containsKey(blockRoot);
+    } finally {
+      readLock.unlock();
+    }
   }
 
   @Override
   public Set<Bytes32> getBlockRoots() {
-    return Collections.unmodifiableSet(blocks.keySet());
+    readLock.lock();
+    try {
+      return Collections.unmodifiableSet(blocks.keySet());
+    } finally {
+      readLock.unlock();
+    }
   }
 
   @Override
   public BeaconState getBlockState(Bytes32 blockRoot) {
-    return block_states.get(blockRoot);
+    readLock.lock();
+    try {
+      return block_states.get(blockRoot);
+    } finally {
+      readLock.unlock();
+    }
   }
 
   @Override
   public boolean containsBlockState(Bytes32 blockRoot) {
-    return block_states.containsKey(blockRoot);
+    readLock.lock();
+    try {
+      return block_states.containsKey(blockRoot);
+    } finally {
+      readLock.unlock();
+    }
   }
 
   @Override
   public BeaconState getCheckpointState(Checkpoint checkpoint) {
-    return checkpoint_states.get(checkpoint);
+    readLock.lock();
+    try {
+      return checkpoint_states.get(checkpoint);
+    } finally {
+      readLock.unlock();
+    }
   }
 
   @Override
   public boolean containsCheckpointState(Checkpoint checkpoint) {
-    return checkpoint_states.containsKey(checkpoint);
+    readLock.lock();
+    try {
+      return checkpoint_states.containsKey(checkpoint);
+    } finally {
+      readLock.unlock();
+    }
   }
 
   @Override
   public LatestMessage getLatestMessage(UnsignedLong validatorIndex) {
-    return latest_messages.get(validatorIndex);
+    readLock.lock();
+    try {
+      return latest_messages.get(validatorIndex);
+    } finally {
+      readLock.unlock();
+    }
   }
 
   @Override
   public boolean containsLatestMessage(UnsignedLong validatorIndex) {
-    return latest_messages.containsKey(validatorIndex);
+    readLock.lock();
+    try {
+      return latest_messages.containsKey(validatorIndex);
+    } finally {
+      readLock.unlock();
+    }
   }
 
   public class Transaction implements ReadOnlyStore {
@@ -155,13 +220,19 @@ public class Store implements ReadOnlyStore {
     }
 
     public void commit() {
-      time.ifPresent(value -> Store.this.time = value);
-      justified_checkpoint.ifPresent(value -> Store.this.justified_checkpoint = value);
-      finalized_checkpoint.ifPresent(value -> Store.this.finalized_checkpoint = value);
-      Store.this.blocks.putAll(blocks);
-      Store.this.block_states.putAll(block_states);
-      Store.this.checkpoint_states.putAll(checkpoint_states);
-      Store.this.latest_messages.putAll(latest_messages);
+      final Lock writeLock = Store.this.lock.writeLock();
+      writeLock.lock();
+      try {
+        time.ifPresent(value -> Store.this.time = value);
+        justified_checkpoint.ifPresent(value -> Store.this.justified_checkpoint = value);
+        finalized_checkpoint.ifPresent(value -> Store.this.finalized_checkpoint = value);
+        Store.this.blocks.putAll(blocks);
+        Store.this.block_states.putAll(block_states);
+        Store.this.checkpoint_states.putAll(checkpoint_states);
+        Store.this.latest_messages.putAll(latest_messages);
+      } finally {
+        writeLock.unlock();
+      }
     }
 
     @Override
