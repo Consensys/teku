@@ -182,9 +182,13 @@ public class SimpleOffsetSerializer {
   @SuppressWarnings("TypeParameterUnusedInFormals")
   public static <T> T deserialize(Bytes bytes, Class classInfo) {
     MutableInt bytePointer = new MutableInt(0);
-    return SSZ.decode(
-        bytes,
-        reader -> deserializeContainerErrorWrapper(classInfo, reader, bytePointer, bytes.size()));
+    if (!isPrimitive(classInfo)) {
+      return SSZ.decode(
+          bytes,
+          reader -> deserializeContainerErrorWrapper(classInfo, reader, bytePointer, bytes.size()));
+    } else {
+      return SSZ.decode(bytes, reader -> (T) deserializePrimitive(classInfo, reader, bytePointer));
+    }
   }
 
   @SuppressWarnings("TypeParameterUnusedInFormals")

@@ -44,6 +44,13 @@ public class TestSet extends ArrayList<TestObject> {
     this.path = path;
   }
 
+  public TestObject getTestObjectByFileName1(String fileName) {
+    return this.stream()
+        .filter(testObject -> testObject.getFileName().equals(fileName))
+        .collect(Collectors.toList())
+        .get(0);
+  }
+
   public List<TestObject> getTestObjectByFileName(String fileName) {
     return this.stream()
         .filter(testObject -> testObject.getFileName().equals(fileName))

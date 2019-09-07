@@ -41,7 +41,6 @@ import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.io.Resources;
-import org.assertj.core.util.Arrays;
 import org.junit.jupiter.params.provider.Arguments;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
@@ -123,9 +122,8 @@ public abstract class TestSuite {
   }
 
   public static Integer loadMetaData(TestSet testSet) {
-    try (Stream<Arguments> testSetArgs = findTestsByPath(testSet)) {
-      return (Integer) testSetArgs.map(e -> e.get()).collect(Collectors.toList()).get(0)[0];
-    }
+    return (Integer)
+        findTestsByPath(testSet).map(e -> e.get()).collect(Collectors.toList()).get(0)[0];
   }
 
   public static InputStream getInputStreamFromPath(Path path) {
@@ -170,6 +168,17 @@ public abstract class TestSuite {
   }
 
   @SuppressWarnings({"rawtypes"})
+  public static Integer getIntegerFromYAMLInputStream(InputStream in) {
+    ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
+    try {
+      return ((Integer) mapper.readerFor(Integer.class).readValue(in));
+    } catch (IOException e) {
+      LOG.log(Level.WARN, e.toString());
+    }
+    return null;
+  }
+
+  @SuppressWarnings({"rawtypes"})
   public static Bytes getSSZBytesFromPath(Path path) {
     InputStream in = getInputStreamFromPath(path);
     try {
@@ -186,7 +195,26 @@ public abstract class TestSuite {
     return getObjectFromYAMLInputStream(getInputStreamFromPath(path));
   }
 
-  @MustBeClosed
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  public static Object getPrimitiveFromPath(Path path, Class classInfo) {
+    InputStream in = getInputStreamFromPath(path);
+    ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
+    try {
+      switch (classInfo.getSimpleName()) {
+        case "String":
+          return (mapper.readerFor(String.class).readValue(in));
+        case "Integer":
+          return (mapper.readerFor(Integer.class).readValue(in));
+      }
+    } catch (IOException e) {
+    }
+    return null;
+  }
+
+  public static Integer pathToString(Path path) {
+    return getIntegerFromYAMLInputStream(getInputStreamFromPath(path));
+  }
+
   public static Stream<Arguments> findTestsByPath(TestSet testSet) {
     Path path = Path.of(pathToTests.toString(), testSet.getPath().toString());
     try (Stream<Path> walk = Files.walk(path)) {
@@ -225,44 +253,47 @@ public abstract class TestSuite {
     return null;
   }
 
-  @MustBeClosed
-  public static Stream<Arguments> findSSZTestsByPath(TestSet testSet) {
+  public static List<Arguments> findSSZTestsByPath(TestSet testSet) {
     Path path = Path.of(pathToTests.toString(), testSet.getPath().toString());
+    List<Arguments> listOfarguments = new ArrayList<>();
+    List<String> result = new ArrayList<>();
     try (Stream<Path> walk = Files.walk(path)) {
-      List<String> result = walk.map(x -> x.toString()).collect(Collectors.toList());
-      result =
-          result.stream()
-              .filter(
-                  walkPath ->
-                      testSet.getFileNames().stream()
-                          .allMatch(fileName -> Files.exists(Path.of(walkPath, fileName))))
-              .collect(Collectors.toList());
-
-      Stream<Arguments> arguments =
-          result.stream()
-              .map(
-                  walkPath -> {
-                    return testSet.getFileNames().stream()
-                        .flatMap(
-                            fileName -> {
-                              Bytes objectBytes = getSSZBytesFromPath(Path.of(walkPath, fileName));
-                              return testSet.getTestObjectByFileName(fileName).stream()
-                                  .map(
-                                      testObject ->
-                                          SimpleOffsetSerializer.deserialize(
-                                              objectBytes, testObject.getClassName()));
-                            })
-                        .collect(Collectors.toList());
-                  })
-              .map(
-                  objects -> {
-                    return Arguments.of(objects.toArray());
-                  });
-      return arguments;
+      result = walk.map(x -> x.toString()).collect(Collectors.toList());
     } catch (IOException e) {
       LOG.log(Level.WARN, e.toString());
     }
-    return null;
+    result =
+        result.stream()
+            .filter(
+                walkPath ->
+                    testSet.getFileNames().stream()
+                        .allMatch(fileName -> Files.exists(Path.of(walkPath, fileName))))
+            .collect(Collectors.toList());
+
+    for (String testFolder : result) {
+      List<Object> objectList = new ArrayList<>();
+      for (String fileName : testSet.getFileNames()) {
+        Path filePath = Path.of(testFolder, fileName);
+        if (fileName.contains("ssz")) {
+          Bytes objectBytes = getSSZBytesFromPath(filePath);
+          TestObject testObject = testSet.getTestObjectByFileName1(fileName);
+          objectList.add(
+              SimpleOffsetSerializer.deserialize(objectBytes, testObject.getClassName()));
+        } else {
+          if (fileName.contains("timestamp")) {
+            objectList.add(
+                UnsignedLong.valueOf((Integer) getPrimitiveFromPath(filePath, Integer.class)));
+          } else {
+            Object object = pathToObject(filePath);
+            TestObject testObject = testSet.getTestObjectByFileName1(fileName);
+            objectList.add(
+                parseObjectFromFile(testObject.getClassName(), testObject.getPath(), object));
+          }
+        }
+      }
+      listOfarguments.add(Arguments.of(objectList.toArray()));
+    }
+    return listOfarguments;
   }
 
   @MustBeClosed
@@ -328,28 +359,27 @@ public abstract class TestSuite {
     return null;
   }
 
-  @SuppressWarnings({"rawtypes"})
-  @MustBeClosed
-  public static Stream<Arguments> convertArrayArguments(Class className, Stream<Arguments> input) {
-    List<Arguments> output = new ArrayList<Arguments>();
-    Iterator<Arguments> itr = input.collect(Collectors.toList()).iterator();
-    while (itr.hasNext()) {
-      List<Object> outputObjects = new ArrayList<>();
-      List<Object> objects = Arrays.asList(itr.next().get());
-      Iterator<Object> itrObject = objects.iterator();
-      List<Object> arrayArguments = new ArrayList<>();
-      while (itrObject.hasNext()) {
-        Object object = itrObject.next();
+  @SuppressWarnings({"rawtypes", "unchecked"})
+  public static List<Arguments> convertArgumentToList(
+      Class className, Integer count, List<Arguments> input) {
+    List<Arguments> finalArguments = new ArrayList<>();
+    for (Arguments arguments : input) {
+      Object[] objectArguments = arguments.get();
+      int counter = 0;
+      Object[] outputObjects = new Object[objectArguments.length - count + 1];
+      List argumentList = new ArrayList();
+      for (Object object : objectArguments) {
         if (object.getClass().equals(className)) {
-          arrayArguments.add(object);
+          argumentList.add(object);
         } else {
-          outputObjects.add(object);
+          outputObjects[counter] = object;
+          counter++;
         }
       }
-      if (arrayArguments.size() > 0) outputObjects.add(arrayArguments);
-      output.add(Arguments.of(outputObjects.toArray()));
+      if (argumentList.size() > 0) outputObjects[counter] = argumentList;
+      finalArguments.add(Arguments.of(outputObjects));
     }
-    return output.stream();
+    return finalArguments;
   }
 
   @SuppressWarnings({"rawtypes"})
@@ -478,7 +508,7 @@ public abstract class TestSuite {
     testSet.add(new TestObject("pre.ssz", BeaconState.class, null));
     testSet.add(new TestObject("post.ssz", BeaconState.class, null));
 
-    return findSSZTestsByPath(testSet);
+    return findSSZTestsByPath(testSet).stream();
   }
 
   @MustBeClosed
@@ -677,9 +707,9 @@ public abstract class TestSuite {
       testSet.add(new TestObject("blocks_" + i + ".yaml", BeaconBlock.class, null));
     }
 
-    try (Stream<Arguments> testSetArgs = findTestsByPath(testSet)) {
-      return convertArrayArguments(BeaconBlock.class, testSetArgs);
-    }
+    return convertArgumentToList(
+        BeaconBlock.class, block_count, findTestsByPath(testSet).collect(Collectors.toList()))
+        .stream();
   }
 
   @MustBeClosed
@@ -697,9 +727,9 @@ public abstract class TestSuite {
       testSet.add(new TestObject("blocks_" + i + ".yaml", BeaconBlock.class, null));
     }
 
-    try (Stream<Arguments> testSetArgs = findTestsByPath(testSet)) {
-      return convertArrayArguments(BeaconBlock.class, testSetArgs);
-    }
+    return convertArgumentToList(
+        BeaconBlock.class, block_count, findTestsByPath(testSet).collect(Collectors.toList()))
+        .stream();
   }
 
   @MustBeClosed
@@ -727,7 +757,6 @@ public abstract class TestSuite {
     return findTestsByPath(testSet);
   }
 
-  @MustBeClosed
   public static Stream<Arguments> genesisInitializationSetup(Path path, Path configPath)
       throws Exception {
     loadConfigFromPath(configPath);
@@ -737,16 +766,16 @@ public abstract class TestSuite {
     Integer deposits_count = loadMetaData(metaDataSet);
 
     TestSet testSet = new TestSet(path);
-    testSet.add(new TestObject("state.yaml", BeaconState.class, null));
-    testSet.add(new TestObject("eth1_block_hash.yaml", Bytes32.class, null));
+    testSet.add(new TestObject("state.ssz", BeaconState.class, null));
     testSet.add(new TestObject("eth1_timestamp.yaml", UnsignedLong.class, null));
+    testSet.add(new TestObject("eth1_block_hash.ssz", Bytes32.class, null));
     for (int i = 0; i < deposits_count; i++) {
-      testSet.add(new TestObject("deposits_" + i + ".yaml", Deposit.class, null));
+      testSet.add(new TestObject("deposits_" + i + ".ssz", Deposit.class, null));
     }
 
-    try (Stream<Arguments> testSetArgs = findTestsByPath(testSet)) {
-      return convertArrayArguments(Deposit.class, testSetArgs);
-    }
+    List<Arguments> arguments =
+        convertArgumentToList(Deposit.class, deposits_count, findSSZTestsByPath(testSet));
+    return arguments.stream();
   }
 
   @MustBeClosed
