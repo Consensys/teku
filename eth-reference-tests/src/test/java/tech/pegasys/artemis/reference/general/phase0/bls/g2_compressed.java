@@ -11,41 +11,33 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.reference.bls;
+package tech.pegasys.artemis.reference.general.phase0.bls;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.google.errorprone.annotations.MustBeClosed;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.stream.Stream;
-import org.apache.commons.lang3.tuple.Pair;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.artemis.reference.TestSuite;
 import tech.pegasys.artemis.util.mikuli.G2Point;
 
-@Disabled
-class g2_uncompressed extends TestSuite {
-  private static String testFile = "**/g2_uncompressed.yaml";
+class g2_compressed extends TestSuite {
 
-  @ParameterizedTest(name = "{index}. message hash to G2 uncompressed {0} -> {1}")
-  @MethodSource("readMessageHashG2Uncompressed")
-  void messageHashToG2Uncompressed(G2Point g2PointExpected, G2Point g2PointActual) {
+  // The msg_hash_g2_compressed handler should hash the message, with the given domain, to G2 with
+  // compression, and the result should match the expected output.
+  @ParameterizedTest(name = "{index}. message hash to G2 compressed {0} -> {1}")
+  @MethodSource("readMessageHashG2Compressed")
+  void messageHashToG2Compressed(G2Point g2PointActual, G2Point g2PointExpected) {
     assertEquals(g2PointExpected, g2PointActual);
   }
 
-  @SuppressWarnings({"rawtypes"})
   @MustBeClosed
-  static Stream<Arguments> readMessageHashG2Uncompressed() throws IOException {
-    List<Pair<Class, List<String>>> arguments = new ArrayList<Pair<Class, List<String>>>();
-    arguments.add(getParams(G2Point.class, Arrays.asList("input")));
-    arguments.add(getParams(G2Point.class, Arrays.asList("output")));
-
-    return findTests(testFile, arguments);
+  static Stream<Arguments> readMessageHashG2Compressed() {
+    Path path = Paths.get("/general/phase0/bls/msg_hash_compressed/small");
+    return messageHashCompressedSetup(path);
   }
 }

@@ -54,7 +54,7 @@ public class ReflectionInformationUtil {
     return false;
   }
 
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings({"unchecked", "rawtypes"})
   public static List<Integer> getVectorLengths(ReflectionInformation reflectionInformation) {
     List<Integer> vectorLengths = new ArrayList<>();
     try {
@@ -174,7 +174,7 @@ public class ReflectionInformationUtil {
     return listElementMaxSizes;
   }
 
-  @SuppressWarnings({"unchecked", "rawtypes"})
+  @SuppressWarnings({"unchecked"})
   public static List<Long> getBitlistElementMaxSizes(ReflectionInformation reflectionInformation) {
     List<Long> bitlistElementsMaxSizes = new ArrayList<>();
     try {

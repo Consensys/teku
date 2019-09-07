@@ -23,9 +23,11 @@ import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.artemis.util.SSZTypes.SSZContainer;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
+import tech.pegasys.artemis.util.hashtree.Merkleizable;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
-public class AttestationDataAndCustodyBit implements SimpleOffsetSerializable, SSZContainer {
+public class AttestationDataAndCustodyBit
+    implements SimpleOffsetSerializable, Merkleizable, SSZContainer {
 
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
   public static final int SSZ_FIELD_COUNT = 1;
@@ -108,6 +110,7 @@ public class AttestationDataAndCustodyBit implements SimpleOffsetSerializable, S
     this.data = data;
   }
 
+  @Override
   public Bytes32 hash_tree_root() {
     return HashTreeUtil.merkleize(
         Arrays.asList(
