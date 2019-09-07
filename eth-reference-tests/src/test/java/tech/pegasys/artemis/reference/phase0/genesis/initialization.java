@@ -13,6 +13,8 @@
 
 package tech.pegasys.artemis.reference.phase0.genesis;
 
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.initialize_beacon_state_from_eth1_new;
+
 import com.google.common.primitives.UnsignedLong;
 import com.google.errorprone.annotations.MustBeClosed;
 import java.nio.file.Path;
@@ -21,7 +23,7 @@ import java.util.List;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.junit.BouncyCastleExtension;
-import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -31,7 +33,6 @@ import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.reference.TestSuite;
 
 @ExtendWith(BouncyCastleExtension.class)
-@Disabled
 public class initialization extends TestSuite {
 
   @ParameterizedTest(name = "{index} root of Merkleizable")
@@ -40,8 +41,10 @@ public class initialization extends TestSuite {
       BeaconState state,
       UnsignedLong eth1_timestamp,
       Bytes32 eth1_block_hash,
-      List<Deposit> deposits) {
-    // TODO
+      List<? extends Deposit> deposits) {
+    BeaconState beaconState =
+        initialize_beacon_state_from_eth1_new(eth1_block_hash, eth1_timestamp, deposits);
+    Assertions.assertEquals(state, beaconState);
   }
 
   @MustBeClosed
