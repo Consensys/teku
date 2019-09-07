@@ -11,15 +11,17 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.reference.general.phase0.bls;
+package tech.pegasys.artemis.reference.bls;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.google.errorprone.annotations.MustBeClosed;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Stream;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -28,19 +30,22 @@ import tech.pegasys.artemis.reference.TestSuite;
 import tech.pegasys.artemis.util.mikuli.Signature;
 
 class aggregate_sigs extends TestSuite {
+  private static String testFile = "**/aggregate_sigs.yaml";
 
-  // The aggregate_sigs handler should aggregate the signatures in the input, and the result should
-  // match the expected output.
   @ParameterizedTest(name = "{index}. aggregate sigs {0} -> {1}")
-  @MethodSource("readAggregateSignatures")
+  @MethodSource("readAggregateSigs")
   void aggregateSig(List<Signature> signatures, Bytes aggregateSignatureExpected) {
     Bytes aggregateSignatureActual = Signature.aggregate(signatures).g2Point().toBytesCompressed();
     assertEquals(aggregateSignatureExpected, aggregateSignatureActual);
   }
 
+  @SuppressWarnings({"rawtypes"})
   @MustBeClosed
-  static Stream<Arguments> readAggregateSignatures() {
-    Path path = Paths.get("general", "phase0", "bls", "aggregate_sigs", "small");
-    return aggregateSignaturesSetup(path);
+  static Stream<Arguments> readAggregateSigs() throws IOException {
+    List<Pair<Class, List<String>>> arguments = new ArrayList<Pair<Class, List<String>>>();
+    arguments.add(getParams(Signature[].class, Arrays.asList("input")));
+    arguments.add(getParams(Bytes.class, Arrays.asList("output")));
+
+    return findTests(testFile, arguments);
   }
 }

@@ -69,17 +69,6 @@ public class Bitvector {
     return new Bitvector(byteArray, size);
   }
 
-  public Bitvector rightShift(int i) {
-    int length = this.getSize();
-    Bitvector newBitvector = new Bitvector(new byte[length], length);
-    for (int j = 0; j < length - i; j++) {
-      if (this.getBit(j) == 1) {
-        newBitvector.setBit(j + i);
-      }
-    }
-    return newBitvector;
-  }
-
   public Bitvector copy() {
     return new Bitvector(this.getByteArray(), this.getSize());
   }
