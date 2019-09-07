@@ -8,7 +8,8 @@ RUN apt-get update && \
 WORKDIR /usr/local/bin
 RUN wget https://github.com/Whiteblock/artemis_log_EATER/releases/download/v1.5.10/artemis-log-parser && chmod +x /usr/local/bin/artemis-log-parser
 
-COPY start.sh /usr/local/bin/
+COPY start.sh /opt/whiteblock/
+COPY scripts /opt/whiteblock/scripts
 
 WORKDIR /
 ENV PATH="/opt/artemis/bin/:${PATH}"
