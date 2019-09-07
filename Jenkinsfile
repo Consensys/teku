@@ -4,11 +4,15 @@ import hudson.model.Result
 import hudson.model.Run
 import jenkins.model.CauseOfInterruption.UserInterruption
 
-if (env.BRANCH_NAME == "master") {
+def shouldPublish() {
+    return env.BRANCH_NAME == 'master' || env.BRANCH_NAME ==~ /^release-\d+\.\d+/
+}
+
+if (shouldPublish()) {
     properties([
         buildDiscarder(
             logRotator(
-                daysToKeepStr: '90'
+                daysToKeepStr: '30', artifactDaysToKeepStr: '7'
             )
         )
     ])
@@ -58,7 +62,7 @@ try {
                 stage('Build Docker Image') {
                     sh './gradlew --no-daemon --parallel distDocker distDockerWhiteblock'
                 }
-                if (env.BRANCH_NAME == "master") {
+                if (shouldPublish() {
                     stage('Push Docker Image') {
                         def gradleProperties = readProperties file: 'gradle.properties'
                         version = gradleProperties.version
@@ -113,7 +117,7 @@ try {
     currentBuild.result = 'FAILURE'
 } finally {
     // If we're on master and it failed, notify slack
-    if (env.BRANCH_NAME == "master") {
+    if (shouldPublish() {
         def currentResult = currentBuild.result ?: 'SUCCESS'
         def channel = '#team-pegasys-rd-bc'
         if (currentResult == 'SUCCESS') {
