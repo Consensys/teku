@@ -98,8 +98,7 @@ public final class BlockProcessorUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#block-header</a>
    */
-  public static void process_block_header(
-      BeaconState state, BeaconBlock block, boolean validate_state_root)
+  public static void process_block_header(BeaconState state, BeaconBlock block)
       throws BlockProcessingException {
     try {
       checkArgument(
@@ -119,9 +118,10 @@ public final class BlockProcessorUtil {
               BLSSignature.empty()));
 
       // Only if we are processing blocks (not proposing them)
-      Validator proposer = state.getValidators().get(get_beacon_proposer_index(state));
-      checkArgument(!proposer.isSlashed(), "process_block_header: Verify proposer is not slashed");
-      if (validate_state_root) {
+      if (!block.getState_root().equals(Bytes32.ZERO)) {
+        Validator proposer = state.getValidators().get(get_beacon_proposer_index(state));
+        checkArgument(
+            !proposer.isSlashed(), "process_block_header: Verify proposer is not slashed");
         checkArgument(
             bls_verify(
                 proposer.getPubkey(),
@@ -246,11 +246,6 @@ public final class BlockProcessorUtil {
     try {
       // For each proposer_slashing in block.body.proposer_slashings:
       for (ProposerSlashing proposer_slashing : proposerSlashings) {
-        checkArgument(
-            UnsignedLong.valueOf(state.getValidators().size())
-                    .compareTo(proposer_slashing.getProposer_index())
-                > 0,
-            "process_proposer_slashings: Invalid proposer index");
         Validator proposer =
             state
                 .getValidators()
@@ -323,12 +318,8 @@ public final class BlockProcessorUtil {
             is_slashable_attestation_data(attestation_1.getData(), attestation_2.getData()),
             "process_attester_slashings: Verify if attestations are slashable");
 
-        checkArgument(
-            is_valid_indexed_attestation(state, attestation_1),
-            "process_attester_slashings: Is valid indexed attestation 1");
-        checkArgument(
-            is_valid_indexed_attestation(state, attestation_2),
-            "process_attester_slashings: Is valid indexed attestation 2");
+        is_valid_indexed_attestation(state, attestation_1);
+        is_valid_indexed_attestation(state, attestation_2);
         boolean slashed_any = false;
 
         List<UnsignedLong> attesting_indices_1 = attestation_1.getCustody_bit_0_indices();
@@ -494,10 +485,6 @@ public final class BlockProcessorUtil {
       // For each exit in block.body.voluntaryExits:
       for (VoluntaryExit exit : exits) {
 
-        checkArgument(
-            UnsignedLong.valueOf(state.getValidators().size()).compareTo(exit.getValidator_index())
-                > 0,
-            "process_voluntary_exits: Invalid validator index");
         Validator validator =
             state.getValidators().get(toIntExact(exit.getValidator_index().longValue()));
 

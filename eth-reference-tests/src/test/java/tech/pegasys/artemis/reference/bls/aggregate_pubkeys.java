@@ -11,15 +11,17 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.reference.general.phase0.bls;
+package tech.pegasys.artemis.reference.bls;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.google.errorprone.annotations.MustBeClosed;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Stream;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.tuweni.junit.BouncyCastleExtension;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -30,19 +32,22 @@ import tech.pegasys.artemis.util.mikuli.PublicKey;
 
 @ExtendWith(BouncyCastleExtension.class)
 class aggregate_pubkeys extends TestSuite {
+  private static String testFile = "**/aggregate_pubkeys.yaml";
 
-  // The aggregate_pubkeys handler should aggregate the keys in the input, and the result should
-  // match the expected output.
   @ParameterizedTest(name = "{index}. aggregate pub keys {0} -> {1}")
-  @MethodSource("readAggregatePublicKeys")
+  @MethodSource("readAggregatePubKeys")
   void aggregatePubkeys(List<PublicKey> pubkeys, PublicKey aggregatePubkeyExpected) {
     PublicKey aggregatePubkeyActual = PublicKey.aggregate(pubkeys);
     assertEquals(aggregatePubkeyExpected, aggregatePubkeyActual);
   }
 
+  @SuppressWarnings({"rawtypes"})
   @MustBeClosed
-  static Stream<Arguments> readAggregatePublicKeys() {
-    Path path = Paths.get("general", "phase0", "bls", "aggregate_pubkeys", "small", "agg_pub_keys");
-    return aggregatePublicKeysSetup(path);
+  static Stream<Arguments> readAggregatePubKeys() throws IOException {
+    List<Pair<Class, List<String>>> arguments = new ArrayList<Pair<Class, List<String>>>();
+    arguments.add(getParams(PublicKey[].class, Arrays.asList("input")));
+    arguments.add(getParams(PublicKey.class, Arrays.asList("output")));
+
+    return findTests(testFile, arguments);
   }
 }

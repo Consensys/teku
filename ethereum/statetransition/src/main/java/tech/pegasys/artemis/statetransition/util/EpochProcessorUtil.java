@@ -24,6 +24,7 @@ import static tech.pegasys.artemis.datastructures.Constants.EPOCHS_PER_SLASHINGS
 import static tech.pegasys.artemis.datastructures.Constants.FAR_FUTURE_EPOCH;
 import static tech.pegasys.artemis.datastructures.Constants.GENESIS_EPOCH;
 import static tech.pegasys.artemis.datastructures.Constants.INACTIVITY_PENALTY_QUOTIENT;
+import static tech.pegasys.artemis.datastructures.Constants.JUSTIFICATION_BITS_LENGTH;
 import static tech.pegasys.artemis.datastructures.Constants.MAX_ATTESTATIONS;
 import static tech.pegasys.artemis.datastructures.Constants.MAX_EFFECTIVE_BALANCE;
 import static tech.pegasys.artemis.datastructures.Constants.MIN_ATTESTATION_INCLUSION_DELAY;
@@ -72,6 +73,7 @@ import java.util.stream.Stream;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.Level;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.artemis.datastructures.Constants;
@@ -287,7 +289,10 @@ public final class EpochProcessorUtil {
 
       // Process justifications
       state.setPrevious_justified_checkpoint(state.getCurrent_justified_checkpoint());
-      Bitvector justificationBits = state.getJustification_bits().rightShift(1);
+      Bitvector justificationBits =
+          new Bitvector(
+              Bytes.wrap(state.getJustification_bits().getByteArray()).shiftRight(1).toArray(),
+              JUSTIFICATION_BITS_LENGTH);
 
       List<PendingAttestation> matching_target_attestations =
           get_matching_target_attestations(state, previous_epoch);
@@ -365,12 +370,12 @@ public final class EpochProcessorUtil {
   public static void process_crosslinks(BeaconState state) throws EpochProcessingException {
     try {
       state.setPrevious_crosslinks(new SSZVector<>(state.getCurrent_crosslinks()));
+      UnsignedLong previous_epoch = get_previous_epoch(state);
+      UnsignedLong current_epoch = get_current_epoch(state);
 
-      List<UnsignedLong> epochs = new ArrayList<>();
-      epochs.add(get_previous_epoch(state));
-      epochs.add(get_current_epoch(state));
-
-      for (UnsignedLong epoch : epochs) {
+      for (UnsignedLong epoch = previous_epoch;
+          epoch.compareTo(current_epoch) < 0;
+          epoch = epoch.plus(UnsignedLong.ONE)) {
         for (int offset = 0; offset < get_committee_count(state, epoch).intValue(); offset++) {
           UnsignedLong shard =
               get_start_shard(state, epoch)
@@ -661,7 +666,6 @@ public final class EpochProcessorUtil {
       // epoch
       List<Integer> activation_queue =
           IntStream.range(0, state.getValidators().size())
-              .sequential()
               .filter(
                   index -> {
                     Validator validator = state.getValidators().get(index);
@@ -674,21 +678,14 @@ public final class EpochProcessorUtil {
                             >= 0;
                   })
               .boxed()
+              .sorted(
+                  (i1, i2) ->
+                      state
+                          .getValidators()
+                          .get(i1)
+                          .getActivation_eligibility_epoch()
+                          .compareTo(state.getValidators().get(i2).getActivation_epoch()))
               .collect(Collectors.toList());
-      activation_queue.sort(
-          (i1, i2) -> {
-            int comparisonResult =
-                state
-                    .getValidators()
-                    .get(i1)
-                    .getActivation_eligibility_epoch()
-                    .compareTo(state.getValidators().get(i2).getActivation_eligibility_epoch());
-            if (comparisonResult == 0) {
-              return i1.compareTo(i2);
-            } else {
-              return comparisonResult;
-            }
-          });
 
       // Dequeued validators for activation up to churn limit (without resetting activation epoch)
       int churn_limit = get_validator_churn_limit(state).intValue();
@@ -793,7 +790,7 @@ public final class EpochProcessorUtil {
             HashTreeUtil.hash_tree_root_list_ul(
                 Constants.VALIDATOR_REGISTRY_LIMIT,
                 indices_list.stream()
-                    .map(elem -> SSZ.encodeUInt64(elem.intValue()))
+                    .map(elem -> SSZ.encodeUInt64(elem))
                     .collect(Collectors.toList())));
 
     // Set committees root

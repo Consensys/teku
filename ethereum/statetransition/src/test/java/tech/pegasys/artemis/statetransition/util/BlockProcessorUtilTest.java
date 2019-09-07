@@ -25,7 +25,6 @@ import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.junit.BouncyCastleExtension;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import tech.pegasys.artemis.datastructures.Constants;
@@ -43,7 +42,6 @@ import tech.pegasys.artemis.util.bls.BLSPublicKey;
 @ExtendWith(BouncyCastleExtension.class)
 class BlockProcessorUtilTest {
   @Test
-  @Disabled
   void processDepositAddsNewValidatorWhenPubkeyIsNotFoundInRegistry()
       throws BlockProcessingException {
     // Data Setup
@@ -83,7 +81,6 @@ class BlockProcessorUtilTest {
   }
 
   @Test
-  @Disabled
   void processDepositTopsUpValidatorBalanceWhenPubkeyIsFoundInRegistry()
       throws BlockProcessingException {
     // Data Setup

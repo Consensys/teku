@@ -111,7 +111,7 @@ public final class HobbitsP2PNetwork implements P2PNetwork {
             200);
   }
 
-  @SuppressWarnings("rawtypes")
+  @SuppressWarnings({"rawtypes"})
   private AbstractSocketHandler createSocketHandler(NetSocket netSocket, Peer peer) {
     return new SocketHandlerFactory()
         .create(

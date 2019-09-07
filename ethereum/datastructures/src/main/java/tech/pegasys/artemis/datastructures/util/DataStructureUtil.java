@@ -515,6 +515,7 @@ public final class DataStructureUtil {
         Hash.sha2_256(Hash.sha2_256(SSZ.encodeUInt64(voting_period.longValue()))));
   }
 
+  @SuppressWarnings("unchecked")
   public static BeaconStateWithCache createInitialBeaconState(ArtemisConfiguration config)
       throws IOException, ParseException {
     final List<DepositWithIndex> deposits = new ArrayList<>();
