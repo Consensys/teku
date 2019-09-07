@@ -1,6 +1,7 @@
 dependencyManagement {
   dependencies {
-    dependency 'com.fasterxml.jackson.core:jackson-databind:2.9.7'
+    dependency 'com.fasterxml.jackson.core:jackson-databind:2.9.8'
+    dependency 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.9.8'
 
     dependency 'com.github.docker-java:docker-java:3.0.14'
 

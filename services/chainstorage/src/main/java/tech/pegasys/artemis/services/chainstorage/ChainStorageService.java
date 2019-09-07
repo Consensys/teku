@@ -13,34 +13,23 @@
 
 package tech.pegasys.artemis.services.chainstorage;
 
-import com.google.common.eventbus.EventBus;
 import tech.pegasys.artemis.service.serviceutils.ServiceConfig;
 import tech.pegasys.artemis.service.serviceutils.ServiceInterface;
-import tech.pegasys.artemis.storage.ChainStorage;
-import tech.pegasys.artemis.storage.ChainStorageServer;
-import tech.pegasys.artemis.util.alogger.ALogger;
+import tech.pegasys.artemis.storage.FixedStateChainStorageServer;
 
 public class ChainStorageService implements ServiceInterface {
-  private EventBus eventBus;
-  private ChainStorageServer chainStore;
-  private static final ALogger LOG = new ALogger(ChainStorageService.class.getName());
-
-  public ChainStorageService() {}
 
   @Override
   public void init(ServiceConfig config) {
-    this.eventBus = config.getEventBus();
-    this.chainStore = ChainStorage.Create(ChainStorageServer.class, eventBus);
-    this.eventBus.register(this);
+    final String interopStartState = config.getConfig().getInteropStartState();
+    if (config.getConfig().getInteropActive() && interopStartState != null) {
+      new FixedStateChainStorageServer(config.getEventBus(), config.getConfig());
+    }
   }
 
   @Override
-  public void run() {
-    // TODO Still do something...maybe
-  }
+  public void run() {}
 
   @Override
-  public void stop() {
-    this.eventBus.unregister(this);
-  }
+  public void stop() {}
 }

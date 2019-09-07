@@ -79,15 +79,15 @@ import tech.pegasys.artemis.proto.messagesigner.MessageSignerGrpc;
 import tech.pegasys.artemis.proto.messagesigner.SignatureRequest;
 import tech.pegasys.artemis.proto.messagesigner.SignatureResponse;
 import tech.pegasys.artemis.service.serviceutils.ServiceConfig;
-import tech.pegasys.artemis.statetransition.GenesisStateEvent;
-import tech.pegasys.artemis.statetransition.SlotEvent;
 import tech.pegasys.artemis.statetransition.StateTransition;
 import tech.pegasys.artemis.statetransition.StateTransitionException;
-import tech.pegasys.artemis.statetransition.ValidatorAssignmentEvent;
+import tech.pegasys.artemis.statetransition.events.ValidatorAssignmentEvent;
 import tech.pegasys.artemis.statetransition.util.EpochProcessingException;
 import tech.pegasys.artemis.statetransition.util.SlotProcessingException;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.Store;
+import tech.pegasys.artemis.storage.events.NodeStartEvent;
+import tech.pegasys.artemis.storage.events.SlotEvent;
 import tech.pegasys.artemis.util.SSZTypes.Bitlist;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.alogger.ALogger;
@@ -196,9 +196,8 @@ public class ValidatorCoordinator {
   }
 
   @Subscribe
-  public void onGenesisStateEvent(GenesisStateEvent genesisHeadStateEvent) {
-    BeaconBlock genesisBlock = genesisHeadStateEvent.getGenesisBlock();
-    BeaconStateWithCache genesisState = genesisHeadStateEvent.getGenesisState();
+  public void onGenesisStateEvent(NodeStartEvent nodeStartEvent) {
+    final BeaconStateWithCache genesisState = nodeStartEvent.getState();
 
     // Get validator indices of our own validators
     List<Validator> validatorRegistry = genesisState.getValidators();
@@ -218,6 +217,7 @@ public class ValidatorCoordinator {
     Bytes32 headBlockRoot = get_head(store);
     BeaconBlock headBlock = store.getBlocks().get(headBlockRoot);
     BeaconState headState = store.getBlock_states().get(headBlockRoot);
+    chainStorageClient.updateBestBlock(headBlockRoot, headBlock.getSlot());
 
     // Logging
     STDOUT.log(
