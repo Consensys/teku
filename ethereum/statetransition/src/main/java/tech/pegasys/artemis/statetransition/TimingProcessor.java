@@ -25,7 +25,11 @@ import org.apache.logging.log4j.Level;
 import tech.pegasys.artemis.metrics.ArtemisMetricCategory;
 import tech.pegasys.artemis.metrics.SettableGauge;
 import tech.pegasys.artemis.service.serviceutils.ServiceConfig;
+import tech.pegasys.artemis.statetransition.events.GenesisEvent;
+import tech.pegasys.artemis.statetransition.events.ValidatorAssignmentEvent;
 import tech.pegasys.artemis.storage.ChainStorageClient;
+import tech.pegasys.artemis.storage.events.DBStoreValidEvent;
+import tech.pegasys.artemis.storage.events.SlotEvent;
 import tech.pegasys.artemis.util.alogger.ALogger;
 
 public class TimingProcessor {
@@ -56,25 +60,40 @@ public class TimingProcessor {
   }
 
   @Subscribe
+  private void onDBStoreValidEvent(DBStoreValidEvent event) {
+    final UnsignedLong slot = event.getNodeSlot();
+    STDOUT.log(Level.INFO, "Restoring nodeSlot to: " + slot);
+    this.nodeSlot = slot;
+  }
+
+  @Subscribe
   private void onTick(Date date) {
     try {
-      on_tick(chainStorageClient.getStore(), UnsignedLong.valueOf(date.getTime() / 1000));
-      if (chainStorageClient
-              .getStore()
-              .getTime()
-              .compareTo(
-                  chainStorageClient
-                      .getGenesisTime()
-                      .plus(nodeSlot.times(UnsignedLong.valueOf(SECONDS_PER_SLOT))))
-          >= 0) {
-        this.eventBus.post(new SlotEvent(nodeSlot));
-        this.currentSlotGauge.set(nodeSlot.longValue());
-        this.currentEpochGauge.set(compute_epoch_of_slot(nodeSlot).longValue());
-        STDOUT.log(Level.INFO, "******* Slot Event *******", ALogger.Color.WHITE);
-        STDOUT.log(Level.INFO, "Node slot:                             " + nodeSlot);
-        nodeSlot = nodeSlot.plus(UnsignedLong.ONE);
-        Thread.sleep(SECONDS_PER_SLOT * 1000 / 2);
-        this.eventBus.post(new ValidatorAssignmentEvent());
+      final UnsignedLong currentTime = UnsignedLong.valueOf(date.getTime() / 1000);
+      if (chainStorageClient.getStore() != null) {
+        on_tick(chainStorageClient.getStore(), currentTime);
+        if (chainStorageClient
+                .getStore()
+                .getTime()
+                .compareTo(
+                    chainStorageClient
+                        .getGenesisTime()
+                        .plus(nodeSlot.times(UnsignedLong.valueOf(SECONDS_PER_SLOT))))
+            >= 0) {
+          this.eventBus.post(new SlotEvent(nodeSlot));
+          this.currentSlotGauge.set(nodeSlot.longValue());
+          this.currentEpochGauge.set(compute_epoch_of_slot(nodeSlot).longValue());
+          STDOUT.log(Level.INFO, "******* Slot Event *******", ALogger.Color.WHITE);
+          STDOUT.log(Level.INFO, "Node slot:                             " + nodeSlot);
+          nodeSlot = nodeSlot.plus(UnsignedLong.ONE);
+          Thread.sleep(SECONDS_PER_SLOT * 1000 / 2);
+          this.eventBus.post(new ValidatorAssignmentEvent());
+        }
+      } else {
+        if (currentTime.compareTo(chainStorageClient.getGenesisTime().minus(UnsignedLong.ONE))
+            >= 0) {
+          this.eventBus.post(new GenesisEvent());
+        }
       }
     } catch (InterruptedException e) {
       STDOUT.log(Level.FATAL, "onTick: " + e.toString());

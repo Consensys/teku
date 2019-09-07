@@ -30,9 +30,9 @@ import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
-import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.storage.events.DBStoreValidEvent;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.alogger.ALogger;
 
@@ -43,21 +43,16 @@ public class ChainStorageClient implements ChainStorage {
   static final Integer UNPROCESSED_BLOCKS_LENGTH = 100;
   private Store store;
   protected EventBus eventBus;
-  protected final ConcurrentHashMap<Integer, Attestation> latestAttestations =
-      new ConcurrentHashMap<>();
   protected final PriorityBlockingQueue<BeaconBlock> unprocessedBlocksQueue =
       new PriorityBlockingQueue<>(
           UNPROCESSED_BLOCKS_LENGTH, Comparator.comparing(BeaconBlock::getSlot));
   private final ConcurrentHashMap<Bytes32, BeaconBlock> unprocessedBlockMap =
       new ConcurrentHashMap<>();
-  protected final ConcurrentHashMap<Bytes32, BeaconState> stateMap = new ConcurrentHashMap<>();
   protected final ConcurrentHashMap<Bytes32, Attestation> processedAttestationsMap =
       new ConcurrentHashMap<>();
   private final ConcurrentHashMap<Bytes32, Attestation> unprocessedAttestationsMap =
       new ConcurrentHashMap<>();
   private final Queue<Attestation> unprocessedAttestationsQueue = new LinkedBlockingQueue<>();
-  private final ConcurrentHashMap<Integer, List<BeaconBlockHeader>> validatorBlockHeaders =
-      new ConcurrentHashMap<>();
   private Bytes32 bestBlockRoot = Bytes32.ZERO; // block chosen by lmd ghost to build and attest on
   private UnsignedLong bestSlot =
       UnsignedLong.ZERO; // slot of the block chosen by lmd ghost to build and attest on
@@ -71,10 +66,7 @@ public class ChainStorageClient implements ChainStorage {
   // Time
   private UnsignedLong genesisTime;
 
-  public ChainStorageClient() {}
-
   public ChainStorageClient(EventBus eventBus) {
-    this();
     this.eventBus = eventBus;
     this.eventBus.register(this);
   }
@@ -115,7 +107,6 @@ public class ChainStorageClient implements ChainStorage {
    * @param slot
    */
   public void updateBestBlock(Bytes32 root, UnsignedLong slot) {
-    // TODO figure out a place to set this best block root and slot
     this.bestBlockRoot = root;
     this.bestSlot = slot;
   }
@@ -234,6 +225,11 @@ public class ChainStorageClient implements ChainStorage {
             + " detected.",
         ALogger.Color.GREEN);
     addUnprocessedAttestation(attestation);
+  }
+
+  @Subscribe
+  public void onDBStoreValidEvent(DBStoreValidEvent dbStoreValidEvent) {
+    this.store = dbStoreValidEvent.getStore();
   }
 
   // STATE PROCESSOR METHODS:
