@@ -32,8 +32,6 @@ import java.util.Date;
 import java.util.List;
 import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.crypto.SECP256K1;
-import org.json.simple.parser.ParseException;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
@@ -57,7 +55,6 @@ public class StateProcessor {
   private final EventBus eventBus;
   private final StateTransition stateTransition;
   private ChainStorageClient chainStorageClient;
-  private SECP256K1.PublicKey publicKey;
   private ArtemisConfiguration config;
   private static final ALogger STDOUT = new ALogger("stdout");
   private List<DepositWithIndex> deposits;
@@ -84,19 +81,14 @@ public class StateProcessor {
 
     this.eventBus = config.getEventBus();
     this.config = config.getConfig();
-    this.publicKey = config.getKeyPair().publicKey();
     this.stateTransition = new StateTransition(true, new EpochMetrics(config.getMetricsSystem()));
     this.chainStorageClient = chainStorageClient;
     this.eventBus.register(this);
 
     if (this.config.getDepositMode().equals(Constants.DEPOSIT_TEST)) {
-      try {
-        initialState = DataStructureUtil.createInitialBeaconState2(this.config);
-        setSimulationGenesisTime(initialState);
-        this.eventBus.post(new NodeStartEvent(initialState));
-      } catch (ParseException | IOException e) {
-        STDOUT.log(Level.FATAL, "StateProcessor initializing: " + e.toString());
-      }
+      initialState = DataStructureUtil.createInitialBeaconState(this.config);
+      setSimulationGenesisTime(initialState);
+      this.eventBus.post(new NodeStartEvent(initialState));
     }
   }
 
@@ -157,14 +149,13 @@ public class StateProcessor {
     }
   }
 
-  public static boolean isGenesisReasonable(
-      UnsignedLong eth1_timestamp, List<DepositWithIndex> deposits) {
-    return (eth1_timestamp.compareTo(MIN_GENESIS_TIME) >= 0
-        && deposits.size() >= MIN_GENESIS_ACTIVE_VALIDATOR_COUNT);
-  }
-
-  public static boolean isGenesisReasonableSim(List<DepositWithIndex> deposits) {
-    return (deposits.size() >= MIN_GENESIS_ACTIVE_VALIDATOR_COUNT);
+  public boolean isGenesisReasonable(UnsignedLong eth1_timestamp, List<DepositWithIndex> deposits) {
+    if (config.getInteropActive()) {
+      return false; // Interop mode never performs genesis in response to deposit events.
+    }
+    final boolean afterMinGenesisTime = eth1_timestamp.compareTo(MIN_GENESIS_TIME) >= 0;
+    final boolean sufficientValidators = deposits.size() >= MIN_GENESIS_ACTIVE_VALIDATOR_COUNT;
+    return afterMinGenesisTime && sufficientValidators;
   }
 
   @Subscribe
@@ -191,8 +182,7 @@ public class StateProcessor {
   }
 
   private void setSimulationGenesisTime(BeaconState state) {
-    if (config.getInteropActive()
-        && config.getInteropMode().equals(Constants.MOCKED_START_INTEROP)) {
+    if (config.getInteropActive()) {
       state.setGenesis_time(UnsignedLong.valueOf(config.getInteropGenesisTime()));
     } else if (Constants.GENESIS_TIME.equals(UnsignedLong.MAX_VALUE)) {
       Date date = new Date();

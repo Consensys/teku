@@ -66,15 +66,8 @@ public class FixedStateChainStorageServer implements ChainStorage {
   DBStoreValidEvent loadInitialState(final Bytes beaconStateData) {
     final BeaconStateWithCache initialBeaconState = loadBeaconState(beaconStateData);
 
-    final Store initialStore =
-        createInitialStore(
-            initialBeaconState, UnsignedLong.valueOf(config.getInteropGenesisTime()));
-    return new DBStoreValidEvent(initialStore, initialBeaconState.getSlot());
-  }
-
-  private static Store createInitialStore(
-      final BeaconStateWithCache initialState, final UnsignedLong genesisTime) {
-    return get_genesis_store(initialState);
+    final Store initialStore = get_genesis_store(initialBeaconState);
+    return new DBStoreValidEvent(initialStore, initialBeaconState.getSlot().plus(UnsignedLong.ONE));
   }
 
   public static Store get_genesis_store(BeaconStateWithCache genesis_state) {
