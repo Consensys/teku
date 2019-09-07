@@ -33,7 +33,6 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.io.Resources;
 import org.apache.tuweni.junit.BouncyCastleExtension;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -72,7 +71,6 @@ import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 
 @ExtendWith(BouncyCastleExtension.class)
-@Disabled
 class SSZStaticTestSuite {
 
   private static String testFile = "**/ssz_minimal_random.yaml";
@@ -426,6 +424,8 @@ class SSZStaticTestSuite {
       LinkedHashMap<String, Object> value, String serialized, String root) {
     BeaconState beaconState = parseBeaconState(value);
 
+    Bytes32 a = Bytes32.fromHexString(root);
+    Bytes32 b = beaconState.hash_tree_root();
     assertEquals(Bytes32.fromHexString(root), beaconState.hash_tree_root());
   }
 

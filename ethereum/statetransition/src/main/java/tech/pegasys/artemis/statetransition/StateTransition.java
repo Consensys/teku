@@ -76,7 +76,7 @@ public class StateTransition {
       process_slots(state, block.getSlot(), printEnabled);
 
       // Process_block
-      process_block(state, block, validate_state_root);
+      process_block(state, block);
 
       Bytes32 stateRoot = state.hash_tree_root();
       // Validate state root (`validate_state_root == True` in production)
@@ -114,10 +114,9 @@ public class StateTransition {
    * @param block
    * @throws BlockProcessingException
    */
-  private void process_block(
-      BeaconStateWithCache state, BeaconBlock block, boolean validate_state_root)
+  private void process_block(BeaconStateWithCache state, BeaconBlock block)
       throws BlockProcessingException {
-    process_block_header(state, block, validate_state_root);
+    process_block_header(state, block);
     process_randao(state, block.getBody());
     process_eth1_data(state, block.getBody());
     process_operations(state, block.getBody());

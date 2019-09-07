@@ -14,7 +14,6 @@
 package tech.pegasys.artemis.reference;
 
 import com.google.common.primitives.UnsignedLong;
-import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -76,8 +75,7 @@ public class MapObjectUtil {
     else if (classtype.equals(Bytes[].class)) return getBytesArray((List) object);
     else if (classtype.equals(Bytes32[].class)) return getBytes32Array((List) object);
     else if (classtype.equals(BeaconState.class)) return getBeaconState((Map) object);
-    else if (classtype.equals(BeaconStateWithCache.class))
-      return getBeaconStateWithCache((Map) object);
+    else if (classtype.equals(BeaconStateWithCache.class)) return getBeaconState((Map) object);
     else if (classtype.equals(Checkpoint.class)) return getCheckpoint((Map) object);
     else if (classtype.equals(CompactCommittee.class)) return getCompactCommittee((Map) object);
     else if (classtype.equals(Crosslink.class)) return getCrossLink((Map) object);
@@ -85,7 +83,7 @@ public class MapObjectUtil {
     else if (classtype.equals(DepositData.class)) return getDepositData((Map) object);
     else if (classtype.equals(Eth1Data.class)) return getEth1Data((Map) object);
     else if (classtype.equals(Fork.class)) return getFork((Map) object);
-    else if (classtype.equals(G2Point.class)) return getG2Point(object);
+    else if (classtype.equals(G2Point.class)) return getG2Point((List) object);
     else if (classtype.equals(HistoricalBatch.class)) return getHistoricalBatch((Map) object);
     else if (classtype.equals(IndexedAttestation.class)) return getIndexedAttestation((Map) object);
     else if (classtype.equals(PendingAttestation.class)) return getPendingAttestation((Map) object);
@@ -98,73 +96,55 @@ public class MapObjectUtil {
     else if (classtype.equals(Transfer.class)) return getTransfer((Map) object);
     else if (classtype.equals(Validator.class)) return getValidator((Map) object);
     else if (classtype.equals(VoluntaryExit.class)) return getVoluntaryExit((Map) object);
-    else if (classtype.equals(Integer[].class)) return getIntegerArray((List) object);
-    else if (classtype.equals(UnsignedLong.class)) return UnsignedLong.valueOf(object.toString());
-    else if (classtype.equals(Integer.class)) return Integer.valueOf(object.toString());
     else if (classtype.equals(Bytes32.class)) return Bytes32.fromHexString(object.toString());
-    else if (classtype.equals(Bytes.class)) {
-      return Bytes.fromHexString(object.toString());
-    } else if (classtype.equals(Boolean.class)) return Boolean.valueOf(object.toString());
+    else if (classtype.equals(Bytes.class)) return Bytes.fromHexString(object.toString());
 
     return null;
   }
 
   @SuppressWarnings({"rawtypes"})
-  private static G2Point getG2Point(Object object) {
-    if (object.getClass() == ArrayList.class) {
-      List list = (List) object;
-      // If we have only two elements then these are the compressed X_im and X_re coordinates
-      if (list.size() == 2) {
-        return G2Point.fromBytesCompressed(
-            Bytes.concatenate(
-                Bytes48.leftPad(Bytes.fromHexString(list.get(0).toString())),
-                Bytes48.leftPad(Bytes.fromHexString(list.get(1).toString()))));
-      }
+  private static G2Point getG2Point(List list) {
 
-      // If we have three elements then these are the uncompressed complex X, Y and Z coords
-      BIG xRe =
-          BIG.fromBytes(
-              Bytes48.leftPad(Bytes.fromHexString(((List) list.get(0)).get(0).toString()))
-                  .toArray());
-      BIG xIm =
-          BIG.fromBytes(
-              Bytes48.leftPad(Bytes.fromHexString(((List) list.get(0)).get(1).toString()))
-                  .toArray());
-      BIG yRe =
-          BIG.fromBytes(
-              Bytes48.leftPad(Bytes.fromHexString(((List) list.get(1)).get(0).toString()))
-                  .toArray());
-      BIG yIm =
-          BIG.fromBytes(
-              Bytes48.leftPad(Bytes.fromHexString(((List) list.get(1)).get(1).toString()))
-                  .toArray());
-      BIG zRe =
-          BIG.fromBytes(
-              Bytes48.leftPad(Bytes.fromHexString(((List) list.get(2)).get(0).toString()))
-                  .toArray());
-      BIG zIm =
-          BIG.fromBytes(
-              Bytes48.leftPad(Bytes.fromHexString(((List) list.get(2)).get(1).toString()))
-                  .toArray());
-
-      FP2 x = new FP2(xRe, xIm);
-      FP2 y = new FP2(yRe, yIm);
-      FP2 z = new FP2(zRe, zIm);
-
-      // Normalise the point (affine transformation) so that Z = 1
-      z.inverse();
-      x.mul(z);
-      x.reduce();
-      y.mul(z);
-      y.reduce();
-
-      return new G2Point(new ECP2(x, y));
-    } else {
-      Map map = (Map) object;
-      return G2Point.hashToG2(
-          Bytes.fromHexString(map.get("message").toString()),
-          Bytes.fromHexString(map.get("domain").toString()));
+    // If we have only two elements then these are the compressed X_im and X_re coordinates
+    if (list.size() == 2) {
+      return G2Point.fromBytesCompressed(
+          Bytes.concatenate(
+              Bytes48.leftPad(Bytes.fromHexString(list.get(0).toString())),
+              Bytes48.leftPad(Bytes.fromHexString(list.get(1).toString()))));
     }
+
+    // If we have three elements then these are the uncompressed complex X, Y and Z coords
+    BIG xRe =
+        BIG.fromBytes(
+            Bytes48.leftPad(Bytes.fromHexString(((List) list.get(0)).get(0).toString())).toArray());
+    BIG xIm =
+        BIG.fromBytes(
+            Bytes48.leftPad(Bytes.fromHexString(((List) list.get(0)).get(1).toString())).toArray());
+    BIG yRe =
+        BIG.fromBytes(
+            Bytes48.leftPad(Bytes.fromHexString(((List) list.get(1)).get(0).toString())).toArray());
+    BIG yIm =
+        BIG.fromBytes(
+            Bytes48.leftPad(Bytes.fromHexString(((List) list.get(1)).get(1).toString())).toArray());
+    BIG zRe =
+        BIG.fromBytes(
+            Bytes48.leftPad(Bytes.fromHexString(((List) list.get(2)).get(0).toString())).toArray());
+    BIG zIm =
+        BIG.fromBytes(
+            Bytes48.leftPad(Bytes.fromHexString(((List) list.get(2)).get(1).toString())).toArray());
+
+    FP2 x = new FP2(xRe, xIm);
+    FP2 y = new FP2(yRe, yIm);
+    FP2 z = new FP2(zRe, zIm);
+
+    // Normalise the point (affine transformation) so that Z = 1
+    z.inverse();
+    x.mul(z);
+    x.reduce();
+    y.mul(z);
+    y.reduce();
+
+    return new G2Point(new ECP2(x, y));
   }
 
   @SuppressWarnings({"unchecked", "rawtypes"})
@@ -212,13 +192,13 @@ public class MapObjectUtil {
     SSZVector<Bytes32> block_roots =
         new SSZVector<>(
             new ArrayList<>(
-                ((List<String>) map.get("block_roots"))
+                ((ArrayList<String>) map.get("block_roots"))
                     .stream().map(e -> Bytes32.fromHexString(e)).collect(Collectors.toList())),
             Bytes32.class);
     SSZVector<Bytes32> state_roots =
         new SSZVector<>(
             new ArrayList<>(
-                ((List<String>) map.get("state_roots"))
+                ((ArrayList<String>) map.get("state_roots"))
                     .stream().map(e -> Bytes32.fromHexString(e)).collect(Collectors.toList())),
             Bytes32.class);
 
@@ -229,7 +209,7 @@ public class MapObjectUtil {
   private static CompactCommittee getCompactCommittee(Map map) {
     SSZList<BLSPublicKey> pubkeys =
         new SSZList<>(
-            ((List<String>) map.get("pubkeys"))
+            ((ArrayList<String>) map.get("pubkeys"))
                 .stream()
                     .map(e -> BLSPublicKey.fromBytes(Bytes.fromHexString(e)))
                     .collect(Collectors.toList()),
@@ -237,9 +217,9 @@ public class MapObjectUtil {
             BLSPublicKey.class);
     SSZList<UnsignedLong> compact_validators =
         new SSZList<>(
-            new ArrayList<>((List<Object>) map.get("compact_validators"))
+            new ArrayList<>((ArrayList<Integer>) map.get("compact_validators"))
                 .stream()
-                    .map(e -> UnsignedLong.valueOf(convertUntypedNumericalClassesToString(e)))
+                    .map(e -> UnsignedLong.valueOf(e.longValue()))
                     .collect(Collectors.toList()),
             Constants.MAX_VALIDATORS_PER_COMMITTEE,
             UnsignedLong.class);
@@ -256,19 +236,19 @@ public class MapObjectUtil {
     SSZVector<Bytes32> block_roots =
         new SSZVector<>(
             new ArrayList<>(
-                ((List<String>) map.get("block_roots"))
+                ((ArrayList<String>) map.get("block_roots"))
                     .stream().map(e -> Bytes32.fromHexString(e)).collect(Collectors.toList())),
             Bytes32.class);
     SSZVector<Bytes32> state_roots =
         new SSZVector<>(
             new ArrayList<>(
-                ((List<String>) map.get("state_roots"))
+                ((ArrayList<String>) map.get("state_roots"))
                     .stream().map(e -> Bytes32.fromHexString(e)).collect(Collectors.toList())),
             Bytes32.class);
     SSZList<Bytes32> historical_roots =
         new SSZList<>(
             new ArrayList<>(
-                ((List<String>) map.get("historical_roots"))
+                ((ArrayList<String>) map.get("historical_roots"))
                     .stream().map(e -> Bytes32.fromHexString(e)).collect(Collectors.toList())),
             Constants.HISTORICAL_ROOTS_LIMIT,
             Bytes32.class);
@@ -289,37 +269,36 @@ public class MapObjectUtil {
             Validator.class);
     SSZList<UnsignedLong> balances =
         new SSZList<>(
-            new ArrayList<>(
-                ((List<Object>) map.get("balances"))
-                    .stream()
-                        .map(e -> UnsignedLong.valueOf(convertUntypedNumericalClassesToString(e)))
-                        .collect(Collectors.toList())),
+            new ArrayList<>((ArrayList<Integer>) map.get("balances"))
+                .stream()
+                    .map(e -> UnsignedLong.valueOf(e.longValue()))
+                    .collect(Collectors.toList()),
             Constants.VALIDATOR_REGISTRY_LIMIT,
             UnsignedLong.class);
     UnsignedLong start_shard = UnsignedLong.valueOf(map.get("start_shard").toString());
     SSZVector<Bytes32> randao_mixes =
         new SSZVector<>(
             new ArrayList<>(
-                ((List<String>) map.get("randao_mixes"))
+                ((ArrayList<String>) map.get("randao_mixes"))
                     .stream().map(e -> Bytes32.fromHexString(e)).collect(Collectors.toList())),
             Bytes32.class);
     SSZVector<Bytes32> active_index_roots =
         new SSZVector<>(
             new ArrayList<>(
-                ((List<String>) map.get("active_index_roots"))
+                ((ArrayList<String>) map.get("active_index_roots"))
                     .stream().map(e -> Bytes32.fromHexString(e)).collect(Collectors.toList())),
             Bytes32.class);
     SSZVector<Bytes32> compact_committees_roots =
         new SSZVector<>(
             new ArrayList<>(
-                ((List<String>) map.get("compact_committees_roots"))
+                ((ArrayList<String>) map.get("compact_committees_roots"))
                     .stream().map(e -> Bytes32.fromHexString(e)).collect(Collectors.toList())),
             Bytes32.class);
     SSZVector<UnsignedLong> slashings =
         new SSZVector<>(
-            new ArrayList<>((List<Object>) map.get("slashings"))
+            new ArrayList<>((ArrayList<Integer>) map.get("slashings"))
                 .stream()
-                    .map(e -> UnsignedLong.valueOf(convertUntypedNumericalClassesToString(e)))
+                    .map(e -> UnsignedLong.valueOf(e.longValue()))
                     .collect(Collectors.toList()),
             UnsignedLong.class);
     SSZList<PendingAttestation> previous_epoch_attestations =
@@ -380,11 +359,6 @@ public class MapObjectUtil {
         previous_justified_checkpoint,
         current_justified_checkpoint,
         finalized_checkpoint);
-  }
-
-  @SuppressWarnings({"rawtypes"})
-  private static BeaconStateWithCache getBeaconStateWithCache(Map map) {
-    return (BeaconStateWithCache) getBeaconState(map);
   }
 
   @SuppressWarnings({"rawtypes"})
@@ -486,7 +460,7 @@ public class MapObjectUtil {
     SSZList<Transfer> transfers =
         new SSZList<>(
             new ArrayList<Transfer>(
-                ((List<Map>) map.get("transfers"))
+                ((ArrayList<Map>) map.get("transfers"))
                     .stream().map(e -> getTransfer(e)).collect(Collectors.toList())),
             Constants.MAX_TRANSFERS,
             Transfer.class);
@@ -528,19 +502,11 @@ public class MapObjectUtil {
   }
 
   @SuppressWarnings({"unchecked", "rawtypes"})
-  private static List<Integer> getIntegerArray(List list) {
-    return (List<Integer>)
-        list.stream()
-            .map(object -> Integer.valueOf(object.toString()))
-            .collect(Collectors.toList());
-  }
-
-  @SuppressWarnings({"unchecked", "rawtypes"})
   private static Deposit getDeposit(Map map) {
     SSZVector<Bytes32> proof =
         new SSZVector<>(
             new ArrayList<>(
-                ((List<String>) map.get("proof"))
+                ((ArrayList<String>) map.get("proof"))
                     .stream().map(e -> Bytes32.fromHexString(e)).collect(Collectors.toList())),
             Bytes32.class);
     DepositData data = getDepositData((Map) map.get("data"));
@@ -602,17 +568,17 @@ public class MapObjectUtil {
   private static IndexedAttestation getIndexedAttestation(Map map) {
     SSZList<UnsignedLong> custody_bit_0_indices =
         new SSZList<>(
-            new ArrayList<>((List<Object>) map.get("custody_bit_0_indices"))
+            new ArrayList<Integer>((ArrayList<Integer>) map.get("custody_bit_0_indices"))
                 .stream()
-                    .map(e -> UnsignedLong.valueOf(convertUntypedNumericalClassesToString(e)))
+                    .map(e -> UnsignedLong.valueOf(e.longValue()))
                     .collect(Collectors.toList()),
             Constants.MAX_VALIDATORS_PER_COMMITTEE,
             UnsignedLong.class);
     SSZList<UnsignedLong> custody_bit_1_indices =
         new SSZList<>(
-            new ArrayList<>((List<Object>) map.get("custody_bit_1_indices"))
+            new ArrayList<Integer>((ArrayList<Integer>) map.get("custody_bit_1_indices"))
                 .stream()
-                    .map(e -> UnsignedLong.valueOf(convertUntypedNumericalClassesToString(e)))
+                    .map(e -> UnsignedLong.valueOf(e.longValue()))
                     .collect(Collectors.toList()),
             Constants.MAX_VALIDATORS_PER_COMMITTEE,
             UnsignedLong.class);
@@ -682,16 +648,5 @@ public class MapObjectUtil {
   public static Bytes getBytes(Map testObject) {
 
     return Bytes.fromHexString(testObject.toString());
-  }
-
-  private static String convertUntypedNumericalClassesToString(Object e) {
-    if (e.getClass().equals(BigInteger.class)) {
-      return ((BigInteger) e).toString();
-    } else if (e.getClass().equals(Long.class)) {
-      return ((Long) e).toString();
-    } else if (e.getClass().equals(Integer.class)) {
-      return ((Integer) e).toString();
-    }
-    return null;
   }
 }
