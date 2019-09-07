@@ -30,10 +30,15 @@ import tech.pegasys.artemis.util.SSZTypes.SSZContainer;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
 import tech.pegasys.artemis.util.hashtree.Merkleizable;
+import tech.pegasys.artemis.util.hashtree.SigningRoot;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
 public class PendingAttestation
-    implements Copyable<PendingAttestation>, Merkleizable, SimpleOffsetSerializable, SSZContainer {
+    implements Copyable<PendingAttestation>,
+        Merkleizable,
+        SigningRoot,
+        SimpleOffsetSerializable,
+        SSZContainer {
 
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
   public static final int SSZ_FIELD_COUNT = 3;
@@ -173,5 +178,10 @@ public class PendingAttestation
                 SSZTypes.BASIC, SSZ.encodeUInt64(inclusion_delay.longValue())),
             HashTreeUtil.hash_tree_root(
                 SSZTypes.BASIC, SSZ.encodeUInt64(proposer_index.longValue()))));
+  }
+
+  @Override
+  public Bytes32 signing_root(String truncation_param) {
+    return null;
   }
 }

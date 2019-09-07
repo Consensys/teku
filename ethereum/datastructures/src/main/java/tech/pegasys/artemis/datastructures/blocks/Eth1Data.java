@@ -26,7 +26,7 @@ import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
 import tech.pegasys.artemis.util.hashtree.Merkleizable;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
-public final class Eth1Data implements SimpleOffsetSerializable, SSZContainer, Merkleizable {
+public final class Eth1Data implements Merkleizable, SimpleOffsetSerializable, SSZContainer {
 
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
   private static final int SSZ_FIELD_COUNT = 3;

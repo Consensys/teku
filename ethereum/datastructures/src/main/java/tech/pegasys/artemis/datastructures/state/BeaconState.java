@@ -13,9 +13,6 @@
 
 package tech.pegasys.artemis.datastructures.state;
 
-import static tech.pegasys.artemis.datastructures.Constants.JUSTIFICATION_BITS_LENGTH;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.int_to_bytes;
-
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -29,6 +26,7 @@ import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
+import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.util.SSZTypes.Bitvector;
 import tech.pegasys.artemis.util.SSZTypes.Bytes4;
@@ -37,9 +35,10 @@ import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.SSZTypes.SSZVector;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
+import tech.pegasys.artemis.util.hashtree.Merkleizable;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
-public class BeaconState implements SimpleOffsetSerializable, SSZContainer {
+public class BeaconState implements Merkleizable, SimpleOffsetSerializable, SSZContainer {
 
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
   public static final int SSZ_FIELD_COUNT = 19;
@@ -184,8 +183,8 @@ public class BeaconState implements SimpleOffsetSerializable, SSZContainer {
     this.slot = UnsignedLong.valueOf(Constants.GENESIS_SLOT);
     this.fork =
         new Fork(
-            new Bytes4(int_to_bytes(0, 4)),
-            new Bytes4(int_to_bytes(0, 4)),
+            new Bytes4(BeaconStateUtil.int_to_bytes(0, 4)),
+            new Bytes4(BeaconStateUtil.int_to_bytes(0, 4)),
             UnsignedLong.valueOf(Constants.GENESIS_EPOCH));
 
     // History
@@ -230,7 +229,7 @@ public class BeaconState implements SimpleOffsetSerializable, SSZContainer {
     this.current_crosslinks = new SSZVector<>(Constants.SHARD_COUNT, new Crosslink());
 
     // Finality
-    this.justification_bits = new Bitvector(JUSTIFICATION_BITS_LENGTH);
+    this.justification_bits = new Bitvector(Constants.JUSTIFICATION_BITS_LENGTH);
     this.previous_justified_checkpoint = new Checkpoint();
     this.current_justified_checkpoint = new Checkpoint();
     this.finalized_checkpoint = new Checkpoint();
@@ -641,6 +640,7 @@ public class BeaconState implements SimpleOffsetSerializable, SSZContainer {
     this.slot = slot.plus(UnsignedLong.ONE);
   }
 
+  @Override
   public Bytes32 hash_tree_root() {
     return HashTreeUtil.merkleize(
         Arrays.asList(

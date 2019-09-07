@@ -17,6 +17,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static java.lang.Math.toIntExact;
 import static tech.pegasys.artemis.datastructures.Constants.ACTIVATION_EXIT_DELAY;
 import static tech.pegasys.artemis.datastructures.Constants.CHURN_LIMIT_QUOTIENT;
+import static tech.pegasys.artemis.datastructures.Constants.DEPOSIT_CONTRACT_TREE_DEPTH;
 import static tech.pegasys.artemis.datastructures.Constants.DOMAIN_DEPOSIT;
 import static tech.pegasys.artemis.datastructures.Constants.EFFECTIVE_BALANCE_INCREMENT;
 import static tech.pegasys.artemis.datastructures.Constants.EPOCHS_PER_HISTORICAL_VECTOR;
@@ -63,12 +64,14 @@ import tech.pegasys.artemis.datastructures.blocks.BeaconBlockBody;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
+import tech.pegasys.artemis.datastructures.operations.DepositData;
 import tech.pegasys.artemis.datastructures.operations.DepositWithIndex;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.util.SSZTypes.Bitvector;
 import tech.pegasys.artemis.util.SSZTypes.Bytes4;
+import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
@@ -140,6 +143,76 @@ public class BeaconStateUtil {
     return state;
   }
 
+  public static BeaconStateWithCache initialize_beacon_state_from_eth1_new(
+      Bytes32 eth1_block_hash, UnsignedLong eth1_timestamp, List<? extends Deposit> deposits) {
+    UnsignedLong genesis_time =
+        eth1_timestamp
+            .minus(eth1_timestamp.mod(UnsignedLong.valueOf(SECONDS_PER_DAY)))
+            .plus(UnsignedLong.valueOf(2).times(UnsignedLong.valueOf(SECONDS_PER_DAY)));
+    Eth1Data eth1_data = new Eth1Data();
+    eth1_data.setBlock_hash(eth1_block_hash);
+    eth1_data.setDeposit_count(UnsignedLong.valueOf(deposits.size()));
+    BeaconBlockHeader beaconBlockHeader = new BeaconBlockHeader();
+    Bytes32 latestBlockRoot = new BeaconBlockBody().hash_tree_root();
+    beaconBlockHeader.setBody_root(latestBlockRoot);
+
+    BeaconStateWithCache state = new BeaconStateWithCache();
+    state.setGenesis_time(genesis_time);
+    state.setEth1_data(eth1_data);
+    state.setLatest_block_header(beaconBlockHeader);
+
+    // Process deposits
+    long depositListLength = ((long) 1) << DEPOSIT_CONTRACT_TREE_DEPTH;
+    List<DepositData> leaves = deposits.stream().map(Deposit::getData).collect(Collectors.toList());
+    for (int i = 0; i < deposits.size(); i++) {
+      SSZList<DepositData> deposit_data_list =
+          new SSZList<>(leaves.subList(0, i + 1), depositListLength, DepositData.class);
+      state
+          .getEth1_data()
+          .setDeposit_root(
+              HashTreeUtil.hash_tree_root(
+                  HashTreeUtil.SSZTypes.LIST_OF_COMPOSITE, depositListLength, deposit_data_list));
+      process_deposit(state, deposits.get(i));
+    }
+
+    // Process activations
+    IntStream.range(0, state.getValidators().size())
+        .forEach(
+            index -> {
+              Validator validator = state.getValidators().get(index);
+              UnsignedLong balance = state.getBalances().get(index);
+              UnsignedLong effective_balance =
+                  min(
+                      balance.minus(balance.mod(UnsignedLong.valueOf(EFFECTIVE_BALANCE_INCREMENT))),
+                      UnsignedLong.valueOf(MAX_EFFECTIVE_BALANCE));
+              validator.setEffective_balance(effective_balance);
+
+              if (validator
+                  .getEffective_balance()
+                  .equals(UnsignedLong.valueOf(MAX_EFFECTIVE_BALANCE))) {
+                validator.setActivation_eligibility_epoch(UnsignedLong.valueOf(GENESIS_EPOCH));
+                validator.setActivation_epoch(UnsignedLong.valueOf(GENESIS_EPOCH));
+              }
+            });
+
+    // Populate active_index_roots and compact_committees_roots
+    List<Integer> indices_list =
+        get_active_validator_indices(state, UnsignedLong.valueOf(GENESIS_EPOCH));
+    Bytes32 active_index_root =
+        HashTreeUtil.hash_tree_root_list_ul(
+            Constants.VALIDATOR_REGISTRY_LIMIT,
+            indices_list.stream().map(elem -> SSZ.encodeUInt64(elem)).collect(Collectors.toList()));
+    Bytes32 committee_root =
+        get_compact_committees_root(state, UnsignedLong.valueOf(GENESIS_EPOCH));
+    IntStream.range(0, EPOCHS_PER_HISTORICAL_VECTOR)
+        .forEach(
+            index -> {
+              state.getActive_index_roots().set(index, active_index_root);
+              state.getCompact_committees_roots().set(index, committee_root);
+            });
+    return state;
+  }
+
   /**
    * Processes deposits
    *
@@ -149,7 +222,6 @@ public class BeaconStateUtil {
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#deposits</a>
    */
   public static void process_deposit(BeaconState state, Deposit deposit) {
-    /*
     checkArgument(
         is_valid_merkle_branch(
             deposit.getData().hash_tree_root(),
@@ -158,7 +230,6 @@ public class BeaconStateUtil {
             toIntExact(state.getEth1_deposit_index().longValue()),
             state.getEth1_data().getDeposit_root()),
         "process_deposit: Verify the Merkle branch");
-        */
 
     state.setEth1_deposit_index(state.getEth1_deposit_index().plus(UnsignedLong.ONE));
 
@@ -586,14 +657,14 @@ public class BeaconStateUtil {
       Bytes hashBytes = Bytes.EMPTY;
       for (int i = 0; i < (list_size + 255) / 256; i++) {
         Bytes iAsBytes4 = int_to_bytes(i, 4);
-        hashBytes = Bytes.wrap(hashBytes, Hash.keccak256(Bytes.wrap(seed, roundAsByte, iAsBytes4)));
+        hashBytes = Bytes.wrap(hashBytes, Hash.sha2_256(Bytes.wrap(seed, roundAsByte, iAsBytes4)));
       }
 
       // This needs to be unsigned modulo.
       int pivot =
           toIntExact(
               Long.remainderUnsigned(
-                  bytes_to_int(Hash.keccak256(Bytes.wrap(seed, roundAsByte)).slice(0, 8)),
+                  bytes_to_int(Hash.sha2_256(Bytes.wrap(seed, roundAsByte)).slice(0, 8)),
                   list_size));
 
       for (int i = 0; i < list_size; i++) {

@@ -126,7 +126,6 @@ public class ValidatorCoordinator {
   private int naughtinessPercentage;
   private boolean interopActive;
 
-  @SuppressWarnings("unchecked")
   public ValidatorCoordinator(ServiceConfig config, ChainStorageClient store) {
     this.eventBus = config.getEventBus();
     this.eventBus.register(this);
@@ -390,7 +389,6 @@ public class ValidatorCoordinator {
     return newBlock;
   }
 
-  @SuppressWarnings("unchecked")
   private void initializeValidators(ArtemisConfiguration config) {
     Pair<Integer, Integer> startAndEnd = getStartAndEnd();
     int startIndex = startAndEnd.getLeft();
@@ -441,7 +439,7 @@ public class ValidatorCoordinator {
     }
   }
 
-  @SuppressWarnings({"unchecked", "rawtypes"})
+  @SuppressWarnings({"rawtypes"})
   private void initializeValidators2(ArtemisConfiguration config) {
     Pair<Integer, Integer> startAndEnd = getStartAndEnd();
     int startIndex = startAndEnd.getLeft();
