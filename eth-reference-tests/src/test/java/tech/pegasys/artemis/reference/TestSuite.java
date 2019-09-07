@@ -17,6 +17,23 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.common.primitives.UnsignedLong;
 import com.google.errorprone.annotations.MustBeClosed;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.UncheckedIOException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.commons.lang3.tuple.Pair;
@@ -38,24 +55,6 @@ import tech.pegasys.artemis.util.mikuli.G2Point;
 import tech.pegasys.artemis.util.mikuli.PublicKey;
 import tech.pegasys.artemis.util.mikuli.SecretKey;
 import tech.pegasys.artemis.util.mikuli.Signature;
-
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.UncheckedIOException;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public abstract class TestSuite {
   protected static Path configPath = null;
@@ -161,12 +160,12 @@ public abstract class TestSuite {
     ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
     Object object = null;
     try {
-      if(testObjects != null && (testObjects.get(0).getClassName().equals(UnsignedLong.class) ||
-              testObjects.get(0).getClassName().equals(Boolean.class) ||
-              testObjects.get(0).getClassName().equals(String.class))){
+      if (testObjects != null
+          && (testObjects.get(0).getClassName().equals(UnsignedLong.class)
+              || testObjects.get(0).getClassName().equals(Boolean.class)
+              || testObjects.get(0).getClassName().equals(String.class))) {
         object = ((String) mapper.readerFor(String.class).readValue(in));
-      }
-      else{
+      } else {
         object = ((Map) mapper.readerFor(Map.class).readValue(in));
       }
 
@@ -243,7 +242,10 @@ public abstract class TestSuite {
                     return testSet.getFileNames().stream()
                         .flatMap(
                             fileName -> {
-                              Object object = pathToObject(Path.of(walkPath, fileName), testSet.getTestObjectByFileName(fileName));
+                              Object object =
+                                  pathToObject(
+                                      Path.of(walkPath, fileName),
+                                      testSet.getTestObjectByFileName(fileName));
                               return testSet.getTestObjectByFileName(fileName).stream()
                                   .map(
                                       testObject ->
@@ -293,7 +295,7 @@ public abstract class TestSuite {
             objectList.add(
                 UnsignedLong.valueOf((Integer) getPrimitiveFromPath(filePath, Integer.class)));
           } else {
-            Object object = pathToObject(filePath,  testSet.getTestObjectByFileName(fileName));
+            Object object = pathToObject(filePath, testSet.getTestObjectByFileName(fileName));
             TestObject testObject = testSet.getTestObjectByFileName1(fileName);
             objectList.add(
                 parseObjectFromFile(testObject.getClassName(), testObject.getPath(), object));
