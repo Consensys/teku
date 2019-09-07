@@ -58,9 +58,7 @@ public class FixedStateChainStorageServer implements ChainStorage {
             loadInitialState(Bytes.wrap(Files.readAllBytes(new File(interopStartState).toPath())));
         this.eventBus.post(dbStoreValidEvent);
       } catch (final IOException e) {
-        //        throw new IllegalStateException("Failed to load initial state", e);
-        e.printStackTrace();
-        System.exit(1);
+        throw new IllegalStateException("Failed to load initial state", e);
       }
     }
   }

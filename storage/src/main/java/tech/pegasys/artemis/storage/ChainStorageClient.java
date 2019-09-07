@@ -107,7 +107,6 @@ public class ChainStorageClient implements ChainStorage {
    * @param slot
    */
   public void updateBestBlock(Bytes32 root, UnsignedLong slot) {
-    // TODO figure out a place to set this best block root and slot
     this.bestBlockRoot = root;
     this.bestSlot = slot;
   }

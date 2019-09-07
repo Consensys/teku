@@ -80,7 +80,7 @@ public class TimingProcessor {
                         .getGenesisTime()
                         .plus(nodeSlot.times(UnsignedLong.valueOf(SECONDS_PER_SLOT))))
             >= 0) {
-          this.eventBus.post(new SlotEvent(nodeSlot, currentTime));
+          this.eventBus.post(new SlotEvent(nodeSlot));
           this.currentSlotGauge.set(nodeSlot.longValue());
           this.currentEpochGauge.set(compute_epoch_of_slot(nodeSlot).longValue());
           STDOUT.log(Level.INFO, "******* Slot Event *******", ALogger.Color.WHITE);

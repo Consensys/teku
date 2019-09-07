@@ -23,15 +23,12 @@ import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_s
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_current_epoch;
 import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.get_active_validator_indices;
 
-import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
-import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
@@ -44,7 +41,6 @@ import tech.pegasys.artemis.statetransition.StateTransition;
 import tech.pegasys.artemis.statetransition.StateTransitionException;
 import tech.pegasys.artemis.storage.LatestMessage;
 import tech.pegasys.artemis.storage.Store;
-import tech.pegasys.artemis.storage.events.NewAttestationEvent;
 
 public class ForkChoiceUtil {
 
@@ -253,12 +249,8 @@ public class ForkChoiceUtil {
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.1/specs/core/0_fork-choice.md#on_attestation</a>
    */
   public static void on_attestation(
-      Store store, Attestation attestation, StateTransition stateTransition, EventBus eventBus)
+      Store store, Attestation attestation, StateTransition stateTransition)
       throws SlotProcessingException, EpochProcessingException {
-    // Client-specific variables
-    List<Pair<UnsignedLong, LatestMessage>> attesterLatestMessages = new ArrayList<>();
-    BeaconStateWithCache state = null;
-    Checkpoint checkpoint = null;
 
     Checkpoint target = attestation.getData().getTarget();
 
@@ -288,10 +280,6 @@ public class ForkChoiceUtil {
       stateTransition.process_slots(
           base_state, compute_start_slot_of_epoch(target.getEpoch()), false);
       store.getCheckpoint_states().put(target, base_state);
-
-      // Client-specific
-      checkpoint = target;
-      state = base_state;
     }
     BeaconState target_state = store.getCheckpoint_states().get(target);
 
@@ -321,13 +309,12 @@ public class ForkChoiceUtil {
     for (UnsignedLong i : all_indices) {
       if (!store.getLatest_messages().containsKey(i)
           || target.getEpoch().compareTo(store.getLatest_messages().get(i).getEpoch()) > 0) {
-        final LatestMessage latestMessage =
-            new LatestMessage(target.getEpoch(), attestation.getData().getBeacon_block_root());
-        store.getLatest_messages().put(i, latestMessage);
-        attesterLatestMessages.add(new ImmutablePair<>(i, latestMessage));
+        store
+            .getLatest_messages()
+            .put(
+                i,
+                new LatestMessage(target.getEpoch(), attestation.getData().getBeacon_block_root()));
       }
     }
-
-    eventBus.post(new NewAttestationEvent(state, checkpoint, attesterLatestMessages));
   }
 }

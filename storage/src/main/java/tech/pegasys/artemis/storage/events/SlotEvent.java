@@ -18,19 +18,13 @@ import com.google.common.primitives.UnsignedLong;
 public class SlotEvent {
 
   private final UnsignedLong slot;
-  private final UnsignedLong time;
 
-  public SlotEvent(UnsignedLong slot, UnsignedLong time) {
+  public SlotEvent(UnsignedLong slot) {
     this.slot = slot;
-    this.time = time;
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */
   public UnsignedLong getSlot() {
     return slot;
-  }
-
-  public UnsignedLong getTime() {
-    return time;
   }
 }
