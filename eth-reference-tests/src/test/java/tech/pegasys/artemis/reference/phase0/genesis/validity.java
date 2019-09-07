@@ -14,9 +14,6 @@
 package tech.pegasys.artemis.reference.phase0.genesis;
 
 import com.google.errorprone.annotations.MustBeClosed;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.stream.Stream;
 import org.apache.tuweni.junit.BouncyCastleExtension;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -26,6 +23,10 @@ import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.reference.TestSuite;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.stream.Stream;
+
 @ExtendWith(BouncyCastleExtension.class)
 @Disabled
 public class validity extends TestSuite {
@@ -33,7 +34,7 @@ public class validity extends TestSuite {
   @ParameterizedTest(name = "{index} root of Merkleizable")
   @MethodSource({"genesisGenericValiditySetup"})
   void genesisValidity(BeaconState genesis, Boolean is_valid) {
-    // TODO
+    // TODO: Proto says this is probably changing
   }
 
   @MustBeClosed

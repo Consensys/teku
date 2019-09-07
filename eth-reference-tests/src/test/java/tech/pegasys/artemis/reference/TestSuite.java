@@ -17,23 +17,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.common.primitives.UnsignedLong;
 import com.google.errorprone.annotations.MustBeClosed;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.UncheckedIOException;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.commons.lang3.tuple.Pair;
@@ -55,6 +38,24 @@ import tech.pegasys.artemis.util.mikuli.G2Point;
 import tech.pegasys.artemis.util.mikuli.PublicKey;
 import tech.pegasys.artemis.util.mikuli.SecretKey;
 import tech.pegasys.artemis.util.mikuli.Signature;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.UncheckedIOException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public abstract class TestSuite {
   protected static Path configPath = null;
@@ -107,7 +108,7 @@ public abstract class TestSuite {
     if (result.isEmpty())
       throw new Exception(
           "TestSuite.loadConfigFromPath(): Configuration files was not found in the hierarchy of the provided path");
-    Constants.init((Map) pathToObject(Paths.get(result)));
+    Constants.init((Map) pathToObject(Paths.get(result), null));
 
     // TODO fix this massacre of a technical debt
     // Checks if constants were changed from minimal to mainnet or vice-versa, and updates
@@ -156,11 +157,19 @@ public abstract class TestSuite {
   }
 
   @SuppressWarnings({"rawtypes"})
-  public static Object getObjectFromYAMLInputStream(InputStream in) {
+  public static Object getObjectFromYAMLInputStream(InputStream in, List<TestObject> testObjects) {
     ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
     Object object = null;
     try {
-      object = ((Map) mapper.readerFor(Map.class).readValue(in));
+      if(testObjects != null && (testObjects.get(0).getClassName().equals(UnsignedLong.class) ||
+              testObjects.get(0).getClassName().equals(Boolean.class) ||
+              testObjects.get(0).getClassName().equals(String.class))){
+        object = ((String) mapper.readerFor(String.class).readValue(in));
+      }
+      else{
+        object = ((Map) mapper.readerFor(Map.class).readValue(in));
+      }
+
     } catch (IOException e) {
       LOG.log(Level.WARN, e.toString());
     }
@@ -191,8 +200,8 @@ public abstract class TestSuite {
     return null;
   }
 
-  public static Object pathToObject(Path path) {
-    return getObjectFromYAMLInputStream(getInputStreamFromPath(path));
+  public static Object pathToObject(Path path, List<TestObject> testObjects) {
+    return getObjectFromYAMLInputStream(getInputStreamFromPath(path), testObjects);
   }
 
   @SuppressWarnings({"unchecked", "rawtypes"})
@@ -234,7 +243,7 @@ public abstract class TestSuite {
                     return testSet.getFileNames().stream()
                         .flatMap(
                             fileName -> {
-                              Object object = pathToObject(Path.of(walkPath, fileName));
+                              Object object = pathToObject(Path.of(walkPath, fileName), testSet.getTestObjectByFileName(fileName));
                               return testSet.getTestObjectByFileName(fileName).stream()
                                   .map(
                                       testObject ->
@@ -284,7 +293,7 @@ public abstract class TestSuite {
             objectList.add(
                 UnsignedLong.valueOf((Integer) getPrimitiveFromPath(filePath, Integer.class)));
           } else {
-            Object object = pathToObject(filePath);
+            Object object = pathToObject(filePath,  testSet.getTestObjectByFileName(fileName));
             TestObject testObject = testSet.getTestObjectByFileName1(fileName);
             objectList.add(
                 parseObjectFromFile(testObject.getClassName(), testObject.getPath(), object));
