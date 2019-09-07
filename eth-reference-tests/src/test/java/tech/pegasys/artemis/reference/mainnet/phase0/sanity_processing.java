@@ -15,7 +15,6 @@ package tech.pegasys.artemis.reference.mainnet.phase0;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
 import com.google.errorprone.annotations.MustBeClosed;
 import java.io.BufferedReader;
@@ -26,7 +25,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.stream.Stream;
-import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.junit.BouncyCastleExtension;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -138,12 +136,12 @@ class sanity_processing extends TestSuite {
 
       Store genesis_store = ForkChoiceUtil.get_genesis_store(spre);
       for (int i = 1; i < blocks.size(); i++) {
-        ForkChoiceUtil.on_block(
-            genesis_store, blocks.get(i), new StateTransition(true), new EventBus());
+        ForkChoiceUtil.on_block(genesis_store, blocks.get(i), new StateTransition(true));
       }
       //      Object hash_tree_root = genesis_store.getFinalized_checkpoint().hash_tree_root();
-      Bytes32 head = ForkChoiceUtil.get_head(genesis_store);
-      BeaconState c = genesis_store.getBlockState(genesis_store.getBlock(head).getState_root());
+      Object head = ForkChoiceUtil.get_head(genesis_store);
+      BeaconState c =
+          genesis_store.getBlock_states().get(genesis_store.getBlocks().get(head).getState_root());
       assertEquals(c, spost);
     }
   }
