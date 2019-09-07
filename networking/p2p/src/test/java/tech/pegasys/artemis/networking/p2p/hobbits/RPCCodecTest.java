@@ -22,7 +22,7 @@ import java.util.Map;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.hobbits.Message;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.artemis.networking.p2p.hobbits.rpc.HelloMessage;
+import tech.pegasys.artemis.datastructures.networking.hobbits.rpc.HelloMessage;
 import tech.pegasys.artemis.networking.p2p.hobbits.rpc.RPCCodec;
 import tech.pegasys.artemis.networking.p2p.hobbits.rpc.RPCMessage;
 import tech.pegasys.artemis.networking.p2p.hobbits.rpc.RPCMethod;

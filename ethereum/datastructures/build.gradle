@@ -1,10 +1,10 @@
 dependencies {
   implementation project(':util')
   implementation project(':pow')
+  implementation 'org.apache.tuweni:tuweni-bytes'
   implementation 'org.apache.tuweni:tuweni-crypto'
   implementation 'org.apache.tuweni:tuweni-units'
   implementation 'org.apache.tuweni:tuweni-ssz'
-  // implementation files('../../lib/tuweni-ssz-0.9.0-SNAPSHOT.jar')
   implementation 'com.google.guava:guava'
   implementation 'com.google.code.gson:gson'
   implementation 'org.apache.logging.log4j:log4j-api'
@@ -12,7 +12,7 @@ dependencies {
   runtime 'org.apache.logging.log4j:log4j-core'
   compile 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
   implementation 'com.fasterxml.jackson.core:jackson-databind'
-
+  
   test {
     testLogging.showStandardStreams = true
   }

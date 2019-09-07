@@ -76,7 +76,7 @@ public final class BeaconStateWithCache extends BeaconState {
       // Finality
       Bitvector justification_bits,
       Checkpoint previous_justified_checkpoint,
-      Checkpoint current_justified_chekpoint,
+      Checkpoint current_justified_checkpoint,
       Checkpoint finalized_checkpoint) {
     super(
         genesis_time,
@@ -102,7 +102,7 @@ public final class BeaconStateWithCache extends BeaconState {
         current_crosslinks,
         justification_bits,
         previous_justified_checkpoint,
-        current_justified_chekpoint,
+        current_justified_checkpoint,
         finalized_checkpoint);
   }
 

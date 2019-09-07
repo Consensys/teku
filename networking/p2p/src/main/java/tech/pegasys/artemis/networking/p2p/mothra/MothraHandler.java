@@ -22,12 +22,13 @@ import net.p2p.mothra;
 import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.networking.mothra.rpc.HelloMessage;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
-import tech.pegasys.artemis.networking.p2p.mothra.rpc.HelloMessage;
 import tech.pegasys.artemis.networking.p2p.mothra.rpc.RPCCodec;
 import tech.pegasys.artemis.networking.p2p.mothra.rpc.RPCMethod;
 import tech.pegasys.artemis.storage.ChainStorageClient;
+import tech.pegasys.artemis.util.SSZTypes.Bytes4;
 import tech.pegasys.artemis.util.alogger.ALogger;
 
 public class MothraHandler {
@@ -110,13 +111,13 @@ public class MothraHandler {
   }
 
   protected HelloMessage buildHelloMessage() {
-    int forkVersion = 4;
+    Bytes4 forkVersion = new Bytes4(Bytes.of(4));
     return new HelloMessage(
         forkVersion,
-        store.getFinalizedBlockRoot().toArrayUnsafe(),
-        store.getFinalizedEpoch().bigIntegerValue(),
-        store.getBestBlockRoot().toArrayUnsafe(),
-        store.getBestSlot().bigIntegerValue());
+        store.getFinalizedBlockRoot(),
+        store.getFinalizedEpoch(),
+        store.getBestBlockRoot(),
+        store.getBestSlot());
   }
 
   @Subscribe

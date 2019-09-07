@@ -14,8 +14,10 @@
 package tech.pegasys.artemis.util.SSZTypes;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.MutableBytes;
 
 public class Bytes4 {
 
@@ -24,6 +26,42 @@ public class Bytes4 {
   public Bytes4(Bytes bytes) {
     checkArgument(bytes.size() == 4, "Bytes4 should be 4 bytes, but was %s bytes.", bytes.size());
     this.bytes = bytes;
+  }
+
+  /**
+   * Left pad a {@link Bytes} value with zero bytes to create a {@link Bytes4}.
+   *
+   * @param value The bytes value pad.
+   * @return A {@link Bytes4} that exposes the left-padded bytes of {@code value}.
+   * @throws IllegalArgumentException if {@code value.size() &gt; 4}.
+   */
+  public static Bytes4 leftPad(Bytes value) {
+    checkNotNull(value);
+    if (value instanceof Bytes4) {
+      return (Bytes4) value;
+    }
+    checkArgument(value.size() <= 4, "Expected at most %s bytes but got %s", 4, value.size());
+    MutableBytes result = MutableBytes.create(4);
+    value.copyTo(result, 4 - value.size());
+    return new Bytes4(result);
+  }
+
+  /**
+   * Right pad a {@link Bytes} value with zero bytes to create a {@link Bytes4}.
+   *
+   * @param value The bytes value pad.
+   * @return A {@link Bytes4} that exposes the right-padded bytes of {@code value}.
+   * @throws IllegalArgumentException if {@code value.size() &gt; 4}.
+   */
+  public static Bytes4 rightPad(Bytes value) {
+    checkNotNull(value);
+    if (value instanceof Bytes4) {
+      return (Bytes4) value;
+    }
+    checkArgument(value.size() <= 4, "Expected at most %s bytes but got %s", 4, value.size());
+    MutableBytes result = MutableBytes.create(4);
+    value.copyTo(result, 0);
+    return new Bytes4(result);
   }
 
   public Bytes getWrappedBytes() {

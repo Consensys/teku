@@ -13,9 +13,6 @@
 
 package tech.pegasys.artemis.datastructures.state;
 
-import static tech.pegasys.artemis.datastructures.Constants.JUSTIFICATION_BITS_LENGTH;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.int_to_bytes;
-
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -29,6 +26,7 @@ import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
+import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.util.SSZTypes.Bitvector;
 import tech.pegasys.artemis.util.SSZTypes.Bytes4;
@@ -37,9 +35,10 @@ import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.SSZTypes.SSZVector;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
+import tech.pegasys.artemis.util.hashtree.Merkleizable;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
-public class BeaconState implements SimpleOffsetSerializable, SSZContainer {
+public class BeaconState implements Merkleizable, SimpleOffsetSerializable, SSZContainer {
 
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
   public static final int SSZ_FIELD_COUNT = 19;
@@ -51,8 +50,8 @@ public class BeaconState implements SimpleOffsetSerializable, SSZContainer {
 
   // History
   protected BeaconBlockHeader latest_block_header;
-  protected SSZVector<Bytes32> block_roots; // Vector Bounded by SLOTS_PER_HISTORICAL_ROOT
-  protected SSZVector<Bytes32> state_roots; // Vector Bounded by SLOTS_PER_HISTORICAL_ROOT
+  protected SSZVector<Bytes32> block_roots; // Vector of length SLOTS_PER_HISTORICAL_ROOT
+  protected SSZVector<Bytes32> state_roots; // Vector of length SLOTS_PER_HISTORICAL_ROOT
   protected SSZList<Bytes32> historical_roots; // Bounded by HISTORICAL_ROOTS_LIMIT
 
   // Ethereum 1.0 chain data
@@ -66,13 +65,13 @@ public class BeaconState implements SimpleOffsetSerializable, SSZContainer {
 
   // Shuffling
   protected UnsignedLong start_shard;
-  protected SSZVector<Bytes32> randao_mixes; // Vector Bounded by EPOCHS_PER_HISTORICAL_VECTOR
-  protected SSZVector<Bytes32> active_index_roots; // Vector Bounded by EPOCHS_PER_HISTORICAL_VECTOR
+  protected SSZVector<Bytes32> randao_mixes; // Vector of length EPOCHS_PER_HISTORICAL_VECTOR
+  protected SSZVector<Bytes32> active_index_roots; // Vector of length EPOCHS_PER_HISTORICAL_VECTOR
   protected SSZVector<Bytes32>
-      compact_committees_roots; // Vector Bounded by EPOCHS_PER_HISTORICAL_VECTOR
+      compact_committees_roots; // Vector of length EPOCHS_PER_HISTORICAL_VECTOR
 
   // Slashings
-  protected SSZVector<UnsignedLong> slashings; // Vector Bounded by EPOCHS_PER_SLASHINGS_VECTOR
+  protected SSZVector<UnsignedLong> slashings; // Vector of length EPOCHS_PER_SLASHINGS_VECTOR
 
   // Attestations
   protected SSZList<PendingAttestation>
@@ -81,8 +80,8 @@ public class BeaconState implements SimpleOffsetSerializable, SSZContainer {
       current_epoch_attestations; // List bounded by MAX_ATTESTATIONS * SLOTS_PER_EPOCH
 
   // Crosslinks
-  protected SSZVector<Crosslink> previous_crosslinks; // Vector Bounded by SHARD_COUNT
-  protected SSZVector<Crosslink> current_crosslinks; // Vector Bounded by SHARD_COUNT
+  protected SSZVector<Crosslink> previous_crosslinks; // Vector of length SHARD_COUNT
+  protected SSZVector<Crosslink> current_crosslinks; // Vector of length SHARD_COUNT
 
   // Finality
   protected Bitvector justification_bits; // Bitvector bounded by JUSTIFICATION_BITS_LENGTH
@@ -184,8 +183,8 @@ public class BeaconState implements SimpleOffsetSerializable, SSZContainer {
     this.slot = UnsignedLong.valueOf(Constants.GENESIS_SLOT);
     this.fork =
         new Fork(
-            new Bytes4(int_to_bytes(0, 4)),
-            new Bytes4(int_to_bytes(0, 4)),
+            new Bytes4(BeaconStateUtil.int_to_bytes(0, 4)),
+            new Bytes4(BeaconStateUtil.int_to_bytes(0, 4)),
             UnsignedLong.valueOf(Constants.GENESIS_EPOCH));
 
     // History
@@ -230,7 +229,7 @@ public class BeaconState implements SimpleOffsetSerializable, SSZContainer {
     this.current_crosslinks = new SSZVector<>(Constants.SHARD_COUNT, new Crosslink());
 
     // Finality
-    this.justification_bits = new Bitvector(JUSTIFICATION_BITS_LENGTH);
+    this.justification_bits = new Bitvector(Constants.JUSTIFICATION_BITS_LENGTH);
     this.previous_justified_checkpoint = new Checkpoint();
     this.current_justified_checkpoint = new Checkpoint();
     this.finalized_checkpoint = new Checkpoint();
@@ -641,6 +640,7 @@ public class BeaconState implements SimpleOffsetSerializable, SSZContainer {
     this.slot = slot.plus(UnsignedLong.ONE);
   }
 
+  @Override
   public Bytes32 hash_tree_root() {
     return HashTreeUtil.merkleize(
         Arrays.asList(
@@ -657,11 +657,11 @@ public class BeaconState implements SimpleOffsetSerializable, SSZContainer {
                 Constants.HISTORICAL_ROOTS_LIMIT, historical_roots),
 
             // Ethereum 1.0 chain data
-            // TODO change hardcoded 16 to Constants.SLOTS_PER_ETH1_VOTING_PERIOD once
-            // mainnet-vs-minimal
-            //  constants are configurable
             eth1_data.hash_tree_root(),
-            HashTreeUtil.hash_tree_root(SSZTypes.LIST_OF_COMPOSITE, 16, eth1_data_votes),
+            HashTreeUtil.hash_tree_root(
+                SSZTypes.LIST_OF_COMPOSITE,
+                Constants.SLOTS_PER_ETH1_VOTING_PERIOD,
+                eth1_data_votes),
             HashTreeUtil.hash_tree_root(
                 SSZTypes.BASIC, SSZ.encodeUInt64(eth1_deposit_index.longValue())),
 
@@ -684,17 +684,13 @@ public class BeaconState implements SimpleOffsetSerializable, SSZContainer {
             HashTreeUtil.hash_tree_root_vector_unsigned_long(slashings),
 
             // Attestations
-            // TODO change hardcoded 8 to Constants.SLOTS_PER_EPOCH once mainnet-vs-minimal
-            //  constants are configurable
             HashTreeUtil.hash_tree_root(
                 SSZTypes.LIST_OF_COMPOSITE,
-                Constants.MAX_ATTESTATIONS * 8,
+                Constants.MAX_ATTESTATIONS * Constants.SLOTS_PER_EPOCH,
                 previous_epoch_attestations),
-            // TODO channge hardcoded 8 to Constants.SLOTS_PER_EPOCH once mainnet-vs-minimal
-            //  constants are configurable
             HashTreeUtil.hash_tree_root(
                 SSZTypes.LIST_OF_COMPOSITE,
-                Constants.MAX_ATTESTATIONS * 8,
+                Constants.MAX_ATTESTATIONS * Constants.SLOTS_PER_EPOCH,
                 current_epoch_attestations),
 
             // Crosslinks

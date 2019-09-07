@@ -377,9 +377,10 @@ public class AttestationUtil {
         committees.get(shard).getCompact_validators().add(compact_validator);
       }
     }
-    // TODO serialization might be an issue here
+
     return HashTreeUtil.hash_tree_root(
-        HashTreeUtil.SSZTypes.LIST_OF_COMPOSITE, Constants.SHARD_COUNT, committees);
+        HashTreeUtil.SSZTypes.VECTOR_OF_COMPOSITE,
+        committees.stream().map(item -> item.hash_tree_root()).collect(Collectors.toList()));
   }
 
   public static <T> List<T> intersection(List<T> list1, List<T> list2) {
