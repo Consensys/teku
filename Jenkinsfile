@@ -56,12 +56,22 @@ try {
                     // sh './artemis/src/main/resources/artemisTestScript.sh'
                 }
                 stage('Build Docker Image') {
-                    sh './gradlew --no-daemon --parallel distDocker'
+                    sh './gradlew --no-daemon --parallel distDocker distDockerWhiteblock'
                 }
                 if (env.BRANCH_NAME == "master") {
                     stage('Push Docker Image') {
+                        def gradleProperties = readProperties file: 'gradle.properties'
+                        version = gradleProperties.version
+                        def imageRepos = 'pegasyseng'
+                        def image = "${imageRepos}/artemis:${version}"
                         docker.withRegistry('https://registry.hub.docker.com', 'dockerhub-pegasysengci') {
-                            docker.image("pegasyseng/artemis:develop").push()
+                            docker.image(image).push()
+                        }
+                    }
+
+                    stage('Push WhiteBlock Docker Image') {
+                        docker.withRegistry('https://registry.hub.docker.com', 'dockerhub-pegasysengci') {
+                            docker.image("pegasyseng/artemis:whiteblock").push()
                         }
                     }
 
