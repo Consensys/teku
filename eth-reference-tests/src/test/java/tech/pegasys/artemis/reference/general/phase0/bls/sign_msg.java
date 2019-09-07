@@ -11,17 +11,14 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.reference.bls;
+package tech.pegasys.artemis.reference.general.phase0.bls;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.google.errorprone.annotations.MustBeClosed;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.stream.Stream;
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -33,8 +30,9 @@ import tech.pegasys.artemis.util.mikuli.SecretKey;
 import tech.pegasys.artemis.util.mikuli.Signature;
 
 class sign_msg extends TestSuite {
-  private static String testFile = "**/sign_msg.yaml";
 
+  // The sign_msg handler should sign the given message, with domain, using the given privkey, and
+  // the result should match the expected output.
   @ParameterizedTest(name = "{index}. sign messages {0} -> {1}")
   @MethodSource("readSignMessages")
   void signMessages(Bytes message, Bytes domain, SecretKey secretKey, Signature signatureExpected) {
@@ -43,15 +41,9 @@ class sign_msg extends TestSuite {
     assertEquals(signatureExpected, signatureActual);
   }
 
-  @SuppressWarnings({"rawtypes"})
   @MustBeClosed
-  static Stream<Arguments> readSignMessages() throws IOException {
-    List<Pair<Class, List<String>>> arguments = new ArrayList<Pair<Class, List<String>>>();
-    arguments.add(getParams(Bytes.class, Arrays.asList("input", "message")));
-    arguments.add(getParams(Bytes.class, Arrays.asList("input", "domain")));
-    arguments.add(getParams(SecretKey.class, Arrays.asList("input", "privkey")));
-    arguments.add(getParams(Signature.class, Arrays.asList("output")));
-
-    return findTests(testFile, arguments);
+  static Stream<Arguments> readSignMessages() {
+    Path path = Paths.get("/general/phase0/bls/sign_msg/small");
+    return signMessagesSetup(path);
   }
 }

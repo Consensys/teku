@@ -11,17 +11,14 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.reference.bls;
+package tech.pegasys.artemis.reference.general.phase0.bls;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.google.errorprone.annotations.MustBeClosed;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.stream.Stream;
-import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -30,8 +27,9 @@ import tech.pegasys.artemis.util.mikuli.PublicKey;
 import tech.pegasys.artemis.util.mikuli.SecretKey;
 
 class priv_to_pub extends TestSuite {
-  private static String testFile = "**/priv_to_pub.yaml";
 
+  // The priv_to_pub handler should compute the public key for the given private key input, and the
+  // result should match the expected output.
   @ParameterizedTest(name = "{index}. private to public key {0} -> {1}")
   @MethodSource("readPrivateToPublicKey")
   void privateToPublicKey(SecretKey secretKey, PublicKey pubkeyExpected) {
@@ -39,13 +37,9 @@ class priv_to_pub extends TestSuite {
     assertEquals(pubkeyExpected, pubkeyActual);
   }
 
-  @SuppressWarnings({"rawtypes"})
   @MustBeClosed
-  static Stream<Arguments> readPrivateToPublicKey() throws IOException {
-    List<Pair<Class, List<String>>> arguments = new ArrayList<Pair<Class, List<String>>>();
-    arguments.add(getParams(SecretKey.class, Arrays.asList("input")));
-    arguments.add(getParams(PublicKey.class, Arrays.asList("output")));
-
-    return findTests(testFile, arguments);
+  static Stream<Arguments> readPrivateToPublicKey() {
+    Path path = Paths.get("/general/phase0/bls/priv_to_pub/small");
+    return privateKeyPublicKeySetup(path);
   }
 }
