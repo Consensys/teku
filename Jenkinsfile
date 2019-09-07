@@ -62,7 +62,7 @@ try {
                 stage('Build Docker Image') {
                     sh './gradlew --no-daemon --parallel distDocker distDockerWhiteblock'
                 }
-                if (shouldPublish() {
+                if (shouldPublish()) {
                     stage('Push Docker Image') {
                         def gradleProperties = readProperties file: 'gradle.properties'
                         version = gradleProperties.version
@@ -117,7 +117,7 @@ try {
     currentBuild.result = 'FAILURE'
 } finally {
     // If we're on master and it failed, notify slack
-    if (shouldPublish() {
+    if (shouldPublish()) {
         def currentResult = currentBuild.result ?: 'SUCCESS'
         def channel = '#team-pegasys-rd-bc'
         if (currentResult == 'SUCCESS') {
