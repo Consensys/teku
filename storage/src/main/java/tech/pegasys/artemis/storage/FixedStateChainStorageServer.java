@@ -98,33 +98,7 @@ public class FixedStateChainStorageServer implements ChainStorage {
   }
 
   private static BeaconStateWithCache loadBeaconState(final Bytes data) {
-    final BeaconState initialState;
-    initialState = SimpleOffsetSerializer.deserialize(data, BeaconState.class);
-    return new BeaconStateWithCache(
-        initialState.getGenesis_time(),
-        initialState.getSlot(),
-        initialState.getFork(),
-        initialState.getLatest_block_header(),
-        initialState.getBlock_roots(),
-        initialState.getState_roots(),
-        initialState.getHistorical_roots(),
-        initialState.getEth1_data(),
-        initialState.getEth1_data_votes(),
-        initialState.getEth1_deposit_index(),
-        initialState.getValidators(),
-        initialState.getBalances(),
-        initialState.getStart_shard(),
-        initialState.getRandao_mixes(),
-        initialState.getActive_index_roots(),
-        initialState.getCompact_committees_roots(),
-        initialState.getSlashings(),
-        initialState.getPrevious_epoch_attestations(),
-        initialState.getCurrent_epoch_attestations(),
-        initialState.getPrevious_crosslinks(),
-        initialState.getCurrent_crosslinks(),
-        initialState.getJustification_bits(),
-        initialState.getPrevious_justified_checkpoint(),
-        initialState.getCurrent_justified_checkpoint(),
-        initialState.getFinalized_checkpoint());
+    return BeaconStateWithCache.fromBeaconState(
+        SimpleOffsetSerializer.deserialize(data, BeaconState.class));
   }
 }
