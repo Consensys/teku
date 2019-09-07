@@ -137,82 +137,95 @@ public class Store {
   }
 
   public Bytes toBytes() {
-    return SSZ.encode(writer -> {
-      writer.writeUInt64(time.longValue());
-      writer.writeBytes(justified_checkpoint.toBytes());
-      writer.writeBytes(finalized_checkpoint.toBytes());
-      writer.writeInt32(blocks.size());
-      blocks.forEach((key, value) -> {
-        writer.writeBytes(key);
-        writer.writeBytes(SimpleOffsetSerializer.serialize(value));
-      });
-      writer.writeInt32(block_states.size());
-      block_states.forEach((key, value) -> {
-        writer.writeBytes(key);
-        writer.writeBytes(SimpleOffsetSerializer.serialize(value));
-      });
-      writer.writeInt32(checkpoint_states.size());
-      checkpoint_states.forEach((key, value) -> {
-        writer.writeBytes(key.toBytes());
-        writer.writeBytes(SimpleOffsetSerializer.serialize(value));
-      });
-      writer.writeInt32(latest_messages.size());
-      latest_messages.forEach((key, value) -> {
-        writer.writeBytes(value.getRoot());
-        writer.writeUInt64(key.longValue());
-        writer.writeUInt64(value.getEpoch().longValue());
-      });
-    });
+    return SSZ.encode(
+        writer -> {
+          writer.writeUInt64(time.longValue());
+          writer.writeBytes(justified_checkpoint.toBytes());
+          writer.writeBytes(finalized_checkpoint.toBytes());
+          writer.writeInt32(blocks.size());
+          blocks.forEach(
+              (key, value) -> {
+                writer.writeBytes(key);
+                writer.writeBytes(SimpleOffsetSerializer.serialize(value));
+              });
+          writer.writeInt32(block_states.size());
+          block_states.forEach(
+              (key, value) -> {
+                writer.writeBytes(key);
+                writer.writeBytes(SimpleOffsetSerializer.serialize(value));
+              });
+          writer.writeInt32(checkpoint_states.size());
+          checkpoint_states.forEach(
+              (key, value) -> {
+                writer.writeBytes(key.toBytes());
+                writer.writeBytes(SimpleOffsetSerializer.serialize(value));
+              });
+          writer.writeInt32(latest_messages.size());
+          latest_messages.forEach(
+              (key, value) -> {
+                writer.writeBytes(value.getRoot());
+                writer.writeUInt64(key.longValue());
+                writer.writeUInt64(value.getEpoch().longValue());
+              });
+        });
   }
 
   public static Store fromBytes(Bytes bytes) {
-    return SSZ.decode(bytes, reader -> {
-      final UnsignedLong time = UnsignedLong.fromLongBits(reader.readUInt64());
-      final Checkpoint justified_checkpoint = Checkpoint.fromBytes(reader.readBytes());
-      final Checkpoint finalized_checkpoint = Checkpoint.fromBytes(reader.readBytes());
-      final ConcurrentHashMap<Bytes32, BeaconBlock> blocks = new ConcurrentHashMap<>();
-      int size = reader.readInt32();
-      for (int i = 0; i < size; i++) {
-        final Bytes32 key = Bytes32.wrap(reader.readBytes());
-        final BeaconBlock value = SimpleOffsetSerializer.deserialize(reader.readBytes(), BeaconBlock.class);
-        blocks.put(key, value);
-      }
+    return SSZ.decode(
+        bytes,
+        reader -> {
+          final UnsignedLong time = UnsignedLong.fromLongBits(reader.readUInt64());
+          final Checkpoint justified_checkpoint = Checkpoint.fromBytes(reader.readBytes());
+          final Checkpoint finalized_checkpoint = Checkpoint.fromBytes(reader.readBytes());
+          final ConcurrentHashMap<Bytes32, BeaconBlock> blocks = new ConcurrentHashMap<>();
+          int size = reader.readInt32();
+          for (int i = 0; i < size; i++) {
+            final Bytes32 key = Bytes32.wrap(reader.readBytes());
+            final BeaconBlock value =
+                SimpleOffsetSerializer.deserialize(reader.readBytes(), BeaconBlock.class);
+            blocks.put(key, value);
+          }
 
-      final ConcurrentHashMap<Bytes32, BeaconState> block_states = new ConcurrentHashMap<>();
-      size = reader.readInt32();
-      for (int i = 0; i < size; i++) {
-        final Bytes32 key = Bytes32.wrap(reader.readBytes());
-        final BeaconState value = wrap(SimpleOffsetSerializer.deserialize(reader.readBytes(), BeaconState.class));
-        block_states.put(key, value);
-      }
+          final ConcurrentHashMap<Bytes32, BeaconState> block_states = new ConcurrentHashMap<>();
+          size = reader.readInt32();
+          for (int i = 0; i < size; i++) {
+            final Bytes32 key = Bytes32.wrap(reader.readBytes());
+            final BeaconState value =
+                wrap(SimpleOffsetSerializer.deserialize(reader.readBytes(), BeaconState.class));
+            block_states.put(key, value);
+          }
 
-      final ConcurrentHashMap<Checkpoint, BeaconState> checkpoint_states = new ConcurrentHashMap<>();
-      size = reader.readInt32();
-      for (int i = 0; i < size; i++) {
-        final Checkpoint key = Checkpoint.fromBytes(reader.readBytes());
-        final BeaconState value = wrap(SimpleOffsetSerializer.deserialize(reader.readBytes(), BeaconState.class));
-        checkpoint_states.put(key, value);
-      }
+          final ConcurrentHashMap<Checkpoint, BeaconState> checkpoint_states =
+              new ConcurrentHashMap<>();
+          size = reader.readInt32();
+          for (int i = 0; i < size; i++) {
+            final Checkpoint key = Checkpoint.fromBytes(reader.readBytes());
+            final BeaconState value =
+                wrap(SimpleOffsetSerializer.deserialize(reader.readBytes(), BeaconState.class));
+            checkpoint_states.put(key, value);
+          }
 
-      final ConcurrentHashMap<UnsignedLong, LatestMessage> latest_messages = new ConcurrentHashMap<>();
-      size = reader.readInt32();
-      for (int i = 0; i < size; i++) {
-        final Bytes32 root = Bytes32.wrap(reader.readBytes());
-        final UnsignedLong key = UnsignedLong.fromLongBits(reader.readUInt64());
-        final UnsignedLong epoch = UnsignedLong.fromLongBits(reader.readUInt64());
-        final LatestMessage value = new LatestMessage(epoch, root);
-        latest_messages.put(key, value);
-      }
-      final Store store = new Store(
-          time,
-          justified_checkpoint,
-          finalized_checkpoint,
-          blocks,
-          block_states,
-          checkpoint_states);
-      store.setLatest_messages(latest_messages);
-      return store;
-    });
+          final ConcurrentHashMap<UnsignedLong, LatestMessage> latest_messages =
+              new ConcurrentHashMap<>();
+          size = reader.readInt32();
+          for (int i = 0; i < size; i++) {
+            final Bytes32 root = Bytes32.wrap(reader.readBytes());
+            final UnsignedLong key = UnsignedLong.fromLongBits(reader.readUInt64());
+            final UnsignedLong epoch = UnsignedLong.fromLongBits(reader.readUInt64());
+            final LatestMessage value = new LatestMessage(epoch, root);
+            latest_messages.put(key, value);
+          }
+          final Store store =
+              new Store(
+                  time,
+                  justified_checkpoint,
+                  finalized_checkpoint,
+                  blocks,
+                  block_states,
+                  checkpoint_states);
+          store.setLatest_messages(latest_messages);
+          return store;
+        });
   }
 
   private static BeaconStateWithCache wrap(BeaconState initialState) {

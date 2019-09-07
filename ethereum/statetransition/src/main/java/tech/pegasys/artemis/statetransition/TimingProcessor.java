@@ -90,7 +90,8 @@ public class TimingProcessor {
           this.eventBus.post(new ValidatorAssignmentEvent());
         }
       } else {
-        if (currentTime.compareTo(chainStorageClient.getGenesisTime().minus(UnsignedLong.ONE)) >= 0) {
+        if (currentTime.compareTo(chainStorageClient.getGenesisTime().minus(UnsignedLong.ONE))
+            >= 0) {
           this.eventBus.post(new GenesisEvent());
         }
       }

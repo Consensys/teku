@@ -275,8 +275,7 @@ public class ForkChoiceUtil {
     // Attestations cannot be from future epochs. If they are, delay consideration until the epoch
     // arrives
     BeaconStateWithCache base_state =
-        new BeaconStateWithCache(
-            (BeaconStateWithCache) store.getBlockState(target.getRoot()));
+        new BeaconStateWithCache((BeaconStateWithCache) store.getBlockState(target.getRoot()));
     checkArgument(
         store
                 .getTime()
