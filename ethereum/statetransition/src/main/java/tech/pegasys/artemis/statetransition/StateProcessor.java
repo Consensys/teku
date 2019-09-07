@@ -170,7 +170,7 @@ public class StateProcessor {
   @Subscribe
   private void onBlock(BeaconBlock block) {
     try {
-      on_block(chainStorageClient.getStore(), block, stateTransition, eventBus);
+      on_block(chainStorageClient.getStore(), block, stateTransition);
       // Add attestations that were processed in the block to processed attestations storage
       block
           .getBody()

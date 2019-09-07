@@ -45,7 +45,6 @@ import tech.pegasys.artemis.statetransition.StateTransitionException;
 import tech.pegasys.artemis.storage.LatestMessage;
 import tech.pegasys.artemis.storage.Store;
 import tech.pegasys.artemis.storage.events.NewAttestationEvent;
-import tech.pegasys.artemis.storage.events.ProcessedBlockEvent;
 
 public class ForkChoiceUtil {
 
@@ -181,7 +180,7 @@ public class ForkChoiceUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.1/specs/core/0_fork-choice.md#on_block</a>
    */
-  public static void on_block(Store store, BeaconBlock block, StateTransition st, EventBus eventBus)
+  public static void on_block(Store store, BeaconBlock block, StateTransition st)
       throws StateTransitionException {
     // Make a copy of the state to avoid mutability issues
     checkArgument(
@@ -244,11 +243,6 @@ public class ForkChoiceUtil {
         > 0) {
       store.setFinalized_checkpoint(state.getFinalized_checkpoint());
     }
-
-    // Client-specific
-    eventBus.post(
-        new ProcessedBlockEvent(
-            state, block, store.getJustified_checkpoint(), store.getFinalized_checkpoint()));
   }
 
   /**
