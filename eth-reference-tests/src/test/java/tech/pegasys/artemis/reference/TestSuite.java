@@ -107,7 +107,7 @@ public abstract class TestSuite {
     if (result.isEmpty())
       throw new Exception(
           "TestSuite.loadConfigFromPath(): Configuration files was not found in the hierarchy of the provided path");
-    Constants.init((Map) pathToObject(Paths.get(result)));
+    Constants.init((Map) pathToObject(Paths.get(result), null));
 
     // TODO fix this massacre of a technical debt
     // Checks if constants were changed from minimal to mainnet or vice-versa, and updates
@@ -156,11 +156,19 @@ public abstract class TestSuite {
   }
 
   @SuppressWarnings({"rawtypes"})
-  public static Object getObjectFromYAMLInputStream(InputStream in) {
+  public static Object getObjectFromYAMLInputStream(InputStream in, List<TestObject> testObjects) {
     ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
     Object object = null;
     try {
-      object = ((Map) mapper.readerFor(Map.class).readValue(in));
+      if (testObjects != null
+          && (testObjects.get(0).getClassName().equals(UnsignedLong.class)
+              || testObjects.get(0).getClassName().equals(Boolean.class)
+              || testObjects.get(0).getClassName().equals(String.class))) {
+        object = ((String) mapper.readerFor(String.class).readValue(in));
+      } else {
+        object = ((Map) mapper.readerFor(Map.class).readValue(in));
+      }
+
     } catch (IOException e) {
       LOG.log(Level.WARN, e.toString());
     }
@@ -191,8 +199,8 @@ public abstract class TestSuite {
     return null;
   }
 
-  public static Object pathToObject(Path path) {
-    return getObjectFromYAMLInputStream(getInputStreamFromPath(path));
+  public static Object pathToObject(Path path, List<TestObject> testObjects) {
+    return getObjectFromYAMLInputStream(getInputStreamFromPath(path), testObjects);
   }
 
   @SuppressWarnings({"unchecked", "rawtypes"})
@@ -234,7 +242,10 @@ public abstract class TestSuite {
                     return testSet.getFileNames().stream()
                         .flatMap(
                             fileName -> {
-                              Object object = pathToObject(Path.of(walkPath, fileName));
+                              Object object =
+                                  pathToObject(
+                                      Path.of(walkPath, fileName),
+                                      testSet.getTestObjectByFileName(fileName));
                               return testSet.getTestObjectByFileName(fileName).stream()
                                   .map(
                                       testObject ->
@@ -284,7 +295,7 @@ public abstract class TestSuite {
             objectList.add(
                 UnsignedLong.valueOf((Integer) getPrimitiveFromPath(filePath, Integer.class)));
           } else {
-            Object object = pathToObject(filePath);
+            Object object = pathToObject(filePath, testSet.getTestObjectByFileName(fileName));
             TestObject testObject = testSet.getTestObjectByFileName1(fileName);
             objectList.add(
                 parseObjectFromFile(testObject.getClassName(), testObject.getPath(), object));
