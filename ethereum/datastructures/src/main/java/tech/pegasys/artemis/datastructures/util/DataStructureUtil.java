@@ -507,7 +507,7 @@ public final class DataStructureUtil {
     if (config.getInteropActive()) {
       return createMockedStartInitialBeaconState(config);
     }
-    return BeaconStateUtil.initialize_beacon_state_from_eth1(
+    return BeaconStateUtil.initialize_beacon_state_from_eth1_new(
         Bytes32.ZERO,
         UnsignedLong.valueOf(Constants.GENESIS_SLOT),
         newDeposits(config.getNumValidators()));
