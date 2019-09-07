@@ -58,7 +58,7 @@ try {
                 stage('Build Docker Image') {
                     sh './gradlew --no-daemon --parallel distDocker distDockerWhiteblock'
                 }
-                if (true || env.BRANCH_NAME == "master") {
+                if (env.BRANCH_NAME == "master") {
                     stage('Push Docker Image') {
                         def gradleProperties = readProperties file: 'gradle.properties'
                         version = gradleProperties.version
