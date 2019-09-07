@@ -37,7 +37,7 @@ import tech.pegasys.artemis.statetransition.util.BlockProcessingException;
 @ExtendWith(BouncyCastleExtension.class)
 public class voluntary_exit extends TestSuite {
 
-  @ParameterizedTest(name = "{index}. minimal process voluntary_exit: {4}")
+  @ParameterizedTest(name = "{index}. mainnet process voluntary_exit: {4}")
   @MethodSource("mainnetVoluntaryExitSetup")
   void mainnetProcessVoluntaryExit(
       VoluntaryExit voluntary_exit,
