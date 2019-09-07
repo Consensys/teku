@@ -25,7 +25,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.artemis.reference.TestSuite;
 import tech.pegasys.artemis.util.mikuli.G2Point;
 
-class g2_uncompressed extends TestSuite {
+class msg_hash_uncompressed extends TestSuite {
 
   // The msg_hash_g2_uncompressed handler should hash the message, with the given domain, to G2,
   // without compression, and the result should match the expected output.
