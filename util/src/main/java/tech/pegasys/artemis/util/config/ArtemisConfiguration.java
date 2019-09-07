@@ -88,8 +88,6 @@ public final class ArtemisConfiguration {
     // Interop
     builder.addBoolean("interop.active", false, "Enable interop mode", null);
     builder.addString(
-        "interop.mode", "file", "Interop mode", PropertyValidator.anyOf("file", "mocked"));
-    builder.addString(
         "interop.inputFile", "interopDepositsAndKeys.json", "Interop deposits and keys file", null);
     builder.addLong("interop.genesisTime", null, "Time of mocked genesis", null);
     builder.addInteger(
@@ -304,10 +302,6 @@ public final class ArtemisConfiguration {
 
   public boolean getInteropActive() {
     return config.getBoolean("interop.active");
-  }
-
-  public String getInteropMode() {
-    return config.getString("interop.mode");
   }
 
   public String getInteropStartState() {

@@ -23,9 +23,6 @@ import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_e
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_domain;
 import static tech.pegasys.artemis.statetransition.util.ForkChoiceUtil.get_head;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.google.common.primitives.UnsignedLong;
@@ -33,14 +30,12 @@ import com.google.protobuf.ByteString;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -53,7 +48,6 @@ import org.apache.commons.lang3.tuple.Triple;
 import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.bytes.Bytes48;
 import org.apache.tuweni.crypto.SECP256K1;
 import org.apache.tuweni.ssz.SSZ;
 import org.apache.tuweni.units.bigints.UInt256;
@@ -447,41 +441,12 @@ public class ValidatorCoordinator {
     long numNaughtyValidators = Math.round((naughtinessPercentage * numValidators) / 100.0);
     List<BLSKeyPair> keypairs = new ArrayList<>();
     if (interopActive) {
-      switch (config.getInteropMode()) {
-        case Constants.FILE_INTEROP:
-          try {
-            Path path = Paths.get(config.getInteropInputFile());
-            String yaml = Files.readString(path.toAbsolutePath(), StandardCharsets.US_ASCII);
-            ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
-            Map<String, List<Map>> fileMap =
-                mapper.readValue(yaml, new TypeReference<Map<String, List<Map>>>() {});
-            List<Map> depositdatakeys = fileMap.get("DepositDataKeys");
-            List<String> privateKeyStrings = new ArrayList<>();
-            depositdatakeys.forEach(
-                item -> {
-                  privateKeyStrings.add(item.get("Privkey").toString());
-                });
-            for (int i = startIndex; i <= endIndex; i++) {
-              BLSKeyPair keypair =
-                  new BLSKeyPair(
-                      new KeyPair(
-                          SecretKey.fromBytes(
-                              Bytes48.leftPad(Bytes.fromBase64String(privateKeyStrings.get(i))))));
-              keypairs.add(keypair);
-            }
-          } catch (IOException e) {
-            STDOUT.log(Level.FATAL, e.toString());
-          }
-          break;
-        case Constants.MOCKED_START_INTEROP:
-          startIndex = config.getInteropOwnedValidatorStartIndex();
-          // - 1 because endIndex is inclusive
-          endIndex = startIndex + config.getInteropOwnedValidatorCount() - 1;
-          STDOUT.log(
-              Level.INFO, "Owning validator range " + startIndex + " to " + endIndex, Color.GREEN);
-          keypairs = new MockStartValidatorKeyPairFactory().generateKeyPairs(startIndex, endIndex);
-          break;
-      }
+      startIndex = config.getInteropOwnedValidatorStartIndex();
+      // - 1 because endIndex is inclusive
+      endIndex = startIndex + config.getInteropOwnedValidatorCount() - 1;
+      STDOUT.log(
+          Level.INFO, "Owning validator range " + startIndex + " to " + endIndex, Color.GREEN);
+      keypairs = new MockStartValidatorKeyPairFactory().generateKeyPairs(startIndex, endIndex);
     } else {
       for (int i = startIndex; i <= endIndex; i++) {
         BLSKeyPair keypair = BLSKeyPair.random(i);
