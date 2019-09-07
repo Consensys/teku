@@ -1,7 +1,6 @@
 *.bak
 *.swp
 *.tmp
-/artemis.db
 *~.nib
 *.iml
 *.launch
