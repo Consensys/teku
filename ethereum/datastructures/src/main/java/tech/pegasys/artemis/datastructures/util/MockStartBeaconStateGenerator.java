@@ -44,7 +44,7 @@ public class MockStartBeaconStateGenerator {
       deposits.add(deposit);
     }
     final BeaconStateWithCache initialState =
-        BeaconStateUtil.initialize_beacon_state_from_eth1(BLOCK_HASH, ETH1_TIMESTAMP, deposits);
+        BeaconStateUtil.initialize_beacon_state_from_eth1_new(BLOCK_HASH, genesisTime, deposits);
 
     initialState.setGenesis_time(genesisTime);
     return initialState;

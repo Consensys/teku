@@ -535,7 +535,7 @@ public final class DataStructureUtil {
     } else {
       deposits.addAll(newDeposits(config.getNumValidators()));
     }
-    return BeaconStateUtil.initialize_beacon_state_from_eth1(
+    return BeaconStateUtil.initialize_beacon_state_from_eth1_new(
         Bytes32.ZERO, UnsignedLong.valueOf(Constants.GENESIS_SLOT), deposits);
   }
 
@@ -549,7 +549,7 @@ public final class DataStructureUtil {
           return createMockedStartInitialBeaconState(config);
       }
     }
-    return BeaconStateUtil.initialize_beacon_state_from_eth1(
+    return BeaconStateUtil.initialize_beacon_state_from_eth1_new(
         Bytes32.ZERO,
         UnsignedLong.valueOf(Constants.GENESIS_SLOT),
         newDeposits(config.getNumValidators()));
@@ -584,7 +584,7 @@ public final class DataStructureUtil {
                   depositData,
                   UnsignedLong.valueOf(item.get("Index").toString())));
         });
-    return BeaconStateUtil.initialize_beacon_state_from_eth1(
+    return BeaconStateUtil.initialize_beacon_state_from_eth1_new(
         Bytes32.ZERO, UnsignedLong.valueOf(Constants.GENESIS_SLOT), deposits);
   }
 

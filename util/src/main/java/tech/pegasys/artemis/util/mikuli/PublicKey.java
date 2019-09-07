@@ -69,6 +69,7 @@ public final class PublicKey {
    * @return a valid public key
    */
   public static PublicKey fromBytesCompressed(Bytes bytes) {
+    Bytes a = Bytes.fromHexString(bytes.toHexString());
     G1Point point = G1Point.fromBytesCompressed(bytes);
     return new PublicKey(point);
   }

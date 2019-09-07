@@ -88,7 +88,7 @@ public class Deposit implements Merkleizable, SimpleOffsetSerializable, SSZConta
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */
-  public List<Bytes32> getProof() {
+  public SSZVector<Bytes32> getProof() {
     return proof;
   }
 

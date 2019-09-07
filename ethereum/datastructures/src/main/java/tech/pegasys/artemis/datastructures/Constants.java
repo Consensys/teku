@@ -45,7 +45,7 @@ public class Constants {
   public static int CHURN_LIMIT_QUOTIENT = 65536;
   public static int SHUFFLE_ROUND_COUNT = 90;
   public static int MIN_GENESIS_ACTIVE_VALIDATOR_COUNT = 65536;
-  public static UnsignedLong MIN_GENESIS_TIME = UnsignedLong.valueOf(1578009600);
+  public static UnsignedLong MIN_GENESIS_TIME = UnsignedLong.valueOf(1567222226);
 
   // Gwei values
   public static long MIN_DEPOSIT_AMOUNT = 1000000000L;

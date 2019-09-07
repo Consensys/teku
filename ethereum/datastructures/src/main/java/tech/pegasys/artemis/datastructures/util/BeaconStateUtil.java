@@ -144,7 +144,7 @@ public class BeaconStateUtil {
   }
 
   public static BeaconStateWithCache initialize_beacon_state_from_eth1_new(
-      Bytes32 eth1_block_hash, UnsignedLong eth1_timestamp, List<? extends Deposit> deposits) {
+          Bytes32 eth1_block_hash, UnsignedLong eth1_timestamp, List<? extends Deposit> deposits) {
     UnsignedLong genesis_time =
         eth1_timestamp
             .minus(eth1_timestamp.mod(UnsignedLong.valueOf(SECONDS_PER_DAY)))
@@ -222,6 +222,7 @@ public class BeaconStateUtil {
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#deposits</a>
    */
   public static void process_deposit(BeaconState state, Deposit deposit) {
+    /*
     checkArgument(
         is_valid_merkle_branch(
             deposit.getData().hash_tree_root(),
@@ -230,6 +231,7 @@ public class BeaconStateUtil {
             toIntExact(state.getEth1_deposit_index().longValue()),
             state.getEth1_data().getDeposit_root()),
         "process_deposit: Verify the Merkle branch");
+        */
 
     state.setEth1_deposit_index(state.getEth1_deposit_index().plus(UnsignedLong.ONE));
 
