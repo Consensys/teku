@@ -144,7 +144,7 @@ public class BeaconStateUtil {
   }
 
   public static BeaconStateWithCache initialize_beacon_state_from_eth1_new(
-          Bytes32 eth1_block_hash, UnsignedLong eth1_timestamp, List<? extends Deposit> deposits) {
+      Bytes32 eth1_block_hash, UnsignedLong eth1_timestamp, List<? extends Deposit> deposits) {
     UnsignedLong genesis_time =
         eth1_timestamp
             .minus(eth1_timestamp.mod(UnsignedLong.valueOf(SECONDS_PER_DAY)))

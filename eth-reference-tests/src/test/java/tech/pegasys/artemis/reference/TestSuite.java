@@ -757,12 +757,16 @@ public abstract class TestSuite {
     return findTestsByPath(testSet);
   }
 
-  public static Stream<Arguments> genesisInitializationCheck(Path path, Path configPath, int numValidators, long genesisTime)
-          throws Exception {
+  public static Stream<Arguments> genesisInitializationCheck(
+      Path path, Path configPath, int numValidators, long genesisTime) throws Exception {
 
     loadConfigFromPath(configPath);
     TestSet testSet = new TestSet(path);
-    testSet.add(new TestObject("quickstart_genesis_" + numValidators + "_" + genesisTime + ".ssz", BeaconState.class, null));
+    testSet.add(
+        new TestObject(
+            "quickstart_genesis_" + numValidators + "_" + genesisTime + ".ssz",
+            BeaconState.class,
+            null));
 
     return findSSZTestsByPath(testSet).stream();
   }

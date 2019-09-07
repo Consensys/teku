@@ -17,29 +17,18 @@ import static tech.pegasys.artemis.datastructures.Constants.SLOTS_PER_EPOCH;
 import static tech.pegasys.artemis.datastructures.Constants.SLOTS_PER_ETH1_VOTING_PERIOD;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_of_slot;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.common.primitives.UnsignedLong;
-import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Random;
 import java.util.function.Supplier;
 import java.util.stream.LongStream;
 import org.apache.logging.log4j.Level;
-import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.Hash;
 import org.apache.tuweni.ssz.SSZ;
-import org.json.simple.parser.ParseException;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockBody;
@@ -75,7 +64,6 @@ import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 
 public final class DataStructureUtil {
-  private static final ALogger LOG = new ALogger(DataStructureUtil.class.getName());
   private static final ALogger STDOUT = new ALogger("stdout");
 
   public static int randomInt() {
@@ -515,77 +503,14 @@ public final class DataStructureUtil {
         Hash.sha2_256(Hash.sha2_256(SSZ.encodeUInt64(voting_period.longValue()))));
   }
 
-  public static BeaconStateWithCache createInitialBeaconState(ArtemisConfiguration config)
-      throws IOException, ParseException {
-    final List<DepositWithIndex> deposits = new ArrayList<>();
+  public static BeaconStateWithCache createInitialBeaconState(ArtemisConfiguration config) {
     if (config.getInteropActive()) {
-      /*
-      Path path = Paths.get("interopDepositsAndKeys.json");
-      String read = Files.readAllLines(path).get(0);
-      JSONParser parser = new JSONParser();
-      Object obj = parser.parse(read);
-      JSONObject array = (JSONObject) obj;
-      JSONArray privateKeyStrings = (JSONArray) array.get("deposits");
-      IntStream.range(0, config.getNumValidators())
-          .forEach(
-              i ->
-                  deposits.add(
-                      Deposit.fromBytes(Bytes.fromHexString(privateKeyStrings.get(i).toString()))));
-                */
-    } else {
-      deposits.addAll(newDeposits(config.getNumValidators()));
-    }
-    return BeaconStateUtil.initialize_beacon_state_from_eth1_new(
-        Bytes32.ZERO, UnsignedLong.valueOf(Constants.GENESIS_SLOT), deposits);
-  }
-
-  public static BeaconStateWithCache createInitialBeaconState2(ArtemisConfiguration config)
-      throws IOException, ParseException {
-    if (config.getInteropActive()) {
-      switch (config.getInteropMode()) {
-        case Constants.FILE_INTEROP:
-          return createFileInteropInitialBeaconState();
-        case Constants.MOCKED_START_INTEROP:
-          return createMockedStartInitialBeaconState(config);
-      }
+      return createMockedStartInitialBeaconState(config);
     }
     return BeaconStateUtil.initialize_beacon_state_from_eth1_new(
         Bytes32.ZERO,
         UnsignedLong.valueOf(Constants.GENESIS_SLOT),
         newDeposits(config.getNumValidators()));
-  }
-
-  @SuppressWarnings("rawtypes")
-  private static BeaconStateWithCache createFileInteropInitialBeaconState() throws IOException {
-    final List<DepositWithIndex> deposits = new ArrayList<>();
-    Path path = Paths.get("depositsAndKeys.yaml");
-    String yaml = Files.readString(path.toAbsolutePath(), StandardCharsets.US_ASCII);
-    ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
-    Map<String, List<Map>> fileMap =
-        mapper.readValue(yaml, new TypeReference<Map<String, List<Map>>>() {});
-    List<Map> depositdatakeys = fileMap.get("DepositDataKeys");
-    depositdatakeys.forEach(
-        item -> {
-          Map depositDataMap = (Map) item.get("DepositData");
-          BLSPublicKey pubkey =
-              BLSPublicKey.fromBytes(
-                  Bytes.fromBase64String(depositDataMap.get("Pubkey").toString()));
-          Bytes32 withdrawalCreds =
-              Bytes32.wrap(
-                  Bytes.fromBase64String(depositDataMap.get("WithdrawalCredentials").toString()));
-          UnsignedLong amount = UnsignedLong.valueOf(depositDataMap.get("amount").toString());
-          BLSSignature signature =
-              BLSSignature.fromBytes(
-                  Bytes.fromBase64String(depositDataMap.get("Signature").toString()));
-          DepositData depositData = new DepositData(pubkey, withdrawalCreds, amount, signature);
-          deposits.add(
-              new DepositWithIndex(
-                  new SSZVector<Bytes32>(),
-                  depositData,
-                  UnsignedLong.valueOf(item.get("Index").toString())));
-        });
-    return BeaconStateUtil.initialize_beacon_state_from_eth1_new(
-        Bytes32.ZERO, UnsignedLong.valueOf(Constants.GENESIS_SLOT), deposits);
   }
 
   private static BeaconStateWithCache createMockedStartInitialBeaconState(

@@ -13,24 +13,19 @@
 
 package tech.pegasys.artemis.reference.phase0.genesis;
 
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.initialize_beacon_state_from_eth1_new;
-
 import com.google.common.primitives.UnsignedLong;
 import com.google.errorprone.annotations.MustBeClosed;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.stream.Stream;
-
-import org.apache.logging.log4j.Level;
-import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.junit.BouncyCastleExtension;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.DepositData;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
@@ -38,24 +33,24 @@ import tech.pegasys.artemis.datastructures.util.MockStartBeaconStateGenerator;
 import tech.pegasys.artemis.datastructures.util.MockStartDepositGenerator;
 import tech.pegasys.artemis.datastructures.util.MockStartValidatorKeyPairFactory;
 import tech.pegasys.artemis.reference.TestSuite;
-import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 
 @ExtendWith(BouncyCastleExtension.class)
 public class stateCheck extends TestSuite {
 
-  static private int numValidators = 16;
-  static private long genesisTime = 1567777777L;
+  private static int numValidators = 16;
+  private static long genesisTime = 1567777777L;
 
+  @Disabled
   @ParameterizedTest(name = "{index} root of Merkleizable")
   @MethodSource({"genesisGenericInitializationSetup"})
-  void genesisInitialization(
-          BeaconState state) {
+  void genesisInitialization(BeaconState state) {
     final List<BLSKeyPair> validatorKeys =
-            new MockStartValidatorKeyPairFactory().generateKeyPairs(0, numValidators - 1);
+        new MockStartValidatorKeyPairFactory().generateKeyPairs(0, numValidators - 1);
     final List<DepositData> initialDepositData =
-            new MockStartDepositGenerator().createDeposits(validatorKeys);
-    BeaconStateWithCache newBeaconState =  new MockStartBeaconStateGenerator()
+        new MockStartDepositGenerator().createDeposits(validatorKeys);
+    BeaconStateWithCache newBeaconState =
+        new MockStartBeaconStateGenerator()
             .createInitialBeaconState(UnsignedLong.valueOf(genesisTime), initialDepositData);
     Assertions.assertEquals(state, newBeaconState);
   }
@@ -63,9 +58,7 @@ public class stateCheck extends TestSuite {
   @MustBeClosed
   static Stream<Arguments> genesisGenericInitializationSetup() throws Exception {
     Path configPath = Paths.get("minimal", "phase0");
-    Path path =
-            Paths.get(
-                    "/minimal/phase0/genesis/clientStateCheck");
+    Path path = Paths.get("/minimal/phase0/genesis/clientStateCheck");
     return genesisInitializationCheck(path, configPath, numValidators, genesisTime);
   }
 }

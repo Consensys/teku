@@ -26,8 +26,8 @@ import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.get_active
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -49,9 +49,9 @@ public class ForkChoiceUtil {
     Bytes32 root = genesis_block.signing_root("signature");
     Checkpoint justified_checkpoint = new Checkpoint(UnsignedLong.valueOf(GENESIS_EPOCH), root);
     Checkpoint finalized_checkpoint = new Checkpoint(UnsignedLong.valueOf(GENESIS_EPOCH), root);
-    HashMap<Bytes32, BeaconBlock> blocks = new HashMap<>();
-    HashMap<Bytes32, BeaconState> block_states = new HashMap<>();
-    HashMap<Checkpoint, BeaconState> checkpoint_states = new HashMap<>();
+    ConcurrentHashMap<Bytes32, BeaconBlock> blocks = new ConcurrentHashMap<>();
+    ConcurrentHashMap<Bytes32, BeaconState> block_states = new ConcurrentHashMap<>();
+    ConcurrentHashMap<Checkpoint, BeaconState> checkpoint_states = new ConcurrentHashMap<>();
     blocks.put(root, genesis_block);
     block_states.put(root, new BeaconStateWithCache(genesis_state));
     checkpoint_states.put(justified_checkpoint, new BeaconStateWithCache(genesis_state));
@@ -183,7 +183,7 @@ public class ForkChoiceUtil {
         store.getBlock_states().containsKey(block.getParent_root()),
         "on_block: Parent block state is not contained in block_state");
     BeaconStateWithCache pre_state =
-        new BeaconStateWithCache(
+        BeaconStateWithCache.deepCopy(
             (BeaconStateWithCache) store.getBlock_states().get(block.getParent_root()));
 
     // Blocks cannot be in the future. If they are, their consideration must be delayed until the
@@ -251,6 +251,7 @@ public class ForkChoiceUtil {
   public static void on_attestation(
       Store store, Attestation attestation, StateTransition stateTransition)
       throws SlotProcessingException, EpochProcessingException {
+
     Checkpoint target = attestation.getData().getTarget();
 
     checkArgument(
