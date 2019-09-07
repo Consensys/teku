@@ -68,7 +68,7 @@ public class StateTransition {
    * @return
    * @throws StateTransitionException
    */
-  public BeaconStateWithCache initiate(
+  public BeaconState initiate(
       BeaconStateWithCache state, BeaconBlock block, boolean validate_state_root)
       throws StateTransitionException {
     try {

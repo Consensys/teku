@@ -221,7 +221,7 @@ public class ForkChoiceUtil {
         "on_block: Check that block is later than the finalized epoch slot");
 
     // Check the block is valid and compute the post-state
-    BeaconStateWithCache state = st.initiate(pre_state, block, true);
+    BeaconState state = st.initiate(pre_state, block, true);
 
     // Add new state for this block to the store
     store.getBlock_states().put(block.signing_root("signature"), state);
