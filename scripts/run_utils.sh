@@ -21,21 +21,9 @@ create_config() {
 
   local BOOTNODES=$(cat ~/.mothra/network/enr.dat)
 
-if [ $MODE == "mothra" ]
-then
+
   # Create the configuration file for the node
   cat $TEMPLATE | \
-    sed "s/logFile\ =.*/logFile = \"artemis-$NODE.log\"/"             |# Use a unique log file
-    sed "s/advertisedPort\ =.*//"                                     |# Remove the advertised port field
-    sed "s/identity\ =.*/identity\ =\ \"$IDENTITY\"/"                 |# Update the identity field to the value set above
-    sed "s/isBootnode\ =.*/isBootnode\ =\ $IS_BOOTNODE/"              |# Update the bootnode flag
-    sed "s/bootnodes\ =.*/bootnodes\ =\ \"$BOOTNODES\"/"              |# Update the bootnodes
-    sed "s/port\ =.*/port\ =\ $PORT/"                                 |# Update the port field to the value set above
-    sed "s/numNodes\ =.*/numNodes\ =\ $TOTAL/"                        |# Update the number of nodes to the total number of nodes
-    sed "s/networkInterface\ =.*/networkInterface\ =\ \"127.0.0.1\"/" |# Update the network interface to localhost
-    sed "s/networkMode\ =.*/networkMode\ =\ \"$MODE\"/" \
-    > ../config/runConfig.$NODE.toml
-else
     sed "s/logFile\ =.*/logFile = \"artemis-$NODE.log\"/"             |# Use a unique log file
     sed "s/advertisedPort\ =.*//"                                     |# Remove the advertised port field
     sed "s/identity\ =.*/identity\ =\ \"$IDENTITY\"/"                 |# Update the identity field to the value set above
@@ -47,7 +35,6 @@ else
     sed "s/networkInterface\ =.*/networkInterface\ =\ \"127.0.0.1\"/" |# Update the network interface to localhost
     sed "s/networkMode\ =.*/networkMode\ =\ \"$MODE\"/" \
     > ../config/runConfig.$NODE.toml
-fi
 
 }
 

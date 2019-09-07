@@ -19,6 +19,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 import net.p2p.mothra;
 import org.apache.logging.log4j.Level;
 import tech.pegasys.artemis.networking.p2p.api.P2PNetwork;
@@ -43,6 +44,7 @@ public final class MothraP2PNetwork implements P2PNetwork {
   private final String identity;
   private final String bootnodes;
   private final boolean isBootnode;
+  private final String discovery;
   private final String userAgent = "Artemis SNAPSHOT";
   private GossipProtocol gossipProtocol;
   private List<String> peers;
@@ -64,6 +66,7 @@ public final class MothraP2PNetwork implements P2PNetwork {
       String identity,
       String bootnodes,
       boolean isBootnode,
+      String discovery,
       List<String> peers) {
     this.eventBus = eventBus;
     this.store = store;
@@ -72,6 +75,7 @@ public final class MothraP2PNetwork implements P2PNetwork {
     this.identity = identity;
     this.bootnodes = bootnodes;
     this.isBootnode = isBootnode;
+    this.discovery = discovery;
     this.peers = peers;
     this.gossipProtocol = GossipProtocol.GOSSIPSUB;
     eventBus.register(this);
@@ -80,7 +84,7 @@ public final class MothraP2PNetwork implements P2PNetwork {
     mothra.DiscoveryMessage = this.handler::handleDiscoveryMessage;
     mothra.ReceivedGossipMessage = this.handler::handleGossipMessage;
     mothra.ReceivedRPCMessage = this.handler::handleRPCMessage;
-    if (this.peers.isEmpty()) {
+    if (this.discovery.equals("discv5")) {
       // TODO - issue #827:
       //      Once i have a reliable way to be notified when
       //      libp2p peers are found then this can be removed
@@ -109,8 +113,9 @@ public final class MothraP2PNetwork implements P2PNetwork {
               + " --datadir "
               + this.defaultDataDir
               + this.identity;
-      // + " --libp2p-addresses "
-      // + this.peers.stream().collect(Collectors.joining(","));
+      if (discovery.equals("static")) {
+        sargs += " --libp2p-addresses " + this.peers.stream().collect(Collectors.joining(","));
+      }
 
     } else {
       STDOUT.log(Level.INFO, "####### BOOTNODE #######");

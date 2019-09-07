@@ -40,7 +40,7 @@ BOOTNODE_ENR=$(cat ~/.mothra/network/enr.dat)
 ## NOTE:  LIGHTHOUSE can't set a genesis time in the future so this constant
 ##        will start them out on a high block number.  We need a better way to sync
 ##        genesis times so we both start at slot 0.
-GENESIS_TIME=1567719788 #$((`date +%s`))
+GENESIS_TIME=1567885567 #$((`date +%s`))
 
 if [ "$CLIENT" == "artemis" ]
 then
@@ -76,6 +76,7 @@ then
          PEERS=$(echo $PEERS | awk '{gsub(/\./,"\\.")}1' | awk '{gsub(/\//,"\\/")}1')
          PEERS=$(echo [\"$PEERS\"] )
          sh configurator.sh "$CONFIG_DIR/runConfig.0.toml" peers $PEERS
+         sh configurator.sh "$CONFIG_DIR/runConfig.0.toml" discovery "\"static\""
     fi
 
     cd $SCRIPT_DIR/demo/node_0/ && ./artemis --config=$CONFIG_DIR/runConfig.0.toml --logging=INFO

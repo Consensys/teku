@@ -59,6 +59,7 @@ public final class ArtemisConfiguration {
         9000,
         "Peer to peer advertised port",
         PropertyValidator.inRange(0, 65535));
+    builder.addString("node.discovery", "", "static or discv5", null);
     builder.addString("node.bootnodes", "", "ENR of the bootnode", null);
     builder.addBoolean("node.isBootnode", true, "Makes this node a bootnode", null);
     builder.addInteger(
@@ -273,6 +274,10 @@ public final class ArtemisConfiguration {
   /** @return the port this node will listen to */
   public int getPort() {
     return config.getInteger("node.port");
+  }
+
+  public String getDiscovery() {
+    return config.getString("node.discovery");
   }
 
   public boolean isBootnode() {
