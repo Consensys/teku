@@ -4,11 +4,15 @@ import hudson.model.Result
 import hudson.model.Run
 import jenkins.model.CauseOfInterruption.UserInterruption
 
-if (env.BRANCH_NAME == "master") {
+def shouldPublish() {
+    return env.BRANCH_NAME == 'master' || env.BRANCH_NAME ==~ /^release-\d+\.\d+/
+}
+
+if (shouldPublish()) {
     properties([
         buildDiscarder(
             logRotator(
-                daysToKeepStr: '90'
+                daysToKeepStr: '30', artifactDaysToKeepStr: '7'
             )
         )
     ])
@@ -56,12 +60,36 @@ try {
                     // sh './artemis/src/main/resources/artemisTestScript.sh'
                 }
                 stage('Build Docker Image') {
-                    sh './gradlew --no-daemon --parallel distDocker'
+                    sh './gradlew --no-daemon --parallel distDocker distDockerWhiteblock'
                 }
-                if (env.BRANCH_NAME == "master") {
+                if (shouldPublish()) {
                     stage('Push Docker Image') {
+                        def gradleProperties = readProperties file: 'gradle.properties'
+                        version = gradleProperties.version
+                        def imageRepos = 'pegasyseng'
+                        def image = "${imageRepos}/artemis:${version}"
                         docker.withRegistry('https://registry.hub.docker.com', 'dockerhub-pegasysengci') {
-                            docker.image("pegasyseng/artemis:develop").push()
+                            docker.image(image).push()
+
+                            def additionalTags = []
+                            if (env.BRANCH_NAME == 'master') {
+                                additionalTags.add('develop')
+                            }
+
+                            if (! version ==~ /.*-SNAPSHOT/) {
+                                additionalTags.add('latest')
+                                additionalTags.add(version.split(/\./)[0..1].join('.'))
+                            }
+
+                            additionalTags.each { tag ->
+                                docker.image(image).push tag.trim()
+                            }
+                        }
+                    }
+
+                    stage('Push WhiteBlock Docker Image') {
+                        docker.withRegistry('https://registry.hub.docker.com', 'dockerhub-pegasysengci') {
+                            docker.image("pegasyseng/artemis:whiteblock").push()
                         }
                     }
 
@@ -89,7 +117,7 @@ try {
     currentBuild.result = 'FAILURE'
 } finally {
     // If we're on master and it failed, notify slack
-    if (env.BRANCH_NAME == "master") {
+    if (shouldPublish()) {
         def currentResult = currentBuild.result ?: 'SUCCESS'
         def channel = '#team-pegasys-rd-bc'
         if (currentResult == 'SUCCESS') {

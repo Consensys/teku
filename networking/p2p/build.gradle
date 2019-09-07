@@ -15,6 +15,7 @@ dependencies {
   implementation 'org.apache.tuweni:tuweni-hobbits'
   implementation 'org.apache.tuweni:tuweni-plumtree'
   implementation 'org.apache.tuweni:tuweni-rlpx'
+  implementation 'org.apache.tuweni:tuweni-ssz'
   implementation 'org.apache.tuweni:tuweni-units'
 
   implementation 'org.apache.logging.log4j:log4j-api'

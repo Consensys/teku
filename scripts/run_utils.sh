@@ -21,6 +21,7 @@ create_config() {
 
   local BOOTNODES=$(cat ~/.mothra/network/enr.dat)
 
+
   # Create the configuration file for the node
   cat $TEMPLATE | \
     sed "s/logFile\ =.*/logFile = \"artemis-$NODE.log\"/"             |# Use a unique log file

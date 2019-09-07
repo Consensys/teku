@@ -76,7 +76,7 @@ public final class BeaconStateWithCache extends BeaconState {
       // Finality
       Bitvector justification_bits,
       Checkpoint previous_justified_checkpoint,
-      Checkpoint current_justified_chekpoint,
+      Checkpoint current_justified_checkpoint,
       Checkpoint finalized_checkpoint) {
     super(
         genesis_time,
@@ -102,7 +102,7 @@ public final class BeaconStateWithCache extends BeaconState {
         current_crosslinks,
         justification_bits,
         previous_justified_checkpoint,
-        current_justified_chekpoint,
+        current_justified_checkpoint,
         finalized_checkpoint);
   }
 
@@ -153,6 +153,41 @@ public final class BeaconStateWithCache extends BeaconState {
     // Client Specific For Caching Purposes
     this.crosslinkCommittees = state.getCrossLinkCommittees();
     this.startShards = state.getStartShards();
+  }
+
+  /**
+   * Creates a BeaconStateWithCache with empty caches from the given BeaconState.
+   *
+   * @param state state to create from
+   * @return created state with empty caches
+   */
+  public static BeaconStateWithCache fromBeaconState(BeaconState state) {
+    return new BeaconStateWithCache(
+        state.getGenesis_time(),
+        state.getSlot(),
+        state.getFork(),
+        state.getLatest_block_header(),
+        state.getBlock_roots(),
+        state.getState_roots(),
+        state.getHistorical_roots(),
+        state.getEth1_data(),
+        state.getEth1_data_votes(),
+        state.getEth1_deposit_index(),
+        state.getValidators(),
+        state.getBalances(),
+        state.getStart_shard(),
+        state.getRandao_mixes(),
+        state.getActive_index_roots(),
+        state.getCompact_committees_roots(),
+        state.getSlashings(),
+        state.getPrevious_epoch_attestations(),
+        state.getCurrent_epoch_attestations(),
+        state.getPrevious_crosslinks(),
+        state.getCurrent_crosslinks(),
+        state.getJustification_bits(),
+        state.getPrevious_justified_checkpoint(),
+        state.getCurrent_justified_checkpoint(),
+        state.getFinalized_checkpoint());
   }
 
   private <S extends Copyable<S>, T extends List<S>> T copyList(T sourceList, T destinationList) {

@@ -33,6 +33,7 @@ import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockBody;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
+import tech.pegasys.artemis.datastructures.networking.mothra.rpc.HelloMessage;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
 import tech.pegasys.artemis.datastructures.operations.AttestationDataAndCustodyBit;
@@ -67,7 +68,7 @@ public class SimpleOffsetSerializer {
 
   public static HashMap<Class, ReflectionInformation> classReflectionInfo = new HashMap<>();
 
-  static {
+  public static void setConstants() {
     classReflectionInfo.put(BeaconBlock.class, new ReflectionInformation(BeaconBlock.class));
     classReflectionInfo.put(
         BeaconBlockBody.class, new ReflectionInformation(BeaconBlockBody.class));
@@ -101,6 +102,11 @@ public class SimpleOffsetSerializer {
     classReflectionInfo.put(
         PendingAttestation.class, new ReflectionInformation(PendingAttestation.class));
     classReflectionInfo.put(Validator.class, new ReflectionInformation(Validator.class));
+    classReflectionInfo.put(HelloMessage.class, new ReflectionInformation(HelloMessage.class));
+  }
+
+  static {
+    setConstants();
   }
 
   public static Bytes serialize(SimpleOffsetSerializable value) {
@@ -176,9 +182,13 @@ public class SimpleOffsetSerializer {
   @SuppressWarnings("TypeParameterUnusedInFormals")
   public static <T> T deserialize(Bytes bytes, Class classInfo) {
     MutableInt bytePointer = new MutableInt(0);
-    return SSZ.decode(
-        bytes,
-        reader -> deserializeContainerErrorWrapper(classInfo, reader, bytePointer, bytes.size()));
+    if (!isPrimitive(classInfo)) {
+      return SSZ.decode(
+          bytes,
+          reader -> deserializeContainerErrorWrapper(classInfo, reader, bytePointer, bytes.size()));
+    } else {
+      return SSZ.decode(bytes, reader -> (T) deserializePrimitive(classInfo, reader, bytePointer));
+    }
   }
 
   @SuppressWarnings("TypeParameterUnusedInFormals")
@@ -420,7 +430,6 @@ public class SimpleOffsetSerializer {
     return new SSZVector<>(newList, classInfo);
   }
 
-  @SuppressWarnings("rawtypes")
   public static Object deserializePrimitive(
       Class classInfo, SSZReader reader, MutableInt bytePointer) {
     switch (classInfo.getSimpleName()) {

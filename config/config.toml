@@ -10,6 +10,7 @@ identity = "0x00"
 timer="QuartzTimer"
 networkInterface = "0.0.0.0"
 port = 9000
+discovery = "discv5"
 bootnodes = ""
 isBootnode = true
 advertisedPort = 9000
@@ -21,9 +22,10 @@ active = false
 # "mocked" generated validator cred deterministically
 mode = "mocked"
 inputFile = "depositsAndKeys.yaml"
-genesisTime = 298928929424
+genesisTime = 1567777777
 ownedValidatorStartIndex = 0
 ownedValidatorCount = 4
+# startState = "initialState.ssz"
 
 [deposit]
 # normal, test, simulation

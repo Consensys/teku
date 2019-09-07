@@ -33,10 +33,6 @@ public class Constants {
   public static int JUSTIFICATION_BITS_LENGTH = 4;
   public static String ENDIANNESS = "little";
 
-  // Interop modes
-  public static final String FILE_INTEROP = "file";
-  public static final String MOCKED_START_INTEROP = "mocked";
-
   // Misc
   public static int SHARD_COUNT = 1024;
   public static int TARGET_COMMITTEE_SIZE = 128;
@@ -45,7 +41,7 @@ public class Constants {
   public static int CHURN_LIMIT_QUOTIENT = 65536;
   public static int SHUFFLE_ROUND_COUNT = 90;
   public static int MIN_GENESIS_ACTIVE_VALIDATOR_COUNT = 65536;
-  public static UnsignedLong MIN_GENESIS_TIME = UnsignedLong.valueOf(1578009600);
+  public static UnsignedLong MIN_GENESIS_TIME = UnsignedLong.valueOf(1567222226);
 
   // Gwei values
   public static long MIN_DEPOSIT_AMOUNT = 1000000000L;
@@ -361,10 +357,10 @@ public class Constants {
     MAX_EPOCHS_PER_CROSSLINK = (int) config.get("MAX_EPOCHS_PER_CROSSLINK");
     MIN_EPOCHS_TO_INACTIVITY_PENALTY = (int) config.get("MIN_EPOCHS_TO_INACTIVITY_PENALTY");
     EARLY_DERIVED_SECRET_PENALTY_MAX_FUTURE_EPOCHS =
-        (int) config.get("MIN_EPOCHS_TO_INACTIVITY_PENALTY");
+        (int) config.get("EARLY_DERIVED_SECRET_PENALTY_MAX_FUTURE_EPOCHS");
     EPOCHS_PER_HISTORICAL_VECTOR = (int) config.get("EPOCHS_PER_HISTORICAL_VECTOR");
-    EPOCHS_PER_SLASHINGS_VECTOR = (int) config.get("MAX_VALIDATORS_PER_COMMITTEE");
-    HISTORICAL_ROOTS_LIMIT = (int) config.get("MAX_VALIDATORS_PER_COMMITTEE");
+    EPOCHS_PER_SLASHINGS_VECTOR = (int) config.get("EPOCHS_PER_SLASHINGS_VECTOR");
+    HISTORICAL_ROOTS_LIMIT = (int) config.get("HISTORICAL_ROOTS_LIMIT");
     VALIDATOR_REGISTRY_LIMIT = (long) config.get("VALIDATOR_REGISTRY_LIMIT");
     BASE_REWARD_FACTOR = (int) config.get("BASE_REWARD_FACTOR");
     WHISTLEBLOWER_REWARD_QUOTIENT = (int) config.get("WHISTLEBLOWER_REWARD_QUOTIENT");

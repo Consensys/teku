@@ -15,8 +15,8 @@ package tech.pegasys.artemis.storage;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
@@ -27,25 +27,25 @@ public class Store {
   private UnsignedLong time;
   private Checkpoint justified_checkpoint;
   private Checkpoint finalized_checkpoint;
-  private HashMap<Bytes32, BeaconBlock> blocks;
-  private HashMap<Bytes32, BeaconState> block_states;
-  private HashMap<Checkpoint, BeaconState> checkpoint_states;
-  private HashMap<UnsignedLong, LatestMessage> latest_messages;
+  private ConcurrentHashMap<Bytes32, BeaconBlock> blocks;
+  private ConcurrentHashMap<Bytes32, BeaconState> block_states;
+  private ConcurrentHashMap<Checkpoint, BeaconState> checkpoint_states;
+  private ConcurrentHashMap<UnsignedLong, LatestMessage> latest_messages;
 
   public Store(
       UnsignedLong time,
       Checkpoint justified_checkpoint,
       Checkpoint finalized_checkpoint,
-      HashMap<Bytes32, BeaconBlock> blocks,
-      HashMap<Bytes32, BeaconState> block_states,
-      HashMap<Checkpoint, BeaconState> checkpoint_states) {
+      ConcurrentHashMap<Bytes32, BeaconBlock> blocks,
+      ConcurrentHashMap<Bytes32, BeaconState> block_states,
+      ConcurrentHashMap<Checkpoint, BeaconState> checkpoint_states) {
     this.time = time;
     this.justified_checkpoint = justified_checkpoint;
     this.finalized_checkpoint = finalized_checkpoint;
     this.blocks = blocks;
     this.block_states = block_states;
     this.checkpoint_states = checkpoint_states;
-    this.latest_messages = new HashMap<>();
+    this.latest_messages = new ConcurrentHashMap<>();
   }
 
   public UnsignedLong getTime() {

@@ -38,11 +38,13 @@ public class ServiceController {
           Class<V> powchainServiceType,
           Class<W> chainStorageServiceType) {
     powChainServiceActive = config.getConfig().getDepositMode().equals("test");
-    beaconChainService = ServiceFactory.getInstance(beaconChainServiceType).getInstance();
     chainStorageService = ServiceFactory.getInstance(chainStorageServiceType).getInstance();
+    beaconChainService = ServiceFactory.getInstance(beaconChainServiceType).getInstance();
 
-    beaconChainService.init(config);
+    // Chain storage has to be initialized first due to node start event requiring storage service
+    // to be online
     chainStorageService.init(config);
+    beaconChainService.init(config);
 
     if (powChainServiceActive) {
       powchainService = ServiceFactory.getInstance(powchainServiceType).getInstance();

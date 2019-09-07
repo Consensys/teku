@@ -23,24 +23,15 @@ import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_e
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_domain;
 import static tech.pegasys.artemis.statetransition.util.ForkChoiceUtil.get_head;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.google.common.primitives.UnsignedLong;
 import com.google.protobuf.ByteString;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -53,14 +44,9 @@ import org.apache.commons.lang3.tuple.Triple;
 import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.bytes.Bytes48;
 import org.apache.tuweni.crypto.SECP256K1;
 import org.apache.tuweni.ssz.SSZ;
 import org.apache.tuweni.units.bigints.UInt256;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
@@ -79,15 +65,15 @@ import tech.pegasys.artemis.proto.messagesigner.MessageSignerGrpc;
 import tech.pegasys.artemis.proto.messagesigner.SignatureRequest;
 import tech.pegasys.artemis.proto.messagesigner.SignatureResponse;
 import tech.pegasys.artemis.service.serviceutils.ServiceConfig;
-import tech.pegasys.artemis.statetransition.GenesisStateEvent;
-import tech.pegasys.artemis.statetransition.SlotEvent;
 import tech.pegasys.artemis.statetransition.StateTransition;
 import tech.pegasys.artemis.statetransition.StateTransitionException;
-import tech.pegasys.artemis.statetransition.ValidatorAssignmentEvent;
+import tech.pegasys.artemis.statetransition.events.ValidatorAssignmentEvent;
 import tech.pegasys.artemis.statetransition.util.EpochProcessingException;
 import tech.pegasys.artemis.statetransition.util.SlotProcessingException;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.Store;
+import tech.pegasys.artemis.storage.events.NodeStartEvent;
+import tech.pegasys.artemis.storage.events.SlotEvent;
 import tech.pegasys.artemis.util.SSZTypes.Bitlist;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.alogger.ALogger;
@@ -98,8 +84,6 @@ import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
-import tech.pegasys.artemis.util.mikuli.KeyPair;
-import tech.pegasys.artemis.util.mikuli.SecretKey;
 import tech.pegasys.artemis.validator.client.ValidatorClient;
 import tech.pegasys.artemis.validator.client.ValidatorClientUtil;
 
@@ -126,7 +110,6 @@ public class ValidatorCoordinator {
   private int naughtinessPercentage;
   private boolean interopActive;
 
-  @SuppressWarnings("unchecked")
   public ValidatorCoordinator(ServiceConfig config, ChainStorageClient store) {
     this.eventBus = config.getEventBus();
     this.eventBus.register(this);
@@ -197,9 +180,8 @@ public class ValidatorCoordinator {
   }
 
   @Subscribe
-  public void onGenesisStateEvent(GenesisStateEvent genesisHeadStateEvent) {
-    BeaconBlock genesisBlock = genesisHeadStateEvent.getGenesisBlock();
-    BeaconStateWithCache genesisState = genesisHeadStateEvent.getGenesisState();
+  public void onGenesisStateEvent(NodeStartEvent nodeStartEvent) {
+    final BeaconStateWithCache genesisState = nodeStartEvent.getState();
 
     // Get validator indices of our own validators
     List<Validator> validatorRegistry = genesisState.getValidators();
@@ -219,6 +201,7 @@ public class ValidatorCoordinator {
     Bytes32 headBlockRoot = get_head(store);
     BeaconBlock headBlock = store.getBlock(headBlockRoot);
     BeaconState headState = store.getBlockState(headBlockRoot);
+    chainStorageClient.updateBestBlock(headBlockRoot, headBlock.getSlot());
 
     // Logging
     STDOUT.log(
@@ -390,58 +373,7 @@ public class ValidatorCoordinator {
     return newBlock;
   }
 
-  @SuppressWarnings("unchecked")
-  private void initializeValidators(ArtemisConfiguration config) {
-    Pair<Integer, Integer> startAndEnd = getStartAndEnd();
-    int startIndex = startAndEnd.getLeft();
-    int endIndex = startAndEnd.getRight();
-    long numNaughtyValidators = Math.round((naughtinessPercentage * numValidators) / 100.0);
-    List<BLSKeyPair> keypairs = new ArrayList<>();
-    if (interopActive) {
-      try {
-        Path path = Paths.get(config.getInteropInputFile());
-        String read = Files.readAllLines(path).get(0);
-        JSONParser parser = new JSONParser();
-        Object obj = parser.parse(read);
-        JSONObject array = (JSONObject) obj;
-        JSONArray privateKeyStrings = (JSONArray) array.get("privateKeys");
-        for (int i = startIndex; i <= endIndex; i++) {
-          BLSKeyPair keypair =
-              new BLSKeyPair(
-                  new KeyPair(
-                      SecretKey.fromBytes(
-                          Bytes.fromHexString(privateKeyStrings.get(i).toString()))));
-          keypairs.add(keypair);
-        }
-      } catch (IOException | ParseException e) {
-        STDOUT.log(Level.FATAL, e.toString());
-      }
-    } else {
-      for (int i = startIndex; i <= endIndex; i++) {
-        BLSKeyPair keypair = BLSKeyPair.random(i);
-        keypairs.add(keypair);
-      }
-    }
-    int our_index = 0;
-    for (int i = startIndex; i <= endIndex; i++) {
-      BLSKeyPair keypair = keypairs.get(our_index);
-      int port = Constants.VALIDATOR_CLIENT_PORT_BASE + i;
-      new ValidatorClient(keypair, port);
-      ManagedChannel channel =
-          ManagedChannelBuilder.forAddress("localhost", port).usePlaintext().build();
-      validatorClientChannels.put(keypair.getPublicKey(), channel);
-      STDOUT.log(Level.DEBUG, "i = " + i + ": " + keypair.getPublicKey().toString());
-      if (numNaughtyValidators > 0) {
-        validatorSet.put(keypair.getPublicKey(), new MutableTriple<>(keypair, true, -1));
-      } else {
-        validatorSet.put(keypair.getPublicKey(), new MutableTriple<>(keypair, false, -1));
-      }
-      numNaughtyValidators--;
-      our_index++;
-    }
-  }
-
-  @SuppressWarnings({"unchecked", "rawtypes"})
+  @SuppressWarnings({"rawtypes"})
   private void initializeValidators2(ArtemisConfiguration config) {
     Pair<Integer, Integer> startAndEnd = getStartAndEnd();
     int startIndex = startAndEnd.getLeft();
@@ -449,41 +381,12 @@ public class ValidatorCoordinator {
     long numNaughtyValidators = Math.round((naughtinessPercentage * numValidators) / 100.0);
     List<BLSKeyPair> keypairs = new ArrayList<>();
     if (interopActive) {
-      switch (config.getInteropMode()) {
-        case Constants.FILE_INTEROP:
-          try {
-            Path path = Paths.get(config.getInteropInputFile());
-            String yaml = Files.readString(path.toAbsolutePath(), StandardCharsets.US_ASCII);
-            ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
-            Map<String, List<Map>> fileMap =
-                mapper.readValue(yaml, new TypeReference<Map<String, List<Map>>>() {});
-            List<Map> depositdatakeys = fileMap.get("DepositDataKeys");
-            List<String> privateKeyStrings = new ArrayList<>();
-            depositdatakeys.forEach(
-                item -> {
-                  privateKeyStrings.add(item.get("Privkey").toString());
-                });
-            for (int i = startIndex; i <= endIndex; i++) {
-              BLSKeyPair keypair =
-                  new BLSKeyPair(
-                      new KeyPair(
-                          SecretKey.fromBytes(
-                              Bytes48.leftPad(Bytes.fromBase64String(privateKeyStrings.get(i))))));
-              keypairs.add(keypair);
-            }
-          } catch (IOException e) {
-            STDOUT.log(Level.FATAL, e.toString());
-          }
-          break;
-        case Constants.MOCKED_START_INTEROP:
-          startIndex = config.getInteropOwnedValidatorStartIndex();
-          // - 1 because endIndex is inclusive
-          endIndex = startIndex + config.getInteropOwnedValidatorCount() - 1;
-          STDOUT.log(
-              Level.INFO, "Owning validator range " + startIndex + " to " + endIndex, Color.GREEN);
-          keypairs = new MockStartValidatorKeyPairFactory().generateKeyPairs(startIndex, endIndex);
-          break;
-      }
+      startIndex = config.getInteropOwnedValidatorStartIndex();
+      // - 1 because endIndex is inclusive
+      endIndex = startIndex + config.getInteropOwnedValidatorCount() - 1;
+      STDOUT.log(
+          Level.INFO, "Owning validator range " + startIndex + " to " + endIndex, Color.GREEN);
+      keypairs = new MockStartValidatorKeyPairFactory().generateKeyPairs(startIndex, endIndex);
     } else {
       for (int i = startIndex; i <= endIndex; i++) {
         BLSKeyPair keypair = BLSKeyPair.random(i);

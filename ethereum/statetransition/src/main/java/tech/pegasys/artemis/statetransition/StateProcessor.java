@@ -32,8 +32,6 @@ import java.util.Date;
 import java.util.List;
 import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.crypto.SECP256K1;
-import org.json.simple.parser.ParseException;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
@@ -43,10 +41,12 @@ import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.datastructures.util.DepositUtil;
 import tech.pegasys.artemis.service.serviceutils.ServiceConfig;
+import tech.pegasys.artemis.statetransition.events.GenesisEvent;
 import tech.pegasys.artemis.statetransition.util.EpochProcessingException;
 import tech.pegasys.artemis.statetransition.util.SlotProcessingException;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.Store;
+import tech.pegasys.artemis.storage.events.NodeStartEvent;
 import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 
@@ -54,12 +54,11 @@ import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 public class StateProcessor {
   private final EventBus eventBus;
   private final StateTransition stateTransition;
-  private Store store;
   private ChainStorageClient chainStorageClient;
-  private SECP256K1.PublicKey publicKey;
   private ArtemisConfiguration config;
   private static final ALogger STDOUT = new ALogger("stdout");
   private List<DepositWithIndex> deposits;
+  private BeaconStateWithCache initialState;
 
   public StateProcessor(ServiceConfig config, ChainStorageClient chainStorageClient) {
     /*
@@ -82,32 +81,29 @@ public class StateProcessor {
 
     this.eventBus = config.getEventBus();
     this.config = config.getConfig();
-    this.publicKey = config.getKeyPair().publicKey();
     this.stateTransition = new StateTransition(true, new EpochMetrics(config.getMetricsSystem()));
     this.chainStorageClient = chainStorageClient;
     this.eventBus.register(this);
 
     if (this.config.getDepositMode().equals(Constants.DEPOSIT_TEST)) {
-      try {
-        BeaconStateWithCache initial_state =
-            DataStructureUtil.createInitialBeaconState2(this.config);
-        setSimulationGenesisTime(initial_state);
-        onEth2Genesis(initial_state);
-      } catch (ParseException | IOException e) {
-        STDOUT.log(Level.FATAL, "StateProcessor initializing: " + e.toString());
-      }
+      initialState = DataStructureUtil.createInitialBeaconState(this.config);
+      setSimulationGenesisTime(initialState);
+      this.eventBus.post(new NodeStartEvent(initialState));
     }
   }
 
-  public void onEth2Genesis(BeaconStateWithCache initial_state) {
+  @Subscribe
+  public void onEth2Genesis(GenesisEvent genesisEvent) {
     STDOUT.log(Level.INFO, "******* Eth2Genesis Event detected ******* : ");
-    UnsignedLong genesisTime = initial_state.getGenesis_time();
-    this.store = get_genesis_store(initial_state);
-    chainStorageClient.setGenesisTime(genesisTime);
-    chainStorageClient.setStore(store);
+    Store store = chainStorageClient.getStore();
+    if (store == null) {
+      store = get_genesis_store(initialState);
+      chainStorageClient.setStore(store);
+      UnsignedLong genesisTime = initialState.getGenesis_time();
+      chainStorageClient.setGenesisTime(genesisTime);
+    }
     Bytes32 genesisBlockRoot = get_head(store);
-    this.eventBus.post(new GenesisStateEvent(initial_state, store.getBlock(genesisBlockRoot)));
-    STDOUT.log(Level.INFO, "Initial state root is " + initial_state.hash_tree_root().toHexString());
+    STDOUT.log(Level.INFO, "Initial state root is " + initialState.hash_tree_root().toHexString());
     STDOUT.log(Level.INFO, "Genesis block root is " + genesisBlockRoot.toHexString());
   }
 
@@ -135,7 +131,8 @@ public class StateProcessor {
                 deposits);
         if (is_valid_genesis_stateSim(candidate_state)) {
           setSimulationGenesisTime(candidate_state);
-          onEth2Genesis(candidate_state);
+          initialState = candidate_state;
+          this.eventBus.post(new GenesisEvent());
         }
 
       } else {
@@ -145,26 +142,26 @@ public class StateProcessor {
                 eth1_timestamp,
                 deposits);
         if (is_valid_genesis_state(candidate_state)) {
-          onEth2Genesis(candidate_state);
+          initialState = candidate_state;
+          this.eventBus.post(new GenesisEvent());
         }
       }
     }
   }
 
-  public static boolean isGenesisReasonable(
-      UnsignedLong eth1_timestamp, List<DepositWithIndex> deposits) {
-    return (eth1_timestamp.compareTo(MIN_GENESIS_TIME) >= 0
-        && deposits.size() >= MIN_GENESIS_ACTIVE_VALIDATOR_COUNT);
-  }
-
-  public static boolean isGenesisReasonableSim(List<DepositWithIndex> deposits) {
-    return (deposits.size() >= MIN_GENESIS_ACTIVE_VALIDATOR_COUNT);
+  public boolean isGenesisReasonable(UnsignedLong eth1_timestamp, List<DepositWithIndex> deposits) {
+    if (config.getInteropActive()) {
+      return false; // Interop mode never performs genesis in response to deposit events.
+    }
+    final boolean afterMinGenesisTime = eth1_timestamp.compareTo(MIN_GENESIS_TIME) >= 0;
+    final boolean sufficientValidators = deposits.size() >= MIN_GENESIS_ACTIVE_VALIDATOR_COUNT;
+    return afterMinGenesisTime && sufficientValidators;
   }
 
   @Subscribe
   private void onBlock(BeaconBlock block) {
     try {
-      on_block(store, block, stateTransition);
+      on_block(chainStorageClient.getStore(), block, stateTransition);
       // Add attestations that were processed in the block to processed attestations storage
       block
           .getBody()
@@ -178,15 +175,14 @@ public class StateProcessor {
   @Subscribe
   private void onAttestation(Attestation attestation) {
     try {
-      on_attestation(store, attestation, stateTransition);
+      on_attestation(chainStorageClient.getStore(), attestation, stateTransition);
     } catch (SlotProcessingException | EpochProcessingException e) {
       STDOUT.log(Level.WARN, "Exception in onAttestation: " + e.toString());
     }
   }
 
   private void setSimulationGenesisTime(BeaconState state) {
-    if (config.getInteropActive()
-        && config.getInteropMode().equals(Constants.MOCKED_START_INTEROP)) {
+    if (config.getInteropActive()) {
       state.setGenesis_time(UnsignedLong.valueOf(config.getInteropGenesisTime()));
     } else if (Constants.GENESIS_TIME.equals(UnsignedLong.MAX_VALUE)) {
       Date date = new Date();
@@ -195,5 +191,6 @@ public class StateProcessor {
     } else {
       state.setGenesis_time(Constants.GENESIS_TIME);
     }
+    chainStorageClient.setGenesisTime(state.getGenesis_time());
   }
 }
