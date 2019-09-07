@@ -40,6 +40,7 @@ import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.statetransition.StateTransition;
 import tech.pegasys.artemis.statetransition.StateTransitionException;
 import tech.pegasys.artemis.storage.LatestMessage;
+import tech.pegasys.artemis.storage.ReadOnlyStore;
 import tech.pegasys.artemis.storage.Store;
 
 public class ForkChoiceUtil {
@@ -74,7 +75,7 @@ public class ForkChoiceUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.1/specs/core/0_fork-choice.md#get_ancestor</a>
    */
-  public static Bytes32 get_ancestor(Store store, Bytes32 root, UnsignedLong slot) {
+  public static Bytes32 get_ancestor(ReadOnlyStore store, Bytes32 root, UnsignedLong slot) {
     BeaconBlock block = store.getBlock(root);
     if (block.getSlot().compareTo(slot) > 0) {
       return get_ancestor(store, block.getParent_root(), slot);
@@ -165,7 +166,7 @@ public class ForkChoiceUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.1/specs/core/0_fork-choice.md#on_tick</a>
    */
-  public static void on_tick(Store store, UnsignedLong time) {
+  public static void on_tick(Store.Transaction store, UnsignedLong time) {
     store.setTime(time);
   }
 
@@ -176,7 +177,7 @@ public class ForkChoiceUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.1/specs/core/0_fork-choice.md#on_block</a>
    */
-  public static void on_block(Store store, BeaconBlock block, StateTransition st)
+  public static void on_block(Store.Transaction store, BeaconBlock block, StateTransition st)
       throws StateTransitionException {
     // Make a copy of the state to avoid mutability issues
     checkArgument(
@@ -249,7 +250,7 @@ public class ForkChoiceUtil {
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.1/specs/core/0_fork-choice.md#on_attestation</a>
    */
   public static void on_attestation(
-      Store store, Attestation attestation, StateTransition stateTransition)
+      Store.Transaction store, Attestation attestation, StateTransition stateTransition)
       throws SlotProcessingException, EpochProcessingException {
 
     Checkpoint target = attestation.getData().getTarget();
