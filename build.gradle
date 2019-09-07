@@ -372,7 +372,7 @@ task distDocker(type: Exec) {
   dependsOn dockerDistUntar
 
   def dockerBuildVersion = project.hasProperty('release.releaseVersion') ? project.property('release.releaseVersion') : "${rootProject.version}"
-  def image = project.hasProperty('release.releaseVersion') ? "pegasyseng/artemis:" + project.property('release.releaseVersion') : "pegasyseng/artemis:develop"
+  def image = project.hasProperty('release.releaseVersion') ? "pegasyseng/artemis:" + project.property('release.releaseVersion') : "pegasyseng/artemis:${project.version}"
   def dockerBuildDir = "build/docker-artemis/"
   workingDir "${dockerBuildDir}"
 
