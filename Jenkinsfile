@@ -66,6 +66,20 @@ try {
                         def image = "${imageRepos}/artemis:${version}"
                         docker.withRegistry('https://registry.hub.docker.com', 'dockerhub-pegasysengci') {
                             docker.image(image).push()
+
+                            def additionalTags = []
+                            if (env.BRANCH_NAME == 'master') {
+                                additionalTags.add('develop')
+                            }
+
+                            if (! version ==~ /.*-SNAPSHOT/) {
+                                additionalTags.add('latest')
+                                additionalTags.add(version.split(/\./)[0..1].join('.'))
+                            }
+
+                            additionalTags.each { tag ->
+                                docker.image(image).push tag.trim()
+                            }
                         }
                     }
 
