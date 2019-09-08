@@ -229,6 +229,7 @@ public class ChainStorageClient implements ChainStorage {
 
   @Subscribe
   public void onDBStoreValidEvent(DBStoreValidEvent dbStoreValidEvent) {
+    this.genesisTime = dbStoreValidEvent.getGenesisTime();
     this.store = dbStoreValidEvent.getStore();
   }
 
