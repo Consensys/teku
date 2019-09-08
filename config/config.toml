@@ -25,7 +25,7 @@ inputFile = "depositsAndKeys.yaml"
 genesisTime = 1567777777
 ownedValidatorStartIndex = 0
 ownedValidatorCount = 4
-startState = "quickstart_genesis_16_1567777777.ssz"
+startState = "/tmp/genesis.ssz"
 
 [deposit]
 # normal, test, simulation
