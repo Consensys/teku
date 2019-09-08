@@ -95,7 +95,7 @@ public class ForkChoiceUtil {
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.1/specs/core/0_fork-choice.md#get_latest_attesting_balance</a>
    */
   public static UnsignedLong get_latest_attesting_balance(Store store, Bytes32 root) {
-    BeaconState state = store.getCheckpointState(store.getJustified_checkpoint());
+    BeaconState state = store.getCheckpointState(store.getJustifiedCheckpoint());
     List<Integer> active_indices = get_active_validator_indices(state, get_current_epoch(state));
     return UnsignedLong.valueOf(
         active_indices.stream()
@@ -122,9 +122,9 @@ public class ForkChoiceUtil {
    */
   public static Bytes32 get_head(Store store) {
     // Execute the LMD-GHOST fork choice
-    Bytes32 head = store.getJustified_checkpoint().getRoot();
+    Bytes32 head = store.getJustifiedCheckpoint().getRoot();
     UnsignedLong justified_slot =
-        compute_start_slot_of_epoch(store.getJustified_checkpoint().getEpoch());
+        compute_start_slot_of_epoch(store.getJustifiedCheckpoint().getEpoch());
 
     while (true) {
       final Bytes32 head_in_filter = head;
@@ -206,14 +206,14 @@ public class ForkChoiceUtil {
         get_ancestor(
                 store,
                 block.signing_root("signature"),
-                store.getBlock(store.getFinalized_checkpoint().getRoot()).getSlot())
-            .equals(store.getFinalized_checkpoint().getRoot()),
+                store.getBlock(store.getFinalizedCheckpoint().getRoot()).getSlot())
+            .equals(store.getFinalizedCheckpoint().getRoot()),
         "on_block: Check block is a descendant of the finalized block");
 
     checkArgument(
         block
                 .getSlot()
-                .compareTo(compute_start_slot_of_epoch(store.getFinalized_checkpoint().getEpoch()))
+                .compareTo(compute_start_slot_of_epoch(store.getFinalizedCheckpoint().getEpoch()))
             > 0,
         "on_block: Check that block is later than the finalized epoch slot");
 
@@ -227,18 +227,18 @@ public class ForkChoiceUtil {
     if (state
             .getCurrent_justified_checkpoint()
             .getEpoch()
-            .compareTo(store.getJustified_checkpoint().getEpoch())
+            .compareTo(store.getJustifiedCheckpoint().getEpoch())
         > 0) {
-      store.setJustified_checkpoint(state.getCurrent_justified_checkpoint());
+      store.setJustifiedCheckpoint(state.getCurrent_justified_checkpoint());
     }
 
     // Update finalized checkpoint
     if (state
             .getFinalized_checkpoint()
             .getEpoch()
-            .compareTo(store.getFinalized_checkpoint().getEpoch())
+            .compareTo(store.getFinalizedCheckpoint().getEpoch())
         > 0) {
-      store.setFinalized_checkpoint(state.getFinalized_checkpoint());
+      store.setFinalizedCheckpoint(state.getFinalized_checkpoint());
     }
   }
 

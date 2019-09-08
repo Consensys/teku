@@ -73,7 +73,7 @@ public class Store implements ReadOnlyStore {
   }
 
   @Override
-  public Checkpoint getJustified_checkpoint() {
+  public Checkpoint getJustifiedCheckpoint() {
     readLock.lock();
     try {
       return justified_checkpoint;
@@ -83,7 +83,7 @@ public class Store implements ReadOnlyStore {
   }
 
   @Override
-  public Checkpoint getFinalized_checkpoint() {
+  public Checkpoint getFinalizedCheckpoint() {
     readLock.lock();
     try {
       return finalized_checkpoint;
@@ -211,11 +211,11 @@ public class Store implements ReadOnlyStore {
       this.time = Optional.of(time);
     }
 
-    public void setJustified_checkpoint(Checkpoint justified_checkpoint) {
+    public void setJustifiedCheckpoint(Checkpoint justified_checkpoint) {
       this.justified_checkpoint = Optional.of(justified_checkpoint);
     }
 
-    public void setFinalized_checkpoint(Checkpoint finalized_checkpoint) {
+    public void setFinalizedCheckpoint(Checkpoint finalized_checkpoint) {
       this.finalized_checkpoint = Optional.of(finalized_checkpoint);
     }
 
@@ -241,13 +241,13 @@ public class Store implements ReadOnlyStore {
     }
 
     @Override
-    public Checkpoint getJustified_checkpoint() {
-      return justified_checkpoint.orElseGet(Store.this::getJustified_checkpoint);
+    public Checkpoint getJustifiedCheckpoint() {
+      return justified_checkpoint.orElseGet(Store.this::getJustifiedCheckpoint);
     }
 
     @Override
-    public Checkpoint getFinalized_checkpoint() {
-      return finalized_checkpoint.orElseGet(Store.this::getFinalized_checkpoint);
+    public Checkpoint getFinalizedCheckpoint() {
+      return finalized_checkpoint.orElseGet(Store.this::getFinalizedCheckpoint);
     }
 
     @Override

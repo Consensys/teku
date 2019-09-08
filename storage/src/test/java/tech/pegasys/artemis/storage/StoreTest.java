@@ -55,8 +55,8 @@ class StoreTest {
     final UnsignedLong time = UnsignedLong.valueOf(3);
     transaction.putBlock(blockRoot, block);
     transaction.putBlockState(blockRoot, state);
-    transaction.setFinalized_checkpoint(finalizedCheckpoint);
-    transaction.setJustified_checkpoint(justifiedCheckpoint);
+    transaction.setFinalizedCheckpoint(finalizedCheckpoint);
+    transaction.setJustifiedCheckpoint(justifiedCheckpoint);
     transaction.putCheckpointState(justifiedCheckpoint, state);
     transaction.setTime(time);
 
@@ -64,15 +64,15 @@ class StoreTest {
     assertFalse(store.containsBlockState(blockRoot));
     assertFalse(store.containsCheckpointState(justifiedCheckpoint));
     assertEquals(UnsignedLong.ZERO, store.getTime());
-    assertEquals(INITIAL_FINALIZED_CHECKPOINT, store.getFinalized_checkpoint());
-    assertEquals(INITIAL_JUSTIFIED_CHECKPOINT, store.getJustified_checkpoint());
+    assertEquals(INITIAL_FINALIZED_CHECKPOINT, store.getFinalizedCheckpoint());
+    assertEquals(INITIAL_JUSTIFIED_CHECKPOINT, store.getJustifiedCheckpoint());
 
     transaction.commit();
 
     assertEquals(block, store.getBlock(blockRoot));
     assertEquals(state, store.getBlockState(blockRoot));
-    assertEquals(finalizedCheckpoint, store.getFinalized_checkpoint());
-    assertEquals(justifiedCheckpoint, store.getJustified_checkpoint());
+    assertEquals(finalizedCheckpoint, store.getFinalizedCheckpoint());
+    assertEquals(justifiedCheckpoint, store.getJustifiedCheckpoint());
     assertEquals(state, store.getCheckpointState(justifiedCheckpoint));
     assertEquals(time, store.getTime());
   }
