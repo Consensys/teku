@@ -17,8 +17,10 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Suppliers;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Supplier;
 import org.apache.tuweni.bytes.Bytes;
 
 /** This class represents a Signature on G2 */
@@ -48,7 +50,7 @@ public final class Signature {
    */
   public static Signature fromBytes(Bytes bytes) {
     checkArgument(bytes.size() == 192, "Expected 192 bytes of input but got %s", bytes.size());
-    return new Signature(G2Point.fromBytes(bytes));
+    return new Signature(bytes);
   }
 
   /**
@@ -59,7 +61,7 @@ public final class Signature {
    */
   public static Signature fromBytesCompressed(Bytes bytes) {
     checkArgument(bytes.size() == 96, "Expected 96 bytes of input but got %s", bytes.size());
-    return new Signature(G2Point.fromBytesCompressed(bytes));
+    return new Signature(bytes);
   }
 
   /**
@@ -87,7 +89,10 @@ public final class Signature {
     return sigAndPubKey.signature();
   }
 
-  private final G2Point point;
+  // Sometimes we are dealing with random, invalid signature points, e.g. when testing.
+  // Let's only interpret the raw data into a point when necessary to do so.
+  private final Bytes rawData;
+  private final Supplier<G2Point> point;
 
   /**
    * Construct signature from a given G2 point
@@ -95,7 +100,13 @@ public final class Signature {
    * @param point the G2 point corresponding to the signature
    */
   Signature(G2Point point) {
-    this.point = point;
+    this.rawData = point.toBytes();
+    this.point = () -> point;
+  }
+
+  Signature(Bytes rawData) {
+    this.rawData = rawData;
+    this.point = Suppliers.memoize(() -> parseSignatureBytes(this.rawData));
   }
 
   /**
@@ -104,7 +115,18 @@ public final class Signature {
    * @param signature the signature to be copied
    */
   Signature(Signature signature) {
+    this.rawData = signature.rawData;
     this.point = signature.point;
+  }
+
+  private G2Point parseSignatureBytes(Bytes signatureBytes) {
+    if (signatureBytes.size() == 96) {
+      return G2Point.fromBytesCompressed(signatureBytes);
+    } else if (signatureBytes.size() == 192) {
+      return G2Point.fromBytes(signatureBytes);
+    }
+    throw new RuntimeException(
+        "Expected either 96 or 192 bytes for signature, but found " + signatureBytes.size());
   }
 
   /**
@@ -114,7 +136,7 @@ public final class Signature {
    * @return a new signature as combination of both signatures
    */
   public Signature combine(Signature signature) {
-    return new Signature(point.add(signature.point));
+    return new Signature(point.get().add(signature.point.get()));
   }
 
   /**
@@ -123,7 +145,7 @@ public final class Signature {
    * @return byte array representation of the signature, not null
    */
   public Bytes toBytes() {
-    return point.toBytes();
+    return (rawData.size() == 192) ? rawData : point.get().toBytes();
   }
 
   /**
@@ -132,7 +154,7 @@ public final class Signature {
    * @return byte array representation of the signature, not null
    */
   public Bytes toBytesCompressed() {
-    return point.toBytesCompressed();
+    return (rawData.size() == 96) ? rawData : point.get().toBytes();
   }
 
   @Override
@@ -147,7 +169,7 @@ public final class Signature {
 
   @VisibleForTesting
   public G2Point g2Point() {
-    return point;
+    return point.get();
   }
 
   @Override
@@ -162,6 +184,9 @@ public final class Signature {
       return false;
     }
     Signature other = (Signature) obj;
-    return point.equals(other.point);
+    if (rawData.size() == other.rawData.size() && rawData.equals(other.rawData)) {
+      return true;
+    }
+    return point.get().equals(other.point.get());
   }
 }

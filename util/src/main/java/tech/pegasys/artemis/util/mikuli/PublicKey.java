@@ -13,8 +13,12 @@
 
 package tech.pegasys.artemis.util.mikuli;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
+import com.google.common.base.Suppliers;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Supplier;
 import org.apache.tuweni.bytes.Bytes;
 
 /** This class represents a BLS12-381 public key. */
@@ -59,7 +63,7 @@ public final class PublicKey {
    * @return a valid public key
    */
   public static PublicKey fromBytesCompressed(byte[] bytes) {
-    return fromBytesCompressed(Bytes.wrap(bytes));
+    return PublicKey.fromBytesCompressed(Bytes.wrap(bytes));
   }
 
   /**
@@ -69,22 +73,42 @@ public final class PublicKey {
    * @return a valid public key
    */
   public static PublicKey fromBytesCompressed(Bytes bytes) {
-    G1Point point = G1Point.fromBytesCompressed(bytes);
-    return new PublicKey(point);
+    checkArgument(bytes.size() == 48, "Expected 48 bytes of input but got %s", bytes.size());
+    return new PublicKey(bytes);
   }
 
-  private final G1Point point;
+  // Sometimes we are dealing with random, invalid signature points, e.g. when testing.
+  // Let's only interpret the raw data into a point when necessary to do so.
+  private final Bytes rawData;
+  private final Supplier<G1Point> point;
 
   PublicKey(G1Point point) {
-    this.point = point;
+    this.rawData = point.toBytes();
+    this.point = () -> point;
+  }
+
+  PublicKey(Bytes rawData) {
+    this.rawData = rawData;
+    this.point = Suppliers.memoize(() -> parsePublicKeyBytes(this.rawData));
   }
 
   public PublicKey(SecretKey secretKey) {
-    this.point = KeyPair.g1Generator.mul(secretKey.getScalarValue());
+    this.rawData = KeyPair.g1Generator.mul(secretKey.getScalarValue()).toBytes();
+    this.point = Suppliers.memoize(() -> parsePublicKeyBytes(this.rawData));
+  }
+
+  private G1Point parsePublicKeyBytes(Bytes publicKeyBytes) {
+    if (publicKeyBytes.size() == 48) {
+      return G1Point.fromBytesCompressed(publicKeyBytes);
+    } else if (publicKeyBytes.size() == 49) {
+      return G1Point.fromBytes(publicKeyBytes);
+    }
+    throw new RuntimeException(
+        "Expected either 48 or 49 bytes for public key, but found " + publicKeyBytes.size());
   }
 
   PublicKey combine(PublicKey pk) {
-    return new PublicKey(point.add(pk.point));
+    return new PublicKey(point.get().add(pk.point.get()));
   }
 
   /**
@@ -93,7 +117,7 @@ public final class PublicKey {
    * @return byte array representation of the public key
    */
   public byte[] toByteArray() {
-    return point.toBytes().toArrayUnsafe();
+    return ((rawData.size() == 96) ? rawData : point.get().toBytes()).toArrayUnsafe();
   }
 
   /**
@@ -102,11 +126,11 @@ public final class PublicKey {
    * @return byte array representation of the public key
    */
   public Bytes toBytesCompressed() {
-    return point.toBytesCompressed();
+    return (rawData.size() == 48) ? rawData : point.get().toBytesCompressed();
   }
 
   public G1Point g1Point() {
-    return point;
+    return point.get();
   }
 
   @Override
@@ -131,6 +155,9 @@ public final class PublicKey {
       return false;
     }
     PublicKey other = (PublicKey) obj;
-    return point.equals(other.point);
+    if (rawData.size() == other.rawData.size() && rawData.equals(other.rawData)) {
+      return true;
+    }
+    return point.get().equals(other.point.get());
   }
 }
