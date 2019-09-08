@@ -135,7 +135,7 @@ public class ChainStorageClient implements ChainStorage {
    * @return
    */
   public Bytes32 getFinalizedBlockRoot() {
-    return this.store.getFinalized_checkpoint().getRoot();
+    return this.store.getFinalizedCheckpoint().getRoot();
   }
 
   /**
@@ -144,7 +144,7 @@ public class ChainStorageClient implements ChainStorage {
    * @return
    */
   public UnsignedLong getFinalizedEpoch() {
-    return this.store.getFinalized_checkpoint().getEpoch();
+    return this.store.getFinalizedCheckpoint().getEpoch();
   }
 
   // UNPROCESSED ITEM METHODS:
