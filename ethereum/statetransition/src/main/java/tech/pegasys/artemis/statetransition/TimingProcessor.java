@@ -28,6 +28,7 @@ import tech.pegasys.artemis.service.serviceutils.ServiceConfig;
 import tech.pegasys.artemis.statetransition.events.GenesisEvent;
 import tech.pegasys.artemis.statetransition.events.ValidatorAssignmentEvent;
 import tech.pegasys.artemis.storage.ChainStorageClient;
+import tech.pegasys.artemis.storage.Store.Transaction;
 import tech.pegasys.artemis.storage.events.DBStoreValidEvent;
 import tech.pegasys.artemis.storage.events.SlotEvent;
 import tech.pegasys.artemis.util.alogger.ALogger;
@@ -71,7 +72,9 @@ public class TimingProcessor {
     try {
       final UnsignedLong currentTime = UnsignedLong.valueOf(date.getTime() / 1000);
       if (chainStorageClient.getStore() != null) {
-        on_tick(chainStorageClient.getStore(), currentTime);
+        final Transaction transaction = chainStorageClient.getStore().startTransaction();
+        on_tick(transaction, currentTime);
+        transaction.commit();
         if (chainStorageClient
                 .getStore()
                 .getTime()
