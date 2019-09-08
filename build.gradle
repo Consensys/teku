@@ -19,12 +19,16 @@ defaultTasks 'build','checkLicenses'
 def buildAliases = [
   'dev': [
     'spotlessApply',
+    'buildMothra',
+    'distMothra',
     'build',
     'checkLicenses',
     'javadoc'],
   'mash': [ 
     'clean',
     'spotlessApply',
+    'buildMothra',
+    'distMothra',
     'build',
     'test']
   ]
@@ -89,6 +93,7 @@ allprojects {
         //Excluding tech.pegasys.artemis.datastructures due to preferred formatting overwritten by plugin in getConstantsAsString.
         exclude '**/src/main/java/tech/pegasys/artemis/Constants.java'
         exclude '**/proto'
+        exclude '**/mothra'
       }
       
 
@@ -185,6 +190,17 @@ allprojects {
     options.encoding = 'UTF-8'
   }
 }
+
+task buildMothra(type:Exec) {
+  workingDir 'mothra'
+  commandLine 'make','java'
+}
+
+task distMothra(type:Exec) {
+  workingDir 'scripts'
+  commandLine 'sh', 'mothra-dist.sh'
+}
+
 
 task deploy() {}
 

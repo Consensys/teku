@@ -84,16 +84,6 @@ public final class MothraP2PNetwork implements P2PNetwork {
     mothra.DiscoveryMessage = this.handler::handleDiscoveryMessage;
     mothra.ReceivedGossipMessage = this.handler::handleGossipMessage;
     mothra.ReceivedRPCMessage = this.handler::handleRPCMessage;
-    if (this.discovery.equals("discv5")) {
-      // TODO - issue #827:
-      //      Once i have a reliable way to be notified when
-      //      libp2p peers are found then this can be removed
-      try {
-        Thread.sleep(15000);
-      } catch (InterruptedException e) {
-        STDOUT.log(Level.ERROR, e.getMessage());
-      }
-    }
     this.args = processArgs();
     if (started.compareAndSet(false, true)) {
       mothra.Start(args);
