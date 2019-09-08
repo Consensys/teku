@@ -14,6 +14,7 @@
 package tech.pegasys.artemis.storage;
 
 import static tech.pegasys.artemis.datastructures.Constants.GENESIS_EPOCH;
+import static tech.pegasys.artemis.datastructures.Constants.SECONDS_PER_SLOT;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
@@ -68,8 +69,11 @@ public class FixedStateChainStorageServer implements ChainStorage {
     final BeaconStateWithCache initialBeaconState = loadBeaconState(beaconStateData);
 
     final Store initialStore = get_genesis_store(initialBeaconState);
-    final UnsignedLong nodeSlot = initialBeaconState.getSlot().plus(UnsignedLong.ONE);
-    return new DBStoreValidEvent(initialStore, nodeSlot, initialBeaconState.getGenesis_time());
+    UnsignedLong genesisTime = initialBeaconState.getGenesis_time();
+    UnsignedLong currentTime = UnsignedLong.valueOf(System.currentTimeMillis() / 1000);
+    UnsignedLong deltaTime = currentTime.minus(genesisTime);
+    UnsignedLong currentSlot = deltaTime.dividedBy(UnsignedLong.valueOf(SECONDS_PER_SLOT));
+    return new DBStoreValidEvent(initialStore, currentSlot, genesisTime);
   }
 
   public static Store get_genesis_store(BeaconStateWithCache genesis_state) {

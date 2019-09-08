@@ -19,13 +19,13 @@
 #
 # Static Peering
 # Run Artemis in interop mode:
-#   sh interop.sh artemis true 16 0 8 /ip4/127.0.0.1/tcp/19001
+#   sh interop.sh artemis true 16 0 0 /ip4/127.0.0.1/tcp/19001 genesis.ssz
 #
 # Run Lighthouse node:
-#   sh interop.sh lighthouse-node true 16 /ip4/127.0.0.1/tcp/19000
+#   sh interop.sh lighthouse-node true 16 0 16 /ip4/127.0.0.1/tcp/19000 genesis.ssz
 #
 # Run Lighthouse validator:
-#   sh interop.sh lighthouse-validator true 16 8 8
+#   sh interop.sh lighthouse-validator true 16 0 16
 
 
 CLIENT=$1
@@ -34,13 +34,16 @@ VALIDATOR_COUNT=$3
 OWNED_VALIDATOR_START_INDEX=$4
 OWNED_VALIDATOR_COUNT=$5
 PEERS=$6
+GENESIS_FILE=$7
+
 
 BOOTNODE_ENR=$(cat ~/.mothra/network/enr.dat)
 
 ## NOTE:  LIGHTHOUSE can't set a genesis time in the future so this constant
 ##        will start them out on a high block number.  We need a better way to sync
 ##        genesis times so we both start at slot 0.
-GENESIS_TIME=1567885567 #$((`date +%s`))
+GENESIS_TIME=1567777777 #$((`date +%s`))
+
 
 if [ "$CLIENT" == "artemis" ]
 then
@@ -68,7 +71,6 @@ then
         sh configurator.sh "$CONFIG_DIR/runConfig.0.toml" genesisTime $GENESIS_TIME
         sh configurator.sh "$CONFIG_DIR/runConfig.0.toml" ownedValidatorStartIndex $OWNED_VALIDATOR_START_INDEX
         sh configurator.sh "$CONFIG_DIR/runConfig.0.toml" ownedValidatorCount $OWNED_VALIDATOR_COUNT
-
     fi
 
     if [ "$PEERS" != "" ]
@@ -77,6 +79,12 @@ then
          PEERS=$(echo [\"$PEERS\"] )
          sh configurator.sh "$CONFIG_DIR/runConfig.0.toml" peers $PEERS
          sh configurator.sh "$CONFIG_DIR/runConfig.0.toml" discovery "\"static\""
+         sh configurator.sh "$CONFIG_DIR/runConfig.0.toml" isBootnode false
+    fi
+
+    if [ "$GENESIS_FILE" != "" ]
+    then
+        sh configurator.sh "$CONFIG_DIR/runConfig.0.toml" startState \"\\/tmp\\/$GENESIS_FILE\"
     fi
 
     cd $SCRIPT_DIR/demo/node_0/ && ./artemis --config=$CONFIG_DIR/runConfig.0.toml --logging=INFO
@@ -91,10 +99,16 @@ then
     # export RUST_LOG=libp2p_gossipsub=debug
 
     rm -rf ~/.lighthouse
+
     if [ "$PEERS" != "" ]
     then
-        cd $DIR && ./beacon_node --libp2p-addresses $PEERS --listen-address $LISTEN_ADDRESS --port $PORT testnet -r quick $VALIDATOR_COUNT $GENESIS_TIME
 
+        if [ "$GENESIS_FILE" != "" ]
+        then
+            cd $DIR && ./beacon_node --libp2p-addresses $PEERS --listen-address $LISTEN_ADDRESS --port $PORT testnet -f file ssz /tmp/$GENESIS_FILE
+        else
+            cd $DIR && ./beacon_node --libp2p-addresses $PEERS --listen-address $LISTEN_ADDRESS --port $PORT testnet -r quick $VALIDATOR_COUNT $GENESIS_TIME
+        fi
     else
         cd $DIR && ./beacon_node --boot-nodes $BOOTNODE_ENR --listen-address $LISTEN_ADDRESS --port $PORT testnet -r quick $VALIDATOR_COUNT $GENESIS_TIME
     fi
@@ -109,4 +123,3 @@ then
     export DIR=$HOME/projects/consensys/pegasys/lighthouse/lighthouse/target/release
     cd $DIR  && ./validator_client testnet -b insecure $OWNED_VALIDATOR_START_INDEX $OWNED_VALIDATOR_COUNT
 fi
-
