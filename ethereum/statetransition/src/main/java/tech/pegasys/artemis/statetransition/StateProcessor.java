@@ -46,6 +46,7 @@ import tech.pegasys.artemis.statetransition.util.EpochProcessingException;
 import tech.pegasys.artemis.statetransition.util.SlotProcessingException;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.Store;
+import tech.pegasys.artemis.storage.events.NodeDataLoadedEvent;
 import tech.pegasys.artemis.storage.events.NodeStartEvent;
 import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
@@ -102,6 +103,7 @@ public class StateProcessor {
       chainStorageClient.setStore(store);
       UnsignedLong genesisTime = initialState.getGenesis_time();
       chainStorageClient.setGenesisTime(genesisTime);
+      this.eventBus.post(new NodeDataLoadedEvent());
     }
     Bytes32 genesisBlockRoot = get_head(store);
     STDOUT.log(Level.INFO, "Initial state root is " + initialState.hash_tree_root().toHexString());
