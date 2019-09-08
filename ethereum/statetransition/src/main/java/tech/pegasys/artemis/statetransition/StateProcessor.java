@@ -161,7 +161,9 @@ public class StateProcessor {
   @Subscribe
   private void onBlock(BeaconBlock block) {
     try {
-      on_block(chainStorageClient.getStore(), block, stateTransition);
+      Store.Transaction transaction = chainStorageClient.getStore().startTransaction();
+      on_block(transaction, block, stateTransition);
+      transaction.commit();
       // Add attestations that were processed in the block to processed attestations storage
       block
           .getBody()
@@ -175,7 +177,9 @@ public class StateProcessor {
   @Subscribe
   private void onAttestation(Attestation attestation) {
     try {
-      on_attestation(chainStorageClient.getStore(), attestation, stateTransition);
+      final Store.Transaction transaction = chainStorageClient.getStore().startTransaction();
+      on_attestation(transaction, attestation, stateTransition);
+      transaction.commit();
     } catch (SlotProcessingException | EpochProcessingException e) {
       STDOUT.log(Level.WARN, "Exception in onAttestation: " + e.toString());
     }

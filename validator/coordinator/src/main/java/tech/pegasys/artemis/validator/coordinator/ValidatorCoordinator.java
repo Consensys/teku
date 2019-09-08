@@ -199,8 +199,8 @@ public class ValidatorCoordinator {
       throws IllegalArgumentException {
     Store store = chainStorageClient.getStore();
     Bytes32 headBlockRoot = get_head(store);
-    BeaconBlock headBlock = store.getBlocks().get(headBlockRoot);
-    BeaconState headState = store.getBlock_states().get(headBlockRoot);
+    BeaconBlock headBlock = store.getBlock(headBlockRoot);
+    BeaconState headState = store.getBlockState(headBlockRoot);
     chainStorageClient.updateBestBlock(headBlockRoot, headBlock.getSlot());
 
     // Logging
@@ -209,14 +209,10 @@ public class ValidatorCoordinator {
         "Head block slot:" + "                       " + headBlock.getSlot().longValue());
     STDOUT.log(
         Level.INFO,
-        "Justified epoch:"
-            + "                       "
-            + store.getJustified_checkpoint().getEpoch());
+        "Justified epoch:" + "                       " + store.getJustifiedCheckpoint().getEpoch());
     STDOUT.log(
         Level.INFO,
-        "Finalized epoch:"
-            + "                       "
-            + store.getFinalized_checkpoint().getEpoch());
+        "Finalized epoch:" + "                       " + store.getFinalizedCheckpoint().getEpoch());
 
     try {
 
