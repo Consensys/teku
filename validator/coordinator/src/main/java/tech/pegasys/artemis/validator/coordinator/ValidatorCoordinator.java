@@ -67,12 +67,12 @@ import tech.pegasys.artemis.proto.messagesigner.SignatureResponse;
 import tech.pegasys.artemis.service.serviceutils.ServiceConfig;
 import tech.pegasys.artemis.statetransition.StateTransition;
 import tech.pegasys.artemis.statetransition.StateTransitionException;
-import tech.pegasys.artemis.statetransition.events.GenesisEvent;
 import tech.pegasys.artemis.statetransition.events.ValidatorAssignmentEvent;
 import tech.pegasys.artemis.statetransition.util.EpochProcessingException;
 import tech.pegasys.artemis.statetransition.util.SlotProcessingException;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.Store;
+import tech.pegasys.artemis.storage.events.NodeDataLoadedEvent;
 import tech.pegasys.artemis.storage.events.SlotEvent;
 import tech.pegasys.artemis.util.SSZTypes.Bitlist;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
@@ -180,11 +180,10 @@ public class ValidatorCoordinator {
   }
 
   @Subscribe
-  public void onGenesisEvent(GenesisEvent genesisEvent) {
+  public void onNodeReadyEvent(NodeDataLoadedEvent event) {
     final Store store = chainStorageClient.getStore();
     final Bytes32 head = get_head(store);
     final BeaconState genesisState = store.getBlockState(head);
-
     // Get validator indices of our own validators
     List<Validator> validatorRegistry = genesisState.getValidators();
     IntStream.range(0, validatorRegistry.size())
