@@ -67,6 +67,13 @@ class StoreTest {
     assertEquals(INITIAL_FINALIZED_CHECKPOINT, store.getFinalizedCheckpoint());
     assertEquals(INITIAL_JUSTIFIED_CHECKPOINT, store.getJustifiedCheckpoint());
 
+    assertEquals(block, transaction.getBlock(blockRoot));
+    assertEquals(state, transaction.getBlockState(blockRoot));
+    assertEquals(finalizedCheckpoint, transaction.getFinalizedCheckpoint());
+    assertEquals(justifiedCheckpoint, transaction.getJustifiedCheckpoint());
+    assertEquals(state, transaction.getCheckpointState(justifiedCheckpoint));
+    assertEquals(time, transaction.getTime());
+
     transaction.commit();
 
     assertEquals(block, store.getBlock(blockRoot));
