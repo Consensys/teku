@@ -34,7 +34,7 @@ import org.apache.tuweni.config.SchemaBuilder;
 import org.apache.tuweni.crypto.SECP256K1;
 
 /** Configuration of an instance of Artemis. */
-public final class ArtemisConfiguration {
+public class ArtemisConfiguration {
 
   @SuppressWarnings({"DoubleBraceInitialization"})
   static final Schema createSchema() {
