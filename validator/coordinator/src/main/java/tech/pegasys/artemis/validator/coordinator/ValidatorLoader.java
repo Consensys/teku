@@ -36,17 +36,18 @@ public class ValidatorLoader {
 
     long numNaughtyValidators = Math.round((naughtinessPercentage * numValidators) / 100.0);
     ValidatorKeyProvider keyProvider;
-    if (interopActive) {
-      keyProvider = new MockStartValidatorKeyProvider(config);
+    if (config.getValidatorsKeyFile() != null) {
+      keyProvider = new YamlValidatorKeyProvider();
+    } else if (interopActive) {
+      keyProvider = new MockStartValidatorKeyProvider();
     } else {
       keyProvider = new RandomValidatorKeyProvider();
     }
     final List<BLSKeyPair> keypairs = keyProvider.loadValidatorKeys(config);
     final Map<BLSPublicKey, ValidatorInfo> validators = new HashMap<>();
 
-    int our_index = 0;
-    for (int i = 0; i <= keypairs.size(); i++) {
-      BLSKeyPair keypair = keypairs.get(our_index);
+    for (int i = 0; i < keypairs.size(); i++) {
+      BLSKeyPair keypair = keypairs.get(i);
       int port = Constants.VALIDATOR_CLIENT_PORT_BASE + i;
       new ValidatorClient(keypair, port);
       ManagedChannel channel =
@@ -55,7 +56,6 @@ public class ValidatorLoader {
 
       validators.put(keypair.getPublicKey(), new ValidatorInfo(numNaughtyValidators > 0, channel));
       numNaughtyValidators--;
-      our_index++;
     }
     return validators;
   }

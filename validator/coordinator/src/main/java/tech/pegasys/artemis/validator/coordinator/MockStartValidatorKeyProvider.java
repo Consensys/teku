@@ -24,14 +24,8 @@ import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 class MockStartValidatorKeyProvider implements ValidatorKeyProvider {
   private static final ALogger STDOUT = new ALogger("stdout");
 
-  private final ArtemisConfiguration config;
-
-  public MockStartValidatorKeyProvider(final ArtemisConfiguration config) {
-    this.config = config;
-  }
-
   @Override
-  public List<BLSKeyPair> loadValidatorKeys(final ArtemisConfiguration configuration) {
+  public List<BLSKeyPair> loadValidatorKeys(final ArtemisConfiguration config) {
     final int startIndex = config.getInteropOwnedValidatorStartIndex();
     final int endIndex = startIndex + config.getInteropOwnedValidatorCount() - 1;
     STDOUT.log(Level.INFO, "Owning validator range " + startIndex + " to " + endIndex, Color.GREEN);

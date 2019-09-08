@@ -8,6 +8,8 @@ dependencies {
   implementation project(':util')
   implementation project(':pow')
 
+
+  compile 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
   implementation 'org.apache.commons:commons-lang3:3.6'
   implementation 'org.apache.tuweni:tuweni-kv'
   implementation 'org.apache.tuweni:tuweni-bytes'
