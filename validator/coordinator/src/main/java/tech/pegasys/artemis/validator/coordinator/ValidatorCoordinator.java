@@ -27,26 +27,21 @@ import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.google.common.primitives.UnsignedLong;
 import com.google.protobuf.ByteString;
-import io.grpc.ManagedChannel;
-import io.grpc.ManagedChannelBuilder;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.stream.IntStream;
-import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.MutableTriple;
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.crypto.SECP256K1;
 import org.apache.tuweni.ssz.SSZ;
-import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
@@ -60,7 +55,6 @@ import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.datastructures.util.AttestationUtil;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
-import tech.pegasys.artemis.datastructures.util.MockStartValidatorKeyPairFactory;
 import tech.pegasys.artemis.proto.messagesigner.MessageSignerGrpc;
 import tech.pegasys.artemis.proto.messagesigner.SignatureRequest;
 import tech.pegasys.artemis.proto.messagesigner.SignatureResponse;
@@ -77,53 +71,38 @@ import tech.pegasys.artemis.storage.events.SlotEvent;
 import tech.pegasys.artemis.util.SSZTypes.Bitlist;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.alogger.ALogger;
-import tech.pegasys.artemis.util.alogger.ALogger.Color;
-import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
-import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
-import tech.pegasys.artemis.validator.client.ValidatorClient;
 import tech.pegasys.artemis.validator.client.ValidatorClientUtil;
 
 /** This class coordinates the activity between the validator clients and the the beacon chain */
 public class ValidatorCoordinator {
-  private static final ALogger LOG = new ALogger(ValidatorCoordinator.class.getName());
   private static final ALogger STDOUT = new ALogger("stdout");
   private final EventBus eventBus;
+  private final Map<BLSPublicKey, ValidatorInfo> validators;
   private StateTransition stateTransition;
-  private final Boolean printEnabled = false;
-  private SECP256K1.SecretKey nodeIdentity;
   private BeaconState headState;
   private int numValidators;
-  private int numNodes;
   private BeaconBlock validatorBlock;
   private SSZList<Deposit> newDeposits = new SSZList<>(Deposit.class, MAX_DEPOSITS);
-  private final HashMap<BLSPublicKey, MutableTriple<BLSKeyPair, Boolean, Integer>> validatorSet =
-      new HashMap<>();
   private ChainStorageClient chainStorageClient;
-  private HashMap<BLSPublicKey, ManagedChannel> validatorClientChannels = new HashMap<>();
   private HashMap<UnsignedLong, List<Triple<List<Integer>, UnsignedLong, Integer>>>
       committeeAssignments = new HashMap<>();
   private LinkedBlockingQueue<ProposerSlashing> slashings = new LinkedBlockingQueue<>();
-  private int naughtinessPercentage;
   private boolean interopActive;
 
   public ValidatorCoordinator(ServiceConfig config, ChainStorageClient store) {
     this.eventBus = config.getEventBus();
     this.eventBus.register(this);
-    this.nodeIdentity =
-        SECP256K1.SecretKey.fromBytes(Bytes32.fromHexString(config.getConfig().getIdentity()));
-    this.naughtinessPercentage = config.getConfig().getNaughtinessPercentage();
-    this.numNodes = config.getConfig().getNumNodes();
     this.numValidators = config.getConfig().getNumValidators();
     this.chainStorageClient = store;
     this.interopActive = config.getConfig().getInteropActive();
 
-    stateTransition = new StateTransition(printEnabled);
+    stateTransition = new StateTransition(false);
 
-    initializeValidators2(config.getConfig());
+    validators = new ValidatorLoader().initializeValidators(config.getConfig());
   }
 
   /*
@@ -188,8 +167,8 @@ public class ValidatorCoordinator {
     IntStream.range(0, validatorRegistry.size())
         .forEach(
             i -> {
-              if (validatorSet.keySet().contains(validatorRegistry.get(i).getPubkey())) {
-                validatorSet.get(validatorRegistry.get(i).getPubkey()).setRight(i);
+              if (validators.containsKey(validatorRegistry.get(i).getPubkey())) {
+                validators.get(validatorRegistry.get(i).getPubkey()).setValidatorIndex(i);
               }
             });
   }
@@ -222,27 +201,23 @@ public class ValidatorCoordinator {
 
       if (headState.getSlot().mod(UnsignedLong.valueOf(SLOTS_PER_EPOCH)).equals(UnsignedLong.ZERO)
           || headState.getSlot().equals(UnsignedLong.valueOf(GENESIS_SLOT))) {
-        validatorSet.forEach(
+        validators.forEach(
             (pubKey, validatorInformation) -> {
               Optional<Triple<List<Integer>, UnsignedLong, UnsignedLong>> committeeAssignment =
                   ValidatorClientUtil.get_committee_assignment(
                       headState,
                       compute_epoch_of_slot(headState.getSlot()),
-                      validatorInformation.getRight());
+                      validatorInformation.getValidatorIndex());
               committeeAssignment.ifPresent(
                   assignment -> {
                     UnsignedLong slot = assignment.getRight();
                     List<Triple<List<Integer>, UnsignedLong, Integer>> assignmentsInSlot =
-                        committeeAssignments.get(slot);
-                    if (assignmentsInSlot == null) {
-                      assignmentsInSlot = new ArrayList<>();
-                      committeeAssignments.put(slot, assignmentsInSlot);
-                    }
+                        committeeAssignments.computeIfAbsent(slot, k -> new ArrayList<>());
                     assignmentsInSlot.add(
                         new MutableTriple<>(
                             assignment.getLeft(),
                             assignment.getMiddle(),
-                            validatorInformation.getRight()));
+                            validatorInformation.getValidatorIndex()));
                   });
             });
       }
@@ -373,45 +348,6 @@ public class ValidatorCoordinator {
     return newBlock;
   }
 
-  @SuppressWarnings({"rawtypes"})
-  private void initializeValidators2(ArtemisConfiguration config) {
-    Pair<Integer, Integer> startAndEnd = getStartAndEnd();
-    int startIndex = startAndEnd.getLeft();
-    int endIndex = startAndEnd.getRight();
-    long numNaughtyValidators = Math.round((naughtinessPercentage * numValidators) / 100.0);
-    List<BLSKeyPair> keypairs = new ArrayList<>();
-    if (interopActive) {
-      startIndex = config.getInteropOwnedValidatorStartIndex();
-      // - 1 because endIndex is inclusive
-      endIndex = startIndex + config.getInteropOwnedValidatorCount() - 1;
-      STDOUT.log(
-          Level.INFO, "Owning validator range " + startIndex + " to " + endIndex, Color.GREEN);
-      keypairs = new MockStartValidatorKeyPairFactory().generateKeyPairs(startIndex, endIndex);
-    } else {
-      for (int i = startIndex; i <= endIndex; i++) {
-        BLSKeyPair keypair = BLSKeyPair.random(i);
-        keypairs.add(keypair);
-      }
-    }
-    int our_index = 0;
-    for (int i = startIndex; i <= endIndex; i++) {
-      BLSKeyPair keypair = keypairs.get(our_index);
-      int port = Constants.VALIDATOR_CLIENT_PORT_BASE + i;
-      new ValidatorClient(keypair, port);
-      ManagedChannel channel =
-          ManagedChannelBuilder.forAddress("localhost", port).usePlaintext().build();
-      validatorClientChannels.put(keypair.getPublicKey(), channel);
-      STDOUT.log(Level.DEBUG, "i = " + i + ": " + keypair.getPublicKey().toString());
-      if (numNaughtyValidators > 0) {
-        validatorSet.put(keypair.getPublicKey(), new MutableTriple<>(keypair, true, -1));
-      } else {
-        validatorSet.put(keypair.getPublicKey(), new MutableTriple<>(keypair, false, -1));
-      }
-      numNaughtyValidators--;
-      our_index++;
-    }
-  }
-
   private void createBlockIfNecessary(BeaconStateWithCache state, BeaconBlock oldBlock) {
     BeaconStateWithCache checkState = BeaconStateWithCache.deepCopy(state);
     try {
@@ -426,7 +362,7 @@ public class ValidatorCoordinator {
     BLSPublicKey proposer = checkState.getValidators().get(proposerIndex).getPubkey();
 
     BeaconStateWithCache newState = BeaconStateWithCache.deepCopy(state);
-    if (validatorSet.containsKey(proposer)) {
+    if (validators.containsKey(proposer)) {
       CompletableFuture<BLSSignature> epochSignatureTask =
           CompletableFuture.supplyAsync(() -> get_epoch_signature(newState, proposer));
       CompletableFuture<BeaconBlock> blockCreationTask =
@@ -453,8 +389,7 @@ public class ValidatorCoordinator {
         newBlock.setSignature(blockSignature);
         validatorBlock = newBlock;
 
-        // If validator set object's right variable is set to true, then the validator is naughty
-        if (validatorSet.get(proposer).getMiddle()) {
+        if (validators.get(proposer).isNaughty()) {
           BeaconStateWithCache naughtyState = BeaconStateWithCache.deepCopy(state);
           BeaconBlock newestBlock = createInitialBlock(naughtyState, oldBlock);
           BLSSignature eSignature = epochSignatureTask.get();
@@ -483,24 +418,7 @@ public class ValidatorCoordinator {
 
     SignatureResponse response;
     response =
-        MessageSignerGrpc.newBlockingStub(validatorClientChannels.get(signer)).signMessage(request);
+        MessageSignerGrpc.newBlockingStub(validators.get(signer).getChannel()).signMessage(request);
     return BLSSignature.fromBytes(Bytes.wrap(response.getMessage().toByteArray()));
-  }
-
-  private Pair<Integer, Integer> getStartAndEnd() {
-    // Add all validators to validatorSet hashMap
-    int nodeCounter = UInt256.fromBytes(nodeIdentity.bytes()).mod(numNodes).intValue();
-
-    int startIndex = nodeCounter * (numValidators / numNodes);
-    int endIndex =
-        startIndex
-            + (numValidators / numNodes - 1)
-            + Math.floorDiv(nodeCounter, Math.max(1, numNodes - 1));
-    endIndex = Math.min(endIndex, numValidators - 1);
-
-    STDOUT.log(
-        Level.INFO,
-        "nodeCounter: " + nodeCounter + " startIndex: " + startIndex + " endIndex: " + endIndex);
-    return new ImmutablePair<>(startIndex, endIndex);
   }
 }
