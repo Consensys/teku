@@ -73,8 +73,7 @@ public class FixedStateChainStorageServer implements ChainStorage {
     UnsignedLong currentTime = UnsignedLong.valueOf(System.currentTimeMillis() / 1000);
     UnsignedLong deltaTime = currentTime.minus(genesisTime);
     UnsignedLong currentSlot = deltaTime.dividedBy(UnsignedLong.valueOf(SECONDS_PER_SLOT));
-    initialBeaconState.setSlot(currentSlot);
-    return new DBStoreValidEvent(initialStore, initialBeaconState.getSlot().plus(UnsignedLong.ONE));
+    return new DBStoreValidEvent(initialStore, currentSlot);
   }
 
   public static Store get_genesis_store(BeaconStateWithCache genesis_state) {

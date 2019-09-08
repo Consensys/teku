@@ -19,13 +19,13 @@
 #
 # Static Peering
 # Run Artemis in interop mode:
-#   sh interop.sh artemis true 16 0 8 /ip4/127.0.0.1/tcp/19001
+#   sh interop.sh artemis true 16 0 0 /ip4/127.0.0.1/tcp/19001 genesis.ssz
 #
 # Run Lighthouse node:
-#   sh interop.sh lighthouse-node true 16 0 16 /ip4/127.0.0.1/tcp/19000
+#   sh interop.sh lighthouse-node true 16 0 16 /ip4/127.0.0.1/tcp/19000 genesis.ssz
 #
 # Run Lighthouse validator:
-#   sh interop.sh lighthouse-validator true 16 8 8
+#   sh interop.sh lighthouse-validator true 16 0 16
 
 
 CLIENT=$1
