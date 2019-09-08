@@ -405,6 +405,10 @@ task distDockerWhiteblock(type: Exec) {
       from fileTree("${projectDir}/scripts/")
       into("${workingDir}/scripts")
     }
+    copy {
+      from fileTree("${projectDir}/config/")
+      into("${workingDir}/config")
+    }
   }
 
   executable "sh"
