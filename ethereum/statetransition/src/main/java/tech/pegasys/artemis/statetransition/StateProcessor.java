@@ -85,11 +85,12 @@ public class StateProcessor {
     this.chainStorageClient = chainStorageClient;
     this.eventBus.register(this);
 
-    if (this.config.getDepositMode().equals(Constants.DEPOSIT_TEST)) {
+    if (this.config.getDepositMode().equals(Constants.DEPOSIT_TEST)
+        && (!this.config.getInteropActive() || this.config.getInteropStartState() == null)) {
       initialState = DataStructureUtil.createInitialBeaconState(this.config);
       setSimulationGenesisTime(initialState);
-      this.eventBus.post(new NodeStartEvent(initialState));
     }
+    this.eventBus.post(new NodeStartEvent(initialState));
   }
 
   @Subscribe
