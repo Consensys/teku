@@ -17,7 +17,6 @@ import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
-import tech.pegasys.artemis.data.TimeSeriesRecord;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.networking.p2p.api.P2PNetwork;
 import tech.pegasys.artemis.util.alogger.ALogger;
@@ -25,21 +24,18 @@ import tech.pegasys.artemis.util.alogger.ALogger;
 public class MockP2PNetwork implements P2PNetwork {
 
   private final EventBus eventBus;
-  private TimeSeriesRecord chainData;
   private static final ALogger LOG = new ALogger(MockP2PNetwork.class.getName());
   private boolean printEnabled = false;
 
   public MockP2PNetwork(EventBus eventBus) {
     this.eventBus = eventBus;
     this.eventBus.register(this);
-    this.chainData = new TimeSeriesRecord();
   }
 
   public MockP2PNetwork(EventBus eventBus, boolean printEnabled) {
     this.eventBus = eventBus;
     this.eventBus.register(this);
     this.printEnabled = printEnabled;
-    this.chainData = new TimeSeriesRecord();
   }
 
   @Override
