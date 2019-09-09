@@ -23,15 +23,14 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Objects;
+import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.junit.BouncyCastleExtension;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import picocli.CommandLine;
 import tech.pegasys.artemis.networking.p2p.api.P2PNetwork;
 import tech.pegasys.artemis.networking.p2p.hobbits.Peer;
-import tech.pegasys.artemis.util.cli.CommandLineArguments;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 
 @ExtendWith(BouncyCastleExtension.class)
@@ -42,10 +41,6 @@ class BeaconNodeIntegrationTest {
   @Disabled
   @Test
   void testTwoNodes() throws InterruptedException, JsonProcessingException, IOException {
-    CommandLineArguments cliArgs = new CommandLineArguments();
-    CommandLine commandLine = new CommandLine(cliArgs);
-    //    commandLine.parse("");
-
     // Read all lines from a file
     String content = "";
     content =
@@ -75,8 +70,8 @@ class BeaconNodeIntegrationTest {
     ArtemisConfiguration config1 = ArtemisConfiguration.fromString(updatedConfig1);
     ArtemisConfiguration config2 = ArtemisConfiguration.fromString(updatedConfig2);
 
-    BeaconNode node1 = new BeaconNode(commandLine, cliArgs, config1);
-    BeaconNode node2 = new BeaconNode(commandLine, cliArgs, config2);
+    BeaconNode node1 = new BeaconNode(Level.INFO, config1);
+    BeaconNode node2 = new BeaconNode(Level.INFO, config2);
 
     node1.start();
     node2.start();

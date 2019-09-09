@@ -22,7 +22,7 @@ dependencyManagement {
 
     dependency 'de.undercouch:bson4jackson:2.9.2'
 
-    dependency 'info.picocli:picocli:3.8.0'
+    dependency 'info.picocli:picocli:4.0.4'
     
     dependency 'io.pkts:pkts-core:3.0.3'
 

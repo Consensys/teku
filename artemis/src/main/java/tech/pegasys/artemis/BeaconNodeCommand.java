@@ -11,14 +11,19 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.util.cli;
+package tech.pegasys.artemis;
 
+import java.util.concurrent.Callable;
 import org.apache.logging.log4j.Level;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
+import tech.pegasys.artemis.util.cli.LogTypeConverter;
+import tech.pegasys.artemis.util.cli.VersionProvider;
+import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 
 @Command(
     name = "artemis",
+    subcommands = {},
     abbreviateSynopsis = true,
     description = "Run the Artemis beacon chain client and validator",
     mixinStandardHelpOptions = true,
@@ -29,7 +34,7 @@ import picocli.CommandLine.Option;
     optionListHeading = "%nOptions:%n",
     footerHeading = "%n",
     footer = "Artemis is licensed under the Apache License 2.0")
-public class CommandLineArguments {
+public class BeaconNodeCommand implements Callable<Integer> {
 
   @Option(
       names = {"-l", "--logging"},
@@ -51,5 +56,27 @@ public class CommandLineArguments {
 
   public String getConfigFile() {
     return configFile;
+  }
+
+  @Override
+  public Integer call() {
+    try {
+      BeaconNode node =
+          new BeaconNode(getLoggingLevel(), ArtemisConfiguration.fromFile(getConfigFile()));
+      node.start();
+      // Detect SIGTERM
+      Runtime.getRuntime()
+          .addShutdownHook(
+              new Thread(
+                  () -> {
+                    System.out.println("Artemis is shutting down");
+                    node.stop();
+                  }));
+      return 0;
+    } catch (Throwable t) {
+      System.err.println("Artemis failed to start.");
+      t.printStackTrace();
+      return 1;
+    }
   }
 }
