@@ -33,8 +33,6 @@ import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.reference.TestSuite;
 import tech.pegasys.artemis.statetransition.StateTransition;
 import tech.pegasys.artemis.statetransition.StateTransitionException;
-import tech.pegasys.artemis.statetransition.util.BlockProcessingException;
-import tech.pegasys.artemis.statetransition.util.BlockProcessorUtil;
 
 @ExtendWith(BouncyCastleExtension.class)
 public class blocks extends TestSuite {
