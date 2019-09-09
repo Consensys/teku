@@ -11,14 +11,32 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.statetransition;
+package tech.pegasys.artemis.data;
 
-import com.google.common.primitives.UnsignedLong;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 
-public interface TransitionRecorder {
-  void recordPreState(UnsignedLong slot, BeaconState state);
+public class BlockProcessingRecord {
+  private final BeaconState preState;
+  private final BeaconBlock block;
+  private final BeaconState postState;
 
-  void recordPostState(UnsignedLong slot, BeaconBlock processedBlock, BeaconState state);
+  public BlockProcessingRecord(
+      final BeaconState preState, final BeaconBlock block, final BeaconState postState) {
+    this.preState = preState;
+    this.block = block;
+    this.postState = postState;
+  }
+
+  public BeaconState getPreState() {
+    return preState;
+  }
+
+  public BeaconBlock getBlock() {
+    return block;
+  }
+
+  public BeaconState getPostState() {
+    return postState;
+  }
 }

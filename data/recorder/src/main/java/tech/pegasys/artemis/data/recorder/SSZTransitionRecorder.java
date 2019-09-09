@@ -11,21 +11,21 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.statetransition;
+package tech.pegasys.artemis.data.recorder;
 
 import static tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer.serialize;
 
+import com.google.common.eventbus.Subscribe;
 import com.google.common.primitives.UnsignedLong;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import org.apache.logging.log4j.Level;
-import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
-import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.data.BlockProcessingRecord;
 import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
-public class SSZTransitionRecorder implements TransitionRecorder {
+public class SSZTransitionRecorder {
 
   private static final ALogger STDOUT = new ALogger("stdout");
   private final Path outputDirectory;
@@ -34,17 +34,12 @@ public class SSZTransitionRecorder implements TransitionRecorder {
     this.outputDirectory = mkdirs(outputDirectory);
   }
 
-  @Override
-  public void recordPreState(final UnsignedLong slot, final BeaconState state) {
-    store(slotDirectory(slot).resolve("pre.ssz"), state);
-  }
-
-  @Override
-  public void recordPostState(
-      final UnsignedLong slot, final BeaconBlock processedBlock, final BeaconState state) {
-    final Path slotDirectory = slotDirectory(slot);
-    store(slotDirectory.resolve("block.ssz"), processedBlock);
-    store(slotDirectory.resolve("post.ssz"), state);
+  @Subscribe
+  public void onBlockProcessingRecord(final BlockProcessingRecord record) {
+    final Path slotDirectory = slotDirectory(record.getBlock().getSlot());
+    store(slotDirectory.resolve("pre.ssz"), record.getPreState());
+    store(slotDirectory.resolve("block.ssz"), record.getBlock());
+    store(slotDirectory.resolve("post.ssz"), record.getPostState());
   }
 
   private void store(final Path file, SimpleOffsetSerializable data) {

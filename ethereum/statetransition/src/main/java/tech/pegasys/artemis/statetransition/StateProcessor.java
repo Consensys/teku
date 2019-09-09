@@ -27,13 +27,12 @@ import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.google.common.primitives.UnsignedLong;
 import java.io.IOException;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.Optional;
 import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.artemis.data.BlockProcessingRecord;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
@@ -57,7 +56,6 @@ import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 public class StateProcessor {
   private final EventBus eventBus;
   private final StateTransition stateTransition;
-  private final Optional<TransitionRecorder> transitionRecorder;
   private ChainStorageClient chainStorageClient;
   private ArtemisConfiguration config;
   private static final ALogger STDOUT = new ALogger("stdout");
@@ -87,9 +85,6 @@ public class StateProcessor {
     this.config = config.getConfig();
     this.stateTransition = new StateTransition(true, new EpochMetrics(config.getMetricsSystem()));
     this.chainStorageClient = chainStorageClient;
-    final String transitionRecordDir = this.config.getTransitionRecordDir();
-    this.transitionRecorder =
-        Optional.ofNullable(transitionRecordDir).map(Path::of).map(SSZTransitionRecorder::new);
     this.eventBus.register(this);
 
     if (this.config.getDepositMode().equals(Constants.DEPOSIT_TEST)
@@ -171,13 +166,14 @@ public class StateProcessor {
   private void onBlock(BeaconBlock block) {
     try {
       Store.Transaction transaction = chainStorageClient.getStore().startTransaction();
-      on_block(transaction, block, stateTransition, transitionRecorder);
+      final BlockProcessingRecord record = on_block(transaction, block, stateTransition);
       transaction.commit();
       // Add attestations that were processed in the block to processed attestations storage
       block
           .getBody()
           .getAttestations()
           .forEach(attestation -> this.chainStorageClient.addProcessedAttestation(attestation));
+      this.eventBus.post(record);
     } catch (StateTransitionException e) {
       STDOUT.log(Level.WARN, "Exception in onBlock: " + e.toString());
     }

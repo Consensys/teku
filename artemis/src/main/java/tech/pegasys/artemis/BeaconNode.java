@@ -16,18 +16,12 @@ package tech.pegasys.artemis;
 import com.google.common.eventbus.AsyncEventBus;
 import com.google.common.eventbus.EventBus;
 import io.vertx.core.Vertx;
-import java.io.IOException;
 import java.nio.file.Path;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.core.config.Configurator;
-import tech.pegasys.artemis.data.provider.CSVProvider;
-import tech.pegasys.artemis.data.provider.EventHandler;
-import tech.pegasys.artemis.data.provider.FileProvider;
-import tech.pegasys.artemis.data.provider.JSONProvider;
-import tech.pegasys.artemis.data.provider.ProviderTypes;
-import tech.pegasys.artemis.data.provider.RawRecordHandler;
+import tech.pegasys.artemis.data.recorder.SSZTransitionRecorder;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.metrics.MetricsEndpoint;
 import tech.pegasys.artemis.service.serviceutils.ServiceConfig;
@@ -52,8 +46,6 @@ public class BeaconNode {
   private final ServiceController serviceController = new ServiceController();
   private final ServiceConfig serviceConfig;
   private EventBus eventBus;
-  private FileProvider fileProvider;
-  private EventHandler eventHandler;
   private MetricsEndpoint metricsEndpoint;
 
   BeaconNode(Level loggingLevel, ArtemisConfiguration config) {
@@ -67,26 +59,9 @@ public class BeaconNode {
         new ServiceConfig(eventBus, vertx, metricsEndpoint.getMetricsSystem(), config);
     Constants.init(config);
 
-    // register a raw record handler that will transform objects to events
-    new RawRecordHandler(this.eventBus);
-
-    if (config.isOutputEnabled()) {
-      this.eventBus.register(this);
-      try {
-        Path outputFilename = FileProvider.uniqueFilename(config.getOutputFile());
-        if (ProviderTypes.compare(CSVProvider.class, config.getProviderType())) {
-          this.fileProvider = new CSVProvider(outputFilename);
-        } else if (ProviderTypes.compare(JSONProvider.class, config.getProviderType())) {
-          this.fileProvider = new JSONProvider(outputFilename);
-        } else {
-          throw new UnsupportedOperationException(
-              "Provider not supported " + config.getProviderType());
-        }
-        this.eventHandler = new EventHandler(config, fileProvider);
-        this.eventBus.register(eventHandler);
-      } catch (IOException e) {
-        LOG.log(Level.ERROR, e.getMessage());
-      }
+    final String transitionRecordDir = config.getTransitionRecordDir();
+    if (transitionRecordDir != null) {
+      eventBus.register(new SSZTransitionRecorder(Path.of(transitionRecordDir)));
     }
 
     // set log level per CLI flags
@@ -116,6 +91,5 @@ public class BeaconNode {
   public void stop() {
     serviceController.stopAll();
     metricsEndpoint.stop();
-    this.fileProvider.close();
   }
 }
