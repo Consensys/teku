@@ -47,6 +47,7 @@ import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.VoluntaryExit;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.mikuli.G2Point;
@@ -707,10 +708,10 @@ public abstract class TestSuite {
     Integer block_count = loadMetaData(metaDataSet);
 
     TestSet testSet = new TestSet(path);
-    testSet.add(new TestObject("pre.yaml", BeaconState.class, null));
-    testSet.add(new TestObject("post.yaml", BeaconState.class, null));
+    testSet.add(new TestObject("pre.ssz", BeaconState.class, null));
+    testSet.add(new TestObject("post.ssz", BeaconState.class, null));
     for (int i = 0; i < block_count; i++) {
-      testSet.add(new TestObject("blocks_" + i + ".yaml", BeaconBlock.class, null));
+      testSet.add(new TestObject("blocks_" + i + ".ssz", BeaconBlock.class, null));
     }
 
     return convertArgumentToList(
