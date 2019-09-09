@@ -43,6 +43,7 @@ nodeUrl = "http://localhost:7545"
 logPath = "."
 logFile = "artemis.log"
 outputFile = "artemis.json"
+#transitionRecordDir = "transitionData"
 providerType = "JSON"
 events = [ "TimeSeriesRecord", "Eth2Genesis", "Deposit" ]
 formatted = false

@@ -39,6 +39,7 @@ import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.statetransition.StateTransition;
 import tech.pegasys.artemis.statetransition.StateTransitionException;
+import tech.pegasys.artemis.statetransition.TransitionRecorder;
 import tech.pegasys.artemis.storage.LatestMessage;
 import tech.pegasys.artemis.storage.ReadOnlyStore;
 import tech.pegasys.artemis.storage.Store;
@@ -177,7 +178,8 @@ public class ForkChoiceUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.1/specs/core/0_fork-choice.md#on_block</a>
    */
-  public static void on_block(Store.Transaction store, BeaconBlock block, StateTransition st)
+  public static void on_block(
+      Store.Transaction store, BeaconBlock block, StateTransition st, TransitionRecorder recorder)
       throws StateTransitionException {
     // Make a copy of the state to avoid mutability issues
     checkArgument(
@@ -186,6 +188,7 @@ public class ForkChoiceUtil {
     BeaconStateWithCache pre_state =
         BeaconStateWithCache.deepCopy(
             (BeaconStateWithCache) store.getBlockState(block.getParent_root()));
+    recorder.recordPreState(block.getSlot(), pre_state);
 
     // Blocks cannot be in the future. If they are, their consideration must be delayed until the
     // are in the past.
@@ -219,6 +222,7 @@ public class ForkChoiceUtil {
 
     // Check the block is valid and compute the post-state
     BeaconState state = st.initiate(pre_state, block, true);
+    recorder.recordPostState(block.getSlot(), block, state);
 
     // Add new state for this block to the store
     store.putBlockState(block.signing_root("signature"), state);

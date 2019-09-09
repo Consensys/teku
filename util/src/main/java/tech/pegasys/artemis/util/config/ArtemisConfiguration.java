@@ -118,6 +118,11 @@ public final class ArtemisConfiguration {
     builder.addString(
         "output.logFile", "artemis.log", "Log file name", PropertyValidator.isPresent());
     builder.addString(
+        "output.transitionRecordDir",
+        "",
+        "Directory to record transition pre and post states",
+        null);
+    builder.addString(
         "output.providerType",
         "JSON",
         "Output provider types: CSV, JSON",
@@ -374,6 +379,10 @@ public final class ArtemisConfiguration {
   /** @return the Path/filename of the output file. */
   public String getOutputFile() {
     return config.getString("output.outputFile");
+  }
+
+  public String getTransitionRecordDir() {
+    return config.getString("output.transitionRecordDir");
   }
 
   /** @return if output is enabled or not */
