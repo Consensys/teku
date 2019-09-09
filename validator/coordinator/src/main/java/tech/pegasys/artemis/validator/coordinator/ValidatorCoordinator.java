@@ -184,6 +184,9 @@ public class ValidatorCoordinator {
     final Store store = chainStorageClient.getStore();
     final Bytes32 head = get_head(store);
     final BeaconState genesisState = store.getBlockState(head);
+
+    STDOUT.log(Level.INFO, "Initial state root is " + genesisState.hash_tree_root().toHexString());
+
     // Get validator indices of our own validators
     List<Validator> validatorRegistry = genesisState.getValidators();
     IntStream.range(0, validatorRegistry.size())
