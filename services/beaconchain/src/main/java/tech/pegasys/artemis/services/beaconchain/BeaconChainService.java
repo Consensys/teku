@@ -14,6 +14,7 @@
 package tech.pegasys.artemis.services.beaconchain;
 
 import com.google.common.eventbus.EventBus;
+import com.google.common.primitives.UnsignedLong;
 import io.vertx.core.Vertx;
 import java.io.IOException;
 import org.apache.logging.log4j.Level;
@@ -61,6 +62,7 @@ public class BeaconChainService implements ServiceInterface {
       System.exit(1);
     }
     this.store = ChainStorage.Create(ChainStorageClient.class, eventBus);
+    this.store.setGenesisTime(UnsignedLong.valueOf(config.getConfig().getInteropGenesisTime()));
     new TimingProcessor(config, store);
     new ValidatorCoordinator(config, store);
     new StateProcessor(config, store);
@@ -107,6 +109,16 @@ public class BeaconChainService implements ServiceInterface {
               config.getConfig().isBootnode(),
               config.getConfig().getDiscovery(),
               config.getConfig().getStaticMothraPeers());
+      if (config.getConfig().getDiscovery().equals("discv5")) {
+        // TODO - issue #827:
+        //      Once i have a reliable way to be notified when
+        //      libp2p peers are found then this can be removed
+        try {
+          Thread.sleep(15000);
+        } catch (InterruptedException e) {
+          STDOUT.log(Level.ERROR, e.getMessage());
+        }
+      }
     } else {
       throw new IllegalArgumentException(
           "Unsupported network mode " + config.getConfig().getNetworkMode());

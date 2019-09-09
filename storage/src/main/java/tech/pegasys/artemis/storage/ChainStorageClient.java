@@ -33,6 +33,7 @@ import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.storage.events.DBStoreValidEvent;
+import tech.pegasys.artemis.storage.events.NodeDataLoadedEvent;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.alogger.ALogger;
 
@@ -135,7 +136,7 @@ public class ChainStorageClient implements ChainStorage {
    * @return
    */
   public Bytes32 getFinalizedBlockRoot() {
-    return this.store.getFinalized_checkpoint().getRoot();
+    return this.store.getFinalizedCheckpoint().getRoot();
   }
 
   /**
@@ -144,7 +145,7 @@ public class ChainStorageClient implements ChainStorage {
    * @return
    */
   public UnsignedLong getFinalizedEpoch() {
-    return this.store.getFinalized_checkpoint().getEpoch();
+    return this.store.getFinalizedCheckpoint().getEpoch();
   }
 
   // UNPROCESSED ITEM METHODS:
@@ -229,7 +230,9 @@ public class ChainStorageClient implements ChainStorage {
 
   @Subscribe
   public void onDBStoreValidEvent(DBStoreValidEvent dbStoreValidEvent) {
+    this.genesisTime = dbStoreValidEvent.getGenesisTime();
     this.store = dbStoreValidEvent.getStore();
+    this.eventBus.post(new NodeDataLoadedEvent());
   }
 
   // STATE PROCESSOR METHODS:

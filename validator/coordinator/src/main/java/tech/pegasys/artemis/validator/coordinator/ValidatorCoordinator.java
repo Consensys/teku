@@ -66,7 +66,7 @@ import tech.pegasys.artemis.statetransition.util.EpochProcessingException;
 import tech.pegasys.artemis.statetransition.util.SlotProcessingException;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.Store;
-import tech.pegasys.artemis.storage.events.NodeStartEvent;
+import tech.pegasys.artemis.storage.events.NodeDataLoadedEvent;
 import tech.pegasys.artemis.storage.events.SlotEvent;
 import tech.pegasys.artemis.util.SSZTypes.Bitlist;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
@@ -159,8 +159,12 @@ public class ValidatorCoordinator {
   }
 
   @Subscribe
-  public void onGenesisStateEvent(NodeStartEvent nodeStartEvent) {
-    final BeaconStateWithCache genesisState = nodeStartEvent.getState();
+  public void onNodeReadyEvent(NodeDataLoadedEvent event) {
+    final Store store = chainStorageClient.getStore();
+    final Bytes32 head = get_head(store);
+    final BeaconState genesisState = store.getBlockState(head);
+
+    STDOUT.log(Level.INFO, "Initial state root is " + genesisState.hash_tree_root().toHexString());
 
     // Get validator indices of our own validators
     List<Validator> validatorRegistry = genesisState.getValidators();
@@ -178,8 +182,8 @@ public class ValidatorCoordinator {
       throws IllegalArgumentException {
     Store store = chainStorageClient.getStore();
     Bytes32 headBlockRoot = get_head(store);
-    BeaconBlock headBlock = store.getBlocks().get(headBlockRoot);
-    BeaconState headState = store.getBlock_states().get(headBlockRoot);
+    BeaconBlock headBlock = store.getBlock(headBlockRoot);
+    BeaconState headState = store.getBlockState(headBlockRoot);
     chainStorageClient.updateBestBlock(headBlockRoot, headBlock.getSlot());
 
     // Logging
@@ -188,14 +192,10 @@ public class ValidatorCoordinator {
         "Head block slot:" + "                       " + headBlock.getSlot().longValue());
     STDOUT.log(
         Level.INFO,
-        "Justified epoch:"
-            + "                       "
-            + store.getJustified_checkpoint().getEpoch());
+        "Justified epoch:" + "                       " + store.getJustifiedCheckpoint().getEpoch());
     STDOUT.log(
         Level.INFO,
-        "Finalized epoch:"
-            + "                       "
-            + store.getFinalized_checkpoint().getEpoch());
+        "Finalized epoch:" + "                       " + store.getFinalizedCheckpoint().getEpoch());
 
     try {
 

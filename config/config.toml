@@ -21,7 +21,7 @@ active = false
 genesisTime = 1567777777
 ownedValidatorStartIndex = 0
 ownedValidatorCount = 4
-# startState = "initialState.ssz"
+startState = "/tmp/genesis.ssz"
 
 [validator]
 #validatorsKeyFile = "keys.yaml"
