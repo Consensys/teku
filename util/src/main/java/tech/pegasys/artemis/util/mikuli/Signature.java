@@ -26,6 +26,9 @@ import org.apache.tuweni.bytes.Bytes;
 /** This class represents a Signature on G2 */
 public final class Signature {
 
+  public static final int COMPRESSED_SIG_SIZE = 96;
+  public static final int UNCOMPRESSED_SIG_SIZE = 192;
+
   /**
    * Aggregates list of Signature pairs, returns the signature that corresponds to G2 point at
    * infinity if list is empty
@@ -49,7 +52,6 @@ public final class Signature {
    * @return the signature
    */
   public static Signature fromBytes(Bytes bytes) {
-    checkArgument(bytes.size() == 192, "Expected 192 bytes of input but got %s", bytes.size());
     return new Signature(bytes);
   }
 
@@ -60,7 +62,8 @@ public final class Signature {
    * @return the signature
    */
   public static Signature fromBytesCompressed(Bytes bytes) {
-    checkArgument(bytes.size() == 96, "Expected 96 bytes of input but got %s", bytes.size());
+    checkArgument(bytes.size() == COMPRESSED_SIG_SIZE, "Expected " + COMPRESSED_SIG_SIZE
+        + " bytes of input but got %s", bytes.size());
     return new Signature(bytes);
   }
 
@@ -120,13 +123,13 @@ public final class Signature {
   }
 
   private G2Point parseSignatureBytes(Bytes signatureBytes) {
-    if (signatureBytes.size() == 96) {
+    if (signatureBytes.size() == COMPRESSED_SIG_SIZE) {
       return G2Point.fromBytesCompressed(signatureBytes);
-    } else if (signatureBytes.size() == 192) {
+    } else if (signatureBytes.size() == UNCOMPRESSED_SIG_SIZE) {
       return G2Point.fromBytes(signatureBytes);
     }
     throw new RuntimeException(
-        "Expected either 96 or 192 bytes for signature, but found " + signatureBytes.size());
+        "Expected either " + COMPRESSED_SIG_SIZE + " or " + UNCOMPRESSED_SIG_SIZE + " bytes for signature, but found " + signatureBytes.size());
   }
 
   /**
@@ -145,7 +148,7 @@ public final class Signature {
    * @return byte array representation of the signature, not null
    */
   public Bytes toBytes() {
-    return (rawData.size() == 192) ? rawData : point.get().toBytes();
+    return (rawData.size() == UNCOMPRESSED_SIG_SIZE) ? rawData : point.get().toBytes();
   }
 
   /**
@@ -154,7 +157,7 @@ public final class Signature {
    * @return byte array representation of the signature, not null
    */
   public Bytes toBytesCompressed() {
-    return (rawData.size() == 96) ? rawData : point.get().toBytesCompressed();
+    return (rawData.size() == COMPRESSED_SIG_SIZE) ? rawData : point.get().toBytesCompressed();
   }
 
   @Override

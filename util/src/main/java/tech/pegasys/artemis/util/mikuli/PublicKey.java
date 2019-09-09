@@ -24,6 +24,9 @@ import org.apache.tuweni.bytes.Bytes;
 /** This class represents a BLS12-381 public key. */
 public final class PublicKey {
 
+  public static final int COMPRESSED_PK_SIZE = 48;
+  public static final int UNCOMPRESSED_PK_LENGTH = 49;
+
   /**
    * Generates a random, valid public key
    *
@@ -70,10 +73,9 @@ public final class PublicKey {
    * Create a PublicKey from bytes
    *
    * @param bytes the bytes to read the public key from
-   * @return a valid public key
+   * @return the public key
    */
   public static PublicKey fromBytesCompressed(Bytes bytes) {
-    checkArgument(bytes.size() == 48, "Expected 48 bytes of input but got %s", bytes.size());
     return new PublicKey(bytes);
   }
 
@@ -98,13 +100,13 @@ public final class PublicKey {
   }
 
   private G1Point parsePublicKeyBytes(Bytes publicKeyBytes) {
-    if (publicKeyBytes.size() == 48) {
+    if (publicKeyBytes.size() == COMPRESSED_PK_SIZE) {
       return G1Point.fromBytesCompressed(publicKeyBytes);
-    } else if (publicKeyBytes.size() == 49) {
+    } else if (publicKeyBytes.size() == UNCOMPRESSED_PK_LENGTH) {
       return G1Point.fromBytes(publicKeyBytes);
     }
     throw new RuntimeException(
-        "Expected either 48 or 49 bytes for public key, but found " + publicKeyBytes.size());
+        "Expected either " + COMPRESSED_PK_SIZE + " or " + UNCOMPRESSED_PK_LENGTH + " bytes for public key, but found " + publicKeyBytes.size());
   }
 
   PublicKey combine(PublicKey pk) {
@@ -116,17 +118,8 @@ public final class PublicKey {
    *
    * @return byte array representation of the public key
    */
-  public byte[] toByteArray() {
-    return ((rawData.size() == 96) ? rawData : point.get().toBytes()).toArrayUnsafe();
-  }
-
-  /**
-   * Public key serialization
-   *
-   * @return byte array representation of the public key
-   */
   public Bytes toBytesCompressed() {
-    return (rawData.size() == 48) ? rawData : point.get().toBytesCompressed();
+    return (rawData.size() == COMPRESSED_PK_SIZE) ? rawData : point.get().toBytesCompressed();
   }
 
   public G1Point g1Point() {
