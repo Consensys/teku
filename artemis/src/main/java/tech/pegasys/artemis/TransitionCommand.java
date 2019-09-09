@@ -15,6 +15,7 @@ package tech.pegasys.artemis;
 
 import com.google.common.base.MoreObjects;
 import com.google.common.io.ByteStreams;
+import com.google.common.primitives.UnsignedLong;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -33,6 +34,8 @@ import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.statetransition.StateTransition;
 import tech.pegasys.artemis.statetransition.StateTransitionException;
+import tech.pegasys.artemis.statetransition.util.EpochProcessingException;
+import tech.pegasys.artemis.statetransition.util.SlotProcessingException;
 import tech.pegasys.artemis.util.cli.VersionProvider;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 
@@ -62,8 +65,58 @@ public class TransitionCommand {
       optionListHeading = "%nOptions:%n",
       footerHeading = "%n",
       footer = "Artemis is licensed under the Apache License 2.0")
-  public void blocks(@Mixin InAndOutParams params, @Parameters List<String> blocks) {
-    initConstants(params);
+  public void blocks(
+      @Mixin InAndOutParams params,
+      @Parameters(paramLabel = "block", description = "Files to read blocks from")
+          List<String> blocks) {
+    processStateTransition(
+        params,
+        (state, stateTransition) -> {
+          if (blocks != null) {
+            for (String blockPath : blocks) {
+              BeaconBlock block = readBlock(blockPath);
+              state = stateTransition.initiate(state, block);
+            }
+          }
+          return state;
+        });
+  }
+
+  @Command(
+      name = "slots",
+      description = "Process empty slots on the pre-state to get a post-state",
+      mixinStandardHelpOptions = true,
+      abbreviateSynopsis = true,
+      versionProvider = VersionProvider.class,
+      header = "Usage:",
+      synopsisHeading = "%n",
+      descriptionHeading = "%nDescription:%n%n",
+      optionListHeading = "%nOptions:%n",
+      footerHeading = "%n",
+      footer = "Artemis is licensed under the Apache License 2.0")
+  public void slots(
+      @Mixin InAndOutParams params,
+      @Option(
+              names = "delta",
+              description = "to interpret the slot number as a delta from the pre-state")
+          boolean delta,
+      @Parameters(paramLabel = "<number>", description = "Number of slots to process")
+          long number) {
+    processStateTransition(
+        params,
+        (state, stateTransition) -> {
+          UnsignedLong targetSlot = UnsignedLong.valueOf(number);
+          if (delta) {
+            targetSlot = state.getSlot().plus(targetSlot);
+          }
+          stateTransition.process_slots(state, targetSlot, false);
+          return state;
+        });
+  }
+
+  private void processStateTransition(
+      final InAndOutParams params, final StateTransitionFunction transition) {
+    Constants.init(ArtemisConfiguration.fromFile(params.configFile));
     try (final InputStream in = selectInputStream(params);
         final OutputStream out = selectOutputStream(params)) {
       final Bytes inData = Bytes.wrap(ByteStreams.toByteArray(in));
@@ -71,21 +124,16 @@ public class TransitionCommand {
           BeaconStateWithCache.fromBeaconState(
               SimpleOffsetSerializer.deserialize(inData, BeaconState.class));
 
-      final StateTransition stateTransition = new StateTransition(true);
-      if (blocks != null) {
-        for (String blockPath : blocks) {
-          BeaconBlock block = readBlock(blockPath);
-          try {
-            state = stateTransition.initiate(state, block);
-          } catch (StateTransitionException e) {
-            System.err.println("State transition failed on block " + blockPath);
-            e.printStackTrace();
-            return;
-          }
-        }
+      final StateTransition stateTransition = new StateTransition(false);
+      try {
+        BeaconState result = transition.applyTransition(state, stateTransition);
+        out.write(SimpleOffsetSerializer.serialize(result).toArrayUnsafe());
+      } catch (final StateTransitionException
+          | EpochProcessingException
+          | SlotProcessingException e) {
+        System.err.println("State transition failed");
+        e.printStackTrace();
       }
-
-      out.write(SimpleOffsetSerializer.serialize(state).toArrayUnsafe());
     } catch (final IOException e) {
       System.err.println("I/O error: " + e.toString());
     }
@@ -107,10 +155,6 @@ public class TransitionCommand {
   private BeaconBlock readBlock(final String path) throws IOException {
     final Bytes blockData = Bytes.wrap(Files.readAllBytes(Path.of(path)));
     return SimpleOffsetSerializer.deserialize(blockData, BeaconBlock.class);
-  }
-
-  private void initConstants(final InAndOutParams params) {
-    Constants.init(ArtemisConfiguration.fromFile(params.configFile));
   }
 
   public static class InAndOutParams {
@@ -135,5 +179,11 @@ public class TransitionCommand {
     public String toString() {
       return MoreObjects.toStringHelper(this).add("post", post).add("pre", pre).toString();
     }
+  }
+
+  private interface StateTransitionFunction {
+    BeaconState applyTransition(BeaconStateWithCache state, StateTransition stateTransition)
+        throws StateTransitionException, EpochProcessingException, SlotProcessingException,
+            IOException;
   }
 }
