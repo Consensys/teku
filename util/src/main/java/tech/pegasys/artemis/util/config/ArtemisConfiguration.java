@@ -21,10 +21,8 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.config.Configuration;
@@ -120,21 +118,9 @@ public class ArtemisConfiguration {
     builder.addString(
         "output.logFile", "artemis.log", "Log file name", PropertyValidator.isPresent());
     builder.addString(
-        "output.providerType",
-        "JSON",
-        "Output provider types: CSV, JSON",
-        PropertyValidator.anyOf("CSV", "JSON"));
-    builder.addString("output.outputFile", "", "Path/filename of the output file", null);
-    builder.addBoolean(
-        "output.formatted", false, "Output of JSON file is serial or formatted", null);
-    builder.addListOfString(
-        "output.events",
-        new ArrayList<String>() {
-          {
-            add("TimeSeriesRecord");
-          }
-        },
-        "Output selector for specific events",
+        "output.transitionRecordDir",
+        "",
+        "Directory to record transition pre and post states",
         null);
 
     // Constants
@@ -378,30 +364,8 @@ public class ArtemisConfiguration {
     return config.getListOfString("metrics.metricsCategories");
   }
 
-  /** @return the Path/filename of the output file. */
-  public String getOutputFile() {
-    return config.getString("output.outputFile");
-  }
-
-  /** @return if output is enabled or not */
-  public Boolean isOutputEnabled() {
-    return this.getOutputFile().length() > 0;
-  }
-
-  /** @return If Output of JSON file is serial or formatted */
-  public Boolean isFormat() {
-    return config.getBoolean("output.formatted");
-  }
-
-  /** @return specific events of Output selector */
-  public List<String> getEvents() {
-    return config.getListOfString("output.events");
-  }
-
-  /** @return specific dynamic event fields of Output selector */
-  public Map<String, Object> getEventFields() {
-
-    return config.getMap("output.fields");
+  public String getTransitionRecordDir() {
+    return config.getString("output.transitionRecordDir");
   }
 
   /** @return misc constants */
