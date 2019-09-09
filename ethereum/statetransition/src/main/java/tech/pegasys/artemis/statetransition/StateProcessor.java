@@ -32,6 +32,7 @@ import java.util.Date;
 import java.util.List;
 import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.artemis.data.BlockProcessingRecord;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
@@ -165,13 +166,14 @@ public class StateProcessor {
   private void onBlock(BeaconBlock block) {
     try {
       Store.Transaction transaction = chainStorageClient.getStore().startTransaction();
-      on_block(transaction, block, stateTransition);
+      final BlockProcessingRecord record = on_block(transaction, block, stateTransition);
       transaction.commit();
       // Add attestations that were processed in the block to processed attestations storage
       block
           .getBody()
           .getAttestations()
           .forEach(attestation -> this.chainStorageClient.addProcessedAttestation(attestation));
+      this.eventBus.post(record);
     } catch (StateTransitionException e) {
       STDOUT.log(Level.WARN, "Exception in onBlock: " + e.toString());
     }
