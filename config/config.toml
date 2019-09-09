@@ -18,14 +18,13 @@ naughtinessPercentage = 0
 
 [interop]
 active = false
-# "file" reads validator creds from file
-# "mocked" generated validator cred deterministically
-mode = "mocked"
-inputFile = "depositsAndKeys.yaml"
 genesisTime = 1567777777
 ownedValidatorStartIndex = 0
 ownedValidatorCount = 4
 startState = "/tmp/genesis.ssz"
+
+[validator]
+#validatorsKeyFile = "keys.yaml"
 
 [deposit]
 # normal, test, simulation
@@ -42,10 +41,7 @@ nodeUrl = "http://localhost:7545"
 [output]
 logPath = "."
 logFile = "artemis.log"
-outputFile = "artemis.json"
-providerType = "JSON"
-events = [ "TimeSeriesRecord", "Eth2Genesis", "Deposit" ]
-formatted = false
+#transitionRecordDir = "transitionData"
 
 [output.fields]
 TimeSeriesRecord = ["date", "index", "slot", "epoch", "block_root", "block_body", "lastFinalizedBlockRoot", "lastFinalizedStateRoot", "block_parent_root", "validators_size", "validators", "lastJustifiedBlockRoot", "lastJustifiedStateRoot"]

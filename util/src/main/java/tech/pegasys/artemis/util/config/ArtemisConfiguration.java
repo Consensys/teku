@@ -21,10 +21,8 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.config.Configuration;
@@ -34,7 +32,7 @@ import org.apache.tuweni.config.SchemaBuilder;
 import org.apache.tuweni.crypto.SECP256K1;
 
 /** Configuration of an instance of Artemis. */
-public final class ArtemisConfiguration {
+public class ArtemisConfiguration {
 
   @SuppressWarnings({"DoubleBraceInitialization"})
   static final Schema createSchema() {
@@ -67,6 +65,8 @@ public final class ArtemisConfiguration {
         0,
         "Percentage of Validator Clients that are naughty",
         PropertyValidator.inRange(0, 101));
+    builder.addString(
+        "validator.validatorsKeyFile", "", "The file to load validator keys from", null);
     builder.addInteger(
         "deposit.numValidators",
         128,
@@ -118,21 +118,9 @@ public final class ArtemisConfiguration {
     builder.addString(
         "output.logFile", "artemis.log", "Log file name", PropertyValidator.isPresent());
     builder.addString(
-        "output.providerType",
-        "JSON",
-        "Output provider types: CSV, JSON",
-        PropertyValidator.anyOf("CSV", "JSON"));
-    builder.addString("output.outputFile", "", "Path/filename of the output file", null);
-    builder.addBoolean(
-        "output.formatted", false, "Output of JSON file is serial or formatted", null);
-    builder.addListOfString(
-        "output.events",
-        new ArrayList<String>() {
-          {
-            add("TimeSeriesRecord");
-          }
-        },
-        "Output selector for specific events",
+        "output.transitionRecordDir",
+        "",
+        "Directory to record transition pre and post states",
         null);
 
     // Constants
@@ -329,6 +317,11 @@ public final class ArtemisConfiguration {
     return config.getInteger("deposit.numNodes");
   }
 
+  public String getValidatorsKeyFile() {
+    final String keyFile = config.getString("validator.validatorsKeyFile");
+    return keyFile == null || keyFile.isEmpty() ? null : keyFile;
+  }
+
   /** @return the Deposit simulation flag, w/ optional input file */
   public String getInputFile() {
     String inputFile = config.getString("deposit.inputFile");
@@ -371,30 +364,8 @@ public final class ArtemisConfiguration {
     return config.getListOfString("metrics.metricsCategories");
   }
 
-  /** @return the Path/filename of the output file. */
-  public String getOutputFile() {
-    return config.getString("output.outputFile");
-  }
-
-  /** @return if output is enabled or not */
-  public Boolean isOutputEnabled() {
-    return this.getOutputFile().length() > 0;
-  }
-
-  /** @return If Output of JSON file is serial or formatted */
-  public Boolean isFormat() {
-    return config.getBoolean("output.formatted");
-  }
-
-  /** @return specific events of Output selector */
-  public List<String> getEvents() {
-    return config.getListOfString("output.events");
-  }
-
-  /** @return specific dynamic event fields of Output selector */
-  public Map<String, Object> getEventFields() {
-
-    return config.getMap("output.fields");
+  public String getTransitionRecordDir() {
+    return config.getString("output.transitionRecordDir");
   }
 
   /** @return misc constants */

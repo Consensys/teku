@@ -31,6 +31,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.artemis.data.BlockProcessingRecord;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.IndexedAttestation;
@@ -177,15 +178,15 @@ public class ForkChoiceUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.1/specs/core/0_fork-choice.md#on_block</a>
    */
-  public static void on_block(Store.Transaction store, BeaconBlock block, StateTransition st)
+  public static BlockProcessingRecord on_block(
+      Store.Transaction store, BeaconBlock block, StateTransition st)
       throws StateTransitionException {
     // Make a copy of the state to avoid mutability issues
     checkArgument(
         store.containsBlockState(block.getParent_root()),
         "on_block: Parent block state is not contained in block_state");
-    BeaconStateWithCache pre_state =
-        BeaconStateWithCache.deepCopy(
-            (BeaconStateWithCache) store.getBlockState(block.getParent_root()));
+    final BeaconState preState = store.getBlockState(block.getParent_root());
+    BeaconStateWithCache state = BeaconStateWithCache.deepCopy((BeaconStateWithCache) preState);
 
     // Blocks cannot be in the future. If they are, their consideration must be delayed until the
     // are in the past.
@@ -193,7 +194,7 @@ public class ForkChoiceUtil {
         store
                 .getTime()
                 .compareTo(
-                    pre_state
+                    state
                         .getGenesis_time()
                         .plus(block.getSlot().times(UnsignedLong.valueOf(SECONDS_PER_SLOT))))
             >= 0,
@@ -218,7 +219,7 @@ public class ForkChoiceUtil {
         "on_block: Check that block is later than the finalized epoch slot");
 
     // Check the block is valid and compute the post-state
-    BeaconState state = st.initiate(pre_state, block, true);
+    state = st.initiate(state, block, true);
 
     // Add new state for this block to the store
     store.putBlockState(block.signing_root("signature"), state);
@@ -240,6 +241,7 @@ public class ForkChoiceUtil {
         > 0) {
       store.setFinalizedCheckpoint(state.getFinalized_checkpoint());
     }
+    return new BlockProcessingRecord(preState, block, state);
   }
 
   /**
