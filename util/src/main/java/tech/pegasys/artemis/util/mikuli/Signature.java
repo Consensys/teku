@@ -154,7 +154,7 @@ public final class Signature {
    * @return byte array representation of the signature, not null
    */
   public Bytes toBytesCompressed() {
-    return (rawData.size() == 96) ? rawData : point.get().toBytes();
+    return (rawData.size() == 96) ? rawData : point.get().toBytesCompressed();
   }
 
   @Override
