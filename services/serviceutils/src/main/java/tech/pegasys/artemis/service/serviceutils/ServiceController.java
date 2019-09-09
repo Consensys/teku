@@ -16,7 +16,6 @@ package tech.pegasys.artemis.service.serviceutils;
 import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import tech.pegasys.artemis.util.cli.CommandLineArguments;
 
 public class ServiceController {
 
@@ -52,8 +51,7 @@ public class ServiceController {
     }
   }
 
-  public void startAll(CommandLineArguments cliArgs) {
-
+  public void startAll() {
     // start all services
     beaconChainExecuterService.execute(beaconChainService);
     chainStorageExecutorService.execute(chainStorageService);
@@ -62,7 +60,7 @@ public class ServiceController {
     }
   }
 
-  public void stopAll(CommandLineArguments cliArgs) {
+  public void stopAll() {
     // stop all services
     beaconChainExecuterService.shutdown();
     if (!Objects.isNull(beaconChainService)) {

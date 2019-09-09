@@ -31,7 +31,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import picocli.CommandLine;
 import tech.pegasys.artemis.networking.p2p.api.P2PNetwork;
 import tech.pegasys.artemis.networking.p2p.hobbits.Peer;
-import tech.pegasys.artemis.util.cli.CommandLineArguments;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 
 @ExtendWith(BouncyCastleExtension.class)
@@ -42,7 +41,7 @@ class BeaconNodeIntegrationTest {
   @Disabled
   @Test
   void testTwoNodes() throws InterruptedException, JsonProcessingException, IOException {
-    CommandLineArguments cliArgs = new CommandLineArguments();
+    BeaconNodeCommand cliArgs = new BeaconNodeCommand();
     CommandLine commandLine = new CommandLine(cliArgs);
     //    commandLine.parse("");
 
@@ -75,8 +74,8 @@ class BeaconNodeIntegrationTest {
     ArtemisConfiguration config1 = ArtemisConfiguration.fromString(updatedConfig1);
     ArtemisConfiguration config2 = ArtemisConfiguration.fromString(updatedConfig2);
 
-    BeaconNode node1 = new BeaconNode(commandLine, cliArgs, config1);
-    BeaconNode node2 = new BeaconNode(commandLine, cliArgs, config2);
+    BeaconNode node1 = new BeaconNode(cliArgs, config1);
+    BeaconNode node2 = new BeaconNode(cliArgs, config2);
 
     node1.start();
     node2.start();

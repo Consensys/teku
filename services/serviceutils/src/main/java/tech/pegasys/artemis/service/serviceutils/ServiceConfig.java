@@ -17,7 +17,6 @@ import com.google.common.eventbus.EventBus;
 import io.vertx.core.Vertx;
 import java.util.Objects;
 import org.apache.tuweni.crypto.SECP256K1;
-import tech.pegasys.artemis.util.cli.CommandLineArguments;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 import tech.pegasys.pantheon.metrics.MetricsSystem;
 import tech.pegasys.pantheon.metrics.noop.NoOpMetricsSystem;
@@ -28,24 +27,18 @@ public class ServiceConfig {
   MetricsSystem metricsSystem;
   ArtemisConfiguration config;
   SECP256K1.KeyPair keyPair;
-  CommandLineArguments cliArgs;
 
   public ServiceConfig() {
     this.metricsSystem = new NoOpMetricsSystem();
   }
 
   public ServiceConfig(
-      EventBus eventBus,
-      Vertx vertx,
-      MetricsSystem metricsSystem,
-      ArtemisConfiguration config,
-      CommandLineArguments cliArgs) {
+      EventBus eventBus, Vertx vertx, MetricsSystem metricsSystem, ArtemisConfiguration config) {
     this.eventBus = eventBus;
     this.vertx = vertx;
     this.metricsSystem = metricsSystem;
     this.config = config;
     this.keyPair = config.getKeyPair();
-    this.cliArgs = cliArgs;
   }
 
   public EventBus getEventBus() {
