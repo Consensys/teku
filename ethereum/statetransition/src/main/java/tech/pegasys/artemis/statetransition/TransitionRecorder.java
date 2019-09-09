@@ -18,16 +18,6 @@ import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 
 public interface TransitionRecorder {
-  TransitionRecorder NONE =
-      new TransitionRecorder() {
-        @Override
-        public void recordPreState(final UnsignedLong slot, final BeaconState state) {}
-
-        @Override
-        public void recordPostState(
-            final UnsignedLong slot, final BeaconBlock processedBlock, final BeaconState state) {}
-      };
-
   void recordPreState(UnsignedLong slot, BeaconState state);
 
   void recordPostState(UnsignedLong slot, BeaconBlock processedBlock, BeaconState state);

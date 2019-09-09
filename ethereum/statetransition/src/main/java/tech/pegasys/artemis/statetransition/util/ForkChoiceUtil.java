@@ -27,6 +27,7 @@ import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
@@ -179,7 +180,10 @@ public class ForkChoiceUtil {
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.1/specs/core/0_fork-choice.md#on_block</a>
    */
   public static void on_block(
-      Store.Transaction store, BeaconBlock block, StateTransition st, TransitionRecorder recorder)
+      Store.Transaction store,
+      BeaconBlock block,
+      StateTransition st,
+      Optional<TransitionRecorder> transitionRecorder)
       throws StateTransitionException {
     // Make a copy of the state to avoid mutability issues
     checkArgument(
@@ -188,7 +192,7 @@ public class ForkChoiceUtil {
     BeaconStateWithCache pre_state =
         BeaconStateWithCache.deepCopy(
             (BeaconStateWithCache) store.getBlockState(block.getParent_root()));
-    recorder.recordPreState(block.getSlot(), pre_state);
+    transitionRecorder.ifPresent(recorder -> recorder.recordPreState(block.getSlot(), pre_state));
 
     // Blocks cannot be in the future. If they are, their consideration must be delayed until the
     // are in the past.
@@ -222,7 +226,8 @@ public class ForkChoiceUtil {
 
     // Check the block is valid and compute the post-state
     BeaconState state = st.initiate(pre_state, block, true);
-    recorder.recordPostState(block.getSlot(), block, state);
+    transitionRecorder.ifPresent(
+        recorder -> recorder.recordPostState(block.getSlot(), block, state));
 
     // Add new state for this block to the store
     store.putBlockState(block.signing_root("signature"), state);
