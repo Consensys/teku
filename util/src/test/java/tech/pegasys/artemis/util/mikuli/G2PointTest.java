@@ -415,6 +415,29 @@ class G2PointTest {
     assertEquals(expected, point);
   }
 
+  @Test
+  void succeedsWhenDifferentPointsHaveDifferentHashcodes() {
+    G2Point point1 = G2Point.random();
+    G2Point point2 = G2Point.random();
+    // Ensure that we have two different points, without assuming too much about .equals
+    while (point1.ecp2Point().equals(point2.ecp2Point())) {
+      point2 = G2Point.random();
+    }
+    assert (point1.hashCode() != point2.hashCode());
+  }
+
+  @Test
+  void succeedsWhenTheSamePointsHaveTheSameHashcodes() {
+    // Arrive at the same point in two different ways
+    G2Point point1 = G2Point.random();
+    G2Point point2 = new G2Point(point1.ecp2Point());
+    point2.add(point2);
+    point1.ecp2Point().dbl();
+
+    assertEquals(point1, point2);
+    assertEquals(point1.hashCode(), point2.hashCode());
+  }
+
   /* ==== Helper Functions ===================================================================== */
 
   // This is the G2 cofactor as defined in the spec. It's too big for a BIG.

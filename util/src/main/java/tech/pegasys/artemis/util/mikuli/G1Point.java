@@ -223,7 +223,7 @@ public final class G1Point implements Group<G1Point> {
 
   @Override
   public int hashCode() {
-    return Objects.hash(point.getX().norm(), point.getY().norm());
+    return Objects.hash(point.toString());
   }
 
   @Override

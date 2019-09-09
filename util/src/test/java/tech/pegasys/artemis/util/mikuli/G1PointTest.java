@@ -214,4 +214,27 @@ class G1PointTest {
         IllegalArgumentException.class,
         () -> G1Point.fromBytesCompressed(Bytes.fromHexString(xInput)));
   }
+
+  @Test
+  void succeedsWhenDifferentPointsHaveDifferentHashcodes() {
+    G1Point point1 = G1Point.random();
+    G1Point point2 = G1Point.random();
+    // Ensure that we have two different points, without assuming too much about .equals
+    while (point1.ecpPoint().equals(point2.ecpPoint())) {
+      point2 = G1Point.random();
+    }
+    assert (point1.hashCode() != point2.hashCode());
+  }
+
+  @Test
+  void succeedsWhenTheSamePointsHaveTheSameHashcodes() {
+    // Arrive at the same point in two different ways
+    G1Point point1 = G1Point.random();
+    G1Point point2 = new G1Point(point1.ecpPoint());
+    point2.add(point2);
+    point1.ecpPoint().dbl();
+
+    assertEquals(point1, point2);
+    assertEquals(point1.hashCode(), point2.hashCode());
+  }
 }

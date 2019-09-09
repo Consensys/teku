@@ -329,10 +329,6 @@ public final class G2Point implements Group<G2Point> {
 
   @Override
   public int hashCode() {
-    return Objects.hash(
-        point.getX().getA().norm(),
-        point.getY().getA().norm(),
-        point.getX().getB().norm(),
-        point.getY().getB().norm());
+    return Objects.hash(point.toString());
   }
 }
