@@ -32,16 +32,17 @@ import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.reference.TestSuite;
 import tech.pegasys.artemis.statetransition.StateTransition;
+import tech.pegasys.artemis.statetransition.StateTransitionException;
 import tech.pegasys.artemis.statetransition.util.BlockProcessingException;
 import tech.pegasys.artemis.statetransition.util.BlockProcessorUtil;
 
 @ExtendWith(BouncyCastleExtension.class)
 public class blocks extends TestSuite {
 
-  @ParameterizedTest(name = "{index} root of Merkleizable")
+  @ParameterizedTest(name = "{index} Sanity blocks valid")
   @MethodSource({
     "sanityAttestationSetup",
-/*    "sanityAttesterSlashingSetup",
+    "sanityAttesterSlashingSetup",
     "sanityBalanceDrivenTransitionsSetup",
     "sanityDepositInBlockSetup",
     "sanityDepositTopUpSetup",
@@ -51,7 +52,7 @@ public class blocks extends TestSuite {
     "sanityProposerSlashingSetup",
     "sanitySameSlotBlockTransitionSetup",
     "sanitySkippedSlotsSetup",
-    "sanityVoluntaryExitSetup" */
+    "sanityVoluntaryExitSetup",
   })
   void sanityProcessBlock(BeaconState pre, BeaconState post, List<BeaconBlock> blocks) {
     BeaconStateWithCache preWithCache = BeaconStateWithCache.fromBeaconState(pre);
@@ -148,18 +149,20 @@ public class blocks extends TestSuite {
     return sanityMultiBlockSetup(path, configPath);
   }
 
-  @ParameterizedTest(name = "{index} root of Merkleizable")
+  @ParameterizedTest(name = "{index} Sanity blocks invalid")
   @MethodSource({
     "sanityInvalidStateRootSetup",
     "sanityExpectedDepositInBlockSetup",
     "sanityPrevSlotBlockTransitionSetup"
   })
   void sanityProcessBlockInvalid(BeaconState pre, List<BeaconBlock> blocks) {
+    BeaconStateWithCache preWithCache = BeaconStateWithCache.fromBeaconState(pre);
+    StateTransition stateTransition = new StateTransition(false);
     blocks.forEach(
         block -> {
           assertThrows(
-              BlockProcessingException.class,
-              () -> BlockProcessorUtil.process_block_header(pre, block, true));
+              StateTransitionException.class,
+              () -> stateTransition.initiate(preWithCache, block, true));
         });
   }
 
