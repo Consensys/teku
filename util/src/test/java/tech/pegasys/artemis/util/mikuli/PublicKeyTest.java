@@ -14,13 +14,27 @@
 package tech.pegasys.artemis.util.mikuli;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.Collections;
+import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 
 public class PublicKeyTest {
   @Test
   void succeedsWhenPassingEmptyListToAggregatePublicKeysDoesNotThrowException() {
     assertDoesNotThrow(() -> PublicKey.aggregate(Collections.emptyList()));
+  }
+
+  @Test
+  public void shouldHaveConsistentHashCodeAndEquals() {
+    final PublicKey key =
+        PublicKey.fromBytesCompressed(
+            Bytes.fromHexString(
+                "0x81283b7a20e1ca460ebd9bbd77005d557370cabb1f9a44f530c4c4c66230f675f8df8b4c2818851aa7d77a80ca5a4a5e"));
+    final PublicKey same = PublicKey.fromBytesCompressed(key.toBytesCompressed());
+
+    assertEquals(key, same);
+    assertEquals(key.hashCode(), same.hashCode());
   }
 }
