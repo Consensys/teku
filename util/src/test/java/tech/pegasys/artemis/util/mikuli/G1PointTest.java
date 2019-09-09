@@ -26,9 +26,23 @@ import org.junit.jupiter.api.Test;
 class G1PointTest {
 
   @Test
+  void succeedsWhenSameSeedGivesSamePoint() {
+    G1Point point1 = G1Point.random(42L);
+    G1Point point2 = G1Point.random(42L);
+    assertEquals(point1, point2);
+  }
+
+  @Test
+  void succeedsWhenDifferentSeedsGiveDifferentPoints() {
+    G1Point point1 = G1Point.random(1L);
+    G1Point point2 = G1Point.random(2L);
+    assertNotEquals(point1, point2);
+  }
+
+  @Test
   void succeedsWhenRandomPointsAreInTheG1Subgroup() {
-    for (int i = 0; i < 20; i++) {
-      G1Point point = G1Point.random();
+    for (long i = 1; i <= 20; i++) {
+      G1Point point = G1Point.random(i);
       assertTrue(isInGroup(point.ecpPoint()));
     }
   }
@@ -48,12 +62,8 @@ class G1PointTest {
 
   @Test
   void succeedsWhenEqualsReturnsFalseForDifferentPoints() {
-    G1Point point1 = G1Point.random();
-    G1Point point2 = G1Point.random();
-    // Ensure that we have two different points, without assuming too much about .equals
-    while (point1.ecpPoint().equals(point2.ecpPoint())) {
-      point2 = G1Point.random();
-    }
+    G1Point point1 = G1Point.random(42L);
+    G1Point point2 = G1Point.random(43L);
     assertNotEquals(point1, point2);
   }
 
@@ -213,5 +223,25 @@ class G1PointTest {
     assertThrows(
         IllegalArgumentException.class,
         () -> G1Point.fromBytesCompressed(Bytes.fromHexString(xInput)));
+  }
+
+  @Test
+  void succeedsWhenDifferentPointsHaveDifferentHashcodes() {
+    G1Point point1 = G1Point.random(1234L);
+    G1Point point2 = G1Point.random(4321L);
+    assertNotEquals(point1, point2);
+    assertNotEquals(point1.hashCode(), point2.hashCode());
+  }
+
+  @Test
+  void succeedsWhenTheSamePointsHaveTheSameHashcodes() {
+    // Arrive at the same point in two different ways
+    G1Point point1 = G1Point.random();
+    G1Point point2 = new G1Point(point1.ecpPoint());
+    point2.add(point2);
+    point1.ecpPoint().dbl();
+
+    assertEquals(point1, point2);
+    assertEquals(point1.hashCode(), point2.hashCode());
   }
 }

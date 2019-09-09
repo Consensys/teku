@@ -99,12 +99,8 @@ class BLSSignatureTest {
 
   @Test
   void succeedsWhenEqualsReturnsFalseForDifferentSignatures() {
-    BLSSignature signature1 = BLSSignature.random();
-    BLSSignature signature2 = BLSSignature.random();
-    // Ensure that we have two different signatures, without assuming too much about .equals
-    while (signature1.getSignature().equals(signature2.getSignature())) {
-      signature2 = BLSSignature.random();
-    }
+    BLSSignature signature1 = BLSSignature.random(42);
+    BLSSignature signature2 = BLSSignature.random(43);
     assertNotEquals(signature1, signature2);
   }
 
@@ -139,11 +135,8 @@ class BLSSignatureTest {
 
   @Test
   void succeedsWhenVerifyingDifferentPublicKeyFails() throws BLSException {
-    BLSKeyPair keyPair1 = BLSKeyPair.random();
-    BLSKeyPair keyPair2 = BLSKeyPair.random();
-    while (keyPair1.equals(keyPair2)) {
-      keyPair2 = BLSKeyPair.random();
-    }
+    BLSKeyPair keyPair1 = BLSKeyPair.random(1969);
+    BLSKeyPair keyPair2 = BLSKeyPair.random(2019);
     Bytes message = Bytes.wrap("Hello, world!".getBytes(UTF_8));
     Bytes domain = Bytes.ofUnsignedLong(42L);
     BLSSignature signature = BLSSignature.sign(keyPair1, message, domain);
