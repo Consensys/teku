@@ -34,7 +34,7 @@ import org.apache.tuweni.config.SchemaBuilder;
 import org.apache.tuweni.crypto.SECP256K1;
 
 /** Configuration of an instance of Artemis. */
-public final class ArtemisConfiguration {
+public class ArtemisConfiguration {
 
   @SuppressWarnings({"DoubleBraceInitialization"})
   static final Schema createSchema() {
@@ -67,6 +67,8 @@ public final class ArtemisConfiguration {
         0,
         "Percentage of Validator Clients that are naughty",
         PropertyValidator.inRange(0, 101));
+    builder.addString(
+        "validator.validatorsKeyFile", "", "The file to load validator keys from", null);
     builder.addInteger(
         "deposit.numValidators",
         128,
@@ -332,6 +334,11 @@ public final class ArtemisConfiguration {
   /** @return the total number of nodes on the network */
   public int getNumNodes() {
     return config.getInteger("deposit.numNodes");
+  }
+
+  public String getValidatorsKeyFile() {
+    final String keyFile = config.getString("validator.validatorsKeyFile");
+    return keyFile == null || keyFile.isEmpty() ? null : keyFile;
   }
 
   /** @return the Deposit simulation flag, w/ optional input file */
