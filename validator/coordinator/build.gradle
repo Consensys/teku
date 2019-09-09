@@ -8,6 +8,8 @@ dependencies {
   implementation project(':util')
   implementation project(':pow')
 
+
+  compile 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
   implementation 'org.apache.commons:commons-lang3:3.6'
   implementation 'org.apache.tuweni:tuweni-kv'
   implementation 'org.apache.tuweni:tuweni-bytes'
@@ -18,5 +20,7 @@ dependencies {
   implementation 'com.google.guava:guava'
   implementation 'org.apache.logging.log4j:log4j-api'
   runtime 'org.apache.logging.log4j:log4j-core'
+
+  testImplementation 'org.mockito:mockito-core:2.28.2'
 }
 
