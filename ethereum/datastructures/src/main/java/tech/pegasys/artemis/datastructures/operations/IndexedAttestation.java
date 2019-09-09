@@ -30,9 +30,11 @@ import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
 import tech.pegasys.artemis.util.hashtree.Merkleizable;
+import tech.pegasys.artemis.util.hashtree.SigningRoot;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
-public class IndexedAttestation implements Merkleizable, SimpleOffsetSerializable, SSZContainer {
+public class IndexedAttestation
+    implements Merkleizable, SigningRoot, SimpleOffsetSerializable, SSZContainer {
 
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
   public static final int SSZ_FIELD_COUNT = 2;
@@ -185,5 +187,27 @@ public class IndexedAttestation implements Merkleizable, SimpleOffsetSerializabl
                     .collect(Collectors.toList())),
             data.hash_tree_root(),
             HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_BASIC, signature.toBytes())));
+  }
+
+  @Override
+  public Bytes32 signing_root(String truncation_param) {
+    if (!truncation_param.equals("signature")) {
+      throw new UnsupportedOperationException(
+          "Only signed_root(beaconBlock, \"signature\") is currently supported for type BeaconBlock.");
+    }
+
+    return HashTreeUtil.merkleize(
+        Arrays.asList(
+            HashTreeUtil.hash_tree_root_list_ul(
+                Constants.MAX_VALIDATORS_PER_COMMITTEE,
+                custody_bit_0_indices.stream()
+                    .map(item -> SSZ.encodeUInt64(item.longValue()))
+                    .collect(Collectors.toList())),
+            HashTreeUtil.hash_tree_root_list_ul(
+                Constants.MAX_VALIDATORS_PER_COMMITTEE,
+                custody_bit_1_indices.stream()
+                    .map(item -> SSZ.encodeUInt64(item.longValue()))
+                    .collect(Collectors.toList())),
+            data.hash_tree_root()));
   }
 }
