@@ -13,8 +13,6 @@
 
 package tech.pegasys.artemis.util.mikuli;
 
-import static com.google.common.base.Preconditions.checkArgument;
-
 import com.google.common.base.Suppliers;
 import java.util.List;
 import java.util.Objects;
@@ -106,7 +104,12 @@ public final class PublicKey {
       return G1Point.fromBytes(publicKeyBytes);
     }
     throw new RuntimeException(
-        "Expected either " + COMPRESSED_PK_SIZE + " or " + UNCOMPRESSED_PK_LENGTH + " bytes for public key, but found " + publicKeyBytes.size());
+        "Expected either "
+            + COMPRESSED_PK_SIZE
+            + " or "
+            + UNCOMPRESSED_PK_LENGTH
+            + " bytes for public key, but found "
+            + publicKeyBytes.size());
   }
 
   PublicKey combine(PublicKey pk) {

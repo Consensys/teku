@@ -62,8 +62,10 @@ public final class Signature {
    * @return the signature
    */
   public static Signature fromBytesCompressed(Bytes bytes) {
-    checkArgument(bytes.size() == COMPRESSED_SIG_SIZE, "Expected " + COMPRESSED_SIG_SIZE
-        + " bytes of input but got %s", bytes.size());
+    checkArgument(
+        bytes.size() == COMPRESSED_SIG_SIZE,
+        "Expected " + COMPRESSED_SIG_SIZE + " bytes of input but got %s",
+        bytes.size());
     return new Signature(bytes);
   }
 
@@ -129,7 +131,12 @@ public final class Signature {
       return G2Point.fromBytes(signatureBytes);
     }
     throw new RuntimeException(
-        "Expected either " + COMPRESSED_SIG_SIZE + " or " + UNCOMPRESSED_SIG_SIZE + " bytes for signature, but found " + signatureBytes.size());
+        "Expected either "
+            + COMPRESSED_SIG_SIZE
+            + " or "
+            + UNCOMPRESSED_SIG_SIZE
+            + " bytes for signature, but found "
+            + signatureBytes.size());
   }
 
   /**
