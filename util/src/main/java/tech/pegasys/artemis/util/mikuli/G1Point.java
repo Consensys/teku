@@ -16,8 +16,8 @@ package tech.pegasys.artemis.util.mikuli;
 import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.artemis.util.mikuli.Util.calculateYFlag;
 
-import java.security.SecureRandom;
 import java.util.Objects;
+import java.util.Random;
 import org.apache.milagro.amcl.BLS381.BIG;
 import org.apache.milagro.amcl.BLS381.ECP;
 import org.apache.milagro.amcl.BLS381.FP;
@@ -36,7 +36,21 @@ public final class G1Point implements Group<G1Point> {
    * @return a random point on the curve.
    */
   public static G1Point random() {
-    SecureRandom rng = new SecureRandom();
+    return random(new Random());
+  }
+
+  /**
+   * Generate a random point on the curve from a seed value. The same seed value gives the same
+   * point.
+   *
+   * @param seed the seed value
+   * @return a random point on the curve.
+   */
+  public static G1Point random(long seed) {
+    return random(new Random(seed));
+  }
+
+  private static G1Point random(Random rng) {
     ECP point;
     byte[] xBytes = new byte[48];
 

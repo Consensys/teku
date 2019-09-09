@@ -17,9 +17,9 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.artemis.util.mikuli.Util.calculateYFlag;
 
 import com.google.common.annotations.VisibleForTesting;
-import java.security.SecureRandom;
 import java.security.Security;
 import java.util.Objects;
+import java.util.Random;
 import org.apache.milagro.amcl.BLS381.BIG;
 import org.apache.milagro.amcl.BLS381.ECP2;
 import org.apache.milagro.amcl.BLS381.FP2;
@@ -40,7 +40,21 @@ public final class G2Point implements Group<G2Point> {
    * @return a random point on the curve.
    */
   public static G2Point random() {
-    SecureRandom rng = new SecureRandom();
+    return random(new Random());
+  }
+
+  /**
+   * Generate a random point on the curve from a seed value. The same seed value gives the same
+   * point.
+   *
+   * @param seed a seed value
+   * @return a random point on the curve.
+   */
+  public static G2Point random(long seed) {
+    return random(new Random(seed));
+  }
+
+  private static G2Point random(Random rng) {
     ECP2 point;
     byte[] xReBytes = new byte[48];
     byte[] xImBytes = new byte[48];

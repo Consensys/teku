@@ -87,12 +87,8 @@ class BLSPublicKeyTest {
 
   @Test
   void succeedsWhenEqualsReturnsFalseForDifferentPublicKeys() {
-    BLSPublicKey publicKey1 = BLSPublicKey.random();
-    BLSPublicKey publicKey2 = BLSPublicKey.random();
-    // Ensure that we have two different publicKeys, without assuming too much about .equals
-    while (publicKey1.getPublicKey().equals(publicKey2.getPublicKey())) {
-      publicKey2 = BLSPublicKey.random();
-    }
+    BLSPublicKey publicKey1 = BLSPublicKey.random(1);
+    BLSPublicKey publicKey2 = BLSPublicKey.random(2);
     assertNotEquals(publicKey1, publicKey2);
   }
 
