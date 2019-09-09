@@ -44,8 +44,6 @@ import org.apache.tuweni.io.Resources;
 import org.junit.jupiter.params.provider.Arguments;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
-import tech.pegasys.artemis.datastructures.operations.Attestation;
-import tech.pegasys.artemis.datastructures.operations.AttesterSlashing;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.VoluntaryExit;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
@@ -248,11 +246,19 @@ public abstract class TestSuite {
                                       testSet.getTestObjectByFileName(fileName));
                               return testSet.getTestObjectByFileName(fileName).stream()
                                   .map(
-                                      testObject ->
-                                          parseObjectFromFile(
+                                      testObject -> {
+                                        if (fileName.contains(".ssz")) {
+                                          Bytes objectBytes =
+                                              getSSZBytesFromPath(Path.of(walkPath, fileName));
+                                          return SimpleOffsetSerializer.deserialize(
+                                              objectBytes, testObject.getClassName());
+                                        } else {
+                                          return parseObjectFromFile(
                                               testObject.getClassName(),
                                               testObject.getPath(),
-                                              object));
+                                              object);
+                                        }
+                                      });
                             })
                         .collect(Collectors.toList());
                   })
@@ -536,39 +542,28 @@ public abstract class TestSuite {
   }
 
   @MustBeClosed
-  @SuppressWarnings({"rawtypes"})
-  public static Stream<Arguments> sszStaticRootSigningRootSetup(
+  @SuppressWarnings("rawtypes")
+  public static Stream<Arguments> sszStaticSetup(Path path, Path configPath, Class className)
+      throws Exception {
+    loadConfigFromPath(configPath);
+
+    TestSet testSet = new TestSet(path);
+    testSet.add(new TestObject("serialized.ssz", className, null));
+    testSet.add(new TestObject("roots.yaml", Bytes32.class, Paths.get("root")));
+    testSet.add(new TestObject("roots.yaml", Bytes32.class, Paths.get("signing_root")));
+
+    return findTestsByPath(testSet);
+  }
+
+  @MustBeClosed
+  @SuppressWarnings("rawtypes")
+  public static Stream<Arguments> sszStaticSetupNoSigningRoot(
       Path path, Path configPath, Class className) throws Exception {
     loadConfigFromPath(configPath);
 
     TestSet testSet = new TestSet(path);
-    testSet.add(new TestObject("value.yaml", className, null));
-    testSet.add(new TestObject("meta.yaml", Bytes32.class, Paths.get("root")));
-    testSet.add(new TestObject("meta.yaml", Bytes32.class, Paths.get("signing_root")));
-
-    return findTestsByPath(testSet);
-  }
-
-  @MustBeClosed
-  public static Stream<Arguments> sszStaticAttestationSetup(Path path, Path configPath)
-      throws Exception {
-    loadConfigFromPath(configPath);
-
-    TestSet testSet = new TestSet(path);
-    testSet.add(new TestObject("attestation.yaml", Attestation.class, null));
-    testSet.add(new TestObject("pre.yaml", BeaconState.class, null));
-
-    return findTestsByPath(testSet);
-  }
-
-  @MustBeClosed
-  public static Stream<Arguments> attestationSlashingSetup(Path path, Path configPath)
-      throws Exception {
-    loadConfigFromPath(configPath);
-
-    TestSet testSet = new TestSet(path);
-    testSet.add(new TestObject("attester_slashing.yaml", AttesterSlashing.class, null));
-    testSet.add(new TestObject("pre.yaml", BeaconState.class, null));
+    testSet.add(new TestObject("serialized.ssz", className, null));
+    testSet.add(new TestObject("roots.yaml", Bytes32.class, Paths.get("root")));
 
     return findTestsByPath(testSet);
   }
