@@ -14,6 +14,7 @@
 package tech.pegasys.artemis.services.beaconchain;
 
 import com.google.common.eventbus.EventBus;
+import com.google.common.primitives.UnsignedLong;
 import io.vertx.core.Vertx;
 import java.io.IOException;
 import org.apache.logging.log4j.Level;
@@ -61,6 +62,7 @@ public class BeaconChainService implements ServiceInterface {
       System.exit(1);
     }
     this.store = ChainStorage.Create(ChainStorageClient.class, eventBus);
+    this.store.setGenesisTime(UnsignedLong.valueOf(config.getConfig().getInteropGenesisTime()));
     new TimingProcessor(config, store);
     new ValidatorCoordinator(config, store);
     new StateProcessor(config, store);
