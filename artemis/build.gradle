@@ -10,6 +10,7 @@ dependencies {
   implementation project(':data:metrics')
   implementation project(':data:provider')
   implementation project(':ethereum:datastructures')
+  implementation project(':ethereum:statetransition')
   implementation project(':validator:coordinator')
   implementation project(':validator:client')
 
