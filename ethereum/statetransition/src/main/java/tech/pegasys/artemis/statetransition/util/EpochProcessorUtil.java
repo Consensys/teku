@@ -615,7 +615,7 @@ public final class EpochProcessorUtil {
       List<UnsignedLong> penalties1 = attestation_deltas.getRight();
       Pair<List<UnsignedLong>, List<UnsignedLong>> crosslink_deltas = get_crosslink_deltas(state);
       List<UnsignedLong> rewards2 = crosslink_deltas.getLeft();
-      List<UnsignedLong> penalties2 = crosslink_deltas.getLeft();
+      List<UnsignedLong> penalties2 = crosslink_deltas.getRight();
 
       for (int i = 0; i < state.getValidators().size(); i++) {
         increase_balance(state, i, rewards1.get(i).plus(rewards2.get(i)));
