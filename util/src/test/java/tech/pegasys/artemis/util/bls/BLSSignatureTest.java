@@ -43,7 +43,7 @@ class BLSSignatureTest {
   void succeedsWhenCallingCheckSignatureOnEmptySignatureThrowsRuntimeException() {
     BLSSignature signature = BLSSignature.empty();
     assertThrows(
-        BLSException.class,
+        RuntimeException.class,
         () ->
             signature.checkSignature(
                 BLSPublicKey.random(),
@@ -54,7 +54,6 @@ class BLSSignatureTest {
   @Test
   void succeedsIfSerialisationOfEmptySignatureIsCorrect() {
     BLSSignature emptySignature = BLSSignature.empty();
-    assertTrue(emptySignature.isEmpty());
     assertEquals(
         "0x0000000000000000000000000000000000000000000000000000000000000000"
             + "0000000000000000000000000000000000000000000000000000000000000000"
@@ -65,7 +64,6 @@ class BLSSignatureTest {
   @Test
   void succeedsIfDeserialisationOfEmptySignatureIsCorrect() {
     BLSSignature emptySignature = BLSSignature.empty();
-    assertTrue(emptySignature.isEmpty());
     Bytes zeroBytes = Bytes.wrap(new byte[96]);
     Bytes emptyBytesSsz = SSZ.encode(writer -> writer.writeFixedBytes(zeroBytes));
     BLSSignature deserialisedSignature = BLSSignature.fromBytes(emptyBytesSsz);
@@ -76,12 +74,6 @@ class BLSSignatureTest {
   void succeedsIfDeserialisationThrowsWithTooFewBytes() {
     Bytes tooFewBytes = Bytes.wrap(new byte[99]);
     assertThrows(IllegalArgumentException.class, () -> BLSSignature.fromBytes(tooFewBytes));
-  }
-
-  @Test
-  void succeedsIfValidSignatureIsNotEmpty() {
-    BLSSignature signature = BLSSignature.random();
-    assertTrue(!signature.isEmpty());
   }
 
   @Test
@@ -105,7 +97,7 @@ class BLSSignatureTest {
   }
 
   @Test
-  void succeedsWhenAMessageSignsAndVerifies() throws BLSException {
+  void succeedsWhenAMessageSignsAndVerifies() {
     BLSKeyPair keyPair = BLSKeyPair.random();
     Bytes message = Bytes.wrap("Hello, world!".getBytes(UTF_8));
     Bytes domain = Bytes.random(8);
@@ -114,7 +106,7 @@ class BLSSignatureTest {
   }
 
   @Test
-  void succeedsWhenVerifyingDifferentDomainFails() throws BLSException {
+  void succeedsWhenVerifyingDifferentDomainFails() {
     BLSKeyPair keyPair = BLSKeyPair.random();
     Bytes message = Bytes.wrap("Hello, world!".getBytes(UTF_8));
     Bytes domain1 = Bytes.ofUnsignedLong(42L);
@@ -124,7 +116,7 @@ class BLSSignatureTest {
   }
 
   @Test
-  void succeedsWhenVerifyingDifferentMessageFails() throws BLSException {
+  void succeedsWhenVerifyingDifferentMessageFails() {
     BLSKeyPair keyPair = BLSKeyPair.random();
     Bytes message1 = Bytes.wrap("Hello, world!".getBytes(UTF_8));
     Bytes message2 = Bytes.wrap("Hello, world?".getBytes(UTF_8));
@@ -134,7 +126,7 @@ class BLSSignatureTest {
   }
 
   @Test
-  void succeedsWhenVerifyingDifferentPublicKeyFails() throws BLSException {
+  void succeedsWhenVerifyingDifferentPublicKeyFails() {
     BLSKeyPair keyPair1 = BLSKeyPair.random(1969);
     BLSKeyPair keyPair2 = BLSKeyPair.random(2019);
     Bytes message = Bytes.wrap("Hello, world!".getBytes(UTF_8));
@@ -144,7 +136,7 @@ class BLSSignatureTest {
   }
 
   @Test
-  void succeedsWhenVerifyingKeyPairsAreSeededTheSame() throws BLSException {
+  void succeedsWhenVerifyingKeyPairsAreSeededTheSame() {
     BLSKeyPair keyPair1 = BLSKeyPair.random(1);
     BLSKeyPair keyPair2 = BLSKeyPair.random(1);
     assertEquals(keyPair1.getPublicKey(), keyPair2.getPublicKey());

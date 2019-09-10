@@ -33,7 +33,7 @@ public class BLSVerify {
       BLSPublicKey pubkey, Bytes32 messageHash, BLSSignature signature, Bytes domain) {
     try {
       return signature.checkSignature(pubkey, Bytes.wrap(messageHash), domain);
-    } catch (BLSException e) {
+    } catch (RuntimeException e) {
       return false;
     }
   }
@@ -58,7 +58,7 @@ public class BLSVerify {
       List<Bytes> messageHashesAsBytes =
           messageHashes.stream().map(x -> Bytes.wrap(x)).collect(Collectors.toList());
       return aggregateSignature.checkSignature(pubkeys, messageHashesAsBytes, domain);
-    } catch (BLSException e) {
+    } catch (RuntimeException e) {
       return false;
     }
   }
