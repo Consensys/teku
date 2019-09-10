@@ -32,6 +32,7 @@ import java.util.Date;
 import java.util.List;
 import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.artemis.data.BlockProcessingRecord;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
@@ -46,6 +47,7 @@ import tech.pegasys.artemis.statetransition.util.EpochProcessingException;
 import tech.pegasys.artemis.statetransition.util.SlotProcessingException;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.Store;
+import tech.pegasys.artemis.storage.events.NodeDataLoadedEvent;
 import tech.pegasys.artemis.storage.events.NodeStartEvent;
 import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
@@ -85,11 +87,12 @@ public class StateProcessor {
     this.chainStorageClient = chainStorageClient;
     this.eventBus.register(this);
 
-    if (this.config.getDepositMode().equals(Constants.DEPOSIT_TEST)) {
+    if (this.config.getDepositMode().equals(Constants.DEPOSIT_TEST)
+        && (!this.config.getInteropActive() || this.config.getInteropStartState() == null)) {
       initialState = DataStructureUtil.createInitialBeaconState(this.config);
       setSimulationGenesisTime(initialState);
-      this.eventBus.post(new NodeStartEvent(initialState));
     }
+    this.eventBus.post(new NodeStartEvent(initialState));
   }
 
   @Subscribe
@@ -101,6 +104,7 @@ public class StateProcessor {
       chainStorageClient.setStore(store);
       UnsignedLong genesisTime = initialState.getGenesis_time();
       chainStorageClient.setGenesisTime(genesisTime);
+      this.eventBus.post(new NodeDataLoadedEvent());
     }
     Bytes32 genesisBlockRoot = get_head(store);
     STDOUT.log(Level.INFO, "Initial state root is " + initialState.hash_tree_root().toHexString());
@@ -161,12 +165,15 @@ public class StateProcessor {
   @Subscribe
   private void onBlock(BeaconBlock block) {
     try {
-      on_block(chainStorageClient.getStore(), block, stateTransition);
+      Store.Transaction transaction = chainStorageClient.getStore().startTransaction();
+      final BlockProcessingRecord record = on_block(transaction, block, stateTransition);
+      transaction.commit();
       // Add attestations that were processed in the block to processed attestations storage
       block
           .getBody()
           .getAttestations()
           .forEach(attestation -> this.chainStorageClient.addProcessedAttestation(attestation));
+      this.eventBus.post(record);
     } catch (StateTransitionException e) {
       STDOUT.log(Level.WARN, "Exception in onBlock: " + e.toString());
     }
@@ -175,7 +182,9 @@ public class StateProcessor {
   @Subscribe
   private void onAttestation(Attestation attestation) {
     try {
-      on_attestation(chainStorageClient.getStore(), attestation, stateTransition);
+      final Store.Transaction transaction = chainStorageClient.getStore().startTransaction();
+      on_attestation(transaction, attestation, stateTransition);
+      transaction.commit();
     } catch (SlotProcessingException | EpochProcessingException e) {
       STDOUT.log(Level.WARN, "Exception in onAttestation: " + e.toString());
     }

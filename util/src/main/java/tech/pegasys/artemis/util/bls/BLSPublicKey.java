@@ -14,7 +14,6 @@
 package tech.pegasys.artemis.util.bls;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static java.util.Objects.isNull;
 
 import java.util.List;
 import java.util.Objects;
@@ -28,6 +27,7 @@ public class BLSPublicKey implements SimpleOffsetSerializable {
 
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
   public static final int SSZ_FIELD_COUNT = 1;
+  public static final int BLS_PUBKEY_SIZE = 48;
 
   /**
    * Generates a compressed, serialised, random, valid public key
@@ -45,13 +45,10 @@ public class BLSPublicKey implements SimpleOffsetSerializable {
   /**
    * Creates an empty public key (all zero bytes)
    *
-   * <p>Due to the flags, this is not actually a valid key, so we use null to flag that the public
-   * key is empty.
-   *
    * @return the empty public key as per the Eth2 spec
    */
   public static BLSPublicKey empty() {
-    return new BLSPublicKey(null);
+    return BLSPublicKey.fromBytes(Bytes.wrap(new byte[BLS_PUBKEY_SIZE]));
   }
 
   public static BLSPublicKey aggregate(List<BLSPublicKey> publicKeys) {
@@ -67,30 +64,23 @@ public class BLSPublicKey implements SimpleOffsetSerializable {
 
   @Override
   public List<Bytes> get_fixed_parts() {
-    if (isNull(publicKey)) {
-      return List.of(SSZ.encode(writer -> writer.writeFixedBytes(Bytes.wrap(new byte[48]))));
-    } else {
-      return List.of(SSZ.encode(writer -> writer.writeFixedBytes(publicKey.toBytesCompressed())));
-    }
+    return List.of(SSZ.encode(writer -> writer.writeFixedBytes(publicKey.toBytesCompressed())));
   }
 
   public static BLSPublicKey fromBytes(Bytes bytes) {
-    checkArgument(bytes.size() == 48, "Expected 48 bytes but received %s.", bytes.size());
-    if (SSZ.decode(bytes, reader -> reader.readFixedBytes(48)).isZero()) {
-      return BLSPublicKey.empty();
-    } else {
-      return SSZ.decode(
-          bytes,
-          reader -> new BLSPublicKey(PublicKey.fromBytesCompressed(reader.readFixedBytes(48))));
-    }
+    checkArgument(
+        bytes.size() == BLS_PUBKEY_SIZE,
+        "Expected " + BLS_PUBKEY_SIZE + " bytes but received %s.",
+        bytes.size());
+    return SSZ.decode(
+        bytes,
+        reader ->
+            new BLSPublicKey(
+                PublicKey.fromBytesCompressed(reader.readFixedBytes(BLS_PUBKEY_SIZE))));
   }
 
   public static BLSPublicKey fromBytesCompressed(Bytes bytes) {
-    if (bytes.isZero()) {
-      return BLSPublicKey.empty();
-    } else {
-      return new BLSPublicKey(PublicKey.fromBytesCompressed(bytes));
-    }
+    return new BLSPublicKey(PublicKey.fromBytesCompressed(bytes));
   }
 
   private final PublicKey publicKey;
@@ -105,30 +95,19 @@ public class BLSPublicKey implements SimpleOffsetSerializable {
    * @return the serialisation of the compressed form of the signature.
    */
   public Bytes toBytes() {
-    if (isNull(publicKey)) {
-      return SSZ.encode(
-          writer -> {
-            writer.writeFixedBytes(Bytes.wrap(new byte[48]));
-          });
-    } else {
-      return SSZ.encode(
-          writer -> {
-            writer.writeFixedBytes(publicKey.toBytesCompressed());
-          });
-    }
+    return SSZ.encode(
+        writer -> {
+          writer.writeFixedBytes(publicKey.toBytesCompressed());
+        });
   }
 
   public PublicKey getPublicKey() {
     return publicKey;
   }
 
-  public boolean isEmpty() {
-    return isNull(publicKey);
-  }
-
   @Override
   public String toString() {
-    return isNull(publicKey) ? "Empty Public Key" : publicKey.toString();
+    return publicKey.toString();
   }
 
   @Override

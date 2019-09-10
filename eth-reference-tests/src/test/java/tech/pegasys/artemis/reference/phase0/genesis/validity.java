@@ -33,7 +33,7 @@ public class validity extends TestSuite {
   @ParameterizedTest(name = "{index} root of Merkleizable")
   @MethodSource({"genesisGenericValiditySetup"})
   void genesisValidity(BeaconState genesis, Boolean is_valid) {
-    // TODO
+    // TODO: Proto says this is probably changing
   }
 
   @MustBeClosed

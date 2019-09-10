@@ -19,10 +19,13 @@ import tech.pegasys.artemis.storage.Store;
 public class DBStoreValidEvent {
   private final Store store;
   private final UnsignedLong nodeSlot;
+  private final UnsignedLong genesisTime;
 
-  public DBStoreValidEvent(final Store store, final UnsignedLong nodeSlot) {
+  public DBStoreValidEvent(
+      final Store store, final UnsignedLong nodeSlot, final UnsignedLong genesisTime) {
     this.store = store;
     this.nodeSlot = nodeSlot;
+    this.genesisTime = genesisTime;
   }
 
   public Store getStore() {
@@ -31,5 +34,9 @@ public class DBStoreValidEvent {
 
   public UnsignedLong getNodeSlot() {
     return nodeSlot;
+  }
+
+  public UnsignedLong getGenesisTime() {
+    return genesisTime;
   }
 }

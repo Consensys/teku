@@ -14,6 +14,7 @@
 package tech.pegasys.artemis.storage;
 
 import static tech.pegasys.artemis.datastructures.Constants.GENESIS_EPOCH;
+import static tech.pegasys.artemis.datastructures.Constants.SECONDS_PER_SLOT;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
@@ -21,7 +22,8 @@ import com.google.common.primitives.UnsignedLong;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.HashMap;
+import java.util.Map;
 import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -65,9 +67,24 @@ public class FixedStateChainStorageServer implements ChainStorage {
 
   DBStoreValidEvent loadInitialState(final Bytes beaconStateData) {
     final BeaconStateWithCache initialBeaconState = loadBeaconState(beaconStateData);
-
     final Store initialStore = get_genesis_store(initialBeaconState);
-    return new DBStoreValidEvent(initialStore, initialBeaconState.getSlot().plus(UnsignedLong.ONE));
+    UnsignedLong genesisTime = initialBeaconState.getGenesis_time();
+    UnsignedLong currentTime = UnsignedLong.valueOf(System.currentTimeMillis() / 1000);
+    UnsignedLong deltaTime = UnsignedLong.ZERO;
+    UnsignedLong currentSlot = UnsignedLong.ZERO;
+    if (currentTime.compareTo(genesisTime) > 0) {
+      deltaTime = currentTime.minus(genesisTime);
+      currentSlot = deltaTime.dividedBy(UnsignedLong.valueOf(SECONDS_PER_SLOT));
+    } else {
+      try {
+        // sleep until genesis
+        Thread.sleep(genesisTime.minus(currentTime).longValue());
+      } catch (InterruptedException e) {
+        e.printStackTrace();
+        throw new IllegalArgumentException("Error in loadInitialState()");
+      }
+    }
+    return new DBStoreValidEvent(initialStore, currentSlot, genesisTime);
   }
 
   public static Store get_genesis_store(BeaconStateWithCache genesis_state) {
@@ -75,9 +92,9 @@ public class FixedStateChainStorageServer implements ChainStorage {
     Bytes32 root = genesis_block.signing_root("signature");
     Checkpoint justified_checkpoint = new Checkpoint(UnsignedLong.valueOf(GENESIS_EPOCH), root);
     Checkpoint finalized_checkpoint = new Checkpoint(UnsignedLong.valueOf(GENESIS_EPOCH), root);
-    ConcurrentHashMap<Bytes32, BeaconBlock> blocks = new ConcurrentHashMap<>();
-    ConcurrentHashMap<Bytes32, BeaconState> block_states = new ConcurrentHashMap<>();
-    ConcurrentHashMap<Checkpoint, BeaconState> checkpoint_states = new ConcurrentHashMap<>();
+    Map<Bytes32, BeaconBlock> blocks = new HashMap<>();
+    Map<Bytes32, BeaconState> block_states = new HashMap<>();
+    Map<Checkpoint, BeaconState> checkpoint_states = new HashMap<>();
     blocks.put(root, genesis_block);
     block_states.put(root, new BeaconStateWithCache(genesis_state));
     checkpoint_states.put(justified_checkpoint, new BeaconStateWithCache(genesis_state));

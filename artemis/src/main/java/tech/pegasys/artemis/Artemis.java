@@ -16,38 +16,10 @@ package tech.pegasys.artemis;
 import java.security.Security;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import picocli.CommandLine;
-import tech.pegasys.artemis.util.cli.CommandLineArguments;
 
 public final class Artemis {
   public static void main(final String... args) {
     Security.addProvider(new BouncyCastleProvider());
-    try {
-      // Process Command Line Args
-      CommandLineArguments cliArgs = new CommandLineArguments();
-      CommandLine commandLine = new CommandLine(cliArgs);
-      commandLine.parse(args);
-      if (commandLine.isUsageHelpRequested()) {
-        commandLine.usage(System.out);
-      } else if (commandLine.isVersionHelpRequested()) {
-        commandLine.printVersionHelp(System.out);
-      } else {
-
-        BeaconNode node = new BeaconNode(commandLine, cliArgs);
-        node.start();
-        // Detect SIGTERM
-        Runtime.getRuntime()
-            .addShutdownHook(
-                new Thread() {
-                  @Override
-                  public void run() {
-                    System.out.println("Artemis is shutting down");
-                    node.stop();
-                  }
-                });
-      }
-    } catch (RuntimeException e) {
-      System.out.println("Artemis failed to start. \n" + e.toString());
-      System.exit(1);
-    }
+    new CommandLine(new BeaconNodeCommand()).execute(args);
   }
 }

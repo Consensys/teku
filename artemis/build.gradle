@@ -8,8 +8,9 @@ dependencies {
   implementation project(':data')
   implementation project(':data:adapter')
   implementation project(':data:metrics')
-  implementation project(':data:provider')
+  implementation project(':data:recorder')
   implementation project(':ethereum:datastructures')
+  implementation project(':ethereum:statetransition')
   implementation project(':validator:coordinator')
   implementation project(':validator:client')
 
