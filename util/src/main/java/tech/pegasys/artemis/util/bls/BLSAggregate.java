@@ -36,7 +36,7 @@ public class BLSAggregate {
   public static BLSSignature bls_aggregate_signatures(List<BLSSignature> signatures) {
     try {
       return BLSSignature.aggregate(signatures);
-    } catch (BLSException e) {
+    } catch (RuntimeException e) {
       // TODO: once we stop using random (unseeded signatures) keypairs,
       // then the signatures will be predictable and the resulting state can be precomputed
       return BLSSignature.random();

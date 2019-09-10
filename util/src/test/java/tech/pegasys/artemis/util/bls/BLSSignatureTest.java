@@ -43,7 +43,7 @@ class BLSSignatureTest {
   void succeedsWhenCallingCheckSignatureOnEmptySignatureThrowsRuntimeException() {
     BLSSignature signature = BLSSignature.empty();
     assertThrows(
-        BLSException.class,
+        RuntimeException.class,
         () ->
             signature.checkSignature(
                 BLSPublicKey.random(),
@@ -54,7 +54,6 @@ class BLSSignatureTest {
   @Test
   void succeedsIfSerialisationOfEmptySignatureIsCorrect() {
     BLSSignature emptySignature = BLSSignature.empty();
-    assertTrue(emptySignature.isEmpty());
     assertEquals(
         "0x0000000000000000000000000000000000000000000000000000000000000000"
             + "0000000000000000000000000000000000000000000000000000000000000000"
@@ -65,7 +64,6 @@ class BLSSignatureTest {
   @Test
   void succeedsIfDeserialisationOfEmptySignatureIsCorrect() {
     BLSSignature emptySignature = BLSSignature.empty();
-    assertTrue(emptySignature.isEmpty());
     Bytes zeroBytes = Bytes.wrap(new byte[96]);
     Bytes emptyBytesSsz = SSZ.encode(writer -> writer.writeFixedBytes(zeroBytes));
     BLSSignature deserialisedSignature = BLSSignature.fromBytes(emptyBytesSsz);
@@ -76,12 +74,6 @@ class BLSSignatureTest {
   void succeedsIfDeserialisationThrowsWithTooFewBytes() {
     Bytes tooFewBytes = Bytes.wrap(new byte[99]);
     assertThrows(IllegalArgumentException.class, () -> BLSSignature.fromBytes(tooFewBytes));
-  }
-
-  @Test
-  void succeedsIfValidSignatureIsNotEmpty() {
-    BLSSignature signature = BLSSignature.random();
-    assertTrue(!signature.isEmpty());
   }
 
   @Test

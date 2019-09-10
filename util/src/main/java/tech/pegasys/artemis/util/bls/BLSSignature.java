@@ -31,6 +31,7 @@ public class BLSSignature implements SimpleOffsetSerializable {
 
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
   public static final int SSZ_FIELD_COUNT = 1;
+  public static final int BLS_SIGNATURE_SIZE = 96;
 
   /**
    * Create a signature by signing the given message and domain with the given private key
@@ -73,13 +74,10 @@ public class BLSSignature implements SimpleOffsetSerializable {
   /**
    * Creates an empty signature (all zero bytes)
    *
-   * <p>Due to the flags, this is not actually a valid signature, so we use null to flag that the
-   * signature is empty.
-   *
    * @return the empty signature as per the Eth2 spec
    */
   public static BLSSignature empty() {
-    return new BLSSignature(null);
+    return BLSSignature.fromBytes(Bytes.wrap(new byte[BLS_SIGNATURE_SIZE]));
   }
 
   /**
@@ -87,12 +85,8 @@ public class BLSSignature implements SimpleOffsetSerializable {
    *
    * @param signatures the list of signatures to be aggregated
    * @return the aggregated signature
-   * @throws BLSException if an empty signature is found in the list to be aggregated
    */
-  static BLSSignature aggregate(List<BLSSignature> signatures) throws BLSException {
-    if (signatures.stream().anyMatch(BLSSignature::isEmpty)) {
-      throw new BLSException("Empty signature found while aggregating signatures.");
-    }
+  static BLSSignature aggregate(List<BLSSignature> signatures) {
     List<Signature> signatureObjects =
         signatures.stream().map(x -> x.signature).collect(Collectors.toList());
     return new BLSSignature(Signature.aggregate(signatureObjects));
@@ -105,22 +99,19 @@ public class BLSSignature implements SimpleOffsetSerializable {
 
   @Override
   public List<Bytes> get_fixed_parts() {
-    if (isNull(signature)) {
-      return List.of(SSZ.encode(writer -> writer.writeFixedBytes(Bytes.wrap(new byte[96]))));
-    } else {
-      return List.of(SSZ.encode(writer -> writer.writeFixedBytes(signature.toBytesCompressed())));
-    }
+    return List.of(SSZ.encode(writer -> writer.writeFixedBytes(signature.toBytesCompressed())));
   }
 
   public static BLSSignature fromBytes(Bytes bytes) {
-    checkArgument(bytes.size() == 96, "Expected 96 bytes but received %s.", bytes.size());
-    if (SSZ.decode(bytes, reader -> reader.readFixedBytes(96)).isZero()) {
-      return BLSSignature.empty();
-    } else {
-      return SSZ.decode(
-          bytes,
-          reader -> new BLSSignature(Signature.fromBytesCompressed(reader.readFixedBytes(96))));
-    }
+    checkArgument(
+        bytes.size() == BLS_SIGNATURE_SIZE,
+        "Expected " + BLS_SIGNATURE_SIZE + " bytes but received %s.",
+        bytes.size());
+    return SSZ.decode(
+        bytes,
+        reader ->
+            new BLSSignature(
+                Signature.fromBytesCompressed(reader.readFixedBytes(BLS_SIGNATURE_SIZE))));
   }
 
   private final Signature signature;
@@ -136,15 +127,8 @@ public class BLSSignature implements SimpleOffsetSerializable {
    * @param message the message
    * @param domain the domain as specified in the Eth2 spec
    * @return true if the signature is valid, false if it is not
-   * @throws BLSException
    */
-  boolean checkSignature(BLSPublicKey publicKey, Bytes message, Bytes domain) throws BLSException {
-    if (isNull(signature)) {
-      throw new BLSException("The checkSignature method was called on an empty signature.");
-    }
-    if (isNull(publicKey)) {
-      throw new BLSException("The checkSignature method was called with an empty public key.");
-    }
+  boolean checkSignature(BLSPublicKey publicKey, Bytes message, Bytes domain) {
     return BLS12381.verify(publicKey.getPublicKey(), signature, message, domain);
   }
 
@@ -156,18 +140,13 @@ public class BLSSignature implements SimpleOffsetSerializable {
    * @param messages the messages to be authenticated
    * @param domain the domain as specified in the Eth2 spec
    * @return true if the signature is valid, false if it is not
-   * @throws BLSException
    */
-  boolean checkSignature(List<BLSPublicKey> publicKeys, List<Bytes> messages, Bytes domain)
-      throws BLSException {
+  boolean checkSignature(List<BLSPublicKey> publicKeys, List<Bytes> messages, Bytes domain) {
     checkArgument(
         publicKeys.size() == messages.size(),
         "Differing numbers of public keys and messages: %s and %s",
         publicKeys.size(),
         messages.size());
-    if (isNull(signature)) {
-      throw new BLSException("The checkSignature method was called on an empty signature.");
-    }
     List<PublicKey> publicKeyObjects =
         publicKeys.stream().map(x -> x.getPublicKey()).collect(Collectors.toList());
     return BLS12381.verifyMultiple(publicKeyObjects, signature, messages, domain);
@@ -179,35 +158,24 @@ public class BLSSignature implements SimpleOffsetSerializable {
    * @return the serialisation of the compressed form of the signature.
    */
   public Bytes toBytes() {
-    if (isNull(signature)) {
-      return SSZ.encode(
-          writer -> {
-            writer.writeFixedBytes(Bytes.wrap(new byte[96]));
-          });
-    } else {
-      return SSZ.encode(
-          writer -> {
-            writer.writeFixedBytes(signature.toBytesCompressed());
-          });
-    }
+    return SSZ.encode(
+        writer -> {
+          writer.writeFixedBytes(signature.toBytesCompressed());
+        });
   }
 
   public Signature getSignature() {
     return signature;
   }
 
-  boolean isEmpty() {
-    return isNull(signature);
-  }
-
   @Override
   public String toString() {
-    return isNull(signature) ? "Empty Signature" : signature.toString();
+    return signature.toString();
   }
 
   @Override
   public int hashCode() {
-    return isEmpty() ? 0 : signature.hashCode();
+    return signature.hashCode();
   }
 
   @Override
