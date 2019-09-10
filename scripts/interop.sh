@@ -24,6 +24,7 @@ export OWNED_VALIDATOR_COUNT=$4
 export PEERS=$5
 START_DELAY=$6
 export GENESIS_FILE=/tmp/genesis.ssz
+export LIGHTHOUSE_DIR=$HOME/Projects/lighthouse/target/release
 
 BOOTNODE_ENR=$(cat ~/.mothra/network/enr.dat)
 
@@ -74,7 +75,6 @@ then
     export LISTEN_ADDRESS=127.0.0.1
     export PORT=19001
     #TODO: use a relative path to lighthouse dir.  the best way would be to deploy it to $ARTEMIS_ROOT/scripts/demo/node_lighthouse
-    export DIR=$HOME/projects/consensys/pegasys/lighthouse/lighthouse/target/release
 
     # export RUST_LOG=libp2p_gossipsub=debug
 
@@ -85,7 +85,7 @@ then
 
         if [ "$GENESIS_FILE" != "" ]
         then
-            tmux split-window -v -t 0 "cd $DIR && ./beacon_node --libp2p-addresses $PEERS --listen-address $LISTEN_ADDRESS --port $PORT testnet -f file ssz $GENESIS_FILE"
+            tmux split-window -v -t 0 "cd $LIGHTHOUSE_DIR && ./beacon_node --libp2p-addresses $PEERS --listen-address $LISTEN_ADDRESS --port $PORT testnet -f file ssz $GENESIS_FILE"
         fi
     else
         #TODO: add tmux
@@ -109,8 +109,7 @@ then
     echo $LIGHTHOUSE_OWNED_VALIDATOR_START_INDEX
     export LIGHTHOUSE_VALIDATOR_COUNT=$((VALIDATOR_COUNT - OWNED_VALIDATOR_COUNT))
     echo $LIGHTHOUSE_VALIDATOR_COUNT
-    export DIR=$HOME/projects/consensys/pegasys/lighthouse/lighthouse/target/release
-    tmux split-window -h -t 0 "cd $DIR  && ./validator_client testnet -b insecure $LIGHTHOUSE_OWNED_VALIDATOR_START_INDEX $LIGHTHOUSE_VALIDATOR_COUNT; sleep 20"
+    tmux split-window -h -t 0 "cd $LIGHTHOUSE_DIR  && ./validator_client testnet -b insecure $LIGHTHOUSE_OWNED_VALIDATOR_START_INDEX $LIGHTHOUSE_VALIDATOR_COUNT; sleep 20"
 fi
 
 
