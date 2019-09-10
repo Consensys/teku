@@ -190,6 +190,13 @@ public class ForkChoiceUtil {
 
     // Blocks cannot be in the future. If they are, their consideration must be delayed until the
     // are in the past.
+    /*
+    System.out.println("store Time: " + store.getTime());
+    System.out.println("genesisTime: " + state.getGenesis_time());
+    System.out.println("target epoch: " + target.getEpoch());
+    System.out.println("start slot of epoch: " + compute_start_slot_of_epoch(target.getEpoch()));
+
+    */
     checkArgument(
         store
                 .getTime()
@@ -264,7 +271,13 @@ public class ForkChoiceUtil {
     // Attestations cannot be from future epochs. If they are, delay consideration until the epoch
     // arrives
     BeaconStateWithCache base_state =
-        new BeaconStateWithCache((BeaconStateWithCache) store.getBlockState(target.getRoot()));
+        BeaconStateWithCache.deepCopy((BeaconStateWithCache) store.getBlockState(target.getRoot()));
+    /*
+    System.out.println("store Time: " + store.getTime());
+    System.out.println("genesisTime: " + base_state.getGenesis_time());
+    System.out.println("target epoch: " + target.getEpoch());
+    System.out.println("start slot of epoch: " + compute_start_slot_of_epoch(target.getEpoch()));
+    */
     checkArgument(
         store
                 .getTime()

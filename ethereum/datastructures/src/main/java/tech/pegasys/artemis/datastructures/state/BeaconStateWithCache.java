@@ -17,6 +17,7 @@ import com.google.common.primitives.UnsignedLong;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.Copyable;
@@ -124,7 +125,10 @@ public final class BeaconStateWithCache extends BeaconState {
     this.eth1_deposit_index = state.getEth1_deposit_index();
 
     // Registry
-    this.validators = new SSZList<>(state.getValidators());
+    this.validators =
+        copyList(
+            state.getValidators(),
+            new SSZList<>(state.getValidators().getClass(), state.getValidators().getMaxSize()));
     this.balances = new SSZList<>(state.getBalances());
 
     // Shuffling
@@ -137,12 +141,30 @@ public final class BeaconStateWithCache extends BeaconState {
     this.slashings = new SSZVector<>(state.getSlashings());
 
     // Attestations
-    this.previous_epoch_attestations = new SSZList<>(state.getPrevious_epoch_attestations());
-    this.current_epoch_attestations = new SSZList<>(state.getCurrent_epoch_attestations());
+    this.previous_epoch_attestations =
+        copyList(
+            state.getPrevious_epoch_attestations(),
+            new SSZList<>(
+                state.getPrevious_epoch_attestations().getClass(),
+                state.getPrevious_epoch_attestations().getMaxSize()));
+    this.current_epoch_attestations =
+        copyList(
+            state.getCurrent_epoch_attestations(),
+            new SSZList<>(
+                state.getCurrent_epoch_attestations().getClass(),
+                state.getCurrent_epoch_attestations().getMaxSize()));
 
     // Crosslinks
-    this.current_crosslinks = new SSZVector<>(state.getCurrent_crosslinks());
-    this.previous_crosslinks = new SSZVector<>(state.getPrevious_crosslinks());
+    SSZVector<Crosslink> newCurrentCrosslinks =
+        new SSZVector<>(state.getCurrent_crosslinks().getSize(), new Crosslink());
+    IntStream.range(0, newCurrentCrosslinks.getSize())
+        .forEach(i -> newCurrentCrosslinks.set(i, state.getCurrent_crosslinks().get(i).copy()));
+    SSZVector<Crosslink> newPreviousCrosslinks =
+        new SSZVector<>(state.getPrevious_crosslinks().getSize(), new Crosslink());
+    IntStream.range(0, newPreviousCrosslinks.getSize())
+        .forEach(i -> newPreviousCrosslinks.set(i, state.getPrevious_crosslinks().get(i).copy()));
+    this.current_crosslinks = newCurrentCrosslinks;
+    this.previous_crosslinks = newPreviousCrosslinks;
 
     // Finality
     this.justification_bits = state.getJustification_bits().copy();

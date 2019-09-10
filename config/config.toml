@@ -41,7 +41,7 @@ nodeUrl = "http://localhost:7545"
 [output]
 logPath = "."
 logFile = "artemis.log"
-#transitionRecordDir = "transitionData"
+transitionRecordDir = "/tmp/transitionData/"
 
 [output.fields]
 TimeSeriesRecord = ["date", "index", "slot", "epoch", "block_root", "block_body", "lastFinalizedBlockRoot", "lastFinalizedStateRoot", "block_parent_root", "validators_size", "validators", "lastJustifiedBlockRoot", "lastJustifiedStateRoot"]

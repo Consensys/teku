@@ -101,7 +101,7 @@ public class Constants {
   public static int VALIDATOR_CLIENT_PORT_BASE = 50000;
   public static Bytes32 ZERO_HASH = Bytes32.ZERO;
   public static int SECONDS_PER_SLOT = 6;
-  public static double TIME_TICKER_REFRESH_RATE = 2; // per sec
+  public static double TIME_TICKER_REFRESH_RATE = 20; // per sec
   public static UnsignedLong GENESIS_TIME = UnsignedLong.MAX_VALUE;
   public static UnsignedLong GENESIS_START_DELAY = UnsignedLong.valueOf(5);
   // TODO make this variable through yaml
