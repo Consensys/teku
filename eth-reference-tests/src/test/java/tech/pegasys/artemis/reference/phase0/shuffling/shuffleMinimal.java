@@ -31,11 +31,11 @@ import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.artemis.reference.TestSuite;
 
 @ExtendWith(BouncyCastleExtension.class)
-public class shuffle extends TestSuite {
+public class shuffleMinimal extends TestSuite {
 
-  @ParameterizedTest(name = "{index} root of Merkleizable")
+  @ParameterizedTest(name = "{index} Sanity shuffling (Minimal)")
   @MethodSource({"shufflingGenericShuffleSetup"})
-  void sanityProcessSlot(Bytes32 seed, Integer count, List<Integer> mapping) {
+  void sanityProcessShuffling(Bytes32 seed, Integer count, List<Integer> mapping) {
     IntStream.range(0, count)
         .forEach(
             i -> {
@@ -45,8 +45,8 @@ public class shuffle extends TestSuite {
 
   @MustBeClosed
   static Stream<Arguments> shufflingGenericShuffleSetup() throws Exception {
-    Path configPath = Paths.get("mainnet", "phase0");
-    Path path = Paths.get("/mainnet/phase0/shuffling/core/shuffle");
+    Path configPath = Paths.get("minimal", "phase0");
+    Path path = Paths.get("/minimal/phase0/shuffling/core/shuffle");
     return shufflingShuffleSetup(path, configPath);
   }
 }
