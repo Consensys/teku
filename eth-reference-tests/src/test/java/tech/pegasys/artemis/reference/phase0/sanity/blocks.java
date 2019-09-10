@@ -143,7 +143,7 @@ public class blocks extends TestSuite {
   @MustBeClosed
   static Stream<Arguments> sanityVoluntaryExitSetup() throws Exception {
     Path configPath = Paths.get("mainnet", "phase0");
-    Path path = Paths.get("/mainnet/phase0/sanity/blocks/pyspec_tests/pyspec_tests/voluntary_exit");
+    Path path = Paths.get("/mainnet/phase0/sanity/blocks/pyspec_tests/voluntary_exit");
     return sanityMultiBlockSetup(path, configPath);
   }
 
