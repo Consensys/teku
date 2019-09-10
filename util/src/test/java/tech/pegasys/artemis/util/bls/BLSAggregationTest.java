@@ -39,12 +39,12 @@ public class BLSAggregationTest {
   }
 
   @Test
-  void succeedsWhenPassingEmptySignatureToAggregateSignaturesThrowsBLSException() {
+  void succeedsWhenPassingEmptySignatureToAggregateSignaturesThrowsIllegalArgumentException() {
     BLSSignature signature1 = BLSSignature.random();
     BLSSignature signature2 = BLSSignature.empty();
     BLSSignature signature3 = BLSSignature.random();
     assertThrows(
-        BLSException.class,
+        IllegalArgumentException.class,
         () -> BLSSignature.aggregate(Arrays.asList(signature1, signature2, signature3)));
   }
 
