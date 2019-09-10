@@ -134,7 +134,10 @@ fi
 # Start Loadstar
 if [ "$START_LOADSTAR" = true ]
 then
-    export PORT=19004
+    #export PORT=19004
+    #LOADSTAR_VALIDATOR_INDEX
+
+    #./bin/lodestar interop -p minimal --db l1 -q $GENESIS_FILE --multiaddrs /ip4/127.0.0.1/tcp/30607 -v <num_validators> -r
     #export DIR=
     #tmux split-window -h -t 0 "cd $DIR; ./start.sh --quickStart=true --stateSnapshot=$GENESIS_FILE"
 
