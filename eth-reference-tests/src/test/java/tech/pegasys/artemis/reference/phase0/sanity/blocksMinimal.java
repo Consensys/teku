@@ -29,14 +29,15 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.reference.TestSuite;
-import tech.pegasys.artemis.statetransition.util.BlockProcessingException;
-import tech.pegasys.artemis.statetransition.util.BlockProcessorUtil;
+import tech.pegasys.artemis.statetransition.StateTransition;
+import tech.pegasys.artemis.statetransition.StateTransitionException;
 
 @ExtendWith(BouncyCastleExtension.class)
-public class blocks extends TestSuite {
+public class blocksMinimal extends TestSuite {
 
-  @ParameterizedTest(name = "{index} root of Merkleizable")
+  @ParameterizedTest(name = "{index} Sanity blocks valid (Minimal)")
   @MethodSource({
     "sanityAttestationSetup",
     "sanityAttesterSlashingSetup",
@@ -49,134 +50,138 @@ public class blocks extends TestSuite {
     "sanityProposerSlashingSetup",
     "sanitySameSlotBlockTransitionSetup",
     "sanitySkippedSlotsSetup",
-    "sanityVoluntaryExitSetup"
+    "sanityVoluntaryExitSetup",
   })
   void sanityProcessBlock(BeaconState pre, BeaconState post, List<BeaconBlock> blocks) {
+    BeaconStateWithCache preWithCache = BeaconStateWithCache.fromBeaconState(pre);
+    StateTransition stateTransition = new StateTransition(false);
     blocks.forEach(
         block -> {
-          assertDoesNotThrow(() -> BlockProcessorUtil.process_block_header(pre, block, true));
+          assertDoesNotThrow(() -> stateTransition.initiate(preWithCache, block, true));
         });
-    assertEquals(pre, post);
+    assertEquals(preWithCache, post);
   }
 
   @MustBeClosed
   static Stream<Arguments> sanityAttestationSetup() throws Exception {
-    Path configPath = Paths.get("mainnet", "phase0");
-    Path path = Paths.get("/mainnet/phase0/sanity/blocks/pyspec_tests/attestation");
+    Path configPath = Paths.get("minimal", "phase0");
+    Path path = Paths.get("/minimal/phase0/sanity/blocks/pyspec_tests/attestation");
     return sanityMultiBlockSetup(path, configPath);
   }
 
   @MustBeClosed
   static Stream<Arguments> sanityAttesterSlashingSetup() throws Exception {
-    Path configPath = Paths.get("mainnet", "phase0");
-    Path path = Paths.get("/mainnet/phase0/sanity/blocks/pyspec_tests/attester_slashing");
+    Path configPath = Paths.get("minimal", "phase0");
+    Path path = Paths.get("/minimal/phase0/sanity/blocks/pyspec_tests/attester_slashing");
     return sanityMultiBlockSetup(path, configPath);
   }
 
   @MustBeClosed
   static Stream<Arguments> sanityBalanceDrivenTransitionsSetup() throws Exception {
-    Path configPath = Paths.get("mainnet", "phase0");
+    Path configPath = Paths.get("minimal", "phase0");
     Path path =
-        Paths.get("/mainnet/phase0/sanity/blocks/pyspec_tests/balance_driven_status_transitions");
+        Paths.get("/minimal/phase0/sanity/blocks/pyspec_tests/balance_driven_status_transitions");
     return sanityMultiBlockSetup(path, configPath);
   }
 
   @MustBeClosed
   static Stream<Arguments> sanityDepositInBlockSetup() throws Exception {
-    Path configPath = Paths.get("mainnet", "phase0");
-    Path path = Paths.get("/mainnet/phase0/sanity/blocks/pyspec_tests/deposit_in_block");
+    Path configPath = Paths.get("minimal", "phase0");
+    Path path = Paths.get("/minimal/phase0/sanity/blocks/pyspec_tests/deposit_in_block");
     return sanityMultiBlockSetup(path, configPath);
   }
 
   @MustBeClosed
   static Stream<Arguments> sanityDepositTopUpSetup() throws Exception {
-    Path configPath = Paths.get("mainnet", "phase0");
-    Path path = Paths.get("/mainnet/phase0/sanity/blocks/pyspec_tests/deposit_top_up");
+    Path configPath = Paths.get("minimal", "phase0");
+    Path path = Paths.get("/minimal/phase0/sanity/blocks/pyspec_tests/deposit_top_up");
     return sanityMultiBlockSetup(path, configPath);
   }
 
   @MustBeClosed
   static Stream<Arguments> sanityEmptyBlockTransitionSetup() throws Exception {
-    Path configPath = Paths.get("mainnet", "phase0");
-    Path path = Paths.get("/mainnet/phase0/sanity/blocks/pyspec_tests/empty_block_transition");
+    Path configPath = Paths.get("minimal", "phase0");
+    Path path = Paths.get("/minimal/phase0/sanity/blocks/pyspec_tests/empty_block_transition");
     return sanityMultiBlockSetup(path, configPath);
   }
 
   @MustBeClosed
   static Stream<Arguments> sanityEmptyEpochTransitionSetup() throws Exception {
-    Path configPath = Paths.get("mainnet", "phase0");
-    Path path = Paths.get("/mainnet/phase0/sanity/blocks/pyspec_tests/empty_epoch_transition");
+    Path configPath = Paths.get("minimal", "phase0");
+    Path path = Paths.get("/minimal/phase0/sanity/blocks/pyspec_tests/empty_epoch_transition");
     return sanityMultiBlockSetup(path, configPath);
   }
 
   @MustBeClosed
   static Stream<Arguments> sanityHistoricalBatchSetup() throws Exception {
-    Path configPath = Paths.get("mainnet", "phase0");
-    Path path = Paths.get("/mainnet/phase0/sanity/blocks/pyspec_tests/historical_batch");
+    Path configPath = Paths.get("minimal", "phase0");
+    Path path = Paths.get("/minimal/phase0/sanity/blocks/pyspec_tests/historical_batch");
     return sanityMultiBlockSetup(path, configPath);
   }
 
   @MustBeClosed
   static Stream<Arguments> sanityProposerSlashingSetup() throws Exception {
-    Path configPath = Paths.get("mainnet", "phase0");
-    Path path = Paths.get("/mainnet/phase0/sanity/blocks/pyspec_tests/proposer_slashing");
+    Path configPath = Paths.get("minimal", "phase0");
+    Path path = Paths.get("/minimal/phase0/sanity/blocks/pyspec_tests/proposer_slashing");
     return sanityMultiBlockSetup(path, configPath);
   }
 
   @MustBeClosed
   static Stream<Arguments> sanitySameSlotBlockTransitionSetup() throws Exception {
-    Path configPath = Paths.get("mainnet", "phase0");
-    Path path = Paths.get("/mainnet/phase0/sanity/blocks/pyspec_tests/same_slot_block_transition");
+    Path configPath = Paths.get("minimal", "phase0");
+    Path path = Paths.get("/minimal/phase0/sanity/blocks/pyspec_tests/same_slot_block_transition");
     return sanityMultiBlockSetup(path, configPath);
   }
 
   @MustBeClosed
   static Stream<Arguments> sanitySkippedSlotsSetup() throws Exception {
-    Path configPath = Paths.get("mainnet", "phase0");
-    Path path = Paths.get("/mainnet/phase0/sanity/blocks/pyspec_tests/pyspec_tests/skipped_slots");
+    Path configPath = Paths.get("minimal", "phase0");
+    Path path = Paths.get("/minimal/phase0/sanity/blocks/pyspec_tests/skipped_slots");
     return sanityMultiBlockSetup(path, configPath);
   }
 
   @MustBeClosed
   static Stream<Arguments> sanityVoluntaryExitSetup() throws Exception {
-    Path configPath = Paths.get("mainnet", "phase0");
-    Path path = Paths.get("/mainnet/phase0/sanity/blocks/pyspec_tests/pyspec_tests/voluntary_exit");
+    Path configPath = Paths.get("minimal", "phase0");
+    Path path = Paths.get("/minimal/phase0/sanity/blocks/pyspec_tests/voluntary_exit");
     return sanityMultiBlockSetup(path, configPath);
   }
 
-  @ParameterizedTest(name = "{index} root of Merkleizable")
+  @ParameterizedTest(name = "{index} Sanity blocks invalid")
   @MethodSource({
     "sanityInvalidStateRootSetup",
     "sanityExpectedDepositInBlockSetup",
     "sanityPrevSlotBlockTransitionSetup"
   })
   void sanityProcessBlockInvalid(BeaconState pre, List<BeaconBlock> blocks) {
+    BeaconStateWithCache preWithCache = BeaconStateWithCache.fromBeaconState(pre);
+    StateTransition stateTransition = new StateTransition(false);
     blocks.forEach(
         block -> {
           assertThrows(
-              BlockProcessingException.class,
-              () -> BlockProcessorUtil.process_block_header(pre, block, true));
+              StateTransitionException.class,
+              () -> stateTransition.initiate(preWithCache, block, true));
         });
   }
 
   @MustBeClosed
   static Stream<Arguments> sanityInvalidStateRootSetup() throws Exception {
-    Path configPath = Paths.get("mainnet", "phase0");
-    Path path = Paths.get("/mainnet/phase0/sanity/blocks/pyspec_tests/invalid_state_root");
+    Path configPath = Paths.get("minimal", "phase0");
+    Path path = Paths.get("/minimal/phase0/sanity/blocks/pyspec_tests/invalid_state_root");
     return sanityMultiBlockSetupInvalid(path, configPath);
   }
 
   @MustBeClosed
   static Stream<Arguments> sanityExpectedDepositInBlockSetup() throws Exception {
-    Path configPath = Paths.get("mainnet", "phase0");
-    Path path = Paths.get("/mainnet/phase0/sanity/blocks/pyspec_tests/expected_deposit_in_block");
+    Path configPath = Paths.get("minimal", "phase0");
+    Path path = Paths.get("/minimal/phase0/sanity/blocks/pyspec_tests/expected_deposit_in_block");
     return sanityMultiBlockSetupInvalid(path, configPath);
   }
 
   @MustBeClosed
   static Stream<Arguments> sanityPrevSlotBlockTransitionSetup() throws Exception {
-    Path configPath = Paths.get("mainnet", "phase0");
-    Path path = Paths.get("/mainnet/phase0/sanity/blocks/pyspec_tests/prev_slot_block_transition");
+    Path configPath = Paths.get("minimal", "phase0");
+    Path path = Paths.get("/minimal/phase0/sanity/blocks/pyspec_tests/prev_slot_block_transition");
     return sanityMultiBlockSetupInvalid(path, configPath);
   }
 }
