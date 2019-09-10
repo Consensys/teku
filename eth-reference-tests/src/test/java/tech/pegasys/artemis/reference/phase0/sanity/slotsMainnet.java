@@ -32,9 +32,9 @@ import tech.pegasys.artemis.reference.TestSuite;
 import tech.pegasys.artemis.statetransition.StateTransition;
 
 @ExtendWith(BouncyCastleExtension.class)
-public class slots extends TestSuite {
+public class slotsMainnet extends TestSuite {
 
-  @ParameterizedTest(name = "{index} Sanity slots")
+  @ParameterizedTest(name = "{index} Sanity slots (Mainnet)")
   @MethodSource({"sanityGenericSlotSetup"})
   void sanityProcessSlot(BeaconState pre, BeaconState post, UnsignedLong slot) {
     boolean printEnabled = false;
