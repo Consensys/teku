@@ -97,7 +97,7 @@ class BLSSignatureTest {
   }
 
   @Test
-  void succeedsWhenAMessageSignsAndVerifies() throws BLSException {
+  void succeedsWhenAMessageSignsAndVerifies() {
     BLSKeyPair keyPair = BLSKeyPair.random();
     Bytes message = Bytes.wrap("Hello, world!".getBytes(UTF_8));
     Bytes domain = Bytes.random(8);
@@ -106,7 +106,7 @@ class BLSSignatureTest {
   }
 
   @Test
-  void succeedsWhenVerifyingDifferentDomainFails() throws BLSException {
+  void succeedsWhenVerifyingDifferentDomainFails() {
     BLSKeyPair keyPair = BLSKeyPair.random();
     Bytes message = Bytes.wrap("Hello, world!".getBytes(UTF_8));
     Bytes domain1 = Bytes.ofUnsignedLong(42L);
@@ -116,7 +116,7 @@ class BLSSignatureTest {
   }
 
   @Test
-  void succeedsWhenVerifyingDifferentMessageFails() throws BLSException {
+  void succeedsWhenVerifyingDifferentMessageFails() {
     BLSKeyPair keyPair = BLSKeyPair.random();
     Bytes message1 = Bytes.wrap("Hello, world!".getBytes(UTF_8));
     Bytes message2 = Bytes.wrap("Hello, world?".getBytes(UTF_8));
@@ -126,7 +126,7 @@ class BLSSignatureTest {
   }
 
   @Test
-  void succeedsWhenVerifyingDifferentPublicKeyFails() throws BLSException {
+  void succeedsWhenVerifyingDifferentPublicKeyFails() {
     BLSKeyPair keyPair1 = BLSKeyPair.random(1969);
     BLSKeyPair keyPair2 = BLSKeyPair.random(2019);
     Bytes message = Bytes.wrap("Hello, world!".getBytes(UTF_8));
@@ -136,7 +136,7 @@ class BLSSignatureTest {
   }
 
   @Test
-  void succeedsWhenVerifyingKeyPairsAreSeededTheSame() throws BLSException {
+  void succeedsWhenVerifyingKeyPairsAreSeededTheSame() {
     BLSKeyPair keyPair1 = BLSKeyPair.random(1);
     BLSKeyPair keyPair2 = BLSKeyPair.random(1);
     assertEquals(keyPair1.getPublicKey(), keyPair2.getPublicKey());
