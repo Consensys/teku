@@ -136,7 +136,7 @@ public class blocks extends TestSuite {
   @MustBeClosed
   static Stream<Arguments> sanitySkippedSlotsSetup() throws Exception {
     Path configPath = Paths.get("mainnet", "phase0");
-    Path path = Paths.get("/mainnet/phase0/sanity/blocks/pyspec_tests/pyspec_tests/skipped_slots");
+    Path path = Paths.get("/mainnet/phase0/sanity/blocks/pyspec_tests/skipped_slots");
     return sanityMultiBlockSetup(path, configPath);
   }
 
