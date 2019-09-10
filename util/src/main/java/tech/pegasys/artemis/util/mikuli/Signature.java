@@ -169,7 +169,7 @@ public final class Signature {
 
   @Override
   public String toString() {
-    return "Signature [ecp2Point=" + point.toString() + "]";
+    return toBytesCompressed().toHexString();
   }
 
   @Override
