@@ -26,21 +26,23 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.reference.TestSuite;
 import tech.pegasys.artemis.statetransition.StateTransition;
 
 @ExtendWith(BouncyCastleExtension.class)
-public class slots extends TestSuite {
+public class slotsMainnet extends TestSuite {
 
-  @ParameterizedTest(name = "{index} root of Merkleizable")
+  @ParameterizedTest(name = "{index} Sanity slots (Mainnet)")
   @MethodSource({"sanityGenericSlotSetup"})
-  void sanityProcessSlot(BeaconStateWithCache pre, BeaconStateWithCache post, UnsignedLong slot) {
+  void sanityProcessSlot(BeaconState pre, BeaconState post, UnsignedLong slot) {
     boolean printEnabled = false;
     StateTransition stateTransition = new StateTransition(printEnabled);
+    BeaconStateWithCache preWithCache = BeaconStateWithCache.fromBeaconState(pre);
 
-    assertDoesNotThrow(() -> stateTransition.process_slots(pre, slot, false));
-    assertEquals(pre, post);
+    assertDoesNotThrow(() -> stateTransition.process_slots(preWithCache, slot, false));
+    assertEquals(preWithCache, post);
   }
 
   @MustBeClosed

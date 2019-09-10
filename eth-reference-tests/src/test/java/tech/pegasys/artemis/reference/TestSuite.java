@@ -707,10 +707,10 @@ public abstract class TestSuite {
     Integer block_count = loadMetaData(metaDataSet);
 
     TestSet testSet = new TestSet(path);
-    testSet.add(new TestObject("pre.yaml", BeaconState.class, null));
-    testSet.add(new TestObject("post.yaml", BeaconState.class, null));
+    testSet.add(new TestObject("pre.ssz", BeaconState.class, null));
+    testSet.add(new TestObject("post.ssz", BeaconState.class, null));
     for (int i = 0; i < block_count; i++) {
-      testSet.add(new TestObject("blocks_" + i + ".yaml", BeaconBlock.class, null));
+      testSet.add(new TestObject("blocks_" + i + ".ssz", BeaconBlock.class, null));
     }
 
     return convertArgumentToList(
@@ -728,9 +728,9 @@ public abstract class TestSuite {
     Integer block_count = loadMetaData(metaDataSet);
 
     TestSet testSet = new TestSet(path);
-    testSet.add(new TestObject("pre.yaml", BeaconState.class, null));
+    testSet.add(new TestObject("pre.ssz", BeaconState.class, null));
     for (int i = 0; i < block_count; i++) {
-      testSet.add(new TestObject("blocks_" + i + ".yaml", BeaconBlock.class, null));
+      testSet.add(new TestObject("blocks_" + i + ".ssz", BeaconBlock.class, null));
     }
 
     return convertArgumentToList(
@@ -743,8 +743,8 @@ public abstract class TestSuite {
     loadConfigFromPath(configPath);
 
     TestSet testSet = new TestSet(path);
-    testSet.add(new TestObject("pre.yaml", BeaconState.class, null));
-    testSet.add(new TestObject("post.yaml", BeaconState.class, null));
+    testSet.add(new TestObject("pre.ssz", BeaconState.class, null));
+    testSet.add(new TestObject("post.ssz", BeaconState.class, null));
     testSet.add(new TestObject("slots.yaml", UnsignedLong.class, null));
 
     return findTestsByPath(testSet);
