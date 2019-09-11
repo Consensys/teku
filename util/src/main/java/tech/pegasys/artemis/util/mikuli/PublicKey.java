@@ -131,7 +131,7 @@ public final class PublicKey {
 
   @Override
   public String toString() {
-    return "PublicKey [ecpPoint=" + point.toString() + "]";
+    return toBytesCompressed().toHexString();
   }
 
   @Override

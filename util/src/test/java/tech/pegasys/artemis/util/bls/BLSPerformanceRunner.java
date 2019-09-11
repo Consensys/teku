@@ -83,7 +83,7 @@ public class BLSPerformanceRunner {
                 List<Bytes> bytes = Collections.nCopies(membs.size(), message1);
                 // Verify the aggregate signatures and keys
                 aggSig.checkSignature(Arrays.asList(aggKey), bytes, Bytes.wrap(new byte[4]));
-              } catch (BLSException e) {
+              } catch (RuntimeException e) {
                 LOG.log(Level.ERROR, "Exception" + e.toString());
               }
             },
@@ -109,7 +109,7 @@ public class BLSPerformanceRunner {
             () -> {
               try {
                 BLSSignature.aggregate(sigs);
-              } catch (BLSException e) {
+              } catch (RuntimeException e) {
                 LOG.log(Level.ERROR, "Exception" + e.toString());
               }
             },
@@ -132,7 +132,7 @@ public class BLSPerformanceRunner {
 
   @ParameterizedTest()
   @MethodSource("singleAggregationCountOrder4")
-  void testSigsAndMessagesCheckSignature(Integer i) throws BLSException {
+  void testSigsAndMessagesCheckSignature(Integer i) {
     Bytes message1 = Bytes.wrap("Message One".getBytes(UTF_8));
     Bytes message2 = Bytes.wrap("Message Two".getBytes(UTF_8));
 
@@ -167,7 +167,7 @@ public class BLSPerformanceRunner {
                     Arrays.asList(aggregatePublicKey12, aggregatePublicKey34),
                     Arrays.asList(message1, message2),
                     Bytes.wrap(new byte[4]));
-              } catch (BLSException e) {
+              } catch (RuntimeException e) {
                 LOG.log(Level.ERROR, "Exception" + e.toString());
               }
             },
@@ -185,7 +185,7 @@ public class BLSPerformanceRunner {
             () -> {
               try {
                 BLSSignature.aggregate(Collections.singletonList(signature));
-              } catch (BLSException e) {
+              } catch (RuntimeException e) {
                 LOG.log(Level.ERROR, "Exception" + e.toString());
               }
             },
