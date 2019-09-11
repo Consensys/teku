@@ -336,7 +336,7 @@ run {
 
 startScripts {
   doLast {
-    unixScript.text = unixScript.text.replace('ARTEMIS_HOME', '\$APP_HOME')
+    unixScript.text = unixScript.text.replace('ARTEMIS_HOME', '\$APP_HOME').replace('APP_NAME=', 'export LD_LIBRARY_PATH="\$APP_HOME/native:\$LD_LIBRARY_PATH"\nAPP_NAME=')
     windowsScript.text = windowsScript.text.replace('ARTEMIS_HOME', '%~dp0..')
   }
 }

@@ -99,7 +99,7 @@ class DepositTest {
         new SSZVector<>(Constants.DEPOSIT_CONTRACT_TREE_DEPTH + 1, Bytes32.ZERO);
 
     for (int i = 0; i < branch.size(); ++i) {
-      branch.add(Bytes32.random());
+      branch.set(i, Bytes32.random());
     }
 
     return branch;
