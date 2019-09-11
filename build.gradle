@@ -309,6 +309,7 @@ jar { enabled = false }
 apply plugin: 'application'
 mainClassName = "tech.pegasys.artemis.Artemis"
 applicationDefaultJvmArgs = [
+  "-Djava.library.path=ARTEMIS_HOME/native",
   "-Dvertx.disableFileCPResolving=true",
   "-Dartemis.home=ARTEMIS_HOME",
   // We shutdown log4j ourselves, as otherwise his shutdown hook runs before our own and whatever
@@ -345,9 +346,15 @@ dependencies {
   errorprone 'com.google.errorprone:error_prone_core'
 }
 
-applicationDistribution.into("") { from("LICENSE") }
+distributions {
+  main {
+    contents {
+      from("./LICENSE") { into "." }
+      from("libs") { into "native" }
+    }
+  }
+}
 
-//installDist { dependsOn checkLicenses }
 installDist { }
 
 distTar {
