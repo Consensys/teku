@@ -64,4 +64,4 @@ bash "${DIR}/configurator.sh" "${CONFIG}" port "${PORT}"
 bash "${DIR}/configurator.sh" "${CONFIG}" validatorKeysFile "\"${VALIDATOR_KEYS}\""
 
 echo "Generated config at ${CONFIG}"
-/opt/artemis/bin/artemis -c "${CONFIG}"
+/opt/artemis/bin/artemis -c "${CONFIG}" 2>&1 >> /opt/artemis/artemis.log
