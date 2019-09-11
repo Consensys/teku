@@ -14,7 +14,6 @@
 package tech.pegasys.artemis.util.ssztypes;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
@@ -26,43 +25,5 @@ class SSZVectorTest {
     SSZVector<Bytes32> vector = new SSZVector<>(10, Bytes32.ZERO);
     assertEquals(vector.get(0), Bytes32.ZERO);
     assertEquals(vector.get(9), Bytes32.ZERO);
-  }
-
-  @Test
-  void add1Test() {
-    SSZVector<Bytes32> vector = new SSZVector<>(10, Bytes32.ZERO);
-
-    Bytes32 randomBytes32 = Bytes32.random();
-    vector.add(randomBytes32);
-
-    assertTrue(randomBytes32.equals(vector.get(0)));
-  }
-
-  @Test
-  void add2Test() {
-    SSZVector<Bytes32> vector = new SSZVector<>(10, Bytes32.ZERO);
-    assertEquals(vector.get(0), Bytes32.ZERO);
-
-    Bytes32 randomBytes32 = Bytes32.random();
-    vector.add(randomBytes32);
-
-    assertEquals(randomBytes32, vector.get(0));
-
-    Bytes32 secondRandomBytes32 = Bytes32.random();
-    vector.add(secondRandomBytes32);
-
-    assertEquals(secondRandomBytes32, vector.get(1));
-  }
-
-  @Test
-  void limitTest() {
-    SSZVector<Bytes32> vector = new SSZVector<>(10, Bytes32.ZERO);
-
-    for (int i = 0; i < 10; i++) {
-      Bytes32 randomBytes32 = Bytes32.random();
-      vector.add(randomBytes32);
-    }
-
-    assertTrue(!vector.add(Bytes32.ZERO));
   }
 }

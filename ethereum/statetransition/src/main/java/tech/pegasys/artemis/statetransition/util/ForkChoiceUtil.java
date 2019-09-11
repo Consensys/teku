@@ -24,6 +24,7 @@ import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_curre
 import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.get_active_validator_indices;
 
 import com.google.common.primitives.UnsignedLong;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -190,13 +191,12 @@ public class ForkChoiceUtil {
 
     // Blocks cannot be in the future. If they are, their consideration must be delayed until the
     // are in the past.
+    UnsignedLong unixTimeStamp = UnsignedLong.valueOf(Instant.now().getEpochSecond());
     checkArgument(
-        store
-                .getTime()
-                .compareTo(
-                    state
-                        .getGenesis_time()
-                        .plus(block.getSlot().times(UnsignedLong.valueOf(SECONDS_PER_SLOT))))
+        unixTimeStamp.compareTo(
+                state
+                    .getGenesis_time()
+                    .plus(block.getSlot().times(UnsignedLong.valueOf(SECONDS_PER_SLOT))))
             >= 0,
         "on_block: Blocks cannot be in the future.");
 
@@ -264,16 +264,15 @@ public class ForkChoiceUtil {
     // Attestations cannot be from future epochs. If they are, delay consideration until the epoch
     // arrives
     BeaconStateWithCache base_state =
-        new BeaconStateWithCache((BeaconStateWithCache) store.getBlockState(target.getRoot()));
+        BeaconStateWithCache.deepCopy((BeaconStateWithCache) store.getBlockState(target.getRoot()));
+    UnsignedLong unixTimeStamp = UnsignedLong.valueOf(Instant.now().getEpochSecond());
     checkArgument(
-        store
-                .getTime()
-                .compareTo(
-                    base_state
-                        .getGenesis_time()
-                        .plus(
-                            compute_start_slot_of_epoch(target.getEpoch())
-                                .times(UnsignedLong.valueOf(SECONDS_PER_SLOT))))
+        unixTimeStamp.compareTo(
+                base_state
+                    .getGenesis_time()
+                    .plus(
+                        compute_start_slot_of_epoch(target.getEpoch())
+                            .times(UnsignedLong.valueOf(SECONDS_PER_SLOT))))
             >= 0,
         "on_attestation: Attestations cannot be from the future epochs");
 
@@ -289,12 +288,10 @@ public class ForkChoiceUtil {
     // Delay consideration in the fork choice until their slot is in the past.
     UnsignedLong attestation_slot = get_attestation_data_slot(target_state, attestation.getData());
     checkArgument(
-        store
-                .getTime()
-                .compareTo(
-                    attestation_slot
-                        .plus(UnsignedLong.ONE)
-                        .times(UnsignedLong.valueOf(SECONDS_PER_SLOT)))
+        unixTimeStamp.compareTo(
+                attestation_slot
+                    .plus(UnsignedLong.ONE)
+                    .times(UnsignedLong.valueOf(SECONDS_PER_SLOT)))
             >= 0,
         "on_attestation: Attestation can only affect the forck choice of subsequent slots");
 

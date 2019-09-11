@@ -364,7 +364,11 @@ public final class EpochProcessorUtil {
    */
   public static void process_crosslinks(BeaconState state) throws EpochProcessingException {
     try {
-      state.setPrevious_crosslinks(new SSZVector<>(state.getCurrent_crosslinks()));
+      SSZVector<Crosslink> newCurrentCrosslinks =
+          new SSZVector<>(state.getCurrent_crosslinks().getSize(), new Crosslink());
+      IntStream.range(0, newCurrentCrosslinks.getSize())
+          .forEach(i -> newCurrentCrosslinks.set(i, state.getCurrent_crosslinks().get(i).copy()));
+      state.setPrevious_crosslinks(newCurrentCrosslinks);
 
       List<UnsignedLong> epochs = new ArrayList<>();
       epochs.add(get_previous_epoch(state));
