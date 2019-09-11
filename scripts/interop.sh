@@ -104,7 +104,6 @@ then
     echo $LIGHTHOUSE_OWNED_VALIDATOR_START_INDEX
     export LIGHTHOUSE_VALIDATOR_COUNT=$((VALIDATOR_COUNT - OWNED_VALIDATOR_COUNT))
     echo $LIGHTHOUSE_VALIDATOR_COUNT
-    export DIR=$HOME/projects/consensys/pegasys/lighthouse/lighthouse/target/release
     if [ "$LIGHTHOUSE_VALIDATOR_COUNT" -gt  0 ]
     then
         tmux split-window -h -t 0 "cd $DIR  && ./validator_client testnet -b insecure $LIGHTHOUSE_OWNED_VALIDATOR_START_INDEX $LIGHTHOUSE_VALIDATOR_COUNT; sleep 20"
