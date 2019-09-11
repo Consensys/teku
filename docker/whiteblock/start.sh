@@ -11,16 +11,14 @@ trap cleanup EXIT
 
 IDENTITY=""
 PEERS=""
-NUM_VALIDATORS="3"
 GEN_STATE=""
 VALIDATOR_KEYS=""
 PORT="8000"
 usage() {
     echo "--identity=<identity>"
     echo "--peers=<peer>"
-    echo "--num-validators=<number>"
     echo "--gen-state=<file path>"
-    port "--port=<port number>"
+    echo port "--port=<port number>"
 }
 while [ "${1:-}" != "" ];
 do
@@ -32,9 +30,6 @@ do
             ;;
         --peers)
             PEERS+="\"$VALUE\", "
-            ;;
-        --num-validators)
-            NUM_VALIDATORS=$VALUE
             ;;
         --gen-state)
             GEN_STATE=$VALUE
@@ -61,7 +56,6 @@ done
 CONFIG_DIR="${DIR}/../config"
 CONFIG="${OUT}/generated_config.toml"
 cp "$CONFIG_DIR/config.toml" "${CONFIG}"
-bash "${DIR}/configurator.sh" "${CONFIG}" numValidators "${NUM_VALIDATORS}"
 bash "${DIR}/configurator.sh" "${CONFIG}" identity "\"${IDENTITY}\""
 bash "${DIR}/configurator.sh" "${CONFIG}" networkMode "\"mothra\""
 bash "${DIR}/configurator.sh" "${CONFIG}" peers "[${PEERS}]"
