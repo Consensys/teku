@@ -79,6 +79,7 @@ then
     export LISTEN_ADDRESS=127.0.0.1
     export PORT=19001
     #TODO: use a relative path to lighthouse dir.  the best way would be to deploy it to $ARTEMIS_ROOT/scripts/demo/node_lighthouse
+	export DIR=$HOME/projects/consensys/pegasys/lighthouse/lighthouse/target/release
 
     # export RUST_LOG=libp2p_gossipsub=debug
 
