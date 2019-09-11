@@ -70,5 +70,4 @@ bash "${DIR}/configurator.sh" "${CONFIG}" port "${PORT}"
 bash "${DIR}/configurator.sh" "${CONFIG}" validatorKeysFile "\"${VALIDATOR_KEYS}\""
 
 echo "Generated config at ${CONFIG}"
-cat "${CONFIG}"
 /opt/artemis/bin/artemis -c "${CONFIG}"
