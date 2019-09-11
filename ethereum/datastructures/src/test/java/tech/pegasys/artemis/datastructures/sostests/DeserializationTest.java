@@ -244,8 +244,8 @@ public class DeserializationTest {
     IntStream.range(0, Constants.SLOTS_PER_HISTORICAL_ROOT)
         .forEach(
             i -> {
-              block_roots.add(DataStructureUtil.randomBytes32(i));
-              state_roots.add(DataStructureUtil.randomBytes32(i));
+              block_roots.set(i, DataStructureUtil.randomBytes32(i));
+              state_roots.set(i, DataStructureUtil.randomBytes32(i));
             });
     HistoricalBatch deposit = new HistoricalBatch(block_roots, state_roots);
     Bytes serialized = SimpleOffsetSerializer.serialize(deposit);

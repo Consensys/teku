@@ -164,6 +164,10 @@ public class StateProcessor {
 
   @Subscribe
   private void onBlock(BeaconBlock block) {
+    // Store.Transaction transaction = chainStorageClient.getStore().startTransaction();
+    //  BeaconState preState =
+    //     BeaconStateWithCache.fromBeaconState(transaction.getBlockState(block.getParent_root()));
+
     try {
       Store.Transaction transaction = chainStorageClient.getStore().startTransaction();
       final BlockProcessingRecord record = on_block(transaction, block, stateTransition);
@@ -175,6 +179,7 @@ public class StateProcessor {
           .forEach(attestation -> this.chainStorageClient.addProcessedAttestation(attestation));
       this.eventBus.post(record);
     } catch (StateTransitionException e) {
+      //  this.eventBus.post(new BlockProcessingRecord(preState, block, new BeaconState()));
       STDOUT.log(Level.WARN, "Exception in onBlock: " + e.toString());
     }
   }
