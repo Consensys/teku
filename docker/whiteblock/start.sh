@@ -29,7 +29,9 @@ do
             IDENTITY=$VALUE
             ;;
         --peers)
-            PEERS+="\"$VALUE\", "
+            [ ! -z "$PEERS"] && PEERS+=","
+            LH_PEER=${VALUE%/p2p*}
+            PEERS+="\"$LH_PEER\""
             ;;
         --gen-state)
             GEN_STATE=$VALUE
