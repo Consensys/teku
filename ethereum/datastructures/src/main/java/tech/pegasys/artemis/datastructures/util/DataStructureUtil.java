@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.datastructures.util;
 
+import static java.lang.Math.toIntExact;
 import static tech.pegasys.artemis.datastructures.Constants.SLOTS_PER_EPOCH;
 import static tech.pegasys.artemis.datastructures.Constants.SLOTS_PER_ETH1_VOTING_PERIOD;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_of_slot;
@@ -112,9 +113,10 @@ public final class DataStructureUtil {
   @SuppressWarnings({"rawtypes", "unchecked"})
   public static <T> SSZVector<T> randomSSZVector(
       T defaultClassObject, long maxSize, Supplier randomFunction) {
-    SSZVector<T> sszvector = new SSZVector<>(Math.toIntExact(maxSize), defaultClassObject);
+    SSZVector<T> sszvector = new SSZVector<>(toIntExact(maxSize), defaultClassObject);
     long numItems = (long) (Math.random() * maxSize);
-    LongStream.range(0, numItems).forEach(i -> sszvector.add((T) randomFunction.get()));
+    LongStream.range(0, numItems)
+        .forEach(i -> sszvector.set(toIntExact(i), (T) randomFunction.get()));
     return sszvector;
   }
 

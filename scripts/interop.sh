@@ -21,6 +21,7 @@ export PEERS=$4
 START_DELAY=$5
 export GENESIS_FILE="/tmp/genesis.ssz"
 
+
 BOOTNODE_ENR=$(cat ~/.mothra/network/enr.dat)
 
 CURRENT_TIME=$(date +%s)
@@ -78,7 +79,7 @@ then
     export LISTEN_ADDRESS=127.0.0.1
     export PORT=19001
     #TODO: use a relative path to lighthouse dir.  the best way would be to deploy it to $ARTEMIS_ROOT/scripts/demo/node_lighthouse
-    export DIR=$HOME/projects/consensys/pegasys/lighthouse/lighthouse/target/release
+	export DIR=$HOME/projects/consensys/pegasys/lighthouse/lighthouse/target/release
 
     # export RUST_LOG=libp2p_gossipsub=debug
 
@@ -103,7 +104,6 @@ then
     echo $LIGHTHOUSE_OWNED_VALIDATOR_START_INDEX
     export LIGHTHOUSE_VALIDATOR_COUNT=$((VALIDATOR_COUNT - OWNED_VALIDATOR_COUNT))
     echo $LIGHTHOUSE_VALIDATOR_COUNT
-    export DIR=$HOME/projects/consensys/pegasys/lighthouse/lighthouse/target/release
     if [ "$LIGHTHOUSE_VALIDATOR_COUNT" -gt  0 ]
     then
         tmux split-window -h -t 0 "cd $DIR  && ./validator_client testnet -b insecure $LIGHTHOUSE_OWNED_VALIDATOR_START_INDEX $LIGHTHOUSE_VALIDATOR_COUNT; sleep 20"
@@ -142,7 +142,6 @@ then
 
     tmux split-window -h -t 0 "cd $DIR; packages/lodestar/./bin/lodestar interop -p minimal --db l1 -q $GENESIS_FILE -v $VALIDATOR_COUNT -r; sleep 20"
     #--multiaddrs /ip4/127.0.0.1/tcp/30607
-
 fi
 
 tmux select-layout tiled

@@ -20,49 +20,38 @@ import java.util.List;
 @SuppressWarnings("rawtypes")
 public class SSZVector<T> extends ArrayList<T> {
 
-  private int size;
-  private int counter = 0;
+  private int maxSize;
   private Class classInfo;
 
   public SSZVector() throws UnsupportedOperationException {
     throw new UnsupportedOperationException("SSZVector must have specified size");
   }
 
-  public SSZVector(int length, T object) {
-    super(Collections.nCopies(length, object));
-    size = length;
+  public SSZVector(int size, T object) {
+    super(Collections.nCopies(size, object));
+    this.maxSize = size;
     classInfo = object.getClass();
   }
 
   public SSZVector(List<T> list, Class classInfo) {
     super(list);
-    size = list.size();
+    maxSize = list.size();
     this.classInfo = classInfo;
   }
 
   public SSZVector(SSZVector<T> list) {
     super(list);
-    size = list.size();
+    maxSize = list.size();
     this.classInfo = list.getElementType();
   }
 
   public int getSize() {
-    return size;
-  }
-
-  public int getCounter() {
-    return size;
+    return maxSize;
   }
 
   @Override
   public boolean add(T object) {
-    if (counter < size) {
-      super.set(counter, object);
-      counter++;
-      return true;
-    } else {
-      return false;
-    }
+    throw new UnsupportedOperationException("SSZVector does not support add, only set");
   }
 
   public Class getElementType() {
