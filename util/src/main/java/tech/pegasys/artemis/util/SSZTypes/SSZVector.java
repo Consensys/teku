@@ -51,12 +51,7 @@ public class SSZVector<T> extends ArrayList<T> {
 
   @Override
   public boolean add(T object) {
-    if (super.size() < maxSize) {
-      super.add(object);
-      return true;
-    } else {
-      return false;
-    }
+    throw new UnsupportedOperationException("SSZVector does not support add, only set");
   }
 
   public Class getElementType() {
