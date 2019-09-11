@@ -17,7 +17,7 @@ VALIDATOR_KEYS=""
 PORT="8000"
 usage() {
     echo "--identity=<identity>"
-    echo "--peer=<peer>"
+    echo "--peers=<peer>"
     echo "--num-validators=<number>"
     echo "--gen-state=<file path>"
     port "--port=<port number>"
@@ -30,7 +30,7 @@ do
         --identity)
             IDENTITY=$VALUE
             ;;
-        --peer)
+        --peers)
             PEERS+="\"$VALUE\", "
             ;;
         --num-validators)
