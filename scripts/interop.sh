@@ -32,6 +32,7 @@ export START_TRINITY=false
 export START_NIMBUS=true
 export START_LODESTAR=true
 
+
 zcli keys generate |zcli genesis mock --count $VALIDATOR_COUNT --genesis-time $GENESIS_TIME --out $GENESIS_FILE
 
 if [ "$START_ARTEMIS" = true ]

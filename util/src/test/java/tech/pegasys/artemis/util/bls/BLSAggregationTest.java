@@ -27,7 +27,7 @@ import org.junit.jupiter.api.Test;
 public class BLSAggregationTest {
 
   @Test
-  void succeedsWhenAggregatingASingleSignatureReturnsTheSameSignature() throws BLSException {
+  void succeedsWhenAggregatingASingleSignatureReturnsTheSameSignature() {
     BLSSignature signature = BLSSignature.random();
     assertEquals(signature, BLSSignature.aggregate(Arrays.asList(signature)));
   }
@@ -39,12 +39,12 @@ public class BLSAggregationTest {
   }
 
   @Test
-  void succeedsWhenPassingEmptySignatureToAggregateSignaturesThrowsBLSException() {
+  void succeedsWhenPassingEmptySignatureToAggregateSignaturesThrowsIllegalArgumentException() {
     BLSSignature signature1 = BLSSignature.random();
     BLSSignature signature2 = BLSSignature.empty();
     BLSSignature signature3 = BLSSignature.random();
     assertThrows(
-        BLSException.class,
+        IllegalArgumentException.class,
         () -> BLSSignature.aggregate(Arrays.asList(signature1, signature2, signature3)));
   }
 
@@ -66,8 +66,7 @@ public class BLSAggregationTest {
   }
 
   @Test
-  void succeedsWhenCorrectlySigningAndVerifyingAggregateSignaturesReturnsTrue()
-      throws BLSException {
+  void succeedsWhenCorrectlySigningAndVerifyingAggregateSignaturesReturnsTrue() {
     Bytes message1 = Bytes.wrap("Message One".getBytes(UTF_8));
     Bytes message2 = Bytes.wrap("Message Two".getBytes(UTF_8));
 
@@ -103,8 +102,7 @@ public class BLSAggregationTest {
   }
 
   @Test
-  void succeedsWhenIncorrectlySigningAndVerifyingAggregateSignaturesReturnsFalse()
-      throws BLSException {
+  void succeedsWhenIncorrectlySigningAndVerifyingAggregateSignaturesReturnsFalse() {
     Bytes message1 = Bytes.wrap("Message One".getBytes(UTF_8));
     Bytes message2 = Bytes.wrap("Message Two".getBytes(UTF_8));
 

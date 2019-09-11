@@ -16,7 +16,6 @@ package tech.pegasys.artemis.util.bls;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.ssz.SSZ;
@@ -40,7 +39,6 @@ class BLSPublicKeyTest {
   @Test
   void succeedsIfSerialisationOfEmptyPublicKeyIsCorrect() {
     BLSPublicKey emptyPublicKey = BLSPublicKey.empty();
-    assertTrue(emptyPublicKey.isEmpty());
     assertEquals(
         "0x000000000000000000000000000000000000000000000000"
             + "000000000000000000000000000000000000000000000000",
@@ -50,7 +48,6 @@ class BLSPublicKeyTest {
   @Test
   void succeedsIfDeserialisationOfEmptyPublicKeyIsCorrect() {
     BLSPublicKey emptyPublicKey = BLSPublicKey.empty();
-    assertTrue(emptyPublicKey.isEmpty());
     Bytes emptyBytesSsz =
         SSZ.encode(
             writer -> {
@@ -64,12 +61,6 @@ class BLSPublicKeyTest {
   void succeedsIfDeserialisationThrowsWithTooFewBytes() {
     Bytes tooFewBytes = Bytes.wrap(new byte[51]);
     assertThrows(IllegalArgumentException.class, () -> BLSPublicKey.fromBytes(tooFewBytes));
-  }
-
-  @Test
-  void succeedsIfValidPublicKeyIsNotEmpty() {
-    BLSPublicKey publicKey = BLSPublicKey.random();
-    assertTrue(!publicKey.isEmpty());
   }
 
   @Test
