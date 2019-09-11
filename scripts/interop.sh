@@ -31,6 +31,8 @@ export START_ARTEMIS=true
 export START_LIGHTHOUSE=true
 export START_TRINITY=false
 export START_NIMBUS=true
+export START_LODESTAR=true
+
 
 zcli keys generate |zcli genesis mock --count $VALIDATOR_COUNT --genesis-time $GENESIS_TIME --out $GENESIS_FILE
 
@@ -127,19 +129,20 @@ then
     rm -f $DIR/validators/*
     rm -rf $DIR/data/node-0/db
     rm -f $DIR/data/state_snapshot.*
-    tmux split-window -h -t 0 "cd $DIR;source ../env.sh; data/beacon_node --dataDir=data/node-0 --network=data/network.json --nodename=0 --tcpPort=$PORT --udpPort=$PORT --quickStart=true --stateSnapshot=$GENESIS_FILE"
+    tmux split-window -v -t 0 "cd $DIR;source ../env.sh; data/beacon_node --dataDir=data/node-0 --network=data/network.json --nodename=0 --tcpPort=$PORT --udpPort=$PORT --quickStart=true --stateSnapshot=$GENESIS_FILE"
 
 fi
 
-# Start Loadstar
-if [ "$START_LOADSTAR" = true ]
+# Start Lodestar
+if [ "$START_LODESTAR" = true ]
 then
-    #export PORT=19004
-    #LOADSTAR_VALIDATOR_INDEX
+    export PORT=19004
+    export DIR=$HOME/projects/consensys/pegasys/lodestar
+    export LODESTAR_VALIDATOR_END_INDEX=0
 
-    #./bin/lodestar interop -p minimal --db l1 -q $GENESIS_FILE --multiaddrs /ip4/127.0.0.1/tcp/30607 -v <num_validators> -r
-    #export DIR=
-    #tmux split-window -h -t 0 "cd $DIR; ./start.sh --quickStart=true --stateSnapshot=$GENESIS_FILE"
+    tmux split-window -h -t 0 "cd $DIR; packages/lodestar/./bin/lodestar interop -p minimal --db l1 -q $GENESIS_FILE -v $VALIDATOR_COUNT -r; sleep 20"
+    #--multiaddrs /ip4/127.0.0.1/tcp/30607
+fi
 
+tmux select-layout tiled
 tmux attach-session -d
-
