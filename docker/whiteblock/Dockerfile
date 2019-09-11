@@ -5,12 +5,13 @@ RUN apt-get update && \
     tmux wget iperf3 curl apt-utils iputils-ping expect git git-extras \
     software-properties-common openssh-server
 
-COPY artemis /opt/artemis
-COPY scripts /opt/whiteblock/scripts
-COPY config /opt/whiteblock/config
-COPY start.sh /launch/start.sh
-
 WORKDIR /
 ENV PATH="/opt/artemis/bin/:${PATH}"
 
 ENTRYPOINT ["/bin/bash"]
+
+COPY scripts /opt/whiteblock/scripts
+COPY config /opt/whiteblock/config
+COPY start.sh /launch/start.sh
+COPY artemis /opt/artemis
+
