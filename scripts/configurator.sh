@@ -1,11 +1,10 @@
-#!/bin/sh
+#!/bin/bash
 if [[ "$#" -ne 3 ]]
-then 
+then
   echo "Usage: sh configurator.sh CONFIG_PATH VARIABLE_NAME VARIABLE_VALUE"
   exit 1
 fi
 
 
-sed -i.bak "s/$2\ =.*/$2\ =\ $3/g" $1
+sed -i.bak "s!#*.*$2\ =.*!$2\ =\ $3!g" $1
 rm $1.bak
-

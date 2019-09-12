@@ -2,7 +2,7 @@
 
 
 
-# "Usage: sh interop.sh [client] [interop_active] [validator_count] [owned_validator_start_index] [owned_validator_count] [peers]"
+# "Usage: bash run_artemis.sh  [validator_count] [owned_validator_start_index] [owned_validator_count] [peers] [genesis_file] [interop_active]"
 #
 #
 #
@@ -15,22 +15,20 @@
 # 10 sec delay from genesis
 # 123454 genesis time
 # /tmp/genesis.ssz is the genesis file
-#   sh run_artemis.sh 16 0 16 /ip4/127.0.0.1/tcp/19001 10 1234545 /tmp/genesis.ssz
+#   sh run_artemis.sh 16 0 16 /ip4/127.0.0.1/tcp/19001 /tmp/genesis.ssz true
 #
 
 export VALIDATOR_COUNT=$1
 export OWNED_VALIDATOR_START_INDEX=$2
 export OWNED_VALIDATOR_COUNT=$3
 export PEERS=$4
-export START_DELAY=$5
-export GENESIS_TIME=$6
-export GENESIS_FILE=$7
-INTEROP_MODE=true
+export GENESIS_FILE=$5
+INTEROP_MODE=$6
 
-BOOTNODE_ENR=$(cat ~/.mothra/network/enr.dat)
+#BOOTNODE_ENR=$(cat ~/.mothra/network/enr.dat)
 
-CURRENT_TIME=$(date +%s)
-GENESIS_TIME=$((CURRENT_TIME + START_DELAY))
+#CURRENT_TIME=$(date +%s)
+#GENESIS_TIME=$((CURRENT_TIME + START_DELAY))
 
 
 SCRIPT_DIR=`pwd`
@@ -52,6 +50,7 @@ sh configurator.sh "$CONFIG_DIR/runConfig.0.toml" active $INTEROP_MODE
 sh configurator.sh "$CONFIG_DIR/runConfig.0.toml" genesisTime $GENESIS_TIME
 sh configurator.sh "$CONFIG_DIR/runConfig.0.toml" ownedValidatorStartIndex $OWNED_VALIDATOR_START_INDEX
 sh configurator.sh "$CONFIG_DIR/runConfig.0.toml" ownedValidatorCount $OWNED_VALIDATOR_COUNT
+sh configurator.sh "$CONFIG_DIR/runConfig.0.toml" startState "\"$GENESIS_FILE"\"
 
 
 if [ "$PEERS" != "" ]

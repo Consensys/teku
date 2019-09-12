@@ -58,7 +58,7 @@ An interop script is provided to create a network with Artemis and a number of o
 The script requires both tmux and [zcli](https://github.com/protolambda/zcli) to be installed and available on the path. Run with:
 ```shell script
 cd scripts
-bash interop.sh [validator_count] [owned_validator_start_index] [owned_validator_count] [peers]
+bash interop.sh interop.sh [validator_count] [owned_validator_start_index] [owned_validator_count] [peers] [start_delay]
 ```
 
 Alternatively Artemis can be run stand-alone using the `bin/artemis` script from a distribution.
@@ -101,7 +101,7 @@ After building with `./gradlew distTar`, follow these instructions:
 
 ```bash
 $ cd scripts
-$ sh run.sh -n=[NUMBER OF NODES] -m=hobbits
+$ bash run_artemis.sh  [validator_count] [owned_validator_start_index] [owned_validator_count] [peers] [genesis_file] [interop_active]
 ```
 
 > Note:  You will need tmux installed for this demo to work
