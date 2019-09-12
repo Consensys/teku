@@ -8,11 +8,61 @@ Implementation of the Ethereum 2.0 Beacon Chain.
 
 Based on the (evolving) [specification](https://github.com/ethereum/eth2.0-specs/blob/master/specs/core/0_beacon-chain.md).
 
+## Interop Intructions
+### Building
+To setup for testing interop with other clients:
+
+```shell script
+git clone --recursive https://github.com/PegaSysEng/artemis.git
+cd artemis
+./gradlew distTar installDist
+```
+
+This will produce a fully packaged distribution in `build/distributions` and an expanded 
+distribution, ready to run in `build/install/artemis`.
+
+Alternatively you can build a docker image with `./gradlew distDocker`.
+
+### Configuration
+
+Artemis' configuration comes from a TOML configuration file, specified using the `--config` argument.
+`config/config.toml` provides a useful starting point.  Values that you will likely want to set:
+
+```toml
+[node]
+networkMode = "mothra"
+identity = "0x01" # Some unique identity for the node
+discovery = "static"
+isBootnode = false
+peers = ["<peer>"]
+networkInterface = "127.0.0.1"
+port = 90001 # Some unique port
+
+[interop]
+active = true
+ownedValidatorStartIndex = 0
+ownedValidatorCount = 4
+startState = "/tmp/genesis.ssz"  # Genesis file to load
+```
+
+### Running
+
+An interop script is provided to create a network with Artemis and a number of other clients. 
+The script requires both tmux and [zcli](https://github.com/protolambda/zcli) to be installed and available on the path. Run with:
+```shell script
+cd scripts
+bash interop.sh [validator_count] [owned_validator_start_index] [owned_validator_count] [peers]
+```
+
+Alternatively Artemis can be run stand-alone using the `bin/artemis` script from a distribution.
+You can use `./build/install/artemis/bin/artemis` if you followed the build instructions above.
+
 ## Build Instructions
 
+### Full build and Test
 To build, clone this repo and run with `gradle` like so:
 
-```
+```shell script
 $ git clone --recursive https://github.com/PegaSysEng/artemis.git
 $ cd artemis
 $ ./gradlew
@@ -20,9 +70,18 @@ $ ./gradlew
 
 After a successful build, distribution packages will be available in `build/distributions`.
 
+### Other Useful Gradle Targets
+
+| Target       |  Description                              |
+|--------------|--------------------------------------------
+| distTar      | Builds a full distribution in build/distributions (as .tar.gz)
+| distZip      | Builds a full distribution in build/distributions (as .zip)
+| installDist  | Builds an expanded distribution in build/install/artemis
+| distDocker   | Builds the pegasyseng/artemis docker image
+
 ## Run Demo (Mothra)
 
-After building, follow these instructions:
+After building with `./gradlew distTar`, follow these instructions:
 
 ```bash
 $ cd scripts
@@ -31,7 +90,7 @@ $ sh run.sh -n=[NUMBER OF NODES]
 
 ## Run Demo (Hobbits)
 
-After building, follow these instructions:
+After building with `./gradlew distTar`, follow these instructions:
 
 ```bash
 $ cd scripts
