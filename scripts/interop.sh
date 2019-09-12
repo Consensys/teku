@@ -1,6 +1,4 @@
-#!/bin/sh
-
-
+#!/usr/bin/env bash
 
 # "Usage: sh interop.sh [client] [interop_active] [validator_count] [owned_validator_start_index] [owned_validator_count] [peers]"
 #
@@ -21,7 +19,6 @@ export PEERS=$4
 START_DELAY=$5
 export GENESIS_FILE="/tmp/genesis.ssz"
 
-
 BOOTNODE_ENR=$(cat ~/.mothra/network/enr.dat)
 
 CURRENT_TIME=$(date +%s)
@@ -29,10 +26,10 @@ GENESIS_TIME=$((CURRENT_TIME + START_DELAY))
 
 export START_ARTEMIS=true
 export START_LIGHTHOUSE=true
-export START_TRINITY=false
+export START_TRINITY=true
 export START_NIMBUS=true
 export START_LODESTAR=true
-
+export START_PRYSM=true
 
 zcli keys generate |zcli genesis mock --count $VALIDATOR_COUNT --genesis-time $GENESIS_TIME --out $GENESIS_FILE
 
@@ -68,7 +65,7 @@ then
          sh configurator.sh "$CONFIG_DIR/runConfig.0.toml" isBootnode false
     fi
 
-    tmux new-session -d -s foo "cd $SCRIPT_DIR/demo/node_0/ && ./artemis --config=$CONFIG_DIR/runConfig.0.toml --logging=INFO"
+    tmux new-session -d -s foo "export RUST_LOG=libp2p_tcp=trace,multistream=trace; cd $SCRIPT_DIR/demo/node_0/ && ./artemis --config=$CONFIG_DIR/runConfig.0.toml --logging=INFO"
 fi
 
 
@@ -79,11 +76,11 @@ then
     export LISTEN_ADDRESS=127.0.0.1
     export PORT=19001
     #TODO: use a relative path to lighthouse dir.  the best way would be to deploy it to $ARTEMIS_ROOT/scripts/demo/node_lighthouse
-	export DIR=$HOME/projects/consensys/pegasys/lighthouse/lighthouse/target/release
+    export DIR=$HOME/projects/consensys/pegasys/lighthouse/lighthouse/target/release
 
     # export RUST_LOG=libp2p_gossipsub=debug
 
-    rm -rf ~/.lighthouse
+    #rm -rf ~/.lighthouse
 
     if [ "$PEERS" != "" ]
     then
@@ -101,9 +98,8 @@ then
     #TODO: need to fix this so that it can either read in keys generated from zcli or
     #      Paul thinks that they will generate keys that match zcli
     export LIGHTHOUSE_OWNED_VALIDATOR_START_INDEX=$((OWNED_VALIDATOR_START_INDEX + OWNED_VALIDATOR_COUNT))
-    echo $LIGHTHOUSE_OWNED_VALIDATOR_START_INDEX
     export LIGHTHOUSE_VALIDATOR_COUNT=$((VALIDATOR_COUNT - OWNED_VALIDATOR_COUNT))
-    echo $LIGHTHOUSE_VALIDATOR_COUNT
+    export DIR=$HOME/projects/consensys/pegasys/lighthouse/lighthouse/target/release
     if [ "$LIGHTHOUSE_VALIDATOR_COUNT" -gt  0 ]
     then
         tmux split-window -h -t 0 "cd $DIR  && ./validator_client testnet -b insecure $LIGHTHOUSE_OWNED_VALIDATOR_START_INDEX $LIGHTHOUSE_VALIDATOR_COUNT; sleep 20"
@@ -114,9 +110,12 @@ if [ "$START_TRINITY" = true ]
 then
     export PORT=19002
     # Start Trinity
-    # export DIR=$HOME/projects/consensys/pegasys/trinity/
-    export DIR=$HOME/.local/share/virtualenvs/trinity-Kj8PVxIn
-    tmux split-window -h -t 0 "cd $DIR; PYTHONWARNINGS=ignore::DeprecationWarning trinity-beacon -l DEBUG --trinity-root-dir /tmp/bb --preferred_nodes= $PEERS interop --start-time $GENESIS_TIME --wipedb"
+    export DIR=$HOME/projects/consensys/pegasys/trinity/
+    #cd $DIR
+    #pipenv run PYTHONWARNINGS=ignore::DeprecationWarning trinity-beacon -l DEBUG --trinity-root-dir /tmp/bb --beacon-nodekey='aaaaaaaaaa' --port $PORT interop --start-time $GENESIS_TIME --wipedb --genesis $GENESIS_FILE
+    #pipenv run ./run_trinity.sh $DIR $GENESIS_TIME $GENESIS_FILE $PORT
+    #tmux split-window -h -t 0 "./run_trinity.sh $DIR $GENESIS_TIME $GENESIS_FILE $PORT; sleep 20"
+    tmux split-window -h -t 0 "cd $DIR; pipenv run serve $DIR $GENESIS_TIME $GENESIS_FILE $PORT; sleep 20"
 
 fi
 
@@ -140,8 +139,28 @@ then
     export DIR=$HOME/projects/consensys/pegasys/lodestar
     export LODESTAR_VALIDATOR_END_INDEX=0
 
-    tmux split-window -h -t 0 "cd $DIR; packages/lodestar/./bin/lodestar interop -p minimal --db l1 -q $GENESIS_FILE -v $VALIDATOR_COUNT -r; sleep 20"
+    tmux split-window -h -t 0 "cd $DIR; packages/lodestar/./bin/lodestar interop -p minimal --db l1 -q $GENESIS_FILE -v 0 --multiaddrs /ip4/127.0.0.1/tcp/19004  --bootnodes /ip4/127.0.0.1/tcp/19001 -r; sleep 20"
     #--multiaddrs /ip4/127.0.0.1/tcp/30607
+
+fi
+
+if [ "$START_PRYSM" = true ]
+then
+
+    sleep 5
+    export PORT=19005
+    export DIR=$HOME/projects/consensys/pegasys/prysm/darwin_amd64
+    tmux split-window -h -t 0 "cd $DIR; ./beacon-chain --datadir /tmp/beacon \
+   --pprof --verbosity=debug \
+   --clear-db \
+   --bootstrap-node= \
+   --interop-eth1data-votes \
+   --peer /ip4/127.0.0.1/tcp/19001/p2p/16Uiu2HAmTHarRLEGsbmjL9ZRj6AWwLN7r69izaQikc2Ay9v3YbAa \
+   --deposit-contract=0xD775140349E6A5D12524C6ccc3d6A1d4519D4029 \
+   --interop-genesis-state $GENESIS_FILE \
+   --p2p-port $PORT; sleep 60"
+
+
 fi
 
 tmux select-layout tiled
