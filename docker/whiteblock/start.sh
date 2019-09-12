@@ -66,6 +66,8 @@ bash "${DIR}/configurator.sh" "${CONFIG}" peers "[${PEERS}]"
 bash "${DIR}/configurator.sh" "${CONFIG}" startState "\"${GEN_STATE}\""
 bash "${DIR}/configurator.sh" "${CONFIG}" port "${PORT}"
 bash "${DIR}/configurator.sh" "${CONFIG}" validatorKeysFile "\"${VALIDATOR_KEYS}\""
+bash "${DIR}/configurator.sh" "${CONFIG}" enabled true # Enable metrics
+bash "${DIR}/configurator.sh" "${CONFIG}" metricsNetworkInterface "0.0.0.0"
 
 echo "Generated config at ${CONFIG}"
 /opt/artemis/bin/artemis -c "${CONFIG}" 2>&1 >> /opt/artemis/artemis.log
