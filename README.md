@@ -9,6 +9,13 @@ Implementation of the Ethereum 2.0 Beacon Chain.
 Based on the (evolving) [specification](https://github.com/ethereum/eth2.0-specs/blob/master/specs/core/0_beacon-chain.md).
 
 ## Interop Intructions
+### Prerequisites
+You need to have Java 11 installed.
+
+Ubuntu: `sudo apt install openjdk-11-jdk`
+MacOS: `brew tap AdoptOpenJDK/openjdk && brew cask install adoptopenjdk11`
+Other systems: [https://adoptopenjdk.net/] is very helpful. 
+
 ### Building
 To setup for testing interop with other clients:
 
