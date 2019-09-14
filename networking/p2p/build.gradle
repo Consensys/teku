@@ -27,6 +27,8 @@ dependencies {
   implementation 'com.fasterxml.jackson.core:jackson-databind'
   implementation 'de.undercouch:bson4jackson'
   implementation 'org.xerial.snappy:snappy-java'
+
+  testImplementation 'org.mockito:mockito-core:2.28.2'
 }
 
 configurations { testArtifacts }

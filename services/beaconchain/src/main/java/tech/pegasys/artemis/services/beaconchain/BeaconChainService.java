@@ -16,7 +16,6 @@ package tech.pegasys.artemis.services.beaconchain;
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
 import io.vertx.core.Vertx;
-import java.io.IOException;
 import java.util.Optional;
 import org.apache.logging.log4j.Level;
 import tech.pegasys.artemis.datastructures.Constants;
@@ -25,7 +24,7 @@ import tech.pegasys.artemis.networking.p2p.JvmLibP2PNetwork;
 import tech.pegasys.artemis.networking.p2p.MockP2PNetwork;
 import tech.pegasys.artemis.networking.p2p.MothraP2PNetwork;
 import tech.pegasys.artemis.networking.p2p.api.P2PNetwork;
-import tech.pegasys.artemis.networking.p2p.jvmlibp2p.JvmLibP2PConfig;
+import tech.pegasys.artemis.networking.p2p.jvmlibp2p.JvmLibp2pConfig;
 import tech.pegasys.artemis.service.serviceutils.ServiceConfig;
 import tech.pegasys.artemis.service.serviceutils.ServiceInterface;
 import tech.pegasys.artemis.statetransition.StateProcessor;
@@ -125,9 +124,11 @@ public class BeaconChainService implements ServiceInterface {
     } else if ("jvmlibp2p".equals(config.getConfig().getNetworkMode())) {
       this.p2pNetwork =
           new JvmLibP2PNetwork(
-              new JvmLibP2PConfig(
+              new JvmLibp2pConfig(
                   Optional.empty(),
-                  Optional.of(config.getConfig().getPort()),
+                  config.getConfig().getNetworkInterface(),
+                  config.getConfig().getPort(),
+                  config.getConfig().getAdvertisedPort(),
                   config.getConfig().getStaticMothraPeers(),
                   true,
                   true,
@@ -148,11 +149,7 @@ public class BeaconChainService implements ServiceInterface {
 
   @Override
   public void stop() {
-    try {
-      this.p2pNetwork.close();
-    } catch (IOException e) {
-      STDOUT.log(Level.FATAL, e.toString());
-    }
+    this.p2pNetwork.stop();
     this.timer.stop();
     this.eventBus.unregister(this);
   }

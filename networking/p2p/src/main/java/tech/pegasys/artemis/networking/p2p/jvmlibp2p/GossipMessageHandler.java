@@ -36,9 +36,9 @@ import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 public class GossipMessageHandler implements Consumer<MessageApi> {
   private static final int MAX_SENT_MESSAGES = 2048;
 
-  private static final Topic blocksTopic = new Topic("/eth2/beacon_block/ssz");
-  private static final Topic attestationsTopic = new Topic("/eth2/beacon_attestation/ssz");
-  private static EventBus eventBus;
+  private static final Topic BLOCKS_TOPIC = new Topic("/eth2/beacon_block/ssz");
+  private static final Topic ATTESTATIONS_TOPIC = new Topic("/eth2/beacon_attestation/ssz");
+  private EventBus eventBus;
   private final PubsubPublisherApi publisher;
   private final Set<Bytes> sentMessages =
       Collections.synchronizedSet(
@@ -50,26 +50,26 @@ public class GossipMessageHandler implements Consumer<MessageApi> {
                 }
               }));
 
-  public GossipMessageHandler(final PubsubPublisherApi publisher) {
+  public GossipMessageHandler(final PubsubPublisherApi publisher, final EventBus eventBus) {
     this.publisher = publisher;
+    this.eventBus = eventBus;
   }
 
   public static void init(final Gossip gossip, final PrivKey privateKey, final EventBus eventBus) {
-    GossipMessageHandler.eventBus = eventBus;
     final PubsubPublisherApi publisher =
         gossip.createPublisher(privateKey, new Random().nextLong());
-    final GossipMessageHandler handler = new GossipMessageHandler(publisher);
-    gossip.subscribe(handler, blocksTopic, attestationsTopic);
+    final GossipMessageHandler handler = new GossipMessageHandler(publisher, eventBus);
+    gossip.subscribe(handler, BLOCKS_TOPIC, ATTESTATIONS_TOPIC);
     eventBus.register(handler);
   }
 
   @Override
   public void accept(MessageApi msg) {
-    if (msg.getTopics().contains(blocksTopic)) {
+    if (msg.getTopics().contains(BLOCKS_TOPIC)) {
       BeaconBlock block =
           SimpleOffsetSerializer.deserialize(Bytes.wrapByteBuf(msg.getData()), BeaconBlock.class);
       eventBus.post(block);
-    } else if (msg.getTopics().contains(attestationsTopic)) {
+    } else if (msg.getTopics().contains(ATTESTATIONS_TOPIC)) {
       Attestation attestation =
           SimpleOffsetSerializer.deserialize(Bytes.wrapByteBuf(msg.getData()), Attestation.class);
       eventBus.post(attestation);
@@ -78,12 +78,12 @@ public class GossipMessageHandler implements Consumer<MessageApi> {
 
   @Subscribe
   public void onNewBlock(final BeaconBlock block) {
-    gossip(block, blocksTopic);
+    gossip(block, BLOCKS_TOPIC);
   }
 
   @Subscribe
   public void onNewAttestation(final Attestation attestation) {
-    gossip(attestation, attestationsTopic);
+    gossip(attestation, ATTESTATIONS_TOPIC);
   }
 
   private void gossip(final SimpleOffsetSerializable block, final Topic topic) {

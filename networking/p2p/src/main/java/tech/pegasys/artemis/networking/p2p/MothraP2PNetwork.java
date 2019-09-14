@@ -14,8 +14,6 @@
 package tech.pegasys.artemis.networking.p2p;
 
 import com.google.common.eventbus.EventBus;
-import java.io.IOException;
-import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -117,38 +115,12 @@ public final class MothraP2PNetwork implements P2PNetwork {
   public void run() {}
 
   @Override
-  public Collection<?> getPeers() {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
-  public Collection<?> getHandlers() {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
   public CompletableFuture<?> connect(String peer) {
     throw new UnsupportedOperationException();
   }
 
   @Override
-  public void subscribe(String event) {
-    // TODO
-    if (!started.get()) {}
-  }
-
-  @Override
   public void stop() {
     if (started.compareAndSet(true, false)) {}
-  }
-
-  @Override
-  public boolean isListening() {
-    return started.get();
-  }
-
-  @Override
-  public void close() throws IOException {
-    stop();
   }
 }

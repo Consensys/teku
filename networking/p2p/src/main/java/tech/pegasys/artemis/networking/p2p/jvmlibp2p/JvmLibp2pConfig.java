@@ -17,24 +17,30 @@ import io.libp2p.core.crypto.PrivKey;
 import java.util.List;
 import java.util.Optional;
 
-public class JvmLibP2PConfig {
+public class JvmLibp2pConfig {
 
   private final Optional<PrivKey> privateKey;
-  private final Optional<Integer> listenPort;
+  private final String networkInterface;
+  private final int listenPort;
+  private final int advertisedPort;
   private final List<String> peers;
   private final boolean logWireCipher;
   private final boolean logWirePlain;
   private final boolean logMuxFrames;
 
-  public JvmLibP2PConfig(
+  public JvmLibp2pConfig(
       final Optional<PrivKey> privateKey,
-      final Optional<Integer> listenPort,
+      final String networkInterface,
+      final int listenPort,
+      final int advertisedPort,
       final List<String> peers,
       final boolean logWireCipher,
       final boolean logWirePlain,
       final boolean logMuxFrames) {
     this.privateKey = privateKey;
+    this.networkInterface = networkInterface;
     this.listenPort = listenPort;
+    this.advertisedPort = advertisedPort;
     this.peers = peers;
     this.logWireCipher = logWireCipher;
     this.logWirePlain = logWirePlain;
@@ -45,8 +51,16 @@ public class JvmLibP2PConfig {
     return privateKey;
   }
 
-  public Optional<Integer> getListenPort() {
+  public String getNetworkInterface() {
+    return networkInterface;
+  }
+
+  public int getListenPort() {
     return listenPort;
+  }
+
+  public int getAdvertisedPort() {
+    return advertisedPort;
   }
 
   public List<String> getPeers() {
