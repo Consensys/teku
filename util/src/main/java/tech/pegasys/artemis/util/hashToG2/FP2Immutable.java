@@ -184,7 +184,7 @@ public class FP2Immutable {
    */
   int sgn0() {
     // Threshold is (P - 1) // 2
-    BIG thresh = (new BIG(P)).minus(new BIG(1));
+    BIG thresh = new BIG(P).minus(new BIG(1));
     thresh.fshr(1);
     fp2.norm();
     int cmp = BIG.comp(fp2.getB(), thresh);

@@ -90,7 +90,7 @@ final class JacobianPoint {
     FP2Immutable a = x.sqr();
     FP2Immutable b = y.sqr();
     FP2Immutable c = b.sqr();
-    FP2Immutable d = (x.add(b).sqr().sub(a).sub(c)).dbl();
+    FP2Immutable d = x.add(b).sqr().sub(a).sub(c).dbl();
     FP2Immutable e = a.mul(new FP2Immutable(3));
     FP2Immutable f = e.sqr();
 
@@ -137,7 +137,7 @@ final class JacobianPoint {
     FP2Immutable s2 = y2.mul(z1).mul(z1z1);
 
     // detect exceptional case P == Q
-    if (u1.equals(u2) && (s1.equals(s2))) {
+    if (u1.equals(u2) && s1.equals(s2)) {
       return dbl();
     }
 
@@ -176,7 +176,7 @@ final class JacobianPoint {
     if (isInfinity()) {
       return new ECP2();
     }
-    FP2Immutable z3inv = (pow(z, 3)).inverse();
+    FP2Immutable z3inv = pow(z, 3).inverse();
     return new ECP2(x.mul(z).mul(z3inv).getFp2(), y.mul(z3inv).getFp2());
   }
 
@@ -210,5 +210,10 @@ final class JacobianPoint {
     }
     JacobianPoint other = (JacobianPoint) obj;
     return x.equals(other.x) && y.equals(other.y) && z.equals(other.z);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(x, y, z);
   }
 }
