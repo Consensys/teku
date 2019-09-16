@@ -15,16 +15,13 @@ package tech.pegasys.artemis.services.chainstorage;
 
 import tech.pegasys.artemis.service.serviceutils.ServiceConfig;
 import tech.pegasys.artemis.service.serviceutils.ServiceInterface;
-import tech.pegasys.artemis.storage.FixedStateChainStorageServer;
+import tech.pegasys.artemis.storage.InteropChainStorageServer;
 
 public class ChainStorageService implements ServiceInterface {
 
   @Override
   public void init(ServiceConfig config) {
-    final String interopStartState = config.getConfig().getInteropStartState();
-    if (config.getConfig().getInteropActive() && interopStartState != null) {
-      new FixedStateChainStorageServer(config.getEventBus(), config.getConfig());
-    }
+    new InteropChainStorageServer(config.getEventBus(), config.getConfig());
   }
 
   @Override
