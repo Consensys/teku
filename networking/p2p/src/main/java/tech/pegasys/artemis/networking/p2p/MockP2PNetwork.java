@@ -15,7 +15,6 @@ package tech.pegasys.artemis.networking.p2p;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
-import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.networking.p2p.api.P2PNetwork;
@@ -39,39 +38,16 @@ public class MockP2PNetwork implements P2PNetwork {
   }
 
   @Override
-  public Collection<?> getPeers() {
-    return null;
-  }
-
-  @Override
-  public Collection<?> getHandlers() {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
   public CompletableFuture<?> connect(String peer) {
     return null;
   }
-
-  @Override
-  public void subscribe(String event) {}
 
   /** Stops the P2P network layer. */
   @Override
   public void stop() {}
 
   @Override
-  public boolean isListening() {
-    return false;
-  }
-
-  @Override
   public void run() {}
-
-  @Override
-  public void close() {
-    this.stop();
-  }
 
   @Subscribe
   public void onNewUnprocessedBlock(BeaconBlock block) {

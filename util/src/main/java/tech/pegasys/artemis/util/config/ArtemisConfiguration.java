@@ -42,7 +42,7 @@ public class ArtemisConfiguration {
                 "node.networkMode",
                 "mock",
                 "represents what network to use",
-                PropertyValidator.anyOf("mock", "hobbits", "mothra"));
+                PropertyValidator.anyOf("mock", "hobbits", "mothra", "jvmlibp2p"));
     builder.addString(
         "node.gossipProtocol",
         "plumtree",

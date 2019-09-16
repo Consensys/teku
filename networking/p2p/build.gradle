@@ -8,6 +8,8 @@ dependencies {
   implementation project(':data:adapter')
   implementation 'com.google.guava:guava'
   compile files("../../libs/mothra.jar")
+  compile files("../../libs/jvm-libp2p-minimal-0.0.1-SNAPSHOT.jar")
+  compile "com.google.protobuf:protobuf-java"
   implementation 'io.vertx:vertx-core'
 
   implementation 'org.apache.tuweni:tuweni-bytes'
@@ -25,6 +27,8 @@ dependencies {
   implementation 'com.fasterxml.jackson.core:jackson-databind'
   implementation 'de.undercouch:bson4jackson'
   implementation 'org.xerial.snappy:snappy-java'
+
+  testImplementation 'org.mockito:mockito-core:2.28.2'
 }
 
 configurations { testArtifacts }
