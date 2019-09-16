@@ -27,10 +27,12 @@ import java.util.Map;
 import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
+import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.storage.events.DBStoreValidEvent;
 import tech.pegasys.artemis.storage.events.NodeStartEvent;
@@ -38,13 +40,13 @@ import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.alogger.ALogger.Color;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 
-public class FixedStateChainStorageServer implements ChainStorage {
+public class InteropChainStorageServer implements ChainStorage {
   private static final ALogger STDOUT = new ALogger("stdout");
 
   private final EventBus eventBus;
   private final ArtemisConfiguration config;
 
-  public FixedStateChainStorageServer(EventBus eventBus, ArtemisConfiguration config) {
+  public InteropChainStorageServer(EventBus eventBus, ArtemisConfiguration config) {
     this.eventBus = eventBus;
     this.config = config;
     eventBus.register(this);
@@ -56,24 +58,29 @@ public class FixedStateChainStorageServer implements ChainStorage {
     if (config.getInteropActive() && interopStartState != null) {
       try {
         STDOUT.log(Level.INFO, "Loading initial state from " + interopStartState, Color.GREEN);
-        final DBStoreValidEvent dbStoreValidEvent =
+        final DBStoreValidEvent event =
             loadInitialState(Bytes.wrap(Files.readAllBytes(new File(interopStartState).toPath())));
-        this.eventBus.post(dbStoreValidEvent);
+        this.eventBus.post(event);
       } catch (final IOException e) {
         throw new IllegalStateException("Failed to load initial state", e);
       }
+    } else if (this.config.getDepositMode().equals(Constants.DEPOSIT_TEST)) {
+      BeaconStateWithCache initialState = DataStructureUtil.createInitialBeaconState(this.config);
+      this.eventBus.post(createDBStoreValidEvent(initialState));
     }
   }
 
   DBStoreValidEvent loadInitialState(final Bytes beaconStateData) {
-    final BeaconStateWithCache initialBeaconState = loadBeaconState(beaconStateData);
+    return createDBStoreValidEvent(loadBeaconState(beaconStateData));
+  }
+
+  private DBStoreValidEvent createDBStoreValidEvent(final BeaconStateWithCache initialBeaconState) {
     final Store initialStore = get_genesis_store(initialBeaconState);
     UnsignedLong genesisTime = initialBeaconState.getGenesis_time();
     UnsignedLong currentTime = UnsignedLong.valueOf(System.currentTimeMillis() / 1000);
-    UnsignedLong deltaTime = UnsignedLong.ZERO;
     UnsignedLong currentSlot = UnsignedLong.ZERO;
     if (currentTime.compareTo(genesisTime) > 0) {
-      deltaTime = currentTime.minus(genesisTime);
+      UnsignedLong deltaTime = currentTime.minus(genesisTime);
       currentSlot = deltaTime.dividedBy(UnsignedLong.valueOf(SECONDS_PER_SLOT));
     } else {
       try {

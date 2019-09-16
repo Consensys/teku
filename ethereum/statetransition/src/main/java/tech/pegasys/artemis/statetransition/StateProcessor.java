@@ -39,7 +39,6 @@ import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.DepositWithIndex;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
-import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.datastructures.util.DepositUtil;
 import tech.pegasys.artemis.service.serviceutils.ServiceConfig;
 import tech.pegasys.artemis.statetransition.events.GenesisEvent;
@@ -48,7 +47,6 @@ import tech.pegasys.artemis.statetransition.util.SlotProcessingException;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.Store;
 import tech.pegasys.artemis.storage.events.NodeDataLoadedEvent;
-import tech.pegasys.artemis.storage.events.NodeStartEvent;
 import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 
@@ -86,13 +84,6 @@ public class StateProcessor {
     this.stateTransition = new StateTransition(true, new EpochMetrics(config.getMetricsSystem()));
     this.chainStorageClient = chainStorageClient;
     this.eventBus.register(this);
-
-    if (this.config.getDepositMode().equals(Constants.DEPOSIT_TEST)
-        && (!this.config.getInteropActive() || this.config.getInteropStartState() == null)) {
-      initialState = DataStructureUtil.createInitialBeaconState(this.config);
-      setSimulationGenesisTime(initialState);
-    }
-    this.eventBus.post(new NodeStartEvent(initialState));
   }
 
   @Subscribe

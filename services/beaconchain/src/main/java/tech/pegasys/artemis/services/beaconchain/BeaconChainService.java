@@ -31,6 +31,7 @@ import tech.pegasys.artemis.statetransition.StateProcessor;
 import tech.pegasys.artemis.statetransition.TimingProcessor;
 import tech.pegasys.artemis.storage.ChainStorage;
 import tech.pegasys.artemis.storage.ChainStorageClient;
+import tech.pegasys.artemis.storage.events.NodeStartEvent;
 import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.time.Timer;
 import tech.pegasys.artemis.util.time.TimerFactory;
@@ -138,6 +139,8 @@ public class BeaconChainService implements ServiceInterface {
       throw new IllegalArgumentException(
           "Unsupported network mode " + config.getConfig().getNetworkMode());
     }
+
+    this.eventBus.post(new NodeStartEvent());
     this.timer.start();
   }
 
