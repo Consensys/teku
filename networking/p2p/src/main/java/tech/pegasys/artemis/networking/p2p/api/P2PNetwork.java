@@ -13,32 +13,15 @@
 
 package tech.pegasys.artemis.networking.p2p.api;
 
-import java.io.Closeable;
-import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
 
-// TODO: Finish defining proper return types and params
-
-public interface P2PNetwork extends Closeable, Runnable {
+public interface P2PNetwork extends Runnable {
   enum GossipProtocol {
     FLOODSUB,
     GOSSIPSUB,
     PLUMTREE,
     NONE
   }
-  /**
-   * Returns a snapshot of the currently connected peer connections.
-   *
-   * @return Peers currently connected.
-   */
-  Collection<?> getPeers();
-
-  /**
-   * Returns a snapshot of the socket handlers.
-   *
-   * @return Socket handlers
-   */
-  Collection<?> getHandlers();
 
   /**
    * Connects to a Peer.
@@ -48,20 +31,6 @@ public interface P2PNetwork extends Closeable, Runnable {
    */
   CompletableFuture<?> connect(String peer);
 
-  /**
-   * Subscribe a to all incoming events.
-   *
-   * @param event to subscribe to.
-   */
-  void subscribe(String event);
-
   /** Stops the P2P network layer. */
   void stop();
-
-  /**
-   * Checks if the node is listening for network connections
-   *
-   * @return true if the node is listening for network connections, false, otherwise.
-   */
-  boolean isListening();
 }

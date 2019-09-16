@@ -20,9 +20,7 @@ import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetServer;
 import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.NetSocket;
-import java.io.IOException;
 import java.net.URI;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -30,7 +28,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.stream.Collectors;
 import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -217,18 +214,6 @@ public final class HobbitsP2PNetwork implements P2PNetwork {
         });
   }
 
-  @Override
-  public Collection<?> getPeers() {
-    return handlersMap.values().stream()
-        .map(AbstractSocketHandler::peer)
-        .collect(Collectors.toList());
-  }
-
-  @Override
-  public Collection<?> getHandlers() {
-    return handlersMap.values();
-  }
-
   CompletableFuture<?> connect(URI peerURI) {
     CompletableFuture<Peer> connected = new CompletableFuture<>();
     connected.whenCompleteAsync(
@@ -269,12 +254,6 @@ public final class HobbitsP2PNetwork implements P2PNetwork {
   }
 
   @Override
-  public void subscribe(String event) {
-    // TODO
-    if (!started.get()) {}
-  }
-
-  @Override
   public void stop() {
     if (started.compareAndSet(true, false)) {
       try {
@@ -297,15 +276,5 @@ public final class HobbitsP2PNetwork implements P2PNetwork {
         client.close();
       }
     }
-  }
-
-  @Override
-  public boolean isListening() {
-    return started.get();
-  }
-
-  @Override
-  public void close() throws IOException {
-    stop();
   }
 }
