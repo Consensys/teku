@@ -25,7 +25,6 @@ import org.apache.logging.log4j.Level;
 import tech.pegasys.artemis.metrics.ArtemisMetricCategory;
 import tech.pegasys.artemis.metrics.SettableGauge;
 import tech.pegasys.artemis.service.serviceutils.ServiceConfig;
-import tech.pegasys.artemis.statetransition.events.GenesisEvent;
 import tech.pegasys.artemis.statetransition.events.ValidatorAssignmentEvent;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.Store.Transaction;
@@ -91,11 +90,6 @@ public class TimingProcessor {
           nodeSlot = nodeSlot.plus(UnsignedLong.ONE);
           Thread.sleep(SECONDS_PER_SLOT * 1000 / 2);
           this.eventBus.post(new ValidatorAssignmentEvent());
-        }
-      } else {
-        if (currentTime.compareTo(chainStorageClient.getGenesisTime().minus(UnsignedLong.ONE))
-            >= 0) {
-          this.eventBus.post(new GenesisEvent());
         }
       }
     } catch (InterruptedException e) {
