@@ -16,13 +16,15 @@ package tech.pegasys.artemis.services.beaconchain;
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
 import io.vertx.core.Vertx;
-import java.io.IOException;
+import java.util.Optional;
 import org.apache.logging.log4j.Level;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.networking.p2p.HobbitsP2PNetwork;
+import tech.pegasys.artemis.networking.p2p.JvmLibP2PNetwork;
 import tech.pegasys.artemis.networking.p2p.MockP2PNetwork;
 import tech.pegasys.artemis.networking.p2p.MothraP2PNetwork;
 import tech.pegasys.artemis.networking.p2p.api.P2PNetwork;
+import tech.pegasys.artemis.networking.p2p.jvmlibp2p.JvmLibp2pConfig;
 import tech.pegasys.artemis.service.serviceutils.ServiceConfig;
 import tech.pegasys.artemis.service.serviceutils.ServiceInterface;
 import tech.pegasys.artemis.statetransition.StateProcessor;
@@ -120,6 +122,19 @@ public class BeaconChainService implements ServiceInterface {
           STDOUT.log(Level.ERROR, e.getMessage());
         }
       }
+    } else if ("jvmlibp2p".equals(config.getConfig().getNetworkMode())) {
+      this.p2pNetwork =
+          new JvmLibP2PNetwork(
+              new JvmLibp2pConfig(
+                  Optional.empty(),
+                  config.getConfig().getNetworkInterface(),
+                  config.getConfig().getPort(),
+                  config.getConfig().getAdvertisedPort(),
+                  config.getConfig().getStaticMothraPeers(),
+                  true,
+                  true,
+                  true),
+              eventBus);
     } else {
       throw new IllegalArgumentException(
           "Unsupported network mode " + config.getConfig().getNetworkMode());
@@ -137,11 +152,7 @@ public class BeaconChainService implements ServiceInterface {
 
   @Override
   public void stop() {
-    try {
-      this.p2pNetwork.close();
-    } catch (IOException e) {
-      STDOUT.log(Level.FATAL, e.toString());
-    }
+    this.p2pNetwork.stop();
     this.timer.stop();
     this.eventBus.unregister(this);
   }

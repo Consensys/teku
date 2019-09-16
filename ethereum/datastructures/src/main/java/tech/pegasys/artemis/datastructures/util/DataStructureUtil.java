@@ -204,9 +204,9 @@ public final class DataStructureUtil {
     return randomAttestationData(randomLong());
   }
 
-  public static Attestation randomAttestation(Long slotNum) {
+  public static Attestation randomAttestation(long slotNum) {
     return new Attestation(
-        randomBitlist(), randomAttestationData(), randomBitlist(), BLSSignature.random());
+        randomBitlist(), randomAttestationData(slotNum), randomBitlist(), BLSSignature.random());
   }
 
   public static Attestation randomAttestation() {

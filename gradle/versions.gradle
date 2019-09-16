@@ -15,6 +15,7 @@ dependencyManagement {
 
     dependency 'com.google.guava:guava:27.0.1-jre'
     dependency 'com.google.code.gson:gson:2.8.5'
+    dependency 'com.google.protobuf:protobuf-java:3.6.1'
 
     dependency 'com.squareup.okhttp3:okhttp:3.12.0'
 
