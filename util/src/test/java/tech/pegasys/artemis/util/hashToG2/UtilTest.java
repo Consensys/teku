@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.util.hashToG2;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static tech.pegasys.artemis.util.hashToG2.FP2Immutable.ONE;
@@ -52,22 +53,22 @@ class UtilTest {
 
   @Test
   void hmacSixtyFourByteKey() {
-    byte[] text = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789?!".getBytes();
-    byte[] key = "1234567890123456789012345678901234567890123456789012345678901234".getBytes();
+    byte[] text = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789?!".getBytes(UTF_8);
+    byte[] key = "1234567890123456789012345678901234567890123456789012345678901234".getBytes(UTF_8);
     Bytes expected =
         Bytes.fromHexString("0x72e4eae543b5669e6a777f9c984029860756f80a2b658d1bca6da5693c580ba1");
     Bytes actual = HMAC_SHA256(text, key);
-    assertEquals(actual, expected);
+    assertEquals(expected, actual);
   }
 
   @Test
   void hmacSixtyFiveByteKey() {
-    byte[] text = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789?!".getBytes();
-    byte[] key = "12345678901234567890123456789012345678901234567890123456789012345".getBytes();
+    byte[] text = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789?!".getBytes(UTF_8);
+    byte[] key = "12345678901234567890123456789012345678901234567890123456789012345".getBytes(UTF_8);
     Bytes expected =
         Bytes.fromHexString("0x7e1bef8bdcd6c63dd009aaeff87a6ba51a3e00efff6353ac514f6fae41361407");
     Bytes actual = HMAC_SHA256(text, key);
-    assertEquals(actual, expected);
+    assertEquals(expected, actual);
   }
 
   /*
@@ -83,7 +84,7 @@ class UtilTest {
     Bytes expected =
         Bytes.fromHexString("0xb0344c61d8db38535ca8afceaf0bf12b881dc200c9833da726e9376c2e32cff7");
     Bytes actual = HMAC_SHA256(data, key);
-    assertEquals(actual, expected);
+    assertEquals(expected, actual);
   }
 
   @Test
@@ -94,7 +95,7 @@ class UtilTest {
     Bytes expected =
         Bytes.fromHexString("0x5bdcc146bf60754e6a042426089575c75a003f089d2739839dec58b964ec3843");
     Bytes actual = HMAC_SHA256(data, key);
-    assertEquals(actual, expected);
+    assertEquals(expected, actual);
   }
 
   @Test
@@ -109,7 +110,7 @@ class UtilTest {
     Bytes expected =
         Bytes.fromHexString("0x773ea91e36800e46854db8ebd09181a72959098b3ef8c122d9635514ced565fe");
     Bytes actual = HMAC_SHA256(data, key);
-    assertEquals(actual, expected);
+    assertEquals(expected, actual);
   }
 
   @Test
@@ -125,7 +126,7 @@ class UtilTest {
     Bytes expected =
         Bytes.fromHexString("0x82558a389a443c0ea4cc819899f2083a85f0faa3e578f8077a2e3ff46729665b");
     Bytes actual = HMAC_SHA256(data, key);
-    assertEquals(actual, expected);
+    assertEquals(expected, actual);
   }
 
   @Test
@@ -134,7 +135,7 @@ class UtilTest {
     byte[] key = Bytes.fromHexString("0x0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c").toArray();
     Bytes expected = Bytes.fromHexString("0xa3b6167473100ee06e0c796c2955552b");
     Bytes actual = HMAC_SHA256(data, key).slice(0, 16);
-    assertEquals(actual, expected);
+    assertEquals(expected, actual);
   }
 
   @Test
@@ -157,7 +158,7 @@ class UtilTest {
     Bytes expected =
         Bytes.fromHexString("0x60e431591ee0b67f0d8a26aacbf5b77f8e0bc6213728c5140546040f0ee37f54");
     Bytes actual = HMAC_SHA256(data, key);
-    assertEquals(actual, expected);
+    assertEquals(expected, actual);
   }
 
   @Test
@@ -183,7 +184,7 @@ class UtilTest {
     Bytes expected =
         Bytes.fromHexString("0x9b09ffa71b942fcb27635fbcd5b0e944bfdc63644f0713938a7f51535c3a35e2");
     Bytes actual = HMAC_SHA256(data, key);
-    assertEquals(actual, expected);
+    assertEquals(expected, actual);
   }
 
   /*
@@ -273,7 +274,7 @@ class UtilTest {
     String hexModulus =
         "1a0111ea397fe69a4b1ba7b6434bacd764774b84f38512bf6730d2a0f6b0f6241eabfffeb153ffffb9feffffffffaaab";
     BigInteger fromHex = new BigInteger(hexModulus, 16);
-    BigInteger fromRom = new BigInteger((new BIG(ROM.Modulus)).toString(), 16);
+    BigInteger fromRom = new BigInteger(new BIG(ROM.Modulus).toString(), 16);
     assertEquals(fromHex, fromRom);
   }
 
