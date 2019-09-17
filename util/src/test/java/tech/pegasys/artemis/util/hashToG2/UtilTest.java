@@ -53,7 +53,8 @@ class UtilTest {
 
   @Test
   void hmacSixtyFourByteKey() {
-    byte[] text = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789?!".getBytes(UTF_8);
+    byte[] text =
+        "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789?!".getBytes(UTF_8);
     byte[] key = "1234567890123456789012345678901234567890123456789012345678901234".getBytes(UTF_8);
     Bytes expected =
         Bytes.fromHexString("0x72e4eae543b5669e6a777f9c984029860756f80a2b658d1bca6da5693c580ba1");
@@ -63,8 +64,10 @@ class UtilTest {
 
   @Test
   void hmacSixtyFiveByteKey() {
-    byte[] text = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789?!".getBytes(UTF_8);
-    byte[] key = "12345678901234567890123456789012345678901234567890123456789012345".getBytes(UTF_8);
+    byte[] text =
+        "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789?!".getBytes(UTF_8);
+    byte[] key =
+        "12345678901234567890123456789012345678901234567890123456789012345".getBytes(UTF_8);
     Bytes expected =
         Bytes.fromHexString("0x7e1bef8bdcd6c63dd009aaeff87a6ba51a3e00efff6353ac514f6fae41361407");
     Bytes actual = HMAC_SHA256(text, key);
