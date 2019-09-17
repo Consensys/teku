@@ -23,8 +23,9 @@ import org.apache.milagro.amcl.BLS381.ECP2;
 /**
  * The new hash-to-G2 algorithm initially generates points that are not on the curve. This prevents
  * us from using the Milagro ECP2 class. Moreover, the points are represented in Jacobian
- * coordinates rather than affine coordinates. This class provides an implementation of the minimum
- * necessary functions to implement hash-to-G2. It is based on the Python reference code at
+ * coordinates rather than the projective coordinates that Milagro uses internally. This class
+ * provides an implementation of the minimum necessary functions to implement hash-to-G2. It is
+ * based on the Python reference code at
  * https://github.com/kwantam/bls_sigs_ref/tree/master/python-impl
  *
  * <p>The point is intended to be immutable and returns copies where required.
@@ -166,9 +167,8 @@ final class JacobianPoint {
   /**
    * Create the equivalent point in Milagro's ECP2 format.
    *
-   * <p>Converts the point from Jacobian representation to the affine representation used by
-   * Milagro: they are the same when z == 1. Will return the point at infinity if the point is not
-   * on the curve.
+   * <p>Converts the point from Jacobian representation to the normal affine representation in the
+   * form of a Milagro ECP2. Will return the point at infinity if the point is not on the curve.
    *
    * @return the ECP2 point corresponding to this point
    */

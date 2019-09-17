@@ -150,7 +150,7 @@ public class FP2ImmutableTest {
   // TODO: more rigorous tests (swapping getA and getB in the routine didn't change the result!)
   @Test
   void signEquals() {
-    BIG thresh = (new BIG(P)).minus(new BIG(1));
+    BIG thresh = new BIG(P).minus(new BIG(1));
     thresh.fshr(1);
     FP2Immutable x = new FP2Immutable(thresh, thresh);
     assertEquals(1, x.sgn0());
@@ -158,7 +158,7 @@ public class FP2ImmutableTest {
 
   @Test
   void signFirstLessThan() {
-    BIG thresh = (new BIG(P)).minus(new BIG(1));
+    BIG thresh = new BIG(P).minus(new BIG(1));
     thresh.fshr(1);
     FP2Immutable x = new FP2Immutable(thresh.minus(new BIG(1)), thresh);
     assertEquals(1, x.sgn0());
@@ -166,7 +166,7 @@ public class FP2ImmutableTest {
 
   @Test
   void signFirstGreaterThan() {
-    BIG thresh = (new BIG(P)).minus(new BIG(1));
+    BIG thresh = new BIG(P).minus(new BIG(1));
     thresh.fshr(1);
     FP2Immutable x = new FP2Immutable(thresh.plus(new BIG(1)), thresh);
     assertEquals(-1, x.sgn0());
@@ -174,7 +174,7 @@ public class FP2ImmutableTest {
 
   @Test
   void signSecondLessThan() {
-    BIG thresh = (new BIG(P)).minus(new BIG(1));
+    BIG thresh = new BIG(P).minus(new BIG(1));
     thresh.fshr(1);
     FP2Immutable x = new FP2Immutable(thresh, thresh.minus(new BIG(1)));
     assertEquals(1, x.sgn0());
@@ -182,14 +182,14 @@ public class FP2ImmutableTest {
 
   @Test
   void signSecondGreaterThan() {
-    BIG thresh = (new BIG(P)).minus(new BIG(1));
+    BIG thresh = new BIG(P).minus(new BIG(1));
     thresh.fshr(1);
     FP2Immutable x = new FP2Immutable(thresh, thresh.plus(new BIG(1)));
     assertEquals(-1, x.sgn0());
   }
 
   @Test
-  void mutabilityTest() {
+  void immutabilityTest() {
     FP2Immutable foo = new FP2Immutable(ONE);
     foo.getFp2().mul(new FP2(0));
     assertEquals(ONE, foo);
