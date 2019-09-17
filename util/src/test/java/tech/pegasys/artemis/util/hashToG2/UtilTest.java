@@ -34,7 +34,6 @@ import static tech.pegasys.artemis.util.hashToG2.Util.xi_2;
 import static tech.pegasys.artemis.util.hashToG2.Util.xi_2Pow2;
 
 import java.math.BigInteger;
-import java.nio.charset.StandardCharsets;
 import org.apache.milagro.amcl.BLS381.BIG;
 import org.apache.milagro.amcl.BLS381.ECP2;
 import org.apache.milagro.amcl.BLS381.FP2;
@@ -377,10 +376,7 @@ class UtilTest {
             bigFromHex(
                 "0x093ec788e7fcfb915ffaac1e66e67d5d020f2b5c7131d82cee7dd361dff283d0023d5b39768595dca7db13c4a40c2287"));
     FP2Immutable actual =
-        hashToBase(
-            Bytes.wrap("sample".getBytes(StandardCharsets.US_ASCII)),
-            (byte) 0,
-            Bytes.fromHexString("0x02"));
+        hashToBase(Bytes.wrap("sample".getBytes(UTF_8)), (byte) 0, Bytes.fromHexString("0x02"));
 
     assertEquals(expected, actual);
   }
@@ -394,10 +390,7 @@ class UtilTest {
             bigFromHex(
                 "0x01fbe48c2b138982f28317f684364327114adecadd94b599347bded08ef7b7ba22d814f1c64f1c77023ec9425383c184"));
     FP2Immutable actual =
-        hashToBase(
-            Bytes.wrap("sample".getBytes(StandardCharsets.US_ASCII)),
-            (byte) 1,
-            Bytes.fromHexString("0x02"));
+        hashToBase(Bytes.wrap("sample".getBytes(UTF_8)), (byte) 1, Bytes.fromHexString("0x02"));
 
     assertEquals(expected, actual);
   }
@@ -590,7 +583,7 @@ class UtilTest {
 
   // End-to-end reference tests from Python implementation data (RFC6979)
   @Test
-  void refTest1() {
+  void endToEndTest1() {
     FP2 x =
         new FP2(
             bigFromHex(
@@ -607,14 +600,13 @@ class UtilTest {
 
     // Cipher suite is 0x02 in the current test data
     G2Point actual =
-        hashToCurve.hashToCurve(
-            Bytes.wrap("sample".getBytes(StandardCharsets.US_ASCII)), Bytes.fromHexString("0x02"));
+        hashToCurve.hashToCurve(Bytes.wrap("sample".getBytes(UTF_8)), Bytes.fromHexString("0x02"));
 
     assertEquals(expected, actual);
   }
 
   @Test
-  void refTest2() {
+  void endToEndTest2() {
     FP2 x =
         new FP2(
             bigFromHex(
@@ -631,8 +623,7 @@ class UtilTest {
 
     // Cipher suite is 0x02 in the current test data
     G2Point actual =
-        hashToCurve.hashToCurve(
-            Bytes.wrap("test".getBytes(StandardCharsets.US_ASCII)), Bytes.fromHexString("0x02"));
+        hashToCurve.hashToCurve(Bytes.wrap("test".getBytes(UTF_8)), Bytes.fromHexString("0x02"));
 
     assertEquals(expected, actual);
   }

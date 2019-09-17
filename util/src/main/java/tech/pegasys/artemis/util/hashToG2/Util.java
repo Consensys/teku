@@ -243,14 +243,14 @@ public class Util {
    *
    * @param prk a pseudorandom key of at least HashLen octets
    * @param info optional context and application specific information
-   * @param l length of output keying material in octets
-   * @return output keying material (of L octets)
+   * @param length desired length of output keying material in octets
+   * @return output keying material (of `length` octets)
    */
-  static Bytes HKDF_Expand(Bytes prk, Bytes info, int l) {
+  static Bytes HKDF_Expand(Bytes prk, Bytes info, int length) {
     Bytes okm = Bytes.EMPTY;
     Bytes tOld = Bytes.EMPTY;
     int i = 1;
-    int remainder = l;
+    int remainder = length;
     while (remainder > 0) {
       Bytes tNew =
           HMAC_SHA256(Bytes.concatenate(tOld, info, Bytes.of((byte) i)).toArray(), prk.toArray());
@@ -259,11 +259,11 @@ public class Util {
       remainder -= SHA256_HASH_SIZE;
       tOld = tNew;
     }
-    return okm.slice(0, l);
+    return okm.slice(0, length);
   }
 
   /**
-   * Big-endian conversion of byte array into a positive BigInteger
+   * Big-endian conversion of byte array into a positive BigInteger.
    *
    * <p>As defined at https://tools.ietf.org/html/rfc3447#section-4.2
    *
@@ -275,7 +275,7 @@ public class Util {
   }
 
   /**
-   * Hashes a string msg of any length into an element of the FP2 field
+   * Hashes a string msg of any length into an element of the FP2 field.
    *
    * <p>As defined at https://tools.ietf.org/html/draft-irtf-cfrg-hash-to-curve-04#section-5.3
    *
@@ -320,8 +320,6 @@ public class Util {
 
     return new FP2Immutable(e1, e2);
   }
-
-  // This is osswu2_help() in the Python code
 
   /**
    * Calculates a point on the elliptic curve E from an element of the finite field FP2.

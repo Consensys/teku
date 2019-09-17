@@ -45,7 +45,7 @@ import tech.pegasys.artemis.util.mikuli.G2Point;
 public class hashToCurve {
 
   static final Bytes CIPHER_SUITE =
-      Bytes.wrap("BLS12381G2-SHA256-SSWU-RO".getBytes(StandardCharsets.US_ASCII));
+      Bytes.wrap("BLS12381G2-SHA256-SSWU-RO".getBytes(StandardCharsets.UTF_8));
 
   /**
    * Hashes to the G2 curve as described in the new BLS standard
