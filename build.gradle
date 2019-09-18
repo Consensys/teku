@@ -411,7 +411,7 @@ task distDocker(type: Exec) {
 }
 
 task distDockerWhiteblock(type: Exec) {
-  dependsOn distDocker
+  dependsOn installDist
 
   def dockerBuildVersion = project.hasProperty('release.releaseVersion') ? project.property('release.releaseVersion') : "${rootProject.version}"
   def image = "pegasyseng/artemis:whiteblock"
@@ -423,6 +423,18 @@ task distDockerWhiteblock(type: Exec) {
     copy {
       from fileTree("${projectDir}/docker/whiteblock/")
       into(workingDir)
+    }
+    copy {
+      from fileTree("${projectDir}/build/install/")
+      into(workingDir)
+    }
+    copy {
+      from fileTree("${projectDir}/scripts/")
+      into("${workingDir}/scripts")
+    }
+    copy {
+      from fileTree("${projectDir}/config/")
+      into("${workingDir}/config")
     }
   }
 
