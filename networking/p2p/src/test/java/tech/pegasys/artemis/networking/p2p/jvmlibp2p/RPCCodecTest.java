@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.networking.p2p.mothra;
+package tech.pegasys.artemis.networking.p2p.jvmlibp2p;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -19,8 +19,8 @@ import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.artemis.datastructures.networking.mothra.rpc.HelloMessage;
-import tech.pegasys.artemis.networking.p2p.mothra.rpc.RPCCodec;
+import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.HelloMessage;
+import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.RPCCodec;
 import tech.pegasys.artemis.util.SSZTypes.Bytes4;
 
 final class RPCCodecTest {

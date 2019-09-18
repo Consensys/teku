@@ -1,8 +1,7 @@
 [node]
 # networkMode options:
 # "mock": use MockP2PNetwork
-# "hobbits": use HobbitsP2PNetwork
-# "mothra": use MothraP2PNetwork
+# "jvmlibp2p" : use JvmLibP2PNetwork
 networkMode = "mock"
 #  Gossip options: floodsub,gossipsub,plumtree,none
 gossipProtocol = "floodsub"

@@ -82,7 +82,7 @@ public class BeaconChainService implements ServiceInterface {
                   config.getConfig().getNetworkInterface(),
                   config.getConfig().getPort(),
                   config.getConfig().getAdvertisedPort(),
-                  config.getConfig().getStaticMothraPeers(),
+                  config.getConfig().getStaticPeers(),
                   true,
                   true,
                   true),

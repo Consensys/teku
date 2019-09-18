@@ -17,8 +17,6 @@ import static java.util.Arrays.asList;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collections;
@@ -578,21 +576,7 @@ public class ArtemisConfiguration {
     return config.getInteger("constants.DEPOSIT_DATA_SIZE");
   }
 
-  /** @return the list of static peers associated with this node */
-  public List<URI> getStaticHobbitsPeers() {
-    return config.getListOfString("node.peers").stream()
-        .map(
-            (peer) -> {
-              try {
-                return new URI(peer);
-              } catch (URISyntaxException e) {
-                throw new RuntimeException(e);
-              }
-            })
-        .collect(Collectors.toList());
-  }
-
-  public List<String> getStaticMothraPeers() {
+  public List<String> getStaticPeers() {
     return config.getListOfString("node.peers");
   }
 

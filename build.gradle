@@ -89,7 +89,6 @@ allprojects {
         //Excluding tech.pegasys.artemis.datastructures due to preferred formatting overwritten by plugin in getConstantsAsString.
         exclude '**/src/main/java/tech/pegasys/artemis/Constants.java'
         exclude '**/proto'
-        exclude '**/mothra'
       }
       
 

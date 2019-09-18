@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# "Usage: sh interop.sh [validator_count] [owned_validator_start_index] [owned_validator_count] [peers] [start_delay]"
+# "Usage: sh interop.sh [validator_count] [owned_validator_start_index] [owned_validator_count] [start_delay]"
 #
 #
 #
@@ -16,7 +16,7 @@ export OWNED_VALIDATOR_COUNT=$3
 START_DELAY=$4
 export GENESIS_FILE="/tmp/genesis.ssz"
 export PEER_ID="16Uiu2HAm8cQB9DcwMtaSVuHNiJEPSq9mXM6FHho7c55M6XN2P3EQ"
-BOOTNODE_ENR=$(cat ~/.mothra/network/enr.dat)
+
 
 CURRENT_TIME=$(date +%s)
 GENESIS_TIME=$((CURRENT_TIME + START_DELAY))
