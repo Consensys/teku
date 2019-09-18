@@ -1,32 +1,32 @@
 #!/usr/bin/env bash
 
-# "Usage: sh interop.sh [validator_count] [owned_validator_start_index] [owned_validator_count] [peers] [start_delay]"
+# "Usage: sh interop.sh [validator_count] [owned_validator_start_index] [owned_validator_count] [start_delay]"
 #
 #
 #
 # Static Peering
 # Run multiclient in interop mode:
-#   sh interop.sh 16 0 16 /ip4/127.0.0.1/tcp/19001 10
+#   sh interop.sh 16 0 16 10
 #
 
 export VALIDATOR_COUNT=$1
 export OWNED_VALIDATOR_START_INDEX=$2
 export OWNED_VALIDATOR_COUNT=$3
-export PEERS=$4
-START_DELAY=$5
+#export PEERS=$4
+START_DELAY=$4
 export GENESIS_FILE="/tmp/genesis.ssz"
+export PEER_ID="16Uiu2HAm8cQB9DcwMtaSVuHNiJEPSq9mXM6FHho7c55M6XN2P3EQ"
 
-BOOTNODE_ENR=$(cat ~/.mothra/network/enr.dat)
 
 CURRENT_TIME=$(date +%s)
 GENESIS_TIME=$((CURRENT_TIME + START_DELAY))
 
 export START_ARTEMIS=true
 export START_LIGHTHOUSE=true
-export START_TRINITY=true
-export START_NIMBUS=true
-export START_LODESTAR=true
-export START_PRYSM=true
+export START_TRINITY=false
+export START_NIMBUS=false
+export START_LODESTAR=false
+export START_PRYSM=false
 export START_HARMONY=true
 
 zcli keys generate |zcli genesis mock --count $VALIDATOR_COUNT --genesis-time $GENESIS_TIME --out $GENESIS_FILE
@@ -47,7 +47,7 @@ then
     NODE_INDEX=0
     NUM_NODES=1
 
-    configure_node "mothra" $NODE_INDEX $NUM_NODES "$CONFIG_DIR/config.toml"
+    configure_node "jvmlibp2p" $NODE_INDEX $NUM_NODES "$CONFIG_DIR/config.toml"
     sh configurator.sh "$CONFIG_DIR/runConfig.0.toml" numValidators $VALIDATOR_COUNT
     sh configurator.sh "$CONFIG_DIR/runConfig.0.toml" numNodes $NUM_NODES
     sh configurator.sh "$CONFIG_DIR/runConfig.0.toml" active true
@@ -55,14 +55,15 @@ then
     sh configurator.sh "$CONFIG_DIR/runConfig.0.toml" ownedValidatorStartIndex $OWNED_VALIDATOR_START_INDEX
     sh configurator.sh "$CONFIG_DIR/runConfig.0.toml" ownedValidatorCount $OWNED_VALIDATOR_COUNT
 
-    if [ "$PEERS" != "" ]
-    then
-         ARTEMIS_PEERS=$(echo $PEERS | awk '{gsub(/\./,"\\.")}1' | awk '{gsub(/\//,"\\/")}1')
-         ARTEMIS_PEERS=$(echo [\"$ARTEMIS_PEERS\"] )
-         sh configurator.sh "$CONFIG_DIR/runConfig.0.toml" peers $ARTEMIS_PEERS
+
+    #if [ "$PEERS" != "" ]
+    #then
+    #     ARTEMIS_PEERS=$(echo $PEERS | awk '{gsub(/\./,"\\.")}1' | awk '{gsub(/\//,"\\/")}1')
+    #     ARTEMIS_PEERS=$(echo [\"$ARTEMIS_PEERS\"] )
+    #     sh configurator.sh "$CONFIG_DIR/runConfig.0.toml" peers $ARTEMIS_PEERS
          sh configurator.sh "$CONFIG_DIR/runConfig.0.toml" discovery "\"static\""
          sh configurator.sh "$CONFIG_DIR/runConfig.0.toml" isBootnode false
-    fi
+    #fi
 
     tmux new-session -d -s foo "jenv local $ARTEMIS_JAVA_VERSION; export RUST_LOG=libp2p_tcp=trace,multistream=trace; cd $SCRIPT_DIR/demo/node_0/ && ./artemis --config=$CONFIG_DIR/runConfig.0.toml --logging=INFO; sleep 20"
 fi
@@ -71,6 +72,7 @@ fi
 # Start lighthouse
 if [ "$START_LIGHTHOUSE" = true ]
 then
+
     #TODO: make port configurable
     export LISTEN_ADDRESS=127.0.0.1
     export PORT=19001
@@ -79,19 +81,10 @@ then
 
     # export RUST_LOG=libp2p_gossipsub=debug
 
-    #rm -rf ~/.lighthouse
+    rm -rf ~/.lighthouse
 
-    if [ "$PEERS" != "" ]
-    then
+    tmux split-window -v -t 0 "sleep 5; cd $DIR && ./beacon_node --libp2p-addresses /ip4/127.0.0.1/tcp/19000  --listen-address $LISTEN_ADDRESS --port $PORT testnet -f file ssz $GENESIS_FILE; sleep 20"
 
-        if [ "$GENESIS_FILE" != "" ]
-        then
-            tmux split-window -v -t 0 "cd $DIR && ./beacon_node --libp2p-addresses $PEERS --listen-address $LISTEN_ADDRESS --port $PORT testnet -f file ssz $GENESIS_FILE; sleep 20"
-        fi
-    else
-        #TODO: add tmux
-        cd $DIR && ./beacon_node --boot-nodes $BOOTNODE_ENR --listen-address $LISTEN_ADDRESS --port $PORT testnet -r quick $VALIDATOR_COUNT $GENESIS_TIME
-    fi
 
     ######LIGHTHOUSE VALIDATOR
     #TODO: need to fix this so that it can either read in keys generated from zcli or
@@ -141,7 +134,7 @@ then
     export PORT=19002
     # Start Trinity
     export DIR=$HOME/projects/consensys/pegasys/trinity/
-    tmux split-window -h -t 0 "cd $DIR; pipenv run serve $DIR $GENESIS_TIME $GENESIS_FILE $PORT; sleep 20"
+    tmux split-window -h -t 0 "sleep 5; cd $DIR; pipenv run serve $DIR $GENESIS_TIME $GENESIS_FILE $PORT; sleep 20"
 
 fi
 
@@ -154,7 +147,7 @@ then
     rm -f $DIR/validators/*
     rm -rf $DIR/data/node-0/db
     rm -f $DIR/data/state_snapshot.*
-    tmux split-window -v -t 0 "cd $DIR;source ../env.sh; data/beacon_node --dataDir=data/node-0 --network=data/network.json --nodename=0 --tcpPort=$PORT --udpPort=$PORT --quickStart=true --stateSnapshot=$GENESIS_FILE"
+    tmux split-window -v -t 0 "sleep 5; cd $DIR;source ../env.sh; data/beacon_node --dataDir=data/node-0 --network=data/network.json --nodename=0 --tcpPort=$PORT --udpPort=$PORT --quickStart=true --stateSnapshot=$GENESIS_FILE"
 
 fi
 
@@ -168,23 +161,21 @@ then
     export DIR=$HOME/projects/consensys/pegasys/lodestar
     export LODESTAR_VALIDATOR_END_INDEX=0
 
-    tmux split-window -h -t 0 "cd $DIR; packages/lodestar/./bin/lodestar interop -p minimal --db l1 -q $GENESIS_FILE -v 0 --multiaddrs /ip4/127.0.0.1/tcp/19004  --bootnodes /ip4/127.0.0.1/tcp/19001/p2p/16Uiu2HAmTHarRLEGsbmjL9ZRj6AWwLN7r69izaQikc2Ay9v3YbAa -v 16 -r; sleep 20"
+    tmux split-window -h -t 0 "sleep 5; cd $DIR; packages/lodestar/./bin/lodestar interop -p minimal --db l1 -q $GENESIS_FILE -v 0 --multiaddrs /ip4/127.0.0.1/tcp/19004  --bootnodes /ip4/127.0.0.1/tcp/19000/p2p/$PEER_ID -v 16 -r; sleep 20"
     #--multiaddrs /ip4/127.0.0.1/tcp/30607
 
 fi
 
 if [ "$START_PRYSM" = true ]
 then
-
-    sleep 10
     export PORT=19005
     export DIR=$HOME/projects/consensys/pegasys/prysm/darwin_amd64
-    tmux split-window -h -t 0 "cd $DIR; ./beacon-chain --datadir /tmp/beacon \
+    tmux split-window -h -t 0 "sleep 5; cd $DIR; ./beacon-chain --datadir /tmp/beacon \
    --pprof --verbosity=debug \
    --clear-db \
    --bootstrap-node= \
    --interop-eth1data-votes \
-   --peer /ip4/127.0.0.1/tcp/19001/p2p/16Uiu2HAmTHarRLEGsbmjL9ZRj6AWwLN7r69izaQikc2Ay9v3YbAa \
+   --peer /ip4/127.0.0.1/tcp/19000/p2p/$PEER_ID \
    --deposit-contract=0xD775140349E6A5D12524C6ccc3d6A1d4519D4029 \
    --interop-genesis-state $GENESIS_FILE \
    --p2p-port $PORT; sleep 60"
@@ -202,7 +193,7 @@ then
     export PORT=19006
     export DIR=$HOME/projects/consensys/pegasys/beacon-chain-java/node-0.2.0/bin
     #tmux split-window -h -t 0 "echo start_index $HARMONY_OWNED_VALIDATOR_START_INDEX;  echo end_index $HARMONY_VALIDATOR_END_INDEX; cd $DIR; jenv local $HARMONY_JAVA_VERSION; ./node default --connect=/ip4/127.0.0.1/tcp/19000/p2p/16Uiu2HAmLyZqiwTqVPEnYYFDRbpYFsaWdxTgPiRRJuzDx8A1Dj1q --listen=$PORT --force-db-clean --spec-constants minimal --initial-state=$GENESIS_FILE --validators=$HARMONY_OWNED_VALIDATOR_START_INDEX-$HARMONY_VALIDATOR_END_INDEX; sleep 20"
-    tmux split-window -h -t 0 "cd $DIR; jenv local $HARMONY_JAVA_VERSION; ./node default --connect=/ip4/127.0.0.1/tcp/19000/p2p/16Uiu2HAmLyZqiwTqVPEnYYFDRbpYFsaWdxTgPiRRJuzDx8A1Dj1q --listen=$PORT --force-db-clean --spec-constants minimal --initial-state=$GENESIS_FILE; sleep 20"
+    tmux split-window -h -t 0 "sleep 5; cd $DIR; jenv local $HARMONY_JAVA_VERSION; ./node default --connect=/ip4/127.0.0.1/tcp/19000/p2p/$PEER_ID --listen=$PORT --force-db-clean --spec-constants minimal --initial-state=$GENESIS_FILE; sleep 20"
 fi
 
 

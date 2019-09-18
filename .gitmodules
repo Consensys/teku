@@ -4,6 +4,4 @@
 [submodule "ganache-cli"]
 	path = ganache-cli
 	url = https://github.com/trufflesuite/ganache-cli.git
-[submodule "mothra"]
-	path = mothra
-	url = https://github.com/jrhea/mothra.git
+
