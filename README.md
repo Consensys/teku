@@ -37,7 +37,7 @@ Artemis' configuration comes from a TOML configuration file, specified using the
 
 ```toml
 [node]
-networkMode = "mothra"
+networkMode = "jvmlibp2p"
 identity = "0x01" # Some unique identity for the node
 discovery = "static"
 isBootnode = false
@@ -58,7 +58,7 @@ An interop script is provided to create a network with Artemis and a number of o
 The script requires both tmux and [zcli](https://github.com/protolambda/zcli) to be installed and available on the path. Run with:
 ```shell script
 cd scripts
-bash interop.sh interop.sh [validator_count] [owned_validator_start_index] [owned_validator_count] [peers] [start_delay]
+bash interop.sh [validator_count] [owned_validator_start_index] [owned_validator_count] [start_delay]
 ```
 
 Alternatively Artemis can be run stand-alone using the `bin/artemis` script from a distribution.
@@ -86,22 +86,13 @@ After a successful build, distribution packages will be available in `build/dist
 | installDist  | Builds an expanded distribution in build/install/artemis
 | distDocker   | Builds the pegasyseng/artemis docker image
 
-## Run Demo (Mothra)
+## Run Demo
 
 After building with `./gradlew distTar`, follow these instructions:
 
 ```bash
 $ cd scripts
 $ sh run.sh -n=[NUMBER OF NODES]
-```
-
-## Run Demo (Hobbits)
-
-After building with `./gradlew distTar`, follow these instructions:
-
-```bash
-$ cd scripts
-$ bash run_artemis.sh  [validator_count] [owned_validator_start_index] [owned_validator_count] [peers] [genesis_file] [interop_active]
 ```
 
 > Note:  You will need tmux installed for this demo to work
@@ -147,31 +138,8 @@ $ ./gradlew run
 
 Refer to `config/config.toml` for a set of default configuration settings.
 
-To run and send formatted output to a json file:
-```
-[output]
-outputFile = "artemis.json"
-providerType = "JSON"
-```
 
-Then run:
-```
-$ ./gradlew run
-```
-
-To run and send formatted output to a csv file:
-```
-[output]
-outputFile = "artemis.csv"
-providerType = "CSV"
-```
-
-Then run:
-```
-$ ./gradlew run
-```
-
-To run with loggin level set to DEBUG
+To run with logging level set to DEBUG
 
 ```
 $ ./gradlew run --args='-l=DEBUG'
@@ -199,35 +167,18 @@ Terminal 2:
 $ ./gradlew run -PgenerateFlow
 ```
 
-## Activating Interop Mode
+## Interop Mode
 
-There are two supported interop modes - file and mocked.
-
-### File Interop Mode
-
-To initialize BeaconState and Validators statically for interop testing, change the
-interop settings in `config/config.toml`.
-
-1) Set the active boolean to true.
-2) Set mode to `file`
-3) Set the inputFile string to the JSON file that has Validator private key and Deposit objec information.
+To activate interop mode with a predefined genesis state, change the config.toml as follows:
 
 ```
 [interop]
 active = true
-mode = "file"
-inputFile = "interopDepositsAndKeys.json"
+genesisTime = 1568830184
+ownedValidatorStartIndex = 0
+ownedValidatorCount = 16
+startState = "/tmp/genesis.ssz"
+privateKey = "0x08021221008166B8EF20C11F3A18F8774BF834173B07F64BAEDA981766896B4A8F53B52EDF"
 ```
 
-### Mocked Start Interop Mode
-
-To initialize BeaconState and Validators using the 
-[mocked start process](https://github.com/ethereum/eth2.0-pm/tree/master/interop/mocked_start) 
-change the interop settings in `config/config.toml`.
-
-1) Set the active boolean to true
-2) Set mode to `mocked`
-3) Set the genesisTime to the agreed value (`genesis_time` from the spec)
-4) Set ownedValidatorStartIndex to the index of the first validator to be run by this node
-5) Set ownedValidatorCount to the number of validators to be run by this node
-6) Under `deposit` set `numValidators` to the agreed number of initial validators (`validator_count` from the spec)
+> NOTE: Under `deposit` set `numValidators` to the agreed number of initial validators (`validator_count` from the spec)

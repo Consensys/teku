@@ -4,7 +4,7 @@
 
 usage() {
   echo "Runs a simulation of artemis with NODES nodes, where NODES > 0 and NODES < 256"
-  echo "Usage: sh run.sh {--numNodes=NODES|-n=NODES} [--networkMode=hobbits|mothra|-m=hobbits|mothra] [--inputFile=INPUT|-i=INPUT]"
+  echo "Usage: sh run.sh {--numNodes=NODES|-n=NODES} [--networkMode=jvmlibp2p|-m=jvmlibp2p] [--inputFile=INPUT|-i=INPUT]"
   echo "                 [--help|-h]"
   echo "If input files are specifed for specific nodes, those input files will be used to"
   echo "configure their respective nodes."
@@ -74,12 +74,12 @@ then
   usage >&2; exit 3
 fi
 
-# If MODE is undefined default to mothra
-[[ -z "$MODE" ]] && MODE="mothra"
+# If MODE is undefined default to jvmlibp2p
+[[ -z "$MODE" ]] && MODE="jvmlibp2p"
 
 # If MODE is not a valid input pipe the usage statement to stderr and exit
 # with exit code 3
-if [ "$MODE" != "hobbits" ] && [ "$MODE" != "mothra" ]
+if [ "$MODE" != "jvmlibp2p" ]
 then
   usage >&2; exit 3
 fi
