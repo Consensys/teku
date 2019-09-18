@@ -3,15 +3,12 @@
 # "mock": use MockP2PNetwork
 # "jvmlibp2p" : use JvmLibP2PNetwork
 networkMode = "mock"
-#  Gossip options: floodsub,gossipsub,plumtree,none
-gossipProtocol = "floodsub"
 identity = "0x00"
 timer="QuartzTimer"
 networkInterface = "0.0.0.0"
 port = 9000
 discovery = "discv5"
 bootnodes = ""
-peers = []
 isBootnode = true
 advertisedPort = 9000
 naughtinessPercentage = 0
