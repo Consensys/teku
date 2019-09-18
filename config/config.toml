@@ -11,6 +11,7 @@ networkInterface = "0.0.0.0"
 port = 9000
 discovery = "discv5"
 bootnodes = ""
+peers = []
 isBootnode = true
 advertisedPort = 9000
 naughtinessPercentage = 0
