@@ -18,11 +18,8 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.common.primitives.UnsignedLong;
 import com.google.errorprone.annotations.MustBeClosed;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.UncheckedIOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Files;
@@ -34,13 +31,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.io.Resources;
 import org.junit.jupiter.params.provider.Arguments;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
@@ -66,26 +61,6 @@ public abstract class TestSuite {
           "eth2.0-spec-tests",
           "tests");
   private static final String FILE = "file://";
-
-  @Deprecated
-  @MustBeClosed
-  @SuppressWarnings({"rawtypes"})
-  public static Stream<Arguments> findTests(String glob, List<Pair<Class, List<String>>> objectPath)
-      throws IOException {
-    return Resources.find(glob)
-        .flatMap(
-            url -> {
-              try (InputStream in = url.openConnection().getInputStream()) {
-                return prepareTests(in, objectPath);
-              } catch (IOException e) {
-                throw new UncheckedIOException(e);
-              }
-            });
-  }
-
-  public static Path getTestPath(Path path) {
-    return Path.of(pathToTests.toString(), path.toString());
-  }
 
   @SuppressWarnings({"rawtypes"})
   public static void loadConfigFromPath(Path path) throws Exception {
@@ -135,22 +110,7 @@ public abstract class TestSuite {
     } catch (IOException e) {
       LOG.log(Level.WARN, e.toString());
     }
-    ;
     return in;
-  }
-
-  public static Bytes readInBinaryFromPath(Path path) {
-    path = Path.of(pathToTests.toString(), path.toString());
-    Bytes readBytes = null;
-    try {
-      InputStream inputStream = new FileInputStream(path.toFile());
-      readBytes = Bytes.wrap(inputStream.readAllBytes());
-    } catch (FileNotFoundException e) {
-      LOG.log(Level.WARN, e.toString());
-    } catch (IOException e) {
-      LOG.log(Level.WARN, e.toString());
-    }
-    return readBytes;
   }
 
   @SuppressWarnings({"rawtypes"})
@@ -174,17 +134,6 @@ public abstract class TestSuite {
   }
 
   @SuppressWarnings({"rawtypes"})
-  public static Integer getIntegerFromYAMLInputStream(InputStream in) {
-    ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
-    try {
-      return ((Integer) mapper.readerFor(Integer.class).readValue(in));
-    } catch (IOException e) {
-      LOG.log(Level.WARN, e.toString());
-    }
-    return null;
-  }
-
-  @SuppressWarnings({"rawtypes"})
   public static Bytes getSSZBytesFromPath(Path path) {
     InputStream in = getInputStreamFromPath(path);
     try {
@@ -199,26 +148,6 @@ public abstract class TestSuite {
 
   public static Object pathToObject(Path path, List<TestObject> testObjects) {
     return getObjectFromYAMLInputStream(getInputStreamFromPath(path), testObjects);
-  }
-
-  @SuppressWarnings({"unchecked", "rawtypes"})
-  public static Object getPrimitiveFromPath(Path path, Class classInfo) {
-    InputStream in = getInputStreamFromPath(path);
-    ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
-    try {
-      switch (classInfo.getSimpleName()) {
-        case "String":
-          return (mapper.readerFor(String.class).readValue(in));
-        case "Integer":
-          return (mapper.readerFor(Integer.class).readValue(in));
-      }
-    } catch (IOException e) {
-    }
-    return null;
-  }
-
-  public static Integer pathToString(Path path) {
-    return getIntegerFromYAMLInputStream(getInputStreamFromPath(path));
   }
 
   public static Stream<Arguments> findTestsByPath(TestSet testSet) {
@@ -268,49 +197,6 @@ public abstract class TestSuite {
       LOG.log(Level.WARN, e.toString());
     }
     return null;
-  }
-
-  public static List<Arguments> findSSZTestsByPath(TestSet testSet) {
-    Path path = Path.of(pathToTests.toString(), testSet.getPath().toString());
-    List<Arguments> listOfarguments = new ArrayList<>();
-    List<String> result = new ArrayList<>();
-    try (Stream<Path> walk = Files.walk(path)) {
-      result = walk.map(x -> x.toString()).collect(Collectors.toList());
-    } catch (IOException e) {
-      LOG.log(Level.WARN, e.toString());
-    }
-    result =
-        result.stream()
-            .filter(
-                walkPath ->
-                    testSet.getFileNames().stream()
-                        .allMatch(fileName -> Files.exists(Path.of(walkPath, fileName))))
-            .collect(Collectors.toList());
-
-    for (String testFolder : result) {
-      List<Object> objectList = new ArrayList<>();
-      for (String fileName : testSet.getFileNames()) {
-        Path filePath = Path.of(testFolder, fileName);
-        if (fileName.contains("ssz")) {
-          Bytes objectBytes = getSSZBytesFromPath(filePath);
-          TestObject testObject = testSet.getTestObjectByFileName1(fileName);
-          objectList.add(
-              SimpleOffsetSerializer.deserialize(objectBytes, testObject.getClassName()));
-        } else {
-          if (fileName.contains("timestamp")) {
-            objectList.add(
-                UnsignedLong.valueOf((Integer) getPrimitiveFromPath(filePath, Integer.class)));
-          } else {
-            Object object = pathToObject(filePath, testSet.getTestObjectByFileName(fileName));
-            TestObject testObject = testSet.getTestObjectByFileName1(fileName);
-            objectList.add(
-                parseObjectFromFile(testObject.getClassName(), testObject.getPath(), object));
-          }
-        }
-      }
-      listOfarguments.add(Arguments.of(objectList.toArray()));
-    }
-    return listOfarguments;
   }
 
   @MustBeClosed
@@ -410,57 +296,6 @@ public abstract class TestSuite {
     return MapObjectUtil.convertMapToTypedObject(className, object);
   }
 
-  @SuppressWarnings({"unchecked", "rawtypes"})
-  private static Stream<Arguments> prepareTests(
-      InputStream in, List<Pair<Class, List<String>>> objectPath) throws IOException {
-    ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
-    List<Map> allTests =
-        (ArrayList) ((Map) mapper.readerFor(Map.class).readValue(in)).get("test_cases");
-    return allTests.stream()
-        .filter(
-            map -> {
-              return objectPath.stream()
-                  .allMatch(
-                      pair -> {
-                        Iterator<String> itr = pair.getValue().iterator();
-                        Object testObject = Map.copyOf(map);
-                        while (itr.hasNext()) {
-                          String param = itr.next();
-                          testObject = ((Map) testObject).get(param);
-                          if (testObject == null) return false;
-                        }
-                        return testObject != null;
-                      });
-            })
-        .map(
-            map -> {
-              return objectPath.stream()
-                  .map(
-                      pair -> {
-                        Iterator<String> itr = pair.getValue().iterator();
-                        Object testObject = Map.copyOf(map);
-                        while (itr.hasNext()) {
-                          String param = itr.next();
-                          testObject = ((Map) testObject).get(param);
-                        }
-                        Class classType = pair.getKey();
-                        return MapObjectUtil.convertMapToTypedObject(classType, testObject);
-                      })
-                  .collect(Collectors.toList());
-            })
-        .map(objects -> Arguments.of(objects.toArray()));
-  }
-
-  @SuppressWarnings({"rawtypes"})
-  public static Pair<Class, List<String>> getParams(Class classType, List<String> args) {
-    return new ImmutablePair<Class, List<String>>(classType, args);
-  }
-
-  @SuppressWarnings({"rawtypes"})
-  public static Pair<Class, String> getParams(Class classType, String args) {
-    return new ImmutablePair<Class, String>(classType, args);
-  }
-
   @MustBeClosed
   public static Stream<Arguments> aggregatePublicKeysSetup(Path path) {
 
@@ -525,7 +360,7 @@ public abstract class TestSuite {
     testSet.add(new TestObject("pre.ssz", BeaconState.class, null));
     testSet.add(new TestObject("post.ssz", BeaconState.class, null));
 
-    return findSSZTestsByPath(testSet).stream();
+    return findTestsByPath(testSet);
   }
 
   @MustBeClosed
@@ -774,7 +609,7 @@ public abstract class TestSuite {
             BeaconState.class,
             null));
 
-    return findSSZTestsByPath(testSet).stream();
+    return findTestsByPath(testSet);
   }
 
   public static Stream<Arguments> genesisInitializationSetup(Path path, Path configPath)
@@ -794,7 +629,8 @@ public abstract class TestSuite {
     }
 
     List<Arguments> arguments =
-        convertArgumentToList(Deposit.class, deposits_count, findSSZTestsByPath(testSet));
+        convertArgumentToList(
+            Deposit.class, deposits_count, findTestsByPath(testSet).collect(Collectors.toList()));
     return arguments.stream();
   }
 
