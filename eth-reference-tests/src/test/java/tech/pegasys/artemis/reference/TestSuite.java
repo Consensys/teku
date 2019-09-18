@@ -17,6 +17,20 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.common.primitives.UnsignedLong;
 import com.google.errorprone.annotations.MustBeClosed;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.Level;
@@ -34,21 +48,6 @@ import tech.pegasys.artemis.util.mikuli.G2Point;
 import tech.pegasys.artemis.util.mikuli.PublicKey;
 import tech.pegasys.artemis.util.mikuli.SecretKey;
 import tech.pegasys.artemis.util.mikuli.Signature;
-
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public abstract class TestSuite {
   protected static Path configPath = null;
@@ -630,7 +629,8 @@ public abstract class TestSuite {
     }
 
     List<Arguments> arguments =
-        convertArgumentToList(Deposit.class, deposits_count, findTestsByPath(testSet).collect(Collectors.toList()));
+        convertArgumentToList(
+            Deposit.class, deposits_count, findTestsByPath(testSet).collect(Collectors.toList()));
     return arguments.stream();
   }
 
