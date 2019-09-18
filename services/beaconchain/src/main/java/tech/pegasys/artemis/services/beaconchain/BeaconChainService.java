@@ -15,9 +15,12 @@ package tech.pegasys.artemis.services.beaconchain;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
+import io.libp2p.core.crypto.KeyKt;
+import io.libp2p.core.crypto.PrivKey;
 import io.vertx.core.Vertx;
 import java.util.Optional;
 import org.apache.logging.log4j.Level;
+import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.networking.p2p.HobbitsP2PNetwork;
 import tech.pegasys.artemis.networking.p2p.JvmLibP2PNetwork;
@@ -123,10 +126,13 @@ public class BeaconChainService implements ServiceInterface {
         }
       }
     } else if ("jvmlibp2p".equals(config.getConfig().getNetworkMode())) {
+      Bytes bytes = Bytes.fromHexString(config.getConfig().getInteropPrivateKey());
+      PrivKey pk = KeyKt.unmarshalPrivateKey(bytes.toArrayUnsafe());
+
       this.p2pNetwork =
           new JvmLibP2PNetwork(
               new JvmLibp2pConfig(
-                  Optional.empty(),
+                  Optional.of(pk),
                   config.getConfig().getNetworkInterface(),
                   config.getConfig().getPort(),
                   config.getConfig().getAdvertisedPort(),

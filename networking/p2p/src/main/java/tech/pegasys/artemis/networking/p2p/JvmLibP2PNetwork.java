@@ -35,6 +35,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import org.apache.logging.log4j.Level;
+import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.artemis.networking.p2p.api.P2PNetwork;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.GossipMessageHandler;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.JvmLibp2pConfig;

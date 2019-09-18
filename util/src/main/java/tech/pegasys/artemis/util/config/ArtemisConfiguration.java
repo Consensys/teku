@@ -94,6 +94,7 @@ public class ArtemisConfiguration {
     builder.addInteger(
         "interop.ownedValidatorCount", 0, "Number of validators owned by this node", null);
     builder.addString("interop.startState", "", "Initial BeaconState to load", null);
+    builder.addString("interop.privateKey", "", "This node's private key", null);
 
     // Metrics
     builder.addBoolean("metrics.enabled", false, "Enables metrics collection via Prometheus", null);
@@ -310,6 +311,10 @@ public class ArtemisConfiguration {
 
   public int getInteropOwnedValidatorCount() {
     return config.getInteger("interop.ownedValidatorCount");
+  }
+
+  public String getInteropPrivateKey() {
+    return config.getString("interop.privateKey");
   }
 
   /** @return the total number of nodes on the network */
