@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.datastructures.networking.mothra.rpc;
+package tech.pegasys.artemis.datastructures.networking.libp2p.rpc;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;

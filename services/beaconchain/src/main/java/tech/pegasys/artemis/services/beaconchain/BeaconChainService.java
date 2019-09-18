@@ -19,13 +19,10 @@ import io.libp2p.core.crypto.KeyKt;
 import io.libp2p.core.crypto.PrivKey;
 import io.vertx.core.Vertx;
 import java.util.Optional;
-import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.artemis.datastructures.Constants;
-import tech.pegasys.artemis.networking.p2p.HobbitsP2PNetwork;
 import tech.pegasys.artemis.networking.p2p.JvmLibP2PNetwork;
 import tech.pegasys.artemis.networking.p2p.MockP2PNetwork;
-import tech.pegasys.artemis.networking.p2p.MothraP2PNetwork;
 import tech.pegasys.artemis.networking.p2p.api.P2PNetwork;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.JvmLibp2pConfig;
 import tech.pegasys.artemis.service.serviceutils.ServiceConfig;
@@ -74,57 +71,6 @@ public class BeaconChainService implements ServiceInterface {
     new StateProcessor(config, store);
     if ("mock".equals(config.getConfig().getNetworkMode())) {
       this.p2pNetwork = new MockP2PNetwork(eventBus);
-    } else if ("hobbits".equals(config.getConfig().getNetworkMode())) {
-      P2PNetwork.GossipProtocol gossipProtocol;
-      switch (config.getConfig().getGossipProtocol()) {
-        case "floodsub":
-          gossipProtocol = P2PNetwork.GossipProtocol.FLOODSUB;
-          break;
-        case "gossipsub":
-          gossipProtocol = P2PNetwork.GossipProtocol.GOSSIPSUB;
-          break;
-        case "plumtree":
-          gossipProtocol = P2PNetwork.GossipProtocol.PLUMTREE;
-          break;
-        case "none":
-          gossipProtocol = P2PNetwork.GossipProtocol.NONE;
-          break;
-        default:
-          gossipProtocol = P2PNetwork.GossipProtocol.PLUMTREE;
-      }
-
-      this.p2pNetwork =
-          new HobbitsP2PNetwork(
-              eventBus,
-              vertx,
-              store,
-              config.getConfig().getPort(),
-              config.getConfig().getAdvertisedPort(),
-              config.getConfig().getNetworkInterface(),
-              config.getConfig().getStaticHobbitsPeers(),
-              gossipProtocol);
-    } else if ("mothra".equals(config.getConfig().getNetworkMode())) {
-      this.p2pNetwork =
-          new MothraP2PNetwork(
-              eventBus,
-              store,
-              config.getConfig().getPort(),
-              config.getConfig().getNetworkInterface(),
-              config.getConfig().getIdentity(),
-              config.getConfig().getBootnodes(),
-              config.getConfig().isBootnode(),
-              config.getConfig().getDiscovery(),
-              config.getConfig().getStaticMothraPeers());
-      if (config.getConfig().getDiscovery().equals("discv5")) {
-        // TODO - issue #827:
-        //      Once i have a reliable way to be notified when
-        //      libp2p peers are found then this can be removed
-        try {
-          Thread.sleep(15000);
-        } catch (InterruptedException e) {
-          STDOUT.log(Level.ERROR, e.getMessage());
-        }
-      }
     } else if ("jvmlibp2p".equals(config.getConfig().getNetworkMode())) {
       Bytes bytes = Bytes.fromHexString(config.getConfig().getInteropPrivateKey());
       PrivKey pk = KeyKt.unmarshalPrivateKey(bytes.toArrayUnsafe());

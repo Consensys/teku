@@ -134,7 +134,7 @@ then
     export PORT=19002
     # Start Trinity
     export DIR=$HOME/projects/consensys/pegasys/trinity/
-    tmux split-window -h -t 0 "cd $DIR; pipenv run serve $DIR $GENESIS_TIME $GENESIS_FILE $PORT; sleep 20"
+    tmux split-window -h -t 0 "sleep 5; cd $DIR; pipenv run serve $DIR $GENESIS_TIME $GENESIS_FILE $PORT; sleep 20"
 
 fi
 

@@ -42,12 +42,8 @@ public class ArtemisConfiguration {
                 "node.networkMode",
                 "mock",
                 "represents what network to use",
-                PropertyValidator.anyOf("mock", "hobbits", "mothra", "jvmlibp2p"));
-    builder.addString(
-        "node.gossipProtocol",
-        "plumtree",
-        "The gossip protocol to use",
-        PropertyValidator.anyOf("floodsub", "gossipsub", "plumtree", "none"));
+                PropertyValidator.anyOf("mock", "jvmlibp2p"));
+
     builder.addString("node.identity", null, "Identity of the peer", null);
     builder.addString("node.timer", "QuartzTimer", "Timer used for slots", null);
     builder.addString("node.networkInterface", "0.0.0.0", "Peer to peer network interface", null);
@@ -611,14 +607,9 @@ public class ArtemisConfiguration {
     return config.getLong("node.networkID");
   }
 
-  /** @return the mode of the network to use - mock or hobbits */
+  /** @return the mode of the network to use - mock or libp2p */
   public String getNetworkMode() {
     return config.getString("node.networkMode");
-  }
-
-  /** @return the gossip protocol to use */
-  public String getGossipProtocol() {
-    return config.getString("node.gossipProtocol");
   }
 
   /** @return the path to the log file */
