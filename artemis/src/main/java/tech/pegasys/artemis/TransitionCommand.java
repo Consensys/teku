@@ -116,7 +116,7 @@ public class TransitionCommand {
 
   private void processStateTransition(
       final InAndOutParams params, final StateTransitionFunction transition) {
-    Constants.init(ArtemisConfiguration.fromFile(params.configFile));
+    Constants.setConstants(ArtemisConfiguration.fromFile(params.configFile).getConstants());
     try (final InputStream in = selectInputStream(params);
         final OutputStream out = selectOutputStream(params)) {
       final Bytes inData = Bytes.wrap(ByteStreams.toByteArray(in));

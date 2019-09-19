@@ -239,11 +239,4 @@ class BeaconBlockBodyTest {
 
     assertNotEquals(beaconBlockBody, testBeaconBlockBody);
   }
-
-  @Test
-  void roundtripSSZ() {
-    // todo
-    // Bytes sszBeaconBlockBodyBytes = beaconBlockBody.toBytes();
-    // assertEquals(beaconBlockBody, BeaconBlockBody.fromBytes(sszBeaconBlockBodyBytes));
-  }
 }
