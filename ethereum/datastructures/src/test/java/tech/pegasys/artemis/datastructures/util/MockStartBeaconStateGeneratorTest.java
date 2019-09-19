@@ -164,11 +164,7 @@ class MockStartBeaconStateGeneratorTest {
   @Disabled
   @SuppressWarnings({"rawtypes"})
   public void printBeaconState() throws Exception {
-    Map config =
-        (Map)
-            fileToObject(
-                "https://media.githubusercontent.com/media/ethereum/eth2.0-spec-tests/v0.8.2/tests/minimal/config.yaml");
-    Constants.init(config);
+    Constants.setConstants("minimal");
 
     final UnsignedLong genesisTime = UnsignedLong.valueOf(1567719788L);
     final int validatorCount = 16;

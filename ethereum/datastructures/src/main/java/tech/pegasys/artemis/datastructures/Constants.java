@@ -113,10 +113,14 @@ public class Constants {
   public static Bytes DOMAIN_CUSTODY_BIT_CHALLENGE;
   public static Bytes DOMAIN_SHARD_PROPOSER;
   public static Bytes DOMAIN_SHARD_ATTESTER;
-  public static int EARLY_DERIVED_SECRET_PENALTY_MAX_FUTURE_EPOCHS = 4096;
+  public static int EARLY_DERIVED_SECRET_PENALTY_MAX_FUTURE_EPOCHS;
 
   public static BLSSignature EMPTY_SIGNATURE = BLSSignature.empty();
   public static UnsignedLong BYTES_PER_LENGTH_OFFSET = UnsignedLong.valueOf(4L);
+
+  static {
+    setConstants("minimal");
+  }
 
   @SuppressWarnings("rawtypes")
   public static void setConstants(String Constants) {
@@ -156,6 +160,7 @@ public class Constants {
       PERSISTENT_COMMITTEE_PERIOD = 2048;
       MAX_EPOCHS_PER_CROSSLINK = 64;
       MIN_EPOCHS_TO_INACTIVITY_PENALTY = 4;
+      EARLY_DERIVED_SECRET_PENALTY_MAX_FUTURE_EPOCHS = 16384;
 
       // State list lengths
       EPOCHS_PER_HISTORICAL_VECTOR = 65536;
@@ -214,6 +219,7 @@ public class Constants {
       PERSISTENT_COMMITTEE_PERIOD = 2048;
       MAX_EPOCHS_PER_CROSSLINK = 4;
       MIN_EPOCHS_TO_INACTIVITY_PENALTY = 4;
+      EARLY_DERIVED_SECRET_PENALTY_MAX_FUTURE_EPOCHS = 4096;
 
       // State list lengths
       EPOCHS_PER_HISTORICAL_VECTOR = 64;
