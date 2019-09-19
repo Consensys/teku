@@ -80,7 +80,8 @@ public abstract class TestSuite {
     if (result.isEmpty())
       throw new Exception(
           "TestSuite.loadConfigFromPath(): Configuration files was not found in the hierarchy of the provided path");
-    Constants.init((Map) pathToObject(Paths.get(result), null));
+    String constants = path.toString().contains("mainnet") ? "mainnet" : "minimal";
+    Constants.setConstants(constants);
 
     // TODO fix this massacre of a technical debt
     // Checks if constants were changed from minimal to mainnet or vice-versa, and updates
