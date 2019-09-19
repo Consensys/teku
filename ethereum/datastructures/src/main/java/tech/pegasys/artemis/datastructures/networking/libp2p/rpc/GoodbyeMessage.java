@@ -36,14 +36,15 @@ public final class GoodbyeMessage implements SimpleOffsetSerializable, SSZContai
         && UnsignedLong.valueOf(REASON_FAULT_ERROR).compareTo(reason) != 0
         && UnsignedLong.valueOf(REASON_IRRELEVANT_NETWORK).compareTo(reason) != 0
         && UnsignedLong.valueOf(MIN_CUSTOM_REASON_CODE).compareTo(reason) == 1) {
-      throw new Exception(
-          "Invalid reason code for Goodbye message");
+      throw new Exception("Invalid reason code for Goodbye message");
     }
     this.reason = reason;
   }
 
   @Override
-  public int getSSZFieldCount() { return 1; }
+  public int getSSZFieldCount() {
+    return 1;
+  }
 
   @Override
   public List<Bytes> get_fixed_parts() {
@@ -74,5 +75,7 @@ public final class GoodbyeMessage implements SimpleOffsetSerializable, SSZContai
     return Objects.equals(this.reason(), other.reason());
   }
 
-  public UnsignedLong reason() { return reason; }
+  public UnsignedLong reason() {
+    return reason;
+  }
 }

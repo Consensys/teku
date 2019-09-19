@@ -39,7 +39,9 @@ public final class BeaconBlocksMessageRequest implements SimpleOffsetSerializabl
   }
 
   @Override
-  public int getSSZFieldCount() { return 4; }
+  public int getSSZFieldCount() {
+    return 4;
+  }
 
   @Override
   public List<Bytes> get_fixed_parts() {
@@ -79,9 +81,18 @@ public final class BeaconBlocksMessageRequest implements SimpleOffsetSerializabl
         && Objects.equals(this.step(), other.step());
   }
 
-  public Bytes32 headBlockRoot() { return headBlockRoot; }
-  public UnsignedLong startSlot() { return startSlot; }
-  public UnsignedLong count() { return count; }
+  public Bytes32 headBlockRoot() {
+    return headBlockRoot;
+  }
+
+  public UnsignedLong startSlot() {
+    return startSlot;
+  }
+
+  public UnsignedLong count() {
+    return count;
+  }
+
   public UnsignedLong step() {
     return step;
   }

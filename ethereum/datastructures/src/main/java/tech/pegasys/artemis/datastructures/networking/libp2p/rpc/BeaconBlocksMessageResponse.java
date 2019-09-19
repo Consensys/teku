@@ -13,38 +13,38 @@
 
 package tech.pegasys.artemis.datastructures.networking.libp2p.rpc;
 
-import com.google.common.primitives.UnsignedLong;
-import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.ssz.SSZ;
-import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
-import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
-import tech.pegasys.artemis.util.SSZTypes.SSZContainer;
-import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.ssz.SSZ;
+import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
+import tech.pegasys.artemis.util.SSZTypes.SSZContainer;
+import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
 public final class BeaconBlocksMessageResponse implements SimpleOffsetSerializable, SSZContainer {
 
   private final List<BeaconBlock> blocks;
 
-  public BeaconBlocksMessageResponse(
-          List<BeaconBlock> blocks) {
+  public BeaconBlocksMessageResponse(List<BeaconBlock> blocks) {
     this.blocks = blocks;
   }
 
   @Override
-  public int getSSZFieldCount() { return 1; }
+  public int getSSZFieldCount() {
+    return 1;
+  }
 
   @Override
   public List<Bytes> get_fixed_parts() {
     List<Bytes> fixedPartsList =
         new ArrayList<>(
             List.of(
-                SSZ.encode(writer -> writer.writeBytes(SimpleOffsetSerializer.serializeVariableCompositeList(blocks)))));
+                SSZ.encode(
+                    writer ->
+                        writer.writeBytes(
+                            SimpleOffsetSerializer.serializeVariableCompositeList(blocks)))));
     return fixedPartsList;
   }
 
@@ -71,5 +71,7 @@ public final class BeaconBlocksMessageResponse implements SimpleOffsetSerializab
     return Objects.equals(this.blocks(), other.blocks());
   }
 
-  public List<BeaconBlock> blocks() { return blocks; }
+  public List<BeaconBlock> blocks() {
+    return blocks;
+  }
 }
