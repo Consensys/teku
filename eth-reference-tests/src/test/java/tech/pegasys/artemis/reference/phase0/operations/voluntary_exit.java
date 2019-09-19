@@ -37,44 +37,22 @@ import tech.pegasys.artemis.statetransition.util.BlockProcessingException;
 @ExtendWith(BouncyCastleExtension.class)
 public class voluntary_exit extends TestSuite {
 
-  @ParameterizedTest(name = "{index}. mainnet process voluntary_exit: {4}")
-  @MethodSource("mainnetVoluntaryExitSetup")
-  void mainnetProcessVoluntaryExit(
-      VoluntaryExit voluntary_exit,
-      BeaconState pre,
-      BeaconState post,
-      Boolean succesTest,
-      String testName)
-      throws Exception {
+  @ParameterizedTest(name = "{index}. process voluntary_exit")
+  @MethodSource({"mainnetVoluntaryExitSetup", "minimalVoluntaryExitSetup"})
+  void processVoluntaryExit(VoluntaryExit voluntary_exit, BeaconState pre) {
     List<VoluntaryExit> voluntary_exits = new ArrayList<>();
     voluntary_exits.add(voluntary_exit);
-    if (succesTest) {
-      assertDoesNotThrow(() -> process_voluntary_exits(pre, voluntary_exits));
-      assertEquals(pre, post);
-    } else {
-      assertThrows(
-          BlockProcessingException.class, () -> process_voluntary_exits(pre, voluntary_exits));
-    }
+    assertThrows(
+        BlockProcessingException.class, () -> process_voluntary_exits(pre, voluntary_exits));
   }
 
-  @ParameterizedTest(name = "{index}. minimal process voluntary_exit: {4}")
-  @MethodSource("minimalVoluntaryExitSetup")
-  void minimalProcessVoluntaryExit(
-      VoluntaryExit voluntary_exit,
-      BeaconState pre,
-      BeaconState post,
-      Boolean succesTest,
-      String testName)
-      throws Exception {
+  @ParameterizedTest(name = "{index}. process voluntary_exit")
+  @MethodSource({"mainnetVoluntaryExitSuccessSetup", "minimalVoluntaryExitSuccessSetup"})
+  void processVoluntaryExit(VoluntaryExit voluntary_exit, BeaconState pre, BeaconState post) {
     List<VoluntaryExit> voluntary_exits = new ArrayList<>();
     voluntary_exits.add(voluntary_exit);
-    if (succesTest) {
-      assertDoesNotThrow(() -> process_voluntary_exits(pre, voluntary_exits));
-      assertEquals(pre, post);
-    } else {
-      assertThrows(
-          BlockProcessingException.class, () -> process_voluntary_exits(pre, voluntary_exits));
-    }
+    assertDoesNotThrow(() -> process_voluntary_exits(pre, voluntary_exits));
+    assertEquals(pre, post);
   }
 
   @MustBeClosed
@@ -91,5 +69,22 @@ public class voluntary_exit extends TestSuite {
   @MustBeClosed
   static Stream<Arguments> mainnetVoluntaryExitSetup() throws Exception {
     return voluntary_exitSetup("mainnet");
+  }
+
+  @MustBeClosed
+  static Stream<Arguments> voluntary_exitSuccessSetup(String config) throws Exception {
+    Path path = Paths.get(config, "phase0", "operations", "voluntary_exit", "pyspec_tests");
+    return operationSuccessSetup(
+        path, Paths.get(config), "voluntary_exit.ssz", VoluntaryExit.class);
+  }
+
+  @MustBeClosed
+  static Stream<Arguments> minimalVoluntaryExitSuccessSetup() throws Exception {
+    return voluntary_exitSuccessSetup("minimal");
+  }
+
+  @MustBeClosed
+  static Stream<Arguments> mainnetVoluntaryExitSuccessSetup() throws Exception {
+    return voluntary_exitSuccessSetup("mainnet");
   }
 }
