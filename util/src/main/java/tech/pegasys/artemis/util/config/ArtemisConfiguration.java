@@ -79,6 +79,11 @@ public class ArtemisConfiguration {
     builder.addListOfString("node.peers", Collections.emptyList(), "Static peers", null);
     builder.addLong(
         "node.networkID", 1L, "The identifier of the network (mainnet, testnet, sidechain)", null);
+    builder.addString(
+        "node.constants",
+        "minimal",
+        "Determines whether to use minimal or mainnet constants",
+        null);
 
     // Interop
     builder.addBoolean("interop.active", false, "Enable interop mode", null);
@@ -117,75 +122,6 @@ public class ArtemisConfiguration {
         "",
         "Directory to record transition pre and post states",
         null);
-
-    // Constants
-    // Misc
-    builder.addInteger("constants.SHARD_COUNT", Integer.MIN_VALUE, null, null);
-    builder.addInteger("constants.TARGET_COMMITTEE_SIZE", Integer.MIN_VALUE, null, null);
-    builder.addInteger("constants.MAX_VALIDATORS_PER_COMMITTEE", Integer.MIN_VALUE, null, null);
-    builder.addInteger("constants.MIN_PER_EPOCH_CHURN_LIMIT", Integer.MIN_VALUE, null, null);
-    builder.addInteger("constants.CHURN_LIMIT_QUOTIENT", Integer.MIN_VALUE, null, null);
-    builder.addInteger("constants.SHUFFLE_ROUND_COUNT", Integer.MIN_VALUE, null, null);
-    builder.addInteger(
-        "constants.MIN_GENESIS_ACTIVE_VALIDATOR_COUNT", Integer.MIN_VALUE, null, null);
-    builder.addInteger("constants.MIN_GENESIS_TIME", Integer.MIN_VALUE, null, null);
-
-    // Gwei values
-    builder.addLong("constants.MIN_DEPOSIT_AMOUNT", Long.MIN_VALUE, null, null);
-    builder.addLong("constants.MAX_EFFECTIVE_BALANCE", Long.MIN_VALUE, null, null);
-    builder.addLong("constants.EJECTION_BALANCE", Long.MIN_VALUE, null, null);
-    builder.addLong("constants.EFFECTIVE_BALANCE_INCREMENT", Long.MIN_VALUE, null, null);
-
-    // Deposit Contract
-    builder.addString("constants.DEPOSIT_CONTRACT_ADDRESS", "", null, null);
-
-    // Initial Values
-    builder.addLong("constants.GENESIS_SLOT", Long.MIN_VALUE, null, null);
-    builder.addLong("constants.GENESIS_EPOCH", Long.MIN_VALUE, null, null);
-    builder.addString("constants.BLS_WITHDRAWAL_PREFIX", "", null, null);
-
-    // Time parameters
-    builder.addInteger("constants.SECONDS_PER_SLOT", Integer.MIN_VALUE, null, null);
-    builder.addInteger("constants.MIN_ATTESTATION_INCLUSION_DELAY", Integer.MIN_VALUE, null, null);
-    builder.addInteger("constants.SLOTS_PER_EPOCH", Integer.MIN_VALUE, null, null);
-    builder.addInteger("constants.MIN_SEED_LOOKAHEAD", Integer.MIN_VALUE, null, null);
-    builder.addInteger("constants.ACTIVATION_EXIT_DELAY", Integer.MIN_VALUE, null, null);
-    builder.addInteger("constants.SLOTS_PER_ETH1_VOTING_PERIOD", Integer.MIN_VALUE, null, null);
-    builder.addInteger("constants.SLOTS_PER_HISTORICAL_ROOT", Integer.MIN_VALUE, null, null);
-    builder.addInteger(
-        "constants.MIN_VALIDATOR_WITHDRAWABILITY_DELAY", Integer.MIN_VALUE, null, null);
-    builder.addInteger("constants.PERSISTENT_COMMITTEE_PERIOD", Integer.MIN_VALUE, null, null);
-    builder.addInteger("constants.MAX_EPOCHS_PER_CROSSLINK", Integer.MIN_VALUE, null, null);
-    builder.addInteger("constants.MIN_EPOCHS_TO_INACTIVITY_PENALTY", Integer.MIN_VALUE, null, null);
-
-    // State list lengths
-    builder.addInteger("constants.EPOCHS_PER_HISTORICAL_VECTOR", Integer.MIN_VALUE, null, null);
-    builder.addInteger("constants.EPOCHS_PER_SLASHINGS_VECTOR", Integer.MIN_VALUE, null, null);
-    builder.addInteger("constants.HISTORICAL_ROOTS_LIMIT", Integer.MIN_VALUE, null, null);
-    builder.addLong("constants.VALIDATOR_REGISTRY_LIMIT", Long.MIN_VALUE, null, null);
-
-    // Reward and penalty quotients
-    builder.addInteger("constants.BASE_REWARD_FACTOR", Integer.MIN_VALUE, null, null);
-    builder.addInteger("constants.WHISTLEBLOWER_REWARD_QUOTIENT", Integer.MIN_VALUE, null, null);
-    builder.addInteger("constants.PROPOSER_REWARD_QUOTIENT", Integer.MIN_VALUE, null, null);
-    builder.addInteger("constants.INACTIVITY_PENALTY_QUOTIENT", Integer.MIN_VALUE, null, null);
-    builder.addInteger("constants.MIN_SLASHING_PENALTY_QUOTIENT", Integer.MIN_VALUE, null, null);
-
-    // Max transactions per block
-    builder.addInteger("constants.MAX_PROPOSER_SLASHINGS", Integer.MIN_VALUE, null, null);
-    builder.addInteger("constants.MAX_ATTESTER_SLASHINGS", Integer.MIN_VALUE, null, null);
-    builder.addInteger("constants.MAX_ATTESTATIONS", Integer.MIN_VALUE, null, null);
-    builder.addInteger("constants.MAX_DEPOSITS", Integer.MIN_VALUE, null, null);
-    builder.addInteger("constants.MAX_VOLUNTARY_EXITS", Integer.MIN_VALUE, null, null);
-    builder.addInteger("constants.MAX_TRANSFERS", Integer.MIN_VALUE, null, null);
-
-    // Signature domains
-    builder.addInteger("constants.DOMAIN_BEACON_PROPOSER", Integer.MIN_VALUE, null, null);
-    builder.addInteger("constants.DOMAIN_RANDAO", Integer.MIN_VALUE, null, null);
-    builder.addInteger("constants.DOMAIN_ATTESTATION", Integer.MIN_VALUE, null, null);
-    builder.addInteger("constants.DOMAIN_DEPOSIT", Integer.MIN_VALUE, null, null);
-    builder.addInteger("constants.DOMAIN_VOLUNTARY_EXIT", Integer.MIN_VALUE, null, null);
-    builder.addInteger("constants.DOMAIN_TRANSFER", Integer.MIN_VALUE, null, null);
 
     // Artemis specific
     builder.addString("constants.SIM_DEPOSIT_VALUE", "", null, null);
@@ -281,6 +217,10 @@ public class ArtemisConfiguration {
     return config.getString("node.networkInterface");
   }
 
+  public String getConstants() {
+    return config.getString("node.constants");
+  }
+
   /** @return the total number of validators in the network */
   public int getNumValidators() {
     return config.getInteger("deposit.numValidators");
@@ -367,215 +307,7 @@ public class ArtemisConfiguration {
     return config.getString("output.transitionRecordDir");
   }
 
-  /** @return misc constants */
-  public int getShardCount() {
-    return config.getInteger("constants.SHARD_COUNT");
-  }
-
-  public int getTargetCommitteeSize() {
-    return config.getInteger("constants.TARGET_COMMITTEE_SIZE");
-  }
-
-  public int getMaxValidatorsPerCommittee() {
-    return config.getInteger("constants.MAX_VALIDATORS_PER_COMMITTEE");
-  }
-
-  public int getMinPerEpochChurnLimit() {
-    return config.getInteger("constants.MIN_PER_EPOCH_CHURN_LIMIT");
-  }
-
-  public int getChurnLimitQuotient() {
-    return config.getInteger("constants.CHURN_LIMIT_QUOTIENT");
-  }
-
-  public int getShuffleRoundCount() {
-    return config.getInteger("constants.SHUFFLE_ROUND_COUNT");
-  }
-
-  public int getMinGenesisActiveValidatorCount() {
-    return config.getInteger("constants.MIN_GENESIS_ACTIVE_VALIDATOR_COUNT");
-  }
-
-  public long getMinGenesisTime() {
-    return config.getLong("constants.MIN_GENESIS_TIME");
-  }
-
-  /** @return deposit contract constants */
-  public String getDepositContractAddress() {
-    return config.getString("constants.DEPOSIT_CONTRACT_ADDRESS");
-  }
-
-  /** @return gwei value constants */
-  public long getMinDepositAmount() {
-    return config.getLong("constants.MIN_DEPOSIT_AMOUNT");
-  }
-
-  public long getMaxEffectiveBalance() {
-    return config.getLong("constants.MAX_EFFECTIVE_BALANCE");
-  }
-
-  public long getEffectiveBalanceIncrement() {
-    return config.getLong("constants.EFFECTIVE_BALANCE_INCREMENT");
-  }
-
-  public long getEjectionBalance() {
-    return config.getLong("constants.EJECTION_BALANCE");
-  }
-
-  public long getGenesisSlot() {
-    return config.getLong("constants.GENESIS_SLOT");
-  }
-
-  public long getGenesisEpoch() {
-    return config.getLong("constants.GENESIS_EPOCH");
-  }
-
-  public String getBlsWithdrawalPrefix() {
-    return config.getString("constants.BLS_WITHDRAWAL_PREFIX");
-  }
-
-  /** @return time parameter constants */
-  public int getSecondsPerSlot() {
-    return config.getInteger("constants.SECONDS_PER_SLOT");
-  }
-
-  public int getMinAttestationInclusionDelay() {
-    return config.getInteger("constants.MIN_ATTESTATION_INCLUSION_DELAY");
-  }
-
-  public int getSlotsPerEpoch() {
-    return config.getInteger("constants.SLOTS_PER_EPOCH");
-  }
-
-  public int getMinSeedLookahead() {
-    return config.getInteger("constants.MIN_SEED_LOOKAHEAD");
-  }
-
-  public int getActivationExitDelay() {
-    return config.getInteger("constants.ACTIVATION_EXIT_DELAY");
-  }
-
-  public int getSlotsPerEth1VotingPeriod() {
-    return config.getInteger("constants.SLOTS_PER_ETH1_VOTING_PERIOD");
-  }
-
-  public int getSlotsPerHistoricalRoot() {
-    return config.getInteger("constants.SLOTS_PER_HISTORICAL_ROOT");
-  }
-
-  public int getMinValidatorWithdrawabilityDelay() {
-    return config.getInteger("constants.MIN_VALIDATOR_WITHDRAWABILITY_DELAY");
-  }
-
-  public int getPersistentCommitteePeriod() {
-    return config.getInteger("constants.PERSISTENT_COMMITTEE_PERIOD");
-  }
-
-  public int getMaxEpochsPerCrosslink() {
-    return config.getInteger("constants.MAX_EPOCHS_PER_CROSSLINK");
-  }
-
-  public int getMinEpochsToInactivityPenalty() {
-    return config.getInteger("constants.MIN_EPOCHS_TO_INACTIVITY_PENALTY");
-  }
-
-  /** @return state list length constants */
-  public int getEpochsPerHistoricalVector() {
-    return config.getInteger("constants.EPOCHS_PER_HISTORICAL_VECTOR");
-  }
-
-  public int getEpochsPerSlashingsVector() {
-    return config.getInteger("constants.EPOCHS_PER_SLASHINGS_VECTOR");
-  }
-
-  public int getHistoricalRootsLimit() {
-    return config.getInteger("constants.HISTORICAL_ROOTS_LIMIT");
-  }
-
-  public long getValidatorRegistryLimit() {
-    return config.getLong("constants.VALIDATOR_REGISTRY_LIMIT");
-  }
-
-  /** @return reward and penalty quotient constants */
-  public int getBaseRewardFactor() {
-    return config.getInteger("constants.BASE_REWARD_FACTOR");
-  }
-
-  public int getWhistleblowerRewardQuotient() {
-    return config.getInteger("constants.WHISTLEBLOWER_REWARD_QUOTIENT");
-  }
-
-  public int getProposerRewardQuotient() {
-    return config.getInteger("constants.PROPOSER_REWARD_QUOTIENT");
-  }
-
-  public int getInactivityPenaltyQuotient() {
-    return config.getInteger("constants.INACTIVITY_PENALTY_QUOTIENT");
-  }
-
-  public int getMinSlashingPenaltyQuotient() {
-    return config.getInteger("constants.MIN_SLASHING_PENALTY_QUOTIENT");
-  }
-
-  /** @return max transactions per block constants */
-  public int getMaxProposerSlashings() {
-    return config.getInteger("constants.MAX_PROPOSER_SLASHINGS");
-  }
-
-  public int getMaxAttesterSlashings() {
-    return config.getInteger("constants.MAX_ATTESTER_SLASHINGS");
-  }
-
-  public int getMaxAttestations() {
-    return config.getInteger("constants.MAX_ATTESTATIONS");
-  }
-
-  public int getMaxDeposits() {
-    return config.getInteger("constants.MAX_DEPOSITS");
-  }
-
-  public int getMaxVoluntaryExits() {
-    return config.getInteger("constants.MAX_VOLUNTARY_EXITS");
-  }
-
-  public int getMaxTransfers() {
-    return config.getInteger("constants.MAX_TRANSFERS");
-  }
-
-  /** @return signature domain constants */
-  public int getDomainBeaconProposer() {
-    return config.getInteger("constants.DOMAIN_BEACON_PROPOSER");
-  }
-
-  public int getDomainRandao() {
-    return config.getInteger("constants.DOMAIN_RANDAO");
-  }
-
-  public int getDomainAttestation() {
-    return config.getInteger("constants.DOMAIN_ATTESTATION");
-  }
-
-  public int getDomainDeposit() {
-    return config.getInteger("constants.DOMAIN_DEPOSIT");
-  }
-
-  public int getDomainVoluntaryExit() {
-    return config.getInteger("constants.DOMAIN_VOLUNTARY_EXIT");
-  }
-
-  public int getDomainTransfer() {
-    return config.getInteger("constants.DOMAIN_TRANSFER");
-  }
-
   /** @return Artemis specific constants */
-  public String getSimDepositValue() {
-    return config.getString("constants.SIM_DEPOSIT_VALUE");
-  }
-
-  public int getDepositDataSize() {
-    return config.getInteger("constants.DEPOSIT_DATA_SIZE");
-  }
-
   public List<String> getStaticPeers() {
     return config.getListOfString("node.peers");
   }

@@ -57,7 +57,7 @@ public class BeaconNode {
     metricsEndpoint = new MetricsEndpoint(config, vertx);
     this.serviceConfig =
         new ServiceConfig(eventBus, vertx, metricsEndpoint.getMetricsSystem(), config);
-    Constants.init(config);
+    Constants.setConstants(config.getConstants());
 
     final String transitionRecordDir = config.getTransitionRecordDir();
     if (transitionRecordDir != null) {
