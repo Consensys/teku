@@ -16,12 +16,10 @@ package tech.pegasys.artemis.datastructures;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.int_to_bytes;
 
 import com.google.common.primitives.UnsignedLong;
-import java.util.Map;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.util.SSZTypes.Bytes4;
 import tech.pegasys.artemis.util.bls.BLSSignature;
-import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 
 public class Constants {
 
@@ -110,7 +108,8 @@ public class Constants {
   public static String DEPOSIT_TEST = "test";
   public static String DEPOSIT_SIM = "simulation";
 
-  public static Bytes DEPOSIT_CONTRACT_ADDRESS = Bytes.fromHexString("0x1234567890123456789012345678901234567890");
+  public static Bytes DEPOSIT_CONTRACT_ADDRESS =
+      Bytes.fromHexString("0x1234567890123456789012345678901234567890");
   public static Bytes DOMAIN_CUSTODY_BIT_CHALLENGE;
   public static Bytes DOMAIN_SHARD_PROPOSER;
   public static Bytes DOMAIN_SHARD_ATTESTER;
@@ -236,7 +235,6 @@ public class Constants {
       MAX_DEPOSITS = 16;
       MAX_VOLUNTARY_EXITS = 16;
       MAX_TRANSFERS = 0;
-
     }
   }
 }

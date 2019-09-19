@@ -79,7 +79,11 @@ public class ArtemisConfiguration {
     builder.addListOfString("node.peers", Collections.emptyList(), "Static peers", null);
     builder.addLong(
         "node.networkID", 1L, "The identifier of the network (mainnet, testnet, sidechain)", null);
-    builder.addString("node.constants", "minimal", "Determines whether to use minimal or mainnet constants", null);
+    builder.addString(
+        "node.constants",
+        "minimal",
+        "Determines whether to use minimal or mainnet constants",
+        null);
 
     // Interop
     builder.addBoolean("interop.active", false, "Enable interop mode", null);
@@ -302,7 +306,6 @@ public class ArtemisConfiguration {
   public String getTransitionRecordDir() {
     return config.getString("output.transitionRecordDir");
   }
-
 
   /** @return Artemis specific constants */
   public List<String> getStaticPeers() {
