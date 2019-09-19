@@ -22,12 +22,12 @@ CURRENT_TIME=$(date +%s)
 GENESIS_TIME=$((CURRENT_TIME + START_DELAY))
 
 export START_ARTEMIS=true
-export START_LIGHTHOUSE=true
+export START_LIGHTHOUSE=false
 export START_TRINITY=false
 export START_NIMBUS=false
 export START_LODESTAR=false
 export START_PRYSM=false
-export START_HARMONY=true
+export START_HARMONY=false
 
 zcli keys generate |zcli genesis mock --count $VALIDATOR_COUNT --genesis-time $GENESIS_TIME --out $GENESIS_FILE
 
