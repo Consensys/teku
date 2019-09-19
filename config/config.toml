@@ -1,11 +1,8 @@
 [node]
 # networkMode options:
 # "mock": use MockP2PNetwork
-# "hobbits": use HobbitsP2PNetwork
-# "mothra": use MothraP2PNetwork
+# "jvmlibp2p" : use JvmLibP2PNetwork
 networkMode = "mock"
-#  Gossip options: floodsub,gossipsub,plumtree,none
-gossipProtocol = "floodsub"
 identity = "0x00"
 timer="QuartzTimer"
 networkInterface = "0.0.0.0"
@@ -22,6 +19,8 @@ genesisTime = 1567777777
 ownedValidatorStartIndex = 0
 ownedValidatorCount = 4
 startState = "/tmp/genesis.ssz"
+#this.privKey.bytes().toHexString() who's corresponding sha2(publicKey) == 16Uiu2HAm8cQB9DcwMtaSVuHNiJEPSq9mXM6FHho7c55M6XN2P3EQ
+privateKey = "0x08021221008166B8EF20C11F3A18F8774BF834173B07F64BAEDA981766896B4A8F53B52EDF"
 
 [validator]
 #validatorsKeyFile = "keys.yaml"

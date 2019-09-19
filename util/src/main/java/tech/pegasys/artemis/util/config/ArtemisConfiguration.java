@@ -17,8 +17,6 @@ import static java.util.Arrays.asList;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collections;
@@ -42,12 +40,8 @@ public class ArtemisConfiguration {
                 "node.networkMode",
                 "mock",
                 "represents what network to use",
-                PropertyValidator.anyOf("mock", "hobbits", "mothra", "jvmlibp2p"));
-    builder.addString(
-        "node.gossipProtocol",
-        "plumtree",
-        "The gossip protocol to use",
-        PropertyValidator.anyOf("floodsub", "gossipsub", "plumtree", "none"));
+                PropertyValidator.anyOf("mock", "jvmlibp2p"));
+
     builder.addString("node.identity", null, "Identity of the peer", null);
     builder.addString("node.timer", "QuartzTimer", "Timer used for slots", null);
     builder.addString("node.networkInterface", "0.0.0.0", "Peer to peer network interface", null);
@@ -94,6 +88,7 @@ public class ArtemisConfiguration {
     builder.addInteger(
         "interop.ownedValidatorCount", 0, "Number of validators owned by this node", null);
     builder.addString("interop.startState", "", "Initial BeaconState to load", null);
+    builder.addString("interop.privateKey", "", "This node's private key", null);
 
     // Metrics
     builder.addBoolean("metrics.enabled", false, "Enables metrics collection via Prometheus", null);
@@ -310,6 +305,10 @@ public class ArtemisConfiguration {
 
   public int getInteropOwnedValidatorCount() {
     return config.getInteger("interop.ownedValidatorCount");
+  }
+
+  public String getInteropPrivateKey() {
+    return config.getString("interop.privateKey");
   }
 
   /** @return the total number of nodes on the network */
@@ -577,21 +576,7 @@ public class ArtemisConfiguration {
     return config.getInteger("constants.DEPOSIT_DATA_SIZE");
   }
 
-  /** @return the list of static peers associated with this node */
-  public List<URI> getStaticHobbitsPeers() {
-    return config.getListOfString("node.peers").stream()
-        .map(
-            (peer) -> {
-              try {
-                return new URI(peer);
-              } catch (URISyntaxException e) {
-                throw new RuntimeException(e);
-              }
-            })
-        .collect(Collectors.toList());
-  }
-
-  public List<String> getStaticMothraPeers() {
+  public List<String> getStaticPeers() {
     return config.getListOfString("node.peers");
   }
 
@@ -606,14 +591,9 @@ public class ArtemisConfiguration {
     return config.getLong("node.networkID");
   }
 
-  /** @return the mode of the network to use - mock or hobbits */
+  /** @return the mode of the network to use - mock or libp2p */
   public String getNetworkMode() {
     return config.getString("node.networkMode");
-  }
-
-  /** @return the gossip protocol to use */
-  public String getGossipProtocol() {
-    return config.getString("node.gossipProtocol");
   }
 
   /** @return the path to the log file */

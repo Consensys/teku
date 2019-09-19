@@ -19,16 +19,12 @@ defaultTasks 'build','checkLicenses'
 def buildAliases = [
   'dev': [
     'spotlessApply',
-    'buildMothra',
-    'distMothra',
     'build',
     'checkLicenses',
     'javadoc'],
   'mash': [ 
     'clean',
     'spotlessApply',
-    'buildMothra',
-    'distMothra',
     'build',
     'test']
   ]
@@ -93,7 +89,6 @@ allprojects {
         //Excluding tech.pegasys.artemis.datastructures due to preferred formatting overwritten by plugin in getConstantsAsString.
         exclude '**/src/main/java/tech/pegasys/artemis/Constants.java'
         exclude '**/proto'
-        exclude '**/mothra'
       }
       
 
@@ -190,17 +185,6 @@ allprojects {
     options.encoding = 'UTF-8'
   }
 }
-
-task buildMothra(type:Exec) {
-  workingDir 'mothra'
-  commandLine 'make','java'
-}
-
-task distMothra(type:Exec) {
-  workingDir 'scripts'
-  commandLine 'sh', 'mothra-dist.sh'
-}
-
 
 task deploy() {}
 
@@ -411,7 +395,7 @@ task distDocker(type: Exec) {
 }
 
 task distDockerWhiteblock(type: Exec) {
-  dependsOn distDocker
+  dependsOn installDist
 
   def dockerBuildVersion = project.hasProperty('release.releaseVersion') ? project.property('release.releaseVersion') : "${rootProject.version}"
   def image = "pegasyseng/artemis:whiteblock"
@@ -423,6 +407,18 @@ task distDockerWhiteblock(type: Exec) {
     copy {
       from fileTree("${projectDir}/docker/whiteblock/")
       into(workingDir)
+    }
+    copy {
+      from fileTree("${projectDir}/build/install/")
+      into(workingDir)
+    }
+    copy {
+      from fileTree("${projectDir}/scripts/")
+      into("${workingDir}/scripts")
+    }
+    copy {
+      from fileTree("${projectDir}/config/")
+      into("${workingDir}/config")
     }
   }
 

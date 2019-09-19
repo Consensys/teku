@@ -19,7 +19,8 @@ create_config() {
   # Set IDENTITY to the one byte hexadecimal representation of the node number
   local IDENTITY; setAsHex $NODE "IDENTITY"
 
-  local BOOTNODES=$(cat ~/.mothra/network/enr.dat)
+  # this can be reactivated once we have a java discv5
+  #local BOOTNODES=$(cat ~/.mothra/network/enr.dat)
 
 
   # Create the configuration file for the node
@@ -66,8 +67,6 @@ configure_node() {
   # in
   rm -rf demo/node_$NODE/*.json
   cp ../*.json demo/node_$NODE/
-  cp -f ../libs/libmothra-egress.dylib demo/node_$NODE/
-  cp -f ../libs/libmothra-ingress.dylib demo/node_$NODE/
   cp -rf ../libs/release demo/node_$NODE/
 }
 
