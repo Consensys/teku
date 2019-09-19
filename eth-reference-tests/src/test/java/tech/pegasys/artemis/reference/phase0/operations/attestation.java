@@ -13,17 +13,7 @@
 
 package tech.pegasys.artemis.reference.phase0.operations;
 
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static tech.pegasys.artemis.statetransition.util.BlockProcessorUtil.process_attestations;
-
 import com.google.errorprone.annotations.MustBeClosed;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Stream;
 import org.apache.tuweni.junit.BouncyCastleExtension;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -34,45 +24,46 @@ import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.reference.TestSuite;
 import tech.pegasys.artemis.statetransition.util.BlockProcessingException;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Stream;
+
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static tech.pegasys.artemis.statetransition.util.BlockProcessorUtil.process_attestations;
+
 @ExtendWith(BouncyCastleExtension.class)
 public class attestation extends TestSuite {
 
-  @ParameterizedTest(name = "{index}. mainnet process attestation: {4}")
-  @MethodSource("mainnetAttestationSetup")
-  void mainnetProcessAttestation(
+  @ParameterizedTest(name = "{index}. process attestation success")
+  @MethodSource({"mainnetAttestationSuccessSetup", "minimalAttestationSuccessSetup"})
+  void processAttestationSuccess(
       Attestation attestation,
       BeaconState pre,
-      BeaconState post,
-      Boolean succesTest,
-      String testName)
-      throws Exception {
+      BeaconState post){
     List<Attestation> attestations = new ArrayList<>();
     attestations.add(attestation);
-    if (succesTest) {
       assertDoesNotThrow(() -> process_attestations(pre, attestations));
       assertEquals(pre, post);
-    } else {
-      assertThrows(BlockProcessingException.class, () -> process_attestations(pre, attestations));
-    }
   }
 
-  @ParameterizedTest(name = "{index}. minimal process attestation: {4}")
-  @MethodSource("minimalAttestationSetup")
-  void minimalProcessAttestation(
-      Attestation attestation,
-      BeaconState pre,
-      BeaconState post,
-      Boolean succesTest,
-      String testName)
-      throws Exception {
+  @ParameterizedTest(name = "{index}. process attestation")
+  @MethodSource({"mainnetAttestationSetup", "minimalAttestationSetup"})
+  void processAttestation(
+          Attestation attestation,
+          BeaconState pre) {
     List<Attestation> attestations = new ArrayList<>();
     attestations.add(attestation);
-    if (succesTest) {
-      assertDoesNotThrow(() -> process_attestations(pre, attestations));
-      assertEquals(pre, post);
-    } else {
-      assertThrows(BlockProcessingException.class, () -> process_attestations(pre, attestations));
-    }
+    assertThrows(BlockProcessingException.class, () -> process_attestations(pre, attestations));
+  }
+
+  @MustBeClosed
+  static Stream<Arguments> attestationSuccessSetup(String config) throws Exception {
+    Path path = Paths.get(config, "phase0", "operations", "attestation", "pyspec_tests");
+    return operationSuccessSetup(path, Paths.get(config), "attestation.ssz", Attestation.class);
   }
 
   @MustBeClosed
@@ -89,5 +80,15 @@ public class attestation extends TestSuite {
   @MustBeClosed
   static Stream<Arguments> mainnetAttestationSetup() throws Exception {
     return attestationSetup("mainnet");
+  }
+
+  @MustBeClosed
+  static Stream<Arguments> minimalAttestationSuccessSetup() throws Exception {
+    return attestationSuccessSetup("minimal");
+  }
+
+  @MustBeClosed
+  static Stream<Arguments> mainnetAttestationSuccessSetup() throws Exception {
+    return attestationSuccessSetup("mainnet");
   }
 }

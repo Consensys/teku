@@ -13,17 +13,7 @@
 
 package tech.pegasys.artemis.reference.phase0.operations;
 
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static tech.pegasys.artemis.statetransition.util.BlockProcessorUtil.process_attester_slashings;
-
 import com.google.errorprone.annotations.MustBeClosed;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Stream;
 import org.apache.tuweni.junit.BouncyCastleExtension;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -34,49 +24,48 @@ import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.reference.TestSuite;
 import tech.pegasys.artemis.statetransition.util.BlockProcessingException;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Stream;
+
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static tech.pegasys.artemis.statetransition.util.BlockProcessorUtil.process_attester_slashings;
+
 @ExtendWith(BouncyCastleExtension.class)
 public class attester_slashing extends TestSuite {
 
-  @ParameterizedTest(name = "{index}. minimal process attester slashing: {4}")
-  @MethodSource("mainnetAttesterSlashingSetup")
-  void mainnetProcessAttesterSlashing(
+  @ParameterizedTest(name = "{index}. process attester slashing success")
+  @MethodSource({"mainnetAttesterSlashingSuccessSetup", "minimalAttesterSlashingSuccessSetup"})
+  void processAttesterSlashingSuccess(
       AttesterSlashing attester_slashing,
       BeaconState pre,
-      BeaconState post,
-      Boolean succesTest,
-      String testName)
-      throws Exception {
+      BeaconState post){
     List<AttesterSlashing> attester_slashings = new ArrayList<>();
     attester_slashings.add(attester_slashing);
-    if (succesTest) {
       assertDoesNotThrow(() -> process_attester_slashings(pre, attester_slashings));
       assertEquals(pre, post);
-    } else {
-      assertThrows(
-          BlockProcessingException.class,
-          () -> process_attester_slashings(pre, attester_slashings));
-    }
   }
 
-  @ParameterizedTest(name = "{index}. minimal process attester slashing: {4}")
-  @MethodSource("minimalAttesterSlashingSetup")
-  void minimalProcessAttesterSlashing(
-      AttesterSlashing attester_slashing,
-      BeaconState pre,
-      BeaconState post,
-      Boolean succesTest,
-      String testName)
-      throws Exception {
+  @ParameterizedTest(name = "{index}. process attester slashing success")
+  @MethodSource({"mainnetAttesterSlashingSetup", "minimalAttesterSlashingSetup"})
+  void processAttesterSlashing(
+          AttesterSlashing attester_slashing,
+          BeaconState pre) {
     List<AttesterSlashing> attester_slashings = new ArrayList<>();
     attester_slashings.add(attester_slashing);
-    if (succesTest) {
-      assertDoesNotThrow(() -> process_attester_slashings(pre, attester_slashings));
-      assertEquals(pre, post);
-    } else {
-      assertThrows(
-          BlockProcessingException.class,
-          () -> process_attester_slashings(pre, attester_slashings));
-    }
+    assertThrows(
+        BlockProcessingException.class,
+        () -> process_attester_slashings(pre, attester_slashings));
+  }
+
+  @MustBeClosed
+  static Stream<Arguments> attester_slashingSuccessSetup(String config) throws Exception {
+    Path path = Paths.get(config, "phase0", "operations", "attester_slashing", "pyspec_tests");
+    return operationSuccessSetup(path, Paths.get(config), "attester_slashing.ssz", AttesterSlashing.class);
   }
 
   @MustBeClosed
@@ -93,5 +82,16 @@ public class attester_slashing extends TestSuite {
   @MustBeClosed
   static Stream<Arguments> mainnetAttesterSlashingSetup() throws Exception {
     return attester_slashingSetup("mainnet");
+  }
+
+
+  @MustBeClosed
+  static Stream<Arguments> minimalAttesterSlashingSuccessSetup() throws Exception {
+    return attester_slashingSuccessSetup("minimal");
+  }
+
+  @MustBeClosed
+  static Stream<Arguments> mainnetAttesterSlashingSuccessSetup() throws Exception {
+    return attester_slashingSuccessSetup("mainnet");
   }
 }

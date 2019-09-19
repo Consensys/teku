@@ -13,15 +13,7 @@
 
 package tech.pegasys.artemis.reference.phase0.operations;
 
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static tech.pegasys.artemis.statetransition.util.BlockProcessorUtil.process_block_header;
-
 import com.google.errorprone.annotations.MustBeClosed;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.stream.Stream;
 import org.apache.tuweni.junit.BouncyCastleExtension;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -32,39 +24,43 @@ import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.reference.TestSuite;
 import tech.pegasys.artemis.statetransition.util.BlockProcessingException;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.stream.Stream;
+
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static tech.pegasys.artemis.statetransition.util.BlockProcessorUtil.process_block_header;
+
 @ExtendWith(BouncyCastleExtension.class)
 public class block_header extends TestSuite {
 
-  @ParameterizedTest(name = "{index}. minimal process block header: {4}")
-  @MethodSource("mainnetBeaconBlockHeaderSetup")
-  void mainnetProcessBeaconBlockHeader(
-      BeaconBlock block, BeaconState pre, BeaconState post, Boolean succesTest, String testName)
-      throws Exception {
-    if (succesTest) {
+  @ParameterizedTest(name = "{index}. minimal process block header success")
+  @MethodSource({"mainnetBeaconBlockHeaderSuccessSetup", "minimalBeaconBlockHeaderSuccessSetup"})
+  void mainnetProcessBeaconBlockHeaderSuccess(
+      BeaconBlock block, BeaconState pre, BeaconState post){
       assertDoesNotThrow(() -> process_block_header(pre, block, true));
       assertEquals(pre, post);
-    } else {
-      assertThrows(BlockProcessingException.class, () -> process_block_header(pre, block, true));
-    }
   }
 
-  @ParameterizedTest(name = "{index}. minimal process block header: {4}")
-  @MethodSource("minimalBeaconBlockHeaderSetup")
-  void minimalProcessBeaconBlockHeader(
-      BeaconBlock block, BeaconState pre, BeaconState post, Boolean succesTest, String testName)
-      throws Exception {
-    if (succesTest) {
-      assertDoesNotThrow(() -> process_block_header(pre, block, true));
-      assertEquals(pre, post);
-    } else {
+  @ParameterizedTest(name = "{index}. process block header")
+  @MethodSource({"mainnetBeaconBlockHeaderSetup", "minimalBeaconBlockHeaderSetup"})
+  void mainnetProcessBeaconBlockHeader(
+          BeaconBlock block, BeaconState pre){
       assertThrows(BlockProcessingException.class, () -> process_block_header(pre, block, true));
-    }
   }
 
   @MustBeClosed
   static Stream<Arguments> blockSetup(String config) throws Exception {
     Path path = Paths.get(config, "phase0", "operations", "block_header", "pyspec_tests");
     return operationSetup(path, Paths.get(config), "block.ssz", BeaconBlock.class);
+  }
+
+  @MustBeClosed
+  static Stream<Arguments> blockSuccessSetup(String config) throws Exception {
+    Path path = Paths.get(config, "phase0", "operations", "block_header", "pyspec_tests");
+    return operationSuccessSetup(path, Paths.get(config), "block.ssz", BeaconBlock.class);
   }
 
   @MustBeClosed
@@ -75,5 +71,15 @@ public class block_header extends TestSuite {
   @MustBeClosed
   static Stream<Arguments> mainnetBeaconBlockHeaderSetup() throws Exception {
     return blockSetup("mainnet");
+  }
+
+  @MustBeClosed
+  static Stream<Arguments> minimalBeaconBlockHeaderSuccessSetup() throws Exception {
+    return blockSuccessSetup("minimal");
+  }
+
+  @MustBeClosed
+  static Stream<Arguments> mainnetBeaconBlockHeaderSuccessSetup() throws Exception {
+    return blockSuccessSetup("mainnet");
   }
 }
