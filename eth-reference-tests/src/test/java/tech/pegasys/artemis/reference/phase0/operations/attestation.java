@@ -13,7 +13,17 @@
 
 package tech.pegasys.artemis.reference.phase0.operations;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static tech.pegasys.artemis.statetransition.util.BlockProcessorUtil.process_attestations;
+
 import com.google.errorprone.annotations.MustBeClosed;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Stream;
 import org.apache.tuweni.junit.BouncyCastleExtension;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -24,37 +34,21 @@ import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.reference.TestSuite;
 import tech.pegasys.artemis.statetransition.util.BlockProcessingException;
 
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Stream;
-
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static tech.pegasys.artemis.statetransition.util.BlockProcessorUtil.process_attestations;
-
 @ExtendWith(BouncyCastleExtension.class)
 public class attestation extends TestSuite {
 
   @ParameterizedTest(name = "{index}. process attestation success")
   @MethodSource({"mainnetAttestationSuccessSetup", "minimalAttestationSuccessSetup"})
-  void processAttestationSuccess(
-      Attestation attestation,
-      BeaconState pre,
-      BeaconState post){
+  void processAttestationSuccess(Attestation attestation, BeaconState pre, BeaconState post) {
     List<Attestation> attestations = new ArrayList<>();
     attestations.add(attestation);
-      assertDoesNotThrow(() -> process_attestations(pre, attestations));
-      assertEquals(pre, post);
+    assertDoesNotThrow(() -> process_attestations(pre, attestations));
+    assertEquals(pre, post);
   }
 
   @ParameterizedTest(name = "{index}. process attestation")
   @MethodSource({"mainnetAttestationSetup", "minimalAttestationSetup"})
-  void processAttestation(
-          Attestation attestation,
-          BeaconState pre) {
+  void processAttestation(Attestation attestation, BeaconState pre) {
     List<Attestation> attestations = new ArrayList<>();
     attestations.add(attestation);
     assertThrows(BlockProcessingException.class, () -> process_attestations(pre, attestations));

@@ -13,7 +13,17 @@
 
 package tech.pegasys.artemis.reference.phase0.operations;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static tech.pegasys.artemis.statetransition.util.BlockProcessorUtil.process_voluntary_exits;
+
 import com.google.errorprone.annotations.MustBeClosed;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Stream;
 import org.apache.tuweni.junit.BouncyCastleExtension;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -24,37 +34,21 @@ import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.reference.TestSuite;
 import tech.pegasys.artemis.statetransition.util.BlockProcessingException;
 
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Stream;
-
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static tech.pegasys.artemis.statetransition.util.BlockProcessorUtil.process_voluntary_exits;
-
 @ExtendWith(BouncyCastleExtension.class)
 public class voluntary_exit extends TestSuite {
 
   @ParameterizedTest(name = "{index}. process voluntary_exit")
   @MethodSource({"mainnetVoluntaryExitSetup", "minimalVoluntaryExitSetup"})
-  void processVoluntaryExit(
-      VoluntaryExit voluntary_exit,
-      BeaconState pre) {
+  void processVoluntaryExit(VoluntaryExit voluntary_exit, BeaconState pre) {
     List<VoluntaryExit> voluntary_exits = new ArrayList<>();
     voluntary_exits.add(voluntary_exit);
-      assertThrows(
-    BlockProcessingException.class, () -> process_voluntary_exits(pre, voluntary_exits));
+    assertThrows(
+        BlockProcessingException.class, () -> process_voluntary_exits(pre, voluntary_exits));
   }
 
   @ParameterizedTest(name = "{index}. process voluntary_exit")
   @MethodSource({"mainnetVoluntaryExitSuccessSetup", "minimalVoluntaryExitSuccessSetup"})
-  void processVoluntaryExit(
-          VoluntaryExit voluntary_exit,
-          BeaconState pre,
-          BeaconState post) {
+  void processVoluntaryExit(VoluntaryExit voluntary_exit, BeaconState pre, BeaconState post) {
     List<VoluntaryExit> voluntary_exits = new ArrayList<>();
     voluntary_exits.add(voluntary_exit);
     assertDoesNotThrow(() -> process_voluntary_exits(pre, voluntary_exits));
@@ -80,7 +74,8 @@ public class voluntary_exit extends TestSuite {
   @MustBeClosed
   static Stream<Arguments> voluntary_exitSuccessSetup(String config) throws Exception {
     Path path = Paths.get(config, "phase0", "operations", "voluntary_exit", "pyspec_tests");
-    return operationSuccessSetup(path, Paths.get(config), "voluntary_exit.ssz", VoluntaryExit.class);
+    return operationSuccessSetup(
+        path, Paths.get(config), "voluntary_exit.ssz", VoluntaryExit.class);
   }
 
   @MustBeClosed

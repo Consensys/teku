@@ -154,51 +154,63 @@ public abstract class TestSuite {
       List<String> result = walk.map(x -> x.toString()).collect(Collectors.toList());
       result =
           result.stream()
-              .filter(
-                  walkPath -> isFilePathConfiguredForTest(testSet, walkPath))
+              .filter(walkPath -> isFilePathConfiguredForTest(testSet, walkPath))
               .collect(Collectors.toList());
 
       return result.stream()
-              .map(
-                  walkPath -> {
-                    return testSet.getFileNames().stream()
-                        .flatMap(
-                            fileName -> {
-                              Object object =
-                                  pathToObject(
-                                      Path.of(walkPath, fileName),
-                                      testSet.getTestObjectByFileName(fileName));
-                              return testSet.getTestObjectByFileName(fileName).stream()
-                                  .map(
-                                      testObject -> {
-                                        if (fileName.contains(".ssz")) {
-                                          Bytes objectBytes =
-                                              getSSZBytesFromPath(Path.of(walkPath, fileName));
-                                          return SimpleOffsetSerializer.deserialize(
-                                              objectBytes, testObject.getClassName());
-                                        } else {
-                                          return parseObjectFromFile(
-                                              testObject.getClassName(),
-                                              testObject.getPath(),
-                                              object);
-                                        }
-                                      });
-                            })
-                        .collect(Collectors.toList());
-                  })
-              .map(objects -> Arguments.of(objects.toArray()));
+          .map(
+              walkPath -> {
+                return testSet.getFileNames().stream()
+                    .flatMap(
+                        fileName -> {
+                          Object object =
+                              pathToObject(
+                                  Path.of(walkPath, fileName),
+                                  testSet.getTestObjectByFileName(fileName));
+                          return testSet.getTestObjectByFileName(fileName).stream()
+                              .map(
+                                  testObject -> {
+                                    if (fileName.contains(".ssz")) {
+                                      Bytes objectBytes =
+                                          getSSZBytesFromPath(Path.of(walkPath, fileName));
+                                      return SimpleOffsetSerializer.deserialize(
+                                          objectBytes, testObject.getClassName());
+                                    } else {
+                                      return parseObjectFromFile(
+                                          testObject.getClassName(), testObject.getPath(), object);
+                                    }
+                                  });
+                        })
+                    .collect(Collectors.toList());
+              })
+          .map(objects -> Arguments.of(objects.toArray()));
     } catch (IOException e) {
       LOG.log(Level.WARN, e.toString());
     }
     return null;
   }
 
-  public static boolean isFilePathConfiguredForTest(TestSet testSet, String walkPath){
-    boolean isIncludedPath = testSet.getFileNames().stream().allMatch(fileName -> Files.exists(Path.of(walkPath, fileName)));
-    boolean isSuccessTest = testSet.getFileNames().stream().filter(fileName -> fileName.contains("pre.yaml") || fileName.contains("pre.ssz") || fileName.contains("post.yaml") || fileName.contains("post.ssz")).collect(Collectors.toList()).size() > 1;
-    if(isSuccessTest) return isIncludedPath;
-    boolean isNotExcludedPath = !(Files.exists(Path.of(walkPath, "post.ssz")) || Files.exists(Path.of(walkPath, "post.yaml")));
-    boolean isMetaPath = testSet.getFileNames().size()==1 && testSet.getFileNames().get(0).equals("meta.yaml");
+  public static boolean isFilePathConfiguredForTest(TestSet testSet, String walkPath) {
+    boolean isIncludedPath =
+        testSet.getFileNames().stream()
+            .allMatch(fileName -> Files.exists(Path.of(walkPath, fileName)));
+    boolean isSuccessTest =
+        testSet.getFileNames().stream()
+                .filter(
+                    fileName ->
+                        fileName.contains("pre.yaml")
+                            || fileName.contains("pre.ssz")
+                            || fileName.contains("post.yaml")
+                            || fileName.contains("post.ssz"))
+                .collect(Collectors.toList())
+                .size()
+            > 1;
+    if (isSuccessTest) return isIncludedPath;
+    boolean isNotExcludedPath =
+        !(Files.exists(Path.of(walkPath, "post.ssz"))
+            || Files.exists(Path.of(walkPath, "post.yaml")));
+    boolean isMetaPath =
+        testSet.getFileNames().size() == 1 && testSet.getFileNames().get(0).equals("meta.yaml");
     return isIncludedPath && (isNotExcludedPath || isMetaPath);
   }
 
@@ -436,7 +448,7 @@ public abstract class TestSuite {
   @MustBeClosed
   @SuppressWarnings("rawtypes")
   public static Stream<Arguments> operationSuccessSetup(
-          Path path, Path configPath, String operationName, Class operationClass) throws Exception {
+      Path path, Path configPath, String operationName, Class operationClass) throws Exception {
     loadConfigFromPath(configPath);
 
     TestSet testSet = new TestSet(path);

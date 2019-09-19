@@ -13,7 +13,15 @@
 
 package tech.pegasys.artemis.reference.phase0.operations;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static tech.pegasys.artemis.statetransition.util.BlockProcessorUtil.process_block_header;
+
 import com.google.errorprone.annotations.MustBeClosed;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.stream.Stream;
 import org.apache.tuweni.junit.BouncyCastleExtension;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -24,31 +32,21 @@ import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.reference.TestSuite;
 import tech.pegasys.artemis.statetransition.util.BlockProcessingException;
 
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.stream.Stream;
-
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static tech.pegasys.artemis.statetransition.util.BlockProcessorUtil.process_block_header;
-
 @ExtendWith(BouncyCastleExtension.class)
 public class block_header extends TestSuite {
 
   @ParameterizedTest(name = "{index}. minimal process block header success")
   @MethodSource({"mainnetBeaconBlockHeaderSuccessSetup", "minimalBeaconBlockHeaderSuccessSetup"})
   void mainnetProcessBeaconBlockHeaderSuccess(
-      BeaconBlock block, BeaconState pre, BeaconState post){
-      assertDoesNotThrow(() -> process_block_header(pre, block, true));
-      assertEquals(pre, post);
+      BeaconBlock block, BeaconState pre, BeaconState post) {
+    assertDoesNotThrow(() -> process_block_header(pre, block, true));
+    assertEquals(pre, post);
   }
 
   @ParameterizedTest(name = "{index}. process block header")
   @MethodSource({"mainnetBeaconBlockHeaderSetup", "minimalBeaconBlockHeaderSetup"})
-  void mainnetProcessBeaconBlockHeader(
-          BeaconBlock block, BeaconState pre){
-      assertThrows(BlockProcessingException.class, () -> process_block_header(pre, block, true));
+  void mainnetProcessBeaconBlockHeader(BeaconBlock block, BeaconState pre) {
+    assertThrows(BlockProcessingException.class, () -> process_block_header(pre, block, true));
   }
 
   @MustBeClosed

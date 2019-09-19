@@ -13,7 +13,17 @@
 
 package tech.pegasys.artemis.reference.phase0.operations;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static tech.pegasys.artemis.statetransition.util.BlockProcessorUtil.process_proposer_slashings;
+
 import com.google.errorprone.annotations.MustBeClosed;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Stream;
 import org.apache.tuweni.junit.BouncyCastleExtension;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -24,37 +34,22 @@ import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.reference.TestSuite;
 import tech.pegasys.artemis.statetransition.util.BlockProcessingException;
 
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Stream;
-
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static tech.pegasys.artemis.statetransition.util.BlockProcessorUtil.process_proposer_slashings;
-
 @ExtendWith(BouncyCastleExtension.class)
 public class proposer_slashing extends TestSuite {
 
   @ParameterizedTest(name = "{index}. mainnet process proposer slashing")
   @MethodSource({"mainnetProposerSlashingSetup", "minimalProposerSlashingSetup"})
-  void processProposerSlashing(
-      ProposerSlashing proposerSlashing,
-      BeaconState pre) {
+  void processProposerSlashing(ProposerSlashing proposerSlashing, BeaconState pre) {
     List<ProposerSlashing> proposerSlashings = new ArrayList<>();
     proposerSlashings.add(proposerSlashing);
     assertThrows(
-          BlockProcessingException.class, () -> process_proposer_slashings(pre, proposerSlashings));
+        BlockProcessingException.class, () -> process_proposer_slashings(pre, proposerSlashings));
   }
 
   @ParameterizedTest(name = "{index}. mainnet process proposer slashing")
   @MethodSource({"mainnetProposerSlashingSuccessSetup", "minimalProposerSlashingSuccessSetup"})
   void processProposerSlashing(
-          ProposerSlashing proposerSlashing,
-          BeaconState pre,
-          BeaconState post) {
+      ProposerSlashing proposerSlashing, BeaconState pre, BeaconState post) {
     List<ProposerSlashing> proposerSlashings = new ArrayList<>();
     proposerSlashings.add(proposerSlashing);
     assertDoesNotThrow(() -> process_proposer_slashings(pre, proposerSlashings));
@@ -80,7 +75,8 @@ public class proposer_slashing extends TestSuite {
   @MustBeClosed
   static Stream<Arguments> proposerSlashingSuccessSetup(String config) throws Exception {
     Path path = Paths.get(config, "phase0", "operations", "proposer_slashing", "pyspec_tests");
-    return operationSuccessSetup(path, Paths.get(config), "proposer_slashing.ssz", ProposerSlashing.class);
+    return operationSuccessSetup(
+        path, Paths.get(config), "proposer_slashing.ssz", ProposerSlashing.class);
   }
 
   @MustBeClosed
