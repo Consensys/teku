@@ -19,6 +19,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.util.SSZTypes.SSZContainer;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
@@ -43,13 +44,13 @@ public final class BeaconBlocksMessageResponse implements SimpleOffsetSerializab
     List<Bytes> fixedPartsList =
         new ArrayList<>(
             List.of(
-                SSZ.encode(writer -> writer.writeFixedBytesList(blocks)));
+                SSZ.encode(writer -> writer.writeBytes(SimpleOffsetSerializer.serializeVariableCompositeList(blocks)))));
     return fixedPartsList;
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(headBlockRoot, startSlot, count, step);
+    return Objects.hash(blocks);
   }
 
   @Override
@@ -67,16 +68,8 @@ public final class BeaconBlocksMessageResponse implements SimpleOffsetSerializab
     }
 
     BeaconBlocksMessageResponse other = (BeaconBlocksMessageResponse) obj;
-    return Objects.equals(this.headBlockRoot(), other.headBlockRoot())
-        && Objects.equals(this.startSlot(), other.startSlot())
-        && Objects.equals(this.count(), other.count())
-        && Objects.equals(this.step(), other.step());
+    return Objects.equals(this.blocks(), other.blocks());
   }
 
-  public Bytes32 headBlockRoot() { return headBlockRoot; }
-  public UnsignedLong startSlot() { return startSlot; }
-  public UnsignedLong count() { return count; }
-  public UnsignedLong step() {
-    return step;
-  }
+  public List<BeaconBlock> blocks() { return blocks; }
 }
