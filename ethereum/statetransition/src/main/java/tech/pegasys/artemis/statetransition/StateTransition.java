@@ -14,9 +14,11 @@
 package tech.pegasys.artemis.statetransition;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static tech.pegasys.artemis.datastructures.Constants.FAR_FUTURE_EPOCH;
 import static tech.pegasys.artemis.datastructures.Constants.SLOTS_PER_EPOCH;
 import static tech.pegasys.artemis.datastructures.Constants.SLOTS_PER_HISTORICAL_ROOT;
 import static tech.pegasys.artemis.datastructures.Constants.ZERO_HASH;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_current_epoch;
 import static tech.pegasys.artemis.statetransition.util.BlockProcessorUtil.process_block_header;
 import static tech.pegasys.artemis.statetransition.util.BlockProcessorUtil.process_eth1_data;
 import static tech.pegasys.artemis.statetransition.util.BlockProcessorUtil.process_operations;
@@ -35,6 +37,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
+import tech.pegasys.artemis.metrics.EpochMetrics;
 import tech.pegasys.artemis.statetransition.util.BlockProcessingException;
 import tech.pegasys.artemis.statetransition.util.EpochProcessingException;
 import tech.pegasys.artemis.statetransition.util.SlotProcessingException;
@@ -192,7 +195,25 @@ public class StateTransition {
             .equals(UnsignedLong.ZERO)) {
           STDOUT.log(Level.INFO, "******* Epoch Event *******", printEnabled, ALogger.Color.BLUE);
           process_epoch(state);
-          epochMetrics.ifPresent(metrics -> metrics.onEpoch(state));
+          epochMetrics.ifPresent(
+              metrics -> {
+                final UnsignedLong currentEpoch = get_current_epoch(state);
+                long pendingExits =
+                    state.getValidators().stream()
+                        .filter(
+                            v ->
+                                !v.getExit_epoch().equals(FAR_FUTURE_EPOCH)
+                                    && currentEpoch.compareTo(v.getExit_epoch()) < 0)
+                        .count();
+
+                metrics.onEpoch(
+                    state.getPrevious_justified_checkpoint().getEpoch(),
+                    state.getCurrent_justified_checkpoint().getEpoch(),
+                    state.getFinalized_checkpoint().getEpoch(),
+                    state.getPrevious_epoch_attestations().size(),
+                    state.getCurrent_epoch_attestations().size(),
+                    pendingExits);
+              });
         }
         state.setSlot(state.getSlot().plus(UnsignedLong.ONE));
       }

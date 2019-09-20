@@ -11,15 +11,9 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.statetransition;
-
-import static tech.pegasys.artemis.datastructures.Constants.FAR_FUTURE_EPOCH;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_current_epoch;
+package tech.pegasys.artemis.metrics;
 
 import com.google.common.primitives.UnsignedLong;
-import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.metrics.ArtemisMetricCategory;
-import tech.pegasys.artemis.metrics.SettableGauge;
 import tech.pegasys.pantheon.metrics.MetricsSystem;
 
 public class EpochMetrics {
@@ -73,23 +67,18 @@ public class EpochMetrics {
             "Number of pending exits");
   }
 
-  // TODO: If we pass in the values individually, then we can remove the dependence on
-  //      BeaconState and move this class into metrics
-  public void onEpoch(final BeaconState headState) {
-    previousJustifiedEpoch.set(
-        headState.getPrevious_justified_checkpoint().getEpoch().doubleValue());
-    currentJustifiedEpoch.set(headState.getCurrent_justified_checkpoint().getEpoch().longValue());
-    currentFinalizedEpoch.set(headState.getFinalized_checkpoint().getEpoch().longValue());
-    currentEpochLiveValidators.set(headState.getCurrent_epoch_attestations().size());
-    previousEpochLiveValidators.set(headState.getPrevious_epoch_attestations().size());
-
-    final UnsignedLong currentEpoch = get_current_epoch(headState);
-    pendingExits.set(
-        headState.getValidators().stream()
-            .filter(
-                v ->
-                    !v.getExit_epoch().equals(FAR_FUTURE_EPOCH)
-                        && currentEpoch.compareTo(v.getExit_epoch()) < 0)
-            .count());
+  public void onEpoch(
+      UnsignedLong prevJustifiedEpoch,
+      UnsignedLong currJustifiedEpoch,
+      UnsignedLong currFinalizedEpoch,
+      int prevEpochLiveValidators,
+      int currEpochLiveValidators,
+      long currPendingExits) {
+    previousJustifiedEpoch.set(prevJustifiedEpoch.doubleValue());
+    currentJustifiedEpoch.set(currJustifiedEpoch.longValue());
+    currentFinalizedEpoch.set(currFinalizedEpoch.longValue());
+    currentEpochLiveValidators.set(prevEpochLiveValidators);
+    previousEpochLiveValidators.set(currEpochLiveValidators);
+    pendingExits.set(currPendingExits);
   }
 }
