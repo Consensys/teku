@@ -116,7 +116,6 @@ public class JvmLibP2PNetwork implements P2PNetwork {
   }
 
   @Override
-  @SuppressWarnings("CatchAndPrintStackTrace")
   public void run() {
     STDOUT.log(Level.INFO, "Starting libp2p network...");
     host.start()
@@ -134,6 +133,7 @@ public class JvmLibP2PNetwork implements P2PNetwork {
       Thread.sleep(2000);
     } catch (InterruptedException e) {
       e.printStackTrace();
+      throw new IllegalArgumentException("Error in JvmLibP2PNetwork.run()");
     }*/
     for (String peer : config.getPeers()) {
       connect(peer);

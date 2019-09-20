@@ -73,6 +73,8 @@ public class EpochMetrics {
             "Number of pending exits");
   }
 
+  // TODO: If we pass in the values individually, then we can remove the dependence on
+  //      BeaconState and move this class into metrics
   public void onEpoch(final BeaconState headState) {
     previousJustifiedEpoch.set(
         headState.getPrevious_justified_checkpoint().getEpoch().doubleValue());

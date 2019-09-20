@@ -58,7 +58,6 @@ import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.proto.messagesigner.MessageSignerGrpc;
 import tech.pegasys.artemis.proto.messagesigner.SignatureRequest;
 import tech.pegasys.artemis.proto.messagesigner.SignatureResponse;
-import tech.pegasys.artemis.service.serviceutils.ServiceConfig;
 import tech.pegasys.artemis.statetransition.StateTransition;
 import tech.pegasys.artemis.statetransition.StateTransitionException;
 import tech.pegasys.artemis.statetransition.events.ValidatorAssignmentEvent;
@@ -73,6 +72,7 @@ import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
+import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
 import tech.pegasys.artemis.validator.client.ValidatorClientUtil;
@@ -93,16 +93,15 @@ public class ValidatorCoordinator {
   private LinkedBlockingQueue<ProposerSlashing> slashings = new LinkedBlockingQueue<>();
   private boolean interopActive;
 
-  public ValidatorCoordinator(ServiceConfig config, ChainStorageClient store) {
-    this.eventBus = config.getEventBus();
+  public ValidatorCoordinator(
+      EventBus eventBus, ChainStorageClient chainStorageClient, ArtemisConfiguration config) {
+    this.eventBus = eventBus;
+    this.numValidators = config.getNumValidators();
+    this.chainStorageClient = chainStorageClient;
+    this.interopActive = config.getInteropActive();
+    this.stateTransition = new StateTransition(false);
+    this.validators = new ValidatorLoader().initializeValidators(config);
     this.eventBus.register(this);
-    this.numValidators = config.getConfig().getNumValidators();
-    this.chainStorageClient = store;
-    this.interopActive = config.getConfig().getInteropActive();
-
-    stateTransition = new StateTransition(false);
-
-    validators = new ValidatorLoader().initializeValidators(config.getConfig());
   }
 
   /*
@@ -163,8 +162,6 @@ public class ValidatorCoordinator {
     final Store store = chainStorageClient.getStore();
     final Bytes32 head = get_head(store);
     final BeaconState genesisState = store.getBlockState(head);
-
-    STDOUT.log(Level.INFO, "Initial state root is " + genesisState.hash_tree_root().toHexString());
 
     // Get validator indices of our own validators
     List<Validator> validatorRegistry = genesisState.getValidators();
