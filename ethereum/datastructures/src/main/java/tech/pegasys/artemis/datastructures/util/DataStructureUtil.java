@@ -13,19 +13,7 @@
 
 package tech.pegasys.artemis.datastructures.util;
 
-import static java.lang.Math.toIntExact;
-import static tech.pegasys.artemis.datastructures.Constants.SLOTS_PER_EPOCH;
-import static tech.pegasys.artemis.datastructures.Constants.SLOTS_PER_ETH1_VOTING_PERIOD;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_of_slot;
-
 import com.google.common.primitives.UnsignedLong;
-import java.nio.ByteBuffer;
-import java.security.SecureRandom;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
-import java.util.function.Supplier;
-import java.util.stream.LongStream;
 import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.Hash;
@@ -64,16 +52,22 @@ import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 
+import java.nio.ByteBuffer;
+import java.security.SecureRandom;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
+import java.util.function.Supplier;
+import java.util.stream.LongStream;
+
+import static java.lang.Math.toIntExact;
+import static tech.pegasys.artemis.datastructures.Constants.SLOTS_PER_EPOCH;
+import static tech.pegasys.artemis.datastructures.Constants.SLOTS_PER_ETH1_VOTING_PERIOD;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_of_slot;
+
 public final class DataStructureUtil {
   private static final ALogger STDOUT = new ALogger("stdout");
 
-  public static int randomInt() {
-    return (int) Math.round(Math.random() * 1000000);
-  }
-
-  public static int randomInt(int seed) {
-    return new Random(seed).nextInt();
-  }
 
   public static long randomLong() {
     return Math.round(Math.random() * 1000000);
@@ -160,10 +154,6 @@ public final class DataStructureUtil {
     return new Eth1Data(randomBytes32(), randomUnsignedLong(), randomBytes32());
   }
 
-  public static Eth1Data randomEth1Data(int seed) {
-    return new Eth1Data(randomBytes32(seed), randomUnsignedLong(seed), randomBytes32(seed));
-  }
-
   public static Crosslink randomCrosslink() {
     return new Crosslink(
         randomUnsignedLong(),
@@ -222,10 +212,6 @@ public final class DataStructureUtil {
     return new AttesterSlashing(randomIndexedAttestation(), randomIndexedAttestation());
   }
 
-  public static AttesterSlashing randomAttesterSlashing(int seed) {
-    return new AttesterSlashing(randomIndexedAttestation(seed), randomIndexedAttestation(seed));
-  }
-
   public static BeaconBlock randomBeaconBlock(long slotNum) {
     UnsignedLong slot = UnsignedLong.valueOf(slotNum);
     Bytes32 previous_root = Bytes32.random();
@@ -243,15 +229,6 @@ public final class DataStructureUtil {
         randomBytes32(),
         randomBytes32(),
         BLSSignature.random());
-  }
-
-  public static BeaconBlockHeader randomBeaconBlockHeader(int seed) {
-    return new BeaconBlockHeader(
-        randomUnsignedLong(seed++),
-        randomBytes32(seed++),
-        randomBytes32(seed++),
-        randomBytes32(seed++),
-        BLSSignature.random(seed));
   }
 
   public static BeaconBlockBody randomBeaconBlockBody() {
@@ -281,11 +258,6 @@ public final class DataStructureUtil {
   public static ProposerSlashing randomProposerSlashing() {
     return new ProposerSlashing(
         randomUnsignedLong(), randomBeaconBlockHeader(), randomBeaconBlockHeader());
-  }
-
-  public static ProposerSlashing randomProposerSlashing(int seed) {
-    return new ProposerSlashing(
-        randomUnsignedLong(seed++), randomBeaconBlockHeader(seed++), randomBeaconBlockHeader(seed));
   }
 
   public static IndexedAttestation randomIndexedAttestation() {
@@ -349,77 +321,14 @@ public final class DataStructureUtil {
         proof_of_possession);
   }
 
-  public static DepositData randomDepositData(int seed) {
-    BLSKeyPair keyPair = BLSKeyPair.random(seed);
-    BLSPublicKey pubkey = keyPair.getPublicKey();
-    Bytes32 withdrawal_credentials = randomBytes32(seed);
-
-    DepositData proof_of_possession_data =
-        new DepositData(
-            pubkey,
-            withdrawal_credentials,
-            UnsignedLong.valueOf(Constants.MAX_EFFECTIVE_BALANCE),
-            Constants.EMPTY_SIGNATURE);
-
-    BLSSignature proof_of_possession =
-        BLSSignature.sign(
-            keyPair,
-            proof_of_possession_data.signing_root("signature"),
-            BeaconStateUtil.compute_domain(Constants.DOMAIN_DEPOSIT));
-
-    return new DepositData(
-        keyPair.getPublicKey(),
-        withdrawal_credentials,
-        UnsignedLong.valueOf(Constants.MAX_EFFECTIVE_BALANCE),
-        proof_of_possession);
-  }
-
-  public static DepositWithIndex randomDeposit() {
-    return new DepositWithIndex(
-        new SSZVector<>(32, Bytes32.random()),
-        randomDepositData(),
-        randomUnsignedLong().mod(UnsignedLong.valueOf(Constants.DEPOSIT_CONTRACT_TREE_DEPTH)));
-  }
-
   public static Deposit randomDepositWithoutIndex() {
     return new Deposit(
         new SSZVector<>(Constants.DEPOSIT_CONTRACT_TREE_DEPTH + 1, randomBytes32()),
         randomDepositData());
   }
 
-  public static Deposit randomDeposit(int seed) {
-    return new Deposit(
-        new SSZVector<>(Constants.DEPOSIT_CONTRACT_TREE_DEPTH + 1, randomBytes32(seed)),
-        randomDepositData(seed));
-  }
-
-  public static ArrayList<DepositWithIndex> randomDeposits(int num) {
-    ArrayList<DepositWithIndex> deposits = new ArrayList<>();
-
-    for (int i = 0; i < num; i++) {
-      deposits.add(randomDeposit());
-    }
-
-    return deposits;
-  }
-
-  public static ArrayList<Deposit> randomDepositsWithoutIndex(int num, int seed) {
-    ArrayList<Deposit> deposits = new ArrayList<Deposit>();
-
-    for (int i = 0; i < num; i++) {
-      deposits.add(randomDeposit(i + seed));
-    }
-
-    return deposits;
-  }
-
   public static VoluntaryExit randomVoluntaryExit() {
     return new VoluntaryExit(randomUnsignedLong(), randomUnsignedLong(), BLSSignature.random());
-  }
-
-  public static VoluntaryExit randomVoluntaryExit(int seed) {
-    return new VoluntaryExit(
-        randomUnsignedLong(seed), randomUnsignedLong(seed++), BLSSignature.random());
   }
 
   public static Transfer randomTransfer() {
@@ -433,22 +342,10 @@ public final class DataStructureUtil {
         BLSSignature.random());
   }
 
-  public static Transfer randomTransfer(int seed) {
-    return new Transfer(
-        randomUnsignedLong(seed),
-        randomUnsignedLong(seed + 1),
-        randomUnsignedLong(seed + 2),
-        randomUnsignedLong(seed + 3),
-        randomUnsignedLong(seed + 4),
-        BLSPublicKey.random(seed + 5),
-        BLSSignature.random(seed + 6));
-  }
-
   public static ArrayList<DepositWithIndex> newDeposits(int numDeposits) {
     ArrayList<DepositWithIndex> deposits = new ArrayList<>();
 
     for (int i = 0; i < numDeposits; i++) {
-      // https://github.com/ethereum/eth2.0-specs/blob/0.4.0/specs/validator/0_beacon-chain-validator.md#submit-deposit
       BLSKeyPair keypair = BLSKeyPair.random(i);
       DepositData depositData =
           new DepositData(
@@ -471,69 +368,6 @@ public final class DataStructureUtil {
     return deposits;
   }
 
-  public static BeaconBlock newBeaconBlock(
-      BeaconState state,
-      Bytes32 previous_block_root,
-      Bytes32 state_root,
-      SSZList<Deposit> deposits,
-      SSZList<Attestation> attestations,
-      int numValidators,
-      boolean interopActive) {
-    BeaconBlockBody beaconBlockBody = new BeaconBlockBody();
-    UnsignedLong slot = state.getSlot().plus(UnsignedLong.ONE);
-    if (interopActive) {
-      beaconBlockBody.setEth1_data(get_eth1_data_stub(state, compute_epoch_of_slot(slot)));
-    } else {
-      beaconBlockBody.setEth1_data(
-          new Eth1Data(
-              Constants.ZERO_HASH, UnsignedLong.valueOf(numValidators), Constants.ZERO_HASH));
-    }
-    beaconBlockBody.setDeposits(deposits);
-    beaconBlockBody.setAttestations(attestations);
-    return new BeaconBlock(
-        slot, previous_block_root, state_root, beaconBlockBody, BLSSignature.empty());
-  }
-
-  private static Eth1Data get_eth1_data_stub(BeaconState state, UnsignedLong current_epoch) {
-    UnsignedLong epochs_per_period =
-        UnsignedLong.valueOf(SLOTS_PER_ETH1_VOTING_PERIOD)
-            .dividedBy(UnsignedLong.valueOf(SLOTS_PER_EPOCH));
-    UnsignedLong voting_period = current_epoch.dividedBy(epochs_per_period);
-    return new Eth1Data(
-        Hash.sha2_256(SSZ.encodeUInt64(epochs_per_period.longValue())),
-        state.getEth1_deposit_index(),
-        Hash.sha2_256(Hash.sha2_256(SSZ.encodeUInt64(voting_period.longValue()))));
-  }
-
-  public static BeaconStateWithCache createInitialBeaconState(ArtemisConfiguration config) {
-    if (config.getInteropActive()) {
-      return createMockedStartInitialBeaconState(config);
-    }
-    return BeaconStateUtil.initialize_beacon_state_from_eth1_new(
-        Bytes32.ZERO,
-        UnsignedLong.valueOf(config.getInteropGenesisTime()),
-        newDeposits(config.getNumValidators()));
-  }
-
-  private static BeaconStateWithCache createMockedStartInitialBeaconState(
-      final ArtemisConfiguration config) {
-    final UnsignedLong genesisTime = UnsignedLong.valueOf(config.getInteropGenesisTime());
-    final int validatorCount = config.getNumValidators();
-    final List<BLSKeyPair> validatorKeys =
-        new MockStartValidatorKeyPairFactory().generateKeyPairs(0, validatorCount - 1);
-    STDOUT.log(
-        Level.INFO,
-        "Using mocked start interoperability mode with genesis time "
-            + genesisTime
-            + " and "
-            + validatorCount
-            + " validators",
-        Color.GREEN);
-    final List<DepositData> initialDepositData =
-        new MockStartDepositGenerator().createDeposits(validatorKeys);
-    return new MockStartBeaconStateGenerator()
-        .createInitialBeaconState(genesisTime, initialDepositData);
-  }
 
   public static Validator randomValidator() {
     return new Validator(

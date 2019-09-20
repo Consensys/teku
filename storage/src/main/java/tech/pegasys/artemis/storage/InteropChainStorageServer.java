@@ -32,7 +32,7 @@ import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
-import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
+import tech.pegasys.artemis.datastructures.util.StartupUtil;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.storage.events.DBStoreValidEvent;
 import tech.pegasys.artemis.storage.events.NodeStartEvent;
@@ -65,7 +65,7 @@ public class InteropChainStorageServer implements ChainStorage {
         throw new IllegalStateException("Failed to load initial state", e);
       }
     } else if (this.config.getDepositMode().equals(Constants.DEPOSIT_TEST)) {
-      BeaconStateWithCache initialState = DataStructureUtil.createInitialBeaconState(this.config);
+      BeaconStateWithCache initialState = StartupUtil.createInitialBeaconState(this.config);
       this.eventBus.post(createDBStoreValidEvent(initialState));
     }
   }

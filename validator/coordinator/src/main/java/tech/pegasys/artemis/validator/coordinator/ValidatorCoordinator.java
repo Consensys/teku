@@ -54,7 +54,7 @@ import tech.pegasys.artemis.datastructures.state.CrosslinkCommittee;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.datastructures.util.AttestationUtil;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
-import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
+import tech.pegasys.artemis.datastructures.util.StartupUtil;
 import tech.pegasys.artemis.proto.messagesigner.MessageSignerGrpc;
 import tech.pegasys.artemis.proto.messagesigner.SignatureRequest;
 import tech.pegasys.artemis.proto.messagesigner.SignatureResponse;
@@ -341,7 +341,7 @@ public class ValidatorCoordinator {
     }
 
     BeaconBlock newBlock =
-        DataStructureUtil.newBeaconBlock(
+            StartupUtil.newBeaconBlock(
             state,
             blockRoot,
             MockStateRoot,
