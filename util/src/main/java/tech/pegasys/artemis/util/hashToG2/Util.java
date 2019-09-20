@@ -35,7 +35,7 @@ public class Util {
   static BIG bigFromHex(String hex) {
     checkArgument(
         hex.length() == 2 + 2 * SIZE_OF_BIG,
-        "Expected %d chars, received %s.",
+        "Expected %s chars, received %s.",
         2 + 2 * SIZE_OF_BIG,
         hex.length());
     return BIG.fromBytes(Bytes.fromHexString(hex).toArray());
