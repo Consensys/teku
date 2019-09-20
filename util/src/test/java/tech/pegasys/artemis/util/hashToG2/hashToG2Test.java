@@ -18,6 +18,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static tech.pegasys.artemis.util.hashToG2.Util.bigFromHex;
 
+import com.google.common.base.Splitter;
 import com.google.errorprone.annotations.MustBeClosed;
 import java.io.File;
 import java.io.IOException;
@@ -87,15 +88,15 @@ public class hashToG2Test {
           sc = new Scanner(file, UTF_8.name());
           int i = 0;
           while (sc.hasNextLine()) {
-            String[] params = sc.nextLine().split(" ");
-            checkArgument(params.length == 6, "Wrong number of fields in input data.");
-            Bytes suite = Bytes.fromHexString(params[0]);
-            Bytes message = Bytes.fromHexString(params[1]);
+            List<String> params = Splitter.on(" ").omitEmptyStrings().splitToList(sc.nextLine());
+            checkArgument(params.size() == 6, "Wrong number of fields in input data.");
+            Bytes suite = Bytes.fromHexString(params.get(0));
+            Bytes message = Bytes.fromHexString(params.get(1));
             G2Point expected =
                 new G2Point(
                     new ECP2(
-                        new FP2(bigFromHex(params[2]), bigFromHex(params[3])),
-                        new FP2(bigFromHex(params[4]), bigFromHex(params[5]))));
+                        new FP2(bigFromHex(params.get(2)), bigFromHex(params.get(3))),
+                        new FP2(bigFromHex(params.get(4)), bigFromHex(params.get(5)))));
             argumentsList.add(Arguments.of(file.toString(), i, message, suite, expected));
             i++;
           }
