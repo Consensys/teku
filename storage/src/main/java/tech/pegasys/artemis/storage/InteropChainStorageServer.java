@@ -79,19 +79,24 @@ public class InteropChainStorageServer implements ChainStorage {
     UnsignedLong genesisTime = initialBeaconState.getGenesis_time();
     UnsignedLong currentTime = UnsignedLong.valueOf(System.currentTimeMillis() / 1000);
     UnsignedLong currentSlot = UnsignedLong.ZERO;
+    STDOUT.log(Level.INFO, "Current Time " + currentTime, Color.GREEN);
+    STDOUT.log(Level.INFO, "Genesis Time " + genesisTime, Color.GREEN);
     if (currentTime.compareTo(genesisTime) > 0) {
       UnsignedLong deltaTime = currentTime.minus(genesisTime);
       currentSlot = deltaTime.dividedBy(UnsignedLong.valueOf(SECONDS_PER_SLOT));
     } else {
       try {
+        UnsignedLong sleepTime =
+            genesisTime.minus(currentTime); // .dividedBy(UnsignedLong.valueOf(1000L));
         // sleep until genesis
-        Thread.sleep(genesisTime.minus(currentTime).longValue());
+        STDOUT.log(Level.INFO, "Sleep for " + sleepTime + " seconds.", Color.GREEN);
+        Thread.sleep(sleepTime.longValue());
       } catch (InterruptedException e) {
         e.printStackTrace();
         throw new IllegalArgumentException("Error in loadInitialState()");
       }
     }
-    return new DBStoreValidEvent(initialStore, currentSlot, genesisTime);
+    return new DBStoreValidEvent(initialStore, currentSlot, genesisTime, initialBeaconState);
   }
 
   public static Store get_genesis_store(BeaconStateWithCache genesis_state) {

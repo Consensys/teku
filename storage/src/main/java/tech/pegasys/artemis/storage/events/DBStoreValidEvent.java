@@ -14,18 +14,24 @@
 package tech.pegasys.artemis.storage.events;
 
 import com.google.common.primitives.UnsignedLong;
+import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.storage.Store;
 
 public class DBStoreValidEvent {
   private final Store store;
   private final UnsignedLong nodeSlot;
   private final UnsignedLong genesisTime;
+  private final BeaconStateWithCache beaconState;
 
   public DBStoreValidEvent(
-      final Store store, final UnsignedLong nodeSlot, final UnsignedLong genesisTime) {
+      final Store store,
+      final UnsignedLong nodeSlot,
+      final UnsignedLong genesisTime,
+      final BeaconStateWithCache beaconState) {
     this.store = store;
     this.nodeSlot = nodeSlot;
     this.genesisTime = genesisTime;
+    this.beaconState = beaconState;
   }
 
   public Store getStore() {
@@ -38,5 +44,9 @@ public class DBStoreValidEvent {
 
   public UnsignedLong getGenesisTime() {
     return genesisTime;
+  }
+
+  public BeaconStateWithCache getBeaconState() {
+    return beaconState;
   }
 }

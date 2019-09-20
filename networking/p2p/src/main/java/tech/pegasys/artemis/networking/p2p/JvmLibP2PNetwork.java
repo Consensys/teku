@@ -35,6 +35,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import org.apache.logging.log4j.Level;
+import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.artemis.networking.p2p.api.P2PNetwork;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.GossipMessageHandler;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.JvmLibp2pConfig;
@@ -56,6 +57,7 @@ public class JvmLibP2PNetwork implements P2PNetwork {
         config
             .getPrivateKey()
             .orElseGet(() -> KeyKt.generateKeyPair(KEY_TYPE.SECP256K1).component1());
+    STDOUT.log(Level.INFO, "Private Key = " + Bytes.wrap(this.privKey.bytes()).toHexString());
     this.config = config;
     scheduler =
         Executors.newSingleThreadScheduledExecutor(
@@ -114,6 +116,7 @@ public class JvmLibP2PNetwork implements P2PNetwork {
   }
 
   @Override
+  @SuppressWarnings("CatchAndPrintStackTrace")
   public void run() {
     STDOUT.log(Level.INFO, "Starting libp2p network...");
     host.start()
@@ -127,7 +130,11 @@ public class JvmLibP2PNetwork implements P2PNetwork {
                       + PeerId.fromPubKey(privKey.publicKey()).toBase58());
               return null;
             });
-
+    /*try {
+      Thread.sleep(2000);
+    } catch (InterruptedException e) {
+      e.printStackTrace();
+    }*/
     for (String peer : config.getPeers()) {
       connect(peer);
     }

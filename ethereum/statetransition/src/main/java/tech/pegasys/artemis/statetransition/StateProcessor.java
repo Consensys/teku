@@ -89,6 +89,7 @@ public class StateProcessor {
   @Subscribe
   public void onEth2Genesis(GenesisEvent genesisEvent) {
     STDOUT.log(Level.INFO, "******* Eth2Genesis Event detected ******* : ");
+    this.initialState = genesisEvent.getBeaconState();
     Store store = chainStorageClient.getStore();
     if (store == null) {
       store = get_genesis_store(initialState);
@@ -127,7 +128,7 @@ public class StateProcessor {
         if (is_valid_genesis_stateSim(candidate_state)) {
           setSimulationGenesisTime(candidate_state);
           initialState = candidate_state;
-          this.eventBus.post(new GenesisEvent());
+          this.eventBus.post(new GenesisEvent(initialState));
         }
 
       } else {
@@ -138,7 +139,7 @@ public class StateProcessor {
                 deposits);
         if (is_valid_genesis_state(candidate_state)) {
           initialState = candidate_state;
-          this.eventBus.post(new GenesisEvent());
+          this.eventBus.post(new GenesisEvent(initialState));
         }
       }
     }
