@@ -31,11 +31,10 @@ import tech.pegasys.artemis.util.cli.VersionProvider;
 
 @Command(
     name = "peer",
-    description = "Generate Peer ID",
+    description = "Commands for LibP2P PeerID",
     abbreviateSynopsis = true,
     mixinStandardHelpOptions = true,
     versionProvider = VersionProvider.class,
-    header = "Usage:",
     synopsisHeading = "%n",
     descriptionHeading = "%nDescription:%n%n",
     optionListHeading = "%nOptions:%n",
@@ -49,7 +48,6 @@ public class PeerCommand {
       mixinStandardHelpOptions = true,
       abbreviateSynopsis = true,
       versionProvider = VersionProvider.class,
-      header = "Usage:",
       synopsisHeading = "%n",
       descriptionHeading = "%nDescription:%n%n",
       optionListHeading = "%nOptions:%n",
