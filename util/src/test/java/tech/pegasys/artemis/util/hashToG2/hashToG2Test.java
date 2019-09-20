@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.util.hashToG2;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static tech.pegasys.artemis.util.hashToG2.Util.bigFromHex;
@@ -43,7 +44,7 @@ import tech.pegasys.artemis.util.mikuli.G2Point;
  * https://github.com/kwantam/bls_sigs_ref/tree/master/test-vectors/hash_g2 processed for easier
  * ingestion.
  *
- * <p>Each test is six lines
+ * <p>Each test is s line containing the following parameters separated by spaces:
  *
  * <ul>
  *   <li>The cipher suite (currently 0x02 for all tests)
@@ -86,17 +87,15 @@ public class hashToG2Test {
           sc = new Scanner(file, UTF_8.name());
           int i = 0;
           while (sc.hasNextLine()) {
-            Bytes suite = Bytes.fromHexString(sc.nextLine());
-            Bytes message = Bytes.fromHexString(sc.nextLine());
-            String x0 = sc.nextLine();
-            String x1 = sc.nextLine();
-            String y0 = sc.nextLine();
-            String y1 = sc.nextLine();
+            String[] params = sc.nextLine().split(" ");
+            checkArgument(params.length == 6, "Wrong number of fields in input data.");
+            Bytes suite = Bytes.fromHexString(params[0]);
+            Bytes message = Bytes.fromHexString(params[1]);
             G2Point expected =
                 new G2Point(
                     new ECP2(
-                        new FP2(bigFromHex(x0), bigFromHex(x1)),
-                        new FP2(bigFromHex(y0), bigFromHex(y1))));
+                        new FP2(bigFromHex(params[2]), bigFromHex(params[3])),
+                        new FP2(bigFromHex(params[4]), bigFromHex(params[5]))));
             argumentsList.add(Arguments.of(file.toString(), i, message, suite, expected));
             i++;
           }
