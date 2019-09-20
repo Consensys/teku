@@ -24,6 +24,8 @@ import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Scanner;
 import java.util.stream.Collectors;
@@ -57,48 +59,53 @@ public class hashToG2Test {
   private static final Path pathToTests =
       Paths.get(System.getProperty("user.dir"), "src", "test", "resources", "hashToG2TestVectors");
 
-  @ParameterizedTest(name = "{index}. Filename={0}")
+  @ParameterizedTest(name = "{index}. Filename={0} Test={1}")
   @MethodSource({
-    "getTest",
+    "getTestCase",
   })
-  // TODO: stream individual test cases rather than whole files
-  void referenceTest(String fileName) {
-    Scanner sc;
-    File file = new File(fileName);
-    try {
-      sc = new Scanner(file, UTF_8.name());
-      int i = 0;
-      while (sc.hasNextLine()) {
-        i++;
-        Bytes suite = Bytes.fromHexString(sc.nextLine());
-        Bytes message = Bytes.fromHexString(sc.nextLine());
-        String x0 = sc.nextLine();
-        String x1 = sc.nextLine();
-        String y0 = sc.nextLine();
-        String y1 = sc.nextLine();
-        G2Point expected =
-            new G2Point(
-                new ECP2(
-                    new FP2(bigFromHex(x0), bigFromHex(x1)),
-                    new FP2(bigFromHex(y0), bigFromHex(y1))));
-        G2Point actual = hashToCurve.hashToCurve(message, suite);
-        assertEquals(expected, actual, "Failed test " + i + " in file " + file);
-      }
-    } catch (IOException e) {
-      throw new UncheckedIOException(e);
-    }
+  void referenceTest(
+      String fileName, int testNumber, Bytes message, Bytes suite, G2Point expected) {
+    G2Point actual = hashToCurve.hashToCurve(message, suite);
+    assertEquals(expected, actual);
   }
 
   @MustBeClosed
-  static Stream<Arguments> getTest() {
+  static Stream<Arguments> getTestCase() {
+    Scanner sc;
     List<String> fileNames;
     try (Stream<Path> walk = Files.walk(pathToTests)) {
 
       fileNames =
           walk.filter(Files::isRegularFile).map(x -> x.toString()).collect(Collectors.toList());
 
-      Stream<Arguments> arguments = fileNames.stream().map(fileName -> Arguments.of(fileName));
-      return arguments;
+      Iterator fileNamesIterator = fileNames.iterator();
+      ArrayList<Arguments> argumentsList = new ArrayList<Arguments>();
+      while (fileNamesIterator.hasNext()) {
+        File file = new File(fileNamesIterator.next().toString());
+        try {
+          sc = new Scanner(file, UTF_8.name());
+          int i = 0;
+          while (sc.hasNextLine()) {
+            Bytes suite = Bytes.fromHexString(sc.nextLine());
+            Bytes message = Bytes.fromHexString(sc.nextLine());
+            String x0 = sc.nextLine();
+            String x1 = sc.nextLine();
+            String y0 = sc.nextLine();
+            String y1 = sc.nextLine();
+            G2Point expected =
+                new G2Point(
+                    new ECP2(
+                        new FP2(bigFromHex(x0), bigFromHex(x1)),
+                        new FP2(bigFromHex(y0), bigFromHex(y1))));
+            argumentsList.add(Arguments.of(file.toString(), i, message, suite, expected));
+            i++;
+          }
+        } catch (IOException e) {
+          throw new UncheckedIOException(e);
+        }
+      }
+
+      return argumentsList.stream();
 
     } catch (IOException e) {
       throw new UncheckedIOException(e);
