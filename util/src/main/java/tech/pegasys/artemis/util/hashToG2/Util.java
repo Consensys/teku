@@ -22,6 +22,8 @@ import org.apache.tuweni.bytes.Bytes;
 
 public class Util {
 
+  private static final int SIZE_OF_BIG = BIG.MODBYTES;
+
   /**
    * Create a BIG from a hex string.
    *
@@ -31,7 +33,11 @@ public class Util {
    * @return a BIG with the value provided
    */
   static BIG bigFromHex(String hex) {
-    checkArgument(hex.length() == 98, "Expected 98 chars, received %s.", hex.length());
+    checkArgument(
+        hex.length() == 2 + 2 * SIZE_OF_BIG,
+        "Expected %d chars, received %s.",
+        2 + 2 * SIZE_OF_BIG,
+        hex.length());
     return BIG.fromBytes(Bytes.fromHexString(hex).toArray());
   }
 
@@ -42,16 +48,16 @@ public class Util {
    * @return a BIG with the value provided
    */
   static BIG bigFromBigInt(BigInteger bigInt) {
-    byte[] bytes = new byte[48];
+    byte[] bytes = new byte[SIZE_OF_BIG];
     byte[] inputBytes = bigInt.toByteArray();
     checkArgument(
-        inputBytes.length <= 48,
+        inputBytes.length <= SIZE_OF_BIG,
         "The BigInteger is too large to convert to a BIG: "
             + bigInt
             + ". It needs "
             + inputBytes.length
             + " bytes.");
-    arraycopy(inputBytes, 0, bytes, 48 - inputBytes.length, inputBytes.length);
+    arraycopy(inputBytes, 0, bytes, SIZE_OF_BIG - inputBytes.length, inputBytes.length);
     return BIG.fromBytes(bytes);
   }
 }

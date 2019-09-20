@@ -28,8 +28,6 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 public class Helper {
 
-  static final int SHA256_HASH_SIZE = 32;
-
   // The field modulus
   static final BIG P = new BIG(ROM.Modulus);
 
@@ -150,6 +148,9 @@ public class Helper {
   private static final DBIGExtended EXPONENT =
       new DBIGExtended(BIG.mul(P.plus(THREE), P.minus(THREE))).fshr(4);
 
+  private static final int SHA256_HASH_SIZE = 32;
+  private static final int SHA2_BLOCK_SIZE = 64;
+
   /**
    * Tests whether the given point lies on the BLS12-381 curve.
    *
@@ -185,7 +186,7 @@ public class Helper {
     Security.addProvider(new BouncyCastleProvider());
 
     // SHA256 blocksize in bytes
-    int blockSize = 64;
+    int blockSize = SHA2_BLOCK_SIZE;
     byte ipad = (byte) 0x36;
     byte opad = (byte) 0x5c;
 

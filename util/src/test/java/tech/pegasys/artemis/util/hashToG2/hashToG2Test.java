@@ -13,12 +13,14 @@
 
 package tech.pegasys.artemis.util.hashToG2;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static tech.pegasys.artemis.util.hashToG2.Util.bigFromHex;
 
 import com.google.errorprone.annotations.MustBeClosed;
 import java.io.File;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -64,7 +66,7 @@ public class hashToG2Test {
     Scanner sc;
     File file = new File(fileName);
     try {
-      sc = new Scanner(file);
+      sc = new Scanner(file, UTF_8.name());
       int i = 0;
       while (sc.hasNextLine()) {
         i++;
@@ -83,7 +85,7 @@ public class hashToG2Test {
         assertEquals(expected, actual, "Failed test " + i + " in file " + file);
       }
     } catch (IOException e) {
-      e.printStackTrace();
+      throw new UncheckedIOException(e);
     }
   }
 
@@ -99,8 +101,7 @@ public class hashToG2Test {
       return arguments;
 
     } catch (IOException e) {
-      e.printStackTrace();
-      return null;
+      throw new UncheckedIOException(e);
     }
   }
 }
