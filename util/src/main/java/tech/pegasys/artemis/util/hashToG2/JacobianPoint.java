@@ -15,7 +15,6 @@ package tech.pegasys.artemis.util.hashToG2;
 
 import static tech.pegasys.artemis.util.hashToG2.FP2Immutable.ONE;
 import static tech.pegasys.artemis.util.hashToG2.FP2Immutable.ZERO;
-import static tech.pegasys.artemis.util.hashToG2.FP2Immutable.pow;
 
 import java.util.Objects;
 import org.apache.milagro.amcl.BLS381.ECP2;
@@ -176,7 +175,7 @@ final class JacobianPoint {
     if (isInfinity()) {
       return new ECP2();
     }
-    FP2Immutable z3inv = pow(z, 3).inverse();
+    FP2Immutable z3inv = z.pow(3).inverse();
     return new ECP2(x.mul(z).mul(z3inv).getFp2(), y.mul(z3inv).getFp2());
   }
 

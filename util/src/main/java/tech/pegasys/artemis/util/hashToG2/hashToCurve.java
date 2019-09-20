@@ -13,11 +13,11 @@
 
 package tech.pegasys.artemis.util.hashToG2;
 
-import static tech.pegasys.artemis.util.hashToG2.Util.clear_h2;
-import static tech.pegasys.artemis.util.hashToG2.Util.hashToBase;
-import static tech.pegasys.artemis.util.hashToG2.Util.iso3;
-import static tech.pegasys.artemis.util.hashToG2.Util.mapToCurve;
-import static tech.pegasys.artemis.util.hashToG2.Util.onCurveG2;
+import static tech.pegasys.artemis.util.hashToG2.Helper.clear_h2;
+import static tech.pegasys.artemis.util.hashToG2.Helper.hashToBase;
+import static tech.pegasys.artemis.util.hashToG2.Helper.iso3;
+import static tech.pegasys.artemis.util.hashToG2.Helper.mapToCurve;
+import static tech.pegasys.artemis.util.hashToG2.Helper.onCurveG2;
 
 import java.nio.charset.StandardCharsets;
 import org.apache.tuweni.bytes.Bytes;

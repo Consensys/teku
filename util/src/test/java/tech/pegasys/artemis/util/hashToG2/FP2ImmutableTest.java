@@ -19,8 +19,7 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static tech.pegasys.artemis.util.hashToG2.FP2Immutable.ONE;
 import static tech.pegasys.artemis.util.hashToG2.FP2Immutable.ZERO;
-import static tech.pegasys.artemis.util.hashToG2.FP2Immutable.pow;
-import static tech.pegasys.artemis.util.hashToG2.Util.P;
+import static tech.pegasys.artemis.util.hashToG2.Helper.P;
 
 import org.apache.milagro.amcl.BLS381.BIG;
 import org.apache.milagro.amcl.BLS381.DBIG;
@@ -128,23 +127,23 @@ public class FP2ImmutableTest {
   // integer exponent
   @Test
   void powIntTest() {
-    assertEquals(ONE, pow(ROOT, 0));
-    assertEquals(ROOT, pow(ROOT, 1));
-    assertEquals(ONE, pow(ROOT, 8));
-    assertEquals(ROOT, pow(ROOT, 9));
-    assertEquals(ONE, pow(ROOT, 9872));
-    assertEquals(ROOT, pow(ROOT, 9873));
+    assertEquals(ONE, ROOT.pow(0));
+    assertEquals(ROOT, ROOT.pow(1));
+    assertEquals(ONE, ROOT.pow(8));
+    assertEquals(ROOT, ROOT.pow(9));
+    assertEquals(ONE, ROOT.pow(9872));
+    assertEquals(ROOT, ROOT.pow(9873));
   }
 
   // DBIG exponent
   @Test
   void powDbigTest() {
-    assertEquals(ONE, pow(ROOT, new DBIG(0)));
-    assertEquals(ROOT, pow(ROOT, new DBIG(1)));
-    assertEquals(ONE, pow(ROOT, new DBIG(8)));
-    assertEquals(ROOT, pow(ROOT, new DBIG(9)));
-    assertEquals(ONE, pow(ROOT, new DBIG(9872)));
-    assertEquals(ROOT, pow(ROOT, new DBIG(9873)));
+    assertEquals(ONE, ROOT.pow(new DBIG(0)));
+    assertEquals(ROOT, ROOT.pow(new DBIG(1)));
+    assertEquals(ONE, ROOT.pow(new DBIG(8)));
+    assertEquals(ROOT, ROOT.pow(new DBIG(9)));
+    assertEquals(ONE, ROOT.pow(new DBIG(9872)));
+    assertEquals(ROOT, ROOT.pow(new DBIG(9873)));
   }
 
   // TODO: more rigorous tests (swapping getA and getB in the routine didn't change the result!)
