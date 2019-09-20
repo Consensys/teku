@@ -37,42 +37,23 @@ import tech.pegasys.artemis.statetransition.util.BlockProcessingException;
 @ExtendWith(BouncyCastleExtension.class)
 public class proposer_slashing extends TestSuite {
 
-  @ParameterizedTest(name = "{index}. mainnet process proposer slashing: {4}")
-  @MethodSource("mainnetProposerSlashingSetup")
-  void mainnetProcessProposerSlashing(
-      ProposerSlashing proposerSlashing,
-      BeaconState pre,
-      BeaconState post,
-      Boolean succesTest,
-      String testName) {
+  @ParameterizedTest(name = "{index}. mainnet process proposer slashing")
+  @MethodSource({"mainnetProposerSlashingSetup", "minimalProposerSlashingSetup"})
+  void processProposerSlashing(ProposerSlashing proposerSlashing, BeaconState pre) {
     List<ProposerSlashing> proposerSlashings = new ArrayList<>();
     proposerSlashings.add(proposerSlashing);
-    if (succesTest) {
-      assertDoesNotThrow(() -> process_proposer_slashings(pre, proposerSlashings));
-      assertEquals(pre, post);
-    } else {
-      assertThrows(
-          BlockProcessingException.class, () -> process_proposer_slashings(pre, proposerSlashings));
-    }
+    assertThrows(
+        BlockProcessingException.class, () -> process_proposer_slashings(pre, proposerSlashings));
   }
 
-  @ParameterizedTest(name = "{index}. minimal process proposer slashing: {4}")
-  @MethodSource("minimalProposerSlashingSetup")
-  void minimalProcessProposerSlashing(
-      ProposerSlashing proposerSlashing,
-      BeaconState pre,
-      BeaconState post,
-      Boolean succesTest,
-      String testName) {
+  @ParameterizedTest(name = "{index}. mainnet process proposer slashing")
+  @MethodSource({"mainnetProposerSlashingSuccessSetup", "minimalProposerSlashingSuccessSetup"})
+  void processProposerSlashing(
+      ProposerSlashing proposerSlashing, BeaconState pre, BeaconState post) {
     List<ProposerSlashing> proposerSlashings = new ArrayList<>();
     proposerSlashings.add(proposerSlashing);
-    if (succesTest) {
-      assertDoesNotThrow(() -> process_proposer_slashings(pre, proposerSlashings));
-      assertEquals(pre, post);
-    } else {
-      assertThrows(
-          BlockProcessingException.class, () -> process_proposer_slashings(pre, proposerSlashings));
-    }
+    assertDoesNotThrow(() -> process_proposer_slashings(pre, proposerSlashings));
+    assertEquals(pre, post);
   }
 
   @MustBeClosed
@@ -89,5 +70,22 @@ public class proposer_slashing extends TestSuite {
   @MustBeClosed
   static Stream<Arguments> mainnetProposerSlashingSetup() throws Exception {
     return proposerSlashingSetup("mainnet");
+  }
+
+  @MustBeClosed
+  static Stream<Arguments> proposerSlashingSuccessSetup(String config) throws Exception {
+    Path path = Paths.get(config, "phase0", "operations", "proposer_slashing", "pyspec_tests");
+    return operationSuccessSetup(
+        path, Paths.get(config), "proposer_slashing.ssz", ProposerSlashing.class);
+  }
+
+  @MustBeClosed
+  static Stream<Arguments> minimalProposerSlashingSuccessSetup() throws Exception {
+    return proposerSlashingSuccessSetup("minimal");
+  }
+
+  @MustBeClosed
+  static Stream<Arguments> mainnetProposerSlashingSuccessSetup() throws Exception {
+    return proposerSlashingSuccessSetup("mainnet");
   }
 }
