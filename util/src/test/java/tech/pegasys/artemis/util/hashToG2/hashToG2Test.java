@@ -78,7 +78,7 @@ public class hashToG2Test {
       fileNames =
           walk.filter(Files::isRegularFile).map(x -> x.toString()).collect(Collectors.toList());
 
-      Iterator fileNamesIterator = fileNames.iterator();
+      Iterator<String> fileNamesIterator = fileNames.iterator();
       ArrayList<Arguments> argumentsList = new ArrayList<Arguments>();
       while (fileNamesIterator.hasNext()) {
         File file = new File(fileNamesIterator.next().toString());
