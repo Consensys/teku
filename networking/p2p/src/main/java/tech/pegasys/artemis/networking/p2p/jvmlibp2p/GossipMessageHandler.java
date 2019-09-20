@@ -68,7 +68,7 @@ public class GossipMessageHandler implements Consumer<MessageApi> {
 
   @Override
   public void accept(MessageApi msg) {
-    STDOUT.log(Level.INFO, "Message received " + msg.getSeqId());
+    STDOUT.log(Level.DEBUG, "Message received " + msg.getSeqId());
     if (msg.getTopics().contains(BLOCKS_TOPIC)) {
       BeaconBlock block =
           SimpleOffsetSerializer.deserialize(Bytes.wrapByteBuf(msg.getData()), BeaconBlock.class);
