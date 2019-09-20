@@ -341,7 +341,7 @@ public class ValidatorCoordinator {
     }
 
     BeaconBlock newBlock =
-            StartupUtil.newBeaconBlock(
+        StartupUtil.newBeaconBlock(
             state,
             blockRoot,
             MockStateRoot,

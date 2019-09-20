@@ -13,19 +13,13 @@
 
 package tech.pegasys.artemis.datastructures.util;
 
-import static java.lang.Math.toIntExact;
 import static tech.pegasys.artemis.datastructures.Constants.SLOTS_PER_EPOCH;
 import static tech.pegasys.artemis.datastructures.Constants.SLOTS_PER_ETH1_VOTING_PERIOD;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_of_slot;
 
 import com.google.common.primitives.UnsignedLong;
-import java.nio.ByteBuffer;
-import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
-import java.util.function.Supplier;
-import java.util.stream.LongStream;
 import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.Hash;
@@ -33,34 +27,18 @@ import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockBody;
-import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
-import tech.pegasys.artemis.datastructures.operations.AttestationData;
-import tech.pegasys.artemis.datastructures.operations.AttesterSlashing;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.DepositData;
 import tech.pegasys.artemis.datastructures.operations.DepositWithIndex;
-import tech.pegasys.artemis.datastructures.operations.IndexedAttestation;
-import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
-import tech.pegasys.artemis.datastructures.operations.Transfer;
-import tech.pegasys.artemis.datastructures.operations.VoluntaryExit;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
-import tech.pegasys.artemis.datastructures.state.Checkpoint;
-import tech.pegasys.artemis.datastructures.state.Crosslink;
-import tech.pegasys.artemis.datastructures.state.Fork;
-import tech.pegasys.artemis.datastructures.state.PendingAttestation;
-import tech.pegasys.artemis.datastructures.state.Validator;
-import tech.pegasys.artemis.util.SSZTypes.Bitlist;
-import tech.pegasys.artemis.util.SSZTypes.Bitvector;
-import tech.pegasys.artemis.util.SSZTypes.Bytes4;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.SSZTypes.SSZVector;
 import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.alogger.ALogger.Color;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
-import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 
@@ -95,37 +73,37 @@ public final class StartupUtil {
   }
 
   public static BeaconBlock newBeaconBlock(
-          BeaconState state,
-          Bytes32 previous_block_root,
-          Bytes32 state_root,
-          SSZList<Deposit> deposits,
-          SSZList<Attestation> attestations,
-          int numValidators,
-          boolean interopActive) {
+      BeaconState state,
+      Bytes32 previous_block_root,
+      Bytes32 state_root,
+      SSZList<Deposit> deposits,
+      SSZList<Attestation> attestations,
+      int numValidators,
+      boolean interopActive) {
     BeaconBlockBody beaconBlockBody = new BeaconBlockBody();
     UnsignedLong slot = state.getSlot().plus(UnsignedLong.ONE);
     if (interopActive) {
       beaconBlockBody.setEth1_data(get_eth1_data_stub(state, compute_epoch_of_slot(slot)));
     } else {
       beaconBlockBody.setEth1_data(
-              new Eth1Data(
-                      Constants.ZERO_HASH, UnsignedLong.valueOf(numValidators), Constants.ZERO_HASH));
+          new Eth1Data(
+              Constants.ZERO_HASH, UnsignedLong.valueOf(numValidators), Constants.ZERO_HASH));
     }
     beaconBlockBody.setDeposits(deposits);
     beaconBlockBody.setAttestations(attestations);
     return new BeaconBlock(
-            slot, previous_block_root, state_root, beaconBlockBody, BLSSignature.empty());
+        slot, previous_block_root, state_root, beaconBlockBody, BLSSignature.empty());
   }
 
   private static Eth1Data get_eth1_data_stub(BeaconState state, UnsignedLong current_epoch) {
     UnsignedLong epochs_per_period =
-            UnsignedLong.valueOf(SLOTS_PER_ETH1_VOTING_PERIOD)
-                    .dividedBy(UnsignedLong.valueOf(SLOTS_PER_EPOCH));
+        UnsignedLong.valueOf(SLOTS_PER_ETH1_VOTING_PERIOD)
+            .dividedBy(UnsignedLong.valueOf(SLOTS_PER_EPOCH));
     UnsignedLong voting_period = current_epoch.dividedBy(epochs_per_period);
     return new Eth1Data(
-            Hash.sha2_256(SSZ.encodeUInt64(epochs_per_period.longValue())),
-            state.getEth1_deposit_index(),
-            Hash.sha2_256(Hash.sha2_256(SSZ.encodeUInt64(voting_period.longValue()))));
+        Hash.sha2_256(SSZ.encodeUInt64(epochs_per_period.longValue())),
+        state.getEth1_deposit_index(),
+        Hash.sha2_256(Hash.sha2_256(SSZ.encodeUInt64(voting_period.longValue()))));
   }
 
   public static BeaconStateWithCache createInitialBeaconState(ArtemisConfiguration config) {
@@ -157,5 +135,4 @@ public final class StartupUtil {
     return new MockStartBeaconStateGenerator()
         .createInitialBeaconState(genesisTime, initialDepositData);
   }
-
 }
