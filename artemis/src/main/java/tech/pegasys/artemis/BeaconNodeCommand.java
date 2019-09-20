@@ -28,7 +28,6 @@ import tech.pegasys.artemis.util.config.ArtemisConfiguration;
     description = "Run the Artemis beacon chain client and validator",
     mixinStandardHelpOptions = true,
     versionProvider = VersionProvider.class,
-    header = "Usage:",
     synopsisHeading = "%n",
     descriptionHeading = "%nDescription:%n%n",
     optionListHeading = "%nOptions:%n",

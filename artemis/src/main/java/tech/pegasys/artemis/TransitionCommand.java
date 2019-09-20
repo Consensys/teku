@@ -23,6 +23,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
+import picocli.CommandLine;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Option;
@@ -41,17 +42,16 @@ import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 
 @Command(
     name = "transition",
-    description = "Run state transitions",
+    description = "Manually run state transitions",
     abbreviateSynopsis = true,
     mixinStandardHelpOptions = true,
     versionProvider = VersionProvider.class,
-    header = "Usage:",
     synopsisHeading = "%n",
     descriptionHeading = "%nDescription:%n%n",
     optionListHeading = "%nOptions:%n",
     footerHeading = "%n",
     footer = "Artemis is licensed under the Apache License 2.0")
-public class TransitionCommand {
+public class TransitionCommand implements Runnable {
 
   @Command(
       name = "blocks",
@@ -59,7 +59,6 @@ public class TransitionCommand {
       mixinStandardHelpOptions = true,
       abbreviateSynopsis = true,
       versionProvider = VersionProvider.class,
-      header = "Usage:",
       synopsisHeading = "%n",
       descriptionHeading = "%nDescription:%n%n",
       optionListHeading = "%nOptions:%n",
@@ -88,7 +87,6 @@ public class TransitionCommand {
       mixinStandardHelpOptions = true,
       abbreviateSynopsis = true,
       versionProvider = VersionProvider.class,
-      header = "Usage:",
       synopsisHeading = "%n",
       descriptionHeading = "%nDescription:%n%n",
       optionListHeading = "%nOptions:%n",
@@ -155,6 +153,11 @@ public class TransitionCommand {
   private BeaconBlock readBlock(final String path) throws IOException {
     final Bytes blockData = Bytes.wrap(Files.readAllBytes(Path.of(path)));
     return SimpleOffsetSerializer.deserialize(blockData, BeaconBlock.class);
+  }
+
+  @Override
+  public void run() {
+    CommandLine.usage(this, System.out);
   }
 
   public static class InAndOutParams {
