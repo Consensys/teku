@@ -168,12 +168,14 @@ public class hashToG2Test {
   }
 
   static class oldHashToG2 implements benchmarkTarget {
+    @Override
     public void target(Bytes message, Bytes suite) {
       hashToG2(message, suite);
     }
   }
 
   static class newHashToG2 implements benchmarkTarget {
+    @Override
     public void target(Bytes message, Bytes suite) {
       hashToCurve(message, suite);
     }

@@ -88,7 +88,6 @@ public class hashToCurve {
    * @param message the message to be hashed. This is usually the 32 byte message digest
    * @return a point from the G2 group representing the message hash
    */
-  //
   static G2Point hashToCurve(Bytes message) {
     return hashToCurve(message, CIPHER_SUITE);
   }

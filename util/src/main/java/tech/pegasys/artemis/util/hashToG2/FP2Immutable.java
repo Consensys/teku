@@ -13,7 +13,6 @@
 
 package tech.pegasys.artemis.util.hashToG2;
 
-import static tech.pegasys.artemis.util.hashToG2.Helper.P;
 import static tech.pegasys.artemis.util.hashToG2.Util.bigFromHex;
 
 import java.util.Objects;
@@ -33,6 +32,11 @@ public final class FP2Immutable {
 
   static final FP2Immutable ZERO = new FP2Immutable(0);
   static final FP2Immutable ONE = new FP2Immutable(1);
+
+  // The threshold for ordering elements is (P - 1) // 2
+  static final BIG THRESHOLD =
+      bigFromHex(
+          "0x0d0088f51cbff34d258dd3db21a5d66bb23ba5c279c2895fb39869507b587b120f55ffff58a9ffffdcff7fffffffd555");
 
   private final FP2 fp2;
 
@@ -156,27 +160,22 @@ public final class FP2Immutable {
    * @return -1 if x is the lexically larger of x and -1 * x, else returns 1
    */
   int sgn0() {
-    // Threshold is (P - 1) // 2
-    BIG thresh = new BIG(P).minus(new BIG(1));
-    thresh.fshr(1);
-    fp2.norm();
-    int cmp = BIG.comp(fp2.getB(), thresh);
-    if (cmp == 0) {
-      cmp = BIG.comp(fp2.getA(), thresh);
+    if (fp2.getB().iszilch()) {
+      return BIG.comp(fp2.getA(), THRESHOLD) > 0 ? -1 : 1;
     }
-    return cmp == 0 ? 1 : -cmp;
+    return BIG.comp(fp2.getB(), THRESHOLD) > 0 ? -1 : 1;
   }
 
   /**
    * Raise this element to an integer exponent.
    *
    * @param exponent the exponent
-   * @return the field point raised to the exponent and reduced
+   * @return the field point raised to the exponent
    */
   FP2Immutable pow(int exponent) {
     if (exponent == 0) return ONE;
     if (exponent == 1) return this;
-    if (exponent == 2) return this.sqr().reduce();
+    if (exponent == 2) return this.sqr();
     FP2Immutable result = ONE;
     FP2Immutable tmp = new FP2Immutable(this);
     while (exponent > 0) {
@@ -186,7 +185,7 @@ public final class FP2Immutable {
       tmp = tmp.sqr();
       exponent /= 2;
     }
-    return result.reduce();
+    return result;
   }
 
   /**
@@ -198,7 +197,6 @@ public final class FP2Immutable {
   FP2Immutable pow(DBIG exponent) {
     FP2Immutable result = ONE;
     DBIGExtended exp = new DBIGExtended(exponent);
-    exp.norm();
     FP2Immutable tmp = new FP2Immutable(this);
     while (!exp.iszilch()) {
       if (exp.parity() == 1) {
@@ -207,7 +205,7 @@ public final class FP2Immutable {
       tmp = tmp.sqr();
       exp.shr(1);
     }
-    return result.reduce();
+    return result;
   }
 
   FP2 getFp2() {

@@ -15,7 +15,7 @@ package tech.pegasys.artemis.util.hashToG2;
 
 import org.apache.milagro.amcl.BLS381.DBIG;
 
-/** Extend Milagro's DBIG class to add a couple of useful functions. */
+/** Extend Milagro's DBIG class to add a couple of useful methods. */
 public class DBIGExtended extends DBIG {
 
   DBIGExtended(DBIG dbig) {

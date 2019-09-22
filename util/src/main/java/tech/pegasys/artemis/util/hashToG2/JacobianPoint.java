@@ -23,9 +23,8 @@ import org.apache.milagro.amcl.BLS381.ECP2;
  * The new hash-to-G2 algorithm initially generates points that are not on the curve. This prevents
  * us from using the Milagro ECP2 class. Moreover, the points are represented in Jacobian
  * coordinates rather than the projective coordinates that Milagro uses internally. This class
- * provides an implementation of the minimum necessary functions to implement hash-to-G2. It is
- * based on the Python reference code at
- * https://github.com/kwantam/bls_sigs_ref/tree/master/python-impl
+ * provides an implementation of the minimum necessary methods to implement hash-to-G2. It is based
+ * on the Python reference code at https://github.com/kwantam/bls_sigs_ref/tree/master/python-impl
  *
  * <p>The point is intended to be immutable and returns copies where required.
  */
@@ -150,7 +149,6 @@ final class JacobianPoint {
     FP2Immutable y3 = rr.mul(v.sub(x3)).sub(s1.mul(j).dbl());
     FP2Immutable z3 = z1.mul(z2).mul(h).dbl();
 
-    // TODO - do we need to reduce() the coords?
     return z3.iszilch() ? INFINITY : new JacobianPoint(x3, y3, z3);
   }
 

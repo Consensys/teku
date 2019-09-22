@@ -461,19 +461,12 @@ public class Helper {
 
   // Shortcut Frobenius evaluation that avoids going all the way to Fq12
   static FP2Immutable qi_y(FP2Immutable y) {
-    // TODO: what a mess! y0 - y1 causes havoc when it is negative. Also be careful about
-    // immutability
-    BIG y0;
-    BIG y1 = new BIG(y.getFp2().getB());
-    y0 = y.getFp2().getA();
-    BIG y0py1 = y0;
-    y0py1.add(y1);
-    y0 = y.getFp2().getA();
-    BIG y0my1 = y0;
-    y0.add(P);
-    y0my1.sub(y1);
-    BIG a = BIG.mul(k_qi_y, y0py1).mod(P);
-    BIG b = BIG.mul(k_qi_y, y0my1).mod(P);
+    BIG y0 = y.getFp2().getA();
+    BIG y1 = y.getFp2().getB();
+    BIG y0Py1 = y0.plus(y1);
+    BIG y0My1 = y0.plus(P).minus(y1);
+    BIG a = BIG.mul(k_qi_y, y0Py1).mod(P);
+    BIG b = BIG.mul(k_qi_y, y0My1).mod(P);
     return new FP2Immutable(a, b);
   }
 

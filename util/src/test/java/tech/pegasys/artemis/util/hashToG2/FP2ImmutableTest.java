@@ -18,6 +18,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static tech.pegasys.artemis.util.hashToG2.FP2Immutable.ONE;
+import static tech.pegasys.artemis.util.hashToG2.FP2Immutable.THRESHOLD;
 import static tech.pegasys.artemis.util.hashToG2.FP2Immutable.ZERO;
 import static tech.pegasys.artemis.util.hashToG2.Helper.P;
 
@@ -146,44 +147,63 @@ public class FP2ImmutableTest {
     assertEquals(ROOT, ROOT.pow(new DBIG(9873)));
   }
 
-  // TODO: more rigorous tests (swapping getA and getB in the routine didn't change the result!)
+  @Test
+  void signZilch0() {
+    FP2Immutable x = new FP2Immutable(0);
+    assertEquals(1, x.sgn0());
+  }
+
+  @Test
+  void signZilch1() {
+    FP2Immutable x = new FP2Immutable(new BIG(0), new BIG(1));
+    assertEquals(1, x.sgn0());
+  }
+
+  @Test
+  void signZilch2() {
+    FP2Immutable x = new FP2Immutable(P.minus(new BIG(0)), P.minus(new BIG(1)));
+    assertEquals(-1, x.sgn0());
+  }
+
+  @Test
+  void signZilch3() {
+    FP2Immutable x = new FP2Immutable(new BIG(1), new BIG(0));
+    assertEquals(1, x.sgn0());
+  }
+
+  @Test
+  void signZilch4() {
+    FP2Immutable x = new FP2Immutable(P.minus(new BIG(1)), new BIG(0));
+    assertEquals(-1, x.sgn0());
+  }
+
   @Test
   void signEquals() {
-    BIG thresh = new BIG(P).minus(new BIG(1));
-    thresh.fshr(1);
-    FP2Immutable x = new FP2Immutable(thresh, thresh);
+    FP2Immutable x = new FP2Immutable(THRESHOLD, THRESHOLD);
     assertEquals(1, x.sgn0());
   }
 
   @Test
   void signFirstLessThan() {
-    BIG thresh = new BIG(P).minus(new BIG(1));
-    thresh.fshr(1);
-    FP2Immutable x = new FP2Immutable(thresh.minus(new BIG(1)), thresh);
+    FP2Immutable x = new FP2Immutable(THRESHOLD.minus(new BIG(1)), THRESHOLD);
     assertEquals(1, x.sgn0());
   }
 
   @Test
   void signFirstGreaterThan() {
-    BIG thresh = new BIG(P).minus(new BIG(1));
-    thresh.fshr(1);
-    FP2Immutable x = new FP2Immutable(thresh.plus(new BIG(1)), thresh);
-    assertEquals(-1, x.sgn0());
+    FP2Immutable x = new FP2Immutable(THRESHOLD.plus(new BIG(1)), THRESHOLD);
+    assertEquals(1, x.sgn0());
   }
 
   @Test
   void signSecondLessThan() {
-    BIG thresh = new BIG(P).minus(new BIG(1));
-    thresh.fshr(1);
-    FP2Immutable x = new FP2Immutable(thresh, thresh.minus(new BIG(1)));
+    FP2Immutable x = new FP2Immutable(THRESHOLD, THRESHOLD.minus(new BIG(1)));
     assertEquals(1, x.sgn0());
   }
 
   @Test
   void signSecondGreaterThan() {
-    BIG thresh = new BIG(P).minus(new BIG(1));
-    thresh.fshr(1);
-    FP2Immutable x = new FP2Immutable(thresh, thresh.plus(new BIG(1)));
+    FP2Immutable x = new FP2Immutable(THRESHOLD, THRESHOLD.plus(new BIG(1)));
     assertEquals(-1, x.sgn0());
   }
 
