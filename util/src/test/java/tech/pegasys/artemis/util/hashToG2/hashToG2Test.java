@@ -17,6 +17,8 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static tech.pegasys.artemis.util.hashToG2.Util.bigFromHex;
+import static tech.pegasys.artemis.util.hashToG2.hashToCurve.hashToCurve;
+import static tech.pegasys.artemis.util.mikuli.G2Point.hashToG2;
 
 import com.google.common.base.Splitter;
 import com.google.errorprone.annotations.MustBeClosed;
@@ -35,6 +37,7 @@ import java.util.stream.Stream;
 import org.apache.milagro.amcl.BLS381.ECP2;
 import org.apache.milagro.amcl.BLS381.FP2;
 import org.apache.tuweni.bytes.Bytes;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -67,7 +70,7 @@ public class hashToG2Test {
   })
   void referenceTest(
       String fileName, int testNumber, Bytes message, Bytes suite, G2Point expected) {
-    G2Point actual = hashToCurve.hashToCurve(message, suite);
+    G2Point actual = hashToCurve(message, suite);
     assertEquals(expected, actual);
   }
 
@@ -109,6 +112,70 @@ public class hashToG2Test {
 
     } catch (IOException e) {
       throw new UncheckedIOException(e);
+    }
+  }
+
+  @Disabled
+  void benchmark() {
+
+    // Do lots of reps because
+    //   (a) There is a few 100ms start-up cost to amortise
+    //   (b) Time taken per iteration of oldHash is very variable
+    int nReps = 1000;
+
+    benchmarkTarget oldHash = new oldHashToG2();
+    benchmarkTarget newHash = new newHashToG2();
+
+    // Set up the input data
+    ArrayList<Bytes> messages = new ArrayList<>();
+    for (int j = 0; j < nReps; j++) {
+      messages.add(Bytes.random(32));
+    }
+    Bytes suite = Bytes.fromHexString("0x02");
+
+    // Run the benchmarks
+    long timeOld = runBenchmark(oldHash, nReps, messages, suite);
+    long timeNew = runBenchmark(newHash, nReps, messages, suite);
+
+    System.out.println(
+        "Old hashToG2: "
+            + timeOld
+            + "ms for "
+            + nReps
+            + " iterations. "
+            + (double) timeOld / nReps
+            + "ms average");
+    System.out.println(
+        "New hashToG2: "
+            + timeNew
+            + "ms for "
+            + nReps
+            + " iterations. "
+            + (double) timeNew / nReps
+            + "ms average");
+  }
+
+  long runBenchmark(benchmarkTarget benchmark, int nReps, ArrayList<Bytes> messages, Bytes suite) {
+    long start = System.currentTimeMillis();
+    for (int i = 0; i < nReps; i++) {
+      benchmark.target(messages.get(i), suite);
+    }
+    return System.currentTimeMillis() - start;
+  }
+
+  interface benchmarkTarget {
+    void target(Bytes message, Bytes suite);
+  }
+
+  static class oldHashToG2 implements benchmarkTarget {
+    public void target(Bytes message, Bytes suite) {
+      hashToG2(message, suite);
+    }
+  }
+
+  static class newHashToG2 implements benchmarkTarget {
+    public void target(Bytes message, Bytes suite) {
+      hashToCurve(message, suite);
     }
   }
 }
