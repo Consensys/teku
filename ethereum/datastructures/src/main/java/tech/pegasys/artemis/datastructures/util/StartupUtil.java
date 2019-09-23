@@ -107,18 +107,24 @@ public final class StartupUtil {
   }
 
   public static BeaconStateWithCache createInitialBeaconState(ArtemisConfiguration config) {
+    BeaconStateWithCache initialState;
+    UnsignedLong genesisTime = UnsignedLong.valueOf(config.getGenesisTime());
     if (config.getInteropActive()) {
-      return createMockedStartInitialBeaconState(config);
+      initialState = createMockedStartInitialBeaconState(config);
+    } else {
+      initialState =
+          BeaconStateUtil.initialize_beacon_state_from_eth1_new(
+              Bytes32.ZERO,
+              UnsignedLong.valueOf(config.getGenesisTime()),
+              newDeposits(config.getNumValidators()));
     }
-    return BeaconStateUtil.initialize_beacon_state_from_eth1_new(
-        Bytes32.ZERO,
-        UnsignedLong.valueOf(config.getInteropGenesisTime()),
-        newDeposits(config.getNumValidators()));
+    initialState.setGenesis_time(genesisTime);
+    return initialState;
   }
 
   private static BeaconStateWithCache createMockedStartInitialBeaconState(
       final ArtemisConfiguration config) {
-    final UnsignedLong genesisTime = UnsignedLong.valueOf(config.getInteropGenesisTime());
+    final UnsignedLong genesisTime = UnsignedLong.valueOf(config.getGenesisTime());
     final int validatorCount = config.getNumValidators();
     final List<BLSKeyPair> validatorKeys =
         new MockStartValidatorKeyPairFactory().generateKeyPairs(0, validatorCount - 1);

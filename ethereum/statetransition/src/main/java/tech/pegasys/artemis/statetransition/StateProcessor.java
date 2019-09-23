@@ -192,7 +192,7 @@ public class StateProcessor {
 
   private void setSimulationGenesisTime(BeaconState state) {
     if (config.getInteropActive()) {
-      state.setGenesis_time(UnsignedLong.valueOf(config.getInteropGenesisTime()));
+      state.setGenesis_time(UnsignedLong.valueOf(config.getGenesisTime()));
     } else if (Constants.GENESIS_TIME.equals(UnsignedLong.MAX_VALUE)) {
       Date date = new Date();
       state.setGenesis_time(

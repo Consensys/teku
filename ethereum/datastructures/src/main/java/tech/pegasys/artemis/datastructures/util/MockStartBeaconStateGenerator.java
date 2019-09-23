@@ -45,8 +45,6 @@ public class MockStartBeaconStateGenerator {
     }
     final BeaconStateWithCache initialState =
         BeaconStateUtil.initialize_beacon_state_from_eth1_new(BLOCK_HASH, genesisTime, deposits);
-
-    initialState.setGenesis_time(genesisTime);
     return initialState;
   }
 }

@@ -92,7 +92,7 @@ public class BeaconChainController {
 
   public void initStorage() {
     this.chainStorageClient = ChainStorage.Create(ChainStorageClient.class, eventBus);
-    this.chainStorageClient.setGenesisTime(UnsignedLong.valueOf(config.getInteropGenesisTime()));
+    this.chainStorageClient.setGenesisTime(UnsignedLong.valueOf(config.getGenesisTime()));
   }
 
   public void initMetrics() {
