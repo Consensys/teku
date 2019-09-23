@@ -13,6 +13,17 @@
 
 package tech.pegasys.artemis.statetransition.events;
 
+import com.google.common.primitives.UnsignedLong;
+
 public class ValidatorAssignmentEvent {
-  public ValidatorAssignmentEvent() {}
+
+  UnsignedLong slot;
+
+  public ValidatorAssignmentEvent(UnsignedLong slot) {
+    this.slot = slot;
+  }
+
+  public UnsignedLong getSlot() {
+    return this.slot;
+  }
 }

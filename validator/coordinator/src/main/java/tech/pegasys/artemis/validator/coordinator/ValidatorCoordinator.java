@@ -180,11 +180,19 @@ public class ValidatorCoordinator {
   @Subscribe
   public void onNewAssignment(ValidatorAssignmentEvent validatorAssignmentEvent)
       throws IllegalArgumentException {
+    UnsignedLong nodeSlot = validatorAssignmentEvent.getSlot();
     Store store = chainStorageClient.getStore();
     Bytes32 headBlockRoot = get_head(store);
     BeaconBlock headBlock = store.getBlock(headBlockRoot);
     BeaconState headState = store.getBlockState(headBlockRoot);
     chainStorageClient.updateBestBlock(headBlockRoot, headBlock.getSlot());
+
+    try {
+      stateTransition.process_slots((BeaconStateWithCache) headState, nodeSlot, false);
+    } catch (SlotProcessingException | EpochProcessingException e) {
+      STDOUT.log(Level.WARN, "Error when processing empty slots");
+      STDOUT.log(Level.WARN, e.toString());
+    }
 
     // Logging
     STDOUT.log(
