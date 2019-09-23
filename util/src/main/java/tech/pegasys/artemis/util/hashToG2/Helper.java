@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.util.hashToG2;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.artemis.util.hashToG2.FP2Immutable.ONE;
 import static tech.pegasys.artemis.util.hashToG2.Util.bigFromBigInt;
 import static tech.pegasys.artemis.util.hashToG2.Util.bigFromHex;
@@ -149,7 +150,7 @@ public class Helper {
       new DBIGExtended(BIG.mul(P.plus(THREE), P.minus(THREE))).fshr(4);
 
   private static final int SHA256_HASH_SIZE = 32;
-  private static final int SHA2_BLOCK_SIZE = 64;
+  private static final int SHA256_BLOCK_SIZE = 64;
 
   /**
    * Tests whether the given point lies on the BLS12-381 curve.
@@ -186,7 +187,7 @@ public class Helper {
     Security.addProvider(new BouncyCastleProvider());
 
     // SHA256 blocksize in bytes
-    int blockSize = SHA2_BLOCK_SIZE;
+    int blockSize = SHA256_BLOCK_SIZE;
     byte ipad = (byte) 0x36;
     byte opad = (byte) 0x5c;
 
@@ -235,6 +236,10 @@ public class Helper {
    * @return output keying material (of `length` octets)
    */
   static Bytes HKDF_Expand(Bytes prk, Bytes info, int length) {
+    checkArgument(prk.size() >= SHA256_HASH_SIZE, "prk must be larger than the hash length.");
+    checkArgument(
+        length > 0 && length <= 255 * SHA256_HASH_SIZE,
+        "length must be non-zero and not more than " + 255 * SHA256_HASH_SIZE);
     Bytes okm = Bytes.EMPTY;
     Bytes tOld = Bytes.EMPTY;
     int i = 1;
