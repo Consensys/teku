@@ -93,6 +93,7 @@ public final class FP2Immutable {
   FP2Immutable sqr() {
     FP2 result = new FP2(this.fp2);
     result.sqr();
+    result.norm();
     return new FP2Immutable(result);
   }
 
@@ -100,6 +101,7 @@ public final class FP2Immutable {
   FP2Immutable mul(FP2Immutable a) {
     FP2 result = new FP2(this.fp2);
     result.mul(a.fp2);
+    result.norm();
     return new FP2Immutable(result);
   }
 
@@ -107,6 +109,7 @@ public final class FP2Immutable {
   FP2Immutable add(FP2Immutable a) {
     FP2 result = new FP2(this.fp2);
     result.add(a.fp2);
+    result.norm();
     return new FP2Immutable(result);
   }
 
@@ -114,6 +117,7 @@ public final class FP2Immutable {
   FP2Immutable dbl() {
     FP2 result = new FP2(this.fp2);
     result.add(this.fp2);
+    result.norm();
     return new FP2Immutable(result);
   }
 
@@ -121,6 +125,7 @@ public final class FP2Immutable {
   FP2Immutable sub(FP2Immutable a) {
     FP2 result = new FP2(this.fp2);
     result.sub(a.fp2);
+    result.norm();
     return new FP2Immutable(result);
   }
 
