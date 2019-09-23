@@ -87,9 +87,9 @@ public class TimingProcessor {
           this.currentEpochGauge.set(compute_epoch_of_slot(nodeSlot).longValue());
           STDOUT.log(Level.INFO, "******* Slot Event *******", ALogger.Color.WHITE);
           STDOUT.log(Level.INFO, "Node slot:                             " + nodeSlot);
-          nodeSlot = nodeSlot.plus(UnsignedLong.ONE);
           Thread.sleep(SECONDS_PER_SLOT * 1000 / 2);
-          this.eventBus.post(new ValidatorAssignmentEvent());
+          this.eventBus.post(new ValidatorAssignmentEvent(nodeSlot));
+          nodeSlot = nodeSlot.plus(UnsignedLong.ONE);
         }
       }
     } catch (InterruptedException e) {
