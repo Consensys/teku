@@ -40,7 +40,7 @@ import tech.pegasys.artemis.datastructures.operations.DepositWithIndex;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.util.DepositUtil;
-import tech.pegasys.artemis.service.serviceutils.ServiceConfig;
+import tech.pegasys.artemis.metrics.EpochMetrics;
 import tech.pegasys.artemis.statetransition.events.GenesisEvent;
 import tech.pegasys.artemis.statetransition.util.EpochProcessingException;
 import tech.pegasys.artemis.statetransition.util.SlotProcessingException;
@@ -49,6 +49,7 @@ import tech.pegasys.artemis.storage.Store;
 import tech.pegasys.artemis.storage.events.NodeDataLoadedEvent;
 import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
+import tech.pegasys.pantheon.metrics.MetricsSystem;
 
 /** Class to manage the state tree and initiate state transitions */
 public class StateProcessor {
@@ -60,7 +61,11 @@ public class StateProcessor {
   private List<DepositWithIndex> deposits;
   private BeaconStateWithCache initialState;
 
-  public StateProcessor(ServiceConfig config, ChainStorageClient chainStorageClient) {
+  public StateProcessor(
+      EventBus eventBus,
+      ChainStorageClient chainStorageClient,
+      MetricsSystem metricsSystem,
+      ArtemisConfiguration config) {
     /*
     List<Long> serializationTimeArray = new ArrayList<>();
     List<Long> deserializationTimeArray = new ArrayList<>();
@@ -79,9 +84,9 @@ public class StateProcessor {
     System.out.println("deserialization: " + deserializationTimeArray);
     */
 
-    this.eventBus = config.getEventBus();
-    this.config = config.getConfig();
-    this.stateTransition = new StateTransition(true, new EpochMetrics(config.getMetricsSystem()));
+    this.eventBus = eventBus;
+    this.config = config;
+    this.stateTransition = new StateTransition(true, new EpochMetrics(metricsSystem));
     this.chainStorageClient = chainStorageClient;
     this.eventBus.register(this);
   }
@@ -89,6 +94,7 @@ public class StateProcessor {
   @Subscribe
   public void onEth2Genesis(GenesisEvent genesisEvent) {
     STDOUT.log(Level.INFO, "******* Eth2Genesis Event detected ******* : ");
+    this.initialState = genesisEvent.getBeaconState();
     Store store = chainStorageClient.getStore();
     if (store == null) {
       store = get_genesis_store(initialState);
@@ -126,8 +132,7 @@ public class StateProcessor {
                 deposits);
         if (is_valid_genesis_stateSim(candidate_state)) {
           setSimulationGenesisTime(candidate_state);
-          initialState = candidate_state;
-          this.eventBus.post(new GenesisEvent());
+          this.eventBus.post(new GenesisEvent(candidate_state));
         }
 
       } else {
@@ -137,8 +142,7 @@ public class StateProcessor {
                 eth1_timestamp,
                 deposits);
         if (is_valid_genesis_state(candidate_state)) {
-          initialState = candidate_state;
-          this.eventBus.post(new GenesisEvent());
+          this.eventBus.post(new GenesisEvent(candidate_state));
         }
       }
     }
@@ -188,7 +192,7 @@ public class StateProcessor {
 
   private void setSimulationGenesisTime(BeaconState state) {
     if (config.getInteropActive()) {
-      state.setGenesis_time(UnsignedLong.valueOf(config.getInteropGenesisTime()));
+      state.setGenesis_time(UnsignedLong.valueOf(config.getGenesisTime()));
     } else if (Constants.GENESIS_TIME.equals(UnsignedLong.MAX_VALUE)) {
       Date date = new Date();
       state.setGenesis_time(

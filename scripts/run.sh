@@ -90,9 +90,11 @@ mkdir -p ./demo
 
 # Clean out the old configuration files
 rm -f ../config/runConfig.*
+rm -f ../config/*.dat
 
-# Create a list of all the peers for the configure node procedure to use
-PEERS=$(generate_peers_list 19000 $NODES "hob+tcp" "abcf@localhost")
+START_DELAY=10
+CURRENT_TIME=$(date +%s)
+GENESIS_TIME=$((CURRENT_TIME + START_DELAY))
 
 # Create the binaries, configuration files, and symlinks for each node
 i=0

@@ -45,6 +45,7 @@ proto/gen/*
 *.a
 *.class
 scripts/.java-version
+config/peer_ids.dat
 
 
 

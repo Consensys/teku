@@ -31,7 +31,7 @@ public class Libp2pPeerManager implements ConnectionHandler {
   private final ALogger LOG = new ALogger(Libp2pPeerManager.class.getName());
 
   private final ScheduledExecutorService scheduler;
-  private static final Duration RECONNECT_TIMEOUT = Duration.ofSeconds(5);
+  private static final Duration RECONNECT_TIMEOUT = Duration.ofSeconds(1);
 
   public Libp2pPeerManager(final ScheduledExecutorService scheduler) {
     this.scheduler = scheduler;
@@ -39,9 +39,10 @@ public class Libp2pPeerManager implements ConnectionHandler {
 
   @Override
   public void handleConnection(@NotNull final Connection connection) {
+    LOG.log(Level.INFO, "Got new connection from ");
     final PeerId remoteId = connection.getSecureSession().getRemoteId();
-    LOG.log(Level.DEBUG, "Got new connection from " + remoteId);
-    connection.closeFuture().thenRun(() -> LOG.log(Level.DEBUG, "Peer disconnected: " + remoteId));
+    LOG.log(Level.INFO, "Got new connection from " + remoteId);
+    connection.closeFuture().thenRun(() -> LOG.log(Level.INFO, "Peer disconnected: " + remoteId));
   }
 
   public CompletableFuture<?> connect(final Multiaddr peer, final NetworkImpl network) {

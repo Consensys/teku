@@ -149,6 +149,7 @@ public class BeaconStateUtil {
         eth1_timestamp
             .minus(eth1_timestamp.mod(UnsignedLong.valueOf(SECONDS_PER_DAY)))
             .plus(UnsignedLong.valueOf(2).times(UnsignedLong.valueOf(SECONDS_PER_DAY)));
+
     Eth1Data eth1_data = new Eth1Data();
     eth1_data.setBlock_hash(eth1_block_hash);
     eth1_data.setDeposit_count(UnsignedLong.valueOf(deposits.size()));
