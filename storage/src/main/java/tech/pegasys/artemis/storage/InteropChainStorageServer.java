@@ -32,8 +32,8 @@ import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
-import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
+import tech.pegasys.artemis.datastructures.util.StartupUtil;
 import tech.pegasys.artemis.storage.events.DBStoreValidEvent;
 import tech.pegasys.artemis.storage.events.NodeStartEvent;
 import tech.pegasys.artemis.util.alogger.ALogger;
@@ -65,7 +65,7 @@ public class InteropChainStorageServer implements ChainStorage {
         throw new IllegalStateException("Failed to load initial state", e);
       }
     } else if (this.config.getDepositMode().equals(Constants.DEPOSIT_TEST)) {
-      BeaconStateWithCache initialState = DataStructureUtil.createInitialBeaconState(this.config);
+      BeaconStateWithCache initialState = StartupUtil.createInitialBeaconState(this.config);
       this.eventBus.post(createDBStoreValidEvent(initialState));
     }
   }
@@ -84,14 +84,16 @@ public class InteropChainStorageServer implements ChainStorage {
       currentSlot = deltaTime.dividedBy(UnsignedLong.valueOf(SECONDS_PER_SLOT));
     } else {
       try {
+        UnsignedLong sleepTime = genesisTime.minus(currentTime);
         // sleep until genesis
-        Thread.sleep(genesisTime.minus(currentTime).longValue());
+        STDOUT.log(Level.INFO, "Sleep for " + sleepTime + " seconds until genesis.", Color.GREEN);
+        Thread.sleep(sleepTime.longValue());
       } catch (InterruptedException e) {
         e.printStackTrace();
         throw new IllegalArgumentException("Error in loadInitialState()");
       }
     }
-    return new DBStoreValidEvent(initialStore, currentSlot, genesisTime);
+    return new DBStoreValidEvent(initialStore, currentSlot, genesisTime, initialBeaconState);
   }
 
   public static Store get_genesis_store(BeaconStateWithCache genesis_state) {

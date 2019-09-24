@@ -51,14 +51,19 @@ public class RandomValidatorKeyProvider implements ValidatorKeyProvider {
       SECP256K1.SecretKey nodeIdentity, int numNodes, int numValidators) {
     // Add all validators to validatorSet hashMap
     int nodeCounter = UInt256.fromBytes(nodeIdentity.bytes()).mod(numNodes).intValue();
-
+    int startIndex = 0;
+    int endIndex = numValidators - 1;
+    if (nodeCounter > 0) {
+      endIndex = -1;
+    }
+    /*
     int startIndex = nodeCounter * (numValidators / numNodes);
     int endIndex =
         startIndex
             + (numValidators / numNodes - 1)
             + Math.floorDiv(nodeCounter, Math.max(1, numNodes - 1));
     endIndex = Math.min(endIndex, numValidators - 1);
-
+    */
     STDOUT.log(
         Level.INFO,
         "nodeCounter: " + nodeCounter + " startIndex: " + startIndex + " endIndex: " + endIndex);

@@ -15,7 +15,7 @@ export OWNED_VALIDATOR_COUNT=$3
 #export PEERS=$4
 START_DELAY=$4
 export GENESIS_FILE="/tmp/genesis.ssz"
-export PEER_ID="16Uiu2HAm8cQB9DcwMtaSVuHNiJEPSq9mXM6FHho7c55M6XN2P3EQ"
+
 
 
 CURRENT_TIME=$(date +%s)
@@ -48,10 +48,14 @@ then
     NUM_NODES=1
 
     configure_node "jvmlibp2p" $NODE_INDEX $NUM_NODES "$CONFIG_DIR/config.toml"
+
+    export PEER_ID=$(sed "$(($NODE_INDEX + 2))q;d" ../config/peer_ids.dat | cut -f 3)
+
     sh configurator.sh "$CONFIG_DIR/runConfig.0.toml" numValidators $VALIDATOR_COUNT
     sh configurator.sh "$CONFIG_DIR/runConfig.0.toml" numNodes $NUM_NODES
     sh configurator.sh "$CONFIG_DIR/runConfig.0.toml" active true
     sh configurator.sh "$CONFIG_DIR/runConfig.0.toml" genesisTime $GENESIS_TIME
+    sh configurator.sh "$CONFIG_DIR/runConfig.0.toml" startState "\"$GENESIS_FILE\""
     sh configurator.sh "$CONFIG_DIR/runConfig.0.toml" ownedValidatorStartIndex $OWNED_VALIDATOR_START_INDEX
     sh configurator.sh "$CONFIG_DIR/runConfig.0.toml" ownedValidatorCount $OWNED_VALIDATOR_COUNT
 
@@ -64,8 +68,8 @@ then
          sh configurator.sh "$CONFIG_DIR/runConfig.0.toml" discovery "\"static\""
          sh configurator.sh "$CONFIG_DIR/runConfig.0.toml" isBootnode false
     #fi
-
-    tmux new-session -d -s foo "jenv local $ARTEMIS_JAVA_VERSION; export RUST_LOG=libp2p_tcp=trace,multistream=trace; cd $SCRIPT_DIR/demo/node_0/ && ./artemis --config=$CONFIG_DIR/runConfig.0.toml --logging=INFO; sleep 20"
+    sed -i "" '10d' "$CONFIG_DIR/runConfig.0.toml"
+    tmux new-session -d -s foo "jenv local $ARTEMIS_JAVA_VERSION; cd $SCRIPT_DIR/demo/node_0/ && ./artemis --config=$CONFIG_DIR/runConfig.0.toml --logging=INFO; sleep 20"
 fi
 
 

@@ -4,24 +4,32 @@
 create_config() {
   local MODE="$1"; local NODE="$2"; local TOTAL="$3"; local TEMPLATE="$4"
 
-  # Create the peer list by removing this node's peer url from the peer list
-  local PEERS=$(echo "$PEERS" | sed "s/\"hob+tcp:\/\/abcf@localhost:$((19000 + $NODE))\"//g")
-  PEERS="[$(echo $PEERS | tr ' ' ',')]"
+
 
   # Set the port number to the node number plus 19000
   local PORT=$((19000 + $NODE))
 
 
   local IS_BOOTNODE=false
-  if [ "$NODE" -eq "0" ]; then
-    IS_BOOTNODE=true;
-  fi
+
   # Set IDENTITY to the one byte hexadecimal representation of the node number
   local IDENTITY; setAsHex $NODE "IDENTITY"
 
   # this can be reactivated once we have a java discv5
   #local BOOTNODES=$(cat ~/.mothra/network/enr.dat)
 
+  if [ "$NODE" == "0" ]
+  then
+    # Create a list of peer ids
+    cd demo/node_0 && ./artemis peer generate $NUM -o "config/peer_ids.dat" && cd ../../
+  fi
+  # Create a list of all the peers for the configure node procedure to use
+  PEERS=$(generate_peers 19000 $NUM $NODE)
+  PEERS=$(echo $PEERS | tr -d '\n')
+  PEERS="[$(echo $PEERS | tr ' ' ',')]"
+
+  # get the private key for this node
+  local PRIVATE_KEY=$(sed "$(($NODE + 2))q;d" ../config/peer_ids.dat | cut -f 1)
 
   # Create the configuration file for the node
   cat $TEMPLATE | \
@@ -30,7 +38,9 @@ create_config() {
     sed "s/identity\ =.*/identity\ =\ \"$IDENTITY\"/"                 |# Update the identity field to the value set above
     sed "s/isBootnode\ =.*/isBootnode\ =\ $IS_BOOTNODE/"              |# Update the bootnode flag
     sed "s/bootnodes\ =.*/bootnodes\ =\ \"$BOOTNODES\"/"              |# Update the bootnodes
+    sed "s/privateKey\ =.*/privateKey\ =\ \"$PRIVATE_KEY\"/"          |# Update the private key
     sed "s/port\ =.*/port\ =\ $PORT/"                                 |# Update the port field to the value set above
+    sed "s/genesisTime\ =.*/genesisTime\ =\ $GENESIS_TIME/"           |# Update the genesis time
     awk -v peers="$PEERS" '/port/{print;print "peers = "peers;next}1' |# Update the peer list
     sed "s/numNodes\ =.*/numNodes\ =\ $TOTAL/"                        |# Update the number of nodes to the total number of nodes
     sed "s/networkInterface\ =.*/networkInterface\ =\ \"127.0.0.1\"/" |# Update the network interface to localhost
@@ -46,6 +56,7 @@ create_config() {
 configure_node() {
   local MODE=$1
   local NODE=$2
+  local NUM=$3
 
   # Unpack the build tar files and move them to the appropriate directory
   # for the node.
@@ -56,18 +67,20 @@ configure_node() {
   ln -sf ../../../config ./demo/node_$NODE/
   cd demo/node_$NODE && ln -sf ./bin/artemis . && cd ../../
 
+
+
   # Create the configuration file for the node
   if [ "$4" == "" ]
   then 
-    create_config $MODE $NODE $3 "../config/config.toml"
+    create_config $MODE $NODE $NUM "../config/config.toml"
   else
-    create_config $MODE $NODE $3 $4
+    create_config $MODE $NODE $NUM $4
   fi
+
 
   # in
   rm -rf demo/node_$NODE/*.json
   cp ../*.json demo/node_$NODE/
-  cp -rf ../libs/release demo/node_$NODE/
 }
 
 # Create tmux panes in the current window for the next "node group".
@@ -133,9 +146,27 @@ create_tmux_windows() {
   tmux attach-session -d
 }
 
-generate_peers_list() {
-  seq $1 $(($1 + $2 - 1)) | sed -E "s/([0-9]+)/\"$3:\/\/$4:\1\"/g"
+generate_peers() {
+  local STARTING_PORT=$1
+  local NODES=$2
+  local NODE=$3
+  local PEERS=$(seq $STARTING_PORT $(($STARTING_PORT + $NODES - 1)) | sed -E "s/([0-9]+)/\"\/ip4\/127\.0\.0\.1\/tcp\/\1\/p2p\//g")
+  local PEER_ARRAY=($PEERS)
+  local RESULT
+
+  for i in "${!PEER_ARRAY[@]}"
+  do
+    if [ "$NODE" != "$i" ]
+    then
+      RESULT[$i]=${PEER_ARRAY[$i]}$(sed "$(($i + 2))q;d" ../config/peer_ids.dat | cut -f 3)
+      RESULT[$i]+="\""
+    fi
+  done
+
+  echo "${RESULT[@]}"
 }
+
+
 
 # Takes a number, $1, and the name of an environment variable, $2, and sets the environment variable in the parent shell 
 # with the specified name to the hexadecimal representation of the provided number.

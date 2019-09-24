@@ -235,7 +235,7 @@ public class ArtemisConfiguration {
     return startState == null || startState.isEmpty() ? null : startState;
   }
 
-  public long getInteropGenesisTime() {
+  public long getGenesisTime() {
     return config.getLong("interop.genesisTime");
   }
 

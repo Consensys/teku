@@ -27,13 +27,16 @@ import java.util.Map.Entry;
 import java.util.Random;
 import java.util.Set;
 import java.util.function.Consumer;
+import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
+import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
 public class GossipMessageHandler implements Consumer<MessageApi> {
+  private static final ALogger STDOUT = new ALogger("stdout");
   private static final int MAX_SENT_MESSAGES = 2048;
 
   private static final Topic BLOCKS_TOPIC = new Topic("/eth2/beacon_block/ssz");
@@ -65,6 +68,7 @@ public class GossipMessageHandler implements Consumer<MessageApi> {
 
   @Override
   public void accept(MessageApi msg) {
+    STDOUT.log(Level.DEBUG, "Message received " + msg.getSeqId());
     if (msg.getTopics().contains(BLOCKS_TOPIC)) {
       BeaconBlock block =
           SimpleOffsetSerializer.deserialize(Bytes.wrapByteBuf(msg.getData()), BeaconBlock.class);
