@@ -117,7 +117,7 @@ public abstract class RPCMessageHandler<TRequest, TResponse>
     @SuppressWarnings("unchecked")
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, ByteBuf byteBuf) throws Exception {
-      STDOUT.log(Level.INFO, "Received " + byteBuf.array().length + " bytes.");
+      STDOUT.log(Level.DEBUG, "Received " + byteBuf.array().length + " bytes.");
       Bytes bytes = Bytes.wrapByteBuf(byteBuf);
       TRequest request = (TRequest) RPCCodec.decode(bytes, HelloMessage.class);
       invokeLocal(connection, request)
@@ -146,7 +146,7 @@ public abstract class RPCMessageHandler<TRequest, TResponse>
             "Received " + byteBuf.array().length + " bytes of data before requesting it.");
         throw new IllegalArgumentException("Some data received prior to request: " + byteBuf);
       }
-      STDOUT.log(Level.INFO, "Received " + byteBuf.array().length + " bytes.");
+      STDOUT.log(Level.DEBUG, "Received " + byteBuf.array().length + " bytes.");
       Bytes bytes = Bytes.wrapByteBuf(byteBuf);
       TResponse response = (TResponse) RPCCodec.decode(bytes, HelloMessage.class);
       if (response != null) {
