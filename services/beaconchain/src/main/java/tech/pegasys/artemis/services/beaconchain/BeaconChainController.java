@@ -33,7 +33,7 @@ import tech.pegasys.artemis.metrics.SettableGauge;
 import tech.pegasys.artemis.networking.p2p.JvmLibP2PNetwork;
 import tech.pegasys.artemis.networking.p2p.MockP2PNetwork;
 import tech.pegasys.artemis.networking.p2p.api.P2PNetwork;
-import tech.pegasys.artemis.networking.p2p.jvmlibp2p.JvmLibp2pConfig;
+import tech.pegasys.artemis.networking.p2p.jvmlibp2p.Config;
 import tech.pegasys.artemis.statetransition.StateProcessor;
 import tech.pegasys.artemis.statetransition.events.GenesisEvent;
 import tech.pegasys.artemis.statetransition.events.ValidatorAssignmentEvent;
@@ -77,6 +77,7 @@ public class BeaconChainController {
 
   @SuppressWarnings("rawtypes")
   public void initTimer() {
+    STDOUT.log(Level.DEBUG, "BeaconChainController.initTimer()");
     int timerPeriodInMiliseconds = (int) ((1.0 / Constants.TIME_TICKER_REFRESH_RATE) * 1000);
     try {
       this.timer =
@@ -91,11 +92,13 @@ public class BeaconChainController {
   }
 
   public void initStorage() {
+    STDOUT.log(Level.DEBUG, "BeaconChainController.initStorage()");
     this.chainStorageClient = ChainStorage.Create(ChainStorageClient.class, eventBus);
     this.chainStorageClient.setGenesisTime(UnsignedLong.valueOf(config.getGenesisTime()));
   }
 
   public void initMetrics() {
+    STDOUT.log(Level.DEBUG, "BeaconChainController.initMetrics()");
     currentSlotGauge =
         SettableGauge.create(
             metricsSystem,
@@ -111,14 +114,17 @@ public class BeaconChainController {
   }
 
   public void initValidatorCoordinator() {
+    STDOUT.log(Level.DEBUG, "BeaconChainController.initValidatorCoordinator()");
     this.validatorCoordinator = new ValidatorCoordinator(eventBus, chainStorageClient, config);
   }
 
   public void initStateProcessor() {
+    STDOUT.log(Level.DEBUG, "BeaconChainController.initStateProcessor()");
     this.stateProcessor = new StateProcessor(eventBus, chainStorageClient, metricsSystem, config);
   }
 
   public void initP2PNetwork() {
+    STDOUT.log(Level.DEBUG, "BeaconChainController.initP2PNetwork()");
     if ("mock".equals(config.getNetworkMode())) {
       this.p2pNetwork = new MockP2PNetwork(eventBus);
     } else if ("jvmlibp2p".equals(config.getNetworkMode())) {
@@ -127,7 +133,7 @@ public class BeaconChainController {
 
       this.p2pNetwork =
           new JvmLibP2PNetwork(
-              new JvmLibp2pConfig(
+              new Config(
                   Optional.of(pk),
                   config.getNetworkInterface(),
                   config.getPort(),
@@ -143,8 +149,11 @@ public class BeaconChainController {
   }
 
   public void start() {
+    STDOUT.log(Level.DEBUG, "BeaconChainController.start(): starting p2pNetwork");
     this.p2pNetwork.run();
+    STDOUT.log(Level.DEBUG, "BeaconChainController.start(): emit NodeStartEvent");
     this.eventBus.post(new NodeStartEvent());
+    STDOUT.log(Level.DEBUG, "BeaconChainController.start(): starting timer");
     this.timer.start();
   }
 
@@ -158,7 +167,7 @@ public class BeaconChainController {
   private void onDBStoreValidEvent(DBStoreValidEvent event) {
     final UnsignedLong slot = event.getNodeSlot();
     if (slot.compareTo(UnsignedLong.ZERO) > 0) {
-      STDOUT.log(Level.INFO, "Restoring nodeSlot to: " + slot);
+      STDOUT.log(Level.DEBUG, "Restoring nodeSlot to: " + slot);
       this.nodeSlot = slot;
     } else {
       this.eventBus.post(new GenesisEvent(event.getBeaconState()));
@@ -184,8 +193,8 @@ public class BeaconChainController {
           this.eventBus.post(new SlotEvent(nodeSlot));
           this.currentSlotGauge.set(nodeSlot.longValue());
           this.currentEpochGauge.set(compute_epoch_of_slot(nodeSlot).longValue());
-          STDOUT.log(Level.INFO, "******* Slot Event *******", ALogger.Color.WHITE);
-          STDOUT.log(Level.INFO, "Node slot:                             " + nodeSlot);
+          STDOUT.log(Level.DEBUG, "******* Slot Event *******", ALogger.Color.WHITE);
+          STDOUT.log(Level.DEBUG, "Node slot:                             " + nodeSlot);
           Thread.sleep(SECONDS_PER_SLOT * 1000 / 2);
           this.eventBus.post(new ValidatorAssignmentEvent(nodeSlot));
           nodeSlot = nodeSlot.plus(UnsignedLong.ONE);

@@ -36,9 +36,9 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import org.apache.logging.log4j.Level;
 import tech.pegasys.artemis.networking.p2p.api.P2PNetwork;
+import tech.pegasys.artemis.networking.p2p.jvmlibp2p.Config;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.GossipMessageHandler;
-import tech.pegasys.artemis.networking.p2p.jvmlibp2p.JvmLibp2pConfig;
-import tech.pegasys.artemis.networking.p2p.jvmlibp2p.Libp2pPeerManager;
+import tech.pegasys.artemis.networking.p2p.jvmlibp2p.PeerManager;
 import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.cli.VersionProvider;
 
@@ -46,12 +46,12 @@ public class JvmLibP2PNetwork implements P2PNetwork {
   private static final ALogger STDOUT = new ALogger("stdout");
 
   private final PrivKey privKey;
-  private final JvmLibp2pConfig config;
+  private final Config config;
   private final Host host;
   private final ScheduledExecutorService scheduler;
-  private final Libp2pPeerManager peerManager;
+  private final PeerManager peerManager;
 
-  public JvmLibP2PNetwork(final JvmLibp2pConfig config, final EventBus eventBus) {
+  public JvmLibP2PNetwork(final Config config, final EventBus eventBus) {
     this.privKey =
         config
             .getPrivateKey()
@@ -62,7 +62,7 @@ public class JvmLibP2PNetwork implements P2PNetwork {
             new ThreadFactoryBuilder().setDaemon(true).setNameFormat("libp2p-%d").build());
     Gossip gossip = new Gossip();
     GossipMessageHandler.init(gossip, privKey, eventBus);
-    peerManager = new Libp2pPeerManager(scheduler);
+    peerManager = new PeerManager(scheduler);
 
     host =
         BuildersJKt.hostJ(
@@ -97,7 +97,7 @@ public class JvmLibP2PNetwork implements P2PNetwork {
               b.getProtocols().add(ping);
               b.getProtocols().add(new Identify(identifyMsg));
               b.getProtocols().add(gossip);
-              //              b.getProtocols().addAll(peerManager.rpcMethods.all());
+              b.getProtocols().addAll(peerManager.all());
 
               if (config.isLogWireCipher()) {
                 b.getDebug().getBeforeSecureHandler().setLogger(LogLevel.DEBUG, "wire.ciphered");

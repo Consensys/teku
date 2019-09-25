@@ -70,13 +70,17 @@ public class GossipMessageHandler implements Consumer<MessageApi> {
   public void accept(MessageApi msg) {
     STDOUT.log(Level.DEBUG, "Message received " + msg.getSeqId());
     if (msg.getTopics().contains(BLOCKS_TOPIC)) {
-      BeaconBlock block =
-          SimpleOffsetSerializer.deserialize(Bytes.wrapByteBuf(msg.getData()), BeaconBlock.class);
-      eventBus.post(block);
+      Bytes bytes = Bytes.wrapByteBuf(msg.getData());
+      BeaconBlock block = SimpleOffsetSerializer.deserialize(bytes, BeaconBlock.class);
+      if (this.sentMessages.add(bytes)) {
+        eventBus.post(block);
+      }
     } else if (msg.getTopics().contains(ATTESTATIONS_TOPIC)) {
-      Attestation attestation =
-          SimpleOffsetSerializer.deserialize(Bytes.wrapByteBuf(msg.getData()), Attestation.class);
-      eventBus.post(attestation);
+      Bytes bytes = Bytes.wrapByteBuf(msg.getData());
+      Attestation attestation = SimpleOffsetSerializer.deserialize(bytes, Attestation.class);
+      if (this.sentMessages.add(bytes)) {
+        eventBus.post(attestation);
+      }
     }
   }
 
