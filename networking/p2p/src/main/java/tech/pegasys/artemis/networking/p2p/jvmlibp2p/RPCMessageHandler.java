@@ -30,30 +30,26 @@ import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.HelloMessage;
+import tech.pegasys.artemis.networking.p2p.jvmlibp2p.RPCMessageHandler.Controller;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.RPCCodec;
 import tech.pegasys.artemis.util.alogger.ALogger;
 
 public abstract class RPCMessageHandler<TRequest, TResponse>
-    implements ProtocolBinding<RPCMessageHandler.Controller<TRequest, TResponse>> {
+    implements ProtocolBinding<Controller<TRequest, TResponse>> {
   private static final ALogger STDOUT = new ALogger("stdout");
 
-  private ChannelHandlerContext ctx;
-  private CompletableFuture<TResponse> respFuture;
   private final String methodMultistreamId;
-  protected final BiFunction<Connection, HelloMessage, HelloMessage> helloHandler;
-  // private final MessageCodec<TRequest> requestCodec;
-  // private final MessageCodec<Pair<TResponse, Throwable>> responseCodec;
+  protected final BiFunction<Connection, TRequest, TResponse> helloHandler;
   private boolean notification = false;
 
   public RPCMessageHandler(
-      String methodMultistreamId, BiFunction<Connection, HelloMessage, HelloMessage> helloHandler) {
+      String methodMultistreamId, BiFunction<Connection, TRequest, TResponse> helloHandler) {
     this.methodMultistreamId = methodMultistreamId;
     this.helloHandler = helloHandler;
   }
 
   @SuppressWarnings("unchecked")
-  public CompletableFuture<HelloMessage> invokeRemote(Connection connection, HelloMessage request) {
-    STDOUT.log(Level.INFO, "invokeRemote HELLO " + connection.remoteAddress());
+  public CompletableFuture<TResponse> invokeRemote(Connection connection, TRequest request) {
     return connection
         .getMuxerSession()
         .createStream(Multistream.create(this.toInitiator(methodMultistreamId)).toStreamHandler())
@@ -61,8 +57,8 @@ public abstract class RPCMessageHandler<TRequest, TResponse>
         .thenCompose(ctr -> ctr.invoke(request));
   }
 
-  protected abstract CompletableFuture<HelloMessage> invokeLocal(
-      Connection connection, HelloMessage request);
+  protected abstract CompletableFuture<TResponse> invokeLocal(
+      Connection connection, TRequest request);
 
   public RPCMessageHandler<TRequest, TResponse> setNotification() {
     this.notification = true;
@@ -96,7 +92,7 @@ public abstract class RPCMessageHandler<TRequest, TResponse>
   }
 
   interface Controller<TRequest, TResponse> {
-    CompletableFuture<HelloMessage> invoke(HelloMessage request);
+    CompletableFuture<TResponse> invoke(TRequest request);
   }
 
   abstract class AbstractHandler extends SimpleChannelInboundHandler<ByteBuf>
@@ -114,20 +110,21 @@ public abstract class RPCMessageHandler<TRequest, TResponse>
     }
 
     @Override
-    public CompletableFuture<HelloMessage> invoke(HelloMessage tRequest) {
+    public CompletableFuture<TResponse> invoke(TRequest tRequest) {
       throw new IllegalStateException("This method shouldn't be called for Responder");
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, ByteBuf byteBuf) throws Exception {
       STDOUT.log(Level.INFO, "Received " + byteBuf.array().length + " bytes.");
       Bytes bytes = Bytes.wrapByteBuf(byteBuf);
-      HelloMessage request = RPCCodec.decode(bytes, HelloMessage.class);
+      TRequest request = (TRequest) RPCCodec.decode(bytes, HelloMessage.class);
       invokeLocal(connection, request)
           .whenComplete(
               (resp, err) -> {
                 ByteBuf respBuf = Unpooled.buffer();
-                Bytes encoded = RPCCodec.encode(request);
+                Bytes encoded = RPCCodec.encode((HelloMessage) request);
                 respBuf.writeBytes(encoded.toArrayUnsafe());
                 ctx.writeAndFlush(respBuf);
                 ctx.channel().disconnect();
@@ -137,16 +134,21 @@ public abstract class RPCMessageHandler<TRequest, TResponse>
 
   class RequesterHandler extends AbstractHandler {
     private ChannelHandlerContext ctx;
-    private CompletableFuture<HelloMessage> respFuture;
+    private CompletableFuture<TResponse> respFuture;
 
+    @SuppressWarnings("unchecked")
     @Override
-    protected void channelRead0(ChannelHandlerContext ctx, ByteBuf byteBuf) throws Exception {
+    protected void channelRead0(ChannelHandlerContext ctx, ByteBuf byteBuf)
+        throws IllegalArgumentException {
       if (respFuture == null) {
-        throw new IllegalStateException("Some data received prior to request: " + byteBuf);
+        STDOUT.log(
+            Level.WARN,
+            "Received " + byteBuf.array().length + " bytes of data before requesting it.");
+        throw new IllegalArgumentException("Some data received prior to request: " + byteBuf);
       }
       STDOUT.log(Level.INFO, "Received " + byteBuf.array().length + " bytes.");
       Bytes bytes = Bytes.wrapByteBuf(byteBuf);
-      HelloMessage response = RPCCodec.decode(bytes, HelloMessage.class);
+      TResponse response = (TResponse) RPCCodec.decode(bytes, HelloMessage.class);
       if (response != null) {
         respFuture.complete(response);
       } else {
@@ -155,16 +157,12 @@ public abstract class RPCMessageHandler<TRequest, TResponse>
     }
 
     @Override
-    public CompletableFuture<HelloMessage> invoke(HelloMessage request) {
+    public CompletableFuture<TResponse> invoke(TRequest request) {
       ByteBuf reqByteBuf = Unpooled.buffer();
-      STDOUT.log(Level.INFO, "Before encode ");
-      Bytes encoded = RPCCodec.encode(request);
-      STDOUT.log(Level.INFO, "After encode ");
+      Bytes encoded = RPCCodec.encode((HelloMessage) request);
       reqByteBuf.writeBytes(encoded.toArrayUnsafe());
-      STDOUT.log(Level.INFO, "After writeBytes ");
       respFuture = new CompletableFuture<>();
       ctx.writeAndFlush(reqByteBuf);
-      STDOUT.log(Level.INFO, "After writeAndFlush ");
       if (notification) {
         ctx.channel().close();
         return CompletableFuture.completedFuture(null);
@@ -181,7 +179,8 @@ public abstract class RPCMessageHandler<TRequest, TResponse>
     }
 
     @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause)
+        throws IllegalArgumentException {
       IllegalArgumentException exception = new IllegalArgumentException("Channel exception", cause);
       activeFuture.completeExceptionally(exception);
       respFuture.completeExceptionally(exception);
@@ -189,7 +188,7 @@ public abstract class RPCMessageHandler<TRequest, TResponse>
     }
 
     @Override
-    public void handlerRemoved(ChannelHandlerContext ctx) throws Exception {
+    public void handlerRemoved(ChannelHandlerContext ctx) throws IllegalArgumentException {
       IllegalArgumentException exception = new IllegalArgumentException("Stream closed.");
       activeFuture.completeExceptionally(exception);
       respFuture.completeExceptionally(exception);

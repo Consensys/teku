@@ -19,6 +19,8 @@ import io.libp2p.core.ConnectionHandler;
 import io.libp2p.core.multiformats.Multiaddr;
 import io.libp2p.network.NetworkImpl;
 import java.time.Duration;
+import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
@@ -40,17 +42,16 @@ public class PeerManager implements ConnectionHandler {
 
   private ConcurrentHashMap<Multiaddr, Peer> connectedPeerMap = new ConcurrentHashMap<>();
 
-  private final RPCMessageHandler<HelloMessage, HelloMessage> helloMessageHandler;
+  private final RPCMessageHandler<HelloMessage, HelloMessage> rpcMessageHandler;
 
   public PeerManager(final ScheduledExecutorService scheduler) {
     this.scheduler = scheduler;
 
-    this.helloMessageHandler =
+    this.rpcMessageHandler =
         new RPCMessageHandler<>("/eth2/beacon_chain/req/hello/1/ssz", this::hello) {
           @Override
           protected CompletableFuture<HelloMessage> invokeLocal(
               Connection connection, HelloMessage helloMessage) {
-            STDOUT.log(Level.INFO, "invokeLocal HELLO to " + connection.remoteAddress());
             return CompletableFuture.completedFuture(
                 this.helloHandler.apply(connection, helloMessage));
           }
@@ -63,14 +64,12 @@ public class PeerManager implements ConnectionHandler {
     Peer peer = new Peer(connection);
     connectedPeerMap.put(peer.getPeerMultiaddr(), peer);
 
-    STDOUT.log(Level.INFO, "Got new connection from " + peer.getPeerId());
     connection
         .closeFuture()
         .thenRun(() -> STDOUT.log(Level.INFO, "Peer disconnected: " + peer.getPeerId()));
 
     if (connection.isInitiator()) {
-      STDOUT.log(Level.INFO, "*******INITIATOR************ " + peer.getPeerId());
-      helloMessageHandler
+      rpcMessageHandler
           .invokeRemote(connection, createHelloMessage())
           .thenApply(resp -> peer.getRemoteHelloMessage().complete(resp));
     }
@@ -90,18 +89,17 @@ public class PeerManager implements ConnectionHandler {
                     RECONNECT_TIMEOUT.toMillis(),
                     TimeUnit.MILLISECONDS);
               } else {
-                // handleConnection(conn);
-                //                conn.closeFuture()
-                //                    .thenAccept(
-                //                        ignore -> {
-                //                          LOG.log(
-                //                              Level.INFO, "Connection to " + peer + " closed. Will
-                // retry shortly");
-                //                          scheduler.schedule(
-                //                              () -> connect(peer, network),
-                //                              RECONNECT_TIMEOUT.toMillis(),
-                //                              TimeUnit.MILLISECONDS);
-                //                        });
+                handleConnection(conn);
+                conn.closeFuture()
+                    .thenAccept(
+                        ignore -> {
+                          LOG.log(
+                              Level.INFO, "Connection to " + peer + " closed. Will retry shortly");
+                          scheduler.schedule(
+                              () -> connect(peer, network),
+                              RECONNECT_TIMEOUT.toMillis(),
+                              TimeUnit.MILLISECONDS);
+                        });
               }
             });
   }
@@ -131,5 +129,9 @@ public class PeerManager implements ConnectionHandler {
         UnsignedLong.ZERO,
         Bytes32.random(),
         UnsignedLong.ZERO);
+  }
+
+  public List<RPCMessageHandler<?, ?>> all() {
+    return Arrays.asList(rpcMessageHandler);
   }
 }

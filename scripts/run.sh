@@ -92,7 +92,7 @@ mkdir -p ./demo
 rm -f ../config/runConfig.*
 rm -f ../config/*.dat
 
-START_DELAY=10
+START_DELAY=20
 CURRENT_TIME=$(date +%s)
 GENESIS_TIME=$((CURRENT_TIME + START_DELAY))
 

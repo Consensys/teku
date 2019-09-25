@@ -87,7 +87,7 @@ then
 
     rm -rf ~/.lighthouse
 
-    tmux split-window -v -t 0 "sleep 5; cd $DIR && ./beacon_node --libp2p-addresses /ip4/127.0.0.1/tcp/19000  --listen-address $LISTEN_ADDRESS --port $PORT testnet -f file ssz $GENESIS_FILE; sleep 20"
+    tmux split-window -v -t 0 "sleep 1; cd $DIR && ./beacon_node --libp2p-addresses /ip4/127.0.0.1/tcp/19000  --listen-address $LISTEN_ADDRESS --port $PORT testnet -f file ssz $GENESIS_FILE; sleep 20"
 
 
     ######LIGHTHOUSE VALIDATOR

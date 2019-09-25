@@ -29,7 +29,6 @@ public class Peer {
   }
 
   public CompletableFuture<HelloMessage> getRemoteHelloMessage() {
-    System.out.println("FOOOOOO");
     return remoteHello;
   }
 

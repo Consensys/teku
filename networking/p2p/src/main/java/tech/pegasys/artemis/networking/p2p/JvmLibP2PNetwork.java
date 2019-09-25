@@ -97,7 +97,7 @@ public class JvmLibP2PNetwork implements P2PNetwork {
               b.getProtocols().add(ping);
               b.getProtocols().add(new Identify(identifyMsg));
               b.getProtocols().add(gossip);
-              //              b.getProtocols().addAll(peerManager.rpcMethods.all());
+              b.getProtocols().addAll(peerManager.all());
 
               if (config.isLogWireCipher()) {
                 b.getDebug().getBeforeSecureHandler().setLogger(LogLevel.DEBUG, "wire.ciphered");
