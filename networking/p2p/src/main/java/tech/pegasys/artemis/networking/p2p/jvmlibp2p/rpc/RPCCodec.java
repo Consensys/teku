@@ -13,28 +13,13 @@
 
 package tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import de.undercouch.bson4jackson.BsonFactory;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
-import tech.pegasys.artemis.util.json.BytesModule;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
 public final class RPCCodec {
 
-  static final ObjectMapper mapper =
-      new ObjectMapper(new BsonFactory()).registerModule(new BytesModule());
-
   private RPCCodec() {}
-
-  /**
-   * Gets the json object mapper
-   *
-   * @return
-   */
-  public static ObjectMapper getMapper() {
-    return mapper;
-  }
 
   /**
    * Encodes a message into a RPC request

@@ -17,7 +17,7 @@ import io.libp2p.core.crypto.PrivKey;
 import java.util.List;
 import java.util.Optional;
 
-public class JvmLibp2pConfig {
+public class Config {
 
   private final Optional<PrivKey> privateKey;
   private final String networkInterface;
@@ -28,7 +28,7 @@ public class JvmLibp2pConfig {
   private final boolean logWirePlain;
   private final boolean logMuxFrames;
 
-  public JvmLibp2pConfig(
+  public Config(
       final Optional<PrivKey> privateKey,
       final String networkInterface,
       final int listenPort,

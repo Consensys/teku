@@ -33,7 +33,7 @@ import tech.pegasys.artemis.metrics.SettableGauge;
 import tech.pegasys.artemis.networking.p2p.JvmLibP2PNetwork;
 import tech.pegasys.artemis.networking.p2p.MockP2PNetwork;
 import tech.pegasys.artemis.networking.p2p.api.P2PNetwork;
-import tech.pegasys.artemis.networking.p2p.jvmlibp2p.JvmLibp2pConfig;
+import tech.pegasys.artemis.networking.p2p.jvmlibp2p.Config;
 import tech.pegasys.artemis.statetransition.StateProcessor;
 import tech.pegasys.artemis.statetransition.events.GenesisEvent;
 import tech.pegasys.artemis.statetransition.events.ValidatorAssignmentEvent;
@@ -127,7 +127,7 @@ public class BeaconChainController {
 
       this.p2pNetwork =
           new JvmLibP2PNetwork(
-              new JvmLibp2pConfig(
+              new Config(
                   Optional.of(pk),
                   config.getNetworkInterface(),
                   config.getPort(),
