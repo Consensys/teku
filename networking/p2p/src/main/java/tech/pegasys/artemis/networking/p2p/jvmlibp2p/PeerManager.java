@@ -80,10 +80,11 @@ public class PeerManager implements ConnectionHandler {
     return network
         .connect(peer)
         .whenComplete(
-            (conn, t) -> {
-              if (t != null) {
+            (conn, throwable) -> {
+              if (throwable != null) {
                 STDOUT.log(
-                    Level.INFO, "Connection to " + peer + " failed. Will retry shortly: " + t);
+                    Level.INFO,
+                    "Connection to " + peer + " failed. Will retry shortly: " + throwable);
                 scheduler.schedule(
                     () -> connect(peer, network),
                     RECONNECT_TIMEOUT.toMillis(),

@@ -193,8 +193,8 @@ public class BeaconChainController {
           this.eventBus.post(new SlotEvent(nodeSlot));
           this.currentSlotGauge.set(nodeSlot.longValue());
           this.currentEpochGauge.set(compute_epoch_of_slot(nodeSlot).longValue());
-          STDOUT.log(Level.DEBUG, "******* Slot Event *******", ALogger.Color.WHITE);
-          STDOUT.log(Level.DEBUG, "Node slot:                             " + nodeSlot);
+          STDOUT.log(Level.INFO, "******* Slot Event *******", ALogger.Color.WHITE);
+          STDOUT.log(Level.INFO, "Node slot:                             " + nodeSlot);
           Thread.sleep(SECONDS_PER_SLOT * 1000 / 2);
           this.eventBus.post(new ValidatorAssignmentEvent(nodeSlot));
           nodeSlot = nodeSlot.plus(UnsignedLong.ONE);
