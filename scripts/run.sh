@@ -4,10 +4,12 @@
 
 usage() {
   echo "Runs a simulation of artemis with NODES nodes, where NODES > 0 and NODES < 256"
-  echo "Usage: sh run.sh {--numNodes=NODES|-n=NODES} [--networkMode=jvmlibp2p|-m=jvmlibp2p] [--inputFile=INPUT|-i=INPUT]"
-  echo "                 [--help|-h]"
-  echo "If input files are specifed for specific nodes, those input files will be used to"
+  echo "Usage: sh run.sh [--numNodes, -n=NODES]  [--config=/path/to/your-config.toml] [--logging, -l=OFF|FATAL|WARN|INFO|DEBUG|TRACE|ALL]"
+  echo "                 [--help, -h]"
+  echo "Note: "
+  echo "- If config files are specifed for specific nodes, those input files will be used to"
   echo "configure their respective nodes."
+  echo "- If no logging option is specified, then INFO is the default"
 }
 
 # **** Script **** #
@@ -44,7 +46,7 @@ do
       MODE="${arg#*=}" ;;
 
     # Match the -i or --inputFile option and update the INPUTS array with the output file path
-    "--inputFile"*) 
+    "--config"*)
       FILE="${arg#*=}"
       IDX=$(echo $FILE | sed -E "s/.*[a-zA-Z0-9]+\.([0-9]+)\.toml/\1/")
       # If the input file for a given node is ambiguous, pipe the usage statement to stderr and exit
@@ -55,6 +57,14 @@ do
       fi 
 
       INPUTS[$IDX]="$FILE" ;;
+
+    # Match the -l or --logging option and set LOG mode to the provided argument
+    -l=*|--logging=*)
+      if [ "$LOG" != "" ]
+      then
+        usage >&2; exit 1
+      fi
+      LOG="${arg#*=}" ;;
 
     # Print the usage and exit if the help flag is provided 
     -h|--help) usage; exit 0 ;;
@@ -83,6 +93,19 @@ if [ "$MODE" != "jvmlibp2p" ]
 then
   usage >&2; exit 3
 fi
+
+# If LOG is undefined default to INFO
+[[ -z "$LOG" ]] && LOG="INFO"
+
+
+LOG_OPTIONS=("OFF FATAL WARN INFO DEBUG TRACE ALL")
+# If LOG is not a valid input pipe the usage statement to stderr and exit
+# with exit code 3
+if [[ ! " ${LOG_OPTIONS[@]} " =~ " ${LOG} " ]]
+then
+  usage >&2; exit 3
+fi
+
 
 # Clean the demo directory
 rm -rf ./demo
