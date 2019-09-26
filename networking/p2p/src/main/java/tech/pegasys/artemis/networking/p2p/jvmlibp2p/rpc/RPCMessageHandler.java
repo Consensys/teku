@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.networking.p2p.jvmlibp2p;
+package tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc;
 
 import io.libp2p.core.Connection;
 import io.libp2p.core.P2PAbstractChannel;
@@ -25,27 +25,27 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.BiFunction;
 import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes;
 import org.jetbrains.annotations.NotNull;
-import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.HelloMessage;
-import tech.pegasys.artemis.networking.p2p.jvmlibp2p.RPCMessageHandler.Controller;
-import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.RPCCodec;
+import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.RPCMessageHandler.Controller;
 import tech.pegasys.artemis.util.alogger.ALogger;
+import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
-public abstract class RPCMessageHandler<TRequest, TResponse>
+public abstract class RPCMessageHandler<TRequest extends SimpleOffsetSerializable, TResponse>
     implements ProtocolBinding<Controller<TRequest, TResponse>> {
   private static final ALogger STDOUT = new ALogger("stdout");
 
   private final String methodMultistreamId;
-  protected final BiFunction<Connection, TRequest, TResponse> helloHandler;
+  private final Class<TRequest> requestClass;
+  private final Class<TResponse> responseClass;
   private boolean notification = false;
 
   public RPCMessageHandler(
-      String methodMultistreamId, BiFunction<Connection, TRequest, TResponse> helloHandler) {
+      String methodMultistreamId, Class<TRequest> requestClass, Class<TResponse> responseClass) {
     this.methodMultistreamId = methodMultistreamId;
-    this.helloHandler = helloHandler;
+    this.requestClass = requestClass;
+    this.responseClass = responseClass;
   }
 
   @SuppressWarnings("unchecked")
@@ -114,17 +114,16 @@ public abstract class RPCMessageHandler<TRequest, TResponse>
       throw new IllegalStateException("This method shouldn't be called for Responder");
     }
 
-    @SuppressWarnings("unchecked")
     @Override
-    protected void channelRead0(ChannelHandlerContext ctx, ByteBuf byteBuf) throws Exception {
+    protected void channelRead0(ChannelHandlerContext ctx, ByteBuf byteBuf) {
       STDOUT.log(Level.DEBUG, "Received " + byteBuf.array().length + " bytes.");
       Bytes bytes = Bytes.wrapByteBuf(byteBuf);
-      TRequest request = (TRequest) RPCCodec.decode(bytes, HelloMessage.class);
+      TRequest request = RPCCodec.decode(bytes, requestClass);
       invokeLocal(connection, request)
           .whenComplete(
               (resp, err) -> {
                 ByteBuf respBuf = Unpooled.buffer();
-                Bytes encoded = RPCCodec.encode((HelloMessage) request);
+                Bytes encoded = RPCCodec.encode(request);
                 respBuf.writeBytes(encoded.toArrayUnsafe());
                 ctx.writeAndFlush(respBuf);
                 ctx.channel().disconnect();
@@ -136,7 +135,6 @@ public abstract class RPCMessageHandler<TRequest, TResponse>
     private ChannelHandlerContext ctx;
     private CompletableFuture<TResponse> respFuture;
 
-    @SuppressWarnings("unchecked")
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, ByteBuf byteBuf)
         throws IllegalArgumentException {
@@ -148,7 +146,7 @@ public abstract class RPCMessageHandler<TRequest, TResponse>
       }
       STDOUT.log(Level.DEBUG, "Received " + byteBuf.array().length + " bytes.");
       Bytes bytes = Bytes.wrapByteBuf(byteBuf);
-      TResponse response = (TResponse) RPCCodec.decode(bytes, HelloMessage.class);
+      TResponse response = RPCCodec.decode(bytes, responseClass);
       if (response != null) {
         respFuture.complete(response);
       } else {
@@ -159,7 +157,7 @@ public abstract class RPCMessageHandler<TRequest, TResponse>
     @Override
     public CompletableFuture<TResponse> invoke(TRequest request) {
       ByteBuf reqByteBuf = Unpooled.buffer();
-      Bytes encoded = RPCCodec.encode((HelloMessage) request);
+      Bytes encoded = RPCCodec.encode(request);
       reqByteBuf.writeBytes(encoded.toArrayUnsafe());
       respFuture = new CompletableFuture<>();
       ctx.writeAndFlush(reqByteBuf);

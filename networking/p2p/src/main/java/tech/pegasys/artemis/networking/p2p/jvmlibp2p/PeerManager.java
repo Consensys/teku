@@ -19,8 +19,6 @@ import io.libp2p.core.ConnectionHandler;
 import io.libp2p.core.multiformats.Multiaddr;
 import io.libp2p.network.NetworkImpl;
 import java.time.Duration;
-import java.util.Arrays;
-import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
@@ -29,7 +27,9 @@ import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.jetbrains.annotations.NotNull;
+import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.GoodbyeMessage;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.HelloMessage;
+import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.RPCMethods;
 import tech.pegasys.artemis.util.SSZTypes.Bytes4;
 import tech.pegasys.artemis.util.alogger.ALogger;
 
@@ -42,20 +42,11 @@ public class PeerManager implements ConnectionHandler {
 
   private ConcurrentHashMap<Multiaddr, Peer> connectedPeerMap = new ConcurrentHashMap<>();
 
-  private final RPCMessageHandler<HelloMessage, HelloMessage> rpcMessageHandler;
+  private final RPCMethods rpcMethods;
 
   public PeerManager(final ScheduledExecutorService scheduler) {
     this.scheduler = scheduler;
-
-    this.rpcMessageHandler =
-        new RPCMessageHandler<>("/eth2/beacon_chain/req/hello/1/ssz", this::hello) {
-          @Override
-          protected CompletableFuture<HelloMessage> invokeLocal(
-              Connection connection, HelloMessage helloMessage) {
-            return CompletableFuture.completedFuture(
-                this.helloHandler.apply(connection, helloMessage));
-          }
-        };
+    this.rpcMethods = new RPCMethods(this::hello, this::goodbye);
   }
 
   @Override
@@ -69,7 +60,8 @@ public class PeerManager implements ConnectionHandler {
         .thenRun(() -> STDOUT.log(Level.INFO, "Peer disconnected: " + peer.getPeerId()));
 
     if (connection.isInitiator()) {
-      rpcMessageHandler
+      rpcMethods
+          .getHello()
           .invokeRemote(connection, createHelloMessage())
           .thenApply(resp -> peer.getRemoteHelloMessage().complete(resp));
     }
@@ -113,14 +105,20 @@ public class PeerManager implements ConnectionHandler {
     STDOUT.log(Level.INFO, "New active peer: " + peer);
   }
 
-  private HelloMessage hello(Connection connection, HelloMessage helloMessage) {
-    STDOUT.log(Level.INFO, "Peer said hello");
+  private HelloMessage hello(Connection connection, HelloMessage message) {
+    STDOUT.log(Level.INFO, "Peer " + connection.getSecureSession().getRemoteId() + " said hello.");
     if (connection.isInitiator()) {
       throw new IllegalArgumentException("Responder peer shouldn't initiate Hello message");
     } else {
-      getPeer(connection).getRemoteHelloMessage().complete(helloMessage);
+      getPeer(connection).getRemoteHelloMessage().complete(message);
       return createHelloMessage();
     }
+  }
+
+  private Void goodbye(Connection connection, GoodbyeMessage message) {
+    STDOUT.log(
+        Level.INFO, "Peer " + connection.getSecureSession().getRemoteId() + " said goodbye.");
+    return null;
   }
 
   private HelloMessage createHelloMessage() {
@@ -132,7 +130,7 @@ public class PeerManager implements ConnectionHandler {
         UnsignedLong.ZERO);
   }
 
-  public List<RPCMessageHandler<?, ?>> all() {
-    return Arrays.asList(rpcMessageHandler);
+  public RPCMethods getRPCMethods() {
+    return rpcMethods;
   }
 }
