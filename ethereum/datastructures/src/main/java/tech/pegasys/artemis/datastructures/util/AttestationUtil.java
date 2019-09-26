@@ -394,4 +394,37 @@ public class AttestationUtil {
 
     return list;
   }
+
+  public static boolean representsNewAttester(
+      Attestation oldAttestation, Attestation newAttestation) {
+    int newAttesterIndex = getAttesterIndexIntoCommittee(newAttestation);
+    return oldAttestation.getAggregation_bits().getBit(newAttesterIndex) == 0;
+  }
+
+  // Returns the index of the first attester in the Attestation
+  public static int getAttesterIndexIntoCommittee(Attestation attestation) {
+    Bitlist aggregationBits = attestation.getAggregation_bits();
+    for (int i = 0; i < aggregationBits.getCurrentSize(); i++) {
+      int bitfieldBit = aggregationBits.getBit(i);
+      if (bitfieldBit == 1) {
+        return i;
+      }
+    }
+    throw new UnsupportedOperationException("Attestation doesn't have any aggregation bit set");
+  }
+
+  public static boolean isSingleAttester(Attestation attestation) {
+    Bitlist aggregationBitfield = attestation.getAggregation_bits();
+    int count = 0;
+    for (int i = 0; i < aggregationBitfield.getCurrentSize(); i++) {
+      int bitfieldBit = aggregationBitfield.getBit(i);
+      if (bitfieldBit == 1) count++;
+    }
+
+    if (count == 1) {
+      return true;
+    } else {
+      return false;
+    }
+  }
 }

@@ -16,7 +16,8 @@ constants = "minimal"
 
 [interop]
 active = false
-genesisTime = 1567777777
+# when genesis time is set to 0, artemis takes genesis time as currentTime + 5 seconds.
+genesisTime = 0
 ownedValidatorStartIndex = 0
 ownedValidatorCount = 16
 startState = ""
@@ -34,7 +35,7 @@ privateKey = "0x08021221008166B8EF20C11F3A18F8774BF834173B07F64BAEDA981766896B4A
 mode = "test"
 inputFile = "validator_test_data.json"
 numValidators = 16
-numNodes = 1
+numNodes = 4
 contractAddr = "0x77f7bED277449F51505a4C54550B074030d989bC"
 nodeUrl = "http://localhost:7545"
 
