@@ -9,6 +9,19 @@
 #   sh interop.sh 16 0 16 10
 #
 
+usage() {
+  echo "Runs a multiclient testnet"
+  echo "Usage: sh interop.sh [validator_count] [owned_validator_start_index] [owned_validator_count] [start_delay]"
+  echo "Example: Run multiple clients in interop mode using static peering. 16 validators and all are assigned to Artemis"
+  echo "         sh interop.sh 16 0 16 10"
+}
+
+if [ "$#" -ne 4 ]
+then
+  usage >&2;
+  exit 1;
+fi
+
 export VALIDATOR_COUNT=$1
 export OWNED_VALIDATOR_START_INDEX=$2
 export OWNED_VALIDATOR_COUNT=$3

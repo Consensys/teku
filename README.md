@@ -52,18 +52,6 @@ ownedValidatorCount = 4
 startState = "/tmp/genesis.ssz"  # Genesis file to load
 ```
 
-### Running
-
-An interop script is provided to create a network with Artemis and a number of other clients. 
-The script requires both tmux and [zcli](https://github.com/protolambda/zcli) to be installed and available on the path. Run with:
-```shell script
-cd scripts
-bash interop.sh [validator_count] [owned_validator_start_index] [owned_validator_count] [start_delay]
-```
-
-Alternatively Artemis can be run stand-alone using the `bin/artemis` script from a distribution.
-You can use `./build/install/artemis/bin/artemis` if you followed the build instructions above.
-
 ## Build Instructions
 
 ### Full build and Test
@@ -86,16 +74,75 @@ After a successful build, distribution packages will be available in `build/dist
 | installDist  | Builds an expanded distribution in build/install/artemis
 | distDocker   | Builds the pegasyseng/artemis docker image
 
-## Run Demo
+## Run Multiple Artemis nodes
 
-After building with `./gradlew distTar`, follow these instructions:
+#### Prereqs:
+
+- tmux
+
+After building with `./gradlew distTar`, the simplest way to run is by using this command: 
 
 ```bash
 $ cd scripts
 $ sh run.sh -n=[NUMBER OF NODES]
 ```
 
-> Note:  You will need tmux installed for this demo to work
+Help is available for this script as well:
+
+```bash
+$ sh run.sh -h
+Runs a simulation of artemis with NODES nodes, where NODES > 0 and NODES < 256
+Usage: sh run.sh [--numNodes, -n=NODES]  [--config=/path/to/your-config.toml] [--logging, -l=OFF|FATAL|WARN|INFO|DEBUG|TRACE|ALL]
+                 [--help, -h]
+- If config files are specifed for specific nodes, those input files will be used to
+configure their respective nodes.
+- If no logging option is specified, then INFO is the default
+```
+
+## Run in Interop Mode
+
+An interop script is provided to create a network with Artemis and a number of other clients. 
+
+### Prereqs:
+
+- tmux
+- [zcli](https://github.com/protolambda/zcli)
+- You will need to have at least one other client built on your machine for this to work
+
+The simplest way to run in interop mode is by using this command: 
+
+```bash
+$ cd scripts
+$ sh interop.sh [validator_count] [owned_validator_start_index] [owned_validator_count] [start_delay]
+```
+Help is available for this script as well:
+
+```bash
+$ sh interop.sh 
+Runs a multiclient testnet
+Usage: sh interop.sh [validator_count] [owned_validator_start_index] [owned_validator_count] [start_delay]
+Example: Run multiple clients in interop mode using static peering. 16 validators and all are assigned to Artemis
+         sh interop.sh 16 0 16 10
+```
+
+### Manual configuration
+
+To configure it manually, set these options in the config.toml:
+
+```bash
+[interop]
+active = true
+genesisTime = [seconds since 1970-01-01 00:00:00 UTC]
+ownedValidatorStartIndex = [int]
+ownedValidatorCount = [int]
+startState = "/tmp/genesis.ssz"
+privateKey = [libp2p private key associated with this node's peerID]
+
+[deposit]
+
+numValidators = 16
+
+```
 
 ## Code Style
 
@@ -121,13 +168,24 @@ To view the run menu:
 ```
 $ ./gradlew run --args='-h'
 
-Usage: Artemis [-hV] [-c=<FILENAME>] [-l=<LOG VERBOSITY LEVEL>]
--c, --config=<FILENAME>   Path/filename of the config file
--h, --help                Show this help message and exit.
--l, --logging=<LOG VERBOSITY LEVEL>
-                          Logging verbosity levels: OFF, FATAL, WARN, INFO, DEBUG,
-                            TRACE, ALL (default: INFO).
--V, --version             Print version information and exit.
+artemis [OPTIONS] [COMMAND]
+
+Description:
+
+Run the Artemis beacon chain client and validator
+
+Options:
+  -c, --config=<FILENAME>   Path/filename of the config file
+  -h, --help                Show this help message and exit.
+  -l, --logging=<LOG VERBOSITY LEVEL>
+                            Logging verbosity levels: OFF, FATAL, WARN, INFO,
+                              DEBUG, TRACE, ALL (default: INFO).
+  -V, --version             Print version information and exit.
+Commands:
+  transition  Manually run state transitions
+  peer        Commands for LibP2P PeerID
+
+Artemis is licensed under the Apache License 2.0
 
 ```
 
@@ -167,18 +225,4 @@ Terminal 2:
 $ ./gradlew run -PgenerateFlow
 ```
 
-## Interop Mode
 
-To activate interop mode with a predefined genesis state, change the config.toml as follows:
-
-```
-[interop]
-active = true
-genesisTime = 1568830184
-ownedValidatorStartIndex = 0
-ownedValidatorCount = 16
-startState = "/tmp/genesis.ssz"
-privateKey = "0x08021221008166B8EF20C11F3A18F8774BF834173B07F64BAEDA981766896B4A8F53B52EDF"
-```
-
-> NOTE: Under `deposit` set `numValidators` to the agreed number of initial validators (`validator_count` from the spec)
