@@ -13,6 +13,37 @@
 
 package tech.pegasys.artemis.datastructures.util;
 
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.primitives.UnsignedLong;
+import org.apache.logging.log4j.Level;
+import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.crypto.Hash;
+import org.apache.tuweni.ssz.SSZ;
+import tech.pegasys.artemis.datastructures.Constants;
+import tech.pegasys.artemis.datastructures.blocks.BeaconBlockBody;
+import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
+import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
+import tech.pegasys.artemis.datastructures.operations.Deposit;
+import tech.pegasys.artemis.datastructures.operations.DepositData;
+import tech.pegasys.artemis.datastructures.operations.DepositWithIndex;
+import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
+import tech.pegasys.artemis.datastructures.state.Validator;
+import tech.pegasys.artemis.util.SSZTypes.Bitvector;
+import tech.pegasys.artemis.util.SSZTypes.Bytes4;
+import tech.pegasys.artemis.util.SSZTypes.SSZList;
+import tech.pegasys.artemis.util.alogger.ALogger;
+import tech.pegasys.artemis.util.bls.BLSPublicKey;
+import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
+
+import java.nio.ByteOrder;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.lang.Math.toIntExact;
 import static tech.pegasys.artemis.datastructures.Constants.ACTIVATION_EXIT_DELAY;
@@ -47,40 +78,11 @@ import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.get_active
 import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.increase_balance;
 import static tech.pegasys.artemis.util.bls.BLSVerify.bls_verify;
 
-import com.google.common.annotations.VisibleForTesting;
-import com.google.common.primitives.UnsignedLong;
-import java.nio.ByteOrder;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.crypto.Hash;
-import org.apache.tuweni.ssz.SSZ;
-import tech.pegasys.artemis.datastructures.Constants;
-import tech.pegasys.artemis.datastructures.blocks.BeaconBlockBody;
-import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
-import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
-import tech.pegasys.artemis.datastructures.operations.Deposit;
-import tech.pegasys.artemis.datastructures.operations.DepositData;
-import tech.pegasys.artemis.datastructures.operations.DepositWithIndex;
-import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
-import tech.pegasys.artemis.datastructures.state.Validator;
-import tech.pegasys.artemis.util.SSZTypes.Bitvector;
-import tech.pegasys.artemis.util.SSZTypes.Bytes4;
-import tech.pegasys.artemis.util.SSZTypes.SSZList;
-import tech.pegasys.artemis.util.alogger.ALogger;
-import tech.pegasys.artemis.util.bls.BLSPublicKey;
-import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
-
 public class BeaconStateUtil {
 
   private static final ALogger LOG = new ALogger(BeaconStateUtil.class.getName());
 
-  public static BeaconStateWithCache initialize_beacon_state_from_eth1(
+  /*public static BeaconStateWithCache initialize_beacon_state_from_eth1(
       Bytes32 eth1_block_hash, UnsignedLong eth1_timestamp, List<DepositWithIndex> deposits) {
     UnsignedLong genesis_time =
         eth1_timestamp.minus(
@@ -141,9 +143,9 @@ public class BeaconStateUtil {
               state.getCompact_committees_roots().set(index, committee_root);
             });
     return state;
-  }
+  }*/
 
-  public static BeaconStateWithCache initialize_beacon_state_from_eth1_new(
+  public static BeaconStateWithCache initialize_beacon_state_from_eth1(
       Bytes32 eth1_block_hash, UnsignedLong eth1_timestamp, List<? extends Deposit> deposits) {
     UnsignedLong genesis_time =
         eth1_timestamp
@@ -163,6 +165,15 @@ public class BeaconStateUtil {
     state.setLatest_block_header(beaconBlockHeader);
 
     // Process deposits
+    List<DepositWithIndex> depositWithIndices =
+        deposits.stream()
+            .map(
+                deposit ->
+                    new DepositWithIndex(deposit, UnsignedLong.valueOf(deposits.indexOf(deposit))))
+            .collect(Collectors.toList());
+    MerkleTree<DepositWithIndex> merkleTree = DepositUtil.generateMerkleTree(depositWithIndices);
+    DepositUtil.applyBranchProofs(merkleTree, depositWithIndices);
+
     long depositListLength = ((long) 1) << DEPOSIT_CONTRACT_TREE_DEPTH;
     List<DepositData> leaves = deposits.stream().map(Deposit::getData).collect(Collectors.toList());
     for (int i = 0; i < deposits.size(); i++) {
@@ -173,7 +184,7 @@ public class BeaconStateUtil {
           .setDeposit_root(
               HashTreeUtil.hash_tree_root(
                   HashTreeUtil.SSZTypes.LIST_OF_COMPOSITE, depositListLength, deposit_data_list));
-      process_deposit(state, deposits.get(i));
+      process_deposit(state, depositWithIndices.get(i));
     }
 
     // Process activations
@@ -223,7 +234,7 @@ public class BeaconStateUtil {
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#deposits</a>
    */
   public static void process_deposit(BeaconState state, Deposit deposit) {
-    /*
+    LOG.log(Level.ERROR, "Sup Joe");
     checkArgument(
         is_valid_merkle_branch(
             deposit.getData().hash_tree_root(),
@@ -232,7 +243,6 @@ public class BeaconStateUtil {
             toIntExact(state.getEth1_deposit_index().longValue()),
             state.getEth1_data().getDeposit_root()),
         "process_deposit: Verify the Merkle branch");
-        */
 
     state.setEth1_deposit_index(state.getEth1_deposit_index().plus(UnsignedLong.ONE));
 
