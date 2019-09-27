@@ -82,14 +82,14 @@ After a successful build, distribution packages will be available in `build/dist
 
 After building with `./gradlew distTar`, the simplest way to run is by using this command: 
 
-```bash
+```shell script
 $ cd scripts
 $ sh run.sh -n=[NUMBER OF NODES]
 ```
 
 Help is available for this script as well:
 
-```bash
+```
 $ sh run.sh -h
 Runs a simulation of artemis with NODES nodes, where NODES > 0 and NODES < 256
 Usage: sh run.sh [--numNodes, -n=NODES]  [--config=/path/to/your-config.toml] [--logging, -l=OFF|FATAL|WARN|INFO|DEBUG|TRACE|ALL]
@@ -111,13 +111,13 @@ An interop script is provided to create a network with Artemis and a number of o
 
 The simplest way to run in interop mode is by using this command: 
 
-```bash
+```shell script
 $ cd scripts
 $ sh interop.sh [validator_count] [owned_validator_start_index] [owned_validator_count] [start_delay]
 ```
 Help is available for this script as well:
 
-```bash
+```
 $ sh interop.sh 
 Runs a multiclient testnet
 Usage: sh interop.sh [validator_count] [owned_validator_start_index] [owned_validator_count] [start_delay]
@@ -129,7 +129,7 @@ Example: Run multiple clients in interop mode using static peering. 16 validator
 
 To configure it manually, set these options in the config.toml:
 
-```bash
+```toml
 [interop]
 active = true
 genesisTime = [seconds since 1970-01-01 00:00:00 UTC]
