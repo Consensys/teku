@@ -13,7 +13,9 @@ Based on the (evolving) [specification](https://github.com/ethereum/eth2.0-specs
 You need to have Java 11 installed.
 
 Ubuntu: `sudo apt install openjdk-11-jdk`
+
 MacOS: `brew tap AdoptOpenJDK/openjdk && brew cask install adoptopenjdk11`
+
 Other systems: [https://adoptopenjdk.net/] is very helpful. 
 
 ### Building
@@ -76,7 +78,7 @@ After a successful build, distribution packages will be available in `build/dist
 
 ## Run Multiple Artemis nodes
 
-#### Prereqs:
+### Prereqs:
 
 - tmux
 
@@ -132,11 +134,11 @@ To configure it manually, set these options in the config.toml:
 ```toml
 [interop]
 active = true
-genesisTime = [seconds since 1970-01-01 00:00:00 UTC]
-ownedValidatorStartIndex = [int]
-ownedValidatorCount = [int]
+genesisTime = 5778872 #seconds since 1970-01-01 00:00:00 UTC
+ownedValidatorStartIndex = 0
+ownedValidatorCount = 8
 startState = "/tmp/genesis.ssz"
-privateKey = [libp2p private key associated with this node's peerID]
+privateKey = 0x00 #libp2p private key associated with this node's peerID
 
 [deposit]
 
@@ -148,7 +150,7 @@ numValidators = 16
 
 We use Google's Java coding conventions for the project. To reformat code, run: 
 
-```
+```shell script 
 $ ./gradlew spotlessApply
 ```
 
@@ -157,7 +159,8 @@ Code style will be checked automatically during a build.
 ## Testing
 
 All the unit tests are run as part of the build, but can be explicitly triggered with:
-```
+
+```shell script 
 $ ./gradlew test
 ```
 
@@ -190,7 +193,7 @@ Artemis is licensed under the Apache License 2.0
 ```
 
 You can run the executable from the CLI with this command:
-```
+```shell script
 $ ./gradlew run
 ```
 
@@ -199,7 +202,7 @@ Refer to `config/config.toml` for a set of default configuration settings.
 
 To run with logging level set to DEBUG
 
-```
+```shell script
 $ ./gradlew run --args='-l=DEBUG'
 ```
 
@@ -207,21 +210,20 @@ To profile and/or generate flow diagrams for Artemis:
 
 Setup:
 
-```bash
+```shell script 
 $ source artemis.env 
 ```
 
 Run:
 
-
 Terminal 1:
 
-```bash
+```shell script
 $ flow
 ```
 
 Terminal 2:
-``` bash
+```shell script
 $ ./gradlew run -PgenerateFlow
 ```
 
