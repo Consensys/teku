@@ -17,7 +17,6 @@ import io.libp2p.core.Connection;
 import io.libp2p.core.PeerId;
 import io.libp2p.core.multiformats.Multiaddr;
 import java.util.concurrent.CompletableFuture;
-import org.apache.logging.log4j.Level;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.HelloMessage;
 import tech.pegasys.artemis.util.alogger.ALogger;
 
@@ -36,9 +35,6 @@ public class Peer {
   }
 
   public CompletableFuture<HelloMessage> getRemoteHelloMessage() {
-    STDOUT.log(
-        Level.DEBUG,
-        "getRemoteHelloMessage() from peer: " + connection.getSecureSession().getRemoteId());
     return remoteHello;
   }
 

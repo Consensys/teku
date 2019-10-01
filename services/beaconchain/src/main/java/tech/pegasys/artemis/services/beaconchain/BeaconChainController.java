@@ -14,6 +14,7 @@
 package tech.pegasys.artemis.services.beaconchain;
 
 import static tech.pegasys.artemis.datastructures.Constants.SECONDS_PER_SLOT;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_of_slot;
 import static tech.pegasys.artemis.statetransition.util.ForkChoiceUtil.get_head;
 import static tech.pegasys.artemis.statetransition.util.ForkChoiceUtil.on_tick;
 
@@ -222,8 +223,8 @@ public class BeaconChainController {
                         .plus(nodeSlot.times(UnsignedLong.valueOf(SECONDS_PER_SLOT))))
             >= 0) {
           this.eventBus.post(new SlotEvent(nodeSlot));
-          // this.currentSlotGauge.set(nodeSlot.longValue());
-          // this.currentEpochGauge.set(compute_epoch_of_slot(nodeSlot).longValue());
+          this.currentSlotGauge.set(nodeSlot.longValue());
+          this.currentEpochGauge.set(compute_epoch_of_slot(nodeSlot).longValue());
           STDOUT.log(Level.INFO, "******* Slot Event *******", ALogger.Color.WHITE);
           STDOUT.log(Level.INFO, "Node slot:                             " + nodeSlot);
           Thread.sleep(SECONDS_PER_SLOT * 1000 / 2);

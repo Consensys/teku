@@ -116,9 +116,10 @@ public abstract class RPCMessageHandler<TRequest extends SimpleOffsetSerializabl
 
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, ByteBuf byteBuf) {
-      STDOUT.log(Level.DEBUG, "Received " + byteBuf.array().length + " bytes.");
+      STDOUT.log(Level.DEBUG, "Responder received " + byteBuf.array().length + " bytes.");
       Bytes bytes = Bytes.wrapByteBuf(byteBuf);
       TRequest request = RPCCodec.decode(bytes, requestClass);
+
       invokeLocal(connection, request)
           .whenComplete(
               (resp, err) -> {
@@ -144,7 +145,7 @@ public abstract class RPCMessageHandler<TRequest extends SimpleOffsetSerializabl
             "Received " + byteBuf.array().length + " bytes of data before requesting it.");
         throw new IllegalArgumentException("Some data received prior to request: " + byteBuf);
       }
-      STDOUT.log(Level.DEBUG, "Received " + byteBuf.array().length + " bytes.");
+      STDOUT.log(Level.DEBUG, "Requester received " + byteBuf.array().length + " bytes.");
       Bytes bytes = Bytes.wrapByteBuf(byteBuf);
       TResponse response = RPCCodec.decode(bytes, responseClass);
       if (response != null) {

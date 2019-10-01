@@ -55,7 +55,6 @@ public class PeerManager implements ConnectionHandler {
     connection.closeFuture().thenRun(() -> onDisconnectedPeer(peer));
 
     if (connection.isInitiator()) {
-      STDOUT.log(Level.DEBUG, "Initiator New peer: " + peer.getPeerMultiaddr());
       rpcMethods
           .getHello()
           .invokeRemote(connection, createLocalHelloMessage())
@@ -76,7 +75,11 @@ public class PeerManager implements ConnectionHandler {
                 scheduler.schedule(
                     () -> connect(peer, network), RECONNECT_TIMEOUT, TimeUnit.MILLISECONDS);
               } else if (throwable == null) {
-                STDOUT.log(Level.DEBUG, "*********SUCESSFUL CONNECTION********");
+                STDOUT.log(
+                    Level.DEBUG,
+                    "Connection to peer: "
+                        + conn.getSecureSession().getRemoteId()
+                        + " was successful");
                 conn.closeFuture()
                     .thenAccept(
                         ignore -> {

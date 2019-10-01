@@ -39,7 +39,7 @@ export START_LIGHTHOUSE=true
 export START_TRINITY=false
 export START_NIMBUS=false
 export START_LODESTAR=false
-export START_PRYSM=true
+export START_PRYSM=false
 export START_HARMONY=true
 
 zcli keys generate |zcli genesis mock --count $VALIDATOR_COUNT --genesis-time $GENESIS_TIME --out $GENESIS_FILE
@@ -82,7 +82,7 @@ then
          sh configurator.sh "$CONFIG_DIR/runConfig.0.toml" isBootnode false
     #fi
     sed -i "" '10d' "$CONFIG_DIR/runConfig.0.toml"
-    tmux new-session -d -s foo "jenv local $ARTEMIS_JAVA_VERSION; cd $SCRIPT_DIR/demo/node_0/ && ./artemis --config=$CONFIG_DIR/runConfig.0.toml --logging=INFO; sleep 20"
+    tmux new-session -d -s foo "jenv local $ARTEMIS_JAVA_VERSION; cd $SCRIPT_DIR/demo/node_0/ && ./artemis --config=$CONFIG_DIR/runConfig.0.toml --logging=DEBUG; sleep 20"
 fi
 
 
@@ -96,7 +96,7 @@ then
     #TODO: use a relative path to lighthouse dir.  the best way would be to deploy it to $ARTEMIS_ROOT/scripts/demo/node_lighthouse
     export DIR=$HOME/projects/consensys/pegasys/lighthouse/lighthouse/target/release
 
-    # export RUST_LOG=libp2p_gossipsub=debug
+    export RUST_LOG=libp2p_gossipsub=debug
 
     rm -rf ~/.lighthouse
 
@@ -210,7 +210,7 @@ then
     export PORT=19006
     export DIR=$HOME/projects/consensys/pegasys/beacon-chain-java/node-0.2.0/bin
     #tmux split-window -h -t 0 "echo start_index $HARMONY_OWNED_VALIDATOR_START_INDEX;  echo end_index $HARMONY_VALIDATOR_END_INDEX; cd $DIR; jenv local $HARMONY_JAVA_VERSION; ./node default --connect=/ip4/127.0.0.1/tcp/19000/p2p/16Uiu2HAmLyZqiwTqVPEnYYFDRbpYFsaWdxTgPiRRJuzDx8A1Dj1q --listen=$PORT --force-db-clean --spec-constants minimal --initial-state=$GENESIS_FILE --validators=$HARMONY_OWNED_VALIDATOR_START_INDEX-$HARMONY_VALIDATOR_END_INDEX; sleep 20"
-    tmux split-window -h -t 0 "sleep 5; cd $DIR; jenv local $HARMONY_JAVA_VERSION; ./node default --connect=/ip4/127.0.0.1/tcp/19000/p2p/$PEER_ID --listen=$PORT --force-db-clean --spec-constants minimal --initial-state=$GENESIS_FILE; sleep 20"
+    tmux split-window -h -t 0 "cd $DIR; jenv local $HARMONY_JAVA_VERSION; ./node default --connect=/ip4/127.0.0.1/tcp/19000/p2p/$PEER_ID --listen=$PORT --force-db-clean --spec-constants minimal --initial-state=$GENESIS_FILE; sleep 20"
 fi
 
 

@@ -129,13 +129,17 @@ public class JvmLibP2PNetwork implements P2PNetwork {
                       + " with peerId "
                       + PeerId.fromPubKey(privKey.publicKey()).toBase58());
               return null;
-            });
-
-    config
-        .getPeers()
-        .forEach(
-            peer -> {
-              connect(peer);
+            })
+        .whenComplete(
+            (object, throwable) -> {
+              try {
+                // Sleep long enough for network listening to complete
+                Thread.sleep(1000);
+              } catch (InterruptedException e) {
+                e.printStackTrace();
+                throw new IllegalArgumentException(e.getMessage());
+              }
+              config.getPeers().forEach(peer -> connect(peer));
             });
   }
 

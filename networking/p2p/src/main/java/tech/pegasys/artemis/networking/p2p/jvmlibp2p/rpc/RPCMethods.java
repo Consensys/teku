@@ -20,9 +20,10 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.BiFunction;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.GoodbyeMessage;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.HelloMessage;
+import tech.pegasys.artemis.util.alogger.ALogger;
 
 public class RPCMethods {
-
+  private static final ALogger STDOUT = new ALogger("stdout");
   private final RPCMessageHandler<HelloMessage, HelloMessage> hello;
   private final RPCMessageHandler<GoodbyeMessage, Void> goodbye;
 
