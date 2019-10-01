@@ -31,6 +31,7 @@ import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
+import tech.pegasys.artemis.networking.p2p.jvmlibp2p.gossip.GossipMessageHandler;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
 class GossipMessageHandlerTest {
