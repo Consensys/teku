@@ -39,7 +39,7 @@ export START_LIGHTHOUSE=true
 export START_TRINITY=false
 export START_NIMBUS=false
 export START_LODESTAR=false
-export START_PRYSM=false
+export START_PRYSM=true
 export START_HARMONY=true
 
 zcli keys generate |zcli genesis mock --count $VALIDATOR_COUNT --genesis-time $GENESIS_TIME --out $GENESIS_FILE
@@ -100,7 +100,7 @@ then
 
     rm -rf ~/.lighthouse
 
-    tmux split-window -v -t 0 "sleep 1; cd $DIR && ./beacon_node --libp2p-addresses /ip4/127.0.0.1/tcp/19000  --listen-address $LISTEN_ADDRESS --port $PORT testnet -f file ssz $GENESIS_FILE; sleep 20"
+    tmux split-window -v -t 0 "sleep 5; cd $DIR && ./beacon_node --libp2p-addresses /ip4/127.0.0.1/tcp/19000  --listen-address $LISTEN_ADDRESS --port $PORT testnet -f file ssz $GENESIS_FILE; sleep 20"
 
 
     ######LIGHTHOUSE VALIDATOR

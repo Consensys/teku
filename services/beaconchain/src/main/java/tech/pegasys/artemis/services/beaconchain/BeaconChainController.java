@@ -14,7 +14,7 @@
 package tech.pegasys.artemis.services.beaconchain;
 
 import static tech.pegasys.artemis.datastructures.Constants.SECONDS_PER_SLOT;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_of_slot;
+import static tech.pegasys.artemis.statetransition.util.ForkChoiceUtil.get_head;
 import static tech.pegasys.artemis.statetransition.util.ForkChoiceUtil.on_tick;
 
 import com.google.common.eventbus.EventBus;
@@ -25,9 +25,16 @@ import io.libp2p.core.crypto.PrivKey;
 import io.vertx.core.Vertx;
 import java.util.Date;
 import java.util.Optional;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.Constants;
+import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
+import tech.pegasys.artemis.datastructures.util.StartupUtil;
 import tech.pegasys.artemis.metrics.ArtemisMetricCategory;
 import tech.pegasys.artemis.metrics.SettableGauge;
 import tech.pegasys.artemis.networking.p2p.JvmLibP2PNetwork;
@@ -39,6 +46,7 @@ import tech.pegasys.artemis.statetransition.events.GenesisEvent;
 import tech.pegasys.artemis.statetransition.events.ValidatorAssignmentEvent;
 import tech.pegasys.artemis.storage.ChainStorage;
 import tech.pegasys.artemis.storage.ChainStorageClient;
+import tech.pegasys.artemis.storage.InteropChainStorageServer;
 import tech.pegasys.artemis.storage.Store;
 import tech.pegasys.artemis.storage.events.DBStoreValidEvent;
 import tech.pegasys.artemis.storage.events.NodeStartEvent;
@@ -52,6 +60,9 @@ import tech.pegasys.pantheon.metrics.MetricsSystem;
 
 public class BeaconChainController {
   private static final ALogger STDOUT = new ALogger("stdout");
+
+  private final ExecutorService networkExecutor = Executors.newSingleThreadExecutor();
+  private Runnable networkTask;
   private final ArtemisConfiguration config;
   private EventBus eventBus;
   private Vertx vertx;
@@ -63,7 +74,6 @@ public class BeaconChainController {
   private SettableGauge currentEpochGauge;
   private ValidatorCoordinator validatorCoordinator;
   private StateProcessor stateProcessor;
-
   private UnsignedLong nodeSlot = UnsignedLong.ZERO;
 
   public BeaconChainController(
@@ -73,6 +83,15 @@ public class BeaconChainController {
     this.config = config;
     this.metricsSystem = metricsSystem;
     this.eventBus.register(this);
+  }
+
+  public void initAll() {
+    initTimer();
+    initStorage();
+    initMetrics();
+    initValidatorCoordinator();
+    initStateProcessor();
+    initP2PNetwork();
   }
 
   @SuppressWarnings("rawtypes")
@@ -95,6 +114,12 @@ public class BeaconChainController {
     STDOUT.log(Level.DEBUG, "BeaconChainController.initStorage()");
     this.chainStorageClient = ChainStorage.Create(ChainStorageClient.class, eventBus);
     this.chainStorageClient.setGenesisTime(UnsignedLong.valueOf(config.getGenesisTime()));
+    BeaconStateWithCache initialState = StartupUtil.createInitialBeaconState(config);
+    this.chainStorageClient.setStore(InteropChainStorageServer.get_genesis_store(initialState));
+    Store store = chainStorageClient.getStore();
+    Bytes32 headBlockRoot = get_head(store);
+    BeaconBlock headBlock = store.getBlock(headBlockRoot);
+    chainStorageClient.updateBestBlock(headBlockRoot, headBlock.getSlot());
   }
 
   public void initMetrics() {
@@ -130,19 +155,18 @@ public class BeaconChainController {
     } else if ("jvmlibp2p".equals(config.getNetworkMode())) {
       Bytes bytes = Bytes.fromHexString(config.getInteropPrivateKey());
       PrivKey pk = KeyKt.unmarshalPrivateKey(bytes.toArrayUnsafe());
-
-      this.p2pNetwork =
-          new JvmLibP2PNetwork(
-              new Config(
-                  Optional.of(pk),
-                  config.getNetworkInterface(),
-                  config.getPort(),
-                  config.getAdvertisedPort(),
-                  config.getStaticPeers(),
-                  true,
-                  true,
-                  true),
-              eventBus);
+      Config p2pConfig =
+          new Config(
+              Optional.of(pk),
+              config.getNetworkInterface(),
+              config.getPort(),
+              config.getAdvertisedPort(),
+              config.getStaticPeers(),
+              true,
+              true,
+              true);
+      this.p2pNetwork = new JvmLibP2PNetwork(p2pConfig, eventBus, chainStorageClient);
+      this.networkTask = () -> this.p2pNetwork.start();
     } else {
       throw new IllegalArgumentException("Unsupported network mode " + config.getNetworkMode());
     }
@@ -150,7 +174,7 @@ public class BeaconChainController {
 
   public void start() {
     STDOUT.log(Level.DEBUG, "BeaconChainController.start(): starting p2pNetwork");
-    this.p2pNetwork.run();
+    networkExecutor.execute(networkTask);
     STDOUT.log(Level.DEBUG, "BeaconChainController.start(): emit NodeStartEvent");
     this.eventBus.post(new NodeStartEvent());
     STDOUT.log(Level.DEBUG, "BeaconChainController.start(): starting timer");
@@ -158,7 +182,14 @@ public class BeaconChainController {
   }
 
   public void stop() {
-    this.p2pNetwork.stop();
+    networkExecutor.shutdown();
+    try {
+      if (!networkExecutor.awaitTermination(250, TimeUnit.MILLISECONDS)) {
+        networkExecutor.shutdownNow();
+      }
+    } catch (InterruptedException e) {
+      networkExecutor.shutdownNow();
+    }
     this.timer.stop();
     this.eventBus.unregister(this);
   }
@@ -191,8 +222,8 @@ public class BeaconChainController {
                         .plus(nodeSlot.times(UnsignedLong.valueOf(SECONDS_PER_SLOT))))
             >= 0) {
           this.eventBus.post(new SlotEvent(nodeSlot));
-          this.currentSlotGauge.set(nodeSlot.longValue());
-          this.currentEpochGauge.set(compute_epoch_of_slot(nodeSlot).longValue());
+          // this.currentSlotGauge.set(nodeSlot.longValue());
+          // this.currentEpochGauge.set(compute_epoch_of_slot(nodeSlot).longValue());
           STDOUT.log(Level.INFO, "******* Slot Event *******", ALogger.Color.WHITE);
           STDOUT.log(Level.INFO, "Node slot:                             " + nodeSlot);
           Thread.sleep(SECONDS_PER_SLOT * 1000 / 2);

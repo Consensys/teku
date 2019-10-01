@@ -122,6 +122,15 @@ public class ChainStorageClient implements ChainStorage {
   }
 
   /**
+   * Retrives the state of the block chosen by fork choice to build and attest on
+   *
+   * @return
+   */
+  public BeaconState getBestBlockRootState() {
+    return this.store.getBlockState(this.bestBlockRoot);
+  }
+
+  /**
    * Retrives the slot of the block chosen by fork choice to build and attest on
    *
    * @return
@@ -229,9 +238,9 @@ public class ChainStorageClient implements ChainStorage {
   }
 
   @Subscribe
-  public void onDBStoreValidEvent(DBStoreValidEvent dbStoreValidEvent) {
-    this.genesisTime = dbStoreValidEvent.getGenesisTime();
-    this.store = dbStoreValidEvent.getStore();
+  public void onDBStoreValidEvent(DBStoreValidEvent event) {
+    this.genesisTime = event.getGenesisTime();
+    this.store = event.getStore();
     this.eventBus.post(new NodeDataLoadedEvent());
   }
 
