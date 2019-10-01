@@ -97,7 +97,7 @@ create_tmux_panes() {
   while [[ $idx -lt $NODES && $idx -lt $end ]]
   do
     # Split the window vertically and start the next node in the new vertical split
-    tmux split-window -v "cd node_$idx && ./artemis --config=./config/runConfig.$idx.toml --logging=INFO"
+    tmux split-window -v "cd node_$idx && ./artemis --config=./config/runConfig.$idx.toml --logging=$LOG"
     idx=$(($idx + 1))
   done
 }

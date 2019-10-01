@@ -47,7 +47,7 @@ public class MockP2PNetwork implements P2PNetwork {
   public void stop() {}
 
   @Override
-  public void run() {}
+  public void start() {}
 
   @Subscribe
   public void onNewUnprocessedBlock(BeaconBlock block) {

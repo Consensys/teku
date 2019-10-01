@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.networking.p2p.jvmlibp2p;
+package tech.pegasys.artemis.networking.p2p.jvmlibp2p.gossip;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
@@ -68,15 +68,16 @@ public class GossipMessageHandler implements Consumer<MessageApi> {
 
   @Override
   public void accept(MessageApi msg) {
-    STDOUT.log(Level.DEBUG, "Message received " + msg.getSeqId());
     if (msg.getTopics().contains(BLOCKS_TOPIC)) {
       Bytes bytes = Bytes.wrapByteBuf(msg.getData());
+      STDOUT.log(Level.DEBUG, "Block received: " + bytes.size() + " bytes");
       BeaconBlock block = SimpleOffsetSerializer.deserialize(bytes, BeaconBlock.class);
       if (this.sentMessages.add(bytes)) {
         eventBus.post(block);
       }
     } else if (msg.getTopics().contains(ATTESTATIONS_TOPIC)) {
       Bytes bytes = Bytes.wrapByteBuf(msg.getData());
+      STDOUT.log(Level.DEBUG, "Attestation received: " + bytes.size() + " bytes");
       Attestation attestation = SimpleOffsetSerializer.deserialize(bytes, Attestation.class);
       if (this.sentMessages.add(bytes)) {
         eventBus.post(attestation);
