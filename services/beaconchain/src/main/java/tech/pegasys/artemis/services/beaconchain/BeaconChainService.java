@@ -30,12 +30,7 @@ public class BeaconChainService implements ServiceInterface {
     this.controller =
         new BeaconChainController(
             config.getEventBus(), config.getVertx(), config.getMetricsSystem(), config.getConfig());
-    this.controller.initTimer();
-    this.controller.initStorage();
-    this.controller.initMetrics();
-    this.controller.initValidatorCoordinator();
-    this.controller.initStateProcessor();
-    this.controller.initP2PNetwork();
+    this.controller.initAll();
   }
 
   @Override

@@ -27,7 +27,7 @@ public final class RPCCodec {
    * @param request the payload of the request
    * @return the encoded RPC message
    */
-  public static Bytes encode(SimpleOffsetSerializable request) {
+  public static <T extends SimpleOffsetSerializable> Bytes encode(T request) {
     return SimpleOffsetSerializer.serialize(request);
   }
 

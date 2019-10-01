@@ -37,8 +37,9 @@ import java.util.concurrent.ScheduledExecutorService;
 import org.apache.logging.log4j.Level;
 import tech.pegasys.artemis.networking.p2p.api.P2PNetwork;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.Config;
-import tech.pegasys.artemis.networking.p2p.jvmlibp2p.GossipMessageHandler;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.PeerManager;
+import tech.pegasys.artemis.networking.p2p.jvmlibp2p.gossip.GossipMessageHandler;
+import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.cli.VersionProvider;
 
@@ -47,11 +48,13 @@ public class JvmLibP2PNetwork implements P2PNetwork {
 
   private final PrivKey privKey;
   private final Config config;
+
   private final Host host;
   private final ScheduledExecutorService scheduler;
   private final PeerManager peerManager;
 
-  public JvmLibP2PNetwork(final Config config, final EventBus eventBus) {
+  public JvmLibP2PNetwork(
+      final Config config, final EventBus eventBus, final ChainStorageClient chainStorageClient) {
     this.privKey =
         config
             .getPrivateKey()
@@ -62,7 +65,7 @@ public class JvmLibP2PNetwork implements P2PNetwork {
             new ThreadFactoryBuilder().setDaemon(true).setNameFormat("libp2p-%d").build());
     Gossip gossip = new Gossip();
     GossipMessageHandler.init(gossip, privKey, eventBus);
-    peerManager = new PeerManager(scheduler);
+    peerManager = new PeerManager(scheduler, chainStorageClient);
 
     host =
         BuildersJKt.hostJ(
@@ -78,7 +81,7 @@ public class JvmLibP2PNetwork implements P2PNetwork {
               final Ping ping = new Ping();
               IdentifyOuterClass.Identify identifyMsg =
                   IdentifyOuterClass.Identify.newBuilder()
-                      //                      .setProtocolVersion("ipfs/0.1.0")
+                      .setProtocolVersion("ipfs/0.1.0")
                       .setAgentVersion(
                           VersionProvider.CLIENT_IDENTITY + "/" + VersionProvider.VERSION)
                       .setPublicKey(ByteArrayExtKt.toProtobuf(privKey.publicKey().bytes()))
@@ -97,7 +100,7 @@ public class JvmLibP2PNetwork implements P2PNetwork {
               b.getProtocols().add(ping);
               b.getProtocols().add(new Identify(identifyMsg));
               b.getProtocols().add(gossip);
-              b.getProtocols().addAll(peerManager.all());
+              b.getProtocols().addAll(peerManager.getRPCMethods().all());
 
               if (config.isLogWireCipher()) {
                 b.getDebug().getBeforeSecureHandler().setLogger(LogLevel.DEBUG, "wire.ciphered");
@@ -114,7 +117,7 @@ public class JvmLibP2PNetwork implements P2PNetwork {
   }
 
   @Override
-  public void run() {
+  public void start() {
     STDOUT.log(Level.INFO, "Starting libp2p network...");
     host.start()
         .thenApply(
@@ -126,11 +129,18 @@ public class JvmLibP2PNetwork implements P2PNetwork {
                       + " with peerId "
                       + PeerId.fromPubKey(privKey.publicKey()).toBase58());
               return null;
+            })
+        .whenComplete(
+            (object, throwable) -> {
+              try {
+                // Sleep long enough for network listening to complete
+                Thread.sleep(1000);
+              } catch (InterruptedException e) {
+                e.printStackTrace();
+                throw new IllegalArgumentException(e.getMessage());
+              }
+              config.getPeers().forEach(peer -> connect(peer));
             });
-
-    for (String peer : config.getPeers()) {
-      connect(peer);
-    }
   }
 
   @Override

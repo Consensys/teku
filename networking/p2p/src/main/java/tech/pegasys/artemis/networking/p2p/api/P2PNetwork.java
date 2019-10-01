@@ -15,14 +15,7 @@ package tech.pegasys.artemis.networking.p2p.api;
 
 import java.util.concurrent.CompletableFuture;
 
-public interface P2PNetwork extends Runnable {
-  enum GossipProtocol {
-    FLOODSUB,
-    GOSSIPSUB,
-    PLUMTREE,
-    NONE
-  }
-
+public interface P2PNetwork {
   /**
    * Connects to a Peer.
    *
@@ -30,6 +23,13 @@ public interface P2PNetwork extends Runnable {
    * @return Future of the established PeerConnection
    */
   CompletableFuture<?> connect(String peer);
+
+  /**
+   * starts the p2p network layer
+   *
+   * @return
+   */
+  void start();
 
   /** Stops the P2P network layer. */
   void stop();

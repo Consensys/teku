@@ -13,24 +13,20 @@
 
 package tech.pegasys.artemis.networking.p2p.jvmlibp2p;
 
-import com.google.common.primitives.UnsignedLong;
 import io.libp2p.core.Connection;
 import io.libp2p.core.ConnectionHandler;
 import io.libp2p.core.multiformats.Multiaddr;
 import io.libp2p.network.NetworkImpl;
-import java.time.Duration;
-import java.util.Arrays;
-import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.Level;
-import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.bytes.Bytes32;
 import org.jetbrains.annotations.NotNull;
+import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.GoodbyeMessage;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.HelloMessage;
-import tech.pegasys.artemis.util.SSZTypes.Bytes4;
+import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.RPCMethods;
+import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.util.alogger.ALogger;
 
 public class PeerManager implements ConnectionHandler {
@@ -38,67 +34,60 @@ public class PeerManager implements ConnectionHandler {
   private final ALogger LOG = new ALogger(PeerManager.class.getName());
 
   private final ScheduledExecutorService scheduler;
-  private static final Duration RECONNECT_TIMEOUT = Duration.ofSeconds(1);
+  private final ChainStorageClient chainStorageClient;
+  private static final long RECONNECT_TIMEOUT = 5000;
 
   private ConcurrentHashMap<Multiaddr, Peer> connectedPeerMap = new ConcurrentHashMap<>();
 
-  private final RPCMessageHandler<HelloMessage, HelloMessage> rpcMessageHandler;
+  private final RPCMethods rpcMethods;
 
-  public PeerManager(final ScheduledExecutorService scheduler) {
+  public PeerManager(
+      final ScheduledExecutorService scheduler, final ChainStorageClient chainStorageClient) {
     this.scheduler = scheduler;
-
-    this.rpcMessageHandler =
-        new RPCMessageHandler<>("/eth2/beacon_chain/req/hello/1/ssz", this::hello) {
-          @Override
-          protected CompletableFuture<HelloMessage> invokeLocal(
-              Connection connection, HelloMessage helloMessage) {
-            return CompletableFuture.completedFuture(
-                this.helloHandler.apply(connection, helloMessage));
-          }
-        };
+    this.chainStorageClient = chainStorageClient;
+    this.rpcMethods = new RPCMethods(this::hello, this::goodbye);
   }
 
   @Override
   public void handleConnection(@NotNull final Connection connection) {
-    STDOUT.log(Level.INFO, "New connection: " + connection.remoteAddress());
     Peer peer = new Peer(connection);
-    connectedPeerMap.put(peer.getPeerMultiaddr(), peer);
-
-    connection
-        .closeFuture()
-        .thenRun(() -> STDOUT.log(Level.INFO, "Peer disconnected: " + peer.getPeerId()));
+    onConnectedPeer(peer);
+    connection.closeFuture().thenRun(() -> onDisconnectedPeer(peer));
 
     if (connection.isInitiator()) {
-      rpcMessageHandler
-          .invokeRemote(connection, createHelloMessage())
+      rpcMethods
+          .getHello()
+          .invokeRemote(connection, createLocalHelloMessage())
           .thenApply(resp -> peer.getRemoteHelloMessage().complete(resp));
     }
   }
 
   public CompletableFuture<?> connect(final Multiaddr peer, final NetworkImpl network) {
-    STDOUT.log(Level.INFO, "Connecting to " + peer);
+    STDOUT.log(Level.DEBUG, "Connecting to " + peer);
     return network
         .connect(peer)
         .whenComplete(
             (conn, throwable) -> {
               if (throwable != null) {
                 STDOUT.log(
-                    Level.INFO,
+                    Level.DEBUG,
                     "Connection to " + peer + " failed. Will retry shortly: " + throwable);
                 scheduler.schedule(
-                    () -> connect(peer, network),
-                    RECONNECT_TIMEOUT.toMillis(),
-                    TimeUnit.MILLISECONDS);
-              } else {
-                handleConnection(conn);
+                    () -> connect(peer, network), RECONNECT_TIMEOUT, TimeUnit.MILLISECONDS);
+              } else if (throwable == null) {
+                STDOUT.log(
+                    Level.DEBUG,
+                    "Connection to peer: "
+                        + conn.getSecureSession().getRemoteId()
+                        + " was successful");
                 conn.closeFuture()
                     .thenAccept(
                         ignore -> {
                           LOG.log(
-                              Level.INFO, "Connection to " + peer + " closed. Will retry shortly");
+                              Level.DEBUG, "Connection to " + peer + " closed. Will retry shortly");
                           scheduler.schedule(
                               () -> connect(peer, network),
-                              RECONNECT_TIMEOUT.toMillis(),
+                              RECONNECT_TIMEOUT,
                               TimeUnit.MILLISECONDS);
                         });
               }
@@ -109,30 +98,47 @@ public class PeerManager implements ConnectionHandler {
     return connectedPeerMap.get(conn.remoteAddress());
   }
 
-  protected void onNewActivePeer(Peer peer) {
-    STDOUT.log(Level.INFO, "New active peer: " + peer);
-  }
-
-  private HelloMessage hello(Connection connection, HelloMessage helloMessage) {
-    STDOUT.log(Level.INFO, "Peer said hello");
-    if (connection.isInitiator()) {
-      throw new IllegalArgumentException("Responder peer shouldn't initiate Hello message");
-    } else {
-      getPeer(connection).getRemoteHelloMessage().complete(helloMessage);
-      return createHelloMessage();
+  protected void onConnectedPeer(Peer peer) {
+    if (!connectedPeerMap.containsKey(peer.getPeerMultiaddr())) {
+      STDOUT.log(Level.DEBUG, "onConnectedPeer() " + peer.getPeerMultiaddr());
+      connectedPeerMap.put(peer.getPeerMultiaddr(), peer);
     }
   }
 
-  private HelloMessage createHelloMessage() {
-    return new HelloMessage(
-        Bytes4.rightPad(Bytes.of(4)),
-        Bytes32.random(),
-        UnsignedLong.ZERO,
-        Bytes32.random(),
-        UnsignedLong.ZERO);
+  protected void onDisconnectedPeer(Peer peer) {
+    if (connectedPeerMap.remove(peer.getPeerMultiaddr()) != null) {
+      STDOUT.log(Level.DEBUG, "Peer disconnected: " + peer.getPeerId());
+    }
   }
 
-  public List<RPCMessageHandler<?, ?>> all() {
-    return Arrays.asList(rpcMessageHandler);
+  private HelloMessage hello(Connection connection, HelloMessage message) {
+    if (connection.isInitiator()) {
+      throw new IllegalArgumentException("Responder peer shouldn't initiate Hello message");
+    } else {
+      STDOUT.log(
+          Level.DEBUG, "Peer " + connection.getSecureSession().getRemoteId() + " said hello.");
+      STDOUT.log(Level.DEBUG, message.toString());
+      getPeer(connection).getRemoteHelloMessage().complete(message);
+      return createLocalHelloMessage();
+    }
+  }
+
+  private Void goodbye(Connection connection, GoodbyeMessage message) {
+    STDOUT.log(
+        Level.DEBUG, "Peer " + connection.getSecureSession().getRemoteId() + " said goodbye.");
+    return null;
+  }
+
+  private HelloMessage createLocalHelloMessage() {
+    return new HelloMessage(
+        chainStorageClient.getBestBlockRootState().getFork().getCurrent_version(),
+        chainStorageClient.getStore().getFinalizedCheckpoint().getRoot(),
+        chainStorageClient.getStore().getFinalizedCheckpoint().getEpoch(),
+        chainStorageClient.getBestBlockRoot(),
+        chainStorageClient.getBestSlot());
+  }
+
+  public RPCMethods getRPCMethods() {
+    return rpcMethods;
   }
 }

@@ -110,4 +110,20 @@ public final class HelloMessage implements SimpleOffsetSerializable, SSZContaine
   public UnsignedLong headSlot() {
     return headSlot;
   }
+
+  @Override
+  public String toString() {
+    return "HelloMessage{"
+        + "forkVersion: "
+        + forkVersion
+        + ", finalizedRoot: "
+        + finalizedRoot
+        + ", finalizedEpoch: "
+        + finalizedEpoch
+        + ", headRoot: "
+        + headRoot
+        + ", headSlot: "
+        + headSlot
+        + '}';
+  }
 }
