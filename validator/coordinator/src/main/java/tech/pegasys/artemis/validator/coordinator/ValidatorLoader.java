@@ -15,10 +15,14 @@ package tech.pegasys.artemis.validator.coordinator;
 
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.apache.logging.log4j.Level;
+import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.crypto.SECP256K1;
+import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
@@ -53,7 +57,7 @@ public class ValidatorLoader {
       new ValidatorClient(keypair, port);
       ManagedChannel channel =
           ManagedChannelBuilder.forAddress("localhost", port).usePlaintext().build();
-      STDOUT.log(Level.INFO, "i = " + i + ": " + keypair.getPublicKey().toString());
+      STDOUT.log(Level.DEBUG, "i = " + i + ": " + keypair.getPublicKey().toString());
 
       validators.put(keypair.getPublicKey(), new ValidatorInfo(numNaughtyValidators > 0, channel));
       numNaughtyValidators--;

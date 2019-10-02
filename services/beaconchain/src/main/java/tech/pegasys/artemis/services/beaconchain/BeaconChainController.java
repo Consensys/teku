@@ -50,6 +50,7 @@ import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.InteropChainStorageServer;
 import tech.pegasys.artemis.storage.Store;
 import tech.pegasys.artemis.storage.events.DBStoreValidEvent;
+import tech.pegasys.artemis.storage.events.NodeDataLoadedEvent;
 import tech.pegasys.artemis.storage.events.NodeStartEvent;
 import tech.pegasys.artemis.storage.events.SlotEvent;
 import tech.pegasys.artemis.util.alogger.ALogger;
@@ -197,12 +198,17 @@ public class BeaconChainController {
 
   @Subscribe
   private void onDBStoreValidEvent(DBStoreValidEvent event) {
+    STDOUT.log(Level.DEBUG, "BeaconChainController::onDBStoreValidEvent");
     final UnsignedLong slot = event.getNodeSlot();
     if (slot.compareTo(UnsignedLong.ZERO) > 0) {
       STDOUT.log(Level.DEBUG, "Restoring nodeSlot to: " + slot);
       this.nodeSlot = slot;
     } else {
-      this.eventBus.post(new GenesisEvent(event.getBeaconState()));
+      this.stateProcessor.eth2Genesis(new GenesisEvent(event.getBeaconState()));
+      STDOUT.log(
+          Level.DEBUG,
+          "BeaconChainController::onDBStoreValidEvent -> post(new NodeDataLoadedEvent())");
+      this.eventBus.post(new NodeDataLoadedEvent());
     }
   }
 

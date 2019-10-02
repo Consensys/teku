@@ -33,7 +33,7 @@ public class RandomValidatorKeyProvider implements ValidatorKeyProvider {
   @Override
   public List<BLSKeyPair> loadValidatorKeys(final ArtemisConfiguration config) {
     SECP256K1.SecretKey nodeIdentity =
-        SECP256K1.SecretKey.fromBytes(Bytes32.fromHexString(config.getIdentity()));
+            SECP256K1.SecretKey.fromBytes(Bytes32.fromHexString(config.getIdentity()));
     int numValidators = config.getNumValidators();
     int numNodes = config.getNumNodes();
 
@@ -51,38 +51,19 @@ public class RandomValidatorKeyProvider implements ValidatorKeyProvider {
   }
 
   private Pair<Integer, Integer> getStartAndEnd(
-      SECP256K1.SecretKey nodeIdentity, int numNodes, int numValidators) {
-    /*
-    // Add all validators to validatorSet hashMap
-    int nodeCounter = UInt256.fromBytes(nodeIdentity.bytes()).mod(numNodes).intValue();
-    int startIndex = 0;
-    int endIndex = numValidators - 1;
-    if (nodeCounter > 0) {
-      endIndex = -1;
-    }
-    int startIndex = nodeCounter * (numValidators / numNodes);
-    int endIndex =
-        startIndex
-            + (numValidators / numNodes - 1)
-            + Math.floorDiv(nodeCounter, Math.max(1, numNodes - 1));
-    endIndex = Math.min(endIndex, numValidators - 1);
-    STDOUT.log(
-        Level.INFO,
-        "nodeCounter: " + nodeCounter + " startIndex: " + startIndex + " endIndex: " + endIndex);
-    return new ImmutablePair<>(startIndex, endIndex);
-    */
+          SECP256K1.SecretKey nodeIdentity, int numNodes, int numValidators) {
     // Add all validators to validatorSet hashMap
     int nodeCounter = UInt256.fromBytes(nodeIdentity.bytes()).mod(numNodes).intValue();
     int startIndex = nodeCounter * (numValidators / numNodes);
     int endIndex =
-        startIndex
-            + (numValidators / numNodes - 1)
-            + Math.floorDiv(nodeCounter, Math.max(1, numNodes - 1));
+            startIndex
+                    + (numValidators / numNodes - 1)
+                    + Math.floorDiv(nodeCounter, Math.max(1, numNodes - 1));
     endIndex = Math.min(endIndex, numValidators - 1);
 
     STDOUT.log(
-        Level.INFO,
-        "nodeCounter: " + nodeCounter + " startIndex: " + startIndex + " endIndex: " + endIndex);
+            Level.DEBUG,
+            "nodeCounter: " + nodeCounter + " startIndex: " + startIndex + " endIndex: " + endIndex);
     return new ImmutablePair<>(startIndex, endIndex);
   }
 

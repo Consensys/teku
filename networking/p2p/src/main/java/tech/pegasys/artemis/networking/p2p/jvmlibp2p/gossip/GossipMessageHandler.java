@@ -68,6 +68,7 @@ public class GossipMessageHandler implements Consumer<MessageApi> {
 
   @Override
   public void accept(MessageApi msg) {
+    STDOUT.log(Level.DEBUG, "Gossip Message Received: " + msg.getTopics());
     if (msg.getTopics().contains(BLOCKS_TOPIC)) {
       Bytes bytes = Bytes.wrapByteBuf(msg.getData());
       STDOUT.log(Level.DEBUG, "Block received: " + bytes.size() + " bytes");
@@ -95,9 +96,10 @@ public class GossipMessageHandler implements Consumer<MessageApi> {
     gossip(attestation, ATTESTATIONS_TOPIC);
   }
 
-  private void gossip(final SimpleOffsetSerializable block, final Topic topic) {
-    Bytes bytes = SimpleOffsetSerializer.serialize(block);
+  private void gossip(final SimpleOffsetSerializable data, final Topic topic) {
+    Bytes bytes = SimpleOffsetSerializer.serialize(data);
     if (this.sentMessages.add(bytes)) {
+      STDOUT.log(Level.DEBUG, "GOSSIPING " + topic.getTopic() + ": " + bytes.size() + " bytes");
       publisher.publish(Unpooled.wrappedBuffer(bytes.toArrayUnsafe()), topic);
     }
   }

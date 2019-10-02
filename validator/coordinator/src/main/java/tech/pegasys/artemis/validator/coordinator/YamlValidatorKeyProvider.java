@@ -43,20 +43,20 @@ public class YamlValidatorKeyProvider implements ValidatorKeyProvider {
     ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
     final Path keyFile = Path.of(config.getValidatorsKeyFile());
     STDOUT.log(
-        Level.INFO,
-        "Loading validator keys from " + keyFile.toAbsolutePath().toString(),
-        Color.GREEN);
+            Level.DEBUG,
+            "Loading validator keys from " + keyFile.toAbsolutePath().toString(),
+            Color.GREEN);
     try (InputStream in = Files.newInputStream(keyFile)) {
       final List<Object> values = mapper.readerFor(Map.class).readValues(in).readAll();
       return values.stream()
-          .map(
-              value -> {
-                Map<String, String> keys = (Map<String, String>) value;
-                final String privKey = keys.get("privkey");
-                return new BLSKeyPair(
-                    new KeyPair(SecretKey.fromBytes(padLeft(Bytes.fromHexString(privKey)))));
-              })
-          .collect(toList());
+              .map(
+                      value -> {
+                        Map<String, String> keys = (Map<String, String>) value;
+                        final String privKey = keys.get("privkey");
+                        return new BLSKeyPair(
+                                new KeyPair(SecretKey.fromBytes(padLeft(Bytes.fromHexString(privKey)))));
+                      })
+              .collect(toList());
     } catch (final IOException e) {
       throw new RuntimeException("Failed to load validator key file", e);
     }
