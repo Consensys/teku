@@ -165,11 +165,13 @@ public class StateProcessor {
           .forEach(
               attestation -> {
                 this.chainStorageClient.addProcessedAttestation(attestation);
-                System.out.println(attestation);
-                System.out.println(
-                    IntStream.range(0, attestation.getAggregation_bits().getCurrentSize())
-                        .filter(i -> attestation.getAggregation_bits().getBit(i) == 1)
-                        .count());
+                STDOUT.log(Level.DEBUG, attestation.toString());
+                STDOUT.log(
+                    Level.DEBUG,
+                    Long.toString(
+                        IntStream.range(0, attestation.getAggregation_bits().getCurrentSize())
+                            .filter(i -> attestation.getAggregation_bits().getBit(i) == 1)
+                            .count()));
               });
       this.eventBus.post(record);
     } catch (StateTransitionException e) {

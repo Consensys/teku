@@ -15,14 +15,10 @@ package tech.pegasys.artemis.validator.coordinator;
 
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
-import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.apache.logging.log4j.Level;
-import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.crypto.SECP256K1;
-import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
