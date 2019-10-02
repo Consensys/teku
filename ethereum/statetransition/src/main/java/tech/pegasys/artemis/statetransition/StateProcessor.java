@@ -18,7 +18,6 @@ import static tech.pegasys.artemis.datastructures.Constants.MIN_GENESIS_TIME;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.initialize_beacon_state_from_eth1;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.is_valid_genesis_state;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.is_valid_genesis_stateSim;
-import static tech.pegasys.artemis.statetransition.util.ForkChoiceUtil.get_genesis_store;
 import static tech.pegasys.artemis.statetransition.util.ForkChoiceUtil.get_head;
 import static tech.pegasys.artemis.statetransition.util.ForkChoiceUtil.on_attestation;
 import static tech.pegasys.artemis.statetransition.util.ForkChoiceUtil.on_block;
@@ -46,7 +45,6 @@ import tech.pegasys.artemis.statetransition.util.EpochProcessingException;
 import tech.pegasys.artemis.statetransition.util.SlotProcessingException;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.Store;
-import tech.pegasys.artemis.storage.events.NodeDataLoadedEvent;
 import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 import tech.pegasys.pantheon.metrics.MetricsSystem;
@@ -91,18 +89,10 @@ public class StateProcessor {
     this.eventBus.register(this);
   }
 
-  @Subscribe
-  public void onEth2Genesis(GenesisEvent genesisEvent) {
-    STDOUT.log(Level.INFO, "******* Eth2Genesis Event detected ******* : ");
+  public void eth2Genesis(GenesisEvent genesisEvent) {
+    STDOUT.log(Level.INFO, "******* Eth2Genesis Event******* : ");
     this.initialState = genesisEvent.getBeaconState();
     Store store = chainStorageClient.getStore();
-    if (store == null) {
-      store = get_genesis_store(initialState);
-      chainStorageClient.setStore(store);
-      UnsignedLong genesisTime = initialState.getGenesis_time();
-      chainStorageClient.setGenesisTime(genesisTime);
-      this.eventBus.post(new NodeDataLoadedEvent());
-    }
     Bytes32 genesisBlockRoot = get_head(store);
     STDOUT.log(Level.INFO, "Initial state root is " + initialState.hash_tree_root().toHexString());
     STDOUT.log(Level.INFO, "Genesis block root is " + genesisBlockRoot.toHexString());
@@ -132,7 +122,7 @@ public class StateProcessor {
                 deposits);
         if (is_valid_genesis_stateSim(candidate_state)) {
           setSimulationGenesisTime(candidate_state);
-          this.eventBus.post(new GenesisEvent(candidate_state));
+          eth2Genesis(new GenesisEvent(candidate_state));
         }
 
       } else {
@@ -142,7 +132,7 @@ public class StateProcessor {
                 eth1_timestamp,
                 deposits);
         if (is_valid_genesis_state(candidate_state)) {
-          this.eventBus.post(new GenesisEvent(candidate_state));
+          eth2Genesis(new GenesisEvent(candidate_state));
         }
       }
     }
