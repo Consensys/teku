@@ -14,21 +14,24 @@
 package tech.pegasys.artemis.validator.coordinator;
 
 import java.util.List;
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.Level;
 import tech.pegasys.artemis.datastructures.util.MockStartValidatorKeyPairFactory;
 import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.alogger.ALogger.Color;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
-import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 
 class MockStartValidatorKeyProvider implements ValidatorKeyProvider {
   private static final ALogger STDOUT = new ALogger("stdout");
 
   @Override
-  public List<BLSKeyPair> loadValidatorKeys(final ArtemisConfiguration config) {
-    final int startIndex = config.getInteropOwnedValidatorStartIndex();
-    final int endIndex = startIndex + config.getInteropOwnedValidatorCount() - 1;
+  public List<BLSKeyPair> loadValidatorKeys(final int startIndex, final int endIndex) {
+
     STDOUT.log(Level.INFO, "Owning validator range " + startIndex + " to " + endIndex, Color.GREEN);
-    return new MockStartValidatorKeyPairFactory().generateKeyPairs(startIndex, endIndex);
+    List<BLSKeyPair> keypairs =
+        new MockStartValidatorKeyPairFactory().generateKeyPairs(startIndex, endIndex);
+    Pair<Integer, Integer> startAndEnd = new ImmutablePair<>(startIndex, endIndex);
+    return keypairs;
   }
 }

@@ -152,6 +152,7 @@ public class ValidatorCoordinator {
   // TODO: make sure blocks that are produced right even after new slot to be pushed.
   public void onNewSlot(SlotEvent slotEvent) {
     if (validatorBlock != null) {
+      STDOUT.log(Level.DEBUG, "Local validator produced a new block");
       this.eventBus.post(validatorBlock);
       validatorBlock = null;
     }
@@ -169,6 +170,9 @@ public class ValidatorCoordinator {
         .forEach(
             i -> {
               if (validators.containsKey(validatorRegistry.get(i).getPubkey())) {
+                STDOUT.log(
+                    Level.DEBUG,
+                    "owned index = " + i + ": " + validatorRegistry.get(i).getPubkey());
                 validators.get(validatorRegistry.get(i).getPubkey()).setValidatorIndex(i);
               }
             });
@@ -365,7 +369,6 @@ public class ValidatorCoordinator {
     // block proposer in our set of validators, produce the block
     int proposerIndex = BeaconStateUtil.get_beacon_proposer_index(checkState);
     BLSPublicKey proposer = checkState.getValidators().get(proposerIndex).getPubkey();
-
     BeaconStateWithCache newState = BeaconStateWithCache.deepCopy(state);
     if (validators.containsKey(proposer)) {
       CompletableFuture<BLSSignature> epochSignatureTask =
