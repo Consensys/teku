@@ -259,19 +259,18 @@ public class AttestationUtil {
 
     if (!(bit_1_indices.size() == 0)) {
       STDOUT.log(
-          Level.DEBUG,
+          Level.WARN,
           "AttestationUtil.is_valid_indexed_attestation: Verify no index has custody bit equal to 1 [to be removed in phase 1]");
       return false;
     }
     if (!((bit_0_indices.size() + bit_1_indices.size()) <= MAX_VALIDATORS_PER_COMMITTEE)) {
       STDOUT.log(
-          Level.DEBUG,
-          "AttestationUtil.is_valid_indexed_attestation: Verify max number of indices");
+          Level.WARN, "AttestationUtil.is_valid_indexed_attestation: Verify max number of indices");
       return false;
     }
     if (!(intersection(bit_0_indices, bit_1_indices).size() == 0)) {
       STDOUT.log(
-          Level.DEBUG,
+          Level.WARN,
           "AttestationUtil.is_valid_indexed_attestation: Verify index sets are disjoint");
       return false;
     }
@@ -282,7 +281,7 @@ public class AttestationUtil {
     if (!(bit_0_indices.equals(bit_0_indices_sorted)
         && bit_1_indices.equals(bit_1_indices_sorted))) {
       STDOUT.log(
-          Level.DEBUG, "AttestationUtil.is_valid_indexed_attestation: Verify indices are sorted");
+          Level.WARN, "AttestationUtil.is_valid_indexed_attestation: Verify indices are sorted");
       return false;
     }
 
@@ -312,7 +311,7 @@ public class AttestationUtil {
         get_domain(state, DOMAIN_ATTESTATION, indexed_attestation.getData().getTarget().getEpoch());
     if (!BLSVerify.bls_verify_multiple(pubkeys, message_hashes, signature, domain)) {
       STDOUT.log(
-          Level.DEBUG, "AttestationUtil.is_valid_indexed_attestation: Verify aggregate signature");
+          Level.WARN, "AttestationUtil.is_valid_indexed_attestation: Verify aggregate signature");
       return false;
     }
     return true;
@@ -393,5 +392,39 @@ public class AttestationUtil {
     }
 
     return list;
+  }
+
+  public static boolean representsNewAttester(
+      Attestation oldAttestation, Attestation newAttestation) {
+    int newAttesterIndex = getAttesterIndexIntoCommittee(newAttestation);
+    return oldAttestation.getAggregation_bits().getBit(newAttesterIndex) == 0;
+  }
+
+  // Returns the index of the first attester in the Attestation
+  public static int getAttesterIndexIntoCommittee(Attestation attestation) {
+    Bitlist aggregationBits = attestation.getAggregation_bits();
+    for (int i = 0; i < aggregationBits.getCurrentSize(); i++) {
+      int bitfieldBit = aggregationBits.getBit(i);
+      if (bitfieldBit == 1) {
+        return i;
+      }
+    }
+    System.out.println("No aggregation bit found");
+    throw new UnsupportedOperationException("Attestation doesn't have any aggregation bit set");
+  }
+
+  public static boolean isSingleAttester(Attestation attestation) {
+    Bitlist aggregationBitfield = attestation.getAggregation_bits();
+    int count = 0;
+    for (int i = 0; i < aggregationBitfield.getCurrentSize(); i++) {
+      int bitfieldBit = aggregationBitfield.getBit(i);
+      if (bitfieldBit == 1) count++;
+    }
+
+    if (count == 1) {
+      return true;
+    } else {
+      return false;
+    }
   }
 }

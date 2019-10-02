@@ -16,7 +16,8 @@ constants = "minimal"
 
 [interop]
 active = false
-genesisTime = 1567777777
+# when genesis time is set to 0, artemis takes genesis time as currentTime + 5 seconds.
+genesisTime = 0
 ownedValidatorStartIndex = 0
 ownedValidatorCount = 16
 startState = ""

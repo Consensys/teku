@@ -15,7 +15,12 @@ package tech.pegasys.artemis.validator.coordinator;
 
 import java.util.List;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
+import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 
 public interface ValidatorKeyProvider {
-  List<BLSKeyPair> loadValidatorKeys(int startIndex, int endIndex);
+  List<BLSKeyPair> loadValidatorKeys(ArtemisConfiguration config);
+
+  default int getValidatorPortStartIndex() {
+    return 0;
+  }
 }

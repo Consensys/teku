@@ -44,6 +44,7 @@ class YamlValidatorKeyProviderTest {
           "0x0000000000000000000000000000000025295F0D1D592A90B333E26E85149708208E9F8E8BC18F6C77BD62F8AD7A6866",
           "0x0000000000000000000000000000000051D0B65185DB6989AB0B560D6DEED19C7EAD0E24B9B6372CBECB1F26BDFAD000",
           "0x00000000000000000000000000000000315ED405FAFE339603932EEBE8DBFD650CE5DAFA561F6928664C75DB85F97857");
+  private final YamlValidatorKeyProvider provider = new YamlValidatorKeyProvider();
   private final ArtemisConfiguration config = mock(ArtemisConfiguration.class);
 
   @Test
@@ -51,11 +52,8 @@ class YamlValidatorKeyProviderTest {
     Path logFile = tempDirectory.resolve("keys.yaml");
     Files.writeString(logFile, TEST_FILE);
     when(config.getValidatorsKeyFile()).thenReturn(logFile.toAbsolutePath().toString());
-    int numValidators = config.getNumValidators();
-    int startIndex = 0;
-    int endIndex = numValidators - 1;
-    YamlValidatorKeyProvider provider = new YamlValidatorKeyProvider(logFile);
-    final List<BLSKeyPair> keys = provider.loadValidatorKeys(startIndex, endIndex);
+
+    final List<BLSKeyPair> keys = provider.loadValidatorKeys(config);
     final List<String> actualPrivateKeys =
         keys.stream()
             .map(keypair -> keypair.getSecretKey().getSecretKey().toBytes().toHexString())

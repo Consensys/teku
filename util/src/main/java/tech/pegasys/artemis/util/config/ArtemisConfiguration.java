@@ -236,7 +236,12 @@ public class ArtemisConfiguration {
   }
 
   public long getGenesisTime() {
-    return config.getLong("interop.genesisTime");
+    long genesisTime = config.getLong("interop.genesisTime");
+    if (genesisTime == 0) {
+      return (System.currentTimeMillis() / 1000) + 5;
+    } else {
+      return genesisTime;
+    }
   }
 
   public int getInteropOwnedValidatorStartIndex() {

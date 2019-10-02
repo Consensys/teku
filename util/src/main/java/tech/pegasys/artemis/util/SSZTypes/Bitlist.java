@@ -55,6 +55,10 @@ public class Bitlist {
     return maxSize;
   }
 
+  public int getCurrentSize() {
+    return byteArray.length;
+  }
+
   @SuppressWarnings("NarrowingCompoundAssignment")
   public Bytes serialize() {
     int len = byteArray.length;
