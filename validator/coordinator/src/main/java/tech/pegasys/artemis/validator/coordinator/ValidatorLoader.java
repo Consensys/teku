@@ -15,10 +15,14 @@ package tech.pegasys.artemis.validator.coordinator;
 
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.apache.logging.log4j.Level;
+import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.crypto.SECP256K1;
+import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
@@ -32,23 +36,38 @@ public class ValidatorLoader {
   public Map<BLSPublicKey, ValidatorInfo> initializeValidators(ArtemisConfiguration config) {
     int naughtinessPercentage = config.getNaughtinessPercentage();
     int numValidators = config.getNumValidators();
+    SECP256K1.SecretKey nodeIdentity =
+        SECP256K1.SecretKey.fromBytes(Bytes32.fromHexString(config.getIdentity()));
+    int numNodes = config.getNumNodes();
+    int nodeNum = UInt256.fromBytes(nodeIdentity.bytes()).mod(numNodes).intValue();
     boolean interopActive = config.getInteropActive();
 
     long numNaughtyValidators = Math.round((naughtinessPercentage * numValidators) / 100.0);
     ValidatorKeyProvider keyProvider;
+    int startIndex = 0;
+    int endIndex = numValidators - 1;
     if (config.getValidatorsKeyFile() != null) {
-      keyProvider = new YamlValidatorKeyProvider();
+      Path keyFile = Path.of(config.getValidatorsKeyFile());
+      keyProvider = new YamlValidatorKeyProvider(keyFile);
     } else if (interopActive) {
+      startIndex = config.getInteropOwnedValidatorStartIndex();
+      endIndex = startIndex + config.getInteropOwnedValidatorCount() - 1;
       keyProvider = new MockStartValidatorKeyProvider();
     } else {
+      startIndex = nodeNum * (numValidators / numNodes);
+      endIndex =
+          startIndex
+              + (numValidators / numNodes - 1)
+              + Math.floorDiv(nodeNum, Math.max(1, numNodes - 1));
+      endIndex = Math.min(endIndex, numValidators - 1);
       keyProvider = new RandomValidatorKeyProvider();
     }
-    final List<BLSKeyPair> keypairs = keyProvider.loadValidatorKeys(config);
+    final List<BLSKeyPair> keypairs = keyProvider.loadValidatorKeys(startIndex, endIndex);
     final Map<BLSPublicKey, ValidatorInfo> validators = new HashMap<>();
 
     for (int i = 0; i < keypairs.size(); i++) {
       BLSKeyPair keypair = keypairs.get(i);
-      int port = Constants.VALIDATOR_CLIENT_PORT_BASE + i;
+      int port = Constants.VALIDATOR_CLIENT_PORT_BASE + startIndex + i;
       new ValidatorClient(keypair, port);
       ManagedChannel channel =
           ManagedChannelBuilder.forAddress("localhost", port).usePlaintext().build();

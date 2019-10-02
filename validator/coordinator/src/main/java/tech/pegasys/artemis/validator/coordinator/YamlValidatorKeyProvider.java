@@ -28,7 +28,6 @@ import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.alogger.ALogger.Color;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
-import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 import tech.pegasys.artemis.util.mikuli.KeyPair;
 import tech.pegasys.artemis.util.mikuli.SecretKey;
 
@@ -36,12 +35,16 @@ public class YamlValidatorKeyProvider implements ValidatorKeyProvider {
 
   private static final ALogger STDOUT = new ALogger("stdout");
   private static final int KEY_LENGTH = 48;
+  private final Path keyFile;
+
+  public YamlValidatorKeyProvider(final Path keyFile) {
+    this.keyFile = keyFile;
+  }
 
   @SuppressWarnings("unchecked")
   @Override
-  public List<BLSKeyPair> loadValidatorKeys(final ArtemisConfiguration config) {
+  public List<BLSKeyPair> loadValidatorKeys(int startIndex, int endIndex) {
     ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
-    final Path keyFile = Path.of(config.getValidatorsKeyFile());
     STDOUT.log(
         Level.INFO,
         "Loading validator keys from " + keyFile.toAbsolutePath().toString(),

@@ -134,7 +134,7 @@ public class JvmLibP2PNetwork implements P2PNetwork {
             (object, throwable) -> {
               try {
                 // Sleep long enough for network listening to complete
-                Thread.sleep(1000);
+                Thread.sleep(2000);
               } catch (InterruptedException e) {
                 e.printStackTrace();
                 throw new IllegalArgumentException(e.getMessage());

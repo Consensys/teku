@@ -32,8 +32,6 @@ import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.storage.events.DBStoreValidEvent;
-import tech.pegasys.artemis.storage.events.NodeDataLoadedEvent;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.alogger.ALogger;
 
@@ -235,13 +233,6 @@ public class ChainStorageClient implements ChainStorage {
             + " detected.",
         ALogger.Color.GREEN);
     addUnprocessedAttestation(attestation);
-  }
-
-  @Subscribe
-  public void onDBStoreValidEvent(DBStoreValidEvent event) {
-    this.genesisTime = event.getGenesisTime();
-    this.store = event.getStore();
-    this.eventBus.post(new NodeDataLoadedEvent());
   }
 
   // STATE PROCESSOR METHODS:

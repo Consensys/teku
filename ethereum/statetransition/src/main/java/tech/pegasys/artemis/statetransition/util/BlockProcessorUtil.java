@@ -87,7 +87,7 @@ import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
 
 public final class BlockProcessorUtil {
 
-  private static final ALogger LOG = new ALogger(BlockProcessorUtil.class.getName());
+  private static final ALogger STDOUT = new ALogger("stdout");
 
   /**
    * Processes block header
@@ -131,7 +131,7 @@ public final class BlockProcessorUtil {
             "process_block_header: Verify proposer signature");
       }
     } catch (IllegalArgumentException e) {
-      LOG.log(Level.WARN, e.getMessage());
+      STDOUT.log(Level.WARN, e.getMessage());
       throw new BlockProcessingException(e);
     }
   }
@@ -149,24 +149,25 @@ public final class BlockProcessorUtil {
       throws BlockProcessingException {
     try {
       UnsignedLong epoch = get_current_epoch(state);
-
       // Verify RANDAO reveal
-      Validator proposer = state.getValidators().get(get_beacon_proposer_index(state));
+      int proposer_index = get_beacon_proposer_index(state);
+      Validator proposer = state.getValidators().get(proposer_index);
+      Bytes32 messageHash =
+          HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(epoch.longValue()));
       checkArgument(
           bls_verify(
               proposer.getPubkey(),
-              HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(epoch.longValue())),
+              messageHash,
               body.getRandao_reveal(),
               get_domain(state, DOMAIN_RANDAO)),
           "process_randao: Verify that the provided randao value is valid");
-
       // Mix in RANDAO reveal
       Bytes32 mix =
           get_randao_mix(state, epoch).xor(Hash.sha2_256(body.getRandao_reveal().toBytes()));
       int index = epoch.mod(UnsignedLong.valueOf(EPOCHS_PER_HISTORICAL_VECTOR)).intValue();
       state.getRandao_mixes().set(index, mix);
     } catch (IllegalArgumentException e) {
-      LOG.log(Level.WARN, e.getMessage());
+      STDOUT.log(Level.WARN, e.getMessage());
       throw new BlockProcessingException(e);
     }
   }
@@ -227,7 +228,7 @@ public final class BlockProcessorUtil {
       process_transfers(state, body.getTransfers());
 
     } catch (IllegalArgumentException e) {
-      LOG.log(Level.WARN, e.getMessage());
+      STDOUT.log(Level.WARN, e.getMessage());
       throw new BlockProcessingException(e);
     }
   }
@@ -296,7 +297,7 @@ public final class BlockProcessorUtil {
         slash_validator(state, toIntExact(proposer_slashing.getProposer_index().longValue()));
       }
     } catch (IllegalArgumentException e) {
-      LOG.log(Level.WARN, e.getMessage());
+      STDOUT.log(Level.WARN, e.getMessage());
       throw new BlockProcessingException(e);
     }
   }
@@ -352,7 +353,7 @@ public final class BlockProcessorUtil {
         checkArgument(slashed_any, "process_attester_slashings: No one is slashed");
       }
     } catch (IllegalArgumentException e) {
-      LOG.log(Level.WARN, e.getMessage());
+      STDOUT.log(Level.WARN, e.getMessage());
       throw new BlockProcessingException(e);
     }
   }
@@ -452,7 +453,7 @@ public final class BlockProcessorUtil {
             "process_attestations: Check signature");
       }
     } catch (IllegalArgumentException e) {
-      LOG.log(Level.WARN, e.getMessage());
+      STDOUT.log(Level.WARN, e.getMessage());
       throw new BlockProcessingException(e);
     }
   }
@@ -473,7 +474,7 @@ public final class BlockProcessorUtil {
         process_deposit(state, deposit);
       }
     } catch (IllegalArgumentException e) {
-      LOG.log(Level.WARN, e.getMessage());
+      STDOUT.log(Level.WARN, e.getMessage());
       throw new BlockProcessingException(e);
     }
   }
@@ -532,7 +533,7 @@ public final class BlockProcessorUtil {
         initiate_validator_exit(state, toIntExact(exit.getValidator_index().longValue()));
       }
     } catch (IllegalArgumentException e) {
-      LOG.log(Level.WARN, e.getMessage());
+      STDOUT.log(Level.WARN, e.getMessage());
       throw new BlockProcessingException(e);
     }
   }
@@ -636,7 +637,7 @@ public final class BlockProcessorUtil {
             "process_tranfers: Verify balances are not dust 2");
       }
     } catch (IllegalArgumentException e) {
-      LOG.log(Level.WARN, e.getMessage());
+      STDOUT.log(Level.WARN, e.getMessage());
       throw new BlockProcessingException(e);
     }
   }
