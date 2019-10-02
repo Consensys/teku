@@ -194,6 +194,7 @@ public class StateProcessor {
       final Store.Transaction transaction = chainStorageClient.getStore().startTransaction();
       on_attestation(transaction, attestation, stateTransition);
       transaction.commit();
+      chainStorageClient.addUnprocessedAttestation(attestation);
     } catch (SlotProcessingException | EpochProcessingException e) {
       STDOUT.log(Level.WARN, "Exception in onAttestation: " + e.toString());
     }

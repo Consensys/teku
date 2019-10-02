@@ -267,7 +267,6 @@ public class ChainStorageClient implements ChainStorage {
             + attestation.getData().getBeacon_block_root()
             + " detected.",
         ALogger.Color.GREEN);
-    addUnprocessedAttestation(attestation);
   }
 
   @Subscribe

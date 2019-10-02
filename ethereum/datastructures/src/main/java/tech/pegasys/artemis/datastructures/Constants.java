@@ -53,7 +53,7 @@ public class Constants {
   public static Bytes BLS_WITHDRAWAL_PREFIX;
 
   // Time parameters
-  public static int SECONDS_PER_SLOT = 6;
+  public static int SECONDS_PER_SLOT = 10;
   public static int MIN_ATTESTATION_INCLUSION_DELAY;
   public static int SLOTS_PER_EPOCH;
   public static int MIN_SEED_LOOKAHEAD;
