@@ -158,21 +158,26 @@ public class StateProcessor {
       Store.Transaction transaction = chainStorageClient.getStore().startTransaction();
       final BlockProcessingRecord record = on_block(transaction, block, stateTransition);
       transaction.commit();
+
       // Add attestations that were processed in the block to processed attestations storage
+      List<Long> numberOfAttestersInAttestations = new ArrayList<>();
       block
           .getBody()
           .getAttestations()
           .forEach(
               attestation -> {
                 this.chainStorageClient.addProcessedAttestation(attestation);
-                STDOUT.log(Level.DEBUG, attestation.toString());
-                STDOUT.log(
-                    Level.DEBUG,
-                    Long.toString(
-                        IntStream.range(0, attestation.getAggregation_bits().getCurrentSize())
-                            .filter(i -> attestation.getAggregation_bits().getBit(i) == 1)
-                            .count()));
+                numberOfAttestersInAttestations.add(
+                    IntStream.range(0, attestation.getAggregation_bits().getCurrentSize())
+                        .filter(i -> attestation.getAggregation_bits().getBit(i) == 1)
+                        .count());
               });
+
+      STDOUT.log(
+          Level.DEBUG, "Number of attestations: " + block.getBody().getAttestations().size());
+      STDOUT.log(
+          Level.DEBUG, "Number of attesters in attestation: " + numberOfAttestersInAttestations);
+
       this.eventBus.post(record);
     } catch (StateTransitionException e) {
       //  this.eventBus.post(new BlockProcessingRecord(preState, block, new BeaconState()));

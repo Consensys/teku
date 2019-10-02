@@ -14,6 +14,7 @@
 package tech.pegasys.artemis.storage;
 
 import static tech.pegasys.artemis.datastructures.util.AttestationUtil.getAttesterIndexIntoCommittee;
+import static tech.pegasys.artemis.datastructures.util.AttestationUtil.getAttesterIndicesIntoCommittee;
 import static tech.pegasys.artemis.datastructures.util.AttestationUtil.get_attestation_data_slot;
 import static tech.pegasys.artemis.datastructures.util.AttestationUtil.isSingleAttester;
 import static tech.pegasys.artemis.datastructures.util.AttestationUtil.representsNewAttester;
@@ -35,6 +36,7 @@ import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.util.SSZTypes.Bitlist;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.bls.BLSAggregate;
@@ -52,7 +54,7 @@ public class ChainStorageClient implements ChainStorage {
           UNPROCESSED_BLOCKS_LENGTH, Comparator.comparing(BeaconBlock::getSlot));
   private final ConcurrentHashMap<Bytes32, BeaconBlock> unprocessedBlockMap =
       new ConcurrentHashMap<>();
-  protected final ConcurrentHashMap<Bytes32, Attestation> processedAttestationsMap =
+  protected final ConcurrentHashMap<Bytes32, Bitlist> processedAttestationsBitlistMap =
       new ConcurrentHashMap<>();
   private final ConcurrentHashMap<Bytes32, Attestation> unprocessedAttestationsMap =
       new ConcurrentHashMap<>();
@@ -98,10 +100,20 @@ public class ChainStorageClient implements ChainStorage {
    *
    * @param attestation
    */
-  // addProcessedAttestationMessage
   public void addProcessedAttestation(Attestation attestation) {
-    ChainStorage.add(
-        attestation.getData().hash_tree_root(), attestation, this.processedAttestationsMap);
+    Bytes32 attestationDataHash = attestation.getData().hash_tree_root();
+    ChainStorage.get(attestationDataHash, this.processedAttestationsBitlistMap)
+        .ifPresentOrElse(
+            oldBitlist -> {
+              for (int i = 0; i < attestation.getAggregation_bits().getCurrentSize(); i++) {
+                if (attestation.getAggregation_bits().getBit(i) == 1) oldBitlist.setBit(i);
+              }
+            },
+            () ->
+                ChainStorage.add(
+                    attestationDataHash,
+                    attestation.getAggregation_bits().copy(),
+                    this.processedAttestationsBitlistMap));
   }
 
   public void addUnprocessedAttestation(Attestation newAttestation) {
@@ -237,7 +249,7 @@ public class ChainStorageClient implements ChainStorage {
    */
   public Optional<Attestation> getUnprocessedAttestation(Bytes32 attestationHash) {
     Optional<Attestation> result = Optional.empty();
-    if (!this.processedAttestationsMap.containsKey(attestationHash)
+    if (!this.processedAttestationsBitlistMap.containsKey(attestationHash)
         && this.unprocessedAttestationsMap.containsKey(attestationHash)) {
       result = ChainStorage.get(attestationHash, this.unprocessedAttestationsMap);
     }
@@ -309,11 +321,22 @@ public class ChainStorageClient implements ChainStorage {
         && numAttestations < Constants.MAX_ATTESTATIONS) {
       Attestation attestation = unprocessedAttestationsQueue.remove();
       // Check if attestation has already been processed in successful block
-      if (!ChainStorage.get(attestation.hash_tree_root(), this.processedAttestationsMap)
+      if (ChainStorage.get(
+              attestation.getData().hash_tree_root(), this.processedAttestationsBitlistMap)
           .isPresent()) {
-        attestations.add(attestation);
-        numAttestations++;
+        Bitlist bitlist =
+            ChainStorage.get(
+                    attestation.getData().hash_tree_root(), this.processedAttestationsBitlistMap)
+                .get();
+        List<Integer> oldAttesters = getAttesterIndicesIntoCommittee(bitlist);
+        List<Integer> newAttesters =
+            getAttesterIndicesIntoCommittee(attestation.getAggregation_bits());
+        if (oldAttesters.containsAll(newAttesters)) {
+          continue;
+        }
       }
+      attestations.add(attestation);
+      numAttestations++;
     }
     return attestations;
   }

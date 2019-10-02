@@ -409,8 +409,19 @@ public class AttestationUtil {
         return i;
       }
     }
-    System.out.println("No aggregation bit found");
     throw new UnsupportedOperationException("Attestation doesn't have any aggregation bit set");
+  }
+
+  // Returns the indices of the attesters in the Attestation
+  public static List<Integer> getAttesterIndicesIntoCommittee(Bitlist aggregationBits) {
+    List<Integer> attesterIndices = new ArrayList<>();
+    for (int i = 0; i < aggregationBits.getCurrentSize(); i++) {
+      int bitfieldBit = aggregationBits.getBit(i);
+      if (bitfieldBit == 1) {
+        attesterIndices.add(i);
+      }
+    }
+    return attesterIndices;
   }
 
   public static boolean isSingleAttester(Attestation attestation) {
