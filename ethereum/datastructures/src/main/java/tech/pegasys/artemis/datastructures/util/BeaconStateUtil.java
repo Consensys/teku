@@ -13,35 +13,6 @@
 
 package tech.pegasys.artemis.datastructures.util;
 
-import com.google.common.annotations.VisibleForTesting;
-import com.google.common.primitives.UnsignedLong;
-import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.crypto.Hash;
-import org.apache.tuweni.ssz.SSZ;
-import tech.pegasys.artemis.datastructures.Constants;
-import tech.pegasys.artemis.datastructures.blocks.BeaconBlockBody;
-import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
-import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
-import tech.pegasys.artemis.datastructures.operations.Deposit;
-import tech.pegasys.artemis.datastructures.operations.DepositData;
-import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
-import tech.pegasys.artemis.datastructures.state.Validator;
-import tech.pegasys.artemis.util.SSZTypes.Bitvector;
-import tech.pegasys.artemis.util.SSZTypes.Bytes4;
-import tech.pegasys.artemis.util.SSZTypes.SSZList;
-import tech.pegasys.artemis.util.alogger.ALogger;
-import tech.pegasys.artemis.util.bls.BLSPublicKey;
-import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
-
-import java.nio.ByteOrder;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.lang.Math.toIntExact;
 import static tech.pegasys.artemis.datastructures.Constants.ACTIVATION_EXIT_DELAY;
@@ -75,6 +46,34 @@ import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.decrease_b
 import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.get_active_validator_indices;
 import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.increase_balance;
 import static tech.pegasys.artemis.util.bls.BLSVerify.bls_verify;
+
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.primitives.UnsignedLong;
+import java.nio.ByteOrder;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.crypto.Hash;
+import org.apache.tuweni.ssz.SSZ;
+import tech.pegasys.artemis.datastructures.Constants;
+import tech.pegasys.artemis.datastructures.blocks.BeaconBlockBody;
+import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
+import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
+import tech.pegasys.artemis.datastructures.operations.Deposit;
+import tech.pegasys.artemis.datastructures.operations.DepositData;
+import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
+import tech.pegasys.artemis.datastructures.state.Validator;
+import tech.pegasys.artemis.util.SSZTypes.Bitvector;
+import tech.pegasys.artemis.util.SSZTypes.Bytes4;
+import tech.pegasys.artemis.util.SSZTypes.SSZList;
+import tech.pegasys.artemis.util.alogger.ALogger;
+import tech.pegasys.artemis.util.bls.BLSPublicKey;
+import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 
 public class BeaconStateUtil {
 
