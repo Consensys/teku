@@ -13,7 +13,10 @@
 
 package tech.pegasys.artemis.storage;
 
+import static tech.pegasys.artemis.datastructures.util.AttestationUtil.getAttesterIndexIntoCommittee;
 import static tech.pegasys.artemis.datastructures.util.AttestationUtil.get_attestation_data_slot;
+import static tech.pegasys.artemis.datastructures.util.AttestationUtil.isSingleAttester;
+import static tech.pegasys.artemis.datastructures.util.AttestationUtil.representsNewAttester;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
@@ -34,6 +37,8 @@ import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.alogger.ALogger;
+import tech.pegasys.artemis.util.bls.BLSAggregate;
+import tech.pegasys.artemis.util.bls.BLSSignature;
 
 /** This class is the ChainStorage client-side logic */
 public class ChainStorageClient implements ChainStorage {
@@ -93,8 +98,46 @@ public class ChainStorageClient implements ChainStorage {
    *
    * @param attestation
    */
+  // addProcessedAttestationMessage
   public void addProcessedAttestation(Attestation attestation) {
-    ChainStorage.add(attestation.hash_tree_root(), attestation, this.processedAttestationsMap);
+    ChainStorage.add(
+        attestation.getData().hash_tree_root(), attestation, this.processedAttestationsMap);
+  }
+
+  public void addUnprocessedAttestation(Attestation newAttestation) {
+    // Make sure the new attestation only represents a single attester
+    if (isSingleAttester(newAttestation)) {
+
+      Bytes32 attestationDataHashTreeRoot = newAttestation.getData().hash_tree_root();
+      Optional<Attestation> aggregateAttestation =
+          ChainStorage.get(attestationDataHashTreeRoot, unprocessedAttestationsMap);
+
+      if (aggregateAttestation.isPresent()
+          && representsNewAttester(aggregateAttestation.get(), newAttestation)) {
+
+        Attestation oldAggregateAttestation = aggregateAttestation.get();
+
+        // Set the bit of the new attester in the aggregate attestation
+        oldAggregateAttestation
+            .getAggregation_bits()
+            .setBit(getAttesterIndexIntoCommittee(newAttestation));
+
+        // Aggregate signatures
+        List<BLSSignature> signaturesToAggregate = new ArrayList<>();
+        signaturesToAggregate.add(oldAggregateAttestation.getAggregate_signature());
+        signaturesToAggregate.add(newAttestation.getAggregate_signature());
+        oldAggregateAttestation.setAggregate_signature(
+            BLSAggregate.bls_aggregate_signatures(signaturesToAggregate));
+      }
+      // If the attestation message hasn't been seen before:
+      // - add it to the unprocessed attestation queue to put in a block later
+      // - add it to the unprocessed attestation map to aggregate further when
+      // another attestation with the same message is received
+      else if (aggregateAttestation.isEmpty()) {
+        ChainStorage.add(newAttestation, unprocessedAttestationsQueue);
+        ChainStorage.add(attestationDataHashTreeRoot, newAttestation, unprocessedAttestationsMap);
+      }
+    }
   }
 
   // NETWORKING RELATED INFORMATION METHODS:
@@ -169,16 +212,6 @@ public class ChainStorageClient implements ChainStorage {
   }
 
   /**
-   * Add unprocessed attestation to storage
-   *
-   * @param attestation
-   */
-  public void addUnprocessedAttestation(Attestation attestation) {
-    ChainStorage.add(attestation, this.unprocessedAttestationsQueue);
-    ChainStorage.add(attestation.hash_tree_root(), attestation, this.unprocessedAttestationsMap);
-  }
-
-  /**
    * Retrieves a list of blocks that were put into storage right after receiving over the wire
    *
    * @param startRoot
@@ -232,7 +265,6 @@ public class ChainStorageClient implements ChainStorage {
             + attestation.getData().getBeacon_block_root()
             + " detected.",
         ALogger.Color.GREEN);
-    addUnprocessedAttestation(attestation);
   }
 
   // STATE PROCESSOR METHODS:

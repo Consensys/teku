@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.stream.IntStream;
 import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.data.BlockProcessingRecord;
@@ -161,7 +162,17 @@ public class StateProcessor {
       block
           .getBody()
           .getAttestations()
-          .forEach(attestation -> this.chainStorageClient.addProcessedAttestation(attestation));
+          .forEach(
+              attestation -> {
+                this.chainStorageClient.addProcessedAttestation(attestation);
+                STDOUT.log(Level.DEBUG, attestation.toString());
+                STDOUT.log(
+                    Level.DEBUG,
+                    Long.toString(
+                        IntStream.range(0, attestation.getAggregation_bits().getCurrentSize())
+                            .filter(i -> attestation.getAggregation_bits().getBit(i) == 1)
+                            .count()));
+              });
       this.eventBus.post(record);
     } catch (StateTransitionException e) {
       //  this.eventBus.post(new BlockProcessingRecord(preState, block, new BeaconState()));
@@ -175,6 +186,7 @@ public class StateProcessor {
       final Store.Transaction transaction = chainStorageClient.getStore().startTransaction();
       on_attestation(transaction, attestation, stateTransition);
       transaction.commit();
+      chainStorageClient.addUnprocessedAttestation(attestation);
     } catch (SlotProcessingException | EpochProcessingException e) {
       STDOUT.log(Level.WARN, "Exception in onAttestation: " + e.toString());
     }
