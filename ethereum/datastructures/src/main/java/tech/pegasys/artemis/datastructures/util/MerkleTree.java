@@ -13,15 +13,14 @@
 
 package tech.pegasys.artemis.datastructures.util;
 
+import static java.nio.ByteOrder.LITTLE_ENDIAN;
+
+import java.util.ArrayList;
+import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.Hash;
 import tech.pegasys.artemis.util.SSZTypes.SSZVector;
-
-import java.util.ArrayList;
-import java.util.List;
-
-import static java.nio.ByteOrder.LITTLE_ENDIAN;
 
 public class MerkleTree<T> {
   private final List<List<Bytes32>> tree;
@@ -51,7 +50,8 @@ public class MerkleTree<T> {
       for (int j = 0; j < child.size(); j += 2) {
         Bytes32 leftNode = child.get(j);
         Bytes32 rightNode = (j + 1 < child.size()) ? child.get(j + 1) : zeroHashes.get(i);
-        if(parent.size() <= j / 2)parent.add(Hash.sha2_256(Bytes.concatenate(leftNode, rightNode)));
+        if (parent.size() <= j / 2)
+          parent.add(Hash.sha2_256(Bytes.concatenate(leftNode, rightNode)));
         else parent.set(j / 2, Hash.sha2_256(Bytes.concatenate(leftNode, rightNode)));
       }
     }
@@ -76,10 +76,11 @@ public class MerkleTree<T> {
     return new SSZVector<Bytes32>(proof, Bytes32.class);
   }
 
-  private Bytes32 calcMixInValue(){
-    return (Bytes32)Bytes.concatenate(Bytes.ofUnsignedLong(tree.get(0).size(), LITTLE_ENDIAN), Bytes.wrap(new byte[24]));
+  private Bytes32 calcMixInValue() {
+    return (Bytes32)
+        Bytes.concatenate(
+            Bytes.ofUnsignedLong(tree.get(0).size(), LITTLE_ENDIAN), Bytes.wrap(new byte[24]));
   }
-
 
   public static List<Bytes32> generateZeroHashes(int height) {
     List<Bytes32> zeroHashes = new ArrayList<Bytes32>();

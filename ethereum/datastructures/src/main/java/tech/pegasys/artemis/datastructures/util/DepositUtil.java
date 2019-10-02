@@ -13,8 +13,15 @@
 
 package tech.pegasys.artemis.datastructures.util;
 
+import static tech.pegasys.artemis.datastructures.Constants.DEPOSIT_CONTRACT_TREE_DEPTH;
+
 import com.google.common.primitives.UnsignedLong;
 import com.google.gson.JsonElement;
+import java.io.IOException;
+import java.math.BigInteger;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.Hash;
@@ -27,23 +34,17 @@ import tech.pegasys.artemis.datastructures.operations.DepositWithIndex;
 import tech.pegasys.artemis.pow.contract.DepositContract;
 import tech.pegasys.artemis.util.SSZTypes.SSZVector;
 
-import java.io.IOException;
-import java.math.BigInteger;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.List;
-
-import static tech.pegasys.artemis.datastructures.Constants.DEPOSIT_CONTRACT_TREE_DEPTH;
-
 public class DepositUtil {
 
-  public static void calcDepositProofs(List<? extends Deposit> deposits){
+  public static void calcDepositProofs(List<? extends Deposit> deposits) {
     MerkleTree<Bytes32> merkleTree = new MerkleTree<Bytes32>(DEPOSIT_CONTRACT_TREE_DEPTH);
-    deposits.stream().forEach(deposit -> {
-      Bytes32 value = deposit.getData().hash_tree_root();
-      merkleTree.add(value);
-      deposit.setProof(merkleTree.getProofTreeByValue(value));
-    });
+    deposits.stream()
+        .forEach(
+            deposit -> {
+              Bytes32 value = deposit.getData().hash_tree_root();
+              merkleTree.add(value);
+              deposit.setProof(merkleTree.getProofTreeByValue(value));
+            });
   }
 
   public static List<DepositWithIndex> applyBranchProofs(
