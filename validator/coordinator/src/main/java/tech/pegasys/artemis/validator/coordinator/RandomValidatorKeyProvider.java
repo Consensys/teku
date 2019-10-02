@@ -28,6 +28,7 @@ import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 public class RandomValidatorKeyProvider implements ValidatorKeyProvider {
 
   private static final ALogger STDOUT = new ALogger("stdout");
+  private int startIndex = 0;
 
   @Override
   public List<BLSKeyPair> loadValidatorKeys(final ArtemisConfiguration config) {
@@ -44,11 +45,14 @@ public class RandomValidatorKeyProvider implements ValidatorKeyProvider {
       BLSKeyPair keypair = BLSKeyPair.random(i);
       keypairs.add(keypair);
     }
+
+    this.startIndex = startIndex;
     return keypairs;
   }
 
   private Pair<Integer, Integer> getStartAndEnd(
       SECP256K1.SecretKey nodeIdentity, int numNodes, int numValidators) {
+    /*
     // Add all validators to validatorSet hashMap
     int nodeCounter = UInt256.fromBytes(nodeIdentity.bytes()).mod(numNodes).intValue();
     int startIndex = 0;
@@ -56,17 +60,34 @@ public class RandomValidatorKeyProvider implements ValidatorKeyProvider {
     if (nodeCounter > 0) {
       endIndex = -1;
     }
-    /*
     int startIndex = nodeCounter * (numValidators / numNodes);
     int endIndex =
         startIndex
             + (numValidators / numNodes - 1)
             + Math.floorDiv(nodeCounter, Math.max(1, numNodes - 1));
     endIndex = Math.min(endIndex, numValidators - 1);
-    */
     STDOUT.log(
         Level.INFO,
         "nodeCounter: " + nodeCounter + " startIndex: " + startIndex + " endIndex: " + endIndex);
     return new ImmutablePair<>(startIndex, endIndex);
+    */
+    // Add all validators to validatorSet hashMap
+    int nodeCounter = UInt256.fromBytes(nodeIdentity.bytes()).mod(numNodes).intValue();
+    int startIndex = nodeCounter * (numValidators / numNodes);
+    int endIndex =
+        startIndex
+            + (numValidators / numNodes - 1)
+            + Math.floorDiv(nodeCounter, Math.max(1, numNodes - 1));
+    endIndex = Math.min(endIndex, numValidators - 1);
+
+    STDOUT.log(
+        Level.INFO,
+        "nodeCounter: " + nodeCounter + " startIndex: " + startIndex + " endIndex: " + endIndex);
+    return new ImmutablePair<>(startIndex, endIndex);
+  }
+
+  @Override
+  public int getValidatorPortStartIndex() {
+    return startIndex;
   }
 }

@@ -48,11 +48,12 @@ public class ValidatorLoader {
 
     for (int i = 0; i < keypairs.size(); i++) {
       BLSKeyPair keypair = keypairs.get(i);
-      int port = Constants.VALIDATOR_CLIENT_PORT_BASE + i;
+      int port =
+          Constants.VALIDATOR_CLIENT_PORT_BASE + i + keyProvider.getValidatorPortStartIndex();
       new ValidatorClient(keypair, port);
       ManagedChannel channel =
           ManagedChannelBuilder.forAddress("localhost", port).usePlaintext().build();
-      STDOUT.log(Level.DEBUG, "i = " + i + ": " + keypair.getPublicKey().toString());
+      STDOUT.log(Level.INFO, "i = " + i + ": " + keypair.getPublicKey().toString());
 
       validators.put(keypair.getPublicKey(), new ValidatorInfo(numNaughtyValidators > 0, channel));
       numNaughtyValidators--;
