@@ -13,49 +13,37 @@
 
 package tech.pegasys.artemis.datastructures.util;
 
-import static tech.pegasys.artemis.datastructures.Constants.DEPOSIT_CONTRACT_TREE_DEPTH;
-
 import com.google.common.primitives.UnsignedLong;
 import com.google.gson.JsonElement;
-import java.io.IOException;
-import java.math.BigInteger;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.Hash;
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.core.DefaultBlockParameterNumber;
 import org.web3j.protocol.http.HttpService;
+import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.DepositData;
 import tech.pegasys.artemis.datastructures.operations.DepositWithIndex;
 import tech.pegasys.artemis.pow.contract.DepositContract;
 import tech.pegasys.artemis.util.SSZTypes.SSZVector;
 
+import java.io.IOException;
+import java.math.BigInteger;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.List;
+
+import static tech.pegasys.artemis.datastructures.Constants.DEPOSIT_CONTRACT_TREE_DEPTH;
+
 public class DepositUtil {
 
-  public static List<DepositWithIndex> generateBranchProofs(List<DepositWithIndex> deposits) {
-    deposits = sortDepositsByIndexAscending(deposits);
-    MerkleTree<DepositWithIndex> merkleTree = new MerkleTree<>(DEPOSIT_CONTRACT_TREE_DEPTH);
-
-    for (int i = 0; i < deposits.size(); i++)
-      merkleTree.add(
-          deposits.get(i).getIndex().intValue(),
-          Hash.sha2_256(deposits.get(i).getData().serialize()));
-    for (int i = 0; i < deposits.size(); i++)
-      deposits.get(i).setProof(new SSZVector<>(merkleTree.getProofTreeByIndex(i), Bytes32.class));
-    return deposits;
-  }
-
-  public static MerkleTree<DepositWithIndex> generateMerkleTree(List<DepositWithIndex> deposits) {
-    deposits = sortDepositsByIndexAscending(deposits);
-    MerkleTree<DepositWithIndex> merkleTree = new MerkleTree<>(DEPOSIT_CONTRACT_TREE_DEPTH + 1);
-
-    for (int i = 0; i < deposits.size(); i++)
-      merkleTree.add(
-          deposits.get(i).getIndex().intValue(), deposits.get(i).getData().hash_tree_root());
-    return merkleTree;
+  public static void calcDepositProofs(List<? extends Deposit> deposits){
+    MerkleTree<Bytes32> merkleTree = new MerkleTree<Bytes32>(DEPOSIT_CONTRACT_TREE_DEPTH);
+    deposits.stream().forEach(deposit -> {
+      Bytes32 value = deposit.getData().hash_tree_root();
+      merkleTree.add(value);
+      deposit.setProof(merkleTree.getProofTreeByValue(value));
+    });
   }
 
   public static List<DepositWithIndex> applyBranchProofs(
