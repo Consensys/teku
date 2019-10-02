@@ -113,7 +113,7 @@ public final class StartupUtil {
       initialState = createMockedStartInitialBeaconState(config);
     } else {
       initialState =
-          BeaconStateUtil.initialize_beacon_state_from_eth1_new(
+          BeaconStateUtil.initialize_beacon_state_from_eth1(
               Bytes32.ZERO,
               UnsignedLong.valueOf(config.getGenesisTime()),
               newDeposits(config.getNumValidators()));

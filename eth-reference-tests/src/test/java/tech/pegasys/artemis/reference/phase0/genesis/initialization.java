@@ -13,7 +13,7 @@
 
 package tech.pegasys.artemis.reference.phase0.genesis;
 
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.initialize_beacon_state_from_eth1_new;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.initialize_beacon_state_from_eth1;
 
 import com.google.common.primitives.UnsignedLong;
 import com.google.errorprone.annotations.MustBeClosed;
@@ -43,7 +43,7 @@ public class initialization extends TestSuite {
       Bytes32 eth1_block_hash,
       List<? extends Deposit> deposits) {
     BeaconState beaconState =
-        initialize_beacon_state_from_eth1_new(eth1_block_hash, eth1_timestamp, deposits);
+        initialize_beacon_state_from_eth1(eth1_block_hash, eth1_timestamp, deposits);
     Assertions.assertEquals(state, beaconState);
   }
 
