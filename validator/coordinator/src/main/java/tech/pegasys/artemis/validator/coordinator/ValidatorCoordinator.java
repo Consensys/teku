@@ -22,6 +22,7 @@ import static tech.pegasys.artemis.datastructures.Constants.SLOTS_PER_EPOCH;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_of_slot;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_domain;
 import static tech.pegasys.artemis.statetransition.util.ForkChoiceUtil.get_head;
+import static tech.pegasys.artemis.validator.coordinator.ValidatorLoader.initializeValidators;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
@@ -100,7 +101,7 @@ public class ValidatorCoordinator {
     this.chainStorageClient = chainStorageClient;
     this.interopActive = config.getInteropActive();
     this.stateTransition = new StateTransition(false);
-    this.validators = new ValidatorLoader().initializeValidators(config);
+    this.validators = initializeValidators(config);
     this.eventBus.register(this);
   }
 
@@ -179,35 +180,11 @@ public class ValidatorCoordinator {
   }
 
   @Subscribe
-  public void onNewAssignment(ValidatorAssignmentEvent validatorAssignmentEvent)
-      throws IllegalArgumentException {
-    UnsignedLong nodeSlot = validatorAssignmentEvent.getSlot();
-    Store store = chainStorageClient.getStore();
-    Bytes32 headBlockRoot = get_head(store);
-    BeaconBlock headBlock = store.getBlock(headBlockRoot);
-    BeaconState headState = store.getBlockState(headBlockRoot);
-    chainStorageClient.updateBestBlock(headBlockRoot, headBlock.getSlot());
-
+  public void onNewAssignment(ValidatorAssignmentEvent event) throws IllegalArgumentException {
     try {
-      stateTransition.process_slots((BeaconStateWithCache) headState, nodeSlot, false);
-    } catch (SlotProcessingException | EpochProcessingException e) {
-      STDOUT.log(Level.WARN, "Error when processing empty slots");
-      STDOUT.log(Level.WARN, e.toString());
-    }
-
-    // Logging
-    STDOUT.log(
-        Level.INFO,
-        "Head block slot:" + "                       " + headBlock.getSlot().longValue());
-    STDOUT.log(
-        Level.INFO,
-        "Justified epoch:" + "                       " + store.getJustifiedCheckpoint().getEpoch());
-    STDOUT.log(
-        Level.INFO,
-        "Finalized epoch:" + "                       " + store.getFinalizedCheckpoint().getEpoch());
-
-    try {
-
+      Store store = chainStorageClient.getStore();
+      BeaconBlock headBlock = store.getBlock(event.getHeadBlockRoot());
+      BeaconState headState = store.getBlockState(event.getHeadBlockRoot());
       if (headState.getSlot().mod(UnsignedLong.valueOf(SLOTS_PER_EPOCH)).equals(UnsignedLong.ZERO)
           || headState.getSlot().equals(UnsignedLong.valueOf(GENESIS_SLOT))) {
         validators.forEach(
