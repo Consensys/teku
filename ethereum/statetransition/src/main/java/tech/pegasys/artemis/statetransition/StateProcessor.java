@@ -176,7 +176,7 @@ public class StateProcessor {
       STDOUT.log(
           Level.DEBUG, "Number of attestations: " + block.getBody().getAttestations().size());
       STDOUT.log(
-          Level.DEBUG, "Number of attesters in attestation: " + numberOfAttestersInAttestations);
+          Level.DEBUG, "Number of attesters in attestations: " + numberOfAttestersInAttestations);
 
       this.eventBus.post(record);
     } catch (StateTransitionException e) {
