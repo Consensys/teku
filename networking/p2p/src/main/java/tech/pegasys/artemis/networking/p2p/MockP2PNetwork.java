@@ -14,9 +14,7 @@
 package tech.pegasys.artemis.networking.p2p;
 
 import com.google.common.eventbus.EventBus;
-import com.google.common.eventbus.Subscribe;
 import java.util.concurrent.CompletableFuture;
-import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.networking.p2p.api.P2PNetwork;
 import tech.pegasys.artemis.util.alogger.ALogger;
 
@@ -48,9 +46,4 @@ public class MockP2PNetwork implements P2PNetwork {
 
   @Override
   public void start() {}
-
-  @Subscribe
-  public void onNewUnprocessedBlock(BeaconBlock block) {
-    // now send it out into the p2p world
-  }
 }

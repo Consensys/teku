@@ -150,6 +150,7 @@ public class JvmLibP2PNetwork implements P2PNetwork {
 
   @Override
   public void stop() {
+    STDOUT.log(Level.DEBUG, "JvmLibP2PNetwork.stop()");
     host.stop();
     scheduler.shutdownNow();
   }

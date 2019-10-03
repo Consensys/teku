@@ -44,7 +44,7 @@ import tech.pegasys.artemis.validator.client.Validator;
 import tech.pegasys.artemis.validator.client.ValidatorClientUtil;
 
 public class PowchainService implements ServiceInterface {
-
+  private static final ALogger STDOUT = new ALogger("stdout");
   public static final String SIM_DEPOSIT_VALUE_GWEI = "32000000000";
   public static final String EVENTS = "events";
   public static final String ROOT = "root";
@@ -133,6 +133,7 @@ public class PowchainService implements ServiceInterface {
 
   @Override
   public void stop() {
+    STDOUT.log(Level.DEBUG, "PowChainService.stop()");
     this.eventBus.unregister(this);
   }
 }

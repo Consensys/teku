@@ -25,6 +25,7 @@ import io.libp2p.core.crypto.KeyKt;
 import io.libp2p.core.crypto.PrivKey;
 import io.vertx.core.Vertx;
 import java.util.Date;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -185,6 +186,10 @@ public class BeaconChainController {
   }
 
   public void stop() {
+    STDOUT.log(Level.DEBUG, "BeaconChainController.stop()");
+    if (!Objects.isNull(p2pNetwork)) {
+      this.p2pNetwork.stop();
+    }
     networkExecutor.shutdown();
     try {
       if (!networkExecutor.awaitTermination(250, TimeUnit.MILLISECONDS)) {
@@ -235,7 +240,23 @@ public class BeaconChainController {
           STDOUT.log(Level.INFO, "******* Slot Event *******", ALogger.Color.WHITE);
           STDOUT.log(Level.INFO, "Node slot:                             " + nodeSlot);
           Thread.sleep(SECONDS_PER_SLOT * 1000 / 2);
-          this.eventBus.post(new ValidatorAssignmentEvent(nodeSlot));
+          Bytes32 headBlockRoot = this.stateProcessor.processHead(nodeSlot);
+          // Logging
+          STDOUT.log(
+              Level.INFO,
+              "Head block slot:" + "                       " + chainStorageClient.getBestSlot());
+          STDOUT.log(
+              Level.INFO,
+              "Justified epoch:"
+                  + "                       "
+                  + chainStorageClient.getStore().getJustifiedCheckpoint().getEpoch());
+          STDOUT.log(
+              Level.INFO,
+              "Finalized epoch:"
+                  + "                       "
+                  + chainStorageClient.getStore().getFinalizedCheckpoint().getEpoch());
+
+          this.eventBus.post(new ValidatorAssignmentEvent(headBlockRoot));
           nodeSlot = nodeSlot.plus(UnsignedLong.ONE);
         }
       }
