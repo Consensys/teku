@@ -17,6 +17,7 @@ import com.google.common.collect.Sets;
 import com.google.common.primitives.UnsignedLong;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -29,6 +30,8 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
+
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_start_slot_of_epoch;
 
 public class Store implements ReadOnlyStore {
 
@@ -60,6 +63,36 @@ public class Store implements ReadOnlyStore {
 
   public Transaction startTransaction() {
     return new Transaction();
+  }
+
+  public void cleanStoreUntilSlot(UnsignedLong slot) {
+
+    // Find keys of objects to clean from store
+    Set<Bytes32> blocks = new HashSet<>();
+    Set<Bytes32> block_states = new HashSet<>();
+    Set<Checkpoint> checkpoint_states = new HashSet<>();
+
+    this.blocks.forEach((key, block) -> {
+      if (block.getSlot().compareTo(slot) < 0) {
+        blocks.add(key);
+      }
+    });
+
+    this.block_states.forEach((key, state) -> {
+      if (state.getSlot().compareTo(slot) < 0) {
+        block_states.add(key);
+      }
+    });
+
+    this.checkpoint_states.forEach((key, state) -> {
+      if (state.getSlot().compareTo(slot) < 0) {
+        checkpoint_states.add(key);
+      }
+    });
+
+    Transaction cleanTransaction = new Transaction();
+    cleanTransaction.setKeysToBeCleaned(blocks, block_states, checkpoint_states);
+    cleanTransaction.commit();
   }
 
   @Override
@@ -191,6 +224,11 @@ public class Store implements ReadOnlyStore {
     private Map<Checkpoint, BeaconState> checkpoint_states = new HashMap<>();
     private Map<UnsignedLong, LatestMessage> latest_messages = new HashMap<>();
 
+    // Keys to be removed from Store for memory cleaning purposes
+    private Set<Bytes32> block_keys = new HashSet<>();
+    private Set<Bytes32> block_state_keys = new HashSet<>();
+    private Set<Checkpoint> checkpoint_state_keys = new HashSet<>();
+
     public void putLatestMessage(UnsignedLong validatorIndex, LatestMessage latestMessage) {
       latest_messages.put(validatorIndex, latestMessage);
     }
@@ -219,6 +257,14 @@ public class Store implements ReadOnlyStore {
       this.finalized_checkpoint = Optional.of(finalized_checkpoint);
     }
 
+    public void setKeysToBeCleaned(Set<Bytes32> block_keys,
+                                      Set<Bytes32> block_state_keys,
+                                      Set<Checkpoint> checkpoint_state_keys) {
+      this.block_keys = block_keys;
+      this.block_state_keys = block_state_keys;
+      this.checkpoint_state_keys = checkpoint_state_keys;
+    }
+
     public void commit() {
       final Lock writeLock = Store.this.lock.writeLock();
       writeLock.lock();
@@ -230,6 +276,10 @@ public class Store implements ReadOnlyStore {
         Store.this.block_states.putAll(block_states);
         Store.this.checkpoint_states.putAll(checkpoint_states);
         Store.this.latest_messages.putAll(latest_messages);
+
+        block_keys.forEach(key -> Store.this.blocks.remove(key));
+        block_state_keys.forEach(key -> Store.this.block_states.remove(key));
+        checkpoint_state_keys.forEach(key -> Store.this.checkpoint_states.remove(key));
       } finally {
         writeLock.unlock();
       }
