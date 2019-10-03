@@ -18,6 +18,9 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiFunction;
+
+import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.BeaconBlocksMessageRequest;
+import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.BeaconBlocksMessageResponse;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.GoodbyeMessage;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.HelloMessage;
 import tech.pegasys.artemis.util.alogger.ALogger;
@@ -26,10 +29,12 @@ public class RPCMethods {
   private static final ALogger STDOUT = new ALogger("stdout");
   private final RPCMessageHandler<HelloMessage, HelloMessage> hello;
   private final RPCMessageHandler<GoodbyeMessage, Void> goodbye;
+  private final RPCMessageHandler<BeaconBlocksMessageRequest, BeaconBlocksMessageResponse> beaconBlocks;
 
   public RPCMethods(
       BiFunction<Connection, HelloMessage, HelloMessage> helloHandler,
-      BiFunction<Connection, GoodbyeMessage, Void> goodbyeHandler) {
+      BiFunction<Connection, GoodbyeMessage, Void> goodbyeHandler,
+      BiFunction<Connection, BeaconBlocksMessageRequest, BeaconBlocksMessageResponse> beaconBlocksHandler) {
 
     this.hello =
         new RPCMessageHandler<>(
@@ -49,6 +54,15 @@ public class RPCMethods {
             return CompletableFuture.completedFuture(goodbyeHandler.apply(connection, msg));
           }
         }.setNotification();
+
+    this.beaconBlocks =
+        new RPCMessageHandler<BeaconBlocksMessageRequest, BeaconBlocksMessageResponse>(
+          "/eth2/beacon_chain/req/beacon_blocks/1/ssz", BeaconBlocksMessageRequest.class, BeaconBlocksMessageResponse.class) {
+            @Override
+            protected CompletableFuture<BeaconBlocksMessageResponse> invokeLocal(Connection connection, BeaconBlocksMessageRequest msg) {
+              return CompletableFuture.completedFuture(beaconBlocksHandler.apply(connection, msg));
+            }
+          };
   }
 
   public RPCMessageHandler<HelloMessage, HelloMessage> getHello() {
@@ -59,7 +73,11 @@ public class RPCMethods {
     return goodbye;
   }
 
+  public RPCMessageHandler<BeaconBlocksMessageRequest, BeaconBlocksMessageResponse> getBeaconBlocks() {
+    return beaconBlocks;
+  }
+
   public List<RPCMessageHandler<?, ?>> all() {
-    return Arrays.asList(getHello(), getGoodbye());
+    return Arrays.asList(getHello(), getGoodbye(), getBeaconBlocks());
   }
 }

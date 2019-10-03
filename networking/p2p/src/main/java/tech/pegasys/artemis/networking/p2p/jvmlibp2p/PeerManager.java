@@ -23,6 +23,9 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.Level;
 import org.jetbrains.annotations.NotNull;
+
+import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.BeaconBlocksMessageRequest;
+import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.BeaconBlocksMessageResponse;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.GoodbyeMessage;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.HelloMessage;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.RPCMethods;
@@ -45,7 +48,7 @@ public class PeerManager implements ConnectionHandler {
       final ScheduledExecutorService scheduler, final ChainStorageClient chainStorageClient) {
     this.scheduler = scheduler;
     this.chainStorageClient = chainStorageClient;
-    this.rpcMethods = new RPCMethods(this::hello, this::goodbye);
+    this.rpcMethods = new RPCMethods(this::hello, this::goodbye, this::beaconBlocks);
   }
 
   @Override
@@ -127,6 +130,11 @@ public class PeerManager implements ConnectionHandler {
     STDOUT.log(
         Level.DEBUG, "Peer " + connection.getSecureSession().getRemoteId() + " said goodbye.");
     return null;
+  }
+
+  private BeaconBlocksMessageResponse beaconBlocks(Connection connection, BeaconBlocksMessageRequest message) {
+    // TODO Stub
+    return new BeaconBlocksMessageResponse(null);
   }
 
   private HelloMessage createLocalHelloMessage() {
