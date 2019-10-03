@@ -99,6 +99,22 @@ public class StateProcessor {
     STDOUT.log(Level.INFO, "Genesis block root is " + genesisBlockRoot.toHexString());
   }
 
+  public Bytes32 processHead(UnsignedLong nodeSlot) {
+    Store store = chainStorageClient.getStore();
+    Bytes32 headBlockRoot = get_head(store);
+    BeaconBlock headBlock = store.getBlock(headBlockRoot);
+    BeaconState headState = store.getBlockState(headBlockRoot);
+    chainStorageClient.updateBestBlock(headBlockRoot, headBlock.getSlot());
+
+    try {
+      stateTransition.process_slots((BeaconStateWithCache) headState, nodeSlot, false);
+    } catch (SlotProcessingException | EpochProcessingException e) {
+      STDOUT.log(Level.WARN, "Error when processing empty slots");
+      STDOUT.log(Level.WARN, e.toString());
+    }
+    return headBlockRoot;
+  }
+
   @Subscribe
   public void onDeposit(tech.pegasys.artemis.pow.event.Deposit event) {
     if (deposits == null) deposits = new ArrayList<>();

@@ -13,17 +13,17 @@
 
 package tech.pegasys.artemis.statetransition.events;
 
-import com.google.common.primitives.UnsignedLong;
+import org.apache.tuweni.bytes.Bytes32;
 
 public class ValidatorAssignmentEvent {
 
-  UnsignedLong slot;
+  Bytes32 headBlockRoot;
 
-  public ValidatorAssignmentEvent(UnsignedLong slot) {
-    this.slot = slot;
+  public ValidatorAssignmentEvent(Bytes32 headBlockRoot) {
+    this.headBlockRoot = headBlockRoot;
   }
 
-  public UnsignedLong getSlot() {
-    return this.slot;
+  public Bytes32 getHeadBlockRoot() {
+    return this.headBlockRoot;
   }
 }

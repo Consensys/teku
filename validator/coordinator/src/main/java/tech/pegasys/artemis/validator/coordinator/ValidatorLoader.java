@@ -29,7 +29,7 @@ import tech.pegasys.artemis.validator.client.ValidatorClient;
 public class ValidatorLoader {
   private static final ALogger STDOUT = new ALogger("stdout");
 
-  public Map<BLSPublicKey, ValidatorInfo> initializeValidators(ArtemisConfiguration config) {
+  public static Map<BLSPublicKey, ValidatorInfo> initializeValidators(ArtemisConfiguration config) {
     int naughtinessPercentage = config.getNaughtinessPercentage();
     int numValidators = config.getNumValidators();
     boolean interopActive = config.getInteropActive();
