@@ -20,10 +20,21 @@ MacOS: `brew tap AdoptOpenJDK/openjdk && brew cask install adoptopenjdk11`
 Other systems: [https://adoptopenjdk.net/] is very helpful. 
 
 ### Full build and Test
+
 To build, clone this repo and run with `gradle` like so:
 
 ```shell script
-$ git clone --recursive https://github.com/PegaSysEng/artemis.git
+$ bash <(https://raw.githubusercontent.com/PegaSysEng/artemis/master/scripts/clone-repo.sh)
+$ cd artemis
+$ ./gradlew
+
+```
+
+Or clone it manually:
+
+```shell script
+$ git clone git@github.com:jrhea/eth2.0-spec-tests-template.git /tmp/eth2.0-spec-tests-template
+$ git clone --recursive --template=/tmp/eth2.0-spec-tests-template git@github.com:PegaSysEng/artemis.git
 $ cd artemis
 $ ./gradlew
 ```
@@ -33,9 +44,9 @@ After a successful build, distribution packages will be available in `build/dist
 Alternatively, to create a ready to run distribution:
 
 ```shell script
-git clone --recursive https://github.com/PegaSysEng/artemis.git
-cd artemis
-./gradlew distTar installDist
+$ bash <(https://raw.githubusercontent.com/PegaSysEng/artemis/master/scripts/clone-repo.sh)
+$ cd artemis 
+$ ./gradlew distTar installDist
 ```
 
 This will produce a fully packaged distribution in `build/distributions` and an expanded 
