@@ -31,8 +31,6 @@ import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_start_slot_of_epoch;
-
 public class Store implements ReadOnlyStore {
 
   private final ReadWriteLock lock = new ReentrantReadWriteLock();
@@ -72,23 +70,26 @@ public class Store implements ReadOnlyStore {
     Set<Bytes32> block_states = new HashSet<>();
     Set<Checkpoint> checkpoint_states = new HashSet<>();
 
-    this.blocks.forEach((key, block) -> {
-      if (block.getSlot().compareTo(slot) < 0) {
-        blocks.add(key);
-      }
-    });
+    this.blocks.forEach(
+        (key, block) -> {
+          if (block.getSlot().compareTo(slot) < 0) {
+            blocks.add(key);
+          }
+        });
 
-    this.block_states.forEach((key, state) -> {
-      if (state.getSlot().compareTo(slot) < 0) {
-        block_states.add(key);
-      }
-    });
+    this.block_states.forEach(
+        (key, state) -> {
+          if (state.getSlot().compareTo(slot) < 0) {
+            block_states.add(key);
+          }
+        });
 
-    this.checkpoint_states.forEach((key, state) -> {
-      if (state.getSlot().compareTo(slot) < 0) {
-        checkpoint_states.add(key);
-      }
-    });
+    this.checkpoint_states.forEach(
+        (key, state) -> {
+          if (state.getSlot().compareTo(slot) < 0) {
+            checkpoint_states.add(key);
+          }
+        });
 
     Transaction cleanTransaction = new Transaction();
     cleanTransaction.setKeysToBeCleaned(blocks, block_states, checkpoint_states);
@@ -257,9 +258,10 @@ public class Store implements ReadOnlyStore {
       this.finalized_checkpoint = Optional.of(finalized_checkpoint);
     }
 
-    public void setKeysToBeCleaned(Set<Bytes32> block_keys,
-                                      Set<Bytes32> block_state_keys,
-                                      Set<Checkpoint> checkpoint_state_keys) {
+    public void setKeysToBeCleaned(
+        Set<Bytes32> block_keys,
+        Set<Bytes32> block_state_keys,
+        Set<Checkpoint> checkpoint_state_keys) {
       this.block_keys = block_keys;
       this.block_state_keys = block_state_keys;
       this.checkpoint_state_keys = checkpoint_state_keys;
