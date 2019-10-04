@@ -24,7 +24,7 @@ Other systems: [https://adoptopenjdk.net/] is very helpful.
 To build, clone this repo and run with `gradle` like so:
 
 ```shell script
-$ bash <(https://raw.githubusercontent.com/PegaSysEng/artemis/master/scripts/clone-repo.sh)
+$ bash <(curl -s https://raw.githubusercontent.com/PegaSysEng/artemis/master/scripts/clone-repo.sh)
 $ cd artemis
 $ ./gradlew
 
