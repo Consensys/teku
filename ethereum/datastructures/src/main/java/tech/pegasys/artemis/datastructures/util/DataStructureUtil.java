@@ -527,4 +527,10 @@ public final class DataStructureUtil {
         randomCheckpoint(),
         randomCheckpoint());
   }
+
+  public static BeaconState randomBeaconState(long slot) {
+    BeaconState randomBeaconState = randomBeaconState();
+    randomBeaconState.setSlot(UnsignedLong.valueOf(slot));
+    return randomBeaconState;
+  }
 }
