@@ -40,7 +40,7 @@ import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.alogger.ALogger.Color;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 
-public class InteropChainStorageServer implements ChainStorage {
+public class InteropChainStorageServer {
   private static final ALogger STDOUT = new ALogger("stdout");
 
   private final EventBus eventBus;

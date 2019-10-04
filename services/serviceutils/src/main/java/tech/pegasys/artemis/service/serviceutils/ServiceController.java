@@ -16,9 +16,12 @@ package tech.pegasys.artemis.service.serviceutils;
 import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import org.apache.logging.log4j.Level;
+import tech.pegasys.artemis.util.alogger.ALogger;
 
 public class ServiceController {
-
+  private static final ALogger STDOUT = new ALogger("stdout");
   private ServiceInterface beaconChainService;
   private ServiceInterface powchainService;
   private ServiceInterface chainStorageService;
@@ -62,19 +65,38 @@ public class ServiceController {
 
   public void stopAll() {
     // stop all services
-    beaconChainExecuterService.shutdown();
+    STDOUT.log(Level.DEBUG, "ServiceController.stopAll()");
     if (!Objects.isNull(beaconChainService)) {
       beaconChainService.stop();
     }
-    chainStorageExecutorService.shutdown();
     if (!Objects.isNull(chainStorageService)) {
       chainStorageService.stop();
     }
     if (powChainServiceActive) {
-      powchainExecuterService.shutdown();
       if (!Objects.isNull(powchainService)) {
         powchainService.stop();
       }
+    }
+
+    beaconChainExecuterService.shutdown();
+    chainStorageExecutorService.shutdown();
+    powchainExecuterService.shutdown();
+
+    try {
+      if (!beaconChainExecuterService.awaitTermination(250, TimeUnit.MILLISECONDS)) {
+        beaconChainExecuterService.shutdownNow();
+      }
+      if (!chainStorageExecutorService.awaitTermination(250, TimeUnit.MILLISECONDS)) {
+        chainStorageExecutorService.shutdownNow();
+      }
+      if (powChainServiceActive
+          && !powchainExecuterService.awaitTermination(250, TimeUnit.MILLISECONDS)) {
+        powchainExecuterService.shutdownNow();
+      }
+    } catch (InterruptedException e) {
+      beaconChainExecuterService.shutdownNow();
+      chainStorageExecutorService.shutdownNow();
+      powchainExecuterService.shutdownNow();
     }
   }
 }
