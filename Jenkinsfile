@@ -52,17 +52,24 @@ try {
         docker.image('pegasyseng/pantheon-build:0.0.7-jdk11').inside {
             try {
                 stage('Build') {
-                    sh './gradlew --no-daemon --parallel build -x :eth-reference-tests:test'
+                    // Build Source
+                    sh './gradlew --no-daemon --parallel build -x test :eth-reference-tests:test'
                 }
-                stage('Test') {
+                stage('UnitTest') {
+                    // Unit Tests
                     sh './gradlew --no-daemon --parallel test -x :eth-reference-tests:test'
                     // Disable Artemis Runtime Tests During Upgrade
                     // sh './artemis/src/main/resources/artemisTestScript.sh'
                 }
-                stage('Build Docker Image') {
-                    sh './gradlew --no-daemon --parallel distDocker distDockerWhiteblock'
-                }
                 if (shouldPublish()) {
+                    stage('RefTest') {
+                        // Reference Tests
+                        sh './scripts/get-ref-tests.sh'
+                        sh './gradlew --no-daemon --parallel test'
+                    }
+                    stage('Build Docker Image') {
+                        sh './gradlew --no-daemon --parallel distDocker distDockerWhiteblock'
+                    }
                     stage('Push Docker Image') {
                         def gradleProperties = readProperties file: 'gradle.properties'
                         version = gradleProperties.version
