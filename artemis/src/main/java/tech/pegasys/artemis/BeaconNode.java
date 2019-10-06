@@ -13,8 +13,11 @@
 
 package tech.pegasys.artemis;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.eventbus.AsyncEventBus;
 import com.google.common.eventbus.EventBus;
+import com.google.common.eventbus.SubscriberExceptionContext;
+import com.google.common.eventbus.SubscriberExceptionHandler;
 import io.vertx.core.Vertx;
 import java.nio.file.Path;
 import java.util.concurrent.ExecutorService;
@@ -52,7 +55,7 @@ public class BeaconNode {
     System.setProperty("logPath", config.getLogPath());
     System.setProperty("rollingFile", config.getLogFile());
 
-    this.eventBus = new AsyncEventBus(threadPool);
+    this.eventBus = new AsyncEventBus(threadPool, new EventBusExceptionHandler(LOG));
 
     metricsEndpoint = new MetricsEndpoint(config, vertx);
     this.serviceConfig =
@@ -91,5 +94,46 @@ public class BeaconNode {
   public void stop() {
     serviceController.stopAll();
     metricsEndpoint.stop();
+  }
+}
+
+@VisibleForTesting
+final class EventBusExceptionHandler implements SubscriberExceptionHandler {
+
+  private final ALogger logger;
+
+  EventBusExceptionHandler(final ALogger logger) {
+    this.logger = logger;
+  }
+
+  @Override
+  public final void handleException(
+      final Throwable exception, final SubscriberExceptionContext context) {
+    if (!isSpecFailure(exception)) {
+      logger.log(Level.FATAL, "Unexpected exception thrown in handler - PLEASE FIX OR REPORT");
+      throw new RuntimeException(exception);
+    }
+
+    logger.log(Level.WARN, specFailedMessage(exception, context));
+  }
+
+  private boolean isSpecFailure(final Throwable exception) {
+    return exception instanceof IllegalArgumentException;
+  }
+
+  private String specFailedMessage(
+      final Throwable exception, final SubscriberExceptionContext context) {
+    return "Spec failed"
+        + " for event '"
+        + context.getEvent().getClass().getName()
+        + "'"
+        + " in handler '"
+        + context.getSubscriber().getClass().getName()
+        + "'"
+        + " (method  '"
+        + context.getSubscriberMethod().getName()
+        + "')"
+        + ": "
+        + exception.toString();
   }
 }
