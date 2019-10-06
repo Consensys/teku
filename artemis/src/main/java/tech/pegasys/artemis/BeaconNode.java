@@ -117,11 +117,11 @@ final class EventBusExceptionHandler implements SubscriberExceptionHandler {
     logger.log(Level.WARN, specFailedMessage(exception, context));
   }
 
-  private boolean isSpecFailure(final Throwable exception) {
+  private static boolean isSpecFailure(final Throwable exception) {
     return exception instanceof IllegalArgumentException;
   }
 
-  private String specFailedMessage(
+  private static String specFailedMessage(
       final Throwable exception, final SubscriberExceptionContext context) {
     return "Spec failed"
         + " for event '"
