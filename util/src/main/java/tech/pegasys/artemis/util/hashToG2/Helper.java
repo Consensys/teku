@@ -20,12 +20,10 @@ import static tech.pegasys.artemis.util.hashToG2.Util.bigFromHex;
 
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
-import java.security.Security;
 import org.apache.milagro.amcl.BLS381.BIG;
 import org.apache.milagro.amcl.BLS381.ROM;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.crypto.Hash;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 public class Helper {
 
@@ -183,8 +181,6 @@ public class Helper {
    * @return Bytes of the HMAC SHA-256 of the text with key
    */
   static Bytes HMAC_SHA256(byte[] text, byte[] key) {
-
-    Security.addProvider(new BouncyCastleProvider());
 
     // SHA256 blocksize in bytes
     int blockSize = SHA256_BLOCK_SIZE;
