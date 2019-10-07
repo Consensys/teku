@@ -10,8 +10,9 @@ Based on the (evolving) [specification](https://github.com/ethereum/eth2.0-specs
 
 ## Build Instructions
 
-### Prerequisites
-You need to have Java 11 installed.
+### Install Prerequisites
+
+**1) Java 11**
 
 Ubuntu: `sudo apt install openjdk-11-jdk`
 
@@ -19,38 +20,65 @@ MacOS: `brew tap AdoptOpenJDK/openjdk && brew cask install adoptopenjdk11`
 
 Other systems: [https://adoptopenjdk.net/] is very helpful. 
 
-### Full build and Test
+**2) Gradle**
+
+Ubuntu: 
+
+1) Download Gradle
+```shell script
+wget https://services.gradle.org/distributions/gradle-5.0-bin.zip -P /tmp
+sudo unzip -d /opt/gradle /tmp/gradle-*.zip
+```
+2) Setup environment variables
+
+Create gradle.sh in /etc/profile.d/
+
+```shell script
+export GRADLE_HOME=/opt/gradle/gradle-5.0
+export PATH=${GRADLE_HOME}/bin:${PATH}
+```
+
+Make gradle.sh executable and source the script
+
+```shell script
+sudo chmod +x /etc/profile.d/gradle.sh
+source /etc/profile.d/gradle.sh
+```
+
+OSX: `brew install gradle`
+
+### Build and Dist
+
+To create a ready to run distribution:
+
+```shell script
+bash <(curl -s https://raw.githubusercontent.com/PegaSysEng/artemis/master/scripts/clone-repo.sh)
+cd artemis && ./gradlew distTar installDist
+```
+
+This will produce:
+- a fully packaged distribution in `build/distributions` 
+- an expanded distribution, ready to run in `build/install/artemis`
+
+### Build and Test
 
 To build, clone this repo and run with `gradle` like so:
 
 ```shell script
-$ bash <(curl -s https://raw.githubusercontent.com/PegaSysEng/artemis/master/scripts/clone-repo.sh)
-$ cd artemis
-$ ./gradlew
+bash <(curl -s https://raw.githubusercontent.com/PegaSysEng/artemis/master/scripts/clone-repo.sh)
+cd artemis && ./gradlew
 
 ```
 
 Or clone it manually:
 
 ```shell script
-$ git clone git@github.com:jrhea/eth2.0-spec-tests-template.git /tmp/eth2.0-spec-tests-template
-$ git clone --recursive --template=/tmp/eth2.0-spec-tests-template git@github.com:PegaSysEng/artemis.git
-$ cd artemis
-$ ./gradlew
+git clone git@github.com:jrhea/eth2.0-spec-tests-template.git /tmp/eth2.0-spec-tests-template
+git clone --recursive --template=/tmp/eth2.0-spec-tests-template git@github.com:PegaSysEng/artemis.git
+cd artemis && ./gradlew
 ```
 
 After a successful build, distribution packages will be available in `build/distributions`.
-
-Alternatively, to create a ready to run distribution:
-
-```shell script
-$ bash <(https://raw.githubusercontent.com/PegaSysEng/artemis/master/scripts/clone-repo.sh)
-$ cd artemis 
-$ ./gradlew distTar installDist
-```
-
-This will produce a fully packaged distribution in `build/distributions` and an expanded 
-distribution, ready to run in `build/install/artemis`.
 
 ### Other Useful Gradle Targets
 
@@ -70,14 +98,13 @@ distribution, ready to run in `build/install/artemis`.
 After building with `./gradlew distTar`, the simplest way to run is by using this command: 
 
 ```shell script
-$ cd scripts
-$ sh run.sh -n=[NUMBER OF NODES]
+cd scripts && sh run.sh -n=[NUMBER OF NODES]
 ```
 
 Help is available for this script as well:
 
 ```
-$ sh run.sh -h
+sh run.sh -h
 Runs a simulation of artemis with NODES nodes, where NODES > 0 and NODES < 256
 Usage: sh run.sh [--numNodes, -n=NODES]  [--config=/path/to/your-config.toml] [--logging, -l=OFF|FATAL|WARN|INFO|DEBUG|TRACE|ALL]
                  [--help, -h]
@@ -99,13 +126,13 @@ An interop script is provided to create a network with Artemis and a number of o
 The simplest way to run in interop mode is by using this command: 
 
 ```shell script
-$ cd scripts
-$ sh interop.sh [validator_count] [owned_validator_start_index] [owned_validator_count] [start_delay]
+cd scripts
+sh interop.sh [validator_count] [owned_validator_start_index] [owned_validator_count] [start_delay]
 ```
 Help is available for this script as well:
 
 ```
-$ sh interop.sh 
+sh interop.sh 
 Runs a multiclient testnet
 Usage: sh interop.sh [validator_count] [owned_validator_start_index] [owned_validator_count] [start_delay]
 Example: Run multiple clients in interop mode using static peering. 16 validators and all are assigned to Artemis
@@ -136,7 +163,7 @@ numValidators = 16
 We use Google's Java coding conventions for the project. To reformat code, run: 
 
 ```shell script 
-$ ./gradlew spotlessApply
+./gradlew spotlessApply
 ```
 
 Code style will be checked automatically during a build.
@@ -146,7 +173,7 @@ Code style will be checked automatically during a build.
 All the unit tests are run as part of the build, but can be explicitly triggered with:
 
 ```shell script 
-$ ./gradlew test
+./gradlew test
 ```
 
 ## Run Options
@@ -154,7 +181,7 @@ $ ./gradlew test
 To view the run menu:
 
 ```
-$ ./gradlew run --args='-h'
+./gradlew run --args='-h'
 
 artemis [OPTIONS] [COMMAND]
 
@@ -179,7 +206,7 @@ Artemis is licensed under the Apache License 2.0
 
 You can run the executable from the CLI with this command:
 ```shell script
-$ ./gradlew run
+./gradlew run
 ```
 
 Refer to `config/config.toml` for a set of default configuration settings.
@@ -188,7 +215,7 @@ Refer to `config/config.toml` for a set of default configuration settings.
 To run with logging level set to DEBUG
 
 ```shell script
-$ ./gradlew run --args='-l=DEBUG'
+./gradlew run --args='-l=DEBUG'
 ```
 
 To profile and/or generate flow diagrams for Artemis: 
@@ -196,7 +223,7 @@ To profile and/or generate flow diagrams for Artemis:
 Setup:
 
 ```shell script 
-$ source artemis.env 
+source artemis.env 
 ```
 
 Run:
@@ -204,12 +231,12 @@ Run:
 Terminal 1:
 
 ```shell script
-$ flow
+flow
 ```
 
 Terminal 2:
 ```shell script
-$ ./gradlew run -PgenerateFlow
+./gradlew run -PgenerateFlow
 ```
 
 
