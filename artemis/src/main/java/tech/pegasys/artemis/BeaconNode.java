@@ -36,7 +36,7 @@ import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 
 public class BeaconNode {
-  private static final ALogger LOG = new ALogger(BeaconNode.class.getName());
+  private static final ALogger LOG = new ALogger("stdout");
   private final Vertx vertx = Vertx.vertx();
   private final ExecutorService threadPool =
       Executors.newCachedThreadPool(
