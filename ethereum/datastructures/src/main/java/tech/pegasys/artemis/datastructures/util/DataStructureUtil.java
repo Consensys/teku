@@ -22,7 +22,7 @@ import java.nio.ByteBuffer;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Random;
-import java.util.function.Supplier;
+import java.util.function.Function;
 import java.util.stream.LongStream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.Hash;
@@ -61,8 +61,16 @@ import tech.pegasys.artemis.util.bls.BLSSignature;
 public final class DataStructureUtil {
   private static final ALogger STDOUT = new ALogger("stdout");
 
+  public static int randomInt() {
+    return new Random().nextInt();
+  }
+
+  public static int randomInt(int seed) {
+    return new Random(seed).nextInt();
+  }
+
   public static long randomLong() {
-    return Math.round(Math.random() * 1000000);
+    return new Random().nextLong();
   }
 
   public static long randomLong(long seed) {
@@ -89,25 +97,29 @@ public final class DataStructureUtil {
 
   @SuppressWarnings({"rawtypes", "unchecked"})
   public static <T> SSZList<T> randomSSZList(
-      Class classInfo, long maxSize, Supplier randomFunction) {
+      Class classInfo, long maxSize, Function<Integer, T> randomFunction, int seed) {
     SSZList<T> sszList = new SSZList<>(classInfo, maxSize);
-    long numItems = (long) (Math.random() * maxSize);
-    LongStream.range(0, numItems).forEach(i -> sszList.add((T) randomFunction.get()));
+    long numItems = maxSize / 10;
+    LongStream.range(0, numItems).forEach(i -> sszList.add(randomFunction.apply(seed)));
     return sszList;
   }
 
   @SuppressWarnings({"rawtypes", "unchecked"})
   public static <T> SSZVector<T> randomSSZVector(
-      T defaultClassObject, long maxSize, Supplier randomFunction) {
+      T defaultClassObject, long maxSize, Function<Integer, T> randomFunction, int seed) {
     SSZVector<T> sszvector = new SSZVector<>(toIntExact(maxSize), defaultClassObject);
-    long numItems = (long) (Math.random() * maxSize);
+    long numItems = maxSize / 10;
     LongStream.range(0, numItems)
-        .forEach(i -> sszvector.set(toIntExact(i), (T) randomFunction.get()));
+        .forEach(i -> sszvector.set(toIntExact(i), randomFunction.apply(seed)));
     return sszvector;
   }
 
   public static Bitlist randomBitlist() {
     return randomBitlist(Constants.MAX_VALIDATORS_PER_COMMITTEE);
+  }
+
+  public static Bitlist randomBitlist(long seed) {
+    return randomBitlist(Constants.MAX_VALIDATORS_PER_COMMITTEE, seed);
   }
 
   public static Bitlist randomBitlist(int n) {
@@ -120,11 +132,31 @@ public final class DataStructureUtil {
     return new Bitlist(byteArray, n);
   }
 
+  public static Bitlist randomBitlist(int n, long seed) {
+    byte[] byteArray = new byte[n];
+    Random random = new Random(seed);
+
+    for (int i = 0; i < n; i++) {
+      byteArray[i] = (byte) (random.nextBoolean() ? 1 : 0);
+    }
+    return new Bitlist(byteArray, n);
+  }
+
   public static Bitvector randomBitvector() {
     return randomBitvector(Constants.JUSTIFICATION_BITS_LENGTH);
   }
 
   public static Bitvector randomBitvector(int n) {
+    byte[] byteArray = new byte[n];
+    Random random = new Random();
+
+    for (int i = 0; i < n; i++) {
+      byteArray[i] = (byte) (random.nextBoolean() ? 1 : 0);
+    }
+    return new Bitvector(byteArray, n);
+  }
+
+  public static Bitvector randomBitvector(int n, long seed) {
     byte[] byteArray = new byte[n];
     Random random = new Random();
 
@@ -147,7 +179,7 @@ public final class DataStructureUtil {
   }
 
   public static Eth1Data randomEth1Data(int seed) {
-    return new Eth1Data(randomBytes32(seed), randomUnsignedLong(seed), randomBytes32(seed));
+    return new Eth1Data(randomBytes32(seed), randomUnsignedLong(seed++), randomBytes32(seed++));
   }
 
   public static Crosslink randomCrosslink() {
@@ -162,41 +194,43 @@ public final class DataStructureUtil {
   public static Crosslink randomCrosslink(int seed) {
     return new Crosslink(
         randomUnsignedLong(seed),
-        randomBytes32(seed),
-        randomUnsignedLong(seed),
-        randomUnsignedLong(seed),
-        randomBytes32(seed));
+        randomBytes32(seed++),
+        randomUnsignedLong(seed++),
+        randomUnsignedLong(seed++),
+        randomBytes32(seed++));
   }
 
   public static Checkpoint randomCheckpoint(int seed) {
-    return new Checkpoint(randomUnsignedLong(seed), randomBytes32(seed));
+    return new Checkpoint(randomUnsignedLong(seed), randomBytes32(seed++));
   }
 
   public static Checkpoint randomCheckpoint() {
     return new Checkpoint(randomUnsignedLong(), randomBytes32());
   }
 
-  public static AttestationData randomAttestationData(long slotNum) {
-    return new AttestationData(
-        randomBytes32(), randomCheckpoint(), randomCheckpoint(), randomCrosslink());
-  }
-
   public static AttestationData randomAttestationData(int seed) {
     return new AttestationData(
-        randomBytes32(seed), randomCheckpoint(seed), randomCheckpoint(seed), randomCrosslink(seed));
+        randomBytes32(seed),
+        randomCheckpoint(seed++),
+        randomCheckpoint(seed++),
+        randomCrosslink(seed++));
   }
 
   public static AttestationData randomAttestationData() {
-    return randomAttestationData(randomLong());
-  }
-
-  public static Attestation randomAttestation(long slotNum) {
-    return new Attestation(
-        randomBitlist(), randomAttestationData(slotNum), randomBitlist(), BLSSignature.random());
+    return randomAttestationData(randomInt());
   }
 
   public static Attestation randomAttestation() {
-    return randomAttestation(randomLong());
+    return new Attestation(
+        randomBitlist(), randomAttestationData(), randomBitlist(), BLSSignature.random());
+  }
+
+  public static Attestation randomAttestation(int seed) {
+    return new Attestation(
+        randomBitlist(seed),
+        randomAttestationData(seed++),
+        randomBitlist(seed++),
+        BLSSignature.random(seed++));
   }
 
   public static PendingAttestation randomPendingAttestation() {
@@ -204,20 +238,28 @@ public final class DataStructureUtil {
         randomBitlist(), randomAttestationData(), randomUnsignedLong(), randomUnsignedLong());
   }
 
+  public static PendingAttestation randomPendingAttestation(int seed) {
+    return new PendingAttestation(
+        randomBitlist(seed),
+        randomAttestationData(seed++),
+        randomUnsignedLong(seed++),
+        randomUnsignedLong(seed++));
+  }
+
   public static AttesterSlashing randomAttesterSlashing() {
     return new AttesterSlashing(randomIndexedAttestation(), randomIndexedAttestation());
   }
 
   public static AttesterSlashing randomAttesterSlashing(int seed) {
-    return new AttesterSlashing(randomIndexedAttestation(seed), randomIndexedAttestation(seed));
+    return new AttesterSlashing(randomIndexedAttestation(seed), randomIndexedAttestation(seed++));
   }
 
-  public static BeaconBlock randomBeaconBlock(long slotNum) {
+  public static BeaconBlock randomBeaconBlock(long slotNum, int seed) {
     UnsignedLong slot = UnsignedLong.valueOf(slotNum);
-    Bytes32 previous_root = Bytes32.random();
-    Bytes32 state_root = Bytes32.random();
-    BeaconBlockBody body = randomBeaconBlockBody();
-    BLSSignature signature = BLSSignature.random();
+    Bytes32 previous_root = randomBytes32(seed);
+    Bytes32 state_root = randomBytes32(seed++);
+    BeaconBlockBody body = randomBeaconBlockBody(seed++);
+    BLSSignature signature = BLSSignature.random(seed++);
 
     return new BeaconBlock(slot, previous_root, state_root, body, signature);
   }
@@ -240,28 +282,38 @@ public final class DataStructureUtil {
         BLSSignature.random(seed));
   }
 
-  public static BeaconBlockBody randomBeaconBlockBody() {
+  public static BeaconBlockBody randomBeaconBlockBody(int seed) {
     return new BeaconBlockBody(
-        BLSSignature.random(),
-        randomEth1Data(),
+        BLSSignature.random(seed),
+        randomEth1Data(seed++),
         Bytes32.ZERO,
         randomSSZList(
             ProposerSlashing.class,
             Constants.MAX_PROPOSER_SLASHINGS,
-            DataStructureUtil::randomProposerSlashing),
+            DataStructureUtil::randomProposerSlashing,
+            seed++),
         randomSSZList(
             AttesterSlashing.class,
             Constants.MAX_ATTESTER_SLASHINGS,
-            DataStructureUtil::randomAttesterSlashing),
+            DataStructureUtil::randomAttesterSlashing,
+            seed++),
         randomSSZList(
-            Attestation.class, Constants.MAX_ATTESTATIONS, DataStructureUtil::randomAttestation),
+            Attestation.class,
+            Constants.MAX_ATTESTATIONS,
+            DataStructureUtil::randomAttestation,
+            seed++),
         randomSSZList(
-            Deposit.class, Constants.MAX_DEPOSITS, DataStructureUtil::randomDepositWithoutIndex),
+            Deposit.class,
+            Constants.MAX_DEPOSITS,
+            DataStructureUtil::randomDepositWithoutIndex,
+            seed++),
         randomSSZList(
             VoluntaryExit.class,
             Constants.MAX_VOLUNTARY_EXITS,
-            DataStructureUtil::randomVoluntaryExit),
-        randomSSZList(Transfer.class, Constants.MAX_TRANSFERS, DataStructureUtil::randomTransfer));
+            DataStructureUtil::randomVoluntaryExit,
+            seed++),
+        randomSSZList(
+            Transfer.class, Constants.MAX_TRANSFERS, DataStructureUtil::randomTransfer, seed++));
   }
 
   public static ProposerSlashing randomProposerSlashing() {
@@ -298,16 +350,16 @@ public final class DataStructureUtil {
     SSZList<UnsignedLong> custody_1_bit_indices =
         new SSZList<>(UnsignedLong.class, Constants.MAX_VALIDATORS_PER_COMMITTEE);
     custody_0_bit_indices.add(randomUnsignedLong(seed));
-    custody_0_bit_indices.add(randomUnsignedLong(seed));
-    custody_0_bit_indices.add(randomUnsignedLong(seed));
-    custody_1_bit_indices.add(randomUnsignedLong(seed));
-    custody_1_bit_indices.add(randomUnsignedLong(seed));
-    custody_1_bit_indices.add(randomUnsignedLong(seed));
+    custody_0_bit_indices.add(randomUnsignedLong(seed++));
+    custody_0_bit_indices.add(randomUnsignedLong(seed++));
+    custody_1_bit_indices.add(randomUnsignedLong(seed++));
+    custody_1_bit_indices.add(randomUnsignedLong(seed++));
+    custody_1_bit_indices.add(randomUnsignedLong(seed++));
     return new IndexedAttestation(
         custody_0_bit_indices,
         custody_1_bit_indices,
         randomAttestationData(seed++),
-        BLSSignature.random(seed));
+        BLSSignature.random(seed++));
   }
 
   public static DepositData randomDepositData() {
@@ -338,7 +390,7 @@ public final class DataStructureUtil {
   public static DepositData randomDepositData(int seed) {
     BLSKeyPair keyPair = BLSKeyPair.random(seed);
     BLSPublicKey pubkey = keyPair.getPublicKey();
-    Bytes32 withdrawal_credentials = randomBytes32(seed);
+    Bytes32 withdrawal_credentials = randomBytes32(seed++);
 
     DepositData proof_of_possession_data =
         new DepositData(
@@ -360,11 +412,19 @@ public final class DataStructureUtil {
         proof_of_possession);
   }
 
-  public static DepositWithIndex randomDeposit() {
+  public static DepositWithIndex randomDepositWithIndex() {
     return new DepositWithIndex(
         new SSZVector<>(32, Bytes32.random()),
         randomDepositData(),
         randomUnsignedLong().mod(UnsignedLong.valueOf(Constants.DEPOSIT_CONTRACT_TREE_DEPTH)));
+  }
+
+  public static DepositWithIndex randomDepositWithIndex(int seed) {
+    return new DepositWithIndex(
+        new SSZVector<>(32, randomBytes32(seed)),
+        randomDepositData(seed++),
+        randomUnsignedLong(seed++)
+            .mod(UnsignedLong.valueOf(Constants.DEPOSIT_CONTRACT_TREE_DEPTH)));
   }
 
   public static Deposit randomDepositWithoutIndex() {
@@ -373,17 +433,23 @@ public final class DataStructureUtil {
         randomDepositData());
   }
 
+  public static Deposit randomDepositWithoutIndex(int seed) {
+    return new Deposit(
+        new SSZVector<>(Constants.DEPOSIT_CONTRACT_TREE_DEPTH + 1, randomBytes32(seed)),
+        randomDepositData(seed++));
+  }
+
   public static Deposit randomDeposit(int seed) {
     return new Deposit(
         new SSZVector<>(Constants.DEPOSIT_CONTRACT_TREE_DEPTH + 1, randomBytes32(seed)),
         randomDepositData(seed));
   }
 
-  public static ArrayList<DepositWithIndex> randomDeposits(int num) {
+  public static ArrayList<DepositWithIndex> randomDeposits(int num, int seed) {
     ArrayList<DepositWithIndex> deposits = new ArrayList<>();
 
     for (int i = 0; i < num; i++) {
-      deposits.add(randomDeposit());
+      deposits.add(randomDepositWithIndex(seed++));
     }
 
     return deposits;
@@ -395,7 +461,7 @@ public final class DataStructureUtil {
 
   public static VoluntaryExit randomVoluntaryExit(int seed) {
     return new VoluntaryExit(
-        randomUnsignedLong(seed), randomUnsignedLong(seed++), BLSSignature.random());
+        randomUnsignedLong(seed), randomUnsignedLong(seed++), BLSSignature.random(seed++));
   }
 
   public static Transfer randomTransfer() {
@@ -472,7 +538,7 @@ public final class DataStructureUtil {
   public static Validator randomValidator(int seed) {
     return new Validator(
         randomPublicKey(seed),
-        randomBytes32(seed),
+        randomBytes32(seed++),
         UnsignedLong.valueOf(Constants.MAX_EFFECTIVE_BALANCE),
         false,
         Constants.FAR_FUTURE_EPOCH,
@@ -488,49 +554,79 @@ public final class DataStructureUtil {
         randomUnsignedLong());
   }
 
-  public static BeaconState randomBeaconState() {
+  public static Fork randomFork(int seed) {
+    return new Fork(
+        new Bytes4(randomBytes32(seed).slice(0, 4)),
+        new Bytes4(randomBytes32(seed++).slice(0, 4)),
+        randomUnsignedLong(seed++));
+  }
+
+  public static BeaconState randomBeaconState(int seed) {
     return new BeaconState(
-        randomUnsignedLong(),
-        randomUnsignedLong(),
-        randomFork(),
-        randomBeaconBlockHeader(),
+        randomUnsignedLong(seed),
+        randomUnsignedLong(seed++),
+        randomFork(seed++),
+        randomBeaconBlockHeader(seed++),
         randomSSZVector(
-            Bytes32.ZERO, Constants.SLOTS_PER_HISTORICAL_ROOT, DataStructureUtil::randomBytes32),
+            Bytes32.ZERO,
+            Constants.SLOTS_PER_HISTORICAL_ROOT,
+            DataStructureUtil::randomBytes32,
+            seed++),
         randomSSZVector(
-            Bytes32.ZERO, Constants.SLOTS_PER_HISTORICAL_ROOT, DataStructureUtil::randomBytes32),
-        randomSSZList(Bytes32.class, 1000, DataStructureUtil::randomBytes32),
-        randomEth1Data(),
+            Bytes32.ZERO,
+            Constants.SLOTS_PER_HISTORICAL_ROOT,
+            DataStructureUtil::randomBytes32,
+            seed++),
+        randomSSZList(Bytes32.class, 1000, DataStructureUtil::randomBytes32, seed++),
+        randomEth1Data(seed++),
         randomSSZList(
-            Eth1Data.class, SLOTS_PER_ETH1_VOTING_PERIOD, DataStructureUtil::randomEth1Data),
-        randomUnsignedLong(),
+            Eth1Data.class,
+            SLOTS_PER_ETH1_VOTING_PERIOD,
+            DataStructureUtil::randomEth1Data,
+            seed++),
+        randomUnsignedLong(seed++),
 
         // Can't use the actual maxSize cause it is too big
-        randomSSZList(Validator.class, 1000, DataStructureUtil::randomValidator),
-        randomSSZList(UnsignedLong.class, 1000, DataStructureUtil::randomUnsignedLong),
-        randomUnsignedLong(),
+        randomSSZList(Validator.class, 1000, DataStructureUtil::randomValidator, seed++),
+        randomSSZList(UnsignedLong.class, 1000, DataStructureUtil::randomUnsignedLong, seed++),
+        randomUnsignedLong(seed++),
         randomSSZVector(
-            Bytes32.ZERO, Constants.EPOCHS_PER_HISTORICAL_VECTOR, DataStructureUtil::randomBytes32),
+            Bytes32.ZERO,
+            Constants.EPOCHS_PER_HISTORICAL_VECTOR,
+            DataStructureUtil::randomBytes32,
+            seed++),
         randomSSZVector(
-            Bytes32.ZERO, Constants.EPOCHS_PER_HISTORICAL_VECTOR, DataStructureUtil::randomBytes32),
+            Bytes32.ZERO,
+            Constants.EPOCHS_PER_HISTORICAL_VECTOR,
+            DataStructureUtil::randomBytes32,
+            seed++),
         randomSSZVector(
-            Bytes32.ZERO, Constants.EPOCHS_PER_HISTORICAL_VECTOR, DataStructureUtil::randomBytes32),
+            Bytes32.ZERO,
+            Constants.EPOCHS_PER_HISTORICAL_VECTOR,
+            DataStructureUtil::randomBytes32,
+            seed++),
         randomSSZVector(
             UnsignedLong.ZERO,
             Constants.EPOCHS_PER_SLASHINGS_VECTOR,
-            DataStructureUtil::randomUnsignedLong),
-        randomSSZList(PendingAttestation.class, 1000, DataStructureUtil::randomPendingAttestation),
-        randomSSZList(PendingAttestation.class, 1000, DataStructureUtil::randomPendingAttestation),
-        randomSSZVector(new Crosslink(), Constants.SHARD_COUNT, DataStructureUtil::randomCrosslink),
-        randomSSZVector(new Crosslink(), Constants.SHARD_COUNT, DataStructureUtil::randomCrosslink),
-        randomBitvector(),
-        randomCheckpoint(),
-        randomCheckpoint(),
-        randomCheckpoint());
+            DataStructureUtil::randomUnsignedLong,
+            seed++),
+        randomSSZList(
+            PendingAttestation.class, 1000, DataStructureUtil::randomPendingAttestation, seed++),
+        randomSSZList(
+            PendingAttestation.class, 1000, DataStructureUtil::randomPendingAttestation, seed++),
+        randomSSZVector(
+            new Crosslink(), Constants.SHARD_COUNT, DataStructureUtil::randomCrosslink, seed++),
+        randomSSZVector(
+            new Crosslink(), Constants.SHARD_COUNT, DataStructureUtil::randomCrosslink, seed++),
+        randomBitvector(Constants.JUSTIFICATION_BITS_LENGTH, seed++),
+        randomCheckpoint(seed++),
+        randomCheckpoint(seed++),
+        randomCheckpoint(seed++));
   }
 
-  public static BeaconState randomBeaconState(long slot) {
-    BeaconState randomBeaconState = randomBeaconState();
-    randomBeaconState.setSlot(UnsignedLong.valueOf(slot));
+  public static BeaconState randomBeaconState(UnsignedLong slot, int seed) {
+    BeaconState randomBeaconState = randomBeaconState(seed);
+    randomBeaconState.setSlot(slot);
     return randomBeaconState;
   }
 }

@@ -18,10 +18,10 @@ import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomA
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomBeaconBlockHeader;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomCrosslink;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomEth1Data;
-import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomLong;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomUnsignedLong;
 
 import com.google.common.primitives.UnsignedLong;
+import java.util.Random;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
@@ -46,7 +46,7 @@ class FixedPartSSZSOSTest {
 
   @Test
   void testBLSPubkeySOS() {
-    BLSPublicKey pubkey = BLSPublicKey.random();
+    BLSPublicKey pubkey = BLSPublicKey.random(100);
 
     Bytes sszPubkeyBytes = pubkey.toBytes();
     Bytes sosPubkeyBytes = SimpleOffsetSerializer.serialize(pubkey);
@@ -56,7 +56,7 @@ class FixedPartSSZSOSTest {
 
   @Test
   void testBLSSignatureSOS() {
-    BLSSignature signature = BLSSignature.random();
+    BLSSignature signature = BLSSignature.random(100);
 
     Bytes sszSignatureBytes = signature.toBytes();
     Bytes sosSignatureBytes = SimpleOffsetSerializer.serialize(signature);
@@ -66,11 +66,11 @@ class FixedPartSSZSOSTest {
 
   @Test
   void testCrosslinkSOS() {
-    UnsignedLong shard = randomUnsignedLong();
-    Bytes32 parent_root = Bytes32.random();
-    UnsignedLong start_epoch = randomUnsignedLong();
-    UnsignedLong end_epoch = randomUnsignedLong();
-    Bytes32 data_root = Bytes32.random();
+    UnsignedLong shard = randomUnsignedLong(100);
+    Bytes32 parent_root = Bytes32.random(new Random(100));
+    UnsignedLong start_epoch = randomUnsignedLong(100);
+    UnsignedLong end_epoch = randomUnsignedLong(100);
+    Bytes32 data_root = Bytes32.random(new Random(101));
 
     Crosslink crosslink = new Crosslink(shard, parent_root, start_epoch, end_epoch, data_root);
 
@@ -82,9 +82,9 @@ class FixedPartSSZSOSTest {
 
   @Test
   void testEth1DataSOS() {
-    Bytes32 depositRoot = Bytes32.random();
-    Bytes32 blockHash = Bytes32.random();
-    UnsignedLong depositCount = UnsignedLong.valueOf(randomLong());
+    Bytes32 depositRoot = Bytes32.random(new Random(100));
+    Bytes32 blockHash = Bytes32.random(new Random(101));
+    UnsignedLong depositCount = UnsignedLong.valueOf(10);
 
     Eth1Data eth1Data = new Eth1Data(depositRoot, depositCount, blockHash);
 
@@ -96,11 +96,11 @@ class FixedPartSSZSOSTest {
 
   @Test
   void testBeaconBlockHeaderSOS() {
-    UnsignedLong slot = randomUnsignedLong();
-    Bytes32 previous_block_root = Bytes32.random();
-    Bytes32 state_root = Bytes32.random();
-    Bytes32 block_body_root = Bytes32.random();
-    BLSSignature signature = BLSSignature.random();
+    UnsignedLong slot = UnsignedLong.valueOf(27);
+    Bytes32 previous_block_root = Bytes32.random(new Random(100));
+    Bytes32 state_root = Bytes32.random(new Random(101));
+    Bytes32 block_body_root = Bytes32.random(new Random(102));
+    BLSSignature signature = BLSSignature.random(100);
 
     BeaconBlockHeader beaconBlockHeader =
         new BeaconBlockHeader(slot, previous_block_root, state_root, block_body_root, signature);
@@ -114,9 +114,9 @@ class FixedPartSSZSOSTest {
 
   @Test
   void testProposerSlashingSOS() {
-    UnsignedLong proposerIndex = randomUnsignedLong();
-    BeaconBlockHeader proposal1 = randomBeaconBlockHeader();
-    BeaconBlockHeader proposal2 = randomBeaconBlockHeader();
+    UnsignedLong proposerIndex = randomUnsignedLong(100);
+    BeaconBlockHeader proposal1 = randomBeaconBlockHeader(100);
+    BeaconBlockHeader proposal2 = randomBeaconBlockHeader(101);
 
     ProposerSlashing proposerSlashing = new ProposerSlashing(proposerIndex, proposal1, proposal2);
 
@@ -129,14 +129,14 @@ class FixedPartSSZSOSTest {
 
   @Test
   void testValidatorSOS() {
-    BLSPublicKey pubkey = BLSPublicKey.random();
-    Bytes32 withdrawal_credentials = Bytes32.random();
-    UnsignedLong effective_balance = randomUnsignedLong();
+    BLSPublicKey pubkey = BLSPublicKey.random(100);
+    Bytes32 withdrawal_credentials = Bytes32.random(new Random(100));
+    UnsignedLong effective_balance = randomUnsignedLong(100);
     boolean slashed = true;
-    UnsignedLong activation_eligibility_epoch = randomUnsignedLong();
-    UnsignedLong activation_epoch = randomUnsignedLong();
-    UnsignedLong exit_epoch = randomUnsignedLong();
-    UnsignedLong withdrawable_epoch = randomUnsignedLong();
+    UnsignedLong activation_eligibility_epoch = randomUnsignedLong(101);
+    UnsignedLong activation_epoch = randomUnsignedLong(102);
+    UnsignedLong exit_epoch = randomUnsignedLong(103);
+    UnsignedLong withdrawable_epoch = randomUnsignedLong(104);
 
     Validator validator =
         new Validator(
@@ -157,17 +157,17 @@ class FixedPartSSZSOSTest {
 
   @Test
   void testAttestationDataSOS() {
-    Bytes32 beaconBlockRoot = Bytes32.random();
+    Bytes32 beaconBlockRoot = Bytes32.random(new Random(100));
 
-    UnsignedLong source_epoch = randomUnsignedLong();
-    Bytes32 source_root = Bytes32.random();
+    UnsignedLong source_epoch = randomUnsignedLong(100);
+    Bytes32 source_root = Bytes32.random(new Random(101));
     Checkpoint source = new Checkpoint(source_epoch, source_root);
 
-    UnsignedLong target_epoch = randomUnsignedLong();
-    Bytes32 target_root = Bytes32.random();
+    UnsignedLong target_epoch = randomUnsignedLong(200);
+    Bytes32 target_root = Bytes32.random(new Random(201));
     Checkpoint target = new Checkpoint(target_epoch, target_root);
 
-    Crosslink crosslink = randomCrosslink();
+    Crosslink crosslink = randomCrosslink(100);
 
     AttestationData attestationData =
         new AttestationData(beaconBlockRoot, source, target, crosslink);
@@ -181,10 +181,10 @@ class FixedPartSSZSOSTest {
 
   @Test
   void testDepositDataSOS() {
-    BLSPublicKey pubkey = BLSPublicKey.random();
-    Bytes32 withdrawalCredentials = Bytes32.random();
-    UnsignedLong amount = randomUnsignedLong();
-    BLSSignature signature = BLSSignature.random();
+    BLSPublicKey pubkey = BLSPublicKey.random(100);
+    Bytes32 withdrawalCredentials = Bytes32.random(new Random(100));
+    UnsignedLong amount = randomUnsignedLong(100);
+    BLSSignature signature = BLSSignature.random(100);
 
     DepositData depositData = new DepositData(pubkey, withdrawalCredentials, amount, signature);
 
@@ -197,9 +197,9 @@ class FixedPartSSZSOSTest {
 
   @Test
   void testVoluntaryExitSOS() {
-    UnsignedLong epoch = randomUnsignedLong();
-    UnsignedLong validatorIndex = randomUnsignedLong();
-    BLSSignature signature = BLSSignature.random();
+    UnsignedLong epoch = randomUnsignedLong(100);
+    UnsignedLong validatorIndex = randomUnsignedLong(101);
+    BLSSignature signature = BLSSignature.random(100);
 
     VoluntaryExit voluntaryExit = new VoluntaryExit(epoch, validatorIndex, signature);
 
@@ -212,13 +212,13 @@ class FixedPartSSZSOSTest {
 
   @Test
   void testTransferSOS() {
-    UnsignedLong sender = randomUnsignedLong();
-    UnsignedLong recipient = randomUnsignedLong();
-    UnsignedLong amount = randomUnsignedLong();
-    UnsignedLong fee = randomUnsignedLong();
-    UnsignedLong slot = randomUnsignedLong();
-    BLSPublicKey pubkey = BLSPublicKey.random();
-    BLSSignature signature = BLSSignature.random();
+    UnsignedLong sender = randomUnsignedLong(100);
+    UnsignedLong recipient = randomUnsignedLong(101);
+    UnsignedLong amount = randomUnsignedLong(100);
+    UnsignedLong fee = randomUnsignedLong(99);
+    UnsignedLong slot = UnsignedLong.valueOf(27);
+    BLSPublicKey pubkey = BLSPublicKey.random(100);
+    BLSSignature signature = BLSSignature.random(100);
 
     Transfer transfer = new Transfer(sender, recipient, amount, fee, slot, pubkey, signature);
 
@@ -231,8 +231,8 @@ class FixedPartSSZSOSTest {
 
   @Test
   void testEth1DataVoteSOS() {
-    Eth1Data eth1Data = randomEth1Data();
-    UnsignedLong voteCount = randomUnsignedLong();
+    Eth1Data eth1Data = randomEth1Data(100);
+    UnsignedLong voteCount = randomUnsignedLong(100);
 
     Eth1DataVote eth1DataVote = new Eth1DataVote(eth1Data, voteCount);
 
@@ -245,7 +245,7 @@ class FixedPartSSZSOSTest {
 
   @Test
   void testAttestationDataAndCustodyBitSOS() {
-    AttestationData attestationData = randomAttestationData();
+    AttestationData attestationData = randomAttestationData(100);
 
     AttestationDataAndCustodyBit attestationDataAndCustodyBit =
         new AttestationDataAndCustodyBit(attestationData, false);
@@ -261,8 +261,8 @@ class FixedPartSSZSOSTest {
 
   @Test
   void testCheckpointSOS() {
-    UnsignedLong epoch = randomUnsignedLong();
-    Bytes32 root = Bytes32.random();
+    UnsignedLong epoch = randomUnsignedLong(100);
+    Bytes32 root = Bytes32.random(new Random(100));
 
     Checkpoint checkpoint = new Checkpoint(epoch, root);
 
