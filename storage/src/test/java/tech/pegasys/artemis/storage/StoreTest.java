@@ -40,7 +40,7 @@ class StoreTest {
 
   private static final int SEED = 12424242;
   private static final Checkpoint INITIAL_JUSTIFIED_CHECKPOINT =
-      new Checkpoint(UnsignedLong.valueOf(50), randomBytes32());
+      new Checkpoint(UnsignedLong.valueOf(50), randomBytes32(SEED - 1));
   private static final Checkpoint INITIAL_FINALIZED_CHECKPOINT = new Checkpoint();
   private final Store store =
       new Store(
@@ -57,8 +57,8 @@ class StoreTest {
     final Bytes32 blockRoot = DataStructureUtil.randomBytes32(SEED);
     final Checkpoint justifiedCheckpoint = new Checkpoint(UnsignedLong.valueOf(2), blockRoot);
     final Checkpoint finalizedCheckpoint = new Checkpoint(UnsignedLong.ONE, blockRoot);
-    final BeaconBlock block = randomBeaconBlock(10);
-    final BeaconState state = randomBeaconState();
+    final BeaconBlock block = randomBeaconBlock(10, 100);
+    final BeaconState state = randomBeaconState(100);
     final UnsignedLong time = UnsignedLong.valueOf(3);
     transaction.putBlock(blockRoot, block);
     transaction.putBlockState(blockRoot, state);
@@ -93,8 +93,8 @@ class StoreTest {
 
   @Test
   public void removesOldObjectsFromStore() {
-    int numValidObjects = 20;
-    int numInvalidObjects = 20;
+    int numValidObjects = 2;
+    int numInvalidObjects = 2;
     int cutOffSlot = 120;
 
     List<Pair<Bytes32, BeaconBlock>> valid_blocks = new ArrayList<>();
@@ -108,25 +108,27 @@ class StoreTest {
     IntStream.range(0, numInvalidObjects)
         .forEach(
             i -> {
-              BeaconBlock randomBeaconBlock = randomBeaconBlock(cutOffSlot - 1);
-              BeaconState randomBeaconState = randomBeaconState(cutOffSlot - 1);
+              BeaconBlock randomBeaconBlock = randomBeaconBlock(cutOffSlot - 1, 200 + i);
+              BeaconState randomBeaconState =
+                  randomBeaconState(UnsignedLong.valueOf(cutOffSlot - 1), 201 + i);
               Bytes32 blockHash = randomBeaconBlock.hash_tree_root();
               invalid_blocks.add(new ImmutablePair<>(blockHash, randomBeaconBlock));
               invalid_block_states.add(new ImmutablePair<>(blockHash, randomBeaconState));
               invalid_checkpoint_states.add(
-                  new ImmutablePair<>(randomCheckpoint(), randomBeaconState));
+                  new ImmutablePair<>(randomCheckpoint(SEED + i), randomBeaconState));
             });
 
     IntStream.range(0, numValidObjects)
         .forEach(
             i -> {
-              BeaconBlock randomBeaconBlock = randomBeaconBlock(cutOffSlot + 1);
-              BeaconState randomBeaconState = randomBeaconState(cutOffSlot + 1);
+              BeaconBlock randomBeaconBlock = randomBeaconBlock(cutOffSlot + 1, 102 + i);
+              BeaconState randomBeaconState =
+                  randomBeaconState(UnsignedLong.valueOf(cutOffSlot + 1), 103 + i);
               Bytes32 blockHash = randomBeaconBlock.hash_tree_root();
               valid_blocks.add(new ImmutablePair<>(blockHash, randomBeaconBlock));
               valid_block_states.add(new ImmutablePair<>(blockHash, randomBeaconState));
               valid_checkpoint_states.add(
-                  new ImmutablePair<>(randomCheckpoint(), randomBeaconState));
+                  new ImmutablePair<>(randomCheckpoint(SEED + i), randomBeaconState));
             });
 
     final Transaction transaction = store.startTransaction();
@@ -142,7 +144,7 @@ class StoreTest {
         state -> transaction.putCheckpointState(state.getLeft(), state.getRight()));
     transaction.commit();
 
-    store.cleanStoreUntilSlot(UnsignedLong.valueOf(120));
+    store.cleanStoreUntilSlot(UnsignedLong.valueOf(cutOffSlot));
     for (Pair<Bytes32, BeaconBlock> pair : invalid_blocks) {
       assertTrue(!store.containsBlock(pair.getLeft()));
     }

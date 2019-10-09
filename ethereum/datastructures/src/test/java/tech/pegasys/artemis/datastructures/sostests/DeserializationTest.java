@@ -16,7 +16,6 @@ package tech.pegasys.artemis.datastructures.sostests;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.int_to_bytes;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomBeaconState;
-import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomLong;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.stream.IntStream;
@@ -54,7 +53,7 @@ import tech.pegasys.artemis.util.bls.BLSPublicKey;
 public class DeserializationTest {
   @Test
   void BeaconBlockBodyTest() {
-    BeaconBlockBody beaconBlockBody = DataStructureUtil.randomBeaconBlockBody();
+    BeaconBlockBody beaconBlockBody = DataStructureUtil.randomBeaconBlockBody(100);
     BeaconBlockBody newBeaconBlockBody =
         SimpleOffsetSerializer.deserialize(
             SimpleOffsetSerializer.serialize(beaconBlockBody), BeaconBlockBody.class);
@@ -72,7 +71,7 @@ public class DeserializationTest {
 
   @Test
   void BeaconBlockTest() {
-    BeaconBlock beaconBlock = DataStructureUtil.randomBeaconBlock(100);
+    BeaconBlock beaconBlock = DataStructureUtil.randomBeaconBlock(100, 100);
     Bytes serialized = SimpleOffsetSerializer.serialize(beaconBlock);
     BeaconBlock newBeaconBlock = SimpleOffsetSerializer.deserialize(serialized, BeaconBlock.class);
     assertEquals(beaconBlock, newBeaconBlock);
@@ -109,7 +108,7 @@ public class DeserializationTest {
 
   @Test
   void AttestationTest() {
-    Attestation attestation = DataStructureUtil.randomAttestation(randomLong());
+    Attestation attestation = DataStructureUtil.randomAttestation(100);
     Attestation newAttestation =
         SimpleOffsetSerializer.deserialize(
             SimpleOffsetSerializer.serialize(attestation), Attestation.class);
@@ -118,7 +117,7 @@ public class DeserializationTest {
 
   @Test
   void AttesterSlashingTest() {
-    AttesterSlashing attesterSlashing = DataStructureUtil.randomAttesterSlashing();
+    AttesterSlashing attesterSlashing = DataStructureUtil.randomAttesterSlashing(100);
     AttesterSlashing newAttesterSlashing =
         SimpleOffsetSerializer.deserialize(
             SimpleOffsetSerializer.serialize(attesterSlashing), AttesterSlashing.class);
@@ -146,7 +145,7 @@ public class DeserializationTest {
 
   @Test
   void IndexedAttestationTest() {
-    IndexedAttestation indexedAttestation = DataStructureUtil.randomIndexedAttestation();
+    IndexedAttestation indexedAttestation = DataStructureUtil.randomIndexedAttestation(100);
     IndexedAttestation newIndexedAttestation =
         SimpleOffsetSerializer.deserialize(
             SimpleOffsetSerializer.serialize(indexedAttestation), IndexedAttestation.class);
@@ -182,10 +181,9 @@ public class DeserializationTest {
 
   @Test
   void BeaconStateTest() {
-    BeaconState beaconState = randomBeaconState();
-    BeaconState state =
-        SimpleOffsetSerializer.deserialize(
-            SimpleOffsetSerializer.serialize(beaconState), BeaconState.class);
+    BeaconState beaconState = randomBeaconState(100);
+    Bytes bytes = SimpleOffsetSerializer.serialize(beaconState);
+    BeaconState state = SimpleOffsetSerializer.deserialize(bytes, BeaconState.class);
     assertEquals(beaconState, state);
   }
 
@@ -201,13 +199,13 @@ public class DeserializationTest {
   @Test
   void CompactCommitteTest() {
     CompactCommittee compactCommittee = new CompactCommittee();
-    compactCommittee.getPubkeys().add(BLSPublicKey.random());
-    compactCommittee.getPubkeys().add(BLSPublicKey.random());
-    compactCommittee.getPubkeys().add(BLSPublicKey.random());
-    compactCommittee.getCompact_validators().add(DataStructureUtil.randomUnsignedLong());
-    compactCommittee.getCompact_validators().add(DataStructureUtil.randomUnsignedLong());
-    compactCommittee.getCompact_validators().add(DataStructureUtil.randomUnsignedLong());
-    compactCommittee.getCompact_validators().add(DataStructureUtil.randomUnsignedLong());
+    compactCommittee.getPubkeys().add(BLSPublicKey.random(100));
+    compactCommittee.getPubkeys().add(BLSPublicKey.random(101));
+    compactCommittee.getPubkeys().add(BLSPublicKey.random(102));
+    compactCommittee.getCompact_validators().add(DataStructureUtil.randomUnsignedLong(100));
+    compactCommittee.getCompact_validators().add(DataStructureUtil.randomUnsignedLong(101));
+    compactCommittee.getCompact_validators().add(DataStructureUtil.randomUnsignedLong(102));
+    compactCommittee.getCompact_validators().add(DataStructureUtil.randomUnsignedLong(103));
     CompactCommittee newCompactCommittee =
         SimpleOffsetSerializer.deserialize(
             SimpleOffsetSerializer.serialize(compactCommittee), CompactCommittee.class);

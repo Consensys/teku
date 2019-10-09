@@ -37,7 +37,7 @@ class BeaconStateTest {
       // Initialize state
       BeaconState state =
           initialize_beacon_state_from_eth1(
-              Bytes32.ZERO, UnsignedLong.ZERO, randomDeposits(numDeposits));
+              Bytes32.ZERO, UnsignedLong.ZERO, randomDeposits(numDeposits, 100));
 
       return state;
     } catch (Exception e) {

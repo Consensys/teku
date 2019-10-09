@@ -15,18 +15,19 @@ package tech.pegasys.artemis.datastructures.blocks;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomLong;
 
 import com.google.common.primitives.UnsignedLong;
+import java.util.Random;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 
 class Eth1DataTest {
 
-  private Bytes32 depositRoot = Bytes32.random();
-  private Bytes32 blockHash = Bytes32.random();
-  private UnsignedLong depositCount = UnsignedLong.valueOf(randomLong());
+  private Random random = new Random(100);
+  private Bytes32 depositRoot = Bytes32.random(random);
+  private Bytes32 blockHash = Bytes32.random(random);
+  private UnsignedLong depositCount = UnsignedLong.valueOf(100);
 
   private Eth1Data eth1Data = new Eth1Data(depositRoot, depositCount, blockHash);
 

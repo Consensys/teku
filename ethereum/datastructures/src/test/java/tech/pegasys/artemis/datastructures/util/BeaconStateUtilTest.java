@@ -318,8 +318,8 @@ class BeaconStateUtilTest {
 
   @Test
   void succeedsWhenGetPermutedIndexAndShuffleGiveTheSameResults() {
-    Bytes32 seed = Bytes32.random();
-    int listSize = 1 + (int) randomUnsignedLong().longValue() % 1000;
+    Bytes32 seed = Bytes32.leftPad(Bytes.ofUnsignedInt(100));
+    int listSize = 100;
     int[] shuffling = BeaconStateUtil.shuffle(listSize, seed);
     for (int i = 0; i < listSize; i++) {
       int idx = CrosslinkCommitteeUtil.compute_shuffled_index(i, listSize, seed);
