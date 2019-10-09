@@ -112,7 +112,7 @@ class BeaconBlockHeaderTest {
 
   @Test
   void blockRootHeaderRootMatchingTests() {
-    BeaconBlock block = DataStructureUtil.randomBeaconBlock(90000000);
+    BeaconBlock block = DataStructureUtil.randomBeaconBlock(90000000, 100);
     BeaconBlockHeader blockHeader =
         new BeaconBlockHeader(
             block.getSlot(),
