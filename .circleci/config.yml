@@ -86,8 +86,9 @@ jobs:
       - run:
           name: Debug
           command: |
-            ls -R build/refTests || true
-            ls ~/project/eth-reference-tests/src/test/resources/eth2.0-spec-tests/tests/ || true
+            ls /home/circleci/project/build/refTests/v0.8.3/general.tar.gz || true
+            ls -R /home/circleci/project/build/refTests || true
+            ls /home/circleci/project/eth-reference-tests/src/test/resources/eth2.0-spec-tests/tests/ || true
       - run:
           name: FetchReferenceTests
           command: |
