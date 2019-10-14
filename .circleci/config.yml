@@ -86,7 +86,7 @@ jobs:
       - run:
           name: FetchReferenceTests
           command: |
-            ./gradlew getRefTests
+            ./gradlew expandRefTests
       - save_cache:
           name: Caching gradle dependencies
           key: reftests-{{ checksum "build.gradle" }}
