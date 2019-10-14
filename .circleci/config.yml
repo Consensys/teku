@@ -92,6 +92,7 @@ jobs:
           key: reftests-{{ checksum "build.gradle" }}
           paths:
             - build/refTests
+            - eth-reference-tests/src/test/resources/eth2.0-spec-tests/
       - run:
           name: ReferenceTests
           // TODO: Skip non-reference tests here

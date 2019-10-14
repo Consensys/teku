@@ -189,24 +189,35 @@ allprojects {
 
 def refTestVersion = 'v0.8.3'
 def refTestBaseUrl = 'https://github.com/ethereum/eth2.0-spec-tests/releases/download'
+def refTestDownloadDir = "${buildDir}/refTests/${refTestVersion}"
+def refTestExpandDir = 'eth-reference-tests/src/test/resources/eth2.0-spec-tests/'
+
 task downloadRefTests(type: Download) {
   src([
       "${refTestBaseUrl}/${refTestVersion}/general.tar.gz",
       "${refTestBaseUrl}/${refTestVersion}/minimal.tar.gz",
       "${refTestBaseUrl}/${refTestVersion}/mainnet.tar.gz"
-      ])
-  dest "${buildDir}/refTests/"
+  ])
+  dest "${refTestDownloadDir}/"
   overwrite false
 }
-task getRefTests() {
-  dependsOn downloadRefTests
-  doLast {
-    def expandDir = 'eth-reference-tests/src/test/resources/eth2.0-spec-tests/'
-    ant.untar(src: "${buildDir}/refTests/general.tar.gz", dest: expandDir, compression: "gzip")
-    ant.untar(src: "${buildDir}/refTests/minimal.tar.gz", dest: expandDir, compression: "gzip")
-    ant.untar(src: "${buildDir}/refTests/mainnet.tar.gz", dest: expandDir, compression: "gzip")
-  }
+
+task expandRefTestsGeneral(type: Copy, dependsOn: downloadRefTests) {
+  from tarTree("${refTestDownloadDir}/general.tar.gz")
+  into refTestExpandDir
 }
+
+task expandRefTestsMainnet(type: Copy, dependsOn: downloadRefTests) {
+  from tarTree("${refTestDownloadDir}/mainnet.tar.gz")
+  into refTestExpandDir
+}
+
+task expandRefTestsMinimal(type: Copy, dependsOn: downloadRefTests) {
+  from tarTree("${refTestDownloadDir}/minimal.tar.gz")
+  into refTestExpandDir
+}
+
+task expandRefTests(dependsOn: [expandRefTestsGeneral, expandRefTestsMainnet, expandRefTestsMinimal])
 
 task deploy() {}
 
