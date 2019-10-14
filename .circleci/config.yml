@@ -92,13 +92,9 @@ jobs:
       - run:
           name: FetchReferenceTests
           command: |
+            ls /home/circleci/project/build/refTests/v0.8.3/general.tar.gz || true
+            pwd
             ./gradlew expandRefTests
-      - save_cache:
-          name: Caching reference tests
-          key: reftests-{{ checksum "build.gradle" }}
-          paths:
-            - build/refTests
-            - eth-reference-tests/src/test/resources/eth2.0-spec-tests/
       - run:
           name: ReferenceTests
           // TODO: Skip non-reference tests here
@@ -113,6 +109,12 @@ jobs:
             GRADLE_ARGS=$(echo $CLASSNAMES | awk '{for (i=1; i<=NF; i++) print "--tests",$i}')
             echo "Prepared arguments for Gradle: $GRADLE_ARGS"
             ./gradlew --no-daemon --no-parallel :eth-reference-tests:test $GRADLE_ARGS
+      - save_cache:
+          name: Caching reference tests
+          key: reftests-{{ checksum "build.gradle" }}
+          paths:
+            - build/refTests
+            - eth-reference-tests/src/test/resources/eth2.0-spec-tests/
       - capture_test_results
 
   javadoc:
