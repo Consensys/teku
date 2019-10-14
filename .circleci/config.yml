@@ -84,6 +84,11 @@ jobs:
           keys:
             - reftests-{{ checksum "build.gradle" }}
       - run:
+          name: Debug
+          command: |
+            ls -R build/refTests
+            ls eth-reference-tests/src/test/resources/eth2.0-spec-tests/tests/
+      - run:
           name: FetchReferenceTests
           command: |
             ./gradlew expandRefTests
