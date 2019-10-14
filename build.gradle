@@ -11,7 +11,9 @@ plugins {
   id 'net.ltgt.errorprone' version '0.7' apply false
   id 'net.researchgate.release' version '2.7.0'
   id 'com.gradle.build-scan' version '2.1'
+  id 'de.undercouch.download' version '4.0.0'
 }
+apply plugin: 'de.undercouch.download'
 
 defaultTasks 'build','checkLicenses'
 
@@ -182,6 +184,26 @@ allprojects {
       options.addStringOption('Xwerror', '-html5')
     }
     options.encoding = 'UTF-8'
+  }
+}
+
+def refTestVersion = 'v0.8.3'
+def refTestBaseUrl = 'https://github.com/ethereum/eth2.0-spec-tests/releases/download'
+task downloadRefTests(type: Download) {
+  src([
+      "${refTestBaseUrl}/${refTestVersion}/general.tar.gz",
+      "${refTestBaseUrl}/${refTestVersion}/minimal.tar.gz",
+      "${refTestBaseUrl}/${refTestVersion}/mainnet.tar.gz"
+      ])
+  dest "${buildDir}/refTests/"
+  overwrite false
+}
+task getRefTests() {
+  dependsOn downloadRefTests
+  doLast {
+    ant.untar(src: "${buildDir}/refTests/general.tar.gz", dest: "eth2.0-spec-tests/", compression: "gzip")
+    ant.untar(src: "${buildDir}/refTests/minimal.tar.gz", dest: "eth2.0-spec-tests/", compression: "gzip")
+    ant.untar(src: "${buildDir}/refTests/mainnet.tar.gz", dest: "eth2.0-spec-tests/", compression: "gzip")
   }
 }
 
