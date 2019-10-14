@@ -1,0 +1,106 @@
+version: 2.1
+executors:
+  medium_executor:
+    docker:
+      - image: circleci/openjdk:11.0.4-jdk-stretch
+      resource_class: medium
+      working_directory: ~/project
+      environment:
+        JAVA_TOOL_OPTIONS: -Xmx2g
+        GRADLE_OPTS: -Dorg.gradle.daemon=false -Dorg.gradle.parallel=true -Dorg.gradle.workers.max=2
+
+commands:
+  prepare:
+    description: "Prepare"
+    steps:
+      - checkout
+      - restore_cache:
+          name: Restore cached gradle dependencies
+          keys:
+            - deps-{{ checksum "build.gradle" }}-{{ .Branch }}-{{ .Revision }}
+            - deps-{{ checksum "build.gradle" }}
+            - deps-
+
+jobs:
+  assemble:
+    executor: medium_executor
+    steps:
+      - prepare
+      - run:
+          name: Assemble
+          command: |
+            ./gradlew --no-daemon --parallel clean compileJava compileTestJava assemble
+      - save_cache:
+          name: Caching gradle dependencies
+          key: deps-{{ checksum "build.gradle" }}-{{ .Branch }}-{{ .Revision }}
+            paths:
+              - .gradle
+              - ~/.gradle
+      - persist_to_workspace:
+          root: ~/project
+          paths:
+            - ./
+
+  unitTests:
+    executor: medium_executor
+    steps:
+      - prepare
+      - attach_workspace:
+          at: ~/project
+      - run:
+        name: Build
+        no_output_timeout: 20m
+        command: |
+          ./graldew --no-daemon --parallel build -x :eth-reference-tests:test
+
+  referenceTests:
+    executor: medium_executor
+    steps:
+      - prepare
+      - attach_workspace:
+          at: ~/project
+      - run:
+        name: FetchReferenceTests
+        command: |
+          ./scripts/get-ref-tests.sh
+      - run:
+        name: ReferenceTests
+        // TODO: Skip non-reference tests here
+        command: |
+          ./gradlew --no-daemon --parallel test
+
+
+
+  docker:
+    executor: medium_executor
+    steps:
+      - prepare
+      - attach_workspace:
+          at: ~/project
+      - setup_remote_docker
+      - run:
+        name: Docker
+        command: |
+          ./gradlew --no-daemon --parallel distDocker
+
+      - run:
+        name: DockerWhiteblock
+        command: |
+          ./gradlew --no-daemon --parallel distDockerWhiteblock
+
+
+workflows:
+  version: 2
+  default:
+    jobs:
+      - assemble
+      - unitTests:
+          requires:
+            - assemble
+      - referenceTests:
+          requires:
+            - assemble
+      - docker:
+          requires:
+            - unitTests
+            - referenceTests
