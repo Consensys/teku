@@ -94,7 +94,7 @@ jobs:
           command: |
             ls /home/circleci/project/build/refTests/v0.8.3/general.tar.gz || true
             pwd
-            ./gradlew expandRefTests
+            ./gradlew --no-daemon --no-parallel expandRefTests
       - run:
           name: ReferenceTests
           // TODO: Skip non-reference tests here
