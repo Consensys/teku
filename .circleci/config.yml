@@ -14,7 +14,6 @@ commands:
   prepare:
     description: "Prepare"
     steps:
-      - checkout
       - restore_cache:
           name: Restore cached gradle dependencies
           keys:
@@ -43,6 +42,7 @@ jobs:
     executor: medium_executor
     steps:
       - prepare
+      - checkout
       - run:
           name: Assemble
           command: |
