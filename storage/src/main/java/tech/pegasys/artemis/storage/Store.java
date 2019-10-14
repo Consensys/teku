@@ -14,8 +14,6 @@
 package tech.pegasys.artemis.storage;
 
 import com.google.common.collect.Sets;
-import com.google.common.eventbus.AsyncEventBus;
-import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
 import java.util.Collections;
 import java.util.HashMap;
@@ -364,7 +362,6 @@ public class Store implements ReadOnlyStore {
 
     public Map<Bytes32, BeaconState> getBlockStates() {
       return block_states;
-
     }
 
     public Map<Checkpoint, BeaconState> getCheckpointStates() {

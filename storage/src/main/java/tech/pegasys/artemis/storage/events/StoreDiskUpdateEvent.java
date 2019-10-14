@@ -13,7 +13,6 @@
 
 package tech.pegasys.artemis.storage.events;
 
-
 import tech.pegasys.artemis.storage.Store;
 
 public class StoreDiskUpdateEvent {
