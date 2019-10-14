@@ -88,7 +88,17 @@ jobs:
             ./gradlew --no-daemon --parallel test
       - capture_test_results
 
-
+  javadoc:
+    executor: medium_executor
+    steps:
+      - prepare
+      - attach_workspace:
+          at: ~/project
+      - run:
+          name: JavaDoc
+          no_output_timeout: 20m
+          command: |
+            ./gradlew --no-daemon --parallel javadoc
 
   docker:
     executor: medium_executor
@@ -107,6 +117,16 @@ jobs:
           command: |
             ./gradlew --no-daemon --parallel distDockerWhiteblock
 
+  publish:
+    executor: medium_executor
+    steps:
+      - prepare
+      - attach_workspace:
+          at: ~/project
+      - run:
+          name: Publish
+          command: |
+            echo "Not really publishing at this stage."
 
 workflows:
   version: 2
@@ -122,4 +142,10 @@ workflows:
       - docker:
           requires:
             - unitTests
+      - javadoc
+      - publish:
+          requires:
+            - unitTests
             - referenceTests
+            - docker
+            - javadoc
