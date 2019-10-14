@@ -144,12 +144,12 @@ workflows:
           requires:
             - assemble
             - unitTests
-      - javadoc:
-          requires:
-            - assemble
+#      - javadoc:
+#          requires:
+#            - assemble
       - publish:
           requires:
             - unitTests
             - referenceTests
             - docker
-            - javadoc
+#            - javadoc
