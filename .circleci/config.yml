@@ -48,10 +48,10 @@ jobs:
       - attach_workspace:
           at: ~/project
       - run:
-          name: Build
+          name: UnitTests
           no_output_timeout: 20m
           command: |
-            ./gradlew --no-daemon --parallel build -x :eth-reference-tests:test
+            ./gradlew --no-daemon --parallel test -x :eth-reference-tests:test
 
   referenceTests:
     executor: medium_executor
@@ -63,6 +63,11 @@ jobs:
           name: FetchReferenceTests
           command: |
             ./scripts/get-ref-tests.sh
+      - save_cache:
+          name: Caching gradle dependencies
+          key: deps-{{ checksum "scripts/get-ref-tests" }}-{{ .Branch }}-{{ .Revision }}
+          paths:
+            - eth2.0-spec-tests/tests
       - run:
           name: ReferenceTests
           // TODO: Skip non-reference tests here
