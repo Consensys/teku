@@ -14,6 +14,8 @@
 package tech.pegasys.artemis.storage;
 
 import com.google.common.collect.Sets;
+import com.google.common.eventbus.AsyncEventBus;
+import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
 import java.util.Collections;
 import java.util.HashMap;
@@ -352,6 +354,25 @@ public class Store implements ReadOnlyStore {
     public boolean containsLatestMessage(final UnsignedLong validatorIndex) {
       return latest_messages.containsKey(validatorIndex)
           || Store.this.containsLatestMessage(validatorIndex);
+    }
+
+    // Disk Storage Related Functions
+
+    public Map<Bytes32, BeaconBlock> getBlocks() {
+      return blocks;
+    }
+
+    public Map<Bytes32, BeaconState> getBlockStates() {
+      return block_states;
+
+    }
+
+    public Map<Checkpoint, BeaconState> getCheckpointStates() {
+      return checkpoint_states;
+    }
+
+    public Map<UnsignedLong, LatestMessage> getLatestMessages() {
+      return latest_messages;
     }
   }
 }

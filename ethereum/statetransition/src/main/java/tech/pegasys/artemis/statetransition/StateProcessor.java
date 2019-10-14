@@ -46,6 +46,7 @@ import tech.pegasys.artemis.statetransition.util.EpochProcessingException;
 import tech.pegasys.artemis.statetransition.util.SlotProcessingException;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.Store;
+import tech.pegasys.artemis.storage.events.StoreDiskUpdateEvent;
 import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 import tech.pegasys.pantheon.metrics.MetricsSystem;
@@ -174,6 +175,7 @@ public class StateProcessor {
       Store.Transaction transaction = chainStorageClient.getStore().startTransaction();
       final BlockProcessingRecord record = on_block(transaction, block, stateTransition);
       transaction.commit();
+      eventBus.post(new StoreDiskUpdateEvent(transaction));
 
       // Add attestations that were processed in the block to processed attestations storage
       List<Long> numberOfAttestersInAttestations = new ArrayList<>();
@@ -207,6 +209,8 @@ public class StateProcessor {
       final Store.Transaction transaction = chainStorageClient.getStore().startTransaction();
       on_attestation(transaction, attestation, stateTransition);
       transaction.commit();
+      eventBus.post(new StoreDiskUpdateEvent(transaction));
+
       chainStorageClient.addUnprocessedAttestation(attestation);
     } catch (SlotProcessingException | EpochProcessingException e) {
       STDOUT.log(Level.WARN, "Exception in onAttestation: " + e.toString());
