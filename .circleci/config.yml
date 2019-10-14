@@ -63,11 +63,6 @@ jobs:
           name: FetchReferenceTests
           command: |
             ./scripts/get-ref-tests.sh
-      - save_cache:
-          name: Caching gradle dependencies
-          key: deps-{{ checksum "scripts/get-ref-tests" }}-{{ .Branch }}-{{ .Revision }}
-          paths:
-            - eth2.0-spec-tests/tests
       - run:
           name: ReferenceTests
           // TODO: Skip non-reference tests here
