@@ -235,7 +235,7 @@ public final class FP2Immutable {
       return false;
     }
     FP2Immutable other = (FP2Immutable) obj;
-    return this.reduce().toString().equals(other.reduce().toString());
+    return this.fp2.equals(other.fp2);
   }
 
   @Override
