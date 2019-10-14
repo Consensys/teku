@@ -48,10 +48,10 @@ jobs:
       - attach_workspace:
           at: ~/project
       - run:
-        name: Build
-        no_output_timeout: 20m
-        command: |
-          ./graldew --no-daemon --parallel build -x :eth-reference-tests:test
+          name: Build
+          no_output_timeout: 20m
+          command: |
+            ./graldew --no-daemon --parallel build -x :eth-reference-tests:test
 
   referenceTests:
     executor: medium_executor
@@ -60,14 +60,14 @@ jobs:
       - attach_workspace:
           at: ~/project
       - run:
-        name: FetchReferenceTests
-        command: |
-          ./scripts/get-ref-tests.sh
+          name: FetchReferenceTests
+          command: |
+            ./scripts/get-ref-tests.sh
       - run:
-        name: ReferenceTests
-        // TODO: Skip non-reference tests here
-        command: |
-          ./gradlew --no-daemon --parallel test
+          name: ReferenceTests
+          // TODO: Skip non-reference tests here
+          command: |
+            ./gradlew --no-daemon --parallel test
 
 
 
@@ -79,14 +79,14 @@ jobs:
           at: ~/project
       - setup_remote_docker
       - run:
-        name: Docker
-        command: |
-          ./gradlew --no-daemon --parallel distDocker
+          name: Docker
+          command: |
+            ./gradlew --no-daemon --parallel distDocker
 
       - run:
-        name: DockerWhiteblock
-        command: |
-          ./gradlew --no-daemon --parallel distDockerWhiteblock
+          name: DockerWhiteblock
+          command: |
+            ./gradlew --no-daemon --parallel distDockerWhiteblock
 
 
 workflows:
