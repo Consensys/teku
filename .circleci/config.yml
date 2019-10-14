@@ -20,6 +20,22 @@ commands:
             - deps-{{ checksum "build.gradle" }}-{{ .Branch }}-{{ .Revision }}
             - deps-{{ checksum "build.gradle" }}
             - deps-
+  capture_test_results:
+    description: "Capture test results"
+    steps:
+      - run:
+          name: "Gather test results"
+          command: |
+            FILES=`find . -name test-results`
+            for FILE in $FILES
+            do
+              MODULE=`echo "$FILE" | sed -e 's@./\(.*\)/build/test-results@\1@'`
+              TARGET="build/test-results/$MODULE"
+              mkdir -p "$TARGET"
+              cp -rf ${FILE}/test/* "build/test-results/$MODULE"
+            done
+      - store_test_results:
+          path: build/test-results
 
 jobs:
   assemble:
@@ -52,6 +68,8 @@ jobs:
           no_output_timeout: 20m
           command: |
             ./gradlew --no-daemon --parallel test -x :eth-reference-tests:test
+      - capture_test_results
+
 
   referenceTests:
     executor: medium_executor
@@ -68,6 +86,7 @@ jobs:
           // TODO: Skip non-reference tests here
           command: |
             ./gradlew --no-daemon --parallel test
+      - capture_test_results
 
 
 
