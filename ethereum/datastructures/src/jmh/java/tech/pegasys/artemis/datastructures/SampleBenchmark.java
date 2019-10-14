@@ -23,7 +23,7 @@ import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
-public class SOS {
+public class SampleBenchmark {
 
   private static SimpleOffsetSerializable state = randomBeaconState();
 
@@ -35,7 +35,7 @@ public class SOS {
   public static void main(String[] args) throws RunnerException {
     Options opt =
         new OptionsBuilder()
-            .include(".*" + SOS.class.getSimpleName() + ".*")
+            .include(".*" + SampleBenchmark.class.getSimpleName() + ".*")
             .warmupIterations(5)
             .measurementIterations(5)
             .forks(1)

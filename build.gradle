@@ -11,11 +11,7 @@ plugins {
   id 'net.ltgt.errorprone' version '0.7' apply false
   id 'net.researchgate.release' version '2.7.0'
   id 'com.gradle.build-scan' version '2.1'
-  id 'me.champeau.gradle.jmh' version '0.4.8'
-}
-
-jmh {
-  include = 'SOS'
+  id 'me.champeau.gradle.jmh' version '0.4.8' apply false
 }
 
 defaultTasks 'build','checkLicenses'
@@ -193,15 +189,6 @@ allprojects {
 task deploy() {}
 
 subprojects {
-
-  apply plugin: 'me.champeau.gradle.jmh'
-
-  jmh {
-    include = 'SOS'
-    humanOutputFile = null
-    warmupIterations = 1
-    iterations = 1
-  }
 
   tasks.withType(Test) {
     // If GRADLE_MAX_TEST_FORKS is not set, use half the available processors
