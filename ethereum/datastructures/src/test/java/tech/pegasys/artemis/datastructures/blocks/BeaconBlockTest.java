@@ -16,21 +16,22 @@ package tech.pegasys.artemis.datastructures.blocks;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomBeaconBlockBody;
-import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomLong;
+import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomUnsignedLong;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.Objects;
+import java.util.Random;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 
 class BeaconBlockTest {
 
-  private UnsignedLong slot = UnsignedLong.valueOf(randomLong());
-  private Bytes32 previous_root = Bytes32.random();
-  private Bytes32 state_root = Bytes32.random();
-  private BeaconBlockBody body = randomBeaconBlockBody();
-  private BLSSignature signature = BLSSignature.random();
+  private UnsignedLong slot = randomUnsignedLong(100);
+  private Bytes32 previous_root = Bytes32.random(new Random(100));
+  private Bytes32 state_root = Bytes32.random(new Random(101));
+  private BeaconBlockBody body = randomBeaconBlockBody(100);
+  private BLSSignature signature = BLSSignature.random(100);
 
   private BeaconBlock beaconBlock =
       new BeaconBlock(slot, previous_root, state_root, body, signature);
@@ -52,12 +53,7 @@ class BeaconBlockTest {
   @Test
   void equalsReturnsFalseWhenSlotsAreDifferent() {
     BeaconBlock testBeaconBlock =
-        new BeaconBlock(
-            slot.plus(UnsignedLong.valueOf(randomLong())),
-            previous_root,
-            state_root,
-            body,
-            signature);
+        new BeaconBlock(slot.plus(UnsignedLong.ONE), previous_root, state_root, body, signature);
 
     assertNotEquals(beaconBlock, testBeaconBlock);
   }
@@ -83,9 +79,9 @@ class BeaconBlockTest {
     // BeaconBlockBody is rather involved to create. Just create a random one until it is not the
     // same
     // as the original.
-    BeaconBlockBody otherBody = randomBeaconBlockBody();
+    BeaconBlockBody otherBody = randomBeaconBlockBody(100);
     while (Objects.equals(otherBody, body)) {
-      otherBody = randomBeaconBlockBody();
+      otherBody = randomBeaconBlockBody(101);
     }
 
     BeaconBlock testBeaconBlock =
@@ -96,9 +92,9 @@ class BeaconBlockTest {
 
   @Test
   void equalsReturnsFalseWhenSignaturesAreDifferent() {
-    BLSSignature differentSignature = BLSSignature.random();
+    BLSSignature differentSignature = BLSSignature.random(100);
     while (differentSignature.equals(signature)) {
-      differentSignature = BLSSignature.random();
+      differentSignature = BLSSignature.random(101);
     }
 
     BeaconBlock testBeaconBlock =

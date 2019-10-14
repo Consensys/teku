@@ -38,8 +38,8 @@ class GossipMessageHandlerTest {
   private static final Topic BLOCKS_TOPIC = new Topic("/eth2/beacon_block/ssz");
   private static final Topic ATTESTATIONS_TOPIC = new Topic("/eth2/beacon_attestation/ssz");
 
-  private static final BeaconBlock BLOCK1 = DataStructureUtil.randomBeaconBlock(1);
-  private static final BeaconBlock BLOCK2 = DataStructureUtil.randomBeaconBlock(2);
+  private static final BeaconBlock BLOCK1 = DataStructureUtil.randomBeaconBlock(1, 100);
+  private static final BeaconBlock BLOCK2 = DataStructureUtil.randomBeaconBlock(2, 100);
   private static final Attestation ATTESTATION1 = DataStructureUtil.randomAttestation(3);
   private static final Attestation ATTESTATION2 = DataStructureUtil.randomAttestation(4);
 
