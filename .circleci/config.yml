@@ -51,7 +51,7 @@ jobs:
           name: Build
           no_output_timeout: 20m
           command: |
-            ./graldew --no-daemon --parallel build -x :eth-reference-tests:test
+            ./gradlew --no-daemon --parallel build -x :eth-reference-tests:test
 
   referenceTests:
     executor: medium_executor
