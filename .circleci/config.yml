@@ -79,10 +79,19 @@ jobs:
       - prepare
       - attach_workspace:
           at: ~/project
+      - restore_cache:
+          name: Restore cached reference test downloads
+          keys:
+            - reftests-{{ checksum "build.gradle" }}
       - run:
           name: FetchReferenceTests
           command: |
             ./gradlew getRefTests
+      - save_cache:
+          name: Caching gradle dependencies
+          key: reftests-{{ checksum "build.gradle" }}
+          paths:
+            - build/refTests
       - run:
           name: ReferenceTests
           // TODO: Skip non-reference tests here
