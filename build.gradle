@@ -201,9 +201,10 @@ task downloadRefTests(type: Download) {
 task getRefTests() {
   dependsOn downloadRefTests
   doLast {
-    ant.untar(src: "${buildDir}/refTests/general.tar.gz", dest: "eth2.0-spec-tests/", compression: "gzip")
-    ant.untar(src: "${buildDir}/refTests/minimal.tar.gz", dest: "eth2.0-spec-tests/", compression: "gzip")
-    ant.untar(src: "${buildDir}/refTests/mainnet.tar.gz", dest: "eth2.0-spec-tests/", compression: "gzip")
+    def expandDir = 'eth-reference-tests/src/test/resources/eth2.0-spec-tests/'
+    ant.untar(src: "${buildDir}/refTests/general.tar.gz", dest: expandDir, compression: "gzip")
+    ant.untar(src: "${buildDir}/refTests/minimal.tar.gz", dest: expandDir, compression: "gzip")
+    ant.untar(src: "${buildDir}/refTests/mainnet.tar.gz", dest: expandDir, compression: "gzip")
   }
 }
 
