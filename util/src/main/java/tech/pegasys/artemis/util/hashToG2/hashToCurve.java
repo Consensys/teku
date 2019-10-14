@@ -61,7 +61,7 @@ public class hashToCurve {
    * @param cipherSuite the salt value for HKDF_Extract
    * @return a point from the G2 group representing the message hash
    */
-  static G2Point hashToCurve(Bytes message, Bytes cipherSuite) {
+  public static G2Point hashToCurve(Bytes message, Bytes cipherSuite) {
 
     FP2Immutable u0 = hashToBase(message, (byte) 0, cipherSuite);
     FP2Immutable u1 = hashToBase(message, (byte) 1, cipherSuite);
@@ -88,7 +88,7 @@ public class hashToCurve {
    * @param message the message to be hashed. This is usually the 32 byte message digest
    * @return a point from the G2 group representing the message hash
    */
-  static G2Point hashToCurve(Bytes message) {
+  public static G2Point hashToCurve(Bytes message) {
     return hashToCurve(message, CIPHER_SUITE);
   }
 }

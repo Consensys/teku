@@ -1,3 +1,7 @@
+plugins {
+  id 'me.champeau.gradle.jmh' version '0.4.8'
+}
+
 dependencies {
   api 'org.bouncycastle:bcprov-jdk15on'
 
