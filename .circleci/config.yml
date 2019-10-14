@@ -86,7 +86,16 @@ jobs:
           name: ReferenceTests
           // TODO: Skip non-reference tests here
           command: |
-            ./gradlew --no-daemon --no-parallel :eth-reference-tests:test
+            cd eth-reference-tests/src/test/java
+            CLASSNAMES=$(circleci tests glob "**/*.java" \
+              | cut -c 1- | sed 's@/@.@g' \
+              | sed 's/.\{5\}$//' \
+              | circleci tests split --split-by=timings --timings-type=classname)
+            cd ../../..
+            # Format the arguments to "./gradlew test"
+            GRADLE_ARGS=$(echo $CLASSNAMES | awk '{for (i=1; i<=NF; i++) print "--tests",$i}')
+            echo "Prepared arguments for Gradle: $GRADLE_ARGS"
+            ./gradlew --no-daemon --no-parallel :eth-reference-tests:test $GRADLE_ARGS
       - capture_test_results
 
   javadoc:
