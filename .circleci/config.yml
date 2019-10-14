@@ -6,8 +6,8 @@ executors:
     resource_class: medium
     working_directory: ~/project
     environment:
-      JAVA_TOOL_OPTIONS: -Xmx2g
-      _JAVA_OPTIONS: -Xmx2g
+      JAVA_TOOL_OPTIONS: -Xmx3g
+      _JAVA_OPTIONS: -Xmx3g
       GRADLE_OPTS: -Dorg.gradle.daemon=false -Dorg.gradle.parallel=true -Dorg.gradle.workers.max=2
 
 commands:
@@ -137,17 +137,17 @@ jobs:
       - run:
           name: Publish
           command: |
-            echo "Not really publishing at this stage."
+            ./gradlew --no-daemon --prallel bintrayUpload
 
 workflows:
   version: 2
   standard_build:
     jobs:
       - assemble
-      - unitTests:
+      - referenceTests:
           requires:
             - assemble
-      - referenceTests:
+      - unitTests:
           requires:
             - assemble
       - docker:
@@ -158,6 +158,11 @@ workflows:
 #          requires:
 #            - assemble
       - publish:
+          filters:
+            branches:
+              only:
+#                - master
+                - /^release-.*/
           requires:
             - unitTests
             - referenceTests
