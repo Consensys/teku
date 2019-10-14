@@ -193,6 +193,9 @@ def refTestDownloadDir = "${buildDir}/refTests/${refTestVersion}"
 def refTestExpandDir = 'eth-reference-tests/src/test/resources/eth2.0-spec-tests/'
 
 task downloadRefTests(type: Download) {
+  doFirst {
+    println "Download target ${refTestDownloadDir}/general.tar.gz: " + (file(refTestDownloadDir + "/general.tar.gz").exists())
+  }
   src([
       "${refTestBaseUrl}/${refTestVersion}/general.tar.gz",
       "${refTestBaseUrl}/${refTestVersion}/minimal.tar.gz",
