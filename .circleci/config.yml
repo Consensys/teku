@@ -86,7 +86,7 @@ jobs:
           name: ReferenceTests
           // TODO: Skip non-reference tests here
           command: |
-            ./gradlew --no-daemon --parallel test
+            ./gradlew --no-daemon --parallel :eth-reference-tests:test
       - capture_test_results
 
   javadoc:
@@ -131,7 +131,7 @@ jobs:
 
 workflows:
   version: 2
-  default:
+  standard_build:
     jobs:
       - assemble
       - unitTests:
