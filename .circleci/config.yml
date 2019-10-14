@@ -73,6 +73,7 @@ jobs:
 
 
   referenceTests:
+    parallelism: 5
     executor: medium_executor
     steps:
       - prepare
