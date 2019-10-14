@@ -86,8 +86,8 @@ jobs:
       - run:
           name: Debug
           command: |
-            ls -R build/refTests
-            ls ~/project/eth-reference-tests/src/test/resources/eth2.0-spec-tests/tests/
+            ls -R build/refTests || true
+            ls ~/project/eth-reference-tests/src/test/resources/eth2.0-spec-tests/tests/ || true
       - run:
           name: FetchReferenceTests
           command: |
