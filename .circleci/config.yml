@@ -33,9 +33,9 @@ jobs:
       - save_cache:
           name: Caching gradle dependencies
           key: deps-{{ checksum "build.gradle" }}-{{ .Branch }}-{{ .Revision }}
-            paths:
-              - .gradle
-              - ~/.gradle
+          paths:
+            - .gradle
+            - ~/.gradle
       - persist_to_workspace:
           root: ~/project
           paths:
