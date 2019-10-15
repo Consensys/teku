@@ -85,7 +85,10 @@ jobs:
       - run:
           name: FetchReferenceTests
           command: |
-            ./gradlew --no-daemon -Partemis.reftest.download.dir=$HOME/refTests expandRefTests
+            if [ ! -d "eth-reference-tests/src/test/resources/eth2.0-spec-tests/tests" ]
+            then
+              ./gradlew --no-daemon expandRefTests
+            fi
       - run:
           name: ReferenceTests
           // TODO: Skip non-reference tests here
@@ -104,8 +107,7 @@ jobs:
           name: Caching reference tests
           key: reftests-{{ checksum "build.gradle" }}
           paths:
-            - ~/refTests
-#            - eth-reference-tests/src/test/resources/eth2.0-spec-tests/
+            - eth-reference-tests/src/test/resources/eth2.0-spec-tests/
       - capture_test_results
 
   javadoc:
