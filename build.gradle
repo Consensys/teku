@@ -192,18 +192,14 @@ def refTestBaseUrl = 'https://github.com/ethereum/eth2.0-spec-tests/releases/dow
 def refTestDownloadDir = project.hasProperty("artemis.reftest.download.dir") ? project.property("artemis.reftest.download.dir") + "/${refTestVersion}" : "${buildDir}/refTests/${refTestVersion}"
 def refTestExpandDir = 'eth-reference-tests/src/test/resources/eth2.0-spec-tests/'
 
-task downloadRefTests {
-  doLast {
-    download {
-      src([
-          "${refTestBaseUrl}/${refTestVersion}/general.tar.gz",
-          "${refTestBaseUrl}/${refTestVersion}/minimal.tar.gz",
-          "${refTestBaseUrl}/${refTestVersion}/mainnet.tar.gz"
-      ])
-      dest "${refTestDownloadDir}"
-      overwrite false
-    }
-  }
+task downloadRefTests(type: Download) {
+  src([
+      "${refTestBaseUrl}/${refTestVersion}/general.tar.gz",
+      "${refTestBaseUrl}/${refTestVersion}/minimal.tar.gz",
+      "${refTestBaseUrl}/${refTestVersion}/mainnet.tar.gz"
+  ])
+  dest "${refTestDownloadDir}"
+  overwrite false
 }
 
 task expandRefTestsGeneral(type: Copy, dependsOn: downloadRefTests) {
