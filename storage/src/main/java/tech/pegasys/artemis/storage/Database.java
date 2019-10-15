@@ -60,9 +60,9 @@ public class Database {
   private ConcurrentMap<Checkpoint, BeaconState> checkpoint_states;
   private ConcurrentMap<UnsignedLong, LatestMessage> latest_messages;
 
-  Database(String dbFileName, boolean clearOldDatabase) {
+  Database(String dbFileName, boolean clearOldDB) {
     try {
-      if (clearOldDatabase) Files.deleteIfExists(Paths.get(dbFileName));
+      if (clearOldDB) Files.deleteIfExists(Paths.get(dbFileName));
     } catch (IOException e) {
       STDOUT.log(Level.WARN, "Failed to clear old database");
     }
