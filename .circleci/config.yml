@@ -7,7 +7,7 @@ executors:
     working_directory: ~/project
     environment:
       JAVA_TOOL_OPTIONS: -Xmx2g
-      _JAVA_OPTIONS: -Xmx2g
+#      _JAVA_OPTIONS: -Xmx2g
       GRADLE_OPTS: -Dorg.gradle.daemon=false -Dorg.gradle.parallel=true -Dorg.gradle.workers.max=2
 
 commands:
