@@ -109,18 +109,6 @@ jobs:
             - eth-reference-tests/src/test/resources/eth2.0-spec-tests/
       - capture_test_results
 
-  javadoc:
-    executor: medium_executor
-    steps:
-      - prepare
-      - attach_workspace:
-          at: ~/project
-      - run:
-          name: JavaDoc
-          no_output_timeout: 20m
-          command: |
-            ./gradlew --no-daemon --parallel javadoc
-
   docker:
     executor: medium_executor
     steps:
@@ -164,17 +152,13 @@ workflows:
           requires:
             - assemble
             - unitTests
-#      - javadoc:
-#          requires:
-#            - assemble
       - publish:
           filters:
             branches:
               only:
-#                - master
+                - master
                 - /^release-.*/
           requires:
             - unitTests
             - referenceTests
             - docker
-#            - javadoc
