@@ -1,0 +1,169 @@
+version: 2.1
+executors:
+  medium_executor:
+    docker:
+      - image: circleci/openjdk:11.0.4-jdk-stretch
+    resource_class: medium
+    working_directory: ~/project
+    environment:
+      JAVA_TOOL_OPTIONS: -Xmx2g
+      _JAVA_OPTIONS: -Xmx2g
+      GRADLE_OPTS: -Dorg.gradle.daemon=false -Dorg.gradle.parallel=true -Dorg.gradle.workers.max=2
+
+commands:
+  prepare:
+    description: "Prepare"
+    steps:
+      - checkout
+      - restore_cache:
+          name: Restore cached gradle dependencies
+          keys:
+            - deps-{{ checksum "build.gradle" }}-{{ .Branch }}-{{ .Revision }}
+            - deps-{{ checksum "build.gradle" }}
+            - deps-
+  capture_test_results:
+    description: "Capture test results"
+    steps:
+      - run:
+          name: "Gather test results"
+          command: |
+            FILES=`find . -name test-results`
+            for FILE in $FILES
+            do
+              MODULE=`echo "$FILE" | sed -e 's@./\(.*\)/build/test-results@\1@'`
+              TARGET="build/test-results/$MODULE"
+              mkdir -p "$TARGET"
+              cp -rf ${FILE}/test/* "build/test-results/$MODULE"
+            done
+      - store_test_results:
+          path: build/test-results
+
+jobs:
+  assemble:
+    executor: medium_executor
+    steps:
+      - prepare
+      - run:
+          name: Assemble
+          command: |
+            ./gradlew --no-daemon --parallel clean compileJava compileTestJava assemble
+      - save_cache:
+          name: Caching gradle dependencies
+          key: deps-{{ checksum "build.gradle" }}-{{ .Branch }}-{{ .Revision }}
+          paths:
+            - .gradle
+            - ~/.gradle
+      - persist_to_workspace:
+          root: ~/project
+          paths:
+            - ./
+
+  unitTests:
+    executor: medium_executor
+    steps:
+      - prepare
+      - attach_workspace:
+          at: ~/project
+      - run:
+          name: UnitTests
+          no_output_timeout: 20m
+          command: |
+            ./gradlew --no-daemon --parallel test -x :eth-reference-tests:test
+      - capture_test_results
+
+  referenceTests:
+    parallelism: 4
+    executor: medium_executor
+    steps:
+      - prepare
+      - attach_workspace:
+          at: ~/project
+      - restore_cache:
+          name: Restore cached reference test downloads
+          keys:
+            - reftests-{{ checksum "build.gradle" }}
+      - run:
+          name: FetchReferenceTests
+          command: |
+            if [ ! -d "eth-reference-tests/src/test/resources/eth2.0-spec-tests/tests" ]
+            then
+              ./gradlew --no-daemon expandRefTests
+            fi
+      - run:
+          name: ReferenceTests
+          command: |
+            cd eth-reference-tests/src/test/java
+            CLASSNAMES=$(circleci tests glob "**/*.java" \
+              | cut -c 1- | sed 's@/@.@g' \
+              | sed 's/.\{5\}$//' \
+              | circleci tests split --split-by=timings --timings-type=classname)
+            cd ../../../..
+            # Format the arguments to "./gradlew test"
+            GRADLE_ARGS=$(echo $CLASSNAMES | awk '{for (i=1; i<=NF; i++) print "--tests",$i}')
+            echo "Prepared arguments for Gradle: $GRADLE_ARGS"
+            ./gradlew --no-daemon --no-parallel :eth-reference-tests:test $GRADLE_ARGS
+      - save_cache:
+          name: Caching reference tests
+          key: reftests-{{ checksum "build.gradle" }}
+          paths:
+            - eth-reference-tests/src/test/resources/eth2.0-spec-tests/
+      - capture_test_results
+
+  docker:
+    executor: medium_executor
+    steps:
+      - prepare
+      - attach_workspace:
+          at: ~/project
+      - setup_remote_docker
+      - run:
+          name: Docker
+          command: |
+            ./gradlew --no-daemon --parallel distDocker
+
+      - run:
+          name: DockerWhiteblock
+          command: |
+            ./gradlew --no-daemon --parallel distDockerWhiteblock
+
+  publish:
+    executor: medium_executor
+    steps:
+      - prepare
+      - attach_workspace:
+          at: ~/project
+      - run:
+          name: Publish
+          command: |
+            ./gradlew --no-daemon --prallel bintrayUpload
+
+workflows:
+  version: 2
+  standard_build:
+    jobs:
+      - assemble
+      - referenceTests:
+          requires:
+            - assemble
+          filters:
+            branches:
+              only:
+                - master
+                - /^release-.*/
+      - unitTests:
+          requires:
+            - assemble
+      - docker:
+          requires:
+            - assemble
+            - unitTests
+      - publish:
+          filters:
+            branches:
+              only:
+                - master
+                - /^release-.*/
+          requires:
+            - unitTests
+            - referenceTests
+            - docker
