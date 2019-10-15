@@ -104,7 +104,7 @@ jobs:
           name: Caching reference tests
           key: reftests-{{ checksum "build.gradle" }}
           paths:
-            - $HOME/refTests
+            - ~/refTests
             - eth-reference-tests/src/test/resources/eth2.0-spec-tests/
       - capture_test_results
 
