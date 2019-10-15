@@ -20,7 +20,9 @@ import static tech.pegasys.artemis.util.hashToG2.FP2Immutable.ONE;
 import static tech.pegasys.artemis.util.hashToG2.Helper.HKDF_Expand;
 import static tech.pegasys.artemis.util.hashToG2.Helper.HKDF_Extract;
 import static tech.pegasys.artemis.util.hashToG2.Helper.HMAC_SHA256;
+import static tech.pegasys.artemis.util.hashToG2.Helper.P;
 import static tech.pegasys.artemis.util.hashToG2.Helper.ROOTS_OF_UNITY;
+import static tech.pegasys.artemis.util.hashToG2.Helper.addChain;
 import static tech.pegasys.artemis.util.hashToG2.Helper.clear_h2;
 import static tech.pegasys.artemis.util.hashToG2.Helper.hashToBase;
 import static tech.pegasys.artemis.util.hashToG2.Helper.iso3;
@@ -41,6 +43,11 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.util.mikuli.G2Point;
 
 class HelperTest {
+
+  // The enormous exponent used in mapToCurve
+  private static final BIG THREE = new BIG(3);
+  private static final DBIGExtended EXPONENT =
+      new DBIGExtended(BIG.mul(P.plus(THREE), P.minus(THREE))).fshr(4);
 
   /*
    * HMAC_SHA256 Tests
@@ -384,6 +391,20 @@ class HelperTest {
     FP2Immutable actual =
         hashToBase(Bytes.wrap("sample".getBytes(UTF_8)), (byte) 1, Bytes.fromHexString("0x02"));
 
+    assertEquals(expected, actual);
+  }
+
+  @Test
+  void addChainTest() {
+    // An arbitrary element
+    FP2Immutable a =
+        new FP2Immutable(
+            bigFromHex(
+                "0x081d1f51370a9e6f59ed62fa605e891c40b20d98601fe7c3fa6a8efabcf0c1c3a0ff05963ab388a4b9ec4d35e97c0863"),
+            bigFromHex(
+                "0x01fbe48c2b138982f28317f684364327114adecadd94b599347bded08ef7b7ba22d814f1c64f1c77023ec9425383c184"));
+    FP2Immutable expected = a.pow(EXPONENT);
+    FP2Immutable actual = addChain(a);
     assertEquals(expected, actual);
   }
 

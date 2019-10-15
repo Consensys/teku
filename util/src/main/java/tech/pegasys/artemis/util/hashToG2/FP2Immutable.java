@@ -172,6 +172,21 @@ public final class FP2Immutable {
   }
 
   /**
+   * Calculate the element to the power of (2 ^ n)
+   *
+   * @param n the number of times to square the element
+   * @return the element to the power of (2 ^ n)
+   */
+  FP2Immutable sqrs(int n) {
+    FP2 result = new FP2(this.fp2);
+    while (n-- > 0) {
+      result.sqr();
+    }
+    result.norm();
+    return new FP2Immutable(result);
+  }
+
+  /**
    * Raise this element to an integer exponent.
    *
    * @param exponent the exponent

@@ -21,12 +21,12 @@ import static tech.pegasys.artemis.util.hashToG2.FP2Immutable.ONE;
 import static tech.pegasys.artemis.util.hashToG2.FP2Immutable.THRESHOLD;
 import static tech.pegasys.artemis.util.hashToG2.FP2Immutable.ZERO;
 import static tech.pegasys.artemis.util.hashToG2.Helper.P;
+import static tech.pegasys.artemis.util.hashToG2.Util.bigFromHex;
 
 import org.apache.milagro.amcl.BLS381.BIG;
 import org.apache.milagro.amcl.BLS381.DBIG;
 import org.apache.milagro.amcl.BLS381.FP2;
 import org.apache.milagro.amcl.BLS381.ROM;
-import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 
 public class FP2ImmutableTest {
@@ -35,10 +35,8 @@ public class FP2ImmutableTest {
   private static final FP2Immutable XSQ = new FP2Immutable(new BIG(0), new BIG(2));
   // An eighth root of unity
   private static final BIG RV1 =
-      BIG.fromBytes(
-          Bytes.fromHexString(
-                  "0x06af0e0437ff400b6831e36d6bd17ffe48395dabc2d3435e77f76e17009241c5ee67992f72ec05f4c81084fbede3cc09")
-              .toArray());
+      bigFromHex(
+          "0x06af0e0437ff400b6831e36d6bd17ffe48395dabc2d3435e77f76e17009241c5ee67992f72ec05f4c81084fbede3cc09");
   private static final FP2Immutable ROOT = new FP2Immutable(RV1, P.minus(RV1));
 
   @Test
@@ -145,6 +143,20 @@ public class FP2ImmutableTest {
     assertEquals(ROOT, ROOT.pow(new DBIG(9)));
     assertEquals(ONE, ROOT.pow(new DBIG(9872)));
     assertEquals(ROOT, ROOT.pow(new DBIG(9873)));
+  }
+
+  @Test
+  void sqrsTest() {
+    // An arbitrary element
+    FP2Immutable a =
+        new FP2Immutable(
+            bigFromHex(
+                "0x081d1f51370a9e6f59ed62fa605e891c40b20d98601fe7c3fa6a8efabcf0c1c3a0ff05963ab388a4b9ec4d35e97c0863"),
+            bigFromHex(
+                "0x01fbe48c2b138982f28317f684364327114adecadd94b599347bded08ef7b7ba22d814f1c64f1c77023ec9425383c184"));
+    FP2Immutable actual = a.sqrs(16);
+    FP2Immutable expected = a.pow(65536);
+    assertEquals(expected, actual);
   }
 
   @Test
