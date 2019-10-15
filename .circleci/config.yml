@@ -71,8 +71,7 @@ jobs:
             ./gradlew --no-daemon --parallel test -x :eth-reference-tests:test
       - capture_test_results
 
-  referenceTests:
-    parallelism: 4
+  downloadReferenceTests:
     executor: medium_executor
     steps:
       - prepare
@@ -89,9 +88,25 @@ jobs:
             then
               ./gradlew --no-daemon expandRefTests
             fi
+      - save_cache:
+          name: Caching reference tests
+          key: reftests-{{ checksum "build.gradle" }}
+          paths:
+            - eth-reference-tests/src/test/resources/eth2.0-spec-tests/
+      - persist_to_workspace:
+          root: ~/project
+          paths:
+            - ./
+
+  referenceTests:
+    parallelism: 4
+    executor: medium_executor
+    steps:
+      - prepare
+      - attach_workspace:
+          at: ~/project
       - run:
           name: ReferenceTests
-          // TODO: Skip non-reference tests here
           command: |
             cd eth-reference-tests/src/test/java
             CLASSNAMES=$(circleci tests glob "**/*.java" \
@@ -103,11 +118,6 @@ jobs:
             GRADLE_ARGS=$(echo $CLASSNAMES | awk '{for (i=1; i<=NF; i++) print "--tests",$i}')
             echo "Prepared arguments for Gradle: $GRADLE_ARGS"
             ./gradlew --no-daemon --no-parallel :eth-reference-tests:test $GRADLE_ARGS
-      - save_cache:
-          name: Caching reference tests
-          key: reftests-{{ checksum "build.gradle" }}
-          paths:
-            - eth-reference-tests/src/test/resources/eth2.0-spec-tests/
       - capture_test_results
 
   javadoc:
@@ -155,9 +165,13 @@ workflows:
   standard_build:
     jobs:
       - assemble
+      - downloadReferenceTests:
+          requires:
+            - assemble
       - referenceTests:
           requires:
             - assemble
+            - downloadReferenceTests
       - unitTests:
           requires:
             - assemble
