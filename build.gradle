@@ -191,7 +191,7 @@ def refTestVersion = 'v0.8.3'
 def refTestBaseUrl = 'https://github.com/ethereum/eth2.0-spec-tests/releases/download'
 def refTestDownloadDir = "${buildDir}/refTests/${refTestVersion}"
 def refTestExpandDir = 'eth-reference-tests/src/test/resources/eth2.0-spec-tests/'
-println "Pretask Download target ${refTestDownloadDir}/general.tar.gz: " + (file(refTestDownloadDir + "/general.tar.gz").exists())
+
 task downloadRefTestsGeneral(type: Download) {
   doFirst {
     println "Download target ${refTestDownloadDir}/general.tar.gz: " + (file(refTestDownloadDir + "/general.tar.gz").exists())

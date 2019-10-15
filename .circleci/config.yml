@@ -109,6 +109,7 @@ jobs:
           paths:
             - build/refTests
             - eth-reference-tests/src/test/resources/eth2.0-spec-tests/
+            - .gradle
       - capture_test_results
 
   javadoc:
