@@ -189,47 +189,34 @@ allprojects {
 
 def refTestVersion = 'v0.8.3'
 def refTestBaseUrl = 'https://github.com/ethereum/eth2.0-spec-tests/releases/download'
-def refTestDownloadDir = "${buildDir}/refTests/${refTestVersion}"
+def refTestDownloadDir = project.hasProperty("artemis.reftest.download.dir") ? project.property("artemis.reftest.download.dir") + "/${refTestVersion}" : "${buildDir}/refTests/${refTestVersion}"
 def refTestExpandDir = 'eth-reference-tests/src/test/resources/eth2.0-spec-tests/'
-
-task downloadRefTestsGeneral(type: Download) {
-  doFirst {
-    println "Download target ${refTestDownloadDir}/general.tar.gz: " + (file(refTestDownloadDir + "/general.tar.gz").exists())
+println "Pretask Download target ${refTestDownloadDir}/general.tar.gz: " + (file(refTestDownloadDir + "/general.tar.gz").exists())
+task downloadRefTests {
+  doLast {
+    download {
+      src([
+          "${refTestBaseUrl}/${refTestVersion}/general.tar.gz",
+          "${refTestBaseUrl}/${refTestVersion}/minimal.tar.gz",
+          "${refTestBaseUrl}/${refTestVersion}/mainnet.tar.gz"
+      ])
+      dest "${refTestDownloadDir}"
+      overwrite false
+    }
   }
-  src "${refTestBaseUrl}/${refTestVersion}/general.tar.gz"
-  dest "${refTestDownloadDir}/general.tar.gz"
-  overwrite false
 }
 
-task downloadRefTestsMainnet(type: Download) {
-  doFirst {
-    println "Download target ${refTestDownloadDir}/mainnet.tar.gz: " + (file(refTestDownloadDir + "/mainnet.tar.gz").exists())
-  }
-  src "${refTestBaseUrl}/${refTestVersion}/mainnet.tar.gz"
-  dest "${refTestDownloadDir}/mainnet.tar.gz"
-  overwrite false
-}
-
-task downloadRefTestsMinimal(type: Download) {
-  doFirst {
-    println "Download target ${refTestDownloadDir}/minimal.tar.gz: " + (file(refTestDownloadDir + "/minimal.tar.gz").exists())
-  }
-  src "${refTestBaseUrl}/${refTestVersion}/minimal.tar.gz"
-  dest "${refTestDownloadDir}/minimal.tar.gz"
-  overwrite false
-}
-
-task expandRefTestsGeneral(type: Copy, dependsOn: downloadRefTestsGeneral) {
+task expandRefTestsGeneral(type: Copy, dependsOn: downloadRefTests) {
   from tarTree("${refTestDownloadDir}/general.tar.gz")
   into refTestExpandDir
 }
 
-task expandRefTestsMainnet(type: Copy, dependsOn: downloadRefTestsMainnet) {
+task expandRefTestsMainnet(type: Copy, dependsOn: downloadRefTests) {
   from tarTree("${refTestDownloadDir}/mainnet.tar.gz")
   into refTestExpandDir
 }
 
-task expandRefTestsMinimal(type: Copy, dependsOn: downloadRefTestsMinimal) {
+task expandRefTestsMinimal(type: Copy, dependsOn: downloadRefTests) {
   from tarTree("${refTestDownloadDir}/minimal.tar.gz")
   into refTestExpandDir
 }

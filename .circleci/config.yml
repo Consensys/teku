@@ -71,7 +71,6 @@ jobs:
             ./gradlew --no-daemon --parallel test -x :eth-reference-tests:test
       - capture_test_results
 
-
   referenceTests:
     parallelism: 4
     executor: medium_executor
@@ -86,9 +85,7 @@ jobs:
       - run:
           name: FetchReferenceTests
           command: |
-            ls /home/circleci/project/build/refTests/v0.8.3/general.tar.gz || true
-            pwd
-            ./gradlew --no-daemon --no-parallel --debug expandRefTests
+            ./gradlew --no-daemon -Partemis.reftest.download.dir=$HOME/refTests expandRefTests
       - run:
           name: ReferenceTests
           // TODO: Skip non-reference tests here
@@ -107,9 +104,8 @@ jobs:
           name: Caching reference tests
           key: reftests-{{ checksum "build.gradle" }}
           paths:
-            - build/refTests
+            - $HOME/refTests
             - eth-reference-tests/src/test/resources/eth2.0-spec-tests/
-            - .gradle
       - capture_test_results
 
   javadoc:
