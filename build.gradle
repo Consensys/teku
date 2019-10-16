@@ -15,20 +15,20 @@ plugins {
   id 'de.undercouch.download' version '4.0.0'
 }
 
-defaultTasks 'build','checkLicenses'
+defaultTasks 'build', 'checkLicenses'
 
 def buildAliases = [
-  'dev': [
-    'spotlessApply',
-    'build',
-    'checkLicenses',
-    'javadoc'],
-  'mash': [ 
-    'clean',
-    'spotlessApply',
-    'build',
-    'test']
-  ]
+    'dev': [
+        'spotlessApply',
+        'build',
+        'checkLicenses',
+        'javadoc'],
+    'mash': [
+        'clean',
+        'spotlessApply',
+        'build',
+        'test']
+]
 
 def expandedTaskList = []
 
@@ -57,13 +57,13 @@ allprojects {
     if ("$System.env.JENKINS_URL" == 'https://jenkins.pegasys.tech/') {
       jcenter()
       mavenCentral()
-      maven { url  "https://consensys.bintray.com/pegasys-repo" }
-      maven { url  "https://dl.bintray.com/tuweni/tuweni/" }
+      maven { url "https://consensys.bintray.com/pegasys-repo" }
+      maven { url "https://dl.bintray.com/tuweni/tuweni/" }
     } else {
       jcenter()
       mavenCentral()
-      maven { url  "https://consensys.bintray.com/pegasys-repo" }
-      maven { url  "https://dl.bintray.com/tuweni/tuweni/" }
+      maven { url "https://consensys.bintray.com/pegasys-repo" }
+      maven { url "https://dl.bintray.com/tuweni/tuweni/" }
     }
   }
 
@@ -74,9 +74,9 @@ allprojects {
     }
   }
 
-  buildScan { 
+  buildScan {
     termsOfServiceUrl = "https://gradle.com/terms-of-service"
-    termsOfServiceAgree = "yes" 
+    termsOfServiceAgree = "yes"
   }
 
   apply plugin: 'com.diffplug.gradle.spotless'
@@ -91,7 +91,7 @@ allprojects {
         exclude '**/src/main/java/tech/pegasys/artemis/Constants.java'
         exclude '**/proto'
       }
-      
+
 
       importOrder 'tech.pegasys', 'net.consensys', 'java', ''
       trimTrailingWhitespace()
@@ -103,14 +103,14 @@ allprojects {
 
   tasks.withType(JavaCompile) {
     options.compilerArgs += [
-      '-Xlint:unchecked',
-      '-Xlint:cast',
-      '-Xlint:rawtypes',
-      '-Xlint:overloads',
-      '-Xlint:divzero',
-      '-Xlint:finally',
-      '-Xlint:static',
-      '-Werror',
+        '-Xlint:unchecked',
+        '-Xlint:cast',
+        '-Xlint:rawtypes',
+        '-Xlint:overloads',
+        '-Xlint:divzero',
+        '-Xlint:finally',
+        '-Xlint:static',
+        '-Werror',
     ]
 
     options.errorprone {
@@ -158,14 +158,14 @@ allprojects {
    */
   test {
     jvmArgs = [
-      '-Xmx4g',
-      '-XX:-UseGCOverheadLimit'
+        '-Xmx4g',
+        '-XX:-UseGCOverheadLimit'
     ]
     Set toImport = [
-      'test.ethereum.include',
-      'test.ethereum.state.eip',
-      'root.log.level',
-      'evm.log.level'
+        'test.ethereum.include',
+        'test.ethereum.state.eip',
+        'root.log.level',
+        'evm.log.level'
     ]
     testLogging.showStandardStreams = true
     for (String name : toImport) {
@@ -225,15 +225,15 @@ subprojects {
 
   tasks.withType(Test) {
     // If GRADLE_MAX_TEST_FORKS is not set, use half the available processors
-   maxParallelForks = (System.getenv('GRADLE_MAX_TEST_FORKS') ?: (Runtime.runtime.availableProcessors().intdiv(2) ?: 1)).toInteger()
+    maxParallelForks = (System.getenv('GRADLE_MAX_TEST_FORKS') ?: (Runtime.runtime.availableProcessors().intdiv(2) ?: 1)).toInteger()
   }
 
-    test {
-        useJUnitPlatform()
-        reports {
-            junitXml.enabled = true
-        }
+  test {
+    useJUnitPlatform()
+    reports {
+      junitXml.enabled = true
     }
+  }
 
   tasks.withType(JavaCompile) {
     options.fork = true
@@ -274,7 +274,7 @@ subprojects {
     testSupportArtifacts
   }
 
-  task testSupportJar (type: Jar) {
+  task testSupportJar(type: Jar) {
     baseName = "${project.name}-support-test"
     from sourceSets.testSupport.output
   }
@@ -311,7 +311,7 @@ subprojects {
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
   }
 
-  task integrationTest(type: Test, dependsOn:["compileTestJava"]){
+  task integrationTest(type: Test, dependsOn: ["compileTestJava"]) {
     group = "verification"
     description = "Runs the Artemis integration tests"
 
@@ -326,28 +326,30 @@ jar { enabled = false }
 apply plugin: 'application'
 mainClassName = "tech.pegasys.artemis.Artemis"
 applicationDefaultJvmArgs = [
-  "-Djava.library.path=ARTEMIS_HOME/native",
-  "-Dvertx.disableFileCPResolving=true",
-  "-Dartemis.home=ARTEMIS_HOME",
-  // We shutdown log4j ourselves, as otherwise his shutdown hook runs before our own and whatever
-  // happens during shutdown is not logged.
-  "-Dlog4j.shutdownHookEnabled=false"
+    "-Djava.library.path=ARTEMIS_HOME/native",
+    "-Dvertx.disableFileCPResolving=true",
+    "-Dartemis.home=ARTEMIS_HOME",
+    // We shutdown log4j ourselves, as otherwise his shutdown hook runs before our own and whatever
+    // happens during shutdown is not logged.
+    "-Dlog4j.shutdownHookEnabled=false"
 ]
 
 run {
-  if(project.hasProperty('generateFlow')){
+  if (project.hasProperty('generateFlow')) {
     def flowJVMArgs = [
-      "-javaagent:${userHome}/.flow/resources/javaagent.jar",
-      "-Dflow.agent.include=tech.pegasys.artemis,tech.pegasys.artemis.services.beaconchain,tech.pegasys.artemis.statetransition,tech.pegasys.artemis.statetransition.util",
-      "-Dflow.agent.exclude=tech.pegasys.artemis.datastructures.state,tech.pegasys.artemis.datastructures.blocks,tech.pegasys.artemis.datastructures.operations,tech.pegasys.artemis.datastructures.util.bitwise,tech.pegasys.artemis.util.hashtree,tech.pegasys.artemis.util.alogger,tech.pegasys.artemis.storage,tech.pegasys.artemis.util.bls,tech.pegasys.artemis.util.mikuli,tech.pegasys.artemis.networking.p2p,tech.pegasys.artemis.validator.coordinator",
-      "-Dflow.agent.autostart",
-      "-Dflow.agent.execution-name=artemis"
-      ]
-   applicationDefaultJvmArgs.addAll(flowJVMArgs)
+        "-javaagent:${userHome}/.flow/resources/javaagent.jar",
+        "-Dflow.agent.include=tech.pegasys.artemis,tech.pegasys.artemis.services.beaconchain,tech.pegasys.artemis.statetransition,tech.pegasys.artemis.statetransition.util",
+        "-Dflow.agent.exclude=tech.pegasys.artemis.datastructures.state,tech.pegasys.artemis.datastructures.blocks,tech.pegasys.artemis.datastructures.operations,tech.pegasys.artemis.datastructures.util.bitwise,tech.pegasys.artemis.util.hashtree,tech.pegasys.artemis.util.alogger,tech.pegasys.artemis.storage,tech.pegasys.artemis.util.bls,tech.pegasys.artemis.util.mikuli,tech.pegasys.artemis.networking.p2p,tech.pegasys.artemis.validator.coordinator",
+        "-Dflow.agent.autostart",
+        "-Dflow.agent.execution-name=artemis"
+    ]
+    applicationDefaultJvmArgs.addAll(flowJVMArgs)
   }
   args project.hasProperty("artemis.run.args") ? project.property("artemis.run.args").toString().split("\\s+") : []
   doFirst {
-    applicationDefaultJvmArgs = applicationDefaultJvmArgs.collect{it.replace('ARTEMIS_HOME', "$buildDir/artemis")}
+    applicationDefaultJvmArgs = applicationDefaultJvmArgs.collect {
+      it.replace('ARTEMIS_HOME', "$buildDir/artemis")
+    }
   }
 }
 
@@ -372,7 +374,7 @@ distributions {
   }
 }
 
-installDist { }
+installDist {}
 
 distTar {
   dependsOn checkLicenses
@@ -503,7 +505,8 @@ task jacocoRootReport(type: JacocoReport) {
   additionalSourceDirs.from = files(subprojects.sourceSets.main.allSource.srcDirs)
   sourceDirectories.from = files(subprojects.sourceSets.main.allSource.srcDirs)
   classDirectories.from = files(subprojects.sourceSets.main.output)
-  executionData.from = files(subprojects.jacocoTestReport.executionData)  //how to exclude some package/classes com.test.**
+  executionData.from = files(subprojects.jacocoTestReport.executionData)
+  //how to exclude some package/classes com.test.**
   reports {
     xml.enabled true
     csv.enabled true
@@ -519,7 +522,7 @@ configurations { annotationProcessor }
 
 // Prevent errorprone-checks being dependent upon errorprone-checks!
 // However, ensure all subprojects comply with the custom rules.
-configure(subprojects.findAll {it.name != 'errorprone-checks'}) {
+configure(subprojects.findAll { it.name != 'errorprone-checks' }) {
   dependencies { annotationProcessor project(":errorprone-checks") }
 
   tasks.withType(JavaCompile) {
@@ -566,3 +569,26 @@ bintray {
 
 bintrayUpload.mustRunAfter(distTar)
 bintrayUpload.mustRunAfter(distZip)
+
+task dockerUpload(type: Exec) {
+  dependsOn([distDocker, distDockerWhiteblock])
+  def imageRepos = 'pegasyseng'
+  def imageName = "${imageRepos}/artemis"
+  def image = "${imageName}:${rootProject.version}"
+  def cmd = "docker push '${image}'"
+  def additionalTags = ['develop']
+  if (project.hasProperty('branch') && project.property('branch') == 'master') {
+    additionalTags.add('develop')
+  }
+
+  if (! version ==~ /.*-SNAPSHOT/) {
+    additionalTags.add('latest')
+    additionalTags.add(version.split(/\./)[0..1].join('.'))
+  }
+
+  additionalTags.each { tag ->
+    cmd += " && docker tag '${image}' && docker push '${imageName}:${tag.trim()}'"
+  }
+  executable "sh"
+  args "-c", cmd
+}

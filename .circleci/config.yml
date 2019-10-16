@@ -136,6 +136,18 @@ jobs:
           command: |
             ./gradlew --no-daemon --parallel bintrayUpload
 
+  publishDocker:
+    executor: medium_executor
+    steps:
+      - prepare
+      - attach_workspace:
+          at: ~/project
+      - run:
+          name: Publish Docker
+          command: |
+            docker login --username "${DOCKER_USER}" --password "${DOCKER_PASSWORD}"
+            ./gradlew --no-daemon --parallel "-Pbranch=${CIRCLE_BRANCH}" dockerUpload
+
 workflows:
   version: 2
   circleci:
@@ -157,6 +169,16 @@ workflows:
             - assemble
             - unitTests
       - publish:
+          filters:
+            branches:
+              only:
+                - master
+                - /^release-.*/
+          requires:
+            - unitTests
+            - referenceTests
+            - docker
+      - publishDocker:
           filters:
             branches:
               only:
