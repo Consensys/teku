@@ -113,14 +113,6 @@ public final class FP2Immutable {
     return new FP2Immutable(result);
   }
 
-  /** Wrap FP2 dbl() method to return a result */
-  FP2Immutable dbl() {
-    FP2 result = new FP2(this.fp2);
-    result.add(this.fp2);
-    result.norm();
-    return new FP2Immutable(result);
-  }
-
   /** Wrap FP2 sub() method to return a result */
   FP2Immutable sub(FP2Immutable a) {
     FP2 result = new FP2(this.fp2);
@@ -148,6 +140,18 @@ public final class FP2Immutable {
     FP2 result = new FP2(this.fp2);
     result.inverse();
     return new FP2Immutable(result);
+  }
+
+  /** Multiply by a small scalar */
+  FP2Immutable mul(int c) {
+    FP2 result = new FP2(this.fp2);
+    result.imul(c);
+    return new FP2Immutable(result);
+  }
+
+  /** Double an element */
+  FP2Immutable dbl() {
+    return new FP2Immutable(this.mul(2));
   }
 
   /**
