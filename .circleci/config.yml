@@ -134,7 +134,7 @@ jobs:
       - run:
           name: Publish
           command: |
-            ./gradlew --no-daemon --prallel bintrayUpload
+            ./gradlew --no-daemon --parallel bintrayUpload
 
 workflows:
   version: 2
