@@ -573,7 +573,7 @@ task dockerUpload(type: Exec) {
   def imageName = "${imageRepos}/artemis"
   def image = "${imageName}:${rootProject.version}"
   def cmd = "docker push '${image}'"
-  def additionalTags = ['develop']
+  def additionalTags = []
   if (project.hasProperty('branch') && project.property('branch') == 'master') {
     additionalTags.add('develop')
   }
@@ -584,7 +584,7 @@ task dockerUpload(type: Exec) {
   }
 
   additionalTags.each { tag ->
-    cmd += " && docker tag '${image}' && docker push '${imageName}:${tag.trim()}'"
+    cmd += " && docker tag '${image}' '${imageName}:${tag.trim()}' && docker push '${imageName}:${tag.trim()}'"
   }
   executable "sh"
   args "-c", cmd
