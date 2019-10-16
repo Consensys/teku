@@ -80,7 +80,7 @@ jobs:
       - capture_test_results
 
   referenceTests:
-    parallelism: 3
+    parallelism: 4
     executor: large_executor
     steps:
       - prepare
