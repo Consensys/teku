@@ -184,7 +184,6 @@ workflows:
               only:
                 - master
                 - /^release-.*/
-                - circleci
           requires:
             - unitTests
             - referenceTests
@@ -195,7 +194,6 @@ workflows:
               only:
                 - master
                 - /^release-.*/
-                - circleci
           requires:
             - unitTests
             - referenceTests

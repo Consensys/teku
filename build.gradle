@@ -532,8 +532,6 @@ apply plugin: 'com.jfrog.bintray'
 def bintrayUser = project.hasProperty('bintrayUser') ? project.property('bintrayUser') : System.getenv('BINTRAY_USER')
 def bintrayKey = project.hasProperty('bintrayApiKey') ? project.property('bintrayApiKey') : System.getenv('BINTRAY_KEY')
 
-println "Using bintray user: ${bintrayUser}"
-
 def bintrayPackage = bintray.pkg {
   repo = 'pegasys-repo'
   name = 'artemis'
