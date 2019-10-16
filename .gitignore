@@ -9,6 +9,7 @@
 *.db
 .classpath
 .DS_Store
+.gradletasknamecache
 .externalToolBuilders/
 .gradle/
 .idea/

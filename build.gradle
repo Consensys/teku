@@ -11,6 +11,8 @@ plugins {
   id 'net.ltgt.errorprone' version '0.7' apply false
   id 'net.researchgate.release' version '2.7.0'
   id 'com.gradle.build-scan' version '2.1'
+  id 'me.champeau.gradle.jmh' version '0.4.8' apply false
+  id 'de.undercouch.download' version '4.0.0'
 }
 
 defaultTasks 'build','checkLicenses'
@@ -21,7 +23,7 @@ def buildAliases = [
     'build',
     'checkLicenses',
     'javadoc'],
-  'mash': [ 
+  'mash': [
     'clean',
     'spotlessApply',
     'build',
@@ -72,9 +74,9 @@ allprojects {
     }
   }
 
-  buildScan { 
+  buildScan {
     termsOfServiceUrl = "https://gradle.com/terms-of-service"
-    termsOfServiceAgree = "yes" 
+    termsOfServiceAgree = "yes"
   }
 
   apply plugin: 'com.diffplug.gradle.spotless'
@@ -89,7 +91,7 @@ allprojects {
         exclude '**/src/main/java/tech/pegasys/artemis/Constants.java'
         exclude '**/proto'
       }
-      
+
 
       importOrder 'tech.pegasys', 'net.consensys', 'java', ''
       trimTrailingWhitespace()
@@ -184,6 +186,38 @@ allprojects {
     options.encoding = 'UTF-8'
   }
 }
+
+def refTestVersion = 'v0.8.3'
+def refTestBaseUrl = 'https://github.com/ethereum/eth2.0-spec-tests/releases/download'
+def refTestDownloadDir = "${buildDir}/refTests/${refTestVersion}"
+def refTestExpandDir = 'eth-reference-tests/src/test/resources/eth2.0-spec-tests/'
+
+task downloadRefTests(type: Download) {
+  src([
+      "${refTestBaseUrl}/${refTestVersion}/general.tar.gz",
+      "${refTestBaseUrl}/${refTestVersion}/minimal.tar.gz",
+      "${refTestBaseUrl}/${refTestVersion}/mainnet.tar.gz"
+  ])
+  dest "${refTestDownloadDir}"
+  overwrite false
+}
+
+task expandRefTestsGeneral(type: Copy, dependsOn: downloadRefTests) {
+  from tarTree("${refTestDownloadDir}/general.tar.gz")
+  into refTestExpandDir
+}
+
+task expandRefTestsMainnet(type: Copy, dependsOn: downloadRefTests) {
+  from tarTree("${refTestDownloadDir}/mainnet.tar.gz")
+  into refTestExpandDir
+}
+
+task expandRefTestsMinimal(type: Copy, dependsOn: downloadRefTests) {
+  from tarTree("${refTestDownloadDir}/minimal.tar.gz")
+  into refTestExpandDir
+}
+
+task expandRefTests(dependsOn: [expandRefTestsGeneral, expandRefTestsMainnet, expandRefTestsMinimal])
 
 task deploy() {}
 
@@ -532,3 +566,26 @@ bintray {
 
 bintrayUpload.mustRunAfter(distTar)
 bintrayUpload.mustRunAfter(distZip)
+
+task dockerUpload(type: Exec) {
+  dependsOn([distDocker, distDockerWhiteblock])
+  def imageRepos = 'pegasyseng'
+  def imageName = "${imageRepos}/artemis"
+  def image = "${imageName}:${rootProject.version}"
+  def cmd = "docker push '${image}'"
+  def additionalTags = ['develop']
+  if (project.hasProperty('branch') && project.property('branch') == 'master') {
+    additionalTags.add('develop')
+  }
+
+  if (! version ==~ /.*-SNAPSHOT/) {
+    additionalTags.add('latest')
+    additionalTags.add(version.split(/\./)[0..1].join('.'))
+  }
+
+  additionalTags.each { tag ->
+    cmd += " && docker tag '${image}' && docker push '${imageName}:${tag.trim()}'"
+  }
+  executable "sh"
+  args "-c", cmd
+}

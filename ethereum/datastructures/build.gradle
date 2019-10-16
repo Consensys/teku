@@ -1,3 +1,7 @@
+plugins {
+  id 'me.champeau.gradle.jmh'
+}
+
 dependencies {
   implementation project(':util')
   implementation project(':pow')
@@ -18,10 +22,15 @@ dependencies {
   }
 }
 
+
 configurations { testArtifacts }
 task testJar (type: Jar) {
   baseName = "${project.name}-test"
   from sourceSets.test.output
+}
+
+jmh {
+  include = '.*'
 }
 
 
