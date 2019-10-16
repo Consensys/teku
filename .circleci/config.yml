@@ -134,7 +134,7 @@ jobs:
       - run:
           name: Publish
           command: |
-            ./gradlew --no-daemon --parallel bintrayUpload
+            ./gradlew --no-daemon --parallel "-PbintrayUser=${BINTRAY_USER}" "-PbintrayApiKey=${BINTRAY_KEY}" bintrayUpload
 
   publishDocker:
     executor: medium_executor
