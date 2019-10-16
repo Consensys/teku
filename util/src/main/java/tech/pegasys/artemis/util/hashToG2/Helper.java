@@ -29,6 +29,8 @@ public class Helper {
 
   // The field modulus
   static final BIG P = new BIG(ROM.Modulus);
+  // The field modulus as a BigInteger
+  private static final BigInteger MODULUS = new BigInteger(P.toString(), 16);
 
   // These are eighth-roots of unity
   static final BIG RV1 =
@@ -275,7 +277,6 @@ public class Helper {
 
     // The output of HKDF_Expand is 64 bytes, which is too large for a BIG, so we use BigInteger
     BigInteger tBig;
-    BigInteger modulus = new BigInteger(P.toString(), 16);
 
     // Do HKDF-Extract
     Bytes m_prime = HKDF_Extract(salt, message);
@@ -288,7 +289,7 @@ public class Helper {
             Bytes.of((byte) 1));
     t = HKDF_Expand(m_prime, info, 64);
 
-    tBig = os2ip(t).mod(modulus);
+    tBig = os2ip(t).mod(MODULUS);
     BIG e1 = bigFromBigInt(tBig);
 
     // Do second HKDF-Expand
@@ -299,7 +300,7 @@ public class Helper {
             Bytes.of((byte) 2));
     t = HKDF_Expand(m_prime, info, 64);
 
-    tBig = os2ip(t).mod(modulus);
+    tBig = os2ip(t).mod(MODULUS);
     BIG e2 = bigFromBigInt(tBig);
 
     return new FP2Immutable(e1, e2);
