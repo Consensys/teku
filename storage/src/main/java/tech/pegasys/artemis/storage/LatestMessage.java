@@ -15,8 +15,12 @@ package tech.pegasys.artemis.storage;
 
 import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
-public class LatestMessage {
+public class LatestMessage implements SimpleOffsetSerializable {
+
+  // The number of SimpleSerialize basic types in this SSZ Container/POJO.
+  public static final int SSZ_FIELD_COUNT = 2;
 
   private UnsignedLong epoch;
   private Bytes32 root;
@@ -40,5 +44,10 @@ public class LatestMessage {
 
   public void setRoot(Bytes32 root) {
     this.root = root;
+  }
+
+  @Override
+  public int getSSZFieldCount() {
+    return SSZ_FIELD_COUNT;
   }
 }

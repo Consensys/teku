@@ -11,4 +11,5 @@ dependencies {
   implementation 'org.apache.logging.log4j:log4j-api'
   runtime 'org.apache.logging.log4j:log4j-core'
   implementation 'org.apache.commons:commons-lang3:3.6'
+  compile group: 'org.mapdb', name: 'mapdb', version: '3.0.7'
 }

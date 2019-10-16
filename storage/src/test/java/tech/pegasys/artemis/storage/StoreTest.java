@@ -92,6 +92,65 @@ class StoreTest {
   }
 
   @Test
+  public void shouldApplyChangesToDisk() {
+    final Database db = new Database("test.db", true);
+
+    final Transaction transaction = store.startTransaction();
+    final Bytes32 blockRoot = DataStructureUtil.randomBytes32(SEED);
+    final Checkpoint justifiedCheckpoint = new Checkpoint(UnsignedLong.valueOf(2), blockRoot);
+    final Checkpoint finalizedCheckpoint = new Checkpoint(UnsignedLong.ONE, blockRoot);
+    final BeaconBlock block = randomBeaconBlock(10, 100);
+    final BeaconState state = randomBeaconState(100);
+    final UnsignedLong time = UnsignedLong.valueOf(3);
+    transaction.putBlock(blockRoot, block);
+    transaction.putBlockState(blockRoot, state);
+    transaction.setFinalizedCheckpoint(finalizedCheckpoint);
+    transaction.setJustifiedCheckpoint(justifiedCheckpoint);
+    transaction.putCheckpointState(justifiedCheckpoint, state);
+    transaction.setTime(time);
+
+    db.insert(transaction);
+
+    assertEquals(block, db.getBlock(blockRoot).get());
+    assertEquals(state, db.getBlock_state(blockRoot).get());
+    assertEquals(finalizedCheckpoint, db.getFinalizedCheckpoint().get());
+    assertEquals(justifiedCheckpoint, db.getJustifiedCheckpoint().get());
+    assertEquals(state, db.getCheckpoint_state(justifiedCheckpoint).get());
+    assertEquals(time, db.getTime().get());
+  }
+
+  @Test
+  public void shouldPersistOnDisk() {
+    final Database db = new Database("test.db", true);
+
+    final Transaction transaction = store.startTransaction();
+    final Bytes32 blockRoot = DataStructureUtil.randomBytes32(SEED);
+    final Checkpoint justifiedCheckpoint = new Checkpoint(UnsignedLong.valueOf(2), blockRoot);
+    final Checkpoint finalizedCheckpoint = new Checkpoint(UnsignedLong.ONE, blockRoot);
+    final BeaconBlock block = randomBeaconBlock(10, 100);
+    final BeaconState state = randomBeaconState(100);
+    final UnsignedLong time = UnsignedLong.valueOf(3);
+    transaction.putBlock(blockRoot, block);
+    transaction.putBlockState(blockRoot, state);
+    transaction.setFinalizedCheckpoint(finalizedCheckpoint);
+    transaction.setJustifiedCheckpoint(justifiedCheckpoint);
+    transaction.putCheckpointState(justifiedCheckpoint, state);
+    transaction.setTime(time);
+
+    db.insert(transaction);
+    db.close();
+
+    final Database newDB = new Database("test.db", false);
+
+    assertEquals(block, newDB.getBlock(blockRoot).get());
+    assertEquals(state, newDB.getBlock_state(blockRoot).get());
+    assertEquals(finalizedCheckpoint, newDB.getFinalizedCheckpoint().get());
+    assertEquals(justifiedCheckpoint, newDB.getJustifiedCheckpoint().get());
+    assertEquals(state, newDB.getCheckpoint_state(justifiedCheckpoint).get());
+    assertEquals(time, newDB.getTime().get());
+  }
+
+  @Test
   public void removesOldObjectsFromStore() {
     int numValidObjects = 2;
     int numInvalidObjects = 2;
