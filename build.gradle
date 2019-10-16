@@ -23,7 +23,7 @@ def buildAliases = [
     'build',
     'checkLicenses',
     'javadoc'],
-  'mash': [ 
+  'mash': [
     'clean',
     'spotlessApply',
     'build',
@@ -74,9 +74,9 @@ allprojects {
     }
   }
 
-  buildScan { 
+  buildScan {
     termsOfServiceUrl = "https://gradle.com/terms-of-service"
-    termsOfServiceAgree = "yes" 
+    termsOfServiceAgree = "yes"
   }
 
   apply plugin: 'com.diffplug.gradle.spotless'
@@ -91,7 +91,7 @@ allprojects {
         exclude '**/src/main/java/tech/pegasys/artemis/Constants.java'
         exclude '**/proto'
       }
-      
+
 
       importOrder 'tech.pegasys', 'net.consensys', 'java', ''
       trimTrailingWhitespace()
@@ -566,3 +566,26 @@ bintray {
 
 bintrayUpload.mustRunAfter(distTar)
 bintrayUpload.mustRunAfter(distZip)
+
+task dockerUpload(type: Exec) {
+  dependsOn([distDocker, distDockerWhiteblock])
+  def imageRepos = 'pegasyseng'
+  def imageName = "${imageRepos}/artemis"
+  def image = "${imageName}:${rootProject.version}"
+  def cmd = "docker push '${image}'"
+  def additionalTags = ['develop']
+  if (project.hasProperty('branch') && project.property('branch') == 'master') {
+    additionalTags.add('develop')
+  }
+
+  if (! version ==~ /.*-SNAPSHOT/) {
+    additionalTags.add('latest')
+    additionalTags.add(version.split(/\./)[0..1].join('.'))
+  }
+
+  additionalTags.each { tag ->
+    cmd += " && docker tag '${image}' && docker push '${imageName}:${tag.trim()}'"
+  }
+  executable "sh"
+  args "-c", cmd
+}
