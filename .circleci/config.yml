@@ -9,6 +9,15 @@ executors:
       JAVA_TOOL_OPTIONS: -Xmx2g
       GRADLE_OPTS: -Dorg.gradle.daemon=false -Dorg.gradle.parallel=true -Dorg.gradle.workers.max=2
 
+  large_executor:
+    docker:
+      - image: circleci/openjdk:11.0.4-jdk-stretch
+    resource_class: large
+    working_directory: ~/project
+    environment:
+      JAVA_TOOL_OPTIONS: -Xmx3g
+      GRADLE_OPTS: -Dorg.gradle.daemon=false -Dorg.gradle.parallel=true -Dorg.gradle.workers.max=2
+
 commands:
   prepare:
     description: "Prepare"
@@ -72,7 +81,7 @@ jobs:
 
   referenceTests:
     parallelism: 4
-    executor: medium_executor
+    executor: large_executor
     steps:
       - prepare
       - attach_workspace:
@@ -100,7 +109,7 @@ jobs:
             # Format the arguments to "./gradlew test"
             GRADLE_ARGS=$(echo $CLASSNAMES | awk '{for (i=1; i<=NF; i++) print "--tests",$i}')
             echo "Prepared arguments for Gradle: $GRADLE_ARGS"
-            ./gradlew --no-daemon --no-parallel :eth-reference-tests:test $GRADLE_ARGS
+            ./gradlew --no-daemon --parallel :eth-reference-tests:test $GRADLE_ARGS
       - save_cache:
           name: Caching reference tests
           key: reftests-{{ checksum "build.gradle" }}
@@ -142,6 +151,7 @@ jobs:
       - prepare
       - attach_workspace:
           at: ~/project
+      - setup_remote_docker
       - run:
           name: Publish Docker
           command: |
