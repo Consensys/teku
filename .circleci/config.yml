@@ -183,7 +183,7 @@ workflows:
               only:
                 - master
                 - /^release-.*/
-                  - circleci
+                - circleci
           requires:
             - unitTests
             - referenceTests
