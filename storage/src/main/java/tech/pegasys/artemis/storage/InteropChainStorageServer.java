@@ -36,6 +36,7 @@ import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.datastructures.util.StartupUtil;
 import tech.pegasys.artemis.storage.events.DBStoreValidEvent;
 import tech.pegasys.artemis.storage.events.NodeStartEvent;
+import tech.pegasys.artemis.storage.events.StoreDiskUpdateEvent;
 import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.alogger.ALogger.Color;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
@@ -46,10 +47,20 @@ public class InteropChainStorageServer {
   private final EventBus eventBus;
   private final ArtemisConfiguration config;
 
+  private final Database database;
+
   public InteropChainStorageServer(EventBus eventBus, ArtemisConfiguration config) {
     this.eventBus = eventBus;
     this.config = config;
     eventBus.register(this);
+
+    this.database = new Database("artemis.db", true);
+  }
+
+  @Subscribe
+  public void onStoreDiskUpdate(StoreDiskUpdateEvent storeDiskUpdateEvent) {
+    Store.Transaction transaction = storeDiskUpdateEvent.getTransaction();
+    database.insert(transaction);
   }
 
   @Subscribe

@@ -54,6 +54,7 @@ import tech.pegasys.artemis.storage.events.DBStoreValidEvent;
 import tech.pegasys.artemis.storage.events.NodeDataLoadedEvent;
 import tech.pegasys.artemis.storage.events.NodeStartEvent;
 import tech.pegasys.artemis.storage.events.SlotEvent;
+import tech.pegasys.artemis.storage.events.StoreDiskUpdateEvent;
 import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 import tech.pegasys.artemis.util.time.Timer;
@@ -226,6 +227,7 @@ public class BeaconChainController {
         final Store.Transaction transaction = chainStorageClient.getStore().startTransaction();
         on_tick(transaction, currentTime);
         transaction.commit();
+        eventBus.post(new StoreDiskUpdateEvent(transaction));
         if (chainStorageClient
                 .getStore()
                 .getTime()

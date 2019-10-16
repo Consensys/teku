@@ -353,5 +353,23 @@ public class Store implements ReadOnlyStore {
       return latest_messages.containsKey(validatorIndex)
           || Store.this.containsLatestMessage(validatorIndex);
     }
+
+    // Disk Storage Related Functions
+
+    public Map<Bytes32, BeaconBlock> getBlocks() {
+      return blocks;
+    }
+
+    public Map<Bytes32, BeaconState> getBlockStates() {
+      return block_states;
+    }
+
+    public Map<Checkpoint, BeaconState> getCheckpointStates() {
+      return checkpoint_states;
+    }
+
+    public Map<UnsignedLong, LatestMessage> getLatestMessages() {
+      return latest_messages;
+    }
   }
 }
