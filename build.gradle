@@ -15,7 +15,7 @@ plugins {
   id 'de.undercouch.download' version '4.0.0'
 }
 
-defaultTasks 'build', 'checkLicenses'
+defaultTasks 'build','checkLicenses'
 
 def buildAliases = [
     'dev': [
@@ -57,13 +57,13 @@ allprojects {
     if ("$System.env.JENKINS_URL" == 'https://jenkins.pegasys.tech/') {
       jcenter()
       mavenCentral()
-      maven { url "https://consensys.bintray.com/pegasys-repo" }
-      maven { url "https://dl.bintray.com/tuweni/tuweni/" }
+      maven { url  "https://consensys.bintray.com/pegasys-repo" }
+      maven { url  "https://dl.bintray.com/tuweni/tuweni/" }
     } else {
       jcenter()
       mavenCentral()
-      maven { url "https://consensys.bintray.com/pegasys-repo" }
-      maven { url "https://dl.bintray.com/tuweni/tuweni/" }
+      maven { url  "https://consensys.bintray.com/pegasys-repo" }
+      maven { url  "https://dl.bintray.com/tuweni/tuweni/" }
     }
   }
 
@@ -274,7 +274,7 @@ subprojects {
     testSupportArtifacts
   }
 
-  task testSupportJar(type: Jar) {
+  task testSupportJar (type: Jar) {
     baseName = "${project.name}-support-test"
     from sourceSets.testSupport.output
   }
@@ -311,7 +311,7 @@ subprojects {
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
   }
 
-  task integrationTest(type: Test, dependsOn: ["compileTestJava"]) {
+  task integrationTest(type: Test, dependsOn:["compileTestJava"]){
     group = "verification"
     description = "Runs the Artemis integration tests"
 
@@ -335,7 +335,7 @@ applicationDefaultJvmArgs = [
 ]
 
 run {
-  if (project.hasProperty('generateFlow')) {
+  if(project.hasProperty('generateFlow')){
     def flowJVMArgs = [
         "-javaagent:${userHome}/.flow/resources/javaagent.jar",
         "-Dflow.agent.include=tech.pegasys.artemis,tech.pegasys.artemis.services.beaconchain,tech.pegasys.artemis.statetransition,tech.pegasys.artemis.statetransition.util",
@@ -347,9 +347,7 @@ run {
   }
   args project.hasProperty("artemis.run.args") ? project.property("artemis.run.args").toString().split("\\s+") : []
   doFirst {
-    applicationDefaultJvmArgs = applicationDefaultJvmArgs.collect {
-      it.replace('ARTEMIS_HOME', "$buildDir/artemis")
-    }
+    applicationDefaultJvmArgs = applicationDefaultJvmArgs.collect{it.replace('ARTEMIS_HOME', "$buildDir/artemis")}
   }
 }
 
@@ -374,7 +372,7 @@ distributions {
   }
 }
 
-installDist {}
+installDist { }
 
 distTar {
   dependsOn checkLicenses
@@ -505,8 +503,7 @@ task jacocoRootReport(type: JacocoReport) {
   additionalSourceDirs.from = files(subprojects.sourceSets.main.allSource.srcDirs)
   sourceDirectories.from = files(subprojects.sourceSets.main.allSource.srcDirs)
   classDirectories.from = files(subprojects.sourceSets.main.output)
-  executionData.from = files(subprojects.jacocoTestReport.executionData)
-  //how to exclude some package/classes com.test.**
+  executionData.from = files(subprojects.jacocoTestReport.executionData)  //how to exclude some package/classes com.test.**
   reports {
     xml.enabled true
     csv.enabled true
@@ -522,7 +519,7 @@ configurations { annotationProcessor }
 
 // Prevent errorprone-checks being dependent upon errorprone-checks!
 // However, ensure all subprojects comply with the custom rules.
-configure(subprojects.findAll { it.name != 'errorprone-checks' }) {
+configure(subprojects.findAll {it.name != 'errorprone-checks'}) {
   dependencies { annotationProcessor project(":errorprone-checks") }
 
   tasks.withType(JavaCompile) {
