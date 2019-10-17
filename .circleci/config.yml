@@ -166,11 +166,11 @@ workflows:
       - referenceTests:
           requires:
             - assemble
-          filters:
-            branches:
-              only:
-                - master
-                - /^release-.*/
+#          filters:
+#            branches:
+#              only:
+#                - master
+#                - /^release-.*/
       - unitTests:
           requires:
             - assemble
