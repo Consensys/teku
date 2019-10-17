@@ -14,10 +14,13 @@
 package tech.pegasys.artemis.storage;
 
 import com.google.common.eventbus.EventBus;
+import com.google.common.eventbus.Subscribe;
+import tech.pegasys.artemis.storage.events.StoreDiskUpdateEvent;
 import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 
 public class ChainStorageServer {
+  private static final ALogger STDOUT = new ALogger("stdout");
 
   private final EventBus eventBus;
   private final ArtemisConfiguration config;
@@ -30,5 +33,11 @@ public class ChainStorageServer {
     eventBus.register(this);
 
     this.database = new Database("artemis.db", true);
+  }
+
+  @Subscribe
+  public void onStoreDiskUpdate(StoreDiskUpdateEvent storeDiskUpdateEvent) {
+    Store.Transaction transaction = storeDiskUpdateEvent.getTransaction();
+    database.insert(transaction);
   }
 }
