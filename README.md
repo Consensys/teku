@@ -1,6 +1,6 @@
 # artemis
 
- [![Build Status](https://jenkins.pegasys.tech/job/Artemis/job/master/badge/icon)](https://jenkins.pegasys.tech/job/Artemis/job/master/)
+ [![Build Status](https://circleci.com/gh/PegaSysEng/artemis.svg?style=svg)](https://circleci.com/gh/PegaSysEng/workflows/artemis)
  [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/PegasysEng/artemis/blob/master/LICENSE)
  [![Gitter chat](https://badges.gitter.im/PegaSysEng/artemis.png)](https://gitter.im/PegaSysEng/artemis)
 
