@@ -53,7 +53,7 @@ public abstract class TestSuite {
       Paths.get(
           System.getProperty("user.dir").toString(),
           "src",
-          "test",
+          "referenceTest",
           "resources",
           "eth2.0-spec-tests",
           "tests");

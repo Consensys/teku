@@ -8,14 +8,3 @@ dependencies {
   runtime 'org.apache.logging.log4j:log4j-core'
   implementation 'org.apache.tuweni:tuweni-config'
 }
-
-configurations { testArtifacts }
-task testJar (type: Jar) {
-  baseName = "${project.name}-test"
-  from sourceSets.test.output
-}
-
-artifacts {
-  testArtifacts testJar
-  testSupportArtifacts testSupportJar
-}

@@ -48,7 +48,7 @@ proto/gen/*
 *.class
 scripts/.java-version
 config/peer_ids.dat
-eth-reference-tests/src/test/resources/eth2.0-spec-tests/
+eth-reference-tests/src/referenceTest/resources/eth2.0-spec-tests/
 
 
 

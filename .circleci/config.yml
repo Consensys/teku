@@ -76,7 +76,7 @@ jobs:
           name: UnitTests
           no_output_timeout: 20m
           command: |
-            ./gradlew --no-daemon --parallel test -x :eth-reference-tests:test
+            ./gradlew --no-daemon --parallel test
       - capture_test_results
 
   referenceTests:
@@ -93,7 +93,7 @@ jobs:
       - run:
           name: FetchReferenceTests
           command: |
-            if [ ! -d "eth-reference-tests/src/test/resources/eth2.0-spec-tests/tests" ]
+            if [ ! -d "eth-reference-tests/src/referenceTest/resources/eth2.0-spec-tests/tests" ]
             then
               ./gradlew --no-daemon expandRefTests
             fi
@@ -109,12 +109,12 @@ jobs:
             # Format the arguments to "./gradlew test"
             GRADLE_ARGS=$(echo $CLASSNAMES | awk '{for (i=1; i<=NF; i++) print "--tests",$i}')
             echo "Prepared arguments for Gradle: $GRADLE_ARGS"
-            ./gradlew --no-daemon --parallel :eth-reference-tests:test $GRADLE_ARGS
+            ./gradlew --no-daemon --parallel referenceTest $GRADLE_ARGS
       - save_cache:
           name: Caching reference tests
           key: reftests-{{ checksum "build.gradle" }}
           paths:
-            - eth-reference-tests/src/test/resources/eth2.0-spec-tests/
+            - eth-reference-tests/src/referenceTest/resources/eth2.0-spec-tests/
       - capture_test_results
 
   docker:

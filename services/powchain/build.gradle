@@ -21,15 +21,3 @@ dependencies {
   testSupportImplementation 'org.assertj:assertj-core'
   testSupportImplementation 'junit:junit'
 }
-
-configurations { testArtifacts }
-task testJar (type: Jar) {
-  baseName = "${project.name}-test"
-  from sourceSets.test.output
-}
-
-
-artifacts {
-  testArtifacts testJar
-  testSupportArtifacts testSupportJar
-}
