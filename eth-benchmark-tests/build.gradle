@@ -1,0 +1,14 @@
+plugins {
+  id 'me.champeau.gradle.jmh'
+}
+
+dependencies {
+  implementation project(':util')
+  implementation project(':ethereum:datastructures')
+  implementation 'org.apache.tuweni:tuweni-bytes'
+}
+
+jmh {
+  include = '.*'
+  resultFormat = 'CSV'
+}
