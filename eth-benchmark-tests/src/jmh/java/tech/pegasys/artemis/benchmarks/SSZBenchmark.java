@@ -11,36 +11,32 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.datastructures;
+package tech.pegasys.artemis.benchmarks;
 
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomBeaconState;
 import static tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer.serialize;
 
 import org.openjdk.jmh.annotations.Benchmark;
+import org.openjdk.jmh.annotations.Measurement;
+import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.runner.RunnerException;
 import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
-public class SampleBenchmark {
+import java.util.concurrent.TimeUnit;
 
-  private static SimpleOffsetSerializable state = randomBeaconState();
+public class SSZBenchmark {
+
+  private static SimpleOffsetSerializable state = randomBeaconState(100);
 
   @Benchmark
+  @Warmup(iterations = 2, time = 100, timeUnit = TimeUnit.MILLISECONDS)
+  @Measurement(iterations = 5, time = 100, timeUnit = TimeUnit.MILLISECONDS)
   public void BeaconStateSerialization() {
     serialize(state);
   }
 
-  public static void main(String[] args) throws RunnerException {
-    Options opt =
-        new OptionsBuilder()
-            .include(".*" + SampleBenchmark.class.getSimpleName() + ".*")
-            .warmupIterations(5)
-            .measurementIterations(5)
-            .forks(1)
-            .build();
 
-    new Runner(opt).run();
-  }
 }
