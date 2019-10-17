@@ -42,14 +42,3 @@ clean {
 tasks.withType(JavaCompile) {
     options.warnings = false
 }
-
-configurations { testArtifacts }
-task testJar (type: Jar) {
-    baseName = "${project.name}-test"
-    from sourceSets.test.output
-}
-
-artifacts {
-    testArtifacts testJar
-    testSupportArtifacts testSupportJar
-}

@@ -13,7 +13,10 @@ plugins {
   id 'com.gradle.build-scan' version '2.1'
   id 'me.champeau.gradle.jmh' version '0.4.8' apply false
   id 'de.undercouch.download' version '4.0.0'
+  id 'org.unbroken-dome.test-sets' version '2.2.1'
 }
+
+apply plugin: 'org.unbroken-dome.test-sets'
 
 defaultTasks 'build','checkLicenses'
 
@@ -190,7 +193,7 @@ allprojects {
 def refTestVersion = 'v0.8.3'
 def refTestBaseUrl = 'https://github.com/ethereum/eth2.0-spec-tests/releases/download'
 def refTestDownloadDir = "${buildDir}/refTests/${refTestVersion}"
-def refTestExpandDir = 'eth-reference-tests/src/test/resources/eth2.0-spec-tests/'
+def refTestExpandDir = 'eth-reference-tests/src/referenceTest/resources/eth2.0-spec-tests/'
 
 task downloadRefTests(type: Download) {
   src([
@@ -222,18 +225,20 @@ task expandRefTests(dependsOn: [expandRefTestsGeneral, expandRefTestsMainnet, ex
 task deploy() {}
 
 subprojects {
+  apply plugin: 'org.unbroken-dome.test-sets'
+
+  testSets {
+    referenceTest
+  }
 
   tasks.withType(Test) {
     // If GRADLE_MAX_TEST_FORKS is not set, use half the available processors
    maxParallelForks = (System.getenv('GRADLE_MAX_TEST_FORKS') ?: (Runtime.runtime.availableProcessors().intdiv(2) ?: 1)).toInteger()
-  }
-
-    test {
-        useJUnitPlatform()
-        reports {
-            junitXml.enabled = true
-        }
+    useJUnitPlatform()
+    reports {
+      junitXml.enabled = true
     }
+  }
 
   tasks.withType(JavaCompile) {
     options.fork = true

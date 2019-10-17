@@ -1,24 +1,20 @@
 jar { enabled = false }
 
-repositories {
-  jcenter()
-}
-
 dependencies {
-  testCompile project(':util')
-  testCompile project(':ethereum:datastructures')
-  testCompile project(':ethereum:statetransition')
-  testCompile project(':storage')
+  referenceTestImplementation project(':util')
+  referenceTestImplementation project(':ethereum:datastructures')
+  referenceTestImplementation project(':ethereum:statetransition')
+  referenceTestImplementation project(':storage')
 
-  compile 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
-  testCompile 'org.miracl.milagro.amcl:milagro-crypto-java:0.4.0'
-  implementation 'org.apache.tuweni:tuweni-bytes'
-  implementation 'org.apache.commons:commons-lang3:3.6'
-  testImplementation 'org.mockito:mockito-core:2.28.2'
-  testCompile 'com.fasterxml.jackson.core:jackson-databind'
-  testCompile 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
-  testCompile 'org.junit.jupiter:junit-jupiter-api'
-  testCompile 'org.junit.jupiter:junit-jupiter-params'
+  referenceTestImplementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
+  referenceTestImplementation 'org.miracl.milagro.amcl:milagro-crypto-java:0.4.0'
+  referenceTestImplementation 'org.apache.tuweni:tuweni-bytes'
+  referenceTestImplementation 'org.apache.commons:commons-lang3:3.6'
+  referenceTestImplementation 'org.mockito:mockito-core:2.28.2'
+  referenceTestImplementation 'com.fasterxml.jackson.core:jackson-databind'
+  referenceTestImplementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
+  referenceTestImplementation 'org.junit.jupiter:junit-jupiter-api'
+  referenceTestImplementation 'org.junit.jupiter:junit-jupiter-params'
 
-  testRuntime 'org.junit.jupiter:junit-jupiter-engine'
+  referenceTestRuntime 'org.junit.jupiter:junit-jupiter-engine'
 }
