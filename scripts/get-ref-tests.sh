@@ -1,6 +1,6 @@
 #!/bin/bash
 
-cd eth-reference-tests/src/test/resources/
+cd eth-reference-tests/src/referenceTest/resources/
 rm -rf eth2.0-spec-tests && mkdir -p eth2.0-spec-tests/tests
 curl -L -o general.tar.gz https://github.com/ethereum/eth2.0-spec-tests/releases/download/v0.8.3/general.tar.gz
 curl -L -o mainnet.tar.gz https://github.com/ethereum/eth2.0-spec-tests/releases/download/v0.8.3/mainnet.tar.gz
