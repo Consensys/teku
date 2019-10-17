@@ -24,6 +24,7 @@ import com.google.common.primitives.UnsignedLong;
 import io.libp2p.core.crypto.KeyKt;
 import io.libp2p.core.crypto.PrivKey;
 import io.vertx.core.Vertx;
+import java.io.IOException;
 import java.util.Date;
 import java.util.Objects;
 import java.util.Optional;
@@ -36,7 +37,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
-import tech.pegasys.artemis.datastructures.util.StartupUtil;
 import tech.pegasys.artemis.metrics.ArtemisMetricCategory;
 import tech.pegasys.artemis.metrics.SettableGauge;
 import tech.pegasys.artemis.networking.p2p.JvmLibP2PNetwork;
@@ -44,17 +44,13 @@ import tech.pegasys.artemis.networking.p2p.MockP2PNetwork;
 import tech.pegasys.artemis.networking.p2p.api.P2PNetwork;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.Config;
 import tech.pegasys.artemis.statetransition.StateProcessor;
-import tech.pegasys.artemis.statetransition.events.GenesisEvent;
 import tech.pegasys.artemis.statetransition.events.ValidatorAssignmentEvent;
+import tech.pegasys.artemis.statetransition.util.StartupUtil;
 import tech.pegasys.artemis.storage.ChainStorage;
 import tech.pegasys.artemis.storage.ChainStorageClient;
-import tech.pegasys.artemis.storage.InteropChainStorageServer;
 import tech.pegasys.artemis.storage.Store;
-import tech.pegasys.artemis.storage.events.DBStoreValidEvent;
-import tech.pegasys.artemis.storage.events.NodeDataLoadedEvent;
 import tech.pegasys.artemis.storage.events.NodeStartEvent;
 import tech.pegasys.artemis.storage.events.SlotEvent;
-import tech.pegasys.artemis.storage.events.StoreDiskUpdateEvent;
 import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 import tech.pegasys.artemis.util.time.Timer;
@@ -118,8 +114,32 @@ public class BeaconChainController {
     STDOUT.log(Level.DEBUG, "BeaconChainController.initStorage()");
     this.chainStorageClient = ChainStorage.Create(ChainStorageClient.class, eventBus);
     this.chainStorageClient.setGenesisTime(UnsignedLong.valueOf(config.getGenesisTime()));
-    BeaconStateWithCache initialState = StartupUtil.createInitialBeaconState(config);
-    this.chainStorageClient.setStore(InteropChainStorageServer.get_genesis_store(initialState));
+    final String startState = config.getStartState();
+    BeaconStateWithCache initialState;
+    if (startState != null) {
+      try {
+        STDOUT.log(Level.INFO, "Loading initial state from " + startState, ALogger.Color.GREEN);
+        initialState = StartupUtil.loadBeaconStateFromFile(startState);
+      } catch (final IOException e) {
+        throw new IllegalStateException("Failed to load initial state", e);
+      }
+    } else {
+      initialState = StartupUtil.createMockedStartInitialBeaconState(config);
+    }
+
+    UnsignedLong genesisTime = initialState.getGenesis_time();
+    UnsignedLong currentTime = UnsignedLong.valueOf(System.currentTimeMillis() / 1000);
+    UnsignedLong currentSlot = UnsignedLong.ZERO;
+    if (currentTime.compareTo(genesisTime) > 0) {
+      UnsignedLong deltaTime = currentTime.minus(genesisTime);
+      currentSlot = deltaTime.dividedBy(UnsignedLong.valueOf(SECONDS_PER_SLOT));
+    } else {
+      UnsignedLong timeUntilGenesis = genesisTime.minus(currentTime);
+      STDOUT.log(Level.INFO, timeUntilGenesis + " seconds until genesis.", ALogger.Color.GREEN);
+    }
+    nodeSlot = currentSlot;
+
+    this.chainStorageClient.setStore(StartupUtil.get_genesis_store(initialState));
     Store store = chainStorageClient.getStore();
     Bytes32 headBlockRoot = get_head(store);
     BeaconBlock headBlock = store.getBlock(headBlockRoot);
@@ -204,22 +224,6 @@ public class BeaconChainController {
   }
 
   @Subscribe
-  private void onDBStoreValidEvent(DBStoreValidEvent event) {
-    STDOUT.log(Level.DEBUG, "BeaconChainController::onDBStoreValidEvent");
-    final UnsignedLong slot = event.getNodeSlot();
-    if (slot.compareTo(UnsignedLong.ZERO) > 0) {
-      STDOUT.log(Level.DEBUG, "Restoring nodeSlot to: " + slot);
-      this.nodeSlot = slot;
-    } else {
-      this.stateProcessor.eth2Genesis(new GenesisEvent(event.getBeaconState()));
-      STDOUT.log(
-          Level.DEBUG,
-          "BeaconChainController::onDBStoreValidEvent -> post(new NodeDataLoadedEvent())");
-      this.eventBus.post(new NodeDataLoadedEvent());
-    }
-  }
-
-  @Subscribe
   private void onTick(Date date) {
     try {
       final UnsignedLong currentTime = UnsignedLong.valueOf(date.getTime() / 1000);
@@ -227,7 +231,6 @@ public class BeaconChainController {
         final Store.Transaction transaction = chainStorageClient.getStore().startTransaction();
         on_tick(transaction, currentTime);
         transaction.commit();
-        eventBus.post(new StoreDiskUpdateEvent(transaction));
         if (chainStorageClient
                 .getStore()
                 .getTime()

@@ -11,16 +11,23 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.datastructures.util;
+package tech.pegasys.artemis.statetransition.util;
 
+import static tech.pegasys.artemis.datastructures.Constants.GENESIS_EPOCH;
 import static tech.pegasys.artemis.datastructures.Constants.SLOTS_PER_EPOCH;
 import static tech.pegasys.artemis.datastructures.Constants.SLOTS_PER_ETH1_VOTING_PERIOD;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_of_slot;
 
 import com.google.common.primitives.UnsignedLong;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import org.apache.logging.log4j.Level;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.Hash;
 import org.apache.tuweni.ssz.SSZ;
@@ -34,6 +41,13 @@ import tech.pegasys.artemis.datastructures.operations.DepositData;
 import tech.pegasys.artemis.datastructures.operations.DepositWithIndex;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
+import tech.pegasys.artemis.datastructures.state.Checkpoint;
+import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
+import tech.pegasys.artemis.datastructures.util.MockStartBeaconStateGenerator;
+import tech.pegasys.artemis.datastructures.util.MockStartDepositGenerator;
+import tech.pegasys.artemis.datastructures.util.MockStartValidatorKeyPairFactory;
+import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
+import tech.pegasys.artemis.storage.Store;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.SSZTypes.SSZVector;
 import tech.pegasys.artemis.util.alogger.ALogger;
@@ -106,23 +120,7 @@ public final class StartupUtil {
         Hash.sha2_256(Hash.sha2_256(SSZ.encodeUInt64(voting_period.longValue()))));
   }
 
-  public static BeaconStateWithCache createInitialBeaconState(ArtemisConfiguration config) {
-    BeaconStateWithCache initialState;
-    UnsignedLong genesisTime = UnsignedLong.valueOf(config.getGenesisTime());
-    if (config.getInteropActive()) {
-      initialState = createMockedStartInitialBeaconState(config);
-    } else {
-      initialState =
-          BeaconStateUtil.initialize_beacon_state_from_eth1(
-              Bytes32.ZERO,
-              UnsignedLong.valueOf(config.getGenesisTime()),
-              newDeposits(config.getNumValidators()));
-    }
-    initialState.setGenesis_time(genesisTime);
-    return initialState;
-  }
-
-  private static BeaconStateWithCache createMockedStartInitialBeaconState(
+  public static BeaconStateWithCache createMockedStartInitialBeaconState(
       final ArtemisConfiguration config) {
     final UnsignedLong genesisTime = UnsignedLong.valueOf(config.getGenesisTime());
     final int validatorCount = config.getNumValidators();
@@ -140,5 +138,32 @@ public final class StartupUtil {
         new MockStartDepositGenerator().createDeposits(validatorKeys);
     return new MockStartBeaconStateGenerator()
         .createInitialBeaconState(genesisTime, initialDepositData);
+  }
+
+  public static BeaconStateWithCache loadBeaconStateFromFile(final String stateFile)
+      throws IOException {
+    return BeaconStateWithCache.fromBeaconState(
+        SimpleOffsetSerializer.deserialize(
+            Bytes.wrap(Files.readAllBytes(new File(stateFile).toPath())), BeaconState.class));
+  }
+
+  public static Store get_genesis_store(BeaconStateWithCache genesis_state) {
+    BeaconBlock genesis_block = new BeaconBlock(genesis_state.hash_tree_root());
+    Bytes32 root = genesis_block.signing_root("signature");
+    Checkpoint justified_checkpoint = new Checkpoint(UnsignedLong.valueOf(GENESIS_EPOCH), root);
+    Checkpoint finalized_checkpoint = new Checkpoint(UnsignedLong.valueOf(GENESIS_EPOCH), root);
+    Map<Bytes32, BeaconBlock> blocks = new HashMap<>();
+    Map<Bytes32, BeaconState> block_states = new HashMap<>();
+    Map<Checkpoint, BeaconState> checkpoint_states = new HashMap<>();
+    blocks.put(root, genesis_block);
+    block_states.put(root, new BeaconStateWithCache(genesis_state));
+    checkpoint_states.put(justified_checkpoint, new BeaconStateWithCache(genesis_state));
+    return new Store(
+        genesis_state.getGenesis_time(),
+        justified_checkpoint,
+        finalized_checkpoint,
+        blocks,
+        block_states,
+        checkpoint_states);
   }
 }

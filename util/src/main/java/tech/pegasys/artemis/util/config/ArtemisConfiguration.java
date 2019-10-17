@@ -230,7 +230,7 @@ public class ArtemisConfiguration {
     return config.getBoolean("interop.active");
   }
 
-  public String getInteropStartState() {
+  public String getStartState() {
     final String startState = config.getString("interop.startState");
     return startState == null || startState.isEmpty() ? null : startState;
   }
