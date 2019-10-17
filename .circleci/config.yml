@@ -100,7 +100,7 @@ jobs:
       - run:
           name: ReferenceTests
           command: |
-            cd eth-reference-tests/src/test/java
+            cd eth-reference-tests/src/referenceTest/java
             CLASSNAMES=$(circleci tests glob "**/*.java" \
               | cut -c 1- | sed 's@/@.@g' \
               | sed 's/.\{5\}$//' \
