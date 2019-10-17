@@ -23,7 +23,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.Level;
 import org.jetbrains.annotations.NotNull;
-
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.BeaconBlocksMessageRequest;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.BeaconBlocksMessageResponse;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.GoodbyeMessage;
@@ -132,7 +131,15 @@ public class PeerManager implements ConnectionHandler {
     return null;
   }
 
-  private BeaconBlocksMessageResponse beaconBlocks(Connection connection, BeaconBlocksMessageRequest message) {
+  private BeaconBlocksMessageResponse beaconBlocks(
+      Connection connection, BeaconBlocksMessageRequest message) {
+    STDOUT.log(
+        Level.DEBUG,
+        "Peer "
+            + connection.getSecureSession().getRemoteId()
+            + " requested BeaconBlocks starting from "
+            + message.getStartSlot()
+            + ".");
     // TODO Stub
     return new BeaconBlocksMessageResponse(null);
   }
