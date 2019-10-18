@@ -39,7 +39,7 @@ public class ServiceController {
           Class<U> beaconChainServiceType,
           Class<V> powchainServiceType,
           Class<W> chainStorageServiceType) {
-    powChainServiceActive = config.getConfig().getDepositMode().equals("test");
+    powChainServiceActive = !config.getConfig().getDepositMode().equals("test");
     chainStorageService = ServiceFactory.getInstance(chainStorageServiceType).getInstance();
     beaconChainService = ServiceFactory.getInstance(beaconChainServiceType).getInstance();
 
