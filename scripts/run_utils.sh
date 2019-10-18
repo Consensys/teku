@@ -2,8 +2,11 @@
 
 # Create the configuration file for a specific node
 create_config() {
-  local MODE="$1"; local NODE="$2"; local TOTAL="$3"; local TEMPLATE="$4"
-
+  local MODE="$1"
+  local NODE="$2"
+  local TOTAL="$3"
+  local NUM_VALIDATORS="$4"
+  local TEMPLATE="$5"
 
 
   # Set the port number to the node number plus 19000
@@ -31,6 +34,9 @@ create_config() {
   # get the private key for this node
   local PRIVATE_KEY=$(sed "$(($NODE + 2))q;d" ../config/peer_ids.dat | cut -f 1)
 
+  local START_INDEX=$(get_start_index $NODE $TOTAL $NUM_VALIDATORS)
+  local OWNED_VALIDATOR_COUNT=$(get_owned_validator_count $TOTAL $NUM_VALIDATORS)
+
   # Create the configuration file for the node
   cat $TEMPLATE | \
     sed "s/logFile\ =.*/logFile = \"artemis-$NODE.log\"/"             |# Use a unique log file
@@ -44,9 +50,10 @@ create_config() {
     awk -v peers="$PEERS" '/port/{print;print "peers = "peers;next}1' |# Update the peer list
     sed "s/numNodes\ =.*/numNodes\ =\ $TOTAL/"                        |# Update the number of nodes to the total number of nodes
     sed "s/networkInterface\ =.*/networkInterface\ =\ \"127.0.0.1\"/" |# Update the network interface to localhost
-    sed "s/networkMode\ =.*/networkMode\ =\ \"$MODE\"/" \
+    sed "s/networkMode\ =.*/networkMode\ =\ \"$MODE\"/"               |# Update the network mode
+    sed "s/ownedValidatorStartIndex\ =.*/ownedValidatorStartIndex\ =\ $START_INDEX/" |# Update the network interface to localhost
+    sed "s/ownedValidatorCount\ =.*/ownedValidatorCount\ =\ $OWNED_VALIDATOR_COUNT/" \
     > ../config/runConfig.$NODE.toml
-
 }
 
 
@@ -57,6 +64,8 @@ configure_node() {
   local MODE=$1
   local NODE=$2
   local NUM=$3
+  local NUM_VALIDATORS="$4"
+  local CONFIG_FILE="$5"
 
   # Unpack the build tar files and move them to the appropriate directory
   # for the node.
@@ -67,16 +76,13 @@ configure_node() {
   ln -sf ../../../config ./demo/node_$NODE/
   cd demo/node_$NODE && ln -sf ./bin/artemis . && cd ../../
 
-
-
   # Create the configuration file for the node
-  if [ "$4" == "" ]
+  if [ "$CONFIG_FILE" == "" ]
   then 
-    create_config $MODE $NODE $NUM "../config/config.toml"
+    create_config $MODE $NODE $NUM $NUM_VALIDATORS "../config/config.toml"
   else
-    create_config $MODE $NODE $NUM $4
+    create_config $MODE $NODE $NUM $NUM_VALIDATORS $CONFIG_FILE
   fi
-
 
   # in
   rm -rf demo/node_$NODE/*.json
@@ -166,7 +172,22 @@ generate_peers() {
   echo "${RESULT[@]}"
 }
 
+get_start_index(){
+    local NODE_INDEX=$1
+    local NUM_NODES=$2
+    local NUM_VALIDATORS=$3
 
+    local START_INDEX=$(($NODE_INDEX * ($NUM_VALIDATORS / $NUM_NODES)))
+    echo ${START_INDEX}
+}
+
+get_owned_validator_count(){
+    local NUM_NODES=$1
+    local NUM_VALIDATORS=$2
+
+    local OWNED_VALIDATOR_COUNT=$(($NUM_VALIDATORS / $NUM_NODES))
+    echo ${OWNED_VALIDATOR_COUNT}
+}
 
 # Takes a number, $1, and the name of an environment variable, $2, and sets the environment variable in the parent shell 
 # with the specified name to the hexadecimal representation of the provided number.

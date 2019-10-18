@@ -91,18 +91,10 @@ public final class StartupUtil {
       Bytes32 previous_block_root,
       Bytes32 state_root,
       SSZList<Deposit> deposits,
-      SSZList<Attestation> attestations,
-      int numValidators,
-      boolean interopActive) {
+      SSZList<Attestation> attestations) {
     BeaconBlockBody beaconBlockBody = new BeaconBlockBody();
     UnsignedLong slot = state.getSlot().plus(UnsignedLong.ONE);
-    if (interopActive) {
-      beaconBlockBody.setEth1_data(get_eth1_data_stub(state, compute_epoch_of_slot(slot)));
-    } else {
-      beaconBlockBody.setEth1_data(
-          new Eth1Data(
-              Constants.ZERO_HASH, UnsignedLong.valueOf(numValidators), Constants.ZERO_HASH));
-    }
+    beaconBlockBody.setEth1_data(get_eth1_data_stub(state, compute_epoch_of_slot(slot)));
     beaconBlockBody.setDeposits(deposits);
     beaconBlockBody.setAttestations(attestations);
     return new BeaconBlock(

@@ -88,14 +88,12 @@ public class ValidatorCoordinator {
   private HashMap<UnsignedLong, List<Triple<List<Integer>, UnsignedLong, Integer>>>
       committeeAssignments = new HashMap<>();
   private LinkedBlockingQueue<ProposerSlashing> slashings = new LinkedBlockingQueue<>();
-  private boolean interopActive;
 
   public ValidatorCoordinator(
       EventBus eventBus, ChainStorageClient chainStorageClient, ArtemisConfiguration config) {
     this.eventBus = eventBus;
     this.numValidators = config.getNumValidators();
     this.chainStorageClient = chainStorageClient;
-    this.interopActive = config.getInteropActive();
     this.stateTransition = new StateTransition(false);
     this.validators = initializeValidators(config, chainStorageClient);
     this.eventBus.register(this);
@@ -299,13 +297,7 @@ public class ValidatorCoordinator {
 
     BeaconBlock newBlock =
         StartupUtil.newBeaconBlock(
-            state,
-            blockRoot,
-            MockStateRoot,
-            newDeposits,
-            current_attestations,
-            numValidators,
-            interopActive);
+            state, blockRoot, MockStateRoot, newDeposits, current_attestations);
 
     return newBlock;
   }
