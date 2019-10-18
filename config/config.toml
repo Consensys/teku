@@ -15,7 +15,6 @@ naughtinessPercentage = 0
 constants = "minimal"
 
 [interop]
-active = false
 # when genesis time is set to 0, artemis takes genesis time as currentTime + 5 seconds.
 genesisTime = 0
 ownedValidatorStartIndex = 0

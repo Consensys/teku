@@ -21,7 +21,6 @@ import static tech.pegasys.artemis.datastructures.Constants.MAX_VALIDATORS_PER_C
 import static tech.pegasys.artemis.datastructures.Constants.SLOTS_PER_EPOCH;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_of_slot;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_domain;
-import static tech.pegasys.artemis.statetransition.util.ForkChoiceUtil.get_head;
 import static tech.pegasys.artemis.validator.coordinator.ValidatorLoader.initializeValidators;
 
 import com.google.common.eventbus.EventBus;
@@ -36,7 +35,6 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.stream.IntStream;
 import org.apache.commons.lang3.tuple.MutableTriple;
 import org.apache.commons.lang3.tuple.Triple;
 import org.apache.logging.log4j.Level;
@@ -52,10 +50,8 @@ import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.state.CrosslinkCommittee;
-import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.datastructures.util.AttestationUtil;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
-import tech.pegasys.artemis.datastructures.util.StartupUtil;
 import tech.pegasys.artemis.proto.messagesigner.MessageSignerGrpc;
 import tech.pegasys.artemis.proto.messagesigner.SignatureRequest;
 import tech.pegasys.artemis.proto.messagesigner.SignatureResponse;
@@ -64,9 +60,9 @@ import tech.pegasys.artemis.statetransition.StateTransitionException;
 import tech.pegasys.artemis.statetransition.events.ValidatorAssignmentEvent;
 import tech.pegasys.artemis.statetransition.util.EpochProcessingException;
 import tech.pegasys.artemis.statetransition.util.SlotProcessingException;
+import tech.pegasys.artemis.statetransition.util.StartupUtil;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.Store;
-import tech.pegasys.artemis.storage.events.NodeDataLoadedEvent;
 import tech.pegasys.artemis.storage.events.SlotEvent;
 import tech.pegasys.artemis.util.SSZTypes.Bitlist;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
@@ -92,16 +88,14 @@ public class ValidatorCoordinator {
   private HashMap<UnsignedLong, List<Triple<List<Integer>, UnsignedLong, Integer>>>
       committeeAssignments = new HashMap<>();
   private LinkedBlockingQueue<ProposerSlashing> slashings = new LinkedBlockingQueue<>();
-  private boolean interopActive;
 
   public ValidatorCoordinator(
       EventBus eventBus, ChainStorageClient chainStorageClient, ArtemisConfiguration config) {
     this.eventBus = eventBus;
     this.numValidators = config.getNumValidators();
     this.chainStorageClient = chainStorageClient;
-    this.interopActive = config.getInteropActive();
     this.stateTransition = new StateTransition(false);
-    this.validators = initializeValidators(config);
+    this.validators = initializeValidators(config, chainStorageClient);
     this.eventBus.register(this);
   }
 
@@ -157,26 +151,6 @@ public class ValidatorCoordinator {
       this.eventBus.post(validatorBlock);
       validatorBlock = null;
     }
-  }
-
-  @Subscribe
-  public void onNodeReadyEvent(NodeDataLoadedEvent event) {
-    final Store store = chainStorageClient.getStore();
-    final Bytes32 head = get_head(store);
-    final BeaconState genesisState = store.getBlockState(head);
-
-    // Get validator indices of our own validators
-    List<Validator> validatorRegistry = genesisState.getValidators();
-    IntStream.range(0, validatorRegistry.size())
-        .forEach(
-            i -> {
-              if (validators.containsKey(validatorRegistry.get(i).getPubkey())) {
-                STDOUT.log(
-                    Level.DEBUG,
-                    "owned index = " + i + ": " + validatorRegistry.get(i).getPubkey());
-                validators.get(validatorRegistry.get(i).getPubkey()).setValidatorIndex(i);
-              }
-            });
   }
 
   @Subscribe
@@ -323,13 +297,7 @@ public class ValidatorCoordinator {
 
     BeaconBlock newBlock =
         StartupUtil.newBeaconBlock(
-            state,
-            blockRoot,
-            MockStateRoot,
-            newDeposits,
-            current_attestations,
-            numValidators,
-            interopActive);
+            state, blockRoot, MockStateRoot, newDeposits, current_attestations);
 
     return newBlock;
   }

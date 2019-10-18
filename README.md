@@ -145,7 +145,6 @@ To configure it manually, set these options in the config.toml:
 
 ```toml
 [interop]
-active = true
 genesisTime = 5778872 #seconds since 1970-01-01 00:00:00 UTC
 ownedValidatorStartIndex = 0
 ownedValidatorCount = 8

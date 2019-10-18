@@ -66,23 +66,6 @@ public class StateProcessor {
       ChainStorageClient chainStorageClient,
       MetricsSystem metricsSystem,
       ArtemisConfiguration config) {
-    /*
-    List<Long> serializationTimeArray = new ArrayList<>();
-    List<Long> deserializationTimeArray = new ArrayList<>();
-    for (int i = 0; i < 100; i++) {
-      BeaconBlock beaconBlock = DataStructureUtil.randomBeaconBlock(100);
-      long startTime = System.currentTimeMillis();
-      Bytes serialized = SimpleOffsetSerializer.serialize(beaconBlock);
-      serializationTimeArray.add(System.currentTimeMillis() - startTime);
-      startTime = System.currentTimeMillis();
-      BeaconBlock newBeaconBlock =
-              SimpleOffsetSerializer.deserialize(serialized, BeaconBlock.class);
-      deserializationTimeArray.add(System.currentTimeMillis() - startTime);
-    }
-
-    System.out.println("serialization: " + serializationTimeArray);
-    System.out.println("deserialization: " + deserializationTimeArray);
-    */
 
     this.eventBus = eventBus;
     this.config = config;
@@ -157,9 +140,6 @@ public class StateProcessor {
   }
 
   public boolean isGenesisReasonable(UnsignedLong eth1_timestamp, List<DepositWithIndex> deposits) {
-    if (config.getInteropActive()) {
-      return false; // Interop mode never performs genesis in response to deposit events.
-    }
     final boolean afterMinGenesisTime = eth1_timestamp.compareTo(MIN_GENESIS_TIME) >= 0;
     final boolean sufficientValidators = deposits.size() >= MIN_GENESIS_ACTIVE_VALIDATOR_COUNT;
     return afterMinGenesisTime && sufficientValidators;
@@ -218,9 +198,7 @@ public class StateProcessor {
   }
 
   private void setSimulationGenesisTime(BeaconState state) {
-    if (config.getInteropActive()) {
-      state.setGenesis_time(UnsignedLong.valueOf(config.getGenesisTime()));
-    } else if (Constants.GENESIS_TIME.equals(UnsignedLong.MAX_VALUE)) {
+    if (Constants.GENESIS_TIME.equals(UnsignedLong.MAX_VALUE)) {
       Date date = new Date();
       state.setGenesis_time(
           UnsignedLong.valueOf((date.getTime() / 1000)).plus(Constants.GENESIS_START_DELAY));
