@@ -157,6 +157,10 @@ numValidators = 16
 
 ```
 
+## Deposit Simulation
+
+Click [here](pow/README.md) for setup instructions
+
 ## Code Style
 
 We use Google's Java coding conventions for the project. To reformat code, run: 
