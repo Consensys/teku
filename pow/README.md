@@ -1,10 +1,15 @@
-##Proof of Work Chain Environmental Setup
+## Proof of Work Chain Environmental Setup
+
 1. `cd` to the artemis root directory
 2. `git submodule update --init --recursive`
 3. `cd ganache-cli`
 4. `npm install`
 
-##Auto-generate DepositContract class from Vyper contract
+> Note: You will need python 2.7 for npm install to complete successfully
+
+## Auto-generate DepositContract class from Vyper contract
+
+> Note: Disregard these steps if you just want to run the simulation.
 
 Ensure you have Python3 installed before proceeding
 
