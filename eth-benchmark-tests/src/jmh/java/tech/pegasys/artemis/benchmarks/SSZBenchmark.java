@@ -16,16 +16,11 @@ package tech.pegasys.artemis.benchmarks;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomBeaconState;
 import static tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer.serialize;
 
+import java.util.concurrent.TimeUnit;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Warmup;
-import org.openjdk.jmh.runner.Runner;
-import org.openjdk.jmh.runner.RunnerException;
-import org.openjdk.jmh.runner.options.Options;
-import org.openjdk.jmh.runner.options.OptionsBuilder;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
-
-import java.util.concurrent.TimeUnit;
 
 public class SSZBenchmark {
 
@@ -37,6 +32,4 @@ public class SSZBenchmark {
   public void BeaconStateSerialization() {
     serialize(state);
   }
-
-
 }
