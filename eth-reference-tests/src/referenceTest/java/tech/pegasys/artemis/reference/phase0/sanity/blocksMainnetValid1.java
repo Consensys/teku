@@ -15,7 +15,6 @@ package tech.pegasys.artemis.reference.phase0.sanity;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.errorprone.annotations.MustBeClosed;
 import java.nio.file.Path;
@@ -32,10 +31,9 @@ import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.reference.TestSuite;
 import tech.pegasys.artemis.statetransition.StateTransition;
-import tech.pegasys.artemis.statetransition.StateTransitionException;
 
 @ExtendWith(BouncyCastleExtension.class)
-public class blocksMainnet extends TestSuite {
+public class blocksMainnetValid1 extends TestSuite {
 
   @ParameterizedTest(name = "{index} Sanity blocks valid (Mainnet)")
   @MethodSource({
@@ -45,12 +43,6 @@ public class blocksMainnet extends TestSuite {
     "sanityDepositInBlockSetup",
     "sanityDepositTopUpSetup",
     "sanityEmptyBlockTransitionSetup",
-    "sanityEmptyEpochTransitionSetup",
-    "sanityHistoricalBatchSetup",
-    "sanityProposerSlashingSetup",
-    "sanitySameSlotBlockTransitionSetup",
-    "sanitySkippedSlotsSetup",
-    "sanityVoluntaryExitSetup",
   })
   void sanityProcessBlock(BeaconState pre, BeaconState post, List<BeaconBlock> blocks) {
     BeaconStateWithCache preWithCache = BeaconStateWithCache.fromBeaconState(pre);
@@ -103,85 +95,5 @@ public class blocksMainnet extends TestSuite {
     Path configPath = Paths.get("mainnet", "phase0");
     Path path = Paths.get("/mainnet/phase0/sanity/blocks/pyspec_tests/empty_block_transition");
     return sanityMultiBlockSetup(path, configPath);
-  }
-
-  @MustBeClosed
-  static Stream<Arguments> sanityEmptyEpochTransitionSetup() throws Exception {
-    Path configPath = Paths.get("mainnet", "phase0");
-    Path path = Paths.get("/mainnet/phase0/sanity/blocks/pyspec_tests/empty_epoch_transition");
-    return sanityMultiBlockSetup(path, configPath);
-  }
-
-  @MustBeClosed
-  static Stream<Arguments> sanityHistoricalBatchSetup() throws Exception {
-    Path configPath = Paths.get("mainnet", "phase0");
-    Path path = Paths.get("/mainnet/phase0/sanity/blocks/pyspec_tests/historical_batch");
-    return sanityMultiBlockSetup(path, configPath);
-  }
-
-  @MustBeClosed
-  static Stream<Arguments> sanityProposerSlashingSetup() throws Exception {
-    Path configPath = Paths.get("mainnet", "phase0");
-    Path path = Paths.get("/mainnet/phase0/sanity/blocks/pyspec_tests/proposer_slashing");
-    return sanityMultiBlockSetup(path, configPath);
-  }
-
-  @MustBeClosed
-  static Stream<Arguments> sanitySameSlotBlockTransitionSetup() throws Exception {
-    Path configPath = Paths.get("mainnet", "phase0");
-    Path path = Paths.get("/mainnet/phase0/sanity/blocks/pyspec_tests/same_slot_block_transition");
-    return sanityMultiBlockSetup(path, configPath);
-  }
-
-  @MustBeClosed
-  static Stream<Arguments> sanitySkippedSlotsSetup() throws Exception {
-    Path configPath = Paths.get("mainnet", "phase0");
-    Path path = Paths.get("/mainnet/phase0/sanity/blocks/pyspec_tests/skipped_slots");
-    return sanityMultiBlockSetup(path, configPath);
-  }
-
-  @MustBeClosed
-  static Stream<Arguments> sanityVoluntaryExitSetup() throws Exception {
-    Path configPath = Paths.get("mainnet", "phase0");
-    Path path = Paths.get("/mainnet/phase0/sanity/blocks/pyspec_tests/voluntary_exit");
-    return sanityMultiBlockSetup(path, configPath);
-  }
-
-  @ParameterizedTest(name = "{index} Sanity blocks invalid")
-  @MethodSource({
-    "sanityInvalidStateRootSetup",
-    "sanityExpectedDepositInBlockSetup",
-    "sanityPrevSlotBlockTransitionSetup"
-  })
-  void sanityProcessBlockInvalid(BeaconState pre, List<BeaconBlock> blocks) {
-    BeaconStateWithCache preWithCache = BeaconStateWithCache.fromBeaconState(pre);
-    StateTransition stateTransition = new StateTransition(false);
-    blocks.forEach(
-        block -> {
-          assertThrows(
-              StateTransitionException.class,
-              () -> stateTransition.initiate(preWithCache, block, true));
-        });
-  }
-
-  @MustBeClosed
-  static Stream<Arguments> sanityInvalidStateRootSetup() throws Exception {
-    Path configPath = Paths.get("mainnet", "phase0");
-    Path path = Paths.get("/mainnet/phase0/sanity/blocks/pyspec_tests/invalid_state_root");
-    return sanityMultiBlockSetupInvalid(path, configPath);
-  }
-
-  @MustBeClosed
-  static Stream<Arguments> sanityExpectedDepositInBlockSetup() throws Exception {
-    Path configPath = Paths.get("mainnet", "phase0");
-    Path path = Paths.get("/mainnet/phase0/sanity/blocks/pyspec_tests/expected_deposit_in_block");
-    return sanityMultiBlockSetupInvalid(path, configPath);
-  }
-
-  @MustBeClosed
-  static Stream<Arguments> sanityPrevSlotBlockTransitionSetup() throws Exception {
-    Path configPath = Paths.get("mainnet", "phase0");
-    Path path = Paths.get("/mainnet/phase0/sanity/blocks/pyspec_tests/prev_slot_block_transition");
-    return sanityMultiBlockSetupInvalid(path, configPath);
   }
 }
