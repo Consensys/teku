@@ -16,7 +16,7 @@ package tech.pegasys.artemis.services.chainstorage;
 import org.apache.logging.log4j.Level;
 import tech.pegasys.artemis.service.serviceutils.ServiceConfig;
 import tech.pegasys.artemis.service.serviceutils.ServiceInterface;
-import tech.pegasys.artemis.storage.InteropChainStorageServer;
+import tech.pegasys.artemis.storage.ChainStorageServer;
 import tech.pegasys.artemis.util.alogger.ALogger;
 
 public class ChainStorageService implements ServiceInterface {
@@ -24,7 +24,7 @@ public class ChainStorageService implements ServiceInterface {
 
   @Override
   public void init(ServiceConfig config) {
-    new InteropChainStorageServer(config.getEventBus(), config.getConfig());
+    new ChainStorageServer(config.getEventBus(), config.getConfig());
   }
 
   @Override

@@ -86,7 +86,6 @@ public class ArtemisConfiguration {
         null);
 
     // Interop
-    builder.addBoolean("interop.active", false, "Enable interop mode", null);
     builder.addLong("interop.genesisTime", null, "Time of mocked genesis", null);
     builder.addInteger(
         "interop.ownedValidatorStartIndex", 0, "Index of first validator owned by this node", null);
@@ -226,11 +225,7 @@ public class ArtemisConfiguration {
     return config.getInteger("deposit.numValidators");
   }
 
-  public boolean getInteropActive() {
-    return config.getBoolean("interop.active");
-  }
-
-  public String getInteropStartState() {
+  public String getStartState() {
     final String startState = config.getString("interop.startState");
     return startState == null || startState.isEmpty() ? null : startState;
   }
