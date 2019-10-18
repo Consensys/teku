@@ -35,7 +35,6 @@ import tech.pegasys.artemis.statetransition.StateTransitionException;
 @ExtendWith(BouncyCastleExtension.class)
 public class blocksMainnetInvalid extends TestSuite {
 
-
   @ParameterizedTest(name = "{index} Sanity blocks invalid")
   @MethodSource({
     "sanityInvalidStateRootSetup",
