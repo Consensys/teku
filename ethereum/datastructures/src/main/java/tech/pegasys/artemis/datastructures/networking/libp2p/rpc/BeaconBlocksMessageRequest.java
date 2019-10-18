@@ -75,25 +75,25 @@ public final class BeaconBlocksMessageRequest implements SimpleOffsetSerializabl
     }
 
     BeaconBlocksMessageRequest other = (BeaconBlocksMessageRequest) obj;
-    return Objects.equals(this.headBlockRoot(), other.headBlockRoot())
-        && Objects.equals(this.startSlot(), other.startSlot())
-        && Objects.equals(this.count(), other.count())
-        && Objects.equals(this.step(), other.step());
+    return Objects.equals(this.getHeadBlockRoot(), other.getHeadBlockRoot())
+        && Objects.equals(this.getStartSlot(), other.getStartSlot())
+        && Objects.equals(this.getCount(), other.getCount())
+        && Objects.equals(this.getStep(), other.getStep());
   }
 
-  public Bytes32 headBlockRoot() {
+  public Bytes32 getHeadBlockRoot() {
     return headBlockRoot;
   }
 
-  public UnsignedLong startSlot() {
+  public UnsignedLong getStartSlot() {
     return startSlot;
   }
 
-  public UnsignedLong count() {
+  public UnsignedLong getCount() {
     return count;
   }
 
-  public UnsignedLong step() {
+  public UnsignedLong getStep() {
     return step;
   }
 }
