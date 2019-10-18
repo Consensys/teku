@@ -41,6 +41,7 @@ import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.util.DepositUtil;
 import tech.pegasys.artemis.metrics.EpochMetrics;
+import tech.pegasys.artemis.statetransition.events.GenesisEvent;
 import tech.pegasys.artemis.statetransition.util.EpochProcessingException;
 import tech.pegasys.artemis.statetransition.util.SlotProcessingException;
 import tech.pegasys.artemis.storage.ChainStorageClient;
@@ -71,6 +72,15 @@ public class StateProcessor {
     this.stateTransition = new StateTransition(true, new EpochMetrics(metricsSystem));
     this.chainStorageClient = chainStorageClient;
     this.eventBus.register(this);
+  }
+
+  public void eth2Genesis(GenesisEvent genesisEvent) {
+    STDOUT.log(Level.INFO, "******* Eth2Genesis Event******* : ");
+    this.initialState = genesisEvent.getBeaconState();
+    Store store = chainStorageClient.getStore();
+    Bytes32 genesisBlockRoot = get_head(store);
+    STDOUT.log(Level.INFO, "Initial state root is " + initialState.hash_tree_root().toHexString());
+    STDOUT.log(Level.INFO, "Genesis block root is " + genesisBlockRoot.toHexString());
   }
 
   public Bytes32 processHead(UnsignedLong nodeSlot) {
@@ -113,6 +123,7 @@ public class StateProcessor {
                 deposits);
         if (is_valid_genesis_stateSim(candidate_state)) {
           setSimulationGenesisTime(candidate_state);
+          eth2Genesis(new GenesisEvent(candidate_state));
         }
 
       } else {
@@ -121,7 +132,9 @@ public class StateProcessor {
                 Bytes32.fromHexString(event.getResponse().log.getBlockHash()),
                 eth1_timestamp,
                 deposits);
-        if (is_valid_genesis_state(candidate_state)) {}
+        if (is_valid_genesis_state(candidate_state)) {
+          eth2Genesis(new GenesisEvent(candidate_state));
+        }
       }
     }
   }
