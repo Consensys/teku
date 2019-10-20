@@ -14,9 +14,7 @@
 package tech.pegasys.artemis.util.hashToG2;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static java.lang.System.arraycopy;
 
-import java.math.BigInteger;
 import org.apache.milagro.amcl.BLS381.BIG;
 import org.apache.tuweni.bytes.Bytes;
 
@@ -39,25 +37,5 @@ public class Util {
         2 + 2 * SIZE_OF_BIG,
         hex.length());
     return BIG.fromBytes(Bytes.fromHexString(hex).toArray());
-  }
-
-  /**
-   * Create a BIG from a BigInteger.
-   *
-   * @param bigInt the BigInteger to convert to a BIG
-   * @return a BIG with the value provided
-   */
-  static BIG bigFromBigInt(BigInteger bigInt) {
-    byte[] bytes = new byte[SIZE_OF_BIG];
-    byte[] inputBytes = bigInt.toByteArray();
-    checkArgument(
-        inputBytes.length <= SIZE_OF_BIG,
-        "The BigInteger is too large to convert to a BIG: "
-            + bigInt
-            + ". It needs "
-            + inputBytes.length
-            + " bytes.");
-    arraycopy(inputBytes, 0, bytes, SIZE_OF_BIG - inputBytes.length, inputBytes.length);
-    return BIG.fromBytes(bytes);
   }
 }

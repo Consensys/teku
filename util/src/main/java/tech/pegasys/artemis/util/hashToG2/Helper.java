@@ -15,10 +15,8 @@ package tech.pegasys.artemis.util.hashToG2;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.artemis.util.hashToG2.FP2Immutable.ONE;
-import static tech.pegasys.artemis.util.hashToG2.Util.bigFromBigInt;
 import static tech.pegasys.artemis.util.hashToG2.Util.bigFromHex;
 
-import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import org.apache.milagro.amcl.BLS381.BIG;
 import org.apache.milagro.amcl.BLS381.ROM;
@@ -29,8 +27,6 @@ public class Helper {
 
   // The field modulus
   static final BIG P = new BIG(ROM.Modulus);
-  // The field modulus as a BigInteger
-  private static final BigInteger MODULUS = new BigInteger(P.toString(), 16);
 
   // These are eighth-roots of unity
   static final BIG RV1 =
@@ -249,15 +245,16 @@ public class Helper {
   }
 
   /**
-   * Big-endian conversion of byte array into a positive BigInteger.
+   * Big-endian conversion of byte array into a BIG, modulo the field modulus.
    *
    * <p>As defined at https://tools.ietf.org/html/rfc3447#section-4.2
    *
    * @param b octet string to be converted
    * @return corresponding nonnegative integer
    */
-  static BigInteger os2ip(Bytes b) {
-    return new BigInteger(1, b.toArray());
+  static BIG os2ip_modP(Bytes b) {
+    DBIGExtended foo = new DBIGExtended(b.toArray());
+    return foo.mod(P);
   }
 
   /**
@@ -272,36 +269,23 @@ public class Helper {
    */
   static FP2Immutable hashToBase(Bytes message, byte ctr, Bytes salt) {
 
-    final BIG curveOrder = new BIG(ROM.Modulus);
-    Bytes info, t;
+    final Bytes h2cBytes = Bytes.wrap("H2C".getBytes(StandardCharsets.US_ASCII));
+    final Bytes ctrBytes = Bytes.of(ctr);
 
-    // The output of HKDF_Expand is 64 bytes, which is too large for a BIG, so we use BigInteger
-    BigInteger tBig;
+    Bytes info, t;
 
     // Do HKDF-Extract
     Bytes m_prime = HKDF_Extract(salt, message);
 
     // Do first HKDF-Expand
-    info =
-        Bytes.concatenate(
-            Bytes.wrap("H2C".getBytes(StandardCharsets.US_ASCII)),
-            Bytes.of(ctr),
-            Bytes.of((byte) 1));
+    info = Bytes.concatenate(h2cBytes, ctrBytes, Bytes.of((byte) 1));
     t = HKDF_Expand(m_prime, info, 64);
-
-    tBig = os2ip(t).mod(MODULUS);
-    BIG e1 = bigFromBigInt(tBig);
+    BIG e1 = os2ip_modP(t);
 
     // Do second HKDF-Expand
-    info =
-        Bytes.concatenate(
-            Bytes.wrap("H2C".getBytes(StandardCharsets.US_ASCII)),
-            Bytes.of(ctr),
-            Bytes.of((byte) 2));
+    info = Bytes.concatenate(h2cBytes, ctrBytes, Bytes.of((byte) 2));
     t = HKDF_Expand(m_prime, info, 64);
-
-    tBig = os2ip(t).mod(MODULUS);
-    BIG e2 = bigFromBigInt(tBig);
+    BIG e2 = os2ip_modP(t);
 
     return new FP2Immutable(e1, e2);
   }

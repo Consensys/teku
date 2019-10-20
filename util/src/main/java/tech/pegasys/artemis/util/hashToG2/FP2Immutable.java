@@ -223,7 +223,7 @@ public final class FP2Immutable {
     DBIGExtended exp = new DBIGExtended(exponent);
     FP2Immutable tmp = new FP2Immutable(this);
     while (!exp.iszilch()) {
-      if (exp.parity() == 1) {
+      if (exp.isOdd()) {
         result = result.mul(tmp);
       }
       tmp = tmp.sqr();

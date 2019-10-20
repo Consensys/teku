@@ -13,9 +13,6 @@
 
 package tech.pegasys.artemis.util.hashToG2;
 
-import static tech.pegasys.artemis.util.hashToG2.FP2Immutable.ONE;
-import static tech.pegasys.artemis.util.hashToG2.FP2Immutable.ZERO;
-
 import java.util.Objects;
 import org.apache.milagro.amcl.BLS381.ECP2;
 
@@ -30,8 +27,7 @@ import org.apache.milagro.amcl.BLS381.ECP2;
  */
 final class JacobianPoint {
 
-  static final JacobianPoint INFINITY =
-      new JacobianPoint(new FP2Immutable(ZERO), new FP2Immutable(ONE), new FP2Immutable(ZERO));
+  static final JacobianPoint INFINITY = new JacobianPoint();
 
   private final FP2Immutable x;
   private final FP2Immutable y;

@@ -29,15 +29,13 @@ import static tech.pegasys.artemis.util.hashToG2.Helper.iso3;
 import static tech.pegasys.artemis.util.hashToG2.Helper.mapToCurve;
 import static tech.pegasys.artemis.util.hashToG2.Helper.mx_chain;
 import static tech.pegasys.artemis.util.hashToG2.Helper.onCurveG2;
-import static tech.pegasys.artemis.util.hashToG2.Helper.os2ip;
+import static tech.pegasys.artemis.util.hashToG2.Helper.os2ip_modP;
 import static tech.pegasys.artemis.util.hashToG2.Helper.psi;
 import static tech.pegasys.artemis.util.hashToG2.Util.bigFromHex;
 
-import java.math.BigInteger;
 import org.apache.milagro.amcl.BLS381.BIG;
 import org.apache.milagro.amcl.BLS381.ECP2;
 import org.apache.milagro.amcl.BLS381.FP2;
-import org.apache.milagro.amcl.BLS381.ROM;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.util.mikuli.G2Point;
@@ -270,19 +268,10 @@ class HelperTest {
   }
 
   @Test
-  void os2ipTest1() {
+  void os2ipTest() {
     // Big-endian bytes
-    byte[] bytes = {1, 2, 3};
-    assertEquals(BigInteger.valueOf(66051L), os2ip(Bytes.wrap(bytes)));
-  }
-
-  @Test
-  void readingCurveModulusToBigInteger() {
-    String hexModulus =
-        "1a0111ea397fe69a4b1ba7b6434bacd764774b84f38512bf6730d2a0f6b0f6241eabfffeb153ffffb9feffffffffaaab";
-    BigInteger fromHex = new BigInteger(hexModulus, 16);
-    BigInteger fromRom = new BigInteger(new BIG(ROM.Modulus).toString(), 16);
-    assertEquals(fromHex, fromRom);
+    byte[] bytes = {1, 2, 3, 4};
+    assertEquals(new BIG(0x01020304).toString(), os2ip_modP(Bytes.wrap(bytes)).toString());
   }
 
   @Test
