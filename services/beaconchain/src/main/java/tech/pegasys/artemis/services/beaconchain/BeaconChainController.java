@@ -206,7 +206,7 @@ public class BeaconChainController {
     this.eventBus.post(new NodeStartEvent());
     STDOUT.log(Level.DEBUG, "BeaconChainController.start(): starting timer");
     this.timer.start();
-}
+  }
 
   public void stop() {
     STDOUT.log(Level.DEBUG, "BeaconChainController.stop()");
@@ -231,7 +231,7 @@ public class BeaconChainController {
       return;
     }
     try {
-      System.out.println("jonny ssuckss asss and dicks all day");
+      System.out.println("cem likes princesses");
       final UnsignedLong currentTime = UnsignedLong.valueOf(date.getTime() / 1000);
       if (chainStorageClient.getStore() != null) {
         final Store.Transaction transaction = chainStorageClient.getStore().startTransaction();
@@ -241,10 +241,10 @@ public class BeaconChainController {
                 .getStore()
                 .getTime()
                 .compareTo(
-                        chainStorageClient
-                                .getGenesisTime()
-                                .plus(nodeSlot.times(UnsignedLong.valueOf(SECONDS_PER_SLOT))))
-                >= 0) {
+                    chainStorageClient
+                        .getGenesisTime()
+                        .plus(nodeSlot.times(UnsignedLong.valueOf(SECONDS_PER_SLOT))))
+            >= 0) {
           this.eventBus.post(new SlotEvent(nodeSlot));
           this.currentSlotGauge.set(nodeSlot.longValue());
           this.currentEpochGauge.set(compute_epoch_of_slot(nodeSlot).longValue());
@@ -254,18 +254,18 @@ public class BeaconChainController {
           Bytes32 headBlockRoot = this.stateProcessor.processHead(nodeSlot);
           // Logging
           STDOUT.log(
-                  Level.INFO,
-                  "Head block slot:" + "                       " + chainStorageClient.getBestSlot());
+              Level.INFO,
+              "Head block slot:" + "                       " + chainStorageClient.getBestSlot());
           STDOUT.log(
-                  Level.INFO,
-                  "Justified epoch:"
-                          + "                       "
-                          + chainStorageClient.getStore().getJustifiedCheckpoint().getEpoch());
+              Level.INFO,
+              "Justified epoch:"
+                  + "                       "
+                  + chainStorageClient.getStore().getJustifiedCheckpoint().getEpoch());
           STDOUT.log(
-                  Level.INFO,
-                  "Finalized epoch:"
-                          + "                       "
-                          + chainStorageClient.getStore().getFinalizedCheckpoint().getEpoch());
+              Level.INFO,
+              "Finalized epoch:"
+                  + "                       "
+                  + chainStorageClient.getStore().getFinalizedCheckpoint().getEpoch());
 
           this.eventBus.post(new ValidatorAssignmentEvent(headBlockRoot));
           nodeSlot = nodeSlot.plus(UnsignedLong.ONE);

@@ -61,7 +61,6 @@ public class StateProcessor {
   private List<DepositWithIndex> deposits;
   private BeaconStateWithCache initialState;
 
-
   private boolean genesisReady = false;
 
   public StateProcessor(
@@ -119,14 +118,15 @@ public class StateProcessor {
     }
 
     // Approximation to save CPU cycles of creating new BeaconState on every Deposit captured
-    if (isGenesisReasonable(eth1_timestamp, deposits, config.getDepositMode().equals("simulation"))) {
+    if (isGenesisReasonable(
+        eth1_timestamp, deposits, config.getDepositMode().equals("simulation"))) {
       if (config.getDepositMode().equals(Constants.DEPOSIT_SIM)) {
         BeaconStateWithCache candidate_state =
             initialize_beacon_state_from_eth1(
                 Bytes32.fromHexString(event.getResponse().log.getBlockHash()),
                 eth1_timestamp,
                 deposits);
-              System.out.println("out from init");
+        System.out.println("out from init");
         if (is_valid_genesis_stateSim(candidate_state)) {
           System.out.println("in valid genesis state sim");
           setSimulationGenesisTime(candidate_state);
@@ -146,7 +146,8 @@ public class StateProcessor {
     }
   }
 
-  public boolean isGenesisReasonable(UnsignedLong eth1_timestamp, List<DepositWithIndex> deposits, boolean isSimulation) {
+  public boolean isGenesisReasonable(
+      UnsignedLong eth1_timestamp, List<DepositWithIndex> deposits, boolean isSimulation) {
     final boolean sufficientValidators = deposits.size() >= MIN_GENESIS_ACTIVE_VALIDATOR_COUNT;
     if (isSimulation) return sufficientValidators;
     final boolean afterMinGenesisTime = eth1_timestamp.compareTo(MIN_GENESIS_TIME) >= 0;

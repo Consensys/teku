@@ -35,8 +35,8 @@ public class MockStartValidatorKeyPairFactory {
 
   public List<BLSKeyPair> generateKeyPairs(final int startIndex, final int endIndex) {
     return IntStream.rangeClosed(startIndex, endIndex)
-            .mapToObj(this::createKeyPairForValidator)
-            .collect(Collectors.toList());
+        .mapToObj(this::createKeyPairForValidator)
+        .collect(Collectors.toList());
   }
 
   private BLSKeyPair createKeyPairForValidator(final int validatorIndex) {

@@ -148,7 +148,6 @@ public class BeaconStateUtil {
     IntStream.range(0, EPOCHS_PER_HISTORICAL_VECTOR)
         .forEach(
             index -> {
-              System.out.println("populate " + index);
               state.getActive_index_roots().set(index, active_index_root);
               state.getCompact_committees_roots().set(index, committee_root);
             });
