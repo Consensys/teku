@@ -14,10 +14,11 @@
 package tech.pegasys.artemis.util.hashToG2;
 
 import static tech.pegasys.artemis.util.hashToG2.Util.bigFromHex;
+import static tech.pegasys.artemis.util.hashToG2.Util.fpFromHex;
 
 import java.util.Objects;
 import org.apache.milagro.amcl.BLS381.BIG;
-import org.apache.milagro.amcl.BLS381.DBIG;
+import org.apache.milagro.amcl.BLS381.FP;
 import org.apache.milagro.amcl.BLS381.FP2;
 
 /**
@@ -59,7 +60,17 @@ public final class FP2Immutable {
   }
 
   /**
-   * Constrcut from two BIG objects.
+   * Construct from two FP objects.
+   *
+   * @param fp1 the first element
+   * @param fp2 the second element
+   */
+  FP2Immutable(FP fp1, FP fp2) {
+    this.fp2 = new FP2(fp1, fp2);
+  }
+
+  /**
+   * Construct from two BIG objects.
    *
    * @param big1 the first element
    * @param big2 the second element
@@ -86,7 +97,7 @@ public final class FP2Immutable {
    * @param hex2 hexadecimal representation of the first element
    */
   FP2Immutable(String hex1, String hex2) {
-    this.fp2 = new FP2(bigFromHex(hex1), bigFromHex(hex2));
+    this.fp2 = new FP2(fpFromHex(hex1), fpFromHex(hex2));
   }
 
   /** Wrap FP2 sqr() method to return a result */
@@ -208,26 +219,6 @@ public final class FP2Immutable {
       }
       tmp = tmp.sqr();
       exponent /= 2;
-    }
-    return result;
-  }
-
-  /**
-   * Raise this element to a DBIG exponent.
-   *
-   * @param exponent the DBIG exponent
-   * @return the field point raised to the DBIG exponent and reduced
-   */
-  FP2Immutable pow(DBIG exponent) {
-    FP2Immutable result = ONE;
-    DBIGExtended exp = new DBIGExtended(exponent);
-    FP2Immutable tmp = new FP2Immutable(this);
-    while (!exp.iszilch()) {
-      if (exp.isOdd()) {
-        result = result.mul(tmp);
-      }
-      tmp = tmp.sqr();
-      exp.shr(1);
     }
     return result;
   }

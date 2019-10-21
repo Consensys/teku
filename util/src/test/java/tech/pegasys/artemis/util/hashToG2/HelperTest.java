@@ -20,7 +20,6 @@ import static tech.pegasys.artemis.util.hashToG2.FP2Immutable.ONE;
 import static tech.pegasys.artemis.util.hashToG2.Helper.HKDF_Expand;
 import static tech.pegasys.artemis.util.hashToG2.Helper.HKDF_Extract;
 import static tech.pegasys.artemis.util.hashToG2.Helper.HMAC_SHA256;
-import static tech.pegasys.artemis.util.hashToG2.Helper.P;
 import static tech.pegasys.artemis.util.hashToG2.Helper.ROOTS_OF_UNITY;
 import static tech.pegasys.artemis.util.hashToG2.Helper.addChain;
 import static tech.pegasys.artemis.util.hashToG2.Helper.clear_h2;
@@ -29,23 +28,42 @@ import static tech.pegasys.artemis.util.hashToG2.Helper.iso3;
 import static tech.pegasys.artemis.util.hashToG2.Helper.mapToCurve;
 import static tech.pegasys.artemis.util.hashToG2.Helper.mx_chain;
 import static tech.pegasys.artemis.util.hashToG2.Helper.onCurveG2;
-import static tech.pegasys.artemis.util.hashToG2.Helper.os2ip_modP;
 import static tech.pegasys.artemis.util.hashToG2.Helper.psi;
 import static tech.pegasys.artemis.util.hashToG2.Util.bigFromHex;
 
 import org.apache.milagro.amcl.BLS381.BIG;
+import org.apache.milagro.amcl.BLS381.DBIG;
 import org.apache.milagro.amcl.BLS381.ECP2;
 import org.apache.milagro.amcl.BLS381.FP2;
+import org.apache.milagro.amcl.BLS381.ROM;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.util.mikuli.G2Point;
 
 class HelperTest {
 
+  // The field modulus
+  private static final BIG P = new BIG(ROM.Modulus);
+
   // The enormous exponent used in mapToCurve
   private static final BIG THREE = new BIG(3);
   private static final DBIGExtended EXPONENT =
       new DBIGExtended(BIG.mul(P.plus(THREE), P.minus(THREE))).fshr(4);
+
+  /* Raise this element to a DBIG exponent. Used for testing the addChain */
+  private static FP2Immutable pow(FP2Immutable a, DBIG exponent) {
+    FP2Immutable result = ONE;
+    DBIGExtended exp = new DBIGExtended(exponent);
+    FP2Immutable tmp = new FP2Immutable(a);
+    while (!exp.iszilch()) {
+      if (exp.isOdd()) {
+        result = result.mul(tmp);
+      }
+      tmp = tmp.sqr();
+      exp.shr(1);
+    }
+    return result;
+  }
 
   /*
    * HMAC_SHA256 Tests
@@ -268,13 +286,6 @@ class HelperTest {
   }
 
   @Test
-  void os2ipTest() {
-    // Big-endian bytes
-    byte[] bytes = {1, 2, 3, 4};
-    assertEquals(new BIG(0x01020304).toString(), os2ip_modP(Bytes.wrap(bytes)).toString());
-  }
-
-  @Test
   void rootsOfUnityTest() {
     for (FP2Immutable root : ROOTS_OF_UNITY) {
       assertEquals(ONE, root.sqr().sqr().sqr().reduce());
@@ -392,7 +403,7 @@ class HelperTest {
                 "0x081d1f51370a9e6f59ed62fa605e891c40b20d98601fe7c3fa6a8efabcf0c1c3a0ff05963ab388a4b9ec4d35e97c0863"),
             bigFromHex(
                 "0x01fbe48c2b138982f28317f684364327114adecadd94b599347bded08ef7b7ba22d814f1c64f1c77023ec9425383c184"));
-    FP2Immutable expected = a.pow(EXPONENT);
+    FP2Immutable expected = pow(a, EXPONENT);
     FP2Immutable actual = addChain(a);
     assertEquals(expected, actual);
   }
@@ -602,7 +613,7 @@ class HelperTest {
 
     // Cipher suite is 0x02 in the current test data
     G2Point actual =
-        hashToCurve.hashToCurve(Bytes.wrap("sample".getBytes(UTF_8)), Bytes.fromHexString("0x02"));
+        hashToCurve.hashToG2(Bytes.wrap("sample".getBytes(UTF_8)), Bytes.fromHexString("0x02"));
 
     assertEquals(expected, actual);
   }
@@ -625,7 +636,7 @@ class HelperTest {
 
     // Cipher suite is 0x02 in the current test data
     G2Point actual =
-        hashToCurve.hashToCurve(Bytes.wrap("test".getBytes(UTF_8)), Bytes.fromHexString("0x02"));
+        hashToCurve.hashToG2(Bytes.wrap("test".getBytes(UTF_8)), Bytes.fromHexString("0x02"));
 
     assertEquals(expected, actual);
   }

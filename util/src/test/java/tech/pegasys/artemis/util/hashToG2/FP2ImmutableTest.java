@@ -20,16 +20,17 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static tech.pegasys.artemis.util.hashToG2.FP2Immutable.ONE;
 import static tech.pegasys.artemis.util.hashToG2.FP2Immutable.THRESHOLD;
 import static tech.pegasys.artemis.util.hashToG2.FP2Immutable.ZERO;
-import static tech.pegasys.artemis.util.hashToG2.Helper.P;
 import static tech.pegasys.artemis.util.hashToG2.Util.bigFromHex;
 
 import org.apache.milagro.amcl.BLS381.BIG;
-import org.apache.milagro.amcl.BLS381.DBIG;
 import org.apache.milagro.amcl.BLS381.FP2;
 import org.apache.milagro.amcl.BLS381.ROM;
 import org.junit.jupiter.api.Test;
 
 public class FP2ImmutableTest {
+
+  // The field modulus
+  private static final BIG P = new BIG(ROM.Modulus);
 
   private static final FP2Immutable X = new FP2Immutable(new BIG(1), new BIG(1));
   private static final FP2Immutable XSQ = new FP2Immutable(new BIG(0), new BIG(2));
@@ -132,17 +133,6 @@ public class FP2ImmutableTest {
     assertEquals(ROOT, ROOT.pow(9));
     assertEquals(ONE, ROOT.pow(9872));
     assertEquals(ROOT, ROOT.pow(9873));
-  }
-
-  // DBIG exponent
-  @Test
-  void powDbigTest() {
-    assertEquals(ONE, ROOT.pow(new DBIG(0)));
-    assertEquals(ROOT, ROOT.pow(new DBIG(1)));
-    assertEquals(ONE, ROOT.pow(new DBIG(8)));
-    assertEquals(ROOT, ROOT.pow(new DBIG(9)));
-    assertEquals(ONE, ROOT.pow(new DBIG(9872)));
-    assertEquals(ROOT, ROOT.pow(new DBIG(9873)));
   }
 
   @Test

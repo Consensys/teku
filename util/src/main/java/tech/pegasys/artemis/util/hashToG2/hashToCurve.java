@@ -44,7 +44,7 @@ import tech.pegasys.artemis.util.mikuli.G2Point;
  */
 public class hashToCurve {
 
-  static final Bytes CIPHER_SUITE =
+  private static final Bytes CIPHER_SUITE =
       Bytes.wrap("BLS12381G2-SHA256-SSWU-RO".getBytes(StandardCharsets.UTF_8));
 
   /**
@@ -61,7 +61,7 @@ public class hashToCurve {
    * @param cipherSuite the salt value for HKDF_Extract
    * @return a point from the G2 group representing the message hash
    */
-  public static G2Point hashToCurve(Bytes message, Bytes cipherSuite) {
+  public static G2Point hashToG2(Bytes message, Bytes cipherSuite) {
 
     FP2Immutable u0 = hashToBase(message, (byte) 0, cipherSuite);
     FP2Immutable u1 = hashToBase(message, (byte) 1, cipherSuite);
@@ -88,7 +88,7 @@ public class hashToCurve {
    * @param message the message to be hashed. This is usually the 32 byte message digest
    * @return a point from the G2 group representing the message hash
    */
-  public static G2Point hashToCurve(Bytes message) {
-    return hashToCurve(message, CIPHER_SUITE);
+  public static G2Point hashToG2(Bytes message) {
+    return hashToG2(message, CIPHER_SUITE);
   }
 }

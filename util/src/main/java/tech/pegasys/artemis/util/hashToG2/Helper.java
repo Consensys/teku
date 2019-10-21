@@ -15,53 +15,50 @@ package tech.pegasys.artemis.util.hashToG2;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.artemis.util.hashToG2.FP2Immutable.ONE;
-import static tech.pegasys.artemis.util.hashToG2.Util.bigFromHex;
+import static tech.pegasys.artemis.util.hashToG2.Util.fpFromHex;
+import static tech.pegasys.artemis.util.hashToG2.Util.negate;
+import static tech.pegasys.artemis.util.hashToG2.Util.os2ip_modP;
 
 import java.nio.charset.StandardCharsets;
-import org.apache.milagro.amcl.BLS381.BIG;
 import org.apache.milagro.amcl.BLS381.FP;
 import org.apache.milagro.amcl.BLS381.FP2;
-import org.apache.milagro.amcl.BLS381.ROM;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.crypto.Hash;
 
 public class Helper {
 
-  // The field modulus
-  static final BIG P = new BIG(ROM.Modulus);
-
   // These are eighth-roots of unity
-  static final BIG RV1 =
-      bigFromHex(
+  private static final FP RV1 =
+      fpFromHex(
           "0x06af0e0437ff400b6831e36d6bd17ffe48395dabc2d3435e77f76e17009241c5ee67992f72ec05f4c81084fbede3cc09");
   static final FP2Immutable[] ROOTS_OF_UNITY = {
-    new FP2Immutable(new BIG(1), new BIG(0)),
-    new FP2Immutable(new BIG(0), new BIG(1)),
+    new FP2Immutable(new FP(1), new FP(0)),
+    new FP2Immutable(new FP(0), new FP(1)),
     new FP2Immutable(RV1, RV1),
-    new FP2Immutable(RV1, P.minus(RV1))
+    new FP2Immutable(RV1, negate(RV1))
   };
 
   // 3-isogenous curve parameters
-  private static final FP2Immutable Ell2p_a = new FP2Immutable(new BIG(0), new BIG(240));
-  private static final FP2Immutable Ell2p_b = new FP2Immutable(new BIG(1012), new BIG(1012));
+  private static final FP2Immutable Ell2p_a = new FP2Immutable(new FP(0), new FP(240));
+  private static final FP2Immutable Ell2p_b = new FP2Immutable(new FP(1012), new FP(1012));
 
   // Distinguished non-square in Fp2 for SWU map
-  private static final FP2Immutable xi_2 = new FP2Immutable(new BIG(1), new BIG(1));
+  private static final FP2Immutable xi_2 = new FP2Immutable(new FP(1), new FP(1));
   private static final FP2Immutable xi_2Pow2 = xi_2.sqr();
   private static final FP2Immutable xi_2Pow3 = xi_2Pow2.mul(xi_2);
 
   // Eta values, used for computing sqrt(g(X1(t)))
-  private static final BIG ev1 =
-      bigFromHex(
+  private static final FP ev1 =
+      fpFromHex(
           "0x02c4a7244a026bd3e305cc456ad9e235ed85f8b53954258ec8186bb3d4eccef7c4ee7b8d4b9e063a6c88d0aa3e03ba01");
-  private static final BIG ev2 =
-      bigFromHex(
+  private static final FP ev2 =
+      fpFromHex(
           "0x085fa8cd9105715e641892a0f9a4bb2912b58b8d32f26594c60679cc7973076dc6638358daf3514d6426a813ae01f51a");
   private static final FP2Immutable[] etas = {
-    new FP2Immutable(ev1, new BIG(0)),
-    new FP2Immutable(new BIG(0), ev1),
+    new FP2Immutable(ev1, new FP(0)),
+    new FP2Immutable(new FP(0), ev1),
     new FP2Immutable(ev2, ev2),
-    new FP2Immutable(ev2, P.minus(ev2))
+    new FP2Immutable(ev2, negate(ev2))
   };
 
   // Coefficients for the 3-isogeny map from Ell2' to Ell2
@@ -125,20 +122,23 @@ public class Helper {
   private static final FP2Immutable[][] map_coeffs = {XNUM, XDEN, YNUM, YDEN};
 
   // Constants for Psi, the untwist-Frobenius-twist endomorphism
-  private static final BIG iwscBase =
-      bigFromHex(
+  private static final FP iwscBase =
+      fpFromHex(
           "0x0d0088f51cbff34d258dd3db21a5d66bb23ba5c279c2895fb39869507b587b120f55ffff58a9ffffdcff7fffffffd556");
-  private static final FP2Immutable iwsc = new FP2Immutable(iwscBase, iwscBase.minus(new BIG(1)));
-  private static final BIG k_qi_x =
-      bigFromHex(
+  private static final FP iwscBaseM1 =
+      fpFromHex(
+          "0x0d0088f51cbff34d258dd3db21a5d66bb23ba5c279c2895fb39869507b587b120f55ffff58a9ffffdcff7fffffffd555");
+  private static final FP2Immutable iwsc = new FP2Immutable(iwscBase, iwscBaseM1);
+  private static final FP k_qi_x =
+      fpFromHex(
           "0x1a0111ea397fe699ec02408663d4de85aa0d857d89759ad4897d29650fb85f9b409427eb4f49fffd8bfd00000000aaad");
-  private static final BIG k_qi_y =
-      bigFromHex(
+  private static final FP k_qi_y =
+      fpFromHex(
           "0x06af0e0437ff400b6831e36d6bd17ffe48395dabc2d3435e77f76e17009241c5ee67992f72ec05f4c81084fbede3cc09");
-  private static final FP2Immutable k_cx = new FP2Immutable(new BIG(0), k_qi_x);
+  private static final FP2Immutable k_cx = new FP2Immutable(new FP(0), k_qi_x);
   private static final FP2Immutable k_cy =
       new FP2Immutable(
-          bigFromHex(
+          fpFromHex(
               "0x135203e60180a68ee2e9c448d77a2cd91c3dedd930b1cf60ef396489f61eb45e304466cf3e67fa0af1ee7b04121bdea2"),
           k_qi_y);
 
@@ -164,7 +164,7 @@ public class Helper {
     FP2Immutable x3 = x.pow(3);
     FP2Immutable z6 = z.pow(6);
 
-    FP2Immutable four = new FP2Immutable(new BIG(4), new BIG(4));
+    FP2Immutable four = new FP2Immutable(new FP(4), new FP(4));
     return y2.equals(x3.add(z6.mul(four)));
   }
 
@@ -188,9 +188,7 @@ public class Helper {
 
     // Pad or truncate the key to the blocksize
     byte[] ikmPadded = new byte[blockSize];
-    for (int i = 0; i < key.length; i++) {
-      ikmPadded[i] = key[i];
-    }
+    System.arraycopy(key, 0, ikmPadded, 0, key.length);
 
     byte[] ikmXorIpad = new byte[blockSize];
     byte[] ikmXorOpad = new byte[blockSize];
@@ -247,19 +245,6 @@ public class Helper {
   }
 
   /**
-   * Big-endian conversion of byte array into a BIG, modulo the field modulus.
-   *
-   * <p>As defined at https://tools.ietf.org/html/rfc3447#section-4.2
-   *
-   * @param b octet string to be converted
-   * @return corresponding nonnegative integer
-   */
-  static BIG os2ip_modP(Bytes b) {
-    DBIGExtended foo = new DBIGExtended(b.toArray());
-    return foo.mod(P);
-  }
-
-  /**
    * Hashes a string msg of any length into an element of the FP2 field.
    *
    * <p>As defined at https://tools.ietf.org/html/draft-irtf-cfrg-hash-to-curve-04#section-5.3
@@ -282,12 +267,12 @@ public class Helper {
     // Do first HKDF-Expand
     info = Bytes.concatenate(h2cBytes, ctrBytes, Bytes.of((byte) 1));
     t = HKDF_Expand(m_prime, info, 64);
-    BIG e1 = os2ip_modP(t);
+    FP e1 = os2ip_modP(t);
 
     // Do second HKDF-Expand
     info = Bytes.concatenate(h2cBytes, ctrBytes, Bytes.of((byte) 2));
     t = HKDF_Expand(m_prime, info, 64);
-    BIG e2 = os2ip_modP(t);
+    FP e2 = os2ip_modP(t);
 
     return new FP2Immutable(e1, e2);
   }
@@ -929,10 +914,10 @@ public class Helper {
     FP2Immutable x = new FP2Immutable(p.getX());
     FP2Immutable y = new FP2Immutable(p.getY());
     FP2Immutable z = new FP2Immutable(p.getZ());
-    FP2Immutable mapvals[] = new FP2Immutable[4];
+    FP2Immutable[] mapvals = new FP2Immutable[4];
 
     // precompute the required powers of Z^2
-    FP2Immutable zpows[] = new FP2Immutable[4];
+    FP2Immutable[] zpows = new FP2Immutable[4];
     zpows[0] = ONE;
     zpows[1] = z.sqr();
     zpows[2] = zpows[1].mul(zpows[1]);
@@ -986,25 +971,25 @@ public class Helper {
   }
 
   // Shortcut Frobenius evaluation that avoids going all the way to Fq12
-  static FP2Immutable qi_x(FP2Immutable x) {
+  private static FP2Immutable qi_x(FP2Immutable x) {
     FP a = new FP(x.getFp2().getA());
     FP b = new FP(x.getFp2().getB());
-    a.mul(new FP(k_qi_x));
-    b.mul(new FP(k_qi_x));
+    a.mul(k_qi_x);
+    b.mul(k_qi_x);
     b.neg();
     return new FP2Immutable(new FP2(a, b));
   }
 
   // Shortcut Frobenius evaluation that avoids going all the way to Fq12
-  static FP2Immutable qi_y(FP2Immutable y) {
+  private static FP2Immutable qi_y(FP2Immutable y) {
     FP y0 = new FP(y.getFp2().getA());
     FP y1 = new FP(y.getFp2().getB());
     FP a = new FP(y0);
     FP b = new FP(y0);
     a.add(y1);
-    a.mul(new FP(k_qi_y));
+    a.mul(k_qi_y);
     b.sub(y1);
-    b.mul(new FP(k_qi_y));
+    b.mul(k_qi_y);
     return new FP2Immutable(new FP2(a, b));
   }
 
