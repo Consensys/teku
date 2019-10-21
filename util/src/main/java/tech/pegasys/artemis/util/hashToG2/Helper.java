@@ -19,6 +19,8 @@ import static tech.pegasys.artemis.util.hashToG2.Util.bigFromHex;
 
 import java.nio.charset.StandardCharsets;
 import org.apache.milagro.amcl.BLS381.BIG;
+import org.apache.milagro.amcl.BLS381.FP;
+import org.apache.milagro.amcl.BLS381.FP2;
 import org.apache.milagro.amcl.BLS381.ROM;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.crypto.Hash;
@@ -985,20 +987,25 @@ public class Helper {
 
   // Shortcut Frobenius evaluation that avoids going all the way to Fq12
   static FP2Immutable qi_x(FP2Immutable x) {
-    BIG a = BIG.mul(k_qi_x, x.getFp2().getA()).mod(P);
-    BIG b = P.minus(BIG.mul(k_qi_x, x.getFp2().getB()).mod(P));
-    return new FP2Immutable(a, b);
+    FP a = new FP(x.getFp2().getA());
+    FP b = new FP(x.getFp2().getB());
+    a.mul(new FP(k_qi_x));
+    b.mul(new FP(k_qi_x));
+    b.neg();
+    return new FP2Immutable(new FP2(a, b));
   }
 
   // Shortcut Frobenius evaluation that avoids going all the way to Fq12
   static FP2Immutable qi_y(FP2Immutable y) {
-    BIG y0 = y.getFp2().getA();
-    BIG y1 = y.getFp2().getB();
-    BIG y0Py1 = y0.plus(y1);
-    BIG y0My1 = y0.plus(P).minus(y1);
-    BIG a = BIG.mul(k_qi_y, y0Py1).mod(P);
-    BIG b = BIG.mul(k_qi_y, y0My1).mod(P);
-    return new FP2Immutable(a, b);
+    FP y0 = new FP(y.getFp2().getA());
+    FP y1 = new FP(y.getFp2().getB());
+    FP a = new FP(y0);
+    FP b = new FP(y0);
+    a.add(y1);
+    a.mul(new FP(k_qi_y));
+    b.sub(y1);
+    b.mul(new FP(k_qi_y));
+    return new FP2Immutable(new FP2(a, b));
   }
 
   // The untwist-Frobenius-twist endomorphism
