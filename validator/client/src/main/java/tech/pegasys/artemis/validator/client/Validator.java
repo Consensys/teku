@@ -16,14 +16,14 @@ package tech.pegasys.artemis.validator.client;
 import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.SECP256K1;
+import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
-import tech.pegasys.artemis.util.mikuli.KeyPair;
 
 public final class Validator extends tech.pegasys.artemis.datastructures.state.Validator {
-  KeyPair blsKeys;
+  BLSKeyPair blsKeys;
   SECP256K1.KeyPair secpKeys;
 
-  public Validator(Bytes32 withdrawal_credentials, KeyPair blsKeys, SECP256K1.KeyPair secpKeys) {
+  public Validator(Bytes32 withdrawal_credentials, BLSKeyPair blsKeys, SECP256K1.KeyPair secpKeys) {
     super(
         null,
         withdrawal_credentials,
@@ -37,7 +37,7 @@ public final class Validator extends tech.pegasys.artemis.datastructures.state.V
     this.secpKeys = secpKeys;
   }
 
-  public KeyPair getBlsKeys() {
+  public BLSKeyPair getBlsKeys() {
     return blsKeys;
   }
 
@@ -47,6 +47,6 @@ public final class Validator extends tech.pegasys.artemis.datastructures.state.V
 
   @Override
   public BLSPublicKey getPubkey() {
-    return BLSPublicKey.fromBytesCompressed(this.blsKeys.publicKey().toBytesCompressed());
+    return this.blsKeys.getPublicKey();
   }
 }

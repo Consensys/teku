@@ -48,7 +48,7 @@ public class MockStartDepositGenerator {
     return data;
   }
 
-  private Bytes32 createWithdrawalCredentials(final BLSKeyPair keyPair) {
+  public Bytes32 createWithdrawalCredentials(final BLSKeyPair keyPair) {
     final Bytes publicKeyHash = sha256(keyPair.getPublicKey().toBytes());
     final Bytes credentials = Bytes.wrap(BLS_WITHDRAWAL_PREFIX, publicKeyHash.slice(1));
     return Bytes32.wrap(credentials);
