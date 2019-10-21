@@ -28,7 +28,7 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
-import tech.pegasys.artemis.reference.TestSuite;
+import tech.pegasys.artemis.tests.TestSuite;
 import tech.pegasys.artemis.statetransition.StateTransition;
 
 @ExtendWith(BouncyCastleExtension.class)
