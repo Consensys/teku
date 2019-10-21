@@ -38,6 +38,7 @@ import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.pow.contract.DepositContract;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
+import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.mikuli.BLS12381;
 import tech.pegasys.artemis.util.mikuli.KeyPair;
 import tech.pegasys.artemis.util.mikuli.PublicKey;
@@ -113,20 +114,23 @@ public class ValidatorClientUtil {
   }
 
   public static void registerValidatorEth1(
-      Validator validator, long amount, String address, Web3j web3j, DefaultGasProvider gasProvider)
+      Validator validator,
+      long amount,
+      String address,
+      Web3j web3j,
+      DefaultGasProvider gasProvider,
+      BLSSignature sig)
       throws Exception {
     Credentials credentials =
         Credentials.create(validator.getSecpKeys().secretKey().bytes().toHexString());
     DepositContract contract = null;
-    Bytes blsSignature =
-        blsSignatureHelper(validator.getBlsKeys(), validator.getWithdrawal_credentials(), amount);
     contract = DepositContract.load(address, web3j, credentials, gasProvider);
 
     contract
         .deposit(
-            validator.getBlsKeys().publicKey().toBytesCompressed().reverse().toArray(),
+            validator.getBlsKeys().getPublicKey().toBytesCompressed().reverse().toArray(),
             validator.getWithdrawal_credentials().reverse().toArray(),
-            blsSignature.reverse().toArray(),
+            sig.toBytes().reverse().toArray(),
             new BigInteger(amount + "000000000"))
         .send();
   }

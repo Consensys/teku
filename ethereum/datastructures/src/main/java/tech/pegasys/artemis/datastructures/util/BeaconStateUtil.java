@@ -55,6 +55,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.Hash;
@@ -77,7 +78,7 @@ import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 
 public class BeaconStateUtil {
 
-  private static final ALogger LOG = new ALogger(BeaconStateUtil.class.getName());
+  private static final ALogger STDOUT = new ALogger("stdout");
 
   public static BeaconStateWithCache initialize_beacon_state_from_eth1(
       Bytes32 eth1_block_hash, UnsignedLong eth1_timestamp, List<? extends Deposit> deposits) {
@@ -110,6 +111,7 @@ public class BeaconStateUtil {
           .setDeposit_root(
               HashTreeUtil.hash_tree_root(
                   HashTreeUtil.SSZTypes.LIST_OF_COMPOSITE, depositListLength, deposit_data_list));
+      STDOUT.log(Level.DEBUG, "About to process deposit: " + i);
       process_deposit(state, deposits.get(i));
     }
 
@@ -190,6 +192,7 @@ public class BeaconStateUtil {
         return;
       }
 
+      STDOUT.log(Level.DEBUG, "Adding new validator to state");
       state
           .getValidators()
           .add(

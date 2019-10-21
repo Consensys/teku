@@ -101,6 +101,10 @@ public class BLSPublicKey implements SimpleOffsetSerializable {
         });
   }
 
+  public Bytes toBytesCompressed() {
+    return publicKey.toBytesCompressed();
+  }
+
   public PublicKey getPublicKey() {
     return publicKey;
   }

@@ -61,6 +61,8 @@ public class StateProcessor {
   private List<DepositWithIndex> deposits;
   private BeaconStateWithCache initialState;
 
+  private boolean genesisReady = false;
+
   public StateProcessor(
       EventBus eventBus,
       ChainStorageClient chainStorageClient,
@@ -75,6 +77,7 @@ public class StateProcessor {
   }
 
   public void eth2Genesis(GenesisEvent genesisEvent) {
+    this.genesisReady = true;
     STDOUT.log(Level.INFO, "******* Eth2Genesis Event******* : ");
     this.initialState = genesisEvent.getBeaconState();
     Store store = chainStorageClient.getStore();
@@ -101,6 +104,7 @@ public class StateProcessor {
 
   @Subscribe
   public void onDeposit(tech.pegasys.artemis.pow.event.Deposit event) {
+    STDOUT.log(Level.DEBUG, "New deposit received");
     if (deposits == null) deposits = new ArrayList<>();
     deposits.add(DepositUtil.convertEventDepositToOperationDeposit(event));
 
@@ -114,7 +118,8 @@ public class StateProcessor {
     }
 
     // Approximation to save CPU cycles of creating new BeaconState on every Deposit captured
-    if (isGenesisReasonable(eth1_timestamp, deposits)) {
+    if (isGenesisReasonable(
+        eth1_timestamp, deposits, config.getDepositMode().equals("simulation"))) {
       if (config.getDepositMode().equals(Constants.DEPOSIT_SIM)) {
         BeaconStateWithCache candidate_state =
             initialize_beacon_state_from_eth1(
@@ -139,9 +144,11 @@ public class StateProcessor {
     }
   }
 
-  public boolean isGenesisReasonable(UnsignedLong eth1_timestamp, List<DepositWithIndex> deposits) {
-    final boolean afterMinGenesisTime = eth1_timestamp.compareTo(MIN_GENESIS_TIME) >= 0;
+  public boolean isGenesisReasonable(
+      UnsignedLong eth1_timestamp, List<DepositWithIndex> deposits, boolean isSimulation) {
     final boolean sufficientValidators = deposits.size() >= MIN_GENESIS_ACTIVE_VALIDATOR_COUNT;
+    if (isSimulation) return sufficientValidators;
+    final boolean afterMinGenesisTime = eth1_timestamp.compareTo(MIN_GENESIS_TIME) >= 0;
     return afterMinGenesisTime && sufficientValidators;
   }
 
@@ -206,5 +213,9 @@ public class StateProcessor {
       state.setGenesis_time(Constants.GENESIS_TIME);
     }
     chainStorageClient.setGenesisTime(state.getGenesis_time());
+  }
+
+  public boolean isGenesisReady() {
+    return genesisReady;
   }
 }

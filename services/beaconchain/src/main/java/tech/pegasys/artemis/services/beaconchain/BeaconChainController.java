@@ -75,6 +75,7 @@ public class BeaconChainController {
   private ValidatorCoordinator validatorCoordinator;
   private StateProcessor stateProcessor;
   private UnsignedLong nodeSlot = UnsignedLong.ZERO;
+  private boolean testMode;
 
   public BeaconChainController(
       EventBus eventBus, Vertx vertx, MetricsSystem metricsSystem, ArtemisConfiguration config) {
@@ -83,6 +84,7 @@ public class BeaconChainController {
     this.config = config;
     this.metricsSystem = metricsSystem;
     this.eventBus.register(this);
+    this.testMode = config.getDepositMode().equals("test");
   }
 
   public void initAll() {
@@ -225,6 +227,9 @@ public class BeaconChainController {
 
   @Subscribe
   private void onTick(Date date) {
+    if (!testMode && !stateProcessor.isGenesisReady()) {
+      return;
+    }
     try {
       final UnsignedLong currentTime = UnsignedLong.valueOf(date.getTime() / 1000);
       if (chainStorageClient.getStore() != null) {
