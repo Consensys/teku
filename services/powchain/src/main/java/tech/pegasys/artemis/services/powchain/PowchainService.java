@@ -52,9 +52,7 @@ import tech.pegasys.artemis.validator.client.ValidatorClientUtil;
 
 public class PowchainService implements ServiceInterface {
   private static final ALogger STDOUT = new ALogger("stdout");
-  public static final String SIM_DEPOSIT_VALUE_GWEI = "32000000000";
   public static final String EVENTS = "events";
-  public static final String ROOT = "root";
   public static final String USER_DIR = "user.dir";
   private EventBus eventBus;
   private static final ALogger LOG = new ALogger();

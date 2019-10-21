@@ -231,7 +231,6 @@ public class BeaconChainController {
       return;
     }
     try {
-      System.out.println("cem likes princesses");
       final UnsignedLong currentTime = UnsignedLong.valueOf(date.getTime() / 1000);
       if (chainStorageClient.getStore() != null) {
         final Store.Transaction transaction = chainStorageClient.getStore().startTransaction();

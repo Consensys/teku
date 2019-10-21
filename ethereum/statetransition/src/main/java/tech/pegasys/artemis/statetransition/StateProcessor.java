@@ -104,7 +104,7 @@ public class StateProcessor {
 
   @Subscribe
   public void onDeposit(tech.pegasys.artemis.pow.event.Deposit event) {
-    System.out.println("onDeposit: WE HAVE A DEPOSIT MOFOS");
+    STDOUT.log(Level.DEBUG, "New deposit received");
     if (deposits == null) deposits = new ArrayList<>();
     deposits.add(DepositUtil.convertEventDepositToOperationDeposit(event));
 
@@ -126,9 +126,7 @@ public class StateProcessor {
                 Bytes32.fromHexString(event.getResponse().log.getBlockHash()),
                 eth1_timestamp,
                 deposits);
-        System.out.println("out from init");
         if (is_valid_genesis_stateSim(candidate_state)) {
-          System.out.println("in valid genesis state sim");
           setSimulationGenesisTime(candidate_state);
           eth2Genesis(new GenesisEvent(candidate_state));
         }
