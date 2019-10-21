@@ -18,6 +18,7 @@ import static tech.pegasys.artemis.datastructures.Constants.DEPOSIT_NORMAL;
 import static tech.pegasys.artemis.datastructures.Constants.DEPOSIT_SIM;
 
 import com.google.common.eventbus.EventBus;
+import com.google.common.primitives.UnsignedLong;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonParser;
 import java.io.FileNotFoundException;
@@ -25,13 +26,21 @@ import java.io.IOException;
 import java.io.Reader;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.List;
+
 import org.apache.logging.log4j.Level;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.SECP256K1;
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.http.HttpService;
 import org.web3j.tx.gas.DefaultGasProvider;
+import tech.pegasys.artemis.datastructures.Constants;
+import tech.pegasys.artemis.datastructures.operations.DepositData;
 import tech.pegasys.artemis.datastructures.util.DepositUtil;
+import tech.pegasys.artemis.datastructures.util.MockStartBeaconStateGenerator;
+import tech.pegasys.artemis.datastructures.util.MockStartDepositGenerator;
+import tech.pegasys.artemis.datastructures.util.MockStartValidatorKeyPairFactory;
 import tech.pegasys.artemis.ganache.GanacheController;
 import tech.pegasys.artemis.pow.DepositContractListener;
 import tech.pegasys.artemis.pow.DepositContractListenerFactory;
@@ -39,6 +48,8 @@ import tech.pegasys.artemis.pow.event.Deposit;
 import tech.pegasys.artemis.service.serviceutils.ServiceConfig;
 import tech.pegasys.artemis.service.serviceutils.ServiceInterface;
 import tech.pegasys.artemis.util.alogger.ALogger;
+import tech.pegasys.artemis.util.bls.BLSKeyPair;
+import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.mikuli.KeyPair;
 import tech.pegasys.artemis.validator.client.Validator;
 import tech.pegasys.artemis.validator.client.ValidatorClientUtil;
@@ -81,20 +92,51 @@ public class PowchainService implements ServiceInterface {
   @Override
   public void run() {
     if (depositMode.equals(DEPOSIT_SIM) && depositSimFile == null) {
-      controller = new GanacheController(10, 6000);
+      controller = new GanacheController(Constants.MIN_GENESIS_ACTIVE_VALIDATOR_COUNT, 6000);
       listener =
           DepositContractListenerFactory.simulationDeployDepositContract(eventBus, controller);
       Web3j web3j = Web3j.build(new HttpService(controller.getProvider()));
       DefaultGasProvider gasProvider = new DefaultGasProvider();
+      MockStartValidatorKeyPairFactory mockStartValidatorKeyPairFactory = new MockStartValidatorKeyPairFactory();
+      MockStartDepositGenerator mockStartDepositGenerator = new MockStartDepositGenerator();
+      List<BLSKeyPair> blsKeyPairList = mockStartValidatorKeyPairFactory.generateKeyPairs(0, controller.getAccounts().size() - 1);
+
+      int i = 0;
       for (SECP256K1.KeyPair keyPair : controller.getAccounts()) {
-        Validator validator = new Validator(Bytes32.random(), KeyPair.random(), keyPair);
+        KeyPair blsKeyPair = new KeyPair(
+                blsKeyPairList.get(i).getSecretKey().getSecretKey(),
+                blsKeyPairList.get(i).getPublicKey().getPublicKey()
+        );
+        Validator validator = new Validator(
+                mockStartDepositGenerator.createWithdrawalCredentials(blsKeyPairList.get(i)),
+                blsKeyPair,
+                keyPair
+        );
+        DepositData depositData = new DepositData(
+                blsKeyPairList.get(i).getPublicKey(),
+                mockStartDepositGenerator.createWithdrawalCredentials(blsKeyPairList.get(i)),
+                UnsignedLong.valueOf(Long.parseLong(SIM_DEPOSIT_VALUE_GWEI)),
+                null
+        );
+
+        BLSSignature sig = BLSSignature.sign(
+                blsKeyPairList.get(i),
+                depositData.signing_root("signature"),
+                Constants.DOMAIN_DEPOSIT.getWrappedBytes()
+        );
+
+        i++;
+
+
+
         try {
           ValidatorClientUtil.registerValidatorEth1(
               validator,
               Long.parseLong(SIM_DEPOSIT_VALUE_GWEI),
               listener.getContract().getContractAddress(),
               web3j,
-              gasProvider);
+              gasProvider,
+                  sig);
         } catch (Exception e) {
           LOG.log(
               Level.WARN,

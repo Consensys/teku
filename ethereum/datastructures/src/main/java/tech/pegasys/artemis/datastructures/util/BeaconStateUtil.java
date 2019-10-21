@@ -98,6 +98,7 @@ public class BeaconStateUtil {
     state.setEth1_data(eth1_data);
     state.setLatest_block_header(beaconBlockHeader);
 
+    System.out.println("About to process deposits");
     // Process deposits
     DepositUtil.calcDepositProofs(deposits);
     long depositListLength = ((long) 1) << DEPOSIT_CONTRACT_TREE_DEPTH;
@@ -110,6 +111,7 @@ public class BeaconStateUtil {
           .setDeposit_root(
               HashTreeUtil.hash_tree_root(
                   HashTreeUtil.SSZTypes.LIST_OF_COMPOSITE, depositListLength, deposit_data_list));
+      System.out.println("About to process deposit " + i);
       process_deposit(state, deposits.get(i));
     }
 
@@ -117,6 +119,7 @@ public class BeaconStateUtil {
     IntStream.range(0, state.getValidators().size())
         .forEach(
             index -> {
+              System.out.println("About to process activation " + index);
               Validator validator = state.getValidators().get(index);
               UnsignedLong balance = state.getBalances().get(index);
               UnsignedLong effective_balance =
@@ -145,6 +148,7 @@ public class BeaconStateUtil {
     IntStream.range(0, EPOCHS_PER_HISTORICAL_VECTOR)
         .forEach(
             index -> {
+              System.out.println("populate " + index);
               state.getActive_index_roots().set(index, active_index_root);
               state.getCompact_committees_roots().set(index, committee_root);
             });
@@ -190,6 +194,7 @@ public class BeaconStateUtil {
         return;
       }
 
+      System.out.println("adding new validator to state");
       state
           .getValidators()
           .add(

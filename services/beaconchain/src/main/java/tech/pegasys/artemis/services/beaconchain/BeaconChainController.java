@@ -75,6 +75,7 @@ public class BeaconChainController {
   private ValidatorCoordinator validatorCoordinator;
   private StateProcessor stateProcessor;
   private UnsignedLong nodeSlot = UnsignedLong.ZERO;
+  private boolean testMode;
 
   public BeaconChainController(
       EventBus eventBus, Vertx vertx, MetricsSystem metricsSystem, ArtemisConfiguration config) {
@@ -83,6 +84,7 @@ public class BeaconChainController {
     this.config = config;
     this.metricsSystem = metricsSystem;
     this.eventBus.register(this);
+    this.testMode = config.getDepositMode().equals("test");
   }
 
   public void initAll() {
@@ -204,7 +206,7 @@ public class BeaconChainController {
     this.eventBus.post(new NodeStartEvent());
     STDOUT.log(Level.DEBUG, "BeaconChainController.start(): starting timer");
     this.timer.start();
-  }
+}
 
   public void stop() {
     STDOUT.log(Level.DEBUG, "BeaconChainController.stop()");
@@ -225,7 +227,11 @@ public class BeaconChainController {
 
   @Subscribe
   private void onTick(Date date) {
+    if (!testMode && !stateProcessor.isGenesisReady()) {
+      return;
+    }
     try {
+      System.out.println("jonny ssuckss asss and dicks all day");
       final UnsignedLong currentTime = UnsignedLong.valueOf(date.getTime() / 1000);
       if (chainStorageClient.getStore() != null) {
         final Store.Transaction transaction = chainStorageClient.getStore().startTransaction();
@@ -235,10 +241,10 @@ public class BeaconChainController {
                 .getStore()
                 .getTime()
                 .compareTo(
-                    chainStorageClient
-                        .getGenesisTime()
-                        .plus(nodeSlot.times(UnsignedLong.valueOf(SECONDS_PER_SLOT))))
-            >= 0) {
+                        chainStorageClient
+                                .getGenesisTime()
+                                .plus(nodeSlot.times(UnsignedLong.valueOf(SECONDS_PER_SLOT))))
+                >= 0) {
           this.eventBus.post(new SlotEvent(nodeSlot));
           this.currentSlotGauge.set(nodeSlot.longValue());
           this.currentEpochGauge.set(compute_epoch_of_slot(nodeSlot).longValue());
@@ -248,18 +254,18 @@ public class BeaconChainController {
           Bytes32 headBlockRoot = this.stateProcessor.processHead(nodeSlot);
           // Logging
           STDOUT.log(
-              Level.INFO,
-              "Head block slot:" + "                       " + chainStorageClient.getBestSlot());
+                  Level.INFO,
+                  "Head block slot:" + "                       " + chainStorageClient.getBestSlot());
           STDOUT.log(
-              Level.INFO,
-              "Justified epoch:"
-                  + "                       "
-                  + chainStorageClient.getStore().getJustifiedCheckpoint().getEpoch());
+                  Level.INFO,
+                  "Justified epoch:"
+                          + "                       "
+                          + chainStorageClient.getStore().getJustifiedCheckpoint().getEpoch());
           STDOUT.log(
-              Level.INFO,
-              "Finalized epoch:"
-                  + "                       "
-                  + chainStorageClient.getStore().getFinalizedCheckpoint().getEpoch());
+                  Level.INFO,
+                  "Finalized epoch:"
+                          + "                       "
+                          + chainStorageClient.getStore().getFinalizedCheckpoint().getEpoch());
 
           this.eventBus.post(new ValidatorAssignmentEvent(headBlockRoot));
           nodeSlot = nodeSlot.plus(UnsignedLong.ONE);

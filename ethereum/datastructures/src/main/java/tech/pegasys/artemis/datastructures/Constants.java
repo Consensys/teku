@@ -194,7 +194,7 @@ public class Constants {
       MIN_PER_EPOCH_CHURN_LIMIT = 4;
       CHURN_LIMIT_QUOTIENT = 65536;
       SHUFFLE_ROUND_COUNT = 10;
-      MIN_GENESIS_ACTIVE_VALIDATOR_COUNT = 64;
+      MIN_GENESIS_ACTIVE_VALIDATOR_COUNT = 8;
       MIN_GENESIS_TIME = UnsignedLong.valueOf(1578009600);
 
       // Gwei values
