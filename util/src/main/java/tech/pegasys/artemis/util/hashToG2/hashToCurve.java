@@ -35,8 +35,8 @@ import tech.pegasys.artemis.util.mikuli.G2Point;
  *   <li>Interesting background: https://eprint.iacr.org/2019/403.pdf
  * </ul>
  *
- * <p>This code is based on the reference implementation in Python, and test vectors are taken from
- * there.
+ * <p>This code is based on the reference implementations in Python and C, and test vectors are
+ * taken from there.
  *
  * <p>Note that no attempt has been made to implement constant-time methods in this package. For the
  * purposes of hashing to G2 within Ethereum I believe that this is of no consequence, since all the

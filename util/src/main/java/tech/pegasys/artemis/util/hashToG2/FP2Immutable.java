@@ -116,6 +116,13 @@ public final class FP2Immutable {
     return new FP2Immutable(result);
   }
 
+  /** Wrap FP2 imul() method to return a result */
+  FP2Immutable mul(int c) {
+    FP2 result = new FP2(this.fp2);
+    result.imul(c);
+    return new FP2Immutable(result);
+  }
+
   /** Wrap FP2 add() method to return a result */
   FP2Immutable add(FP2Immutable a) {
     FP2 result = new FP2(this.fp2);
@@ -153,23 +160,12 @@ public final class FP2Immutable {
     return new FP2Immutable(result);
   }
 
-  /** Multiply by a small scalar */
-  FP2Immutable mul(int c) {
-    FP2 result = new FP2(this.fp2);
-    result.imul(c);
-    return new FP2Immutable(result);
-  }
-
   /** Double an element */
   FP2Immutable dbl() {
     return new FP2Immutable(this.mul(2));
   }
 
-  /**
-   * Test whether the element is zero.
-   *
-   * @return true if the element is zero, false otherwise
-   */
+  /** Test whether the element is zero */
   boolean iszilch() {
     return fp2.iszilch();
   }
@@ -211,16 +207,16 @@ public final class FP2Immutable {
     if (exponent == 0) return ONE;
     if (exponent == 1) return this;
     if (exponent == 2) return this.sqr();
-    FP2Immutable result = ONE;
-    FP2Immutable tmp = new FP2Immutable(this);
+    FP2 res = new FP2(1);
+    FP2 tmp = new FP2(fp2);
     while (exponent > 0) {
-      if (exponent % 2 == 1) {
-        result = result.mul(tmp);
+      if ((exponent & 1) == 1) {
+        res.mul(tmp);
       }
-      tmp = tmp.sqr();
-      exponent /= 2;
+      tmp.sqr();
+      exponent >>>= 1;
     }
-    return result;
+    return new FP2Immutable(res);
   }
 
   FP2 getFp2() {
