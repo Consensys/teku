@@ -2,6 +2,7 @@ jar { enabled = false }
 
 dependencies {
   referenceTestImplementation project(':util')
+  referenceTestImplementation project(':eth-tests')
   referenceTestImplementation project(':ethereum:datastructures')
   referenceTestImplementation project(':ethereum:statetransition')
   referenceTestImplementation project(':storage')

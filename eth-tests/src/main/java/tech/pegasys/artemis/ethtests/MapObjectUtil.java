@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.reference;
+package tech.pegasys.artemis.ethtests;
 
 import com.google.common.primitives.UnsignedLong;
 import java.math.BigInteger;
