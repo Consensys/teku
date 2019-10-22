@@ -1,20 +1,18 @@
-jar { enabled = false }
-
 dependencies {
-  referenceTestImplementation project(':util')
-  referenceTestImplementation project(':ethereum:datastructures')
-  referenceTestImplementation project(':ethereum:statetransition')
-  referenceTestImplementation project(':storage')
+  implementation project(':util')
+  implementation project(':ethereum:datastructures')
+  implementation project(':ethereum:statetransition')
+  implementation project(':storage')
 
-  referenceTestImplementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
-  referenceTestImplementation 'org.miracl.milagro.amcl:milagro-crypto-java:0.4.0'
-  referenceTestImplementation 'org.apache.tuweni:tuweni-bytes'
-  referenceTestImplementation 'org.apache.commons:commons-lang3:3.6'
-  referenceTestImplementation 'org.mockito:mockito-core:2.28.2'
-  referenceTestImplementation 'com.fasterxml.jackson.core:jackson-databind'
-  referenceTestImplementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
-  referenceTestImplementation 'org.junit.jupiter:junit-jupiter-api'
-  referenceTestImplementation 'org.junit.jupiter:junit-jupiter-params'
+  implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
+  implementation 'org.miracl.milagro.amcl:milagro-crypto-java:0.4.0'
+  implementation 'org.apache.tuweni:tuweni-bytes'
+  implementation 'org.apache.commons:commons-lang3:3.6'
+  implementation 'org.mockito:mockito-core:2.28.2'
+  implementation 'com.fasterxml.jackson.core:jackson-databind'
+  implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
+  implementation 'org.junit.jupiter:junit-jupiter-api'
+  implementation 'org.junit.jupiter:junit-jupiter-params'
 
-  referenceTestRuntime 'org.junit.jupiter:junit-jupiter-engine'
+  implementation 'org.junit.jupiter:junit-jupiter-engine'
 }
