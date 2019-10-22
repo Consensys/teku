@@ -29,8 +29,8 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.tests.TestSuite;
 import tech.pegasys.artemis.statetransition.util.BlockProcessingException;
+import tech.pegasys.artemis.ethtests.TestSuite;
 
 @ExtendWith(BouncyCastleExtension.class)
 public class block_header extends TestSuite {

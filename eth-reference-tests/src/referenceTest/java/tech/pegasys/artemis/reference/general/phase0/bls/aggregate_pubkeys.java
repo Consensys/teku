@@ -25,7 +25,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import tech.pegasys.artemis.tests.TestSuite;
+import tech.pegasys.artemis.ethtests.TestSuite;
 import tech.pegasys.artemis.util.mikuli.PublicKey;
 
 @ExtendWith(BouncyCastleExtension.class)

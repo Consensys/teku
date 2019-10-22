@@ -97,7 +97,6 @@ jobs:
             then
               ./gradlew --no-daemon expandRefTests
             fi
-            ./gradlew --no-daemon compileJava
       - run:
           name: ReferenceTests
           command: |

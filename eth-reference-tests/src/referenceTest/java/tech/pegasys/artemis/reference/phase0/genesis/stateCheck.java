@@ -32,7 +32,7 @@ import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.util.MockStartBeaconStateGenerator;
 import tech.pegasys.artemis.datastructures.util.MockStartDepositGenerator;
 import tech.pegasys.artemis.datastructures.util.MockStartValidatorKeyPairFactory;
-import tech.pegasys.artemis.tests.TestSuite;
+import tech.pegasys.artemis.ethtests.TestSuite;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 
 @ExtendWith(BouncyCastleExtension.class)

@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.tests;
+package tech.pegasys.artemis.ethtests;
 
 import java.nio.file.Path;
 
