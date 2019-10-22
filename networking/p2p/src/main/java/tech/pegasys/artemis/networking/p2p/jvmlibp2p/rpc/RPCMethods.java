@@ -59,16 +59,7 @@ public class RPCMethods {
     return hello;
   }
 
-  public RPCMessageHandler<GoodbyeMessage, Void> getGoodbye() {
-    return goodbye;
-  }
-
-  public RPCMessageHandler<BeaconBlocksMessageRequest, BeaconBlocksMessageResponse>
-      getBeaconBlocks() {
-    return beaconBlocks;
-  }
-
   public List<RPCMessageHandler<?, ?>> all() {
-    return Arrays.asList(getHello(), getGoodbye(), getBeaconBlocks());
+    return Arrays.asList(getHello(), goodbye, beaconBlocks);
   }
 }

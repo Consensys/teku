@@ -18,10 +18,8 @@ import io.libp2p.core.PeerId;
 import io.libp2p.core.multiformats.Multiaddr;
 import java.util.concurrent.CompletableFuture;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.HelloMessage;
-import tech.pegasys.artemis.util.alogger.ALogger;
 
 public class Peer {
-  private static final ALogger STDOUT = new ALogger("stdout");
   final Connection connection;
   final Multiaddr multiaddr;
   final PeerId peerId;
@@ -34,12 +32,8 @@ public class Peer {
         new Multiaddr(connection.remoteAddress().toString() + "/p2p/" + peerId.toString());
   }
 
-  public CompletableFuture<HelloMessage> getRemoteHelloMessage() {
-    return remoteHello;
-  }
-
-  public Connection getConnection() {
-    return connection;
+  public void receivedHelloMessage(final HelloMessage message) {
+    remoteHello.complete(message);
   }
 
   public PeerId getPeerId() {
