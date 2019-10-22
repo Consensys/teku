@@ -13,60 +13,46 @@
 
 package tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc;
 
-import io.libp2p.core.Connection;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.function.BiFunction;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.BeaconBlocksMessageRequest;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.BeaconBlocksMessageResponse;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.GoodbyeMessage;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.HelloMessage;
-import tech.pegasys.artemis.util.alogger.ALogger;
 
 public class RPCMethods {
-  private static final ALogger STDOUT = new ALogger("stdout");
   private final RPCMessageHandler<HelloMessage, HelloMessage> hello;
   private final RPCMessageHandler<GoodbyeMessage, Void> goodbye;
   private final RPCMessageHandler<BeaconBlocksMessageRequest, BeaconBlocksMessageResponse>
       beaconBlocks;
 
   public RPCMethods(
-      BiFunction<Connection, HelloMessage, HelloMessage> helloHandler,
-      BiFunction<Connection, GoodbyeMessage, Void> goodbyeHandler,
-      BiFunction<Connection, BeaconBlocksMessageRequest, BeaconBlocksMessageResponse>
+      LocalMessageHandler<HelloMessage, HelloMessage> helloHandler,
+      LocalMessageHandler<GoodbyeMessage, Void> goodbyeHandler,
+      LocalMessageHandler<BeaconBlocksMessageRequest, BeaconBlocksMessageResponse>
           beaconBlocksHandler) {
 
     this.hello =
         new RPCMessageHandler<>(
-            "/eth2/beacon_chain/req/hello/1/ssz", HelloMessage.class, HelloMessage.class) {
-          @Override
-          protected CompletableFuture<HelloMessage> invokeLocal(
-              Connection connection, HelloMessage msg) {
-            return CompletableFuture.completedFuture(helloHandler.apply(connection, msg));
-          }
-        };
+            "/eth2/beacon_chain/req/hello/1/ssz",
+            HelloMessage.class,
+            HelloMessage.class,
+            helloHandler);
 
     this.goodbye =
-        new RPCMessageHandler<GoodbyeMessage, Void>(
-            "/eth2/beacon_chain/req/goodbye/1/ssz", GoodbyeMessage.class, Void.class) {
-          @Override
-          protected CompletableFuture<Void> invokeLocal(Connection connection, GoodbyeMessage msg) {
-            return CompletableFuture.completedFuture(goodbyeHandler.apply(connection, msg));
-          }
-        }.setNotification();
+        new RPCMessageHandler<>(
+                "/eth2/beacon_chain/req/goodbye/1/ssz",
+                GoodbyeMessage.class,
+                Void.class,
+                goodbyeHandler)
+            .setNotification();
 
     this.beaconBlocks =
-        new RPCMessageHandler<BeaconBlocksMessageRequest, BeaconBlocksMessageResponse>(
+        new RPCMessageHandler<>(
             "/eth2/beacon_chain/req/beacon_blocks/1/ssz",
             BeaconBlocksMessageRequest.class,
-            BeaconBlocksMessageResponse.class) {
-          @Override
-          protected CompletableFuture<BeaconBlocksMessageResponse> invokeLocal(
-              Connection connection, BeaconBlocksMessageRequest msg) {
-            return CompletableFuture.completedFuture(beaconBlocksHandler.apply(connection, msg));
-          }
-        };
+            BeaconBlocksMessageResponse.class,
+            beaconBlocksHandler);
   }
 
   public RPCMessageHandler<HelloMessage, HelloMessage> getHello() {

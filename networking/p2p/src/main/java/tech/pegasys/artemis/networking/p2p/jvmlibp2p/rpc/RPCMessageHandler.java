@@ -32,20 +32,25 @@ import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.RPCMessageHandler.Contr
 import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
-public abstract class RPCMessageHandler<TRequest extends SimpleOffsetSerializable, TResponse>
+public class RPCMessageHandler<TRequest extends SimpleOffsetSerializable, TResponse>
     implements ProtocolBinding<Controller<TRequest, TResponse>> {
   private static final ALogger STDOUT = new ALogger("stdout");
 
   private final String methodMultistreamId;
   private final Class<TRequest> requestClass;
   private final Class<TResponse> responseClass;
+  private final LocalMessageHandler<TRequest, TResponse> localMessageHandler;
   private boolean notification = false;
 
   public RPCMessageHandler(
-      String methodMultistreamId, Class<TRequest> requestClass, Class<TResponse> responseClass) {
+      String methodMultistreamId,
+      Class<TRequest> requestClass,
+      Class<TResponse> responseClass,
+      LocalMessageHandler<TRequest, TResponse> localMessageHandler) {
     this.methodMultistreamId = methodMultistreamId;
     this.requestClass = requestClass;
     this.responseClass = responseClass;
+    this.localMessageHandler = localMessageHandler;
   }
 
   @SuppressWarnings("unchecked")
@@ -57,8 +62,9 @@ public abstract class RPCMessageHandler<TRequest extends SimpleOffsetSerializabl
         .thenCompose(ctr -> ctr.invoke(request));
   }
 
-  protected abstract CompletableFuture<TResponse> invokeLocal(
-      Connection connection, TRequest request);
+  protected CompletableFuture<TResponse> invokeLocal(Connection connection, TRequest request) {
+    return CompletableFuture.completedFuture(localMessageHandler.invokeLocal(connection, request));
+  }
 
   public RPCMessageHandler<TRequest, TResponse> setNotification() {
     this.notification = true;
@@ -172,7 +178,7 @@ public abstract class RPCMessageHandler<TRequest extends SimpleOffsetSerializabl
     }
 
     @Override
-    public void channelActive(ChannelHandlerContext ctx) throws Exception {
+    public void channelActive(ChannelHandlerContext ctx) {
       this.ctx = ctx;
       activeFuture.complete(this);
     }
