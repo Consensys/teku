@@ -4,8 +4,19 @@ plugins {
 
 dependencies {
   implementation project(':util')
+  implementation project(':eth-tests')
   implementation project(':ethereum:datastructures')
   implementation 'org.apache.tuweni:tuweni-bytes'
+
+  implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
+  implementation 'org.miracl.milagro.amcl:milagro-crypto-java:0.4.0'
+  implementation 'org.apache.tuweni:tuweni-bytes'
+  implementation 'org.apache.commons:commons-lang3:3.6'
+  implementation 'org.mockito:mockito-core:2.28.2'
+  implementation 'com.fasterxml.jackson.core:jackson-databind'
+  implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
+  implementation 'org.junit.jupiter:junit-jupiter-api'
+  implementation 'org.junit.jupiter:junit-jupiter-params'
 }
 
 jmh {

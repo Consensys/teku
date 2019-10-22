@@ -29,8 +29,8 @@ import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
-import tech.pegasys.artemis.statetransition.StateTransition;
 import tech.pegasys.artemis.ethtests.TestSuite;
+import tech.pegasys.artemis.statetransition.StateTransition;
 
 @ExtendWith(BouncyCastleExtension.class)
 public class blocksMainnetValid2 extends TestSuite {
