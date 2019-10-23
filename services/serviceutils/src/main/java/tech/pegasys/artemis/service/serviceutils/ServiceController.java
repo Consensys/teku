@@ -45,8 +45,8 @@ public class ServiceController {
 
     // Chain storage has to be initialized first due to node start event requiring storage service
     // to be online
-    chainStorageService.init(config);
     beaconChainService.init(config);
+    chainStorageService.init(config);
 
     if (powChainServiceActive) {
       powchainService = ServiceFactory.getInstance(powchainServiceType).getInstance();
@@ -56,8 +56,8 @@ public class ServiceController {
 
   public void startAll() {
     // start all services
-    beaconChainExecuterService.execute(beaconChainService);
     chainStorageExecutorService.execute(chainStorageService);
+    beaconChainExecuterService.execute(beaconChainService);
     if (powChainServiceActive) {
       powchainExecuterService.execute(powchainService);
     }

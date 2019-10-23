@@ -85,6 +85,7 @@ public class ChainStorageClient implements ChainStorage {
     return genesisTime;
   }
 
+  @Subscribe
   public void setStore(Store store) {
     this.store = store;
   }

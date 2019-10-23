@@ -13,16 +13,24 @@
 
 package tech.pegasys.artemis.storage;
 
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_of_slot;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_start_slot_of_epoch;
+
+import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
 import java.io.IOException;
 import java.io.Serializable;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.stream.LongStream;
 import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -58,9 +66,15 @@ public class Database {
   private ConcurrentMap<Bytes32, BeaconBlock> blocks;
   private ConcurrentMap<Bytes32, BeaconState> block_states;
   private ConcurrentMap<Checkpoint, BeaconState> checkpoint_states;
-  private ConcurrentMap<UnsignedLong, LatestMessage> latest_messages;
+  private ConcurrentMap<UnsignedLong, Checkpoint> latest_messages;
 
-  Database(String dbFileName, boolean clearOldDB) {
+  // Slot -> Map references
+  private ConcurrentMap<UnsignedLong, Bytes32> block_root_references;
+  private ConcurrentMap<UnsignedLong, Checkpoint> checkpoint_references;
+  private Atomic.Var<UnsignedLong> latest_slot;
+
+  @SuppressWarnings("CheckReturnValue")
+  Database(String dbFileName, EventBus eventBus, boolean clearOldDB) {
     try {
       if (clearOldDB) Files.deleteIfExists(Paths.get(dbFileName));
     } catch (IOException e) {
@@ -99,14 +113,86 @@ public class Database {
         db.hashMap(
                 "latest_messages_map",
                 new UnsignedLongSerializer(),
-                new MapDBSerializer<LatestMessage>(LatestMessage.class))
+                new MapDBSerializer<Checkpoint>(Checkpoint.class))
             .createOrOpen();
+
+    // Optimization variables (used to not load the entire database content in memory when Artemis
+    // restarts)
+    latest_slot = db.atomicVar("latest_slot", new UnsignedLongSerializer()).createOrOpen();
+    try {
+      latest_slot.get().equals(null);
+    } catch (Exception e) {
+      latest_slot.set(UnsignedLong.ZERO);
+    }
+    block_root_references =
+        db.hashMap(
+                "block_root_references_map", new UnsignedLongSerializer(), new Bytes32Serializer())
+            .createOrOpen();
+    checkpoint_references =
+        db.hashMap(
+                "checkpoint_references_map",
+                new UnsignedLongSerializer(),
+                new MapDBSerializer<Checkpoint>(Checkpoint.class))
+            .createOrOpen();
+
+    if (!clearOldDB) {
+      STDOUT.log(
+          Level.INFO,
+          "Using the database to load Store and thus the previously Store will be overwritten.",
+          ALogger.Color.GREEN);
+      Store memoryStore = createMemoryStore();
+      eventBus.post(memoryStore);
+    }
+  }
+
+  public Store createMemoryStore() {
+    UnsignedLong slot = latest_slot.get();
+    Checkpoint finalized_checkpoint_memory = new Checkpoint(finalizedCheckpoint.get());
+    Checkpoint justified_checkpoint_memory = new Checkpoint(justifiedCheckpoint.get());
+    UnsignedLong time_memory = time.get();
+    Map<UnsignedLong, Checkpoint> latest_messages_memory = new ConcurrentHashMap<>(latest_messages);
+    Map<Bytes32, BeaconBlock> blocks_memory = new ConcurrentHashMap<>();
+    Map<Bytes32, BeaconState> block_states_memory = new ConcurrentHashMap<>();
+    Map<Checkpoint, BeaconState> checkpoint_states_memory = new ConcurrentHashMap<>();
+
+    LongStream.range(
+            compute_start_slot_of_epoch(finalized_checkpoint_memory.getEpoch()).longValue(),
+            slot.longValue() + 1)
+        .forEach(
+            currentSlot -> {
+              Bytes32 root = block_root_references.get(UnsignedLong.valueOf(currentSlot));
+              Checkpoint checkpoint =
+                  checkpoint_references.get(
+                      compute_start_slot_of_epoch(
+                          compute_epoch_of_slot(UnsignedLong.valueOf(currentSlot))));
+
+              blocks_memory.put(root, blocks.get(root));
+              block_states_memory.put(root, block_states.get(root));
+              checkpoint_states_memory.put(checkpoint, checkpoint_states.get(checkpoint));
+            });
+
+    return new Store(
+        time_memory,
+        justified_checkpoint_memory,
+        finalized_checkpoint_memory,
+        blocks_memory,
+        block_states_memory,
+        checkpoint_states_memory,
+        latest_messages_memory);
   }
 
   public void insert(Store.Transaction transaction) {
     final Lock writeLock = lock.writeLock();
     writeLock.lock();
     try {
+      transaction
+          .getSlot()
+          .ifPresent(
+              transaction_slot -> {
+                if (latest_slot.get().compareTo(transaction_slot) < 0) {
+                  latest_slot.set(transaction_slot);
+                }
+              });
 
       time.set(transaction.getTime());
       justifiedCheckpoint.set(transaction.getJustifiedCheckpoint());
@@ -116,10 +202,30 @@ public class Database {
       checkpoint_states.putAll(transaction.getCheckpointStates());
       latest_messages.putAll(transaction.getLatestMessages());
 
+      Map<UnsignedLong, Bytes32> new_block_root_references = new HashMap<>();
+      Map<UnsignedLong, Checkpoint> new_checkpoint_references = new HashMap<>();
+
+      transaction
+          .getBlocks()
+          .forEach((root, block) -> new_block_root_references.put(block.getSlot(), root));
+
+      transaction
+          .getCheckpointStates()
+          .keySet()
+          .forEach(
+              checkpoint ->
+                  new_checkpoint_references.put(
+                      compute_start_slot_of_epoch(checkpoint.getEpoch()), checkpoint));
+
+      block_root_references.putAll(new_block_root_references);
+      checkpoint_references.putAll(new_checkpoint_references);
+
       db.commit();
     } catch (Exception e) {
 
       db.rollback();
+      STDOUT.log(
+          Level.WARN, "Unable to insert new data into DB " + e.toString(), ALogger.Color.RED);
 
     } finally {
       writeLock.unlock();
@@ -153,7 +259,7 @@ public class Database {
     return blockContained ? Optional.of(checkpoint_states.get(checkpoint)) : Optional.empty();
   }
 
-  public Optional<LatestMessage> getLatest_message(UnsignedLong validatorIndex) {
+  public Optional<Checkpoint> getLatest_message(UnsignedLong validatorIndex) {
     boolean blockContained = latest_messages.containsKey(validatorIndex);
     return blockContained ? Optional.of(latest_messages.get(validatorIndex)) : Optional.empty();
   }
@@ -162,9 +268,8 @@ public class Database {
     db.close();
   }
 
-  @SuppressWarnings("rawtypes")
-  private static class MapDBSerializer<T extends SimpleOffsetSerializable>
-      implements Serializer<T>, Serializable {
+  @SuppressWarnings({"rawtypes", "unchecked"})
+  private static class MapDBSerializer<T> implements Serializer<T>, Serializable {
 
     private Class classInfo;
 
@@ -173,13 +278,14 @@ public class Database {
     }
 
     @Override
-    public void serialize(DataOutput2 out, SimpleOffsetSerializable object) throws IOException {
-      out.writeChars(SimpleOffsetSerializer.serialize(object).toHexString());
+    public void serialize(DataOutput2 out, Object object) throws IOException {
+      out.writeChars(
+          SimpleOffsetSerializer.serialize((SimpleOffsetSerializable) object).toHexString());
     }
 
     @Override
     public T deserialize(DataInput2 in, int available) throws IOException {
-      return SimpleOffsetSerializer.deserialize(Bytes.fromHexString(in.readLine()), classInfo);
+      return (T) SimpleOffsetSerializer.deserialize(Bytes.fromHexString(in.readLine()), classInfo);
     }
   }
 }
