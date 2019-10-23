@@ -74,9 +74,9 @@ public class Database {
   private Atomic.Var<UnsignedLong> latest_slot;
 
   @SuppressWarnings("CheckReturnValue")
-  Database(String dbFileName, EventBus eventBus, boolean clearOldDB) {
+  Database(String dbFileName, EventBus eventBus, boolean startFromDisk) {
     try {
-      if (clearOldDB) Files.deleteIfExists(Paths.get(dbFileName));
+      if (!startFromDisk) Files.deleteIfExists(Paths.get(dbFileName));
     } catch (IOException e) {
       STDOUT.log(Level.WARN, "Failed to clear old database");
     }
@@ -135,10 +135,10 @@ public class Database {
                 new MapDBSerializer<Checkpoint>(Checkpoint.class))
             .createOrOpen();
 
-    if (!clearOldDB) {
+    if (startFromDisk) {
       STDOUT.log(
           Level.INFO,
-          "Using the database to load Store and thus the previously Store will be overwritten.",
+          "Using the database to load Store and thus the previously built Store will be overwritten.",
           ALogger.Color.GREEN);
       Store memoryStore = createMemoryStore();
       eventBus.post(memoryStore);

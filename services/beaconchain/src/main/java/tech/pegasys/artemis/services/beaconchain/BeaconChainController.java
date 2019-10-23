@@ -288,7 +288,7 @@ public class BeaconChainController {
     nodeSlot = unixTimeStamp.minus(genesisTime).dividedBy(UnsignedLong.valueOf(SECONDS_PER_SLOT));
     STDOUT.log(
         Level.INFO,
-        "Database Store genesis time " + genesisTime + " and current node slot: " + nodeSlot,
+        "Database Store genesis time " + genesisTime + " and current node slot " + nodeSlot + ".",
         ALogger.Color.GREEN);
   }
 }

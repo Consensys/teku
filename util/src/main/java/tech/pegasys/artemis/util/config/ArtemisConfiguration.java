@@ -127,7 +127,7 @@ public class ArtemisConfiguration {
     builder.addInteger("constants.DEPOSIT_DATA_SIZE", Integer.MIN_VALUE, null, null);
 
     // Database
-    builder.addBoolean("database.clearOldDB", true, "Clear the DB if set to true", null);
+    builder.addBoolean("database.startFromDisk", false, "Start from the disk if set to true", null);
 
     builder.validateConfiguration(
         config -> {
@@ -341,7 +341,7 @@ public class ArtemisConfiguration {
     return config.getString("output.logFile");
   }
 
-  public boolean clearOldDB() {
-    return config.getBoolean("database.clearOldDB");
+  public boolean startFromDisk() {
+    return config.getBoolean("database.startFromDisk");
   }
 }

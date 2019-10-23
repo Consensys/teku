@@ -21,6 +21,7 @@ import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomB
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomBytes32;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomCheckpoint;
 
+import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -93,7 +94,8 @@ class StoreTest {
 
   @Test
   public void shouldApplyChangesToDisk() {
-    final Database db = new Database("test.db", true);
+    EventBus eventBus = new EventBus();
+    final Database db = new Database("test.db", eventBus, false);
 
     final Transaction transaction = store.startTransaction();
     final Bytes32 blockRoot = DataStructureUtil.randomBytes32(SEED);
@@ -121,7 +123,8 @@ class StoreTest {
 
   @Test
   public void shouldPersistOnDisk() {
-    final Database db = new Database("test.db", true);
+    EventBus eventBus = new EventBus();
+    final Database db = new Database("test.db", eventBus, false);
 
     final Transaction transaction = store.startTransaction();
     final Bytes32 blockRoot = DataStructureUtil.randomBytes32(SEED);
@@ -140,7 +143,7 @@ class StoreTest {
     db.insert(transaction);
     db.close();
 
-    final Database newDB = new Database("test.db", false);
+    final Database newDB = new Database("test.db", eventBus, true);
 
     assertEquals(block, newDB.getBlock(blockRoot).get());
     assertEquals(state, newDB.getBlock_state(blockRoot).get());
