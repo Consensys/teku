@@ -49,7 +49,8 @@ public class PeerManager implements ConnectionHandler, PeerLookup {
     helloMessageFactory = new HelloMessageFactory(chainStorageClient);
     this.rpcMethods =
         new RPCMethods(
-            new HelloMessageHandler(this, helloMessageFactory),
+            this,
+            new HelloMessageHandler(helloMessageFactory),
             new GoodbyeMessageHandler(),
             new BeaconBlocksMessageHandler());
   }
@@ -100,6 +101,7 @@ public class PeerManager implements ConnectionHandler, PeerLookup {
             });
   }
 
+  @Override
   public Peer getPeer(Connection conn) {
     return connectedPeerMap.get(conn.remoteAddress());
   }

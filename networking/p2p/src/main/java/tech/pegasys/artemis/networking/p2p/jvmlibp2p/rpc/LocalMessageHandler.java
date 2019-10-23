@@ -13,8 +13,8 @@
 
 package tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc;
 
-import io.libp2p.core.Connection;
+import tech.pegasys.artemis.networking.p2p.jvmlibp2p.Peer;
 
 public interface LocalMessageHandler<I, O> {
-  O invokeLocal(Connection connection, I message);
+  O onIncomingMessage(Peer peer, I message);
 }

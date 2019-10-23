@@ -18,12 +18,14 @@ import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.BeaconBlocksMes
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.BeaconBlocksMessageResponse;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.GoodbyeMessage;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.HelloMessage;
+import tech.pegasys.artemis.networking.p2p.jvmlibp2p.PeerLookup;
 
 public class RPCMethods {
   private final RPCMessageHandler<HelloMessage, HelloMessage> hello;
   private final List<RPCMessageHandler<?, ?>> methods;
 
   public RPCMethods(
+      PeerLookup peerLookup,
       LocalMessageHandler<HelloMessage, HelloMessage> helloHandler,
       LocalMessageHandler<GoodbyeMessage, Void> goodbyeHandler,
       LocalMessageHandler<BeaconBlocksMessageRequest, BeaconBlocksMessageResponse>
@@ -32,6 +34,7 @@ public class RPCMethods {
     this.hello =
         new RPCMessageHandler<>(
             "/eth2/beacon_chain/req/hello/1/ssz",
+            peerLookup,
             HelloMessage.class,
             HelloMessage.class,
             helloHandler);
@@ -41,12 +44,14 @@ public class RPCMethods {
             hello,
             new RPCMessageHandler<>(
                     "/eth2/beacon_chain/req/goodbye/1/ssz",
+                    peerLookup,
                     GoodbyeMessage.class,
                     Void.class,
                     goodbyeHandler)
                 .setNotification(),
             new RPCMessageHandler<>(
                 "/eth2/beacon_chain/req/beacon_blocks/1/ssz",
+                peerLookup,
                 BeaconBlocksMessageRequest.class,
                 BeaconBlocksMessageResponse.class,
                 beaconBlocksHandler));

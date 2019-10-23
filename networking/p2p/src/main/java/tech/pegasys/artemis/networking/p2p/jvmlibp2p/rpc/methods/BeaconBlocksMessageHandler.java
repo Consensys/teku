@@ -13,10 +13,10 @@
 
 package tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.methods;
 
-import io.libp2p.core.Connection;
 import org.apache.logging.log4j.Level;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.BeaconBlocksMessageRequest;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.BeaconBlocksMessageResponse;
+import tech.pegasys.artemis.networking.p2p.jvmlibp2p.Peer;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.LocalMessageHandler;
 import tech.pegasys.artemis.util.alogger.ALogger;
 
@@ -25,12 +25,12 @@ public class BeaconBlocksMessageHandler
   private final ALogger LOG = new ALogger(BeaconBlocksMessageHandler.class.getName());
 
   @Override
-  public BeaconBlocksMessageResponse invokeLocal(
-      final Connection connection, final BeaconBlocksMessageRequest message) {
+  public BeaconBlocksMessageResponse onIncomingMessage(
+      final Peer peer, final BeaconBlocksMessageRequest message) {
     LOG.log(
         Level.DEBUG,
         "Peer "
-            + connection.getSecureSession().getRemoteId()
+            + peer.getRemoteId()
             + " requested BeaconBlocks starting from "
             + message.getStartSlot()
             + ".");

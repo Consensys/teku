@@ -28,6 +28,8 @@ import java.util.concurrent.CompletableFuture;
 import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes;
 import org.jetbrains.annotations.NotNull;
+import tech.pegasys.artemis.networking.p2p.jvmlibp2p.Peer;
+import tech.pegasys.artemis.networking.p2p.jvmlibp2p.PeerLookup;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.RPCMessageHandler.Controller;
 import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
@@ -37,6 +39,7 @@ public class RPCMessageHandler<TRequest extends SimpleOffsetSerializable, TRespo
   private static final ALogger STDOUT = new ALogger("stdout");
 
   private final String methodMultistreamId;
+  private final PeerLookup peerLookup;
   private final Class<TRequest> requestClass;
   private final Class<TResponse> responseClass;
   private final LocalMessageHandler<TRequest, TResponse> localMessageHandler;
@@ -44,10 +47,12 @@ public class RPCMessageHandler<TRequest extends SimpleOffsetSerializable, TRespo
 
   public RPCMessageHandler(
       String methodMultistreamId,
+      PeerLookup peerLookup,
       Class<TRequest> requestClass,
       Class<TResponse> responseClass,
       LocalMessageHandler<TRequest, TResponse> localMessageHandler) {
     this.methodMultistreamId = methodMultistreamId;
+    this.peerLookup = peerLookup;
     this.requestClass = requestClass;
     this.responseClass = responseClass;
     this.localMessageHandler = localMessageHandler;
@@ -63,7 +68,8 @@ public class RPCMessageHandler<TRequest extends SimpleOffsetSerializable, TRespo
   }
 
   protected CompletableFuture<TResponse> invokeLocal(Connection connection, TRequest request) {
-    return CompletableFuture.completedFuture(localMessageHandler.invokeLocal(connection, request));
+    final Peer peer = peerLookup.getPeer(connection);
+    return CompletableFuture.completedFuture(localMessageHandler.onIncomingMessage(peer, request));
   }
 
   public RPCMessageHandler<TRequest, TResponse> setNotification() {

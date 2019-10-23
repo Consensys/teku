@@ -13,32 +13,28 @@
 
 package tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.methods;
 
-import io.libp2p.core.Connection;
 import org.apache.logging.log4j.Level;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.HelloMessage;
-import tech.pegasys.artemis.networking.p2p.jvmlibp2p.PeerLookup;
+import tech.pegasys.artemis.networking.p2p.jvmlibp2p.Peer;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.LocalMessageHandler;
 import tech.pegasys.artemis.util.alogger.ALogger;
 
 public class HelloMessageHandler implements LocalMessageHandler<HelloMessage, HelloMessage> {
 
   private final ALogger LOG = new ALogger(HelloMessageHandler.class.getName());
-  private final PeerLookup peerLookup;
   private final HelloMessageFactory helloMessageFactory;
 
-  public HelloMessageHandler(
-      final PeerLookup peerLookup, final HelloMessageFactory helloMessageFactory) {
-    this.peerLookup = peerLookup;
+  public HelloMessageHandler(final HelloMessageFactory helloMessageFactory) {
     this.helloMessageFactory = helloMessageFactory;
   }
 
   @Override
-  public HelloMessage invokeLocal(final Connection connection, final HelloMessage message) {
-    if (connection.isInitiator()) {
-      throw new IllegalArgumentException("Responder peer shouldn't initiate Hello message");
+  public HelloMessage onIncomingMessage(final Peer peer, final HelloMessage message) {
+    if (peer.isInitiator()) {
+      throw new IllegalStateException("Responder peer shouldn't initiate Hello message");
     } else {
-      LOG.log(Level.DEBUG, "Peer " + connection.getSecureSession().getRemoteId() + " said hello.");
-      peerLookup.getPeer(connection).receivedHelloMessage(message);
+      LOG.log(Level.DEBUG, "Peer " + peer.getRemoteId() + " said hello.");
+      peer.receivedHelloMessage(message);
       return helloMessageFactory.createLocalHelloMessage();
     }
   }

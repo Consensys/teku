@@ -13,9 +13,9 @@
 
 package tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.methods;
 
-import io.libp2p.core.Connection;
 import org.apache.logging.log4j.Level;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.GoodbyeMessage;
+import tech.pegasys.artemis.networking.p2p.jvmlibp2p.Peer;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.LocalMessageHandler;
 import tech.pegasys.artemis.util.alogger.ALogger;
 
@@ -24,8 +24,8 @@ public class GoodbyeMessageHandler implements LocalMessageHandler<GoodbyeMessage
   private final ALogger LOG = new ALogger(GoodbyeMessageHandler.class.getName());
 
   @Override
-  public Void invokeLocal(final Connection connection, final GoodbyeMessage message) {
-    LOG.log(Level.DEBUG, "Peer " + connection.getSecureSession().getRemoteId() + " said goodbye.");
+  public Void onIncomingMessage(final Peer peer, final GoodbyeMessage message) {
+    LOG.log(Level.DEBUG, "Peer " + peer.getRemoteId() + " said goodbye.");
     return null;
   }
 }

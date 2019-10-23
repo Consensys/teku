@@ -43,4 +43,12 @@ public class Peer {
   public Multiaddr getPeerMultiaddr() {
     return multiaddr;
   }
+
+  public PeerId getRemoteId() {
+    return connection.getSecureSession().getRemoteId();
+  }
+
+  public boolean isInitiator() {
+    return connection.isInitiator();
+  }
 }
