@@ -13,8 +13,8 @@
 
 package tech.pegasys.artemis.datastructures.networking.libp2p.rpc;
 
+import com.google.common.base.Preconditions;
 import com.google.common.primitives.UnsignedLong;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
@@ -26,18 +26,18 @@ public final class GoodbyeMessage implements SimpleOffsetSerializable, SSZContai
 
   private final UnsignedLong reason;
 
-  public static final int REASON_CLIENT_SHUT_DOWN = 1;
-  public static final int REASON_IRRELEVANT_NETWORK = 2;
-  public static final int REASON_FAULT_ERROR = 3;
-  public static final int MIN_CUSTOM_REASON_CODE = 128; //
+  public static final UnsignedLong REASON_CLIENT_SHUT_DOWN = UnsignedLong.ONE;
+  public static final UnsignedLong REASON_IRRELEVANT_NETWORK = UnsignedLong.valueOf(2);
+  public static final UnsignedLong REASON_FAULT_ERROR = UnsignedLong.valueOf(3);
+  public static final UnsignedLong MIN_CUSTOM_REASON_CODE = UnsignedLong.valueOf(128);
 
-  public GoodbyeMessage(UnsignedLong reason) throws Exception {
-    if (UnsignedLong.valueOf(REASON_CLIENT_SHUT_DOWN).compareTo(reason) != 0
-        && UnsignedLong.valueOf(REASON_FAULT_ERROR).compareTo(reason) != 0
-        && UnsignedLong.valueOf(REASON_IRRELEVANT_NETWORK).compareTo(reason) != 0
-        && UnsignedLong.valueOf(MIN_CUSTOM_REASON_CODE).compareTo(reason) == 1) {
-      throw new Exception("Invalid reason code for Goodbye message");
-    }
+  public GoodbyeMessage(UnsignedLong reason) {
+    Preconditions.checkArgument(
+        REASON_CLIENT_SHUT_DOWN.compareTo(reason) == 0
+            || REASON_FAULT_ERROR.compareTo(reason) == 0
+            || REASON_IRRELEVANT_NETWORK.compareTo(reason) == 0
+            || MIN_CUSTOM_REASON_CODE.compareTo(reason) <= 0,
+        "Invalid reason code for Goodbye message");
     this.reason = reason;
   }
 
@@ -48,8 +48,7 @@ public final class GoodbyeMessage implements SimpleOffsetSerializable, SSZContai
 
   @Override
   public List<Bytes> get_fixed_parts() {
-    List<Bytes> fixedPartsList = new ArrayList<>(List.of(SSZ.encodeUInt64(reason.longValue())));
-    return fixedPartsList;
+    return List.of(SSZ.encodeUInt64(reason.longValue()));
   }
 
   @Override
