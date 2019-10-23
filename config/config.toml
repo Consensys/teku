@@ -49,3 +49,5 @@ port = 8008
 metricsNetworkInterface = "127.0.0.1"
 #metricsCategories = [ "BEACONCHAIN", "JVM", "PROCESS" ]
 
+[database]
+startFromDisk = false

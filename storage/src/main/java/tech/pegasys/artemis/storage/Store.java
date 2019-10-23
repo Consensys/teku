@@ -41,7 +41,7 @@ public class Store implements ReadOnlyStore {
   private Map<Bytes32, BeaconBlock> blocks;
   private Map<Bytes32, BeaconState> block_states;
   private Map<Checkpoint, BeaconState> checkpoint_states;
-  private Map<UnsignedLong, LatestMessage> latest_messages;
+  private Map<UnsignedLong, Checkpoint> latest_messages;
 
   public Store(
       UnsignedLong time,
@@ -59,8 +59,29 @@ public class Store implements ReadOnlyStore {
     this.latest_messages = new ConcurrentHashMap<>();
   }
 
+  public Store(
+      UnsignedLong time,
+      Checkpoint justified_checkpoint,
+      Checkpoint finalized_checkpoint,
+      Map<Bytes32, BeaconBlock> blocks,
+      Map<Bytes32, BeaconState> block_states,
+      Map<Checkpoint, BeaconState> checkpoint_states,
+      Map<UnsignedLong, Checkpoint> latest_messages) {
+    this.time = time;
+    this.justified_checkpoint = justified_checkpoint;
+    this.finalized_checkpoint = finalized_checkpoint;
+    this.blocks = blocks;
+    this.block_states = block_states;
+    this.checkpoint_states = checkpoint_states;
+    this.latest_messages = latest_messages;
+  }
+
   public Transaction startTransaction() {
     return new Transaction();
+  }
+
+  public Transaction startTransaction(UnsignedLong slot) {
+    return new Transaction(slot);
   }
 
   public void cleanStoreUntilSlot(UnsignedLong slot) {
@@ -197,7 +218,7 @@ public class Store implements ReadOnlyStore {
   }
 
   @Override
-  public LatestMessage getLatestMessage(UnsignedLong validatorIndex) {
+  public Checkpoint getLatestMessage(UnsignedLong validatorIndex) {
     readLock.lock();
     try {
       return latest_messages.get(validatorIndex);
@@ -223,14 +244,22 @@ public class Store implements ReadOnlyStore {
     private Map<Bytes32, BeaconBlock> blocks = new HashMap<>();
     private Map<Bytes32, BeaconState> block_states = new HashMap<>();
     private Map<Checkpoint, BeaconState> checkpoint_states = new HashMap<>();
-    private Map<UnsignedLong, LatestMessage> latest_messages = new HashMap<>();
+    private Map<UnsignedLong, Checkpoint> latest_messages = new HashMap<>();
+
+    private Optional<UnsignedLong> slot = Optional.empty();
+
+    Transaction() {}
+
+    public Transaction(UnsignedLong slot) {
+      this.slot = Optional.of(slot);
+    }
 
     // Keys to be removed from Store for memory cleaning purposes
     private Set<Bytes32> block_keys = new HashSet<>();
     private Set<Bytes32> block_state_keys = new HashSet<>();
     private Set<Checkpoint> checkpoint_state_keys = new HashSet<>();
 
-    public void putLatestMessage(UnsignedLong validatorIndex, LatestMessage latestMessage) {
+    public void putLatestMessage(UnsignedLong validatorIndex, Checkpoint latestMessage) {
       latest_messages.put(validatorIndex, latestMessage);
     }
 
@@ -344,7 +373,7 @@ public class Store implements ReadOnlyStore {
     }
 
     @Override
-    public LatestMessage getLatestMessage(final UnsignedLong validatorIndex) {
+    public Checkpoint getLatestMessage(final UnsignedLong validatorIndex) {
       return either(validatorIndex, latest_messages::get, Store.this::getLatestMessage);
     }
 
@@ -355,6 +384,10 @@ public class Store implements ReadOnlyStore {
     }
 
     // Disk Storage Related Functions
+
+    public Optional<UnsignedLong> getSlot() {
+      return slot;
+    }
 
     public Map<Bytes32, BeaconBlock> getBlocks() {
       return blocks;
@@ -368,7 +401,7 @@ public class Store implements ReadOnlyStore {
       return checkpoint_states;
     }
 
-    public Map<UnsignedLong, LatestMessage> getLatestMessages() {
+    public Map<UnsignedLong, Checkpoint> getLatestMessages() {
       return latest_messages;
     }
   }

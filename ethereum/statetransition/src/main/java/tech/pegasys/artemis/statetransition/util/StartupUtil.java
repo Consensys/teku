@@ -120,7 +120,7 @@ public final class StartupUtil {
         new MockStartValidatorKeyPairFactory().generateKeyPairs(0, validatorCount - 1);
     STDOUT.log(
         Level.INFO,
-        "Using mocked start interoperability mode with genesis time "
+        "Starting with mocked start interoperability mode with genesis time "
             + genesisTime
             + " and "
             + validatorCount

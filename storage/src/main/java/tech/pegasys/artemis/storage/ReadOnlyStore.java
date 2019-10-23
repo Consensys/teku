@@ -42,7 +42,7 @@ public interface ReadOnlyStore {
 
   boolean containsCheckpointState(Checkpoint checkpoint);
 
-  LatestMessage getLatestMessage(UnsignedLong validatorIndex);
+  Checkpoint getLatestMessage(UnsignedLong validatorIndex);
 
   boolean containsLatestMessage(UnsignedLong validatorIndex);
 }
