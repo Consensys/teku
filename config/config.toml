@@ -50,4 +50,4 @@ metricsNetworkInterface = "127.0.0.1"
 #metricsCategories = [ "BEACONCHAIN", "JVM", "PROCESS" ]
 
 [database]
-startFromDisk = true
+startFromDisk = false
