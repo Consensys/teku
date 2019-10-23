@@ -41,7 +41,6 @@ import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.statetransition.StateTransition;
 import tech.pegasys.artemis.statetransition.StateTransitionException;
-import tech.pegasys.artemis.storage.LatestMessage;
 import tech.pegasys.artemis.storage.ReadOnlyStore;
 import tech.pegasys.artemis.storage.Store;
 
@@ -187,7 +186,8 @@ public class ForkChoiceUtil {
         store.containsBlockState(block.getParent_root()),
         "on_block: Parent block state is not contained in block_state");
     final BeaconState preState = store.getBlockState(block.getParent_root());
-    BeaconStateWithCache state = BeaconStateWithCache.deepCopy((BeaconStateWithCache) preState);
+    BeaconStateWithCache state =
+        BeaconStateWithCache.deepCopy(BeaconStateWithCache.fromBeaconState(preState));
 
     // Blocks cannot be in the future. If they are, their consideration must be delayed until the
     // are in the past.
@@ -309,7 +309,7 @@ public class ForkChoiceUtil {
       if (!store.containsLatestMessage(i)
           || target.getEpoch().compareTo(store.getLatestMessage(i).getEpoch()) > 0) {
         store.putLatestMessage(
-            i, new LatestMessage(target.getEpoch(), attestation.getData().getBeacon_block_root()));
+            i, new Checkpoint(target.getEpoch(), attestation.getData().getBeacon_block_root()));
       }
     }
   }

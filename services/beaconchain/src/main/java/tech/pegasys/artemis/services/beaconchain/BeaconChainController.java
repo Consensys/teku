@@ -25,6 +25,7 @@ import io.libp2p.core.crypto.KeyKt;
 import io.libp2p.core.crypto.PrivKey;
 import io.vertx.core.Vertx;
 import java.io.IOException;
+import java.time.Instant;
 import java.util.Date;
 import java.util.Objects;
 import java.util.Optional;
@@ -36,7 +37,9 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
+import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.metrics.ArtemisMetricCategory;
 import tech.pegasys.artemis.metrics.SettableGauge;
 import tech.pegasys.artemis.networking.p2p.JvmLibP2PNetwork;
@@ -273,5 +276,19 @@ public class BeaconChainController {
     } catch (InterruptedException e) {
       STDOUT.log(Level.FATAL, "onTick: " + e.toString());
     }
+  }
+
+  @Subscribe
+  public void setNodeSlotAccordingToDBStore(Store store) {
+    Checkpoint finalizedCheckpoint = store.getFinalizedCheckpoint();
+    BeaconState state = store.getBlockState(finalizedCheckpoint.getRoot());
+    UnsignedLong unixTimeStamp = UnsignedLong.valueOf(Instant.now().getEpochSecond());
+    UnsignedLong genesisTime = state.getGenesis_time();
+    chainStorageClient.setGenesisTime(genesisTime);
+    nodeSlot = unixTimeStamp.minus(genesisTime).dividedBy(UnsignedLong.valueOf(SECONDS_PER_SLOT));
+    STDOUT.log(
+        Level.INFO,
+        "Database Store genesis time " + genesisTime + " and current node slot " + nodeSlot + ".",
+        ALogger.Color.GREEN);
   }
 }

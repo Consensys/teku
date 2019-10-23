@@ -184,6 +184,7 @@ public final class BeaconStateWithCache extends BeaconState {
    * @return created state with empty caches
    */
   public static BeaconStateWithCache fromBeaconState(BeaconState state) {
+    if (state instanceof BeaconStateWithCache) return (BeaconStateWithCache) state;
     return new BeaconStateWithCache(
         state.getGenesis_time(),
         state.getSlot(),

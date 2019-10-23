@@ -15,6 +15,7 @@ package tech.pegasys.artemis.statetransition;
 
 import static tech.pegasys.artemis.datastructures.Constants.MIN_GENESIS_ACTIVE_VALIDATOR_COUNT;
 import static tech.pegasys.artemis.datastructures.Constants.MIN_GENESIS_TIME;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_start_slot_of_epoch;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.initialize_beacon_state_from_eth1;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.is_valid_genesis_state;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.is_valid_genesis_stateSim;
@@ -94,7 +95,8 @@ public class StateProcessor {
     chainStorageClient.updateBestBlock(headBlockRoot, headBlock.getSlot());
 
     try {
-      stateTransition.process_slots((BeaconStateWithCache) headState, nodeSlot, false);
+      stateTransition.process_slots(
+          BeaconStateWithCache.fromBeaconState(headState), nodeSlot, false);
     } catch (SlotProcessingException | EpochProcessingException e) {
       STDOUT.log(Level.WARN, "Error when processing empty slots");
       STDOUT.log(Level.WARN, e.toString());
@@ -154,12 +156,9 @@ public class StateProcessor {
 
   @Subscribe
   private void onBlock(BeaconBlock block) {
-    // Store.Transaction transaction = chainStorageClient.getStore().startTransaction();
-    //  BeaconState preState =
-    //     BeaconStateWithCache.fromBeaconState(transaction.getBlockState(block.getParent_root()));
-
     try {
-      Store.Transaction transaction = chainStorageClient.getStore().startTransaction();
+      Store.Transaction transaction =
+          chainStorageClient.getStore().startTransaction(block.getSlot());
       final BlockProcessingRecord record = on_block(transaction, block, stateTransition);
       transaction.commit();
       eventBus.post(new StoreDiskUpdateEvent(transaction));
@@ -193,7 +192,11 @@ public class StateProcessor {
   @Subscribe
   private void onAttestation(Attestation attestation) {
     try {
-      final Store.Transaction transaction = chainStorageClient.getStore().startTransaction();
+      final Store.Transaction transaction =
+          chainStorageClient
+              .getStore()
+              .startTransaction(
+                  compute_start_slot_of_epoch(attestation.getData().getTarget().getEpoch()));
       on_attestation(transaction, attestation, stateTransition);
       transaction.commit();
       eventBus.post(new StoreDiskUpdateEvent(transaction));
