@@ -1,12 +1,8 @@
-plugins {
-  id 'me.champeau.gradle.jmh'
-}
-
 dependencies {
   implementation project(':util')
-  implementation project(':eth-tests')
   implementation project(':ethereum:datastructures')
-  implementation 'org.apache.tuweni:tuweni-bytes'
+  implementation project(':ethereum:statetransition')
+  implementation project(':storage')
 
   implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
   implementation 'org.miracl.milagro.amcl:milagro-crypto-java:0.4.0'
@@ -19,7 +15,6 @@ dependencies {
   implementation 'org.junit.jupiter:junit-jupiter-params'
 }
 
-jmh {
-  include = '.*'
-  resultFormat = 'CSV'
+test {
+  testLogging.showStandardStreams = true
 }

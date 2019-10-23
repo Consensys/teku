@@ -22,7 +22,7 @@ import java.util.stream.Stream;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import tech.pegasys.artemis.reference.TestSuite;
+import tech.pegasys.artemis.ethtests.TestSuite;
 import tech.pegasys.artemis.util.mikuli.G2Point;
 
 class msg_hash_uncompressed extends TestSuite {
