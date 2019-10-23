@@ -169,8 +169,10 @@ final class JacobianPoint {
     if (isInfinity()) {
       return new ECP2();
     }
-    FP2Immutable z3inv = z.pow(3).inverse();
-    return new ECP2(x.mul(z).mul(z3inv).getFp2(), y.mul(z3inv).getFp2());
+    FP2Immutable zInv = z.inverse();
+    FP2Immutable z2Inv = zInv.sqr();
+    FP2Immutable z3Inv = zInv.mul(z2Inv);
+    return new ECP2(x.mul(z2Inv).getFp2(), y.mul(z3Inv).getFp2());
   }
 
   public FP2Immutable getX() {

@@ -917,23 +917,23 @@ public class Helper {
     FP2Immutable[] mapvals = new FP2Immutable[4];
 
     // precompute the required powers of Z^2
-    FP2Immutable[] zpows = new FP2Immutable[4];
+    final FP2Immutable[] zpows = new FP2Immutable[4];
     zpows[0] = ONE;
     zpows[1] = z.sqr();
-    zpows[2] = zpows[1].mul(zpows[1]);
+    zpows[2] = zpows[1].sqr();
     zpows[3] = zpows[2].mul(zpows[1]);
 
     // compute the numerator and denominator of the X and Y maps via Horner's rule
     FP2Immutable[] coeffs_z = new FP2Immutable[4];
     for (int idx = 0; idx < map_coeffs.length; idx++) {
       FP2Immutable[] coeffs = map_coeffs[idx];
-      for (int j = 0; j < coeffs.length; j++) {
+      coeffs_z[0] = coeffs[coeffs.length - 1];
+      for (int j = 1; j < coeffs.length; j++) {
         coeffs_z[j] = coeffs[coeffs.length - j - 1].mul(zpows[j]);
       }
       FP2Immutable tmp = coeffs_z[0];
       for (int j = 1; j < coeffs.length; j++) {
-        tmp = tmp.mul(x);
-        tmp = tmp.add(coeffs_z[j]);
+        tmp = tmp.mul(x).add(coeffs_z[j]);
       }
       mapvals[idx] = tmp;
     }
@@ -947,7 +947,7 @@ public class Helper {
 
     FP2Immutable zz = mapvals[1].mul(mapvals[3]);
     FP2Immutable xx = mapvals[0].mul(mapvals[3]).mul(zz);
-    FP2Immutable yy = mapvals[2].mul(mapvals[1]).mul(zz).mul(zz);
+    FP2Immutable yy = mapvals[2].mul(mapvals[1]).mul(zz.sqr());
 
     return new JacobianPoint(xx, yy, zz);
   }
@@ -1007,7 +1007,7 @@ public class Helper {
 
     FP2Immutable zOut = pz2.mul(pz3);
     FP2Immutable xOut = px.mul(pz3).mul(zOut);
-    FP2Immutable yOut = py.mul(pz2).mul(zOut).mul(zOut);
+    FP2Immutable yOut = py.mul(pz2).mul(zOut.sqr());
 
     return new JacobianPoint(xOut, yOut, zOut);
   }

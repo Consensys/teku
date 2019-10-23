@@ -24,4 +24,9 @@ class JacobianPointTest {
   void infinityTest() {
     assertTrue(INFINITY.isInfinity());
   }
+
+  @Test
+  void toAffineTest() {
+    // TODO
+  }
 }
