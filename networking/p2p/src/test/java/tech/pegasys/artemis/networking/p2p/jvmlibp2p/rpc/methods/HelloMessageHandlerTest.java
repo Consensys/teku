@@ -13,8 +13,10 @@
 
 package tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.methods;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.google.common.primitives.UnsignedLong;
@@ -27,12 +29,19 @@ import tech.pegasys.artemis.util.SSZTypes.Bytes4;
 
 class HelloMessageHandlerTest {
 
-  private static final HelloMessage HELLO_MESSAGE =
+  private static final HelloMessage REMOTE_HELLO =
       new HelloMessage(
           Bytes4.rightPad(Bytes.of(4)),
-          Bytes32.random(),
+          Bytes32.fromHexStringLenient("0x11"),
           UnsignedLong.ZERO,
-          Bytes32.random(),
+          Bytes32.fromHexStringLenient("0x11"),
+          UnsignedLong.ZERO);
+  private static final HelloMessage LOCAL_HELLO =
+      new HelloMessage(
+          Bytes4.rightPad(Bytes.of(4)),
+          Bytes32.fromHexStringLenient("0x22"),
+          UnsignedLong.ZERO,
+          Bytes32.fromHexStringLenient("0x22"),
           UnsignedLong.ZERO);
   private final HelloMessageFactory helloMessageFactory = mock(HelloMessageFactory.class);
   private final Peer peer = mock(Peer.class);
@@ -41,6 +50,18 @@ class HelloMessageHandlerTest {
   @Test
   public void shouldRejectIncomingHelloWhenWeInitiatedConnection() {
     when(peer.isInitiator()).thenReturn(true);
-    assertThrows(IllegalStateException.class, () -> handler.onIncomingMessage(peer, HELLO_MESSAGE));
+    assertThrows(IllegalStateException.class, () -> handler.onIncomingMessage(peer, REMOTE_HELLO));
+  }
+
+  @Test
+  public void shouldRegisterHelloMessageWithPeer() {
+    handler.onIncomingMessage(peer, REMOTE_HELLO);
+    verify(peer).receivedHelloMessage(REMOTE_HELLO);
+  }
+
+  @Test
+  public void shouldReturnLocalHelloMessage() {
+    when(helloMessageFactory.createLocalHelloMessage()).thenReturn(LOCAL_HELLO);
+    assertThat(handler.onIncomingMessage(peer, REMOTE_HELLO)).isSameAs(LOCAL_HELLO);
   }
 }
