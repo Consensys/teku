@@ -17,7 +17,8 @@ import java.util.Optional;
 import tech.pegasys.pantheon.metrics.MetricCategory;
 
 public enum ArtemisMetricCategory implements MetricCategory {
-  BEACONCHAIN("beaconchain");
+  BEACONCHAIN("beaconchain"),
+  NETWORK("network");
 
   private final String name;
 

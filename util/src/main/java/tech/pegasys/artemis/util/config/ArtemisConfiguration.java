@@ -108,7 +108,7 @@ public class ArtemisConfiguration {
         PropertyValidator.inRange(0, 65535));
     builder.addListOfString(
         "metrics.metricsCategories",
-        asList("JVM", "PROCESS", "BEACONCHAIN"),
+        asList("JVM", "PROCESS", "BEACONCHAIN", "NETWORK"),
         "Metric categories to enable",
         null);
     // Outputs

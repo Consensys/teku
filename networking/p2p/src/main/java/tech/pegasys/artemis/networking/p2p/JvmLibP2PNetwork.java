@@ -42,6 +42,7 @@ import tech.pegasys.artemis.networking.p2p.jvmlibp2p.gossip.GossipMessageHandler
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.cli.VersionProvider;
+import tech.pegasys.pantheon.metrics.MetricsSystem;
 
 public class JvmLibP2PNetwork implements P2PNetwork {
   private static final ALogger STDOUT = new ALogger("stdout");
@@ -54,7 +55,10 @@ public class JvmLibP2PNetwork implements P2PNetwork {
   private final PeerManager peerManager;
 
   public JvmLibP2PNetwork(
-      final Config config, final EventBus eventBus, final ChainStorageClient chainStorageClient) {
+      final Config config,
+      final EventBus eventBus,
+      final ChainStorageClient chainStorageClient,
+      final MetricsSystem metricsSystem) {
     this.privKey =
         config
             .getPrivateKey()
@@ -65,7 +69,7 @@ public class JvmLibP2PNetwork implements P2PNetwork {
             new ThreadFactoryBuilder().setDaemon(true).setNameFormat("libp2p-%d").build());
     Gossip gossip = new Gossip();
     GossipMessageHandler.init(gossip, privKey, eventBus);
-    peerManager = new PeerManager(scheduler, chainStorageClient);
+    peerManager = new PeerManager(scheduler, chainStorageClient, metricsSystem);
 
     host =
         BuildersJKt.hostJ(

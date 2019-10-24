@@ -26,16 +26,16 @@ public final class GoodbyeMessage implements SimpleOffsetSerializable, SSZContai
 
   private final UnsignedLong reason;
 
-  public static final UnsignedLong REASON_CLIENT_SHUT_DOWN = UnsignedLong.ONE;
+  public static final UnsignedLong REASON_CLIENT_SHUT_DOWN = UnsignedLong.valueOf(1);
   public static final UnsignedLong REASON_IRRELEVANT_NETWORK = UnsignedLong.valueOf(2);
   public static final UnsignedLong REASON_FAULT_ERROR = UnsignedLong.valueOf(3);
   public static final UnsignedLong MIN_CUSTOM_REASON_CODE = UnsignedLong.valueOf(128);
 
   public GoodbyeMessage(UnsignedLong reason) {
     Preconditions.checkArgument(
-        REASON_CLIENT_SHUT_DOWN.compareTo(reason) == 0
-            || REASON_FAULT_ERROR.compareTo(reason) == 0
-            || REASON_IRRELEVANT_NETWORK.compareTo(reason) == 0
+        REASON_CLIENT_SHUT_DOWN.equals(reason)
+            || REASON_FAULT_ERROR.equals(reason)
+            || REASON_IRRELEVANT_NETWORK.equals(reason)
             || MIN_CUSTOM_REASON_CODE.compareTo(reason) <= 0,
         "Invalid reason code for Goodbye message");
     this.reason = reason;
@@ -71,10 +71,10 @@ public final class GoodbyeMessage implements SimpleOffsetSerializable, SSZContai
     }
 
     GoodbyeMessage other = (GoodbyeMessage) obj;
-    return Objects.equals(this.reason(), other.reason());
+    return Objects.equals(this.getReason(), other.getReason());
   }
 
-  public UnsignedLong reason() {
+  public UnsignedLong getReason() {
     return reason;
   }
 }

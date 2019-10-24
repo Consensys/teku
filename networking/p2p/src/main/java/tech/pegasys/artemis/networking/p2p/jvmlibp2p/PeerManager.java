@@ -30,6 +30,7 @@ import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.methods.HelloMessageFac
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.methods.HelloMessageHandler;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.util.alogger.ALogger;
+import tech.pegasys.pantheon.metrics.MetricsSystem;
 
 public class PeerManager implements ConnectionHandler, PeerLookup {
   private static final ALogger STDOUT = new ALogger("stdout");
@@ -44,14 +45,16 @@ public class PeerManager implements ConnectionHandler, PeerLookup {
   private final RPCMethods rpcMethods;
 
   public PeerManager(
-      final ScheduledExecutorService scheduler, final ChainStorageClient chainStorageClient) {
+      final ScheduledExecutorService scheduler,
+      final ChainStorageClient chainStorageClient,
+      final MetricsSystem metricsSystem) {
     this.scheduler = scheduler;
     helloMessageFactory = new HelloMessageFactory(chainStorageClient);
     this.rpcMethods =
         new RPCMethods(
             this,
             new HelloMessageHandler(helloMessageFactory),
-            new GoodbyeMessageHandler(),
+            new GoodbyeMessageHandler(metricsSystem),
             new BeaconBlocksMessageHandler());
   }
 
