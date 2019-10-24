@@ -30,7 +30,7 @@ import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
 public class RpcMethods {
 
-  private final Map<RpcMethod<?, ?>, RPCMessageHandler<?, ?>> methods;
+  private final Map<RpcMethod<?, ?>, RpcMessageHandler<?, ?>> methods;
 
   public RpcMethods(
       PeerLookup peerLookup,
@@ -41,15 +41,15 @@ public class RpcMethods {
 
     this.methods =
         createMethodMap(
-            new RPCMessageHandler<>(RpcMethod.HELLO, peerLookup, helloHandler),
-            new RPCMessageHandler<>(RpcMethod.GOODBYE, peerLookup, goodbyeHandler)
+            new RpcMessageHandler<>(RpcMethod.HELLO, peerLookup, helloHandler),
+            new RpcMessageHandler<>(RpcMethod.GOODBYE, peerLookup, goodbyeHandler)
                 .setCloseNotification(),
-            new RPCMessageHandler<>(RpcMethod.BEACON_BLOCKS, peerLookup, beaconBlocksHandler));
+            new RpcMessageHandler<>(RpcMethod.BEACON_BLOCKS, peerLookup, beaconBlocksHandler));
   }
 
-  private Map<RpcMethod<?, ?>, RPCMessageHandler<?, ?>> createMethodMap(
-      final RPCMessageHandler<?, ?>... handlers) {
-    final Builder<RpcMethod<?, ?>, RPCMessageHandler<?, ?>> builder = ImmutableMap.builder();
+  private Map<RpcMethod<?, ?>, RpcMessageHandler<?, ?>> createMethodMap(
+      final RpcMessageHandler<?, ?>... handlers) {
+    final Builder<RpcMethod<?, ?>, RpcMessageHandler<?, ?>> builder = ImmutableMap.builder();
     Stream.of(handlers).forEach(handler -> builder.put(handler.getMethod(), handler));
     return builder.build();
   }
@@ -59,13 +59,13 @@ public class RpcMethods {
     return getHandler(method).invokeRemote(connection, request);
   }
 
-  public Collection<RPCMessageHandler<?, ?>> all() {
+  public Collection<RpcMessageHandler<?, ?>> all() {
     return Collections.unmodifiableCollection(methods.values());
   }
 
   @SuppressWarnings("unchecked")
-  private <I extends SimpleOffsetSerializable, O> RPCMessageHandler<I, O> getHandler(
+  private <I extends SimpleOffsetSerializable, O> RpcMessageHandler<I, O> getHandler(
       final RpcMethod<I, O> method) {
-    return (RPCMessageHandler<I, O>) methods.get(method);
+    return (RpcMessageHandler<I, O>) methods.get(method);
   }
 }
