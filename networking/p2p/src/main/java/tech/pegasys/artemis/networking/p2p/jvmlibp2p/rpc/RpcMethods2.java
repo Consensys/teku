@@ -28,11 +28,11 @@ import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.HelloMessage;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.PeerLookup;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
-public class RpcMethods {
+public class RpcMethods2 {
 
   private final Map<RpcMethod<?, ?>, RpcMessageHandler<?, ?>> methods;
 
-  public RpcMethods(
+  public RpcMethods2(
       PeerLookup peerLookup,
       LocalMessageHandler<HelloMessage, HelloMessage> helloHandler,
       LocalMessageHandler<GoodbyeMessage, Void> goodbyeHandler,

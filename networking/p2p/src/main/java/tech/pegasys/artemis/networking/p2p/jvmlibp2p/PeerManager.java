@@ -26,7 +26,7 @@ import org.apache.logging.log4j.Level;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.RpcMessageHandler;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.RpcMethod;
-import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.RpcMethods;
+import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.RpcMethods2;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.methods.BeaconBlocksMessageHandler;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.methods.GoodbyeMessageHandler;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.methods.HelloMessageFactory;
@@ -45,7 +45,7 @@ public class PeerManager implements ConnectionHandler, PeerLookup {
 
   private ConcurrentHashMap<Multiaddr, Peer> connectedPeerMap = new ConcurrentHashMap<>();
 
-  private final RpcMethods rpcMethods;
+  private final RpcMethods2 rpcMethods;
 
   public PeerManager(
       final ScheduledExecutorService scheduler,
@@ -54,7 +54,7 @@ public class PeerManager implements ConnectionHandler, PeerLookup {
     this.scheduler = scheduler;
     helloMessageFactory = new HelloMessageFactory(chainStorageClient);
     this.rpcMethods =
-        new RpcMethods(
+        new RpcMethods2(
             this,
             new HelloMessageHandler(helloMessageFactory),
             new GoodbyeMessageHandler(metricsSystem),
