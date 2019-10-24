@@ -31,10 +31,7 @@ public class RPCMethods {
   private final RPCMessageHandler<BeaconBlocksMessageRequest, BeaconBlocksMessageResponse>
       beaconBlocks;
 
-  public RPCMethods(
-      BiFunction<Connection, HelloMessage, HelloMessage> helloHandler,
-      BiFunction<Connection, GoodbyeMessage, Void> goodbyeHandler,
-      BiFunction<Connection, BeaconBlocksMessageRequest, BeaconBlocksMessageResponse>
+  public RPCMethods(BiFunction<Connection, HelloMessage, HelloMessage> helloHandler, BiFunction<Connection, GoodbyeMessage, Void> goodbyeHandler, BiFunction<Connection, BeaconBlocksMessageRequest, BeaconBlocksMessageResponse>
           beaconBlocksHandler) {
 
     this.hello =
