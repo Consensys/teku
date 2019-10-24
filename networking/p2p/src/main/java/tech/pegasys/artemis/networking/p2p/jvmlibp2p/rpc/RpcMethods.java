@@ -14,7 +14,6 @@
 package tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc;
 
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableMap.Builder;
 import io.libp2p.core.Connection;
 import java.util.Collection;
 import java.util.Collections;
@@ -49,7 +48,8 @@ public class RpcMethods {
 
   private Map<RpcMethod<?, ?>, RpcMessageHandler<?, ?>> createMethodMap(
       final RpcMessageHandler<?, ?>... handlers) {
-    final Builder<RpcMethod<?, ?>, RpcMessageHandler<?, ?>> builder = ImmutableMap.builder();
+    final ImmutableMap.Builder<RpcMethod<?, ?>, RpcMessageHandler<?, ?>> builder =
+        ImmutableMap.builder();
     Stream.of(handlers).forEach(handler -> builder.put(handler.getMethod(), handler));
     return builder.build();
   }
