@@ -51,6 +51,7 @@ create_config() {
     sed "s/numNodes\ =.*/numNodes\ =\ $TOTAL/"                        |# Update the number of nodes to the total number of nodes
     sed "s/networkInterface\ =.*/networkInterface\ =\ \"127.0.0.1\"/" |# Update the network interface to localhost
     sed "s/networkMode\ =.*/networkMode\ =\ \"$MODE\"/"               |# Update the network mode
+    sed "s/numValidators\ =.*/numValidators\ =\ $NUM_VALIDATORS/"     | # Update validator count
     sed "s/ownedValidatorStartIndex\ =.*/ownedValidatorStartIndex\ =\ $START_INDEX/" | # Update the validator start index
     sed "s/ownedValidatorCount\ =.*/ownedValidatorCount\ =\ $OWNED_VALIDATOR_COUNT/" \
     > ../config/runConfig.$NODE.toml
