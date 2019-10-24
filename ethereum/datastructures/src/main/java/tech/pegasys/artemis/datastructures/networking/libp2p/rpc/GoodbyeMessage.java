@@ -13,7 +13,8 @@
 
 package tech.pegasys.artemis.datastructures.networking.libp2p.rpc;
 
-import com.google.common.base.Preconditions;
+import static com.google.common.base.Preconditions.checkArgument;
+
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.Objects;
@@ -32,7 +33,7 @@ public final class GoodbyeMessage implements SimpleOffsetSerializable, SSZContai
   public static final UnsignedLong MIN_CUSTOM_REASON_CODE = UnsignedLong.valueOf(128);
 
   public GoodbyeMessage(UnsignedLong reason) {
-    Preconditions.checkArgument(
+    checkArgument(
         REASON_CLIENT_SHUT_DOWN.equals(reason)
             || REASON_FAULT_ERROR.equals(reason)
             || REASON_IRRELEVANT_NETWORK.equals(reason)
