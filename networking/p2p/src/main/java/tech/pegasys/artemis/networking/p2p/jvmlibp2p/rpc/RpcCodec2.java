@@ -17,9 +17,9 @@ import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
-public final class RpcCodec {
+public final class RpcCodec2 {
 
-  private RpcCodec() {}
+  private RpcCodec2() {}
 
   /**
    * Encodes a message into a RPC request

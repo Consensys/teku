@@ -129,13 +129,13 @@ public class RpcMessageHandler2<TRequest extends SimpleOffsetSerializable, TResp
     protected void channelRead0(ChannelHandlerContext ctx, ByteBuf byteBuf) {
       STDOUT.log(Level.DEBUG, "Responder received " + byteBuf.array().length + " bytes.");
       Bytes bytes = Bytes.wrapByteBuf(byteBuf);
-      TRequest request = RpcCodec.decode(bytes, method.getRequestType());
+      TRequest request = RpcCodec2.decode(bytes, method.getRequestType());
 
       invokeLocal(connection, request)
           .whenComplete(
               (resp, err) -> {
                 ByteBuf respBuf = Unpooled.buffer();
-                Bytes encoded = RpcCodec.encode(request);
+                Bytes encoded = RpcCodec2.encode(request);
                 respBuf.writeBytes(encoded.toArrayUnsafe());
                 ctx.writeAndFlush(respBuf);
                 ctx.channel().disconnect();
@@ -158,7 +158,7 @@ public class RpcMessageHandler2<TRequest extends SimpleOffsetSerializable, TResp
       }
       STDOUT.log(Level.DEBUG, "Requester received " + byteBuf.array().length + " bytes.");
       Bytes bytes = Bytes.wrapByteBuf(byteBuf);
-      TResponse response = RpcCodec.decode(bytes, method.getResponseType());
+      TResponse response = RpcCodec2.decode(bytes, method.getResponseType());
       if (response != null) {
         respFuture.complete(response);
       } else {
@@ -169,7 +169,7 @@ public class RpcMessageHandler2<TRequest extends SimpleOffsetSerializable, TResp
     @Override
     public CompletableFuture<TResponse> invoke(TRequest request) {
       ByteBuf reqByteBuf = Unpooled.buffer();
-      Bytes encoded = RpcCodec.encode(request);
+      Bytes encoded = RpcCodec2.encode(request);
       reqByteBuf.writeBytes(encoded.toArrayUnsafe());
       respFuture = new CompletableFuture<>();
       ctx.writeAndFlush(reqByteBuf);

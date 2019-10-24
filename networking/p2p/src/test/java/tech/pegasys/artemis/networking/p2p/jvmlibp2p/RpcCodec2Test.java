@@ -20,10 +20,10 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.HelloMessage;
-import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.RpcCodec;
+import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.RpcCodec2;
 import tech.pegasys.artemis.util.SSZTypes.Bytes4;
 
-final class RpcCodecTest {
+final class RpcCodec2Test {
 
   @Test
   void testHelloRoundtripSerialization() {
@@ -35,8 +35,8 @@ final class RpcCodecTest {
             Bytes32.random(),
             UnsignedLong.ZERO);
 
-    Bytes encoded = RpcCodec.encode(hello);
-    HelloMessage message = RpcCodec.decode(encoded, HelloMessage.class);
+    Bytes encoded = RpcCodec2.encode(hello);
+    HelloMessage message = RpcCodec2.decode(encoded, HelloMessage.class);
 
     assertEquals(hello, message);
   }
