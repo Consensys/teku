@@ -7,7 +7,7 @@ dependencies {
   implementation project(':data')
   implementation project(':data:adapter')
   implementation 'com.google.guava:guava'
-  compile files("../../libs/jvm-libp2p-minimal-0.0.1-SNAPSHOT.jar")
+  implementation 'io.libp2p:jvm-libp2p-minimal'
   compile "com.google.protobuf:protobuf-java"
   implementation 'io.vertx:vertx-core'
 
