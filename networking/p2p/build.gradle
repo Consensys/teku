@@ -6,6 +6,7 @@ dependencies {
   implementation project(':ethereum:statetransition')
   implementation project(':data')
   implementation project(':data:adapter')
+  implementation project(':data:metrics')
   implementation 'com.google.guava:guava'
   compile files("../../libs/jvm-libp2p-minimal-0.0.1-SNAPSHOT.jar")
   compile "com.google.protobuf:protobuf-java"
@@ -28,6 +29,7 @@ dependencies {
   implementation 'com.fasterxml.jackson.core:jackson-databind'
   implementation 'de.undercouch:bson4jackson'
   implementation 'org.xerial.snappy:snappy-java'
+  implementation 'tech.pegasys.pantheon.internal:metrics-core'
 
   testImplementation 'org.mockito:mockito-core:2.28.2'
 }
