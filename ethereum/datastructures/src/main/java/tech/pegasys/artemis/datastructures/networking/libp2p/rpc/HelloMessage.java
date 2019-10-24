@@ -13,8 +13,8 @@
 
 package tech.pegasys.artemis.datastructures.networking.libp2p.rpc;
 
+import com.google.common.base.MoreObjects;
 import com.google.common.primitives.UnsignedLong;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
@@ -52,15 +52,12 @@ public final class HelloMessage implements SimpleOffsetSerializable, SSZContaine
 
   @Override
   public List<Bytes> get_fixed_parts() {
-    List<Bytes> fixedPartsList =
-        new ArrayList<>(
-            List.of(
-                SSZ.encode(writer -> writer.writeFixedBytes(forkVersion.getWrappedBytes())),
-                SSZ.encode(writer -> writer.writeFixedBytes(finalizedRoot)),
-                SSZ.encodeUInt64(finalizedEpoch.longValue()),
-                SSZ.encode(writer -> writer.writeFixedBytes(headRoot)),
-                SSZ.encodeUInt64(headSlot.longValue())));
-    return fixedPartsList;
+    return List.of(
+        SSZ.encode(writer -> writer.writeFixedBytes(forkVersion.getWrappedBytes())),
+        SSZ.encode(writer -> writer.writeFixedBytes(finalizedRoot)),
+        SSZ.encodeUInt64(finalizedEpoch.longValue()),
+        SSZ.encode(writer -> writer.writeFixedBytes(headRoot)),
+        SSZ.encodeUInt64(headSlot.longValue()));
   }
 
   @Override
@@ -113,17 +110,12 @@ public final class HelloMessage implements SimpleOffsetSerializable, SSZContaine
 
   @Override
   public String toString() {
-    return "HelloMessage{"
-        + "forkVersion: "
-        + forkVersion
-        + ", finalizedRoot: "
-        + finalizedRoot
-        + ", finalizedEpoch: "
-        + finalizedEpoch
-        + ", headRoot: "
-        + headRoot
-        + ", headSlot: "
-        + headSlot
-        + '}';
+    return MoreObjects.toStringHelper(this)
+        .add("forkVersion", forkVersion)
+        .add("finalizedRoot", finalizedRoot)
+        .add("finalizedEpoch", finalizedEpoch)
+        .add("headRoot", headRoot)
+        .add("headSlot", headSlot)
+        .toString();
   }
 }

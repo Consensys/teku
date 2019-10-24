@@ -11,28 +11,10 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.metrics;
+package tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc;
 
-import java.util.Optional;
-import tech.pegasys.pantheon.metrics.MetricCategory;
+import tech.pegasys.artemis.networking.p2p.jvmlibp2p.Peer;
 
-public enum ArtemisMetricCategory implements MetricCategory {
-  BEACONCHAIN("beaconchain"),
-  NETWORK("network");
-
-  private final String name;
-
-  ArtemisMetricCategory(final String name) {
-    this.name = name;
-  }
-
-  @Override
-  public String getName() {
-    return name;
-  }
-
-  @Override
-  public Optional<String> getApplicationPrefix() {
-    return Optional.empty();
-  }
+public interface LocalMessageHandler<I, O> {
+  O onIncomingMessage(Peer peer, I message);
 }
