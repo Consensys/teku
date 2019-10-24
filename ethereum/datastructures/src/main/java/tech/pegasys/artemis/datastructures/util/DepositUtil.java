@@ -165,7 +165,7 @@ public class DepositUtil {
     return deposits;
   }
 
-  public static DepositWithIndex convertEventDepositToOperationDeposit(
+  public static DepositWithIndex convertDepositEventToOperationDeposit(
       tech.pegasys.artemis.pow.event.Deposit event) {
     DepositData data =
         new DepositData(
