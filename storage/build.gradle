@@ -10,6 +10,6 @@ dependencies {
   implementation 'com.google.guava:guava'
   implementation 'org.apache.logging.log4j:log4j-api'
   runtime 'org.apache.logging.log4j:log4j-core'
-  implementation 'org.apache.commons:commons-lang3:3.6'
+  implementation 'org.apache.commons:commons-lang3'
   compile group: 'org.mapdb', name: 'mapdb', version: '3.0.7'
 }

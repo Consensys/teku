@@ -5,10 +5,10 @@ dependencies {
   implementation project(':storage')
 
   implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
-  implementation 'org.miracl.milagro.amcl:milagro-crypto-java:0.4.0'
+  implementation 'org.miracl.milagro.amcl:milagro-crypto-java'
   implementation 'org.apache.tuweni:tuweni-bytes'
-  implementation 'org.apache.commons:commons-lang3:3.6'
-  implementation 'org.mockito:mockito-core:2.28.2'
+  implementation 'org.apache.commons:commons-lang3'
+  implementation 'org.mockito:mockito-core'
   implementation 'com.fasterxml.jackson.core:jackson-databind'
   implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
   implementation 'org.junit.jupiter:junit-jupiter-api'
