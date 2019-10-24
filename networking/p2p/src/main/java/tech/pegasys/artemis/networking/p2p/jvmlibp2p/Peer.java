@@ -19,17 +19,17 @@ import io.libp2p.core.multiformats.Multiaddr;
 import java.util.concurrent.CompletableFuture;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.HelloMessage;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.RpcMethod;
-import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.RpcMethods2;
+import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.RpcMethods;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
 public class Peer {
   private final Connection connection;
   private final Multiaddr multiaddr;
-  private final RpcMethods2 rpcMethods;
+  private final RpcMethods rpcMethods;
   private final PeerId peerId;
   private final CompletableFuture<HelloMessage> remoteHello = new CompletableFuture<>();
 
-  public Peer(Connection connection, RpcMethods2 rpcMethods) {
+  public Peer(Connection connection, RpcMethods rpcMethods) {
     this.connection = connection;
     this.peerId = connection.getSecureSession().getRemoteId();
     this.multiaddr =
