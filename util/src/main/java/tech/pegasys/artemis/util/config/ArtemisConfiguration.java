@@ -126,6 +126,9 @@ public class ArtemisConfiguration {
     builder.addString("constants.SIM_DEPOSIT_VALUE", "", null, null);
     builder.addInteger("constants.DEPOSIT_DATA_SIZE", Integer.MIN_VALUE, null, null);
 
+    // Database
+    builder.addBoolean("database.startFromDisk", false, "Start from the disk if set to true", null);
+
     builder.validateConfiguration(
         config -> {
           return null;
@@ -336,5 +339,9 @@ public class ArtemisConfiguration {
   /** @return the name of the log file */
   public String getLogFile() {
     return config.getString("output.logFile");
+  }
+
+  public boolean startFromDisk() {
+    return config.getBoolean("database.startFromDisk");
   }
 }

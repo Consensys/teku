@@ -202,7 +202,7 @@ public class ValidatorCoordinator {
 
       // Copy state so that state transition during block creation does not manipulate headState in
       // storage
-      createBlockIfNecessary((BeaconStateWithCache) headState, headBlock);
+      createBlockIfNecessary(BeaconStateWithCache.fromBeaconState(headState), headBlock);
 
       // Save headState to check for slashings
       this.headState = headState;
