@@ -30,11 +30,11 @@ import org.apache.tuweni.bytes.Bytes;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.Peer;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.PeerLookup;
-import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.RpcMessageHandler2.Controller;
+import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.RPCMessageHandler.Controller;
 import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
-public class RpcMessageHandler2<TRequest extends SimpleOffsetSerializable, TResponse>
+public class RPCMessageHandler<TRequest extends SimpleOffsetSerializable, TResponse>
     implements ProtocolBinding<Controller<TRequest, TResponse>> {
   private static final ALogger STDOUT = new ALogger("stdout");
 
@@ -43,7 +43,7 @@ public class RpcMessageHandler2<TRequest extends SimpleOffsetSerializable, TResp
   private final LocalMessageHandler<TRequest, TResponse> localMessageHandler;
   private boolean closeNotification = false;
 
-  public RpcMessageHandler2(
+  public RPCMessageHandler(
       RpcMethod<TRequest, TResponse> method,
       PeerLookup peerLookup,
       LocalMessageHandler<TRequest, TResponse> localMessageHandler) {
@@ -67,7 +67,7 @@ public class RpcMessageHandler2<TRequest extends SimpleOffsetSerializable, TResp
     return CompletableFuture.completedFuture(localMessageHandler.onIncomingMessage(peer, request));
   }
 
-  public RpcMessageHandler2<TRequest, TResponse> setCloseNotification() {
+  public RPCMessageHandler<TRequest, TResponse> setCloseNotification() {
     this.closeNotification = true;
     return this;
   }

@@ -24,7 +24,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.Level;
 import org.jetbrains.annotations.NotNull;
-import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.RpcMessageHandler2;
+import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.RPCMessageHandler;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.RpcMethod;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.RpcMethods;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.methods.BeaconBlocksMessageHandler;
@@ -123,7 +123,7 @@ public class PeerManager implements ConnectionHandler, PeerLookup {
     }
   }
 
-  public Collection<RpcMessageHandler2<?, ?>> getRpcMessageHandlers() {
+  public Collection<RPCMessageHandler<?, ?>> getRpcMessageHandlers() {
     return rpcMethods.all();
   }
 }
