@@ -65,7 +65,7 @@ jobs:
           root: ~/project
           paths:
             - ./
-            -
+
   spotless:
     executor: medium_executor
     steps:
