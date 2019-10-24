@@ -31,6 +31,8 @@ dependencyManagement {
     dependency 'io.grpc:grpc-protobuf:1.21.0'
     dependency 'io.grpc:grpc-stub:1.21.0'
 
+    dependency 'io.libp2p:jvm-libp2p-minimal:0.1.0-RELEASE'
+
     dependency 'io.pkts:pkts-core:3.0.3'
 
     dependency "io.prometheus:simpleclient:0.6.0"
