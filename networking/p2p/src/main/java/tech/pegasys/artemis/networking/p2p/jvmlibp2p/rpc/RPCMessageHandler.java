@@ -30,31 +30,25 @@ import org.apache.tuweni.bytes.Bytes;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.Peer;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.PeerLookup;
-import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.RPCMessageHandler.Controller;
+import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.RpcMessageHandler.Controller;
 import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
-public class RPCMessageHandler<TRequest extends SimpleOffsetSerializable, TResponse>
+public class RpcMessageHandler<TRequest extends SimpleOffsetSerializable, TResponse>
     implements ProtocolBinding<Controller<TRequest, TResponse>> {
   private static final ALogger STDOUT = new ALogger("stdout");
 
-  private final String methodMultistreamId;
+  private final RpcMethod<TRequest, TResponse> method;
   private final PeerLookup peerLookup;
-  private final Class<TRequest> requestClass;
-  private final Class<TResponse> responseClass;
   private final LocalMessageHandler<TRequest, TResponse> localMessageHandler;
-  private boolean notification = false;
+  private boolean closeNotification = false;
 
-  public RPCMessageHandler(
-      String methodMultistreamId,
+  public RpcMessageHandler(
+      RpcMethod<TRequest, TResponse> method,
       PeerLookup peerLookup,
-      Class<TRequest> requestClass,
-      Class<TResponse> responseClass,
       LocalMessageHandler<TRequest, TResponse> localMessageHandler) {
-    this.methodMultistreamId = methodMultistreamId;
+    this.method = method;
     this.peerLookup = peerLookup;
-    this.requestClass = requestClass;
-    this.responseClass = responseClass;
     this.localMessageHandler = localMessageHandler;
   }
 
@@ -62,7 +56,8 @@ public class RPCMessageHandler<TRequest extends SimpleOffsetSerializable, TRespo
   public CompletableFuture<TResponse> invokeRemote(Connection connection, TRequest request) {
     return connection
         .getMuxerSession()
-        .createStream(Multistream.create(this.toInitiator(methodMultistreamId)).toStreamHandler())
+        .createStream(
+            Multistream.create(this.toInitiator(method.getMultistreamId())).toStreamHandler())
         .getControler()
         .thenCompose(ctr -> ctr.invoke(request));
   }
@@ -72,15 +67,19 @@ public class RPCMessageHandler<TRequest extends SimpleOffsetSerializable, TRespo
     return CompletableFuture.completedFuture(localMessageHandler.onIncomingMessage(peer, request));
   }
 
-  public RPCMessageHandler<TRequest, TResponse> setNotification() {
-    this.notification = true;
+  public RpcMessageHandler<TRequest, TResponse> setCloseNotification() {
+    this.closeNotification = true;
     return this;
   }
 
   @NotNull
   @Override
   public String getAnnounce() {
-    return methodMultistreamId;
+    return method.getMultistreamId();
+  }
+
+  public RpcMethod<TRequest, TResponse> getMethod() {
+    return method;
   }
 
   @NotNull
@@ -130,13 +129,13 @@ public class RPCMessageHandler<TRequest extends SimpleOffsetSerializable, TRespo
     protected void channelRead0(ChannelHandlerContext ctx, ByteBuf byteBuf) {
       STDOUT.log(Level.DEBUG, "Responder received " + byteBuf.array().length + " bytes.");
       Bytes bytes = Bytes.wrapByteBuf(byteBuf);
-      TRequest request = RPCCodec.decode(bytes, requestClass);
+      TRequest request = RpcCodec.decode(bytes, method.getRequestType());
 
       invokeLocal(connection, request)
           .whenComplete(
               (resp, err) -> {
                 ByteBuf respBuf = Unpooled.buffer();
-                Bytes encoded = RPCCodec.encode(request);
+                Bytes encoded = RpcCodec.encode(request);
                 respBuf.writeBytes(encoded.toArrayUnsafe());
                 ctx.writeAndFlush(respBuf);
                 ctx.channel().disconnect();
@@ -159,22 +158,22 @@ public class RPCMessageHandler<TRequest extends SimpleOffsetSerializable, TRespo
       }
       STDOUT.log(Level.DEBUG, "Requester received " + byteBuf.array().length + " bytes.");
       Bytes bytes = Bytes.wrapByteBuf(byteBuf);
-      TResponse response = RPCCodec.decode(bytes, responseClass);
+      TResponse response = RpcCodec.decode(bytes, method.getResponseType());
       if (response != null) {
         respFuture.complete(response);
       } else {
-        respFuture.completeExceptionally(new IllegalArgumentException("Error decoding reponse"));
+        respFuture.completeExceptionally(new IllegalArgumentException("Error decoding response"));
       }
     }
 
     @Override
     public CompletableFuture<TResponse> invoke(TRequest request) {
       ByteBuf reqByteBuf = Unpooled.buffer();
-      Bytes encoded = RPCCodec.encode(request);
+      Bytes encoded = RpcCodec.encode(request);
       reqByteBuf.writeBytes(encoded.toArrayUnsafe());
       respFuture = new CompletableFuture<>();
       ctx.writeAndFlush(reqByteBuf);
-      if (notification) {
+      if (closeNotification) {
         ctx.channel().close();
         return CompletableFuture.completedFuture(null);
       } else {

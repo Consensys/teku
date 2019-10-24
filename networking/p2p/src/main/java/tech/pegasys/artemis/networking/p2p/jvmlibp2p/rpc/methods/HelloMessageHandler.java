@@ -35,7 +35,7 @@ public class HelloMessageHandler implements LocalMessageHandler<HelloMessage, He
     } else {
       LOG.log(Level.DEBUG, "Peer " + peer.getRemoteId() + " said hello.");
       peer.receivedHelloMessage(message);
-      return helloMessageFactory.createLocalHelloMessage();
+      return helloMessageFactory.createHelloMessage();
     }
   }
 }

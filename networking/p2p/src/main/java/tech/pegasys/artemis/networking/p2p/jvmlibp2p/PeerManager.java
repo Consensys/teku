@@ -17,13 +17,16 @@ import io.libp2p.core.Connection;
 import io.libp2p.core.ConnectionHandler;
 import io.libp2p.core.multiformats.Multiaddr;
 import io.libp2p.network.NetworkImpl;
+import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.Level;
 import org.jetbrains.annotations.NotNull;
-import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.RPCMethods;
+import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.RpcMessageHandler;
+import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.RpcMethod;
+import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.RpcMethods;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.methods.BeaconBlocksMessageHandler;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.methods.GoodbyeMessageHandler;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.methods.HelloMessageFactory;
@@ -42,7 +45,7 @@ public class PeerManager implements ConnectionHandler, PeerLookup {
 
   private ConcurrentHashMap<Multiaddr, Peer> connectedPeerMap = new ConcurrentHashMap<>();
 
-  private final RPCMethods rpcMethods;
+  private final RpcMethods rpcMethods;
 
   public PeerManager(
       final ScheduledExecutorService scheduler,
@@ -51,7 +54,7 @@ public class PeerManager implements ConnectionHandler, PeerLookup {
     this.scheduler = scheduler;
     helloMessageFactory = new HelloMessageFactory(chainStorageClient);
     this.rpcMethods =
-        new RPCMethods(
+        new RpcMethods(
             this,
             new HelloMessageHandler(helloMessageFactory),
             new GoodbyeMessageHandler(metricsSystem),
@@ -60,14 +63,12 @@ public class PeerManager implements ConnectionHandler, PeerLookup {
 
   @Override
   public void handleConnection(@NotNull final Connection connection) {
-    Peer peer = new Peer(connection);
+    Peer peer = new Peer(connection, rpcMethods);
     onConnectedPeer(peer);
     connection.closeFuture().thenRun(() -> onDisconnectedPeer(peer));
 
     if (connection.isInitiator()) {
-      rpcMethods
-          .getHello()
-          .invokeRemote(connection, helloMessageFactory.createLocalHelloMessage())
+      peer.send(RpcMethod.HELLO, helloMessageFactory.createHelloMessage())
           .thenAccept(peer::receivedHelloMessage);
     }
   }
@@ -122,7 +123,7 @@ public class PeerManager implements ConnectionHandler, PeerLookup {
     }
   }
 
-  public RPCMethods getRPCMethods() {
-    return rpcMethods;
+  public Collection<RpcMessageHandler<?, ?>> getRpcMessageHandlers() {
+    return rpcMethods.all();
   }
 }

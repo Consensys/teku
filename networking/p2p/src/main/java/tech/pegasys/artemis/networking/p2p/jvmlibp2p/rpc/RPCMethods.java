@@ -13,55 +13,59 @@
 
 package tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc;
 
-import java.util.List;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableMap.Builder;
+import io.libp2p.core.Connection;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.stream.Stream;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.BeaconBlocksMessageRequest;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.BeaconBlocksMessageResponse;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.GoodbyeMessage;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.HelloMessage;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.PeerLookup;
+import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
-public class RPCMethods {
-  private final RPCMessageHandler<HelloMessage, HelloMessage> hello;
-  private final List<RPCMessageHandler<?, ?>> methods;
+public class RpcMethods {
 
-  public RPCMethods(
+  private final Map<RpcMethod<?, ?>, RpcMessageHandler<?, ?>> methods;
+
+  public RpcMethods(
       PeerLookup peerLookup,
       LocalMessageHandler<HelloMessage, HelloMessage> helloHandler,
       LocalMessageHandler<GoodbyeMessage, Void> goodbyeHandler,
       LocalMessageHandler<BeaconBlocksMessageRequest, BeaconBlocksMessageResponse>
           beaconBlocksHandler) {
 
-    this.hello =
-        new RPCMessageHandler<>(
-            "/eth2/beacon_chain/req/hello/1/ssz",
-            peerLookup,
-            HelloMessage.class,
-            HelloMessage.class,
-            helloHandler);
-
     this.methods =
-        List.of(
-            hello,
-            new RPCMessageHandler<>(
-                    "/eth2/beacon_chain/req/goodbye/1/ssz",
-                    peerLookup,
-                    GoodbyeMessage.class,
-                    Void.class,
-                    goodbyeHandler)
-                .setNotification(),
-            new RPCMessageHandler<>(
-                "/eth2/beacon_chain/req/beacon_blocks/1/ssz",
-                peerLookup,
-                BeaconBlocksMessageRequest.class,
-                BeaconBlocksMessageResponse.class,
-                beaconBlocksHandler));
+        createMethodMap(
+            new RpcMessageHandler<>(RpcMethod.HELLO, peerLookup, helloHandler),
+            new RpcMessageHandler<>(RpcMethod.GOODBYE, peerLookup, goodbyeHandler)
+                .setCloseNotification(),
+            new RpcMessageHandler<>(RpcMethod.BEACON_BLOCKS, peerLookup, beaconBlocksHandler));
   }
 
-  public RPCMessageHandler<HelloMessage, HelloMessage> getHello() {
-    return hello;
+  private Map<RpcMethod<?, ?>, RpcMessageHandler<?, ?>> createMethodMap(
+      final RpcMessageHandler<?, ?>... handlers) {
+    final Builder<RpcMethod<?, ?>, RpcMessageHandler<?, ?>> builder = ImmutableMap.builder();
+    Stream.of(handlers).forEach(handler -> builder.put(handler.getMethod(), handler));
+    return builder.build();
   }
 
-  public List<RPCMessageHandler<?, ?>> all() {
-    return methods;
+  public <I extends SimpleOffsetSerializable, O> CompletableFuture<O> invoke(
+      final RpcMethod<I, O> method, final Connection connection, final I request) {
+    return getHandler(method).invokeRemote(connection, request);
+  }
+
+  public Collection<RpcMessageHandler<?, ?>> all() {
+    return Collections.unmodifiableCollection(methods.values());
+  }
+
+  @SuppressWarnings("unchecked")
+  private <I extends SimpleOffsetSerializable, O> RpcMessageHandler<I, O> getHandler(
+      final RpcMethod<I, O> method) {
+    return (RpcMessageHandler<I, O>) methods.get(method);
   }
 }

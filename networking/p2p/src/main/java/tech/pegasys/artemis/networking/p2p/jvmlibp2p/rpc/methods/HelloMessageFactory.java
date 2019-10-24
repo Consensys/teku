@@ -24,7 +24,7 @@ public class HelloMessageFactory {
     this.chainStorageClient = chainStorageClient;
   }
 
-  public HelloMessage createLocalHelloMessage() {
+  public HelloMessage createHelloMessage() {
     return new HelloMessage(
         chainStorageClient.getBestBlockRootState().getFork().getCurrent_version(),
         chainStorageClient.getStore().getFinalizedCheckpoint().getRoot(),

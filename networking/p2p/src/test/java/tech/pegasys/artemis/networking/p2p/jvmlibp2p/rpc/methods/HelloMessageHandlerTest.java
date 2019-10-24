@@ -61,7 +61,7 @@ class HelloMessageHandlerTest {
 
   @Test
   public void shouldReturnLocalHelloMessage() {
-    when(helloMessageFactory.createLocalHelloMessage()).thenReturn(LOCAL_HELLO);
+    when(helloMessageFactory.createHelloMessage()).thenReturn(LOCAL_HELLO);
     assertThat(handler.onIncomingMessage(peer, REMOTE_HELLO)).isSameAs(LOCAL_HELLO);
   }
 }
