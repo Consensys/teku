@@ -108,7 +108,7 @@ public class StateProcessor {
   public void onDeposit(tech.pegasys.artemis.pow.event.Deposit event) {
     STDOUT.log(Level.DEBUG, "New deposit received");
     if (deposits == null) deposits = new ArrayList<>();
-    deposits.add(DepositUtil.convertEventDepositToOperationDeposit(event));
+    deposits.add(DepositUtil.convertDepositEventToOperationDeposit(event));
 
     UnsignedLong eth1_timestamp = null;
     try {
