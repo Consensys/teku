@@ -30,11 +30,11 @@ import org.apache.tuweni.bytes.Bytes;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.Peer;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.PeerLookup;
-import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.RpcMessageHandler2.Controller;
+import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.RpcMessageHandler.Controller;
 import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
-public class RpcMessageHandler2<TRequest extends SimpleOffsetSerializable, TResponse>
+public class RpcMessageHandler<TRequest extends SimpleOffsetSerializable, TResponse>
     implements ProtocolBinding<Controller<TRequest, TResponse>> {
   private static final ALogger STDOUT = new ALogger("stdout");
 
@@ -43,7 +43,7 @@ public class RpcMessageHandler2<TRequest extends SimpleOffsetSerializable, TResp
   private final LocalMessageHandler<TRequest, TResponse> localMessageHandler;
   private boolean closeNotification = false;
 
-  public RpcMessageHandler2(
+  public RpcMessageHandler(
       RpcMethod<TRequest, TResponse> method,
       PeerLookup peerLookup,
       LocalMessageHandler<TRequest, TResponse> localMessageHandler) {
@@ -67,7 +67,7 @@ public class RpcMessageHandler2<TRequest extends SimpleOffsetSerializable, TResp
     return CompletableFuture.completedFuture(localMessageHandler.onIncomingMessage(peer, request));
   }
 
-  public RpcMessageHandler2<TRequest, TResponse> setCloseNotification() {
+  public RpcMessageHandler<TRequest, TResponse> setCloseNotification() {
     this.closeNotification = true;
     return this;
   }
@@ -129,13 +129,13 @@ public class RpcMessageHandler2<TRequest extends SimpleOffsetSerializable, TResp
     protected void channelRead0(ChannelHandlerContext ctx, ByteBuf byteBuf) {
       STDOUT.log(Level.DEBUG, "Responder received " + byteBuf.array().length + " bytes.");
       Bytes bytes = Bytes.wrapByteBuf(byteBuf);
-      TRequest request = RpcCodec2.decode(bytes, method.getRequestType());
+      TRequest request = RpcCodec.decode(bytes, method.getRequestType());
 
       invokeLocal(connection, request)
           .whenComplete(
               (resp, err) -> {
                 ByteBuf respBuf = Unpooled.buffer();
-                Bytes encoded = RpcCodec2.encode(request);
+                Bytes encoded = RpcCodec.encode(request);
                 respBuf.writeBytes(encoded.toArrayUnsafe());
                 ctx.writeAndFlush(respBuf);
                 ctx.channel().disconnect();
@@ -158,7 +158,7 @@ public class RpcMessageHandler2<TRequest extends SimpleOffsetSerializable, TResp
       }
       STDOUT.log(Level.DEBUG, "Requester received " + byteBuf.array().length + " bytes.");
       Bytes bytes = Bytes.wrapByteBuf(byteBuf);
-      TResponse response = RpcCodec2.decode(bytes, method.getResponseType());
+      TResponse response = RpcCodec.decode(bytes, method.getResponseType());
       if (response != null) {
         respFuture.complete(response);
       } else {
@@ -169,7 +169,7 @@ public class RpcMessageHandler2<TRequest extends SimpleOffsetSerializable, TResp
     @Override
     public CompletableFuture<TResponse> invoke(TRequest request) {
       ByteBuf reqByteBuf = Unpooled.buffer();
-      Bytes encoded = RpcCodec2.encode(request);
+      Bytes encoded = RpcCodec.encode(request);
       reqByteBuf.writeBytes(encoded.toArrayUnsafe());
       respFuture = new CompletableFuture<>();
       ctx.writeAndFlush(reqByteBuf);
