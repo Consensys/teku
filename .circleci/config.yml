@@ -65,6 +65,15 @@ jobs:
           root: ~/project
           paths:
             - ./
+            -
+  spotless:
+    executor: medium_executor
+    steps:
+      - prepare
+      - run:
+          name: Spotless
+          command: |
+            ./gradlew --no-daemon --parallel spotlessCheck
 
   unitTests:
     executor: medium_executor
@@ -163,16 +172,20 @@ workflows:
   circleci:
     jobs:
       - assemble
+      - spotless
       - referenceTests:
           requires:
             - assemble
+            - spotless
       - unitTests:
           requires:
             - assemble
+            - spotless
       - docker:
           requires:
             - assemble
             - unitTests
+            - spotless
       - publish:
           filters:
             branches:
