@@ -195,7 +195,8 @@ public class BeaconChainController {
               true,
               true,
               true);
-      this.p2pNetwork = new JvmLibP2PNetwork(p2pConfig, eventBus, chainStorageClient);
+      this.p2pNetwork =
+          new JvmLibP2PNetwork(p2pConfig, eventBus, chainStorageClient, metricsSystem);
       this.networkTask = () -> this.p2pNetwork.start();
     } else {
       throw new IllegalArgumentException("Unsupported network mode " + config.getNetworkMode());
