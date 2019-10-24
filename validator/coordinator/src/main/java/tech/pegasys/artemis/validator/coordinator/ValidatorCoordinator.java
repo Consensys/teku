@@ -52,6 +52,7 @@ import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.state.CrosslinkCommittee;
 import tech.pegasys.artemis.datastructures.util.AttestationUtil;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
+import tech.pegasys.artemis.datastructures.util.DepositUtil;
 import tech.pegasys.artemis.proto.messagesigner.MessageSignerGrpc;
 import tech.pegasys.artemis.proto.messagesigner.SignatureRequest;
 import tech.pegasys.artemis.proto.messagesigner.SignatureResponse;
@@ -151,6 +152,13 @@ public class ValidatorCoordinator {
       this.eventBus.post(validatorBlock);
       validatorBlock = null;
     }
+  }
+
+  @Subscribe
+  public void onNewDeposit(tech.pegasys.artemis.pow.event.Deposit event) {
+    STDOUT.log(Level.DEBUG, "New deposit received by ValidatorCoordinator");
+    Deposit deposit = DepositUtil.convertDepositEventToOperationDeposit(event);
+    if (!newDeposits.contains(deposit)) newDeposits.add(deposit);
   }
 
   @Subscribe
