@@ -83,7 +83,7 @@ fi
 [[ -z "$LOG" ]] && LOG="INFO"
 
 # If VALIDATORS is undefined default to INFO
-[[ -z "$VALIDATORS" ]] && VALIDATORS=16
+[[ -z "$VALIDATORS" ]] && VALIDATORS=64
 
 
 LOG_OPTIONS=("OFF FATAL WARN INFO DEBUG TRACE ALL")
