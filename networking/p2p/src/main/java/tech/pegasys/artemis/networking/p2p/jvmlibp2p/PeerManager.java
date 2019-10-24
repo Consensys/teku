@@ -110,14 +110,14 @@ public class PeerManager implements ConnectionHandler, PeerLookup {
     return connectedPeerMap.get(conn.remoteAddress());
   }
 
-  protected void onConnectedPeer(Peer peer) {
+  private void onConnectedPeer(Peer peer) {
     final boolean wasAdded = connectedPeerMap.putIfAbsent(peer.getPeerMultiaddr(), peer) == null;
     if (wasAdded) {
       STDOUT.log(Level.DEBUG, "onConnectedPeer() " + peer.getPeerMultiaddr());
     }
   }
 
-  protected void onDisconnectedPeer(Peer peer) {
+  private void onDisconnectedPeer(Peer peer) {
     if (connectedPeerMap.remove(peer.getPeerMultiaddr()) != null) {
       STDOUT.log(Level.DEBUG, "Peer disconnected: " + peer.getPeerId());
     }
