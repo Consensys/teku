@@ -35,8 +35,6 @@ public class GanacheController {
 
   private static final String NODE = "node";
   private static final String CLI = "cli.js";
-  private static final String HOST_NAME_PARAM = "-h";
-  private static final String PORT = "-p";
   private static final String BALANCE_PARAM = "-e";
   private static final String ACCOUNT_SIZE_PARAM = "-a";
   private static final String KEY_PATH_PARAM = "--acctKeys";
@@ -145,8 +143,6 @@ public class GanacheController {
     // SECP256K1.SecretKey.fromBytes(Bytes32.fromHexString(accountsJSON.get(key).toString())))
 
     for (String key : keys) {
-      // Bytes32 bytes = Bytes32.fromHexString(accountsJSON.get(key).toString());
-      Bytes32 stuff = Bytes32.fromHexString((String) accountsJSON.get(key));
       SECP256K1.KeyPair keyPair =
           SECP256K1.KeyPair.fromSecretKey(
               SECP256K1.SecretKey.fromBytes(Bytes32.fromHexString((String) accountsJSON.get(key))));

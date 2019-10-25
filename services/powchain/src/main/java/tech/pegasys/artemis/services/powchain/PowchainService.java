@@ -65,8 +65,6 @@ public class PowchainService implements ServiceInterface {
   private String provider;
 
   private String depositSimFile;
-  private int validatorCount;
-  private int nodeCount;
 
   public PowchainService() {}
 
@@ -77,8 +75,6 @@ public class PowchainService implements ServiceInterface {
     this.depositMode = config.getConfig().getDepositMode();
     if (config.getConfig().getInputFile() != null)
       this.depositSimFile = System.getProperty(USER_DIR) + "/" + config.getConfig().getInputFile();
-    validatorCount = config.getConfig().getNumValidators();
-    nodeCount = config.getConfig().getNumNodes();
     contractAddr = config.getConfig().getContractAddr();
     provider = config.getConfig().getNodeUrl();
   }
@@ -158,5 +154,8 @@ public class PowchainService implements ServiceInterface {
   public void stop() {
     STDOUT.log(Level.DEBUG, "PowChainService.stop()");
     this.eventBus.unregister(this);
+    if (listener != null) {
+      listener.stop();
+    }
   }
 }

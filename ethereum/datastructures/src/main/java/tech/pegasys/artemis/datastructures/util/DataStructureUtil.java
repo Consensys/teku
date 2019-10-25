@@ -14,7 +14,6 @@
 package tech.pegasys.artemis.datastructures.util;
 
 import static java.lang.Math.toIntExact;
-import static tech.pegasys.artemis.datastructures.Constants.SLOTS_PER_EPOCH;
 import static tech.pegasys.artemis.datastructures.Constants.SLOTS_PER_ETH1_VOTING_PERIOD;
 
 import com.google.common.primitives.UnsignedLong;
@@ -25,8 +24,6 @@ import java.util.Random;
 import java.util.function.Function;
 import java.util.stream.LongStream;
 import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.crypto.Hash;
-import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockBody;
@@ -53,17 +50,11 @@ import tech.pegasys.artemis.util.SSZTypes.Bitvector;
 import tech.pegasys.artemis.util.SSZTypes.Bytes4;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.SSZTypes.SSZVector;
-import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 
 public final class DataStructureUtil {
-  private static final ALogger STDOUT = new ALogger("stdout");
-
-  public static int randomInt() {
-    return new Random().nextInt();
-  }
 
   public static int randomInt(int seed) {
     return new Random(seed).nextInt();
@@ -217,7 +208,7 @@ public final class DataStructureUtil {
   }
 
   public static AttestationData randomAttestationData() {
-    return randomAttestationData(randomInt());
+    return randomAttestationData(randomInt(12344));
   }
 
   public static Attestation randomAttestation() {
@@ -510,17 +501,6 @@ public final class DataStructureUtil {
       deposits.add(deposit);
     }
     return deposits;
-  }
-
-  private static Eth1Data get_eth1_data_stub(BeaconState state, UnsignedLong current_epoch) {
-    UnsignedLong epochs_per_period =
-        UnsignedLong.valueOf(SLOTS_PER_ETH1_VOTING_PERIOD)
-            .dividedBy(UnsignedLong.valueOf(SLOTS_PER_EPOCH));
-    UnsignedLong voting_period = current_epoch.dividedBy(epochs_per_period);
-    return new Eth1Data(
-        Hash.sha2_256(SSZ.encodeUInt64(epochs_per_period.longValue())),
-        state.getEth1_deposit_index(),
-        Hash.sha2_256(Hash.sha2_256(SSZ.encodeUInt64(voting_period.longValue()))));
   }
 
   public static Validator randomValidator() {

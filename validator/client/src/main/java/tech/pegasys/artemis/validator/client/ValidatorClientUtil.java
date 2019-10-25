@@ -123,8 +123,7 @@ public class ValidatorClientUtil {
       throws Exception {
     Credentials credentials =
         Credentials.create(validator.getSecpKeys().secretKey().bytes().toHexString());
-    DepositContract contract = null;
-    contract = DepositContract.load(address, web3j, credentials, gasProvider);
+    DepositContract contract = DepositContract.load(address, web3j, credentials, gasProvider);
 
     contract
         .deposit(

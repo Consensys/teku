@@ -63,12 +63,6 @@ public class ChainStorageClient implements ChainStorage {
   private UnsignedLong bestSlot =
       UnsignedLong.ZERO; // slot of the block chosen by lmd ghost to build and attest on
 
-  // Memory cleaning references
-  private ConcurrentHashMap<UnsignedLong, List<Bytes32>> blockReferences =
-      new ConcurrentHashMap<>();
-  private ConcurrentHashMap<UnsignedLong, List<Bytes32>> stateReferences =
-      new ConcurrentHashMap<>();
-
   // Time
   private UnsignedLong genesisTime;
 

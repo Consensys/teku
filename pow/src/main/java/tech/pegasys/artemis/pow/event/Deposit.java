@@ -132,9 +132,7 @@ public class Deposit extends AbstractEvent<DepositContract.DepositEventEventResp
 
   @Override
   public String toJSON() throws JsonProcessingException {
-    String jsonOutputString = null;
-    jsonOutputString = mapper.writerFor(Map.class).writeValueAsString(this.outputFieldMap);
-    return jsonOutputString;
+    return mapper.writerFor(Map.class).writeValueAsString(this.outputFieldMap);
   }
 
   @Override

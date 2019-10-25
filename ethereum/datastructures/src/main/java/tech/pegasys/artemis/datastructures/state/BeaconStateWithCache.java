@@ -18,7 +18,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.IntStream;
-import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.Copyable;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
@@ -216,13 +215,6 @@ public final class BeaconStateWithCache extends BeaconState {
   private <S extends Copyable<S>, T extends List<S>> T copyList(T sourceList, T destinationList) {
     for (S sourceItem : sourceList) {
       destinationList.add(sourceItem.copy());
-    }
-    return destinationList;
-  }
-
-  private <T extends List<Bytes32>> T copyBytesList(T sourceList, T destinationList) {
-    for (Bytes sourceItem : sourceList) {
-      destinationList.add((Bytes32) sourceItem.copy());
     }
     return destinationList;
   }
