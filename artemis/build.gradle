@@ -15,7 +15,7 @@ dependencies {
   implementation project(':validator:client')
 
   
-  api 'com.google.guava:guava:27.0.1-jre'
+  api 'com.google.guava:guava'
   implementation 'com.google.code.gson:gson'
   implementation 'org.apache.tuweni:tuweni-crypto'
   implementation 'org.apache.tuweni:tuweni-plumtree'
@@ -28,7 +28,7 @@ dependencies {
   implementation 'io.vertx:vertx-core'
   implementation 'io.vertx:vertx-web'
   implementation 'org.apache.logging.log4j:log4j-api'
-  implementation 'org.slf4j:slf4j-nop:1.7.25'
+  implementation 'org.apache.logging.log4j:log4j-slf4j-impl'
   implementation 'tech.pegasys.pantheon.internal:metrics-core'
 
   runtimeOnly 'org.apache.logging.log4j:log4j-core'

@@ -8,10 +8,10 @@ dependencies {
   referenceTestImplementation project(':storage')
 
   referenceTestImplementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
-  referenceTestImplementation 'org.miracl.milagro.amcl:milagro-crypto-java:0.4.0'
+  referenceTestImplementation 'org.miracl.milagro.amcl:milagro-crypto-java'
   referenceTestImplementation 'org.apache.tuweni:tuweni-bytes'
-  referenceTestImplementation 'org.apache.commons:commons-lang3:3.6'
-  referenceTestImplementation 'org.mockito:mockito-core:2.28.2'
+  referenceTestImplementation 'org.apache.commons:commons-lang3'
+  referenceTestImplementation 'org.mockito:mockito-core'
   referenceTestImplementation 'com.fasterxml.jackson.core:jackson-databind'
   referenceTestImplementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
   referenceTestImplementation 'org.junit.jupiter:junit-jupiter-api'
