@@ -253,13 +253,14 @@ class BeaconStateUtilTest {
     // Not powers of two:
     assertThat(is_power_of_two(UnsignedLong.ZERO)).isEqualTo(false);
     assertThat(is_power_of_two(UnsignedLong.valueOf(42L))).isEqualTo(false);
-//    assertThat(is_power_of_two(UnsignedLong.valueOf(Long.MAX_VALUE))).isEqualTo(false);
+    //    assertThat(is_power_of_two(UnsignedLong.valueOf(Long.MAX_VALUE))).isEqualTo(false);
     // Powers of two:
     assertThat(is_power_of_two(UnsignedLong.ONE)).isEqualTo(true);
     assertThat(is_power_of_two(UnsignedLong.ONE.plus(UnsignedLong.ONE))).isEqualTo(true);
     assertThat(is_power_of_two(UnsignedLong.valueOf(0x040000L))).isEqualTo(true);
-//    assertThat(is_power_of_two(UnsignedLong.valueOf(0x0100000000L))).isEqualTo(true);
-//    assertThat(is_power_of_two(UnsignedLong.fromLongBits(0x8000000000000000L))).isEqualTo(true);
+    //    assertThat(is_power_of_two(UnsignedLong.valueOf(0x0100000000L))).isEqualTo(true);
+    //
+    // assertThat(is_power_of_two(UnsignedLong.fromLongBits(0x8000000000000000L))).isEqualTo(true);
   }
 
   private BeaconState createBeaconState() {
