@@ -30,8 +30,6 @@ import tech.pegasys.artemis.statetransition.util.EpochProcessorUtil;
 
 @ExtendWith(BouncyCastleExtension.class)
 public class justification_and_finalization extends TestSuite {
-  private static final Path configPath = Paths.get("mainnet");
-
   @ParameterizedTest(name = "{index}. process justification and finalization pre={0} -> post={1}")
   @MethodSource("mainnetProcessJusticationAndFinalizationSetup")
   void mainnetProcessJusticationAndFinalization(BeaconState pre, BeaconState post)
