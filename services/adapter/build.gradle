@@ -8,11 +8,11 @@ dependencies {
 
     implementation 'com.google.guava:guava'
     implementation 'org.apache.logging.log4j:log4j-api'
-    implementation 'io.grpc:grpc-core:1.18.0'
-    implementation 'io.grpc:grpc-stub:1.18.0'
-    implementation 'io.grpc:grpc-netty:1.18.0'
-    implementation 'io.protostuff:protostuff-core:1.6.0'
-    implementation 'io.protostuff:protostuff-runtime:1.6.0'
+    implementation 'io.grpc:grpc-core'
+    implementation 'io.grpc:grpc-stub'
+    implementation 'io.grpc:grpc-netty'
+    implementation 'io.protostuff:protostuff-core'
+    implementation 'io.protostuff:protostuff-runtime'
     implementation 'org.apache.tuweni:tuweni-config'
     implementation 'org.apache.tuweni:tuweni-bytes'
 

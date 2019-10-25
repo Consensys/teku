@@ -31,5 +31,5 @@ dependencies {
   implementation 'org.xerial.snappy:snappy-java'
   implementation 'tech.pegasys.pantheon.internal:metrics-core'
 
-  testImplementation 'org.mockito:mockito-core:2.28.2'
+  testImplementation 'org.mockito:mockito-core'
 }
