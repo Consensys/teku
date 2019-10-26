@@ -56,6 +56,10 @@ import tech.pegasys.artemis.util.bls.BLSSignature;
 
 public final class DataStructureUtil {
 
+  public static int randomInt() {
+    return new Random().nextInt();
+  }
+
   public static int randomInt(int seed) {
     return new Random(seed).nextInt();
   }
@@ -208,7 +212,7 @@ public final class DataStructureUtil {
   }
 
   public static AttestationData randomAttestationData() {
-    return randomAttestationData(randomInt(12344));
+    return randomAttestationData(randomInt());
   }
 
   public static Attestation randomAttestation() {
