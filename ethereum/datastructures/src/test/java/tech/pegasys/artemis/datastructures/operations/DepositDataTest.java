@@ -15,6 +15,7 @@ package tech.pegasys.artemis.datastructures.operations;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomBytes32;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomUnsignedLong;
 
 import com.google.common.primitives.UnsignedLong;
@@ -25,11 +26,11 @@ import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 
 class DepositDataTest {
-
-  private BLSPublicKey pubkey = BLSPublicKey.random();
-  private Bytes32 withdrawalCredentials = Bytes32.random();
-  private UnsignedLong amount = randomUnsignedLong();
-  private BLSSignature signature = BLSSignature.random();
+  private int seed = 100;
+  private BLSPublicKey pubkey = BLSPublicKey.random(seed++);
+  private Bytes32 withdrawalCredentials = randomBytes32(seed++);
+  private UnsignedLong amount = randomUnsignedLong(seed++);
+  private BLSSignature signature = BLSSignature.random(seed++);
 
   private DepositData depositData =
       new DepositData(pubkey, withdrawalCredentials, amount, signature);

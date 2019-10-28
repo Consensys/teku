@@ -31,9 +31,9 @@ import tech.pegasys.artemis.util.SSZTypes.SSZVector;
 
 @ExtendWith(BouncyCastleExtension.class)
 class DepositTest {
-
+  private int seed = 100;
   private SSZVector<Bytes32> branch = setupMerkleBranch();
-  private DepositData depositData = randomDepositData();
+  private DepositData depositData = randomDepositData(seed);
 
   private Deposit deposit = new Deposit(branch, depositData);
 
@@ -66,9 +66,9 @@ class DepositTest {
   void equalsReturnsFalseWhenDepositDataIsDifferent() {
     // DepositData is rather involved to create. Just create a random one until it is not the same
     // as the original.
-    DepositData otherDepositData = randomDepositData();
+    DepositData otherDepositData = randomDepositData(seed++);
     while (Objects.equals(otherDepositData, depositData)) {
-      otherDepositData = randomDepositData();
+      otherDepositData = randomDepositData(seed++);
     }
 
     Deposit testDeposit = new Deposit(branch, otherDepositData);

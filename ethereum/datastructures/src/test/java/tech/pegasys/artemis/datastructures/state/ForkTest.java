@@ -23,10 +23,10 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.util.SSZTypes.Bytes4;
 
 class ForkTest {
-
+  private int seed = 100;
   private Bytes4 previousVersion = new Bytes4(Bytes.random(4));
   private Bytes4 currentVersion = new Bytes4(Bytes.random(4));
-  private UnsignedLong epoch = randomUnsignedLong();
+  private UnsignedLong epoch = randomUnsignedLong(seed++);
 
   private Fork fork = new Fork(previousVersion, currentVersion, epoch);
 
@@ -62,7 +62,8 @@ class ForkTest {
 
   @Test
   void equalsReturnsFalseWhenEpochsAreDifferent() {
-    Fork testFork = new Fork(previousVersion, currentVersion, epoch.plus(randomUnsignedLong()));
+    Fork testFork =
+        new Fork(previousVersion, currentVersion, epoch.plus(randomUnsignedLong(seed++)));
 
     assertNotEquals(fork, testFork);
   }

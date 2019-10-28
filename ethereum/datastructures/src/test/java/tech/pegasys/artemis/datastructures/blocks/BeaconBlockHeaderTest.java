@@ -15,6 +15,7 @@ package tech.pegasys.artemis.datastructures.blocks;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomBytes32;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomUnsignedLong;
 
 import com.google.common.primitives.UnsignedLong;
@@ -25,12 +26,12 @@ import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 
 class BeaconBlockHeaderTest {
-
-  private UnsignedLong slot = randomUnsignedLong();
-  private Bytes32 previous_block_root = Bytes32.random();
-  private Bytes32 state_root = Bytes32.random();
-  private Bytes32 block_body_root = Bytes32.random();
-  private BLSSignature signature = BLSSignature.random();
+  private int seed = 100;
+  private UnsignedLong slot = randomUnsignedLong(seed);
+  private Bytes32 previous_block_root = randomBytes32(seed++);
+  private Bytes32 state_root = randomBytes32(seed++);
+  private Bytes32 block_body_root = randomBytes32(seed++);
+  private BLSSignature signature = BLSSignature.random(seed++);
 
   private BeaconBlockHeader beaconBlockHeader =
       new BeaconBlockHeader(slot, previous_block_root, state_root, block_body_root, signature);
@@ -54,7 +55,7 @@ class BeaconBlockHeaderTest {
   void equalsReturnsFalseWhenSlotsAreDifferent() {
     BeaconBlockHeader testBeaconBlockHeader =
         new BeaconBlockHeader(
-            slot.plus(randomUnsignedLong()),
+            slot.plus(randomUnsignedLong(seed++)),
             previous_block_root,
             state_root,
             block_body_root,
@@ -92,9 +93,9 @@ class BeaconBlockHeaderTest {
 
   @Test
   void equalsReturnsFalseWhenSignaturesAreDifferent() {
-    BLSSignature differentSignature = BLSSignature.random();
+    BLSSignature differentSignature = BLSSignature.random(seed++);
     while (differentSignature.equals(signature)) {
-      differentSignature = BLSSignature.random();
+      differentSignature = BLSSignature.random(seed++);
     }
 
     BeaconBlockHeader testBeaconBlockHeader =
@@ -112,7 +113,7 @@ class BeaconBlockHeaderTest {
 
   @Test
   void blockRootHeaderRootMatchingTests() {
-    BeaconBlock block = DataStructureUtil.randomBeaconBlock(90000000, 100);
+    BeaconBlock block = DataStructureUtil.randomBeaconBlock(90000000, seed++);
     BeaconBlockHeader blockHeader =
         new BeaconBlockHeader(
             block.getSlot(),

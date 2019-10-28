@@ -137,7 +137,7 @@ class BlockProcessorUtilTest {
   private BeaconState createBeaconState(
       boolean addToList, UnsignedLong amount, Validator knownValidator) {
     BeaconState beaconState = new BeaconStateWithCache();
-    beaconState.setSlot(randomUnsignedLong());
+    beaconState.setSlot(randomUnsignedLong(100));
     beaconState.setFork(
         new Fork(
             new Bytes4(Bytes.ofUnsignedInt(0)),
@@ -146,12 +146,13 @@ class BlockProcessorUtilTest {
 
     SSZList<Validator> validatorList =
         new SSZList<>(
-            Arrays.asList(randomValidator(), randomValidator(), randomValidator()),
+            Arrays.asList(randomValidator(101), randomValidator(102), randomValidator(103)),
             Constants.VALIDATOR_REGISTRY_LIMIT,
             Validator.class);
     SSZList<UnsignedLong> balanceList =
         new SSZList<>(
-            Arrays.asList(randomUnsignedLong(), randomUnsignedLong(), randomUnsignedLong()),
+            Arrays.asList(
+                randomUnsignedLong(104), randomUnsignedLong(105), randomUnsignedLong(106)),
             Constants.VALIDATOR_REGISTRY_LIMIT,
             UnsignedLong.class);
 

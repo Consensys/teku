@@ -24,11 +24,11 @@ import tech.pegasys.artemis.util.SSZTypes.Bitlist;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 
 class AttestationTest {
-
-  private Bitlist aggregationBitfield = randomBitlist();
-  private AttestationData data = randomAttestationData();
-  private Bitlist custodyBitfield = randomBitlist();
-  private BLSSignature aggregateSignature = BLSSignature.random();
+  private int seed = 100;
+  private Bitlist aggregationBitfield = randomBitlist(seed);
+  private AttestationData data = randomAttestationData(seed++);
+  private Bitlist custodyBitfield = randomBitlist(seed++);
+  private BLSSignature aggregateSignature = BLSSignature.random(seed++);
 
   private Attestation attestation =
       new Attestation(aggregationBitfield, data, custodyBitfield, aggregateSignature);
@@ -51,7 +51,7 @@ class AttestationTest {
   @Test
   void equalsReturnsFalseWhenAggregationBitfieldsAreDifferent() {
     Attestation testAttestation =
-        new Attestation(randomBitlist(), data, custodyBitfield, aggregateSignature);
+        new Attestation(randomBitlist(seed++), data, custodyBitfield, aggregateSignature);
 
     assertNotEquals(attestation, testAttestation);
   }
@@ -60,9 +60,9 @@ class AttestationTest {
   void equalsReturnsFalseWhenAttestationDataIsDifferent() {
     // AttestationData is rather involved to create. Just create a random one until it is not the
     // same as the original.
-    AttestationData otherData = randomAttestationData();
+    AttestationData otherData = randomAttestationData(seed++);
     while (Objects.equals(otherData, data)) {
-      otherData = randomAttestationData();
+      otherData = randomAttestationData(seed++);
     }
 
     Attestation testAttestation =
@@ -74,7 +74,7 @@ class AttestationTest {
   @Test
   void equalsReturnsFalseWhenCustodyBitfieldsAreDifferent() {
     Attestation testAttestation =
-        new Attestation(aggregationBitfield, data, randomBitlist(), aggregateSignature);
+        new Attestation(aggregationBitfield, data, randomBitlist(seed++), aggregateSignature);
 
     assertNotEquals(attestation, testAttestation);
   }

@@ -23,7 +23,8 @@ import org.junit.jupiter.api.Test;
 
 class AttestationDataAndCustodyBitTest {
 
-  private AttestationData data = randomAttestationData();
+  private int seed = 100;
+  private AttestationData data = randomAttestationData(seed);
   private boolean custodyBit = false;
 
   private AttestationDataAndCustodyBit attestationDataAndCustodyBit =
@@ -49,9 +50,9 @@ class AttestationDataAndCustodyBitTest {
     // AttestationData is rather involved to create. Just create a random one until it is not the
     // same
     // as the original.
-    AttestationData otherAttestationData = randomAttestationData();
+    AttestationData otherAttestationData = randomAttestationData(seed++);
     while (Objects.equals(otherAttestationData, data)) {
-      otherAttestationData = randomAttestationData();
+      otherAttestationData = randomAttestationData(seed++);
     }
     AttestationDataAndCustodyBit testAttestationDataAndCustodyBit =
         new AttestationDataAndCustodyBit(otherAttestationData, custodyBit);
