@@ -25,14 +25,10 @@ import tech.pegasys.artemis.pow.event.Deposit;
 
 public class DepositContractListener {
 
-  private Disposable depositEventSub;
-  private Disposable eth2GenesisEventSub;
-  private EventBus eventBus;
-
+  private final Disposable subscription;
   private DepositContract contract;
 
   public DepositContractListener(EventBus eventBus, DepositContract contract) {
-    this.eventBus = eventBus;
     this.contract = contract;
 
     // Filter by the contract address and by begin/end blocks
@@ -45,7 +41,7 @@ public class DepositContractListener {
 
     // Subscribe to the event of a validator being registered in the
     // DepositContract
-    depositEventSub =
+    subscription =
         contract
             .depositEventEventFlowable(depositEventFilter)
             .subscribe(
@@ -57,5 +53,9 @@ public class DepositContractListener {
 
   public DepositContract getContract() {
     return contract;
+  }
+
+  public void stop() {
+    subscription.dispose();
   }
 }

@@ -14,7 +14,6 @@
 package tech.pegasys.artemis.datastructures.util;
 
 import com.google.common.primitives.UnsignedLong;
-import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -25,8 +24,6 @@ import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 
 public class MockStartBeaconStateGenerator {
 
-  private static final UnsignedLong ETH1_TIMESTAMP =
-      UnsignedLong.valueOf(new BigInteger("2").pow(40));
   private static final Bytes32 BLOCK_HASH;
 
   static {

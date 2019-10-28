@@ -23,7 +23,6 @@ import com.google.common.eventbus.Subscribe;
 import com.google.common.primitives.UnsignedLong;
 import io.libp2p.core.crypto.KeyKt;
 import io.libp2p.core.crypto.PrivKey;
-import io.vertx.core.Vertx;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.Date;
@@ -68,22 +67,19 @@ public class BeaconChainController {
   private Runnable networkTask;
   private final ArtemisConfiguration config;
   private EventBus eventBus;
-  private Vertx vertx;
   private Timer timer;
   private ChainStorageClient chainStorageClient;
   private P2PNetwork p2pNetwork;
   private final MetricsSystem metricsSystem;
   private SettableGauge currentSlotGauge;
   private SettableGauge currentEpochGauge;
-  private ValidatorCoordinator validatorCoordinator;
   private StateProcessor stateProcessor;
   private UnsignedLong nodeSlot = UnsignedLong.ZERO;
   private boolean testMode;
 
   public BeaconChainController(
-      EventBus eventBus, Vertx vertx, MetricsSystem metricsSystem, ArtemisConfiguration config) {
+      EventBus eventBus, MetricsSystem metricsSystem, ArtemisConfiguration config) {
     this.eventBus = eventBus;
-    this.vertx = vertx;
     this.config = config;
     this.metricsSystem = metricsSystem;
     this.eventBus.register(this);
@@ -169,7 +165,7 @@ public class BeaconChainController {
 
   public void initValidatorCoordinator() {
     STDOUT.log(Level.DEBUG, "BeaconChainController.initValidatorCoordinator()");
-    this.validatorCoordinator = new ValidatorCoordinator(eventBus, chainStorageClient, config);
+    new ValidatorCoordinator(eventBus, chainStorageClient, config);
   }
 
   public void initStateProcessor() {
@@ -230,6 +226,7 @@ public class BeaconChainController {
   }
 
   @Subscribe
+  @SuppressWarnings("unused")
   private void onTick(Date date) {
     if (!testMode && !stateProcessor.isGenesisReady()) {
       return;

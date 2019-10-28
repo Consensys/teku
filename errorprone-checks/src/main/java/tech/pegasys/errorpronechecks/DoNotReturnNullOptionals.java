@@ -13,7 +13,6 @@
 
 package tech.pegasys.errorpronechecks;
 
-import static com.google.errorprone.BugPattern.Category.JDK;
 import static com.google.errorprone.BugPattern.SeverityLevel.SUGGESTION;
 import static com.google.errorprone.matchers.Matchers.contains;
 import static com.sun.source.tree.Tree.Kind.NULL_LITERAL;
@@ -25,9 +24,11 @@ import com.google.errorprone.bugpatterns.BugChecker;
 import com.google.errorprone.bugpatterns.BugChecker.MethodTreeMatcher;
 import com.google.errorprone.matchers.Description;
 import com.google.errorprone.matchers.Matcher;
+import com.google.errorprone.matchers.Matchers;
 import com.sun.source.tree.MethodTree;
 import com.sun.source.tree.ReturnTree;
 import com.sun.source.tree.Tree;
+import java.util.Optional;
 
 /*
  * This is reworked from an example found at:
@@ -38,9 +39,11 @@ import com.sun.source.tree.Tree;
 @BugPattern(
     name = "DoNotReturnNullOptionals",
     summary = "Do not return null optionals.",
-    category = JDK,
     severity = SUGGESTION)
 public class DoNotReturnNullOptionals extends BugChecker implements MethodTreeMatcher {
+
+  private static final Matcher<MethodTree> RETURN_OPTIONAL_MATCHER =
+      Matchers.methodReturns(Matchers.isSameType(Optional.class));
 
   private static class ReturnNullMatcher implements Matcher<Tree> {
 
@@ -59,7 +62,7 @@ public class DoNotReturnNullOptionals extends BugChecker implements MethodTreeMa
   @Override
   public Description matchMethod(final MethodTree tree, final VisitorState state) {
     if ((tree.getReturnType() == null)
-        || !tree.getReturnType().toString().startsWith("Optional<")
+        || !RETURN_OPTIONAL_MATCHER.matches(tree, state)
         || (tree.getBody() == null)
         || !CONTAINS_RETURN_NULL.matches(tree.getBody(), state)) {
       return Description.NO_MATCH;
