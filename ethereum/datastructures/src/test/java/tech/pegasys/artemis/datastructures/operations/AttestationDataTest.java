@@ -15,6 +15,7 @@ package tech.pegasys.artemis.datastructures.operations;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomBytes32;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomCrosslink;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomUnsignedLong;
 
@@ -26,15 +27,15 @@ import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.datastructures.state.Crosslink;
 
 class AttestationDataTest {
-
-  private Bytes32 beaconBlockRoot = Bytes32.random();
-  private UnsignedLong source_epoch = randomUnsignedLong();
-  private Bytes32 source_root = Bytes32.random();
-  private UnsignedLong target_epoch = randomUnsignedLong();
-  private Bytes32 target_root = Bytes32.random();
+  private int seed = 100;
+  private Bytes32 beaconBlockRoot = randomBytes32(seed);
+  private UnsignedLong source_epoch = randomUnsignedLong(seed++);
+  private Bytes32 source_root = randomBytes32(seed++);
+  private UnsignedLong target_epoch = randomUnsignedLong(seed++);
+  private Bytes32 target_root = randomBytes32(seed++);
   private Checkpoint source = new Checkpoint(source_epoch, source_root);
   private Checkpoint target = new Checkpoint(target_epoch, target_root);
-  private Crosslink crosslink = randomCrosslink();
+  private Crosslink crosslink = randomCrosslink(seed++);
 
   private AttestationData attestationData =
       new AttestationData(beaconBlockRoot, source, target, crosslink);
@@ -65,7 +66,7 @@ class AttestationDataTest {
   @Test
   void equalsReturnsFalseWhenSourceEpochsAreDifferent() {
     Checkpoint newSource = new Checkpoint(source);
-    newSource.setEpoch(randomUnsignedLong());
+    newSource.setEpoch(randomUnsignedLong(seed++));
     AttestationData testAttestationData =
         new AttestationData(beaconBlockRoot, newSource, target, crosslink);
 
@@ -85,7 +86,7 @@ class AttestationDataTest {
   @Test
   void equalsReturnsFalseWhenTargetEpochsAreDifferent() {
     Checkpoint newTarget = new Checkpoint(target);
-    newTarget.setEpoch(randomUnsignedLong());
+    newTarget.setEpoch(randomUnsignedLong(seed++));
     AttestationData testAttestationData =
         new AttestationData(beaconBlockRoot, source, newTarget, crosslink);
 
@@ -106,7 +107,7 @@ class AttestationDataTest {
   void equalsReturnsFalseWhenLatestCrosslinkRootsAreDifferent() {
 
     AttestationData testAttestationData =
-        new AttestationData(beaconBlockRoot, source, target, randomCrosslink());
+        new AttestationData(beaconBlockRoot, source, target, randomCrosslink(seed++));
 
     assertNotEquals(attestationData, testAttestationData);
   }

@@ -43,10 +43,10 @@ import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 
 class BeaconBlockBodyTest {
-
-  private BLSSignature blsSignature = BLSSignature.random();
-  private Eth1Data eth1Data = randomEth1Data();
-  private Bytes32 graffiti = randomBytes32();
+  private int seed = 100;
+  private BLSSignature blsSignature = BLSSignature.random(seed);
+  private Eth1Data eth1Data = randomEth1Data(seed++);
+  private Bytes32 graffiti = randomBytes32(seed++);
   private SSZList<ProposerSlashing> proposerSlashings =
       new SSZList<>(ProposerSlashing.class, MAX_PROPOSER_SLASHINGS);
   private SSZList<AttesterSlashing> attesterSlashings =
@@ -58,17 +58,17 @@ class BeaconBlockBodyTest {
   private SSZList<Transfer> transfers = new SSZList<>(Transfer.class, MAX_TRANSFERS);
 
   {
-    proposerSlashings.add(randomProposerSlashing());
-    proposerSlashings.add(randomProposerSlashing());
-    proposerSlashings.add(randomProposerSlashing());
-    attesterSlashings.add(randomAttesterSlashing());
-    attestations.add(randomAttestation());
-    attestations.add(randomAttestation());
-    attestations.add(randomAttestation());
-    deposits.addAll(randomDeposits(100, 100));
-    voluntaryExits.add(randomVoluntaryExit());
-    voluntaryExits.add(randomVoluntaryExit());
-    voluntaryExits.add(randomVoluntaryExit());
+    proposerSlashings.add(randomProposerSlashing(seed++));
+    proposerSlashings.add(randomProposerSlashing(seed++));
+    proposerSlashings.add(randomProposerSlashing(seed++));
+    attesterSlashings.add(randomAttesterSlashing(seed++));
+    attestations.add(randomAttestation(seed++));
+    attestations.add(randomAttestation(seed++));
+    attestations.add(randomAttestation(seed++));
+    deposits.addAll(randomDeposits(100, seed++));
+    voluntaryExits.add(randomVoluntaryExit(seed++));
+    voluntaryExits.add(randomVoluntaryExit(seed++));
+    voluntaryExits.add(randomVoluntaryExit(seed++));
   }
 
   private BeaconBlockBody beaconBlockBody =
@@ -134,7 +134,7 @@ class BeaconBlockBodyTest {
     // Create copy of attesterSlashings and change the element to ensure it is different.
     SSZList<AttesterSlashing> otherAttesterSlashings =
         new SSZList<>(attesterSlashings, MAX_ATTESTER_SLASHINGS, AttesterSlashing.class);
-    otherAttesterSlashings.add(0, randomAttesterSlashing());
+    otherAttesterSlashings.add(0, randomAttesterSlashing(seed++));
 
     BeaconBlockBody testBeaconBlockBody =
         new BeaconBlockBody(

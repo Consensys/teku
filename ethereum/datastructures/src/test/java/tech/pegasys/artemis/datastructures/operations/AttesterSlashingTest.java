@@ -22,8 +22,9 @@ import org.junit.jupiter.api.Test;
 
 class AttesterSlashingTest {
 
-  private IndexedAttestation indexedAttestation1 = randomIndexedAttestation();
-  private IndexedAttestation indexedAttestation2 = randomIndexedAttestation();
+  private int seed = 100;
+  private IndexedAttestation indexedAttestation1 = randomIndexedAttestation(seed);
+  private IndexedAttestation indexedAttestation2 = randomIndexedAttestation(seed++);
 
   private AttesterSlashing attesterSlashing =
       new AttesterSlashing(indexedAttestation1, indexedAttestation2);
@@ -47,9 +48,9 @@ class AttesterSlashingTest {
   void equalsReturnsFalseWhenIndexedAttestation1IsDifferent() {
     // IndexedAttestation is rather involved to create. Just create a random one until it is not
     // the same as the original.
-    IndexedAttestation otherIndexedAttestation1 = randomIndexedAttestation();
+    IndexedAttestation otherIndexedAttestation1 = randomIndexedAttestation(seed++);
     while (Objects.equals(otherIndexedAttestation1, indexedAttestation1)) {
-      otherIndexedAttestation1 = randomIndexedAttestation();
+      otherIndexedAttestation1 = randomIndexedAttestation(seed++);
     }
 
     AttesterSlashing testAttesterSlashing =
@@ -62,9 +63,9 @@ class AttesterSlashingTest {
   void equalsReturnsFalseWhenIndexedAttestation2IsDifferent() {
     // IndexedAttestation is rather involved to create. Just create a random one until it is not
     // the ame as the original.
-    IndexedAttestation otherIndexedAttestation2 = randomIndexedAttestation();
+    IndexedAttestation otherIndexedAttestation2 = randomIndexedAttestation(seed++);
     while (Objects.equals(otherIndexedAttestation2, indexedAttestation2)) {
-      otherIndexedAttestation2 = randomIndexedAttestation();
+      otherIndexedAttestation2 = randomIndexedAttestation(seed++);
     }
 
     AttesterSlashing testAttesterSlashing =

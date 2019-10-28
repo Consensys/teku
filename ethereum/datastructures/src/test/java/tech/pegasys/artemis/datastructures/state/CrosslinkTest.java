@@ -15,6 +15,7 @@ package tech.pegasys.artemis.datastructures.state;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomBytes32;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomUnsignedLong;
 
 import com.google.common.primitives.UnsignedLong;
@@ -23,12 +24,12 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 
 class CrosslinkTest {
-
-  UnsignedLong shard = randomUnsignedLong();
-  UnsignedLong start_epoch = randomUnsignedLong();
-  UnsignedLong end_epoch = randomUnsignedLong();
-  Bytes32 parentRoot = Bytes32.random();
-  Bytes32 dataRoot = Bytes32.random();
+  int seed = 100;
+  UnsignedLong shard = randomUnsignedLong(seed);
+  UnsignedLong start_epoch = randomUnsignedLong(seed++);
+  UnsignedLong end_epoch = randomUnsignedLong(seed++);
+  Bytes32 parentRoot = randomBytes32(seed++);
+  Bytes32 dataRoot = randomBytes32(seed++);
 
   private Crosslink crosslink = new Crosslink(shard, parentRoot, start_epoch, end_epoch, dataRoot);
 
@@ -50,7 +51,7 @@ class CrosslinkTest {
   void equalsReturnsFalseWhenEpochsAreDifferent() {
     Crosslink testCrosslink =
         new Crosslink(
-            shard, parentRoot, start_epoch.plus(randomUnsignedLong()), end_epoch, dataRoot);
+            shard, parentRoot, start_epoch.plus(randomUnsignedLong(seed++)), end_epoch, dataRoot);
 
     assertNotEquals(crosslink, testCrosslink);
   }

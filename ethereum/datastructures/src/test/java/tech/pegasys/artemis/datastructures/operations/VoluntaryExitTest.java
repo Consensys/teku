@@ -23,10 +23,10 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 
 class VoluntaryExitTest {
-
-  private UnsignedLong epoch = randomUnsignedLong();
-  private UnsignedLong validatorIndex = randomUnsignedLong();
-  private BLSSignature signature = BLSSignature.random();
+  private int seed = 100;
+  private UnsignedLong epoch = randomUnsignedLong(seed);
+  private UnsignedLong validatorIndex = randomUnsignedLong(seed++);
+  private BLSSignature signature = BLSSignature.random(seed++);
 
   private VoluntaryExit voluntaryExit = new VoluntaryExit(epoch, validatorIndex, signature);
 
@@ -47,7 +47,7 @@ class VoluntaryExitTest {
   @Test
   void equalsReturnsFalseWhenEpochsAreDifferent() {
     VoluntaryExit testVoluntaryExit =
-        new VoluntaryExit(epoch.plus(randomUnsignedLong()), validatorIndex, signature);
+        new VoluntaryExit(epoch.plus(randomUnsignedLong(seed++)), validatorIndex, signature);
 
     assertNotEquals(voluntaryExit, testVoluntaryExit);
   }
@@ -55,7 +55,7 @@ class VoluntaryExitTest {
   @Test
   void equalsReturnsFalseWhenValidatorIndicesAreDifferent() {
     VoluntaryExit testVoluntaryExit =
-        new VoluntaryExit(epoch, validatorIndex.plus(randomUnsignedLong()), signature);
+        new VoluntaryExit(epoch, validatorIndex.plus(randomUnsignedLong(seed++)), signature);
 
     assertNotEquals(voluntaryExit, testVoluntaryExit);
   }

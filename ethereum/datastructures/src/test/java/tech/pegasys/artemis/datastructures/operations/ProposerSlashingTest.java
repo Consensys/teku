@@ -25,10 +25,10 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
 
 class ProposerSlashingTest {
-
-  private UnsignedLong proposerIndex = randomUnsignedLong();
-  private BeaconBlockHeader proposal1 = randomBeaconBlockHeader();
-  private BeaconBlockHeader proposal2 = randomBeaconBlockHeader();
+  private int seed = 100;
+  private UnsignedLong proposerIndex = randomUnsignedLong(seed);
+  private BeaconBlockHeader proposal1 = randomBeaconBlockHeader(seed++);
+  private BeaconBlockHeader proposal2 = randomBeaconBlockHeader(seed++);
 
   private ProposerSlashing proposerSlashing =
       new ProposerSlashing(proposerIndex, proposal1, proposal2);
@@ -51,7 +51,7 @@ class ProposerSlashingTest {
   @Test
   void equalsReturnsFalseWhenProposerIndicesAreDifferent() {
     ProposerSlashing testProposerSlashing =
-        new ProposerSlashing(proposerIndex.plus(randomUnsignedLong()), proposal1, proposal2);
+        new ProposerSlashing(proposerIndex.plus(randomUnsignedLong(seed++)), proposal1, proposal2);
 
     assertNotEquals(proposerSlashing, testProposerSlashing);
   }
@@ -60,9 +60,9 @@ class ProposerSlashingTest {
   void equalsReturnsFalseWhenProposalData1IsDifferent() {
     // Proposalis rather involved to create. Just create a random one until it is not the
     // same as the original.
-    BeaconBlockHeader otherProposal1 = randomBeaconBlockHeader();
+    BeaconBlockHeader otherProposal1 = randomBeaconBlockHeader(seed++);
     while (Objects.equals(otherProposal1, proposal1)) {
-      otherProposal1 = randomBeaconBlockHeader();
+      otherProposal1 = randomBeaconBlockHeader(seed++);
     }
 
     ProposerSlashing testProposerSlashing =
@@ -75,9 +75,9 @@ class ProposerSlashingTest {
   void equalsReturnsFalseWhenProposalData2IsDifferent() {
     // Proposal is rather involved to create. Just create a random one until it is not the
     // same as the original.
-    BeaconBlockHeader otherProposal2 = randomBeaconBlockHeader();
+    BeaconBlockHeader otherProposal2 = randomBeaconBlockHeader(seed++);
     while (Objects.equals(otherProposal2, proposal2)) {
-      otherProposal2 = randomBeaconBlockHeader();
+      otherProposal2 = randomBeaconBlockHeader(seed++);
     }
 
     ProposerSlashing testProposerSlashing =
