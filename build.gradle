@@ -13,10 +13,7 @@ plugins {
   id 'com.gradle.build-scan' version '2.1'
   id 'me.champeau.gradle.jmh' version '0.4.8' apply false
   id 'de.undercouch.download' version '4.0.0'
-  id 'org.unbroken-dome.test-sets' version '2.2.1'
 }
-
-apply plugin: 'org.unbroken-dome.test-sets'
 
 defaultTasks 'build','checkLicenses'
 
@@ -223,12 +220,6 @@ task expandRefTests(dependsOn: [expandRefTestsGeneral, expandRefTestsMainnet, ex
 task deploy() {}
 
 subprojects {
-  apply plugin: 'org.unbroken-dome.test-sets'
-
-  testSets {
-    referenceTest
-  }
-
   tasks.withType(Test) {
     // If GRADLE_MAX_TEST_FORKS is not set, use half the available processors
    maxParallelForks = (System.getenv('GRADLE_MAX_TEST_FORKS') ?: (Runtime.runtime.availableProcessors().intdiv(2) ?: 1)).toInteger()
@@ -267,13 +258,20 @@ subprojects {
         runtimeClasspath += main.output
         srcDir file('src/integration-test/java')
       }
-      resources.srcDir file('src/integration-test/resources')
+      resources.srcDir file('src/integrationTest/resources')
+    }
+    referenceTest {
+      java {
+        srcDir file('src/referenceTest/java')
+      }
+      resources.srcDir file('src/referenceTest/resources')
     }
   }
 
   configurations {
     testSupportImplementation.extendsFrom implementation
     integrationTestImplementation.extendsFrom implementation
+    referenceTestImplementation.extendsFrom implementation
     testSupportArtifacts
   }
 
@@ -312,15 +310,29 @@ subprojects {
     testImplementation 'org.junit.jupiter:junit-jupiter-params'
 
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
+
+    integrationTestImplementation 'org.assertj:assertj-core'
+    integrationTestImplementation 'org.apache.tuweni:tuweni-junit'
+    integrationTestImplementation 'org.junit.jupiter:junit-jupiter-api'
+    integrationTestImplementation 'org.junit.jupiter:junit-jupiter-params'
+
+    integrationTestRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
   }
 
-  task integrationTest(type: Test, dependsOn:["compileTestJava"]){
+  task integrationTest(type: Test, dependsOn:["compileIntegrationTestJava"]){
     group = "verification"
     description = "Runs the Artemis integration tests"
 
     testClassesDirs = sourceSets.integrationTest.output.classesDirs
     classpath = sourceSets.integrationTest.runtimeClasspath
-    outputs.upToDateWhen { false }
+  }
+
+  task referenceTest(type: Test, dependsOn:["compileReferenceTestJava"]){
+    group = "verification"
+    description = "Runs the reference tests"
+
+    testClassesDirs = sourceSets.referenceTest.output.classesDirs
+    classpath = sourceSets.referenceTest.runtimeClasspath
   }
 }
 

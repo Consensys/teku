@@ -20,6 +20,4 @@ dependencies {
   implementation 'io.libp2p:jvm-libp2p-minimal'
   implementation 'io.vertx:vertx-core'
   implementation 'io.vertx:vertx-web'
-
-  testSupportImplementation 'io.vertx:vertx-core'
 }
