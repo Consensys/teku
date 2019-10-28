@@ -25,8 +25,9 @@ import org.junit.jupiter.api.Test;
 
 class Eth1DataVoteTest {
 
-  private Eth1Data eth1Data = randomEth1Data();
-  private UnsignedLong voteCount = randomUnsignedLong();
+  private int seed = 100;
+  private Eth1Data eth1Data = randomEth1Data(seed);
+  private UnsignedLong voteCount = randomUnsignedLong(seed++);
 
   private Eth1DataVote eth1DataVote = new Eth1DataVote(eth1Data, voteCount);
 
@@ -48,9 +49,9 @@ class Eth1DataVoteTest {
   void equalsReturnsFalseWhenEth1DataIsDifferent() {
     // Eth1Data is rather involved to create. Just create a random one until it is not the same
     // as the original.
-    Eth1Data otherEth1Data = randomEth1Data();
+    Eth1Data otherEth1Data = randomEth1Data(seed++);
     while (Objects.equals(otherEth1Data, eth1Data)) {
-      otherEth1Data = randomEth1Data();
+      otherEth1Data = randomEth1Data(seed++);
     }
     Eth1DataVote testEth1DataVote = new Eth1DataVote(otherEth1Data, voteCount);
 
@@ -60,7 +61,7 @@ class Eth1DataVoteTest {
   @Test
   void equalsReturnsFalseWhenVoteCountsAreDifferent() {
     Eth1DataVote testEth1DataVote =
-        new Eth1DataVote(eth1Data, voteCount.plus(randomUnsignedLong()));
+        new Eth1DataVote(eth1Data, voteCount.plus(randomUnsignedLong(seed++)));
 
     assertNotEquals(eth1DataVote, testEth1DataVote);
   }

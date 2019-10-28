@@ -26,11 +26,11 @@ import tech.pegasys.artemis.datastructures.operations.AttestationData;
 import tech.pegasys.artemis.util.SSZTypes.Bitlist;
 
 class PendingAttestationTest {
-
-  private Bitlist participationBitfield = randomBitlist();
-  private AttestationData data = randomAttestationData();
-  private UnsignedLong inclusionDelay = randomUnsignedLong();
-  private UnsignedLong proposerIndex = randomUnsignedLong();
+  private int seed = 100;
+  private Bitlist participationBitfield = randomBitlist(seed);
+  private AttestationData data = randomAttestationData(seed++);
+  private UnsignedLong inclusionDelay = randomUnsignedLong(seed++);
+  private UnsignedLong proposerIndex = randomUnsignedLong(seed++);
 
   private PendingAttestation pendingAttestation =
       new PendingAttestation(participationBitfield, data, inclusionDelay, proposerIndex);
@@ -54,9 +54,9 @@ class PendingAttestationTest {
   void equalsReturnsFalseWhenAttestationDataIsDifferent() {
     // BeaconBlock is rather involved to create. Just create a random one until it is not the same
     // as the original.
-    AttestationData otherAttestationData = randomAttestationData();
+    AttestationData otherAttestationData = randomAttestationData(seed++);
     while (Objects.equals(otherAttestationData, data)) {
-      otherAttestationData = randomAttestationData();
+      otherAttestationData = randomAttestationData(seed++);
     }
     PendingAttestation testPendingAttestation =
         new PendingAttestation(
@@ -68,7 +68,7 @@ class PendingAttestationTest {
   @Test
   void equalsReturnsFalseWhenParticipationBitfieldsAreDifferent() {
     PendingAttestation testPendingAttestation =
-        new PendingAttestation(randomBitlist(), data, inclusionDelay, proposerIndex);
+        new PendingAttestation(randomBitlist(seed++), data, inclusionDelay, proposerIndex);
 
     assertNotEquals(pendingAttestation, testPendingAttestation);
   }
@@ -77,7 +77,10 @@ class PendingAttestationTest {
   void equalsReturnsFalseWhenCustodyBitfieldsAreDifferent() {
     PendingAttestation testPendingAttestation =
         new PendingAttestation(
-            participationBitfield, data, inclusionDelay.plus(randomUnsignedLong()), proposerIndex);
+            participationBitfield,
+            data,
+            inclusionDelay.plus(randomUnsignedLong(seed++)),
+            proposerIndex);
 
     assertNotEquals(pendingAttestation, testPendingAttestation);
   }
@@ -86,7 +89,10 @@ class PendingAttestationTest {
   void equalsReturnsFalseWhenProposerIndicesAreDifferent() {
     PendingAttestation testPendingAttestation =
         new PendingAttestation(
-            participationBitfield, data, inclusionDelay, proposerIndex.plus(randomUnsignedLong()));
+            participationBitfield,
+            data,
+            inclusionDelay,
+            proposerIndex.plus(randomUnsignedLong(seed++)));
 
     assertNotEquals(pendingAttestation, testPendingAttestation);
   }

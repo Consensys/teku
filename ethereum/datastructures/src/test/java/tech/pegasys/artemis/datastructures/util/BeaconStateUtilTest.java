@@ -270,7 +270,7 @@ class BeaconStateUtilTest {
   private BeaconState createBeaconState(
       boolean addToList, UnsignedLong amount, Validator knownValidator) {
     BeaconState beaconState = new BeaconStateWithCache();
-    beaconState.setSlot(randomUnsignedLong());
+    beaconState.setSlot(randomUnsignedLong(100));
     beaconState.setFork(
         new Fork(
             new Bytes4(Bytes.ofUnsignedInt(0)),
@@ -278,7 +278,8 @@ class BeaconStateUtilTest {
             UnsignedLong.valueOf(Constants.GENESIS_EPOCH)));
 
     List<Validator> validatorList =
-        new ArrayList<>(Arrays.asList(randomValidator(), randomValidator(), randomValidator()));
+        new ArrayList<>(
+            Arrays.asList(randomValidator(101), randomValidator(102), randomValidator(103)));
     List<UnsignedLong> balanceList =
         new ArrayList<>(
             Collections.nCopies(3, UnsignedLong.valueOf(Constants.MAX_EFFECTIVE_BALANCE)));

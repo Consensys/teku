@@ -15,6 +15,7 @@ package tech.pegasys.artemis.datastructures.state;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomBytes32;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomUnsignedLong;
 
 import com.google.common.primitives.UnsignedLong;
@@ -24,15 +25,15 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 
 class ValidatorTest {
-
-  private BLSPublicKey pubkey = BLSPublicKey.random();
-  private Bytes32 withdrawalCredentials = Bytes32.random();
-  private UnsignedLong activationEligibilityEpoch = randomUnsignedLong();
-  private UnsignedLong activationEpoch = randomUnsignedLong();
-  private UnsignedLong exitEpoch = randomUnsignedLong();
-  private UnsignedLong withdrawalEpoch = randomUnsignedLong();
+  private int seed = 100;
+  private BLSPublicKey pubkey = BLSPublicKey.random(seed);
+  private Bytes32 withdrawalCredentials = randomBytes32(seed++);
+  private UnsignedLong activationEligibilityEpoch = randomUnsignedLong(seed++);
+  private UnsignedLong activationEpoch = randomUnsignedLong(seed++);
+  private UnsignedLong exitEpoch = randomUnsignedLong(seed++);
+  private UnsignedLong withdrawalEpoch = randomUnsignedLong(seed++);
   private boolean slashed = false;
-  private UnsignedLong effectiveBalance = randomUnsignedLong();
+  private UnsignedLong effectiveBalance = randomUnsignedLong(seed++);
 
   private Validator validator =
       new Validator(
@@ -113,7 +114,7 @@ class ValidatorTest {
             effectiveBalance,
             slashed,
             activationEligibilityEpoch,
-            activationEpoch.plus(randomUnsignedLong()),
+            activationEpoch.plus(randomUnsignedLong(seed++)),
             exitEpoch,
             withdrawalEpoch);
 
@@ -130,7 +131,7 @@ class ValidatorTest {
             slashed,
             activationEligibilityEpoch,
             activationEpoch,
-            exitEpoch.plus(randomUnsignedLong()),
+            exitEpoch.plus(randomUnsignedLong(seed++)),
             withdrawalEpoch);
 
     assertNotEquals(validator, testValidator);
@@ -147,7 +148,7 @@ class ValidatorTest {
             activationEligibilityEpoch,
             activationEpoch,
             exitEpoch,
-            withdrawalEpoch.plus(randomUnsignedLong()));
+            withdrawalEpoch.plus(randomUnsignedLong(seed++)));
 
     assertNotEquals(validator, testValidator);
   }
