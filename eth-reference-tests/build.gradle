@@ -10,6 +10,7 @@ dependencies {
   referenceTestImplementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
   referenceTestImplementation 'org.miracl.milagro.amcl:milagro-crypto-java'
   referenceTestImplementation 'org.apache.tuweni:tuweni-bytes'
+  referenceTestImplementation 'org.apache.tuweni:tuweni-junit'
   referenceTestImplementation 'org.apache.commons:commons-lang3'
   referenceTestImplementation 'org.mockito:mockito-core'
   referenceTestImplementation 'com.fasterxml.jackson.core:jackson-databind'
