@@ -81,8 +81,7 @@ public class ValidatorCoordinator {
   private final EventBus eventBus;
   private final Map<BLSPublicKey, ValidatorInfo> validators;
   private StateTransition stateTransition;
-  private BeaconState headState;
-  private int numValidators;
+  //  private BeaconState headState;
   private BeaconBlock validatorBlock;
   private SSZList<Deposit> newDeposits = new SSZList<>(Deposit.class, MAX_DEPOSITS);
   private ChainStorageClient chainStorageClient;
@@ -93,7 +92,6 @@ public class ValidatorCoordinator {
   public ValidatorCoordinator(
       EventBus eventBus, ChainStorageClient chainStorageClient, ArtemisConfiguration config) {
     this.eventBus = eventBus;
-    this.numValidators = config.getNumValidators();
     this.chainStorageClient = chainStorageClient;
     this.stateTransition = new StateTransition(false);
     this.validators = initializeValidators(config, chainStorageClient);
@@ -213,7 +211,7 @@ public class ValidatorCoordinator {
       createBlockIfNecessary(BeaconStateWithCache.fromBeaconState(headState), headBlock);
 
       // Save headState to check for slashings
-      this.headState = headState;
+      //      this.headState = headState;
     } catch (IllegalArgumentException e) {
       STDOUT.log(Level.WARN, "Can not produce attestations or create a block" + e.toString());
     }
@@ -335,13 +333,13 @@ public class ValidatorCoordinator {
         BLSSignature epochSignature = epochSignatureTask.get();
         newBlock.getBody().setRandao_reveal(epochSignature);
         List<ProposerSlashing> slashingsInBlock = newBlock.getBody().getProposer_slashings();
-        slashings.forEach(
-            slashing -> {
-              if (!state.getValidators().get(slashing.getProposer_index().intValue()).isSlashed()) {
-                slashingsInBlock.add(slashing);
-              }
-            });
-        slashings = new LinkedBlockingQueue<>();
+        ProposerSlashing slashing = slashings.poll();
+        while (slashing != null) {
+          if (!state.getValidators().get(slashing.getProposer_index().intValue()).isSlashed()) {
+            slashingsInBlock.add(slashing);
+          }
+          slashing = slashings.poll();
+        }
         boolean validate_state_root = false;
         Bytes32 stateRoot =
             stateTransition.initiate(newState, newBlock, validate_state_root).hash_tree_root();

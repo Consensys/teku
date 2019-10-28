@@ -16,20 +16,12 @@ package tech.pegasys.artemis.storage;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import tech.pegasys.artemis.storage.events.StoreDiskUpdateEvent;
-import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 
 public class ChainStorageServer {
-  private static final ALogger STDOUT = new ALogger("stdout");
-
-  private final EventBus eventBus;
-  private final ArtemisConfiguration config;
-
   private final Database database;
 
   public ChainStorageServer(EventBus eventBus, ArtemisConfiguration config) {
-    this.eventBus = eventBus;
-    this.config = config;
     eventBus.register(this);
 
     this.database = new Database("artemis.db", eventBus, config.startFromDisk());

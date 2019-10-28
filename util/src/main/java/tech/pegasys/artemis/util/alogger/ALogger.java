@@ -20,17 +20,11 @@ import org.apache.logging.log4j.Logger;
 public class ALogger {
 
   public enum Color {
-    RED(0),
-    BLUE(1),
-    PURPLE(2),
-    WHITE(3),
-    GREEN(4);
-
-    private int identifier;
-
-    Color(int identifier) {
-      this.identifier = identifier;
-    }
+    RED,
+    BLUE,
+    PURPLE,
+    WHITE,
+    GREEN
   }
 
   private static final String resetCode = "\u001B[0m";

@@ -16,23 +16,11 @@ package tech.pegasys.artemis.networking.p2p;
 import com.google.common.eventbus.EventBus;
 import java.util.concurrent.CompletableFuture;
 import tech.pegasys.artemis.networking.p2p.api.P2PNetwork;
-import tech.pegasys.artemis.util.alogger.ALogger;
 
 public class MockP2PNetwork implements P2PNetwork {
 
-  private final EventBus eventBus;
-  private static final ALogger LOG = new ALogger(MockP2PNetwork.class.getName());
-  private boolean printEnabled = false;
-
   public MockP2PNetwork(EventBus eventBus) {
-    this.eventBus = eventBus;
-    this.eventBus.register(this);
-  }
-
-  public MockP2PNetwork(EventBus eventBus, boolean printEnabled) {
-    this.eventBus = eventBus;
-    this.eventBus.register(this);
-    this.printEnabled = printEnabled;
+    eventBus.register(this);
   }
 
   @Override
