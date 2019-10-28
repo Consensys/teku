@@ -29,7 +29,7 @@ public interface P2PNetwork {
    *
    * @return
    */
-  void start();
+  CompletableFuture<?> start();
 
   /** Stops the P2P network layer. */
   void stop();
