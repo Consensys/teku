@@ -143,7 +143,7 @@ public class JvmLibP2PNetwork implements P2PNetwork {
     return advertisedAddr + "/p2p/" + getPeerId();
   }
 
-  public int getPeerCount(){
+  public int getPeerCount() {
     return peerManager.getPeerCount();
   }
 
