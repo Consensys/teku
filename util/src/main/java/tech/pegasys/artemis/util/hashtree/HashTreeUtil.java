@@ -46,7 +46,7 @@ public final class HashTreeUtil {
    * _OF_BASIC: A list containing only basic SSZ types. - _OF_COMPOSITE: A list containing
    * homogenous SSZ composite types.
    */
-  public static enum SSZTypes {
+  public enum SSZTypes {
     BASIC,
     CONTAINER,
     VECTOR_OF_BASIC,
@@ -273,7 +273,6 @@ public final class HashTreeUtil {
   /**
    * Create the hash tree root of a SSZ Bitlist.
    *
-   * @param bytes One Bytes value or a list of homogeneous Bytes values.
    * @return The SSZ tree root hash of the values.
    * @see <a
    *     href="https://github.com/ethereum/eth2.0-specs/blob/v0.5.1/specs/simple-serialize.md">SSZ
@@ -332,9 +331,7 @@ public final class HashTreeUtil {
    */
   private static Bytes32 hash_tree_root_list_bytes(List<Bytes32> bytes, long maxSize, int length) {
     return mix_in_length(
-        merkleize(
-            bytes, chunk_count(SSZTypes.LIST_OF_COMPOSITE, maxSize, bytes.toArray(new Bytes[0]))),
-        length);
+        merkleize(bytes, chunk_count(SSZTypes.LIST_OF_COMPOSITE, maxSize)), length);
   }
 
   public static Bytes32 hash_tree_root_list_pubkey(List<BLSPublicKey> pubkeys, long maxSize) {
@@ -348,11 +345,7 @@ public final class HashTreeUtil {
             .map(item -> hash_tree_root(SSZTypes.VECTOR_OF_BASIC, item.toBytes()))
             .collect(Collectors.toList());
     return mix_in_length(
-        merkleize(
-            hashTreeRootList,
-            chunk_count(
-                SSZTypes.LIST_OF_COMPOSITE, maxSize, hashTreeRootList.toArray(new Bytes32[0]))),
-        length);
+        merkleize(hashTreeRootList, chunk_count(SSZTypes.LIST_OF_COMPOSITE, maxSize)), length);
   }
 
   /**
@@ -370,11 +363,7 @@ public final class HashTreeUtil {
     List<Bytes32> hashTreeRootList =
         bytes.stream().map(item -> item.hash_tree_root()).collect(Collectors.toList());
     return mix_in_length(
-        merkleize(
-            hashTreeRootList,
-            chunk_count(
-                SSZTypes.LIST_OF_COMPOSITE, maxSize, hashTreeRootList.toArray(new Bytes32[0]))),
-        length);
+        merkleize(hashTreeRootList, chunk_count(SSZTypes.LIST_OF_COMPOSITE, maxSize)), length);
   }
 
   /**
@@ -409,13 +398,6 @@ public final class HashTreeUtil {
     return pack(trimmedBitfield.reverse());
   }
 
-  private static byte reverseByte(int revByte) {
-    revByte = ((revByte & 240) >>> 4) | ((revByte & 15) << 4);
-    revByte = ((revByte & 204) >>> 2) | ((revByte & 51) << 2);
-    revByte = ((revByte & 170) >>> 1) | ((revByte & 85) << 1);
-    return (byte) revByte;
-  }
-
   private static List<Bytes32> pack(Bytes... sszValues) {
     // Join all varags sszValues into one Bytes type
     Bytes concatenatedBytes = Bytes.concatenate(sszValues);
@@ -441,7 +423,7 @@ public final class HashTreeUtil {
     return (maxSize * 8 + 31) / 32;
   }
 
-  private static long chunk_count(HashTreeUtil.SSZTypes sszType, long maxSize, Bytes... value) {
+  private static long chunk_count(HashTreeUtil.SSZTypes sszType, long maxSize) {
     switch (sszType) {
       case BASIC:
         throw new UnsupportedOperationException(
@@ -464,31 +446,6 @@ public final class HashTreeUtil {
       case VECTOR_OF_COMPOSITE:
         throw new UnsupportedOperationException(
             "Use chunk_count(HashTreeUtil.SSZTypes, Bytes) for VECTORS of BASIC SSZ types.");
-      case CONTAINER:
-        throw new UnsupportedOperationException(
-            "hash_tree_root of SSZ Containers (often implemented by POJOs) must be done by the container POJO itself, as its individual fields cannot be enumerated without reflection.");
-    }
-    return -1;
-  }
-
-  private static int chunk_count(HashTreeUtil.SSZTypes sszType, Bytes value) {
-    switch (sszType) {
-      case BASIC:
-        return 1;
-      case BITLIST:
-      case BITVECTOR:
-        throw new UnsupportedOperationException(
-            "Use chunk_count(HashTreeUtil.SSZTypes, int, Bytes...) for BitList or BitVector SSZ types.");
-      case LIST_OF_BASIC:
-        throw new UnsupportedOperationException(
-            "Lists are not yet supported in chunk_count. Support is pending a way to send the list max_length.");
-      case VECTOR_OF_BASIC:
-        return (value.size() + 31) / 32;
-      case LIST_OF_COMPOSITE:
-        throw new UnsupportedOperationException(
-            "Lists are not yet supported in chunk_count. Support is pending a way to send the list max_length.");
-      case VECTOR_OF_COMPOSITE:
-        return value.size();
       case CONTAINER:
         throw new UnsupportedOperationException(
             "hash_tree_root of SSZ Containers (often implemented by POJOs) must be done by the container POJO itself, as its individual fields cannot be enumerated without reflection.");

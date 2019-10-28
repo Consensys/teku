@@ -155,6 +155,7 @@ public class StateProcessor {
   }
 
   @Subscribe
+  @SuppressWarnings("unused")
   private void onBlock(BeaconBlock block) {
     try {
       Store.Transaction transaction =
@@ -190,6 +191,7 @@ public class StateProcessor {
   }
 
   @Subscribe
+  @SuppressWarnings("unused")
   private void onAttestation(Attestation attestation) {
     try {
       final Store.Transaction transaction =

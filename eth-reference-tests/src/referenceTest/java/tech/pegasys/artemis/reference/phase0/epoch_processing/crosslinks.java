@@ -31,8 +31,6 @@ import tech.pegasys.artemis.statetransition.util.EpochProcessorUtil;
 @ExtendWith(BouncyCastleExtension.class)
 public class crosslinks extends TestSuite {
 
-  private static int testCounter = 0;
-
   @ParameterizedTest(name = "{index}. process crosslinks pre={0} -> post={1}")
   @MethodSource("mainnetCrosslinkSetup")
   void mainnetProcessCrosslinks(BeaconState pre, BeaconState post) throws Exception {
