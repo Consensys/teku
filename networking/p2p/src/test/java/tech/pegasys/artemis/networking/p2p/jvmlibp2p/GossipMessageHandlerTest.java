@@ -32,6 +32,8 @@ import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.gossip.GossipMessageHandler;
+import tech.pegasys.artemis.storage.ChainStorage;
+import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
 class GossipMessageHandlerTest {
@@ -45,8 +47,11 @@ class GossipMessageHandlerTest {
 
   private final PubsubPublisherApi publisher = mock(PubsubPublisherApi.class);
   private final EventBus eventBus = mock(EventBus.class);
+  private final ChainStorageClient chainStorageClient =
+      ChainStorage.Create(ChainStorageClient.class, eventBus);
 
-  private final GossipMessageHandler handler = new GossipMessageHandler(publisher, eventBus);
+  private final GossipMessageHandler handler =
+      new GossipMessageHandler(publisher, eventBus, chainStorageClient);
 
   @Test
   public void shouldGossipProcessedBlocks() {
