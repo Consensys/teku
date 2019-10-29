@@ -272,13 +272,16 @@ subprojects {
     testSupportImplementation.extendsFrom implementation
     integrationTestImplementation.extendsFrom implementation
     referenceTestImplementation.extendsFrom implementation
-    testSupportArtifacts
+    testSupportArtifacts.extendsFrom testSupportImplementation
   }
 
   task testSupportJar (type: Jar) {
     baseName = "${project.name}-support-test"
     from sourceSets.testSupport.output
   }
+
+  artifacts { testSupportArtifacts testSupportJar }
+
   def jarName = project.name
   def parent = project.parent
   while (parent != null) {

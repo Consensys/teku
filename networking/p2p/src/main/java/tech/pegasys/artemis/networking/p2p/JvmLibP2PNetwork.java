@@ -53,6 +53,7 @@ public class JvmLibP2PNetwork implements P2PNetwork {
   private final Host host;
   private final ScheduledExecutorService scheduler;
   private final PeerManager peerManager;
+  private final Multiaddr advertisedAddr;
 
   public JvmLibP2PNetwork(
       final Config config,
@@ -70,6 +71,7 @@ public class JvmLibP2PNetwork implements P2PNetwork {
     Gossip gossip = new Gossip();
     GossipMessageHandler.init(gossip, privKey, eventBus);
     peerManager = new PeerManager(scheduler, chainStorageClient, metricsSystem);
+    advertisedAddr = new Multiaddr("/ip4/127.0.0.1/tcp/" + config.getAdvertisedPort());
 
     host =
         BuildersJKt.hostJ(
@@ -89,14 +91,10 @@ public class JvmLibP2PNetwork implements P2PNetwork {
                       .setAgentVersion(
                           VersionProvider.CLIENT_IDENTITY + "/" + VersionProvider.VERSION)
                       .setPublicKey(ByteArrayExtKt.toProtobuf(privKey.publicKey().bytes()))
-                      .addListenAddrs(
-                          ByteArrayExtKt.toProtobuf(
-                              new Multiaddr("/ip4/127.0.0.1/tcp/" + config.getAdvertisedPort())
-                                  .getBytes()))
+                      .addListenAddrs(ByteArrayExtKt.toProtobuf(advertisedAddr.getBytes()))
                       .setObservedAddr(
                           ByteArrayExtKt.toProtobuf( // TODO: Report external IP?
-                              new Multiaddr("/ip4/127.0.0.1/tcp/" + config.getAdvertisedPort())
-                                  .getBytes()))
+                              advertisedAddr.getBytes()))
                       .addProtocols(ping.getAnnounce())
                       .addProtocols(gossip.getAnnounce())
                       .build();
@@ -121,9 +119,9 @@ public class JvmLibP2PNetwork implements P2PNetwork {
   }
 
   @Override
-  public void start() {
+  public CompletableFuture<?> start() {
     STDOUT.log(Level.INFO, "Starting libp2p network...");
-    host.start()
+    return host.start()
         .thenApply(
             i -> {
               STDOUT.log(
@@ -131,20 +129,22 @@ public class JvmLibP2PNetwork implements P2PNetwork {
                   "Listening for connections on port "
                       + config.getListenPort()
                       + " with peerId "
-                      + PeerId.fromPubKey(privKey.publicKey()).toBase58());
+                      + getPeerId());
               return null;
             })
-        .whenComplete(
-            (object, throwable) -> {
-              try {
-                // Sleep long enough for network listening to complete
-                Thread.sleep(2000);
-              } catch (InterruptedException e) {
-                e.printStackTrace();
-                throw new IllegalArgumentException(e.getMessage());
-              }
-              config.getPeers().forEach(peer -> connect(peer));
-            });
+        .thenRun(() -> config.getPeers().forEach(this::connect));
+  }
+
+  private String getPeerId() {
+    return PeerId.fromPubKey(privKey.publicKey()).toBase58();
+  }
+
+  public String getPeerAddress() {
+    return advertisedAddr + "/p2p/" + getPeerId();
+  }
+
+  public int getPeerCount() {
+    return peerManager.getPeerCount();
   }
 
   @Override
