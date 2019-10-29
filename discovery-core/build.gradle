@@ -1,0 +1,9 @@
+dependencies {
+  implementation project(':discovery-types')
+  implementation project(':discovery-crypto')
+  implementation project(':discovery-ssz')
+
+  implementation 'com.google.guava:guava'
+
+  testImplementation project(':discovery-consensus')
+}

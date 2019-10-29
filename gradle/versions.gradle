@@ -26,6 +26,10 @@ dependencyManagement {
 
     dependency 'info.picocli:picocli:4.0.4'
 
+    // discovery
+    dependency "io.netty:netty-all:4.1.36.Final"
+//    dependency 'org.javatuples:javatuples:1.2'
+
     dependency 'io.grpc:protoc-gen-grpc-java:1.21.0'
     dependency 'io.grpc:grpc-netty-shaded:1.21.0'
     dependency 'io.grpc:grpc-protobuf:1.21.0'

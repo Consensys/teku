@@ -1,0 +1,17 @@
+dependencies {
+  implementation project(':discovery-types')
+  implementation project(':discovery-core')
+  implementation project(':discovery-crypto')
+  implementation project(':discovery-ssz')
+  implementation project(':discovery-util')
+
+  implementation 'com.google.guava:guava'
+
+  implementation 'org.javatuples:javatuples:1.2'
+
+  implementation 'org.apache.logging.log4j:log4j-core'
+  // Gradle does not import test sources alongside with main sources
+  // use a workaround until better solution will be found
+  testImplementation project(':discovery-ssz').sourceSets.test.output
+  testImplementation project(':discovery-core').sourceSets.test.output
+}

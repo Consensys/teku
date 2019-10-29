@@ -1,0 +1,21 @@
+dependencies {
+  implementation project(':discovery-types')
+  implementation project(':discovery-util')
+  implementation project(':discovery-crypto')
+  implementation project(':discovery-db')
+  implementation project(':discovery-chain')
+
+  implementation 'com.google.guava:guava'
+  implementation 'org.javatuples:javatuples:1.2'
+  implementation 'io.projectreactor:reactor-core'
+  implementation 'io.netty:netty-all'
+  implementation 'org.apache.logging.log4j:log4j-core'
+  implementation 'org.web3j:core'
+
+  implementation 'junit:junit:4.12'
+
+  testImplementation 'junit:junit:4.12'
+//  testCompile("org.junit.jupiter:junit-jupiter-api:5.4.2")
+//  testCompile("org.junit.jupiter:junit-jupiter-params:5.4.2")
+//  testRuntime("org.junit.jupiter:junit-jupiter-engine:5.4.2")
+}

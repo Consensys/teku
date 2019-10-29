@@ -1,0 +1,7 @@
+dependencies {
+  implementation project(':discovery-types')
+
+  api 'org.bouncycastle:bcprov-jdk15on'
+  api 'org.miracl.milagro.amcl:milagro-crypto-java'
+  implementation 'com.google.guava:guava'
+}

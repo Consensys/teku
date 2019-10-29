@@ -1,0 +1,17 @@
+dependencies {
+  implementation project(':pow:core')
+  implementation project(':types')
+  implementation project(':core')
+  implementation project(':ssz')
+  implementation project(':crypto')
+  implementation project(':chain')
+  implementation project(':consensus')
+  implementation project(':validator:embedded')
+  implementation project(':util')
+  implementation project(':db:core')
+
+  implementation 'io.projectreactor:reactor-core'
+  implementation 'com.google.guava:guava'
+
+  testImplementation 'org.mockito:mockito-core'
+}

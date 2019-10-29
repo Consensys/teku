@@ -1,0 +1,15 @@
+apply plugin: 'java-library'
+
+dependencies {
+    implementation project(':discovery-types')
+    implementation project(':discovery-util')
+
+    api 'net.consensys.cava:cava-ssz:1.0.0-955810-snapshot'
+    implementation 'net.consensys.cava:cava-units:1.0.0-955810-snapshot'
+    implementation 'org.javatuples:javatuples:1.2'
+
+//    testImplementation 'junit:junit'
+    testImplementation 'org.assertj:assertj-core'
+    testImplementation 'org.mockito:mockito-core'
+    testImplementation project(':discovery-crypto')
+}
