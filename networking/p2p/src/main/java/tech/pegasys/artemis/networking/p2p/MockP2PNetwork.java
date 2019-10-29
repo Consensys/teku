@@ -33,5 +33,7 @@ public class MockP2PNetwork implements P2PNetwork {
   public void stop() {}
 
   @Override
-  public void start() {}
+  public CompletableFuture<?> start() {
+    return CompletableFuture.completedFuture(null);
+  }
 }

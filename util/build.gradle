@@ -16,4 +16,6 @@ dependencies {
   compile (group: 'org.quartz-scheduler', name: 'quartz') {
     exclude group: 'com.mchange'
   }
+
+  testSupportImplementation 'org.awaitility:awaitility'
 }

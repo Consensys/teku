@@ -126,4 +126,8 @@ public class PeerManager implements ConnectionHandler, PeerLookup {
   public Collection<RpcMessageHandler<?, ?>> getRpcMessageHandlers() {
     return rpcMethods.all();
   }
+
+  public int getPeerCount() {
+    return connectedPeerMap.size();
+  }
 }

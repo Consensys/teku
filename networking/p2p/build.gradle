@@ -32,4 +32,10 @@ dependencies {
   implementation 'tech.pegasys.pantheon.internal:metrics-core'
 
   testImplementation 'org.mockito:mockito-core'
+
+  integrationTestImplementation project(path: ':util', configuration: 'testSupportArtifacts')
+  integrationTestImplementation 'org.mockito:mockito-core'
+
+  testSupportImplementation project(path: ':util', configuration: 'testSupportArtifacts')
+  testSupportCompile 'org.assertj:assertj-core'
 }
