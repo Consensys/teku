@@ -11,26 +11,23 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.networking.p2p.api;
+package tech.pegasys.artemis.util;
 
-import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
+import org.awaitility.Awaitility;
 
-public interface P2PNetwork {
-  /**
-   * Connects to a Peer.
-   *
-   * @param peer Peer to connect to.
-   * @return Future of the established PeerConnection
-   */
-  CompletableFuture<?> connect(String peer);
+/**
+ * A simpler wrapper around Awaitility that directs people towards best practices for waiting. The
+ * native Awaitility wrapper has a number of "gotchas" that can lead to intermittency which this
+ * wrapper aims to prevent.
+ */
+public class Waiter {
 
-  /**
-   * starts the p2p network layer
-   *
-   * @return
-   */
-  CompletableFuture<?> start();
+  public static void waitFor(final Condition assertion) {
+    Awaitility.waitAtMost(30, TimeUnit.SECONDS).untilAsserted(assertion::run);
+  }
 
-  /** Stops the P2P network layer. */
-  void stop();
+  public interface Condition {
+    void run() throws Throwable;
+  }
 }

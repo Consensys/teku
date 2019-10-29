@@ -72,7 +72,7 @@ jobs:
       - run:
           name: Assemble
           command: |
-            ./gradlew --no-daemon --parallel clean compileJava compileTestJava assemble
+            ./gradlew --no-daemon --parallel clean compileJava compileTestJava compileJmhJava compileIntegrationTestJava compileReferenceTestJava assemble
       - save_cache:
           name: Caching gradle dependencies
           key: deps-{{ checksum "build.gradle" }}-{{ .Branch }}-{{ .Revision }}
@@ -104,6 +104,19 @@ jobs:
           no_output_timeout: 20m
           command: |
             ./gradlew --no-daemon --parallel test
+      - capture_test_results
+
+  integrationTests:
+    executor: medium_plus_executor
+    steps:
+      - prepare
+      - attach_workspace:
+          at: ~/project
+      - run:
+          name: IntegrationTests
+          no_output_timeout: 20m
+          command: |
+            ./gradlew --no-daemon --parallel integrationTest
       - capture_test_results
 
   referenceTests:
@@ -199,6 +212,10 @@ workflows:
           requires:
             - assemble
             - spotless
+      - integrationTests:
+          requires:
+            - assemble
+            - spotless
       - docker:
           requires:
             - assemble
@@ -212,6 +229,7 @@ workflows:
                 - /^release-.*/
           requires:
             - unitTests
+            - integrationTests
             - referenceTests
             - docker
       - publishDocker:
@@ -222,5 +240,6 @@ workflows:
                 - /^release-.*/
           requires:
             - unitTests
+            - integrationTests
             - referenceTests
             - docker
