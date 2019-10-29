@@ -48,8 +48,6 @@ public class JvmLibP2pSmokeIntegrationTest {
           assertThat(network1.getPeerCount()).isEqualTo(1);
           assertThat(network2.getPeerCount()).isEqualTo(1);
         });
-    network1.stop();
-    network2.stop();
   }
 
   @Test
