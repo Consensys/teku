@@ -26,19 +26,19 @@ import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
 public final class StatusMessage implements SimpleOffsetSerializable, SSZContainer {
 
-  private final Bytes4 forkVersion;
+  private final Bytes4 headForkVersion;
   private final Bytes32 finalizedRoot;
   private final UnsignedLong finalizedEpoch;
   private final Bytes32 headRoot;
   private final UnsignedLong headSlot;
 
   public StatusMessage(
-      Bytes4 forkVersion,
+      Bytes4 headForkVersion,
       Bytes32 finalizedRoot,
       UnsignedLong finalizedEpoch,
       Bytes32 headRoot,
       UnsignedLong headSlot) {
-    this.forkVersion = forkVersion;
+    this.headForkVersion = headForkVersion;
     this.finalizedRoot = finalizedRoot;
     this.finalizedEpoch = finalizedEpoch;
     this.headRoot = headRoot;
@@ -53,7 +53,7 @@ public final class StatusMessage implements SimpleOffsetSerializable, SSZContain
   @Override
   public List<Bytes> get_fixed_parts() {
     return List.of(
-        SSZ.encode(writer -> writer.writeFixedBytes(forkVersion.getWrappedBytes())),
+        SSZ.encode(writer -> writer.writeFixedBytes(headForkVersion.getWrappedBytes())),
         SSZ.encode(writer -> writer.writeFixedBytes(finalizedRoot)),
         SSZ.encodeUInt64(finalizedEpoch.longValue()),
         SSZ.encode(writer -> writer.writeFixedBytes(headRoot)),
@@ -62,7 +62,7 @@ public final class StatusMessage implements SimpleOffsetSerializable, SSZContain
 
   @Override
   public int hashCode() {
-    return Objects.hash(forkVersion, finalizedRoot, finalizedEpoch, headRoot, headSlot);
+    return Objects.hash(headForkVersion, finalizedRoot, finalizedEpoch, headRoot, headSlot);
   }
 
   @Override
@@ -81,15 +81,16 @@ public final class StatusMessage implements SimpleOffsetSerializable, SSZContain
 
     StatusMessage other = (StatusMessage) obj;
     return Objects.equals(
-            this.getForkVersion().getWrappedBytes(), other.getForkVersion().getWrappedBytes())
+            this.getHeadForkVersion().getWrappedBytes(),
+            other.getHeadForkVersion().getWrappedBytes())
         && Objects.equals(this.getFinalizedRoot(), other.getFinalizedRoot())
         && Objects.equals(this.getFinalizedEpoch(), other.getFinalizedEpoch())
         && Objects.equals(this.getHeadRoot(), other.getHeadRoot())
         && Objects.equals(this.getHeadSlot(), other.getHeadSlot());
   }
 
-  public Bytes4 getForkVersion() {
-    return forkVersion;
+  public Bytes4 getHeadForkVersion() {
+    return headForkVersion;
   }
 
   public Bytes32 getFinalizedRoot() {
@@ -111,7 +112,7 @@ public final class StatusMessage implements SimpleOffsetSerializable, SSZContain
   @Override
   public String toString() {
     return MoreObjects.toStringHelper(this)
-        .add("forkVersion", forkVersion)
+        .add("forkVersion", headForkVersion)
         .add("finalizedRoot", finalizedRoot)
         .add("finalizedEpoch", finalizedEpoch)
         .add("headRoot", headRoot)

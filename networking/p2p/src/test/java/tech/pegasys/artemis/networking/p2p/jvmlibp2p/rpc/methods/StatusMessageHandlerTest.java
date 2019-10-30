@@ -56,7 +56,7 @@ class StatusMessageHandlerTest {
   @Test
   public void shouldRegisterStatusMessageWithPeer() {
     handler.onIncomingMessage(peer, REMOTE_STATUS);
-    verify(peer).receivedStatusMessage(REMOTE_STATUS);
+    verify(peer).updateStatus(REMOTE_STATUS);
   }
 
   @Test

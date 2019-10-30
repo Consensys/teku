@@ -14,10 +14,10 @@
 package tech.pegasys.artemis.services.powchain;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static tech.pegasys.artemis.datastructures.Constants.DEPOSIT_NORMAL;
-import static tech.pegasys.artemis.datastructures.Constants.DEPOSIT_SIM;
-import static tech.pegasys.artemis.datastructures.Constants.MAX_EFFECTIVE_BALANCE;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_domain;
+import static tech.pegasys.artemis.util.config.Constants.DEPOSIT_NORMAL;
+import static tech.pegasys.artemis.util.config.Constants.DEPOSIT_SIM;
+import static tech.pegasys.artemis.util.config.Constants.MAX_EFFECTIVE_BALANCE;
 
 import com.google.common.eventbus.EventBus;
 import com.google.gson.JsonArray;
@@ -33,7 +33,6 @@ import org.apache.tuweni.crypto.SECP256K1;
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.http.HttpService;
 import org.web3j.tx.gas.DefaultGasProvider;
-import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.operations.DepositData;
 import tech.pegasys.artemis.datastructures.util.DepositUtil;
 import tech.pegasys.artemis.datastructures.util.MockStartDepositGenerator;
@@ -47,6 +46,7 @@ import tech.pegasys.artemis.service.serviceutils.ServiceInterface;
 import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.bls.BLSSignature;
+import tech.pegasys.artemis.util.config.Constants;
 import tech.pegasys.artemis.validator.client.Validator;
 import tech.pegasys.artemis.validator.client.ValidatorClientUtil;
 

@@ -18,6 +18,7 @@ import com.google.common.primitives.UnsignedLong;
 import io.libp2p.core.Connection;
 import io.libp2p.core.PeerId;
 import io.libp2p.core.multiformats.Multiaddr;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.StatusMessage;
@@ -31,7 +32,7 @@ public class Peer {
   private final Multiaddr multiaddr;
   private final RpcMethods rpcMethods;
   private final PeerId peerId;
-  private final CompletableFuture<StatusData> remoteStatus = new CompletableFuture<>();
+  private volatile Optional<StatusData> remoteStatus = Optional.empty();
 
   public Peer(Connection connection, RpcMethods rpcMethods) {
     this.connection = connection;
@@ -41,12 +42,16 @@ public class Peer {
     this.rpcMethods = rpcMethods;
   }
 
-  public void receivedStatusMessage(final StatusMessage message) {
-    remoteStatus.complete(StatusData.fromStatusMessage(message));
+  public void updateStatus(final StatusMessage message) {
+    remoteStatus = Optional.of(StatusData.fromStatusMessage(message));
   }
 
   public StatusData getStatus() {
-    return remoteStatus.getNow(null);
+    return remoteStatus.orElseThrow();
+  }
+
+  public boolean hasStatus() {
+    return remoteStatus.isPresent();
   }
 
   public PeerId getPeerId() {
@@ -70,10 +75,6 @@ public class Peer {
     return rpcMethods.invoke(method, connection, request);
   }
 
-  public boolean hasReceivedHello() {
-    return remoteStatus.isDone() && !remoteStatus.isCompletedExceptionally();
-  }
-
   public static class StatusData {
     private final Bytes4 currentFork;
     private final Bytes32 finalizedRoot;
@@ -83,7 +84,7 @@ public class Peer {
 
     public static StatusData fromStatusMessage(final StatusMessage message) {
       return new StatusData(
-          message.getForkVersion().copy(),
+          message.getHeadForkVersion().copy(),
           message.getFinalizedRoot().copy(),
           message.getFinalizedEpoch(),
           message.getHeadRoot().copy(),

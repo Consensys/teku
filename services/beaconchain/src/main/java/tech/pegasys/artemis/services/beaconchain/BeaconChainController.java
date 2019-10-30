@@ -13,9 +13,9 @@
 
 package tech.pegasys.artemis.services.beaconchain;
 
-import static tech.pegasys.artemis.datastructures.Constants.SECONDS_PER_SLOT;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_of_slot;
 import static tech.pegasys.artemis.statetransition.util.ForkChoiceUtil.on_tick;
+import static tech.pegasys.artemis.util.config.Constants.SECONDS_PER_SLOT;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
@@ -32,7 +32,6 @@ import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.metrics.ArtemisMetricCategory;
@@ -50,6 +49,7 @@ import tech.pegasys.artemis.storage.events.NodeStartEvent;
 import tech.pegasys.artemis.storage.events.SlotEvent;
 import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
+import tech.pegasys.artemis.util.config.Constants;
 import tech.pegasys.artemis.util.time.Timer;
 import tech.pegasys.artemis.util.time.TimerFactory;
 import tech.pegasys.artemis.validator.coordinator.ValidatorCoordinator;
