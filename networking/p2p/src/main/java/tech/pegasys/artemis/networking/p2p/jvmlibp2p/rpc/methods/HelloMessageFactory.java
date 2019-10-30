@@ -13,8 +13,13 @@
 
 package tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.methods;
 
+import com.google.common.primitives.UnsignedLong;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.HelloMessage;
+import tech.pegasys.artemis.datastructures.state.Checkpoint;
+import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.storage.ChainStorageClient;
+import tech.pegasys.artemis.util.SSZTypes.Bytes4;
 
 public class HelloMessageFactory {
 
@@ -25,10 +30,23 @@ public class HelloMessageFactory {
   }
 
   public HelloMessage createHelloMessage() {
+    final Bytes4 currentFork;
+    final Bytes32 finalizedRoot;
+    final UnsignedLong finalizedEpoch;
+    if (chainStorageClient.getStore() != null) {
+      currentFork = chainStorageClient.getBestBlockRootState().getFork().getCurrent_version();
+      final Checkpoint finalizedCheckpoint = chainStorageClient.getStore().getFinalizedCheckpoint();
+      finalizedRoot = finalizedCheckpoint.getRoot();
+      finalizedEpoch = finalizedCheckpoint.getEpoch();
+    } else {
+      currentFork = Fork.VERSION_ZERO;
+      finalizedRoot = Bytes32.ZERO;
+      finalizedEpoch = UnsignedLong.ZERO;
+    }
     return new HelloMessage(
-        chainStorageClient.getBestBlockRootState().getFork().getCurrent_version(),
-        chainStorageClient.getStore().getFinalizedCheckpoint().getRoot(),
-        chainStorageClient.getStore().getFinalizedCheckpoint().getEpoch(),
+        currentFork,
+        finalizedRoot,
+        finalizedEpoch,
         chainStorageClient.getBestBlockRoot(),
         chainStorageClient.getBestSlot());
   }
