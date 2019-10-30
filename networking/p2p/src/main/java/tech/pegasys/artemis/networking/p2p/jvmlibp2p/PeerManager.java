@@ -71,7 +71,7 @@ public class PeerManager implements ConnectionHandler, PeerLookup {
 
     if (connection.isInitiator()) {
       peer.send(RpcMethod.STATUS, statusMessageFactory.createStatusMessage())
-          .thenAccept(peer::receivedStatusMessage);
+          .thenAccept(peer::updateStatus);
     }
   }
 
@@ -112,9 +112,9 @@ public class PeerManager implements ConnectionHandler, PeerLookup {
     return connectedPeerMap.get(conn.getSecureSession().getRemoteId());
   }
 
-  public Optional<Peer> getPeer(PeerId peerId) {
+  public Optional<Peer> getAvailablePeer(PeerId peerId) {
     final Peer peer = connectedPeerMap.get(peerId);
-    return peer != null && peer.hasReceivedHello() ? Optional.of(peer) : Optional.empty();
+    return peer != null && peer.hasStatus() ? Optional.of(peer) : Optional.empty();
   }
 
   private void onConnectedPeer(Peer peer) {
@@ -134,7 +134,7 @@ public class PeerManager implements ConnectionHandler, PeerLookup {
     return rpcMethods.all();
   }
 
-  public int getPeerCount() {
-    return (int) connectedPeerMap.values().stream().filter(Peer::hasReceivedHello).count();
+  public int getAvailablePeerCount() {
+    return (int) connectedPeerMap.values().stream().filter(Peer::hasStatus).count();
   }
 }

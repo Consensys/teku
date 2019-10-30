@@ -48,12 +48,12 @@ public class JvmLibP2pSmokeIntegrationTest {
     network1.connect(network2.getPeerAddress());
     Waiter.waitFor(
         () -> {
-          assertThat(network1.getPeerManager().getPeerCount()).isEqualTo(1);
-          assertThat(network2.getPeerManager().getPeerCount()).isEqualTo(1);
+          assertThat(network1.getPeerManager().getAvailablePeerCount()).isEqualTo(1);
+          assertThat(network2.getPeerManager().getAvailablePeerCount()).isEqualTo(1);
         });
 
     final Peer network2ViewOfPeer1 =
-        network2.getPeerManager().getPeer(network1.getPeerId()).orElseThrow();
+        network2.getPeerManager().getAvailablePeer(network1.getPeerId()).orElseThrow();
     assertThat(network2ViewOfPeer1.getStatus().getForkVersion()).isEqualTo(Fork.VERSION_ZERO);
     assertThat(network2ViewOfPeer1.getStatus().getFinalizedRoot()).isEqualTo(Bytes32.ZERO);
     assertThat(network2ViewOfPeer1.getStatus().getFinalizedEpoch()).isEqualTo(UnsignedLong.ZERO);
@@ -61,7 +61,7 @@ public class JvmLibP2pSmokeIntegrationTest {
     assertThat(network2ViewOfPeer1.getStatus().getHeadSlot()).isEqualTo(UnsignedLong.ZERO);
 
     final Peer network1ViewOfPeer2 =
-        network1.getPeerManager().getPeer(network2.getPeerId()).orElseThrow();
+        network1.getPeerManager().getAvailablePeer(network2.getPeerId()).orElseThrow();
     assertThat(network1ViewOfPeer2.getStatus().getForkVersion()).isEqualTo(Fork.VERSION_ZERO);
     assertThat(network1ViewOfPeer2.getStatus().getFinalizedRoot()).isEqualTo(Bytes32.ZERO);
     assertThat(network1ViewOfPeer2.getStatus().getFinalizedEpoch()).isEqualTo(UnsignedLong.ZERO);

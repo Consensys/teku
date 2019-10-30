@@ -34,7 +34,7 @@ public class StatusMessageHandler implements LocalMessageHandler<StatusMessage, 
       throw new IllegalStateException("Responder peer shouldn't initiate Status message");
     } else {
       LOG.log(Level.DEBUG, "Peer " + peer.getRemoteId() + " sent status.");
-      peer.receivedStatusMessage(message);
+      peer.updateStatus(message);
       return statusMessageFactory.createStatusMessage();
     }
   }

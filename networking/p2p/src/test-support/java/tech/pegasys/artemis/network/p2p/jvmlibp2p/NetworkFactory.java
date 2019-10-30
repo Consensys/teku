@@ -68,7 +68,9 @@ public class NetworkFactory {
         network.start().get(30, TimeUnit.SECONDS);
         networks.add(network);
         Waiter.waitFor(
-            () -> assertThat(network.getPeerManager().getPeerCount()).isEqualTo(peers.length));
+            () ->
+                assertThat(network.getPeerManager().getAvailablePeerCount())
+                    .isEqualTo(peers.length));
         return network;
       } catch (ExecutionException e) {
         if (e.getCause() instanceof BindException) {
