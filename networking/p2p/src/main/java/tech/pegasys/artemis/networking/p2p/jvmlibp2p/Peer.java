@@ -76,7 +76,7 @@ public class Peer {
   }
 
   public static class StatusData {
-    private final Bytes4 currentFork;
+    private final Bytes4 headForkVersion;
     private final Bytes32 finalizedRoot;
     private final UnsignedLong finalizedEpoch;
     private final Bytes32 headRoot;
@@ -92,20 +92,20 @@ public class Peer {
     }
 
     private StatusData(
-        final Bytes4 currentFork,
+        final Bytes4 headForkVersion,
         final Bytes32 finalizedRoot,
         final UnsignedLong finalizedEpoch,
         final Bytes32 headRoot,
         final UnsignedLong headSlot) {
-      this.currentFork = currentFork;
+      this.headForkVersion = headForkVersion;
       this.finalizedRoot = finalizedRoot;
       this.finalizedEpoch = finalizedEpoch;
       this.headRoot = headRoot;
       this.headSlot = headSlot;
     }
 
-    public Bytes4 getForkVersion() {
-      return currentFork;
+    public Bytes4 getHeadForkVersion() {
+      return headForkVersion;
     }
 
     public Bytes32 getFinalizedRoot() {
@@ -127,7 +127,7 @@ public class Peer {
     @Override
     public String toString() {
       return MoreObjects.toStringHelper(this)
-          .add("currentFork", currentFork)
+          .add("currentFork", headForkVersion)
           .add("finalizedRoot", finalizedRoot)
           .add("finalizedEpoch", finalizedEpoch)
           .add("headRoot", headRoot)

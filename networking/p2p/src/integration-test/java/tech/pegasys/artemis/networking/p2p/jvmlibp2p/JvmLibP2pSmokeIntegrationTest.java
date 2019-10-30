@@ -60,7 +60,7 @@ public class JvmLibP2pSmokeIntegrationTest {
 
     final Peer network2ViewOfPeer1 =
         network2.getPeerManager().getAvailablePeer(network1.getPeerId()).orElseThrow();
-    assertThat(network2ViewOfPeer1.getStatus().getForkVersion()).isEqualTo(Fork.VERSION_ZERO);
+    assertThat(network2ViewOfPeer1.getStatus().getHeadForkVersion()).isEqualTo(Fork.VERSION_ZERO);
     assertThat(network2ViewOfPeer1.getStatus().getFinalizedRoot()).isEqualTo(Bytes32.ZERO);
     assertThat(network2ViewOfPeer1.getStatus().getFinalizedEpoch()).isEqualTo(UnsignedLong.ZERO);
     assertThat(network2ViewOfPeer1.getStatus().getHeadRoot()).isEqualTo(Bytes32.ZERO);
@@ -69,7 +69,7 @@ public class JvmLibP2pSmokeIntegrationTest {
     final Store network2Store = storageClient2.getStore();
     final Peer network1ViewOfPeer2 =
         network1.getPeerManager().getAvailablePeer(network2.getPeerId()).orElseThrow();
-    assertThat(network1ViewOfPeer2.getStatus().getForkVersion())
+    assertThat(network1ViewOfPeer2.getStatus().getHeadForkVersion())
         .isEqualTo(storageClient2.getBestBlockRootState().getFork().getCurrent_version());
     assertThat(network1ViewOfPeer2.getStatus().getFinalizedRoot())
         .isEqualTo(network2Store.getFinalizedCheckpoint().getRoot());
@@ -87,8 +87,8 @@ public class JvmLibP2pSmokeIntegrationTest {
     final EventBus eventBus1 = new EventBus();
     final EventBus eventBus2 = mock(EventBus.class);
 
-    final JvmLibP2PNetwork peer1 = networkFactory.startNetwork(eventBus1);
-    networkFactory.startNetwork(eventBus2, peer1);
+    final JvmLibP2PNetwork network1 = networkFactory.startNetwork(eventBus1);
+    networkFactory.startNetwork(eventBus2, network1);
 
     final BeaconBlock block = DataStructureUtil.randomBeaconBlock(100, 100);
     eventBus1.post(block);
