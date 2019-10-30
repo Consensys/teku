@@ -14,28 +14,28 @@
 package tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.methods;
 
 import org.apache.logging.log4j.Level;
-import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.HelloMessage;
+import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.Peer;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.LocalMessageHandler;
 import tech.pegasys.artemis.util.alogger.ALogger;
 
-public class HelloMessageHandler implements LocalMessageHandler<HelloMessage, HelloMessage> {
+public class StatusMessageHandler implements LocalMessageHandler<StatusMessage, StatusMessage> {
 
-  private final ALogger LOG = new ALogger(HelloMessageHandler.class.getName());
-  private final HelloMessageFactory helloMessageFactory;
+  private final ALogger LOG = new ALogger(StatusMessageHandler.class.getName());
+  private final StatusMessageFactory statusMessageFactory;
 
-  public HelloMessageHandler(final HelloMessageFactory helloMessageFactory) {
-    this.helloMessageFactory = helloMessageFactory;
+  public StatusMessageHandler(final StatusMessageFactory statusMessageFactory) {
+    this.statusMessageFactory = statusMessageFactory;
   }
 
   @Override
-  public HelloMessage onIncomingMessage(final Peer peer, final HelloMessage message) {
+  public StatusMessage onIncomingMessage(final Peer peer, final StatusMessage message) {
     if (peer.isInitiator()) {
-      throw new IllegalStateException("Responder peer shouldn't initiate Hello message");
+      throw new IllegalStateException("Responder peer shouldn't initiate Status message");
     } else {
-      LOG.log(Level.DEBUG, "Peer " + peer.getRemoteId() + " said hello.");
-      peer.receivedHelloMessage(message);
-      return helloMessageFactory.createHelloMessage();
+      LOG.log(Level.DEBUG, "Peer " + peer.getRemoteId() + " sent status.");
+      peer.receivedStatusMessage(message);
+      return statusMessageFactory.createStatusMessage();
     }
   }
 }

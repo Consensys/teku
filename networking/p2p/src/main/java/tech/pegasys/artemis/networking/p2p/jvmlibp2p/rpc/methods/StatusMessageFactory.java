@@ -15,21 +15,21 @@ package tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.methods;
 
 import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.HelloMessage;
+import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.util.SSZTypes.Bytes4;
 
-public class HelloMessageFactory {
+public class StatusMessageFactory {
 
   private final ChainStorageClient chainStorageClient;
 
-  public HelloMessageFactory(final ChainStorageClient chainStorageClient) {
+  public StatusMessageFactory(final ChainStorageClient chainStorageClient) {
     this.chainStorageClient = chainStorageClient;
   }
 
-  public HelloMessage createHelloMessage() {
+  public StatusMessage createStatusMessage() {
     final Bytes4 currentFork;
     final Bytes32 finalizedRoot;
     final UnsignedLong finalizedEpoch;
@@ -43,7 +43,7 @@ public class HelloMessageFactory {
       finalizedRoot = Bytes32.ZERO;
       finalizedEpoch = UnsignedLong.ZERO;
     }
-    return new HelloMessage(
+    return new StatusMessage(
         currentFork,
         finalizedRoot,
         finalizedEpoch,

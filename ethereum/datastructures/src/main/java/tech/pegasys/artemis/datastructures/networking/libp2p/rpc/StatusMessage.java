@@ -24,7 +24,7 @@ import tech.pegasys.artemis.util.SSZTypes.Bytes4;
 import tech.pegasys.artemis.util.SSZTypes.SSZContainer;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
-public final class HelloMessage implements SimpleOffsetSerializable, SSZContainer {
+public final class StatusMessage implements SimpleOffsetSerializable, SSZContainer {
 
   private final Bytes4 forkVersion;
   private final Bytes32 finalizedRoot;
@@ -32,7 +32,7 @@ public final class HelloMessage implements SimpleOffsetSerializable, SSZContaine
   private final Bytes32 headRoot;
   private final UnsignedLong headSlot;
 
-  public HelloMessage(
+  public StatusMessage(
       Bytes4 forkVersion,
       Bytes32 finalizedRoot,
       UnsignedLong finalizedEpoch,
@@ -75,11 +75,11 @@ public final class HelloMessage implements SimpleOffsetSerializable, SSZContaine
       return true;
     }
 
-    if (!(obj instanceof HelloMessage)) {
+    if (!(obj instanceof StatusMessage)) {
       return false;
     }
 
-    HelloMessage other = (HelloMessage) obj;
+    StatusMessage other = (StatusMessage) obj;
     return Objects.equals(
             this.forkVersion().getWrappedBytes(), other.forkVersion().getWrappedBytes())
         && Objects.equals(this.finalizedRoot(), other.finalizedRoot())

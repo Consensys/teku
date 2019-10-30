@@ -17,7 +17,7 @@ import io.libp2p.core.Connection;
 import io.libp2p.core.PeerId;
 import io.libp2p.core.multiformats.Multiaddr;
 import java.util.concurrent.CompletableFuture;
-import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.HelloMessage;
+import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.RpcMethod;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.RpcMethods;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
@@ -27,7 +27,7 @@ public class Peer {
   private final Multiaddr multiaddr;
   private final RpcMethods rpcMethods;
   private final PeerId peerId;
-  private final CompletableFuture<HelloMessage> remoteHello = new CompletableFuture<>();
+  private final CompletableFuture<StatusMessage> remoteStatus = new CompletableFuture<>();
 
   public Peer(Connection connection, RpcMethods rpcMethods) {
     this.connection = connection;
@@ -37,8 +37,8 @@ public class Peer {
     this.rpcMethods = rpcMethods;
   }
 
-  public void receivedHelloMessage(final HelloMessage message) {
-    remoteHello.complete(message);
+  public void receivedStatusMessage(final StatusMessage message) {
+    remoteStatus.complete(message);
   }
 
   public PeerId getPeerId() {
@@ -63,6 +63,6 @@ public class Peer {
   }
 
   public boolean hasReceivedHello() {
-    return remoteHello.isDone() && !remoteHello.isCompletedExceptionally();
+    return remoteStatus.isDone() && !remoteStatus.isCompletedExceptionally();
   }
 }

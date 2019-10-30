@@ -23,45 +23,45 @@ import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.HelloMessage;
+import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.Peer;
 import tech.pegasys.artemis.util.SSZTypes.Bytes4;
 
-class HelloMessageHandlerTest {
+class StatusMessageHandlerTest {
 
-  private static final HelloMessage REMOTE_HELLO =
-      new HelloMessage(
+  private static final StatusMessage REMOTE_STATUS =
+      new StatusMessage(
           Bytes4.rightPad(Bytes.of(4)),
           Bytes32.fromHexStringLenient("0x11"),
           UnsignedLong.ZERO,
           Bytes32.fromHexStringLenient("0x11"),
           UnsignedLong.ZERO);
-  private static final HelloMessage LOCAL_HELLO =
-      new HelloMessage(
+  private static final StatusMessage LOCAL_STATUS =
+      new StatusMessage(
           Bytes4.rightPad(Bytes.of(4)),
           Bytes32.fromHexStringLenient("0x22"),
           UnsignedLong.ZERO,
           Bytes32.fromHexStringLenient("0x22"),
           UnsignedLong.ZERO);
-  private final HelloMessageFactory helloMessageFactory = mock(HelloMessageFactory.class);
+  private final StatusMessageFactory statusMessageFactory = mock(StatusMessageFactory.class);
   private final Peer peer = mock(Peer.class);
-  private final HelloMessageHandler handler = new HelloMessageHandler(helloMessageFactory);
+  private final StatusMessageHandler handler = new StatusMessageHandler(statusMessageFactory);
 
   @Test
   public void shouldRejectIncomingHelloWhenWeInitiatedConnection() {
     when(peer.isInitiator()).thenReturn(true);
-    assertThrows(IllegalStateException.class, () -> handler.onIncomingMessage(peer, REMOTE_HELLO));
+    assertThrows(IllegalStateException.class, () -> handler.onIncomingMessage(peer, REMOTE_STATUS));
   }
 
   @Test
-  public void shouldRegisterHelloMessageWithPeer() {
-    handler.onIncomingMessage(peer, REMOTE_HELLO);
-    verify(peer).receivedHelloMessage(REMOTE_HELLO);
+  public void shouldRegisterStatusMessageWithPeer() {
+    handler.onIncomingMessage(peer, REMOTE_STATUS);
+    verify(peer).receivedStatusMessage(REMOTE_STATUS);
   }
 
   @Test
-  public void shouldReturnLocalHelloMessage() {
-    when(helloMessageFactory.createHelloMessage()).thenReturn(LOCAL_HELLO);
-    assertThat(handler.onIncomingMessage(peer, REMOTE_HELLO)).isSameAs(LOCAL_HELLO);
+  public void shouldReturnLocalStatusMessage() {
+    when(statusMessageFactory.createStatusMessage()).thenReturn(LOCAL_STATUS);
+    assertThat(handler.onIncomingMessage(peer, REMOTE_STATUS)).isSameAs(LOCAL_STATUS);
   }
 }

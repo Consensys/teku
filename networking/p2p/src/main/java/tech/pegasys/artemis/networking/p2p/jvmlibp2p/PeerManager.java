@@ -30,8 +30,8 @@ import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.RpcMethod;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.RpcMethods;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.methods.BeaconBlocksMessageHandler;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.methods.GoodbyeMessageHandler;
-import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.methods.HelloMessageFactory;
-import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.methods.HelloMessageHandler;
+import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.methods.StatusMessageFactory;
+import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.methods.StatusMessageHandler;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.pantheon.metrics.MetricsSystem;
@@ -42,7 +42,7 @@ public class PeerManager implements ConnectionHandler, PeerLookup {
 
   private final ScheduledExecutorService scheduler;
   private static final long RECONNECT_TIMEOUT = 5000;
-  private final HelloMessageFactory helloMessageFactory;
+  private final StatusMessageFactory statusMessageFactory;
 
   private ConcurrentHashMap<PeerId, Peer> connectedPeerMap = new ConcurrentHashMap<>();
 
@@ -53,11 +53,11 @@ public class PeerManager implements ConnectionHandler, PeerLookup {
       final ChainStorageClient chainStorageClient,
       final MetricsSystem metricsSystem) {
     this.scheduler = scheduler;
-    helloMessageFactory = new HelloMessageFactory(chainStorageClient);
+    statusMessageFactory = new StatusMessageFactory(chainStorageClient);
     this.rpcMethods =
         new RpcMethods(
             this,
-            new HelloMessageHandler(helloMessageFactory),
+            new StatusMessageHandler(statusMessageFactory),
             new GoodbyeMessageHandler(metricsSystem),
             new BeaconBlocksMessageHandler());
   }
@@ -69,8 +69,8 @@ public class PeerManager implements ConnectionHandler, PeerLookup {
     connection.closeFuture().thenRun(() -> onDisconnectedPeer(peer));
 
     if (connection.isInitiator()) {
-      peer.send(RpcMethod.HELLO, helloMessageFactory.createHelloMessage())
-          .thenAccept(peer::receivedHelloMessage);
+      peer.send(RpcMethod.STATUS, statusMessageFactory.createStatusMessage())
+          .thenAccept(peer::receivedStatusMessage);
     }
   }
 
