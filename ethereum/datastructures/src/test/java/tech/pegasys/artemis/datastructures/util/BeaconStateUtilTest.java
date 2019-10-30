@@ -33,7 +33,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.junit.BouncyCastleExtension;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.DepositData;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
@@ -45,6 +44,7 @@ import tech.pegasys.artemis.util.SSZTypes.Bytes4;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSVerify;
+import tech.pegasys.artemis.util.config.Constants;
 
 @ExtendWith(BouncyCastleExtension.class)
 class BeaconStateUtilTest {

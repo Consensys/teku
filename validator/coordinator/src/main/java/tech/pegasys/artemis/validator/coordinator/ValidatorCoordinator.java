@@ -13,14 +13,14 @@
 
 package tech.pegasys.artemis.validator.coordinator;
 
-import static tech.pegasys.artemis.datastructures.Constants.DOMAIN_ATTESTATION;
-import static tech.pegasys.artemis.datastructures.Constants.GENESIS_SLOT;
-import static tech.pegasys.artemis.datastructures.Constants.MAX_ATTESTATIONS;
-import static tech.pegasys.artemis.datastructures.Constants.MAX_DEPOSITS;
-import static tech.pegasys.artemis.datastructures.Constants.MAX_VALIDATORS_PER_COMMITTEE;
-import static tech.pegasys.artemis.datastructures.Constants.SLOTS_PER_EPOCH;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_of_slot;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_domain;
+import static tech.pegasys.artemis.util.config.Constants.DOMAIN_ATTESTATION;
+import static tech.pegasys.artemis.util.config.Constants.GENESIS_SLOT;
+import static tech.pegasys.artemis.util.config.Constants.MAX_ATTESTATIONS;
+import static tech.pegasys.artemis.util.config.Constants.MAX_DEPOSITS;
+import static tech.pegasys.artemis.util.config.Constants.MAX_VALIDATORS_PER_COMMITTEE;
+import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_EPOCH;
 import static tech.pegasys.artemis.validator.coordinator.ValidatorLoader.initializeValidators;
 
 import com.google.common.eventbus.EventBus;
@@ -41,7 +41,6 @@ import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
-import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
@@ -71,6 +70,7 @@ import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
+import tech.pegasys.artemis.util.config.Constants;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
 import tech.pegasys.artemis.validator.client.ValidatorClientUtil;

@@ -63,7 +63,7 @@ public class ArtemisConfiguration {
         "validator.validatorsKeyFile", "", "The file to load validator keys from", null);
     builder.addInteger(
         "deposit.numValidators",
-        128,
+        64,
         "represents the total number of validators in the network",
         PropertyValidator.inRange(1, 65535));
     builder.addInteger(
@@ -121,10 +121,6 @@ public class ArtemisConfiguration {
         "",
         "Directory to record transition pre and post states",
         null);
-
-    // Artemis specific
-    builder.addString("constants.SIM_DEPOSIT_VALUE", "", null, null);
-    builder.addInteger("constants.DEPOSIT_DATA_SIZE", Integer.MIN_VALUE, null, null);
 
     // Database
     builder.addBoolean("database.startFromDisk", false, "Start from the disk if set to true", null);
@@ -343,5 +339,11 @@ public class ArtemisConfiguration {
 
   public boolean startFromDisk() {
     return config.getBoolean("database.startFromDisk");
+  }
+
+  public void validateConfig() throws IllegalArgumentException {
+    if (getNumValidators() < Constants.SLOTS_PER_EPOCH) {
+      throw new IllegalArgumentException("Invalid config.toml");
+    }
   }
 }
