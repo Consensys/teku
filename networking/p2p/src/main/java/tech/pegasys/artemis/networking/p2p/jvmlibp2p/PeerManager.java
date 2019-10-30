@@ -129,6 +129,6 @@ public class PeerManager implements ConnectionHandler, PeerLookup {
   }
 
   public int getPeerCount() {
-    return connectedPeerMap.size();
+    return (int) connectedPeerMap.values().stream().filter(Peer::hasReceivedHello).count();
   }
 }

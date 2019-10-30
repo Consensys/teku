@@ -61,4 +61,8 @@ public class Peer {
       final RpcMethod<I, O> method, I request) {
     return rpcMethods.invoke(method, connection, request);
   }
+
+  public boolean hasReceivedHello() {
+    return remoteHello.isDone() && !remoteHello.isCompletedExceptionally();
+  }
 }
