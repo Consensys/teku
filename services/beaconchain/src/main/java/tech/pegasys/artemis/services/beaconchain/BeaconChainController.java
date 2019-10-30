@@ -15,7 +15,6 @@ package tech.pegasys.artemis.services.beaconchain;
 
 import static tech.pegasys.artemis.datastructures.Constants.SECONDS_PER_SLOT;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_of_slot;
-import static tech.pegasys.artemis.statetransition.util.ForkChoiceUtil.get_head;
 import static tech.pegasys.artemis.statetransition.util.ForkChoiceUtil.on_tick;
 
 import com.google.common.eventbus.EventBus;
@@ -23,7 +22,6 @@ import com.google.common.eventbus.Subscribe;
 import com.google.common.primitives.UnsignedLong;
 import io.libp2p.core.crypto.KeyKt;
 import io.libp2p.core.crypto.PrivKey;
-import java.io.IOException;
 import java.time.Instant;
 import java.util.Date;
 import java.util.Objects;
@@ -35,9 +33,7 @@ import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.Constants;
-import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.metrics.ArtemisMetricCategory;
 import tech.pegasys.artemis.metrics.SettableGauge;
@@ -48,7 +44,6 @@ import tech.pegasys.artemis.networking.p2p.jvmlibp2p.Config;
 import tech.pegasys.artemis.statetransition.StateProcessor;
 import tech.pegasys.artemis.statetransition.events.ValidatorAssignmentEvent;
 import tech.pegasys.artemis.statetransition.util.StartupUtil;
-import tech.pegasys.artemis.storage.ChainStorage;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.Store;
 import tech.pegasys.artemis.storage.events.NodeStartEvent;
@@ -112,23 +107,11 @@ public class BeaconChainController {
   }
 
   public void initStorage() {
-    STDOUT.log(Level.DEBUG, "BeaconChainController.initStorage()");
-    this.chainStorageClient = ChainStorage.Create(ChainStorageClient.class, eventBus);
-    this.chainStorageClient.setGenesisTime(UnsignedLong.valueOf(config.getGenesisTime()));
-    final String startState = config.getStartState();
-    BeaconStateWithCache initialState;
-    if (startState != null) {
-      try {
-        STDOUT.log(Level.INFO, "Loading initial state from " + startState, ALogger.Color.GREEN);
-        initialState = StartupUtil.loadBeaconStateFromFile(startState);
-      } catch (final IOException e) {
-        throw new IllegalStateException("Failed to load initial state", e);
-      }
-    } else {
-      initialState = StartupUtil.createMockedStartInitialBeaconState(config);
-    }
+    this.chainStorageClient =
+        StartupUtil.initChainStorageClient(
+            eventBus, config.getGenesisTime(), config.getStartState(), config.getNumValidators());
 
-    UnsignedLong genesisTime = initialState.getGenesis_time();
+    UnsignedLong genesisTime = chainStorageClient.getGenesisTime();
     UnsignedLong currentTime = UnsignedLong.valueOf(System.currentTimeMillis() / 1000);
     UnsignedLong currentSlot = UnsignedLong.ZERO;
     if (currentTime.compareTo(genesisTime) > 0) {
@@ -139,12 +122,6 @@ public class BeaconChainController {
       STDOUT.log(Level.INFO, timeUntilGenesis + " seconds until genesis.", ALogger.Color.GREEN);
     }
     nodeSlot = currentSlot;
-
-    this.chainStorageClient.setStore(StartupUtil.get_genesis_store(initialState));
-    Store store = chainStorageClient.getStore();
-    Bytes32 headBlockRoot = get_head(store);
-    BeaconBlock headBlock = store.getBlock(headBlockRoot);
-    chainStorageClient.updateBestBlock(headBlockRoot, headBlock.getSlot());
   }
 
   public void initMetrics() {

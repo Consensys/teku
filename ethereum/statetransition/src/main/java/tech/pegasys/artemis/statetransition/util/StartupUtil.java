@@ -17,7 +17,9 @@ import static tech.pegasys.artemis.datastructures.Constants.GENESIS_EPOCH;
 import static tech.pegasys.artemis.datastructures.Constants.SLOTS_PER_EPOCH;
 import static tech.pegasys.artemis.datastructures.Constants.SLOTS_PER_ETH1_VOTING_PERIOD;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_of_slot;
+import static tech.pegasys.artemis.statetransition.util.ForkChoiceUtil.get_head;
 
+import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
 import java.io.File;
 import java.io.IOException;
@@ -47,6 +49,8 @@ import tech.pegasys.artemis.datastructures.util.MockStartBeaconStateGenerator;
 import tech.pegasys.artemis.datastructures.util.MockStartDepositGenerator;
 import tech.pegasys.artemis.datastructures.util.MockStartValidatorKeyPairFactory;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
+import tech.pegasys.artemis.storage.ChainStorage;
+import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.Store;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.SSZTypes.SSZVector;
@@ -54,7 +58,6 @@ import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.alogger.ALogger.Color;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.bls.BLSSignature;
-import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 
 public final class StartupUtil {
   private static final ALogger STDOUT = new ALogger("stdout");
@@ -113,9 +116,7 @@ public final class StartupUtil {
   }
 
   public static BeaconStateWithCache createMockedStartInitialBeaconState(
-      final ArtemisConfiguration config) {
-    final UnsignedLong genesisTime = UnsignedLong.valueOf(config.getGenesisTime());
-    final int validatorCount = config.getNumValidators();
+      final long genesisTime, final int validatorCount) {
     final List<BLSKeyPair> validatorKeys =
         new MockStartValidatorKeyPairFactory().generateKeyPairs(0, validatorCount - 1);
     STDOUT.log(
@@ -129,7 +130,7 @@ public final class StartupUtil {
     final List<DepositData> initialDepositData =
         new MockStartDepositGenerator().createDeposits(validatorKeys);
     return new MockStartBeaconStateGenerator()
-        .createInitialBeaconState(genesisTime, initialDepositData);
+        .createInitialBeaconState(UnsignedLong.valueOf(genesisTime), initialDepositData);
   }
 
   public static BeaconStateWithCache loadBeaconStateFromFile(final String stateFile)
@@ -157,5 +158,33 @@ public final class StartupUtil {
         blocks,
         block_states,
         checkpoint_states);
+  }
+
+  public static ChainStorageClient initChainStorageClient(
+      final EventBus eventBus,
+      final long genesisTime,
+      final String startState,
+      final int numValidators) {
+    final ChainStorageClient chainStorageClient =
+        ChainStorage.Create(ChainStorageClient.class, eventBus);
+    chainStorageClient.setGenesisTime(UnsignedLong.valueOf(genesisTime));
+    BeaconStateWithCache initialState;
+    if (startState != null) {
+      try {
+        STDOUT.log(Level.INFO, "Loading initial state from " + startState, ALogger.Color.GREEN);
+        initialState = StartupUtil.loadBeaconStateFromFile(startState);
+      } catch (final IOException e) {
+        throw new IllegalStateException("Failed to load initial state", e);
+      }
+    } else {
+      initialState = StartupUtil.createMockedStartInitialBeaconState(genesisTime, numValidators);
+    }
+
+    chainStorageClient.setStore(StartupUtil.get_genesis_store(initialState));
+    Store store = chainStorageClient.getStore();
+    Bytes32 headBlockRoot = get_head(store);
+    BeaconBlock headBlock = store.getBlock(headBlockRoot);
+    chainStorageClient.updateBestBlock(headBlockRoot, headBlock.getSlot());
+    return chainStorageClient;
   }
 }
