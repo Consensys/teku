@@ -62,7 +62,7 @@ public class RpcMessageHandler<TRequest extends SimpleOffsetSerializable, TRespo
         .thenCompose(ctr -> ctr.invoke(request));
   }
 
-  protected CompletableFuture<TResponse> invokeLocal(Connection connection, TRequest request) {
+  private CompletableFuture<TResponse> invokeLocal(Connection connection, TRequest request) {
     final Peer peer = peerLookup.getPeer(connection);
     return CompletableFuture.completedFuture(localMessageHandler.onIncomingMessage(peer, request));
   }
