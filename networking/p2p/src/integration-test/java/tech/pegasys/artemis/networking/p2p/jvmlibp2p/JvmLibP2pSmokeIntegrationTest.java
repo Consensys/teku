@@ -29,6 +29,9 @@ import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.network.p2p.jvmlibp2p.NetworkFactory;
 import tech.pegasys.artemis.networking.p2p.JvmLibP2PNetwork;
+import tech.pegasys.artemis.statetransition.util.StartupUtil;
+import tech.pegasys.artemis.storage.ChainStorageClient;
+import tech.pegasys.artemis.storage.Store;
 import tech.pegasys.artemis.util.Waiter;
 
 public class JvmLibP2pSmokeIntegrationTest {
@@ -41,9 +44,12 @@ public class JvmLibP2pSmokeIntegrationTest {
   }
 
   @Test
-  public void shouldConnectToPeers() throws Exception {
+  public void shouldExchangeStatusMessagesOnConnection() throws Exception {
+    final EventBus eventBus2 = new EventBus();
+    final ChainStorageClient storageClient2 =
+        StartupUtil.initChainStorageClient(eventBus2, 0, null, 0);
     final JvmLibP2PNetwork network1 = networkFactory.startNetwork();
-    final JvmLibP2PNetwork network2 = networkFactory.startNetwork();
+    final JvmLibP2PNetwork network2 = networkFactory.startNetwork(eventBus2, storageClient2);
 
     network1.connect(network2.getPeerAddress());
     Waiter.waitFor(
@@ -60,13 +66,19 @@ public class JvmLibP2pSmokeIntegrationTest {
     assertThat(network2ViewOfPeer1.getStatus().getHeadRoot()).isEqualTo(Bytes32.ZERO);
     assertThat(network2ViewOfPeer1.getStatus().getHeadSlot()).isEqualTo(UnsignedLong.ZERO);
 
+    final Store network2Store = storageClient2.getStore();
     final Peer network1ViewOfPeer2 =
         network1.getPeerManager().getPeer(network2.getPeerId()).orElseThrow();
-    assertThat(network1ViewOfPeer2.getStatus().getForkVersion()).isEqualTo(Fork.VERSION_ZERO);
-    assertThat(network1ViewOfPeer2.getStatus().getFinalizedRoot()).isEqualTo(Bytes32.ZERO);
-    assertThat(network1ViewOfPeer2.getStatus().getFinalizedEpoch()).isEqualTo(UnsignedLong.ZERO);
-    assertThat(network1ViewOfPeer2.getStatus().getHeadRoot()).isEqualTo(Bytes32.ZERO);
-    assertThat(network1ViewOfPeer2.getStatus().getHeadSlot()).isEqualTo(UnsignedLong.ZERO);
+    assertThat(network1ViewOfPeer2.getStatus().getForkVersion())
+        .isEqualTo(storageClient2.getBestBlockRootState().getFork().getCurrent_version());
+    assertThat(network1ViewOfPeer2.getStatus().getFinalizedRoot())
+        .isEqualTo(network2Store.getFinalizedCheckpoint().getRoot());
+    assertThat(network1ViewOfPeer2.getStatus().getFinalizedEpoch())
+        .isEqualTo(network2Store.getFinalizedCheckpoint().getEpoch());
+    assertThat(network1ViewOfPeer2.getStatus().getHeadRoot())
+        .isEqualTo(storageClient2.getBestBlockRoot());
+    assertThat(network1ViewOfPeer2.getStatus().getHeadSlot())
+        .isEqualTo(storageClient2.getBestSlot());
   }
 
   @Test

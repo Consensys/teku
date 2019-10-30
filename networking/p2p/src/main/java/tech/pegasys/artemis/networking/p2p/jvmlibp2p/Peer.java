@@ -65,8 +65,8 @@ public class Peer {
     return connection.isInitiator();
   }
 
-  public <I extends SimpleOffsetSerializable, O> CompletableFuture<O> send(
-      final RpcMethod<I, O> method, I request) {
+  public <I extends SimpleOffsetSerializable, O extends SimpleOffsetSerializable>
+      CompletableFuture<O> send(final RpcMethod<I, O> method, I request) {
     return rpcMethods.invoke(method, connection, request);
   }
 

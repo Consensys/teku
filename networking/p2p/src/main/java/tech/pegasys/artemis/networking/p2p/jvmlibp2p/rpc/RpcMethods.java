@@ -34,7 +34,7 @@ public class RpcMethods {
   public RpcMethods(
       PeerLookup peerLookup,
       LocalMessageHandler<StatusMessage, StatusMessage> helloHandler,
-      LocalMessageHandler<GoodbyeMessage, Void> goodbyeHandler,
+      LocalMessageHandler<GoodbyeMessage, GoodbyeMessage> goodbyeHandler,
       LocalMessageHandler<BeaconBlocksMessageRequest, BeaconBlocksMessageResponse>
           beaconBlocksHandler) {
 
@@ -54,8 +54,9 @@ public class RpcMethods {
     return builder.build();
   }
 
-  public <I extends SimpleOffsetSerializable, O> CompletableFuture<O> invoke(
-      final RpcMethod<I, O> method, final Connection connection, final I request) {
+  public <I extends SimpleOffsetSerializable, O extends SimpleOffsetSerializable>
+      CompletableFuture<O> invoke(
+          final RpcMethod<I, O> method, final Connection connection, final I request) {
     return getHandler(method).invokeRemote(connection, request);
   }
 
@@ -64,8 +65,8 @@ public class RpcMethods {
   }
 
   @SuppressWarnings("unchecked")
-  private <I extends SimpleOffsetSerializable, O> RpcMessageHandler<I, O> getHandler(
-      final RpcMethod<I, O> method) {
+  private <I extends SimpleOffsetSerializable, O extends SimpleOffsetSerializable>
+      RpcMessageHandler<I, O> getHandler(final RpcMethod<I, O> method) {
     return (RpcMessageHandler<I, O>) methods.get(method);
   }
 }

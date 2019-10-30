@@ -34,7 +34,8 @@ import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.RpcMessageHandler.Contr
 import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
-public class RpcMessageHandler<TRequest extends SimpleOffsetSerializable, TResponse>
+public class RpcMessageHandler<
+        TRequest extends SimpleOffsetSerializable, TResponse extends SimpleOffsetSerializable>
     implements ProtocolBinding<Controller<TRequest, TResponse>> {
   private static final ALogger STDOUT = new ALogger("stdout");
 
@@ -133,12 +134,16 @@ public class RpcMessageHandler<TRequest extends SimpleOffsetSerializable, TRespo
 
       invokeLocal(connection, request)
           .whenComplete(
-              (resp, err) -> {
-                ByteBuf respBuf = Unpooled.buffer();
-                Bytes encoded = RpcCodec.encode(request);
-                respBuf.writeBytes(encoded.toArrayUnsafe());
-                ctx.writeAndFlush(respBuf);
-                ctx.channel().disconnect();
+              (response, err) -> {
+                ByteBuf respBuf = ctx.alloc().buffer();
+                try {
+                  Bytes encoded = RpcCodec.encode(response);
+                  respBuf.writeBytes(encoded.toArrayUnsafe());
+                  ctx.writeAndFlush(respBuf);
+                  ctx.channel().disconnect();
+                } finally {
+                  respBuf.release();
+                }
               });
     }
   }

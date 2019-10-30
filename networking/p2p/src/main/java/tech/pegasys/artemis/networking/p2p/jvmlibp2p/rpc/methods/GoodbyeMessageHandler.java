@@ -24,7 +24,7 @@ import tech.pegasys.pantheon.metrics.Counter;
 import tech.pegasys.pantheon.metrics.LabelledMetric;
 import tech.pegasys.pantheon.metrics.MetricsSystem;
 
-public class GoodbyeMessageHandler implements LocalMessageHandler<GoodbyeMessage, Void> {
+public class GoodbyeMessageHandler implements LocalMessageHandler<GoodbyeMessage, GoodbyeMessage> {
 
   private final ALogger LOG = new ALogger(GoodbyeMessageHandler.class.getName());
   private final LabelledMetric<Counter> goodbyeCounter;
@@ -39,7 +39,7 @@ public class GoodbyeMessageHandler implements LocalMessageHandler<GoodbyeMessage
   }
 
   @Override
-  public Void onIncomingMessage(final Peer peer, final GoodbyeMessage message) {
+  public GoodbyeMessage onIncomingMessage(final Peer peer, final GoodbyeMessage message) {
     LOG.log(Level.DEBUG, "Peer " + peer.getRemoteId() + " said goodbye.");
     goodbyeCounter.labels(labelForReason(message.getReason())).inc();
     return null;

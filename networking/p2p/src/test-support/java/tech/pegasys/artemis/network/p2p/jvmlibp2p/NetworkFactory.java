@@ -30,7 +30,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.artemis.networking.p2p.JvmLibP2PNetwork;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.Config;
-import tech.pegasys.artemis.statetransition.util.StartupUtil;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.util.Waiter;
 import tech.pegasys.pantheon.metrics.noop.NoOpMetricsSystem;
@@ -51,8 +50,14 @@ public class NetworkFactory {
 
   public JvmLibP2PNetwork startNetwork(final EventBus eventBus, final JvmLibP2PNetwork... peers)
       throws TimeoutException, InterruptedException, ExecutionException {
-    final ChainStorageClient chainStorageClient =
-        StartupUtil.initChainStorageClient(eventBus, 0, null, 0);
+    return startNetwork(eventBus, new ChainStorageClient(eventBus), peers);
+  }
+
+  public JvmLibP2PNetwork startNetwork(
+      final EventBus eventBus,
+      final ChainStorageClient chainStorageClient,
+      final JvmLibP2PNetwork... peers)
+      throws TimeoutException, InterruptedException, ExecutionException {
     final Random random = new Random();
     final List<String> peerAddresses =
         Stream.of(peers).map(JvmLibP2PNetwork::getPeerAddress).collect(Collectors.toList());
