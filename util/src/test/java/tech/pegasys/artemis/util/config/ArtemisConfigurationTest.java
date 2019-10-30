@@ -47,4 +47,18 @@ final class ArtemisConfigurationTest {
             ArtemisConfiguration.fromString(
                 "node.identity=\"2345\"\nnode.networkMode=\"tcpblah\""));
   }
+
+  @Test
+  void invalidMinimalArtemisConfig() {
+    Constants.setConstants("minimal");
+    ArtemisConfiguration config = ArtemisConfiguration.fromString("deposit.numValidators=7");
+    assertThrows(IllegalArgumentException.class, () -> config.validateConfig());
+  }
+
+  @Test
+  void invalidMainnetArtemisConfig() {
+    Constants.setConstants("mainnet");
+    ArtemisConfiguration config = ArtemisConfiguration.fromString("deposit.numValidators=63");
+    assertThrows(IllegalArgumentException.class, () -> config.validateConfig());
+  }
 }

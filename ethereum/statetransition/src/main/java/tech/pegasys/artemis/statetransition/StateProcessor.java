@@ -13,8 +13,6 @@
 
 package tech.pegasys.artemis.statetransition;
 
-import static tech.pegasys.artemis.datastructures.Constants.MIN_GENESIS_ACTIVE_VALIDATOR_COUNT;
-import static tech.pegasys.artemis.datastructures.Constants.MIN_GENESIS_TIME;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_start_slot_of_epoch;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.initialize_beacon_state_from_eth1;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.is_valid_genesis_state;
@@ -22,6 +20,8 @@ import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.is_valid_
 import static tech.pegasys.artemis.statetransition.util.ForkChoiceUtil.get_head;
 import static tech.pegasys.artemis.statetransition.util.ForkChoiceUtil.on_attestation;
 import static tech.pegasys.artemis.statetransition.util.ForkChoiceUtil.on_block;
+import static tech.pegasys.artemis.util.config.Constants.MIN_GENESIS_ACTIVE_VALIDATOR_COUNT;
+import static tech.pegasys.artemis.util.config.Constants.MIN_GENESIS_TIME;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
@@ -34,7 +34,6 @@ import java.util.stream.IntStream;
 import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.data.BlockProcessingRecord;
-import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.DepositWithIndex;
@@ -50,6 +49,7 @@ import tech.pegasys.artemis.storage.Store;
 import tech.pegasys.artemis.storage.events.StoreDiskUpdateEvent;
 import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
+import tech.pegasys.artemis.util.config.Constants;
 import tech.pegasys.pantheon.metrics.MetricsSystem;
 
 /** Class to manage the state tree and initiate state transitions */

@@ -14,7 +14,7 @@
 package tech.pegasys.artemis.datastructures.util;
 
 import static java.lang.Math.toIntExact;
-import static tech.pegasys.artemis.datastructures.Constants.SLOTS_PER_ETH1_VOTING_PERIOD;
+import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_ETH1_VOTING_PERIOD;
 
 import com.google.common.primitives.UnsignedLong;
 import java.nio.ByteBuffer;
@@ -24,7 +24,6 @@ import java.util.Random;
 import java.util.function.Function;
 import java.util.stream.LongStream;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockBody;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
@@ -53,6 +52,7 @@ import tech.pegasys.artemis.util.SSZTypes.SSZVector;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
+import tech.pegasys.artemis.util.config.Constants;
 
 public final class DataStructureUtil {
 

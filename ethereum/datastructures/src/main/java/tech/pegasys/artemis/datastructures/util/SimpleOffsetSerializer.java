@@ -13,7 +13,7 @@
 
 package tech.pegasys.artemis.datastructures.util;
 
-import static tech.pegasys.artemis.datastructures.Constants.BYTES_PER_LENGTH_OFFSET;
+import static tech.pegasys.artemis.util.config.Constants.BYTES_PER_LENGTH_OFFSET;
 
 import com.google.common.primitives.UnsignedLong;
 import java.lang.reflect.Constructor;

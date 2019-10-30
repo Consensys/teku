@@ -14,10 +14,6 @@
 package tech.pegasys.artemis.statetransition;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static tech.pegasys.artemis.datastructures.Constants.FAR_FUTURE_EPOCH;
-import static tech.pegasys.artemis.datastructures.Constants.SLOTS_PER_EPOCH;
-import static tech.pegasys.artemis.datastructures.Constants.SLOTS_PER_HISTORICAL_ROOT;
-import static tech.pegasys.artemis.datastructures.Constants.ZERO_HASH;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_current_epoch;
 import static tech.pegasys.artemis.statetransition.util.BlockProcessorUtil.process_block_header;
 import static tech.pegasys.artemis.statetransition.util.BlockProcessorUtil.process_eth1_data;
@@ -29,6 +25,10 @@ import static tech.pegasys.artemis.statetransition.util.EpochProcessorUtil.proce
 import static tech.pegasys.artemis.statetransition.util.EpochProcessorUtil.process_registry_updates;
 import static tech.pegasys.artemis.statetransition.util.EpochProcessorUtil.process_rewards_and_penalties;
 import static tech.pegasys.artemis.statetransition.util.EpochProcessorUtil.process_slashings;
+import static tech.pegasys.artemis.util.config.Constants.FAR_FUTURE_EPOCH;
+import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_EPOCH;
+import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_HISTORICAL_ROOT;
+import static tech.pegasys.artemis.util.config.Constants.ZERO_HASH;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.Optional;

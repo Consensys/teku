@@ -15,9 +15,6 @@ package tech.pegasys.artemis.datastructures.util;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.lang.Math.toIntExact;
-import static tech.pegasys.artemis.datastructures.Constants.SHARD_COUNT;
-import static tech.pegasys.artemis.datastructures.Constants.SHUFFLE_ROUND_COUNT;
-import static tech.pegasys.artemis.datastructures.Constants.SLOTS_PER_EPOCH;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.bytes_to_int;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_committee_count;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_current_epoch;
@@ -25,6 +22,9 @@ import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_seed;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.int_to_bytes;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.min;
 import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.get_active_validator_indices;
+import static tech.pegasys.artemis.util.config.Constants.SHARD_COUNT;
+import static tech.pegasys.artemis.util.config.Constants.SHUFFLE_ROUND_COUNT;
+import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_EPOCH;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;

@@ -45,7 +45,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.json.simple.JSONObject;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.operations.DepositData;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
@@ -55,6 +54,7 @@ import tech.pegasys.artemis.util.SSZTypes.Bytes4;
 import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
+import tech.pegasys.artemis.util.config.Constants;
 
 class MockStartBeaconStateGeneratorTest {
   private static final ALogger LOG = new ALogger(MockStartBeaconStateGeneratorTest.class.getName());
