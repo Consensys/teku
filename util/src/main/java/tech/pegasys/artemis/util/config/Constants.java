@@ -11,9 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.datastructures;
-
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.int_to_bytes;
+package tech.pegasys.artemis.util.config;
 
 import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes;
@@ -87,12 +85,15 @@ public class Constants {
   public static int MAX_TRANSFERS = 0;
 
   // Signature domains
-  public static Bytes4 DOMAIN_BEACON_PROPOSER = new Bytes4(int_to_bytes(0, 4));
-  public static Bytes4 DOMAIN_RANDAO = new Bytes4(int_to_bytes(1, 4));
-  public static Bytes4 DOMAIN_ATTESTATION = new Bytes4(int_to_bytes(2, 4));
-  public static Bytes4 DOMAIN_DEPOSIT = new Bytes4(int_to_bytes(3, 4));
-  public static Bytes4 DOMAIN_VOLUNTARY_EXIT = new Bytes4(int_to_bytes(4, 4));
-  public static Bytes4 DOMAIN_TRANSFER = new Bytes4(int_to_bytes(5, 4));
+  public static Bytes4 DOMAIN_BEACON_PROPOSER = new Bytes4(Bytes.fromHexString("0x00000000"));
+  public static Bytes4 DOMAIN_RANDAO = new Bytes4(Bytes.fromHexString("0x01000000"));
+  public static Bytes4 DOMAIN_ATTESTATION = new Bytes4(Bytes.fromHexString("0x02000000"));
+  public static Bytes4 DOMAIN_DEPOSIT = new Bytes4(Bytes.fromHexString("0x03000000"));
+  public static Bytes4 DOMAIN_VOLUNTARY_EXIT = new Bytes4(Bytes.fromHexString("0x04000000"));
+  public static Bytes4 DOMAIN_TRANSFER = new Bytes4(Bytes.fromHexString("0x05000000"));
+  public static Bytes4 DOMAIN_CUSTODY_BIT_CHALLENGE = new Bytes4(Bytes.fromHexString("0x06000000"));
+  public static Bytes4 DOMAIN_SHARD_PROPOSER = new Bytes4(Bytes.fromHexString("0x08000000"));
+  public static Bytes4 DOMAIN_SHARD_ATTESTER = new Bytes4(Bytes.fromHexString("0x08100000"));
 
   // Artemis specific
   public static String SIM_DEPOSIT_VALUE = "1000000000000000000";
@@ -110,9 +111,7 @@ public class Constants {
 
   public static Bytes DEPOSIT_CONTRACT_ADDRESS =
       Bytes.fromHexString("0x1234567890123456789012345678901234567890");
-  public static Bytes DOMAIN_CUSTODY_BIT_CHALLENGE;
-  public static Bytes DOMAIN_SHARD_PROPOSER;
-  public static Bytes DOMAIN_SHARD_ATTESTER;
+
   public static int EARLY_DERIVED_SECRET_PENALTY_MAX_FUTURE_EPOCHS;
 
   public static BLSSignature EMPTY_SIGNATURE = BLSSignature.empty();
