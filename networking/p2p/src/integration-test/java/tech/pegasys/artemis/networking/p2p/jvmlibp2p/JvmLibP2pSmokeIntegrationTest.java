@@ -19,10 +19,13 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
 import com.google.common.eventbus.EventBus;
+import com.google.common.primitives.UnsignedLong;
+import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.network.p2p.jvmlibp2p.NetworkFactory;
 import tech.pegasys.artemis.networking.p2p.JvmLibP2PNetwork;
@@ -45,9 +48,25 @@ public class JvmLibP2pSmokeIntegrationTest {
     network1.connect(network2.getPeerAddress());
     Waiter.waitFor(
         () -> {
-          assertThat(network1.getPeerCount()).isEqualTo(1);
-          assertThat(network2.getPeerCount()).isEqualTo(1);
+          assertThat(network1.getPeerManager().getPeerCount()).isEqualTo(1);
+          assertThat(network2.getPeerManager().getPeerCount()).isEqualTo(1);
         });
+
+    final Peer network2ViewOfPeer1 =
+        network2.getPeerManager().getPeer(network1.getPeerId()).orElseThrow();
+    assertThat(network2ViewOfPeer1.getStatus().getForkVersion()).isEqualTo(Fork.VERSION_ZERO);
+    assertThat(network2ViewOfPeer1.getStatus().getFinalizedRoot()).isEqualTo(Bytes32.ZERO);
+    assertThat(network2ViewOfPeer1.getStatus().getFinalizedEpoch()).isEqualTo(UnsignedLong.ZERO);
+    assertThat(network2ViewOfPeer1.getStatus().getHeadRoot()).isEqualTo(Bytes32.ZERO);
+    assertThat(network2ViewOfPeer1.getStatus().getHeadSlot()).isEqualTo(UnsignedLong.ZERO);
+
+    final Peer network1ViewOfPeer2 =
+        network1.getPeerManager().getPeer(network2.getPeerId()).orElseThrow();
+    assertThat(network1ViewOfPeer2.getStatus().getForkVersion()).isEqualTo(Fork.VERSION_ZERO);
+    assertThat(network1ViewOfPeer2.getStatus().getFinalizedRoot()).isEqualTo(Bytes32.ZERO);
+    assertThat(network1ViewOfPeer2.getStatus().getFinalizedEpoch()).isEqualTo(UnsignedLong.ZERO);
+    assertThat(network1ViewOfPeer2.getStatus().getHeadRoot()).isEqualTo(Bytes32.ZERO);
+    assertThat(network1ViewOfPeer2.getStatus().getHeadSlot()).isEqualTo(UnsignedLong.ZERO);
   }
 
   @Test

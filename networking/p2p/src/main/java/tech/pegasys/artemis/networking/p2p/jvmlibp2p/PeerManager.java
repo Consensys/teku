@@ -19,6 +19,7 @@ import io.libp2p.core.PeerId;
 import io.libp2p.core.multiformats.Multiaddr;
 import io.libp2p.network.NetworkImpl;
 import java.util.Collection;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
@@ -109,6 +110,11 @@ public class PeerManager implements ConnectionHandler, PeerLookup {
   @Override
   public Peer getPeer(Connection conn) {
     return connectedPeerMap.get(conn.getSecureSession().getRemoteId());
+  }
+
+  public Optional<Peer> getPeer(PeerId peerId) {
+    final Peer peer = connectedPeerMap.get(peerId);
+    return peer != null && peer.hasReceivedHello() ? Optional.of(peer) : Optional.empty();
   }
 
   private void onConnectedPeer(Peer peer) {

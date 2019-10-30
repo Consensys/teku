@@ -81,30 +81,30 @@ public final class StatusMessage implements SimpleOffsetSerializable, SSZContain
 
     StatusMessage other = (StatusMessage) obj;
     return Objects.equals(
-            this.forkVersion().getWrappedBytes(), other.forkVersion().getWrappedBytes())
-        && Objects.equals(this.finalizedRoot(), other.finalizedRoot())
-        && Objects.equals(this.finalizedEpoch(), other.finalizedEpoch())
-        && Objects.equals(this.headRoot(), other.headRoot())
-        && Objects.equals(this.headSlot(), other.headSlot());
+            this.getForkVersion().getWrappedBytes(), other.getForkVersion().getWrappedBytes())
+        && Objects.equals(this.getFinalizedRoot(), other.getFinalizedRoot())
+        && Objects.equals(this.getFinalizedEpoch(), other.getFinalizedEpoch())
+        && Objects.equals(this.getHeadRoot(), other.getHeadRoot())
+        && Objects.equals(this.getHeadSlot(), other.getHeadSlot());
   }
 
-  public Bytes4 forkVersion() {
+  public Bytes4 getForkVersion() {
     return forkVersion;
   }
 
-  public Bytes32 finalizedRoot() {
+  public Bytes32 getFinalizedRoot() {
     return finalizedRoot;
   }
 
-  public UnsignedLong finalizedEpoch() {
+  public UnsignedLong getFinalizedEpoch() {
     return finalizedEpoch;
   }
 
-  public Bytes32 headRoot() {
+  public Bytes32 getHeadRoot() {
     return headRoot;
   }
 
-  public UnsignedLong headSlot() {
+  public UnsignedLong getHeadSlot() {
     return headSlot;
   }
 
