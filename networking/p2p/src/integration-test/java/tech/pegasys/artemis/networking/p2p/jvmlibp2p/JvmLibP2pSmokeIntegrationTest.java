@@ -55,8 +55,9 @@ public class JvmLibP2pSmokeIntegrationTest {
   public void shouldGossipBlocks() throws Exception {
     final EventBus eventBus1 = new EventBus();
     final EventBus eventBus2 = mock(EventBus.class);
-    final JvmLibP2PNetwork network1 = networkFactory.startNetwork();
-    networkFactory.startNetwork(network1);
+
+    final JvmLibP2PNetwork peer1 = networkFactory.startNetwork(eventBus1);
+    networkFactory.startNetwork(eventBus2, peer1);
 
     final BeaconBlock block = DataStructureUtil.randomBeaconBlock(100, 100);
     eventBus1.post(block);
