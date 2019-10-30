@@ -24,21 +24,21 @@ import tech.pegasys.artemis.util.SSZTypes.Bytes4;
 import tech.pegasys.artemis.util.SSZTypes.SSZContainer;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
-public final class HelloMessage implements SimpleOffsetSerializable, SSZContainer {
+public final class StatusMessage implements SimpleOffsetSerializable, SSZContainer {
 
-  private final Bytes4 forkVersion;
+  private final Bytes4 headForkVersion;
   private final Bytes32 finalizedRoot;
   private final UnsignedLong finalizedEpoch;
   private final Bytes32 headRoot;
   private final UnsignedLong headSlot;
 
-  public HelloMessage(
-      Bytes4 forkVersion,
+  public StatusMessage(
+      Bytes4 headForkVersion,
       Bytes32 finalizedRoot,
       UnsignedLong finalizedEpoch,
       Bytes32 headRoot,
       UnsignedLong headSlot) {
-    this.forkVersion = forkVersion;
+    this.headForkVersion = headForkVersion;
     this.finalizedRoot = finalizedRoot;
     this.finalizedEpoch = finalizedEpoch;
     this.headRoot = headRoot;
@@ -53,7 +53,7 @@ public final class HelloMessage implements SimpleOffsetSerializable, SSZContaine
   @Override
   public List<Bytes> get_fixed_parts() {
     return List.of(
-        SSZ.encode(writer -> writer.writeFixedBytes(forkVersion.getWrappedBytes())),
+        SSZ.encode(writer -> writer.writeFixedBytes(headForkVersion.getWrappedBytes())),
         SSZ.encode(writer -> writer.writeFixedBytes(finalizedRoot)),
         SSZ.encodeUInt64(finalizedEpoch.longValue()),
         SSZ.encode(writer -> writer.writeFixedBytes(headRoot)),
@@ -62,7 +62,7 @@ public final class HelloMessage implements SimpleOffsetSerializable, SSZContaine
 
   @Override
   public int hashCode() {
-    return Objects.hash(forkVersion, finalizedRoot, finalizedEpoch, headRoot, headSlot);
+    return Objects.hash(headForkVersion, finalizedRoot, finalizedEpoch, headRoot, headSlot);
   }
 
   @Override
@@ -75,43 +75,44 @@ public final class HelloMessage implements SimpleOffsetSerializable, SSZContaine
       return true;
     }
 
-    if (!(obj instanceof HelloMessage)) {
+    if (!(obj instanceof StatusMessage)) {
       return false;
     }
 
-    HelloMessage other = (HelloMessage) obj;
+    StatusMessage other = (StatusMessage) obj;
     return Objects.equals(
-            this.forkVersion().getWrappedBytes(), other.forkVersion().getWrappedBytes())
-        && Objects.equals(this.finalizedRoot(), other.finalizedRoot())
-        && Objects.equals(this.finalizedEpoch(), other.finalizedEpoch())
-        && Objects.equals(this.headRoot(), other.headRoot())
-        && Objects.equals(this.headSlot(), other.headSlot());
+            this.getHeadForkVersion().getWrappedBytes(),
+            other.getHeadForkVersion().getWrappedBytes())
+        && Objects.equals(this.getFinalizedRoot(), other.getFinalizedRoot())
+        && Objects.equals(this.getFinalizedEpoch(), other.getFinalizedEpoch())
+        && Objects.equals(this.getHeadRoot(), other.getHeadRoot())
+        && Objects.equals(this.getHeadSlot(), other.getHeadSlot());
   }
 
-  public Bytes4 forkVersion() {
-    return forkVersion;
+  public Bytes4 getHeadForkVersion() {
+    return headForkVersion;
   }
 
-  public Bytes32 finalizedRoot() {
+  public Bytes32 getFinalizedRoot() {
     return finalizedRoot;
   }
 
-  public UnsignedLong finalizedEpoch() {
+  public UnsignedLong getFinalizedEpoch() {
     return finalizedEpoch;
   }
 
-  public Bytes32 headRoot() {
+  public Bytes32 getHeadRoot() {
     return headRoot;
   }
 
-  public UnsignedLong headSlot() {
+  public UnsignedLong getHeadSlot() {
     return headSlot;
   }
 
   @Override
   public String toString() {
     return MoreObjects.toStringHelper(this)
-        .add("forkVersion", forkVersion)
+        .add("forkVersion", headForkVersion)
         .add("finalizedRoot", finalizedRoot)
         .add("finalizedEpoch", finalizedEpoch)
         .add("headRoot", headRoot)

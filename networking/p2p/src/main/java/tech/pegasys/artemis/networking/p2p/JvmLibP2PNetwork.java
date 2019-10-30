@@ -129,22 +129,22 @@ public class JvmLibP2PNetwork implements P2PNetwork {
                   "Listening for connections on port "
                       + config.getListenPort()
                       + " with peerId "
-                      + getPeerId());
+                      + getPeerId().toBase58());
               return null;
             })
         .thenRun(() -> config.getPeers().forEach(this::connect));
   }
 
-  private String getPeerId() {
-    return PeerId.fromPubKey(privKey.publicKey()).toBase58();
+  public PeerId getPeerId() {
+    return PeerId.fromPubKey(privKey.publicKey());
   }
 
   public String getPeerAddress() {
-    return advertisedAddr + "/p2p/" + getPeerId();
+    return advertisedAddr + "/p2p/" + getPeerId().toBase58();
   }
 
-  public int getPeerCount() {
-    return peerManager.getPeerCount();
+  public PeerManager getPeerManager() {
+    return peerManager;
   }
 
   @Override

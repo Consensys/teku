@@ -16,6 +16,7 @@ package tech.pegasys.artemis.util.SSZTypes;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.MutableBytes;
 
@@ -66,5 +67,31 @@ public class Bytes4 {
 
   public Bytes getWrappedBytes() {
     return bytes;
+  }
+
+  public Bytes4 copy() {
+    return new Bytes4(bytes.copy());
+  }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    final Bytes4 bytes4 = (Bytes4) o;
+    return bytes.equals(bytes4.bytes);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(bytes);
+  }
+
+  @Override
+  public String toString() {
+    return bytes.toString();
   }
 }
