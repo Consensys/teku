@@ -11,26 +11,24 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.datastructures.state;
+package tech.pegasys.artemis.provider;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static tech.pegasys.artemis.provider.JsonProvider.printBeaconState;
 
-import java.util.List;
-import org.apache.tuweni.junit.BouncyCastleExtension;
+import com.google.common.primitives.UnsignedLong;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
+import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.util.config.Constants;
 
-@ExtendWith(BouncyCastleExtension.class)
-public class HistoricalBatchTest {
+class JsonProviderTest {
 
   @Test
-  void vectorLengthsTest() {
-    List<Integer> vectorLengths =
-        List.of(Constants.SLOTS_PER_HISTORICAL_ROOT, Constants.SLOTS_PER_HISTORICAL_ROOT);
-    assertEquals(
-        vectorLengths,
-        SimpleOffsetSerializer.classReflectionInfo.get(HistoricalBatch.class).getVectorLengths());
+  void printBeaconStateTest() {
+    Constants.setConstants("minimal");
+    BeaconState state = DataStructureUtil.randomBeaconState(UnsignedLong.valueOf(16), 100);
+    String jsonState = printBeaconState(state);
+    assertTrue(jsonState.length() > 0);
   }
 }

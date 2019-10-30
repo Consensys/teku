@@ -15,10 +15,10 @@ package tech.pegasys.artemis.datastructures.state;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.fail;
-import static tech.pegasys.artemis.datastructures.Constants.GENESIS_EPOCH;
-import static tech.pegasys.artemis.datastructures.Constants.VALIDATOR_REGISTRY_LIMIT;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.initialize_beacon_state_from_eth1;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomDeposits;
+import static tech.pegasys.artemis.util.config.Constants.GENESIS_EPOCH;
+import static tech.pegasys.artemis.util.config.Constants.VALIDATOR_REGISTRY_LIMIT;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;

@@ -13,7 +13,7 @@
 
 package tech.pegasys.artemis.datastructures.util;
 
-import static tech.pegasys.artemis.datastructures.Constants.DEPOSIT_CONTRACT_TREE_DEPTH;
+import static tech.pegasys.artemis.util.config.Constants.DEPOSIT_CONTRACT_TREE_DEPTH;
 
 import com.google.common.primitives.UnsignedLong;
 import com.google.gson.JsonElement;
