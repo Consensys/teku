@@ -258,7 +258,7 @@ subprojects {
         runtimeClasspath += main.output
         srcDir file('src/integration-test/java')
       }
-      resources.srcDir file('src/integrationTest/resources')
+      resources.srcDir file('src/integration-test/resources')
     }
     referenceTest {
       java {
