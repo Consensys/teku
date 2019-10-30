@@ -15,6 +15,7 @@ package tech.pegasys.artemis.networking.p2p.jvmlibp2p;
 
 import io.libp2p.core.Connection;
 import io.libp2p.core.ConnectionHandler;
+import io.libp2p.core.PeerId;
 import io.libp2p.core.multiformats.Multiaddr;
 import io.libp2p.network.NetworkImpl;
 import java.util.Collection;
@@ -43,7 +44,7 @@ public class PeerManager implements ConnectionHandler, PeerLookup {
   private static final long RECONNECT_TIMEOUT = 5000;
   private final HelloMessageFactory helloMessageFactory;
 
-  private ConcurrentHashMap<Multiaddr, Peer> connectedPeerMap = new ConcurrentHashMap<>();
+  private ConcurrentHashMap<PeerId, Peer> connectedPeerMap = new ConcurrentHashMap<>();
 
   private final RpcMethods rpcMethods;
 
@@ -107,19 +108,19 @@ public class PeerManager implements ConnectionHandler, PeerLookup {
 
   @Override
   public Peer getPeer(Connection conn) {
-    return connectedPeerMap.get(conn.remoteAddress());
+    return connectedPeerMap.get(conn.getSecureSession().getRemoteId());
   }
 
   private void onConnectedPeer(Peer peer) {
-    final boolean wasAdded = connectedPeerMap.putIfAbsent(peer.getPeerMultiaddr(), peer) == null;
+    final boolean wasAdded = connectedPeerMap.putIfAbsent(peer.getRemoteId(), peer) == null;
     if (wasAdded) {
-      STDOUT.log(Level.DEBUG, "onConnectedPeer() " + peer.getPeerMultiaddr());
+      STDOUT.log(Level.DEBUG, "onConnectedPeer() " + peer.getRemoteId());
     }
   }
 
   private void onDisconnectedPeer(Peer peer) {
-    if (connectedPeerMap.remove(peer.getPeerMultiaddr()) != null) {
-      STDOUT.log(Level.DEBUG, "Peer disconnected: " + peer.getPeerId());
+    if (connectedPeerMap.remove(peer.getRemoteId()) != null) {
+      STDOUT.log(Level.DEBUG, "Peer disconnected: " + peer.getRemoteId());
     }
   }
 
