@@ -24,6 +24,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.RpcMethod;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.RpcMethods;
+import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.methods.StatusMessageFactory;
 import tech.pegasys.artemis.util.SSZTypes.Bytes4;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
@@ -31,15 +32,20 @@ public class Peer {
   private final Connection connection;
   private final Multiaddr multiaddr;
   private final RpcMethods rpcMethods;
+  private final StatusMessageFactory statusMessageFactory;
   private final PeerId peerId;
   private volatile Optional<StatusData> remoteStatus = Optional.empty();
 
-  public Peer(Connection connection, RpcMethods rpcMethods) {
+  public Peer(
+      final Connection connection,
+      final RpcMethods rpcMethods,
+      final StatusMessageFactory statusMessageFactory) {
     this.connection = connection;
     this.peerId = connection.getSecureSession().getRemoteId();
     this.multiaddr =
         new Multiaddr(connection.remoteAddress().toString() + "/p2p/" + peerId.toString());
     this.rpcMethods = rpcMethods;
+    this.statusMessageFactory = statusMessageFactory;
   }
 
   public void updateStatus(final StatusMessage message) {
@@ -70,13 +76,22 @@ public class Peer {
     return connection.isInitiator();
   }
 
-  public <I extends SimpleOffsetSerializable, O> CompletableFuture<O> send(
-      final RpcMethod<I, O> method, I request) {
+  public CompletableFuture<StatusData> sendStatus() {
+    return send(RpcMethod.STATUS, statusMessageFactory.createStatusMessage())
+        .thenApply(
+            remoteStatus -> {
+              updateStatus(remoteStatus);
+              return getStatus();
+            });
+  }
+
+  public <I extends SimpleOffsetSerializable, O extends SimpleOffsetSerializable>
+      CompletableFuture<O> send(final RpcMethod<I, O> method, I request) {
     return rpcMethods.invoke(method, connection, request);
   }
 
   public static class StatusData {
-    private final Bytes4 currentFork;
+    private final Bytes4 headForkVersion;
     private final Bytes32 finalizedRoot;
     private final UnsignedLong finalizedEpoch;
     private final Bytes32 headRoot;
@@ -92,20 +107,20 @@ public class Peer {
     }
 
     private StatusData(
-        final Bytes4 currentFork,
+        final Bytes4 headForkVersion,
         final Bytes32 finalizedRoot,
         final UnsignedLong finalizedEpoch,
         final Bytes32 headRoot,
         final UnsignedLong headSlot) {
-      this.currentFork = currentFork;
+      this.headForkVersion = headForkVersion;
       this.finalizedRoot = finalizedRoot;
       this.finalizedEpoch = finalizedEpoch;
       this.headRoot = headRoot;
       this.headSlot = headSlot;
     }
 
-    public Bytes4 getForkVersion() {
-      return currentFork;
+    public Bytes4 getHeadForkVersion() {
+      return headForkVersion;
     }
 
     public Bytes32 getFinalizedRoot() {
@@ -127,7 +142,7 @@ public class Peer {
     @Override
     public String toString() {
       return MoreObjects.toStringHelper(this)
-          .add("currentFork", currentFork)
+          .add("currentFork", headForkVersion)
           .add("finalizedRoot", finalizedRoot)
           .add("finalizedEpoch", finalizedEpoch)
           .add("headRoot", headRoot)

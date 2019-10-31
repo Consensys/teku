@@ -13,7 +13,10 @@
 
 package tech.pegasys.artemis.util;
 
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import org.awaitility.Awaitility;
 
 /**
@@ -25,6 +28,11 @@ public class Waiter {
 
   public static void waitFor(final Condition assertion) {
     Awaitility.waitAtMost(30, TimeUnit.SECONDS).untilAsserted(assertion::run);
+  }
+
+  public static <T> T waitFor(final CompletableFuture<T> future)
+      throws InterruptedException, ExecutionException, TimeoutException {
+    return future.get(30, TimeUnit.SECONDS);
   }
 
   public interface Condition {
