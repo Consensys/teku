@@ -14,7 +14,6 @@
 package tech.pegasys.artemis.networking.p2p.jvmlibp2p;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.refEq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -36,11 +35,6 @@ public class JvmLibP2pSmokeIntegrationTest {
   @AfterEach
   public void tearDown() {
     networkFactory.stopAll();
-  }
-
-  @Test
-  public void shouldFail() {
-    fail("Fail");
   }
 
   @Test
