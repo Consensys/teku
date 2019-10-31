@@ -40,6 +40,7 @@ import tech.pegasys.artemis.networking.p2p.JvmLibP2PNetwork;
 import tech.pegasys.artemis.networking.p2p.MockP2PNetwork;
 import tech.pegasys.artemis.networking.p2p.api.P2PNetwork;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.Config;
+import tech.pegasys.artemis.restapi.RestApi;
 import tech.pegasys.artemis.statetransition.StateProcessor;
 import tech.pegasys.artemis.statetransition.events.ValidatorAssignmentEvent;
 import tech.pegasys.artemis.statetransition.util.StartupUtil;
@@ -89,6 +90,7 @@ public class BeaconChainController {
     initValidatorCoordinator();
     initStateProcessor();
     initP2PNetwork();
+    initRestAPI();
   }
 
   @SuppressWarnings("rawtypes")
@@ -178,6 +180,11 @@ public class BeaconChainController {
     } else {
       throw new IllegalArgumentException("Unsupported network mode " + config.getNetworkMode());
     }
+  }
+
+  public void initRestAPI() {
+    STDOUT.log(Level.DEBUG, "BeaconChainController.initRestAPI()");
+    new RestApi(7000);
   }
 
   public void start() {
