@@ -49,10 +49,10 @@ commands:
             - deps-
   capture_test_results:
     description: "Capture test results"
-    when: "always"
     steps:
       - run:
           name: "Gather test results"
+          when: "always"
           command: |
             FILES=`find . -name test-results`
             for FILE in $FILES
