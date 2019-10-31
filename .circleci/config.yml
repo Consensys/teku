@@ -49,6 +49,7 @@ commands:
             - deps-
   capture_test_results:
     description: "Capture test results"
+    when: "always"
     steps:
       - run:
           name: "Gather test results"
@@ -59,7 +60,8 @@ commands:
               MODULE=`echo "$FILE" | sed -e 's@./\(.*\)/build/test-results@\1@'`
               TARGET="build/test-results/$MODULE"
               mkdir -p "$TARGET"
-              cp -rf ${FILE}/*/* "$TARGET"
+              echo "$MODULE"
+#              cp -rf ${FILE}/*/* "$TARGET"
             done
       - store_test_results:
           path: build/test-results
