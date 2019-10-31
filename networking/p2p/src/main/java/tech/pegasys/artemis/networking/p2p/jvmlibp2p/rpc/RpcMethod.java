@@ -17,13 +17,14 @@ import java.util.Objects;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.BeaconBlocksMessageRequest;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.BeaconBlocksMessageResponse;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.GoodbyeMessage;
-import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.HelloMessage;
+import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
 public class RpcMethod<I extends SimpleOffsetSerializable, O> {
 
-  public static final RpcMethod<HelloMessage, HelloMessage> HELLO =
-      new RpcMethod<>("/eth2/beacon_chain/req/hello/1/ssz", HelloMessage.class, HelloMessage.class);
+  public static final RpcMethod<StatusMessage, StatusMessage> STATUS =
+      new RpcMethod<>(
+          "/eth2/beacon_chain/req/status/1/ssz", StatusMessage.class, StatusMessage.class);
   public static final RpcMethod<GoodbyeMessage, Void> GOODBYE =
       new RpcMethod<>("/eth2/beacon_chain/req/goodbye/1/ssz", GoodbyeMessage.class, Void.class);
   public static final RpcMethod<BeaconBlocksMessageRequest, BeaconBlocksMessageResponse>

@@ -25,7 +25,6 @@ import java.util.concurrent.Executors;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.core.config.Configurator;
 import tech.pegasys.artemis.data.recorder.SSZTransitionRecorder;
-import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.metrics.MetricsEndpoint;
 import tech.pegasys.artemis.service.serviceutils.ServiceConfig;
 import tech.pegasys.artemis.service.serviceutils.ServiceController;
@@ -34,6 +33,7 @@ import tech.pegasys.artemis.services.chainstorage.ChainStorageService;
 import tech.pegasys.artemis.services.powchain.PowchainService;
 import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
+import tech.pegasys.artemis.util.config.Constants;
 
 public class BeaconNode {
   private static final ALogger LOG = new ALogger("stdout");
@@ -75,6 +75,7 @@ public class BeaconNode {
   public void start() {
 
     try {
+      this.serviceConfig.getConfig().validateConfig();
       metricsEndpoint.start();
       // Initialize services
       serviceController.initAll(
@@ -88,6 +89,8 @@ public class BeaconNode {
 
     } catch (java.util.concurrent.CompletionException e) {
       LOG.log(Level.FATAL, e.toString());
+    } catch (IllegalArgumentException e) {
+      LOG.log(Level.FATAL, e.getMessage());
     }
   }
 

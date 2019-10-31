@@ -31,10 +31,11 @@ public class Fork implements Merkleizable, SimpleOffsetSerializable, SSZContaine
 
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
   public static final int SSZ_FIELD_COUNT = 3;
+  public static final Bytes4 VERSION_ZERO = new Bytes4(Bytes.of(0, 0, 0, 0));
 
-  private Bytes4 previous_version; // This is a Version type, aliased as a Bytes4
-  private Bytes4 current_version; // This is a Version type, aliased as a Bytes4
-  private UnsignedLong epoch;
+  private final Bytes4 previous_version; // This is a Version type, aliased as a Bytes4
+  private final Bytes4 current_version; // This is a Version type, aliased as a Bytes4
+  private final UnsignedLong epoch;
 
   public Fork(Bytes4 previous_version, Bytes4 current_version, UnsignedLong epoch) {
     this.previous_version = previous_version;
@@ -95,24 +96,12 @@ public class Fork implements Merkleizable, SimpleOffsetSerializable, SSZContaine
     return previous_version;
   }
 
-  public void setPrevious_version(Bytes4 previous_version) {
-    this.previous_version = previous_version;
-  }
-
   public Bytes4 getCurrent_version() {
     return current_version;
   }
 
-  public void setCurrent_version(Bytes4 current_version) {
-    this.current_version = current_version;
-  }
-
   public UnsignedLong getEpoch() {
     return epoch;
-  }
-
-  public void setEpoch(UnsignedLong epoch) {
-    this.epoch = epoch;
   }
 
   @Override

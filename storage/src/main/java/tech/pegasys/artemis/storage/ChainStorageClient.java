@@ -24,41 +24,43 @@ import com.google.common.eventbus.Subscribe;
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.PriorityBlockingQueue;
 import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
+import tech.pegasys.artemis.storage.events.SlotEvent;
 import tech.pegasys.artemis.util.SSZTypes.Bitlist;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.bls.BLSAggregate;
 import tech.pegasys.artemis.util.bls.BLSSignature;
+import tech.pegasys.artemis.util.config.Constants;
 
 /** This class is the ChainStorage client-side logic */
 public class ChainStorageClient implements ChainStorage {
   private static final ALogger STDOUT = new ALogger("stdout");
   static final ALogger LOG = new ALogger(ChainStorageClient.class.getName());
-  static final Integer UNPROCESSED_BLOCKS_LENGTH = 100;
   private Store store;
   protected EventBus eventBus;
-  protected final PriorityBlockingQueue<BeaconBlock> unprocessedBlocksQueue =
-      new PriorityBlockingQueue<>(
-          UNPROCESSED_BLOCKS_LENGTH, Comparator.comparing(BeaconBlock::getSlot));
-  private final ConcurrentHashMap<Bytes32, BeaconBlock> unprocessedBlockMap =
-      new ConcurrentHashMap<>();
   protected final ConcurrentHashMap<Bytes32, Bitlist> processedAttestationsBitlistMap =
+      new ConcurrentHashMap<>();
+  protected final ConcurrentHashMap<Bytes32, UnsignedLong> processedAttestationsToEpoch =
       new ConcurrentHashMap<>();
   private final ConcurrentHashMap<Bytes32, Attestation> unprocessedAttestationsMap =
       new ConcurrentHashMap<>();
-  private final Queue<Attestation> unprocessedAttestationsQueue = new LinkedBlockingQueue<>();
+  private final int QUEUE_MAX_SIZE =
+      Constants.MAX_VALIDATORS_PER_COMMITTEE * Constants.SHARD_COUNT * Constants.SLOTS_PER_EPOCH;
+  private final Queue<Attestation> unprocessedAttestationsQueue =
+      new PriorityBlockingQueue<>(
+          QUEUE_MAX_SIZE, Comparator.comparing(a -> a.getData().getTarget().getEpoch()));
   private Bytes32 bestBlockRoot = Bytes32.ZERO; // block chosen by lmd ghost to build and attest on
   private UnsignedLong bestSlot =
       UnsignedLong.ZERO; // slot of the block chosen by lmd ghost to build and attest on
@@ -96,6 +98,7 @@ public class ChainStorageClient implements ChainStorage {
    * @param attestation
    */
   public void addProcessedAttestation(Attestation attestation) {
+
     Bytes32 attestationDataHash = attestation.getData().hash_tree_root();
     ChainStorage.get(attestationDataHash, this.processedAttestationsBitlistMap)
         .ifPresentOrElse(
@@ -104,11 +107,16 @@ public class ChainStorageClient implements ChainStorage {
                 if (attestation.getAggregation_bits().getBit(i) == 1) oldBitlist.setBit(i);
               }
             },
-            () ->
-                ChainStorage.add(
-                    attestationDataHash,
-                    attestation.getAggregation_bits().copy(),
-                    this.processedAttestationsBitlistMap));
+            () -> {
+              ChainStorage.add(
+                  attestationDataHash,
+                  attestation.getAggregation_bits().copy(),
+                  this.processedAttestationsBitlistMap);
+              ChainStorage.add(
+                  attestationDataHash,
+                  attestation.getData().getTarget().getEpoch(),
+                  processedAttestationsToEpoch);
+            });
   }
 
   public void addUnprocessedAttestation(Attestation newAttestation) {
@@ -205,52 +213,6 @@ public class ChainStorageClient implements ChainStorage {
     return this.store.getFinalizedCheckpoint().getEpoch();
   }
 
-  // UNPROCESSED ITEM METHODS:
-
-  /**
-   * Add unprocessed block to storage
-   *
-   * @param block
-   */
-  public void addUnprocessedBlock(BeaconBlock block) {
-    ChainStorage.add(block, this.unprocessedBlocksQueue);
-    Bytes32 blockHash = block.hash_tree_root();
-    ChainStorage.add(blockHash, block, this.unprocessedBlockMap);
-  }
-
-  /**
-   * Retrieves a list of blocks that were put into storage right after receiving over the wire
-   *
-   * @param startRoot
-   * @param max
-   * @param skip
-   * @return
-   */
-  public List<Optional<BeaconBlock>> getUnprocessedBlock(Bytes32 startRoot, long max, long skip) {
-    List<Optional<BeaconBlock>> result = new ArrayList<>();
-    Bytes32 blockRoot = startRoot;
-    Optional<BeaconBlock> block = ChainStorage.get(blockRoot, this.unprocessedBlockMap);
-    if (block.isPresent()) {
-      result.add(block);
-    }
-    return result;
-  }
-
-  /**
-   * Retrieves a list of unprocessed attestations that have not been included in blocks
-   *
-   * @param attestationHash
-   * @return
-   */
-  public Optional<Attestation> getUnprocessedAttestation(Bytes32 attestationHash) {
-    Optional<Attestation> result = Optional.empty();
-    if (!this.processedAttestationsBitlistMap.containsKey(attestationHash)
-        && this.unprocessedAttestationsMap.containsKey(attestationHash)) {
-      result = ChainStorage.get(attestationHash, this.unprocessedAttestationsMap);
-    }
-    return result;
-  }
-
   // SUBSCRIPTION METHODS:
   // Place items on queue's for processing, and HashMap
   // for network related quick retrieval
@@ -261,7 +223,6 @@ public class ChainStorageClient implements ChainStorage {
         Level.INFO,
         "New BeaconBlock with state root:  " + block.getState_root().toHexString() + " detected.",
         ALogger.Color.GREEN);
-    addUnprocessedBlock(block);
   }
 
   @Subscribe
@@ -272,25 +233,6 @@ public class ChainStorageClient implements ChainStorage {
             + attestation.getData().getBeacon_block_root()
             + " detected.",
         ALogger.Color.GREEN);
-  }
-
-  // STATE PROCESSOR METHODS:
-
-  /**
-   * Returns the list of blocks that both have slot number less than or equal to slot. Removes the
-   * blocks from the slot sorted queue in the process.
-   *
-   * @param slot
-   * @return
-   */
-  public List<BeaconBlock> getUnprocessedBlocksUntilSlot(UnsignedLong slot) {
-    List<BeaconBlock> unprocessedBlocks = new ArrayList<>();
-    Optional<BeaconBlock> currentBlock;
-    while (!(currentBlock = ChainStorage.peek(this.unprocessedBlocksQueue)).equals(Optional.empty())
-        && currentBlock.get().getSlot().compareTo(slot) <= 0) {
-      unprocessedBlocks.add(ChainStorage.remove(this.unprocessedBlocksQueue).get());
-    }
-    return unprocessedBlocks;
   }
 
   // VALIDATOR COORDINATOR METHODS:
@@ -314,10 +256,12 @@ public class ChainStorageClient implements ChainStorage {
                 .compareTo(slot)
             <= 0
         && numAttestations < Constants.MAX_ATTESTATIONS) {
+
       Attestation attestation = unprocessedAttestationsQueue.remove();
+      Bytes32 attestationHashTreeRoot = attestation.getData().hash_tree_root();
+      unprocessedAttestationsMap.remove(attestationHashTreeRoot);
       // Check if attestation has already been processed in successful block
-      if (ChainStorage.get(
-              attestation.getData().hash_tree_root(), this.processedAttestationsBitlistMap)
+      if (ChainStorage.get(attestationHashTreeRoot, this.processedAttestationsBitlistMap)
           .isPresent()) {
         Bitlist bitlist =
             ChainStorage.get(
@@ -338,66 +282,29 @@ public class ChainStorageClient implements ChainStorage {
 
   // Memory Cleaning
 
-  /*
-  private void cleanMemory(UnsignedLong latestFinalizedEpoch) {
-    CompletableFuture.runAsync(
-            () -> {
-              cleanOldBlocks(latestFinalizedEpoch);
-              cleanOldState(latestFinalizedEpoch);
-            });
-  }
-
-  private void cleanOldBlocks(UnsignedLong latestFinalizedEpoch) {
-    blockReferences.keySet().stream()
-            .filter(key -> key.compareTo(latestFinalizedEpoch) < 0)
-            .forEach(
-                    key -> {
-                      ChainStorage.get(key, blockReferences)
-                              .ifPresent(
-                                      list ->
-                                              list.forEach(
-                                                      blockRoot -> {
-                                                        ChainStorage.remove(blockRoot, processedBlockMap);
-                                                        ChainStorage.remove(blockRoot, unprocessedBlockMap);
-                                                      }));
-                      ChainStorage.remove(key, blockReferences);
-                    });
-  }
-
-  private void cleanOldState(UnsignedLong latestFinalizedEpoch) {
-    stateReferences.keySet().stream()
-            .filter(key -> key.compareTo(latestFinalizedEpoch) < 0)
-            .forEach(
-                    key -> {
-                      ChainStorage.get(key, stateReferences)
-                              .ifPresent(
-                                      list ->
-                                              list.forEach(
-                                                      stateRoot -> {
-                                                        ChainStorage.remove(stateRoot, stateMap);
-                                                      }));
-                      ChainStorage.remove(key, stateReferences);
-                    });
-  }
-
-  private void addBlockReference(UnsignedLong epoch, Bytes32 blockRoot) {
-    if (ChainStorage.get(epoch, blockReferences).isPresent()) {
-      ChainStorage.get(epoch, blockReferences).get().add(blockRoot);
-    } else {
-      List<Bytes32> epochBlockReferences = new ArrayList<>();
-      epochBlockReferences.add(blockRoot);
-      ChainStorage.add(epoch, epochBlockReferences, blockReferences);
+  public void cleanAttestationsUntilEpoch(UnsignedLong epoch) {
+    Iterator<Bytes32> it = processedAttestationsBitlistMap.keySet().iterator();
+    while (it.hasNext()) {
+      Bytes32 key = it.next();
+      UnsignedLong currentEpoch = processedAttestationsToEpoch.get(key);
+      if (currentEpoch.compareTo(epoch) < 0) {
+        it.remove();
+        processedAttestationsToEpoch.remove(key);
+      }
     }
   }
 
-  private void addStateReference(UnsignedLong epoch, Bytes32 stateRoot) {
-    if (ChainStorage.get(epoch, stateReferences).isPresent()) {
-      ChainStorage.get(epoch, stateReferences).get().add(stateRoot);
-    } else {
-      List<Bytes32> epochStateReferences = new ArrayList<>();
-      epochStateReferences.add(stateRoot);
-      ChainStorage.add(epoch, epochStateReferences, stateReferences);
+  @Subscribe
+  public void onNewSlot(SlotEvent slotEvent) {
+    if (slotEvent
+            .getSlot()
+            .mod(UnsignedLong.valueOf(Constants.SLOTS_PER_EPOCH))
+            .compareTo(UnsignedLong.ZERO)
+        == 0) {
+      UnsignedLong epoch = BeaconStateUtil.compute_epoch_of_slot(slotEvent.getSlot());
+      if (epoch.compareTo(UnsignedLong.ONE) > 0) {
+        cleanAttestationsUntilEpoch(epoch.minus(UnsignedLong.ONE));
+      }
     }
   }
-  */
 }

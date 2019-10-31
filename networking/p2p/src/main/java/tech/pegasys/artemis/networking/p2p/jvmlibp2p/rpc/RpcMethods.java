@@ -23,7 +23,7 @@ import java.util.stream.Stream;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.BeaconBlocksMessageRequest;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.BeaconBlocksMessageResponse;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.GoodbyeMessage;
-import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.HelloMessage;
+import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.PeerLookup;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
@@ -33,14 +33,14 @@ public class RpcMethods {
 
   public RpcMethods(
       PeerLookup peerLookup,
-      LocalMessageHandler<HelloMessage, HelloMessage> helloHandler,
+      LocalMessageHandler<StatusMessage, StatusMessage> helloHandler,
       LocalMessageHandler<GoodbyeMessage, Void> goodbyeHandler,
       LocalMessageHandler<BeaconBlocksMessageRequest, BeaconBlocksMessageResponse>
           beaconBlocksHandler) {
 
     this.methods =
         createMethodMap(
-            new RpcMessageHandler<>(RpcMethod.HELLO, peerLookup, helloHandler),
+            new RpcMessageHandler<>(RpcMethod.STATUS, peerLookup, helloHandler),
             new RpcMessageHandler<>(RpcMethod.GOODBYE, peerLookup, goodbyeHandler)
                 .setCloseNotification(),
             new RpcMessageHandler<>(RpcMethod.BEACON_BLOCKS, peerLookup, beaconBlocksHandler));

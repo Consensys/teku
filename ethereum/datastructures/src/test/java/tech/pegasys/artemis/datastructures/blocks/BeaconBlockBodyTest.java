@@ -15,12 +15,6 @@ package tech.pegasys.artemis.datastructures.blocks;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static tech.pegasys.artemis.datastructures.Constants.MAX_ATTESTATIONS;
-import static tech.pegasys.artemis.datastructures.Constants.MAX_ATTESTER_SLASHINGS;
-import static tech.pegasys.artemis.datastructures.Constants.MAX_DEPOSITS;
-import static tech.pegasys.artemis.datastructures.Constants.MAX_PROPOSER_SLASHINGS;
-import static tech.pegasys.artemis.datastructures.Constants.MAX_TRANSFERS;
-import static tech.pegasys.artemis.datastructures.Constants.MAX_VOLUNTARY_EXITS;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomAttestation;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomAttesterSlashing;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomBytes32;
@@ -28,6 +22,12 @@ import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomD
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomEth1Data;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomProposerSlashing;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomVoluntaryExit;
+import static tech.pegasys.artemis.util.config.Constants.MAX_ATTESTATIONS;
+import static tech.pegasys.artemis.util.config.Constants.MAX_ATTESTER_SLASHINGS;
+import static tech.pegasys.artemis.util.config.Constants.MAX_DEPOSITS;
+import static tech.pegasys.artemis.util.config.Constants.MAX_PROPOSER_SLASHINGS;
+import static tech.pegasys.artemis.util.config.Constants.MAX_TRANSFERS;
+import static tech.pegasys.artemis.util.config.Constants.MAX_VOLUNTARY_EXITS;
 
 import java.util.Collections;
 import org.apache.tuweni.bytes.Bytes32;
