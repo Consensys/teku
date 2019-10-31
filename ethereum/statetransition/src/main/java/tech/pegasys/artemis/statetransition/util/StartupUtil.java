@@ -167,6 +167,15 @@ public final class StartupUtil {
       final int numValidators) {
     final ChainStorageClient chainStorageClient =
         ChainStorage.Create(ChainStorageClient.class, eventBus);
+    initChainStorageClient(chainStorageClient, genesisTime, startState, numValidators);
+    return chainStorageClient;
+  }
+
+  public static void initChainStorageClient(
+      final ChainStorageClient chainStorageClient,
+      final long genesisTime,
+      final String startState,
+      final int numValidators) {
     chainStorageClient.setGenesisTime(UnsignedLong.valueOf(genesisTime));
     BeaconStateWithCache initialState;
     if (startState != null) {
@@ -185,6 +194,5 @@ public final class StartupUtil {
     Bytes32 headBlockRoot = get_head(store);
     BeaconBlock headBlock = store.getBlock(headBlockRoot);
     chainStorageClient.updateBestBlock(headBlockRoot, headBlock.getSlot());
-    return chainStorageClient;
   }
 }

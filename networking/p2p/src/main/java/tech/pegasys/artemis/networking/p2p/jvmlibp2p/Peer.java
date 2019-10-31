@@ -24,6 +24,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.RpcMethod;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.RpcMethods;
+import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.methods.StatusMessageFactory;
 import tech.pegasys.artemis.util.SSZTypes.Bytes4;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
@@ -31,15 +32,20 @@ public class Peer {
   private final Connection connection;
   private final Multiaddr multiaddr;
   private final RpcMethods rpcMethods;
+  private final StatusMessageFactory statusMessageFactory;
   private final PeerId peerId;
   private volatile Optional<StatusData> remoteStatus = Optional.empty();
 
-  public Peer(Connection connection, RpcMethods rpcMethods) {
+  public Peer(
+      final Connection connection,
+      final RpcMethods rpcMethods,
+      final StatusMessageFactory statusMessageFactory) {
     this.connection = connection;
     this.peerId = connection.getSecureSession().getRemoteId();
     this.multiaddr =
         new Multiaddr(connection.remoteAddress().toString() + "/p2p/" + peerId.toString());
     this.rpcMethods = rpcMethods;
+    this.statusMessageFactory = statusMessageFactory;
   }
 
   public void updateStatus(final StatusMessage message) {
@@ -68,6 +74,15 @@ public class Peer {
 
   public boolean isInitiator() {
     return connection.isInitiator();
+  }
+
+  public CompletableFuture<StatusData> sendStatus() {
+    return send(RpcMethod.STATUS, statusMessageFactory.createStatusMessage())
+        .thenApply(
+            remoteStatus -> {
+              updateStatus(remoteStatus);
+              return getStatus();
+            });
   }
 
   public <I extends SimpleOffsetSerializable, O extends SimpleOffsetSerializable>
