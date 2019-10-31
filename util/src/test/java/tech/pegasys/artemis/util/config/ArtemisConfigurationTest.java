@@ -14,6 +14,7 @@
 package tech.pegasys.artemis.util.config;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import org.junit.jupiter.api.Test;
 
@@ -46,5 +47,10 @@ final class ArtemisConfigurationTest {
         () ->
             ArtemisConfiguration.fromString(
                 "node.identity=\"2345\"\nnode.networkMode=\"tcpblah\""));
+  }
+
+  @Test
+  public void shouldFail() {
+    fail("Fail this too.");
   }
 }
