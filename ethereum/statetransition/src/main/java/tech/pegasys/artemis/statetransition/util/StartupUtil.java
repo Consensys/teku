@@ -19,7 +19,6 @@ import static tech.pegasys.artemis.util.config.Constants.GENESIS_EPOCH;
 import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_EPOCH;
 import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_ETH1_VOTING_PERIOD;
 
-import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
 import java.io.File;
 import java.io.IOException;
@@ -48,7 +47,6 @@ import tech.pegasys.artemis.datastructures.util.MockStartBeaconStateGenerator;
 import tech.pegasys.artemis.datastructures.util.MockStartDepositGenerator;
 import tech.pegasys.artemis.datastructures.util.MockStartValidatorKeyPairFactory;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
-import tech.pegasys.artemis.storage.ChainStorage;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.Store;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
@@ -160,18 +158,7 @@ public final class StartupUtil {
         checkpoint_states);
   }
 
-  public static ChainStorageClient initChainStorageClient(
-      final EventBus eventBus,
-      final long genesisTime,
-      final String startState,
-      final int numValidators) {
-    final ChainStorageClient chainStorageClient =
-        ChainStorage.Create(ChainStorageClient.class, eventBus);
-    initChainStorageClient(chainStorageClient, genesisTime, startState, numValidators);
-    return chainStorageClient;
-  }
-
-  public static void initChainStorageClient(
+  public static void setupInitialState(
       final ChainStorageClient chainStorageClient,
       final long genesisTime,
       final String startState,

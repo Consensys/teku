@@ -43,6 +43,7 @@ import tech.pegasys.artemis.networking.p2p.jvmlibp2p.Config;
 import tech.pegasys.artemis.statetransition.StateProcessor;
 import tech.pegasys.artemis.statetransition.events.ValidatorAssignmentEvent;
 import tech.pegasys.artemis.statetransition.util.StartupUtil;
+import tech.pegasys.artemis.storage.ChainStorage;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.Store;
 import tech.pegasys.artemis.storage.events.NodeStartEvent;
@@ -107,9 +108,12 @@ public class BeaconChainController {
   }
 
   public void initStorage() {
-    this.chainStorageClient =
-        StartupUtil.initChainStorageClient(
-            eventBus, config.getGenesisTime(), config.getStartState(), config.getNumValidators());
+    this.chainStorageClient = ChainStorage.Create(ChainStorageClient.class, eventBus);
+    StartupUtil.setupInitialState(
+        chainStorageClient,
+        config.getGenesisTime(),
+        config.getStartState(),
+        config.getNumValidators());
 
     UnsignedLong genesisTime = chainStorageClient.getGenesisTime();
     UnsignedLong currentTime = UnsignedLong.valueOf(System.currentTimeMillis() / 1000);

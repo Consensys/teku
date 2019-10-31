@@ -42,8 +42,7 @@ public class PeerStatusIntegrationTest {
   @Test
   public void shouldExchangeStatusMessagesOnConnection() throws Exception {
     final EventBus eventBus2 = new EventBus();
-    final ChainStorageClient storageClient2 =
-        StartupUtil.initChainStorageClient(eventBus2, 0, null, 0);
+    final ChainStorageClient storageClient2 = createInitedStorageClient(eventBus2);
     final JvmLibP2PNetwork network1 = networkFactory.startNetwork();
     final JvmLibP2PNetwork network2 = networkFactory.startNetwork(eventBus2, storageClient2);
 
@@ -76,8 +75,7 @@ public class PeerStatusIntegrationTest {
     final JvmLibP2PNetwork network1 = networkFactory.startNetwork(eventBus1, storageClient1);
 
     final EventBus eventBus2 = new EventBus();
-    final ChainStorageClient storageClient2 =
-        StartupUtil.initChainStorageClient(eventBus2, 0, null, 0);
+    final ChainStorageClient storageClient2 = createInitedStorageClient(eventBus2);
     final JvmLibP2PNetwork network2 =
         networkFactory.startNetwork(eventBus2, storageClient2, network1);
 
@@ -93,7 +91,7 @@ public class PeerStatusIntegrationTest {
         UnsignedLong.ZERO);
 
     // Peer 1 goes through genesis event.
-    StartupUtil.initChainStorageClient(storageClient1, 0, null, 0);
+    StartupUtil.setupInitialState(storageClient1, 0, null, 0);
 
     final StatusData updatedStatusData = Waiter.waitFor(network2ViewOfPeer1.sendStatus());
     assertStatusMatchesStorage(storageClient1, updatedStatusData);
@@ -124,5 +122,11 @@ public class PeerStatusIntegrationTest {
         network2Store.getFinalizedCheckpoint().getEpoch(),
         storageClient.getBestBlockRoot(),
         storageClient.getBestSlot());
+  }
+
+  private ChainStorageClient createInitedStorageClient(final EventBus eventBus2) {
+    final ChainStorageClient chainStorageClient = new ChainStorageClient(eventBus2);
+    StartupUtil.setupInitialState(chainStorageClient, 0, null, 0);
+    return chainStorageClient;
   }
 }
