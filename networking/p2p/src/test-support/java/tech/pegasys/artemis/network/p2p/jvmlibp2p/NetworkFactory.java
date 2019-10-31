@@ -50,7 +50,14 @@ public class NetworkFactory {
 
   public JvmLibP2PNetwork startNetwork(final EventBus eventBus, final JvmLibP2PNetwork... peers)
       throws TimeoutException, InterruptedException, ExecutionException {
-    final ChainStorageClient chainStorageClient = new ChainStorageClient(eventBus);
+    return startNetwork(eventBus, new ChainStorageClient(eventBus), peers);
+  }
+
+  public JvmLibP2PNetwork startNetwork(
+      final EventBus eventBus,
+      final ChainStorageClient chainStorageClient,
+      final JvmLibP2PNetwork... peers)
+      throws TimeoutException, InterruptedException, ExecutionException {
     final Random random = new Random();
     final List<String> peerAddresses =
         Stream.of(peers).map(JvmLibP2PNetwork::getPeerAddress).collect(Collectors.toList());

@@ -20,13 +20,14 @@ import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.GoodbyeMessage;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
-public class RpcMethod<I extends SimpleOffsetSerializable, O> {
+public class RpcMethod<I extends SimpleOffsetSerializable, O extends SimpleOffsetSerializable> {
 
   public static final RpcMethod<StatusMessage, StatusMessage> STATUS =
       new RpcMethod<>(
           "/eth2/beacon_chain/req/status/1/ssz", StatusMessage.class, StatusMessage.class);
-  public static final RpcMethod<GoodbyeMessage, Void> GOODBYE =
-      new RpcMethod<>("/eth2/beacon_chain/req/goodbye/1/ssz", GoodbyeMessage.class, Void.class);
+  public static final RpcMethod<GoodbyeMessage, GoodbyeMessage> GOODBYE =
+      new RpcMethod<>(
+          "/eth2/beacon_chain/req/goodbye/1/ssz", GoodbyeMessage.class, GoodbyeMessage.class);
   public static final RpcMethod<BeaconBlocksMessageRequest, BeaconBlocksMessageResponse>
       BEACON_BLOCKS =
           new RpcMethod<>(

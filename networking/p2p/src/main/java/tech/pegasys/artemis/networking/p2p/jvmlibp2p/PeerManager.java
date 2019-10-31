@@ -27,7 +27,6 @@ import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.Level;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.RpcMessageHandler;
-import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.RpcMethod;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.RpcMethods;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.methods.BeaconBlocksMessageHandler;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.methods.GoodbyeMessageHandler;
@@ -65,13 +64,12 @@ public class PeerManager implements ConnectionHandler, PeerLookup {
 
   @Override
   public void handleConnection(@NotNull final Connection connection) {
-    Peer peer = new Peer(connection, rpcMethods);
+    Peer peer = new Peer(connection, rpcMethods, statusMessageFactory);
     onConnectedPeer(peer);
     connection.closeFuture().thenRun(() -> onDisconnectedPeer(peer));
 
     if (connection.isInitiator()) {
-      peer.send(RpcMethod.STATUS, statusMessageFactory.createStatusMessage())
-          .thenAccept(peer::updateStatus);
+      peer.sendStatus();
     }
   }
 
@@ -113,8 +111,7 @@ public class PeerManager implements ConnectionHandler, PeerLookup {
   }
 
   public Optional<Peer> getAvailablePeer(PeerId peerId) {
-    final Peer peer = connectedPeerMap.get(peerId);
-    return peer != null && peer.hasStatus() ? Optional.of(peer) : Optional.empty();
+    return Optional.ofNullable(connectedPeerMap.get(peerId)).filter(Peer::hasStatus);
   }
 
   private void onConnectedPeer(Peer peer) {
