@@ -40,7 +40,7 @@ public class JvmLibP2pSmokeIntegrationTest {
 
   @Test
   public void shouldFail() {
-      fail("Fail");
+    fail("Fail");
   }
 
   @Test
