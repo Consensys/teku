@@ -14,19 +14,13 @@
 package tech.pegasys.artemis.networking.p2p.jvmlibp2p;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.refEq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.state.Fork;
-import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.network.p2p.jvmlibp2p.NetworkFactory;
 import tech.pegasys.artemis.networking.p2p.JvmLibP2PNetwork;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.Peer.StatusData;
@@ -36,7 +30,7 @@ import tech.pegasys.artemis.storage.Store;
 import tech.pegasys.artemis.util.SSZTypes.Bytes4;
 import tech.pegasys.artemis.util.Waiter;
 
-public class JvmLibP2pSmokeIntegrationTest {
+public class PeerStatusIntegrationTest {
 
   private final NetworkFactory networkFactory = new NetworkFactory();
 
@@ -104,21 +98,6 @@ public class JvmLibP2pSmokeIntegrationTest {
     final StatusData updatedStatusData = Waiter.waitFor(network2ViewOfPeer1.sendStatus());
     assertStatusMatchesStorage(storageClient1, updatedStatusData);
     assertStatusMatchesStorage(storageClient1, network2ViewOfPeer1.getStatus());
-  }
-
-  @Test
-  @Disabled("Chain storage is not configured so HELLO messages cause immediate disconnects")
-  public void shouldGossipBlocks() throws Exception {
-    final EventBus eventBus1 = new EventBus();
-    final EventBus eventBus2 = mock(EventBus.class);
-
-    final JvmLibP2PNetwork network1 = networkFactory.startNetwork(eventBus1);
-    networkFactory.startNetwork(eventBus2, network1);
-
-    final BeaconBlock block = DataStructureUtil.randomBeaconBlock(100, 100);
-    eventBus1.post(block);
-
-    Waiter.waitFor(() -> verify(eventBus2).post(refEq(block)));
   }
 
   private void assertStatus(
