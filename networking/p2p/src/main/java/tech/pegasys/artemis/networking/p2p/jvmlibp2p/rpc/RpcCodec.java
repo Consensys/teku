@@ -13,11 +13,16 @@
 
 package tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc;
 
+import com.google.protobuf.CodedInputStream;
+import com.google.protobuf.CodedOutputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
 public final class RpcCodec {
+  private static final Bytes SUCCESS_RESPONSE_CODE = Bytes.of(0);
 
   private RpcCodec() {}
 
@@ -27,8 +32,30 @@ public final class RpcCodec {
    * @param request the payload of the request
    * @return the encoded RPC message
    */
-  public static <T extends SimpleOffsetSerializable> Bytes encode(T request) {
-    return SimpleOffsetSerializer.serialize(request);
+  public static <T extends SimpleOffsetSerializable> Bytes encodeRequest(T request) {
+    return encodePayload(request);
+  }
+
+  public static <T extends SimpleOffsetSerializable> Bytes encodeSuccessfulResponse(T response) {
+    return Bytes.concatenate(SUCCESS_RESPONSE_CODE, encodePayload(response));
+  }
+
+  private static <T extends SimpleOffsetSerializable> Bytes encodePayload(final T data) {
+    final Bytes payload = SimpleOffsetSerializer.serialize(data);
+    final Bytes header = writeVarInt(payload.size());
+    return Bytes.concatenate(header, payload);
+  }
+
+  private static Bytes writeVarInt(final int value) {
+    try {
+      final ByteArrayOutputStream output = new ByteArrayOutputStream();
+      final CodedOutputStream codedOutputStream = CodedOutputStream.newInstance(output);
+      codedOutputStream.writeUInt32NoTag(value);
+      codedOutputStream.flush();
+      return Bytes.wrap(output.toByteArray());
+    } catch (final IOException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   /**
@@ -38,6 +65,13 @@ public final class RpcCodec {
    * @return the payload, decoded
    */
   public static <T> T decode(Bytes message, Class<T> clazz) {
-    return SimpleOffsetSerializer.deserialize(message, clazz);
+    try {
+      final CodedInputStream in = CodedInputStream.newInstance(message.toArrayUnsafe());
+      final int expectedLength = in.readRawVarint32();
+      final Bytes payload = Bytes.wrap(in.readRawBytes(expectedLength));
+      return SimpleOffsetSerializer.deserialize(payload, clazz);
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
   }
 }

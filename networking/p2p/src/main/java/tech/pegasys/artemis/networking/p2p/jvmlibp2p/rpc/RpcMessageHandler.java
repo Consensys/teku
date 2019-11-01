@@ -21,7 +21,6 @@ import io.libp2p.core.multistream.Multistream;
 import io.libp2p.core.multistream.ProtocolBinding;
 import io.libp2p.core.multistream.ProtocolMatcher;
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import java.util.concurrent.CompletableFuture;
@@ -136,14 +135,9 @@ public class RpcMessageHandler<
           .whenComplete(
               (response, err) -> {
                 ByteBuf respBuf = ctx.alloc().buffer();
-                try {
-                  Bytes encoded = RpcCodec.encode(response);
-                  respBuf.writeBytes(encoded.toArrayUnsafe());
-                  ctx.writeAndFlush(respBuf);
-                  ctx.channel().disconnect();
-                } finally {
-                  respBuf.release();
-                }
+                final Bytes encoded = RpcCodec.encodeSuccessfulResponse(response);
+                respBuf.writeBytes(encoded.toArrayUnsafe());
+                ctx.writeAndFlush(respBuf).addListener(future -> ctx.channel().disconnect());
               });
     }
   }
@@ -173,18 +167,21 @@ public class RpcMessageHandler<
 
     @Override
     public CompletableFuture<TResponse> invoke(TRequest request) {
-      ByteBuf reqByteBuf = Unpooled.buffer();
-      Bytes encoded = RpcCodec.encode(request);
+      ByteBuf reqByteBuf = ctx.alloc().buffer();
+      final Bytes encoded = RpcCodec.encodeRequest(request);
       reqByteBuf.writeBytes(encoded.toArrayUnsafe());
       respFuture = new CompletableFuture<>();
-      ctx.writeAndFlush(reqByteBuf);
-      if (closeNotification) {
-        ctx.channel().close();
-        return CompletableFuture.completedFuture(null);
-      } else {
-        ctx.channel().disconnect();
-        return respFuture;
-      }
+      ctx.writeAndFlush(reqByteBuf)
+          .addListener(
+              future -> {
+                if (closeNotification) {
+                  ctx.channel().close();
+                  respFuture.complete(null);
+                } else {
+                  ctx.channel().disconnect();
+                }
+              });
+      return respFuture;
     }
 
     @Override

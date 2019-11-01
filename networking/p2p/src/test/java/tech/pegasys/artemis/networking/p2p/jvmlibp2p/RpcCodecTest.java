@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.networking.p2p.jvmlibp2p;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.google.common.primitives.UnsignedLong;
@@ -25,8 +26,20 @@ import tech.pegasys.artemis.util.SSZTypes.Bytes4;
 
 final class RpcCodecTest {
 
+  private static final Bytes RECORDED_STATUS_REQUEST_BYTES =
+      Bytes.fromHexString(
+          "0x54000000000000000000000000000000000000000000000000000000000000000000000000000000000000000030A903798306695D21D1FAA76363A0070677130835E503760B0E84479B7819E60000000000000000");
+  private static final StatusMessage RECORDED_STATUS_MESSAGE_DATA =
+      new StatusMessage(
+          new Bytes4(Bytes.of(0, 0, 0, 0)),
+          Bytes32.ZERO,
+          UnsignedLong.ZERO,
+          Bytes32.fromHexString(
+              "0x30A903798306695D21D1FAA76363A0070677130835E503760B0E84479B7819E6"),
+          UnsignedLong.ZERO);
+
   @Test
-  void testHelloRoundtripSerialization() {
+  void testStatusRoundtripSerialization() {
     StatusMessage hello =
         new StatusMessage(
             Bytes4.rightPad(Bytes.of(4)),
@@ -35,9 +48,23 @@ final class RpcCodecTest {
             Bytes32.random(),
             UnsignedLong.ZERO);
 
-    Bytes encoded = RpcCodec.encode(hello);
+    final Bytes encoded = RpcCodec.encodeRequest(hello);
     StatusMessage message = RpcCodec.decode(encoded, StatusMessage.class);
 
     assertEquals(hello, message);
+  }
+
+  @Test
+  public void shouldDecodeStatusMessage() {
+    final StatusMessage actualMessage =
+        RpcCodec.decode(RECORDED_STATUS_REQUEST_BYTES, StatusMessage.class);
+    assertThat(actualMessage)
+        .isEqualToComparingFieldByFieldRecursively(RECORDED_STATUS_MESSAGE_DATA);
+  }
+
+  @Test
+  public void shouldEncodeStatusRequestCorrectly() {
+    final Bytes actualBytes = RpcCodec.encodeRequest(RECORDED_STATUS_MESSAGE_DATA);
+    assertThat(actualBytes).isEqualTo(RECORDED_STATUS_REQUEST_BYTES);
   }
 }

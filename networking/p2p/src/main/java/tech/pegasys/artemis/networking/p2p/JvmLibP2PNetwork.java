@@ -124,12 +124,7 @@ public class JvmLibP2PNetwork implements P2PNetwork {
     return host.start()
         .thenApply(
             i -> {
-              STDOUT.log(
-                  Level.INFO,
-                  "Listening for connections on port "
-                      + config.getListenPort()
-                      + " with peerId "
-                      + getPeerId().toBase58());
+              STDOUT.log(Level.INFO, "Listening for connections on: " + getPeerAddress());
               return null;
             })
         .thenRun(() -> config.getPeers().forEach(this::connect));
