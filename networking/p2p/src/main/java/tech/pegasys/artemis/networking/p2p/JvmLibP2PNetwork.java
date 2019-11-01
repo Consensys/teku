@@ -31,6 +31,7 @@ import io.libp2p.pubsub.gossip.Gossip;
 import io.libp2p.security.secio.SecIoSecureChannel;
 import io.libp2p.transport.tcp.TcpTransport;
 import io.netty.handler.logging.LogLevel;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -152,5 +153,15 @@ public class JvmLibP2PNetwork implements P2PNetwork {
     STDOUT.log(Level.DEBUG, "JvmLibP2PNetwork.stop()");
     host.stop();
     scheduler.shutdownNow();
+  }
+
+  // Rest API methods
+
+  public String getPeerIDString() {
+    return getPeerId().toBase58();
+  }
+
+  public List<String> getPeersStrings() {
+    return getPeerManager().getPeerIDs();
   }
 }

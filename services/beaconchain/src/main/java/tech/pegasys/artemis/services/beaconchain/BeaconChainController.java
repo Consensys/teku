@@ -184,7 +184,7 @@ public class BeaconChainController {
 
   public void initRestAPI() {
     STDOUT.log(Level.DEBUG, "BeaconChainController.initRestAPI()");
-    new RestApi(7000);
+    new RestApi(chainStorageClient, p2pNetwork, 5051);
   }
 
   public void start() {
