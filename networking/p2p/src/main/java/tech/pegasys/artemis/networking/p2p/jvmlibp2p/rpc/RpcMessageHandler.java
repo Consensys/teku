@@ -129,7 +129,7 @@ public class RpcMessageHandler<
     protected void channelRead0(ChannelHandlerContext ctx, ByteBuf byteBuf) {
       STDOUT.log(Level.DEBUG, "Responder received " + byteBuf.array().length + " bytes.");
       Bytes bytes = Bytes.wrapByteBuf(byteBuf);
-      TRequest request = RpcCodec.decode(bytes, method.getRequestType());
+      TRequest request = RpcCodec.decodeRequest(bytes, method.getRequestType());
 
       invokeLocal(connection, request)
           .whenComplete(
@@ -155,13 +155,19 @@ public class RpcMessageHandler<
             "Received " + byteBuf.array().length + " bytes of data before requesting it.");
         throw new IllegalArgumentException("Some data received prior to request: " + byteBuf);
       }
-      STDOUT.log(Level.DEBUG, "Requester received " + byteBuf.array().length + " bytes.");
-      Bytes bytes = Bytes.wrapByteBuf(byteBuf);
-      TResponse response = RpcCodec.decode(bytes, method.getResponseType());
-      if (response != null) {
-        respFuture.complete(response);
-      } else {
-        respFuture.completeExceptionally(new IllegalArgumentException("Error decoding response"));
+      try {
+        STDOUT.log(Level.DEBUG, "Requester received " + byteBuf.array().length + " bytes.");
+        Bytes bytes = Bytes.wrapByteBuf(byteBuf);
+        final Response<TResponse> response =
+            RpcCodec.decodeResponse(bytes, method.getResponseType());
+        if (response.isSuccess()) {
+          respFuture.complete(response.getData());
+        } else {
+          // TODO: Will have to handle this better when we have requests that may be rejected.
+          respFuture.completeExceptionally(new IllegalStateException("Received failure response"));
+        }
+      } catch (final Throwable t) {
+        respFuture.completeExceptionally(t);
       }
     }
 

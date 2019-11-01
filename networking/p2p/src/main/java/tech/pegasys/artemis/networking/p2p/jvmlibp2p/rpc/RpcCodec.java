@@ -13,6 +13,8 @@
 
 package tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import com.google.protobuf.CodedInputStream;
 import com.google.protobuf.CodedOutputStream;
 import java.io.ByteArrayOutputStream;
@@ -59,12 +61,12 @@ public final class RpcCodec {
   }
 
   /**
-   * Decodes a RPC message into a payload.
+   * Decodes a RPC request into a payload.
    *
    * @param message the bytes of the message to read
    * @return the payload, decoded
    */
-  public static <T> T decode(Bytes message, Class<T> clazz) {
+  public static <T> T decodeRequest(Bytes message, Class<T> clazz) {
     try {
       final CodedInputStream in = CodedInputStream.newInstance(message.toArrayUnsafe());
       final int expectedLength = in.readRawVarint32();
@@ -73,5 +75,11 @@ public final class RpcCodec {
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
+  }
+
+  public static <T> Response<T> decodeResponse(Bytes message, Class<T> clazz) {
+    checkArgument(!message.isEmpty(), "Cannot decode an empty response");
+    final byte responseCode = message.get(0);
+    return new Response<>(responseCode, decodeRequest(message.slice(1), clazz));
   }
 }
