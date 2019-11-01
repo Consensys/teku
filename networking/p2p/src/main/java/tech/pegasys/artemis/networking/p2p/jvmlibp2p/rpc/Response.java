@@ -14,18 +14,20 @@
 package tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc;
 
 import java.util.Objects;
+import org.apache.tuweni.bytes.Bytes;
 
 public class Response<T> {
-  private final byte responseCode;
+  public static final Bytes SUCCESS_RESPONSE_CODE = Bytes.of(0);
+  private final Bytes responseCode;
   private final T data;
 
-  public Response(final byte responseCode, final T data) {
+  public Response(final Bytes responseCode, final T data) {
     this.responseCode = responseCode;
     this.data = data;
   }
 
   public boolean isSuccess() {
-    return responseCode == 0;
+    return SUCCESS_RESPONSE_CODE.equals(responseCode);
   }
 
   public T getData() {

@@ -41,6 +41,7 @@ public class RpcMessageHandler<
   private final RpcMethod<TRequest, TResponse> method;
   private final PeerLookup peerLookup;
   private final LocalMessageHandler<TRequest, TResponse> localMessageHandler;
+  private final RpcCodec rpcCodec;
   private boolean closeNotification = false;
 
   public RpcMessageHandler(
@@ -50,6 +51,7 @@ public class RpcMessageHandler<
     this.method = method;
     this.peerLookup = peerLookup;
     this.localMessageHandler = localMessageHandler;
+    this.rpcCodec = new RpcCodec(method.getEncoding());
   }
 
   @SuppressWarnings("unchecked")
@@ -129,13 +131,13 @@ public class RpcMessageHandler<
     protected void channelRead0(ChannelHandlerContext ctx, ByteBuf byteBuf) {
       STDOUT.log(Level.DEBUG, "Responder received " + byteBuf.array().length + " bytes.");
       Bytes bytes = Bytes.wrapByteBuf(byteBuf);
-      TRequest request = RpcCodec.decodeRequest(bytes, method.getRequestType());
+      TRequest request = rpcCodec.decodeRequest(bytes, method.getRequestType());
 
       invokeLocal(connection, request)
           .whenComplete(
               (response, err) -> {
                 ByteBuf respBuf = ctx.alloc().buffer();
-                final Bytes encoded = RpcCodec.encodeSuccessfulResponse(response);
+                final Bytes encoded = rpcCodec.encodeSuccessfulResponse(response);
                 respBuf.writeBytes(encoded.toArrayUnsafe());
                 ctx.writeAndFlush(respBuf).addListener(future -> ctx.channel().disconnect());
               });
@@ -159,7 +161,7 @@ public class RpcMessageHandler<
         STDOUT.log(Level.DEBUG, "Requester received " + byteBuf.array().length + " bytes.");
         Bytes bytes = Bytes.wrapByteBuf(byteBuf);
         final Response<TResponse> response =
-            RpcCodec.decodeResponse(bytes, method.getResponseType());
+            rpcCodec.decodeResponse(bytes, method.getResponseType());
         if (response.isSuccess()) {
           respFuture.complete(response.getData());
         } else {
@@ -174,7 +176,7 @@ public class RpcMessageHandler<
     @Override
     public CompletableFuture<TResponse> invoke(TRequest request) {
       ByteBuf reqByteBuf = ctx.alloc().buffer();
-      final Bytes encoded = RpcCodec.encodeRequest(request);
+      final Bytes encoded = rpcCodec.encodeRequest(request);
       reqByteBuf.writeBytes(encoded.toArrayUnsafe());
       respFuture = new CompletableFuture<>();
       ctx.writeAndFlush(reqByteBuf)

@@ -14,7 +14,6 @@
 package tech.pegasys.artemis.networking.p2p.jvmlibp2p;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes;
@@ -23,6 +22,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.Response;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.RpcCodec;
+import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.encodings.SszEncoding;
 import tech.pegasys.artemis.util.SSZTypes.Bytes4;
 
 final class RpcCodecTest {
@@ -42,9 +42,11 @@ final class RpcCodecTest {
               "0x30A903798306695D21D1FAA76363A0070677130835E503760B0E84479B7819E6"),
           UnsignedLong.ZERO);
 
+  private final RpcCodec codec = new RpcCodec(new SszEncoding());
+
   @Test
   void testStatusRoundtripSerialization() {
-    StatusMessage hello =
+    final StatusMessage expected =
         new StatusMessage(
             Bytes4.rightPad(Bytes.of(4)),
             Bytes32.random(),
@@ -52,38 +54,38 @@ final class RpcCodecTest {
             Bytes32.random(),
             UnsignedLong.ZERO);
 
-    final Bytes encoded = RpcCodec.encodeRequest(hello);
-    StatusMessage message = RpcCodec.decodeRequest(encoded, StatusMessage.class);
+    final Bytes encoded = codec.encodeRequest(expected);
+    final StatusMessage actual = codec.decodeRequest(encoded, StatusMessage.class);
 
-    assertEquals(hello, message);
+    assertThat(actual).isEqualTo(expected);
   }
 
   @Test
   public void shouldDecodeStatusMessageRequest() {
     final StatusMessage actualMessage =
-        RpcCodec.decodeRequest(RECORDED_STATUS_REQUEST_BYTES, StatusMessage.class);
+        codec.decodeRequest(RECORDED_STATUS_REQUEST_BYTES, StatusMessage.class);
     assertThat(actualMessage)
         .isEqualToComparingFieldByFieldRecursively(RECORDED_STATUS_MESSAGE_DATA);
   }
 
   @Test
   public void shouldEncodeStatusRequest() {
-    final Bytes actualBytes = RpcCodec.encodeRequest(RECORDED_STATUS_MESSAGE_DATA);
+    final Bytes actualBytes = codec.encodeRequest(RECORDED_STATUS_MESSAGE_DATA);
     assertThat(actualBytes).isEqualTo(RECORDED_STATUS_REQUEST_BYTES);
   }
 
   @Test
   public void shouldDecodeStatusResponse() {
     final Response<StatusMessage> actualMessage =
-        RpcCodec.decodeResponse(RECORDED_STATUS_RESPONSE_BYTES, StatusMessage.class);
+        codec.decodeResponse(RECORDED_STATUS_RESPONSE_BYTES, StatusMessage.class);
     assertThat(actualMessage)
         .isEqualToComparingFieldByFieldRecursively(
-            new Response<>((byte) 0, RECORDED_STATUS_MESSAGE_DATA));
+            new Response<>(Bytes.of(0), RECORDED_STATUS_MESSAGE_DATA));
   }
 
   @Test
   public void shouldEncodeSuccessfulResponse() {
-    final Bytes actual = RpcCodec.encodeSuccessfulResponse(RECORDED_STATUS_MESSAGE_DATA);
+    final Bytes actual = codec.encodeSuccessfulResponse(RECORDED_STATUS_MESSAGE_DATA);
     assertThat(actual).isEqualTo(RECORDED_STATUS_RESPONSE_BYTES);
   }
 }

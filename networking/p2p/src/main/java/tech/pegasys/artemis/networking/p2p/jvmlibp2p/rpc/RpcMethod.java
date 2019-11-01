@@ -18,30 +18,39 @@ import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.BeaconBlocksMes
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.BeaconBlocksMessageResponse;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.GoodbyeMessage;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.StatusMessage;
+import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.encodings.RpcEncoding;
+import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.encodings.SszEncoding;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
 public class RpcMethod<I extends SimpleOffsetSerializable, O extends SimpleOffsetSerializable> {
 
+  private static final RpcEncoding SSZ = new SszEncoding();
   public static final RpcMethod<StatusMessage, StatusMessage> STATUS =
       new RpcMethod<>(
-          "/eth2/beacon_chain/req/status/1/ssz", StatusMessage.class, StatusMessage.class);
+          "/eth2/beacon_chain/req/status/1", SSZ, StatusMessage.class, StatusMessage.class);
   public static final RpcMethod<GoodbyeMessage, GoodbyeMessage> GOODBYE =
       new RpcMethod<>(
-          "/eth2/beacon_chain/req/goodbye/1/ssz", GoodbyeMessage.class, GoodbyeMessage.class);
+          "/eth2/beacon_chain/req/goodbye/1", SSZ, GoodbyeMessage.class, GoodbyeMessage.class);
   public static final RpcMethod<BeaconBlocksMessageRequest, BeaconBlocksMessageResponse>
       BEACON_BLOCKS =
           new RpcMethod<>(
-              "/eth2/beacon_chain/req/beacon_blocks/1/ssz",
+              "/eth2/beacon_chain/req/beacon_blocks/1",
+              SSZ,
               BeaconBlocksMessageRequest.class,
               BeaconBlocksMessageResponse.class);
 
   private final String methodMultistreamId;
+  private final RpcEncoding encoding;
   private final Class<I> requestType;
   private final Class<O> responseType;
 
   RpcMethod(
-      final String methodMultistreamId, final Class<I> requestType, final Class<O> responseType) {
-    this.methodMultistreamId = methodMultistreamId;
+      final String methodMultistreamId,
+      final RpcEncoding encoding,
+      final Class<I> requestType,
+      final Class<O> responseType) {
+    this.methodMultistreamId = methodMultistreamId + "/" + encoding.getName();
+    this.encoding = encoding;
     this.requestType = requestType;
     this.responseType = responseType;
   }
@@ -56,6 +65,10 @@ public class RpcMethod<I extends SimpleOffsetSerializable, O extends SimpleOffse
 
   public Class<O> getResponseType() {
     return responseType;
+  }
+
+  public RpcEncoding getEncoding() {
+    return encoding;
   }
 
   @Override
