@@ -148,6 +148,7 @@ public abstract class TestSuite {
     return getObjectFromYAMLInputStream(getInputStreamFromPath(path), testObjects);
   }
 
+  @SuppressWarnings("unchecked")
   public static Stream<Arguments> findTestsByPath(TestSet testSet) {
     Path path = Path.of(pathToTests.toString(), testSet.getPath().toString());
     try (Stream<Path> walk = Files.walk(path)) {
