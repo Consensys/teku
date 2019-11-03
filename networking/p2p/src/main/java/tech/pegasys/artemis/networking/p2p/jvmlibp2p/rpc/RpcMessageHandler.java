@@ -21,7 +21,6 @@ import io.libp2p.core.multistream.Multistream;
 import io.libp2p.core.multistream.ProtocolBinding;
 import io.libp2p.core.multistream.ProtocolMatcher;
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import java.util.concurrent.CompletableFuture;
@@ -42,6 +41,7 @@ public class RpcMessageHandler<
   private final RpcMethod<TRequest, TResponse> method;
   private final PeerLookup peerLookup;
   private final LocalMessageHandler<TRequest, TResponse> localMessageHandler;
+  private final RpcCodec rpcCodec;
   private boolean closeNotification = false;
 
   public RpcMessageHandler(
@@ -51,6 +51,7 @@ public class RpcMessageHandler<
     this.method = method;
     this.peerLookup = peerLookup;
     this.localMessageHandler = localMessageHandler;
+    this.rpcCodec = new RpcCodec(method.getEncoding());
   }
 
   @SuppressWarnings("unchecked")
@@ -130,20 +131,15 @@ public class RpcMessageHandler<
     protected void channelRead0(ChannelHandlerContext ctx, ByteBuf byteBuf) {
       STDOUT.log(Level.DEBUG, "Responder received " + byteBuf.array().length + " bytes.");
       Bytes bytes = Bytes.wrapByteBuf(byteBuf);
-      TRequest request = RpcCodec.decode(bytes, method.getRequestType());
+      TRequest request = rpcCodec.decodeRequest(bytes, method.getRequestType());
 
       invokeLocal(connection, request)
           .whenComplete(
               (response, err) -> {
                 ByteBuf respBuf = ctx.alloc().buffer();
-                try {
-                  Bytes encoded = RpcCodec.encode(response);
-                  respBuf.writeBytes(encoded.toArrayUnsafe());
-                  ctx.writeAndFlush(respBuf);
-                  ctx.channel().disconnect();
-                } finally {
-                  respBuf.release();
-                }
+                final Bytes encoded = rpcCodec.encodeSuccessfulResponse(response);
+                respBuf.writeBytes(encoded.toArrayUnsafe());
+                ctx.writeAndFlush(respBuf).addListener(future -> ctx.channel().disconnect());
               });
     }
   }
@@ -161,30 +157,39 @@ public class RpcMessageHandler<
             "Received " + byteBuf.array().length + " bytes of data before requesting it.");
         throw new IllegalArgumentException("Some data received prior to request: " + byteBuf);
       }
-      STDOUT.log(Level.DEBUG, "Requester received " + byteBuf.array().length + " bytes.");
-      Bytes bytes = Bytes.wrapByteBuf(byteBuf);
-      TResponse response = RpcCodec.decode(bytes, method.getResponseType());
-      if (response != null) {
-        respFuture.complete(response);
-      } else {
-        respFuture.completeExceptionally(new IllegalArgumentException("Error decoding response"));
+      try {
+        STDOUT.log(Level.DEBUG, "Requester received " + byteBuf.array().length + " bytes.");
+        Bytes bytes = Bytes.wrapByteBuf(byteBuf);
+        final Response<TResponse> response =
+            rpcCodec.decodeResponse(bytes, method.getResponseType());
+        if (response.isSuccess()) {
+          respFuture.complete(response.getData());
+        } else {
+          // TODO: Will have to handle this better when we have requests that may be rejected.
+          respFuture.completeExceptionally(new IllegalStateException("Received failure response"));
+        }
+      } catch (final Throwable t) {
+        respFuture.completeExceptionally(t);
       }
     }
 
     @Override
     public CompletableFuture<TResponse> invoke(TRequest request) {
-      ByteBuf reqByteBuf = Unpooled.buffer();
-      Bytes encoded = RpcCodec.encode(request);
+      ByteBuf reqByteBuf = ctx.alloc().buffer();
+      final Bytes encoded = rpcCodec.encodeRequest(request);
       reqByteBuf.writeBytes(encoded.toArrayUnsafe());
       respFuture = new CompletableFuture<>();
-      ctx.writeAndFlush(reqByteBuf);
-      if (closeNotification) {
-        ctx.channel().close();
-        return CompletableFuture.completedFuture(null);
-      } else {
-        ctx.channel().disconnect();
-        return respFuture;
-      }
+      ctx.writeAndFlush(reqByteBuf)
+          .addListener(
+              future -> {
+                if (closeNotification) {
+                  ctx.channel().close();
+                  respFuture.complete(null);
+                } else {
+                  ctx.channel().disconnect();
+                }
+              });
+      return respFuture;
     }
 
     @Override
