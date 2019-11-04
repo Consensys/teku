@@ -44,7 +44,7 @@ public class RpcMethod<I extends SimpleOffsetSerializable, O extends SimpleOffse
   private final Class<I> requestType;
   private final Class<O> responseType;
 
-  RpcMethod(
+  public RpcMethod(
       final String methodMultistreamId,
       final RpcEncoding encoding,
       final Class<I> requestType,

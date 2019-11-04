@@ -17,5 +17,7 @@ dependencies {
     exclude group: 'com.mchange'
   }
 
+  testImplementation 'org.mockito:mockito-core'
+
   testSupportImplementation 'org.awaitility:awaitility'
 }
