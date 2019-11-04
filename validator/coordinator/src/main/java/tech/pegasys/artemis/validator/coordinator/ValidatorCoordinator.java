@@ -16,11 +16,13 @@ package tech.pegasys.artemis.validator.coordinator;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_of_slot;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_domain;
 import static tech.pegasys.artemis.util.config.Constants.DOMAIN_ATTESTATION;
+import static tech.pegasys.artemis.util.config.Constants.ETH1_FOLLOW_DISTANCE;
 import static tech.pegasys.artemis.util.config.Constants.GENESIS_SLOT;
 import static tech.pegasys.artemis.util.config.Constants.MAX_ATTESTATIONS;
 import static tech.pegasys.artemis.util.config.Constants.MAX_DEPOSITS;
 import static tech.pegasys.artemis.util.config.Constants.MAX_VALIDATORS_PER_COMMITTEE;
 import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_EPOCH;
+import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_ETH1_VOTING_PERIOD;
 import static tech.pegasys.artemis.validator.coordinator.ValidatorLoader.initializeValidators;
 
 import com.google.common.eventbus.EventBus;
@@ -28,23 +30,33 @@ import com.google.common.eventbus.Subscribe;
 import com.google.common.primitives.UnsignedLong;
 import com.google.protobuf.ByteString;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.stream.Collectors;
+import java.util.stream.LongStream;
+import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.commons.lang3.tuple.MutableTriple;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
+import tech.pegasys.artemis.datastructures.blocks.Eth1DataWithIndexAndDeposits;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
+import tech.pegasys.artemis.datastructures.operations.DepositWithIndex;
 import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
@@ -88,6 +100,7 @@ public class ValidatorCoordinator {
   private HashMap<UnsignedLong, List<Triple<List<Integer>, UnsignedLong, Integer>>>
       committeeAssignments = new HashMap<>();
   private LinkedBlockingQueue<ProposerSlashing> slashings = new LinkedBlockingQueue<>();
+  private HashMap<UnsignedLong, Eth1DataWithIndexAndDeposits> eth1DataCache = new HashMap<>();
 
   public ValidatorCoordinator(
       EventBus eventBus, ChainStorageClient chainStorageClient, ArtemisConfiguration config) {
@@ -97,7 +110,6 @@ public class ValidatorCoordinator {
     this.validators = initializeValidators(config, chainStorageClient);
     this.eventBus.register(this);
   }
-
   /*
   @Subscribe
   public void checkIfIncomingBlockObeysSlashingConditions(BeaconBlock block) {
@@ -379,5 +391,106 @@ public class ValidatorCoordinator {
     response =
         MessageSignerGrpc.newBlockingStub(validators.get(signer).getChannel()).signMessage(request);
     return BLSSignature.fromBytes(Bytes.wrap(response.getMessage().toByteArray()));
+  }
+
+  public Eth1Data get_eth1_vote(BeaconState state, UnsignedLong previous_eth1_distance) {
+    processEth1DataCache();
+    List<Eth1Data> new_eth1_data =
+        LongStream.range(
+                ETH1_FOLLOW_DISTANCE.longValue(),
+                ETH1_FOLLOW_DISTANCE.times(UnsignedLong.valueOf(2)).longValue())
+            .mapToObj(value -> get_eth1_data(UnsignedLong.valueOf(value)))
+            .collect(Collectors.toList());
+    List<Eth1Data> all_eth1_data =
+        LongStream.range(ETH1_FOLLOW_DISTANCE.longValue(), previous_eth1_distance.longValue())
+            .mapToObj(value -> get_eth1_data(UnsignedLong.valueOf(value)))
+            .collect(Collectors.toList());
+
+    List<Eth1Data> valid_votes = new ArrayList<>();
+
+    ListIterator<Eth1Data> eth1_data_votes = state.getEth1_data_votes().listIterator();
+    while (eth1_data_votes.hasNext()) {
+      UnsignedLong slot = UnsignedLong.valueOf(eth1_data_votes.nextIndex());
+      Eth1Data vote = eth1_data_votes.next();
+
+      boolean period_tail =
+          slot.mod(UnsignedLong.valueOf(SLOTS_PER_ETH1_VOTING_PERIOD))
+                  .compareTo(
+                      UnsignedLong.valueOf(
+                          (int) Math.floor(Math.sqrt(SLOTS_PER_ETH1_VOTING_PERIOD))))
+              >= 0;
+      if (new_eth1_data.contains(vote) || (period_tail && all_eth1_data.contains(vote))) {
+        valid_votes.add(vote);
+      }
+    }
+
+    return valid_votes.stream()
+        .map(
+            vote ->
+                new MutablePair<>(
+                    Collections.frequency(valid_votes, vote) - all_eth1_data.indexOf(vote), vote))
+        .max(Comparator.comparing(MutablePair::getLeft))
+        .map(Pair::getRight)
+        .orElseGet(() -> get_eth1_data(ETH1_FOLLOW_DISTANCE));
+  }
+
+  @Subscribe
+  public void updateEth1DataCache(tech.pegasys.artemis.pow.event.Deposit deposit) {
+    UnsignedLong blockNumber = UnsignedLong.valueOf(deposit.getResponse().log.getBlockNumber());
+    Bytes32 blockHash = Bytes32.fromHexString(deposit.getResponse().log.getBlockHash());
+
+    // removes a deposit in the event of a reorg
+    if (deposit.getResponse().log.isRemoved()) {
+      List<DepositWithIndex> deposits =
+          eth1DataCache.get(blockNumber).getDeposits().stream()
+              .filter(
+                  item ->
+                      !item.getLog()
+                          .getTransactionHash()
+                          .equals(deposit.getResponse().log.getTransactionHash()))
+              .collect(Collectors.toList());
+      eth1DataCache.get(blockNumber).setDeposits(deposits);
+    }
+
+    DepositWithIndex depositWithIndex = DepositUtil.convertDepositEventToOperationDeposit(deposit);
+    Eth1DataWithIndexAndDeposits eth1Data = eth1DataCache.get(blockNumber);
+    if (eth1Data == null) {
+      eth1Data = new Eth1DataWithIndexAndDeposits(blockNumber, new ArrayList<>(), blockHash);
+      eth1DataCache.put(blockNumber, eth1Data);
+    }
+    if (!eth1Data.getBlock_hash().equals(blockHash)) {
+      eth1Data.setBlock_hash(blockHash);
+      eth1Data.setDeposits(new ArrayList<DepositWithIndex>());
+    }
+    eth1Data.getDeposits().add(depositWithIndex);
+    eth1DataCache.put(blockNumber, eth1Data);
+  }
+
+  public void processEth1DataCache() {
+    List<Eth1DataWithIndexAndDeposits> eth1DataWithIndexAndDeposits =
+        eth1DataCache.values().stream().sorted().collect(Collectors.toList());
+
+    List<DepositWithIndex> accumulatedDeposits = new ArrayList<>();
+    for (final Eth1DataWithIndexAndDeposits item : eth1DataWithIndexAndDeposits) {
+      accumulatedDeposits.addAll(item.getDeposits());
+      Collections.sort(accumulatedDeposits);
+      item.setDeposit_root(
+          HashTreeUtil.hash_tree_root(
+              HashTreeUtil.SSZTypes.LIST_OF_COMPOSITE,
+              accumulatedDeposits.size(),
+              accumulatedDeposits));
+      item.setDeposit_count(UnsignedLong.valueOf(accumulatedDeposits.size()));
+    }
+    eth1DataCache.clear();
+    eth1DataWithIndexAndDeposits.forEach(item -> eth1DataCache.put(item.getBlockNumber(), item));
+  }
+
+  public Eth1Data get_eth1_data(UnsignedLong distance) {
+    UnsignedLong cacheSize =
+        UnsignedLong.valueOf(
+            eth1DataCache.entrySet().stream()
+                .filter(item -> item.getValue().getDeposit_root() != null)
+                .count());
+    return eth1DataCache.get(cacheSize.minus(distance).minus(UnsignedLong.ONE));
   }
 }
