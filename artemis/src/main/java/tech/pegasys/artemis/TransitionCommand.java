@@ -95,7 +95,7 @@ public class TransitionCommand implements Runnable {
   public void slots(
       @Mixin InAndOutParams params,
       @Option(
-              names = "delta",
+              names = {"--delta", "-d"},
               description = "to interpret the slot number as a delta from the pre-state")
           boolean delta,
       @Parameters(paramLabel = "<number>", description = "Number of slots to process")
