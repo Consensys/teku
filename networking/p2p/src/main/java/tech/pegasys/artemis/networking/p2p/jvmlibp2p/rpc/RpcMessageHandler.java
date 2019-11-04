@@ -145,7 +145,10 @@ public class RpcMessageHandler<
           .exceptionally(
               error -> {
                 if (error instanceof RpcException) {
-                  return rpcCodec.encodeErrorResponse((RpcException) error);
+                  final RpcException rpcException = (RpcException) error;
+                  LOG.debug(
+                      "Returning to RPC request with error: {}", rpcException.getErrorMessage());
+                  return rpcCodec.encodeErrorResponse(rpcException);
                 } else {
                   LOG.error("Unhandled error while processing req/resp request", error);
                   return rpcCodec.encodeErrorResponse(RpcException.SERVER_ERROR);
