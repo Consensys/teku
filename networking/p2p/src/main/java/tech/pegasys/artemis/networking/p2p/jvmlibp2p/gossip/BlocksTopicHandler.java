@@ -82,6 +82,7 @@ public class BlocksTopicHandler extends GossipTopicHandler<BeaconBlock> {
     }
 
     if (!isBlockSignatureValid(block, preState)) {
+      LOG.trace("Dropping gossiped block with invalid signature: {}", block);
       return Optional.empty();
     }
 
