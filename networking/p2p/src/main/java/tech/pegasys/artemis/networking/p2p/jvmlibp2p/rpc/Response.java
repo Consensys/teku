@@ -31,6 +31,10 @@ public class Response<T> {
     return SUCCESS_RESPONSE_CODE.equals(responseCode);
   }
 
+  public Bytes getResponseCode() {
+    return responseCode;
+  }
+
   public T getData() {
     return data;
   }

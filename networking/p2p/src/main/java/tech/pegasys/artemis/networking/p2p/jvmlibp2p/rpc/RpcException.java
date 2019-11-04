@@ -13,24 +13,24 @@
 
 package tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc;
 
-import com.google.common.base.MoreObjects;
 import org.apache.tuweni.bytes.Bytes;
 
-public class ErrorResponse {
+public class RpcException extends Exception {
 
   private static final Bytes INVALID_REQUEST_CODE = Bytes.of(1);
   private static final Bytes SERVER_ERROR_CODE = Bytes.of(1);
-  public static final ErrorResponse MALFORMED_REQUEST_ERROR =
-      new ErrorResponse(INVALID_REQUEST_CODE, "Request was malformed");
-  public static final ErrorResponse INCORRECT_LENGTH_ERRROR =
-      new ErrorResponse(
+  public static final RpcException MALFORMED_REQUEST_ERROR =
+      new RpcException(INVALID_REQUEST_CODE, "Request was malformed");
+  public static final RpcException INCORRECT_LENGTH_ERRROR =
+      new RpcException(
           INVALID_REQUEST_CODE, "Specified message length did not match actual length");
-  public static final ErrorResponse SERVER_ERROR =
-      new ErrorResponse(SERVER_ERROR_CODE, "Unexpected error");
+  public static final RpcException SERVER_ERROR =
+      new RpcException(SERVER_ERROR_CODE, "Unexpected error");
   private final Bytes responseCode;
   private final String errorMessage;
 
-  private ErrorResponse(final Bytes responseCode, final String errorMessage) {
+  private RpcException(final Bytes responseCode, final String errorMessage) {
+    super(errorMessage);
     this.responseCode = responseCode;
     this.errorMessage = errorMessage;
   }
@@ -41,13 +41,5 @@ public class ErrorResponse {
 
   public String getErrorMessage() {
     return errorMessage;
-  }
-
-  @Override
-  public String toString() {
-    return MoreObjects.toStringHelper(this)
-        .add("responseCode", responseCode)
-        .add("errorMessage", errorMessage)
-        .toString();
   }
 }

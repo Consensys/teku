@@ -14,14 +14,13 @@
 package tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.encodings;
 
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.ErrorResponse;
+import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.RpcException;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
-import tech.pegasys.artemis.util.types.Result;
 
 public interface RpcEncoding {
   <T extends SimpleOffsetSerializable> Bytes encodeMessage(T data);
 
-  <T> Result<T, ErrorResponse> decodeMessage(Bytes message, Class<T> clazz);
+  <T> T decodeMessage(Bytes message, Class<T> clazz) throws RpcException;
 
   String getName();
 }

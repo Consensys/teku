@@ -13,6 +13,8 @@
 
 package tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc;
 
+import static tech.pegasys.artemis.util.future.FutureUtils.wrapInFuture;
+
 import io.libp2p.core.Connection;
 import io.libp2p.core.P2PAbstractChannel;
 import io.libp2p.core.Stream;
@@ -25,6 +27,8 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import java.util.concurrent.CompletableFuture;
 import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.Peer;
@@ -32,11 +36,11 @@ import tech.pegasys.artemis.networking.p2p.jvmlibp2p.PeerLookup;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.RpcMessageHandler.Controller;
 import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
-import tech.pegasys.artemis.util.types.Result;
 
 public class RpcMessageHandler<
         TRequest extends SimpleOffsetSerializable, TResponse extends SimpleOffsetSerializable>
     implements ProtocolBinding<Controller<TRequest, TResponse>> {
+  private static final Logger LOG = LogManager.getLogger();
   private static final ALogger STDOUT = new ALogger("stdout");
 
   private final RpcMethod<TRequest, TResponse> method;
@@ -65,11 +69,12 @@ public class RpcMessageHandler<
         .thenCompose(ctr -> ctr.invoke(request));
   }
 
-  private CompletableFuture<Result<TResponse, ErrorResponse>> invokeLocal(
-      Connection connection, TRequest request) {
-    final Peer peer = peerLookup.getPeer(connection);
-    return CompletableFuture.completedFuture(
-        Result.success(localMessageHandler.onIncomingMessage(peer, request)));
+  private CompletableFuture<TResponse> invokeLocal(Connection connection, TRequest request) {
+    return wrapInFuture(
+        () -> {
+          final Peer peer = peerLookup.getPeer(connection);
+          return localMessageHandler.onIncomingMessage(peer, request);
+        });
   }
 
   public RpcMessageHandler<TRequest, TResponse> setCloseNotification() {
@@ -134,20 +139,24 @@ public class RpcMessageHandler<
     protected void channelRead0(ChannelHandlerContext ctx, ByteBuf byteBuf) {
       STDOUT.log(Level.DEBUG, "Responder received " + byteBuf.array().length + " bytes.");
       Bytes bytes = Bytes.wrapByteBuf(byteBuf);
-      rpcCodec
-          .decodeRequest(bytes, method.getRequestType())
-          .either(
-              request ->
-                  invokeLocal(connection, request)
-                      .whenComplete(
-                          (response, err) -> {
-                            ByteBuf respBuf = ctx.alloc().buffer();
-                            final Bytes encoded = rpcCodec.encodeSuccessfulResponse(response);
-                            respBuf.writeBytes(encoded.toArrayUnsafe());
-                            ctx.writeAndFlush(respBuf)
-                                .addListener(future -> ctx.channel().disconnect());
-                          }),
-              error -> {});
+      wrapInFuture(() -> rpcCodec.decodeRequest(bytes, method.getRequestType()))
+          .thenCompose(request -> invokeLocal(connection, request))
+          .thenApply(rpcCodec::encodeSuccessfulResponse)
+          .exceptionally(
+              error -> {
+                if (error instanceof RpcException) {
+                  return rpcCodec.encodeErrorResponse((RpcException) error);
+                } else {
+                  LOG.error("Unhandled error while processing req/resp request", error);
+                  return rpcCodec.encodeErrorResponse(RpcException.SERVER_ERROR);
+                }
+              })
+          .thenAccept(
+              encoded -> {
+                ByteBuf respBuf = ctx.alloc().buffer();
+                respBuf.writeBytes(encoded.toArrayUnsafe());
+                ctx.writeAndFlush(respBuf).addListener(future -> ctx.channel().disconnect());
+              });
     }
   }
 
@@ -168,24 +177,15 @@ public class RpcMessageHandler<
         STDOUT.log(Level.DEBUG, "Requester received " + byteBuf.array().length + " bytes.");
         Bytes bytes = Bytes.wrapByteBuf(byteBuf);
 
-        rpcCodec
-            .decodeResponse(bytes, method.getResponseType())
-            .either(
-                response -> {
-                  if (response.isSuccess()) {
-                    respFuture.complete(response.getData());
-                  } else {
-                    // TODO: Will have to handle this better when we have requests that may be
-                    // rejected.
-                    respFuture.completeExceptionally(
-                        new IllegalStateException("Received failure response"));
-                  }
-                },
-                parseError ->
-                    respFuture.completeExceptionally(
-                        new IllegalStateException(
-                            "Failed to parse response: " + parseError.getErrorMessage())));
-
+        final Response<TResponse> response =
+            rpcCodec.decodeResponse(bytes, method.getResponseType());
+        if (response.isSuccess()) {
+          respFuture.complete(response.getData());
+        } else {
+          // TODO: Will have to handle this better when we have requests that may be
+          // rejected.
+          respFuture.completeExceptionally(new IllegalStateException("Received failure response"));
+        }
       } catch (final Throwable t) {
         respFuture.completeExceptionally(t);
       }

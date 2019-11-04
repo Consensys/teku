@@ -20,12 +20,10 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.StatusMessage;
-import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.ErrorResponse;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.Response;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.RpcCodec;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.encodings.SszEncoding;
 import tech.pegasys.artemis.util.SSZTypes.Bytes4;
-import tech.pegasys.artemis.util.types.Result;
 
 final class RpcCodecTest {
 
@@ -47,7 +45,7 @@ final class RpcCodecTest {
   private final RpcCodec codec = new RpcCodec(new SszEncoding());
 
   @Test
-  void testStatusRoundtripSerialization() {
+  void testStatusRoundtripSerialization() throws Exception {
     final StatusMessage expected =
         new StatusMessage(
             Bytes4.rightPad(Bytes.of(4)),
@@ -57,18 +55,17 @@ final class RpcCodecTest {
             UnsignedLong.ZERO);
 
     final Bytes encoded = codec.encodeRequest(expected);
-    final Result<StatusMessage, ErrorResponse> actual =
-        codec.decodeRequest(encoded, StatusMessage.class);
+    final StatusMessage actual = codec.decodeRequest(encoded, StatusMessage.class);
 
-    assertThat(actual).isEqualTo(Result.success(expected));
+    assertThat(actual).isEqualTo(expected);
   }
 
   @Test
-  public void shouldDecodeStatusMessageRequest() {
-    final Result<StatusMessage, ErrorResponse> actualMessage =
+  public void shouldDecodeStatusMessageRequest() throws Exception {
+    final StatusMessage actualMessage =
         codec.decodeRequest(RECORDED_STATUS_REQUEST_BYTES, StatusMessage.class);
     assertThat(actualMessage)
-        .isEqualToComparingFieldByFieldRecursively(Result.success(RECORDED_STATUS_MESSAGE_DATA));
+        .isEqualToComparingFieldByFieldRecursively(RECORDED_STATUS_MESSAGE_DATA);
   }
 
   @Test
@@ -78,11 +75,10 @@ final class RpcCodecTest {
   }
 
   @Test
-  public void shouldDecodeStatusResponse() {
-    final Result<Response<StatusMessage>, ErrorResponse> actualMessage =
+  public void shouldDecodeStatusResponse() throws Exception {
+    final Response<StatusMessage> actualMessage =
         codec.decodeResponse(RECORDED_STATUS_RESPONSE_BYTES, StatusMessage.class);
-    assertThat(actualMessage)
-        .isEqualTo(Result.success(new Response<>(Bytes.of(0), RECORDED_STATUS_MESSAGE_DATA)));
+    assertThat(actualMessage).isEqualTo(new Response<>(Bytes.of(0), RECORDED_STATUS_MESSAGE_DATA));
   }
 
   @Test

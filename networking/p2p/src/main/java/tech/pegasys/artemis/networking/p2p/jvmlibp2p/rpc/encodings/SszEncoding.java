@@ -23,9 +23,8 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.ssz.InvalidSSZTypeException;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
-import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.ErrorResponse;
+import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.RpcException;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
-import tech.pegasys.artemis.util.types.Result;
 
 public class SszEncoding implements RpcEncoding {
   private static final Logger LOG = LogManager.getLogger();
@@ -38,25 +37,25 @@ public class SszEncoding implements RpcEncoding {
   }
 
   @Override
-  public <T> Result<T, ErrorResponse> decodeMessage(final Bytes message, final Class<T> clazz) {
+  public <T> T decodeMessage(final Bytes message, final Class<T> clazz) throws RpcException {
     try {
       final CodedInputStream in = CodedInputStream.newInstance(message.toArrayUnsafe());
       final int expectedLength;
       try {
         expectedLength = in.readRawVarint32();
       } catch (final InvalidProtocolBufferException e) {
-        return Result.error(ErrorResponse.MALFORMED_REQUEST_ERROR);
+        throw RpcException.MALFORMED_REQUEST_ERROR;
       }
 
       final Bytes payload;
       try {
         payload = Bytes.wrap(in.readRawBytes(expectedLength));
       } catch (final InvalidProtocolBufferException e) {
-        return Result.error(ErrorResponse.INCORRECT_LENGTH_ERRROR);
+        throw RpcException.INCORRECT_LENGTH_ERRROR;
       }
 
       if (!in.isAtEnd()) {
-        return Result.error(ErrorResponse.INCORRECT_LENGTH_ERRROR);
+        throw RpcException.INCORRECT_LENGTH_ERRROR;
       }
 
       final T parsedMessage;
@@ -65,13 +64,13 @@ public class SszEncoding implements RpcEncoding {
       } catch (final InvalidSSZTypeException e) {
         LOG.debug(
             "Failed to parse network message. Error: {} Message: {}", e.getMessage(), message);
-        return Result.error(ErrorResponse.MALFORMED_REQUEST_ERROR);
+        throw RpcException.MALFORMED_REQUEST_ERROR;
       }
 
-      return Result.success(parsedMessage);
+      return parsedMessage;
     } catch (IOException e) {
       LOG.error("Unexpected error while processing message: " + message, e);
-      return Result.error(ErrorResponse.SERVER_ERROR);
+      throw RpcException.SERVER_ERROR;
     }
   }
 
