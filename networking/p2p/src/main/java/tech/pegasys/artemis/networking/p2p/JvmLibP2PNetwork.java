@@ -69,7 +69,7 @@ public class JvmLibP2PNetwork implements P2PNetwork {
         Executors.newSingleThreadScheduledExecutor(
             new ThreadFactoryBuilder().setDaemon(true).setNameFormat("libp2p-%d").build());
     Gossip gossip = new Gossip();
-    GossipMessageHandler.init(gossip, privKey, eventBus);
+    GossipMessageHandler.create(gossip, privKey, eventBus, chainStorageClient).start();
     peerManager = new PeerManager(scheduler, chainStorageClient, metricsSystem);
     advertisedAddr = new Multiaddr("/ip4/127.0.0.1/tcp/" + config.getAdvertisedPort());
 

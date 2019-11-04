@@ -91,7 +91,7 @@ public class PowchainService implements ServiceInterface {
           new MockStartValidatorKeyPairFactory();
       MockStartDepositGenerator mockStartDepositGenerator = new MockStartDepositGenerator();
       List<BLSKeyPair> blsKeyPairList =
-          mockStartValidatorKeyPairFactory.generateKeyPairs(0, controller.getAccounts().size() - 1);
+          mockStartValidatorKeyPairFactory.generateKeyPairs(0, controller.getAccounts().size());
       List<DepositData> depositDataList = mockStartDepositGenerator.createDeposits(blsKeyPairList);
       int i = 0;
       for (SECP256K1.KeyPair keyPair : controller.getAccounts()) {
