@@ -131,12 +131,8 @@ public class JvmLibP2PNetwork implements P2PNetwork {
         .thenRun(() -> config.getPeers().forEach(this::connect));
   }
 
-  public PeerId getPeerId() {
-    return PeerId.fromPubKey(privKey.publicKey());
-  }
-
   public String getPeerAddress() {
-    return advertisedAddr + "/p2p/" + getPeerId().toBase58();
+    return advertisedAddr + "/p2p/" + getPeerIDString();
   }
 
   public PeerManager getPeerManager() {
@@ -155,13 +151,15 @@ public class JvmLibP2PNetwork implements P2PNetwork {
     scheduler.shutdownNow();
   }
 
-  // Rest API methods
-
-  public String getPeerIDString() {
-    return getPeerId().toBase58();
+  public PeerId getPeerID() {
+    return PeerId.fromPubKey(privKey.publicKey());
   }
 
-  public List<String> getPeersStrings() {
+  public String getPeerIDString() {
+    return getPeerID().toBase58();
+  }
+
+  public List<String> getPeerIDs() {
     return getPeerManager().getPeerIDs();
   }
 }

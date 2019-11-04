@@ -25,7 +25,7 @@ import tech.pegasys.artemis.util.config.Constants;
 class JsonProviderTest {
 
   @Test
-  void printBeaconStateTest() {
+  void beaconStateJsonTest() {
     Constants.setConstants("minimal");
     BeaconState state = DataStructureUtil.randomBeaconState(UnsignedLong.valueOf(16), 100);
     String jsonState = objectToJSON(state);

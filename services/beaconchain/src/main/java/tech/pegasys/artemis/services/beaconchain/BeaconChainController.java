@@ -32,6 +32,7 @@ import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.artemis.beaconrestapi.BeaconRestApi;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.metrics.ArtemisMetricCategory;
@@ -40,7 +41,6 @@ import tech.pegasys.artemis.networking.p2p.JvmLibP2PNetwork;
 import tech.pegasys.artemis.networking.p2p.MockP2PNetwork;
 import tech.pegasys.artemis.networking.p2p.api.P2PNetwork;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.Config;
-import tech.pegasys.artemis.restapi.RestApi;
 import tech.pegasys.artemis.statetransition.StateProcessor;
 import tech.pegasys.artemis.statetransition.events.ValidatorAssignmentEvent;
 import tech.pegasys.artemis.statetransition.util.StartupUtil;
@@ -184,7 +184,9 @@ public class BeaconChainController {
 
   public void initRestAPI() {
     STDOUT.log(Level.DEBUG, "BeaconChainController.initRestAPI()");
-    new RestApi(chainStorageClient, p2pNetwork, 5051);
+    BeaconRestApi restApi =
+        new BeaconRestApi(chainStorageClient, p2pNetwork, config.getBeaconRestAPIPortNumber());
+    restApi.runHandlers();
   }
 
   public void start() {

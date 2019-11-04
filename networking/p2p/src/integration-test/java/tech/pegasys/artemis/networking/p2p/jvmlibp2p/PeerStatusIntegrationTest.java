@@ -54,7 +54,7 @@ public class PeerStatusIntegrationTest {
         });
 
     final Peer network2ViewOfPeer1 =
-        network2.getPeerManager().getAvailablePeer(network1.getPeerId()).orElseThrow();
+        network2.getPeerManager().getAvailablePeer(network1.getPeerID()).orElseThrow();
     assertStatus(
         network2ViewOfPeer1.getStatus(),
         Fork.VERSION_ZERO,
@@ -64,7 +64,7 @@ public class PeerStatusIntegrationTest {
         UnsignedLong.ZERO);
 
     final Peer network1ViewOfPeer2 =
-        network1.getPeerManager().getAvailablePeer(network2.getPeerId()).orElseThrow();
+        network1.getPeerManager().getAvailablePeer(network2.getPeerID()).orElseThrow();
     assertStatusMatchesStorage(storageClient2, network1ViewOfPeer2.getStatus());
   }
 
@@ -80,7 +80,7 @@ public class PeerStatusIntegrationTest {
         networkFactory.startNetwork(eventBus2, storageClient2, network1);
 
     final Peer network2ViewOfPeer1 =
-        network2.getPeerManager().getAvailablePeer(network1.getPeerId()).orElseThrow();
+        network2.getPeerManager().getAvailablePeer(network1.getPeerID()).orElseThrow();
 
     assertStatus(
         network2ViewOfPeer1.getStatus(),
