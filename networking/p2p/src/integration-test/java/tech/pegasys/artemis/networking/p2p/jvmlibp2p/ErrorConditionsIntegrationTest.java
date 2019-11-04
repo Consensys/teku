@@ -54,7 +54,7 @@ public class ErrorConditionsIntegrationTest {
     Assertions.assertThatThrownBy(() -> Waiter.waitFor(response))
         .isInstanceOf(ExecutionException.class)
         .extracting(Throwable::getCause)
-        .isEqualTo(RpcException.MALFORMED_REQUEST_ERROR);
+        .isEqualToComparingFieldByField(RpcException.MALFORMED_REQUEST_ERROR);
   }
 
   // Deliberately doesn't serialize to a valid STATUS message.

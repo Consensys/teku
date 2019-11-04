@@ -20,6 +20,7 @@ import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.encodings.RpcEncoding;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
 public final class RpcCodec {
+  public static final byte SUCCESS_RESPONSE_CODE = 0;
   private final RpcEncoding encoding;
 
   public RpcCodec(final RpcEncoding encoding) {
@@ -37,12 +38,12 @@ public final class RpcCodec {
   }
 
   public <T extends SimpleOffsetSerializable> Bytes encodeSuccessfulResponse(T response) {
-    return Bytes.concatenate(Response.SUCCESS_RESPONSE_CODE, encoding.encodeMessage(response));
+    return Bytes.concatenate(Bytes.of(SUCCESS_RESPONSE_CODE), encoding.encodeMessage(response));
   }
 
   public Bytes encodeErrorResponse(RpcException error) {
     return Bytes.concatenate(
-        error.getResponseCode(), encoding.encodeError(error.getErrorMessage()));
+        Bytes.of(error.getResponseCode()), encoding.encodeError(error.getErrorMessage()));
   }
 
   /**
@@ -55,9 +56,13 @@ public final class RpcCodec {
     return encoding.decodeMessage(message, clazz);
   }
 
-  public <T> Response<T> decodeResponse(Bytes message, Class<T> clazz) throws RpcException {
+  public <T> T decodeResponse(Bytes message, Class<T> clazz) throws RpcException {
     checkArgument(!message.isEmpty(), "Cannot decode an empty response");
-    final Bytes responseCode = message.slice(0, 1);
-    return new Response<>(responseCode, encoding.decodeMessage(message.slice(1), clazz));
+    final byte responseCode = message.get(0);
+    if (responseCode == SUCCESS_RESPONSE_CODE) {
+      return encoding.decodeMessage(message.slice(1), clazz);
+    } else {
+      throw new RpcException(responseCode, encoding.decodeError(message.slice(1)));
+    }
   }
 }

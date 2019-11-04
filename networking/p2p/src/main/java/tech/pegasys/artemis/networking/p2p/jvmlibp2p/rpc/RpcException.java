@@ -13,12 +13,10 @@
 
 package tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc;
 
-import org.apache.tuweni.bytes.Bytes;
-
 public class RpcException extends Exception {
 
-  private static final Bytes INVALID_REQUEST_CODE = Bytes.of(1);
-  private static final Bytes SERVER_ERROR_CODE = Bytes.of(1);
+  private static final byte INVALID_REQUEST_CODE = 1;
+  private static final byte SERVER_ERROR_CODE = 1;
   public static final RpcException MALFORMED_REQUEST_ERROR =
       new RpcException(INVALID_REQUEST_CODE, "Request was malformed");
   public static final RpcException INCORRECT_LENGTH_ERRROR =
@@ -26,16 +24,17 @@ public class RpcException extends Exception {
           INVALID_REQUEST_CODE, "Specified message length did not match actual length");
   public static final RpcException SERVER_ERROR =
       new RpcException(SERVER_ERROR_CODE, "Unexpected error");
-  private final Bytes responseCode;
+
+  private final byte responseCode;
   private final String errorMessage;
 
-  private RpcException(final Bytes responseCode, final String errorMessage) {
+  RpcException(final byte responseCode, final String errorMessage) {
     super(errorMessage);
     this.responseCode = responseCode;
     this.errorMessage = errorMessage;
   }
 
-  public Bytes getResponseCode() {
+  public byte getResponseCode() {
     return responseCode;
   }
 

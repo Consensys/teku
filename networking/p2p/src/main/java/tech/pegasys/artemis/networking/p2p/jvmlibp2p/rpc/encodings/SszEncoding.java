@@ -18,6 +18,7 @@ import com.google.protobuf.CodedOutputStream;
 import com.google.protobuf.InvalidProtocolBufferException;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.function.Function;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
@@ -41,6 +42,11 @@ public class SszEncoding implements RpcEncoding {
     return encodeMessageWithLength(SSZ.encodeString(errorMessage));
   }
 
+  @Override
+  public String decodeError(final Bytes message) throws RpcException {
+    return decode(message, SSZ::decodeString);
+  }
+
   private Bytes encodeMessageWithLength(final Bytes payload) {
     final Bytes header = writeVarInt(payload.size());
     return Bytes.concatenate(header, payload);
@@ -48,6 +54,10 @@ public class SszEncoding implements RpcEncoding {
 
   @Override
   public <T> T decodeMessage(final Bytes message, final Class<T> clazz) throws RpcException {
+    return decode(message, payload -> SimpleOffsetSerializer.deserialize(payload, clazz));
+  }
+
+  private <T> T decode(final Bytes message, final Function<Bytes, T> parser) throws RpcException {
     try {
       final CodedInputStream in = CodedInputStream.newInstance(message.toArrayUnsafe());
       final int expectedLength;
@@ -70,7 +80,7 @@ public class SszEncoding implements RpcEncoding {
 
       final T parsedMessage;
       try {
-        parsedMessage = SimpleOffsetSerializer.deserialize(payload, clazz);
+        parsedMessage = parser.apply(payload);
       } catch (final InvalidSSZTypeException e) {
         LOG.debug(
             "Failed to parse network message. Error: {} Message: {}", e.getMessage(), message);

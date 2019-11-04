@@ -20,9 +20,11 @@ import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 public interface RpcEncoding {
   <T extends SimpleOffsetSerializable> Bytes encodeMessage(T data);
 
+  <T> T decodeMessage(Bytes message, Class<T> clazz) throws RpcException;
+
   Bytes encodeError(String errorMessage);
 
-  <T> T decodeMessage(Bytes message, Class<T> clazz) throws RpcException;
+  String decodeError(Bytes message) throws RpcException;
 
   String getName();
 }

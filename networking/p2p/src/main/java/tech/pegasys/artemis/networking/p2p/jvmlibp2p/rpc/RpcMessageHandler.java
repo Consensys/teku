@@ -26,6 +26,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -144,8 +145,9 @@ public class RpcMessageHandler<
           .thenApply(rpcCodec::encodeSuccessfulResponse)
           .exceptionally(
               error -> {
-                if (error instanceof RpcException) {
-                  final RpcException rpcException = (RpcException) error;
+                if (error instanceof CompletionException
+                    && error.getCause() instanceof RpcException) {
+                  final RpcException rpcException = (RpcException) error.getCause();
                   LOG.debug(
                       "Returning to RPC request with error: {}", rpcException.getErrorMessage());
                   return rpcCodec.encodeErrorResponse(rpcException);
@@ -180,16 +182,12 @@ public class RpcMessageHandler<
         STDOUT.log(Level.DEBUG, "Requester received " + byteBuf.array().length + " bytes.");
         Bytes bytes = Bytes.wrapByteBuf(byteBuf);
 
-        final Response<TResponse> response =
-            rpcCodec.decodeResponse(bytes, method.getResponseType());
-        if (response.isSuccess()) {
-          respFuture.complete(response.getData());
-        } else {
-          // TODO: Will have to handle this better when we have requests that may be
-          // rejected.
-          respFuture.completeExceptionally(new IllegalStateException("Received failure response"));
-        }
+        respFuture.complete(rpcCodec.decodeResponse(bytes, method.getResponseType()));
+      } catch (final RpcException e) {
+        LOG.debug("Request returned an error {}", e.getErrorMessage());
+        respFuture.completeExceptionally(e);
       } catch (final Throwable t) {
+        LOG.error("Failed to handle response", t);
         respFuture.completeExceptionally(t);
       }
     }
