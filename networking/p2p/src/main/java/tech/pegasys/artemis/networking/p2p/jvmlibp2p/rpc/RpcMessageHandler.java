@@ -13,6 +13,9 @@
 
 package tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc;
 
+import static tech.pegasys.artemis.util.future.FutureUtils.wrapInFuture;
+
+import com.google.common.base.Throwables;
 import io.libp2p.core.Connection;
 import io.libp2p.core.P2PAbstractChannel;
 import io.libp2p.core.Stream;
@@ -25,6 +28,8 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import java.util.concurrent.CompletableFuture;
 import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.Peer;
@@ -36,6 +41,7 @@ import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 public class RpcMessageHandler<
         TRequest extends SimpleOffsetSerializable, TResponse extends SimpleOffsetSerializable>
     implements ProtocolBinding<Controller<TRequest, TResponse>> {
+  private static final Logger LOG = LogManager.getLogger();
   private static final ALogger STDOUT = new ALogger("stdout");
 
   private final RpcMethod<TRequest, TResponse> method;
@@ -65,8 +71,11 @@ public class RpcMessageHandler<
   }
 
   private CompletableFuture<TResponse> invokeLocal(Connection connection, TRequest request) {
-    final Peer peer = peerLookup.getPeer(connection);
-    return CompletableFuture.completedFuture(localMessageHandler.onIncomingMessage(peer, request));
+    return wrapInFuture(
+        () -> {
+          final Peer peer = peerLookup.getPeer(connection);
+          return localMessageHandler.onIncomingMessage(peer, request);
+        });
   }
 
   public RpcMessageHandler<TRequest, TResponse> setCloseNotification() {
@@ -108,13 +117,13 @@ public class RpcMessageHandler<
     CompletableFuture<TResponse> invoke(TRequest request);
   }
 
-  abstract class AbstractHandler extends SimpleChannelInboundHandler<ByteBuf>
+  private abstract class AbstractHandler extends SimpleChannelInboundHandler<ByteBuf>
       implements Controller<TRequest, TResponse> {
 
-    final CompletableFuture<AbstractHandler> activeFuture = new CompletableFuture<>();
+    protected final CompletableFuture<AbstractHandler> activeFuture = new CompletableFuture<>();
   }
 
-  class ResponderHandler extends AbstractHandler {
+  private class ResponderHandler extends AbstractHandler {
     private final Connection connection;
 
     public ResponderHandler(Connection connection) {
@@ -131,20 +140,32 @@ public class RpcMessageHandler<
     protected void channelRead0(ChannelHandlerContext ctx, ByteBuf byteBuf) {
       STDOUT.log(Level.DEBUG, "Responder received " + byteBuf.array().length + " bytes.");
       Bytes bytes = Bytes.wrapByteBuf(byteBuf);
-      TRequest request = rpcCodec.decodeRequest(bytes, method.getRequestType());
-
-      invokeLocal(connection, request)
-          .whenComplete(
-              (response, err) -> {
+      wrapInFuture(() -> rpcCodec.decodeRequest(bytes, method.getRequestType()))
+          .thenCompose(request -> invokeLocal(connection, request))
+          .thenApply(rpcCodec::encodeSuccessfulResponse)
+          .exceptionally(
+              error -> {
+                final Throwable rootCause = Throwables.getRootCause(error);
+                if (rootCause instanceof RpcException) {
+                  final RpcException rpcException = (RpcException) rootCause;
+                  LOG.debug(
+                      "Returning to RPC request with error: {}", rpcException.getErrorMessage());
+                  return rpcCodec.encodeErrorResponse(rpcException);
+                } else {
+                  LOG.error("Unhandled error while processing req/resp request", error);
+                  return rpcCodec.encodeErrorResponse(RpcException.SERVER_ERROR);
+                }
+              })
+          .thenAccept(
+              encoded -> {
                 ByteBuf respBuf = ctx.alloc().buffer();
-                final Bytes encoded = rpcCodec.encodeSuccessfulResponse(response);
                 respBuf.writeBytes(encoded.toArrayUnsafe());
                 ctx.writeAndFlush(respBuf).addListener(future -> ctx.channel().disconnect());
               });
     }
   }
 
-  class RequesterHandler extends AbstractHandler {
+  private class RequesterHandler extends AbstractHandler {
     private ChannelHandlerContext ctx;
     private CompletableFuture<TResponse> respFuture;
 
@@ -160,15 +181,13 @@ public class RpcMessageHandler<
       try {
         STDOUT.log(Level.DEBUG, "Requester received " + byteBuf.array().length + " bytes.");
         Bytes bytes = Bytes.wrapByteBuf(byteBuf);
-        final Response<TResponse> response =
-            rpcCodec.decodeResponse(bytes, method.getResponseType());
-        if (response.isSuccess()) {
-          respFuture.complete(response.getData());
-        } else {
-          // TODO: Will have to handle this better when we have requests that may be rejected.
-          respFuture.completeExceptionally(new IllegalStateException("Received failure response"));
-        }
+
+        respFuture.complete(rpcCodec.decodeResponse(bytes, method.getResponseType()));
+      } catch (final RpcException e) {
+        LOG.debug("Request returned an error {}", e.getErrorMessage());
+        respFuture.completeExceptionally(e);
       } catch (final Throwable t) {
+        LOG.error("Failed to handle response", t);
         respFuture.completeExceptionally(t);
       }
     }

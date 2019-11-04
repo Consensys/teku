@@ -11,20 +11,17 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.encodings;
+package tech.pegasys.artemis.util.future;
 
-import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.RpcException;
-import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CompletableFuture;
 
-public interface RpcEncoding {
-  <T extends SimpleOffsetSerializable> Bytes encodeMessage(T data);
-
-  <T> T decodeMessage(Bytes message, Class<T> clazz) throws RpcException;
-
-  Bytes encodeError(String errorMessage);
-
-  String decodeError(Bytes message) throws RpcException;
-
-  String getName();
+public class FutureUtils {
+  public static <T> CompletableFuture<T> wrapInFuture(final Callable<T> action) {
+    try {
+      return CompletableFuture.completedFuture(action.call());
+    } catch (final Throwable t) {
+      return CompletableFuture.failedFuture(t);
+    }
+  }
 }

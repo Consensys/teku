@@ -14,14 +14,15 @@
 package tech.pegasys.artemis.networking.p2p.jvmlibp2p;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.StatusMessage;
-import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.Response;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.RpcCodec;
+import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.RpcException;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.encodings.SszEncoding;
 import tech.pegasys.artemis.util.SSZTypes.Bytes4;
 
@@ -45,7 +46,7 @@ final class RpcCodecTest {
   private final RpcCodec codec = new RpcCodec(new SszEncoding());
 
   @Test
-  void testStatusRoundtripSerialization() {
+  void testStatusRoundtripSerialization() throws Exception {
     final StatusMessage expected =
         new StatusMessage(
             Bytes4.rightPad(Bytes.of(4)),
@@ -61,7 +62,7 @@ final class RpcCodecTest {
   }
 
   @Test
-  public void shouldDecodeStatusMessageRequest() {
+  public void shouldDecodeStatusMessageRequest() throws Exception {
     final StatusMessage actualMessage =
         codec.decodeRequest(RECORDED_STATUS_REQUEST_BYTES, StatusMessage.class);
     assertThat(actualMessage)
@@ -75,17 +76,22 @@ final class RpcCodecTest {
   }
 
   @Test
-  public void shouldDecodeStatusResponse() {
-    final Response<StatusMessage> actualMessage =
+  public void shouldDecodeStatusResponse() throws Exception {
+    final StatusMessage actualMessage =
         codec.decodeResponse(RECORDED_STATUS_RESPONSE_BYTES, StatusMessage.class);
-    assertThat(actualMessage)
-        .isEqualToComparingFieldByFieldRecursively(
-            new Response<>(Bytes.of(0), RECORDED_STATUS_MESSAGE_DATA));
+    assertThat(actualMessage).isEqualTo(RECORDED_STATUS_MESSAGE_DATA);
   }
 
   @Test
   public void shouldEncodeSuccessfulResponse() {
     final Bytes actual = codec.encodeSuccessfulResponse(RECORDED_STATUS_MESSAGE_DATA);
     assertThat(actual).isEqualTo(RECORDED_STATUS_RESPONSE_BYTES);
+  }
+
+  @Test
+  public void shouldRoundTripError() {
+    final Bytes encoded = codec.encodeErrorResponse(RpcException.INCORRECT_LENGTH_ERRROR);
+    assertThatThrownBy(() -> codec.decodeResponse(encoded, StatusMessage.class))
+        .isEqualToComparingFieldByField(RpcException.INCORRECT_LENGTH_ERRROR);
   }
 }
