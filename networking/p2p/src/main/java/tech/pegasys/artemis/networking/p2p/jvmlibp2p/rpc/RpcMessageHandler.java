@@ -15,6 +15,7 @@ package tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc;
 
 import static tech.pegasys.artemis.util.future.FutureUtils.wrapInFuture;
 
+import com.google.common.base.Throwables;
 import io.libp2p.core.Connection;
 import io.libp2p.core.P2PAbstractChannel;
 import io.libp2p.core.Stream;
@@ -26,7 +27,6 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionException;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -145,9 +145,9 @@ public class RpcMessageHandler<
           .thenApply(rpcCodec::encodeSuccessfulResponse)
           .exceptionally(
               error -> {
-                if (error instanceof CompletionException
-                    && error.getCause() instanceof RpcException) {
-                  final RpcException rpcException = (RpcException) error.getCause();
+                final Throwable rootCause = Throwables.getRootCause(error);
+                if (rootCause instanceof RpcException) {
+                  final RpcException rpcException = (RpcException) rootCause;
                   LOG.debug(
                       "Returning to RPC request with error: {}", rpcException.getErrorMessage());
                   return rpcCodec.encodeErrorResponse(rpcException);
