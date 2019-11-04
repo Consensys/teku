@@ -24,7 +24,7 @@ import tech.pegasys.artemis.util.SSZTypes.Bytes4;
 import tech.pegasys.artemis.util.SSZTypes.SSZContainer;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
-public final class StatusMessage implements SimpleOffsetSerializable, SSZContainer {
+public class StatusMessage implements SimpleOffsetSerializable, SSZContainer {
 
   private final Bytes4 headForkVersion;
   private final Bytes32 finalizedRoot;

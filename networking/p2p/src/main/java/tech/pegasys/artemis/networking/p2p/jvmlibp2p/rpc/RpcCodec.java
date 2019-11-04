@@ -15,7 +15,6 @@ package tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
-import java.nio.charset.StandardCharsets;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.encodings.RpcEncoding;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
@@ -43,13 +42,7 @@ public final class RpcCodec {
 
   public Bytes encodeErrorResponse(RpcException error) {
     return Bytes.concatenate(
-        error.getResponseCode(),
-        Bytes.wrap(error.getErrorMessage().getBytes(StandardCharsets.UTF_8)));
-  }
-
-  public <T extends SimpleOffsetSerializable> Bytes encodeResponse(Response<T> response) {
-    return Bytes.concatenate(
-        response.getResponseCode(), encoding.encodeMessage(response.getData()));
+        error.getResponseCode(), encoding.encodeError(error.getErrorMessage()));
   }
 
   /**

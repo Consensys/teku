@@ -22,6 +22,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.ssz.InvalidSSZTypeException;
+import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.RpcException;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
@@ -32,6 +33,15 @@ public class SszEncoding implements RpcEncoding {
   @Override
   public <T extends SimpleOffsetSerializable> Bytes encodeMessage(final T data) {
     final Bytes payload = SimpleOffsetSerializer.serialize(data);
+    return encodeMessageWithLength(payload);
+  }
+
+  @Override
+  public Bytes encodeError(final String errorMessage) {
+    return encodeMessageWithLength(SSZ.encodeString(errorMessage));
+  }
+
+  private Bytes encodeMessageWithLength(final Bytes payload) {
     final Bytes header = writeVarInt(payload.size());
     return Bytes.concatenate(header, payload);
   }
