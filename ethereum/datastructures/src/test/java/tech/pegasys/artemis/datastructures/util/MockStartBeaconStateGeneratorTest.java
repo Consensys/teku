@@ -65,7 +65,7 @@ class MockStartBeaconStateGeneratorTest {
     final int validatorCount = 10;
 
     final List<BLSKeyPair> validatorKeyPairs =
-        new MockStartValidatorKeyPairFactory().generateKeyPairs(0, validatorCount - 1);
+        new MockStartValidatorKeyPairFactory().generateKeyPairs(0, validatorCount);
 
     final List<DepositData> deposits =
         new MockStartDepositGenerator().createDeposits(validatorKeyPairs);
@@ -99,7 +99,7 @@ class MockStartBeaconStateGeneratorTest {
     final int validatorCount = 8;
 
     final List<BLSKeyPair> validatorKeyPairs =
-        new MockStartValidatorKeyPairFactory().generateKeyPairs(0, validatorCount - 1);
+        new MockStartValidatorKeyPairFactory().generateKeyPairs(0, validatorCount);
 
     validatorKeyPairs.forEach(
         blsKeyPair -> {
@@ -170,7 +170,7 @@ class MockStartBeaconStateGeneratorTest {
     final int validatorCount = 16;
 
     final List<BLSKeyPair> validatorKeyPairs =
-        new MockStartValidatorKeyPairFactory().generateKeyPairs(0, validatorCount - 1);
+        new MockStartValidatorKeyPairFactory().generateKeyPairs(0, validatorCount);
 
     final List<DepositData> deposits =
         new MockStartDepositGenerator().createDeposits(validatorKeyPairs);

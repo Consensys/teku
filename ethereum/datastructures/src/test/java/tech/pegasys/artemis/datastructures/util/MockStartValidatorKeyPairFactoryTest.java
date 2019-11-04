@@ -55,7 +55,7 @@ class MockStartValidatorKeyPairFactoryTest {
 
   @Test
   public void shouldGenerateValidKeys() {
-    final List<BLSKeyPair> keyPairs = factory.generateKeyPairs(0, 9);
+    final List<BLSKeyPair> keyPairs = factory.generateKeyPairs(0, 10);
     final List<BigInteger> actualPrivateKeys =
         keyPairs.stream()
             .map(keyPair -> keyPair.getSecretKey().getSecretKey().toBytes().toBigInteger())
