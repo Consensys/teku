@@ -20,10 +20,12 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.StatusMessage;
+import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.ErrorResponse;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.Response;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.RpcCodec;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.encodings.SszEncoding;
 import tech.pegasys.artemis.util.SSZTypes.Bytes4;
+import tech.pegasys.artemis.util.types.Result;
 
 final class RpcCodecTest {
 
@@ -55,17 +57,18 @@ final class RpcCodecTest {
             UnsignedLong.ZERO);
 
     final Bytes encoded = codec.encodeRequest(expected);
-    final StatusMessage actual = codec.decodeRequest(encoded, StatusMessage.class);
+    final Result<StatusMessage, ErrorResponse> actual =
+        codec.decodeRequest(encoded, StatusMessage.class);
 
-    assertThat(actual).isEqualTo(expected);
+    assertThat(actual).isEqualTo(Result.success(expected));
   }
 
   @Test
   public void shouldDecodeStatusMessageRequest() {
-    final StatusMessage actualMessage =
+    final Result<StatusMessage, ErrorResponse> actualMessage =
         codec.decodeRequest(RECORDED_STATUS_REQUEST_BYTES, StatusMessage.class);
     assertThat(actualMessage)
-        .isEqualToComparingFieldByFieldRecursively(RECORDED_STATUS_MESSAGE_DATA);
+        .isEqualToComparingFieldByFieldRecursively(Result.success(RECORDED_STATUS_MESSAGE_DATA));
   }
 
   @Test
@@ -76,11 +79,10 @@ final class RpcCodecTest {
 
   @Test
   public void shouldDecodeStatusResponse() {
-    final Response<StatusMessage> actualMessage =
+    final Result<Response<StatusMessage>, ErrorResponse> actualMessage =
         codec.decodeResponse(RECORDED_STATUS_RESPONSE_BYTES, StatusMessage.class);
     assertThat(actualMessage)
-        .isEqualToComparingFieldByFieldRecursively(
-            new Response<>(Bytes.of(0), RECORDED_STATUS_MESSAGE_DATA));
+        .isEqualTo(Result.success(new Response<>(Bytes.of(0), RECORDED_STATUS_MESSAGE_DATA)));
   }
 
   @Test

@@ -15,13 +15,20 @@ package tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.encodings;
 
 import com.google.protobuf.CodedInputStream;
 import com.google.protobuf.CodedOutputStream;
+import com.google.protobuf.InvalidProtocolBufferException;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.ssz.InvalidSSZTypeException;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
+import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.ErrorResponse;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
+import tech.pegasys.artemis.util.types.Result;
 
 public class SszEncoding implements RpcEncoding {
+  private static final Logger LOG = LogManager.getLogger();
 
   @Override
   public <T extends SimpleOffsetSerializable> Bytes encodeMessage(final T data) {
@@ -31,14 +38,40 @@ public class SszEncoding implements RpcEncoding {
   }
 
   @Override
-  public <T> T decodeMessage(final Bytes message, final Class<T> clazz) {
+  public <T> Result<T, ErrorResponse> decodeMessage(final Bytes message, final Class<T> clazz) {
     try {
       final CodedInputStream in = CodedInputStream.newInstance(message.toArrayUnsafe());
-      final int expectedLength = in.readRawVarint32();
-      final Bytes payload = Bytes.wrap(in.readRawBytes(expectedLength));
-      return SimpleOffsetSerializer.deserialize(payload, clazz);
+      final int expectedLength;
+      try {
+        expectedLength = in.readRawVarint32();
+      } catch (final InvalidProtocolBufferException e) {
+        return Result.error(ErrorResponse.MALFORMED_REQUEST_ERROR);
+      }
+
+      final Bytes payload;
+      try {
+        payload = Bytes.wrap(in.readRawBytes(expectedLength));
+      } catch (final InvalidProtocolBufferException e) {
+        return Result.error(ErrorResponse.INCORRECT_LENGTH_ERRROR);
+      }
+
+      if (!in.isAtEnd()) {
+        return Result.error(ErrorResponse.INCORRECT_LENGTH_ERRROR);
+      }
+
+      final T parsedMessage;
+      try {
+        parsedMessage = SimpleOffsetSerializer.deserialize(payload, clazz);
+      } catch (final InvalidSSZTypeException e) {
+        LOG.debug(
+            "Failed to parse network message. Error: {} Message: {}", e.getMessage(), message);
+        return Result.error(ErrorResponse.MALFORMED_REQUEST_ERROR);
+      }
+
+      return Result.success(parsedMessage);
     } catch (IOException e) {
-      throw new RuntimeException(e);
+      LOG.error("Unexpected error while processing message: " + message, e);
+      return Result.error(ErrorResponse.SERVER_ERROR);
     }
   }
 

@@ -18,6 +18,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.encodings.RpcEncoding;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
+import tech.pegasys.artemis.util.types.Result;
 
 public final class RpcCodec {
   private final RpcEncoding encoding;
@@ -46,13 +47,15 @@ public final class RpcCodec {
    * @param message the bytes of the message to read
    * @return the payload, decoded
    */
-  public <T> T decodeRequest(Bytes message, Class<T> clazz) {
+  public <T> Result<T, ErrorResponse> decodeRequest(Bytes message, Class<T> clazz) {
     return encoding.decodeMessage(message, clazz);
   }
 
-  public <T> Response<T> decodeResponse(Bytes message, Class<T> clazz) {
+  public <T> Result<Response<T>, ErrorResponse> decodeResponse(Bytes message, Class<T> clazz) {
     checkArgument(!message.isEmpty(), "Cannot decode an empty response");
     final Bytes responseCode = message.slice(0, 1);
-    return new Response<>(responseCode, encoding.decodeMessage(message.slice(1), clazz));
+    return encoding
+        .decodeMessage(message.slice(1), clazz)
+        .map(decodedMessage -> new Response<>(responseCode, decodedMessage));
   }
 }

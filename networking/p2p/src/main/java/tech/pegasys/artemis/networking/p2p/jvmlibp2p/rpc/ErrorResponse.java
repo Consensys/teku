@@ -14,50 +14,40 @@
 package tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc;
 
 import com.google.common.base.MoreObjects;
-import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 
-public class Response<T> {
-  public static final Bytes SUCCESS_RESPONSE_CODE = Bytes.of(0);
+public class ErrorResponse {
+
+  private static final Bytes INVALID_REQUEST_CODE = Bytes.of(1);
+  private static final Bytes SERVER_ERROR_CODE = Bytes.of(1);
+  public static final ErrorResponse MALFORMED_REQUEST_ERROR =
+      new ErrorResponse(INVALID_REQUEST_CODE, "Request was malformed");
+  public static final ErrorResponse INCORRECT_LENGTH_ERRROR =
+      new ErrorResponse(
+          INVALID_REQUEST_CODE, "Specified message length did not match actual length");
+  public static final ErrorResponse SERVER_ERROR =
+      new ErrorResponse(SERVER_ERROR_CODE, "Unexpected error");
   private final Bytes responseCode;
-  private final T data;
+  private final String errorMessage;
 
-  public Response(final Bytes responseCode, final T data) {
+  private ErrorResponse(final Bytes responseCode, final String errorMessage) {
     this.responseCode = responseCode;
-    this.data = data;
+    this.errorMessage = errorMessage;
   }
 
-  public boolean isSuccess() {
-    return SUCCESS_RESPONSE_CODE.equals(responseCode);
+  public Bytes getResponseCode() {
+    return responseCode;
   }
 
-  public T getData() {
-    return data;
-  }
-
-  @Override
-  public boolean equals(final Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (o == null || getClass() != o.getClass()) {
-      return false;
-    }
-    final Response<?> response = (Response<?>) o;
-    return Objects.equals(responseCode, response.responseCode)
-        && Objects.equals(data, response.data);
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(responseCode, data);
+  public String getErrorMessage() {
+    return errorMessage;
   }
 
   @Override
   public String toString() {
     return MoreObjects.toStringHelper(this)
         .add("responseCode", responseCode)
-        .add("data", data)
+        .add("errorMessage", errorMessage)
         .toString();
   }
 }
