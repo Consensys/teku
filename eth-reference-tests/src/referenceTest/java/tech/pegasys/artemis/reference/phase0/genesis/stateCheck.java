@@ -46,7 +46,7 @@ public class stateCheck extends TestSuite {
   @MethodSource({"genesisGenericInitializationSetup"})
   void genesisInitialization(BeaconState state) {
     final List<BLSKeyPair> validatorKeys =
-        new MockStartValidatorKeyPairFactory().generateKeyPairs(0, numValidators - 1);
+        new MockStartValidatorKeyPairFactory().generateKeyPairs(0, numValidators);
     final List<DepositData> initialDepositData =
         new MockStartDepositGenerator().createDeposits(validatorKeys);
     BeaconStateWithCache newBeaconState =
