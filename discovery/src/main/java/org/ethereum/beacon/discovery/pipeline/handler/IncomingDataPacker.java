@@ -15,14 +15,17 @@ package org.ethereum.beacon.discovery.pipeline.handler;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes;
+import org.ethereum.beacon.discovery.BytesValue;
 import org.ethereum.beacon.discovery.packet.UnknownPacket;
 import org.ethereum.beacon.discovery.pipeline.Envelope;
 import org.ethereum.beacon.discovery.pipeline.EnvelopeHandler;
 import org.ethereum.beacon.discovery.pipeline.Field;
 import org.ethereum.beacon.discovery.pipeline.HandlerUtil;
-import tech.pegasys.artemis.util.bytes.BytesValue;
 
-/** Handles raw BytesValue incoming data in {@link Field#INCOMING} */
+// import tech.pegasys.artemis.util.bytes.Bytes;
+
+/** Handles raw Bytes incoming data in {@link Field#INCOMING} */
 public class IncomingDataPacker implements EnvelopeHandler {
   private static final Logger logger = LogManager.getLogger(IncomingDataPacker.class);
 
@@ -42,7 +45,8 @@ public class IncomingDataPacker implements EnvelopeHandler {
                 "Envelope %s in IncomingDataPacker, requirements are satisfied!",
                 envelope.getId()));
 
-    UnknownPacket unknownPacket = new UnknownPacket((BytesValue) envelope.get(Field.INCOMING));
+    UnknownPacket unknownPacket =
+        new UnknownPacket(BytesValue.wrap(((Bytes) envelope.get(Field.INCOMING)).toArray()));
     envelope.put(Field.PACKET_UNKNOWN, unknownPacket);
     logger.trace(
         () -> String.format("Incoming packet %s in envelope #%s", unknownPacket, envelope.getId()));

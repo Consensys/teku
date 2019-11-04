@@ -19,11 +19,13 @@ import java.time.temporal.ChronoUnit;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import org.apache.tuweni.bytes.Bytes;
 import org.ethereum.beacon.discovery.DiscoveryManager;
 import org.ethereum.beacon.discovery.NodeRecordInfo;
 import org.ethereum.beacon.schedulers.Scheduler;
 import org.ethereum.beacon.util.ExpirationScheduler;
-import tech.pegasys.artemis.util.bytes.Bytes32;
+
+// import tech.pegasys.artemis.util.bytes.Bytes;
 
 /**
  * Sends {@link TaskType#PING} to closest NodeRecords added via {@link #add(NodeRecordInfo,
@@ -33,8 +35,8 @@ import tech.pegasys.artemis.util.bytes.Bytes32;
 public class LiveCheckTasks {
   private final Scheduler scheduler;
   private final DiscoveryManager discoveryManager;
-  private final Set<Bytes32> currentTasks = Sets.newConcurrentHashSet();
-  private final ExpirationScheduler<Bytes32> taskTimeouts;
+  private final Set<Bytes> currentTasks = Sets.newConcurrentHashSet();
+  private final ExpirationScheduler<Bytes> taskTimeouts;
 
   public LiveCheckTasks(DiscoveryManager discoveryManager, Scheduler scheduler, Duration timeout) {
     this.discoveryManager = discoveryManager;

@@ -21,7 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import java.util.ArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import org.ethereum.beacon.db.Database;
+import org.apache.tuweni.bytes.Bytes;
 import org.ethereum.beacon.discovery.enr.NodeRecord;
 import org.ethereum.beacon.discovery.packet.AuthHeaderMessagePacket;
 import org.ethereum.beacon.discovery.packet.MessagePacket;
@@ -37,7 +37,8 @@ import org.ethereum.beacon.schedulers.Schedulers;
 import org.javatuples.Pair;
 import org.junit.Test;
 import reactor.core.publisher.Flux;
-import tech.pegasys.artemis.util.bytes.BytesValue;
+
+// import tech.pegasys.artemis.util.bytes.BytesValue;
 
 /** Same as {@link DiscoveryNoNetworkTest} but using real network */
 public class DiscoveryNetworkTest {
@@ -83,7 +84,7 @@ public class DiscoveryNetworkTest {
             nodeTableStorage1.get(),
             nodeBucketStorage1,
             nodeRecord1,
-            nodePair1.getValue0(),
+            Bytes.wrap(nodePair1.getValue0().extractArray()),
             NODE_RECORD_FACTORY_NO_VERIFICATION,
             Schedulers.createDefault().newSingleThreadDaemon("server-1"),
             Schedulers.createDefault().newSingleThreadDaemon("client-1"),
@@ -93,7 +94,7 @@ public class DiscoveryNetworkTest {
             nodeTableStorage2.get(),
             nodeBucketStorage2,
             nodeRecord2,
-            nodePair2.getValue0(),
+            Bytes.wrap(nodePair2.getValue0().extractArray()),
             NODE_RECORD_FACTORY_NO_VERIFICATION,
             Schedulers.createDefault().newSingleThreadDaemon("server-2"),
             Schedulers.createDefault().newSingleThreadDaemon("client-2"),
@@ -106,7 +107,7 @@ public class DiscoveryNetworkTest {
     CountDownLatch nodesSent2to1 = new CountDownLatch(1);
 
     Flux.from(discoveryManager1.getOutgoingMessages())
-        .map(p -> new UnknownPacket(p.getPacket().getBytes()))
+        .map(p -> new UnknownPacket(p.getPacket().getBytesValue()))
         .subscribe(
             networkPacket -> {
               // 1 -> 2 random
@@ -125,7 +126,7 @@ public class DiscoveryNetworkTest {
               }
             });
     Flux.from(discoveryManager2.getOutgoingMessages())
-        .map(p -> new UnknownPacket(p.getPacket().getBytes()))
+        .map(p -> new UnknownPacket(p.getPacket().getBytesValue()))
         .subscribe(
             networkPacket -> {
               // 2 -> 1 whoareyou

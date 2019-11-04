@@ -18,6 +18,8 @@ import static org.ethereum.beacon.discovery.TestUtil.NODE_RECORD_FACTORY_NO_VERI
 import java.util.concurrent.CompletableFuture;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes;
+import org.ethereum.beacon.discovery.BytesValue;
 import org.ethereum.beacon.discovery.DiscoveryManager;
 import org.ethereum.beacon.discovery.DiscoveryManagerImpl;
 import org.ethereum.beacon.discovery.enr.NodeRecord;
@@ -52,7 +54,8 @@ import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.FluxSink;
 import reactor.core.publisher.ReplayProcessor;
-import tech.pegasys.artemis.util.bytes.BytesValue;
+
+// import tech.pegasys.artemis.util.bytes.BytesValue;
 
 /**
  * Implementation of {@link DiscoveryManager} without network as an opposite to Netty network
@@ -82,7 +85,7 @@ public class DiscoveryManagerNoNetwork implements DiscoveryManager {
     NodeIdToSession nodeIdToSession =
         new NodeIdToSession(
             homeNode,
-            homeNodePrivateKey,
+            Bytes.wrap(homeNodePrivateKey.extractArray()),
             nodeBucketStorage,
             authTagRepo,
             nodeTable,

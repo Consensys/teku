@@ -15,21 +15,24 @@ package org.ethereum.beacon.discovery.message;
 
 import java.util.List;
 import java.util.stream.Collectors;
+import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.units.bigints.UInt64;
 import org.ethereum.beacon.discovery.IdentityScheme;
 import org.ethereum.beacon.discovery.enr.NodeRecordFactory;
 import org.web3j.rlp.RlpDecoder;
 import org.web3j.rlp.RlpList;
 import org.web3j.rlp.RlpString;
 import org.web3j.rlp.RlpType;
-import tech.pegasys.artemis.util.bytes.Bytes8;
-import tech.pegasys.artemis.util.bytes.BytesValue;
-import tech.pegasys.artemis.util.uint.UInt64;
+
+// import tech.pegasys.artemis.util.bytes.Bytes8;
+// import tech.pegasys.artemis.util.bytes.Bytes;
+// import tech.pegasys.artemis.util.uint.UInt64;
 
 public class DiscoveryV5Message implements DiscoveryMessage {
-  private final BytesValue bytes;
+  private final Bytes bytes;
   private List<RlpType> payload = null;
 
-  public DiscoveryV5Message(BytesValue bytes) {
+  public DiscoveryV5Message(Bytes bytes) {
     this.bytes = bytes;
   }
 
@@ -38,7 +41,7 @@ public class DiscoveryV5Message implements DiscoveryMessage {
   }
 
   @Override
-  public BytesValue getBytes() {
+  public Bytes getBytes() {
     return bytes;
   }
 
@@ -56,13 +59,12 @@ public class DiscoveryV5Message implements DiscoveryMessage {
       return;
     }
     this.payload =
-        ((RlpList) RlpDecoder.decode(getBytes().slice(1).extractArray()).getValues().get(0))
-            .getValues();
+        ((RlpList) RlpDecoder.decode(getBytes().slice(1).toArray()).getValues().get(0)).getValues();
   }
 
-  public BytesValue getRequestId() {
+  public Bytes getRequestId() {
     decode();
-    return BytesValue.wrap(((RlpString) payload.get(0)).getBytes());
+    return Bytes.wrap(((RlpString) payload.get(0)).getBytes());
   }
 
   public V5Message create(NodeRecordFactory nodeRecordFactory) {
@@ -72,30 +74,28 @@ public class DiscoveryV5Message implements DiscoveryMessage {
       case PING:
         {
           return new PingMessage(
-              BytesValue.wrap(((RlpString) payload.get(0)).getBytes()),
-              UInt64.fromBytesBigEndian(
-                  Bytes8.leftPad(BytesValue.wrap(((RlpString) payload.get(1)).getBytes()))));
+              Bytes.wrap(((RlpString) payload.get(0)).getBytes()),
+              UInt64.fromBytes(Bytes.wrap(((RlpString) payload.get(1)).getBytes())));
         }
       case PONG:
         {
           return new PongMessage(
-              BytesValue.wrap(((RlpString) payload.get(0)).getBytes()),
-              UInt64.fromBytesBigEndian(
-                  Bytes8.leftPad(BytesValue.wrap(((RlpString) payload.get(1)).getBytes()))),
-              BytesValue.wrap(((RlpString) payload.get(2)).getBytes()),
+              Bytes.wrap(((RlpString) payload.get(0)).getBytes()),
+              UInt64.fromBytes(Bytes.wrap(((RlpString) payload.get(1)).getBytes())),
+              Bytes.wrap(((RlpString) payload.get(2)).getBytes()),
               ((RlpString) payload.get(3)).asPositiveBigInteger().intValueExact());
         }
       case FINDNODE:
         {
           return new FindNodeMessage(
-              BytesValue.wrap(((RlpString) payload.get(0)).getBytes()),
+              Bytes.wrap(((RlpString) payload.get(0)).getBytes()),
               ((RlpString) payload.get(1)).asPositiveBigInteger().intValueExact());
         }
       case NODES:
         {
           RlpList nodeRecords = (RlpList) payload.get(2);
           return new NodesMessage(
-              BytesValue.wrap(((RlpString) payload.get(0)).getBytes()),
+              Bytes.wrap(((RlpString) payload.get(0)).getBytes()),
               ((RlpString) payload.get(1)).asPositiveBigInteger().intValueExact(),
               () ->
                   nodeRecords.getValues().stream()

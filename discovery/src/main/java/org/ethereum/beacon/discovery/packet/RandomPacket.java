@@ -14,13 +14,16 @@
 package org.ethereum.beacon.discovery.packet;
 
 import java.util.Random;
+import org.apache.tuweni.bytes.Bytes;
+import org.ethereum.beacon.discovery.BytesValue;
 import org.ethereum.beacon.discovery.Functions;
 import org.web3j.rlp.RlpDecoder;
 import org.web3j.rlp.RlpEncoder;
 import org.web3j.rlp.RlpString;
-import tech.pegasys.artemis.util.bytes.Bytes32;
-import tech.pegasys.artemis.util.bytes.Bytes32s;
-import tech.pegasys.artemis.util.bytes.BytesValue;
+
+// import tech.pegasys.artemis.util.bytes.Bytes;
+// import tech.pegasys.artemis.util.bytes.Bytess;
+// import tech.pegasys.artemis.util.bytes.Bytes;
 
 /**
  * Sent if no session keys are available to initiate handshake
@@ -33,26 +36,27 @@ import tech.pegasys.artemis.util.bytes.BytesValue;
 public class RandomPacket extends AbstractPacket {
   private RandomPacketDecoded decoded = null;
 
-  public RandomPacket(BytesValue bytes) {
+  public RandomPacket(Bytes bytes) {
     super(bytes);
   }
 
-  public static RandomPacket create(
-      Bytes32 homeNodeId, Bytes32 destNodeId, BytesValue authTag, Random rnd) {
-    BytesValue tag = Packet.createTag(homeNodeId, destNodeId);
-    byte[] authTagRlp = RlpEncoder.encode(RlpString.create(authTag.extractArray()));
-    BytesValue authTagEncoded = BytesValue.wrap(authTagRlp);
+  public static RandomPacket create(Bytes homeNodeId, Bytes destNodeId, Bytes authTag, Random rnd) {
+    Bytes tag =
+        Bytes.wrap(
+            Packet.createTag(BytesValue.wrap(homeNodeId.toArray()), destNodeId).extractArray());
+    byte[] authTagRlp = RlpEncoder.encode(RlpString.create(authTag.toArray()));
+    Bytes authTagEncoded = Bytes.wrap(authTagRlp);
     byte[] randomBytes = new byte[44];
     rnd.nextBytes(randomBytes); // at least 44 bytes of random data
-    return new RandomPacket(tag.concat(authTagEncoded).concat(BytesValue.wrap(randomBytes)));
+    return new RandomPacket(Bytes.concatenate(tag, authTagEncoded, Bytes.wrap(randomBytes)));
   }
 
-  public Bytes32 getHomeNodeId(Bytes32 destNodeId) {
+  public Bytes getHomeNodeId(Bytes destNodeId) {
     decode();
-    return Bytes32s.xor(Functions.hash(destNodeId), decoded.tag);
+    return Functions.hash(destNodeId).xor(decoded.tag);
   }
 
-  public BytesValue getAuthTag() {
+  public Bytes getAuthTag() {
     decode();
     return decoded.authTag;
   }
@@ -62,10 +66,10 @@ public class RandomPacket extends AbstractPacket {
       return;
     }
     RandomPacketDecoded blank = new RandomPacketDecoded();
-    blank.tag = Bytes32.wrap(getBytes().slice(0, 32), 0);
+    blank.tag = Bytes.wrap(getBytes().slice(0, 32));
     blank.authTag =
-        BytesValue.wrap(
-            ((RlpString) RlpDecoder.decode(getBytes().slice(32).extractArray()).getValues().get(0))
+        Bytes.wrap(
+            ((RlpString) RlpDecoder.decode(getBytes().slice(32).toArray()).getValues().get(0))
                 .getBytes());
     this.decoded = blank;
   }
@@ -80,7 +84,7 @@ public class RandomPacket extends AbstractPacket {
   }
 
   private static class RandomPacketDecoded {
-    private Bytes32 tag;
-    private BytesValue authTag;
+    private Bytes tag;
+    private Bytes authTag;
   }
 }

@@ -20,6 +20,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes;
 import org.ethereum.beacon.discovery.NodeRecordInfo;
 import org.ethereum.beacon.discovery.NodeSession;
 import org.ethereum.beacon.discovery.enr.NodeRecord;
@@ -34,8 +35,9 @@ import org.ethereum.beacon.discovery.storage.NodeBucketStorage;
 import org.ethereum.beacon.discovery.storage.NodeTable;
 import org.ethereum.beacon.util.ExpirationScheduler;
 import org.javatuples.Pair;
-import tech.pegasys.artemis.util.bytes.Bytes32;
-import tech.pegasys.artemis.util.bytes.BytesValue;
+
+// import tech.pegasys.artemis.util.bytes.Bytes;
+// import tech.pegasys.artemis.util.bytes.Bytes;
 
 /**
  * Performs {@link Field#SESSION_LOOKUP} request. Looks up for Node session based on NodeId, which
@@ -45,19 +47,19 @@ public class NodeIdToSession implements EnvelopeHandler {
   private static final int CLEANUP_DELAY_SECONDS = 180;
   private static final Logger logger = LogManager.getLogger(NodeIdToSession.class);
   private final NodeRecord homeNodeRecord;
-  private final BytesValue staticNodeKey;
+  private final Bytes staticNodeKey;
   private final NodeBucketStorage nodeBucketStorage;
   private final AuthTagRepository authTagRepo;
-  private final Map<Bytes32, NodeSession> recentSessions =
+  private final Map<Bytes, NodeSession> recentSessions =
       new ConcurrentHashMap<>(); // nodeId -> session
   private final NodeTable nodeTable;
   private final Pipeline outgoingPipeline;
-  private ExpirationScheduler<Bytes32> sessionExpirationScheduler =
+  private ExpirationScheduler<Bytes> sessionExpirationScheduler =
       new ExpirationScheduler<>(CLEANUP_DELAY_SECONDS, TimeUnit.SECONDS);
 
   public NodeIdToSession(
       NodeRecord homeNodeRecord,
-      BytesValue staticNodeKey,
+      Bytes staticNodeKey,
       NodeBucketStorage nodeBucketStorage,
       AuthTagRepository authTagRepo,
       NodeTable nodeTable,
@@ -85,8 +87,8 @@ public class NodeIdToSession implements EnvelopeHandler {
             String.format(
                 "Envelope %s in NodeIdToSession, requirements are satisfied!", envelope.getId()));
 
-    Pair<Bytes32, Runnable> sessionRequest =
-        (Pair<Bytes32, Runnable>) envelope.get(Field.SESSION_LOOKUP);
+    Pair<Bytes, Runnable> sessionRequest =
+        (Pair<Bytes, Runnable>) envelope.get(Field.SESSION_LOOKUP);
     envelope.remove(Field.SESSION_LOOKUP);
     logger.trace(
         () ->
@@ -111,7 +113,7 @@ public class NodeIdToSession implements EnvelopeHandler {
     }
   }
 
-  private Optional<NodeSession> getSession(Bytes32 nodeId) {
+  private Optional<NodeSession> getSession(Bytes nodeId) {
     NodeSession context = recentSessions.get(nodeId);
     if (context == null) {
       Optional<NodeRecordInfo> nodeOptional = nodeTable.getNode(nodeId);

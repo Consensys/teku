@@ -16,15 +16,18 @@ package org.ethereum.beacon.discovery;
 import static org.web3j.rlp.RlpDecoder.OFFSET_LONG_LIST;
 import static org.web3j.rlp.RlpDecoder.OFFSET_SHORT_LIST;
 
+import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.units.bigints.UInt64;
 import org.javatuples.Pair;
 import org.web3j.rlp.RlpDecoder;
 import org.web3j.rlp.RlpList;
-import tech.pegasys.artemis.util.bytes.Bytes8;
-import tech.pegasys.artemis.util.bytes.BytesValue;
-import tech.pegasys.artemis.util.uint.UInt64;
+
+// import tech.pegasys.artemis.util.bytes.Bytes8;
+// import tech.pegasys.artemis.util.bytes.Bytes;
+// import tech.pegasys.artemis.util.uint.UInt64;
 
 public class RlpUtil {
-  public static int calcListLen(BytesValue data) {
+  public static int calcListLen(Bytes data) {
     int prefix = data.get(0) & 0xFF;
     int prefixAddon = 1;
     if (prefix >= OFFSET_SHORT_LIST && prefix <= OFFSET_LONG_LIST) {
@@ -47,9 +50,7 @@ public class RlpUtil {
 
       int lenOfListLen = (prefix - OFFSET_LONG_LIST) & 0xFF;
       prefixAddon += lenOfListLen;
-      return UInt64.fromBytesBigEndian(Bytes8.leftPad(data.slice(1, lenOfListLen & 0xFF)))
-              .intValue()
-          + prefixAddon;
+      return UInt64.fromBytes(data.slice(1, lenOfListLen & 0xFF)).intValue() + prefixAddon;
     } else {
       throw new RuntimeException("Not a start of RLP list!!");
     }
@@ -58,8 +59,8 @@ public class RlpUtil {
   /**
    * @return first rlp list in provided data, plus remaining data starting from the end of this list
    */
-  public static Pair<RlpList, BytesValue> decodeFirstList(BytesValue data) {
+  public static Pair<RlpList, Bytes> decodeFirstList(Bytes data) {
     int len = RlpUtil.calcListLen(data);
-    return Pair.with(RlpDecoder.decode(data.slice(0, len).extractArray()), data.slice(len));
+    return Pair.with(RlpDecoder.decode(data.slice(0, len).toArray()), data.slice(len));
   }
 }

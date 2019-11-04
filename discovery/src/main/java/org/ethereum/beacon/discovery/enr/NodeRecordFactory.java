@@ -18,14 +18,17 @@ import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.units.bigints.UInt64;
 import org.javatuples.Pair;
 import org.web3j.rlp.RlpDecoder;
 import org.web3j.rlp.RlpList;
 import org.web3j.rlp.RlpString;
 import org.web3j.rlp.RlpType;
-import tech.pegasys.artemis.util.bytes.Bytes8;
-import tech.pegasys.artemis.util.bytes.BytesValue;
-import tech.pegasys.artemis.util.uint.UInt64;
+
+// import tech.pegasys.artemis.util.bytes.Bytes8;
+// import tech.pegasys.artemis.util.bytes.BytesValue;
+// import tech.pegasys.artemis.util.uint.UInt64;
 
 public class NodeRecordFactory {
   public static final NodeRecordFactory DEFAULT =
@@ -40,18 +43,12 @@ public class NodeRecordFactory {
 
   @SafeVarargs
   public final NodeRecord createFromValues(
-      EnrScheme enrScheme,
-      UInt64 seq,
-      BytesValue signature,
-      Pair<String, Object>... fieldKeyPairs) {
+      EnrScheme enrScheme, UInt64 seq, Bytes signature, Pair<String, Object>... fieldKeyPairs) {
     return createFromValues(enrScheme, seq, signature, Arrays.asList(fieldKeyPairs));
   }
 
   public NodeRecord createFromValues(
-      EnrScheme enrScheme,
-      UInt64 seq,
-      BytesValue signature,
-      List<Pair<String, Object>> fieldKeyPairs) {
+      EnrScheme enrScheme, UInt64 seq, Bytes signature, List<Pair<String, Object>> fieldKeyPairs) {
 
     EnrSchemeInterpreter enrSchemeInterpreter = interpreters.get(enrScheme);
     if (enrSchemeInterpreter == null) {
@@ -66,8 +63,8 @@ public class NodeRecordFactory {
     return fromBytes(Base64.getUrlDecoder().decode(enrBase64));
   }
 
-  public NodeRecord fromBytes(BytesValue bytes) {
-    return fromBytes(bytes.extractArray());
+  public NodeRecord fromBytes(Bytes bytes) {
+    return fromBytes(bytes.toArray());
   }
 
   public NodeRecord fromBytes(byte[] bytes) {
@@ -77,14 +74,14 @@ public class NodeRecordFactory {
     if (values.size() < 4) {
       throw new RuntimeException(
           String.format(
-              "Unable to deserialize ENR with less than 4 fields, [%s]", BytesValue.wrap(bytes)));
+              "Unable to deserialize ENR with less than 4 fields, [%s]", Bytes.wrap(bytes)));
     }
     RlpString id = (RlpString) values.get(2);
     if (!"id".equals(new String(id.getBytes()))) {
       throw new RuntimeException(
           String.format(
               "Unable to deserialize ENR with no id field at 2-3 records, [%s]",
-              BytesValue.wrap(bytes)));
+              Bytes.wrap(bytes)));
     }
 
     RlpString idVersion = (RlpString) values.get(3);
@@ -105,9 +102,9 @@ public class NodeRecordFactory {
 
     return NodeRecord.fromRawFields(
         enrSchemeInterpreter,
-        UInt64.fromBytesBigEndian(
-            Bytes8.leftPad(BytesValue.wrap(((RlpString) values.get(1)).getBytes()))),
-        BytesValue.wrap(((RlpString) values.get(0)).getBytes()),
+        UInt64.fromBytes( // BigEndian
+            Bytes.wrap(((RlpString) values.get(1)).getBytes())),
+        Bytes.wrap(((RlpString) values.get(0)).getBytes()),
         values.subList(4, values.size()));
   }
 }

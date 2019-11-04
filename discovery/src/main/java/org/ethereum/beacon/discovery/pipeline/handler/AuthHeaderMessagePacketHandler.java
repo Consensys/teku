@@ -17,6 +17,7 @@ import static org.ethereum.beacon.discovery.NodeSession.SessionStatus.AUTHENTICA
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes;
 import org.ethereum.beacon.discovery.Functions;
 import org.ethereum.beacon.discovery.NodeSession;
 import org.ethereum.beacon.discovery.enr.NodeRecordFactory;
@@ -27,7 +28,8 @@ import org.ethereum.beacon.discovery.pipeline.Field;
 import org.ethereum.beacon.discovery.pipeline.HandlerUtil;
 import org.ethereum.beacon.discovery.pipeline.Pipeline;
 import org.ethereum.beacon.schedulers.Scheduler;
-import tech.pegasys.artemis.util.bytes.BytesValue;
+
+// import tech.pegasys.artemis.util.bytes.Bytes;
 
 /** Handles {@link AuthHeaderMessagePacket} in {@link Field#PACKET_AUTH_HEADER_MESSAGE} field */
 public class AuthHeaderMessagePacketHandler implements EnvelopeHandler {
@@ -67,7 +69,7 @@ public class AuthHeaderMessagePacketHandler implements EnvelopeHandler {
     NodeSession session = (NodeSession) envelope.get(Field.SESSION);
     try {
       packet.decodeEphemeralPubKey();
-      BytesValue ephemeralPubKey = packet.getEphemeralPubkey();
+      Bytes ephemeralPubKey = packet.getEphemeralPubkey();
       Functions.HKDFKeys keys =
           Functions.hkdf_expand(
               session.getNodeRecord().getNodeId(),

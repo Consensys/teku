@@ -20,6 +20,7 @@ import java.time.Duration;
 import java.util.List;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
+import org.apache.tuweni.bytes.Bytes;
 import org.ethereum.beacon.discovery.DiscoveryManager;
 import org.ethereum.beacon.discovery.NodeRecordInfo;
 import org.ethereum.beacon.discovery.NodeStatus;
@@ -27,7 +28,8 @@ import org.ethereum.beacon.discovery.enr.NodeRecord;
 import org.ethereum.beacon.discovery.storage.NodeBucketStorage;
 import org.ethereum.beacon.discovery.storage.NodeTable;
 import org.ethereum.beacon.schedulers.Scheduler;
-import tech.pegasys.artemis.util.bytes.Bytes32;
+
+// import tech.pegasys.artemis.util.bytes.Bytes;
 
 /** Manages recurrent node check task(s) */
 public class DiscoveryTaskManager {
@@ -40,7 +42,7 @@ public class DiscoveryTaskManager {
   private static final int RETRY_TIMEOUT_SECONDS = 60;
   private static final int MAX_RETRIES = 10;
   private final Scheduler scheduler;
-  private final Bytes32 homeNodeId;
+  private final Bytes homeNodeId;
   private final LiveCheckTasks liveCheckTasks;
   private final RecursiveLookupTasks recursiveLookupTasks;
   private final NodeTable nodeTable;

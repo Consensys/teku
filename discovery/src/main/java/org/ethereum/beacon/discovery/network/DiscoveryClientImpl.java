@@ -27,13 +27,15 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes;
 import org.ethereum.beacon.discovery.enr.EnrScheme;
 import org.ethereum.beacon.discovery.enr.NodeRecord;
 import org.ethereum.beacon.schedulers.Scheduler;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
-import tech.pegasys.artemis.util.bytes.Bytes4;
-import tech.pegasys.artemis.util.bytes.BytesValue;
+
+// import tech.pegasys.artemis.util.bytes.Bytes4;
+// import tech.pegasys.artemis.util.bytes.Bytes;
 
 /** Discovery UDP client */
 public class DiscoveryClientImpl implements DiscoveryClient {
@@ -119,7 +121,7 @@ public class DiscoveryClientImpl implements DiscoveryClient {
   }
 
   @Override
-  public void send(BytesValue data, NodeRecord recipient) {
+  public void send(Bytes data, NodeRecord recipient) {
     if (!(recipient.getIdentityScheme().equals(EnrScheme.V4))) {
       String error =
           String.format(
@@ -131,15 +133,14 @@ public class DiscoveryClientImpl implements DiscoveryClient {
     try {
       address =
           new InetSocketAddress(
-              InetAddress.getByAddress(
-                  ((Bytes4) recipient.get(NodeRecord.FIELD_IP_V4)).extractArray()),
+              InetAddress.getByAddress(((Bytes) recipient.get(NodeRecord.FIELD_IP_V4)).toArray()),
               (int) recipient.get(NodeRecord.FIELD_UDP_V4));
     } catch (UnknownHostException e) {
       String error = String.format("Failed to resolve host for node record: %s", recipient);
       logger.error(error);
       throw new RuntimeException(error);
     }
-    DatagramPacket packet = new DatagramPacket(Unpooled.copiedBuffer(data.extractArray()), address);
+    DatagramPacket packet = new DatagramPacket(Unpooled.copiedBuffer(data.toArray()), address);
     logger.trace(() -> String.format("Sending packet %s", packet));
     channel.write(packet);
     channel.flush();

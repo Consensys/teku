@@ -1,14 +1,21 @@
 dependencies {
-  implementation project(':discovery-types')
+//  implementation project(':discovery-types')
   implementation project(':discovery-util')
-  implementation project(':discovery-crypto')
-  implementation project(':discovery-db')
-  implementation project(':discovery-chain')
+  implementation project(':util')
+  implementation project(':ethereum')
+  implementation project(':ethereum:datastructures')
+//  implementation project(':discovery-crypto')
+//  implementation project(':discovery-db')
+//  implementation project(':discovery-chain')
+  implementation 'org.apache.tuweni:tuweni-bytes'
+  implementation 'org.apache.tuweni:tuweni-units'
+  implementation 'org.apache.tuweni:tuweni-crypto'
 
   implementation 'com.google.guava:guava'
   implementation 'org.javatuples:javatuples:1.2'
   implementation 'io.projectreactor:reactor-core'
   implementation 'io.netty:netty-all'
+  implementation 'io.vertx:vertx-core'
   implementation 'org.apache.logging.log4j:log4j-core'
   implementation 'org.web3j:core'
 

@@ -18,7 +18,9 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.socket.DatagramPacket;
 import io.netty.handler.codec.MessageToMessageDecoder;
 import java.util.List;
-import tech.pegasys.artemis.util.bytes.BytesValue;
+import org.apache.tuweni.bytes.Bytes;
+
+// import tech.pegasys.artemis.util.bytes.BytesValue;
 
 /** UDP Packet -> BytesValue converter with default Netty interface */
 public class DatagramToBytesValue extends MessageToMessageDecoder<DatagramPacket> {
@@ -28,6 +30,6 @@ public class DatagramToBytesValue extends MessageToMessageDecoder<DatagramPacket
     ByteBuf buf = msg.content();
     byte[] data = new byte[buf.readableBytes()];
     buf.readBytes(data);
-    out.add(BytesValue.wrap(data));
+    out.add(Bytes.wrap(data));
   }
 }

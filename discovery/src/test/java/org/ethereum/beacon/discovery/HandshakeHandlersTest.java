@@ -31,7 +31,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
-import org.ethereum.beacon.db.Database;
+import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.units.bigints.UInt64;
 import org.ethereum.beacon.discovery.enr.NodeRecord;
 import org.ethereum.beacon.discovery.packet.MessagePacket;
 import org.ethereum.beacon.discovery.packet.Packet;
@@ -54,9 +55,10 @@ import org.ethereum.beacon.schedulers.Scheduler;
 import org.ethereum.beacon.schedulers.Schedulers;
 import org.javatuples.Pair;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.artemis.util.bytes.Bytes32;
-import tech.pegasys.artemis.util.bytes.BytesValue;
-import tech.pegasys.artemis.util.uint.UInt64;
+
+// import tech.pegasys.artemis.util.bytes.BytesValue;
+// import tech.pegasys.artemis.util.bytes.BytesValue;
+// import tech.pegasys.artemis.util.uint.UInt64;
 
 public class HandshakeHandlersTest {
 
@@ -114,7 +116,7 @@ public class HandshakeHandlersTest {
         new NodeSession(
             nodeRecord2,
             nodeRecord1,
-            nodePair1.getValue0(),
+            Bytes.wrap(nodePair1.getValue0().extractArray()),
             nodeTableStorage1.get(),
             nodeBucketStorage1,
             authTagRepository1,
@@ -128,7 +130,7 @@ public class HandshakeHandlersTest {
         new NodeSession(
             nodeRecord1,
             nodeRecord2,
-            nodePair2.getValue0(),
+            Bytes.wrap(nodePair2.getValue0().extractArray()),
             nodeTableStorage2.get(),
             nodeBucketStorage2,
             new AuthTagRepository(),
@@ -142,13 +144,17 @@ public class HandshakeHandlersTest {
     Envelope envelopeAt1From2 = new Envelope();
     byte[] idNonceBytes = new byte[32];
     Functions.getRandom().nextBytes(idNonceBytes);
-    Bytes32 idNonce = Bytes32.wrap(idNonceBytes);
-    nodeSessionAt2For1.setIdNonce(idNonce);
-    BytesValue authTag = nodeSessionAt2For1.generateNonce();
-    authTagRepository1.put(authTag, nodeSessionAt1For2);
+    BytesValue idNonce = BytesValue.wrap(idNonceBytes);
+    nodeSessionAt2For1.setIdNonce(Bytes.wrap(idNonce.extractArray()));
+    BytesValue authTag = BytesValue.wrap(nodeSessionAt2For1.generateNonce().toArray());
+    authTagRepository1.put(Bytes.wrap(authTag.extractArray()), nodeSessionAt1For2);
     envelopeAt1From2.put(
         Field.PACKET_WHOAREYOU,
-        WhoAreYouPacket.create(nodePair1.getValue1().getNodeId(), authTag, idNonce, UInt64.ZERO));
+        WhoAreYouPacket.create(
+            nodePair1.getValue1().getNodeId(),
+            Bytes.wrap(authTag.extractArray()),
+            Bytes.wrap(idNonce.extractArray()),
+            UInt64.ZERO));
     envelopeAt1From2.put(Field.SESSION, nodeSessionAt1For2);
     CompletableFuture<Void> future = new CompletableFuture<>();
     nodeSessionAt1For2.createNextRequest(TaskType.FINDNODE, future);
@@ -170,10 +176,10 @@ public class HandshakeHandlersTest {
     // Node 1 handles message from Node 2
     MessagePacketHandler messagePacketHandler1 = new MessagePacketHandler();
     Envelope envelopeAt1From2WithMessage = new Envelope();
-    BytesValue pingAuthTag = nodeSessionAt1For2.generateNonce();
+    BytesValue pingAuthTag = BytesValue.wrap(nodeSessionAt1For2.generateNonce().toArray());
     MessagePacket pingPacketFrom2To1 =
         TaskMessageFactory.createPingPacket(
-            pingAuthTag,
+            Bytes.wrap(pingAuthTag.extractArray()),
             nodeSessionAt2For1,
             nodeSessionAt2For1
                 .createNextRequest(TaskType.PING, new CompletableFuture<>())

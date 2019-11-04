@@ -18,6 +18,7 @@ import java.time.Duration;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes;
 import org.ethereum.beacon.discovery.NodeSession;
 import org.ethereum.beacon.discovery.packet.MessagePacket;
 import org.ethereum.beacon.discovery.packet.RandomPacket;
@@ -29,7 +30,8 @@ import org.ethereum.beacon.discovery.pipeline.Pipeline;
 import org.ethereum.beacon.discovery.task.TaskMessageFactory;
 import org.ethereum.beacon.discovery.task.TaskStatus;
 import org.ethereum.beacon.schedulers.Scheduler;
-import tech.pegasys.artemis.util.bytes.BytesValue;
+
+// import tech.pegasys.artemis.util.bytes.Bytes;
 
 /** Gets next request task in session and processes it */
 public class NextTaskHandler implements EnvelopeHandler {
@@ -80,8 +82,8 @@ public class NextTaskHandler implements EnvelopeHandler {
         () ->
             String.format(
                 "Envelope %s: processing awaiting request %s", envelope.getId(), requestInfo));
-    BytesValue authTag = session.generateNonce();
-    BytesValue requestId = requestInfo.getRequestId();
+    Bytes authTag = session.generateNonce();
+    Bytes requestId = requestInfo.getRequestId();
     if (session.getStatus().equals(NodeSession.SessionStatus.INITIAL)) {
       RandomPacket randomPacket =
           RandomPacket.create(

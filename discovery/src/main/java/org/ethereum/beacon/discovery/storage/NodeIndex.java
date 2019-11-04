@@ -15,14 +15,19 @@ package org.ethereum.beacon.discovery.storage;
 
 import java.util.ArrayList;
 import java.util.List;
+import org.apache.tuweni.bytes.Bytes;
+import org.ethereum.beacon.discovery.BytesValue;
+import org.ethereum.beacon.discovery.Hash32;
 import org.web3j.rlp.RlpDecoder;
 import org.web3j.rlp.RlpEncoder;
 import org.web3j.rlp.RlpList;
 import org.web3j.rlp.RlpString;
 import org.web3j.rlp.RlpType;
-import tech.pegasys.artemis.ethereum.core.Hash32;
-import tech.pegasys.artemis.util.bytes.Bytes32;
-import tech.pegasys.artemis.util.bytes.BytesValue;
+
+// import tech.pegasys.artemis.ethereum.core.Hash32;
+
+// import tech.pegasys.artemis.util.bytes.Bytes;
+// import tech.pegasys.artemis.util.bytes.Bytes;
 
 /** Node Index. Stores several node keys. */
 public class NodeIndex {
@@ -36,11 +41,15 @@ public class NodeIndex {
     RlpList internalList = (RlpList) RlpDecoder.decode(bytes.extractArray()).getValues().get(0);
     List<Hash32> entries = new ArrayList<>();
     for (RlpType entry : internalList.getValues()) {
-      entries.add(Hash32.wrap(Bytes32.wrap(((RlpString) entry).getBytes())));
+      entries.add(Hash32.wrap(BytesValue.wrap(((RlpString) entry).getBytes())));
     }
     NodeIndex res = new NodeIndex();
     res.setEntries(entries);
     return res;
+  }
+
+  public static NodeIndex fromRlpBytes(Bytes bytes) {
+    return fromRlpBytes(BytesValue.wrap(bytes.toArray()));
   }
 
   public List<Hash32> getEntries() {

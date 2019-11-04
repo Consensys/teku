@@ -11,23 +11,24 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.ethereum.core;
+package org.ethereum.beacon.discovery;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import java.util.Random;
-import tech.pegasys.artemis.util.bytes.Bytes32;
-import tech.pegasys.artemis.util.bytes.DelegatingBytes32;
+
+// import tech.pegasys.artemis.util.bytes.Bytes;
+// import tech.pegasys.artemis.util.bytes.DelegatingBytes;
 
 /** A 32-bytes hash value as used in Ethereum blocks, that is the result of the KEC algorithm. */
-public class Hash32 extends DelegatingBytes32 implements Hash {
+public class Hash32 extends DelegatingBytes32 {
 
-  public static final Hash32 ZERO = new Hash32(Bytes32.ZERO);
+  public static final Hash32 ZERO = new Hash32(BytesValue.EMPTY);
 
-  private Hash32(final Bytes32 bytes) {
+  private Hash32(final BytesValue bytes) {
     super(bytes);
   }
 
-  public static Hash32 wrap(final Bytes32 bytes) {
+  public static Hash32 wrap(final BytesValue bytes) {
     return new Hash32(bytes);
   }
 
@@ -43,11 +44,11 @@ public class Hash32 extends DelegatingBytes32 implements Hash {
    */
   @JsonCreator
   public static Hash32 fromHexString(final String str) {
-    return new Hash32(Bytes32.fromHexStringStrict(str));
+    return new Hash32(BytesValue.fromHexString(str));
   }
 
   public static Hash32 fromHexStringLenient(final String str) {
-    return new Hash32(Bytes32.fromHexStringLenient(str));
+    return new Hash32(BytesValue.fromHexString(str));
   }
 
   /**
@@ -57,7 +58,7 @@ public class Hash32 extends DelegatingBytes32 implements Hash {
    * @return random hash value.
    */
   public static Hash32 random(Random rnd) {
-    return wrap(Bytes32.random(rnd));
+    return wrap(BytesValue.of(rnd.nextInt()));
   }
 
   public String toStringShort() {

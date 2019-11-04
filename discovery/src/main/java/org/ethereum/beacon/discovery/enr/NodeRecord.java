@@ -21,14 +21,17 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.units.bigints.UInt64;
 import org.javatuples.Pair;
 import org.web3j.rlp.RlpEncoder;
 import org.web3j.rlp.RlpList;
 import org.web3j.rlp.RlpString;
 import org.web3j.rlp.RlpType;
-import tech.pegasys.artemis.util.bytes.Bytes32;
-import tech.pegasys.artemis.util.bytes.BytesValue;
-import tech.pegasys.artemis.util.uint.UInt64;
+
+// import tech.pegasys.artemis.util.bytes.Bytes32;
+// import tech.pegasys.artemis.util.bytes.BytesValue;
+// import tech.pegasys.artemis.util.uint.UInt64;
 
 /**
  * Ethereum Node Record
@@ -53,13 +56,13 @@ public class NodeRecord {
 
   private UInt64 seq;
   // Signature
-  private BytesValue signature;
+  private Bytes signature;
   // optional fields
   private Map<String, Object> fields = new HashMap<>();
 
   private EnrSchemeInterpreter enrSchemeInterpreter;
 
-  private NodeRecord(EnrSchemeInterpreter enrSchemeInterpreter, UInt64 seq, BytesValue signature) {
+  private NodeRecord(EnrSchemeInterpreter enrSchemeInterpreter, UInt64 seq, Bytes signature) {
     this.seq = seq;
     this.signature = signature;
     this.enrSchemeInterpreter = enrSchemeInterpreter;
@@ -70,7 +73,7 @@ public class NodeRecord {
   public static NodeRecord fromValues(
       EnrSchemeInterpreter enrSchemeInterpreter,
       UInt64 seq,
-      BytesValue signature,
+      Bytes signature,
       List<Pair<String, Object>> fieldKeyPairs) {
     NodeRecord nodeRecord = new NodeRecord(enrSchemeInterpreter, seq, signature);
     fieldKeyPairs.forEach(objects -> nodeRecord.set(objects.getValue0(), objects.getValue1()));
@@ -80,7 +83,7 @@ public class NodeRecord {
   public static NodeRecord fromRawFields(
       EnrSchemeInterpreter enrSchemeInterpreter,
       UInt64 seq,
-      BytesValue signature,
+      Bytes signature,
       List<RlpType> rawFields) {
     NodeRecord nodeRecord = new NodeRecord(enrSchemeInterpreter, seq, signature);
     for (int i = 0; i < rawFields.size(); i += 2) {
@@ -91,7 +94,7 @@ public class NodeRecord {
   }
 
   public String asBase64() {
-    return new String(Base64.getUrlEncoder().encode(serialize().extractArray()));
+    return new String(Base64.getUrlEncoder().encode(serialize().toArray()));
   }
 
   public EnrScheme getIdentityScheme() {
@@ -114,11 +117,11 @@ public class NodeRecord {
     this.seq = seq;
   }
 
-  public BytesValue getSignature() {
+  public Bytes getSignature() {
     return signature;
   }
 
-  public void setSignature(BytesValue signature) {
+  public void setSignature(Bytes signature) {
     this.signature = signature;
   }
 
@@ -149,20 +152,20 @@ public class NodeRecord {
     enrSchemeInterpreter.verify(this);
   }
 
-  public BytesValue serialize() {
+  public Bytes serialize() {
     return serialize(true);
   }
 
-  public BytesValue serialize(boolean withSignature) {
+  public Bytes serialize(boolean withSignature) {
     assert getSeq() != null;
     // content   = [seq, k, v, ...]
     // signature = sign(content)
     // record    = [signature, seq, k, v, ...]
     List<RlpType> values = new ArrayList<>();
     if (withSignature) {
-      values.add(RlpString.create(getSignature().extractArray()));
+      values.add(RlpString.create(getSignature().toArray()));
     }
-    values.add(RlpString.create(getSeq().toBI()));
+    values.add(RlpString.create(getSeq().toBigInteger()));
     values.add(RlpString.create("id"));
     values.add(RlpString.create(getIdentityScheme().stringName()));
     for (Map.Entry<String, Object> keyPair : fields.entrySet()) {
@@ -174,10 +177,10 @@ public class NodeRecord {
     }
     byte[] bytes = RlpEncoder.encode(new RlpList(values));
     assert bytes.length <= 300;
-    return BytesValue.wrap(bytes);
+    return Bytes.wrap(bytes);
   }
 
-  public Bytes32 getNodeId() {
+  public Bytes getNodeId() {
     return enrSchemeInterpreter.getNodeId(this);
   }
 

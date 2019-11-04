@@ -15,6 +15,7 @@ package org.ethereum.beacon.discovery.pipeline.handler;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes;
 import org.ethereum.beacon.discovery.Functions;
 import org.ethereum.beacon.discovery.NodeSession;
 import org.ethereum.beacon.discovery.packet.MessagePacket;
@@ -25,8 +26,9 @@ import org.ethereum.beacon.discovery.pipeline.Envelope;
 import org.ethereum.beacon.discovery.pipeline.EnvelopeHandler;
 import org.ethereum.beacon.discovery.pipeline.Field;
 import org.ethereum.beacon.discovery.pipeline.HandlerUtil;
-import tech.pegasys.artemis.util.bytes.Bytes32;
-import tech.pegasys.artemis.util.bytes.BytesValue;
+
+// import tech.pegasys.artemis.util.bytes.Bytes;
+// import tech.pegasys.artemis.util.bytes.Bytes;
 
 /** Handles {@link UnknownPacket} from node, which is not on any stage of the handshake with us */
 public class NotExpectedIncomingPacketHandler implements EnvelopeHandler {
@@ -55,7 +57,7 @@ public class NotExpectedIncomingPacketHandler implements EnvelopeHandler {
     NodeSession session = (NodeSession) envelope.get(Field.SESSION);
     try {
       // packet it either random or message packet if session is expired
-      BytesValue authTag = null;
+      Bytes authTag = null;
       try {
         RandomPacket randomPacket = unknownPacket.getRandomPacket();
         authTag = randomPacket.getAuthTag();
@@ -70,7 +72,7 @@ public class NotExpectedIncomingPacketHandler implements EnvelopeHandler {
       session.setAuthTag(authTag);
       byte[] idNonceBytes = new byte[32];
       Functions.getRandom().nextBytes(idNonceBytes);
-      Bytes32 idNonce = Bytes32.wrap(idNonceBytes);
+      Bytes idNonce = Bytes.wrap(idNonceBytes);
       session.setIdNonce(idNonce);
       WhoAreYouPacket whoAreYouPacket =
           WhoAreYouPacket.create(

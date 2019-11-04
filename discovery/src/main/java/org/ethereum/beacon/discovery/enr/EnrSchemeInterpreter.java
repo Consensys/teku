@@ -13,8 +13,8 @@
 
 package org.ethereum.beacon.discovery.enr;
 
+import org.apache.tuweni.bytes.Bytes;
 import org.web3j.rlp.RlpString;
-import tech.pegasys.artemis.util.bytes.Bytes32;
 
 public interface EnrSchemeInterpreter {
   /** Returns supported scheme */
@@ -28,7 +28,7 @@ public interface EnrSchemeInterpreter {
   }
 
   /** Delivers nodeId according to identity scheme scheme */
-  Bytes32 getNodeId(NodeRecord nodeRecord);
+  Bytes getNodeId(NodeRecord nodeRecord);
 
   Object decode(String key, RlpString rlpString);
 

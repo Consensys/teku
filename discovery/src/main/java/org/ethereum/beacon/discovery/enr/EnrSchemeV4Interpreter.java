@@ -13,6 +13,7 @@
 
 package org.ethereum.beacon.discovery.enr;
 
+import static org.ethereum.beacon.discovery.crypto.CryptoUtil.sha256;
 import static org.ethereum.beacon.discovery.enr.NodeRecord.FIELD_IP_V4;
 import static org.ethereum.beacon.discovery.enr.NodeRecord.FIELD_IP_V6;
 import static org.ethereum.beacon.discovery.enr.NodeRecord.FIELD_PKEY_SECP256K1;
@@ -26,29 +27,29 @@ import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
+import org.apache.tuweni.bytes.Bytes;
 import org.bouncycastle.util.Arrays;
-import org.ethereum.beacon.crypto.Hashes;
+import org.ethereum.beacon.discovery.BytesValue;
 import org.web3j.crypto.ECDSASignature;
 import org.web3j.crypto.Hash;
 import org.web3j.crypto.Sign;
 import org.web3j.rlp.RlpString;
-import tech.pegasys.artemis.util.bytes.Bytes16;
-import tech.pegasys.artemis.util.bytes.Bytes32;
-import tech.pegasys.artemis.util.bytes.Bytes4;
-import tech.pegasys.artemis.util.bytes.BytesValue;
+
+// import tech.pegasys.artemis.util.bytes.Bytes16;
+// import tech.pegasys.artemis.util.bytes.Bytes32;
+// import tech.pegasys.artemis.util.bytes.Bytes4;
+// import tech.pegasys.artemis.util.bytes.Bytes;
 
 public class EnrSchemeV4Interpreter implements EnrSchemeInterpreter {
 
   private Map<String, Function<RlpString, Object>> fieldDecoders = new HashMap<>();
 
   public EnrSchemeV4Interpreter() {
-    fieldDecoders.put(FIELD_PKEY_SECP256K1, rlpString -> BytesValue.wrap(rlpString.getBytes()));
-    fieldDecoders.put(
-        FIELD_IP_V4, rlpString -> Bytes4.wrap(BytesValue.wrap(rlpString.getBytes()), 0));
+    fieldDecoders.put(FIELD_PKEY_SECP256K1, rlpString -> Bytes.wrap(rlpString.getBytes()));
+    fieldDecoders.put(FIELD_IP_V4, rlpString -> Bytes.wrap(rlpString.getBytes()));
     fieldDecoders.put(FIELD_TCP_V4, rlpString -> rlpString.asPositiveBigInteger().intValue());
     fieldDecoders.put(FIELD_UDP_V4, rlpString -> rlpString.asPositiveBigInteger().intValue());
-    fieldDecoders.put(
-        FIELD_IP_V6, rlpString -> Bytes16.wrap(BytesValue.wrap(rlpString.getBytes()), 0));
+    fieldDecoders.put(FIELD_IP_V6, rlpString -> Bytes.wrap(rlpString.getBytes()));
     fieldDecoders.put(FIELD_TCP_V6, rlpString -> rlpString.asPositiveBigInteger().intValue());
     fieldDecoders.put(FIELD_UDP_V6, rlpString -> rlpString.asPositiveBigInteger().intValue());
   }
@@ -61,19 +62,18 @@ public class EnrSchemeV4Interpreter implements EnrSchemeInterpreter {
           String.format(
               "Field %s not exists but required for scheme %s", FIELD_PKEY_SECP256K1, getScheme()));
     }
-    BytesValue pubKey = (BytesValue) nodeRecord.get(FIELD_PKEY_SECP256K1);
+    Bytes pubKey = Bytes.wrap(((BytesValue) nodeRecord.get(FIELD_PKEY_SECP256K1)).extractArray());
     ECDSASignature ecdsaSignature =
         new ECDSASignature(
-            new BigInteger(1, nodeRecord.getSignature().slice(0, 32).extractArray()),
-            new BigInteger(1, nodeRecord.getSignature().slice(32).extractArray()));
-    byte[] msgHash = Hash.sha3(nodeRecord.serialize(false).extractArray());
+            new BigInteger(1, nodeRecord.getSignature().slice(0, 32).toArray()),
+            new BigInteger(1, nodeRecord.getSignature().slice(32).toArray()));
+    byte[] msgHash = Hash.sha3(nodeRecord.serialize(false).toArray());
     for (int recId = 0; recId < 4; ++recId) {
       BigInteger calculatedPubKey = Sign.recoverFromSignature(1, ecdsaSignature, msgHash);
       if (calculatedPubKey == null) {
         continue;
       }
-      if (Arrays.areEqual(
-          pubKey.extractArray(), extractBytesFromUnsignedBigInt(calculatedPubKey))) {
+      if (Arrays.areEqual(pubKey.toArray(), extractBytesFromUnsignedBigInt(calculatedPubKey))) {
         return;
       }
     }
@@ -86,9 +86,13 @@ public class EnrSchemeV4Interpreter implements EnrSchemeInterpreter {
   }
 
   @Override
-  public Bytes32 getNodeId(NodeRecord nodeRecord) {
+  public Bytes getNodeId(NodeRecord nodeRecord) {
     verify(nodeRecord);
-    return Hashes.sha256((BytesValue) nodeRecord.getKey(FIELD_PKEY_SECP256K1));
+    Object key = nodeRecord.getKey(FIELD_PKEY_SECP256K1);
+    if (key instanceof BytesValue) {
+      return sha256((BytesValue) key);
+    }
+    return sha256((Bytes) key);
   }
 
   @Override
@@ -102,8 +106,10 @@ public class EnrSchemeV4Interpreter implements EnrSchemeInterpreter {
 
   @Override
   public RlpString encode(String key, Object object) {
-    if (object instanceof BytesValue) {
-      return fromBytesValue((BytesValue) object);
+    if (object instanceof Bytes) {
+      return fromBytes((Bytes) object);
+    } else if (object instanceof BytesValue) {
+      return fromBytes(Bytes.wrap(((BytesValue) object).extractArray()));
     } else if (object instanceof Number) {
       return fromNumber((Number) object);
     } else if (object == null) {
@@ -129,7 +135,7 @@ public class EnrSchemeV4Interpreter implements EnrSchemeInterpreter {
     }
   }
 
-  private RlpString fromBytesValue(BytesValue bytes) {
-    return RlpString.create(bytes.extractArray());
+  private RlpString fromBytes(Bytes bytes) {
+    return RlpString.create(bytes.toArray());
   }
 }

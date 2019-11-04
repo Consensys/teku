@@ -15,9 +15,11 @@ package org.ethereum.beacon.discovery.storage;
 
 import java.util.List;
 import java.util.Optional;
+import org.apache.tuweni.bytes.Bytes;
 import org.ethereum.beacon.discovery.NodeRecordInfo;
 import org.ethereum.beacon.discovery.enr.NodeRecord;
-import tech.pegasys.artemis.util.bytes.Bytes32;
+
+// import tech.pegasys.artemis.util.bytes.Bytes;
 
 /**
  * Stores Ethereum Node Records in {@link NodeRecordInfo} containers. Also stores home node as node
@@ -28,10 +30,10 @@ public interface NodeTable {
 
   void remove(NodeRecordInfo node);
 
-  Optional<NodeRecordInfo> getNode(Bytes32 nodeId);
+  Optional<NodeRecordInfo> getNode(Bytes nodeId);
 
   /** Returns list of nodes including `nodeId` (if it's found) in logLimit distance from it. */
-  List<NodeRecordInfo> findClosestNodes(Bytes32 nodeId, int logLimit);
+  List<NodeRecordInfo> findClosestNodes(Bytes nodeId, int logLimit);
 
   NodeRecord getHomeNode();
 }

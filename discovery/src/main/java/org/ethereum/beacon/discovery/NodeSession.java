@@ -26,6 +26,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes;
 import org.ethereum.beacon.discovery.enr.NodeRecord;
 import org.ethereum.beacon.discovery.packet.Packet;
 import org.ethereum.beacon.discovery.storage.AuthTagRepository;
@@ -35,8 +36,9 @@ import org.ethereum.beacon.discovery.storage.NodeTable;
 import org.ethereum.beacon.discovery.task.TaskStatus;
 import org.ethereum.beacon.discovery.task.TaskType;
 import org.ethereum.beacon.util.ExpirationScheduler;
-import tech.pegasys.artemis.util.bytes.Bytes32;
-import tech.pegasys.artemis.util.bytes.BytesValue;
+
+// import tech.pegasys.artemis.util.bytes.Bytes;
+// import tech.pegasys.artemis.util.bytes.Bytes;
 
 /**
  * Stores session status and all keys for discovery session between us (homeNode) and the other node
@@ -48,26 +50,26 @@ public class NodeSession {
   private static final int CLEANUP_DELAY_SECONDS = 60;
   private final NodeRecord nodeRecord;
   private final NodeRecord homeNodeRecord;
-  private final Bytes32 homeNodeId;
+  private final Bytes homeNodeId;
   private final AuthTagRepository authTagRepo;
   private final NodeTable nodeTable;
   private final NodeBucketStorage nodeBucketStorage;
   private final Consumer<Packet> outgoing;
   private final Random rnd;
   private SessionStatus status = SessionStatus.INITIAL;
-  private Bytes32 idNonce;
-  private BytesValue initiatorKey;
-  private BytesValue recipientKey;
-  private Map<BytesValue, RequestInfo> requestIdStatuses = new ConcurrentHashMap<>();
-  private ExpirationScheduler<BytesValue> requestExpirationScheduler =
+  private Bytes idNonce;
+  private Bytes initiatorKey;
+  private Bytes recipientKey;
+  private Map<Bytes, RequestInfo> requestIdStatuses = new ConcurrentHashMap<>();
+  private ExpirationScheduler<Bytes> requestExpirationScheduler =
       new ExpirationScheduler<>(CLEANUP_DELAY_SECONDS, TimeUnit.SECONDS);
   private CompletableFuture<Void> completableFuture = null;
-  private BytesValue staticNodeKey;
+  private Bytes staticNodeKey;
 
   public NodeSession(
       NodeRecord nodeRecord,
       NodeRecord homeNodeRecord,
-      BytesValue staticNodeKey,
+      Bytes staticNodeKey,
       NodeTable nodeTable,
       NodeBucketStorage nodeBucketStorage,
       AuthTagRepository authTagRepo,
@@ -120,7 +122,7 @@ public class NodeSession {
       TaskType taskType, CompletableFuture<Void> future) {
     byte[] requestId = new byte[REQUEST_ID_SIZE];
     rnd.nextBytes(requestId);
-    BytesValue wrappedId = BytesValue.wrap(requestId);
+    Bytes wrappedId = Bytes.wrap(requestId);
     RequestInfo requestInfo = new GeneralRequestInfo(taskType, AWAIT, wrappedId, future);
     requestIdStatuses.put(wrappedId, requestInfo);
     requestExpirationScheduler.put(
@@ -139,7 +141,7 @@ public class NodeSession {
     return requestInfo;
   }
 
-  public synchronized void updateRequestInfo(BytesValue requestId, RequestInfo newRequestInfo) {
+  public synchronized void updateRequestInfo(Bytes requestId, RequestInfo newRequestInfo) {
     RequestInfo oldRequestInfo = requestIdStatuses.remove(requestId);
     if (oldRequestInfo == null) {
       logger.debug(
@@ -166,7 +168,7 @@ public class NodeSession {
 
   public synchronized void cancelAllRequests(String message) {
     logger.debug(() -> String.format("Cancelling all requests in session %s", this));
-    Set<BytesValue> requestIdsCopy = new HashSet<>(requestIdStatuses.keySet());
+    Set<Bytes> requestIdsCopy = new HashSet<>(requestIdStatuses.keySet());
     requestIdsCopy.forEach(
         requestId -> {
           RequestInfo requestInfo = clearRequestId(requestId);
@@ -179,10 +181,10 @@ public class NodeSession {
         });
   }
 
-  public synchronized BytesValue generateNonce() {
+  public synchronized Bytes generateNonce() {
     byte[] nonce = new byte[NONCE_SIZE];
     rnd.nextBytes(nonce);
-    return BytesValue.wrap(nonce);
+    return Bytes.wrap(nonce);
   }
 
   public synchronized boolean isAuthenticated() {
@@ -193,47 +195,47 @@ public class NodeSession {
     authTagRepo.expire(this);
   }
 
-  public Optional<BytesValue> getAuthTag() {
+  public Optional<Bytes> getAuthTag() {
     return authTagRepo.getTag(this);
   }
 
-  public void setAuthTag(BytesValue authTag) {
+  public void setAuthTag(Bytes authTag) {
     authTagRepo.put(authTag, this);
   }
 
-  public Bytes32 getHomeNodeId() {
+  public Bytes getHomeNodeId() {
     return homeNodeId;
   }
 
-  public BytesValue getInitiatorKey() {
+  public Bytes getInitiatorKey() {
     return initiatorKey;
   }
 
-  public void setInitiatorKey(BytesValue initiatorKey) {
+  public void setInitiatorKey(Bytes initiatorKey) {
     this.initiatorKey = initiatorKey;
   }
 
-  public BytesValue getRecipientKey() {
+  public Bytes getRecipientKey() {
     return recipientKey;
   }
 
-  public void setRecipientKey(BytesValue recipientKey) {
+  public void setRecipientKey(Bytes recipientKey) {
     this.recipientKey = recipientKey;
   }
 
-  public synchronized void clearRequestId(BytesValue requestId, TaskType taskType) {
+  public synchronized void clearRequestId(Bytes requestId, TaskType taskType) {
     RequestInfo requestInfo = clearRequestId(requestId);
     requestInfo.getFuture().complete(null);
     assert taskType.equals(requestInfo.getTaskType());
   }
 
-  private synchronized RequestInfo clearRequestId(BytesValue requestId) {
+  private synchronized RequestInfo clearRequestId(Bytes requestId) {
     RequestInfo requestInfo = requestIdStatuses.remove(requestId);
     requestExpirationScheduler.cancel(requestId);
     return requestInfo;
   }
 
-  public synchronized Optional<RequestInfo> getRequestId(BytesValue requestId) {
+  public synchronized Optional<RequestInfo> getRequestId(Bytes requestId) {
     RequestInfo requestInfo = requestIdStatuses.get(requestId);
     return requestId == null ? Optional.empty() : Optional.of(requestInfo);
   }
@@ -256,11 +258,11 @@ public class NodeSession {
     return nodeBucketStorage.get(index);
   }
 
-  public synchronized Bytes32 getIdNonce() {
+  public synchronized Bytes getIdNonce() {
     return idNonce;
   }
 
-  public synchronized void setIdNonce(Bytes32 idNonce) {
+  public synchronized void setIdNonce(Bytes idNonce) {
     this.idNonce = idNonce;
   }
 
@@ -292,7 +294,7 @@ public class NodeSession {
     this.status = newStatus;
   }
 
-  public BytesValue getStaticNodeKey() {
+  public Bytes getStaticNodeKey() {
     return staticNodeKey;
   }
 
@@ -308,7 +310,7 @@ public class NodeSession {
 
     TaskStatus getTaskStatus();
 
-    BytesValue getRequestId();
+    Bytes getRequestId();
 
     CompletableFuture<Void> getFuture();
   }
@@ -316,14 +318,11 @@ public class NodeSession {
   public static class GeneralRequestInfo implements RequestInfo {
     private final TaskType taskType;
     private final TaskStatus taskStatus;
-    private final BytesValue requestId;
+    private final Bytes requestId;
     private final CompletableFuture<Void> future;
 
     public GeneralRequestInfo(
-        TaskType taskType,
-        TaskStatus taskStatus,
-        BytesValue requestId,
-        CompletableFuture<Void> future) {
+        TaskType taskType, TaskStatus taskStatus, Bytes requestId, CompletableFuture<Void> future) {
       this.taskType = taskType;
       this.taskStatus = taskStatus;
       this.requestId = requestId;
@@ -341,7 +340,7 @@ public class NodeSession {
     }
 
     @Override
-    public BytesValue getRequestId() {
+    public Bytes getRequestId() {
       return requestId;
     }
 

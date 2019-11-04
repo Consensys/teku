@@ -13,19 +13,21 @@
 
 package org.ethereum.beacon.discovery.task;
 
+import org.apache.tuweni.bytes.Bytes;
 import org.ethereum.beacon.discovery.NodeSession;
 import org.ethereum.beacon.discovery.message.DiscoveryV5Message;
 import org.ethereum.beacon.discovery.message.FindNodeMessage;
 import org.ethereum.beacon.discovery.message.PingMessage;
 import org.ethereum.beacon.discovery.message.V5Message;
 import org.ethereum.beacon.discovery.packet.MessagePacket;
-import tech.pegasys.artemis.util.bytes.BytesValue;
+
+// import tech.pegasys.artemis.util.bytes.Bytes;
 
 public class TaskMessageFactory {
   public static final int DEFAULT_DISTANCE = 10;
 
   public static MessagePacket createPacketFromRequest(
-      NodeSession.RequestInfo requestInfo, BytesValue authTag, NodeSession session) {
+      NodeSession.RequestInfo requestInfo, Bytes authTag, NodeSession session) {
     switch (requestInfo.getTaskType()) {
       case PING:
         {
@@ -63,7 +65,7 @@ public class TaskMessageFactory {
   }
 
   public static MessagePacket createPingPacket(
-      BytesValue authTag, NodeSession session, BytesValue requestId) {
+      Bytes authTag, NodeSession session, Bytes requestId) {
 
     return MessagePacket.create(
         session.getHomeNodeId(),
@@ -73,12 +75,12 @@ public class TaskMessageFactory {
         DiscoveryV5Message.from(createPing(session, requestId)));
   }
 
-  public static PingMessage createPing(NodeSession session, BytesValue requestId) {
+  public static PingMessage createPing(NodeSession session, Bytes requestId) {
     return new PingMessage(requestId, session.getNodeRecord().getSeq());
   }
 
   public static MessagePacket createFindNodePacket(
-      BytesValue authTag, NodeSession session, BytesValue requestId) {
+      Bytes authTag, NodeSession session, Bytes requestId) {
     FindNodeMessage findNodeMessage = createFindNode(requestId);
     return MessagePacket.create(
         session.getHomeNodeId(),
@@ -88,7 +90,7 @@ public class TaskMessageFactory {
         DiscoveryV5Message.from(findNodeMessage));
   }
 
-  public static FindNodeMessage createFindNode(BytesValue requestId) {
+  public static FindNodeMessage createFindNode(Bytes requestId) {
     return new FindNodeMessage(requestId, DEFAULT_DISTANCE);
   }
 }

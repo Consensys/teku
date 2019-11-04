@@ -14,29 +14,32 @@
 package org.ethereum.beacon.discovery.message;
 
 import com.google.common.base.Objects;
+import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.units.bigints.UInt64;
 import org.web3j.rlp.RlpEncoder;
 import org.web3j.rlp.RlpList;
 import org.web3j.rlp.RlpString;
-import tech.pegasys.artemis.util.bytes.Bytes1;
-import tech.pegasys.artemis.util.bytes.BytesValue;
-import tech.pegasys.artemis.util.uint.UInt64;
+
+// import tech.pegasys.artemis.util.bytes.Bytes1;
+// import tech.pegasys.artemis.util.bytes.Bytes;
+// import tech.pegasys.artemis.util.uint.UInt64;
 
 /**
  * PING checks whether the recipient is alive and informs it about the sender's ENR sequence number.
  */
 public class PingMessage implements V5Message {
   // Unique request id
-  private final BytesValue requestId;
+  private final Bytes requestId;
   // Local ENR sequence number of sender
   private final UInt64 enrSeq;
 
-  public PingMessage(BytesValue requestId, UInt64 enrSeq) {
+  public PingMessage(Bytes requestId, UInt64 enrSeq) {
     this.requestId = requestId;
     this.enrSeq = enrSeq;
   }
 
   @Override
-  public BytesValue getRequestId() {
+  public Bytes getRequestId() {
     return requestId;
   }
 
@@ -45,14 +48,14 @@ public class PingMessage implements V5Message {
   }
 
   @Override
-  public BytesValue getBytes() {
-    return Bytes1.intToBytes1(MessageCode.PING.byteCode())
-        .concat(
-            BytesValue.wrap(
-                RlpEncoder.encode(
-                    new RlpList(
-                        RlpString.create(requestId.extractArray()),
-                        RlpString.create(enrSeq.toBI())))));
+  public Bytes getBytes() {
+    return Bytes.concatenate(
+        Bytes.of(MessageCode.PING.byteCode()),
+        Bytes.wrap(
+            RlpEncoder.encode(
+                new RlpList(
+                    RlpString.create(requestId.toArray()),
+                    RlpString.create(enrSeq.toBigInteger())))));
   }
 
   @Override

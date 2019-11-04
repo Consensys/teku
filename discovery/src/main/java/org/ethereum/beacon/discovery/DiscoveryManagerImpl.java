@@ -17,6 +17,7 @@ import com.google.common.annotations.VisibleForTesting;
 import java.util.concurrent.CompletableFuture;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes;
 import org.ethereum.beacon.discovery.enr.NodeRecord;
 import org.ethereum.beacon.discovery.enr.NodeRecordFactory;
 import org.ethereum.beacon.discovery.network.DiscoveryClient;
@@ -53,8 +54,9 @@ import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.FluxSink;
 import reactor.core.publisher.ReplayProcessor;
-import tech.pegasys.artemis.util.bytes.Bytes4;
-import tech.pegasys.artemis.util.bytes.BytesValue;
+
+// import tech.pegasys.artemis.util.bytes.Bytes;
+// import tech.pegasys.artemis.util.bytes.Bytes;
 
 public class DiscoveryManagerImpl implements DiscoveryManager {
   private static final Logger logger = LogManager.getLogger(DiscoveryManagerImpl.class);
@@ -71,7 +73,7 @@ public class DiscoveryManagerImpl implements DiscoveryManager {
       NodeTable nodeTable,
       NodeBucketStorage nodeBucketStorage,
       NodeRecord homeNode,
-      BytesValue homeNodePrivateKey,
+      Bytes homeNodePrivateKey,
       NodeRecordFactory nodeRecordFactory,
       Scheduler serverScheduler,
       Scheduler clientScheduler,
@@ -81,7 +83,7 @@ public class DiscoveryManagerImpl implements DiscoveryManager {
     this.nodeRecordFactory = nodeRecordFactory;
     this.discoveryServer =
         new DiscoveryServerImpl(
-            ((Bytes4) homeNode.get(NodeRecord.FIELD_IP_V4)),
+            ((Bytes) homeNode.get(NodeRecord.FIELD_IP_V4)),
             (int) homeNode.get(NodeRecord.FIELD_UDP_V4));
     this.discoveryClient = new DiscoveryClientImpl(outgoingMessages, clientScheduler);
     NodeIdToSession nodeIdToSession =

@@ -16,6 +16,7 @@ package org.ethereum.beacon.discovery;
 import com.google.common.base.Objects;
 import java.util.ArrayList;
 import java.util.List;
+import org.apache.tuweni.bytes.Bytes;
 import org.ethereum.beacon.discovery.enr.NodeRecord;
 import org.ethereum.beacon.discovery.enr.NodeRecordFactory;
 import org.web3j.rlp.RlpDecoder;
@@ -23,7 +24,8 @@ import org.web3j.rlp.RlpEncoder;
 import org.web3j.rlp.RlpList;
 import org.web3j.rlp.RlpString;
 import org.web3j.rlp.RlpType;
-import tech.pegasys.artemis.util.bytes.BytesValue;
+
+// import tech.pegasys.artemis.util.bytes.Bytes;
 
 /**
  * Container for {@link NodeRecord}. Also saves all necessary data about presence of this node and
@@ -55,9 +57,13 @@ public class NodeRecordInfo {
         ((RlpString) internalList.getValues().get(1)).asPositiveBigInteger().intValue());
   }
 
+  public static NodeRecordInfo fromRlpBytes(Bytes bytes, NodeRecordFactory nodeRecordFactory) {
+    return fromRlpBytes(BytesValue.wrap(bytes.toArray()), nodeRecordFactory);
+  }
+
   public BytesValue toRlpBytes() {
     List<RlpType> values = new ArrayList<>();
-    values.add(RlpString.create(getNode().serialize().extractArray()));
+    values.add(RlpString.create(getNode().serialize().toArray()));
     values.add(RlpString.create(getLastRetry()));
     values.add(RlpString.create(getStatus().byteCode()));
     values.add(RlpString.create(getRetry()));

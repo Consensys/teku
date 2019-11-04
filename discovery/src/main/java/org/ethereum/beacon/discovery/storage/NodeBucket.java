@@ -20,6 +20,8 @@ import java.util.List;
 import java.util.TreeSet;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import org.apache.tuweni.bytes.Bytes;
+import org.ethereum.beacon.discovery.BytesValue;
 import org.ethereum.beacon.discovery.NodeRecordInfo;
 import org.ethereum.beacon.discovery.NodeStatus;
 import org.ethereum.beacon.discovery.enr.NodeRecordFactory;
@@ -27,7 +29,8 @@ import org.web3j.rlp.RlpDecoder;
 import org.web3j.rlp.RlpEncoder;
 import org.web3j.rlp.RlpList;
 import org.web3j.rlp.RlpString;
-import tech.pegasys.artemis.util.bytes.BytesValue;
+
+// import tech.pegasys.artemis.util.bytes.Bytes;
 
 /**
  * Storage for nodes, K-Bucket. Holds only {@link #K} nodes, replacing nodes with the same nodeId
@@ -60,6 +63,10 @@ public class NodeBucket {
             .map((BytesValue bytes1) -> NodeRecordInfo.fromRlpBytes(bytes1, nodeRecordFactory))
             .forEach(nodeBucket::put);
     return nodeBucket;
+  }
+
+  public static NodeBucket fromRlpBytes(Bytes bytes, NodeRecordFactory nodeRecordFactory) {
+    return fromRlpBytes(BytesValue.wrap(bytes.toArray()), nodeRecordFactory);
   }
 
   public synchronized boolean put(NodeRecordInfo nodeRecord) {

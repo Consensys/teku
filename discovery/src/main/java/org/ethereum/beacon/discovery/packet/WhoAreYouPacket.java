@@ -13,15 +13,18 @@
 
 package org.ethereum.beacon.discovery.packet;
 
+import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.units.bigints.UInt64;
 import org.ethereum.beacon.discovery.Functions;
 import org.web3j.rlp.RlpDecoder;
 import org.web3j.rlp.RlpEncoder;
 import org.web3j.rlp.RlpList;
 import org.web3j.rlp.RlpString;
-import tech.pegasys.artemis.util.bytes.Bytes32;
-import tech.pegasys.artemis.util.bytes.Bytes8;
-import tech.pegasys.artemis.util.bytes.BytesValue;
-import tech.pegasys.artemis.util.uint.UInt64;
+
+// import tech.pegasys.artemis.util.bytes.Bytes;
+// import tech.pegasys.artemis.util.bytes.Bytes8;
+// import tech.pegasys.artemis.util.bytes.Bytes;
+// import tech.pegasys.artemis.util.uint.UInt64;
 
 /**
  * The WHOAREYOU packet, used during the handshake as a response to any message received from
@@ -35,36 +38,36 @@ import tech.pegasys.artemis.util.uint.UInt64;
  * enr-seq = highest ENR sequence number of node A known on node B's side</code>
  */
 public class WhoAreYouPacket extends AbstractPacket {
-  private static final BytesValue MAGIC_BYTES = BytesValue.wrap("WHOAREYOU".getBytes());
+  private static final Bytes MAGIC_BYTES = Bytes.wrap("WHOAREYOU".getBytes());
   private WhoAreYouDecoded decoded = null;
 
-  public WhoAreYouPacket(BytesValue bytes) {
+  public WhoAreYouPacket(Bytes bytes) {
     super(bytes);
   }
 
   public static WhoAreYouPacket create(
-      Bytes32 destNodeId, BytesValue authTag, Bytes32 idNonce, UInt64 enrSeq) {
-    BytesValue magic = getStartMagic(destNodeId);
+      Bytes destNodeId, Bytes authTag, Bytes idNonce, UInt64 enrSeq) {
+    Bytes magic = getStartMagic(destNodeId);
     byte[] rlpListEncoded =
         RlpEncoder.encode(
             new RlpList(
-                RlpString.create(authTag.extractArray()),
-                RlpString.create(idNonce.extractArray()),
-                RlpString.create(enrSeq.toBI())));
-    return new WhoAreYouPacket(magic.concat(BytesValue.wrap(rlpListEncoded)));
+                RlpString.create(authTag.toArray()),
+                RlpString.create(idNonce.toArray()),
+                RlpString.create(enrSeq.toBigInteger())));
+    return new WhoAreYouPacket(Bytes.concatenate(magic, Bytes.wrap(rlpListEncoded)));
   }
 
   /** Calculates first 32 bytes of WHOAREYOU packet */
-  public static BytesValue getStartMagic(Bytes32 destNodeId) {
-    return Functions.hash(destNodeId.concat(MAGIC_BYTES));
+  public static Bytes getStartMagic(Bytes destNodeId) {
+    return Functions.hash(Bytes.concatenate(destNodeId, MAGIC_BYTES));
   }
 
-  public BytesValue getAuthTag() {
+  public Bytes getAuthTag() {
     decode();
     return decoded.authTag;
   }
 
-  public Bytes32 getIdNonce() {
+  public Bytes getIdNonce() {
     decode();
     return decoded.idNonce;
   }
@@ -74,9 +77,9 @@ public class WhoAreYouPacket extends AbstractPacket {
     return decoded.enrSeq;
   }
 
-  public void verify(Bytes32 destNodeId, BytesValue expectedAuthTag) {
+  public void verify(Bytes destNodeId, Bytes expectedAuthTag) {
     decode();
-    assert Functions.hash(destNodeId.concat(MAGIC_BYTES)).equals(decoded.magic);
+    assert Functions.hash(Bytes.concatenate(destNodeId, MAGIC_BYTES)).equals(decoded.magic);
     assert expectedAuthTag.equals(getAuthTag());
   }
 
@@ -85,14 +88,13 @@ public class WhoAreYouPacket extends AbstractPacket {
       return;
     }
     WhoAreYouDecoded blank = new WhoAreYouDecoded();
-    blank.magic = Bytes32.wrap(getBytes().slice(0, 32), 0);
+    blank.magic = Bytes.wrap(getBytes().slice(0, 32));
     RlpList payload =
-        (RlpList) RlpDecoder.decode(getBytes().slice(32).extractArray()).getValues().get(0);
-    blank.authTag = BytesValue.wrap(((RlpString) payload.getValues().get(0)).getBytes());
-    blank.idNonce = Bytes32.wrap(((RlpString) payload.getValues().get(1)).getBytes());
+        (RlpList) RlpDecoder.decode(getBytes().slice(32).toArray()).getValues().get(0);
+    blank.authTag = Bytes.wrap(((RlpString) payload.getValues().get(0)).getBytes());
+    blank.idNonce = Bytes.wrap(((RlpString) payload.getValues().get(1)).getBytes());
     blank.enrSeq =
-        UInt64.fromBytesBigEndian(
-            Bytes8.leftPad(BytesValue.wrap(((RlpString) payload.getValues().get(2)).getBytes())));
+        UInt64.fromBytes(Bytes.wrap(((RlpString) payload.getValues().get(2)).getBytes()));
     this.decoded = blank;
   }
 
@@ -115,9 +117,9 @@ public class WhoAreYouPacket extends AbstractPacket {
   }
 
   private static class WhoAreYouDecoded {
-    private Bytes32 magic;
-    private BytesValue authTag;
-    private Bytes32 idNonce;
+    private Bytes magic;
+    private Bytes authTag;
+    private Bytes idNonce;
     private UInt64 enrSeq;
   }
 }

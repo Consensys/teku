@@ -14,27 +14,30 @@
 package org.ethereum.beacon.discovery.storage;
 
 import java.util.Optional;
-import org.ethereum.beacon.chain.storage.impl.SerializerFactory;
-import org.ethereum.beacon.db.Database;
-import org.ethereum.beacon.db.source.DataSource;
-import org.ethereum.beacon.db.source.HoleyList;
-import org.ethereum.beacon.db.source.impl.DataSourceList;
+import org.apache.tuweni.bytes.Bytes;
+import org.ethereum.beacon.discovery.BytesValue;
+import org.ethereum.beacon.discovery.DataSource;
+import org.ethereum.beacon.discovery.DataSourceList;
+import org.ethereum.beacon.discovery.Database;
 import org.ethereum.beacon.discovery.Functions;
+import org.ethereum.beacon.discovery.HoleyList;
 import org.ethereum.beacon.discovery.NodeRecordInfo;
+import org.ethereum.beacon.discovery.SerializerFactory;
 import org.ethereum.beacon.discovery.enr.NodeRecord;
-import tech.pegasys.artemis.util.bytes.Bytes32;
-import tech.pegasys.artemis.util.bytes.BytesValue;
+
+// import tech.pegasys.artemis.util.bytes.Bytes;
+// import tech.pegasys.artemis.util.bytes.Bytes;
 
 /**
  * Stores {@link NodeRecordInfo}'s in {@link NodeBucket}'s calculating index number of bucket as
- * {@link Functions#logDistance(Bytes32, Bytes32)} from homeNodeId and ignoring index above {@link
+ * {@link Functions#logDistance(Bytes, Bytes)} from homeNodeId and ignoring index above {@link
  * #MAXIMUM_BUCKET}
  */
 public class NodeBucketStorageImpl implements NodeBucketStorage {
   public static final String NODE_BUCKET_STORAGE_NAME = "node-bucket-table";
   public static final int MAXIMUM_BUCKET = 256;
   private final HoleyList<NodeBucket> nodeBucketsTable;
-  private final Bytes32 homeNodeId;
+  private final Bytes homeNodeId;
 
   public NodeBucketStorageImpl(
       Database database, SerializerFactory serializerFactory, NodeRecord homeNode) {

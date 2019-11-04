@@ -13,10 +13,14 @@
 
 package org.ethereum.beacon.discovery.packet;
 
-import org.ethereum.beacon.crypto.Hashes;
-import tech.pegasys.artemis.util.bytes.Bytes32;
-import tech.pegasys.artemis.util.bytes.Bytes32s;
-import tech.pegasys.artemis.util.bytes.BytesValue;
+import org.apache.tuweni.bytes.Bytes;
+import org.ethereum.beacon.discovery.BytesValue;
+import org.ethereum.beacon.discovery.Hashes;
+
+// import org.ethereum.beacon.crypto.Hashes;
+// import tech.pegasys.artemis.util.bytes.Bytes;
+// import tech.pegasys.artemis.util.bytes.Bytess;
+// import tech.pegasys.artemis.util.bytes.Bytes;
 
 /** Default packet form until its goal is known */
 public class UnknownPacket extends AbstractPacket {
@@ -41,7 +45,7 @@ public class UnknownPacket extends AbstractPacket {
     return new WhoAreYouPacket(getBytes());
   }
 
-  public boolean isWhoAreYouPacket(Bytes32 destNodeId) {
+  public boolean isWhoAreYouPacket(Bytes destNodeId) {
     return WhoAreYouPacket.getStartMagic(destNodeId).equals(getBytes().slice(0, 32));
   }
 
@@ -52,10 +56,11 @@ public class UnknownPacket extends AbstractPacket {
   // The recipient can recover the sender's ID by performing the same calculation in reverse.
   //
   // src-node-id      = xor(sha256(dest-node-id), tag)
-  public Bytes32 getSourceNodeId(Bytes32 destNodeId) {
+  public Bytes getSourceNodeId(Bytes destNodeId) {
     assert !isWhoAreYouPacket(destNodeId);
-    BytesValue xorTag = getBytes().slice(0, 32);
-    return Bytes32s.xor(Hashes.sha256(destNodeId), Bytes32.wrap(xorTag, 0));
+    Bytes xorTag = Bytes.wrap(getBytes().toArray()).slice(0, 32);
+    return Bytes.wrap(Hashes.sha256(BytesValue.wrap(destNodeId.toArray())).extractArray())
+        .xor(Bytes.wrap(Bytes.concatenate(xorTag, Bytes.of(0))));
   }
 
   @Override

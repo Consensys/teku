@@ -23,27 +23,29 @@ import java.net.UnknownHostException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes;
 import org.ethereum.beacon.schedulers.Scheduler;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.FluxSink;
 import reactor.core.publisher.ReplayProcessor;
-import tech.pegasys.artemis.util.bytes.Bytes4;
-import tech.pegasys.artemis.util.bytes.BytesValue;
+
+// import tech.pegasys.artemis.util.bytes.Bytes4;
+// import tech.pegasys.artemis.util.bytes.Bytes;
 
 public class DiscoveryServerImpl implements DiscoveryServer {
   private static final int RECREATION_TIMEOUT = 5000;
   private static final int STOPPING_TIMEOUT = 10000;
   private static final Logger logger = LogManager.getLogger(DiscoveryServerImpl.class);
-  private final ReplayProcessor<BytesValue> incomingPackets = ReplayProcessor.cacheLast();
-  private final FluxSink<BytesValue> incomingSink = incomingPackets.sink();
+  private final ReplayProcessor<Bytes> incomingPackets = ReplayProcessor.cacheLast();
+  private final FluxSink<Bytes> incomingSink = incomingPackets.sink();
   private final Integer udpListenPort;
   private final String udpListenHost;
   private AtomicBoolean listen = new AtomicBoolean(true);
   private Channel channel;
 
-  public DiscoveryServerImpl(Bytes4 udpListenHost, Integer udpListenPort) {
+  public DiscoveryServerImpl(Bytes udpListenHost, Integer udpListenPort) {
     try {
-      this.udpListenHost = InetAddress.getByAddress(udpListenHost.extractArray()).getHostAddress();
+      this.udpListenHost = InetAddress.getByAddress(udpListenHost.toArray()).getHostAddress();
     } catch (UnknownHostException e) {
       throw new RuntimeException(e);
     }
@@ -95,7 +97,7 @@ public class DiscoveryServerImpl implements DiscoveryServer {
   }
 
   @Override
-  public Publisher<BytesValue> getIncomingPackets() {
+  public Publisher<Bytes> getIncomingPackets() {
     return incomingPackets;
   }
 

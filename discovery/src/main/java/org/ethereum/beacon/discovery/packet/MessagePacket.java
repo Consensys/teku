@@ -13,15 +13,19 @@
 
 package org.ethereum.beacon.discovery.packet;
 
+import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.MutableBytes;
+import org.ethereum.beacon.discovery.BytesValue;
 import org.ethereum.beacon.discovery.Functions;
 import org.ethereum.beacon.discovery.message.DiscoveryMessage;
 import org.ethereum.beacon.discovery.message.DiscoveryV5Message;
 import org.web3j.rlp.RlpDecoder;
 import org.web3j.rlp.RlpEncoder;
 import org.web3j.rlp.RlpString;
-import tech.pegasys.artemis.util.bytes.Bytes32;
-import tech.pegasys.artemis.util.bytes.Bytes32s;
-import tech.pegasys.artemis.util.bytes.BytesValue;
+
+// import tech.pegasys.artemis.util.bytes.Bytes;
+// import tech.pegasys.artemis.util.bytes.Bytess;
+// import tech.pegasys.artemis.util.bytes.Bytes;
 
 /**
  * Used when handshake is completed as a {@link DiscoveryMessage} authenticated container
@@ -33,38 +37,42 @@ import tech.pegasys.artemis.util.bytes.BytesValue;
  */
 public class MessagePacket extends AbstractPacket {
   private MessagePacketDecoded decoded = null;
-  private BytesValue initiatorKey = null;
+  private Bytes initiatorKey = null;
+
+  public MessagePacket(Bytes bytes) {
+    super(bytes);
+  }
 
   public MessagePacket(BytesValue bytes) {
     super(bytes);
   }
 
   public static MessagePacket create(
-      Bytes32 homeNodeId,
-      Bytes32 destNodeId,
-      BytesValue authTag,
-      BytesValue initiatorKey,
+      Bytes homeNodeId,
+      Bytes destNodeId,
+      Bytes authTag,
+      Bytes initiatorKey,
       DiscoveryMessage message) {
-    BytesValue tag = Packet.createTag(homeNodeId, destNodeId);
-    byte[] authTagBytesRlp = RlpEncoder.encode(RlpString.create(authTag.extractArray()));
-    BytesValue authTagEncoded = BytesValue.wrap(authTagBytesRlp);
-    BytesValue encryptedData =
-        Functions.aesgcm_encrypt(initiatorKey, authTag, message.getBytes(), tag);
-    return new MessagePacket(tag.concat(authTagEncoded).concat(encryptedData));
+    Bytes tag =
+        Bytes.wrap(
+            Packet.createTag(BytesValue.wrap(homeNodeId.toArray()), destNodeId).extractArray());
+    byte[] authTagBytesRlp = RlpEncoder.encode(RlpString.create(authTag.toArray()));
+    Bytes authTagEncoded = Bytes.wrap(authTagBytesRlp);
+    Bytes encryptedData = Functions.aesgcm_encrypt(initiatorKey, authTag, message.getBytes(), tag);
+    return new MessagePacket(Bytes.concatenate(tag, authTagEncoded, encryptedData));
   }
 
-  public void verify(BytesValue expectedAuthTag) {}
+  public void verify(Bytes expectedAuthTag) {}
 
-  public Bytes32 getHomeNodeId(Bytes32 destNodeId) {
+  public Bytes getHomeNodeId(Bytes destNodeId) {
     verifyDecode();
-    return Bytes32s.xor(Functions.hash(destNodeId), decoded.tag);
+    return Functions.hash(destNodeId).xor(decoded.tag, MutableBytes.create(decoded.tag.size()));
   }
 
-  public BytesValue getAuthTag() {
+  public Bytes getAuthTag() {
     if (decoded == null) {
-      return BytesValue.wrap(
-          ((RlpString)
-                  RlpDecoder.decode(getBytes().slice(32, 13).extractArray()).getValues().get(0))
+      return Bytes.wrap(
+          ((RlpString) RlpDecoder.decode(getBytes().slice(32, 13).toArray()).getValues().get(0))
               .getBytes());
     }
     return decoded.authTag;
@@ -81,16 +89,15 @@ public class MessagePacket extends AbstractPacket {
     }
   }
 
-  public void decode(BytesValue initiatorKey) {
+  public void decode(Bytes initiatorKey) {
     if (decoded != null) {
       return;
     }
     MessagePacketDecoded blank = new MessagePacketDecoded();
-    blank.tag = Bytes32.wrap(getBytes().slice(0, 32), 0);
+    blank.tag = Bytes.wrap(getBytes().slice(0, 32));
     blank.authTag =
-        BytesValue.wrap(
-            ((RlpString)
-                    RlpDecoder.decode(getBytes().slice(32, 13).extractArray()).getValues().get(0))
+        Bytes.wrap(
+            ((RlpString) RlpDecoder.decode(getBytes().slice(32, 13).toArray()).getValues().get(0))
                 .getBytes());
     blank.message =
         new DiscoveryV5Message(
@@ -115,8 +122,8 @@ public class MessagePacket extends AbstractPacket {
   }
 
   private static class MessagePacketDecoded {
-    private Bytes32 tag;
-    private BytesValue authTag;
+    private Bytes tag;
+    private Bytes authTag;
     private DiscoveryMessage message;
   }
 }

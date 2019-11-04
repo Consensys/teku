@@ -20,7 +20,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import java.util.ArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import org.ethereum.beacon.db.Database;
 import org.ethereum.beacon.discovery.enr.NodeRecord;
 import org.ethereum.beacon.discovery.mock.DiscoveryManagerNoNetwork;
 import org.ethereum.beacon.discovery.packet.AuthHeaderMessagePacket;
@@ -38,7 +37,8 @@ import org.ethereum.beacon.stream.SimpleProcessor;
 import org.javatuples.Pair;
 import org.junit.Test;
 import reactor.core.publisher.Flux;
-import tech.pegasys.artemis.util.bytes.BytesValue;
+
+// import tech.pegasys.artemis.util.bytes.BytesValue;
 
 /**
  * Discovery test without real network, instead outgoing stream of each peer is connected with
@@ -109,9 +109,9 @@ public class DiscoveryNoNetworkTest {
 
     // 2) Link outgoing of each one with incoming of another
     Flux.from(discoveryManager1.getOutgoingMessages())
-        .subscribe(t -> from1to2.onNext(t.getPacket().getBytes()));
+        .subscribe(t -> from1to2.onNext(BytesValue.wrap(t.getPacket().getBytes().toArray())));
     Flux.from(discoveryManager2.getOutgoingMessages())
-        .subscribe(t -> from2to1.onNext(t.getPacket().getBytes()));
+        .subscribe(t -> from2to1.onNext(BytesValue.wrap(t.getPacket().getBytes().toArray())));
 
     // 3) Expect standard 1 => 2 dialog
     CountDownLatch randomSent1to2 = new CountDownLatch(1);

@@ -17,7 +17,8 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Random;
-import org.ethereum.beacon.chain.storage.impl.SerializerFactory;
+import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.units.bigints.UInt64;
 import org.ethereum.beacon.discovery.enr.EnrScheme;
 import org.ethereum.beacon.discovery.enr.NodeRecord;
 import org.ethereum.beacon.discovery.enr.NodeRecordFactory;
@@ -26,10 +27,11 @@ import org.ethereum.beacon.discovery.storage.NodeSerializerFactory;
 import org.ethereum.beacon.util.Utils;
 import org.javatuples.Pair;
 import org.web3j.crypto.ECKeyPair;
-import tech.pegasys.artemis.util.bytes.Bytes4;
-import tech.pegasys.artemis.util.bytes.Bytes96;
-import tech.pegasys.artemis.util.bytes.BytesValue;
-import tech.pegasys.artemis.util.uint.UInt64;
+
+// import tech.pegasys.artemis.util.bytes.BytesValue;
+// import tech.pegasys.artemis.util.bytes.Bytes96;
+// import tech.pegasys.artemis.util.bytes.BytesValue;
+// import tech.pegasys.artemis.util.uint.UInt64;
 
 public class TestUtil {
   public static final NodeRecordFactory NODE_RECORD_FACTORY_NO_VERIFICATION =
@@ -46,13 +48,13 @@ public class TestUtil {
    */
   public static Pair<BytesValue, NodeRecord> generateNode(int port) {
     final Random rnd = new Random(SEED);
-    Bytes4 localIp = null;
+    BytesValue localIp = null;
     try {
-      localIp = Bytes4.wrap(InetAddress.getByName("127.0.0.1").getAddress());
+      localIp = BytesValue.wrap(InetAddress.getByName("127.0.0.1").getAddress());
     } catch (UnknownHostException e) {
       throw new RuntimeException(e);
     }
-    final Bytes4 finalLocalIp = localIp;
+    final BytesValue finalLocalIp = localIp;
     for (int i = 0; i < port; ++i) {
       rnd.nextBoolean(); // skip according to input
     }
@@ -65,7 +67,7 @@ public class TestUtil {
         NODE_RECORD_FACTORY_NO_VERIFICATION.createFromValues(
             EnrScheme.V4,
             UInt64.valueOf(1),
-            Bytes96.EMPTY,
+            Bytes.EMPTY,
             new ArrayList<Pair<String, Object>>() {
               {
                 add(Pair.with(NodeRecord.FIELD_IP_V4, finalLocalIp));

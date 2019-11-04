@@ -17,12 +17,14 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes;
 import org.ethereum.beacon.discovery.NodeRecordInfo;
 import org.ethereum.beacon.discovery.NodeSession;
 import org.ethereum.beacon.discovery.message.NodesMessage;
 import org.ethereum.beacon.discovery.task.TaskStatus;
 import org.ethereum.beacon.discovery.task.TaskType;
-import tech.pegasys.artemis.util.bytes.BytesValue;
+
+// import tech.pegasys.artemis.util.bytes.Bytes;
 
 public class NodesHandler implements MessageHandler<NodesMessage> {
   private static final Logger logger = LogManager.getLogger(FindNodeHandler.class);
@@ -89,7 +91,7 @@ public class NodesHandler implements MessageHandler<NodesMessage> {
 
     public FindNodeRequestInfo(
         TaskStatus taskStatus,
-        BytesValue requestId,
+        Bytes requestId,
         CompletableFuture<Void> future,
         int remainingNodes) {
       super(TaskType.FINDNODE, taskStatus, requestId, future);

@@ -13,24 +13,31 @@
 
 package org.ethereum.beacon.discovery.storage;
 
-import org.ethereum.beacon.chain.storage.impl.SerializerFactory;
-import org.ethereum.beacon.crypto.Hashes;
-import org.ethereum.beacon.db.Database;
-import org.ethereum.beacon.db.source.CodecSource;
-import org.ethereum.beacon.db.source.DataSource;
-import org.ethereum.beacon.db.source.HoleyList;
-import org.ethereum.beacon.db.source.SingleValueSource;
-import org.ethereum.beacon.db.source.impl.DataSourceList;
+import static org.ethereum.beacon.discovery.crypto.CryptoUtil.sha256;
+
+import org.apache.tuweni.bytes.Bytes;
+import org.ethereum.beacon.discovery.BytesValue;
+import org.ethereum.beacon.discovery.CodecSource;
+import org.ethereum.beacon.discovery.DataSource;
+import org.ethereum.beacon.discovery.DataSourceList;
+import org.ethereum.beacon.discovery.Database;
+import org.ethereum.beacon.discovery.Hash32;
+import org.ethereum.beacon.discovery.HoleyList;
 import org.ethereum.beacon.discovery.NodeRecordInfo;
-import tech.pegasys.artemis.ethereum.core.Hash32;
-import tech.pegasys.artemis.util.bytes.BytesValue;
+import org.ethereum.beacon.discovery.SerializerFactory;
+import org.ethereum.beacon.discovery.SingleValueSource;
+
+// import tech.pegasys.artemis.util.bytes.Bytes;
 
 /** Creates NodeTableStorage containing NodeTable with indexes */
 public class NodeTableStorageImpl implements NodeTableStorage {
   public static final String NODE_TABLE_STORAGE_NAME = "node-table";
   public static final String INDEXES_STORAGE_NAME = "node-table-index";
   private static final Hash32 HOME_NODE_KEY =
-      Hash32.wrap(Hashes.sha256(BytesValue.wrap("HOME_NODE".getBytes())));
+      Hash32.wrap(
+          BytesValue.wrap(
+              sha256(Bytes.wrap(BytesValue.wrap("HOME_NODE".getBytes()).extractArray()))
+                  .toArray()));
   private final DataSource<BytesValue, BytesValue> nodeTableSource;
   private final DataSource<BytesValue, BytesValue> nodeIndexesSource;
   private final SingleValueSource<NodeRecordInfo> homeNodeSource;

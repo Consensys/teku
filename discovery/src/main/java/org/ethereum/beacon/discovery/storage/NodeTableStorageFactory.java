@@ -16,10 +16,12 @@ package org.ethereum.beacon.discovery.storage;
 import java.util.List;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import org.ethereum.beacon.chain.storage.impl.SerializerFactory;
-import org.ethereum.beacon.db.Database;
+import org.apache.tuweni.units.bigints.UInt64;
+import org.ethereum.beacon.discovery.Database;
+import org.ethereum.beacon.discovery.SerializerFactory;
 import org.ethereum.beacon.discovery.enr.NodeRecord;
-import tech.pegasys.artemis.util.uint.UInt64;
+
+// import tech.pegasys.artemis.util.uint.UInt64;
 
 public interface NodeTableStorageFactory {
   /**

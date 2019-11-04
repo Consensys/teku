@@ -16,10 +16,12 @@ package org.ethereum.beacon.discovery.storage;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
-import org.ethereum.beacon.chain.storage.impl.SerializerFactory;
+import org.ethereum.beacon.discovery.BytesValue;
 import org.ethereum.beacon.discovery.NodeRecordInfo;
+import org.ethereum.beacon.discovery.SerializerFactory;
 import org.ethereum.beacon.discovery.enr.NodeRecordFactory;
-import tech.pegasys.artemis.util.bytes.BytesValue;
+
+// import tech.pegasys.artemis.util.bytes.Bytes;
 
 public class NodeSerializerFactory implements SerializerFactory {
   private final Map<Class, Function<BytesValue, Object>> deserializerMap = new HashMap<>();

@@ -23,7 +23,10 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Random;
 import java.util.stream.IntStream;
-import org.ethereum.beacon.db.Database;
+import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.units.bigints.UInt64;
+import org.ethereum.beacon.discovery.BytesValue;
+import org.ethereum.beacon.discovery.Database;
 import org.ethereum.beacon.discovery.Functions;
 import org.ethereum.beacon.discovery.NodeRecordInfo;
 import org.ethereum.beacon.discovery.NodeStatus;
@@ -32,10 +35,11 @@ import org.ethereum.beacon.discovery.enr.EnrScheme;
 import org.ethereum.beacon.discovery.enr.NodeRecord;
 import org.javatuples.Pair;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.artemis.util.bytes.Bytes4;
-import tech.pegasys.artemis.util.bytes.Bytes96;
-import tech.pegasys.artemis.util.bytes.BytesValue;
-import tech.pegasys.artemis.util.uint.UInt64;
+
+// import tech.pegasys.artemis.util.bytes.Bytes4;
+// import tech.pegasys.artemis.util.bytes.BytesValue;
+// import tech.pegasys.artemis.util.bytes.BytesValue;
+// import tech.pegasys.artemis.util.uint.UInt64;
 
 public class NodeBucketTest {
   private final Random rnd = new Random();
@@ -48,13 +52,13 @@ public class NodeBucketTest {
           TestUtil.NODE_RECORD_FACTORY_NO_VERIFICATION.createFromValues(
               EnrScheme.V4,
               UInt64.valueOf(1),
-              Bytes96.EMPTY,
+              Bytes.EMPTY,
               new ArrayList<Pair<String, Object>>() {
                 {
                   add(
                       Pair.with(
                           NodeRecord.FIELD_IP_V4,
-                          Bytes4.wrap(InetAddress.getByName("127.0.0.1").getAddress())));
+                          BytesValue.wrap(InetAddress.getByName("127.0.0.1").getAddress())));
                   add(Pair.with(NodeRecord.FIELD_UDP_V4, 30303));
                   add(Pair.with(NodeRecord.FIELD_PKEY_SECP256K1, BytesValue.wrap(pkey)));
                 }

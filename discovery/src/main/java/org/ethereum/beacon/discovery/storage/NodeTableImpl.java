@@ -22,15 +22,18 @@ import java.util.Optional;
 import java.util.Set;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.ethereum.beacon.db.source.DataSource;
-import org.ethereum.beacon.db.source.HoleyList;
-import org.ethereum.beacon.db.source.SingleValueSource;
+import org.apache.tuweni.bytes.Bytes;
+import org.ethereum.beacon.discovery.BytesValue;
+import org.ethereum.beacon.discovery.DataSource;
 import org.ethereum.beacon.discovery.Functions;
+import org.ethereum.beacon.discovery.Hash32;
+import org.ethereum.beacon.discovery.HoleyList;
 import org.ethereum.beacon.discovery.NodeRecordInfo;
+import org.ethereum.beacon.discovery.SingleValueSource;
 import org.ethereum.beacon.discovery.enr.NodeRecord;
-import tech.pegasys.artemis.ethereum.core.Hash32;
-import tech.pegasys.artemis.util.bytes.Bytes32;
-import tech.pegasys.artemis.util.bytes.BytesValue;
+
+// import tech.pegasys.artemis.util.bytes.Bytes;
+// import tech.pegasys.artemis.util.bytes.Bytes;
 
 /**
  * Stores Ethereum Node Records in {@link NodeRecordInfo} containers. Also stores home node as node
@@ -55,7 +58,7 @@ public class NodeTableImpl implements NodeTable {
   }
 
   @VisibleForTesting
-  static long getNodeIndex(Bytes32 nodeKey) {
+  static long getNodeIndex(BytesValue nodeKey) {
     int activeBytes = 1;
     long required = NUMBER_OF_INDEXES;
     while (required > 0) {
@@ -81,7 +84,7 @@ public class NodeTableImpl implements NodeTable {
 
   @Override
   public void save(NodeRecordInfo node) {
-    Hash32 nodeKey = Hash32.wrap(node.getNode().getNodeId());
+    Hash32 nodeKey = Hash32.wrap(BytesValue.wrap(node.getNode().getNodeId().toArray()));
     nodeTable.put(nodeKey, node);
     NodeIndex activeIndex = indexTable.get(getNodeIndex(nodeKey)).orElseGet(NodeIndex::new);
     List<Hash32> nodes = activeIndex.getEntries();
@@ -93,7 +96,7 @@ public class NodeTableImpl implements NodeTable {
 
   @Override
   public void remove(NodeRecordInfo node) {
-    Hash32 nodeKey = Hash32.wrap(node.getNode().getNodeId());
+    Hash32 nodeKey = Hash32.wrap(BytesValue.wrap(node.getNode().getNodeId().toArray()));
     nodeTable.remove(nodeKey);
     NodeIndex activeIndex = indexTable.get(getNodeIndex(nodeKey)).orElseGet(NodeIndex::new);
     List<Hash32> nodes = activeIndex.getEntries();
@@ -104,17 +107,17 @@ public class NodeTableImpl implements NodeTable {
   }
 
   @Override
-  public Optional<NodeRecordInfo> getNode(Bytes32 nodeId) {
-    return nodeTable.get(Hash32.wrap(nodeId));
+  public Optional<NodeRecordInfo> getNode(Bytes nodeId) {
+    return nodeTable.get(Hash32.wrap(BytesValue.wrap(nodeId.toArray())));
   }
 
   /**
    * Returns list of nodes including `nodeId` (if it's found) in logLimit distance from it. Uses
-   * {@link Functions#logDistance(Bytes32, Bytes32)} as distance function.
+   * {@link Functions#logDistance(Bytes, Bytes)} as distance function.
    */
   @Override
-  public List<NodeRecordInfo> findClosestNodes(Bytes32 nodeId, int logLimit) {
-    long start = getNodeIndex(nodeId);
+  public List<NodeRecordInfo> findClosestNodes(Bytes nodeId, int logLimit) {
+    long start = getNodeIndex(BytesValue.wrap(nodeId.toArray()));
     boolean limitReached = false;
     long currentIndexUp = start;
     long currentIndexDown = start;
@@ -131,11 +134,11 @@ public class NodeTableImpl implements NodeTable {
       if (upNodesOptional.isPresent()) {
         NodeIndex upNodes = upNodesOptional.get();
         for (Hash32 currentNodeId : upNodes.getEntries()) {
-          if (Functions.logDistance(currentNodeId, nodeId) >= logLimit) {
+          if (Functions.logDistance(Bytes.wrap(currentNodeId.extractArray()), nodeId) >= logLimit) {
             limitReached = true;
             break;
           } else {
-            res.add(getNode(currentNodeId).get());
+            res.add(getNode(Bytes.wrap(currentNodeId.extractArray())).get());
           }
         }
       }
@@ -145,11 +148,11 @@ public class NodeTableImpl implements NodeTable {
         // XXX: iterate in reverse order to reach logDistance limit from the right side
         for (int i = entries.size() - 1; i >= 0; i--) {
           Hash32 currentNodeId = entries.get(i);
-          if (Functions.logDistance(currentNodeId, nodeId) >= logLimit) {
+          if (Functions.logDistance(Bytes.wrap(currentNodeId.extractArray()), nodeId) >= logLimit) {
             limitReached = true;
             break;
           } else {
-            res.add(getNode(currentNodeId).get());
+            res.add(getNode(Bytes.wrap(currentNodeId.extractArray())).get());
           }
         }
       }

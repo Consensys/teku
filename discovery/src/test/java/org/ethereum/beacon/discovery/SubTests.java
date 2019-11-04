@@ -20,7 +20,8 @@ import org.ethereum.beacon.util.Utils;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.web3j.crypto.ECKeyPair;
-import tech.pegasys.artemis.util.bytes.BytesValue;
+
+// import tech.pegasys.artemis.util.bytes.BytesValue;
 
 /**
  * Secondary tests not directly related to discovery but clarifying functions used somewhere in

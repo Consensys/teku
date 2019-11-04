@@ -17,12 +17,14 @@ import com.google.common.base.Objects;
 import java.util.List;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import org.apache.tuweni.bytes.Bytes;
 import org.ethereum.beacon.discovery.enr.NodeRecord;
 import org.web3j.rlp.RlpEncoder;
 import org.web3j.rlp.RlpList;
 import org.web3j.rlp.RlpString;
-import tech.pegasys.artemis.util.bytes.Bytes1;
-import tech.pegasys.artemis.util.bytes.BytesValue;
+
+// import tech.pegasys.artemis.util.bytes.Bytes1;
+// import tech.pegasys.artemis.util.bytes.Bytes;
 
 /**
  * NODES is the response to a FINDNODE or TOPICQUERY message. Multiple NODES messages may be sent as
@@ -30,7 +32,7 @@ import tech.pegasys.artemis.util.bytes.BytesValue;
  */
 public class NodesMessage implements V5Message {
   // Unique request id
-  private final BytesValue requestId;
+  private final Bytes requestId;
   // Total number of responses to the request
   private final Integer total;
   // List of nodes upon request
@@ -40,7 +42,7 @@ public class NodesMessage implements V5Message {
   private List<NodeRecord> nodeRecords = null;
 
   public NodesMessage(
-      BytesValue requestId,
+      Bytes requestId,
       Integer total,
       Supplier<List<NodeRecord>> nodeRecordsSupplier,
       Integer nodeRecordsSize) {
@@ -51,7 +53,7 @@ public class NodesMessage implements V5Message {
   }
 
   @Override
-  public BytesValue getRequestId() {
+  public Bytes getRequestId() {
     return requestId;
   }
 
@@ -71,18 +73,18 @@ public class NodesMessage implements V5Message {
   }
 
   @Override
-  public BytesValue getBytes() {
-    return Bytes1.intToBytes1(MessageCode.NODES.byteCode())
-        .concat(
-            BytesValue.wrap(
-                RlpEncoder.encode(
+  public Bytes getBytes() {
+    return Bytes.concatenate(
+        Bytes.of(MessageCode.NODES.byteCode()),
+        Bytes.wrap(
+            RlpEncoder.encode(
+                new RlpList(
+                    RlpString.create(requestId.toArray()),
+                    RlpString.create(total),
                     new RlpList(
-                        RlpString.create(requestId.extractArray()),
-                        RlpString.create(total),
-                        new RlpList(
-                            getNodeRecords().stream()
-                                .map(n -> RlpString.create(n.serialize().extractArray()))
-                                .collect(Collectors.toList()))))));
+                        getNodeRecords().stream()
+                            .map(n -> RlpString.create(n.serialize().toArray()))
+                            .collect(Collectors.toList()))))));
   }
 
   @Override

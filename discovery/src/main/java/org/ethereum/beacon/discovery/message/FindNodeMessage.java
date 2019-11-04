@@ -14,11 +14,13 @@
 package org.ethereum.beacon.discovery.message;
 
 import com.google.common.base.Objects;
+import org.apache.tuweni.bytes.Bytes;
 import org.web3j.rlp.RlpEncoder;
 import org.web3j.rlp.RlpList;
 import org.web3j.rlp.RlpString;
-import tech.pegasys.artemis.util.bytes.Bytes1;
-import tech.pegasys.artemis.util.bytes.BytesValue;
+
+// import tech.pegasys.artemis.util.bytes.Bytes1;
+// import tech.pegasys.artemis.util.bytes.Bytes;
 
 /**
  * FINDNODE queries for nodes at the given logarithmic distance from the recipient's node ID. The
@@ -28,17 +30,17 @@ import tech.pegasys.artemis.util.bytes.BytesValue;
  */
 public class FindNodeMessage implements V5Message {
   // Unique request id
-  private final BytesValue requestId;
+  private final Bytes requestId;
   // The requested log2 distance, a positive integer
   private final Integer distance;
 
-  public FindNodeMessage(BytesValue requestId, Integer distance) {
+  public FindNodeMessage(Bytes requestId, Integer distance) {
     this.requestId = requestId;
     this.distance = distance;
   }
 
   @Override
-  public BytesValue getRequestId() {
+  public Bytes getRequestId() {
     return requestId;
   }
 
@@ -47,13 +49,12 @@ public class FindNodeMessage implements V5Message {
   }
 
   @Override
-  public BytesValue getBytes() {
-    return Bytes1.intToBytes1(MessageCode.FINDNODE.byteCode())
-        .concat(
-            BytesValue.wrap(
-                RlpEncoder.encode(
-                    new RlpList(
-                        RlpString.create(requestId.extractArray()), RlpString.create(distance)))));
+  public Bytes getBytes() {
+    return Bytes.concatenate(
+        Bytes.of(MessageCode.FINDNODE.byteCode()),
+        Bytes.wrap(
+            RlpEncoder.encode(
+                new RlpList(RlpString.create(requestId.toArray()), RlpString.create(distance)))));
   }
 
   @Override
