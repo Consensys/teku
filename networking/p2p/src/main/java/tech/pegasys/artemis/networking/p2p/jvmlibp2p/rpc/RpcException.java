@@ -16,7 +16,7 @@ package tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc;
 public class RpcException extends Exception {
 
   private static final byte INVALID_REQUEST_CODE = 1;
-  private static final byte SERVER_ERROR_CODE = 1;
+  private static final byte SERVER_ERROR_CODE = 2;
   public static final RpcException MALFORMED_REQUEST_ERROR =
       new RpcException(INVALID_REQUEST_CODE, "Request was malformed");
   public static final RpcException INCORRECT_LENGTH_ERRROR =
