@@ -14,8 +14,8 @@
 package org.ethereum.beacon.discovery.storage;
 
 // import org.ethereum.beacon.db.source.SingleValueSource;
-import org.ethereum.beacon.discovery.NodeRecordInfo;
-import org.ethereum.beacon.discovery.SingleValueSource;
+import org.ethereum.beacon.discovery.database.SingleValueSource;
+import org.ethereum.beacon.discovery.schema.NodeRecordInfo;
 
 /** Stores {@link NodeTable} and home node info */
 public interface NodeTableStorage {

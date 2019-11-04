@@ -19,7 +19,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
-import org.ethereum.beacon.discovery.NodeSession;
+import org.ethereum.beacon.discovery.schema.NodeSession;
 
 // import tech.pegasys.artemis.util.bytes.Bytes;
 

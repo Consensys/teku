@@ -19,6 +19,8 @@ package org.ethereum.beacon.discovery;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.apache.tuweni.bytes.Bytes;
+import org.ethereum.beacon.discovery.type.BytesValue;
+import org.ethereum.beacon.discovery.util.Functions;
 import org.junit.jupiter.api.Test;
 import org.web3j.crypto.ECKeyPair;
 

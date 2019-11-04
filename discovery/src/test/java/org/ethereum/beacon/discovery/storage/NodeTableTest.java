@@ -28,12 +28,12 @@ import java.util.Set;
 import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.units.bigints.UInt64;
-import org.ethereum.beacon.discovery.BytesValue;
-import org.ethereum.beacon.discovery.Database;
-import org.ethereum.beacon.discovery.NodeRecordInfo;
-import org.ethereum.beacon.discovery.NodeStatus;
-import org.ethereum.beacon.discovery.enr.EnrScheme;
-import org.ethereum.beacon.discovery.enr.NodeRecord;
+import org.ethereum.beacon.discovery.database.Database;
+import org.ethereum.beacon.discovery.schema.EnrScheme;
+import org.ethereum.beacon.discovery.schema.NodeRecord;
+import org.ethereum.beacon.discovery.schema.NodeRecordInfo;
+import org.ethereum.beacon.discovery.schema.NodeStatus;
+import org.ethereum.beacon.discovery.type.BytesValue;
 import org.javatuples.Pair;
 import org.junit.jupiter.api.Test;
 
@@ -143,7 +143,9 @@ public class NodeTableTest {
             .getNode(closestNode.getNodeId())
             .get()
             .getNode()
-            .get(NodeRecord.FIELD_PKEY_SECP256K1).toString().toUpperCase(),
+            .get(NodeRecord.FIELD_PKEY_SECP256K1)
+            .toString()
+            .toUpperCase(),
         closestNode.get(NodeRecord.FIELD_PKEY_SECP256K1).toString().toUpperCase());
     NodeRecord farNode =
         NODE_RECORD_FACTORY_NO_VERIFICATION.createFromValues(
@@ -175,11 +177,11 @@ public class NodeTableTest {
           if (key3 instanceof BytesValue) {
             publicKeys.add((BytesValue) key3);
           } else {
-            publicKeys.add(BytesValue.wrap(((Bytes)key3).toArray()));
+            publicKeys.add(BytesValue.wrap(((Bytes) key3).toArray()));
           }
         });
-//    assertTrue(publicKeys.contains(localHostNode.get(NodeRecord.FIELD_PKEY_SECP256K1)));
-//    assertTrue(publicKeys.contains(closestNode.get(NodeRecord.FIELD_PKEY_SECP256K1)));
+    //    assertTrue(publicKeys.contains(localHostNode.get(NodeRecord.FIELD_PKEY_SECP256K1)));
+    //    assertTrue(publicKeys.contains(closestNode.get(NodeRecord.FIELD_PKEY_SECP256K1)));
     List<NodeRecordInfo> farNodes = nodeTableStorage.get().findClosestNodes(farNode.getNodeId(), 1);
     assertEquals(1, farNodes.size());
     assertEquals(

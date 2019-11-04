@@ -13,7 +13,7 @@
 
 package org.ethereum.beacon.discovery.task;
 
-import static org.ethereum.beacon.discovery.NodeStatus.DEAD;
+import static org.ethereum.beacon.discovery.schema.NodeStatus.DEAD;
 import static org.ethereum.beacon.discovery.task.TaskMessageFactory.DEFAULT_DISTANCE;
 
 import java.time.Duration;
@@ -22,12 +22,14 @@ import java.util.function.Predicate;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import org.ethereum.beacon.discovery.DiscoveryManager;
-import org.ethereum.beacon.discovery.NodeRecordInfo;
-import org.ethereum.beacon.discovery.NodeStatus;
-import org.ethereum.beacon.discovery.enr.NodeRecord;
+import org.ethereum.beacon.discovery.scheduler.Scheduler;
+import org.ethereum.beacon.discovery.schema.NodeRecord;
+import org.ethereum.beacon.discovery.schema.NodeRecordInfo;
+import org.ethereum.beacon.discovery.schema.NodeStatus;
 import org.ethereum.beacon.discovery.storage.NodeBucketStorage;
 import org.ethereum.beacon.discovery.storage.NodeTable;
-import org.ethereum.beacon.schedulers.Scheduler;
+
+// import org.ethereum.beacon.schedulers.Scheduler;
 
 // import tech.pegasys.artemis.util.bytes.Bytes;
 
@@ -48,9 +50,9 @@ public class DiscoveryTaskManager {
   private final NodeTable nodeTable;
   private final NodeBucketStorage nodeBucketStorage;
   /**
-   * Checks whether {@link org.ethereum.beacon.discovery.enr.NodeRecord} is ready for alive status
-   * check. Plus, marks records as DEAD if there were a lot of unsuccessful retries to get reply
-   * from node.
+   * Checks whether {@link org.ethereum.beacon.discovery.schema.NodeRecord} is ready for alive
+   * status check. Plus, marks records as DEAD if there were a lot of unsuccessful retries to get
+   * reply from node.
    *
    * <p>We don't need to recheck the node if
    *
@@ -81,8 +83,8 @@ public class DiscoveryTaskManager {
       };
 
   /**
-   * Checks whether {@link org.ethereum.beacon.discovery.enr.NodeRecord} is ready for FINDNODE query
-   * which expands the list of all known nodes.
+   * Checks whether {@link org.ethereum.beacon.discovery.schema.NodeRecord} is ready for FINDNODE
+   * query which expands the list of all known nodes.
    *
    * <p>Node is eligible if
    *

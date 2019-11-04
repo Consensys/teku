@@ -13,17 +13,14 @@
 
 package org.ethereum.beacon.discovery.pipeline.handler;
 
-import static org.ethereum.beacon.discovery.enr.NodeRecord.FIELD_PKEY_SECP256K1;
+import static org.ethereum.beacon.discovery.schema.NodeRecord.FIELD_PKEY_SECP256K1;
+import static org.ethereum.beacon.discovery.util.Utils.extractBytesFromUnsignedBigInt;
 
 import java.util.Optional;
 import java.util.function.Supplier;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
-import org.ethereum.beacon.discovery.BytesValue;
-import org.ethereum.beacon.discovery.Functions;
-import org.ethereum.beacon.discovery.NodeSession;
-import org.ethereum.beacon.discovery.enr.NodeRecord;
 import org.ethereum.beacon.discovery.message.DiscoveryV5Message;
 import org.ethereum.beacon.discovery.message.V5Message;
 import org.ethereum.beacon.discovery.packet.AuthHeaderMessagePacket;
@@ -33,9 +30,12 @@ import org.ethereum.beacon.discovery.pipeline.EnvelopeHandler;
 import org.ethereum.beacon.discovery.pipeline.Field;
 import org.ethereum.beacon.discovery.pipeline.HandlerUtil;
 import org.ethereum.beacon.discovery.pipeline.Pipeline;
+import org.ethereum.beacon.discovery.scheduler.Scheduler;
+import org.ethereum.beacon.discovery.schema.NodeRecord;
+import org.ethereum.beacon.discovery.schema.NodeSession;
 import org.ethereum.beacon.discovery.task.TaskMessageFactory;
-import org.ethereum.beacon.schedulers.Scheduler;
-import org.ethereum.beacon.util.Utils;
+import org.ethereum.beacon.discovery.type.BytesValue;
+import org.ethereum.beacon.discovery.util.Functions;
 import org.web3j.crypto.ECKeyPair;
 
 // import tech.pegasys.artemis.util.bytes.Bytes;
@@ -77,7 +77,9 @@ public class WhoAreYouPacketHandler implements EnvelopeHandler {
       if (packet.getEnrSeq().compareTo(session.getHomeNodeRecord().getSeq()) < 0) {
         respRecord = session.getHomeNodeRecord();
       }
-      Bytes remotePubKey = Bytes.wrap(((BytesValue)session.getNodeRecord().getKey(FIELD_PKEY_SECP256K1)).extractArray());
+      Bytes remotePubKey =
+          Bytes.wrap(
+              ((BytesValue) session.getNodeRecord().getKey(FIELD_PKEY_SECP256K1)).extractArray());
       byte[] ephemeralKeyBytes = new byte[32];
       Functions.getRandom().nextBytes(ephemeralKeyBytes);
       ECKeyPair ephemeralKey = ECKeyPair.create(ephemeralKeyBytes);
@@ -105,7 +107,7 @@ public class WhoAreYouPacketHandler implements EnvelopeHandler {
                                   envelope.getId(), session)));
 
       Bytes ephemeralPubKey =
-          Bytes.wrap(Utils.extractBytesFromUnsignedBigInt(ephemeralKey.getPublicKey()));
+          Bytes.wrap(extractBytesFromUnsignedBigInt(ephemeralKey.getPublicKey()));
       AuthHeaderMessagePacket response =
           AuthHeaderMessagePacket.create(
               session.getHomeNodeId(),

@@ -15,8 +15,8 @@ package org.ethereum.beacon.discovery.packet;
 
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.MutableBytes;
-import org.ethereum.beacon.discovery.BytesValue;
-import org.ethereum.beacon.discovery.Functions;
+import org.ethereum.beacon.discovery.type.BytesValue;
+import org.ethereum.beacon.discovery.util.Functions;
 
 public interface Packet {
   static BytesValue createTag(BytesValue homeNodeId, Bytes destNodeId) {

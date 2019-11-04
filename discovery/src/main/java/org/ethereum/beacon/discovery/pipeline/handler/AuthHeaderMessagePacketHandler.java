@@ -13,21 +13,23 @@
 
 package org.ethereum.beacon.discovery.pipeline.handler;
 
-import static org.ethereum.beacon.discovery.NodeSession.SessionStatus.AUTHENTICATED;
+import static org.ethereum.beacon.discovery.schema.NodeSession.SessionStatus.AUTHENTICATED;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
-import org.ethereum.beacon.discovery.Functions;
-import org.ethereum.beacon.discovery.NodeSession;
-import org.ethereum.beacon.discovery.enr.NodeRecordFactory;
 import org.ethereum.beacon.discovery.packet.AuthHeaderMessagePacket;
 import org.ethereum.beacon.discovery.pipeline.Envelope;
 import org.ethereum.beacon.discovery.pipeline.EnvelopeHandler;
 import org.ethereum.beacon.discovery.pipeline.Field;
 import org.ethereum.beacon.discovery.pipeline.HandlerUtil;
 import org.ethereum.beacon.discovery.pipeline.Pipeline;
-import org.ethereum.beacon.schedulers.Scheduler;
+import org.ethereum.beacon.discovery.scheduler.Scheduler;
+import org.ethereum.beacon.discovery.schema.NodeRecordFactory;
+import org.ethereum.beacon.discovery.schema.NodeSession;
+import org.ethereum.beacon.discovery.util.Functions;
+
+// import org.ethereum.beacon.schedulers.Scheduler;
 
 // import tech.pegasys.artemis.util.bytes.Bytes;
 

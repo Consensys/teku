@@ -14,7 +14,7 @@
 package org.ethereum.beacon.discovery;
 
 import java.util.concurrent.CompletableFuture;
-import org.ethereum.beacon.discovery.enr.NodeRecord;
+import org.ethereum.beacon.discovery.schema.NodeRecord;
 import org.ethereum.beacon.discovery.task.TaskType;
 
 /**

@@ -14,8 +14,8 @@
 package org.ethereum.beacon.discovery.packet;
 
 import org.apache.tuweni.bytes.Bytes;
-import org.ethereum.beacon.discovery.BytesValue;
-import org.ethereum.beacon.discovery.Hashes;
+import org.ethereum.beacon.discovery.type.BytesValue;
+import org.ethereum.beacon.discovery.type.Hashes;
 
 // import org.ethereum.beacon.crypto.Hashes;
 // import tech.pegasys.artemis.util.bytes.Bytes;

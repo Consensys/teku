@@ -17,9 +17,9 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import org.apache.tuweni.units.bigints.UInt64;
-import org.ethereum.beacon.discovery.Database;
-import org.ethereum.beacon.discovery.SerializerFactory;
-import org.ethereum.beacon.discovery.enr.NodeRecord;
+import org.ethereum.beacon.discovery.database.Database;
+import org.ethereum.beacon.discovery.format.SerializerFactory;
+import org.ethereum.beacon.discovery.schema.NodeRecord;
 
 // import tech.pegasys.artemis.util.uint.UInt64;
 

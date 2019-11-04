@@ -14,7 +14,7 @@
 package org.ethereum.beacon.discovery.network;
 
 import org.apache.tuweni.bytes.Bytes;
-import org.ethereum.beacon.discovery.enr.NodeRecord;
+import org.ethereum.beacon.discovery.schema.NodeRecord;
 
 // import tech.pegasys.artemis.util.bytes.BytesValue;
 

@@ -1,5 +1,4 @@
 dependencies {
-  implementation project(':discovery-util')
   implementation project(':util')
   implementation project(':ethereum')
   implementation project(':ethereum:datastructures')

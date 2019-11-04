@@ -21,9 +21,12 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import org.apache.tuweni.bytes.Bytes;
 import org.ethereum.beacon.discovery.DiscoveryManager;
-import org.ethereum.beacon.discovery.NodeRecordInfo;
-import org.ethereum.beacon.schedulers.Scheduler;
-import org.ethereum.beacon.util.ExpirationScheduler;
+import org.ethereum.beacon.discovery.scheduler.ExpirationScheduler;
+import org.ethereum.beacon.discovery.scheduler.Scheduler;
+import org.ethereum.beacon.discovery.schema.NodeRecordInfo;
+
+// import org.ethereum.beacon.schedulers.Scheduler;
+// import org.ethereum.beacon.util.ExpirationScheduler;
 
 // import tech.pegasys.artemis.util.bytes.Bytes;
 

@@ -13,8 +13,8 @@
 
 package org.ethereum.beacon.discovery.mock;
 
-import org.ethereum.beacon.discovery.enr.EnrSchemeV4Interpreter;
-import org.ethereum.beacon.discovery.enr.NodeRecord;
+import org.ethereum.beacon.discovery.schema.EnrSchemeV4Interpreter;
+import org.ethereum.beacon.discovery.schema.NodeRecord;
 
 public class EnrSchemeV4InterpreterMock extends EnrSchemeV4Interpreter {
   @Override

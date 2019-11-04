@@ -18,9 +18,9 @@ import java.util.concurrent.CompletableFuture;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
-import org.ethereum.beacon.discovery.NodeRecordInfo;
-import org.ethereum.beacon.discovery.NodeSession;
 import org.ethereum.beacon.discovery.message.NodesMessage;
+import org.ethereum.beacon.discovery.schema.NodeRecordInfo;
+import org.ethereum.beacon.discovery.schema.NodeSession;
 import org.ethereum.beacon.discovery.task.TaskStatus;
 import org.ethereum.beacon.discovery.task.TaskType;
 

@@ -14,7 +14,7 @@
 package org.ethereum.beacon.discovery.storage;
 
 import java.util.Optional;
-import org.ethereum.beacon.discovery.NodeRecordInfo;
+import org.ethereum.beacon.discovery.schema.NodeRecordInfo;
 
 /** Stores {@link NodeRecordInfo}'s in {@link NodeBucket}'s */
 public interface NodeBucketStorage {

@@ -22,27 +22,34 @@ import java.util.ArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import org.apache.tuweni.bytes.Bytes;
-import org.ethereum.beacon.discovery.enr.NodeRecord;
+import org.ethereum.beacon.discovery.database.Database;
 import org.ethereum.beacon.discovery.packet.AuthHeaderMessagePacket;
 import org.ethereum.beacon.discovery.packet.MessagePacket;
 import org.ethereum.beacon.discovery.packet.RandomPacket;
 import org.ethereum.beacon.discovery.packet.UnknownPacket;
 import org.ethereum.beacon.discovery.packet.WhoAreYouPacket;
+import org.ethereum.beacon.discovery.scheduler.Schedulers;
+import org.ethereum.beacon.discovery.schema.NodeRecord;
 import org.ethereum.beacon.discovery.storage.NodeBucket;
 import org.ethereum.beacon.discovery.storage.NodeBucketStorage;
 import org.ethereum.beacon.discovery.storage.NodeTableStorage;
 import org.ethereum.beacon.discovery.storage.NodeTableStorageFactoryImpl;
 import org.ethereum.beacon.discovery.task.TaskType;
-import org.ethereum.beacon.schedulers.Schedulers;
+import org.ethereum.beacon.discovery.type.BytesValue;
+import org.ethereum.beacon.discovery.util.Functions;
 import org.javatuples.Pair;
-import org.junit.Test;
 import reactor.core.publisher.Flux;
 
 // import tech.pegasys.artemis.util.bytes.BytesValue;
 
 /** Same as {@link DiscoveryNoNetworkTest} but using real network */
 public class DiscoveryNetworkTest {
-  @Test
+
+  public static void main(String[] args) throws Exception {
+    DiscoveryNetworkTest dnt = new DiscoveryNetworkTest();
+    dnt.test();
+  }
+  //  @Test
   public void test() throws Exception {
     // 1) start 2 nodes
     Pair<BytesValue, NodeRecord> nodePair1 = TestUtil.generateNode(30303);

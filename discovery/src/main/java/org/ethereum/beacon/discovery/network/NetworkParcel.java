@@ -13,8 +13,8 @@
 
 package org.ethereum.beacon.discovery.network;
 
-import org.ethereum.beacon.discovery.enr.NodeRecord;
 import org.ethereum.beacon.discovery.packet.Packet;
+import org.ethereum.beacon.discovery.schema.NodeRecord;
 
 /**
  * Abstraction on the top of the {@link Packet}.

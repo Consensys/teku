@@ -16,7 +16,8 @@ package org.ethereum.beacon.discovery;
 // import static org.junit.Assert.assertEquals;
 
 import java.math.BigInteger;
-import org.ethereum.beacon.util.Utils;
+import org.ethereum.beacon.discovery.type.BytesValue;
+import org.ethereum.beacon.discovery.util.Utils;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.web3j.crypto.ECKeyPair;

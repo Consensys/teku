@@ -28,9 +28,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
-import org.ethereum.beacon.discovery.enr.EnrScheme;
-import org.ethereum.beacon.discovery.enr.NodeRecord;
-import org.ethereum.beacon.schedulers.Scheduler;
+import org.ethereum.beacon.discovery.scheduler.Scheduler;
+import org.ethereum.beacon.discovery.schema.EnrScheme;
+import org.ethereum.beacon.discovery.schema.NodeRecord;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 

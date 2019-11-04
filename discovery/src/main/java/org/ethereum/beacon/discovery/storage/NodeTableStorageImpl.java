@@ -13,19 +13,19 @@
 
 package org.ethereum.beacon.discovery.storage;
 
-import static org.ethereum.beacon.discovery.crypto.CryptoUtil.sha256;
+import static org.ethereum.beacon.discovery.util.CryptoUtil.sha256;
 
 import org.apache.tuweni.bytes.Bytes;
-import org.ethereum.beacon.discovery.BytesValue;
-import org.ethereum.beacon.discovery.CodecSource;
-import org.ethereum.beacon.discovery.DataSource;
-import org.ethereum.beacon.discovery.DataSourceList;
-import org.ethereum.beacon.discovery.Database;
-import org.ethereum.beacon.discovery.Hash32;
-import org.ethereum.beacon.discovery.HoleyList;
-import org.ethereum.beacon.discovery.NodeRecordInfo;
-import org.ethereum.beacon.discovery.SerializerFactory;
-import org.ethereum.beacon.discovery.SingleValueSource;
+import org.ethereum.beacon.discovery.database.CodecSource;
+import org.ethereum.beacon.discovery.database.DataSource;
+import org.ethereum.beacon.discovery.database.DataSourceList;
+import org.ethereum.beacon.discovery.database.Database;
+import org.ethereum.beacon.discovery.database.HoleyList;
+import org.ethereum.beacon.discovery.database.SingleValueSource;
+import org.ethereum.beacon.discovery.format.SerializerFactory;
+import org.ethereum.beacon.discovery.schema.NodeRecordInfo;
+import org.ethereum.beacon.discovery.type.BytesValue;
+import org.ethereum.beacon.discovery.type.Hash32;
 
 // import tech.pegasys.artemis.util.bytes.Bytes;
 

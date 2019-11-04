@@ -15,8 +15,8 @@ package org.ethereum.beacon.discovery.packet;
 
 import java.util.Random;
 import org.apache.tuweni.bytes.Bytes;
-import org.ethereum.beacon.discovery.BytesValue;
-import org.ethereum.beacon.discovery.Functions;
+import org.ethereum.beacon.discovery.type.BytesValue;
+import org.ethereum.beacon.discovery.util.Functions;
 import org.web3j.rlp.RlpDecoder;
 import org.web3j.rlp.RlpEncoder;
 import org.web3j.rlp.RlpString;

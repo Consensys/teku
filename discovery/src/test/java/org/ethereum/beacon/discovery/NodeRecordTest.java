@@ -14,25 +14,26 @@
 package org.ethereum.beacon.discovery;
 
 import static org.ethereum.beacon.discovery.TestUtil.SEED;
-import static org.ethereum.beacon.discovery.enr.NodeRecord.FIELD_IP_V4;
-import static org.ethereum.beacon.discovery.enr.NodeRecord.FIELD_PKEY_SECP256K1;
-import static org.ethereum.beacon.discovery.enr.NodeRecord.FIELD_TCP_V4;
-import static org.ethereum.beacon.discovery.enr.NodeRecord.FIELD_UDP_V4;
-import static org.ethereum.beacon.util.Utils.extractBytesFromUnsignedBigInt;
+import static org.ethereum.beacon.discovery.schema.NodeRecord.FIELD_IP_V4;
+import static org.ethereum.beacon.discovery.schema.NodeRecord.FIELD_PKEY_SECP256K1;
+import static org.ethereum.beacon.discovery.schema.NodeRecord.FIELD_TCP_V4;
+import static org.ethereum.beacon.discovery.schema.NodeRecord.FIELD_UDP_V4;
+import static org.ethereum.beacon.discovery.util.Utils.extractBytesFromUnsignedBigInt;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.net.InetAddress;
-import java.util.Arrays;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.units.bigints.UInt64;
-import org.ethereum.beacon.discovery.enr.EnrScheme;
-import org.ethereum.beacon.discovery.enr.NodeRecord;
-import org.ethereum.beacon.discovery.enr.NodeRecordFactory;
+import org.ethereum.beacon.discovery.schema.EnrScheme;
+import org.ethereum.beacon.discovery.schema.NodeRecord;
+import org.ethereum.beacon.discovery.schema.NodeRecordFactory;
+import org.ethereum.beacon.discovery.type.BytesValue;
+import org.ethereum.beacon.discovery.util.Functions;
 import org.javatuples.Pair;
 import org.junit.jupiter.api.Test;
 import org.web3j.crypto.ECKeyPair;
@@ -77,9 +78,9 @@ public class NodeRecordTest {
     assertEquals(expectedSeqNumber, nodeRecord.getSeq());
     Object key = nodeRecord.get(NodeRecord.FIELD_PKEY_SECP256K1);
     if (key instanceof Bytes) {
-      assertArrayEquals(expectedPublicKey.extractArray(), ((Bytes)key).toArray());
+      assertArrayEquals(expectedPublicKey.extractArray(), ((Bytes) key).toArray());
     } else {
-      assertArrayEquals(expectedPublicKey.extractArray(), ((BytesValue)key).extractArray());
+      assertArrayEquals(expectedPublicKey.extractArray(), ((BytesValue) key).extractArray());
     }
 
     assertArrayEquals(expectedSignature.extractArray(), nodeRecord.getSignature().toArray());
@@ -92,26 +93,22 @@ public class NodeRecordTest {
     NodeRecord nodeRecordV4Restored = (NodeRecord) nodeRecordRestored;
     Object key1 = nodeRecordV4Restored.get(NodeRecord.FIELD_IP_V4);
     if (key1 instanceof Bytes) {
-      assertArrayEquals(
-          InetAddress.getByName(expectedHost).getAddress(),
-          ((Bytes) key1).toArray()
-          );
+      assertArrayEquals(InetAddress.getByName(expectedHost).getAddress(), ((Bytes) key1).toArray());
     } else {
       assertArrayEquals(
-          InetAddress.getByName(expectedHost).getAddress(),
-          ((BytesValue) key1).extractArray()
-          );
+          InetAddress.getByName(expectedHost).getAddress(), ((BytesValue) key1).extractArray());
     }
     assertEquals(expectedUdpPort, nodeRecordV4Restored.get(NodeRecord.FIELD_UDP_V4));
     assertEquals(expectedTcpPort, nodeRecordV4Restored.get(NodeRecord.FIELD_TCP_V4));
     assertEquals(expectedSeqNumber, nodeRecordV4Restored.getSeq());
     Object key2 = nodeRecordV4Restored.get(NodeRecord.FIELD_PKEY_SECP256K1);
     if (key2 instanceof Bytes) {
-      assertArrayEquals(expectedPublicKey.extractArray(), ((Bytes)key2).toArray());
+      assertArrayEquals(expectedPublicKey.extractArray(), ((Bytes) key2).toArray());
     } else {
-      assertArrayEquals(expectedPublicKey.extractArray(), ((BytesValue)key2).extractArray());
+      assertArrayEquals(expectedPublicKey.extractArray(), ((BytesValue) key2).extractArray());
     }
-    assertArrayEquals(expectedSignature.extractArray(), nodeRecordV4Restored.getSignature().toArray());
+    assertArrayEquals(
+        expectedSignature.extractArray(), nodeRecordV4Restored.getSignature().toArray());
   }
 
   @Test

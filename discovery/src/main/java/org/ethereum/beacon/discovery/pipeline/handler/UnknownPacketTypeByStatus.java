@@ -15,7 +15,6 @@ package org.ethereum.beacon.discovery.pipeline.handler;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.ethereum.beacon.discovery.NodeSession;
 import org.ethereum.beacon.discovery.packet.AuthHeaderMessagePacket;
 import org.ethereum.beacon.discovery.packet.MessagePacket;
 import org.ethereum.beacon.discovery.packet.UnknownPacket;
@@ -23,6 +22,7 @@ import org.ethereum.beacon.discovery.pipeline.Envelope;
 import org.ethereum.beacon.discovery.pipeline.EnvelopeHandler;
 import org.ethereum.beacon.discovery.pipeline.Field;
 import org.ethereum.beacon.discovery.pipeline.HandlerUtil;
+import org.ethereum.beacon.discovery.schema.NodeSession;
 
 /**
  * Resolves incoming packet type based on session states and places packet into the corresponding

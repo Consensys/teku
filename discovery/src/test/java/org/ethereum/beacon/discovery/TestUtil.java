@@ -19,12 +19,14 @@ import java.util.ArrayList;
 import java.util.Random;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.units.bigints.UInt64;
-import org.ethereum.beacon.discovery.enr.EnrScheme;
-import org.ethereum.beacon.discovery.enr.NodeRecord;
-import org.ethereum.beacon.discovery.enr.NodeRecordFactory;
+import org.ethereum.beacon.discovery.format.SerializerFactory;
 import org.ethereum.beacon.discovery.mock.EnrSchemeV4InterpreterMock;
+import org.ethereum.beacon.discovery.schema.EnrScheme;
+import org.ethereum.beacon.discovery.schema.NodeRecord;
+import org.ethereum.beacon.discovery.schema.NodeRecordFactory;
 import org.ethereum.beacon.discovery.storage.NodeSerializerFactory;
-import org.ethereum.beacon.util.Utils;
+import org.ethereum.beacon.discovery.type.BytesValue;
+import org.ethereum.beacon.discovery.util.Utils;
 import org.javatuples.Pair;
 import org.web3j.crypto.ECKeyPair;
 

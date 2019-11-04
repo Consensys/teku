@@ -16,8 +16,8 @@ package org.ethereum.beacon.discovery.storage;
 import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
-import org.ethereum.beacon.discovery.NodeRecordInfo;
-import org.ethereum.beacon.discovery.enr.NodeRecord;
+import org.ethereum.beacon.discovery.schema.NodeRecord;
+import org.ethereum.beacon.discovery.schema.NodeRecordInfo;
 
 // import tech.pegasys.artemis.util.bytes.Bytes;
 

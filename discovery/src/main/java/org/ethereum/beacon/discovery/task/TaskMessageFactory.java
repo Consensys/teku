@@ -14,12 +14,12 @@
 package org.ethereum.beacon.discovery.task;
 
 import org.apache.tuweni.bytes.Bytes;
-import org.ethereum.beacon.discovery.NodeSession;
 import org.ethereum.beacon.discovery.message.DiscoveryV5Message;
 import org.ethereum.beacon.discovery.message.FindNodeMessage;
 import org.ethereum.beacon.discovery.message.PingMessage;
 import org.ethereum.beacon.discovery.message.V5Message;
 import org.ethereum.beacon.discovery.packet.MessagePacket;
+import org.ethereum.beacon.discovery.schema.NodeSession;
 
 // import tech.pegasys.artemis.util.bytes.Bytes;
 

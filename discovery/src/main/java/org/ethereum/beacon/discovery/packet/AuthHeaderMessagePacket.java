@@ -15,13 +15,13 @@ package org.ethereum.beacon.discovery.packet;
 
 import java.math.BigInteger;
 import org.apache.tuweni.bytes.Bytes;
-import org.ethereum.beacon.discovery.BytesValue;
-import org.ethereum.beacon.discovery.Functions;
-import org.ethereum.beacon.discovery.RlpUtil;
-import org.ethereum.beacon.discovery.enr.NodeRecord;
-import org.ethereum.beacon.discovery.enr.NodeRecordFactory;
 import org.ethereum.beacon.discovery.message.DiscoveryMessage;
 import org.ethereum.beacon.discovery.message.DiscoveryV5Message;
+import org.ethereum.beacon.discovery.schema.NodeRecord;
+import org.ethereum.beacon.discovery.schema.NodeRecordFactory;
+import org.ethereum.beacon.discovery.type.BytesValue;
+import org.ethereum.beacon.discovery.util.Functions;
+import org.ethereum.beacon.discovery.util.RlpUtil;
 import org.javatuples.Pair;
 import org.web3j.rlp.RlpDecoder;
 import org.web3j.rlp.RlpEncoder;

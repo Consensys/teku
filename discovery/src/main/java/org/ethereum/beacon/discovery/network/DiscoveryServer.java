@@ -14,7 +14,7 @@
 package org.ethereum.beacon.discovery.network;
 
 import org.apache.tuweni.bytes.Bytes;
-import org.ethereum.beacon.schedulers.Scheduler;
+import org.ethereum.beacon.discovery.scheduler.Scheduler;
 import org.reactivestreams.Publisher;
 
 // import tech.pegasys.artemis.util.bytes.BytesValue;

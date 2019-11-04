@@ -15,15 +15,15 @@ package org.ethereum.beacon.discovery.storage;
 
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
-import org.ethereum.beacon.discovery.BytesValue;
-import org.ethereum.beacon.discovery.DataSource;
-import org.ethereum.beacon.discovery.DataSourceList;
-import org.ethereum.beacon.discovery.Database;
-import org.ethereum.beacon.discovery.Functions;
-import org.ethereum.beacon.discovery.HoleyList;
-import org.ethereum.beacon.discovery.NodeRecordInfo;
-import org.ethereum.beacon.discovery.SerializerFactory;
-import org.ethereum.beacon.discovery.enr.NodeRecord;
+import org.ethereum.beacon.discovery.database.DataSource;
+import org.ethereum.beacon.discovery.database.DataSourceList;
+import org.ethereum.beacon.discovery.database.Database;
+import org.ethereum.beacon.discovery.database.HoleyList;
+import org.ethereum.beacon.discovery.format.SerializerFactory;
+import org.ethereum.beacon.discovery.schema.NodeRecord;
+import org.ethereum.beacon.discovery.schema.NodeRecordInfo;
+import org.ethereum.beacon.discovery.type.BytesValue;
+import org.ethereum.beacon.discovery.util.Functions;
 
 // import tech.pegasys.artemis.util.bytes.Bytes;
 // import tech.pegasys.artemis.util.bytes.Bytes;

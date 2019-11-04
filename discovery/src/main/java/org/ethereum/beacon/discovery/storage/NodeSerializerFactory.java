@@ -16,10 +16,10 @@ package org.ethereum.beacon.discovery.storage;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
-import org.ethereum.beacon.discovery.BytesValue;
-import org.ethereum.beacon.discovery.NodeRecordInfo;
-import org.ethereum.beacon.discovery.SerializerFactory;
-import org.ethereum.beacon.discovery.enr.NodeRecordFactory;
+import org.ethereum.beacon.discovery.format.SerializerFactory;
+import org.ethereum.beacon.discovery.schema.NodeRecordFactory;
+import org.ethereum.beacon.discovery.schema.NodeRecordInfo;
+import org.ethereum.beacon.discovery.type.BytesValue;
 
 // import tech.pegasys.artemis.util.bytes.Bytes;
 
