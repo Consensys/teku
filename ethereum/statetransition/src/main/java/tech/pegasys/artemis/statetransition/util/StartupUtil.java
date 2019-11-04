@@ -102,7 +102,7 @@ public final class StartupUtil {
         slot, previous_block_root, state_root, beaconBlockBody, BLSSignature.empty());
   }
 
-  private static Eth1Data get_eth1_data_stub(BeaconState state, UnsignedLong current_epoch) {
+  public static Eth1Data get_eth1_data_stub(BeaconState state, UnsignedLong current_epoch) {
     UnsignedLong epochs_per_period =
         UnsignedLong.valueOf(SLOTS_PER_ETH1_VOTING_PERIOD)
             .dividedBy(UnsignedLong.valueOf(SLOTS_PER_EPOCH));
