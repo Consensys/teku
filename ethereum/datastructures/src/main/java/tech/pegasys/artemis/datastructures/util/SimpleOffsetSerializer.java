@@ -179,8 +179,7 @@ public class SimpleOffsetSerializer {
         Bytes.concatenate(variable_parts.toArray(new Bytes[0])));
   }
 
-  @SuppressWarnings("TypeParameterUnusedInFormals")
-  public static <T> T deserialize(Bytes bytes, Class classInfo) {
+  public static <T> T deserialize(Bytes bytes, Class<T> classInfo) {
     MutableInt bytePointer = new MutableInt(0);
     if (!isPrimitive(classInfo)) {
       return SSZ.decode(
@@ -191,9 +190,8 @@ public class SimpleOffsetSerializer {
     }
   }
 
-  @SuppressWarnings("TypeParameterUnusedInFormals")
   private static <T> T deserializeContainerErrorWrapper(
-      Class classInfo, SSZReader reader, MutableInt bytePointer, int bytesEndByte) {
+      Class<T> classInfo, SSZReader reader, MutableInt bytePointer, int bytesEndByte) {
     try {
       return deserializeContainer(classInfo, reader, bytePointer, bytesEndByte);
     } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
@@ -206,9 +204,8 @@ public class SimpleOffsetSerializer {
     return null;
   }
 
-  @SuppressWarnings("TypeParameterUnusedInFormals")
   private static <T> T deserializeContainer(
-      Class classInfo, SSZReader reader, MutableInt bytesPointer, int bytesEndByte)
+      Class<T> classInfo, SSZReader reader, MutableInt bytesPointer, int bytesEndByte)
       throws InstantiationException, IllegalAccessException, InvocationTargetException {
     int currentObjectStartByte = bytesPointer.intValue();
     ReflectionInformation reflectionInformation = classReflectionInfo.get(classInfo);
@@ -240,9 +237,8 @@ public class SimpleOffsetSerializer {
     return (T) constructor.newInstance(params);
   }
 
-  @SuppressWarnings("TypeParameterUnusedInFormals")
   private static <T> T deserializeFixedContainer(
-      Class classInfo, SSZReader reader, MutableInt bytePointer)
+      Class<T> classInfo, SSZReader reader, MutableInt bytePointer)
       throws InstantiationException, InvocationTargetException, IllegalAccessException {
     // bytesEndByte is only necessary for variable size containers
     return deserializeContainer(classInfo, reader, bytePointer, 0);
