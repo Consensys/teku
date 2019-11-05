@@ -127,7 +127,7 @@ public final class BeaconStateWithCache extends BeaconState {
     this.validators =
         copyList(
             state.getValidators(),
-            new SSZList<>(state.getValidators().getClass(), state.getValidators().getMaxSize()));
+            new SSZList<>(Validator.class, state.getValidators().getMaxSize()));
     this.balances = new SSZList<>(state.getBalances());
 
     // Shuffling
@@ -144,14 +144,12 @@ public final class BeaconStateWithCache extends BeaconState {
         copyList(
             state.getPrevious_epoch_attestations(),
             new SSZList<>(
-                state.getPrevious_epoch_attestations().getClass(),
-                state.getPrevious_epoch_attestations().getMaxSize()));
+                PendingAttestation.class, state.getPrevious_epoch_attestations().getMaxSize()));
     this.current_epoch_attestations =
         copyList(
             state.getCurrent_epoch_attestations(),
             new SSZList<>(
-                state.getCurrent_epoch_attestations().getClass(),
-                state.getCurrent_epoch_attestations().getMaxSize()));
+                PendingAttestation.class, state.getCurrent_epoch_attestations().getMaxSize()));
 
     // Crosslinks
     SSZVector<Crosslink> newCurrentCrosslinks =
