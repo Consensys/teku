@@ -17,7 +17,6 @@ import com.google.common.base.MoreObjects;
 import com.google.common.primitives.UnsignedLong;
 import io.libp2p.core.Connection;
 import io.libp2p.core.PeerId;
-import io.libp2p.core.multiformats.Multiaddr;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import org.apache.tuweni.bytes.Bytes32;
@@ -30,10 +29,8 @@ import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
 public class Peer {
   private final Connection connection;
-  private final Multiaddr multiaddr;
   private final RpcMethods rpcMethods;
   private final StatusMessageFactory statusMessageFactory;
-  private final PeerId peerId;
   private volatile Optional<StatusData> remoteStatus = Optional.empty();
 
   public Peer(
@@ -41,9 +38,6 @@ public class Peer {
       final RpcMethods rpcMethods,
       final StatusMessageFactory statusMessageFactory) {
     this.connection = connection;
-    this.peerId = connection.getSecureSession().getRemoteId();
-    this.multiaddr =
-        new Multiaddr(connection.remoteAddress().toString() + "/p2p/" + peerId.toString());
     this.rpcMethods = rpcMethods;
     this.statusMessageFactory = statusMessageFactory;
   }
@@ -61,19 +55,11 @@ public class Peer {
   }
 
   public PeerId getPeerId() {
-    return peerId;
-  }
-
-  public Multiaddr getPeerMultiaddr() {
-    return multiaddr;
-  }
-
-  public PeerId getRemoteId() {
     return connection.getSecureSession().getRemoteId();
   }
 
-  public boolean isInitiator() {
-    return connection.isInitiator();
+  public boolean isConnected() {
+    return connection.getNettyChannel().isOpen();
   }
 
   public CompletableFuture<StatusData> sendStatus() {

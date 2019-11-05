@@ -13,18 +13,19 @@
 
 package tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.methods;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.Peer;
+import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.ResponseCallback;
 import tech.pegasys.artemis.util.SSZTypes.Bytes4;
 
 class StatusMessageHandlerTest {
@@ -43,25 +44,31 @@ class StatusMessageHandlerTest {
           UnsignedLong.ZERO,
           Bytes32.fromHexStringLenient("0x22"),
           UnsignedLong.ZERO);
+
+  @SuppressWarnings("unchecked")
+  private final ResponseCallback<StatusMessage> callback = mock(ResponseCallback.class);
+
   private final StatusMessageFactory statusMessageFactory = mock(StatusMessageFactory.class);
   private final Peer peer = mock(Peer.class);
+
   private final StatusMessageHandler handler = new StatusMessageHandler(statusMessageFactory);
 
-  @Test
-  public void shouldRejectIncomingHelloWhenWeInitiatedConnection() {
-    when(peer.isInitiator()).thenReturn(true);
-    assertThrows(IllegalStateException.class, () -> handler.onIncomingMessage(peer, REMOTE_STATUS));
+  @BeforeEach
+  public void setUp() {
+    when(statusMessageFactory.createStatusMessage()).thenReturn(LOCAL_STATUS);
   }
 
   @Test
   public void shouldRegisterStatusMessageWithPeer() {
-    handler.onIncomingMessage(peer, REMOTE_STATUS);
+    handler.onIncomingMessage(peer, REMOTE_STATUS, callback);
     verify(peer).updateStatus(REMOTE_STATUS);
   }
 
   @Test
   public void shouldReturnLocalStatusMessage() {
-    when(statusMessageFactory.createStatusMessage()).thenReturn(LOCAL_STATUS);
-    assertThat(handler.onIncomingMessage(peer, REMOTE_STATUS)).isSameAs(LOCAL_STATUS);
+    handler.onIncomingMessage(peer, REMOTE_STATUS, callback);
+    verify(callback).respond(LOCAL_STATUS);
+    verify(callback).completeSuccessfully();
+    verifyNoMoreInteractions(callback);
   }
 }

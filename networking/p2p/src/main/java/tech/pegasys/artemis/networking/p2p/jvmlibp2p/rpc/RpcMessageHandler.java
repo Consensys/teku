@@ -13,9 +13,6 @@
 
 package tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc;
 
-import static tech.pegasys.artemis.util.future.FutureUtils.wrapInFuture;
-
-import com.google.common.base.Throwables;
 import io.libp2p.core.Connection;
 import io.libp2p.core.P2PAbstractChannel;
 import io.libp2p.core.Stream;
@@ -70,12 +67,15 @@ public class RpcMessageHandler<
         .thenCompose(ctr -> ctr.invoke(request));
   }
 
-  private CompletableFuture<TResponse> invokeLocal(Connection connection, TRequest request) {
-    return wrapInFuture(
-        () -> {
-          final Peer peer = peerLookup.getPeer(connection);
-          return localMessageHandler.onIncomingMessage(peer, request);
-        });
+  private void invokeLocal(
+      Connection connection, TRequest request, ResponseCallback<TResponse> callback) {
+    try {
+      final Peer peer = peerLookup.getPeer(connection);
+      localMessageHandler.onIncomingMessage(peer, request, callback);
+    } catch (final Throwable t) {
+      LOG.error("Unhandled error while processing request " + method.getMultistreamId(), t);
+      callback.completeWithError(RpcException.SERVER_ERROR);
+    }
   }
 
   public RpcMessageHandler<TRequest, TResponse> setCloseNotification() {
@@ -140,28 +140,14 @@ public class RpcMessageHandler<
     protected void channelRead0(ChannelHandlerContext ctx, ByteBuf byteBuf) {
       STDOUT.log(Level.DEBUG, "Responder received " + byteBuf.array().length + " bytes.");
       Bytes bytes = Bytes.wrapByteBuf(byteBuf);
-      wrapInFuture(() -> rpcCodec.decodeRequest(bytes, method.getRequestType()))
-          .thenCompose(request -> invokeLocal(connection, request))
-          .thenApply(rpcCodec::encodeSuccessfulResponse)
-          .exceptionally(
-              error -> {
-                final Throwable rootCause = Throwables.getRootCause(error);
-                if (rootCause instanceof RpcException) {
-                  final RpcException rpcException = (RpcException) rootCause;
-                  LOG.debug(
-                      "Returning to RPC request with error: {}", rpcException.getErrorMessage());
-                  return rpcCodec.encodeErrorResponse(rpcException);
-                } else {
-                  LOG.error("Unhandled error while processing req/resp request", error);
-                  return rpcCodec.encodeErrorResponse(RpcException.SERVER_ERROR);
-                }
-              })
-          .thenAccept(
-              encoded -> {
-                ByteBuf respBuf = ctx.alloc().buffer();
-                respBuf.writeBytes(encoded.toArrayUnsafe());
-                ctx.writeAndFlush(respBuf).addListener(future -> ctx.channel().disconnect());
-              });
+      final ResponseCallback<TResponse> callback =
+          new RpcResponseCallback<>(ctx, rpcCodec, closeNotification, connection);
+      try {
+        final TRequest request = rpcCodec.decodeRequest(bytes, method.getRequestType());
+        invokeLocal(connection, request, callback);
+      } catch (final RpcException e) {
+        callback.completeWithError(e);
+      }
     }
   }
 
