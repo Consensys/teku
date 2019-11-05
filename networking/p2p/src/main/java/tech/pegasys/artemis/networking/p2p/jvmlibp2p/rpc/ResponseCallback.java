@@ -18,7 +18,7 @@ import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 public interface ResponseCallback<T extends SimpleOffsetSerializable> {
   void respond(T data);
 
-  void completeWithError(RpcException error);
+  void completeSuccessfully();
 
-  void responseComplete();
+  void completeWithError(RpcException error);
 }

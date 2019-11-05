@@ -34,9 +34,9 @@ public class StatusMessageHandler implements LocalMessageHandler<StatusMessage, 
       final Peer peer,
       final StatusMessage message,
       final ResponseCallback<StatusMessage> callback) {
-    LOG.log(Level.DEBUG, "Peer " + peer.getRemoteId() + " sent status.");
+    LOG.log(Level.DEBUG, "Peer " + peer.getPeerId() + " sent status.");
     peer.updateStatus(message);
     callback.respond(statusMessageFactory.createStatusMessage());
-    callback.responseComplete();
+    callback.completeSuccessfully();
   }
 }

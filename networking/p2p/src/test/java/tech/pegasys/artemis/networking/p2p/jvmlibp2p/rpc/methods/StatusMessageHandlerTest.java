@@ -59,17 +59,6 @@ class StatusMessageHandlerTest {
   }
 
   @Test
-  public void shouldRespondToIncomingHelloWhenWeInitiatedConnection() {
-    // The initiator is expected to send STATUS on first connection, but either peer can send it
-    // any time to get an updated status.  So check that's allowed.
-    when(peer.isInitiator()).thenReturn(true);
-    handler.onIncomingMessage(peer, REMOTE_STATUS, callback);
-    verify(callback).respond(LOCAL_STATUS);
-    verify(callback).responseComplete();
-    verifyNoMoreInteractions(callback);
-  }
-
-  @Test
   public void shouldRegisterStatusMessageWithPeer() {
     handler.onIncomingMessage(peer, REMOTE_STATUS, callback);
     verify(peer).updateStatus(REMOTE_STATUS);
@@ -77,10 +66,9 @@ class StatusMessageHandlerTest {
 
   @Test
   public void shouldReturnLocalStatusMessage() {
-    when(peer.isInitiator()).thenReturn(false);
     handler.onIncomingMessage(peer, REMOTE_STATUS, callback);
     verify(callback).respond(LOCAL_STATUS);
-    verify(callback).responseComplete();
+    verify(callback).completeSuccessfully();
     verifyNoMoreInteractions(callback);
   }
 }

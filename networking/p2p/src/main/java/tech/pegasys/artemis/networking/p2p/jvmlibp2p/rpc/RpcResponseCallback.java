@@ -46,6 +46,14 @@ class RpcResponseCallback<TResponse extends SimpleOffsetSerializable>
   }
 
   @Override
+  public void completeSuccessfully() {
+    ctx.channel().disconnect();
+    if (closeNotification) {
+      connection.getNettyChannel().close();
+    }
+  }
+
+  @Override
   public void completeWithError(final RpcException error) {
     LOG.debug("Responding to RPC request with error: {}", error.getErrorMessage());
     writeResponse(ctx, rpcCodec.encodeErrorResponse(error));
@@ -56,13 +64,5 @@ class RpcResponseCallback<TResponse extends SimpleOffsetSerializable>
     ByteBuf respBuf = ctx.alloc().buffer();
     respBuf.writeBytes(encoded.toArrayUnsafe());
     ctx.writeAndFlush(respBuf);
-  }
-
-  @Override
-  public void responseComplete() {
-    ctx.channel().disconnect();
-    if (closeNotification) {
-      connection.getNettyChannel().close();
-    }
   }
 }

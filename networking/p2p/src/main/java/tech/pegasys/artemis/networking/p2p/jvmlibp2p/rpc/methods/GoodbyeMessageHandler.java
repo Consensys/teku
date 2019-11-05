@@ -44,9 +44,9 @@ public class GoodbyeMessageHandler implements LocalMessageHandler<GoodbyeMessage
       final Peer peer,
       final GoodbyeMessage message,
       final ResponseCallback<GoodbyeMessage> callback) {
-    LOG.log(Level.DEBUG, "Peer " + peer.getRemoteId() + " said goodbye.");
+    LOG.log(Level.DEBUG, "Peer " + peer.getPeerId() + " said goodbye.");
     goodbyeCounter.labels(labelForReason(message.getReason())).inc();
-    callback.responseComplete();
+    callback.completeSuccessfully();
   }
 
   private String labelForReason(final UnsignedLong reason) {

@@ -33,11 +33,11 @@ public class BeaconBlocksMessageHandler
     LOG.log(
         Level.DEBUG,
         "Peer "
-            + peer.getRemoteId()
+            + peer.getPeerId()
             + " requested BeaconBlocks starting from "
             + message.getStartSlot()
             + ".");
     // TODO Stub
-    callback.responseComplete();
+    callback.completeSuccessfully();
   }
 }
