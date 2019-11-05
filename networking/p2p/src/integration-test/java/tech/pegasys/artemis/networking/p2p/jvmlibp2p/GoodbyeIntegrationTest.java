@@ -28,11 +28,13 @@ public class GoodbyeIntegrationTest {
   private final NetworkFactory networkFactory = new NetworkFactory();
   private Peer peer1;
   private Peer peer2;
+  private JvmLibP2PNetwork network1;
+  private JvmLibP2PNetwork network2;
 
   @BeforeEach
   public void setUp() throws Exception {
-    final JvmLibP2PNetwork network1 = networkFactory.startNetwork();
-    final JvmLibP2PNetwork network2 = networkFactory.startNetwork(network1);
+    network1 = networkFactory.startNetwork();
+    network2 = networkFactory.startNetwork(network1);
     peer1 = network2.getPeerManager().getAvailablePeer(network1.getPeerId()).orElseThrow();
     peer2 = network1.getPeerManager().getAvailablePeer(network2.getPeerId()).orElseThrow();
   }
@@ -51,5 +53,7 @@ public class GoodbyeIntegrationTest {
     assertThat(response).isNull();
     waitFor(() -> assertThat(peer1.isConnected()).isFalse());
     waitFor(() -> assertThat(peer2.isConnected()).isFalse());
+    assertThat(network1.getPeerManager().getAvailablePeerCount()).isZero();
+    assertThat(network2.getPeerManager().getAvailablePeerCount()).isZero();
   }
 }
