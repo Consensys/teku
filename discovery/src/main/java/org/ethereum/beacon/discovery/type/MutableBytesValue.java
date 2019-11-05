@@ -18,13 +18,15 @@ import static com.google.common.base.Preconditions.checkElementIndex;
 
 import io.netty.buffer.ByteBuf;
 import io.vertx.core.buffer.Buffer;
+import java.security.MessageDigest;
+import org.apache.tuweni.bytes.MutableBytes;
 
 /**
  * A mutable {@link BytesValue}.
  *
  * @see BytesValues for static methods to create and work with {@link MutableBytesValue}.
  */
-public interface MutableBytesValue extends BytesValue {
+public interface MutableBytesValue extends BytesValue, MutableBytes {
 
   /**
    * The empty value (with 0 bytes).
@@ -95,6 +97,45 @@ public interface MutableBytesValue extends BytesValue {
     }
     return new MutableByteBufWrappingBytesValue(buffer, offset, size);
   }
+
+  @Override
+  int size();
+
+  @Override
+  byte get(int i);
+
+  @Override
+  BytesValue slice(int index);
+
+  @Override
+  BytesValue slice(int index, int length);
+
+  @Override
+  BytesValue copy();
+
+  @Override
+  MutableBytesValue mutableCopy();
+
+  @Override
+  void copyTo(MutableBytesValue destination);
+
+  @Override
+  void copyTo(MutableBytesValue destination, int destinationOffset);
+
+  @Override
+  int commonPrefixLength(BytesValue other);
+
+  @Override
+  BytesValue commonPrefix(BytesValue other);
+
+  @Override
+  void update(MessageDigest digest);
+
+  @Override
+  boolean isZero();
+
+  @Override
+  String toString();
 
   /**
    * Sets a particular byte in this value.

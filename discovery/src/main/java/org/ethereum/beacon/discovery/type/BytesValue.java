@@ -21,6 +21,7 @@ import io.netty.buffer.ByteBuf;
 import io.vertx.core.buffer.Buffer;
 import java.security.MessageDigest;
 import java.util.List;
+import org.apache.tuweni.bytes.Bytes;
 
 /**
  * A value made of bytes.
@@ -34,7 +35,7 @@ import java.util.List;
  *
  * @see BytesValues for static methods to create and work with {@link BytesValue}.
  */
-public interface BytesValue extends Comparable<BytesValue> {
+public interface BytesValue extends Comparable<Bytes>, Bytes {
 
   /** The empty value (with 0 bytes). */
   BytesValue EMPTY = wrap(new byte[0]);
@@ -502,7 +503,7 @@ public interface BytesValue extends Comparable<BytesValue> {
   }
 
   @Override
-  default int compareTo(BytesValue other) {
+  default int compareTo(Bytes other) {
     int minSize = Math.min(size(), other.size());
     for (int i = 0; i < minSize; i++) {
       // Using integer comparison to basically simulate unsigned byte comparison
