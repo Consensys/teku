@@ -14,19 +14,22 @@
 package tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.methods;
 
 import org.apache.logging.log4j.Level;
+import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.BeaconBlocksMessageRequest;
-import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.BeaconBlocksMessageResponse;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.Peer;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.LocalMessageHandler;
+import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.ResponseCallback;
 import tech.pegasys.artemis.util.alogger.ALogger;
 
 public class BeaconBlocksMessageHandler
-    implements LocalMessageHandler<BeaconBlocksMessageRequest, BeaconBlocksMessageResponse> {
+    implements LocalMessageHandler<BeaconBlocksMessageRequest, BeaconBlock> {
   private final ALogger LOG = new ALogger(BeaconBlocksMessageHandler.class.getName());
 
   @Override
-  public BeaconBlocksMessageResponse onIncomingMessage(
-      final Peer peer, final BeaconBlocksMessageRequest message) {
+  public void onIncomingMessage(
+      final Peer peer,
+      final BeaconBlocksMessageRequest message,
+      final ResponseCallback<BeaconBlock> callback) {
     LOG.log(
         Level.DEBUG,
         "Peer "
@@ -35,6 +38,6 @@ public class BeaconBlocksMessageHandler
             + message.getStartSlot()
             + ".");
     // TODO Stub
-    return new BeaconBlocksMessageResponse(null);
+    callback.responseComplete();
   }
 }

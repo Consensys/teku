@@ -19,6 +19,7 @@ import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.GoodbyeMessage;
 import tech.pegasys.artemis.metrics.ArtemisMetricCategory;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.Peer;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.LocalMessageHandler;
+import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.ResponseCallback;
 import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.pantheon.metrics.Counter;
 import tech.pegasys.pantheon.metrics.LabelledMetric;
@@ -39,10 +40,13 @@ public class GoodbyeMessageHandler implements LocalMessageHandler<GoodbyeMessage
   }
 
   @Override
-  public GoodbyeMessage onIncomingMessage(final Peer peer, final GoodbyeMessage message) {
+  public void onIncomingMessage(
+      final Peer peer,
+      final GoodbyeMessage message,
+      final ResponseCallback<GoodbyeMessage> callback) {
     LOG.log(Level.DEBUG, "Peer " + peer.getRemoteId() + " said goodbye.");
     goodbyeCounter.labels(labelForReason(message.getReason())).inc();
-    return null;
+    callback.responseComplete();
   }
 
   private String labelForReason(final UnsignedLong reason) {

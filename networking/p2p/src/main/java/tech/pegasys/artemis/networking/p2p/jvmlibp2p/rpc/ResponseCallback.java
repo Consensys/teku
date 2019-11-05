@@ -11,17 +11,14 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.util.future;
+package tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc;
 
-import java.util.concurrent.Callable;
-import java.util.concurrent.CompletableFuture;
+import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
-public class FutureUtils {
-  public static <T> CompletableFuture<T> wrapInFuture(final Callable<T> action) {
-    try {
-      return CompletableFuture.completedFuture(action.call());
-    } catch (final Throwable t) {
-      return CompletableFuture.failedFuture(t);
-    }
-  }
+public interface ResponseCallback<T extends SimpleOffsetSerializable> {
+  void respond(T data);
+
+  void completeWithError(RpcException error);
+
+  void responseComplete();
 }
