@@ -26,6 +26,7 @@ import io.libp2p.core.multistream.ProtocolMatcher;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
@@ -70,11 +71,15 @@ public class RpcMessageHandler<
         .thenCompose(ctr -> ctr.invoke(request));
   }
 
-  private CompletableFuture<TResponse> invokeLocal(Connection connection, TRequest request) {
+  private CompletableFuture<Optional<TResponse>> invokeLocal(
+      Connection connection, TRequest request) {
     return wrapInFuture(
         () -> {
           final Peer peer = peerLookup.getPeer(connection);
-          return localMessageHandler.onIncomingMessage(peer, request);
+          // Methods which act as closeNotifcation do not send a response, but still need
+          // to process the incoming request.
+          final TResponse response = localMessageHandler.onIncomingMessage(peer, request);
+          return closeNotification ? Optional.empty() : Optional.of(response);
         });
   }
 
@@ -142,26 +147,31 @@ public class RpcMessageHandler<
       Bytes bytes = Bytes.wrapByteBuf(byteBuf);
       wrapInFuture(() -> rpcCodec.decodeRequest(bytes, method.getRequestType()))
           .thenCompose(request -> invokeLocal(connection, request))
-          .thenApply(rpcCodec::encodeSuccessfulResponse)
-          .exceptionally(
-              error -> {
-                final Throwable rootCause = Throwables.getRootCause(error);
-                if (rootCause instanceof RpcException) {
-                  final RpcException rpcException = (RpcException) rootCause;
-                  LOG.debug(
-                      "Returning to RPC request with error: {}", rpcException.getErrorMessage());
-                  return rpcCodec.encodeErrorResponse(rpcException);
-                } else {
-                  LOG.error("Unhandled error while processing req/resp request", error);
-                  return rpcCodec.encodeErrorResponse(RpcException.SERVER_ERROR);
-                }
-              })
-          .thenAccept(
-              encoded -> {
-                ByteBuf respBuf = ctx.alloc().buffer();
-                respBuf.writeBytes(encoded.toArrayUnsafe());
-                ctx.writeAndFlush(respBuf).addListener(future -> ctx.channel().disconnect());
-              });
+          .thenApply(response -> response.map(rpcCodec::encodeSuccessfulResponse))
+          .exceptionally(this::createErrorResponse)
+          .thenAccept(response -> writeResponse(ctx, response));
+    }
+
+    private Optional<Bytes> createErrorResponse(final Throwable error) {
+      final Throwable rootCause = Throwables.getRootCause(error);
+      if (rootCause instanceof RpcException) {
+        final RpcException rpcException = (RpcException) rootCause;
+        LOG.debug("Returning to RPC request with error: {}", rpcException.getErrorMessage());
+        return Optional.of(rpcCodec.encodeErrorResponse(rpcException));
+      } else {
+        LOG.error("Unhandled error while processing req/resp request", error);
+        return Optional.of(rpcCodec.encodeErrorResponse(RpcException.SERVER_ERROR));
+      }
+    }
+
+    private void writeResponse(final ChannelHandlerContext ctx, final Optional<Bytes> encoded) {
+      if (closeNotification) {
+        connection.getNettyChannel().close();
+        return;
+      }
+      ByteBuf respBuf = ctx.alloc().buffer();
+      encoded.map(Bytes::toArrayUnsafe).ifPresent(respBuf::writeBytes);
+      ctx.writeAndFlush(respBuf).addListener(future -> ctx.channel().disconnect());
     }
   }
 

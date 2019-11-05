@@ -90,6 +90,10 @@ public class Peer {
     return rpcMethods.invoke(method, connection, request);
   }
 
+  public boolean isConnected() {
+    return connection.getNettyChannel().isOpen();
+  }
+
   public static class StatusData {
     private final Bytes4 headForkVersion;
     private final Bytes32 finalizedRoot;
