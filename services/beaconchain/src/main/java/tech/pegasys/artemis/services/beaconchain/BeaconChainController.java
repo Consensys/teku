@@ -72,6 +72,7 @@ public class BeaconChainController {
   private SettableGauge currentEpochGauge;
   private StateProcessor stateProcessor;
   private UnsignedLong nodeSlot = UnsignedLong.ZERO;
+  private BeaconRestApi beaconRestAPI;
   private boolean testMode;
 
   public BeaconChainController(
@@ -184,9 +185,8 @@ public class BeaconChainController {
 
   public void initRestAPI() {
     STDOUT.log(Level.DEBUG, "BeaconChainController.initRestAPI()");
-    BeaconRestApi restApi =
+    beaconRestAPI =
         new BeaconRestApi(chainStorageClient, p2pNetwork, config.getBeaconRestAPIPortNumber());
-    restApi.start();
   }
 
   public void start() {
@@ -196,6 +196,8 @@ public class BeaconChainController {
     this.eventBus.post(new NodeStartEvent());
     STDOUT.log(Level.DEBUG, "BeaconChainController.start(): starting timer");
     this.timer.start();
+    STDOUT.log(Level.DEBUG, "BeaconChainController.start(): starting BeaconRestAPI");
+    this.beaconRestAPI.start();
   }
 
   public void stop() {
@@ -212,6 +214,7 @@ public class BeaconChainController {
       networkExecutor.shutdownNow();
     }
     this.timer.stop();
+    this.beaconRestAPI.stop();
     this.eventBus.unregister(this);
   }
 

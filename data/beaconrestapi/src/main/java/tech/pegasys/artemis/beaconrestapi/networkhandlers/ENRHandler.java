@@ -15,17 +15,13 @@ package tech.pegasys.artemis.beaconrestapi.networkhandlers;
 
 import tech.pegasys.artemis.beaconrestapi.handlerinterfaces.BeaconRestApiHandler;
 
-// TODO: remove unused variable when discovery is integrated
-@SuppressWarnings("UnusedVariable")
 public class ENRHandler implements BeaconRestApiHandler {
-
-  private String path = "/network/enr";
 
   public ENRHandler() {}
 
   @Override
   public String getPath() {
-    return path;
+    return "/network/enr";
   }
 
   @Override

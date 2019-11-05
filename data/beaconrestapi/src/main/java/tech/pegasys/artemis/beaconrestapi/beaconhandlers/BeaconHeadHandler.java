@@ -14,17 +14,16 @@
 package tech.pegasys.artemis.beaconrestapi.beaconhandlers;
 
 import com.google.common.primitives.UnsignedLong;
-import io.javalin.plugin.json.JavalinJson;
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.beaconrestapi.handlerinterfaces.BeaconRestApiHandler;
+import tech.pegasys.artemis.provider.JsonProvider;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 
 public class BeaconHeadHandler implements BeaconRestApiHandler {
 
-  private ChainStorageClient client;
-  private String path = "/beacon/head";
+  private final ChainStorageClient client;
 
   public BeaconHeadHandler(ChainStorageClient client) {
     this.client = client;
@@ -32,7 +31,7 @@ public class BeaconHeadHandler implements BeaconRestApiHandler {
 
   @Override
   public String getPath() {
-    return path;
+    return "/beacon/head";
   }
 
   @Override
@@ -44,6 +43,6 @@ public class BeaconHeadHandler implements BeaconRestApiHandler {
     jsonObject.put("slot", head_block_slot.longValue());
     jsonObject.put("block_root", head_block_root.toHexString());
     jsonObject.put("state_root", head_state_root.toHexString());
-    return JavalinJson.toJson(jsonObject);
+    return JsonProvider.objectToJSON(jsonObject);
   }
 }

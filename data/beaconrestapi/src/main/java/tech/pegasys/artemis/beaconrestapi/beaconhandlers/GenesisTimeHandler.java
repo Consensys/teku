@@ -13,26 +13,25 @@
 
 package tech.pegasys.artemis.beaconrestapi.beaconhandlers;
 
-import io.javalin.plugin.json.JavalinJson;
 import java.util.HashMap;
 import java.util.Map;
 import tech.pegasys.artemis.beaconrestapi.handlerinterfaces.BeaconRestApiHandler;
+import tech.pegasys.artemis.provider.JsonProvider;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 
 public class GenesisTimeHandler implements BeaconRestApiHandler {
 
-  private String path = "/node/genesis_time";
-  private String returnString;
+  private final String returnString;
 
-  public GenesisTimeHandler(ChainStorageClient client) {
+  public GenesisTimeHandler(final ChainStorageClient client) {
     Map<String, Long> jsonObject = new HashMap<>();
     jsonObject.put("genesis_time", client.getGenesisTime().longValue());
-    returnString = JavalinJson.toJson(jsonObject);
+    returnString = JsonProvider.objectToJSON(jsonObject);
   }
 
   @Override
   public String getPath() {
-    return path;
+    return "/node/genesis_time";
   }
 
   @Override

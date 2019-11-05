@@ -46,7 +46,7 @@ public class ErrorConditionsIntegrationTest {
     final JvmLibP2PNetwork network2 = networkFactory.startNetwork(network1);
 
     final Peer peer =
-        network1.getPeerManager().getAvailablePeer(network2.getPeerID()).orElseThrow();
+        network1.getPeerManager().getAvailablePeer(network2.getPeerId()).orElseThrow();
 
     final CompletableFuture<StatusMessage> response =
         peer.send(RpcMethod.STATUS, new InvalidStatusMessage());

@@ -137,7 +137,7 @@ public class PeerManager implements ConnectionHandler, PeerLookup {
     return (int) connectedPeerMap.values().stream().filter(Peer::hasStatus).count();
   }
 
-  public List<String> getPeerIDs() {
+  public List<String> getPeerIds() {
     return connectedPeerMap.keySet().stream().map(PeerId::toBase58).collect(Collectors.toList());
   }
 }

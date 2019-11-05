@@ -22,7 +22,7 @@ import tech.pegasys.artemis.beaconrestapi.beaconhandlers.BeaconStateHandler;
 import tech.pegasys.artemis.beaconrestapi.beaconhandlers.GenesisTimeHandler;
 import tech.pegasys.artemis.beaconrestapi.handlerinterfaces.BeaconRestApiHandler;
 import tech.pegasys.artemis.beaconrestapi.networkhandlers.ENRHandler;
-import tech.pegasys.artemis.beaconrestapi.networkhandlers.PeerIDHandler;
+import tech.pegasys.artemis.beaconrestapi.networkhandlers.PeerIdHandler;
 import tech.pegasys.artemis.beaconrestapi.networkhandlers.PeersHandler;
 import tech.pegasys.artemis.networking.p2p.JvmLibP2PNetwork;
 import tech.pegasys.artemis.networking.p2p.api.P2PNetwork;
@@ -35,15 +35,14 @@ public class BeaconRestApi {
 
   public BeaconRestApi(
       ChainStorageClient chainStorageClient, P2PNetwork p2pNetwork, final int portNumber) {
-    boolean isLibP2P = false;
-    if (p2pNetwork instanceof JvmLibP2PNetwork) isLibP2P = true;
+    boolean isLibP2P = p2pNetwork instanceof JvmLibP2PNetwork;
     app = Javalin.create().start(portNumber);
 
     handlers.add(new GenesisTimeHandler(chainStorageClient));
     handlers.add(new BeaconHeadHandler(chainStorageClient));
     handlers.add(new BeaconBlockHandler(chainStorageClient));
     handlers.add(new BeaconStateHandler(chainStorageClient));
-    handlers.add(new PeerIDHandler(p2pNetwork, isLibP2P));
+    handlers.add(new PeerIdHandler(p2pNetwork, isLibP2P));
     handlers.add(new PeersHandler(p2pNetwork, isLibP2P));
     handlers.add(new ENRHandler());
   }
@@ -56,5 +55,9 @@ public class BeaconRestApi {
                 ctx ->
                     ctx.result(handler.handleRequest(new BeaconRestApiHandler.RequestParams(ctx)))
                         .contentType("application/json")));
+  }
+
+  public void stop() {
+    app.stop();
   }
 }

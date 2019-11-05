@@ -13,17 +13,15 @@
 
 package tech.pegasys.artemis.beaconrestapi.beaconhandlers;
 
-import static tech.pegasys.artemis.provider.JsonProvider.objectToJSON;
-
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.beaconrestapi.handlerinterfaces.BeaconRestApiHandler;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.provider.JsonProvider;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 
 public class BeaconBlockHandler implements BeaconRestApiHandler {
 
-  private ChainStorageClient client;
-  private String path = "/beacon/block";
+  private final ChainStorageClient client;
 
   public BeaconBlockHandler(ChainStorageClient client) {
     this.client = client;
@@ -31,13 +29,13 @@ public class BeaconBlockHandler implements BeaconRestApiHandler {
 
   @Override
   public String getPath() {
-    return path;
+    return "/beacon/block";
   }
 
   @Override
   public String handleRequest(RequestParams param) {
     Bytes32 root = Bytes32.fromHexString(param.getQueryParam("root"));
     BeaconBlock block = client.getStore().getBlock(root);
-    return objectToJSON(block);
+    return JsonProvider.objectToJSON(block);
   }
 }

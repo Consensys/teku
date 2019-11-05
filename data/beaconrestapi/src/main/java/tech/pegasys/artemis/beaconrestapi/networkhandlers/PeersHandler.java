@@ -13,16 +13,15 @@
 
 package tech.pegasys.artemis.beaconrestapi.networkhandlers;
 
-import io.javalin.plugin.json.JavalinJson;
 import tech.pegasys.artemis.beaconrestapi.handlerinterfaces.BeaconRestApiHandler;
 import tech.pegasys.artemis.networking.p2p.JvmLibP2PNetwork;
 import tech.pegasys.artemis.networking.p2p.api.P2PNetwork;
+import tech.pegasys.artemis.provider.JsonProvider;
 
 public class PeersHandler implements BeaconRestApiHandler {
 
-  private P2PNetwork network;
-  private boolean isLibP2P;
-  private String path = "/network/peers";
+  private final P2PNetwork network;
+  private final boolean isLibP2P;
 
   public PeersHandler(P2PNetwork network, boolean isLibP2P) {
     this.network = network;
@@ -31,13 +30,13 @@ public class PeersHandler implements BeaconRestApiHandler {
 
   @Override
   public String getPath() {
-    return path;
+    return "/network/peers";
   }
 
   @Override
   public String handleRequest(RequestParams param) {
     if (isLibP2P) {
-      return JavalinJson.toJson(((JvmLibP2PNetwork) network).getPeerIDs().toArray());
+      return JsonProvider.objectToJSON(((JvmLibP2PNetwork) network).getPeerIds().toArray());
     } else {
       return "p2pNetwork not set to libP2P";
     }

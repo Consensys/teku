@@ -132,7 +132,7 @@ public class JvmLibP2PNetwork implements P2PNetwork {
   }
 
   public String getPeerAddress() {
-    return advertisedAddr + "/p2p/" + getPeerIDString();
+    return advertisedAddr + "/p2p/" + getPeerIdString();
   }
 
   public PeerManager getPeerManager() {
@@ -151,15 +151,15 @@ public class JvmLibP2PNetwork implements P2PNetwork {
     scheduler.shutdownNow();
   }
 
-  public PeerId getPeerID() {
+  public PeerId getPeerId() {
     return PeerId.fromPubKey(privKey.publicKey());
   }
 
-  public String getPeerIDString() {
-    return getPeerID().toBase58();
+  public String getPeerIdString() {
+    return getPeerId().toBase58();
   }
 
-  public List<String> getPeerIDs() {
-    return getPeerManager().getPeerIDs();
+  public List<String> getPeerIds() {
+    return getPeerManager().getPeerIds();
   }
 }
