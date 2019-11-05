@@ -20,8 +20,8 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Stream;
+import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.BeaconBlocksMessageRequest;
-import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.BeaconBlocksMessageResponse;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.GoodbyeMessage;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.PeerLookup;
@@ -35,8 +35,7 @@ public class RpcMethods {
       PeerLookup peerLookup,
       LocalMessageHandler<StatusMessage, StatusMessage> helloHandler,
       LocalMessageHandler<GoodbyeMessage, GoodbyeMessage> goodbyeHandler,
-      LocalMessageHandler<BeaconBlocksMessageRequest, BeaconBlocksMessageResponse>
-          beaconBlocksHandler) {
+      LocalMessageHandler<BeaconBlocksMessageRequest, BeaconBlock> beaconBlocksHandler) {
 
     this.methods =
         createMethodMap(
