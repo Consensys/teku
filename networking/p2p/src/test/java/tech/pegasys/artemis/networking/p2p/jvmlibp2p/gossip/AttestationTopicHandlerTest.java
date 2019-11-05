@@ -36,14 +36,18 @@ import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.network.p2p.jvmlibp2p.MockMessageApi;
+import tech.pegasys.artemis.statetransition.BeaconChainUtil;
+import tech.pegasys.artemis.storage.ChainStorageClient;
 
 public class AttestationTopicHandlerTest {
 
   private final PubsubPublisherApi publisher = mock(PubsubPublisherApi.class);
   private final EventBus eventBus = spy(new EventBus());
+  private final ChainStorageClient storageClient = new ChainStorageClient(eventBus);
+  private final BeaconChainUtil beaconChainUtil = BeaconChainUtil.create(12, storageClient);
 
   private final AttestationTopicHandler topicHandler =
-      new AttestationTopicHandler(publisher, eventBus);
+      new AttestationTopicHandler(publisher, eventBus, storageClient);
 
   ArgumentCaptor<ByteBuf> byteBufCaptor = ArgumentCaptor.forClass(ByteBuf.class);
   ArgumentCaptor<Topic> topicCaptor = ArgumentCaptor.forClass(Topic.class);
