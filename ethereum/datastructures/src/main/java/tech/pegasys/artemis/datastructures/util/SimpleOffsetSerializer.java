@@ -33,6 +33,7 @@ import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockBody;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
+import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.GoodbyeMessage;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
@@ -105,6 +106,9 @@ public class SimpleOffsetSerializer {
     classReflectionInfo.put(Validator.class, new ReflectionInformation(Validator.class));
     classReflectionInfo.put(StatusMessage.class, new ReflectionInformation(StatusMessage.class));
     classReflectionInfo.put(GoodbyeMessage.class, new ReflectionInformation(GoodbyeMessage.class));
+    classReflectionInfo.put(
+        BeaconBlocksByRootRequestMessage.class,
+        new ReflectionInformation(BeaconBlocksByRootRequestMessage.class));
   }
 
   static {

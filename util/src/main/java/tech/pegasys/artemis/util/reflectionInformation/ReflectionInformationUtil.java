@@ -56,8 +56,8 @@ public class ReflectionInformationUtil {
 
   @SuppressWarnings({"unchecked", "rawtypes"})
   public static List<Integer> getVectorLengths(ReflectionInformation reflectionInformation) {
-    List<Integer> vectorLengths = new ArrayList<>();
     try {
+      List<Integer> vectorLengths = new ArrayList<>();
       Field[] fields = reflectionInformation.getFields();
       if (containsClass(fields, SSZVector.class)) {
         Object object = reflectionInformation.getClassInfo().getConstructor().newInstance();
@@ -79,15 +79,14 @@ public class ReflectionInformationUtil {
         | IllegalAccessException
         | InvocationTargetException
         | NoSuchMethodException e) {
-      System.out.println(e);
+      throw new RuntimeException("Failed to determine SSZ reflection information", e);
     }
-    return vectorLengths;
   }
 
   @SuppressWarnings({"unchecked", "rawtypes"})
   public static List<Class> getVectorElementTypes(ReflectionInformation reflectionInformation) {
-    List<Class> vectorElementTypes = new ArrayList<>();
     try {
+      List<Class> vectorElementTypes = new ArrayList<>();
       Field[] fields = reflectionInformation.getFields();
       if (containsClass(fields, SSZVector.class)) {
         Object object = reflectionInformation.getClassInfo().getConstructor().newInstance();
@@ -109,15 +108,14 @@ public class ReflectionInformationUtil {
         | IllegalAccessException
         | InvocationTargetException
         | NoSuchMethodException e) {
-      System.out.println(e);
+      throw new RuntimeException("Failed to determine SSZ reflection information", e);
     }
-    return vectorElementTypes;
   }
 
   @SuppressWarnings({"unchecked", "rawtypes"})
   public static List<Class> getListElementTypes(ReflectionInformation reflectionInformation) {
-    List<Class> listElementTypes = new ArrayList<>();
     try {
+      List<Class> listElementTypes = new ArrayList<>();
       Field[] fields = reflectionInformation.getFields();
       if (containsClass(fields, SSZList.class)) {
         Object object = reflectionInformation.getClassInfo().getConstructor().newInstance();
@@ -139,15 +137,14 @@ public class ReflectionInformationUtil {
         | IllegalAccessException
         | InvocationTargetException
         | NoSuchMethodException e) {
-      System.out.println(e);
+      throw new RuntimeException("Failed to determine SSZ reflection information", e);
     }
-    return listElementTypes;
   }
 
   @SuppressWarnings({"unchecked", "rawtypes"})
   public static List<Long> getListElementMaxSizes(ReflectionInformation reflectionInformation) {
-    List<Long> listElementMaxSizes = new ArrayList<>();
     try {
+      List<Long> listElementMaxSizes = new ArrayList<>();
       Field[] fields = reflectionInformation.getFields();
       if (containsClass(fields, SSZList.class)) {
         Object object = reflectionInformation.getClassInfo().getConstructor().newInstance();
@@ -169,15 +166,14 @@ public class ReflectionInformationUtil {
         | IllegalAccessException
         | InvocationTargetException
         | NoSuchMethodException e) {
-      System.out.println(e);
+      throw new RuntimeException("Failed to determine SSZ reflection information", e);
     }
-    return listElementMaxSizes;
   }
 
   @SuppressWarnings({"unchecked"})
   public static List<Long> getBitlistElementMaxSizes(ReflectionInformation reflectionInformation) {
-    List<Long> bitlistElementsMaxSizes = new ArrayList<>();
     try {
+      List<Long> bitlistElementsMaxSizes = new ArrayList<>();
       Field[] fields = reflectionInformation.getFields();
       if (containsClass(fields, Bitlist.class)) {
         Object object = reflectionInformation.getClassInfo().getConstructor().newInstance();
@@ -199,15 +195,14 @@ public class ReflectionInformationUtil {
         | IllegalAccessException
         | InvocationTargetException
         | NoSuchMethodException e) {
-      System.out.println(e);
+      throw new RuntimeException("Failed to determine SSZ reflection information", e);
     }
-    return bitlistElementsMaxSizes;
   }
 
   @SuppressWarnings("unchecked")
   public static List<Integer> getBitvectorSizes(ReflectionInformation reflectionInformation) {
-    List<Integer> vectorLengths = new ArrayList<>();
     try {
+      List<Integer> vectorLengths = new ArrayList<>();
       Field[] fields = reflectionInformation.getFields();
       if (containsClass(fields, Bitvector.class)) {
         Object object = reflectionInformation.getClassInfo().getConstructor().newInstance();
@@ -229,8 +224,7 @@ public class ReflectionInformationUtil {
         | IllegalAccessException
         | InvocationTargetException
         | NoSuchMethodException e) {
-      System.out.println(e);
+      throw new RuntimeException("Failed to determine SSZ reflection information", e);
     }
-    return vectorLengths;
   }
 }

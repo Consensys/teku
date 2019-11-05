@@ -13,22 +13,30 @@
 
 package tech.pegasys.artemis.datastructures.networking.libp2p.rpc;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.artemis.util.SSZTypes.SSZContainer;
+import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
-public final class RecentBeaconBlocksMessageRequest
+public final class BeaconBlocksByRootRequestMessage
     implements SimpleOffsetSerializable, SSZContainer {
 
-  private final List<Bytes32> blockRoots;
+  private final SSZList<Bytes32> blockRoots = new SSZList<>(Bytes32.class, Integer.MAX_VALUE);
 
-  public RecentBeaconBlocksMessageRequest(List<Bytes32> blockRoots) {
-    this.blockRoots = blockRoots;
+  @SuppressWarnings("unused") // Required by SimpleOffsetSerializer
+  public BeaconBlocksByRootRequestMessage() {}
+
+  public BeaconBlocksByRootRequestMessage(final List<Bytes32> blockRoots) {
+    this.blockRoots.addAll(blockRoots);
+  }
+
+  @SuppressWarnings("unused") // Required by SimpleOffsetSerializer
+  public BeaconBlocksByRootRequestMessage(final SSZList<Bytes32> blockRoots) {
+    this.blockRoots.addAll(blockRoots);
   }
 
   @Override
@@ -38,9 +46,7 @@ public final class RecentBeaconBlocksMessageRequest
 
   @Override
   public List<Bytes> get_fixed_parts() {
-    List<Bytes> fixedPartsList =
-        new ArrayList<>(List.of(SSZ.encode(writer -> writer.writeFixedBytesList(blockRoots))));
-    return fixedPartsList;
+    return List.of(SSZ.encode(writer -> writer.writeFixedBytesList(blockRoots)));
   }
 
   @Override
@@ -58,11 +64,11 @@ public final class RecentBeaconBlocksMessageRequest
       return true;
     }
 
-    if (!(obj instanceof RecentBeaconBlocksMessageRequest)) {
+    if (!(obj instanceof BeaconBlocksByRootRequestMessage)) {
       return false;
     }
 
-    RecentBeaconBlocksMessageRequest other = (RecentBeaconBlocksMessageRequest) obj;
+    BeaconBlocksByRootRequestMessage other = (BeaconBlocksByRootRequestMessage) obj;
     return Objects.equals(this.blockRoots(), other.blockRoots());
   }
 
