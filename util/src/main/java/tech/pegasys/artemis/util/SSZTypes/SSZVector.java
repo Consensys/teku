@@ -17,23 +17,23 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-@SuppressWarnings("rawtypes")
 public class SSZVector<T> extends ArrayList<T> {
 
   private int maxSize;
-  private Class classInfo;
+  private Class<T> classInfo;
 
   public SSZVector() throws UnsupportedOperationException {
     throw new UnsupportedOperationException("SSZVector must have specified size");
   }
 
+  @SuppressWarnings("unchecked")
   public SSZVector(int size, T object) {
     super(Collections.nCopies(size, object));
     this.maxSize = size;
-    classInfo = object.getClass();
+    classInfo = (Class<T>) object.getClass();
   }
 
-  public SSZVector(List<T> list, Class classInfo) {
+  public SSZVector(List<T> list, Class<T> classInfo) {
     super(list);
     maxSize = list.size();
     this.classInfo = classInfo;
@@ -54,7 +54,7 @@ public class SSZVector<T> extends ArrayList<T> {
     throw new UnsupportedOperationException("SSZVector does not support add, only set");
   }
 
-  public Class getElementType() {
+  public Class<T> getElementType() {
     return classInfo;
   }
 }
