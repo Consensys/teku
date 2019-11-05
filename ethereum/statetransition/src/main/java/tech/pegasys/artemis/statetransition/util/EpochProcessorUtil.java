@@ -75,7 +75,6 @@ import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
-import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
@@ -833,6 +832,6 @@ public final class EpochProcessorUtil {
     // Rotate current/previous epoch attestations
     state.setPrevious_epoch_attestations(state.getCurrent_epoch_attestations());
     state.setCurrent_epoch_attestations(
-        new SSZList<>(Attestation.class, MAX_ATTESTATIONS * SLOTS_PER_EPOCH));
+        new SSZList<>(PendingAttestation.class, MAX_ATTESTATIONS * SLOTS_PER_EPOCH));
   }
 }

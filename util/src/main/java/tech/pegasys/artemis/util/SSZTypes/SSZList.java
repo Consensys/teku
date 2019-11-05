@@ -16,17 +16,12 @@ package tech.pegasys.artemis.util.SSZTypes;
 import java.util.ArrayList;
 import java.util.List;
 
-@SuppressWarnings("rawtypes")
 public class SSZList<T> extends ArrayList<T> {
 
   private long maxSize;
-  private Class classInfo;
+  private Class<T> classInfo;
 
-  public SSZList() throws UnsupportedOperationException {
-    throw new UnsupportedOperationException("SSZList must have specified max size");
-  }
-
-  public SSZList(Class classInfo, long maxSize) {
+  public SSZList(Class<T> classInfo, long maxSize) {
     super();
     this.classInfo = classInfo;
     this.maxSize = maxSize;
@@ -38,7 +33,7 @@ public class SSZList<T> extends ArrayList<T> {
     this.classInfo = list.getElementType();
   }
 
-  public SSZList(List<T> list, long maxSize, Class classInfo) {
+  public SSZList(List<T> list, long maxSize, Class<T> classInfo) {
     super(list);
     this.maxSize = maxSize;
     this.classInfo = classInfo;
@@ -57,7 +52,7 @@ public class SSZList<T> extends ArrayList<T> {
     return maxSize;
   }
 
-  public Class getElementType() {
+  public Class<T> getElementType() {
     return classInfo;
   }
 }
