@@ -21,11 +21,9 @@ import tech.pegasys.artemis.provider.JsonProvider;
 public class PeersHandler implements BeaconRestApiHandler {
 
   private final P2PNetwork network;
-  private final boolean isLibP2P;
 
-  public PeersHandler(P2PNetwork network, boolean isLibP2P) {
+  public PeersHandler(P2PNetwork network) {
     this.network = network;
-    this.isLibP2P = isLibP2P;
   }
 
   @Override
@@ -35,7 +33,7 @@ public class PeersHandler implements BeaconRestApiHandler {
 
   @Override
   public String handleRequest(RequestParams param) {
-    if (isLibP2P) {
+    if (network instanceof JvmLibP2PNetwork) {
       return JsonProvider.objectToJSON(((JvmLibP2PNetwork) network).getPeerIds().toArray());
     } else {
       return "p2pNetwork not set to libP2P";
