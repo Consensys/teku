@@ -74,16 +74,14 @@ public final class DataStructureUtil {
     return Bytes32.random(new SecureRandom(buffer.array()));
   }
 
-  @SuppressWarnings({"rawtypes", "unchecked"})
   public static <T> SSZList<T> randomSSZList(
-      Class classInfo, long maxSize, Function<Integer, T> randomFunction, int seed) {
+      Class<T> classInfo, long maxSize, Function<Integer, T> randomFunction, int seed) {
     SSZList<T> sszList = new SSZList<>(classInfo, maxSize);
     long numItems = maxSize / 10;
     LongStream.range(0, numItems).forEach(i -> sszList.add(randomFunction.apply(seed)));
     return sszList;
   }
 
-  @SuppressWarnings({"rawtypes", "unchecked"})
   public static <T> SSZVector<T> randomSSZVector(
       T defaultClassObject, long maxSize, Function<Integer, T> randomFunction, int seed) {
     SSZVector<T> sszvector = new SSZVector<>(toIntExact(maxSize), defaultClassObject);

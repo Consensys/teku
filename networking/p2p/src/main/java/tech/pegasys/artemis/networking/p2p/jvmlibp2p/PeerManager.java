@@ -117,15 +117,15 @@ public class PeerManager implements ConnectionHandler, PeerLookup {
   }
 
   private void onConnectedPeer(Peer peer) {
-    final boolean wasAdded = connectedPeerMap.putIfAbsent(peer.getRemoteId(), peer) == null;
+    final boolean wasAdded = connectedPeerMap.putIfAbsent(peer.getPeerId(), peer) == null;
     if (wasAdded) {
-      STDOUT.log(Level.DEBUG, "onConnectedPeer() " + peer.getRemoteId());
+      STDOUT.log(Level.DEBUG, "onConnectedPeer() " + peer.getPeerId());
     }
   }
 
   private void onDisconnectedPeer(Peer peer) {
-    if (connectedPeerMap.remove(peer.getRemoteId()) != null) {
-      STDOUT.log(Level.DEBUG, "Peer disconnected: " + peer.getRemoteId());
+    if (connectedPeerMap.remove(peer.getPeerId()) != null) {
+      STDOUT.log(Level.DEBUG, "Peer disconnected: " + peer.getPeerId());
     }
   }
 

@@ -26,13 +26,15 @@ import org.awaitility.Awaitility;
  */
 public class Waiter {
 
+  private static final int DEFAULT_TIMEOUT_SECONDS = 30;
+
   public static void waitFor(final Condition assertion) {
-    Awaitility.waitAtMost(30, TimeUnit.SECONDS).untilAsserted(assertion::run);
+    Awaitility.waitAtMost(DEFAULT_TIMEOUT_SECONDS, TimeUnit.SECONDS).untilAsserted(assertion::run);
   }
 
   public static <T> T waitFor(final CompletableFuture<T> future)
       throws InterruptedException, ExecutionException, TimeoutException {
-    return future.get(30, TimeUnit.SECONDS);
+    return future.get(DEFAULT_TIMEOUT_SECONDS, TimeUnit.SECONDS);
   }
 
   public interface Condition {

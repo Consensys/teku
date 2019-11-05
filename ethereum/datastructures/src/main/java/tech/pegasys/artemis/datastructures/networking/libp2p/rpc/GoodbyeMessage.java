@@ -15,6 +15,7 @@ package tech.pegasys.artemis.datastructures.networking.libp2p.rpc;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
+import com.google.common.base.MoreObjects;
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.Objects;
@@ -52,6 +53,10 @@ public final class GoodbyeMessage implements SimpleOffsetSerializable, SSZContai
     return List.of(SSZ.encodeUInt64(reason.longValue()));
   }
 
+  public UnsignedLong getReason() {
+    return reason;
+  }
+
   @Override
   public int hashCode() {
     return Objects.hash(reason);
@@ -75,7 +80,8 @@ public final class GoodbyeMessage implements SimpleOffsetSerializable, SSZContai
     return Objects.equals(this.getReason(), other.getReason());
   }
 
-  public UnsignedLong getReason() {
-    return reason;
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this).add("reason", reason).toString();
   }
 }
