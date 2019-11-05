@@ -19,11 +19,13 @@ import io.libp2p.core.PeerId;
 import io.libp2p.core.multiformats.Multiaddr;
 import io.libp2p.network.NetworkImpl;
 import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import org.apache.logging.log4j.Level;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.RpcMessageHandler;
@@ -133,5 +135,9 @@ public class PeerManager implements ConnectionHandler, PeerLookup {
 
   public int getAvailablePeerCount() {
     return (int) connectedPeerMap.values().stream().filter(Peer::hasStatus).count();
+  }
+
+  public List<String> getPeerIds() {
+    return connectedPeerMap.keySet().stream().map(PeerId::toBase58).collect(Collectors.toList());
   }
 }

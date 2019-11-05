@@ -20,6 +20,7 @@ ext.acceptedLicenses = [
     'BSD 3-Clause',
     'Eclipse Distribution License - v 1.0',
     'Eclipse Public License - v 1.0',
+    'Eclipse Public License - Version 1.0',
     'Eclipse Public License 1.0',
     'Eclipse Public License - v 2.0',
     'MIT License',
@@ -61,6 +62,7 @@ downloadLicenses {
   ext.todoToBeFixed = license('TODO to be fixed', 'TODO to be fixed')
   aliases = [
       (apache)    : [
+          'Apache Software License - Version 2.0',
           'The Apache Software License, Version 2.0',
           'The Apache Software License, version 2.0',
           'Apache License Version 2.0',
