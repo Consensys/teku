@@ -23,16 +23,17 @@ import com.google.gson.JsonPrimitive;
 import com.google.gson.JsonSerializer;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.util.SSZTypes.Bitvector;
 import tech.pegasys.artemis.util.SSZTypes.Bytes4;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
+import tech.pegasys.artemis.util.bls.BLSSignature;
 
 public class JsonProvider {
 
-  public static String printBeaconState(BeaconState state) {
+  private static Gson gson;
 
+  static {
     ExclusionStrategy strategy =
         new ExclusionStrategy() {
           @Override
@@ -49,9 +50,7 @@ public class JsonProvider {
             return false;
           }
         };
-
     GsonBuilder builder = new GsonBuilder().addSerializationExclusionStrategy(strategy);
-
     builder.registerTypeAdapter(
         UnsignedLong.class,
         (JsonSerializer<UnsignedLong>)
@@ -114,7 +113,16 @@ public class JsonProvider {
               return Bitvector.fromBytes(bytes, length);
             });
 
-    Gson gson = builder.create();
-    return gson.toJson(state);
+    builder.registerTypeAdapter(
+        BLSSignature.class,
+        (JsonSerializer<BLSSignature>)
+            (src, typeOfSrc, context) ->
+                new JsonPrimitive(src.toBytes().toHexString().toLowerCase()));
+
+    gson = builder.create();
+  }
+
+  public static <T> String objectToJSON(T object) {
+    return gson.toJson(object);
   }
 }
