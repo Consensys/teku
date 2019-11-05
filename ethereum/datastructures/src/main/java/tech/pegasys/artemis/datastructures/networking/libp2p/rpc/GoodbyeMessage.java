@@ -82,8 +82,6 @@ public final class GoodbyeMessage implements SimpleOffsetSerializable, SSZContai
 
   @Override
   public String toString() {
-    return MoreObjects.toStringHelper(this)
-        .add("reason", reason)
-        .toString();
+    return MoreObjects.toStringHelper(this).add("reason", reason).toString();
   }
 }
