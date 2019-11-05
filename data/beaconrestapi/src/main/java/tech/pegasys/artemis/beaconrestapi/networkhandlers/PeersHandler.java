@@ -13,35 +13,33 @@
 
 package tech.pegasys.artemis.beaconrestapi.networkhandlers;
 
-import io.javalin.Javalin;
-import tech.pegasys.artemis.beaconrestapi.handlerinterfaces.P2PNetworkHandlerInterface;
+import io.javalin.plugin.json.JavalinJson;
+import tech.pegasys.artemis.beaconrestapi.handlerinterfaces.BeaconRestApiHandler;
 import tech.pegasys.artemis.networking.p2p.JvmLibP2PNetwork;
 import tech.pegasys.artemis.networking.p2p.api.P2PNetwork;
 
-public class PeersHandler implements P2PNetworkHandlerInterface {
+public class PeersHandler implements BeaconRestApiHandler {
 
-  private Javalin app;
   private P2PNetwork network;
   private boolean isLibP2P;
+  private String path = "/network/peers";
 
-  @Override
-  public PeersHandler init(Javalin app, P2PNetwork network, boolean isLibP2P) {
-    this.app = app;
+  public PeersHandler(P2PNetwork network, boolean isLibP2P) {
     this.network = network;
     this.isLibP2P = isLibP2P;
-    return this;
   }
 
   @Override
-  public void run() {
-    app.get(
-        "/network/peers",
-        ctx -> {
-          if (isLibP2P) {
-            ctx.json(((JvmLibP2PNetwork) network).getPeerIDs().toArray());
-          } else {
-            ctx.result("p2pNetwork not set to libP2P");
-          }
-        });
+  public String getPath() {
+    return path;
+  }
+
+  @Override
+  public String handleRequest(RequestParams param) {
+    if (isLibP2P) {
+      return JavalinJson.toJson(((JvmLibP2PNetwork) network).getPeerIDs().toArray());
+    } else {
+      return "p2pNetwork not set to libP2P";
+    }
   }
 }

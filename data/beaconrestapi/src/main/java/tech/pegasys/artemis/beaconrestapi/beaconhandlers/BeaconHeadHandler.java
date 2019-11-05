@@ -14,38 +14,36 @@
 package tech.pegasys.artemis.beaconrestapi.beaconhandlers;
 
 import com.google.common.primitives.UnsignedLong;
-import io.javalin.Javalin;
+import io.javalin.plugin.json.JavalinJson;
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.artemis.beaconrestapi.handlerinterfaces.BeaconHandlerInterface;
+import tech.pegasys.artemis.beaconrestapi.handlerinterfaces.BeaconRestApiHandler;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 
-public class BeaconHeadHandler implements BeaconHandlerInterface {
+public class BeaconHeadHandler implements BeaconRestApiHandler {
 
-  private Javalin app;
   private ChainStorageClient client;
+  private String path = "/beacon/head";
 
-  @Override
-  public BeaconHeadHandler init(Javalin app, ChainStorageClient client) {
-    this.app = app;
+  public BeaconHeadHandler(ChainStorageClient client) {
     this.client = client;
-    return this;
   }
 
   @Override
-  public void run() {
-    app.get(
-        "/beacon/head",
-        ctx -> {
-          Bytes32 head_block_root = client.getBestBlockRoot();
-          Bytes32 head_state_root = client.getBestBlockRootState().hash_tree_root();
-          UnsignedLong head_block_slot = client.getBestSlot();
-          Map<String, Object> jsonObject = new HashMap<>();
-          jsonObject.put("slot", head_block_slot.longValue());
-          jsonObject.put("block_root", head_block_root.toHexString());
-          jsonObject.put("state_root", head_state_root.toHexString());
-          ctx.json(jsonObject);
-        });
+  public String getPath() {
+    return path;
+  }
+
+  @Override
+  public String handleRequest(RequestParams params) {
+    Bytes32 head_block_root = client.getBestBlockRoot();
+    Bytes32 head_state_root = client.getBestBlockRootState().hash_tree_root();
+    UnsignedLong head_block_slot = client.getBestSlot();
+    Map<String, Object> jsonObject = new HashMap<>();
+    jsonObject.put("slot", head_block_slot.longValue());
+    jsonObject.put("block_root", head_block_root.toHexString());
+    jsonObject.put("state_root", head_state_root.toHexString());
+    return JavalinJson.toJson(jsonObject);
   }
 }

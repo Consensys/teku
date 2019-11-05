@@ -13,28 +13,23 @@
 
 package tech.pegasys.artemis.beaconrestapi.networkhandlers;
 
-import io.javalin.Javalin;
-import tech.pegasys.artemis.beaconrestapi.handlerinterfaces.P2PNetworkHandlerInterface;
-import tech.pegasys.artemis.networking.p2p.api.P2PNetwork;
+import tech.pegasys.artemis.beaconrestapi.handlerinterfaces.BeaconRestApiHandler;
 
 // TODO: remove unused variable when discovery is integrated
 @SuppressWarnings("UnusedVariable")
-public class ENRHandler implements P2PNetworkHandlerInterface {
+public class ENRHandler implements BeaconRestApiHandler {
 
-  private Javalin app;
-  private P2PNetwork network;
-  private boolean isLibP2P;
+  private String path = "/network/enr";
+
+  public ENRHandler() {}
 
   @Override
-  public ENRHandler init(Javalin app, P2PNetwork network, boolean isLibP2P) {
-    this.app = app;
-    this.network = network;
-    this.isLibP2P = isLibP2P;
-    return this;
+  public String getPath() {
+    return path;
   }
 
   @Override
-  public void run() {
-    app.get("/network/enr", ctx -> ctx.result("Discovery service not yet implemented"));
+  public String handleRequest(RequestParams params) {
+    return "Discovery service not yet implemented";
   }
 }

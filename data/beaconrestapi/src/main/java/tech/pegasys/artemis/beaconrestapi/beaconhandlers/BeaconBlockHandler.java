@@ -15,32 +15,29 @@ package tech.pegasys.artemis.beaconrestapi.beaconhandlers;
 
 import static tech.pegasys.artemis.provider.JsonProvider.objectToJSON;
 
-import io.javalin.Javalin;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.artemis.beaconrestapi.handlerinterfaces.BeaconHandlerInterface;
+import tech.pegasys.artemis.beaconrestapi.handlerinterfaces.BeaconRestApiHandler;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 
-public class BeaconBlockHandler implements BeaconHandlerInterface {
+public class BeaconBlockHandler implements BeaconRestApiHandler {
 
-  private Javalin app;
   private ChainStorageClient client;
+  private String path = "/beacon/block";
 
-  @Override
-  public BeaconBlockHandler init(Javalin app, ChainStorageClient client) {
-    this.app = app;
+  public BeaconBlockHandler(ChainStorageClient client) {
     this.client = client;
-    return this;
   }
 
   @Override
-  public void run() {
-    app.get(
-        "/beacon/block",
-        ctx -> {
-          Bytes32 root = Bytes32.fromHexString(ctx.queryParam("root"));
-          BeaconBlock block = client.getStore().getBlock(root);
-          ctx.result(objectToJSON(block)).contentType("application/json");
-        });
+  public String getPath() {
+    return path;
+  }
+
+  @Override
+  public String handleRequest(RequestParams param) {
+    Bytes32 root = Bytes32.fromHexString(param.getQueryParam("root"));
+    BeaconBlock block = client.getStore().getBlock(root);
+    return objectToJSON(block);
   }
 }

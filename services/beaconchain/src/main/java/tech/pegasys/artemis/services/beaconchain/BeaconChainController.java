@@ -186,7 +186,7 @@ public class BeaconChainController {
     STDOUT.log(Level.DEBUG, "BeaconChainController.initRestAPI()");
     BeaconRestApi restApi =
         new BeaconRestApi(chainStorageClient, p2pNetwork, config.getBeaconRestAPIPortNumber());
-    restApi.runHandlers();
+    restApi.start();
   }
 
   public void start() {

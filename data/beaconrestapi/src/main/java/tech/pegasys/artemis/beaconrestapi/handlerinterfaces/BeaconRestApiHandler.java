@@ -13,10 +13,22 @@
 
 package tech.pegasys.artemis.beaconrestapi.handlerinterfaces;
 
-import io.javalin.Javalin;
-import tech.pegasys.artemis.storage.ChainStorageClient;
+import io.javalin.http.Context;
 
-public interface BeaconHandlerInterface extends HandlerInterface {
+public interface BeaconRestApiHandler {
+  String getPath();
 
-  BeaconHandlerInterface init(Javalin app, ChainStorageClient chainStorageClient);
+  String handleRequest(RequestParams params); // Returns JSON response
+
+  class RequestParams {
+    private final Context javalinContext;
+
+    public RequestParams(Context javalinContext) {
+      this.javalinContext = javalinContext;
+    }
+
+    public String getQueryParam(String name) {
+      return javalinContext.queryParam(name);
+    }
+  }
 }

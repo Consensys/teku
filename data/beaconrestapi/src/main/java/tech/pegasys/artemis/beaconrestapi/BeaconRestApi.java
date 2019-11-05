@@ -20,7 +20,7 @@ import tech.pegasys.artemis.beaconrestapi.beaconhandlers.BeaconBlockHandler;
 import tech.pegasys.artemis.beaconrestapi.beaconhandlers.BeaconHeadHandler;
 import tech.pegasys.artemis.beaconrestapi.beaconhandlers.BeaconStateHandler;
 import tech.pegasys.artemis.beaconrestapi.beaconhandlers.GenesisTimeHandler;
-import tech.pegasys.artemis.beaconrestapi.handlerinterfaces.HandlerInterface;
+import tech.pegasys.artemis.beaconrestapi.handlerinterfaces.BeaconRestApiHandler;
 import tech.pegasys.artemis.beaconrestapi.networkhandlers.ENRHandler;
 import tech.pegasys.artemis.beaconrestapi.networkhandlers.PeerIDHandler;
 import tech.pegasys.artemis.beaconrestapi.networkhandlers.PeersHandler;
@@ -30,26 +30,31 @@ import tech.pegasys.artemis.storage.ChainStorageClient;
 
 public class BeaconRestApi {
 
-  private List<HandlerInterface> handlers = new ArrayList<>();
+  private List<BeaconRestApiHandler> handlers = new ArrayList<>();
+  private Javalin app;
 
   public BeaconRestApi(
       ChainStorageClient chainStorageClient, P2PNetwork p2pNetwork, final int portNumber) {
     boolean isLibP2P = false;
     if (p2pNetwork instanceof JvmLibP2PNetwork) isLibP2P = true;
-    Javalin app = Javalin.create().start(portNumber);
+    app = Javalin.create().start(portNumber);
 
-    handlers.add(new GenesisTimeHandler().init(app, chainStorageClient));
-    handlers.add(new BeaconHeadHandler().init(app, chainStorageClient));
-    handlers.add(new BeaconBlockHandler().init(app, chainStorageClient));
-    handlers.add(new BeaconStateHandler().init(app, chainStorageClient));
-    handlers.add(new PeerIDHandler().init(app, p2pNetwork, isLibP2P));
-    handlers.add(new PeersHandler().init(app, p2pNetwork, isLibP2P));
-    handlers.add(new ENRHandler().init(app, p2pNetwork, isLibP2P));
+    handlers.add(new GenesisTimeHandler(chainStorageClient));
+    handlers.add(new BeaconHeadHandler(chainStorageClient));
+    handlers.add(new BeaconBlockHandler(chainStorageClient));
+    handlers.add(new BeaconStateHandler(chainStorageClient));
+    handlers.add(new PeerIDHandler(p2pNetwork, isLibP2P));
+    handlers.add(new PeersHandler(p2pNetwork, isLibP2P));
+    handlers.add(new ENRHandler());
   }
 
-  public void runHandlers() {
-    for (HandlerInterface handler : handlers) {
-      handler.run();
-    }
+  public void start() {
+    handlers.forEach(
+        handler ->
+            app.get(
+                handler.getPath(),
+                ctx ->
+                    ctx.result(handler.handleRequest(new BeaconRestApiHandler.RequestParams(ctx)))
+                        .contentType("application/json")));
   }
 }
