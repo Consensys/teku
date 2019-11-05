@@ -13,8 +13,6 @@
 
 package tech.pegasys.artemis.util.reflectionInformation;
 
-import static java.util.stream.Collectors.toList;
-
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -26,7 +24,6 @@ public class ReflectionInformation {
 
   private Class classInfo;
   private Field[] fields;
-  private Class[] paramClasses;
   private Constructor constructor;
   private int parameterCount;
   private boolean isVariable;
@@ -42,7 +39,7 @@ public class ReflectionInformation {
     try {
       this.classInfo = classInfo;
       this.fields = getFields(classInfo);
-      this.paramClasses = getTypes(fields);
+      final Class[] paramClasses = getTypes(fields);
       this.constructor = classInfo.getConstructor(paramClasses);
       this.parameterCount = constructor.getParameterCount();
       this.isVariable = ReflectionInformationUtil.isVariable(this);
@@ -53,7 +50,7 @@ public class ReflectionInformation {
       this.bitlistElementMaxSizes = ReflectionInformationUtil.getBitlistElementMaxSizes(this);
       this.bitvectorSizes = ReflectionInformationUtil.getBitvectorSizes(this);
     } catch (NoSuchMethodException e) {
-      System.out.println(e);
+      throw new RuntimeException("Failed to determine SSZ reflection information", e);
     }
   }
 
@@ -104,11 +101,10 @@ public class ReflectionInformation {
   private Field[] getFields(Class classInfo) {
     return Arrays.stream(classInfo.getDeclaredFields())
         .filter(f -> !Modifier.isStatic(f.getModifiers()))
-        .collect(toList())
-        .toArray(new Field[0]);
+        .toArray(Field[]::new);
   }
 
   private Class[] getTypes(Field[] fields) {
-    return Arrays.stream(fields).map(f -> f.getType()).collect(toList()).toArray(new Class[0]);
+    return Arrays.stream(fields).map(Field::getType).toArray(Class[]::new);
   }
 }
